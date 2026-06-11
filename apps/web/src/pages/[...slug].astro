@@ -23,7 +23,8 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await entry.render();
+import { render } from 'astro:content';
+const { Content } = await render(entry);
 ---
 <BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
   <section class="hero">

@@ -5,14 +5,9 @@ import ComplianceNote from '../components/ComplianceNote.astro';
 import ProductCTA from '../components/ProductCTA.astro';
 import FrameworkVisual from '../components/FrameworkVisual.astro';
 
-const collections = ['pages', 'products', 'frameworks', 'leadMagnets', 'benchmarkModules'];
-const entries = (await Promise.all(collections.map(async (collection) => {
-  const items = await getCollection(collection);
-  return items.map((entry) => ({ ...entry, collection }));
-}))).flat();
-
 export async function getStaticPaths() {
-  const all = (await Promise.all(collections.map(async (collection) => {
+  const collectionNames = ['pages', 'products', 'frameworks', 'leadMagnets', 'benchmarkModules'];
+  const all = (await Promise.all(collectionNames.map(async (collection) => {
     const items = await getCollection(collection);
     return items.map((entry) => ({ ...entry, collection }));
   }))).flat();

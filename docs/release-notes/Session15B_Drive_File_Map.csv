@@ -1,0 +1,12 @@
+Folder,Expected Active Contents,Status
+01_FINAL_BOOK_CURRENT,Session15A_Certified_NoISBN DOCX + PDFs,PASS
+02_COVER_PACKAGING,Session14APlus publisher-ready packaging ZIP,PASS
+03_WEBSITE_ASTRO_GITHUB,Session14B website/product/lead magnet package,PASS
+04_LEAD_MAGNETS,Checklist DOCX + PDF,PASS
+05_SOCIAL_LAUNCH,Session14C social launch package,PASS
+06_BRAND_ASSETS,"Brand Guide, Logo System, vector cleanup package",PASS
+07_VISUAL_SYSTEM,Session13B visual register + Session13C accessibility package,PASS
+08_LOCALIZATION,Session13E terminology master kit,PASS
+09_QA_CHECKSUMS,Session15A QA certification + QA master archive,PASS
+00_ADMIN_INDEX,Release index + upload completion map,PASS
+10_ARCHIVE_PREVIOUS_SESSIONS,Older book candidate + original 14A package are archive-only,PASS

@@ -1,0 +1,5 @@
+Provider,Use Case,Base/Root Directory,Install Command,Validation Command,Build Command,Output Directory,Config File,Deployment Status,Notes
+Cloudflare Workers,Primary Cloudflare-stack static deployment,apps/web,npm install --no-audit --no-fund,npm run validate,npm run build,dist,apps/web/wrangler.jsonc,Configured not deployed,Requires CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID
+Vercel,Fast preview deployments,apps/web,npm install --no-audit --no-fund,npm run validate,npm run build,dist,apps/web/vercel.json,Configured not deployed,Vercel auto-detects Astro when imported
+Netlify,Alternative static deployment,apps/web,npm install --no-audit --no-fund,npm run validate,npm run build,dist,apps/web/netlify.toml,Configured not deployed,Netlify can use dashboard import and netlify.toml
+GitHub Actions,Build artifact preview,repository root,npm install --no-audit --no-fund,npm run validate,npm run build,apps/web/dist,.github/workflows/preview-build.yml,Configured not deployed,Uploads dist artifact for PR/manual review

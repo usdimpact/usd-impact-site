@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://usd-impact.com/sitemap-index.xml

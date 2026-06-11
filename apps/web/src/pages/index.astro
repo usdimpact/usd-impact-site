@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductCTA from '../components/ProductCTA.astro';
+import BenchmarkModuleCard from '../components/BenchmarkModuleCard.astro';
+---
+<BaseLayout title="USD Impact | Read the Dollar First" description="Educational macro-finance framework for reading dollar regimes across oil, gold, Bitcoin, gas, FX and equities.">
+  <section class="hero">
+    <div class="container">
+      <div class="eyebrow">USD Impact</div>
+      <h1>Read the Dollar First.</h1>
+      <p class="lead">A premium educational framework for understanding how dollar regimes transmit across oil, gold, Bitcoin, gas, FX, equities, and global market conditions.</p>
+      <ProductCTA />
+    </div>
+  </section>
+  <main class="container">
+    <section class="grid">
+      <BenchmarkModuleCard title="Start with the dollar" body="Separate DXY from the broader dollar and identify whether the move is rate-led, liquidity-led, or risk-led." />
+      <BenchmarkModuleCard title="Use the three dials" body="Track dollar direction, real-rate pressure, and liquidity stress before reading asset moves." />
+      <BenchmarkModuleCard title="Keep it educational" body="No trading signals, no return promises, no recommendations. Framework first, context second." />
+    </section>
+  </main>
+</BaseLayout>

@@ -1,0 +1,30 @@
+Path,Change Type,Purpose
+.nvmrc,Added,Pin Node version for workspace
+apps/web/.nvmrc,Added,Pin Node version for provider root
+apps/web/netlify.toml,Added,Netlify static deployment configuration
+apps/web/vercel.json,Added,Vercel project configuration
+apps/web/wrangler.jsonc,Added,Cloudflare Workers static asset configuration
+apps/web/public/_headers,Added,Security and cache headers for static hosting
+apps/web/public/_redirects,Added,Reserved redirect control file
+apps/web/.env.preview.example,Added,Preview env example without secrets
+apps/web/.env.production.example,Added,Production env example without secrets
+apps/web/package.json,Updated,Added validate/build-preview/preview/deployment scripts
+package.json,Updated,Added root-level validate/build-preview scripts
+.github/workflows/preview-build.yml,Added,Pull request/manual preview build artifact workflow
+.github/workflows/deploy-cloudflare-workers.yml,Added,Manual Cloudflare deploy workflow requiring secrets
+.github/workflows/deploy-netlify-placeholder.yml,Added,Manual Netlify config check placeholder
+.github/workflows/deploy-vercel-placeholder.yml,Added,Manual Vercel config check placeholder
+apps/web/scripts/generate-offline-preview.mjs,Added,Generates local static content preview when Astro dependencies are unavailable
+docs/deployment/SESSION16B_DEPLOYMENT_PROVIDER_CONFIGURATION.md,Added,Deployment configuration guide
+docs/deployment/SESSION16B_PREVIEW_BUILD_CHECKLIST.md,Added,Preview review checklist
+docs/deployment/SESSION16B_PROVIDER_SETTINGS_MATRIX.csv,Added,Provider settings matrix
+docs/deployment/SESSION16B_PREVIEW_URL_REGISTER.csv,Added,Preview URL register
+docs/deployment/SESSION16B_UPLOAD_INSTRUCTIONS.md,Added,Drive upload instructions
+docs/deployment/SESSION16B_GITHUB_PROVIDER_SETUP_INSTRUCTIONS.md,Added,GitHub and provider setup instructions
+docs/qa/SESSION16B_QA_NOTES.md,Added,QA notes and local build caveat
+docs/qa/SESSION16B_LOCAL_VALIDATION_LOG.json,Added,Machine-readable validation log
+docs/qa/SESSION16B_VALIDATION_MATRIX.csv,Added,Validation matrix
+docs/qa/SESSION16B_REPOSITORY_CHANGE_LOG.csv,Added,Repository change log
+docs/release-notes/SESSION16B_RELEASE_NOTES.md,Added,Session release notes
+docs/release-notes/SESSION16B_CLAUDE_HANDOFF_UPDATE.md,Added,Claude continuation prompt update
+apps/web/dist-offline-preview/,Generated,Offline content preview snapshot; not an Astro build

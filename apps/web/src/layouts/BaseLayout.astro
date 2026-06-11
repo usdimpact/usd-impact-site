@@ -1,0 +1,37 @@
+---
+import '../styles/global.css';
+const { title, description } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="logo" href="/">
+          <img src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_2048.png" alt="USD Impact" />
+          <span>USD Impact</span>
+        </a>
+        <nav class="nav" aria-label="Main navigation">
+          <a href="/start-here/">Start Here</a>
+          <a href="/book/read-the-dollar-first/">Book</a>
+          <a href="/framework/dollar-transmission-chain/">Framework</a>
+          <a href="/lead-magnets/weekly-dollar-regime-checklist/">Checklist</a>
+          <a href="/benchmark/usd-impact-benchmark-dashboard/">Benchmark</a>
+        </nav>
+      </div>
+    </header>
+    <slot />
+    <footer class="footer">
+      <div class="container">
+        <strong>USD Impact</strong><br />
+        Educational macro-finance framework. Not investment, legal, tax, trading, or financial advice.
+      </div>
+    </footer>
+  </body>
+</html>

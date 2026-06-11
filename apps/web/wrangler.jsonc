@@ -1,0 +1,15 @@
+{
+  // USD Impact - Cloudflare Workers static asset deployment configuration.
+  // Run from apps/web after dependencies are installed:
+  //   npm run build && npx wrangler dev
+  //   npm run build && npx wrangler deploy
+  "name": "usd-impact-site",
+  "compatibility_date": "2026-06-11",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

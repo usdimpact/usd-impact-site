@@ -1,18 +1,13 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ComplianceNote from '../components/ComplianceNote.astro';
 import ProductCTA from '../components/ProductCTA.astro';
 import FrameworkVisual from '../components/FrameworkVisual.astro';
 
-const collections = ['pages', 'products', 'frameworks', 'leadMagnets', 'benchmarkModules'];
-const entries = (await Promise.all(collections.map(async (collection) => {
-  const items = await getCollection(collection);
-  return items.map((entry) => ({ ...entry, collection }));
-}))).flat();
-
 export async function getStaticPaths() {
-  const all = (await Promise.all(collections.map(async (collection) => {
+  const collectionNames = ['pages', 'products', 'frameworks', 'leadMagnets', 'benchmarkModules'];
+  const all = (await Promise.all(collectionNames.map(async (collection) => {
     const items = await getCollection(collection);
     return items.map((entry) => ({ ...entry, collection }));
   }))).flat();
@@ -23,7 +18,7 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await entry.render();
+const { Content } = await render(entry);
 ---
 <BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
   <section class="hero">

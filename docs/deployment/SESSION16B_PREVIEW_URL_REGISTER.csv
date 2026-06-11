@@ -1,0 +1,5 @@
+Provider,Environment,URL,Status,Owner,Notes
+Cloudflare,Preview/TBD,,Pending,Mircea,Do not attach production domain until preview approval
+Vercel,Preview/TBD,,Pending,Mircea,Use branch/PR preview for fast inspection
+Netlify,Preview/TBD,,Pending,Mircea,Alternative provider if preferred
+Local,Offline snapshot,dist-offline-preview/index.html,Generated,ChatGPT,Not an Astro build; content preview only

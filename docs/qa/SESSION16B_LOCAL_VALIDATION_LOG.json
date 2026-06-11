@@ -1,0 +1,15 @@
+{
+  "session": "16B",
+  "timestamp_utc": "2026-06-11T13:45:00Z",
+  "checks": [
+    {"check": "npm run validate:content", "working_directory": "apps/web", "status": "pass", "exit_code": 0, "summary": "content validation pass"},
+    {"check": "npm run validate:compliance", "working_directory": "apps/web", "status": "pass", "exit_code": 0, "summary": "compliance phrase check pass"},
+    {"check": "npm run validate:links", "working_directory": "apps/web", "status": "pass", "exit_code": 0, "summary": "internal link slug check pass"},
+    {"check": "node scripts/generate-offline-preview.mjs", "working_directory": "apps/web", "status": "pass", "exit_code": 0, "summary": "offline static content preview generated for 11 content routes"},
+    {"check": "npm run build", "working_directory": "apps/web", "status": "blocked", "exit_code": 127, "summary": "Astro binary not available in sandbox because dependencies are not installed; run npm install in GitHub/provider/local environment"},
+    {"check": "npm install --offline", "working_directory": "apps/web", "status": "blocked", "exit_code": 1, "summary": "offline cache incomplete; provider/GitHub environment must install dependencies from npm registry"}
+  ],
+  "secrets_committed": false,
+  "certified_book_modified": false,
+  "live_deployment_performed": false
+}

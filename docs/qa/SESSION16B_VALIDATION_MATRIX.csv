@@ -1,0 +1,18 @@
+Area,Check,Result,Notes
+Repository,Session16A source copied,Pass,Working repo created from Session16A bootstrap
+Provider config,Cloudflare wrangler.jsonc present,Pass,Static assets directory set to ./dist
+Provider config,Netlify config present,Pass,apps/web/netlify.toml created
+Provider config,Vercel config present,Pass,apps/web/vercel.json created
+Environment,.env preview example,Pass,No real secrets
+Environment,.env production example,Pass,No real secrets
+Security,Headers configured,Pass,Cloudflare/Netlify/Vercel compatible headers added
+GitHub Actions,Preview build workflow,Pass,Build artifact workflow created
+GitHub Actions,Cloudflare deploy workflow,Pass,Manual workflow only and requires secrets
+Local validation,Content validation,Pass,npm run validate:content passed
+Local validation,Compliance check,Pass,npm run validate:compliance passed
+Local validation,Internal link check,Pass,npm run validate:links passed
+Local build,Astro build,Blocked,Astro binary unavailable because dependencies are not installed in sandbox
+Offline preview,Static content snapshot,Pass,Generated for content preview; not an Astro build
+Secrets,No API keys committed,Pass,Only example env files included
+Certified book,No manuscript modification,Pass,Session15A book untouched
+Live deployment,No live deployment,Pass,Configuration only

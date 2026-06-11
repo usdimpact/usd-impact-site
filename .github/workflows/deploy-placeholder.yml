@@ -1,0 +1,10 @@
+name: Deploy Placeholder
+
+on:
+  workflow_dispatch:
+
+jobs:
+  note:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Deploy target not configured. Choose Cloudflare Pages, Netlify, Vercel, or another provider in Session 16B."

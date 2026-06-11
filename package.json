@@ -1,0 +1,14 @@
+{
+  "name": "usd-impact-site-workspace",
+  "private": true,
+  "version": "0.1.0-session16a",
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "validate": "npm --workspace apps/web run validate",
+    "build": "npm --workspace apps/web run build",
+    "build:preview": "npm --workspace apps/web run build:preview",
+    "preview:local": "npm --workspace apps/web run preview:local"
+  }
+}

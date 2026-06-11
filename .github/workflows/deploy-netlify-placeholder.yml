@@ -1,0 +1,14 @@
+name: Netlify Deployment Placeholder
+
+on:
+  workflow_dispatch:
+
+jobs:
+  config-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm Netlify config exists
+        run: test -f apps/web/netlify.toml
+      - name: Netlify deployment note
+        run: echo "Connect repository in Netlify UI with base directory apps/web. Do not store tokens in repository."

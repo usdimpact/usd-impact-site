@@ -1,0 +1,14 @@
+name: Vercel Deployment Placeholder
+
+on:
+  workflow_dispatch:
+
+jobs:
+  config-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm Vercel config exists
+        run: test -f apps/web/vercel.json
+      - name: Vercel deployment note
+        run: echo "Connect repository in Vercel UI with root directory apps/web. Do not store tokens in repository."

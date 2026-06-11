@@ -1,0 +1,20 @@
+name: Content Audit
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/content/**'
+      - 'apps/web/src/pages/**'
+      - 'apps/web/src/components/**'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run local compliance checks
+        run: node scripts/check-compliance-phrases.mjs && node scripts/validate-links.mjs
+        working-directory: apps/web

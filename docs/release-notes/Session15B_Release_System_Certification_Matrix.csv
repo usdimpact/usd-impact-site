@@ -1,0 +1,12 @@
+Area,Folder,Required Active Baseline,Certification Status,Notes
+Book,01_FINAL_BOOK_CURRENT,Session15A_Certified_NoISBN DOCX + PDFs,PASS,Verified in Drive listing before certification.
+Cover,02_COVER_PACKAGING,Session14APlus publisher-ready packaging ZIP,PASS,Verified in Drive listing before certification.
+Website / Astro,03_WEBSITE_ASTRO_GITHUB,Session14B website/product/lead magnet package,PASS,Verified in Drive listing before certification.
+Lead magnet,04_LEAD_MAGNETS,Checklist DOCX + PDF,PASS,Verified in Drive listing before certification.
+Social launch,05_SOCIAL_LAUNCH,Session14C social launch package,PASS,Verified in Drive listing before certification.
+Brand,06_BRAND_ASSETS,"Brand Guide, Logo System, vector cleanup package",PASS,Verified in Drive listing before certification.
+Visual system,07_VISUAL_SYSTEM,Session13B visual register + Session13C accessibility package,PASS,Verified in Drive listing before certification.
+Localization,08_LOCALIZATION,Session13E terminology master kit,PASS,Verified in Drive listing before certification.
+QA / checksums,09_QA_CHECKSUMS,Session15A QA certification + QA master archive,PASS,Verified in Drive listing before certification.
+Admin index,00_ADMIN_INDEX,Release index + upload completion map,PASS,Verified in Drive listing before certification.
+Archive,10_ARCHIVE_PREVIOUS_SESSIONS,Older book candidate + original 14A package are archive-only,PASS,Verified in Drive listing before certification.

@@ -1,0 +1,31 @@
+name: Preview Build
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  preview-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: apps/web/.nvmrc
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Validate content and compliance
+        run: npm run validate
+      - name: Build static preview
+        run: npm run build
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: usd-impact-preview-dist
+          path: apps/web/dist
+          retention-days: 14

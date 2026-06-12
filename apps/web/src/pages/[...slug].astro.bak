@@ -1,0 +1,42 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ComplianceNote from '../components/ComplianceNote.astro';
+import ProductCTA from '../components/ProductCTA.astro';
+import FrameworkVisual from '../components/FrameworkVisual.astro';
+
+const collections = ['pages', 'products', 'frameworks', 'leadMagnets', 'benchmarkModules'];
+const entries = (await Promise.all(collections.map(async (collection) => {
+  const items = await getCollection(collection);
+  return items.map((entry) => ({ ...entry, collection }));
+}))).flat();
+
+export async function getStaticPaths() {
+  const all = (await Promise.all(collections.map(async (collection) => {
+    const items = await getCollection(collection);
+    return items.map((entry) => ({ ...entry, collection }));
+  }))).flat();
+  return all.map((entry) => ({
+    params: { slug: entry.data.slug.replace(/^\//, '').replace(/\/$/, '') },
+    props: { entry }
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+---
+<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
+  <section class="hero">
+    <div class="container">
+      <div class="eyebrow">{entry.data.category}</div>
+      <h1>{entry.data.title}</h1>
+      {entry.data.hero && <p class="lead">{entry.data.hero}</p>}
+      <ProductCTA primary={entry.data.ctaPrimary} secondary={entry.data.ctaSecondary} />
+    </div>
+  </section>
+  <main class="container">
+    {entry.data.visual && <FrameworkVisual src={entry.data.visual} alt={entry.data.title} />}
+    <Content />
+    <ComplianceNote text={entry.data.complianceNote} />
+  </main>
+</BaseLayout>

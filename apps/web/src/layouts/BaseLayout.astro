@@ -19,18 +19,35 @@ const { title, description } = Astro.props;
         </a>
         <nav class="nav" aria-label="Main navigation">
           <a href="/start-here/">Start Here</a>
+          <a href="/dollar-framework/">Framework</a>
           <a href="/book/read-the-dollar-first/">Book</a>
-          <a href="/framework/dollar-transmission-chain/">Framework</a>
           <a href="/lead-magnets/weekly-dollar-regime-checklist/">Checklist</a>
           <a href="/benchmark/usd-impact-benchmark-dashboard/">Benchmark</a>
+          <a href="/compliance/">Compliance</a>
         </nav>
+        <a class="button primary nav-cta" href="/starter-guide/">Free Guide</a>
       </div>
     </header>
     <slot />
     <footer class="footer">
-      <div class="container">
-        <strong>USD Impact</strong><br />
-        Educational macro-finance framework. Not investment, legal, tax, trading, or financial advice.
+      <div class="container footer-inner">
+        <div class="footer-brand">
+          <strong>USD Impact</strong>
+          <p>How the Dollar Moves Global Markets.</p>
+        </div>
+        <nav class="footer-nav" aria-label="Footer navigation">
+          <a href="/start-here/">Start Here</a>
+          <a href="/dollar-framework/">Framework</a>
+          <a href="/glossary/dxy/">Glossary</a>
+          <a href="/starter-guide/">Free Guide</a>
+          <a href="/compliance/">Compliance</a>
+        </nav>
+      </div>
+      <div class="container footer-compliance">
+        Educational and informational only. Not investment, legal, tax, trading, or financial advice.
+        Not a recommendation to buy or sell any asset. Relationships between the U.S. dollar, rates,
+        liquidity, inflation, and asset prices are regime-dependent and may change over time.
+        <a href="/compliance/">Full compliance statement</a>.
       </div>
     </footer>
   </body>

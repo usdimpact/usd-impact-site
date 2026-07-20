@@ -12,7 +12,7 @@ const routeCollections = {
 const navigationPath = path.resolve('src/layouts/BaseLayout.astro');
 
 function normalizeSlug(value) {
-  const slug = value.trim().replace(/^\/+|\/+$/g, '');
+  const slug = value.trim().replace(/\/{2,}/g, '/').replace(/^\/+|\/+$/g, '');
   return slug ? `/${slug}` : '/';
 }
 

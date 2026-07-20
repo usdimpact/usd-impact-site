@@ -36,7 +36,6 @@ const formId = 'book-waitlist-form';
       <input name="company" type="text" tabindex="-1" autocomplete="off" />
     </label>
 
-    <input name="source" type="hidden" value="book-waitlist" />
     <p class="waitlist-status" data-waitlist-status aria-live="polite"></p>
   </form>
 
@@ -61,7 +60,6 @@ const formId = 'book-waitlist-form';
       const email = String(formData.get('email') ?? '').trim();
       const consent = formData.get('consent') === 'yes';
       const company = String(formData.get('company') ?? '').trim();
-      const source = String(formData.get('source') ?? 'book-waitlist');
 
       if (status instanceof HTMLElement) {
         status.textContent = 'Submitting…';
@@ -76,7 +74,7 @@ const formId = 'book-waitlist-form';
         const response = await fetch('/api/waitlist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, consent, company, source }),
+          body: JSON.stringify({ email, consent, company }),
         });
 
         const payload = await response.json().catch(() => ({}));

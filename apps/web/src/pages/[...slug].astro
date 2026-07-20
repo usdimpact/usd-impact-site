@@ -19,6 +19,9 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
+const downloadPath = 'downloadPath' in entry.data && typeof entry.data.downloadPath === 'string'
+  ? entry.data.downloadPath
+  : undefined;
 ---
 <BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
   <section class="hero">
@@ -26,7 +29,12 @@ const { Content } = await render(entry);
       <div class="eyebrow">{entry.data.category}</div>
       <h1>{entry.data.title}</h1>
       {entry.data.hero && <p class="lead">{entry.data.hero}</p>}
-      <ProductCTA primary={entry.data.ctaPrimary} secondary={entry.data.ctaSecondary} />
+      <ProductCTA
+        primary={entry.data.ctaPrimary}
+        secondary={entry.data.ctaSecondary}
+        secondaryHref={downloadPath ?? '/lead-magnets/weekly-dollar-regime-checklist/'}
+        secondaryDownload={Boolean(downloadPath)}
+      />
     </div>
   </section>
   <main class="container">

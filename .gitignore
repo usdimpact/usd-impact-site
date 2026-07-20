@@ -141,3 +141,7 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Reproducible offline preview output
+apps/web/dist-offline-preview/
+apps/web/.astro/

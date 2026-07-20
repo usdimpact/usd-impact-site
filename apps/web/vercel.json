@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run validate:content && npm run validate:compliance && npm run validate:links && npm run build",
+  "buildCommand": "npm run validate && npm run build",
   "installCommand": "npm install --no-audit --no-fund",
   "outputDirectory": "dist",
   "framework": "astro",

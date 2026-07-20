@@ -4,10 +4,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ComplianceNote from '../components/ComplianceNote.astro';
 import ProductCTA from '../components/ProductCTA.astro';
 import FrameworkVisual from '../components/FrameworkVisual.astro';
+import WaitlistForm from '../components/WaitlistForm.astro';
 
 const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
-const bookRoute = '/book/read-the-dollar-first/';
-const startRoute = '/start-here/';
+const bookSlug = '/book/read-the-dollar-first';
 
 export async function getStaticPaths() {
   const collections = ['pages', 'products', 'frameworks', 'leadMagnets', 'benchmarkModules'];
@@ -26,13 +26,12 @@ const { Content } = await render(entry);
 const downloadPath = 'downloadPath' in entry.data && typeof entry.data.downloadPath === 'string'
   ? entry.data.downloadPath
   : checklistDownload;
-const isBookPage = entry.data.slug.replace(/\/$/, '') === '/book/read-the-dollar-first';
-const primaryLabel = isBookPage
-  ? 'Start Here'
-  : entry.data.ctaPrimary === 'Get the book'
-    ? 'Explore the book'
-    : entry.data.ctaPrimary;
-const primaryHref = isBookPage ? startRoute : bookRoute;
+const isBookPage = entry.data.slug.replace(/\/$/, '') === bookSlug;
+const requestedPrimary = entry.data.ctaPrimary;
+const primaryLabel = isBookPage || requestedPrimary === 'Get the book' || requestedPrimary === 'Explore the book'
+  ? 'Join the book waitlist'
+  : requestedPrimary;
+const primaryHref = isBookPage ? '#book-waitlist' : `${bookSlug}/#book-waitlist`;
 ---
 <BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
   <section class="hero">
@@ -52,6 +51,7 @@ const primaryHref = isBookPage ? startRoute : bookRoute;
   <main class="container">
     {entry.data.visual && <FrameworkVisual src={entry.data.visual} alt={entry.data.title} />}
     <Content />
+    {isBookPage && <WaitlistForm />}
     <ComplianceNote text={entry.data.complianceNote} />
   </main>
 </BaseLayout>

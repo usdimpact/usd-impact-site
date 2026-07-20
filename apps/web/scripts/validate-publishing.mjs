@@ -60,8 +60,14 @@ for (const [slug, collisions] of slugEntries) {
   }
 }
 
-const navigation = fs.readFileSync(navigationPath, 'utf8');
-const requiredRoutes = [...navigation.matchAll(/<a\s+href="(\/[^"]*)"/g)]
+const layoutSource = fs.readFileSync(navigationPath, 'utf8');
+const mainNavigation = layoutSource.match(/<nav\b[^>]*class="nav"[^>]*>[\s\S]*?<\/nav>/)?.[0] ?? '';
+
+if (!mainNavigation) {
+  failures.push(`Main navigation block not found in ${path.relative(process.cwd(), navigationPath)}`);
+}
+
+const requiredRoutes = [...mainNavigation.matchAll(/<a\s+href="(\/[^\"]*)"/g)]
   .map((match) => normalizeSlug(match[1]))
   .filter((slug) => slug !== '/');
 
@@ -84,4 +90,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`publishing validation pass (${entries.length} dynamic entries; ${new Set(requiredRoutes).size} required navigation routes)`);
+console.log(`publishing validation pass (${entries.length} dynamic entries; ${new Set(requiredRoutes).size} required main-navigation routes)`);

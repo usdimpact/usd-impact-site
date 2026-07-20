@@ -6,6 +6,8 @@ import ProductCTA from '../components/ProductCTA.astro';
 import FrameworkVisual from '../components/FrameworkVisual.astro';
 
 const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
+const bookRoute = '/book/read-the-dollar-first/';
+const startRoute = '/start-here/';
 
 export async function getStaticPaths() {
   const collections = ['pages', 'products', 'frameworks', 'leadMagnets', 'benchmarkModules'];
@@ -24,6 +26,13 @@ const { Content } = await render(entry);
 const downloadPath = 'downloadPath' in entry.data && typeof entry.data.downloadPath === 'string'
   ? entry.data.downloadPath
   : checklistDownload;
+const isBookPage = entry.data.slug.replace(/\/$/, '') === '/book/read-the-dollar-first';
+const primaryLabel = isBookPage
+  ? 'Start Here'
+  : entry.data.ctaPrimary === 'Get the book'
+    ? 'Explore the book'
+    : entry.data.ctaPrimary;
+const primaryHref = isBookPage ? startRoute : bookRoute;
 ---
 <BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
   <section class="hero">
@@ -32,7 +41,8 @@ const downloadPath = 'downloadPath' in entry.data && typeof entry.data.downloadP
       <h1>{entry.data.title}</h1>
       {entry.data.hero && <p class="lead">{entry.data.hero}</p>}
       <ProductCTA
-        primary={entry.data.ctaPrimary}
+        primary={primaryLabel}
+        primaryHref={primaryHref}
         secondary={entry.data.ctaSecondary}
         secondaryHref={downloadPath}
         secondaryDownload={true}

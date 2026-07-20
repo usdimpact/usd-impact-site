@@ -3,7 +3,11 @@ import path from 'node:path';
 
 const distRoot = path.resolve('dist');
 const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
+const bookRouteHref = '/book/read-the-dollar-first/';
+const startRouteHref = '/start-here/';
 const checklistPdf = path.join(distRoot, checklistDownload.replace(/^\//, ''));
+const homepage = path.join(distRoot, 'index.html');
+const bookPage = path.join(distRoot, 'book', 'read-the-dollar-first', 'index.html');
 const benchmarkRoute = path.join(
   distRoot,
   'benchmark',
@@ -42,6 +46,30 @@ for (const route of downloadCtaPages) {
   const html = fs.readFileSync(page, 'utf8');
   if (!html.includes(`href="${checklistDownload}"`)) {
     failures.push(`Checklist CTA on /${route} does not link directly to ${checklistDownload}.`);
+  }
+}
+
+if (!fs.existsSync(homepage)) {
+  failures.push('Homepage was not generated.');
+} else {
+  const homepageHtml = fs.readFileSync(homepage, 'utf8');
+  if (!homepageHtml.includes(`href="${bookRouteHref}"`)) {
+    failures.push(`Homepage book CTA does not link to ${bookRouteHref}.`);
+  }
+  if (!homepageHtml.includes('Explore the book')) {
+    failures.push('Homepage book CTA does not use the truthful "Explore the book" label.');
+  }
+}
+
+if (!fs.existsSync(bookPage)) {
+  failures.push('Book page was not generated.');
+} else {
+  const bookHtml = fs.readFileSync(bookPage, 'utf8');
+  if (!bookHtml.includes(`href="${startRouteHref}"`)) {
+    failures.push(`Book-page primary CTA does not link to ${startRouteHref}.`);
+  }
+  if (bookHtml.includes(`<a class="button primary" href="${bookRouteHref}">`)) {
+    failures.push('Book-page primary CTA still links back to the book page itself.');
   }
 }
 

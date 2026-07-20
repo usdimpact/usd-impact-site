@@ -1,7 +1,17 @@
 ---
-const { primary='Get the book', secondary='Download the weekly checklist' } = Astro.props;
+const {
+  primary = 'Get the book',
+  secondary = 'Download the weekly checklist',
+  primaryHref = '/book/read-the-dollar-first/',
+  secondaryHref = '/lead-magnets/weekly-dollar-regime-checklist/',
+  secondaryDownload = false,
+} = Astro.props;
 ---
 <div class="button-row">
-  <a class="button primary" href="/book/read-the-dollar-first/">{primary}</a>
-  <a class="button secondary" href="/lead-magnets/weekly-dollar-regime-checklist/">{secondary}</a>
+  <a class="button primary" href={primaryHref}>{primary}</a>
+  {secondaryDownload ? (
+    <a class="button secondary" href={secondaryHref} download>{secondary}</a>
+  ) : (
+    <a class="button secondary" href={secondaryHref}>{secondary}</a>
+  )}
 </div>

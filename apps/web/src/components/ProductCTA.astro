@@ -1,10 +1,11 @@
 ---
+const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
 const {
   primary = 'Get the book',
   secondary = 'Download the weekly checklist',
   primaryHref = '/book/read-the-dollar-first/',
-  secondaryHref = '/lead-magnets/weekly-dollar-regime-checklist/',
-  secondaryDownload = false,
+  secondaryHref = checklistDownload,
+  secondaryDownload = true,
 } = Astro.props;
 ---
 <div class="button-row">

@@ -52,7 +52,6 @@ export default async function handler(request) {
   const email = normalizeEmail(payload.email);
   const consent = payload.consent === true;
   const company = String(payload.company ?? '').trim();
-  const source = String(payload.source ?? 'book-waitlist').trim().slice(0, 80);
 
   // Honeypot submissions receive a neutral success response.
   if (company) {
@@ -83,9 +82,6 @@ export default async function handler(request) {
       email,
       unsubscribed: false,
       segments: [{ id: segmentId }],
-      properties: {
-        signup_source: source || 'book-waitlist',
-      },
     }),
   });
 

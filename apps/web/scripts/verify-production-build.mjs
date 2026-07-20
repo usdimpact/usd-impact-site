@@ -2,12 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const distRoot = path.resolve('dist');
-const checklistRoute = path.join(
-  distRoot,
-  'lead-magnets',
-  'weekly-dollar-regime-checklist',
-  'index.html',
-);
 const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
 const checklistPdf = path.join(distRoot, checklistDownload.replace(/^\//, ''));
 const benchmarkRoute = path.join(
@@ -25,6 +19,11 @@ const requiredRoutes = [
   'lead-magnets/weekly-dollar-regime-checklist/index.html',
 ];
 
+const downloadCtaPages = [
+  'index.html',
+  ...requiredRoutes,
+];
+
 const failures = [];
 
 for (const route of requiredRoutes) {
@@ -33,12 +32,16 @@ for (const route of requiredRoutes) {
   }
 }
 
-if (!fs.existsSync(checklistRoute)) {
-  failures.push('Checklist landing page was not generated.');
-} else {
-  const checklistHtml = fs.readFileSync(checklistRoute, 'utf8');
-  if (!checklistHtml.includes(`href="${checklistDownload}"`)) {
-    failures.push(`Checklist landing page does not link directly to ${checklistDownload}.`);
+for (const route of downloadCtaPages) {
+  const page = path.join(distRoot, route);
+  if (!fs.existsSync(page)) {
+    failures.push(`Cannot verify checklist CTA because the page is missing: /${route}`);
+    continue;
+  }
+
+  const html = fs.readFileSync(page, 'utf8');
+  if (!html.includes(`href="${checklistDownload}"`)) {
+    failures.push(`Checklist CTA on /${route} does not link directly to ${checklistDownload}.`);
   }
 }
 

@@ -10,7 +10,7 @@ _Last updated: July 20, 2026_
 
 ## What we collect
 
-When you join the *Read the Dollar First* waitlist, we collect the email address you submit, the time the contact record is created, and the waitlist source used for the submission.
+When you join the *Read the Dollar First* waitlist, we collect the email address you submit and the time the contact record is created.
 
 ## Why we collect it
 
@@ -28,7 +28,7 @@ The website is deployed through Vercel. Waitlist contacts and confirmation email
 
 ## Retention and deletion
 
-Your waitlist record is retained until you unsubscribe, request deletion, or the waitlist is retired. You may withdraw at any time by using the unsubscribe option in a waitlist message or by replying to a waitlist email with a deletion request.
+Your waitlist record is retained until you unsubscribe, request deletion, or the waitlist is retired. You may withdraw at any time by replying to a waitlist email with a deletion request. Future availability messages will include an unsubscribe mechanism where required.
 
 ## Sharing and sale
 

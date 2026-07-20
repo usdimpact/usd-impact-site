@@ -5,6 +5,8 @@ import ComplianceNote from '../components/ComplianceNote.astro';
 import ProductCTA from '../components/ProductCTA.astro';
 import FrameworkVisual from '../components/FrameworkVisual.astro';
 
+const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
+
 export async function getStaticPaths() {
   const collections = ['pages', 'products', 'frameworks', 'leadMagnets', 'benchmarkModules'];
   const all = (await Promise.all(collections.map(async (collection) => {
@@ -21,7 +23,7 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 const downloadPath = 'downloadPath' in entry.data && typeof entry.data.downloadPath === 'string'
   ? entry.data.downloadPath
-  : undefined;
+  : checklistDownload;
 ---
 <BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
   <section class="hero">
@@ -32,8 +34,8 @@ const downloadPath = 'downloadPath' in entry.data && typeof entry.data.downloadP
       <ProductCTA
         primary={entry.data.ctaPrimary}
         secondary={entry.data.ctaSecondary}
-        secondaryHref={downloadPath ?? '/lead-magnets/weekly-dollar-regime-checklist/'}
-        secondaryDownload={Boolean(downloadPath)}
+        secondaryHref={downloadPath}
+        secondaryDownload={true}
       />
     </div>
   </section>

@@ -2,15 +2,38 @@ const RESEND_API = 'https://api.resend.com';
 const EMAIL_MAX_LENGTH = 254;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function json(body, status = 200, extraHeaders = {}) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-      ...extraHeaders,
-    },
-  });
+function requestHeader(request, name) {
+  const headers = request.headers ?? {};
+  if (typeof headers.get === 'function') return headers.get(name) ?? '';
+
+  const value = headers[name.toLowerCase()] ?? headers[name];
+  return Array.isArray(value) ? value[0] ?? '' : String(value ?? '');
+}
+
+function sendJson(response, body, status = 200, extraHeaders = {}) {
+  response.statusCode = status;
+  response.setHeader('Content-Type', 'application/json; charset=utf-8');
+  response.setHeader('Cache-Control', 'no-store');
+
+  for (const [name, value] of Object.entries(extraHeaders)) {
+    response.setHeader(name, value);
+  }
+
+  response.end(JSON.stringify(body));
+}
+
+function requestBody(request) {
+  const body = request.body;
+
+  if (body && typeof body === 'object' && !Buffer.isBuffer(body)) {
+    return body;
+  }
+
+  if (typeof body === 'string' || Buffer.isBuffer(body)) {
+    return JSON.parse(body.toString());
+  }
+
+  throw new TypeError('Request body is missing or invalid.');
 }
 
 async function resendRequest(path, apiKey, options = {}) {
@@ -28,25 +51,25 @@ function normalizeEmail(value) {
   return String(value ?? '').trim().toLowerCase();
 }
 
-export default async function handler(request) {
+export default async function handler(request, response) {
   if (request.method !== 'POST') {
-    return json({ error: 'Method not allowed.' }, 405, { Allow: 'POST' });
+    return sendJson(response, { error: 'Method not allowed.' }, 405, { Allow: 'POST' });
   }
 
-  if (request.headers.get('sec-fetch-site') === 'cross-site') {
-    return json({ error: 'Cross-site submissions are not allowed.' }, 403);
+  if (requestHeader(request, 'sec-fetch-site') === 'cross-site') {
+    return sendJson(response, { error: 'Cross-site submissions are not allowed.' }, 403);
   }
 
-  const contentType = request.headers.get('content-type') || '';
+  const contentType = requestHeader(request, 'content-type');
   if (!contentType.includes('application/json')) {
-    return json({ error: 'Content type must be application/json.' }, 415);
+    return sendJson(response, { error: 'Content type must be application/json.' }, 415);
   }
 
   let payload;
   try {
-    payload = await request.json();
+    payload = requestBody(request);
   } catch {
-    return json({ error: 'Invalid request body.' }, 400);
+    return sendJson(response, { error: 'Invalid request body.' }, 400);
   }
 
   const email = normalizeEmail(payload.email);
@@ -55,15 +78,15 @@ export default async function handler(request) {
 
   // Honeypot submissions receive a neutral success response.
   if (company) {
-    return json({ ok: true });
+    return sendJson(response, { ok: true });
   }
 
   if (!email || email.length > EMAIL_MAX_LENGTH || !EMAIL_PATTERN.test(email)) {
-    return json({ error: 'Enter a valid email address.' }, 400);
+    return sendJson(response, { error: 'Enter a valid email address.' }, 400);
   }
 
   if (!consent) {
-    return json({ error: 'Consent is required to join the waitlist.' }, 400);
+    return sendJson(response, { error: 'Consent is required to join the waitlist.' }, 400);
   }
 
   const apiKey = process.env.RESEND_API_KEY;
@@ -73,57 +96,75 @@ export default async function handler(request) {
 
   if (!apiKey || !segmentId || !fromEmail) {
     console.error('Waitlist configuration is incomplete.');
-    return json({ error: 'The waitlist is temporarily unavailable. Please try again later.' }, 503);
+    return sendJson(response, { error: 'The waitlist is temporarily unavailable. Please try again later.' }, 503);
   }
 
-  const contactResponse = await resendRequest('/contacts', apiKey, {
-    method: 'POST',
-    body: JSON.stringify({
-      email,
-      unsubscribed: false,
-      segments: [{ id: segmentId }],
-    }),
-  });
+  let contactResponse;
+  try {
+    contactResponse = await resendRequest('/contacts', apiKey, {
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        unsubscribed: false,
+        segments: [{ id: segmentId }],
+      }),
+    });
+  } catch (error) {
+    console.error(`Waitlist contact request failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+    return sendJson(response, { error: 'The waitlist is temporarily unavailable. Please try again later.' }, 502);
+  }
 
   if (contactResponse.status === 409) {
-    const segmentResponse = await resendRequest(
-      `/contacts/${encodeURIComponent(email)}/segments/${encodeURIComponent(segmentId)}`,
-      apiKey,
-      { method: 'POST' },
-    );
+    let segmentResponse;
+    try {
+      segmentResponse = await resendRequest(
+        `/contacts/${encodeURIComponent(email)}/segments/${encodeURIComponent(segmentId)}`,
+        apiKey,
+        { method: 'POST' },
+      );
+    } catch (error) {
+      console.error(`Waitlist segment request failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+      return sendJson(response, { error: 'The waitlist is temporarily unavailable. Please try again later.' }, 502);
+    }
 
     if (!segmentResponse.ok && segmentResponse.status !== 409) {
       console.error(`Waitlist segment assignment failed with status ${segmentResponse.status}.`);
-      return json({ error: 'The waitlist is temporarily unavailable. Please try again later.' }, 502);
+      return sendJson(response, { error: 'The waitlist is temporarily unavailable. Please try again later.' }, 502);
     }
   } else if (!contactResponse.ok) {
     console.error(`Waitlist contact creation failed with status ${contactResponse.status}.`);
-    return json({ error: 'The waitlist is temporarily unavailable. Please try again later.' }, 502);
+    return sendJson(response, { error: 'The waitlist is temporarily unavailable. Please try again later.' }, 502);
   }
 
-  const confirmationResponse = await resendRequest('/emails', apiKey, {
-    method: 'POST',
-    body: JSON.stringify({
-      from: fromEmail,
-      to: [email],
-      ...(replyTo ? { reply_to: replyTo } : {}),
-      subject: "You're on the Read the Dollar First waitlist",
-      html: `
-        <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#161a1f;max-width:620px;margin:0 auto;padding:24px;">
-          <p style="font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#8a6b32;font-weight:700;">USD Impact</p>
-          <h1 style="font-size:30px;line-height:1.15;color:#071a33;">You’re on the waitlist.</h1>
-          <p>Thank you for joining the waitlist for <strong><em>Read the Dollar First</em></strong>.</p>
-          <p>We will email the purchase link when the book becomes available.</p>
-          <p style="font-size:13px;color:#5a6472;margin-top:28px;">Educational product information only. This is not investment, legal, tax, trading, or financial advice.</p>
-        </div>
-      `,
-    }),
-  });
+  let confirmationResponse;
+  try {
+    confirmationResponse = await resendRequest('/emails', apiKey, {
+      method: 'POST',
+      body: JSON.stringify({
+        from: fromEmail,
+        to: [email],
+        ...(replyTo ? { reply_to: replyTo } : {}),
+        subject: "You're on the Read the Dollar First waitlist",
+        html: `
+          <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#161a1f;max-width:620px;margin:0 auto;padding:24px;">
+            <p style="font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#8a6b32;font-weight:700;">USD Impact</p>
+            <h1 style="font-size:30px;line-height:1.15;color:#071a33;">You’re on the waitlist.</h1>
+            <p>Thank you for joining the waitlist for <strong><em>Read the Dollar First</em></strong>.</p>
+            <p>We will email the purchase link when the book becomes available.</p>
+            <p style="font-size:13px;color:#5a6472;margin-top:28px;">Educational product information only. This is not investment, legal, tax, trading, or financial advice.</p>
+          </div>
+        `,
+      }),
+    });
+  } catch (error) {
+    console.error(`Waitlist confirmation request failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+    return sendJson(response, { error: 'Your address was saved, but the confirmation email could not be sent. Please try again later.' }, 502);
+  }
 
   if (!confirmationResponse.ok) {
     console.error(`Waitlist confirmation email failed with status ${confirmationResponse.status}.`);
-    return json({ error: 'Your address was saved, but the confirmation email could not be sent. Please try again later.' }, 502);
+    return sendJson(response, { error: 'Your address was saved, but the confirmation email could not be sent. Please try again later.' }, 502);
   }
 
-  return json({ ok: true });
+  return sendJson(response, { ok: true });
 }

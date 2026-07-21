@@ -1,10 +1,10 @@
 # USD Impact - Netlify preview/production configuration
 # Dashboard base directory: apps/web
-# Build command: npm run validate:content && npm run validate:compliance && npm run validate:links && npm run build
+# Build command: npm run validate && npm run build
 # Publish directory: dist
 
 [build]
-  command = "npm run validate:content && npm run validate:compliance && npm run validate:links && npm run build"
+  command = "npm run validate && npm run build"
   publish = "dist"
 
 [build.environment]

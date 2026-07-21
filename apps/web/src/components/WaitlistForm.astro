@@ -1,0 +1,105 @@
+---
+const formId = 'book-waitlist-form';
+---
+<section id="book-waitlist" class="waitlist-card" aria-labelledby="book-waitlist-title">
+  <div class="eyebrow">Book waitlist</div>
+  <h2 id="book-waitlist-title">Receive the purchase link by email</h2>
+  <p>
+    Join the waitlist for <em>Read the Dollar First</em>. We will email the purchase link when the book becomes available.
+  </p>
+
+  <form id={formId} class="waitlist-form" data-waitlist-form>
+    <label for="waitlist-email">Email address</label>
+    <div class="waitlist-inline">
+      <input
+        id="waitlist-email"
+        name="email"
+        type="email"
+        inputmode="email"
+        autocomplete="email"
+        maxlength="254"
+        placeholder="you@example.com"
+        required
+      />
+      <button class="button primary" type="submit">Join the waitlist</button>
+    </div>
+
+    <label class="waitlist-consent">
+      <input name="consent" type="checkbox" value="yes" required />
+      <span>
+        I agree to receive the purchase link and essential availability updates for the book by email. I can unsubscribe at any time. See the <a href="/privacy/">privacy notice</a>.
+      </span>
+    </label>
+
+    <label class="waitlist-honeypot" aria-hidden="true">
+      Company
+      <input name="company" type="text" tabindex="-1" autocomplete="off" />
+    </label>
+
+    <p class="waitlist-status" data-waitlist-status aria-live="polite"></p>
+  </form>
+
+  <noscript>
+    <p class="waitlist-status" data-state="error">JavaScript is required to join the waitlist.</p>
+  </noscript>
+</section>
+
+<script>
+  const form = document.querySelector('[data-waitlist-form]');
+
+  if (form instanceof HTMLFormElement) {
+    const status = form.querySelector('[data-waitlist-status]');
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (!form.reportValidity()) return;
+
+      const formData = new FormData(form);
+      const email = String(formData.get('email') ?? '').trim();
+      const consent = formData.get('consent') === 'yes';
+      const company = String(formData.get('company') ?? '').trim();
+
+      if (status instanceof HTMLElement) {
+        status.textContent = 'Submitting…';
+        status.dataset.state = 'pending';
+      }
+
+      if (submitButton instanceof HTMLButtonElement) {
+        submitButton.disabled = true;
+      }
+
+      try {
+        const response = await fetch('/api/waitlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, consent, company }),
+        });
+
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(payload.error || 'The waitlist is temporarily unavailable. Please try again later.');
+        }
+
+        form.reset();
+        if (status instanceof HTMLElement) {
+          status.textContent = 'You are on the waitlist. Check your inbox for confirmation.';
+          status.dataset.state = 'success';
+        }
+      } catch (error) {
+        if (status instanceof HTMLElement) {
+          status.textContent = error instanceof Error
+            ? error.message
+            : 'The waitlist is temporarily unavailable. Please try again later.';
+          status.dataset.state = 'error';
+        }
+      } finally {
+        if (submitButton instanceof HTMLButtonElement) {
+          submitButton.disabled = false;
+        }
+      }
+    });
+  }
+</script>

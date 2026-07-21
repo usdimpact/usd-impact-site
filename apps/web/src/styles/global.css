@@ -28,11 +28,33 @@ h2 { color: var(--navy); margin-top: 42px; }
 .card { background: var(--white); border: 1px solid #e3e7ec; border-radius: 18px; padding: 24px; box-shadow: 0 12px 34px rgba(2,10,20,.06); }
 main { padding: 56px 0; }
 .button-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 28px; }
-.button { display: inline-block; padding: 12px 18px; border-radius: 999px; text-decoration: none; font-weight: 700; }
+.button { display: inline-block; padding: 12px 18px; border-radius: 999px; text-decoration: none; font-weight: 700; border: 0; cursor: pointer; font: inherit; }
 .button.primary { background: var(--gold); color: var(--midnight); }
 .button.secondary { border: 1px solid var(--silver); color: var(--white); }
+.button:disabled { cursor: wait; opacity: .65; }
 .compliance { margin-top: 48px; background: #fff8e6; border-left: 4px solid var(--gold); padding: 18px 20px; border-radius: 10px; font-size: 14px; color: #4b3b14; }
 .visual { width: 100%; border-radius: 16px; border: 1px solid #dbe1e8; background: white; }
+.waitlist-card { margin-top: 56px; padding: clamp(24px, 5vw, 44px); border-radius: 20px; background: var(--white); border: 1px solid #dce2e9; box-shadow: 0 16px 42px rgba(2,10,20,.08); scroll-margin-top: 24px; }
+.waitlist-card h2 { margin-top: 8px; margin-bottom: 8px; }
+.waitlist-card > p { max-width: 720px; color: var(--slate); }
+.waitlist-form { margin-top: 24px; max-width: 760px; }
+.waitlist-form > label:first-child { display: block; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+.waitlist-inline { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: stretch; }
+.waitlist-inline input[type="email"] { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid #aeb7c3; border-radius: 12px; background: var(--white); color: var(--graphite); font: inherit; }
+.waitlist-inline input[type="email"]:focus { outline: 3px solid rgba(201,163,91,.25); border-color: var(--gold); }
+.waitlist-consent { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; font-size: 14px; color: var(--slate); }
+.waitlist-consent input { margin-top: 5px; flex: 0 0 auto; }
+.waitlist-status { min-height: 1.6em; margin: 14px 0 0; font-weight: 700; }
+.waitlist-status[data-state="success"] { color: #176b3a; }
+.waitlist-status[data-state="error"] { color: #a12622; }
+.waitlist-status[data-state="pending"] { color: var(--slate); }
+.waitlist-honeypot { position: absolute !important; left: -10000px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; }
 .footer { background: var(--midnight); color: var(--soft-silver); padding: 36px 0; margin-top: 56px; font-size: 14px; }
 .footer a { color: var(--soft-silver); }
-@media (max-width: 760px) { .header-inner { align-items: flex-start; flex-direction: column; } .hero { padding: 52px 0; } }
+.footer-links { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
+@media (max-width: 760px) {
+  .header-inner { align-items: flex-start; flex-direction: column; }
+  .hero { padding: 52px 0; }
+  .waitlist-inline { grid-template-columns: 1fr; }
+  .waitlist-inline .button { width: 100%; }
+}

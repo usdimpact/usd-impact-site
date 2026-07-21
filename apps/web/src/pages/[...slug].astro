@@ -1,21 +1,20 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ComplianceNote from '../components/ComplianceNote.astro';
 import ProductCTA from '../components/ProductCTA.astro';
 import FrameworkVisual from '../components/FrameworkVisual.astro';
+import WaitlistForm from '../components/WaitlistForm.astro';
 
-const collections = ['pages', 'products', 'frameworks', 'leadMagnets', 'benchmarkModules'];
-const entries = (await Promise.all(collections.map(async (collection) => {
-  const items = await getCollection(collection);
-  return items.map((entry) => ({ ...entry, collection }));
-}))).flat();
+const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
+const bookSlug = '/book/read-the-dollar-first';
 
 export async function getStaticPaths() {
+  const collections = ['pages', 'products', 'frameworks', 'leadMagnets', 'benchmarkModules'];
   const all = (await Promise.all(collections.map(async (collection) => {
-    const items = await getCollection(collection);
-    return items.map((entry) => ({ ...entry, collection }));
-  }))).flat();
+    return getCollection(collection);
+  }))).flat().filter((entry) => entry.data.status === 'published');
+
   return all.map((entry) => ({
     params: { slug: entry.data.slug.replace(/^\//, '').replace(/\/$/, '') },
     props: { entry }
@@ -23,7 +22,16 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await entry.render();
+const { Content } = await render(entry);
+const downloadPath = 'downloadPath' in entry.data && typeof entry.data.downloadPath === 'string'
+  ? entry.data.downloadPath
+  : checklistDownload;
+const isBookPage = entry.data.slug.replace(/\/$/, '') === bookSlug;
+const requestedPrimary = entry.data.ctaPrimary;
+const primaryLabel = isBookPage || requestedPrimary === 'Get the book' || requestedPrimary === 'Explore the book'
+  ? 'Join the book waitlist'
+  : requestedPrimary;
+const primaryHref = isBookPage ? '#book-waitlist' : `${bookSlug}/#book-waitlist`;
 ---
 <BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
   <section class="hero">
@@ -31,12 +39,19 @@ const { Content } = await entry.render();
       <div class="eyebrow">{entry.data.category}</div>
       <h1>{entry.data.title}</h1>
       {entry.data.hero && <p class="lead">{entry.data.hero}</p>}
-      <ProductCTA primary={entry.data.ctaPrimary} secondary={entry.data.ctaSecondary} />
+      <ProductCTA
+        primary={primaryLabel}
+        primaryHref={primaryHref}
+        secondary={entry.data.ctaSecondary}
+        secondaryHref={downloadPath}
+        secondaryDownload={true}
+      />
     </div>
   </section>
   <main class="container">
     {entry.data.visual && <FrameworkVisual src={entry.data.visual} alt={entry.data.title} />}
     <Content />
+    {isBookPage && <WaitlistForm />}
     <ComplianceNote text={entry.data.complianceNote} />
   </main>
 </BaseLayout>

@@ -9,19 +9,43 @@ const originalEnv = {
   RESEND_REPLY_TO: process.env.RESEND_REPLY_TO,
 };
 
-function request(body, headers = {}) {
-  return new Request('https://example.com/api/waitlist', {
-    method: 'POST',
+function request(body, headers = {}, method = 'POST') {
+  return {
+    method,
     headers: {
-      'Content-Type': 'application/json',
-      'Sec-Fetch-Site': 'same-origin',
+      'content-type': 'application/json',
+      'sec-fetch-site': 'same-origin',
       ...headers,
     },
-    body: JSON.stringify(body),
-  });
+    body,
+  };
 }
 
-function response(body, status = 200) {
+function responseRecorder() {
+  return {
+    statusCode: 200,
+    headers: {},
+    body: '',
+    setHeader(name, value) {
+      this.headers[name.toLowerCase()] = String(value);
+    },
+    end(body = '') {
+      this.body = String(body);
+    },
+  };
+}
+
+async function invoke(req) {
+  const res = responseRecorder();
+  await handler(req, res);
+  return {
+    status: res.statusCode,
+    headers: res.headers,
+    json: res.body ? JSON.parse(res.body) : null,
+  };
+}
+
+function resendResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { 'Content-Type': 'application/json' },
@@ -37,16 +61,17 @@ try {
   const calls = [];
   globalThis.fetch = async (url, options = {}) => {
     calls.push({ url: String(url), options });
-    return response({ id: `result-${calls.length}` });
+    return resendResponse({ id: `result-${calls.length}` });
   };
 
-  const success = await handler(request({
+  const success = await invoke(request({
     email: ' Reader@Example.com ',
     consent: true,
     company: '',
-    source: 'book-waitlist',
   }));
   assert.equal(success.status, 200);
+  assert.deepEqual(success.json, { ok: true });
+  assert.equal(success.headers['cache-control'], 'no-store');
   assert.equal(calls.length, 2);
   assert.equal(calls[0].url, 'https://api.resend.com/contacts');
   assert.equal(calls[1].url, 'https://api.resend.com/emails');
@@ -59,16 +84,23 @@ try {
   assert.deepEqual(emailBody.to, ['reader@example.com']);
   assert.match(emailBody.subject, /waitlist/i);
 
+  const stringBodySuccess = await invoke(request(JSON.stringify({
+    email: 'string-body@example.com',
+    consent: true,
+    company: '',
+  })));
+  assert.equal(stringBodySuccess.status, 200);
+
   const callsBeforeValidation = calls.length;
-  const invalidEmail = await handler(request({ email: 'not-an-email', consent: true }));
+  const invalidEmail = await invoke(request({ email: 'not-an-email', consent: true }));
   assert.equal(invalidEmail.status, 400);
   assert.equal(calls.length, callsBeforeValidation);
 
-  const missingConsent = await handler(request({ email: 'reader@example.com', consent: false }));
+  const missingConsent = await invoke(request({ email: 'reader@example.com', consent: false }));
   assert.equal(missingConsent.status, 400);
   assert.equal(calls.length, callsBeforeValidation);
 
-  const honeypot = await handler(request({
+  const honeypot = await invoke(request({
     email: 'bot@example.com',
     consent: true,
     company: 'Spam Incorporated',
@@ -76,18 +108,27 @@ try {
   assert.equal(honeypot.status, 200);
   assert.equal(calls.length, callsBeforeValidation);
 
+  const crossSite = await invoke(request(
+    { email: 'reader@example.com', consent: true },
+    { 'sec-fetch-site': 'cross-site' },
+  ));
+  assert.equal(crossSite.status, 403);
+
+  const wrongMethod = await invoke(request(null, {}, 'GET'));
+  assert.equal(wrongMethod.status, 405);
+  assert.equal(wrongMethod.headers.allow, 'POST');
+
   const duplicateCalls = [];
   globalThis.fetch = async (url, options = {}) => {
     duplicateCalls.push({ url: String(url), options });
-    if (duplicateCalls.length === 1) return response({ message: 'Contact exists' }, 409);
-    return response({ id: `duplicate-${duplicateCalls.length}` });
+    if (duplicateCalls.length === 1) return resendResponse({ message: 'Contact exists' }, 409);
+    return resendResponse({ id: `duplicate-${duplicateCalls.length}` });
   };
 
-  const duplicate = await handler(request({
+  const duplicate = await invoke(request({
     email: 'reader@example.com',
     consent: true,
     company: '',
-    source: 'book-waitlist',
   }));
   assert.equal(duplicate.status, 200);
   assert.equal(duplicateCalls.length, 3);
@@ -98,7 +139,7 @@ try {
   assert.equal(duplicateCalls[2].url, 'https://api.resend.com/emails');
 
   delete process.env.RESEND_API_KEY;
-  const unavailable = await handler(request({
+  const unavailable = await invoke(request({
     email: 'reader@example.com',
     consent: true,
     company: '',

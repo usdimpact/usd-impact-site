@@ -1,7 +1,13 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductCTA from '../components/ProductCTA.astro';
 import BenchmarkModuleCard from '../components/BenchmarkModuleCard.astro';
+import NewsHighlightCard from '../components/NewsHighlightCard.astro';
+
+const latestNews = (await getCollection('news'))
+  .filter((entry) => entry.data.status === 'published')
+  .sort((a, b) => b.data.date.localeCompare(a.data.date))[0];
 ---
 <BaseLayout title="USD Impact | Read the Dollar First" description="Educational macro-finance framework for reading dollar regimes across oil, gold, Bitcoin, gas, FX and equities.">
   <section class="hero">
@@ -18,5 +24,30 @@ import BenchmarkModuleCard from '../components/BenchmarkModuleCard.astro';
       <BenchmarkModuleCard title="Use the three dials" body="Track dollar direction, real-rate pressure, and liquidity stress before reading asset moves." />
       <BenchmarkModuleCard title="Keep it educational" body="No trading signals, no return promises, no recommendations. Framework first, context second." />
     </section>
+
+    {latestNews && (
+      <section class="home-news">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">Daily USD Impact</div>
+            <h2>Today’s market drivers</h2>
+          </div>
+          <a href="/news/">View all editions</a>
+        </div>
+        <div class="regime-panel">
+          <span>Market regime</span>
+          <strong>{latestNews.data.marketRegime}</strong>
+          <p>{latestNews.data.summary}</p>
+        </div>
+        <div class="news-grid">
+          {latestNews.data.highlights.slice(0, 3).map((highlight) => (
+            <NewsHighlightCard highlight={highlight} sources={latestNews.data.sources} />
+          ))}
+        </div>
+        <div class="button-row">
+          <a class="button primary" href={latestNews.data.slug}>Read today’s edition</a>
+        </div>
+      </section>
+    )}
   </main>
 </BaseLayout>

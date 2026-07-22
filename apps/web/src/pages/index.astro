@@ -25,6 +25,27 @@ const latestNews = (await getCollection('news'))
       <BenchmarkModuleCard title="Keep it educational" body="No trading signals, no return promises, no recommendations. Framework first, context second." />
     </section>
 
+    <section class="home-score">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Weekly USD Impact Score</div>
+          <h2>A systematic dollar-regime reading</h2>
+        </div>
+        <a href="/score/">Open the score dashboard</a>
+      </div>
+      <div class="score-promo card">
+        <div>
+          <p class="score-promo-kicker">Updated weekly by the USD Impact data pipeline</p>
+          <h3>Measure the regime before interpreting the asset move.</h3>
+          <p>The USD Impact Score condenses cross-asset dollar pressure into a single weekly reading, with supporting regime context and commentary.</p>
+        </div>
+        <div class="button-row">
+          <a class="button primary" href="/score/">View weekly score</a>
+          <a class="button score-external" href="https://usd-impact-pipeline.pages.dev/en/" target="_blank" rel="noreferrer">Standalone dashboard</a>
+        </div>
+      </div>
+    </section>
+
     {latestNews && (
       <section class="home-news">
         <div class="section-heading">

@@ -16,6 +16,7 @@ concurrency:
 jobs:
   build-draft:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     defaults:
       run:
         working-directory: apps/web
@@ -26,10 +27,11 @@ jobs:
         id: config
         env:
           NEWSFEED_ENDPOINT: ${{ secrets.NEWSFEED_ENDPOINT }}
+          NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
         run: |
-          if [ -z "$NEWSFEED_ENDPOINT" ]; then
+          if [ -z "$NEWSFEED_ENDPOINT" ] || [ -z "$NEWSFEED_BEARER_TOKEN" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::NEWSFEED_ENDPOINT is not configured; no draft was generated."
+            echo "::notice::NEWSFEED_ENDPOINT or NEWSFEED_BEARER_TOKEN is not configured; no draft was generated."
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
@@ -51,13 +53,9 @@ jobs:
           NEWSFEED_ENDPOINT: ${{ secrets.NEWSFEED_ENDPOINT }}
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
         run: |
-          headers=()
-          if [ -n "$NEWSFEED_BEARER_TOKEN" ]; then
-            headers=(-H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN")
-          fi
           curl --fail --silent --show-error --location \
-            --retry 3 --retry-delay 5 --max-time 90 \
-            "${headers[@]}" \
+            --retry 3 --retry-delay 5 --max-time 240 \
+            -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
             "$NEWSFEED_ENDPOINT" \
             --output "$RUNNER_TEMP/daily-usd-impact.json"
 

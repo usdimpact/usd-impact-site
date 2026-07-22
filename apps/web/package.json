@@ -12,7 +12,7 @@
     "validate:links": "node scripts/validate-links.mjs",
     "validate:compliance": "node scripts/check-compliance-phrases.mjs",
     "validate:publishing": "node scripts/validate-publishing.mjs",
-    "validate:functions": "node --check api/waitlist.js && node scripts/test-waitlist-function.mjs",
+    "validate:functions": "node --check api/waitlist.js && node --check api/daily-news-source.js && node scripts/test-waitlist-function.mjs && node scripts/test-daily-news-source-function.mjs",
     "validate": "npm run validate:content && npm run validate:news && npm run validate:compliance && npm run validate:links && npm run validate:publishing && npm run validate:functions",
     "build:preview": "npm run validate && npm run build",
     "preview:local": "astro preview --host 127.0.0.1 --port 4321",

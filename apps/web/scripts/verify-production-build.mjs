@@ -10,6 +10,7 @@ const homepage = path.join(distRoot, 'index.html');
 const bookPage = path.join(distRoot, 'book', 'read-the-dollar-first', 'index.html');
 const privacyPage = path.join(distRoot, 'privacy', 'index.html');
 const waitlistFunction = path.resolve('api', 'waitlist.js');
+const dailyNewsSourceFunction = path.resolve('api', 'daily-news-source.js');
 const benchmarkRoute = path.join(
   distRoot,
   'benchmark',
@@ -104,6 +105,10 @@ if (!fs.existsSync(privacyPage)) {
 
 if (!fs.existsSync(waitlistFunction)) {
   failures.push('Vercel waitlist function is missing: api/waitlist.js');
+}
+
+if (!fs.existsSync(dailyNewsSourceFunction)) {
+  failures.push('Vercel Daily USD Impact source function is missing: api/daily-news-source.js');
 }
 
 if (!fs.existsSync(checklistPdf)) {

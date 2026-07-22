@@ -6,6 +6,69 @@ const RESPONSE_ID_PATTERN = /^resp_[A-Za-z0-9_-]{8,200}$/;
 const ACTIVE_STATUSES = new Set(['queued', 'in_progress']);
 const TERMINAL_FAILURE_STATUSES = new Set(['cancelled', 'failed', 'incomplete']);
 const MAX_BACKGROUND_OUTPUT_TOKENS = 16_000;
+const MAX_REPAIR_OUTPUT_TOKENS = 9_000;
+const REPAIR_TIMEOUT_MS = 150_000;
+
+const ALLOWED_ASSETS = [
+  'DXY', 'USD', 'EURUSD', 'Fed', 'U.S. rates', 'Liquidity', 'WTI', 'Brent',
+  'Henry Hub', 'TTF', 'LNG', 'XAUUSD', 'BTCUSD', 'S&P 500', 'Nasdaq',
+  'Dow', 'Russell 2000', 'NVDA', 'MSFT', 'AAPL', 'AMZN', 'GOOGL', 'META', 'TSLA',
+];
+
+const OUTPUT_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['marketRegime', 'summary', 'highlights', 'catalysts', 'sources', 'body'],
+  properties: {
+    marketRegime: { type: 'string' },
+    summary: { type: 'string' },
+    highlights: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['headline', 'development', 'whyItMatters', 'assets', 'importance', 'sourceIds'],
+        properties: {
+          headline: { type: 'string' },
+          development: { type: 'string' },
+          whyItMatters: { type: 'string' },
+          assets: { type: 'array', items: { type: 'string', enum: ALLOWED_ASSETS } },
+          importance: { type: 'string', enum: ['high', 'medium', 'low'] },
+          sourceIds: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    },
+    catalysts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['date', 'event', 'assets', 'sourceIds'],
+        properties: {
+          date: { type: 'string' },
+          event: { type: 'string' },
+          assets: { type: 'array', items: { type: 'string', enum: ALLOWED_ASSETS } },
+          sourceIds: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    },
+    sources: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['id', 'title', 'url', 'publishedAt'],
+        properties: {
+          id: { type: 'string' },
+          title: { type: 'string' },
+          url: { type: 'string' },
+          publishedAt: { type: 'string' },
+        },
+      },
+    },
+    body: { type: 'string' },
+  },
+};
 
 let runtimeOverrideQueue = Promise.resolve();
 
@@ -83,6 +146,77 @@ function sourceRequest(request, date) {
   };
 }
 
+function canonicalUrl(value) {
+  const url = new URL(value);
+  url.hash = '';
+  for (const key of [...url.searchParams.keys()]) {
+    if (/^(utm_|gclid$|fbclid$|mc_)/i.test(key)) url.searchParams.delete(key);
+  }
+  if (url.pathname.length > 1) url.pathname = url.pathname.replace(/\/+$/, '');
+  return url.toString();
+}
+
+function collectOpenAiText(openAiResponse) {
+  const parts = [];
+  for (const item of openAiResponse.output ?? []) {
+    if (item.type !== 'message') continue;
+    for (const content of item.content ?? []) {
+      if (content.type === 'output_text' && typeof content.text === 'string') parts.push(content.text);
+    }
+  }
+  return parts.join('').trim();
+}
+
+function collectGroundedUrls(openAiResponse) {
+  const urls = new Set();
+  const add = (value) => {
+    if (typeof value !== 'string') return;
+    try {
+      urls.add(canonicalUrl(value));
+    } catch {
+      // Ignore malformed provider metadata.
+    }
+  };
+  for (const item of openAiResponse.output ?? []) {
+    if (item.type === 'web_search_call') {
+      add(item.action?.url);
+      for (const source of item.action?.sources ?? []) add(source?.url);
+    }
+    if (item.type === 'message') {
+      for (const content of item.content ?? []) {
+        for (const annotation of content.annotations ?? []) {
+          add(annotation?.url);
+          add(annotation?.url_citation?.url);
+        }
+      }
+    }
+  }
+  return urls;
+}
+
+function groundingOutputItems(openAiResponse) {
+  const items = [];
+  for (const item of openAiResponse.output ?? []) {
+    if (item.type === 'web_search_call') {
+      items.push(item);
+      continue;
+    }
+    if (item.type !== 'message') continue;
+    const content = (item.content ?? [])
+      .filter((part) => Array.isArray(part.annotations) && part.annotations.length > 0)
+      .map((part) => ({ ...part, text: '' }));
+    if (content.length > 0) items.push({ ...item, content });
+  }
+  return items;
+}
+
+function validationReason(messages) {
+  const prefix = 'Daily news source failed:';
+  const match = [...messages].reverse().find((message) => message.includes(prefix));
+  if (!match) return 'Unknown validation error';
+  return match.slice(match.indexOf(prefix) + prefix.length).trim().slice(0, 1_000);
+}
+
 function terminalFailureDetails(openAiResponse) {
   const reason = String(
     openAiResponse?.incomplete_details?.reason
@@ -104,7 +238,7 @@ function terminalFailureDetails(openAiResponse) {
   return { reason, providerMessage, usage };
 }
 
-async function withRuntimeOverride(makeFetch, suppressExpectedStatusError, task) {
+async function withRuntimeOverride(makeFetch, suppressExpectedStatusError, task, capturedErrors = null) {
   let release;
   const previous = runtimeOverrideQueue;
   runtimeOverrideQueue = new Promise((resolve) => {
@@ -115,10 +249,13 @@ async function withRuntimeOverride(makeFetch, suppressExpectedStatusError, task)
   const originalFetch = globalThis.fetch;
   const originalConsoleError = console.error;
   globalThis.fetch = makeFetch(originalFetch);
-  if (suppressExpectedStatusError) {
+  if (suppressExpectedStatusError || capturedErrors) {
     console.error = (...args) => {
       const message = args.map((value) => String(value)).join(' ');
-      if (!message.includes('OpenAI response did not complete:')) originalConsoleError(...args);
+      if (capturedErrors) capturedErrors.push(message);
+      if (!suppressExpectedStatusError || !message.includes('OpenAI response did not complete:')) {
+        originalConsoleError(...args);
+      }
     };
   }
 
@@ -217,8 +354,9 @@ async function retrieveOpenAiResponse(apiKey, responseId) {
   return payload;
 }
 
-async function normalizeCompletedResponse(request, response, date, openAiResponse) {
+async function validateCompletedResponse(request, date, openAiResponse) {
   const recorder = responseRecorder();
+  const errors = [];
   await withRuntimeOverride(
     () => async () => new Response(JSON.stringify(openAiResponse), {
       status: 200,
@@ -226,14 +364,113 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
     }),
     false,
     () => sourceHandler(sourceRequest(request, date), recorder),
+    errors,
   );
+  return {
+    recorder,
+    reason: recorder.statusCode === 200 ? null : validationReason(errors),
+  };
+}
 
+async function repairCompletedResponse(apiKey, date, openAiResponse, initialReason) {
+  const originalDraft = collectOpenAiText(openAiResponse);
+  const groundedUrls = [...collectGroundedUrls(openAiResponse)];
+  if (!originalDraft) throw new Error('The completed response contained no draft text to repair.');
+  if (groundedUrls.length < 2) throw new Error('The completed response contained fewer than two grounded URLs.');
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REPAIR_TIMEOUT_MS);
+  try {
+    const repairModel = String(process.env.OPENAI_NEWS_REPAIR_MODEL || 'gpt-5-mini').trim();
+    const providerResponse = await fetch(OPENAI_RESPONSES_API, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: repairModel,
+        store: false,
+        reasoning: { effort: 'low' },
+        instructions: 'You repair a source-backed USD Impact research bundle. Preserve verified facts, remove unsupported claims, and return only the requested complete JSON object.',
+        input: `The bundle for ${date} failed validation with this exact error:\n${initialReason}\n\nRepair the bundle using these rules:\n- Use only the exact source URLs listed under PERMITTED SOURCE URLS.\n- Do not add facts, events, prices, dates, or sources that are not already present in the original bundle.\n- Every source id must be lowercase and hyphenated, unique, and referenced consistently.\n- Every highlight must cite either at least one authoritative primary source or two independent reporting domains. Remove a highlight that cannot satisfy this rule, but retain 3-7 highlights.\n- Use only supported asset names from the schema.\n- Catalyst dates must use YYYY-MM-DD. Remove an unsupported catalyst rather than inventing evidence.\n- Keep the summary under 700 characters, each headline under 140 characters, each development and whyItMatters under 700 characters, and the body under 9,000 characters.\n- Return the complete corrected bundle, not a patch or explanation.\n\nPERMITTED SOURCE URLS:\n${JSON.stringify(groundedUrls, null, 2)}\n\nORIGINAL BUNDLE:\n${originalDraft}`,
+        text: {
+          format: {
+            type: 'json_schema',
+            name: 'daily_usd_impact_bundle_repair',
+            strict: true,
+            schema: OUTPUT_SCHEMA,
+          },
+        },
+        max_output_tokens: MAX_REPAIR_OUTPUT_TOKENS,
+      }),
+    });
+
+    const raw = await providerResponse.text();
+    let repairPayload;
+    try {
+      repairPayload = JSON.parse(raw);
+    } catch {
+      throw new Error(`OpenAI repair returned invalid JSON with status ${providerResponse.status}`);
+    }
+    if (!providerResponse.ok) {
+      throw new Error(repairPayload?.error?.message ?? `OpenAI repair failed with status ${providerResponse.status}`);
+    }
+    if (repairPayload.status && repairPayload.status !== 'completed') {
+      throw new Error(`OpenAI repair did not complete: ${repairPayload.status}`);
+    }
+
+    return {
+      ...repairPayload,
+      status: 'completed',
+      output: [
+        ...groundingOutputItems(openAiResponse),
+        ...(repairPayload.output ?? []),
+      ],
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function forwardRecordedResponse(response, recorder, extraHeaders = {}) {
   response.statusCode = recorder.statusCode;
   for (const [name, value] of Object.entries(recorder.headers)) response.setHeader(name, value);
+  for (const [name, value] of Object.entries(extraHeaders)) response.setHeader(name, value);
   response.end(recorder.body);
 }
 
-export const config = { maxDuration: 60 };
+async function normalizeCompletedResponse(request, response, date, openAiResponse, apiKey) {
+  const initial = await validateCompletedResponse(request, date, openAiResponse);
+  if (initial.recorder.statusCode === 200) {
+    return forwardRecordedResponse(response, initial.recorder, { 'X-USD-Impact-Repaired': 'false' });
+  }
+
+  console.error(`Daily news bundle requires one repair attempt: ${initial.reason}`);
+  try {
+    const repairedResponse = await repairCompletedResponse(apiKey, date, openAiResponse, initial.reason);
+    const repaired = await validateCompletedResponse(request, date, repairedResponse);
+    if (repaired.recorder.statusCode === 200) {
+      return forwardRecordedResponse(response, repaired.recorder, { 'X-USD-Impact-Repaired': 'true' });
+    }
+    return sendJson(response, {
+      error: 'Daily news source generation failed validation after one repair attempt.',
+      initialValidationReason: initial.reason,
+      repairValidationReason: repaired.reason,
+    }, 502);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'unknown repair error';
+    console.error(`Daily news bundle repair failed: ${message}`);
+    return sendJson(response, {
+      error: 'Daily news source generation failed validation and could not be repaired.',
+      initialValidationReason: initial.reason,
+      repairError: message.slice(0, 1_000),
+    }, 502);
+  }
+}
+
+export const config = { maxDuration: 300 };
 
 export default async function handler(request, response) {
   if (!['GET', 'POST'].includes(request.method)) {
@@ -299,7 +536,7 @@ export default async function handler(request, response) {
         status: openAiResponse.status ?? 'unknown',
       }, 502);
     }
-    return await normalizeCompletedResponse(request, response, date, openAiResponse);
+    return await normalizeCompletedResponse(request, response, date, openAiResponse, openAiApiKey);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown error';
     console.error(`Daily news background retrieval failed: ${message}`);

@@ -1,0 +1,20 @@
+---
+const { sources = [] } = Astro.props;
+---
+<section class="source-ledger" aria-labelledby="source-ledger-title">
+  <div class="section-heading">
+    <div>
+      <div class="eyebrow">Verification</div>
+      <h2 id="source-ledger-title">Source ledger</h2>
+    </div>
+    <p>{sources.length} source{sources.length === 1 ? '' : 's'} used in this edition.</p>
+  </div>
+  <ol>
+    {sources.map((source) => (
+      <li id={`source-${source.id}`}>
+        <a href={source.url} target="_blank" rel="noreferrer"><strong>{source.title}</strong></a>
+        <span>{source.publisher} · {source.sourceType === 'primary' ? 'Primary source' : 'Independent reporting'} · {source.publishedAt}</span>
+      </li>
+    ))}
+  </ol>
+</section>

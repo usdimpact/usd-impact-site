@@ -1,0 +1,28 @@
+---
+const { highlight, sources = [] } = Astro.props;
+const sourceMap = new Map(sources.map((source) => [source.id, source]));
+const linkedSources = highlight.sourceIds.map((id) => sourceMap.get(id)).filter(Boolean);
+---
+<article class="news-highlight card">
+  <div class="news-highlight-topline">
+    <span class={`importance importance-${highlight.importance}`}>{highlight.importance} importance</span>
+    <span class="verification">{highlight.verification === 'verified-primary' ? 'Primary-source verified' : 'Multi-source verified'}</span>
+  </div>
+  <h3>{highlight.headline}</h3>
+  <p>{highlight.development}</p>
+  <p class="why-it-matters"><strong>Why it matters:</strong> {highlight.whyItMatters}</p>
+  <div class="asset-tags" aria-label="Affected assets">
+    {highlight.assets.map((asset) => <span>{asset}</span>)}
+  </div>
+  {linkedSources.length > 0 && (
+    <p class="card-sources">
+      Sources:
+      {linkedSources.map((source, index) => (
+        <>
+          {index > 0 && ' · '}
+          <a href={source.url} target="_blank" rel="noreferrer">{source.publisher}</a>
+        </>
+      ))}
+    </p>
+  )}
+</article>

@@ -12,6 +12,7 @@ const routeCollections = {
 };
 const staticRoutes = new Map([
   ['/news', path.resolve('src/pages/news/index.astro')],
+  ['/score', path.resolve('src/pages/score.astro')],
 ]);
 const navigationPath = path.resolve('src/layouts/BaseLayout.astro');
 
@@ -77,7 +78,7 @@ if (!mainNavigation) {
   failures.push(`Main navigation block not found in ${path.relative(process.cwd(), navigationPath)}`);
 }
 
-const requiredRoutes = [...mainNavigation.matchAll(/<a\s+href="(\/[^\"]*)"/g)]
+const requiredRoutes = [...mainNavigation.matchAll(/<a\s+href="(\/[^"]*)"/g)]
   .map((match) => normalizeSlug(match[1]))
   .filter((slug) => slug !== '/');
 

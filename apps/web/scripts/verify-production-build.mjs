@@ -26,6 +26,13 @@ const requiredRoutes = [
   'privacy/index.html',
 ];
 
+const requiredNewsOutputs = [
+  'news/index.html',
+  'news/2026-07-22/index.html',
+  'news/feed.xml',
+  'news/latest.json',
+];
+
 const downloadCtaPages = [
   'index.html',
   ...requiredRoutes.filter((route) => route !== 'privacy/index.html'),
@@ -36,6 +43,12 @@ const failures = [];
 for (const route of requiredRoutes) {
   if (!fs.existsSync(path.join(distRoot, route))) {
     failures.push(`Missing published route in production build: /${route.replace(/index\.html$/, '')}`);
+  }
+}
+
+for (const output of requiredNewsOutputs) {
+  if (!fs.existsSync(path.join(distRoot, output))) {
+    failures.push(`Missing Daily USD Impact output in production build: /${output.replace(/index\.html$/, '')}`);
   }
 }
 
@@ -61,6 +74,9 @@ if (!fs.existsSync(homepage)) {
   }
   if (!homepageHtml.includes('Join the book waitlist')) {
     failures.push('Homepage does not use the "Join the book waitlist" CTA label.');
+  }
+  if (!homepageHtml.includes('Daily USD Impact') || !homepageHtml.includes('href="/news/"')) {
+    failures.push('Homepage does not expose the Daily USD Impact module and archive link.');
   }
 }
 
@@ -104,6 +120,9 @@ if (!fs.existsSync(sitemap)) {
   const sitemapXml = fs.readFileSync(sitemap, 'utf8');
   if (sitemapXml.includes('benchmark/usd-impact-benchmark-dashboard')) {
     failures.push('Draft benchmark route appears in the generated sitemap.');
+  }
+  if (!sitemapXml.includes('/news/2026-07-22/')) {
+    failures.push('Published Daily USD Impact edition is missing from the sitemap.');
   }
 }
 

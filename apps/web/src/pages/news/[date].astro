@@ -1,0 +1,97 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ComplianceNote from '../../components/ComplianceNote.astro';
+import NewsHighlightCard from '../../components/NewsHighlightCard.astro';
+import SourceLedger from '../../components/SourceLedger.astro';
+
+export async function getStaticPaths() {
+  const editions = (await getCollection('news')).filter((entry) => entry.data.status === 'published');
+  return editions.map((entry) => ({
+    params: { date: entry.data.date },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const formattedDate = new Intl.DateTimeFormat('en', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+}).format(new Date(`${entry.data.date}T12:00:00Z`));
+const sourceMap = new Map(entry.data.sources.map((source) => [source.id, source]));
+---
+<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
+  <section class="hero news-hero">
+    <div class="container">
+      <div class="eyebrow">{entry.data.category}</div>
+      <h1>{entry.data.title}</h1>
+      <p class="lead">{entry.data.summary}</p>
+      <p class="edition-meta">Published {formattedDate} · Last reviewed {entry.data.lastReviewed}</p>
+    </div>
+  </section>
+
+  <main class="container">
+    <section class="regime-panel">
+      <span>Market regime</span>
+      <strong>{entry.data.marketRegime}</strong>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Highlights</div>
+          <h2>What matters today</h2>
+        </div>
+      </div>
+      <div class="news-grid">
+        {entry.data.highlights.map((highlight) => (
+          <NewsHighlightCard highlight={highlight} sources={entry.data.sources} />
+        ))}
+      </div>
+    </section>
+
+    {entry.data.catalysts.length > 0 && (
+      <section class="catalyst-section">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">Calendar</div>
+            <h2>Upcoming catalysts</h2>
+          </div>
+        </div>
+        <div class="catalyst-list">
+          {entry.data.catalysts.map((catalyst) => (
+            <article class="card">
+              <time datetime={catalyst.date}>{catalyst.date}</time>
+              <h3>{catalyst.event}</h3>
+              <div class="asset-tags">
+                {catalyst.assets.map((asset) => <span>{asset}</span>)}
+              </div>
+              <p class="card-sources">
+                Sources:
+                {catalyst.sourceIds.map((id, index) => {
+                  const source = sourceMap.get(id);
+                  return source ? (
+                    <>
+                      {index > 0 && ' · '}
+                      <a href={source.url} target="_blank" rel="noreferrer">{source.publisher}</a>
+                    </>
+                  ) : null;
+                })}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <article class="edition-analysis">
+      <Content />
+    </article>
+
+    <SourceLedger sources={entry.data.sources} />
+    <ComplianceNote text={entry.data.complianceNote} />
+  </main>
+</BaseLayout>

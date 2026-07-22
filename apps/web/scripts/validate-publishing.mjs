@@ -8,7 +8,11 @@ const routeCollections = {
   frameworks: 'frameworks',
   leadMagnets: 'lead-magnets',
   benchmarkModules: 'benchmark-modules',
+  news: 'news',
 };
+const staticRoutes = new Map([
+  ['/news', path.resolve('src/pages/news/index.astro')],
+]);
 const navigationPath = path.resolve('src/layouts/BaseLayout.astro');
 
 function normalizeSlug(value) {
@@ -22,6 +26,7 @@ function frontmatterValue(source, key) {
 }
 
 function contentFiles(directory) {
+  if (!fs.existsSync(directory)) return [];
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(directory, entry.name);
     return entry.isDirectory() ? contentFiles(entryPath) : entry.name.endsWith('.md') ? [entryPath] : [];
@@ -60,6 +65,11 @@ for (const [slug, collisions] of slugEntries) {
   }
 }
 
+for (const [route, file] of staticRoutes) {
+  if (!fs.existsSync(file)) failures.push(`Static route source missing for ${route}: ${path.relative(process.cwd(), file)}`);
+  if (slugEntries.has(route)) failures.push(`Static route ${route} collides with dynamic content.`);
+}
+
 const layoutSource = fs.readFileSync(navigationPath, 'utf8');
 const mainNavigation = layoutSource.match(/<nav\b[^>]*class="nav"[^>]*>[\s\S]*?<\/nav>/)?.[0] ?? '';
 
@@ -72,9 +82,11 @@ const requiredRoutes = [...mainNavigation.matchAll(/<a\s+href="(\/[^\"]*)"/g)]
   .filter((slug) => slug !== '/');
 
 for (const route of new Set(requiredRoutes)) {
+  if (staticRoutes.has(route)) continue;
+
   const matchingEntries = slugEntries.get(route) ?? [];
   if (matchingEntries.length === 0) {
-    failures.push(`Required route missing from dynamic content: ${route}`);
+    failures.push(`Required route missing from dynamic content or static route registry: ${route}`);
     continue;
   }
 
@@ -90,4 +102,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`publishing validation pass (${entries.length} dynamic entries; ${new Set(requiredRoutes).size} required main-navigation routes)`);
+console.log(`publishing validation pass (${entries.length} dynamic entries; ${staticRoutes.size} static routes; ${new Set(requiredRoutes).size} required main-navigation routes)`);

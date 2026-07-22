@@ -1,0 +1,114 @@
+name: Daily USD Impact draft
+
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: daily-usd-impact
+  cancel-in-progress: false
+
+jobs:
+  build-draft:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check newsfeed configuration
+        id: config
+        env:
+          NEWSFEED_ENDPOINT: ${{ secrets.NEWSFEED_ENDPOINT }}
+        run: |
+          if [ -z "$NEWSFEED_ENDPOINT" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::NEWSFEED_ENDPOINT is not configured; no draft was generated."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.config.outputs.configured == 'true'
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        if: steps.config.outputs.configured == 'true'
+        run: npm ci --no-audit --no-fund
+
+      - name: Fetch structured news bundle
+        if: steps.config.outputs.configured == 'true'
+        env:
+          NEWSFEED_ENDPOINT: ${{ secrets.NEWSFEED_ENDPOINT }}
+          NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
+        run: |
+          headers=()
+          if [ -n "$NEWSFEED_BEARER_TOKEN" ]; then
+            headers=(-H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN")
+          fi
+          curl --fail --silent --show-error --location \
+            --retry 3 --retry-delay 5 --max-time 90 \
+            "${headers[@]}" \
+            "$NEWSFEED_ENDPOINT" \
+            --output "$RUNNER_TEMP/daily-usd-impact.json"
+
+      - name: Import as review content
+        if: steps.config.outputs.configured == 'true'
+        run: node scripts/import-daily-news.mjs "$RUNNER_TEMP/daily-usd-impact.json" --replace
+
+      - name: Validate and build
+        if: steps.config.outputs.configured == 'true'
+        run: |
+          npm run validate
+          npm run build
+
+      - name: Open draft pull request
+        if: steps.config.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$(git status --porcelain src/content/news)" ]; then
+            echo "No news changes to propose."
+            exit 0
+          fi
+
+          edition_date="$(node -p "JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/daily-usd-impact.json', 'utf8')).date")"
+          branch="automation/daily-usd-impact-${edition_date}-${GITHUB_RUN_ID}"
+
+          git config user.name "usd-impact-news-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add src/content/news
+          git commit -m "Add Daily USD Impact edition for ${edition_date}"
+          git push --set-upstream origin "$branch"
+
+          cat > "$RUNNER_TEMP/daily-news-pr.md" <<EOF
+          ## Daily USD Impact draft
+
+          This automated pull request imports the source-backed edition for **${edition_date}** with status \`review\`.
+
+          ### Required review
+          - Verify every material fact against its linked source.
+          - Confirm price timestamps and event dates.
+          - Check that cross-asset interpretation is conditional and educational.
+          - Update the edition to \`published\` only after editorial approval.
+          - Merge only after the Web quality workflow passes.
+
+          The automation does not publish directly to production.
+          EOF
+
+          gh pr create \
+            --draft \
+            --base main \
+            --head "$branch" \
+            --title "Daily USD Impact — ${edition_date}" \
+            --body-file "$RUNNER_TEMP/daily-news-pr.md"

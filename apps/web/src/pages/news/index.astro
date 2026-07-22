@@ -1,0 +1,83 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NewsHighlightCard from '../../components/NewsHighlightCard.astro';
+
+const editions = (await getCollection('news'))
+  .filter((entry) => entry.data.status === 'published')
+  .sort((a, b) => b.data.date.localeCompare(a.data.date));
+
+const latest = editions[0];
+const formatDate = (value) => new Intl.DateTimeFormat('en', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+}).format(new Date(`${value}T12:00:00Z`));
+---
+<BaseLayout title="Daily USD Impact | Market Drivers and Sources" description="Verified daily cross-asset market highlights covering the U.S. dollar, rates, liquidity, energy, gold, Bitcoin, U.S. indices, and the Magnificent 7.">
+  <section class="hero news-hero">
+    <div class="container">
+      <div class="eyebrow">Daily USD Impact</div>
+      <h1>Read the market through the dollar.</h1>
+      <p class="lead">A source-backed daily view of the developments transmitting through DXY, rates, liquidity, energy, gold, Bitcoin, U.S. equities, and the Magnificent 7.</p>
+      <div class="feed-links">
+        <a class="button primary" href="/news/feed.xml">RSS feed</a>
+        <a class="button secondary" href="/news/latest.json">JSON feed</a>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+    {latest ? (
+      <>
+        <section class="latest-edition">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Latest edition</div>
+              <h2>{latest.data.title}</h2>
+            </div>
+            <p>{formatDate(latest.data.date)}</p>
+          </div>
+          <div class="regime-panel">
+            <span>Market regime</span>
+            <strong>{latest.data.marketRegime}</strong>
+            <p>{latest.data.summary}</p>
+          </div>
+          <div class="news-grid">
+            {latest.data.highlights.map((highlight) => (
+              <NewsHighlightCard highlight={highlight} sources={latest.data.sources} />
+            ))}
+          </div>
+          <div class="button-row">
+            <a class="button primary" href={latest.data.slug}>Read the complete edition</a>
+          </div>
+        </section>
+
+        <section class="edition-archive">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Archive</div>
+              <h2>Previous editions</h2>
+            </div>
+          </div>
+          <div class="archive-list">
+            {editions.map((edition) => (
+              <a href={edition.data.slug}>
+                <span>{formatDate(edition.data.date)}</span>
+                <strong>{edition.data.marketRegime}</strong>
+                <small>{edition.data.summary}</small>
+              </a>
+            ))}
+          </div>
+        </section>
+      </>
+    ) : (
+      <section class="empty-state card">
+        <div class="eyebrow">Daily USD Impact</div>
+        <h2>Publication pipeline active</h2>
+        <p>The first edition will appear after its source verification and publishing review are complete.</p>
+      </section>
+    )}
+  </main>
+</BaseLayout>

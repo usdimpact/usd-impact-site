@@ -2,13 +2,15 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
+const publicationStatus = z.enum(['draft', 'review', 'ready-for-build', 'published']);
+
 const baseSchema = z.object({
   title: z.string(),
   metaTitle: z.string(),
   metaDescription: z.string(),
   slug: z.string(),
   category: z.string(),
-  status: z.enum(['draft', 'review', 'ready-for-build', 'published']),
+  status: publicationStatus,
   readingLevel: z.string(),
   lastReviewed: z.string(),
   complianceNote: z.string(),
@@ -18,6 +20,32 @@ const baseSchema = z.object({
   ctaSecondary: z.string().optional(),
   hero: z.string().optional(),
   subhero: z.string().optional(),
+});
+
+const newsSourceSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  publisher: z.string(),
+  url: z.string().url(),
+  publishedAt: z.string(),
+  sourceType: z.enum(['primary', 'reporting']),
+});
+
+const newsHighlightSchema = z.object({
+  headline: z.string(),
+  development: z.string(),
+  whyItMatters: z.string(),
+  assets: z.array(z.string()).min(1),
+  importance: z.enum(['high', 'medium', 'low']),
+  verification: z.enum(['verified-primary', 'verified-multiple']),
+  sourceIds: z.array(z.string()).min(1),
+});
+
+const newsCatalystSchema = z.object({
+  date: z.string(),
+  event: z.string(),
+  assets: z.array(z.string()).default([]),
+  sourceIds: z.array(z.string()).min(1),
 });
 
 const pages = defineCollection({
@@ -50,10 +78,33 @@ const glossary = defineCollection({
   schema: z.object({
     title: z.string(),
     slug: z.string(),
-    status: z.enum(['draft', 'review', 'ready-for-build', 'published']),
+    status: publicationStatus,
     doNotTranslate: z.boolean().default(false),
     definition: z.string(),
   }),
 });
 
-export const collections = { pages, products, frameworks, leadMagnets, benchmarkModules, glossary };
+const news = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/news' }),
+  schema: z.object({
+    title: z.string(),
+    metaTitle: z.string(),
+    metaDescription: z.string(),
+    slug: z.string(),
+    date: z.string(),
+    generatedAt: z.string(),
+    lastReviewed: z.string(),
+    status: publicationStatus,
+    category: z.literal('Daily USD Impact'),
+    marketRegime: z.string(),
+    summary: z.string(),
+    featured: z.boolean().default(false),
+    assets: z.array(z.string()).min(1),
+    highlights: z.array(newsHighlightSchema).min(3).max(7),
+    catalysts: z.array(newsCatalystSchema).default([]),
+    sources: z.array(newsSourceSchema).min(2),
+    complianceNote: z.string(),
+  }),
+});
+
+export const collections = { pages, products, frameworks, leadMagnets, benchmarkModules, glossary, news };

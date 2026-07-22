@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Weekly USD Impact Score | Dollar Regime Dashboard"
+  description="The weekly USD Impact Score dashboard: a cross-asset reading of the current dollar regime, updated by the USD Impact data pipeline."
+>
+  <section class="hero score-hero">
+    <div class="container">
+      <div class="eyebrow">Weekly USD Impact Score</div>
+      <h1>The dollar regime, measured weekly.</h1>
+      <p class="lead">A systematic cross-asset reading produced by the USD Impact data pipeline. Use it as educational context alongside the Daily USD Impact edition and the broader framework.</p>
+      <div class="button-row">
+        <a class="button primary" href="#score-dashboard">View the latest score</a>
+        <a class="button secondary" href="https://usd-impact-pipeline.pages.dev/en/" target="_blank" rel="noreferrer">Open standalone dashboard</a>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+    <section class="score-intro grid">
+      <article class="card">
+        <div class="eyebrow">What it measures</div>
+        <h2>Cross-asset dollar pressure</h2>
+        <p>The score combines market inputs into one weekly regime reading rather than treating DXY as a complete measure of dollar conditions.</p>
+      </article>
+      <article class="card">
+        <div class="eyebrow">How to use it</div>
+        <h2>Context, not a signal</h2>
+        <p>Read the score together with rates, liquidity, commodities, FX and risk conditions. It is not a forecast, recommendation or trading instruction.</p>
+      </article>
+      <article class="card">
+        <div class="eyebrow">Update cycle</div>
+        <h2>Weekly pipeline</h2>
+        <p>The dashboard is maintained separately by the USD Impact Score pipeline and displays the latest published reading and commentary.</p>
+      </article>
+    </section>
+
+    <section id="score-dashboard" class="score-dashboard-section">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Live dashboard</div>
+          <h2>Latest USD Impact Score</h2>
+        </div>
+        <a href="https://usd-impact-pipeline.pages.dev/en/" target="_blank" rel="noreferrer">Open in a new tab</a>
+      </div>
+      <div class="score-embed-shell">
+        <iframe
+          class="score-embed"
+          src="https://usd-impact-pipeline.pages.dev/en/"
+          title="USD Impact Score weekly dashboard"
+          loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
+        ></iframe>
+        <p class="score-embed-fallback">If the dashboard does not load inside this page, <a href="https://usd-impact-pipeline.pages.dev/en/" target="_blank" rel="noreferrer">open the standalone version</a>.</p>
+      </div>
+    </section>
+
+    <section class="compliance" aria-label="Compliance note">
+      <strong>Compliance note:</strong> Educational and informational only. The USD Impact Score is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset.
+    </section>
+  </main>
+</BaseLayout>

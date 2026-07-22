@@ -54,6 +54,22 @@ main { padding: 56px 0; }
 .footer a { color: var(--soft-silver); }
 .footer-links { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
 
+/* Weekly USD Impact Score */
+.home-score { margin-top: 64px; }
+.score-promo { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 28px; background: linear-gradient(135deg, #ffffff, #f7f3ea); border-left: 5px solid var(--gold); }
+.score-promo h3 { margin: 6px 0 8px; font-size: clamp(24px, 3vw, 34px); }
+.score-promo p { margin: 0; max-width: 760px; color: var(--slate); }
+.score-promo-kicker { color: var(--gold) !important; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; }
+.score-external { border: 1px solid #b7c0ca; color: var(--navy); }
+.score-hero { padding-bottom: 64px; }
+.score-intro { margin-top: 8px; }
+.score-intro h2 { margin: 8px 0 8px; font-size: 24px; }
+.score-intro p { color: var(--slate); margin: 0; }
+.score-dashboard-section { margin-top: 64px; scroll-margin-top: 24px; }
+.score-embed-shell { overflow: hidden; border: 1px solid #dce2e9; border-radius: 18px; background: var(--white); box-shadow: 0 16px 42px rgba(2,10,20,.08); }
+.score-embed { display: block; width: 100%; min-height: 980px; border: 0; background: var(--white); }
+.score-embed-fallback { margin: 0; padding: 14px 18px; color: var(--slate); font-size: 14px; border-top: 1px solid #e3e7ec; }
+
 /* Daily USD Impact */
 .news-hero { padding-bottom: 64px; }
 .feed-links { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
@@ -98,4 +114,6 @@ main { padding: 56px 0; }
   .waitlist-inline .button { width: 100%; }
   .section-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
   .archive-list a { grid-template-columns: 1fr; gap: 4px; }
+  .score-promo { grid-template-columns: 1fr; }
+  .score-embed { min-height: 1180px; }
 }

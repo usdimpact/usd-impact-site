@@ -16,7 +16,7 @@ concurrency:
 jobs:
   build-draft:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: apps/web
@@ -47,17 +47,77 @@ jobs:
         if: steps.config.outputs.configured == 'true'
         run: npm ci --no-audit --no-fund
 
-      - name: Fetch structured news bundle
+      - name: Start background news generation
         if: steps.config.outputs.configured == 'true'
         env:
           NEWSFEED_ENDPOINT: ${{ secrets.NEWSFEED_ENDPOINT }}
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
         run: |
+          background_endpoint="$(node -e '
+            const url = new URL(process.env.NEWSFEED_ENDPOINT);
+            if (!/\/daily-news-source\/?$/.test(url.pathname)) {
+              throw new Error("NEWSFEED_ENDPOINT must end with /daily-news-source");
+            }
+            url.pathname = url.pathname.replace(/\/daily-news-source\/?$/, "/daily-news-background");
+            process.stdout.write(url.toString());
+          ')"
+          echo "BACKGROUND_ENDPOINT=$background_endpoint" >> "$GITHUB_ENV"
+
           curl --fail --silent --show-error --location \
-            --retry 1 --retry-delay 10 --retry-all-errors --retry-max-time 600 --max-time 280 \
+            --request POST --max-time 60 \
             -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
-            "$NEWSFEED_ENDPOINT" \
-            --output "$RUNNER_TEMP/daily-usd-impact.json"
+            "$background_endpoint" \
+            --output "$RUNNER_TEMP/daily-usd-impact-start.json"
+
+          response_id="$(node -e '
+            const fs = require("fs");
+            const payload = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/daily-usd-impact-start.json", "utf8"));
+            if (!/^resp_[A-Za-z0-9_-]{8,200}$/.test(payload.id || "")) {
+              throw new Error("Background endpoint did not return a valid response id");
+            }
+            process.stdout.write(payload.id);
+          ')"
+          echo "OPENAI_RESPONSE_ID=$response_id" >> "$GITHUB_ENV"
+          echo "Started background response $response_id"
+
+      - name: Poll background news generation
+        if: steps.config.outputs.configured == 'true'
+        env:
+          NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
+        run: |
+          for attempt in $(seq 1 36); do
+            poll_url="${BACKGROUND_ENDPOINT}?response_id=${OPENAI_RESPONSE_ID}"
+            http_code="$(curl --silent --show-error --location \
+              --max-time 60 \
+              -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
+              "$poll_url" \
+              --output "$RUNNER_TEMP/daily-usd-impact-poll.json" \
+              --write-out '%{http_code}')"
+
+            if [ "$http_code" = "200" ]; then
+              mv "$RUNNER_TEMP/daily-usd-impact-poll.json" "$RUNNER_TEMP/daily-usd-impact.json"
+              echo "Background news generation completed on poll $attempt."
+              exit 0
+            fi
+
+            if [ "$http_code" = "202" ]; then
+              status="$(node -e '
+                const fs = require("fs");
+                const payload = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/daily-usd-impact-poll.json", "utf8"));
+                process.stdout.write(String(payload.status || "pending"));
+              ')"
+              echo "Poll $attempt: $status"
+              sleep 20
+              continue
+            fi
+
+            echo "Background endpoint returned HTTP $http_code"
+            cat "$RUNNER_TEMP/daily-usd-impact-poll.json"
+            exit 1
+          done
+
+          echo "Background news generation did not complete within 12 minutes."
+          exit 1
 
       - name: Import as review content
         if: steps.config.outputs.configured == 'true'

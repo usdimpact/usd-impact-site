@@ -5,7 +5,7 @@ const OPENAI_RESPONSES_API = 'https://api.openai.com/v1/responses';
 const RESPONSE_ID_PATTERN = /^resp_[A-Za-z0-9_-]{8,200}$/;
 const ACTIVE_STATUSES = new Set(['queued', 'in_progress']);
 const TERMINAL_FAILURE_STATUSES = new Set(['cancelled', 'failed', 'incomplete']);
-const MAX_BACKGROUND_OUTPUT_TOKENS = 7_000;
+const MAX_BACKGROUND_OUTPUT_TOKENS = 16_000;
 
 let runtimeOverrideQueue = Promise.resolve();
 
@@ -83,6 +83,27 @@ function sourceRequest(request, date) {
   };
 }
 
+function terminalFailureDetails(openAiResponse) {
+  const reason = String(
+    openAiResponse?.incomplete_details?.reason
+      ?? openAiResponse?.error?.code
+      ?? openAiResponse?.error?.type
+      ?? 'unknown',
+  );
+  const providerMessage = typeof openAiResponse?.error?.message === 'string'
+    ? openAiResponse.error.message.slice(0, 500)
+    : null;
+  const usage = openAiResponse?.usage
+    ? {
+        inputTokens: openAiResponse.usage.input_tokens ?? null,
+        outputTokens: openAiResponse.usage.output_tokens ?? null,
+        reasoningTokens: openAiResponse.usage.output_tokens_details?.reasoning_tokens ?? null,
+        totalTokens: openAiResponse.usage.total_tokens ?? null,
+      }
+    : null;
+  return { reason, providerMessage, usage };
+}
+
 async function withRuntimeOverride(makeFetch, suppressExpectedStatusError, task) {
   let release;
   const previous = runtimeOverrideQueue;
@@ -130,10 +151,11 @@ async function startBackgroundResponse(request, response, date) {
 
       body.background = true;
       body.store = true;
-      body.max_output_tokens = Math.min(
-        Number.isFinite(body.max_output_tokens) ? body.max_output_tokens : MAX_BACKGROUND_OUTPUT_TOKENS,
-        MAX_BACKGROUND_OUTPUT_TOKENS,
-      );
+      body.reasoning = {
+        ...(body.reasoning ?? {}),
+        effort: 'low',
+      };
+      body.max_output_tokens = MAX_BACKGROUND_OUTPUT_TOKENS;
       for (const tool of body.tools ?? []) {
         if (tool?.type === 'web_search') tool.search_context_size = 'medium';
       }
@@ -167,6 +189,8 @@ async function startBackgroundResponse(request, response, date) {
     status: providerPayload.status ?? 'queued',
     date,
     model: providerPayload.model ?? process.env.OPENAI_NEWS_MODEL ?? 'gpt-5',
+    reasoningEffort: 'low',
+    maxOutputTokens: MAX_BACKGROUND_OUTPUT_TOKENS,
   }, 202, {
     'Retry-After': '20',
   });
@@ -256,12 +280,24 @@ export default async function handler(request, response) {
       });
     }
     if (TERMINAL_FAILURE_STATUSES.has(openAiResponse.status)) {
-      console.error(`Daily news background response ${responseId} ended with status ${openAiResponse.status}.`);
-      return sendJson(response, { error: 'Daily news background generation did not complete.' }, 502);
+      const details = terminalFailureDetails(openAiResponse);
+      console.error(
+        `Daily news background response ${responseId} ended with status ${openAiResponse.status}; reason ${details.reason}; usage ${JSON.stringify(details.usage)}.`,
+      );
+      return sendJson(response, {
+        error: 'Daily news background generation did not complete.',
+        status: openAiResponse.status,
+        reason: details.reason,
+        providerMessage: details.providerMessage,
+        usage: details.usage,
+      }, 502);
     }
     if (openAiResponse.status !== 'completed') {
       console.error(`Daily news background response ${responseId} returned unknown status ${openAiResponse.status}.`);
-      return sendJson(response, { error: 'Daily news background generation returned an unknown status.' }, 502);
+      return sendJson(response, {
+        error: 'Daily news background generation returned an unknown status.',
+        status: openAiResponse.status ?? 'unknown',
+      }, 502);
     }
     return await normalizeCompletedResponse(request, response, date, openAiResponse);
   } catch (error) {

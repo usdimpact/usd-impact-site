@@ -1,4 +1,9 @@
 import backgroundHandler from './daily-news-background.js';
+import {
+  SOURCE_DATE_RULES,
+  SOURCE_DATE_SCHEMA_PATTERN,
+  normalizeBundleDraft,
+} from './daily-news-validation.js';
 
 const OPENAI_RESPONSES_API = 'https://api.openai.com/v1/responses';
 const WEB_SEARCH_SOURCES_INCLUDE = 'web_search_call.action.sources';
@@ -21,11 +26,64 @@ function includesWebSearch(body) {
 
 function withSourceMetadata(body) {
   const include = Array.isArray(body.include) ? body.include : [];
-  return {
+  const next = {
     ...body,
     tool_choice: 'required',
     include: [...new Set([...include, WEB_SEARCH_SOURCES_INCLUDE])],
   };
+
+  if (typeof next.input === 'string' && !next.input.includes(SOURCE_DATE_RULES)) {
+    next.input = `${next.input}\n- ${SOURCE_DATE_RULES}`;
+  }
+
+  const sourceDateSchema = next.text?.format?.schema?.properties?.sources?.items?.properties?.publishedAt;
+  if (sourceDateSchema && typeof sourceDateSchema === 'object') {
+    sourceDateSchema.pattern = SOURCE_DATE_SCHEMA_PATTERN;
+    sourceDateSchema.description = 'Verified source publication date in YYYY-MM-DD format.';
+  }
+
+  return next;
+}
+
+function normalizeOutputText(openAiResponse) {
+  if (!openAiResponse || typeof openAiResponse !== 'object') return openAiResponse;
+
+  return {
+    ...openAiResponse,
+    output: (openAiResponse.output ?? []).map((item) => {
+      if (item?.type !== 'message') return item;
+      return {
+        ...item,
+        content: (item.content ?? []).map((part) => {
+          if (part?.type !== 'output_text' || typeof part.text !== 'string') return part;
+          try {
+            const draft = JSON.parse(part.text);
+            return { ...part, text: JSON.stringify(normalizeBundleDraft(draft)) };
+          } catch {
+            return part;
+          }
+        }),
+      };
+    }),
+  };
+}
+
+async function normalizeProviderResponse(providerResponse) {
+  const raw = await providerResponse.text();
+  let payload;
+  try {
+    payload = normalizeOutputText(JSON.parse(raw));
+  } catch {
+    return new Response(raw, {
+      status: providerResponse.status,
+      headers: providerResponse.headers,
+    });
+  }
+
+  return new Response(JSON.stringify(payload), {
+    status: providerResponse.status,
+    headers: providerResponse.headers,
+  });
 }
 
 function groundedFetch(realFetch) {
@@ -51,7 +109,8 @@ function groundedFetch(realFetch) {
 
     if (method === 'GET' && /^\/v1\/responses\/resp_[A-Za-z0-9_-]+$/.test(url.pathname)) {
       url.searchParams.append('include[]', WEB_SEARCH_SOURCES_INCLUDE);
-      return realFetch(url, options);
+      const providerResponse = await realFetch(url, options);
+      return normalizeProviderResponse(providerResponse);
     }
 
     return realFetch(input, options);

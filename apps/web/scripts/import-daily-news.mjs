@@ -3,8 +3,9 @@ import path from 'node:path';
 
 const inputPath = process.argv[2];
 const replace = process.argv.includes('--replace');
+const skipPublished = process.argv.includes('--skip-published');
 if (!inputPath) {
-  console.error('Usage: node scripts/import-daily-news.mjs <bundle.json> [--replace]');
+  console.error('Usage: node scripts/import-daily-news.mjs <bundle.json> [--replace] [--skip-published]');
   process.exit(1);
 }
 
@@ -135,12 +136,16 @@ try {
   if (error?.code !== 'ENOENT') throw error;
 }
 
-if (existingContent && !replace) {
-  throw new Error(`${outputPath} already exists; pass --replace to update a non-published review`);
+if (existingContent && /^status:\s*"published"\s*$/m.test(existingContent)) {
+  if (skipPublished) {
+    console.log(`Published Daily USD Impact edition already exists at ${outputPath}; no changes made.`);
+    process.exit(0);
+  }
+  throw new Error(`${outputPath} is already published and cannot be replaced by automation`);
 }
 
-if (existingContent && /^status:\s*"published"\s*$/m.test(existingContent)) {
-  throw new Error(`${outputPath} is already published and cannot be replaced by automation`);
+if (existingContent && !replace) {
+  throw new Error(`${outputPath} already exists; pass --replace to update a non-published review`);
 }
 
 await writeFile(outputPath, `${lines.join('\n')}\n`, 'utf8');

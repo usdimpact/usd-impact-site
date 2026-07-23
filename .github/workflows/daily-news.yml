@@ -85,39 +85,65 @@ jobs:
         env:
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
         run: |
-          for attempt in $(seq 1 36); do
-            poll_url="${BACKGROUND_ENDPOINT}?response_id=${OPENAI_RESPONSE_ID}"
-            http_code="$(curl --silent --show-error --location \
-              --max-time 60 \
-              -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
-              "$poll_url" \
-              --output "$RUNNER_TEMP/daily-usd-impact-poll.json" \
-              --write-out '%{http_code}')"
+          response_id="$OPENAI_RESPONSE_ID"
 
-            if [ "$http_code" = "200" ]; then
-              mv "$RUNNER_TEMP/daily-usd-impact-poll.json" "$RUNNER_TEMP/daily-usd-impact.json"
-              echo "Background news generation completed on poll $attempt."
-              exit 0
+          for generation_attempt in 1 2; do
+            for poll_attempt in $(seq 1 18); do
+              poll_url="${BACKGROUND_ENDPOINT}?response_id=${response_id}"
+              http_code="$(curl --silent --show-error --location \
+                --max-time 60 \
+                -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
+                "$poll_url" \
+                --output "$RUNNER_TEMP/daily-usd-impact-poll.json" \
+                --write-out '%{http_code}')"
+
+              if [ "$http_code" = "200" ]; then
+                mv "$RUNNER_TEMP/daily-usd-impact-poll.json" "$RUNNER_TEMP/daily-usd-impact.json"
+                echo "Background news generation completed on generation attempt $generation_attempt, poll $poll_attempt."
+                exit 0
+              fi
+
+              if [ "$http_code" = "202" ]; then
+                status="$(node -e '
+                  const fs = require("fs");
+                  const payload = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/daily-usd-impact-poll.json", "utf8"));
+                  process.stdout.write(String(payload.status || "pending"));
+                ')"
+                echo "Generation attempt $generation_attempt, poll $poll_attempt: $status"
+                sleep 20
+                continue
+              fi
+
+              if [ "$generation_attempt" = "1" ] && node scripts/daily-news-retry-policy.mjs "$RUNNER_TEMP/daily-usd-impact-poll.json"; then
+                echo "Insufficient grounded sources detected; starting one bounded full regeneration attempt."
+                curl --fail --silent --show-error --location \
+                  --request POST --max-time 60 \
+                  -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
+                  "$BACKGROUND_ENDPOINT" \
+                  --output "$RUNNER_TEMP/daily-usd-impact-retry-start.json"
+
+                response_id="$(node -e '
+                  const fs = require("fs");
+                  const payload = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/daily-usd-impact-retry-start.json", "utf8"));
+                  if (!/^resp_[A-Za-z0-9_-]{8,200}$/.test(payload.id || "")) {
+                    throw new Error("Retry endpoint did not return a valid response id");
+                  }
+                  process.stdout.write(payload.id);
+                ')"
+                echo "Started retry background response $response_id"
+                break
+              fi
+
+              echo "Background endpoint returned HTTP $http_code"
+              cat "$RUNNER_TEMP/daily-usd-impact-poll.json"
+              exit 1
+            done
+
+            if [ "$generation_attempt" = "2" ]; then
+              echo "Background news generation did not complete successfully after one bounded regeneration attempt."
+              exit 1
             fi
-
-            if [ "$http_code" = "202" ]; then
-              status="$(node -e '
-                const fs = require("fs");
-                const payload = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/daily-usd-impact-poll.json", "utf8"));
-                process.stdout.write(String(payload.status || "pending"));
-              ')"
-              echo "Poll $attempt: $status"
-              sleep 20
-              continue
-            fi
-
-            echo "Background endpoint returned HTTP $http_code"
-            cat "$RUNNER_TEMP/daily-usd-impact-poll.json"
-            exit 1
           done
-
-          echo "Background news generation did not complete within 12 minutes."
-          exit 1
 
       - name: Import as review content
         if: steps.config.outputs.configured == 'true'

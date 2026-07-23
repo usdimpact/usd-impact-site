@@ -58,7 +58,7 @@ jobs:
             if (!/\/daily-news-source\/?$/.test(url.pathname)) {
               throw new Error("NEWSFEED_ENDPOINT must end with /daily-news-source");
             }
-            url.pathname = url.pathname.replace(/\/daily-news-source\/?$/, "/daily-news-background");
+            url.pathname = url.pathname.replace(/\/daily-news-source\/?$/, "/daily-news-grounded-background");
             process.stdout.write(url.toString());
           ')"
           echo "BACKGROUND_ENDPOINT=$background_endpoint" >> "$GITHUB_ENV"

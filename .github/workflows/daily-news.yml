@@ -121,7 +121,7 @@ jobs:
 
       - name: Import as review content
         if: steps.config.outputs.configured == 'true'
-        run: node scripts/import-daily-news.mjs "$RUNNER_TEMP/daily-usd-impact.json" --replace
+        run: node scripts/import-daily-news.mjs "$RUNNER_TEMP/daily-usd-impact.json" --replace --skip-published
 
       - name: Validate and build
         if: steps.config.outputs.configured == 'true'

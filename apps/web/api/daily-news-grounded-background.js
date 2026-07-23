@@ -7,6 +7,12 @@ import {
 
 const OPENAI_RESPONSES_API = 'https://api.openai.com/v1/responses';
 const WEB_SEARCH_SOURCES_INCLUDE = 'web_search_call.action.sources';
+const GROUNDED_SOURCE_RULES = [
+  'Use web search results from at least two distinct source URLs before producing the bundle.',
+  'The source ledger must contain at least two distinct URLs returned by the web search tool metadata.',
+  'Do not finish the response with only one grounded URL; continue researching across approved domains.',
+  'Never invent, reconstruct, or substitute a URL that was not returned by web search.',
+].join(' ');
 
 let runtimeOverrideQueue = Promise.resolve();
 
@@ -32,8 +38,11 @@ function withSourceMetadata(body) {
     include: [...new Set([...include, WEB_SEARCH_SOURCES_INCLUDE])],
   };
 
-  if (typeof next.input === 'string' && !next.input.includes(SOURCE_DATE_RULES)) {
-    next.input = `${next.input}\n- ${SOURCE_DATE_RULES}`;
+  if (typeof next.input === 'string') {
+    const additions = [];
+    if (!next.input.includes(SOURCE_DATE_RULES)) additions.push(SOURCE_DATE_RULES);
+    if (!next.input.includes(GROUNDED_SOURCE_RULES)) additions.push(GROUNDED_SOURCE_RULES);
+    if (additions.length > 0) next.input = `${next.input}\n- ${additions.join('\n- ')}`;
   }
 
   const sourceDateSchema = next.text?.format?.schema?.properties?.sources?.items?.properties?.publishedAt;

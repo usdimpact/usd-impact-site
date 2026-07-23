@@ -50,7 +50,7 @@ function groundedFetch(realFetch) {
     }
 
     if (method === 'GET' && /^\/v1\/responses\/resp_[A-Za-z0-9_-]+$/.test(url.pathname)) {
-      url.searchParams.append('include', WEB_SEARCH_SOURCES_INCLUDE);
+      url.searchParams.append('include[]', WEB_SEARCH_SOURCES_INCLUDE);
       return realFetch(url, options);
     }
 

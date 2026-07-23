@@ -75,16 +75,32 @@ jobs:
             if (!/^resp_[A-Za-z0-9_-]{8,200}$/.test(payload.id || "")) {
               throw new Error("Background endpoint did not return a valid response id");
             }
+            const accepted = new Set(["queued", "in_progress", "completed"]);
+            if (!accepted.has(String(payload.status || ""))) {
+              throw new Error(`Background endpoint returned unexpected start status: ${payload.status || "missing"}`);
+            }
             process.stdout.write(payload.id);
           ')"
+          start_status="$(node -e '
+            const fs = require("fs");
+            const payload = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/daily-usd-impact-start.json", "utf8"));
+            process.stdout.write(String(payload.status));
+          ')"
           echo "OPENAI_RESPONSE_ID=$response_id" >> "$GITHUB_ENV"
-          echo "Started background response $response_id"
+          echo "Background generation accepted as $response_id with status $start_status."
+
+      - name: Wait for background generation registration
+        if: steps.config.outputs.configured == 'true'
+        run: |
+          echo "Generation has been started. Waiting before the first status retrieval."
+          sleep 10
 
       - name: Poll background news generation
         if: steps.config.outputs.configured == 'true'
         env:
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
         run: |
+          echo "Retrieval checks status only; content is imported only after the response is completed."
           for attempt in $(seq 1 36); do
             poll_url="${BACKGROUND_ENDPOINT}?response_id=${OPENAI_RESPONSE_ID}"
             http_code="$(curl --silent --show-error --location \

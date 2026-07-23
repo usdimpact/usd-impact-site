@@ -19,7 +19,8 @@ const latestNews = (await getCollection('news'))
     </div>
   </section>
   <main class="container">
-    <section class="grid">
+    <section class="grid" aria-labelledby="framework-essentials-heading">
+      <h2 id="framework-essentials-heading" class="visually-hidden">USD Impact framework essentials</h2>
       <BenchmarkModuleCard title="Start with the dollar" body="Separate DXY from the broader dollar and identify whether the move is rate-led, liquidity-led, or risk-led." />
       <BenchmarkModuleCard title="Use the three dials" body="Track dollar direction, real-rate pressure, and liquidity stress before reading asset moves." />
       <BenchmarkModuleCard title="Keep it educational" body="No trading signals, no return promises, no recommendations. Framework first, context second." />

@@ -1,0 +1,158 @@
+name: Daily USD Impact Health
+
+on:
+  schedule:
+    - cron: '45 10 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: daily-usd-impact-health
+  cancel-in-progress: false
+
+jobs:
+  verify-daily-automation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Inspect latest daily workflow run
+        id: health
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_NAME: Daily USD Impact draft
+          MAX_AGE_HOURS: '4'
+        run: |
+          set -euo pipefail
+
+          run_json="$(gh run list \
+            --repo "$GITHUB_REPOSITORY" \
+            --workflow "$WORKFLOW_NAME" \
+            --branch main \
+            --limit 1 \
+            --json databaseId,status,conclusion,createdAt,url,event)"
+
+          if [ "$(jq length <<< "$run_json")" -ne 1 ]; then
+            echo "No recent Daily USD Impact workflow run was found." > daily-health-report.md
+            exit 1
+          fi
+
+          run_id="$(jq -r '.[0].databaseId' <<< "$run_json")"
+          status="$(jq -r '.[0].status' <<< "$run_json")"
+          conclusion="$(jq -r '.[0].conclusion // "unknown"' <<< "$run_json")"
+          created_at="$(jq -r '.[0].createdAt' <<< "$run_json")"
+          run_url="$(jq -r '.[0].url' <<< "$run_json")"
+          event="$(jq -r '.[0].event' <<< "$run_json")"
+
+          now_epoch="$(date -u +%s)"
+          created_epoch="$(date -u -d "$created_at" +%s)"
+          age_seconds="$((now_epoch - created_epoch))"
+          max_age_seconds="$((MAX_AGE_HOURS * 3600))"
+
+          {
+            echo "# Daily USD Impact automation health report"
+            echo
+            echo "- Workflow run: $run_url"
+            echo "- Run ID: \`$run_id\`"
+            echo "- Trigger: \`$event\`"
+            echo "- Status: \`$status\`"
+            echo "- Conclusion: \`$conclusion\`"
+            echo "- Started: \`$created_at\`"
+            echo "- Age: $((age_seconds / 60)) minutes"
+          } > daily-health-report.md
+
+          if [ "$status" != "completed" ]; then
+            echo "- Failure: the latest run is not complete." >> daily-health-report.md
+            exit 1
+          fi
+
+          if [ "$conclusion" != "success" ]; then
+            echo "- Failure: the latest run did not succeed." >> daily-health-report.md
+            exit 1
+          fi
+
+          if [ "$age_seconds" -lt 0 ] || [ "$age_seconds" -gt "$max_age_seconds" ]; then
+            echo "- Failure: the latest run is older than ${MAX_AGE_HOURS} hours." >> daily-health-report.md
+            exit 1
+          fi
+
+          echo "- Result: healthy." >> daily-health-report.md
+          cat daily-health-report.md
+
+      - name: Open or update daily health issue
+        if: steps.health.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_TITLE: Daily USD Impact automation requires attention
+        run: |
+          set -euo pipefail
+
+          if [ ! -s daily-health-report.md ]; then
+            echo "# Daily USD Impact automation health report" > daily-health-report.md
+            echo >> daily-health-report.md
+            echo "The health check failed before a detailed report could be generated." >> daily-health-report.md
+          fi
+
+          issue_number="$(gh issue list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --search "in:title $ISSUE_TITLE" \
+            --json number,title \
+            --jq ".[] | select(.title == env.ISSUE_TITLE) | .number" \
+            | head -n 1)"
+
+          if [ -n "$issue_number" ]; then
+            gh issue comment "$issue_number" \
+              --repo "$GITHUB_REPOSITORY" \
+              --body-file daily-health-report.md
+            echo "Updated issue #$issue_number"
+          else
+            gh issue create \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$ISSUE_TITLE" \
+              --body-file daily-health-report.md
+          fi
+
+      - name: Close recovered daily health issue
+        if: steps.health.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_TITLE: Daily USD Impact automation requires attention
+        run: |
+          set -euo pipefail
+
+          issue_number="$(gh issue list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --search "in:title $ISSUE_TITLE" \
+            --json number,title \
+            --jq ".[] | select(.title == env.ISSUE_TITLE) | .number" \
+            | head -n 1)"
+
+          if [ -n "$issue_number" ]; then
+            {
+              echo "## Recovery confirmed"
+              echo
+              cat daily-health-report.md
+            } > daily-health-recovery.md
+            gh issue comment "$issue_number" \
+              --repo "$GITHUB_REPOSITORY" \
+              --body-file daily-health-recovery.md
+            gh issue close "$issue_number" \
+              --repo "$GITHUB_REPOSITORY" \
+              --reason completed
+            echo "Closed recovered issue #$issue_number"
+          else
+            echo "No open daily health issue to close"
+          fi
+
+      - name: Fail when daily health checks fail
+        if: steps.health.outcome == 'failure'
+        run: |
+          echo "Daily USD Impact health checks failed. Review the generated issue and report."
+          exit 1

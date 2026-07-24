@@ -222,6 +222,11 @@ const { quiz, access, totalQuizzes, passScore, storageKey, purchaseUrl } = Astro
     };
 
     const renderQuestion = ({ focus = true } = {}) => {
+      currentIndex = Math.max(
+        0,
+        Math.min(currentIndex, questionElements.length - 1)
+      );
+
       questionElements.forEach((question, index) => {
         if (question instanceof HTMLElement) question.hidden = index !== currentIndex;
       });
@@ -292,6 +297,11 @@ const { quiz, access, totalQuizzes, passScore, storageKey, purchaseUrl } = Astro
         status.textContent = 'Select one answer before continuing.';
         return;
       }
+
+      if (currentIndex >= questionElements.length - 1) {
+        return;
+      }
+
       currentIndex += 1;
       renderQuestion();
     });

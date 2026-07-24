@@ -1,0 +1,456 @@
+{
+  "quizId": "QUIZ-WEB-004_DXY-Explained",
+  "canonicalId": "quiz-dxy-explained",
+  "language": "en",
+  "title": "DXY Explained: What the Dollar Index Measures — and What It Misses",
+  "seoTitle": "DXY Explained Quiz | USD Impact",
+  "metaDescription": "Test your understanding of what DXY measures, why its euro-heavy basket matters, and why DXY is not the full global dollar system.",
+  "slug": "/dxy/what-is-dxy/quiz",
+  "relatedLessonUrl": "/dxy/what-is-dxy",
+  "difficulty": "Beginner / Lower-intermediate",
+  "estimatedTime": "8–10 minutes",
+  "audience": "New investors and beginner macro learners",
+  "sourceDriveUrl": "https://docs.google.com/document/d/1UxzbEGef8D62Q8PCF_3C0dSQk1-7WfJr7mMtZ6KZMGk",
+  "format": "Website quiz",
+  "questionCount": 10,
+  "learningObjective": [
+    "Understand that DXY is a useful dollar benchmark, but not the entire dollar system.",
+    "Understand that DXY measures the U.S. dollar against a specific six-currency basket and is heavily influenced by the euro."
+  ],
+  "conceptsTested": [
+    "What DXY measures",
+    "DXY six-currency basket",
+    "Euro-heavy weighting",
+    "DXY vs Broad USD",
+    "DXY vs purchasing power",
+    "Basket composition risk",
+    "DXY as signal, not full regime proof",
+    "Compliance-safe market interpretation"
+  ],
+  "frameworkNote": "DXY / USDX is a weighted dollar index against six currencies: euro, Japanese yen, British pound, Canadian dollar, Swedish krona, and Swiss franc. The euro has the largest weight, commonly cited at 57.6%.",
+  "questions": [
+    {
+      "number": 1,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "What does DXY primarily measure?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The U.S. dollar against a specific basket of foreign currencies."
+        },
+        {
+          "key": "B",
+          "text": "U.S. domestic inflation."
+        },
+        {
+          "key": "C",
+          "text": "Global oil demand."
+        },
+        {
+          "key": "D",
+          "text": "The total size of the Federal Reserve balance sheet."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "DXY is a dollar index. It measures the dollar against a specific foreign-currency basket. It does not directly measure inflation, oil demand, or the Fed balance sheet.",
+      "sourceReference": "DXY Explained — What DXY measures."
+    },
+    {
+      "number": 2,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "Which currency has the largest weight in DXY?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Euro."
+        },
+        {
+          "key": "B",
+          "text": "Chinese yuan."
+        },
+        {
+          "key": "C",
+          "text": "Mexican peso."
+        },
+        {
+          "key": "D",
+          "text": "Australian dollar."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "The euro is the dominant component of DXY. This is why EURUSD moves can have an outsized effect on DXY.",
+      "sourceReference": "DXY Explained — DXY composition."
+    },
+    {
+      "number": 3,
+      "difficulty": "Easy",
+      "skillTested": "Comprehension",
+      "type": "true-false",
+      "question": "True or false: DXY includes the Chinese yuan and Mexican peso.",
+      "options": [
+        {
+          "key": "True",
+          "text": "True"
+        },
+        {
+          "key": "False",
+          "text": "False"
+        }
+      ],
+      "correctAnswer": "False",
+      "explanation": "The standard DXY basket includes the euro, Japanese yen, British pound, Canadian dollar, Swedish krona, and Swiss franc. It does not include CNY or MXN.",
+      "sourceReference": "DXY Explained — What DXY misses."
+    },
+    {
+      "number": 4,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "DXY rises sharply because EURUSD falls, but several emerging-market currencies are stable. What is the best interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Global dollar stress has definitely risen everywhere."
+        },
+        {
+          "key": "B",
+          "text": "The move may be heavily influenced by euro weakness rather than broad dollar pressure."
+        },
+        {
+          "key": "C",
+          "text": "U.S. inflation has disappeared."
+        },
+        {
+          "key": "D",
+          "text": "Gold must fall immediately."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Because the euro has the largest DXY weight, a large EURUSD move can drive DXY. Check broader USD measures and other currencies before calling broad dollar stress.",
+      "sourceReference": "DXY Explained — Euro-heavy basket risk."
+    },
+    {
+      "number": 5,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "A learner says: “DXY is rising, so the whole global dollar system is tightening.” What is the best correction?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Correct. DXY always equals global dollar liquidity."
+        },
+        {
+          "key": "B",
+          "text": "Incorrect. DXY is one signal; confirm with Broad USD, funding conditions, real yields, and risk indicators."
+        },
+        {
+          "key": "C",
+          "text": "Incorrect. DXY never matters."
+        },
+        {
+          "key": "D",
+          "text": "Correct, but only for Bitcoin."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "DXY is useful, but it is not the whole global dollar system. Broader interpretation requires confirmation from trade-weighted USD, funding stress, real rates, credit spreads, and volatility.",
+      "sourceReference": "DXY Explained — DXY vs broader dollar system."
+    },
+    {
+      "number": 6,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "Why can DXY give a misleading impression of broad dollar strength?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Because its basket is narrow and heavily weighted toward the euro."
+        },
+        {
+          "key": "B",
+          "text": "Because it only measures Bitcoin."
+        },
+        {
+          "key": "C",
+          "text": "Because it is an inflation index."
+        },
+        {
+          "key": "D",
+          "text": "Because it is based only on oil prices."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "DXY is structurally narrow. Its euro-heavy design means it can move because of European currency movement even when broader dollar pressure is less clear.",
+      "sourceReference": "DXY Explained — Basket limitations."
+    },
+    {
+      "number": 7,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "Which sequence best reflects the USD Impact method for using DXY?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY moves → automatic asset conclusion."
+        },
+        {
+          "key": "B",
+          "text": "Identify DXY move → identify basket driver → check Broad USD and second signals → interpret cautiously."
+        },
+        {
+          "key": "C",
+          "text": "Ignore DXY completely."
+        },
+        {
+          "key": "D",
+          "text": "Treat DXY as the full inflation report."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Use DXY as a first signal, not a final conclusion. Identify the component driver, validate with broader measures, and interpret asset impact conditionally.",
+      "sourceReference": "DXY Explained — USD Impact method."
+    },
+    {
+      "number": 8,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "A reader says: “DXY fell, so all commodities, gold, Bitcoin, and equities must rise.” What is the most disciplined response?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Correct. DXY explains all assets mechanically."
+        },
+        {
+          "key": "B",
+          "text": "Incorrect. A DXY move must be linked to its driver and then tested against each asset’s own transmission channel."
+        },
+        {
+          "key": "C",
+          "text": "Incorrect. DXY never matters."
+        },
+        {
+          "key": "D",
+          "text": "Correct, but only if the euro caused the move."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "DXY can matter, but asset reactions depend on the driver. Gold, Bitcoin, oil, and equities each have different transmission channels.",
+      "sourceReference": "DXY Explained — DXY and asset transmission."
+    },
+    {
+      "number": 9,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "Which statement is the weakest analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY is rising, but we should check whether EURUSD is driving most of the move."
+        },
+        {
+          "key": "B",
+          "text": "DXY is useful, but Broad USD can help confirm whether the move is broader."
+        },
+        {
+          "key": "C",
+          "text": "DXY moved today, so the entire global dollar regime has definitely changed."
+        },
+        {
+          "key": "D",
+          "text": "DXY does not directly measure U.S. purchasing power."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "One DXY move does not prove a full global dollar regime shift. Check basket driver, Broad USD, real yields, credit spreads, volatility, and funding conditions.",
+      "sourceReference": "DXY Explained — One-signal mistake."
+    },
+    {
+      "number": 10,
+      "difficulty": "Medium",
+      "skillTested": "Compliance-safe interpretation",
+      "type": "multiple-choice",
+      "question": "Which sentence is most consistent with USD Impact’s educational and compliance-safe style?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY is rising, so you should sell risk assets."
+        },
+        {
+          "key": "B",
+          "text": "DXY is a useful dollar benchmark, but its meaning depends on the basket driver, broader confirmation, and asset-specific context."
+        },
+        {
+          "key": "C",
+          "text": "DXY guarantees the next move in gold or Bitcoin."
+        },
+        {
+          "key": "D",
+          "text": "DXY alone is enough for an investment decision."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "This sentence is conditional, educational, and method-based. It avoids advice, certainty, and single-variable market conclusions.",
+      "sourceReference": "DXY Explained — Compliance-safe interpretation."
+    }
+  ],
+  "practicalApplications": [
+    {
+      "title": "DXY Up, EUR Weakness Dominant",
+      "scenario": "DXY rises 1.3% in a week. Most of the move comes from EURUSD weakness. Broad USD is only slightly higher.",
+      "bestInterpretation": "This may be more of a euro-driven DXY move than a full broad-dollar tightening.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "EURUSD",
+        "Broad USD",
+        "real yields",
+        "funding indicators"
+      ],
+      "likelyDominantDriver": "Euro weakness or Europe-specific repricing.",
+      "secondSignalToValidate": [
+        "Broad USD",
+        "USDJPY",
+        "EM FX",
+        "real yields",
+        "credit spreads"
+      ],
+      "mistakeToAvoid": "Calling broad dollar stress from DXY alone."
+    },
+    {
+      "title": "DXY Flat, Broad USD Stronger",
+      "scenario": "DXY is flat, but several emerging-market currencies weaken and Broad USD rises.",
+      "bestInterpretation": "DXY may be missing broader dollar pressure outside its narrow six-currency basket.",
+      "benchmarkThatMatters": [
+        "Broad USD",
+        "EM FX",
+        "DXY",
+        "funding stress indicators"
+      ],
+      "likelyDominantDriver": "Broader trade-weighted or funding-related dollar pressure.",
+      "secondSignalToValidate": [
+        "Credit spreads",
+        "volatility",
+        "cross-currency basis",
+        "EM FX performance",
+        "real yields"
+      ],
+      "mistakeToAvoid": "Assuming a flat DXY means no dollar pressure."
+    },
+    {
+      "title": "DXY Down, Assets Mixed",
+      "scenario": "DXY falls, but gold is flat, oil rises, Bitcoin falls, and equities are mixed.",
+      "bestInterpretation": "The DXY move alone is not enough. Asset-specific drivers may be dominating.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "real yields",
+        "liquidity indicators",
+        "WTI fundamentals",
+        "Bitcoin liquidity proxies",
+        "equity rates and earnings context"
+      ],
+      "likelyDominantDriver": "Mixed cross-asset transmission rather than a simple dollar regime.",
+      "secondSignalToValidate": [
+        "Real yields",
+        "VIX",
+        "credit spreads",
+        "oil inventories",
+        "BTC flows",
+        "equity sector performance"
+      ],
+      "mistakeToAvoid": "Assuming “DXY down = everything up.”"
+    }
+  ],
+  "answerKey": [
+    {
+      "question": 1,
+      "correctAnswer": "A",
+      "conceptTested": "DXY definition",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 2,
+      "correctAnswer": "A",
+      "conceptTested": "Euro-heavy weighting",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 3,
+      "correctAnswer": "False",
+      "conceptTested": "DXY basket exclusions",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 4,
+      "correctAnswer": "B",
+      "conceptTested": "EUR-driven DXY move",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 5,
+      "correctAnswer": "B",
+      "conceptTested": "DXY vs global dollar system",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 6,
+      "correctAnswer": "A",
+      "conceptTested": "Basket limitation",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 7,
+      "correctAnswer": "B",
+      "conceptTested": "USD Impact method",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 8,
+      "correctAnswer": "B",
+      "conceptTested": "Conditional asset transmission",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 9,
+      "correctAnswer": "C",
+      "conceptTested": "One-DXY-signal mistake",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 10,
+      "correctAnswer": "B",
+      "conceptTested": "Compliance-safe framing",
+      "difficulty": "Medium"
+    }
+  ],
+  "scoreInterpretation": [
+    {
+      "range": "80–100%",
+      "meaning": "Strong understanding. Proceed to the next lesson."
+    },
+    {
+      "range": "60–79%",
+      "meaning": "Good base. Review the key distinction points before moving forward."
+    },
+    {
+      "range": "Below 60%",
+      "meaning": "Reread the lesson before moving forward."
+    }
+  ],
+  "followUpReadingPath": [
+    "/dxy/dxy-vs-broad-usd",
+    "/regime/how-to-read-the-dollar",
+    "/fx/fx-depreciation-vs-inflation",
+    "/gold/usd-gold"
+  ],
+  "complianceNote": "This quiz is for educational and informational purposes only. It is not investment advice, financial advice, legal advice, tax advice, trading advice, or a recommendation to buy or sell any asset. Market relationships are conditional and can change by regime.",
+  "status": "Ready",
+  "version": "1.0"
+}

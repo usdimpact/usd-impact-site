@@ -1,0 +1,498 @@
+{
+  "quizId": "QUIZ-WEB-008_USD-and-WTI",
+  "canonicalId": "quiz-usd-and-wti",
+  "language": "en",
+  "title": "USD and WTI: Why Oil Is Not Only a Dollar Trade",
+  "seoTitle": "USD and WTI Quiz | USD Impact",
+  "metaDescription": "Test your understanding of how the U.S. dollar, oil inventories, OPEC+, physical supply-demand, futures curves, geopolitical risk, and inflation channels can influence WTI crude oil.",
+  "slug": "/energy/usd-wti/quiz",
+  "relatedLessonUrl": "/energy/usd-wti",
+  "difficulty": "Beginner / Lower-intermediate",
+  "estimatedTime": "9–11 minutes",
+  "audience": "New investors and beginner macro learners",
+  "format": "Website quiz",
+  "questionCount": 10,
+  "learningObjective": [
+    "After completing this quiz, the learner should understand that WTI crude oil is dollar-priced, but not dollar-only.",
+    "The U.S. dollar can influence oil through pricing, global purchasing power, financial conditions, inflation expectations, and risk appetite.",
+    "WTI is also a physical commodity shaped by supply, demand, inventories, refinery activity, storage, OPEC+ policy, geopolitical risk, logistics, and the futures curve."
+  ],
+  "conceptsTested": [
+    "WTI as a dollar-priced commodity",
+    "USD pricing channel",
+    "Physical supply-demand balance",
+    "Crude inventories and storage pressure",
+    "OPEC+ and production policy",
+    "Geopolitical supply risk",
+    "Futures curve: backwardation and contango",
+    "Compliance-safe oil interpretation"
+  ],
+  "frameworkNote": "For WTI, read USD direction together with physical balances, inventories, OPEC+, geopolitics, and the futures curve.",
+  "questions": [
+    {
+      "number": 1,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "Why can the U.S. dollar matter for WTI crude oil?",
+      "options": [
+        {
+          "key": "A",
+          "text": "WTI is commonly priced in U.S. dollars, so dollar moves can affect affordability and financial conditions for global buyers."
+        },
+        {
+          "key": "B",
+          "text": "The dollar directly measures the number of oil barrels in storage."
+        },
+        {
+          "key": "C",
+          "text": "DXY is the same thing as crude inventories."
+        },
+        {
+          "key": "D",
+          "text": "Oil has no connection to currency markets."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "WTI is quoted in dollars, so USD strength or weakness can influence purchasing power, commodity pricing, inflation channels, and financial conditions. But the dollar does not directly measure barrels, storage, or physical supply.",
+      "sourceReference": "USD and WTI — Dollar pricing channel.",
+      "wrongAnswerNotes": [
+        "B confuses currency movement with physical inventory.",
+        "C confuses an FX index with oil-market data.",
+        "D ignores the dollar pricing channel."
+      ]
+    },
+    {
+      "number": 2,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "Which statement best describes the USD-WTI relationship in the USD Impact framework?",
+      "options": [
+        {
+          "key": "A",
+          "text": "WTI always falls when the dollar rises."
+        },
+        {
+          "key": "B",
+          "text": "WTI always rises when the dollar rises."
+        },
+        {
+          "key": "C",
+          "text": "The USD-WTI relationship is conditional and can be dominated by physical balances, inventories, OPEC+, geopolitics, and demand."
+        },
+        {
+          "key": "D",
+          "text": "WTI is only driven by DXY."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "The dollar matters, but WTI is not a one-variable asset. Physical oil-market drivers can dominate the FX channel.",
+      "sourceReference": "USD and WTI — Conditional relationship.",
+      "wrongAnswerNotes": [
+        "A and B are fixed slogans.",
+        "D reduces a physical commodity to one currency index."
+      ]
+    },
+    {
+      "number": 3,
+      "difficulty": "Easy",
+      "skillTested": "Comprehension",
+      "type": "true-false",
+      "question": "True or false: WTI can sometimes rise at the same time as the U.S. dollar.",
+      "options": [
+        {
+          "key": "True",
+          "text": "True"
+        },
+        {
+          "key": "False",
+          "text": "False"
+        }
+      ],
+      "correctAnswer": "True",
+      "explanation": "WTI can rise with USD if supply risk, inventory drawdowns, geopolitical stress, sanctions risk, OPEC+ policy, or inflation concerns dominate the dollar headwind.",
+      "sourceReference": "USD and WTI — Physical drivers can dominate FX."
+    },
+    {
+      "number": 4,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "DXY rises, but WTI also rises because crude inventories fall sharply and geopolitical supply risk increases. What is the best interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The move is impossible because USD and oil must always move opposite."
+        },
+        {
+          "key": "B",
+          "text": "Physical tightness and supply-risk premium may be dominating the dollar headwind."
+        },
+        {
+          "key": "C",
+          "text": "DXY alone explains the move."
+        },
+        {
+          "key": "D",
+          "text": "WTI must reverse immediately."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A stronger dollar can pressure oil in some regimes, but falling inventories and higher supply risk can support WTI. In oil, the physical market can overpower the FX channel.",
+      "sourceReference": "USD and WTI — Inventory and geopolitical risk channel.",
+      "wrongAnswerNotes": [
+        "A assumes a false law.",
+        "C ignores inventories and geopolitics.",
+        "D is a prediction, not analysis."
+      ]
+    },
+    {
+      "number": 5,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "DXY falls, but WTI also falls because demand weakens and inventories build. What is the most disciplined explanation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "WTI must always rise when DXY falls, so the data is wrong."
+        },
+        {
+          "key": "B",
+          "text": "Weak demand and inventory builds may be offsetting or dominating the weaker-dollar support."
+        },
+        {
+          "key": "C",
+          "text": "The dollar never matters to oil."
+        },
+        {
+          "key": "D",
+          "text": "Oil is only driven by gold."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A weaker dollar can support commodities in some regimes, but oil can still fall if the physical balance worsens through demand weakness or inventory accumulation.",
+      "sourceReference": "USD and WTI — Demand and inventory channel.",
+      "wrongAnswerNotes": [
+        "A treats a conditional relationship as a law.",
+        "C rejects a valid USD channel.",
+        "D introduces an unrelated single driver."
+      ]
+    },
+    {
+      "number": 6,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "Why are crude inventories important for WTI analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Inventories help reveal whether the physical market is tightening or loosening."
+        },
+        {
+          "key": "B",
+          "text": "Inventories are the same thing as DXY."
+        },
+        {
+          "key": "C",
+          "text": "Inventories directly measure the euro’s weight in DXY."
+        },
+        {
+          "key": "D",
+          "text": "Inventories are irrelevant because only the dollar matters."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Crude inventories are a key physical-market signal. Drawdowns may suggest tighter supply-demand conditions, while builds may suggest looser conditions, depending on context.",
+      "sourceReference": "USD and WTI — Inventories and physical balance.",
+      "wrongAnswerNotes": [
+        "B and C confuse physical oil data with FX benchmarks.",
+        "D ignores the physical nature of oil markets."
+      ]
+    },
+    {
+      "number": 7,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "Which sequence best reflects the USD Impact method for analyzing WTI?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY moves → automatic WTI conclusion."
+        },
+        {
+          "key": "B",
+          "text": "Check USD benchmark → check physical balances → inspect inventories and futures curve → evaluate OPEC+/geopolitics → interpret cautiously."
+        },
+        {
+          "key": "C",
+          "text": "Ignore inventories and supply."
+        },
+        {
+          "key": "D",
+          "text": "Treat every oil move as only inflation."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "WTI requires multi-signal analysis. USD direction matters, but inventories, production, demand, OPEC+, geopolitics, refinery activity, and futures-curve structure are essential for interpreting oil.",
+      "sourceReference": "USD and WTI — USD Impact oil workflow."
+    },
+    {
+      "number": 8,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "A learner says: “The dollar is stronger, so oil must fall.” What is the most disciplined response?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Correct. USD strength guarantees lower WTI."
+        },
+        {
+          "key": "B",
+          "text": "Incorrect. USD strength can be a headwind, but supply risk, inventories, OPEC+ policy, demand, and geopolitics may dominate."
+        },
+        {
+          "key": "C",
+          "text": "Incorrect. The dollar never matters to oil."
+        },
+        {
+          "key": "D",
+          "text": "Correct, but only if gold is falling."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "The dollar is one channel. Oil can rise despite USD strength if physical-market conditions tighten or risk premium increases. Oil analysis must distinguish financial headwinds from physical drivers.",
+      "sourceReference": "USD and WTI — Avoiding USD-only oil analysis.",
+      "wrongAnswerNotes": [
+        "A is a guaranteed-outcome claim.",
+        "C ignores a valid macro channel.",
+        "D adds an unsupported condition."
+      ]
+    },
+    {
+      "number": 9,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "Which statement is the weakest analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "WTI can be pressured by a stronger dollar in some regimes."
+        },
+        {
+          "key": "B",
+          "text": "WTI can rise with USD if physical supply risk dominates."
+        },
+        {
+          "key": "C",
+          "text": "DXY is up today, so WTI must fall."
+        },
+        {
+          "key": "D",
+          "text": "WTI interpretation should include USD, inventories, OPEC+, demand, geopolitics, and the futures curve."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "A single DXY move is not enough to predict WTI. Oil may respond to inventories, refinery activity, OPEC+ decisions, production disruptions, sanctions risk, geopolitical chokepoints, demand expectations, and curve structure.",
+      "sourceReference": "USD and WTI — One-signal oil mistake."
+    },
+    {
+      "number": 10,
+      "difficulty": "Medium",
+      "skillTested": "Compliance-safe interpretation",
+      "type": "multiple-choice",
+      "question": "Which sentence is most consistent with USD Impact’s educational and compliance-safe style?",
+      "options": [
+        {
+          "key": "A",
+          "text": "WTI must fall because the dollar is strengthening."
+        },
+        {
+          "key": "B",
+          "text": "WTI can be influenced by USD direction, but interpretation depends on physical balances, inventories, OPEC+, geopolitics, demand, financial conditions, and futures-curve structure."
+        },
+        {
+          "key": "C",
+          "text": "WTI is guaranteed to rise when inventories fall."
+        },
+        {
+          "key": "D",
+          "text": "A single DXY move is enough to decide oil exposure."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "This sentence is educational, conditional, and framework-based. It avoids advice, certainty, and guaranteed outcomes.",
+      "sourceReference": "USD and WTI — Compliance-safe interpretation.",
+      "wrongAnswerNotes": [
+        "A turns a conditional relationship into a certainty.",
+        "C overstates one physical signal.",
+        "D ignores confirmation and context."
+      ]
+    }
+  ],
+  "practicalApplications": [
+    {
+      "title": "Dollar Up, WTI Up",
+      "scenario": "DXY rises, Broad USD strengthens, but WTI rises because crude inventories fall, geopolitical tensions rise, and the futures curve tightens.",
+      "bestInterpretation": "Oil may be supported by physical tightness and supply-risk premium despite the stronger dollar.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "WTI",
+        "crude inventories",
+        "futures curve",
+        "OVX",
+        "geopolitical risk indicators"
+      ],
+      "likelyDominantDriver": "Physical-market tightening or supply-risk premium.",
+      "secondSignalToValidate": [
+        "EIA-style inventory data",
+        "refinery runs",
+        "futures curve backwardation/contango",
+        "OPEC+ signals",
+        "volatility",
+        "shipping or sanctions risk"
+      ],
+      "mistakeToAvoid": "Assuming oil cannot rise with USD."
+    },
+    {
+      "title": "Dollar Down, WTI Down",
+      "scenario": "DXY weakens, but WTI falls because demand expectations deteriorate and crude inventories build.",
+      "bestInterpretation": "The weaker-dollar tailwind may be offset or dominated by weaker physical demand and looser inventories.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "WTI",
+        "demand indicators",
+        "crude inventories",
+        "product inventories",
+        "refinery activity"
+      ],
+      "likelyDominantDriver": "Demand weakness or inventory build.",
+      "secondSignalToValidate": [
+        "inventory reports",
+        "product demand",
+        "refinery utilization",
+        "curve structure",
+        "macro growth indicators"
+      ],
+      "mistakeToAvoid": "Assuming DXY down automatically means oil up."
+    },
+    {
+      "title": "Geopolitical Risk Premium",
+      "scenario": "WTI rises sharply after a supply-route disruption headline, while USD also strengthens as markets move risk-off.",
+      "bestInterpretation": "Both USD and WTI can rise if the market prices geopolitical risk: USD through safe-liquidity demand, WTI through supply-risk premium.",
+      "benchmarkThatMatters": [
+        "WTI",
+        "DXY",
+        "Broad USD",
+        "oil volatility",
+        "futures curve",
+        "geopolitical risk",
+        "shipping and supply-route data"
+      ],
+      "likelyDominantDriver": "Geopolitical supply risk and risk-off dollar demand.",
+      "secondSignalToValidate": [
+        "OVX",
+        "futures curve",
+        "physical differentials",
+        "shipping flows",
+        "inventory data",
+        "policy or OPEC+ response"
+      ],
+      "mistakeToAvoid": "Assuming USD and oil must always move opposite in geopolitical regimes."
+    }
+  ],
+  "commonMistakeCheckpoint": "The main mistake is treating oil as a one-variable dollar trade. WTI is dollar-priced, but physical-market driven.",
+  "answerKey": [
+    {
+      "question": 1,
+      "correctAnswer": "A",
+      "conceptTested": "USD pricing channel",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 2,
+      "correctAnswer": "C",
+      "conceptTested": "Conditional USD-WTI relationship",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 3,
+      "correctAnswer": "True",
+      "conceptTested": "WTI can rise with USD",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 4,
+      "correctAnswer": "B",
+      "conceptTested": "USD up / WTI up interpretation",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 5,
+      "correctAnswer": "B",
+      "conceptTested": "USD weakness vs weak physical balance",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 6,
+      "correctAnswer": "A",
+      "conceptTested": "Inventories and physical balance",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 7,
+      "correctAnswer": "B",
+      "conceptTested": "USD Impact WTI workflow",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 8,
+      "correctAnswer": "B",
+      "conceptTested": "USD-only oil misconception",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 9,
+      "correctAnswer": "C",
+      "conceptTested": "One-signal oil mistake",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 10,
+      "correctAnswer": "B",
+      "conceptTested": "Compliance-safe framing",
+      "difficulty": "Medium"
+    }
+  ],
+  "scoreInterpretation": [
+    {
+      "range": "80–100%",
+      "meaning": "Strong understanding. You can analyze WTI through USD direction, inventories, physical balances, OPEC+, geopolitics, and futures-curve structure."
+    },
+    {
+      "range": "60–79%",
+      "meaning": "Good base. Review the difference between the dollar pricing channel and physical oil-market drivers."
+    },
+    {
+      "range": "Below 60%",
+      "meaning": "Reread the lesson before moving forward. Focus on why WTI is dollar-priced but not dollar-only."
+    }
+  ],
+  "followUpReadingPath": [
+    "/regime/how-to-read-the-dollar",
+    "/dxy/dxy-vs-broad-usd",
+    "/gold/usd-gold",
+    "/energy/lng-natural-gas"
+  ],
+  "complianceNote": "This quiz is for educational and informational purposes only. It is not investment advice, financial advice, legal advice, tax advice, trading advice, or a recommendation to buy or sell any asset. Market relationships are conditional and can change by regime.",
+  "sourceDriveUrl": "https://docs.google.com/document/d/1K-t-wth2uuBcqhXSlV6xIyv3BwoKu0dYZxiqnsy802k",
+  "status": "Ready",
+  "version": "1.0"
+}

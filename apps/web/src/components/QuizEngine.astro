@@ -1,0 +1,432 @@
+---
+import '../styles/quiz.css';
+
+interface QuizOption {
+  key: string;
+  text: string;
+}
+
+interface QuizQuestion {
+  number: number;
+  difficulty: string;
+  skillTested: string;
+  type: string;
+  question: string;
+  options: QuizOption[];
+}
+
+interface QuizData {
+  canonicalId: string;
+  title: string;
+  estimatedTime: string;
+  difficulty: string;
+  audience: string;
+  frameworkNote: string;
+  learningObjective: string[];
+  conceptsTested: string[];
+  questions: QuizQuestion[];
+  commonMistakeCheckpoint?: string;
+  complianceNote: string;
+}
+
+interface AccessData {
+  order: number;
+  relatedLessonUrl: string;
+  nextQuizUrl: string | null;
+  unlocksChapter: string | null;
+  completionUrl: string | null;
+}
+
+interface Props {
+  quiz: QuizData;
+  access: AccessData;
+  totalQuizzes: number;
+  passScore: number;
+  storageKey: string;
+  purchaseUrl: string;
+}
+
+const { quiz, access, totalQuizzes, passScore, storageKey, purchaseUrl } = Astro.props;
+---
+
+<section
+  class="quiz-shell"
+  data-quiz-root
+  data-canonical-id={quiz.canonicalId}
+  data-storage-key={storageKey}
+  data-purchase-url={purchaseUrl}
+  data-pass-score={String(passScore)}
+>
+  <div class="quiz-intro" data-quiz-intro>
+    <div class="quiz-meta" aria-label="Quiz details">
+      <span>Quiz {access.order} of {totalQuizzes}</span>
+      <span>{quiz.estimatedTime}</span>
+      <span>{quiz.difficulty}</span>
+    </div>
+
+    <p class="quiz-framework-note">{quiz.frameworkNote}</p>
+
+    <div class="quiz-intro-grid">
+      <div>
+        <h2>Learning objectives</h2>
+        <ul>
+          {quiz.learningObjective.map((objective) => <li>{objective}</li>)}
+        </ul>
+      </div>
+      <div>
+        <h2>Concepts tested</h2>
+        <ul>
+          {quiz.conceptsTested.map((concept) => <li>{concept}</li>)}
+        </ul>
+      </div>
+    </div>
+
+    <p class="quiz-progress-note" data-quiz-progress-note hidden></p>
+
+    <div class="button-row quiz-actions">
+      <button class="button primary" type="button" data-quiz-start>Start quiz</button>
+      <a class="button secondary" href={purchaseUrl}>Get full book access</a>
+    </div>
+  </div>
+
+  <form class="quiz-form" data-quiz-form hidden novalidate>
+    <div class="quiz-progress-wrap">
+      <div class="quiz-progress-copy">
+        <span data-quiz-progress-label>Question 1 of {quiz.questions.length}</span>
+        <span>Pass mark: {passScore}/{quiz.questions.length}</span>
+      </div>
+      <progress data-quiz-progress max={quiz.questions.length} value="1">1 of {quiz.questions.length}</progress>
+    </div>
+
+    <div class="quiz-status" data-quiz-status aria-live="polite"></div>
+
+    {quiz.questions.map((question, index) => (
+      <fieldset
+        class="quiz-question"
+        data-quiz-question
+        data-question-number={String(question.number)}
+        data-question-text={question.question}
+        hidden={index !== 0}
+      >
+        <legend tabindex="-1">
+          <span class="quiz-question-label">{question.skillTested} · {question.difficulty}</span>
+          <span class="quiz-question-text">{question.question}</span>
+        </legend>
+
+        <div class="quiz-options">
+          {question.options.map((option) => (
+            <label class="quiz-option">
+              <input
+                type="radio"
+                name={`question-${question.number}`}
+                value={option.key}
+                required
+              />
+              <span class="quiz-option-key" aria-hidden="true">{option.key}</span>
+              <span>{option.text}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+    ))}
+
+    <div class="quiz-navigation">
+      <button class="button secondary" type="button" data-quiz-previous disabled>Previous</button>
+      <button class="button primary" type="button" data-quiz-next disabled>Continue</button>
+      <button class="button primary" type="submit" data-quiz-submit hidden disabled>Submit answers</button>
+    </div>
+  </form>
+
+  <section class="quiz-results" data-quiz-results hidden aria-live="polite" tabindex="-1">
+    <div class="quiz-result-summary" data-quiz-result-summary></div>
+
+    <div class="button-row quiz-actions">
+      <a class="button primary" data-quiz-unlock-link hidden>Continue to the next chapter</a>
+      <a class="button primary" data-quiz-completion-link hidden>Return to the book</a>
+      <a class="button secondary" href={purchaseUrl}>Get full book access</a>
+      <button class="button secondary" type="button" data-quiz-retake>Retake quiz</button>
+    </div>
+
+    <div class="quiz-review" data-quiz-review></div>
+
+    {quiz.commonMistakeCheckpoint && (
+      <aside class="quiz-checkpoint">
+        <h2>Common mistake checkpoint</h2>
+        <p>{quiz.commonMistakeCheckpoint}</p>
+      </aside>
+    )}
+  </section>
+
+  <p class="quiz-compliance">{quiz.complianceNote}</p>
+</section>
+
+<script>
+  // @ts-nocheck
+  const roots = document.querySelectorAll('[data-quiz-root]');
+
+  for (const root of roots) {
+    if (!(root instanceof HTMLElement)) continue;
+
+    const intro = root.querySelector('[data-quiz-intro]');
+    const form = root.querySelector('[data-quiz-form]');
+    const results = root.querySelector('[data-quiz-results]');
+    const startButton = root.querySelector('[data-quiz-start]');
+    const previousButton = root.querySelector('[data-quiz-previous]');
+    const nextButton = root.querySelector('[data-quiz-next]');
+    const submitButton = root.querySelector('[data-quiz-submit]');
+    const retakeButton = root.querySelector('[data-quiz-retake]');
+    const progress = root.querySelector('[data-quiz-progress]');
+    const progressLabel = root.querySelector('[data-quiz-progress-label]');
+    const status = root.querySelector('[data-quiz-status]');
+    const resultSummary = root.querySelector('[data-quiz-result-summary]');
+    const review = root.querySelector('[data-quiz-review]');
+    const unlockLink = root.querySelector('[data-quiz-unlock-link]');
+    const completionLink = root.querySelector('[data-quiz-completion-link]');
+    const progressNote = root.querySelector('[data-quiz-progress-note]');
+    const questionElements = Array.from(root.querySelectorAll('[data-quiz-question]'));
+
+    if (
+      !(intro instanceof HTMLElement) ||
+      !(form instanceof HTMLFormElement) ||
+      !(results instanceof HTMLElement) ||
+      !(startButton instanceof HTMLButtonElement) ||
+      !(previousButton instanceof HTMLButtonElement) ||
+      !(nextButton instanceof HTMLButtonElement) ||
+      !(submitButton instanceof HTMLButtonElement) ||
+      !(retakeButton instanceof HTMLButtonElement) ||
+      !(progress instanceof HTMLProgressElement) ||
+      !(progressLabel instanceof HTMLElement) ||
+      !(status instanceof HTMLElement) ||
+      !(resultSummary instanceof HTMLElement) ||
+      !(review instanceof HTMLElement) ||
+      !(unlockLink instanceof HTMLAnchorElement) ||
+      !(completionLink instanceof HTMLAnchorElement)
+    ) continue;
+
+    const canonicalId = root.dataset.canonicalId ?? '';
+    const storageKey = root.dataset.storageKey ?? 'usd-impact-quiz-progress-v1';
+    let currentIndex = 0;
+    let submitting = false;
+
+    const selectedInput = (index) => {
+      const question = questionElements[index];
+      return question?.querySelector('input[type="radio"]:checked');
+    };
+
+    const focusCurrentQuestion = () => {
+      const question = questionElements[currentIndex];
+      const checked = selectedInput(currentIndex);
+      const first = question?.querySelector('input[type="radio"]');
+      const target = checked instanceof HTMLInputElement ? checked : first;
+      if (target instanceof HTMLInputElement) target.focus();
+    };
+
+    const renderQuestion = ({ focus = true } = {}) => {
+      questionElements.forEach((question, index) => {
+        if (question instanceof HTMLElement) question.hidden = index !== currentIndex;
+      });
+
+      const questionNumber = currentIndex + 1;
+      progress.value = questionNumber;
+      progressLabel.textContent = `Question ${questionNumber} of ${questionElements.length}`;
+      previousButton.disabled = currentIndex === 0 || submitting;
+
+      const answered = selectedInput(currentIndex) instanceof HTMLInputElement;
+      const isLast = currentIndex === questionElements.length - 1;
+      nextButton.hidden = isLast;
+      submitButton.hidden = !isLast;
+      nextButton.disabled = !answered || submitting;
+      submitButton.disabled = !answered || submitting;
+      status.textContent = '';
+
+      if (focus) focusCurrentQuestion();
+    };
+
+    const readStoredProgress = () => {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        const saved = raw ? JSON.parse(raw) : {};
+        return saved && typeof saved === 'object' ? saved[canonicalId] : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const writeStoredProgress = (entry) => {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        const saved = raw ? JSON.parse(raw) : {};
+        const next = saved && typeof saved === 'object' ? saved : {};
+        next[canonicalId] = entry;
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch {
+        // Local progress is a convenience only. The quiz still works without storage.
+      }
+    };
+
+    const savedProgress = readStoredProgress();
+    if (savedProgress && progressNote instanceof HTMLElement) {
+      progressNote.hidden = false;
+      progressNote.textContent = savedProgress.passed
+        ? `Completed on this device with ${savedProgress.score}/${questionElements.length}.`
+        : `Last attempt on this device: ${savedProgress.score}/${questionElements.length}.`;
+    }
+
+    startButton.addEventListener('click', () => {
+      intro.hidden = true;
+      results.hidden = true;
+      form.hidden = false;
+      renderQuestion();
+    });
+
+    form.addEventListener('change', () => renderQuestion({ focus: false }));
+
+    previousButton.addEventListener('click', () => {
+      if (currentIndex === 0) return;
+      currentIndex -= 1;
+      renderQuestion();
+    });
+
+    nextButton.addEventListener('click', () => {
+      if (!(selectedInput(currentIndex) instanceof HTMLInputElement)) {
+        status.textContent = 'Select one answer before continuing.';
+        return;
+      }
+      currentIndex += 1;
+      renderQuestion();
+    });
+
+    const setResultSummary = (headingText, bodyText) => {
+      resultSummary.replaceChildren();
+      const heading = document.createElement('h2');
+      heading.textContent = headingText;
+      const body = document.createElement('p');
+      body.textContent = bodyText;
+      resultSummary.append(heading, body);
+    };
+
+    const makeReview = (payload) => {
+      review.replaceChildren();
+      const heading = document.createElement('h2');
+      heading.textContent = 'Answer review';
+      review.append(heading);
+
+      const list = document.createElement('ol');
+      list.className = 'quiz-review-list';
+
+      for (const detail of payload.details) {
+        const sourceQuestion = questionElements.find(
+          (question) => question instanceof HTMLElement && question.dataset.questionNumber === String(detail.number),
+        );
+        const item = document.createElement('li');
+        item.className = detail.correct ? 'is-correct' : 'is-incorrect';
+
+        const title = document.createElement('h3');
+        title.textContent = sourceQuestion instanceof HTMLElement
+          ? `Question ${detail.number}: ${sourceQuestion.dataset.questionText ?? ''}`
+          : `Question ${detail.number}`;
+
+        const answer = document.createElement('p');
+        answer.textContent = detail.correct
+          ? `Correct — ${detail.correctAnswer}`
+          : `Your answer: ${detail.selectedAnswer}. Correct answer: ${detail.correctAnswer}.`;
+
+        const explanation = document.createElement('p');
+        explanation.textContent = detail.explanation;
+
+        item.append(title, answer, explanation);
+        list.append(item);
+      }
+
+      review.append(list);
+    };
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (submitting) return;
+
+      const answers = {};
+      for (const question of questionElements) {
+        if (!(question instanceof HTMLElement)) continue;
+        const input = question.querySelector('input[type="radio"]:checked');
+        if (!(input instanceof HTMLInputElement)) {
+          status.textContent = 'Answer every question before submitting.';
+          return;
+        }
+        answers[question.dataset.questionNumber ?? ''] = input.value;
+      }
+
+      submitting = true;
+      renderQuestion({ focus: false });
+      status.textContent = 'Checking answers…';
+
+      try {
+        const response = await fetch('/api/quiz-submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ canonicalId, answers }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || 'The quiz could not be scored.');
+
+        writeStoredProgress({
+          score: payload.score,
+          passed: payload.passed,
+          completedAt: new Date().toISOString(),
+          nextChapterStatus: payload.nextChapterStatus,
+        });
+
+        form.hidden = true;
+        results.hidden = false;
+        unlockLink.hidden = true;
+        completionLink.hidden = true;
+
+        if (payload.passed) {
+          if (payload.unlocksChapter) {
+            setResultSummary(
+              `Passed — ${payload.score}/${payload.questionCount}`,
+              'The next chapter is available. This device record is temporary until account-backed progress is enabled.',
+            );
+            unlockLink.href = payload.unlocksChapter;
+            unlockLink.hidden = false;
+          } else if (payload.completionUrl) {
+            setResultSummary(
+              `Completed — ${payload.score}/${payload.questionCount}`,
+              'You completed the current quiz sequence.',
+            );
+            completionLink.href = payload.completionUrl;
+            completionLink.hidden = false;
+          } else {
+            setResultSummary(
+              `Passed — ${payload.score}/${payload.questionCount}`,
+              'The next chapter is not published yet. Your practice result is saved on this device.',
+            );
+          }
+        } else {
+          setResultSummary(
+            `Review and retry — ${payload.score}/${payload.questionCount}`,
+            `The pass mark is ${payload.passScore}/${payload.questionCount}. Review the explanations, then retake the quiz.`,
+          );
+        }
+
+        makeReview(payload);
+        results.focus();
+      } catch (error) {
+        status.textContent = error instanceof Error ? error.message : 'The quiz could not be scored.';
+      } finally {
+        submitting = false;
+        renderQuestion({ focus: false });
+      }
+    });
+
+    retakeButton.addEventListener('click', () => {
+      form.reset();
+      currentIndex = 0;
+      results.hidden = true;
+      form.hidden = false;
+      review.replaceChildren();
+      resultSummary.replaceChildren();
+      renderQuestion();
+    });
+  }
+</script>

@@ -1,0 +1,497 @@
+{
+  "quizId": "QUIZ-WEB-009_USD-and-LNG-Natural-Gas",
+  "canonicalId": "quiz-usd-and-lng-natural-gas",
+  "language": "en",
+  "title": "USD and LNG / Natural Gas: Why Gas Is More Regional Than Oil",
+  "seoTitle": "USD and LNG / Natural Gas Quiz | USD Impact",
+  "metaDescription": "Test your understanding of how the U.S. dollar, regional gas benchmarks, LNG trade, storage, weather, infrastructure, shipping, and geopolitical risk influence natural gas markets.",
+  "slug": "/energy/lng-natural-gas/quiz",
+  "relatedLessonUrl": "/energy/lng-natural-gas",
+  "difficulty": "Beginner / Lower-intermediate",
+  "estimatedTime": "9–11 minutes",
+  "audience": "New investors and beginner macro learners",
+  "format": "Website quiz",
+  "questionCount": 10,
+  "learningObjective": [
+    "After completing this quiz, the learner should understand that natural gas and LNG are not analyzed exactly like crude oil.",
+    "The U.S. dollar matters through pricing, financing, global trade, LNG contracts, and macro conditions, but gas markets are highly regional.",
+    "The learner should avoid slogans such as “USD up = gas down” or “LNG is one global market.”"
+  ],
+  "conceptsTested": [
+    "Natural gas as a regional commodity",
+    "LNG as a connector between regional markets",
+    "USD pricing and financing channel",
+    "Henry Hub vs European and Asian LNG benchmarks",
+    "Storage and seasonal demand",
+    "Weather sensitivity",
+    "Infrastructure, pipeline, liquefaction, regasification, and shipping constraints",
+    "Compliance-safe gas and LNG interpretation"
+  ],
+  "frameworkNote": "For natural gas and LNG, identify the regional benchmark first. Then check storage, weather, infrastructure, LNG flows, geopolitics, and only then interpret the USD channel.",
+  "questions": [
+    {
+      "number": 1,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "Why is natural gas often more regional than crude oil?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Gas transportation depends heavily on pipelines, LNG infrastructure, storage, and regional delivery constraints."
+        },
+        {
+          "key": "B",
+          "text": "Natural gas has no physical market."
+        },
+        {
+          "key": "C",
+          "text": "Natural gas is always priced by DXY only."
+        },
+        {
+          "key": "D",
+          "text": "Natural gas can be transported globally with no infrastructure limits."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Natural gas is harder to move than oil. Pipeline networks, liquefaction capacity, regasification terminals, storage, shipping routes, and regional demand all affect prices.",
+      "sourceReference": "USD and LNG / Natural Gas — Regional market structure.",
+      "wrongAnswerNotes": [
+        "B ignores the physical gas market.",
+        "C reduces gas to a dollar index.",
+        "D ignores infrastructure and transport constraints."
+      ]
+    },
+    {
+      "number": 2,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "What role does LNG play in the gas market?",
+      "options": [
+        {
+          "key": "A",
+          "text": "LNG helps connect regional gas markets, but it does not make gas one perfectly unified global market."
+        },
+        {
+          "key": "B",
+          "text": "LNG eliminates all regional price differences."
+        },
+        {
+          "key": "C",
+          "text": "LNG is the same thing as DXY."
+        },
+        {
+          "key": "D",
+          "text": "LNG only matters for gold prices."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "LNG allows gas to move across oceans, but liquefaction capacity, shipping availability, regasification capacity, contracts, weather, and local demand still create regional differences.",
+      "sourceReference": "USD and LNG / Natural Gas — LNG as regional connector.",
+      "wrongAnswerNotes": [
+        "B overstates LNG’s ability to unify markets.",
+        "C confuses an energy product with a currency index.",
+        "D is unrelated."
+      ]
+    },
+    {
+      "number": 3,
+      "difficulty": "Easy",
+      "skillTested": "Comprehension",
+      "type": "true-false",
+      "question": "True or false: Henry Hub, European gas, and Asian LNG prices must always move together.",
+      "options": [
+        {
+          "key": "True",
+          "text": "True"
+        },
+        {
+          "key": "False",
+          "text": "False"
+        }
+      ],
+      "correctAnswer": "False",
+      "explanation": "Different gas benchmarks can diverge because they reflect different regional storage levels, weather patterns, pipeline flows, LNG imports, infrastructure constraints, and policy risks.",
+      "sourceReference": "USD and LNG / Natural Gas — Benchmark fragmentation."
+    },
+    {
+      "number": 4,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "DXY rises, but European gas prices also rise because storage is low and cold weather increases heating demand. What is the best interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The move is impossible because USD and gas must always move opposite."
+        },
+        {
+          "key": "B",
+          "text": "Regional storage and weather may be dominating the dollar channel."
+        },
+        {
+          "key": "C",
+          "text": "DXY alone explains European gas prices."
+        },
+        {
+          "key": "D",
+          "text": "European gas must reverse immediately."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A stronger dollar can matter through purchasing power and financing, but regional gas prices can be dominated by storage levels, weather-driven demand, pipeline flows, and LNG availability.",
+      "sourceReference": "USD and LNG / Natural Gas — Storage and weather channel.",
+      "wrongAnswerNotes": [
+        "A assumes a false law.",
+        "C ignores regional gas fundamentals.",
+        "D is a prediction, not analysis."
+      ]
+    },
+    {
+      "number": 5,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "DXY weakens, but Henry Hub falls because U.S. storage is high and weather is mild. What is the most disciplined explanation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Henry Hub must always rise when DXY falls."
+        },
+        {
+          "key": "B",
+          "text": "High storage and weak weather demand may be dominating the weaker-dollar support."
+        },
+        {
+          "key": "C",
+          "text": "The dollar never matters to energy markets."
+        },
+        {
+          "key": "D",
+          "text": "Henry Hub is only driven by Bitcoin liquidity."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A weaker dollar can support commodities in some regimes, but Henry Hub can fall if local U.S. gas balances are loose due to high storage, mild weather, or weak demand.",
+      "sourceReference": "USD and LNG / Natural Gas — U.S. storage and weather channel.",
+      "wrongAnswerNotes": [
+        "A treats a conditional relationship as a law.",
+        "C rejects a valid USD channel.",
+        "D introduces an unrelated driver."
+      ]
+    },
+    {
+      "number": 6,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "Why is identifying the benchmark especially important in gas and LNG analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Because Henry Hub, European gas, and Asian LNG can reflect different regional conditions."
+        },
+        {
+          "key": "B",
+          "text": "Because every gas benchmark is identical."
+        },
+        {
+          "key": "C",
+          "text": "Because gas prices are always the same as DXY."
+        },
+        {
+          "key": "D",
+          "text": "Because storage and weather never matter."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Gas markets are benchmark-fragmented. The correct interpretation depends on whether the analyst is looking at U.S. Henry Hub, European gas, Asian LNG, or another regional market.",
+      "sourceReference": "USD and LNG / Natural Gas — Benchmark first.",
+      "wrongAnswerNotes": [
+        "B is false. Benchmarks can diverge.",
+        "C confuses gas benchmarks with FX.",
+        "D ignores two of the most important gas-market drivers."
+      ]
+    },
+    {
+      "number": 7,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "Which sequence best reflects the USD Impact method for analyzing LNG and natural gas?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY moves → automatic gas conclusion."
+        },
+        {
+          "key": "B",
+          "text": "Identify benchmark and region → check storage and weather → inspect infrastructure and LNG flows → evaluate geopolitics → interpret USD cautiously."
+        },
+        {
+          "key": "C",
+          "text": "Ignore storage, weather, and infrastructure."
+        },
+        {
+          "key": "D",
+          "text": "Treat every gas move as only an inflation signal."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Gas and LNG analysis starts with region and benchmark. USD can matter, but regional fundamentals often dominate.",
+      "sourceReference": "USD and LNG / Natural Gas — USD Impact gas workflow."
+    },
+    {
+      "number": 8,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "A learner says: “LNG is global, so all gas prices should move the same way.” What is the most disciplined response?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Correct. LNG eliminates all regional differences."
+        },
+        {
+          "key": "B",
+          "text": "Incorrect. LNG connects regions, but infrastructure, contracts, shipping, weather, storage, and local demand still create regional price differences."
+        },
+        {
+          "key": "C",
+          "text": "Incorrect. LNG never matters."
+        },
+        {
+          "key": "D",
+          "text": "Correct, but only when DXY is flat."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "LNG creates a bridge between markets, but it does not remove bottlenecks. Liquefaction, regasification, shipping, contract structure, regional policy, and demand conditions can keep prices fragmented.",
+      "sourceReference": "USD and LNG / Natural Gas — LNG is a connector, not full unifier.",
+      "wrongAnswerNotes": [
+        "A overstates LNG globalization.",
+        "C rejects LNG’s real role.",
+        "D adds an irrelevant condition."
+      ]
+    },
+    {
+      "number": 9,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "Which statement is the weakest analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Natural gas prices can diverge across regions."
+        },
+        {
+          "key": "B",
+          "text": "Storage and weather can dominate short-term gas pricing."
+        },
+        {
+          "key": "C",
+          "text": "DXY is up today, so every gas benchmark must fall."
+        },
+        {
+          "key": "D",
+          "text": "LNG flows can transmit shocks between regions, but infrastructure limits still matter."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "A single DXY move is not enough to predict all gas benchmarks. Natural gas and LNG markets can be dominated by regional storage, weather, infrastructure, supply disruptions, power demand, and shipping constraints.",
+      "sourceReference": "USD and LNG / Natural Gas — One-signal gas mistake."
+    },
+    {
+      "number": 10,
+      "difficulty": "Medium",
+      "skillTested": "Compliance-safe interpretation",
+      "type": "multiple-choice",
+      "question": "Which sentence is most consistent with USD Impact’s educational and compliance-safe style?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Natural gas must fall because the dollar is strengthening."
+        },
+        {
+          "key": "B",
+          "text": "Natural gas and LNG can be influenced by USD conditions, but interpretation depends on benchmark, region, storage, weather, infrastructure, LNG flows, geopolitics, and demand."
+        },
+        {
+          "key": "C",
+          "text": "LNG guarantees one global gas price."
+        },
+        {
+          "key": "D",
+          "text": "A single DXY move is enough to decide gas exposure."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "This sentence is educational, conditional, and framework-based. It avoids advice, certainty, and guaranteed outcomes.",
+      "sourceReference": "USD and LNG / Natural Gas — Compliance-safe interpretation.",
+      "wrongAnswerNotes": [
+        "A turns a conditional relationship into a certainty.",
+        "C overstates LNG’s market-unifying role.",
+        "D ignores confirmation and regional context."
+      ]
+    }
+  ],
+  "practicalApplications": [
+    {
+      "title": "Dollar Up, European Gas Up",
+      "scenario": "DXY rises, but European gas prices also rise because storage is low, weather is colder than expected, and LNG cargo competition increases.",
+      "bestInterpretation": "Regional storage, weather, and LNG competition may be dominating the dollar channel.",
+      "benchmarkThatMatters": [
+        "European gas benchmark",
+        "DXY",
+        "Broad USD",
+        "storage levels",
+        "weather forecasts",
+        "LNG import flows"
+      ],
+      "likelyDominantDriver": "Regional supply-demand tightness and weather-driven demand.",
+      "secondSignalToValidate": [
+        "storage data",
+        "heating-degree demand",
+        "LNG cargo arrivals",
+        "pipeline flows",
+        "gas volatility",
+        "power demand"
+      ],
+      "mistakeToAvoid": "Assuming gas cannot rise with USD."
+    },
+    {
+      "title": "Dollar Down, Henry Hub Down",
+      "scenario": "DXY weakens, but Henry Hub falls because U.S. storage is high, production remains firm, and weather is mild.",
+      "bestInterpretation": "Loose U.S. physical balances may be dominating the weaker-dollar tailwind.",
+      "benchmarkThatMatters": [
+        "Henry Hub",
+        "DXY",
+        "U.S. storage",
+        "production",
+        "weather",
+        "power burn"
+      ],
+      "likelyDominantDriver": "High storage and weak weather demand.",
+      "secondSignalToValidate": [
+        "EIA-style storage data",
+        "production data",
+        "weather forecasts",
+        "power-sector demand",
+        "futures curve"
+      ],
+      "mistakeToAvoid": "Assuming DXY down automatically means gas up."
+    },
+    {
+      "title": "LNG Shock Transmission",
+      "scenario": "Asian LNG prices rise after a supply disruption, while European gas prices also rise because buyers compete for flexible cargoes.",
+      "bestInterpretation": "LNG can transmit shocks between regions, but the effect depends on cargo availability, shipping, contracts, regasification capacity, and local storage.",
+      "benchmarkThatMatters": [
+        "Asian LNG benchmark",
+        "European gas benchmark",
+        "shipping rates",
+        "cargo availability",
+        "storage",
+        "regas capacity"
+      ],
+      "likelyDominantDriver": "LNG cargo competition and supply disruption.",
+      "secondSignalToValidate": [
+        "cargo-tracking data",
+        "shipping rates",
+        "regas utilization",
+        "storage levels",
+        "contract flexibility",
+        "weather demand"
+      ],
+      "mistakeToAvoid": "Assuming LNG creates one perfectly unified global gas market."
+    }
+  ],
+  "commonMistakeCheckpoint": "The main mistake is treating gas and LNG like one simple global commodity with one price. Gas is more regional than oil, and LNG connects regions without fully unifying them.",
+  "answerKey": [
+    {
+      "question": 1,
+      "correctAnswer": "A",
+      "conceptTested": "Regional gas structure",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 2,
+      "correctAnswer": "A",
+      "conceptTested": "LNG as market connector",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 3,
+      "correctAnswer": "False",
+      "conceptTested": "Benchmark fragmentation",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 4,
+      "correctAnswer": "B",
+      "conceptTested": "USD up / European gas up interpretation",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 5,
+      "correctAnswer": "B",
+      "conceptTested": "USD weakness vs loose U.S. gas balance",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 6,
+      "correctAnswer": "A",
+      "conceptTested": "Benchmark and region discipline",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 7,
+      "correctAnswer": "B",
+      "conceptTested": "USD Impact gas workflow",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 8,
+      "correctAnswer": "B",
+      "conceptTested": "LNG globalization misconception",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 9,
+      "correctAnswer": "C",
+      "conceptTested": "One-signal gas mistake",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 10,
+      "correctAnswer": "B",
+      "conceptTested": "Compliance-safe framing",
+      "difficulty": "Medium"
+    }
+  ],
+  "scoreInterpretation": [
+    {
+      "range": "80–100%",
+      "meaning": "Strong understanding. You can analyze gas and LNG through benchmark, region, storage, weather, infrastructure, LNG flows, and USD conditions."
+    },
+    {
+      "range": "60–79%",
+      "meaning": "Good base. Review the difference between oil’s global benchmark structure and gas/LNG’s regional benchmark fragmentation."
+    },
+    {
+      "range": "Below 60%",
+      "meaning": "Reread the lesson before moving forward. Focus on why LNG connects regions without creating one perfectly unified global gas market."
+    }
+  ],
+  "followUpReadingPath": [
+    "/energy/usd-wti",
+    "/regime/how-to-read-the-dollar",
+    "/dxy/dxy-vs-broad-usd",
+    "/equities/usd-equities"
+  ],
+  "complianceNote": "This quiz is for educational and informational purposes only. It is not investment advice, financial advice, legal advice, tax advice, trading advice, or a recommendation to buy or sell any asset. Market relationships are conditional and can change by regime.",
+  "sourceDriveUrl": "https://docs.google.com/document/d/1WGXaALZ1WZW8qQK_8htc9g0EeByX7rd5amojXv9z-hU",
+  "status": "Ready",
+  "version": "1.0"
+}

@@ -1,0 +1,487 @@
+{
+  "quizId": "QUIZ-WEB-006_Dollar-Regime-Framework",
+  "canonicalId": "quiz-dollar-regime-framework",
+  "language": "en",
+  "title": "Dollar Regime Framework: How to Read the USD Signal",
+  "seoTitle": "Dollar Regime Framework Quiz | USD Impact",
+  "metaDescription": "Test your understanding of the USD Impact regime framework: dollar direction, real rates, liquidity stress, second-signal validation, and asset-specific transmission.",
+  "slug": "/regime/how-to-read-the-dollar/quiz",
+  "relatedLessonUrl": "/regime/how-to-read-the-dollar",
+  "difficulty": "Beginner / Lower-intermediate",
+  "estimatedTime": "9–11 minutes",
+  "audience": "New investors and beginner macro learners",
+  "format": "Website quiz",
+  "questionCount": 10,
+  "learningObjective": [
+    "After completing this quiz, the learner should understand the core USD Impact operating model for reading dollar regimes.",
+    "The dollar is not interpreted through DXY alone.",
+    "A stronger framework checks dollar direction, real rates, liquidity and stress conditions, then applies the signal through each asset’s own transmission channel."
+  ],
+  "conceptsTested": [
+    "Dollar direction and benchmark selection",
+    "DXY vs Broad USD confirmation",
+    "Real rates and opportunity cost",
+    "Liquidity and stress indicators",
+    "Credit spreads and volatility",
+    "Asset-specific transmission",
+    "Regime confirmation vs single-signal noise",
+    "Compliance-safe interpretation"
+  ],
+  "frameworkNote": "The USD Impact regime framework uses four practical steps: dollar direction, real rates, liquidity/stress, and asset-specific transmission. A dollar move is a signal. A regime requires confirmation.",
+  "questions": [
+    {
+      "number": 1,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "What is the main purpose of the USD Impact dollar regime framework?",
+      "options": [
+        {
+          "key": "A",
+          "text": "To turn every DXY move into a trading signal."
+        },
+        {
+          "key": "B",
+          "text": "To interpret dollar moves through benchmark, driver, confirmation, and asset-specific context."
+        },
+        {
+          "key": "C",
+          "text": "To ignore the dollar completely."
+        },
+        {
+          "key": "D",
+          "text": "To treat all assets as identical."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "The framework is designed to prevent shallow dollar analysis. It starts with the correct benchmark, identifies the dominant driver, validates with second signals, and then applies the interpretation to each asset carefully.",
+      "sourceReference": "Dollar Regime Framework — Core method.",
+      "wrongAnswerNotes": [
+        "A turns the framework into a trading system, which it is not.",
+        "C ignores a major macro transmission channel.",
+        "D ignores asset-specific fundamentals."
+      ]
+    },
+    {
+      "number": 2,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "Which sequence best represents the USD Impact method?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Headline → emotion → asset prediction."
+        },
+        {
+          "key": "B",
+          "text": "DXY → automatic conclusion → trade."
+        },
+        {
+          "key": "C",
+          "text": "Benchmark → dominant driver → second-signal validation → cautious interpretation."
+        },
+        {
+          "key": "D",
+          "text": "Social media trend → certainty."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "The USD Impact method is disciplined and conditional. It avoids automatic asset calls and requires confirmation before interpreting market impact.",
+      "sourceReference": "Dollar Regime Framework — Method sequence."
+    },
+    {
+      "number": 3,
+      "difficulty": "Easy",
+      "skillTested": "Comprehension",
+      "type": "true-false",
+      "question": "True or false: A dollar regime can be confirmed from one DXY move alone.",
+      "options": [
+        {
+          "key": "True",
+          "text": "True"
+        },
+        {
+          "key": "False",
+          "text": "False"
+        }
+      ],
+      "correctAnswer": "False",
+      "explanation": "One DXY move can be useful, but it is not enough to confirm a regime. The analyst should check Broad USD, real rates, liquidity indicators, credit spreads, volatility, funding signals, and asset-specific behavior.",
+      "sourceReference": "Dollar Regime Framework — Signal vs regime."
+    },
+    {
+      "number": 4,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "DXY rises, Broad USD rises, real yields rise, and credit spreads widen. What is the best interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The dollar signal has stronger confirmation, but asset impact still needs asset-specific analysis."
+        },
+        {
+          "key": "B",
+          "text": "Every asset must fall immediately."
+        },
+        {
+          "key": "C",
+          "text": "Gold, oil, Bitcoin, and equities must all react the same way."
+        },
+        {
+          "key": "D",
+          "text": "The dollar signal is irrelevant."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "When multiple signals confirm — DXY, Broad USD, real yields, and credit stress — the dollar regime signal is stronger. But that does not guarantee identical reactions across assets. Gold, oil, Bitcoin, and equities each have separate transmission channels.",
+      "sourceReference": "Dollar Regime Framework — Multi-signal confirmation.",
+      "wrongAnswerNotes": [
+        "B and C turn confirmation into guaranteed asset outcomes.",
+        "D ignores the value of multi-signal confirmation."
+      ]
+    },
+    {
+      "number": 5,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "Real yields rise while the dollar strengthens. Which asset is often especially sensitive to this combination?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Gold, because higher real yields can raise the opportunity cost of holding non-yielding assets."
+        },
+        {
+          "key": "B",
+          "text": "Oil inventories, because real yields directly count barrels."
+        },
+        {
+          "key": "C",
+          "text": "DXY itself, because it is a commodity stockpile."
+        },
+        {
+          "key": "D",
+          "text": "Natural gas storage, because real yields physically create supply."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Gold is often sensitive to real yields because it does not pay interest. A stronger dollar plus rising real yields can pressure gold in some regimes, although stress demand or other drivers can offset this.",
+      "sourceReference": "Dollar Regime Framework — Real rates channel.",
+      "wrongAnswerNotes": [
+        "B, C, and D confuse financial rates with physical commodity inventory."
+      ]
+    },
+    {
+      "number": 6,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "The dollar is rising, but oil is also rising because supply risk is worsening. What is the most disciplined interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The move is impossible because USD and oil must always move inversely."
+        },
+        {
+          "key": "B",
+          "text": "Oil’s physical supply channel may be dominating the dollar channel."
+        },
+        {
+          "key": "C",
+          "text": "The dollar no longer matters to oil forever."
+        },
+        {
+          "key": "D",
+          "text": "Oil must reverse immediately."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Oil is affected by the dollar, but it is also a physical commodity. Inventories, OPEC+, supply disruptions, geopolitics, demand, and futures curve structure can dominate the FX channel.",
+      "sourceReference": "Dollar Regime Framework — Asset-specific transmission.",
+      "wrongAnswerNotes": [
+        "A assumes a false law.",
+        "C throws out a valid USD channel entirely.",
+        "D is a prediction, not an interpretation."
+      ]
+    },
+    {
+      "number": 7,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "Which group of indicators best helps validate whether a dollar move is linked to liquidity stress?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Credit spreads, volatility, funding pressure, and risk-off behavior."
+        },
+        {
+          "key": "B",
+          "text": "Only the latest social media trend."
+        },
+        {
+          "key": "C",
+          "text": "Only one daily DXY candle."
+        },
+        {
+          "key": "D",
+          "text": "Only the price of one commodity."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Liquidity stress is better validated through credit spreads, volatility, funding indicators, and cross-asset risk behavior. DXY can be part of the signal, but it is not enough by itself.",
+      "sourceReference": "Dollar Regime Framework — Liquidity and stress channel."
+    },
+    {
+      "number": 8,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "A learner says: “The dollar is down, so Bitcoin, gold, oil, and equities must all rise.” What is the most disciplined response?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Correct. A weaker dollar guarantees all assets rise."
+        },
+        {
+          "key": "B",
+          "text": "Incorrect. First identify why the dollar is down, then check real rates, liquidity, risk appetite, and each asset’s specific driver."
+        },
+        {
+          "key": "C",
+          "text": "Incorrect. The dollar never matters."
+        },
+        {
+          "key": "D",
+          "text": "Correct, but only if DXY is below 100."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A weaker dollar can support some assets in some regimes, but the driver matters. Gold may care about real yields and safe-haven demand. Bitcoin may care about liquidity and risk appetite. Oil may care about supply, inventories, OPEC+, and geopolitics. Equities may care about rates, earnings, and FX translation.",
+      "sourceReference": "Dollar Regime Framework — Avoiding asset slogans.",
+      "wrongAnswerNotes": [
+        "A is a false universal rule.",
+        "C rejects a valid macro input.",
+        "D invents a threshold not part of the framework."
+      ]
+    },
+    {
+      "number": 9,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "Which statement is the weakest analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY is rising, but Broad USD confirmation matters."
+        },
+        {
+          "key": "B",
+          "text": "Real yields are rising, so we should consider how that affects gold and duration-sensitive assets."
+        },
+        {
+          "key": "C",
+          "text": "One DXY move proves the entire macro regime has changed."
+        },
+        {
+          "key": "D",
+          "text": "Oil can rise with USD if physical supply risk dominates."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "One DXY move is not enough to prove a regime shift. Strong analysis requires confirmation across benchmarks, real rates, liquidity, stress, and asset-specific channels.",
+      "sourceReference": "Dollar Regime Framework — Confirmation discipline."
+    },
+    {
+      "number": 10,
+      "difficulty": "Medium",
+      "skillTested": "Compliance-safe interpretation",
+      "type": "multiple-choice",
+      "question": "Which sentence is most consistent with USD Impact’s educational and compliance-safe style?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The dollar regime changed, so you should buy or sell immediately."
+        },
+        {
+          "key": "B",
+          "text": "Dollar signals can influence assets, but interpretation depends on benchmark selection, real rates, liquidity conditions, confirmation signals, and asset-specific drivers."
+        },
+        {
+          "key": "C",
+          "text": "DXY guarantees the next move in gold, Bitcoin, oil, and equities."
+        },
+        {
+          "key": "D",
+          "text": "One signal is enough for allocation decisions."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "This sentence is educational, conditional, and framework-based. It avoids advice, certainty, and single-variable conclusions.",
+      "sourceReference": "Dollar Regime Framework — Compliance-safe interpretation.",
+      "wrongAnswerNotes": [
+        "A gives advice and overstates certainty.",
+        "C claims a guaranteed relationship.",
+        "D ignores confirmation and context."
+      ]
+    }
+  ],
+  "practicalApplications": [
+    {
+      "title": "Stronger Dollar, Higher Real Yields, Wider Credit Spreads",
+      "scenario": "DXY rises, Broad USD confirms the move, real yields rise, credit spreads widen, and volatility rises.",
+      "bestInterpretation": "This is a stronger dollar-regime signal because multiple indicators confirm tighter conditions. However, each asset still needs separate transmission analysis.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "real yields",
+        "credit spreads",
+        "volatility",
+        "funding indicators"
+      ],
+      "likelyDominantDriver": "Tighter financial conditions, risk-off dollar demand, or policy-rate repricing.",
+      "secondSignalToValidate": [
+        "VIX",
+        "HY OAS",
+        "Treasury yields",
+        "funding spreads",
+        "EM FX",
+        "asset-specific behavior"
+      ],
+      "mistakeToAvoid": "Assuming every asset must react identically."
+    },
+    {
+      "title": "Dollar Down, Real Yields Down, Liquidity Improving",
+      "scenario": "DXY weakens, Broad USD weakens, real yields fall, credit spreads tighten, and volatility declines.",
+      "bestInterpretation": "This may indicate easier financial conditions. It can be supportive for some risk-sensitive and duration-sensitive assets, but asset-specific confirmation remains necessary.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "real yields",
+        "credit spreads",
+        "volatility",
+        "liquidity proxies"
+      ],
+      "likelyDominantDriver": "Easier financial conditions or improving risk appetite.",
+      "secondSignalToValidate": [
+        "Equity breadth",
+        "Bitcoin liquidity/flow indicators",
+        "gold reaction to real yields",
+        "credit-market behavior"
+      ],
+      "mistakeToAvoid": "Turning easier conditions into a guaranteed asset rally."
+    },
+    {
+      "title": "Dollar Up, Oil Up",
+      "scenario": "USD strengthens, but WTI rises because inventories are falling and geopolitical supply risk is increasing.",
+      "bestInterpretation": "Oil’s physical-market driver may be stronger than the dollar headwind.",
+      "benchmarkThatMatters": [
+        "WTI",
+        "DXY",
+        "Broad USD",
+        "inventories",
+        "futures curve",
+        "OVX",
+        "geopolitical risk"
+      ],
+      "likelyDominantDriver": "Supply tightness or geopolitical risk premium.",
+      "secondSignalToValidate": [
+        "EIA inventory data",
+        "futures curve backwardation/contango",
+        "OPEC+ signals",
+        "OVX"
+      ],
+      "mistakeToAvoid": "Treating oil as only a dollar trade."
+    }
+  ],
+  "commonMistakeCheckpoint": "The main mistake is treating the dollar as a one-factor master switch. A regime is not a headline; it is a confirmed pattern across signals.",
+  "answerKey": [
+    {
+      "question": 1,
+      "correctAnswer": "B",
+      "conceptTested": "Framework purpose",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 2,
+      "correctAnswer": "C",
+      "conceptTested": "USD Impact method",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 3,
+      "correctAnswer": "False",
+      "conceptTested": "Signal vs regime",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 4,
+      "correctAnswer": "A",
+      "conceptTested": "Multi-signal confirmation",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 5,
+      "correctAnswer": "A",
+      "conceptTested": "Real rates and gold",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 6,
+      "correctAnswer": "B",
+      "conceptTested": "Oil-specific transmission",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 7,
+      "correctAnswer": "A",
+      "conceptTested": "Liquidity/stress validation",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 8,
+      "correctAnswer": "B",
+      "conceptTested": "Conditional asset transmission",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 9,
+      "correctAnswer": "C",
+      "conceptTested": "One-signal regime mistake",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 10,
+      "correctAnswer": "B",
+      "conceptTested": "Compliance-safe framing",
+      "difficulty": "Medium"
+    }
+  ],
+  "scoreInterpretation": [
+    {
+      "range": "80–100%",
+      "meaning": "Strong understanding. You can read the dollar through benchmark, driver, real rates, liquidity/stress, and asset-specific transmission."
+    },
+    {
+      "range": "60–79%",
+      "meaning": "Good base. Review the difference between signal and regime, and practice the four-step USD Impact sequence."
+    },
+    {
+      "range": "Below 60%",
+      "meaning": "Reread the lesson before moving forward. Focus on why DXY alone is not enough and why assets need separate transmission analysis."
+    }
+  ],
+  "followUpReadingPath": [
+    "/gold/usd-gold",
+    "/energy/usd-wti",
+    "/bitcoin/usd-bitcoin",
+    "/equities/usd-equities"
+  ],
+  "complianceNote": "This quiz is for educational and informational purposes only. It is not investment advice, financial advice, legal advice, tax advice, trading advice, or a recommendation to buy or sell any asset. Market relationships are conditional and can change by regime.",
+  "sourceDriveUrl": "https://docs.google.com/document/d/1Cx6Uz40lO1BxjhrNtGcZAfKYX-uAPPcZahXNtFAPNrg",
+  "status": "Ready",
+  "version": "1.0"
+}

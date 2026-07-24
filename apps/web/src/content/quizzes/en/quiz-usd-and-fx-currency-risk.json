@@ -1,0 +1,489 @@
+{
+  "quizId": "QUIZ-WEB-012_USD-and-FX-Currency-Risk",
+  "canonicalId": "quiz-usd-and-fx-currency-risk",
+  "language": "en",
+  "title": "USD and FX: Currency Pairs, Translation Risk, and Hedging Logic",
+  "seoTitle": "USD and FX Currency Risk Quiz | USD Impact",
+  "metaDescription": "Test your understanding of how USD direction, currency pairs, FX translation, transaction risk, hedging logic, portfolio currency exposure, and client communication interact.",
+  "slug": "/fx/usd-and-currency-risk/quiz",
+  "relatedLessonUrl": "/fx/usd-and-currency-risk",
+  "difficulty": "Beginner / Lower-intermediate",
+  "estimatedTime": "9–11 minutes",
+  "audience": "New investors and beginner macro learners",
+  "format": "Website quiz",
+  "questionCount": 10,
+  "learningObjective": [
+    "After completing this quiz, the learner should understand that FX is not just “the dollar is up” or “the dollar is down.”",
+    "Currency markets are quoted in pairs, and the interpretation depends on the base currency, quote currency, investor home currency, and type of exposure.",
+    "The learner should avoid treating DXY as the whole FX market, confusing EURUSD direction, ignoring translation risk, or assuming every currency exposure must be hedged."
+  ],
+  "conceptsTested": [
+    "FX pairs: base currency vs quote currency",
+    "EURUSD and USD interpretation",
+    "DXY vs broader USD pressure",
+    "Translation risk vs transaction risk",
+    "Portfolio currency exposure",
+    "Revenue, cost, and debt currency mismatch",
+    "Hedging logic and natural hedges",
+    "Compliance-safe FX communication"
+  ],
+  "frameworkNote": "For FX and currency risk, identify the pair, the home currency, the exposure type, and the direction of translation before making a conclusion.",
+  "questions": [
+    {
+      "number": 1,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "In the currency pair EURUSD, what does EUR represent?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The base currency."
+        },
+        {
+          "key": "B",
+          "text": "The quote currency."
+        },
+        {
+          "key": "C",
+          "text": "The DXY basket."
+        },
+        {
+          "key": "D",
+          "text": "The interest rate."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "In EURUSD, EUR is the base currency and USD is the quote currency. The pair shows how many U.S. dollars one euro can buy.",
+      "sourceReference": "USD and FX — Currency pairs and quotation.",
+      "wrongAnswerNotes": [
+        "B is incorrect because USD is the quote currency in EURUSD.",
+        "C confuses a currency pair with a dollar index.",
+        "D confuses FX quotation with interest rates."
+      ]
+    },
+    {
+      "number": 2,
+      "difficulty": "Easy",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "If EURUSD rises, what is the most basic interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "EUR is strengthening versus USD, or USD is weakening versus EUR."
+        },
+        {
+          "key": "B",
+          "text": "USD is strengthening versus EUR."
+        },
+        {
+          "key": "C",
+          "text": "DXY must always be rising."
+        },
+        {
+          "key": "D",
+          "text": "Oil inventories are rising."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "If EURUSD rises, one euro buys more dollars. That usually means the euro has strengthened against the dollar, or the dollar has weakened against the euro.",
+      "sourceReference": "USD and FX — Reading EURUSD direction.",
+      "wrongAnswerNotes": [
+        "B describes EURUSD falling, not rising.",
+        "C is too mechanical; DXY may often move inversely with EURUSD, but DXY is a basket and requires confirmation.",
+        "D is unrelated."
+      ]
+    },
+    {
+      "number": 3,
+      "difficulty": "Easy",
+      "skillTested": "Comprehension",
+      "type": "true-false",
+      "question": "True or false: DXY is the same thing as the whole global dollar market.",
+      "options": [
+        {
+          "key": "True",
+          "text": "True"
+        },
+        {
+          "key": "False",
+          "text": "False"
+        }
+      ],
+      "correctAnswer": "False",
+      "explanation": "DXY is a useful dollar benchmark against a specific basket of major currencies, but it does not represent every USD relationship, every currency pair, or every type of dollar pressure.",
+      "sourceReference": "USD and FX — DXY vs broader USD pressure."
+    },
+    {
+      "number": 4,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "DXY rises mainly because EURUSD falls sharply, but USD is flat against several emerging-market currencies. What is the best interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The whole dollar is strengthening equally against every currency."
+        },
+        {
+          "key": "B",
+          "text": "The DXY move may be concentrated in the euro leg, so broader USD pressure should be checked before making a global conclusion."
+        },
+        {
+          "key": "C",
+          "text": "DXY is irrelevant and should never be used."
+        },
+        {
+          "key": "D",
+          "text": "EURUSD has no effect on DXY."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "DXY can be heavily influenced by EURUSD. If DXY rises mainly because EURUSD falls, the analyst should check broader USD measures or other currency pairs before saying the dollar is strengthening everywhere.",
+      "sourceReference": "USD and FX — DXY concentration risk.",
+      "wrongAnswerNotes": [
+        "A overgeneralizes from one basket move.",
+        "C rejects a useful benchmark instead of contextualizing it.",
+        "D ignores the euro’s importance in DXY."
+      ]
+    },
+    {
+      "number": 5,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "A European investor buys a U.S. stock. The stock rises in USD, but EURUSD rises sharply at the same time. Why might the investor’s euro return be lower than expected?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Because a stronger euro can reduce the value of USD-denominated gains when translated back into EUR."
+        },
+        {
+          "key": "B",
+          "text": "Because U.S. stocks cannot rise when EUR rises."
+        },
+        {
+          "key": "C",
+          "text": "Because EURUSD directly changes the number of shares owned."
+        },
+        {
+          "key": "D",
+          "text": "Because DXY eliminates all portfolio risk."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "If the investor’s home currency is EUR and the asset is priced in USD, currency translation matters. A stronger euro can reduce the EUR value of USD gains.",
+      "sourceReference": "USD and FX — Portfolio translation risk.",
+      "wrongAnswerNotes": [
+        "B is a false relationship.",
+        "C confuses FX translation with share ownership.",
+        "D overstates what a benchmark can do."
+      ]
+    },
+    {
+      "number": 6,
+      "difficulty": "Medium",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "What is transaction risk?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Risk from future payments or receivables denominated in a foreign currency."
+        },
+        {
+          "key": "B",
+          "text": "Risk from converting a company’s full foreign financial statements into its reporting currency."
+        },
+        {
+          "key": "C",
+          "text": "Risk that DXY stops trading."
+        },
+        {
+          "key": "D",
+          "text": "Risk that all currencies move identically."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Transaction risk comes from actual future cash flows in foreign currency, such as invoices, supplier payments, debt payments, or receivables.",
+      "sourceReference": "USD and FX — Transaction risk.",
+      "wrongAnswerNotes": [
+        "B describes translation risk more closely.",
+        "C is not the relevant mechanism.",
+        "D is false; currencies do not all move identically."
+      ]
+    },
+    {
+      "number": 7,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "Which sequence best reflects the USD Impact method for analyzing currency risk?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY moves → automatic portfolio conclusion."
+        },
+        {
+          "key": "B",
+          "text": "Identify pair → identify home/reporting currency → identify exposure type → separate translation and transaction risk → evaluate hedge logic cautiously."
+        },
+        {
+          "key": "C",
+          "text": "Ignore the investor’s home currency."
+        },
+        {
+          "key": "D",
+          "text": "Treat all USD moves as the same across every currency pair."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Currency risk depends on the pair, the investor or company’s base currency, the exposure type, timing, cash-flow needs, and whether a natural or financial hedge exists.",
+      "sourceReference": "USD and FX — USD Impact FX workflow."
+    },
+    {
+      "number": 8,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "A learner says: “EURUSD is rising, so the dollar must be strengthening.” What is the most disciplined response?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Correct. EURUSD rising means USD is stronger."
+        },
+        {
+          "key": "B",
+          "text": "Incorrect. EURUSD rising usually means EUR is strengthening versus USD, or USD is weakening versus EUR."
+        },
+        {
+          "key": "C",
+          "text": "Incorrect. EURUSD never matters for the dollar."
+        },
+        {
+          "key": "D",
+          "text": "Correct, but only if oil is rising."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "EURUSD is quoted as euros priced in dollars. If the pair rises, one euro buys more dollars. That generally points to EUR strength versus USD, not USD strength versus EUR.",
+      "sourceReference": "USD and FX — Common pair-reading mistake.",
+      "wrongAnswerNotes": [
+        "A reverses the pair interpretation.",
+        "C ignores a major FX pair.",
+        "D adds an irrelevant condition."
+      ]
+    },
+    {
+      "number": 9,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "Which statement is the weakest analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "A foreign asset return can change when translated into the investor’s home currency."
+        },
+        {
+          "key": "B",
+          "text": "DXY is useful, but it is not the entire dollar market."
+        },
+        {
+          "key": "C",
+          "text": "DXY is up today, so every investor’s currency exposure has the same result."
+        },
+        {
+          "key": "D",
+          "text": "Transaction risk and translation risk are different exposures."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "A DXY move does not create the same result for every investor or company. Currency impact depends on the specific pair, home currency, revenue/cost exposure, debt currency, and timing.",
+      "sourceReference": "USD and FX — One-signal FX mistake."
+    },
+    {
+      "number": 10,
+      "difficulty": "Medium",
+      "skillTested": "Compliance-safe interpretation",
+      "type": "multiple-choice",
+      "question": "Which sentence is most consistent with USD Impact’s educational and compliance-safe style?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY is rising, so every client must hedge immediately."
+        },
+        {
+          "key": "B",
+          "text": "Currency exposure can be influenced by USD direction, but interpretation depends on the pair, home currency, exposure type, timing, cash-flow needs, and hedge structure."
+        },
+        {
+          "key": "C",
+          "text": "A stronger dollar guarantees losses for every non-U.S. investor."
+        },
+        {
+          "key": "D",
+          "text": "A single FX move is enough to decide portfolio positioning."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "This sentence is educational, conditional, and framework-based. It avoids advice, certainty, and guaranteed outcomes.",
+      "sourceReference": "USD and FX — Compliance-safe FX interpretation.",
+      "wrongAnswerNotes": [
+        "A turns analysis into a universal action instruction.",
+        "C overgeneralizes across investors and exposures.",
+        "D ignores context and confirmation."
+      ]
+    }
+  ],
+  "practicalApplications": [
+    {
+      "title": "EUR Investor, U.S. Asset, FX Translation",
+      "scenario": "A European investor holds a U.S. equity ETF. The ETF rises 6% in USD, but EURUSD also rises sharply during the same period.",
+      "bestInterpretation": "The investor’s EUR-denominated return may be lower than the USD return because the stronger euro reduces the translated value of USD gains.",
+      "benchmarkThatMatters": [
+        "EURUSD",
+        "investor home currency",
+        "USD asset return",
+        "local-currency return",
+        "hedged vs unhedged share class if applicable"
+      ],
+      "likelyDominantDriver": "Portfolio translation risk.",
+      "secondSignalToValidate": [
+        "compare USD return with EUR-translated return",
+        "check FX-hedged share class performance",
+        "verify the investor’s reporting currency"
+      ],
+      "mistakeToAvoid": "Assuming the asset’s USD return equals the investor’s home-currency return."
+    },
+    {
+      "title": "DXY Up, Not All Pairs Confirm",
+      "scenario": "DXY rises, but the move is mostly driven by EURUSD falling. USD is flat against several emerging-market currencies and weaker against a commodity currency.",
+      "bestInterpretation": "The dollar strength may be concentrated in the DXY basket rather than broad across all FX pairs.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "EURUSD",
+        "Broad USD",
+        "selected EM FX pairs",
+        "commodity currency pairs"
+      ],
+      "likelyDominantDriver": "Basket concentration rather than universal USD strength.",
+      "secondSignalToValidate": [
+        "broader USD indexes",
+        "USD versus regional currencies",
+        "cross rates",
+        "client actual exposure currency"
+      ],
+      "mistakeToAvoid": "Treating DXY as the whole dollar."
+    },
+    {
+      "title": "Company Transaction Risk",
+      "scenario": "A company reports in EUR but must pay a large USD supplier invoice in three months. USD strengthens before the payment date.",
+      "bestInterpretation": "The company may face transaction risk because the future USD payment becomes more expensive in EUR terms.",
+      "benchmarkThatMatters": [
+        "EURUSD",
+        "payment currency",
+        "reporting/home currency",
+        "invoice timing",
+        "cash-flow exposure"
+      ],
+      "likelyDominantDriver": "Transaction risk from a future foreign-currency payment.",
+      "secondSignalToValidate": [
+        "invoice amount",
+        "payment date",
+        "hedge policy",
+        "natural USD revenues",
+        "forward-market pricing if applicable"
+      ],
+      "mistakeToAvoid": "Confusing transaction risk with broad market commentary."
+    }
+  ],
+  "commonMistakeCheckpoint": "The main mistake is treating FX as a single dollar-up or dollar-down headline. FX risk is pair-specific, exposure-specific, and home-currency-specific.",
+  "answerKey": [
+    {
+      "question": 1,
+      "correctAnswer": "A",
+      "conceptTested": "Base currency",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 2,
+      "correctAnswer": "A",
+      "conceptTested": "EURUSD interpretation",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 3,
+      "correctAnswer": "False",
+      "conceptTested": "DXY vs whole FX market",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 4,
+      "correctAnswer": "B",
+      "conceptTested": "DXY concentration risk",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 5,
+      "correctAnswer": "A",
+      "conceptTested": "Portfolio translation risk",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 6,
+      "correctAnswer": "A",
+      "conceptTested": "Transaction risk",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 7,
+      "correctAnswer": "B",
+      "conceptTested": "USD Impact FX workflow",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 8,
+      "correctAnswer": "B",
+      "conceptTested": "Pair-reading mistake",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 9,
+      "correctAnswer": "C",
+      "conceptTested": "One-signal FX mistake",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 10,
+      "correctAnswer": "B",
+      "conceptTested": "Compliance-safe framing",
+      "difficulty": "Medium"
+    }
+  ],
+  "scoreInterpretation": [
+    {
+      "range": "80–100%",
+      "meaning": "Strong understanding. You can analyze FX through currency pairs, home currency, translation risk, transaction risk, DXY limits, and hedging context."
+    },
+    {
+      "range": "60–79%",
+      "meaning": "Good base. Review EURUSD quotation, DXY vs broad USD, and the difference between transaction and translation risk."
+    },
+    {
+      "range": "Below 60%",
+      "meaning": "Reread the lesson before moving forward. Focus on why FX risk depends on the pair, exposure, timing, and home currency."
+    }
+  ],
+  "followUpReadingPath": [
+    "/start-here",
+    "/dxy/dxy-vs-broad-usd",
+    "/equities/usd-equities",
+    "/regime/how-to-read-the-dollar"
+  ],
+  "complianceNote": "This quiz is for educational and informational purposes only. It is not investment advice, financial advice, legal advice, tax advice, trading advice, or a recommendation to buy or sell any asset. Market relationships are conditional and can change by regime.",
+  "sourceDriveUrl": "https://docs.google.com/document/d/1E6bLqsH0wHX6w5kAlImumUDWCDMZCiAB6InXuybZ_qc",
+  "status": "Ready",
+  "version": "1.0"
+}

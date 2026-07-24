@@ -1,0 +1,66 @@
+---
+import { getCollection } from 'astro:content';
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import accessMap from '../../data/quiz-access-map.json';
+import '../../styles/quiz.css';
+
+const quizzes = await getCollection('quizzes');
+const quizByCanonicalId = new Map(quizzes.map((entry) => [entry.data.canonicalId, entry.data]));
+const catalog = accessMap.quizzes.map((access) => ({
+  access,
+  quiz: quizByCanonicalId.get(access.canonicalId),
+}));
+const purchaseUrl = import.meta.env.PUBLIC_BOOK_PURCHASE_URL || accessMap.purchaseFallbackUrl;
+---
+
+<BaseLayout
+  title="Book Quizzes | USD Impact"
+  description="Educational chapter quizzes for Read the Dollar First. Pass each released checkpoint to continue, or get full access to the book."
+>
+  <section class="hero">
+    <div class="container">
+      <div class="eyebrow">Read the Dollar First</div>
+      <h1>Book chapter quizzes</h1>
+      <p class="lead">
+        Read each released chapter, complete its checkpoint, and continue through the learning path. The pass mark is {accessMap.passScore}/10.
+      </p>
+      <div class="button-row">
+        <a class="button primary" href={purchaseUrl}>Get full book access</a>
+        <a class="button secondary" href="/start-here/">Start reading</a>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+    <section class="quiz-catalog" aria-labelledby="quiz-catalog-title">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Learning path</div>
+          <h2 id="quiz-catalog-title">Twelve chapter checkpoints</h2>
+        </div>
+      </div>
+
+      <ol class="quiz-catalog-list">
+        {catalog.map(({ access, quiz }) => (
+          <li class:list={["quiz-catalog-card", { "is-released": access.released }]}>
+            <div>
+              <span class="quiz-catalog-order">Quiz {access.order}</span>
+              <h3>{quiz?.title ?? access.canonicalId}</h3>
+              <p>{quiz?.estimatedTime ?? '6–8 minutes'} · {quiz?.difficulty ?? 'Educational checkpoint'}</p>
+            </div>
+            {access.released ? (
+              <a class="button primary" href={access.slug}>Take quiz</a>
+            ) : (
+              <span class="quiz-catalog-status">Releases with its chapter</span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="compliance" aria-label="Compliance note">
+      <strong>Compliance note:</strong> These quizzes are educational only. They do not provide investment, legal, tax, trading, or financial advice and are not certifications of investment competence.
+    </section>
+  </main>
+</BaseLayout>

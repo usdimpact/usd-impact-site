@@ -1,0 +1,140 @@
+{
+  "project": "USD Impact",
+  "package": "USD_Impact_Quiz_JSON_Export_Full_AZ_Spine_v1",
+  "language": "en",
+  "generatedAt": "2026-05-19T19:55:00+00:00",
+  "routes": [
+    {
+      "order": 1,
+      "slug": "/start-here/quiz",
+      "canonicalId": "quiz-start-here",
+      "quizId": "QUIZ-WEB-001_Start-Here",
+      "title": "Start Here: Why the Dollar Moves Global Markets",
+      "jsonFile": "quizzes/en/quiz-start-here.json",
+      "relatedLessonUrl": "/start-here",
+      "nextSlug": "/dollar/what-is-the-us-dollar/quiz",
+      "previousSlug": null
+    },
+    {
+      "order": 2,
+      "slug": "/dollar/what-is-the-us-dollar/quiz",
+      "canonicalId": "quiz-what-is-us-dollar",
+      "quizId": "QUIZ-WEB-002_What-Is-the-US-Dollar",
+      "title": "What Is the U.S. Dollar in Global Markets?",
+      "jsonFile": "quizzes/en/quiz-what-is-us-dollar.json",
+      "relatedLessonUrl": "/dollar/what-is-the-us-dollar",
+      "nextSlug": "/fx/fx-depreciation-vs-inflation/quiz",
+      "previousSlug": "/start-here/quiz"
+    },
+    {
+      "order": 3,
+      "slug": "/fx/fx-depreciation-vs-inflation/quiz",
+      "canonicalId": "quiz-fx-depreciation-vs-inflation",
+      "quizId": "QUIZ-WEB-003_FX-vs-Inflation",
+      "title": "FX Depreciation vs Inflation: What Is the Difference?",
+      "jsonFile": "quizzes/en/quiz-fx-depreciation-vs-inflation.json",
+      "relatedLessonUrl": "/fx/fx-depreciation-vs-inflation",
+      "nextSlug": "/dxy/what-is-dxy/quiz",
+      "previousSlug": "/dollar/what-is-the-us-dollar/quiz"
+    },
+    {
+      "order": 4,
+      "slug": "/dxy/what-is-dxy/quiz",
+      "canonicalId": "quiz-dxy-explained",
+      "quizId": "QUIZ-WEB-004_DXY-Explained",
+      "title": "DXY Explained: What the Dollar Index Measures — and What It Misses",
+      "jsonFile": "quizzes/en/quiz-dxy-explained.json",
+      "relatedLessonUrl": "/dxy/what-is-dxy",
+      "nextSlug": "/dxy/dxy-vs-broad-usd/quiz",
+      "previousSlug": "/fx/fx-depreciation-vs-inflation/quiz"
+    },
+    {
+      "order": 5,
+      "slug": "/dxy/dxy-vs-broad-usd/quiz",
+      "canonicalId": "quiz-dxy-vs-broad-usd",
+      "quizId": "QUIZ-WEB-005_DXY-vs-Broad-USD",
+      "title": "DXY vs Broad USD: Which Dollar Signal Matters?",
+      "jsonFile": "quizzes/en/quiz-dxy-vs-broad-usd.json",
+      "relatedLessonUrl": "/dxy/dxy-vs-broad-usd",
+      "nextSlug": "/regime/how-to-read-the-dollar/quiz",
+      "previousSlug": "/dxy/what-is-dxy/quiz"
+    },
+    {
+      "order": 6,
+      "slug": "/regime/how-to-read-the-dollar/quiz",
+      "canonicalId": "quiz-dollar-regime-framework",
+      "quizId": "QUIZ-WEB-006_Dollar-Regime-Framework",
+      "title": "Dollar Regime Framework: How to Read the USD Signal",
+      "jsonFile": "quizzes/en/quiz-dollar-regime-framework.json",
+      "relatedLessonUrl": "/regime/how-to-read-the-dollar",
+      "nextSlug": "/gold/usd-gold/quiz",
+      "previousSlug": "/dxy/dxy-vs-broad-usd/quiz"
+    },
+    {
+      "order": 7,
+      "slug": "/gold/usd-gold/quiz",
+      "canonicalId": "quiz-usd-and-gold",
+      "quizId": "QUIZ-WEB-007_USD-and-Gold",
+      "title": "USD and Gold: How the Dollar, Real Yields, and Stress Shape Gold",
+      "jsonFile": "quizzes/en/quiz-usd-and-gold.json",
+      "relatedLessonUrl": "/gold/usd-gold",
+      "nextSlug": "/energy/usd-wti/quiz",
+      "previousSlug": "/regime/how-to-read-the-dollar/quiz"
+    },
+    {
+      "order": 8,
+      "slug": "/energy/usd-wti/quiz",
+      "canonicalId": "quiz-usd-and-wti",
+      "quizId": "QUIZ-WEB-008_USD-and-WTI",
+      "title": "USD and WTI: Why Oil Is Not Only a Dollar Trade",
+      "jsonFile": "quizzes/en/quiz-usd-and-wti.json",
+      "relatedLessonUrl": "/energy/usd-wti",
+      "nextSlug": "/energy/lng-natural-gas/quiz",
+      "previousSlug": "/gold/usd-gold/quiz"
+    },
+    {
+      "order": 9,
+      "slug": "/energy/lng-natural-gas/quiz",
+      "canonicalId": "quiz-usd-and-lng-natural-gas",
+      "quizId": "QUIZ-WEB-009_USD-and-LNG-Natural-Gas",
+      "title": "USD and LNG / Natural Gas: Why Gas Is More Regional Than Oil",
+      "jsonFile": "quizzes/en/quiz-usd-and-lng-natural-gas.json",
+      "relatedLessonUrl": "/energy/lng-natural-gas",
+      "nextSlug": "/equities/usd-equities/quiz",
+      "previousSlug": "/energy/usd-wti/quiz"
+    },
+    {
+      "order": 10,
+      "slug": "/equities/usd-equities/quiz",
+      "canonicalId": "quiz-usd-and-equities",
+      "quizId": "QUIZ-WEB-010_USD-and-Equities",
+      "title": "USD and Equities: How the Dollar Affects Earnings, Margins, and Valuations",
+      "jsonFile": "quizzes/en/quiz-usd-and-equities.json",
+      "relatedLessonUrl": "/equities/usd-equities",
+      "nextSlug": "/bitcoin/usd-bitcoin/quiz",
+      "previousSlug": "/energy/lng-natural-gas/quiz"
+    },
+    {
+      "order": 11,
+      "slug": "/bitcoin/usd-bitcoin/quiz",
+      "canonicalId": "quiz-usd-and-bitcoin",
+      "quizId": "QUIZ-WEB-011_USD-and-Bitcoin",
+      "title": "USD and Bitcoin: Liquidity, Risk Appetite, Adoption, and Volatility",
+      "jsonFile": "quizzes/en/quiz-usd-and-bitcoin.json",
+      "relatedLessonUrl": "/bitcoin/usd-bitcoin",
+      "nextSlug": "/fx/usd-and-currency-risk/quiz",
+      "previousSlug": "/equities/usd-equities/quiz"
+    },
+    {
+      "order": 12,
+      "slug": "/fx/usd-and-currency-risk/quiz",
+      "canonicalId": "quiz-usd-and-fx-currency-risk",
+      "quizId": "QUIZ-WEB-012_USD-and-FX-Currency-Risk",
+      "title": "USD and FX: Currency Pairs, Translation Risk, and Hedging Logic",
+      "jsonFile": "quizzes/en/quiz-usd-and-fx-currency-risk.json",
+      "relatedLessonUrl": "/fx/usd-and-currency-risk",
+      "nextSlug": null,
+      "previousSlug": "/bitcoin/usd-bitcoin/quiz"
+    }
+  ]
+}

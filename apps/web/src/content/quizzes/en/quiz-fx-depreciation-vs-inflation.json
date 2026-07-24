@@ -1,0 +1,452 @@
+{
+  "quizId": "QUIZ-WEB-003_FX-vs-Inflation",
+  "canonicalId": "quiz-fx-depreciation-vs-inflation",
+  "language": "en",
+  "title": "FX Depreciation vs Inflation: What Is the Difference?",
+  "seoTitle": "FX Depreciation vs Inflation Quiz | USD Impact",
+  "metaDescription": "Test your understanding of the difference between exchange-rate weakness, domestic purchasing-power loss, inflation, and dollar regime interpretation.",
+  "slug": "/fx/fx-depreciation-vs-inflation/quiz",
+  "sourceSlug": "/fundamentals/fx-vs-inflation/quiz",
+  "relatedLessonUrl": "/fx/fx-depreciation-vs-inflation",
+  "sourceRelatedLessonUrl": "/fundamentals/fx-vs-inflation",
+  "difficulty": "Beginner / Lower-intermediate",
+  "estimatedTime": "7–9 minutes",
+  "audience": "New investors and beginner macro learners",
+  "sourceDriveUrl": "https://docs.google.com/document/d/11Uuh8siWzPHw73TeZjk9Sbdby5ZV9pHDbZGcc42P74I",
+  "format": "Website quiz",
+  "questionCount": 10,
+  "learningObjective": [
+    "Understand the difference between external dollar weakness in foreign exchange and domestic loss of purchasing power through inflation.",
+    "Avoid saying “the dollar is devaluing” without identifying whether the mechanism is FX depreciation, domestic inflation, formal devaluation, or broad dollar liquidity stress."
+  ],
+  "conceptsTested": [
+    "FX depreciation",
+    "Domestic purchasing-power loss",
+    "Inflation vs exchange-rate movement",
+    "Depreciation vs devaluation",
+    "USD vs DXY vs Broad USD",
+    "Real rates and purchasing power",
+    "Cross-asset transmission errors",
+    "Compliance-safe macro interpretation"
+  ],
+  "frameworkNote": "A weak-dollar headline can refer to FX depreciation, broad USD weakness, domestic purchasing-power loss, inflation pressure, liquidity easing, or formal devaluation. Define the signal before interpreting market impact.",
+  "questions": [
+    {
+      "number": 1,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "What does FX depreciation mean?",
+      "options": [
+        {
+          "key": "A",
+          "text": "A currency loses value against another currency or currency basket."
+        },
+        {
+          "key": "B",
+          "text": "Domestic prices always fall."
+        },
+        {
+          "key": "C",
+          "text": "The currency becomes risk-free."
+        },
+        {
+          "key": "D",
+          "text": "Every asset priced in that currency must rise."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "FX depreciation means a currency weakens relative to another currency or exchange-rate benchmark. It is external currency price movement, not full domestic purchasing-power analysis.",
+      "sourceReference": "FX Depreciation vs Inflation — FX depreciation."
+    },
+    {
+      "number": 2,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "What does domestic purchasing-power loss mean?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The currency buys less goods and services inside the economy over time."
+        },
+        {
+          "key": "B",
+          "text": "The currency always weakens against every foreign currency."
+        },
+        {
+          "key": "C",
+          "text": "DXY must fall."
+        },
+        {
+          "key": "D",
+          "text": "Gold must rise immediately."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Purchasing-power loss is about what currency can buy domestically. It is usually linked to inflation and the internal price level, not just exchange rates.",
+      "sourceReference": "FX Depreciation vs Inflation — Purchasing power."
+    },
+    {
+      "number": 3,
+      "difficulty": "Easy",
+      "skillTested": "Comprehension",
+      "type": "true-false",
+      "question": "True or false: A falling DXY automatically proves the U.S. dollar is losing domestic purchasing power at the same pace.",
+      "options": [
+        {
+          "key": "True",
+          "text": "True"
+        },
+        {
+          "key": "False",
+          "text": "False"
+        }
+      ],
+      "correctAnswer": "False",
+      "explanation": "DXY measures the dollar against a specific basket of foreign currencies. Domestic purchasing power depends on inflation and internal prices.",
+      "sourceReference": "FX Depreciation vs Inflation — DXY is not purchasing power."
+    },
+    {
+      "number": 4,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "DXY falls because the euro strengthens sharply, but U.S. inflation data is stable. What is the best interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The dollar has definitely lost domestic purchasing power at the same pace as DXY."
+        },
+        {
+          "key": "B",
+          "text": "The move may be more about exchange-rate movement than domestic inflation."
+        },
+        {
+          "key": "C",
+          "text": "Inflation has disappeared permanently."
+        },
+        {
+          "key": "D",
+          "text": "All commodities must rise immediately."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A DXY decline can be driven by foreign-currency strength or basket composition. It does not automatically prove a matching loss of domestic purchasing power.",
+      "sourceReference": "FX Depreciation vs Inflation — External vs internal dollar value."
+    },
+    {
+      "number": 5,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "A learner says: “The dollar is weak today, so inflation must be surging today.” What is the best correction?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Correct. Every FX move is the same as inflation."
+        },
+        {
+          "key": "B",
+          "text": "Incorrect. FX weakness and inflation are different signals and need separate evidence."
+        },
+        {
+          "key": "C",
+          "text": "Correct, but only for oil."
+        },
+        {
+          "key": "D",
+          "text": "Incorrect. The dollar never affects inflation."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "FX weakness can influence import prices in some contexts, but it is not the same as inflation. Inflation requires separate price-level evidence.",
+      "sourceReference": "FX Depreciation vs Inflation — Separate the signal from the mechanism."
+    },
+    {
+      "number": 6,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "Which statement is most precise?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Depreciation and devaluation always mean the same thing."
+        },
+        {
+          "key": "B",
+          "text": "Depreciation usually describes market-driven exchange-rate weakness; devaluation is more precise for a formal reduction under a fixed or managed exchange-rate regime."
+        },
+        {
+          "key": "C",
+          "text": "Devaluation only means inflation."
+        },
+        {
+          "key": "D",
+          "text": "Depreciation only applies to Bitcoin."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Depreciation usually refers to market-driven currency weakness. Devaluation is more technically associated with an official reduction under a fixed or managed exchange-rate system.",
+      "sourceReference": "FX Depreciation vs Inflation — Depreciation vs devaluation."
+    },
+    {
+      "number": 7,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "Which sequence best reflects the USD Impact method for analyzing a weak dollar headline?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Headline says weak dollar → assume inflation → buy/sell assets."
+        },
+        {
+          "key": "B",
+          "text": "Identify the dollar measure → identify whether it is FX, inflation, funding, or liquidity → validate with a second signal → interpret cautiously."
+        },
+        {
+          "key": "C",
+          "text": "Ignore all dollar headlines."
+        },
+        {
+          "key": "D",
+          "text": "Treat DXY as the full inflation report."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "The correct method separates the type of dollar signal first. Weak-dollar headlines can refer to DXY, broad USD, purchasing power, inflation, or liquidity conditions.",
+      "sourceReference": "FX Depreciation vs Inflation — USD Impact method."
+    },
+    {
+      "number": 8,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "A reader says: “The dollar is depreciating, so gold, Bitcoin, oil, and equities must all rise.” What is the most disciplined response?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Correct. All assets always rise when the dollar weakens."
+        },
+        {
+          "key": "B",
+          "text": "Incorrect. First identify whether this is FX depreciation, inflation, liquidity easing, or risk stress, then analyze each asset separately."
+        },
+        {
+          "key": "C",
+          "text": "Incorrect. The dollar never matters."
+        },
+        {
+          "key": "D",
+          "text": "Correct, but only if DXY moves by more than 1%."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Dollar weakness can transmit into assets through different channels, but the effect depends on the driver and the asset.",
+      "sourceReference": "FX Depreciation vs Inflation — Asset transmission is conditional."
+    },
+    {
+      "number": 9,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "Which statement is the weakest analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY is down, but we should check Broad USD before calling broad dollar weakness."
+        },
+        {
+          "key": "B",
+          "text": "Inflation is about domestic prices, not only FX."
+        },
+        {
+          "key": "C",
+          "text": "The dollar fell on FX screens today, so U.S. purchasing power definitely collapsed today."
+        },
+        {
+          "key": "D",
+          "text": "A weak dollar can matter, but the active channel must be identified."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "One FX move does not prove a collapse in domestic purchasing power. Domestic purchasing power requires inflation, wages, prices, and real-rate analysis.",
+      "sourceReference": "FX Depreciation vs Inflation — One-signal mistake."
+    },
+    {
+      "number": 10,
+      "difficulty": "Medium",
+      "skillTested": "Compliance-safe interpretation",
+      "type": "multiple-choice",
+      "question": "Which sentence is most consistent with USD Impact’s educational and compliance-safe style?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The dollar is depreciating, so you should immediately buy inflation hedges."
+        },
+        {
+          "key": "B",
+          "text": "Dollar weakness can matter, but we first need to know whether the signal is FX depreciation, domestic inflation, liquidity easing, or something else."
+        },
+        {
+          "key": "C",
+          "text": "A falling DXY guarantees inflation."
+        },
+        {
+          "key": "D",
+          "text": "FX moves alone are enough to make investment decisions."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "The USD Impact style is educational, conditional, and method-based. It avoids advice, certainty, and one-variable conclusions.",
+      "sourceReference": "FX Depreciation vs Inflation — Compliance-safe interpretation."
+    }
+  ],
+  "practicalApplications": [
+    {
+      "title": "DXY Down, Inflation Stable",
+      "scenario": "DXY falls for two weeks, mainly because EURUSD rises. U.S. inflation data remains stable.",
+      "bestInterpretation": "This may be primarily an external FX move, not immediate evidence of domestic purchasing-power loss.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "EURUSD",
+        "inflation indicators"
+      ],
+      "likelyDominantDriver": "FX basket movement or relative currency strength.",
+      "secondSignalToValidate": [
+        "Broad USD",
+        "CPI/PCE trend",
+        "import prices",
+        "inflation expectations",
+        "real yields"
+      ],
+      "mistakeToAvoid": "Treating DXY as a direct inflation gauge."
+    },
+    {
+      "title": "Inflation Up, DXY Also Up",
+      "scenario": "U.S. inflation surprises higher, and DXY rises because markets price tighter monetary policy.",
+      "bestInterpretation": "Domestic purchasing-power pressure may be rising even while the dollar strengthens externally.",
+      "benchmarkThatMatters": [
+        "Inflation data",
+        "DXY",
+        "real yields",
+        "Fed expectations"
+      ],
+      "likelyDominantDriver": "Inflation surprise and policy-rate repricing.",
+      "secondSignalToValidate": [
+        "Real yields",
+        "breakevens",
+        "Fed funds expectations",
+        "Treasury yields"
+      ],
+      "mistakeToAvoid": "Assuming inflation always means a weaker FX dollar."
+    },
+    {
+      "title": "Weak Dollar Headline",
+      "scenario": "A headline says “the dollar is devaluing,” but the article only shows a one-day DXY decline.",
+      "bestInterpretation": "The language is imprecise. A one-day DXY decline is not the same as formal devaluation or domestic purchasing-power collapse.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "exchange-rate regime",
+        "inflation data"
+      ],
+      "likelyDominantDriver": "Short-term FX movement, not necessarily formal policy devaluation.",
+      "secondSignalToValidate": [
+        "Broad USD",
+        "currency basket details",
+        "inflation indicators",
+        "real rates"
+      ],
+      "mistakeToAvoid": "Using “devaluation” as a loose synonym for every dollar decline."
+    }
+  ],
+  "answerKey": [
+    {
+      "question": 1,
+      "correctAnswer": "A",
+      "conceptTested": "FX depreciation definition",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 2,
+      "correctAnswer": "A",
+      "conceptTested": "Purchasing-power loss",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 3,
+      "correctAnswer": "False",
+      "conceptTested": "DXY is not inflation",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 4,
+      "correctAnswer": "B",
+      "conceptTested": "External FX vs internal prices",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 5,
+      "correctAnswer": "B",
+      "conceptTested": "FX weakness vs inflation evidence",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 6,
+      "correctAnswer": "B",
+      "conceptTested": "Depreciation vs devaluation",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 7,
+      "correctAnswer": "B",
+      "conceptTested": "USD Impact method",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 8,
+      "correctAnswer": "B",
+      "conceptTested": "Conditional asset transmission",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 9,
+      "correctAnswer": "C",
+      "conceptTested": "One-signal inflation mistake",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 10,
+      "correctAnswer": "B",
+      "conceptTested": "Compliance-safe framing",
+      "difficulty": "Medium"
+    }
+  ],
+  "scoreInterpretation": [
+    {
+      "range": "80–100%",
+      "meaning": "Strong understanding. Proceed to the next lesson."
+    },
+    {
+      "range": "60–79%",
+      "meaning": "Good base. Review the key distinction points before moving forward."
+    },
+    {
+      "range": "Below 60%",
+      "meaning": "Reread the lesson before moving forward."
+    }
+  ],
+  "followUpReadingPath": [
+    "/dxy/what-is-dxy",
+    "/dxy/dxy-vs-broad-usd",
+    "/regime/how-to-read-the-dollar",
+    "/gold/usd-gold"
+  ],
+  "complianceNote": "This quiz is for educational and informational purposes only. It is not investment advice, financial advice, legal advice, tax advice, trading advice, or a recommendation to buy or sell any asset. Market relationships are conditional and can change by regime.",
+  "status": "Ready",
+  "version": "1.0"
+}

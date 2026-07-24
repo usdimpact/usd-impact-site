@@ -1,0 +1,492 @@
+{
+  "quizId": "QUIZ-WEB-005_DXY-vs-Broad-USD",
+  "canonicalId": "quiz-dxy-vs-broad-usd",
+  "language": "en",
+  "title": "DXY vs Broad USD: Which Dollar Signal Matters?",
+  "seoTitle": "DXY vs Broad USD Quiz | USD Impact",
+  "metaDescription": "Test your understanding of the difference between DXY, Broad USD, basket-driven moves, trade-weighted dollar pressure, and regime confirmation.",
+  "slug": "/dxy/dxy-vs-broad-usd/quiz",
+  "relatedLessonUrl": "/dxy/dxy-vs-broad-usd",
+  "difficulty": "Beginner / Lower-intermediate",
+  "estimatedTime": "8–10 minutes",
+  "audience": "New investors and beginner macro learners",
+  "format": "Website quiz",
+  "questionCount": 10,
+  "learningObjective": [
+    "After completing this quiz, the learner should understand the difference between DXY and Broad USD.",
+    "DXY is a useful, fast, market-visible dollar benchmark, but it is narrow and euro-heavy.",
+    "Broad USD helps check whether dollar strength or weakness is showing up across a broader trade-weighted currency set."
+  ],
+  "conceptsTested": [
+    "DXY as a six-currency index",
+    "DXY euro-heavy composition",
+    "Broad USD as a broader dollar-pressure measure",
+    "Trade-weighted dollar logic",
+    "Basket-driven divergence",
+    "DXY vs Broad USD confirmation",
+    "One-index regime mistake",
+    "Compliance-safe market interpretation"
+  ],
+  "frameworkNote": "DXY / USDX is commonly described as a weighted dollar index against six currencies: euro, Japanese yen, British pound, Canadian dollar, Swedish krona, and Swiss franc. Its euro weight is commonly cited at 57.6%, making it structurally euro-heavy. Broad USD asks whether dollar strength or weakness is showing up across a broader trade-weighted currency set.",
+  "questions": [
+    {
+      "number": 1,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "What is the main difference between DXY and Broad USD?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY is a narrow dollar index; Broad USD is designed to capture a broader trade-weighted view of dollar movement."
+        },
+        {
+          "key": "B",
+          "text": "DXY measures inflation; Broad USD measures oil inventories."
+        },
+        {
+          "key": "C",
+          "text": "DXY measures Bitcoin; Broad USD measures gold."
+        },
+        {
+          "key": "D",
+          "text": "DXY and Broad USD always show exactly the same signal."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "DXY is a specific six-currency dollar index with heavy euro exposure. Broad USD is designed to provide a wider trade-weighted view of dollar movement. They can move together, but they do not always send the same signal.",
+      "sourceReference": "DXY vs Broad USD — Core distinction.",
+      "wrongAnswerNotes": [
+        "B confuses currency indexes with inflation and energy data.",
+        "C is unrelated to what either index measures.",
+        "D is false. DXY and Broad USD can diverge."
+      ]
+    },
+    {
+      "number": 2,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "Why can DXY move sharply even when broader dollar pressure is less clear?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Because DXY is heavily influenced by the euro."
+        },
+        {
+          "key": "B",
+          "text": "Because DXY includes every global currency."
+        },
+        {
+          "key": "C",
+          "text": "Because DXY directly measures U.S. inflation."
+        },
+        {
+          "key": "D",
+          "text": "Because DXY is based on oil demand."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "The euro is the largest component in DXY. A large EURUSD move can drive DXY even if broader dollar pressure across other currencies is less obvious.",
+      "sourceReference": "DXY vs Broad USD — Euro-heavy DXY risk.",
+      "wrongAnswerNotes": [
+        "B is false. DXY is narrow, not universal.",
+        "C confuses FX with domestic prices.",
+        "D confuses a currency index with a commodity variable."
+      ]
+    },
+    {
+      "number": 3,
+      "difficulty": "Easy",
+      "skillTested": "Comprehension",
+      "type": "true-false",
+      "question": "True or false: A DXY move is enough by itself to prove a full global dollar regime shift.",
+      "options": [
+        {
+          "key": "True",
+          "text": "True"
+        },
+        {
+          "key": "False",
+          "text": "False"
+        }
+      ],
+      "correctAnswer": "False",
+      "explanation": "A DXY move can be an important signal, but it is not enough by itself. A broader regime call requires confirmation from Broad USD, real yields, funding stress, volatility, credit spreads, and asset-specific behavior.",
+      "sourceReference": "DXY vs Broad USD — Signal vs regime."
+    },
+    {
+      "number": 4,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "DXY rises strongly because EURUSD falls, but Broad USD is flat. What is the best interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The move may be mostly a DXY basket move rather than broad dollar tightening."
+        },
+        {
+          "key": "B",
+          "text": "Global dollar stress is definitely rising everywhere."
+        },
+        {
+          "key": "C",
+          "text": "U.S. inflation has disappeared."
+        },
+        {
+          "key": "D",
+          "text": "Gold, Bitcoin, oil, and equities must all fall."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "If DXY rises but Broad USD is flat, the analyst should suspect a basket-specific move, especially if EURUSD explains most of the index change. That is not enough to declare broad global dollar tightening.",
+      "sourceReference": "DXY vs Broad USD — Divergence example.",
+      "wrongAnswerNotes": [
+        "B overstates the signal.",
+        "C confuses exchange-rate movement with inflation.",
+        "D turns a benchmark move into a universal asset prediction."
+      ]
+    },
+    {
+      "number": 5,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "DXY is flat, but Broad USD rises and several emerging-market currencies weaken. What is the best interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "There may be broader dollar pressure that DXY is not capturing well."
+        },
+        {
+          "key": "B",
+          "text": "There is no dollar pressure because DXY is flat."
+        },
+        {
+          "key": "C",
+          "text": "Broad USD never matters."
+        },
+        {
+          "key": "D",
+          "text": "This proves oil must fall immediately."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "A flat DXY does not always mean dollar pressure is absent. Because DXY is narrow, a broader trade-weighted measure and EM FX can reveal pressure that DXY misses.",
+      "sourceReference": "DXY vs Broad USD — Broad USD confirmation.",
+      "wrongAnswerNotes": [
+        "B overrelies on DXY.",
+        "C dismisses a useful broader benchmark.",
+        "D turns a dollar observation into an unsupported oil call."
+      ]
+    },
+    {
+      "number": 6,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "Which index is more likely to capture pressure across a wider set of U.S. trading partners?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Broad USD."
+        },
+        {
+          "key": "B",
+          "text": "DXY only."
+        },
+        {
+          "key": "C",
+          "text": "Gold."
+        },
+        {
+          "key": "D",
+          "text": "WTI."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Broad USD is designed as a broader dollar measure. DXY is more visible in markets, but it is narrower and heavily influenced by its six-currency basket.",
+      "sourceReference": "DXY vs Broad USD — Trade-weighted logic.",
+      "wrongAnswerNotes": [
+        "B ignores DXY’s narrow basket limitation.",
+        "C and D are assets, not broad dollar indexes."
+      ]
+    },
+    {
+      "number": 7,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "Which sequence best reflects the USD Impact method for comparing DXY and Broad USD?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Check DXY only → make an immediate asset conclusion."
+        },
+        {
+          "key": "B",
+          "text": "Check DXY → identify basket driver → check Broad USD → validate with second signals → interpret asset impact cautiously."
+        },
+        {
+          "key": "C",
+          "text": "Ignore DXY and Broad USD completely."
+        },
+        {
+          "key": "D",
+          "text": "Treat Broad USD as a guaranteed trading signal."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "The USD Impact method uses DXY as a visible first signal, then checks whether Broad USD confirms the move. The final interpretation requires additional confirmation from rates, liquidity, stress, and asset-specific channels.",
+      "sourceReference": "DXY vs Broad USD — USD Impact method."
+    },
+    {
+      "number": 8,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "A reader says: “DXY is down, so the dollar is weak everywhere.” What is the most disciplined response?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Correct. DXY captures all global dollar movement."
+        },
+        {
+          "key": "B",
+          "text": "Incorrect. Check whether Broad USD confirms the move and identify which DXY component drove it."
+        },
+        {
+          "key": "C",
+          "text": "Incorrect. DXY never matters."
+        },
+        {
+          "key": "D",
+          "text": "Correct, but only if Bitcoin is rising."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "DXY weakness may be real, but the conclusion “weak everywhere” requires broader confirmation. The correct process is to identify the DXY driver, then check Broad USD and other currency groups.",
+      "sourceReference": "DXY vs Broad USD — Avoiding DXY overreach.",
+      "wrongAnswerNotes": [
+        "A treats DXY as the whole dollar.",
+        "C rejects a useful signal.",
+        "D adds an unrelated condition."
+      ]
+    },
+    {
+      "number": 9,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "Which statement is the weakest analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY and Broad USD are both useful, but they answer different questions."
+        },
+        {
+          "key": "B",
+          "text": "If DXY and Broad USD confirm each other, the dollar signal is stronger."
+        },
+        {
+          "key": "C",
+          "text": "DXY moved today, so we know the full global dollar regime changed."
+        },
+        {
+          "key": "D",
+          "text": "If DXY diverges from Broad USD, we should inspect basket composition and broader currency behavior."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "A single DXY move does not prove a full global dollar regime shift. Stronger analysis checks whether DXY and Broad USD agree, then validates with second signals such as real yields, credit spreads, volatility, and funding conditions.",
+      "sourceReference": "DXY vs Broad USD — Confirmation discipline."
+    },
+    {
+      "number": 10,
+      "difficulty": "Medium",
+      "skillTested": "Compliance-safe interpretation",
+      "type": "multiple-choice",
+      "question": "Which sentence is most consistent with USD Impact’s educational and compliance-safe style?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY is up, so you should sell risk assets."
+        },
+        {
+          "key": "B",
+          "text": "DXY and Broad USD together can improve dollar interpretation, but the asset impact depends on the driver, confirmation signals, and asset-specific context."
+        },
+        {
+          "key": "C",
+          "text": "Broad USD guarantees the next move in gold or Bitcoin."
+        },
+        {
+          "key": "D",
+          "text": "DXY alone is enough for allocation decisions."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "This sentence is conditional, educational, and framework-based. It avoids advice, certainty, and single-index conclusions.",
+      "sourceReference": "DXY vs Broad USD — Compliance-safe interpretation.",
+      "wrongAnswerNotes": [
+        "A gives advice and overstates the signal.",
+        "C claims certainty.",
+        "D ignores confirmation and context."
+      ]
+    }
+  ],
+  "practicalApplications": [
+    {
+      "title": "DXY Up, Broad USD Flat",
+      "scenario": "DXY rises 1.4% in a week. EURUSD explains most of the move. Broad USD is flat.",
+      "bestInterpretation": "This may be a DXY basket move, not broad dollar tightening.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "EURUSD",
+        "Broad USD",
+        "real yields",
+        "funding stress"
+      ],
+      "likelyDominantDriver": "Euro weakness or Europe-specific repricing.",
+      "secondSignalToValidate": [
+        "Broad USD",
+        "EM FX",
+        "USDJPY",
+        "real yields",
+        "credit spreads",
+        "volatility"
+      ],
+      "mistakeToAvoid": "Calling global dollar stress from DXY alone."
+    },
+    {
+      "title": "DXY Flat, Broad USD Rising",
+      "scenario": "DXY is flat, but Broad USD rises and multiple emerging-market currencies weaken.",
+      "bestInterpretation": "Dollar pressure may be broader than DXY suggests.",
+      "benchmarkThatMatters": [
+        "Broad USD",
+        "EM FX",
+        "DXY",
+        "credit spreads",
+        "volatility"
+      ],
+      "likelyDominantDriver": "Trade-weighted dollar pressure or funding stress outside the DXY basket.",
+      "secondSignalToValidate": [
+        "Credit spreads",
+        "cross-currency basis",
+        "VIX",
+        "EM FX performance",
+        "real yields"
+      ],
+      "mistakeToAvoid": "Assuming flat DXY means no dollar pressure."
+    },
+    {
+      "title": "DXY and Broad USD Both Rising",
+      "scenario": "DXY rises, Broad USD rises, real yields move higher, and credit spreads widen.",
+      "bestInterpretation": "The dollar signal is stronger because multiple confirmation signals point in the same direction. Still, asset impact must be interpreted case by case.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "real yields",
+        "credit spreads",
+        "volatility"
+      ],
+      "likelyDominantDriver": "Tighter dollar conditions or risk-off dollar demand.",
+      "secondSignalToValidate": [
+        "VIX",
+        "HY OAS",
+        "Treasury yields",
+        "FX breadth",
+        "asset-specific reactions"
+      ],
+      "mistakeToAvoid": "Treating confirmation as a guaranteed asset outcome."
+    }
+  ],
+  "commonMistakeCheckpoint": "The main mistake is treating DXY as a complete dollar map. DXY identifies a dollar move; Broad USD helps test whether it is broad.",
+  "answerKey": [
+    {
+      "question": 1,
+      "correctAnswer": "A",
+      "conceptTested": "DXY vs Broad USD distinction",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 2,
+      "correctAnswer": "A",
+      "conceptTested": "DXY euro-heavy risk",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 3,
+      "correctAnswer": "False",
+      "conceptTested": "One-index regime mistake",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 4,
+      "correctAnswer": "A",
+      "conceptTested": "DXY up / Broad USD flat divergence",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 5,
+      "correctAnswer": "A",
+      "conceptTested": "DXY flat / Broad USD up divergence",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 6,
+      "correctAnswer": "A",
+      "conceptTested": "Broad USD trade-weighted logic",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 7,
+      "correctAnswer": "B",
+      "conceptTested": "USD Impact method",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 8,
+      "correctAnswer": "B",
+      "conceptTested": "Avoiding DXY overreach",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 9,
+      "correctAnswer": "C",
+      "conceptTested": "Confirmation discipline",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 10,
+      "correctAnswer": "B",
+      "conceptTested": "Compliance-safe framing",
+      "difficulty": "Medium"
+    }
+  ],
+  "scoreInterpretation": [
+    {
+      "range": "80–100%",
+      "meaning": "Strong understanding. You can explain why DXY and Broad USD answer different questions and how to use them together."
+    },
+    {
+      "range": "60–79%",
+      "meaning": "Good base. Review DXY basket concentration, Broad USD confirmation, and divergence scenarios."
+    },
+    {
+      "range": "Below 60%",
+      "meaning": "Reread the lesson before moving forward. Focus on why one dollar index is not enough for a regime call."
+    }
+  ],
+  "followUpReadingPath": [
+    "/regime/how-to-read-the-dollar",
+    "/fx/fx-depreciation-vs-inflation",
+    "/gold/usd-gold",
+    "/energy/usd-wti"
+  ],
+  "complianceNote": "This quiz is for educational and informational purposes only. It is not investment advice, financial advice, legal advice, tax advice, trading advice, or a recommendation to buy or sell any asset. Market relationships are conditional and can change by regime.",
+  "sourceDriveUrl": "https://docs.google.com/document/d/1SItWxV8UQVigqifUQrFvEd0DOTWCO3dPKefI0-l-0Gw",
+  "status": "Ready",
+  "version": "1.0"
+}

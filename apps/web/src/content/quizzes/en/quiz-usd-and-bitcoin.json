@@ -1,0 +1,501 @@
+{
+  "quizId": "QUIZ-WEB-011_USD-and-Bitcoin",
+  "canonicalId": "quiz-usd-and-bitcoin",
+  "language": "en",
+  "title": "USD and Bitcoin: Liquidity, Risk Appetite, Adoption, and Volatility",
+  "seoTitle": "USD and Bitcoin Quiz | USD Impact",
+  "metaDescription": "Test your understanding of how the U.S. dollar, real rates, liquidity, risk appetite, ETF and adoption flows, regulation, and Bitcoin-specific volatility can affect Bitcoin.",
+  "slug": "/bitcoin/usd-bitcoin/quiz",
+  "relatedLessonUrl": "/bitcoin/usd-bitcoin",
+  "difficulty": "Beginner / Lower-intermediate",
+  "estimatedTime": "9–11 minutes",
+  "audience": "New investors and beginner macro learners",
+  "format": "Website quiz",
+  "questionCount": 10,
+  "learningObjective": [
+    "After completing this quiz, the learner should understand that Bitcoin is not explained by the dollar alone.",
+    "Bitcoin can be influenced by USD direction, real rates, liquidity, risk appetite, ETF and institutional flows, regulation, network adoption, narratives, leverage, and its own volatility cycle.",
+    "The learner should avoid slogans such as “USD down = Bitcoin up,” “Bitcoin always hedges inflation,” or “Bitcoin is just a tech stock.”"
+  ],
+  "conceptsTested": [
+    "Bitcoin as a scarce digital monetary asset",
+    "USD liquidity and global risk appetite",
+    "Real rates and opportunity cost",
+    "Bitcoin’s high-volatility profile",
+    "ETF / institutional / adoption-flow channel",
+    "Regulation and policy risk",
+    "Bitcoin vs equities: correlation can change by regime",
+    "Compliance-safe Bitcoin interpretation"
+  ],
+  "frameworkNote": "For Bitcoin, read USD direction together with real rates, liquidity, risk appetite, adoption/flow data, regulation, leverage, and Bitcoin-specific volatility.",
+  "questions": [
+    {
+      "number": 1,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "Why can U.S. dollar liquidity matter for Bitcoin?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Bitcoin can be sensitive to global liquidity and risk appetite, especially when investors increase or reduce exposure to volatile assets."
+        },
+        {
+          "key": "B",
+          "text": "USD liquidity directly changes Bitcoin’s fixed supply schedule."
+        },
+        {
+          "key": "C",
+          "text": "DXY directly measures Bitcoin network security."
+        },
+        {
+          "key": "D",
+          "text": "Bitcoin has no relationship with liquidity conditions."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Bitcoin has a fixed issuance design, but its market price can still be influenced by liquidity, risk appetite, leverage, and investor demand. Easier liquidity can support speculative and risk-sensitive assets in some regimes, while tighter liquidity can pressure them.",
+      "sourceReference": "USD and Bitcoin — Liquidity and risk-appetite channel.",
+      "wrongAnswerNotes": [
+        "B confuses market price dynamics with Bitcoin’s supply rules.",
+        "C confuses an FX index with network fundamentals.",
+        "D ignores a major macro channel."
+      ]
+    },
+    {
+      "number": 2,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "Which statement best describes the USD-Bitcoin relationship in the USD Impact framework?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Bitcoin always rises when the dollar falls."
+        },
+        {
+          "key": "B",
+          "text": "Bitcoin always falls when the dollar rises."
+        },
+        {
+          "key": "C",
+          "text": "Bitcoin’s relationship with USD is conditional and depends on liquidity, real rates, risk appetite, flows, regulation, leverage, and adoption."
+        },
+        {
+          "key": "D",
+          "text": "Bitcoin is only driven by DXY."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "Bitcoin can be influenced by the dollar, but it is not a one-variable asset. Liquidity, real rates, risk appetite, ETF and institutional flows, regulation, leverage, and adoption can all change the outcome.",
+      "sourceReference": "USD and Bitcoin — Conditional relationship.",
+      "wrongAnswerNotes": [
+        "A and B are fixed slogans.",
+        "D reduces Bitcoin to one currency index."
+      ]
+    },
+    {
+      "number": 3,
+      "difficulty": "Easy",
+      "skillTested": "Comprehension",
+      "type": "true-false",
+      "question": "True or false: Bitcoin is a permanent inverse-dollar asset.",
+      "options": [
+        {
+          "key": "True",
+          "text": "True"
+        },
+        {
+          "key": "False",
+          "text": "False"
+        }
+      ],
+      "correctAnswer": "False",
+      "explanation": "Bitcoin may sometimes move inversely to the dollar, especially when a weaker USD coincides with easier liquidity and stronger risk appetite. But the relationship can break when Bitcoin-specific flows, regulation, leverage, or adoption dominate.",
+      "sourceReference": "USD and Bitcoin — Avoiding permanent inverse-dollar assumptions."
+    },
+    {
+      "number": 4,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "DXY rises, but Bitcoin also rises because ETF inflows and institutional adoption demand are strong. What is the best interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The move is impossible because Bitcoin must always fall when USD rises."
+        },
+        {
+          "key": "B",
+          "text": "Bitcoin-specific demand and adoption flows may be dominating the dollar headwind."
+        },
+        {
+          "key": "C",
+          "text": "DXY alone explains the Bitcoin move."
+        },
+        {
+          "key": "D",
+          "text": "Bitcoin must reverse immediately."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A stronger dollar can be a headwind for Bitcoin in some regimes, especially if it reflects tighter liquidity or stress. But Bitcoin-specific flows, adoption demand, ETF demand, regulatory clarity, or supply-cycle dynamics can dominate.",
+      "sourceReference": "USD and Bitcoin — Flow and adoption channel.",
+      "wrongAnswerNotes": [
+        "A assumes a false law.",
+        "C ignores Bitcoin-specific demand.",
+        "D is a prediction, not analysis."
+      ]
+    },
+    {
+      "number": 5,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "DXY falls, but Bitcoin also falls because real yields rise, risk appetite weakens, and leverage unwinds. What is the most disciplined explanation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Bitcoin must always rise when DXY falls, so the data is wrong."
+        },
+        {
+          "key": "B",
+          "text": "Tighter real-rate conditions, weaker risk appetite, and leverage unwind may be dominating the weaker-dollar support."
+        },
+        {
+          "key": "C",
+          "text": "The dollar never matters to Bitcoin."
+        },
+        {
+          "key": "D",
+          "text": "Bitcoin is only driven by oil inventories."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A weaker dollar can support Bitcoin in some regimes, but Bitcoin can still fall if real yields rise, liquidity tightens, risk appetite weakens, leverage unwinds, or regulation deteriorates.",
+      "sourceReference": "USD and Bitcoin — Weak USD vs tighter risk conditions.",
+      "wrongAnswerNotes": [
+        "A treats a conditional relationship as a law.",
+        "C rejects a valid USD channel.",
+        "D introduces an unrelated single driver."
+      ]
+    },
+    {
+      "number": 6,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "Why do real rates matter for Bitcoin analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Higher real rates can make cash and yield-bearing assets more attractive relative to non-yielding or long-duration speculative assets."
+        },
+        {
+          "key": "B",
+          "text": "Real rates directly change Bitcoin’s maximum supply."
+        },
+        {
+          "key": "C",
+          "text": "Real rates are the same as Bitcoin hash rate."
+        },
+        {
+          "key": "D",
+          "text": "Real rates only matter for crude oil inventories."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Bitcoin does not pay a coupon or dividend. Higher real yields can raise the opportunity cost of holding volatile non-yielding assets and can pressure liquidity-sensitive assets in some regimes.",
+      "sourceReference": "USD and Bitcoin — Real-rate channel.",
+      "wrongAnswerNotes": [
+        "B confuses market demand with Bitcoin’s protocol supply limit.",
+        "C confuses macro rates with network security metrics.",
+        "D is unrelated."
+      ]
+    },
+    {
+      "number": 7,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "Which sequence best reflects the USD Impact method for analyzing Bitcoin?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY moves → automatic Bitcoin conclusion."
+        },
+        {
+          "key": "B",
+          "text": "Identify USD signal → check real rates and liquidity → inspect risk appetite and leverage → evaluate flows/adoption/regulation → interpret cautiously."
+        },
+        {
+          "key": "C",
+          "text": "Ignore liquidity and flows."
+        },
+        {
+          "key": "D",
+          "text": "Treat every Bitcoin move as only inflation protection."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Bitcoin requires multi-signal analysis. USD direction matters, but liquidity, real rates, risk appetite, leverage, ETF/institutional flows, regulation, adoption, and Bitcoin-specific volatility are essential.",
+      "sourceReference": "USD and Bitcoin — USD Impact Bitcoin workflow."
+    },
+    {
+      "number": 8,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "A learner says: “Inflation is high, so Bitcoin must rise.” What is the most disciplined response?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Correct. Inflation alone guarantees Bitcoin upside."
+        },
+        {
+          "key": "B",
+          "text": "Incorrect. Bitcoin may be viewed by some investors as a monetary hedge, but real rates, liquidity, risk appetite, regulation, flows, and leverage also matter."
+        },
+        {
+          "key": "C",
+          "text": "Incorrect. Inflation never matters to Bitcoin narratives."
+        },
+        {
+          "key": "D",
+          "text": "Correct, but only when oil prices rise."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Inflation can support Bitcoin’s monetary narrative in some regimes. But if high inflation leads to tighter policy, higher real yields, weaker liquidity, or risk-off behavior, Bitcoin can struggle despite the inflation narrative.",
+      "sourceReference": "USD and Bitcoin — Inflation narrative vs liquidity reality.",
+      "wrongAnswerNotes": [
+        "A is a guaranteed-outcome claim.",
+        "C ignores a common Bitcoin narrative channel.",
+        "D adds an unsupported condition."
+      ]
+    },
+    {
+      "number": 9,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "Which statement is the weakest analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Bitcoin can be liquidity-sensitive in some regimes."
+        },
+        {
+          "key": "B",
+          "text": "Bitcoin can sometimes rise despite USD strength if adoption flows dominate."
+        },
+        {
+          "key": "C",
+          "text": "DXY is down today, so Bitcoin must rise."
+        },
+        {
+          "key": "D",
+          "text": "Bitcoin interpretation should include USD, real rates, liquidity, risk appetite, flows, regulation, leverage, and adoption."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "A single DXY move is not enough to predict Bitcoin. Bitcoin may respond to liquidity, real yields, leverage, ETF flows, regulatory headlines, network adoption, risk appetite, and cycle-specific demand.",
+      "sourceReference": "USD and Bitcoin — One-signal Bitcoin mistake."
+    },
+    {
+      "number": 10,
+      "difficulty": "Medium",
+      "skillTested": "Compliance-safe interpretation",
+      "type": "multiple-choice",
+      "question": "Which sentence is most consistent with USD Impact’s educational and compliance-safe style?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Bitcoin must rise because the dollar is weakening."
+        },
+        {
+          "key": "B",
+          "text": "Bitcoin can be influenced by USD direction, but interpretation depends on real rates, liquidity, risk appetite, adoption flows, regulation, leverage, and Bitcoin-specific volatility."
+        },
+        {
+          "key": "C",
+          "text": "Bitcoin is guaranteed protection in every inflation regime."
+        },
+        {
+          "key": "D",
+          "text": "A single DXY move is enough to decide Bitcoin exposure."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "This sentence is educational, conditional, and framework-based. It avoids advice, certainty, and guaranteed outcomes.",
+      "sourceReference": "USD and Bitcoin — Compliance-safe interpretation.",
+      "wrongAnswerNotes": [
+        "A turns a conditional relationship into certainty.",
+        "C overstates Bitcoin’s hedge role.",
+        "D ignores confirmation and context."
+      ]
+    }
+  ],
+  "practicalApplications": [
+    {
+      "title": "Strong Dollar, Bitcoin Up",
+      "scenario": "DXY rises, but Bitcoin rises as ETF/institutional inflows strengthen, regulatory clarity improves, and market demand increases.",
+      "bestInterpretation": "Bitcoin-specific adoption and flow drivers may be dominating the stronger-dollar headwind.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "Bitcoin price",
+        "ETF/institutional flow data",
+        "regulatory context",
+        "liquidity and risk indicators"
+      ],
+      "likelyDominantDriver": "Adoption/flow demand or Bitcoin-specific narrative strength.",
+      "secondSignalToValidate": [
+        "ETF flow data",
+        "exchange balances",
+        "funding rates",
+        "open interest",
+        "spot vs derivatives behavior",
+        "regulatory headlines",
+        "risk appetite indicators"
+      ],
+      "mistakeToAvoid": "Assuming Bitcoin cannot rise with USD."
+    },
+    {
+      "title": "Weak Dollar, Bitcoin Down",
+      "scenario": "DXY weakens, but Bitcoin falls as real yields rise, equity risk appetite deteriorates, leverage unwinds, and volatility increases.",
+      "bestInterpretation": "Tighter real-rate and risk conditions may be dominating the weaker-dollar support.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "real yields",
+        "Bitcoin price",
+        "funding rates",
+        "open interest",
+        "equity risk appetite",
+        "volatility"
+      ],
+      "likelyDominantDriver": "Liquidity/risk-off pressure and leverage unwind.",
+      "secondSignalToValidate": [
+        "10Y real yields",
+        "VIX",
+        "crypto funding rates",
+        "open interest",
+        "exchange liquidations",
+        "credit spreads",
+        "ETF flows"
+      ],
+      "mistakeToAvoid": "Assuming DXY down automatically means Bitcoin up."
+    },
+    {
+      "title": "Inflation Narrative vs Liquidity Reality",
+      "scenario": "Inflation remains high, but policy expectations tighten, real yields rise, liquidity weakens, and Bitcoin sells off.",
+      "bestInterpretation": "The inflation narrative may be outweighed by tighter monetary conditions and weaker liquidity.",
+      "benchmarkThatMatters": [
+        "inflation expectations",
+        "real yields",
+        "Fed/policy expectations",
+        "DXY",
+        "Broad USD",
+        "Bitcoin price",
+        "liquidity indicators"
+      ],
+      "likelyDominantDriver": "Tighter policy expectations and higher real yields.",
+      "secondSignalToValidate": [
+        "Treasury real yields",
+        "breakeven inflation",
+        "policy-rate expectations",
+        "risk appetite indicators",
+        "crypto leverage data"
+      ],
+      "mistakeToAvoid": "Assuming high inflation automatically makes Bitcoin rise."
+    }
+  ],
+  "commonMistakeCheckpoint": "The main mistake is treating Bitcoin as a mechanical inverse-dollar or automatic inflation-hedge asset. Bitcoin is dollar-sensitive and liquidity-sensitive, but not dollar-only.",
+  "answerKey": [
+    {
+      "question": 1,
+      "correctAnswer": "A",
+      "conceptTested": "Liquidity and risk appetite",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 2,
+      "correctAnswer": "C",
+      "conceptTested": "Conditional USD-Bitcoin relationship",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 3,
+      "correctAnswer": "False",
+      "conceptTested": "Inverse-dollar misconception",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 4,
+      "correctAnswer": "B",
+      "conceptTested": "USD up / Bitcoin up interpretation",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 5,
+      "correctAnswer": "B",
+      "conceptTested": "Weak USD vs tighter risk conditions",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 6,
+      "correctAnswer": "A",
+      "conceptTested": "Real rates and opportunity cost",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 7,
+      "correctAnswer": "B",
+      "conceptTested": "USD Impact Bitcoin workflow",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 8,
+      "correctAnswer": "B",
+      "conceptTested": "Inflation hedge misconception",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 9,
+      "correctAnswer": "C",
+      "conceptTested": "One-signal Bitcoin mistake",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 10,
+      "correctAnswer": "B",
+      "conceptTested": "Compliance-safe framing",
+      "difficulty": "Medium"
+    }
+  ],
+  "scoreInterpretation": [
+    {
+      "range": "80–100%",
+      "meaning": "Strong understanding. You can analyze Bitcoin through USD direction, real rates, liquidity, risk appetite, flows, regulation, leverage, and Bitcoin-specific volatility."
+    },
+    {
+      "range": "60–79%",
+      "meaning": "Good base. Review why Bitcoin is not a permanent inverse-dollar asset and why liquidity/risk appetite often matter."
+    },
+    {
+      "range": "Below 60%",
+      "meaning": "Reread the lesson before moving forward. Focus on why Bitcoin is dollar-sensitive and liquidity-sensitive, but not dollar-only."
+    }
+  ],
+  "followUpReadingPath": [
+    "/regime/how-to-read-the-dollar",
+    "/dxy/dxy-vs-broad-usd",
+    "/gold/usd-gold",
+    "/fx/usd-and-currency-risk"
+  ],
+  "complianceNote": "This quiz is for educational and informational purposes only. It is not investment advice, financial advice, legal advice, tax advice, trading advice, or a recommendation to buy or sell any asset. Market relationships are conditional and can change by regime.",
+  "sourceDriveUrl": "https://docs.google.com/document/d/1kXQudDXRt-EMoYQus4BNaeyf2exRHCYe7IpYJlDZLUo",
+  "status": "Ready",
+  "version": "1.0"
+}

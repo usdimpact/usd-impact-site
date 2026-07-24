@@ -1,0 +1,496 @@
+{
+  "quizId": "QUIZ-WEB-007_USD-and-Gold",
+  "canonicalId": "quiz-usd-and-gold",
+  "language": "en",
+  "title": "USD and Gold: How the Dollar, Real Yields, and Stress Shape Gold",
+  "seoTitle": "USD and Gold Quiz | USD Impact",
+  "metaDescription": "Test your understanding of how the U.S. dollar, real yields, liquidity stress, safe-haven demand, and central-bank behavior can influence gold.",
+  "slug": "/gold/usd-gold/quiz",
+  "relatedLessonUrl": "/gold/usd-gold",
+  "difficulty": "Beginner / Lower-intermediate",
+  "estimatedTime": "9–11 minutes",
+  "audience": "New investors and beginner macro learners",
+  "format": "Website quiz",
+  "questionCount": 10,
+  "learningObjective": [
+    "After completing this quiz, the learner should understand that gold is not explained by the dollar alone.",
+    "Gold can be influenced by USD direction, real yields, inflation expectations, liquidity stress, central-bank demand, safe-haven demand, and broader market confidence.",
+    "The learner should avoid slogans such as “USD up = gold down” or “money printing always means gold up.”"
+  ],
+  "conceptsTested": [
+    "Gold as a non-yielding asset",
+    "USD direction and gold pricing",
+    "Real yields and opportunity cost",
+    "Inflation expectations vs real rates",
+    "Safe-haven overlap between USD and gold",
+    "Liquidity stress and forced selling risk",
+    "Central-bank and reserve demand",
+    "Compliance-safe gold interpretation"
+  ],
+  "frameworkNote": "For gold, read USD direction together with real yields, inflation expectations, stress indicators, and safe-haven demand.",
+  "questions": [
+    {
+      "number": 1,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "Why are real yields important for gold analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Gold does not pay interest, so higher real yields can raise the opportunity cost of holding it."
+        },
+        {
+          "key": "B",
+          "text": "Real yields directly measure mine production."
+        },
+        {
+          "key": "C",
+          "text": "Real yields are the same as gold reserves."
+        },
+        {
+          "key": "D",
+          "text": "Real yields only measure oil inventories."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Gold is a non-yielding asset. When inflation-adjusted yields rise, yield-bearing assets may become more attractive relative to gold. When real yields fall, the opportunity cost of holding gold may decline.",
+      "sourceReference": "USD and Gold — Real yields and opportunity cost.",
+      "wrongAnswerNotes": [
+        "B confuses financial rates with mine output.",
+        "C confuses yields with reserves.",
+        "D confuses real yields with energy data."
+      ]
+    },
+    {
+      "number": 2,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "Which statement best describes the USD-gold relationship in the USD Impact framework?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Gold always falls when the dollar rises."
+        },
+        {
+          "key": "B",
+          "text": "Gold always rises when the dollar rises."
+        },
+        {
+          "key": "C",
+          "text": "The USD-gold relationship is conditional and depends on real yields, stress, inflation expectations, and safe-haven demand."
+        },
+        {
+          "key": "D",
+          "text": "Gold has no relationship with macro conditions."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "Gold often reacts to dollar direction, but the relationship is not mechanical. Real yields, inflation expectations, risk stress, central-bank demand, and confidence in financial conditions can change the outcome.",
+      "sourceReference": "USD and Gold — Conditional relationship.",
+      "wrongAnswerNotes": [
+        "A and B are fixed slogans.",
+        "D ignores major macro transmission channels."
+      ]
+    },
+    {
+      "number": 3,
+      "difficulty": "Easy",
+      "skillTested": "Comprehension",
+      "type": "true-false",
+      "question": "True or false: Gold can sometimes rise at the same time as the U.S. dollar.",
+      "options": [
+        {
+          "key": "True",
+          "text": "True"
+        },
+        {
+          "key": "False",
+          "text": "False"
+        }
+      ],
+      "correctAnswer": "True",
+      "explanation": "Gold and the dollar can both rise during stress regimes if investors seek safety, liquidity, reserve assets, or protection from uncertainty. This is safe-haven overlap.",
+      "sourceReference": "USD and Gold — Safe-haven overlap."
+    },
+    {
+      "number": 4,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "DXY rises, but real yields fall and geopolitical stress increases. Gold also rises. What is the best interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The move is impossible because USD and gold must always move opposite."
+        },
+        {
+          "key": "B",
+          "text": "Falling real yields and safe-haven demand may be supporting gold despite a stronger dollar."
+        },
+        {
+          "key": "C",
+          "text": "DXY alone explains the move."
+        },
+        {
+          "key": "D",
+          "text": "Gold must reverse immediately."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A stronger dollar can pressure gold in some regimes, but falling real yields lower the opportunity cost of holding gold, and geopolitical stress can increase safe-haven demand. These forces can offset or dominate the USD headwind.",
+      "sourceReference": "USD and Gold — Real yields plus safe-haven demand.",
+      "wrongAnswerNotes": [
+        "A assumes a false law.",
+        "C ignores real yields and stress.",
+        "D is a prediction, not analysis."
+      ]
+    },
+    {
+      "number": 5,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "DXY falls, but real yields rise sharply. Gold fails to rally. What is the most disciplined explanation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Gold must always rise when DXY falls, so the data is wrong."
+        },
+        {
+          "key": "B",
+          "text": "Rising real yields may be offsetting the weaker-dollar support for gold."
+        },
+        {
+          "key": "C",
+          "text": "The dollar never matters to gold."
+        },
+        {
+          "key": "D",
+          "text": "Gold is only driven by oil inventories."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A weaker dollar can support gold, but rising real yields increase the opportunity cost of holding a non-yielding asset. This can offset the weaker-dollar effect.",
+      "sourceReference": "USD and Gold — USD vs real-yield conflict.",
+      "wrongAnswerNotes": [
+        "A treats a conditional relationship as a law.",
+        "C rejects a valid USD channel.",
+        "D introduces an irrelevant single driver."
+      ]
+    },
+    {
+      "number": 6,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "During a severe liquidity shock, why might gold temporarily fall even if long-term uncertainty is rising?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Investors may sell liquid assets, including gold, to raise cash or meet margin needs."
+        },
+        {
+          "key": "B",
+          "text": "Gold becomes physically impossible to trade."
+        },
+        {
+          "key": "C",
+          "text": "DXY stops existing during stress."
+        },
+        {
+          "key": "D",
+          "text": "Real yields physically destroy gold supply."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "In acute liquidity stress, investors may sell high-quality liquid assets to raise cash. Gold can temporarily fall during forced liquidation even if the longer-term uncertainty backdrop remains supportive.",
+      "sourceReference": "USD and Gold — Liquidity stress and forced selling.",
+      "wrongAnswerNotes": [
+        "B is not the mechanism.",
+        "C is false.",
+        "D confuses financial rates with physical supply."
+      ]
+    },
+    {
+      "number": 7,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "Which sequence best reflects the USD Impact method for analyzing gold?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY moves → automatic gold conclusion."
+        },
+        {
+          "key": "B",
+          "text": "Check USD benchmark → check real yields → inspect stress/liquidity → evaluate gold-specific demand → interpret cautiously."
+        },
+        {
+          "key": "C",
+          "text": "Ignore real yields and stress."
+        },
+        {
+          "key": "D",
+          "text": "Treat every gold move as inflation only."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Gold requires multi-signal analysis. USD direction matters, but real yields, inflation expectations, liquidity stress, central-bank demand, ETF/investment demand, and safe-haven flows can all affect interpretation.",
+      "sourceReference": "USD and Gold — USD Impact gold workflow."
+    },
+    {
+      "number": 8,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "A learner says: “Inflation is high, so gold must rise.” What is the most disciplined response?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Correct. Inflation alone guarantees gold appreciation."
+        },
+        {
+          "key": "B",
+          "text": "Incorrect. Gold may react to inflation expectations, but real yields, USD direction, policy expectations, and stress conditions also matter."
+        },
+        {
+          "key": "C",
+          "text": "Incorrect. Inflation never matters to gold."
+        },
+        {
+          "key": "D",
+          "text": "Correct, but only if oil is rising."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Inflation can support gold in some regimes, especially if real yields fall or confidence weakens. But if policy expectations push real yields higher, gold may struggle even during high inflation.",
+      "sourceReference": "USD and Gold — Inflation vs real rates.",
+      "wrongAnswerNotes": [
+        "A is a guaranteed-outcome claim.",
+        "C ignores an important macro channel.",
+        "D adds an unsupported condition."
+      ]
+    },
+    {
+      "number": 9,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "Which statement is the weakest analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Gold can be pressured by rising real yields."
+        },
+        {
+          "key": "B",
+          "text": "Gold can rise with USD during safe-haven overlap."
+        },
+        {
+          "key": "C",
+          "text": "DXY is up today, so gold must fall."
+        },
+        {
+          "key": "D",
+          "text": "Gold interpretation should include USD, real yields, stress, and gold-specific demand."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "A single DXY move is not enough to predict gold. Gold may respond to real yields, stress demand, inflation expectations, central-bank buying, ETF flows, or liquidity conditions.",
+      "sourceReference": "USD and Gold — Avoiding one-signal gold analysis."
+    },
+    {
+      "number": 10,
+      "difficulty": "Medium",
+      "skillTested": "Compliance-safe interpretation",
+      "type": "multiple-choice",
+      "question": "Which sentence is most consistent with USD Impact’s educational and compliance-safe style?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Gold must rise because the dollar is weakening."
+        },
+        {
+          "key": "B",
+          "text": "Gold can be influenced by USD direction, but interpretation depends on real yields, inflation expectations, liquidity stress, safe-haven demand, and gold-specific flows."
+        },
+        {
+          "key": "C",
+          "text": "Gold is guaranteed protection in every market regime."
+        },
+        {
+          "key": "D",
+          "text": "A single DXY move is enough to decide gold exposure."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "This sentence is educational, conditional, and framework-based. It avoids advice, certainty, and guaranteed outcomes.",
+      "sourceReference": "USD and Gold — Compliance-safe interpretation.",
+      "wrongAnswerNotes": [
+        "A turns a conditional relationship into a certainty.",
+        "C overstates gold’s role.",
+        "D ignores confirmation and context."
+      ]
+    }
+  ],
+  "practicalApplications": [
+    {
+      "title": "Dollar Up, Gold Up",
+      "scenario": "DXY rises, geopolitical risk increases, volatility rises, real yields fall, and gold rises.",
+      "bestInterpretation": "Gold may be supported by safe-haven demand and falling real yields even though the dollar is stronger.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "real yields",
+        "gold price",
+        "volatility",
+        "credit stress",
+        "geopolitical risk indicators"
+      ],
+      "likelyDominantDriver": "Safe-haven overlap and lower opportunity cost.",
+      "secondSignalToValidate": [
+        "10Y real yields",
+        "VIX",
+        "credit spreads",
+        "ETF/investment demand",
+        "central-bank/reserve demand indicators where available"
+      ],
+      "mistakeToAvoid": "Assuming gold cannot rise with USD."
+    },
+    {
+      "title": "Dollar Down, Gold Flat",
+      "scenario": "DXY weakens, but real yields rise and the market prices tighter monetary policy. Gold remains flat.",
+      "bestInterpretation": "The weaker-dollar tailwind may be offset by higher real yields and tighter policy expectations.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "real yields",
+        "Fed expectations",
+        "inflation expectations",
+        "gold price"
+      ],
+      "likelyDominantDriver": "Real-rate pressure overpowering FX support.",
+      "secondSignalToValidate": [
+        "Treasury real yields",
+        "breakeven inflation",
+        "policy-rate expectations",
+        "gold ETF flows",
+        "bond-market reaction"
+      ],
+      "mistakeToAvoid": "Assuming DXY down automatically means gold up."
+    },
+    {
+      "title": "Liquidity Shock",
+      "scenario": "Markets sell off sharply, volatility jumps, credit spreads widen, USD strengthens, and gold falls for several sessions.",
+      "bestInterpretation": "Gold may be affected by forced liquidation or cash-raising behavior during acute liquidity stress.",
+      "benchmarkThatMatters": [
+        "gold price",
+        "DXY",
+        "Broad USD",
+        "VIX",
+        "credit spreads",
+        "funding indicators",
+        "real yields"
+      ],
+      "likelyDominantDriver": "Liquidity stress and cash demand.",
+      "secondSignalToValidate": [
+        "margin stress",
+        "credit spreads",
+        "Treasury market behavior",
+        "ETF flows",
+        "volatility indexes"
+      ],
+      "mistakeToAvoid": "Assuming uncertainty always makes gold rise immediately."
+    }
+  ],
+  "commonMistakeCheckpoint": "The main mistake is treating gold as a one-variable asset. Gold is dollar-sensitive, but not dollar-only.",
+  "answerKey": [
+    {
+      "question": 1,
+      "correctAnswer": "A",
+      "conceptTested": "Real yields and opportunity cost",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 2,
+      "correctAnswer": "C",
+      "conceptTested": "Conditional USD-gold relationship",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 3,
+      "correctAnswer": "True",
+      "conceptTested": "Safe-haven overlap",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 4,
+      "correctAnswer": "B",
+      "conceptTested": "USD up / gold up interpretation",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 5,
+      "correctAnswer": "B",
+      "conceptTested": "USD vs real-yield conflict",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 6,
+      "correctAnswer": "A",
+      "conceptTested": "Liquidity shock and forced selling",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 7,
+      "correctAnswer": "B",
+      "conceptTested": "USD Impact gold workflow",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 8,
+      "correctAnswer": "B",
+      "conceptTested": "Inflation vs real rates",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 9,
+      "correctAnswer": "C",
+      "conceptTested": "One-signal gold mistake",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 10,
+      "correctAnswer": "B",
+      "conceptTested": "Compliance-safe framing",
+      "difficulty": "Medium"
+    }
+  ],
+  "scoreInterpretation": [
+    {
+      "range": "80–100%",
+      "meaning": "Strong understanding. You can analyze gold through USD direction, real yields, stress conditions, and gold-specific demand."
+    },
+    {
+      "range": "60–79%",
+      "meaning": "Good base. Review the difference between dollar direction, real yields, inflation expectations, and safe-haven overlap."
+    },
+    {
+      "range": "Below 60%",
+      "meaning": "Reread the lesson before moving forward. Focus on why gold is dollar-sensitive but not dollar-only."
+    }
+  ],
+  "followUpReadingPath": [
+    "/regime/how-to-read-the-dollar",
+    "/dxy/dxy-vs-broad-usd",
+    "/energy/usd-wti",
+    "/bitcoin/usd-bitcoin"
+  ],
+  "complianceNote": "This quiz is for educational and informational purposes only. It is not investment advice, financial advice, legal advice, tax advice, trading advice, or a recommendation to buy or sell any asset. Market relationships are conditional and can change by regime.",
+  "sourceDriveUrl": "https://docs.google.com/document/d/1374BfktES2WKK-8ILmjzaFAk7psyaZ8dffENIfB2DFQ",
+  "status": "Ready",
+  "version": "1.0"
+}

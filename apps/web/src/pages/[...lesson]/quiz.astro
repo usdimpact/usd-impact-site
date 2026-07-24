@@ -1,0 +1,56 @@
+---
+import { getCollection } from 'astro:content';
+
+import QuizEngine from '../../components/QuizEngine.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import accessMap from '../../data/quiz-access-map.json';
+
+export async function getStaticPaths() {
+  const quizzes = await getCollection('quizzes');
+  const quizByCanonicalId = new Map(quizzes.map((entry) => [entry.data.canonicalId, entry.data]));
+
+  return accessMap.quizzes
+    .filter((access) => access.released)
+    .map((access) => {
+      const quiz = quizByCanonicalId.get(access.canonicalId);
+      if (!quiz) throw new Error(`Missing quiz content for ${access.canonicalId}`);
+
+      return {
+        params: {
+          lesson: access.slug.replace(/^\//, '').replace(/\/quiz\/?$/, ''),
+        },
+        props: { quiz, access },
+      };
+    });
+}
+
+const { quiz, access } = Astro.props;
+const purchaseUrl = import.meta.env.PUBLIC_BOOK_PURCHASE_URL || accessMap.purchaseFallbackUrl;
+---
+
+<BaseLayout title={quiz.seoTitle || quiz.title} description={quiz.metaDescription}>
+  <section class="hero">
+    <div class="container">
+      <div class="eyebrow">Book checkpoint · Quiz {access.order} of {accessMap.quizzes.length}</div>
+      <h1>{quiz.title}</h1>
+      <p class="lead">
+        Pass with {accessMap.passScore} of {quiz.questionCount} correct answers. Failed attempts can be retried without penalty.
+      </p>
+      <div class="button-row">
+        <a class="button secondary" href={access.relatedLessonUrl}>Return to the lesson</a>
+        <a class="button primary" href={purchaseUrl}>Get full book access</a>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+    <QuizEngine
+      quiz={quiz}
+      access={access}
+      totalQuizzes={accessMap.quizzes.length}
+      passScore={accessMap.passScore}
+      storageKey={accessMap.storageKey}
+      purchaseUrl={purchaseUrl}
+    />
+  </main>
+</BaseLayout>

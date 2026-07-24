@@ -1,0 +1,493 @@
+{
+  "quizId": "QUIZ-WEB-010_USD-and-Equities",
+  "canonicalId": "quiz-usd-and-equities",
+  "language": "en",
+  "title": "USD and Equities: How the Dollar Affects Earnings, Margins, and Valuations",
+  "seoTitle": "USD and Equities Quiz | USD Impact",
+  "metaDescription": "Test your understanding of how the U.S. dollar, real rates, earnings translation, margins, global revenue exposure, valuation pressure, liquidity, and stress conditions affect equities.",
+  "slug": "/equities/usd-equities/quiz",
+  "relatedLessonUrl": "/equities/usd-equities",
+  "difficulty": "Beginner / Lower-intermediate",
+  "estimatedTime": "9–11 minutes",
+  "audience": "New investors and beginner macro learners",
+  "format": "Website quiz",
+  "questionCount": 10,
+  "learningObjective": [
+    "After completing this quiz, the learner should understand that equities are not affected by the dollar in one simple direction.",
+    "The U.S. dollar can influence stocks through earnings translation, export competitiveness, import costs, margins, overseas revenue exposure, real rates, discount rates, liquidity, stress conditions, and investor risk appetite.",
+    "The learner should avoid slogans such as “strong dollar = stocks down” or “weak dollar = stocks up.”"
+  ],
+  "conceptsTested": [
+    "Dollar strength and foreign revenue translation",
+    "Global revenue exposure",
+    "Export competitiveness and import-cost effects",
+    "Real rates and equity valuation pressure",
+    "Long-duration growth equities vs value/cyclical exposure",
+    "Liquidity and stress conditions",
+    "Sector and company-specific transmission",
+    "Compliance-safe equity interpretation"
+  ],
+  "frameworkNote": "For equities, identify the dollar move, then ask who is exposed: exporter, importer, multinational, domestic company, commodity producer, financial, technology platform, or rate-sensitive growth stock.",
+  "questions": [
+    {
+      "number": 1,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "Why can a stronger U.S. dollar pressure some U.S. multinational companies?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Foreign revenues may translate into fewer U.S. dollars when reported in USD."
+        },
+        {
+          "key": "B",
+          "text": "A stronger dollar directly reduces the number of shares outstanding."
+        },
+        {
+          "key": "C",
+          "text": "A stronger dollar automatically eliminates company profits."
+        },
+        {
+          "key": "D",
+          "text": "DXY directly measures corporate margins."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "When a U.S. company earns revenue abroad, those revenues may be translated back into U.S. dollars. If the dollar strengthens, the translated USD value of foreign revenue can fall, all else equal.",
+      "sourceReference": "USD and Equities — Earnings translation channel.",
+      "wrongAnswerNotes": [
+        "B confuses FX translation with share count.",
+        "C is too absolute; companies can still be profitable.",
+        "D confuses a currency index with corporate financial statements."
+      ]
+    },
+    {
+      "number": 2,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "Which companies are generally more exposed to USD translation risk?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Companies with large foreign revenue exposure."
+        },
+        {
+          "key": "B",
+          "text": "Companies with no international business at all."
+        },
+        {
+          "key": "C",
+          "text": "Companies whose revenue is entirely domestic and costs are entirely domestic."
+        },
+        {
+          "key": "D",
+          "text": "Companies that do not report earnings."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Companies with significant overseas revenue can be more sensitive to currency translation. A strong dollar can reduce reported USD revenue from foreign sales, while a weaker dollar can improve translation.",
+      "sourceReference": "USD and Equities — Global revenue exposure.",
+      "wrongAnswerNotes": [
+        "B and C describe lower direct translation exposure.",
+        "D is not a useful investment-analysis category in this context."
+      ]
+    },
+    {
+      "number": 3,
+      "difficulty": "Easy",
+      "skillTested": "Comprehension",
+      "type": "true-false",
+      "question": "True or false: A stronger dollar automatically hurts every equity sector in the same way.",
+      "options": [
+        {
+          "key": "True",
+          "text": "True"
+        },
+        {
+          "key": "False",
+          "text": "False"
+        }
+      ],
+      "correctAnswer": "False",
+      "explanation": "Dollar effects differ by sector and company. Multinationals, exporters, importers, commodity producers, financials, technology firms, and domestic companies can have different exposures.",
+      "sourceReference": "USD and Equities — Sector and company-specific transmission."
+    },
+    {
+      "number": 4,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "The dollar strengthens, but a company with mostly domestic revenue and imported input costs improves margins. What is the best interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The move is impossible because USD strength must hurt all equities."
+        },
+        {
+          "key": "B",
+          "text": "The company may benefit if the stronger dollar lowers imported input costs more than it hurts revenue."
+        },
+        {
+          "key": "C",
+          "text": "DXY alone explains the company’s earnings."
+        },
+        {
+          "key": "D",
+          "text": "The stock must rise immediately."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A stronger dollar can reduce the cost of imported inputs for some companies. If the firm has limited foreign revenue exposure and benefits from cheaper imports, margins may improve despite dollar strength.",
+      "sourceReference": "USD and Equities — Margin and import-cost channel.",
+      "wrongAnswerNotes": [
+        "A assumes a false universal rule.",
+        "C ignores company-specific cost and revenue structure.",
+        "D is a prediction, not analysis."
+      ]
+    },
+    {
+      "number": 5,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "The dollar weakens, but real yields rise sharply and long-duration growth stocks fall. What is the most disciplined explanation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Growth stocks must always rise when USD falls."
+        },
+        {
+          "key": "B",
+          "text": "Higher real yields may be pressuring valuations despite the weaker-dollar tailwind."
+        },
+        {
+          "key": "C",
+          "text": "The dollar never matters to equities."
+        },
+        {
+          "key": "D",
+          "text": "Equities are only driven by oil inventories."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A weaker dollar can support some equity conditions, but rising real yields can increase discount-rate pressure, especially for long-duration growth equities whose valuations depend heavily on future cash flows.",
+      "sourceReference": "USD and Equities — Real rates and valuation pressure.",
+      "wrongAnswerNotes": [
+        "A treats a conditional relationship as a law.",
+        "C rejects a valid dollar channel.",
+        "D introduces an unrelated single driver."
+      ]
+    },
+    {
+      "number": 6,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "Why do real rates matter for equity valuation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Higher real rates can raise the discount rate applied to future cash flows, pressuring valuation multiples in some regimes."
+        },
+        {
+          "key": "B",
+          "text": "Real rates directly count corporate employees."
+        },
+        {
+          "key": "C",
+          "text": "Real rates are the same as DXY."
+        },
+        {
+          "key": "D",
+          "text": "Real rates only matter for natural gas storage."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "Equities are valued based on expected future cash flows. When real rates rise, future cash flows can be discounted more heavily, which can pressure valuation multiples, especially for long-duration growth assets.",
+      "sourceReference": "USD and Equities — Discount-rate channel.",
+      "wrongAnswerNotes": [
+        "B confuses rates with labor data.",
+        "C confuses interest-rate concepts with FX indexes.",
+        "D is unrelated."
+      ]
+    },
+    {
+      "number": 7,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "Which sequence best reflects the USD Impact method for analyzing equities?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY moves → automatic equity conclusion."
+        },
+        {
+          "key": "B",
+          "text": "Identify USD signal → identify company/index exposure → check real rates and liquidity → inspect earnings, margins, and sector drivers → interpret cautiously."
+        },
+        {
+          "key": "C",
+          "text": "Ignore earnings and rates."
+        },
+        {
+          "key": "D",
+          "text": "Treat every stock as a pure dollar trade."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Equity analysis requires multiple channels. USD direction matters, but the impact depends on exposure, earnings translation, cost structure, margins, real rates, liquidity, stress, and sector fundamentals.",
+      "sourceReference": "USD and Equities — USD Impact equity workflow."
+    },
+    {
+      "number": 8,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "A learner says: “The dollar is down, so equities must rise.” What is the most disciplined response?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Correct. USD weakness guarantees equity upside."
+        },
+        {
+          "key": "B",
+          "text": "Incorrect. A weaker dollar may help some equities, but real rates, earnings, margins, liquidity, credit, and sector exposure also matter."
+        },
+        {
+          "key": "C",
+          "text": "Incorrect. The dollar never matters to equities."
+        },
+        {
+          "key": "D",
+          "text": "Correct, but only for every technology stock."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A weaker dollar can support some companies through foreign revenue translation or easier global financial conditions. But equities can still fall if real rates rise, earnings weaken, margins compress, or liquidity conditions deteriorate.",
+      "sourceReference": "USD and Equities — Avoiding weak-dollar equity slogans.",
+      "wrongAnswerNotes": [
+        "A is a guaranteed-outcome claim.",
+        "C rejects a valid macro channel.",
+        "D overgeneralizes one sector."
+      ]
+    },
+    {
+      "number": 9,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "Which statement is the weakest analysis?",
+      "options": [
+        {
+          "key": "A",
+          "text": "A stronger dollar can pressure foreign revenue translation for U.S. multinationals."
+        },
+        {
+          "key": "B",
+          "text": "Real yields can matter for valuation multiples."
+        },
+        {
+          "key": "C",
+          "text": "DXY is up today, so all stocks must fall."
+        },
+        {
+          "key": "D",
+          "text": "Equity impact depends on revenue exposure, margins, real rates, liquidity, and sector-specific drivers."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "A single DXY move is not enough to predict the entire equity market. The effect depends on the index, sector, company exposure, valuation sensitivity, earnings quality, margins, liquidity, and stress conditions.",
+      "sourceReference": "USD and Equities — One-signal equity mistake."
+    },
+    {
+      "number": 10,
+      "difficulty": "Medium",
+      "skillTested": "Compliance-safe interpretation",
+      "type": "multiple-choice",
+      "question": "Which sentence is most consistent with USD Impact’s educational and compliance-safe style?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Stocks must fall because the dollar is strengthening."
+        },
+        {
+          "key": "B",
+          "text": "Equities can be influenced by USD direction, but interpretation depends on earnings translation, margins, real rates, liquidity, stress conditions, sector exposure, and company fundamentals."
+        },
+        {
+          "key": "C",
+          "text": "A weaker dollar guarantees equity gains."
+        },
+        {
+          "key": "D",
+          "text": "A single DXY move is enough to decide equity exposure."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "This sentence is educational, conditional, and framework-based. It avoids advice, certainty, and guaranteed outcomes.",
+      "sourceReference": "USD and Equities — Compliance-safe interpretation.",
+      "wrongAnswerNotes": [
+        "A and C turn conditional relationships into certainty.",
+        "D ignores confirmation and company-specific context."
+      ]
+    }
+  ],
+  "practicalApplications": [
+    {
+      "title": "Strong Dollar, Multinational Earnings Pressure",
+      "scenario": "DXY rises, Broad USD strengthens, and a U.S. multinational with large overseas revenue warns that FX translation is reducing reported revenue growth.",
+      "bestInterpretation": "The strong dollar may be creating an earnings-translation headwind for the company.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "company foreign revenue mix",
+        "reported revenue growth",
+        "constant-currency revenue growth"
+      ],
+      "likelyDominantDriver": "FX translation pressure on foreign revenues.",
+      "secondSignalToValidate": [
+        "company earnings guidance",
+        "segment revenue by region",
+        "constant-currency reporting",
+        "margin commentary",
+        "sector peers"
+      ],
+      "mistakeToAvoid": "Assuming the stock move is only about DXY without checking company exposure."
+    },
+    {
+      "title": "Weak Dollar, Equities Still Fall",
+      "scenario": "DXY weakens, but real yields rise, credit spreads widen, and growth equities fall.",
+      "bestInterpretation": "The weaker-dollar tailwind may be outweighed by valuation pressure from higher real yields and worsening liquidity/stress conditions.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "real yields",
+        "credit spreads",
+        "equity valuation multiples",
+        "volatility"
+      ],
+      "likelyDominantDriver": "Discount-rate pressure and stress/liquidity deterioration.",
+      "secondSignalToValidate": [
+        "10Y real yields",
+        "HY OAS",
+        "VIX",
+        "earnings revisions",
+        "equity breadth",
+        "sector rotation"
+      ],
+      "mistakeToAvoid": "Assuming DXY down automatically means stocks up."
+    },
+    {
+      "title": "Strong Dollar, Mixed Sector Impact",
+      "scenario": "The dollar strengthens. Export-heavy multinationals struggle, but a domestic retailer with imported goods sees input-cost relief.",
+      "bestInterpretation": "The dollar impact is sector and company-specific. One equity may face revenue translation pressure while another may benefit through lower import costs.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD",
+        "company revenue geography",
+        "cost structure",
+        "import exposure",
+        "margins"
+      ],
+      "likelyDominantDriver": "Company-specific exposure to revenue translation versus input-cost relief.",
+      "secondSignalToValidate": [
+        "earnings calls",
+        "margin guidance",
+        "cost-of-goods commentary",
+        "geographic revenue split",
+        "sector comparison"
+      ],
+      "mistakeToAvoid": "Treating all equities as one USD trade."
+    }
+  ],
+  "commonMistakeCheckpoint": "The main mistake is treating equities as if the whole stock market has one simple dollar relationship. Equities are dollar-sensitive, rate-sensitive, earnings-sensitive, and sector-specific.",
+  "answerKey": [
+    {
+      "question": 1,
+      "correctAnswer": "A",
+      "conceptTested": "Foreign revenue translation",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 2,
+      "correctAnswer": "A",
+      "conceptTested": "Global revenue exposure",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 3,
+      "correctAnswer": "False",
+      "conceptTested": "Sector-specific transmission",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 4,
+      "correctAnswer": "B",
+      "conceptTested": "Import-cost and margin channel",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 5,
+      "correctAnswer": "B",
+      "conceptTested": "Weak USD vs real-rate pressure",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 6,
+      "correctAnswer": "A",
+      "conceptTested": "Real rates and valuation",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 7,
+      "correctAnswer": "B",
+      "conceptTested": "USD Impact equity workflow",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 8,
+      "correctAnswer": "B",
+      "conceptTested": "Weak-dollar equity misconception",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 9,
+      "correctAnswer": "C",
+      "conceptTested": "One-signal equity mistake",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 10,
+      "correctAnswer": "B",
+      "conceptTested": "Compliance-safe framing",
+      "difficulty": "Medium"
+    }
+  ],
+  "scoreInterpretation": [
+    {
+      "range": "80–100%",
+      "meaning": "Strong understanding. You can analyze equities through USD direction, revenue translation, margins, real rates, liquidity, and sector/company exposure."
+    },
+    {
+      "range": "60–79%",
+      "meaning": "Good base. Review FX translation, real-rate valuation pressure, and why equity sectors respond differently to dollar moves."
+    },
+    {
+      "range": "Below 60%",
+      "meaning": "Reread the lesson before moving forward. Focus on why equities are not one simple dollar trade."
+    }
+  ],
+  "followUpReadingPath": [
+    "/regime/how-to-read-the-dollar",
+    "/dxy/dxy-vs-broad-usd",
+    "/bitcoin/usd-bitcoin",
+    "/fx/usd-and-currency-risk"
+  ],
+  "complianceNote": "This quiz is for educational and informational purposes only. It is not investment advice, financial advice, legal advice, tax advice, trading advice, or a recommendation to buy or sell any asset. Market relationships are conditional and can change by regime.",
+  "sourceDriveUrl": "https://docs.google.com/document/d/1l6CDR9JASo_2DK7hwGfuc8_PLcFkJS9OoavZgJOmwOQ",
+  "status": "Ready",
+  "version": "1.0"
+}

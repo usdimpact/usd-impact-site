@@ -1,0 +1,449 @@
+{
+  "quizId": "QUIZ-WEB-001_Start-Here",
+  "canonicalId": "quiz-start-here",
+  "language": "en",
+  "title": "Start Here: Why the Dollar Moves Global Markets",
+  "seoTitle": "Why the Dollar Moves Global Markets Quiz | USD Impact",
+  "metaDescription": "Test your understanding of why the U.S. dollar affects oil, gold, Bitcoin, FX, equities, and global liquidity.",
+  "slug": "/start-here/quiz",
+  "relatedLessonUrl": "/start-here",
+  "difficulty": "Beginner / Lower-intermediate",
+  "estimatedTime": "6–8 minutes",
+  "audience": "New investors and beginner macro learners",
+  "sourceDriveUrl": "https://docs.google.com/document/d/1f6o73xN5ss7G3Dv0Ceb23-RgDAMizjtgK2vlPsjliHg",
+  "format": "Website quiz",
+  "questionCount": 10,
+  "learningObjective": [
+    "Understand that the U.S. dollar is not just a currency pair on a chart.",
+    "Understand the dollar as a reserve currency, funding currency, liquidity refuge, and global transmission mechanism.",
+    "Apply the USD Impact method: correct benchmark, dominant driver, second-signal validation, and cautious interpretation."
+  ],
+  "conceptsTested": [
+    "USD beyond national currency",
+    "USD vs DXY",
+    "FX weakness vs purchasing-power loss",
+    "Dollar liquidity and funding stress",
+    "Broad USD confirmation",
+    "Asset transmission channels",
+    "One-data-point regime mistake",
+    "Compliance-safe interpretation"
+  ],
+  "frameworkNote": "Use benchmark → driver → confirmation signal → asset-specific transmission before making a market interpretation.",
+  "questions": [
+    {
+      "number": 1,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "In the USD Impact framework, why does the U.S. dollar matter beyond the FX market?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Because it only controls EURUSD."
+        },
+        {
+          "key": "B",
+          "text": "Because it acts as a reserve currency, funding currency, pricing reference, and liquidity channel."
+        },
+        {
+          "key": "C",
+          "text": "Because DXY measures every global currency."
+        },
+        {
+          "key": "D",
+          "text": "Because all assets move inversely to the dollar at all times."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "The dollar matters because it sits inside global reserves, financing, trade, commodities, debt markets, and liquidity stress. It is not just an FX ticker.",
+      "sourceReference": "Start Here — Why the USD moves global markets."
+    },
+    {
+      "number": 2,
+      "difficulty": "Easy",
+      "skillTested": "Definition",
+      "type": "multiple-choice",
+      "question": "What is the main mistake in saying “USD = DXY”?",
+      "options": [
+        {
+          "key": "A",
+          "text": "DXY does not exist."
+        },
+        {
+          "key": "B",
+          "text": "DXY only measures gold."
+        },
+        {
+          "key": "C",
+          "text": "DXY is a specific dollar index, not the full global dollar system."
+        },
+        {
+          "key": "D",
+          "text": "DXY only tracks Bitcoin."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "DXY is useful, but it is only one benchmark. It does not fully capture trade-weighted dollar pressure, emerging markets, funding stress, or purchasing power.",
+      "sourceReference": "Start Here — USD vs DXY."
+    },
+    {
+      "number": 3,
+      "difficulty": "Easy",
+      "skillTested": "Comprehension",
+      "type": "true-false",
+      "question": "True or false: A weak dollar in FX always means the dollar is losing purchasing power at the same pace inside the United States.",
+      "options": [
+        {
+          "key": "True",
+          "text": "True"
+        },
+        {
+          "key": "False",
+          "text": "False"
+        }
+      ],
+      "correctAnswer": "False",
+      "explanation": "FX depreciation and purchasing-power loss are different concepts. FX weakness means the dollar falls against other currencies. Purchasing-power loss is linked to inflation and domestic prices.",
+      "sourceReference": "Start Here — FX vs inflation."
+    },
+    {
+      "number": 4,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "DXY rises sharply, but the Fed’s Broad USD index is mostly flat. What is the best interpretation?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The whole global dollar system is clearly tightening."
+        },
+        {
+          "key": "B",
+          "text": "The move may be specific to the DXY basket rather than broad dollar strength."
+        },
+        {
+          "key": "C",
+          "text": "Gold must fall immediately."
+        },
+        {
+          "key": "D",
+          "text": "Bitcoin must rise because DXY is misleading."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "If DXY rises but Broad USD does not confirm, the move may be driven by basket composition. Validate before calling it a broad dollar regime shift.",
+      "sourceReference": "Start Here — Benchmark discipline."
+    },
+    {
+      "number": 5,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "The dollar rises during a market stress event. Which explanation best fits the USD Impact framework?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The U.S. economy must be booming."
+        },
+        {
+          "key": "B",
+          "text": "Investors may be demanding dollar liquidity, collateral, and funding safety."
+        },
+        {
+          "key": "C",
+          "text": "Commodities must collapse immediately."
+        },
+        {
+          "key": "D",
+          "text": "The dollar is rising because inflation disappeared."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "During stress, the dollar can rise because global investors need USD liquidity, collateral, margin funding, and balance-sheet safety.",
+      "sourceReference": "Start Here — Dollar as liquidity refuge."
+    },
+    {
+      "number": 6,
+      "difficulty": "Medium",
+      "skillTested": "Interpretation",
+      "type": "multiple-choice",
+      "question": "A learner says: “DXY is down, so gold, Bitcoin, oil, and equities should all rise.” What is the best correction?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Correct. All assets always rise when DXY falls."
+        },
+        {
+          "key": "B",
+          "text": "Incorrect. First identify why the dollar is falling and which driver dominates each asset."
+        },
+        {
+          "key": "C",
+          "text": "Incorrect. Assets never react to the dollar."
+        },
+        {
+          "key": "D",
+          "text": "Correct, but only for Bitcoin."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "A weaker DXY can mean different things depending on rates, liquidity, growth, risk stress, inflation, or basket composition.",
+      "sourceReference": "Start Here — Avoiding market slogans."
+    },
+    {
+      "number": 7,
+      "difficulty": "Medium",
+      "skillTested": "Application",
+      "type": "multiple-choice",
+      "question": "Which sequence best represents the USD Impact method?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Headline → emotion → asset call → trade."
+        },
+        {
+          "key": "B",
+          "text": "DXY → automatic conclusion → buy/sell decision."
+        },
+        {
+          "key": "C",
+          "text": "Benchmark → dominant driver → second-signal validation → cautious interpretation."
+        },
+        {
+          "key": "D",
+          "text": "Social media trend → price prediction → certainty."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "The framework starts with the right benchmark, identifies the likely driver, checks confirmation, and then applies cautious interpretation.",
+      "sourceReference": "Start Here — USD Impact method."
+    },
+    {
+      "number": 8,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "Oil rises while the dollar also rises. Which conclusion is most disciplined?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The oil move is impossible because USD and oil must move inversely."
+        },
+        {
+          "key": "B",
+          "text": "The dollar signal is irrelevant forever."
+        },
+        {
+          "key": "C",
+          "text": "A supply, inflation, or geopolitical shock may be dominating the usual FX channel."
+        },
+        {
+          "key": "D",
+          "text": "Oil must crash next."
+        }
+      ],
+      "correctAnswer": "C",
+      "explanation": "Oil is not only a dollar trade. Physical balance, OPEC+, inventories, geopolitics, and inflation expectations can dominate.",
+      "sourceReference": "Start Here — Asset transmission is regime-dependent."
+    },
+    {
+      "number": 9,
+      "difficulty": "Hard",
+      "skillTested": "Mistake detection",
+      "type": "multiple-choice",
+      "question": "A reader sees one daily move in DXY and says, “The dollar regime has changed.” What is the main problem?",
+      "options": [
+        {
+          "key": "A",
+          "text": "One data point is not enough to call a full regime shift."
+        },
+        {
+          "key": "B",
+          "text": "DXY never matters."
+        },
+        {
+          "key": "C",
+          "text": "The dollar only matters for forex traders."
+        },
+        {
+          "key": "D",
+          "text": "Regimes change every hour."
+        }
+      ],
+      "correctAnswer": "A",
+      "explanation": "A regime call needs confirmation through Broad USD, real yields, volatility, credit spreads, and asset reactions.",
+      "sourceReference": "Start Here — Signal vs noise."
+    },
+    {
+      "number": 10,
+      "difficulty": "Medium",
+      "skillTested": "Practical interpretation",
+      "type": "multiple-choice",
+      "question": "Which statement is most consistent with USD Impact’s educational approach?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The dollar moved, so the asset reaction is guaranteed."
+        },
+        {
+          "key": "B",
+          "text": "The dollar is one transmission channel; the dominant driver must be identified before interpreting asset impact."
+        },
+        {
+          "key": "C",
+          "text": "Every weak dollar move is bullish for all risk assets."
+        },
+        {
+          "key": "D",
+          "text": "DXY alone explains global liquidity."
+        }
+      ],
+      "correctAnswer": "B",
+      "explanation": "Dollar moves matter, but they must be interpreted through drivers, benchmarks, liquidity, rates, and asset-specific fundamentals.",
+      "sourceReference": "Start Here — Framework discipline."
+    }
+  ],
+  "practicalApplications": [
+    {
+      "title": "DXY vs Broad USD",
+      "scenario": "DXY rises 1.2% in a week, but Broad USD is flat.",
+      "bestInterpretation": "This may be a DXY basket story, not a full global dollar tightening.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "Broad USD"
+      ],
+      "likelyDominantDriver": "EUR-specific weakness or basket composition.",
+      "secondSignalToValidate": [
+        "Broad USD",
+        "EURUSD",
+        "USDJPY",
+        "real yields"
+      ],
+      "mistakeToAvoid": "Calling broad USD strength from DXY alone."
+    },
+    {
+      "title": "Dollar Up, Gold Up",
+      "scenario": "USD rises, but gold also rises.",
+      "bestInterpretation": "The market may be pricing stress, real-rate movement, sovereign-risk concern, or safe-haven demand.",
+      "benchmarkThatMatters": [
+        "DXY",
+        "real yields",
+        "gold price",
+        "volatility",
+        "credit stress"
+      ],
+      "likelyDominantDriver": "Safe-haven overlap or real-rate dynamics.",
+      "secondSignalToValidate": [
+        "10Y real yields",
+        "VIX",
+        "credit spreads"
+      ],
+      "mistakeToAvoid": "Assuming USD up always means gold down."
+    },
+    {
+      "title": "Oil Up, Dollar Up",
+      "scenario": "WTI rises while USD also strengthens.",
+      "bestInterpretation": "A physical supply shock, geopolitical risk, or inflation concern may be overpowering the normal FX channel.",
+      "benchmarkThatMatters": [
+        "WTI",
+        "DXY",
+        "inventories",
+        "oil curve",
+        "volatility"
+      ],
+      "likelyDominantDriver": "Supply risk or inflation repricing.",
+      "secondSignalToValidate": [
+        "EIA data",
+        "futures curve",
+        "OVX",
+        "OPEC+ headlines"
+      ],
+      "mistakeToAvoid": "Treating oil as only a dollar trade."
+    }
+  ],
+  "answerKey": [
+    {
+      "question": 1,
+      "correctAnswer": "B",
+      "conceptTested": "USD as global system",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 2,
+      "correctAnswer": "C",
+      "conceptTested": "USD vs DXY",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 3,
+      "correctAnswer": "False",
+      "conceptTested": "FX vs purchasing power",
+      "difficulty": "Easy"
+    },
+    {
+      "question": 4,
+      "correctAnswer": "B",
+      "conceptTested": "DXY vs Broad USD",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 5,
+      "correctAnswer": "B",
+      "conceptTested": "Dollar liquidity stress",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 6,
+      "correctAnswer": "B",
+      "conceptTested": "Avoiding market slogans",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 7,
+      "correctAnswer": "C",
+      "conceptTested": "USD Impact method",
+      "difficulty": "Medium"
+    },
+    {
+      "question": 8,
+      "correctAnswer": "C",
+      "conceptTested": "Oil and dollar regime logic",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 9,
+      "correctAnswer": "A",
+      "conceptTested": "One-data-point mistake",
+      "difficulty": "Hard"
+    },
+    {
+      "question": 10,
+      "correctAnswer": "B",
+      "conceptTested": "Conditional asset transmission",
+      "difficulty": "Medium"
+    }
+  ],
+  "scoreInterpretation": [
+    {
+      "range": "80–100%",
+      "meaning": "Strong understanding. Proceed to the next lesson."
+    },
+    {
+      "range": "60–79%",
+      "meaning": "Good base. Review the key distinction points before moving forward."
+    },
+    {
+      "range": "Below 60%",
+      "meaning": "Reread the lesson before moving forward."
+    }
+  ],
+  "followUpReadingPath": [
+    "/dxy/what-is-dxy",
+    "/dxy/dxy-vs-broad-usd",
+    "/fx/fx-depreciation-vs-inflation",
+    "/energy/usd-wti"
+  ],
+  "complianceNote": "This quiz is for educational and informational purposes only. It is not investment advice, financial advice, legal advice, tax advice, trading advice, or a recommendation to buy or sell any asset. Market relationships are conditional and can change by regime.",
+  "status": "Ready",
+  "version": "1.0"
+}

@@ -57,6 +57,7 @@ const releasedQuizzes = [
   [routes.regimeQuiz,'Quiz 6 of 12',routes.regimeLesson], [routes.goldQuiz,'Quiz 7 of 12',routes.goldLesson],
   [routes.wtiQuiz,'Quiz 8 of 12',routes.wtiLesson], [routes.lngQuiz,'Quiz 9 of 12',routes.lngLesson],
   [routes.equitiesQuiz,'Quiz 10 of 12',routes.equitiesLesson], [routes.bitcoinQuiz,'Quiz 11 of 12',routes.bitcoinLesson],
+  [routes.currencyRiskQuiz,'Quiz 12 of 12',routes.currencyRiskLesson],
 ];
 for (const [route, label, lesson] of releasedQuizzes) {
   const file = pagePath(route);
@@ -65,7 +66,8 @@ for (const [route, label, lesson] of releasedQuizzes) {
   if (!html.includes(label)) failures.push(`${route} is missing ${label}.`);
   if (!html.includes(`href="${lesson}"`)) failures.push(`${route} does not link to ${lesson}.`);
 }
-if (fs.existsSync(pagePath(routes.currencyRiskQuiz))) failures.push(`Unreleased Quiz 12 was generated at ${routes.currencyRiskQuiz}.`);
+const finalQuizHtml = fs.existsSync(pagePath(routes.currencyRiskQuiz)) ? fs.readFileSync(pagePath(routes.currencyRiskQuiz), 'utf8') : '';
+if (finalQuizHtml && !finalQuizHtml.includes('data-quiz-completion-link')) failures.push('Quiz 12 is missing the completion link contract.');
 for (const file of ['api/waitlist.js','api/daily-news-source.js']) if (!fs.existsSync(path.resolve(file))) failures.push(`Required Vercel function is missing: ${file}.`);
 if (!fs.existsSync(path.join(distRoot, checklistDownload.replace(/^\//, '')))) failures.push(`Checklist PDF is missing: ${checklistDownload}.`);
 if (fs.existsSync(pagePath('/benchmark/usd-impact-benchmark-dashboard'))) failures.push('Draft benchmark route was generated.');
@@ -74,10 +76,9 @@ const sitemap = path.join(distRoot, 'sitemap-0.xml');
 if (!fs.existsSync(sitemap)) failures.push('Generated sitemap-0.xml is missing.');
 else {
   const xml = fs.readFileSync(sitemap, 'utf8');
-  for (const route of [routes.dollarLesson,routes.fxLesson,routes.fxQuiz,routes.dxyLesson,routes.dxyQuiz,routes.broadLesson,routes.broadQuiz,routes.regimeLesson,routes.regimeQuiz,routes.goldLesson,routes.goldQuiz,routes.wtiLesson,routes.wtiQuiz,routes.lngLesson,routes.lngQuiz,routes.equitiesLesson,routes.equitiesQuiz,routes.bitcoinLesson,routes.bitcoinQuiz,routes.currencyRiskLesson]) {
+  for (const route of [routes.dollarLesson,routes.fxLesson,routes.fxQuiz,routes.dxyLesson,routes.dxyQuiz,routes.broadLesson,routes.broadQuiz,routes.regimeLesson,routes.regimeQuiz,routes.goldLesson,routes.goldQuiz,routes.wtiLesson,routes.wtiQuiz,routes.lngLesson,routes.lngQuiz,routes.equitiesLesson,routes.equitiesQuiz,routes.bitcoinLesson,routes.bitcoinQuiz,routes.currencyRiskLesson,routes.currencyRiskQuiz]) {
     if (!xml.includes(`${route}/`)) failures.push(`Released route is missing from sitemap: ${route}.`);
   }
-  if (xml.includes(`${routes.currencyRiskQuiz}/`)) failures.push('Unreleased Quiz 12 appears in sitemap.');
   if (xml.includes('benchmark/usd-impact-benchmark-dashboard')) failures.push('Draft benchmark route appears in sitemap.');
 }
 if (failures.length > 0) { console.error(`Production build verification failed:\n${failures.join('\n')}`); process.exit(1); }

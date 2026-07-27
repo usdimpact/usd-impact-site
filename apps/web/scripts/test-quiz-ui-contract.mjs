@@ -10,17 +10,15 @@ const engineSource = await fs.readFile(path.join(webRoot, 'src/components/QuizEn
 const routeSource = await fs.readFile(path.join(webRoot, 'src/pages/[...lesson]/quiz.astro'), 'utf8');
 
 assert.deepEqual(accessMap.quizzes.filter((item) => item.released).map((item) => item.canonicalId), [
-  'quiz-start-here','quiz-what-is-us-dollar','quiz-fx-depreciation-vs-inflation','quiz-dxy-explained','quiz-dxy-vs-broad-usd','quiz-dollar-regime-framework','quiz-usd-and-gold','quiz-usd-and-wti','quiz-usd-and-lng-natural-gas','quiz-usd-and-equities','quiz-usd-and-bitcoin',
+  'quiz-start-here','quiz-what-is-us-dollar','quiz-fx-depreciation-vs-inflation','quiz-dxy-explained','quiz-dxy-vs-broad-usd','quiz-dollar-regime-framework','quiz-usd-and-gold','quiz-usd-and-wti','quiz-usd-and-lng-natural-gas','quiz-usd-and-equities','quiz-usd-and-bitcoin','quiz-usd-and-fx-currency-risk',
 ]);
-const quiz11 = accessMap.quizzes[10];
 const quiz12 = accessMap.quizzes[11];
-assert.equal(quiz11.released, true);
-assert.equal(quiz11.lessonReleased, true);
-assert.equal(quiz11.relatedLessonUrl, '/bitcoin/usd-bitcoin');
-assert.equal(quiz11.unlocksChapter, '/fx/usd-and-currency-risk');
-assert.equal(quiz12.released, false);
+assert.equal(quiz12.released, true);
 assert.equal(quiz12.lessonReleased, true);
 assert.equal(quiz12.relatedLessonUrl, '/fx/usd-and-currency-risk');
+assert.equal(quiz12.unlocksChapter, null);
+assert.equal(quiz12.nextQuizUrl, null);
+assert.equal(quiz12.completionUrl, '/book/read-the-dollar-first/');
 
 assert.match(engineSource, /Math\.min\(currentIndex, questionElements\.length - 1\)/);
 assert.match(engineSource, /currentIndex >= questionElements\.length - 1/);
@@ -29,6 +27,9 @@ assert.match(engineSource, /submitButton\.hidden = !isLast/);
 assert.match(engineSource, /currentIndex = 0/);
 assert.match(engineSource, /localStorage\.getItem\(storageKey\)/);
 assert.match(engineSource, /localStorage\.setItem\(storageKey/);
+assert.match(engineSource, /data-quiz-completion-link/);
+assert.match(engineSource, /Completed —/);
+assert.match(engineSource, /completionLink\.href = payload\.completionUrl/);
 assert.match(routeSource, /access\.lessonReleased/);
 assert.match(routeSource, /Return to the lesson/);
 assert.match(routeSource, /View all quizzes/);

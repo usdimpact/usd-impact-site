@@ -36,6 +36,13 @@ for (const file of contentFiles) {
   const match = text.match(/^slug:\s*["']?([^\n"']+)["']?\s*$/m);
   if (match) contentSlugs.add(normalizeRoute(match[1].trim()));
 }
+const releasedQuizSlugs = new Set(
+  accessMap.quizzes
+    .filter((item) => item.released)
+    .map((item) => normalizeRoute(item.slug)),
+);
+const availableRoutes = new Set([...contentSlugs, ...releasedQuizSlugs]);
+
 const quizFiles = (await fs.readdir(quizDir)).filter((name) => name.endsWith('.json')).sort();
 const quizzes = await Promise.all(
   quizFiles.map(async (name) => JSON.parse(await fs.readFile(path.join(quizDir, name), 'utf8'))),
@@ -57,7 +64,9 @@ for (const quiz of quizzes.sort((a, b) => a.canonicalId.localeCompare(b.canonica
     released: access.released,
     relatedLessonUrl: access.relatedLessonUrl,
     unlocksChapter: access.unlocksChapter,
-    unlocksChapterAvailable: access.unlocksChapter ? contentSlugs.has(normalizeRoute(access.unlocksChapter)) : false,
+    unlocksChapterAvailable: access.unlocksChapter
+      ? availableRoutes.has(normalizeRoute(access.unlocksChapter))
+      : false,
     nextQuizUrl: access.nextQuizUrl,
     completionUrl: access.completionUrl,
     questions: quiz.questions.map((question) => ({

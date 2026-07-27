@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "passScore": 8,
   "totalQuestionsPerQuiz": 10,
   "storageKey": "usd-impact-quiz-progress-v1",
@@ -25,7 +25,7 @@
       "lessonReleased": true,
       "nextQuizUrl": "/fx/fx-depreciation-vs-inflation/quiz",
       "previousQuizUrl": "/start-here/quiz",
-      "unlocksChapter": null,
+      "unlocksChapter": "/fx/fx-depreciation-vs-inflation",
       "completionUrl": null,
       "released": true
     },
@@ -34,7 +34,7 @@
       "canonicalId": "quiz-fx-depreciation-vs-inflation",
       "slug": "/fx/fx-depreciation-vs-inflation/quiz",
       "relatedLessonUrl": "/fx/fx-depreciation-vs-inflation",
-      "lessonReleased": false,
+      "lessonReleased": true,
       "nextQuizUrl": "/dxy/what-is-dxy/quiz",
       "previousQuizUrl": "/dollar/what-is-the-us-dollar/quiz",
       "unlocksChapter": "/dxy/what-is-dxy",

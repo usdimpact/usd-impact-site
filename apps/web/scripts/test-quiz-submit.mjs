@@ -57,8 +57,8 @@ const quiz2Pass = await request({ canonicalId: quiz2Id, answers: answersFor(quiz
 assert.equal(quiz2Pass.status, 200);
 assert.equal(quiz2Pass.json.score, 10);
 assert.equal(quiz2Pass.json.passed, true);
-assert.equal(quiz2Pass.json.unlocksChapter, null);
-assert.equal(quiz2Pass.json.nextChapterStatus, 'coming-soon');
+assert.equal(quiz2Pass.json.unlocksChapter, '/fx/fx-depreciation-vs-inflation');
+assert.equal(quiz2Pass.json.nextChapterStatus, 'available');
 assert.equal(quiz2Pass.json.details.length, 10);
 
 const quiz2Fail = await request({ canonicalId: quiz2Id, answers: answersFor(quiz2Id, false) });

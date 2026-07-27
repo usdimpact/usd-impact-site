@@ -1,5 +1,5 @@
 {
-  "version": "1.5.0",
+  "version": "1.6.0",
   "passScore": 8,
   "totalQuestionsPerQuiz": 10,
   "storageKey": "usd-impact-quiz-progress-v1",
@@ -63,14 +63,14 @@
       "previousQuizUrl": "/dxy/what-is-dxy/quiz",
       "unlocksChapter": "/regime/how-to-read-the-dollar",
       "completionUrl": null,
-      "released": false
+      "released": true
     },
     {
       "order": 6,
       "canonicalId": "quiz-dollar-regime-framework",
       "slug": "/regime/how-to-read-the-dollar/quiz",
       "relatedLessonUrl": "/regime/how-to-read-the-dollar",
-      "lessonReleased": false,
+      "lessonReleased": true,
       "nextQuizUrl": "/gold/usd-gold/quiz",
       "previousQuizUrl": "/dxy/dxy-vs-broad-usd/quiz",
       "unlocksChapter": "/gold/usd-gold",

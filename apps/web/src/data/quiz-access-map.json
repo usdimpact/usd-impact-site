@@ -1,5 +1,5 @@
 {
-  "version": "1.7.0",
+  "version": "1.8.0",
   "passScore": 8,
   "totalQuestionsPerQuiz": 10,
   "storageKey": "usd-impact-quiz-progress-v1",
@@ -87,14 +87,14 @@
       "previousQuizUrl": "/regime/how-to-read-the-dollar/quiz",
       "unlocksChapter": "/energy/usd-wti",
       "completionUrl": null,
-      "released": false
+      "released": true
     },
     {
       "order": 8,
       "canonicalId": "quiz-usd-and-wti",
       "slug": "/energy/usd-wti/quiz",
       "relatedLessonUrl": "/energy/usd-wti",
-      "lessonReleased": false,
+      "lessonReleased": true,
       "nextQuizUrl": "/energy/lng-natural-gas/quiz",
       "previousQuizUrl": "/gold/usd-gold/quiz",
       "unlocksChapter": "/energy/lng-natural-gas",

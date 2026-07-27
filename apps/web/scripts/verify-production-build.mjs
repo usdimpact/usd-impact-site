@@ -14,6 +14,8 @@ const routes = {
   broadQuiz: '/dxy/dxy-vs-broad-usd/quiz',
   regimeLesson: '/regime/how-to-read-the-dollar',
   regimeQuiz: '/regime/how-to-read-the-dollar/quiz',
+  goldLesson: '/gold/usd-gold',
+  goldQuiz: '/gold/usd-gold/quiz',
   roadmap: '/quiz/',
 };
 
@@ -27,6 +29,7 @@ const requiredRoutes = [
   routes.dxyLesson,
   routes.broadLesson,
   routes.regimeLesson,
+  routes.goldLesson,
   '/framework/dollar-transmission-chain',
   '/lead-magnets/weekly-dollar-regime-checklist',
   '/privacy',
@@ -53,7 +56,8 @@ const lessonChecks = [
   [routes.fxLesson, 'FX Depreciation vs Inflation: What Is the Difference?', '$105'],
   [routes.dxyLesson, 'Take Quiz 4', routes.dxyQuiz],
   [routes.broadLesson, 'DXY vs Broad USD: Which Dollar Signal Matters?', routes.broadQuiz],
-  [routes.regimeLesson, 'How to Read the Dollar: A Regime Framework', 'The regime evidence ladder'],
+  [routes.regimeLesson, 'Take Quiz 6', routes.regimeQuiz],
+  [routes.goldLesson, 'USD and Gold: How the Dollar, Real Yields, and Stress Shape Gold', '$10,000'],
 ];
 for (const [route, requiredText, requiredLink] of lessonChecks) {
   const file = pagePath(route);
@@ -68,6 +72,7 @@ const releasedQuizzes = [
   [routes.fxQuiz, 'Quiz 3 of 12', routes.fxLesson],
   [routes.dxyQuiz, 'Quiz 4 of 12', routes.dxyLesson],
   [routes.broadQuiz, 'Quiz 5 of 12', routes.broadLesson],
+  [routes.regimeQuiz, 'Quiz 6 of 12', routes.regimeLesson],
 ];
 for (const [route, label, lesson] of releasedQuizzes) {
   const file = pagePath(route);
@@ -80,8 +85,8 @@ for (const [route, label, lesson] of releasedQuizzes) {
   if (!html.includes(`href="${lesson}"`)) failures.push(`${route} does not link to ${lesson}.`);
 }
 
-if (fs.existsSync(pagePath(routes.regimeQuiz))) {
-  failures.push(`Unreleased Quiz 6 was generated at ${routes.regimeQuiz}.`);
+if (fs.existsSync(pagePath(routes.goldQuiz))) {
+  failures.push(`Unreleased Quiz 7 was generated at ${routes.goldQuiz}.`);
 }
 
 for (const file of ['api/waitlist.js', 'api/daily-news-source.js']) {
@@ -107,10 +112,12 @@ else {
     routes.broadLesson,
     routes.broadQuiz,
     routes.regimeLesson,
+    routes.regimeQuiz,
+    routes.goldLesson,
   ]) {
     if (!xml.includes(`${route}/`)) failures.push(`Released route is missing from sitemap: ${route}.`);
   }
-  if (xml.includes(`${routes.regimeQuiz}/`)) failures.push('Unreleased Quiz 6 appears in sitemap.');
+  if (xml.includes(`${routes.goldQuiz}/`)) failures.push('Unreleased Quiz 7 appears in sitemap.');
   if (xml.includes('benchmark/usd-impact-benchmark-dashboard')) failures.push('Draft benchmark route appears in sitemap.');
 }
 

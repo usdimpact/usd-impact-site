@@ -45,6 +45,7 @@ const quiz4Id = 'quiz-dxy-explained';
 const quiz5Id = 'quiz-dxy-vs-broad-usd';
 const quiz6Id = 'quiz-dollar-regime-framework';
 const quiz7Id = 'quiz-usd-and-gold';
+const quiz8Id = 'quiz-usd-and-wti';
 
 const releasedQuizzes = [
   [quiz1Id, '/dollar/what-is-the-us-dollar/quiz'],
@@ -53,6 +54,7 @@ const releasedQuizzes = [
   [quiz4Id, '/dxy/dxy-vs-broad-usd'],
   [quiz5Id, '/regime/how-to-read-the-dollar'],
   [quiz6Id, '/gold/usd-gold'],
+  [quiz7Id, '/energy/usd-wti'],
 ];
 
 for (const [canonicalId, expectedUnlock] of releasedQuizzes) {
@@ -65,27 +67,27 @@ for (const [canonicalId, expectedUnlock] of releasedQuizzes) {
   assert.equal(pass.json.details.length, 10);
 }
 
-const quiz6 = QUIZ_RUNTIME[quiz6Id];
-const quiz6Fail = await request({ canonicalId: quiz6Id, answers: answersFor(quiz6Id, false) });
-assert.equal(quiz6Fail.status, 200);
-assert.equal(quiz6Fail.json.score, 0);
-assert.equal(quiz6Fail.json.passed, false);
-assert.equal(quiz6Fail.json.unlocksChapter, null);
-assert.equal(quiz6Fail.json.nextChapterStatus, 'locked');
+const quiz7 = QUIZ_RUNTIME[quiz7Id];
+const quiz7Fail = await request({ canonicalId: quiz7Id, answers: answersFor(quiz7Id, false) });
+assert.equal(quiz7Fail.status, 200);
+assert.equal(quiz7Fail.json.score, 0);
+assert.equal(quiz7Fail.json.passed, false);
+assert.equal(quiz7Fail.json.unlocksChapter, null);
+assert.equal(quiz7Fail.json.nextChapterStatus, 'locked');
 
-const invalidOption = { ...answersFor(quiz6Id, true), '1': 'NOT_AN_OPTION' };
-const invalid = await request({ canonicalId: quiz6Id, answers: invalidOption });
+const invalidOption = { ...answersFor(quiz7Id, true), '1': 'NOT_AN_OPTION' };
+const invalid = await request({ canonicalId: quiz7Id, answers: invalidOption });
 assert.equal(invalid.status, 400);
 assert.match(invalid.json.error, /Question 1/);
 
 const incomplete = await request({
-  canonicalId: quiz6Id,
-  answers: { '1': quiz6.questions[0].correctAnswer },
+  canonicalId: quiz7Id,
+  answers: { '1': quiz7.questions[0].correctAnswer },
 });
 assert.equal(incomplete.status, 400);
 assert.match(incomplete.json.error, /Question 2/);
 
-const unreleased = await request({ canonicalId: quiz7Id, answers: answersFor(quiz1Id, true) });
+const unreleased = await request({ canonicalId: quiz8Id, answers: answersFor(quiz1Id, true) });
 assert.equal(unreleased.status, 404);
 
 const method = await request({}, 'GET');
@@ -94,6 +96,6 @@ assert.equal(method.status, 405);
 for (const [canonicalId] of releasedQuizzes) {
   assert.equal(QUIZ_RUNTIME[canonicalId].released, true);
 }
-assert.equal(QUIZ_RUNTIME[quiz7Id].released, false);
+assert.equal(QUIZ_RUNTIME[quiz8Id].released, false);
 
 console.log('Quiz submit function tests passed.');

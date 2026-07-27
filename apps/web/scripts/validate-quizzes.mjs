@@ -160,6 +160,7 @@ const expectedReleasedIds = [
   'quiz-what-is-us-dollar',
   'quiz-fx-depreciation-vs-inflation',
   'quiz-dxy-explained',
+  'quiz-dxy-vs-broad-usd',
 ];
 if (JSON.stringify(releasedIds) !== JSON.stringify(expectedReleasedIds)) {
   fail(`Expected released quizzes ${expectedReleasedIds.join(', ')}, found ${releasedIds.join(', ')}.`);

@@ -29,8 +29,10 @@ const quiz2 = accessMap.quizzes[1];
 const quiz3 = accessMap.quizzes[2];
 
 assert.equal(quiz1.unlocksChapter, quiz2.slug);
-assert.equal(quiz2.lessonReleased, false);
+assert.equal(quiz2.lessonReleased, true);
+assert.equal(quiz2.relatedLessonUrl, '/dollar/what-is-the-us-dollar');
 assert.equal(quiz3.released, false);
+assert.equal(quiz3.lessonReleased, false);
 
 assert.match(engineSource, /Math\.min\(currentIndex, questionElements\.length - 1\)/);
 assert.match(engineSource, /currentIndex >= questionElements\.length - 1/);
@@ -40,6 +42,7 @@ assert.match(engineSource, /currentIndex = 0/);
 assert.match(engineSource, /localStorage\.getItem\(storageKey\)/);
 assert.match(engineSource, /localStorage\.setItem\(storageKey/);
 assert.match(routeSource, /access\.lessonReleased/);
+assert.match(routeSource, /Return to the lesson/);
 assert.match(routeSource, /View all quizzes/);
 
 console.log('Quiz UI regression contract passed.');

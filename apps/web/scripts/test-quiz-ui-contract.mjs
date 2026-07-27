@@ -9,27 +9,18 @@ const accessMap = JSON.parse(await fs.readFile(path.join(webRoot, 'src/data/quiz
 const engineSource = await fs.readFile(path.join(webRoot, 'src/components/QuizEngine.astro'), 'utf8');
 const routeSource = await fs.readFile(path.join(webRoot, 'src/pages/[...lesson]/quiz.astro'), 'utf8');
 
-const released = accessMap.quizzes.filter((item) => item.released);
-assert.deepEqual(released.map((item) => item.canonicalId), [
-  'quiz-start-here',
-  'quiz-what-is-us-dollar',
-  'quiz-fx-depreciation-vs-inflation',
-  'quiz-dxy-explained',
-  'quiz-dxy-vs-broad-usd',
-  'quiz-dollar-regime-framework',
-  'quiz-usd-and-gold',
-  'quiz-usd-and-wti',
+assert.deepEqual(accessMap.quizzes.filter((item) => item.released).map((item) => item.canonicalId), [
+  'quiz-start-here','quiz-what-is-us-dollar','quiz-fx-depreciation-vs-inflation','quiz-dxy-explained','quiz-dxy-vs-broad-usd','quiz-dollar-regime-framework','quiz-usd-and-gold','quiz-usd-and-wti','quiz-usd-and-lng-natural-gas',
 ]);
-
-const quiz8 = accessMap.quizzes[7];
 const quiz9 = accessMap.quizzes[8];
-assert.equal(quiz8.released, true);
-assert.equal(quiz8.lessonReleased, true);
-assert.equal(quiz8.relatedLessonUrl, '/energy/usd-wti');
-assert.equal(quiz8.unlocksChapter, '/energy/lng-natural-gas');
-assert.equal(quiz9.released, false);
+const quiz10 = accessMap.quizzes[9];
+assert.equal(quiz9.released, true);
 assert.equal(quiz9.lessonReleased, true);
 assert.equal(quiz9.relatedLessonUrl, '/energy/lng-natural-gas');
+assert.equal(quiz9.unlocksChapter, '/equities/usd-equities');
+assert.equal(quiz10.released, false);
+assert.equal(quiz10.lessonReleased, true);
+assert.equal(quiz10.relatedLessonUrl, '/equities/usd-equities');
 
 assert.match(engineSource, /Math\.min\(currentIndex, questionElements\.length - 1\)/);
 assert.match(engineSource, /currentIndex >= questionElements\.length - 1/);

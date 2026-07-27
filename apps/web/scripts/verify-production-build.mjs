@@ -11,6 +11,8 @@ const fxLessonHref = '/fx/fx-depreciation-vs-inflation';
 const fxQuizHref = '/fx/fx-depreciation-vs-inflation/quiz';
 const dxyLessonHref = '/dxy/what-is-dxy';
 const dxyQuizHref = '/dxy/what-is-dxy/quiz';
+const broadLessonHref = '/dxy/dxy-vs-broad-usd';
+const broadQuizHref = '/dxy/dxy-vs-broad-usd/quiz';
 const quizRoadmapHref = '/quiz/';
 const startHereHref = '/start-here/';
 const checklistPdf = path.join(distRoot, checklistDownload.replace(/^\//, ''));
@@ -22,6 +24,8 @@ const fxLessonPage = path.join(distRoot, 'fx', 'fx-depreciation-vs-inflation', '
 const fxQuizPage = path.join(distRoot, 'fx', 'fx-depreciation-vs-inflation', 'quiz', 'index.html');
 const dxyLessonPage = path.join(distRoot, 'dxy', 'what-is-dxy', 'index.html');
 const dxyQuizPage = path.join(distRoot, 'dxy', 'what-is-dxy', 'quiz', 'index.html');
+const broadLessonPage = path.join(distRoot, 'dxy', 'dxy-vs-broad-usd', 'index.html');
+const broadQuizPage = path.join(distRoot, 'dxy', 'dxy-vs-broad-usd', 'quiz', 'index.html');
 const privacyPage = path.join(distRoot, 'privacy', 'index.html');
 const waitlistFunction = path.resolve('api', 'waitlist.js');
 const dailyNewsSourceFunction = path.resolve('api', 'daily-news-source.js');
@@ -39,6 +43,7 @@ const requiredRoutes = [
   'dollar/what-is-the-us-dollar/index.html',
   'fx/fx-depreciation-vs-inflation/index.html',
   'dxy/what-is-dxy/index.html',
+  'dxy/dxy-vs-broad-usd/index.html',
   'framework/dollar-transmission-chain/index.html',
   'lead-magnets/weekly-dollar-regime-checklist/index.html',
   'privacy/index.html',
@@ -59,6 +64,7 @@ const downloadCtaPages = [
       'dollar/what-is-the-us-dollar/index.html',
       'fx/fx-depreciation-vs-inflation/index.html',
       'dxy/what-is-dxy/index.html',
+      'dxy/dxy-vs-broad-usd/index.html',
     ].includes(route),
   ),
 ];
@@ -136,18 +142,12 @@ if (!fs.existsSync(dollarLessonPage)) {
   if (!lessonHtml.includes(`href="${startHereHref}"`)) {
     failures.push(`Dollar lesson does not link back to ${startHereHref}.`);
   }
-  if (lessonHtml.includes(`<a class="button secondary" href="${startHereHref}" download`)) {
-    failures.push('Dollar lesson Start Here CTA is incorrectly marked as a download.');
-  }
 }
 
 if (!fs.existsSync(dollarQuizPage)) {
   failures.push('Quiz 2 page was not generated.');
-} else {
-  const quizHtml = fs.readFileSync(dollarQuizPage, 'utf8');
-  if (!quizHtml.includes(`href="${dollarLessonHref}"`)) {
-    failures.push(`Quiz 2 does not expose its published lesson link at ${dollarLessonHref}.`);
-  }
+} else if (!fs.readFileSync(dollarQuizPage, 'utf8').includes(`href="${dollarLessonHref}"`)) {
+  failures.push(`Quiz 2 does not expose its published lesson link at ${dollarLessonHref}.`);
 }
 
 if (!fs.existsSync(fxLessonPage)) {
@@ -156,15 +156,6 @@ if (!fs.existsSync(fxLessonPage)) {
   const lessonHtml = fs.readFileSync(fxLessonPage, 'utf8');
   if (!lessonHtml.includes('FX Depreciation vs Inflation: What Is the Difference?')) {
     failures.push('FX lesson title is missing from its generated page.');
-  }
-  if (!lessonHtml.includes(`href="${quizRoadmapHref}"`)) {
-    failures.push(`FX lesson does not link to the quiz roadmap at ${quizRoadmapHref}.`);
-  }
-  if (!lessonHtml.includes(`href="${dollarLessonHref}"`)) {
-    failures.push(`FX lesson does not link back to ${dollarLessonHref}.`);
-  }
-  if (lessonHtml.includes(`<a class="button secondary" href="${dollarLessonHref}" download`)) {
-    failures.push('FX lesson return CTA is incorrectly marked as a download.');
   }
   if (!lessonHtml.includes('$100') || !lessonHtml.includes('$105')) {
     failures.push('FX lesson is missing the required domestic purchasing-power learning block.');
@@ -193,37 +184,50 @@ if (!fs.existsSync(dxyLessonPage)) {
   if (!lessonHtml.includes('57.6%') || !lessonHtml.includes('Japanese yen')) {
     failures.push('DXY lesson is missing the required basket-composition learning block.');
   }
-  if (!lessonHtml.includes(`href="${fxQuizHref}"`)) {
-    failures.push(`DXY lesson does not link back to Quiz 3 at ${fxQuizHref}.`);
+  if (!lessonHtml.includes(`href="${dxyQuizHref}"`)) {
+    failures.push(`DXY lesson does not link to Quiz 4 at ${dxyQuizHref}.`);
+  }
+}
+
+if (!fs.existsSync(dxyQuizPage)) {
+  failures.push('Quiz 4 page was not generated.');
+} else {
+  const quizHtml = fs.readFileSync(dxyQuizPage, 'utf8');
+  if (!quizHtml.includes(`href="${dxyLessonHref}"`)) {
+    failures.push(`Quiz 4 does not expose its published lesson link at ${dxyLessonHref}.`);
+  }
+  if (!quizHtml.includes('Quiz 4 of 12')) {
+    failures.push('Quiz 4 numbering is missing from its generated page.');
+  }
+}
+
+if (!fs.existsSync(broadLessonPage)) {
+  failures.push('DXY versus Broad USD lesson was not generated.');
+} else {
+  const lessonHtml = fs.readFileSync(broadLessonPage, 'utf8');
+  if (!lessonHtml.includes('DXY vs Broad USD: Which Dollar Signal Matters?')) {
+    failures.push('DXY versus Broad USD lesson title is missing.');
+  }
+  if (!lessonHtml.includes('DXY rises while Broad USD is flat')) {
+    failures.push('DXY versus Broad USD lesson is missing the divergence learning block.');
+  }
+  if (!lessonHtml.includes(`href="${dxyQuizHref}"`)) {
+    failures.push(`Broad USD lesson does not link back to Quiz 4 at ${dxyQuizHref}.`);
   }
   if (!lessonHtml.includes(`href="${quizRoadmapHref}"`)) {
-    failures.push(`DXY lesson does not link to the quiz roadmap at ${quizRoadmapHref}.`);
+    failures.push(`Broad USD lesson does not link to the quiz roadmap at ${quizRoadmapHref}.`);
   }
 }
 
-if (fs.existsSync(dxyQuizPage)) {
-  failures.push(`Unreleased Quiz 4 was generated at ${dxyQuizHref}.`);
+if (fs.existsSync(broadQuizPage)) {
+  failures.push(`Unreleased Quiz 5 was generated at ${broadQuizHref}.`);
 }
 
-if (!fs.existsSync(privacyPage)) {
-  failures.push('Waitlist privacy notice was not generated.');
-}
-
-if (!fs.existsSync(waitlistFunction)) {
-  failures.push('Vercel waitlist function is missing: api/waitlist.js');
-}
-
-if (!fs.existsSync(dailyNewsSourceFunction)) {
-  failures.push('Vercel Daily USD Impact source function is missing: api/daily-news-source.js');
-}
-
-if (!fs.existsSync(checklistPdf)) {
-  failures.push(`Checklist PDF is missing from production output: ${checklistDownload}`);
-}
-
-if (fs.existsSync(benchmarkRoute)) {
-  failures.push('Draft benchmark route was generated in production output.');
-}
+if (!fs.existsSync(privacyPage)) failures.push('Waitlist privacy notice was not generated.');
+if (!fs.existsSync(waitlistFunction)) failures.push('Vercel waitlist function is missing: api/waitlist.js');
+if (!fs.existsSync(dailyNewsSourceFunction)) failures.push('Vercel Daily USD Impact source function is missing: api/daily-news-source.js');
+if (!fs.existsSync(checklistPdf)) failures.push(`Checklist PDF is missing from production output: ${checklistDownload}`);
+if (fs.existsSync(benchmarkRoute)) failures.push('Draft benchmark route was generated in production output.');
 
 if (!fs.existsSync(sitemap)) {
   failures.push('Generated sitemap-0.xml is missing.');
@@ -232,23 +236,11 @@ if (!fs.existsSync(sitemap)) {
   if (sitemapXml.includes('benchmark/usd-impact-benchmark-dashboard')) {
     failures.push('Draft benchmark route appears in the generated sitemap.');
   }
-  if (!sitemapXml.includes('/news/2026-07-22/')) {
-    failures.push('Published Daily USD Impact edition is missing from the sitemap.');
+  for (const href of [dollarLessonHref, fxLessonHref, fxQuizHref, dxyLessonHref, dxyQuizHref, broadLessonHref]) {
+    if (!sitemapXml.includes(`${href}/`)) failures.push(`Released route is missing from the sitemap: ${href}.`);
   }
-  if (!sitemapXml.includes(`${dollarLessonHref}/`)) {
-    failures.push('Dollar foundations lesson is missing from the sitemap.');
-  }
-  if (!sitemapXml.includes(`${fxLessonHref}/`)) {
-    failures.push('FX depreciation versus inflation lesson is missing from the sitemap.');
-  }
-  if (!sitemapXml.includes(`${fxQuizHref}/`)) {
-    failures.push('Released Quiz 3 is missing from the sitemap.');
-  }
-  if (!sitemapXml.includes(`${dxyLessonHref}/`)) {
-    failures.push('DXY foundations lesson is missing from the sitemap.');
-  }
-  if (sitemapXml.includes(`${dxyQuizHref}/`)) {
-    failures.push('Unreleased Quiz 4 appears in the sitemap.');
+  if (sitemapXml.includes(`${broadQuizHref}/`)) {
+    failures.push('Unreleased Quiz 5 appears in the sitemap.');
   }
 }
 

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/verify-production-build.mjs",
+    "build": "npm run generate:quizzes && astro build && node scripts/verify-production-build.mjs",
     "preview": "astro preview",
     "validate:content": "node scripts/validate-content.mjs",
     "validate:news": "node scripts/validate-news.mjs",
@@ -17,7 +17,7 @@
     "build:preview": "npm run validate && npm run build",
     "preview:local": "astro preview --host 127.0.0.1 --port 4321",
     "generate:quizzes": "node scripts/generate-quiz-runtime.mjs",
-    "validate:quizzes": "node scripts/verify-quiz-source-integrity.mjs && node scripts/validate-quizzes.mjs && node scripts/generate-quiz-runtime.mjs --check && node scripts/test-quiz-submit.mjs"
+    "validate:quizzes": "node scripts/verify-quiz-source-integrity.mjs && node scripts/validate-quizzes.mjs && node scripts/generate-quiz-runtime.mjs && node scripts/test-quiz-submit.mjs && node scripts/test-quiz-ui-contract.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "3.2.1",

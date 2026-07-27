@@ -9,6 +9,8 @@ const dollarLessonHref = '/dollar/what-is-the-us-dollar';
 const dollarQuizHref = '/dollar/what-is-the-us-dollar/quiz';
 const fxLessonHref = '/fx/fx-depreciation-vs-inflation';
 const fxQuizHref = '/fx/fx-depreciation-vs-inflation/quiz';
+const dxyLessonHref = '/dxy/what-is-dxy';
+const dxyQuizHref = '/dxy/what-is-dxy/quiz';
 const quizRoadmapHref = '/quiz/';
 const startHereHref = '/start-here/';
 const checklistPdf = path.join(distRoot, checklistDownload.replace(/^\//, ''));
@@ -18,6 +20,8 @@ const dollarLessonPage = path.join(distRoot, 'dollar', 'what-is-the-us-dollar', 
 const dollarQuizPage = path.join(distRoot, 'dollar', 'what-is-the-us-dollar', 'quiz', 'index.html');
 const fxLessonPage = path.join(distRoot, 'fx', 'fx-depreciation-vs-inflation', 'index.html');
 const fxQuizPage = path.join(distRoot, 'fx', 'fx-depreciation-vs-inflation', 'quiz', 'index.html');
+const dxyLessonPage = path.join(distRoot, 'dxy', 'what-is-dxy', 'index.html');
+const dxyQuizPage = path.join(distRoot, 'dxy', 'what-is-dxy', 'quiz', 'index.html');
 const privacyPage = path.join(distRoot, 'privacy', 'index.html');
 const waitlistFunction = path.resolve('api', 'waitlist.js');
 const dailyNewsSourceFunction = path.resolve('api', 'daily-news-source.js');
@@ -34,6 +38,7 @@ const requiredRoutes = [
   'book/read-the-dollar-first/index.html',
   'dollar/what-is-the-us-dollar/index.html',
   'fx/fx-depreciation-vs-inflation/index.html',
+  'dxy/what-is-dxy/index.html',
   'framework/dollar-transmission-chain/index.html',
   'lead-magnets/weekly-dollar-regime-checklist/index.html',
   'privacy/index.html',
@@ -53,6 +58,7 @@ const downloadCtaPages = [
       'privacy/index.html',
       'dollar/what-is-the-us-dollar/index.html',
       'fx/fx-depreciation-vs-inflation/index.html',
+      'dxy/what-is-dxy/index.html',
     ].includes(route),
   ),
 ];
@@ -165,8 +171,38 @@ if (!fs.existsSync(fxLessonPage)) {
   }
 }
 
-if (fs.existsSync(fxQuizPage)) {
-  failures.push(`Unreleased Quiz 3 was generated at ${fxQuizHref}.`);
+if (!fs.existsSync(fxQuizPage)) {
+  failures.push('Quiz 3 page was not generated.');
+} else {
+  const quizHtml = fs.readFileSync(fxQuizPage, 'utf8');
+  if (!quizHtml.includes(`href="${fxLessonHref}"`)) {
+    failures.push(`Quiz 3 does not expose its published lesson link at ${fxLessonHref}.`);
+  }
+  if (!quizHtml.includes('Quiz 3 of 12')) {
+    failures.push('Quiz 3 numbering is missing from its generated page.');
+  }
+}
+
+if (!fs.existsSync(dxyLessonPage)) {
+  failures.push('DXY foundations lesson was not generated.');
+} else {
+  const lessonHtml = fs.readFileSync(dxyLessonPage, 'utf8');
+  if (!lessonHtml.includes('What Is DXY?')) {
+    failures.push('DXY lesson title is missing from its generated page.');
+  }
+  if (!lessonHtml.includes('57.6%') || !lessonHtml.includes('Japanese yen')) {
+    failures.push('DXY lesson is missing the required basket-composition learning block.');
+  }
+  if (!lessonHtml.includes(`href="${fxQuizHref}"`)) {
+    failures.push(`DXY lesson does not link back to Quiz 3 at ${fxQuizHref}.`);
+  }
+  if (!lessonHtml.includes(`href="${quizRoadmapHref}"`)) {
+    failures.push(`DXY lesson does not link to the quiz roadmap at ${quizRoadmapHref}.`);
+  }
+}
+
+if (fs.existsSync(dxyQuizPage)) {
+  failures.push(`Unreleased Quiz 4 was generated at ${dxyQuizHref}.`);
 }
 
 if (!fs.existsSync(privacyPage)) {
@@ -205,8 +241,14 @@ if (!fs.existsSync(sitemap)) {
   if (!sitemapXml.includes(`${fxLessonHref}/`)) {
     failures.push('FX depreciation versus inflation lesson is missing from the sitemap.');
   }
-  if (sitemapXml.includes(`${fxQuizHref}/`)) {
-    failures.push('Unreleased Quiz 3 appears in the sitemap.');
+  if (!sitemapXml.includes(`${fxQuizHref}/`)) {
+    failures.push('Released Quiz 3 is missing from the sitemap.');
+  }
+  if (!sitemapXml.includes(`${dxyLessonHref}/`)) {
+    failures.push('DXY foundations lesson is missing from the sitemap.');
+  }
+  if (sitemapXml.includes(`${dxyQuizHref}/`)) {
+    failures.push('Unreleased Quiz 4 appears in the sitemap.');
   }
 }
 

@@ -16,12 +16,12 @@ sources:
   - "USD Impact Quiz 4 — DXY Explained: approved learning contract"
 internalLinks:
   - "/fx/fx-depreciation-vs-inflation"
-  - "/fx/fx-depreciation-vs-inflation/quiz"
-  - "/dxy/what-is-dxy"
+  - "/dxy/what-is-dxy/quiz"
+  - "/dxy/dxy-vs-broad-usd"
   - "/quiz/"
   - "/framework/dollar-transmission-chain"
-ctaPrimary: "View quiz roadmap"
-ctaPrimaryHref: "/quiz/"
+ctaPrimary: "Take Quiz 4"
+ctaPrimaryHref: "/dxy/what-is-dxy/quiz"
 ctaSecondary: "Return to the FX lesson"
 ctaSecondaryHref: "/fx/fx-depreciation-vs-inflation"
 ctaSecondaryDownload: false
@@ -245,8 +245,10 @@ You should now be able to explain:
 - what DXY misses;
 - and which confirming signals are required before making a broader dollar-regime conclusion.
 
-Quiz 4 will test this material after its separate release gate is completed. Quiz 3 is the current checkpoint for progressing into this DXY lesson.
+Quiz 4 tests this material. Passing it unlocks the DXY-versus-Broad-USD comparison lesson.
 
-**[View the quiz roadmap](/quiz/)**
+**[Take Quiz 4: DXY Explained](/dxy/what-is-dxy/quiz)**
 
-[Return to the FX lesson](/fx/fx-depreciation-vs-inflation) · [Take Quiz 3](/fx/fx-depreciation-vs-inflation/quiz) · [Review the Dollar Transmission Chain](/framework/dollar-transmission-chain/)
+Pass mark: 8 out of 10. Failed attempts can be reviewed and retried without penalty.
+
+[Return to the FX lesson](/fx/fx-depreciation-vs-inflation) · [View the quiz roadmap](/quiz/) · [Review the Dollar Transmission Chain](/framework/dollar-transmission-chain/)

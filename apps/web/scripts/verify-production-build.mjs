@@ -7,12 +7,17 @@ const bookRouteHref = '/book/read-the-dollar-first/';
 const bookWaitlistHref = '/book/read-the-dollar-first/#book-waitlist';
 const dollarLessonHref = '/dollar/what-is-the-us-dollar';
 const dollarQuizHref = '/dollar/what-is-the-us-dollar/quiz';
+const fxLessonHref = '/fx/fx-depreciation-vs-inflation';
+const fxQuizHref = '/fx/fx-depreciation-vs-inflation/quiz';
+const quizRoadmapHref = '/quiz/';
 const startHereHref = '/start-here/';
 const checklistPdf = path.join(distRoot, checklistDownload.replace(/^\//, ''));
 const homepage = path.join(distRoot, 'index.html');
 const bookPage = path.join(distRoot, 'book', 'read-the-dollar-first', 'index.html');
 const dollarLessonPage = path.join(distRoot, 'dollar', 'what-is-the-us-dollar', 'index.html');
 const dollarQuizPage = path.join(distRoot, 'dollar', 'what-is-the-us-dollar', 'quiz', 'index.html');
+const fxLessonPage = path.join(distRoot, 'fx', 'fx-depreciation-vs-inflation', 'index.html');
+const fxQuizPage = path.join(distRoot, 'fx', 'fx-depreciation-vs-inflation', 'quiz', 'index.html');
 const privacyPage = path.join(distRoot, 'privacy', 'index.html');
 const waitlistFunction = path.resolve('api', 'waitlist.js');
 const dailyNewsSourceFunction = path.resolve('api', 'daily-news-source.js');
@@ -28,6 +33,7 @@ const requiredRoutes = [
   'start-here/index.html',
   'book/read-the-dollar-first/index.html',
   'dollar/what-is-the-us-dollar/index.html',
+  'fx/fx-depreciation-vs-inflation/index.html',
   'framework/dollar-transmission-chain/index.html',
   'lead-magnets/weekly-dollar-regime-checklist/index.html',
   'privacy/index.html',
@@ -43,7 +49,11 @@ const requiredNewsOutputs = [
 const downloadCtaPages = [
   'index.html',
   ...requiredRoutes.filter(
-    (route) => !['privacy/index.html', 'dollar/what-is-the-us-dollar/index.html'].includes(route),
+    (route) => ![
+      'privacy/index.html',
+      'dollar/what-is-the-us-dollar/index.html',
+      'fx/fx-depreciation-vs-inflation/index.html',
+    ].includes(route),
   ),
 ];
 
@@ -134,6 +144,31 @@ if (!fs.existsSync(dollarQuizPage)) {
   }
 }
 
+if (!fs.existsSync(fxLessonPage)) {
+  failures.push('FX depreciation versus inflation lesson was not generated.');
+} else {
+  const lessonHtml = fs.readFileSync(fxLessonPage, 'utf8');
+  if (!lessonHtml.includes('FX Depreciation vs Inflation: What Is the Difference?')) {
+    failures.push('FX lesson title is missing from its generated page.');
+  }
+  if (!lessonHtml.includes(`href="${quizRoadmapHref}"`)) {
+    failures.push(`FX lesson does not link to the quiz roadmap at ${quizRoadmapHref}.`);
+  }
+  if (!lessonHtml.includes(`href="${dollarLessonHref}"`)) {
+    failures.push(`FX lesson does not link back to ${dollarLessonHref}.`);
+  }
+  if (lessonHtml.includes(`<a class="button secondary" href="${dollarLessonHref}" download`)) {
+    failures.push('FX lesson return CTA is incorrectly marked as a download.');
+  }
+  if (!lessonHtml.includes('$100') || !lessonHtml.includes('$105')) {
+    failures.push('FX lesson is missing the required domestic purchasing-power learning block.');
+  }
+}
+
+if (fs.existsSync(fxQuizPage)) {
+  failures.push(`Unreleased Quiz 3 was generated at ${fxQuizHref}.`);
+}
+
 if (!fs.existsSync(privacyPage)) {
   failures.push('Waitlist privacy notice was not generated.');
 }
@@ -166,6 +201,12 @@ if (!fs.existsSync(sitemap)) {
   }
   if (!sitemapXml.includes(`${dollarLessonHref}/`)) {
     failures.push('Dollar foundations lesson is missing from the sitemap.');
+  }
+  if (!sitemapXml.includes(`${fxLessonHref}/`)) {
+    failures.push('FX depreciation versus inflation lesson is missing from the sitemap.');
+  }
+  if (sitemapXml.includes(`${fxQuizHref}/`)) {
+    failures.push('Unreleased Quiz 3 appears in the sitemap.');
   }
 }
 

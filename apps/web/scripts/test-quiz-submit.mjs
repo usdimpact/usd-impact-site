@@ -15,58 +15,61 @@ function answersFor(canonicalId, correct) {
   return Object.fromEntries(quiz.questions.map((question) => [String(question.number), correct ? question.correctAnswer : question.allowedAnswerKeys.find((key) => key !== question.correctAnswer)]));
 }
 
-const quiz1Id = 'quiz-start-here';
-const quiz2Id = 'quiz-what-is-us-dollar';
-const quiz3Id = 'quiz-fx-depreciation-vs-inflation';
-const quiz4Id = 'quiz-dxy-explained';
-const quiz5Id = 'quiz-dxy-vs-broad-usd';
-const quiz6Id = 'quiz-dollar-regime-framework';
-const quiz7Id = 'quiz-usd-and-gold';
-const quiz8Id = 'quiz-usd-and-wti';
-const quiz9Id = 'quiz-usd-and-lng-natural-gas';
-
-const releasedQuizzes = [
-  [quiz1Id, '/dollar/what-is-the-us-dollar/quiz'],
-  [quiz2Id, '/fx/fx-depreciation-vs-inflation'],
-  [quiz3Id, '/dxy/what-is-dxy'],
-  [quiz4Id, '/dxy/dxy-vs-broad-usd'],
-  [quiz5Id, '/regime/how-to-read-the-dollar'],
-  [quiz6Id, '/gold/usd-gold'],
-  [quiz7Id, '/energy/usd-wti'],
-  [quiz8Id, '/energy/lng-natural-gas'],
+const ids = [
+  'quiz-start-here',
+  'quiz-what-is-us-dollar',
+  'quiz-fx-depreciation-vs-inflation',
+  'quiz-dxy-explained',
+  'quiz-dxy-vs-broad-usd',
+  'quiz-dollar-regime-framework',
+  'quiz-usd-and-gold',
+  'quiz-usd-and-wti',
+  'quiz-usd-and-lng-natural-gas',
+  'quiz-usd-and-equities',
+];
+const unlocks = [
+  '/dollar/what-is-the-us-dollar/quiz',
+  '/fx/fx-depreciation-vs-inflation',
+  '/dxy/what-is-dxy',
+  '/dxy/dxy-vs-broad-usd',
+  '/regime/how-to-read-the-dollar',
+  '/gold/usd-gold',
+  '/energy/usd-wti',
+  '/energy/lng-natural-gas',
+  '/equities/usd-equities',
 ];
 
-for (const [canonicalId, expectedUnlock] of releasedQuizzes) {
+for (let index = 0; index < unlocks.length; index += 1) {
+  const canonicalId = ids[index];
   const pass = await request({ canonicalId, answers: answersFor(canonicalId, true) });
   assert.equal(pass.status, 200);
   assert.equal(pass.json.score, 10);
   assert.equal(pass.json.passed, true);
-  assert.equal(pass.json.unlocksChapter, expectedUnlock);
+  assert.equal(pass.json.unlocksChapter, unlocks[index]);
   assert.equal(pass.json.nextChapterStatus, 'available');
   assert.equal(pass.json.details.length, 10);
 }
 
-const quiz8 = QUIZ_RUNTIME[quiz8Id];
-const quiz8Fail = await request({ canonicalId: quiz8Id, answers: answersFor(quiz8Id, false) });
-assert.equal(quiz8Fail.status, 200);
-assert.equal(quiz8Fail.json.score, 0);
-assert.equal(quiz8Fail.json.passed, false);
-assert.equal(quiz8Fail.json.unlocksChapter, null);
-assert.equal(quiz8Fail.json.nextChapterStatus, 'locked');
+const quiz9Id = ids[8];
+const quiz9 = QUIZ_RUNTIME[quiz9Id];
+const failed = await request({ canonicalId: quiz9Id, answers: answersFor(quiz9Id, false) });
+assert.equal(failed.status, 200);
+assert.equal(failed.json.score, 0);
+assert.equal(failed.json.passed, false);
+assert.equal(failed.json.unlocksChapter, null);
+assert.equal(failed.json.nextChapterStatus, 'locked');
 
-const invalidOption = { ...answersFor(quiz8Id, true), '1': 'NOT_AN_OPTION' };
-const invalid = await request({ canonicalId: quiz8Id, answers: invalidOption });
+const invalid = await request({ canonicalId: quiz9Id, answers: { ...answersFor(quiz9Id, true), '1': 'NOT_AN_OPTION' } });
 assert.equal(invalid.status, 400);
 assert.match(invalid.json.error, /Question 1/);
-
-const incomplete = await request({ canonicalId: quiz8Id, answers: { '1': quiz8.questions[0].correctAnswer } });
+const incomplete = await request({ canonicalId: quiz9Id, answers: { '1': quiz9.questions[0].correctAnswer } });
 assert.equal(incomplete.status, 400);
 assert.match(incomplete.json.error, /Question 2/);
 
-const unreleased = await request({ canonicalId: quiz9Id, answers: answersFor(quiz1Id, true) });
+const unreleased = await request({ canonicalId: ids[9], answers: answersFor(ids[0], true) });
 assert.equal(unreleased.status, 404);
 const method = await request({}, 'GET');
 assert.equal(method.status, 405);
-for (const [canonicalId] of releasedQuizzes) assert.equal(QUIZ_RUNTIME[canonicalId].released, true);
-assert.equal(QUIZ_RUNTIME[quiz9Id].released, false);
+for (const canonicalId of ids.slice(0, 9)) assert.equal(QUIZ_RUNTIME[canonicalId].released, true);
+assert.equal(QUIZ_RUNTIME[ids[9]].released, false);
 console.log('Quiz submit function tests passed.');

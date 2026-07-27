@@ -1,11 +1,11 @@
 {
-  "version": "1.13.0",
+  "version": "1.14.0",
   "passScore": 8,
   "totalQuestionsPerQuiz": 10,
   "storageKey": "usd-impact-quiz-progress-v1",
   "purchaseFallbackUrl": "/book/read-the-dollar-first/#book-waitlist",
   "quizzes": [
-    {"order":1,"canonicalId":"quiz-start-here","slug":"/start-here/quiz","relatedLessonUrl":"/start-here","lessonReleased":true,"nextQuizUrl":"/dollar/what-is-the-us-dollar/quiz","previousQuizUrl":null,"unlocksChapter":"/dollar/what-is-the-us-dollar/quiz","completionUrl":null,"released":true},
+    {"order":1,"canonicalId":"quiz-start-here","slug":"/start-here/quiz","relatedLessonUrl":"/start-here","lessonReleased":true,"nextQuizUrl":"/dollar/what-is-the-us-dollar/quiz","previousQuizUrl":null,"unlocksChapter":"/dollar/what-is-the-us-dollar","completionUrl":null,"released":true},
     {"order":2,"canonicalId":"quiz-what-is-us-dollar","slug":"/dollar/what-is-the-us-dollar/quiz","relatedLessonUrl":"/dollar/what-is-the-us-dollar","lessonReleased":true,"nextQuizUrl":"/fx/fx-depreciation-vs-inflation/quiz","previousQuizUrl":"/start-here/quiz","unlocksChapter":"/fx/fx-depreciation-vs-inflation","completionUrl":null,"released":true},
     {"order":3,"canonicalId":"quiz-fx-depreciation-vs-inflation","slug":"/fx/fx-depreciation-vs-inflation/quiz","relatedLessonUrl":"/fx/fx-depreciation-vs-inflation","lessonReleased":true,"nextQuizUrl":"/dxy/what-is-dxy/quiz","previousQuizUrl":"/dollar/what-is-the-us-dollar/quiz","unlocksChapter":"/dxy/what-is-dxy","completionUrl":null,"released":true},
     {"order":4,"canonicalId":"quiz-dxy-explained","slug":"/dxy/what-is-dxy/quiz","relatedLessonUrl":"/dxy/what-is-dxy","lessonReleased":true,"nextQuizUrl":"/dxy/dxy-vs-broad-usd/quiz","previousQuizUrl":"/fx/fx-depreciation-vs-inflation/quiz","unlocksChapter":"/dxy/dxy-vs-broad-usd","completionUrl":null,"released":true},

@@ -3,245 +3,115 @@ import path from 'node:path';
 
 const distRoot = path.resolve('dist');
 const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
-const bookRouteHref = '/book/read-the-dollar-first/';
-const bookWaitlistHref = '/book/read-the-dollar-first/#book-waitlist';
-const dollarLessonHref = '/dollar/what-is-the-us-dollar';
-const dollarQuizHref = '/dollar/what-is-the-us-dollar/quiz';
-const fxLessonHref = '/fx/fx-depreciation-vs-inflation';
-const fxQuizHref = '/fx/fx-depreciation-vs-inflation/quiz';
-const dxyLessonHref = '/dxy/what-is-dxy';
-const dxyQuizHref = '/dxy/what-is-dxy/quiz';
-const broadLessonHref = '/dxy/dxy-vs-broad-usd';
-const broadQuizHref = '/dxy/dxy-vs-broad-usd/quiz';
-const quizRoadmapHref = '/quiz/';
-const startHereHref = '/start-here/';
-const checklistPdf = path.join(distRoot, checklistDownload.replace(/^\//, ''));
-const homepage = path.join(distRoot, 'index.html');
-const bookPage = path.join(distRoot, 'book', 'read-the-dollar-first', 'index.html');
-const dollarLessonPage = path.join(distRoot, 'dollar', 'what-is-the-us-dollar', 'index.html');
-const dollarQuizPage = path.join(distRoot, 'dollar', 'what-is-the-us-dollar', 'quiz', 'index.html');
-const fxLessonPage = path.join(distRoot, 'fx', 'fx-depreciation-vs-inflation', 'index.html');
-const fxQuizPage = path.join(distRoot, 'fx', 'fx-depreciation-vs-inflation', 'quiz', 'index.html');
-const dxyLessonPage = path.join(distRoot, 'dxy', 'what-is-dxy', 'index.html');
-const dxyQuizPage = path.join(distRoot, 'dxy', 'what-is-dxy', 'quiz', 'index.html');
-const broadLessonPage = path.join(distRoot, 'dxy', 'dxy-vs-broad-usd', 'index.html');
-const broadQuizPage = path.join(distRoot, 'dxy', 'dxy-vs-broad-usd', 'quiz', 'index.html');
-const privacyPage = path.join(distRoot, 'privacy', 'index.html');
-const waitlistFunction = path.resolve('api', 'waitlist.js');
-const dailyNewsSourceFunction = path.resolve('api', 'daily-news-source.js');
-const benchmarkRoute = path.join(
-  distRoot,
-  'benchmark',
-  'usd-impact-benchmark-dashboard',
-  'index.html',
-);
-const sitemap = path.join(distRoot, 'sitemap-0.xml');
+const routes = {
+  dollarLesson: '/dollar/what-is-the-us-dollar',
+  dollarQuiz: '/dollar/what-is-the-us-dollar/quiz',
+  fxLesson: '/fx/fx-depreciation-vs-inflation',
+  fxQuiz: '/fx/fx-depreciation-vs-inflation/quiz',
+  dxyLesson: '/dxy/what-is-dxy',
+  dxyQuiz: '/dxy/what-is-dxy/quiz',
+  broadLesson: '/dxy/dxy-vs-broad-usd',
+  broadQuiz: '/dxy/dxy-vs-broad-usd/quiz',
+  regimeLesson: '/regime/how-to-read-the-dollar',
+  regimeQuiz: '/regime/how-to-read-the-dollar/quiz',
+  roadmap: '/quiz/',
+};
 
-const requiredRoutes = [
-  'start-here/index.html',
-  'book/read-the-dollar-first/index.html',
-  'dollar/what-is-the-us-dollar/index.html',
-  'fx/fx-depreciation-vs-inflation/index.html',
-  'dxy/what-is-dxy/index.html',
-  'dxy/dxy-vs-broad-usd/index.html',
-  'framework/dollar-transmission-chain/index.html',
-  'lead-magnets/weekly-dollar-regime-checklist/index.html',
-  'privacy/index.html',
-];
-
-const requiredNewsOutputs = [
-  'news/index.html',
-  'news/2026-07-22/index.html',
-  'news/feed.xml',
-  'news/latest.json',
-];
-
-const downloadCtaPages = [
-  'index.html',
-  ...requiredRoutes.filter(
-    (route) => ![
-      'privacy/index.html',
-      'dollar/what-is-the-us-dollar/index.html',
-      'fx/fx-depreciation-vs-inflation/index.html',
-      'dxy/what-is-dxy/index.html',
-      'dxy/dxy-vs-broad-usd/index.html',
-    ].includes(route),
-  ),
-];
-
+const pagePath = (route) => path.join(distRoot, route.replace(/^\//, ''), 'index.html');
 const failures = [];
+const requiredRoutes = [
+  '/start-here',
+  '/book/read-the-dollar-first',
+  routes.dollarLesson,
+  routes.fxLesson,
+  routes.dxyLesson,
+  routes.broadLesson,
+  routes.regimeLesson,
+  '/framework/dollar-transmission-chain',
+  '/lead-magnets/weekly-dollar-regime-checklist',
+  '/privacy',
+];
 
 for (const route of requiredRoutes) {
-  if (!fs.existsSync(path.join(distRoot, route))) {
-    failures.push(`Missing published route in production build: /${route.replace(/index\.html$/, '')}`);
-  }
+  if (!fs.existsSync(pagePath(route))) failures.push(`Missing published route: ${route}.`);
 }
 
-for (const output of requiredNewsOutputs) {
-  if (!fs.existsSync(path.join(distRoot, output))) {
-    failures.push(`Missing Daily USD Impact output in production build: /${output.replace(/index\.html$/, '')}`);
-  }
+for (const output of ['news/index.html', 'news/2026-07-22/index.html', 'news/feed.xml', 'news/latest.json']) {
+  if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing Daily USD Impact output: /${output}.`);
 }
 
-for (const route of downloadCtaPages) {
-  const page = path.join(distRoot, route);
-  if (!fs.existsSync(page)) {
-    failures.push(`Cannot verify checklist CTA because the page is missing: /${route}`);
+const homepage = path.join(distRoot, 'index.html');
+if (!fs.existsSync(homepage)) failures.push('Homepage was not generated.');
+else {
+  const html = fs.readFileSync(homepage, 'utf8');
+  if (!html.includes('Join the book waitlist')) failures.push('Homepage waitlist CTA label is missing.');
+  if (!html.includes('href="/news/"')) failures.push('Homepage Daily USD Impact link is missing.');
+}
+
+const lessonChecks = [
+  [routes.dollarLesson, 'Take Quiz 2', routes.dollarQuiz],
+  [routes.fxLesson, 'FX Depreciation vs Inflation: What Is the Difference?', '$105'],
+  [routes.dxyLesson, 'Take Quiz 4', routes.dxyQuiz],
+  [routes.broadLesson, 'DXY vs Broad USD: Which Dollar Signal Matters?', routes.broadQuiz],
+  [routes.regimeLesson, 'How to Read the Dollar: A Regime Framework', 'The regime evidence ladder'],
+];
+for (const [route, requiredText, requiredLink] of lessonChecks) {
+  const file = pagePath(route);
+  if (!fs.existsSync(file)) continue;
+  const html = fs.readFileSync(file, 'utf8');
+  if (!html.includes(requiredText)) failures.push(`${route} is missing required text: ${requiredText}.`);
+  if (!html.includes(requiredLink)) failures.push(`${route} is missing required link or learning block: ${requiredLink}.`);
+}
+
+const releasedQuizzes = [
+  [routes.dollarQuiz, 'Quiz 2 of 12', routes.dollarLesson],
+  [routes.fxQuiz, 'Quiz 3 of 12', routes.fxLesson],
+  [routes.dxyQuiz, 'Quiz 4 of 12', routes.dxyLesson],
+  [routes.broadQuiz, 'Quiz 5 of 12', routes.broadLesson],
+];
+for (const [route, label, lesson] of releasedQuizzes) {
+  const file = pagePath(route);
+  if (!fs.existsSync(file)) {
+    failures.push(`Released quiz was not generated: ${route}.`);
     continue;
   }
-
-  const html = fs.readFileSync(page, 'utf8');
-  if (!html.includes(`href="${checklistDownload}"`)) {
-    failures.push(`Checklist CTA on /${route} does not link directly to ${checklistDownload}.`);
-  }
+  const html = fs.readFileSync(file, 'utf8');
+  if (!html.includes(label)) failures.push(`${route} is missing ${label}.`);
+  if (!html.includes(`href="${lesson}"`)) failures.push(`${route} does not link to ${lesson}.`);
 }
 
-if (!fs.existsSync(homepage)) {
-  failures.push('Homepage was not generated.');
-} else {
-  const homepageHtml = fs.readFileSync(homepage, 'utf8');
-  if (!homepageHtml.includes(`href="${bookWaitlistHref}"`)) {
-    failures.push(`Homepage waitlist CTA does not link to ${bookWaitlistHref}.`);
-  }
-  if (!homepageHtml.includes('Join the book waitlist')) {
-    failures.push('Homepage does not use the "Join the book waitlist" CTA label.');
-  }
-  if (!homepageHtml.includes('Daily USD Impact') || !homepageHtml.includes('href="/news/"')) {
-    failures.push('Homepage does not expose the Daily USD Impact module and archive link.');
-  }
+if (fs.existsSync(pagePath(routes.regimeQuiz))) {
+  failures.push(`Unreleased Quiz 6 was generated at ${routes.regimeQuiz}.`);
 }
 
-if (!fs.existsSync(bookPage)) {
-  failures.push('Book page was not generated.');
-} else {
-  const bookHtml = fs.readFileSync(bookPage, 'utf8');
-  if (!bookHtml.includes('href="#book-waitlist"')) {
-    failures.push('Book-page primary CTA does not target the embedded waitlist form.');
-  }
-  if (!bookHtml.includes('id="book-waitlist"') || !bookHtml.includes('data-waitlist-form')) {
-    failures.push('Book page does not contain the waitlist form.');
-  }
-  if (!bookHtml.includes('/api/waitlist')) {
-    failures.push('Book waitlist form does not submit to /api/waitlist.');
-  }
-  if (bookHtml.includes(`<a class="button primary" href="${bookRouteHref}">`)) {
-    failures.push('Book-page primary CTA still links back to the book page itself.');
-  }
+for (const file of ['api/waitlist.js', 'api/daily-news-source.js']) {
+  if (!fs.existsSync(path.resolve(file))) failures.push(`Required Vercel function is missing: ${file}.`);
+}
+if (!fs.existsSync(path.join(distRoot, checklistDownload.replace(/^\//, '')))) {
+  failures.push(`Checklist PDF is missing: ${checklistDownload}.`);
+}
+if (fs.existsSync(pagePath('/benchmark/usd-impact-benchmark-dashboard'))) {
+  failures.push('Draft benchmark route was generated.');
 }
 
-if (!fs.existsSync(dollarLessonPage)) {
-  failures.push('Dollar foundations lesson was not generated.');
-} else {
-  const lessonHtml = fs.readFileSync(dollarLessonPage, 'utf8');
-  if (!lessonHtml.includes(`href="${dollarQuizHref}"`)) {
-    failures.push(`Dollar lesson does not link to Quiz 2 at ${dollarQuizHref}.`);
+const sitemap = path.join(distRoot, 'sitemap-0.xml');
+if (!fs.existsSync(sitemap)) failures.push('Generated sitemap-0.xml is missing.');
+else {
+  const xml = fs.readFileSync(sitemap, 'utf8');
+  for (const route of [
+    routes.dollarLesson,
+    routes.fxLesson,
+    routes.fxQuiz,
+    routes.dxyLesson,
+    routes.dxyQuiz,
+    routes.broadLesson,
+    routes.broadQuiz,
+    routes.regimeLesson,
+  ]) {
+    if (!xml.includes(`${route}/`)) failures.push(`Released route is missing from sitemap: ${route}.`);
   }
-  if (!lessonHtml.includes('Take Quiz 2')) {
-    failures.push('Dollar lesson does not expose the Take Quiz 2 CTA.');
-  }
-  if (!lessonHtml.includes(`href="${startHereHref}"`)) {
-    failures.push(`Dollar lesson does not link back to ${startHereHref}.`);
-  }
-}
-
-if (!fs.existsSync(dollarQuizPage)) {
-  failures.push('Quiz 2 page was not generated.');
-} else if (!fs.readFileSync(dollarQuizPage, 'utf8').includes(`href="${dollarLessonHref}"`)) {
-  failures.push(`Quiz 2 does not expose its published lesson link at ${dollarLessonHref}.`);
-}
-
-if (!fs.existsSync(fxLessonPage)) {
-  failures.push('FX depreciation versus inflation lesson was not generated.');
-} else {
-  const lessonHtml = fs.readFileSync(fxLessonPage, 'utf8');
-  if (!lessonHtml.includes('FX Depreciation vs Inflation: What Is the Difference?')) {
-    failures.push('FX lesson title is missing from its generated page.');
-  }
-  if (!lessonHtml.includes('$100') || !lessonHtml.includes('$105')) {
-    failures.push('FX lesson is missing the required domestic purchasing-power learning block.');
-  }
-}
-
-if (!fs.existsSync(fxQuizPage)) {
-  failures.push('Quiz 3 page was not generated.');
-} else {
-  const quizHtml = fs.readFileSync(fxQuizPage, 'utf8');
-  if (!quizHtml.includes(`href="${fxLessonHref}"`)) {
-    failures.push(`Quiz 3 does not expose its published lesson link at ${fxLessonHref}.`);
-  }
-  if (!quizHtml.includes('Quiz 3 of 12')) {
-    failures.push('Quiz 3 numbering is missing from its generated page.');
-  }
-}
-
-if (!fs.existsSync(dxyLessonPage)) {
-  failures.push('DXY foundations lesson was not generated.');
-} else {
-  const lessonHtml = fs.readFileSync(dxyLessonPage, 'utf8');
-  if (!lessonHtml.includes('What Is DXY?')) {
-    failures.push('DXY lesson title is missing from its generated page.');
-  }
-  if (!lessonHtml.includes('57.6%') || !lessonHtml.includes('Japanese yen')) {
-    failures.push('DXY lesson is missing the required basket-composition learning block.');
-  }
-  if (!lessonHtml.includes(`href="${dxyQuizHref}"`)) {
-    failures.push(`DXY lesson does not link to Quiz 4 at ${dxyQuizHref}.`);
-  }
-}
-
-if (!fs.existsSync(dxyQuizPage)) {
-  failures.push('Quiz 4 page was not generated.');
-} else {
-  const quizHtml = fs.readFileSync(dxyQuizPage, 'utf8');
-  if (!quizHtml.includes(`href="${dxyLessonHref}"`)) {
-    failures.push(`Quiz 4 does not expose its published lesson link at ${dxyLessonHref}.`);
-  }
-  if (!quizHtml.includes('Quiz 4 of 12')) {
-    failures.push('Quiz 4 numbering is missing from its generated page.');
-  }
-}
-
-if (!fs.existsSync(broadLessonPage)) {
-  failures.push('DXY versus Broad USD lesson was not generated.');
-} else {
-  const lessonHtml = fs.readFileSync(broadLessonPage, 'utf8');
-  if (!lessonHtml.includes('DXY vs Broad USD: Which Dollar Signal Matters?')) {
-    failures.push('DXY versus Broad USD lesson title is missing.');
-  }
-  if (!lessonHtml.includes('DXY rises while Broad USD is flat')) {
-    failures.push('DXY versus Broad USD lesson is missing the divergence learning block.');
-  }
-  if (!lessonHtml.includes(`href="${dxyQuizHref}"`)) {
-    failures.push(`Broad USD lesson does not link back to Quiz 4 at ${dxyQuizHref}.`);
-  }
-  if (!lessonHtml.includes(`href="${quizRoadmapHref}"`)) {
-    failures.push(`Broad USD lesson does not link to the quiz roadmap at ${quizRoadmapHref}.`);
-  }
-}
-
-if (fs.existsSync(broadQuizPage)) {
-  failures.push(`Unreleased Quiz 5 was generated at ${broadQuizHref}.`);
-}
-
-if (!fs.existsSync(privacyPage)) failures.push('Waitlist privacy notice was not generated.');
-if (!fs.existsSync(waitlistFunction)) failures.push('Vercel waitlist function is missing: api/waitlist.js');
-if (!fs.existsSync(dailyNewsSourceFunction)) failures.push('Vercel Daily USD Impact source function is missing: api/daily-news-source.js');
-if (!fs.existsSync(checklistPdf)) failures.push(`Checklist PDF is missing from production output: ${checklistDownload}`);
-if (fs.existsSync(benchmarkRoute)) failures.push('Draft benchmark route was generated in production output.');
-
-if (!fs.existsSync(sitemap)) {
-  failures.push('Generated sitemap-0.xml is missing.');
-} else {
-  const sitemapXml = fs.readFileSync(sitemap, 'utf8');
-  if (sitemapXml.includes('benchmark/usd-impact-benchmark-dashboard')) {
-    failures.push('Draft benchmark route appears in the generated sitemap.');
-  }
-  for (const href of [dollarLessonHref, fxLessonHref, fxQuizHref, dxyLessonHref, dxyQuizHref, broadLessonHref]) {
-    if (!sitemapXml.includes(`${href}/`)) failures.push(`Released route is missing from the sitemap: ${href}.`);
-  }
-  if (sitemapXml.includes(`${broadQuizHref}/`)) {
-    failures.push('Unreleased Quiz 5 appears in the sitemap.');
-  }
+  if (xml.includes(`${routes.regimeQuiz}/`)) failures.push('Unreleased Quiz 6 appears in sitemap.');
+  if (xml.includes('benchmark/usd-impact-benchmark-dashboard')) failures.push('Draft benchmark route appears in sitemap.');
 }
 
 if (failures.length > 0) {

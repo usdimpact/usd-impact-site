@@ -21,20 +21,25 @@ const routeSource = await fs.readFile(
 const released = accessMap.quizzes.filter((item) => item.released);
 assert.deepEqual(
   released.map((item) => item.canonicalId),
-  ['quiz-start-here', 'quiz-what-is-us-dollar'],
+  ['quiz-start-here', 'quiz-what-is-us-dollar', 'quiz-fx-depreciation-vs-inflation'],
 );
 
 const quiz1 = accessMap.quizzes[0];
 const quiz2 = accessMap.quizzes[1];
 const quiz3 = accessMap.quizzes[2];
+const quiz4 = accessMap.quizzes[3];
 
 assert.equal(quiz1.unlocksChapter, quiz2.slug);
 assert.equal(quiz2.lessonReleased, true);
 assert.equal(quiz2.relatedLessonUrl, '/dollar/what-is-the-us-dollar');
 assert.equal(quiz2.unlocksChapter, '/fx/fx-depreciation-vs-inflation');
-assert.equal(quiz3.released, false);
+assert.equal(quiz3.released, true);
 assert.equal(quiz3.lessonReleased, true);
 assert.equal(quiz3.relatedLessonUrl, '/fx/fx-depreciation-vs-inflation');
+assert.equal(quiz3.unlocksChapter, '/dxy/what-is-dxy');
+assert.equal(quiz4.released, false);
+assert.equal(quiz4.lessonReleased, true);
+assert.equal(quiz4.relatedLessonUrl, '/dxy/what-is-dxy');
 
 assert.match(engineSource, /Math\.min\(currentIndex, questionElements\.length - 1\)/);
 assert.match(engineSource, /currentIndex >= questionElements\.length - 1/);

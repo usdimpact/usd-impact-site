@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0",
+  "version": "1.4.0",
   "passScore": 8,
   "totalQuestionsPerQuiz": 10,
   "storageKey": "usd-impact-quiz-progress-v1",
@@ -39,14 +39,14 @@
       "previousQuizUrl": "/dollar/what-is-the-us-dollar/quiz",
       "unlocksChapter": "/dxy/what-is-dxy",
       "completionUrl": null,
-      "released": false
+      "released": true
     },
     {
       "order": 4,
       "canonicalId": "quiz-dxy-explained",
       "slug": "/dxy/what-is-dxy/quiz",
       "relatedLessonUrl": "/dxy/what-is-dxy",
-      "lessonReleased": false,
+      "lessonReleased": true,
       "nextQuizUrl": "/dxy/dxy-vs-broad-usd/quiz",
       "previousQuizUrl": "/fx/fx-depreciation-vs-inflation/quiz",
       "unlocksChapter": "/dxy/dxy-vs-broad-usd",

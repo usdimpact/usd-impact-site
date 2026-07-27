@@ -155,7 +155,11 @@ for (const access of releasedQuizzes) {
 }
 
 const releasedIds = releasedQuizzes.map((item) => item.canonicalId);
-const expectedReleasedIds = ['quiz-start-here', 'quiz-what-is-us-dollar'];
+const expectedReleasedIds = [
+  'quiz-start-here',
+  'quiz-what-is-us-dollar',
+  'quiz-fx-depreciation-vs-inflation',
+];
 if (JSON.stringify(releasedIds) !== JSON.stringify(expectedReleasedIds)) {
   fail(`Expected released quizzes ${expectedReleasedIds.join(', ')}, found ${releasedIds.join(', ')}.`);
 }

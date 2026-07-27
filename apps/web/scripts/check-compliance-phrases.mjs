@@ -20,6 +20,10 @@ const allowedPhrasesByFile = new Map([
   [
     'src/content/quizzes/en/quiz-what-is-us-dollar.json',
     ['The U.S. economy must be risk-free.']
+  ],
+  [
+    'src/content/pages/usd-and-currency-risk.md',
+    ['not a guaranteed return']
   ]
 ]);
 

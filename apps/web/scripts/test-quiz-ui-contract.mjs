@@ -31,8 +31,10 @@ const quiz3 = accessMap.quizzes[2];
 assert.equal(quiz1.unlocksChapter, quiz2.slug);
 assert.equal(quiz2.lessonReleased, true);
 assert.equal(quiz2.relatedLessonUrl, '/dollar/what-is-the-us-dollar');
+assert.equal(quiz2.unlocksChapter, '/fx/fx-depreciation-vs-inflation');
 assert.equal(quiz3.released, false);
-assert.equal(quiz3.lessonReleased, false);
+assert.equal(quiz3.lessonReleased, true);
+assert.equal(quiz3.relatedLessonUrl, '/fx/fx-depreciation-vs-inflation');
 
 assert.match(engineSource, /Math\.min\(currentIndex, questionElements\.length - 1\)/);
 assert.match(engineSource, /currentIndex >= questionElements\.length - 1/);

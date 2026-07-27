@@ -18,6 +18,8 @@ const routes = {
   goldQuiz: '/gold/usd-gold/quiz',
   wtiLesson: '/energy/usd-wti',
   wtiQuiz: '/energy/usd-wti/quiz',
+  lngLesson: '/energy/lng-natural-gas',
+  lngQuiz: '/energy/lng-natural-gas/quiz',
   roadmap: '/quiz/',
 };
 
@@ -33,6 +35,7 @@ const requiredRoutes = [
   routes.regimeLesson,
   routes.goldLesson,
   routes.wtiLesson,
+  routes.lngLesson,
   '/framework/dollar-transmission-chain',
   '/lead-magnets/weekly-dollar-regime-checklist',
   '/privacy',
@@ -62,6 +65,7 @@ const lessonChecks = [
   [routes.regimeLesson, 'Take Quiz 6', routes.regimeQuiz],
   [routes.goldLesson, 'USD and Gold: How the Dollar, Real Yields, and Stress Shape Gold', '$10,000'],
   [routes.wtiLesson, 'USD and WTI: Why Oil Is Not Only a Dollar Trade', '$1,000,000'],
+  [routes.lngLesson, 'USD and LNG / Natural Gas: Why Gas Is More Regional Than Oil', '$240,000'],
 ];
 for (const [route, requiredText, requiredLink] of lessonChecks) {
   const file = pagePath(route);
@@ -78,6 +82,7 @@ const releasedQuizzes = [
   [routes.broadQuiz, 'Quiz 5 of 12', routes.broadLesson],
   [routes.regimeQuiz, 'Quiz 6 of 12', routes.regimeLesson],
   [routes.goldQuiz, 'Quiz 7 of 12', routes.goldLesson],
+  [routes.wtiQuiz, 'Quiz 8 of 12', routes.wtiLesson],
 ];
 for (const [route, label, lesson] of releasedQuizzes) {
   const file = pagePath(route);
@@ -90,19 +95,13 @@ for (const [route, label, lesson] of releasedQuizzes) {
   if (!html.includes(`href="${lesson}"`)) failures.push(`${route} does not link to ${lesson}.`);
 }
 
-if (fs.existsSync(pagePath(routes.wtiQuiz))) {
-  failures.push(`Unreleased Quiz 8 was generated at ${routes.wtiQuiz}.`);
-}
+if (fs.existsSync(pagePath(routes.lngQuiz))) failures.push(`Unreleased Quiz 9 was generated at ${routes.lngQuiz}.`);
 
 for (const file of ['api/waitlist.js', 'api/daily-news-source.js']) {
   if (!fs.existsSync(path.resolve(file))) failures.push(`Required Vercel function is missing: ${file}.`);
 }
-if (!fs.existsSync(path.join(distRoot, checklistDownload.replace(/^\//, '')))) {
-  failures.push(`Checklist PDF is missing: ${checklistDownload}.`);
-}
-if (fs.existsSync(pagePath('/benchmark/usd-impact-benchmark-dashboard'))) {
-  failures.push('Draft benchmark route was generated.');
-}
+if (!fs.existsSync(path.join(distRoot, checklistDownload.replace(/^\//, '')))) failures.push(`Checklist PDF is missing: ${checklistDownload}.`);
+if (fs.existsSync(pagePath('/benchmark/usd-impact-benchmark-dashboard'))) failures.push('Draft benchmark route was generated.');
 
 const sitemap = path.join(distRoot, 'sitemap-0.xml');
 if (!fs.existsSync(sitemap)) failures.push('Generated sitemap-0.xml is missing.');
@@ -121,10 +120,12 @@ else {
     routes.goldLesson,
     routes.goldQuiz,
     routes.wtiLesson,
+    routes.wtiQuiz,
+    routes.lngLesson,
   ]) {
     if (!xml.includes(`${route}/`)) failures.push(`Released route is missing from sitemap: ${route}.`);
   }
-  if (xml.includes(`${routes.wtiQuiz}/`)) failures.push('Unreleased Quiz 8 appears in sitemap.');
+  if (xml.includes(`${routes.lngQuiz}/`)) failures.push('Unreleased Quiz 9 appears in sitemap.');
   if (xml.includes('benchmark/usd-impact-benchmark-dashboard')) failures.push('Draft benchmark route appears in sitemap.');
 }
 
@@ -132,5 +133,4 @@ if (failures.length > 0) {
   console.error(`Production build verification failed:\n${failures.join('\n')}`);
   process.exit(1);
 }
-
 console.log('production build verification pass');

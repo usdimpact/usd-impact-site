@@ -28,6 +28,7 @@ assert.deepEqual(
     'quiz-dxy-explained',
     'quiz-dxy-vs-broad-usd',
     'quiz-dollar-regime-framework',
+    'quiz-usd-and-gold',
   ],
 );
 
@@ -38,6 +39,7 @@ const quiz4 = accessMap.quizzes[3];
 const quiz5 = accessMap.quizzes[4];
 const quiz6 = accessMap.quizzes[5];
 const quiz7 = accessMap.quizzes[6];
+const quiz8 = accessMap.quizzes[7];
 
 assert.equal(quiz1.unlocksChapter, quiz2.slug);
 assert.equal(quiz2.lessonReleased, true);
@@ -48,12 +50,14 @@ assert.equal(quiz4.unlocksChapter, '/dxy/dxy-vs-broad-usd');
 assert.equal(quiz5.released, true);
 assert.equal(quiz5.unlocksChapter, '/regime/how-to-read-the-dollar');
 assert.equal(quiz6.released, true);
-assert.equal(quiz6.lessonReleased, true);
-assert.equal(quiz6.relatedLessonUrl, '/regime/how-to-read-the-dollar');
 assert.equal(quiz6.unlocksChapter, '/gold/usd-gold');
-assert.equal(quiz7.released, false);
+assert.equal(quiz7.released, true);
 assert.equal(quiz7.lessonReleased, true);
 assert.equal(quiz7.relatedLessonUrl, '/gold/usd-gold');
+assert.equal(quiz7.unlocksChapter, '/energy/usd-wti');
+assert.equal(quiz8.released, false);
+assert.equal(quiz8.lessonReleased, true);
+assert.equal(quiz8.relatedLessonUrl, '/energy/usd-wti');
 
 assert.match(engineSource, /Math\.min\(currentIndex, questionElements\.length - 1\)/);
 assert.match(engineSource, /currentIndex >= questionElements\.length - 1/);

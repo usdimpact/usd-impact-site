@@ -1,5 +1,5 @@
 {
-  "version": "1.11.0",
+  "version": "1.12.0",
   "passScore": 8,
   "totalQuestionsPerQuiz": 10,
   "storageKey": "usd-impact-quiz-progress-v1",
@@ -15,7 +15,7 @@
     {"order":8,"canonicalId":"quiz-usd-and-wti","slug":"/energy/usd-wti/quiz","relatedLessonUrl":"/energy/usd-wti","lessonReleased":true,"nextQuizUrl":"/energy/lng-natural-gas/quiz","previousQuizUrl":"/gold/usd-gold/quiz","unlocksChapter":"/energy/lng-natural-gas","completionUrl":null,"released":true},
     {"order":9,"canonicalId":"quiz-usd-and-lng-natural-gas","slug":"/energy/lng-natural-gas/quiz","relatedLessonUrl":"/energy/lng-natural-gas","lessonReleased":true,"nextQuizUrl":"/equities/usd-equities/quiz","previousQuizUrl":"/energy/usd-wti/quiz","unlocksChapter":"/equities/usd-equities","completionUrl":null,"released":true},
     {"order":10,"canonicalId":"quiz-usd-and-equities","slug":"/equities/usd-equities/quiz","relatedLessonUrl":"/equities/usd-equities","lessonReleased":true,"nextQuizUrl":"/bitcoin/usd-bitcoin/quiz","previousQuizUrl":"/energy/lng-natural-gas/quiz","unlocksChapter":"/bitcoin/usd-bitcoin","completionUrl":null,"released":true},
-    {"order":11,"canonicalId":"quiz-usd-and-bitcoin","slug":"/bitcoin/usd-bitcoin/quiz","relatedLessonUrl":"/bitcoin/usd-bitcoin","lessonReleased":true,"nextQuizUrl":"/fx/usd-and-currency-risk/quiz","previousQuizUrl":"/equities/usd-equities/quiz","unlocksChapter":"/fx/usd-and-currency-risk","completionUrl":null,"released":false},
-    {"order":12,"canonicalId":"quiz-usd-and-fx-currency-risk","slug":"/fx/usd-and-currency-risk/quiz","relatedLessonUrl":"/fx/usd-and-currency-risk","lessonReleased":false,"nextQuizUrl":null,"previousQuizUrl":"/bitcoin/usd-bitcoin/quiz","unlocksChapter":null,"completionUrl":"/book/read-the-dollar-first/","released":false}
+    {"order":11,"canonicalId":"quiz-usd-and-bitcoin","slug":"/bitcoin/usd-bitcoin/quiz","relatedLessonUrl":"/bitcoin/usd-bitcoin","lessonReleased":true,"nextQuizUrl":"/fx/usd-and-currency-risk/quiz","previousQuizUrl":"/equities/usd-equities/quiz","unlocksChapter":"/fx/usd-and-currency-risk","completionUrl":null,"released":true},
+    {"order":12,"canonicalId":"quiz-usd-and-fx-currency-risk","slug":"/fx/usd-and-currency-risk/quiz","relatedLessonUrl":"/fx/usd-and-currency-risk","lessonReleased":true,"nextQuizUrl":null,"previousQuizUrl":"/bitcoin/usd-bitcoin/quiz","unlocksChapter":null,"completionUrl":"/book/read-the-dollar-first/","released":false}
   ]
 }

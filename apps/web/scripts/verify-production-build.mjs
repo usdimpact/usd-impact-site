@@ -13,10 +13,11 @@ const routes = {
   wtiLesson: '/energy/usd-wti', wtiQuiz: '/energy/usd-wti/quiz',
   lngLesson: '/energy/lng-natural-gas', lngQuiz: '/energy/lng-natural-gas/quiz',
   equitiesLesson: '/equities/usd-equities', equitiesQuiz: '/equities/usd-equities/quiz',
+  bitcoinLesson: '/bitcoin/usd-bitcoin', bitcoinQuiz: '/bitcoin/usd-bitcoin/quiz',
 };
 const pagePath = (route) => path.join(distRoot, route.replace(/^\//, ''), 'index.html');
 const failures = [];
-const requiredRoutes = ['/start-here','/book/read-the-dollar-first',routes.dollarLesson,routes.fxLesson,routes.dxyLesson,routes.broadLesson,routes.regimeLesson,routes.goldLesson,routes.wtiLesson,routes.lngLesson,routes.equitiesLesson,'/framework/dollar-transmission-chain','/lead-magnets/weekly-dollar-regime-checklist','/privacy'];
+const requiredRoutes = ['/start-here','/book/read-the-dollar-first',routes.dollarLesson,routes.fxLesson,routes.dxyLesson,routes.broadLesson,routes.regimeLesson,routes.goldLesson,routes.wtiLesson,routes.lngLesson,routes.equitiesLesson,routes.bitcoinLesson,'/framework/dollar-transmission-chain','/lead-magnets/weekly-dollar-regime-checklist','/privacy'];
 for (const route of requiredRoutes) if (!fs.existsSync(pagePath(route))) failures.push(`Missing published route: ${route}.`);
 for (const output of ['news/index.html','news/2026-07-22/index.html','news/feed.xml','news/latest.json']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing Daily USD Impact output: /${output}.`);
 
@@ -38,6 +39,7 @@ const lessonChecks = [
   [routes.wtiLesson,'USD and WTI: Why Oil Is Not Only a Dollar Trade','$1,000,000'],
   [routes.lngLesson,'USD and LNG / Natural Gas: Why Gas Is More Regional Than Oil','$240,000'],
   [routes.equitiesLesson,'USD and Equities: How the Dollar Affects Earnings, Margins, and Valuations','$100,000,000'],
+  [routes.bitcoinLesson,'USD and Bitcoin: Liquidity, Risk Appetite, Adoption, and Volatility','$10,000'],
 ];
 for (const [route, requiredText, requiredBlock] of lessonChecks) {
   const file = pagePath(route);
@@ -52,6 +54,7 @@ const releasedQuizzes = [
   [routes.dxyQuiz,'Quiz 4 of 12',routes.dxyLesson], [routes.broadQuiz,'Quiz 5 of 12',routes.broadLesson],
   [routes.regimeQuiz,'Quiz 6 of 12',routes.regimeLesson], [routes.goldQuiz,'Quiz 7 of 12',routes.goldLesson],
   [routes.wtiQuiz,'Quiz 8 of 12',routes.wtiLesson], [routes.lngQuiz,'Quiz 9 of 12',routes.lngLesson],
+  [routes.equitiesQuiz,'Quiz 10 of 12',routes.equitiesLesson],
 ];
 for (const [route, label, lesson] of releasedQuizzes) {
   const file = pagePath(route);
@@ -60,7 +63,7 @@ for (const [route, label, lesson] of releasedQuizzes) {
   if (!html.includes(label)) failures.push(`${route} is missing ${label}.`);
   if (!html.includes(`href="${lesson}"`)) failures.push(`${route} does not link to ${lesson}.`);
 }
-if (fs.existsSync(pagePath(routes.equitiesQuiz))) failures.push(`Unreleased Quiz 10 was generated at ${routes.equitiesQuiz}.`);
+if (fs.existsSync(pagePath(routes.bitcoinQuiz))) failures.push(`Unreleased Quiz 11 was generated at ${routes.bitcoinQuiz}.`);
 for (const file of ['api/waitlist.js','api/daily-news-source.js']) if (!fs.existsSync(path.resolve(file))) failures.push(`Required Vercel function is missing: ${file}.`);
 if (!fs.existsSync(path.join(distRoot, checklistDownload.replace(/^\//, '')))) failures.push(`Checklist PDF is missing: ${checklistDownload}.`);
 if (fs.existsSync(pagePath('/benchmark/usd-impact-benchmark-dashboard'))) failures.push('Draft benchmark route was generated.');
@@ -69,10 +72,10 @@ const sitemap = path.join(distRoot, 'sitemap-0.xml');
 if (!fs.existsSync(sitemap)) failures.push('Generated sitemap-0.xml is missing.');
 else {
   const xml = fs.readFileSync(sitemap, 'utf8');
-  for (const route of [routes.dollarLesson,routes.fxLesson,routes.fxQuiz,routes.dxyLesson,routes.dxyQuiz,routes.broadLesson,routes.broadQuiz,routes.regimeLesson,routes.regimeQuiz,routes.goldLesson,routes.goldQuiz,routes.wtiLesson,routes.wtiQuiz,routes.lngLesson,routes.lngQuiz,routes.equitiesLesson]) {
+  for (const route of [routes.dollarLesson,routes.fxLesson,routes.fxQuiz,routes.dxyLesson,routes.dxyQuiz,routes.broadLesson,routes.broadQuiz,routes.regimeLesson,routes.regimeQuiz,routes.goldLesson,routes.goldQuiz,routes.wtiLesson,routes.wtiQuiz,routes.lngLesson,routes.lngQuiz,routes.equitiesLesson,routes.equitiesQuiz,routes.bitcoinLesson]) {
     if (!xml.includes(`${route}/`)) failures.push(`Released route is missing from sitemap: ${route}.`);
   }
-  if (xml.includes(`${routes.equitiesQuiz}/`)) failures.push('Unreleased Quiz 10 appears in sitemap.');
+  if (xml.includes(`${routes.bitcoinQuiz}/`)) failures.push('Unreleased Quiz 11 appears in sitemap.');
   if (xml.includes('benchmark/usd-impact-benchmark-dashboard')) failures.push('Draft benchmark route appears in sitemap.');
 }
 if (failures.length > 0) { console.error(`Production build verification failed:\n${failures.join('\n')}`); process.exit(1); }

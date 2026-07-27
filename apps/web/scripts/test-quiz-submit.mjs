@@ -26,6 +26,7 @@ const ids = [
   'quiz-usd-and-wti',
   'quiz-usd-and-lng-natural-gas',
   'quiz-usd-and-equities',
+  'quiz-usd-and-bitcoin',
 ];
 const unlocks = [
   '/dollar/what-is-the-us-dollar/quiz',
@@ -37,6 +38,7 @@ const unlocks = [
   '/energy/usd-wti',
   '/energy/lng-natural-gas',
   '/equities/usd-equities',
+  '/bitcoin/usd-bitcoin',
 ];
 
 for (let index = 0; index < unlocks.length; index += 1) {
@@ -50,26 +52,26 @@ for (let index = 0; index < unlocks.length; index += 1) {
   assert.equal(pass.json.details.length, 10);
 }
 
-const quiz9Id = ids[8];
-const quiz9 = QUIZ_RUNTIME[quiz9Id];
-const failed = await request({ canonicalId: quiz9Id, answers: answersFor(quiz9Id, false) });
+const quiz10Id = ids[9];
+const quiz10 = QUIZ_RUNTIME[quiz10Id];
+const failed = await request({ canonicalId: quiz10Id, answers: answersFor(quiz10Id, false) });
 assert.equal(failed.status, 200);
 assert.equal(failed.json.score, 0);
 assert.equal(failed.json.passed, false);
 assert.equal(failed.json.unlocksChapter, null);
 assert.equal(failed.json.nextChapterStatus, 'locked');
 
-const invalid = await request({ canonicalId: quiz9Id, answers: { ...answersFor(quiz9Id, true), '1': 'NOT_AN_OPTION' } });
+const invalid = await request({ canonicalId: quiz10Id, answers: { ...answersFor(quiz10Id, true), '1': 'NOT_AN_OPTION' } });
 assert.equal(invalid.status, 400);
 assert.match(invalid.json.error, /Question 1/);
-const incomplete = await request({ canonicalId: quiz9Id, answers: { '1': quiz9.questions[0].correctAnswer } });
+const incomplete = await request({ canonicalId: quiz10Id, answers: { '1': quiz10.questions[0].correctAnswer } });
 assert.equal(incomplete.status, 400);
 assert.match(incomplete.json.error, /Question 2/);
 
-const unreleased = await request({ canonicalId: ids[9], answers: answersFor(ids[0], true) });
+const unreleased = await request({ canonicalId: ids[10], answers: answersFor(ids[0], true) });
 assert.equal(unreleased.status, 404);
 const method = await request({}, 'GET');
 assert.equal(method.status, 405);
-for (const canonicalId of ids.slice(0, 9)) assert.equal(QUIZ_RUNTIME[canonicalId].released, true);
-assert.equal(QUIZ_RUNTIME[ids[9]].released, false);
+for (const canonicalId of ids.slice(0, 10)) assert.equal(QUIZ_RUNTIME[canonicalId].released, true);
+assert.equal(QUIZ_RUNTIME[ids[10]].released, false);
 console.log('Quiz submit function tests passed.');

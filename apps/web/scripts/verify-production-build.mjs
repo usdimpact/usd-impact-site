@@ -16,6 +16,8 @@ const routes = {
   regimeQuiz: '/regime/how-to-read-the-dollar/quiz',
   goldLesson: '/gold/usd-gold',
   goldQuiz: '/gold/usd-gold/quiz',
+  wtiLesson: '/energy/usd-wti',
+  wtiQuiz: '/energy/usd-wti/quiz',
   roadmap: '/quiz/',
 };
 
@@ -30,6 +32,7 @@ const requiredRoutes = [
   routes.broadLesson,
   routes.regimeLesson,
   routes.goldLesson,
+  routes.wtiLesson,
   '/framework/dollar-transmission-chain',
   '/lead-magnets/weekly-dollar-regime-checklist',
   '/privacy',
@@ -57,7 +60,8 @@ const lessonChecks = [
   [routes.dxyLesson, 'Take Quiz 4', routes.dxyQuiz],
   [routes.broadLesson, 'DXY vs Broad USD: Which Dollar Signal Matters?', routes.broadQuiz],
   [routes.regimeLesson, 'Take Quiz 6', routes.regimeQuiz],
-  [routes.goldLesson, 'USD and Gold: How the Dollar, Real Yields, and Stress Shape Gold', '$10,000'],
+  [routes.goldLesson, 'Take Quiz 7', routes.goldQuiz],
+  [routes.wtiLesson, 'USD and WTI: Why Oil Is Not Only a Dollar Trade', '$1,000,000'],
 ];
 for (const [route, requiredText, requiredLink] of lessonChecks) {
   const file = pagePath(route);
@@ -73,6 +77,7 @@ const releasedQuizzes = [
   [routes.dxyQuiz, 'Quiz 4 of 12', routes.dxyLesson],
   [routes.broadQuiz, 'Quiz 5 of 12', routes.broadLesson],
   [routes.regimeQuiz, 'Quiz 6 of 12', routes.regimeLesson],
+  [routes.goldQuiz, 'Quiz 7 of 12', routes.goldLesson],
 ];
 for (const [route, label, lesson] of releasedQuizzes) {
   const file = pagePath(route);
@@ -85,8 +90,8 @@ for (const [route, label, lesson] of releasedQuizzes) {
   if (!html.includes(`href="${lesson}"`)) failures.push(`${route} does not link to ${lesson}.`);
 }
 
-if (fs.existsSync(pagePath(routes.goldQuiz))) {
-  failures.push(`Unreleased Quiz 7 was generated at ${routes.goldQuiz}.`);
+if (fs.existsSync(pagePath(routes.wtiQuiz))) {
+  failures.push(`Unreleased Quiz 8 was generated at ${routes.wtiQuiz}.`);
 }
 
 for (const file of ['api/waitlist.js', 'api/daily-news-source.js']) {
@@ -114,10 +119,12 @@ else {
     routes.regimeLesson,
     routes.regimeQuiz,
     routes.goldLesson,
+    routes.goldQuiz,
+    routes.wtiLesson,
   ]) {
     if (!xml.includes(`${route}/`)) failures.push(`Released route is missing from sitemap: ${route}.`);
   }
-  if (xml.includes(`${routes.goldQuiz}/`)) failures.push('Unreleased Quiz 7 appears in sitemap.');
+  if (xml.includes(`${routes.wtiQuiz}/`)) failures.push('Unreleased Quiz 8 appears in sitemap.');
   if (xml.includes('benchmark/usd-impact-benchmark-dashboard')) failures.push('Draft benchmark route appears in sitemap.');
 }
 

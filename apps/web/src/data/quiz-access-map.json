@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "passScore": 8,
   "totalQuestionsPerQuiz": 10,
   "storageKey": "usd-impact-quiz-progress-v1",
@@ -22,7 +22,7 @@
       "canonicalId": "quiz-what-is-us-dollar",
       "slug": "/dollar/what-is-the-us-dollar/quiz",
       "relatedLessonUrl": "/dollar/what-is-the-us-dollar",
-      "lessonReleased": false,
+      "lessonReleased": true,
       "nextQuizUrl": "/fx/fx-depreciation-vs-inflation/quiz",
       "previousQuizUrl": "/start-here/quiz",
       "unlocksChapter": null,

@@ -28,10 +28,17 @@ const downloadPath = 'downloadPath' in entry.data && typeof entry.data.downloadP
   : checklistDownload;
 const isBookPage = entry.data.slug.replace(/\/$/, '') === bookSlug;
 const requestedPrimary = entry.data.ctaPrimary;
+const requestedPrimaryHref = entry.data.ctaPrimaryHref;
+const requestedSecondaryHref = entry.data.ctaSecondaryHref;
+const requestedSecondaryDownload = entry.data.ctaSecondaryDownload;
 const primaryLabel = isBookPage || requestedPrimary === 'Get the book' || requestedPrimary === 'Explore the book'
   ? 'Join the book waitlist'
   : requestedPrimary;
-const primaryHref = isBookPage ? '#book-waitlist' : `${bookSlug}/#book-waitlist`;
+const primaryHref = isBookPage
+  ? '#book-waitlist'
+  : requestedPrimaryHref ?? `${bookSlug}/#book-waitlist`;
+const secondaryHref = requestedSecondaryHref ?? downloadPath;
+const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref === undefined;
 ---
 <BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
   <section class="hero">
@@ -43,8 +50,8 @@ const primaryHref = isBookPage ? '#book-waitlist' : `${bookSlug}/#book-waitlist`
         primary={primaryLabel}
         primaryHref={primaryHref}
         secondary={entry.data.ctaSecondary}
-        secondaryHref={downloadPath}
-        secondaryDownload={true}
+        secondaryHref={secondaryHref}
+        secondaryDownload={secondaryDownload}
       />
     </div>
   </section>

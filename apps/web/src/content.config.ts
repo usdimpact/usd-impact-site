@@ -17,7 +17,10 @@ const baseSchema = z.object({
   sources: z.array(z.string()).default([]),
   internalLinks: z.array(z.string()).default([]),
   ctaPrimary: z.string().optional(),
+  ctaPrimaryHref: z.string().optional(),
   ctaSecondary: z.string().optional(),
+  ctaSecondaryHref: z.string().optional(),
+  ctaSecondaryDownload: z.boolean().optional(),
   hero: z.string().optional(),
   subhero: z.string().optional(),
 });

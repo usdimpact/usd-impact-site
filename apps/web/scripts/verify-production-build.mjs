@@ -5,9 +5,14 @@ const distRoot = path.resolve('dist');
 const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
 const bookRouteHref = '/book/read-the-dollar-first/';
 const bookWaitlistHref = '/book/read-the-dollar-first/#book-waitlist';
+const dollarLessonHref = '/dollar/what-is-the-us-dollar';
+const dollarQuizHref = '/dollar/what-is-the-us-dollar/quiz';
+const startHereHref = '/start-here/';
 const checklistPdf = path.join(distRoot, checklistDownload.replace(/^\//, ''));
 const homepage = path.join(distRoot, 'index.html');
 const bookPage = path.join(distRoot, 'book', 'read-the-dollar-first', 'index.html');
+const dollarLessonPage = path.join(distRoot, 'dollar', 'what-is-the-us-dollar', 'index.html');
+const dollarQuizPage = path.join(distRoot, 'dollar', 'what-is-the-us-dollar', 'quiz', 'index.html');
 const privacyPage = path.join(distRoot, 'privacy', 'index.html');
 const waitlistFunction = path.resolve('api', 'waitlist.js');
 const dailyNewsSourceFunction = path.resolve('api', 'daily-news-source.js');
@@ -22,6 +27,7 @@ const sitemap = path.join(distRoot, 'sitemap-0.xml');
 const requiredRoutes = [
   'start-here/index.html',
   'book/read-the-dollar-first/index.html',
+  'dollar/what-is-the-us-dollar/index.html',
   'framework/dollar-transmission-chain/index.html',
   'lead-magnets/weekly-dollar-regime-checklist/index.html',
   'privacy/index.html',
@@ -36,7 +42,9 @@ const requiredNewsOutputs = [
 
 const downloadCtaPages = [
   'index.html',
-  ...requiredRoutes.filter((route) => route !== 'privacy/index.html'),
+  ...requiredRoutes.filter(
+    (route) => !['privacy/index.html', 'dollar/what-is-the-us-dollar/index.html'].includes(route),
+  ),
 ];
 
 const failures = [];
@@ -99,6 +107,33 @@ if (!fs.existsSync(bookPage)) {
   }
 }
 
+if (!fs.existsSync(dollarLessonPage)) {
+  failures.push('Dollar foundations lesson was not generated.');
+} else {
+  const lessonHtml = fs.readFileSync(dollarLessonPage, 'utf8');
+  if (!lessonHtml.includes(`href="${dollarQuizHref}"`)) {
+    failures.push(`Dollar lesson does not link to Quiz 2 at ${dollarQuizHref}.`);
+  }
+  if (!lessonHtml.includes('Take Quiz 2')) {
+    failures.push('Dollar lesson does not expose the Take Quiz 2 CTA.');
+  }
+  if (!lessonHtml.includes(`href="${startHereHref}"`)) {
+    failures.push(`Dollar lesson does not link back to ${startHereHref}.`);
+  }
+  if (lessonHtml.includes(`<a class="button secondary" href="${startHereHref}" download`)) {
+    failures.push('Dollar lesson Start Here CTA is incorrectly marked as a download.');
+  }
+}
+
+if (!fs.existsSync(dollarQuizPage)) {
+  failures.push('Quiz 2 page was not generated.');
+} else {
+  const quizHtml = fs.readFileSync(dollarQuizPage, 'utf8');
+  if (!quizHtml.includes(`href="${dollarLessonHref}"`)) {
+    failures.push(`Quiz 2 does not expose its published lesson link at ${dollarLessonHref}.`);
+  }
+}
+
 if (!fs.existsSync(privacyPage)) {
   failures.push('Waitlist privacy notice was not generated.');
 }
@@ -128,6 +163,9 @@ if (!fs.existsSync(sitemap)) {
   }
   if (!sitemapXml.includes('/news/2026-07-22/')) {
     failures.push('Published Daily USD Impact edition is missing from the sitemap.');
+  }
+  if (!sitemapXml.includes(`${dollarLessonHref}/`)) {
+    failures.push('Dollar foundations lesson is missing from the sitemap.');
   }
 }
 

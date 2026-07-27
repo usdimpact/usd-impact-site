@@ -26,45 +26,68 @@ async function request(body, method = 'POST') {
   };
 }
 
-const quiz = QUIZ_RUNTIME['quiz-start-here'];
-const allCorrect = Object.fromEntries(
-  quiz.questions.map((question) => [String(question.number), question.correctAnswer]),
-);
-const allWrong = Object.fromEntries(
-  quiz.questions.map((question) => [
-    String(question.number),
-    question.allowedAnswerKeys.find((key) => key !== question.correctAnswer),
-  ]),
-);
+function answersFor(canonicalId, correct) {
+  const quiz = QUIZ_RUNTIME[canonicalId];
+  return Object.fromEntries(
+    quiz.questions.map((question) => [
+      String(question.number),
+      correct
+        ? question.correctAnswer
+        : question.allowedAnswerKeys.find((key) => key !== question.correctAnswer),
+    ]),
+  );
+}
 
-const pass = await request({ canonicalId: 'quiz-start-here', answers: allCorrect });
-assert.equal(pass.status, 200);
-assert.equal(pass.json.score, 10);
-assert.equal(pass.json.passed, true);
-assert.equal(pass.json.unlocksChapter, null);
-assert.equal(pass.json.nextChapterStatus, 'coming-soon');
-assert.equal(pass.json.details.length, 10);
+const quiz1Id = 'quiz-start-here';
+const quiz2Id = 'quiz-what-is-us-dollar';
+const quiz3Id = 'quiz-fx-depreciation-vs-inflation';
 
-const fail = await request({ canonicalId: 'quiz-start-here', answers: allWrong });
-assert.equal(fail.status, 200);
-assert.equal(fail.json.score, 0);
-assert.equal(fail.json.passed, false);
-assert.equal(fail.json.unlocksChapter, null);
+const quiz1 = QUIZ_RUNTIME[quiz1Id];
+const quiz2 = QUIZ_RUNTIME[quiz2Id];
 
+const quiz1Pass = await request({ canonicalId: quiz1Id, answers: answersFor(quiz1Id, true) });
+assert.equal(quiz1Pass.status, 200);
+assert.equal(quiz1Pass.json.score, 10);
+assert.equal(quiz1Pass.json.passed, true);
+assert.equal(quiz1Pass.json.unlocksChapter, '/dollar/what-is-the-us-dollar/quiz');
+assert.equal(quiz1Pass.json.nextChapterStatus, 'available');
+assert.equal(quiz1Pass.json.details.length, 10);
 
-const invalidOption = { ...allCorrect, '1': 'NOT_AN_OPTION' };
-const invalid = await request({ canonicalId: 'quiz-start-here', answers: invalidOption });
+const quiz2Pass = await request({ canonicalId: quiz2Id, answers: answersFor(quiz2Id, true) });
+assert.equal(quiz2Pass.status, 200);
+assert.equal(quiz2Pass.json.score, 10);
+assert.equal(quiz2Pass.json.passed, true);
+assert.equal(quiz2Pass.json.unlocksChapter, null);
+assert.equal(quiz2Pass.json.nextChapterStatus, 'coming-soon');
+assert.equal(quiz2Pass.json.details.length, 10);
+
+const quiz2Fail = await request({ canonicalId: quiz2Id, answers: answersFor(quiz2Id, false) });
+assert.equal(quiz2Fail.status, 200);
+assert.equal(quiz2Fail.json.score, 0);
+assert.equal(quiz2Fail.json.passed, false);
+assert.equal(quiz2Fail.json.unlocksChapter, null);
+assert.equal(quiz2Fail.json.nextChapterStatus, 'locked');
+
+const invalidOption = { ...answersFor(quiz2Id, true), '1': 'NOT_AN_OPTION' };
+const invalid = await request({ canonicalId: quiz2Id, answers: invalidOption });
 assert.equal(invalid.status, 400);
 assert.match(invalid.json.error, /Question 1/);
 
-const incomplete = await request({ canonicalId: 'quiz-start-here', answers: { '1': quiz.questions[0].correctAnswer } });
+const incomplete = await request({
+  canonicalId: quiz2Id,
+  answers: { '1': quiz2.questions[0].correctAnswer },
+});
 assert.equal(incomplete.status, 400);
 assert.match(incomplete.json.error, /Question 2/);
 
-const unreleased = await request({ canonicalId: 'quiz-what-is-us-dollar', answers: allCorrect });
+const unreleased = await request({ canonicalId: quiz3Id, answers: answersFor(quiz1Id, true) });
 assert.equal(unreleased.status, 404);
 
 const method = await request({}, 'GET');
 assert.equal(method.status, 405);
+
+assert.equal(quiz1.released, true);
+assert.equal(quiz2.released, true);
+assert.equal(QUIZ_RUNTIME[quiz3Id].released, false);
 
 console.log('Quiz submit function tests passed.');

@@ -125,6 +125,9 @@ for (const access of accessMap.quizzes) {
     fail(`${access.canonicalId}: access-map lesson route does not match quiz.`);
   }
   if (typeof access.released !== 'boolean') fail(`${access.canonicalId}: released must be boolean.`);
+  if (typeof access.lessonReleased !== 'boolean') {
+    fail(`${access.canonicalId}: lessonReleased must be boolean.`);
+  }
 }
 
 const contentFiles = (await walk(contentRoot)).filter(
@@ -137,14 +140,27 @@ for (const file of contentFiles) {
   if (match) contentSlugs.add(normalizeRoute(match[1].trim()));
 }
 
-for (const access of accessMap.quizzes.filter((item) => item.released)) {
+const releasedQuizzes = accessMap.quizzes.filter((item) => item.released);
+const releasedQuizSlugs = new Set(releasedQuizzes.map((item) => normalizeRoute(item.slug)));
+const availableRoutes = new Set([...contentSlugs, ...releasedQuizSlugs]);
+
+for (const access of releasedQuizzes) {
   const lesson = normalizeRoute(access.relatedLessonUrl);
-  if (!contentSlugs.has(lesson)) {
+  if (access.lessonReleased && !contentSlugs.has(lesson)) {
     fail(`Released quiz ${access.canonicalId} points to missing lesson ${lesson}.`);
   }
+  if (access.unlocksChapter && !availableRoutes.has(normalizeRoute(access.unlocksChapter))) {
+    fail(`Released quiz ${access.canonicalId} unlocks unavailable route ${access.unlocksChapter}.`);
+  }
+}
+
+const releasedIds = releasedQuizzes.map((item) => item.canonicalId);
+const expectedReleasedIds = ['quiz-start-here', 'quiz-what-is-us-dollar'];
+if (JSON.stringify(releasedIds) !== JSON.stringify(expectedReleasedIds)) {
+  fail(`Expected released quizzes ${expectedReleasedIds.join(', ')}, found ${releasedIds.join(', ')}.`);
 }
 
 console.log(
   `Validated ${quizzes.length} quizzes, ${quizzes.length * 10} questions, ` +
-  `${accessMap.quizzes.filter((item) => item.released).length} released route(s).`,
+  `${releasedQuizzes.length} released route(s).`,
 );

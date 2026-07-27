@@ -1,0 +1,98 @@
+<script>
+  // @ts-nocheck
+  const TELEMETRY_ENDPOINT = '/api/telemetry';
+  const CHECKLIST_PATH = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
+  const observedResults = new WeakSet();
+
+  const campaign = (() => {
+    const query = new URLSearchParams(window.location.search);
+    const clean = (key) => {
+      const value = query.get(key);
+      return value && /^[a-zA-Z0-9._~-]{1,64}$/.test(value) ? value : undefined;
+    };
+    return {
+      utmSource: clean('utm_source'),
+      utmMedium: clean('utm_medium'),
+      utmCampaign: clean('utm_campaign'),
+    };
+  })();
+
+  const createEventId = () => {
+    if (typeof crypto?.randomUUID === 'function') return crypto.randomUUID();
+    return `evt-${Date.now()}-${Math.random().toString(36).slice(2, 14)}`;
+  };
+
+  const track = (eventName, details = {}) => {
+    const payload = {
+      eventId: createEventId(),
+      eventName,
+      route: window.location.pathname,
+      ...campaign,
+      ...details,
+    };
+
+    fetch(TELEMETRY_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => {
+      // Telemetry must never interrupt downloads, quiz scoring, or navigation.
+    });
+  };
+
+  document.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target.closest('a, button') : null;
+    if (!(target instanceof HTMLElement)) return;
+
+    if (target instanceof HTMLAnchorElement) {
+      const url = new URL(target.href, window.location.origin);
+      if (url.origin === window.location.origin && url.pathname === CHECKLIST_PATH) {
+        track('checklist_download');
+      }
+    }
+
+    const quizRoot = target.closest('[data-quiz-root]');
+    if (!(quizRoot instanceof HTMLElement)) return;
+    const quizId = quizRoot.dataset.canonicalId;
+    if (!quizId) return;
+
+    if (target.matches('[data-quiz-start]')) {
+      track('quiz_start', { quizId });
+    } else if (target.matches('[data-quiz-retake]')) {
+      track('quiz_retry', { quizId });
+    }
+  });
+
+  const observeQuizResult = (root) => {
+    if (!(root instanceof HTMLElement) || observedResults.has(root)) return;
+    const summary = root.querySelector('[data-quiz-result-summary]');
+    if (!(summary instanceof HTMLElement)) return;
+
+    observedResults.add(root);
+    let lastResult = '';
+
+    const observer = new MutationObserver(() => {
+      const heading = summary.querySelector('h2')?.textContent?.trim() ?? '';
+      if (!heading || heading === lastResult) return;
+
+      const match = heading.match(/^(Passed|Completed|Review and retry) — (\d+)\/(\d+)$/);
+      if (!match) return;
+
+      lastResult = heading;
+      const quizId = root.dataset.canonicalId;
+      if (!quizId) return;
+
+      track('quiz_complete', {
+        quizId,
+        outcome: match[1] === 'Review and retry' ? 'fail' : 'pass',
+        score: Number(match[2]),
+        questionCount: Number(match[3]),
+      });
+    });
+
+    observer.observe(summary, { childList: true, subtree: true, characterData: true });
+  };
+
+  document.querySelectorAll('[data-quiz-root]').forEach(observeQuizResult);
+</script>

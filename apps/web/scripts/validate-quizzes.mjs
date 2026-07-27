@@ -94,6 +94,6 @@ for (const access of releasedQuizzes) {
 }
 
 const releasedIds = releasedQuizzes.map((item) => item.canonicalId);
-const expectedReleasedIds = ['quiz-start-here','quiz-what-is-us-dollar','quiz-fx-depreciation-vs-inflation','quiz-dxy-explained','quiz-dxy-vs-broad-usd','quiz-dollar-regime-framework','quiz-usd-and-gold','quiz-usd-and-wti','quiz-usd-and-lng-natural-gas'];
+const expectedReleasedIds = ['quiz-start-here','quiz-what-is-us-dollar','quiz-fx-depreciation-vs-inflation','quiz-dxy-explained','quiz-dxy-vs-broad-usd','quiz-dollar-regime-framework','quiz-usd-and-gold','quiz-usd-and-wti','quiz-usd-and-lng-natural-gas','quiz-usd-and-equities'];
 if (JSON.stringify(releasedIds) !== JSON.stringify(expectedReleasedIds)) fail(`Expected released quizzes ${expectedReleasedIds.join(', ')}, found ${releasedIds.join(', ')}.`);
 console.log(`Validated ${quizzes.length} quizzes, ${quizzes.length * 10} questions, ${releasedQuizzes.length} released route(s).`);

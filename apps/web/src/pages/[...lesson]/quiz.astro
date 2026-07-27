@@ -37,7 +37,11 @@ const purchaseUrl = import.meta.env.PUBLIC_BOOK_PURCHASE_URL || accessMap.purcha
         Pass with {accessMap.passScore} of {quiz.questionCount} correct answers. Failed attempts can be retried without penalty.
       </p>
       <div class="button-row">
-        <a class="button secondary" href={access.relatedLessonUrl}>Return to the lesson</a>
+        {access.lessonReleased ? (
+          <a class="button secondary" href={access.relatedLessonUrl}>Return to the lesson</a>
+        ) : (
+          <a class="button secondary" href="/quiz/">View all quizzes</a>
+        )}
         <a class="button primary" href={purchaseUrl}>Get full book access</a>
       </div>
     </div>

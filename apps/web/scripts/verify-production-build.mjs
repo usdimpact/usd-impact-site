@@ -60,7 +60,7 @@ const lessonChecks = [
   [routes.dxyLesson, 'Take Quiz 4', routes.dxyQuiz],
   [routes.broadLesson, 'DXY vs Broad USD: Which Dollar Signal Matters?', routes.broadQuiz],
   [routes.regimeLesson, 'Take Quiz 6', routes.regimeQuiz],
-  [routes.goldLesson, 'Take Quiz 7', routes.goldQuiz],
+  [routes.goldLesson, 'USD and Gold: How the Dollar, Real Yields, and Stress Shape Gold', '$10,000'],
   [routes.wtiLesson, 'USD and WTI: Why Oil Is Not Only a Dollar Trade', '$1,000,000'],
 ];
 for (const [route, requiredText, requiredLink] of lessonChecks) {

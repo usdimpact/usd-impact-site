@@ -14,15 +14,16 @@ sources:
   - "U.S. Department of the Treasury — nominal and inflation-indexed Treasury yields"
   - "Federal Reserve Bank of Chicago — National Financial Conditions Index"
   - "Bank for International Settlements — global liquidity indicators"
-  - "Federal Reserve Bank of St. Louis — financial and macroeconomic data series"
 internalLinks:
   - "/dxy/dxy-vs-broad-usd"
   - "/dxy/dxy-vs-broad-usd/quiz"
   - "/regime/how-to-read-the-dollar"
+  - "/regime/how-to-read-the-dollar/quiz"
+  - "/gold/usd-gold"
   - "/quiz/"
   - "/framework/dollar-transmission-chain"
-ctaPrimary: "View quiz roadmap"
-ctaPrimaryHref: "/quiz/"
+ctaPrimary: "Take Quiz 6"
+ctaPrimaryHref: "/regime/how-to-read-the-dollar/quiz"
 ctaSecondary: "Return to DXY vs Broad USD"
 ctaSecondaryHref: "/dxy/dxy-vs-broad-usd"
 ctaSecondaryDownload: false
@@ -39,103 +40,60 @@ The USD Impact regime framework uses four layers:
 3. **Confirmation:** Which independent signals support or contradict the interpretation?
 4. **Transmission:** Through which channel can the regime reach the asset, company, borrower, or economy being studied?
 
-This sequence converts a headline into a testable macro explanation.
-
 ## Direction is not a regime
 
 “Dollar up” and “dollar down” are observations. A regime description adds context.
 
-A stronger dollar can be associated with:
+A stronger dollar can be associated with rising real yields, tighter expected policy, stronger relative U.S. growth, weaker conditions abroad, risk aversion, funding stress, or a large move in one DXY basket currency. Those are different regimes even when the index direction is identical.
 
-- rising U.S. real yields;
-- tighter expected Federal Reserve policy;
-- stronger relative U.S. growth;
-- weaker growth or policy expectations abroad;
-- risk aversion and demand for liquid dollar assets;
-- funding stress or balance-sheet pressure;
-- a large move in one DXY basket currency.
-
-Those are different regimes even when the index direction is identical.
-
-A weaker dollar can be associated with:
-
-- falling real yields;
-- easier policy expectations;
-- improving global risk appetite;
-- stronger growth outside the United States;
-- easing funding pressure;
-- a euro-specific or other basket-specific move;
-- confidence concerns or fiscal risk.
-
-The expected asset effects depend on the cause, not only the sign.
+A weaker dollar can reflect falling real yields, easier policy expectations, improving risk appetite, stronger growth abroad, easing funding pressure, or a basket-specific move. The expected asset effect depends on the cause, not only the sign.
 
 ## Layer 1: define the benchmark
 
-The first question is **which dollar signal is being observed**.
-
 ### DXY
 
-DXY is a visible, tradable, six-currency benchmark with heavy euro exposure. It is useful for identifying a major-market dollar move, but it can be dominated by EURUSD.
+A visible, tradable six-currency benchmark with heavy euro exposure. It is useful, but EURUSD can dominate it.
 
-### Federal Reserve Broad Dollar Index
+### Broad USD
 
-Broad USD covers a wider trade-weighted currency group. It is useful for testing whether a DXY move extends across a broader set of U.S. trading partners.
+A wider trade-weighted measure that tests whether the dollar move extends beyond the narrow DXY basket.
 
 ### Bilateral exchange rate
 
-A bilateral rate may be the correct measure for a specific country, company, importer, exporter, borrower, or revenue exposure.
+Often the correct measure for a specific country, company, importer, exporter, borrower, or revenue exposure.
 
 ### Real dollar index
 
-A real index adjusts nominal exchange-rate relationships for relative price levels. It is useful for competitiveness and longer-horizon purchasing-power analysis, not as a substitute for a daily spot-currency signal.
+A nominal exchange-rate measure adjusted for relative prices. It is useful for competitiveness and longer-horizon analysis.
 
 ### Funding and liquidity indicators
 
-Funding stress is not an exchange-rate index. Dollar funding spreads, cross-currency basis measures, credit conditions, collateral demand, and market liquidity may reveal pressure that DXY does not capture directly.
+Funding spreads, cross-currency basis, credit conditions, collateral demand, and market liquidity can reveal pressure that an exchange-rate index does not directly measure.
 
 A regime claim should state the measure explicitly. “DXY strengthened” is narrower and more precise than “the whole dollar system tightened.”
 
 ## Layer 2: identify the dominant driver
 
-A dollar move normally reflects relative conditions between the United States and other economies. The analyst should rank plausible drivers rather than list every macro variable equally.
+Rank the plausible drivers rather than listing every macro variable equally.
 
-### Relative monetary policy
-
-Expected policy-rate differences can change currency demand. A repricing toward tighter U.S. policy relative to foreign policy can support the dollar, while a relative easing shift can weaken it.
-
-### Nominal yields and real yields
-
-Nominal yields include inflation compensation. Real yields adjust for expected inflation and are especially relevant to the opportunity cost of holding non-yielding or long-duration assets.
-
-A dollar rise accompanied by higher real yields represents a different environment from a dollar rise caused primarily by stress demand.
-
-### Relative growth
-
-Stronger expected U.S. growth can attract capital and support the dollar. Stronger growth abroad can support foreign currencies. Growth expectations can also affect commodity demand, earnings, and risk appetite, so the transmission is not purely foreign exchange.
-
-### Inflation expectations
-
-Inflation data matter through purchasing power, expected policy, real rates, and risk pricing. Higher inflation can weaken or strengthen the dollar depending on the expected policy response and relative conditions abroad.
-
-### Risk aversion and safe-asset demand
-
-During stress, investors and institutions may seek dollar cash, Treasury securities, or short-term dollar funding. Dollar strength in this setting can be both a symptom of stress and a mechanism that transmits tighter conditions.
-
-### Basket-specific or local shocks
-
-A political, fiscal, banking, or policy event outside the United States can move a major currency and therefore DXY. The dollar index may rise even when the U.S. macro driver is secondary.
+- **Relative monetary policy:** expected policy-rate differences can alter currency demand.
+- **Nominal and real yields:** rising real yields can support the dollar and raise opportunity costs for non-yielding assets.
+- **Relative growth:** stronger expected U.S. growth can attract capital; stronger foreign growth can support other currencies.
+- **Inflation expectations:** inflation matters through policy expectations, real rates, and risk pricing.
+- **Risk aversion:** demand for dollar cash, Treasury securities, collateral, or funding can strengthen the dollar during stress.
+- **Local shocks:** political, fiscal, banking, or policy events abroad can move a major basket currency and therefore DXY.
 
 ## Layer 3: require confirmation
 
-A regime interpretation becomes stronger when independent signals point in the same direction.
+A regime interpretation becomes stronger when independent signals agree.
 
 ### Benchmark confirmation
 
-Compare DXY with Broad USD, advanced-economy currencies, emerging-market currencies, and the bilateral rates relevant to the exposure.
+Compare DXY with Broad USD, advanced-economy currencies, emerging-market currencies, and relevant bilateral rates.
 
 ### Rate confirmation
 
-Check nominal yields, real yields, yield differentials, and expected policy paths. The direction and speed of the move matter.
+Check nominal yields, real yields, rate differentials, and expected policy paths.
 
 ### Financial-condition confirmation
 
@@ -143,17 +101,13 @@ Review credit spreads, lending conditions, volatility, market depth, and broad f
 
 ### Funding confirmation
 
-Check dollar funding costs, cross-currency basis, short-term funding markets, collateral conditions, and signs of balance-sheet constraint.
+Check dollar funding costs, cross-currency basis, short-term funding markets, collateral conditions, and balance-sheet constraints.
 
 ### Cross-asset confirmation
 
 Observe whether gold, equities, credit, commodities, and volatility behave consistently with the proposed driver. Cross-asset behavior is evidence, not proof.
 
-A single confirming variable is rarely sufficient. The goal is a coherent cluster of signals.
-
 ## The regime evidence ladder
-
-Use an evidence ladder to prevent overconfidence:
 
 | Evidence level | Description | Appropriate conclusion |
 | --- | --- | --- |
@@ -162,9 +116,7 @@ Use an evidence ladder to prevent overconfidence:
 | Partial confirmation | One or two independent signals agree | State that evidence is building |
 | Broad confirmation | Benchmarks, rates, and stress signals align | Describe a stronger regime signal |
 | Transmission confirmation | The relevant asset channel behaves consistently | Explain the asset impact conditionally |
-| Invalidation | Key confirming signals reverse or contradict | Reduce confidence or change the regime call |
-
-This ladder keeps certainty proportional to evidence.
+| Invalidation | Key signals reverse or contradict | Reduce confidence or change the regime call |
 
 ## Layer 4: map the transmission channel
 
@@ -172,158 +124,81 @@ The same dollar regime can reach different assets through different mechanisms.
 
 ### Gold
 
-Relevant channels include real yields, opportunity cost, inflation expectations, confidence, reserve demand, and stress demand. A stronger dollar and rising real yields can pressure gold in some regimes, but safe-haven demand can offset that relationship.
+Relevant channels include real yields, opportunity cost, inflation expectations, reserve demand, confidence, stress demand, and gold-specific flows.
 
 ### Oil
 
-Relevant channels include dollar pricing, global demand, inventories, physical supply, OPEC+ policy, geopolitics, shipping, and futures-curve structure. A dollar move can matter without dominating the physical market.
+Relevant channels include dollar pricing, global demand, inventories, physical supply, OPEC+ policy, geopolitics, and futures-curve structure.
 
 ### Bitcoin
 
-Relevant channels include global liquidity, real yields, leverage, risk appetite, fund flows, regulation, and crypto-specific market structure. A weaker dollar is not an automatic Bitcoin signal.
+Relevant channels include global liquidity, real yields, leverage, risk appetite, fund flows, regulation, and crypto-specific market structure.
 
 ### Equities
 
-Relevant channels include discount rates, earnings, financial conditions, foreign-revenue translation, import costs, sector exposure, leverage, and pricing power. The same dollar move can help one company and hurt another.
-
-### Foreign exchange
-
-An FX pair reflects two economies and two policy regimes. The relevant driver may originate on the dollar side, the other currency’s side, or both.
+Relevant channels include discount rates, earnings, financial conditions, currency translation, import costs, sector exposure, leverage, and pricing power.
 
 ### Dollar borrowers
 
-A stronger dollar can increase local-currency debt-service costs for borrowers with dollar liabilities and non-dollar revenue. Hedging, maturity, refinancing access, and cash-flow currency determine the severity.
+A stronger dollar can increase local-currency debt-service costs for borrowers with dollar liabilities and non-dollar revenue. Hedging and refinancing conditions determine the severity.
 
 ## Four core regime combinations
 
-Dollar direction should be combined with real yields and financial conditions.
-
 ### Stronger dollar, rising real yields
 
-Possible interpretation: tighter relative policy or stronger U.S. rate support.
-
-Confirmation may include higher real yields, wider relative-rate differentials, and pressure on long-duration assets. Asset effects remain conditional.
+Possible interpretation: tighter relative policy or stronger U.S. rate support. Confirm with rate differentials and financial conditions.
 
 ### Stronger dollar, worsening funding and credit conditions
 
-Possible interpretation: liquidity demand or financial stress.
+Possible interpretation: liquidity demand or financial stress. Confirm with credit spreads, volatility, funding measures, and defensive cross-asset behavior.
 
-Confirmation may include wider credit spreads, higher volatility, funding pressure, and defensive cross-asset behavior. The dollar may be both signal and transmitter.
+### Weaker dollar, falling real yields, easier conditions
 
-### Weaker dollar, falling real yields, easier financial conditions
+Possible interpretation: policy easing, liquidity improvement, or stronger risk appetite. Confirm with credit, volatility, and broad participation.
 
-Possible interpretation: policy easing, liquidity improvement, or stronger risk appetite.
+### Weaker dollar without easier conditions
 
-Confirmation may include lower real yields, narrower credit spreads, lower volatility, and broader participation across risk assets. Local supply shocks can still override the macro channel.
-
-### Weaker dollar without easier financial conditions
-
-Possible interpretation: basket-specific movement, growth deterioration, confidence concerns, or a relative shift outside the United States.
-
-A falling DXY alone is not evidence of global liquidity easing. Broad USD, funding, credit, and rate signals are required.
+Possible interpretation: basket-specific movement, growth deterioration, confidence concerns, or a relative shift outside the United States. A falling DXY alone is not proof of global liquidity easing.
 
 ## Signal matrix learning block
 
-Consider two observations:
+Assume DXY rises 2% while Broad USD rises only 0.2%. If EURUSD explains most of the move and funding conditions remain stable, the evidence supports basket-concentrated dollar strength rather than confirmed global dollar stress.
 
-- DXY rises 2% over several sessions.
-- Broad USD rises only 0.2%.
-
-That evidence supports a strong DXY move, but only limited broad-dollar confirmation. If EURUSD explains most of the move and funding conditions remain stable, the appropriate conclusion is basket-concentrated dollar strength rather than confirmed global dollar stress.
-
-Now add:
-
-- real yields rise;
-- Broad USD accelerates;
-- credit spreads widen;
-- volatility increases;
-- emerging-market currencies weaken.
-
-The regime evidence is now broader. The interpretation may shift toward tighter global dollar conditions, subject to asset-specific validation.
+Now add rising real yields, a stronger Broad USD move, wider credit spreads, higher volatility, and weaker emerging-market currencies. The evidence is now broader and more consistent with tighter global dollar conditions.
 
 The framework changes the conclusion as the evidence changes.
 
-## A complete USD Impact reading sequence
+## The USD Impact reading sequence
 
-Use this workflow:
+1. Name the benchmark.
+2. Measure direction and persistence.
+3. Inspect basket composition.
+4. Rank the drivers.
+5. Check independent confirmation.
+6. Define the regime using dollar direction, rates, and financial conditions.
+7. Map the transmission channel.
+8. Test asset-specific evidence.
+9. State invalidation conditions.
+10. Use conditional language.
 
-1. **Name the benchmark.** DXY, Broad USD, bilateral FX, real dollar index, or funding measure.
-2. **Measure direction and persistence.** Separate a one-day move from a sustained trend.
-3. **Inspect composition.** Determine whether one basket currency or region dominates.
-4. **Rank the drivers.** Relative policy, real yields, growth, inflation, risk demand, funding stress, or local shock.
-5. **Check independent confirmation.** Rates, credit, volatility, liquidity, funding, and other currency groups.
-6. **Define the regime.** Describe the combination of dollar direction, rates, and financial conditions.
-7. **Map the transmission channel.** Pricing, opportunity cost, funding, balance sheet, translation, liquidity, or physical supply and demand.
-8. **Test asset-specific evidence.** Confirm whether the asset behaves consistently with the proposed channel.
-9. **State invalidation conditions.** Identify which signal would weaken or reverse the interpretation.
-10. **Use conditional language.** Report what the evidence suggests rather than promising an outcome.
+## Time horizon and invalidation
 
-## A worked regime example
+Intraday moves may reflect positioning or event risk. Multiweek moves may reflect policy repricing and relative growth. Structural moves may reflect productivity, fiscal credibility, external balances, reserve behavior, and capital flows.
 
-Assume DXY and Broad USD both rise. U.S. real yields increase, credit spreads widen, and volatility rises. Oil remains firm because of a major supply disruption, while gold is stable because safe-haven demand offsets higher real yields.
-
-A weak analysis says:
-
-> The dollar rose, so all commodities should fall.
-
-A disciplined analysis says:
-
-> Dollar strength is broadly confirmed and appears alongside higher real yields and tighter financial conditions. That regime may create headwinds for some risk and non-yielding assets, but oil is being dominated by a physical supply shock and gold is receiving offsetting stress demand.
-
-The framework explains why assets can diverge without invalidating the macro signal.
-
-## Time horizon matters
-
-A regime can differ across horizons.
-
-- Intraday moves may reflect positioning, event risk, or liquidity.
-- Multiweek moves may reflect policy repricing and relative growth.
-- Multiyear moves may reflect productivity, fiscal credibility, external balances, reserve behavior, and structural capital flows.
-
-Do not combine a one-day DXY move with a multiyear purchasing-power conclusion unless the evidence supports the same horizon.
-
-## Invalidation is part of the framework
-
-Every regime interpretation should include evidence that could prove it incomplete.
-
-Examples:
-
-- DXY rises but Broad USD and bilateral rates fail to confirm.
-- Real yields reverse after the initial move.
-- Credit spreads narrow and volatility falls despite a stress hypothesis.
-- Funding indicators remain normal.
-- The asset is dominated by a local supply, earnings, regulatory, or positioning shock.
-
-An invalidated interpretation is not a failed process. It is the framework working correctly.
+A regime interpretation should weaken when Broad USD fails to confirm DXY, real yields reverse, credit and volatility contradict a stress hypothesis, funding remains normal, or a local asset-specific shock dominates.
 
 ## Common mistakes
 
-Avoid these errors:
-
-- treating dollar direction as a complete regime;
-- using DXY without checking composition or broader confirmation;
-- assuming rising inflation automatically weakens the dollar;
-- assuming a stronger dollar always means funding stress;
-- treating correlation as a permanent transmission rule;
-- ignoring real yields and financial conditions;
-- applying one asset conclusion to gold, oil, Bitcoin, equities, and FX;
-- omitting the time horizon;
-- refusing to revise when confirmation signals disagree;
-- turning an educational framework into a trading instruction.
+Avoid treating dollar direction as a complete regime, using DXY without checking broader confirmation, assuming inflation automatically weakens the dollar, assuming a stronger dollar always means funding stress, treating correlation as permanent, ignoring real yields, applying one asset conclusion to every market, mixing time horizons, or refusing to revise when evidence changes.
 
 ## Lesson checkpoint
 
-You should now be able to build a regime statement that includes:
+You should now be able to build a regime statement that includes the benchmark, dominant driver, confirming and contradicting signals, time horizon, asset-specific transmission channel, and invalidation evidence.
 
-- the dollar benchmark;
-- the dominant driver;
-- the confirming and contradicting signals;
-- the relevant time horizon;
-- the asset-specific transmission channel;
-- and the evidence that would invalidate the conclusion.
+Quiz 6 tests this framework. Passing it unlocks the USD-and-gold lesson.
 
-Quiz 6 will test this framework after its separate release gate is completed. Quiz 5 is the current checkpoint for progressing from the index-comparison lesson into this regime lesson.
+**[Take Quiz 6: Dollar Regime Framework](/regime/how-to-read-the-dollar/quiz)**
 
-**[View the quiz roadmap](/quiz/)**
+Pass mark: 8 out of 10. Failed attempts can be reviewed and retried without penalty.
 
-[Return to DXY vs Broad USD](/dxy/dxy-vs-broad-usd) · [Take Quiz 5](/dxy/dxy-vs-broad-usd/quiz) · [Review the Dollar Transmission Chain](/framework/dollar-transmission-chain/)
+[Return to DXY vs Broad USD](/dxy/dxy-vs-broad-usd) · [View the quiz roadmap](/quiz/) · [Review the Dollar Transmission Chain](/framework/dollar-transmission-chain/)

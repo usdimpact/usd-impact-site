@@ -1,5 +1,5 @@
 {
-  "version": "1.6.0",
+  "version": "1.7.0",
   "passScore": 8,
   "totalQuestionsPerQuiz": 10,
   "storageKey": "usd-impact-quiz-progress-v1",
@@ -75,14 +75,14 @@
       "previousQuizUrl": "/dxy/dxy-vs-broad-usd/quiz",
       "unlocksChapter": "/gold/usd-gold",
       "completionUrl": null,
-      "released": false
+      "released": true
     },
     {
       "order": 7,
       "canonicalId": "quiz-usd-and-gold",
       "slug": "/gold/usd-gold/quiz",
       "relatedLessonUrl": "/gold/usd-gold",
-      "lessonReleased": false,
+      "lessonReleased": true,
       "nextQuizUrl": "/energy/usd-wti/quiz",
       "previousQuizUrl": "/regime/how-to-read-the-dollar/quiz",
       "unlocksChapter": "/energy/usd-wti",

@@ -26,6 +26,7 @@ assert.deepEqual(
     'quiz-what-is-us-dollar',
     'quiz-fx-depreciation-vs-inflation',
     'quiz-dxy-explained',
+    'quiz-dxy-vs-broad-usd',
   ],
 );
 
@@ -34,22 +35,22 @@ const quiz2 = accessMap.quizzes[1];
 const quiz3 = accessMap.quizzes[2];
 const quiz4 = accessMap.quizzes[3];
 const quiz5 = accessMap.quizzes[4];
+const quiz6 = accessMap.quizzes[5];
 
 assert.equal(quiz1.unlocksChapter, quiz2.slug);
 assert.equal(quiz2.lessonReleased, true);
 assert.equal(quiz2.relatedLessonUrl, '/dollar/what-is-the-us-dollar');
-assert.equal(quiz2.unlocksChapter, '/fx/fx-depreciation-vs-inflation');
 assert.equal(quiz3.released, true);
-assert.equal(quiz3.lessonReleased, true);
-assert.equal(quiz3.relatedLessonUrl, '/fx/fx-depreciation-vs-inflation');
 assert.equal(quiz3.unlocksChapter, '/dxy/what-is-dxy');
 assert.equal(quiz4.released, true);
-assert.equal(quiz4.lessonReleased, true);
-assert.equal(quiz4.relatedLessonUrl, '/dxy/what-is-dxy');
 assert.equal(quiz4.unlocksChapter, '/dxy/dxy-vs-broad-usd');
-assert.equal(quiz5.released, false);
+assert.equal(quiz5.released, true);
 assert.equal(quiz5.lessonReleased, true);
 assert.equal(quiz5.relatedLessonUrl, '/dxy/dxy-vs-broad-usd');
+assert.equal(quiz5.unlocksChapter, '/regime/how-to-read-the-dollar');
+assert.equal(quiz6.released, false);
+assert.equal(quiz6.lessonReleased, true);
+assert.equal(quiz6.relatedLessonUrl, '/regime/how-to-read-the-dollar');
 
 assert.match(engineSource, /Math\.min\(currentIndex, questionElements\.length - 1\)/);
 assert.match(engineSource, /currentIndex >= questionElements\.length - 1/);

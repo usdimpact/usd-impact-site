@@ -58,6 +58,9 @@ for (const quiz of quizzes.sort((a, b) => a.canonicalId.localeCompare(b.canonica
   }
 
   runtime[quiz.canonicalId] = {
+    canonicalId: quiz.canonicalId,
+    order: access.order,
+    totalQuizzes: accessMap.quizzes.length,
     title: quiz.title,
     questionCount: quiz.questionCount,
     passScore: accessMap.passScore,

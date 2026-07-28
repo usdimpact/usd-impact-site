@@ -1,4 +1,10 @@
 import { QUIZ_RUNTIME } from './_quiz-runtime.generated.js';
+import {
+  advanceQuizEntitlement,
+  canAccessQuizOrder,
+  readQuizEntitlement,
+  serializeQuizEntitlementCookie,
+} from '../src/lib/quiz-entitlement.js';
 
 const MAX_BODY_BYTES = 16_384;
 
@@ -32,6 +38,11 @@ export default async function handler(request, response) {
     return send(response, 405, { error: 'Method not allowed.' });
   }
 
+  const secret = process.env.QUIZ_PROGRESS_SECRET;
+  if (typeof secret !== 'string' || secret.length < 32) {
+    return send(response, 503, { error: 'Quiz progression is temporarily unavailable.' });
+  }
+
   let payload;
   try {
     payload = parseBody(request);
@@ -48,6 +59,15 @@ export default async function handler(request, response) {
   }
   if (!answers || typeof answers !== 'object' || Array.isArray(answers)) {
     return send(response, 400, { error: 'answers must be an object keyed by question number.' });
+  }
+
+  const cookieHeader = request.headers?.cookie ?? request.headers?.Cookie ?? '';
+  const progress = readQuizEntitlement(cookieHeader, secret, quiz.totalQuizzes);
+  if (!canAccessQuizOrder(progress.entitlement, quiz.order)) {
+    return send(response, 403, {
+      error: 'Complete the required earlier checkpoint before submitting this quiz.',
+      highestUnlockedOrder: progress.entitlement.highestUnlockedOrder,
+    });
   }
 
   const details = [];
@@ -74,6 +94,12 @@ export default async function handler(request, response) {
   }
 
   const passed = score >= quiz.passScore;
+  let entitlement = progress.entitlement;
+  if (passed) {
+    entitlement = advanceQuizEntitlement(progress.entitlement, quiz, quiz.totalQuizzes);
+    response.setHeader('Set-Cookie', serializeQuizEntitlementCookie(entitlement, secret));
+  }
+
   return send(response, 200, {
     canonicalId,
     score,
@@ -87,6 +113,10 @@ export default async function handler(request, response) {
       : 'locked',
     nextQuizUrl: passed ? quiz.nextQuizUrl : null,
     completionUrl: passed ? quiz.completionUrl : null,
+    progress: {
+      highestUnlockedOrder: entitlement.highestUnlockedOrder,
+      sequenceCompleted: entitlement.sequenceCompleted,
+    },
     details,
   });
 }

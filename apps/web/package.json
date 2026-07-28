@@ -12,15 +12,16 @@
     "validate:links": "node scripts/validate-links.mjs",
     "validate:compliance": "node scripts/check-compliance-phrases.mjs",
     "validate:publishing": "node scripts/validate-publishing.mjs",
-    "validate:functions": "node --check api/waitlist.js && node --check api/daily-news-source.js && node --check api/daily-news-background.js && node --check api/daily-news-grounded-background.js && node --check api/quiz-submit.js && node --check api/telemetry.js && node --check api/_telemetry-store.js && node --check api/telemetry-report.js && node scripts/test-waitlist-function.mjs && node scripts/test-daily-news-source-function.mjs && node scripts/test-daily-news-validation.mjs && node scripts/test-import-daily-news.mjs && node scripts/test-daily-news-retry-policy.mjs && node scripts/test-telemetry-function.mjs && node scripts/test-telemetry-storage.mjs && node scripts/test-telemetry-client-contract.mjs",
+    "validate:functions": "node --check api/waitlist.js && node --check api/daily-news-source.js && node --check api/daily-news-background.js && node --check api/daily-news-grounded-background.js && node --check api/quiz-submit.js && node --check api/telemetry.js && node --check api/_telemetry-store.js && node --check api/telemetry-report.js && node --check middleware.js && node scripts/test-waitlist-function.mjs && node scripts/test-daily-news-source-function.mjs && node scripts/test-daily-news-validation.mjs && node scripts/test-import-daily-news.mjs && node scripts/test-daily-news-retry-policy.mjs && node scripts/test-telemetry-function.mjs && node scripts/test-telemetry-storage.mjs && node scripts/test-telemetry-client-contract.mjs",
     "validate": "npm run validate:content && npm run validate:news && npm run validate:compliance && npm run validate:links && npm run validate:publishing && npm run validate:functions && npm run validate:quizzes",
     "build:preview": "npm run validate && npm run build",
     "preview:local": "astro preview --host 127.0.0.1 --port 4321",
     "generate:quizzes": "node scripts/generate-quiz-runtime.mjs",
-    "validate:quizzes": "node scripts/verify-quiz-source-integrity.mjs && node scripts/validate-quizzes.mjs && node scripts/generate-quiz-runtime.mjs && node scripts/test-quiz-submit.mjs && node scripts/test-quiz-ui-contract.mjs"
+    "validate:quizzes": "node scripts/verify-quiz-source-integrity.mjs && node scripts/validate-quizzes.mjs && node scripts/generate-quiz-runtime.mjs && node scripts/test-quiz-entitlement.mjs && node scripts/test-quiz-submit.mjs && node scripts/test-quiz-ui-contract.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "3.2.1",
+    "@vercel/functions": "3.7.6",
     "astro": "5.16.0"
   },
   "devDependencies": {}

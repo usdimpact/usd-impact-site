@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import handler, { resetTelemetryStateForTests } from '../api/telemetry.js';
+import handler, {
+  resetTelemetryStateForTests,
+  setTelemetryRecorderForTests,
+} from '../api/telemetry.js';
 
 function createResponse() {
   return {
@@ -26,9 +29,19 @@ async function request(body, method = 'POST') {
 }
 
 resetTelemetryStateForTests();
+setTelemetryRecorderForTests(async () => ({
+  durable: true,
+  duplicate: false,
+  rateLimited: false,
+  status: 'accepted',
+}));
+
 const logged = [];
+const errors = [];
 const originalLog = console.log;
+const originalError = console.error;
 console.log = (value) => logged.push(value);
+console.error = (value) => errors.push(value);
 
 try {
   const checklist = await request({
@@ -45,10 +58,12 @@ try {
   assert.equal(checklist.status, 202);
   assert.equal(checklist.json.accepted, true);
   assert.equal(checklist.json.duplicate, false);
+  assert.equal(checklist.json.durable, true);
 
   const checklistRecord = JSON.parse(logged.at(-1));
   assert.equal(checklistRecord.eventName, 'checklist_download');
   assert.equal(checklistRecord.utmSource, 'newsletter');
+  assert.equal(checklistRecord.durable, true);
   assert.equal(checklistRecord.email, undefined);
   assert.equal(checklistRecord.userAgent, undefined);
   assert.equal(checklistRecord.answerChoices, undefined);
@@ -111,11 +126,28 @@ try {
   });
   assert.equal(invalidCampaign.status, 400);
 
+  setTelemetryRecorderForTests(async () => {
+    throw new Error('simulated storage outage');
+  });
+  const degraded = await request({
+    eventId: 'evt-storage-failure-0001',
+    eventName: 'quiz_start',
+    route: '/start-here/quiz',
+    quizId: 'quiz-start-here',
+  });
+  assert.equal(degraded.status, 202);
+  assert.equal(degraded.json.accepted, true);
+  assert.equal(degraded.json.durable, false);
+  assert.match(errors.at(-1), /durable storage failed/i);
+  assert.equal(JSON.parse(logged.at(-1)).durable, false);
+
   const method = await request({}, 'GET');
   assert.equal(method.status, 405);
   assert.equal(method.headers.allow, 'POST');
 } finally {
   console.log = originalLog;
+  console.error = originalError;
+  resetTelemetryStateForTests();
 }
 
 console.log('Telemetry function tests passed.');

@@ -1,5 +1,7 @@
+import { recordTelemetryEvent } from './_telemetry-store.js';
+
 const MAX_BODY_BYTES = 4_096;
-const DUPLICATE_TTL_MS = 10_000;
+const FALLBACK_DUPLICATE_TTL_MS = 10_000;
 const MAX_RECENT_EVENT_IDS = 1_000;
 
 const ALLOWED_EVENTS = new Set([
@@ -15,11 +17,13 @@ const CAMPAIGN_PATTERN = /^[a-zA-Z0-9._~-]{1,64}$/;
 const ROUTE_PATTERN = /^\/[a-zA-Z0-9/_-]{0,199}$/;
 
 const recentEventIds = new Map();
+let telemetryRecorder = recordTelemetryEvent;
 
 function send(response, status, payload) {
   response.statusCode = status;
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
   response.setHeader('Cache-Control', 'no-store');
+  response.setHeader('X-Content-Type-Options', 'nosniff');
   response.end(JSON.stringify(payload));
 }
 
@@ -85,7 +89,7 @@ function normalizeEvent(payload, now) {
 
   const record = {
     kind: 'usd-impact-learning-telemetry',
-    schemaVersion: 1,
+    schemaVersion: 2,
     eventName,
     occurredAt: new Date(now).toISOString(),
     route,
@@ -126,6 +130,11 @@ function normalizeEvent(payload, now) {
 
 export function resetTelemetryStateForTests() {
   recentEventIds.clear();
+  telemetryRecorder = recordTelemetryEvent;
+}
+
+export function setTelemetryRecorderForTests(recorder) {
+  telemetryRecorder = recorder;
 }
 
 export default async function handler(request, response) {
@@ -156,14 +165,38 @@ export default async function handler(request, response) {
   }
 
   if (recentEventIds.has(normalized.eventId)) {
-    return send(response, 202, { accepted: true, duplicate: true });
+    return send(response, 202, { accepted: true, duplicate: true, durable: false });
   }
 
-  recentEventIds.set(normalized.eventId, now + DUPLICATE_TTL_MS);
+  recentEventIds.set(normalized.eventId, now + FALLBACK_DUPLICATE_TTL_MS);
 
-  // Deliberately log only the normalized allowlist. Request headers, IP addresses,
-  // user agents, cookies, email addresses, answer choices, and referrers are excluded.
-  console.log(JSON.stringify(normalized.record));
-
-  return send(response, 202, { accepted: true, duplicate: false });
+  try {
+    const result = await telemetryRecorder(normalized);
+    if (result.rateLimited) {
+      console.warn('Telemetry event rate limited.');
+      return send(response, 202, {
+        accepted: true,
+        duplicate: false,
+        durable: true,
+        rateLimited: true,
+      });
+    }
+    if (!result.duplicate) {
+      console.log(JSON.stringify({ ...normalized.record, durable: true }));
+    }
+    return send(response, 202, {
+      accepted: true,
+      duplicate: result.duplicate,
+      durable: true,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'unknown storage error';
+    console.error(`Telemetry durable storage failed: ${message}`);
+    console.log(JSON.stringify({ ...normalized.record, durable: false }));
+    return send(response, 202, {
+      accepted: true,
+      duplicate: false,
+      durable: false,
+    });
+  }
 }

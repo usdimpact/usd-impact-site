@@ -1,3 +1,4 @@
+import { next } from '@vercel/functions';
 import accessMap from './src/data/quiz-access-map.json' with { type: 'json' };
 import {
   canAccessQuizOrder,
@@ -31,11 +32,11 @@ export const config = {
 };
 
 export default function learningProgressMiddleware(request) {
-  if (request.method !== 'GET' && request.method !== 'HEAD') return;
+  if (request.method !== 'GET' && request.method !== 'HEAD') return next();
 
   const url = new URL(request.url);
   const order = protectedRoutes.get(normalizePath(url.pathname));
-  if (!order) return;
+  if (!order) return next();
 
   const progress = readQuizEntitlement(
     request.headers.get('cookie') ?? '',
@@ -43,7 +44,7 @@ export default function learningProgressMiddleware(request) {
     accessMap.quizzes.length,
   );
 
-  if (canAccessQuizOrder(progress.entitlement, order)) return;
+  if (canAccessQuizOrder(progress.entitlement, order)) return next();
 
   const current = accessMap.quizzes[Math.max(0, progress.entitlement.highestUnlockedOrder - 1)];
   const destination = new URL(`${current.relatedLessonUrl}/`, request.url);

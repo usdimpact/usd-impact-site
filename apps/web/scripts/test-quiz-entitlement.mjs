@@ -44,7 +44,8 @@ assert.deepEqual(repeatedQuiz1.completedQuizIds, [quiz1.canonicalId]);
 
 process.env.QUIZ_PROGRESS_SECRET = secret;
 const openQuiz1 = middleware(new Request('https://www.usd-impact.com/start-here/quiz'));
-assert.equal(openQuiz1, undefined);
+assert.notEqual(openQuiz1, undefined);
+assert.equal(openQuiz1.headers.get('x-middleware-next'), '1');
 
 const blockedFuture = middleware(new Request('https://www.usd-impact.com/fx/usd-and-currency-risk/quiz'));
 assert.equal(blockedFuture.status, 302);
@@ -52,7 +53,8 @@ assert.equal(new URL(blockedFuture.headers.get('location')).pathname, '/start-he
 
 const cookie = serializeQuizEntitlementCookie(afterQuiz1, secret).split(';', 1)[0];
 const openDollarLesson = middleware(new Request('https://www.usd-impact.com/dollar/what-is-the-us-dollar', { headers: { cookie } }));
-assert.equal(openDollarLesson, undefined);
+assert.notEqual(openDollarLesson, undefined);
+assert.equal(openDollarLesson.headers.get('x-middleware-next'), '1');
 
 const stillBlocked = middleware(new Request('https://www.usd-impact.com/fx/fx-depreciation-vs-inflation', { headers: { cookie } }));
 assert.equal(stillBlocked.status, 302);

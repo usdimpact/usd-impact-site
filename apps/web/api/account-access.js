@@ -1,9 +1,9 @@
 import {
   readAccountAccessState,
-  readBearerToken,
   safeSupabaseError,
   sendJson,
 } from '../src/lib/supabase-server.js';
+import { readSessionAccessToken } from '../src/lib/supabase-auth.js';
 
 export default async function handler(request, response) {
   if (request.method !== 'GET') {
@@ -11,7 +11,7 @@ export default async function handler(request, response) {
     return sendJson(response, 405, { error: 'Method not allowed.', code: 'METHOD_NOT_ALLOWED' });
   }
 
-  const accessToken = readBearerToken(request);
+  const accessToken = readSessionAccessToken(request);
   if (!accessToken) {
     return sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
   }

@@ -32,7 +32,7 @@ export default async function handler(request, response) {
   }
 
   try {
-    await sendPasswordlessEmail({ email: payload.email, request });
+    await sendPasswordlessEmail({ email: payload.email, next: payload.next, request });
     return sendJson(response, 202, {
       ok: true,
       message: 'If the address can receive a sign-in email, a link has been sent.',

@@ -44,6 +44,7 @@ assert.equal(
   'https://usd-impact-site-test-usd-impact.vercel.app',
 );
 assert.throws(() => requestOrigin(request({ host: 'evil.example', 'x-forwarded-proto': 'https' })));
+assert.throws(() => requestOrigin(request({ host: 'unrelated-project.vercel.app', 'x-forwarded-proto': 'https' })));
 
 const cookieResponse = responseRecorder();
 setSessionCookies(cookieResponse, request({ host: 'www.usd-impact.com', 'x-forwarded-proto': 'https' }), {
@@ -71,8 +72,10 @@ assert.match(clearResponse.getHeader('set-cookie')[0], /Max-Age=0/);
 assert.doesNotMatch(clearResponse.getHeader('set-cookie')[0], /Secure/);
 
 let otpRequest;
-await sendPasswordlessEmail({
+const requestedDestination = '/book/read-the-dollar-first/chapter-1/?resume=1';
+const sent = await sendPasswordlessEmail({
   email: ' Reader@Example.com ',
+  next: requestedDestination,
   request: request({ host: 'localhost:4321' }),
   config,
   fetchImpl: async (url, options) => {
@@ -81,6 +84,7 @@ await sendPasswordlessEmail({
   },
 });
 assert.match(otpRequest.url, /\/auth\/v1\/otp\?redirect_to=/);
+assert.equal(new URL(sent.redirectTo).searchParams.get('next'), requestedDestination);
 assert.deepEqual(JSON.parse(otpRequest.options.body), {
   email: 'reader@example.com',
   create_user: true,
@@ -109,12 +113,18 @@ assert.equal(verified.refreshToken, refreshToken);
 const signInPage = await readFile(new URL('../src/pages/account/sign-in/index.astro', import.meta.url), 'utf8');
 const confirmPage = await readFile(new URL('../src/pages/auth/confirm/index.astro', import.meta.url), 'utf8');
 const accountPage = await readFile(new URL('../src/pages/account/index.astro', import.meta.url), 'utf8');
+const loginEndpoint = await readFile(new URL('../api/auth-login.js', import.meta.url), 'utf8');
+const confirmEndpoint = await readFile(new URL('../api/auth-confirm.js', import.meta.url), 'utf8');
 assert.match(signInPage, /\/api\/auth-login/);
 assert.match(confirmPage, /\/api\/auth-confirm/);
 assert.match(accountPage, /\/api\/account-access/);
 assert.match(accountPage, /\/api\/account-export/);
 assert.match(accountPage, /\/api\/account-delete/);
 assert.match(accountPage, /\/api\/auth-logout/);
+assert.match(loginEndpoint, /next:\s*payload\.next/);
+assert.match(confirmEndpoint, /request\.method !== 'POST'/);
+assert.match(confirmEndpoint, /payload\.token_hash/);
+assert.match(confirmEndpoint, /redirectTo:\s*next/);
 assert.doesNotMatch(`${signInPage}${confirmPage}${accountPage}`, /sb_secret_|SUPABASE_SECRET_KEY/);
 
 console.log('Supabase passwordless auth tests passed.');

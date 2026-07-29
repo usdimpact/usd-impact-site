@@ -116,6 +116,12 @@ async function handleConfirm(request, response) {
     setSessionCookies(response, request, session);
     return redirect(response, next);
   } catch (error) {
+    console.error('Supabase passwordless confirmation failed.', {
+      name: error instanceof Error ? error.name : 'UnknownError',
+      status: Number.isInteger(error?.status) ? error.status : null,
+      code: typeof error?.code === 'string' ? error.code : null,
+      message: error instanceof Error ? error.message : 'Unknown confirmation error.',
+    });
     clearPkceCookie(response, request);
     const safe = safeSupabaseError(error);
     const target = new URL('/account/sign-in/', 'https://usd-impact.invalid');

@@ -1,46 +1,45 @@
-import { safeSupabaseError, sendJson } from '../src/lib/supabase-server.js';
-import { safeNextPath, setSessionCookies, verifyPasswordlessToken } from '../src/lib/supabase-auth.js';
+import { safeSupabaseError } from '../src/lib/supabase-server.js';
+import {
+  clearPkceCookie,
+  exchangePasswordlessCode,
+  readPkceVerifier,
+  safeNextPath,
+  setSessionCookies,
+} from '../src/lib/supabase-auth.js';
 
-function header(request, name) {
-  const value = request.headers?.[name] ?? request.headers?.[name.toLowerCase()];
-  return Array.isArray(value) ? value[0] ?? '' : String(value ?? '');
-}
-
-function body(request) {
-  if (request.body && typeof request.body === 'object' && !Buffer.isBuffer(request.body)) return request.body;
-  if (typeof request.body === 'string' || Buffer.isBuffer(request.body)) return JSON.parse(request.body.toString());
-  throw new TypeError('Invalid request body.');
+function redirect(response, location, status = 303) {
+  response.statusCode = status;
+  response.setHeader('Location', location);
+  response.setHeader('Cache-Control', 'no-store');
+  response.setHeader('X-Content-Type-Options', 'nosniff');
+  response.end();
 }
 
 export default async function handler(request, response) {
-  if (request.method !== 'POST') {
-    response.setHeader('Allow', 'POST');
-    return sendJson(response, 405, { error: 'Method not allowed.', code: 'METHOD_NOT_ALLOWED' });
-  }
-  if (header(request, 'sec-fetch-site') === 'cross-site') {
-    return sendJson(response, 403, { error: 'Cross-site requests are not allowed.', code: 'CROSS_SITE_REQUEST' });
-  }
-  if (!header(request, 'content-type').includes('application/json')) {
-    return sendJson(response, 415, { error: 'Content type must be application/json.', code: 'INVALID_CONTENT_TYPE' });
+  if (request.method !== 'GET') {
+    response.statusCode = 405;
+    response.setHeader('Allow', 'GET');
+    response.end('Method not allowed.');
+    return;
   }
 
-  let payload;
-  try {
-    payload = body(request);
-  } catch {
-    return sendJson(response, 400, { error: 'Invalid request body.', code: 'INVALID_REQUEST_BODY' });
-  }
+  const url = new URL(request.url, 'https://usd-impact.invalid');
+  const next = safeNextPath(url.searchParams.get('next'));
+  const codeVerifier = readPkceVerifier(request);
 
-  const next = safeNextPath(payload.next);
   try {
-    const session = await verifyPasswordlessToken({
-      tokenHash: payload.token_hash,
-      type: payload.type,
+    const session = await exchangePasswordlessCode({
+      authCode: url.searchParams.get('code'),
+      codeVerifier,
     });
+    clearPkceCookie(response, request);
     setSessionCookies(response, request, session);
-    return sendJson(response, 200, { ok: true, redirectTo: next });
+    return redirect(response, next);
   } catch (error) {
+    clearPkceCookie(response, request);
     const safe = safeSupabaseError(error);
-    return sendJson(response, safe.status, safe.payload);
+    const target = new URL('/account/sign-in/', 'https://usd-impact.invalid');
+    target.searchParams.set('error', safe.status >= 500 ? 'service_unavailable' : 'invalid_link');
+    return redirect(response, `${target.pathname}${target.search}`);
   }
 }

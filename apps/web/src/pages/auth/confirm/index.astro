@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Confirm sign-in | USD Impact"
+  description="Complete your secure USD Impact account sign-in."
+>
+  <main>
+    <div class="container account-shell">
+      <section class="card account-panel" aria-labelledby="confirm-heading">
+        <p class="eyebrow">Secure sign-in</p>
+        <h1 id="confirm-heading" class="account-title">Confirming your email…</h1>
+        <p id="confirm-status" class="account-status" data-state="pending" role="status" aria-live="polite">
+          Please keep this page open while the one-time link is verified.
+        </p>
+        <p><a href="/account/sign-in/">Return to sign in</a></p>
+      </section>
+    </div>
+  </main>
+
+  <script is:inline>
+    const status = document.getElementById('confirm-status');
+    const params = new URLSearchParams(window.location.search);
+    const tokenHash = params.get('token_hash');
+    const type = params.get('type') || 'email';
+    const next = params.get('next') || '/account/';
+
+    const finish = async () => {
+      if (!tokenHash || !status) {
+        if (status) {
+          status.dataset.state = 'error';
+          status.textContent = 'This sign-in link is incomplete or expired.';
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auth-confirm', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token_hash: tokenHash, type, next }),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || 'The sign-in link could not be verified.');
+
+        status.dataset.state = 'success';
+        status.textContent = 'Email confirmed. Redirecting to your account…';
+        window.location.replace(body.redirectTo || '/account/');
+      } catch (error) {
+        status.dataset.state = 'error';
+        status.textContent = error instanceof Error
+          ? error.message
+          : 'The sign-in link could not be verified.';
+      }
+    };
+
+    finish();
+  </script>
+</BaseLayout>

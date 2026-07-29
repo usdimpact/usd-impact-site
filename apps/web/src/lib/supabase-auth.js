@@ -118,11 +118,15 @@ function isLocalHost(hostname) {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
 }
 
+function isUsdImpactPreviewHost(hostname) {
+  return hostname.startsWith('usd-impact-site-') && hostname.endsWith('-usd-impact.vercel.app');
+}
+
 function isAllowedHost(hostname) {
   return isLocalHost(hostname)
     || hostname === 'usd-impact.com'
     || hostname === 'www.usd-impact.com'
-    || hostname.endsWith('.vercel.app');
+    || isUsdImpactPreviewHost(hostname);
 }
 
 export function requestOrigin(request) {
@@ -225,6 +229,7 @@ export function readSessionRefreshToken(request) {
 
 export async function sendPasswordlessEmail({
   email,
+  next,
   request,
   environment,
   config,
@@ -233,7 +238,9 @@ export async function sendPasswordlessEmail({
 }) {
   const resolvedConfig = config || readSupabaseServerConfig(environment);
   const normalizedEmail = normalizeEmail(email);
-  const redirectTo = `${requestOrigin(request)}/auth/confirm/`;
+  const redirectUrl = new URL('/auth/confirm/', requestOrigin(request));
+  redirectUrl.searchParams.set('next', safeNextPath(next));
+  const redirectTo = redirectUrl.toString();
   await authRequest({
     config: resolvedConfig,
     path: `/auth/v1/otp?redirect_to=${encodeURIComponent(redirectTo)}`,

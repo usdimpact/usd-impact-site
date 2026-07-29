@@ -1,15 +1,17 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
+  PKCE_COOKIE_NAME,
   SESSION_COOKIE_NAMES,
   clearSessionCookies,
+  exchangePasswordlessCode,
+  readPkceVerifier,
   readSessionAccessToken,
   readSessionRefreshToken,
   requestOrigin,
   safeNextPath,
   sendPasswordlessEmail,
   setSessionCookies,
-  verifyPasswordlessToken,
 } from '../src/lib/supabase-auth.js';
 
 const config = Object.freeze({
@@ -20,15 +22,17 @@ const config = Object.freeze({
 const accessToken = 'access_token_value_that_is_long_enough_for_validation_12345';
 const refreshToken = 'refresh_token_value_that_is_long_enough_for_validation_12345';
 
-function request(headers = {}) {
-  return { headers };
+function request(headers = {}, url = '/') {
+  return { headers, url };
 }
 
 function responseRecorder() {
   const values = new Map();
   return {
+    statusCode: 200,
     setHeader(name, value) { values.set(name.toLowerCase(), value); },
     getHeader(name) { return values.get(name.toLowerCase()); },
+    end() {},
     values,
   };
 }
@@ -73,10 +77,12 @@ assert.doesNotMatch(clearResponse.getHeader('set-cookie')[0], /Secure/);
 
 let otpRequest;
 const requestedDestination = '/book/read-the-dollar-first/chapter-1/?resume=1';
+const pkceResponse = responseRecorder();
 const sent = await sendPasswordlessEmail({
   email: ' Reader@Example.com ',
   next: requestedDestination,
   request: request({ host: 'localhost:4321' }),
+  response: pkceResponse,
   config,
   fetchImpl: async (url, options) => {
     otpRequest = { url, options };
@@ -84,21 +90,30 @@ const sent = await sendPasswordlessEmail({
   },
 });
 assert.match(otpRequest.url, /\/auth\/v1\/otp\?redirect_to=/);
+assert.equal(new URL(sent.redirectTo).pathname, '/api/auth-confirm');
 assert.equal(new URL(sent.redirectTo).searchParams.get('next'), requestedDestination);
-assert.deepEqual(JSON.parse(otpRequest.options.body), {
-  email: 'reader@example.com',
-  create_user: true,
-});
+const otpBody = JSON.parse(otpRequest.options.body);
+assert.equal(otpBody.email, 'reader@example.com');
+assert.equal(otpBody.create_user, true);
+assert.equal(otpBody.code_challenge_method, 's256');
+assert.match(otpBody.code_challenge, /^[A-Za-z0-9_-]{43}$/);
 
-const verified = await verifyPasswordlessToken({
-  tokenHash: 'valid_token_hash_value_that_is_long_enough_123456',
-  type: 'email',
+const pkceCookie = pkceResponse.getHeader('set-cookie')[0];
+assert.match(pkceCookie, new RegExp(`^${PKCE_COOKIE_NAME}=`));
+assert.match(pkceCookie, /HttpOnly/);
+assert.match(pkceCookie, /Path=\/api\/auth-confirm/);
+const verifierValue = decodeURIComponent(pkceCookie.split(';')[0].split('=').slice(1).join('='));
+assert.equal(readPkceVerifier(request({ cookie: `${PKCE_COOKIE_NAME}=${encodeURIComponent(verifierValue)}` })), verifierValue);
+
+const exchanged = await exchangePasswordlessCode({
+  authCode: 'valid_authorization_code_that_is_long_enough_123456',
+  codeVerifier: verifierValue,
   config,
   fetchImpl: async (url, options) => {
-    assert.equal(url, `${config.url}/auth/v1/verify`);
+    assert.equal(url, `${config.url}/auth/v1/token?grant_type=pkce`);
     assert.deepEqual(JSON.parse(options.body), {
-      token_hash: 'valid_token_hash_value_that_is_long_enough_123456',
-      type: 'email',
+      auth_code: 'valid_authorization_code_that_is_long_enough_123456',
+      code_verifier: verifierValue,
     });
     return new Response(JSON.stringify({
       access_token: accessToken,
@@ -107,24 +122,23 @@ const verified = await verifyPasswordlessToken({
     }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   },
 });
-assert.equal(verified.accessToken, accessToken);
-assert.equal(verified.refreshToken, refreshToken);
+assert.equal(exchanged.accessToken, accessToken);
+assert.equal(exchanged.refreshToken, refreshToken);
 
 const signInPage = await readFile(new URL('../src/pages/account/sign-in/index.astro', import.meta.url), 'utf8');
-const confirmPage = await readFile(new URL('../src/pages/auth/confirm/index.astro', import.meta.url), 'utf8');
 const accountPage = await readFile(new URL('../src/pages/account/index.astro', import.meta.url), 'utf8');
 const loginEndpoint = await readFile(new URL('../api/auth-login.js', import.meta.url), 'utf8');
 const confirmEndpoint = await readFile(new URL('../api/auth-confirm.js', import.meta.url), 'utf8');
 assert.match(signInPage, /\/api\/auth-login/);
-assert.match(confirmPage, /\/api\/auth-confirm/);
 assert.match(accountPage, /\/api\/account-access/);
 assert.match(accountPage, /\/api\/account-export/);
 assert.match(accountPage, /\/api\/account-delete/);
 assert.match(accountPage, /\/api\/auth-logout/);
-assert.match(loginEndpoint, /next:\s*payload\.next/);
-assert.match(confirmEndpoint, /request\.method !== 'POST'/);
-assert.match(confirmEndpoint, /payload\.token_hash/);
-assert.match(confirmEndpoint, /redirectTo:\s*next/);
-assert.doesNotMatch(`${signInPage}${confirmPage}${accountPage}`, /sb_secret_|SUPABASE_SECRET_KEY/);
+assert.match(loginEndpoint, /response,/);
+assert.match(confirmEndpoint, /request\.method !== 'GET'/);
+assert.match(confirmEndpoint, /url\.searchParams\.get\('code'\)/);
+assert.match(confirmEndpoint, /readPkceVerifier/);
+assert.match(confirmEndpoint, /setSessionCookies/);
+assert.doesNotMatch(`${signInPage}${accountPage}`, /sb_secret_|SUPABASE_SECRET_KEY/);
 
 console.log('Supabase passwordless auth tests passed.');

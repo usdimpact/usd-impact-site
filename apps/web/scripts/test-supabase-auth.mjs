@@ -19,8 +19,8 @@ const config = Object.freeze({
   publishableKey: 'sb_publishable_abcdefghijklmnopqrstuvwxyz',
   secretKey: 'sb_secret_abcdefghijklmnopqrstuvwxyz',
 });
-const accessToken = 'access_token_value_that_is_long_enough_for_validation_12345';
-const refreshToken = 'refresh_token_value_that_is_long_enough_for_validation_12345';
+const accessToken = 'access.token/value+that=is_long_enough_for_validation_12345';
+const refreshToken = 'refresh/token+value=that_is_long_enough_for_validation_12345';
 
 function request(headers = {}, url = '/') {
   return { headers, url };
@@ -68,6 +68,7 @@ const cookieHeader = `${SESSION_COOKIE_NAMES.ACCESS}=${encodeURIComponent(access
 assert.equal(readSessionAccessToken(request({ cookie: cookieHeader })), accessToken);
 assert.equal(readSessionRefreshToken(request({ cookie: cookieHeader })), refreshToken);
 assert.equal(readSessionAccessToken(request({ authorization: `Bearer ${accessToken}` })), accessToken);
+assert.equal(readSessionRefreshToken(request({ cookie: `${SESSION_COOKIE_NAMES.REFRESH}=bad%0Atoken` })), null);
 
 const clearResponse = responseRecorder();
 clearSessionCookies(clearResponse, request({ host: 'localhost:4321' }));
@@ -124,6 +125,22 @@ const exchanged = await exchangePasswordlessCode({
 });
 assert.equal(exchanged.accessToken, accessToken);
 assert.equal(exchanged.refreshToken, refreshToken);
+
+const wrappedExchange = await exchangePasswordlessCode({
+  authCode: 'another_valid_auth_code_value_that_is_long_enough',
+  codeVerifier: verifier,
+  config,
+  fetchImpl: async () => new Response(JSON.stringify({
+    data: {
+      session: {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        expires_in: 3600,
+      },
+    },
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+});
+assert.equal(wrappedExchange.accessToken, accessToken);
 
 const signInPage = await readFile(new URL('../src/pages/account/sign-in/index.astro', import.meta.url), 'utf8');
 const accountPage = await readFile(new URL('../src/pages/account/index.astro', import.meta.url), 'utf8');

@@ -32,7 +32,7 @@ function responseRecorder() {
     statusCode: 200,
     setHeader(name, value) { values.set(name.toLowerCase(), value); },
     getHeader(name) { return values.get(name.toLowerCase()); },
-    end() {},
+    end(value = '') { this.body = value; },
     values,
   };
 }
@@ -77,12 +77,12 @@ assert.doesNotMatch(clearResponse.getHeader('set-cookie')[0], /Secure/);
 
 let otpRequest;
 const requestedDestination = '/book/read-the-dollar-first/chapter-1/?resume=1';
-const pkceResponse = responseRecorder();
+const otpResponse = responseRecorder();
 const sent = await sendPasswordlessEmail({
   email: ' Reader@Example.com ',
   next: requestedDestination,
   request: request({ host: 'localhost:4321' }),
-  response: pkceResponse,
+  response: otpResponse,
   config,
   fetchImpl: async (url, options) => {
     otpRequest = { url, options };
@@ -97,23 +97,23 @@ assert.equal(otpBody.email, 'reader@example.com');
 assert.equal(otpBody.create_user, true);
 assert.equal(otpBody.code_challenge_method, 's256');
 assert.match(otpBody.code_challenge, /^[A-Za-z0-9_-]{43}$/);
-
-const pkceCookie = pkceResponse.getHeader('set-cookie')[0];
+const pkceCookie = otpResponse.getHeader('set-cookie')[0];
 assert.match(pkceCookie, new RegExp(`^${PKCE_COOKIE_NAME}=`));
-assert.match(pkceCookie, /HttpOnly/);
 assert.match(pkceCookie, /Path=\/api\/auth-confirm/);
-const verifierValue = decodeURIComponent(pkceCookie.split(';')[0].split('=').slice(1).join('='));
-assert.equal(readPkceVerifier(request({ cookie: `${PKCE_COOKIE_NAME}=${encodeURIComponent(verifierValue)}` })), verifierValue);
+assert.match(pkceCookie, /HttpOnly/);
+const verifier = decodeURIComponent(pkceCookie.match(new RegExp(`^${PKCE_COOKIE_NAME}=([^;]+)`))[1]);
+assert.match(verifier, /^[A-Za-z0-9_-]{43,128}$/);
+assert.equal(readPkceVerifier(request({ cookie: `${PKCE_COOKIE_NAME}=${encodeURIComponent(verifier)}` })), verifier);
 
 const exchanged = await exchangePasswordlessCode({
-  authCode: 'valid_authorization_code_that_is_long_enough_123456',
-  codeVerifier: verifierValue,
+  authCode: 'valid_auth_code_value_that_is_long_enough_123456',
+  codeVerifier: verifier,
   config,
   fetchImpl: async (url, options) => {
     assert.equal(url, `${config.url}/auth/v1/token?grant_type=pkce`);
     assert.deepEqual(JSON.parse(options.body), {
-      auth_code: 'valid_authorization_code_that_is_long_enough_123456',
-      code_verifier: verifierValue,
+      auth_code: 'valid_auth_code_value_that_is_long_enough_123456',
+      code_verifier: verifier,
     });
     return new Response(JSON.stringify({
       access_token: accessToken,
@@ -127,18 +127,25 @@ assert.equal(exchanged.refreshToken, refreshToken);
 
 const signInPage = await readFile(new URL('../src/pages/account/sign-in/index.astro', import.meta.url), 'utf8');
 const accountPage = await readFile(new URL('../src/pages/account/index.astro', import.meta.url), 'utf8');
-const loginEndpoint = await readFile(new URL('../api/auth-login.js', import.meta.url), 'utf8');
-const confirmEndpoint = await readFile(new URL('../api/auth-confirm.js', import.meta.url), 'utf8');
+const accountRouter = await readFile(new URL('../api/account.js', import.meta.url), 'utf8');
+const vercelConfig = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
+const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+
 assert.match(signInPage, /\/api\/auth-login/);
 assert.match(accountPage, /\/api\/account-access/);
 assert.match(accountPage, /\/api\/account-export/);
 assert.match(accountPage, /\/api\/account-delete/);
 assert.match(accountPage, /\/api\/auth-logout/);
-assert.match(loginEndpoint, /response,/);
-assert.match(confirmEndpoint, /request\.method !== 'GET'/);
-assert.match(confirmEndpoint, /url\.searchParams\.get\('code'\)/);
-assert.match(confirmEndpoint, /readPkceVerifier/);
-assert.match(confirmEndpoint, /setSessionCookies/);
+for (const action of ['login', 'confirm', 'refresh', 'logout', 'access', 'export', 'delete']) {
+  assert.match(accountRouter, new RegExp(`${action}: handle`, 'i'));
+}
+const rewriteMap = new Map(vercelConfig.rewrites.map((entry) => [entry.source, entry.destination]));
+assert.equal(rewriteMap.get('/api/auth-login'), '/api/account?action=login');
+assert.equal(rewriteMap.get('/api/auth-confirm'), '/api/account?action=confirm');
+assert.equal(rewriteMap.get('/api/account-access'), '/api/account?action=access');
+assert.equal(rewriteMap.get('/api/telemetry-report'), '/api/telemetry?action=report');
+assert.match(packageJson.scripts['validate:functions'], /node --check api\/account\.js/);
+assert.doesNotMatch(packageJson.scripts['validate:functions'], /auth-login|auth-confirm|account-access|telemetry-report/);
 assert.doesNotMatch(`${signInPage}${accountPage}`, /sb_secret_|SUPABASE_SECRET_KEY/);
 
 console.log('Supabase passwordless auth tests passed.');

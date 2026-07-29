@@ -15,7 +15,7 @@ export const PKCE_COOKIE_NAME = 'usd_impact_pkce';
 
 const EMAIL_MAX_LENGTH = 254;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const TOKEN_PATTERN = /^[A-Za-z0-9._~-]{20,12000}$/;
+const OPAQUE_TOKEN_PATTERN = /^[\x21-\x7E]{20,16384}$/;
 const AUTH_CODE_PATTERN = /^[A-Za-z0-9._~-]{20,1024}$/;
 const PKCE_VERIFIER_PATTERN = /^[A-Za-z0-9_-]{43,128}$/;
 const ACCESS_COOKIE_MAX_AGE = 60 * 60;
@@ -77,11 +77,11 @@ async function authRequest({
 }
 
 function normalizeSession(payload) {
-  const session = payload?.session || payload;
+  const session = payload?.session || payload?.data?.session || payload?.data || payload;
   const accessToken = session?.access_token;
   const refreshToken = session?.refresh_token;
   const expiresIn = Number(session?.expires_in || ACCESS_COOKIE_MAX_AGE);
-  if (!TOKEN_PATTERN.test(accessToken || '') || !TOKEN_PATTERN.test(refreshToken || '')) {
+  if (!OPAQUE_TOKEN_PATTERN.test(accessToken || '') || !OPAQUE_TOKEN_PATTERN.test(refreshToken || '')) {
     throw new SupabaseRequestError('The authentication session was invalid.', {
       status: 502,
       code: 'INVALID_AUTH_SESSION',
@@ -242,12 +242,12 @@ export function readSessionAccessToken(request) {
   const bearer = readBearerToken(request);
   if (bearer) return bearer;
   const token = cookieMap(request).get(SESSION_COOKIE_NAMES.ACCESS) || '';
-  return TOKEN_PATTERN.test(token) ? token : null;
+  return OPAQUE_TOKEN_PATTERN.test(token) ? token : null;
 }
 
 export function readSessionRefreshToken(request) {
   const token = cookieMap(request).get(SESSION_COOKIE_NAMES.REFRESH) || '';
-  return TOKEN_PATTERN.test(token) ? token : null;
+  return OPAQUE_TOKEN_PATTERN.test(token) ? token : null;
 }
 
 export function readPkceVerifier(request) {
@@ -330,7 +330,7 @@ export async function refreshPasswordlessSession({
   config,
   fetchImpl,
 }) {
-  if (!TOKEN_PATTERN.test(refreshToken || '')) {
+  if (!OPAQUE_TOKEN_PATTERN.test(refreshToken || '')) {
     throw new SupabaseRequestError('Authentication is required.', {
       status: 401,
       code: 'AUTHENTICATION_REQUIRED',
@@ -352,7 +352,7 @@ export async function revokePasswordlessSession({
   config,
   fetchImpl,
 }) {
-  if (!TOKEN_PATTERN.test(accessToken || '')) return;
+  if (!OPAQUE_TOKEN_PATTERN.test(accessToken || '')) return;
   const resolvedConfig = config || readSupabaseServerConfig(environment);
   try {
     await authRequest({

@@ -1,0 +1,30 @@
+.account-hero { padding-bottom: 58px; }
+.account-shell { display: grid; gap: 24px; max-width: 860px; }
+.account-panel { padding: clamp(24px, 5vw, 42px); }
+.account-panel h2 { margin: 0 0 18px; }
+.account-title { color: var(--navy); font-size: clamp(34px, 5vw, 54px); }
+.account-form { display: grid; gap: 12px; max-width: 620px; }
+.account-form label { color: var(--navy); font-weight: 800; }
+.account-form input[type="email"] { width: 100%; min-height: 50px; padding: 12px 14px; border: 1px solid #aeb7c3; border-radius: 12px; background: var(--white); color: var(--graphite); font: inherit; }
+.account-form input[type="email"]:focus { outline: 3px solid rgba(201,163,91,.25); border-color: var(--gold); }
+.account-form .button { justify-self: start; margin-top: 8px; }
+.account-help { margin-top: 20px; color: var(--slate); font-size: 14px; }
+.account-status { min-height: 1.6em; margin: 18px 0 0; font-weight: 700; }
+.account-status[data-state="success"] { color: #176b3a; }
+.account-status[data-state="error"] { color: #a12622; }
+.account-status[data-state="pending"] { color: var(--slate); }
+.account-details { display: grid; gap: 0; margin: 0; border: 1px solid #e1e5ea; border-radius: 14px; overflow: hidden; }
+.account-details div { display: grid; grid-template-columns: minmax(120px, .35fr) 1fr; gap: 20px; padding: 16px 18px; background: var(--white); }
+.account-details div + div { border-top: 1px solid #e1e5ea; }
+.account-details dt { color: var(--slate); font-weight: 700; }
+.account-details dd { margin: 0; overflow-wrap: anywhere; font-weight: 700; color: var(--navy); }
+.account-actions { margin-top: 24px; }
+.account-secondary { border: 1px solid #aeb7c3; background: var(--white); color: var(--navy); }
+.account-danger { border-left: 5px solid #a12622; }
+.account-danger p { color: var(--slate); }
+.account-danger-button { background: #a12622; color: var(--white); }
+
+@media (max-width: 620px) {
+  .account-details div { grid-template-columns: 1fr; gap: 2px; }
+  .account-actions .button { width: 100%; }
+}

@@ -1,0 +1,150 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Your account | USD Impact"
+  description="Manage your USD Impact learning access, data export, and account settings."
+>
+  <section class="hero account-hero">
+    <div class="container">
+      <p class="eyebrow">USD Impact account</p>
+      <h1>Your learning account.</h1>
+      <p class="lead">Review access status and manage your account securely.</p>
+    </div>
+  </section>
+
+  <main>
+    <div class="container account-shell">
+      <section class="card account-panel" aria-labelledby="account-heading">
+        <h2 id="account-heading">Account status</h2>
+        <dl class="account-details">
+          <div><dt>Email</dt><dd id="account-email">Loading…</dd></div>
+          <div><dt>Account</dt><dd id="account-status">Loading…</dd></div>
+          <div><dt>Paid access</dt><dd id="paid-access">Loading…</dd></div>
+        </dl>
+        <p id="account-message" class="account-status" role="status" aria-live="polite"></p>
+        <div class="button-row account-actions">
+          <button id="refresh-session" class="button account-secondary" type="button">Refresh session</button>
+          <button id="export-account" class="button account-secondary" type="button">Download my data</button>
+          <button id="sign-out" class="button account-secondary" type="button">Sign out</button>
+        </div>
+      </section>
+
+      <section class="card account-panel account-danger" aria-labelledby="delete-heading">
+        <h2 id="delete-heading">Delete account</h2>
+        <p>
+          Deletion ends paid access and starts a seven-day safety period. It does not create a refund.
+          Certain transaction, tax, fraud, dispute, and audit records may be retained where required.
+        </p>
+        <button id="delete-account" class="button account-danger-button" type="button">Request account deletion</button>
+      </section>
+    </div>
+  </main>
+
+  <script is:inline>
+    const message = document.getElementById('account-message');
+    const email = document.getElementById('account-email');
+    const accountStatus = document.getElementById('account-status');
+    const paidAccess = document.getElementById('paid-access');
+
+    const showMessage = (text, state = '') => {
+      if (!message) return;
+      message.textContent = text;
+      message.dataset.state = state;
+    };
+
+    const loadAccount = async () => {
+      showMessage('Loading account…', 'pending');
+      const response = await fetch('/api/account-access', { credentials: 'same-origin' });
+      if (response.status === 401) {
+        window.location.replace('/account/sign-in/?next=/account/');
+        return;
+      }
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || 'Account details could not be loaded.');
+
+      if (email) email.textContent = body.account?.email || 'Unavailable';
+      if (accountStatus) accountStatus.textContent = body.account?.status || 'Unavailable';
+      if (paidAccess) {
+        paidAccess.textContent = body.paidAccess?.allowed
+          ? 'Active'
+          : `Not active (${body.paidAccess?.reason || 'unknown'})`;
+      }
+      showMessage('Account loaded.', 'success');
+    };
+
+    document.getElementById('refresh-session')?.addEventListener('click', async () => {
+      showMessage('Refreshing session…', 'pending');
+      const response = await fetch('/api/auth-refresh', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) return showMessage(body.error || 'Session refresh failed.', 'error');
+      await loadAccount().catch((error) => showMessage(error.message, 'error'));
+    });
+
+    document.getElementById('export-account')?.addEventListener('click', async () => {
+      showMessage('Preparing your export…', 'pending');
+      const response = await fetch('/api/account-export', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        return showMessage(body.error || 'The export could not be created.', 'error');
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'usd-impact-account-export.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showMessage('Export downloaded.', 'success');
+    });
+
+    document.getElementById('sign-out')?.addEventListener('click', async () => {
+      await fetch('/api/auth-logout', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      window.location.replace('/account/sign-in/');
+    });
+
+    document.getElementById('delete-account')?.addEventListener('click', async () => {
+      const confirmed = window.confirm(
+        'Request account deletion? Paid access will stop and a seven-day safety period will begin. This does not create a refund.'
+      );
+      if (!confirmed) return;
+
+      showMessage('Submitting deletion request…', 'pending');
+      const response = await fetch('/api/account-delete', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) return showMessage(body.error || 'Deletion could not be requested.', 'error');
+      showMessage(
+        body.deletionDueAt
+          ? `Deletion requested. Safety period ends ${new Date(body.deletionDueAt).toLocaleString()}.`
+          : 'Deletion requested.',
+        'success'
+      );
+      if (accountStatus) accountStatus.textContent = body.status || 'deletion_pending';
+      if (paidAccess) paidAccess.textContent = 'Not active (deletion pending)';
+    });
+
+    loadAccount().catch((error) => showMessage(error.message, 'error'));
+  </script>
+</BaseLayout>

@@ -1,7 +1,7 @@
 import { PAID_PRODUCT_ID, authorizePaidAccess } from './paid-access.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9._~-]{20,8192}$/;
+const ACCESS_TOKEN_PATTERN = /^[\x21-\x7E]{20,16384}$/;
 const JSON_HEADERS = Object.freeze({
   Accept: 'application/json',
   'Content-Type': 'application/json',

@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from 'node:crypto';
 import {
   SupabaseConfigurationError,
   SupabaseRequestError,
@@ -10,14 +11,16 @@ export const SESSION_COOKIE_NAMES = Object.freeze({
   ACCESS: 'usd_impact_access',
   REFRESH: 'usd_impact_refresh',
 });
+export const PKCE_COOKIE_NAME = 'usd_impact_pkce';
 
 const EMAIL_MAX_LENGTH = 254;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TOKEN_PATTERN = /^[A-Za-z0-9._~-]{20,12000}$/;
-const TOKEN_HASH_PATTERN = /^[A-Za-z0-9_-]{20,512}$/;
-const ALLOWED_EMAIL_TYPES = new Set(['email', 'magiclink', 'signup']);
+const AUTH_CODE_PATTERN = /^[A-Za-z0-9._~-]{20,1024}$/;
+const PKCE_VERIFIER_PATTERN = /^[A-Za-z0-9_-]{43,128}$/;
 const ACCESS_COOKIE_MAX_AGE = 60 * 60;
 const REFRESH_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
+const PKCE_COOKIE_MAX_AGE = 10 * 60;
 
 function normalizeEmail(value) {
   const email = String(value ?? '').trim().toLowerCase();
@@ -175,10 +178,10 @@ function shouldUseSecureCookie(request) {
   return !isLocalHost(host);
 }
 
-function serializeCookie(name, value, { maxAge, request }) {
+function serializeCookie(name, value, { maxAge, request, path = '/' }) {
   const parts = [
     `${name}=${encodeURIComponent(value)}`,
-    'Path=/',
+    `Path=${path}`,
     'HttpOnly',
     'SameSite=Lax',
     `Max-Age=${Math.max(0, Math.floor(maxAge))}`,
@@ -215,6 +218,26 @@ export function clearSessionCookies(response, request) {
   ]);
 }
 
+function setPkceCookie(response, request, verifier) {
+  appendSetCookies(response, [
+    serializeCookie(PKCE_COOKIE_NAME, verifier, {
+      maxAge: PKCE_COOKIE_MAX_AGE,
+      request,
+      path: '/api/auth-confirm',
+    }),
+  ]);
+}
+
+export function clearPkceCookie(response, request) {
+  appendSetCookies(response, [
+    serializeCookie(PKCE_COOKIE_NAME, '', {
+      maxAge: 0,
+      request,
+      path: '/api/auth-confirm',
+    }),
+  ]);
+}
+
 export function readSessionAccessToken(request) {
   const bearer = readBearerToken(request);
   if (bearer) return bearer;
@@ -227,42 +250,62 @@ export function readSessionRefreshToken(request) {
   return TOKEN_PATTERN.test(token) ? token : null;
 }
 
+export function readPkceVerifier(request) {
+  const verifier = cookieMap(request).get(PKCE_COOKIE_NAME) || '';
+  return PKCE_VERIFIER_PATTERN.test(verifier) ? verifier : null;
+}
+
+function createPkcePair() {
+  const verifier = randomBytes(48).toString('base64url');
+  const challenge = createHash('sha256').update(verifier).digest('base64url');
+  return Object.freeze({ verifier, challenge });
+}
+
 export async function sendPasswordlessEmail({
   email,
   next,
   request,
+  response,
   environment,
   config,
   fetchImpl,
   shouldCreateUser = true,
 }) {
+  if (!response || typeof response.setHeader !== 'function') {
+    throw new SupabaseConfigurationError('A response object is required for PKCE authentication.');
+  }
   const resolvedConfig = config || readSupabaseServerConfig(environment);
   const normalizedEmail = normalizeEmail(email);
-  const redirectUrl = new URL('/auth/confirm/', requestOrigin(request));
+  const redirectUrl = new URL('/api/auth-confirm', requestOrigin(request));
   redirectUrl.searchParams.set('next', safeNextPath(next));
   const redirectTo = redirectUrl.toString();
+  const pkce = createPkcePair();
+
   await authRequest({
     config: resolvedConfig,
     path: `/auth/v1/otp?redirect_to=${encodeURIComponent(redirectTo)}`,
     body: {
       email: normalizedEmail,
       create_user: shouldCreateUser === true,
+      code_challenge: pkce.challenge,
+      code_challenge_method: 's256',
     },
     fetchImpl,
   });
+  setPkceCookie(response, request, pkce.verifier);
   return Object.freeze({ email: normalizedEmail, redirectTo });
 }
 
-export async function verifyPasswordlessToken({
-  tokenHash,
-  type,
+export async function exchangePasswordlessCode({
+  authCode,
+  codeVerifier,
   environment,
   config,
   fetchImpl,
 }) {
-  const normalizedHash = String(tokenHash ?? '').trim();
-  const normalizedType = String(type ?? '').trim().toLowerCase();
-  if (!TOKEN_HASH_PATTERN.test(normalizedHash) || !ALLOWED_EMAIL_TYPES.has(normalizedType)) {
+  const normalizedCode = String(authCode ?? '').trim();
+  const normalizedVerifier = String(codeVerifier ?? '').trim();
+  if (!AUTH_CODE_PATTERN.test(normalizedCode) || !PKCE_VERIFIER_PATTERN.test(normalizedVerifier)) {
     throw new SupabaseRequestError('The sign-in link is invalid or expired.', {
       status: 400,
       code: 'INVALID_SIGN_IN_LINK',
@@ -271,8 +314,11 @@ export async function verifyPasswordlessToken({
   const resolvedConfig = config || readSupabaseServerConfig(environment);
   const payload = await authRequest({
     config: resolvedConfig,
-    path: '/auth/v1/verify',
-    body: { token_hash: normalizedHash, type: normalizedType },
+    path: '/auth/v1/token?grant_type=pkce',
+    body: {
+      auth_code: normalizedCode,
+      code_verifier: normalizedVerifier,
+    },
     fetchImpl,
   });
   return normalizeSession(payload);

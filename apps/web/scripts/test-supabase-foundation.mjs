@@ -14,9 +14,13 @@ import {
 const accountId = '46d8a4a1-e616-4d9d-8faf-d877a42af310';
 const entitlementId = 'aa921ce7-11ce-41d0-92e1-57960d91e20d';
 const accessToken = 'eyJhbGciOiJIUzI1NiJ9.test-access-token-that-is-long-enough.signature';
-const config = Object.freeze({
+const publicConfig = Object.freeze({
   url: 'https://development.supabase.co',
   publishableKey: 'sb_publishable_abcdefghijklmnopqrstuvwxyz',
+  secretKey: null,
+});
+const privilegedConfig = Object.freeze({
+  ...publicConfig,
   secretKey: 'sb_secret_abcdefghijklmnopqrstuvwxyz',
 });
 
@@ -32,18 +36,29 @@ const verifiedUser = () => ({
 
 assert.deepEqual(readSupabaseServerConfig({
   SUPABASE_URL: 'https://development.supabase.co/path',
-  SUPABASE_PUBLISHABLE_KEY: config.publishableKey,
-  SUPABASE_SECRET_KEY: config.secretKey,
-}), config);
+  SUPABASE_PUBLISHABLE_KEY: publicConfig.publishableKey,
+}), publicConfig);
+assert.deepEqual(readSupabaseServerConfig({
+  SUPABASE_URL: 'https://development.supabase.co/path',
+  SUPABASE_PUBLISHABLE_KEY: publicConfig.publishableKey,
+  SUPABASE_SECRET_KEY: privilegedConfig.secretKey,
+}, { requireSecret: true }), privilegedConfig);
+assert.throws(
+  () => readSupabaseServerConfig({
+    SUPABASE_URL: 'https://development.supabase.co',
+    SUPABASE_PUBLISHABLE_KEY: publicConfig.publishableKey,
+  }, { requireSecret: true }),
+  (error) => error instanceof SupabaseConfigurationError,
+);
 assert.throws(() => readSupabaseServerConfig({}), (error) => error instanceof SupabaseConfigurationError);
 assert.equal(readBearerToken({ headers: { authorization: `Bearer ${accessToken}` } }), accessToken);
 assert.equal(readBearerToken({ headers: { authorization: 'Basic abc' } }), null);
 
 const verified = await getVerifiedSupabaseUser(accessToken, {
-  config,
+  config: publicConfig,
   fetchImpl: async (url, options) => {
-    assert.equal(url, `${config.url}/auth/v1/user`);
-    assert.equal(options.headers.apikey, config.publishableKey);
+    assert.equal(url, `${publicConfig.url}/auth/v1/user`);
+    assert.equal(options.headers.apikey, publicConfig.publishableKey);
     assert.equal(options.headers.Authorization, `Bearer ${accessToken}`);
     return response(200, verifiedUser());
   },
@@ -51,17 +66,18 @@ const verified = await getVerifiedSupabaseUser(accessToken, {
 assert.equal(verified.email, 'reader@example.com');
 
 await assert.rejects(() => getVerifiedSupabaseUser(accessToken, {
-  config,
+  config: publicConfig,
   fetchImpl: async () => response(200, { ...verifiedUser(), email_confirmed_at: null }),
 }), (error) => error instanceof SupabaseRequestError && error.code === 'VERIFIED_ACCOUNT_REQUIRED');
 
 const activeState = await readAccountAccessState({
   accessToken,
-  config,
+  config: publicConfig,
   nowMs: Date.parse('2026-07-29T20:30:00.000Z'),
   fetchImpl: async (url, options) => {
+    assert.equal(options.headers.apikey, publicConfig.publishableKey);
+    assert.equal(options.headers.Authorization, `Bearer ${accessToken}`);
     if (url.endsWith('/auth/v1/user')) return response(200, verifiedUser());
-    assert.equal(options.headers.apikey, config.secretKey);
     if (url.includes('/rest/v1/profiles?')) return response(200, [{
       account_id: accountId,
       email: 'reader@example.com',
@@ -85,7 +101,7 @@ assert.equal(activeState.reason, 'active');
 
 const suspendedState = await readAccountAccessState({
   accessToken,
-  config,
+  config: publicConfig,
   fetchImpl: async (url) => {
     if (url.endsWith('/auth/v1/user')) return response(200, verifiedUser());
     if (url.includes('/rest/v1/profiles?')) return response(200, [{ account_id: accountId, status: 'suspended' }]);
@@ -98,10 +114,12 @@ assert.equal(suspendedState.reason, 'suspended');
 
 const exported = await exportOwnAccount({
   accessToken,
-  config,
+  config: publicConfig,
   fetchImpl: async (url, options) => {
     if (url.endsWith('/auth/v1/user')) return response(200, verifiedUser());
-    assert.equal(url, `${config.url}/rest/v1/rpc/account_export`);
+    assert.equal(url, `${publicConfig.url}/rest/v1/rpc/account_export`);
+    assert.equal(options.headers.apikey, publicConfig.publishableKey);
+    assert.equal(options.headers.Authorization, `Bearer ${accessToken}`);
     assert.deepEqual(JSON.parse(options.body), { export_account_id: accountId });
     return response(200, { profile: { account_id: accountId }, purchases: [] });
   },
@@ -110,10 +128,12 @@ assert.equal(exported.accountId, accountId);
 
 const deletion = await requestOwnAccountDeletion({
   accessToken,
-  config,
+  config: publicConfig,
   fetchImpl: async (url, options) => {
     if (url.endsWith('/auth/v1/user')) return response(200, verifiedUser());
-    assert.equal(url, `${config.url}/rest/v1/rpc/request_account_deletion`);
+    assert.equal(url, `${publicConfig.url}/rest/v1/rpc/request_account_deletion`);
+    assert.equal(options.headers.apikey, publicConfig.publishableKey);
+    assert.equal(options.headers.Authorization, `Bearer ${accessToken}`);
     assert.deepEqual(JSON.parse(options.body), {});
     return response(200, { account_id: accountId, status: 'deletion_pending' });
   },

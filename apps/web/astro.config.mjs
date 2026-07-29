@@ -15,7 +15,7 @@ const protectedPaths = new Set(
 );
 
 export default defineConfig({
-  site: 'https://usd-impact.com',
+  site: 'https://www.usd-impact.com',
   output: 'static',
   integrations: [
     sitemap({

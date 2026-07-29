@@ -48,7 +48,10 @@ function requireKey(value, name, prefix) {
   return value;
 }
 
-export function readSupabaseServerConfig(environment = process.env) {
+export function readSupabaseServerConfig(
+  environment = process.env,
+  { requireSecret = false } = {},
+) {
   return Object.freeze({
     url: requireUrl(environment.SUPABASE_URL),
     publishableKey: requireKey(
@@ -56,7 +59,9 @@ export function readSupabaseServerConfig(environment = process.env) {
       'SUPABASE_PUBLISHABLE_KEY',
       'sb_publishable_',
     ),
-    secretKey: requireKey(environment.SUPABASE_SECRET_KEY, 'SUPABASE_SECRET_KEY', 'sb_secret_'),
+    secretKey: requireSecret
+      ? requireKey(environment.SUPABASE_SECRET_KEY, 'SUPABASE_SECRET_KEY', 'sb_secret_')
+      : null,
   });
 }
 
@@ -99,6 +104,9 @@ async function supabaseFetch({
   headers = {},
   fetchImpl = fetch,
 }) {
+  if (useSecret && !config.secretKey) {
+    throw new SupabaseConfigurationError('SUPABASE_SECRET_KEY is required for this operation.');
+  }
   const apiKey = useSecret ? config.secretKey : config.publishableKey;
   const response = await fetchImpl(`${config.url}${path}`, {
     method,
@@ -185,13 +193,13 @@ export async function readAccountAccessState({
     supabaseFetch({
       config: resolvedConfig,
       path: profilePath(user.id),
-      useSecret: true,
+      accessToken,
       fetchImpl,
     }),
     supabaseFetch({
       config: resolvedConfig,
       path: entitlementPath(user.id, productId),
-      useSecret: true,
+      accessToken,
       fetchImpl,
     }),
   ]);

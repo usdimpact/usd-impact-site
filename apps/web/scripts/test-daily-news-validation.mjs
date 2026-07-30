@@ -14,7 +14,7 @@ assert.equal(SOURCE_ID_SCHEMA_PATTERN, '^[a-z0-9][a-z0-9-]{1,63}$');
 assert.match(SOURCE_DATE_RULES, /YYYY-MM-DD/);
 assert.match(SOURCE_DATE_RULES, /omit that source/i);
 assert.match(SOURCE_ID_RULES, /never place a URL/i);
-assert.match(SOURCE_ID_RULES, /reference them consistently/i);
+assert.match(SOURCE_ID_RULES, /same normalized source id/i);
 
 assert.equal(normalizePublishedAt('2026-07-23', 'dated-source'), '2026-07-23');
 assert.equal(normalizePublishedAt('2026-07-23T09:30:00Z', 'timestamp-source'), '2026-07-23');

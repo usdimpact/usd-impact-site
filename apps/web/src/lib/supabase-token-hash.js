@@ -4,7 +4,7 @@ import {
 } from './supabase-server.js';
 
 const TOKEN_HASH_PATTERN = /^[A-Za-z0-9._~-]{20,2048}$/;
-const MAGIC_LINK_TYPE = 'magiclink';
+const EMAIL_VERIFICATION_TYPE = 'email';
 
 async function readJsonBody(response) {
   const text = await response.text();
@@ -42,7 +42,7 @@ export async function verifyPasswordlessTokenHash({
     },
     body: JSON.stringify({
       token_hash: normalizedTokenHash,
-      type: MAGIC_LINK_TYPE,
+      type: EMAIL_VERIFICATION_TYPE,
     }),
   });
   const payload = await readJsonBody(response);

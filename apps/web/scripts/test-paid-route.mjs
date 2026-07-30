@@ -84,11 +84,24 @@ assert.match(middleware, /isPaidContentPath\(url\.pathname\)/);
 assert.match(middleware, /Paid-route authorization failed closed/);
 assert.doesNotMatch(middleware, /localStorage|sessionStorage/);
 
+const signInPage = await readFile(
+  new URL('../src/pages/account/sign-in/index.astro', import.meta.url),
+  'utf8',
+);
+assert.match(signInPage, /new URLSearchParams\(window\.location\.search\)\.get\('next'\)/);
+assert.match(signInPage, /parsed\.origin !== window\.location\.origin/);
+assert.match(signInPage, /nextInput\.value = safeNextPath\(requestedNext\)/);
+assert.doesNotMatch(signInPage, /Astro\.url\.searchParams\.get\('next'\)/);
+
 const accessRequiredPage = await readFile(
   new URL('../src/pages/account/access-required/index.astro', import.meta.url),
   'utf8',
 );
 assert.match(accessRequiredPage, /Browser state, email possession alone, and a checkout redirect do not grant access/);
+assert.match(accessRequiredPage, /const reason = params\.get\('reason'\) \|\| 'missing'/);
+assert.match(accessRequiredPage, /const next = safeNextPath\(params\.get\('next'\)\)/);
+assert.match(accessRequiredPage, /messages\[reason\] \|\| messages\.denied/);
+assert.doesNotMatch(accessRequiredPage, /Astro\.url\.searchParams/);
 
 const protectedPage = await readFile(
   new URL('../src/pages/guided-edition/index.astro', import.meta.url),

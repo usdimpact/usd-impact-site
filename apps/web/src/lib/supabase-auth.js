@@ -22,6 +22,7 @@ const ACCESS_COOKIE_MAX_AGE = 60 * 60;
 const REFRESH_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 const PKCE_COOKIE_MAX_AGE = 10 * 60;
 const CONFIRMATION_PATH = '/auth/confirm/';
+const PKCE_COOKIE_PATH = '/';
 
 function normalizeEmail(value) {
   const email = String(value ?? '').trim().toLowerCase();
@@ -224,7 +225,7 @@ function setPkceCookie(response, request, verifier) {
     serializeCookie(PKCE_COOKIE_NAME, verifier, {
       maxAge: PKCE_COOKIE_MAX_AGE,
       request,
-      path: CONFIRMATION_PATH,
+      path: PKCE_COOKIE_PATH,
     }),
   ]);
 }
@@ -234,7 +235,7 @@ export function clearPkceCookie(response, request) {
     serializeCookie(PKCE_COOKIE_NAME, '', {
       maxAge: 0,
       request,
-      path: CONFIRMATION_PATH,
+      path: PKCE_COOKIE_PATH,
     }),
   ]);
 }

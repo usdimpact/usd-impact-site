@@ -58,6 +58,6 @@ assert.equal(openDollarLesson.headers.get('x-middleware-next'), '1');
 
 const stillBlocked = await middleware(new Request('https://www.usd-impact.com/fx/fx-depreciation-vs-inflation', { headers: { cookie } }));
 assert.equal(stillBlocked.status, 302);
-assert.equal(new URL(stillBlocked.headers.get('location')).pathname, '/dollar/what-is-the-dollar/');
+assert.equal(new URL(stillBlocked.headers.get('location')).pathname, '/dollar/what-is-the-us-dollar/');
 
 console.log('Quiz entitlement and middleware tests passed.');

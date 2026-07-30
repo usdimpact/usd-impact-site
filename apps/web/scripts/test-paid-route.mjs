@@ -147,15 +147,14 @@ await assert.rejects(
 );
 
 const middleware = await readFile(new URL('../middleware.js', import.meta.url), 'utf8');
-assert.match(middleware, /'\/guided-edition\/:path\*'/);
-assert.match(middleware, /readSessionAccessToken\(request\)/);
-assert.match(middleware, /readPaidAccessFromAccountApi\(\{/);
-assert.match(middleware, /accessToken,/);
-assert.match(middleware, /isPaidContentPath\(url\.pathname\)/);
-assert.match(middleware, /Paid-route authorization failed closed/);
-assert.doesNotMatch(middleware, /cookieHeader:/);
-assert.doesNotMatch(middleware, /readAccountAccessState/);
+assert.doesNotMatch(middleware, /guided-edition/);
+assert.doesNotMatch(middleware, /readSessionAccessToken|readPaidAccessFromAccountApi|readAccountAccessState/);
 assert.doesNotMatch(middleware, /localStorage|sessionStorage/);
+
+const vercelConfig = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
+const rewriteMap = new Map(vercelConfig.rewrites.map((entry) => [entry.source, entry.destination]));
+assert.equal(rewriteMap.get('/guided-edition'), '/api/guided-edition');
+assert.equal(rewriteMap.get('/guided-edition/:path*'), '/api/guided-edition?__paid_path=:path*');
 
 const signInPage = await readFile(
   new URL('../src/pages/account/sign-in/index.astro', import.meta.url),
@@ -175,11 +174,5 @@ assert.match(accessRequiredPage, /const reason = params\.get\('reason'\) \|\| 'm
 assert.match(accessRequiredPage, /const next = safeNextPath\(params\.get\('next'\)\)/);
 assert.match(accessRequiredPage, /messages\[reason\] \|\| messages\.denied/);
 assert.doesNotMatch(accessRequiredPage, /Astro\.url\.searchParams/);
-
-const protectedPage = await readFile(
-  new URL('../src/pages/guided-edition/index.astro', import.meta.url),
-  'utf8',
-);
-assert.match(protectedPage, /durable Supabase entitlement/);
 
 console.log('Protected paid-route tests passed.');

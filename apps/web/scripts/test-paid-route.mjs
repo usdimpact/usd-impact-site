@@ -15,6 +15,7 @@ const response = (status, body) => new Response(body == null ? '' : JSON.stringi
   status,
   headers: { 'Content-Type': 'application/json' },
 });
+const accessToken = 'eyJhbGciOiJIUzI1NiJ9.test-access-token-that-is-long-enough.signature';
 
 assert.equal(PAID_CONTENT_PREFIX, '/guided-edition');
 assert.equal(isPaidContentPath('/guided-edition'), true);
@@ -83,10 +84,10 @@ assert.equal(unavailable.searchParams.get('reason'), 'denied');
 
 const anonymousApi = await readPaidAccessFromAccountApi({
   requestUrl: protectedUrl,
-  cookieHeader: '',
+  accessToken: '',
   fetchImpl: async (url, options) => {
     assert.equal(url.toString(), 'https://preview.example/api/account-access');
-    assert.equal(options.headers.Cookie, '');
+    assert.equal(options.headers.Authorization, undefined);
     assert.equal(options.redirect, 'manual');
     assert.equal(options.cache, 'no-store');
     return response(401, { code: 'AUTHENTICATION_REQUIRED' });
@@ -96,10 +97,10 @@ assert.deepEqual(anonymousApi, { hasSession: false, accessState: null });
 
 const unpaidApi = await readPaidAccessFromAccountApi({
   requestUrl: protectedUrl,
-  cookieHeader: 'usd_impact_access=opaque-token',
+  accessToken,
   fetchImpl: async (url, options) => {
     assert.equal(url.toString(), 'https://preview.example/api/account-access');
-    assert.equal(options.headers.Cookie, 'usd_impact_access=opaque-token');
+    assert.equal(options.headers.Authorization, `Bearer ${accessToken}`);
     return response(200, {
       account: { id: 'account-id', email: 'reader@example.com', status: 'active' },
       paidAccess: { allowed: false, reason: 'missing', productId: null, state: null },
@@ -113,7 +114,7 @@ assert.deepEqual(unpaidApi, {
 
 const activeApi = await readPaidAccessFromAccountApi({
   requestUrl: protectedUrl,
-  cookieHeader: 'usd_impact_access=opaque-token',
+  accessToken,
   fetchImpl: async () => response(200, {
     paidAccess: {
       allowed: true,
@@ -130,7 +131,7 @@ assert.equal(activeApi.accessState.reason, 'active');
 await assert.rejects(
   () => readPaidAccessFromAccountApi({
     requestUrl: protectedUrl,
-    cookieHeader: 'usd_impact_access=opaque-token',
+    accessToken,
     fetchImpl: async () => response(200, { paidAccess: { allowed: 'yes', reason: null } }),
   }),
   (error) => error?.code === 'INVALID_PAID_ACCESS_RESPONSE' && error?.status === 502,
@@ -139,7 +140,7 @@ await assert.rejects(
 await assert.rejects(
   () => readPaidAccessFromAccountApi({
     requestUrl: protectedUrl,
-    cookieHeader: 'usd_impact_access=opaque-token',
+    accessToken,
     fetchImpl: async () => response(503, { code: 'SUPABASE_CONFIGURATION_ERROR' }),
   }),
   (error) => error?.code === 'SUPABASE_CONFIGURATION_ERROR' && error?.status === 503,
@@ -147,11 +148,13 @@ await assert.rejects(
 
 const middleware = await readFile(new URL('../middleware.js', import.meta.url), 'utf8');
 assert.match(middleware, /'\/guided-edition\/:path\*'/);
+assert.match(middleware, /readSessionAccessToken\(request\)/);
 assert.match(middleware, /readPaidAccessFromAccountApi\(\{/);
-assert.match(middleware, /cookieHeader: request\.headers\.get\('cookie'\) \?\? ''/);
+assert.match(middleware, /accessToken,/);
 assert.match(middleware, /isPaidContentPath\(url\.pathname\)/);
 assert.match(middleware, /Paid-route authorization failed closed/);
-assert.doesNotMatch(middleware, /readAccountAccessState|readSessionAccessToken/);
+assert.doesNotMatch(middleware, /cookieHeader:/);
+assert.doesNotMatch(middleware, /readAccountAccessState/);
 assert.doesNotMatch(middleware, /localStorage|sessionStorage/);
 
 const signInPage = await readFile(

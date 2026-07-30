@@ -7,9 +7,14 @@ import {
   decidePaidRouteAccess,
   isPaidContentPath,
   normalizePaidAccessReason,
+  readPaidAccessFromAccountApi,
 } from '../src/lib/paid-route.js';
 
 const protectedUrl = new URL('https://preview.example/guided-edition/chapter-1/?section=yield-curve');
+const response = (status, body) => new Response(body == null ? '' : JSON.stringify(body), {
+  status,
+  headers: { 'Content-Type': 'application/json' },
+});
 
 assert.equal(PAID_CONTENT_PREFIX, '/guided-edition');
 assert.equal(isPaidContentPath('/guided-edition'), true);
@@ -76,12 +81,77 @@ assert.equal(normalizePaidAccessReason('unexpected-provider-state'), 'denied');
 const unavailable = buildPaidAccessRequiredRedirect(protectedUrl, 'unexpected-provider-state');
 assert.equal(unavailable.searchParams.get('reason'), 'denied');
 
+const anonymousApi = await readPaidAccessFromAccountApi({
+  requestUrl: protectedUrl,
+  cookieHeader: '',
+  fetchImpl: async (url, options) => {
+    assert.equal(url.toString(), 'https://preview.example/api/account-access');
+    assert.equal(options.headers.Cookie, '');
+    assert.equal(options.redirect, 'manual');
+    assert.equal(options.cache, 'no-store');
+    return response(401, { code: 'AUTHENTICATION_REQUIRED' });
+  },
+});
+assert.deepEqual(anonymousApi, { hasSession: false, accessState: null });
+
+const unpaidApi = await readPaidAccessFromAccountApi({
+  requestUrl: protectedUrl,
+  cookieHeader: 'usd_impact_access=opaque-token',
+  fetchImpl: async (url, options) => {
+    assert.equal(url.toString(), 'https://preview.example/api/account-access');
+    assert.equal(options.headers.Cookie, 'usd_impact_access=opaque-token');
+    return response(200, {
+      account: { id: 'account-id', email: 'reader@example.com', status: 'active' },
+      paidAccess: { allowed: false, reason: 'missing', productId: null, state: null },
+    });
+  },
+});
+assert.deepEqual(unpaidApi, {
+  hasSession: true,
+  accessState: { allowed: false, reason: 'missing', productId: null, state: null },
+});
+
+const activeApi = await readPaidAccessFromAccountApi({
+  requestUrl: protectedUrl,
+  cookieHeader: 'usd_impact_access=opaque-token',
+  fetchImpl: async () => response(200, {
+    paidAccess: {
+      allowed: true,
+      reason: 'active',
+      productId: 'read-the-dollar-first-guided-interactive-edition',
+      state: 'active',
+    },
+  }),
+});
+assert.equal(activeApi.hasSession, true);
+assert.equal(activeApi.accessState.allowed, true);
+assert.equal(activeApi.accessState.reason, 'active');
+
+await assert.rejects(
+  () => readPaidAccessFromAccountApi({
+    requestUrl: protectedUrl,
+    cookieHeader: 'usd_impact_access=opaque-token',
+    fetchImpl: async () => response(200, { paidAccess: { allowed: 'yes', reason: null } }),
+  }),
+  (error) => error?.code === 'INVALID_PAID_ACCESS_RESPONSE' && error?.status === 502,
+);
+
+await assert.rejects(
+  () => readPaidAccessFromAccountApi({
+    requestUrl: protectedUrl,
+    cookieHeader: 'usd_impact_access=opaque-token',
+    fetchImpl: async () => response(503, { code: 'SUPABASE_CONFIGURATION_ERROR' }),
+  }),
+  (error) => error?.code === 'SUPABASE_CONFIGURATION_ERROR' && error?.status === 503,
+);
+
 const middleware = await readFile(new URL('../middleware.js', import.meta.url), 'utf8');
 assert.match(middleware, /'\/guided-edition\/:path\*'/);
-assert.match(middleware, /readSessionAccessToken\(request\)/);
-assert.match(middleware, /readAccountAccessState\(\{ accessToken \}\)/);
+assert.match(middleware, /readPaidAccessFromAccountApi\(\{/);
+assert.match(middleware, /cookieHeader: request\.headers\.get\('cookie'\) \?\? ''/);
 assert.match(middleware, /isPaidContentPath\(url\.pathname\)/);
 assert.match(middleware, /Paid-route authorization failed closed/);
+assert.doesNotMatch(middleware, /readAccountAccessState|readSessionAccessToken/);
 assert.doesNotMatch(middleware, /localStorage|sessionStorage/);
 
 const signInPage = await readFile(

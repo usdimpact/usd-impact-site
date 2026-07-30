@@ -73,6 +73,11 @@ function logConfirmationFailure(error) {
   });
 }
 
+function verificationCode(payload) {
+  const value = payload?.code || payload?.data?.code || payload?.auth_code || payload?.data?.auth_code;
+  return typeof value === 'string' ? value : null;
+}
+
 async function handleLogin(request, response) {
   if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
   if (!requireSameSiteJson(request, response)) return;
@@ -121,11 +126,13 @@ async function handleTokenHashConfirmation(request, response) {
   }
 
   const next = safeNextPath(payload.next);
+  const codeVerifier = readPkceVerifier(request);
   try {
-    const session = await verifyPasswordlessTokenHash({
-      tokenHash: payload.token_hash,
-      type: payload.type,
-    });
+    const verified = await verifyPasswordlessTokenHash({ tokenHash: payload.token_hash });
+    const code = verificationCode(verified);
+    const session = code
+      ? await exchangePasswordlessCode({ authCode: code, codeVerifier })
+      : verified;
     clearPkceCookie(response, request);
     setSessionCookies(response, request, session);
     return sendJson(response, 200, { ok: true, redirectTo: next });

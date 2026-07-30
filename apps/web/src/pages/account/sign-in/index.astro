@@ -1,7 +1,5 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-
-const requestedNext = Astro.url.searchParams.get('next') || '/account/';
 ---
 <BaseLayout
   title="Sign in | USD Impact"
@@ -30,7 +28,7 @@ const requestedNext = Astro.url.searchParams.get('next') || '/account/';
             maxlength="254"
             required
           />
-          <input id="account-next" type="hidden" value={requestedNext} />
+          <input id="account-next" type="hidden" value="/account/" />
           <button class="button primary" type="submit">Send sign-in link</button>
         </form>
         <p id="sign-in-status" class="account-status" role="status" aria-live="polite"></p>
@@ -48,6 +46,25 @@ const requestedNext = Astro.url.searchParams.get('next') || '/account/';
     const nextInput = document.getElementById('account-next');
     const status = document.getElementById('sign-in-status');
     const submit = form?.querySelector('button[type="submit"]');
+
+    const safeNextPath = (value) => {
+      const next = String(value || '').trim();
+      if (!next.startsWith('/') || next.startsWith('//') || next.includes('\\') || next.length > 512) {
+        return '/account/';
+      }
+      try {
+        const parsed = new URL(next, window.location.origin);
+        if (parsed.origin !== window.location.origin) return '/account/';
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      } catch {
+        return '/account/';
+      }
+    };
+
+    if (nextInput) {
+      const requestedNext = new URLSearchParams(window.location.search).get('next');
+      nextInput.value = safeNextPath(requestedNext);
+    }
 
     form?.addEventListener('submit', async (event) => {
       event.preventDefault();

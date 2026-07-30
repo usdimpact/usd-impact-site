@@ -64,6 +64,15 @@ function redirect(response, location, status = 303) {
   response.end();
 }
 
+function logConfirmationFailure(error) {
+  console.error('Supabase passwordless confirmation failed.', {
+    name: error instanceof Error ? error.name : 'UnknownError',
+    status: Number.isInteger(error?.status) ? error.status : null,
+    code: typeof error?.code === 'string' ? error.code : null,
+    message: error instanceof Error ? error.message : 'Unknown confirmation error.',
+  });
+}
+
 async function handleLogin(request, response) {
   if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
   if (!requireSameSiteJson(request, response)) return;
@@ -101,41 +110,60 @@ async function handleLogin(request, response) {
   }
 }
 
-async function handleConfirm(request, response) {
-  if (request.method !== 'GET') return methodNotAllowed(response, 'GET');
+async function handleTokenHashConfirmation(request, response) {
+  if (!requireSameSiteJson(request, response)) return;
 
+  let payload;
+  try {
+    payload = parseBody(request);
+  } catch {
+    return sendJson(response, 400, { error: 'Invalid request body.', code: 'INVALID_REQUEST_BODY' });
+  }
+
+  const next = safeNextPath(payload.next);
+  try {
+    const session = await verifyPasswordlessTokenHash({
+      tokenHash: payload.token_hash,
+      type: payload.type,
+    });
+    clearPkceCookie(response, request);
+    setSessionCookies(response, request, session);
+    return sendJson(response, 200, { ok: true, redirectTo: next });
+  } catch (error) {
+    logConfirmationFailure(error);
+    clearPkceCookie(response, request);
+    const safe = safeSupabaseError(error);
+    return sendJson(response, safe.status, safe.payload);
+  }
+}
+
+async function handlePkceConfirmation(request, response) {
   const url = requestUrl(request);
   const next = safeNextPath(url.searchParams.get('next'));
-  const tokenHash = url.searchParams.get('token_hash');
-  const tokenType = url.searchParams.get('type');
   const codeVerifier = readPkceVerifier(request);
 
   try {
-    const session = tokenHash || tokenType
-      ? await verifyPasswordlessTokenHash({
-          tokenHash,
-          type: tokenType,
-        })
-      : await exchangePasswordlessCode({
-          authCode: url.searchParams.get('code'),
-          codeVerifier,
-        });
+    const session = await exchangePasswordlessCode({
+      authCode: url.searchParams.get('code'),
+      codeVerifier,
+    });
     clearPkceCookie(response, request);
     setSessionCookies(response, request, session);
     return redirect(response, next);
   } catch (error) {
-    console.error('Supabase passwordless confirmation failed.', {
-      name: error instanceof Error ? error.name : 'UnknownError',
-      status: Number.isInteger(error?.status) ? error.status : null,
-      code: typeof error?.code === 'string' ? error.code : null,
-      message: error instanceof Error ? error.message : 'Unknown confirmation error.',
-    });
+    logConfirmationFailure(error);
     clearPkceCookie(response, request);
     const safe = safeSupabaseError(error);
     const target = new URL('/account/sign-in/', 'https://usd-impact.invalid');
     target.searchParams.set('error', safe.status >= 500 ? 'service_unavailable' : 'invalid_link');
     return redirect(response, `${target.pathname}${target.search}`);
   }
+}
+
+async function handleConfirm(request, response) {
+  if (request.method === 'POST') return handleTokenHashConfirmation(request, response);
+  if (request.method === 'GET') return handlePkceConfirmation(request, response);
+  return methodNotAllowed(response, 'GET, POST');
 }
 
 async function handleRefresh(request, response) {

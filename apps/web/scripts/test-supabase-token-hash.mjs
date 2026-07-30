@@ -20,7 +20,7 @@ const payload = await verifyPasswordlessTokenHash({
     assert.equal(options.headers.Authorization, `Bearer ${config.publishableKey}`);
     assert.deepEqual(JSON.parse(options.body), {
       token_hash: tokenHash,
-      type: 'magiclink',
+      type: 'email',
     });
     return new Response(JSON.stringify({
       access_token: accessToken,
@@ -32,25 +32,23 @@ const payload = await verifyPasswordlessTokenHash({
 assert.equal(payload.access_token, accessToken);
 assert.equal(payload.refresh_token, refreshToken);
 
+const codePayload = await verifyPasswordlessTokenHash({
+  tokenHash,
+  config,
+  fetchImpl: async (_url, options) => {
+    assert.equal(JSON.parse(options.body).type, 'email');
+    return new Response(JSON.stringify({ code: 'valid_auth_code_value_that_is_long_enough_123456' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  },
+});
+assert.equal(codePayload.code, 'valid_auth_code_value_that_is_long_enough_123456');
+
 await assert.rejects(
   verifyPasswordlessTokenHash({ tokenHash: 'short', config }),
   (error) => error?.code === 'INVALID_SIGN_IN_LINK' && error?.status === 400,
 );
-
-const clientTypeIgnored = await verifyPasswordlessTokenHash({
-  tokenHash,
-  type: 'email',
-  config,
-  fetchImpl: async (_url, options) => {
-    assert.equal(JSON.parse(options.body).type, 'magiclink');
-    return new Response(JSON.stringify({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      expires_in: 3600,
-    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-  },
-});
-assert.equal(clientTypeIgnored.access_token, accessToken);
 
 await assert.rejects(
   verifyPasswordlessTokenHash({

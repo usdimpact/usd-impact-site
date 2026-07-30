@@ -4,7 +4,7 @@ import {
 } from './supabase-server.js';
 
 const TOKEN_HASH_PATTERN = /^[A-Za-z0-9._~-]{20,2048}$/;
-const SUPPORTED_MAGIC_LINK_TYPE = 'magiclink';
+const MAGIC_LINK_TYPE = 'magiclink';
 
 async function readJsonBody(response) {
   const text = await response.text();
@@ -18,15 +18,13 @@ async function readJsonBody(response) {
 
 export async function verifyPasswordlessTokenHash({
   tokenHash,
-  type,
   environment,
   config,
   fetchImpl = fetch,
 }) {
   const normalizedTokenHash = String(tokenHash ?? '').trim();
-  const normalizedType = String(type ?? '').trim().toLowerCase();
 
-  if (!TOKEN_HASH_PATTERN.test(normalizedTokenHash) || normalizedType !== SUPPORTED_MAGIC_LINK_TYPE) {
+  if (!TOKEN_HASH_PATTERN.test(normalizedTokenHash)) {
     throw new SupabaseRequestError('The sign-in link is invalid or expired.', {
       status: 400,
       code: 'INVALID_SIGN_IN_LINK',
@@ -44,7 +42,7 @@ export async function verifyPasswordlessTokenHash({
     },
     body: JSON.stringify({
       token_hash: normalizedTokenHash,
-      type: SUPPORTED_MAGIC_LINK_TYPE,
+      type: MAGIC_LINK_TYPE,
     }),
   });
   const payload = await readJsonBody(response);

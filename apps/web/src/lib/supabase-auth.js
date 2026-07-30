@@ -15,7 +15,7 @@ export const PKCE_COOKIE_NAME = 'usd_impact_pkce';
 
 const EMAIL_MAX_LENGTH = 254;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const OPAQUE_TOKEN_PATTERN = /^[\x21-\x7E]{20,16384}$/;
+const SESSION_TOKEN_PATTERN = /^[\x21-\x7E]{1,16384}$/;
 const AUTH_CODE_PATTERN = /^[A-Za-z0-9._~-]{20,1024}$/;
 const PKCE_VERIFIER_PATTERN = /^[A-Za-z0-9_-]{43,128}$/;
 const ACCESS_COOKIE_MAX_AGE = 60 * 60;
@@ -79,16 +79,42 @@ async function authRequest({
 }
 
 function normalizeSession(payload) {
-  const session = payload?.session || payload?.data?.session || payload?.data || payload;
-  const accessToken = session?.access_token;
-  const refreshToken = session?.refresh_token;
-  const expiresIn = Number(session?.expires_in || ACCESS_COOKIE_MAX_AGE);
-  if (!OPAQUE_TOKEN_PATTERN.test(accessToken || '') || !OPAQUE_TOKEN_PATTERN.test(refreshToken || '')) {
+  const candidates = [
+    payload?.session,
+    payload?.data?.session,
+    payload?.data,
+    payload,
+  ].filter((candidate) => candidate && typeof candidate === 'object');
+  const session = candidates.find((candidate) => (
+    candidate.access_token !== undefined
+    || candidate.accessToken !== undefined
+    || candidate.refresh_token !== undefined
+    || candidate.refreshToken !== undefined
+  )) || {};
+  const accessToken = session.access_token ?? session.accessToken;
+  const refreshToken = session.refresh_token ?? session.refreshToken;
+  const expiresIn = Number(session.expires_in ?? session.expiresIn ?? ACCESS_COOKIE_MAX_AGE);
+
+  if (
+    typeof accessToken !== 'string'
+    || typeof refreshToken !== 'string'
+    || !SESSION_TOKEN_PATTERN.test(accessToken)
+    || !SESSION_TOKEN_PATTERN.test(refreshToken)
+  ) {
     throw new SupabaseRequestError('The authentication session was invalid.', {
       status: 502,
       code: 'INVALID_AUTH_SESSION',
+      details: {
+        payloadKeys: payload && typeof payload === 'object' ? Object.keys(payload).slice(0, 20) : [],
+        sessionKeys: Object.keys(session).slice(0, 20),
+        accessTokenType: typeof accessToken,
+        accessTokenLength: typeof accessToken === 'string' ? accessToken.length : null,
+        refreshTokenType: typeof refreshToken,
+        refreshTokenLength: typeof refreshToken === 'string' ? refreshToken.length : null,
+      },
     });
   }
+
   return Object.freeze({
     accessToken,
     refreshToken,
@@ -244,12 +270,12 @@ export function readSessionAccessToken(request) {
   const bearer = readBearerToken(request);
   if (bearer) return bearer;
   const token = cookieMap(request).get(SESSION_COOKIE_NAMES.ACCESS) || '';
-  return OPAQUE_TOKEN_PATTERN.test(token) ? token : null;
+  return SESSION_TOKEN_PATTERN.test(token) ? token : null;
 }
 
 export function readSessionRefreshToken(request) {
   const token = cookieMap(request).get(SESSION_COOKIE_NAMES.REFRESH) || '';
-  return OPAQUE_TOKEN_PATTERN.test(token) ? token : null;
+  return SESSION_TOKEN_PATTERN.test(token) ? token : null;
 }
 
 export function readPkceVerifier(request) {
@@ -332,7 +358,7 @@ export async function refreshPasswordlessSession({
   config,
   fetchImpl,
 }) {
-  if (!OPAQUE_TOKEN_PATTERN.test(refreshToken || '')) {
+  if (!SESSION_TOKEN_PATTERN.test(refreshToken || '')) {
     throw new SupabaseRequestError('Authentication is required.', {
       status: 401,
       code: 'AUTHENTICATION_REQUIRED',
@@ -354,7 +380,7 @@ export async function revokePasswordlessSession({
   config,
   fetchImpl,
 }) {
-  if (!OPAQUE_TOKEN_PATTERN.test(accessToken || '')) return;
+  if (!SESSION_TOKEN_PATTERN.test(accessToken || '')) return;
   const resolvedConfig = config || readSupabaseServerConfig(environment);
   try {
     await authRequest({

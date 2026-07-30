@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Confirm sign-in | USD Impact"
+  description="Complete your secure USD Impact account sign-in."
+>
+  <main>
+    <div class="container account-shell">
+      <section class="card account-panel" aria-labelledby="confirm-heading">
+        <p class="eyebrow">Secure sign-in</p>
+        <h1 id="confirm-heading" class="account-title">Confirming your email…</h1>
+        <p id="confirm-status" class="account-status" data-state="pending" role="status" aria-live="polite">
+          Please keep this page open while the one-time link is verified.
+        </p>
+        <p><a href="/account/sign-in/">Return to sign in</a></p>
+      </section>
+    </div>
+  </main>
+
+  <script is:inline>
+    const status = document.getElementById('confirm-status');
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const next = params.get('next') || '/account/';
+
+    const sanitizedUrl = new URL(window.location.href);
+    sanitizedUrl.searchParams.delete('code');
+    window.history.replaceState({}, document.title, `${sanitizedUrl.pathname}${sanitizedUrl.search}${sanitizedUrl.hash}`);
+
+    if (!code) {
+      if (status) {
+        status.dataset.state = 'error';
+        status.textContent = 'This sign-in link is incomplete or expired.';
+      }
+    } else {
+      const target = new URL('/api/auth-confirm', window.location.origin);
+      target.searchParams.set('code', code);
+      target.searchParams.set('next', next);
+      window.location.replace(`${target.pathname}${target.search}`);
+    }
+  </script>
+</BaseLayout>

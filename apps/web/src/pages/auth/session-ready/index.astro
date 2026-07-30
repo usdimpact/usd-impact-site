@@ -1,0 +1,82 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Preparing your account | USD Impact"
+  description="Completing secure sign-in and preparing your USD Impact account."
+>
+  <section class="hero account-hero">
+    <div class="container">
+      <p class="eyebrow">USD Impact account</p>
+      <h1>Preparing your account.</h1>
+      <p class="lead">Your secure session is ready. Redirecting you now…</p>
+    </div>
+  </section>
+
+  <main>
+    <div class="container account-shell">
+      <section class="card account-panel" aria-labelledby="session-ready-heading">
+        <h2 id="session-ready-heading">Secure sign-in complete</h2>
+        <p id="session-ready-status" class="account-status" role="status" aria-live="polite">
+          Confirming your session…
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <script is:inline>
+    const params = new URLSearchParams(window.location.search);
+    const requestedNext = params.get('next');
+    const statusNode = document.getElementById('session-ready-status');
+
+    const safeNextPath = (value) => {
+      const fallback = '/account/';
+      const candidate = String(value || '').trim();
+      if (!candidate.startsWith('/') || candidate.startsWith('//') || candidate.includes('\\') || candidate.length > 512) {
+        return fallback;
+      }
+      try {
+        const parsed = new URL(candidate, window.location.origin);
+        if (parsed.origin !== window.location.origin) return fallback;
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      } catch {
+        return fallback;
+      }
+    };
+
+    const delay = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+    const destination = safeNextPath(requestedNext);
+    const signIn = new URL('/account/sign-in/', window.location.origin);
+    signIn.searchParams.set('next', destination);
+    window.history.replaceState(null, '', '/auth/session-ready/');
+
+    const confirmSession = async () => {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const response = await fetch('/api/account-access', {
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin',
+            cache: 'no-store',
+          });
+          if (response.ok) {
+            statusNode.textContent = 'Session confirmed. Continuing to your requested page…';
+            await delay(150);
+            window.location.replace(destination);
+            return;
+          }
+          if (response.status !== 401) break;
+        } catch {
+          // Retry briefly while the browser commits the new HttpOnly cookies.
+        }
+        await delay(250 * (attempt + 1));
+      }
+
+      statusNode.textContent = 'The secure session could not be confirmed. Returning to sign-in…';
+      await delay(500);
+      window.location.replace(`${signIn.pathname}${signIn.search}`);
+    };
+
+    confirmSession();
+  </script>
+</BaseLayout>

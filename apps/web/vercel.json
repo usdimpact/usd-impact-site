@@ -6,6 +6,18 @@
   "framework": "astro",
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/guided-edition", "destination": "/api/guided-edition" },
+    { "source": "/guided-edition/:path*", "destination": "/api/guided-edition?__paid_path=:path*" },
+    { "source": "/api/auth-login", "destination": "/api/account?action=login" },
+    { "source": "/api/auth-confirm", "destination": "/api/account?action=confirm" },
+    { "source": "/api/auth-refresh", "destination": "/api/account?action=refresh" },
+    { "source": "/api/auth-logout", "destination": "/api/account?action=logout" },
+    { "source": "/api/account-access", "destination": "/api/account?action=access" },
+    { "source": "/api/account-export", "destination": "/api/account?action=export" },
+    { "source": "/api/account-delete", "destination": "/api/account?action=delete" },
+    { "source": "/api/telemetry-report", "destination": "/api/telemetry?action=report" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

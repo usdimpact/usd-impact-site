@@ -68,9 +68,10 @@ for (const [route, label, lesson] of releasedQuizzes) {
 }
 const finalQuizHtml = fs.existsSync(pagePath(routes.currencyRiskQuiz)) ? fs.readFileSync(pagePath(routes.currencyRiskQuiz), 'utf8') : '';
 if (finalQuizHtml && !finalQuizHtml.includes('data-quiz-completion-link')) failures.push('Quiz 12 is missing the completion link contract.');
-for (const file of ['api/waitlist.js','api/daily-news-source.js','middleware.js']) if (!fs.existsSync(path.resolve(file))) failures.push(`Required Vercel function or middleware is missing: ${file}.`);
+for (const file of ['api/waitlist.js','api/daily-news-source.js','api/guided-edition.js','middleware.js']) if (!fs.existsSync(path.resolve(file))) failures.push(`Required Vercel function or middleware is missing: ${file}.`);
 if (!fs.existsSync(path.join(distRoot, checklistDownload.replace(/^\//, '')))) failures.push(`Checklist PDF is missing: ${checklistDownload}.`);
 if (fs.existsSync(pagePath('/benchmark/usd-impact-benchmark-dashboard'))) failures.push('Draft benchmark route was generated.');
+if (fs.existsSync(pagePath('/guided-edition'))) failures.push('Protected Guided Edition was generated as public static HTML.');
 
 const sitemap = path.join(distRoot, 'sitemap-0.xml');
 if (!fs.existsSync(sitemap)) failures.push('Generated sitemap-0.xml is missing.');
@@ -81,7 +82,7 @@ else {
     routes.dxyLesson,routes.dxyQuiz,routes.broadLesson,routes.broadQuiz,routes.regimeLesson,routes.regimeQuiz,
     routes.goldLesson,routes.goldQuiz,routes.wtiLesson,routes.wtiQuiz,routes.lngLesson,routes.lngQuiz,
     routes.equitiesLesson,routes.equitiesQuiz,routes.bitcoinLesson,routes.bitcoinQuiz,
-    routes.currencyRiskLesson,routes.currencyRiskQuiz,
+    routes.currencyRiskLesson,routes.currencyRiskQuiz,'/guided-edition',
   ];
   for (const route of protectedRoutes) {
     if (xml.includes(`${route}/`)) failures.push(`Protected learning route appears in sitemap: ${route}.`);

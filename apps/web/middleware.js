@@ -31,7 +31,7 @@ export const config = {
   ],
 };
 
-export default function learningProgressMiddleware(request) {
+export default function learningAccessMiddleware(request) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return next();
 
   const url = new URL(request.url);

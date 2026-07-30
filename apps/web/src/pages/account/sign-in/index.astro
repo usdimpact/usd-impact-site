@@ -1,0 +1,106 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Sign in | USD Impact"
+  description="Sign in securely to your USD Impact learning account with a one-time email link."
+>
+  <section class="hero account-hero">
+    <div class="container">
+      <p class="eyebrow">USD Impact account</p>
+      <h1>Sign in without a password.</h1>
+      <p class="lead">Enter your email address and we will send a short-lived, one-time sign-in link.</p>
+    </div>
+  </section>
+
+  <main>
+    <div class="container account-shell">
+      <section class="card account-panel" aria-labelledby="sign-in-heading">
+        <h2 id="sign-in-heading">Email sign-in</h2>
+        <form id="passwordless-sign-in" class="account-form">
+          <label for="account-email">Email address</label>
+          <input
+            id="account-email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            inputmode="email"
+            maxlength="254"
+            required
+          />
+          <input id="account-next" type="hidden" value="/account/" />
+          <button class="button primary" type="submit">Send sign-in link</button>
+        </form>
+        <p id="sign-in-status" class="account-status" role="status" aria-live="polite"></p>
+        <p class="account-help">
+          The response is deliberately neutral. If the address can be used, the email will arrive shortly.
+          The link expires and can be used only once.
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <script is:inline>
+    const form = document.getElementById('passwordless-sign-in');
+    const emailInput = document.getElementById('account-email');
+    const nextInput = document.getElementById('account-next');
+    const status = document.getElementById('sign-in-status');
+    const submit = form?.querySelector('button[type="submit"]');
+
+    const safeNextPath = (value) => {
+      const next = String(value || '').trim();
+      if (!next.startsWith('/') || next.startsWith('//') || next.includes('\\') || next.length > 512) {
+        return '/account/';
+      }
+      try {
+        const parsed = new URL(next, window.location.origin);
+        if (parsed.origin !== window.location.origin) return '/account/';
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      } catch {
+        return '/account/';
+      }
+    };
+
+    if (nextInput) {
+      const requestedNext = new URLSearchParams(window.location.search).get('next');
+      nextInput.value = safeNextPath(requestedNext);
+    }
+
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!emailInput?.value || !submit || !status) return;
+
+      submit.disabled = true;
+      status.dataset.state = 'pending';
+      status.textContent = 'Sending a secure sign-in link…';
+
+      try {
+        const response = await fetch('/api/auth-login', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailInput.value,
+            next: nextInput?.value || '/account/',
+          }),
+        });
+
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.error || 'The sign-in link could not be sent.');
+        }
+
+        status.dataset.state = 'success';
+        status.textContent = 'Check your email for the one-time sign-in link.';
+        emailInput.value = '';
+      } catch (error) {
+        status.dataset.state = 'error';
+        status.textContent = error instanceof Error
+          ? error.message
+          : 'The sign-in link could not be sent.';
+      } finally {
+        submit.disabled = false;
+      }
+    });
+  </script>
+</BaseLayout>

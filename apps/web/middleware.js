@@ -4,6 +4,7 @@ import {
   canAccessQuizOrder,
   readQuizEntitlement,
 } from './src/lib/quiz-entitlement.js';
+import { readSessionAccessToken } from './src/lib/supabase-auth.js';
 import {
   decidePaidRouteAccess,
   isPaidContentPath,
@@ -38,10 +39,20 @@ export const config = {
 };
 
 async function enforcePaidRoute(request, url) {
+  const accessToken = readSessionAccessToken(request);
+  if (!accessToken) {
+    const decision = decidePaidRouteAccess({
+      requestUrl: url,
+      hasSession: false,
+      accessState: null,
+    });
+    return Response.redirect(decision.location, 302);
+  }
+
   try {
     const result = await readPaidAccessFromAccountApi({
       requestUrl: url,
-      cookieHeader: request.headers.get('cookie') ?? '',
+      accessToken,
     });
     const decision = decidePaidRouteAccess({
       requestUrl: url,

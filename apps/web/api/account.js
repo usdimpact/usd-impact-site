@@ -63,6 +63,12 @@ function redirect(response, location, status = 303) {
   response.end();
 }
 
+function sessionReadyLocation(next) {
+  const target = new URL('/auth/session-ready/', 'https://usd-impact.invalid');
+  target.searchParams.set('next', safeNextPath(next));
+  return `${target.pathname}${target.search}`;
+}
+
 function logConfirmationFailure(error) {
   console.error('Supabase passwordless confirmation failed.', {
     name: error instanceof Error ? error.name : 'UnknownError',
@@ -123,7 +129,7 @@ async function handleConfirm(request, response) {
     });
     clearPkceCookie(response, request);
     setSessionCookies(response, request, session);
-    return redirect(response, next);
+    return redirect(response, sessionReadyLocation(next));
   } catch (error) {
     logConfirmationFailure(error);
     clearPkceCookie(response, request);

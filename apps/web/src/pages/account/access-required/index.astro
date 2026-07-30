@@ -1,30 +1,5 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-
-const reason = Astro.url.searchParams.get('reason') || 'missing';
-const next = Astro.url.searchParams.get('next') || '/guided-edition/';
-const knownMessages = {
-  missing: 'This account does not yet have access to the Guided Interactive Edition.',
-  'missing-profile': 'The account profile is not ready for paid access.',
-  suspended: 'Paid access is currently suspended for this account.',
-  suspended_dispute: 'Paid access is suspended while a payment dispute is reviewed.',
-  refunded: 'This purchase was refunded, so paid access is no longer active.',
-  charged_back: 'Paid access is unavailable because the purchase was charged back.',
-  revoked: 'Paid access has been revoked for this account.',
-  account_deleted: 'Paid access is unavailable because this account was deleted.',
-  deletion_pending: 'Paid access is unavailable while account deletion is pending.',
-  deleted: 'Paid access is unavailable because this account was deleted.',
-  disabled: 'Paid access is unavailable because this account is disabled.',
-  expired: 'This paid entitlement has expired.',
-  'not-started': 'This paid entitlement is not active yet.',
-  'wrong-product': 'This account does not have access to this product.',
-  malformed: 'The paid-access record could not be verified.',
-  'unknown-state': 'The paid-access record is in an unsupported state.',
-  'invalid-window': 'The paid-access period could not be verified.',
-  denied: 'Paid access could not be verified. Please try again shortly.',
-};
-const message = knownMessages[reason] || knownMessages.denied;
-const signInUrl = `/account/sign-in/?next=${encodeURIComponent(next)}`;
 ---
 <BaseLayout
   title="Access required | USD Impact"
@@ -34,7 +9,7 @@ const signInUrl = `/account/sign-in/?next=${encodeURIComponent(next)}`;
     <div class="container">
       <p class="eyebrow">Guided Interactive Edition</p>
       <h1>Paid access required.</h1>
-      <p class="lead">{message}</p>
+      <p id="access-required-lead" class="lead">This account does not yet have access to the Guided Interactive Edition.</p>
     </div>
   </section>
 
@@ -42,17 +17,66 @@ const signInUrl = `/account/sign-in/?next=${encodeURIComponent(next)}`;
     <div class="container account-shell">
       <section class="card account-panel" aria-labelledby="access-required-heading">
         <h2 id="access-required-heading">Your access status</h2>
-        <p>{message}</p>
+        <p id="access-required-message">This account does not yet have access to the Guided Interactive Edition.</p>
         <p>
           The Guided Interactive Edition is tied to the verified account that owns the active purchase entitlement.
           Browser state, email possession alone, and a checkout redirect do not grant access.
         </p>
         <div class="button-row account-actions">
-          <a class="button primary" href={signInUrl}>Sign in again</a>
+          <a id="access-required-sign-in" class="button primary" href="/account/sign-in/?next=%2Fguided-edition%2F">Sign in again</a>
           <a class="button account-secondary" href="/account/">Review account</a>
           <a class="button account-secondary" href="/book/read-the-dollar-first/">View book overview</a>
         </div>
       </section>
     </div>
   </main>
+
+  <script is:inline>
+    const messages = Object.freeze({
+      missing: 'This account does not yet have access to the Guided Interactive Edition.',
+      'missing-profile': 'The account profile is not ready for paid access.',
+      suspended: 'Paid access is currently suspended for this account.',
+      suspended_dispute: 'Paid access is suspended while a payment dispute is reviewed.',
+      refunded: 'This purchase was refunded, so paid access is no longer active.',
+      charged_back: 'Paid access is unavailable because the purchase was charged back.',
+      revoked: 'Paid access has been revoked for this account.',
+      account_deleted: 'Paid access is unavailable because this account was deleted.',
+      deletion_pending: 'Paid access is unavailable while account deletion is pending.',
+      deleted: 'Paid access is unavailable because this account was deleted.',
+      disabled: 'Paid access is unavailable because this account is disabled.',
+      expired: 'This paid entitlement has expired.',
+      'not-started': 'This paid entitlement is not active yet.',
+      'wrong-product': 'This account does not have access to this product.',
+      malformed: 'The paid-access record could not be verified.',
+      'unknown-state': 'The paid-access record is in an unsupported state.',
+      'invalid-window': 'The paid-access period could not be verified.',
+      denied: 'Paid access could not be verified. Please try again shortly.',
+    });
+
+    const safeNextPath = (value) => {
+      const next = String(value || '').trim();
+      if (!next.startsWith('/') || next.startsWith('//') || next.includes('\\') || next.length > 512) {
+        return '/guided-edition/';
+      }
+      try {
+        const parsed = new URL(next, window.location.origin);
+        if (parsed.origin !== window.location.origin) return '/guided-edition/';
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      } catch {
+        return '/guided-edition/';
+      }
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const reason = params.get('reason') || 'missing';
+    const message = messages[reason] || messages.denied;
+    const next = safeNextPath(params.get('next'));
+
+    const lead = document.getElementById('access-required-lead');
+    const detail = document.getElementById('access-required-message');
+    const signIn = document.getElementById('access-required-sign-in');
+    if (lead) lead.textContent = message;
+    if (detail) detail.textContent = message;
+    if (signIn) signIn.href = `/account/sign-in/?next=${encodeURIComponent(next)}`;
+  </script>
 </BaseLayout>

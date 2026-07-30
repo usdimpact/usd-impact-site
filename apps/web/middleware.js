@@ -4,12 +4,6 @@ import {
   canAccessQuizOrder,
   readQuizEntitlement,
 } from './src/lib/quiz-entitlement.js';
-import { readSessionAccessToken } from './src/lib/supabase-auth.js';
-import {
-  decidePaidRouteAccess,
-  isPaidContentPath,
-  readPaidAccessFromAccountApi,
-} from './src/lib/paid-route.js';
 
 const normalizePath = (value) => {
   const normalized = value.replace(/\/+$/, '');
@@ -34,55 +28,13 @@ export const config = {
     '/energy/:path*',
     '/equities/:path*',
     '/bitcoin/:path*',
-    '/guided-edition/:path*',
   ],
 };
 
-async function enforcePaidRoute(request, url) {
-  const accessToken = readSessionAccessToken(request);
-  if (!accessToken) {
-    const decision = decidePaidRouteAccess({
-      requestUrl: url,
-      hasSession: false,
-      accessState: null,
-    });
-    return Response.redirect(decision.location, 302);
-  }
-
-  try {
-    const result = await readPaidAccessFromAccountApi({
-      requestUrl: url,
-      accessToken,
-    });
-    const decision = decidePaidRouteAccess({
-      requestUrl: url,
-      hasSession: result.hasSession,
-      accessState: result.accessState,
-    });
-    return decision.action === 'allow'
-      ? next()
-      : Response.redirect(decision.location, 302);
-  } catch (error) {
-    console.error('Paid-route authorization failed closed.', {
-      name: error instanceof Error ? error.name : 'UnknownError',
-      code: typeof error?.code === 'string' ? error.code : null,
-      status: Number.isInteger(error?.status) ? error.status : null,
-    });
-    const decision = decidePaidRouteAccess({
-      requestUrl: url,
-      hasSession: true,
-      accessState: { allowed: false, reason: 'denied' },
-    });
-    return Response.redirect(decision.location, 302);
-  }
-}
-
-export default async function learningAndPaidAccessMiddleware(request) {
+export default function learningAccessMiddleware(request) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return next();
 
   const url = new URL(request.url);
-  if (isPaidContentPath(url.pathname)) return enforcePaidRoute(request, url);
-
   const order = protectedRoutes.get(normalizePath(url.pathname));
   if (!order) return next();
 

@@ -63,28 +63,6 @@ function redirect(response, location, status = 303) {
   response.end();
 }
 
-function cookieDiagnostics(request) {
-  const raw = header(request, 'cookie');
-  const names = raw
-    .split(';')
-    .map((part) => part.split('=')[0]?.trim())
-    .filter(Boolean)
-    .slice(0, 30);
-  return {
-    cookieHeaderLength: raw.length,
-    cookieNames: names,
-  };
-}
-
-function responseCookieDiagnostics(response) {
-  const value = typeof response.getHeader === 'function' ? response.getHeader('Set-Cookie') : null;
-  const cookies = Array.isArray(value) ? value : value ? [value] : [];
-  return {
-    setCookieCount: cookies.length,
-    setCookieLengths: cookies.map((cookie) => String(cookie).length),
-  };
-}
-
 function logConfirmationFailure(error) {
   console.error('Supabase passwordless confirmation failed.', {
     name: error instanceof Error ? error.name : 'UnknownError',
@@ -145,12 +123,6 @@ async function handleConfirm(request, response) {
     });
     clearPkceCookie(response, request);
     setSessionCookies(response, request, session);
-    console.info('Supabase passwordless confirmation completed.', {
-      host: header(request, 'x-forwarded-host') || header(request, 'host'),
-      accessTokenLength: typeof session?.accessToken === 'string' ? session.accessToken.length : null,
-      refreshTokenLength: typeof session?.refreshToken === 'string' ? session.refreshToken.length : null,
-      ...responseCookieDiagnostics(response),
-    });
     return redirect(response, next);
   } catch (error) {
     logConfirmationFailure(error);
@@ -204,10 +176,6 @@ async function handleAccess(request, response) {
 
   const accessToken = readSessionAccessToken(request);
   if (!accessToken) {
-    console.warn('Account access did not receive a usable session cookie.', {
-      host: header(request, 'x-forwarded-host') || header(request, 'host'),
-      ...cookieDiagnostics(request),
-    });
     return sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
   }
 
@@ -228,13 +196,6 @@ async function handleAccess(request, response) {
     });
   } catch (error) {
     const safe = safeSupabaseError(error);
-    console.warn('Account access rejected a received session.', {
-      status: safe.status,
-      code: safe.payload?.code ?? null,
-      accessTokenLength: accessToken.length,
-      host: header(request, 'x-forwarded-host') || header(request, 'host'),
-      ...cookieDiagnostics(request),
-    });
     return sendJson(response, safe.status, safe.payload);
   }
 }

@@ -175,4 +175,15 @@ assert.match(accessRequiredPage, /const next = safeNextPath\(params\.get\('next'
 assert.match(accessRequiredPage, /messages\[reason\] \|\| messages\.denied/);
 assert.doesNotMatch(accessRequiredPage, /Astro\.url\.searchParams/);
 
+await assert.rejects(
+  () => readFile(new URL('../src/pages/guided-edition/index.astro', import.meta.url), 'utf8'),
+  (error) => error?.code === 'ENOENT',
+);
+
+const protectedFunction = await readFile(new URL('../api/guided-edition.js', import.meta.url), 'utf8');
+assert.match(protectedFunction, /readAccountAccessState/);
+assert.match(protectedFunction, /readSessionAccessToken/);
+assert.match(protectedFunction, /private, no-store/);
+assert.match(protectedFunction, /normalizePaidAccessReason/);
+
 console.log('Protected paid-route tests passed.');

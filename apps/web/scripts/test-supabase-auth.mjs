@@ -126,22 +126,6 @@ const exchanged = await exchangePasswordlessCode({
 assert.equal(exchanged.accessToken, accessToken);
 assert.equal(exchanged.refreshToken, refreshToken);
 
-const wrappedExchange = await exchangePasswordlessCode({
-  authCode: 'another_valid_auth_code_value_that_is_long_enough',
-  codeVerifier: verifier,
-  config,
-  fetchImpl: async () => new Response(JSON.stringify({
-    data: {
-      session: {
-        access_token: accessToken,
-        refresh_token: refreshToken,
-        expires_in: 3600,
-      },
-    },
-  }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
-});
-assert.equal(wrappedExchange.accessToken, accessToken);
-
 const signInPage = await readFile(new URL('../src/pages/account/sign-in/index.astro', import.meta.url), 'utf8');
 const accountPage = await readFile(new URL('../src/pages/account/index.astro', import.meta.url), 'utf8');
 const confirmationPage = await readFile(new URL('../src/pages/auth/confirm/index.astro', import.meta.url), 'utf8');
@@ -154,25 +138,23 @@ assert.match(accountPage, /\/api\/account-access/);
 assert.match(accountPage, /\/api\/account-export/);
 assert.match(accountPage, /\/api\/account-delete/);
 assert.match(accountPage, /\/api\/auth-logout/);
-assert.match(confirmationPage, /method:\s*'POST'/);
-assert.match(confirmationPage, /history\.replaceState/);
-assert.match(confirmationPage, /searchParams\.delete\('token_hash'\)/);
 assert.match(confirmationPage, /searchParams\.delete\('code'\)/);
-assert.match(confirmationPage, /\/auth\/confirm\/exchange/);
-assert.match(accountRouter, /verificationCode/);
+assert.match(confirmationPage, /new URL\('\/api\/auth-confirm'/);
+assert.doesNotMatch(confirmationPage, /token_hash|auth\/confirm\/exchange/);
+assert.match(accountRouter, /request\.method !== 'GET'/);
 assert.match(accountRouter, /exchangePasswordlessCode/);
-assert.match(accountRouter, /return sendJson\(response, 200, \{ ok: true, redirectTo: next \}\)/);
+assert.doesNotMatch(accountRouter, /verifyPasswordlessTokenHash|handleTokenHashConfirmation/);
 for (const action of ['login', 'confirm', 'refresh', 'logout', 'access', 'export', 'delete']) {
   assert.match(accountRouter, new RegExp(`${action}: handle`, 'i'));
 }
 const rewriteMap = new Map(vercelConfig.rewrites.map((entry) => [entry.source, entry.destination]));
 assert.equal(rewriteMap.get('/api/auth-login'), '/api/account?action=login');
 assert.equal(rewriteMap.get('/api/auth-confirm'), '/api/account?action=confirm');
-assert.equal(rewriteMap.get('/auth/confirm/exchange'), '/api/account?action=confirm');
+assert.equal(rewriteMap.has('/auth/confirm/exchange'), false);
 assert.equal(rewriteMap.get('/api/account-access'), '/api/account?action=access');
 assert.equal(rewriteMap.get('/api/telemetry-report'), '/api/telemetry?action=report');
 assert.match(packageJson.scripts['validate:functions'], /node --check api\/account\.js/);
-assert.doesNotMatch(packageJson.scripts['validate:functions'], /auth-login|auth-confirm|account-access|telemetry-report/);
+assert.doesNotMatch(packageJson.scripts['validate:supabase'], /token-hash/);
 assert.doesNotMatch(`${signInPage}${accountPage}${confirmationPage}`, /sb_secret_|SUPABASE_SECRET_KEY/);
 
 console.log('Supabase passwordless auth tests passed.');

@@ -67,16 +67,17 @@ export function buildPaidAccessRequiredRedirect(requestUrl, reason) {
 
 export async function readPaidAccessFromAccountApi({
   requestUrl,
-  cookieHeader,
+  accessToken,
   fetchImpl = fetch,
 }) {
   const url = requestUrl instanceof URL ? requestUrl : new URL(requestUrl);
   const endpoint = new URL('/api/account-access', url);
+  const token = String(accessToken || '').trim();
   const response = await fetchImpl(endpoint, {
     method: 'GET',
     headers: {
       Accept: 'application/json',
-      Cookie: String(cookieHeader || ''),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     redirect: 'manual',
     cache: 'no-store',

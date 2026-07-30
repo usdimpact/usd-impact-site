@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Preparing your account | USD Impact"
+  description="Completing secure sign-in and preparing your USD Impact account."
+>
+  <section class="hero account-hero">
+    <div class="container">
+      <p class="eyebrow">USD Impact account</p>
+      <h1>Preparing your account.</h1>
+      <p class="lead">Your secure session is ready. Redirecting you now…</p>
+    </div>
+  </section>
+
+  <main>
+    <div class="container account-shell">
+      <section class="card account-panel" aria-labelledby="session-ready-heading">
+        <h2 id="session-ready-heading">Secure sign-in complete</h2>
+        <p id="session-ready-status" class="account-status" role="status" aria-live="polite">
+          Continuing to your requested page…
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <script is:inline>
+    const params = new URLSearchParams(window.location.search);
+    const requestedNext = params.get('next');
+
+    const safeNextPath = (value) => {
+      const fallback = '/account/';
+      const candidate = String(value || '').trim();
+      if (!candidate.startsWith('/') || candidate.startsWith('//') || candidate.includes('\\') || candidate.length > 512) {
+        return fallback;
+      }
+      try {
+        const parsed = new URL(candidate, window.location.origin);
+        if (parsed.origin !== window.location.origin) return fallback;
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      } catch {
+        return fallback;
+      }
+    };
+
+    const destination = safeNextPath(requestedNext);
+    window.history.replaceState(null, '', '/auth/session-ready/');
+    window.setTimeout(() => {
+      window.location.replace(destination);
+    }, 50);
+  </script>
+</BaseLayout>

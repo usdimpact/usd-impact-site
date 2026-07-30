@@ -12,7 +12,6 @@ const tokenHash = '0123456789abcdef0123456789abcdef0123456789abcdef01234567';
 
 const payload = await verifyPasswordlessTokenHash({
   tokenHash,
-  type: 'magiclink',
   config,
   fetchImpl: async (url, options) => {
     assert.equal(url, `${config.url}/auth/v1/verify`);
@@ -34,21 +33,28 @@ assert.equal(payload.access_token, accessToken);
 assert.equal(payload.refresh_token, refreshToken);
 
 await assert.rejects(
-  verifyPasswordlessTokenHash({ tokenHash: 'short', type: 'magiclink', config }),
+  verifyPasswordlessTokenHash({ tokenHash: 'short', config }),
   (error) => error?.code === 'INVALID_SIGN_IN_LINK' && error?.status === 400,
 );
-await assert.rejects(
-  verifyPasswordlessTokenHash({ tokenHash, type: 'email', config }),
-  (error) => error?.code === 'INVALID_SIGN_IN_LINK' && error?.status === 400,
-);
-await assert.rejects(
-  verifyPasswordlessTokenHash({ tokenHash, type: 'recovery', config }),
-  (error) => error?.code === 'INVALID_SIGN_IN_LINK' && error?.status === 400,
-);
+
+const clientTypeIgnored = await verifyPasswordlessTokenHash({
+  tokenHash,
+  type: 'email',
+  config,
+  fetchImpl: async (_url, options) => {
+    assert.equal(JSON.parse(options.body).type, 'magiclink');
+    return new Response(JSON.stringify({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_in: 3600,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  },
+});
+assert.equal(clientTypeIgnored.access_token, accessToken);
+
 await assert.rejects(
   verifyPasswordlessTokenHash({
     tokenHash,
-    type: 'magiclink',
     config,
     fetchImpl: async () => new Response(JSON.stringify({
       error: 'otp_expired',

@@ -33,18 +33,23 @@ function includesWebSearch(body) {
 }
 
 function withSourceMetadata(body) {
+  const usesWebSearch = includesWebSearch(body);
   const include = Array.isArray(body.include) ? body.include : [];
   const next = {
     ...body,
-    tool_choice: 'required',
-    include: [...new Set([...include, WEB_SEARCH_SOURCES_INCLUDE])],
+    ...(usesWebSearch
+      ? {
+          tool_choice: 'required',
+          include: [...new Set([...include, WEB_SEARCH_SOURCES_INCLUDE])],
+        }
+      : {}),
   };
 
   if (typeof next.input === 'string') {
     const additions = [];
     if (!next.input.includes(SOURCE_DATE_RULES)) additions.push(SOURCE_DATE_RULES);
     if (!next.input.includes(SOURCE_ID_RULES)) additions.push(SOURCE_ID_RULES);
-    if (!next.input.includes(GROUNDED_SOURCE_RULES)) additions.push(GROUNDED_SOURCE_RULES);
+    if (usesWebSearch && !next.input.includes(GROUNDED_SOURCE_RULES)) additions.push(GROUNDED_SOURCE_RULES);
     if (additions.length > 0) next.input = `${next.input}\n- ${additions.join('\n- ')}`;
   }
 
@@ -118,10 +123,10 @@ function groundedFetch(realFetch) {
         return realFetch(input, options);
       }
 
-      const requestOptions = includesWebSearch(body)
-        ? { ...options, body: JSON.stringify(withSourceMetadata(body)) }
-        : options;
-      const providerResponse = await realFetch(input, requestOptions);
+      const providerResponse = await realFetch(input, {
+        ...options,
+        body: JSON.stringify(withSourceMetadata(body)),
+      });
       return normalizeProviderResponse(providerResponse);
     }
 

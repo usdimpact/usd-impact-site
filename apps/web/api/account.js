@@ -18,6 +18,7 @@ import {
   sendPasswordlessEmail,
   setSessionCookies,
 } from '../src/lib/supabase-auth.js';
+import { verifyPasswordlessTokenHash } from '../src/lib/supabase-token-hash.js';
 
 function header(request, name) {
   const value = request.headers?.[name] ?? request.headers?.[name.toLowerCase()];
@@ -105,13 +106,20 @@ async function handleConfirm(request, response) {
 
   const url = requestUrl(request);
   const next = safeNextPath(url.searchParams.get('next'));
+  const tokenHash = url.searchParams.get('token_hash');
+  const tokenType = url.searchParams.get('type');
   const codeVerifier = readPkceVerifier(request);
 
   try {
-    const session = await exchangePasswordlessCode({
-      authCode: url.searchParams.get('code'),
-      codeVerifier,
-    });
+    const session = tokenHash || tokenType
+      ? await verifyPasswordlessTokenHash({
+          tokenHash,
+          type: tokenType,
+        })
+      : await exchangePasswordlessCode({
+          authCode: url.searchParams.get('code'),
+          codeVerifier,
+        });
     clearPkceCookie(response, request);
     setSessionCookies(response, request, session);
     return redirect(response, next);

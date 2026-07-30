@@ -91,7 +91,7 @@ const sent = await sendPasswordlessEmail({
   },
 });
 assert.match(otpRequest.url, /\/auth\/v1\/otp\?redirect_to=/);
-assert.equal(new URL(sent.redirectTo).pathname, '/api/auth-confirm');
+assert.equal(new URL(sent.redirectTo).pathname, '/auth/confirm/');
 assert.equal(new URL(sent.redirectTo).searchParams.get('next'), requestedDestination);
 const otpBody = JSON.parse(otpRequest.options.body);
 assert.equal(otpBody.email, 'reader@example.com');
@@ -100,7 +100,7 @@ assert.equal(otpBody.code_challenge_method, 's256');
 assert.match(otpBody.code_challenge, /^[A-Za-z0-9_-]{43}$/);
 const pkceCookie = otpResponse.getHeader('set-cookie')[0];
 assert.match(pkceCookie, new RegExp(`^${PKCE_COOKIE_NAME}=`));
-assert.match(pkceCookie, /Path=\/api\/auth-confirm/);
+assert.match(pkceCookie, /Path=\/auth\/confirm\//);
 assert.match(pkceCookie, /HttpOnly/);
 const verifier = decodeURIComponent(pkceCookie.match(new RegExp(`^${PKCE_COOKIE_NAME}=([^;]+)`))[1]);
 assert.match(verifier, /^[A-Za-z0-9_-]{43,128}$/);
@@ -144,6 +144,7 @@ assert.equal(wrappedExchange.accessToken, accessToken);
 
 const signInPage = await readFile(new URL('../src/pages/account/sign-in/index.astro', import.meta.url), 'utf8');
 const accountPage = await readFile(new URL('../src/pages/account/index.astro', import.meta.url), 'utf8');
+const confirmationPage = await readFile(new URL('../src/pages/auth/confirm/index.astro', import.meta.url), 'utf8');
 const accountRouter = await readFile(new URL('../api/account.js', import.meta.url), 'utf8');
 const vercelConfig = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
@@ -153,6 +154,17 @@ assert.match(accountPage, /\/api\/account-access/);
 assert.match(accountPage, /\/api\/account-export/);
 assert.match(accountPage, /\/api\/account-delete/);
 assert.match(accountPage, /\/api\/auth-logout/);
+assert.match(confirmationPage, /method:\s*'POST'/);
+assert.match(confirmationPage, /history\.replaceState/);
+assert.match(confirmationPage, /searchParams\.delete\('token_hash'\)/);
+assert.match(confirmationPage, /searchParams\.delete\('code'\)/);
+assert.match(confirmationPage, /new URL\('\/api\/auth-confirm'/);
+assert.match(accountRouter, /request\.method === 'POST'/);
+assert.match(accountRouter, /request\.method === 'GET'/);
+assert.match(accountRouter, /handleTokenHashConfirmation/);
+assert.match(accountRouter, /handlePkceConfirmation/);
+assert.match(accountRouter, /return sendJson\(response, 200, \{ ok: true, redirectTo: next \}\)/);
+assert.match(accountRouter, /methodNotAllowed\(response, 'GET, POST'\)/);
 for (const action of ['login', 'confirm', 'refresh', 'logout', 'access', 'export', 'delete']) {
   assert.match(accountRouter, new RegExp(`${action}: handle`, 'i'));
 }
@@ -163,6 +175,6 @@ assert.equal(rewriteMap.get('/api/account-access'), '/api/account?action=access'
 assert.equal(rewriteMap.get('/api/telemetry-report'), '/api/telemetry?action=report');
 assert.match(packageJson.scripts['validate:functions'], /node --check api\/account\.js/);
 assert.doesNotMatch(packageJson.scripts['validate:functions'], /auth-login|auth-confirm|account-access|telemetry-report/);
-assert.doesNotMatch(`${signInPage}${accountPage}`, /sb_secret_|SUPABASE_SECRET_KEY/);
+assert.doesNotMatch(`${signInPage}${accountPage}${confirmationPage}`, /sb_secret_|SUPABASE_SECRET_KEY/);
 
 console.log('Supabase passwordless auth tests passed.');

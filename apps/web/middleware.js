@@ -4,11 +4,10 @@ import {
   canAccessQuizOrder,
   readQuizEntitlement,
 } from './src/lib/quiz-entitlement.js';
-import { readSessionAccessToken } from './src/lib/supabase-auth.js';
-import { readAccountAccessState } from './src/lib/supabase-server.js';
 import {
   decidePaidRouteAccess,
   isPaidContentPath,
+  readPaidAccessFromAccountApi,
 } from './src/lib/paid-route.js';
 
 const normalizePath = (value) => {
@@ -39,22 +38,15 @@ export const config = {
 };
 
 async function enforcePaidRoute(request, url) {
-  const accessToken = readSessionAccessToken(request);
-  if (!accessToken) {
-    const decision = decidePaidRouteAccess({
-      requestUrl: url,
-      hasSession: false,
-      accessState: null,
-    });
-    return Response.redirect(decision.location, 302);
-  }
-
   try {
-    const accessState = await readAccountAccessState({ accessToken });
+    const result = await readPaidAccessFromAccountApi({
+      requestUrl: url,
+      cookieHeader: request.headers.get('cookie') ?? '',
+    });
     const decision = decidePaidRouteAccess({
       requestUrl: url,
-      hasSession: true,
-      accessState,
+      hasSession: result.hasSession,
+      accessState: result.accessState,
     });
     return decision.action === 'allow'
       ? next()

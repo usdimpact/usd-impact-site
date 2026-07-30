@@ -31,6 +31,16 @@ function requestTarget(requestUrl) {
   return `${url.pathname}${url.search}`;
 }
 
+async function readJsonSafely(response) {
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 export function isPaidContentPath(pathname) {
   const normalized = normalizePathname(pathname);
   return normalized === PAID_CONTENT_PREFIX || normalized.startsWith(`${PAID_CONTENT_PREFIX}/`);
@@ -53,6 +63,61 @@ export function buildPaidAccessRequiredRedirect(requestUrl, reason) {
   destination.searchParams.set('reason', normalizePaidAccessReason(reason));
   destination.searchParams.set('next', requestTarget(url));
   return destination;
+}
+
+export async function readPaidAccessFromAccountApi({
+  requestUrl,
+  cookieHeader,
+  fetchImpl = fetch,
+}) {
+  const url = requestUrl instanceof URL ? requestUrl : new URL(requestUrl);
+  const endpoint = new URL('/api/account-access', url);
+  const response = await fetchImpl(endpoint, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      Cookie: String(cookieHeader || ''),
+    },
+    redirect: 'manual',
+    cache: 'no-store',
+  });
+
+  if (response.status === 401) {
+    return Object.freeze({ hasSession: false, accessState: null });
+  }
+
+  const payload = await readJsonSafely(response);
+  if (!response.ok) {
+    const error = new Error('Paid access could not be verified.');
+    error.name = 'PaidAccessServiceError';
+    error.status = response.status;
+    error.code = typeof payload?.code === 'string' ? payload.code : 'PAID_ACCESS_SERVICE_FAILED';
+    throw error;
+  }
+
+  const paidAccess = payload?.paidAccess;
+  if (
+    !paidAccess
+    || typeof paidAccess !== 'object'
+    || typeof paidAccess.allowed !== 'boolean'
+    || typeof paidAccess.reason !== 'string'
+  ) {
+    const error = new Error('Paid access response was invalid.');
+    error.name = 'PaidAccessServiceError';
+    error.status = 502;
+    error.code = 'INVALID_PAID_ACCESS_RESPONSE';
+    throw error;
+  }
+
+  return Object.freeze({
+    hasSession: true,
+    accessState: Object.freeze({
+      allowed: paidAccess.allowed,
+      reason: paidAccess.reason,
+      productId: typeof paidAccess.productId === 'string' ? paidAccess.productId : null,
+      state: typeof paidAccess.state === 'string' ? paidAccess.state : null,
+    }),
+  });
 }
 
 export function decidePaidRouteAccess({ requestUrl, hasSession, accessState }) {

@@ -2,6 +2,8 @@ import backgroundHandler from './daily-news-background.js';
 import {
   SOURCE_DATE_RULES,
   SOURCE_DATE_SCHEMA_PATTERN,
+  SOURCE_ID_RULES,
+  SOURCE_ID_SCHEMA_PATTERN,
   normalizeBundleDraft,
 } from './daily-news-validation.js';
 
@@ -41,14 +43,21 @@ function withSourceMetadata(body) {
   if (typeof next.input === 'string') {
     const additions = [];
     if (!next.input.includes(SOURCE_DATE_RULES)) additions.push(SOURCE_DATE_RULES);
+    if (!next.input.includes(SOURCE_ID_RULES)) additions.push(SOURCE_ID_RULES);
     if (!next.input.includes(GROUNDED_SOURCE_RULES)) additions.push(GROUNDED_SOURCE_RULES);
     if (additions.length > 0) next.input = `${next.input}\n- ${additions.join('\n- ')}`;
   }
 
-  const sourceDateSchema = next.text?.format?.schema?.properties?.sources?.items?.properties?.publishedAt;
+  const sourceProperties = next.text?.format?.schema?.properties?.sources?.items?.properties;
+  const sourceDateSchema = sourceProperties?.publishedAt;
   if (sourceDateSchema && typeof sourceDateSchema === 'object') {
     sourceDateSchema.pattern = SOURCE_DATE_SCHEMA_PATTERN;
     sourceDateSchema.description = 'Verified source publication date in YYYY-MM-DD format.';
+  }
+  const sourceIdSchema = sourceProperties?.id;
+  if (sourceIdSchema && typeof sourceIdSchema === 'object') {
+    sourceIdSchema.pattern = SOURCE_ID_SCHEMA_PATTERN;
+    sourceIdSchema.description = 'Unique lowercase hyphenated source identifier, 2-64 characters; never a URL.';
   }
 
   return next;
@@ -109,11 +118,11 @@ function groundedFetch(realFetch) {
         return realFetch(input, options);
       }
 
-      if (!includesWebSearch(body)) return realFetch(input, options);
-      return realFetch(input, {
-        ...options,
-        body: JSON.stringify(withSourceMetadata(body)),
-      });
+      const requestOptions = includesWebSearch(body)
+        ? { ...options, body: JSON.stringify(withSourceMetadata(body)) }
+        : options;
+      const providerResponse = await realFetch(input, requestOptions);
+      return normalizeProviderResponse(providerResponse);
     }
 
     if (method === 'GET' && /^\/v1\/responses\/resp_[A-Za-z0-9_-]+$/.test(url.pathname)) {

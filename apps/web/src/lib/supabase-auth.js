@@ -21,6 +21,7 @@ const PKCE_VERIFIER_PATTERN = /^[A-Za-z0-9_-]{43,128}$/;
 const ACCESS_COOKIE_MAX_AGE = 60 * 60;
 const REFRESH_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 const PKCE_COOKIE_MAX_AGE = 10 * 60;
+const CONFIRMATION_PATH = '/auth/confirm/';
 
 function normalizeEmail(value) {
   const email = String(value ?? '').trim().toLowerCase();
@@ -223,7 +224,7 @@ function setPkceCookie(response, request, verifier) {
     serializeCookie(PKCE_COOKIE_NAME, verifier, {
       maxAge: PKCE_COOKIE_MAX_AGE,
       request,
-      path: '/api/auth-confirm',
+      path: CONFIRMATION_PATH,
     }),
   ]);
 }
@@ -233,7 +234,7 @@ export function clearPkceCookie(response, request) {
     serializeCookie(PKCE_COOKIE_NAME, '', {
       maxAge: 0,
       request,
-      path: '/api/auth-confirm',
+      path: CONFIRMATION_PATH,
     }),
   ]);
 }
@@ -276,7 +277,7 @@ export async function sendPasswordlessEmail({
   }
   const resolvedConfig = config || readSupabaseServerConfig(environment);
   const normalizedEmail = normalizeEmail(email);
-  const redirectUrl = new URL('/api/auth-confirm', requestOrigin(request));
+  const redirectUrl = new URL(CONFIRMATION_PATH, requestOrigin(request));
   redirectUrl.searchParams.set('next', safeNextPath(next));
   const redirectTo = redirectUrl.toString();
   const pkce = createPkcePair();

@@ -23,7 +23,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     const params = new URLSearchParams(window.location.search);
     const tokenHash = params.get('token_hash');
     const code = params.get('code');
-    const type = params.get('type') || 'magiclink';
     const next = params.get('next') || '/account/';
 
     const sanitizedUrl = new URL(window.location.href);
@@ -43,11 +42,11 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
       try {
         if (tokenHash) {
-          const response = await fetch('/api/auth-confirm', {
+          const response = await fetch('/auth/confirm/exchange', {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token_hash: tokenHash, type, next }),
+            body: JSON.stringify({ token_hash: tokenHash, next }),
           });
           const body = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(body.error || 'The sign-in link could not be verified.');

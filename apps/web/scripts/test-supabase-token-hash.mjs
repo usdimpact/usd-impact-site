@@ -12,7 +12,7 @@ const tokenHash = '0123456789abcdef0123456789abcdef0123456789abcdef01234567';
 
 const payload = await verifyPasswordlessTokenHash({
   tokenHash,
-  type: 'email',
+  type: 'magiclink',
   config,
   fetchImpl: async (url, options) => {
     assert.equal(url, `${config.url}/auth/v1/verify`);
@@ -21,7 +21,7 @@ const payload = await verifyPasswordlessTokenHash({
     assert.equal(options.headers.Authorization, `Bearer ${config.publishableKey}`);
     assert.deepEqual(JSON.parse(options.body), {
       token_hash: tokenHash,
-      type: 'email',
+      type: 'magiclink',
     });
     return new Response(JSON.stringify({
       access_token: accessToken,
@@ -34,7 +34,11 @@ assert.equal(payload.access_token, accessToken);
 assert.equal(payload.refresh_token, refreshToken);
 
 await assert.rejects(
-  verifyPasswordlessTokenHash({ tokenHash: 'short', type: 'email', config }),
+  verifyPasswordlessTokenHash({ tokenHash: 'short', type: 'magiclink', config }),
+  (error) => error?.code === 'INVALID_SIGN_IN_LINK' && error?.status === 400,
+);
+await assert.rejects(
+  verifyPasswordlessTokenHash({ tokenHash, type: 'email', config }),
   (error) => error?.code === 'INVALID_SIGN_IN_LINK' && error?.status === 400,
 );
 await assert.rejects(
@@ -44,7 +48,7 @@ await assert.rejects(
 await assert.rejects(
   verifyPasswordlessTokenHash({
     tokenHash,
-    type: 'email',
+    type: 'magiclink',
     config,
     fetchImpl: async () => new Response(JSON.stringify({
       error: 'otp_expired',

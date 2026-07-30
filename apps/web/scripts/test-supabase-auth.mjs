@@ -158,19 +158,17 @@ assert.match(confirmationPage, /method:\s*'POST'/);
 assert.match(confirmationPage, /history\.replaceState/);
 assert.match(confirmationPage, /searchParams\.delete\('token_hash'\)/);
 assert.match(confirmationPage, /searchParams\.delete\('code'\)/);
-assert.match(confirmationPage, /new URL\('\/api\/auth-confirm'/);
-assert.match(accountRouter, /request\.method === 'POST'/);
-assert.match(accountRouter, /request\.method === 'GET'/);
-assert.match(accountRouter, /handleTokenHashConfirmation/);
-assert.match(accountRouter, /handlePkceConfirmation/);
+assert.match(confirmationPage, /\/auth\/confirm\/exchange/);
+assert.match(accountRouter, /verificationCode/);
+assert.match(accountRouter, /exchangePasswordlessCode/);
 assert.match(accountRouter, /return sendJson\(response, 200, \{ ok: true, redirectTo: next \}\)/);
-assert.match(accountRouter, /methodNotAllowed\(response, 'GET, POST'\)/);
 for (const action of ['login', 'confirm', 'refresh', 'logout', 'access', 'export', 'delete']) {
   assert.match(accountRouter, new RegExp(`${action}: handle`, 'i'));
 }
 const rewriteMap = new Map(vercelConfig.rewrites.map((entry) => [entry.source, entry.destination]));
 assert.equal(rewriteMap.get('/api/auth-login'), '/api/account?action=login');
 assert.equal(rewriteMap.get('/api/auth-confirm'), '/api/account?action=confirm');
+assert.equal(rewriteMap.get('/auth/confirm/exchange'), '/api/account?action=confirm');
 assert.equal(rewriteMap.get('/api/account-access'), '/api/account?action=access');
 assert.equal(rewriteMap.get('/api/telemetry-report'), '/api/telemetry?action=report');
 assert.match(packageJson.scripts['validate:functions'], /node --check api\/account\.js/);

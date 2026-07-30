@@ -1,18 +1,60 @@
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})$/;
+const SOURCE_ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,63}$/;
 
 export const SOURCE_DATE_SCHEMA_PATTERN = '^\\d{4}-\\d{2}-\\d{2}$';
+export const SOURCE_ID_SCHEMA_PATTERN = '^[a-z0-9][a-z0-9-]{1,63}$';
 export const SOURCE_DATE_RULES = [
   'Source publishedAt values must use exactly YYYY-MM-DD.',
   'If a provider returns a full ISO timestamp, convert it to the leading YYYY-MM-DD date.',
   'Never use month-only text, human-readable dates, relative dates, or access dates.',
   'If an otherwise useful page has no verifiable publication date, omit that source and any unsupported claim instead of inventing a date.',
 ].join(' ');
+export const SOURCE_ID_RULES = [
+  'Every source id must be lowercase and hyphenated.',
+  'Source ids must start with a letter or number, contain only lowercase letters, numbers, and hyphens, and be 2-64 characters long.',
+  'Never place a URL in a source id field.',
+  'Use the same normalized source id in every highlight and catalyst reference.',
+].join(' ');
 
 function isRealDate(value) {
   if (!DATE_ONLY_PATTERN.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00.000Z`);
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function sourceIdBase(value, source, index) {
+  const candidates = [value, source?.title, source?.url, `source-${index + 1}`];
+  for (const candidate of candidates) {
+    const normalized = String(candidate ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .replace(/-+/g, '-')
+      .slice(0, 64)
+      .replace(/-+$/g, '');
+    if (SOURCE_ID_PATTERN.test(normalized)) return normalized;
+    if (/^[a-z0-9]$/.test(normalized)) return `${normalized}-source`;
+  }
+  return `source-${index + 1}`;
+}
+
+function uniqueSourceId(base, used) {
+  if (!used.has(base)) {
+    used.add(base);
+    return base;
+  }
+  for (let suffix = 2; suffix < 10_000; suffix += 1) {
+    const suffixText = `-${suffix}`;
+    const candidate = `${base.slice(0, 64 - suffixText.length).replace(/-+$/g, '')}${suffixText}`;
+    if (!used.has(candidate)) {
+      used.add(candidate);
+      return candidate;
+    }
+  }
+  throw new Error('Could not create a unique source id');
 }
 
 export function normalizePublishedAt(value, sourceId = 'unknown') {
@@ -35,19 +77,40 @@ export function normalizeBundleDraft(draft) {
   if (!draft || typeof draft !== 'object' || Array.isArray(draft)) return draft;
   if (!Array.isArray(draft.sources)) return draft;
 
+  const usedIds = new Set();
+  const idMap = new Map();
+  const sources = draft.sources.map((source, index) => {
+    if (!source || typeof source !== 'object' || Array.isArray(source)) return source;
+    const originalId = String(source.id ?? '').trim();
+    const id = uniqueSourceId(sourceIdBase(originalId, source, index), usedIds);
+    if (originalId && !idMap.has(originalId)) idMap.set(originalId, id);
+    try {
+      return {
+        ...source,
+        id,
+        publishedAt: normalizePublishedAt(source.publishedAt, id),
+      };
+    } catch {
+      return { ...source, id };
+    }
+  });
+
+  const rewriteSourceIds = (items) => {
+    if (!Array.isArray(items)) return items;
+    return items.map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item) || !Array.isArray(item.sourceIds)) return item;
+      return {
+        ...item,
+        sourceIds: item.sourceIds.map((id) => idMap.get(String(id ?? '').trim()) ?? String(id ?? '').trim()),
+      };
+    });
+  };
+
   return {
     ...draft,
-    sources: draft.sources.map((source) => {
-      if (!source || typeof source !== 'object' || Array.isArray(source)) return source;
-      try {
-        return {
-          ...source,
-          publishedAt: normalizePublishedAt(source.publishedAt, String(source.id ?? 'unknown')),
-        };
-      } catch {
-        return source;
-      }
-    }),
+    sources,
+    highlights: rewriteSourceIds(draft.highlights),
+    catalysts: rewriteSourceIds(draft.catalysts),
   };
 }
 
@@ -58,6 +121,12 @@ export function safeValidationDiagnostic(message) {
     return {
       code: 'invalid-source-date',
       reason: 'One or more source publication dates are invalid. Use a verified YYYY-MM-DD value or omit the undated source.',
+    };
+  }
+  if (/invalid source id|source id field|lowercase and hyphenated/i.test(text)) {
+    return {
+      code: 'invalid-source-id',
+      reason: 'One or more source IDs are malformed. Use unique lowercase hyphenated IDs and reference them consistently.',
     };
   }
   if (/not returned by OpenAI web search|grounded URL|grounded source/i.test(text)) {

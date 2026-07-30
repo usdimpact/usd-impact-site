@@ -13,7 +13,12 @@ assert.doesNotMatch(accountRouter, /return redirect\(response, next\);/);
 
 assert.match(sessionReadyPage, /new URLSearchParams\(window\.location\.search\)/);
 assert.match(sessionReadyPage, /window\.history\.replaceState\(null, '', '\/auth\/session-ready\/'\)/);
+assert.match(sessionReadyPage, /fetch\('\/api\/account-access'/);
+assert.match(sessionReadyPage, /credentials: 'same-origin'/);
+assert.match(sessionReadyPage, /if \(response\.ok\)/);
+assert.match(sessionReadyPage, /for \(let attempt = 0; attempt < 3; attempt \+= 1\)/);
 assert.match(sessionReadyPage, /window\.location\.replace\(destination\)/);
+assert.match(sessionReadyPage, /window\.location\.replace\(`\$\{signIn\.pathname\}\$\{signIn\.search\}`\)/);
 assert.match(sessionReadyPage, /parsed\.origin !== window\.location\.origin/);
 assert.match(sessionReadyPage, /candidate\.startsWith\('\/\/'\)/);
 assert.doesNotMatch(sessionReadyPage, /Astro\.url\.searchParams/);

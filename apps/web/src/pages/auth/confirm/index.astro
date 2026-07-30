@@ -22,36 +22,55 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     const status = document.getElementById('confirm-status');
     const params = new URLSearchParams(window.location.search);
     const tokenHash = params.get('token_hash');
+    const code = params.get('code');
     const type = params.get('type') || 'email';
     const next = params.get('next') || '/account/';
 
+    const sanitizedUrl = new URL(window.location.href);
+    sanitizedUrl.searchParams.delete('token_hash');
+    sanitizedUrl.searchParams.delete('code');
+    sanitizedUrl.searchParams.delete('type');
+    window.history.replaceState({}, document.title, `${sanitizedUrl.pathname}${sanitizedUrl.search}${sanitizedUrl.hash}`);
+
+    const fail = (message) => {
+      if (!status) return;
+      status.dataset.state = 'error';
+      status.textContent = message;
+    };
+
     const finish = async () => {
-      if (!tokenHash || !status) {
-        if (status) {
-          status.dataset.state = 'error';
-          status.textContent = 'This sign-in link is incomplete or expired.';
-        }
-        return;
-      }
+      if (!status) return;
 
       try {
-        const response = await fetch('/api/auth-confirm', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token_hash: tokenHash, type, next }),
-        });
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error || 'The sign-in link could not be verified.');
+        if (tokenHash) {
+          const response = await fetch('/api/auth-confirm', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token_hash: tokenHash, type, next }),
+          });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(body.error || 'The sign-in link could not be verified.');
 
-        status.dataset.state = 'success';
-        status.textContent = 'Email confirmed. Redirecting to your account…';
-        window.location.replace(body.redirectTo || '/account/');
+          status.dataset.state = 'success';
+          status.textContent = 'Email confirmed. Redirecting to your account…';
+          window.location.replace(body.redirectTo || '/account/');
+          return;
+        }
+
+        if (code) {
+          const target = new URL('/api/auth-confirm', window.location.origin);
+          target.searchParams.set('code', code);
+          target.searchParams.set('next', next);
+          window.location.replace(`${target.pathname}${target.search}`);
+          return;
+        }
+
+        fail('This sign-in link is incomplete or expired.');
       } catch (error) {
-        status.dataset.state = 'error';
-        status.textContent = error instanceof Error
+        fail(error instanceof Error
           ? error.message
-          : 'The sign-in link could not be verified.';
+          : 'The sign-in link could not be verified.');
       }
     };
 

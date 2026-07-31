@@ -33,6 +33,17 @@ function requireObject(value, name) {
   return value;
 }
 
+function integerAmount(value, name) {
+  if (typeof value !== 'string' || !/^\d+$/.test(value)) {
+    throw new TypeError(`${name} must be an integer string.`);
+  }
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    throw new TypeError(`${name} is invalid.`);
+  }
+  return parsed;
+}
+
 export function normalizePaddleAdjustment(event) {
   if (event?.eventType !== 'adjustment.created' && event?.eventType !== 'adjustment.updated') {
     throw new TypeError('Only Paddle adjustment events can be normalized.');
@@ -49,7 +60,9 @@ export function normalizePaddleAdjustment(event) {
   const action = String(data.action || '');
   const status = String(data.status || '');
   const type = String(data.type || '');
-  const revokesAccess = REVOCATION_ACTIONS.has(action) && status === 'approved' && type === 'full';
+  const totals = requireObject(data.totals, 'event.data.totals');
+  const totalCents = integerAmount(totals.total, 'event.data.totals.total');
+  const revocationCandidate = REVOCATION_ACTIONS.has(action) && status === 'approved';
 
   return Object.freeze({
     eventId: event.eventId,
@@ -59,7 +72,8 @@ export function normalizePaddleAdjustment(event) {
     action,
     status,
     type,
-    revokesAccess,
+    totalCents,
+    revocationCandidate,
     payload: event.payload,
   });
 }
@@ -71,7 +85,7 @@ export async function applyPaddleAdjustment({
   fetchImpl = fetch,
 }) {
   const adjustment = normalizePaddleAdjustment(event);
-  if (!adjustment.revokesAccess) {
+  if (!adjustment.revocationCandidate) {
     return Object.freeze({ processed: false, ignored: true, adjustment });
   }
 
@@ -85,6 +99,8 @@ export async function applyPaddleAdjustment({
       p_adjustment_id: adjustment.adjustmentId,
       p_transaction_id: adjustment.transactionId,
       p_action: adjustment.action,
+      p_adjustment_total_cents: adjustment.totalCents,
+      p_adjustment_type: adjustment.type,
       p_payload: adjustment.payload,
     }),
   });
@@ -100,5 +116,11 @@ export async function applyPaddleAdjustment({
     );
   }
 
-  return Object.freeze({ processed: true, ignored: false, result: payload, adjustment });
+  const revoked = payload?.revoked === true;
+  return Object.freeze({
+    processed: revoked,
+    ignored: !revoked,
+    result: payload,
+    adjustment,
+  });
 }

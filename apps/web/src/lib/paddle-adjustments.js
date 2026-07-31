@@ -124,7 +124,7 @@ export async function applyPaddleAdjustment({
   }
 
   const resolved = config || readSupabaseServerConfig(environment, { requireSecret: true });
-  const response = await fetchImpl(`${resolved.url}/rest/v1/rpc/apply_paddle_adjustment_lifecycle`, {
+  const response = await fetchImpl(`${resolved.url}/rest/v1/rpc/apply_paddle_adjustment_dispatch`, {
     method: 'POST',
     headers: jsonHeaders(resolved),
     body: JSON.stringify({

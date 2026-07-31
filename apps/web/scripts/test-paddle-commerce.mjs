@@ -82,6 +82,8 @@ const result = await completePaddlePurchase({
       purchase_id: 'f5c1f345-71a1-4b29-93f2-42d3b4adfe20',
       entitlement_id: 'bf8e1cf5-6794-4880-9025-60b8a3e96f67',
       duplicate_transaction: false,
+      duplicate_purchase: false,
+      refund_required: false,
     }), {
       status: 200,
       headers: { 'content-type': 'application/json' },
@@ -89,10 +91,60 @@ const result = await completePaddlePurchase({
   },
 });
 assert.equal(result.processed, true);
+assert.equal(result.duplicatePurchase, false);
 assert.match(rpc.url, /\/rest\/v1\/rpc\/complete_paddle_purchase$/);
 assert.equal(rpc.body.p_account_id, event.data.custom_data.account_id);
 assert.equal(rpc.body.p_intent_id, event.data.custom_data.purchase_intent_id);
 assert.equal(rpc.body.p_transaction_id, event.data.id);
 assert.equal(rpc.body.p_subtotal_cents, 4900);
+
+const duplicateCalls = [];
+let duplicateRefundTransactionId = null;
+const duplicateResult = await completePaddlePurchase({
+  event,
+  environment,
+  config: {
+    url: 'https://project.supabase.co',
+    publishableKey: 'sb_publishable_test_1234567890123456',
+    secretKey: 'sb_secret_test_1234567890123456',
+  },
+  ensureDuplicateRefund: async ({ transactionId }) => {
+    duplicateRefundTransactionId = transactionId;
+    return {
+      id: 'adj_01kyabcdefghijklmnopqrstuv',
+      status: 'pending_approval',
+      raw: { id: 'adj_01kyabcdefghijklmnopqrstuv', status: 'pending_approval' },
+    };
+  },
+  fetchImpl: async (url, options) => {
+    duplicateCalls.push({ url, body: JSON.parse(options.body) });
+    if (url.endsWith('/rpc/complete_paddle_purchase')) {
+      return new Response(JSON.stringify({
+        duplicate_purchase_id: 'c9fa8f7e-d027-4a54-9f54-39b7c347fbcb',
+        original_purchase_id: 'f5c1f345-71a1-4b29-93f2-42d3b4adfe20',
+        duplicate_purchase: true,
+        refund_required: true,
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (url.endsWith('/rpc/record_paddle_duplicate_refund_request')) {
+      return new Response(JSON.stringify({
+        status: 'refund_pending',
+        adjustment_id: 'adj_01kyabcdefghijklmnopqrstuv',
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`Unexpected RPC URL: ${url}`);
+  },
+});
+assert.equal(duplicateResult.processed, true);
+assert.equal(duplicateResult.duplicatePurchase, true);
+assert.equal(duplicateRefundTransactionId, event.data.id);
+assert.equal(duplicateCalls.length, 2);
+assert.equal(duplicateCalls[1].body.p_adjustment_status, 'pending_approval');
 
 console.log('Paddle commerce processing tests passed.');

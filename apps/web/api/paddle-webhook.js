@@ -5,6 +5,10 @@ import {
 } from '../src/lib/paddle-webhook.js';
 import { storePaddleWebhookReceipt } from '../src/lib/paddle-supabase.js';
 import {
+  markPaddleWebhookReceipt,
+  processPaddleWebhookEvent,
+} from '../src/lib/paddle-commerce.js';
+import {
   SupabaseConfigurationError,
   SupabaseRequestError,
 } from '../src/lib/supabase-server.js';
@@ -34,9 +38,24 @@ function readTolerance(environment) {
   return parsed;
 }
 
+async function markFailedSafely({ eventId, error, environment, markReceipt }) {
+  try {
+    await markReceipt({
+      eventId,
+      status: 'failed',
+      lastError: error instanceof Error ? error.message.slice(0, 1000) : 'Unknown processing error.',
+      environment,
+    });
+  } catch (markError) {
+    console.error('Unable to mark Paddle webhook receipt as failed.', markError);
+  }
+}
+
 export function createPaddleWebhookHandler({
   environment = process.env,
   storeReceipt = storePaddleWebhookReceipt,
+  processEvent = processPaddleWebhookEvent,
+  markReceipt = markPaddleWebhookReceipt,
   now = () => Date.now(),
 } = {}) {
   return async function fetchHandler(request) {
@@ -98,13 +117,27 @@ export function createPaddleWebhookHandler({
         rawBody,
         environment,
       });
+      if (stored.duplicate) {
+        return jsonResponse(200, {
+          ok: true,
+          accepted: false,
+          duplicate: true,
+          processed: false,
+          eventId: event.eventId,
+        });
+      }
+
+      const processing = await processEvent({ event, environment });
       return jsonResponse(200, {
         ok: true,
-        accepted: stored.inserted,
-        duplicate: stored.duplicate,
+        accepted: true,
+        duplicate: false,
+        processed: Boolean(processing?.processed),
+        ignored: Boolean(processing?.ignored),
         eventId: event.eventId,
       });
     } catch (error) {
+      await markFailedSafely({ eventId: event.eventId, error, environment, markReceipt });
       if (error instanceof SupabaseConfigurationError) {
         console.error(error.message);
         return jsonResponse(503, {
@@ -113,13 +146,20 @@ export function createPaddleWebhookHandler({
         });
       }
       if (error instanceof SupabaseRequestError) {
-        console.error('Unable to store Paddle webhook receipt.', {
+        console.error('Unable to persist or process Paddle webhook.', {
           status: error.status,
           code: error.code,
         });
         return jsonResponse(503, {
           error: 'Webhook services are temporarily unavailable.',
-          code: 'PADDLE_WEBHOOK_RECEIPT_FAILED',
+          code: 'PADDLE_WEBHOOK_PROCESSING_FAILED',
+        });
+      }
+      if (error instanceof TypeError) {
+        console.error('Rejected verified Paddle event.', { message: error.message });
+        return jsonResponse(422, {
+          error: 'Verified Paddle event did not match a trusted purchase intent.',
+          code: 'PADDLE_EVENT_MISMATCH',
         });
       }
       console.error(error);

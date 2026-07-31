@@ -20,6 +20,8 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - uses: actions/checkout@v4
+
       - name: Inspect latest daily workflow run
         id: health
         continue-on-error: true
@@ -48,6 +50,7 @@ jobs:
           created_at="$(jq -r '.[0].createdAt' <<< "$run_json")"
           run_url="$(jq -r '.[0].url' <<< "$run_json")"
           event="$(jq -r '.[0].event' <<< "$run_json")"
+          expected_date="${created_at:0:10}"
 
           now_epoch="$(date -u +%s)"
           created_epoch="$(date -u -d "$created_at" +%s)"
@@ -80,6 +83,11 @@ jobs:
             echo "- Failure: the latest run is older than ${MAX_AGE_HOURS} hours." >> daily-health-report.md
             exit 1
           fi
+
+          node apps/web/scripts/check-daily-news-deployment-health.mjs \
+            --expected-date "$expected_date" \
+            --base-url "https://www.usd-impact.com" \
+            --report daily-health-report.md
 
           echo "- Result: healthy." >> daily-health-report.md
           cat daily-health-report.md

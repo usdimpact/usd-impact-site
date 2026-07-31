@@ -19,6 +19,35 @@ async function readJsonSafely(response) {
   }
 }
 
+async function readExistingReceipt({ eventId, config, fetchImpl }) {
+  const query = new URLSearchParams({
+    provider: 'eq.paddle',
+    provider_event_id: `eq.${eventId}`,
+    select: 'id,status,event_type',
+    limit: '1',
+  });
+  const response = await fetchImpl(`${config.url}/rest/v1/webhook_receipts?${query}`, {
+    method: 'GET',
+    headers: {
+      ...JSON_HEADERS,
+      apikey: config.secretKey,
+      Authorization: `Bearer ${config.secretKey}`,
+    },
+  });
+  const payload = await readJsonSafely(response);
+  if (!response.ok) {
+    throw new SupabaseRequestError(
+      payload?.message || payload?.error || 'Unable to read existing Paddle webhook receipt.',
+      {
+        status: response.status,
+        code: payload?.code || 'PADDLE_WEBHOOK_RECEIPT_READ_FAILED',
+        details: payload,
+      },
+    );
+  }
+  return Array.isArray(payload) && payload.length > 0 ? payload[0] : null;
+}
+
 export async function storePaddleWebhookReceipt({
   event,
   rawBody,
@@ -68,10 +97,20 @@ export async function storePaddleWebhookReceipt({
   }
 
   const receipt = Array.isArray(payload) && payload.length > 0 ? payload[0] : null;
+  const existing = receipt
+    ? null
+    : await readExistingReceipt({
+      eventId: event.eventId,
+      config: resolvedConfig,
+      fetchImpl,
+    });
+
   return Object.freeze({
     inserted: Boolean(receipt),
     duplicate: !receipt,
-    receiptId: receipt?.id ?? null,
+    receiptId: receipt?.id ?? existing?.id ?? null,
+    existingStatus: existing?.status ?? null,
+    existingEventType: existing?.event_type ?? null,
     payloadSha256,
   });
 }

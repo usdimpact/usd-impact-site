@@ -40,6 +40,10 @@ function isAdjustmentEvent(eventType) {
   return eventType === 'adjustment.created' || eventType === 'adjustment.updated';
 }
 
+function isRecoverableAdjustmentReceipt(status) {
+  return status === 'ignored' || status === 'failed';
+}
+
 async function markFailedSafely({ eventId, error, environment, markReceipt }) {
   try {
     await markReceipt({
@@ -115,11 +119,11 @@ export function createPaddleWebhookHandler({
 
     try {
       const stored = await storeReceipt({ event, rawBody, environment });
-      const replayIgnoredAdjustment = stored.duplicate
-        && stored.existingStatus === 'ignored'
+      const replayRecoverableAdjustment = stored.duplicate
+        && isRecoverableAdjustmentReceipt(stored.existingStatus)
         && isAdjustmentEvent(event.eventType);
 
-      if (stored.duplicate && !replayIgnoredAdjustment) {
+      if (stored.duplicate && !replayRecoverableAdjustment) {
         return jsonResponse(200, {
           ok: true,
           accepted: false,
@@ -138,7 +142,7 @@ export function createPaddleWebhookHandler({
         ignored: Boolean(processing?.ignored),
         eventId: event.eventId,
       };
-      if (replayIgnoredAdjustment) responsePayload.replayed = true;
+      if (replayRecoverableAdjustment) responsePayload.replayed = true;
       return jsonResponse(200, responsePayload);
     } catch (error) {
       await markFailedSafely({ eventId: event.eventId, error, environment, markReceipt });

@@ -55,6 +55,7 @@ assert.throws(
 );
 
 const storedEvents = [];
+const processedEvents = [];
 const handler = createPaddleWebhookHandler({
   environment: { PADDLE_WEBHOOK_SECRET: secret },
   now: () => nowMs,
@@ -62,6 +63,11 @@ const handler = createPaddleWebhookHandler({
     storedEvents.push({ event, receivedBody });
     return { inserted: true, duplicate: false };
   },
+  processEvent: async ({ event }) => {
+    processedEvents.push(event);
+    return { processed: true, ignored: false };
+  },
+  markReceipt: async () => {},
 });
 
 let response = await handler(new Request('https://example.test/api/paddle-webhook', {
@@ -77,9 +83,12 @@ assert.deepEqual(await response.json(), {
   ok: true,
   accepted: true,
   duplicate: false,
+  processed: true,
+  ignored: false,
   eventId: 'evt_01kytwebhook00000000000001',
 });
 assert.equal(storedEvents.length, 1);
+assert.equal(processedEvents.length, 1);
 assert.equal(storedEvents[0].receivedBody, rawBody);
 
 response = await handler(new Request('https://example.test/api/paddle-webhook', {
@@ -92,6 +101,7 @@ response = await handler(new Request('https://example.test/api/paddle-webhook', 
 }));
 assert.equal(response.status, 401);
 assert.equal(storedEvents.length, 1);
+assert.equal(processedEvents.length, 1);
 
 const invalidBody = '{"event_id":';
 response = await handler(new Request('https://example.test/api/paddle-webhook', {
@@ -113,6 +123,8 @@ const duplicateHandler = createPaddleWebhookHandler({
   environment: { PADDLE_WEBHOOK_SECRET: secret },
   now: () => nowMs,
   storeReceipt: async () => ({ inserted: false, duplicate: true }),
+  processEvent: async () => { throw new Error('duplicate must not be processed'); },
+  markReceipt: async () => {},
 });
 response = await duplicateHandler(new Request('https://example.test/api/paddle-webhook', {
   method: 'POST',
@@ -123,7 +135,13 @@ response = await duplicateHandler(new Request('https://example.test/api/paddle-w
   body: rawBody,
 }));
 assert.equal(response.status, 200);
-assert.equal((await response.json()).duplicate, true);
+assert.deepEqual(await response.json(), {
+  ok: true,
+  accepted: false,
+  duplicate: true,
+  processed: false,
+  eventId: 'evt_01kytwebhook00000000000001',
+});
 
 let receiptRequest = null;
 const stored = await storePaddleWebhookReceipt({

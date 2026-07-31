@@ -81,24 +81,30 @@ try {
 
   const initial = runImporter('--replace');
   assert.equal(initial.status, 0, initial.stderr);
-  assert.match(initial.stdout, /Imported Daily USD Impact bundle/);
+  assert.match(initial.stdout, /status review/);
 
   const reviewContent = await readFile(editionPath, 'utf8');
   assert.match(reviewContent, /^status:\s*"review"\s*$/m);
 
-  const publishedContent = reviewContent.replace(/^status:\s*"review"\s*$/m, 'status: "published"');
-  await writeFile(editionPath, publishedContent, 'utf8');
+  await rm(editionPath, { force: true });
 
-  const protectedFailure = runImporter('--replace');
+  const directPublish = runImporter('--replace', '--publish');
+  assert.equal(directPublish.status, 0, directPublish.stderr);
+  assert.match(directPublish.stdout, /status published/);
+
+  const publishedContent = await readFile(editionPath, 'utf8');
+  assert.match(publishedContent, /^status:\s*"published"\s*$/m);
+
+  const protectedFailure = runImporter('--replace', '--publish');
   assert.notEqual(protectedFailure.status, 0);
   assert.match(protectedFailure.stderr, /already published and cannot be replaced by automation/);
 
-  const scheduledNoop = runImporter('--replace', '--skip-published');
+  const scheduledNoop = runImporter('--replace', '--skip-published', '--publish');
   assert.equal(scheduledNoop.status, 0, scheduledNoop.stderr);
   assert.match(scheduledNoop.stdout, /already exists.*no changes made/i);
   assert.equal(await readFile(editionPath, 'utf8'), publishedContent);
 
-  console.log('daily news importer published-edition tests pass');
+  console.log('daily news importer review and direct-publish tests pass');
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });
 }

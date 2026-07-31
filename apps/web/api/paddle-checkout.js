@@ -12,7 +12,9 @@ import {
   reservePaddlePurchaseIntent,
 } from '../src/lib/paddle-commerce.js';
 import {
+  cancelPaddleTransaction,
   createPaddleTransaction,
+  getPaddleTransaction,
   PaddleApiError,
   PaddleConfigurationError,
 } from '../src/lib/paddle-api.js';
@@ -51,13 +53,16 @@ function publicCheckoutError(error) {
     return { status: 503, payload: { error: 'Checkout is temporarily unavailable.', code: error.code } };
   }
   if (error instanceof PaddleApiError) {
-    console.error('Paddle transaction creation failed.', { status: error.status, code: error.code });
+    console.error('Paddle transaction request failed.', { status: error.status, code: error.code });
     return { status: 502, payload: { error: 'Checkout could not be created.', code: error.code } };
   }
   if (error instanceof SupabaseRequestError) {
     const message = String(error.message || '').toLowerCase();
     if (message.includes('already entitled') || message.includes('active entitlement')) {
       return { status: 409, payload: { error: 'This account already has access.', code: 'ALREADY_ENTITLED' } };
+    }
+    if (message.includes('not eligible for checkout')) {
+      return { status: 409, payload: { error: 'This account cannot purchase this product again.', code: 'CHECKOUT_NOT_ELIGIBLE' } };
     }
     if (message.includes('profile is not active')) {
       return { status: 409, payload: { error: 'This account cannot start checkout.', code: 'ACCOUNT_NOT_ACTIVE' } };
@@ -66,11 +71,39 @@ function publicCheckoutError(error) {
   return null;
 }
 
+function checkoutResponse({ intent, transaction, reused }) {
+  const responseToken = createHash('sha256')
+    .update(`${intent.id}:${transaction.id}`)
+    .digest('hex')
+    .slice(0, 24);
+  return {
+    ok: true,
+    reused,
+    checkout: {
+      transactionId: transaction.id,
+      url: transaction.checkoutUrl,
+      status: transaction.status,
+      token: responseToken,
+    },
+    intent: {
+      id: intent.id,
+      productId: intent.productId,
+      priceTier: intent.priceTier,
+      amountCents: intent.amountCents,
+      currency: intent.currency,
+      expiresAt: intent.expiresAt,
+      status: intent.status,
+    },
+  };
+}
+
 export function createPaddleCheckoutHandler({
   readAccessToken = readSessionAccessToken,
   getUser = getVerifiedSupabaseUser,
   reserveIntent = reservePaddlePurchaseIntent,
   createTransaction = createPaddleTransaction,
+  getTransaction = getPaddleTransaction,
+  cancelTransaction = cancelPaddleTransaction,
   attachTransaction = attachPaddleTransaction,
 } = {}) {
   return async function handler(request, response) {
@@ -105,31 +138,43 @@ export function createPaddleCheckoutHandler({
     try {
       const account = await getUser(accessToken);
       const intent = await reserveIntent({ accountId: account.id, requestId });
-      const transaction = await createTransaction({ intent, account });
-      await attachTransaction({ intentId: intent.id, transactionId: transaction.id });
 
-      const responseToken = createHash('sha256')
-        .update(`${intent.id}:${transaction.id}`)
-        .digest('hex')
-        .slice(0, 24);
+      if (intent.providerTransactionId) {
+        const existingTransaction = await getTransaction({ transactionId: intent.providerTransactionId });
+        return sendJson(response, 200, checkoutResponse({
+          intent,
+          transaction: existingTransaction,
+          reused: true,
+        }));
+      }
 
-      return sendJson(response, 201, {
-        ok: true,
-        checkout: {
-          transactionId: transaction.id,
-          url: transaction.checkoutUrl,
-          status: transaction.status,
-          token: responseToken,
-        },
-        intent: {
-          id: intent.id,
-          productId: intent.productId,
-          priceTier: intent.priceTier,
-          amountCents: intent.amountCents,
-          currency: intent.currency,
-          expiresAt: intent.expiresAt,
-        },
+      const createdTransaction = await createTransaction({ intent, account });
+      const attachment = await attachTransaction({
+        intentId: intent.id,
+        transactionId: createdTransaction.id,
       });
+
+      if (attachment.transactionId !== createdTransaction.id) {
+        try {
+          await cancelTransaction({ transactionId: createdTransaction.id });
+        } catch (cancelError) {
+          console.error('Unable to cancel a superseded Paddle transaction.', {
+            code: cancelError?.code || 'PADDLE_TRANSACTION_CANCEL_FAILED',
+          });
+        }
+        const existingTransaction = await getTransaction({ transactionId: attachment.transactionId });
+        return sendJson(response, 200, checkoutResponse({
+          intent: { ...intent, providerTransactionId: attachment.transactionId },
+          transaction: existingTransaction,
+          reused: true,
+        }));
+      }
+
+      return sendJson(response, 201, checkoutResponse({
+        intent,
+        transaction: createdTransaction,
+        reused: false,
+      }));
     } catch (error) {
       const checkoutError = publicCheckoutError(error);
       if (checkoutError) return sendJson(response, checkoutError.status, checkoutError.payload);

@@ -1,4 +1,4 @@
-name: Daily USD Impact draft
+name: Daily USD Impact publication
 
 on:
   schedule:
@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -14,9 +15,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-draft:
+  build-and-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: apps/web
@@ -31,7 +32,7 @@ jobs:
         run: |
           if [ -z "$NEWSFEED_ENDPOINT" ] || [ -z "$NEWSFEED_BEARER_TOKEN" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::NEWSFEED_ENDPOINT or NEWSFEED_BEARER_TOKEN is not configured; no draft was generated."
+            echo "::notice::NEWSFEED_ENDPOINT or NEWSFEED_BEARER_TOKEN is not configured; no edition was generated."
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
@@ -115,7 +116,7 @@ jobs:
               fi
 
               if [ "$generation_attempt" = "1" ] && node scripts/daily-news-retry-policy.mjs "$RUNNER_TEMP/daily-usd-impact-poll.json"; then
-                echo "Insufficient grounded sources detected; starting one bounded full regeneration attempt."
+                echo "Recoverable validation failure detected; starting one bounded full regeneration attempt."
                 curl --fail --silent --show-error --location \
                   --request POST --max-time 60 \
                   -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
@@ -145,9 +146,9 @@ jobs:
             fi
           done
 
-      - name: Import as review content
+      - name: Import as published content
         if: steps.config.outputs.configured == 'true'
-        run: node scripts/import-daily-news.mjs "$RUNNER_TEMP/daily-usd-impact.json" --replace --skip-published
+        run: node scripts/import-daily-news.mjs "$RUNNER_TEMP/daily-usd-impact.json" --replace --skip-published --publish
 
       - name: Validate and build
         if: steps.config.outputs.configured == 'true'
@@ -155,13 +156,13 @@ jobs:
           npm run validate
           npm run build
 
-      - name: Open draft pull request
+      - name: Open, validate, and merge publication pull request
         if: steps.config.outputs.configured == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ -z "$(git status --porcelain src/content/news)" ]; then
-            echo "No news changes to propose."
+            echo "No news changes to publish."
             exit 0
           fi
 
@@ -172,27 +173,46 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git checkout -b "$branch"
           git add src/content/news
-          git commit -m "Add Daily USD Impact edition for ${edition_date}"
+          git commit -m "Publish Daily USD Impact edition for ${edition_date}"
           git push --set-upstream origin "$branch"
+          head_sha="$(git rev-parse HEAD)"
 
           cat > "$RUNNER_TEMP/daily-news-pr.md" <<EOF
-          ## Daily USD Impact draft
+          ## Automated Daily USD Impact publication
 
-          This automated pull request imports the source-backed edition for **${edition_date}** with status \`review\`.
+          This pull request contains the source-backed **${edition_date}** edition with status \`published\`.
 
-          ### Required review
-          - Verify every material fact against its linked source.
-          - Confirm price timestamps and event dates.
-          - Check that cross-asset interpretation is conditional and educational.
-          - Update the edition to \`published\` only after editorial approval.
-          - Merge only after the Web quality workflow passes.
-
-          The automation does not publish directly to production.
+          Publication is automatic only after the required Web quality workflow passes on this exact commit. A failed validation or build leaves the pull request open and does not change production.
           EOF
 
-          gh pr create \
-            --draft \
+          pr_url="$(gh pr create \
             --base main \
             --head "$branch" \
-            --title "Daily USD Impact — ${edition_date}" \
-            --body-file "$RUNNER_TEMP/daily-news-pr.md"
+            --title "Publish Daily USD Impact — ${edition_date}" \
+            --body-file "$RUNNER_TEMP/daily-news-pr.md")"
+
+          gh workflow run quality.yml --ref "$branch"
+
+          run_id=""
+          for attempt in $(seq 1 30); do
+            run_id="$(gh run list \
+              --workflow quality.yml \
+              --branch "$branch" \
+              --event workflow_dispatch \
+              --limit 10 \
+              --json databaseId,headSha \
+              --jq ".[] | select(.headSha == \"$head_sha\") | .databaseId" | head -n 1)"
+            if [ -n "$run_id" ]; then
+              break
+            fi
+            sleep 5
+          done
+
+          if [ -z "$run_id" ]; then
+            echo "Could not locate the dispatched Web quality run for $head_sha."
+            exit 1
+          fi
+
+          gh run watch "$run_id" --exit-status
+          gh pr merge "$pr_url" --squash --delete-branch
+          echo "Merged Daily USD Impact publication for ${edition_date}. Vercel production deployment will follow from main."

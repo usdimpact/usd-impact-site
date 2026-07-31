@@ -1,5 +1,6 @@
 const PRICE_ID_PATTERN = /^pri_[a-z\d]{26}$/;
 const TRANSACTION_ID_PATTERN = /^txn_[a-z\d]{26}$/;
+const ADJUSTMENT_ID_PATTERN = /^adj_[a-z\d]{26}$/;
 
 export class PaddleConfigurationError extends Error {
   constructor(message) {
@@ -69,10 +70,62 @@ async function readJson(response) {
   }
 }
 
+function apiHeaders(config) {
+  return {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${config.apiKey}`,
+    'Paddle-Version': '1',
+  };
+}
+
+async function paddleRequest({ path, method = 'GET', body, config, fetchImpl = fetch }) {
+  const response = await fetchImpl(`${config.baseUrl}${path}`, {
+    method,
+    headers: apiHeaders(config),
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  const payload = await readJson(response);
+  if (!response.ok) {
+    throw new PaddleApiError(
+      payload?.error?.detail || payload?.error?.type || payload?.message || 'Paddle API request failed.',
+      {
+        status: response.status,
+        code: payload?.error?.code || 'PADDLE_API_REQUEST_FAILED',
+        details: payload,
+      },
+    );
+  }
+  return payload;
+}
+
 export function priceIdForTier(config, priceTier) {
   if (priceTier === 'launch') return config.launchPriceId;
   if (priceTier === 'standard') return config.standardPriceId;
   throw new TypeError('priceTier must be launch or standard.');
+}
+
+function normalizeTransactionResponse(payload, { expectedId = null, priceId = null } = {}) {
+  const transaction = payload?.data;
+  if (!TRANSACTION_ID_PATTERN.test(transaction?.id || '')) {
+    throw new PaddleApiError('Paddle returned an invalid transaction.', {
+      code: 'PADDLE_INVALID_TRANSACTION_RESPONSE',
+      details: payload,
+    });
+  }
+  if (expectedId && transaction.id !== expectedId) {
+    throw new PaddleApiError('Paddle returned the wrong transaction.', {
+      code: 'PADDLE_TRANSACTION_RESPONSE_MISMATCH',
+      details: payload,
+    });
+  }
+  return Object.freeze({
+    id: transaction.id,
+    status: transaction.status || 'draft',
+    checkoutUrl: typeof transaction.checkout?.url === 'string' ? transaction.checkout.url : null,
+    priceId,
+    raw: transaction,
+  });
 }
 
 export async function createPaddleTransaction({
@@ -105,40 +158,162 @@ export async function createPaddleTransaction({
     ...(resolved.checkoutUrl ? { checkout: { url: resolved.checkoutUrl } } : {}),
   };
 
-  const response = await fetchImpl(`${resolved.baseUrl}/transactions`, {
+  const payload = await paddleRequest({
+    path: '/transactions',
     method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${resolved.apiKey}`,
-      'Paddle-Version': '1',
-    },
-    body: JSON.stringify(body),
+    body,
+    config: resolved,
+    fetchImpl,
   });
-  const payload = await readJson(response);
-  if (!response.ok) {
-    throw new PaddleApiError(
-      payload?.error?.detail || payload?.error?.type || payload?.message || 'Unable to create Paddle transaction.',
-      {
-        status: response.status,
-        code: payload?.error?.code || 'PADDLE_TRANSACTION_CREATE_FAILED',
-        details: payload,
-      },
-    );
-  }
+  return normalizeTransactionResponse(payload, { priceId });
+}
 
-  const transaction = payload?.data;
-  if (!TRANSACTION_ID_PATTERN.test(transaction?.id || '')) {
-    throw new PaddleApiError('Paddle returned an invalid transaction.', {
-      code: 'PADDLE_INVALID_TRANSACTION_RESPONSE',
+export async function getPaddleTransaction({
+  transactionId,
+  environment,
+  config,
+  fetchImpl = fetch,
+}) {
+  if (!TRANSACTION_ID_PATTERN.test(transactionId || '')) {
+    throw new TypeError('transactionId is invalid.');
+  }
+  const resolved = config || readPaddleApiConfig(environment);
+  const payload = await paddleRequest({
+    path: `/transactions/${encodeURIComponent(transactionId)}`,
+    config: resolved,
+    fetchImpl,
+  });
+  return normalizeTransactionResponse(payload, { expectedId: transactionId });
+}
+
+export async function cancelPaddleTransaction({
+  transactionId,
+  environment,
+  config,
+  fetchImpl = fetch,
+}) {
+  if (!TRANSACTION_ID_PATTERN.test(transactionId || '')) {
+    throw new TypeError('transactionId is invalid.');
+  }
+  const resolved = config || readPaddleApiConfig(environment);
+  const payload = await paddleRequest({
+    path: `/transactions/${encodeURIComponent(transactionId)}`,
+    method: 'PATCH',
+    body: { status: 'canceled' },
+    config: resolved,
+    fetchImpl,
+  });
+  return normalizeTransactionResponse(payload, { expectedId: transactionId });
+}
+
+function normalizeAdjustmentResponse(payload, { reused = false } = {}) {
+  const adjustment = payload?.data;
+  if (!ADJUSTMENT_ID_PATTERN.test(adjustment?.id || '') || adjustment.action !== 'refund') {
+    throw new PaddleApiError('Paddle returned an invalid refund adjustment.', {
+      code: 'PADDLE_INVALID_ADJUSTMENT_RESPONSE',
       details: payload,
     });
   }
-
   return Object.freeze({
-    id: transaction.id,
-    status: transaction.status || 'draft',
-    checkoutUrl: typeof transaction.checkout?.url === 'string' ? transaction.checkout.url : null,
-    priceId,
+    id: adjustment.id,
+    transactionId: adjustment.transaction_id,
+    action: adjustment.action,
+    type: adjustment.type,
+    status: adjustment.status,
+    reused,
+    raw: adjustment,
   });
+}
+
+export async function createPaddleFullRefund({
+  transactionId,
+  reason = 'duplicate purchase for the same account and product',
+  environment,
+  config,
+  fetchImpl = fetch,
+}) {
+  if (!TRANSACTION_ID_PATTERN.test(transactionId || '')) {
+    throw new TypeError('transactionId is invalid.');
+  }
+  if (typeof reason !== 'string' || !reason.trim()) {
+    throw new TypeError('reason is required.');
+  }
+  const resolved = config || readPaddleApiConfig(environment);
+  const payload = await paddleRequest({
+    path: '/adjustments',
+    method: 'POST',
+    body: {
+      action: 'refund',
+      type: 'full',
+      transaction_id: transactionId,
+      reason: reason.trim().slice(0, 1000),
+    },
+    config: resolved,
+    fetchImpl,
+  });
+  return normalizeAdjustmentResponse(payload);
+}
+
+export async function listPaddleRefundsForTransaction({
+  transactionId,
+  environment,
+  config,
+  fetchImpl = fetch,
+}) {
+  if (!TRANSACTION_ID_PATTERN.test(transactionId || '')) {
+    throw new TypeError('transactionId is invalid.');
+  }
+  const resolved = config || readPaddleApiConfig(environment);
+  const query = new URLSearchParams({
+    transaction_id: transactionId,
+    action: 'refund',
+    per_page: '50',
+  });
+  const payload = await paddleRequest({
+    path: `/adjustments?${query}`,
+    config: resolved,
+    fetchImpl,
+  });
+  const rows = Array.isArray(payload?.data) ? payload.data : [];
+  return Object.freeze(rows
+    .filter((row) => ADJUSTMENT_ID_PATTERN.test(row?.id || '') && row.action === 'refund')
+    .map((row) => normalizeAdjustmentResponse({ data: row }, { reused: true })));
+}
+
+export async function ensurePaddleDuplicateRefund({
+  transactionId,
+  environment,
+  config,
+  fetchImpl = fetch,
+}) {
+  const resolved = config || readPaddleApiConfig(environment);
+  let createError = null;
+  try {
+    return await createPaddleFullRefund({
+      transactionId,
+      environment,
+      config: resolved,
+      fetchImpl,
+    });
+  } catch (error) {
+    createError = error;
+  }
+
+  try {
+    const existing = await listPaddleRefundsForTransaction({
+      transactionId,
+      environment,
+      config: resolved,
+      fetchImpl,
+    });
+    const matching = existing.find((adjustment) =>
+      adjustment.transactionId === transactionId
+      && adjustment.type === 'full'
+      && ['pending_approval', 'approved'].includes(adjustment.status));
+    if (matching) return matching;
+  } catch (lookupError) {
+    if (!(createError instanceof PaddleApiError)) throw lookupError;
+  }
+
+  throw createError;
 }

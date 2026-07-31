@@ -4,10 +4,8 @@ import {
   verifyPaddleWebhookSignature,
 } from '../src/lib/paddle-webhook.js';
 import { storePaddleWebhookReceipt } from '../src/lib/paddle-supabase.js';
-import {
-  markPaddleWebhookReceipt,
-  processPaddleWebhookEvent,
-} from '../src/lib/paddle-commerce.js';
+import { markPaddleWebhookReceipt } from '../src/lib/paddle-commerce.js';
+import { processPaddleWebhookEvent } from '../src/lib/paddle-event-processor.js';
 import {
   SupabaseConfigurationError,
   SupabaseRequestError,
@@ -112,11 +110,7 @@ export function createPaddleWebhookHandler({
     }
 
     try {
-      const stored = await storeReceipt({
-        event,
-        rawBody,
-        environment,
-      });
+      const stored = await storeReceipt({ event, rawBody, environment });
       if (stored.duplicate) {
         return jsonResponse(200, {
           ok: true,
@@ -158,7 +152,7 @@ export function createPaddleWebhookHandler({
       if (error instanceof TypeError) {
         console.error('Rejected verified Paddle event.', { message: error.message });
         return jsonResponse(422, {
-          error: 'Verified Paddle event did not match a trusted purchase intent.',
+          error: 'Verified Paddle event did not match a trusted purchase or adjustment.',
           code: 'PADDLE_EVENT_MISMATCH',
         });
       }
@@ -172,5 +166,4 @@ export function createPaddleWebhookHandler({
 }
 
 const fetchHandler = createPaddleWebhookHandler();
-
 export default Object.freeze({ fetch: fetchHandler });

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   applyPaddleAdjustment,
   normalizePaddleAdjustment,
+  paddleAdjustmentTransition,
 } from '../src/lib/paddle-adjustments.js';
 
 const ids = {
@@ -17,6 +18,7 @@ function event(overrides = {}) {
     action: 'refund',
     status: 'approved',
     type: 'partial',
+    reason: 'no longer needed',
     totals: { total: '4900' },
     ...overrides,
   };
@@ -29,63 +31,130 @@ function event(overrides = {}) {
   };
 }
 
+assert.equal(paddleAdjustmentTransition('refund', 'approved'), 'refund');
+assert.equal(paddleAdjustmentTransition('chargeback_warning', 'approved'), 'chargeback_warning');
+assert.equal(paddleAdjustmentTransition('chargeback', 'approved'), 'chargeback');
+assert.equal(paddleAdjustmentTransition('chargeback_reverse', 'approved'), 'chargeback_reverse');
+assert.equal(
+  paddleAdjustmentTransition('chargeback_warning_reverse', 'approved'),
+  'chargeback_warning_reverse',
+);
+assert.equal(paddleAdjustmentTransition('chargeback', 'reversed'), 'chargeback_reverse');
+assert.equal(
+  paddleAdjustmentTransition('chargeback_warning', 'reversed'),
+  'chargeback_warning_reverse',
+);
+assert.equal(paddleAdjustmentTransition('refund', 'pending_approval'), null);
+assert.equal(paddleAdjustmentTransition('refund', 'rejected'), null);
+
 const approvedDashboardRefund = normalizePaddleAdjustment(event());
+assert.equal(approvedDashboardRefund.lifecycleCandidate, true);
 assert.equal(approvedDashboardRefund.revocationCandidate, true);
 assert.equal(approvedDashboardRefund.totalCents, 4900);
 assert.equal(approvedDashboardRefund.type, 'partial');
+assert.equal(approvedDashboardRefund.reason, 'no longer needed');
 
-assert.equal(normalizePaddleAdjustment(event({ status: 'pending_approval' })).revocationCandidate, false);
-assert.equal(normalizePaddleAdjustment(event({ status: 'rejected' })).revocationCandidate, false);
-assert.equal(normalizePaddleAdjustment(event({ action: 'chargeback_warning' })).revocationCandidate, false);
-assert.equal(normalizePaddleAdjustment(event({ action: 'chargeback' })).revocationCandidate, true);
+const warning = normalizePaddleAdjustment(event({ action: 'chargeback_warning' }));
+assert.equal(warning.transition, 'chargeback_warning');
+assert.equal(warning.suspensionCandidate, true);
+assert.equal(warning.revocationCandidate, false);
+
+const chargeback = normalizePaddleAdjustment(event({ action: 'chargeback' }));
+assert.equal(chargeback.transition, 'chargeback');
+assert.equal(chargeback.revocationCandidate, true);
+
+const chargebackReverse = normalizePaddleAdjustment(event({ action: 'chargeback_reverse' }));
+assert.equal(chargebackReverse.transition, 'chargeback_reverse');
+assert.equal(chargebackReverse.restorationCandidate, true);
+
+const warningReversedUpdate = normalizePaddleAdjustment(event({
+  action: 'chargeback_warning',
+  status: 'reversed',
+}));
+assert.equal(warningReversedUpdate.transition, 'chargeback_warning_reverse');
+assert.equal(warningReversedUpdate.restorationCandidate, true);
 
 let called = false;
-const ignoredPending = await applyPaddleAdjustment({
-  event: event({ status: 'pending_approval' }),
+const ignoredCredit = await applyPaddleAdjustment({
+  event: event({ action: 'credit' }),
   config: { url: 'https://example.supabase.co', secretKey: 'secret' },
   fetchImpl: async () => {
     called = true;
-    throw new Error('RPC must not be called for pending refunds.');
+    throw new Error('RPC must not be called for unrelated credits.');
   },
 });
-assert.equal(ignoredPending.ignored, true);
+assert.equal(ignoredCredit.ignored, true);
 assert.equal(called, false);
 
-let partialBody;
-const ignoredPartial = await applyPaddleAdjustment({
-  event: event({ totals: { total: '1000' } }),
-  config: { url: 'https://example.supabase.co', secretKey: 'secret' },
-  fetchImpl: async (_url, request) => {
-    partialBody = JSON.parse(request.body);
-    return new Response(JSON.stringify({ revoked: false, reason: 'partial_amount' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+async function applyWithResult(overrides, result) {
+  let request;
+  const applied = await applyPaddleAdjustment({
+    event: event(overrides),
+    config: { url: 'https://example.supabase.co', secretKey: 'secret' },
+    fetchImpl: async (url, options) => {
+      request = { url, body: JSON.parse(options.body) };
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    },
+  });
+  return { applied, request };
+}
+
+const pending = await applyWithResult(
+  { status: 'pending_approval' },
+  { handled: true, state_changed: false, transition: 'none' },
+);
+assert.equal(pending.applied.processed, true);
+assert.equal(pending.applied.stateChanged, false);
+assert.equal(pending.request.body.p_status, 'pending_approval');
+
+const suspended = await applyWithResult(
+  { action: 'chargeback_warning', reason: 'dispute warning' },
+  {
+    handled: true,
+    state_changed: true,
+    transition: 'chargeback_warning',
+    entitlement_state: 'suspended_dispute',
   },
-});
-assert.equal(ignoredPartial.ignored, true);
-assert.equal(ignoredPartial.processed, false);
-assert.equal(partialBody.p_adjustment_total_cents, 1000);
+);
+assert.equal(suspended.applied.processed, true);
+assert.equal(suspended.applied.stateChanged, true);
+assert.equal(
+  suspended.request.url,
+  'https://example.supabase.co/rest/v1/rpc/apply_paddle_adjustment_lifecycle',
+);
+assert.equal(suspended.request.body.p_action, 'chargeback_warning');
+assert.equal(suspended.request.body.p_reason, 'dispute warning');
 
-let body;
-const processed = await applyPaddleAdjustment({
-  event: event(),
-  config: { url: 'https://example.supabase.co', secretKey: 'secret' },
-  fetchImpl: async (url, request) => {
-    assert.equal(url, 'https://example.supabase.co/rest/v1/rpc/apply_paddle_access_revocation');
-    body = JSON.parse(request.body);
-    return new Response(JSON.stringify({ revoked: true, entitlement_state: 'refunded' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+const revoked = await applyWithResult(
+  { action: 'chargeback' },
+  {
+    handled: true,
+    state_changed: true,
+    transition: 'chargeback',
+    entitlement_state: 'charged_back',
   },
-});
+);
+assert.equal(revoked.applied.stateChanged, true);
+assert.equal(revoked.request.body.p_adjustment_total_cents, 4900);
 
-assert.equal(processed.processed, true);
-assert.equal(body.p_adjustment_id, ids.adjustment);
-assert.equal(body.p_transaction_id, ids.transaction);
-assert.equal(body.p_action, 'refund');
-assert.equal(body.p_adjustment_total_cents, 4900);
-assert.equal(body.p_adjustment_type, 'partial');
+const restored = await applyWithResult(
+  { action: 'chargeback_reverse' },
+  {
+    handled: true,
+    state_changed: true,
+    transition: 'chargeback_reverse',
+    entitlement_state: 'active',
+    restore_allowed: true,
+  },
+);
+assert.equal(restored.applied.stateChanged, true);
+assert.equal(restored.request.body.p_action, 'chargeback_reverse');
+assert.equal(restored.request.body.p_adjustment_type, 'partial');
+assert.equal(restored.request.body.p_event_id, ids.event);
+assert.equal(restored.request.body.p_adjustment_id, ids.adjustment);
+assert.equal(restored.request.body.p_transaction_id, ids.transaction);
 
-console.log('Paddle adjustment tests passed.');
+console.log('Paddle adjustment lifecycle tests passed.');

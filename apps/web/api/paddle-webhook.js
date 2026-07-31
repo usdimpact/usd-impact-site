@@ -36,6 +36,10 @@ function readTolerance(environment) {
   return parsed;
 }
 
+function isAdjustmentEvent(eventType) {
+  return eventType === 'adjustment.created' || eventType === 'adjustment.updated';
+}
+
 async function markFailedSafely({ eventId, error, environment, markReceipt }) {
   try {
     await markReceipt({
@@ -111,7 +115,11 @@ export function createPaddleWebhookHandler({
 
     try {
       const stored = await storeReceipt({ event, rawBody, environment });
-      if (stored.duplicate) {
+      const replayIgnoredAdjustment = stored.duplicate
+        && stored.existingStatus === 'ignored'
+        && isAdjustmentEvent(event.eventType);
+
+      if (stored.duplicate && !replayIgnoredAdjustment) {
         return jsonResponse(200, {
           ok: true,
           accepted: false,
@@ -124,8 +132,9 @@ export function createPaddleWebhookHandler({
       const processing = await processEvent({ event, environment });
       return jsonResponse(200, {
         ok: true,
-        accepted: true,
-        duplicate: false,
+        accepted: !stored.duplicate,
+        duplicate: stored.duplicate,
+        replayed: replayIgnoredAdjustment,
         processed: Boolean(processing?.processed),
         ignored: Boolean(processing?.ignored),
         eventId: event.eventId,

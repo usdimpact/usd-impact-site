@@ -4,10 +4,15 @@ import {
   readSupabaseServerConfig,
   SupabaseRequestError,
 } from './supabase-server.js';
-import { priceIdForTier, readPaddleApiConfig } from './paddle-api.js';
+import {
+  ensurePaddleDuplicateRefund,
+  priceIdForTier,
+  readPaddleApiConfig,
+} from './paddle-api.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const TRANSACTION_ID_PATTERN = /^txn_[a-z\d]{26}$/;
+const ADJUSTMENT_ID_PATTERN = /^adj_[a-z\d]{26}$/;
 const CUSTOMER_ID_PATTERN = /^ctm_[a-z\d]{26}$/;
 const IDEMPOTENCY_INPUT_PATTERN = /^[a-zA-Z0-9._:-]{8,128}$/;
 
@@ -57,6 +62,14 @@ function normalizeIntent(payload) {
       code: 'INVALID_PURCHASE_INTENT_RESPONSE',
     });
   }
+  const providerTransactionId = payload.provider_checkout_id == null
+    ? null
+    : String(payload.provider_checkout_id);
+  if (providerTransactionId && !TRANSACTION_ID_PATTERN.test(providerTransactionId)) {
+    throw new SupabaseRequestError('Supabase returned an invalid attached transaction.', {
+      code: 'INVALID_PURCHASE_INTENT_TRANSACTION',
+    });
+  }
   return Object.freeze({
     id: payload.id,
     accountId: payload.account_id,
@@ -67,6 +80,8 @@ function normalizeIntent(payload) {
     currency: payload.currency,
     offerTerms: payload.offer_terms,
     expiresAt: payload.expires_at,
+    providerTransactionId,
+    reusedOpenIntent: payload.reused_open_intent === true,
   });
 }
 
@@ -110,7 +125,7 @@ export async function attachPaddleTransaction({
 }) {
   if (!UUID_PATTERN.test(intentId || '')) throw new TypeError('intentId must be a UUID.');
   if (!TRANSACTION_ID_PATTERN.test(transactionId || '')) throw new TypeError('transactionId is invalid.');
-  return serviceRpc({
+  const payload = await serviceRpc({
     name: 'attach_paddle_transaction',
     body: {
       p_intent_id: intentId,
@@ -119,6 +134,17 @@ export async function attachPaddleTransaction({
     environment,
     config,
     fetchImpl,
+  });
+  const attachedTransactionId = String(payload?.provider_checkout_id || '');
+  if (!TRANSACTION_ID_PATTERN.test(attachedTransactionId)) {
+    throw new SupabaseRequestError('Supabase returned an invalid attached transaction.', {
+      code: 'INVALID_ATTACHED_TRANSACTION_RESPONSE',
+    });
+  }
+  return Object.freeze({
+    attached: payload?.attached !== false,
+    transactionId: attachedTransactionId,
+    status: payload?.status || null,
   });
 }
 
@@ -199,11 +225,35 @@ export function normalizeCompletedPaddleTransaction(event, environment = process
   });
 }
 
+async function recordDuplicateRefundRequest({
+  transactionId,
+  adjustment,
+  environment,
+  config,
+  fetchImpl,
+}) {
+  if (!TRANSACTION_ID_PATTERN.test(transactionId || '')) throw new TypeError('transactionId is invalid.');
+  if (!ADJUSTMENT_ID_PATTERN.test(adjustment?.id || '')) throw new TypeError('adjustment is invalid.');
+  return serviceRpc({
+    name: 'record_paddle_duplicate_refund_request',
+    body: {
+      p_transaction_id: transactionId,
+      p_adjustment_id: adjustment.id,
+      p_adjustment_status: adjustment.status,
+      p_payload: adjustment.raw || {},
+    },
+    environment,
+    config,
+    fetchImpl,
+  });
+}
+
 export async function completePaddlePurchase({
   event,
   environment,
   config,
   fetchImpl,
+  ensureDuplicateRefund = ensurePaddleDuplicateRefund,
 }) {
   const transaction = normalizeCompletedPaddleTransaction(event, environment);
   const result = await serviceRpc({
@@ -228,7 +278,37 @@ export async function completePaddlePurchase({
     config,
     fetchImpl,
   });
-  return Object.freeze({ processed: true, ignored: false, result });
+
+  if (result?.refund_required === true) {
+    const adjustment = await ensureDuplicateRefund({
+      transactionId: transaction.transactionId,
+      environment,
+      fetchImpl,
+    });
+    const refundRecord = await recordDuplicateRefundRequest({
+      transactionId: transaction.transactionId,
+      adjustment,
+      environment,
+      config,
+      fetchImpl,
+    });
+    return Object.freeze({
+      processed: true,
+      ignored: false,
+      duplicatePurchase: true,
+      result: {
+        ...result,
+        duplicate_refund: refundRecord,
+      },
+    });
+  }
+
+  return Object.freeze({
+    processed: true,
+    ignored: false,
+    duplicatePurchase: result?.duplicate_purchase === true,
+    result,
+  });
 }
 
 export async function markPaddleWebhookReceipt({
@@ -264,27 +344,4 @@ export async function markPaddleWebhookReceipt({
       details: payload,
     });
   }
-}
-
-export async function processPaddleWebhookEvent({ event, environment, config, fetchImpl }) {
-  if (event.eventType !== 'transaction.completed') {
-    await markPaddleWebhookReceipt({
-      eventId: event.eventId,
-      status: 'ignored',
-      environment,
-      config,
-      fetchImpl,
-    });
-    return Object.freeze({ processed: false, ignored: true });
-  }
-
-  const result = await completePaddlePurchase({ event, environment, config, fetchImpl });
-  await markPaddleWebhookReceipt({
-    eventId: event.eventId,
-    status: 'processed',
-    environment,
-    config,
-    fetchImpl,
-  });
-  return result;
 }

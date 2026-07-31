@@ -130,15 +130,16 @@ export function createPaddleWebhookHandler({
       }
 
       const processing = await processEvent({ event, environment });
-      return jsonResponse(200, {
+      const responsePayload = {
         ok: true,
         accepted: !stored.duplicate,
         duplicate: stored.duplicate,
-        replayed: replayIgnoredAdjustment,
         processed: Boolean(processing?.processed),
         ignored: Boolean(processing?.ignored),
         eventId: event.eventId,
-      });
+      };
+      if (replayIgnoredAdjustment) responsePayload.replayed = true;
+      return jsonResponse(200, responsePayload);
     } catch (error) {
       await markFailedSafely({ eventId: event.eventId, error, environment, markReceipt });
       if (error instanceof SupabaseConfigurationError) {

@@ -33,6 +33,8 @@ jobs:
         run: npm run validate:links
       - name: Validate publishing
         run: npm run validate:publishing
+      - name: Validate automation health checks
+        run: npm run validate:automation-health
       - name: Validate Vercel functions
         run: npm run validate:functions
       - name: Build production site

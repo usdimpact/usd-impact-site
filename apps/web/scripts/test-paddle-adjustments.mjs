@@ -123,7 +123,7 @@ assert.equal(suspended.applied.processed, true);
 assert.equal(suspended.applied.stateChanged, true);
 assert.equal(
   suspended.request.url,
-  'https://example.supabase.co/rest/v1/rpc/apply_paddle_adjustment_lifecycle',
+  'https://example.supabase.co/rest/v1/rpc/apply_paddle_adjustment_dispatch',
 );
 assert.equal(suspended.request.body.p_action, 'chargeback_warning');
 assert.equal(suspended.request.body.p_reason, 'dispute warning');

@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import {
   SupabaseConfigurationError,
   SupabaseRequestError,
+  createOwnSupportRequest,
   exportOwnAccount,
   getVerifiedSupabaseUser,
   readAccountAccessState,
@@ -93,11 +94,20 @@ const activeState = await readAccountAccessState({
       version: 1,
       updated_at: '2026-07-29T20:00:00.000Z',
     }]);
+    if (url.includes('/rest/v1/purchase_intents?')) return response(200, [{
+      id: '8b759b85-1218-4d31-94d0-91786d0ddec7',
+      status: 'completed',
+      provider_checkout_id: 'txn_01kytags0sybwaqtmpczg7brny',
+      expires_at: '2026-07-29T20:30:00.000Z',
+      created_at: '2026-07-29T20:00:00.000Z',
+      updated_at: '2026-07-29T20:01:00.000Z',
+    }]);
     throw new Error(`Unexpected URL: ${url}`);
   },
 });
 assert.equal(activeState.allowed, true);
 assert.equal(activeState.reason, 'active');
+assert.equal(activeState.checkout.status, 'completed');
 
 const suspendedState = await readAccountAccessState({
   accessToken,
@@ -106,6 +116,7 @@ const suspendedState = await readAccountAccessState({
     if (url.endsWith('/auth/v1/user')) return response(200, verifiedUser());
     if (url.includes('/rest/v1/profiles?')) return response(200, [{ account_id: accountId, status: 'suspended' }]);
     if (url.includes('/rest/v1/entitlements?')) return response(200, []);
+    if (url.includes('/rest/v1/purchase_intents?')) return response(200, []);
     throw new Error(`Unexpected URL: ${url}`);
   },
 });
@@ -139,6 +150,49 @@ const deletion = await requestOwnAccountDeletion({
   },
 });
 assert.equal(deletion.profile.status, 'deletion_pending');
+
+const supportRequest = await createOwnSupportRequest({
+  accessToken,
+  category: 'duplicate_charge',
+  message: 'I see two charges and need help checking the automatic refund status.',
+  config: publicConfig,
+  fetchImpl: async (url, options) => {
+    if (url.endsWith('/auth/v1/user')) return response(200, verifiedUser());
+    assert.equal(
+      url,
+      `${publicConfig.url}/rest/v1/support_requests?select=id,category,subject,status,created_at`,
+    );
+    assert.equal(options.method, 'POST');
+    assert.equal(options.headers.Authorization, `Bearer ${accessToken}`);
+    assert.equal(options.headers.Prefer, 'return=representation');
+    assert.deepEqual(JSON.parse(options.body), {
+      account_id: accountId,
+      email: 'reader@example.com',
+      category: 'duplicate_charge',
+      subject: 'Possible duplicate charge',
+      message: 'I see two charges and need help checking the automatic refund status.',
+    });
+    return response(201, [{
+      id: 'af5ca9a5-e711-4648-8dc2-f067e9214c0c',
+      category: 'duplicate_charge',
+      subject: 'Possible duplicate charge',
+      status: 'open',
+      created_at: '2026-07-31T21:00:00.000Z',
+    }]);
+  },
+});
+assert.equal(supportRequest.status, 'open');
+
+await assert.rejects(() => createOwnSupportRequest({
+  accessToken,
+  category: 'invented',
+  message: 'This message is long enough but the category is invalid.',
+  config: publicConfig,
+  fetchImpl: async (url) => {
+    if (url.endsWith('/auth/v1/user')) return response(200, verifiedUser());
+    throw new Error(`Unexpected URL: ${url}`);
+  },
+}), (error) => error instanceof SupabaseRequestError && error.code === 'INVALID_SUPPORT_CATEGORY');
 
 const migration = await readFile(
   new URL('../../../supabase/migrations/20260729203000_paid_access_foundation.sql', import.meta.url),

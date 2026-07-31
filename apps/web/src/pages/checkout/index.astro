@@ -43,6 +43,7 @@ const clientToken = import.meta.env.PUBLIC_PADDLE_CLIENT_TOKEN || '';
       parameters.get('ptxn') ||
       parameters.get('transaction_id') ||
       '';
+    let checkoutCompleted = false;
 
     function setStatus(message) {
       if (status) status.textContent = message;
@@ -60,10 +61,24 @@ const clientToken = import.meta.env.PUBLIC_PADDLE_CLIENT_TOKEN || '';
         token,
         eventCallback(event) {
           if (event?.name === 'checkout.completed') {
+            checkoutCompleted = true;
             setStatus('Payment received. Confirming your access…');
             window.setTimeout(() => {
               window.location.assign(returnPath);
             }, 1200);
+          } else if (event?.name === 'checkout.loaded') {
+            setStatus('Secure checkout is ready.');
+          } else if (event?.name === 'checkout.payment.initiated') {
+            setStatus('Processing your payment securely…');
+          } else if (event?.name === 'checkout.payment.failed') {
+            setStatus('Payment was not completed. Check your payment details or try again. No access has been granted.');
+          } else if (event?.name === 'checkout.payment.error' || event?.name === 'checkout.error') {
+            setStatus('Paddle could not process the checkout. Try again or return to your account for billing support.');
+          } else if (event?.name === 'checkout.closed' && !checkoutCompleted) {
+            setStatus('Checkout closed. Returning to your account…');
+            window.setTimeout(() => {
+              window.location.assign('/account/?checkout=cancelled');
+            }, 400);
           }
         },
       });

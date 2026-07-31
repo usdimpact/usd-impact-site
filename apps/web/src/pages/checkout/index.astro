@@ -31,8 +31,8 @@ const clientToken = import.meta.env.PUBLIC_PADDLE_CLIENT_TOKEN || '';
     hidden
   ></div>
 
-  <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
-  <script>
+  <script is:inline src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+  <script is:inline>
     const config = document.getElementById('paddle-checkout-config');
     const status = document.getElementById('checkout-status');
     const token = config?.dataset.clientToken || '';

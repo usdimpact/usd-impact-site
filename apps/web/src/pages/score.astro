@@ -56,6 +56,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </div>
     </section>
 
+    <section class="score-archive-section" aria-labelledby="previous-weeks-heading">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Weekly archive</div>
+          <h2 id="previous-weeks-heading">Previous weeks</h2>
+        </div>
+        <a href="https://usd-impact-pipeline.pages.dev/archive/en/" target="_blank" rel="noreferrer">Open the full archive</a>
+      </div>
+      <p class="score-archive-intro">Review the score, regime, and deterministic commentary exactly as they were published for each completed week.</p>
+      <div class="score-archive-embed-shell">
+        <iframe
+          class="score-archive-embed"
+          src="https://usd-impact-pipeline.pages.dev/archive/en/"
+          title="Previous Weekly USD Impact Score editions"
+          loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
+        ></iframe>
+        <p class="score-embed-fallback">If the archive does not load inside this page, <a href="https://usd-impact-pipeline.pages.dev/archive/en/" target="_blank" rel="noreferrer">open the full archive</a>.</p>
+      </div>
+    </section>
+
     <section class="compliance" aria-label="Compliance note">
       <strong>Compliance note:</strong> Educational and informational only. The USD Impact Score is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset.
     </section>

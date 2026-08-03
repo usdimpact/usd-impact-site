@@ -20,11 +20,13 @@ Confirm all of the following without recording secret values in GitHub, chat, sc
 2. The Production product and the USD 39 and USD 49 one-time prices are active, quantity is limited to one, and their identifiers are stored in the approved secrets manager.
 3. The Production default payment link uses `https://www.usd-impact.com/checkout/`.
 4. A Production webhook destination targets `https://www.usd-impact.com/api/paddle-webhook` and includes every event handled by `paddle-event-processor.js`.
-5. Vercel Production has separately created values for `PADDLE_ENVIRONMENT`, `PADDLE_API_KEY`, `PADDLE_LAUNCH_PRICE_ID`, `PADDLE_STANDARD_PRICE_ID`, `PUBLIC_PADDLE_CLIENT_TOKEN`, and `PADDLE_WEBHOOK_SECRET`.
+5. Vercel Production has separately created values for `PADDLE_ENVIRONMENT`, `PADDLE_API_KEY`, `PADDLE_LAUNCH_PRICE_ID`, `PADDLE_STANDARD_PRICE_ID`, `PUBLIC_PADDLE_CLIENT_TOKEN`, `PADDLE_WEBHOOK_SECRET`, and `PADDLE_CHECKOUT_URL`.
 6. `PADDLE_ENVIRONMENT` is `production`; no sandbox API key, client token, price identifier, webhook secret, or notification destination is reused.
 7. Production Supabase uses the approved EU project and has `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and sensitive `SUPABASE_SECRET_KEY` values scoped only where required.
 8. All committed Supabase migrations, including the launch-window migration, have been applied in order and the backup and isolated-restore plan is current.
 9. The transactional email sender, support address, accounting treatment, retained-record schedule, and final legal/privacy/terms copy are approved.
+
+The production build runs `validate-paddle-deployment-config.mjs` and fails closed unless it receives a live-format API key, a live-format client token, distinct price identifiers, a webhook secret, `PADDLE_ENVIRONMENT=production`, and `PADDLE_CHECKOUT_URL=https://www.usd-impact.com/checkout/`. Preview builds require the matching sandbox credential formats. The check never prints credential values.
 
 ## Controlled release order
 

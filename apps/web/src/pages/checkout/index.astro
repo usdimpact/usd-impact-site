@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const clientToken = import.meta.env.PUBLIC_PADDLE_CLIENT_TOKEN || '';
+const paddleEnvironment = import.meta.env.PADDLE_ENVIRONMENT === 'production' ? 'production' : 'sandbox';
 ---
 
 <BaseLayout
@@ -27,6 +28,7 @@ const clientToken = import.meta.env.PUBLIC_PADDLE_CLIENT_TOKEN || '';
   <div
     id="paddle-checkout-config"
     data-client-token={clientToken}
+    data-paddle-environment={paddleEnvironment}
     data-account-return="/account/?checkout=complete"
     hidden
   ></div>
@@ -36,6 +38,7 @@ const clientToken = import.meta.env.PUBLIC_PADDLE_CLIENT_TOKEN || '';
     const config = document.getElementById('paddle-checkout-config');
     const status = document.getElementById('checkout-status');
     const token = config?.dataset.clientToken || '';
+    const paddleEnvironment = config?.dataset.paddleEnvironment === 'production' ? 'production' : 'sandbox';
     const returnPath = config?.dataset.accountReturn || '/account/';
     const parameters = new URLSearchParams(window.location.search);
     const transactionId =
@@ -49,14 +52,20 @@ const clientToken = import.meta.env.PUBLIC_PADDLE_CLIENT_TOKEN || '';
       if (status) status.textContent = message;
     }
 
-    if (!/^test_[a-zA-Z0-9]{27}$/.test(token)) {
-      setStatus('Checkout is temporarily unavailable because the sandbox client token is missing.');
+    const tokenPattern = paddleEnvironment === 'production'
+      ? /^live_[a-zA-Z0-9]{27}$/
+      : /^test_[a-zA-Z0-9]{27}$/;
+
+    if (!tokenPattern.test(token)) {
+      setStatus('Checkout is temporarily unavailable because the Paddle client token is missing or invalid.');
     } else if (!/^txn_[a-z0-9]{26}$/.test(transactionId)) {
       setStatus('This checkout link is invalid or incomplete. Return to your account and start checkout again.');
     } else if (!window.Paddle) {
       setStatus('Paddle Checkout could not load. Refresh this page and try again.');
     } else {
-      window.Paddle.Environment.set('sandbox');
+      if (paddleEnvironment === 'sandbox') {
+        window.Paddle.Environment.set('sandbox');
+      }
       window.Paddle.Initialize({
         token,
         eventCallback(event) {

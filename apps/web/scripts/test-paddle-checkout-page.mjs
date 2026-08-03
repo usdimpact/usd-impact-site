@@ -4,7 +4,12 @@ import { readFile } from 'node:fs/promises';
 const source = await readFile(new URL('../src/pages/checkout/index.astro', import.meta.url), 'utf8');
 
 assert.match(source, /PUBLIC_PADDLE_CLIENT_TOKEN/);
+assert.match(source, /import\.meta\.env\.PADDLE_ENVIRONMENT/);
+assert.match(source, /data-paddle-environment/);
 assert.match(source, /https:\/\/cdn\.paddle\.com\/paddle\/v2\/paddle\.js/);
+assert.match(source, /paddleEnvironment === 'sandbox'/);
+assert.match(source, /\^live_/);
+assert.match(source, /\^test_/);
 assert.match(source, /Paddle\.Environment\.set\('sandbox'\)/);
 assert.match(source, /Paddle\.Initialize/);
 assert.match(source, /Paddle\.Checkout\.open/);

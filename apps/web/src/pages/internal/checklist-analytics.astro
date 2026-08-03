@@ -233,6 +233,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .analytics-form input, .analytics-form select { min-height: 44px; padding: 9px 11px; border: 1px solid #cdd4dc; border-radius: 8px; background: var(--white); color: var(--midnight); }
   .analytics-status { min-height: 24px; margin: 0; color: var(--slate); }
   .analytics-dashboard { display: grid; gap: 28px; }
+  .analytics-dashboard[hidden] { display: none; }
   .analytics-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
   .analytics-metrics article { display: grid; gap: 8px; }
   .analytics-metrics span { color: var(--slate); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }

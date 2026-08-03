@@ -1,5 +1,10 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const latestWeeklyReport = (await getCollection('weeklyReports'))
+  .filter((entry) => entry.data.status === 'published')
+  .sort((a, b) => b.data.periodEnd.localeCompare(a.data.periodEnd))[0];
 ---
 <BaseLayout
   title="Weekly USD Impact Score | Dollar Regime Dashboard"
@@ -55,6 +60,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <p class="score-embed-fallback">If the dashboard does not load inside this page, <a href="https://usd-impact-pipeline.pages.dev/en/" target="_blank" rel="noreferrer">open the standalone version</a>.</p>
       </div>
     </section>
+
+    {latestWeeklyReport && (
+      <section class="reports-promo card">
+        <div>
+          <div class="eyebrow">News + score</div>
+          <h2>Read the Weekly USD Impact Brief</h2>
+          <p>{latestWeeklyReport.data.summary}</p>
+        </div>
+        <a class="button report-link" href={latestWeeklyReport.data.slug}>Open the Weekly Brief</a>
+      </section>
+    )}
 
     <section class="score-archive-section" aria-labelledby="previous-weeks-heading">
       <div class="section-heading">

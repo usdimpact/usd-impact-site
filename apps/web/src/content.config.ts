@@ -51,6 +51,18 @@ const newsCatalystSchema = z.object({
   sourceIds: z.array(z.string()).min(1),
 });
 
+const weeklyReportThemeSchema = z.object({
+  title: z.string(),
+  summary: z.string(),
+  editionDates: z.array(z.string()).min(1),
+});
+
+const weeklyReportSourceSchema = z.object({
+  date: z.string(),
+  title: z.string(),
+  url: z.string(),
+});
+
 const pages = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/pages' }),
   schema: baseSchema,
@@ -106,6 +118,39 @@ const news = defineCollection({
     highlights: z.array(newsHighlightSchema).min(3).max(7),
     catalysts: z.array(newsCatalystSchema).default([]),
     sources: z.array(newsSourceSchema).min(2),
+    complianceNote: z.string(),
+  }),
+});
+
+const weeklyReports = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/weekly-reports' }),
+  schema: z.object({
+    title: z.string(),
+    metaTitle: z.string(),
+    metaDescription: z.string(),
+    slug: z.string(),
+    periodStart: z.string(),
+    periodEnd: z.string(),
+    generatedAt: z.string(),
+    lastReviewed: z.string(),
+    status: publicationStatus,
+    category: z.literal('Weekly USD Impact Brief'),
+    summary: z.string(),
+    score: z.object({
+      value: z.number(),
+      regime: z.string(),
+      weekOverWeekChange: z.number(),
+      fourWeekChange: z.number(),
+      nearestRegimeBoundary: z.number(),
+      sourceUrl: z.string().url(),
+    }),
+    themes: z.array(weeklyReportThemeSchema).min(3).max(5),
+    sourceEditions: z.array(weeklyReportSourceSchema).min(1),
+    catalysts: z.array(z.object({
+      date: z.string(),
+      event: z.string(),
+      sourceEditionDate: z.string(),
+    })).default([]),
     complianceNote: z.string(),
   }),
 });
@@ -169,4 +214,4 @@ const quizzes = defineCollection({
   }),
 });
 
-export const collections = { pages, products, frameworks, leadMagnets, benchmarkModules, glossary, news, quizzes };
+export const collections = { pages, products, frameworks, leadMagnets, benchmarkModules, glossary, news, weeklyReports, quizzes };

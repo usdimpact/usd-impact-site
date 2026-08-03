@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 const contentRoot = path.resolve('src/content');
 const slugs = new Set(['/']);
-for (const dir of ['pages','products','frameworks','lead-magnets','benchmark-modules']) {
+for (const dir of ['pages','products','frameworks','lead-magnets','benchmark-modules','weekly-reports']) {
   const p = path.join(contentRoot, dir);
   for (const file of fs.readdirSync(p).filter((x) => x.endsWith('.md'))) {
     const text = fs.readFileSync(path.join(p, file), 'utf8');

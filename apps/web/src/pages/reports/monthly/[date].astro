@@ -1,0 +1,131 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const monthlyReportFiles = import.meta.glob('../../../content/monthly-reports/*.md');
+  const reports = Object.keys(monthlyReportFiles).length > 0
+    ? (await getCollection('monthlyReports')).filter((entry) => entry.data.status === 'published')
+    : [];
+  return reports.map((entry) => ({
+    params: { date: entry.data.periodEnd },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const sourceMap = new Map(entry.data.sourceWeeklyReports.map((source) => [source.periodEnd, source]));
+const formatDate = (value) => new Intl.DateTimeFormat('en', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+}).format(new Date(`${value}T12:00:00Z`));
+const signed = (value, digits = 2) => `${value >= 0 ? '+' : ''}${value.toFixed(digits)}`.replace('-', '−');
+const transitions = entry.data.scorePath.slice(1).flatMap((point, index) => {
+  const previous = entry.data.scorePath[index];
+  return point.regime === previous.regime ? [] : [{
+    periodEnd: point.periodEnd,
+    from: previous.regime,
+    to: point.regime,
+  }];
+});
+---
+<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
+  <section class="hero reports-hero">
+    <div class="container">
+      <div class="eyebrow">{entry.data.category}</div>
+      <h1>{entry.data.title}</h1>
+      <p class="lead">{entry.data.summary}</p>
+      <p class="edition-meta">Reporting period {formatDate(entry.data.periodStart)}–{formatDate(entry.data.periodEnd)} · Last reviewed {entry.data.lastReviewed}</p>
+    </div>
+  </section>
+
+  <main class="container">
+    <section class="monthly-score-section" aria-labelledby="monthly-score-heading">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Four-week score path</div>
+          <h2 id="monthly-score-heading">How the regime evolved</h2>
+        </div>
+      </div>
+      <div class="monthly-score-path">
+        {entry.data.scorePath.map((point) => (
+          <article class="monthly-score-point">
+            <time datetime={point.periodEnd}>{formatDate(point.periodEnd)}</time>
+            <strong>{signed(point.value)}</strong>
+            <span>{point.regime}</span>
+          </article>
+        ))}
+      </div>
+      {transitions.length > 0 ? (
+        <div class="monthly-transitions">
+          {transitions.map((transition) => (
+            <p>
+              <strong>{formatDate(transition.periodEnd)}:</strong> {transition.from} → {transition.to}
+            </p>
+          ))}
+        </div>
+      ) : (
+        <p class="monthly-transitions">The regime classification did not change across the four source weeks.</p>
+      )}
+    </section>
+
+    <section class="report-themes">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Persistent themes</div>
+          <h2>What carried across the month</h2>
+        </div>
+      </div>
+      <div class="report-theme-grid">
+        {entry.data.themes.map((theme) => (
+          <article class="card report-theme-card">
+            <h3>{theme.title}</h3>
+            <p>{theme.summary}</p>
+            <p class="report-theme-sources">
+              Weekly briefs:
+              {theme.weeklyReportDates.map((date, index) => {
+                const source = sourceMap.get(date);
+                return source ? (
+                  <>
+                    {index > 0 && ' · '}
+                    <a href={source.url}>{date}</a>
+                  </>
+                ) : null;
+              })}
+            </p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <article class="report-analysis">
+      <Content />
+    </article>
+
+    <section class="report-sources">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Provenance</div>
+          <h2>Weekly reports used</h2>
+        </div>
+      </div>
+      <ol>
+        {entry.data.sourceWeeklyReports.map((source) => (
+          <li><a href={source.url}>{source.title}</a></li>
+        ))}
+      </ol>
+    </section>
+
+    <div class="button-row">
+      <a class="button report-back" href="/reports/">View all reports</a>
+      <a class="button report-back" href="/score/">Open the Weekly Score</a>
+    </div>
+
+    <section class="compliance" aria-label="Compliance note">
+      <strong>Compliance note:</strong> {entry.data.complianceNote}
+    </section>
+  </main>
+</BaseLayout>

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import handler, {
+  buildChecklistAnalytics,
   resetTelemetryStateForTests,
+  setTelemetryAggregateReaderForTests,
   setTelemetryRecorderForTests,
 } from '../api/telemetry.js';
 
@@ -18,9 +20,14 @@ function createResponse() {
   };
 }
 
-async function request(body, method = 'POST') {
+async function request(body, method = 'POST', options = {}) {
   const response = createResponse();
-  await handler({ method, body, headers: { 'user-agent': 'excluded-test-agent' } }, response);
+  await handler({
+    method,
+    body,
+    url: options.url ?? '/',
+    headers: { 'user-agent': 'excluded-test-agent', ...(options.headers ?? {}) },
+  }, response);
   return {
     status: response.statusCode,
     headers: response.headers,
@@ -40,6 +47,7 @@ const logged = [];
 const errors = [];
 const originalLog = console.log;
 const originalError = console.error;
+const originalReportToken = process.env.TELEMETRY_REPORT_TOKEN;
 console.log = (value) => logged.push(value);
 console.error = (value) => errors.push(value);
 
@@ -141,12 +149,65 @@ try {
   assert.match(errors.at(-1), /durable storage failed/i);
   assert.equal(JSON.parse(logged.at(-1)).durable, false);
 
+  const aggregateFixture = {
+    totals: {
+      'checklist:downloads': 20,
+      'checklist:route:/lead-magnets/weekly-dollar-regime-checklist/': 12,
+      'checklist:utm_source:newsletter': 8,
+      'checklist:utm_medium:email': 8,
+      'checklist:utm_campaign:july_launch': 6,
+    },
+    days: [
+      { date: '2026-07-27', counters: { 'checklist:downloads': 1 } },
+      { date: '2026-07-28', counters: { 'checklist:downloads': 2 } },
+      { date: '2026-07-29', counters: { 'checklist:downloads': 4 } },
+      { date: '2026-07-30', counters: { 'checklist:downloads': 6 } },
+    ],
+  };
+  const summary = buildChecklistAnalytics(aggregateFixture, 2);
+  assert.equal(summary.lifetimeDownloads, 20);
+  assert.equal(summary.rangeDownloads, 10);
+  assert.equal(summary.previousRangeDownloads, 3);
+  assert.equal(summary.changePercent, 233.3);
+  assert.equal(summary.activeDays, 2);
+  assert.equal(summary.averagePerDay, 5);
+  assert.equal(summary.mostRecentDownloadDate, '2026-07-30');
+  assert.deepEqual(summary.attribution.sources, [{ label: 'newsletter', value: 8 }]);
+
+  process.env.TELEMETRY_REPORT_TOKEN = 'report-token-for-tests';
+  setTelemetryAggregateReaderForTests(async (dates) => {
+    assert.deepEqual(dates, ['2026-07-27', '2026-07-28', '2026-07-29', '2026-07-30']);
+    return aggregateFixture;
+  });
+  const unauthorizedReport = await request(null, 'GET', {
+    url: '/api/telemetry?action=checklist-report&end=2026-07-30&days=2',
+  });
+  assert.equal(unauthorizedReport.status, 401);
+  assert.equal(unauthorizedReport.headers['www-authenticate'], 'Bearer');
+
+  const checklistReport = await request(null, 'GET', {
+    url: '/api/telemetry?action=checklist-report&end=2026-07-30&days=2',
+    headers: { authorization: 'Bearer report-token-for-tests' },
+  });
+  assert.equal(checklistReport.status, 200);
+  assert.deepEqual(checklistReport.json.range, { start: '2026-07-29', end: '2026-07-30', days: 2 });
+  assert.deepEqual(checklistReport.json.comparisonRange, { start: '2026-07-27', end: '2026-07-28', days: 2 });
+  assert.equal(checklistReport.json.checklist.rangeDownloads, 10);
+
+  const invalidReportRange = await request(null, 'GET', {
+    url: '/api/telemetry?action=checklist-report&end=2026-07-30&days=32',
+    headers: { authorization: 'Bearer report-token-for-tests' },
+  });
+  assert.equal(invalidReportRange.status, 400);
+
   const method = await request({}, 'GET');
   assert.equal(method.status, 405);
   assert.equal(method.headers.allow, 'POST');
 } finally {
   console.log = originalLog;
   console.error = originalError;
+  if (originalReportToken === undefined) delete process.env.TELEMETRY_REPORT_TOKEN;
+  else process.env.TELEMETRY_REPORT_TOKEN = originalReportToken;
   resetTelemetryStateForTests();
 }
 

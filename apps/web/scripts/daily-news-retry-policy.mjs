@@ -7,6 +7,8 @@ const RETRYABLE_PATTERNS = [
   /fewer than two grounded urls/i,
   /at least two distinct grounded source urls/i,
   /insufficient grounded sources/i,
+  /bundle must contain 3-7 highlights/i,
+  /requires one primary source or two independent reporting domains/i,
 ];
 
 export function isRetryableGroundingFailure(payload) {

@@ -5,6 +5,7 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -26,12 +27,16 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Validate content
         run: npm run validate:content
+      - name: Validate reports
+        run: npm run validate:reports
       - name: Validate compliance
         run: npm run validate:compliance
       - name: Validate internal links
         run: npm run validate:links
       - name: Validate publishing
         run: npm run validate:publishing
+      - name: Validate automation health checks
+        run: npm run validate:automation-health
       - name: Validate Vercel functions
         run: npm run validate:functions
       - name: Build production site

@@ -25,6 +25,7 @@ const ROUTE_PATTERN = /^\/[a-zA-Z0-9/_-]{0,199}$/;
 
 const recentEventIds = new Map();
 let telemetryRecorder = recordTelemetryEvent;
+let telemetryAggregateReader = readTelemetryAggregates;
 
 function send(response, status, payload, extraHeaders = {}) {
   response.statusCode = status;
@@ -211,7 +212,7 @@ async function handleReport(request, response) {
 
   try {
     const dates = dateRange(endDate, days);
-    const aggregates = await readTelemetryAggregates(dates);
+    const aggregates = await telemetryAggregateReader(dates);
     return send(response, 200, {
       generatedAt: new Date().toISOString(),
       range: { start: dates[0], end: dates.at(-1), days },
@@ -222,6 +223,95 @@ async function handleReport(request, response) {
     const message = error instanceof Error ? error.message : 'unknown reporting error';
     console.error(`Telemetry report failed: ${message}`);
     return send(response, 503, { error: 'Telemetry reporting is temporarily unavailable.' });
+  }
+}
+
+function rankedCounters(counters, prefix, limit = 8) {
+  return Object.entries(counters)
+    .filter(([field, value]) => field.startsWith(prefix) && Number.isFinite(value) && value > 0)
+    .map(([field, value]) => ({ label: field.slice(prefix.length), value }))
+    .sort((left, right) => right.value - left.value || left.label.localeCompare(right.label))
+    .slice(0, limit);
+}
+
+function checklistDownloads(day) {
+  return Number(day?.counters?.['checklist:downloads']) || 0;
+}
+
+export function buildChecklistAnalytics(aggregates, selectedDays) {
+  if (!Number.isInteger(selectedDays) || selectedDays < 1 || selectedDays > MAX_REPORT_DAYS) {
+    throw new Error('selectedDays is invalid.');
+  }
+
+  const days = Array.isArray(aggregates?.days) ? aggregates.days : [];
+  if (days.length !== selectedDays * 2) throw new Error('Checklist analytics requires two complete periods.');
+
+  const previous = days.slice(0, selectedDays);
+  const current = days.slice(selectedDays);
+  const rangeDownloads = current.reduce((total, day) => total + checklistDownloads(day), 0);
+  const previousRangeDownloads = previous.reduce((total, day) => total + checklistDownloads(day), 0);
+  const activeDays = current.filter((day) => checklistDownloads(day) > 0).length;
+  const mostRecentDownloadDate = [...current].reverse().find((day) => checklistDownloads(day) > 0)?.date ?? null;
+  const totals = aggregates?.totals ?? {};
+
+  return {
+    lifetimeDownloads: Number(totals['checklist:downloads']) || 0,
+    rangeDownloads,
+    previousRangeDownloads,
+    changePercent: previousRangeDownloads > 0
+      ? Math.round(((rangeDownloads - previousRangeDownloads) / previousRangeDownloads) * 1_000) / 10
+      : null,
+    activeDays,
+    averagePerDay: Math.round((rangeDownloads / selectedDays) * 100) / 100,
+    mostRecentDownloadDate,
+    daily: current.map((day) => ({ date: day.date, downloads: checklistDownloads(day) })),
+    attribution: {
+      routes: rankedCounters(totals, 'checklist:route:'),
+      sources: rankedCounters(totals, 'checklist:utm_source:'),
+      mediums: rankedCounters(totals, 'checklist:utm_medium:'),
+      campaigns: rankedCounters(totals, 'checklist:utm_campaign:'),
+    },
+  };
+}
+
+async function handleChecklistReport(request, response) {
+  if (request.method !== 'GET') {
+    return send(response, 405, { error: 'Method not allowed.' }, { Allow: 'GET' });
+  }
+
+  const endpointToken = process.env.TELEMETRY_REPORT_TOKEN || process.env.NEWSFEED_BEARER_TOKEN;
+  if (!endpointToken) {
+    console.error('Telemetry report token is not configured.');
+    return send(response, 503, { error: 'Telemetry reporting is not configured.' });
+  }
+  if (!safeTokenEqual(bearerToken(request), endpointToken)) {
+    return send(response, 401, { error: 'Unauthorized.' }, { 'WWW-Authenticate': 'Bearer' });
+  }
+
+  const endDate = queryValue(request, 'end') || utcDateString();
+  if (!isRealDate(endDate)) return send(response, 400, { error: 'end must use YYYY-MM-DD.' });
+
+  const daysValue = queryValue(request, 'days') || '30';
+  const days = Number.parseInt(daysValue, 10);
+  if (!Number.isInteger(days) || days < 1 || days > MAX_REPORT_DAYS || String(days) !== daysValue) {
+    return send(response, 400, { error: `days must be an integer from 1 to ${MAX_REPORT_DAYS}.` });
+  }
+
+  try {
+    const dates = dateRange(endDate, days * 2);
+    const aggregates = await telemetryAggregateReader(dates);
+    const checklist = buildChecklistAnalytics(aggregates, days);
+    return send(response, 200, {
+      generatedAt: new Date().toISOString(),
+      range: { start: dates[days], end: dates.at(-1), days },
+      comparisonRange: { start: dates[0], end: dates[days - 1], days },
+      retentionDays: telemetryStorageConstants.dailyRetentionDays,
+      checklist,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'unknown checklist reporting error';
+    console.error(`Checklist analytics failed: ${message}`);
+    return send(response, 503, { error: 'Checklist analytics are temporarily unavailable.' });
   }
 }
 
@@ -292,13 +382,20 @@ async function handleEvent(request, response) {
 export function resetTelemetryStateForTests() {
   recentEventIds.clear();
   telemetryRecorder = recordTelemetryEvent;
+  telemetryAggregateReader = readTelemetryAggregates;
 }
 
 export function setTelemetryRecorderForTests(recorder) {
   telemetryRecorder = recorder;
 }
 
+export function setTelemetryAggregateReaderForTests(reader) {
+  telemetryAggregateReader = reader;
+}
+
 export default async function handler(request, response) {
-  if (queryValue(request, 'action') === 'report') return handleReport(request, response);
+  const requestedAction = queryValue(request, 'action');
+  if (requestedAction === 'report') return handleReport(request, response);
+  if (requestedAction === 'checklist-report') return handleChecklistReport(request, response);
   return handleEvent(request, response);
 }

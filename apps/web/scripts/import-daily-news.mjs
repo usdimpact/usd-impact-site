@@ -4,8 +4,9 @@ import path from 'node:path';
 const inputPath = process.argv[2];
 const replace = process.argv.includes('--replace');
 const skipPublished = process.argv.includes('--skip-published');
+const publish = process.argv.includes('--publish');
 if (!inputPath) {
-  console.error('Usage: node scripts/import-daily-news.mjs <bundle.json> [--replace] [--skip-published]');
+  console.error('Usage: node scripts/import-daily-news.mjs <bundle.json> [--replace] [--skip-published] [--publish]');
   process.exit(1);
 }
 
@@ -70,6 +71,7 @@ for (const catalyst of catalysts) {
 }
 
 const list = (items, indent = 0) => items.map((item) => `${' '.repeat(indent)}- ${quoted(item)}`).join('\n');
+const publicationStatus = publish ? 'published' : 'review';
 
 const lines = [
   '---',
@@ -80,7 +82,7 @@ const lines = [
   `date: ${quoted(date)}`,
   `generatedAt: ${quoted(requiredString(payload, 'generatedAt'))}`,
   `lastReviewed: ${quoted(payload.lastReviewed ?? date)}`,
-  'status: "review"',
+  `status: ${quoted(publicationStatus)}`,
   'category: "Daily USD Impact"',
   `marketRegime: ${quoted(requiredString(payload, 'marketRegime'))}`,
   `summary: ${quoted(requiredString(payload, 'summary'))}`,
@@ -123,7 +125,7 @@ for (const source of sources) {
 }
 
 lines.push(`complianceNote: ${quoted(payload.complianceNote ?? 'Educational and informational only. This content is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset.')}`);
-lines.push('---', '', String(payload.body ?? 'This edition was generated from a structured, source-backed input bundle and remains in review until publication approval.').trim(), '');
+lines.push('---', '', String(payload.body ?? 'This edition was generated from a structured, source-backed input bundle.').trim(), '');
 
 const outputDir = path.resolve('src/content/news');
 const outputPath = path.join(outputDir, `${date}.md`);
@@ -149,4 +151,4 @@ if (existingContent && !replace) {
 }
 
 await writeFile(outputPath, `${lines.join('\n')}\n`, 'utf8');
-console.log(`Imported Daily USD Impact bundle to ${outputPath} with status review.`);
+console.log(`Imported Daily USD Impact bundle to ${outputPath} with status ${publicationStatus}.`);

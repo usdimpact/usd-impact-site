@@ -1,0 +1,187 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { monthlyEligibility } from '../../lib/report-periods.js';
+
+const weeklyReports = (await getCollection('weeklyReports'))
+  .filter((entry) => entry.data.status === 'published')
+  .sort((a, b) => b.data.periodEnd.localeCompare(a.data.periodEnd));
+const monthlyReportFiles = import.meta.glob('../../content/monthly-reports/*.md');
+const monthlyReports = Object.keys(monthlyReportFiles).length > 0
+  ? (await getCollection('monthlyReports'))
+    .filter((entry) => entry.data.status === 'published')
+    .sort((a, b) => b.data.periodEnd.localeCompare(a.data.periodEnd))
+  : [];
+
+const latest = weeklyReports[0];
+const latestMonthly = monthlyReports[0];
+const monthlyWindow = monthlyEligibility(weeklyReports, monthlyReports);
+const monthlyProgress = monthlyWindow.progress;
+const formatDate = (value) => new Intl.DateTimeFormat('en', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+}).format(new Date(`${value}T12:00:00Z`));
+const signed = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}`.replace('-', '−');
+---
+<BaseLayout
+  title="USD Impact Reports | Weekly Briefs and Monthly Reviews"
+  description="Source-backed weekly briefs connecting Daily USD Impact developments with the completed-Friday USD Impact Score, plus monthly reviews built from validated weekly reports."
+>
+  <section class="hero reports-hero">
+    <div class="container">
+      <div class="eyebrow">USD Impact Reports</div>
+      <h1>Connect the week's developments to the score.</h1>
+      <p class="lead">Weekly briefs combine the published Daily USD Impact editions with the completed-Friday cross-asset score. Monthly reviews will build only from validated weekly briefs.</p>
+    </div>
+  </section>
+
+  <main class="container">
+    {latest ? (
+      <section class="latest-report">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">Latest weekly brief</div>
+            <h2>{latest.data.title}</h2>
+          </div>
+          <p>Week ending {formatDate(latest.data.periodEnd)}</p>
+        </div>
+
+        <div class="report-score-panel">
+          <div>
+            <span>USD Impact Score</span>
+            <strong>{signed(latest.data.score.value)}</strong>
+          </div>
+          <div>
+            <span>Regime</span>
+            <strong>{latest.data.score.regime}</strong>
+          </div>
+          <p>{latest.data.summary}</p>
+        </div>
+
+        <div class="report-theme-grid">
+          {latest.data.themes.map((theme) => (
+            <article class="card report-theme-card">
+              <div class="eyebrow">Weekly theme</div>
+              <h3>{theme.title}</h3>
+              <p>{theme.summary}</p>
+            </article>
+          ))}
+        </div>
+
+        <div class="button-row">
+          <a class="button primary" href={latest.data.slug}>Read the weekly brief</a>
+        </div>
+      </section>
+    ) : (
+      <section class="empty-state card">
+        <div class="eyebrow">Weekly reports</div>
+        <h2>The first brief is being prepared</h2>
+        <p>A report appears only after its daily editions and completed-Friday score have passed publication checks.</p>
+      </section>
+    )}
+
+    {latestMonthly && (
+      <section class="monthly-latest">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">Latest monthly report</div>
+            <h2>{latestMonthly.data.title}</h2>
+          </div>
+          <p>Through {formatDate(latestMonthly.data.periodEnd)}</p>
+        </div>
+        <article class="card monthly-latest-card">
+          <div>
+            <p>{latestMonthly.data.summary}</p>
+            <div class="button-row">
+              <a class="button primary" href={latestMonthly.data.slug}>Read the monthly report</a>
+            </div>
+          </div>
+          <div class="monthly-score-mini" aria-label="Monthly score path">
+            {latestMonthly.data.scorePath.map((point) => (
+              <span>
+                <small>{point.periodEnd}</small>
+                <strong>{signed(point.value)}</strong>
+              </span>
+            ))}
+          </div>
+        </article>
+      </section>
+    )}
+
+    <section class="monthly-roadmap">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Monthly review</div>
+          <h2>{monthlyWindow.ready ? 'Four briefs are ready for synthesis' : 'Built from validated weekly briefs'}</h2>
+        </div>
+        <p>{monthlyProgress} of 4 briefs available</p>
+      </div>
+      <article class="card monthly-roadmap-card">
+        <div>
+          <h3>{monthlyWindow.ready ? 'Monthly input gate passed' : 'Next Monthly USD Impact Report'}</h3>
+          <p>The next monthly report will summarize four consecutive published weekly briefs, the score path, regime changes, and persistent themes. It will not add unsourced market claims.</p>
+          {monthlyWindow.inputs.length > 0 && (
+            <p class="monthly-inputs">
+              Eligible briefs:
+              {monthlyWindow.inputs.map((report, index) => (
+                <>
+                  {index > 0 && ' · '}
+                  <a href={report.data.slug}>{report.data.periodEnd}</a>
+                </>
+              ))}
+            </p>
+          )}
+        </div>
+        <div class="monthly-progress" aria-label={`${monthlyProgress} of 4 weekly briefs available`}>
+          {[1, 2, 3, 4].map((step) => <span class:list={{ complete: step <= monthlyProgress }}></span>)}
+        </div>
+      </article>
+    </section>
+
+    {monthlyReports.length > 0 && (
+      <section class="monthly-archive">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">Archive</div>
+            <h2>Monthly reports</h2>
+          </div>
+        </div>
+        <div class="archive-list">
+          {monthlyReports.map((report) => (
+            <a href={report.data.slug}>
+              <span>{formatDate(report.data.periodEnd)}</span>
+              <strong>Four-week review</strong>
+              <small>{report.data.summary}</small>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    {weeklyReports.length > 0 && (
+      <section class="report-archive">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">Archive</div>
+            <h2>Weekly briefs</h2>
+          </div>
+        </div>
+        <div class="archive-list">
+          {weeklyReports.map((report) => (
+            <a href={report.data.slug}>
+              <span>{formatDate(report.data.periodEnd)}</span>
+              <strong>{report.data.score.regime}</strong>
+              <small>{report.data.summary}</small>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <section class="compliance" aria-label="Compliance note">
+      <strong>Compliance note:</strong> USD Impact reports are educational and informational. They are not investment, financial, trading, legal, or tax advice and are not recommendations to buy or sell any asset.
+    </section>
+  </main>
+</BaseLayout>

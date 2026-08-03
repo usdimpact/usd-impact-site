@@ -160,6 +160,7 @@ assert.equal(rewriteMap.has('/auth/confirm/exchange'), false);
 assert.equal(rewriteMap.get('/api/account-access'), '/api/account?action=access');
 assert.equal(rewriteMap.get('/api/account-support'), '/api/account?action=support');
 assert.equal(rewriteMap.get('/api/telemetry-report'), '/api/telemetry?action=report');
+assert.equal(rewriteMap.get('/api/checklist-analytics'), '/api/telemetry?action=checklist-report');
 assert.match(packageJson.scripts['validate:functions'], /node --check api\/account\.js/);
 assert.doesNotMatch(packageJson.scripts['validate:supabase'], /token-hash/);
 assert.doesNotMatch(`${signInPage}${accountPage}${confirmationPage}`, /sb_secret_|SUPABASE_SECRET_KEY/);

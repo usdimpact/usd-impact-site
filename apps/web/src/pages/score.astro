@@ -1,5 +1,10 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const latestWeeklyReport = (await getCollection('weeklyReports'))
+  .filter((entry) => entry.data.status === 'published')
+  .sort((a, b) => b.data.periodEnd.localeCompare(a.data.periodEnd))[0];
 ---
 <BaseLayout
   title="Weekly USD Impact Score | Dollar Regime Dashboard"
@@ -53,6 +58,38 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           referrerpolicy="strict-origin-when-cross-origin"
         ></iframe>
         <p class="score-embed-fallback">If the dashboard does not load inside this page, <a href="https://usd-impact-pipeline.pages.dev/en/" target="_blank" rel="noreferrer">open the standalone version</a>.</p>
+      </div>
+    </section>
+
+    {latestWeeklyReport && (
+      <section class="reports-promo card">
+        <div>
+          <div class="eyebrow">News + score</div>
+          <h2>Read the Weekly USD Impact Brief</h2>
+          <p>{latestWeeklyReport.data.summary}</p>
+        </div>
+        <a class="button report-link" href={latestWeeklyReport.data.slug}>Open the Weekly Brief</a>
+      </section>
+    )}
+
+    <section class="score-archive-section" aria-labelledby="previous-weeks-heading">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Weekly archive</div>
+          <h2 id="previous-weeks-heading">Previous weeks</h2>
+        </div>
+        <a href="https://usd-impact-pipeline.pages.dev/archive/en/" target="_blank" rel="noreferrer">Open the full archive</a>
+      </div>
+      <p class="score-archive-intro">Review the score, regime, and deterministic commentary exactly as they were published for each completed week.</p>
+      <div class="score-archive-embed-shell">
+        <iframe
+          class="score-archive-embed"
+          src="https://usd-impact-pipeline.pages.dev/archive/en/"
+          title="Previous Weekly USD Impact Score editions"
+          loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
+        ></iframe>
+        <p class="score-embed-fallback">If the archive does not load inside this page, <a href="https://usd-impact-pipeline.pages.dev/archive/en/" target="_blank" rel="noreferrer">open the full archive</a>.</p>
       </div>
     </section>
 

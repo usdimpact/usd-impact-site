@@ -14,12 +14,17 @@ const protectedPaths = new Set(
   ]),
 );
 
+const privatePaths = new Set([
+  ...protectedPaths,
+  '/internal/checklist-analytics',
+]);
+
 export default defineConfig({
   site: 'https://www.usd-impact.com',
   output: 'static',
   integrations: [
     sitemap({
-      filter: (page) => !protectedPaths.has(normalizePath(new URL(page).pathname)),
+      filter: (page) => !privatePaths.has(normalizePath(new URL(page).pathname)),
     }),
   ],
 });

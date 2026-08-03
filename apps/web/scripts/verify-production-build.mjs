@@ -21,6 +21,7 @@ const failures = [];
 const requiredRoutes = ['/start-here','/book/read-the-dollar-first',routes.dollarLesson,routes.fxLesson,routes.dxyLesson,routes.broadLesson,routes.regimeLesson,routes.goldLesson,routes.wtiLesson,routes.lngLesson,routes.equitiesLesson,routes.bitcoinLesson,routes.currencyRiskLesson,'/framework/dollar-transmission-chain','/lead-magnets/weekly-dollar-regime-checklist','/privacy'];
 for (const route of requiredRoutes) if (!fs.existsSync(pagePath(route))) failures.push(`Missing published route: ${route}.`);
 for (const output of ['news/index.html','news/2026-07-22/index.html','news/feed.xml','news/latest.json']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing Daily USD Impact output: /${output}.`);
+for (const output of ['reports/index.html','reports/weekly/2026-07-31/index.html']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing USD Impact Reports output: /${output}.`);
 
 const homepage = path.join(distRoot, 'index.html');
 if (!fs.existsSync(homepage)) failures.push('Homepage was not generated.');

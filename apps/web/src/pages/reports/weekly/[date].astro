@@ -1,0 +1,134 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const reports = (await getCollection('weeklyReports')).filter((entry) => entry.data.status === 'published');
+  return reports.map((entry) => ({
+    params: { date: entry.data.periodEnd },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const sourceMap = new Map(entry.data.sourceEditions.map((source) => [source.date, source]));
+const formatDate = (value) => new Intl.DateTimeFormat('en', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+}).format(new Date(`${value}T12:00:00Z`));
+const signed = (value, digits = 2) => `${value >= 0 ? '+' : ''}${value.toFixed(digits)}`.replace('-', '−');
+---
+<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
+  <section class="hero reports-hero">
+    <div class="container">
+      <div class="eyebrow">{entry.data.category}</div>
+      <h1>{entry.data.title}</h1>
+      <p class="lead">{entry.data.summary}</p>
+      <p class="edition-meta">Reporting period {formatDate(entry.data.periodStart)}–{formatDate(entry.data.periodEnd)} · Last reviewed {entry.data.lastReviewed}</p>
+    </div>
+  </section>
+
+  <main class="container">
+    <section class="report-score-panel report-score-detail" aria-label="Weekly score summary">
+      <div>
+        <span>USD Impact Score</span>
+        <strong>{signed(entry.data.score.value)}</strong>
+      </div>
+      <div>
+        <span>Regime</span>
+        <strong>{entry.data.score.regime}</strong>
+      </div>
+      <div>
+        <span>Weekly change</span>
+        <strong>{signed(entry.data.score.weekOverWeekChange)}</strong>
+      </div>
+      <div>
+        <span>Four-week change</span>
+        <strong>{signed(entry.data.score.fourWeekChange)}</strong>
+      </div>
+    </section>
+
+    <section class="report-themes">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Weekly synthesis</div>
+          <h2>What shaped the week</h2>
+        </div>
+      </div>
+      <div class="report-theme-grid">
+        {entry.data.themes.map((theme) => (
+          <article class="card report-theme-card">
+            <h3>{theme.title}</h3>
+            <p>{theme.summary}</p>
+            <p class="report-theme-sources">
+              Daily editions:
+              {theme.editionDates.map((date, index) => {
+                const source = sourceMap.get(date);
+                return source ? (
+                  <>
+                    {index > 0 && ' · '}
+                    <a href={source.url}>{date}</a>
+                  </>
+                ) : null;
+              })}
+            </p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <article class="report-analysis">
+      <Content />
+    </article>
+
+    {entry.data.catalysts.length > 0 && (
+      <section class="report-catalysts">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">Confirmed calendar</div>
+            <h2>Next-week catalysts</h2>
+          </div>
+        </div>
+        <div class="catalyst-list">
+          {entry.data.catalysts.map((catalyst) => {
+            const source = sourceMap.get(catalyst.sourceEditionDate);
+            return (
+              <article class="card">
+                <time datetime={catalyst.date}>{formatDate(catalyst.date)}</time>
+                <h3>{catalyst.event}</h3>
+                {source && <p class="card-sources">Source: <a href={source.url}>{source.title}</a></p>}
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    )}
+
+    <section class="report-sources">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Provenance</div>
+          <h2>Reports used</h2>
+        </div>
+      </div>
+      <ol>
+        {entry.data.sourceEditions.map((source) => (
+          <li><a href={source.url}>{source.title}</a></li>
+        ))}
+        <li><a href={entry.data.score.sourceUrl} target="_blank" rel="noreferrer">Archived Weekly USD Impact Score input — {entry.data.periodEnd}</a></li>
+      </ol>
+    </section>
+
+    <div class="button-row">
+      <a class="button report-back" href="/reports/">View all reports</a>
+      <a class="button report-back" href="/score/">Open the Weekly Score</a>
+    </div>
+
+    <section class="compliance" aria-label="Compliance note">
+      <strong>Compliance note:</strong> {entry.data.complianceNote}
+    </section>
+  </main>
+</BaseLayout>

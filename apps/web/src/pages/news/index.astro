@@ -8,6 +8,9 @@ const editions = (await getCollection('news'))
   .sort((a, b) => b.data.date.localeCompare(a.data.date));
 
 const latest = editions[0];
+const latestWeeklyReport = (await getCollection('weeklyReports'))
+  .filter((entry) => entry.data.status === 'published')
+  .sort((a, b) => b.data.periodEnd.localeCompare(a.data.periodEnd))[0];
 const formatDate = (value) => new Intl.DateTimeFormat('en', {
   day: 'numeric',
   month: 'long',
@@ -53,6 +56,17 @@ const formatDate = (value) => new Intl.DateTimeFormat('en', {
             <a class="button primary" href={latest.data.slug}>Read the complete edition</a>
           </div>
         </section>
+
+        {latestWeeklyReport && (
+          <section class="reports-promo card">
+            <div>
+              <div class="eyebrow">Weekly synthesis</div>
+              <h2>Connect the news to the score</h2>
+              <p>{latestWeeklyReport.data.summary}</p>
+            </div>
+            <a class="button report-link" href={latestWeeklyReport.data.slug}>Read the Weekly Brief</a>
+          </section>
+        )}
 
         <section class="edition-archive">
           <div class="section-heading">

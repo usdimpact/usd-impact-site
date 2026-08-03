@@ -27,6 +27,8 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Validate content
         run: npm run validate:content
+      - name: Validate weekly reports
+        run: npm run validate:reports
       - name: Validate compliance
         run: npm run validate:compliance
       - name: Validate internal links

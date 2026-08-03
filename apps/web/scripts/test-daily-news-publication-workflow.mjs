@@ -16,15 +16,15 @@ assert.match(
   /if \[ -n "\$existing_pr_url" \]; then[\s\S]*gh pr view "\$pr_url" --json headRefOid[\s\S]*else[\s\S]*git push --set-upstream origin "\$branch"/,
   'bounded reruns must reuse the immutable existing PR head instead of overwriting it',
 );
-assert.match(
-  workflow,
-  /gh pr merge "\$pr_url" --auto --squash --delete-branch/,
-  'publication must wait for protected-branch requirements through auto-merge',
-);
 assert.doesNotMatch(
   workflow,
-  /gh pr merge "\$pr_url" --squash --delete-branch/,
-  'publication must not attempt an immediate protected-branch merge',
+  /gh pr merge/,
+  'publication must not merge unreviewed content',
+);
+assert.match(
+  workflow,
+  /passed Web quality and is ready for protected review and merge/,
+  'publication must clearly report the protected review handoff',
 );
 
 console.log('daily news publication workflow tests pass');

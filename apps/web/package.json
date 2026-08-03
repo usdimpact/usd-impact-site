@@ -11,7 +11,7 @@
     "validate:reports": "node scripts/validate-weekly-reports.mjs && node scripts/validate-monthly-reports.mjs && node scripts/test-monthly-reports.mjs && node scripts/test-report-periods.mjs",
     "validate:news": "node scripts/validate-news.mjs",
     "validate:links": "node scripts/validate-links.mjs",
-    "validate:compliance": "node scripts/check-compliance-phrases.mjs",
+    "validate:compliance": "node scripts/check-compliance-phrases.mjs && node scripts/test-domain-readiness-contract.mjs",
     "validate:publishing": "node scripts/validate-publishing.mjs",
     "validate:automation-health": "node scripts/test-daily-news-deployment-health.mjs && node scripts/test-daily-news-publication-workflow.mjs",
     "validate:functions": "node --check api/waitlist.js && node --check api/daily-news-source.js && node --check api/daily-news-background.js && node --check api/daily-news-grounded-background.js && node --check api/quiz-submit.js && node --check api/telemetry.js && node --check api/_telemetry-store.js && node --check api/account.js && node --check api/guided-edition.js && node --check middleware.js && node scripts/test-waitlist-function.mjs && node scripts/test-daily-news-source-function.mjs && node scripts/test-daily-news-validation.mjs && node scripts/test-import-daily-news.mjs && node scripts/test-daily-news-retry-policy.mjs && node scripts/test-telemetry-function.mjs && node scripts/test-telemetry-storage.mjs && node scripts/test-telemetry-client-contract.mjs && node scripts/test-checklist-analytics-contract.mjs",

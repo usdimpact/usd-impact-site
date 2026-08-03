@@ -31,6 +31,11 @@ h3 { color: var(--navy); line-height: 1.25; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
 .card { background: var(--white); border: 1px solid #e3e7ec; border-radius: 18px; padding: 24px; box-shadow: 0 12px 34px rgba(2,10,20,.06); }
 main { padding: 56px 0; }
+.legal-page { max-width: 880px; }
+.legal-page h1 { color: var(--navy); font-size: clamp(38px, 6vw, 58px); }
+.legal-page h2 { margin-top: 38px; }
+.legal-page p, .legal-page li { max-width: 78ch; }
+.legal-page > p:first-of-type { color: var(--slate); }
 .button-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 28px; }
 .button { display: inline-block; padding: 12px 18px; border-radius: 999px; text-decoration: none; font-weight: 700; border: 0; cursor: pointer; font: inherit; }
 .button.primary { background: var(--gold); color: var(--midnight); }

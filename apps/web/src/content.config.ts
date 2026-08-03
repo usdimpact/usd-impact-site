@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
+import fs from 'node:fs';
 
 const publicationStatus = z.enum(['draft', 'review', 'ready-for-build', 'published']);
 
@@ -62,6 +63,27 @@ const weeklyReportSourceSchema = z.object({
   title: z.string(),
   url: z.string(),
 });
+
+const monthlyReportThemeSchema = z.object({
+  title: z.string(),
+  summary: z.string(),
+  weeklyReportDates: z.array(z.string()).min(1),
+});
+
+const monthlyReportSourceSchema = z.object({
+  periodEnd: z.string(),
+  title: z.string(),
+  url: z.string(),
+});
+
+const monthlyReportScorePointSchema = z.object({
+  periodEnd: z.string(),
+  value: z.number(),
+  regime: z.string(),
+});
+
+const monthlyReportDirectory = new URL('./content/monthly-reports/', import.meta.url);
+const hasMonthlyReportFiles = fs.readdirSync(monthlyReportDirectory).some((name) => name.endsWith('.md'));
 
 const pages = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/pages' }),
@@ -155,6 +177,27 @@ const weeklyReports = defineCollection({
   }),
 });
 
+const monthlyReports = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/monthly-reports' }),
+  schema: z.object({
+    title: z.string(),
+    metaTitle: z.string(),
+    metaDescription: z.string(),
+    slug: z.string(),
+    periodStart: z.string(),
+    periodEnd: z.string(),
+    generatedAt: z.string(),
+    lastReviewed: z.string(),
+    status: publicationStatus,
+    category: z.literal('Monthly USD Impact Report'),
+    summary: z.string(),
+    scorePath: z.array(monthlyReportScorePointSchema).min(4).max(4),
+    themes: z.array(monthlyReportThemeSchema).min(3).max(6),
+    sourceWeeklyReports: z.array(monthlyReportSourceSchema).min(4).max(4),
+    complianceNote: z.string(),
+  }),
+});
+
 
 const quizzes = defineCollection({
   loader: glob({ pattern: '**/*.json', base: './src/content/quizzes' }),
@@ -214,4 +257,15 @@ const quizzes = defineCollection({
   }),
 });
 
-export const collections = { pages, products, frameworks, leadMagnets, benchmarkModules, glossary, news, weeklyReports, quizzes };
+export const collections = {
+  pages,
+  products,
+  frameworks,
+  leadMagnets,
+  benchmarkModules,
+  glossary,
+  news,
+  weeklyReports,
+  ...(hasMonthlyReportFiles ? { monthlyReports } : {}),
+  quizzes,
+};

@@ -10,6 +10,7 @@ const routeCollections = {
   benchmarkModules: 'benchmark-modules',
   news: 'news',
   weeklyReports: 'weekly-reports',
+  monthlyReports: 'monthly-reports',
 };
 const staticRoutes = new Map([
   ['/news', path.resolve('src/pages/news/index.astro')],

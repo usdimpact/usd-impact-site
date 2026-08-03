@@ -22,6 +22,15 @@ const requiredRoutes = ['/start-here','/book/read-the-dollar-first',routes.dolla
 for (const route of requiredRoutes) if (!fs.existsSync(pagePath(route))) failures.push(`Missing published route: ${route}.`);
 for (const output of ['news/index.html','news/2026-07-22/index.html','news/feed.xml','news/latest.json']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing Daily USD Impact output: /${output}.`);
 for (const output of ['reports/index.html','reports/weekly/2026-07-31/index.html']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing USD Impact Reports output: /${output}.`);
+const monthlyReportRoot = path.resolve('src/content/monthly-reports');
+for (const file of fs.readdirSync(monthlyReportRoot).filter((name) => name.endsWith('.md'))) {
+  const source = fs.readFileSync(path.join(monthlyReportRoot, file), 'utf8');
+  const status = source.match(/^status:\s*["']?([^"'\r\n]+)["']?\s*$/m)?.[1]?.trim();
+  const slug = source.match(/^slug:\s*["']?([^"'\r\n]+)["']?\s*$/m)?.[1]?.trim();
+  if (status === 'published' && (!slug || !fs.existsSync(pagePath(slug)))) {
+    failures.push(`Published monthly report was not generated: ${slug ?? file}.`);
+  }
+}
 
 const homepage = path.join(distRoot, 'index.html');
 if (!fs.existsSync(homepage)) failures.push('Homepage was not generated.');

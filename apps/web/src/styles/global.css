@@ -116,7 +116,7 @@ main { padding: 56px 0; }
 
 /* Weekly and monthly reports */
 .reports-hero { padding-bottom: 64px; }
-.latest-report, .monthly-roadmap, .report-archive, .report-themes, .report-catalysts, .report-sources { margin-top: 64px; }
+.latest-report, .monthly-latest, .monthly-roadmap, .monthly-archive, .monthly-score-section, .report-archive, .report-themes, .report-catalysts, .report-sources { margin-top: 64px; }
 .report-score-panel { display: grid; grid-template-columns: minmax(170px, .35fr) minmax(220px, .65fr) minmax(0, 1.8fr); gap: 24px; align-items: center; padding: 24px; margin: 20px 0 28px; color: var(--white); background: var(--navy); border-left: 5px solid var(--gold); border-radius: 16px; }
 .report-score-panel > div { display: grid; gap: 4px; }
 .report-score-panel span { color: var(--gold); font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
@@ -131,9 +131,23 @@ main { padding: 56px 0; }
 .monthly-roadmap-card, .reports-promo { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 28px; align-items: center; }
 .monthly-roadmap-card h3, .reports-promo h2 { margin: 6px 0 8px; }
 .monthly-roadmap-card p, .reports-promo p { margin: 0; color: var(--slate); }
+.monthly-inputs { margin-top: 14px !important; font-size: 14px; }
 .monthly-progress { display: grid; grid-template-columns: repeat(4, 28px); gap: 8px; }
 .monthly-progress span { width: 28px; height: 10px; border-radius: 999px; background: #dce2e9; }
 .monthly-progress span.complete { background: var(--gold); }
+.monthly-latest-card { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr); gap: 28px; align-items: center; border-left: 5px solid var(--gold); }
+.monthly-latest-card p { margin: 0; color: var(--slate); }
+.monthly-score-mini { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.monthly-score-mini span { display: grid; gap: 5px; padding: 12px; border-radius: 10px; background: var(--navy); color: var(--white); }
+.monthly-score-mini small { color: var(--soft-silver); font-size: 11px; }
+.monthly-score-mini strong { color: var(--gold); font-size: 20px; }
+.monthly-score-path { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.monthly-score-point { display: grid; gap: 8px; padding: 20px; border-radius: 14px; background: var(--navy); color: var(--white); border-top: 4px solid var(--gold); }
+.monthly-score-point time { color: var(--soft-silver); font-size: 12px; }
+.monthly-score-point strong { color: var(--gold); font-size: 30px; }
+.monthly-score-point span { font-weight: 700; }
+.monthly-transitions { margin-top: 18px; padding: 18px 20px; border-radius: 12px; background: #f3f5f7; color: var(--slate); }
+.monthly-transitions p { margin: 6px 0; }
 .reports-promo { margin-top: 64px; border-left: 5px solid var(--gold); background: linear-gradient(135deg, #ffffff, #f7f3ea); }
 .report-link { white-space: nowrap; background: var(--gold); color: var(--midnight); }
 .report-analysis { max-width: 860px; margin-top: 64px; font-size: 17px; }
@@ -153,6 +167,7 @@ main { padding: 56px 0; }
   .score-embed { min-height: 1180px; }
   .score-archive-embed { min-height: 860px; }
   .report-score-panel, .report-score-detail { grid-template-columns: 1fr; }
-  .monthly-roadmap-card, .reports-promo { grid-template-columns: 1fr; }
+  .monthly-roadmap-card, .monthly-latest-card, .reports-promo { grid-template-columns: 1fr; }
+  .monthly-score-mini, .monthly-score-path { grid-template-columns: 1fr 1fr; }
   .report-link { justify-self: start; }
 }

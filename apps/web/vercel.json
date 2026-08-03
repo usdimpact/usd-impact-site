@@ -16,7 +16,8 @@
     { "source": "/api/account-access", "destination": "/api/account?action=access" },
     { "source": "/api/account-export", "destination": "/api/account?action=export" },
     { "source": "/api/account-delete", "destination": "/api/account?action=delete" },
-    { "source": "/api/telemetry-report", "destination": "/api/telemetry?action=report" }
+    { "source": "/api/telemetry-report", "destination": "/api/telemetry?action=report" },
+    { "source": "/api/checklist-analytics", "destination": "/api/telemetry?action=checklist-report" }
   ],
   "headers": [
     {
@@ -38,6 +39,13 @@
       "source": "/downloads/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
+      "source": "/internal/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "private, no-store" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
       ]
     }
   ]

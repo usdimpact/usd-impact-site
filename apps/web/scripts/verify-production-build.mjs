@@ -22,6 +22,9 @@ const requiredRoutes = ['/start-here','/book/read-the-dollar-first',routes.dolla
 for (const route of requiredRoutes) if (!fs.existsSync(pagePath(route))) failures.push(`Missing published route: ${route}.`);
 for (const output of ['news/index.html','news/2026-07-22/index.html','news/feed.xml','news/latest.json']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing Daily USD Impact output: /${output}.`);
 for (const output of ['reports/index.html','reports/weekly/2026-07-31/index.html']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing USD Impact Reports output: /${output}.`);
+const checklistAnalytics = pagePath('/internal/checklist-analytics');
+if (!fs.existsSync(checklistAnalytics)) failures.push('Checklist analytics dashboard was not generated.');
+else if (!fs.readFileSync(checklistAnalytics, 'utf8').includes('content="noindex, nofollow"')) failures.push('Checklist analytics dashboard is missing noindex metadata.');
 const monthlyReportRoot = path.resolve('src/content/monthly-reports');
 for (const file of fs.readdirSync(monthlyReportRoot).filter((name) => name.endsWith('.md'))) {
   const source = fs.readFileSync(path.join(monthlyReportRoot, file), 'utf8');
@@ -98,6 +101,7 @@ else {
     if (xml.includes(`${route}/`)) failures.push(`Protected learning route appears in sitemap: ${route}.`);
   }
   if (xml.includes('benchmark/usd-impact-benchmark-dashboard')) failures.push('Draft benchmark route appears in sitemap.');
+  if (xml.includes('internal/checklist-analytics')) failures.push('Checklist analytics dashboard appears in sitemap.');
 }
 if (failures.length > 0) { console.error(`Production build verification failed:\n${failures.join('\n')}`); process.exit(1); }
 console.log('production build verification pass');

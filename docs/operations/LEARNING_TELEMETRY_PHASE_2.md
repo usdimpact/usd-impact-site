@@ -8,6 +8,7 @@ Persisted counters include:
 
 - total events and counts by event name;
 - checklist downloads;
+- checklist download routes and explicit checklist-scoped UTM attribution;
 - quiz starts, completions, pass/fail outcomes, retries, score sums, and question-count sums;
 - daily counters; and
 - explicit `utm_source`, `utm_medium`, and `utm_campaign` values.
@@ -60,6 +61,22 @@ Constraints:
 - responses use `Cache-Control: no-store`.
 - the read-only Upstash token is used for reports.
 
+### Checklist operator dashboard
+
+`/internal/checklist-analytics` provides a noindex, no-store operator view over a checklist-only report endpoint. The page requires the same bearer token, sends it only in the `Authorization` header, keeps it only in the current tab's memory, and never adds it to the URL or browser storage.
+
+The dashboard shows:
+
+- lifetime and selected-period download totals;
+- comparison with the immediately preceding period;
+- active days, daily average, most recent activity, and a daily trend;
+- checklist-specific source route and UTM attribution; and
+- a client-generated CSV containing only daily aggregate counts.
+
+Checklist attribution counters begin with the dashboard release. Historical downloads remain in the lifetime and daily totals but cannot be retroactively attributed.
+
+The backing route is `GET /api/checklist-analytics`. It accepts `days` from 1 to 31 (default 30) and reads two adjacent periods internally so it can calculate the comparison safely.
+
 ## Counter naming
 
 Examples:
@@ -68,6 +85,10 @@ Examples:
 events:total
 events:checklist_download
 checklist:downloads
+checklist:route:/lead-magnets/weekly-dollar-regime-checklist/
+checklist:utm_source:newsletter
+checklist:utm_medium:email
+checklist:utm_campaign:july_launch
 quiz:quiz-start-here:starts
 quiz:quiz-start-here:completions
 quiz:quiz-start-here:pass
@@ -103,6 +124,7 @@ Preview validation must confirm:
 2. repeating the same event ID returns `duplicate: true`;
 3. the protected report endpoint rejects missing or invalid authorization;
 4. an authorized report request returns daily and cumulative counters; and
-5. simulated storage failure does not block checklist or quiz flows.
+5. the checklist dashboard remains outside the sitemap and never stores its bearer token in browser storage; and
+6. simulated storage failure does not block checklist or quiz flows.
 
 #usd-impact-backlog

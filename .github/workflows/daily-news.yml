@@ -169,27 +169,39 @@ jobs:
           edition_date="$(node -p "JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/daily-usd-impact.json', 'utf8')).date")"
           branch="automation/daily-usd-impact-${edition_date}-${GITHUB_RUN_ID}"
 
-          git config user.name "usd-impact-news-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git checkout -b "$branch"
-          git add src/content/news
-          git commit -m "Publish Daily USD Impact edition for ${edition_date}"
-          git push --set-upstream origin "$branch"
-          head_sha="$(git rev-parse HEAD)"
-
-          cat > "$RUNNER_TEMP/daily-news-pr.md" <<EOF
-          ## Automated Daily USD Impact publication
-
-          This pull request contains the source-backed **${edition_date}** edition with status \`published\`.
-
-          Publication is automatic only after the required Web quality workflow passes on this exact commit. A failed validation or build leaves the pull request open and does not change production.
-          EOF
-
-          pr_url="$(gh pr create \
-            --base main \
+          existing_pr_url="$(gh pr list \
+            --state open \
             --head "$branch" \
-            --title "Publish Daily USD Impact — ${edition_date}" \
-            --body-file "$RUNNER_TEMP/daily-news-pr.md")"
+            --json url \
+            --jq '.[0].url // empty')"
+
+          if [ -n "$existing_pr_url" ]; then
+            pr_url="$existing_pr_url"
+            head_sha="$(gh pr view "$pr_url" --json headRefOid --jq '.headRefOid')"
+            echo "Reusing existing publication pull request $pr_url at $head_sha."
+          else
+            git config user.name "usd-impact-news-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git checkout -b "$branch"
+            git add src/content/news
+            git commit -m "Publish Daily USD Impact edition for ${edition_date}"
+            git push --set-upstream origin "$branch"
+            head_sha="$(git rev-parse HEAD)"
+
+            cat > "$RUNNER_TEMP/daily-news-pr.md" <<EOF
+            ## Automated Daily USD Impact publication
+
+            This pull request contains the source-backed **${edition_date}** edition with status \`published\`.
+
+            Publication is automatic only after the required Web quality workflow passes on this exact commit. A failed validation or build leaves the pull request open and does not change production.
+            EOF
+
+            pr_url="$(gh pr create \
+              --base main \
+              --head "$branch" \
+              --title "Publish Daily USD Impact — ${edition_date}" \
+              --body-file "$RUNNER_TEMP/daily-news-pr.md")"
+          fi
 
           gh workflow run quality.yml --ref "$branch"
 
@@ -214,5 +226,4 @@ jobs:
           fi
 
           gh run watch "$run_id" --exit-status
-          gh pr merge "$pr_url" --squash --delete-branch
-          echo "Merged Daily USD Impact publication for ${edition_date}. Vercel production deployment will follow from main."
+          echo "Daily USD Impact ${edition_date} passed Web quality and is ready for protected review and merge: $pr_url"

@@ -19,6 +19,7 @@ for (const required of [
   'Daily downloads',
   'Download CSV',
   'No attributed downloads yet.',
+  '.analytics-dashboard[hidden] { display: none; }',
 ]) {
   assert.ok(dashboard.includes(required), `Checklist dashboard is missing: ${required}`);
 }

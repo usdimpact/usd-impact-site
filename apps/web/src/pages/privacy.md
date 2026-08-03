@@ -1,16 +1,26 @@
 ---
-layout: ../layouts/BaseLayout.astro
+layout: ../layouts/LegalLayout.astro
 title: "Privacy Notice | USD Impact"
-description: "How USD Impact handles waitlist information and limited learning telemetry."
+description: "How USD Impact handles account, purchase, support, waitlist, and limited learning information."
 ---
 
 # Privacy notice
 
-_Last updated: July 28, 2026_
+_Last updated: August 3, 2026_
 
 ## What we collect
 
 When you join the *Read the Dollar First* waitlist, we collect the email address you submit and the time the contact record is created.
+
+If you create an account or purchase the Guided Interactive Edition, we may process:
+
+- your email address and authentication records needed to secure your account;
+- Paddle customer, transaction, and adjustment identifiers;
+- purchase status, price tier, currency, and entitlement status;
+- learning progress and quiz results associated with your account; and
+- account, billing, refund, deletion, or support requests you send to us.
+
+Payment-card details are collected and processed by Paddle. USD Impact does not receive or store complete payment-card numbers or card security codes.
 
 The website also records limited first-party learning events needed to understand whether educational resources work. These events can include:
 
@@ -30,6 +40,15 @@ Waitlist information is used only to:
 - send the purchase link when the book becomes available; and
 - send essential availability updates directly related to the book.
 
+Account and commerce information is used to:
+
+- authenticate your account and protect it from unauthorized access;
+- create and confirm checkout transactions;
+- grant, maintain, suspend, refund, or revoke paid access when required;
+- prevent duplicate purchases and reconcile payment events;
+- answer account, billing, refund, and deletion requests; and
+- meet fraud-prevention, accounting, tax, and other legal obligations.
+
 Learning telemetry is used to:
 
 - measure whether the checklist and quizzes are used;
@@ -41,17 +60,25 @@ Joining the waitlist does not subscribe you to unrelated market commentary, trad
 
 ## Service providers
 
-The website is deployed through Vercel. Vercel processes website requests and application runtime logs needed to operate and troubleshoot the service. Aggregate learning counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Waitlist contacts and confirmation emails are processed through Resend. These providers process data on behalf of USD Impact to operate the website, learning tools, waitlist, and requested email delivery.
+The website is deployed through Vercel. Vercel processes website requests and application runtime logs needed to operate and troubleshoot the service. Aggregate learning counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Account, entitlement, and commerce records are stored through Supabase. Waitlist contacts and transactional emails are processed through Resend. Paddle acts as merchant of record and processes checkout, payment, tax, invoice, refund, fraud-prevention, and related transaction information.
+
+These providers process information only as needed to operate the website, accounts, learning tools, commerce workflow, support, and requested email delivery. Their own privacy notices apply where they act independently, including Paddle's role as merchant of record.
+
+## Legal bases
+
+Depending on the activity, we process information because it is necessary to provide the service you requested, to comply with legal obligations, with your consent, or for legitimate interests such as security, fraud prevention, service reliability, and support. Where processing relies on consent, you may withdraw that consent without affecting earlier lawful processing.
 
 ## Retention and deletion
 
 Your waitlist record is retained until you unsubscribe, request deletion, or the waitlist is retired. You may withdraw at any time by replying to a waitlist email with a deletion request. Future availability messages will include an unsubscribe mechanism where required.
 
+Account and entitlement records are retained while your account or purchased access remains active. If you request account deletion, access is disabled and the account enters the documented safety period before eligible account data is deleted or anonymized. Transaction, refund, invoice, fraud-prevention, and accounting records may be retained for the periods required by Paddle, payment networks, tax, accounting, dispute, and other applicable legal obligations.
+
 Daily aggregate learning counters are retained for up to 24 months. Duplicate event identifiers are retained for up to 24 hours and are used only to prevent repeated counting. Raw learning event bodies are not stored in the durable analytics database. Operational runtime-log retention follows the hosting plan and project settings.
 
 ## Sharing and sale
 
-USD Impact does not sell waitlist email addresses or learning telemetry. Information may be shared only with service providers required to operate the website, store aggregate telemetry, store the waitlist, deliver requested email, and maintain production systems.
+USD Impact does not sell personal information, waitlist email addresses, account information, or learning telemetry. Information may be shared only with service providers required to operate the website, process purchases and refunds, provide account access, store data, deliver requested email, answer support requests, prevent fraud, and meet legal obligations.
 
 ## Security
 
@@ -59,6 +86,14 @@ API credentials are stored as protected deployment environment variables and are
 
 ## Your choice
 
-Submitting the waitlist form is optional. The consent checkbox is not preselected. You may continue using the educational website without joining the waitlist. Learning events are designed not to block downloads, quiz scoring, retries, or navigation if telemetry is unavailable.
+Submitting the waitlist form is optional. The consent checkbox is not preselected. You may continue using the public educational website without joining the waitlist. Learning events are designed not to block downloads, quiz scoring, retries, or navigation if telemetry is unavailable.
+
+Subject to applicable law, you may ask to access, correct, delete, restrict, or export your personal information, or object to certain processing. You may also complain to the relevant data-protection authority. Some transaction or accounting records cannot be deleted immediately where retention is legally required.
+
+For privacy, account, or data-rights requests, contact [support@usd-impact.com](mailto:support@usd-impact.com). We may need to verify that a request relates to your account before acting on it.
+
+## Operator
+
+USD Impact is operated by **SC Kela Leads SRL**, a company registered in Romania under CUI **40790448** and Trade Register number **J38/820/2020**.
 
 This notice describes current website operations and is not legal advice.

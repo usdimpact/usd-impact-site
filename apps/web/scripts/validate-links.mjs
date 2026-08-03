@@ -13,4 +13,10 @@ for (const dir of ['pages','products','frameworks','lead-magnets','benchmark-mod
 const requiredLinks = ['/start-here','/book/read-the-dollar-first','/lead-magnets/weekly-dollar-regime-checklist','/benchmark/usd-impact-benchmark-dashboard'];
 const missing = requiredLinks.filter((l) => !slugs.has(l));
 if (missing.length) { console.error('Missing internal slugs: ' + missing.join(', ')); process.exit(1); }
+for (const page of ['privacy.md', 'terms.md', 'refund-policy.md']) {
+  if (!fs.existsSync(path.resolve('src/pages', page))) {
+    console.error(`Missing required legal page: /${page.replace(/\.md$/, '')}.`);
+    process.exit(1);
+  }
+}
 console.log('internal link slug check pass');

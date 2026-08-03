@@ -91,6 +91,15 @@ export function buildTelemetryCounterPairs(record) {
 
   if (record.eventName === 'checklist_download') {
     addPair(pairs, 'checklist:downloads');
+    addPair(pairs, `checklist:route:${record.route}`);
+
+    for (const [property, label] of [
+      ['utmSource', 'utm_source'],
+      ['utmMedium', 'utm_medium'],
+      ['utmCampaign', 'utm_campaign'],
+    ]) {
+      if (record[property]) addPair(pairs, `checklist:${label}:${record[property]}`);
+    }
   }
 
   if (record.quizId) {

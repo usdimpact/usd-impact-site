@@ -29,6 +29,20 @@ assert.equal(pairs['quiz:quiz-start-here:pass'], 1);
 assert.equal(pairs['quiz:quiz-start-here:score_sum'], 9);
 assert.equal(pairs['utm_source:newsletter'], 1);
 
+const checklistPairs = Object.fromEntries(buildTelemetryCounterPairs({
+  eventName: 'checklist_download',
+  occurredAt: '2026-07-28T12:34:56.000Z',
+  route: '/lead-magnets/weekly-dollar-regime-checklist/',
+  utmSource: 'newsletter',
+  utmMedium: 'email',
+  utmCampaign: 'july_launch',
+}));
+assert.equal(checklistPairs['checklist:downloads'], 1);
+assert.equal(checklistPairs['checklist:route:/lead-magnets/weekly-dollar-regime-checklist/'], 1);
+assert.equal(checklistPairs['checklist:utm_source:newsletter'], 1);
+assert.equal(checklistPairs['checklist:utm_medium:email'], 1);
+assert.equal(checklistPairs['checklist:utm_campaign:july_launch'], 1);
+
 let capturedRequest;
 const accepted = await recordTelemetryEvent({
   eventId: 'evt-storage-0001',
@@ -53,6 +67,7 @@ assert.equal(command[0], 'EVAL');
 assert.match(command.join(' '), /dedup:evt-storage-0001/);
 assert.match(command.join(' '), /daily:2026-07-28/);
 assert.match(command.join(' '), /checklist:downloads/);
+assert.match(command.join(' '), /checklist:route:\/lead-magnets\/weekly-dollar-regime-checklist\//);
 
 const duplicate = await recordTelemetryEvent({
   eventId: 'evt-storage-0002',

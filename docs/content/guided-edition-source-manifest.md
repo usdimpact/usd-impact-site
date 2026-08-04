@@ -81,6 +81,16 @@ Chapter 6 contains three source examples, including a worked real-yield opportun
 
 Chapter 7 contains three anchor examples, including a worked short-term dollar hurdle-rate example. The complete boundary was rendered and checked page by page, the examples were represented through the existing structured group model, and all remaining narrative was compared exactly against the certified PDF after whitespace and line-wrap normalization. The release contains ten reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
 
+## Chapter 8 extraction boundary
+
+- Title: `Gas / LNG and the Dollar`
+- Printed pages: 41-44
+- Physical PDF pages: 42-45
+- Next boundary: Chapter 9 begins on printed page 45 / physical PDF page 46
+- Canonical reader text SHA-256: `da7f918f48e644c9aba49c3350dc5c516e48d6f3df826fc4eb06fb12a0a7506f`
+
+Chapter 8 contains three source examples, including a worked regional gas-price-spread example. The complete boundary was rendered and checked page by page, the examples were represented through the existing structured group model, and all remaining narrative was compared exactly against the certified PDF after whitespace and line-wrap normalization. The release contains ten reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
+
 ## Repository policy
 
 The certified full-book PDF, canonical chapter text, mastery answer key, and corrective feedback are controlled content. None is stored in the public repository or offered as a customer download. The repository contains only source metadata, integrity hashes, generic rendering/scoring code, and synthetic test fixtures.

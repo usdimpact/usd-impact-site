@@ -202,6 +202,10 @@ const securityHardeningMigration = await readFile(
   new URL('../../../supabase/migrations/20260804154505_supabase_security_hardening.sql', import.meta.url),
   'utf8',
 );
+const performanceHardeningMigration = await readFile(
+  new URL('../../../supabase/migrations/20260804160932_optimize_rls_and_foreign_key_indexes.sql', import.meta.url),
+  'utf8',
+);
 for (const table of [
   'profiles', 'purchase_intents', 'purchases', 'entitlements', 'entitlement_events',
   'webhook_receipts', 'learning_progress', 'bookmarks', 'support_requests',
@@ -219,5 +223,25 @@ assert.match(
   securityHardeningMigration,
   /revoke all on function public\.handle_new_auth_user\(\)\s+from public, anon, authenticated, service_role;/,
 );
+for (const policy of [
+  'profiles_select_own', 'purchase_intents_select_own', 'purchases_select_own',
+  'entitlements_select_own', 'entitlement_events_select_own', 'learning_progress_select_own',
+  'learning_progress_insert_own', 'learning_progress_update_own', 'learning_progress_delete_own',
+  'bookmarks_select_own', 'bookmarks_insert_own', 'bookmarks_update_own',
+  'bookmarks_delete_own', 'support_requests_select_own', 'support_requests_insert_own',
+  'privacy_requests_select_own', 'privacy_requests_insert_own',
+]) {
+  assert.match(
+    performanceHardeningMigration,
+    new RegExp(`alter policy ${policy}[\\s\\S]*?\\(select auth\\.uid\\(\\)\\)`),
+  );
+}
+for (const index of [
+  'entitlement_events_account_id_idx', 'entitlements_purchase_id_idx',
+  'paddle_duplicate_purchases_purchase_intent_id_idx', 'privacy_requests_account_id_idx',
+  'purchases_purchase_intent_id_idx', 'support_requests_account_id_idx',
+]) {
+  assert.match(performanceHardeningMigration, new RegExp(`create index ${index}`));
+}
 
 console.log('Supabase account and durable-record foundation tests passed.');

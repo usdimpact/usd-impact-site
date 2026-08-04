@@ -214,6 +214,10 @@ function learningProgressPath(accountId, contentId) {
   return `/rest/v1/learning_progress?account_id=eq.${encodeURIComponent(accountId)}&content_id=eq.${encodeURIComponent(contentId)}&select=account_id,content_id,status,progress_percent,resume_position,mastery_score,attempt_count,completed_at,data,updated_at&limit=1`;
 }
 
+function guidedContentReleasePath(contentId, version) {
+  return `/rest/v1/guided_content_releases?content_id=eq.${encodeURIComponent(contentId)}&version=eq.${version}&status=eq.published&select=content_id,version,slug,status,source_sha256,reader_sha256,payload&limit=1`;
+}
+
 export async function readAccountAccessState({
   accessToken,
   productId = PAID_PRODUCT_ID,
@@ -308,6 +312,37 @@ export async function readGuidedLearningProgress({
     fetchImpl,
   });
   return firstRow(rows);
+}
+
+export async function readGuidedContentRelease({
+  contentId,
+  version,
+  environment,
+  config,
+  fetchImpl,
+}) {
+  const resolvedConfig = config || readSupabaseServerConfig(environment, { requireSecret: true });
+  const validContentId = requireGuidedContentId(contentId);
+  if (!Number.isInteger(version) || version < 1) {
+    throw new SupabaseRequestError('A valid Guided Edition content version is required.', {
+      status: 400,
+      code: 'INVALID_GUIDED_CONTENT_VERSION',
+    });
+  }
+  const rows = await supabaseFetch({
+    config: resolvedConfig,
+    path: guidedContentReleasePath(validContentId, version),
+    useSecret: true,
+    fetchImpl,
+  });
+  const release = firstRow(rows);
+  if (!release) {
+    throw new SupabaseRequestError('The Guided Edition chapter is temporarily unavailable.', {
+      status: 503,
+      code: 'GUIDED_CONTENT_UNAVAILABLE',
+    });
+  }
+  return release;
 }
 
 export async function recordGuidedLearningProgress({

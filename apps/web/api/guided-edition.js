@@ -1,5 +1,6 @@
 import {
   readAccountAccessState,
+  readGuidedContentRelease,
   readGuidedLearningProgress,
   recordGuidedLearningProgress,
   safeSupabaseError,
@@ -22,6 +23,7 @@ import {
   getGuidedChapterByContentId,
   getGuidedChapterBySlug,
   guidedResumeHref,
+  normalizeGuidedContentRelease,
   normalizeGuidedProgressInput,
   normalizeGuidedProgressRecord,
   publicGuidedChapter,
@@ -133,7 +135,7 @@ function shell({ title, eyebrow, lead, content, script = '' }) {
   <title>${escapeHtml(title)} | USD Impact</title>
   <meta name="description" content="Protected Read the Dollar First Guided Interactive Edition.">
   <style>
-    :root{color-scheme:light;--navy:#031426;--ink:#081a31;--gold:#d2a84f;--paper:#f4f6f9;--line:#d9e0e8;--muted:#536275;--good:#12633d}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--paper)}a{color:inherit}.skip{position:absolute;left:-9999px;top:8px;background:#fff;padding:12px;z-index:5}.skip:focus{left:8px}header,footer{background:#020d19;color:#fff}.nav,.container,.footer-inner{max-width:1120px;margin:0 auto}.nav{padding:20px 26px;display:flex;align-items:center;justify-content:space-between;gap:24px}.brand{font-size:1.15rem;font-weight:850;text-decoration:none}.nav nav{display:flex;gap:20px;font-weight:650}.nav nav a{text-decoration:none}.hero{background:linear-gradient(135deg,#020e1c,#09233e);color:#fff;padding:64px 26px}.eyebrow{margin:0 0 14px;color:var(--gold);font-size:.83rem;font-weight:850;letter-spacing:.14em;text-transform:uppercase}h1{max-width:850px;margin:0;font-size:clamp(2.35rem,6vw,4.6rem);line-height:1.03;letter-spacing:-.035em}.lead{max-width:790px;margin:22px 0 0;font-size:clamp(1.08rem,2vw,1.3rem);line-height:1.6}main{padding:44px 26px 76px}.card,.reader-section,.mastery{background:#fff;border:1px solid var(--line);border-radius:18px;padding:30px;box-shadow:0 12px 32px rgba(6,24,45,.06)}.stack{display:grid;gap:22px}.reader-grid{display:grid;grid-template-columns:minmax(210px,280px) minmax(0,1fr);gap:28px;align-items:start}.reader-nav{position:sticky;top:20px}.reader-nav ul{padding-left:20px;line-height:1.8}.reader-content{display:grid;gap:24px}h2,h3{line-height:1.18}h2{margin:0 0 14px;font-size:clamp(1.65rem,3vw,2.25rem)}h3{margin:0 0 12px;font-size:1.35rem}p{line-height:1.7}.fixture{border-left:5px solid var(--gold)}.muted{color:var(--muted)}.progress-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}progress{width:min(100%,360px);height:16px}.button{appearance:none;display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 20px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font:inherit;font-weight:800;text-decoration:none;cursor:pointer}.primary{background:var(--gold);border-color:var(--gold);color:#111}.button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #1474d4;outline-offset:3px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}fieldset{border:0;padding:0;margin:0}legend{font-size:1.15rem;font-weight:800;line-height:1.5;margin-bottom:14px}.option{display:block;padding:10px 0}.status{min-height:1.5em;font-weight:700}.status[data-state="success"]{color:var(--good)}footer{padding:30px 26px}.footer-inner{color:#d6deea;font-size:.9rem;line-height:1.6}@media(max-width:760px){.nav nav{display:none}.reader-grid{grid-template-columns:1fr}.reader-nav{position:static}.hero{padding:52px 20px}main{padding:30px 16px 60px}.card,.reader-section,.mastery{padding:24px 20px}}
+    :root{color-scheme:light;--navy:#031426;--ink:#081a31;--gold:#d2a84f;--paper:#f4f6f9;--line:#d9e0e8;--muted:#536275;--good:#12633d}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--paper)}a{color:inherit}.skip{position:absolute;left:-9999px;top:8px;background:#fff;padding:12px;z-index:5}.skip:focus{left:8px}header,footer{background:#020d19;color:#fff}.nav,.container,.footer-inner{max-width:1120px;margin:0 auto}.nav{padding:20px 26px;display:flex;align-items:center;justify-content:space-between;gap:24px}.brand{font-size:1.15rem;font-weight:850;text-decoration:none}.nav nav{display:flex;gap:20px;font-weight:650}.nav nav a{text-decoration:none}.hero{background:linear-gradient(135deg,#020e1c,#09233e);color:#fff;padding:64px 26px}.eyebrow{margin:0 0 14px;color:var(--gold);font-size:.83rem;font-weight:850;letter-spacing:.14em;text-transform:uppercase}h1{max-width:850px;margin:0;font-size:clamp(2.35rem,6vw,4.6rem);line-height:1.03;letter-spacing:-.035em}.lead{max-width:790px;margin:22px 0 0;font-size:clamp(1.08rem,2vw,1.3rem);line-height:1.6}main{padding:44px 26px 76px}.card,.reader-section,.mastery{background:#fff;border:1px solid var(--line);border-radius:18px;padding:30px;box-shadow:0 12px 32px rgba(6,24,45,.06)}.stack{display:grid;gap:22px}.reader-grid{display:grid;grid-template-columns:minmax(210px,280px) minmax(0,1fr);gap:28px;align-items:start}.reader-nav{position:sticky;top:20px}.reader-nav ul{padding-left:20px;line-height:1.8}.reader-content{display:grid;gap:24px}h2,h3{line-height:1.18}h2{margin:0 0 14px;font-size:clamp(1.65rem,3vw,2.25rem)}h3{margin:28px 0 12px;font-size:1.25rem}p{line-height:1.7}.canonical{border-left:5px solid var(--gold)}.source-note,.muted{color:var(--muted)}.source-note{font-size:.92rem}.chapter-list,.feedback-list{line-height:1.7;padding-left:24px}.chapter-list li,.feedback-list li{margin:.55rem 0}.compliance{border-top:1px solid var(--line);margin-top:26px;padding-top:20px;font-size:.92rem;color:var(--muted)}.progress-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}progress{width:min(100%,360px);height:16px}.button{appearance:none;display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 20px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font:inherit;font-weight:800;text-decoration:none;cursor:pointer}.primary{background:var(--gold);border-color:var(--gold);color:#111}.button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #1474d4;outline-offset:3px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}fieldset{border:0;padding:0;margin:0}.mastery-question{border-top:1px solid var(--line);padding:24px 0}.mastery-question:first-of-type{border-top:0;padding-top:8px}legend{font-size:1.08rem;font-weight:800;line-height:1.5;margin-bottom:10px}.option{display:block;padding:9px 0}.status{min-height:1.5em;font-weight:700}.status[data-state="success"]{color:var(--good)}footer{padding:30px 26px}.footer-inner{color:#d6deea;font-size:.9rem;line-height:1.6}@media(max-width:760px){.nav nav{display:none}.reader-grid{grid-template-columns:1fr}.reader-nav{position:static}.hero{padding:52px 20px}main{padding:30px 16px 60px}.card,.reader-section,.mastery{padding:24px 20px}}
   </style>
 </head>
 <body>
@@ -147,12 +149,11 @@ function shell({ title, eyebrow, lead, content, script = '' }) {
 </html>`;
 }
 
-function renderLibrary(progressByContentId) {
-  const cards = GUIDED_EDITION_CHAPTERS.map((chapter) => {
-    const progress = progressByContentId.get(chapter.contentId);
+function renderLibrary(chaptersWithProgress) {
+  const cards = chaptersWithProgress.map(({ chapter, progress }) => {
     const href = guidedResumeHref(chapter, progress);
-    return `<article class="card fixture">
-      <p class="eyebrow">Implementation fixture · Chapter ${chapter.number}</p>
+    return `<article class="card canonical">
+      <p class="eyebrow">Canonical chapter · Chapter ${chapter.number}</p>
       <h2>${escapeHtml(chapter.title)}</h2>
       <p>${escapeHtml(chapter.description)}</p>
       <div class="progress-row"><progress max="100" value="${progress.progressPercent}" aria-label="Chapter progress"></progress><strong>${progress.progressPercent}%</strong></div>
@@ -168,29 +169,42 @@ function renderLibrary(progressByContentId) {
   });
 }
 
+async function loadChapterContent(descriptor, dependencies) {
+  const row = await dependencies.readContent({
+    contentId: descriptor.contentId,
+    version: descriptor.version,
+  });
+  return normalizeGuidedContentRelease(row, descriptor);
+}
+
 function renderChapter(chapter, progress) {
   const publicChapter = publicGuidedChapter(chapter);
   const navigation = publicChapter.sections.map((section) => `<li><a href="#${escapeHtml(section.id)}">${escapeHtml(section.title)}</a></li>`).join('');
-  const sections = publicChapter.sections.map((section) => `<section id="${escapeHtml(section.id)}" class="reader-section" tabindex="-1">
-    <h2>${escapeHtml(section.title)}</h2>
-    ${section.paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}
-    <button class="button save-place" type="button" data-position="${escapeHtml(section.id)}" data-progress="${section.progressPercent}">Save my place here</button>
-  </section>`).join('');
-  const options = publicChapter.mastery.options.map((option) => `<label class="option"><input type="radio" name="mastery-answer" value="${escapeHtml(option.id)}" required> ${escapeHtml(option.label)}</label>`).join('');
+  const sections = publicChapter.sections.map((section) => {
+    const groups = (section.groups || []).map((group) => `${group.title ? `<h3>${escapeHtml(group.title)}</h3>` : ''}<ul class="chapter-list">${group.items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`).join('');
+    const compliance = section.complianceNote ? `<p class="compliance"><strong>Compliance note.</strong> ${escapeHtml(section.complianceNote)}</p>` : '';
+    return `<section id="${escapeHtml(section.id)}" class="reader-section" tabindex="-1">
+      <h2>${escapeHtml(section.title)}</h2>
+      ${section.paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}
+      ${groups}${compliance}
+      <button class="button save-place" type="button" data-position="${escapeHtml(section.id)}" data-progress="${section.progressPercent}">Save my place here</button>
+    </section>`;
+  }).join('');
+  const questions = publicChapter.mastery.questions.map((question) => `<fieldset class="mastery-question"><legend>${escapeHtml(question.prompt)}</legend>${question.options.map((option) => `<label class="option"><input type="radio" name="${escapeHtml(question.questionId)}" value="${escapeHtml(option.id)}" required> ${escapeHtml(option.label)}</label>`).join('')}</fieldset>`).join('');
   const scriptData = JSON.stringify({ contentId: publicChapter.contentId }).replaceAll('<', '\\u003c');
   return shell({
     title: publicChapter.title,
     eyebrow: `Guided Interactive Edition · Chapter ${publicChapter.number}`,
     lead: publicChapter.description,
     content: `<div class="reader-grid">
-      <aside class="card reader-nav" aria-label="Chapter navigation"><p class="eyebrow">Your progress</p><div class="progress-row"><progress id="chapter-progress" max="100" value="${progress.progressPercent}"></progress><strong id="chapter-percent">${progress.progressPercent}%</strong></div><nav aria-label="On this page"><ul>${navigation}</ul></nav><a href="/guided-edition/">Back to library</a></aside>
+      <aside class="card reader-nav" aria-label="Chapter navigation"><p class="eyebrow">Your progress</p><div class="progress-row"><progress id="chapter-progress" max="100" value="${progress.progressPercent}"></progress><strong id="chapter-percent">${progress.progressPercent}%</strong></div><p id="reader-status" class="status" role="status" aria-live="polite"></p><nav aria-label="On this page"><ul>${navigation}</ul></nav><a href="/guided-edition/">Back to library</a></aside>
       <article class="reader-content">
-        <section class="card fixture" aria-labelledby="fixture-heading"><h2 id="fixture-heading">Implementation fixture—not manuscript content</h2><p>This chapter validates secure routing, durable resume state, and server-scored mastery. Canonical book text has not been copied or altered.</p></section>
+        <section class="card canonical" aria-labelledby="chapter-purpose-heading"><p class="eyebrow">${escapeHtml(publicChapter.part)} · Chapter ${publicChapter.number}</p><h2 id="chapter-purpose-heading">What this chapter does</h2><p>${escapeHtml(publicChapter.purpose)}</p><p class="source-note">Source verified from ${escapeHtml(publicChapter.source.productionBuild)}, edition ${escapeHtml(publicChapter.source.edition)}, printed pages ${escapeHtml(publicChapter.source.printedPages)}.</p></section>
         ${sections}
-        <section class="mastery" aria-labelledby="mastery-heading"><h2 id="mastery-heading">Mastery check</h2><form id="mastery-form"><fieldset><legend>${escapeHtml(publicChapter.mastery.prompt)}</legend>${options}</fieldset><button class="button primary" type="submit">Check my answer</button></form><p id="mastery-status" class="status" role="status" aria-live="polite"></p></section>
+        <section id="mastery" class="mastery" aria-labelledby="mastery-heading"><h2 id="mastery-heading">Mastery check</h2><p>Answer all five questions. A score of 80% or higher completes the chapter.</p><form id="mastery-form">${questions}<button class="button primary" type="submit">Check my answers</button></form><p id="mastery-status" class="status" role="status" aria-live="polite"></p><ul id="mastery-feedback" class="feedback-list"></ul></section>
       </article>
     </div>`,
-    script: `<script>const guidedChapter=${scriptData};const progress=document.getElementById('chapter-progress');const percent=document.getElementById('chapter-percent');const status=document.getElementById('mastery-status');const updateProgress=(value)=>{if(progress)progress.value=value;if(percent)percent.textContent=value+'%'};document.querySelectorAll('.save-place').forEach((button)=>button.addEventListener('click',async()=>{button.disabled=true;const response=await fetch('/api/guided-progress',{method:'PATCH',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId:guidedChapter.contentId,resumePosition:button.dataset.position,progressPercent:Number(button.dataset.progress)})});const body=await response.json().catch(()=>({}));button.disabled=false;if(!response.ok){status.textContent=body.error||'Your place could not be saved.';status.dataset.state='error';return}updateProgress(body.progress.progressPercent);status.textContent='Your place was saved.';status.dataset.state='success'}));document.getElementById('mastery-form')?.addEventListener('submit',async(event)=>{event.preventDefault();const selected=new FormData(event.currentTarget).get('mastery-answer');if(!selected)return;const submit=event.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;status.textContent='Checking your answer…';status.dataset.state='pending';const response=await fetch('/api/guided-mastery',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId:guidedChapter.contentId,answers:{'chapter-1-access-proof':selected}})});const body=await response.json().catch(()=>({}));submit.disabled=false;if(!response.ok){status.textContent=body.error||'The mastery check could not be recorded.';status.dataset.state='error';return}updateProgress(body.progress.progressPercent);status.textContent=body.feedback;status.dataset.state=body.passed?'success':'error'});</script>`,
+    script: `<script>const guidedChapter=${scriptData};const progress=document.getElementById('chapter-progress');const percent=document.getElementById('chapter-percent');const readerStatus=document.getElementById('reader-status');const masteryStatus=document.getElementById('mastery-status');const feedbackList=document.getElementById('mastery-feedback');const updateProgress=(value)=>{if(progress)progress.value=value;if(percent)percent.textContent=value+'%'};document.querySelectorAll('.save-place').forEach((button)=>button.addEventListener('click',async()=>{button.disabled=true;readerStatus.textContent='Saving your place…';readerStatus.dataset.state='pending';const response=await fetch('/api/guided-progress',{method:'PATCH',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId:guidedChapter.contentId,resumePosition:button.dataset.position,progressPercent:Number(button.dataset.progress)})});const body=await response.json().catch(()=>({}));button.disabled=false;if(!response.ok){readerStatus.textContent=body.error||'Your place could not be saved.';readerStatus.dataset.state='error';return}updateProgress(body.progress.progressPercent);readerStatus.textContent='Your place was saved.';readerStatus.dataset.state='success'}));document.getElementById('mastery-form')?.addEventListener('submit',async(event)=>{event.preventDefault();const answers=Object.fromEntries(new FormData(event.currentTarget).entries());const submit=event.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;masteryStatus.textContent='Checking your answers…';masteryStatus.dataset.state='pending';feedbackList.replaceChildren();const response=await fetch('/api/guided-mastery',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId:guidedChapter.contentId,answers})});const body=await response.json().catch(()=>({}));submit.disabled=false;if(!response.ok){masteryStatus.textContent=body.error||'The mastery check could not be recorded.';masteryStatus.dataset.state='error';return}updateProgress(body.progress.progressPercent);masteryStatus.textContent=body.feedback;masteryStatus.dataset.state=body.passed?'success':'error';for(const result of body.questionResults||[]){const item=document.createElement('li');item.textContent=result.feedback;if(!result.correct&&result.reviewSectionId){const link=document.createElement('a');link.href='#'+result.reviewSectionId;link.textContent=' Review this section.';item.append(link)}feedbackList.append(item)}});</script>`,
   });
 }
 
@@ -225,14 +239,22 @@ async function handleProgressApi(request, response, dependencies) {
   if (!access) return;
 
   try {
+    let descriptor;
     let chapter;
     if (request.method === 'GET') {
-      chapter = getGuidedChapterByContentId(requestUrl(request).searchParams.get('contentId'));
-      if (!chapter) {
+      descriptor = getGuidedChapterByContentId(requestUrl(request).searchParams.get('contentId'));
+      if (!descriptor) {
         return sendJson(response, 400, { error: 'Choose a valid Guided Edition chapter.', code: 'INVALID_GUIDED_CONTENT' });
       }
+      chapter = await loadChapterContent(descriptor, dependencies);
     } else {
-      const normalized = normalizeGuidedProgressInput(parseJsonBody(request));
+      const payload = parseJsonBody(request);
+      descriptor = getGuidedChapterByContentId(payload.contentId);
+      if (!descriptor) {
+        return sendJson(response, 400, { error: 'Choose a valid Guided Edition chapter.', code: 'INVALID_GUIDED_CONTENT' });
+      }
+      chapter = await loadChapterContent(descriptor, dependencies);
+      const normalized = normalizeGuidedProgressInput(payload, chapter);
       chapter = normalized.chapter;
       const recorded = await dependencies.recordProgress({
         accountId: access.state.user.id,
@@ -241,7 +263,7 @@ async function handleProgressApi(request, response, dependencies) {
         resumePosition: normalized.resumePosition,
         contentVersion: normalized.contentVersion,
       });
-      return sendJson(response, 200, { ok: true, progress: normalizeGuidedProgressRecord(recorded, chapter.contentId) });
+      return sendJson(response, 200, { ok: true, progress: normalizeGuidedProgressRecord(recorded, chapter) });
     }
 
     const row = await dependencies.readProgress({
@@ -249,9 +271,9 @@ async function handleProgressApi(request, response, dependencies) {
       accountId: access.state.user.id,
       contentId: chapter.contentId,
     });
-    return sendJson(response, 200, { progress: normalizeGuidedProgressRecord(row, chapter.contentId) });
+    return sendJson(response, 200, { progress: normalizeGuidedProgressRecord(row, chapter) });
   } catch (error) {
-    if (Number.isInteger(error?.status) && error.status >= 400 && error.status < 500) {
+    if (Number.isInteger(error?.status) && error.status >= 400 && error.status < 600) {
       return sendJson(response, error.status, { error: error.message, code: error.code || 'INVALID_REQUEST' });
     }
     const safe = safeSupabaseError(error);
@@ -265,11 +287,17 @@ async function handleMasteryApi(request, response, dependencies) {
   const access = await requireApiAccess(request, response, dependencies.readAccessState);
   if (!access) return;
   try {
-    const result = evaluateGuidedMastery(parseJsonBody(request));
+    const payload = parseJsonBody(request);
+    const descriptor = getGuidedChapterByContentId(payload.contentId);
+    if (!descriptor) {
+      return sendJson(response, 400, { error: 'Choose a valid Guided Edition chapter.', code: 'INVALID_GUIDED_CONTENT' });
+    }
+    const chapter = await loadChapterContent(descriptor, dependencies);
+    const result = evaluateGuidedMastery(payload, chapter);
     const recorded = await dependencies.recordProgress({
       accountId: access.state.user.id,
       contentId: result.contentId,
-      progressPercent: result.passed ? 100 : 90,
+      progressPercent: result.passed ? 100 : result.progressPercent,
       resumePosition: result.resumePosition,
       contentVersion: result.contentVersion,
       masteryScore: result.score,
@@ -281,10 +309,11 @@ async function handleMasteryApi(request, response, dependencies) {
       passed: result.passed,
       score: result.score,
       feedback: result.feedback,
-      progress: normalizeGuidedProgressRecord(recorded, result.contentId),
+      questionResults: result.questionResults,
+      progress: normalizeGuidedProgressRecord(recorded, chapter),
     });
   } catch (error) {
-    if (Number.isInteger(error?.status) && error.status >= 400 && error.status < 500) {
+    if (Number.isInteger(error?.status) && error.status >= 400 && error.status < 600) {
       return sendJson(response, error.status, { error: error.message, code: error.code || 'INVALID_REQUEST' });
     }
     const safe = safeSupabaseError(error);
@@ -295,6 +324,7 @@ async function handleMasteryApi(request, response, dependencies) {
 export async function handleGuidedEditionRequest(request, response, overrides = {}) {
   const dependencies = {
     readAccessState: overrides.readAccessState || readAccountAccessState,
+    readContent: overrides.readContent || readGuidedContentRelease,
     readProgress: overrides.readProgress || readGuidedLearningProgress,
     recordProgress: overrides.recordProgress || recordGuidedLearningProgress,
   };
@@ -334,33 +364,51 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
   }
 
   const route = protectedUrl.pathname.replace(/^\/guided-edition\/?/, '').replace(/\/+$/, '');
-  const chapter = route ? getGuidedChapterBySlug(route) : null;
-  if (route && !chapter) {
+  const descriptor = route ? getGuidedChapterBySlug(route) : null;
+  if (route && !descriptor) {
     response.statusCode = 404;
     response.setHeader('Content-Type', 'text/plain; charset=utf-8');
     return response.end('Protected page not found.');
   }
 
   let body;
-  if (chapter) {
+  if (descriptor) {
+    let chapter;
+    try {
+      chapter = await loadChapterContent(descriptor, dependencies);
+    } catch (error) {
+      console.error('Guided Edition content read failed.', error);
+      response.statusCode = 503;
+      response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      return response.end('Guided Edition content is temporarily unavailable.');
+    }
     let row = null;
     try {
       row = await dependencies.readProgress({ accessToken, accountId: state.user.id, contentId: chapter.contentId });
     } catch (error) {
       console.error('Guided Edition progress read failed.', error);
     }
-    body = renderChapter(chapter, normalizeGuidedProgressRecord(row, chapter.contentId));
+    body = renderChapter(chapter, normalizeGuidedProgressRecord(row, chapter));
   } else {
-    const pairs = await Promise.all(GUIDED_EDITION_CHAPTERS.map(async (item) => {
-      try {
-        const row = await dependencies.readProgress({ accessToken, accountId: state.user.id, contentId: item.contentId });
-        return [item.contentId, normalizeGuidedProgressRecord(row, item.contentId)];
-      } catch (error) {
-        console.error('Guided Edition progress read failed.', error);
-        return [item.contentId, normalizeGuidedProgressRecord(null, item.contentId)];
-      }
-    }));
-    body = renderLibrary(new Map(pairs));
+    let chaptersWithProgress;
+    try {
+      chaptersWithProgress = await Promise.all(GUIDED_EDITION_CHAPTERS.map(async (item) => {
+        const chapter = await loadChapterContent(item, dependencies);
+        let row = null;
+        try {
+          row = await dependencies.readProgress({ accessToken, accountId: state.user.id, contentId: item.contentId });
+        } catch (error) {
+          console.error('Guided Edition progress read failed.', error);
+        }
+        return { chapter, progress: normalizeGuidedProgressRecord(row, chapter) };
+      }));
+    } catch (error) {
+      console.error('Guided Edition content read failed.', error);
+      response.statusCode = 503;
+      response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      return response.end('Guided Edition content is temporarily unavailable.');
+    }
+    body = renderLibrary(chaptersWithProgress);
   }
 
   response.statusCode = 200;

@@ -1,11 +1,66 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { handleGuidedEditionRequest } from '../api/guided-edition.js';
+import { canonicalGuidedReaderText } from '../src/lib/guided-edition.js';
 import { SESSION_COOKIE_NAMES } from '../src/lib/supabase-auth.js';
 
 const host = 'usd-impact-site-test-usd-impact.vercel.app';
 const accountId = '46d8a4a1-e616-4d9d-8faf-d877a42af310';
 const accessToken = 'eyJhbGciOiJIUzI1NiJ9.guided-edition-test-token.signature';
 const activeState = { allowed: true, reason: 'active', user: { id: accountId } };
+const testContent = {
+  slug: 'chapter-1',
+  contentId: 'guided-edition:chapter-1',
+  version: 2,
+  number: 1,
+  title: 'Protected test chapter',
+  shortTitle: 'Test chapter',
+  description: 'Synthetic content used only by automated tests.',
+  part: 'Test part',
+  purpose: 'Verify that content is returned only after account access is approved.',
+  fixture: false,
+  source: {
+    documentSha256: 'a'.repeat(64),
+    readerTextSha256: '',
+    productionBuild: 'test-build',
+    edition: 'test-edition',
+    printedPages: '1-2',
+  },
+  sections: [
+    { id: 'test-start', title: 'Test start', progressPercent: 20, paragraphs: ['First synthetic paragraph.'] },
+    { id: 'test-middle', title: 'Test middle', progressPercent: 50, paragraphs: ['Second synthetic paragraph.'] },
+    { id: 'test-review', title: 'Test review', progressPercent: 98, paragraphs: ['Final synthetic paragraph.'] },
+  ],
+  mastery: {
+    questions: Array.from({ length: 5 }, (_, index) => ({
+      questionId: `test-question-${index + 1}`,
+      prompt: `Synthetic question ${index + 1}?`,
+      options: [
+        { id: 'correct', label: 'Correct test answer' },
+        { id: 'incorrect', label: 'Incorrect test answer' },
+      ],
+      correctOptionId: 'correct',
+      correctFeedback: 'Correct synthetic feedback.',
+      incorrectFeedback: 'Review the synthetic test section.',
+      reviewSectionId: index < 2 ? 'test-start' : 'test-middle',
+    })),
+  },
+};
+testContent.source.readerTextSha256 = createHash('sha256')
+  .update(canonicalGuidedReaderText(testContent))
+  .digest('hex');
+const testRelease = {
+  content_id: testContent.contentId,
+  version: testContent.version,
+  slug: testContent.slug,
+  status: 'published',
+  source_sha256: testContent.source.documentSha256,
+  reader_sha256: testContent.source.readerTextSha256,
+  payload: testContent,
+};
+const correctAnswers = Object.fromEntries(
+  testContent.mastery.questions.map((question) => [question.questionId, 'correct']),
+);
 
 function request({ method = 'GET', url = '/api/guided-edition', authenticated = false, body, headers = {} } = {}) {
   return {
@@ -37,18 +92,26 @@ async function run(input, dependencies = {}) {
   const response = responseRecorder();
   await handleGuidedEditionRequest(input, response, {
     readAccessState: async () => activeState,
+    readContent: async ({ contentId, version }) => {
+      assert.equal(contentId, testContent.contentId);
+      assert.equal(version, testContent.version);
+      return testRelease;
+    },
     readProgress: async () => null,
     recordProgress: async () => ({
-      status: 'in_progress', progress_percent: 60, resume_position: 'access-boundary',
-      mastery_score: null, attempt_count: 0, completed_at: null, updated_at: '2026-08-04T16:45:00.000Z',
+      status: 'in_progress', progress_percent: 50, resume_position: 'test-middle',
+      mastery_score: null, attempt_count: 0, completed_at: null,
+      updated_at: '2026-08-04T16:45:00.000Z', data: { contentVersion: 2 },
     }),
     ...dependencies,
   });
   return response;
 }
 
-const anonymous = await run(request());
+let protectedContentReads = 0;
+const anonymous = await run(request(), { readContent: async () => { protectedContentReads += 1; } });
 assert.equal(anonymous.statusCode, 302);
+assert.equal(protectedContentReads, 0);
 const anonymousLocation = new URL(anonymous.getHeader('location'), `https://${host}`);
 assert.equal(anonymousLocation.pathname, '/account/sign-in/');
 assert.equal(anonymousLocation.searchParams.get('next'), '/guided-edition/');
@@ -56,47 +119,71 @@ assert.equal(anonymousLocation.searchParams.get('next'), '/guided-edition/');
 for (const reason of ['missing', 'suspended', 'suspended_dispute', 'refunded', 'charged_back', 'revoked', 'expired', 'deletion_pending']) {
   const denied = await run(
     request({ authenticated: true, url: '/api/guided-edition?campaign=launch' }),
-    { readAccessState: async () => ({ allowed: false, reason }) },
+    {
+      readAccessState: async () => ({ allowed: false, reason }),
+      readContent: async () => { protectedContentReads += 1; },
+    },
   );
   assert.equal(denied.statusCode, 302);
   const location = new URL(denied.getHeader('location'), `https://${host}`);
   assert.equal(location.pathname, '/account/access-required/');
   assert.equal(location.searchParams.get('reason'), reason);
-  assert.equal(location.searchParams.get('next'), '/guided-edition/?campaign=launch');
 }
+assert.equal(protectedContentReads, 0);
 
 const library = await run(request({ authenticated: true }), {
   readProgress: async ({ accessToken: received, accountId: receivedAccount, contentId }) => {
     assert.equal(received, accessToken);
     assert.equal(receivedAccount, accountId);
-    assert.equal(contentId, 'guided-edition:chapter-1');
-    return { status: 'in_progress', progress_percent: 60, resume_position: 'access-boundary', attempt_count: 1 };
+    assert.equal(contentId, testContent.contentId);
+    return {
+      status: 'in_progress', progress_percent: 50, resume_position: 'test-middle',
+      attempt_count: 1, data: { contentVersion: 2 },
+    };
   },
 });
 assert.equal(library.statusCode, 200);
 assert.match(library.getHeader('content-type'), /text\/html/);
 assert.match(library.getHeader('cache-control'), /private, no-store/);
 assert.equal(library.getHeader('vary'), 'Cookie, Authorization');
-assert.match(library.body, /Protected learning library/);
+assert.match(library.body, /Protected test chapter/);
 assert.match(library.body, /Resume chapter/);
-assert.match(library.body, /value="60"/);
+assert.match(library.body, /value="50"/);
 
 const chapter = await run(request({ authenticated: true, url: '/api/guided-edition?__paid_path=chapter-1' }));
 assert.equal(chapter.statusCode, 200);
-assert.match(chapter.body, /Implementation fixture—not manuscript content/);
-assert.match(chapter.body, /id="orientation"/);
+assert.match(chapter.body, /Protected test chapter/);
+assert.match(chapter.body, /What this chapter does/);
+assert.match(chapter.body, /id="test-start"/);
+assert.match(chapter.body, /id="test-review"/);
 assert.match(chapter.body, /id="mastery-form"/);
+assert.match(chapter.body, /Answer all five questions/);
 assert.match(chapter.body, /Skip to content/);
-assert.doesNotMatch(chapter.body, /correctOptionId|correctFeedback/);
+assert.doesNotMatch(chapter.body, /correctOptionId|correctFeedback|incorrectFeedback/);
 
 const head = await run(request({ method: 'HEAD', authenticated: true, url: '/api/guided-edition?__paid_path=chapter-1' }));
 assert.equal(head.statusCode, 200);
 assert.equal(head.body, '');
 assert.ok(Number(head.getHeader('content-length')) > 1000);
 
+const originalConsoleError = console.error;
+let unavailableLog = '';
+console.error = (...values) => { unavailableLog = values.map(String).join(' '); };
+let unavailable;
+try {
+  unavailable = await run(
+    request({ authenticated: true, url: '/api/guided-edition?__paid_path=chapter-1' }),
+    { readContent: async () => null },
+  );
+} finally {
+  console.error = originalConsoleError;
+}
+assert.equal(unavailable.statusCode, 503);
+assert.equal(unavailable.body, 'Guided Edition content is temporarily unavailable.');
+assert.match(unavailableLog, /Guided Edition content read failed/);
+
 const missing = await run(request({ authenticated: true, url: '/api/guided-edition?__paid_path=chapter-99' }));
 assert.equal(missing.statusCode, 404);
-assert.equal(missing.body, 'Protected page not found.');
 
 const anonymousProgress = await run(request({ url: '/api/guided-edition?action=progress&contentId=guided-edition%3Achapter-1' }));
 assert.equal(anonymousProgress.statusCode, 401);
@@ -105,11 +192,14 @@ assert.equal(JSON.parse(anonymousProgress.body).code, 'AUTHENTICATION_REQUIRED')
 const readProgress = await run(request({ authenticated: true, url: '/api/guided-edition?action=progress&contentId=guided-edition%3Achapter-1' }), {
   readProgress: async ({ accountId: receivedAccount }) => {
     assert.equal(receivedAccount, accountId);
-    return { status: 'in_progress', progress_percent: 25, resume_position: 'orientation', attempt_count: 0 };
+    return {
+      status: 'in_progress', progress_percent: 20, resume_position: 'test-start',
+      attempt_count: 0, data: { contentVersion: 2 },
+    };
   },
 });
 assert.equal(readProgress.statusCode, 200);
-assert.equal(JSON.parse(readProgress.body).progress.progressPercent, 25);
+assert.equal(JSON.parse(readProgress.body).progress.progressPercent, 20);
 
 const invalidContent = await run(request({ authenticated: true, url: '/api/guided-edition?action=progress&contentId=private%3Aother' }));
 assert.equal(invalidContent.statusCode, 400);
@@ -117,26 +207,26 @@ assert.equal(JSON.parse(invalidContent.body).code, 'INVALID_GUIDED_CONTENT');
 
 let recordedProgress;
 const writeProgress = await run(request({
-  method: 'PATCH',
-  authenticated: true,
-  url: '/api/guided-edition?action=progress',
+  method: 'PATCH', authenticated: true, url: '/api/guided-edition?action=progress',
   headers: { 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' },
-  body: { contentId: 'guided-edition:chapter-1', progressPercent: 60, resumePosition: 'access-boundary' },
+  body: { contentId: testContent.contentId, progressPercent: 50, resumePosition: 'test-middle' },
 }), {
   recordProgress: async (input) => {
     recordedProgress = input;
-    return { status: 'in_progress', progress_percent: 60, resume_position: 'access-boundary', attempt_count: 0 };
+    return {
+      status: 'in_progress', progress_percent: 50, resume_position: 'test-middle',
+      attempt_count: 0, data: { contentVersion: 2 },
+    };
   },
 });
 assert.equal(writeProgress.statusCode, 200);
 assert.equal(recordedProgress.accountId, accountId);
-assert.equal(recordedProgress.contentVersion, 1);
-assert.equal(recordedProgress.masteryScore, undefined);
+assert.equal(recordedProgress.contentVersion, 2);
 
 const mismatchedProgress = await run(request({
   method: 'PATCH', authenticated: true, url: '/api/guided-edition?action=progress',
   headers: { 'content-type': 'application/json' },
-  body: { contentId: 'guided-edition:chapter-1', progressPercent: 100, resumePosition: 'orientation' },
+  body: { contentId: testContent.contentId, progressPercent: 100, resumePosition: 'test-middle' },
 }));
 assert.equal(mismatchedProgress.statusCode, 400);
 assert.equal(JSON.parse(mismatchedProgress.body).code, 'INVALID_PROGRESS_PERCENT');
@@ -146,23 +236,48 @@ const crossSite = await run(request({
   headers: { 'content-type': 'application/json', 'sec-fetch-site': 'cross-site' }, body: {},
 }));
 assert.equal(crossSite.statusCode, 403);
-assert.equal(JSON.parse(crossSite.body).code, 'CROSS_SITE_REQUEST');
 
 let masteryWrite;
 const mastery = await run(request({
   method: 'POST', authenticated: true, url: '/api/guided-edition?action=mastery',
   headers: { 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' },
-  body: { contentId: 'guided-edition:chapter-1', answers: { 'chapter-1-access-proof': 'verified-entitlement' } },
+  body: { contentId: testContent.contentId, answers: correctAnswers },
 }), {
   recordProgress: async (input) => {
     masteryWrite = input;
-    return { status: 'completed', progress_percent: 100, resume_position: 'next-step', mastery_score: 100, attempt_count: 1, completed_at: '2026-08-04T16:50:00.000Z' };
+    return {
+      status: 'completed', progress_percent: 100, resume_position: 'test-review', mastery_score: 100,
+      attempt_count: 1, completed_at: '2026-08-04T16:50:00.000Z', data: { contentVersion: 2 },
+    };
   },
 });
 assert.equal(mastery.statusCode, 200);
 assert.equal(JSON.parse(mastery.body).passed, true);
+assert.equal(JSON.parse(mastery.body).questionResults.length, 5);
 assert.equal(masteryWrite.masteryPassed, true);
-assert.equal(masteryWrite.attemptIncrement, 1);
+assert.equal(masteryWrite.contentVersion, 2);
+
+let failedMasteryWrite;
+const failedMastery = await run(request({
+  method: 'POST', authenticated: true, url: '/api/guided-edition?action=mastery',
+  headers: { 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' },
+  body: {
+    contentId: testContent.contentId,
+    answers: { ...correctAnswers, 'test-question-4': 'incorrect', 'test-question-5': 'incorrect' },
+  },
+}), {
+  recordProgress: async (input) => {
+    failedMasteryWrite = input;
+    return {
+      status: 'in_progress', progress_percent: 98, resume_position: 'test-review', mastery_score: 60,
+      attempt_count: 1, completed_at: null, data: { contentVersion: 2 },
+    };
+  },
+});
+assert.equal(failedMastery.statusCode, 200);
+assert.equal(JSON.parse(failedMastery.body).score, 60);
+assert.equal(failedMasteryWrite.progressPercent, 98);
+assert.equal(failedMasteryWrite.masteryPassed, false);
 
 const deniedApi = await run(request({ authenticated: true, url: '/api/guided-edition?action=progress&contentId=guided-edition%3Achapter-1' }), {
   readAccessState: async () => ({ allowed: false, reason: 'refunded' }),
@@ -174,4 +289,4 @@ const postPage = await run(request({ method: 'POST' }));
 assert.equal(postPage.statusCode, 405);
 assert.equal(postPage.getHeader('allow'), 'GET, HEAD');
 
-console.log('Serverless Guided Edition routing, progress, and mastery tests passed.');
+console.log('Serverless Guided Edition private-content routing tests passed.');

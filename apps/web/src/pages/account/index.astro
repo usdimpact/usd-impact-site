@@ -174,9 +174,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         }
         if (learningResumeLink) {
           const position = typeof progress.resumePosition === 'string'
-            ? progress.resumePosition
-            : 'orientation';
-          learningResumeLink.href = `/guided-edition/chapter-1/#${encodeURIComponent(position)}`;
+            ? `#${encodeURIComponent(progress.resumePosition)}`
+            : '';
+          learningResumeLink.href = `/guided-edition/chapter-1/${position}`;
           learningResumeLink.textContent = percent > 0 ? 'Resume Chapter 1' : 'Start Chapter 1';
         }
         if (learningProgressStatus) learningProgressStatus.textContent = 'Saved progress loaded.';

@@ -4,6 +4,8 @@ import {
   SupabaseRequestError,
   readGuidedContentCatalog,
   readGuidedContentRelease,
+  readGuidedSupplementCatalog,
+  readGuidedSupplementRelease,
   readGuidedLearningProgress,
   recordGuidedLearningProgress,
 } from '../src/lib/supabase-server.js';
@@ -110,6 +112,22 @@ const catalog = await readGuidedContentCatalog({
 });
 assert.deepEqual(catalog, [releaseRow]);
 
+const supplementRow = { content_id: 'guided-supplement:further-reading', version: 1, slug: 'further-reading', supplement_type: 'further-reading', sort_order: 1, status: 'published', source_sha256: 'a'.repeat(64), reader_sha256: 'b'.repeat(64), payload: { synthetic: true } };
+const supplementRelease = await readGuidedSupplementRelease({ slug: 'FURTHER-READING', config, fetchImpl: async (url, options) => {
+  const parsed = new URL(url);
+  assert.equal(parsed.pathname, '/rest/v1/guided_supplement_releases');
+  assert.equal(parsed.searchParams.get('slug'), 'eq.further-reading');
+  assert.equal(options.headers.apikey, config.secretKey);
+  return response(200, [supplementRow]);
+} });
+assert.deepEqual(supplementRelease, supplementRow);
+const supplementCatalog = await readGuidedSupplementCatalog({ config, fetchImpl: async (url) => {
+  const parsed = new URL(url);
+  assert.equal(parsed.searchParams.get('order'), 'sort_order.asc');
+  return response(200, [supplementRow]);
+} });
+assert.deepEqual(supplementCatalog, [supplementRow]);
+
 await assert.rejects(
   () => readGuidedContentRelease({ contentId: row.content_id, slug: 'chapter-1', config }),
   (error) => error instanceof SupabaseRequestError && error.code === 'INVALID_GUIDED_CONTENT',
@@ -210,6 +228,16 @@ assert.match(privateContentMigration, /revoke all on public\.guided_content_rele
 assert.match(privateContentMigration, /grant select on public\.guided_content_releases to service_role/);
 assert.match(privateContentMigration, /guided_content_releases_deny_client_access[\s\S]*using \(false\)/);
 assert.doesNotMatch(privateContentMigration, /insert into public\.guided_content_releases/);
+
+const supplementMigration = await readFile(
+  new URL('../../../supabase/migrations/20260805110000_store_guided_supplements_privately.sql', import.meta.url),
+  'utf8',
+);
+assert.match(supplementMigration, /create table public\.guided_supplement_releases/);
+assert.match(supplementMigration, /force row level security/);
+assert.match(supplementMigration, /revoke all on public\.guided_supplement_releases from public, anon, authenticated/);
+assert.match(supplementMigration, /grant select on public\.guided_supplement_releases to service_role/);
+assert.doesNotMatch(supplementMigration, /insert into public\.guided_supplement_releases/);
 
 const catalogMigration = await readFile(
   new URL('../../../supabase/migrations/20260804174902_publish_guided_content_catalog.sql', import.meta.url),

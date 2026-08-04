@@ -27,7 +27,6 @@ assert.match(
   /passed Web quality and is ready for protected review and merge/,
   'publication must clearly report the protected review handoff',
 );
-
 assert.match(
   workflow,
   /printf '%s\\n\\n%s\\n\\n%s\\n'/,

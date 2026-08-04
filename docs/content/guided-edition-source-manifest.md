@@ -61,6 +61,16 @@ Chapter 4 includes the Dollar Transmission Chain figure. Its labels and relation
 
 Chapter 5 contains three source examples, including a worked local-currency oil-cost example. The complete boundary was rendered and checked page by page, the examples were represented through the existing structured group model, and all remaining narrative was compared against the certified PDF after whitespace and line-wrap normalization. The release contains twelve reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
 
+## Chapter 6 extraction boundary
+
+- Title: `Gold and the Dollar`
+- Printed pages: 32-35
+- Physical PDF pages: 33-36
+- Next boundary: Chapter 7 begins on printed page 36 / physical PDF page 37
+- Canonical reader text SHA-256: `8da55ca266864f2f43ba2668ba1beb91a184a52ca5bcd3f9d022f79f7a7ad8ed`
+
+Chapter 6 contains three source examples, including a worked real-yield opportunity-cost example. The complete boundary was rendered and checked page by page, the examples were represented through the existing structured group model, and all remaining narrative was compared against the certified PDF after whitespace and line-wrap normalization. The release contains eleven reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
+
 ## Repository policy
 
 The certified full-book PDF, canonical chapter text, mastery answer key, and corrective feedback are controlled content. None is stored in the public repository or offered as a customer download. The repository contains only source metadata, integrity hashes, generic rendering/scoring code, and synthetic test fixtures.

@@ -226,6 +226,7 @@ function learningProgressPath(accountId, contentId) {
 }
 
 const GUIDED_CONTENT_RELEASE_SELECT = 'content_id,version,chapter_number,slug,status,source_sha256,reader_sha256,payload';
+const GUIDED_SUPPLEMENT_RELEASE_SELECT = 'content_id,version,slug,supplement_type,sort_order,status,source_sha256,reader_sha256,payload';
 
 function guidedContentReleasePath({ contentId, slug }) {
   const identity = contentId
@@ -236,6 +237,14 @@ function guidedContentReleasePath({ contentId, slug }) {
 
 function guidedContentCatalogPath() {
   return `/rest/v1/guided_content_releases?status=eq.published&select=${GUIDED_CONTENT_RELEASE_SELECT}&order=chapter_number.asc`;
+}
+
+function guidedSupplementPath(slug) {
+  return `/rest/v1/guided_supplement_releases?slug=eq.${encodeURIComponent(requireGuidedSlug(slug))}&status=eq.published&select=${GUIDED_SUPPLEMENT_RELEASE_SELECT}&limit=1`;
+}
+
+function guidedSupplementCatalogPath() {
+  return `/rest/v1/guided_supplement_releases?status=eq.published&select=${GUIDED_SUPPLEMENT_RELEASE_SELECT}&order=sort_order.asc`;
 }
 
 export async function readAccountAccessState({
@@ -369,6 +378,28 @@ export async function readGuidedContentCatalog({
   const rows = await supabaseFetch({
     config: resolvedConfig,
     path: guidedContentCatalogPath(),
+    useSecret: true,
+    fetchImpl,
+  });
+  return Array.isArray(rows) ? rows : [];
+}
+
+export async function readGuidedSupplementRelease({ slug, environment, config, fetchImpl }) {
+  const resolvedConfig = config || readSupabaseServerConfig(environment, { requireSecret: true });
+  const rows = await supabaseFetch({
+    config: resolvedConfig,
+    path: guidedSupplementPath(slug),
+    useSecret: true,
+    fetchImpl,
+  });
+  return firstRow(rows);
+}
+
+export async function readGuidedSupplementCatalog({ environment, config, fetchImpl } = {}) {
+  const resolvedConfig = config || readSupabaseServerConfig(environment, { requireSecret: true });
+  const rows = await supabaseFetch({
+    config: resolvedConfig,
+    path: guidedSupplementCatalogPath(),
     useSecret: true,
     fetchImpl,
   });

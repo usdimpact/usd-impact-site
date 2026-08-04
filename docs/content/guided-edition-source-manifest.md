@@ -39,6 +39,17 @@ The same extraction, rendering, visual-review, and normalized text-comparison pr
 
 Chapter 3 includes a source diagram and a four-column cross-check table. Their labels and relationships were visually reviewed and represented through the existing structured text model; the remaining narrative was compared against the certified PDF after whitespace and line-wrap normalization. This release requires no application-code or schema change, demonstrating that the published catalog supports reusable data-only chapter ingestion.
 
+
+## Chapter 4 extraction boundary
+
+- Title: `How the Dollar Moves Oil, Gold, Bitcoin, Gas, and FX`
+- Printed pages: 21-26
+- Physical PDF pages: 22-27
+- Next boundary: Chapter 5 begins on printed page 27 / physical PDF page 28
+- Canonical reader text SHA-256: `1cc90b04e249fe200a5ec2ea907043906c5493bfc703402daac647bf376929d1`
+
+Chapter 4 includes the Dollar Transmission Chain figure. Its labels and relationships were visually reviewed and represented through the existing structured text model; the complete chapter boundary was rendered and checked page by page, and the narrative was compared against the certified PDF after whitespace and line-wrap normalization. The release contains eleven reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
+
 ## Repository policy
 
 The certified full-book PDF, canonical chapter text, mastery answer key, and corrective feedback are controlled content. None is stored in the public repository or offered as a customer download. The repository contains only source metadata, integrity hashes, generic rendering/scoring code, and synthetic test fixtures.

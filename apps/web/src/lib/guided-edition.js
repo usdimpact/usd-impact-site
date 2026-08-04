@@ -47,6 +47,97 @@ export function canonicalGuidedReaderText(chapter) {
   ].filter(Boolean).join('\n');
 }
 
+export function canonicalGuidedSupplementText(supplement) {
+  return [
+    supplement.title,
+    supplement.description,
+    ...supplement.sections.flatMap((section) => [
+      section.title,
+      ...section.paragraphs,
+      ...(section.groups || []).flatMap((group) => [group.title, ...group.items]),
+      section.complianceNote || '',
+    ]),
+  ].filter(Boolean).join('\n');
+}
+
+export function normalizeGuidedSupplementRelease(row, expected = {}) {
+  if (
+    !row || typeof row !== 'object' || Array.isArray(row)
+    || typeof row.content_id !== 'string'
+    || !/^guided-supplement:[a-z0-9]+(?:-[a-z0-9]+)*$/.test(row.content_id)
+    || !Number.isInteger(row.version) || row.version < 1
+    || typeof row.slug !== 'string' || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(row.slug)
+    || !['further-reading', 'appendix'].includes(row.supplement_type)
+    || !Number.isInteger(row.sort_order) || row.sort_order < 1
+    || row.status !== 'published'
+    || !/^[a-f0-9]{64}$/.test(row.source_sha256 || '')
+    || !/^[a-f0-9]{64}$/.test(row.reader_sha256 || '')
+  ) {
+    throw contentError('The published Guided Edition supplement metadata is invalid.', 'INVALID_GUIDED_SUPPLEMENT_RELEASE');
+  }
+  if ((expected.contentId && row.content_id !== expected.contentId) || (expected.slug && row.slug !== expected.slug)) {
+    throw contentError('The published Guided Edition supplement does not match the requested page.');
+  }
+  const supplement = row.payload;
+  if (
+    !supplement || typeof supplement !== 'object' || Array.isArray(supplement)
+    || supplement.contentId !== row.content_id
+    || supplement.version !== row.version
+    || supplement.slug !== row.slug
+    || supplement.type !== row.supplement_type
+    || supplement.order !== row.sort_order
+    || supplement.fixture !== false
+  ) {
+    throw contentError('The Guided Edition supplement payload metadata is invalid.', 'INVALID_GUIDED_SUPPLEMENT_RELEASE');
+  }
+  requireText(supplement.title, 'a supplement title');
+  requireText(supplement.description, 'a supplement description');
+  requireText(supplement.source?.edition, 'a source edition');
+  requireText(supplement.source?.productionBuild, 'a source build');
+  requireText(supplement.source?.printedPages, 'source page numbers');
+  requireText(supplement.source?.pdfPages, 'physical PDF page numbers');
+  if (supplement.source?.documentSha256 !== row.source_sha256 || supplement.source?.readerTextSha256 !== row.reader_sha256) {
+    throw contentError('The Guided Edition supplement manifest does not match the stored release.', 'GUIDED_CONTENT_INTEGRITY_FAILED');
+  }
+  if (!Array.isArray(supplement.sections) || supplement.sections.length === 0) {
+    throw contentError('The Guided Edition supplement has no sections.', 'INVALID_GUIDED_SUPPLEMENT_RELEASE');
+  }
+  const sectionIds = new Set();
+  for (const section of supplement.sections) {
+    requireText(section?.id, 'a supplement section identifier');
+    requireText(section?.title, 'a supplement section title');
+    if (sectionIds.has(section.id) || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(section.id)
+      || !Array.isArray(section.paragraphs)
+      || section.paragraphs.some((paragraph) => typeof paragraph !== 'string' || !paragraph.trim())
+      || (section.groups !== undefined && !Array.isArray(section.groups))) {
+      throw contentError('A Guided Edition supplement section is invalid.', 'INVALID_GUIDED_SUPPLEMENT_RELEASE');
+    }
+    for (const group of section.groups || []) {
+      if (typeof group?.title !== 'string' || !Array.isArray(group.items) || group.items.length === 0
+        || group.items.some((item) => typeof item !== 'string' || !item.trim())) {
+        throw contentError('A Guided Edition supplement group is invalid.', 'INVALID_GUIDED_SUPPLEMENT_RELEASE');
+      }
+    }
+    sectionIds.add(section.id);
+  }
+  const readerHash = createHash('sha256').update(canonicalGuidedSupplementText(supplement)).digest('hex');
+  if (readerHash !== row.reader_sha256) {
+    throw contentError('The Guided Edition supplement text failed its integrity check.', 'GUIDED_CONTENT_INTEGRITY_FAILED');
+  }
+  return deepFreeze(supplement);
+}
+
+export function normalizeGuidedSupplementCatalog(rows) {
+  if (!Array.isArray(rows)) throw contentError('The Guided Edition supplement catalog is temporarily unavailable.');
+  const supplements = rows.map((row) => normalizeGuidedSupplementRelease(row)).sort((a, b) => a.order - b.order);
+  if (new Set(supplements.map((item) => item.contentId)).size !== supplements.length
+    || new Set(supplements.map((item) => item.slug)).size !== supplements.length
+    || new Set(supplements.map((item) => item.order)).size !== supplements.length) {
+    throw contentError('The supplement catalog contains duplicate identities.', 'INVALID_GUIDED_SUPPLEMENT_RELEASE');
+  }
+  return deepFreeze(supplements);
+}
+
 export function normalizeGuidedContentRelease(row, expected = {}) {
   if (!row || typeof row !== 'object' || Array.isArray(row)) {
     throw contentError('The Guided Edition chapter is temporarily unavailable.');

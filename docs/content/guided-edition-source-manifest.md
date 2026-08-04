@@ -50,6 +50,17 @@ Chapter 3 includes a source diagram and a four-column cross-check table. Their l
 
 Chapter 4 includes the Dollar Transmission Chain figure. Its labels and relationships were visually reviewed and represented through the existing structured text model; the complete chapter boundary was rendered and checked page by page, and the narrative was compared against the certified PDF after whitespace and line-wrap normalization. The release contains eleven reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
 
+
+## Chapter 5 extraction boundary
+
+- Title: `Oil Is Not a Dollar Trade Only`
+- Printed pages: 27-31
+- Physical PDF pages: 28-32
+- Next boundary: Chapter 6 begins on printed page 32 / physical PDF page 33
+- Canonical reader text SHA-256: `d9a41ffd7b8ada135bd64a802309837cec329236d2c144c93e04bb5ea22b512f`
+
+Chapter 5 contains three source examples, including a worked local-currency oil-cost example. The complete boundary was rendered and checked page by page, the examples were represented through the existing structured group model, and all remaining narrative was compared against the certified PDF after whitespace and line-wrap normalization. The release contains twelve reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
+
 ## Repository policy
 
 The certified full-book PDF, canonical chapter text, mastery answer key, and corrective feedback are controlled content. None is stored in the public repository or offered as a customer download. The repository contains only source metadata, integrity hashes, generic rendering/scoring code, and synthetic test fixtures.

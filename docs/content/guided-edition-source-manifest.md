@@ -29,6 +29,16 @@ The reader hash covers the ordered title, description, purpose, section headings
 
 The same extraction, rendering, visual-review, and normalized text-comparison process was repeated for Chapter 2. Its first release is deliberately data-only: adding it does not require a new hard-coded application registry entry.
 
+## Chapter 3 extraction boundary
+
+- Title: `USD Is Not DXY`
+- Printed pages: 16-20
+- Physical PDF pages: 17-21
+- Next boundary: Chapter 4 begins on printed page 21 / physical PDF page 22
+- Canonical reader text SHA-256: `16ce02ba0096a878eeb32522b6d598270545fc715149a8a346f9fa1dae97e16a`
+
+Chapter 3 includes a source diagram and a four-column cross-check table. Their labels and relationships were visually reviewed and represented through the existing structured text model; the remaining narrative was compared against the certified PDF after whitespace and line-wrap normalization. This release requires no application-code or schema change, demonstrating that the published catalog supports reusable data-only chapter ingestion.
+
 ## Repository policy
 
 The certified full-book PDF, canonical chapter text, mastery answer key, and corrective feedback are controlled content. None is stored in the public repository or offered as a customer download. The repository contains only source metadata, integrity hashes, generic rendering/scoring code, and synthetic test fixtures.

@@ -188,10 +188,10 @@ jobs:
             git push --set-upstream origin "$branch"
             head_sha="$(git rev-parse HEAD)"
 
-            printf '%s\\n\\n%s\\n\\n%s\\n' \\
-              '## Automated Daily USD Impact publication' \\
-              "This pull request contains the source-backed **${edition_date}** edition with status \`published\`." \\
-              'Publication is automatic only after the required Web quality workflow passes on this exact commit. A failed validation or build leaves the pull request open and does not change production.' \\
+            printf '%s\n\n%s\n\n%s\n' \
+              '## Automated Daily USD Impact publication' \
+              "This pull request contains the source-backed **${edition_date}** edition with status \`published\`." \
+              'Publication is automatic only after the required Web quality workflow passes on this exact commit. A failed validation or build leaves the pull request open and does not change production.' \
               > "$RUNNER_TEMP/daily-news-pr.md"
 
             pr_url="$(gh pr create \

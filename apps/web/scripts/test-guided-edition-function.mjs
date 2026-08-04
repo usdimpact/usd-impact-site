@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { handleGuidedEditionRequest } from '../api/guided-edition.js';
-import { canonicalGuidedReaderText } from '../src/lib/guided-edition.js';
+import { canonicalGuidedReaderText, canonicalGuidedSupplementText } from '../src/lib/guided-edition.js';
 import { SESSION_COOKIE_NAMES } from '../src/lib/supabase-auth.js';
 
 const host = 'usd-impact-site-test-usd-impact.vercel.app';
@@ -86,6 +86,14 @@ const testReleaseTwo = {
 const correctAnswers = Object.fromEntries(
   testContent.mastery.questions.map((question) => [question.questionId, 'correct']),
 );
+const testSupplement = {
+  contentId: 'guided-supplement:further-reading', version: 1, slug: 'further-reading', type: 'further-reading', order: 1,
+  title: 'Protected test supplement', description: 'Synthetic protected reference.', fixture: false,
+  source: { documentSha256: 'a'.repeat(64), readerTextSha256: '', productionBuild: 'test-build', edition: 'test-edition', printedPages: '3', pdfPages: '4' },
+  sections: [{ id: 'sources', title: 'Sources', paragraphs: ['Synthetic reference text.'] }],
+};
+testSupplement.source.readerTextSha256 = createHash('sha256').update(canonicalGuidedSupplementText(testSupplement)).digest('hex');
+const testSupplementRelease = { content_id: testSupplement.contentId, version: 1, slug: testSupplement.slug, supplement_type: testSupplement.type, sort_order: 1, status: 'published', source_sha256: testSupplement.source.documentSha256, reader_sha256: testSupplement.source.readerTextSha256, payload: testSupplement };
 
 function request({ method = 'GET', url = '/api/guided-edition', authenticated = false, body, headers = {} } = {}) {
   return {
@@ -118,6 +126,8 @@ async function run(input, dependencies = {}) {
   await handleGuidedEditionRequest(input, response, {
     readAccessState: async () => activeState,
     readCatalog: async () => [testRelease],
+    readSupplementCatalog: async () => [testSupplementRelease],
+    readSupplement: async ({ slug }) => slug === testSupplement.slug ? testSupplementRelease : null,
     readContent: async ({ contentId, slug }) => {
       if (contentId && contentId !== testContent.contentId) return null;
       if (slug && slug !== testContent.slug) return null;
@@ -181,6 +191,7 @@ assert.equal(library.getHeader('vary'), 'Cookie, Authorization');
 assert.match(library.body, /Protected test chapter/);
 assert.match(library.body, /Resume chapter/);
 assert.match(library.body, /value="50"/);
+assert.match(library.body, /Protected test supplement/);
 
 const multiChapterLibrary = await run(request({ authenticated: true }), {
   readCatalog: async () => [testReleaseTwo, testRelease],
@@ -223,6 +234,12 @@ assert.match(unavailableLog, /Guided Edition content read failed/);
 
 const missing = await run(request({ authenticated: true, url: '/api/guided-edition?__paid_path=chapter-99' }));
 assert.equal(missing.statusCode, 404);
+
+const supplement = await run(request({ authenticated: true, url: '/api/guided-edition?__paid_path=further-reading' }));
+assert.equal(supplement.statusCode, 200);
+assert.match(supplement.body, /Protected test supplement/);
+assert.match(supplement.body, /Protected reference/);
+assert.doesNotMatch(supplement.body, /mastery-form|save-place/);
 
 const anonymousProgress = await run(request({ url: '/api/guided-edition?action=progress&contentId=guided-edition%3Achapter-1' }));
 assert.equal(anonymousProgress.statusCode, 401);

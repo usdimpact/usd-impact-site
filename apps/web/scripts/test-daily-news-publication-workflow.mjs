@@ -30,24 +30,24 @@ assert.match(
 
 assert.match(
   workflow,
-  /printf '%s\\\\n\\\\n%s\\\\n\\\\n%s\\\\n'/,
+  /printf '%s\\n\\n%s\\n\\n%s\\n'/,
   'publication pull-request copy must use the shell-safe printf writer',
 );
 assert.doesNotMatch(
   workflow,
-  /<<-?\\s*['"]?EOF/,
+  /<<-?\s*['"]?EOF/,
   'publication workflow must not use an indentation-sensitive here-document',
 );
 
 const handoffStep = workflow.match(
-  /      - name: Open, validate, and merge publication pull request\\n[\\s\\S]*?        run: \\|\\n([\\s\\S]*)$/,
+  /      - name: Open, validate, and merge publication pull request\n[\s\S]*?        run: \|\n([\s\S]*)$/,
 );
 assert.ok(handoffStep, 'publication handoff shell must be present');
 
 const handoffShell = handoffStep[1]
-  .split('\\n')
+  .split('\n')
   .map((line) => (line.startsWith('          ') ? line.slice(10) : line))
-  .join('\\n');
+  .join('\n');
 const syntaxCheck = spawnSync('bash', ['-n'], {
   input: handoffShell,
   encoding: 'utf8',
@@ -55,7 +55,7 @@ const syntaxCheck = spawnSync('bash', ['-n'], {
 assert.equal(
   syntaxCheck.status,
   0,
-  `publication handoff shell must parse with bash -n:\\n${syntaxCheck.stderr}`,
+  `publication handoff shell must parse with bash -n:\n${syntaxCheck.stderr}`,
 );
 
 console.log('daily news publication workflow tests pass');

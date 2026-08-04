@@ -71,6 +71,16 @@ Chapter 5 contains three source examples, including a worked local-currency oil-
 
 Chapter 6 contains three source examples, including a worked real-yield opportunity-cost example. The complete boundary was rendered and checked page by page, the examples were represented through the existing structured group model, and all remaining narrative was compared against the certified PDF after whitespace and line-wrap normalization. The release contains eleven reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
 
+## Chapter 7 extraction boundary
+
+- Title: `Bitcoin and the Dollar`
+- Printed pages: 36-40
+- Physical PDF pages: 37-41
+- Next boundary: Chapter 8 begins on printed page 41 / physical PDF page 42
+- Canonical reader text SHA-256: `f3a16b4def4972fc5b8fc3f7190adf63a4ebe17d7c1326b4e69afb9aee22615f`
+
+Chapter 7 contains three anchor examples, including a worked short-term dollar hurdle-rate example. The complete boundary was rendered and checked page by page, the examples were represented through the existing structured group model, and all remaining narrative was compared exactly against the certified PDF after whitespace and line-wrap normalization. The release contains ten reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
+
 ## Repository policy
 
 The certified full-book PDF, canonical chapter text, mastery answer key, and corrective feedback are controlled content. None is stored in the public repository or offered as a customer download. The repository contains only source metadata, integrity hashes, generic rendering/scoring code, and synthetic test fixtures.

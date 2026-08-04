@@ -198,6 +198,10 @@ const migration = await readFile(
   new URL('../../../supabase/migrations/20260729203000_paid_access_foundation.sql', import.meta.url),
   'utf8',
 );
+const securityHardeningMigration = await readFile(
+  new URL('../../../supabase/migrations/20260804154505_supabase_security_hardening.sql', import.meta.url),
+  'utf8',
+);
 for (const table of [
   'profiles', 'purchase_intents', 'purchases', 'entitlements', 'entitlement_events',
   'webhook_receipts', 'learning_progress', 'bookmarks', 'support_requests',
@@ -211,5 +215,9 @@ assert.match(migration, /create policy purchases_select_own[\s\S]*account_id = a
 assert.match(migration, /create policy entitlements_select_own[\s\S]*account_id = auth\.uid\(\)/);
 assert.match(migration, /deletion_due_at = now\(\) \+ interval '7 days'/);
 assert.match(migration, /create or replace function public\.account_export\(export_account_id uuid\)/);
+assert.match(
+  securityHardeningMigration,
+  /revoke all on function public\.handle_new_auth_user\(\)\s+from public, anon, authenticated, service_role;/,
+);
 
 console.log('Supabase account and durable-record foundation tests passed.');

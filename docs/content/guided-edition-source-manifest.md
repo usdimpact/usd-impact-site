@@ -111,6 +111,16 @@ Chapter 9 contains three source examples, including a worked Mexican-peso carry-
 
 Chapter 10 contains the Five Backtested Regimes figure and two historical case studies. The complete boundary was rendered and checked page by page; every figure label, regime classification, percentage, legend relationship, and source note was represented through the existing structured group model and independently checked against high-resolution OCR. All narrative was compared exactly against the certified PDF after whitespace and line-wrap normalization. The release contains eleven reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
 
+## Chapter 11 extraction boundary
+
+- Title: `The Weekly Operating Framework`
+- Printed pages: 56-59
+- Physical PDF pages: 57-60
+- Next boundary: Chapter 12 begins on printed page 60 / physical PDF page 61
+- Canonical reader text SHA-256: `b14b5f4ff0759b78fc2accaf2981c4b7d3bbe9a74e62d0ea4f510c2a90e4bb49`
+
+Chapter 11 contains the Three-Dial Macro Dashboard and a one-page operating-discipline table. The complete boundary was rendered and checked page by page; every dashboard title, dial label, input label, state, interpretation rule, and caption was represented through the existing structured group model and independently checked against high-resolution OCR. All eighteen table facts were reconstructed by visual column position, and all remaining narrative matched the certified PDF exactly after whitespace and line-wrap normalization. The release contains ten reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
+
 ## Repository policy
 
 The certified full-book PDF, canonical chapter text, mastery answer key, and corrective feedback are controlled content. None is stored in the public repository or offered as a customer download. The repository contains only source metadata, integrity hashes, generic rendering/scoring code, and synthetic test fixtures.

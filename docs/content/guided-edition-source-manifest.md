@@ -131,6 +131,16 @@ Chapter 11 contains the Three-Dial Macro Dashboard and a one-page operating-disc
 
 Chapter 12 is narrative-only and contains seven named analytical mistakes plus a five-step practical discipline. The complete boundary was rendered and checked page by page; no embedded figures or tables were present, and all narrative matched the certified PDF exactly after whitespace and line-wrap normalization. The release contains ten reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
 
+## Chapter 13 extraction boundary
+
+- Title: `What to Watch from Here`
+- Printed pages: 65-70
+- Physical PDF pages: 66-71
+- Next boundary: Further Reading begins on printed page 71 / physical PDF page 72
+- Canonical reader text SHA-256: `f8a8a7b314f0db27c25f130d2065d847724b37a8686a7ce0cc865e1753162232`
+
+Chapter 13 contains a seven-question weekly checklist, two structured operating tables, six major asset-block subsections, and a final one-page discipline. The complete boundary was rendered and checked page by page; all table rows were reconstructed by visual column position, and all remaining narrative matched the certified PDF exactly after whitespace and line-wrap normalization. The release contains nine reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
+
 ## Repository policy
 
 The certified full-book PDF, canonical chapter text, mastery answer key, and corrective feedback are controlled content. None is stored in the public repository or offered as a customer download. The repository contains only source metadata, integrity hashes, generic rendering/scoring code, and synthetic test fixtures.

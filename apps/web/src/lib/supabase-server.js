@@ -189,6 +189,31 @@ function purchaseIntentPath(accountId, productId) {
   return `/rest/v1/purchase_intents?account_id=eq.${encodeURIComponent(accountId)}&product_id=eq.${encodeURIComponent(productId)}&select=id,status,provider_checkout_id,expires_at,created_at,updated_at&order=created_at.desc&limit=1`;
 }
 
+function requireAccountId(accountId) {
+  if (!UUID_PATTERN.test(accountId || '')) {
+    throw new SupabaseRequestError('A valid account is required.', {
+      status: 400,
+      code: 'INVALID_ACCOUNT_ID',
+    });
+  }
+  return accountId;
+}
+
+function requireGuidedContentId(contentId) {
+  const normalized = typeof contentId === 'string' ? contentId.trim() : '';
+  if (!/^guided-edition:[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalized)) {
+    throw new SupabaseRequestError('A valid Guided Edition chapter is required.', {
+      status: 400,
+      code: 'INVALID_GUIDED_CONTENT',
+    });
+  }
+  return normalized;
+}
+
+function learningProgressPath(accountId, contentId) {
+  return `/rest/v1/learning_progress?account_id=eq.${encodeURIComponent(accountId)}&content_id=eq.${encodeURIComponent(contentId)}&select=account_id,content_id,status,progress_percent,resume_position,mastery_score,attempt_count,completed_at,data,updated_at&limit=1`;
+}
+
 export async function readAccountAccessState({
   accessToken,
   productId = PAID_PRODUCT_ID,
@@ -263,6 +288,69 @@ export async function readAccountAccessState({
     allowed: authorization.allowed,
     reason: authorization.reason,
   });
+}
+
+export async function readGuidedLearningProgress({
+  accessToken,
+  accountId,
+  contentId,
+  environment,
+  config,
+  fetchImpl,
+}) {
+  const resolvedConfig = config || readSupabaseServerConfig(environment);
+  const validAccountId = requireAccountId(accountId);
+  const validContentId = requireGuidedContentId(contentId);
+  const rows = await supabaseFetch({
+    config: resolvedConfig,
+    path: learningProgressPath(validAccountId, validContentId),
+    accessToken,
+    fetchImpl,
+  });
+  return firstRow(rows);
+}
+
+export async function recordGuidedLearningProgress({
+  accountId,
+  contentId,
+  progressPercent,
+  resumePosition,
+  contentVersion,
+  masteryScore = null,
+  attemptIncrement = 0,
+  masteryPassed = false,
+  environment,
+  config,
+  fetchImpl,
+}) {
+  const resolvedConfig = config || readSupabaseServerConfig(environment, { requireSecret: true });
+  const validAccountId = requireAccountId(accountId);
+  const validContentId = requireGuidedContentId(contentId);
+  const payload = await supabaseFetch({
+    config: resolvedConfig,
+    path: '/rest/v1/rpc/record_guided_learning_progress',
+    method: 'POST',
+    useSecret: true,
+    body: {
+      p_account_id: validAccountId,
+      p_content_id: validContentId,
+      p_progress_percent: progressPercent,
+      p_resume_position: resumePosition,
+      p_content_version: contentVersion,
+      p_mastery_score: masteryScore,
+      p_attempt_increment: attemptIncrement,
+      p_mastery_passed: masteryPassed,
+    },
+    fetchImpl,
+  });
+  const recorded = Array.isArray(payload) ? firstRow(payload) : payload;
+  if (!recorded || typeof recorded !== 'object') {
+    throw new SupabaseRequestError('Learning progress could not be recorded.', {
+      status: 502,
+      code: 'LEARNING_PROGRESS_NOT_RECORDED',
+    });
+  }
+  return recorded;
 }
 
 export async function exportOwnAccount({ accessToken, environment, config, fetchImpl }) {

@@ -40,6 +40,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </div>
       </section>
 
+      <section id="learning-progress" class="card account-panel" aria-labelledby="learning-progress-heading" hidden>
+        <p class="eyebrow">Guided Interactive Edition</p>
+        <h2 id="learning-progress-heading">Continue learning</h2>
+        <p id="learning-progress-summary">Loading your saved place…</p>
+        <progress id="learning-progress-meter" max="100" value="0" aria-label="Chapter 1 progress"></progress>
+        <div class="button-row account-actions">
+          <a id="learning-resume-link" class="button primary" href="/guided-edition/chapter-1/">Open chapter</a>
+        </div>
+        <p id="learning-progress-status" class="account-status" role="status" aria-live="polite"></p>
+      </section>
+
       <section id="billing-support" class="card account-panel" aria-labelledby="billing-support-heading">
         <h2 id="billing-support-heading">Billing &amp; purchase support</h2>
         <p>
@@ -90,6 +101,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     const checkoutResultTitle = document.getElementById('checkout-result-title');
     const checkoutResultMessage = document.getElementById('checkout-result-message');
     const checkoutAccessLink = document.getElementById('checkout-access-link');
+    const learningProgress = document.getElementById('learning-progress');
+    const learningProgressSummary = document.getElementById('learning-progress-summary');
+    const learningProgressMeter = document.getElementById('learning-progress-meter');
+    const learningResumeLink = document.getElementById('learning-resume-link');
+    const learningProgressStatus = document.getElementById('learning-progress-status');
     const supportForm = document.getElementById('billing-support-form');
     const supportStatus = document.getElementById('billing-support-status');
     const checkoutReturn = new URLSearchParams(window.location.search).get('checkout');
@@ -137,10 +153,49 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       }
     };
 
+    const loadLearningProgress = async (hasPaidAccess) => {
+      if (!learningProgress) return;
+      learningProgress.hidden = !hasPaidAccess;
+      if (!hasPaidAccess) return;
+      try {
+        const response = await fetch(
+          '/api/guided-progress?contentId=guided-edition%3Achapter-1',
+          { credentials: 'same-origin' }
+        );
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || 'Learning progress could not be loaded.');
+        const progress = body.progress || {};
+        const percent = Number.isInteger(progress.progressPercent) ? progress.progressPercent : 0;
+        if (learningProgressMeter) learningProgressMeter.value = percent;
+        if (learningProgressSummary) {
+          learningProgressSummary.textContent = progress.completedAt
+            ? 'Chapter 1 mastery is complete.'
+            : `Chapter 1 is ${percent}% complete.`;
+        }
+        if (learningResumeLink) {
+          const position = typeof progress.resumePosition === 'string'
+            ? progress.resumePosition
+            : 'orientation';
+          learningResumeLink.href = `/guided-edition/chapter-1/#${encodeURIComponent(position)}`;
+          learningResumeLink.textContent = percent > 0 ? 'Resume Chapter 1' : 'Start Chapter 1';
+        }
+        if (learningProgressStatus) learningProgressStatus.textContent = 'Saved progress loaded.';
+      } catch (error) {
+        if (learningProgressSummary) learningProgressSummary.textContent = 'Your chapter is available.';
+        if (learningProgressStatus) {
+          learningProgressStatus.textContent = error instanceof Error
+            ? error.message
+            : 'Learning progress could not be loaded.';
+          learningProgressStatus.dataset.state = 'error';
+        }
+      }
+    };
+
     const loadAccount = async ({ announce = true } = {}) => {
       if (announce) showMessage('Loading account…', 'pending');
       const body = await fetchAccount();
       renderAccount(body);
+      await loadLearningProgress(body?.paidAccess?.allowed === true);
       if (announce && body) showMessage('Account loaded.', 'success');
       return body;
     };

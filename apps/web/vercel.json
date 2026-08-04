@@ -9,6 +9,8 @@
   "rewrites": [
     { "source": "/guided-edition", "destination": "/api/guided-edition" },
     { "source": "/guided-edition/:path*", "destination": "/api/guided-edition?__paid_path=:path*" },
+    { "source": "/api/guided-progress", "destination": "/api/guided-edition?action=progress" },
+    { "source": "/api/guided-mastery", "destination": "/api/guided-edition?action=mastery" },
     { "source": "/api/auth-login", "destination": "/api/account?action=login" },
     { "source": "/api/auth-confirm", "destination": "/api/account?action=confirm" },
     { "source": "/api/auth-refresh", "destination": "/api/account?action=refresh" },

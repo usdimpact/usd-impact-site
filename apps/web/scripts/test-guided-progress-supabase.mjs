@@ -230,7 +230,7 @@ assert.match(privateContentMigration, /guided_content_releases_deny_client_acces
 assert.doesNotMatch(privateContentMigration, /insert into public\.guided_content_releases/);
 
 const supplementMigration = await readFile(
-  new URL('../../../supabase/migrations/20260805110000_store_guided_supplements_privately.sql', import.meta.url),
+  new URL('../../../supabase/migrations/20260804234558_store_guided_supplements_privately.sql', import.meta.url),
   'utf8',
 );
 assert.match(supplementMigration, /create table public\.guided_supplement_releases/);

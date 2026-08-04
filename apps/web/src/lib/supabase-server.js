@@ -210,12 +210,32 @@ function requireGuidedContentId(contentId) {
   return normalized;
 }
 
+function requireGuidedSlug(slug) {
+  const normalized = typeof slug === 'string' ? slug.trim().toLowerCase() : '';
+  if (!/^[a-z0-9][a-z0-9-]{0,79}$/.test(normalized)) {
+    throw new SupabaseRequestError('A valid Guided Edition chapter is required.', {
+      status: 400,
+      code: 'INVALID_GUIDED_CONTENT',
+    });
+  }
+  return normalized;
+}
+
 function learningProgressPath(accountId, contentId) {
   return `/rest/v1/learning_progress?account_id=eq.${encodeURIComponent(accountId)}&content_id=eq.${encodeURIComponent(contentId)}&select=account_id,content_id,status,progress_percent,resume_position,mastery_score,attempt_count,completed_at,data,updated_at&limit=1`;
 }
 
-function guidedContentReleasePath(contentId, version) {
-  return `/rest/v1/guided_content_releases?content_id=eq.${encodeURIComponent(contentId)}&version=eq.${version}&status=eq.published&select=content_id,version,slug,status,source_sha256,reader_sha256,payload&limit=1`;
+const GUIDED_CONTENT_RELEASE_SELECT = 'content_id,version,chapter_number,slug,status,source_sha256,reader_sha256,payload';
+
+function guidedContentReleasePath({ contentId, slug }) {
+  const identity = contentId
+    ? `content_id=eq.${encodeURIComponent(contentId)}`
+    : `slug=eq.${encodeURIComponent(slug)}`;
+  return `/rest/v1/guided_content_releases?${identity}&status=eq.published&select=${GUIDED_CONTENT_RELEASE_SELECT}&limit=1`;
+}
+
+function guidedContentCatalogPath() {
+  return `/rest/v1/guided_content_releases?status=eq.published&select=${GUIDED_CONTENT_RELEASE_SELECT}&order=chapter_number.asc`;
 }
 
 export async function readAccountAccessState({
@@ -316,33 +336,43 @@ export async function readGuidedLearningProgress({
 
 export async function readGuidedContentRelease({
   contentId,
-  version,
+  slug,
   environment,
   config,
   fetchImpl,
 }) {
   const resolvedConfig = config || readSupabaseServerConfig(environment, { requireSecret: true });
-  const validContentId = requireGuidedContentId(contentId);
-  if (!Number.isInteger(version) || version < 1) {
-    throw new SupabaseRequestError('A valid Guided Edition content version is required.', {
+  if (Boolean(contentId) === Boolean(slug)) {
+    throw new SupabaseRequestError('Choose exactly one Guided Edition chapter identity.', {
       status: 400,
-      code: 'INVALID_GUIDED_CONTENT_VERSION',
+      code: 'INVALID_GUIDED_CONTENT',
     });
   }
+  const identity = contentId
+    ? { contentId: requireGuidedContentId(contentId), slug: null }
+    : { contentId: null, slug: requireGuidedSlug(slug) };
   const rows = await supabaseFetch({
     config: resolvedConfig,
-    path: guidedContentReleasePath(validContentId, version),
+    path: guidedContentReleasePath(identity),
     useSecret: true,
     fetchImpl,
   });
-  const release = firstRow(rows);
-  if (!release) {
-    throw new SupabaseRequestError('The Guided Edition chapter is temporarily unavailable.', {
-      status: 503,
-      code: 'GUIDED_CONTENT_UNAVAILABLE',
-    });
-  }
-  return release;
+  return firstRow(rows);
+}
+
+export async function readGuidedContentCatalog({
+  environment,
+  config,
+  fetchImpl,
+} = {}) {
+  const resolvedConfig = config || readSupabaseServerConfig(environment, { requireSecret: true });
+  const rows = await supabaseFetch({
+    config: resolvedConfig,
+    path: guidedContentCatalogPath(),
+    useSecret: true,
+    fetchImpl,
+  });
+  return Array.isArray(rows) ? rows : [];
 }
 
 export async function recordGuidedLearningProgress({

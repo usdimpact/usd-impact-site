@@ -25,6 +25,7 @@ const testContent = {
     productionBuild: 'test-build',
     edition: 'test-edition',
     printedPages: '1-2',
+    pdfPages: '2-3',
   },
   sections: [
     { id: 'test-start', title: 'Test start', progressPercent: 20, paragraphs: ['First synthetic paragraph.'] },
@@ -52,11 +53,35 @@ testContent.source.readerTextSha256 = createHash('sha256')
 const testRelease = {
   content_id: testContent.contentId,
   version: testContent.version,
+  chapter_number: testContent.number,
   slug: testContent.slug,
   status: 'published',
   source_sha256: testContent.source.documentSha256,
   reader_sha256: testContent.source.readerTextSha256,
   payload: testContent,
+};
+const testContentTwo = {
+  ...structuredClone(testContent),
+  slug: 'chapter-2',
+  contentId: 'guided-edition:chapter-2',
+  version: 1,
+  number: 2,
+  title: 'Protected test chapter 2',
+  shortTitle: 'Test chapter 2',
+  source: { ...testContent.source, readerTextSha256: '' },
+};
+testContentTwo.source.readerTextSha256 = createHash('sha256')
+  .update(canonicalGuidedReaderText(testContentTwo))
+  .digest('hex');
+const testReleaseTwo = {
+  content_id: testContentTwo.contentId,
+  version: testContentTwo.version,
+  chapter_number: testContentTwo.number,
+  slug: testContentTwo.slug,
+  status: 'published',
+  source_sha256: testContentTwo.source.documentSha256,
+  reader_sha256: testContentTwo.source.readerTextSha256,
+  payload: testContentTwo,
 };
 const correctAnswers = Object.fromEntries(
   testContent.mastery.questions.map((question) => [question.questionId, 'correct']),
@@ -92,9 +117,11 @@ async function run(input, dependencies = {}) {
   const response = responseRecorder();
   await handleGuidedEditionRequest(input, response, {
     readAccessState: async () => activeState,
-    readContent: async ({ contentId, version }) => {
-      assert.equal(contentId, testContent.contentId);
-      assert.equal(version, testContent.version);
+    readCatalog: async () => [testRelease],
+    readContent: async ({ contentId, slug }) => {
+      if (contentId && contentId !== testContent.contentId) return null;
+      if (slug && slug !== testContent.slug) return null;
+      assert.equal(Boolean(contentId) === Boolean(slug), false);
       return testRelease;
     },
     readProgress: async () => null,
@@ -109,7 +136,11 @@ async function run(input, dependencies = {}) {
 }
 
 let protectedContentReads = 0;
-const anonymous = await run(request(), { readContent: async () => { protectedContentReads += 1; } });
+const trackProtectedRead = async () => { protectedContentReads += 1; return []; };
+const anonymous = await run(request(), {
+  readCatalog: trackProtectedRead,
+  readContent: trackProtectedRead,
+});
 assert.equal(anonymous.statusCode, 302);
 assert.equal(protectedContentReads, 0);
 const anonymousLocation = new URL(anonymous.getHeader('location'), `https://${host}`);
@@ -121,7 +152,8 @@ for (const reason of ['missing', 'suspended', 'suspended_dispute', 'refunded', '
     request({ authenticated: true, url: '/api/guided-edition?campaign=launch' }),
     {
       readAccessState: async () => ({ allowed: false, reason }),
-      readContent: async () => { protectedContentReads += 1; },
+      readCatalog: trackProtectedRead,
+      readContent: trackProtectedRead,
     },
   );
   assert.equal(denied.statusCode, 302);
@@ -150,6 +182,13 @@ assert.match(library.body, /Protected test chapter/);
 assert.match(library.body, /Resume chapter/);
 assert.match(library.body, /value="50"/);
 
+const multiChapterLibrary = await run(request({ authenticated: true }), {
+  readCatalog: async () => [testReleaseTwo, testRelease],
+  readProgress: async () => null,
+});
+assert.equal(multiChapterLibrary.statusCode, 200);
+assert.ok(multiChapterLibrary.body.indexOf('Protected test chapter 1') < multiChapterLibrary.body.indexOf('Protected test chapter 2'));
+
 const chapter = await run(request({ authenticated: true, url: '/api/guided-edition?__paid_path=chapter-1' }));
 assert.equal(chapter.statusCode, 200);
 assert.match(chapter.body, /Protected test chapter/);
@@ -173,7 +212,7 @@ let unavailable;
 try {
   unavailable = await run(
     request({ authenticated: true, url: '/api/guided-edition?__paid_path=chapter-1' }),
-    { readContent: async () => null },
+    { readContent: async () => { throw new Error('Synthetic content read failure.'); } },
   );
 } finally {
   console.error = originalConsoleError;

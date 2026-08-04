@@ -9,28 +9,14 @@ function deepFreeze(value) {
   return Object.freeze(value);
 }
 
-const chapterDescriptors = [
-  {
-    slug: 'chapter-1',
-    contentId: `${GUIDED_EDITION_CONTENT_PREFIX}chapter-1`,
-    version: 2,
-    number: 1,
-  },
-];
-
-export const GUIDED_EDITION_CHAPTERS = deepFreeze(chapterDescriptors);
-
-const chaptersBySlug = new Map(GUIDED_EDITION_CHAPTERS.map((chapter) => [chapter.slug, chapter]));
-const chaptersByContentId = new Map(
-  GUIDED_EDITION_CHAPTERS.map((chapter) => [chapter.contentId, chapter]),
-);
-
-export function getGuidedChapterBySlug(slug) {
-  return chaptersBySlug.get(String(slug || '').trim().toLowerCase()) || null;
+export function getGuidedChapterBySlug(chapters, slug) {
+  const normalized = String(slug || '').trim().toLowerCase();
+  return chapters.find((chapter) => chapter.slug === normalized) || null;
 }
 
-export function getGuidedChapterByContentId(contentId) {
-  return chaptersByContentId.get(String(contentId || '').trim()) || null;
+export function getGuidedChapterByContentId(chapters, contentId) {
+  const normalized = String(contentId || '').trim();
+  return chapters.find((chapter) => chapter.contentId === normalized) || null;
 }
 
 function contentError(message, code = 'GUIDED_CONTENT_UNAVAILABLE') {
@@ -61,17 +47,30 @@ export function canonicalGuidedReaderText(chapter) {
   ].filter(Boolean).join('\n');
 }
 
-export function normalizeGuidedContentRelease(row, descriptor) {
-  if (!descriptor || !row || typeof row !== 'object' || Array.isArray(row)) {
+export function normalizeGuidedContentRelease(row, expected = {}) {
+  if (!row || typeof row !== 'object' || Array.isArray(row)) {
     throw contentError('The Guided Edition chapter is temporarily unavailable.');
   }
   if (
-    row.content_id !== descriptor.contentId
-    || row.version !== descriptor.version
-    || row.slug !== descriptor.slug
+    typeof row.content_id !== 'string'
+    || !/^guided-edition:[a-z0-9]+(?:-[a-z0-9]+)*$/.test(row.content_id)
+    || !Number.isInteger(row.version)
+    || row.version < 1
+    || typeof row.slug !== 'string'
+    || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(row.slug)
+    || !Number.isInteger(row.chapter_number)
+    || row.chapter_number < 1
     || row.status !== 'published'
+    || !/^[a-f0-9]{64}$/.test(row.source_sha256 || '')
+    || !/^[a-f0-9]{64}$/.test(row.reader_sha256 || '')
   ) {
-    throw contentError('The published Guided Edition release does not match the application manifest.');
+    throw contentError('The published Guided Edition release metadata is invalid.', 'INVALID_GUIDED_CONTENT_RELEASE');
+  }
+  if (
+    (expected.contentId && row.content_id !== expected.contentId)
+    || (expected.slug && row.slug !== expected.slug)
+  ) {
+    throw contentError('The published Guided Edition release does not match the requested chapter.');
   }
 
   const chapter = row.payload;
@@ -79,10 +78,10 @@ export function normalizeGuidedContentRelease(row, descriptor) {
     throw contentError('The published Guided Edition payload is invalid.', 'INVALID_GUIDED_CONTENT_RELEASE');
   }
   if (
-    chapter.contentId !== descriptor.contentId
-    || chapter.version !== descriptor.version
-    || chapter.slug !== descriptor.slug
-    || chapter.number !== descriptor.number
+    chapter.contentId !== row.content_id
+    || chapter.version !== row.version
+    || chapter.slug !== row.slug
+    || chapter.number !== row.chapter_number
     || chapter.fixture !== false
   ) {
     throw contentError('The Guided Edition payload metadata is invalid.', 'INVALID_GUIDED_CONTENT_RELEASE');
@@ -93,6 +92,10 @@ export function normalizeGuidedContentRelease(row, descriptor) {
   requireText(chapter.description, 'a description');
   requireText(chapter.part, 'a part label');
   requireText(chapter.purpose, 'a purpose statement');
+  requireText(chapter.source?.edition, 'a source edition');
+  requireText(chapter.source?.productionBuild, 'a source build');
+  requireText(chapter.source?.printedPages, 'source page numbers');
+  requireText(chapter.source?.pdfPages, 'physical PDF page numbers');
   if (
     chapter.source?.documentSha256 !== row.source_sha256
     || chapter.source?.readerTextSha256 !== row.reader_sha256
@@ -117,8 +120,19 @@ export function normalizeGuidedContentRelease(row, descriptor) {
       || section.progressPercent > 99
       || !Array.isArray(section.paragraphs)
       || section.paragraphs.some((paragraph) => typeof paragraph !== 'string' || !paragraph.trim())
+      || (section.groups !== undefined && !Array.isArray(section.groups))
     ) {
       throw contentError('A Guided Edition section is invalid.', 'INVALID_GUIDED_CONTENT_RELEASE');
+    }
+    for (const group of section.groups || []) {
+      if (
+        typeof group?.title !== 'string'
+        || !Array.isArray(group.items)
+        || group.items.length === 0
+        || group.items.some((item) => typeof item !== 'string' || !item.trim())
+      ) {
+        throw contentError('A Guided Edition section group is invalid.', 'INVALID_GUIDED_CONTENT_RELEASE');
+      }
     }
     sectionIds.add(section.id);
     priorProgress = section.progressPercent;
@@ -129,15 +143,30 @@ export function normalizeGuidedContentRelease(row, descriptor) {
   }
   const questionIds = new Set();
   for (const question of chapter.mastery.questions) {
+    const optionIds = new Set();
     if (
       typeof question?.questionId !== 'string'
+      || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(question.questionId)
       || questionIds.has(question.questionId)
       || !Array.isArray(question.options)
       || question.options.length < 2
-      || !question.options.some((option) => option.id === question.correctOptionId)
       || !sectionIds.has(question.reviewSectionId)
     ) {
       throw contentError('A Guided Edition mastery question is invalid.', 'INVALID_GUIDED_CONTENT_RELEASE');
+    }
+    for (const option of question.options) {
+      if (
+        typeof option?.id !== 'string'
+        || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(option.id)
+        || optionIds.has(option.id)
+      ) {
+        throw contentError('A Guided Edition mastery option is invalid.', 'INVALID_GUIDED_CONTENT_RELEASE');
+      }
+      optionIds.add(option.id);
+      requireText(option.label, 'a mastery option label');
+    }
+    if (!optionIds.has(question.correctOptionId)) {
+      throw contentError('A Guided Edition mastery answer is invalid.', 'INVALID_GUIDED_CONTENT_RELEASE');
     }
     questionIds.add(question.questionId);
     requireText(question.prompt, 'a mastery prompt');
@@ -150,6 +179,30 @@ export function normalizeGuidedContentRelease(row, descriptor) {
     throw contentError('The Guided Edition reader text failed its integrity check.', 'GUIDED_CONTENT_INTEGRITY_FAILED');
   }
   return deepFreeze(chapter);
+}
+
+export function normalizeGuidedContentCatalog(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throw contentError('The Guided Edition catalog is temporarily unavailable.');
+  }
+  const chapters = rows.map((row) => normalizeGuidedContentRelease(row))
+    .sort((left, right) => left.number - right.number);
+  const contentIds = new Set();
+  const slugs = new Set();
+  const numbers = new Set();
+  for (const chapter of chapters) {
+    if (
+      contentIds.has(chapter.contentId)
+      || slugs.has(chapter.slug)
+      || numbers.has(chapter.number)
+    ) {
+      throw contentError('The Guided Edition catalog contains duplicate chapter identities.', 'INVALID_GUIDED_CONTENT_RELEASE');
+    }
+    contentIds.add(chapter.contentId);
+    slugs.add(chapter.slug);
+    numbers.add(chapter.number);
+  }
+  return deepFreeze(chapters);
 }
 
 export function publicGuidedChapter(chapter) {

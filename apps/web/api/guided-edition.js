@@ -1,5 +1,6 @@
 import {
   readAccountAccessState,
+  readGuidedContentCatalog,
   readGuidedContentRelease,
   readGuidedLearningProgress,
   recordGuidedLearningProgress,
@@ -18,11 +19,9 @@ import {
   normalizePaidAccessReason,
 } from '../src/lib/paid-route.js';
 import {
-  GUIDED_EDITION_CHAPTERS,
   evaluateGuidedMastery,
-  getGuidedChapterByContentId,
-  getGuidedChapterBySlug,
   guidedResumeHref,
+  normalizeGuidedContentCatalog,
   normalizeGuidedContentRelease,
   normalizeGuidedProgressInput,
   normalizeGuidedProgressRecord,
@@ -169,12 +168,9 @@ function renderLibrary(chaptersWithProgress) {
   });
 }
 
-async function loadChapterContent(descriptor, dependencies) {
-  const row = await dependencies.readContent({
-    contentId: descriptor.contentId,
-    version: descriptor.version,
-  });
-  return normalizeGuidedContentRelease(row, descriptor);
+async function loadChapterContent(identity, dependencies) {
+  const row = await dependencies.readContent(identity);
+  return row ? normalizeGuidedContentRelease(row, identity) : null;
 }
 
 function renderChapter(chapter, progress) {
@@ -239,21 +235,19 @@ async function handleProgressApi(request, response, dependencies) {
   if (!access) return;
 
   try {
-    let descriptor;
     let chapter;
     if (request.method === 'GET') {
-      descriptor = getGuidedChapterByContentId(requestUrl(request).searchParams.get('contentId'));
-      if (!descriptor) {
+      const contentId = requestUrl(request).searchParams.get('contentId');
+      chapter = await loadChapterContent({ contentId }, dependencies);
+      if (!chapter) {
         return sendJson(response, 400, { error: 'Choose a valid Guided Edition chapter.', code: 'INVALID_GUIDED_CONTENT' });
       }
-      chapter = await loadChapterContent(descriptor, dependencies);
     } else {
       const payload = parseJsonBody(request);
-      descriptor = getGuidedChapterByContentId(payload.contentId);
-      if (!descriptor) {
+      chapter = await loadChapterContent({ contentId: payload.contentId }, dependencies);
+      if (!chapter) {
         return sendJson(response, 400, { error: 'Choose a valid Guided Edition chapter.', code: 'INVALID_GUIDED_CONTENT' });
       }
-      chapter = await loadChapterContent(descriptor, dependencies);
       const normalized = normalizeGuidedProgressInput(payload, chapter);
       chapter = normalized.chapter;
       const recorded = await dependencies.recordProgress({
@@ -288,11 +282,10 @@ async function handleMasteryApi(request, response, dependencies) {
   if (!access) return;
   try {
     const payload = parseJsonBody(request);
-    const descriptor = getGuidedChapterByContentId(payload.contentId);
-    if (!descriptor) {
+    const chapter = await loadChapterContent({ contentId: payload.contentId }, dependencies);
+    if (!chapter) {
       return sendJson(response, 400, { error: 'Choose a valid Guided Edition chapter.', code: 'INVALID_GUIDED_CONTENT' });
     }
-    const chapter = await loadChapterContent(descriptor, dependencies);
     const result = evaluateGuidedMastery(payload, chapter);
     const recorded = await dependencies.recordProgress({
       accountId: access.state.user.id,
@@ -324,6 +317,7 @@ async function handleMasteryApi(request, response, dependencies) {
 export async function handleGuidedEditionRequest(request, response, overrides = {}) {
   const dependencies = {
     readAccessState: overrides.readAccessState || readAccountAccessState,
+    readCatalog: overrides.readCatalog || readGuidedContentCatalog,
     readContent: overrides.readContent || readGuidedContentRelease,
     readProgress: overrides.readProgress || readGuidedLearningProgress,
     recordProgress: overrides.recordProgress || recordGuidedLearningProgress,
@@ -364,23 +358,27 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
   }
 
   const route = protectedUrl.pathname.replace(/^\/guided-edition\/?/, '').replace(/\/+$/, '');
-  const descriptor = route ? getGuidedChapterBySlug(route) : null;
-  if (route && !descriptor) {
-    response.statusCode = 404;
-    response.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    return response.end('Protected page not found.');
-  }
 
   let body;
-  if (descriptor) {
+  if (route) {
     let chapter;
     try {
-      chapter = await loadChapterContent(descriptor, dependencies);
+      chapter = await loadChapterContent({ slug: route }, dependencies);
     } catch (error) {
+      if (error?.status === 400) {
+        response.statusCode = 404;
+        response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        return response.end('Protected page not found.');
+      }
       console.error('Guided Edition content read failed.', error);
       response.statusCode = 503;
       response.setHeader('Content-Type', 'text/plain; charset=utf-8');
       return response.end('Guided Edition content is temporarily unavailable.');
+    }
+    if (!chapter) {
+      response.statusCode = 404;
+      response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      return response.end('Protected page not found.');
     }
     let row = null;
     try {
@@ -392,11 +390,11 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
   } else {
     let chaptersWithProgress;
     try {
-      chaptersWithProgress = await Promise.all(GUIDED_EDITION_CHAPTERS.map(async (item) => {
-        const chapter = await loadChapterContent(item, dependencies);
+      const chapters = normalizeGuidedContentCatalog(await dependencies.readCatalog());
+      chaptersWithProgress = await Promise.all(chapters.map(async (chapter) => {
         let row = null;
         try {
-          row = await dependencies.readProgress({ accessToken, accountId: state.user.id, contentId: item.contentId });
+          row = await dependencies.readProgress({ accessToken, accountId: state.user.id, contentId: chapter.contentId });
         } catch (error) {
           console.error('Guided Edition progress read failed.', error);
         }

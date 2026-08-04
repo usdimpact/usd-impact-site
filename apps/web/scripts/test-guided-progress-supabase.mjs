@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
   SupabaseRequestError,
+  readGuidedContentCatalog,
   readGuidedContentRelease,
   readGuidedLearningProgress,
   recordGuidedLearningProgress,
@@ -52,6 +53,7 @@ assert.deepEqual(read, row);
 const releaseRow = {
   content_id: row.content_id,
   version: 2,
+  chapter_number: 1,
   slug: 'chapter-1',
   status: 'published',
   source_sha256: 'a'.repeat(64),
@@ -60,20 +62,58 @@ const releaseRow = {
 };
 const release = await readGuidedContentRelease({
   contentId: row.content_id,
-  version: 2,
   config,
   fetchImpl: async (url, options) => {
     const parsed = new URL(url);
     assert.equal(parsed.pathname, '/rest/v1/guided_content_releases');
     assert.equal(parsed.searchParams.get('content_id'), `eq.${row.content_id}`);
-    assert.equal(parsed.searchParams.get('version'), 'eq.2');
+    assert.equal(parsed.searchParams.has('version'), false);
     assert.equal(parsed.searchParams.get('status'), 'eq.published');
+    assert.match(parsed.searchParams.get('select'), /chapter_number/);
     assert.equal(options.headers.apikey, config.secretKey);
     assert.equal(options.headers.Authorization, `Bearer ${config.secretKey}`);
     return response(200, [releaseRow]);
   },
 });
 assert.deepEqual(release, releaseRow);
+
+const releaseBySlug = await readGuidedContentRelease({
+  slug: 'CHAPTER-1',
+  config,
+  fetchImpl: async (url) => {
+    const parsed = new URL(url);
+    assert.equal(parsed.searchParams.get('slug'), 'eq.chapter-1');
+    assert.equal(parsed.searchParams.has('content_id'), false);
+    return response(200, [releaseRow]);
+  },
+});
+assert.deepEqual(releaseBySlug, releaseRow);
+
+const missingRelease = await readGuidedContentRelease({
+  slug: 'chapter-99',
+  config,
+  fetchImpl: async () => response(200, []),
+});
+assert.equal(missingRelease, null);
+
+const catalog = await readGuidedContentCatalog({
+  config,
+  fetchImpl: async (url, options) => {
+    const parsed = new URL(url);
+    assert.equal(parsed.pathname, '/rest/v1/guided_content_releases');
+    assert.equal(parsed.searchParams.get('status'), 'eq.published');
+    assert.equal(parsed.searchParams.get('order'), 'chapter_number.asc');
+    assert.equal(options.headers.apikey, config.secretKey);
+    assert.equal(options.headers.Authorization, `Bearer ${config.secretKey}`);
+    return response(200, [releaseRow]);
+  },
+});
+assert.deepEqual(catalog, [releaseRow]);
+
+await assert.rejects(
+  () => readGuidedContentRelease({ contentId: row.content_id, slug: 'chapter-1', config }),
+  (error) => error instanceof SupabaseRequestError && error.code === 'INVALID_GUIDED_CONTENT',
+);
 
 let recordedBody;
 const recorded = await recordGuidedLearningProgress({
@@ -171,4 +211,20 @@ assert.match(privateContentMigration, /grant select on public\.guided_content_re
 assert.match(privateContentMigration, /guided_content_releases_deny_client_access[\s\S]*using \(false\)/);
 assert.doesNotMatch(privateContentMigration, /insert into public\.guided_content_releases/);
 
-console.log('Supabase Guided Edition private-content and progress boundary tests passed.');
+const catalogMigration = await readFile(
+  new URL('../../../supabase/migrations/20260804174902_publish_guided_content_catalog.sql', import.meta.url),
+  'utf8',
+);
+assert.match(catalogMigration, /add column chapter_number integer/);
+assert.match(catalogMigration, /alter column chapter_number set not null/);
+assert.match(catalogMigration, /guided_content_releases_chapter_number[\s\S]*chapter_number > 0/);
+for (const index of [
+  'guided_content_releases_one_published_content_idx',
+  'guided_content_releases_one_published_slug_idx',
+  'guided_content_releases_published_chapter_number_idx',
+]) {
+  assert.match(catalogMigration, new RegExp(`create unique index ${index}`));
+}
+assert.equal((catalogMigration.match(/where status = 'published'/g) || []).length, 3);
+
+console.log('Supabase Guided Edition private catalog and progress boundary tests passed.');

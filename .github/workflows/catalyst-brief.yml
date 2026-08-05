@@ -1,0 +1,244 @@
+name: Important Catalyst Brief publication
+
+on:
+  schedule:
+    - cron: '45 6 * * *'
+    - cron: '45 22 * * *'
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: Brief phase to check
+        type: choice
+        options:
+          - preview
+          - outcome
+        default: preview
+      as_of:
+        description: Optional UTC date (YYYY-MM-DD)
+        required: false
+        type: string
+
+permissions:
+  actions: write
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: important-catalyst-brief
+  cancel-in-progress: false
+
+jobs:
+  research-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Resolve check phase and configuration
+        id: config
+        env:
+          NEWSFEED_ENDPOINT: ${{ secrets.NEWSFEED_ENDPOINT }}
+          NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
+          DISPATCH_PHASE: ${{ inputs.phase }}
+          DISPATCH_AS_OF: ${{ inputs.as_of }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          if [ -z "$NEWSFEED_ENDPOINT" ] || [ -z "$NEWSFEED_BEARER_TOKEN" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Catalyst Brief source configuration is incomplete; no publication was attempted."
+            exit 0
+          fi
+
+          phase="$DISPATCH_PHASE"
+          if [ -z "$phase" ]; then
+            if [ "$EVENT_SCHEDULE" = "45 6 * * *" ]; then phase="preview"; else phase="outcome"; fi
+          fi
+          as_of="${DISPATCH_AS_OF:-$(date -u +%F)}"
+          if ! [[ "$as_of" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "Invalid as_of date: $as_of"
+            exit 1
+          fi
+
+          catalyst_endpoint="$(node -e '
+            const url = new URL(process.env.NEWSFEED_ENDPOINT);
+            if (!/\/daily-news-source\/?$/.test(url.pathname)) throw new Error("NEWSFEED_ENDPOINT must end with /daily-news-source");
+            url.pathname = url.pathname.replace(/\/daily-news-source\/?$/, "/catalyst-brief-source");
+            process.stdout.write(url.toString());
+          ')"
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+          echo "phase=$phase" >> "$GITHUB_OUTPUT"
+          echo "as_of=$as_of" >> "$GITHUB_OUTPUT"
+          echo "CATALYST_ENDPOINT=$catalyst_endpoint" >> "$GITHUB_ENV"
+
+      - name: Fetch latest catalyst calendar
+        if: steps.config.outputs.configured == 'true'
+        run: |
+          for attempt in 1 2 3; do
+            if curl --fail --silent --show-error --location --max-time 30 \
+              https://www.usd-impact.com/news/latest.json \
+              --output "$RUNNER_TEMP/latest-news.json"; then
+              exit 0
+            fi
+            if [ "$attempt" != "3" ]; then sleep 10; fi
+          done
+          exit 1
+
+      - name: Select one important catalyst
+        if: steps.config.outputs.configured == 'true'
+        id: candidate
+        env:
+          PHASE: ${{ steps.config.outputs.phase }}
+          AS_OF: ${{ steps.config.outputs.as_of }}
+        run: |
+          node scripts/select-important-catalyst.mjs \
+            "$RUNNER_TEMP/latest-news.json" \
+            "--phase=$PHASE" \
+            "--as-of=$AS_OF" \
+            > "$RUNNER_TEMP/catalyst-candidate.json"
+          has_candidate="$(node -p "Boolean(JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/catalyst-candidate.json', 'utf8')).candidate)")"
+          echo "has_candidate=$has_candidate" >> "$GITHUB_OUTPUT"
+          if [ "$has_candidate" != "true" ]; then
+            echo "No unpublished high-impact catalyst is due in the $PHASE window."
+          fi
+
+      - name: Fetch and analyze the catalyst
+        if: steps.candidate.outputs.has_candidate == 'true'
+        env:
+          NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
+        run: |
+          for attempt in 1 2; do
+            if curl --fail --silent --show-error --location \
+              --request POST --max-time 280 \
+              -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data-binary "@$RUNNER_TEMP/catalyst-candidate.json" \
+              "$CATALYST_ENDPOINT" \
+              --output "$RUNNER_TEMP/catalyst-brief.json"; then
+              exit 0
+            fi
+            if [ "$attempt" = "1" ]; then
+              echo "Catalyst research failed once; retrying one time."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      - name: Check publication eligibility
+        if: steps.candidate.outputs.has_candidate == 'true'
+        id: eligibility
+        run: |
+          publishable="$(node -p "Boolean(JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/catalyst-brief.json', 'utf8')).publishable)")"
+          echo "publishable=$publishable" >> "$GITHUB_OUTPUT"
+          if [ "$publishable" != "true" ]; then
+            node -e '
+              const data = JSON.parse(require("fs").readFileSync(process.env.RUNNER_TEMP + "/catalyst-brief.json", "utf8"));
+              console.log(`Catalyst Brief held for verification: ${data.holdReason || "unspecified reason"}`);
+            '
+          fi
+
+      - name: Import as protected publication content
+        if: steps.eligibility.outputs.publishable == 'true'
+        run: node scripts/import-catalyst-brief.mjs "$RUNNER_TEMP/catalyst-brief.json" --publish --skip-published
+
+      - name: Validate and build
+        if: steps.eligibility.outputs.publishable == 'true'
+        run: |
+          npm run validate
+          npm run build
+
+      - name: Open publication pull request
+        if: steps.eligibility.outputs.publishable == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$(git status --porcelain src/content/catalyst-briefs)" ]; then
+            echo "No Catalyst Brief changes to publish."
+            exit 0
+          fi
+
+          brief_slug="$(node -p "JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/catalyst-brief.json', 'utf8')).slug.split('/').pop()")"
+          event_name="$(node -p "JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/catalyst-brief.json', 'utf8')).event")"
+          phase="$(node -p "JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/catalyst-brief.json', 'utf8')).phase")"
+          branch="automation/catalyst-brief-${brief_slug}-${GITHUB_RUN_ID}"
+
+          existing_pr_url="$(gh pr list --state open --head "$branch" --json url --jq '.[0].url // empty')"
+          if [ -n "$existing_pr_url" ]; then
+            pr_url="$existing_pr_url"
+            head_sha="$(gh pr view "$pr_url" --json headRefOid --jq '.headRefOid')"
+            echo "Reusing existing Catalyst Brief pull request $pr_url at $head_sha."
+          else
+            git config user.name "usd-impact-news-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git checkout -b "$branch"
+            git add src/content/catalyst-briefs
+            git commit -m "Publish Catalyst Brief for ${event_name}"
+            git push --set-upstream origin "$branch"
+            head_sha="$(git rev-parse HEAD)"
+
+            printf '%s\n\n%s\n\n%s\n' \
+              '## Automated Important Catalyst Brief' \
+              "This pull request contains the source-backed **${phase}** brief for **${event_name}** with status \`published\`." \
+              'Publication remains protected: Web quality must pass on this exact commit and a human must review and merge the pull request.' \
+              > "$RUNNER_TEMP/catalyst-brief-pr.md"
+
+            pr_url="$(gh pr create \
+              --base main \
+              --head "$branch" \
+              --title "Publish Catalyst Brief — ${event_name}" \
+              --body-file "$RUNNER_TEMP/catalyst-brief-pr.md")"
+          fi
+
+          gh workflow run quality.yml --ref "$branch"
+          run_id=""
+          for attempt in $(seq 1 30); do
+            run_id="$(gh run list \
+              --workflow quality.yml \
+              --branch "$branch" \
+              --event workflow_dispatch \
+              --limit 10 \
+              --json databaseId,headSha \
+              --jq ".[] | select(.headSha == \"$head_sha\") | .databaseId" | head -n 1)"
+            if [ -n "$run_id" ]; then break; fi
+            sleep 5
+          done
+          if [ -z "$run_id" ]; then
+            echo "Could not locate the Web quality run for $head_sha."
+            exit 1
+          fi
+          gh run watch "$run_id" --exit-status
+          echo "Catalyst Brief passed Web quality and is ready for protected review and merge: $pr_url"
+
+      - name: Record automation failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Important Catalyst Brief automation requires attention"
+          issue_number="$(gh issue list --state open --search "$title in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -n 1)"
+          body="Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          if [ -n "$issue_number" ]; then gh issue comment "$issue_number" --body "$body"; else gh issue create --title "$title" --body "$body"; fi
+
+      - name: Close recovered automation issue
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Important Catalyst Brief automation requires attention"
+          issue_number="$(gh issue list --state open --search "$title in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -n 1)"
+          if [ -n "$issue_number" ]; then
+            gh issue comment "$issue_number" --body "Recovered in workflow run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}."
+            gh issue close "$issue_number"
+          fi

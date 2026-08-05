@@ -4,16 +4,26 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import ComplianceNote from '../../components/ComplianceNote.astro';
 import NewsHighlightCard from '../../components/NewsHighlightCard.astro';
 import SourceLedger from '../../components/SourceLedger.astro';
+import { catalystEventKey } from '../../lib/catalyst-briefs.js';
+import { hasCatalystBriefFiles } from '../../lib/catalyst-brief-content.js';
 
 export async function getStaticPaths() {
   const editions = (await getCollection('news')).filter((entry) => entry.data.status === 'published');
+  const briefs = hasCatalystBriefFiles
+    ? (await getCollection('catalystBriefs')).filter((entry) => entry.data.status === 'published')
+    : [];
   return editions.map((entry) => ({
     params: { date: entry.data.date },
-    props: { entry },
+    props: {
+      entry,
+      briefs: briefs.filter((brief) => entry.data.catalysts.some(
+        (catalyst) => brief.data.eventKey === catalystEventKey(catalyst.date, catalyst.event),
+      )),
+    },
   }));
 }
 
-const { entry } = Astro.props;
+const { entry, briefs } = Astro.props;
 const { Content } = await render(entry);
 const formattedDate = new Intl.DateTimeFormat('en', {
   day: 'numeric',
@@ -64,8 +74,14 @@ const sourceMap = new Map(entry.data.sources.map((source) => [source.id, source]
         <div class="catalyst-list">
           {entry.data.catalysts.map((catalyst) => (
             <article class="card">
-              <time datetime={catalyst.date}>{catalyst.date}</time>
+              <div class="news-highlight-topline">
+                <time datetime={catalyst.date}>{catalyst.date}</time>
+                <span class={`importance importance-${catalyst.importance}`}>
+                  {catalyst.importance} importance · {catalyst.impactScore}/5
+                </span>
+              </div>
               <h3>{catalyst.event}</h3>
+              {catalyst.whyItMatters && <p><strong>Why it matters:</strong> {catalyst.whyItMatters}</p>}
               <div class="asset-tags">
                 {catalyst.assets.map((asset) => <span>{asset}</span>)}
               </div>
@@ -81,6 +97,17 @@ const sourceMap = new Map(entry.data.sources.map((source) => [source.id, source]
                   ) : null;
                 })}
               </p>
+              {briefs
+                .filter((brief) => brief.data.eventKey === catalystEventKey(catalyst.date, catalyst.event))
+                .sort((a, b) => a.data.phase.localeCompare(b.data.phase))
+                .map((brief) => (
+                  <p><a class="button report-link" href={brief.data.slug}>
+                    Read the {brief.data.phase === 'preview' ? 'pre-event' : 'outcome'} Catalyst Brief
+                  </a></p>
+                ))}
+              {catalyst.extraBrief && !briefs.some(
+                (brief) => brief.data.eventKey === catalystEventKey(catalyst.date, catalyst.event),
+              ) && <p class="verification">Extra Catalyst Brief scheduled after source verification.</p>}
             </article>
           ))}
         </div>

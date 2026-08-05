@@ -1,23 +1,23 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { readSessionAccessToken } from '../src/lib/supabase-auth.js';
+import { readSessionAccessToken } from './supabase-auth.js';
 import {
   getVerifiedSupabaseUser,
   safeSupabaseError,
   sendJson,
   SupabaseRequestError,
-} from '../src/lib/supabase-server.js';
+} from './supabase-server.js';
 import {
   attachPaddleTransaction,
   normalizeCheckoutRequestId,
   reservePaddlePurchaseIntent,
-} from '../src/lib/paddle-commerce.js';
+} from './paddle-commerce.js';
 import {
   cancelPaddleTransaction,
   createPaddleTransaction,
   getPaddleTransaction,
   PaddleApiError,
   PaddleConfigurationError,
-} from '../src/lib/paddle-api.js';
+} from './paddle-api.js';
 
 function header(request, name) {
   const value = request.headers?.[name] ?? request.headers?.[name.toLowerCase()];
@@ -184,4 +184,3 @@ export function createPaddleCheckoutHandler({
   };
 }
 
-export default createPaddleCheckoutHandler();

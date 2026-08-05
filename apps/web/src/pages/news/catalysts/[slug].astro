@@ -1,0 +1,112 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ComplianceNote from '../../../components/ComplianceNote.astro';
+import SourceLedger from '../../../components/SourceLedger.astro';
+import { hasCatalystBriefFiles } from '../../../lib/catalyst-brief-content.js';
+
+export async function getStaticPaths() {
+  const briefs = hasCatalystBriefFiles
+    ? (await getCollection('catalystBriefs')).filter((entry) => entry.data.status === 'published')
+    : [];
+  return briefs.map((entry) => ({
+    params: { slug: entry.data.slug.split('/').filter(Boolean).at(-1) },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const sourceMap = new Map(entry.data.sources.map((source) => [source.id, source]));
+const formatDate = (value) => new Intl.DateTimeFormat('en', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+}).format(new Date(`${value}T12:00:00Z`));
+---
+<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
+  <section class="hero news-hero">
+    <div class="container">
+      <div class="eyebrow">{entry.data.category} · {entry.data.phase === 'preview' ? 'Pre-event' : 'Outcome'}</div>
+      <h1>{entry.data.title}</h1>
+      <p class="lead">{entry.data.summary}</p>
+      <p class="edition-meta">
+        Event date {formatDate(entry.data.eventDate)} · Last reviewed {entry.data.lastReviewed}
+      </p>
+    </div>
+  </section>
+
+  <main class="container">
+    <section class="regime-panel">
+      <span>Verification status</span>
+      <strong>{entry.data.statusLabel.replaceAll('-', ' ')}</strong>
+      <div class="asset-tags" aria-label="Affected assets">
+        {entry.data.assets.map((asset) => <span>{asset}</span>)}
+      </div>
+    </section>
+
+    <section class="catalyst-section">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Verified evidence</div>
+          <h2>What is confirmed</h2>
+        </div>
+      </div>
+      <div class="news-grid">
+        {entry.data.verifiedFacts.map((fact) => (
+          <article class="card">
+            <span class="verification">
+              {fact.verification === 'verified-primary' ? 'Primary-source verified' : 'Multi-source verified'}
+            </span>
+            <p>{fact.statement}</p>
+            <p class="card-sources">
+              Sources:
+              {fact.sourceIds.map((id, index) => {
+                const source = sourceMap.get(id);
+                return source ? (
+                  <>
+                    {index > 0 && ' · '}
+                    <a href={source.url} target="_blank" rel="noreferrer">{source.publisher}</a>
+                  </>
+                ) : null;
+              })}
+            </p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="catalyst-section">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Transmission map</div>
+          <h2>How the event may move through markets</h2>
+        </div>
+      </div>
+      <div class="news-grid">
+        {entry.data.transmissionChannels.map((channel) => (
+          <article class="card">
+            <h3>{channel.channel}</h3>
+            <p>{channel.conditionalImpact}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="catalyst-section card">
+      <div class="eyebrow">Monitoring checklist</div>
+      <h2>What to watch next</h2>
+      <ul>
+        {entry.data.whatToWatch.map((item) => <li>{item}</li>)}
+      </ul>
+    </section>
+
+    <article class="edition-analysis">
+      <Content />
+    </article>
+
+    <SourceLedger sources={entry.data.sources} />
+    <ComplianceNote text={entry.data.complianceNote} />
+  </main>
+</BaseLayout>

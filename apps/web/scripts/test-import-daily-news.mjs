@@ -47,7 +47,19 @@ const bundle = {
       sourceIds: ['source-a', 'source-b'],
     },
   ],
-  catalysts: [],
+  catalysts: [
+    {
+      date: '2026-07-29',
+      event: 'Federal Reserve policy decision and press conference',
+      eventType: 'central-bank',
+      assets: ['DXY', 'U.S. rates'],
+      importance: 'high',
+      impactScore: 5,
+      extraBrief: true,
+      whyItMatters: 'The decision can reprice the expected policy path across rates and the dollar.',
+      sourceIds: ['source-a'],
+    },
+  ],
   sources: [
     {
       id: 'source-a',
@@ -85,6 +97,8 @@ try {
 
   const reviewContent = await readFile(editionPath, 'utf8');
   assert.match(reviewContent, /^status:\s*"review"\s*$/m);
+  assert.match(reviewContent, /^\s+impactScore:\s*5\s*$/m);
+  assert.match(reviewContent, /^\s+extraBrief:\s*true\s*$/m);
 
   await rm(editionPath, { force: true });
 

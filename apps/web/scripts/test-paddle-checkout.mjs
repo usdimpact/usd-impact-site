@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createPaddleCheckoutHandler } from '../api/paddle-checkout.js';
+import { createPaddleCheckoutHandler } from '../src/lib/paddle-checkout-handler.js';
 import { SupabaseRequestError } from '../src/lib/supabase-server.js';
 
 function responseRecorder() {

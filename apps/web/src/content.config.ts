@@ -48,8 +48,27 @@ const newsHighlightSchema = z.object({
 const newsCatalystSchema = z.object({
   date: z.string(),
   event: z.string(),
+  eventType: z.enum([
+    'central-bank', 'inflation', 'labor', 'growth', 'liquidity', 'energy',
+    'corporate', 'regulatory', 'geopolitical', 'other',
+  ]).default('other'),
   assets: z.array(z.string()).default([]),
+  importance: z.enum(['high', 'medium', 'low']).default('medium'),
+  impactScore: z.number().int().min(1).max(5).default(2),
+  extraBrief: z.boolean().default(false),
+  whyItMatters: z.string().default(''),
   sourceIds: z.array(z.string()).min(1),
+});
+
+const catalystVerifiedFactSchema = z.object({
+  statement: z.string(),
+  verification: z.enum(['verified-primary', 'verified-multiple']),
+  sourceIds: z.array(z.string()).min(1),
+});
+
+const catalystTransmissionSchema = z.object({
+  channel: z.string(),
+  conditionalImpact: z.string(),
 });
 
 const weeklyReportThemeSchema = z.object({
@@ -84,6 +103,8 @@ const monthlyReportScorePointSchema = z.object({
 
 const monthlyReportDirectory = new URL('./content/monthly-reports/', import.meta.url);
 const hasMonthlyReportFiles = fs.readdirSync(monthlyReportDirectory).some((name) => name.endsWith('.md'));
+const catalystBriefDirectory = new URL('./content/catalyst-briefs/', import.meta.url);
+const hasCatalystBriefFiles = fs.readdirSync(catalystBriefDirectory).some((name) => name.endsWith('.md'));
 
 const pages = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/pages' }),
@@ -139,6 +160,33 @@ const news = defineCollection({
     assets: z.array(z.string()).min(1),
     highlights: z.array(newsHighlightSchema).min(3).max(7),
     catalysts: z.array(newsCatalystSchema).default([]),
+    sources: z.array(newsSourceSchema).min(2),
+    complianceNote: z.string(),
+  }),
+});
+
+const catalystBriefs = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/catalyst-briefs' }),
+  schema: z.object({
+    title: z.string(),
+    metaTitle: z.string(),
+    metaDescription: z.string(),
+    slug: z.string(),
+    eventKey: z.string(),
+    event: z.string(),
+    eventDate: z.string(),
+    sourceEditionDate: z.string(),
+    phase: z.enum(['preview', 'outcome']),
+    generatedAt: z.string(),
+    lastReviewed: z.string(),
+    status: publicationStatus,
+    category: z.literal('USD Impact Catalyst Brief'),
+    statusLabel: z.enum(['scheduled-confirmed', 'rescheduled', 'cancelled', 'released']),
+    summary: z.string(),
+    assets: z.array(z.string()).min(1),
+    verifiedFacts: z.array(catalystVerifiedFactSchema).min(2).max(6),
+    transmissionChannels: z.array(catalystTransmissionSchema).min(2).max(5),
+    whatToWatch: z.array(z.string()).min(3).max(6),
     sources: z.array(newsSourceSchema).min(2),
     complianceNote: z.string(),
   }),
@@ -265,6 +313,7 @@ export const collections = {
   benchmarkModules,
   glossary,
   news,
+  ...(hasCatalystBriefFiles ? { catalystBriefs } : {}),
   weeklyReports,
   ...(hasMonthlyReportFiles ? { monthlyReports } : {}),
   quizzes,

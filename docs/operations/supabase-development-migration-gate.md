@@ -72,8 +72,18 @@ Development history, not only the migrations currently merged into `main`.
 ## Phase 1 — read-only metadata reconciliation
 
 Capture metadata from Development and Production without rows, secrets, or
-customer content. Compare the common commercial objects and record differences
-for all of the following:
+customer content. The reviewed source collector is
+`supabase/diagnostics/public_metadata_snapshot.sql`. It produces one
+deterministically ordered JSON document inside a repeatable-read, read-only
+transaction and queries PostgreSQL catalogs only.
+
+Committing the collector does not authorize execution. Do not run it against
+either project until a separate approval identifies the exact projects and
+evidence-handling location. Keep generated snapshots out of Git because
+function bodies and access-control metadata are operational evidence.
+
+Compare the common commercial objects and record differences for all of the
+following:
 
 - schemas, tables, columns, generated types, constraints, and enums;
 - sequences and ownership;

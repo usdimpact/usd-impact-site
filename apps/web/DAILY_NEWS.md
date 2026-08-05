@@ -63,7 +63,8 @@ The bundle contains:
 - a server-derived verification state for every highlight
 - source IDs for every claim
 - at least two grounded HTTPS sources
-- catalysts with source IDs
+- catalysts with source IDs, event type, importance, 1-5 impact score, and a concise transmission explanation
+- a deterministic `extraBrief` eligibility flag for the small subset of high-impact catalysts
 - optional long-form body
 
 The importer always writes `status: review`. It cannot publish.
@@ -120,3 +121,46 @@ A published highlight must be either:
 - `verified-multiple`: supported by at least two independent reliable reporting domains
 
 Developing or single-source claims remain outside the published edition until verified. Every generated draft still requires human editorial review before its status is changed to `published`. Corrections must update `lastReviewed` and preserve the original source ledger.
+
+## Important Catalyst Briefs
+
+The Upcoming catalysts calendar is also the input to a separate, event-driven editorial workflow. It does not create an extra article for every calendar item.
+
+A catalyst becomes eligible only when all of these deterministic conditions are satisfied:
+
+- `importance` is `high`
+- `impactScore` is 4 or 5
+- at least two covered USD Impact assets may be affected
+- the scheduled date is backed by an authoritative primary source
+- the daily bundle marks `extraBrief: true`
+
+Examples that may qualify include major central-bank decisions, CPI/PCE, payrolls, material Treasury-liquidity events, OPEC-level supply decisions, and exceptionally material index-heavy corporate events. Routine weekly releases should remain medium or low importance.
+
+The `Important Catalyst Brief publication` workflow checks twice each day:
+
+- `06:45 UTC` — look up to two calendar days ahead and prepare one pre-event brief
+- `22:45 UTC` — re-check events from today or yesterday and prepare one verified-outcome brief
+
+Each check performs this sequence:
+
+1. Fetch `/news/latest.json` from Production.
+2. Select the highest-scored eligible catalyst that does not already have the requested phase.
+3. Call the private `/api/catalyst-brief-source` endpoint with the bounded event metadata.
+4. Re-fetch authoritative sources with OpenAI web search.
+5. Require at least one primary source, at least two grounded URLs, and claim-level primary or independent multi-source verification.
+6. Hold the brief without writing content when the official schedule or outcome cannot be verified.
+7. Import an eligible brief, run the complete validation and production build, and open a publication pull request.
+8. Dispatch Web quality against the exact publication commit and stop for protected human review. The workflow never merges its own pull request.
+
+Pre-event briefs explain the verified timing, evidence, transmission channels, and monitoring checklist. Outcome briefs are created only after the result can be verified; they separate confirmed facts from conditional cross-asset interpretation.
+
+The workflow has one bounded research retry, duplicate-file protection, duplicate-pull-request reuse, and an automation-health issue that opens on failure and closes after recovery. Catalyst Briefs appear on the news hub, the combined RSS feed, and the latest JSON metadata after a reviewed pull request is merged.
+
+Manual selection test from `apps/web`:
+
+```bash
+curl --fail --show-error https://www.usd-impact.com/news/latest.json -o /tmp/latest-news.json
+node scripts/select-important-catalyst.mjs /tmp/latest-news.json --phase=preview --as-of=2026-08-05
+```
+
+The endpoint uses the existing `OPENAI_API_KEY`, `OPENAI_NEWS_MODEL`, `OPENAI_NEWS_TIMEOUT_MS`, and `NEWSFEED_BEARER_TOKEN` settings. No additional Production secret is required.

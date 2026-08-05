@@ -2,6 +2,8 @@ import {
   readAccountAccessState,
   readGuidedContentCatalog,
   readGuidedContentRelease,
+  readGuidedSupplementCatalog,
+  readGuidedSupplementRelease,
   readGuidedLearningProgress,
   recordGuidedLearningProgress,
   safeSupabaseError,
@@ -23,6 +25,8 @@ import {
   guidedResumeHref,
   normalizeGuidedContentCatalog,
   normalizeGuidedContentRelease,
+  normalizeGuidedSupplementCatalog,
+  normalizeGuidedSupplementRelease,
   normalizeGuidedProgressInput,
   normalizeGuidedProgressRecord,
   publicGuidedChapter,
@@ -148,7 +152,7 @@ function shell({ title, eyebrow, lead, content, script = '' }) {
 </html>`;
 }
 
-function renderLibrary(chaptersWithProgress) {
+function renderLibrary(chaptersWithProgress, supplements) {
   const cards = chaptersWithProgress.map(({ chapter, progress }) => {
     const href = guidedResumeHref(chapter, progress);
     return `<article class="card canonical">
@@ -160,11 +164,17 @@ function renderLibrary(chaptersWithProgress) {
       <div class="actions"><a class="button primary" href="${escapeHtml(href)}">${progress.progressPercent > 0 ? 'Resume chapter' : 'Start chapter'}</a><a class="button" href="/account/">Account</a></div>
     </article>`;
   }).join('');
+  const referenceCards = supplements.map((supplement) => `<article class="card">
+      <p class="eyebrow">Protected reference · ${escapeHtml(supplement.type === 'appendix' ? 'Appendix' : 'Further reading')}</p>
+      <h2>${escapeHtml(supplement.title)}</h2>
+      <p>${escapeHtml(supplement.description)}</p>
+      <div class="actions"><a class="button" href="/guided-edition/${escapeHtml(supplement.slug)}/">Open reference</a></div>
+    </article>`).join('');
   return shell({
     title: 'Guided Interactive Edition',
     eyebrow: 'Protected learning library',
     lead: 'Resume your reading and mastery checks from any signed-in device.',
-    content: `<div class="stack">${cards}</div>`,
+    content: `<div class="stack">${cards}${referenceCards ? `<section class="card canonical"><p class="eyebrow">Reference library</p><h2>Book supplements</h2><p>These protected reference pages supplement the 13 numbered chapters and do not affect chapter mastery or progress.</p></section>${referenceCards}` : ''}</div>`,
   });
 }
 
@@ -201,6 +211,21 @@ function renderChapter(chapter, progress) {
       </article>
     </div>`,
     script: `<script>const guidedChapter=${scriptData};const progress=document.getElementById('chapter-progress');const percent=document.getElementById('chapter-percent');const readerStatus=document.getElementById('reader-status');const masteryStatus=document.getElementById('mastery-status');const feedbackList=document.getElementById('mastery-feedback');const updateProgress=(value)=>{if(progress)progress.value=value;if(percent)percent.textContent=value+'%'};document.querySelectorAll('.save-place').forEach((button)=>button.addEventListener('click',async()=>{button.disabled=true;readerStatus.textContent='Saving your place…';readerStatus.dataset.state='pending';const response=await fetch('/api/guided-progress',{method:'PATCH',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId:guidedChapter.contentId,resumePosition:button.dataset.position,progressPercent:Number(button.dataset.progress)})});const body=await response.json().catch(()=>({}));button.disabled=false;if(!response.ok){readerStatus.textContent=body.error||'Your place could not be saved.';readerStatus.dataset.state='error';return}updateProgress(body.progress.progressPercent);readerStatus.textContent='Your place was saved.';readerStatus.dataset.state='success'}));document.getElementById('mastery-form')?.addEventListener('submit',async(event)=>{event.preventDefault();const answers=Object.fromEntries(new FormData(event.currentTarget).entries());const submit=event.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;masteryStatus.textContent='Checking your answers…';masteryStatus.dataset.state='pending';feedbackList.replaceChildren();const response=await fetch('/api/guided-mastery',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId:guidedChapter.contentId,answers})});const body=await response.json().catch(()=>({}));submit.disabled=false;if(!response.ok){masteryStatus.textContent=body.error||'The mastery check could not be recorded.';masteryStatus.dataset.state='error';return}updateProgress(body.progress.progressPercent);masteryStatus.textContent=body.feedback;masteryStatus.dataset.state=body.passed?'success':'error';for(const result of body.questionResults||[]){const item=document.createElement('li');item.textContent=result.feedback;if(!result.correct&&result.reviewSectionId){const link=document.createElement('a');link.href='#'+result.reviewSectionId;link.textContent=' Review this section.';item.append(link)}feedbackList.append(item)}});</script>`,
+  });
+}
+
+function renderSupplement(supplement) {
+  const navigation = supplement.sections.map((section) => `<li><a href="#${escapeHtml(section.id)}">${escapeHtml(section.title)}</a></li>`).join('');
+  const sections = supplement.sections.map((section) => {
+    const groups = (section.groups || []).map((group) => `${group.title ? `<h3>${escapeHtml(group.title)}</h3>` : ''}<ul class="chapter-list">${group.items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`).join('');
+    const compliance = section.complianceNote ? `<p class="compliance"><strong>Compliance note.</strong> ${escapeHtml(section.complianceNote)}</p>` : '';
+    return `<section id="${escapeHtml(section.id)}" class="reader-section" tabindex="-1"><h2>${escapeHtml(section.title)}</h2>${section.paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}${groups}${compliance}</section>`;
+  }).join('');
+  return shell({
+    title: supplement.title,
+    eyebrow: `Guided Interactive Edition · ${supplement.type === 'appendix' ? 'Appendix' : 'Further reading'}`,
+    lead: supplement.description,
+    content: `<div class="reader-grid"><aside class="card reader-nav" aria-label="Reference navigation"><p class="eyebrow">Protected reference</p><nav aria-label="On this page"><ul>${navigation}</ul></nav><a href="/guided-edition/">Back to library</a></aside><article class="reader-content"><section class="card canonical"><h2>Source record</h2><p class="source-note">Source verified from ${escapeHtml(supplement.source.productionBuild)}, edition ${escapeHtml(supplement.source.edition)}, printed pages ${escapeHtml(supplement.source.printedPages)}.</p></section>${sections}</article></div>`,
   });
 }
 
@@ -319,6 +344,8 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
     readAccessState: overrides.readAccessState || readAccountAccessState,
     readCatalog: overrides.readCatalog || readGuidedContentCatalog,
     readContent: overrides.readContent || readGuidedContentRelease,
+    readSupplementCatalog: overrides.readSupplementCatalog || readGuidedSupplementCatalog,
+    readSupplement: overrides.readSupplement || readGuidedSupplementRelease,
     readProgress: overrides.readProgress || readGuidedLearningProgress,
     recordProgress: overrides.recordProgress || recordGuidedLearningProgress,
   };
@@ -376,21 +403,40 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
       return response.end('Guided Edition content is temporarily unavailable.');
     }
     if (!chapter) {
-      response.statusCode = 404;
-      response.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      return response.end('Protected page not found.');
+      try {
+        const supplementRow = await dependencies.readSupplement({ slug: route });
+        const supplement = supplementRow ? normalizeGuidedSupplementRelease(supplementRow, { slug: route }) : null;
+        if (!supplement) {
+          response.statusCode = 404;
+          response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+          return response.end('Protected page not found.');
+        }
+        body = renderSupplement(supplement);
+      } catch (error) {
+        console.error('Guided Edition supplement read failed.', error);
+        response.statusCode = 503;
+        response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        return response.end('Guided Edition content is temporarily unavailable.');
+      }
     }
+    if (body) {
+      // Supplement pages intentionally have no chapter progress or mastery state.
+    } else {
     let row = null;
     try {
       row = await dependencies.readProgress({ accessToken, accountId: state.user.id, contentId: chapter.contentId });
     } catch (error) {
       console.error('Guided Edition progress read failed.', error);
     }
-    body = renderChapter(chapter, normalizeGuidedProgressRecord(row, chapter));
+      body = renderChapter(chapter, normalizeGuidedProgressRecord(row, chapter));
+    }
   } else {
     let chaptersWithProgress;
+    let supplements;
     try {
-      const chapters = normalizeGuidedContentCatalog(await dependencies.readCatalog());
+      const [chapterRows, supplementRows] = await Promise.all([dependencies.readCatalog(), dependencies.readSupplementCatalog()]);
+      const chapters = normalizeGuidedContentCatalog(chapterRows);
+      supplements = normalizeGuidedSupplementCatalog(supplementRows);
       chaptersWithProgress = await Promise.all(chapters.map(async (chapter) => {
         let row = null;
         try {
@@ -406,7 +452,7 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
       response.setHeader('Content-Type', 'text/plain; charset=utf-8');
       return response.end('Guided Edition content is temporarily unavailable.');
     }
-    body = renderLibrary(chaptersWithProgress);
+    body = renderLibrary(chaptersWithProgress, supplements);
   }
 
   response.statusCode = 200;

@@ -3,12 +3,15 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import {
   canonicalGuidedReaderText,
+  canonicalGuidedSupplementText,
   evaluateGuidedMastery,
   getGuidedChapterByContentId,
   getGuidedChapterBySlug,
   guidedResumeHref,
   normalizeGuidedContentCatalog,
   normalizeGuidedContentRelease,
+  normalizeGuidedSupplementCatalog,
+  normalizeGuidedSupplementRelease,
   normalizeGuidedProgressInput,
   normalizeGuidedProgressRecord,
   publicGuidedChapter,
@@ -73,6 +76,18 @@ function buildTestRelease(number, version = number + 1) {
 
 const releaseOne = buildTestRelease(1, 2);
 const releaseTwo = buildTestRelease(2, 1);
+const supplementPayload = {
+  contentId: 'guided-supplement:further-reading', version: 1, slug: 'further-reading',
+  type: 'further-reading', order: 1, title: 'Synthetic further reading',
+  description: 'Synthetic supplement used only by automated tests.', fixture: false,
+  source: { documentSha256: 'a'.repeat(64), readerTextSha256: '', productionBuild: 'test-build', edition: 'test-edition', printedPages: '3', pdfPages: '4' },
+  sections: [{ id: 'sources', title: 'Sources', paragraphs: ['Synthetic source note.'] }],
+};
+supplementPayload.source.readerTextSha256 = createHash('sha256').update(canonicalGuidedSupplementText(supplementPayload)).digest('hex');
+const supplementRelease = { content_id: supplementPayload.contentId, version: 1, slug: supplementPayload.slug, supplement_type: supplementPayload.type, sort_order: 1, status: 'published', source_sha256: supplementPayload.source.documentSha256, reader_sha256: supplementPayload.source.readerTextSha256, payload: supplementPayload };
+assert.equal(normalizeGuidedSupplementRelease(supplementRelease).title, 'Synthetic further reading');
+assert.equal(normalizeGuidedSupplementCatalog([supplementRelease]).length, 1);
+assert.throws(() => normalizeGuidedSupplementRelease({ ...supplementRelease, reader_sha256: 'b'.repeat(64) }), (error) => error.code === 'GUIDED_CONTENT_INTEGRITY_FAILED');
 const catalog = normalizeGuidedContentCatalog([releaseTwo, releaseOne]);
 const [chapter] = catalog;
 assert.equal(catalog.length, 2);

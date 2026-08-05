@@ -74,7 +74,7 @@ columns as (
     attribute.attnotnull as not_null,
     attribute.attidentity as identity_kind,
     attribute.attgenerated as generated_kind,
-    collation.collname as collation_name,
+    collation_entry.collname as collation_name,
     pg_catalog.pg_get_expr(default_value.adbin, default_value.adrelid) as default_expression
   from pg_catalog.pg_attribute as attribute
   join pg_catalog.pg_class as relation
@@ -84,8 +84,8 @@ columns as (
   left join pg_catalog.pg_attrdef as default_value
     on default_value.adrelid = attribute.attrelid
    and default_value.adnum = attribute.attnum
-  left join pg_catalog.pg_collation as collation
-    on collation.oid = attribute.attcollation
+  left join pg_catalog.pg_collation as collation_entry
+    on collation_entry.oid = attribute.attcollation
    and attribute.attcollation <> 0
   where namespace.nspname = 'public'
     and relation.relkind in ('r', 'p', 'v', 'm')
@@ -97,9 +97,9 @@ constraints as (
     relation.relname as relation_name,
     constraint_entry.conname as constraint_name,
     constraint_entry.contype as constraint_type,
-    constraint_entry.condeferrable as deferrable,
-    constraint_entry.condeferred as initially_deferred,
-    constraint_entry.convalidated as validated,
+    constraint_entry.condeferrable as is_deferrable,
+    constraint_entry.condeferred as is_initially_deferred,
+    constraint_entry.convalidated as is_validated,
     pg_catalog.pg_get_constraintdef(constraint_entry.oid, true) as definition
   from pg_catalog.pg_constraint as constraint_entry
   join pg_catalog.pg_class as relation

@@ -14,6 +14,10 @@ const ALLOWED_ASSETS = [
   'Henry Hub', 'TTF', 'LNG', 'XAUUSD', 'BTCUSD', 'S&P 500', 'Nasdaq',
   'Dow', 'Russell 2000', 'NVDA', 'MSFT', 'AAPL', 'AMZN', 'GOOGL', 'META', 'TSLA',
 ];
+const CATALYST_EVENT_TYPES = [
+  'central-bank', 'inflation', 'labor', 'growth', 'liquidity', 'energy',
+  'corporate', 'regulatory', 'geopolitical', 'other',
+];
 
 const OUTPUT_SCHEMA = {
   type: 'object',
@@ -43,11 +47,18 @@ const OUTPUT_SCHEMA = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['date', 'event', 'assets', 'sourceIds'],
+        required: [
+          'date', 'event', 'eventType', 'assets', 'importance', 'impactScore',
+          'whyItMatters', 'sourceIds',
+        ],
         properties: {
           date: { type: 'string' },
           event: { type: 'string' },
+          eventType: { type: 'string', enum: CATALYST_EVENT_TYPES },
           assets: { type: 'array', items: { type: 'string', enum: ALLOWED_ASSETS } },
+          importance: { type: 'string', enum: ['high', 'medium', 'low'] },
+          impactScore: { type: 'integer', minimum: 1, maximum: 5 },
+          whyItMatters: { type: 'string' },
           sourceIds: { type: 'array', items: { type: 'string' } },
         },
       },
@@ -394,7 +405,7 @@ async function repairCompletedResponse(apiKey, date, openAiResponse, initialReas
         store: false,
         reasoning: { effort: 'low' },
         instructions: 'You repair a source-backed USD Impact research bundle. Preserve verified facts, remove unsupported claims, and return only the requested complete JSON object.',
-        input: `The bundle for ${date} failed validation with this exact error:\n${initialReason}\n\nRepair the bundle using these rules:\n- Use only the exact source URLs listed under PERMITTED SOURCE URLS.\n- Do not add facts, events, prices, dates, or sources that are not already present in the original bundle.\n- Every source id must be lowercase and hyphenated, unique, and referenced consistently.\n- Every highlight must cite either at least one authoritative primary source or two independent reporting domains. Remove a highlight that cannot satisfy this rule, but retain 3-7 highlights.\n- Use only supported asset names from the schema.\n- Catalyst dates must use YYYY-MM-DD. Remove an unsupported catalyst rather than inventing evidence.\n- Keep the summary under 700 characters, each headline under 140 characters, each development and whyItMatters under 700 characters, and the body under 9,000 characters.\n- Return the complete corrected bundle, not a patch or explanation.\n\nPERMITTED SOURCE URLS:\n${JSON.stringify(groundedUrls, null, 2)}\n\nORIGINAL BUNDLE:\n${originalDraft}`,
+        input: `The bundle for ${date} failed validation with this exact error:\n${initialReason}\n\nRepair the bundle using these rules:\n- Use only the exact source URLs listed under PERMITTED SOURCE URLS.\n- Do not add facts, events, prices, dates, or sources that are not already present in the original bundle.\n- Every source id must be lowercase and hyphenated, unique, and referenced consistently.\n- Every highlight must cite either at least one authoritative primary source or two independent reporting domains. Remove a highlight that cannot satisfy this rule, but retain 3-7 highlights.\n- Use only supported asset names from the schema.\n- Catalyst dates must use YYYY-MM-DD, stay within the requested seven-day window, and cite an authoritative primary schedule source. Remove an unsupported catalyst rather than inventing evidence.\n- Preserve each catalyst's eventType, importance, 1-5 impactScore, and whyItMatters explanation. Reserve high 4-5 scores for genuinely important events across at least two covered assets; the server derives extra-publication eligibility.\n- Keep the summary under 700 characters, each headline under 140 characters, each development and whyItMatters under 700 characters, and the body under 9,000 characters.\n- Return the complete corrected bundle, not a patch or explanation.\n\nPERMITTED SOURCE URLS:\n${JSON.stringify(groundedUrls, null, 2)}\n\nORIGINAL BUNDLE:\n${originalDraft}`,
         text: {
           format: {
             type: 'json_schema',

@@ -18,6 +18,10 @@ const allowedAssets = new Set([
 ]);
 const allowedVerification = new Set(['verified-primary', 'verified-multiple']);
 const allowedSourceType = new Set(['primary', 'reporting']);
+const allowedCatalystEventType = new Set([
+  'central-bank', 'inflation', 'labor', 'growth', 'liquidity', 'energy',
+  'corporate', 'regulatory', 'geopolitical', 'other',
+]);
 const isDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value));
 const isHttps = (value) => /^https:\/\/[^\s]+$/.test(String(value));
 const requiredString = (object, key) => {
@@ -26,6 +30,11 @@ const requiredString = (object, key) => {
   return value;
 };
 const quoted = (value) => JSON.stringify(String(value));
+const addDays = (value, days) => {
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  parsed.setUTCDate(parsed.getUTCDate() + days);
+  return parsed.toISOString().slice(0, 10);
+};
 
 const date = requiredString(payload, 'date');
 if (!isDate(date)) throw new Error('date must use YYYY-MM-DD');
@@ -37,12 +46,15 @@ if (highlights.length < 3 || highlights.length > 7) throw new Error('highlights 
 if (sources.length < 2) throw new Error('sources must contain at least two items');
 
 const sourceIds = new Set();
+const sourceTypeById = new Map();
 for (const source of sources) {
   const id = requiredString(source, 'id');
   if (sourceIds.has(id)) throw new Error(`Duplicate source id: ${id}`);
   sourceIds.add(id);
   if (!isHttps(requiredString(source, 'url'))) throw new Error(`Source ${id} must use HTTPS`);
-  if (!allowedSourceType.has(requiredString(source, 'sourceType'))) throw new Error(`Invalid sourceType for ${id}`);
+  const sourceType = requiredString(source, 'sourceType');
+  if (!allowedSourceType.has(sourceType)) throw new Error(`Invalid sourceType for ${id}`);
+  sourceTypeById.set(id, sourceType);
 }
 
 for (const highlight of highlights) {
@@ -62,11 +74,30 @@ for (const highlight of highlights) {
 }
 
 for (const catalyst of catalysts) {
-  if (!isDate(requiredString(catalyst, 'date'))) throw new Error('Catalyst dates must use YYYY-MM-DD');
+  const catalystDate = requiredString(catalyst, 'date');
+  if (!isDate(catalystDate)) throw new Error('Catalyst dates must use YYYY-MM-DD');
+  if (catalystDate < date || catalystDate > addDays(date, 7)) throw new Error('Catalysts must be inside the next seven calendar days');
   requiredString(catalyst, 'event');
+  if (!allowedCatalystEventType.has(requiredString(catalyst, 'eventType'))) throw new Error('Invalid catalyst eventType');
+  const importance = requiredString(catalyst, 'importance');
+  if (!['high', 'medium', 'low'].includes(importance)) throw new Error('Invalid catalyst importance');
+  const impactScore = Number(catalyst.impactScore);
+  if (!Number.isInteger(impactScore) || impactScore < 1 || impactScore > 5) throw new Error('Catalyst impactScore must be 1-5');
+  requiredString(catalyst, 'whyItMatters');
+  if (typeof catalyst.extraBrief !== 'boolean') throw new Error('Each catalyst requires an extraBrief boolean');
+  if (catalyst.extraBrief !== (importance === 'high' && impactScore >= 4 && (catalyst.assets?.length ?? 0) >= 2)) {
+    throw new Error('Catalyst extraBrief does not match the high-impact publication rule');
+  }
+  if (!Array.isArray(catalyst.assets)) throw new Error('Each catalyst requires an assets array');
+  for (const asset of catalyst.assets) {
+    if (!allowedAssets.has(asset)) throw new Error(`Unsupported catalyst asset label: ${asset}`);
+  }
   if (!Array.isArray(catalyst.sourceIds) || catalyst.sourceIds.length === 0) throw new Error('Each catalyst requires sourceIds');
   for (const id of catalyst.sourceIds) {
     if (!sourceIds.has(id)) throw new Error(`Unknown catalyst source id: ${id}`);
+  }
+  if (!catalyst.sourceIds.some((id) => sourceTypeById.get(id) === 'primary')) {
+    throw new Error('Each catalyst requires an authoritative primary schedule source');
   }
 }
 
@@ -108,8 +139,13 @@ lines.push('catalysts:');
 for (const catalyst of catalysts) {
   lines.push(`  - date: ${quoted(catalyst.date)}`);
   lines.push(`    event: ${quoted(catalyst.event)}`);
+  lines.push(`    eventType: ${quoted(catalyst.eventType)}`);
   lines.push('    assets:');
   lines.push(list(catalyst.assets ?? [], 6));
+  lines.push(`    importance: ${quoted(catalyst.importance)}`);
+  lines.push(`    impactScore: ${catalyst.impactScore}`);
+  lines.push(`    extraBrief: ${catalyst.extraBrief ? 'true' : 'false'}`);
+  lines.push(`    whyItMatters: ${quoted(catalyst.whyItMatters)}`);
   lines.push('    sourceIds:');
   lines.push(list(catalyst.sourceIds, 6));
 }

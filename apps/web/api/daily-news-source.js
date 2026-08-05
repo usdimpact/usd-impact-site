@@ -6,6 +6,10 @@ const DEFAULT_TIMEOUT_MS = 180_000;
 const MAX_OPENAI_RESPONSE_BYTES = 2_000_000;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SOURCE_ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,63}$/;
+const CATALYST_EVENT_TYPES = [
+  'central-bank', 'inflation', 'labor', 'growth', 'liquidity', 'energy',
+  'corporate', 'regulatory', 'geopolitical', 'other',
+];
 
 const ALLOWED_ASSETS = new Set([
   'DXY', 'USD', 'EURUSD', 'Fed', 'U.S. rates', 'Liquidity', 'WTI', 'Brent',
@@ -94,11 +98,18 @@ const OUTPUT_SCHEMA = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['date', 'event', 'assets', 'sourceIds'],
+        required: [
+          'date', 'event', 'eventType', 'assets', 'importance', 'impactScore',
+          'whyItMatters', 'sourceIds',
+        ],
         properties: {
           date: { type: 'string' },
           event: { type: 'string' },
+          eventType: { type: 'string', enum: CATALYST_EVENT_TYPES },
           assets: { type: 'array', items: { type: 'string', enum: [...ALLOWED_ASSETS] } },
+          importance: { type: 'string', enum: ['high', 'medium', 'low'] },
+          impactScore: { type: 'integer', minimum: 1, maximum: 5 },
+          whyItMatters: { type: 'string' },
           sourceIds: { type: 'array', items: { type: 'string' } },
         },
       },
@@ -170,6 +181,12 @@ function isRealDate(value) {
   if (!DATE_PATTERN.test(value)) return false;
   const date = new Date(`${value}T00:00:00.000Z`);
   return Number.isFinite(date.getTime()) && utcDateString(date) === value;
+}
+
+function addUtcDays(date, days) {
+  const parsed = new Date(`${date}T00:00:00.000Z`);
+  parsed.setUTCDate(parsed.getUTCDate() + days);
+  return utcDateString(parsed);
 }
 
 function domainMatch(hostname, domain) {
@@ -340,11 +357,34 @@ function validateAndNormalizeDraft(draft, groundedUrls, editionDate, generatedAt
     const context = `Catalyst ${index + 1}`;
     const date = requiredString(catalyst, 'date', 10);
     if (!isRealDate(date)) throw new Error(`${context} has invalid date`);
+    if (date < editionDate || date > addUtcDays(editionDate, 7)) {
+      throw new Error(`${context} must fall within the edition's next seven calendar days`);
+    }
+    const ids = validateSourceIds(catalyst.sourceIds, context);
+    const referenced = ids.map((id) => sourceById.get(id));
+    if (!referenced.some((source) => source.sourceType === 'primary')) {
+      throw new Error(`${context} requires an authoritative primary schedule source`);
+    }
+    const eventType = requiredString(catalyst, 'eventType', 24);
+    if (!CATALYST_EVENT_TYPES.includes(eventType)) throw new Error(`${context} has invalid eventType`);
+    const importance = requiredString(catalyst, 'importance', 10);
+    if (!['high', 'medium', 'low'].includes(importance)) throw new Error(`${context} has invalid importance`);
+    const impactScore = Number(catalyst.impactScore);
+    if (!Number.isInteger(impactScore) || impactScore < 1 || impactScore > 5) {
+      throw new Error(`${context} impactScore must be an integer from 1 to 5`);
+    }
+    const assets = validateAssets(catalyst.assets, context, true);
+    const extraBrief = importance === 'high' && impactScore >= 4 && assets.length >= 2;
     return {
       date,
       event: requiredString(catalyst, 'event', 240),
-      assets: validateAssets(catalyst.assets, context, true),
-      sourceIds: validateSourceIds(catalyst.sourceIds, context),
+      eventType,
+      assets,
+      importance,
+      impactScore,
+      extraBrief,
+      whyItMatters: requiredString(catalyst, 'whyItMatters', 500),
+      sourceIds: ids,
     };
   });
 
@@ -386,6 +426,9 @@ Rules:
 - Use educational language: may, could, tends to, or is consistent with. Do not give investment advice, trading instructions, guaranteed outcomes, or personalized recommendations.
 - Do not force coverage of an asset when no material verified development exists.
 - Keep source IDs lowercase and hyphenated. Every highlight and catalyst must reference source IDs included in the source ledger.
+- Every catalyst date must be confirmed by an authoritative primary schedule source and fall between ${editionDate} and ${addUtcDays(editionDate, 7)} inclusive.
+- Classify every catalyst with an eventType, importance, 1-5 impactScore, and concise whyItMatters explanation. Score 4 or 5 only for genuinely high-impact events that could materially affect at least two covered assets.
+- Reserve high 4-5 scores for decisions or releases such as major central-bank decisions, CPI/PCE, payrolls, material Treasury liquidity events, OPEC-level supply decisions, or exceptionally material index-heavy corporate events. Routine releases should remain medium or low. The server derives extra-publication eligibility deterministically.
 - The body should be concise Markdown with an executive view, key drivers, catalysts, risks, and a watchlist. Do not repeat raw source URLs in the body.`;
 }
 
@@ -441,6 +484,16 @@ async function openAiRequest(apiKey, model, editionDate, timeoutMs) {
     clearTimeout(timeout);
   }
 }
+
+export {
+  ALLOWED_ASSETS,
+  COMPLIANCE_NOTE,
+  TRUSTED_DOMAINS,
+  canonicalUrl,
+  collectGroundedUrls,
+  collectOpenAiText,
+  sourceClassification,
+};
 
 export const config = { maxDuration: 300 };
 

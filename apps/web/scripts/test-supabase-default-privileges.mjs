@@ -19,7 +19,11 @@ assert.match(
 );
 assert.match(
   migration,
-  /alter default privileges for role postgres in schema public\s+revoke execute on functions\s+from public, anon, authenticated, service_role;/i,
+  /alter default privileges for role postgres\s+revoke execute on functions\s+from public, anon, authenticated, service_role;/i,
+);
+assert.doesNotMatch(
+  migration,
+  /alter default privileges for role postgres in schema public\s+revoke execute on functions/i,
 );
 
 assert.match(migration, /namespace\.nspname = 'public'/i);

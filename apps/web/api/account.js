@@ -19,6 +19,7 @@ import {
   sendPasswordlessEmail,
   setSessionCookies,
 } from '../src/lib/supabase-auth.js';
+import { createPaddleCheckoutHandler } from '../src/lib/paddle-checkout-handler.js';
 
 function header(request, name) {
   const value = request.headers?.[name] ?? request.headers?.[name.toLowerCase()];
@@ -285,6 +286,7 @@ async function handleSupport(request, response) {
 }
 
 const handlers = Object.freeze({
+  checkout: createPaddleCheckoutHandler(),
   login: handleLogin,
   confirm: handleConfirm,
   refresh: handleRefresh,

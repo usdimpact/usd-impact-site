@@ -83,7 +83,11 @@ function draft(overrides = {}) {
       {
         date: '2026-07-29',
         event: 'Federal Reserve policy decision and press conference',
+        eventType: 'central-bank',
         assets: ['Fed', 'U.S. rates', 'DXY', 'EURUSD', 'XAUUSD', 'BTCUSD'],
+        importance: 'high',
+        impactScore: 5,
+        whyItMatters: 'The decision can materially reprice the expected policy path across rates, the dollar, and liquidity-sensitive assets.',
         sourceIds: ['fed-release'],
       },
     ],
@@ -145,6 +149,8 @@ try {
   assert.equal(success.json.title, 'Daily USD Impact — July 23, 2026');
   assert.equal(success.json.highlights[0].verification, 'verified-primary');
   assert.equal(success.json.highlights[2].verification, 'verified-multiple');
+  assert.equal(success.json.catalysts[0].extraBrief, true);
+  assert.equal(success.json.catalysts[0].impactScore, 5);
   assert.equal(success.json.sources[0].sourceType, 'primary');
   assert.equal(success.json.sources[2].sourceType, 'reporting');
   assert.equal(success.json.sources[2].publisher, 'Reuters');

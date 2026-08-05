@@ -121,6 +121,16 @@ Chapter 10 contains the Five Backtested Regimes figure and two historical case s
 
 Chapter 11 contains the Three-Dial Macro Dashboard and a one-page operating-discipline table. The complete boundary was rendered and checked page by page; every dashboard title, dial label, input label, state, interpretation rule, and caption was represented through the existing structured group model and independently checked against high-resolution OCR. All eighteen table facts were reconstructed by visual column position, and all remaining narrative matched the certified PDF exactly after whitespace and line-wrap normalization. The release contains ten reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
 
+## Chapter 12 extraction boundary
+
+- Title: `Common Mistakes in Dollar and Cross-Asset Analysis`
+- Printed pages: 60-64
+- Physical PDF pages: 61-65
+- Next boundary: Chapter 13 begins on printed page 65 / physical PDF page 66
+- Canonical reader text SHA-256: `c506f3a5c954bef779a739f273433bb90cfdf7a63fcbc3b5831547c85150cb44`
+
+Chapter 12 is narrative-only and contains seven named analytical mistakes plus a five-step practical discipline. The complete boundary was rendered and checked page by page; no embedded figures or tables were present, and all narrative matched the certified PDF exactly after whitespace and line-wrap normalization. The release contains ten reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
+
 ## Repository policy
 
 The certified full-book PDF, canonical chapter text, mastery answer key, and corrective feedback are controlled content. None is stored in the public repository or offered as a customer download. The repository contains only source metadata, integrity hashes, generic rendering/scoring code, and synthetic test fixtures.

@@ -101,6 +101,16 @@ Chapter 8 contains three source examples, including a worked regional gas-price-
 
 Chapter 9 contains three source examples, including a worked Mexican-peso carry-return example. The complete boundary was rendered and checked page by page, the examples were represented through the existing structured group model, and all remaining narrative was compared exactly against the certified PDF after whitespace and line-wrap normalization. The release contains nine reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
 
+## Chapter 10 extraction boundary
+
+- Title: `Reading Regimes: The Eleven-Year Record`
+- Printed pages: 49-55
+- Physical PDF pages: 50-56
+- Next boundary: Chapter 11 begins on printed page 56 / physical PDF page 57
+- Canonical reader text SHA-256: `a000d5cb0dbeec81ebab25815ab0bdbd14791653a856c4c0948802b854eceeae`
+
+Chapter 10 contains the Five Backtested Regimes figure and two historical case studies. The complete boundary was rendered and checked page by page; every figure label, regime classification, percentage, legend relationship, and source note was represented through the existing structured group model and independently checked against high-resolution OCR. All narrative was compared exactly against the certified PDF after whitespace and line-wrap normalization. The release contains eleven reader sections and five mastery questions in the private payload, requires no application-code or schema change, and leaves Production untouched.
+
 ## Repository policy
 
 The certified full-book PDF, canonical chapter text, mastery answer key, and corrective feedback are controlled content. None is stored in the public repository or offered as a customer download. The repository contains only source metadata, integrity hashes, generic rendering/scoring code, and synthetic test fixtures.

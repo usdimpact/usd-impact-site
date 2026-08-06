@@ -13,9 +13,12 @@ database change.
 
 - The only permitted target is `usd-impact-development`.
 - `usd-impact-production` is observation-only throughout this runbook.
-- Do not use the SQL Editor, `execute_sql`, `db push`, `apply_migration`,
-  migration repair, reset, restore, or branch merge during the preparation
-  phases.
+- Do not use the SQL Editor, `db push`, `apply_migration`, migration
+  repair, reset, restore, or branch merge during the preparation phases.
+- `execute_sql` is prohibited except for the single read-only metadata
+  collector exception defined in Phase 1. That exception requires a later,
+  separate approval and does not authorize migration SQL, ad-hoc queries, or
+  any database write.
 - Never paste database passwords, access tokens, service-role keys, connection
   strings, or other secrets into GitHub, chat, screenshots, or evidence.
 - Stop if any screen, command, or connector identifies Production as the target.
@@ -78,9 +81,28 @@ deterministically ordered JSON document inside a repeatable-read, read-only
 transaction and queries PostgreSQL catalogs only.
 
 Committing the collector does not authorize execution. Do not run it against
-either project until a separate approval identifies the exact projects and
-evidence-handling location. Keep generated snapshots out of Git because
-function bodies and access-control metadata are operational evidence.
+either project until a separate approval identifies both exact projects and a
+private evidence-handling location. That later approval may permit
+`execute_sql` only under all of these controls:
+
+- the payload is byte-for-byte identical to
+  `supabase/diagnostics/public_metadata_snapshot.sql` at the approved commit;
+- one call is made to `usd-impact-development`
+  (`ycstrcvshdluovtuasjc`) and one call to `usd-impact-production`
+  (`gjzetjugmnwanvjkchux`), with the project identity checked before each call;
+- no statement, comment, wrapper, variable, or retry logic is prepended,
+  appended, or substituted;
+- the collector's read-only transaction, bounded timeouts, catalog-only
+  queries, deterministic output, and final `ROLLBACK` remain intact;
+- the operator stops after the first unexpected result instead of modifying or
+  retrying the query;
+- raw snapshots stay in the approved private evidence location and are never
+  committed, pasted into an issue or pull request, or published.
+
+This is the only connector-SQL exception in the preparation phases. It does not
+permit a migration, ledger repair, schema change, application-row query, Auth or
+Storage query, or any Production write. Keep generated snapshots out of Git
+because function bodies and access-control metadata are operational evidence.
 
 Compare the common commercial objects and record differences for all of the
 following:

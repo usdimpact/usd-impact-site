@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import {
   SupabaseConfigurationError,
   SupabaseRequestError,
@@ -140,10 +140,19 @@ const deletion = await requestOwnAccountDeletion({
 });
 assert.equal(deletion.profile.status, 'deletion_pending');
 
+const migrationDirectory = new URL('../../../supabase/migrations/', import.meta.url);
 const migration = await readFile(
-  new URL('../../../supabase/migrations/20260729203000_paid_access_foundation.sql', import.meta.url),
+  new URL('20260729203000_paid_access_foundation.sql', migrationDirectory),
   'utf8',
 );
+const migrationFiles = (await readdir(migrationDirectory))
+  .filter((name) => name.endsWith('.sql'))
+  .sort();
+const migrationChain = (
+  await Promise.all(
+    migrationFiles.map((name) => readFile(new URL(name, migrationDirectory), 'utf8')),
+  )
+).join('\n');
 for (const table of [
   'profiles', 'purchase_intents', 'purchases', 'entitlements', 'entitlement_events',
   'webhook_receipts', 'learning_progress', 'bookmarks', 'support_requests',
@@ -157,5 +166,71 @@ assert.match(migration, /create policy purchases_select_own[\s\S]*account_id = a
 assert.match(migration, /create policy entitlements_select_own[\s\S]*account_id = auth\.uid\(\)/);
 assert.match(migration, /deletion_due_at = now\(\) \+ interval '7 days'/);
 assert.match(migration, /create or replace function public\.account_export\(export_account_id uuid\)/);
+
+// SECURITY DEFINER RPCs are intentionally callable by authenticated customers,
+// so their source-level identity and privilege boundaries are release gates.
+// Scan the complete ordered migration chain so a later migration cannot silently
+// redefine either RPC or grant it to an unapproved role.
+assert.equal(
+  (migrationChain.match(
+    /create or replace function public\.account_export\(export_account_id uuid\)/gi,
+  ) ?? []).length,
+  1,
+  'account_export has an unreviewed later definition',
+);
+assert.equal(
+  (migrationChain.match(
+    /create or replace function public\.request_account_deletion\(\)/gi,
+  ) ?? []).length,
+  1,
+  'request_account_deletion has an unreviewed later definition',
+);
+
+const accountExportStart = migration.indexOf(
+  'create or replace function public.account_export(export_account_id uuid)',
+);
+const accountDeletionStart = migration.indexOf(
+  'create or replace function public.request_account_deletion()',
+);
+const productOfferSeedStart = migration.indexOf(
+  'insert into public.product_offers',
+);
+assert.ok(accountExportStart >= 0);
+assert.ok(accountDeletionStart > accountExportStart);
+assert.ok(productOfferSeedStart > accountDeletionStart);
+
+const accountExportSql = migration.slice(accountExportStart, accountDeletionStart);
+assert.match(accountExportSql, /security definer/i);
+assert.match(accountExportSql, /set search_path = public/i);
+assert.match(accountExportSql, /where export_account_id = auth\.uid\(\)/i);
+assert.match(
+  accountExportSql,
+  /revoke all on function public\.account_export\(uuid\) from public, anon;/i,
+);
+assert.match(
+  accountExportSql,
+  /grant execute on function public\.account_export\(uuid\) to authenticated;/i,
+);
+assert.doesNotMatch(
+  migrationChain,
+  /grant\s+execute\s+on\s+function\s+public\.account_export\(uuid\)\s+to\s+[^;]*\b(?:public|anon|service_role)\b[^;]*;/i,
+);
+
+const accountDeletionSql = migration.slice(accountDeletionStart, productOfferSeedStart);
+assert.match(accountDeletionSql, /security definer/i);
+assert.match(accountDeletionSql, /set search_path = public/i);
+assert.match(accountDeletionSql, /where account_id = auth\.uid\(\)/i);
+assert.match(
+  accountDeletionSql,
+  /revoke all on function public\.request_account_deletion\(\) from public, anon;/i,
+);
+assert.match(
+  accountDeletionSql,
+  /grant execute on function public\.request_account_deletion\(\) to authenticated;/i,
+);
+assert.doesNotMatch(
+  migrationChain,
+  /grant\s+execute\s+on\s+function\s+public\.request_account_deletion\(\)\s+to\s+[^;]*\b(?:public|anon|service_role)\b[^;]*;/i,
+);
 
 console.log('Supabase account and durable-record foundation tests passed.');

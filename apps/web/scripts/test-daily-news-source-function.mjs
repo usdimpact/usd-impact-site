@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import handler from '../api/daily-news-source.js';
+import handler, { applySystemicCatalystPolicy } from '../api/daily-news-source.js';
 
 const originalFetch = globalThis.fetch;
 const originalEnv = {
@@ -41,6 +41,47 @@ async function invoke(req) {
     json: res.body ? JSON.parse(res.body) : null,
   };
 }
+
+assert.deepEqual(
+  applySystemicCatalystPolicy({
+    event: 'BLS Employment Situation for July 2026',
+    eventType: 'other',
+    importance: 'medium',
+    impactScore: 2,
+    assets: ['U.S. rates', 'DXY', 'S&P 500', 'Nasdaq'],
+  }),
+  { eventType: 'labor', importance: 'high', impactScore: 4 },
+);
+assert.deepEqual(
+  applySystemicCatalystPolicy({
+    event: 'BLS Consumer Price Index (CPI) for July 2026',
+    eventType: 'other',
+    importance: 'medium',
+    impactScore: 2,
+    assets: ['U.S. rates', 'DXY', 'XAUUSD'],
+  }),
+  { eventType: 'inflation', importance: 'high', impactScore: 4 },
+);
+assert.deepEqual(
+  applySystemicCatalystPolicy({
+    event: 'Routine weekly petroleum statistics',
+    eventType: 'energy',
+    importance: 'medium',
+    impactScore: 2,
+    assets: ['WTI', 'Brent'],
+  }),
+  { eventType: 'energy', importance: 'medium', impactScore: 2 },
+);
+assert.deepEqual(
+  applySystemicCatalystPolicy({
+    event: 'Payrolls update affecting one covered asset',
+    eventType: 'labor',
+    importance: 'medium',
+    impactScore: 2,
+    assets: ['DXY'],
+  }),
+  { eventType: 'labor', importance: 'medium', impactScore: 2 },
+);
 
 const sourceUrls = {
   fed: 'https://www.federalreserve.gov/newsevents/pressreleases/monetary20260723a.htm',

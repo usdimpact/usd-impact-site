@@ -39,5 +39,7 @@ jobs:
         run: npm run validate:automation-health
       - name: Validate Vercel functions
         run: npm run validate:functions
+      - name: Validate Supabase contracts
+        run: npm run validate:supabase
       - name: Build production site
         run: npm run build

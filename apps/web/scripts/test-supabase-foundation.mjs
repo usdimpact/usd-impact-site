@@ -158,4 +158,53 @@ assert.match(migration, /create policy entitlements_select_own[\s\S]*account_id 
 assert.match(migration, /deletion_due_at = now\(\) \+ interval '7 days'/);
 assert.match(migration, /create or replace function public\.account_export\(export_account_id uuid\)/);
 
+// SECURITY DEFINER RPCs are intentionally callable by authenticated customers,
+// so their source-level identity and privilege boundaries are release gates.
+const accountExportStart = migration.indexOf(
+  'create or replace function public.account_export(export_account_id uuid)',
+);
+const accountDeletionStart = migration.indexOf(
+  'create or replace function public.request_account_deletion()',
+);
+const productOfferSeedStart = migration.indexOf(
+  'insert into public.product_offers',
+);
+assert.ok(accountExportStart >= 0);
+assert.ok(accountDeletionStart > accountExportStart);
+assert.ok(productOfferSeedStart > accountDeletionStart);
+
+const accountExportSql = migration.slice(accountExportStart, accountDeletionStart);
+assert.match(accountExportSql, /security definer/i);
+assert.match(accountExportSql, /set search_path = public/i);
+assert.match(accountExportSql, /where export_account_id = auth\.uid\(\)/i);
+assert.match(
+  accountExportSql,
+  /revoke all on function public\.account_export\(uuid\) from public, anon;/i,
+);
+assert.match(
+  accountExportSql,
+  /grant execute on function public\.account_export\(uuid\) to authenticated;/i,
+);
+assert.doesNotMatch(
+  accountExportSql,
+  /grant execute on function public\.account_export\(uuid\) to (?:public|anon|service_role)/i,
+);
+
+const accountDeletionSql = migration.slice(accountDeletionStart, productOfferSeedStart);
+assert.match(accountDeletionSql, /security definer/i);
+assert.match(accountDeletionSql, /set search_path = public/i);
+assert.match(accountDeletionSql, /where account_id = auth\.uid\(\)/i);
+assert.match(
+  accountDeletionSql,
+  /revoke all on function public\.request_account_deletion\(\) from public, anon;/i,
+);
+assert.match(
+  accountDeletionSql,
+  /grant execute on function public\.request_account_deletion\(\) to authenticated;/i,
+);
+assert.doesNotMatch(
+  accountDeletionSql,
+  /grant execute on function public\.request_account_deletion\(\) to (?:public|anon|service_role)/i,
+);
+
 console.log('Supabase account and durable-record foundation tests passed.');

@@ -278,6 +278,32 @@ function validateSourceDate(value, id) {
   return text;
 }
 
+const SYSTEMIC_CATALYST_RULES = [
+  {
+    eventType: 'central-bank',
+    pattern: /\bFOMC\b|Federal Reserve policy decision|central[- ]bank (?:policy )?decision/i,
+  },
+  {
+    eventType: 'inflation',
+    pattern: /\bCPI\b|consumer price index|personal consumption expenditures|\bPCE\b/i,
+  },
+  {
+    eventType: 'labor',
+    pattern: /employment situation|nonfarm payrolls?|\bpayrolls?\b/i,
+  },
+];
+
+function applySystemicCatalystPolicy({ event, eventType, importance, impactScore, assets }) {
+  if (assets.length < 2) return { eventType, importance, impactScore };
+  const rule = SYSTEMIC_CATALYST_RULES.find((candidate) => candidate.pattern.test(event));
+  if (!rule) return { eventType, importance, impactScore };
+  return {
+    eventType: rule.eventType,
+    importance: 'high',
+    impactScore: Math.max(4, impactScore),
+  };
+}
+
 function validateAndNormalizeDraft(draft, groundedUrls, editionDate, generatedAt) {
   if (!draft || typeof draft !== 'object' || Array.isArray(draft)) throw new Error('OpenAI output must be an object');
   const rawSources = Array.isArray(draft.sources) ? draft.sources : [];
@@ -365,19 +391,27 @@ function validateAndNormalizeDraft(draft, groundedUrls, editionDate, generatedAt
     if (!referenced.some((source) => source.sourceType === 'primary')) {
       throw new Error(`${context} requires an authoritative primary schedule source`);
     }
-    const eventType = requiredString(catalyst, 'eventType', 24);
-    if (!CATALYST_EVENT_TYPES.includes(eventType)) throw new Error(`${context} has invalid eventType`);
-    const importance = requiredString(catalyst, 'importance', 10);
-    if (!['high', 'medium', 'low'].includes(importance)) throw new Error(`${context} has invalid importance`);
-    const impactScore = Number(catalyst.impactScore);
-    if (!Number.isInteger(impactScore) || impactScore < 1 || impactScore > 5) {
+    const proposedEventType = requiredString(catalyst, 'eventType', 24);
+    if (!CATALYST_EVENT_TYPES.includes(proposedEventType)) throw new Error(`${context} has invalid eventType`);
+    const proposedImportance = requiredString(catalyst, 'importance', 10);
+    if (!['high', 'medium', 'low'].includes(proposedImportance)) throw new Error(`${context} has invalid importance`);
+    const proposedImpactScore = Number(catalyst.impactScore);
+    if (!Number.isInteger(proposedImpactScore) || proposedImpactScore < 1 || proposedImpactScore > 5) {
       throw new Error(`${context} impactScore must be an integer from 1 to 5`);
     }
+    const event = requiredString(catalyst, 'event', 240);
     const assets = validateAssets(catalyst.assets, context, true);
+    const { eventType, importance, impactScore } = applySystemicCatalystPolicy({
+      event,
+      eventType: proposedEventType,
+      importance: proposedImportance,
+      impactScore: proposedImpactScore,
+      assets,
+    });
     const extraBrief = importance === 'high' && impactScore >= 4 && assets.length >= 2;
     return {
       date,
-      event: requiredString(catalyst, 'event', 240),
+      event,
       eventType,
       assets,
       importance,
@@ -488,6 +522,7 @@ async function openAiRequest(apiKey, model, editionDate, timeoutMs) {
 export {
   ALLOWED_ASSETS,
   COMPLIANCE_NOTE,
+  applySystemicCatalystPolicy,
   TRUSTED_DOMAINS,
   canonicalUrl,
   collectGroundedUrls,

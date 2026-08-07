@@ -48,7 +48,7 @@ else {
 const productPage = pagePath('/book/read-the-dollar-first');
 if (fs.existsSync(productPage)) {
   const html = fs.readFileSync(productPage, 'utf8');
-  for (const requiredText of ['Guided Interactive Edition', 'USD 39.00', 'USD 49.00', 'one-time', '14-day Refund Policy', 'ongoing access']) {
+  for (const requiredText of ['Guided Interactive Edition', 'Weekly Score v1.1', 'USD 39.00', 'USD 49.00', 'one-time', '14-day Refund Policy', 'ongoing access']) {
     if (!html.includes(requiredText)) failures.push(`Product page is missing domain-review text: ${requiredText}.`);
   }
 }

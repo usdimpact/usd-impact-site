@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { handleGuidedEditionRequest } from '../api/guided-edition.js';
 import { SESSION_COOKIE_NAMES } from '../src/lib/supabase-auth.js';
+import { WEEKLY_SCORE_DOWNLOAD_NAME } from '../src/lib/private-paid-assets.js';
 
 const host = 'usd-impact-site-test-usd-impact.vercel.app';
 const accessToken = 'eyJhbGciOiJIUzI1NiJ9.guided-edition-test-token.signature';
@@ -69,8 +71,57 @@ assert.equal(activeResponse.statusCode, 200);
 assert.match(activeResponse.getHeader('content-type'), /text\/html/);
 assert.match(activeResponse.getHeader('cache-control'), /no-store/);
 assert.equal(activeResponse.getHeader('vary'), 'Cookie, Authorization');
-assert.match(activeResponse.body, /Access confirmed/);
-assert.match(activeResponse.body, /durable Supabase entitlement/);
+assert.match(activeResponse.body, /Your member library/);
+assert.match(activeResponse.body, /Weekly Score v1\.1/);
+assert.match(activeResponse.body, /durable purchase entitlement/);
+
+const weeklyScoreResponse = responseRecorder();
+await handleGuidedEditionRequest(
+  request({ authenticated: true, url: '/api/guided-edition?__paid_path=weekly-score' }),
+  weeklyScoreResponse,
+  { readAccessState: async () => ({ allowed: true, reason: 'active' }) },
+);
+assert.equal(weeklyScoreResponse.statusCode, 200);
+assert.match(weeklyScoreResponse.body, /Install it once\. Read it weekly\./);
+assert.match(weeklyScoreResponse.body, /Copy all <strong>753 lines<\/strong>/);
+assert.match(weeklyScoreResponse.body, /Once per bar close/);
+assert.match(weeklyScoreResponse.body, /not forecasts, trading signals, or recommendations/);
+
+const downloadBytes = Buffer.from('verified-paid-member-package');
+const downloadSha256 = createHash('sha256').update(downloadBytes).digest('hex');
+const downloadResponse = responseRecorder();
+await handleGuidedEditionRequest(
+  request({ authenticated: true, url: '/api/guided-edition?__paid_path=weekly-score/download' }),
+  downloadResponse,
+  {
+    readAccessState: async () => ({ allowed: true, reason: 'active' }),
+    downloadAsset: async () => ({
+      bytes: downloadBytes,
+      sha256: downloadSha256,
+      size: downloadBytes.length,
+    }),
+  },
+);
+assert.equal(downloadResponse.statusCode, 200);
+assert.equal(downloadResponse.getHeader('content-type'), 'application/zip');
+assert.equal(
+  downloadResponse.getHeader('content-disposition'),
+  `attachment; filename="${WEEKLY_SCORE_DOWNLOAD_NAME}"`,
+);
+assert.equal(downloadResponse.getHeader('content-length'), downloadBytes.length);
+assert.deepEqual(downloadResponse.body, downloadBytes);
+
+const unavailableDownloadResponse = responseRecorder();
+await handleGuidedEditionRequest(
+  request({ authenticated: true, url: '/api/guided-edition?__paid_path=weekly-score/download' }),
+  unavailableDownloadResponse,
+  {
+    readAccessState: async () => ({ allowed: true, reason: 'active' }),
+    downloadAsset: async () => { throw new Error('Private storage unavailable.'); },
+  },
+);
+assert.equal(unavailableDownloadResponse.statusCode, 503);
+assert.match(unavailableDownloadResponse.body, /temporarily unavailable/);
 
 const nestedResponse = responseRecorder();
 await handleGuidedEditionRequest(

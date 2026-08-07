@@ -24,7 +24,8 @@ Confirm all of the following without recording secret values in GitHub, chat, sc
 6. `PADDLE_ENVIRONMENT` is `production`; no sandbox API key, client token, price identifier, webhook secret, or notification destination is reused.
 7. Production Supabase uses the approved EU project and has `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and sensitive `SUPABASE_SECRET_KEY` values scoped only where required.
 8. All committed Supabase migrations, including the launch-window migration, have been applied in order and the backup and isolated-restore plan is current.
-9. The transactional email sender, support address, accounting treatment, retained-record schedule, and final legal/privacy/terms copy are approved.
+9. The frozen Weekly Score v1.1 paid-member ZIP is present at the exact private Storage path, its SHA-256 matches the release contract, and anonymous/unpaid/refunded states receive no package bytes.
+10. The transactional email sender, support address, accounting treatment, retained-record schedule, and final legal/privacy/terms copy are approved.
 
 The production build runs `validate-paddle-deployment-config.mjs` and fails closed unless it receives a live-format API key, a live-format client token, distinct price identifiers, a webhook secret, `PADDLE_ENVIRONMENT=production`, and `PADDLE_CHECKOUT_URL=https://www.usd-impact.com/checkout/`. Preview builds require the matching sandbox credential formats. The check never prints credential values.
 
@@ -36,7 +37,8 @@ The production build runs `validate-paddle-deployment-config.mjs` and fails clos
 4. Merge PR #65 only after GitHub Web quality and the final Vercel Preview pass.
 5. Confirm Production deploys the merge commit and both `/checkout/` and `/api/paddle-webhook` exist.
 6. Send a signed Paddle Production simulation and confirm HTTP 200 plus one durable webhook receipt without granting an entitlement.
-7. Before launch, verify anonymous, unpaid, paid, refunded, disputed, revoked, deletion-pending, and deleted account states.
-8. At launch, verify the server selects USD 39 and does not trust browser-submitted account, price, or amount values.
+7. Upload and verify the private Weekly Score v1.1 member package by following `weekly-score-paid-member-delivery.md`.
+8. Before launch, verify anonymous, unpaid, paid, refunded, disputed, revoked, deletion-pending, and deleted account states across both the Guided Edition and Weekly Score download.
+9. At launch, verify the server selects USD 39 and does not trust browser-submitted account, price, or amount values.
 
 If any check fails, keep PR #65 draft or disable the Production notification destination. Do not bypass signature verification, grant access manually, reuse sandbox credentials, or move the approved start time earlier.

@@ -27,6 +27,8 @@
 .account-checkout-result[data-state="error"] { border-left-color: #a12622; background: #fff7f6; }
 .account-checkout-result[data-state="pending"] { border-left-color: var(--gold); background: #fffbf2; }
 .account-secondary { border: 1px solid #aeb7c3; background: var(--white); color: var(--navy); }
+.account-member-library { border-top: 5px solid var(--gold); }
+.account-member-library .eyebrow { margin-bottom: 12px; }
 .account-danger { border-left: 5px solid #a12622; }
 .account-danger p { color: var(--slate); }
 .account-danger-button { background: #a12622; color: var(--white); }

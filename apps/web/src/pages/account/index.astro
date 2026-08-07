@@ -3,7 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 <BaseLayout
   title="Your account | USD Impact"
-  description="Manage your USD Impact learning access, data export, and account settings."
+  description="Manage your USD Impact learning access, member tools, data export, and account settings."
 >
   <section class="hero account-hero">
     <div class="container">
@@ -27,7 +27,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <p id="checkout-result-message"></p>
           <div class="button-row account-actions">
             <a id="checkout-access-link" class="button primary" href="/guided-edition/" hidden>
-              Open Guided Interactive Edition
+              Open member library
             </a>
             <a class="button account-secondary" href="#billing-support">Billing support</a>
           </div>
@@ -37,6 +37,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <button id="refresh-session" class="button account-secondary" type="button">Refresh session</button>
           <button id="export-account" class="button account-secondary" type="button">Download my data</button>
           <button id="sign-out" class="button account-secondary" type="button">Sign out</button>
+        </div>
+      </section>
+
+      <section id="member-library" class="card account-panel account-member-library" aria-labelledby="member-library-heading" hidden>
+        <p class="eyebrow">Included with paid access</p>
+        <h2 id="member-library-heading">Your member library</h2>
+        <p>
+          Open the Guided Interactive Edition and the private USD Impact Weekly Score v1.1
+          TradingView tool with its beginner setup and weekly-use guide.
+        </p>
+        <div class="button-row account-actions">
+          <a class="button primary" href="/guided-edition/">Open member library</a>
+          <a class="button account-secondary" href="/guided-edition/weekly-score/">Weekly Score setup</a>
         </div>
       </section>
 
@@ -90,6 +103,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     const checkoutResultTitle = document.getElementById('checkout-result-title');
     const checkoutResultMessage = document.getElementById('checkout-result-message');
     const checkoutAccessLink = document.getElementById('checkout-access-link');
+    const memberLibrary = document.getElementById('member-library');
     const supportForm = document.getElementById('billing-support-form');
     const supportStatus = document.getElementById('billing-support-status');
     const checkoutReturn = new URLSearchParams(window.location.search).get('checkout');
@@ -135,6 +149,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           ? 'Active'
           : `Not active (${body.paidAccess?.reason || 'unknown'})`;
       }
+      if (memberLibrary) memberLibrary.hidden = body.paidAccess?.allowed !== true;
     };
 
     const loadAccount = async ({ announce = true } = {}) => {
@@ -277,6 +292,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       );
       if (accountStatus) accountStatus.textContent = body.status || 'deletion_pending';
       if (paidAccess) paidAccess.textContent = 'Not active (deletion pending)';
+      if (memberLibrary) memberLibrary.hidden = true;
     });
 
     supportForm?.addEventListener('submit', async (event) => {

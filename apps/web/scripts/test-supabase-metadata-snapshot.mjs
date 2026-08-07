@@ -61,6 +61,14 @@ assert.match(sql, /pg_get_triggerdef\s*\(/i);
 assert.match(sql, /pg_get_constraintdef\s*\(/i);
 assert.match(sql, /pg_get_indexdef\s*\(/i);
 assert.match(sql, /pg_catalog\.acldefault\s*\(/i);
+assert.match(
+  sql,
+  /pg_catalog\.acldefault\(\s*case\s+when\s+relation\.relkind\s*=\s*'S'\s+then\s+'s'::"char"\s+else\s+'r'::"char"\s+end,\s*relation\.relowner\s*\)/,
+);
+assert.doesNotMatch(
+  sql,
+  /when\s+relation\.relkind\s*=\s*'S'\s+then\s+'S'/,
+);
 assert.match(sql, /jsonb_agg\s*\([^)]*order\s+by/is);
 assert.doesNotMatch(sql, /current_timestamp|clock_timestamp|now\s*\(/i);
 

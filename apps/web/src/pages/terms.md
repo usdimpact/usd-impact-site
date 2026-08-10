@@ -1,14 +1,14 @@
 ---
 layout: ../layouts/LegalLayout.astro
 title: "Terms & Conditions | USD Impact"
-description: "Terms governing use of USD Impact and purchases of the Read the Dollar First Guided Interactive Edition."
+description: "Terms governing use of USD Impact and purchases of the Read the Dollar First Library Pass."
 ---
 
 # Terms & Conditions
 
-_Last updated: August 3, 2026_
+_Last updated: August 10, 2026_
 
-These Terms & Conditions govern use of the USD Impact website and the purchase and use of the *Read the Dollar First Guided Interactive Edition*. By creating an account or completing a purchase, you agree to these Terms. Mandatory consumer rights that apply in your country are not limited by these Terms.
+These Terms & Conditions govern use of the USD Impact website and the purchase and use of the *Read the Dollar First Library Pass*. The Library Pass includes the Guided Interactive Edition and complete English audiobook described on the product page. By creating an account or completing a purchase, you agree to these Terms. Mandatory consumer rights that apply in your country are not limited by these Terms.
 
 ## 1. Service provider
 
@@ -16,7 +16,7 @@ USD Impact is operated by **SC Kela Leads SRL**, a company registered in Romania
 
 ## 2. Educational service
 
-USD Impact provides educational macro-finance content, including articles, frameworks, checklists, quizzes, reports, and the Guided Interactive Edition. The service does not provide personalized investment, financial, trading, legal, tax, or accounting advice, trading signals, or recommendations to enter any transaction.
+USD Impact provides educational macro-finance content, including articles, frameworks, checklists, quizzes, reports, the Guided Interactive Edition, and its English audiobook. The service does not provide personalized investment, financial, trading, legal, tax, or accounting advice, trading signals, or recommendations to enter any transaction.
 
 ## 3. Accounts
 
@@ -24,7 +24,7 @@ You must provide an email address you control and keep access to your account se
 
 ## 4. Product, price, and payment
 
-The Guided Interactive Edition is sold as a one-time purchase. The product page states the applicable USD price, offer period, and included deliverables. Paddle acts as merchant of record for checkout, payment processing, applicable tax calculation, invoices, and refunds. The final amount, currency, and applicable taxes are displayed before payment is confirmed.
+The Library Pass is sold as a one-time purchase and includes permanent account access to the purchased Guided Interactive Edition and complete English audiobook, subject to these Terms. The product page states the applicable USD price, offer period, and included deliverables. Paddle acts as merchant of record for checkout, payment processing, applicable tax calculation, invoices, and refunds. The final amount, currency, and applicable taxes are displayed before payment is confirmed.
 
 ## 5. Delivery and ongoing access
 
@@ -34,7 +34,7 @@ An active purchase provides ongoing access to the purchased edition without a fi
 
 ## 6. Personal-use license
 
-Your purchase grants you a limited, non-exclusive, non-transferable license to access the purchased edition for your personal or internal educational use. You may not reproduce, resell, sublicense, publicly distribute, scrape, systematically extract, or make the protected edition available to another person except where applicable law expressly permits it.
+Your purchase grants you a limited, non-exclusive, non-transferable license to access the purchased edition and audiobook for your personal or internal educational use. You may not reproduce, resell, sublicense, publicly distribute, scrape, systematically extract, share protected media links, or make the protected materials available to another person except where applicable law expressly permits it.
 
 ## 7. Refunds
 
@@ -42,7 +42,7 @@ The [Refund Policy](/refund-policy/) forms part of these Terms. Eligible request
 
 ## 8. Intellectual property
 
-The website, Guided Interactive Edition, written content, original frameworks, branding, graphics, software, and arrangement of materials are owned by or licensed to SC Kela Leads SRL and are protected by applicable intellectual-property laws. No ownership rights transfer with a purchase.
+The website, Guided Interactive Edition, audiobook, written content, original frameworks, branding, graphics, software, and arrangement of materials are owned by or licensed to SC Kela Leads SRL and are protected by applicable intellectual-property laws. No ownership rights transfer with a purchase.
 
 ## 9. Availability and acceptable use
 

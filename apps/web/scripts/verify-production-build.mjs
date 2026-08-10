@@ -56,8 +56,11 @@ if (fs.existsSync(productPage)) {
 const audiobookPage = pagePath('/audiobook/read-the-dollar-first');
 if (fs.existsSync(audiobookPage)) {
   const html = fs.readFileSync(audiobookPage, 'utf8');
-  for (const requiredText of ['data-audiobook-player', '20 tracks', 'Chapter 13 - What to Watch from Here', 'n0w53ba4ottrav2w.public.blob.vercel-storage.com']) {
+  for (const requiredText of ['data-audiobook-player', '20 tracks', 'Chapter 13 - What to Watch from Here', 'Library Pass required', '/api/audiobook?chapter=0']) {
     if (!html.includes(requiredText)) failures.push(`Audiobook page is missing required player content: ${requiredText}.`);
+  }
+  if (/\.public\.blob\.vercel-storage\.com|https:\/\/[^\s"']+\.mp3/.test(html)) {
+    failures.push('Audiobook page exposes a permanent public audio location.');
   }
 }
 
@@ -99,7 +102,7 @@ for (const [route, label, lesson] of releasedQuizzes) {
 }
 const finalQuizHtml = fs.existsSync(pagePath(routes.currencyRiskQuiz)) ? fs.readFileSync(pagePath(routes.currencyRiskQuiz), 'utf8') : '';
 if (finalQuizHtml && !finalQuizHtml.includes('data-quiz-completion-link')) failures.push('Quiz 12 is missing the completion link contract.');
-for (const file of ['api/waitlist.js','api/daily-news-source.js','api/catalyst-brief-source.js','api/guided-edition.js','middleware.js']) if (!fs.existsSync(path.resolve(file))) failures.push(`Required Vercel function or middleware is missing: ${file}.`);
+for (const file of ['api/waitlist.js','api/daily-news-source.js','api/catalyst-brief-source.js','api/guided-edition.js','api/audiobook.js','middleware.js']) if (!fs.existsSync(path.resolve(file))) failures.push(`Required Vercel function or middleware is missing: ${file}.`);
 if (!fs.existsSync(path.join(distRoot, checklistDownload.replace(/^\//, '')))) failures.push(`Checklist PDF is missing: ${checklistDownload}.`);
 if (fs.existsSync(pagePath('/benchmark/usd-impact-benchmark-dashboard'))) failures.push('Draft benchmark route was generated.');
 if (fs.existsSync(pagePath('/guided-edition'))) failures.push('Protected Guided Edition was generated as public static HTML.');

@@ -9,6 +9,8 @@ const {
   initialTrack = 0,
   persistKey = 'usd-impact-audiobook-progress',
   showPlaylist = true,
+  requiresPaidAccess = true,
+  accessEndpoint = '/api/account-access',
 } = Astro.props;
 
 const safeInitialTrack = Math.max(0, Math.min(Number(initialTrack) || 0, chapters.length - 1));
@@ -19,15 +21,28 @@ const firstChapter = chapters[safeInitialTrack];
   data-audiobook-player
   data-initial-track={safeInitialTrack}
   data-persist-key={persistKey}
+  data-requires-paid-access={requiresPaidAccess ? 'true' : 'false'}
+  data-access-endpoint={accessEndpoint}
   aria-labelledby={`audiobook-title-${persistKey}`}
 >
   <div class="audiobook-now-playing">
-    {coverUrl && <img class="audiobook-cover" src={coverUrl} alt={coverAlt} width="3000" height="3000" loading="eager" decoding="async" />}
+    {coverUrl && <img class="audiobook-cover" src={coverUrl} alt={coverAlt} width="1200" height="1800" loading="eager" decoding="async" />}
     <div class="audiobook-player-copy">
       <div class="eyebrow">English audiobook</div>
       <h2 id={`audiobook-title-${persistKey}`}>{title}</h2>
       {subtitle && <p class="audiobook-subtitle">{subtitle}</p>}
       <p class="audiobook-byline">Narrated for {author} · AI-generated speech with human quality review</p>
+      {requiresPaidAccess && (
+        <div class="audiobook-access" data-access-panel>
+          <strong>Library Pass required</strong>
+          <p data-access-status role="status" aria-live="polite">Checking your Library Pass…</p>
+          <div class="button-row audiobook-access-actions" data-access-actions hidden>
+            <a class="button primary" data-access-sign-in href="/account/sign-in/?next=%2Faudiobook%2Fread-the-dollar-first%2F">Sign in</a>
+            <a class="button account-secondary" data-access-review href="/account/access-required/?next=%2Faudiobook%2Fread-the-dollar-first%2F">Review access</a>
+            <a class="button account-secondary" href="/book/read-the-dollar-first/">View Library Pass</a>
+          </div>
+        </div>
+      )}
       <div class="audiobook-current" aria-live="polite">
         <span>Now playing</span>
         <strong data-current-title>{firstChapter.title}</strong>
@@ -35,18 +50,17 @@ const firstChapter = chapters[safeInitialTrack];
       <audio
         class="audiobook-audio"
         data-audio
-        src={firstChapter.url}
-        preload="metadata"
-        controls
+        preload={requiresPaidAccess ? 'none' : 'metadata'}
+        controls={!requiresPaidAccess}
       >
-        Your browser does not support the audio player. You can <a href={firstChapter.url}>open this chapter directly</a>.
+        Your browser does not support the audio player.
       </audio>
       <div class="audiobook-controls" aria-label="Chapter controls">
-        <button class="audiobook-control" type="button" data-previous>Previous chapter</button>
-        <button class="audiobook-control" type="button" data-next>Next chapter</button>
+        <button class="audiobook-control" type="button" data-previous disabled={requiresPaidAccess}>Previous chapter</button>
+        <button class="audiobook-control" type="button" data-next disabled={requiresPaidAccess}>Next chapter</button>
         <label class="audiobook-speed">
           <span>Speed</span>
-          <select data-speed aria-label="Playback speed">
+          <select data-speed aria-label="Playback speed" disabled={requiresPaidAccess}>
             <option value="0.75">0.75×</option>
             <option value="1" selected>1×</option>
             <option value="1.25">1.25×</option>
@@ -55,7 +69,9 @@ const firstChapter = chapters[safeInitialTrack];
           </select>
         </label>
       </div>
-      <p class="audiobook-progress-note" data-progress-note>Your listening position is saved on this device.</p>
+      <p class="audiobook-progress-note" data-progress-note>
+        {requiresPaidAccess ? 'Playback unlocks after your Library Pass is verified.' : 'Your listening position is saved on this device.'}
+      </p>
     </div>
   </div>
 
@@ -76,6 +92,7 @@ const firstChapter = chapters[safeInitialTrack];
               data-url={chapter.url}
               data-title={chapter.title}
               aria-current={index === safeInitialTrack ? 'true' : undefined}
+              disabled={requiresPaidAccess}
             >
               <span class="audiobook-track-number">{String(index + 1).padStart(2, '0')}</span>
               <span class="audiobook-track-title">{chapter.title}</span>
@@ -95,6 +112,7 @@ const firstChapter = chapters[safeInitialTrack];
       data-index="0"
       data-url={firstChapter.url}
       data-title={firstChapter.title}
+      disabled={requiresPaidAccess}
     >
       {firstChapter.title}
     </button>
@@ -115,13 +133,33 @@ const firstChapter = chapters[safeInitialTrack];
     const next = root.querySelector('[data-next]');
     const speed = root.querySelector('[data-speed]');
     const progressNote = root.querySelector('[data-progress-note]');
+    const accessStatus = root.querySelector('[data-access-status]');
+    const accessActions = root.querySelector('[data-access-actions]');
+    const signInLink = root.querySelector('[data-access-sign-in]');
+    const reviewLink = root.querySelector('[data-access-review]');
     const tracks = [...root.querySelectorAll('[data-track]')];
     const persistKey = root.dataset.persistKey || 'usd-impact-audiobook-progress';
+    const requiresPaidAccess = root.dataset.requiresPaidAccess === 'true';
+    const accessEndpoint = root.dataset.accessEndpoint || '/api/account-access';
     let currentIndex = clampTrack(Number(root.dataset.initialTrack) || 0, tracks.length - 1);
     let pendingResumeTime = 0;
     let lastSavedSecond = -1;
+    let accessGranted = !requiresPaidAccess;
 
     if (!(audio instanceof HTMLAudioElement) || tracks.length === 0) return;
+
+    const returnPath = `${window.location.pathname}${window.location.search}`;
+    if (signInLink instanceof HTMLAnchorElement) {
+      signInLink.href = `/account/sign-in/?next=${encodeURIComponent(returnPath)}`;
+    }
+
+    const setAccessMessage = (message, { showActions = false, reason = 'missing' } = {}) => {
+      if (accessStatus instanceof HTMLElement) accessStatus.textContent = message;
+      if (accessActions instanceof HTMLElement) accessActions.hidden = !showActions;
+      if (reviewLink instanceof HTMLAnchorElement) {
+        reviewLink.href = `/account/access-required/?reason=${encodeURIComponent(reason)}&next=${encodeURIComponent(returnPath)}`;
+      }
+    };
 
     const readProgress = () => {
       try {
@@ -151,13 +189,16 @@ const firstChapter = chapters[safeInitialTrack];
         track.classList.toggle('is-active', isActive);
         if (isActive) track.setAttribute('aria-current', 'true');
         else track.removeAttribute('aria-current');
+        if (track instanceof HTMLButtonElement) track.disabled = !accessGranted;
       });
 
-      if (previous instanceof HTMLButtonElement) previous.disabled = currentIndex === 0;
-      if (next instanceof HTMLButtonElement) next.disabled = currentIndex === tracks.length - 1;
+      if (previous instanceof HTMLButtonElement) previous.disabled = !accessGranted || currentIndex === 0;
+      if (next instanceof HTMLButtonElement) next.disabled = !accessGranted || currentIndex === tracks.length - 1;
+      if (speed instanceof HTMLSelectElement) speed.disabled = !accessGranted;
     };
 
     const loadTrack = (index, { autoplay = false, resumeTime = 0 } = {}) => {
+      if (!accessGranted) return;
       currentIndex = clampTrack(index, tracks.length - 1);
       const track = tracks[currentIndex];
       if (!(track instanceof HTMLElement)) return;
@@ -168,7 +209,11 @@ const firstChapter = chapters[safeInitialTrack];
 
       pendingResumeTime = Math.max(0, resumeTime);
       lastSavedSecond = -1;
-      audio.src = url;
+      const protectedUrl = new URL(url, window.location.origin);
+      protectedUrl.searchParams.set('request', String(Date.now()));
+      audio.src = `${protectedUrl.pathname}${protectedUrl.search}`;
+      audio.controls = true;
+      audio.preload = 'metadata';
       audio.load();
       if (title instanceof HTMLElement && trackTitle) title.textContent = trackTitle;
       updateButtons();
@@ -209,8 +254,60 @@ const firstChapter = chapters[safeInitialTrack];
     audio.addEventListener('ended', () => {
       if (currentIndex < tracks.length - 1) loadTrack(currentIndex + 1, { autoplay: true });
     });
+    audio.addEventListener('error', () => {
+      if (accessGranted && progressNote instanceof HTMLElement) {
+        progressNote.textContent = 'This chapter could not be loaded. Select it again to request fresh access.';
+      }
+    });
 
-    readProgress();
-    loadTrack(currentIndex, { resumeTime: pendingResumeTime });
+    const activatePlayer = () => {
+      accessGranted = true;
+      audio.controls = true;
+      readProgress();
+      updateButtons();
+      setAccessMessage('Library Pass verified. Full chapter playback is available.');
+      if (progressNote instanceof HTMLElement) {
+        progressNote.textContent = 'Your listening position is saved on this device.';
+      }
+      loadTrack(currentIndex, { resumeTime: pendingResumeTime });
+    };
+
+    const verifyAccess = async () => {
+      setAccessMessage('Checking your Library Pass…');
+      try {
+        const response = await fetch(accessEndpoint, {
+          method: 'GET',
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        });
+        if (response.status === 401) {
+          setAccessMessage('Sign in with the account that owns your Library Pass.', {
+            showActions: true,
+            reason: 'missing',
+          });
+          return;
+        }
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error('Library Pass verification is unavailable.');
+        if (body.paidAccess?.allowed === true) {
+          activatePlayer();
+          return;
+        }
+        setAccessMessage('Full playback requires an active Library Pass.', {
+          showActions: true,
+          reason: body.paidAccess?.reason || 'missing',
+        });
+      } catch {
+        setAccessMessage('Library Pass verification is temporarily unavailable. Please try again.', {
+          showActions: true,
+          reason: 'denied',
+        });
+      }
+    };
+
+    updateButtons();
+    if (requiresPaidAccess) verifyAccess();
+    else activatePlayer();
   });
 </script>

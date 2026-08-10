@@ -30,6 +30,7 @@ The Guided Interactive Edition combines the *Read the Dollar First* learning seq
 
 - secure access through your verified USD Impact account;
 - the complete Guided Interactive Edition learning sequence;
+- the complete 20-chapter English audiobook with saved listening progress;
 - interactive quizzes and progress tracking;
 - ongoing access to the purchased edition with no recurring subscription fee; and
 - account and billing support at [support@usd-impact.com](mailto:support@usd-impact.com).
@@ -69,4 +70,4 @@ This is not a signal service, portfolio recommendation, forecast product or trad
 
 ## Availability and delivery
 
-The Guided Interactive Edition is scheduled to open on August 17, 2026 at 13:00 UTC. After Paddle confirms a completed payment, access is attached to the verified USD Impact account used for the purchase. If access does not appear, contact [support@usd-impact.com](mailto:support@usd-impact.com).
+The Guided Interactive Edition is scheduled to open on August 17, 2026 at 13:00 UTC. After Paddle confirms a completed payment, permanent Library Pass access—including the Guided Interactive Edition and complete English audiobook—is attached to the verified USD Impact account used for the purchase. Ongoing Research Membership reports and tools are separate. If access does not appear, contact [support@usd-impact.com](mailto:support@usd-impact.com).

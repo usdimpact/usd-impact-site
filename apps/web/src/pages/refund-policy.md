@@ -1,14 +1,14 @@
 ---
 layout: ../layouts/LegalLayout.astro
 title: "Refund Policy | USD Impact"
-description: "The 14-day refund policy for the Read the Dollar First Guided Interactive Edition."
+description: "The 14-day refund policy for the Read the Dollar First Library Pass."
 ---
 
 # Refund Policy
 
-_Last updated: August 3, 2026_
+_Last updated: August 10, 2026_
 
-This policy applies to one-time purchases of the *Read the Dollar First Guided Interactive Edition* from USD Impact.
+This policy applies to one-time purchases of the *Read the Dollar First Library Pass*, including the Guided Interactive Edition and complete English audiobook, from USD Impact.
 
 ## 14-day refund period
 
@@ -24,7 +24,7 @@ We will confirm receipt of the request and may ask for limited information neede
 
 ## Access after a refund
 
-Paid access associated with the refunded purchase is revoked when the refund is approved or confirmed. Public USD Impact educational content remains available without paid access.
+Library Pass access associated with the refunded purchase, including Guided Interactive Edition and audiobook playback, is revoked when the refund is approved or confirmed. Public USD Impact educational content remains available without paid access.
 
 ## Duplicate charges, technical problems, or unauthorized payments
 

@@ -13,6 +13,7 @@ const urls = {
   reuters: 'https://www.reuters.com/markets/us/jobs-preview-2026-08-06/',
   ap: 'https://apnews.com/article/jobs-economy-2026-preview',
 };
+const inventedBlsUrl = 'https://www.bls.gov/news.release/empsit.nr0.htm';
 
 const candidate = {
   phase: 'preview',
@@ -107,6 +108,7 @@ try {
   assert.equal(providerBody.tool_choice, 'required');
   assert.ok(providerBody.include.includes('web_search_call.action.sources'));
   assert.ok(providerBody.tools[0].filters.allowed_domains.includes('bls.gov'));
+  assert.match(providerBody.input, /Copy every sources\[\]\.url exactly/);
 
   assert.equal((await invoke(request({ token: '' }))).status, 401);
   assert.equal((await invoke(request({ method: 'GET' }))).status, 405);
@@ -114,6 +116,53 @@ try {
 
   globalThis.fetch = async () => new Response(JSON.stringify(openAiResponse(draft, [urls.reuters, urls.ap])), { status: 200 });
   assert.equal((await invoke(request())).status, 502);
+
+  const ungroundedDraft = {
+    ...draft,
+    sources: draft.sources.map((source) => (
+      source.id === 'bls-schedule' ? { ...source, url: inventedBlsUrl } : source
+    )),
+  };
+  const repairedLedger = {
+    publishable: true,
+    holdReason: '',
+    sources: draft.sources.map(({ id, url }) => ({ id, url })),
+    verifiedFactSourceIds: draft.verifiedFacts.map(({ sourceIds }) => sourceIds),
+  };
+  const repairCalls = [];
+  globalThis.fetch = async (url, options) => {
+    repairCalls.push({ url: String(url), options });
+    const payload = repairCalls.length === 1
+      ? openAiResponse(ungroundedDraft)
+      : openAiResponse(repairedLedger, []);
+    return new Response(JSON.stringify(payload), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const repaired = await invoke(request());
+  assert.equal(repaired.status, 200);
+  assert.equal(repaired.json.sources[0].url, urls.bls);
+  assert.equal(repairCalls.length, 2);
+  const repairBody = JSON.parse(repairCalls[1].options.body);
+  assert.equal(repairBody.model, 'gpt-5-mini');
+  assert.equal(repairBody.tools, undefined);
+  assert.equal(repairBody.max_output_tokens, 4_000);
+  assert.ok(repairBody.input.includes(urls.bls));
+  assert.match(repairBody.input, /Use only source IDs already present/);
+
+  const inventedLedger = {
+    ...repairedLedger,
+    sources: repairedLedger.sources.map((source) => (
+      source.id === 'bls-schedule' ? { ...source, url: inventedBlsUrl } : source
+    )),
+  };
+
+  let failedRepairCalls = 0;
+  globalThis.fetch = async () => {
+    failedRepairCalls += 1;
+    const payload = failedRepairCalls === 1 ? openAiResponse(ungroundedDraft) : openAiResponse(inventedLedger, []);
+    return new Response(JSON.stringify(payload), { status: 200 });
+  };
+  assert.equal((await invoke(request())).status, 502);
+  assert.equal(failedRepairCalls, 2);
 
   console.log('catalyst brief source function tests pass');
 } finally {

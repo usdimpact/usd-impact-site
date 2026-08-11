@@ -48,7 +48,7 @@ else {
 const productPage = pagePath('/book/read-the-dollar-first');
 if (fs.existsSync(productPage)) {
   const html = fs.readFileSync(productPage, 'utf8');
-  for (const requiredText of ['Guided Interactive Edition', 'USD 39.00', 'USD 49.00', 'one-time', '14-day Refund Policy', 'ongoing access']) {
+  for (const requiredText of ['Library Pass', 'Guided Interactive Edition', 'complete 20-track English audiobook', 'USD 39.00', 'USD 49.00', 'one-time', '14-day Refund Policy', 'ongoing access', 'independent of Research Membership']) {
     if (!html.includes(requiredText)) failures.push(`Product page is missing domain-review text: ${requiredText}.`);
   }
 }
@@ -56,8 +56,19 @@ if (fs.existsSync(productPage)) {
 const audiobookPage = pagePath('/audiobook/read-the-dollar-first');
 if (fs.existsSync(audiobookPage)) {
   const html = fs.readFileSync(audiobookPage, 'utf8');
-  for (const requiredText of ['data-audiobook-player', '20 tracks', 'Chapter 13 - What to Watch from Here', 'n0w53ba4ottrav2w.public.blob.vercel-storage.com']) {
-    if (!html.includes(requiredText)) failures.push(`Audiobook page is missing required player content: ${requiredText}.`);
+  for (const requiredText of ['Library Pass', 'Sign in to listen', '20 tracks', 'Chapter 13 - What to Watch from Here', 'not part of Research Membership']) {
+    if (!html.includes(requiredText)) failures.push(`Public audiobook page is missing required access content: ${requiredText}.`);
+  }
+  for (const forbiddenText of ['data-audiobook-player', '.mp3', 'public.blob.vercel-storage.com', '/storage/v1/object/sign/', 'token=']) {
+    if (html.includes(forbiddenText)) failures.push(`Public audiobook page exposes forbidden playback content: ${forbiddenText}.`);
+  }
+}
+
+for (const file of fs.readdirSync(distRoot, { recursive: true })) {
+  if (!/\.(?:html|js|xml|json)$/i.test(file)) continue;
+  const source = fs.readFileSync(path.join(distRoot, file), 'utf8');
+  if (source.includes('n0w53ba4ottrav2w.public.blob.vercel-storage.com')) {
+    failures.push(`Generated public output retains the legacy audiobook Blob host: ${file}.`);
   }
 }
 

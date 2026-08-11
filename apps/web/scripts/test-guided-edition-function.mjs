@@ -140,6 +140,7 @@ async function run(input, dependencies = {}) {
       mastery_score: null, attempt_count: 0, completed_at: null,
       updated_at: '2026-08-04T16:45:00.000Z', data: { contentVersion: 2 },
     }),
+    createSignedTrackUrl: async ({ slug }) => `https://project-ref.supabase.co/storage/v1/object/sign/library-pass-assets/audiobook/read-the-dollar-first/v1/${slug}.mp3?token=test-token`,
     ...dependencies,
   });
   return response;
@@ -157,7 +158,7 @@ const anonymousLocation = new URL(anonymous.getHeader('location'), `https://${ho
 assert.equal(anonymousLocation.pathname, '/account/sign-in/');
 assert.equal(anonymousLocation.searchParams.get('next'), '/guided-edition/');
 
-for (const reason of ['missing', 'suspended', 'suspended_dispute', 'refunded', 'charged_back', 'revoked', 'expired', 'deletion_pending']) {
+for (const reason of ['missing', 'suspended', 'suspended_dispute', 'refunded', 'charged_back', 'revoked', 'expired', 'deletion_pending', 'account_deleted', 'deleted']) {
   const denied = await run(
     request({ authenticated: true, url: '/api/guided-edition?campaign=launch' }),
     {
@@ -172,6 +173,40 @@ for (const reason of ['missing', 'suspended', 'suspended_dispute', 'refunded', '
   assert.equal(location.searchParams.get('reason'), reason);
 }
 assert.equal(protectedContentReads, 0);
+
+let protectedTrackSigns = 0;
+const trackSigner = async () => { protectedTrackSigns += 1; return 'https://project-ref.supabase.co/forbidden'; };
+const anonymousAudiobook = await run(
+  request({ url: '/api/guided-edition?__paid_path=audiobook' }),
+  { createSignedTrackUrl: trackSigner },
+);
+assert.equal(anonymousAudiobook.statusCode, 302);
+assert.equal(
+  new URL(anonymousAudiobook.getHeader('location'), `https://${host}`).searchParams.get('next'),
+  '/guided-edition/audiobook',
+);
+const anonymousTrack = await run(
+  request({ url: '/api/guided-edition?__paid_path=audiobook/track/read-the-dollar-first' }),
+  { createSignedTrackUrl: trackSigner },
+);
+assert.equal(anonymousTrack.statusCode, 302);
+assert.equal(protectedTrackSigns, 0);
+
+for (const reason of ['missing', 'suspended_dispute', 'refunded', 'charged_back', 'revoked', 'deletion_pending', 'deleted']) {
+  const deniedTrack = await run(
+    request({ authenticated: true, url: '/api/guided-edition?__paid_path=audiobook/track/read-the-dollar-first' }),
+    {
+      readAccessState: async () => ({ allowed: false, reason }),
+      createSignedTrackUrl: trackSigner,
+    },
+  );
+  assert.equal(deniedTrack.statusCode, 302);
+  assert.equal(
+    new URL(deniedTrack.getHeader('location'), `https://${host}`).searchParams.get('reason'),
+    reason,
+  );
+}
+assert.equal(protectedTrackSigns, 0);
 
 const library = await run(request({ authenticated: true }), {
   readProgress: async ({ accessToken: received, accountId: receivedAccount, contentId }) => {
@@ -192,6 +227,89 @@ assert.match(library.body, /Protected test chapter/);
 assert.match(library.body, /Resume chapter/);
 assert.match(library.body, /value="50"/);
 assert.match(library.body, /Protected test supplement/);
+assert.match(library.body, /Library Pass audiobook/);
+assert.match(library.body, /href="\/guided-edition\/audiobook\/"/);
+
+let audiobookContentReads = 0;
+const audiobook = await run(
+  request({ authenticated: true, url: '/api/guided-edition?__paid_path=audiobook' }),
+  {
+    readAccessState: async () => ({
+      ...activeState,
+      productId: 'read-the-dollar-first-guided-interactive-edition',
+      researchMembership: { allowed: false, reason: 'missing' },
+    }),
+    readContent: async () => { audiobookContentReads += 1; return null; },
+  },
+);
+assert.equal(audiobook.statusCode, 200);
+assert.equal(audiobookContentReads, 0);
+assert.equal(audiobook.getHeader('referrer-policy'), 'no-referrer');
+assert.match(audiobook.body, /Protected Library Pass audiobook/);
+assert.match(audiobook.body, /AI-generated speech with human quality review/);
+assert.match(audiobook.body, /Previous chapter/);
+assert.match(audiobook.body, /Playback speed/);
+assert.match(audiobook.body, /saved on this device/);
+assert.equal((audiobook.body.match(/data-index="\d+"/g) || []).length, 20);
+assert.match(audiobook.body, /\/guided-edition\/audiobook\/track\/read-the-dollar-first\//);
+assert.match(audiobook.body, /Chapter 13 - What to Watch from Here/);
+assert.doesNotMatch(audiobook.body, /\.mp3|public\.blob\.vercel-storage\.com|storage\/v1\/object\/sign|token=/);
+
+const audiobookHead = await run(request({
+  method: 'HEAD',
+  authenticated: true,
+  url: '/api/guided-edition?__paid_path=audiobook',
+}));
+assert.equal(audiobookHead.statusCode, 200);
+assert.equal(audiobookHead.body, '');
+assert.ok(Number(audiobookHead.getHeader('content-length')) > 1000);
+
+let signedSlug = '';
+const signedTrackUrl = 'https://project-ref.supabase.co/storage/v1/object/sign/library-pass-assets/audiobook/read-the-dollar-first/v1/00-read-the-dollar-first.mp3?token=temporary-token';
+const track = await run(
+  request({ authenticated: true, url: '/api/guided-edition?__paid_path=audiobook/track/read-the-dollar-first' }),
+  {
+    createSignedTrackUrl: async ({ slug }) => {
+      signedSlug = slug;
+      return signedTrackUrl;
+    },
+  },
+);
+assert.equal(track.statusCode, 302);
+assert.equal(signedSlug, 'read-the-dollar-first');
+assert.equal(track.getHeader('location'), signedTrackUrl);
+assert.match(track.getHeader('cache-control'), /private, no-store/);
+assert.equal(track.getHeader('referrer-policy'), 'no-referrer');
+assert.equal(track.body, '');
+
+let invalidTrackSigns = 0;
+const invalidTrack = await run(
+  request({ authenticated: true, url: '/api/guided-edition?__paid_path=audiobook/track/not-a-track' }),
+  { createSignedTrackUrl: async () => { invalidTrackSigns += 1; return signedTrackUrl; } },
+);
+assert.equal(invalidTrack.statusCode, 404);
+assert.equal(invalidTrackSigns, 0);
+
+const originalSigningConsoleError = console.error;
+let signingLog = '';
+console.error = (...values) => { signingLog = values.map(String).join(' '); };
+let signingFailure;
+try {
+  signingFailure = await run(
+    request({ authenticated: true, url: '/api/guided-edition?__paid_path=audiobook/track/read-the-dollar-first' }),
+    { createSignedTrackUrl: async () => {
+      const error = new Error('Sensitive provider details must not reach the response.');
+      error.code = 'AUDIOBOOK_SIGNING_FAILED';
+      throw error;
+    } },
+  );
+} finally {
+  console.error = originalSigningConsoleError;
+}
+assert.equal(signingFailure.statusCode, 503);
+assert.equal(signingFailure.body, 'This audiobook track is temporarily unavailable.');
+assert.doesNotMatch(signingFailure.body, /Sensitive provider details/);
+assert.match(signingLog, /AUDIOBOOK_SIGNING_FAILED/);
 
 const multiChapterLibrary = await run(request({ authenticated: true }), {
   readCatalog: async () => [testReleaseTwo, testRelease],

@@ -31,6 +31,13 @@ import {
   normalizeGuidedProgressRecord,
   publicGuidedChapter,
 } from '../src/lib/guided-edition.js';
+import {
+  AUDIOBOOK_MEMBER_PATH,
+  createSignedAudiobookTrackUrl,
+  getPrivateAudiobookTrack,
+  privateAudiobookTrackHref,
+  privateAudiobookTracks,
+} from '../src/lib/private-audiobook.js';
 
 const ROUTE_PARAM = '__paid_path';
 const ROOT_PATH = '/guided-edition/';
@@ -75,6 +82,14 @@ function originalRequestUrl(request) {
 function redirect(response, destination, status = 302) {
   response.statusCode = status;
   response.setHeader('Location', `${destination.pathname}${destination.search}${destination.hash}`);
+  response.end();
+}
+
+function redirectToSignedAudio(response, destination) {
+  const signedUrl = new URL(destination);
+  if (signedUrl.protocol !== 'https:') throw new Error('The signed audiobook URL must use HTTPS.');
+  response.statusCode = 302;
+  response.setHeader('Location', signedUrl.toString());
   response.end();
 }
 
@@ -136,9 +151,9 @@ function shell({ title, eyebrow, lead, content, script = '' }) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>${escapeHtml(title)} | USD Impact</title>
-  <meta name="description" content="Protected Read the Dollar First Guided Interactive Edition.">
+  <meta name="description" content="Protected Read the Dollar First Library Pass content.">
   <style>
-    :root{color-scheme:light;--navy:#031426;--ink:#081a31;--gold:#d2a84f;--paper:#f4f6f9;--line:#d9e0e8;--muted:#536275;--good:#12633d}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--paper)}a{color:inherit}.skip{position:absolute;left:-9999px;top:8px;background:#fff;padding:12px;z-index:5}.skip:focus{left:8px}header,footer{background:#020d19;color:#fff}.nav,.container,.footer-inner{max-width:1120px;margin:0 auto}.nav{padding:20px 26px;display:flex;align-items:center;justify-content:space-between;gap:24px}.brand{font-size:1.15rem;font-weight:850;text-decoration:none}.nav nav{display:flex;gap:20px;font-weight:650}.nav nav a{text-decoration:none}.hero{background:linear-gradient(135deg,#020e1c,#09233e);color:#fff;padding:64px 26px}.eyebrow{margin:0 0 14px;color:var(--gold);font-size:.83rem;font-weight:850;letter-spacing:.14em;text-transform:uppercase}h1{max-width:850px;margin:0;font-size:clamp(2.35rem,6vw,4.6rem);line-height:1.03;letter-spacing:-.035em}.lead{max-width:790px;margin:22px 0 0;font-size:clamp(1.08rem,2vw,1.3rem);line-height:1.6}main{padding:44px 26px 76px}.card,.reader-section,.mastery{background:#fff;border:1px solid var(--line);border-radius:18px;padding:30px;box-shadow:0 12px 32px rgba(6,24,45,.06)}.stack{display:grid;gap:22px}.reader-grid{display:grid;grid-template-columns:minmax(210px,280px) minmax(0,1fr);gap:28px;align-items:start}.reader-nav{position:sticky;top:20px}.reader-nav ul{padding-left:20px;line-height:1.8}.reader-content{display:grid;gap:24px}h2,h3{line-height:1.18}h2{margin:0 0 14px;font-size:clamp(1.65rem,3vw,2.25rem)}h3{margin:28px 0 12px;font-size:1.25rem}p{line-height:1.7}.canonical{border-left:5px solid var(--gold)}.source-note,.muted{color:var(--muted)}.source-note{font-size:.92rem}.chapter-list,.feedback-list{line-height:1.7;padding-left:24px}.chapter-list li,.feedback-list li{margin:.55rem 0}.compliance{border-top:1px solid var(--line);margin-top:26px;padding-top:20px;font-size:.92rem;color:var(--muted)}.progress-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}progress{width:min(100%,360px);height:16px}.button{appearance:none;display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 20px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font:inherit;font-weight:800;text-decoration:none;cursor:pointer}.primary{background:var(--gold);border-color:var(--gold);color:#111}.button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #1474d4;outline-offset:3px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}fieldset{border:0;padding:0;margin:0}.mastery-question{border-top:1px solid var(--line);padding:24px 0}.mastery-question:first-of-type{border-top:0;padding-top:8px}legend{font-size:1.08rem;font-weight:800;line-height:1.5;margin-bottom:10px}.option{display:block;padding:9px 0}.status{min-height:1.5em;font-weight:700}.status[data-state="success"]{color:var(--good)}footer{padding:30px 26px}.footer-inner{color:#d6deea;font-size:.9rem;line-height:1.6}@media(max-width:760px){.nav nav{display:none}.reader-grid{grid-template-columns:1fr}.reader-nav{position:static}.hero{padding:52px 20px}main{padding:30px 16px 60px}.card,.reader-section,.mastery{padding:24px 20px}}
+    :root{color-scheme:light;--navy:#031426;--ink:#081a31;--gold:#d2a84f;--paper:#f4f6f9;--line:#d9e0e8;--muted:#536275;--good:#12633d}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--paper)}a{color:inherit}.skip{position:absolute;left:-9999px;top:8px;background:#fff;padding:12px;z-index:5}.skip:focus{left:8px}header,footer{background:#020d19;color:#fff}.nav,.container,.footer-inner{max-width:1120px;margin:0 auto}.nav{padding:20px 26px;display:flex;align-items:center;justify-content:space-between;gap:24px}.brand{font-size:1.15rem;font-weight:850;text-decoration:none}.nav nav{display:flex;gap:20px;font-weight:650}.nav nav a{text-decoration:none}.hero{background:linear-gradient(135deg,#020e1c,#09233e);color:#fff;padding:64px 26px}.eyebrow{margin:0 0 14px;color:var(--gold);font-size:.83rem;font-weight:850;letter-spacing:.14em;text-transform:uppercase}h1{max-width:850px;margin:0;font-size:clamp(2.35rem,6vw,4.6rem);line-height:1.03;letter-spacing:-.035em}.lead{max-width:790px;margin:22px 0 0;font-size:clamp(1.08rem,2vw,1.3rem);line-height:1.6}main{padding:44px 26px 76px}.card,.reader-section,.mastery{background:#fff;border:1px solid var(--line);border-radius:18px;padding:30px;box-shadow:0 12px 32px rgba(6,24,45,.06)}.stack{display:grid;gap:22px}.reader-grid{display:grid;grid-template-columns:minmax(210px,280px) minmax(0,1fr);gap:28px;align-items:start}.reader-nav{position:sticky;top:20px}.reader-nav ul{padding-left:20px;line-height:1.8}.reader-content{display:grid;gap:24px}h2,h3{line-height:1.18}h2{margin:0 0 14px;font-size:clamp(1.65rem,3vw,2.25rem)}h3{margin:28px 0 12px;font-size:1.25rem}p{line-height:1.7}.canonical{border-left:5px solid var(--gold)}.source-note,.muted{color:var(--muted)}.source-note{font-size:.92rem}.chapter-list,.feedback-list{line-height:1.7;padding-left:24px}.chapter-list li,.feedback-list li{margin:.55rem 0}.compliance{border-top:1px solid var(--line);margin-top:26px;padding-top:20px;font-size:.92rem;color:var(--muted)}.progress-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}progress{width:min(100%,360px);height:16px}.button{appearance:none;display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 20px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font:inherit;font-weight:800;text-decoration:none;cursor:pointer}.primary{background:var(--gold);border-color:var(--gold);color:#111}.button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #1474d4;outline-offset:3px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}fieldset{border:0;padding:0;margin:0}.mastery-question{border-top:1px solid var(--line);padding:24px 0}.mastery-question:first-of-type{border-top:0;padding-top:8px}legend{font-size:1.08rem;font-weight:800;line-height:1.5;margin-bottom:10px}.option{display:block;padding:9px 0}.status{min-height:1.5em;font-weight:700}.status[data-state="success"]{color:var(--good)}.audio-shell{display:grid;gap:26px}.audio-player{border-left:5px solid var(--gold)}.audio-player audio{display:block;width:100%;min-height:54px;margin-top:16px}.audio-current{display:grid;gap:4px;margin:20px 0 8px}.audio-current span{color:var(--muted);font-size:.78rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.audio-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}.audio-controls label{display:inline-flex;align-items:center;gap:8px;margin-left:auto;color:var(--muted);font-size:.9rem;font-weight:750}.audio-controls select{min-height:42px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:6px 10px;font:inherit}.audio-note{color:var(--muted);font-size:.92rem}.audio-list{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin:0;padding:0;list-style:none}.audio-track{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;min-height:58px;padding:10px 12px;border:1px solid transparent;border-radius:12px;background:#f7f9fb;color:var(--ink);font:inherit;text-align:left;cursor:pointer}.audio-track:hover{background:#edf1f5}.audio-track.is-active{border-color:#d2a84f;background:#fff8e8}.audio-track span:nth-child(1){color:#80601d;font-size:.78rem;font-weight:850}.audio-track span:nth-child(2){font-weight:750;line-height:1.3}.audio-track time{color:var(--muted);font-size:.78rem}.audio-track:focus-visible{outline:3px solid #1474d4;outline-offset:2px}footer{padding:30px 26px}.footer-inner{color:#d6deea;font-size:.9rem;line-height:1.6}@media(max-width:760px){.nav nav{display:none}.reader-grid{grid-template-columns:1fr}.reader-nav{position:static}.hero{padding:52px 20px}main{padding:30px 16px 60px}.card,.reader-section,.mastery{padding:24px 20px}.audio-list{grid-template-columns:1fr}.audio-controls label{margin-left:0}}
   </style>
 </head>
 <body>
@@ -174,7 +189,20 @@ function renderLibrary(chaptersWithProgress, supplements) {
     title: 'Guided Interactive Edition',
     eyebrow: 'Protected learning library',
     lead: 'Resume your reading and mastery checks from any signed-in device.',
-    content: `<div class="stack">${cards}${referenceCards ? `<section class="card canonical"><p class="eyebrow">Reference library</p><h2>Book supplements</h2><p>These protected reference pages supplement the 13 numbered chapters and do not affect chapter mastery or progress.</p></section>${referenceCards}` : ''}</div>`,
+    content: `<div class="stack"><section class="card canonical"><p class="eyebrow">Library Pass audiobook</p><h2>Listen to the complete English edition</h2><p>All 20 tracks are available here with chapter controls, playback speed, and listening position saved only in this browser.</p><div class="actions"><a class="button primary" href="${AUDIOBOOK_MEMBER_PATH}">Open audiobook</a></div></section>${cards}${referenceCards ? `<section class="card canonical"><p class="eyebrow">Reference library</p><h2>Book supplements</h2><p>These protected reference pages supplement the 13 numbered chapters and do not affect chapter mastery or progress.</p></section>${referenceCards}` : ''}</div>`,
+  });
+}
+
+function renderAudiobook() {
+  const tracks = privateAudiobookTracks.map((track, index) => `<li><button class="audio-track${index === 0 ? ' is-active' : ''}" type="button" data-audio-track data-index="${index}" data-url="${escapeHtml(privateAudiobookTrackHref(track))}" data-title="${escapeHtml(track.title)}"${index === 0 ? ' aria-current="true"' : ''}><span>${String(index + 1).padStart(2, '0')}</span><span>${escapeHtml(track.title)}</span><time>${escapeHtml(track.duration)}</time></button></li>`).join('');
+  const firstTrack = privateAudiobookTracks[0];
+  const firstHref = privateAudiobookTrackHref(firstTrack);
+  return shell({
+    title: 'Read the Dollar First English Audiobook',
+    eyebrow: 'Protected Library Pass audiobook',
+    lead: 'Listen to the complete 20-track English edition. Your chapter and position are saved only in this browser.',
+    content: `<div class="audio-shell" data-audiobook-player data-initial-track="0" data-persist-key="usd-impact-library-pass-audiobook-progress"><section class="card audio-player" aria-labelledby="audiobook-player-heading"><p class="eyebrow">Now listening</p><h2 id="audiobook-player-heading">Read the Dollar First</h2><p>How the Dollar Moves Global Markets · USD Impact</p><p class="audio-note">AI-generated speech with human quality review.</p><div class="audio-current" aria-live="polite"><span>Current track</span><strong data-current-title>${escapeHtml(firstTrack.title)}</strong></div><audio data-audio src="${escapeHtml(firstHref)}" preload="metadata" controls>Audio playback is not supported by this browser. <a href="${escapeHtml(firstHref)}">Open the current track</a>.</audio><div class="audio-controls" aria-label="Audiobook controls"><button class="button" type="button" data-previous disabled>Previous chapter</button><button class="button" type="button" data-next>Next chapter</button><label><span>Speed</span><select data-speed aria-label="Playback speed"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label></div><p class="audio-note" data-progress-note role="status" aria-live="polite">Your listening position is saved on this device.</p></section><section class="card" aria-labelledby="audiobook-track-list"><h2 id="audiobook-track-list">Chapters</h2><ol class="audio-list">${tracks}</ol></section><p class="compliance"><strong>Educational use only.</strong> This audiobook is not personalized investment, financial, legal, tax, or trading advice; not a trading signal; and not a recommendation to buy or sell any asset. Market relationships are conditional and may change across regimes.</p></div>`,
+    script: `<script>(()=>{const root=document.querySelector('[data-audiobook-player]');if(!(root instanceof HTMLElement))return;const audio=root.querySelector('[data-audio]');const title=root.querySelector('[data-current-title]');const previous=root.querySelector('[data-previous]');const next=root.querySelector('[data-next]');const speed=root.querySelector('[data-speed]');const note=root.querySelector('[data-progress-note]');const tracks=[...root.querySelectorAll('[data-audio-track]')];if(!(audio instanceof HTMLAudioElement)||tracks.length===0)return;const key=root.dataset.persistKey||'usd-impact-library-pass-audiobook-progress';const clamp=(value)=>Math.max(0,Math.min(value,tracks.length-1));let index=clamp(Number(root.dataset.initialTrack)||0);let pendingTime=0;let lastSaved=-1;const readProgress=()=>{try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved&&Number.isFinite(saved.index)&&Number.isFinite(saved.time)){index=clamp(saved.index);pendingTime=Math.max(0,saved.time)}}catch{}};const saveProgress=()=>{const second=Math.floor(audio.currentTime||0);if(second===lastSaved)return;lastSaved=second;try{localStorage.setItem(key,JSON.stringify({index,time:second}))}catch{}};const updateControls=()=>{tracks.forEach((track,trackIndex)=>{const active=trackIndex===index;track.classList.toggle('is-active',active);if(active)track.setAttribute('aria-current','true');else track.removeAttribute('aria-current')});if(previous instanceof HTMLButtonElement)previous.disabled=index===0;if(next instanceof HTMLButtonElement)next.disabled=index===tracks.length-1};const loadTrack=(nextIndex,{autoplay=false,resumeTime=0}={})=>{index=clamp(nextIndex);const track=tracks[index];if(!(track instanceof HTMLElement)||!track.dataset.url)return;pendingTime=Math.max(0,resumeTime);lastSaved=-1;audio.src=track.dataset.url;audio.load();if(title instanceof HTMLElement&&track.dataset.title)title.textContent=track.dataset.title;updateControls();if(resumeTime===0)saveProgress();if(autoplay)audio.play().catch(()=>{if(note instanceof HTMLElement)note.textContent='Press play to begin this chapter.'})};tracks.forEach((track,trackIndex)=>track.addEventListener('click',()=>loadTrack(trackIndex,{autoplay:true})));previous?.addEventListener('click',()=>loadTrack(index-1,{autoplay:true}));next?.addEventListener('click',()=>loadTrack(index+1,{autoplay:true}));speed?.addEventListener('change',()=>{if(speed instanceof HTMLSelectElement)audio.playbackRate=Number(speed.value)||1});audio.addEventListener('loadedmetadata',()=>{if(pendingTime>0&&Number.isFinite(audio.duration)){audio.currentTime=Math.min(pendingTime,Math.max(0,audio.duration-1));if(note instanceof HTMLElement)note.textContent='Your saved listening position is ready.'}pendingTime=0});audio.addEventListener('timeupdate',saveProgress);audio.addEventListener('pause',saveProgress);audio.addEventListener('ended',()=>{if(index<tracks.length-1)loadTrack(index+1,{autoplay:true})});audio.addEventListener('error',()=>{if(note instanceof HTMLElement)note.textContent='This track is temporarily unavailable. Choose the track again to retry.'});readProgress();loadTrack(index,{resumeTime:pendingTime})})();</script>`,
   });
 }
 
@@ -348,11 +376,13 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
     readSupplement: overrides.readSupplement || readGuidedSupplementRelease,
     readProgress: overrides.readProgress || readGuidedLearningProgress,
     recordProgress: overrides.recordProgress || recordGuidedLearningProgress,
+    createSignedTrackUrl: overrides.createSignedTrackUrl || createSignedAudiobookTrackUrl,
   };
   response.setHeader('Cache-Control', 'private, no-store, max-age=0');
   response.setHeader('Vary', 'Cookie, Authorization');
   response.setHeader('X-Content-Type-Options', 'nosniff');
   response.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  response.setHeader('Referrer-Policy', 'no-referrer');
 
   const requestedAction = action(request);
   if (requestedAction === 'progress') return handleProgressApi(request, response, dependencies);
@@ -387,7 +417,25 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
   const route = protectedUrl.pathname.replace(/^\/guided-edition\/?/, '').replace(/\/+$/, '');
 
   let body;
-  if (route) {
+  if (route === 'audiobook') {
+    body = renderAudiobook();
+  } else if (route.startsWith('audiobook/track/')) {
+    const slug = route.slice('audiobook/track/'.length);
+    if (!slug || slug.includes('/') || !getPrivateAudiobookTrack(slug)) {
+      response.statusCode = 404;
+      response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      return response.end('Audiobook track not found.');
+    }
+    try {
+      const signedUrl = await dependencies.createSignedTrackUrl({ slug });
+      return redirectToSignedAudio(response, signedUrl);
+    } catch (error) {
+      console.error('Private audiobook signing failed.', error?.code || 'PRIVATE_AUDIOBOOK_UNAVAILABLE');
+      response.statusCode = 503;
+      response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      return response.end('This audiobook track is temporarily unavailable.');
+    }
+  } else if (route) {
     let chapter;
     try {
       chapter = await loadChapterContent({ slug: route }, dependencies);

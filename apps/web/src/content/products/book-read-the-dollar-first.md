@@ -1,7 +1,7 @@
 ---
 title: "Read the Dollar First"
 metaTitle: "Read the Dollar First | USD Impact Book"
-metaDescription: "Explore the Read the Dollar First Guided Interactive Edition, its learning features, one-time pricing, and launch availability."
+metaDescription: "Explore the Read the Dollar First Library Pass, including the Guided Interactive Edition and complete English audiobook."
 slug: "/book/read-the-dollar-first"
 category: "Book"
 status: "published"
@@ -22,17 +22,20 @@ subhero: "Learn how dollar direction, real rates, liquidity stress and funding c
 ---
 Learn how dollar direction, real rates, liquidity stress and funding conditions transmit into oil, gold, Bitcoin, gas, FX, equities and broader market regimes.
 
-## Guided Interactive Edition
+## Read the Dollar First Library Pass
 
-The Guided Interactive Edition combines the *Read the Dollar First* learning sequence with secure account access, chapter-by-chapter lessons, knowledge checks, saved progress, and account-based access to the purchased edition.
+The Library Pass combines the *Read the Dollar First* Guided Interactive Edition with the complete English audiobook. It provides secure account access, chapter-by-chapter lessons, knowledge checks, saved learning progress, and a protected audiobook player with device-local listening progress.
 
 ### What the purchase includes
 
 - secure access through your verified USD Impact account;
 - the complete Guided Interactive Edition learning sequence;
+- the complete 20-track English audiobook;
 - interactive quizzes and progress tracking;
 - ongoing access to the purchased edition with no recurring subscription fee; and
 - account and billing support at [support@usd-impact.com](mailto:support@usd-impact.com).
+
+The Library Pass is a one-time purchase. It is independent of Research Membership: no Research Membership subscription is required, and Research Membership by itself does not grant Library Pass access.
 
 ### One-time pricing
 
@@ -69,4 +72,4 @@ This is not a signal service, portfolio recommendation, forecast product or trad
 
 ## Availability and delivery
 
-The Guided Interactive Edition is scheduled to open on August 17, 2026 at 13:00 UTC. After Paddle confirms a completed payment, access is attached to the verified USD Impact account used for the purchase. If access does not appear, contact [support@usd-impact.com](mailto:support@usd-impact.com).
+The Library Pass is scheduled to open on August 17, 2026 at 13:00 UTC. After Paddle confirms a completed payment, Guided Interactive Edition and audiobook access are attached to the verified USD Impact account used for the purchase. If access does not appear, contact [support@usd-impact.com](mailto:support@usd-impact.com).

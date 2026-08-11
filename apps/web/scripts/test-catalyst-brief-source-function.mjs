@@ -61,6 +61,19 @@ function openAiResponse(bundle = draft, grounded = Object.values(urls)) {
   };
 }
 
+function contentRepairDraft(bundle = draft) {
+  return {
+    publishable: bundle.publishable,
+    holdReason: bundle.holdReason,
+    statusLabel: bundle.statusLabel,
+    summary: bundle.summary,
+    verifiedFacts: bundle.verifiedFacts,
+    transmissionChannels: bundle.transmissionChannels,
+    whatToWatch: bundle.whatToWatch,
+    body: bundle.body,
+  };
+}
+
 function request({ token = 'endpoint-secret', body = { candidate }, method = 'POST' } = {}) {
   return {
     method,
@@ -109,6 +122,12 @@ try {
   assert.ok(providerBody.include.includes('web_search_call.action.sources'));
   assert.ok(providerBody.tools[0].filters.allowed_domains.includes('bls.gov'));
   assert.match(providerBody.input, /Copy every sources\[\]\.url exactly/);
+  assert.equal(providerBody.text.format.schema.properties.verifiedFacts.minItems, 2);
+  assert.equal(providerBody.text.format.schema.properties.verifiedFacts.maxItems, 6);
+  assert.equal(providerBody.text.format.schema.properties.transmissionChannels.minItems, 2);
+  assert.equal(providerBody.text.format.schema.properties.whatToWatch.minItems, 3);
+  assert.equal(providerBody.text.format.schema.properties.whatToWatch.maxItems, 6);
+  assert.match(providerBody.input, /Every verified fact must cite either an authoritative primary source or at least two independent reporting domains/);
 
   assert.equal((await invoke(request({ token: '' }))).status, 401);
   assert.equal((await invoke(request({ method: 'GET' }))).status, 405);
@@ -163,6 +182,50 @@ try {
   };
   assert.equal((await invoke(request())).status, 502);
   assert.equal(failedRepairCalls, 2);
+
+  const shortWatchDraft = { ...draft, whatToWatch: ['Payroll growth'] };
+  let watchRepairCalls = 0;
+  const watchRepairRequests = [];
+  globalThis.fetch = async (url, options) => {
+    watchRepairCalls += 1;
+    watchRepairRequests.push({ url: String(url), options });
+    const payload = watchRepairCalls === 1
+      ? openAiResponse(shortWatchDraft)
+      : openAiResponse(contentRepairDraft(draft), []);
+    return new Response(JSON.stringify(payload), { status: 200 });
+  };
+  const watchRepaired = await invoke(request());
+  assert.equal(watchRepaired.status, 200);
+  assert.equal(watchRepaired.json.whatToWatch.length, 3);
+  assert.equal(watchRepairCalls, 2);
+  const watchRepairBody = JSON.parse(watchRepairRequests[1].options.body);
+  assert.equal(watchRepairBody.model, 'gpt-5-mini');
+  assert.equal(watchRepairBody.tools, undefined);
+  assert.equal(watchRepairBody.text.format.name, 'usd_impact_catalyst_content_repair');
+  assert.match(watchRepairBody.input, /source ledger below is immutable/i);
+
+  const weakFactDraft = {
+    ...draft,
+    verifiedFacts: [
+      ...draft.verifiedFacts,
+      {
+        statement: 'One reporting source described additional market sensitivity.',
+        sourceIds: ['reuters-preview'],
+      },
+    ],
+  };
+  let factRepairCalls = 0;
+  globalThis.fetch = async () => {
+    factRepairCalls += 1;
+    const payload = factRepairCalls === 1
+      ? openAiResponse(weakFactDraft)
+      : openAiResponse(contentRepairDraft(draft), []);
+    return new Response(JSON.stringify(payload), { status: 200 });
+  };
+  const factRepaired = await invoke(request());
+  assert.equal(factRepaired.status, 200);
+  assert.equal(factRepaired.json.verifiedFacts.length, 2);
+  assert.equal(factRepairCalls, 2);
 
   console.log('catalyst brief source function tests pass');
 } finally {

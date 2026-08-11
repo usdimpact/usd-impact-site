@@ -1,7 +1,7 @@
 ---
 title: "BLS — Consumer Price Index (CPI) for July 2026 — What to Watch"
 metaTitle: "BLS — Consumer Price Index (CPI) for July 2026 — What to Watch | USD Impact"
-metaDescription: "BLS has scheduled the Consumer Price Index (CPI) for July 2026 to be published on 2026-08-12 at 8:30 AM Eastern Time (12:30 UTC). The timing and embargo are confirmed on BLS pages and the FRED series lists the same next-release date. Markets will parse headline vs. core prints and key component brea"
+metaDescription: "BLS schedules July 2026 CPI for Aug. 12 at 8:30 a.m. ET (12:30 UTC). Markets will focus on headline and core inflation, shelter, energy, Treasury yields, DXY, gold, and equities."
 slug: "/news/catalysts/2026-08-12-bls-consumer-price-index-cpi-for-july-2026-preview"
 eventKey: "2026-08-12-bls-consumer-price-index-cpi-for-july-2026"
 event: "BLS — Consumer Price Index (CPI) for July 2026"
@@ -13,7 +13,7 @@ lastReviewed: "2026-08-11"
 status: "published"
 category: "USD Impact Catalyst Brief"
 statusLabel: "scheduled-confirmed"
-summary: "BLS has scheduled the Consumer Price Index (CPI) for July 2026 to be published on 2026-08-12 at 8:30 AM Eastern Time (12:30 UTC). The timing and embargo are confirmed on BLS pages and the FRED series lists the same next-release date. Markets will parse headline vs. core prints and key component breadth (shelter, energy, used cars/medical) — moves in the US dollar, Treasury yields and risk assets could be material if totals surprise consensus."
+summary: "BLS has scheduled the Consumer Price Index (CPI) for July 2026 to be published on 2026-08-12 at 8:30 AM Eastern Time (12:30 UTC). The BLS release page confirms the timing, and the FRED series lists the same next-release date. Markets will parse headline vs. core prints and key component breadth (shelter, energy, used cars/medical) — moves in the US dollar, Treasury yields and risk assets could be material if totals surprise consensus."
 assets:
   - "DXY"
   - "U.S. rates"
@@ -26,12 +26,7 @@ verifiedFacts:
     sourceIds:
       - "bls-cpi-newsrelease"
       - "bls-cpi-home"
-  - statement: "The BLS news‑release materials (PDF/HTML) explicitly indicate the July 2026 CPI release timing and that the news release will be published at the stated time (embargoed until release time)."
-    verification: "verified-primary"
-    sourceIds:
-      - "bls-cpi-pdf"
-      - "bls-cpi-newsrelease"
-  - statement: "The Federal Reserve Bank of St. Louis (FRED) CPI series page shows the 'Next Release Date' as Aug 12, 2026, confirming third‑party data providers’ scheduling of the BLS release."
+  - statement: "The Federal Reserve Bank of St. Louis (FRED) CPI series page shows the 'Next Release Date' as Aug 12, 2026, independently confirming the scheduled date."
     verification: "verified-primary"
     sourceIds:
       - "fred-cpi-series"
@@ -71,36 +66,18 @@ sources:
     url: "https://www.bls.gov/cpi"
     publishedAt: "2026-07-14"
     sourceType: "primary"
-  - id: "bls-cpi-pdf"
-    title: "Consumer Price Index - June 2026 (PDF)"
-    publisher: "U.S. Bureau of Labor Statistics"
-    url: "https://www.bls.gov/news.release/pdf/cpi.pdf?stream=future"
-    publishedAt: "2026-07-14"
-    sourceType: "primary"
-  - id: "bls-schedule-july"
-    title: "Schedule of Selected Releases for July 2026"
-    publisher: "U.S. Bureau of Labor Statistics"
-    url: "https://www.bls.gov/schedule/2026/07_sched.htm"
-    publishedAt: "2026-02-18"
-    sourceType: "primary"
   - id: "fred-cpi-series"
     title: "Consumer Price Index for All Urban Consumers: All Items in U.S. City Average (CUUS0000SA0) | FRED | St. Louis Fed"
     publisher: "Federal Reserve Bank of St. Louis"
     url: "https://fred.stlouisfed.org/series/CUUS0000SA0"
     publishedAt: "2026-07-14"
     sourceType: "primary"
-  - id: "ap-weekahead"
-    title: "Wall Street week ahead: inflation, retail sales updates | AP News"
-    publisher: "Associated Press"
-    url: "https://apnews.com/article/1cf6047f812b3e1f151781f5722d97b7"
-    publishedAt: "2026-08-07"
-    sourceType: "reporting"
 complianceNote: "Educational and informational only. This content is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset."
 ---
 
 Confirmed timing (primary sources)
 
-- BLS has scheduled the Consumer Price Index (CPI) for July 2026 to be published on 2026-08-12 at 8:30 AM Eastern Time (which is 12:30 UTC). This timing and the standard embargo language are shown directly on BLS release pages and the PDF release package. (See sources: BLS news release / BLS CPI home / BLS PDF.)
+- BLS has scheduled the Consumer Price Index (CPI) for July 2026 to be published on 2026-08-12 at 8:30 AM Eastern Time (which is 12:30 UTC). The June 2026 BLS CPI release states this next-release date and time directly. (See sources: BLS news release / BLS CPI home.)
 
 What this means for markets (pre‑event, conditional)
 
@@ -109,8 +86,7 @@ What this means for markets (pre‑event, conditional)
 
 Operational notes
 
-- Confirm you are watching the release at 08:30 AM ET / 12:30 UTC on 2026-08-12. The BLS release is embargoed until publication; use the official BLS release pages and the BLS PDF for the definitive tables and component contributions.
+- Confirm you are watching the release at 08:30 AM ET / 12:30 UTC on 2026-08-12. Use the official BLS release page for the definitive tables and component contributions once published.
 - If you need market reaction summaries (quotes, intraday moves), those are reported by market news services after the release; use multiple reporting sources to triangulate market moves.
 
 Sources (primary and reporting) are listed in the source ledger above. No trading recommendations are provided — the brief is a pre‑event, conditional checklist and verified timing confirmation.
-

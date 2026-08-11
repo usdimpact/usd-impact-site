@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Inspect latest daily workflow run
         id: health
@@ -37,7 +37,7 @@ jobs:
             --workflow "$WORKFLOW_NAME" \
             --branch main \
             --limit 1 \
-            --json databaseId,status,conclusion,createdAt,url,event)"
+            --json databaseId,status,conclusion,createdAt,updatedAt,url,event)"
 
           if [ "$(jq length <<< "$run_json")" -ne 1 ]; then
             echo "No recent Daily USD Impact workflow run was found." > daily-health-report.md
@@ -48,13 +48,14 @@ jobs:
           status="$(jq -r '.[0].status' <<< "$run_json")"
           conclusion="$(jq -r '.[0].conclusion // "unknown"' <<< "$run_json")"
           created_at="$(jq -r '.[0].createdAt' <<< "$run_json")"
+          updated_at="$(jq -r '.[0].updatedAt // .[0].createdAt' <<< "$run_json")"
           run_url="$(jq -r '.[0].url' <<< "$run_json")"
           event="$(jq -r '.[0].event' <<< "$run_json")"
           expected_date="${created_at:0:10}"
 
           now_epoch="$(date -u +%s)"
-          created_epoch="$(date -u -d "$created_at" +%s)"
-          age_seconds="$((now_epoch - created_epoch))"
+          updated_epoch="$(date -u -d "$updated_at" +%s)"
+          age_seconds="$((now_epoch - updated_epoch))"
           max_age_seconds="$((MAX_AGE_HOURS * 3600))"
 
           {
@@ -66,7 +67,8 @@ jobs:
             echo "- Status: \`$status\`"
             echo "- Conclusion: \`$conclusion\`"
             echo "- Started: \`$created_at\`"
-            echo "- Age: $((age_seconds / 60)) minutes"
+            echo "- Last updated: \`$updated_at\`"
+            echo "- Recovery age: $((age_seconds / 60)) minutes"
           } > daily-health-report.md
 
           if [ "$status" != "completed" ]; then

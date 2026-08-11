@@ -122,5 +122,8 @@ const repairHandler = await readFile(new URL('../api/daily-news-background.js', 
 assert.match(repairHandler, /stale daily-development source/i);
 assert.match(repairHandler, /unsupported absence claim/i);
 assert.match(repairHandler, /current Treasury refunding or auction source/i);
+assert.match(repairHandler, /fewer than three grounded URLs/i);
+assert.match(repairHandler, /Keep at least three distinct permitted sources/i);
+assert.match(repairHandler, /minItems: 3/);
 
 console.log('daily news editorial validation tests pass');

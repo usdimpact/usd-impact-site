@@ -16,6 +16,7 @@ const staticRoutes = new Map([
   ['/news', path.resolve('src/pages/news/index.astro')],
   ['/score', path.resolve('src/pages/score.astro')],
   ['/reports', path.resolve('src/pages/reports/index.astro')],
+  ['/audiobook/read-the-dollar-first', path.resolve('src/pages/audiobook/read-the-dollar-first.astro')],
   ['/account', path.resolve('src/pages/account/index.astro')],
   ['/account/sign-in', path.resolve('src/pages/account/sign-in/index.astro')],
   ['/auth/confirm', path.resolve('src/pages/auth/confirm/index.astro')],

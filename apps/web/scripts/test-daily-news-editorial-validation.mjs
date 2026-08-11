@@ -116,11 +116,18 @@ assert.doesNotMatch(metaDescription, /\bAddit$/);
 const sourceHandler = await readFile(new URL('../api/daily-news-source.js', import.meta.url), 'utf8');
 assert.match(sourceHandler, /check the official current-date release pages/i);
 assert.match(sourceHandler, /current quarterly refunding release/i);
+assert.match(sourceHandler, /Never retain the claim merely to satisfy the 3-highlight minimum/i);
+assert.match(sourceHandler, /confirm the summary is at most 700 characters/i);
 assert.match(sourceHandler, /include every Employment Situation, CPI, PCE, and FOMC event/i);
 
 const repairHandler = await readFile(new URL('../api/daily-news-background.js', import.meta.url), 'utf8');
 assert.match(repairHandler, /stale daily-development source/i);
 assert.match(repairHandler, /unsupported absence claim/i);
 assert.match(repairHandler, /current Treasury refunding or auction source/i);
+assert.match(repairHandler, /Never retain an unsupported claim merely to satisfy the highlight minimum/i);
+assert.match(repairHandler, /fail closed rather than inventing a replacement/i);
+assert.match(repairHandler, /fewer than three grounded URLs/i);
+assert.match(repairHandler, /Keep at least three distinct permitted sources/i);
+assert.match(repairHandler, /minItems: 3/);
 
 console.log('daily news editorial validation tests pass');

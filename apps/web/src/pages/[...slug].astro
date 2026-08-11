@@ -56,6 +56,16 @@ const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref =
     </div>
   </section>
   <main class="container">
+    {isBookPage && (
+      <section class="book-audio-promo card" aria-labelledby="book-audio-heading">
+        <div>
+          <div class="eyebrow">English audiobook</div>
+          <h2 id="book-audio-heading">Listen to <em>Read the Dollar First</em></h2>
+          <p>The complete four-hour English edition is available in 20 human-reviewed chapters, with saved listening progress.</p>
+        </div>
+        <a class="button primary" href="/audiobook/read-the-dollar-first/">Open the audiobook player</a>
+      </section>
+    )}
     {entry.data.visual && <FrameworkVisual src={entry.data.visual} alt={entry.data.title} />}
     <Content />
     {isBookPage && <WaitlistForm />}

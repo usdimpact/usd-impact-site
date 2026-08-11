@@ -120,6 +120,8 @@ const OUTPUT_SCHEMA = {
     },
     sources: {
       type: 'array',
+      minItems: 3,
+      maxItems: 24,
       items: {
         type: 'object',
         additionalProperties: false,
@@ -311,7 +313,7 @@ function applySystemicCatalystPolicy({ event, eventType, importance, impactScore
 function validateAndNormalizeDraft(draft, groundedUrls, editionDate, generatedAt) {
   if (!draft || typeof draft !== 'object' || Array.isArray(draft)) throw new Error('OpenAI output must be an object');
   const rawSources = Array.isArray(draft.sources) ? draft.sources : [];
-  if (rawSources.length < 2 || rawSources.length > 24) throw new Error('The bundle must contain 2-24 sources');
+  if (rawSources.length < 3 || rawSources.length > 24) throw new Error('The bundle must contain 3-24 sources');
 
   const sourceIds = new Set();
   const sourceUrls = new Set();
@@ -465,6 +467,7 @@ Research the most material developments published or occurring in the prior 36 h
 
 Rules:
 - Use web search extensively and open the underlying pages.
+- Return at least three distinct grounded sources, including at least one authoritative primary source.
 - Before relying on calendar or older reference material, check the official current-date release pages for BLS, BEA, EIA, Treasury, and the Federal Reserve as applicable. Prefer a released current outcome over a schedule page when the outcome is already available.
 - Prefer authoritative primary sources. A highlight without a primary source must use at least two independent high-quality reporting organizations.
 - Never present an older announcement as if it occurred in the prior 36 hours. The cited publication date must support every recency claim, and a daily-development highlight must include a source published within the prior 14 days.
@@ -571,7 +574,7 @@ export default async function handler(request, response) {
   try {
     const openAiResponse = await openAiRequest(openAiApiKey, model, date, timeoutMs);
     const groundedUrls = collectGroundedUrls(openAiResponse);
-    if (groundedUrls.size < 2) throw new Error('OpenAI web search returned fewer than two grounded source URLs');
+    if (groundedUrls.size < 3) throw new Error('OpenAI web search returned fewer than three grounded source URLs');
     const outputText = collectOpenAiText(openAiResponse);
     if (!outputText) throw new Error('OpenAI returned no structured output text');
     let draft;

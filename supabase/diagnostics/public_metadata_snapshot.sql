@@ -51,7 +51,10 @@ relations as (
           coalesce(
             relation.relacl,
             pg_catalog.acldefault(
-              case when relation.relkind = 'S' then 'S' else 'r' end,
+              case
+                when relation.relkind = 'S' then 's'::"char"
+                else 'r'::"char"
+              end,
               relation.relowner
             )
           )

@@ -13,6 +13,7 @@ const urls = {
   reuters: 'https://www.reuters.com/markets/us/jobs-preview-2026-08-06/',
   ap: 'https://apnews.com/article/jobs-economy-2026-preview',
 };
+const inventedBlsUrl = 'https://www.bls.gov/news.release/empsit.nr0.htm';
 
 const candidate = {
   phase: 'preview',
@@ -57,6 +58,19 @@ function openAiResponse(bundle = draft, grounded = Object.values(urls)) {
       { type: 'web_search_call', action: { sources: grounded.map((url) => ({ type: 'url', url })) } },
       { type: 'message', content: [{ type: 'output_text', text: JSON.stringify(bundle), annotations: [] }] },
     ],
+  };
+}
+
+function contentRepairDraft(bundle = draft) {
+  return {
+    publishable: bundle.publishable,
+    holdReason: bundle.holdReason,
+    statusLabel: bundle.statusLabel,
+    summary: bundle.summary,
+    verifiedFacts: bundle.verifiedFacts,
+    transmissionChannels: bundle.transmissionChannels,
+    whatToWatch: bundle.whatToWatch,
+    body: bundle.body,
   };
 }
 
@@ -107,6 +121,13 @@ try {
   assert.equal(providerBody.tool_choice, 'required');
   assert.ok(providerBody.include.includes('web_search_call.action.sources'));
   assert.ok(providerBody.tools[0].filters.allowed_domains.includes('bls.gov'));
+  assert.match(providerBody.input, /Copy every sources\[\]\.url exactly/);
+  assert.equal(providerBody.text.format.schema.properties.verifiedFacts.minItems, 2);
+  assert.equal(providerBody.text.format.schema.properties.verifiedFacts.maxItems, 6);
+  assert.equal(providerBody.text.format.schema.properties.transmissionChannels.minItems, 2);
+  assert.equal(providerBody.text.format.schema.properties.whatToWatch.minItems, 3);
+  assert.equal(providerBody.text.format.schema.properties.whatToWatch.maxItems, 6);
+  assert.match(providerBody.input, /Every verified fact must cite either an authoritative primary source or at least two independent reporting domains/);
 
   assert.equal((await invoke(request({ token: '' }))).status, 401);
   assert.equal((await invoke(request({ method: 'GET' }))).status, 405);
@@ -114,6 +135,97 @@ try {
 
   globalThis.fetch = async () => new Response(JSON.stringify(openAiResponse(draft, [urls.reuters, urls.ap])), { status: 200 });
   assert.equal((await invoke(request())).status, 502);
+
+  const ungroundedDraft = {
+    ...draft,
+    sources: draft.sources.map((source) => (
+      source.id === 'bls-schedule' ? { ...source, url: inventedBlsUrl } : source
+    )),
+  };
+  const repairedLedger = {
+    publishable: true,
+    holdReason: '',
+    sources: draft.sources.map(({ id, url }) => ({ id, url })),
+    verifiedFactSourceIds: draft.verifiedFacts.map(({ sourceIds }) => sourceIds),
+  };
+  const repairCalls = [];
+  globalThis.fetch = async (url, options) => {
+    repairCalls.push({ url: String(url), options });
+    const payload = repairCalls.length === 1
+      ? openAiResponse(ungroundedDraft)
+      : openAiResponse(repairedLedger, []);
+    return new Response(JSON.stringify(payload), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const repaired = await invoke(request());
+  assert.equal(repaired.status, 200);
+  assert.equal(repaired.json.sources[0].url, urls.bls);
+  assert.equal(repairCalls.length, 2);
+  const repairBody = JSON.parse(repairCalls[1].options.body);
+  assert.equal(repairBody.model, 'gpt-5-mini');
+  assert.equal(repairBody.tools, undefined);
+  assert.equal(repairBody.max_output_tokens, 4_000);
+  assert.ok(repairBody.input.includes(urls.bls));
+  assert.match(repairBody.input, /Use only source IDs already present/);
+
+  const inventedLedger = {
+    ...repairedLedger,
+    sources: repairedLedger.sources.map((source) => (
+      source.id === 'bls-schedule' ? { ...source, url: inventedBlsUrl } : source
+    )),
+  };
+
+  let failedRepairCalls = 0;
+  globalThis.fetch = async () => {
+    failedRepairCalls += 1;
+    const payload = failedRepairCalls === 1 ? openAiResponse(ungroundedDraft) : openAiResponse(inventedLedger, []);
+    return new Response(JSON.stringify(payload), { status: 200 });
+  };
+  assert.equal((await invoke(request())).status, 502);
+  assert.equal(failedRepairCalls, 2);
+
+  const shortWatchDraft = { ...draft, whatToWatch: ['Payroll growth'] };
+  let watchRepairCalls = 0;
+  const watchRepairRequests = [];
+  globalThis.fetch = async (url, options) => {
+    watchRepairCalls += 1;
+    watchRepairRequests.push({ url: String(url), options });
+    const payload = watchRepairCalls === 1
+      ? openAiResponse(shortWatchDraft)
+      : openAiResponse(contentRepairDraft(draft), []);
+    return new Response(JSON.stringify(payload), { status: 200 });
+  };
+  const watchRepaired = await invoke(request());
+  assert.equal(watchRepaired.status, 200);
+  assert.equal(watchRepaired.json.whatToWatch.length, 3);
+  assert.equal(watchRepairCalls, 2);
+  const watchRepairBody = JSON.parse(watchRepairRequests[1].options.body);
+  assert.equal(watchRepairBody.model, 'gpt-5-mini');
+  assert.equal(watchRepairBody.tools, undefined);
+  assert.equal(watchRepairBody.text.format.name, 'usd_impact_catalyst_content_repair');
+  assert.match(watchRepairBody.input, /source ledger below is immutable/i);
+
+  const weakFactDraft = {
+    ...draft,
+    verifiedFacts: [
+      ...draft.verifiedFacts,
+      {
+        statement: 'One reporting source described additional market sensitivity.',
+        sourceIds: ['reuters-preview'],
+      },
+    ],
+  };
+  let factRepairCalls = 0;
+  globalThis.fetch = async () => {
+    factRepairCalls += 1;
+    const payload = factRepairCalls === 1
+      ? openAiResponse(weakFactDraft)
+      : openAiResponse(contentRepairDraft(draft), []);
+    return new Response(JSON.stringify(payload), { status: 200 });
+  };
+  const factRepaired = await invoke(request());
+  assert.equal(factRepaired.status, 200);
+  assert.equal(factRepaired.json.verifiedFacts.length, 2);
+  assert.equal(factRepairCalls, 2);
 
   console.log('catalyst brief source function tests pass');
 } finally {

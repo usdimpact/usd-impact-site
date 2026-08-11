@@ -18,7 +18,7 @@ const routes = {
 };
 const pagePath = (route) => path.join(distRoot, route.replace(/^\//, ''), 'index.html');
 const failures = [];
-const requiredRoutes = ['/start-here','/book/read-the-dollar-first',routes.dollarLesson,routes.fxLesson,routes.dxyLesson,routes.broadLesson,routes.regimeLesson,routes.goldLesson,routes.wtiLesson,routes.lngLesson,routes.equitiesLesson,routes.bitcoinLesson,routes.currencyRiskLesson,'/framework/dollar-transmission-chain','/lead-magnets/weekly-dollar-regime-checklist','/privacy','/terms','/refund-policy'];
+const requiredRoutes = ['/start-here','/book/read-the-dollar-first','/audiobook/read-the-dollar-first',routes.dollarLesson,routes.fxLesson,routes.dxyLesson,routes.broadLesson,routes.regimeLesson,routes.goldLesson,routes.wtiLesson,routes.lngLesson,routes.equitiesLesson,routes.bitcoinLesson,routes.currencyRiskLesson,'/framework/dollar-transmission-chain','/lead-magnets/weekly-dollar-regime-checklist','/privacy','/terms','/refund-policy'];
 for (const route of requiredRoutes) if (!fs.existsSync(pagePath(route))) failures.push(`Missing published route: ${route}.`);
 for (const output of ['news/index.html','news/2026-07-22/index.html','news/feed.xml','news/latest.json']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing Daily USD Impact output: /${output}.`);
 for (const output of ['reports/index.html','reports/weekly/2026-07-31/index.html']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing USD Impact Reports output: /${output}.`);
@@ -50,6 +50,14 @@ if (fs.existsSync(productPage)) {
   const html = fs.readFileSync(productPage, 'utf8');
   for (const requiredText of ['Guided Interactive Edition', 'USD 39.00', 'USD 49.00', 'one-time', '14-day Refund Policy', 'ongoing access']) {
     if (!html.includes(requiredText)) failures.push(`Product page is missing domain-review text: ${requiredText}.`);
+  }
+}
+
+const audiobookPage = pagePath('/audiobook/read-the-dollar-first');
+if (fs.existsSync(audiobookPage)) {
+  const html = fs.readFileSync(audiobookPage, 'utf8');
+  for (const requiredText of ['data-audiobook-player', '20 tracks', 'Chapter 13 - What to Watch from Here', 'n0w53ba4ottrav2w.public.blob.vercel-storage.com']) {
+    if (!html.includes(requiredText)) failures.push(`Audiobook page is missing required player content: ${requiredText}.`);
   }
 }
 

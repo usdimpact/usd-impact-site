@@ -208,6 +208,9 @@ try {
   assert.equal(requestBody.tools[0].type, 'web_search');
   assert.equal(requestBody.text.format.type, 'json_schema');
   assert.equal(requestBody.text.format.strict, true);
+  assert.equal(requestBody.text.format.schema.properties.sources.minItems, 3);
+  assert.equal(requestBody.text.format.schema.properties.sources.maxItems, 24);
+  assert.match(requestBody.input, /at least three distinct grounded sources/i);
   assert.ok(requestBody.tools[0].filters.allowed_domains.includes('federalreserve.gov'));
   assert.ok(requestBody.tools[0].filters.allowed_domains.includes('reuters.com'));
 
@@ -229,6 +232,20 @@ try {
   const unconfigured = await invoke(request());
   assert.equal(unconfigured.status, 503);
   process.env.OPENAI_API_KEY = 'sk-test';
+
+  const twoSourceBundle = draft({
+    sources: [
+      { id: 'fed-release', title: 'Federal Reserve policy communication', url: sourceUrls.fed, publishedAt: '2026-07-23' },
+      { id: 'eia-weekly', title: 'Weekly Petroleum Status Report', url: sourceUrls.eia, publishedAt: '2026-07-23' },
+    ],
+  });
+  twoSourceBundle.highlights[2].sourceIds = ['fed-release'];
+  globalThis.fetch = async () => providerResponse(openAiResponse(twoSourceBundle, [
+    sourceUrls.fed,
+    sourceUrls.eia,
+    sourceUrls.reuters,
+  ]));
+  assert.equal((await invoke(request())).status, 502);
 
   globalThis.fetch = async () => providerResponse(openAiResponse(
     draft({

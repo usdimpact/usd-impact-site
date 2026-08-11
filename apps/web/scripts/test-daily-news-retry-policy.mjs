@@ -12,6 +12,18 @@ assert.equal(isRetryableGroundingFailure({
 assert.equal(isRetryableGroundingFailure({
   repairValidationReason: 'Highlight 1 requires one primary source or two independent reporting domains',
 }), true);
+assert.equal(isRetryableGroundingFailure({
+  initialValidationReason: 'Highlight 1 references only stale daily-development sources',
+}), true);
+assert.equal(isRetryableGroundingFailure({
+  initialValidationReason: 'Highlight 2 makes an unsupported absence claim',
+}), true);
+assert.equal(isRetryableGroundingFailure({
+  repairValidationReason: 'Catalyst 1 requires a current Treasury refunding or auction source',
+}), true);
+assert.equal(isRetryableGroundingFailure({
+  repairValidationReason: 'Upcoming systemic catalyst mentioned but missing from catalysts: labor',
+}), true);
 assert.equal(isRetryableGroundingFailure({ error: 'Unauthorized.' }), false);
 assert.equal(isRetryableGroundingFailure({ error: 'Daily news background generation is not configured.' }), false);
 assert.equal(isRetryableGroundingFailure({ error: 'OpenAI structured output was not valid JSON' }), false);

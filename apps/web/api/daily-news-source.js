@@ -1,4 +1,8 @@
 import { timingSafeEqual } from 'node:crypto';
+import {
+  buildMetaDescription,
+  validateEditorialBundle,
+} from '../src/lib/daily-news-editorial-validation.js';
 
 const OPENAI_RESPONSES_API = 'https://api.openai.com/v1/responses';
 const DEFAULT_MODEL = 'gpt-5';
@@ -116,6 +120,8 @@ const OUTPUT_SCHEMA = {
     },
     sources: {
       type: 'array',
+      minItems: 3,
+      maxItems: 24,
       items: {
         type: 'object',
         additionalProperties: false,
@@ -307,7 +313,7 @@ function applySystemicCatalystPolicy({ event, eventType, importance, impactScore
 function validateAndNormalizeDraft(draft, groundedUrls, editionDate, generatedAt) {
   if (!draft || typeof draft !== 'object' || Array.isArray(draft)) throw new Error('OpenAI output must be an object');
   const rawSources = Array.isArray(draft.sources) ? draft.sources : [];
-  if (rawSources.length < 2 || rawSources.length > 24) throw new Error('The bundle must contain 2-24 sources');
+  if (rawSources.length < 3 || rawSources.length > 24) throw new Error('The bundle must contain 3-24 sources');
 
   const sourceIds = new Set();
   const sourceUrls = new Set();
@@ -424,6 +430,14 @@ function validateAndNormalizeDraft(draft, groundedUrls, editionDate, generatedAt
 
   const assets = [...new Set(highlights.flatMap((highlight) => highlight.assets))];
   const summary = requiredString(draft, 'summary', 700);
+  const body = requiredString(draft, 'body', 9000);
+  validateEditorialBundle({
+    editionDate,
+    sources,
+    highlights,
+    catalysts,
+    summary,
+  });
   const titleDate = new Intl.DateTimeFormat('en-US', {
     timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric',
   }).format(new Date(`${editionDate}T12:00:00Z`));
@@ -431,7 +445,7 @@ function validateAndNormalizeDraft(draft, groundedUrls, editionDate, generatedAt
     date: editionDate,
     title: `Daily USD Impact — ${titleDate}`,
     metaTitle: `Daily USD Impact — ${titleDate} | USD Impact`,
-    metaDescription: summary.slice(0, 300),
+    metaDescription: buildMetaDescription(summary),
     generatedAt,
     lastReviewed: editionDate,
     marketRegime: requiredString(draft, 'marketRegime', 180),
@@ -442,7 +456,7 @@ function validateAndNormalizeDraft(draft, groundedUrls, editionDate, generatedAt
     catalysts,
     sources: sources.map(({ domain, ...source }) => source),
     complianceNote: COMPLIANCE_NOTE,
-    body: requiredString(draft, 'body', 9000),
+    body,
   };
 }
 
@@ -453,7 +467,11 @@ Research the most material developments published or occurring in the prior 36 h
 
 Rules:
 - Use web search extensively and open the underlying pages.
+- Return at least three distinct grounded sources, including at least one authoritative primary source.
+- Before relying on calendar or older reference material, check the official current-date release pages for BLS, BEA, EIA, Treasury, and the Federal Reserve as applicable. Prefer a released current outcome over a schedule page when the outcome is already available.
 - Prefer authoritative primary sources. A highlight without a primary source must use at least two independent high-quality reporting organizations.
+- Never present an older announcement as if it occurred in the prior 36 hours. The cited publication date must support every recency claim, and a daily-development highlight must include a source published within the prior 14 days.
+- Do not create a highlight whose main claim is that no new release, decision, or source was found. Omit unsupported absence claims and continue researching material verified developments.
 - Use only source URLs from the web search results. Never invent or reconstruct a URL.
 - Do not state an exact market price unless a trusted source provides the price and a clear timestamp or session date.
 - Separate verified fact from conditional cross-asset interpretation.
@@ -461,6 +479,10 @@ Rules:
 - Do not force coverage of an asset when no material verified development exists.
 - Keep source IDs lowercase and hyphenated. Every highlight and catalyst must reference source IDs included in the source ledger.
 - Every catalyst date must be confirmed by an authoritative primary schedule source and fall between ${editionDate} and ${addUtcDays(editionDate, 7)} inclusive.
+- Check the official release calendars (BLS for Employment Situation and CPI, BEA for PCE, and the Federal Reserve for FOMC) and include every Employment Situation, CPI, PCE, and FOMC event that falls inside the seven-day catalyst window. If a near-term systemic event is mentioned in the summary or highlights, it must also appear in catalysts.
+- For quarterly refunding or 3-year, 10-year, and 30-year refunding auctions, use the current quarterly refunding release rather than an earlier quarter's tentative schedule, and verify the exact auction date and announced size.
+- Before returning the bundle, inspect every highlight for Treasury refunding, 3-year, 10-year, or 30-year auction language. If that highlight does not cite a current Treasury refunding or auction source published within the prior 14 days, remove the entire highlight and every related sentence from the summary and body. Never retain the claim merely to satisfy the 3-highlight minimum; research a different fully supported development instead.
+- Before returning the bundle, confirm the summary is at most 700 characters, every headline is at most 140 characters, every development and highlight whyItMatters is at most 700 characters, every catalyst whyItMatters is at most 500 characters, and the body is at most 9,000 characters.
 - Classify every catalyst with an eventType, importance, 1-5 impactScore, and concise whyItMatters explanation. Score 4 or 5 only for genuinely high-impact events that could materially affect at least two covered assets.
 - Reserve high 4-5 scores for decisions or releases such as major central-bank decisions, CPI/PCE, payrolls, material Treasury liquidity events, OPEC-level supply decisions, or exceptionally material index-heavy corporate events. Routine releases should remain medium or low. The server derives extra-publication eligibility deterministically.
 - The body should be concise Markdown with an executive view, key drivers, catalysts, risks, and a watchlist. Do not repeat raw source URLs in the body.`;
@@ -554,7 +576,7 @@ export default async function handler(request, response) {
   try {
     const openAiResponse = await openAiRequest(openAiApiKey, model, date, timeoutMs);
     const groundedUrls = collectGroundedUrls(openAiResponse);
-    if (groundedUrls.size < 2) throw new Error('OpenAI web search returned fewer than two grounded source URLs');
+    if (groundedUrls.size < 3) throw new Error('OpenAI web search returned fewer than three grounded source URLs');
     const outputText = collectOpenAiText(openAiResponse);
     if (!outputText) throw new Error('OpenAI returned no structured output text');
     let draft;

@@ -9,6 +9,11 @@ const RETRYABLE_PATTERNS = [
   /insufficient grounded sources/i,
   /bundle must contain 3-7 highlights/i,
   /requires one primary source or two independent reporting domains/i,
+  /dated after the edition/i,
+  /stale daily-development source/i,
+  /unsupported absence claim/i,
+  /current Treasury refunding or auction source/i,
+  /upcoming systemic catalyst mentioned but missing/i,
 ];
 
 export function isRetryableGroundingFailure(payload) {

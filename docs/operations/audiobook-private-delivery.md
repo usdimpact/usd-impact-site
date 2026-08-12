@@ -16,7 +16,7 @@ Scope: Issue #121, the complete English audiobook for *Read the Dollar First*. T
 
 ## Private storage layout
 
-Create or reuse a **private** Supabase Storage bucket named `library-pass-assets`. The bucket must not be public. Upload the audio masters below beneath:
+Create or reuse a **private** Supabase Storage bucket named `library-pass-assets`. The bucket must not be public. Migration `20260812104532_create_private_audiobook_bucket.sql` fixes its maximum object size at 40 MiB, permits only `audio/mpeg`, and intentionally creates no browser-access policy. Upload the audio masters below beneath:
 
 `audiobook/read-the-dollar-first/v1/`
 

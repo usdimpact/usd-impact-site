@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { readTheDollarFirstAudiobook } from '../src/data/read-the-dollar-first-audiobook.js';
 import {
   AUDIOBOOK_SIGNED_URL_TTL_SECONDS,
@@ -103,5 +104,14 @@ await assert.rejects(
   createSignedAudiobookTrackUrl({ slug: 'missing', config }),
   (error) => error.code === 'INVALID_AUDIOBOOK_TRACK' && error.status === 404,
 );
+
+const bucketMigration = await readFile(
+  new URL('../../../supabase/migrations/20260812104532_create_private_audiobook_bucket.sql', import.meta.url),
+  'utf8',
+);
+assert.match(bucketMigration, /'library-pass-assets'/);
+assert.match(bucketMigration, /public,\s*file_size_limit,\s*allowed_mime_types/s);
+assert.match(bucketMigration, /false,\s*41943040,\s*array\['audio\/mpeg'\]::text\[\]/s);
+assert.doesNotMatch(bucketMigration, /create\s+policy|to\s+(?:anon|authenticated)/i);
 
 console.log('Private audiobook manifest and signed-delivery tests passed.');

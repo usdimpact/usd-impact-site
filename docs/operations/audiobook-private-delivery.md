@@ -1,6 +1,6 @@
 # Library Pass audiobook private-delivery runbook
 
-Status: source implementation prepared; private asset migration and Preview verification are still required.
+Status: source implementation and the development-only private bucket are prepared; asset upload/read-back and authenticated Preview verification are still required.
 
 Scope: Issue #121, the complete English audiobook for *Read the Dollar First*. This runbook does not authorize a Production deployment, a database migration, a billing change, an asset upload, or deletion of the legacy public objects.
 
@@ -47,12 +47,27 @@ Do not rename, recompress, retag, or otherwise transform these frozen masters du
 
 ## Authorized migration procedure
 
-Perform these steps only after explicit approval for the target Supabase project and asset upload:
+Perform these steps only after explicit approval for the target Supabase project and asset upload. The repository command defaults to a local-only dry run and hard-fails unless an executing operator confirms both the approved development project name and ref:
+
+```bash
+cd apps/web
+npm run audiobook:storage -- --source-dir=/absolute/path/to/frozen-masters
+
+SUPABASE_URL=https://ycstrcvshdluovtuasjc.supabase.co \
+SUPABASE_SECRET_KEY="$SUPABASE_SECRET_KEY" \
+npm run audiobook:storage -- \
+  --source-dir=/absolute/path/to/frozen-masters \
+  --confirm-project-name=usd-impact-development \
+  --confirm-project-ref=ycstrcvshdluovtuasjc \
+  --execute
+```
+
+The first command verifies all local byte lengths and SHA-256 digests without making a network request. The executing command refuses every other Supabase origin, never enables upsert, skips only pre-existing objects that already match the frozen manifest, and downloads every object through the authenticated private path for final byte/SHA-256 verification. Supply the secret through the environment already approved for the operator; never paste it into the command, source tree, logs, or chat.
 
 1. Confirm the target is the non-Production project used by the PR Preview.
 2. Confirm the bucket is named exactly `library-pass-assets` and its public setting is disabled.
-3. Upload all 20 frozen masters to the exact prefix above without overwriting unrelated objects.
-4. Read every uploaded object back through an authenticated administrative path and verify its byte length and SHA-256 against the table. A filename-only comparison is insufficient.
+3. Run the dry-run command against the frozen-master directory and require all 20 local checks to pass.
+4. Run the executing command. It uploads missing objects without overwrite semantics and reads every object back through an authenticated administrative path. Require the final `20 read back` result; a filename-only comparison is insufficient.
 5. Confirm the Preview function has its existing Supabase URL, publishable key, and secret key configuration. Do not expose the secret to client-side variables or logs.
 6. Deploy only to Preview and run the verification matrix below.
 

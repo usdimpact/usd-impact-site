@@ -40,6 +40,8 @@ assert.equal(isRetryableGroundingFailure({
   initialValidationReason: 'Highlight 1 requires a current Treasury refunding or auction source',
   repairValidationReason: 'Upcoming systemic catalyst mentioned but missing from catalysts: central-bank',
 }), true);
+assert.equal(isRetryableGroundingFailure({ repairValidationReason: 'Source treasury-old is not referenced by any highlight or catalyst' }), true);
+assert.equal(isRetryableGroundingFailure({ repairValidationReason: 'Body contains conversational assistant residue' }), true);
 assert.equal(isRetryableGroundingFailure({ error: 'Unauthorized.' }), false);
 assert.equal(isRetryableGroundingFailure({ error: 'Daily news background generation is not configured.' }), false);
 assert.equal(isRetryableGroundingFailure({ error: 'OpenAI structured output was not valid JSON' }), false);

@@ -437,6 +437,7 @@ function validateAndNormalizeDraft(draft, groundedUrls, editionDate, generatedAt
     highlights,
     catalysts,
     summary,
+    body,
   });
   const titleDate = new Intl.DateTimeFormat('en-US', {
     timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric',
@@ -478,12 +479,15 @@ Rules:
 - Use educational language: may, could, tends to, or is consistent with. Do not give investment advice, trading instructions, guaranteed outcomes, or personalized recommendations.
 - Do not force coverage of an asset when no material verified development exists.
 - Keep source IDs lowercase and hyphenated. Every highlight and catalyst must reference source IDs included in the source ledger.
+- Every source in the ledger must be referenced by at least one highlight or catalyst. Never pad the ledger with an unused source merely to reach the three-source minimum.
 - Every catalyst date must be confirmed by an authoritative primary schedule source and fall between ${editionDate} and ${addUtcDays(editionDate, 7)} inclusive.
 - Check the official release calendars (BLS for Employment Situation and CPI, BEA for PCE, and the Federal Reserve for FOMC) and include every Employment Situation, CPI, PCE, and FOMC event that falls inside the seven-day catalyst window.
 - Treat FOMC, Federal Reserve policy decision, or central-bank decision language as central-bank catalyst mentions; CPI, Consumer Price Index, PCE, or personal consumption expenditures language as inflation catalyst mentions; and Employment Situation, nonfarm payrolls, or payrolls language as labor catalyst mentions. If the summary or a schedule-focused highlight discusses any such upcoming or next event, include the matching catalyst backed by an authoritative primary schedule source. Otherwise remove the forward-looking mention.
 - For quarterly refunding or 3-year, 10-year, and 30-year refunding auctions, use the current quarterly refunding release rather than an earlier quarter's tentative schedule, and verify the exact auction date and announced size.
 - Before returning the bundle, inspect every highlight for Treasury refunding, 3-year, 10-year, or 30-year auction language. If that highlight does not cite a current Treasury refunding or auction source published within the prior 14 days, remove the entire highlight and every related sentence from the summary and body. Never retain the claim merely to satisfy the 3-highlight minimum; research a different fully supported development instead.
 - Before returning the bundle, confirm the summary is at most 700 characters, every headline is at most 140 characters, every development and highlight whyItMatters is at most 700 characters, every catalyst whyItMatters is at most 500 characters, and the body is at most 9,000 characters.
+- Apply the unsupported-absence and current-Treasury-source rules to the summary and body as well as the highlights. Do not claim that a release, decision, or source was not found.
+- Write the body as finished publication copy. Do not include assistant conversation, first-person offers, "If you want" sections, follow-up questions, or offers to rerun, expand, add, or provide more material.
 - Classify every catalyst with an eventType, importance, 1-5 impactScore, and concise whyItMatters explanation. Score 4 or 5 only for genuinely high-impact events that could materially affect at least two covered assets.
 - Reserve high 4-5 scores for decisions or releases such as major central-bank decisions, CPI/PCE, payrolls, material Treasury liquidity events, OPEC-level supply decisions, or exceptionally material index-heavy corporate events. Routine releases should remain medium or low. The server derives extra-publication eligibility deterministically.
 - The body should be concise Markdown with an executive view, key drivers, catalysts, risks, and a watchlist. Do not repeat raw source URLs in the body.`;

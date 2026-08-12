@@ -20,6 +20,8 @@ const RETRYABLE_PATTERNS = [
   /unsupported absence claim/i,
   /current Treasury refunding or auction source/i,
   /upcoming systemic catalyst mentioned but missing/i,
+  /not referenced by any highlight or catalyst/i,
+  /conversational assistant residue/i,
 ];
 
 export function isRetryableGroundingFailure(payload) {

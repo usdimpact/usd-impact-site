@@ -125,6 +125,33 @@ assert.throws(
   },
 );
 
+assert.throws(
+  () => validateEditorialBundle(bundle({
+    sources: [
+      source('bls-current', '2026-08-06'),
+      source('bls-calendar', '2026-06-10', 'https://www.bls.gov/schedule/2026/08_sched_list.htm'),
+      source('treasury-stale', '2026-05-06', staleTreasuryUrl),
+    ],
+    highlights: [
+      { headline: 'Current release', sourceIds: ['bls-current'] },
+      { headline: 'Payrolls are scheduled next', sourceIds: ['bls-calendar'] },
+      { headline: 'CPI is scheduled next', sourceIds: ['bls-calendar'] },
+    ],
+    catalysts: [
+      { event: 'BLS Employment Situation', sourceIds: ['bls-calendar'] },
+      { event: 'BLS Consumer Price Index (CPI)', sourceIds: ['bls-calendar'] },
+    ],
+    body: 'Quarterly refunding remains current. I did not identify another release.\n\nIf you want, I can rerun the search.',
+  })),
+  (error) => {
+    assert.match(error.message, /Source treasury-stale is not referenced by any highlight or catalyst/);
+    assert.match(error.message, /Body makes an unsupported absence claim/);
+    assert.match(error.message, /Body contains conversational assistant residue/);
+    assert.match(error.message, /Body requires a current Treasury refunding or auction source/);
+    return true;
+  },
+);
+
 const longSummary = 'Treasury supply remains important for rates and dollar liquidity. Payrolls and CPI are the next scheduled tests for the policy path, gold, Bitcoin, and U.S. equities. Additional conditional interpretation should not force a search description to end inside a word even when the complete summary is much longer than the metadata field.';
 const metaDescription = buildMetaDescription(longSummary, 170);
 assert.equal(metaDescription, 'Treasury supply remains important for rates and dollar liquidity. Payrolls and CPI are the next scheduled tests for the policy path, gold, Bitcoin, and U.S. equities.');
@@ -139,12 +166,15 @@ assert.match(sourceHandler, /confirm the summary is at most 700 characters/i);
 assert.match(sourceHandler, /include every Employment Situation, CPI, PCE, and FOMC event/i);
 assert.match(sourceHandler, /central-bank decision language as central-bank catalyst mentions/i);
 assert.match(sourceHandler, /Otherwise remove the forward-looking mention/i);
+assert.match(sourceHandler, /Never pad the ledger with an unused source/i);
+assert.match(sourceHandler, /Do not claim that a release, decision, or source was not found/i);
+assert.match(sourceHandler, /Do not include assistant conversation/i);
 
 const repairHandler = await readFile(new URL('../api/daily-news-background.js', import.meta.url), 'utf8');
 assert.match(repairHandler, /stale daily-development source/i);
 assert.match(repairHandler, /unsupported absence claim/i);
 assert.match(repairHandler, /current Treasury refunding or auction source/i);
-assert.match(repairHandler, /Never retain an unsupported claim merely to satisfy the highlight minimum/i);
+assert.match(repairHandler, /Never retain an unsupported claim or unused source merely to satisfy a minimum/i);
 assert.match(repairHandler, /fail closed rather than inventing a replacement/i);
 assert.match(repairHandler, /fewer than three grounded URLs/i);
 assert.match(repairHandler, /Keep at least three distinct permitted sources/i);
@@ -154,7 +184,10 @@ assert.match(repairHandler, /complete validation sweep/i);
 assert.match(repairHandler, /named error may be only the first defect/i);
 assert.match(repairHandler, /central-bank decision language as central-bank catalyst mentions/i);
 assert.match(repairHandler, /If no supported matching catalyst can be retained, remove the forward-looking mention/i);
-assert.match(repairHandler, /Re-scan every remaining highlight and catalyst/i);
+assert.match(repairHandler, /Re-scan the complete bundle/i);
+assert.match(repairHandler, /remove unused ledger padding/i);
+assert.match(repairHandler, /Remove every unsupported absence claim from highlights, summary, and body/i);
+assert.match(repairHandler, /Remove first-person offers/i);
 assert.match(repairHandler, /minItems: 3/);
 
 const groundedHandler = await readFile(new URL('../api/daily-news-grounded-background.js', import.meta.url), 'utf8');

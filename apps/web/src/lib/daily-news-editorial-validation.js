@@ -4,6 +4,7 @@ const MAX_DAILY_HIGHLIGHT_SOURCE_AGE_DAYS = 14;
 const SCHEDULE_FOCUSED_PATTERN = /\b(?:auction|calendar|scheduled|schedule|upcoming|watchlist)\b|\bnext (?:catalyst|decision|event|major|release|scheduled|test)\b/i;
 const UNSUPPORTED_ABSENCE_PATTERN = /\bno (?:new|current|official|primary(?:-source)?|material|relevant)[^.]{0,100}\b(?:available|found|identified|published|released)\b|\b(?:did not|does not) (?:find|identify|show)\b/i;
 const TREASURY_REFUNDING_PATTERN = /\bquarterly refunding\b|\brefunding auctions?\b|\b(?:3|10|30)[ -]?year (?:notes?|bonds?)(?: auctions?)?\b/i;
+const CONVERSATIONAL_RESIDUE_PATTERN = /(?:^|\n)\s*(?:#+\s*)?if you want\b|\bI can (?:add|check|expand|help|provide|re-?run)\b/i;
 
 const SYSTEMIC_CATALYST_RULES = [
   {
@@ -99,15 +100,21 @@ export function buildMetaDescription(summary, maxLength = 300) {
   return `${clean}…`;
 }
 
-export function validateEditorialBundle({ editionDate, sources, highlights, catalysts, summary }) {
+export function validateEditorialBundle({ editionDate, sources, highlights, catalysts, summary, body = '' }) {
   const edition = dateOnly(editionDate, 'Edition');
   const sourceById = new Map(sources.map((source) => [source.id, source]));
   const issues = [];
+  const referencedSourceIds = new Set(
+    [...highlights, ...catalysts].flatMap((item) => item?.sourceIds ?? []),
+  );
 
   for (const source of sources) {
     const published = dateOnly(source.publishedAt, `Source ${source.id}`);
     if (published.time > edition.time) {
       issues.push(`Source ${source.id} is dated after the edition`);
+    }
+    if (!referencedSourceIds.has(source.id)) {
+      issues.push(`Source ${source.id} is not referenced by any highlight or catalyst`);
     }
   }
 
@@ -139,6 +146,19 @@ export function validateEditorialBundle({ editionDate, sources, highlights, cata
       issues.push(`${context} requires a current Treasury refunding or auction source`);
     }
   });
+
+  for (const [context, text] of [['Summary', summary], ['Body', body]]) {
+    if (UNSUPPORTED_ABSENCE_PATTERN.test(text)) {
+      issues.push(`${context} makes an unsupported absence claim`);
+    }
+    if (CONVERSATIONAL_RESIDUE_PATTERN.test(text)) {
+      issues.push(`${context} contains conversational assistant residue`);
+    }
+    if (TREASURY_REFUNDING_PATTERN.test(text)
+      && !hasRecentSource(sources, edition, isTreasurySource)) {
+      issues.push(`${context} requires a current Treasury refunding or auction source`);
+    }
+  }
 
   issues.push(...upcomingSystemicCoverageIssues({ summary, highlights, catalysts }));
   if (issues.length > 0) throw new Error(issues.join('; '));

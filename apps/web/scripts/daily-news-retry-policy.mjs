@@ -1,12 +1,18 @@
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 
-const RETRYABLE_CODE = 'insufficient-grounded-sources';
+const RETRYABLE_CODES = new Set([
+  'insufficient-grounded-sources',
+  'ungrounded-source',
+]);
+const RETRYABLE_RESULT = 'retryable-grounding-failure';
 const RETRYABLE_PATTERNS = [
   /fewer than two grounded source urls/i,
   /fewer than two grounded urls/i,
   /at least two distinct grounded source urls/i,
   /insufficient grounded sources/i,
+  /not returned by OpenAI web search/i,
+  /cited URLs were not present in the grounded web-search results/i,
   /bundle must contain 3-7 highlights/i,
   /requires one primary source or two independent reporting domains/i,
   /dated after the edition/i,
@@ -18,7 +24,7 @@ const RETRYABLE_PATTERNS = [
 
 export function isRetryableGroundingFailure(payload) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return false;
-  if (payload.code === RETRYABLE_CODE) return true;
+  if (RETRYABLE_CODES.has(payload.code)) return true;
 
   const text = [
     payload.error,
@@ -48,7 +54,7 @@ async function main() {
   }
 
   if (isRetryableGroundingFailure(payload)) {
-    console.log(RETRYABLE_CODE);
+    console.log(RETRYABLE_RESULT);
     process.exit(0);
   }
   process.exit(1);

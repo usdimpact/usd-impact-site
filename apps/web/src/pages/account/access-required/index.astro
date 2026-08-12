@@ -3,13 +3,13 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 ---
 <BaseLayout
   title="Access required | USD Impact"
-  description="Review access requirements for the USD Impact Guided Interactive Edition."
+  description="Review access requirements for the USD Impact Library Pass."
 >
   <section class="hero account-hero">
     <div class="container">
-      <p class="eyebrow">Guided Interactive Edition</p>
-      <h1>Paid access required.</h1>
-      <p id="access-required-lead" class="lead">This account does not yet have access to the Guided Interactive Edition.</p>
+      <p class="eyebrow">USD Impact Library Pass</p>
+      <h1>Library Pass required.</h1>
+      <p id="access-required-lead" class="lead">This account does not yet have an active Library Pass.</p>
     </div>
   </section>
 
@@ -17,9 +17,9 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     <div class="container account-shell">
       <section class="card account-panel" aria-labelledby="access-required-heading">
         <h2 id="access-required-heading">Your access status</h2>
-        <p id="access-required-message">This account does not yet have access to the Guided Interactive Edition.</p>
+        <p id="access-required-message">This account does not yet have an active Library Pass.</p>
         <p>
-          The Guided Interactive Edition is tied to the verified account that owns the active purchase entitlement.
+          The Guided Interactive Edition and complete English audiobook are tied to the verified account that owns the eligible Library Pass entitlement.
           Browser state, email possession alone, and a checkout redirect do not grant access.
         </p>
         <div class="button-row account-actions">
@@ -33,7 +33,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   <script is:inline>
     const messages = Object.freeze({
-      missing: 'This account does not yet have access to the Guided Interactive Edition.',
+      missing: 'This account does not yet have an active Library Pass.',
       'missing-profile': 'The account profile is not ready for paid access.',
       suspended: 'Paid access is currently suspended for this account.',
       suspended_dispute: 'Paid access is suspended while a payment dispute is reviewed.',

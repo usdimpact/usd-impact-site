@@ -7,6 +7,7 @@ const files = {
   privacy: read('src/pages/privacy.md'),
   terms: read('src/pages/terms.md'),
   refund: read('src/pages/refund-policy.md'),
+  accessRequired: read('src/pages/account/access-required/index.astro'),
 };
 
 const failures = [];
@@ -26,8 +27,9 @@ requireText(files.product, 'Product page', [
   'ongoing access',
 ]);
 requireText(files.terms, 'Terms', ['SC Kela Leads SRL', '40790448', 'J38/820/2020', 'support@usd-impact.com']);
-requireText(files.refund, 'Refund Policy', ['14 calendar days', 'full refund', 'support@usd-impact.com', 'Paddle']);
-requireText(files.privacy, 'Privacy Notice', ['Paddle', 'Supabase', 'SC Kela Leads SRL', 'support@usd-impact.com']);
+requireText(files.refund, 'Refund Policy', ['Library Pass', 'Guided Interactive Edition', 'audiobook', '14 calendar days', 'full refund', 'support@usd-impact.com', 'Paddle']);
+requireText(files.privacy, 'Privacy Notice', ['Library Pass', 'private audiobook masters', 'Paddle', 'Supabase', 'SC Kela Leads SRL', 'support@usd-impact.com']);
+requireText(files.accessRequired, 'Access required page', ['Library Pass required', 'Guided Interactive Edition', 'complete English audiobook']);
 
 const privateAddressFragments = ['Doctor Hacman', 'Bl. 83', 'Sc. B', 'Ap. 9'];
 for (const [label, file] of Object.entries(files)) {

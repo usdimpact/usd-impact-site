@@ -1,4 +1,5 @@
 import {
+  createOwnSupportRequest,
   exportOwnAccount,
   readAccountAccessState,
   requestOwnAccountDeletion,
@@ -18,6 +19,7 @@ import {
   sendPasswordlessEmail,
   setSessionCookies,
 } from '../src/lib/supabase-auth.js';
+import { createPaddleCheckoutHandler } from '../src/lib/paddle-checkout-handler.js';
 
 function header(request, name) {
   const value = request.headers?.[name] ?? request.headers?.[name.toLowerCase()];
@@ -199,6 +201,12 @@ async function handleAccess(request, response) {
         productId: state.entitlement?.productId ?? null,
         state: state.entitlement?.state ?? null,
       },
+      checkout: state.checkout
+        ? {
+            status: state.checkout.status,
+            updatedAt: state.checkout.updatedAt,
+          }
+        : null,
     });
   } catch (error) {
     const safe = safeSupabaseError(error);
@@ -248,7 +256,37 @@ async function handleDelete(request, response) {
   }
 }
 
+async function handleSupport(request, response) {
+  if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
+  if (!requireSameSiteJson(request, response)) return;
+
+  const accessToken = readSessionAccessToken(request);
+  if (!accessToken) {
+    return sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
+  }
+
+  let payload;
+  try {
+    payload = parseBody(request);
+  } catch {
+    return sendJson(response, 400, { error: 'Invalid request body.', code: 'INVALID_REQUEST_BODY' });
+  }
+
+  try {
+    const supportRequest = await createOwnSupportRequest({
+      accessToken,
+      category: payload.category,
+      message: payload.message,
+    });
+    return sendJson(response, 201, { ok: true, supportRequest });
+  } catch (error) {
+    const safe = safeSupabaseError(error);
+    return sendJson(response, safe.status, safe.payload);
+  }
+}
+
 const handlers = Object.freeze({
+  checkout: createPaddleCheckoutHandler(),
   login: handleLogin,
   confirm: handleConfirm,
   refresh: handleRefresh,
@@ -256,6 +294,7 @@ const handlers = Object.freeze({
   access: handleAccess,
   export: handleExport,
   delete: handleDelete,
+  support: handleSupport,
 });
 
 export default async function handler(request, response) {

@@ -138,14 +138,19 @@ assert.match(signInPage, /\/api\/auth-login/);
 assert.match(accountPage, /\/api\/account-access/);
 assert.match(accountPage, /\/api\/account-export/);
 assert.match(accountPage, /\/api\/account-delete/);
+assert.match(accountPage, /\/api\/account-support/);
 assert.match(accountPage, /\/api\/auth-logout/);
+assert.match(accountPage, /checkoutReturn !== 'complete'/);
+assert.match(accountPage, /Payment confirmed — access is active/);
+assert.match(accountPage, /body\.checkout\?\.status === 'failed'/);
+assert.match(accountPage, /for \(let attempt = 0; attempt < 10; attempt \+= 1\)/);
 assert.match(confirmationPage, /searchParams\.delete\('code'\)/);
 assert.match(confirmationPage, /new URL\('\/api\/auth-confirm'/);
 assert.doesNotMatch(confirmationPage, /token_hash|auth\/confirm\/exchange/);
 assert.match(accountRouter, /request\.method !== 'GET'/);
 assert.match(accountRouter, /exchangePasswordlessCode/);
 assert.doesNotMatch(accountRouter, /verifyPasswordlessTokenHash|handleTokenHashConfirmation/);
-for (const action of ['login', 'confirm', 'refresh', 'logout', 'access', 'export', 'delete']) {
+for (const action of ['login', 'confirm', 'refresh', 'logout', 'access', 'export', 'delete', 'support']) {
   assert.match(accountRouter, new RegExp(`${action}: handle`, 'i'));
 }
 const rewriteMap = new Map(vercelConfig.rewrites.map((entry) => [entry.source, entry.destination]));
@@ -153,6 +158,7 @@ assert.equal(rewriteMap.get('/api/auth-login'), '/api/account?action=login');
 assert.equal(rewriteMap.get('/api/auth-confirm'), '/api/account?action=confirm');
 assert.equal(rewriteMap.has('/auth/confirm/exchange'), false);
 assert.equal(rewriteMap.get('/api/account-access'), '/api/account?action=access');
+assert.equal(rewriteMap.get('/api/account-support'), '/api/account?action=support');
 assert.equal(rewriteMap.get('/api/telemetry-report'), '/api/telemetry?action=report');
 assert.equal(rewriteMap.get('/api/checklist-analytics'), '/api/telemetry?action=checklist-report');
 assert.match(packageJson.scripts['validate:functions'], /node --check api\/account\.js/);

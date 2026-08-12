@@ -5,8 +5,9 @@
 .account-title { color: var(--navy); font-size: clamp(34px, 5vw, 54px); }
 .account-form { display: grid; gap: 12px; max-width: 620px; }
 .account-form label { color: var(--navy); font-weight: 800; }
-.account-form input[type="email"] { width: 100%; min-height: 50px; padding: 12px 14px; border: 1px solid #aeb7c3; border-radius: 12px; background: var(--white); color: var(--graphite); font: inherit; }
-.account-form input[type="email"]:focus { outline: 3px solid rgba(201,163,91,.25); border-color: var(--gold); }
+.account-form input[type="email"], .account-form select, .account-form textarea { width: 100%; min-height: 50px; padding: 12px 14px; border: 1px solid #aeb7c3; border-radius: 12px; background: var(--white); color: var(--graphite); font: inherit; }
+.account-form textarea { min-height: 140px; resize: vertical; }
+.account-form input[type="email"]:focus, .account-form select:focus, .account-form textarea:focus { outline: 3px solid rgba(201,163,91,.25); border-color: var(--gold); }
 .account-form .button { justify-self: start; margin-top: 8px; }
 .account-help { margin-top: 20px; color: var(--slate); font-size: 14px; }
 .account-status { min-height: 1.6em; margin: 18px 0 0; font-weight: 700; }
@@ -19,6 +20,12 @@
 .account-details dt { color: var(--slate); font-weight: 700; }
 .account-details dd { margin: 0; overflow-wrap: anywhere; font-weight: 700; color: var(--navy); }
 .account-actions { margin-top: 24px; }
+.account-checkout-result { margin-top: 22px; padding: 20px; border: 1px solid #d9dee5; border-left: 5px solid var(--slate); border-radius: 12px; background: #f8fafc; }
+.account-checkout-result h3 { margin: 0 0 8px; color: var(--navy); }
+.account-checkout-result p { margin: 0; }
+.account-checkout-result[data-state="success"] { border-left-color: #176b3a; background: #f1faf4; }
+.account-checkout-result[data-state="error"] { border-left-color: #a12622; background: #fff7f6; }
+.account-checkout-result[data-state="pending"] { border-left-color: var(--gold); background: #fffbf2; }
 .account-secondary { border: 1px solid #aeb7c3; background: var(--white); color: var(--navy); }
 .account-danger { border-left: 5px solid #a12622; }
 .account-danger p { color: var(--slate); }

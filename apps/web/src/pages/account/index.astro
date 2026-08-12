@@ -22,12 +22,62 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <div><dt>Account</dt><dd id="account-status">Loading…</dd></div>
           <div><dt>Paid access</dt><dd id="paid-access">Loading…</dd></div>
         </dl>
+        <aside id="checkout-result" class="account-checkout-result" aria-live="polite" hidden>
+          <h3 id="checkout-result-title">Checkout update</h3>
+          <p id="checkout-result-message"></p>
+          <div class="button-row account-actions">
+            <a id="checkout-access-link" class="button primary" href="/guided-edition/" hidden>
+              Open Guided Interactive Edition
+            </a>
+            <a class="button account-secondary" href="#billing-support">Billing support</a>
+          </div>
+        </aside>
         <p id="account-message" class="account-status" role="status" aria-live="polite"></p>
         <div class="button-row account-actions">
           <button id="refresh-session" class="button account-secondary" type="button">Refresh session</button>
           <button id="export-account" class="button account-secondary" type="button">Download my data</button>
           <button id="sign-out" class="button account-secondary" type="button">Sign out</button>
         </div>
+      </section>
+
+      <section id="learning-progress" class="card account-panel" aria-labelledby="learning-progress-heading" hidden>
+        <p class="eyebrow">Guided Interactive Edition</p>
+        <h2 id="learning-progress-heading">Continue learning</h2>
+        <p>Your protected library shows every published chapter and your saved place in each one.</p>
+        <div class="button-row account-actions">
+          <a class="button primary" href="/guided-edition/">Open learning library</a>
+          <a class="button" href="/guided-edition/audiobook/">Open audiobook</a>
+        </div>
+      </section>
+
+      <section id="billing-support" class="card account-panel" aria-labelledby="billing-support-heading">
+        <h2 id="billing-support-heading">Billing &amp; purchase support</h2>
+        <p>
+          Paddle sends the purchase receipt and invoice link by email. If access is still pending,
+          you see a possible duplicate charge, or you need help with a refund or invoice, send a secure request below.
+        </p>
+        <form id="billing-support-form" class="account-form">
+          <label for="billing-support-category">What do you need help with?</label>
+          <select id="billing-support-category" name="category" required>
+            <option value="payment_confirmation">Payment confirmation or access</option>
+            <option value="duplicate_charge">Possible duplicate charge</option>
+            <option value="refund">Refund question</option>
+            <option value="invoice">Invoice or receipt question</option>
+            <option value="other_billing">Other billing question</option>
+          </select>
+          <label for="billing-support-message">Details</label>
+          <textarea
+            id="billing-support-message"
+            name="message"
+            minlength="20"
+            maxlength="2000"
+            rows="6"
+            required
+            placeholder="Describe what happened. You may include the Paddle transaction reference from your receipt, but never enter card details."
+          ></textarea>
+          <button class="button primary" type="submit">Send secure request</button>
+        </form>
+        <p id="billing-support-status" class="account-status" role="status" aria-live="polite"></p>
       </section>
 
       <section class="card account-panel account-danger" aria-labelledby="delete-heading">
@@ -46,6 +96,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     const email = document.getElementById('account-email');
     const accountStatus = document.getElementById('account-status');
     const paidAccess = document.getElementById('paid-access');
+    const checkoutResult = document.getElementById('checkout-result');
+    const checkoutResultTitle = document.getElementById('checkout-result-title');
+    const checkoutResultMessage = document.getElementById('checkout-result-message');
+    const checkoutAccessLink = document.getElementById('checkout-access-link');
+    const learningProgress = document.getElementById('learning-progress');
+    const supportForm = document.getElementById('billing-support-form');
+    const supportStatus = document.getElementById('billing-support-status');
+    const checkoutReturn = new URLSearchParams(window.location.search).get('checkout');
 
     const showMessage = (text, state = '') => {
       if (!message) return;
@@ -53,16 +111,34 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       message.dataset.state = state;
     };
 
-    const loadAccount = async () => {
-      showMessage('Loading account…', 'pending');
+    const showSupportMessage = (text, state = '') => {
+      if (!supportStatus) return;
+      supportStatus.textContent = text;
+      supportStatus.dataset.state = state;
+    };
+
+    const showCheckoutResult = ({ title, text, state, allowAccess = false }) => {
+      if (!checkoutResult || !checkoutResultTitle || !checkoutResultMessage) return;
+      checkoutResult.hidden = false;
+      checkoutResult.dataset.state = state;
+      checkoutResultTitle.textContent = title;
+      checkoutResultMessage.textContent = text;
+      if (checkoutAccessLink) checkoutAccessLink.hidden = !allowAccess;
+    };
+
+    const fetchAccount = async () => {
       const response = await fetch('/api/account-access', { credentials: 'same-origin' });
       if (response.status === 401) {
         window.location.replace('/account/sign-in/?next=/account/');
-        return;
+        return null;
       }
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || 'Account details could not be loaded.');
+      return body;
+    };
 
+    const renderAccount = (body) => {
+      if (!body) return;
       if (email) email.textContent = body.account?.email || 'Unavailable';
       if (accountStatus) accountStatus.textContent = body.account?.status || 'Unavailable';
       if (paidAccess) {
@@ -70,7 +146,82 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           ? 'Active'
           : `Not active (${body.paidAccess?.reason || 'unknown'})`;
       }
-      showMessage('Account loaded.', 'success');
+    };
+
+    const showLearningLibrary = (hasPaidAccess) => {
+      if (!learningProgress) return;
+      learningProgress.hidden = !hasPaidAccess;
+    };
+
+    const loadAccount = async ({ announce = true } = {}) => {
+      if (announce) showMessage('Loading account…', 'pending');
+      const body = await fetchAccount();
+      renderAccount(body);
+      showLearningLibrary(body?.paidAccess?.allowed === true);
+      if (announce && body) showMessage('Account loaded.', 'success');
+      return body;
+    };
+
+    const wait = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+
+    const handleCheckoutReturn = async () => {
+      if (checkoutReturn === 'cancelled') {
+        await loadAccount();
+        showCheckoutResult({
+          title: 'Checkout closed',
+          text: 'The checkout was closed before confirmation. No access change is made from the browser checkout alone.',
+          state: 'neutral',
+        });
+        return;
+      }
+
+      if (checkoutReturn !== 'complete') {
+        await loadAccount();
+        return;
+      }
+
+      showMessage('Checking verified payment status…', 'pending');
+      showCheckoutResult({
+        title: 'Confirming payment',
+        text: 'Paddle reported that checkout completed. Access will appear only after the signed payment event is verified.',
+        state: 'pending',
+      });
+
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        try {
+          const body = await loadAccount({ announce: false });
+          if (!body) return;
+          if (body.paidAccess?.allowed) {
+            showMessage('Verified payment confirmed.', 'success');
+            showCheckoutResult({
+              title: 'Payment confirmed — access is active',
+              text: 'The verified Paddle payment event has been processed and your durable access is ready.',
+              state: 'success',
+              allowAccess: true,
+            });
+            return;
+          }
+          if (body.checkout?.status === 'failed') {
+            showMessage('Payment was not completed.', 'error');
+            showCheckoutResult({
+              title: 'Payment not completed',
+              text: 'The verified transaction status is failed, so no access was granted. You can try checkout again or send a billing-support request.',
+              state: 'error',
+            });
+            return;
+          }
+        } catch (error) {
+          if (attempt === 9) throw error;
+        }
+        await wait(1500);
+      }
+
+      showMessage('Payment confirmation is still pending.', 'pending');
+      showCheckoutResult({
+        title: 'Payment confirmation is still pending',
+        text: 'No unverified access has been granted. Refresh this page shortly; if the status does not update, send a billing-support request below.',
+        state: 'pending',
+      });
     };
 
     document.getElementById('refresh-session')?.addEventListener('click', async () => {
@@ -83,7 +234,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) return showMessage(body.error || 'Session refresh failed.', 'error');
-      await loadAccount().catch((error) => showMessage(error.message, 'error'));
+      await handleCheckoutReturn().catch((error) => showMessage(error.message, 'error'));
     });
 
     document.getElementById('export-account')?.addEventListener('click', async () => {
@@ -145,6 +296,39 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       if (paidAccess) paidAccess.textContent = 'Not active (deletion pending)';
     });
 
-    loadAccount().catch((error) => showMessage(error.message, 'error'));
+    supportForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const category = document.getElementById('billing-support-category');
+      const details = document.getElementById('billing-support-message');
+      const submit = supportForm.querySelector('button[type="submit"]');
+      if (!category?.value || !details?.value || !submit) return;
+
+      submit.disabled = true;
+      showSupportMessage('Sending your secure request…', 'pending');
+      try {
+        const response = await fetch('/api/account-support', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category: category.value, message: details.value }),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || 'The support request could not be sent.');
+        details.value = '';
+        showSupportMessage(
+          `Request ${body.supportRequest?.id || ''} was received securely.`,
+          'success'
+        );
+      } catch (error) {
+        showSupportMessage(
+          error instanceof Error ? error.message : 'The support request could not be sent.',
+          'error'
+        );
+      } finally {
+        submit.disabled = false;
+      }
+    });
+
+    handleCheckoutReturn().catch((error) => showMessage(error.message, 'error'));
   </script>
 </BaseLayout>

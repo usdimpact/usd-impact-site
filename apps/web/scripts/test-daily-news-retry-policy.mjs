@@ -34,6 +34,12 @@ assert.equal(isRetryableGroundingFailure({
 assert.equal(isRetryableGroundingFailure({
   repairValidationReason: 'Upcoming systemic catalyst mentioned but missing from catalysts: labor',
 }), true);
+
+assert.equal(isRetryableGroundingFailure({
+  error: 'Daily news source generation failed validation after one repair attempt.',
+  initialValidationReason: 'Highlight 1 requires a current Treasury refunding or auction source',
+  repairValidationReason: 'Upcoming systemic catalyst mentioned but missing from catalysts: central-bank',
+}), true);
 assert.equal(isRetryableGroundingFailure({ error: 'Unauthorized.' }), false);
 assert.equal(isRetryableGroundingFailure({ error: 'Daily news background generation is not configured.' }), false);
 assert.equal(isRetryableGroundingFailure({ error: 'OpenAI structured output was not valid JSON' }), false);

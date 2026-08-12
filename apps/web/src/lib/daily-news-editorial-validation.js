@@ -66,16 +66,18 @@ function hasRecentSource(referenced, editionDate, predicate = () => true) {
   });
 }
 
-function validateUpcomingSystemicCoverage({ summary, highlights, catalysts }) {
+function upcomingSystemicCoverageIssues({ summary, highlights, catalysts }) {
   const forwardLookingText = [summary, ...highlights.map(itemText)]
     .filter((text) => typeof text === 'string' && SCHEDULE_FOCUSED_PATTERN.test(text));
+  const issues = [];
 
   for (const rule of SYSTEMIC_CATALYST_RULES) {
     if (!forwardLookingText.some((text) => rule.pattern.test(text))) continue;
     if (!catalysts.some((catalyst) => rule.pattern.test(itemText(catalyst)))) {
-      throw new Error(`Upcoming systemic catalyst mentioned but missing from catalysts: ${rule.eventType}`);
+      issues.push(`Upcoming systemic catalyst mentioned but missing from catalysts: ${rule.eventType}`);
     }
   }
+  return issues;
 }
 
 export function buildMetaDescription(summary, maxLength = 300) {
@@ -100,11 +102,12 @@ export function buildMetaDescription(summary, maxLength = 300) {
 export function validateEditorialBundle({ editionDate, sources, highlights, catalysts, summary }) {
   const edition = dateOnly(editionDate, 'Edition');
   const sourceById = new Map(sources.map((source) => [source.id, source]));
+  const issues = [];
 
   for (const source of sources) {
     const published = dateOnly(source.publishedAt, `Source ${source.id}`);
     if (published.time > edition.time) {
-      throw new Error(`Source ${source.id} is dated after the edition`);
+      issues.push(`Source ${source.id} is dated after the edition`);
     }
   }
 
@@ -114,16 +117,16 @@ export function validateEditorialBundle({ editionDate, sources, highlights, cata
     const referenced = referencedSources(highlight, sourceById, context);
 
     if (UNSUPPORTED_ABSENCE_PATTERN.test(text)) {
-      throw new Error(`${context} makes an unsupported absence claim`);
+      issues.push(`${context} makes an unsupported absence claim`);
     }
 
     if (TREASURY_REFUNDING_PATTERN.test(text)
       && !hasRecentSource(referenced, edition, isTreasurySource)) {
-      throw new Error(`${context} requires a current Treasury refunding or auction source`);
+      issues.push(`${context} requires a current Treasury refunding or auction source`);
     }
 
     if (!SCHEDULE_FOCUSED_PATTERN.test(text) && !hasRecentSource(referenced, edition)) {
-      throw new Error(`${context} references only stale daily-development sources`);
+      issues.push(`${context} references only stale daily-development sources`);
     }
   });
 
@@ -133,11 +136,12 @@ export function validateEditorialBundle({ editionDate, sources, highlights, cata
     const context = `Catalyst ${index + 1}`;
     const referenced = referencedSources(catalyst, sourceById, context);
     if (!hasRecentSource(referenced, edition, isTreasurySource)) {
-      throw new Error(`${context} requires a current Treasury refunding or auction source`);
+      issues.push(`${context} requires a current Treasury refunding or auction source`);
     }
   });
 
-  validateUpcomingSystemicCoverage({ summary, highlights, catalysts });
+  issues.push(...upcomingSystemicCoverageIssues({ summary, highlights, catalysts }));
+  if (issues.length > 0) throw new Error(issues.join('; '));
 }
 
 export { MAX_DAILY_HIGHLIGHT_SOURCE_AGE_DAYS };

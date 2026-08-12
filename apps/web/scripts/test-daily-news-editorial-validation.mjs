@@ -107,6 +107,24 @@ assert.throws(
   /missing from catalysts: inflation/,
 );
 
+assert.throws(
+  () => validateEditorialBundle(bundle({
+    sources: [source('treasury-stale', '2026-05-06', staleTreasuryUrl)],
+    highlights: [{
+      headline: 'Treasury refunding auctions remain a funding catalyst.',
+      development: 'The next central-bank decision is also on the watchlist.',
+      sourceIds: ['treasury-stale'],
+    }],
+    catalysts: [],
+    summary: 'The next central-bank decision is on the schedule.',
+  })),
+  (error) => {
+    assert.match(error.message, /Highlight 1 requires a current Treasury refunding or auction source/);
+    assert.match(error.message, /missing from catalysts: central-bank/);
+    return true;
+  },
+);
+
 const longSummary = 'Treasury supply remains important for rates and dollar liquidity. Payrolls and CPI are the next scheduled tests for the policy path, gold, Bitcoin, and U.S. equities. Additional conditional interpretation should not force a search description to end inside a word even when the complete summary is much longer than the metadata field.';
 const metaDescription = buildMetaDescription(longSummary, 170);
 assert.equal(metaDescription, 'Treasury supply remains important for rates and dollar liquidity. Payrolls and CPI are the next scheduled tests for the policy path, gold, Bitcoin, and U.S. equities.');
@@ -119,6 +137,8 @@ assert.match(sourceHandler, /current quarterly refunding release/i);
 assert.match(sourceHandler, /Never retain the claim merely to satisfy the 3-highlight minimum/i);
 assert.match(sourceHandler, /confirm the summary is at most 700 characters/i);
 assert.match(sourceHandler, /include every Employment Situation, CPI, PCE, and FOMC event/i);
+assert.match(sourceHandler, /central-bank decision language as central-bank catalyst mentions/i);
+assert.match(sourceHandler, /Otherwise remove the forward-looking mention/i);
 
 const repairHandler = await readFile(new URL('../api/daily-news-background.js', import.meta.url), 'utf8');
 assert.match(repairHandler, /stale daily-development source/i);
@@ -130,6 +150,11 @@ assert.match(repairHandler, /fewer than three grounded URLs/i);
 assert.match(repairHandler, /Keep at least three distinct permitted sources/i);
 assert.match(repairHandler, /Remove every non-matching source/i);
 assert.match(repairHandler, /Never reconstruct, replace, or preserve an ungrounded URL/i);
+assert.match(repairHandler, /complete validation sweep/i);
+assert.match(repairHandler, /named error may be only the first defect/i);
+assert.match(repairHandler, /central-bank decision language as central-bank catalyst mentions/i);
+assert.match(repairHandler, /If no supported matching catalyst can be retained, remove the forward-looking mention/i);
+assert.match(repairHandler, /Re-scan every remaining highlight and catalyst/i);
 assert.match(repairHandler, /minItems: 3/);
 
 const groundedHandler = await readFile(new URL('../api/daily-news-grounded-background.js', import.meta.url), 'utf8');

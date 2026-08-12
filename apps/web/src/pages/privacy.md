@@ -6,13 +6,13 @@ description: "How USD Impact handles account, purchase, support, waitlist, and l
 
 # Privacy notice
 
-_Last updated: August 3, 2026_
+_Last updated: August 12, 2026_
 
 ## What we collect
 
 When you join the *Read the Dollar First* waitlist, we collect the email address you submit and the time the contact record is created.
 
-If you create an account or purchase the Guided Interactive Edition, we may process:
+If you create an account or purchase the Library Pass, we may process:
 
 - your email address and authentication records needed to secure your account;
 - Paddle customer, transaction, and adjustment identifiers;
@@ -60,7 +60,7 @@ Joining the waitlist does not subscribe you to unrelated market commentary, trad
 
 ## Service providers
 
-The website is deployed through Vercel. Vercel processes website requests and application runtime logs needed to operate and troubleshoot the service. Aggregate learning counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Account, entitlement, and commerce records are stored through Supabase. Waitlist contacts and transactional emails are processed through Resend. Paddle acts as merchant of record and processes checkout, payment, tax, invoice, refund, fraud-prevention, and related transaction information.
+The website is deployed through Vercel. Vercel processes website requests, protected application routes, and application runtime logs needed to operate and troubleshoot the service. Aggregate learning counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Account, entitlement, and commerce records, together with the private audiobook masters used for authorized playback, are stored through Supabase. Waitlist contacts and transactional emails are processed through Resend. Paddle acts as merchant of record and processes checkout, payment, tax, invoice, refund, fraud-prevention, and related transaction information.
 
 These providers process information only as needed to operate the website, accounts, learning tools, commerce workflow, support, and requested email delivery. Their own privacy notices apply where they act independently, including Paddle's role as merchant of record.
 

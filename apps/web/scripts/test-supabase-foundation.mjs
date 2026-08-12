@@ -131,7 +131,7 @@ const exported = await exportOwnAccount({
     assert.equal(url, `${publicConfig.url}/rest/v1/rpc/account_export`);
     assert.equal(options.headers.apikey, publicConfig.publishableKey);
     assert.equal(options.headers.Authorization, `Bearer ${accessToken}`);
-    assert.deepEqual(JSON.parse(options.body), { export_account_id: accountId });
+    assert.deepEqual(JSON.parse(options.body), {});
     return response(200, { profile: { account_id: accountId }, purchases: [] });
   },
 });
@@ -215,6 +215,18 @@ const performanceHardeningMigration = await readFile(
   new URL('../../../supabase/migrations/20260804160932_optimize_rls_and_foreign_key_indexes.sql', import.meta.url),
   'utf8',
 );
+const accountRpcHardeningMigrationName = migrationFiles.find(
+  (name) => name.endsWith('_harden_account_rpcs.sql'),
+);
+assert.ok(accountRpcHardeningMigrationName, 'account RPC hardening migration is missing');
+const accountRpcHardeningMigration = await readFile(
+  new URL(accountRpcHardeningMigrationName, migrationDirectory),
+  'utf8',
+);
+const accountRpcRollbackTest = await readFile(
+  new URL('../../../supabase/tests/20260812_account_rpc_hardening_rollback.sql', import.meta.url),
+  'utf8',
+);
 for (const table of [
   'profiles', 'purchase_intents', 'purchases', 'entitlements', 'entitlement_events',
   'webhook_receipts', 'learning_progress', 'bookmarks', 'support_requests',
@@ -253,22 +265,28 @@ for (const index of [
   assert.match(performanceHardeningMigration, new RegExp(`create index ${index}`));
 }
 
-// SECURITY DEFINER RPCs are intentionally callable by authenticated customers,
-// so their source-level identity and privilege boundaries are release gates.
-// Scan the complete ordered migration chain so a later migration cannot silently
-// redefine either RPC or grant it to an unapproved role.
+// Account RPC definitions and privilege boundaries are release gates. Scan the
+// complete ordered migration chain so only the reviewed hardening migration may
+// redefine them or change their effective signatures.
 assert.equal(
   (migrationChain.match(
     /create or replace function public\.account_export\(export_account_id uuid\)/gi,
   ) ?? []).length,
-  1,
+  2,
   'account_export has an unreviewed later definition',
+);
+assert.equal(
+  (migrationChain.match(
+    /create or replace function public\.account_export\(\)/gi,
+  ) ?? []).length,
+  1,
+  'parameterless account_export has an unreviewed definition',
 );
 assert.equal(
   (migrationChain.match(
     /create or replace function public\.request_account_deletion\(\)/gi,
   ) ?? []).length,
-  1,
+  2,
   'request_account_deletion has an unreviewed later definition',
 );
 
@@ -317,6 +335,88 @@ assert.match(
 assert.doesNotMatch(
   migrationChain,
   /grant\s+execute\s+on\s+function\s+public\.request_account_deletion\(\)\s+to\s+[^;]*\b(?:public|anon|service_role)\b[^;]*;/i,
+);
+
+const hardenedExportStart = accountRpcHardeningMigration.indexOf(
+  'create or replace function public.account_export()',
+);
+const compatibilityExportStart = accountRpcHardeningMigration.indexOf(
+  'create or replace function public.account_export(export_account_id uuid)',
+);
+const hardenedDeletionStart = accountRpcHardeningMigration.indexOf(
+  'create or replace function public.request_account_deletion()',
+);
+assert.ok(hardenedExportStart >= 0);
+assert.ok(compatibilityExportStart > hardenedExportStart);
+assert.ok(hardenedDeletionStart > compatibilityExportStart);
+
+const hardenedExportSql = accountRpcHardeningMigration.slice(
+  hardenedExportStart,
+  compatibilityExportStart,
+);
+assert.match(hardenedExportSql, /security invoker/i);
+assert.match(hardenedExportSql, /set search_path = ''/i);
+assert.match(hardenedExportSql, /select \(select auth\.uid\(\)\) as account_id/i);
+assert.match(hardenedExportSql, /where caller\.account_id is not null/i);
+assert.doesNotMatch(hardenedExportSql, /^\s*security definer\s*$/im);
+assert.doesNotMatch(hardenedExportSql, /export_account_id/i);
+assert.match(
+  hardenedExportSql,
+  /revoke all on function public\.account_export\(\)\s+from public, anon, authenticated, service_role;/i,
+);
+assert.match(
+  hardenedExportSql,
+  /grant execute on function public\.account_export\(\) to authenticated;/i,
+);
+
+const compatibilityExportSql = accountRpcHardeningMigration.slice(
+  compatibilityExportStart,
+  hardenedDeletionStart,
+);
+assert.match(compatibilityExportSql, /security invoker/i);
+assert.match(compatibilityExportSql, /set search_path = ''/i);
+assert.match(compatibilityExportSql, /select public\.account_export\(\)/i);
+assert.match(compatibilityExportSql, /export_account_id = \(select auth\.uid\(\)\)/i);
+assert.doesNotMatch(compatibilityExportSql, /^\s*security definer\s*$/im);
+assert.match(
+  compatibilityExportSql,
+  /revoke all on function public\.account_export\(uuid\)\s+from public, anon, authenticated, service_role;/i,
+);
+assert.match(
+  compatibilityExportSql,
+  /grant execute on function public\.account_export\(uuid\) to authenticated;/i,
+);
+
+const hardenedDeletionSql = accountRpcHardeningMigration.slice(hardenedDeletionStart);
+assert.match(hardenedDeletionSql, /security definer/i);
+assert.match(hardenedDeletionSql, /set search_path = ''/i);
+assert.match(hardenedDeletionSql, /caller_account_id uuid := auth\.uid\(\)/i);
+assert.match(hardenedDeletionSql, /if caller_account_id is null then/i);
+assert.match(hardenedDeletionSql, /where account_id = caller_account_id/i);
+assert.match(hardenedDeletionSql, /pg_catalog\.now\(\)/i);
+assert.doesNotMatch(hardenedDeletionSql, /where account_id = auth\.uid\(\)/i);
+assert.match(
+  hardenedDeletionSql,
+  /revoke all on function public\.request_account_deletion\(\)\s+from public, anon, authenticated, service_role;/i,
+);
+assert.match(
+  hardenedDeletionSql,
+  /grant execute on function public\.request_account_deletion\(\) to authenticated;/i,
+);
+
+assert.match(
+  accountRpcRollbackTest,
+  /public\.account_export\(v_other_account_id\) is null/i,
+);
+assert.match(
+  accountRpcRollbackTest,
+  /v_profile := public\.request_account_deletion\(\)/i,
+);
+assert.match(accountRpcRollbackTest, /repeat deletion request is rejected/i);
+assert.match(accountRpcRollbackTest, /errcode = 'ZX003'/i);
+assert.match(
+  accountRpcRollbackTest,
+  /v_actual_profile_status = v_original_profile_status[\s\S]*v_actual_privacy_request_count = v_original_privacy_request_count/i,
 );
 
 console.log('Supabase account and durable-record foundation tests passed.');

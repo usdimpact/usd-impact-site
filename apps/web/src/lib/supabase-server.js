@@ -457,7 +457,7 @@ export async function exportOwnAccount({ accessToken, environment, config, fetch
     path: '/rest/v1/rpc/account_export',
     method: 'POST',
     accessToken,
-    body: { export_account_id: user.id },
+    body: {},
     fetchImpl,
   });
   return Object.freeze({

@@ -75,6 +75,56 @@ assert.deepEqual(sourceIdNormalized.highlights[0].sourceIds, [
 assert.deepEqual(sourceIdNormalized.catalysts[0].sourceIds, ['reuters-markets']);
 assert.equal(sourceIdNormalized.sources[1].publishedAt, '2026-07-30');
 
+const run33RepairNormalized = normalizeBundleDraft({
+  sources: [
+    {
+      id: 'bls-current',
+      title: 'Current BLS release',
+      url: 'https://www.bls.gov/news.release/cpi.nr0.htm',
+      publishedAt: '2026-08-12',
+    },
+    {
+      id: 'fed-calendar',
+      title: 'Federal Reserve calendar',
+      url: 'https://www.federalreserve.gov/newsevents/2026-august.htm',
+      publishedAt: '2026-08-01',
+    },
+    {
+      id: 'reuters-market',
+      title: 'Current market reaction',
+      url: 'https://www.reuters.com/markets/example',
+      publishedAt: '2026-08-12',
+    },
+    {
+      id: 'eia-weekly-historical-prices',
+      title: 'Historical energy prices',
+      url: 'https://www.eia.gov/dnav/pet/pet_pri_spt_s1_d.htm',
+      publishedAt: '2026-08-06',
+    },
+  ],
+  highlights: [
+    { sourceIds: ['bls-current'] },
+    { sourceIds: ['reuters-market'] },
+    { sourceIds: ['fed-calendar'] },
+  ],
+  catalysts: [{ sourceIds: ['fed-calendar'] }],
+});
+assert.deepEqual(
+  run33RepairNormalized.sources.map(({ id }) => id),
+  ['bls-current', 'fed-calendar', 'reuters-market'],
+);
+assert.ok(run33RepairNormalized.sources.length >= 3);
+
+const belowMinimumAfterPruning = normalizeBundleDraft({
+  sources: run33RepairNormalized.sources,
+  highlights: [{ sourceIds: ['bls-current'] }],
+  catalysts: [{ sourceIds: ['fed-calendar'] }],
+});
+assert.deepEqual(
+  belowMinimumAfterPruning.sources.map(({ id }) => id),
+  ['bls-current', 'fed-calendar'],
+);
+
 const duplicateIds = normalizeBundleDraft({
   sources: [
     { id: 'Reuters Markets', publishedAt: '2026-07-30' },

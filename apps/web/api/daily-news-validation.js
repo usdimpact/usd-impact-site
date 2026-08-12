@@ -106,11 +106,21 @@ export function normalizeBundleDraft(draft) {
     });
   };
 
+  const highlights = rewriteSourceIds(draft.highlights);
+  const catalysts = rewriteSourceIds(draft.catalysts);
+  const referencedSourceIds = new Set(
+    [...(highlights ?? []), ...(catalysts ?? [])]
+      .flatMap((item) => (Array.isArray(item?.sourceIds) ? item.sourceIds : [])),
+  );
+  const referencedSources = referencedSourceIds.size > 0
+    ? sources.filter((source) => referencedSourceIds.has(source?.id))
+    : sources;
+
   return {
     ...draft,
-    sources,
-    highlights: rewriteSourceIds(draft.highlights),
-    catalysts: rewriteSourceIds(draft.catalysts),
+    sources: referencedSources,
+    highlights,
+    catalysts,
   };
 }
 

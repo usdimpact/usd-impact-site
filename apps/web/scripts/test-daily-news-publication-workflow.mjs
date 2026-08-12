@@ -38,6 +38,25 @@ assert.doesNotMatch(
   'publication workflow must not use an indentation-sensitive here-document',
 );
 
+const pollStep = workflow.match(
+  /      - name: Poll background news generation\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Import as published content)/,
+);
+assert.ok(pollStep, 'background polling shell must be present');
+const pollRequest = pollStep[1].match(
+  /http_code="\$\(curl[\s\S]*?--write-out '%\{http_code\}'\)"/,
+);
+assert.ok(pollRequest, 'background polling request must be present');
+assert.match(
+  pollRequest[0],
+  /--max-time 240/,
+  'a completed response must have enough time for the bounded 150-second repair call',
+);
+assert.doesNotMatch(
+  pollRequest[0],
+  /--max-time 60/,
+  'background polling must not terminate a valid bounded repair at 60 seconds',
+);
+
 const handoffStep = workflow.match(
   /      - name: Open, validate, and merge publication pull request\n[\s\S]*?        run: \|\n([\s\S]*)$/,
 );

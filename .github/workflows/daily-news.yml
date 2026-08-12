@@ -92,7 +92,7 @@ jobs:
             for poll_attempt in $(seq 1 18); do
               poll_url="${BACKGROUND_ENDPOINT}?response_id=${response_id}"
               http_code="$(curl --silent --show-error --location \
-                --max-time 60 \
+                --max-time 240 \
                 -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
                 "$poll_url" \
                 --output "$RUNNER_TEMP/daily-usd-impact-poll.json" \

@@ -128,6 +128,13 @@ assert.match(repairHandler, /Never retain an unsupported claim merely to satisfy
 assert.match(repairHandler, /fail closed rather than inventing a replacement/i);
 assert.match(repairHandler, /fewer than three grounded URLs/i);
 assert.match(repairHandler, /Keep at least three distinct permitted sources/i);
+assert.match(repairHandler, /Remove every non-matching source/i);
+assert.match(repairHandler, /Never reconstruct, replace, or preserve an ungrounded URL/i);
 assert.match(repairHandler, /minItems: 3/);
+
+const groundedHandler = await readFile(new URL('../api/daily-news-grounded-background.js', import.meta.url), 'utf8');
+assert.match(groundedHandler, /at least three distinct source URLs/i);
+assert.match(groundedHandler, /fewer than three grounded URLs/i);
+assert.doesNotMatch(groundedHandler, /at least two distinct source URLs/i);
 
 console.log('daily news editorial validation tests pass');

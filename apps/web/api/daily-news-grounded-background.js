@@ -10,9 +10,9 @@ import {
 const OPENAI_RESPONSES_API = 'https://api.openai.com/v1/responses';
 const WEB_SEARCH_SOURCES_INCLUDE = 'web_search_call.action.sources';
 const GROUNDED_SOURCE_RULES = [
-  'Use web search results from at least two distinct source URLs before producing the bundle.',
-  'The source ledger must contain at least two distinct URLs returned by the web search tool metadata.',
-  'Do not finish the response with only one grounded URL; continue researching across approved domains.',
+  'Use web search results from at least three distinct source URLs before producing the bundle.',
+  'The source ledger must contain at least three distinct URLs returned by the web search tool metadata.',
+  'Do not finish the response with fewer than three grounded URLs; continue researching across approved domains.',
   'Never invent, reconstruct, or substitute a URL that was not returned by web search.',
 ].join(' ');
 

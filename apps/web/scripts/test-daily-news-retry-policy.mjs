@@ -2,9 +2,19 @@ import assert from 'node:assert/strict';
 import { isRetryableGroundingFailure } from './daily-news-retry-policy.mjs';
 
 assert.equal(isRetryableGroundingFailure({ code: 'insufficient-grounded-sources' }), true);
+assert.equal(isRetryableGroundingFailure({ code: 'ungrounded-source' }), true);
 assert.equal(isRetryableGroundingFailure({
   initialValidationReason: 'OpenAI web search returned fewer than two grounded source URLs',
   repairError: 'The completed response contained fewer than two grounded URLs.',
+}), true);
+assert.equal(isRetryableGroundingFailure({
+  error: 'Daily news source generation failed validation after one repair attempt.',
+  initialValidationReason: 'Source eia-wpsr was not returned by OpenAI web search',
+  repairValidationReason: 'Source eia-wpsr was not returned by OpenAI web search',
+}), true);
+assert.equal(isRetryableGroundingFailure({
+  code: 'ungrounded-source',
+  reason: 'One or more cited URLs were not present in the grounded web-search results.',
 }), true);
 assert.equal(isRetryableGroundingFailure({
   initialValidationReason: 'The bundle must contain 3-7 highlights',

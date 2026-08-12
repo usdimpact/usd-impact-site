@@ -299,6 +299,21 @@ try {
   const staleTreasuryFailure = await invoke(request());
   assert.equal(staleTreasuryFailure.status, 502);
 
+  const unusedSource = draft({
+    sources: [
+      ...draft().sources,
+      { id: 'unused-treasury', title: 'Unused Treasury source', url: sourceUrls.treasuryStale, publishedAt: '2026-05-06' },
+    ],
+  });
+  globalThis.fetch = async () => providerResponse(openAiResponse(unusedSource));
+  assert.equal((await invoke(request())).status, 502);
+
+  const conversationalBody = draft({
+    body: 'I did not identify another release.\n\nIf you want, I can rerun the search.',
+  });
+  globalThis.fetch = async () => providerResponse(openAiResponse(conversationalBody));
+  assert.equal((await invoke(request())).status, 502);
+
   globalThis.fetch = async () => providerResponse({ error: { message: 'rate limited' } }, 429);
   const providerFailure = await invoke(request());
   assert.equal(providerFailure.status, 502);

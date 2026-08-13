@@ -41,6 +41,9 @@ jobs:
         run: node scripts/test-assemble-release-evidence.mjs
       - name: Validate Production data-plane evidence producer
         run: node scripts/test-produce-production-data-plane-evidence.mjs
+      - name: Validate providerless Production boundary
+        run: |
+          node --input-type=module -e "import assert from 'node:assert/strict'; import { validatePaddleDeploymentConfig } from './src/lib/paddle-deployment-config.js'; const closed = validatePaddleDeploymentConfig({ VERCEL_ENV: 'production', PADDLE_CHECKOUT_ENABLED: 'false' }); assert.equal(closed.checkoutEnabled, false); assert.equal(closed.paddleEnvironment, null); assert.throws(() => validatePaddleDeploymentConfig({ VERCEL_ENV: 'production', PADDLE_CHECKOUT_ENABLED: 'true' }), /PADDLE_ENVIRONMENT must be production/);"
       - name: Validate content
         run: npm run validate:content
       - name: Validate reports

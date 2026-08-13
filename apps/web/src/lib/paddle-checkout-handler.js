@@ -18,6 +18,7 @@ import {
   PaddleApiError,
   PaddleConfigurationError,
 } from './paddle-api.js';
+import { isPaddleCheckoutEnabled } from './paddle-deployment-config.js';
 
 function header(request, name) {
   const value = request.headers?.[name] ?? request.headers?.[name.toLowerCase()];
@@ -98,6 +99,8 @@ function checkoutResponse({ intent, transaction, reused }) {
 }
 
 export function createPaddleCheckoutHandler({
+  environment = process.env,
+  checkoutEnabled = isPaddleCheckoutEnabled,
   readAccessToken = readSessionAccessToken,
   getUser = getVerifiedSupabaseUser,
   reserveIntent = reservePaddlePurchaseIntent,
@@ -115,6 +118,13 @@ export function createPaddleCheckoutHandler({
       return sendJson(response, 405, { error: 'Method not allowed.', code: 'METHOD_NOT_ALLOWED' });
     }
     if (!requireSameSiteJson(request, response)) return;
+
+    if (!checkoutEnabled(environment)) {
+      return sendJson(response, 503, {
+        error: 'Checkout is temporarily unavailable.',
+        code: 'CHECKOUT_DISABLED',
+      });
+    }
 
     const accessToken = readAccessToken(request);
     if (!accessToken) {

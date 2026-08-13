@@ -27,6 +27,8 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Validate GitHub Action runtimes
         run: node scripts/test-github-action-runtimes.mjs
+      - name: Validate release gatekeeper policy
+        run: node scripts/test-release-gatekeeper-policy.mjs
       - name: Validate content
         run: npm run validate:content
       - name: Validate reports

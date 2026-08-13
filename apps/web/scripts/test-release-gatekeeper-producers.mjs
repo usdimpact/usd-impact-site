@@ -62,7 +62,8 @@ assert.equal(envelope.schema, 'usd-impact.release-gate-evidence.v1');
 assert.equal(envelope.records.length, 3);
 
 assert.throws(() => produceVercelProductionEnvironmentEvidence({ ...vercel, checkoutEnabled: true }), /Checkout must remain CLOSED/);
-assert.throws(() => produceVercelProductionEnvironmentEvidence({ ...vercel, presentVariableNames: variables.filter((x) => x !== 'PADDLE_WEBHOOK_SECRET') }), /Missing Production variable name: PADDLE_WEBHOOK_SECRET/);
+assert.throws(() => produceVercelProductionEnvironmentEvidence({ ...vercel, presentVariableNames: variables.filter((x) => x !== 'SUPABASE_SECRET_KEY') }), /Missing Production variable name: SUPABASE_SECRET_KEY/);
+assert.doesNotThrow(() => produceVercelProductionEnvironmentEvidence({ ...vercel, presentVariableNames: variables.filter((x) => !x.startsWith('PADDLE_') && x !== 'PUBLIC_PADDLE_CLIENT_TOKEN') }));
 assert.throws(() => produceVercelProductionEnvironmentEvidence({ ...vercel, valuesExposed: true }), /must not expose secret values/);
 assert.throws(() => produceVercelProductionEnvironmentEvidence({ ...vercel, source: 'manual' }), /Unsupported Vercel evidence source/);
 

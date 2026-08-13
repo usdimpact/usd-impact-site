@@ -52,7 +52,7 @@ const observedAt = '2026-08-13T01:30:00.000Z';
   assert.equal(snapshot.environmentVariables.find((entry) => entry.key === 'PADDLE_CHECKOUT_ENABLED')?.state, 'closed');
   assert.ok(snapshot.environmentVariables.every((entry) => !Object.hasOwn(entry, 'value')), 'collector must redact all values');
   const serialized = JSON.stringify(snapshot);
-  for (const [, secret] of productionVars) {
+  for (const { value: secret } of productionVars) {
     if (secret === 'false') continue;
     assert.equal(serialized.includes(secret), false, `snapshot leaked value ${secret}`);
   }

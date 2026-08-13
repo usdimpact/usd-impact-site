@@ -28,6 +28,24 @@ export function validatePaddleDeploymentConfig(environment = process.env) {
     return Object.freeze({ skipped: true, vercelEnvironment: vercelEnvironment || 'local' });
   }
 
+  const checkoutEnabled = isPaddleCheckoutEnabled(environment);
+
+  // A Production deployment with commerce explicitly CLOSED is allowed to run
+  // without Paddle credentials. This keeps content/account deployment independent
+  // from a declined or replaceable commerce provider while preserving a hard
+  // fail-closed boundary: any checkout enablement still requires full live Paddle
+  // configuration until another provider adapter replaces this implementation.
+  if (vercelEnvironment === 'production' && !checkoutEnabled) {
+    return Object.freeze({
+      skipped: false,
+      vercelEnvironment,
+      paddleEnvironment: null,
+      checkoutUrlConfigured: Boolean(String(environment.PADDLE_CHECKOUT_URL || '').trim()),
+      checkoutEnabled: false,
+      commerceProviderConfigured: false,
+    });
+  }
+
   const expectedPaddleEnvironment = vercelEnvironment === 'production' ? 'production' : 'sandbox';
   const config = readPaddleApiConfig(environment);
 
@@ -62,6 +80,7 @@ export function validatePaddleDeploymentConfig(environment = process.env) {
     vercelEnvironment,
     paddleEnvironment: config.mode,
     checkoutUrlConfigured: Boolean(config.checkoutUrl),
-    checkoutEnabled: isPaddleCheckoutEnabled(environment),
+    checkoutEnabled,
+    commerceProviderConfigured: true,
   });
 }

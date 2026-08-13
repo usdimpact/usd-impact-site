@@ -33,6 +33,8 @@ jobs:
         run: node scripts/test-release-gatekeeper-evidence.mjs
       - name: Validate trusted release evidence producers
         run: node scripts/test-release-gatekeeper-producers.mjs
+      - name: Validate authenticated release audit adapters
+        run: node scripts/test-release-gatekeeper-audit-adapters.mjs
       - name: Validate content
         run: npm run validate:content
       - name: Validate reports

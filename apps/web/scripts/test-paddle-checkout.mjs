@@ -12,6 +12,7 @@ function responseRecorder() {
   };
 }
 
+const checkoutEnvironment = { PADDLE_CHECKOUT_ENABLED: 'true' };
 const account = {
   id: '2a95425a-0a46-4c20-8b31-7ad474768559',
   email: 'buyer@example.com',
@@ -33,8 +34,26 @@ const transaction = {
   checkoutUrl: 'https://checkout.example.test/?_ptxn=txn_01kyabcdefghijklmnopqrstuv',
 };
 
+let closedCalls = 0;
+const closedHandler = createPaddleCheckoutHandler({
+  readAccessToken: () => { closedCalls += 1; return 'access-token'; },
+  getUser: async () => { closedCalls += 1; return account; },
+  reserveIntent: async () => { closedCalls += 1; return intent; },
+  createTransaction: async () => { closedCalls += 1; return transaction; },
+});
+const closedResponse = responseRecorder();
+await closedHandler({
+  method: 'POST',
+  headers: { 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' },
+  body: '{}',
+}, closedResponse);
+assert.equal(closedResponse.statusCode, 503);
+assert.equal(JSON.parse(closedResponse.body).code, 'CHECKOUT_DISABLED');
+assert.equal(closedCalls, 0);
+
 let observed = null;
 const handler = createPaddleCheckoutHandler({
+  environment: checkoutEnvironment,
   readAccessToken: () => 'access-token',
   getUser: async (token) => {
     assert.equal(token, 'access-token');
@@ -85,6 +104,7 @@ assert.deepEqual(observed.attach, {
 
 let createdForReuse = false;
 const reusedHandler = createPaddleCheckoutHandler({
+  environment: checkoutEnvironment,
   readAccessToken: () => 'access-token',
   getUser: async () => account,
   reserveIntent: async () => ({ ...intent, status: 'failed', providerTransactionId: transaction.id }),
@@ -110,6 +130,7 @@ const winningTransaction = {
   checkoutUrl: 'https://checkout.example.test/?_ptxn=txn_01kyabcdefghijklmnopqrstu1',
 };
 const raceHandler = createPaddleCheckoutHandler({
+  environment: checkoutEnvironment,
   readAccessToken: () => 'access-token',
   getUser: async () => account,
   reserveIntent: async () => intent,
@@ -132,7 +153,10 @@ await handler({
 }, crossSiteResponse);
 assert.equal(crossSiteResponse.statusCode, 403);
 
-const unauthenticated = createPaddleCheckoutHandler({ readAccessToken: () => null });
+const unauthenticated = createPaddleCheckoutHandler({
+  environment: checkoutEnvironment,
+  readAccessToken: () => null,
+});
 const unauthenticatedResponse = responseRecorder();
 await unauthenticated({
   method: 'POST',
@@ -142,6 +166,7 @@ await unauthenticated({
 assert.equal(unauthenticatedResponse.statusCode, 401);
 
 const entitled = createPaddleCheckoutHandler({
+  environment: checkoutEnvironment,
   readAccessToken: () => 'access-token',
   getUser: async () => account,
   reserveIntent: async () => {

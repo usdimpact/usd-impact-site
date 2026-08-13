@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { evaluateReleaseGatekeeper } from './release-gatekeeper-policy.mjs';
 
 const required = (name) => {
   const value = process.env[name]?.trim();
@@ -49,42 +50,19 @@ const [owner, name] = repo.split('/');
 assert.ok(owner && name, 'GITHUB_REPOSITORY must be owner/name');
 
 const pr = await api(`/repos/${owner}/${name}/pulls/${prNumber}`);
-const failures = [];
-
-if (pr.base?.ref !== 'main') failures.push(`PR base is ${pr.base?.ref ?? 'unknown'}, not main`);
-if (pr.head?.sha?.toLowerCase() !== expectedHead) {
-  failures.push(`PR head ${pr.head?.sha ?? 'unknown'} does not match expected ${expectedHead}`);
-}
-
-if (mode === 'production-promotion') {
-  if (pr.state !== 'open') failures.push(`PR is ${pr.state}, not open`);
-  if (pr.draft !== true) failures.push('PR is not Draft');
-  if (pr.merged === true || pr.merged_at) failures.push('PR is already merged');
-} else {
-  if (!(pr.merged === true || pr.merged_at)) failures.push('PR is not merged; checkout approval requires a merged release candidate');
-}
-
-const runs = await api(
-  `/repos/${owner}/${name}/actions/runs?event=pull_request&head_sha=${expectedHead}&per_page=100`,
-);
-const qualityRuns = (runs.workflow_runs ?? [])
+const runs = await api(`/repos/${owner}/${name}/actions/runs?event=pull_request&head_sha=${expectedHead}&per_page=100`);
+const quality = (runs.workflow_runs ?? [])
   .filter((run) => run.name === 'Web quality')
-  .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-const quality = qualityRuns[0];
-if (!quality) failures.push('No Web quality run found for exact head');
-else if (quality.status !== 'completed' || quality.conclusion !== 'success') {
-  failures.push(`Web quality is ${quality.status}/${quality.conclusion ?? 'none'}, not completed/success`);
-}
+  .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
 
-if (!gates.vercelProductionEnvironment) failures.push('Vercel Production environment gate is not verified');
-if (!gates.paddleLive) failures.push('Paddle Live gate is not verified');
-if (!gates.productionDataPlane) failures.push('Production data-plane gate is not verified');
-if (!gates.checkoutClosed) failures.push('Checkout CLOSED gate is not verified');
-if (mode === 'checkout-enable' && !gates.protectedProduction) {
-  failures.push('Protected Production verification is required before checkout approval');
-}
+const { approved, failures } = evaluateReleaseGatekeeper({
+  mode,
+  pr,
+  expectedHead,
+  quality,
+  gates,
+});
 
-const approved = failures.length === 0;
 const context = `release-gatekeeper/${mode}`;
 const state = approved ? 'success' : 'failure';
 const description = approved
@@ -104,7 +82,6 @@ const lines = [
   '',
   `- mode: \`${mode}\``,
   `- exact head: \`${expectedHead}\``,
-  `- PR state: ${pr.merged === true || pr.merged_at ? 'MERGED' : pr.draft ? 'OPEN / DRAFT' : pr.state.toUpperCase()}`,
   `- Web quality: ${quality ? `#${quality.run_number} ${quality.status}/${quality.conclusion ?? 'none'}` : 'not found'}`,
   `- Vercel Production environment: ${gates.vercelProductionEnvironment ? 'VERIFIED' : 'UNVERIFIED'}`,
   `- Paddle Live: ${gates.paddleLive ? 'VERIFIED' : 'UNVERIFIED'}`,

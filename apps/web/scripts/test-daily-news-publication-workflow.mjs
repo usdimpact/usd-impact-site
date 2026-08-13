@@ -49,7 +49,7 @@ assert.ok(pollRequest, 'background polling request must be present');
 assert.match(
   pollRequest[0],
   /--max-time 240/,
-  'a completed response must have enough time for the bounded 150-second repair call',
+  'a completed response must have enough time for the bounded multi-pass repair budget',
 );
 assert.doesNotMatch(
   pollRequest[0],

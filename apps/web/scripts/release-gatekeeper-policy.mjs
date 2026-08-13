@@ -27,11 +27,20 @@ export function evaluateReleaseGatekeeper({ mode, pr, expectedHead, quality, gat
   }
 
   if (!gates.vercelProductionEnvironment) failures.push('Vercel Production environment gate is not verified');
-  if (!gates.paddleLive) failures.push('Paddle Live gate is not verified');
   if (!gates.productionDataPlane) failures.push('Production data-plane gate is not verified');
   if (!gates.checkoutClosed) failures.push('Checkout CLOSED gate is not verified');
-  if (mode === 'checkout-enable' && !gates.protectedProduction) {
-    failures.push('Protected Production verification is required before checkout approval');
+
+  // Commerce-provider readiness is intentionally not a Production-promotion
+  // prerequisite while checkout is explicitly CLOSED. This allows the
+  // protected application/content release to ship independently of a
+  // declined, pending, or replaceable payment provider. Provider readiness
+  // becomes mandatory only at the separate checkout-enable boundary.
+  if (mode === 'checkout-enable') {
+    const commerceProviderLive = gates.commerceProviderLive ?? gates.paddleLive ?? false;
+    if (!commerceProviderLive) failures.push('Live commerce-provider gate is not verified');
+    if (!gates.protectedProduction) {
+      failures.push('Protected Production verification is required before checkout approval');
+    }
   }
 
   return { approved: failures.length === 0, failures };

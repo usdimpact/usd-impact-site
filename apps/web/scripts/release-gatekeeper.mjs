@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { evaluateReleaseGatekeeper } from './release-gatekeeper-policy.mjs';
+import { parseReleaseEvidence } from './release-gatekeeper-evidence.mjs';
 
 const required = (name) => {
   const value = process.env[name]?.trim();
@@ -12,21 +13,13 @@ const token = required('GITHUB_TOKEN');
 const prNumber = Number(required('GATEKEEPER_PR_NUMBER'));
 const expectedHead = required('GATEKEEPER_EXPECTED_HEAD').toLowerCase();
 const mode = required('GATEKEEPER_MODE');
-const evidenceRefs = required('GATEKEEPER_EVIDENCE_REFS');
+const evidenceJson = required('GATEKEEPER_EVIDENCE_JSON');
 
 assert.ok(Number.isInteger(prNumber) && prNumber > 0, 'GATEKEEPER_PR_NUMBER must be a positive integer');
 assert.match(expectedHead, /^[0-9a-f]{40}$/, 'GATEKEEPER_EXPECTED_HEAD must be a full 40-character SHA');
 assert.ok(['production-promotion', 'checkout-enable'].includes(mode), 'Unsupported gatekeeper mode');
-assert.ok(evidenceRefs.length >= 8, 'At least one evidence reference is required');
 
-const attestation = (name) => required(name) === 'verified';
-const gates = {
-  vercelProductionEnvironment: attestation('GATEKEEPER_VERCEL_PRODUCTION_ENV'),
-  paddleLive: attestation('GATEKEEPER_PADDLE_LIVE'),
-  productionDataPlane: attestation('GATEKEEPER_PRODUCTION_DATA_PLANE'),
-  checkoutClosed: attestation('GATEKEEPER_CHECKOUT_CLOSED'),
-  protectedProduction: process.env.GATEKEEPER_PROTECTED_PRODUCTION?.trim() === 'verified',
-};
+const { gates, refs: evidenceRefs } = parseReleaseEvidence(evidenceJson, { expectedHead });
 
 const api = async (path, options = {}) => {
   const response = await fetch(`https://api.github.com${path}`, {
@@ -88,7 +81,8 @@ const lines = [
   `- Production data plane: ${gates.productionDataPlane ? 'VERIFIED' : 'UNVERIFIED'}`,
   `- checkout CLOSED: ${gates.checkoutClosed ? 'VERIFIED' : 'UNVERIFIED'}`,
   `- protected Production: ${gates.protectedProduction ? 'VERIFIED' : 'UNVERIFIED'}`,
-  `- evidence: ${evidenceRefs}`,
+  '- structured evidence:',
+  ...evidenceRefs.map((ref) => `  - \`${ref}\``),
   '',
 ];
 

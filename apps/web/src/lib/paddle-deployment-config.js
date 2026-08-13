@@ -22,6 +22,18 @@ export function isPaddleCheckoutEnabled(environment = process.env) {
   return String(environment.PADDLE_CHECKOUT_ENABLED || '').trim().toLowerCase() === 'true';
 }
 
+function hasAnyPaddleConfiguration(environment) {
+  return [
+    'PADDLE_ENVIRONMENT',
+    'PADDLE_API_KEY',
+    'PADDLE_LAUNCH_PRICE_ID',
+    'PADDLE_STANDARD_PRICE_ID',
+    'PUBLIC_PADDLE_CLIENT_TOKEN',
+    'PADDLE_WEBHOOK_SECRET',
+    'PADDLE_CHECKOUT_URL',
+  ].some((key) => String(environment[key] || '').trim().length > 0);
+}
+
 export function validatePaddleDeploymentConfig(environment = process.env) {
   const vercelEnvironment = String(environment.VERCEL_ENV || '').trim().toLowerCase();
   if (vercelEnvironment !== 'preview' && vercelEnvironment !== 'production') {
@@ -30,19 +42,16 @@ export function validatePaddleDeploymentConfig(environment = process.env) {
 
   const checkoutEnabled = isPaddleCheckoutEnabled(environment);
 
-  // A Production deployment with commerce explicitly CLOSED is allowed to run
-  // without Paddle credentials. This keeps content/account deployment independent
-  // from a declined or replaceable commerce provider while preserving a hard
-  // fail-closed boundary: any checkout enablement still requires full live Paddle
-  // configuration until another provider adapter replaces this implementation.
-  if (vercelEnvironment === 'production' && !checkoutEnabled) {
+  // Production may run without a commerce provider while checkout is CLOSED.
+  // If Paddle configuration is present, keep validating it exactly as before so
+  // partially configured credentials cannot hide behind the closed switch.
+  if (vercelEnvironment === 'production' && !checkoutEnabled && !hasAnyPaddleConfiguration(environment)) {
     return Object.freeze({
       skipped: false,
       vercelEnvironment,
       paddleEnvironment: null,
-      checkoutUrlConfigured: Boolean(String(environment.PADDLE_CHECKOUT_URL || '').trim()),
+      checkoutUrlConfigured: false,
       checkoutEnabled: false,
-      commerceProviderConfigured: false,
     });
   }
 
@@ -81,6 +90,5 @@ export function validatePaddleDeploymentConfig(environment = process.env) {
     paddleEnvironment: config.mode,
     checkoutUrlConfigured: Boolean(config.checkoutUrl),
     checkoutEnabled,
-    commerceProviderConfigured: true,
   });
 }

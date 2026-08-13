@@ -31,6 +31,8 @@ jobs:
         run: node scripts/test-release-gatekeeper-policy.mjs
       - name: Validate release gatekeeper evidence
         run: node scripts/test-release-gatekeeper-evidence.mjs
+      - name: Validate trusted release evidence producers
+        run: node scripts/test-release-gatekeeper-producers.mjs
       - name: Validate content
         run: npm run validate:content
       - name: Validate reports

@@ -4,6 +4,7 @@ import {
   buildMetaDescription,
   validateEditorialBundle,
 } from '../src/lib/daily-news-editorial-validation.js';
+import { buildRepairOutputSchema } from '../api/daily-news-background.js';
 
 const currentTreasuryUrl = 'https://home.treasury.gov/news/press-releases/sb0590';
 const staleTreasuryUrl = 'https://home.treasury.gov/news/press-releases/sb0489';
@@ -158,6 +159,39 @@ assert.equal(metaDescription, 'Treasury supply remains important for rates and d
 assert.ok(metaDescription.length <= 170);
 assert.doesNotMatch(metaDescription, /\bAddit$/);
 
+const august13RepairSchema = buildRepairOutputSchema('2026-08-13');
+const august13CatalystDates = [
+  '2026-08-13',
+  '2026-08-14',
+  '2026-08-15',
+  '2026-08-16',
+  '2026-08-17',
+  '2026-08-18',
+  '2026-08-19',
+  '2026-08-20',
+];
+assert.deepEqual(
+  august13RepairSchema.properties.catalysts.items.properties.date,
+  { type: 'string', enum: august13CatalystDates },
+);
+assert.deepEqual(
+  buildRepairOutputSchema('2026-08-12').properties.catalysts.items.properties.date.enum,
+  [
+    '2026-08-12',
+    '2026-08-13',
+    '2026-08-14',
+    '2026-08-15',
+    '2026-08-16',
+    '2026-08-17',
+    '2026-08-18',
+    '2026-08-19',
+  ],
+);
+assert.deepEqual(
+  august13RepairSchema.properties.catalysts.items.properties.date.enum,
+  august13CatalystDates,
+);
+
 const sourceHandler = await readFile(new URL('../api/daily-news-source.js', import.meta.url), 'utf8');
 assert.match(sourceHandler, /check the official current-date release pages/i);
 assert.match(sourceHandler, /current quarterly refunding release/i);
@@ -182,13 +216,23 @@ assert.match(repairHandler, /Remove every non-matching source/i);
 assert.match(repairHandler, /Never reconstruct, replace, or preserve an ungrounded URL/i);
 assert.match(repairHandler, /complete validation sweep/i);
 assert.match(repairHandler, /named error may be only the first defect/i);
+assert.match(repairHandler, /After pruning any source or source id, re-evaluate every retained highlight/i);
+assert.match(repairHandler, /never leave it supported by only one reporting domain/i);
 assert.match(repairHandler, /central-bank decision language as central-bank catalyst mentions/i);
 assert.match(repairHandler, /If no supported matching catalyst can be retained, remove the forward-looking mention/i);
+assert.match(repairHandler, /exact inclusive window/i);
+assert.match(repairHandler, /repair schema rejects every other date/i);
+assert.match(repairHandler, /Never move, shorten, or invent an event date/i);
+assert.match(repairHandler, /buildRepairOutputSchema\(date\)/);
 assert.match(repairHandler, /Re-scan the complete bundle/i);
 assert.match(repairHandler, /remove unused ledger padding/i);
 assert.match(repairHandler, /Remove every unsupported absence claim from highlights, summary, and body/i);
 assert.match(repairHandler, /Remove first-person offers/i);
 assert.match(repairHandler, /minItems: 3/);
+assert.match(repairHandler, /MAX_REPAIR_ATTEMPTS = 2/);
+assert.match(repairHandler, /REPAIR_TOTAL_TIMEOUT_MS = 225_000/);
+assert.match(repairHandler, /failed validation after two bounded repair attempts/i);
+assert.match(repairHandler, /X-USD-Impact-Repair-Count/);
 
 const groundedHandler = await readFile(new URL('../api/daily-news-grounded-background.js', import.meta.url), 'utf8');
 assert.match(groundedHandler, /at least three distinct source URLs/i);

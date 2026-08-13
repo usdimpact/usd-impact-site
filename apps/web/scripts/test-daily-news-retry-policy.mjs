@@ -8,7 +8,7 @@ assert.equal(isRetryableGroundingFailure({
   repairError: 'The completed response contained fewer than two grounded URLs.',
 }), true);
 assert.equal(isRetryableGroundingFailure({
-  error: 'Daily news source generation failed validation after one repair attempt.',
+  error: 'Daily news source generation failed validation after two bounded repair attempts.',
   initialValidationReason: 'Source eia-wpsr was not returned by OpenAI web search',
   repairValidationReason: 'Source eia-wpsr was not returned by OpenAI web search',
 }), true);
@@ -36,7 +36,7 @@ assert.equal(isRetryableGroundingFailure({
 }), true);
 
 assert.equal(isRetryableGroundingFailure({
-  error: 'Daily news source generation failed validation after one repair attempt.',
+  error: 'Daily news source generation failed validation after two bounded repair attempts.',
   initialValidationReason: 'Highlight 1 requires a current Treasury refunding or auction source',
   repairValidationReason: 'Upcoming systemic catalyst mentioned but missing from catalysts: central-bank',
 }), true);

@@ -3,7 +3,8 @@ const MAX_DAILY_HIGHLIGHT_SOURCE_AGE_DAYS = 14;
 
 const SCHEDULE_FOCUSED_PATTERN = /\b(?:auction|calendar|scheduled|schedule|upcoming|watchlist)\b|\bnext (?:catalyst|decision|event|major|release|scheduled|test)\b/i;
 const UNSUPPORTED_ABSENCE_PATTERN = /\bno (?:new|current|official|primary(?:-source)?|material|relevant)[^.]{0,100}\b(?:available|found|identified|published|released)\b|\b(?:did not|does not) (?:find|identify|show)\b/i;
-const TREASURY_REFUNDING_PATTERN = /\bquarterly refunding\b|\brefunding auctions?\b|\b(?:3|10|30)[ -]?year (?:notes?|bonds?)(?: auctions?)?\b/i;
+const TREASURY_REFUNDING_PATTERN = /\bquarterly refunding\b|\brefunding auctions?\b|\b(?:3|10|30)[ -]?year (?:notes?|bonds?|auctions?|auction windows?)\b/i;
+const UNICODE_DASH_PATTERN = /[\u2010-\u2015\u2212]/g;
 const CONVERSATIONAL_RESIDUE_PATTERN = /(?:^|\n)\s*(?:#+\s*)?if you want\b|\bI can (?:add|check|expand|help|provide|re-?run)\b/i;
 
 const SYSTEMIC_CATALYST_RULES = [
@@ -39,6 +40,13 @@ function itemText(item) {
   return [item?.headline, item?.development, item?.whyItMatters, item?.event]
     .filter((value) => typeof value === 'string')
     .join(' ');
+}
+
+function hasTreasuryRefundingLanguage(value) {
+  const normalized = String(value ?? '')
+    .replace(UNICODE_DASH_PATTERN, '-')
+    .replace(/\u00a0/g, ' ');
+  return TREASURY_REFUNDING_PATTERN.test(normalized);
 }
 
 function referencedSources(item, sourceById, context) {
@@ -127,7 +135,7 @@ export function validateEditorialBundle({ editionDate, sources, highlights, cata
       issues.push(`${context} makes an unsupported absence claim`);
     }
 
-    if (TREASURY_REFUNDING_PATTERN.test(text)
+    if (hasTreasuryRefundingLanguage(text)
       && !hasRecentSource(referenced, edition, isTreasurySource)) {
       issues.push(`${context} requires a current Treasury refunding or auction source`);
     }
@@ -139,7 +147,7 @@ export function validateEditorialBundle({ editionDate, sources, highlights, cata
 
   catalysts.forEach((catalyst, index) => {
     const text = itemText(catalyst);
-    if (!TREASURY_REFUNDING_PATTERN.test(text)) return;
+    if (!hasTreasuryRefundingLanguage(text)) return;
     const context = `Catalyst ${index + 1}`;
     const referenced = referencedSources(catalyst, sourceById, context);
     if (!hasRecentSource(referenced, edition, isTreasurySource)) {
@@ -154,7 +162,7 @@ export function validateEditorialBundle({ editionDate, sources, highlights, cata
     if (CONVERSATIONAL_RESIDUE_PATTERN.test(text)) {
       issues.push(`${context} contains conversational assistant residue`);
     }
-    if (TREASURY_REFUNDING_PATTERN.test(text)
+    if (hasTreasuryRefundingLanguage(text)
       && !hasRecentSource(sources, edition, isTreasurySource)) {
       issues.push(`${context} requires a current Treasury refunding or auction source`);
     }

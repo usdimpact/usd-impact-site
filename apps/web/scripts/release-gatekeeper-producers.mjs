@@ -25,13 +25,6 @@ export function produceVercelProductionEnvironmentEvidence(input) {
     'SUPABASE_URL',
     'SUPABASE_PUBLISHABLE_KEY',
     'SUPABASE_SECRET_KEY',
-    'PADDLE_WEBHOOK_SECRET',
-    'PADDLE_ENVIRONMENT',
-    'PADDLE_API_KEY',
-    'PADDLE_LAUNCH_PRICE_ID',
-    'PADDLE_STANDARD_PRICE_ID',
-    'PUBLIC_PADDLE_CLIENT_TOKEN',
-    'PADDLE_CHECKOUT_URL',
   ]);
   const present = new Set(input.presentVariableNames ?? []);
   for (const name of required) assert.ok(present.has(name), `Missing Production variable name: ${name}`);

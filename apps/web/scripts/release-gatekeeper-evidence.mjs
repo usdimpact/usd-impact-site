@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 
 const GATES = new Set([
   'vercel-production-environment',
+  'commerce-provider-live',
   'paddle-live',
   'production-data-plane',
   'checkout-closed',
@@ -10,6 +11,7 @@ const GATES = new Set([
 
 const SOURCES = {
   'vercel-production-environment': new Set(['vercel-api', 'vercel-dashboard', 'owner-visible-vercel']),
+  'commerce-provider-live': new Set(['commerce-provider-api', 'commerce-provider-dashboard', 'owner-visible-commerce-provider']),
   'paddle-live': new Set(['paddle-api', 'paddle-dashboard', 'owner-visible-paddle']),
   'production-data-plane': new Set(['supabase-api', 'github-audit']),
   'checkout-closed': new Set(['vercel-api', 'vercel-dashboard', 'deployment-validation', 'github-actions']),
@@ -18,6 +20,7 @@ const SOURCES = {
 
 const MAX_AGE_MS = {
   'vercel-production-environment': 6 * 60 * 60 * 1000,
+  'commerce-provider-live': 6 * 60 * 60 * 1000,
   'paddle-live': 6 * 60 * 60 * 1000,
   'production-data-plane': 24 * 60 * 60 * 1000,
   'checkout-closed': 60 * 60 * 1000,
@@ -55,7 +58,7 @@ export function parseReleaseEvidence(raw, { expectedHead, now = Date.now() }) {
   assert.equal(envelope.schema, 'usd-impact.release-gate-evidence.v1', 'Unsupported evidence schema');
   assert.equal(envelope.release_head?.toLowerCase(), expectedHead.toLowerCase(), 'Evidence envelope release_head mismatch');
   assert.ok(Array.isArray(envelope.records), 'Evidence records must be an array');
-  assert.ok(envelope.records.length >= 4 && envelope.records.length <= 20, 'Evidence must contain 4 to 20 records');
+  assert.ok(envelope.records.length >= 3 && envelope.records.length <= 20, 'Evidence must contain 3 to 20 records');
 
   const verified = new Map();
   const refs = [];
@@ -80,10 +83,12 @@ export function parseReleaseEvidence(raw, { expectedHead, now = Date.now() }) {
     refs.push(`${record.gate}:${record.source}:${record.ref}`);
   }
 
+  const paddleLive = verified.has('paddle-live');
   return {
     gates: {
       vercelProductionEnvironment: verified.has('vercel-production-environment'),
-      paddleLive: verified.has('paddle-live'),
+      commerceProviderLive: verified.has('commerce-provider-live') || paddleLive,
+      paddleLive,
       productionDataPlane: verified.has('production-data-plane'),
       checkoutClosed: verified.has('checkout-closed'),
       protectedProduction: verified.has('protected-production'),

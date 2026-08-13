@@ -18,6 +18,10 @@ function requireWebhookSecret(value) {
   }
 }
 
+export function isPaddleCheckoutEnabled(environment = process.env) {
+  return String(environment.PADDLE_CHECKOUT_ENABLED || '').trim().toLowerCase() === 'true';
+}
+
 export function validatePaddleDeploymentConfig(environment = process.env) {
   const vercelEnvironment = String(environment.VERCEL_ENV || '').trim().toLowerCase();
   if (vercelEnvironment !== 'preview' && vercelEnvironment !== 'production') {
@@ -58,5 +62,6 @@ export function validatePaddleDeploymentConfig(environment = process.env) {
     vercelEnvironment,
     paddleEnvironment: config.mode,
     checkoutUrlConfigured: Boolean(config.checkoutUrl),
+    checkoutEnabled: isPaddleCheckoutEnabled(environment),
   });
 }

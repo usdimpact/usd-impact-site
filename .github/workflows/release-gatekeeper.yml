@@ -17,33 +17,8 @@ on:
         options:
           - production-promotion
           - checkout-enable
-      vercel_production_environment:
-        description: Fresh Vercel Production env evidence verified
-        required: true
-        type: choice
-        options: [unverified, verified]
-      paddle_live:
-        description: Fresh Paddle Live readiness evidence verified
-        required: true
-        type: choice
-        options: [unverified, verified]
-      production_data_plane:
-        description: Production Supabase/content/audio data plane verified
-        required: true
-        type: choice
-        options: [unverified, verified]
-      checkout_closed:
-        description: Checkout is confirmed CLOSED at evaluation time
-        required: true
-        type: choice
-        options: [unverified, verified]
-      protected_production:
-        description: Protected Production verification complete (required for checkout-enable)
-        required: true
-        type: choice
-        options: [unverified, verified]
-      evidence_refs:
-        description: Non-secret evidence refs (PR comment IDs, run IDs, dashboard audit refs)
+      evidence_json:
+        description: Structured non-secret usd-impact.release-gate-evidence.v1 JSON envelope
         required: true
 
 permissions:
@@ -78,10 +53,5 @@ jobs:
           GATEKEEPER_PR_NUMBER: ${{ inputs.pr_number }}
           GATEKEEPER_EXPECTED_HEAD: ${{ inputs.expected_head }}
           GATEKEEPER_MODE: ${{ inputs.mode }}
-          GATEKEEPER_VERCEL_PRODUCTION_ENV: ${{ inputs.vercel_production_environment }}
-          GATEKEEPER_PADDLE_LIVE: ${{ inputs.paddle_live }}
-          GATEKEEPER_PRODUCTION_DATA_PLANE: ${{ inputs.production_data_plane }}
-          GATEKEEPER_CHECKOUT_CLOSED: ${{ inputs.checkout_closed }}
-          GATEKEEPER_PROTECTED_PRODUCTION: ${{ inputs.protected_production }}
-          GATEKEEPER_EVIDENCE_REFS: ${{ inputs.evidence_refs }}
+          GATEKEEPER_EVIDENCE_JSON: ${{ inputs.evidence_json }}
         run: node scripts/release-gatekeeper.mjs

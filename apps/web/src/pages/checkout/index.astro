@@ -1,0 +1,23 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Checkout unavailable | USD Impact"
+  description="USD Impact checkout is closed while payment-provider review and release verification are completed."
+>
+  <main class="account-main">
+    <section class="account-panel" aria-labelledby="checkout-title">
+      <p class="eyebrow">USD IMPACT CHECKOUT</p>
+      <h1 id="checkout-title">Checkout is not open yet.</h1>
+      <p>
+        We are completing payment-provider review and protected delivery verification before enabling purchases.
+        No payment can be made on this page, and no access is granted from a browser redirect alone.
+      </p>
+      <div class="button-row account-actions">
+        <a class="button primary" href="/book/read-the-dollar-first/#book-waitlist">Join the launch waitlist</a>
+        <a class="button account-secondary" href="/account/">Return to your account</a>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

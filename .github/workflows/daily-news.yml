@@ -224,4 +224,9 @@ jobs:
           fi
 
           gh run watch "$run_id" --exit-status
+          run_conclusion="$(gh run view "$run_id" --json conclusion --jq '.conclusion // empty')"
+          if [ "$run_conclusion" != "success" ]; then
+            echo "Web quality run $run_id concluded '${run_conclusion:-unknown}'; expected success."
+            exit 1
+          fi
           echo "Daily USD Impact ${edition_date} passed Web quality and is ready for protected review and merge: $pr_url"

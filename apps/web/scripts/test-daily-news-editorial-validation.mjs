@@ -100,6 +100,24 @@ assert.throws(
   /requires a current Treasury refunding or auction source/,
 );
 
+for (const treasuryHeadline of [
+  'Treasury’s 3‑year and 10‑year auction windows settle next week.',
+  'Treasury’s 30–year bond auction remains the duration test.',
+]) {
+  assert.throws(
+    () => validateEditorialBundle(bundle({
+      sources: [source('treasury-stale', '2026-05-06', staleTreasuryUrl)],
+      highlights: [{
+        headline: treasuryHeadline,
+        sourceIds: ['treasury-stale'],
+      }],
+      catalysts: [],
+      summary: 'Treasury supply remains in focus.',
+    })),
+    /requires a current Treasury refunding or auction source/,
+  );
+}
+
 assert.throws(
   () => validateEditorialBundle(bundle({ catalysts: [
     { event: 'BLS Employment Situation', sourceIds: ['bls-calendar'] },

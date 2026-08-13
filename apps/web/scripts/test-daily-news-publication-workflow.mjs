@@ -29,6 +29,11 @@ assert.match(
 );
 assert.match(
   workflow,
+  /run_conclusion="\$\(gh run view "\$run_id" --json conclusion --jq '\.conclusion \/\/ empty'\)"[\s\S]*if \[ "\$run_conclusion" != "success" \]; then[\s\S]*exit 1/,
+  'publication must reject action_required and every other non-success workflow conclusion',
+);
+assert.match(
+  workflow,
   /printf '%s\\n\\n%s\\n\\n%s\\n'/,
   'publication pull-request copy must use the shell-safe printf writer',
 );

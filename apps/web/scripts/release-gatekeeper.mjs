@@ -51,12 +51,17 @@ assert.ok(owner && name, 'GITHUB_REPOSITORY must be owner/name');
 const pr = await api(`/repos/${owner}/${name}/pulls/${prNumber}`);
 const failures = [];
 
-if (pr.state !== 'open') failures.push(`PR is ${pr.state}, not open`);
-if (pr.draft !== true) failures.push('PR is not Draft');
-if (pr.merged === true || pr.merged_at) failures.push('PR is already merged');
 if (pr.base?.ref !== 'main') failures.push(`PR base is ${pr.base?.ref ?? 'unknown'}, not main`);
 if (pr.head?.sha?.toLowerCase() !== expectedHead) {
   failures.push(`PR head ${pr.head?.sha ?? 'unknown'} does not match expected ${expectedHead}`);
+}
+
+if (mode === 'production-promotion') {
+  if (pr.state !== 'open') failures.push(`PR is ${pr.state}, not open`);
+  if (pr.draft !== true) failures.push('PR is not Draft');
+  if (pr.merged === true || pr.merged_at) failures.push('PR is already merged');
+} else {
+  if (!(pr.merged === true || pr.merged_at)) failures.push('PR is not merged; checkout approval requires a merged release candidate');
 }
 
 const runs = await api(
@@ -99,6 +104,7 @@ const lines = [
   '',
   `- mode: \`${mode}\``,
   `- exact head: \`${expectedHead}\``,
+  `- PR state: ${pr.merged === true || pr.merged_at ? 'MERGED' : pr.draft ? 'OPEN / DRAFT' : pr.state.toUpperCase()}`,
   `- Web quality: ${quality ? `#${quality.run_number} ${quality.status}/${quality.conclusion ?? 'none'}` : 'not found'}`,
   `- Vercel Production environment: ${gates.vercelProductionEnvironment ? 'VERIFIED' : 'UNVERIFIED'}`,
   `- Paddle Live: ${gates.paddleLive ? 'VERIFIED' : 'UNVERIFIED'}`,

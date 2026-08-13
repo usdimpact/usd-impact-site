@@ -35,6 +35,8 @@ jobs:
         run: node scripts/test-release-gatekeeper-producers.mjs
       - name: Validate authenticated release audit adapters
         run: node scripts/test-release-gatekeeper-audit-adapters.mjs
+      - name: Validate Vercel release audit collector
+        run: node scripts/test-collect-vercel-release-audit.mjs
       - name: Validate content
         run: npm run validate:content
       - name: Validate reports

@@ -7,6 +7,8 @@ const files = {
   privacy: read('src/pages/privacy.md'),
   terms: read('src/pages/terms.md'),
   refund: read('src/pages/refund-policy.md'),
+  account: read('src/pages/account/index.astro'),
+  checkout: read('src/pages/checkout/index.astro'),
   accessRequired: read('src/pages/account/access-required/index.astro'),
 };
 
@@ -27,9 +29,19 @@ requireText(files.product, 'Product page', [
   'ongoing access',
 ]);
 requireText(files.terms, 'Terms', ['SC Kela Leads SRL', '40790448', 'J38/820/2020', 'support@usd-impact.com']);
-requireText(files.refund, 'Refund Policy', ['Library Pass', 'Guided Interactive Edition', 'audiobook', '14 calendar days', 'full refund', 'support@usd-impact.com', 'Paddle']);
-requireText(files.privacy, 'Privacy Notice', ['Library Pass', 'private audiobook masters', 'Paddle', 'Supabase', 'SC Kela Leads SRL', 'support@usd-impact.com']);
+requireText(files.terms, 'Terms', ['authorized payment provider', 'identified during checkout']);
+requireText(files.refund, 'Refund Policy', ['Library Pass', 'Guided Interactive Edition', 'audiobook', '14 calendar days', 'full refund', 'support@usd-impact.com', 'payment provider']);
+requireText(files.privacy, 'Privacy Notice', ['Library Pass', 'private audiobook masters', 'authorized payment provider', 'Supabase', 'SC Kela Leads SRL', 'support@usd-impact.com']);
+requireText(files.checkout, 'Checkout page', ['Checkout is not open yet.', 'payment-provider review', 'No payment can be made on this page']);
 requireText(files.accessRequired, 'Access required page', ['Library Pass required', 'Guided Interactive Edition', 'complete English audiobook']);
+
+const customerFacingFiles = ['product', 'privacy', 'terms', 'refund', 'account', 'checkout'];
+const commerceProviderNames = ['Paddle', 'FastSpring'];
+for (const name of customerFacingFiles) {
+  for (const provider of commerceProviderNames) {
+    if (files[name].includes(provider)) failures.push(`${name} contains provider-specific customer copy: ${provider}`);
+  }
+}
 
 const privateAddressFragments = ['Doctor Hacman', 'Bl. 83', 'Sc. B', 'Ap. 9'];
 for (const [label, file] of Object.entries(files)) {

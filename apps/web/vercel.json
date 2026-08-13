@@ -24,10 +24,6 @@
       "destination": "/api/guided-edition?action=mastery"
     },
     {
-      "source": "/api/paddle-checkout",
-      "destination": "/api/account?action=checkout"
-    },
-    {
       "source": "/api/auth-login",
       "destination": "/api/account?action=login"
     },

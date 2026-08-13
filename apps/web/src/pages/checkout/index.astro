@@ -1,107 +1,23 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-
-const clientToken = import.meta.env.PUBLIC_PADDLE_CLIENT_TOKEN || '';
-const paddleEnvironment = import.meta.env.PADDLE_ENVIRONMENT === 'production' ? 'production' : 'sandbox';
 ---
 
 <BaseLayout
-  title="Secure checkout | USD Impact"
-  description="Complete your USD Impact purchase securely with Paddle."
+  title="Checkout unavailable | USD Impact"
+  description="USD Impact checkout is closed while payment-provider review and release verification are completed."
 >
   <main class="account-main">
     <section class="account-panel" aria-labelledby="checkout-title">
       <p class="eyebrow">USD IMPACT CHECKOUT</p>
-      <h1 id="checkout-title">Secure checkout</h1>
-      <p id="checkout-status" role="status" aria-live="polite">
-        Preparing your secure Paddle checkout…
-      </p>
+      <h1 id="checkout-title">Checkout is not open yet.</h1>
       <p>
-        Payment details are collected by Paddle. Access is activated only after a verified payment event is processed.
+        We are completing payment-provider review and protected delivery verification before enabling purchases.
+        No payment can be made on this page, and no access is granted from a browser redirect alone.
       </p>
-      <p>
-        <a href="/account/">Return to your account</a>
-      </p>
+      <div class="button-row account-actions">
+        <a class="button primary" href="/book/read-the-dollar-first/#book-waitlist">Join the launch waitlist</a>
+        <a class="button account-secondary" href="/account/">Return to your account</a>
+      </div>
     </section>
   </main>
-
-  <div
-    id="paddle-checkout-config"
-    data-client-token={clientToken}
-    data-paddle-environment={paddleEnvironment}
-    data-account-return="/account/?checkout=complete"
-    hidden
-  ></div>
-
-  <script is:inline src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
-  <script is:inline>
-    const config = document.getElementById('paddle-checkout-config');
-    const status = document.getElementById('checkout-status');
-    const token = config?.dataset.clientToken || '';
-    const paddleEnvironment = config?.dataset.paddleEnvironment === 'production' ? 'production' : 'sandbox';
-    const returnPath = config?.dataset.accountReturn || '/account/';
-    const parameters = new URLSearchParams(window.location.search);
-    const transactionId =
-      parameters.get('_ptxn') ||
-      parameters.get('ptxn') ||
-      parameters.get('transaction_id') ||
-      '';
-    let checkoutCompleted = false;
-
-    function setStatus(message) {
-      if (status) status.textContent = message;
-    }
-
-    const tokenPattern = paddleEnvironment === 'production'
-      ? /^live_[a-zA-Z0-9]{27}$/
-      : /^test_[a-zA-Z0-9]{27}$/;
-
-    if (!tokenPattern.test(token)) {
-      setStatus('Checkout is temporarily unavailable because the Paddle client token is missing or invalid.');
-    } else if (!/^txn_[a-z0-9]{26}$/.test(transactionId)) {
-      setStatus('This checkout link is invalid or incomplete. Return to your account and start checkout again.');
-    } else if (!window.Paddle) {
-      setStatus('Paddle Checkout could not load. Refresh this page and try again.');
-    } else {
-      if (paddleEnvironment === 'sandbox') {
-        window.Paddle.Environment.set('sandbox');
-      }
-      window.Paddle.Initialize({
-        token,
-        eventCallback(event) {
-          if (event?.name === 'checkout.completed') {
-            checkoutCompleted = true;
-            setStatus('Payment received. Confirming your access…');
-            window.setTimeout(() => {
-              window.location.assign(returnPath);
-            }, 1200);
-          } else if (event?.name === 'checkout.loaded') {
-            setStatus('Secure checkout is ready.');
-          } else if (event?.name === 'checkout.payment.initiated') {
-            setStatus('Processing your payment securely…');
-          } else if (event?.name === 'checkout.payment.failed') {
-            setStatus('Payment was not completed. Check your payment details or try again. No access has been granted.');
-          } else if (event?.name === 'checkout.payment.error' || event?.name === 'checkout.error') {
-            setStatus('Paddle could not process the checkout. Try again or return to your account for billing support.');
-          } else if (event?.name === 'checkout.closed' && !checkoutCompleted) {
-            setStatus('Checkout closed. Returning to your account…');
-            window.setTimeout(() => {
-              window.location.assign('/account/?checkout=cancelled');
-            }, 400);
-          }
-        },
-      });
-
-      setStatus('Opening secure checkout…');
-      window.Paddle.Checkout.open({
-        transactionId,
-        settings: {
-          displayMode: 'overlay',
-          theme: 'light',
-          locale: 'en',
-          allowLogout: false,
-        },
-      });
-    }
-  </script>
 </BaseLayout>

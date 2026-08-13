@@ -6,7 +6,7 @@ description: "The 14-day refund policy for the Read the Dollar First Library Pas
 
 # Refund Policy
 
-_Last updated: August 12, 2026_
+_Last updated: August 13, 2026_
 
 This policy applies to one-time purchases of the *Read the Dollar First Library Pass*, including the Guided Interactive Edition and complete English audiobook, from USD Impact.
 
@@ -14,11 +14,11 @@ This policy applies to one-time purchases of the *Read the Dollar First Library 
 
 You may request a full refund within **14 calendar days of the purchase date**. The request must be sent before the end of that 14-day period.
 
-To request a refund, email [support@usd-impact.com](mailto:support@usd-impact.com) from the email address associated with the purchase. Include enough information to identify the transaction, such as the purchase date or Paddle transaction or invoice number. **Do not send complete payment-card details.**
+To request a refund, email [support@usd-impact.com](mailto:support@usd-impact.com) from the email address associated with the purchase. Include enough information to identify the transaction, such as the purchase date or the transaction, order, or invoice number shown on your receipt. **Do not send complete payment-card details.**
 
 ## How refunds are handled
 
-Paddle is the merchant of record and processes the payment and approved refund to the original payment method. Bank and payment-provider processing times may vary after a refund is issued.
+The authorized payment provider or merchant of record identified on the receipt processes the payment and any approved refund to the original payment method. Bank and payment-provider processing times may vary after a refund is issued.
 
 We will confirm receipt of the request and may ask for limited information needed to locate the transaction or protect the account from fraud. A refund does not require you to provide investment, financial, or other sensitive personal information.
 
@@ -28,7 +28,7 @@ Library Pass access associated with the refunded purchase, including Guided Inte
 
 ## Duplicate charges, technical problems, or unauthorized payments
 
-Contact [support@usd-impact.com](mailto:support@usd-impact.com) promptly if you see a possible duplicate charge, cannot access the purchased Library Pass after a confirmed payment, or believe a payment was unauthorized. We will investigate the transaction and coordinate with Paddle where required.
+Contact [support@usd-impact.com](mailto:support@usd-impact.com) promptly if you see a possible duplicate charge, cannot access the purchased Library Pass after a confirmed payment, or believe a payment was unauthorized. We will investigate the transaction and coordinate with the payment provider where required.
 
 ## Statutory rights
 

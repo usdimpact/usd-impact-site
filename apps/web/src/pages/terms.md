@@ -6,7 +6,7 @@ description: "Terms governing use of USD Impact and purchases of the Read the Do
 
 # Terms & Conditions
 
-_Last updated: August 12, 2026_
+_Last updated: August 13, 2026_
 
 These Terms & Conditions govern use of the USD Impact website and the purchase and use of the *Read the Dollar First Library Pass*. By creating an account or completing a purchase, you agree to these Terms. Mandatory consumer rights that apply in your country are not limited by these Terms.
 
@@ -24,11 +24,11 @@ You must provide an email address you control and keep access to your account se
 
 ## 4. Product, price, and payment
 
-The Library Pass is sold as a one-time purchase and includes the Guided Interactive Edition and complete English audiobook described on the product page. It is separate from Research Membership: neither product grants access to the other unless a later offer expressly says so. The product page states the applicable USD price, offer period, and included deliverables. Paddle acts as merchant of record for checkout, payment processing, applicable tax calculation, invoices, and refunds. The final amount, currency, and applicable taxes are displayed before payment is confirmed.
+The Library Pass is sold as a one-time purchase and includes the Guided Interactive Edition and complete English audiobook described on the product page. It is separate from Research Membership: neither product grants access to the other unless a later offer expressly says so. The product page states the applicable USD price, offer period, and included deliverables. Checkout, payment processing, applicable tax calculation, invoices, and refunds are handled by the authorized payment provider or merchant of record identified during checkout. The final amount, currency, applicable taxes, provider identity, and provider terms are displayed before payment is confirmed.
 
 ## 5. Delivery and ongoing access
 
-Access is normally attached to the verified USD Impact account after Paddle confirms a completed payment. Contact support if access is not available after payment confirmation.
+Access is normally attached to the verified USD Impact account after the authorized payment provider confirms a completed payment. Contact support if access is not available after payment confirmation.
 
 An active Library Pass provides ongoing access to the purchased Guided Interactive Edition and audiobook without a fixed expiry date or recurring subscription fee. “Ongoing access” does not mean that the service or every technical feature is guaranteed to operate forever. Access remains subject to these Terms, service availability, security requirements, and any valid refund, reversal, dispute, chargeback, or account-enforcement action. We may maintain, correct, improve, or replace technical components while preserving the purchased edition's core educational purpose.
 
@@ -58,7 +58,7 @@ To the extent permitted by applicable law, USD Impact is not responsible for inv
 
 ## 11. Privacy
 
-The [Privacy Notice](/privacy/) explains how account, purchase, learning, support, and operational information is processed. Payment information is processed by Paddle; USD Impact does not store complete payment-card details.
+The [Privacy Notice](/privacy/) explains how account, purchase, learning, support, and operational information is processed. Payment information is processed by the authorized payment provider identified during checkout; USD Impact does not store complete payment-card details.
 
 ## 12. Changes and governing law
 

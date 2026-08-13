@@ -53,7 +53,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <section id="billing-support" class="card account-panel" aria-labelledby="billing-support-heading">
         <h2 id="billing-support-heading">Billing &amp; purchase support</h2>
         <p>
-          Paddle sends the purchase receipt and invoice link by email. If access is still pending,
+          Your payment provider sends the purchase receipt and invoice link by email. If access is still pending,
           you see a possible duplicate charge, or you need help with a refund or invoice, send a secure request below.
         </p>
         <form id="billing-support-form" class="account-form">
@@ -73,7 +73,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             maxlength="2000"
             rows="6"
             required
-            placeholder="Describe what happened. You may include the Paddle transaction reference from your receipt, but never enter card details."
+            placeholder="Describe what happened. You may include the transaction, order, or invoice reference from your receipt, but never enter card details."
           ></textarea>
           <button class="button primary" type="submit">Send secure request</button>
         </form>
@@ -183,7 +183,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       showMessage('Checking verified payment status…', 'pending');
       showCheckoutResult({
         title: 'Confirming payment',
-        text: 'Paddle reported that checkout completed. Access will appear only after the signed payment event is verified.',
+        text: 'The checkout provider reported that payment completed. Access will appear only after the signed payment event is verified.',
         state: 'pending',
       });
 
@@ -195,7 +195,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             showMessage('Verified payment confirmed.', 'success');
             showCheckoutResult({
               title: 'Payment confirmed — access is active',
-              text: 'The verified Paddle payment event has been processed and your durable access is ready.',
+              text: 'The verified payment event has been processed and your durable access is ready.',
               state: 'success',
               allowAccess: true,
             });

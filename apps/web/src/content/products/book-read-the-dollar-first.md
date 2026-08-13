@@ -42,7 +42,7 @@ The Library Pass is a one-time purchase. It is independent of Research Membershi
 - **Launch price: USD 39.00.** The launch offer is limited to the approved launch window and the first 100 completed purchases, whichever limit is reached first.
 - **Standard price: USD 49.00.** Applies after the launch offer ends.
 
-Taxes and any supported currency conversion are calculated and displayed during Paddle checkout. The purchase is one-time, not a subscription. Public checkout remains unavailable until the protected Production delivery, payment, access, and support experience has passed release verification and checkout is explicitly enabled.
+Taxes and any supported currency conversion are calculated and displayed by the authorized payment provider during checkout. The purchase is one-time, not a subscription. Public checkout remains unavailable until the protected Production delivery, payment, access, and support experience has passed release verification and checkout is explicitly enabled.
 
 Purchases are covered by the [14-day Refund Policy](/refund-policy/). Use of the product is also subject to the [Terms & Conditions](/terms/) and [Privacy Notice](/privacy/).
 
@@ -72,4 +72,4 @@ This is not a signal service, portfolio recommendation, forecast product or trad
 
 ## Availability and delivery
 
-The Library Pass will open only after the protected Production experience has passed release verification and checkout is explicitly enabled. After Paddle confirms a completed payment, Guided Interactive Edition and audiobook access are attached to the verified USD Impact account used for the purchase. If access does not appear, contact [support@usd-impact.com](mailto:support@usd-impact.com).
+The Library Pass will open only after the protected Production experience has passed release verification and checkout is explicitly enabled. After the authorized payment provider confirms a completed payment, Guided Interactive Edition and audiobook access are attached to the verified USD Impact account used for the purchase. The provider will be identified before payment details are entered. If access does not appear, contact [support@usd-impact.com](mailto:support@usd-impact.com).

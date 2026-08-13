@@ -8,7 +8,7 @@ import { parseReleaseEvidence } from './release-gatekeeper-evidence.mjs';
 import { buildReleaseEvidenceEnvelope } from './release-gatekeeper-producers.mjs';
 
 const shaPattern = /^[0-9a-f]{40}$/;
-const dataPlaneKeys = new Set(['gate', 'status', 'source', 'ref', 'observed_at', 'release_head']);
+const recordKeys = new Set(['gate', 'status', 'source', 'ref', 'observed_at', 'release_head']);
 
 function assertExactKeys(value, allowed, label) {
   assert.ok(value && typeof value === 'object' && !Array.isArray(value), `${label} must be an object`);
@@ -16,35 +16,63 @@ function assertExactKeys(value, allowed, label) {
   assert.deepEqual(unexpected, [], `${label} contains unsupported fields: ${unexpected.join(', ')}`);
 }
 
-function validateProductionDataPlaneRecord(record, releaseHead) {
-  assertExactKeys(record, dataPlaneKeys, 'Production data-plane record');
-  assert.equal(record.gate, 'production-data-plane', 'Production data-plane record has wrong gate');
-  assert.equal(record.status, 'verified', 'Production data-plane record must be verified');
-  assert.ok(['supabase-api', 'github-audit'].includes(record.source), 'Unsupported Production data-plane source');
-  assert.equal(record.release_head, releaseHead, 'Production data-plane record release SHA mismatch');
-  assert.equal(typeof record.ref, 'string', 'Production data-plane record ref must be a string');
-  assert.match(record.ref, /^[A-Za-z0-9][A-Za-z0-9._:/#-]{2,199}$/, 'Production data-plane record ref format is invalid');
-  assert.ok(Number.isFinite(Date.parse(record.observed_at)), 'Production data-plane observed_at must be a valid timestamp');
+function validateRecord(record, { gate, sources, releaseHead, label }) {
+  assertExactKeys(record, recordKeys, label);
+  assert.equal(record.gate, gate, `${label} has wrong gate`);
+  assert.equal(record.status, 'verified', `${label} must be verified`);
+  assert.ok(sources.includes(record.source), `Unsupported ${label} source`);
+  assert.equal(record.release_head, releaseHead, `${label} release SHA mismatch`);
+  assert.equal(typeof record.ref, 'string', `${label} ref must be a string`);
+  assert.match(record.ref, /^[A-Za-z0-9][A-Za-z0-9._:/#-]{2,199}$/, `${label} ref format is invalid`);
+  assert.ok(Number.isFinite(Date.parse(record.observed_at)), `${label} observed_at must be a valid timestamp`);
   return record;
 }
 
-export function assembleReleaseEvidence({ releaseHead, vercelAudit, paddleAudit, productionDataPlaneRecord, now = Date.now() }) {
+function validateProductionDataPlaneRecord(record, releaseHead) {
+  return validateRecord(record, {
+    gate: 'production-data-plane',
+    sources: ['supabase-api', 'github-audit'],
+    releaseHead,
+    label: 'Production data-plane record',
+  });
+}
+
+function validateCommerceProviderRecord(record, releaseHead) {
+  return validateRecord(record, {
+    gate: 'commerce-provider-live',
+    sources: ['commerce-provider-api', 'commerce-provider-dashboard', 'owner-visible-commerce-provider'],
+    releaseHead,
+    label: 'Commerce-provider record',
+  });
+}
+
+export function assembleReleaseEvidence({
+  releaseHead,
+  vercelAudit,
+  paddleAudit = null,
+  commerceProviderRecord = null,
+  productionDataPlaneRecord,
+  now = Date.now(),
+}) {
   assert.match(releaseHead, shaPattern, 'releaseHead must be a full lowercase SHA');
 
-  const vercelRecords = adaptAuthenticatedVercelAudit(vercelAudit, { releaseHead });
-  const paddleRecords = adaptAuthenticatedPaddleAudit(paddleAudit, { releaseHead });
-  const dataPlaneRecord = validateProductionDataPlaneRecord(productionDataPlaneRecord, releaseHead);
+  const records = [
+    ...adaptAuthenticatedVercelAudit(vercelAudit, { releaseHead }),
+  ];
 
-  const envelope = buildReleaseEvidenceEnvelope({
-    releaseHead,
-    records: [...vercelRecords, ...paddleRecords, dataPlaneRecord],
-  });
+  if (paddleAudit) records.push(...adaptAuthenticatedPaddleAudit(paddleAudit, { releaseHead }));
+  if (commerceProviderRecord) records.push(validateCommerceProviderRecord(commerceProviderRecord, releaseHead));
+  records.push(validateProductionDataPlaneRecord(productionDataPlaneRecord, releaseHead));
 
+  const envelope = buildReleaseEvidenceEnvelope({ releaseHead, records });
   const parsed = parseReleaseEvidence(JSON.stringify(envelope), { expectedHead: releaseHead, now });
+
   assert.equal(parsed.gates.vercelProductionEnvironment, true, 'Vercel Production gate did not validate');
   assert.equal(parsed.gates.checkoutClosed, true, 'Checkout CLOSED gate did not validate');
-  assert.equal(parsed.gates.paddleLive, true, 'Paddle Live gate did not validate');
   assert.equal(parsed.gates.productionDataPlane, true, 'Production data-plane gate did not validate');
+  if (paddleAudit || commerceProviderRecord) {
+    assert.equal(parsed.gates.commerceProviderLive, true, 'Commerce-provider gate did not validate');
+  }
 
   return envelope;
 }
@@ -64,13 +92,11 @@ function parseArgs(argv) {
 
 async function readJsonFile(path, label) {
   assert.equal(typeof path, 'string', `${label} path is required`);
-  let parsed;
   try {
-    parsed = JSON.parse(await readFile(path, 'utf8'));
+    return JSON.parse(await readFile(path, 'utf8'));
   } catch (error) {
     throw new Error(`${label} must be readable valid JSON: ${error.message}`);
   }
-  return parsed;
 }
 
 async function main() {
@@ -78,16 +104,18 @@ async function main() {
   const releaseHead = args['release-head'];
   assert.match(releaseHead ?? '', shaPattern, '--release-head must be a full lowercase SHA');
 
-  const [vercelAudit, paddleAudit, productionDataPlaneRecord] = await Promise.all([
-    readJsonFile(args.vercel, 'Vercel audit'),
-    readJsonFile(args.paddle, 'Paddle audit'),
-    readJsonFile(args['production-data-plane'], 'Production data-plane record'),
-  ]);
+  const vercelAudit = await readJsonFile(args.vercel, 'Vercel audit');
+  const productionDataPlaneRecord = await readJsonFile(args['production-data-plane'], 'Production data-plane record');
+  const paddleAudit = args.paddle ? await readJsonFile(args.paddle, 'Paddle audit') : null;
+  const commerceProviderRecord = args['commerce-provider']
+    ? await readJsonFile(args['commerce-provider'], 'Commerce-provider record')
+    : null;
 
   const envelope = assembleReleaseEvidence({
     releaseHead,
     vercelAudit,
     paddleAudit,
+    commerceProviderRecord,
     productionDataPlaneRecord,
   });
 

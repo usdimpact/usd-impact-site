@@ -5,6 +5,7 @@ const head = 'a'.repeat(40);
 const greenQuality = { status: 'completed', conclusion: 'success' };
 const verifiedGates = {
   vercelProductionEnvironment: true,
+  commerceProviderLive: true,
   paddleLive: true,
   productionDataPlane: true,
   checkoutClosed: true,
@@ -38,11 +39,15 @@ const evaluate = (overrides = {}) => evaluateReleaseGatekeeper({
   ...overrides,
 });
 
-assert.equal(evaluate().approved, true, 'Production promotion should approve with all exact-head gates verified');
+assert.equal(evaluate().approved, true, 'Production promotion should approve with exact-head non-commerce gates verified');
+assert.equal(
+  evaluate({ gates: { ...verifiedGates, commerceProviderLive: false, paddleLive: false } }).approved,
+  true,
+  'Production promotion must not depend on live commerce-provider approval while checkout is CLOSED',
+);
 
 for (const [key, message] of [
   ['vercelProductionEnvironment', 'Vercel Production environment gate is not verified'],
-  ['paddleLive', 'Paddle Live gate is not verified'],
   ['productionDataPlane', 'Production data-plane gate is not verified'],
   ['checkoutClosed', 'Checkout CLOSED gate is not verified'],
 ]) {
@@ -74,7 +79,22 @@ const checkoutApproved = evaluate({
   pr: merged,
   gates: verifiedGates,
 });
-assert.equal(checkoutApproved.approved, true, 'Checkout approval requires merged PR and protected Production verification');
+assert.equal(checkoutApproved.approved, true, 'Checkout approval requires merged PR, live provider, and protected Production verification');
+
+const checkoutWithoutProvider = evaluate({
+  mode: 'checkout-enable',
+  pr: merged,
+  gates: { ...verifiedGates, commerceProviderLive: false, paddleLive: false },
+});
+assert.equal(checkoutWithoutProvider.approved, false, 'Checkout approval must fail without a verified live commerce provider');
+assert.ok(checkoutWithoutProvider.failures.includes('Live commerce-provider gate is not verified'));
+
+const paddleBackwardCompatibility = evaluate({
+  mode: 'checkout-enable',
+  pr: merged,
+  gates: { ...verifiedGates, commerceProviderLive: undefined, paddleLive: true },
+});
+assert.equal(paddleBackwardCompatibility.approved, true, 'Existing Paddle evidence remains accepted during provider-neutral migration');
 
 const checkoutWithoutProtected = evaluate({
   mode: 'checkout-enable',
@@ -97,4 +117,4 @@ assert.equal(
   'Unknown approval modes must fail closed',
 );
 
-console.log('Release gatekeeper fail-closed policy tests passed.');
+console.log('Release gatekeeper provider-neutral fail-closed policy tests passed.');

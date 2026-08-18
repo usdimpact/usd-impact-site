@@ -6,7 +6,7 @@ description: "Terms governing use of USD Impact and purchases of the Read the Do
 
 # Terms & Conditions
 
-_Last updated: August 13, 2026_
+_Last updated: August 18, 2026_
 
 These Terms & Conditions govern use of the USD Impact website and the purchase and use of the *Read the Dollar First Guided Interactive Edition*. By creating an account or completing a purchase, you agree to these Terms. Mandatory consumer rights that apply in your country are not limited by these Terms.
 
@@ -16,7 +16,7 @@ USD Impact is operated by **SC Kela Leads SRL**, a company registered in Romania
 
 ## 2. Educational service
 
-USD Impact provides educational macro-finance content, including articles, frameworks, checklists, quizzes, reports, and the Guided Interactive Edition. The service does not provide personalized investment, financial, trading, legal, tax, or accounting advice, trading signals, or recommendations to enter any transaction.
+USD Impact provides educational macro-finance content, including articles, videos, frameworks, checklists, quizzes, reports, and the Guided Interactive Edition. The service does not provide personalized investment, financial, trading, legal, tax, or accounting advice, trading signals, or recommendations to enter any transaction.
 
 ## 3. Accounts
 

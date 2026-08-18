@@ -18,7 +18,7 @@ const routes = {
 };
 const pagePath = (route) => path.join(distRoot, route.replace(/^\//, ''), 'index.html');
 const failures = [];
-const requiredRoutes = ['/start-here','/book/read-the-dollar-first','/audiobook/read-the-dollar-first',routes.dollarLesson,routes.fxLesson,routes.dxyLesson,routes.broadLesson,routes.regimeLesson,routes.goldLesson,routes.wtiLesson,routes.lngLesson,routes.equitiesLesson,routes.bitcoinLesson,routes.currencyRiskLesson,'/framework/dollar-transmission-chain','/lead-magnets/weekly-dollar-regime-checklist','/privacy','/terms','/refund-policy'];
+const requiredRoutes = ['/start-here','/book/read-the-dollar-first','/audiobook/read-the-dollar-first','/video-library',routes.dollarLesson,routes.fxLesson,routes.dxyLesson,routes.broadLesson,routes.regimeLesson,routes.goldLesson,routes.wtiLesson,routes.lngLesson,routes.equitiesLesson,routes.bitcoinLesson,routes.currencyRiskLesson,'/framework/dollar-transmission-chain','/lead-magnets/weekly-dollar-regime-checklist','/privacy','/terms','/refund-policy'];
 for (const route of requiredRoutes) if (!fs.existsSync(pagePath(route))) failures.push(`Missing published route: ${route}.`);
 for (const output of ['news/index.html','news/2026-07-22/index.html','news/feed.xml','news/latest.json']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing Daily USD Impact output: /${output}.`);
 for (const output of ['reports/index.html','reports/weekly/2026-07-31/index.html']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing USD Impact Reports output: /${output}.`);
@@ -48,9 +48,19 @@ else {
 const productPage = pagePath('/book/read-the-dollar-first');
 if (fs.existsSync(productPage)) {
   const html = fs.readFileSync(productPage, 'utf8');
-  for (const requiredText of ['Guided Interactive Edition', 'USD 39.00', 'USD 49.00', 'one-time', '14-day Refund Policy', 'ongoing access']) {
+  for (const requiredText of ['Guided Interactive Edition', '51-film USD Impact Video Library', 'USD 39.00', 'USD 49.00', 'one-time', '14-day Refund Policy', 'ongoing access']) {
     if (!html.includes(requiredText)) failures.push(`Product page is missing domain-review text: ${requiredText}.`);
   }
+}
+
+const videoLibraryPage = pagePath('/video-library');
+if (fs.existsSync(videoLibraryPage)) {
+  const html = fs.readFileSync(videoLibraryPage, 'utf8');
+  const filmLinks = html.match(/href="\/guided-edition\/video-library\/[a-z0-9-]+\/?"/g) || [];
+  if (filmLinks.length !== 51) failures.push(`Public video library contains ${filmLinks.length} film links instead of 51.`);
+  if (!html.includes('51-film')) failures.push('Public video library is missing the 51-film overview.');
+  if (/[a-f0-9]{32}/i.test(html)) failures.push('Public video library exposes a Stream UID.');
+  if (html.includes('cloudflarestream.com')) failures.push('Public video library exposes a playback origin.');
 }
 
 const audiobookPage = pagePath('/audiobook/read-the-dollar-first');
@@ -99,7 +109,13 @@ for (const [route, label, lesson] of releasedQuizzes) {
 }
 const finalQuizHtml = fs.existsSync(pagePath(routes.currencyRiskQuiz)) ? fs.readFileSync(pagePath(routes.currencyRiskQuiz), 'utf8') : '';
 if (finalQuizHtml && !finalQuizHtml.includes('data-quiz-completion-link')) failures.push('Quiz 12 is missing the completion link contract.');
-for (const file of ['api/waitlist.js','api/daily-news-source.js','api/catalyst-brief-source.js','api/guided-edition.js','middleware.js']) if (!fs.existsSync(path.resolve(file))) failures.push(`Required Vercel function or middleware is missing: ${file}.`);
+for (const file of ['api/waitlist.js','api/daily-news-source.js','api/catalyst-brief-source.js','api/guided-edition.js','api/account.js','src/lib/video-library-handler.js','src/lib/video-progress-handler.js','middleware.js']) if (!fs.existsSync(path.resolve(file))) failures.push(`Required Vercel function, protected handler, or middleware is missing: ${file}.`);
+const apiFunctionFiles = fs.readdirSync(path.resolve('api')).filter((name) => name.endsWith('.js'));
+if (apiFunctionFiles.length > 12) failures.push(`Vercel function-source count is ${apiFunctionFiles.length}; the Hobby limit is 12.`);
+const vercelConfig = JSON.parse(fs.readFileSync(path.resolve('vercel.json'), 'utf8'));
+const rewrites = new Map((vercelConfig.rewrites || []).map((rewrite) => [rewrite.source, rewrite.destination]));
+if (rewrites.get('/guided-edition/video-library') !== '/api/guided-edition?__video_library=1') failures.push('Protected video catalog is not consolidated into the Guided Edition function.');
+if (rewrites.get('/api/video-progress') !== '/api/account?action=video-progress') failures.push('Video progress is not consolidated into the account function.');
 if (!fs.existsSync(path.join(distRoot, checklistDownload.replace(/^\//, '')))) failures.push(`Checklist PDF is missing: ${checklistDownload}.`);
 if (fs.existsSync(pagePath('/benchmark/usd-impact-benchmark-dashboard'))) failures.push('Draft benchmark route was generated.');
 if (fs.existsSync(pagePath('/guided-edition'))) failures.push('Protected Guided Edition was generated as public static HTML.');
@@ -113,7 +129,7 @@ else {
     routes.dxyLesson,routes.dxyQuiz,routes.broadLesson,routes.broadQuiz,routes.regimeLesson,routes.regimeQuiz,
     routes.goldLesson,routes.goldQuiz,routes.wtiLesson,routes.wtiQuiz,routes.lngLesson,routes.lngQuiz,
     routes.equitiesLesson,routes.equitiesQuiz,routes.bitcoinLesson,routes.bitcoinQuiz,
-    routes.currencyRiskLesson,routes.currencyRiskQuiz,'/guided-edition',
+    routes.currencyRiskLesson,routes.currencyRiskQuiz,'/guided-edition','/guided-edition/video-library',
   ];
   for (const route of protectedRoutes) {
     if (xml.includes(`${route}/`)) failures.push(`Protected learning route appears in sitemap: ${route}.`);

@@ -7,6 +7,8 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    { "source": "/guided-edition/video-library", "destination": "/api/guided-edition?__video_library=1" },
+    { "source": "/guided-edition/video-library/:path*", "destination": "/api/guided-edition?__video_library=1&__video_path=:path*" },
     { "source": "/guided-edition", "destination": "/api/guided-edition" },
     { "source": "/guided-edition/:path*", "destination": "/api/guided-edition?__paid_path=:path*" },
     { "source": "/api/auth-login", "destination": "/api/account?action=login" },
@@ -16,6 +18,7 @@
     { "source": "/api/account-access", "destination": "/api/account?action=access" },
     { "source": "/api/account-export", "destination": "/api/account?action=export" },
     { "source": "/api/account-delete", "destination": "/api/account?action=delete" },
+    { "source": "/api/video-progress", "destination": "/api/account?action=video-progress" },
     { "source": "/api/telemetry-report", "destination": "/api/telemetry?action=report" },
     { "source": "/api/checklist-analytics", "destination": "/api/telemetry?action=checklist-report" }
   ],

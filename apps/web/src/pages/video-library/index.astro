@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  collections,
+  getCollectionVideos,
+  getVideoNumber,
+  libraryMeta,
+} from '../../data/video-library.js';
+---
+<BaseLayout
+  title="USD Impact Video Library | 51 Dollar-System Films"
+  description="Explore the 51-film USD Impact educational video library covering dollar measurement, asset transmission, rates, liquidity, funding markets and FX mechanics."
+  stylesheets={['/assets/video-library.css']}
+>
+  <section class="vl-hero">
+    <div class="vl-shell">
+      <p class="vl-eyebrow">Guided Interactive Edition</p>
+      <h1>Read the dollar system visually.</h1>
+      <p class="vl-lead">A structured 51-film learning path for understanding how dollar signals, rates, liquidity, funding markets and cross-border balance sheets connect.</p>
+      <div class="vl-stat-row">
+        <span><strong>51</strong> films</span>
+        <span><strong>5</strong> collections</span>
+        <span><strong>{libraryMeta.totalDurationLabel}</strong> total</span>
+        <span><strong>EN</strong> captions</span>
+      </div>
+      <p><a class="vl-button" href="/guided-edition/video-library/">Open the protected library</a></p>
+    </div>
+  </section>
+
+  <main class="vl-shell vl-main">
+    <p class="vl-public-note">Playback is available only inside the secure Guided Interactive Edition. Sign in with the USD Impact account that holds active access.</p>
+    {collections.map((collection) => {
+      const items = getCollectionVideos(collection.id);
+      return (
+        <section class="vl-collection" id={collection.id}>
+          <div class="vl-section-heading">
+            <div><p class="vl-eyebrow">{collection.kicker}</p><h2>{collection.title}</h2></div>
+            <p>{collection.description}</p>
+          </div>
+          <ol class="vl-grid">
+            {items.map((video) => {
+              const number = getVideoNumber(video);
+              return (
+                <li class="vl-card vl-public-card">
+                  <a href={`/guided-edition/video-library/${video.slug}/`}>
+                    <div class={`vl-card-art vl-theme-${video.collectionId}`} aria-hidden="true">
+                      <span>{String(number).padStart(2, '0')}</span><i></i><i></i><i></i>
+                    </div>
+                    <div class="vl-card-copy">
+                      <div class="vl-card-meta"><span>Film {String(number).padStart(2, '0')}</span><time>{video.durationLabel}</time></div>
+                      <h3>{video.title}</h3>
+                      <p>{video.description}</p>
+                    </div>
+                  </a>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      );
+    })}
+  </main>
+</BaseLayout>

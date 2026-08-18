@@ -6,7 +6,7 @@ description: "How USD Impact handles account, purchase, support, waitlist, and l
 
 # Privacy notice
 
-_Last updated: August 13, 2026_
+_Last updated: August 18, 2026_
 
 ## What we collect
 
@@ -17,7 +17,8 @@ If you create an account or purchase the Guided Interactive Edition, we may proc
 - your email address and authentication records needed to secure your account;
 - payment-provider customer, transaction, refund, and adjustment identifiers;
 - purchase status, price tier, currency, and entitlement status;
-- learning progress and quiz results associated with your account; and
+- learning progress and quiz results associated with your account;
+- video viewing position, completion status, and the film identifier needed to resume playback; and
 - account, billing, refund, deletion, or support requests you send to us.
 
 Payment-card details are collected and processed by the authorized payment provider identified during checkout. USD Impact does not receive or store complete payment-card numbers or card security codes.
@@ -60,7 +61,7 @@ Joining the waitlist does not subscribe you to unrelated market commentary, trad
 
 ## Service providers
 
-The website is deployed through Vercel. Vercel processes website requests and application runtime logs needed to operate and troubleshoot the service. Aggregate learning counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Account, entitlement, and commerce records are stored through Supabase. Waitlist contacts and transactional emails are processed through Resend. When public checkout is enabled, the authorized payment provider or merchant of record identified during checkout processes payment, tax, invoice, refund, fraud-prevention, and related transaction information.
+The website is deployed through Vercel. Vercel processes website requests and application runtime logs needed to operate and troubleshoot the service. Cloudflare Stream processes protected video playback requests and delivers the adaptive video and caption files requested by an authorised account. Aggregate learning counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Account, entitlement, commerce, and saved video-progress records are stored through Supabase. Waitlist contacts and transactional emails are processed through Resend. When public checkout is enabled, the authorized payment provider or merchant of record identified during checkout processes payment, tax, invoice, refund, fraud-prevention, and related transaction information.
 
 These providers process information only as needed to operate the website, accounts, learning tools, commerce workflow, support, and requested email delivery. Their own privacy notices apply where they act independently, including the payment provider or merchant of record identified during checkout.
 

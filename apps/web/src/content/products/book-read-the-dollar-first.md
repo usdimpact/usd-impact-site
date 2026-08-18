@@ -30,6 +30,7 @@ The Guided Interactive Edition combines the *Read the Dollar First* learning seq
 
 - secure access through your verified USD Impact account;
 - the complete Guided Interactive Edition learning sequence;
+- the 51-film USD Impact Video Library, organised into five collections with verified English captions;
 - interactive quizzes and progress tracking;
 - ongoing access to the purchased edition with no recurring subscription fee; and
 - account and billing support at [support@usd-impact.com](mailto:support@usd-impact.com).

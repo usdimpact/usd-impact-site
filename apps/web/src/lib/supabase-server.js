@@ -236,6 +236,110 @@ export async function readAccountAccessState({
   });
 }
 
+const VIDEO_CONTENT_ID_PATTERN = /^video:[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const VIDEO_PROGRESS_STATUSES = new Set(['started', 'in_progress', 'completed']);
+
+function requireAccountId(value) {
+  const accountId = String(value || '').trim();
+  if (!UUID_PATTERN.test(accountId)) throw new TypeError('A valid account ID is required.');
+  return accountId;
+}
+
+function requireVideoContentId(value) {
+  const contentId = String(value || '').trim();
+  if (!VIDEO_CONTENT_ID_PATTERN.test(contentId)) throw new TypeError('A valid video content ID is required.');
+  return contentId;
+}
+
+function ownVideoProgressPath(accountId, contentId = null) {
+  const base = `/rest/v1/learning_progress?account_id=eq.${encodeURIComponent(accountId)}`;
+  const filter = contentId
+    ? `&content_id=eq.${encodeURIComponent(contentId)}`
+    : '&content_id=like.video:*';
+  return `${base}${filter}&select=account_id,content_id,status,progress_percent,resume_position,attempt_count,completed_at,data,created_at,updated_at&order=content_id.asc`;
+}
+
+export async function readOwnVideoProgress({
+  accessToken,
+  accountId,
+  contentId = null,
+  environment,
+  config,
+  fetchImpl,
+}) {
+  const resolvedConfig = config || readSupabaseServerConfig(environment);
+  const normalizedAccountId = requireAccountId(accountId);
+  const normalizedContentId = contentId ? requireVideoContentId(contentId) : null;
+  const rows = await supabaseFetch({
+    config: resolvedConfig,
+    path: ownVideoProgressPath(normalizedAccountId, normalizedContentId),
+    accessToken,
+    fetchImpl,
+  });
+  return Object.freeze(Array.isArray(rows) ? rows.map((row) => Object.freeze({ ...row })) : []);
+}
+
+export async function upsertOwnVideoProgress({
+  accessToken,
+  accountId,
+  contentId,
+  status,
+  progressPercent,
+  resumePositionSeconds,
+  durationSeconds,
+  environment,
+  config,
+  fetchImpl,
+  now = new Date(),
+}) {
+  const resolvedConfig = config || readSupabaseServerConfig(environment);
+  const normalizedAccountId = requireAccountId(accountId);
+  const normalizedContentId = requireVideoContentId(contentId);
+  if (!VIDEO_PROGRESS_STATUSES.has(status)) throw new TypeError('Video progress status is invalid.');
+  const position = Number(resumePositionSeconds);
+  const duration = Number(durationSeconds);
+  const percent = Number(progressPercent);
+  if (!Number.isFinite(position) || position < 0 || position > 86_400) throw new TypeError('Video resume position is invalid.');
+  if (!Number.isFinite(duration) || duration <= 0 || duration > 86_400) throw new TypeError('Video duration is invalid.');
+  if (!Number.isInteger(percent) || percent < 0 || percent > 100) throw new TypeError('Video progress percentage is invalid.');
+
+  const existingRows = await readOwnVideoProgress({
+    accessToken,
+    accountId: normalizedAccountId,
+    contentId: normalizedContentId,
+    config: resolvedConfig,
+    fetchImpl,
+  });
+  const existing = existingRows[0] || null;
+  const remainsCompleted = existing?.status === 'completed';
+  const resolvedStatus = remainsCompleted ? 'completed' : status;
+  const resolvedPercent = resolvedStatus === 'completed' ? 100 : percent;
+  const body = {
+    account_id: normalizedAccountId,
+    content_id: normalizedContentId,
+    status: resolvedStatus,
+    progress_percent: resolvedPercent,
+    resume_position: position.toFixed(1),
+    data: {
+      contentType: 'video',
+      durationSeconds: Number(duration.toFixed(3)),
+    },
+    ...(resolvedStatus === 'completed'
+      ? { completed_at: existing?.completed_at || now.toISOString() }
+      : {}),
+  };
+  const rows = await supabaseFetch({
+    config: resolvedConfig,
+    path: '/rest/v1/learning_progress?on_conflict=account_id,content_id',
+    method: 'POST',
+    accessToken,
+    body,
+    headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+    fetchImpl,
+  });
+  return Object.freeze({ ...(firstRow(rows) || body) });
+}
+
 export async function exportOwnAccount({ accessToken, environment, config, fetchImpl }) {
   const resolvedConfig = config || readSupabaseServerConfig(environment);
   const user = await getVerifiedSupabaseUser(accessToken, { config: resolvedConfig, fetchImpl });

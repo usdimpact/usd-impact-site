@@ -22,7 +22,7 @@ hero: "Everything published on USD Impact is educational and informational. This
 
 ## 1. Educational purpose
 
-USD Impact exists to explain how the U.S. dollar interacts with global financial markets. All content on this website — including articles, frameworks, checklists, guides, glossary entries, and downloadable materials — is produced for educational and informational purposes only.
+USD Impact exists to explain how the U.S. dollar interacts with global financial markets. All content on this website — including articles, videos, frameworks, checklists, guides, glossary entries, and downloadable materials — is produced for educational and informational purposes only.
 
 The site teaches conceptual frameworks, historical relationships, and analytical structures. It is designed to help readers understand macro-finance dynamics, not to instruct them on what to buy, sell, or hold.
 

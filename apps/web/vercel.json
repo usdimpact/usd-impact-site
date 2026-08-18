@@ -7,6 +7,8 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    { "source": "/guided-edition/video-library", "destination": "/api/video-library" },
+    { "source": "/guided-edition/video-library/:path*", "destination": "/api/video-library?__video_path=:path*" },
     { "source": "/guided-edition", "destination": "/api/guided-edition" },
     { "source": "/guided-edition/:path*", "destination": "/api/guided-edition?__paid_path=:path*" },
     { "source": "/api/auth-login", "destination": "/api/account?action=login" },

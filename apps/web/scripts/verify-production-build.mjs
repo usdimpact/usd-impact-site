@@ -66,8 +66,11 @@ if (fs.existsSync(videoLibraryPage)) {
 const audiobookPage = pagePath('/audiobook/read-the-dollar-first');
 if (fs.existsSync(audiobookPage)) {
   const html = fs.readFileSync(audiobookPage, 'utf8');
-  for (const requiredText of ['data-audiobook-player', '20 tracks', 'Chapter 13 - What to Watch from Here', 'n0w53ba4ottrav2w.public.blob.vercel-storage.com']) {
-    if (!html.includes(requiredText)) failures.push(`Audiobook page is missing required player content: ${requiredText}.`);
+  for (const requiredText of ['Library Pass', '20 chapters', 'Chapter 13 - What to Watch from Here', 'Sign in to listen']) {
+    if (!html.includes(requiredText)) failures.push(`Audiobook page is missing required protected-access content: ${requiredText}.`);
+  }
+  for (const forbiddenText of ['data-audiobook-player', 'public.blob.vercel-storage.com', '<audio']) {
+    if (html.includes(forbiddenText)) failures.push(`Audiobook page exposes forbidden public-player content: ${forbiddenText}.`);
   }
 }
 

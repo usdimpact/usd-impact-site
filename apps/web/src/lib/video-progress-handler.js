@@ -4,9 +4,9 @@ import {
   safeSupabaseError,
   sendJson,
   upsertOwnVideoProgress,
-} from '../src/lib/supabase-server.js';
-import { readSessionAccessToken } from '../src/lib/supabase-auth.js';
-import { getVideo, videoSlugs } from '../src/data/video-library.js';
+} from './supabase-server.js';
+import { readSessionAccessToken } from './supabase-auth.js';
+import { getVideo, videoSlugs } from '../data/video-library.js';
 
 const MAX_BODY_BYTES = 4_096;
 const VIDEO_SLUG_SET = new Set(videoSlugs);
@@ -144,8 +144,4 @@ export async function handleVideoProgressRequest(
     const safe = safeSupabaseError(error);
     return sendJson(response, safe.status, safe.payload);
   }
-}
-
-export default async function handler(request, response) {
-  return handleVideoProgressRequest(request, response);
 }

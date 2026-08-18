@@ -18,6 +18,7 @@ import {
   sendPasswordlessEmail,
   setSessionCookies,
 } from '../src/lib/supabase-auth.js';
+import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js';
 
 function header(request, name) {
   const value = request.headers?.[name] ?? request.headers?.[name.toLowerCase()];
@@ -256,6 +257,7 @@ const handlers = Object.freeze({
   access: handleAccess,
   export: handleExport,
   delete: handleDelete,
+  'video-progress': handleVideoProgressRequest,
 });
 
 export default async function handler(request, response) {

@@ -1,32 +1,32 @@
 import {
   readAccountAccessState,
   safeSupabaseError,
-} from '../src/lib/supabase-server.js';
+} from './supabase-server.js';
 import {
   readSessionAccessToken,
   requestOrigin,
   safeNextPath,
-} from '../src/lib/supabase-auth.js';
+} from './supabase-auth.js';
 import {
   buildPaidAccessRequiredRedirect,
   buildPaidSignInRedirect,
   normalizePaidAccessReason,
-} from '../src/lib/paid-route.js';
-import { getVideo } from '../src/data/video-library.js';
+} from './paid-route.js';
+import { getVideo } from '../data/video-library.js';
 import {
   createCloudflareStreamToken,
   safeCloudflareStreamError,
-} from '../src/lib/cloudflare-stream.js';
+} from './cloudflare-stream.js';
 import {
   renderProtectedVideoCatalog,
   renderProtectedVideoLesson,
   renderVideoUnavailable,
   videoLibraryContentSecurityPolicy,
-} from '../src/lib/video-library-page.js';
+} from './video-library-page.js';
 import {
   getStreamCustomerCode,
   getStreamUid,
-} from './_video-stream-map.js';
+} from './video-stream-map.js';
 
 const ROUTE_PARAM = '__video_path';
 const ROOT_PATH = '/guided-edition/video-library/';
@@ -40,6 +40,7 @@ function originalRequestUrl(request) {
   const internalUrl = requestUrl(request);
   const rawRoute = String(internalUrl.searchParams.get(ROUTE_PARAM) || '').trim();
   internalUrl.searchParams.delete(ROUTE_PARAM);
+  internalUrl.searchParams.delete('__video_library');
   const decodedRoute = rawRoute ? decodeURIComponent(rawRoute).replace(/^\/+|\/+$/g, '') : '';
   const candidate = decodedRoute ? `${ROOT_PATH}${decodedRoute}/` : ROOT_PATH;
   const safePath = safeNextPath(candidate, ROOT_PATH);
@@ -157,8 +158,4 @@ export async function handleVideoLibraryRequest(
     safeCloudflareStreamError(error);
     return sendHtml(response, request, 503, renderVideoUnavailable({ video }));
   }
-}
-
-export default async function handler(request, response) {
-  return handleVideoLibraryRequest(request, response);
 }

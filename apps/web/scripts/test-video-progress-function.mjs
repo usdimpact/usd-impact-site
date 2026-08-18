@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { handleVideoProgressRequest } from '../api/video-progress.js';
+import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js';
 import { SESSION_COOKIE_NAMES } from '../src/lib/supabase-auth.js';
 
 const accessToken = 'eyJhbGciOiJIUzI1NiJ9.video-progress-test-token.signature';

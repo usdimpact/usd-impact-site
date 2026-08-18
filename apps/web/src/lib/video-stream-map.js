@@ -1,5 +1,5 @@
 /**
- * Server-only Cloudflare Stream delivery map.
+ * Server-only Cloudflare Stream delivery map used by the protected handler.
  *
  * Stream UIDs are identifiers, not credentials. Every referenced video has
  * requireSignedURLs enabled, so these values cannot be used for playback
@@ -69,4 +69,3 @@ export function getStreamCustomerCode(environment = process.env) {
   const override = String(environment.CLOUDFLARE_STREAM_CUSTOMER_CODE || '').trim();
   return override || STREAM_CUSTOMER_CODE;
 }
-

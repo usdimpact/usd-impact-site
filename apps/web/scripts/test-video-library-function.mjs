@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { handleVideoLibraryRequest } from '../api/video-library.js';
-import { getStreamUid } from '../api/_video-stream-map.js';
+import { handleVideoLibraryRequest } from '../src/lib/video-library-handler.js';
+import { getStreamUid } from '../src/lib/video-stream-map.js';
 import { SESSION_COOKIE_NAMES } from '../src/lib/supabase-auth.js';
 
 const host = 'usd-impact-site-test-usd-impact.vercel.app';

@@ -6,7 +6,7 @@ import {
   libraryMeta,
   videos,
 } from '../src/data/video-library.js';
-import { STREAM_CUSTOMER_CODE, VIDEO_STREAM_UIDS } from '../api/_video-stream-map.js';
+import { STREAM_CUSTOMER_CODE, VIDEO_STREAM_UIDS } from '../src/lib/video-stream-map.js';
 
 assert.equal(videos.length, 51);
 assert.equal(collections.length, 5);

@@ -13,6 +13,7 @@ import {
   isPaidContentPath,
   normalizePaidAccessReason,
 } from '../src/lib/paid-route.js';
+import { handleVideoLibraryRequest } from '../src/lib/video-library-handler.js';
 
 const ROUTE_PARAM = '__paid_path';
 const ROOT_PATH = '/guided-edition/';
@@ -189,5 +190,8 @@ export async function handleGuidedEditionRequest(
 }
 
 export default async function handler(request, response) {
+  if (requestUrl(request).searchParams.get('__video_library') === '1') {
+    return handleVideoLibraryRequest(request, response);
+  }
   return handleGuidedEditionRequest(request, response);
 }

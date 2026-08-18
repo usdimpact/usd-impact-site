@@ -10,8 +10,8 @@ assert.doesNotMatch(page, /AudiobookPlayer/);
 assert.doesNotMatch(page, /<audio\b/i);
 assert.doesNotMatch(page, /\.public\.blob\.vercel-storage\.com/);
 assert.doesNotMatch(page, /https:\/\/[^\s'"]+\.mp3/i);
-assert.match(page, /Full chapter playback is available only after account and Library Pass verification\./);
-assert.match(page, /Browser state, email possession and a checkout redirect do not grant access\./);
-assert.match(page, /Playback will be restored here after the protected delivery path has completed release verification\./);
+assert.match(page, /Full playback is available only through an eligible, signed-in Library Pass account\./);
+assert.match(page, /The Library Pass is a one-time purchase/);
+assert.match(page, /the audiobook is not part of Research Membership and does not require a recurring subscription\./);
 
 console.log('Public audiobook HOLD contract passed.');

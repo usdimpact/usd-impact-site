@@ -20,7 +20,7 @@ function response() {
 }
 
 const publicHtml = renderProtectedAudiobook();
-assert.equal((publicHtml.match(/data-track/g) || []).length, 20);
+assert.equal((publicHtml.match(/data-track data-index=/g) || []).length, 20);
 assert.doesNotMatch(publicHtml, /\.public\.blob\.vercel-storage\.com/);
 assert.doesNotMatch(publicHtml, /https:\/\/[^\s'\"]+\.mp3/);
 assert.match(publicHtml, /\/guided-edition\/audiobook\/track\/read-the-dollar-first\//);

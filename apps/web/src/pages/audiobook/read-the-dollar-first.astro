@@ -1,41 +1,76 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ComplianceNote from '../../components/ComplianceNote.astro';
+import { readTheDollarFirstAudiobook } from '../../data/read-the-dollar-first-audiobook.js';
+
+const memberAudiobookSignIn = '/account/sign-in/?next=%2Fguided-edition%2Faudiobook%2F';
 ---
 <BaseLayout
   title="Read the Dollar First English Audiobook | USD Impact"
-  description="Explore the English audiobook edition of Read the Dollar First. Full chapter playback is included with the permanent USD Impact Library Pass."
+  description="Explore the complete English audiobook included with the Read the Dollar First Library Pass."
 >
   <section class="hero audiobook-hero">
     <div class="container">
-      <div class="eyebrow">Library Pass audiobook</div>
-      <h1>Listen chapter by chapter.</h1>
+      <div class="eyebrow">English audiobook</div>
+      <h1>The complete audiobook is part of the Library Pass.</h1>
       <p class="lead">
-        Explore the 20-chapter English narration of <em>Read the Dollar First</em>. Full playback is reserved for the verified account that owns the permanent Library Pass.
+        Sign in with an eligible Library Pass to listen to all 20 tracks of <em>Read the Dollar First</em>, with chapter controls and saved listening position.
       </p>
       <div class="audiobook-hero-meta" aria-label="Audiobook details">
         <span>20 chapters</span>
-        <span>4 hr 18 min</span>
+        <span>{readTheDollarFirstAudiobook.duration}</span>
         <span>Human-reviewed narration</span>
       </div>
     </div>
   </section>
 
   <main class="container audiobook-page">
-    <section class="audiobook-about" aria-labelledby="audiobook-access-heading">
+    <section class="card audiobook-access" aria-labelledby="audiobook-access-heading">
+      <img
+        class="audiobook-access-cover"
+        src={readTheDollarFirstAudiobook.coverUrl}
+        alt={readTheDollarFirstAudiobook.coverAlt}
+        width="1200"
+        height="1800"
+        loading="eager"
+        decoding="async"
+      />
       <div>
-        <div class="eyebrow">Protected access</div>
-        <h2 id="audiobook-access-heading">Permanent access through your Library Pass.</h2>
+        <div class="eyebrow">Library Pass benefit</div>
+        <h2 id="audiobook-access-heading">Listen in the protected member library.</h2>
         <p>
-          Full chapter playback is available only after account and Library Pass verification. Browser state, email possession and a checkout redirect do not grant access.
+          Full playback is available only through an eligible, signed-in Library Pass account. The Library Pass is a one-time purchase; the audiobook is not part of Research Membership and does not require a recurring subscription.
         </p>
+        <div class="button-row">
+          <a class="button primary" href={memberAudiobookSignIn}>Sign in to listen</a>
+          <a class="button audiobook-product-link" href="/book/read-the-dollar-first/">View Library Pass details</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="audiobook-chapter-preview" aria-labelledby="audiobook-chapters-heading">
+      <div class="eyebrow">Included tracks</div>
+      <h2 id="audiobook-chapters-heading">Complete chapter order</h2>
+      <ol class="audiobook-public-chapters">
+        {readTheDollarFirstAudiobook.chapters.map((chapter) => (
+          <li>
+            <span>{chapter.title}</span>
+            <time>{chapter.duration}</time>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="audiobook-about" aria-labelledby="audiobook-about-heading">
+      <div>
+        <div class="eyebrow">How to use it</div>
+        <h2 id="audiobook-about-heading">Start once, return anytime.</h2>
         <p>
-          Research Membership is not required for this audiobook. Playback will be restored here after the protected delivery path has completed release verification.
+          In the protected player, choose any chapter, use the previous and next controls, or change playback speed. Your chapter and listening position are stored only in your browser so you can continue later.
         </p>
       </div>
       <div class="button-row">
-        <a class="button primary" href="/account/">Review account access</a>
-        <a class="button account-secondary" href="/book/read-the-dollar-first/">Explore the Library Pass</a>
+        <a class="button primary" href={memberAudiobookSignIn}>Open member audiobook</a>
       </div>
     </section>
 

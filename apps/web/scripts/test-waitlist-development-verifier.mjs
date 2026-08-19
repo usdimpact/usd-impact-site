@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import {
   WAITLIST_CONFIRMATION_TEMPLATE_VERSION,
   WAITLIST_CONSENT_PURPOSE,
@@ -29,7 +30,37 @@ const environment = {
   WAITLIST_EXPECTED_STATE: 'delivered',
 };
 
+function canonicalize(value) {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (Array.isArray(value)) return value.map((item) => canonicalize(item));
+  return Object.fromEntries(
+    Object.keys(value)
+      .sort()
+      .map((key) => [key, canonicalize(value[key])]),
+  );
+}
+
+function checksum(value) {
+  return createHash('sha256').update(JSON.stringify(canonicalize(value))).digest('hex');
+}
+
 function consentRow(overrides = {}) {
+  const evidence = {
+    purpose: WAITLIST_CONSENT_PURPOSE,
+    status: 'granted',
+    consent_text_version: WAITLIST_CONSENT_TEXT_VERSION,
+    privacy_notice_version: WAITLIST_PRIVACY_NOTICE_VERSION,
+    source: 'waitlist_form',
+    source_event_id: records.consentRecord.source_event_id,
+    captured_at: capturedAt,
+    withdrawn_at: null,
+    withdrawal_source: null,
+    context: {
+      consentCheckbox: true,
+      formVersion: WAITLIST_FORM_VERSION,
+    },
+  };
   return {
     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     idempotency_key: records.consentRecord.idempotency_key,
@@ -41,22 +72,8 @@ function consentRow(overrides = {}) {
     privacy_notice_version: WAITLIST_PRIVACY_NOTICE_VERSION,
     source: 'waitlist_form',
     captured_at: capturedAt,
-    evidence: {
-      purpose: WAITLIST_CONSENT_PURPOSE,
-      status: 'granted',
-      consent_text_version: WAITLIST_CONSENT_TEXT_VERSION,
-      privacy_notice_version: WAITLIST_PRIVACY_NOTICE_VERSION,
-      source: 'waitlist_form',
-      source_event_id: records.consentRecord.source_event_id,
-      captured_at: capturedAt,
-      withdrawn_at: null,
-      withdrawal_source: null,
-      context: {
-        consentCheckbox: true,
-        formVersion: WAITLIST_FORM_VERSION,
-      },
-    },
-    evidence_checksum: 'a'.repeat(64),
+    evidence,
+    evidence_checksum: checksum(evidence),
     created_at: capturedAt,
     ...overrides,
   };
@@ -206,7 +223,7 @@ async function expectVerifierError(operation, expectedCode) {
 
 {
   const { fetchImpl } = verifierFetch(
-    [consentRow()],
+    [consentRow({ provider_message_ref: null })],
     [outboxRow({ provider_message_ref: null })],
   );
   await expectVerifierError(
@@ -239,6 +256,22 @@ async function expectVerifierError(operation, expectedCode) {
 {
   const { fetchImpl } = verifierFetch(
     [consentRow({ purpose: 'different_purpose' })],
+    [outboxRow()],
+  );
+  await expectVerifierError(
+    () => verifyWaitlistDevelopmentLifecycle({
+      email,
+      submissionId,
+      environment,
+      fetchImpl,
+    }),
+    'CONSENT_EVIDENCE_MISMATCH',
+  );
+}
+
+{
+  const { fetchImpl } = verifierFetch(
+    [consentRow({ evidence_checksum: 'b'.repeat(64) })],
     [outboxRow()],
   );
   await expectVerifierError(

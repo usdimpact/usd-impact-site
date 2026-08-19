@@ -67,3 +67,7 @@ The validation covers normalization, consent evidence, deterministic replay
 keys, duplicate-state boundaries, classification and consent guards, payload
 data minimization, table privileges, RLS, indexes, migration safety, and an
 ephemeral PostgreSQL execution of the migration and its access-control triggers.
+
+This branch was revalidated after the GitHub-native control center reached
+`main`; this note changes no database, provider, delivery, consent, or runtime
+behavior.

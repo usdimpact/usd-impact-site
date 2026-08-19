@@ -1,4 +1,5 @@
 import { handleResendWebhook } from '../src/lib/resend-webhook-handler.js';
+import { requestOrigin } from '../src/lib/supabase-auth.js';
 import { buildWaitlistConfirmationEmail } from '../src/lib/waitlist-email-template.js';
 import {
   markWaitlistOutboxAccepted,
@@ -6,11 +7,15 @@ import {
   markWaitlistOutboxSending,
   prepareWaitlistReadiness,
 } from '../src/lib/waitlist-readiness.js';
+import {
+  createWaitlistUnsubscribeUrl,
+  handleWaitlistUnsubscribe,
+  verifyWaitlistUnsubscribeToken,
+} from '../src/lib/waitlist-unsubscribe.js';
 
 const RESEND_API = 'https://api.resend.com';
 const EMAIL_MAX_LENGTH = 254;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const WAITLIST_CONFIRMATION_EMAIL = buildWaitlistConfirmationEmail();
 
 function requestHeader(request, name) {
   const headers = request.headers ?? {};
@@ -30,6 +35,48 @@ function sendJson(response, body, status = 200, extraHeaders = {}) {
   }
 
   response.end(JSON.stringify(body));
+}
+
+function sendUnsubscribeGuardError(request, response, { status, code }) {
+  const acceptsHtml = requestHeader(request, 'accept').toLowerCase().includes('text/html');
+  if (!acceptsHtml) {
+    return sendJson(response, {
+      error: status >= 500 ? 'Unsubscribe service unavailable.' : 'Invalid unsubscribe request.',
+      code,
+    }, status);
+  }
+
+  response.statusCode = status;
+  response.setHeader('Content-Type', 'text/html; charset=utf-8');
+  response.setHeader('Cache-Control', 'no-store');
+  response.setHeader('X-Content-Type-Options', 'nosniff');
+  response.setHeader('X-Frame-Options', 'DENY');
+  response.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  response.setHeader('Referrer-Policy', 'no-referrer');
+  response.setHeader(
+    'Content-Security-Policy',
+    "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'",
+  );
+  response.end(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Unsubscribe unavailable | USD Impact</title>
+</head>
+<body style="margin:0;background:#f5f6f8;color:#161a1f;font-family:Arial,Helvetica,sans-serif;">
+  <main style="min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box;">
+    <section style="width:min(620px,100%);background:#ffffff;border:1px solid #e6e9ed;padding:36px;box-sizing:border-box;">
+      <p style="margin:0 0 12px;color:#8a6b32;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">USD Impact</p>
+      <h1 style="margin:0 0 18px;color:#071a33;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.15;">The request could not be completed.</h1>
+      <p style="margin:0;color:#5a6472;font-size:17px;line-height:1.65;">${status >= 500
+        ? 'The unsubscribe service is temporarily unavailable. Please try again later.'
+        : 'This unsubscribe link is invalid, disabled, or no longer available.'}</p>
+    </section>
+  </main>
+</body>
+</html>`);
 }
 
 function requestBody(request) {
@@ -78,6 +125,55 @@ function requestAction(request) {
   }
 }
 
+function unsubscribeTokenFromRequest(request) {
+  try {
+    return new URL(request.url || '/unsubscribe', 'https://usd-impact.invalid')
+      .searchParams.get('token') || '';
+  } catch {
+    return '';
+  }
+}
+
+function handleUnsubscribeAction(request, response) {
+  if (request.method === 'GET') {
+    if (process.env.WAITLIST_UNSUBSCRIBE_ENABLED !== 'true') {
+      return sendUnsubscribeGuardError(request, response, {
+        status: 404,
+        code: 'UNSUBSCRIBE_NOT_ENABLED',
+      });
+    }
+    try {
+      verifyWaitlistUnsubscribeToken({
+        token: unsubscribeTokenFromRequest(request),
+        secret: process.env.WAITLIST_UNSUBSCRIBE_SECRET,
+      });
+    } catch (error) {
+      return sendUnsubscribeGuardError(request, response, {
+        status: Number.isInteger(error?.status) ? error.status : 400,
+        code: error?.code || 'INVALID_UNSUBSCRIBE_TOKEN',
+      });
+    }
+  }
+  return handleWaitlistUnsubscribe(request, response);
+}
+
+function createConfirmationEmail({ request, readinessState, email, submissionId }) {
+  if (
+    !readinessState.enabled
+    || process.env.WAITLIST_UNSUBSCRIBE_ENABLED !== 'true'
+  ) {
+    return buildWaitlistConfirmationEmail();
+  }
+
+  const unsubscribeUrl = createWaitlistUnsubscribeUrl({
+    email,
+    submissionId,
+    secret: process.env.WAITLIST_UNSUBSCRIBE_SECRET,
+    baseUrl: requestOrigin(request),
+  });
+  return buildWaitlistConfirmationEmail({ unsubscribeUrl });
+}
+
 async function scheduleReadinessRetry(state, errorCode) {
   if (!state?.enabled) return;
   try {
@@ -88,8 +184,12 @@ async function scheduleReadinessRetry(state, errorCode) {
 }
 
 export default async function handler(request, response) {
-  if (requestAction(request) === 'resend-webhook') {
+  const action = requestAction(request);
+  if (action === 'resend-webhook') {
     return handleResendWebhook(request, response);
+  }
+  if (action === 'unsubscribe') {
+    return handleUnsubscribeAction(request, response);
   }
 
   if (request.method !== 'POST') {
@@ -163,6 +263,21 @@ export default async function handler(request, response) {
     }, 503);
   }
 
+  let confirmationEmail;
+  try {
+    confirmationEmail = createConfirmationEmail({
+      request,
+      readinessState,
+      email,
+      submissionId,
+    });
+  } catch (error) {
+    console.error('Waitlist unsubscribe delivery configuration is invalid.', {
+      code: error?.code || 'UNSUBSCRIBE_CONFIGURATION_ERROR',
+    });
+    return sendJson(response, { error: 'The waitlist is temporarily unavailable. Please try again later.' }, 503);
+  }
+
   let contactResponse;
   try {
     contactResponse = await resendRequest('/contacts', apiKey, {
@@ -222,9 +337,10 @@ export default async function handler(request, response) {
         from: fromEmail,
         to: [email],
         ...(replyTo ? { reply_to: replyTo } : {}),
-        subject: WAITLIST_CONFIRMATION_EMAIL.subject,
-        text: WAITLIST_CONFIRMATION_EMAIL.text,
-        html: WAITLIST_CONFIRMATION_EMAIL.html,
+        subject: confirmationEmail.subject,
+        text: confirmationEmail.text,
+        html: confirmationEmail.html,
+        ...(confirmationEmail.headers ? { headers: confirmationEmail.headers } : {}),
       }),
     });
   } catch (error) {

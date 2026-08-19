@@ -65,7 +65,7 @@ function responseMock() {
 }
 
 function jsonResponse(body, status = 200) {
-  return new Response(body === null ? '' : JSON.stringify(body), {
+  return new Response(body === null ? null : JSON.stringify(body), {
     status,
     headers: { 'Content-Type': 'application/json' },
   });

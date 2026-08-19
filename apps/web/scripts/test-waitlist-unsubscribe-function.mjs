@@ -148,6 +148,20 @@ try {
   }
 
   {
+    process.env.WAITLIST_UNSUBSCRIBE_ENABLED = 'false';
+    let fetchCount = 0;
+    globalThis.fetch = async () => {
+      fetchCount += 1;
+      throw new Error('Disabled GET must not query providers.');
+    };
+    const response = await invoke(request());
+    assert.equal(response.statusCode, 404);
+    assert.match(response.body, /could not be completed/i);
+    assert.equal(fetchCount, 0);
+    process.env.WAITLIST_UNSUBSCRIBE_ENABLED = 'true';
+  }
+
+  {
     let fetchCount = 0;
     globalThis.fetch = async () => {
       fetchCount += 1;
@@ -155,6 +169,21 @@ try {
     };
     const response = await invoke(request({
       url: '/api/waitlist?action=unsubscribe&token=invalid',
+    }));
+    assert.equal(response.statusCode, 400);
+    assert.match(response.body, /could not be completed/i);
+    assert.equal(fetchCount, 0);
+  }
+
+  {
+    let fetchCount = 0;
+    const invalidSignature = `${token.slice(0, -1)}${token.endsWith('a') ? 'b' : 'a'}`;
+    globalThis.fetch = async () => {
+      fetchCount += 1;
+      throw new Error('Invalid signed GET must not query providers.');
+    };
+    const response = await invoke(request({
+      url: `/api/waitlist?action=unsubscribe&token=${encodeURIComponent(invalidSignature)}`,
     }));
     assert.equal(response.statusCode, 400);
     assert.match(response.body, /could not be completed/i);

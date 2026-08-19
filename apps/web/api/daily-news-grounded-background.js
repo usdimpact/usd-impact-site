@@ -32,7 +32,7 @@ function includesWebSearch(body) {
   return Array.isArray(body?.tools) && body.tools.some((tool) => tool?.type === 'web_search');
 }
 
-function withSourceMetadata(body) {
+export function withSourceMetadata(body) {
   const usesWebSearch = includesWebSearch(body);
   const include = Array.isArray(body.include) ? body.include : [];
   const next = {
@@ -53,7 +53,15 @@ function withSourceMetadata(body) {
     if (additions.length > 0) next.input = `${next.input}\n- ${additions.join('\n- ')}`;
   }
 
-  const sourceProperties = next.text?.format?.schema?.properties?.sources?.items?.properties;
+  const schemaProperties = next.text?.format?.schema?.properties;
+  const highlightSchema = schemaProperties?.highlights;
+  if (highlightSchema && typeof highlightSchema === 'object') {
+    highlightSchema.minItems = 3;
+    highlightSchema.maxItems = 7;
+    highlightSchema.description = 'Return 3-7 publication-ready highlights. Never return fewer than 3 or more than 7.';
+  }
+
+  const sourceProperties = schemaProperties?.sources?.items?.properties;
   const sourceDateSchema = sourceProperties?.publishedAt;
   if (sourceDateSchema && typeof sourceDateSchema === 'object') {
     sourceDateSchema.pattern = SOURCE_DATE_SCHEMA_PATTERN;
@@ -123,7 +131,7 @@ function groundedFetch(realFetch) {
         return realFetch(input, options);
       }
 
-      const providerResponse = await realFetch(input, {
+      const providerResponse = await realFetch(url, {
         ...options,
         body: JSON.stringify(withSourceMetadata(body)),
       });

@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This runbook is the canonical operational gate for GitHub issue #130: transactional email, support mailbox, consent evidence, and delivery readiness for the Library Pass launch.
+This runbook is the canonical operational gate for GitHub issue #130: transactional email, support mailbox, consent evidence, provider lifecycle handling, and delivery readiness for the Library Pass launch.
 
-It converts scattered source, provider, mailbox, DNS, database, and test evidence into one fail-closed release decision. It does not authorize DNS changes, provider purchases, Production environment changes, database writes, marketing sends, Paddle Live activation, or legal-policy changes.
+It converts source, provider, mailbox, DNS, database, and test evidence into one fail-closed release decision. It does not authorize DNS changes, provider purchases, Production environment changes, Production database writes, marketing sends, Paddle Live activation, or legal-policy changes.
 
 ## Current verified baseline — 2026-08-20
 
@@ -14,7 +14,35 @@ It converts scattered source, provider, mailbox, DNS, database, and test evidenc
 - Observed authentication sender: `USD Impact <no-reply@updates.usd-impact.com>`.
 - Public book waitlist uses Resend and sends from `book@updates.usd-impact.com`.
 - Public policy and product pages use `support@usd-impact.com` as the account, billing, refund, privacy, and support route.
-- The repository contains `20260819191131_email_consent_outbox_contracts.sql`, which defines append-only marketing-consent evidence and a durable notification outbox contract. This migration is source-controlled but must not be assumed applied to either database without migration-ledger evidence.
+- The repository migration `20260819215648_email_consent_outbox_contracts.sql` defines append-only marketing-consent evidence and a durable notification outbox contract.
+- Development records migration version `20260819215648` as applied. Production does not.
+
+### Direct Resend evidence
+
+The connected Resend account was inspected directly on 2026-08-20.
+
+Verified:
+
+- `updates.usd-impact.com` status: verified;
+- sending: enabled;
+- receiving: enabled;
+- DKIM record: verified;
+- MAIL FROM / return-path MX: verified;
+- SPF record: verified;
+- inbound receiving MX: verified;
+- intended segment exists: `Read the Dollar First Waitlist`;
+- a separate `General` segment exists;
+- 34 recent sent messages were returned and every returned message was `delivered`;
+- inspected send/contact API requests were successful in the returned log window;
+- zero broadcasts were found;
+- zero contact imports were found;
+- zero subscription topics were found.
+
+Open provider gap:
+
+- zero Resend webhooks are configured, so no account-level real-time lifecycle callback currently exists for delivered, bounced, complained, failed, delayed, or suppressed email events.
+
+Open/click tracking is disabled. Do not enable tracking merely to satisfy this gate; tracking is a separate privacy/product decision.
 
 ### Deliverability evidence already captured
 
@@ -25,7 +53,7 @@ Prior controlled Gmail-header evidence recorded in issue #130 shows:
 - cPanel-originated `@usd-impact.com` test message: SPF pass, DKIM pass using selector `default`, DMARC pass for `usd-impact.com`;
 - observed DMARC policy was monitoring mode (`p=none`), so authentication is verified but enforcement is not asserted.
 
-These checks do not by themselves prove bounce processing, suppression behavior, complaint handling, inbox placement across representative providers, or ongoing sender-domain health.
+These checks do not by themselves prove bounce/complaint processing, inbox placement across representative providers, or ongoing root-domain support receiving.
 
 ### Support mailbox evidence
 
@@ -35,20 +63,34 @@ Therefore support receiving/escalation/response ownership remains **UNVERIFIED**
 
 ### Database and migration state
 
-Source provenance for the Guided Edition migration stack has been restored to `main`, including `20260819001529_restore_learning_progress_writes.sql`.
+Source provenance for the Guided Edition migration stack has been restored, including `20260819001529_restore_learning_progress_writes.sql`.
 
-A read-only catalog comparison found:
+Migration ledgers were rechecked directly:
 
-- Development has the intended hardened future `postgres` function defaults;
-- Production still exposes broader future-function defaults to API roles;
-- current account RPC definitions inspected in Development and Production match for `account_export` and `request_account_deletion`;
-- Development has owner-scoped `INSERT` and `UPDATE` policies for `learning_progress`, while Production remains select-only.
+- Development is reconciled through `20260819001529_restore_learning_progress_writes` and now also records `20260819215648_email_consent_outbox_contracts`;
+- Production is reconciled through `20260813004700_restore_guided_release_service_role_select` and intentionally does not contain the Development-only learning-progress write migration or the email consent/outbox migration.
 
-`20260805194908_secure_future_public_object_defaults.sql` is present in source but is not safely treated as applied solely from catalog effects. Timestamp-preserving migration-ledger reconciliation is required before any normal migration push.
+The email migration was applied to **Development only**. Post-apply verification confirmed:
 
-The connected Supabase MCP `apply_migration` action must not be used to repair this history because it creates its own migration-history entry rather than preserving the repository migration version. Use the official Supabase CLI migration-repair/db-push path with authenticated project access and exact project targeting.
+- `marketing_consent_events` exists with RLS enabled;
+- `notification_outbox` exists with RLS enabled;
+- no browser-role table grants were introduced;
+- service-role consent writes are column-scoped and the consent ledger has no application UPDATE/DELETE grant;
+- service-role outbox writes are column-scoped and delivery-state UPDATE is limited to the intended state columns;
+- the consent-reference and outbox-reference validation triggers exist;
+- the outbox updated-at trigger exists;
+- no new security-advisor WARN was introduced by the migration;
+- the two new advisor notices are INFO-level `RLS Enabled No Policy`, which is intentional because these are backend-only tables.
 
-Production remains observation-only until Development reconciliation and validation are complete.
+Existing unrelated Development advisor WARNs remain tracked separately, including the reviewed `request_account_deletion()` SECURITY DEFINER finding and leaked-password protection setting.
+
+### Migration-version reconciliation rule
+
+The connected Supabase MCP migration action records its own migration version. For this Development apply, Supabase recorded `20260819215648`. Source control must therefore use the same exact migration version so repository and remote history remain aligned.
+
+Do not apply the old `20260819191131` version anywhere after this reconciliation. Do not create a second migration containing the same SQL.
+
+For Production, use a reviewed migration path only after all remaining launch gates pass. Production remains observation-only under this runbook.
 
 ## Gate A — ownership and message classification
 
@@ -73,22 +115,22 @@ Record names and scopes only. Never commit secret values.
 - [ ] `SUPABASE_PUBLISHABLE_KEY` present in the required Vercel environments.
 - [ ] `SUPABASE_SECRET_KEY` present only where server-side use is required.
 - [ ] Production Site URL and approved redirect URLs verified in Supabase Auth.
-- [ ] Branded SMTP/sender configuration verified.
+- [ ] Branded SMTP/sender configuration verified from current provider settings.
 - [ ] Authentication rate limits/anti-abuse settings reviewed.
 
 ### Resend/waitlist and transactional delivery
 
-- [ ] `RESEND_API_KEY` present server-side only.
-- [ ] `RESEND_WAITLIST_SEGMENT_ID` present where waitlist capture runs.
-- [ ] `RESEND_FROM_EMAIL` matches an approved verified sender.
-- [ ] `RESEND_REPLY_TO` points to an owned, monitored route.
-- [ ] Resend domain status is verified.
-- [ ] Sender identities are verified.
-- [ ] Audience/segment is the intended waitlist segment and contains no unintended imported audience.
-- [ ] Suppression, bounce, complaint, and webhook handling are reviewed.
-- [ ] Provider logs show no unexplained launch-critical delivery failures.
-
-A connected Resend integration may be used to collect this evidence when its account-action tools are available. Do not paste API keys into issues, PRs, docs, or chat.
+- [ ] `RESEND_API_KEY` presence/scope verified server-side without exposing its value.
+- [ ] `RESEND_WAITLIST_SEGMENT_ID` presence/scope verified where waitlist capture runs.
+- [ ] `RESEND_FROM_EMAIL` presence/scope verified and matches the approved sender.
+- [ ] `RESEND_REPLY_TO` presence/scope verified and points to an owned, monitored route.
+- [x] Resend domain status verified directly.
+- [x] DKIM/SPF/MAIL FROM records verified directly in Resend.
+- [x] Intended waitlist segment exists.
+- [x] No contact imports found in the inspected account.
+- [x] No broadcasts found in the inspected account.
+- [x] Provider logs show no unexplained failure in the inspected send/contact window.
+- [ ] Suppression, bounce, complaint, and webhook handling implemented and tested.
 
 ## Gate C — domain authentication and receiving
 
@@ -99,8 +141,8 @@ A connected Resend integration may be used to collect this evidence when its acc
 - [x] DKIM pass observed for waitlist sender.
 - [x] DMARC pass observed for waitlist sender.
 - [x] SPF/DKIM/DMARC pass observed for the tested `@usd-impact.com` mailbox-originated message.
-- [ ] Current DNS/provider state rechecked near launch if records or providers changed after the recorded tests.
-- [ ] Return-path/bounce-domain alignment verified.
+- [x] Resend MAIL FROM / return-path MX reports verified.
+- [ ] Current DNS/provider state rechecked near launch if records or providers change after the recorded tests.
 - [ ] `support@usd-impact.com` inbound receiving verified with a controlled test.
 - [ ] Support reply path verified end-to-end.
 
@@ -108,37 +150,42 @@ Do not tighten DMARC enforcement merely to close this gate. A change from monito
 
 ## Gate D — consent and recordkeeping
 
-Source contract requires:
+Database contract is now present in Development. Application behavior still must prove it uses the contract correctly.
 
 - [ ] Explicit marketing consent is affirmative and not preselected.
 - [ ] Consent purpose is specific to the relevant marketing/waitlist use.
-- [ ] Consent timestamp is stored.
-- [ ] Consent source is stored.
-- [ ] Consent-text version is stored.
-- [ ] Privacy-notice version is stored.
+- [ ] Consent timestamp is persisted to `marketing_consent_events`.
+- [ ] Consent source is persisted.
+- [ ] Consent-text version is persisted.
+- [ ] Privacy-notice version is persisted.
 - [ ] Withdrawal is append-only/auditable rather than destructive.
 - [ ] Transactional records remain separate from promotional audience segmentation.
 - [ ] Unsubscribe from marketing does not suppress required account/security communication.
 - [ ] Retention periods for consent evidence, delivery logs, suppression records, and support correspondence are documented.
 
-Database-backed items are not complete until the corresponding migration is applied and verified in the target environment.
-
-## Gate E — migration sequence for Development
+## Gate E — Development migration verification
 
 No Production write is authorized by this runbook.
 
-1. Authenticate the Supabase CLI using approved operator credentials; do not expose tokens in logs or chat.
-2. Link or target **Development only**: `usd-impact-development` / `ycstrcvshdluovtuasjc`.
-3. Run the CLI migration list and compare repository vs remote history.
-4. If `20260805194908` is absent from the migration ledger but its schema effects are already present, use the official timestamp-preserving migration-repair mechanism to mark only that exact version as applied after independent review.
-5. Re-run migration list. Stop unless repository and remote history now reconcile through the known Development versions.
-6. Preview the next push. Stop unless the only intended new migration is `20260819191131_email_consent_outbox_contracts.sql` plus any explicitly reviewed, source-controlled predecessor that is genuinely unapplied.
-7. Require a fresh Development backup and a second-person target check.
-8. Apply to Development only using the normal timestamp-preserving migration path.
-9. Run application validation, security advisors, performance advisors, and targeted lifecycle tests.
-10. Record exact migration versions, UTC time, operator, evidence, and results.
+Completed:
 
-If any tool proposes Production, `--include-all`, a replay of historical migration SQL, or an unexpected migration version, stop.
+- [x] Development migration ledger reconciled through `20260819001529` before email apply.
+- [x] Security and performance advisor baselines captured before email apply.
+- [x] `email_consent_outbox_contracts` applied to Development only.
+- [x] Supabase recorded version `20260819215648`.
+- [x] RLS verified on both new tables.
+- [x] Browser-role table grants verified absent.
+- [x] Service-role column privileges verified.
+- [x] Validation and updated-at triggers verified.
+- [x] Post-apply security advisors reviewed; no new WARN introduced.
+
+Still required:
+
+- [ ] Source migration filename and contract test merged using exact version `20260819215648`.
+- [ ] Application-level Development tests exercise consent grant, withdrawal, outbox enqueue, retry, delivery-state updates, and forbidden browser access against the real Development database.
+- [ ] Production migration remains blocked until Gates A–G pass and an explicit Production release step is reviewed.
+
+If any future tool proposes Production, `--include-all`, a replay of the old email migration version, or an unexpected migration version, stop.
 
 ## Gate F — lifecycle tests
 
@@ -160,6 +207,20 @@ All launch-critical paths must be tested in Preview/Development first with contr
 - [ ] Suppression handling fails safely.
 - [ ] Provider outage/retry behavior is bounded and idempotent.
 - [ ] Message logs contain no secrets, raw payment-card data, private learning inputs, or unnecessary personal data.
+
+### Resend lifecycle implementation gate
+
+Resend currently has zero webhooks. Before registering one:
+
+1. deploy a reviewed HTTPS receiver;
+2. verify the raw body using the Resend signing secret and signed webhook headers;
+3. make event handling idempotent;
+4. map only reviewed lifecycle events into durable delivery state;
+5. fail closed when required configuration or database contracts are unavailable;
+6. test in Preview/Development before registering a Production endpoint;
+7. store no unnecessary recipient or message content in logs.
+
+Do not register a Production webhook merely to satisfy the checklist.
 
 ## Gate G — template and rendering QA
 
@@ -211,19 +272,22 @@ Completed or substantially evidenced:
 
 - application/provider architecture identified;
 - SPF/DKIM/DMARC pass evidence exists for authentication, waitlist, and tested mailbox-originated paths;
-- consent/outbox database contract is source-controlled;
-- migration source provenance has been restored;
+- direct Resend domain, DNS, segment, delivery and bulk-send state inspected;
+- 34 returned recent Resend messages are delivered;
+- no Resend broadcast/import activity found in the inspected account;
+- consent/outbox migration applied and verified in Development as `20260819215648`;
+- migration source provenance through the Development stack is known;
 - application email/auth contracts previously passed source-level tests;
-- Production website deployment remains on the canonical Vercel path.
+- canonical release-gate deployment is READY in Vercel Production.
 
 Remaining launch-critical blockers:
 
-1. support receiving/reply ownership evidence;
-2. direct Resend account evidence for domain/sender/suppression/bounce/webhook state;
-3. current Supabase auth SMTP/sender configuration evidence;
-4. timestamp-preserving Development migration-ledger reconciliation;
-5. Development application/verification of the email consent/outbox migration;
-6. lifecycle delivery/failure tests;
+1. merge source-version reconciliation for `20260819215648`;
+2. support receiving/reply ownership evidence;
+3. current Supabase Auth SMTP/sender configuration evidence;
+4. application integration with the Development consent/outbox contract;
+5. Resend lifecycle webhook handling for bounce/complaint/failure/suppression state;
+6. lifecycle delivery/failure/idempotency tests;
 7. controlled Production proof.
 
 Do not reduce issue #130 from P0 until these launch-critical blockers are resolved or a reviewed product-scope change removes the corresponding path from launch.

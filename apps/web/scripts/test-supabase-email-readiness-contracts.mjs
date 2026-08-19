@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 
 const migrationDirectory = new URL('../../../supabase/migrations/', import.meta.url);
-const migrationName = '20260819191131_email_consent_outbox_contracts.sql';
+const migrationName = '20260819215648_email_consent_outbox_contracts.sql';
 const migration = await readFile(new URL(migrationName, migrationDirectory), 'utf8');
 const migrationFiles = (await readdir(migrationDirectory))
   .filter((name) => name.endsWith('.sql'))

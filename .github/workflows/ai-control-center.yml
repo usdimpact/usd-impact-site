@@ -1,0 +1,139 @@
+name: USD Impact AI Control Center
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: Control command
+        required: true
+        default: status
+        type: choice
+        options:
+          - status
+          - next
+          - daily
+          - sync
+  issue_comment:
+    types: [created]
+  schedule:
+    - cron: '41 6 * * 1-5'
+
+permissions:
+  actions: write
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: usd-impact-ai-control-center
+  cancel-in-progress: false
+
+jobs:
+  control:
+    if: >-
+      github.event_name != 'issue_comment' ||
+      ((github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'MEMBER' ||
+        github.event.comment.author_association == 'COLLABORATOR') &&
+       (github.event.comment.body == '/status' ||
+        github.event.comment.body == '/next' ||
+        github.event.comment.body == '/daily' ||
+        github.event.comment.body == '/sync'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+
+      - name: Resolve control command
+        id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_COMMAND: ${{ inputs.command }}
+          COMMENT_COMMAND: ${{ github.event.comment.body }}
+        run: |
+          if [ "$EVENT_NAME" = "schedule" ]; then
+            command="sync"
+          elif [ "$EVENT_NAME" = "issue_comment" ]; then
+            command="${COMMENT_COMMAND#/}"
+          else
+            command="$DISPATCH_COMMAND"
+          fi
+          case "$command" in
+            status|next|daily|sync) ;;
+            *) echo "Unsupported command: $command"; exit 1 ;;
+          esac
+          echo "command=$command" >> "$GITHUB_OUTPUT"
+
+      - name: Refresh project state and priority queue
+        id: control
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/control-center.mjs "${{ steps.resolve.outputs.command }}"
+
+      - name: Reply to slash command
+        if: github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          BODY: ${{ steps.control.outputs.response }}
+        run: gh api --method POST "repos/$REPO/issues/$ISSUE_NUMBER/comments" -f body="$BODY"
+
+      - name: Dispatch authoritative daily publication workflow
+        if: steps.resolve.outputs.command == 'daily' && steps.control.outputs.daily_allowed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run daily-news.yml --ref main
+
+      - name: Confirm daily dispatch
+        if: github.event_name == 'issue_comment' && steps.resolve.outputs.command == 'daily' && steps.control.outputs.daily_allowed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: gh api --method POST "repos/$REPO/issues/$ISSUE_NUMBER/comments" -f body='Daily publication workflow dispatched. Existing generation, validation, exact-head quality, protected review, and merge gates remain authoritative.'
+
+      - name: Prepare automatic state snapshot branch
+        if: github.event_name == 'schedule' || steps.resolve.outputs.command == 'sync'
+        id: snapshot
+        run: |
+          if git diff --quiet -- docs/operations/ai-control-center/PROJECT_STATE.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          branch="automation/control-center-state"
+          git config user.name "usd-impact-control-center"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add docs/operations/ai-control-center/PROJECT_STATE.json
+          git commit -m "Refresh USD Impact control-center state"
+          git push --force-with-lease origin "$branch"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Open or refresh state snapshot pull request
+        if: steps.snapshot.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.snapshot.outputs.branch }}
+        run: |
+          existing="$(gh pr list --state open --head "$BRANCH" --base main --json number --jq '.[0].number // empty')"
+          if [ -z "$existing" ]; then
+            cat > "$RUNNER_TEMP/control-center-pr.md" <<'EOF'
+          ## Automated USD Impact control-center state refresh
+
+          This PR updates only the generated `PROJECT_STATE.json` snapshot from live GitHub repository, issue, and workflow evidence.
+
+          The snapshot is informational and does not override canonical governance, deployment configuration, or production state. Vercel production verification remains a separate release step.
+          EOF
+            gh pr create --base main --head "$BRANCH" --title "Refresh USD Impact control-center state" --body-file "$RUNNER_TEMP/control-center-pr.md"
+          else
+            echo "Updated existing control-center state PR #$existing."
+          fi

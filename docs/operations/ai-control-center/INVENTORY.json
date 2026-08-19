@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "project": "USD Impact",
+  "repositories": {
+    "website": {
+      "name": "usdimpact/usd-impact-site",
+      "role": "canonical website and product application",
+      "production_branch": "main",
+      "application_root": "apps/web",
+      "production_provider": "vercel",
+      "production_domain": "https://www.usd-impact.com/"
+    },
+    "pipeline": {
+      "name": "usdimpact/usd-impact-pipeline",
+      "role": "publishing/research/scoring pipeline and separate Weekly Score dashboard",
+      "dashboard_provider": "cloudflare-pages"
+    },
+    "weekly_commentary": {
+      "name": "usdimpact/usd-impact",
+      "role": "supporting weekly educational commentary framework",
+      "production_authority": false
+    }
+  },
+  "website_hierarchy": [
+    "governance",
+    "research_data",
+    "content",
+    "application",
+    "delivery",
+    "observability"
+  ],
+  "website_controls": {
+    "canonical_deployment_doc": "docs/production-deployment.md",
+    "control_center_doc": "docs/operations/ai-control-center/AI_CONTROL_CENTER.md",
+    "release_checklist": "docs/operations/ai-control-center/PRODUCTION_RELEASE_CHECKLIST.md",
+    "quality_workflow": ".github/workflows/quality.yml",
+    "daily_workflow": ".github/workflows/daily-news.yml",
+    "daily_health_workflow": ".github/workflows/daily-news-health.yml",
+    "catalyst_workflow": ".github/workflows/catalyst-brief.yml",
+    "vercel_config": "apps/web/vercel.json",
+    "package_manifest": "apps/web/package.json"
+  },
+  "required_release_gates": [
+    "content",
+    "sources",
+    "compliance",
+    "build",
+    "automation",
+    "links",
+    "preview",
+    "production_verification"
+  ],
+  "commands": ["/status", "/next", "/daily", "/sync"],
+  "state_rules": {
+    "generated_state_is_authoritative": false,
+    "unknown_is_green": false,
+    "production_release_requires_post_deploy_verification": true,
+    "cloudflare_is_website_deployment_target": false
+  }
+}

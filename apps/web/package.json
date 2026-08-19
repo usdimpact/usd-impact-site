@@ -22,7 +22,7 @@
     "preview:local": "astro preview --host 127.0.0.1 --port 4321",
     "generate:quizzes": "node scripts/generate-quiz-runtime.mjs",
     "validate:quizzes": "node scripts/verify-quiz-source-integrity.mjs && node scripts/validate-quizzes.mjs && node scripts/generate-quiz-runtime.mjs && node scripts/test-quiz-entitlement.mjs && node scripts/test-quiz-submit.mjs && node scripts/test-quiz-ui-contract.mjs",
-    "validate:video-library": "node --check src/data/video-library.js && node --check src/lib/cloudflare-stream.js && node --check src/lib/video-stream-map.js && node --check src/lib/video-stream-map.js && node --check src/lib/video-library-page.js && node --check src/lib/video-library-handler.js && node --check src/lib/video-progress-handler.js && node --check api/guided-edition.js && node --check api/account.js && node scripts/test-video-library.mjs && node scripts/test-cloudflare-stream.mjs && node scripts/test-video-library-function.mjs && node scripts/test-video-progress-function.mjs && node scripts/test-supabase-video-progress.mjs"
+    "validate:video-library": "node --check src/data/video-library.js && node --check src/lib/cloudflare-stream.js && node --check src/lib/video-stream-map.js && node --check src/lib/video-library-page.js && node --check src/lib/video-library-handler.js && node --check src/lib/video-progress-handler.js && node --check api/guided-edition.js && node --check api/account.js && node scripts/test-video-library.mjs && node scripts/test-cloudflare-stream.mjs && node scripts/test-video-library-function.mjs && node scripts/test-video-progress-function.mjs && node scripts/test-supabase-video-progress.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "3.2.1",

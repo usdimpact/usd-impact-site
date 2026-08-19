@@ -5,6 +5,7 @@ import {
   markWaitlistOutboxSending,
   prepareWaitlistReadiness,
 } from '../src/lib/waitlist-readiness.js';
+import { handleWaitlistUnsubscribe } from '../src/lib/waitlist-unsubscribe.js';
 
 const RESEND_API = 'https://api.resend.com';
 const EMAIL_MAX_LENGTH = 254;
@@ -86,8 +87,12 @@ async function scheduleReadinessRetry(state, errorCode) {
 }
 
 export default async function handler(request, response) {
-  if (requestAction(request) === 'resend-webhook') {
+  const action = requestAction(request);
+  if (action === 'resend-webhook') {
     return handleResendWebhook(request, response);
+  }
+  if (action === 'unsubscribe') {
+    return handleWaitlistUnsubscribe(request, response);
   }
 
   if (request.method !== 'POST') {

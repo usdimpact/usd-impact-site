@@ -60,12 +60,24 @@ assert.throws(() => createConsentEventRecord({
   capturedAt: occurredAt,
   evidenceContext: { ipAddress: '192.0.2.1' },
 }), /not allowed/);
+for (const evidenceContext of [
+  { recipient: 'reader@example.com' },
+  { address: '192.0.2.1' },
+  { request: { locale: 'en', userAgent: 'browser fingerprint' } },
+]) {
+  assert.throws(() => createConsentEventRecord({
+    ...consentIdentity,
+    source: 'waitlist_form',
+    capturedAt: occurredAt,
+    evidenceContext,
+  }), /not allowed/);
+}
 
 const withdrawal = createConsentEventRecord({
   ...consentIdentity,
   sourceEventId: 'unsubscribe-456',
   status: 'withdrawn',
-  source: 'waitlist_form',
+  source: 'unsubscribe_link',
   capturedAt: occurredAt,
   withdrawnAt: '2026-08-19T19:00:00.000Z',
   withdrawalSource: 'unsubscribe_link',
@@ -189,10 +201,17 @@ assert.equal(waitlistConfirmation.classification, 'operational');
 assert.equal(waitlistConfirmation.consent_required, true);
 
 for (const payload of [
-  { apiKey: 'secret' },
-  { nested: { authorization: 'Bearer secret' } },
-  { customer: { cardNumber: '4111111111111111' } },
-  { learning: { privateLearningInput: 'private answer' } },
+  { amountCents: 3900, currency: 'USD', apiKey: 'secret' },
+  { amountCents: 3900, currency: 'USD', nested: { authorization: 'Bearer secret' } },
+  {
+    amountCents: 3900,
+    currency: 'USD',
+    customer: { displayName: 'Reader', cardNumber: '4111111111111111' },
+  },
+  { amountCents: 3900, currency: 'USD', learning: { privateLearningInput: 'private answer' } },
+  { amountCents: 3900, currency: 'USD', token: 'sensitive-token-value' },
+  { amountCents: 3900, currency: 'USD', number: '4111111111111111' },
+  { amountCents: 3900, currency: 'USD', response: 'private answer' },
 ]) {
   assert.throws(() => buildNotificationOutboxRecord({
     ...identity,
@@ -205,5 +224,38 @@ for (const payload of [
     nextAttemptAt: occurredAt,
   }), /not allowed/);
 }
+
+assert.throws(() => buildNotificationOutboxRecord({
+  ...identity,
+  eventId: 'purchase.completed:purchase_123:v1',
+  classification: 'transactional',
+  templateId: 'purchase_receipt',
+  templateVersion: '2026-08-19',
+  provider: 'resend',
+  payload: { currency: 'USD' },
+  nextAttemptAt: occurredAt,
+}), /amountCents is required/);
+
+assert.throws(() => buildNotificationOutboxRecord({
+  ...identity,
+  eventId: 'purchase.completed:purchase_123:v1',
+  classification: 'transactional',
+  templateId: 'unreviewed_template',
+  templateVersion: '2026-08-19',
+  provider: 'resend',
+  payload: {},
+  nextAttemptAt: occurredAt,
+}), /approved payload contract/);
+
+assert.throws(() => buildNotificationOutboxRecord({
+  ...identity,
+  eventId: 'purchase.completed:purchase_123:v1',
+  classification: 'marketing',
+  templateId: 'purchase_receipt',
+  templateVersion: '2026-08-19',
+  provider: 'resend',
+  payload: { amountCents: 3900, currency: 'USD' },
+  nextAttemptAt: occurredAt,
+}), /classification is not approved/);
 
 console.log('Email readiness core contract tests passed.');

@@ -11,8 +11,60 @@ export const NOTIFICATION_CLASSIFICATIONS = Object.freeze([
 const CLASSIFICATION_SET = new Set(NOTIFICATION_CLASSIFICATIONS);
 const IDENTIFIER_PATTERN = /^[a-z][a-z0-9_.:-]{1,127}$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const FORBIDDEN_PAYLOAD_KEY_PATTERN = /(?:^|_)(?:authorization|cookie|set_cookie|password|passcode|secret|api_?key|cvv|cvc|card_number|access_token|refresh_token|auth_token|learning_answer|learning_note|private_learning_input)(?:$|_)/i;
-const FORBIDDEN_EVIDENCE_KEY_PATTERN = /(?:^|_)(?:email|ip|ip_address|user_agent|fingerprint|device_id|full_name|first_name|last_name)(?:$|_)/i;
+
+const CONSENT_EVIDENCE_CONTEXT_CONTRACT = Object.freeze({
+  type: 'object',
+  properties: Object.freeze({
+    campaignId: Object.freeze({ type: 'string', maxLength: 128, pattern: IDENTIFIER_PATTERN }),
+    consentCheckbox: Object.freeze({ type: 'boolean' }),
+    formVersion: Object.freeze({ type: 'string', maxLength: 80 }),
+    request: Object.freeze({
+      type: 'object',
+      properties: Object.freeze({
+        country: Object.freeze({ type: 'string', maxLength: 2, pattern: /^[A-Z]{2}$/ }),
+        locale: Object.freeze({ type: 'string', maxLength: 35, pattern: /^[A-Za-z0-9-]{2,35}$/ }),
+      }),
+    }),
+  }),
+});
+
+const NOTIFICATION_CONTRACTS = Object.freeze({
+  market_update: Object.freeze({
+    classifications: Object.freeze(['marketing']),
+    payload: Object.freeze({
+      type: 'object',
+      required: Object.freeze(['editionId']),
+      properties: Object.freeze({
+        editionId: Object.freeze({ type: 'string', maxLength: 128, pattern: IDENTIFIER_PATTERN }),
+      }),
+    }),
+  }),
+  purchase_receipt: Object.freeze({
+    classifications: Object.freeze(['transactional']),
+    payload: Object.freeze({
+      type: 'object',
+      required: Object.freeze(['amountCents', 'currency']),
+      properties: Object.freeze({
+        amountCents: Object.freeze({ type: 'integer', minimum: 0, maximum: 999_999_999 }),
+        currency: Object.freeze({ type: 'string', maxLength: 3, pattern: /^[A-Z]{3}$/ }),
+        customer: Object.freeze({
+          type: 'object',
+          required: Object.freeze(['displayName']),
+          properties: Object.freeze({
+            displayName: Object.freeze({ type: 'string', maxLength: 160 }),
+          }),
+        }),
+      }),
+    }),
+  }),
+  waitlist_confirmation: Object.freeze({
+    classifications: Object.freeze(['operational']),
+    payload: Object.freeze({
+      type: 'object',
+      properties: Object.freeze({}),
+    }),
+  }),
+});
 
 function requirePlainObject(value, fieldName) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -90,32 +142,50 @@ function deepFreeze(value) {
   return Object.freeze(value);
 }
 
-function normalizedKey(value) {
-  return value
-    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
-    .replace(/[^a-zA-Z0-9]+/g, '_')
-    .toLowerCase();
-}
-
-function assertSafeObjectKeys(value, pattern, path) {
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => assertSafeObjectKeys(item, pattern, `${path}[${index}]`));
-    return;
-  }
-  if (!value || typeof value !== 'object') return;
-  requirePlainObject(value, path);
-  for (const [key, child] of Object.entries(value)) {
-    if (pattern.test(normalizedKey(key))) {
-      throw new TypeError(`${path}.${key} is not allowed.`);
+function normalizeContractValue(value, contract, path) {
+  if (contract.type === 'object') {
+    requirePlainObject(value, path);
+    const properties = contract.properties ?? {};
+    for (const requiredKey of contract.required ?? []) {
+      if (!Object.hasOwn(value, requiredKey)) {
+        throw new TypeError(`${path}.${requiredKey} is required.`);
+      }
     }
-    assertSafeObjectKeys(child, pattern, `${path}.${key}`);
+    return Object.fromEntries(Object.keys(value).sort().map((key) => {
+      if (!Object.hasOwn(properties, key)) {
+        throw new TypeError(`${path}.${key} is not allowed.`);
+      }
+      return [key, normalizeContractValue(value[key], properties[key], `${path}.${key}`)];
+    }));
   }
+  if (contract.type === 'string') {
+    const normalized = requireString(value, path, contract.maxLength ?? 200);
+    if (contract.pattern && !contract.pattern.test(normalized)) {
+      throw new TypeError(`${path} does not match its approved format.`);
+    }
+    return normalized;
+  }
+  if (contract.type === 'integer') {
+    if (
+      !Number.isSafeInteger(value)
+      || value < (contract.minimum ?? Number.MIN_SAFE_INTEGER)
+      || value > (contract.maximum ?? Number.MAX_SAFE_INTEGER)
+    ) {
+      throw new TypeError(`${path} is outside its approved integer range.`);
+    }
+    return value;
+  }
+  if (contract.type === 'boolean') {
+    if (typeof value !== 'boolean') {
+      throw new TypeError(`${path} must be a boolean.`);
+    }
+    return value;
+  }
+  throw new TypeError(`${path} uses an unsupported contract type.`);
 }
 
-function requireBoundedJsonObject(value, fieldName, forbiddenKeyPattern) {
-  requirePlainObject(value, fieldName);
-  assertSafeObjectKeys(value, forbiddenKeyPattern, fieldName);
-  const normalized = canonicalize(value, fieldName);
+function requireContractObject(value, fieldName, contract) {
+  const normalized = normalizeContractValue(value, contract, fieldName);
   if (Buffer.byteLength(JSON.stringify(normalized), 'utf8') > 65_536) {
     throw new TypeError(`${fieldName} must not exceed 65536 bytes.`);
   }
@@ -207,10 +277,10 @@ export function createConsentEventRecord({
     throw new TypeError('withdrawnAt must not precede capturedAt.');
   }
 
-  const normalizedEvidenceContext = requireBoundedJsonObject(
+  const normalizedEvidenceContext = requireContractObject(
     evidenceContext,
     'evidenceContext',
-    FORBIDDEN_EVIDENCE_KEY_PATTERN,
+    CONSENT_EVIDENCE_CONTEXT_CONTRACT,
   );
   const normalizedConsentTextVersion = requireString(
     consentTextVersion,
@@ -302,6 +372,14 @@ export function buildNotificationOutboxRecord({
   if (!CLASSIFICATION_SET.has(classification)) {
     throw new TypeError('classification is not supported.');
   }
+  const normalizedTemplateId = requireIdentifier(templateId, 'templateId');
+  const notificationContract = NOTIFICATION_CONTRACTS[normalizedTemplateId];
+  if (!notificationContract) {
+    throw new TypeError('templateId does not have an approved payload contract.');
+  }
+  if (!notificationContract.classifications.includes(classification)) {
+    throw new TypeError('classification is not approved for templateId.');
+  }
   const consentRequired = classification === 'marketing' || consent != null;
   let normalizedConsent = null;
   if (consentRequired) {
@@ -319,10 +397,10 @@ export function buildNotificationOutboxRecord({
       checkedAt: requireTimestamp(consentCheckedAt, 'consentCheckedAt'),
     };
   }
-  const normalizedPayload = requireBoundedJsonObject(
+  const normalizedPayload = requireContractObject(
     payload,
     'payload',
-    FORBIDDEN_PAYLOAD_KEY_PATTERN,
+    notificationContract.payload,
   );
   const identity = {
     messageId,
@@ -341,7 +419,7 @@ export function buildNotificationOutboxRecord({
     business_object_id: requireString(businessObjectId, 'businessObjectId'),
     state_version: requireInteger(stateVersion, 'stateVersion'),
     recipient_email_normalized: normalizeEmail(recipientEmail),
-    template_id: requireIdentifier(templateId, 'templateId'),
+    template_id: normalizedTemplateId,
     template_version: requireString(templateVersion, 'templateVersion', 80),
     provider: requireIdentifier(provider, 'provider', 80),
     consent_required: consentRequired,

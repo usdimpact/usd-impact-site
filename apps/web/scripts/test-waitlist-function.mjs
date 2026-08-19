@@ -8,6 +8,7 @@ const originalEnv = {
   RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
   RESEND_REPLY_TO: process.env.RESEND_REPLY_TO,
   EMAIL_READINESS_LEDGER_ENABLED: process.env.EMAIL_READINESS_LEDGER_ENABLED,
+  WAITLIST_UNSUBSCRIBE_ENABLED: process.env.WAITLIST_UNSUBSCRIBE_ENABLED,
 };
 
 function request(body, headers = {}, method = 'POST') {
@@ -59,6 +60,7 @@ try {
   process.env.RESEND_FROM_EMAIL = 'USD Impact <book@updates.example.com>';
   process.env.RESEND_REPLY_TO = 'support@example.com';
   process.env.EMAIL_READINESS_LEDGER_ENABLED = 'false';
+  process.env.WAITLIST_UNSUBSCRIBE_ENABLED = 'false';
 
   const calls = [];
   globalThis.fetch = async (url, options = {}) => {
@@ -86,6 +88,7 @@ try {
   assert.equal(emailBody.from, 'USD Impact <book@updates.example.com>');
   assert.deepEqual(emailBody.to, ['reader@example.com']);
   assert.equal(emailBody.reply_to, 'support@example.com');
+  assert.equal(emailBody.headers, undefined);
   assert.match(emailBody.subject, /waitlist/i);
   assert.match(emailBody.text, /reply to this email with the word 'unsubscribe'/i);
   assert.match(emailBody.text, /https:\/\/www\.usd-impact\.com\/privacy\//);

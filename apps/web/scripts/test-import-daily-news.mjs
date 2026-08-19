@@ -118,6 +118,15 @@ try {
   assert.match(scheduledNoop.stdout, /already exists.*no changes made/i);
   assert.equal(await readFile(editionPath, 'utf8'), publishedContent);
 
+  await rm(editionPath, { force: true });
+  bundle.catalysts = null;
+  await writeFile(bundlePath, JSON.stringify(bundle), 'utf8');
+
+  const emptyCatalysts = runImporter('--replace');
+  assert.equal(emptyCatalysts.status, 0, emptyCatalysts.stderr);
+  const emptyCatalystsContent = await readFile(editionPath, 'utf8');
+  assert.match(emptyCatalystsContent, /^catalysts:\s*\[\]\s*$/m);
+
   console.log('daily news importer review and direct-publish tests pass');
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });

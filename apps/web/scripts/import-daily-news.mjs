@@ -135,19 +135,23 @@ for (const highlight of highlights) {
   lines.push(list(highlight.sourceIds, 6));
 }
 
-lines.push('catalysts:');
-for (const catalyst of catalysts) {
-  lines.push(`  - date: ${quoted(catalyst.date)}`);
-  lines.push(`    event: ${quoted(catalyst.event)}`);
-  lines.push(`    eventType: ${quoted(catalyst.eventType)}`);
-  lines.push('    assets:');
-  lines.push(list(catalyst.assets ?? [], 6));
-  lines.push(`    importance: ${quoted(catalyst.importance)}`);
-  lines.push(`    impactScore: ${catalyst.impactScore}`);
-  lines.push(`    extraBrief: ${catalyst.extraBrief ? 'true' : 'false'}`);
-  lines.push(`    whyItMatters: ${quoted(catalyst.whyItMatters)}`);
-  lines.push('    sourceIds:');
-  lines.push(list(catalyst.sourceIds, 6));
+if (catalysts.length === 0) {
+  lines.push('catalysts: []');
+} else {
+  lines.push('catalysts:');
+  for (const catalyst of catalysts) {
+    lines.push(`  - date: ${quoted(catalyst.date)}`);
+    lines.push(`    event: ${quoted(catalyst.event)}`);
+    lines.push(`    eventType: ${quoted(catalyst.eventType)}`);
+    lines.push('    assets:');
+    lines.push(list(catalyst.assets ?? [], 6));
+    lines.push(`    importance: ${quoted(catalyst.importance)}`);
+    lines.push(`    impactScore: ${catalyst.impactScore}`);
+    lines.push(`    extraBrief: ${catalyst.extraBrief ? 'true' : 'false'}`);
+    lines.push(`    whyItMatters: ${quoted(catalyst.whyItMatters)}`);
+    lines.push('    sourceIds:');
+    lines.push(list(catalyst.sourceIds, 6));
+  }
 }
 
 lines.push('sources:');

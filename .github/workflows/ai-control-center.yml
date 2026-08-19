@@ -87,13 +87,13 @@ jobs:
         run: gh api --method POST "repos/$REPO/issues/$ISSUE_NUMBER/comments" -f body="$BODY"
 
       - name: Dispatch authoritative daily publication workflow
-        if: steps.resolve.outputs.command == 'daily' && steps.control.outputs.health != 'RED'
+        if: steps.resolve.outputs.command == 'daily' && steps.control.outputs.daily_allowed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run daily-news.yml --ref main
 
       - name: Confirm daily dispatch
-        if: github.event_name == 'issue_comment' && steps.resolve.outputs.command == 'daily' && steps.control.outputs.health != 'RED'
+        if: github.event_name == 'issue_comment' && steps.resolve.outputs.command == 'daily' && steps.control.outputs.daily_allowed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}

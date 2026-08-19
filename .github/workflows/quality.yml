@@ -27,6 +27,11 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Validate GitHub Action runtimes
         run: node scripts/test-github-action-runtimes.mjs
+      - name: Validate AI control center
+        run: |
+          node --check ../../scripts/control-center.mjs
+          node -e "JSON.parse(require('fs').readFileSync('../../docs/operations/ai-control-center/INVENTORY.json', 'utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('../../docs/operations/ai-control-center/PROJECT_STATE.json', 'utf8'))"
       - name: Validate content
         run: npm run validate:content
       - name: Validate reports

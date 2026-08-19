@@ -1,4 +1,5 @@
 import { handleResendWebhook } from '../src/lib/resend-webhook-handler.js';
+import { buildWaitlistConfirmationEmail } from '../src/lib/waitlist-email-template.js';
 import {
   markWaitlistOutboxAccepted,
   markWaitlistOutboxRetry,
@@ -9,6 +10,7 @@ import {
 const RESEND_API = 'https://api.resend.com';
 const EMAIL_MAX_LENGTH = 254;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const WAITLIST_CONFIRMATION_EMAIL = buildWaitlistConfirmationEmail();
 
 function requestHeader(request, name) {
   const headers = request.headers ?? {};
@@ -220,16 +222,9 @@ export default async function handler(request, response) {
         from: fromEmail,
         to: [email],
         ...(replyTo ? { reply_to: replyTo } : {}),
-        subject: "You're on the Read the Dollar First waitlist",
-        html: `
-          <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#161a1f;max-width:620px;margin:0 auto;padding:24px;">
-            <p style="font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#8a6b32;font-weight:700;">USD Impact</p>
-            <h1 style="font-size:30px;line-height:1.15;color:#071a33;">You’re on the waitlist.</h1>
-            <p>Thank you for joining the waitlist for <strong><em>Read the Dollar First</em></strong>.</p>
-            <p>We will email the purchase link when the book becomes available.</p>
-            <p style="font-size:13px;color:#5a6472;margin-top:28px;">Educational product information only. This is not investment, legal, tax, trading, or financial advice.</p>
-          </div>
-        `,
+        subject: WAITLIST_CONFIRMATION_EMAIL.subject,
+        text: WAITLIST_CONFIRMATION_EMAIL.text,
+        html: WAITLIST_CONFIRMATION_EMAIL.html,
       }),
     });
   } catch (error) {

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "generated_at": null,
+  "generated_by": "bootstrap",
+  "freshness": "STALE",
+  "health": "AMBER",
+  "production": {
+    "provider": "vercel",
+    "domain": "https://www.usd-impact.com/",
+    "branch": "main",
+    "deployment": "UNKNOWN",
+    "verification": "UNKNOWN"
+  },
+  "repositories": {
+    "website": {
+      "name": "usdimpact/usd-impact-site",
+      "default_branch": "main",
+      "head_sha": null
+    },
+    "pipeline": {
+      "name": "usdimpact/usd-impact-pipeline",
+      "default_branch": "main",
+      "head_sha": null
+    },
+    "weekly_commentary": {
+      "name": "usdimpact/usd-impact",
+      "default_branch": "main",
+      "head_sha": null
+    }
+  },
+  "workflows": {},
+  "open_work": [],
+  "priority_queue": [],
+  "main_blocker": "State has not yet been refreshed by the control-center workflow.",
+  "next_action": "Run /sync or the AI Control Center workflow.",
+  "notes": [
+    "Generated state is a snapshot and never overrides canonical production or governance configuration.",
+    "Unknown state cannot be classified GREEN."
+  ]
+}

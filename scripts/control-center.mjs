@@ -84,7 +84,19 @@ const websiteRepo = 'usdimpact/usd-impact-site';
 const pipelineRepo = 'usdimpact/usd-impact-pipeline';
 const commentaryRepo = 'usdimpact/usd-impact';
 
-const [websiteHead, pipelineHead, commentaryHead, issuesRaw, quality, daily, dailyHealth, catalyst] = await Promise.all([
+const [
+  websiteHead,
+  pipelineHead,
+  commentaryHead,
+  issuesRaw,
+  quality,
+  daily,
+  dailyHealth,
+  catalyst,
+  pipelineQuality,
+  pipelineWeekly,
+  pipelineWeeklyHealth
+] = await Promise.all([
   repoHead(websiteRepo),
   repoHead(pipelineRepo),
   repoHead(commentaryRepo),
@@ -92,7 +104,10 @@ const [websiteHead, pipelineHead, commentaryHead, issuesRaw, quality, daily, dai
   latestWorkflow(websiteRepo, 'quality.yml'),
   latestWorkflow(websiteRepo, 'daily-news.yml'),
   latestWorkflow(websiteRepo, 'daily-news-health.yml'),
-  latestWorkflow(websiteRepo, 'catalyst-brief.yml')
+  latestWorkflow(websiteRepo, 'catalyst-brief.yml'),
+  latestWorkflow(pipelineRepo, 'quality.yml'),
+  latestWorkflow(pipelineRepo, 'weekly.yml'),
+  latestWorkflow(pipelineRepo, 'weekly-health.yml')
 ]);
 
 const openIssues = issuesRaw
@@ -111,12 +126,13 @@ const openIssues = issuesRaw
   })
   .sort((a, b) => b.score - a.score || b.number - a.number);
 
-const criticalWorkflowFailure = [quality, dailyHealth].some((run) => run.conclusion === 'failure');
+const websiteCriticalFailure = [quality, dailyHealth].some((run) => run.conclusion === 'failure');
+const pipelineCriticalFailure = [pipelineQuality, pipelineWeeklyHealth].some((run) => run.conclusion === 'failure');
 const hasP0 = openIssues.some((issue) => issue.priority === 'P0' && !issue.blocked);
 const hasP1 = openIssues.some((issue) => issue.priority === 'P1' && !issue.blocked);
 let health = 'GREEN';
-if (criticalWorkflowFailure || hasP0) health = 'RED';
-else if (hasP1 || [quality, daily, dailyHealth].some((run) => run.status === 'UNKNOWN' || run.conclusion === 'UNKNOWN')) health = 'AMBER';
+if (websiteCriticalFailure || pipelineCriticalFailure || hasP0) health = 'RED';
+else if (hasP1 || [quality, daily, dailyHealth, pipelineQuality, pipelineWeeklyHealth].some((run) => run.status === 'UNKNOWN' || run.conclusion === 'UNKNOWN')) health = 'AMBER';
 
 const dailyIssueBlocker = openIssues.find((issue) => {
   if (issue.blocked || !['P0', 'P1'].includes(issue.priority)) return false;
@@ -124,11 +140,11 @@ const dailyIssueBlocker = openIssues.find((issue) => {
   return /daily|news|publish|publishing|workflow|automation/.test(text);
 });
 const dailyWorkflowUnknown = [quality, dailyHealth].some((run) => run.status === 'UNKNOWN' || run.conclusion === 'UNKNOWN');
-const dailyAllowed = !criticalWorkflowFailure && !dailyIssueBlocker && !dailyWorkflowUnknown;
+const dailyAllowed = !websiteCriticalFailure && !dailyIssueBlocker && !dailyWorkflowUnknown;
 
 const next = openIssues.find((issue) => !issue.blocked) || openIssues[0] || null;
 const mainBlocker = health === 'RED'
-  ? (next ? `#${next.number} ${next.title}` : 'Critical workflow failure detected')
+  ? (next ? `#${next.number} ${next.title}` : (websiteCriticalFailure ? 'Website critical workflow failure detected' : 'Pipeline critical workflow failure detected'))
   : (next && next.priority === 'P1' ? `#${next.number} ${next.title}` : 'NONE');
 
 const state = {
@@ -150,14 +166,21 @@ const state = {
     weekly_commentary: { name: commentaryRepo, ...commentaryHead }
   },
   workflows: {
-    quality,
-    daily_news: daily,
-    daily_news_health: dailyHealth,
-    catalyst_brief: catalyst
+    website: {
+      quality,
+      daily_news: daily,
+      daily_news_health: dailyHealth,
+      catalyst_brief: catalyst
+    },
+    pipeline: {
+      quality: pipelineQuality,
+      weekly: pipelineWeekly,
+      weekly_health: pipelineWeeklyHealth
+    }
   },
   publishing: {
     daily_allowed: dailyAllowed,
-    daily_blocker: dailyIssueBlocker ? `#${dailyIssueBlocker.number} ${dailyIssueBlocker.title}` : (criticalWorkflowFailure ? 'Critical quality or daily-health workflow failure' : (dailyWorkflowUnknown ? 'Quality or daily-health workflow state is unknown' : 'NONE'))
+    daily_blocker: dailyIssueBlocker ? `#${dailyIssueBlocker.number} ${dailyIssueBlocker.title}` : (websiteCriticalFailure ? 'Critical website quality or daily-health workflow failure' : (dailyWorkflowUnknown ? 'Website quality or daily-health workflow state is unknown' : 'NONE'))
   },
   open_work: openIssues,
   priority_queue: openIssues.slice(0, 10),
@@ -167,7 +190,7 @@ const state = {
     'Generated state is a snapshot and never overrides canonical production or governance configuration.',
     'Vercel production readiness must be verified outside this GitHub-only state snapshot after release.',
     'Cloudflare Pages remains separate to the pipeline dashboard and is not a usd-impact-site deployment target.',
-    'A project-wide P0 does not automatically block public Daily News unless it affects publishing or a critical quality/health workflow.'
+    'A project-wide P0 or pipeline failure does not automatically block public Daily News unless it affects website publishing or a critical website quality/health workflow.'
   ]
 };
 
@@ -185,11 +208,16 @@ const statusMd = [
   `**Main blocker:** ${mainBlocker}`,
   `**Next priority:** ${nextLine}`,
   '',
-  '**Workflow health:**',
+  '**Website workflow health:**',
   workflowLine('quality', quality),
   workflowLine('daily-news', daily),
   workflowLine('daily-news-health', dailyHealth),
-  workflowLine('catalyst-brief', catalyst)
+  workflowLine('catalyst-brief', catalyst),
+  '',
+  '**Pipeline workflow health:**',
+  workflowLine('quality', pipelineQuality),
+  workflowLine('weekly', pipelineWeekly),
+  workflowLine('weekly-health', pipelineWeeklyHealth)
 ].join('\n');
 
 let responseMd = statusMd;
@@ -198,7 +226,7 @@ if (command === 'next') {
 }
 if (command === 'daily') {
   const blocker = state.publishing.daily_blocker;
-  responseMd += `\n\n### DAILY PREFLIGHT\n\n${dailyAllowed ? '**PREFLIGHT PASS:** daily-specific quality and health gates permit dispatch. The existing daily publication workflow remains authoritative.' : `**RELEASE BLOCKED:** ${blocker}. The daily publication workflow was not dispatched.`}`;
+  responseMd += `\n\n### DAILY PREFLIGHT\n\n${dailyAllowed ? '**PREFLIGHT PASS:** daily-specific website quality and health gates permit dispatch. The existing daily publication workflow remains authoritative.' : `**RELEASE BLOCKED:** ${blocker}. The daily publication workflow was not dispatched.`}`;
 }
 if (command === 'sync') {
   responseMd += '\n\n**State:** refreshed from live GitHub repository, issue, and workflow data.';

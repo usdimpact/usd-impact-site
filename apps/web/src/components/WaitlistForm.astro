@@ -50,6 +50,11 @@ const formId = 'book-waitlist-form';
   if (form instanceof HTMLFormElement) {
     const status = form.querySelector('[data-waitlist-status]');
     const submitButton = form.querySelector('button[type="submit"]');
+    let pendingSubmissionId = '';
+
+    form.addEventListener('input', () => {
+      pendingSubmissionId = '';
+    });
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -60,6 +65,7 @@ const formId = 'book-waitlist-form';
       const email = String(formData.get('email') ?? '').trim();
       const consent = formData.get('consent') === 'yes';
       const company = String(formData.get('company') ?? '').trim();
+      pendingSubmissionId ||= crypto.randomUUID();
 
       if (status instanceof HTMLElement) {
         status.textContent = 'Submitting…';
@@ -74,7 +80,12 @@ const formId = 'book-waitlist-form';
         const response = await fetch('/api/waitlist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, consent, company }),
+          body: JSON.stringify({
+            email,
+            consent,
+            company,
+            submissionId: pendingSubmissionId,
+          }),
         });
 
         const payload = await response.json().catch(() => ({}));
@@ -83,6 +94,7 @@ const formId = 'book-waitlist-form';
           throw new Error(payload.error || 'The waitlist is temporarily unavailable. Please try again later.');
         }
 
+        pendingSubmissionId = '';
         form.reset();
         if (status instanceof HTMLElement) {
           status.textContent = 'You are on the waitlist. Check your inbox for confirmation.';

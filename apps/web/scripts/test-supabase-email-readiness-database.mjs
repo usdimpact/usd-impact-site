@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 
 const migrationUrl = new URL(
-  '../../../supabase/migrations/20260819191131_email_consent_outbox_contracts.sql',
+  '../../../supabase/migrations/20260819215648_email_consent_outbox_contracts.sql',
   import.meta.url,
 );
 const migration = await readFile(migrationUrl, 'utf8');

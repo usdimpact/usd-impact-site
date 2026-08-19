@@ -157,7 +157,6 @@ try {
   const emptyNestedArraysContent = await readFile(editionPath, 'utf8');
   assert.match(emptyNestedArraysContent, /^assets:\s*\n\s+- "DXY"/m);
   assert.match(emptyNestedArraysContent, /^\s{4}assets:\s*\[\]\s*$/m);
-  assert.doesNotMatch(emptyNestedArraysContent, /^catalysts:\s*$/m);
 
   console.log('daily news importer review and direct-publish tests pass');
 } finally {

@@ -38,10 +38,13 @@ const addDays = (value, days) => {
 
 const date = requiredString(payload, 'date');
 if (!isDate(date)) throw new Error('date must use YYYY-MM-DD');
+if (!Array.isArray(payload.highlights)) throw new Error('highlights must be an array');
+if (payload.catalysts != null && !Array.isArray(payload.catalysts)) throw new Error('catalysts must be an array when provided');
+if (!Array.isArray(payload.sources)) throw new Error('sources must be an array');
 
-const highlights = Array.isArray(payload.highlights) ? payload.highlights : [];
-const catalysts = Array.isArray(payload.catalysts) ? payload.catalysts : [];
-const sources = Array.isArray(payload.sources) ? payload.sources : [];
+const highlights = payload.highlights;
+const catalysts = payload.catalysts ?? [];
+const sources = payload.sources;
 if (highlights.length < 3 || highlights.length > 7) throw new Error('highlights must contain 3-7 items');
 if (sources.length < 2) throw new Error('sources must contain at least two items');
 
@@ -101,7 +104,31 @@ for (const catalyst of catalysts) {
   }
 }
 
+const derivedAssets = [...new Set(highlights.flatMap((highlight) => highlight.assets))];
+let articleAssets;
+if (payload.assets == null || (Array.isArray(payload.assets) && payload.assets.length === 0)) {
+  articleAssets = derivedAssets;
+} else if (Array.isArray(payload.assets)) {
+  articleAssets = [...new Set(payload.assets.map((asset) => String(asset).trim()))];
+} else {
+  throw new Error('assets must be an array when provided');
+}
+if (articleAssets.length === 0) throw new Error('assets must contain at least one item');
+for (const asset of articleAssets) {
+  if (!allowedAssets.has(asset)) throw new Error(`Unsupported asset label: ${asset}`);
+}
+
 const list = (items, indent = 0) => items.map((item) => `${' '.repeat(indent)}- ${quoted(item)}`).join('\n');
+const pushScalarArray = (lines, key, items, indent = 0) => {
+  if (!Array.isArray(items)) throw new Error(`${key} must be an array`);
+  const prefix = ' '.repeat(indent);
+  if (items.length === 0) {
+    lines.push(`${prefix}${key}: []`);
+    return;
+  }
+  lines.push(`${prefix}${key}:`);
+  lines.push(list(items, indent + 2));
+};
 const publicationStatus = publish ? 'published' : 'review';
 
 const lines = [
@@ -118,21 +145,18 @@ const lines = [
   `marketRegime: ${quoted(requiredString(payload, 'marketRegime'))}`,
   `summary: ${quoted(requiredString(payload, 'summary'))}`,
   `featured: ${payload.featured === false ? 'false' : 'true'}`,
-  'assets:',
-  list(payload.assets ?? [...new Set(highlights.flatMap((highlight) => highlight.assets))], 2),
-  'highlights:',
 ];
+pushScalarArray(lines, 'assets', articleAssets);
+lines.push('highlights:');
 
 for (const highlight of highlights) {
   lines.push(`  - headline: ${quoted(highlight.headline)}`);
   lines.push(`    development: ${quoted(highlight.development)}`);
   lines.push(`    whyItMatters: ${quoted(highlight.whyItMatters)}`);
-  lines.push('    assets:');
-  lines.push(list(highlight.assets, 6));
+  pushScalarArray(lines, 'assets', highlight.assets, 4);
   lines.push(`    importance: ${quoted(highlight.importance)}`);
   lines.push(`    verification: ${quoted(highlight.verification)}`);
-  lines.push('    sourceIds:');
-  lines.push(list(highlight.sourceIds, 6));
+  pushScalarArray(lines, 'sourceIds', highlight.sourceIds, 4);
 }
 
 if (catalysts.length === 0) {
@@ -143,14 +167,12 @@ if (catalysts.length === 0) {
     lines.push(`  - date: ${quoted(catalyst.date)}`);
     lines.push(`    event: ${quoted(catalyst.event)}`);
     lines.push(`    eventType: ${quoted(catalyst.eventType)}`);
-    lines.push('    assets:');
-    lines.push(list(catalyst.assets ?? [], 6));
+    pushScalarArray(lines, 'assets', catalyst.assets, 4);
     lines.push(`    importance: ${quoted(catalyst.importance)}`);
     lines.push(`    impactScore: ${catalyst.impactScore}`);
     lines.push(`    extraBrief: ${catalyst.extraBrief ? 'true' : 'false'}`);
     lines.push(`    whyItMatters: ${quoted(catalyst.whyItMatters)}`);
-    lines.push('    sourceIds:');
-    lines.push(list(catalyst.sourceIds, 6));
+    pushScalarArray(lines, 'sourceIds', catalyst.sourceIds, 4);
   }
 }
 

@@ -17,6 +17,16 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 const RESEND_IDEMPOTENCY_PREFIX = 'waitlist-confirmation/';
 const RESEND_IDEMPOTENCY_MAX_LENGTH = 256;
 const RESEND_RETRY_WINDOW_MS = 23 * 60 * 60 * 1000;
+const CLOCK_SKEW_MS = 5 * 60 * 1000;
+const COMPLETE_STATUSES = new Set(['accepted', 'delivered']);
+const BLOCKED_STATUSES = new Set([
+  'soft_bounced',
+  'hard_bounced',
+  'complained',
+  'suppressed',
+  'terminal_failed',
+  'cancelled',
+]);
 
 export class WaitlistReadinessError extends Error {
   constructor(message, code = 'WAITLIST_READINESS_FAILED') {
@@ -156,7 +166,7 @@ async function insertOrLoadOutbox({ config, record, fetchImpl }) {
 
   const rows = await serviceRequest({
     config,
-    path: `/rest/v1/notification_outbox?idempotency_key=eq.${encodeURIComponent(record.idempotency_key)}&select=id,idempotency_key,message_id,recipient_email_normalized,status,attempt_count,provider_message_ref,created_at&limit=1`,
+    path: `/rest/v1/notification_outbox?idempotency_key=eq.${encodeURIComponent(record.idempotency_key)}&select=id,idempotency_key,message_id,recipient_email_normalized,status,attempt_count,next_attempt_at,provider_message_ref,error_code,accepted_at,created_at&limit=1`,
     fetchImpl,
   });
   const existing = Array.isArray(rows) ? rows[0] : null;
@@ -173,14 +183,73 @@ async function insertOrLoadOutbox({ config, record, fetchImpl }) {
   return existing;
 }
 
-function shouldAttemptSend(outbox, nowMs) {
-  const status = String(outbox?.status || '');
-  if (['queued', 'retry_scheduled', 'soft_bounced'].includes(status)) return true;
-  if (status !== 'sending') return false;
+function timestampMs(value) {
+  const parsed = Date.parse(String(value || ''));
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
-  const createdAt = Date.parse(outbox.created_at || '');
-  if (!Number.isFinite(createdAt)) return false;
-  return nowMs - createdAt <= RESEND_RETRY_WINDOW_MS;
+function withinProviderIdempotencyWindow(outbox, nowMs) {
+  const createdAt = timestampMs(outbox?.created_at);
+  if (createdAt === null) return false;
+  const age = nowMs - createdAt;
+  return age >= -CLOCK_SKEW_MS && age <= RESEND_RETRY_WINDOW_MS;
+}
+
+function hasAcceptedProviderState(outbox) {
+  return typeof outbox?.provider_message_ref === 'string'
+    && outbox.provider_message_ref.trim().length > 0
+    && timestampMs(outbox.accepted_at) !== null;
+}
+
+export function resolveWaitlistOutboxDecision(outbox, nowMs = Date.now()) {
+  if (!outbox || typeof outbox !== 'object') {
+    return Object.freeze({ action: 'reconcile', reason: 'missing-outbox' });
+  }
+
+  const status = String(outbox.status || '');
+  if (COMPLETE_STATUSES.has(status)) {
+    return hasAcceptedProviderState(outbox)
+      ? Object.freeze({ action: 'complete', reason: status })
+      : Object.freeze({ action: 'reconcile', reason: 'incomplete-provider-state' });
+  }
+
+  if (BLOCKED_STATUSES.has(status)) {
+    return Object.freeze({ action: 'blocked', reason: status });
+  }
+
+  if (status === 'queued') {
+    const attempts = Number.isInteger(outbox.attempt_count) ? outbox.attempt_count : 0;
+    return attempts === 0
+      ? Object.freeze({ action: 'send', reason: 'queued' })
+      : Object.freeze({ action: 'reconcile', reason: 'queued-after-attempt' });
+  }
+
+  if (status === 'sending') {
+    if (hasAcceptedProviderState(outbox)) {
+      return Object.freeze({ action: 'complete', reason: 'accepted-provider-state' });
+    }
+    return withinProviderIdempotencyWindow(outbox, nowMs)
+      ? Object.freeze({ action: 'send', reason: 'idempotent-sending-retry' })
+      : Object.freeze({ action: 'reconcile', reason: 'expired-sending-window' });
+  }
+
+  if (status === 'retry_scheduled') {
+    if (hasAcceptedProviderState(outbox)) {
+      return Object.freeze({ action: 'complete', reason: 'accepted-provider-state' });
+    }
+    const nextAttemptAt = timestampMs(outbox.next_attempt_at);
+    if (nextAttemptAt === null) {
+      return Object.freeze({ action: 'reconcile', reason: 'invalid-next-attempt' });
+    }
+    if (nextAttemptAt > nowMs) {
+      return Object.freeze({ action: 'wait', reason: 'retry-not-due' });
+    }
+    return withinProviderIdempotencyWindow(outbox, nowMs)
+      ? Object.freeze({ action: 'send', reason: 'idempotent-scheduled-retry' })
+      : Object.freeze({ action: 'reconcile', reason: 'expired-retry-window' });
+  }
+
+  return Object.freeze({ action: 'reconcile', reason: 'unknown-status' });
 }
 
 function resendIdempotencyKey(submissionId) {
@@ -264,6 +333,7 @@ export async function prepareWaitlistReadiness({
   const records = createWaitlistReadinessRecords({ email, submissionId, capturedAt });
   const consent = await insertOrLoadConsent({ config, record: records.consentRecord, fetchImpl });
   const outbox = await insertOrLoadOutbox({ config, record: records.outboxRecord, fetchImpl });
+  const decision = resolveWaitlistOutboxDecision(outbox, nowMs);
 
   return Object.freeze({
     enabled: true,
@@ -274,7 +344,8 @@ export async function prepareWaitlistReadiness({
     consentId: consent.id,
     outbox,
     providerIdempotencyKey: records.providerIdempotencyKey,
-    shouldSend: shouldAttemptSend(outbox, nowMs),
+    decision,
+    shouldSend: decision.action === 'send',
   });
 }
 

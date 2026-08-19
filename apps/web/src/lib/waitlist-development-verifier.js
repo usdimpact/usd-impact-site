@@ -13,6 +13,19 @@ import {
 const VERIFIED_STATES = new Set(['accepted', 'delivered']);
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
+const CONSENT_EVIDENCE_KEYS = Object.freeze([
+  'captured_at',
+  'consent_text_version',
+  'context',
+  'privacy_notice_version',
+  'purpose',
+  'source',
+  'source_event_id',
+  'status',
+  'withdrawal_source',
+  'withdrawn_at',
+]);
+const CONSENT_CONTEXT_KEYS = Object.freeze(['consentCheckbox', 'formVersion']);
 
 export class WaitlistDevelopmentVerificationError extends Error {
   constructor(message, code = 'WAITLIST_DEVELOPMENT_VERIFICATION_FAILED') {
@@ -76,8 +89,29 @@ function validTimestamp(value) {
   return typeof value === 'string' && Number.isFinite(Date.parse(value));
 }
 
+function canonicalize(value) {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (Array.isArray(value)) return value.map((item) => canonicalize(item));
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.keys(value)
+      .sort()
+      .map((key) => [key, canonicalize(value[key])]),
+  );
+}
+
+function sha256(value) {
+  return createHash('sha256').update(value).digest('hex');
+}
+
 function providerReferenceFingerprint(value) {
-  return createHash('sha256').update(value).digest('hex').slice(0, 16);
+  return sha256(value).slice(0, 16);
+}
+
+function exactKeys(value, expectedKeys) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  return JSON.stringify(Object.keys(value).sort()) === JSON.stringify([...expectedKeys].sort());
 }
 
 async function readJsonSafely(response) {
@@ -134,6 +168,10 @@ function requireSingleRow(rows, entity) {
 function assertConsentEvidence(row, expected) {
   const evidence = row?.evidence;
   const context = evidence?.context;
+  const evidenceChecksum = String(row?.evidence_checksum || '');
+  const computedChecksum = evidence && typeof evidence === 'object'
+    ? sha256(JSON.stringify(canonicalize(evidence)))
+    : '';
   const matches = row?.idempotency_key === expected.idempotency_key
     && row?.source_event_id === expected.source_event_id
     && row?.email_normalized === expected.email_normalized
@@ -143,14 +181,20 @@ function assertConsentEvidence(row, expected) {
     && row?.privacy_notice_version === WAITLIST_PRIVACY_NOTICE_VERSION
     && row?.source === 'waitlist_form'
     && validTimestamp(row?.captured_at)
-    && SHA256_PATTERN.test(String(row?.evidence_checksum || ''))
+    && SHA256_PATTERN.test(evidenceChecksum)
+    && evidenceChecksum === computedChecksum
+    && exactKeys(evidence, CONSENT_EVIDENCE_KEYS)
     && evidence?.purpose === WAITLIST_CONSENT_PURPOSE
     && evidence?.status === 'granted'
     && evidence?.consent_text_version === WAITLIST_CONSENT_TEXT_VERSION
     && evidence?.privacy_notice_version === WAITLIST_PRIVACY_NOTICE_VERSION
     && evidence?.source === 'waitlist_form'
     && evidence?.source_event_id === expected.source_event_id
+    && evidence?.captured_at === row?.captured_at
     && validTimestamp(evidence?.captured_at)
+    && evidence?.withdrawn_at === null
+    && evidence?.withdrawal_source === null
+    && exactKeys(context, CONSENT_CONTEXT_KEYS)
     && context?.consentCheckbox === true
     && context?.formVersion === WAITLIST_FORM_VERSION;
 

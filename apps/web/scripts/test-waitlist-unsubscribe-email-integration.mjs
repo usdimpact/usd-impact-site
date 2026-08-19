@@ -198,7 +198,7 @@ try {
     );
     assert.ok(sendCall.body.text.includes(unsubscribeUrl));
     assert.match(sendCall.body.html, /unsubscribe from book availability emails/i);
-    assert.match(sendCall.body.html, /List-Unsubscribe/i, 'HTML should remain independent of provider header names.');
+    assert.doesNotMatch(sendCall.body.html, /List-Unsubscribe/i);
   }
 
   {

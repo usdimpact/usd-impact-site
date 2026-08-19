@@ -88,8 +88,12 @@ function runImporter(...args) {
   });
 }
 
+async function writeBundle(nextBundle) {
+  await writeFile(bundlePath, JSON.stringify(nextBundle), 'utf8');
+}
+
 try {
-  await writeFile(bundlePath, JSON.stringify(bundle), 'utf8');
+  await writeBundle(bundle);
 
   const initial = runImporter('--replace');
   assert.equal(initial.status, 0, initial.stderr);
@@ -119,13 +123,41 @@ try {
   assert.equal(await readFile(editionPath, 'utf8'), publishedContent);
 
   await rm(editionPath, { force: true });
-  bundle.catalysts = null;
-  await writeFile(bundlePath, JSON.stringify(bundle), 'utf8');
+  await writeBundle({ ...bundle, catalysts: null });
 
-  const emptyCatalysts = runImporter('--replace');
-  assert.equal(emptyCatalysts.status, 0, emptyCatalysts.stderr);
-  const emptyCatalystsContent = await readFile(editionPath, 'utf8');
-  assert.match(emptyCatalystsContent, /^catalysts:\s*\[\]\s*$/m);
+  const nullCatalysts = runImporter('--replace');
+  assert.equal(nullCatalysts.status, 0, nullCatalysts.stderr);
+  const nullCatalystsContent = await readFile(editionPath, 'utf8');
+  assert.match(nullCatalystsContent, /^catalysts:\s*\[\]\s*$/m);
+
+  await rm(editionPath, { force: true });
+  await writeBundle({ ...bundle, catalysts: { unexpected: true } });
+
+  const malformedCatalysts = runImporter('--replace');
+  assert.notEqual(malformedCatalysts.status, 0);
+  assert.match(malformedCatalysts.stderr, /catalysts must be an array when provided/i);
+
+  await rm(editionPath, { force: true });
+  await writeBundle({
+    ...bundle,
+    assets: [],
+    catalysts: [
+      {
+        ...bundle.catalysts[0],
+        assets: [],
+        importance: 'medium',
+        impactScore: 3,
+        extraBrief: false,
+      },
+    ],
+  });
+
+  const emptyNestedArrays = runImporter('--replace');
+  assert.equal(emptyNestedArrays.status, 0, emptyNestedArrays.stderr);
+  const emptyNestedArraysContent = await readFile(editionPath, 'utf8');
+  assert.match(emptyNestedArraysContent, /^assets:\s*\n\s+- "DXY"/m);
+  assert.match(emptyNestedArraysContent, /^\s{4}assets:\s*\[\]\s*$/m);
+  assert.doesNotMatch(emptyNestedArraysContent, /^catalysts:\s*$/m);
 
   console.log('daily news importer review and direct-publish tests pass');
 } finally {

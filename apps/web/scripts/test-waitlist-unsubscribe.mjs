@@ -86,8 +86,19 @@ function queueFetch(responses) {
   return { calls, fetchImpl };
 }
 
-async function expectUnsubscribeError(operation, code) {
-  await assert.rejects(operation, (error) => {
+async function expectAsyncError(operation, code) {
+  let caught = null;
+  try {
+    await operation();
+  } catch (error) {
+    caught = error;
+  }
+  assert.ok(caught instanceof WaitlistUnsubscribeError);
+  assert.equal(caught.code, code);
+}
+
+function expectSyncError(operation, code) {
+  assert.throws(operation, (error) => {
     assert.ok(error instanceof WaitlistUnsubscribeError);
     assert.equal(error.code, code);
     return true;
@@ -95,22 +106,22 @@ async function expectUnsubscribeError(operation, code) {
 }
 
 assert.match(token, /^u1\.[0-9a-f]{64}\.[A-Za-z0-9_-]{43}$/);
-assert.deepEqual(
+assert.equal(
   verifyWaitlistUnsubscribeToken({ token, secret }).consentIdempotencyKey,
   records.consentRecord.idempotency_key,
 );
-await expectUnsubscribeError(
-  () => Promise.resolve(verifyWaitlistUnsubscribeToken({
+expectSyncError(
+  () => verifyWaitlistUnsubscribeToken({
     token: `${token.slice(0, -1)}${token.endsWith('a') ? 'b' : 'a'}`,
     secret,
-  })),
+  }),
   'INVALID_UNSUBSCRIBE_TOKEN',
 );
-await expectUnsubscribeError(
-  () => Promise.resolve(verifyWaitlistUnsubscribeToken({
+expectSyncError(
+  () => verifyWaitlistUnsubscribeToken({
     token,
     secret: `wus_${Buffer.from('fedcba9876543210fedcba9876543210').toString('base64url')}`,
-  })),
+  }),
   'INVALID_UNSUBSCRIBE_TOKEN',
 );
 
@@ -196,7 +207,7 @@ await expectUnsubscribeError(
 
 {
   let fetchCount = 0;
-  await expectUnsubscribeError(
+  await expectAsyncError(
     () => processWaitlistUnsubscribe({
       token,
       environment: {
@@ -205,7 +216,7 @@ await expectUnsubscribeError(
       },
       fetchImpl: async () => {
         fetchCount += 1;
-        throw new Error('Fetch must not run.');
+        return jsonResponse({});
       },
     }),
     'UNSUBSCRIBE_NOT_ENABLED',
@@ -215,7 +226,7 @@ await expectUnsubscribeError(
 
 {
   let fetchCount = 0;
-  await expectUnsubscribeError(
+  await expectAsyncError(
     () => processWaitlistUnsubscribe({
       token,
       environment: {
@@ -224,7 +235,7 @@ await expectUnsubscribeError(
       },
       fetchImpl: async () => {
         fetchCount += 1;
-        throw new Error('Fetch must not run.');
+        return jsonResponse({});
       },
     }),
     'UNEXPECTED_SUPABASE_PROJECT',
@@ -234,7 +245,7 @@ await expectUnsubscribeError(
 
 {
   let fetchCount = 0;
-  await expectUnsubscribeError(
+  await expectAsyncError(
     () => processWaitlistUnsubscribe({
       token,
       environment: {
@@ -244,7 +255,7 @@ await expectUnsubscribeError(
       },
       fetchImpl: async () => {
         fetchCount += 1;
-        throw new Error('Fetch must not run.');
+        return jsonResponse({});
       },
     }),
     'PRODUCTION_UNSUBSCRIBE_NOT_APPROVED',
@@ -259,7 +270,7 @@ await expectUnsubscribeError(
     jsonResponse([withdrawalRow()], 201),
     jsonResponse({ message: 'provider unavailable' }, 503),
   ]);
-  await expectUnsubscribeError(
+  await expectAsyncError(
     () => processWaitlistUnsubscribe({
       token,
       environment: baseEnvironment,
@@ -276,7 +287,7 @@ await expectUnsubscribeError(
   const { fetchImpl } = queueFetch([
     jsonResponse([grantRow({ status: 'withdrawn' })]),
   ]);
-  await expectUnsubscribeError(
+  await expectAsyncError(
     () => processWaitlistUnsubscribe({
       token,
       environment: baseEnvironment,

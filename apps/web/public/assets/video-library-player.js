@@ -10,7 +10,9 @@
   let lastSavedPosition = -1;
   let lastSaveAt = 0;
   let ready = false;
+  let playbackStarted = false;
   let resumeApplied = false;
+  let resumeRequested = false;
   let savedStatus = 'started';
 
   const updateUi = (position, duration, status = 'in_progress') => {
@@ -21,7 +23,8 @@
   };
 
   const applySavedPosition = () => {
-    if (resumeApplied || !player) return false;
+    if (resumeApplied) return true;
+    if (!player) return false;
     const duration = Number(player.duration) || 0;
     if (!(duration > 0)) return false;
     const shouldResume = savedStatus !== 'completed'
@@ -32,11 +35,20 @@
       updateUi(savedPosition, duration, savedStatus);
       return true;
     }
+    if (!playbackStarted) {
+      updateUi(savedPosition, duration, savedStatus);
+      return false;
+    }
+    const currentPosition = Math.max(0, Number(player.currentTime) || 0);
+    if (resumeRequested && Math.abs(currentPosition - savedPosition) <= 2) {
+      resumeApplied = true;
+      updateUi(currentPosition, duration, savedStatus);
+      return true;
+    }
     player.currentTime = savedPosition;
-    const appliedPosition = Math.max(0, Number(player.currentTime) || 0);
-    resumeApplied = Math.abs(appliedPosition - savedPosition) <= 2;
+    resumeRequested = true;
     updateUi(savedPosition, duration, savedStatus);
-    return resumeApplied;
+    return false;
   };
 
   const save = async (status, force = false, keepalive = false) => {
@@ -88,11 +100,20 @@
     player = window.Stream(iframe);
     player.addEventListener('loadedmetadata', applySavedPosition);
     player.addEventListener('durationchange', applySavedPosition);
-    player.addEventListener('play', () => { if (applySavedPosition()) save('started', true); });
+    player.addEventListener('play', () => {
+      playbackStarted = true;
+      if (applySavedPosition()) save('started', true);
+    });
     player.addEventListener('timeupdate', () => { if (applySavedPosition()) save('in_progress'); });
     player.addEventListener('pause', () => { if (applySavedPosition()) save('in_progress', true); });
-    player.addEventListener('ended', () => { savedStatus = 'completed'; save('completed', true); });
-    window.addEventListener('pagehide', () => save('in_progress', true, true));
+    player.addEventListener('ended', () => {
+      savedStatus = 'completed';
+      resumeApplied = true;
+      save('completed', true);
+    });
+    window.addEventListener('pagehide', () => {
+      if (applySavedPosition()) save('in_progress', true, true);
+    });
     applySavedPosition();
     return true;
   };

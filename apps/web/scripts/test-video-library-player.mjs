@@ -83,20 +83,25 @@ async function loadPlayer({ initialDuration = 120, initiallySeekable = false } =
   };
 }
 
-const metadataAlreadyLoaded = await loadPlayer();
-assert.equal(metadataAlreadyLoaded.player.currentTime, 0, 'the SDK may reject a pre-play seek');
+const metadataAlreadyLoaded = await loadPlayer({ initiallySeekable: true });
+assert.equal(metadataAlreadyLoaded.player.currentTime, 0, 'resume must wait until playback starts');
 assert.equal(metadataAlreadyLoaded.label.textContent, '38% complete');
 assert.equal(metadataAlreadyLoaded.bar.style.width, '38%');
 
-metadataAlreadyLoaded.setSeekable(true);
 metadataAlreadyLoaded.listeners.get('play')();
 await new Promise((resolve) => setImmediate(resolve));
 assert.equal(metadataAlreadyLoaded.player.currentTime, 45);
-assert.equal(metadataAlreadyLoaded.posts[0].positionSeconds, 45, 'a rejected seek must not overwrite saved progress with zero');
+assert.equal(metadataAlreadyLoaded.posts.length, 0, 'the first seek request must be verified before saving');
+metadataAlreadyLoaded.listeners.get('timeupdate')();
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(metadataAlreadyLoaded.posts[0].positionSeconds, 45);
 
 metadataAlreadyLoaded.player.currentTime = 70;
 metadataAlreadyLoaded.listeners.get('loadedmetadata')();
 assert.equal(metadataAlreadyLoaded.player.currentTime, 70, 'resume must be applied only once');
+metadataAlreadyLoaded.listeners.get('pause')();
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(metadataAlreadyLoaded.posts.at(-1).positionSeconds, 70, 'normal saves must continue after resume');
 
 const seekOnTimeupdate = await loadPlayer();
 seekOnTimeupdate.listeners.get('play')();
@@ -107,6 +112,9 @@ seekOnTimeupdate.setSeekable(true);
 seekOnTimeupdate.listeners.get('timeupdate')();
 await new Promise((resolve) => setImmediate(resolve));
 assert.equal(seekOnTimeupdate.player.currentTime, 45);
+assert.equal(seekOnTimeupdate.posts.length, 0, 'a retry must also be verified before saving');
+seekOnTimeupdate.listeners.get('timeupdate')();
+await new Promise((resolve) => setImmediate(resolve));
 assert.equal(seekOnTimeupdate.posts[0].positionSeconds, 45);
 
 const metadataStillPending = await loadPlayer({ initialDuration: 0 });
@@ -114,6 +122,15 @@ assert.equal(metadataStillPending.player.currentTime, 0);
 metadataStillPending.setSeekable(true);
 metadataStillPending.player.duration = 120;
 metadataStillPending.listeners.get('durationchange')();
+assert.equal(metadataStillPending.player.currentTime, 0, 'metadata readiness alone must not trigger a pre-play seek');
+metadataStillPending.listeners.get('play')();
+metadataStillPending.listeners.get('timeupdate')();
+await new Promise((resolve) => setImmediate(resolve));
 assert.equal(metadataStillPending.player.currentTime, 45);
+
+const pageExitBeforeResume = await loadPlayer();
+pageExitBeforeResume.windowListeners.get('pagehide')();
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(pageExitBeforeResume.posts.length, 0, 'page exit must not overwrite an unapplied resume checkpoint');
 
 console.log('Video library player resume-race tests passed.');

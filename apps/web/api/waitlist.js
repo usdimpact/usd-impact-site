@@ -1,4 +1,10 @@
 import { handleResendWebhook } from '../src/lib/resend-webhook-handler.js';
+import {
+  markWaitlistOutboxAccepted,
+  markWaitlistOutboxRetry,
+  markWaitlistOutboxSending,
+  prepareWaitlistReadiness,
+} from '../src/lib/waitlist-readiness.js';
 
 const RESEND_API = 'https://api.resend.com';
 const EMAIL_MAX_LENGTH = 254;
@@ -49,6 +55,14 @@ async function resendRequest(path, apiKey, options = {}) {
   });
 }
 
+async function readJsonSafely(response) {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
 function normalizeEmail(value) {
   return String(value ?? '').trim().toLowerCase();
 }
@@ -59,6 +73,15 @@ function requestAction(request) {
     return url.searchParams.get('action')?.trim().toLowerCase() || '';
   } catch {
     return '';
+  }
+}
+
+async function scheduleReadinessRetry(state, errorCode) {
+  if (!state?.enabled) return;
+  try {
+    await markWaitlistOutboxRetry({ state, errorCode });
+  } catch {
+    console.error('Waitlist readiness retry state could not be recorded.');
   }
 }
 
@@ -90,8 +113,9 @@ export default async function handler(request, response) {
   const email = normalizeEmail(payload.email);
   const consent = payload.consent === true;
   const company = String(payload.company ?? '').trim();
+  const submissionId = String(payload.submissionId ?? '').trim();
 
-  // Honeypot submissions receive a neutral success response.
+  // Honeypot submissions receive a neutral success response and never reach a provider or ledger.
   if (company) {
     return sendJson(response, { ok: true });
   }
@@ -112,6 +136,29 @@ export default async function handler(request, response) {
   if (!apiKey || !segmentId || !fromEmail) {
     console.error('Waitlist configuration is incomplete.');
     return sendJson(response, { error: 'The waitlist is temporarily unavailable. Please try again later.' }, 503);
+  }
+
+  let readinessState;
+  try {
+    readinessState = await prepareWaitlistReadiness({ email, submissionId });
+  } catch (error) {
+    console.error('Waitlist readiness preparation failed.', {
+      code: error?.code || 'WAITLIST_READINESS_FAILED',
+    });
+    return sendJson(response, { error: 'The waitlist is temporarily unavailable. Please try again later.' }, 503);
+  }
+
+  if (readinessState.enabled && readinessState.decision?.action !== 'send') {
+    if (readinessState.decision?.action === 'complete') {
+      return sendJson(response, { ok: true });
+    }
+    console.error('Waitlist confirmation is not safe to send automatically.', {
+      action: readinessState.decision?.action || 'reconcile',
+      reason: readinessState.decision?.reason || 'unknown',
+    });
+    return sendJson(response, {
+      error: 'Your address was saved, but the confirmation email status is still being reconciled. Please try again later.',
+    }, 503);
   }
 
   let contactResponse;
@@ -151,10 +198,24 @@ export default async function handler(request, response) {
     return sendJson(response, { error: 'The waitlist is temporarily unavailable. Please try again later.' }, 502);
   }
 
+  if (readinessState.enabled) {
+    try {
+      await markWaitlistOutboxSending({ state: readinessState });
+    } catch (error) {
+      console.error('Waitlist outbox could not enter sending state.', {
+        code: error?.code || 'WAITLIST_OUTBOX_UPDATE_FAILED',
+      });
+      return sendJson(response, { error: 'Your address was saved, but the confirmation email could not be sent. Please try again later.' }, 503);
+    }
+  }
+
   let confirmationResponse;
   try {
     confirmationResponse = await resendRequest('/emails', apiKey, {
       method: 'POST',
+      headers: readinessState.enabled
+        ? { 'Idempotency-Key': readinessState.providerIdempotencyKey }
+        : {},
       body: JSON.stringify({
         from: fromEmail,
         to: [email],
@@ -173,12 +234,33 @@ export default async function handler(request, response) {
     });
   } catch (error) {
     console.error(`Waitlist confirmation request failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+    await scheduleReadinessRetry(readinessState, 'RESEND_NETWORK_ERROR');
     return sendJson(response, { error: 'Your address was saved, but the confirmation email could not be sent. Please try again later.' }, 502);
   }
 
+  const confirmationPayload = await readJsonSafely(confirmationResponse);
   if (!confirmationResponse.ok) {
     console.error(`Waitlist confirmation email failed with status ${confirmationResponse.status}.`);
+    await scheduleReadinessRetry(
+      readinessState,
+      confirmationResponse.status === 409 ? 'RESEND_IDEMPOTENCY_CONFLICT' : 'RESEND_SEND_FAILED',
+    );
     return sendJson(response, { error: 'Your address was saved, but the confirmation email could not be sent. Please try again later.' }, 502);
+  }
+
+  if (readinessState.enabled) {
+    try {
+      await markWaitlistOutboxAccepted({
+        state: readinessState,
+        providerMessageRef: confirmationPayload?.id,
+      });
+    } catch (error) {
+      console.error('Waitlist confirmation provider state could not be persisted.', {
+        code: error?.code || 'WAITLIST_OUTBOX_ACCEPT_FAILED',
+      });
+      await scheduleReadinessRetry(readinessState, 'OUTBOX_ACCEPT_FAILED');
+      return sendJson(response, { error: 'Your address was saved, but the confirmation email could not be confirmed. Please try again later.' }, 502);
+    }
   }
 
   return sendJson(response, { ok: true });

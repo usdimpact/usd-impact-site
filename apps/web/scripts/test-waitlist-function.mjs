@@ -7,6 +7,7 @@ const originalEnv = {
   RESEND_WAITLIST_SEGMENT_ID: process.env.RESEND_WAITLIST_SEGMENT_ID,
   RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
   RESEND_REPLY_TO: process.env.RESEND_REPLY_TO,
+  EMAIL_READINESS_LEDGER_ENABLED: process.env.EMAIL_READINESS_LEDGER_ENABLED,
 };
 
 function request(body, headers = {}, method = 'POST') {
@@ -57,6 +58,7 @@ try {
   process.env.RESEND_WAITLIST_SEGMENT_ID = 'segment-test';
   process.env.RESEND_FROM_EMAIL = 'USD Impact <book@updates.example.com>';
   process.env.RESEND_REPLY_TO = 'support@example.com';
+  process.env.EMAIL_READINESS_LEDGER_ENABLED = 'false';
 
   const calls = [];
   globalThis.fetch = async (url, options = {}) => {

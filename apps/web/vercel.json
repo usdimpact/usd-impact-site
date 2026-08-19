@@ -32,6 +32,10 @@
       "destination": "/api/guided-edition?__paid_path=:path*"
     },
     {
+      "source": "/unsubscribe",
+      "destination": "/api/waitlist?action=unsubscribe"
+    },
+    {
       "source": "/api/auth-login",
       "destination": "/api/account?action=login"
     },
@@ -126,6 +130,23 @@
         {
           "key": "X-Robots-Tag",
           "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/unsubscribe",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
         }
       ]
     }

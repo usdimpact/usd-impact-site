@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash, createHmac } from 'node:crypto';
 import { Readable } from 'node:stream';
-import { handleResendWebhook } from '../api/resend-webhook.js';
+import { handleResendWebhook } from '../src/lib/resend-webhook-handler.js';
 
 const nowMs = Date.parse('2026-08-20T12:00:00.000Z');
 const timestamp = String(Math.floor(nowMs / 1000));

@@ -10,6 +10,7 @@
   let lastSavedPosition = -1;
   let lastSaveAt = 0;
   let ready = false;
+  let resumeApplied = false;
   let savedStatus = 'started';
 
   const updateUi = (position, duration, status = 'in_progress') => {
@@ -17,6 +18,16 @@
     const percent = status === 'completed' ? 100 : Math.max(0, Math.min(100, Math.round((position / total) * 100) || 0));
     if (bar) bar.style.width = `${percent}%`;
     if (label) label.textContent = status === 'completed' ? 'Completed' : percent ? `${percent}% complete` : 'Not started';
+  };
+
+  const applySavedPosition = () => {
+    if (resumeApplied || !player) return false;
+    const duration = Number(player.duration) || 0;
+    if (!(duration > 0)) return false;
+    resumeApplied = true;
+    if (savedPosition > 2 && savedPosition < duration - 3) player.currentTime = savedPosition;
+    updateUi(savedPosition, duration, savedStatus);
+    return true;
   };
 
   const save = async (status, force = false, keepalive = false) => {
@@ -66,16 +77,14 @@
     if (ready || !iframe || typeof window.Stream !== 'function') return false;
     ready = true;
     player = window.Stream(iframe);
-    player.addEventListener('loadedmetadata', () => {
-      const duration = Number(player.duration) || catalogDuration;
-      if (savedPosition > 2 && savedPosition < duration - 3) player.currentTime = savedPosition;
-      updateUi(savedPosition, duration, savedStatus);
-    });
-    player.addEventListener('play', () => save('started', true));
+    player.addEventListener('loadedmetadata', applySavedPosition);
+    player.addEventListener('durationchange', applySavedPosition);
+    player.addEventListener('play', () => { applySavedPosition(); save('started', true); });
     player.addEventListener('timeupdate', () => save('in_progress'));
     player.addEventListener('pause', () => save('in_progress', true));
     player.addEventListener('ended', () => { savedStatus = 'completed'; save('completed', true); });
     window.addEventListener('pagehide', () => save('in_progress', true, true));
+    applySavedPosition();
     return true;
   };
 

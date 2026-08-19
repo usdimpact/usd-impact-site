@@ -9,6 +9,7 @@ Use this checklist for every production release affecting `usdimpact/usd-impact-
 - [ ] `docs/production-deployment.md` still identifies Vercel as the canonical website production provider.
 - [ ] Cloudflare Pages work is limited to the separate pipeline dashboard unless explicitly reviewed otherwise.
 - [ ] No DNS, mail, payment, authentication, or Production-secret change is implied unless separately authorized.
+- [ ] If the change affects authentication email, transactional email, waitlist/marketing mail, support routing, consent records, sender domains, or email provider configuration, `docs/operations/email-readiness-release-gate.md` is evaluated and its mandatory state is satisfied.
 
 ## 2. Content and sources
 
@@ -24,6 +25,7 @@ Use this checklist for every production release affecting `usdimpact/usd-impact-
 - [ ] No guaranteed outcomes, direct buy/sell recommendations, fake urgency, or unsupported price targets.
 - [ ] Required compliance note is present where applicable.
 - [ ] Paid-access, privacy, consent, refund, or account language has been reviewed when affected.
+- [ ] Marketing consent is not used to gate required authentication, security, purchase, entitlement, refund, privacy, or account-deletion communications.
 
 ## 4. Repository quality gates
 
@@ -55,6 +57,7 @@ Use this checklist for every production release affecting `usdimpact/usd-impact-
 - [ ] PR is reviewable and not blocked by unresolved critical feedback.
 - [ ] Required GitHub quality workflow passed on the current head SHA.
 - [ ] No P0/P1 issue directly invalidates the release.
+- [ ] Domain-specific release gates are satisfied for any affected high-risk subsystem.
 - [ ] Rollback candidate is known.
 - [ ] Merge is through the protected `main` path; no direct production bypass.
 

@@ -107,9 +107,12 @@ export function normalizeBundleDraft(draft) {
   };
 
   const highlights = rewriteSourceIds(draft.highlights);
-  const catalysts = rewriteSourceIds(draft.catalysts);
+  const catalystInput = draft.catalysts == null ? [] : draft.catalysts;
+  const catalysts = rewriteSourceIds(catalystInput);
+  const highlightItems = Array.isArray(highlights) ? highlights : [];
+  const catalystItems = Array.isArray(catalysts) ? catalysts : [];
   const referencedSourceIds = new Set(
-    [...(highlights ?? []), ...(catalysts ?? [])]
+    [...highlightItems, ...catalystItems]
       .flatMap((item) => (Array.isArray(item?.sourceIds) ? item.sourceIds : [])),
   );
   const referencedSources = referencedSourceIds.size > 0
@@ -163,7 +166,7 @@ export function safeValidationDiagnostic(message) {
       reason: 'The generated bundle did not contain enough verified sources.',
     };
   }
-  if (/invalid JSON|structured output|must be an object|missing required field/i.test(text)) {
+  if (/invalid JSON|structured output|must be an object|missing required field|must be an array|invalid collection/i.test(text)) {
     return {
       code: 'invalid-structured-output',
       reason: 'The generated bundle did not match the required structured-output format.',

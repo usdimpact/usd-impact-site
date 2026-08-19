@@ -118,6 +118,14 @@ let health = 'GREEN';
 if (criticalWorkflowFailure || hasP0) health = 'RED';
 else if (hasP1 || [quality, daily, dailyHealth].some((run) => run.status === 'UNKNOWN' || run.conclusion === 'UNKNOWN')) health = 'AMBER';
 
+const dailyIssueBlocker = openIssues.find((issue) => {
+  if (issue.blocked || !['P0', 'P1'].includes(issue.priority)) return false;
+  const text = issue.title.toLowerCase();
+  return /daily|news|publish|publishing|workflow|automation/.test(text);
+});
+const dailyWorkflowUnknown = [quality, dailyHealth].some((run) => run.status === 'UNKNOWN' || run.conclusion === 'UNKNOWN');
+const dailyAllowed = !criticalWorkflowFailure && !dailyIssueBlocker && !dailyWorkflowUnknown;
+
 const next = openIssues.find((issue) => !issue.blocked) || openIssues[0] || null;
 const mainBlocker = health === 'RED'
   ? (next ? `#${next.number} ${next.title}` : 'Critical workflow failure detected')
@@ -147,6 +155,10 @@ const state = {
     daily_news_health: dailyHealth,
     catalyst_brief: catalyst
   },
+  publishing: {
+    daily_allowed: dailyAllowed,
+    daily_blocker: dailyIssueBlocker ? `#${dailyIssueBlocker.number} ${dailyIssueBlocker.title}` : (criticalWorkflowFailure ? 'Critical quality or daily-health workflow failure' : (dailyWorkflowUnknown ? 'Quality or daily-health workflow state is unknown' : 'NONE'))
+  },
   open_work: openIssues,
   priority_queue: openIssues.slice(0, 10),
   main_blocker: mainBlocker,
@@ -154,7 +166,8 @@ const state = {
   notes: [
     'Generated state is a snapshot and never overrides canonical production or governance configuration.',
     'Vercel production readiness must be verified outside this GitHub-only state snapshot after release.',
-    'Cloudflare Pages remains separate to the pipeline dashboard and is not a usd-impact-site deployment target.'
+    'Cloudflare Pages remains separate to the pipeline dashboard and is not a usd-impact-site deployment target.',
+    'A project-wide P0 does not automatically block public Daily News unless it affects publishing or a critical quality/health workflow.'
   ]
 };
 
@@ -184,7 +197,8 @@ if (command === 'next') {
   responseMd += `\n\n### NEXT BEST ACTION\n\n${next ? `**Task:** #${next.number} ${next.title}\n\n**Priority:** ${next.priority} — score ${next.score}\n\n**Link:** ${next.url}` : 'No actionable open issue was found.'}`;
 }
 if (command === 'daily') {
-  responseMd += `\n\n### DAILY PREFLIGHT\n\n${health === 'RED' ? '**RELEASE BLOCKED:** control-center health is RED. The daily publication workflow was not dispatched.' : '**PREFLIGHT PASS:** control-center health is not RED. The existing daily publication workflow may be dispatched; its own validation and protected review gates remain authoritative.'}`;
+  const blocker = state.publishing.daily_blocker;
+  responseMd += `\n\n### DAILY PREFLIGHT\n\n${dailyAllowed ? '**PREFLIGHT PASS:** daily-specific quality and health gates permit dispatch. The existing daily publication workflow remains authoritative.' : `**RELEASE BLOCKED:** ${blocker}. The daily publication workflow was not dispatched.`}`;
 }
 if (command === 'sync') {
   responseMd += '\n\n**State:** refreshed from live GitHub repository, issue, and workflow data.';
@@ -195,7 +209,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
 }
 if (process.env.GITHUB_OUTPUT) {
   const delimiter = `EOF_${Date.now()}`;
-  fs.appendFileSync(process.env.GITHUB_OUTPUT, `health=${health}\ncommand=${command}\nresponse<<${delimiter}\n${responseMd}\n${delimiter}\n`);
+  fs.appendFileSync(process.env.GITHUB_OUTPUT, `health=${health}\ndaily_allowed=${dailyAllowed}\ncommand=${command}\nresponse<<${delimiter}\n${responseMd}\n${delimiter}\n`);
 }
 
 console.log(responseMd);

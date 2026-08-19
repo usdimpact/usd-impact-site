@@ -5,7 +5,53 @@ export const WAITLIST_SUPPORT_EMAIL = 'support@usd-impact.com';
 
 const WAITLIST_SUPPORT_URL = `mailto:${WAITLIST_SUPPORT_EMAIL}?subject=Read%20the%20Dollar%20First%20waitlist%20support`;
 
-export function buildWaitlistConfirmationEmail() {
+function normalizeUnsubscribeUrl(value) {
+  if (value === undefined || value === null || String(value).trim() === '') return null;
+
+  let url;
+  try {
+    url = new URL(String(value).trim());
+  } catch {
+    throw new TypeError('unsubscribeUrl must be a valid absolute URL.');
+  }
+
+  const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+  if (url.protocol !== 'https:' && !(local && url.protocol === 'http:')) {
+    throw new TypeError('unsubscribeUrl must use HTTPS outside localhost.');
+  }
+  if (url.username || url.password || url.hash) {
+    throw new TypeError('unsubscribeUrl must not contain credentials or a fragment.');
+  }
+  if (url.pathname !== '/unsubscribe') {
+    throw new TypeError('unsubscribeUrl must use the /unsubscribe path.');
+  }
+  const keys = [...new Set(url.searchParams.keys())];
+  if (keys.length !== 1 || keys[0] !== 'token' || !url.searchParams.get('token')) {
+    throw new TypeError('unsubscribeUrl must contain only a non-empty token query parameter.');
+  }
+  return url.toString();
+}
+
+function escapeHtmlAttribute(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
+}
+
+export function buildWaitlistConfirmationEmail({ unsubscribeUrl = null } = {}) {
+  const normalizedUnsubscribeUrl = normalizeUnsubscribeUrl(unsubscribeUrl);
+  const unsubscribeText = normalizedUnsubscribeUrl
+    ? [
+        `Unsubscribe from book availability emails: ${normalizedUnsubscribeUrl}`,
+        "You can also reply to this email with the word 'unsubscribe'.",
+      ]
+    : ["To leave the waitlist, reply to this email with the word 'unsubscribe'."];
+  const unsubscribeHtml = normalizedUnsubscribeUrl
+    ? `To leave the waitlist, <a href="${escapeHtmlAttribute(normalizedUnsubscribeUrl)}" style="color:#071A33; text-decoration:underline;">unsubscribe from book availability emails</a>. You can also reply to this email with the word <strong>unsubscribe</strong>.`
+    : 'To leave the waitlist, reply to this email with the word <strong>unsubscribe</strong>.';
+
   const text = [
     'USD Impact',
     '',
@@ -17,7 +63,7 @@ export function buildWaitlistConfirmationEmail() {
     `Book details: ${WAITLIST_BOOK_URL}`,
     `Privacy notice: ${WAITLIST_PRIVACY_URL}`,
     '',
-    "To leave the waitlist, reply to this email with the word 'unsubscribe'.",
+    ...unsubscribeText,
     `Support: ${WAITLIST_SUPPORT_EMAIL}`,
     '',
     'Educational product information only. This is not investment, legal, tax, trading, or financial advice.',
@@ -64,7 +110,7 @@ export function buildWaitlistConfirmationEmail() {
                 </tr>
               </table>
               <p style="margin-top:22px; margin-right:0; margin-bottom:10px; margin-left:0; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#5A6472;">You are receiving this confirmation because you explicitly requested book availability updates.</p>
-              <p style="margin-top:0; margin-right:0; margin-bottom:10px; margin-left:0; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#5A6472;">To leave the waitlist, reply to this email with the word <strong>unsubscribe</strong>. For help, email <a href="${WAITLIST_SUPPORT_URL}" style="color:#071A33; text-decoration:underline;">${WAITLIST_SUPPORT_EMAIL}</a>.</p>
+              <p style="margin-top:0; margin-right:0; margin-bottom:10px; margin-left:0; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#5A6472;">${unsubscribeHtml} For help, email <a href="${WAITLIST_SUPPORT_URL}" style="color:#071A33; text-decoration:underline;">${WAITLIST_SUPPORT_EMAIL}</a>.</p>
               <p style="margin-top:0; margin-right:0; margin-bottom:18px; margin-left:0; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#5A6472;"><a href="${WAITLIST_PRIVACY_URL}" style="color:#071A33; text-decoration:underline;">Read the USD Impact privacy notice</a>.</p>
               <p style="margin-top:0; margin-right:0; margin-bottom:0; margin-left:0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:19px; color:#5A6472;">Educational product information only. This is not investment, legal, tax, trading, or financial advice.</p>
             </td>
@@ -79,9 +125,17 @@ export function buildWaitlistConfirmationEmail() {
 </body>
 </html>`;
 
+  const headers = normalizedUnsubscribeUrl
+    ? Object.freeze({
+        'List-Unsubscribe': `<${normalizedUnsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      })
+    : null;
+
   return Object.freeze({
     subject: WAITLIST_CONFIRMATION_SUBJECT,
     text,
     html,
+    ...(headers ? { headers } : {}),
   });
 }

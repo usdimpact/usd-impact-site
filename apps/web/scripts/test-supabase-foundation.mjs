@@ -145,6 +145,10 @@ const migration = await readFile(
   new URL('20260729203000_paid_access_foundation.sql', migrationDirectory),
   'utf8',
 );
+const accountRpcHardeningMigration = await readFile(
+  new URL('20260812180308_harden_account_rpcs.sql', migrationDirectory),
+  'utf8',
+);
 const migrationFiles = (await readdir(migrationDirectory))
   .filter((name) => name.endsWith('.sql'))
   .sort();
@@ -167,22 +171,21 @@ assert.match(migration, /create policy entitlements_select_own[\s\S]*account_id 
 assert.match(migration, /deletion_due_at = now\(\) \+ interval '7 days'/);
 assert.match(migration, /create or replace function public\.account_export\(export_account_id uuid\)/);
 
-// SECURITY DEFINER RPCs are intentionally callable by authenticated customers,
-// so their source-level identity and privilege boundaries are release gates.
-// Scan the complete ordered migration chain so a later migration cannot silently
-// redefine either RPC or grant it to an unapproved role.
+// Account RPCs have exactly two reviewed definitions in the migration chain:
+// the original paid-access foundation and the later account-RPC hardening migration.
+// A third definition is a release blocker until it is reviewed explicitly here.
 assert.equal(
   (migrationChain.match(
     /create or replace function public\.account_export\(export_account_id uuid\)/gi,
   ) ?? []).length,
-  1,
+  2,
   'account_export has an unreviewed later definition',
 );
 assert.equal(
   (migrationChain.match(
     /create or replace function public\.request_account_deletion\(\)/gi,
   ) ?? []).length,
-  1,
+  2,
   'request_account_deletion has an unreviewed later definition',
 );
 
@@ -231,6 +234,42 @@ assert.match(
 assert.doesNotMatch(
   migrationChain,
   /grant\s+execute\s+on\s+function\s+public\.request_account_deletion\(\)\s+to\s+[^;]*\b(?:public|anon|service_role)\b[^;]*;/i,
+);
+
+// The later hardened export runs as the authenticated caller so RLS remains in
+// force, derives the account from auth.uid(), and preserves only authenticated
+// execute access. The compatibility UUID signature must refuse cross-account use.
+assert.match(accountRpcHardeningMigration, /create or replace function public\.account_export\(\)/i);
+assert.match(accountRpcHardeningMigration, /security invoker/i);
+assert.match(accountRpcHardeningMigration, /set search_path = ''/i);
+assert.match(accountRpcHardeningMigration, /select \(select auth\.uid\(\)\) as account_id/i);
+assert.match(
+  accountRpcHardeningMigration,
+  /revoke all on function public\.account_export\(\)[\s\S]*from public, anon, authenticated, service_role;/i,
+);
+assert.match(
+  accountRpcHardeningMigration,
+  /grant execute on function public\.account_export\(\) to authenticated;/i,
+);
+assert.match(
+  accountRpcHardeningMigration,
+  /export_account_id = \(select auth\.uid\(\)\)/i,
+);
+
+// The later deletion RPC remains the one intentional SECURITY DEFINER customer
+// mutation, resolves identity from auth.uid(), uses an empty search_path, and
+// grants execution only to authenticated users.
+assert.match(accountRpcHardeningMigration, /create or replace function public\.request_account_deletion\(\)/i);
+assert.match(accountRpcHardeningMigration, /security definer/i);
+assert.match(accountRpcHardeningMigration, /caller_account_id uuid := auth\.uid\(\)/i);
+assert.match(accountRpcHardeningMigration, /set search_path = ''/i);
+assert.match(
+  accountRpcHardeningMigration,
+  /revoke all on function public\.request_account_deletion\(\)[\s\S]*from public, anon, authenticated, service_role;/i,
+);
+assert.match(
+  accountRpcHardeningMigration,
+  /grant execute on function public\.request_account_deletion\(\) to authenticated;/i,
 );
 
 console.log('Supabase account and durable-record foundation tests passed.');

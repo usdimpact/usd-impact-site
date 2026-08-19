@@ -83,8 +83,18 @@ try {
   assert.deepEqual(contactBody.segments, [{ id: 'segment-test' }]);
 
   const emailBody = JSON.parse(calls[1].options.body);
+  assert.equal(emailBody.from, 'USD Impact <book@updates.example.com>');
   assert.deepEqual(emailBody.to, ['reader@example.com']);
+  assert.equal(emailBody.reply_to, 'support@example.com');
   assert.match(emailBody.subject, /waitlist/i);
+  assert.match(emailBody.text, /reply to this email with the word 'unsubscribe'/i);
+  assert.match(emailBody.text, /https:\/\/www\.usd-impact\.com\/privacy\//);
+  assert.match(emailBody.html, /^<!DOCTYPE html>/);
+  assert.match(emailBody.html, /<meta name="viewport" content="width=device-width, initial-scale=1.0">/);
+  assert.match(emailBody.html, /<table role="presentation"/);
+  assert.match(emailBody.html, /https:\/\/www\.usd-impact\.com\/book\/read-the-dollar-first\//);
+  assert.match(emailBody.html, /mailto:support@usd-impact\.com/);
+  assert.doesNotMatch(emailBody.html, /<script\b/i);
 
   const stringBodySuccess = await invoke(request(JSON.stringify({
     email: 'string-body@example.com',

@@ -148,8 +148,14 @@ export default async function handler(request, response) {
     return sendJson(response, { error: 'The waitlist is temporarily unavailable. Please try again later.' }, 503);
   }
 
-  // A completed/reconciled duplicate should not call the provider again.
+  // A terminal/reconciled duplicate should not call the provider again. A stale
+  // sending row is ambiguous once the provider idempotency window has elapsed,
+  // so fail closed instead of risking a duplicate send or claiming success.
   if (readinessState.enabled && !readinessState.shouldSend) {
+    if (String(readinessState.outbox?.status || '') === 'sending') {
+      console.error('Waitlist confirmation is awaiting manual delivery reconciliation.');
+      return sendJson(response, { error: 'Your address was saved, but the confirmation email status is still being reconciled. Please try again later.' }, 503);
+    }
     return sendJson(response, { ok: true });
   }
 

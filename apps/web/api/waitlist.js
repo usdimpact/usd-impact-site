@@ -1,3 +1,5 @@
+import { handleResendWebhook } from '../src/lib/resend-webhook-handler.js';
+
 const RESEND_API = 'https://api.resend.com';
 const EMAIL_MAX_LENGTH = 254;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -51,7 +53,20 @@ function normalizeEmail(value) {
   return String(value ?? '').trim().toLowerCase();
 }
 
+function requestAction(request) {
+  try {
+    const url = new URL(request.url || '/api/waitlist', 'https://usd-impact.invalid');
+    return url.searchParams.get('action')?.trim().toLowerCase() || '';
+  } catch {
+    return '';
+  }
+}
+
 export default async function handler(request, response) {
+  if (requestAction(request) === 'resend-webhook') {
+    return handleResendWebhook(request, response);
+  }
+
   if (request.method !== 'POST') {
     return sendJson(response, { error: 'Method not allowed.' }, 405, { Allow: 'POST' });
   }

@@ -64,6 +64,10 @@
       "destination": "/api/account?action=video-progress"
     },
     {
+      "source": "/api/resend-webhook",
+      "destination": "/api/waitlist?action=resend-webhook"
+    },
+    {
       "source": "/api/telemetry-report",
       "destination": "/api/telemetry?action=report"
     },

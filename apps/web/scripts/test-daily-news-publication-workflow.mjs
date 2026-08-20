@@ -7,6 +7,7 @@ const workflow = await readFile(
   'utf8',
 );
 
+assert.match(workflow, /permissions:[\s\S]*issues: write/, 'failure reporting needs issue-write permission');
 assert.match(
   workflow,
   /existing_pr_url="\$\(gh pr list[\s\S]*--state open[\s\S]*--head "\$branch"/,
@@ -61,24 +62,58 @@ assert.doesNotMatch(
   /--max-time 60/,
   'background polling must not terminate a valid bounded repair at 60 seconds',
 );
+assert.match(
+  pollStep[1],
+  /for generation_attempt in 1 2/,
+  'the workflow must permit only the initial generation and one bounded full regeneration',
+);
+assert.match(
+  pollStep[1],
+  /daily-news-retry-policy\.mjs/,
+  'the bounded regeneration decision must use the reviewed retry policy',
+);
 
 const handoffStep = workflow.match(
-  /      - name: Open, validate, and merge publication pull request\n[\s\S]*?        run: \|\n([\s\S]*)$/,
+  /      - name: Open, validate, and merge publication pull request\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Report Daily failure gate)/,
 );
 assert.ok(handoffStep, 'publication handoff shell must be present');
 
-const handoffShell = handoffStep[1]
-  .split('\n')
-  .map((line) => (line.startsWith('          ') ? line.slice(10) : line))
-  .join('\n');
-const syntaxCheck = spawnSync('bash', ['-n'], {
-  input: handoffShell,
-  encoding: 'utf8',
-});
-assert.equal(
-  syntaxCheck.status,
-  0,
-  `publication handoff shell must parse with bash -n:\n${syntaxCheck.stderr}`,
+const failureStep = workflow.match(
+  /      - name: Report Daily failure gate\n[\s\S]*?        run: \|\n([\s\S]*)$/,
 );
+assert.ok(failureStep, 'stage-aware failure reporting shell must be present');
+assert.match(workflow, /id: start/);
+assert.match(workflow, /id: poll/);
+assert.match(workflow, /id: import_content/);
+assert.match(workflow, /id: validate_build/);
+assert.match(workflow, /id: publish_pr/);
+assert.match(failureStep[1], /daily-news-failure-stage\.mjs/);
+assert.match(failureStep[1], /usd-impact-daily-failure-stage/);
+assert.match(failureStep[1], /Failure stage:/);
+assert.match(failureStep[1], /Failing gate:/);
+assert.match(failureStep[1], /gh issue comment 184/);
+assert.match(failureStep[1], /gh issue create/);
+
+function shellFromWorkflowBlock(block) {
+  return block
+    .split('\n')
+    .map((line) => (line.startsWith('          ') ? line.slice(10) : line))
+    .join('\n');
+}
+
+for (const [label, block] of [
+  ['publication handoff', handoffStep[1]],
+  ['failure reporting', failureStep[1]],
+]) {
+  const syntaxCheck = spawnSync('bash', ['-n'], {
+    input: shellFromWorkflowBlock(block),
+    encoding: 'utf8',
+  });
+  assert.equal(
+    syntaxCheck.status,
+    0,
+    `${label} shell must parse with bash -n:\n${syntaxCheck.stderr}`,
+  );
+}
 
 console.log('daily news publication workflow tests pass');

@@ -149,6 +149,25 @@ assert.equal(
   safeValidationDiagnostic('Source example was not returned by OpenAI web search').code,
   'ungrounded-source',
 );
+assert.deepEqual(
+  safeValidationDiagnostic('The bundle must contain 3-7 highlights'),
+  {
+    code: 'invalid-highlight-count',
+    reason: 'The generated bundle must contain between three and seven complete highlights.',
+  },
+);
+assert.equal(
+  safeValidationDiagnostic("Catalyst 1 must fall within the edition's next seven calendar days").code,
+  'invalid-catalyst-window',
+);
+assert.equal(
+  safeValidationDiagnostic('Catalysts must be an array').code,
+  'invalid-catalyst-collection',
+);
+assert.equal(
+  safeValidationDiagnostic('Daily news source generation failed validation after two bounded repair attempts.').code,
+  'repair-exhausted',
+);
 assert.equal(
   safeValidationDiagnostic('unexpected provider detail with a secret-looking value').code,
   'generation-validation-failed',

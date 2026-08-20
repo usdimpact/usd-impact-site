@@ -8,6 +8,7 @@ on:
 permissions:
   actions: write
   contents: write
+  issues: write
   pull-requests: write
 
 concurrency:
@@ -49,6 +50,7 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Start background news generation
+        id: start
         if: steps.config.outputs.configured == 'true'
         env:
           NEWSFEED_ENDPOINT: ${{ secrets.NEWSFEED_ENDPOINT }}
@@ -82,6 +84,7 @@ jobs:
           echo "Started background response $response_id"
 
       - name: Poll background news generation
+        id: poll
         if: steps.config.outputs.configured == 'true'
         env:
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
@@ -116,7 +119,7 @@ jobs:
               fi
 
               if [ "$generation_attempt" = "1" ] && node scripts/daily-news-retry-policy.mjs "$RUNNER_TEMP/daily-usd-impact-poll.json"; then
-                echo "Recoverable validation failure detected; starting one bounded full regeneration attempt."
+                echo "Recoverable generation or bounded-repair failure detected; starting one bounded full regeneration attempt."
                 curl --fail --silent --show-error --location \
                   --request POST --max-time 60 \
                   -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
@@ -147,16 +150,19 @@ jobs:
           done
 
       - name: Import as published content
+        id: import_content
         if: steps.config.outputs.configured == 'true'
         run: node scripts/import-daily-news.mjs "$RUNNER_TEMP/daily-usd-impact.json" --replace --skip-published --publish
 
       - name: Validate and build
+        id: validate_build
         if: steps.config.outputs.configured == 'true'
         run: |
           npm run validate
           npm run build
 
       - name: Open, validate, and merge publication pull request
+        id: publish_pr
         if: steps.config.outputs.configured == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -230,3 +236,68 @@ jobs:
             exit 1
           fi
           echo "Daily USD Impact ${edition_date} passed Web quality and is ready for protected review and merge: $pr_url"
+
+      - name: Report Daily failure gate
+        if: failure() && steps.config.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          START_OUTCOME: ${{ steps.start.outcome }}
+          POLL_OUTCOME: ${{ steps.poll.outcome }}
+          IMPORT_OUTCOME: ${{ steps.import_content.outcome }}
+          VALIDATE_OUTCOME: ${{ steps.validate_build.outcome }}
+          PUBLISH_OUTCOME: ${{ steps.publish_pr.outcome }}
+        run: |
+          payload_path="-"
+          if [ -s "$RUNNER_TEMP/daily-usd-impact-poll.json" ]; then
+            payload_path="$RUNNER_TEMP/daily-usd-impact-poll.json"
+          fi
+
+          result="$(node scripts/daily-news-failure-stage.mjs \
+            "$payload_path" \
+            "$START_OUTCOME" \
+            "$POLL_OUTCOME" \
+            "$IMPORT_OUTCOME" \
+            "$VALIDATE_OUTCOME" \
+            "$PUBLISH_OUTCOME")"
+          stage="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.stage)' "$result")"
+          gate="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.gate)' "$result")"
+          detail="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.detail || "not exposed")' "$result")"
+
+          printf '%s\n\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s\n' \
+            '## Daily USD Impact automation failure' \
+            "<!-- usd-impact-daily-failure-stage: ${stage} -->" \
+            "- Failure stage: \`${stage}\`" \
+            "- Failing gate: \`${gate}\`" \
+            "- Run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            "- Commit: \`${GITHUB_SHA}\`" \
+            "- Trigger: \`${GITHUB_EVENT_NAME}\`" \
+            "- Step outcomes: start=${START_OUTCOME}, poll=${POLL_OUTCOME}, import=${IMPORT_OUTCOME}, validate=${VALIDATE_OUTCOME}, publish=${PUBLISH_OUTCOME}" \
+            "- Bounded detail: ${detail}" \
+            'The workflow remained fail-closed. No content was merged or deployed by this failed run.' \
+            > "$RUNNER_TEMP/daily-failure-report.md"
+
+          cat "$RUNNER_TEMP/daily-failure-report.md" >> "$GITHUB_STEP_SUMMARY"
+
+          if gh issue view 184 --repo "$GITHUB_REPOSITORY" --json state --jq '.state' 2>/dev/null | grep -q '^OPEN$'; then
+            gh issue comment 184 \
+              --repo "$GITHUB_REPOSITORY" \
+              --body-file "$RUNNER_TEMP/daily-failure-report.md"
+          else
+            issue_title='P1 — Daily USD Impact automation requires attention'
+            issue_number="$(gh issue list \
+              --repo "$GITHUB_REPOSITORY" \
+              --state open \
+              --search "$issue_title in:title" \
+              --json number \
+              --jq '.[0].number // empty')"
+            if [ -n "$issue_number" ]; then
+              gh issue edit "$issue_number" \
+                --repo "$GITHUB_REPOSITORY" \
+                --body-file "$RUNNER_TEMP/daily-failure-report.md"
+            else
+              gh issue create \
+                --repo "$GITHUB_REPOSITORY" \
+                --title "$issue_title" \
+                --body-file "$RUNNER_TEMP/daily-failure-report.md"
+            fi
+          fi

@@ -71,6 +71,25 @@ jobs:
             echo "- Recovery age: $((age_seconds / 60)) minutes"
           } > daily-health-report.md
 
+          if [ "$status" = "completed" ] && [ "$conclusion" != "success" ]; then
+            jobs_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs?per_page=100")"
+            failed_step="$(jq -r '[.jobs[].steps[]? | select(.conclusion == "failure")][0].name // ""' <<< "$jobs_json")"
+            case "$failed_step" in
+              'Start background news generation') failure_stage='generation' ;;
+              'Poll background news generation') failure_stage='generation-or-repair' ;;
+              'Import as published content') failure_stage='import' ;;
+              'Validate and build') failure_stage='validation' ;;
+              'Open, validate, and merge publication pull request') failure_stage='publication' ;;
+              'Report Daily failure gate') failure_stage='failure-reporting' ;;
+              *) failure_stage='workflow' ;;
+            esac
+            {
+              echo "<!-- usd-impact-daily-failure-stage: $failure_stage -->"
+              echo "- Failure stage: \`$failure_stage\`"
+              echo "- Failed step: \`${failed_step:-unknown}\`"
+            } >> daily-health-report.md
+          fi
+
           if [ "$status" != "completed" ]; then
             echo "- Failure: the latest run is not complete." >> daily-health-report.md
             exit 1
@@ -98,14 +117,24 @@ jobs:
         if: steps.health.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE_TITLE: Daily USD Impact automation requires attention
+          ISSUE_TITLE: P1 — Daily USD Impact automation requires attention
         run: |
           set -euo pipefail
 
           if [ ! -s daily-health-report.md ]; then
             echo "# Daily USD Impact automation health report" > daily-health-report.md
             echo >> daily-health-report.md
+            echo "<!-- usd-impact-daily-failure-stage: workflow -->" >> daily-health-report.md
+            echo "- Failure stage: \`workflow\`" >> daily-health-report.md
             echo "The health check failed before a detailed report could be generated." >> daily-health-report.md
+          fi
+
+          if gh issue view 184 --json state --jq '.state' 2>/dev/null | grep -q '^OPEN$'; then
+            gh issue comment 184 \
+              --repo "$GITHUB_REPOSITORY" \
+              --body-file daily-health-report.md
+            echo "Updated hardening issue #184"
+            exit 0
           fi
 
           issue_number="$(gh issue list \
@@ -117,10 +146,10 @@ jobs:
             | head -n 1)"
 
           if [ -n "$issue_number" ]; then
-            gh issue comment "$issue_number" \
+            gh issue edit "$issue_number" \
               --repo "$GITHUB_REPOSITORY" \
               --body-file daily-health-report.md
-            echo "Updated issue #$issue_number"
+            echo "Refreshed issue #$issue_number"
           else
             gh issue create \
               --repo "$GITHUB_REPOSITORY" \
@@ -132,7 +161,7 @@ jobs:
         if: steps.health.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE_TITLE: Daily USD Impact automation requires attention
+          ISSUE_TITLE: P1 — Daily USD Impact automation requires attention
         run: |
           set -euo pipefail
 

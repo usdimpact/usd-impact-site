@@ -28,7 +28,7 @@ const malformedCatalysts = normalizeBundleDraft({ ...base, catalysts: { unexpect
 assert.deepEqual(malformedCatalysts.catalysts, { unexpected: true });
 assert.equal(
   safeValidationDiagnostic('catalysts must be an array when provided').code,
-  'invalid-structured-output',
+  'invalid-catalyst-collection',
 );
 
 console.log('daily news collection normalization tests pass');

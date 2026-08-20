@@ -9,6 +9,7 @@ import {
 
 const OPENAI_RESPONSES_API = 'https://api.openai.com/v1/responses';
 const WEB_SEARCH_SOURCES_INCLUDE = 'web_search_call.action.sources';
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const GROUNDED_SOURCE_RULES = [
   'Use web search results from at least three distinct source URLs before producing the bundle.',
   'The source ledger must contain at least three distinct URLs returned by the web search tool metadata.',
@@ -30,6 +31,36 @@ function requestMethod(input, options) {
 
 function includesWebSearch(body) {
   return Array.isArray(body?.tools) && body.tools.some((tool) => tool?.type === 'web_search');
+}
+
+function utcDateString(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function isRealDate(value) {
+  if (!DATE_PATTERN.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) && utcDateString(parsed) === value;
+}
+
+function addUtcDays(value, days) {
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  parsed.setUTCDate(parsed.getUTCDate() + days);
+  return utcDateString(parsed);
+}
+
+export function extractEditionDate(input) {
+  if (typeof input !== 'string') return null;
+  const patterns = [
+    /\b(?:bundle|research bundle)\s+for\s+(\d{4}-\d{2}-\d{2})\b/i,
+    /\bfor\s+(\d{4}-\d{2}-\d{2})\s*\(UTC\)/i,
+    /\bexact inclusive window\s+(\d{4}-\d{2}-\d{2})\s+through\s+\d{4}-\d{2}-\d{2}\b/i,
+  ];
+  for (const pattern of patterns) {
+    const candidate = input.match(pattern)?.[1];
+    if (candidate && isRealDate(candidate)) return candidate;
+  }
+  return null;
 }
 
 export function withSourceMetadata(body) {
@@ -58,7 +89,22 @@ export function withSourceMetadata(body) {
   if (highlightSchema && typeof highlightSchema === 'object') {
     highlightSchema.minItems = 3;
     highlightSchema.maxItems = 7;
-    highlightSchema.description = 'Return 3-7 publication-ready highlights. Never return fewer than 3 or more than 7.';
+    highlightSchema.description = 'Return 3-7 complete publication-ready highlights. Never return fewer than 3 or more than 7.';
+  }
+
+  const catalystSchema = schemaProperties?.catalysts;
+  if (catalystSchema && typeof catalystSchema === 'object') {
+    catalystSchema.minItems = 0;
+    catalystSchema.maxItems = 10;
+    catalystSchema.description = 'Return an array of 0-10 confirmed catalysts. Use an empty array only when no qualifying event exists.';
+
+    const editionDate = extractEditionDate(next.input);
+    const catalystDateSchema = catalystSchema.items?.properties?.date;
+    if (editionDate && catalystDateSchema && typeof catalystDateSchema === 'object') {
+      catalystDateSchema.enum = Array.from({ length: 8 }, (_, index) => addUtcDays(editionDate, index));
+      delete catalystDateSchema.pattern;
+      catalystDateSchema.description = `Confirmed catalyst date from ${editionDate} through ${addUtcDays(editionDate, 7)} inclusive. Never move or invent a date to enter this window.`;
+    }
   }
 
   const sourceProperties = schemaProperties?.sources?.items?.properties;

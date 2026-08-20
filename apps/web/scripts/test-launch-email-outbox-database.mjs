@@ -13,7 +13,7 @@ assert.equal(launchMigrationNames.length, 1);
 const launchMigration = await readFile(new URL(launchMigrationNames[0], migrationDirectory), 'utf8');
 
 const database = new PGlite();
-const now = '2026-08-20T12:00:00.000Z';
+const now = new Date().toISOString();
 const recipient = 'reader@example.com';
 const consentKey = `consent:v1:${'a'.repeat(64)}`;
 let notificationCounter = 0;

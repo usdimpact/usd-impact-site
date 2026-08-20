@@ -31,6 +31,52 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </div>
       </section>
 
+      <section class="card account-panel" aria-labelledby="support-heading">
+        <h2 id="support-heading">Contact support</h2>
+        <p>
+          Submit an account-linked support request. Do not include passwords, one-time codes,
+          complete sign-in links, payment-card data, API keys, or provider secrets.
+        </p>
+        <form id="account-support-form" class="account-form">
+          <label for="support-category">Category</label>
+          <select id="support-category" name="category" required>
+            <option value="access">Access</option>
+            <option value="commerce">Commerce</option>
+            <option value="privacy">Privacy</option>
+            <option value="security">Security</option>
+            <option value="product">Product</option>
+            <option value="general">General</option>
+          </select>
+
+          <label for="support-subject">Subject</label>
+          <input
+            id="support-subject"
+            name="subject"
+            type="text"
+            minlength="3"
+            maxlength="160"
+            autocomplete="off"
+            required
+          />
+
+          <label for="support-message">Message</label>
+          <textarea
+            id="support-message"
+            name="message"
+            minlength="10"
+            maxlength="5000"
+            rows="7"
+            required
+          ></textarea>
+
+          <button class="button primary" type="submit">Submit support request</button>
+        </form>
+        <p id="support-status" class="account-status" role="status" aria-live="polite"></p>
+        <p class="account-help">
+          For mailbox-based support, email <a href="mailto:support@usd-impact.com">support@usd-impact.com</a>.
+        </p>
+      </section>
+
       <section class="card account-panel account-danger" aria-labelledby="delete-heading">
         <h2 id="delete-heading">Delete account</h2>
         <p>
@@ -47,11 +93,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     const email = document.getElementById('account-email');
     const accountStatus = document.getElementById('account-status');
     const paidAccess = document.getElementById('paid-access');
+    const supportForm = document.getElementById('account-support-form');
+    const supportStatus = document.getElementById('support-status');
 
     const showMessage = (text, state = '') => {
       if (!message) return;
       message.textContent = text;
       message.dataset.state = state;
+    };
+
+    const showSupportMessage = (text, state = '') => {
+      if (!supportStatus) return;
+      supportStatus.textContent = text;
+      supportStatus.dataset.state = state;
     };
 
     const loadAccount = async () => {
@@ -85,6 +139,46 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       const body = await response.json().catch(() => ({}));
       if (!response.ok) return showMessage(body.error || 'Session refresh failed.', 'error');
       await loadAccount().catch((error) => showMessage(error.message, 'error'));
+    });
+
+    supportForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const submit = supportForm.querySelector('button[type="submit"]');
+      const category = document.getElementById('support-category');
+      const subject = document.getElementById('support-subject');
+      const supportMessage = document.getElementById('support-message');
+      if (!submit || !category || !subject || !supportMessage) return;
+
+      submit.disabled = true;
+      showSupportMessage('Recording your support request…', 'pending');
+      try {
+        const response = await fetch('/api/account-support', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            category: category.value,
+            subject: subject.value,
+            message: supportMessage.value,
+          }),
+        });
+        if (response.status === 401) {
+          window.location.replace('/account/sign-in/?next=/account/');
+          return;
+        }
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || 'The support request could not be recorded.');
+        const reference = body.caseReference ? ` Reference: ${body.caseReference}.` : '';
+        showSupportMessage(`Your support request is recorded.${reference}`, 'success');
+        supportForm.reset();
+      } catch (error) {
+        showSupportMessage(
+          error instanceof Error ? error.message : 'The support request could not be recorded.',
+          'error'
+        );
+      } finally {
+        submit.disabled = false;
+      }
     });
 
     document.getElementById('export-account')?.addEventListener('click', async () => {

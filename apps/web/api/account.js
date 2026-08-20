@@ -22,6 +22,11 @@ import {
 import { enqueueAccountDeletionRequestedEmail } from '../src/lib/account-deletion-email.js';
 import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-handler.js';
 import { enqueuePrivacyExportAcknowledgementEmail } from '../src/lib/privacy-export-email.js';
+import {
+  createSupportCaseReceivedEmailIntent,
+  enqueueSupportCaseReceivedEmail,
+} from '../src/lib/support-case-email.js';
+import { createOwnSupportRequest } from '../src/lib/support-request.js';
 import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js';
 
 function header(request, name) {
@@ -81,6 +86,22 @@ function logConfirmationFailure(error) {
     code: typeof error?.code === 'string' ? error.code : null,
     message: error instanceof Error ? error.message : 'Unknown confirmation error.',
   });
+}
+
+async function recordSupportCaseEmailIntent(result) {
+  let caseReference = null;
+  try {
+    const intent = createSupportCaseReceivedEmailIntent({ supportResult: result });
+    caseReference = intent.customerReference;
+    await enqueueSupportCaseReceivedEmail({ supportResult: result });
+  } catch (error) {
+    console.error('Support acknowledgement email intent could not be recorded.', {
+      code: typeof error?.code === 'string'
+        ? error.code
+        : 'SUPPORT_CASE_EMAIL_INTENT_FAILED',
+    });
+  }
+  return caseReference;
 }
 
 async function recordPrivacyExportEmailIntent({ exportResult, accessToken }) {
@@ -241,6 +262,42 @@ async function handleAccess(request, response) {
   }
 }
 
+async function handleSupport(request, response) {
+  if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
+  if (!requireSameSiteJson(request, response)) return;
+
+  const accessToken = readSessionAccessToken(request);
+  if (!accessToken) {
+    return sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
+  }
+
+  let payload;
+  try {
+    payload = parseBody(request);
+  } catch {
+    return sendJson(response, 400, { error: 'Invalid request body.', code: 'INVALID_REQUEST_BODY' });
+  }
+
+  try {
+    const result = await createOwnSupportRequest({
+      accessToken,
+      category: payload.category,
+      subject: payload.subject,
+      message: payload.message,
+    });
+    const caseReference = await recordSupportCaseEmailIntent(result);
+    return sendJson(response, 202, {
+      ok: true,
+      status: result.request.status,
+      caseReference,
+      message: 'Your support request has been recorded.',
+    });
+  } catch (error) {
+    const safe = safeSupabaseError(error);
+    return sendJson(response, safe.status, safe.payload);
+  }
+}
+
 async function handleExport(request, response) {
   if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
   if (!requireSameSiteJson(request, response)) return;
@@ -291,6 +348,7 @@ const handlers = Object.freeze({
   refresh: handleRefresh,
   logout: handleLogout,
   access: handleAccess,
+  support: handleSupport,
   export: handleExport,
   delete: handleDelete,
   'commerce-readiness': handleCommerceReadinessRequest,

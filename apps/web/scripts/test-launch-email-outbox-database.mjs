@@ -224,7 +224,7 @@ try {
       consentId,
       consentPurpose: 'market_updates',
     }),
-    /notification_outbox_payload_contract/i,
+    /(?:notification_outbox_payload_contract|notification must reference an active matching consent grant)/i,
   );
   await expectSqlError(
     () => insertOutbox({

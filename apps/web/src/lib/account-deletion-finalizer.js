@@ -41,7 +41,10 @@ export function readAccountDeletionFinalizerConfig(environment = process.env) {
   const vercelEnvironment = String(environment.VERCEL_ENV || '').trim().toLowerCase();
   const production = vercelEnvironment === 'production';
   if (production) {
-    if (projectRef !== PRODUCTION_PROJECT_REF || !enabled(environment.ACCOUNT_DELETION_FINALIZER_PRODUCTION_APPROVED)) {
+    if (
+      projectRef !== PRODUCTION_PROJECT_REF
+      || !enabled(environment.ACCOUNT_DELETION_FINALIZER_PRODUCTION_APPROVED)
+    ) {
       throw new AccountDeletionFinalizerError(
         'Production account deletion finalization is not approved for this project.',
         'ACCOUNT_DELETION_PRODUCTION_NOT_APPROVED',
@@ -104,6 +107,16 @@ export async function listDueAccountDeletions({
   return Array.isArray(rows) ? rows : [];
 }
 
+export async function readDeletionProfile({ config, accountId, fetchImpl = fetch }) {
+  const path = `/rest/v1/profiles?account_id=eq.${encodeURIComponent(accountId)}&select=account_id,status,deleted_at&limit=1`;
+  const response = await fetchImpl(`${config.supabase.url}${path}`, {
+    method: 'GET',
+    headers: jsonHeaders(config.supabase.secretKey),
+  });
+  const rows = await requireOk(response, 'ACCOUNT_DELETION_PROFILE_RELOAD_FAILED');
+  return Array.isArray(rows) ? rows[0] || null : null;
+}
+
 export async function softDeleteAuthUser({ config, accountId, fetchImpl = fetch }) {
   const response = await fetchImpl(
     `${config.supabase.url}/auth/v1/admin/users/${encodeURIComponent(accountId)}?should_soft_delete=true`,
@@ -125,13 +138,17 @@ export async function finalizeAccountDeletionRecord({ config, accountId, fetchIm
   });
   const payload = await requireOk(response, 'ACCOUNT_DELETION_DATABASE_FINALIZE_FAILED');
   const row = Array.isArray(payload) ? payload[0] : payload;
-  if (!row?.account_id || !row?.recipient_email || !row?.deleted_at) {
-    throw new AccountDeletionFinalizerError(
-      'The account deletion finalization did not return an authoritative completion row.',
-      'ACCOUNT_DELETION_COMPLETION_ROW_MISSING',
-    );
+  if (row?.account_id && row?.recipient_email && row?.deleted_at) return row;
+
+  const profile = await readDeletionProfile({ config, accountId, fetchImpl });
+  if (profile?.status === 'deleted' && profile?.deleted_at) {
+    return Object.freeze({ alreadyFinalized: true, account_id: accountId, deleted_at: profile.deleted_at });
   }
-  return row;
+
+  throw new AccountDeletionFinalizerError(
+    'The account deletion finalization did not return an authoritative completion row.',
+    'ACCOUNT_DELETION_COMPLETION_ROW_MISSING',
+  );
 }
 
 function opaqueReference(accountId) {
@@ -177,6 +194,15 @@ export async function finalizeOneDueAccount({
   try {
     await softDeleteAuthUser({ config, accountId, fetchImpl });
     completion = await finalizeAccountDeletionRecord({ config, accountId, fetchImpl });
+
+    if (completion.alreadyFinalized === true) {
+      return Object.freeze({
+        status: 'already_finalized',
+        accountReference: opaqueReference(accountId),
+        outboxId: null,
+      });
+    }
+
     const emailState = await enqueueAccountDeletionCompletedEmail({
       finalizationResult: completion,
       environment,
@@ -223,15 +249,19 @@ export async function runDueAccountDeletionFinalizer({
   batchSize = MAX_BATCH_SIZE,
 } = {}) {
   const config = readAccountDeletionFinalizerConfig(environment);
-  if (!config.enabled) return Object.freeze({ enabled: false, scanned: 0, finalized: 0, failed: 0 });
+  if (!config.enabled) {
+    return Object.freeze({ enabled: false, scanned: 0, finalized: 0, alreadyFinalized: 0, failed: 0 });
+  }
 
   const profiles = await listDueAccountDeletions({ config, fetchImpl, now, batchSize });
   let finalized = 0;
+  let alreadyFinalized = 0;
   let failed = 0;
   for (const profile of profiles) {
     try {
-      await finalizeOneDueAccount({ profile, config, environment, fetchImpl });
-      finalized += 1;
+      const result = await finalizeOneDueAccount({ profile, config, environment, fetchImpl });
+      if (result.status === 'already_finalized') alreadyFinalized += 1;
+      else finalized += 1;
     } catch (error) {
       failed += 1;
       console.error('Account deletion finalization failed.', {
@@ -239,7 +269,7 @@ export async function runDueAccountDeletionFinalizer({
       });
     }
   }
-  return Object.freeze({ enabled: true, scanned: profiles.length, finalized, failed });
+  return Object.freeze({ enabled: true, scanned: profiles.length, finalized, alreadyFinalized, failed });
 }
 
 export function validCronAuthorization(request, environment = process.env) {

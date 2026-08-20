@@ -1,0 +1,58 @@
+name: Controlled Development email lifecycle probe
+
+on:
+  push:
+    branches:
+      - automation/controlled-email-lifecycle-20260820
+    paths:
+      - .github/workflows/controlled-email-lifecycle-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    if: github.event.head_commit.message == 'Run controlled Development waitlist lifecycle probe'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Submit one controlled delivered-event request
+        shell: bash
+        env:
+          ENDPOINT: https://usd-impact-site-kljof9261-usd-impact.vercel.app/api/waitlist
+          ORIGIN: https://usd-impact-site-kljof9261-usd-impact.vercel.app
+          TEST_EMAIL: delivered+usd-impact-issue130-20260820@resend.dev
+          SUBMISSION_ID: f1d3d8e6-7b0c-4e76-9ec5-98bd78b5c901
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          headers_file="$(mktemp)"
+          payload="$(printf '{\"email\":\"%s\",\"consent\":true,\"company\":\"\",\"submissionId\":\"%s\"}' "$TEST_EMAIL" "$SUBMISSION_ID")"
+
+          status="$(curl --silent --show-error --location \
+            --request POST "$ENDPOINT" \
+            --header 'Content-Type: application/json' \
+            --header 'Sec-Fetch-Site: same-origin' \
+            --header "Origin: $ORIGIN" \
+            --data "$payload" \
+            --dump-header "$headers_file" \
+            --output "$response_file" \
+            --write-out '%{http_code}')"
+
+          echo "HTTP status: $status"
+          cat "$response_file"
+          echo
+
+          test "$status" = '200'
+          grep --quiet '"ok":true' "$response_file"
+
+          {
+            echo '### Controlled Development lifecycle probe'
+            echo
+            echo '- Exact target: PR #190 Preview'
+            echo '- Scenario: Resend delivered-event test address'
+            echo '- Recipient: `delivered+usd-impact-issue130-20260820@resend.dev`'
+            echo '- Submission ID: `f1d3d8e6-7b0c-4e76-9ec5-98bd78b5c901`'
+            echo "- HTTP result: \`$status\` with \`ok: true\`"
+            echo '- No repository secret or customer address was used.'
+          } >> "$GITHUB_STEP_SUMMARY"

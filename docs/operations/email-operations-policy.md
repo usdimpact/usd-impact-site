@@ -2,7 +2,7 @@
 
 ## Status
 
-Policy version: `2026-08-20.v1`
+Policy version: `2026-08-20.v2`
 
 This document is the operational companion to `email-readiness-release-gate.md` and the machine-readable contract in `apps/web/src/lib/email-operations-policy.js`.
 
@@ -10,22 +10,31 @@ It defines launch-message ownership, classification, bounded retries, suppressio
 
 The retention periods below are internal operational defaults for data minimization and incident recovery. They are not presented as statutory minimums. A documented legal, accounting, fraud, dispute, or privacy hold may override ordinary deletion; the reason, approver, scope, and review date must be recorded.
 
+Current evidence is recorded in:
+
+- `email-readiness-evidence-2026-08-20.md`;
+- `support-mailbox-runbook.md`;
+- GitHub Issue #130.
+
 ## Ownership
 
 | Area | Business entity | Primary operational owner | Backup | Escalation |
 |---|---|---|---|---|
 | Authentication email | SC Kela Leads SRL | USD Impact owner/operator | SC Kela Leads SRL authorized administrator | USD Impact incident owner |
 | Purchase, entitlement, refund and dispute email | SC Kela Leads SRL | USD Impact commerce operations | SC Kela Leads SRL authorized administrator | USD Impact incident owner |
-| Support mailbox | SC Kela Leads SRL | USD Impact support operations | SC Kela Leads SRL authorized administrator | USD Impact owner/operator |
+| Support mailbox | SC Kela Leads SRL | Mircea Albulescu, USD Impact owner/operator | SC Kela Leads SRL authorized administrator | USD Impact owner/operator |
 | Privacy and account-rights email | SC Kela Leads SRL | USD Impact privacy operations | SC Kela Leads SRL authorized administrator | USD Impact owner/operator |
 | Waitlist and marketing email | SC Kela Leads SRL | USD Impact editorial operations | USD Impact owner/operator | USD Impact privacy operations |
 
 Operational requirements:
 
 - `support@usd-impact.com` is the public escalation address for launch-critical customer communication.
+- Inbound receipt and reply-as-support were technically verified on 20 August 2026.
+- The named backup individual and tested recovery/delegation path remain mandatory before public Library Pass activation.
 - Primary and backup access must use individually controlled credentials and supported recovery controls; shared passwords are not an acceptable ownership model.
 - Launch-critical support should be acknowledged within one business day during the launch window. A payment, access, privacy, security, or deletion incident should be triaged the same business day when received during monitored hours.
 - Unresolved provider acceptance, hard bounce, complaint, suppression, duplicate-event, entitlement, or privacy-state conflicts require manual escalation rather than silent success.
+- The detailed mailbox process, outage rule, recovery controls, and verification checklist are in `support-mailbox-runbook.md`.
 
 ## Message classification matrix
 
@@ -62,6 +71,8 @@ Retries are bounded. The attempt count includes the first delivery attempt.
 Rules:
 
 - Provider acceptance without durable correlation is ambiguous and requires reconciliation; it must not be reported as delivered or automatically resent after the provider idempotency window.
+- A signed lifecycle callback that arrives before `provider_message_ref` exists must be retained as retryable evidence and return a retryable failure. It must not be marked permanently ignored.
+- A replay after correlation must reuse the existing provider receipt, increment the attempt count, apply at most one monotonic transition, and clear the transient correlation error.
 - A delivered event is terminal.
 - A hard bounce, complaint, or provider suppression is terminal for marketing and nonessential operational delivery.
 - Required transactional or security mail that cannot be delivered moves to manual support escalation; marketing consent must not be used to decide whether required mail is attempted.
@@ -109,15 +120,25 @@ The machine-readable policy is validated during the standard Supabase/quality ga
 - retention defaults exceed the approved three-year email-evidence ceiling;
 - global unsubscribe is configured to suppress required transactional/security communication.
 
+The controlled Development evidence has additionally verified:
+
+- consent-bound waitlist and book-availability outbox contracts;
+- delivered, hard-bounced, complained, and suppressed provider states;
+- retry after callback/correlation ordering;
+- duplicate-event idempotency;
+- invalid-signature rejection;
+- temporary test-surface rollback.
+
 ## Remaining external gates
 
-This policy closes the internal ownership/classification and bounded retry/suppression/retention design gap. It does not close:
+This policy closes the internal ownership/classification design gap, the technical support-route uncertainty, and the controlled Development provider-lifecycle gate. It does not close:
 
-1. monitored receipt and reply-as-support evidence for `support@usd-impact.com`;
-2. final Production Supabase Auth sender, template, Site URL and `/auth/confirm/` redirect proof;
-3. real Development Resend callback, bounce/complaint/suppression and unsubscribe proof;
-4. Production migration and post-apply verification;
+1. named backup support operator, tested delegated access, and mailbox account-recovery drill;
+2. final Production Supabase Auth sender, template, Site URL, `/auth/confirm/` redirect, valid-link, expired/invalid-link, and neutral-response proof;
+3. real business-event enqueue for remaining purchase, access, refund, dispute, privacy, deletion, and support messages;
+4. Production migration, post-apply security verification, and rollback evidence;
 5. provider-specific purchase/refund/dispute responsibility mapping after #53 selects a provider;
-6. controlled Production delivery proof.
+6. controlled Production delivery and callback proof;
+7. the full Issue #54 integrated Library Pass rehearsal.
 
 Until those gates pass, Issue #130 remains `RELEASE BLOCKED` and public checkout remains disabled.

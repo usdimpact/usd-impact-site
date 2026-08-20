@@ -1,6 +1,11 @@
 name: Controlled Development email lifecycle probe
 
 on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
   push:
     branches:
       - automation/controlled-email-lifecycle-20260820
@@ -12,7 +17,9 @@ permissions:
 
 jobs:
   submit:
-    if: github.event.head_commit.message == 'Run controlled Development waitlist lifecycle probe'
+    if: >-
+      (github.event_name == 'push' && github.event.head_commit.message == 'Run controlled Development waitlist lifecycle probe') ||
+      (github.event_name == 'pull_request' && github.head_ref == 'automation/controlled-email-lifecycle-20260820')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

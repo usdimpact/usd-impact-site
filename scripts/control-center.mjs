@@ -67,6 +67,18 @@ function scoreIssue(issue) {
   return { priority, score, explicitlyBlocked };
 }
 
+function dailyGateFromIssue(issue) {
+  const text = `${issue.title || ''}\n${issue.body || ''}`;
+  const marker = text.match(/<!--\s*usd-impact-daily-failure-stage:\s*([a-z0-9-]+)\s*-->/i);
+  const visible = text.match(/Failure stage:\s*`?([a-z0-9-]+)`?/i);
+  return String(marker?.[1] ?? visible?.[1] ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64) || null;
+}
+
 async function latestWorkflow(repo, workflow, { branch = null, headSha = null } = {}) {
   const params = new URLSearchParams({ per_page: '20' });
   if (branch) params.set('branch', branch);
@@ -156,7 +168,8 @@ const openIssues = issuesRaw
       updated_at: issue.updated_at,
       priority: scored.priority,
       score: scored.score,
-      blocked: scored.explicitlyBlocked
+      blocked: scored.explicitlyBlocked,
+      daily_gate: dailyGateFromIssue(issue),
     };
   })
   .sort((a, b) => b.score - a.score || b.number - a.number);
@@ -172,11 +185,22 @@ const dailyDecision = evaluateDailyDispatch({
   quality,
   daily,
   dailyHealth,
-  dailyIssueBlocker,
+  dailyIssueBlocker: dailyIssueBlocker
+    ? { ...dailyIssueBlocker, gate: dailyIssueBlocker.daily_gate }
+    : null,
 });
 const dailyAllowed = dailyDecision.allowed;
 const staleDailyRecoveryPending = dailyDecision.dailyFailureStale
   && dailyDecision.dailyHealthFailureStale;
+const dailyFailureGate = dailyIssueBlocker?.daily_gate
+  ?? (isCompletedFailure(daily) || staleDailyRecoveryPending ? 'unclassified' : 'none');
+const dailyDegradation = dailyIssueBlocker
+  ? `gate ${dailyFailureGate} — #${dailyIssueBlocker.number} ${dailyIssueBlocker.title}`
+  : staleDailyRecoveryPending
+    ? `gate ${dailyFailureGate} — stale Daily and health failures await explicit recovery`
+    : isCompletedFailure(daily)
+      ? `gate ${dailyFailureGate} — latest Daily workflow failed`
+      : 'none';
 
 const qualityFailureUnscoped = isCompletedFailure(quality) && !quality.head_sha;
 const dailyHealthFailureUnscoped = isCompletedFailure(dailyHealth) && !dailyHealth.head_sha;
@@ -234,6 +258,8 @@ const state = {
     daily_recovery_eligible: dailyDecision.recoveryEligible,
     daily_blocker: dailyAllowed ? 'NONE' : dailyDecision.reason,
     daily_reason: dailyDecision.reason,
+    daily_failure_gate: dailyFailureGate,
+    daily_degradation: dailyDegradation,
     exact_current_head_quality_green: dailyDecision.currentQualityGreen,
     stale_daily_failure: dailyDecision.dailyFailureStale,
     stale_daily_health_failure: dailyDecision.dailyHealthFailureStale
@@ -247,7 +273,8 @@ const state = {
     'Vercel production readiness must be verified outside this GitHub-only state snapshot after release.',
     'Cloudflare Pages remains separate to the pipeline dashboard and is not a usd-impact-site deployment target.',
     'A project-wide P0 or pipeline failure does not automatically block public Daily News unless it affects website publishing or a critical website quality/health workflow.',
-    'An explicit /daily may perform one recovery dispatch only when both failed Daily signals belong to older commits and exact-current-head Web Quality is green.'
+    'An explicit /daily may perform one recovery dispatch only when both failed Daily signals belong to older commits and exact-current-head Web Quality is green.',
+    'Daily failure gates are read only from bounded issue markers and never from untrusted provider payloads.'
   ]
 };
 
@@ -268,6 +295,7 @@ const statusMd = [
   `**Main blocker:** ${mainBlocker}`,
   `**Next priority:** ${nextLine}`,
   `**Daily dispatch:** ${dailyLine}`,
+  `**Daily degradation:** ${dailyDegradation}`,
   '',
   '**Website workflow health:**',
   workflowLine('quality', quality),
@@ -305,7 +333,7 @@ if (process.env.GITHUB_OUTPUT) {
   const delimiter = `EOF_${Date.now()}`;
   fs.appendFileSync(
     process.env.GITHUB_OUTPUT,
-    `health=${health}\ndaily_allowed=${dailyAllowed}\ndaily_mode=${dailyDecision.mode}\ncommand=${command}\nresponse<<${delimiter}\n${responseMd}\n${delimiter}\n`,
+    `health=${health}\ndaily_allowed=${dailyAllowed}\ndaily_mode=${dailyDecision.mode}\ndaily_failure_gate=${dailyFailureGate}\ncommand=${command}\nresponse<<${delimiter}\n${responseMd}\n${delimiter}\n`,
   );
 }
 

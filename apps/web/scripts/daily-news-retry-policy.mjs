@@ -4,6 +4,10 @@ import { pathToFileURL } from 'node:url';
 const RETRYABLE_CODES = new Set([
   'insufficient-grounded-sources',
   'ungrounded-source',
+  'invalid-highlight-count',
+  'invalid-catalyst-window',
+  'invalid-catalyst-collection',
+  'repair-exhausted',
 ]);
 const RETRYABLE_RESULT = 'retryable-grounding-failure';
 const RETRYABLE_PATTERNS = [
@@ -14,6 +18,8 @@ const RETRYABLE_PATTERNS = [
   /not returned by OpenAI web search/i,
   /cited URLs were not present in the grounded web-search results/i,
   /bundle must contain 3-7 highlights/i,
+  /fewer than three highlights/i,
+  /more than seven highlights/i,
   /requires one primary source or two independent reporting domains/i,
   /dated after the edition/i,
   /stale daily-development source/i,
@@ -22,6 +28,12 @@ const RETRYABLE_PATTERNS = [
   /upcoming systemic catalyst mentioned but missing/i,
   /not referenced by any highlight or catalyst/i,
   /conversational assistant residue/i,
+  /catalyst.*next seven calendar days/i,
+  /catalyst.*outside.*seven-day/i,
+  /catalysts?.*must be an array/i,
+  /malformed catalyst array/i,
+  /bounded repair budget/i,
+  /after two bounded repair attempts/i,
 ];
 
 export function isRetryableGroundingFailure(payload) {

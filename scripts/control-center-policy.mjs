@@ -2,6 +2,11 @@ function normalized(value) {
   return String(value ?? '').trim().toLowerCase();
 }
 
+function boundedGate(value) {
+  const gate = normalized(value).replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+  return gate.slice(0, 64);
+}
+
 export function selectWorkflowRun(runs, { headSha = null } = {}) {
   if (!Array.isArray(runs)) return null;
   const candidates = runs.filter((run) => run && typeof run === 'object');
@@ -67,10 +72,11 @@ export function evaluateDailyDispatch({
     && dailyHealthFailureStale;
 
   if (dailyIssueBlocker) {
+    const gate = boundedGate(dailyIssueBlocker.gate);
     return Object.freeze({
       allowed: false,
       mode: 'blocked',
-      reason: `Open Daily publication blocker: #${dailyIssueBlocker.number} ${dailyIssueBlocker.title}`,
+      reason: `Open Daily publication blocker: #${dailyIssueBlocker.number} ${dailyIssueBlocker.title}${gate ? ` (gate: ${gate})` : ''}`,
       recoveryEligible: false,
       currentQualityGreen,
       dailyFailureStale,

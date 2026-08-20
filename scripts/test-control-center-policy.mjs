@@ -112,10 +112,30 @@ assert.equal(isRunUnknown({ status: 'in_progress', conclusion: null, head_sha: c
     dailyIssueBlocker: {
       number: 999,
       title: 'P1 — Daily publication blocked',
+      gate: 'site-validation-build',
     },
   });
   assert.equal(result.allowed, false);
   assert.match(result.reason, /#999/);
+  assert.match(result.reason, /gate: site-validation-build/);
+}
+
+{
+  const result = evaluateDailyDispatch({
+    command: 'daily',
+    websiteHeadSha: currentHead,
+    quality: run(),
+    daily: run({ conclusion: 'failure', headSha: oldHead }),
+    dailyHealth: run({ conclusion: 'failure', headSha: oldHead }),
+    dailyIssueBlocker: {
+      number: 1000,
+      title: 'P1 — Daily publication blocked',
+      gate: 'repair <secret>',
+    },
+  });
+  assert.equal(result.allowed, false);
+  assert.match(result.reason, /gate: repair-secret/);
+  assert.doesNotMatch(result.reason, /</);
 }
 
 {

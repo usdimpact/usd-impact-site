@@ -142,6 +142,30 @@ export function safeValidationDiagnostic(message) {
       reason: 'One or more source IDs are malformed. Use unique lowercase hyphenated IDs and reference them consistently.',
     };
   }
+  if (/3-7 highlights|fewer than three highlights|more than seven highlights|highlight count/i.test(text)) {
+    return {
+      code: 'invalid-highlight-count',
+      reason: 'The generated bundle must contain between three and seven complete highlights.',
+    };
+  }
+  if (/catalyst.*next seven calendar days|catalyst.*outside.*seven-day|catalyst.*before the edition|catalyst.*invalid date/i.test(text)) {
+    return {
+      code: 'invalid-catalyst-window',
+      reason: 'Every retained catalyst must use its confirmed date within the edition date through the next seven calendar days.',
+    };
+  }
+  if (/catalysts?.*must be an array|malformed catalyst array|invalid catalyst collection/i.test(text)) {
+    return {
+      code: 'invalid-catalyst-collection',
+      reason: 'Catalysts must be a valid array; use an empty array only when no qualifying upcoming event exists.',
+    };
+  }
+  if (/bounded repair budget|after two bounded repair attempts|repair.*still failed validation|repair exhausted/i.test(text)) {
+    return {
+      code: 'repair-exhausted',
+      reason: 'The bounded repair path did not produce a valid bundle; one bounded full regeneration may be attempted.',
+    };
+  }
   if (/not returned by OpenAI web search|grounded URL|grounded source/i.test(text)) {
     return {
       code: 'ungrounded-source',

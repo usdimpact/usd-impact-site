@@ -3,6 +3,10 @@ import { isRetryableGroundingFailure } from './daily-news-retry-policy.mjs';
 
 assert.equal(isRetryableGroundingFailure({ code: 'insufficient-grounded-sources' }), true);
 assert.equal(isRetryableGroundingFailure({ code: 'ungrounded-source' }), true);
+assert.equal(isRetryableGroundingFailure({ code: 'invalid-highlight-count' }), true);
+assert.equal(isRetryableGroundingFailure({ code: 'invalid-catalyst-window' }), true);
+assert.equal(isRetryableGroundingFailure({ code: 'invalid-catalyst-collection' }), true);
+assert.equal(isRetryableGroundingFailure({ code: 'repair-exhausted' }), true);
 assert.equal(isRetryableGroundingFailure({
   initialValidationReason: 'OpenAI web search returned fewer than two grounded source URLs',
   repairError: 'The completed response contained fewer than two grounded URLs.',
@@ -20,6 +24,12 @@ assert.equal(isRetryableGroundingFailure({
   initialValidationReason: 'The bundle must contain 3-7 highlights',
 }), true);
 assert.equal(isRetryableGroundingFailure({
+  initialValidationReason: 'The bundle contains fewer than three highlights',
+}), true);
+assert.equal(isRetryableGroundingFailure({
+  initialValidationReason: 'The bundle contains more than seven highlights',
+}), true);
+assert.equal(isRetryableGroundingFailure({
   repairValidationReason: 'Highlight 1 requires one primary source or two independent reporting domains',
 }), true);
 assert.equal(isRetryableGroundingFailure({
@@ -33,6 +43,15 @@ assert.equal(isRetryableGroundingFailure({
 }), true);
 assert.equal(isRetryableGroundingFailure({
   repairValidationReason: 'Upcoming systemic catalyst mentioned but missing from catalysts: labor',
+}), true);
+assert.equal(isRetryableGroundingFailure({
+  repairValidationReason: "Catalyst 1 must fall within the edition's next seven calendar days",
+}), true);
+assert.equal(isRetryableGroundingFailure({
+  repairValidationReason: 'Catalysts must be an array',
+}), true);
+assert.equal(isRetryableGroundingFailure({
+  error: 'Daily news source generation exhausted its bounded repair budget.',
 }), true);
 
 assert.equal(isRetryableGroundingFailure({

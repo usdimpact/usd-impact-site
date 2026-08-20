@@ -28,7 +28,30 @@ const CONSENT_EVIDENCE_CONTEXT_CONTRACT = Object.freeze({
   }),
 });
 
+const EMPTY_PAYLOAD_CONTRACT = Object.freeze({
+  type: 'object',
+  properties: Object.freeze({}),
+});
+
+function emptyNotificationContract(classification, options = {}) {
+  return Object.freeze({
+    classifications: Object.freeze([classification]),
+    payload: EMPTY_PAYLOAD_CONTRACT,
+    consentRequired: options.consentRequired === true,
+    consentPurpose: options.consentPurpose ?? null,
+  });
+}
+
 const NOTIFICATION_CONTRACTS = Object.freeze({
+  account_deletion_completed: emptyNotificationContract('transactional_operational'),
+  account_deletion_requested: emptyNotificationContract('transactional_operational'),
+  book_availability: emptyNotificationContract('marketing', {
+    consentRequired: true,
+    consentPurpose: 'book_availability',
+  }),
+  chargeback_revoked: emptyNotificationContract('transactional'),
+  dispute_reversal_restored: emptyNotificationContract('transactional'),
+  dispute_warning: emptyNotificationContract('transactional_operational'),
   market_update: Object.freeze({
     classifications: Object.freeze(['marketing']),
     payload: Object.freeze({
@@ -38,7 +61,13 @@ const NOTIFICATION_CONTRACTS = Object.freeze({
         editionId: Object.freeze({ type: 'string', maxLength: 128, pattern: IDENTIFIER_PATTERN }),
       }),
     }),
+    consentRequired: true,
+    consentPurpose: null,
   }),
+  privacy_export_acknowledgement: emptyNotificationContract('transactional_operational'),
+  purchase_access_ready: emptyNotificationContract('transactional'),
+  purchase_failed: emptyNotificationContract('transactional_operational'),
+  purchase_pending: emptyNotificationContract('transactional_operational'),
   purchase_receipt: Object.freeze({
     classifications: Object.freeze(['transactional']),
     payload: Object.freeze({
@@ -56,13 +85,14 @@ const NOTIFICATION_CONTRACTS = Object.freeze({
         }),
       }),
     }),
+    consentRequired: false,
+    consentPurpose: null,
   }),
-  waitlist_confirmation: Object.freeze({
-    classifications: Object.freeze(['operational']),
-    payload: Object.freeze({
-      type: 'object',
-      properties: Object.freeze({}),
-    }),
+  refund_approved: emptyNotificationContract('transactional'),
+  support_case_received: emptyNotificationContract('operational'),
+  waitlist_confirmation: emptyNotificationContract('operational', {
+    consentRequired: true,
+    consentPurpose: 'book_availability',
   }),
 });
 
@@ -380,7 +410,15 @@ export function buildNotificationOutboxRecord({
   if (!notificationContract.classifications.includes(classification)) {
     throw new TypeError('classification is not approved for templateId.');
   }
-  const consentRequired = classification === 'marketing' || consent != null;
+
+  const consentRequired = notificationContract.consentRequired === true;
+  if (consentRequired && consent == null) {
+    throw new TypeError('consent must be a plain object for this notification contract.');
+  }
+  if (!consentRequired && consent != null) {
+    throw new TypeError('Consent is not approved for this required notification contract.');
+  }
+
   let normalizedConsent = null;
   if (consentRequired) {
     requirePlainObject(consent, 'consent');
@@ -396,7 +434,14 @@ export function buildNotificationOutboxRecord({
       purpose: requireIdentifier(consent.purpose, 'consent.purpose', 80),
       checkedAt: requireTimestamp(consentCheckedAt, 'consentCheckedAt'),
     };
+    if (
+      notificationContract.consentPurpose
+      && normalizedConsent.purpose !== notificationContract.consentPurpose
+    ) {
+      throw new TypeError('The consent purpose is not approved for templateId.');
+    }
   }
+
   const normalizedPayload = requireContractObject(
     payload,
     'payload',

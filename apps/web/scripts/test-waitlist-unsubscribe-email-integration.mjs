@@ -30,6 +30,7 @@ const originalEnvironment = Object.fromEntries(
 const email = 'reader@example.com';
 const submissionId = '123e4567-e89b-42d3-a456-426614174000';
 const capturedAt = '2026-08-20T12:00:00.000Z';
+const consentId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const unsubscribeSecret = `wus_${Buffer.from('0123456789abcdef0123456789abcdef').toString('base64url')}`;
 const previewHost = 'usd-impact-site-email-qa-usd-impact.vercel.app';
 
@@ -110,17 +111,29 @@ function queueFetch(responses) {
 }
 
 function recordsFor(id) {
-  return createWaitlistReadinessRecords({
+  const base = createWaitlistReadinessRecords({
     email,
     submissionId: id,
     capturedAt,
   });
+  const ready = createWaitlistReadinessRecords({
+    email,
+    submissionId: id,
+    capturedAt,
+    consent: {
+      id: consentId,
+      status: 'granted',
+      purpose: WAITLIST_CONSENT_PURPOSE,
+      emailNormalized: email,
+    },
+  });
+  return { base, ready };
 }
 
 function consentRow(records) {
   return {
-    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    idempotency_key: records.consentRecord.idempotency_key,
+    id: consentId,
+    idempotency_key: records.base.consentRecord.idempotency_key,
     email_normalized: email,
     purpose: WAITLIST_CONSENT_PURPOSE,
     status: 'granted',
@@ -131,9 +144,13 @@ function consentRow(records) {
 function outboxRow(records, overrides = {}) {
   return {
     id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-    idempotency_key: records.outboxRecord.idempotency_key,
+    idempotency_key: records.ready.outboxRecord.idempotency_key,
     message_id: 'waitlist_confirmation',
     recipient_email_normalized: email,
+    consent_required: true,
+    consent_record_id: consentId,
+    consent_purpose: WAITLIST_CONSENT_PURPOSE,
+    consent_checked_at: capturedAt,
     status: 'queued',
     attempt_count: 0,
     next_attempt_at: capturedAt,
@@ -175,6 +192,10 @@ try {
     assert.equal(result.status, 200);
     assert.deepEqual(result.json, { ok: true });
     assert.equal(flow.calls.length, 6);
+    assert.equal(flow.calls[1].body.consent_required, true);
+    assert.equal(flow.calls[1].body.consent_record_id, consentId);
+    assert.equal(flow.calls[1].body.consent_purpose, WAITLIST_CONSENT_PURPOSE);
+    assert.ok(Number.isFinite(Date.parse(flow.calls[1].body.consent_checked_at)));
 
     const sendCall = flow.calls[4];
     assert.equal(sendCall.url, 'https://api.resend.com/emails');
@@ -194,7 +215,7 @@ try {
     assert.match(token, /^u1\.[0-9a-f]{64}\.[A-Za-z0-9_-]{43}$/);
     assert.equal(
       verifyWaitlistUnsubscribeToken({ token, secret: unsubscribeSecret }).consentIdempotencyKey,
-      records.consentRecord.idempotency_key,
+      records.base.consentRecord.idempotency_key,
     );
     assert.ok(sendCall.body.text.includes(unsubscribeUrl));
     assert.match(sendCall.body.html, /unsubscribe from book availability emails/i);

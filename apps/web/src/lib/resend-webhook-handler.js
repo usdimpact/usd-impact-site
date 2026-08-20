@@ -184,7 +184,12 @@ async function applyDeliveryEvent({ config, verified, fetchImpl }) {
   }
 
   const matches = await readOutboxMatch(config, verified.event.emailId, fetchImpl);
-  if (matches.length === 0) return Object.freeze({ outcome: 'ignored', reason: 'outbox-not-found' });
+  if (matches.length === 0) {
+    throw new WebhookProcessingError(
+      'Resend outbox correlation is not ready.',
+      'OUTBOX_CORRELATION_PENDING',
+    );
+  }
   if (matches.length > 1) {
     throw new WebhookProcessingError('Resend email identifier matches multiple outbox rows.', 'AMBIGUOUS_OUTBOX_MATCH');
   }
@@ -295,10 +300,23 @@ export async function handleResendWebhook(request, response, options = {}) {
         console.error('Resend webhook receipt failure state could not be recorded.');
       }
     }
-    const status = error?.code === 'WEBHOOK_RECEIPT_CONFLICT' ? 409 : 500;
-    return sendJson(response, status, {
-      error: status === 409 ? 'Webhook conflict.' : 'Webhook processing failed.',
-      code: error?.code || 'WEBHOOK_PROCESSING_FAILED',
-    });
+    const status = error?.code === 'WEBHOOK_RECEIPT_CONFLICT'
+      ? 409
+      : error?.code === 'OUTBOX_CORRELATION_PENDING'
+        ? 503
+        : 500;
+    return sendJson(
+      response,
+      status,
+      {
+        error: status === 409
+          ? 'Webhook conflict.'
+          : status === 503
+            ? 'Webhook processing deferred.'
+            : 'Webhook processing failed.',
+        code: error?.code || 'WEBHOOK_PROCESSING_FAILED',
+      },
+      status === 503 ? { 'Retry-After': '5' } : {},
+    );
   }
 }

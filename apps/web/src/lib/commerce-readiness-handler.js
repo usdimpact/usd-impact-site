@@ -3,6 +3,10 @@ import {
   publicCommerceReadiness,
   resolveCommerceReadiness,
 } from './commerce-provider.js';
+import {
+  controlledLifecycleProofRequested,
+  handleControlledLifecycleEmailProof,
+} from './controlled-lifecycle-email-proof.js';
 
 function sendJson(response, body, status = 200, extraHeaders = {}) {
   response.statusCode = status;
@@ -27,6 +31,10 @@ export async function handleCommerceReadinessRequest(
       error: 'Method not allowed.',
       code: 'METHOD_NOT_ALLOWED',
     }, 405, { Allow: 'GET' });
+  }
+
+  if (controlledLifecycleProofRequested(request)) {
+    return handleControlledLifecycleEmailProof(request, response);
   }
 
   try {

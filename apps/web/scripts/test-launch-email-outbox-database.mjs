@@ -65,6 +65,7 @@ async function insertOutbox({
   payload = {},
 }) {
   const consentRequired = consentId !== null;
+  const consentCheckedAt = consentRequired ? now : null;
   return asRole('service_role', () => database.query(`
     insert into public.notification_outbox (
       idempotency_key,
@@ -86,7 +87,7 @@ async function insertOutbox({
       next_attempt_at
     ) values (
       $1, $2, $3, $4, 'library_pass_event', $5, 1, $6, $3,
-      '2026-08-20.v1', 'resend', $7, $8, $9, $10, $11::jsonb, $10
+      '2026-08-20.v1', 'resend', $7, $8, $9, $10, $11::jsonb, $12
     )
     returning template_id, classification, consent_required, consent_record_id,
       consent_purpose, payload;
@@ -100,8 +101,9 @@ async function insertOutbox({
     consentRequired,
     consentId,
     consentPurpose,
-    now,
+    consentCheckedAt,
     JSON.stringify(payload),
+    now,
   ]));
 }
 

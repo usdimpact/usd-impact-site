@@ -18,6 +18,7 @@ import {
   sendPasswordlessEmail,
   setSessionCookies,
 } from '../src/lib/supabase-auth.js';
+import { enqueueAccountDeletionRequestedEmail } from '../src/lib/account-deletion-email.js';
 import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-handler.js';
 import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js';
 
@@ -78,6 +79,19 @@ function logConfirmationFailure(error) {
     code: typeof error?.code === 'string' ? error.code : null,
     message: error instanceof Error ? error.message : 'Unknown confirmation error.',
   });
+}
+
+async function recordAccountDeletionEmailIntent(result) {
+  try {
+    return await enqueueAccountDeletionRequestedEmail({ deletionResult: result });
+  } catch (error) {
+    console.error('Account deletion email intent could not be recorded.', {
+      code: typeof error?.code === 'string'
+        ? error.code
+        : 'ACCOUNT_DELETION_EMAIL_INTENT_FAILED',
+    });
+    return null;
+  }
 }
 
 async function handleLogin(request, response) {
@@ -238,6 +252,7 @@ async function handleDelete(request, response) {
 
   try {
     const result = await requestOwnAccountDeletion({ accessToken });
+    await recordAccountDeletionEmailIntent(result);
     return sendJson(response, 202, {
       ok: true,
       status: result.profile?.status ?? 'deletion_pending',

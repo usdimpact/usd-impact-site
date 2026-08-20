@@ -18,6 +18,7 @@ import {
   sendPasswordlessEmail,
   setSessionCookies,
 } from '../src/lib/supabase-auth.js';
+import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-handler.js';
 import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js';
 
 function header(request, name) {
@@ -257,6 +258,7 @@ const handlers = Object.freeze({
   access: handleAccess,
   export: handleExport,
   delete: handleDelete,
+  'commerce-readiness': handleCommerceReadinessRequest,
   'video-progress': handleVideoProgressRequest,
 });
 

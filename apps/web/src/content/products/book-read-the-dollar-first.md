@@ -6,7 +6,7 @@ slug: "/book/read-the-dollar-first"
 category: "Book"
 status: "published"
 readingLevel: "Beginner to intermediate"
-lastReviewed: "2026-08-13"
+lastReviewed: "2026-08-20"
 complianceNote: "Educational only. Not investment, legal, tax, trading, or financial advice. Not a recommendation, forecast, or trading signal."
 sources:
   - "Session 14B Website Product Page & Lead Magnet System"
@@ -40,7 +40,7 @@ The Guided Interactive Edition combines the *Read the Dollar First* learning seq
 - **Launch price: USD 39.00.** The launch offer is limited to the approved launch window and the first 100 completed purchases, whichever limit is reached first.
 - **Standard price: USD 49.00.** Applies after the launch offer ends.
 
-Taxes and any supported currency conversion are calculated and displayed by the authorized payment provider during checkout. The purchase is one-time, not a subscription. Public checkout remains unavailable until payment-provider review and protected delivery verification are complete.
+Taxes and any supported currency conversion will be calculated and displayed by the approved payment provider during checkout. The purchase is one-time, not a subscription. Public checkout remains unavailable while a replacement provider is selected, integrated, tested, and approved for Live use.
 
 Purchases are covered by the [14-day Refund Policy](/refund-policy/). Use of the product is also subject to the [Terms & Conditions](/terms/) and [Privacy Notice](/privacy/).
 
@@ -70,4 +70,4 @@ This is not a signal service, portfolio recommendation, forecast product or trad
 
 ## Availability and delivery
 
-The Guided Interactive Edition will open only after payment-provider review and protected delivery verification are complete. After the authorized payment provider confirms a completed payment, access is attached to the verified USD Impact account used for the purchase. The provider will be identified before payment details are entered. If access does not appear, contact [support@usd-impact.com](mailto:support@usd-impact.com).
+The Guided Interactive Edition will open only after a replacement payment provider is selected, integrated, and verified together with protected delivery. After the approved provider confirms a completed payment through a verified commercial event, access is attached to the verified USD Impact account used for the purchase. The provider will be identified before payment details are entered. If access does not appear, contact [support@usd-impact.com](mailto:support@usd-impact.com).

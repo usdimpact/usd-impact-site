@@ -3,16 +3,30 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout
-  title="Checkout unavailable | USD Impact"
-  description="USD Impact checkout is closed while payment-provider review and release verification are completed."
+  title="Secure checkout readiness | USD Impact"
+  description="USD Impact is ready to connect an approved payment provider while public checkout remains safely disabled."
 >
   <main class="account-main">
     <section class="account-panel" aria-labelledby="checkout-title">
       <p class="eyebrow">USD IMPACT CHECKOUT</p>
       <h1 id="checkout-title">Checkout is not open yet.</h1>
       <p>
-        We are completing payment-provider review and protected delivery verification before enabling purchases.
-        No payment can be made on this page, and no access is granted from a browser redirect alone.
+        The secure account, purchase-intent, verified-webhook, and entitlement foundation is ready to connect
+        an approved payment provider. Public payment remains disabled until a replacement provider is selected,
+        integrated, tested, and explicitly approved for Live use.
+      </p>
+      <dl class="account-details" aria-label="Commerce readiness">
+        <div>
+          <dt>Commerce foundation</dt>
+          <dd id="commerce-state">Checking…</dd>
+        </div>
+        <div>
+          <dt>Public checkout</dt>
+          <dd id="checkout-state">Disabled</dd>
+        </div>
+      </dl>
+      <p id="commerce-message" class="account-status" role="status" aria-live="polite">
+        No payment can be made on this page. A browser redirect alone never grants access.
       </p>
       <div class="button-row account-actions">
         <a class="button primary" href="/book/read-the-dollar-first/#book-waitlist">Join the launch waitlist</a>
@@ -20,4 +34,46 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </div>
     </section>
   </main>
+
+  <script is:inline>
+    const stateElement = document.getElementById('commerce-state');
+    const checkoutElement = document.getElementById('checkout-state');
+    const messageElement = document.getElementById('commerce-message');
+
+    const stateLabels = {
+      ready_for_provider_configuration: 'Ready for provider configuration',
+      ready_for_sandbox: 'Ready for sandbox verification',
+      ready_for_controlled_live_test: 'Ready for a controlled Live test',
+      active: 'Active',
+      blocked: 'Blocked',
+    };
+
+    fetch('/api/commerce-readiness', {
+      method: 'GET',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || !body.commerce) throw new Error('Commerce readiness could not be verified.');
+        const commerce = body.commerce;
+        if (stateElement) stateElement.textContent = stateLabels[commerce.state] || 'Unavailable';
+        if (checkoutElement) checkoutElement.textContent = commerce.checkoutEnabled ? 'Enabled' : 'Disabled';
+        if (messageElement) {
+          messageElement.textContent = commerce.message || 'Public checkout remains disabled.';
+          messageElement.dataset.state = commerce.state === 'blocked' ? 'error' : 'success';
+        }
+      })
+      .catch((error) => {
+        if (stateElement) stateElement.textContent = 'Verification unavailable';
+        if (checkoutElement) checkoutElement.textContent = 'Disabled';
+        if (messageElement) {
+          messageElement.textContent = error instanceof Error
+            ? `${error.message} Public checkout remains disabled.`
+            : 'Commerce readiness could not be verified. Public checkout remains disabled.';
+          messageElement.dataset.state = 'error';
+        }
+      });
+  </script>
 </BaseLayout>

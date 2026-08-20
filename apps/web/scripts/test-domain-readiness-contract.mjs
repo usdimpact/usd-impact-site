@@ -26,12 +26,28 @@ requireText(files.product, 'Product page', [
   'first 100 completed purchases',
   'one-time',
   'ongoing access',
+  'replacement provider is selected, integrated, tested, and approved for Live use',
+  'verified commercial event',
 ]);
 requireText(files.terms, 'Terms', ['SC Kela Leads SRL', '40790448', 'J38/820/2020', 'support@usd-impact.com']);
 requireText(files.terms, 'Terms', ['authorized payment provider', 'identified during checkout']);
 requireText(files.refund, 'Refund Policy', ['14 calendar days', 'full refund', 'support@usd-impact.com', 'payment provider']);
 requireText(files.privacy, 'Privacy Notice', ['authorized payment provider', 'Supabase', 'SC Kela Leads SRL', 'support@usd-impact.com']);
-requireText(files.checkout, 'Checkout page', ['Checkout is not open yet.', 'payment-provider review', 'No payment can be made on this page']);
+requireText(files.checkout, 'Checkout page', [
+  'Checkout is not open yet.',
+  'ready to connect',
+  'Public payment remains disabled',
+  'No payment can be made on this page',
+  '/api/commerce-readiness',
+  'browser redirect alone never grants access',
+]);
+
+if (files.product.includes('payment-provider review')) {
+  failures.push('Product page still treats provider review as the active checkout gate.');
+}
+if (files.checkout.includes('payment-provider review')) {
+  failures.push('Checkout page still treats provider review as the active checkout gate.');
+}
 
 const customerFacingFiles = ['product', 'privacy', 'terms', 'refund', 'account', 'checkout'];
 const commerceProviderNames = ['Paddle', 'FastSpring'];

@@ -2,6 +2,13 @@ function normalized(value) {
   return String(value ?? '').trim().toLowerCase();
 }
 
+export function selectWorkflowRun(runs, { headSha = null } = {}) {
+  if (!Array.isArray(runs)) return null;
+  const candidates = runs.filter((run) => run && typeof run === 'object');
+  if (!headSha) return candidates[0] || null;
+  return candidates.find((run) => run.head_sha === headSha) || null;
+}
+
 export function isRunUnknown(run) {
   if (!run || typeof run !== 'object') return true;
   const status = normalized(run.status);

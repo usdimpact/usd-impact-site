@@ -5,6 +5,7 @@ import {
   isCompletedFailure,
   isFailureOnCurrentHead,
   isRunUnknown,
+  selectWorkflowRun,
 } from './control-center-policy.mjs';
 
 const token = process.env.GITHUB_TOKEN || '';
@@ -66,10 +67,24 @@ function scoreIssue(issue) {
   return { priority, score, explicitlyBlocked };
 }
 
-async function latestWorkflow(repo, workflow) {
-  const data = await gh(`https://api.github.com/repos/${repo}/actions/workflows/${encodeURIComponent(workflow)}/runs?per_page=1`);
-  const run = data.workflow_runs?.[0];
-  if (!run) return { status: 'UNKNOWN', conclusion: 'UNKNOWN', url: null, created_at: null, head_sha: null };
+async function latestWorkflow(repo, workflow, { branch = null, headSha = null } = {}) {
+  const params = new URLSearchParams({ per_page: '20' });
+  if (branch) params.set('branch', branch);
+  const data = await gh(
+    `https://api.github.com/repos/${repo}/actions/workflows/${encodeURIComponent(workflow)}/runs?${params}`,
+  );
+  // Branch filtering prevents automation and feature runs from shadowing the
+  // default-branch state. An exact-head request never falls back to another SHA.
+  const run = selectWorkflowRun(data.workflow_runs, { headSha });
+  if (!run) {
+    return {
+      status: 'UNKNOWN',
+      conclusion: 'UNKNOWN',
+      url: null,
+      created_at: null,
+      head_sha: headSha || null,
+    };
+  }
   return {
     status: run.status || 'UNKNOWN',
     conclusion: run.conclusion || 'UNKNOWN',
@@ -90,11 +105,14 @@ const websiteRepo = 'usdimpact/usd-impact-site';
 const pipelineRepo = 'usdimpact/usd-impact-pipeline';
 const commentaryRepo = 'usdimpact/usd-impact';
 
+const [websiteHead, pipelineHead, commentaryHead, issuesRaw] = await Promise.all([
+  repoHead(websiteRepo),
+  repoHead(pipelineRepo),
+  repoHead(commentaryRepo),
+  gh(`https://api.github.com/repos/${websiteRepo}/issues?state=open&per_page=100&sort=updated&direction=desc`),
+]);
+
 const [
-  websiteHead,
-  pipelineHead,
-  commentaryHead,
-  issuesRaw,
   quality,
   daily,
   dailyHealth,
@@ -103,17 +121,28 @@ const [
   pipelineWeekly,
   pipelineWeeklyHealth
 ] = await Promise.all([
-  repoHead(websiteRepo),
-  repoHead(pipelineRepo),
-  repoHead(commentaryRepo),
-  gh(`https://api.github.com/repos/${websiteRepo}/issues?state=open&per_page=100&sort=updated&direction=desc`),
-  latestWorkflow(websiteRepo, 'quality.yml'),
-  latestWorkflow(websiteRepo, 'daily-news.yml'),
-  latestWorkflow(websiteRepo, 'daily-news-health.yml'),
-  latestWorkflow(websiteRepo, 'catalyst-brief.yml'),
-  latestWorkflow(pipelineRepo, 'quality.yml'),
-  latestWorkflow(pipelineRepo, 'weekly.yml'),
-  latestWorkflow(pipelineRepo, 'weekly-health.yml')
+  latestWorkflow(websiteRepo, 'quality.yml', {
+    branch: websiteHead.default_branch,
+    headSha: websiteHead.head_sha,
+  }),
+  latestWorkflow(websiteRepo, 'daily-news.yml', {
+    branch: websiteHead.default_branch,
+  }),
+  latestWorkflow(websiteRepo, 'daily-news-health.yml', {
+    branch: websiteHead.default_branch,
+  }),
+  latestWorkflow(websiteRepo, 'catalyst-brief.yml', {
+    branch: websiteHead.default_branch,
+  }),
+  latestWorkflow(pipelineRepo, 'quality.yml', {
+    branch: pipelineHead.default_branch,
+  }),
+  latestWorkflow(pipelineRepo, 'weekly.yml', {
+    branch: pipelineHead.default_branch,
+  }),
+  latestWorkflow(pipelineRepo, 'weekly-health.yml', {
+    branch: pipelineHead.default_branch,
+  }),
 ]);
 
 const openIssues = issuesRaw

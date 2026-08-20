@@ -20,7 +20,19 @@ const submissionId = '123e4567-e89b-42d3-a456-426614174000';
 const capturedAt = '2026-08-20T12:00:00.000Z';
 const deliveredAt = '2026-08-20T12:01:00.000Z';
 const providerMessageRef = '56761188-7520-42d8-8898-ff6fc54ce618';
-const records = createWaitlistReadinessRecords({ email, submissionId, capturedAt });
+const consentId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const baseRecords = createWaitlistReadinessRecords({ email, submissionId, capturedAt });
+const records = createWaitlistReadinessRecords({
+  email,
+  submissionId,
+  capturedAt,
+  consent: {
+    id: consentId,
+    status: 'granted',
+    purpose: WAITLIST_CONSENT_PURPOSE,
+    emailNormalized: email,
+  },
+});
 const environment = {
   SUPABASE_URL: `https://${WAITLIST_DEVELOPMENT_PROJECT_REF}.supabase.co`,
   SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_12345678901234567890',
@@ -52,7 +64,7 @@ function consentRow(overrides = {}) {
     consent_text_version: WAITLIST_CONSENT_TEXT_VERSION,
     privacy_notice_version: WAITLIST_PRIVACY_NOTICE_VERSION,
     source: 'waitlist_form',
-    source_event_id: records.consentRecord.source_event_id,
+    source_event_id: baseRecords.consentRecord.source_event_id,
     captured_at: capturedAt,
     withdrawn_at: null,
     withdrawal_source: null,
@@ -62,9 +74,9 @@ function consentRow(overrides = {}) {
     },
   };
   return {
-    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    idempotency_key: records.consentRecord.idempotency_key,
-    source_event_id: records.consentRecord.source_event_id,
+    id: consentId,
+    idempotency_key: baseRecords.consentRecord.idempotency_key,
+    source_event_id: baseRecords.consentRecord.source_event_id,
     email_normalized: email,
     purpose: WAITLIST_CONSENT_PURPOSE,
     status: 'granted',
@@ -93,10 +105,10 @@ function outboxRow(overrides = {}) {
     template_id: 'waitlist_confirmation',
     template_version: WAITLIST_CONFIRMATION_TEMPLATE_VERSION,
     provider: 'resend',
-    consent_required: false,
-    consent_record_id: null,
-    consent_purpose: null,
-    consent_checked_at: null,
+    consent_required: true,
+    consent_record_id: consentId,
+    consent_purpose: WAITLIST_CONSENT_PURPOSE,
+    consent_checked_at: capturedAt,
     payload: {},
     status: 'delivered',
     attempt_count: 1,
@@ -164,6 +176,8 @@ async function expectVerifierError(operation, expectedCode) {
   assert.match(result.delivery.providerReferenceFingerprint, /^[0-9a-f]{16}$/);
   assert.equal(JSON.stringify(result).includes(providerMessageRef), false);
   assert.equal(calls.length, 2);
+  assert.match(calls[0].url, /marketing_consent_events/);
+  assert.match(calls[1].url, /notification_outbox/);
   for (const call of calls) {
     assert.equal(call.method, 'GET');
     assert.equal(call.body, undefined);
@@ -211,28 +225,18 @@ async function expectVerifierError(operation, expectedCode) {
 {
   const { fetchImpl } = verifierFetch([consentRow(), consentRow()], [outboxRow()]);
   await expectVerifierError(
-    () => verifyWaitlistDevelopmentLifecycle({
-      email,
-      submissionId,
-      environment,
-      fetchImpl,
-    }),
+    () => verifyWaitlistDevelopmentLifecycle({ email, submissionId, environment, fetchImpl }),
     'DUPLICATE_CONSENT_EVIDENCE',
   );
 }
 
 {
   const { fetchImpl } = verifierFetch(
-    [consentRow({ provider_message_ref: null })],
+    [consentRow()],
     [outboxRow({ provider_message_ref: null })],
   );
   await expectVerifierError(
-    () => verifyWaitlistDevelopmentLifecycle({
-      email,
-      submissionId,
-      environment,
-      fetchImpl,
-    }),
+    () => verifyWaitlistDevelopmentLifecycle({ email, submissionId, environment, fetchImpl }),
     'PROVIDER_CORRELATION_MISSING',
   );
 }
@@ -243,13 +247,21 @@ async function expectVerifierError(operation, expectedCode) {
     [outboxRow({ status: 'retry_scheduled', delivered_at: null })],
   );
   await expectVerifierError(
-    () => verifyWaitlistDevelopmentLifecycle({
-      email,
-      submissionId,
-      environment,
-      fetchImpl,
-    }),
+    () => verifyWaitlistDevelopmentLifecycle({ email, submissionId, environment, fetchImpl }),
     'OUTBOX_STATE_NOT_VERIFIED',
+  );
+}
+
+for (const invalidOutbox of [
+  { consent_required: false, consent_record_id: null, consent_purpose: null, consent_checked_at: null },
+  { consent_record_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc' },
+  { consent_purpose: 'different_purpose' },
+  { consent_checked_at: '2026-08-20T13:00:00.000Z' },
+]) {
+  const { fetchImpl } = verifierFetch([consentRow()], [outboxRow(invalidOutbox)]);
+  await expectVerifierError(
+    () => verifyWaitlistDevelopmentLifecycle({ email, submissionId, environment, fetchImpl }),
+    'OUTBOX_EVIDENCE_MISMATCH',
   );
 }
 
@@ -259,12 +271,7 @@ async function expectVerifierError(operation, expectedCode) {
     [outboxRow()],
   );
   await expectVerifierError(
-    () => verifyWaitlistDevelopmentLifecycle({
-      email,
-      submissionId,
-      environment,
-      fetchImpl,
-    }),
+    () => verifyWaitlistDevelopmentLifecycle({ email, submissionId, environment, fetchImpl }),
     'CONSENT_EVIDENCE_MISMATCH',
   );
 }
@@ -275,12 +282,7 @@ async function expectVerifierError(operation, expectedCode) {
     [outboxRow()],
   );
   await expectVerifierError(
-    () => verifyWaitlistDevelopmentLifecycle({
-      email,
-      submissionId,
-      environment,
-      fetchImpl,
-    }),
+    () => verifyWaitlistDevelopmentLifecycle({ email, submissionId, environment, fetchImpl }),
     'CONSENT_EVIDENCE_MISMATCH',
   );
 }

@@ -26,7 +26,20 @@ const originalEnvironment = Object.fromEntries(
 const email = 'reader@example.com';
 const submissionId = '123e4567-e89b-42d3-a456-426614174000';
 const capturedAt = '2026-08-20T12:00:00.000Z';
-const records = createWaitlistReadinessRecords({ email, submissionId, capturedAt });
+const consentId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const baseRecords = createWaitlistReadinessRecords({ email, submissionId, capturedAt });
+const consentReference = Object.freeze({
+  id: consentId,
+  status: 'granted',
+  purpose: WAITLIST_CONSENT_PURPOSE,
+  emailNormalized: email,
+});
+const records = createWaitlistReadinessRecords({
+  email,
+  submissionId,
+  capturedAt,
+  consent: consentReference,
+});
 
 function configureDevelopment() {
   process.env.RESEND_API_KEY = 're_test';
@@ -99,14 +112,15 @@ function queueFetch(responses) {
   return { calls, fetchImpl };
 }
 
-function consentRow() {
+function consentRow(overrides = {}) {
   return {
-    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    idempotency_key: records.consentRecord.idempotency_key,
+    id: consentId,
+    idempotency_key: baseRecords.consentRecord.idempotency_key,
     email_normalized: email,
     purpose: WAITLIST_CONSENT_PURPOSE,
     status: 'granted',
     captured_at: capturedAt,
+    ...overrides,
   };
 }
 
@@ -116,6 +130,10 @@ function outboxRow(overrides = {}) {
     idempotency_key: records.outboxRecord.idempotency_key,
     message_id: 'waitlist_confirmation',
     recipient_email_normalized: email,
+    consent_required: true,
+    consent_record_id: consentId,
+    consent_purpose: WAITLIST_CONSENT_PURPOSE,
+    consent_checked_at: capturedAt,
     status: 'queued',
     attempt_count: 0,
     next_attempt_at: capturedAt,
@@ -160,6 +178,10 @@ try {
     assert.equal(queued.calls[0].body.status, 'granted');
     assert.match(queued.calls[1].url, /notification_outbox\?on_conflict=/);
     assert.equal(queued.calls[1].body.status, undefined);
+    assert.equal(queued.calls[1].body.consent_required, true);
+    assert.equal(queued.calls[1].body.consent_record_id, consentId);
+    assert.equal(queued.calls[1].body.consent_purpose, WAITLIST_CONSENT_PURPOSE);
+    assert.ok(Number.isFinite(Date.parse(queued.calls[1].body.consent_checked_at)));
     assert.equal(queued.calls[2].url, 'https://api.resend.com/contacts');
     assert.equal(queued.calls[3].body.status, 'sending');
     assert.equal(queued.calls[4].url, 'https://api.resend.com/emails');
@@ -232,15 +254,21 @@ try {
 
   {
     const retrySubmissionId = '223e4567-e89b-42d3-a456-426614174000';
-    const retryRecords = createWaitlistReadinessRecords({
+    const retryBaseRecords = createWaitlistReadinessRecords({
       email,
       submissionId: retrySubmissionId,
       capturedAt,
     });
+    const retryRecords = createWaitlistReadinessRecords({
+      email,
+      submissionId: retrySubmissionId,
+      capturedAt,
+      consent: consentReference,
+    });
     const failed = queueFetch([
       jsonResponse([{
         ...consentRow(),
-        idempotency_key: retryRecords.consentRecord.idempotency_key,
+        idempotency_key: retryBaseRecords.consentRecord.idempotency_key,
       }], 201),
       jsonResponse([{
         ...outboxRow(),

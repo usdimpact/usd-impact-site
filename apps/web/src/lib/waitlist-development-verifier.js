@@ -26,6 +26,7 @@ const CONSENT_EVIDENCE_KEYS = Object.freeze([
   'withdrawn_at',
 ]);
 const CONSENT_CONTEXT_KEYS = Object.freeze(['consentCheckbox', 'formVersion']);
+const CLOCK_SKEW_MS = 5 * 60 * 1000;
 
 export class WaitlistDevelopmentVerificationError extends Error {
   constructor(message, code = 'WAITLIST_DEVELOPMENT_VERIFICATION_FAILED') {
@@ -172,7 +173,8 @@ function assertConsentEvidence(row, expected) {
   const computedChecksum = evidence && typeof evidence === 'object'
     ? sha256(JSON.stringify(canonicalize(evidence)))
     : '';
-  const matches = row?.idempotency_key === expected.idempotency_key
+  const matches = UUID_PATTERN.test(String(row?.id || ''))
+    && row?.idempotency_key === expected.idempotency_key
     && row?.source_event_id === expected.source_event_id
     && row?.email_normalized === expected.email_normalized
     && row?.purpose === WAITLIST_CONSENT_PURPOSE
@@ -206,7 +208,16 @@ function assertConsentEvidence(row, expected) {
   }
 }
 
-function assertOutboxEvidence(row, expected, expectedState) {
+function assertOutboxEvidence(row, expected, consent, expectedState) {
+  const checkedAtMs = Date.parse(String(row?.consent_checked_at || ''));
+  const consentCapturedAtMs = Date.parse(String(consent?.captured_at || ''));
+  const outboxCreatedAtMs = Date.parse(String(row?.created_at || ''));
+  const consentTimingMatches = Number.isFinite(checkedAtMs)
+    && Number.isFinite(consentCapturedAtMs)
+    && Number.isFinite(outboxCreatedAtMs)
+    && checkedAtMs >= consentCapturedAtMs
+    && Math.abs(checkedAtMs - outboxCreatedAtMs) <= CLOCK_SKEW_MS;
+
   const identityMatches = row?.idempotency_key === expected.idempotency_key
     && row?.event_id === expected.event_id
     && row?.message_id === 'waitlist_confirmation'
@@ -218,10 +229,10 @@ function assertOutboxEvidence(row, expected, expectedState) {
     && row?.template_id === 'waitlist_confirmation'
     && row?.template_version === WAITLIST_CONFIRMATION_TEMPLATE_VERSION
     && row?.provider === 'resend'
-    && row?.consent_required === false
-    && row?.consent_record_id === null
-    && row?.consent_purpose === null
-    && row?.consent_checked_at === null
+    && row?.consent_required === true
+    && row?.consent_record_id === consent?.id
+    && row?.consent_purpose === WAITLIST_CONSENT_PURPOSE
+    && consentTimingMatches
     && row?.payload
     && typeof row.payload === 'object'
     && !Array.isArray(row.payload)
@@ -231,7 +242,7 @@ function assertOutboxEvidence(row, expected, expectedState) {
 
   if (!identityMatches) {
     throw new WaitlistDevelopmentVerificationError(
-      'Notification outbox evidence does not match the reviewed waitlist contract.',
+      'Notification outbox evidence does not match the reviewed consent-bound waitlist contract.',
       'OUTBOX_EVIDENCE_MISMATCH',
     );
   }
@@ -288,7 +299,7 @@ export async function verifyWaitlistDevelopmentLifecycle({
     );
   }
   const projectRef = assertDevelopmentTarget(config);
-  const records = createWaitlistReadinessRecords({
+  const baseRecords = createWaitlistReadinessRecords({
     email,
     submissionId: normalizedSubmissionId,
     capturedAt: '2000-01-01T00:00:00.000Z',
@@ -309,6 +320,25 @@ export async function verifyWaitlistDevelopmentLifecycle({
     'evidence_checksum',
     'created_at',
   ].join(',');
+  const consentRows = await serviceGet({
+    config,
+    path: `/rest/v1/marketing_consent_events?idempotency_key=eq.${encodeURIComponent(baseRecords.consentRecord.idempotency_key)}&select=${consentSelect}&limit=2`,
+    fetchImpl,
+  });
+  const consent = requireSingleRow(consentRows, 'Consent evidence');
+  assertConsentEvidence(consent, baseRecords.consentRecord);
+
+  const records = createWaitlistReadinessRecords({
+    email: baseRecords.email,
+    submissionId: baseRecords.submissionId,
+    capturedAt: consent.captured_at,
+    consent: {
+      id: consent.id,
+      status: consent.status,
+      purpose: consent.purpose,
+      emailNormalized: consent.email_normalized,
+    },
+  });
   const outboxSelect = [
     'id',
     'idempotency_key',
@@ -337,26 +367,16 @@ export async function verifyWaitlistDevelopmentLifecycle({
     'created_at',
     'updated_at',
   ].join(',');
-
-  const [consentRows, outboxRows] = await Promise.all([
-    serviceGet({
-      config,
-      path: `/rest/v1/marketing_consent_events?idempotency_key=eq.${encodeURIComponent(records.consentRecord.idempotency_key)}&select=${consentSelect}&limit=2`,
-      fetchImpl,
-    }),
-    serviceGet({
-      config,
-      path: `/rest/v1/notification_outbox?idempotency_key=eq.${encodeURIComponent(records.outboxRecord.idempotency_key)}&select=${outboxSelect}&limit=2`,
-      fetchImpl,
-    }),
-  ]);
-
-  const consent = requireSingleRow(consentRows, 'Consent evidence');
+  const outboxRows = await serviceGet({
+    config,
+    path: `/rest/v1/notification_outbox?idempotency_key=eq.${encodeURIComponent(records.outboxRecord.idempotency_key)}&select=${outboxSelect}&limit=2`,
+    fetchImpl,
+  });
   const outbox = requireSingleRow(outboxRows, 'Outbox evidence');
-  assertConsentEvidence(consent, records.consentRecord);
   const providerMessageRef = assertOutboxEvidence(
     outbox,
     records.outboxRecord,
+    consent,
     normalizedExpectedState,
   );
 

@@ -1,5 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  evaluateDailyDispatch,
+  isCompletedFailure,
+  isFailureOnCurrentHead,
+  isRunUnknown,
+} from './control-center-policy.mjs';
 
 const token = process.env.GITHUB_TOKEN || '';
 const command = (process.argv[2] || 'status').replace(/^\//, '').toLowerCase();
@@ -126,21 +132,36 @@ const openIssues = issuesRaw
   })
   .sort((a, b) => b.score - a.score || b.number - a.number);
 
-const websiteCriticalFailure = [quality, dailyHealth].some((run) => run.conclusion === 'failure');
-const pipelineCriticalFailure = [pipelineQuality, pipelineWeeklyHealth].some((run) => run.conclusion === 'failure');
-const hasP0 = openIssues.some((issue) => issue.priority === 'P0' && !issue.blocked);
-const hasP1 = openIssues.some((issue) => issue.priority === 'P1' && !issue.blocked);
-let health = 'GREEN';
-if (websiteCriticalFailure || pipelineCriticalFailure || hasP0) health = 'RED';
-else if (hasP1 || [quality, daily, dailyHealth, pipelineQuality, pipelineWeeklyHealth].some((run) => run.status === 'UNKNOWN' || run.conclusion === 'UNKNOWN')) health = 'AMBER';
-
 const dailyIssueBlocker = openIssues.find((issue) => {
   if (issue.blocked || !['P0', 'P1'].includes(issue.priority)) return false;
   const text = issue.title.toLowerCase();
   return /daily|news|publish|publishing|workflow|automation/.test(text);
 });
-const dailyWorkflowUnknown = [quality, dailyHealth].some((run) => run.status === 'UNKNOWN' || run.conclusion === 'UNKNOWN');
-const dailyAllowed = !websiteCriticalFailure && !dailyIssueBlocker && !dailyWorkflowUnknown;
+const dailyDecision = evaluateDailyDispatch({
+  command,
+  websiteHeadSha: websiteHead.head_sha,
+  quality,
+  daily,
+  dailyHealth,
+  dailyIssueBlocker,
+});
+const dailyAllowed = dailyDecision.allowed;
+const staleDailyRecoveryPending = dailyDecision.dailyFailureStale
+  && dailyDecision.dailyHealthFailureStale;
+
+const qualityFailureUnscoped = isCompletedFailure(quality) && !quality.head_sha;
+const dailyHealthFailureUnscoped = isCompletedFailure(dailyHealth) && !dailyHealth.head_sha;
+const websiteCriticalFailure = qualityFailureUnscoped
+  || dailyHealthFailureUnscoped
+  || isFailureOnCurrentHead(quality, websiteHead.head_sha)
+  || isFailureOnCurrentHead(dailyHealth, websiteHead.head_sha);
+const pipelineCriticalFailure = [pipelineQuality, pipelineWeeklyHealth].some((run) => run.conclusion === 'failure');
+const hasP0 = openIssues.some((issue) => issue.priority === 'P0' && !issue.blocked);
+const hasP1 = openIssues.some((issue) => issue.priority === 'P1' && !issue.blocked);
+const workflowUnknown = [quality, daily, dailyHealth, pipelineQuality, pipelineWeeklyHealth].some(isRunUnknown);
+let health = 'GREEN';
+if (websiteCriticalFailure || pipelineCriticalFailure || hasP0) health = 'RED';
+else if (hasP1 || staleDailyRecoveryPending || workflowUnknown) health = 'AMBER';
 
 const next = openIssues.find((issue) => !issue.blocked) || openIssues[0] || null;
 const mainBlocker = health === 'RED'
@@ -180,7 +201,13 @@ const state = {
   },
   publishing: {
     daily_allowed: dailyAllowed,
-    daily_blocker: dailyIssueBlocker ? `#${dailyIssueBlocker.number} ${dailyIssueBlocker.title}` : (websiteCriticalFailure ? 'Critical website quality or daily-health workflow failure' : (dailyWorkflowUnknown ? 'Website quality or daily-health workflow state is unknown' : 'NONE'))
+    daily_mode: dailyDecision.mode,
+    daily_recovery_eligible: dailyDecision.recoveryEligible,
+    daily_blocker: dailyAllowed ? 'NONE' : dailyDecision.reason,
+    daily_reason: dailyDecision.reason,
+    exact_current_head_quality_green: dailyDecision.currentQualityGreen,
+    stale_daily_failure: dailyDecision.dailyFailureStale,
+    stale_daily_health_failure: dailyDecision.dailyHealthFailureStale
   },
   open_work: openIssues,
   priority_queue: openIssues.slice(0, 10),
@@ -190,7 +217,8 @@ const state = {
     'Generated state is a snapshot and never overrides canonical production or governance configuration.',
     'Vercel production readiness must be verified outside this GitHub-only state snapshot after release.',
     'Cloudflare Pages remains separate to the pipeline dashboard and is not a usd-impact-site deployment target.',
-    'A project-wide P0 or pipeline failure does not automatically block public Daily News unless it affects website publishing or a critical website quality/health workflow.'
+    'A project-wide P0 or pipeline failure does not automatically block public Daily News unless it affects website publishing or a critical website quality/health workflow.',
+    'An explicit /daily may perform one recovery dispatch only when both failed Daily signals belong to older commits and exact-current-head Web Quality is green.'
   ]
 };
 
@@ -200,6 +228,9 @@ fs.writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`);
 
 const workflowLine = (name, run) => `- ${name}: ${run.conclusion || run.status || 'UNKNOWN'}`;
 const nextLine = next ? `#${next.number} ${next.title} (${next.priority}, score ${next.score})` : 'No open issue selected';
+const dailyLine = dailyAllowed
+  ? `${dailyDecision.mode} — ${dailyDecision.reason}`
+  : `blocked — ${dailyDecision.reason}`;
 const statusMd = [
   '## USD IMPACT CONTROL',
   '',
@@ -207,6 +238,7 @@ const statusMd = [
   `**Production:** Vercel / main / https://www.usd-impact.com/ — post-deploy verification remains external to this GitHub snapshot`,
   `**Main blocker:** ${mainBlocker}`,
   `**Next priority:** ${nextLine}`,
+  `**Daily dispatch:** ${dailyLine}`,
   '',
   '**Website workflow health:**',
   workflowLine('quality', quality),
@@ -225,8 +257,13 @@ if (command === 'next') {
   responseMd += `\n\n### NEXT BEST ACTION\n\n${next ? `**Task:** #${next.number} ${next.title}\n\n**Priority:** ${next.priority} — score ${next.score}\n\n**Link:** ${next.url}` : 'No actionable open issue was found.'}`;
 }
 if (command === 'daily') {
-  const blocker = state.publishing.daily_blocker;
-  responseMd += `\n\n### DAILY PREFLIGHT\n\n${dailyAllowed ? '**PREFLIGHT PASS:** daily-specific website quality and health gates permit dispatch. The existing daily publication workflow remains authoritative.' : `**RELEASE BLOCKED:** ${blocker}. The daily publication workflow was not dispatched.`}`;
+  if (!dailyAllowed) {
+    responseMd += `\n\n### DAILY PREFLIGHT\n\n**RELEASE BLOCKED:** ${dailyDecision.reason} The daily publication workflow was not dispatched.`;
+  } else if (dailyDecision.mode === 'stale-failure-recovery') {
+    responseMd += `\n\n### DAILY PREFLIGHT\n\n**PREFLIGHT RECOVERY PASS:** ${dailyDecision.reason} The existing daily publication workflow remains authoritative.`;
+  } else {
+    responseMd += `\n\n### DAILY PREFLIGHT\n\n**PREFLIGHT PASS:** ${dailyDecision.reason} The existing daily publication workflow remains authoritative.`;
+  }
 }
 if (command === 'sync') {
   responseMd += '\n\n**State:** refreshed from live GitHub repository, issue, and workflow data.';
@@ -237,7 +274,10 @@ if (process.env.GITHUB_STEP_SUMMARY) {
 }
 if (process.env.GITHUB_OUTPUT) {
   const delimiter = `EOF_${Date.now()}`;
-  fs.appendFileSync(process.env.GITHUB_OUTPUT, `health=${health}\ndaily_allowed=${dailyAllowed}\ncommand=${command}\nresponse<<${delimiter}\n${responseMd}\n${delimiter}\n`);
+  fs.appendFileSync(
+    process.env.GITHUB_OUTPUT,
+    `health=${health}\ndaily_allowed=${dailyAllowed}\ndaily_mode=${dailyDecision.mode}\ncommand=${command}\nresponse<<${delimiter}\n${responseMd}\n${delimiter}\n`,
+  );
 }
 
 console.log(responseMd);

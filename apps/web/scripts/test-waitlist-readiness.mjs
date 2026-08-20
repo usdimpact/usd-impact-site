@@ -16,6 +16,14 @@ import {
 const submissionId = '123e4567-e89b-42d3-a456-426614174000';
 const capturedAt = '2026-08-20T12:00:00.000Z';
 const email = 'Reader@Example.com';
+const consentId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const outboxId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const consentReference = Object.freeze({
+  id: consentId,
+  status: 'granted',
+  purpose: WAITLIST_CONSENT_PURPOSE,
+  emailNormalized: 'reader@example.com',
+});
 
 function jsonResponse(body, status = 200) {
   return new Response(body === null ? null : JSON.stringify(body), {
@@ -40,25 +48,37 @@ function queueFetch(responses) {
   return { calls, fetchImpl };
 }
 
-const records = createWaitlistReadinessRecords({ email, submissionId, capturedAt });
-assert.equal(records.submissionId, submissionId);
-assert.equal(records.email, 'reader@example.com');
-assert.equal(records.consentRecord.purpose, WAITLIST_CONSENT_PURPOSE);
-assert.equal(records.consentRecord.status, 'granted');
-assert.equal(records.consentRecord.consent_text_version, WAITLIST_CONSENT_TEXT_VERSION);
-assert.equal(records.consentRecord.privacy_notice_version, WAITLIST_PRIVACY_NOTICE_VERSION);
-assert.equal(records.consentRecord.evidence.context.consentCheckbox, true);
-assert.equal(records.consentRecord.evidence.context.formVersion, WAITLIST_FORM_VERSION);
+const baseRecords = createWaitlistReadinessRecords({ email, submissionId, capturedAt });
+assert.equal(baseRecords.submissionId, submissionId);
+assert.equal(baseRecords.email, 'reader@example.com');
+assert.equal(baseRecords.consentRecord.purpose, WAITLIST_CONSENT_PURPOSE);
+assert.equal(baseRecords.consentRecord.status, 'granted');
+assert.equal(baseRecords.consentRecord.consent_text_version, WAITLIST_CONSENT_TEXT_VERSION);
+assert.equal(baseRecords.consentRecord.privacy_notice_version, WAITLIST_PRIVACY_NOTICE_VERSION);
+assert.equal(baseRecords.consentRecord.evidence.context.consentCheckbox, true);
+assert.equal(baseRecords.consentRecord.evidence.context.formVersion, WAITLIST_FORM_VERSION);
+assert.equal(baseRecords.outboxRecord, null);
+assert.equal(baseRecords.providerIdempotencyKey, `waitlist-confirmation/${submissionId}`);
+
+const records = createWaitlistReadinessRecords({
+  email,
+  submissionId,
+  capturedAt,
+  consent: consentReference,
+});
 assert.equal(records.outboxRecord.message_id, 'waitlist_confirmation');
 assert.equal(records.outboxRecord.classification, 'operational');
-assert.equal(records.outboxRecord.consent_required, false);
+assert.equal(records.outboxRecord.consent_required, true);
+assert.equal(records.outboxRecord.consent_record_id, consentId);
+assert.equal(records.outboxRecord.consent_purpose, WAITLIST_CONSENT_PURPOSE);
+assert.equal(records.outboxRecord.consent_checked_at, capturedAt);
 assert.equal(records.outboxRecord.recipient_email_normalized, 'reader@example.com');
-assert.equal(records.providerIdempotencyKey, `waitlist-confirmation/${submissionId}`);
 
 const retriedRecords = createWaitlistReadinessRecords({
   email,
   submissionId,
   capturedAt: '2026-08-20T12:05:00.000Z',
+  consent: consentReference,
 });
 assert.equal(retriedRecords.consentRecord.idempotency_key, records.consentRecord.idempotency_key);
 assert.equal(retriedRecords.outboxRecord.idempotency_key, records.outboxRecord.idempotency_key);
@@ -67,6 +87,15 @@ assert.equal(retriedRecords.providerIdempotencyKey, records.providerIdempotencyK
 assert.throws(
   () => createWaitlistReadinessRecords({ email, submissionId: 'not-a-uuid', capturedAt }),
   (error) => error instanceof WaitlistReadinessError && error.code === 'INVALID_SUBMISSION_ID',
+);
+assert.throws(
+  () => createWaitlistReadinessRecords({
+    email,
+    submissionId,
+    capturedAt,
+    consent: { ...consentReference, purpose: 'other_purpose' },
+  }),
+  /consent purpose is not approved/i,
 );
 
 {
@@ -129,7 +158,7 @@ const developmentEnvironment = {
 {
   const { calls, fetchImpl } = queueFetch([
     jsonResponse([{
-      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      id: consentId,
       idempotency_key: records.consentRecord.idempotency_key,
       email_normalized: 'reader@example.com',
       purpose: WAITLIST_CONSENT_PURPOSE,
@@ -137,10 +166,14 @@ const developmentEnvironment = {
       captured_at: capturedAt,
     }], 201),
     jsonResponse([{
-      id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      id: outboxId,
       idempotency_key: records.outboxRecord.idempotency_key,
       message_id: 'waitlist_confirmation',
       recipient_email_normalized: 'reader@example.com',
+      consent_required: true,
+      consent_record_id: consentId,
+      consent_purpose: WAITLIST_CONSENT_PURPOSE,
+      consent_checked_at: capturedAt,
       status: 'queued',
       attempt_count: 0,
       provider_message_ref: null,
@@ -160,13 +193,17 @@ const developmentEnvironment = {
   assert.equal(state.enabled, true);
   assert.equal(state.projectRef, WAITLIST_DEVELOPMENT_PROJECT_REF);
   assert.equal(state.shouldSend, true);
-  assert.equal(state.consentId, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
-  assert.equal(state.outbox.id, 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+  assert.equal(state.consentId, consentId);
+  assert.equal(state.outbox.id, outboxId);
   assert.equal(calls.length, 2);
   assert.match(calls[0].url, /marketing_consent_events/);
   assert.match(calls[1].url, /notification_outbox/);
   assert.equal(calls[1].body.status, undefined);
   assert.equal(calls[1].body.attempt_count, undefined);
+  assert.equal(calls[1].body.consent_required, true);
+  assert.equal(calls[1].body.consent_record_id, consentId);
+  assert.equal(calls[1].body.consent_purpose, WAITLIST_CONSENT_PURPOSE);
+  assert.equal(calls[1].body.consent_checked_at, capturedAt);
   assert.equal(calls[0].headers.Authorization, `Bearer ${developmentEnvironment.SUPABASE_SECRET_KEY}`);
 
   const updates = queueFetch([
@@ -207,7 +244,7 @@ const developmentEnvironment = {
   const duplicate = queueFetch([
     jsonResponse([], 201),
     jsonResponse([{
-      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      id: consentId,
       idempotency_key: records.consentRecord.idempotency_key,
       email_normalized: 'reader@example.com',
       purpose: WAITLIST_CONSENT_PURPOSE,
@@ -216,13 +253,18 @@ const developmentEnvironment = {
     }]),
     jsonResponse([], 201),
     jsonResponse([{
-      id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      id: outboxId,
       idempotency_key: records.outboxRecord.idempotency_key,
       message_id: 'waitlist_confirmation',
       recipient_email_normalized: 'reader@example.com',
+      consent_required: true,
+      consent_record_id: consentId,
+      consent_purpose: WAITLIST_CONSENT_PURPOSE,
+      consent_checked_at: capturedAt,
       status: 'accepted',
       attempt_count: 1,
       provider_message_ref: 'resend-message-id',
+      accepted_at: capturedAt,
       created_at: capturedAt,
     }]),
   ]);
@@ -237,7 +279,50 @@ const developmentEnvironment = {
   });
 
   assert.equal(state.shouldSend, false);
+  assert.equal(state.decision.action, 'complete');
   assert.equal(duplicate.calls.length, 4);
+}
+
+{
+  const conflict = queueFetch([
+    jsonResponse([], 201),
+    jsonResponse([{
+      id: consentId,
+      idempotency_key: records.consentRecord.idempotency_key,
+      email_normalized: 'reader@example.com',
+      purpose: WAITLIST_CONSENT_PURPOSE,
+      status: 'granted',
+      captured_at: capturedAt,
+    }]),
+    jsonResponse([], 201),
+    jsonResponse([{
+      id: outboxId,
+      idempotency_key: records.outboxRecord.idempotency_key,
+      message_id: 'waitlist_confirmation',
+      recipient_email_normalized: 'reader@example.com',
+      consent_required: false,
+      consent_record_id: null,
+      consent_purpose: null,
+      consent_checked_at: null,
+      status: 'accepted',
+      attempt_count: 1,
+      provider_message_ref: 'resend-message-id',
+      accepted_at: capturedAt,
+      created_at: capturedAt,
+    }]),
+  ]);
+
+  await assert.rejects(
+    () => prepareWaitlistReadiness({
+      email,
+      submissionId,
+      capturedAt,
+      environment: developmentEnvironment,
+      fetchImpl: conflict.fetchImpl,
+      nowMs: Date.parse(capturedAt),
+    }),
+    (error) => error instanceof WaitlistReadinessError && error.code === 'OUTBOX_EVENT_CONFLICT',
+  );
 }
 
 console.log('Waitlist readiness persistence tests passed.');

@@ -166,7 +166,7 @@ async function insertOrLoadOutbox({ config, record, fetchImpl }) {
 
   const rows = await serviceRequest({
     config,
-    path: `/rest/v1/notification_outbox?idempotency_key=eq.${encodeURIComponent(record.idempotency_key)}&select=id,idempotency_key,message_id,recipient_email_normalized,status,attempt_count,next_attempt_at,provider_message_ref,error_code,accepted_at,created_at&limit=1`,
+    path: `/rest/v1/notification_outbox?idempotency_key=eq.${encodeURIComponent(record.idempotency_key)}&select=id,idempotency_key,message_id,recipient_email_normalized,consent_required,consent_record_id,consent_purpose,consent_checked_at,status,attempt_count,next_attempt_at,provider_message_ref,error_code,accepted_at,created_at&limit=1`,
     fetchImpl,
   });
   const existing = Array.isArray(rows) ? rows[0] : null;
@@ -177,6 +177,10 @@ async function insertOrLoadOutbox({ config, record, fetchImpl }) {
     existing.idempotency_key !== record.idempotency_key
     || existing.message_id !== record.message_id
     || existing.recipient_email_normalized !== record.recipient_email_normalized
+    || existing.consent_required !== true
+    || existing.consent_record_id !== record.consent_record_id
+    || existing.consent_purpose !== WAITLIST_CONSENT_PURPOSE
+    || !existing.consent_checked_at
   ) {
     throw new WaitlistReadinessError('Notification outbox identity conflicts with existing state.', 'OUTBOX_EVENT_CONFLICT');
   }
@@ -264,7 +268,12 @@ export function waitlistReadinessEnabled(environment = process.env) {
   return environment.EMAIL_READINESS_LEDGER_ENABLED === 'true';
 }
 
-export function createWaitlistReadinessRecords({ email, submissionId, capturedAt }) {
+export function createWaitlistReadinessRecords({
+  email,
+  submissionId,
+  capturedAt,
+  consent = null,
+}) {
   const normalizedSubmissionId = requireSubmissionId(submissionId);
   const normalizedEmail = normalizeEmail(email);
   const sourceEventId = `waitlist.submit:${normalizedSubmissionId}`;
@@ -284,20 +293,24 @@ export function createWaitlistReadinessRecords({ email, submissionId, capturedAt
     },
   });
 
-  const outboxRecord = buildNotificationOutboxRecord({
-    eventId: `waitlist.confirm:${normalizedSubmissionId}`,
-    messageId: 'waitlist_confirmation',
-    classification: 'operational',
-    businessObjectType: 'waitlist_submission',
-    businessObjectId: normalizedSubmissionId,
-    stateVersion: 1,
-    recipientEmail: normalizedEmail,
-    templateId: 'waitlist_confirmation',
-    templateVersion: WAITLIST_CONFIRMATION_TEMPLATE_VERSION,
-    provider: 'resend',
-    payload: {},
-    nextAttemptAt: capturedAt,
-  });
+  const outboxRecord = consent
+    ? buildNotificationOutboxRecord({
+        eventId: `waitlist.confirm:${normalizedSubmissionId}`,
+        messageId: 'waitlist_confirmation',
+        classification: 'operational',
+        businessObjectType: 'waitlist_submission',
+        businessObjectId: normalizedSubmissionId,
+        stateVersion: 1,
+        recipientEmail: normalizedEmail,
+        templateId: 'waitlist_confirmation',
+        templateVersion: WAITLIST_CONFIRMATION_TEMPLATE_VERSION,
+        provider: 'resend',
+        consent,
+        consentCheckedAt: capturedAt,
+        payload: {},
+        nextAttemptAt: capturedAt,
+      })
+    : null;
 
   return Object.freeze({
     submissionId: normalizedSubmissionId,
@@ -330,8 +343,19 @@ export async function prepareWaitlistReadiness({
     );
   }
   const projectRef = assertExpectedProject(config, environment);
-  const records = createWaitlistReadinessRecords({ email, submissionId, capturedAt });
-  const consent = await insertOrLoadConsent({ config, record: records.consentRecord, fetchImpl });
+  const baseRecords = createWaitlistReadinessRecords({ email, submissionId, capturedAt });
+  const consent = await insertOrLoadConsent({ config, record: baseRecords.consentRecord, fetchImpl });
+  const records = createWaitlistReadinessRecords({
+    email: baseRecords.email,
+    submissionId: baseRecords.submissionId,
+    capturedAt,
+    consent: {
+      id: consent.id,
+      status: consent.status,
+      purpose: consent.purpose,
+      emailNormalized: consent.email_normalized,
+    },
+  });
   const outbox = await insertOrLoadOutbox({ config, record: records.outboxRecord, fetchImpl });
   const decision = resolveWaitlistOutboxDecision(outbox, nowMs);
 

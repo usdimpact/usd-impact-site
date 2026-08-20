@@ -159,7 +159,10 @@ begin
 
     update public.entitlements
     set state = 'account_deleted',
-        ends_at = coalesce(ends_at, finalized_at),
+        ends_at = case
+          when ends_at is null then greatest(finalized_at, starts_at + interval '1 microsecond')
+          else ends_at
+        end,
         version = version + 1,
         updated_at = finalized_at
     where id = entitlement_row.id

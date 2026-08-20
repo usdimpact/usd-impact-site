@@ -1,5 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "automation/control-center-state": false
+    }
+  },
   "buildCommand": "npm run validate && npm run build",
   "installCommand": "npm install --no-audit --no-fund",
   "outputDirectory": "dist",

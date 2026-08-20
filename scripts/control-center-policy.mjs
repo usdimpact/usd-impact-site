@@ -2,6 +2,19 @@ function normalized(value) {
   return String(value ?? '').trim().toLowerCase();
 }
 
+export function workflowRunsUrl(repo, workflow, branch = 'main') {
+  const normalizedRepo = String(repo ?? '').trim();
+  const normalizedWorkflow = String(workflow ?? '').trim();
+  const normalizedBranch = String(branch ?? '').trim();
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(normalizedRepo)) {
+    throw new TypeError('repo must use owner/name form.');
+  }
+  if (!normalizedWorkflow || !normalizedBranch) {
+    throw new TypeError('workflow and branch are required.');
+  }
+  return `https://api.github.com/repos/${normalizedRepo}/actions/workflows/${encodeURIComponent(normalizedWorkflow)}/runs?branch=${encodeURIComponent(normalizedBranch)}&per_page=1`;
+}
+
 export function isRunUnknown(run) {
   if (!run || typeof run !== 'object') return true;
   const status = normalized(run.status);

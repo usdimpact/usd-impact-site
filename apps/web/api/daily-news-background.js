@@ -1,181 +1,621 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
-import {
-  dispatchAccountDeletionRequestedEmail,
-  enqueueAccountDeletionRequestedEmail,
-} from '../src/lib/account-deletion-email.js';
+import { timingSafeEqual } from 'node:crypto';
+import sourceHandler from './daily-news-source.js';
 
-const RESEND_API = 'https://api.resend.com';
-const PROOF_TOKEN_SHA256 = '4790935393112139d697b98301c652a852224e22b1f29b225e0ed8946739acdc';
-const PROOF_EXPIRES_AT = Date.parse('2026-08-20T19:40:00.000Z');
-const FIXTURE_ACCOUNT_ID = '7b14a3d1-00f7-4f4e-8a31-b5884af7e65f';
-const FIXTURE_EMAIL = 'delivered+issue130-account-deletion-20260820@resend.dev';
-const FIXTURE_OCCURRED_AT = '2026-08-20T18:40:00.000Z';
-const FIXTURE_DUE_AT = '2026-08-27T18:40:00.000Z';
+const OPENAI_RESPONSES_API = 'https://api.openai.com/v1/responses';
+const RESPONSE_ID_PATTERN = /^resp_[A-Za-z0-9_-]{8,200}$/;
+const ACTIVE_STATUSES = new Set(['queued', 'in_progress']);
+const TERMINAL_FAILURE_STATUSES = new Set(['cancelled', 'failed', 'incomplete']);
+const MAX_BACKGROUND_OUTPUT_TOKENS = 16_000;
+const MAX_REPAIR_OUTPUT_TOKENS = 9_000;
+const REPAIR_TIMEOUT_MS = 150_000;
+const REPAIR_TOTAL_TIMEOUT_MS = 225_000;
+const MAX_REPAIR_ATTEMPTS = 2;
 
-function sendJson(response, status, body, extraHeaders = {}) {
+const ALLOWED_ASSETS = [
+  'DXY', 'USD', 'EURUSD', 'Fed', 'U.S. rates', 'Liquidity', 'WTI', 'Brent',
+  'Henry Hub', 'TTF', 'LNG', 'XAUUSD', 'BTCUSD', 'S&P 500', 'Nasdaq',
+  'Dow', 'Russell 2000', 'NVDA', 'MSFT', 'AAPL', 'AMZN', 'GOOGL', 'META', 'TSLA',
+];
+const CATALYST_EVENT_TYPES = [
+  'central-bank', 'inflation', 'labor', 'growth', 'liquidity', 'energy',
+  'corporate', 'regulatory', 'geopolitical', 'other',
+];
+
+const OUTPUT_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['marketRegime', 'summary', 'highlights', 'catalysts', 'sources', 'body'],
+  properties: {
+    marketRegime: { type: 'string' },
+    summary: { type: 'string' },
+    highlights: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['headline', 'development', 'whyItMatters', 'assets', 'importance', 'sourceIds'],
+        properties: {
+          headline: { type: 'string' },
+          development: { type: 'string' },
+          whyItMatters: { type: 'string' },
+          assets: { type: 'array', items: { type: 'string', enum: ALLOWED_ASSETS } },
+          importance: { type: 'string', enum: ['high', 'medium', 'low'] },
+          sourceIds: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    },
+    catalysts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: [
+          'date', 'event', 'eventType', 'assets', 'importance', 'impactScore',
+          'whyItMatters', 'sourceIds',
+        ],
+        properties: {
+          date: { type: 'string' },
+          event: { type: 'string' },
+          eventType: { type: 'string', enum: CATALYST_EVENT_TYPES },
+          assets: { type: 'array', items: { type: 'string', enum: ALLOWED_ASSETS } },
+          importance: { type: 'string', enum: ['high', 'medium', 'low'] },
+          impactScore: { type: 'integer', minimum: 1, maximum: 5 },
+          whyItMatters: { type: 'string' },
+          sourceIds: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    },
+    sources: {
+      type: 'array',
+      minItems: 3,
+      maxItems: 24,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['id', 'title', 'url', 'publishedAt'],
+        properties: {
+          id: { type: 'string' },
+          title: { type: 'string' },
+          url: { type: 'string' },
+          publishedAt: { type: 'string' },
+        },
+      },
+    },
+    body: { type: 'string' },
+  },
+};
+
+let runtimeOverrideQueue = Promise.resolve();
+
+function requestHeader(request, name) {
+  const headers = request.headers ?? {};
+  if (typeof headers.get === 'function') return headers.get(name) ?? '';
+  const value = headers[name.toLowerCase()] ?? headers[name];
+  return Array.isArray(value) ? value[0] ?? '' : String(value ?? '');
+}
+
+function bearerToken(request) {
+  const authorization = requestHeader(request, 'authorization');
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  return match?.[1]?.trim() ?? '';
+}
+
+function safeTokenEqual(actual, expected) {
+  const actualBuffer = Buffer.from(String(actual ?? ''));
+  const expectedBuffer = Buffer.from(String(expected ?? ''));
+  if (actualBuffer.length !== expectedBuffer.length) return false;
+  return timingSafeEqual(actualBuffer, expectedBuffer);
+}
+
+function queryParam(request, name) {
+  const direct = request.query?.[name];
+  if (Array.isArray(direct)) return String(direct[0] ?? '').trim();
+  if (direct !== undefined && direct !== null) return String(direct).trim();
+  try {
+    const url = new URL(request.url ?? '/', 'https://usd-impact.com');
+    return url.searchParams.get(name)?.trim() ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function utcDateString(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function addUtcDays(date, days) {
+  const parsed = new Date(`${date}T00:00:00.000Z`);
+  parsed.setUTCDate(parsed.getUTCDate() + days);
+  return utcDateString(parsed);
+}
+
+function isRealDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) && utcDateString(date) === value;
+}
+
+export function buildRepairOutputSchema(editionDate) {
+  const catalystDates = Array.from({ length: 8 }, (_, index) => addUtcDays(editionDate, index));
+  return {
+    ...OUTPUT_SCHEMA,
+    properties: {
+      ...OUTPUT_SCHEMA.properties,
+      catalysts: {
+        ...OUTPUT_SCHEMA.properties.catalysts,
+        items: {
+          ...OUTPUT_SCHEMA.properties.catalysts.items,
+          properties: {
+            ...OUTPUT_SCHEMA.properties.catalysts.items.properties,
+            date: { type: 'string', enum: catalystDates },
+          },
+        },
+      },
+    },
+  };
+}
+
+function sendJson(response, body, status = 200, extraHeaders = {}) {
   response.statusCode = status;
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
   response.setHeader('Cache-Control', 'no-store');
   response.setHeader('X-Content-Type-Options', 'nosniff');
-  response.setHeader('X-Robots-Tag', 'noindex, nofollow');
   for (const [name, value] of Object.entries(extraHeaders)) response.setHeader(name, value);
   response.end(JSON.stringify(body));
 }
 
-function requestUrl(request) {
-  return new URL(request.url || '/', 'https://usd-impact.invalid');
-}
-
-function validProofToken(value) {
-  if (typeof value !== 'string' || value.length < 32 || value.length > 128) return false;
-  const supplied = Buffer.from(createHash('sha256').update(value).digest('hex'), 'utf8');
-  const expected = Buffer.from(PROOF_TOKEN_SHA256, 'utf8');
-  return supplied.length === expected.length && timingSafeEqual(supplied, expected);
-}
-
-function boundedErrorCode(error) {
-  const code = String(error?.code || 'CONTROLLED_PROOF_FAILED')
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9_]/g, '_')
-    .slice(0, 80);
-  return /^[A-Z][A-Z0-9_]{1,79}$/.test(code) ? code : 'CONTROLLED_PROOF_FAILED';
-}
-
-async function readJsonSafely(response) {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
-}
-
-function controlledEnvironment() {
+function responseRecorder() {
   return {
-    ...process.env,
-    VERCEL_ENV: 'preview',
-    EMAIL_READINESS_LEDGER_ENABLED: 'true',
-    LAUNCH_EMAIL_DISPATCH_ENABLED: 'true',
-    EMAIL_READINESS_PRODUCTION_APPROVED: 'false',
-    LAUNCH_EMAIL_PRODUCTION_APPROVED: 'false',
+    statusCode: 200,
+    headers: {},
+    body: '',
+    setHeader(name, value) {
+      this.headers[String(name).toLowerCase()] = String(value);
+    },
+    end(body = '') {
+      this.body = String(body);
+    },
   };
 }
 
-function deletionResultFixture() {
-  return Object.freeze({
-    user: Object.freeze({ id: FIXTURE_ACCOUNT_ID, email: FIXTURE_EMAIL }),
-    profile: Object.freeze({
-      account_id: FIXTURE_ACCOUNT_ID,
-      email: FIXTURE_EMAIL,
-      status: 'deletion_pending',
-      deletion_requested_at: FIXTURE_OCCURRED_AT,
-      deletion_due_at: FIXTURE_DUE_AT,
-    }),
-  });
+function sourceRequest(request, date) {
+  return {
+    method: 'GET',
+    url: `/api/daily-news-source?date=${encodeURIComponent(date)}`,
+    query: { date },
+    headers: request.headers ?? {},
+  };
 }
 
-function resendAdapter() {
-  return Object.freeze({
-    id: 'resend',
-    async send(message) {
-      const apiKey = process.env.RESEND_API_KEY;
-      const from = process.env.RESEND_FROM_EMAIL;
-      const replyTo = process.env.RESEND_REPLY_TO;
-      if (!apiKey || !from) {
-        const error = new Error('Controlled Resend configuration is incomplete.');
-        error.code = 'CONTROLLED_RESEND_CONFIGURATION_ERROR';
-        error.providerState = 'failed';
-        throw error;
-      }
-
-      const providerResponse = await fetch(`${RESEND_API}/emails`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'Idempotency-Key': message.idempotencyKey,
-        },
-        body: JSON.stringify({
-          from,
-          to: message.to,
-          ...(replyTo ? { reply_to: replyTo } : {}),
-          subject: message.subject,
-          text: message.text,
-          html: message.html,
-          ...(message.headers ? { headers: message.headers } : {}),
-        }),
-      });
-      const providerPayload = await readJsonSafely(providerResponse);
-      if (!providerResponse.ok) {
-        const error = new Error(`Controlled Resend request failed with status ${providerResponse.status}.`);
-        error.code = `RESEND_HTTP_${providerResponse.status}`;
-        error.providerState = providerResponse.status >= 500 ? 'failed' : 'accepted_ambiguous';
-        throw error;
-      }
-      if (typeof providerPayload?.id !== 'string' || !providerPayload.id) {
-        const error = new Error('Controlled Resend response did not include a message identifier.');
-        error.code = 'RESEND_MESSAGE_ID_MISSING';
-        error.providerState = 'accepted_ambiguous';
-        throw error;
-      }
-      return Object.freeze({
-        state: 'accepted',
-        messageRef: providerPayload.id,
-        occurredAt: new Date().toISOString(),
-      });
-    },
-  });
+function canonicalUrl(value) {
+  const url = new URL(value);
+  url.hash = '';
+  for (const key of [...url.searchParams.keys()]) {
+    if (/^(utm_|gclid$|fbclid$|mc_)/i.test(key)) url.searchParams.delete(key);
+  }
+  if (url.pathname.length > 1) url.pathname = url.pathname.replace(/\/+$/, '');
+  return url.toString();
 }
 
-export default async function handler(request, response) {
-  if (request.method !== 'GET') {
-    return sendJson(response, 405, { error: 'Method not allowed.', code: 'METHOD_NOT_ALLOWED' }, { Allow: 'GET' });
+function collectOpenAiText(openAiResponse) {
+  const parts = [];
+  for (const item of openAiResponse.output ?? []) {
+    if (item.type !== 'message') continue;
+    for (const content of item.content ?? []) {
+      if (content.type === 'output_text' && typeof content.text === 'string') parts.push(content.text);
+    }
   }
-  if (String(process.env.VERCEL_ENV || '').toLowerCase() === 'production') {
-    return sendJson(response, 404, { error: 'Not found.', code: 'NOT_FOUND' });
-  }
-  if (Date.now() > PROOF_EXPIRES_AT) {
-    return sendJson(response, 410, { error: 'Controlled proof expired.', code: 'CONTROLLED_PROOF_EXPIRED' });
-  }
+  return parts.join('').trim();
+}
 
-  const url = requestUrl(request);
-  const keys = [...new Set(url.searchParams.keys())];
-  if (keys.length !== 1 || keys[0] !== 'proof' || !validProofToken(url.searchParams.get('proof'))) {
-    return sendJson(response, 404, { error: 'Not found.', code: 'NOT_FOUND' });
+function collectGroundedUrls(openAiResponse) {
+  const urls = new Set();
+  const add = (value) => {
+    if (typeof value !== 'string') return;
+    try {
+      urls.add(canonicalUrl(value));
+    } catch {
+      // Ignore malformed provider metadata.
+    }
+  };
+  for (const item of openAiResponse.output ?? []) {
+    if (item.type === 'web_search_call') {
+      add(item.action?.url);
+      for (const source of item.action?.sources ?? []) add(source?.url);
+    }
+    if (item.type === 'message') {
+      for (const content of item.content ?? []) {
+        for (const annotation of content.annotations ?? []) {
+          add(annotation?.url);
+          add(annotation?.url_citation?.url);
+        }
+      }
+    }
+  }
+  return urls;
+}
+
+function groundingOutputItems(openAiResponse) {
+  const items = [];
+  for (const item of openAiResponse.output ?? []) {
+    if (item.type === 'web_search_call') {
+      items.push(item);
+      continue;
+    }
+    if (item.type !== 'message') continue;
+    const content = (item.content ?? [])
+      .filter((part) => Array.isArray(part.annotations) && part.annotations.length > 0)
+      .map((part) => ({ ...part, text: '' }));
+    if (content.length > 0) items.push({ ...item, content });
+  }
+  return items;
+}
+
+function validationReason(messages) {
+  const prefix = 'Daily news source failed:';
+  const match = [...messages].reverse().find((message) => message.includes(prefix));
+  if (!match) return 'Unknown validation error';
+  return match.slice(match.indexOf(prefix) + prefix.length).trim().slice(0, 1_000);
+}
+
+function terminalFailureDetails(openAiResponse) {
+  const reason = String(
+    openAiResponse?.incomplete_details?.reason
+      ?? openAiResponse?.error?.code
+      ?? openAiResponse?.error?.type
+      ?? 'unknown',
+  );
+  const providerMessage = typeof openAiResponse?.error?.message === 'string'
+    ? openAiResponse.error.message.slice(0, 500)
+    : null;
+  const usage = openAiResponse?.usage
+    ? {
+        inputTokens: openAiResponse.usage.input_tokens ?? null,
+        outputTokens: openAiResponse.usage.output_tokens ?? null,
+        reasoningTokens: openAiResponse.usage.output_tokens_details?.reasoning_tokens ?? null,
+        totalTokens: openAiResponse.usage.total_tokens ?? null,
+      }
+    : null;
+  return { reason, providerMessage, usage };
+}
+
+async function withRuntimeOverride(makeFetch, suppressExpectedStatusError, task, capturedErrors = null) {
+  let release;
+  const previous = runtimeOverrideQueue;
+  runtimeOverrideQueue = new Promise((resolve) => {
+    release = resolve;
+  });
+  await previous;
+
+  const originalFetch = globalThis.fetch;
+  const originalConsoleError = console.error;
+  globalThis.fetch = makeFetch(originalFetch);
+  if (suppressExpectedStatusError || capturedErrors) {
+    console.error = (...args) => {
+      const message = args.map((value) => String(value)).join(' ');
+      if (capturedErrors) capturedErrors.push(message);
+      if (!suppressExpectedStatusError || !message.includes('OpenAI response did not complete:')) {
+        originalConsoleError(...args);
+      }
+    };
   }
 
   try {
-    const environment = controlledEnvironment();
-    const state = await enqueueAccountDeletionRequestedEmail({
-      deletionResult: deletionResultFixture(),
-      environment,
-    });
-    const result = await dispatchAccountDeletionRequestedEmail({
-      state,
-      providerAdapter: resendAdapter(),
-      environment,
-      nowMs: Date.now(),
-    });
-    return sendJson(response, 200, {
-      ok: true,
-      environment: 'development',
-      action: result.action,
-      outbox: {
-        id: result.outbox?.id || state.outbox?.id || null,
-        status: result.outbox?.status || state.outbox?.status || null,
-        attemptCount: result.outbox?.attempt_count ?? state.outbox?.attempt_count ?? null,
-        providerCorrelated: Boolean(result.outbox?.provider_message_ref || state.outbox?.provider_message_ref),
+    return await task();
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.error = originalConsoleError;
+    release();
+  }
+}
+
+async function startBackgroundResponse(request, response, date) {
+  let providerPayload = null;
+  const recorder = responseRecorder();
+
+  await withRuntimeOverride(
+    (realFetch) => async (url, options = {}) => {
+      if (String(url) !== OPENAI_RESPONSES_API) return realFetch(url, options);
+
+      let body;
+      try {
+        body = JSON.parse(String(options.body ?? '{}'));
+      } catch {
+        return new Response(JSON.stringify({ error: { message: 'Invalid OpenAI request body.' } }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      body.background = true;
+      body.store = true;
+      body.reasoning = {
+        ...(body.reasoning ?? {}),
+        effort: 'low',
+      };
+      body.max_output_tokens = MAX_BACKGROUND_OUTPUT_TOKENS;
+      for (const tool of body.tools ?? []) {
+        if (tool?.type === 'web_search') tool.search_context_size = 'medium';
+      }
+
+      const providerResponse = await realFetch(url, {
+        ...options,
+        body: JSON.stringify(body),
+      });
+      const raw = await providerResponse.text();
+      try {
+        providerPayload = JSON.parse(raw);
+      } catch {
+        providerPayload = null;
+      }
+      return new Response(raw, {
+        status: providerResponse.status,
+        headers: providerResponse.headers,
+      });
+    },
+    true,
+    () => sourceHandler(sourceRequest(request, date), recorder),
+  );
+
+  if (!providerPayload?.id || !RESPONSE_ID_PATTERN.test(providerPayload.id)) {
+    console.error(`Daily news background start failed with source status ${recorder.statusCode}.`);
+    return sendJson(response, { error: 'Daily news background generation could not be started.' }, 502);
+  }
+
+  return sendJson(response, {
+    id: providerPayload.id,
+    status: providerPayload.status ?? 'queued',
+    date,
+    model: providerPayload.model ?? process.env.OPENAI_NEWS_MODEL ?? 'gpt-5',
+    reasoningEffort: 'low',
+    maxOutputTokens: MAX_BACKGROUND_OUTPUT_TOKENS,
+  }, 202, {
+    'Retry-After': '20',
+  });
+}
+
+async function retrieveOpenAiResponse(apiKey, responseId) {
+  const providerResponse = await fetch(`${OPENAI_RESPONSES_API}/${encodeURIComponent(responseId)}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  const raw = await providerResponse.text();
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch {
+    throw new Error(`OpenAI returned invalid JSON with status ${providerResponse.status}`);
+  }
+  if (!providerResponse.ok) {
+    throw new Error(payload?.error?.message ?? `OpenAI retrieval failed with status ${providerResponse.status}`);
+  }
+  return payload;
+}
+
+async function validateCompletedResponse(request, date, openAiResponse) {
+  const recorder = responseRecorder();
+  const errors = [];
+  await withRuntimeOverride(
+    () => async () => new Response(JSON.stringify(openAiResponse), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }),
+    false,
+    () => sourceHandler(sourceRequest(request, date), recorder),
+    errors,
+  );
+  return {
+    recorder,
+    reason: recorder.statusCode === 200 ? null : validationReason(errors),
+  };
+}
+
+async function repairCompletedResponse(apiKey, date, openAiResponse, initialReason, timeoutMs = REPAIR_TIMEOUT_MS) {
+  const originalDraft = collectOpenAiText(openAiResponse);
+  const groundedUrls = [...collectGroundedUrls(openAiResponse)];
+  const catalystWindowEnd = addUtcDays(date, 7);
+  if (!originalDraft) throw new Error('The completed response contained no draft text to repair.');
+  if (groundedUrls.length < 3) throw new Error('The completed response contained fewer than three grounded URLs.');
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const repairModel = String(process.env.OPENAI_NEWS_REPAIR_MODEL || 'gpt-5-mini').trim();
+    const providerResponse = await fetch(OPENAI_RESPONSES_API, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
-      providerMessageRef: result.providerMessageRef || result.outbox?.provider_message_ref || null,
-      expiresAt: new Date(PROOF_EXPIRES_AT).toISOString(),
+      body: JSON.stringify({
+        model: repairModel,
+        store: false,
+        reasoning: { effort: 'low' },
+        instructions: 'You repair a source-backed USD Impact research bundle. Preserve verified facts, remove unsupported claims and conversational assistant residue, and return only the requested complete JSON object. Perform a complete validation sweep after addressing the named error; do not stop after the first defect. Remove every source whose URL is absent from the permitted grounded-source list, then remove every dependent highlight, catalyst, summary sentence, and body sentence. After pruning any source or source id, re-evaluate every retained highlight: it must still cite a primary source or two independent reporting domains. Remove a highlight and every related summary or body sentence if it no longer meets that support rule; never leave it supported by only one reporting domain. Remove every Treasury refunding or 3-year, 10-year, or 30-year auction claim that lacks a current Treasury source published within the prior 14 days, together with related summary and body sentences. Never retain an unsupported claim or unused source merely to satisfy a minimum; fail closed rather than inventing a replacement.',
+        input: `The bundle for ${date} failed validation with this exact error:\n${initialReason}\n\nRepair the bundle using these rules:\n- Fix the named error, then perform a complete validation sweep over every source, highlight, catalyst, summary sentence, and body sentence. The named error may be only the first defect.\n- Use only the exact source URLs listed under PERMITTED SOURCE URLS.\n- Compare every source ledger URL against PERMITTED SOURCE URLS. Remove every non-matching source, every highlight or catalyst that depends on it, and every related sentence from the summary and body. Never reconstruct, replace, or preserve an ungrounded URL.\n- Keep at least three distinct permitted sources, including at least one authoritative primary source. Every retained source must be referenced by at least one retained highlight or catalyst; remove unused ledger padding.\n- Do not add facts, events, prices, dates, or sources that are not already present in the original bundle.\n- Every source id must be lowercase and hyphenated, unique, and referenced consistently.\n- Every highlight must cite either at least one authoritative primary source or two independent reporting domains. A non-schedule daily-development highlight must include a source published within the prior 14 days; remove a highlight supported only by a stale daily-development source, but retain 3-7 highlights.\n- Remove every unsupported absence claim from highlights, summary, and body, including claims that no new release, decision, or source was found or identified.\n- Quarterly refunding and 3-year, 10-year, or 30-year refunding-auction claims require a current Treasury refunding or auction source published within the prior 14 days. Remove a stale claim from highlights, catalysts, summary, and body rather than presenting an earlier quarter as current. Re-scan the complete bundle for this language after all edits.\n- Use only supported asset names from the schema.\n- Catalyst dates must use YYYY-MM-DD and fall inside the exact inclusive window ${date} through ${catalystWindowEnd}. The repair schema rejects every other date. Never move, shorten, or invent an event date to force it into this window. Remove every out-of-window catalyst and its forward-looking mentions from the summary, highlights, and body. Every retained catalyst must cite an authoritative primary schedule source.\n- Treat FOMC, Federal Reserve policy decision, or central-bank decision language as central-bank catalyst mentions; CPI, Consumer Price Index, PCE, or personal consumption expenditures language as inflation catalyst mentions; and Employment Situation, nonfarm payrolls, or payrolls language as labor catalyst mentions.\n- If the summary or any schedule-focused highlight uses one of those phrases while discussing a calendar, schedule, upcoming event, watchlist, or next catalyst, decision, event, major release, or test, retain the matching catalyst only when its unchanged confirmed date falls inside ${date} through ${catalystWindowEnd} and it is backed by an authoritative primary schedule source already present in the original bundle. If no supported matching catalyst can be retained, remove the forward-looking mention from the summary, highlight, and body instead of inventing a catalyst; an out-of-window event is not retainable.\n- Preserve each catalyst's eventType, importance, 1-5 impactScore, and whyItMatters explanation. Reserve high 4-5 scores for genuinely important events across at least two covered assets; the server derives extra-publication eligibility.\n- Return finished publication copy. Remove first-person offers, follow-up questions, "If you want" sections, and offers to rerun, expand, add, check, or provide more material.\n- Do not say an organization, calendar, release, or source was checked, used, or included unless its exact permitted URL remains in the source ledger and is referenced by a highlight or catalyst.\n- Keep the summary under 700 characters, each headline under 140 characters, each development and whyItMatters under 700 characters, and the body under 9,000 characters.\n- Return the complete corrected bundle, not a patch or explanation.\n\nPERMITTED SOURCE URLS:\n${JSON.stringify(groundedUrls, null, 2)}\n\nORIGINAL BUNDLE:\n${originalDraft}`,
+        text: {
+          format: {
+            type: 'json_schema',
+            name: 'daily_usd_impact_bundle_repair',
+            strict: true,
+            schema: buildRepairOutputSchema(date),
+          },
+        },
+        max_output_tokens: MAX_REPAIR_OUTPUT_TOKENS,
+      }),
     });
+
+    const raw = await providerResponse.text();
+    let repairPayload;
+    try {
+      repairPayload = JSON.parse(raw);
+    } catch {
+      throw new Error(`OpenAI repair returned invalid JSON with status ${providerResponse.status}`);
+    }
+    if (!providerResponse.ok) {
+      throw new Error(repairPayload?.error?.message ?? `OpenAI repair failed with status ${providerResponse.status}`);
+    }
+    if (repairPayload.status && repairPayload.status !== 'completed') {
+      throw new Error(`OpenAI repair did not complete: ${repairPayload.status}`);
+    }
+
+    return {
+      ...repairPayload,
+      status: 'completed',
+      output: [
+        ...groundingOutputItems(openAiResponse),
+        ...(repairPayload.output ?? []),
+      ],
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function forwardRecordedResponse(response, recorder, extraHeaders = {}) {
+  response.statusCode = recorder.statusCode;
+  for (const [name, value] of Object.entries(recorder.headers)) response.setHeader(name, value);
+  for (const [name, value] of Object.entries(extraHeaders)) response.setHeader(name, value);
+  response.end(recorder.body);
+}
+
+async function normalizeCompletedResponse(request, response, date, openAiResponse, apiKey) {
+  const initial = await validateCompletedResponse(request, date, openAiResponse);
+  if (initial.recorder.statusCode === 200) {
+    return forwardRecordedResponse(response, initial.recorder, {
+      'X-USD-Impact-Repaired': 'false',
+      'X-USD-Impact-Repair-Count': '0',
+    });
+  }
+
+  console.error(`Daily news bundle requires bounded repair: ${initial.reason}`);
+  const repairStartedAt = Date.now();
+  let candidate = openAiResponse;
+  let currentReason = initial.reason;
+
+  for (let attempt = 1; attempt <= MAX_REPAIR_ATTEMPTS; attempt += 1) {
+    const remainingBudget = REPAIR_TOTAL_TIMEOUT_MS - (Date.now() - repairStartedAt);
+    if (remainingBudget < 10_000) {
+      return sendJson(response, {
+        error: 'Daily news source generation exhausted its bounded repair budget.',
+        initialValidationReason: initial.reason,
+        repairValidationReason: currentReason,
+        repairAttempts: attempt - 1,
+      }, 502);
+    }
+
+    try {
+      candidate = await repairCompletedResponse(
+        apiKey,
+        date,
+        candidate,
+        currentReason,
+        Math.min(REPAIR_TIMEOUT_MS, remainingBudget),
+      );
+      const repaired = await validateCompletedResponse(request, date, candidate);
+      if (repaired.recorder.statusCode === 200) {
+        return forwardRecordedResponse(response, repaired.recorder, {
+          'X-USD-Impact-Repaired': 'true',
+          'X-USD-Impact-Repair-Count': String(attempt),
+        });
+      }
+      currentReason = repaired.reason;
+      console.error(`Daily news bundle repair attempt ${attempt} still failed validation: ${currentReason}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown repair error';
+      console.error(`Daily news bundle repair attempt ${attempt} failed: ${message}`);
+      return sendJson(response, {
+        error: 'Daily news source generation failed validation and could not be repaired.',
+        initialValidationReason: initial.reason,
+        repairValidationReason: currentReason,
+        repairAttempts: attempt,
+        repairError: message.slice(0, 1_000),
+      }, 502);
+    }
+  }
+
+  return sendJson(response, {
+    error: 'Daily news source generation failed validation after two bounded repair attempts.',
+    initialValidationReason: initial.reason,
+    repairValidationReason: currentReason,
+    repairAttempts: MAX_REPAIR_ATTEMPTS,
+  }, 502);
+}
+
+export const config = { maxDuration: 300 };
+
+export default async function handler(request, response) {
+  if (!['GET', 'POST'].includes(request.method)) {
+    return sendJson(response, { error: 'Method not allowed.' }, 405, { Allow: 'GET, POST' });
+  }
+
+  const endpointToken = process.env.NEWSFEED_BEARER_TOKEN;
+  const openAiApiKey = process.env.OPENAI_API_KEY;
+  if (!endpointToken || !openAiApiKey) {
+    console.error('Daily news background configuration is incomplete.');
+    return sendJson(response, { error: 'Daily news background generation is not configured.' }, 503);
+  }
+  if (!safeTokenEqual(bearerToken(request), endpointToken)) {
+    return sendJson(response, { error: 'Unauthorized.' }, 401, { 'WWW-Authenticate': 'Bearer' });
+  }
+
+  const date = queryParam(request, 'date') || utcDateString();
+  if (!isRealDate(date)) return sendJson(response, { error: 'date must use YYYY-MM-DD.' }, 400);
+
+  if (request.method === 'POST') {
+    try {
+      return await startBackgroundResponse(request, response, date);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown error';
+      console.error(`Daily news background start failed: ${message}`);
+      return sendJson(response, { error: 'Daily news background generation could not be started.' }, 502);
+    }
+  }
+
+  const responseId = queryParam(request, 'response_id');
+  if (!RESPONSE_ID_PATTERN.test(responseId)) {
+    return sendJson(response, { error: 'A valid response_id is required.' }, 400);
+  }
+
+  try {
+    const openAiResponse = await retrieveOpenAiResponse(openAiApiKey, responseId);
+    if (ACTIVE_STATUSES.has(openAiResponse.status)) {
+      return sendJson(response, {
+        id: responseId,
+        status: openAiResponse.status,
+        date,
+      }, 202, {
+        'Retry-After': '20',
+      });
+    }
+    if (TERMINAL_FAILURE_STATUSES.has(openAiResponse.status)) {
+      const details = terminalFailureDetails(openAiResponse);
+      console.error(
+        `Daily news background response ${responseId} ended with status ${openAiResponse.status}; reason ${details.reason}; usage ${JSON.stringify(details.usage)}.`,
+      );
+      return sendJson(response, {
+        error: 'Daily news background generation did not complete.',
+        status: openAiResponse.status,
+        reason: details.reason,
+        providerMessage: details.providerMessage,
+        usage: details.usage,
+      }, 502);
+    }
+    if (openAiResponse.status !== 'completed') {
+      console.error(`Daily news background response ${responseId} returned unknown status ${openAiResponse.status}.`);
+      return sendJson(response, {
+        error: 'Daily news background generation returned an unknown status.',
+        status: openAiResponse.status ?? 'unknown',
+      }, 502);
+    }
+    return await normalizeCompletedResponse(request, response, date, openAiResponse, openAiApiKey);
   } catch (error) {
-    const code = boundedErrorCode(error);
-    console.error('Controlled account-deletion email proof failed.', { code });
-    return sendJson(response, 500, {
-      ok: false,
-      error: 'Controlled Development proof failed.',
-      code,
-    });
+    const message = error instanceof Error ? error.message : 'unknown error';
+    console.error(`Daily news background retrieval failed: ${message}`);
+    return sendJson(response, { error: 'Daily news background generation could not be retrieved.' }, 502);
   }
 }

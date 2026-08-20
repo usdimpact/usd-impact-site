@@ -60,6 +60,10 @@
       "destination": "/api/account?action=access"
     },
     {
+      "source": "/api/account-support",
+      "destination": "/api/account?action=support"
+    },
+    {
       "source": "/api/account-export",
       "destination": "/api/account?action=export"
     },

@@ -30,6 +30,8 @@ jobs:
       - name: Validate AI control center
         run: |
           node --check ../../scripts/control-center.mjs
+          node --check ../../scripts/control-center-policy.mjs
+          node ../../scripts/test-control-center-policy.mjs
           node -e "JSON.parse(require('fs').readFileSync('../../docs/operations/ai-control-center/INVENTORY.json', 'utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('../../docs/operations/ai-control-center/PROJECT_STATE.json', 'utf8'))"
       - name: Validate content

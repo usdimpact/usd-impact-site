@@ -7,6 +7,7 @@ import {
   isFailureOnOlderHead,
   isRunUnknown,
   runMatchesHead,
+  workflowRunsUrl,
 } from './control-center-policy.mjs';
 
 const currentHead = 'current-head-sha';
@@ -16,6 +17,17 @@ const run = ({ status = 'completed', conclusion = 'success', headSha = currentHe
   conclusion,
   head_sha: headSha,
 });
+
+assert.equal(
+  workflowRunsUrl('usdimpact/usd-impact-site', 'quality.yml'),
+  'https://api.github.com/repos/usdimpact/usd-impact-site/actions/workflows/quality.yml/runs?branch=main&per_page=1',
+);
+assert.equal(
+  workflowRunsUrl('usdimpact/usd-impact-pipeline', 'weekly health.yml', 'release/candidate'),
+  'https://api.github.com/repos/usdimpact/usd-impact-pipeline/actions/workflows/weekly%20health.yml/runs?branch=release%2Fcandidate&per_page=1',
+);
+assert.throws(() => workflowRunsUrl('invalid-repo', 'quality.yml'), TypeError);
+assert.throws(() => workflowRunsUrl('usdimpact/usd-impact-site', '', 'main'), TypeError);
 
 assert.equal(isCompletedSuccess(run()), true);
 assert.equal(isCompletedFailure(run({ conclusion: 'failure' })), true);

@@ -143,8 +143,9 @@ assert.deepEqual(evaluateLaunchEmailEligibility({
   messageId: 'book_availability',
   consentState: 'granted',
   suppressionState: 'provider_suppressed',
-}), { action: 'terminal_suppressed', reason: 'provider_suppresssed' });
+}), { action: 'terminal_suppressed', reason: 'provider_suppressed' });
 
+const queued = persistedOutbox(accessIntent);
 assert.deepEqual(resolveLaunchEmailDispatchDecision({
   intent: accessIntent,
   outbox: queued,

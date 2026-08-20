@@ -5,6 +5,7 @@ import {
   isCompletedFailure,
   isFailureOnCurrentHead,
   isRunUnknown,
+  workflowRunsUrl,
 } from './control-center-policy.mjs';
 
 const token = process.env.GITHUB_TOKEN || '';
@@ -66,8 +67,8 @@ function scoreIssue(issue) {
   return { priority, score, explicitlyBlocked };
 }
 
-async function latestWorkflow(repo, workflow) {
-  const data = await gh(`https://api.github.com/repos/${repo}/actions/workflows/${encodeURIComponent(workflow)}/runs?per_page=1`);
+async function latestWorkflow(repo, workflow, branch = 'main') {
+  const data = await gh(workflowRunsUrl(repo, workflow, branch));
   const run = data.workflow_runs?.[0];
   if (!run) return { status: 'UNKNOWN', conclusion: 'UNKNOWN', url: null, created_at: null, head_sha: null };
   return {
@@ -217,6 +218,7 @@ const state = {
     'Generated state is a snapshot and never overrides canonical production or governance configuration.',
     'Vercel production readiness must be verified outside this GitHub-only state snapshot after release.',
     'Cloudflare Pages remains separate to the pipeline dashboard and is not a usd-impact-site deployment target.',
+    'Workflow evidence is scoped to the default main branch so pull-request and automation-branch checks cannot replace production-branch health.',
     'A project-wide P0 or pipeline failure does not automatically block public Daily News unless it affects website publishing or a critical website quality/health workflow.',
     'An explicit /daily may perform one recovery dispatch only when both failed Daily signals belong to older commits and exact-current-head Web Quality is green.'
   ]

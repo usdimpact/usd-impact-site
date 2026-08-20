@@ -7,6 +7,7 @@ import {
   isFailureOnOlderHead,
   isRunUnknown,
   runMatchesHead,
+  selectWorkflowRun,
 } from './control-center-policy.mjs';
 
 const currentHead = 'current-head-sha';
@@ -16,6 +17,18 @@ const run = ({ status = 'completed', conclusion = 'success', headSha = currentHe
   conclusion,
   head_sha: headSha,
 });
+
+{
+  const automationRun = run({ conclusion: 'action_required', headSha: 'automation-head-sha' });
+  const currentMainRun = run();
+  const olderMainRun = run({ conclusion: 'failure', headSha: oldHead });
+  const runs = [automationRun, currentMainRun, olderMainRun];
+
+  assert.equal(selectWorkflowRun(runs), automationRun);
+  assert.equal(selectWorkflowRun(runs, { headSha: currentHead }), currentMainRun);
+  assert.equal(selectWorkflowRun(runs, { headSha: 'missing-head-sha' }), null);
+  assert.equal(selectWorkflowRun(null, { headSha: currentHead }), null);
+}
 
 assert.equal(isCompletedSuccess(run()), true);
 assert.equal(isCompletedFailure(run({ conclusion: 'failure' })), true);
@@ -129,4 +142,4 @@ assert.equal(isRunUnknown({ status: 'in_progress', conclusion: null, head_sha: c
   assert.equal(result.currentQualityGreen, false);
 }
 
-console.log('Control-center Daily recovery policy tests passed.');
+console.log('Control-center workflow selection and Daily recovery policy tests passed.');

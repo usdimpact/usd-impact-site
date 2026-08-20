@@ -36,6 +36,10 @@
       "destination": "/api/waitlist?action=unsubscribe"
     },
     {
+      "source": "/api/commerce-readiness",
+      "destination": "/api/account?action=commerce-readiness"
+    },
+    {
       "source": "/api/auth-login",
       "destination": "/api/account?action=login"
     },
@@ -147,6 +151,19 @@
         {
           "key": "Referrer-Policy",
           "value": "no-referrer"
+        }
+      ]
+    },
+    {
+      "source": "/api/commerce-readiness",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
         }
       ]
     }

@@ -19,6 +19,7 @@ import {
   setSessionCookies,
 } from '../src/lib/supabase-auth.js';
 import { enqueueAccountDeletionRequestedEmail } from '../src/lib/account-deletion-email.js';
+import { handleControlledProductionAuthProof } from '../src/lib/controlled-production-auth-proof.js';
 import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-handler.js';
 import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js';
 
@@ -273,6 +274,7 @@ const handlers = Object.freeze({
   access: handleAccess,
   export: handleExport,
   delete: handleDelete,
+  'controlled-production-auth-proof': handleControlledProductionAuthProof,
   'commerce-readiness': handleCommerceReadinessRequest,
   'video-progress': handleVideoProgressRequest,
 });

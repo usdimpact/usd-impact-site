@@ -8,6 +8,8 @@ This document records the approved source-level customer-message copy and securi
 
 The registry is fail-closed and provider-neutral. It does not send email, register a provider, grant access, alter a commercial state, or replace real Preview/Production delivery proof.
 
+The provider-neutral intent, eligibility, durable enqueue, and injected-adapter execution contract is `apps/web/src/lib/launch-email-dispatch.js`. Its operating boundary is documented in `launch-email-dispatch.md`. The dispatch module is disabled by default and does not register a sender, provider, webhook, Production migration, or business-event trigger.
+
 ## Template ownership
 
 | Message | Source owner | Delivery boundary | Key customer statement |
@@ -60,22 +62,27 @@ App-owned state templates accept only a bounded opaque reference matching the re
 - private learning input;
 - a privacy export.
 
+The dispatch contract derives this customer-facing reference from the immutable business-state identity. The raw business-object identifier remains in the backend outbox record and is not copied into customer-facing message text.
+
 ## Provider boundary
 
-`auth_sign_in` remains provider-managed. Its actual sender, subject, HTML, secure action URL, Site URL, redirect allowlist, and expiration behavior must be verified directly in Supabase Auth. The application registry refuses to render it and therefore cannot create a parallel or stale magic-link implementation.
+`auth_sign_in` remains provider-managed. Its actual sender, subject, HTML, secure action URL, Site URL, redirect allowlist, and expiration behavior must be verified directly in Supabase Auth. The application registry and dispatch layer refuse to render or enqueue it and therefore cannot create a parallel or stale magic-link implementation.
 
 Purchase, refund, dispute, and chargeback messages remain source-ready but inactive until Issue #53 selects a provider and maps Merchant-of-Record, tax, settlement, receipt, refund, dispute, and accounting responsibilities. Provider receipts do not replace USD Impact account/access/privacy/support communication unless the reviewed responsibility matrix explicitly says so.
 
+The dispatch layer rejects the shared `purchase_pending` and `purchase_failed` boundaries unless the caller supplies an explicit reviewed responsibility approval. Application-owned messages still require an authoritative durable business event before enqueue. Before provider delivery, the dispatcher reloads the durable row and uses compare-and-set status and attempt-count conditions so concurrent workers fail closed rather than issuing parallel sends.
+
 ## Release gates still required
 
-The source template contract does not close Issue #130. Before launch:
+The source template and dispatch contracts do not close Issue #130. Before launch:
 
 1. review the exact final copy against the selected provider and legal/accounting responsibilities;
-2. connect each app-owned template to a verified outbox state transition;
-3. prove idempotent delivery, duplicate suppression, bounce/complaint/suppression, and retry exhaustion in Development;
-4. complete mobile and representative mailbox placement checks;
-5. verify the provider-managed Production Auth template and callback;
-6. apply and verify the Production email migration through the approved gate;
-7. complete one controlled Production delivery lifecycle.
+2. wire each real business event through the provider-neutral dispatch contract using an immutable business-state identity and version;
+3. prove idempotent enqueue and injected-adapter delivery for representative application-owned messages in Development;
+4. prove duplicate suppression, bounce/complaint/suppression, and retry exhaustion in Development;
+5. complete mobile and representative mailbox placement checks;
+6. verify the provider-managed Production Auth template and callback;
+7. apply and verify the Production email migration through the approved gate;
+8. complete one controlled Production delivery lifecycle.
 
 Until those gates pass, public checkout remains disabled and Issue #130 remains `RELEASE BLOCKED`.

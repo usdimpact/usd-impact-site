@@ -1,5 +1,6 @@
 import {
   exportOwnAccount,
+  getVerifiedSupabaseUser,
   readAccountAccessState,
   requestOwnAccountDeletion,
   safeSupabaseError,
@@ -20,6 +21,7 @@ import {
 } from '../src/lib/supabase-auth.js';
 import { enqueueAccountDeletionRequestedEmail } from '../src/lib/account-deletion-email.js';
 import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-handler.js';
+import { enqueuePrivacyExportAcknowledgementEmail } from '../src/lib/privacy-export-email.js';
 import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js';
 
 function header(request, name) {
@@ -79,6 +81,23 @@ function logConfirmationFailure(error) {
     code: typeof error?.code === 'string' ? error.code : null,
     message: error instanceof Error ? error.message : 'Unknown confirmation error.',
   });
+}
+
+async function recordPrivacyExportEmailIntent({ exportResult, accessToken }) {
+  try {
+    const verifiedUser = await getVerifiedSupabaseUser(accessToken);
+    return await enqueuePrivacyExportAcknowledgementEmail({
+      exportResult,
+      verifiedUser,
+    });
+  } catch (error) {
+    console.error('Privacy export acknowledgement email intent could not be recorded.', {
+      code: typeof error?.code === 'string'
+        ? error.code
+        : 'PRIVACY_EXPORT_EMAIL_INTENT_FAILED',
+    });
+    return null;
+  }
 }
 
 async function recordAccountDeletionEmailIntent(result) {
@@ -233,6 +252,7 @@ async function handleExport(request, response) {
 
   try {
     const exported = await exportOwnAccount({ accessToken });
+    await recordPrivacyExportEmailIntent({ exportResult: exported, accessToken });
     response.setHeader('Content-Disposition', 'attachment; filename="usd-impact-account-export.json"');
     return sendJson(response, 200, exported);
   } catch (error) {

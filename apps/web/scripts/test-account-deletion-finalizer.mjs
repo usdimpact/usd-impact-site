@@ -125,10 +125,57 @@ const result = await runDueAccountDeletionFinalizer({
   fetchImpl,
   now: new Date('2026-08-27T18:10:00.000Z'),
 });
-assert.deepEqual(result, { enabled: true, scanned: 1, finalized: 1, failed: 0 });
+assert.deepEqual(result, {
+  enabled: true,
+  scanned: 1,
+  finalized: 1,
+  alreadyFinalized: 0,
+  failed: 0,
+});
 assert.equal(calls.filter((call) => call.href.includes('/auth/v1/admin/users/')).length, 1);
 assert.equal(calls.filter((call) => call.href.endsWith('/rpc/finalize_account_deletion')).length, 1);
 assert.equal(calls.filter((call) => call.href.includes('/notification_outbox')).length >= 1, true);
+
+const concurrentCalls = [];
+const concurrentFetch = async (url, options = {}) => {
+  const href = String(url);
+  concurrentCalls.push({ href, options });
+  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
+    return response(200, [{
+      account_id: accountId,
+      email: recipientEmail,
+      status: 'deletion_pending',
+      deletion_requested_at: deletionRequestedAt,
+      deletion_due_at: deletionDueAt,
+    }]);
+  }
+  if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') {
+    return response(404, { message: 'already removed' });
+  }
+  if (href.endsWith('/rest/v1/rpc/finalize_account_deletion') && options.method === 'POST') {
+    return response(200, []);
+  }
+  if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
+    return response(200, [{ account_id: accountId, status: 'deleted', deleted_at: deletedAt }]);
+  }
+  if (href.includes('/notification_outbox') || href.includes('/support_requests')) {
+    throw new Error('Concurrent already-finalized path must not write another outbox or escalation.');
+  }
+  throw new Error(`Unexpected concurrent request: ${options.method || 'GET'} ${href}`);
+};
+const concurrent = await runDueAccountDeletionFinalizer({
+  environment,
+  fetchImpl: concurrentFetch,
+  now: new Date('2026-08-27T18:10:00.000Z'),
+});
+assert.deepEqual(concurrent, {
+  enabled: true,
+  scanned: 1,
+  finalized: 0,
+  alreadyFinalized: 1,
+  failed: 0,
+});
+assert.equal(concurrentCalls.filter((call) => call.href.includes('/support_requests')).length, 0);
 
 let disabledFetchCalled = false;
 const disabled = await runDueAccountDeletionFinalizer({
@@ -138,7 +185,13 @@ const disabled = await runDueAccountDeletionFinalizer({
     throw new Error('should not run');
   },
 });
-assert.deepEqual(disabled, { enabled: false, scanned: 0, finalized: 0, failed: 0 });
+assert.deepEqual(disabled, {
+  enabled: false,
+  scanned: 0,
+  finalized: 0,
+  alreadyFinalized: 0,
+  failed: 0,
+});
 assert.equal(disabledFetchCalled, false);
 
 console.log('Account deletion finalizer tests passed.');

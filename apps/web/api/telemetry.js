@@ -1,401 +1,181 @@
-import { timingSafeEqual } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import {
-  readTelemetryAggregates,
-  recordTelemetryEvent,
-  telemetryStorageConstants,
-} from './_telemetry-store.js';
+  dispatchAccountDeletionRequestedEmail,
+  enqueueAccountDeletionRequestedEmail,
+} from '../src/lib/account-deletion-email.js';
 
-const MAX_BODY_BYTES = 4_096;
-const FALLBACK_DUPLICATE_TTL_MS = 10_000;
-const MAX_RECENT_EVENT_IDS = 1_000;
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const MAX_REPORT_DAYS = 31;
+const RESEND_API = 'https://api.resend.com';
+const PROOF_TOKEN_SHA256 = '4790935393112139d697b98301c652a852224e22b1f29b225e0ed8946739acdc';
+const PROOF_EXPIRES_AT = Date.parse('2026-08-20T19:40:00.000Z');
+const FIXTURE_ACCOUNT_ID = '7b14a3d1-00f7-4f4e-8a31-b5884af7e65f';
+const FIXTURE_EMAIL = 'delivered+issue130-account-deletion-20260820@resend.dev';
+const FIXTURE_OCCURRED_AT = '2026-08-20T18:40:00.000Z';
+const FIXTURE_DUE_AT = '2026-08-27T18:40:00.000Z';
 
-const ALLOWED_EVENTS = new Set([
-  'checklist_download',
-  'quiz_start',
-  'quiz_complete',
-  'quiz_retry',
-]);
-
-const QUIZ_ID_PATTERN = /^quiz-[a-z0-9-]{1,80}$/;
-const EVENT_ID_PATTERN = /^[a-zA-Z0-9-]{8,80}$/;
-const CAMPAIGN_PATTERN = /^[a-zA-Z0-9._~-]{1,64}$/;
-const ROUTE_PATTERN = /^\/[a-zA-Z0-9/_-]{0,199}$/;
-
-const recentEventIds = new Map();
-let telemetryRecorder = recordTelemetryEvent;
-let telemetryAggregateReader = readTelemetryAggregates;
-
-function send(response, status, payload, extraHeaders = {}) {
+function sendJson(response, status, body, extraHeaders = {}) {
   response.statusCode = status;
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
   response.setHeader('Cache-Control', 'no-store');
   response.setHeader('X-Content-Type-Options', 'nosniff');
+  response.setHeader('X-Robots-Tag', 'noindex, nofollow');
   for (const [name, value] of Object.entries(extraHeaders)) response.setHeader(name, value);
-  response.end(JSON.stringify(payload));
+  response.end(JSON.stringify(body));
 }
 
-function requestHeader(request, name) {
-  const headers = request.headers ?? {};
-  if (typeof headers.get === 'function') return headers.get(name) ?? '';
-  const value = headers[name.toLowerCase()] ?? headers[name];
-  return Array.isArray(value) ? value[0] ?? '' : String(value ?? '');
+function requestUrl(request) {
+  return new URL(request.url || '/', 'https://usd-impact.invalid');
 }
 
-function queryValue(request, key) {
-  const direct = request.query?.[key];
-  if (Array.isArray(direct)) return String(direct[0] ?? '').trim();
-  if (direct !== undefined && direct !== null) return String(direct).trim();
+function validProofToken(value) {
+  if (typeof value !== 'string' || value.length < 32 || value.length > 128) return false;
+  const supplied = Buffer.from(createHash('sha256').update(value).digest('hex'), 'utf8');
+  const expected = Buffer.from(PROOF_TOKEN_SHA256, 'utf8');
+  return supplied.length === expected.length && timingSafeEqual(supplied, expected);
+}
+
+function boundedErrorCode(error) {
+  const code = String(error?.code || 'CONTROLLED_PROOF_FAILED')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9_]/g, '_')
+    .slice(0, 80);
+  return /^[A-Z][A-Z0-9_]{1,79}$/.test(code) ? code : 'CONTROLLED_PROOF_FAILED';
+}
+
+async function readJsonSafely(response) {
   try {
-    return new URL(request.url ?? '/', 'https://usd-impact.com').searchParams.get(key)?.trim() ?? '';
+    return await response.json();
   } catch {
-    return '';
+    return null;
   }
 }
 
-function parseBody(request) {
-  if (request.body && typeof request.body === 'object') {
-    const encoded = JSON.stringify(request.body);
-    if (Buffer.byteLength(encoded, 'utf8') > MAX_BODY_BYTES) {
-      throw new Error('Request body is too large.');
-    }
-    return request.body;
-  }
-
-  if (typeof request.body === 'string') {
-    if (Buffer.byteLength(request.body, 'utf8') > MAX_BODY_BYTES) {
-      throw new Error('Request body is too large.');
-    }
-    return JSON.parse(request.body);
-  }
-
-  throw new Error('A JSON request body is required.');
-}
-
-function optionalCampaignValue(payload, key) {
-  const value = payload[key];
-  if (value === undefined || value === null || value === '') return null;
-  if (typeof value !== 'string' || !CAMPAIGN_PATTERN.test(value)) {
-    throw new Error(`${key} is invalid.`);
-  }
-  return value;
-}
-
-function pruneRecentEventIds(now) {
-  for (const [eventId, expiresAt] of recentEventIds) {
-    if (expiresAt <= now) recentEventIds.delete(eventId);
-  }
-
-  while (recentEventIds.size > MAX_RECENT_EVENT_IDS) {
-    const oldest = recentEventIds.keys().next().value;
-    if (!oldest) break;
-    recentEventIds.delete(oldest);
-  }
-}
-
-function normalizeEvent(payload, now) {
-  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-    throw new Error('Telemetry payload must be an object.');
-  }
-
-  const eventName = payload.eventName;
-  if (typeof eventName !== 'string' || !ALLOWED_EVENTS.has(eventName)) {
-    throw new Error('eventName is unavailable.');
-  }
-
-  const eventId = payload.eventId;
-  if (typeof eventId !== 'string' || !EVENT_ID_PATTERN.test(eventId)) {
-    throw new Error('eventId is invalid.');
-  }
-
-  const route = payload.route;
-  if (typeof route !== 'string' || !ROUTE_PATTERN.test(route) || route.includes('//')) {
-    throw new Error('route is invalid.');
-  }
-
-  const record = {
-    kind: 'usd-impact-learning-telemetry',
-    schemaVersion: 2,
-    eventName,
-    occurredAt: new Date(now).toISOString(),
-    route,
+function controlledEnvironment() {
+  return {
+    ...process.env,
+    VERCEL_ENV: 'preview',
+    EMAIL_READINESS_LEDGER_ENABLED: 'true',
+    LAUNCH_EMAIL_DISPATCH_ENABLED: 'true',
+    EMAIL_READINESS_PRODUCTION_APPROVED: 'false',
+    LAUNCH_EMAIL_PRODUCTION_APPROVED: 'false',
   };
-
-  const utmSource = optionalCampaignValue(payload, 'utmSource');
-  const utmMedium = optionalCampaignValue(payload, 'utmMedium');
-  const utmCampaign = optionalCampaignValue(payload, 'utmCampaign');
-  if (utmSource) record.utmSource = utmSource;
-  if (utmMedium) record.utmMedium = utmMedium;
-  if (utmCampaign) record.utmCampaign = utmCampaign;
-
-  if (eventName.startsWith('quiz_')) {
-    const quizId = payload.quizId;
-    if (typeof quizId !== 'string' || !QUIZ_ID_PATTERN.test(quizId)) {
-      throw new Error('quizId is invalid.');
-    }
-    record.quizId = quizId;
-  }
-
-  if (eventName === 'quiz_complete') {
-    if (!['pass', 'fail'].includes(payload.outcome)) {
-      throw new Error('outcome must be pass or fail.');
-    }
-    if (!Number.isInteger(payload.score) || payload.score < 0 || payload.score > 10) {
-      throw new Error('score must be an integer from 0 to 10.');
-    }
-    if (payload.questionCount !== 10) {
-      throw new Error('questionCount must be 10.');
-    }
-    record.outcome = payload.outcome;
-    record.score = payload.score;
-    record.questionCount = payload.questionCount;
-  }
-
-  return { eventId, record };
 }
 
-function safeTokenEqual(actual, expected) {
-  const actualBuffer = Buffer.from(String(actual ?? ''));
-  const expectedBuffer = Buffer.from(String(expected ?? ''));
-  if (actualBuffer.length !== expectedBuffer.length) return false;
-  return timingSafeEqual(actualBuffer, expectedBuffer);
-}
-
-function bearerToken(request) {
-  const authorization = requestHeader(request, 'authorization');
-  const match = authorization.match(/^Bearer\s+(.+)$/i);
-  return match?.[1]?.trim() ?? '';
-}
-
-function utcDateString(date = new Date()) {
-  return date.toISOString().slice(0, 10);
-}
-
-function isRealDate(value) {
-  if (!DATE_PATTERN.test(value)) return false;
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return Number.isFinite(date.getTime()) && utcDateString(date) === value;
-}
-
-function dateRange(endDate, days) {
-  const end = new Date(`${endDate}T00:00:00.000Z`);
-  return Array.from({ length: days }, (_, index) => {
-    const date = new Date(end);
-    date.setUTCDate(end.getUTCDate() - (days - index - 1));
-    return utcDateString(date);
+function deletionResultFixture() {
+  return Object.freeze({
+    user: Object.freeze({ id: FIXTURE_ACCOUNT_ID, email: FIXTURE_EMAIL }),
+    profile: Object.freeze({
+      account_id: FIXTURE_ACCOUNT_ID,
+      email: FIXTURE_EMAIL,
+      status: 'deletion_pending',
+      deletion_requested_at: FIXTURE_OCCURRED_AT,
+      deletion_due_at: FIXTURE_DUE_AT,
+    }),
   });
 }
 
-async function handleReport(request, response) {
-  if (request.method !== 'GET') {
-    return send(response, 405, { error: 'Method not allowed.' }, { Allow: 'GET' });
-  }
+function resendAdapter() {
+  return Object.freeze({
+    id: 'resend',
+    async send(message) {
+      const apiKey = process.env.RESEND_API_KEY;
+      const from = process.env.RESEND_FROM_EMAIL;
+      const replyTo = process.env.RESEND_REPLY_TO;
+      if (!apiKey || !from) {
+        const error = new Error('Controlled Resend configuration is incomplete.');
+        error.code = 'CONTROLLED_RESEND_CONFIGURATION_ERROR';
+        error.providerState = 'failed';
+        throw error;
+      }
 
-  const endpointToken = process.env.TELEMETRY_REPORT_TOKEN || process.env.NEWSFEED_BEARER_TOKEN;
-  if (!endpointToken) {
-    console.error('Telemetry report token is not configured.');
-    return send(response, 503, { error: 'Telemetry reporting is not configured.' });
-  }
-  if (!safeTokenEqual(bearerToken(request), endpointToken)) {
-    return send(response, 401, { error: 'Unauthorized.' }, { 'WWW-Authenticate': 'Bearer' });
-  }
-
-  const endDate = queryValue(request, 'end') || utcDateString();
-  if (!isRealDate(endDate)) return send(response, 400, { error: 'end must use YYYY-MM-DD.' });
-
-  const daysValue = queryValue(request, 'days') || '7';
-  const days = Number.parseInt(daysValue, 10);
-  if (!Number.isInteger(days) || days < 1 || days > MAX_REPORT_DAYS || String(days) !== daysValue) {
-    return send(response, 400, { error: `days must be an integer from 1 to ${MAX_REPORT_DAYS}.` });
-  }
-
-  try {
-    const dates = dateRange(endDate, days);
-    const aggregates = await telemetryAggregateReader(dates);
-    return send(response, 200, {
-      generatedAt: new Date().toISOString(),
-      range: { start: dates[0], end: dates.at(-1), days },
-      retentionDays: telemetryStorageConstants.dailyRetentionDays,
-      ...aggregates,
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'unknown reporting error';
-    console.error(`Telemetry report failed: ${message}`);
-    return send(response, 503, { error: 'Telemetry reporting is temporarily unavailable.' });
-  }
-}
-
-function rankedCounters(counters, prefix, limit = 8) {
-  return Object.entries(counters)
-    .filter(([field, value]) => field.startsWith(prefix) && Number.isFinite(value) && value > 0)
-    .map(([field, value]) => ({ label: field.slice(prefix.length), value }))
-    .sort((left, right) => right.value - left.value || left.label.localeCompare(right.label))
-    .slice(0, limit);
-}
-
-function checklistDownloads(day) {
-  return Number(day?.counters?.['checklist:downloads']) || 0;
-}
-
-export function buildChecklistAnalytics(aggregates, selectedDays) {
-  if (!Number.isInteger(selectedDays) || selectedDays < 1 || selectedDays > MAX_REPORT_DAYS) {
-    throw new Error('selectedDays is invalid.');
-  }
-
-  const days = Array.isArray(aggregates?.days) ? aggregates.days : [];
-  if (days.length !== selectedDays * 2) throw new Error('Checklist analytics requires two complete periods.');
-
-  const previous = days.slice(0, selectedDays);
-  const current = days.slice(selectedDays);
-  const rangeDownloads = current.reduce((total, day) => total + checklistDownloads(day), 0);
-  const previousRangeDownloads = previous.reduce((total, day) => total + checklistDownloads(day), 0);
-  const activeDays = current.filter((day) => checklistDownloads(day) > 0).length;
-  const mostRecentDownloadDate = [...current].reverse().find((day) => checklistDownloads(day) > 0)?.date ?? null;
-  const totals = aggregates?.totals ?? {};
-
-  return {
-    lifetimeDownloads: Number(totals['checklist:downloads']) || 0,
-    rangeDownloads,
-    previousRangeDownloads,
-    changePercent: previousRangeDownloads > 0
-      ? Math.round(((rangeDownloads - previousRangeDownloads) / previousRangeDownloads) * 1_000) / 10
-      : null,
-    activeDays,
-    averagePerDay: Math.round((rangeDownloads / selectedDays) * 100) / 100,
-    mostRecentDownloadDate,
-    daily: current.map((day) => ({ date: day.date, downloads: checklistDownloads(day) })),
-    attribution: {
-      routes: rankedCounters(totals, 'checklist:route:'),
-      sources: rankedCounters(totals, 'checklist:utm_source:'),
-      mediums: rankedCounters(totals, 'checklist:utm_medium:'),
-      campaigns: rankedCounters(totals, 'checklist:utm_campaign:'),
-    },
-  };
-}
-
-async function handleChecklistReport(request, response) {
-  if (request.method !== 'GET') {
-    return send(response, 405, { error: 'Method not allowed.' }, { Allow: 'GET' });
-  }
-
-  const endpointToken = process.env.TELEMETRY_REPORT_TOKEN || process.env.NEWSFEED_BEARER_TOKEN;
-  if (!endpointToken) {
-    console.error('Telemetry report token is not configured.');
-    return send(response, 503, { error: 'Telemetry reporting is not configured.' });
-  }
-  if (!safeTokenEqual(bearerToken(request), endpointToken)) {
-    return send(response, 401, { error: 'Unauthorized.' }, { 'WWW-Authenticate': 'Bearer' });
-  }
-
-  const endDate = queryValue(request, 'end') || utcDateString();
-  if (!isRealDate(endDate)) return send(response, 400, { error: 'end must use YYYY-MM-DD.' });
-
-  const daysValue = queryValue(request, 'days') || '30';
-  const days = Number.parseInt(daysValue, 10);
-  if (!Number.isInteger(days) || days < 1 || days > MAX_REPORT_DAYS || String(days) !== daysValue) {
-    return send(response, 400, { error: `days must be an integer from 1 to ${MAX_REPORT_DAYS}.` });
-  }
-
-  try {
-    const dates = dateRange(endDate, days * 2);
-    const aggregates = await telemetryAggregateReader(dates);
-    const checklist = buildChecklistAnalytics(aggregates, days);
-    return send(response, 200, {
-      generatedAt: new Date().toISOString(),
-      range: { start: dates[days], end: dates.at(-1), days },
-      comparisonRange: { start: dates[0], end: dates[days - 1], days },
-      retentionDays: telemetryStorageConstants.dailyRetentionDays,
-      checklist,
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'unknown checklist reporting error';
-    console.error(`Checklist analytics failed: ${message}`);
-    return send(response, 503, { error: 'Checklist analytics are temporarily unavailable.' });
-  }
-}
-
-async function handleEvent(request, response) {
-  if (request.method !== 'POST') {
-    response.setHeader('Allow', 'POST');
-    return send(response, 405, { error: 'Method not allowed.' });
-  }
-
-  let payload;
-  try {
-    payload = parseBody(request);
-  } catch (error) {
-    return send(response, 400, {
-      error: error instanceof Error ? error.message : 'Invalid JSON.',
-    });
-  }
-
-  const now = Date.now();
-  pruneRecentEventIds(now);
-
-  let normalized;
-  try {
-    normalized = normalizeEvent(payload, now);
-  } catch (error) {
-    return send(response, 400, {
-      error: error instanceof Error ? error.message : 'Invalid telemetry event.',
-    });
-  }
-
-  if (recentEventIds.has(normalized.eventId)) {
-    return send(response, 202, { accepted: true, duplicate: true, durable: false });
-  }
-
-  recentEventIds.set(normalized.eventId, now + FALLBACK_DUPLICATE_TTL_MS);
-
-  try {
-    const result = await telemetryRecorder(normalized);
-    if (result.rateLimited) {
-      console.warn('Telemetry event rate limited.');
-      return send(response, 202, {
-        accepted: true,
-        duplicate: false,
-        durable: true,
-        rateLimited: true,
+      const providerResponse = await fetch(`${RESEND_API}/emails`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'Idempotency-Key': message.idempotencyKey,
+        },
+        body: JSON.stringify({
+          from,
+          to: message.to,
+          ...(replyTo ? { reply_to: replyTo } : {}),
+          subject: message.subject,
+          text: message.text,
+          html: message.html,
+          ...(message.headers ? { headers: message.headers } : {}),
+        }),
       });
-    }
-    if (!result.duplicate) {
-      console.log(JSON.stringify({ ...normalized.record, durable: true }));
-    }
-    return send(response, 202, {
-      accepted: true,
-      duplicate: result.duplicate,
-      durable: true,
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'unknown storage error';
-    console.error(`Telemetry durable storage failed: ${message}`);
-    console.log(JSON.stringify({ ...normalized.record, durable: false }));
-    return send(response, 202, {
-      accepted: true,
-      duplicate: false,
-      durable: false,
-    });
-  }
-}
-
-export function resetTelemetryStateForTests() {
-  recentEventIds.clear();
-  telemetryRecorder = recordTelemetryEvent;
-  telemetryAggregateReader = readTelemetryAggregates;
-}
-
-export function setTelemetryRecorderForTests(recorder) {
-  telemetryRecorder = recorder;
-}
-
-export function setTelemetryAggregateReaderForTests(reader) {
-  telemetryAggregateReader = reader;
+      const providerPayload = await readJsonSafely(providerResponse);
+      if (!providerResponse.ok) {
+        const error = new Error(`Controlled Resend request failed with status ${providerResponse.status}.`);
+        error.code = `RESEND_HTTP_${providerResponse.status}`;
+        error.providerState = providerResponse.status >= 500 ? 'failed' : 'accepted_ambiguous';
+        throw error;
+      }
+      if (typeof providerPayload?.id !== 'string' || !providerPayload.id) {
+        const error = new Error('Controlled Resend response did not include a message identifier.');
+        error.code = 'RESEND_MESSAGE_ID_MISSING';
+        error.providerState = 'accepted_ambiguous';
+        throw error;
+      }
+      return Object.freeze({
+        state: 'accepted',
+        messageRef: providerPayload.id,
+        occurredAt: new Date().toISOString(),
+      });
+    },
+  });
 }
 
 export default async function handler(request, response) {
-  const requestedAction = queryValue(request, 'action');
-  if (requestedAction === 'report') return handleReport(request, response);
-  if (requestedAction === 'checklist-report') return handleChecklistReport(request, response);
-  return handleEvent(request, response);
+  if (request.method !== 'GET') {
+    return sendJson(response, 405, { error: 'Method not allowed.', code: 'METHOD_NOT_ALLOWED' }, { Allow: 'GET' });
+  }
+  if (String(process.env.VERCEL_ENV || '').toLowerCase() === 'production') {
+    return sendJson(response, 404, { error: 'Not found.', code: 'NOT_FOUND' });
+  }
+  if (Date.now() > PROOF_EXPIRES_AT) {
+    return sendJson(response, 410, { error: 'Controlled proof expired.', code: 'CONTROLLED_PROOF_EXPIRED' });
+  }
+
+  const url = requestUrl(request);
+  const keys = [...new Set(url.searchParams.keys())];
+  if (keys.length !== 1 || keys[0] !== 'proof' || !validProofToken(url.searchParams.get('proof'))) {
+    return sendJson(response, 404, { error: 'Not found.', code: 'NOT_FOUND' });
+  }
+
+  try {
+    const environment = controlledEnvironment();
+    const state = await enqueueAccountDeletionRequestedEmail({
+      deletionResult: deletionResultFixture(),
+      environment,
+    });
+    const result = await dispatchAccountDeletionRequestedEmail({
+      state,
+      providerAdapter: resendAdapter(),
+      environment,
+      nowMs: Date.now(),
+    });
+    return sendJson(response, 200, {
+      ok: true,
+      environment: 'development',
+      action: result.action,
+      outbox: {
+        id: result.outbox?.id || state.outbox?.id || null,
+        status: result.outbox?.status || state.outbox?.status || null,
+        attemptCount: result.outbox?.attempt_count ?? state.outbox?.attempt_count ?? null,
+        providerCorrelated: Boolean(result.outbox?.provider_message_ref || state.outbox?.provider_message_ref),
+      },
+      providerMessageRef: result.providerMessageRef || result.outbox?.provider_message_ref || null,
+      expiresAt: new Date(PROOF_EXPIRES_AT).toISOString(),
+    });
+  } catch (error) {
+    const code = boundedErrorCode(error);
+    console.error('Controlled account-deletion email proof failed.', { code });
+    return sendJson(response, 500, {
+      ok: false,
+      error: 'Controlled Development proof failed.',
+      code,
+    });
+  }
 }

@@ -4,6 +4,7 @@ import {
   enqueueAccountDeletionRequestedEmail,
 } from './account-deletion-email.js';
 
+// This temporary Preview-only helper is redeployed unchanged to verify real replay behavior.
 const RESEND_API = 'https://api.resend.com';
 const PROOF_TOKEN_SHA256 = '4790935393112139d697b98301c652a852224e22b1f29b225e0ed8946739acdc';
 const PROOF_EXPIRES_AT = Date.parse('2026-08-20T20:30:00.000Z');

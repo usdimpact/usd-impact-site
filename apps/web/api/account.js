@@ -21,7 +21,6 @@ import {
 } from '../src/lib/supabase-auth.js';
 import { enqueueAccountDeletionRequestedEmail } from '../src/lib/account-deletion-email.js';
 import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-handler.js';
-import { handleControlledPrivacyExportEmailProof } from '../src/lib/controlled-privacy-export-email-proof.js';
 import { enqueuePrivacyExportAcknowledgementEmail } from '../src/lib/privacy-export-email.js';
 import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js';
 
@@ -295,7 +294,6 @@ const handlers = Object.freeze({
   export: handleExport,
   delete: handleDelete,
   'commerce-readiness': handleCommerceReadinessRequest,
-  'controlled-privacy-export-email-proof': handleControlledPrivacyExportEmailProof,
   'video-progress': handleVideoProgressRequest,
 });
 

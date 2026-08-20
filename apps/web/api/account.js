@@ -20,7 +20,6 @@ import {
 } from '../src/lib/supabase-auth.js';
 import { enqueueAccountDeletionRequestedEmail } from '../src/lib/account-deletion-email.js';
 import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-handler.js';
-import { handleControlledAuthConfigRemediation } from '../src/lib/controlled-auth-config-remediation.js';
 import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js';
 
 function header(request, name) {
@@ -275,7 +274,6 @@ const handlers = Object.freeze({
   export: handleExport,
   delete: handleDelete,
   'commerce-readiness': handleCommerceReadinessRequest,
-  'controlled-auth-config-remediation': handleControlledAuthConfigRemediation,
   'video-progress': handleVideoProgressRequest,
 });
 

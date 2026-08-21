@@ -1,4 +1,5 @@
 # QA diagnostic trigger only. Never merge this workflow to main.
+# Persist the pure intent error through the bounded Development QA audit RPC.
 name: QA account deletion completion intent diagnostic
 
 on:
@@ -18,6 +19,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail-with-body --silent --show-error \
+          curl --silent --show-error \
             'https://ycstrcvshdluovtuasjc.supabase.co/functions/v1/qa-account-deletion-intent-diagnostic-20260821' \
             | jq .

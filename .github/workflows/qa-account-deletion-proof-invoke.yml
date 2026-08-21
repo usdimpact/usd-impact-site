@@ -1,5 +1,5 @@
 # One-shot QA trigger commit. Never merge this workflow to main.
-# Run the authorized Development proof against repaired Edge Function v5.
+# Final Development proof against Edge Function v5 after auth-link migration 20260821195116.
 name: QA account deletion proof invoke
 
 on:

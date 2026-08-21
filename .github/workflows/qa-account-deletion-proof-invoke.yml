@@ -1,6 +1,5 @@
-# One-shot QA trigger commit. Never merge this workflow to main.
-# Final Development proof against Edge Function v6 after auth-link and outbox grant fixes.
-name: QA account deletion proof invoke
+# QA diagnostic trigger only. Never merge this workflow to main.
+name: QA account deletion completion intent diagnostic
 
 on:
   push:
@@ -11,35 +10,14 @@ permissions:
   contents: read
 
 jobs:
-  invoke:
+  diagnose:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Invoke sentinel-gated Development proof exactly once
+      - name: Run pure Development completion-intent diagnostic
         shell: bash
         run: |
           set -euo pipefail
-          response="$(mktemp)"
-          status="$(curl --silent --show-error --output "$response" --write-out '%{http_code}' \
-            'https://ycstrcvshdluovtuasjc.supabase.co/functions/v1/qa-account-deletion-proof-20260821')"
-          jq '{
-            ok,
-            pass,
-            cleanupComplete,
-            failure,
-            evidence: {
-              exactCommit: .evidence.exactCommit,
-              databaseFixMigrations: .evidence.databaseFixMigrations,
-              finalizer: .evidence.finalizer,
-              accessBefore: .evidence.accessBefore,
-              requestState: .evidence.requestState,
-              authSoftDeleted: .evidence.authSoftDeleted,
-              authAdminStatusAfterFinalizer: .evidence.authAdminStatusAfterFinalizer,
-              staleAccessTokenUserLookupStatus: .evidence.staleAccessTokenUserLookupStatus,
-              refreshRejected: .evidence.refreshRejected,
-              refreshStatus: .evidence.refreshStatus,
-              accessAfter: .evidence.accessAfter,
-              database: .evidence.database
-            }
-          }' "$response"
-          test "$status" = '200'
+          curl --fail-with-body --silent --show-error \
+            'https://ycstrcvshdluovtuasjc.supabase.co/functions/v1/qa-account-deletion-intent-diagnostic-20260821' \
+            | jq .

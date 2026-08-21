@@ -1,5 +1,5 @@
 # One-shot QA trigger commit. Never merge this workflow to main.
-# Re-run the authorized Development proof against repaired Edge Function v3.
+# Run the authorized Development proof against repaired Edge Function v4.
 name: QA account deletion proof invoke
 
 on:

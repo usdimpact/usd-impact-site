@@ -14,6 +14,7 @@ export const SESSION_COOKIE_NAMES = Object.freeze({
 export const PKCE_COOKIE_NAME = 'usd_impact_pkce';
 
 const EMAIL_MAX_LENGTH = 254;
+const CAPTCHA_TOKEN_MAX_LENGTH = 2048;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SESSION_TOKEN_PATTERN = /^[\x21-\x7E]{1,16384}$/;
 const AUTH_CODE_PATTERN = /^[A-Za-z0-9._~-]{20,1024}$/;
@@ -33,6 +34,18 @@ function normalizeEmail(value) {
     });
   }
   return email;
+}
+
+function readCaptchaToken(request) {
+  const token = requestHeader(request, 'x-turnstile-token').trim();
+  if (!token) return null;
+  if (token.length > CAPTCHA_TOKEN_MAX_LENGTH || /[\x00-\x1F\x7F]/.test(token)) {
+    throw new SupabaseRequestError('The security check was invalid.', {
+      status: 400,
+      code: 'INVALID_CAPTCHA_TOKEN',
+    });
+  }
+  return token;
 }
 
 function readJsonBody(response) {
@@ -304,6 +317,7 @@ export async function sendPasswordlessEmail({
   }
   const resolvedConfig = config || readSupabaseServerConfig(environment);
   const normalizedEmail = normalizeEmail(email);
+  const captchaToken = readCaptchaToken(request);
   const redirectUrl = new URL(CONFIRMATION_PATH, requestOrigin(request));
   redirectUrl.searchParams.set('next', safeNextPath(next));
   const redirectTo = redirectUrl.toString();
@@ -315,6 +329,7 @@ export async function sendPasswordlessEmail({
     body: {
       email: normalizedEmail,
       create_user: shouldCreateUser === true,
+      ...(captchaToken ? { gotrue_meta_security: { captcha_token: captchaToken } } : {}),
       code_challenge: pkce.challenge,
       code_challenge_method: 's256',
     },

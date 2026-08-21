@@ -1,6 +1,6 @@
-# QA diagnostic trigger only. Never merge this workflow to main.
-# Validate Node Buffer compatibility shim for the pure completion intent.
-name: QA account deletion completion intent diagnostic
+# One-shot QA trigger. Never merge this workflow to main.
+# Final Development proof using Edge Function v7 with test-only Node Buffer compatibility.
+name: QA account deletion proof invoke
 
 on:
   push:
@@ -11,14 +11,35 @@ permissions:
   contents: read
 
 jobs:
-  diagnose:
+  invoke:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Run pure Development completion-intent diagnostic
+      - name: Invoke sentinel-gated Development proof exactly once
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail-with-body --silent --show-error \
-            'https://ycstrcvshdluovtuasjc.supabase.co/functions/v1/qa-account-deletion-intent-diagnostic-20260821' \
-            | jq .
+          response="$(mktemp)"
+          status="$(curl --silent --show-error --output "$response" --write-out '%{http_code}' \
+            'https://ycstrcvshdluovtuasjc.supabase.co/functions/v1/qa-account-deletion-proof-20260821')"
+          jq '{
+            ok,
+            pass,
+            cleanupComplete,
+            failure,
+            evidence: {
+              exactCommit: .evidence.exactCommit,
+              databaseFixMigrations: .evidence.databaseFixMigrations,
+              finalizer: .evidence.finalizer,
+              accessBefore: .evidence.accessBefore,
+              requestState: .evidence.requestState,
+              authSoftDeleted: .evidence.authSoftDeleted,
+              authAdminStatusAfterFinalizer: .evidence.authAdminStatusAfterFinalizer,
+              staleAccessTokenUserLookupStatus: .evidence.staleAccessTokenUserLookupStatus,
+              refreshRejected: .evidence.refreshRejected,
+              refreshStatus: .evidence.refreshStatus,
+              accessAfter: .evidence.accessAfter,
+              database: .evidence.database
+            }
+          }' "$response"
+          test "$status" = '200'

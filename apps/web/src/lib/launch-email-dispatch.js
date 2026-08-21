@@ -20,6 +20,16 @@ export {
   patchLaunchEmailOutbox,
 } from './launch-email-dispatch-ledger.js';
 export { dispatchEnqueuedLaunchEmail } from './launch-email-dispatch-provider.js';
+export {
+  ResendLaunchEmailConfigurationError,
+  ResendLaunchEmailRequestError,
+  createResendLaunchEmailAdapter,
+} from './launch-email-resend-adapter.js';
+export {
+  LAUNCH_EMAIL_RUNNER_DEFAULT_ITEMS,
+  LAUNCH_EMAIL_RUNNER_MAX_ITEMS,
+  runLaunchEmailDispatchBatch,
+} from './launch-email-dispatch-runner.js';
 
 import { validateLaunchEmailDispatchContract } from './launch-email-dispatch-intent.js';
 validateLaunchEmailDispatchContract();

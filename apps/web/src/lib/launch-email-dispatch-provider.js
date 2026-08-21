@@ -101,6 +101,24 @@ async function recordProviderFailure({
     return deepFreeze({ ...decision, outbox });
   }
 
+  if (providerState === 'failed' && error?.retryable === false) {
+    const retry = EMAIL_RETRY_POLICIES[state.intent.policy.retryPolicy];
+    const outbox = await patchLaunchEmailOutbox({
+      state: sendingState,
+      body: {
+        status: 'terminal_failed',
+        failed_at: attemptedAt,
+        error_code: errorCode,
+      },
+      fetchImpl,
+    });
+    return deepFreeze({
+      action: retry.manualEscalation ? 'manual_escalation' : 'terminal_failed',
+      reason: 'provider_permanent_failure',
+      outbox,
+    });
+  }
+
   const createdAt = timestampMs(sending.created_at) ?? nowMs;
   const completedAttempts = Number.isInteger(sending.attempt_count) ? sending.attempt_count : 1;
   const policyDecision = decideEmailDeliveryAction({

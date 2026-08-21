@@ -1,5 +1,5 @@
 # QA diagnostic trigger only. Never merge this workflow to main.
-# Persist the pure intent error through the bounded Development QA audit RPC.
+# Validate Node Buffer compatibility shim for the pure completion intent.
 name: QA account deletion completion intent diagnostic
 
 on:
@@ -19,6 +19,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --silent --show-error \
+          curl --fail-with-body --silent --show-error \
             'https://ycstrcvshdluovtuasjc.supabase.co/functions/v1/qa-account-deletion-intent-diagnostic-20260821' \
             | jq .

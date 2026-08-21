@@ -1,3 +1,4 @@
+# One-shot QA trigger commit. Never merge this workflow to main.
 name: QA account deletion proof invoke
 
 on:

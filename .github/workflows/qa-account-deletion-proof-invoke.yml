@@ -1,4 +1,5 @@
 # One-shot QA trigger commit. Never merge this workflow to main.
+# Preview build trigger after mounting the bridge on the existing account function.
 name: QA account deletion proof invoke
 
 on:

@@ -2,7 +2,8 @@ name: Daily USD Impact Health
 
 on:
   schedule:
-    - cron: '45 10 * * 1-5'
+    # Daily publication starts at 09:17 UTC and requires protected review/merge before deployment health is meaningful.
+    - cron: '45 13 * * 1-5'
   workflow_dispatch:
 
 permissions:
@@ -28,7 +29,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_NAME: daily-news.yml
-          MAX_AGE_HOURS: '4'
+          MAX_AGE_HOURS: '6'
         run: |
           set -euo pipefail
 

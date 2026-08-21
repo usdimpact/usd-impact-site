@@ -1,45 +1,15 @@
-# One-shot QA trigger. Never merge this workflow to main.
-# Final Development proof using Edge Function v7 with test-only Node Buffer compatibility.
-name: QA account deletion proof invoke
+# Retired QA branch. Never merge this workflow to main.
+name: QA account deletion proof retired
 
 on:
-  push:
-    branches:
-      - qa/account-deletion-proof-invoke-20260821
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  invoke:
+  retired:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     steps:
-      - name: Invoke sentinel-gated Development proof exactly once
-        shell: bash
-        run: |
-          set -euo pipefail
-          response="$(mktemp)"
-          status="$(curl --silent --show-error --output "$response" --write-out '%{http_code}' \
-            'https://ycstrcvshdluovtuasjc.supabase.co/functions/v1/qa-account-deletion-proof-20260821')"
-          jq '{
-            ok,
-            pass,
-            cleanupComplete,
-            failure,
-            evidence: {
-              exactCommit: .evidence.exactCommit,
-              databaseFixMigrations: .evidence.databaseFixMigrations,
-              finalizer: .evidence.finalizer,
-              accessBefore: .evidence.accessBefore,
-              requestState: .evidence.requestState,
-              authSoftDeleted: .evidence.authSoftDeleted,
-              authAdminStatusAfterFinalizer: .evidence.authAdminStatusAfterFinalizer,
-              staleAccessTokenUserLookupStatus: .evidence.staleAccessTokenUserLookupStatus,
-              refreshRejected: .evidence.refreshRejected,
-              refreshStatus: .evidence.refreshStatus,
-              accessAfter: .evidence.accessAfter,
-              database: .evidence.database
-            }
-          }' "$response"
-          test "$status" = '200'
+      - name: Confirm retired state
+        run: echo 'Account deletion QA proof is retired; no destructive action is configured.'

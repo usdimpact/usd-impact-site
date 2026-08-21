@@ -2,13 +2,15 @@
 
 ## Status
 
-Operational version: `2026-08-20.v1`
+Operational version: `2026-08-21.v2`
 
 Public support address: `support@usd-impact.com`
 
 Business entity: SC Kela Leads SRL
 
 Technical route status: **VERIFIED** on 20 August 2026.
+
+Continuity model: **SINGLE-OPERATOR RECOVERY EXCEPTION — recovery controls pending proof**.
 
 The controlled verification established:
 
@@ -27,12 +29,17 @@ This runbook converts that technical result into an operating process for Librar
 | Operating business | SC Kela Leads SRL |
 | Primary queue | `support@usd-impact.com` |
 | Primary operating role | USD Impact support operations |
-| Backup operating role | SC Kela Leads SRL authorized administrator |
+| Continuity model | Single-Operator Recovery Exception |
+| AI recovery coordinator | ChatGPT/OpenAI assistant — procedural coordination only; no credentials, independent mailbox, MFA device, recovery factor, or standing authority |
 | Incident escalation | USD Impact owner/operator |
 | Privacy escalation | USD Impact privacy operations |
 | Commerce escalation | USD Impact commerce operations after replacement-provider selection |
 
-The backup role is approved, but the individual backup account holder must be recorded before public Library Pass activation. The backup must use an individually controlled account; a shared password is not an acceptable substitute.
+The owner has explicitly declined delegating support-mailbox access to another person. The prior human-backup requirement is therefore replaced by the reviewed Single-Operator Recovery Exception in `single-operator-recovery-exception.md`.
+
+This is a deliberate acceptance of single-person operational risk. ChatGPT is **not** a backup operator, account holder, recovery identity, or substitute for an independently controlled recovery factor. ChatGPT may help inspect connected state, maintain the runbook, diagnose failures, prepare recovery steps, and perform explicitly authorized connected actions when the owner is present and the required tools are available. ChatGPT cannot receive recovery email independently, possess MFA hardware, retain secret recovery material, or guarantee action when the owner is unavailable.
+
+If the owner is unavailable and support continuity cannot be maintained, new paid activation must remain disabled or be paused. Valid existing entitlements must not be revoked solely because the support operator is unavailable, and public Daily News should remain independent of this support-continuity failure.
 
 ## Service target
 
@@ -146,18 +153,39 @@ If inbound receiving or reply-as-support fails:
 
 ## Account access and recovery controls
 
-Before Library Pass activation, verify and record:
+Before Library Pass activation, verify and record all compensating controls required by the Single-Operator Recovery Exception:
 
-- the primary operator has individually controlled mailbox access;
-- the named backup has separate access or a tested delegated route;
+- the owner has individually controlled mailbox access;
+- a separate recovery email account exists, is controlled only by the owner, and is not merely a `+alias` of the primary account;
 - multi-factor authentication is enabled where the provider supports it;
-- recovery methods are current and controlled by SC Kela Leads SRL;
-- provider account recovery does not depend on one unavailable device or one person’s memory;
+- at least two independent recovery/authentication factors are available where technically supported, with one factor stored separately from the owner's everyday device;
+- offline recovery material is controlled by SC Kela Leads SRL and stored outside the ordinary mailbox, browser session, Git repository, and ChatGPT conversation;
+- recovery methods are current and do not depend solely on one active browser session, one device, one phone number, or memory;
+- provider account-recovery contacts and the minimum non-secret recovery procedure are documented;
 - mailbox forwarding and reply identity can be reconstructed from documented settings;
 - DNS and mail-routing records are inventoried without storing provider secrets in GitHub;
-- recovery is tested with a controlled message after any material provider or DNS change.
+- ChatGPT/OpenAI has no standing credential, recovery code, MFA factor, mailbox delegation, or independent recovery authority;
+- inability of the owner to access the mailbox causes new paid activation to remain disabled or pause rather than silently delegating access or bypassing controls;
+- recovery is tested with a controlled message before launch and after any material provider, recovery-method, or DNS change.
 
-Do not store mailbox passwords, recovery codes, API keys, or signing secrets in this repository.
+Do not store mailbox passwords, recovery codes, API keys, signing secrets, private keys, or complete recovery links in this repository or in ordinary ChatGPT messages.
+
+## Single-operator recovery drill
+
+The exception is not launch-ready merely because it is documented. Before public Library Pass activation, complete a controlled drill that proves the owner can recover support operations through an independent route.
+
+1. Confirm the separate recovery email account can be accessed without relying on the primary support mailbox session.
+2. Confirm the independent MFA/recovery factor is available and current.
+3. Start the provider-supported account-recovery flow far enough to prove that the independent recovery route is recognized. Do not invalidate working credentials or rotate secrets unless separately approved.
+4. Re-establish or confirm access to the support operating queue through the normal approved account path.
+5. Send one controlled external message to `support@usd-impact.com`.
+6. Confirm receipt in the monitored queue.
+7. Reply as `support@usd-impact.com` to the controlled sender.
+8. Confirm the reply arrives and passes expected authentication checks.
+9. Record only UTC time, recovery method category, PASS/FAIL, responsible owner, and any provider ticket. Do not record recovery codes, passwords, full links, secret values, or token material.
+10. If any step fails, keep new paid activation disabled until recovery is repaired and retested.
+
+The drill must not rely on ChatGPT retaining credentials or receiving the provider recovery message. ChatGPT may coordinate the procedure while the owner remains the person controlling every recovery factor.
 
 ## Retention
 
@@ -197,17 +225,22 @@ Run this procedure before launch, after a provider/DNS change, and after mailbox
 - [x] Retention default recorded.
 - [x] Sensitive-data handling rule recorded.
 - [x] Mailbox outage rule recorded.
-- [ ] Named backup individual recorded.
-- [ ] Backup access or delegated route tested.
-- [ ] Mailbox account-recovery procedure tested.
-- [ ] Final pre-launch inbound/reply verification recorded.
+- [x] Single-Operator Recovery Exception documented.
+- [x] ChatGPT/OpenAI AI-recovery-coordinator scope and limitations recorded.
+- [ ] Separate owner-controlled recovery email account created and verified.
+- [ ] Independent MFA/recovery factor verified and stored separately from the everyday device.
+- [ ] Offline recovery material secured outside the primary mailbox/device and outside GitHub/ChatGPT.
+- [ ] Provider account-recovery procedure tested through the independent owner-controlled route.
+- [ ] Recovery drill plus controlled inbound/reply verification recorded.
+- [ ] Final pre-launch inbound/reply verification recorded after the last material mail/DNS/recovery change.
 
 ## Related controls
 
+- `single-operator-recovery-exception.md`
 - `email-operations-policy.md`
 - `email-readiness-release-gate.md`
 - `email-readiness-evidence-2026-08-20.md`
 - GitHub Issue #130
 - GitHub Issue #54
 
-This runbook closes the technical support-route uncertainty. It does not close Production authentication delivery, Production email migration, commerce-provider responsibility mapping, or the integrated Library Pass release rehearsal.
+This runbook closes the technical support-route uncertainty and formally replaces the human-backup gate with an owner-controlled single-operator recovery exception. It does not by itself prove the compensating recovery controls, close Production authentication delivery, authorize a Production email migration, select a commerce provider, or complete the integrated Library Pass release rehearsal.

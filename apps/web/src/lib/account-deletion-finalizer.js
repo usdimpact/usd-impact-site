@@ -32,6 +32,25 @@ function normalizeBatchSize(batchSize) {
   return Math.min(Math.max(Number.parseInt(batchSize, 10) || 1, 1), MAX_BATCH_SIZE);
 }
 
+function configuredBatchSize(environment, production) {
+  const raw = String(environment.ACCOUNT_DELETION_FINALIZER_BATCH_SIZE || '').trim();
+  if (!raw) return production ? 1 : MAX_BATCH_SIZE;
+  if (!/^\d+$/.test(raw)) {
+    throw new AccountDeletionFinalizerError(
+      'Account deletion finalizer batch size must be an integer between 1 and 25.',
+      'ACCOUNT_DELETION_BATCH_SIZE_INVALID',
+    );
+  }
+  const batchSize = Number.parseInt(raw, 10);
+  if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > MAX_BATCH_SIZE) {
+    throw new AccountDeletionFinalizerError(
+      'Account deletion finalizer batch size must be an integer between 1 and 25.',
+      'ACCOUNT_DELETION_BATCH_SIZE_INVALID',
+    );
+  }
+  return batchSize;
+}
+
 export function readAccountDeletionFinalizerConfig(environment = process.env) {
   if (!enabled(environment.ACCOUNT_DELETION_FINALIZER_ENABLED)) {
     return Object.freeze({ enabled: false });
@@ -63,7 +82,8 @@ export function readAccountDeletionFinalizerConfig(environment = process.env) {
       'ACCOUNT_DELETION_PROJECT_MISMATCH',
     );
   }
-  return Object.freeze({ enabled: true, production, projectRef, supabase });
+  const batchSize = configuredBatchSize(environment, production);
+  return Object.freeze({ enabled: true, production, projectRef, batchSize, supabase });
 }
 
 function jsonHeaders(secretKey) {
@@ -450,7 +470,7 @@ export async function runDueAccountDeletionFinalizer({
   environment = process.env,
   fetchImpl = fetch,
   now = new Date(),
-  batchSize = MAX_BATCH_SIZE,
+  batchSize,
 } = {}) {
   const config = readAccountDeletionFinalizerConfig(environment);
   if (!config.enabled) {
@@ -466,7 +486,7 @@ export async function runDueAccountDeletionFinalizer({
     });
   }
 
-  const limit = normalizeBatchSize(batchSize);
+  const limit = normalizeBatchSize(batchSize ?? config.batchSize ?? MAX_BATCH_SIZE);
   const recovery = await runDeletionCompletionRecoveries({
     config,
     environment,

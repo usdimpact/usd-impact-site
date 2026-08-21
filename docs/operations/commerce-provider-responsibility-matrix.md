@@ -2,7 +2,7 @@
 
 ## Status
 
-Decision-support version: `2026-08-21.v1`
+Decision-support version: `2026-08-21.v2`
 
 Product: `Read the Dollar First Library Pass`
 
@@ -113,26 +113,77 @@ For each candidate, complete this table from authoritative technical documentati
 
 A missing native provider event does not permit inference from a redirect or email. The adapter design must identify an authoritative API/event mechanism or the provider fails the required capability gate.
 
+## FastSpring public technical evidence prefill — 2026-08-21
+
+This section records what current FastSpring public developer documentation supports before the written Sales eligibility response arrives. It is **technical evidence only** and does not select FastSpring.
+
+### Confirmed from public FastSpring documentation
+
+- Webhook authenticity can use an HMAC-SHA256 secret. FastSpring computes the digest over the webhook payload, Base64-encodes it, and sends it in `X-FS-Signature`; their Node/Express examples explicitly validate the raw body before JSON parsing.
+- FastSpring advises duplicate-safe webhook handlers. Automatic retries keep the same event ID, while manual resends generate a new event ID, so USD Impact must deduplicate at both provider-event and durable business-state levels.
+- Failed webhook delivery is retried for up to seven days. Current documentation describes up to 12 retries: 1h, 2h, 4h, then 6h intervals during the first day, followed by daily retries. Permanently failed events remain recoverable through the webhook log or events API.
+- Webhooks can be configured for live orders, test orders, or both.
+- FastSpring provides Test mode/test orders and supports server-created sessions with `live: false`.
+- `order.payment.pending` is a documented pending-payment event.
+- `order.completed` is documented for successful orders after payment succeeds and fulfillment completes.
+- `order.failed` is documented for failed payment attempts.
+- `order.canceled` is documented for canceled orders.
+- `return.created` is documented when a refund/return has been issued.
+- `chargeback.created` is documented when a buyer's bank/card issuer initiates a chargeback and includes an order reference plus processor case metadata.
+- FastSpring states that it acts as Merchant of Record in its chargeback/dispute documentation, but product/company eligibility and the exact commercial allocation still require the pending written Sales response.
+
+### Provisional canonical mapping
+
+| USD Impact canonical event | FastSpring public event/evidence | Current technical disposition |
+|---|---|---|
+| `checkout.pending` | `order.payment.pending` | plausible documented mapping; sandbox proof still required |
+| `payment.completed` | `order.completed` | documented mapping; sandbox proof still required |
+| `payment.failed` | `order.failed` | documented mapping; sandbox proof still required |
+| `payment.cancelled` | `order.canceled` | documented mapping; sandbox proof still required |
+| `payment.expired` | no distinct order-expiry webhook found in reviewed public order-event documentation | **BLOCKED pending authoritative equivalent** |
+| `refund.completed` | `return.created` | documented mapping for issued refunds/returns; sandbox proof still required |
+| `dispute.opened` | `chargeback.created` covers chargeback initiation; public material also describes PayPal disputes operationally | **PARTIAL** — generic dispute-warning semantics need confirmation |
+| `chargeback.completed` | `chargeback.created` fires at initiation, not clearly at final lost-dispute outcome | **BLOCKED pending final-outcome mechanism** |
+| `dispute.reversed` | no native won-dispute/restoration webhook found in the reviewed public event catalog | **BLOCKED pending authoritative equivalent** |
+
+The three blocked/partial rows above are selection-critical. A Sales or technical response may close them by naming a documented webhook, API status transition, or another authoritative server-side mechanism. A browser redirect, customer email, or assumption about provider workflow is not an acceptable substitute.
+
+### Official FastSpring references reviewed
+
+- Message Security — `https://developer.fastspring.com/reference/message-security`
+- Webhooks Overview — `https://developer.fastspring.com/reference/webhooks-overview`
+- Processed and unprocessed webhook events — `https://developer.fastspring.com/reference/processed-and-unprocessed-webhook-events`
+- Order Related Webhooks — `https://developer.fastspring.com/reference/orders-1`
+- Successful Orders / `order.completed` — `https://developer.fastspring.com/reference/ordercompleted`
+- Unsuccessful Orders / `order.failed` — `https://developer.fastspring.com/reference/orderfailed`
+- Canceled Orders / `order.canceled` — `https://developer.fastspring.com/reference/ordercanceled`
+- Return or Refund an Order / `return.created` — `https://developer.fastspring.com/reference/returncreated`
+- Order Chargeback / `chargeback.created` — `https://developer.fastspring.com/reference/order-chargeback`
+- Chargebacks and disputes — `https://developer.fastspring.com/docs/chargebacks-and-disputes`
+- Test orders — `https://developer.fastspring.com/docs/test-orders`
+- Activate your store — `https://developer.fastspring.com/docs/activate-your-store`
+- Create session — `https://developer.fastspring.com/reference/createsession`
+
 ## FastSpring pending-answer checklist
 
 The Sales/pre-clearance response should be recorded here without copying credentials or unnecessary personal data.
 
 - [ ] Product/company eligibility confirmed in writing.
 - [ ] Educational Bitcoin content explicitly accepted within the disclosed product boundaries.
-- [ ] Merchant-of-Record responsibilities confirmed.
+- [ ] Merchant-of-Record responsibilities confirmed contractually for this seller/product.
 - [ ] Romanian entity/settlement requirements confirmed.
 - [ ] Fees, reserve, payout, refund, dispute, and chargeback terms confirmed.
 - [ ] Provider-initiated refund behavior confirmed.
 - [ ] Buyer-support escalation behavior confirmed.
-- [ ] Hosted checkout and server-controlled product/price model confirmed.
-- [ ] Raw-body webhook signature procedure confirmed.
-- [ ] Webhook retry/redelivery behavior confirmed.
-- [ ] Pending/completed/failed/cancelled/expired event coverage confirmed.
-- [ ] Full-refund event coverage confirmed.
-- [ ] Dispute-warning/opened event coverage confirmed.
-- [ ] Chargeback/lost-dispute event coverage confirmed.
+- [x] Public docs confirm hosted/test checkout and server-created session support; account-specific setup remains pending.
+- [x] Public docs confirm raw-body HMAC-SHA256 webhook signature procedure.
+- [x] Public docs confirm bounded webhook retry/redelivery behavior and event-ID retry semantics.
+- [ ] Pending/completed/failed/cancelled/expired canonical coverage confirmed end-to-end; `payment.expired` remains unresolved.
+- [x] Public docs confirm full-refund/return event coverage via `return.created`; sandbox proof remains pending.
+- [ ] Dispute-warning/opened event coverage confirmed beyond chargeback initiation.
+- [ ] Chargeback final/lost-dispute event coverage confirmed.
 - [ ] Eligible won-dispute/reversal event coverage confirmed.
-- [ ] Sandbox/test simulation coverage confirmed.
+- [ ] Sandbox/test simulation coverage confirmed for the complete USD Impact lifecycle matrix.
 - [ ] DPA/subprocessor/data-retention/export terms reviewed.
 - [ ] Live review, secret rotation, rollback, and incident paths reviewed.
 

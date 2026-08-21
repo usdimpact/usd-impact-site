@@ -96,6 +96,7 @@ assert.equal(new URL(sent.redirectTo).searchParams.get('next'), requestedDestina
 const otpBody = JSON.parse(otpRequest.options.body);
 assert.equal(otpBody.email, 'reader@example.com');
 assert.equal(otpBody.create_user, true);
+assert.equal(otpBody.gotrue_meta_security, undefined);
 assert.equal(otpBody.code_challenge_method, 's256');
 assert.match(otpBody.code_challenge, /^[A-Za-z0-9_-]{43}$/);
 const pkceCookie = otpResponse.getHeader('set-cookie')[0];
@@ -106,6 +107,35 @@ assert.match(pkceCookie, /HttpOnly/);
 const verifier = decodeURIComponent(pkceCookie.match(new RegExp(`^${PKCE_COOKIE_NAME}=([^;]+)`))[1]);
 assert.match(verifier, /^[A-Za-z0-9_-]{43,128}$/);
 assert.equal(readPkceVerifier(request({ cookie: `${PKCE_COOKIE_NAME}=${encodeURIComponent(verifier)}` })), verifier);
+
+let captchaOtpRequest;
+const captchaResponse = responseRecorder();
+await sendPasswordlessEmail({
+  email: 'captcha@example.com',
+  next: '/account/',
+  request: request({ host: 'localhost:4321', 'x-turnstile-token': 'turnstile-test-token' }),
+  response: captchaResponse,
+  config,
+  fetchImpl: async (url, options) => {
+    captchaOtpRequest = { url, options };
+    return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+  },
+});
+const captchaOtpBody = JSON.parse(captchaOtpRequest.options.body);
+assert.deepEqual(captchaOtpBody.gotrue_meta_security, { captcha_token: 'turnstile-test-token' });
+assert.equal(captchaOtpBody.create_user, true);
+
+await assert.rejects(
+  sendPasswordlessEmail({
+    email: 'captcha@example.com',
+    next: '/account/',
+    request: request({ host: 'localhost:4321', 'x-turnstile-token': 'x'.repeat(2049) }),
+    response: responseRecorder(),
+    config,
+    fetchImpl: async () => new Response('{}', { status: 200 }),
+  }),
+  (error) => error?.code === 'INVALID_CAPTCHA_TOKEN' && error?.status === 400,
+);
 
 const exchanged = await exchangePasswordlessCode({
   authCode: 'valid_auth_code_value_that_is_long_enough_123456',
@@ -135,6 +165,10 @@ const vercelConfig = JSON.parse(await readFile(new URL('../vercel.json', import.
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 
 assert.match(signInPage, /\/api\/auth-login/);
+assert.match(signInPage, /PUBLIC_TURNSTILE_SITE_KEY/);
+assert.match(signInPage, /cf-turnstile/);
+assert.match(signInPage, /X-Turnstile-Token/);
+assert.match(signInPage, /account_sign_in/);
 assert.match(accountPage, /\/api\/account-access/);
 assert.match(accountPage, /\/api\/account-export/);
 assert.match(accountPage, /\/api\/account-delete/);

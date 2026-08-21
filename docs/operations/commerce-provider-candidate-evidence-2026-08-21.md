@@ -10,54 +10,12 @@ Business entity: SC Kela Leads SRL, Romania.
 
 ## Current provisional ranking
 
-1. **Stripe Managed Payments — technical/Merchant-of-Record leader pending written product-specific eligibility and account availability.**
-2. **FastSpring — mature Merchant-of-Record candidate pending Sales pre-clearance and closure of final lifecycle-event gaps.**
-3. **PayPro Global — strong Merchant-of-Record and lifecycle coverage, but its documented webhook signature is field-derived rather than a raw-body signature and therefore does not yet satisfy the current USD Impact adapter contract.**
+1. **FastSpring — current primary Merchant-of-Record candidate pending Sales pre-clearance and closure of final lifecycle-event gaps.**
+2. **PayPro Global — strong Merchant-of-Record and lifecycle coverage, but its documented webhook signature is field-derived rather than a raw-body signature and therefore does not yet satisfy the current USD Impact adapter contract.**
+3. **Stripe Managed Payments — excellent technical/Merchant-of-Record fit and Romania support, but policy-blocked pending written confirmation because Managed Payments explicitly prohibits NFT or cryptocurrency-related products.**
 4. **Lemon Squeezy — policy-blocked pending an affirmative written determination because its public prohibited-products policy includes NFT and crypto-related products.**
 
 This ranking is provisional. Written product/company eligibility, commercial terms, privacy terms, and technical sandbox evidence remain mandatory before selection.
-
-## Stripe Managed Payments
-
-### Confirmed current public evidence
-
-- Managed Payments is in Public Preview.
-- Stripe lists **Romania** as a supported business location for Managed Payments.
-- Managed Payments supports digital products, including digital content/downloads, and supports one-time payments.
-- Stripe acts as Merchant of Record for Managed Payments.
-- Stripe documents responsibility for indirect-tax calculation/collection/filing/remittance where covered, fraud prevention, dispute management, and transaction-level customer support.
-- Stripe sends receipts, invoices, and refund notifications for Managed Payments transactions through Link.
-- Stripe can issue certain customer-requested refunds and can escalate to the seller for product-specific input.
-- Stripe's standard webhook verification requires the exact raw request body, `Stripe-Signature`, and endpoint secret before parsing.
-- Stripe exposes dispute-created and dispute-closed events. `charge.dispute.closed` identifies `won` or `lost` outcomes, allowing deterministic revocation/restoration mapping.
-- Stripe documents refund events including `refund.created`, `refund.updated`, and `refund.failed`.
-- Romania pricing currently publishes Managed Payments at 3.5% per successful Managed Payments transaction in addition to Payments fees; account-specific pricing and any additional applicable fees still require review.
-
-### Current USD Impact disposition
-
-**Technical fit: strongest current match to the canonical adapter contract.**
-
-The existing contract requirement `webhook.verify-raw-body` maps directly to Stripe's documented signature procedure. Dispute-open, lost and won outcomes have authoritative webhook/API states. Exact Checkout pending/failed/cancelled/expired mappings and Managed Payments-specific sandbox fixtures still need to be frozen during implementation review.
-
-### Remaining selection gates
-
-- written confirmation that the disclosed macro-finance education product, including educational Bitcoin content, is acceptable for this Romanian account;
-- confirmation that Managed Payments is actually activatable for SC Kela Leads SRL during the Public Preview;
-- full fee/reserve/payout/settlement terms for the account;
-- exact seller-vs-Stripe residual responsibility for jurisdictions not covered by Managed Payments indirect-tax handling;
-- DPA/subprocessor/data-location/retention review;
-- sandbox proof for the complete USD Impact canonical event matrix;
-- explicit provider-selection approval before adapter work.
-
-### Official references
-
-- https://docs.stripe.com/payments/managed-payments/how-it-works
-- https://docs.stripe.com/payments/managed-payments/set-up
-- https://docs.stripe.com/webhooks/signature
-- https://docs.stripe.com/api/events/types
-- https://docs.stripe.com/refunds
-- https://docs.stripe.com/disputes/responding
-- https://stripe.com/en-ro/pricing
 
 ## FastSpring
 
@@ -82,7 +40,7 @@ FastSpring Seller Support case `01856169` redirected the eligibility packet to S
 - won-dispute/reversal event/state suitable for access restoration;
 - complete sandbox simulation proof.
 
-FastSpring remains a strong candidate, but these are release-significant gaps until Sales/technical onboarding supplies authoritative mechanisms.
+FastSpring remains the primary candidate, but these are release-significant gaps until Sales/technical onboarding supplies authoritative mechanisms.
 
 ### Official references
 
@@ -130,6 +88,49 @@ No such contract change is authorized by this evidence update.
 - https://payproglobal.com/
 - https://payproglobal.com/about/
 
+## Stripe Managed Payments
+
+### Confirmed current public evidence
+
+- Managed Payments is in Public Preview.
+- Stripe lists **Romania** as a supported business location for Managed Payments.
+- Managed Payments supports eligible digital products, including digital content/downloads, and supports one-time payments.
+- Stripe acts as Merchant of Record for Managed Payments.
+- Stripe documents responsibility for indirect-tax calculation/collection/filing/remittance, fraud prevention, dispute management, and transaction-level customer support.
+- Stripe's standard webhook verification requires the exact raw request body, `Stripe-Signature`, and endpoint secret before parsing.
+- Stripe exposes dispute-created and dispute-closed events. `charge.dispute.closed` identifies `won` or `lost` outcomes, allowing deterministic revocation/restoration mapping.
+- Stripe documents refund events including `refund.created`, `refund.updated`, and `refund.failed`.
+
+### Blocking product-policy ambiguity
+
+Stripe Managed Payments explicitly lists **NFT or cryptocurrency-related products** among prohibited products. USD Impact does not sell cryptocurrency, transactions, custody, brokerage, signals, or financial services, but the Library Pass contains educational Bitcoin curriculum.
+
+That wording is broad enough that USD Impact must not infer eligibility from the technical fit or Romania support. Stripe requires written product-specific clarification before Managed Payments can remain on the implementation path.
+
+### Current USD Impact disposition
+
+**Technical fit: excellent. Product-policy eligibility: BLOCKED pending written clearance.**
+
+No account activation, Managed Payments enablement, or adapter work should begin on the assumption that educational Bitcoin content is permitted.
+
+### Remaining selection gates
+
+- written confirmation that the disclosed macro-finance education product, including educational Bitcoin content, is not prohibited as a cryptocurrency-related product;
+- confirmation that Managed Payments is activatable for SC Kela Leads SRL during the Public Preview;
+- full fee/reserve/payout/settlement terms for the account;
+- DPA/subprocessor/data-location/retention review;
+- sandbox proof for the complete USD Impact canonical event matrix;
+- explicit provider-selection approval before adapter work.
+
+### Official references
+
+- https://docs.stripe.com/payments/managed-payments/how-it-works
+- https://docs.stripe.com/payments/managed-payments/set-up
+- https://docs.stripe.com/webhooks/signature
+- https://docs.stripe.com/api/events/types
+- https://docs.stripe.com/refunds
+- https://docs.stripe.com/disputes/responding
+
 ## Lemon Squeezy
 
 Lemon Squeezy's public documentation generally permits digital goods such as eBooks, PDFs, audio and video, but explicitly lists **NFT & Crypto related products** as prohibited. USD Impact does not sell or facilitate cryptocurrency, but the Library Pass includes educational Bitcoin content.
@@ -146,7 +147,7 @@ The support pre-clearance request already asks for a written policy determinatio
 - **FastSpring:** Support response received; Sales eligibility still pending.
 - **PayPro Global:** written pre-clearance packet sent; no response yet.
 - **Lemon Squeezy:** written policy pre-clearance packet sent; no response yet.
-- **Stripe:** written packet sent to a non-monitored Sales email and automatically redirected to the official Sales contact form; the packet must be routed through that official Sales path before treating written eligibility as pending with a human team.
+- **Stripe:** direct Sales email is not monitored. The product-specific policy question must be routed through Stripe's official Sales/Support path before eligibility can be considered pending with a human reviewer.
 
 ## Decision rule
 

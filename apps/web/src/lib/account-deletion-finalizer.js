@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { enqueueAccountDeletionCompletedEmail } from './account-deletion-completed-email.js';
 import { readSupabaseServerConfig } from './supabase-server.js';
 
@@ -167,6 +167,25 @@ function scrubbedSupportEmail(accountId) {
   return `deleted+${digest}@support.invalid`;
 }
 
+function recoveryProof({ config, recoveryId, accountId, email }) {
+  return createHmac('sha256', config.supabase.secretKey)
+    .update(`account-deletion-recovery:v1\n${recoveryId}\n${accountId}\n${String(email).trim().toLowerCase()}`)
+    .digest('hex');
+}
+
+function validRecoveryProof({ config, recovery }) {
+  const match = String(recovery?.message || '').match(/Recovery proof: adr1:([0-9a-f]{64})(?:\.|$)/i);
+  if (!match) return false;
+  const expected = Buffer.from(recoveryProof({
+    config,
+    recoveryId: recovery.id,
+    accountId: recovery.account_id,
+    email: recovery.email,
+  }), 'hex');
+  const supplied = Buffer.from(match[1].toLowerCase(), 'hex');
+  return supplied.length === expected.length && timingSafeEqual(supplied, expected);
+}
+
 export async function recordDeletionFinalizationEscalation({
   config,
   accountId,
@@ -176,6 +195,10 @@ export async function recordDeletionFinalizationEscalation({
   fetchImpl = fetch,
 }) {
   const reference = opaqueReference(accountId);
+  const recoveryId = recoverable ? randomUUID() : null;
+  const proof = recoverable
+    ? recoveryProof({ config, recoveryId, accountId, email })
+    : null;
   const response = await fetchImpl(`${config.supabase.url}/rest/v1/support_requests`, {
     method: 'POST',
     headers: {
@@ -183,12 +206,13 @@ export async function recordDeletionFinalizationEscalation({
       Prefer: 'return=minimal',
     },
     body: JSON.stringify({
+      ...(recoveryId ? { id: recoveryId } : {}),
       account_id: recoverable ? accountId : null,
       email,
       category: 'privacy',
       subject: recoverable ? RECOVERABLE_ESCALATION_SUBJECT : MANUAL_ESCALATION_SUBJECT,
       message: recoverable
-        ? `Deletion completion reference ${reference} requires acknowledgement recovery. Error code: ${errorCode}. Do not request credentials or authentication links.`
+        ? `Deletion completion reference ${reference} requires acknowledgement recovery. Error code: ${errorCode}. Recovery proof: adr1:${proof}. Do not request credentials or authentication links.`
         : `Deletion completion reference ${reference} requires manual review. Error code: ${errorCode}. Do not request credentials or authentication links.`,
       status: 'open',
     }),
@@ -204,14 +228,17 @@ export async function listDeletionCompletionRecoveries({
 }) {
   if (!config?.enabled) return [];
   const limit = normalizeBatchSize(batchSize);
+  const scanLimit = Math.min(limit * 4, 100);
   const subject = encodeURIComponent(RECOVERABLE_ESCALATION_SUBJECT);
-  const path = `/rest/v1/support_requests?category=eq.privacy&subject=eq.${subject}&status=in.(open,in_progress)&account_id=not.is.null&email=not.is.null&select=id,account_id,email,status,created_at&order=created_at.asc&limit=${limit}`;
+  const path = `/rest/v1/support_requests?category=eq.privacy&subject=eq.${subject}&status=in.(open,in_progress)&account_id=not.is.null&email=not.is.null&select=id,account_id,email,message,status,created_at&order=created_at.desc&limit=${scanLimit}`;
   const response = await fetchImpl(`${config.supabase.url}${path}`, {
     method: 'GET',
     headers: jsonHeaders(config.supabase.secretKey),
   });
   const rows = await requireOk(response, 'ACCOUNT_DELETION_RECOVERY_SCAN_FAILED');
-  return Array.isArray(rows) ? rows : [];
+  return Array.isArray(rows)
+    ? rows.filter((row) => validRecoveryProof({ config, recovery: row })).slice(0, limit)
+    : [];
 }
 
 export async function resolveDeletionCompletionRecovery({
@@ -255,18 +282,23 @@ export async function recoverOneDeletionCompletionAcknowledgement({
   const accountId = String(recovery?.account_id || '');
   const recipientEmail = String(recovery?.email || '');
   const recoveryId = String(recovery?.id || '');
-  if (!accountId || !recipientEmail || !recoveryId) {
+  if (!accountId || !recipientEmail || !recoveryId || !validRecoveryProof({ config, recovery })) {
     throw new AccountDeletionFinalizerError(
-      'The account deletion completion recovery record is incomplete.',
+      'The account deletion completion recovery record is incomplete or unauthenticated.',
       'ACCOUNT_DELETION_RECOVERY_RECORD_INVALID',
     );
   }
 
   const profile = await readDeletionProfile({ config, accountId, fetchImpl });
+  const recoveryCreatedAt = Date.parse(String(recovery?.created_at || ''));
+  const profileDeletedAt = Date.parse(String(profile?.deleted_at || ''));
   if (
     profile?.status !== 'deleted'
     || !profile?.deletion_requested_at
     || !profile?.deleted_at
+    || !Number.isFinite(recoveryCreatedAt)
+    || !Number.isFinite(profileDeletedAt)
+    || recoveryCreatedAt < profileDeletedAt
   ) {
     throw new AccountDeletionFinalizerError(
       'The account deletion completion recovery target is not authoritatively finalized.',

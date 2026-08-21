@@ -21,7 +21,10 @@ The finalizer is reachable in application source through:
 - Production project guard: Supabase project ref must equal `gjzetjugmnwanvjkchux`;
 - Production finalizer approval: `ACCOUNT_DELETION_FINALIZER_PRODUCTION_APPROVED=true`;
 - durable ledger gate: `EMAIL_READINESS_LEDGER_ENABLED=true`;
-- Production ledger approval: `EMAIL_READINESS_PRODUCTION_APPROVED=true`.
+- Production ledger approval: `EMAIL_READINESS_PRODUCTION_APPROVED=true`;
+- bounded execution: `ACCOUNT_DELETION_FINALIZER_BATCH_SIZE` accepts only integers `1` through `25`; when unset, Production defaults to `1` and non-Production defaults to `25`.
+
+Invalid configured batch values fail closed with `ACCOUNT_DELETION_BATCH_SIZE_INVALID`; they are not silently clamped. Direct internal calls may still pass an explicit bounded `batchSize`, but the public scheduler route does not expose a query/body override.
 
 The repository intentionally has no Vercel `crons` configuration today. Creating or enabling a Production scheduler is therefore a separate release action after schema verification and separate approval.
 
@@ -85,7 +88,7 @@ Required checks:
 6. Due deletion inventory
    - count profiles already in `deletion_pending`;
    - separately count profiles whose `deletion_due_at <= now()`;
-   - if any real Production account is already due, do not enable the finalizer until the owner explicitly approves how those accounts will be handled in the first run.
+   - if any real Production account is already due, record the count and require explicit approval for the first-run disposition. Production now defaults to one processed recovery/finalization target per invocation, but that bound does not itself authorize processing a real account.
 
 ### Suggested read-only SQL shapes
 
@@ -124,7 +127,7 @@ Abort the Production schema gate if any of the following is true:
 - there are due real-customer deletions without an explicitly approved first-run disposition;
 - CI no longer passes on the exact release commit;
 - source migration contents differ from the reviewed commit;
-- any operator proposes weakening RLS, function grants, state constraints, or finalizer guards to make the apply succeed.
+- any operator proposes weakening RLS, function grants, state constraints, finalizer guards, or the bounded Production batch contract to make the apply succeed.
 
 ## Gate 2 — schema apply only
 
@@ -177,7 +180,8 @@ Before changing environment controls:
 - if any real account is due, list only its opaque operational reference in the approval record, not customer PII;
 - confirm a valid Production `CRON_SECRET` exists without exposing its value;
 - confirm Production Supabase configuration points to `gjzetjugmnwanvjkchux`;
-- verify lifecycle dispatch flags remain at the separately approved setting.
+- verify lifecycle dispatch flags remain at the separately approved setting;
+- leave `ACCOUNT_DELETION_FINALIZER_BATCH_SIZE` unset for the Production default of `1`, or explicitly set it to `1` for the first proof. Any increase above `1` requires a deliberate operational decision after the bounded proof is green.
 
 Required runtime gates for a Production execution are:
 
@@ -186,16 +190,19 @@ Required runtime gates for a Production execution are:
 - `ACCOUNT_DELETION_FINALIZER_PRODUCTION_APPROVED=true`
 - `EMAIL_READINESS_LEDGER_ENABLED=true`
 - `EMAIL_READINESS_PRODUCTION_APPROVED=true`
+- `ACCOUNT_DELETION_FINALIZER_BATCH_SIZE` unset or an integer `1`–`25` (Production default: `1`)
 - correct Production Supabase URL/key configuration
 - valid `CRON_SECRET`
 
-The route must still reject requests without a valid bearer scheduler secret.
+The route must still reject requests without a valid bearer scheduler secret. An invalid batch-size setting must prevent execution rather than fall back to a larger batch.
 
 ## Gate 5 — bounded first execution
 
 Prefer a controlled execution with no due real-customer accounts, or exactly one explicitly approved synthetic/controlled Production fixture if Production fixture creation itself has been separately authorized.
 
-The current public route does not expose a batch-size query parameter; the application finalizer defaults to a maximum batch size of 25. Therefore **do not enable the route while multiple unreviewed real accounts are already due**. If a batch-size-one Production rehearsal is required, implement that bound in reviewed source before activation rather than assuming the public route can set it.
+Production now defaults to a **single recovery/finalization target per invocation** when `ACCOUNT_DELETION_FINALIZER_BATCH_SIZE` is unset. The setting may explicitly choose `1` through `25`; invalid values fail closed. For the first Production proof, keep the bound at `1`. The public route intentionally does not accept a query/body batch override, so an unauthenticated caller cannot raise the batch through request input.
+
+The batch limit is shared across authenticated completion-recovery work and new due-profile finalization: recovery records are processed first and consume the available batch capacity before new due profiles are scanned.
 
 For a single intended completion, the acceptance evidence is:
 
@@ -224,6 +231,7 @@ Scheduler acceptance requirements:
 - invokes only `/api/account-deletion-finalizer`;
 - sends the platform-supported bearer `CRON_SECRET` authorization;
 - cannot be invoked anonymously through a weaker alternate route;
+- preserves the reviewed `ACCOUNT_DELETION_FINALIZER_BATCH_SIZE` Production bound rather than injecting request-controlled scope;
 - frequency is appropriate to the deletion-due SLA and does not cause overlapping runs;
 - failure is observable;
 - a non-zero `failed + recoveryFailed` response remains a failure (`503`), not a green run;
@@ -258,12 +266,12 @@ The Production account-deletion finalization/scheduler gate is complete only whe
 4. four migration versions applied in canonical order;
 5. post-apply object/grant/advisor verification;
 6. explicit Production runtime authorization;
-7. bounded first-run proof with access revocation, data finalization, audit and idempotency evidence;
+7. bounded first-run proof with Production batch limit `1`, access revocation, data finalization, audit and idempotency evidence;
 8. completion acknowledgement outbox proof;
 9. recovery/escalation behavior where applicable;
 10. separately reviewed scheduler creation/activation and healthy scheduled proof;
 11. separately gated provider delivery/callback proof if that gate is being completed at the same release stage;
-12. final documented state of every activation flag.
+12. final documented state of every activation flag, including the batch setting.
 
 Until all required gates are independently green, Issue #130 must continue to state that Production account-deletion finalization/scheduling is not fully activated/proven.
 
@@ -278,5 +286,6 @@ Until all required gates are independently green, Issue #130 must continue to st
 - `apps/web/api/account.js`
 - `apps/web/vercel.json`
 - `apps/web/scripts/test-account-deletion-finalizer.mjs`
+- `apps/web/scripts/test-account-deletion-finalizer-batch-bound.mjs`
 - `docs/operations/email-readiness-release-gate.md`
 - GitHub Issue #130

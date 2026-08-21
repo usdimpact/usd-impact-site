@@ -13,7 +13,6 @@ const recipientEmail = 'reader@example.com';
 const deletionRequestedAt = '2026-08-20T18:00:00.000Z';
 const deletionDueAt = '2026-08-27T18:00:00.000Z';
 const deletedAt = '2026-08-27T18:05:00.000Z';
-const recoveryId = '9a25b9ae-95c0-46ee-8cc6-93ed174d23cb';
 const vercelConfig = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
 const finalizerRewrite = vercelConfig.rewrites.find((entry) => entry.source === '/api/account-deletion-finalizer');
 assert.deepEqual(finalizerRewrite, {
@@ -288,6 +287,14 @@ assert.equal(recoverableEscalations.length, 1);
 assert.equal(recoverableEscalations[0].account_id, accountId);
 assert.equal(recoverableEscalations[0].email, recipientEmail);
 assert.match(recoverableEscalations[0].subject, /acknowledgement requires recovery/i);
+assert.match(recoverableEscalations[0].id, /^[0-9a-f-]{36}$/i);
+assert.match(recoverableEscalations[0].message, /Recovery proof: adr1:[0-9a-f]{64}/i);
+const signedRecovery = {
+  ...recoverableEscalations[0],
+  status: 'open',
+  created_at: deletedAt,
+};
+const recoveryId = signedRecovery.id;
 
 const completionFailureEscalations = [];
 const completionFailureFetch = async (url, options = {}) => {
@@ -321,7 +328,7 @@ const recoveryPatches = [];
 const recoveryFetch = async (url, options = {}) => {
   const href = String(url);
   if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') {
-    return response(200, [{ id: recoveryId, account_id: accountId, email: recipientEmail, status: 'open', created_at: deletedAt }]);
+    return response(200, [signedRecovery]);
   }
   if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
     return response(200, [{ account_id: accountId, status: 'deleted', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt, deleted_at: deletedAt }]);
@@ -353,7 +360,7 @@ assert.equal(recoveryPatches[0].status, 'completed');
 assert.match(recoveryPatches[0].email, /^deleted\+[0-9a-f]{32}@support\.invalid$/);
 
 const duplicateCalls = [];
-const duplicateRecovery = { id: recoveryId, account_id: accountId, email: recipientEmail, status: 'open' };
+const duplicateRecovery = signedRecovery;
 let duplicateOutbox = null;
 const duplicateRecoveryFetch = async (url, options = {}) => {
   const href = String(url);
@@ -392,6 +399,21 @@ const recoveredTwice = await recoverOneDeletionCompletionAcknowledgement({
 assert.equal(recoveredOnce.outboxId, recoveredTwice.outboxId);
 assert.equal(duplicateCalls.filter((call) => call.href.includes('/notification_outbox?') && call.options.method === 'GET').length, 1);
 
+let forgedFetchCalled = false;
+await assert.rejects(
+  () => recoverOneDeletionCompletionAcknowledgement({
+    recovery: { ...signedRecovery, message: signedRecovery.message.replace(/[0-9a-f]{64}/i, '0'.repeat(64)) },
+    config: readAccountDeletionFinalizerConfig(environment),
+    environment,
+    fetchImpl: async () => {
+      forgedFetchCalled = true;
+      throw new Error('forged recovery must not fetch');
+    },
+  }),
+  /incomplete or unauthenticated/,
+);
+assert.equal(forgedFetchCalled, false);
+
 const escalationFailureFetch = async (url, options = {}) => {
   const href = String(url);
   if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') return response(200, []);
@@ -410,6 +432,22 @@ const escalationFailure = await runDueAccountDeletionFinalizer({
 });
 assert.deepEqual(escalationFailure, emptyRunResult({ scanned: 1, failed: 1 }));
 
+const forgedScanUrls = [];
+const forgedScanFetch = async (url, options = {}) => {
+  const href = String(url);
+  forgedScanUrls.push(href);
+  if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') {
+    return response(200, [{ ...signedRecovery, message: signedRecovery.message.replace(/[0-9a-f]{64}/i, 'f'.repeat(64)) }]);
+  }
+  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') return response(200, []);
+  throw new Error(`Unexpected forged-scan request: ${options.method || 'GET'} ${href}`);
+};
+assert.deepEqual(
+  await runDueAccountDeletionFinalizer({ environment, fetchImpl: forgedScanFetch, batchSize: 5 }),
+  emptyRunResult(),
+);
+assert.equal(forgedScanUrls.some((href) => href.includes('/profiles?')), true);
+
 const limitUrls = [];
 const limitFetch = async (url, options = {}) => {
   const href = String(url);
@@ -421,7 +459,7 @@ assert.deepEqual(
   await runDueAccountDeletionFinalizer({ environment, fetchImpl: limitFetch, batchSize: 999 }),
   emptyRunResult(),
 );
-assert.equal(limitUrls.some((href) => href.includes('/support_requests?') && href.includes('limit=25')), true);
+assert.equal(limitUrls.some((href) => href.includes('/support_requests?') && href.includes('limit=100')), true);
 assert.equal(limitUrls.some((href) => href.includes('/profiles?') && href.includes('limit=25')), true);
 
 let disabledFetchCalled = false;

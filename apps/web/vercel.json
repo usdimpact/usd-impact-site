@@ -72,6 +72,10 @@
       "destination": "/api/account?action=delete"
     },
     {
+      "source": "/api/account-deletion-finalizer",
+      "destination": "/api/account?action=deletion-finalizer"
+    },
+    {
       "source": "/api/video-progress",
       "destination": "/api/account?action=video-progress"
     },

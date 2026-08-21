@@ -1,40 +1,252 @@
 {
   "schema_version": 1,
-  "generated_at": null,
-  "generated_by": "bootstrap",
-  "freshness": "STALE",
-  "health": "AMBER",
+  "generated_at": "2026-08-21T07:27:27.038Z",
+  "generated_by": "github-actions:sync",
+  "freshness": "VERIFIED",
+  "health": "RED",
   "production": {
     "provider": "vercel",
     "domain": "https://www.usd-impact.com/",
     "branch": "main",
-    "deployment": "UNKNOWN",
-    "verification": "UNKNOWN"
+    "deployment": "EXTERNAL_VERIFY",
+    "verification": "REQUIRED_AFTER_RELEASE"
   },
   "repositories": {
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": null
+      "head_sha": "e5d6602ac7418d1851918c0ca858c9a4fb7385fa"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
       "default_branch": "main",
-      "head_sha": null
+      "head_sha": "502fe9d756973e2ab140066adc3b506f4fe5de6c"
     },
     "weekly_commentary": {
       "name": "usdimpact/usd-impact",
       "default_branch": "main",
-      "head_sha": null
+      "head_sha": "24ab0318febfb7d2766607db7e11d5d67aa716e6"
     }
   },
-  "workflows": {},
-  "open_work": [],
-  "priority_queue": [],
-  "main_blocker": "State has not yet been refreshed by the control-center workflow.",
-  "next_action": "Run /sync or the AI Control Center workflow.",
+  "workflows": {
+    "website": {
+      "quality": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32421763121",
+        "created_at": "2026-08-20T21:54:53Z",
+        "head_sha": "e5d6602ac7418d1851918c0ca858c9a4fb7385fa"
+      },
+      "daily_news": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32355810381",
+        "created_at": "2026-08-20T09:49:07Z",
+        "head_sha": "f3771193f03cf1f8c125bbca75750ea0482643cb"
+      },
+      "daily_news_health": {
+        "status": "completed",
+        "conclusion": "failure",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32361996557",
+        "created_at": "2026-08-20T11:04:10Z",
+        "head_sha": "f3771193f03cf1f8c125bbca75750ea0482643cb"
+      },
+      "catalyst_brief": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32426855272",
+        "created_at": "2026-08-20T23:01:20Z",
+        "head_sha": "e5d6602ac7418d1851918c0ca858c9a4fb7385fa"
+      }
+    },
+    "pipeline": {
+      "quality": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/31640585146",
+        "created_at": "2026-08-12T21:01:59Z",
+        "head_sha": "6d023d807d074756da220701a7ddec1b58675c91"
+      },
+      "weekly": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/31846181023",
+        "created_at": "2026-08-14T22:19:44Z",
+        "head_sha": "6d023d807d074756da220701a7ddec1b58675c91"
+      },
+      "weekly_health": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/31859936069",
+        "created_at": "2026-08-15T02:43:36Z",
+        "head_sha": "502fe9d756973e2ab140066adc3b506f4fe5de6c"
+      }
+    }
+  },
+  "publishing": {
+    "daily_allowed": false,
+    "daily_mode": "blocked",
+    "daily_recovery_eligible": false,
+    "daily_blocker": "The latest Daily health workflow failed and is not eligible for an explicit stale-head recovery dispatch.",
+    "daily_reason": "The latest Daily health workflow failed and is not eligible for an explicit stale-head recovery dispatch.",
+    "daily_failure_gate": "none",
+    "daily_degradation": "none",
+    "exact_current_head_quality_green": true,
+    "stale_daily_failure": false,
+    "stale_daily_health_failure": true
+  },
+  "open_work": [
+    {
+      "number": 130,
+      "title": "P0 — complete transactional email, support, and consent readiness",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
+      "updated_at": "2026-08-20T22:22:27Z",
+      "priority": "P0",
+      "score": 1260,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 53,
+      "title": "P0 — replacement-provider checkout and verified entitlement integration",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
+      "updated_at": "2026-08-20T22:08:49Z",
+      "priority": "P0",
+      "score": 1260,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 50,
+      "title": "P0 — controlled Library Pass revenue and Production-readiness program",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/50",
+      "updated_at": "2026-08-20T01:51:10Z",
+      "priority": "P0",
+      "score": 1060,
+      "blocked": true,
+      "daily_gate": null
+    },
+    {
+      "number": 54,
+      "title": "P1 — integrated Library Pass rehearsal and Production launch",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/54",
+      "updated_at": "2026-08-20T00:54:13Z",
+      "priority": "P1",
+      "score": 980,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 184,
+      "title": "P1 — prove Daily reliability after hardening release",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/184",
+      "updated_at": "2026-08-20T22:22:47Z",
+      "priority": "P1",
+      "score": 900,
+      "blocked": true,
+      "daily_gate": null
+    },
+    {
+      "number": 166,
+      "title": "USD Impact Control Center — operations console",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
+      "updated_at": "2026-08-20T22:43:43Z",
+      "priority": "P3",
+      "score": 620,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 122,
+      "title": "Add recurring Research Membership for weekly reports",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/122",
+      "updated_at": "2026-08-12T17:42:00Z",
+      "priority": "P3",
+      "score": 370,
+      "blocked": true,
+      "daily_gate": null
+    }
+  ],
+  "priority_queue": [
+    {
+      "number": 130,
+      "title": "P0 — complete transactional email, support, and consent readiness",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
+      "updated_at": "2026-08-20T22:22:27Z",
+      "priority": "P0",
+      "score": 1260,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 53,
+      "title": "P0 — replacement-provider checkout and verified entitlement integration",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
+      "updated_at": "2026-08-20T22:08:49Z",
+      "priority": "P0",
+      "score": 1260,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 50,
+      "title": "P0 — controlled Library Pass revenue and Production-readiness program",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/50",
+      "updated_at": "2026-08-20T01:51:10Z",
+      "priority": "P0",
+      "score": 1060,
+      "blocked": true,
+      "daily_gate": null
+    },
+    {
+      "number": 54,
+      "title": "P1 — integrated Library Pass rehearsal and Production launch",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/54",
+      "updated_at": "2026-08-20T00:54:13Z",
+      "priority": "P1",
+      "score": 980,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 184,
+      "title": "P1 — prove Daily reliability after hardening release",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/184",
+      "updated_at": "2026-08-20T22:22:47Z",
+      "priority": "P1",
+      "score": 900,
+      "blocked": true,
+      "daily_gate": null
+    },
+    {
+      "number": 166,
+      "title": "USD Impact Control Center — operations console",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
+      "updated_at": "2026-08-20T22:43:43Z",
+      "priority": "P3",
+      "score": 620,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 122,
+      "title": "Add recurring Research Membership for weekly reports",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/122",
+      "updated_at": "2026-08-12T17:42:00Z",
+      "priority": "P3",
+      "score": 370,
+      "blocked": true,
+      "daily_gate": null
+    }
+  ],
+  "main_blocker": "#130 P0 — complete transactional email, support, and consent readiness",
+  "next_action": "#130 P0 — complete transactional email, support, and consent readiness",
   "notes": [
     "Generated state is a snapshot and never overrides canonical production or governance configuration.",
-    "Unknown state cannot be classified GREEN."
+    "Vercel production readiness must be verified outside this GitHub-only state snapshot after release.",
+    "Cloudflare Pages remains separate to the pipeline dashboard and is not a usd-impact-site deployment target.",
+    "A project-wide P0 or pipeline failure does not automatically block public Daily News unless it affects website publishing or a critical website quality/health workflow.",
+    "An explicit /daily may perform one recovery dispatch only when both failed Daily signals belong to older commits and exact-current-head Web Quality is green.",
+    "Daily failure gates are read only from bounded issue markers and never from untrusted provider payloads."
   ]
 }

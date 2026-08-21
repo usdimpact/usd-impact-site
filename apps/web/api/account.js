@@ -20,6 +20,10 @@ import {
   setSessionCookies,
 } from '../src/lib/supabase-auth.js';
 import { enqueueAccountDeletionRequestedEmail } from '../src/lib/account-deletion-email.js';
+import {
+  runDueAccountDeletionFinalizer,
+  validCronAuthorization,
+} from '../src/lib/account-deletion-finalizer.js';
 import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-handler.js';
 import { enqueuePrivacyExportAcknowledgementEmail } from '../src/lib/privacy-export-email.js';
 import {
@@ -342,6 +346,43 @@ async function handleDelete(request, response) {
   }
 }
 
+export async function handleAccountDeletionFinalizer(request, response) {
+  if (process.env.ACCOUNT_DELETION_FINALIZER_ROUTE_ENABLED !== 'true') {
+    return sendJson(response, 404, {
+      error: 'Account deletion finalizer route is disabled.',
+      code: 'ACCOUNT_DELETION_FINALIZER_ROUTE_DISABLED',
+    });
+  }
+  if (request.method !== 'GET') return methodNotAllowed(response, 'GET');
+  if (!validCronAuthorization(request)) {
+    return sendJson(response, 401, {
+      error: 'Scheduler authorization is required.',
+      code: 'SCHEDULER_AUTHORIZATION_REQUIRED',
+    });
+  }
+
+  try {
+    const result = await runDueAccountDeletionFinalizer();
+    const failures = result.failed + result.recoveryFailed;
+    return sendJson(response, failures > 0 ? 503 : 200, {
+      ok: failures === 0,
+      ...result,
+    });
+  } catch (error) {
+    console.error('Account deletion finalizer route failed.', {
+      code: typeof error?.code === 'string'
+        ? error.code
+        : 'ACCOUNT_DELETION_FINALIZER_ROUTE_FAILED',
+    });
+    return sendJson(response, 503, {
+      error: 'Account deletion finalization is temporarily unavailable.',
+      code: typeof error?.code === 'string'
+        ? error.code
+        : 'ACCOUNT_DELETION_FINALIZER_ROUTE_FAILED',
+    });
+  }
+}
+
 const handlers = Object.freeze({
   login: handleLogin,
   confirm: handleConfirm,
@@ -351,6 +392,7 @@ const handlers = Object.freeze({
   support: handleSupport,
   export: handleExport,
   delete: handleDelete,
+  'deletion-finalizer': handleAccountDeletionFinalizer,
   'commerce-readiness': handleCommerceReadinessRequest,
   'video-progress': handleVideoProgressRequest,
 });

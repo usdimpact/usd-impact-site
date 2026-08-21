@@ -2,6 +2,7 @@ import {
   LAUNCH_EMAIL_DEVELOPMENT_PROJECT_REF,
   LAUNCH_EMAIL_PRODUCTION_PROJECT_REF,
   LaunchEmailDispatchError,
+  projectRefFromUrl,
 } from './launch-email-dispatch-common.js';
 import { lifecycleEmailDispatchEnabled } from './launch-email-dispatch-intent.js';
 import { dispatchEnqueuedLaunchEmail } from './launch-email-dispatch-provider.js';
@@ -40,8 +41,10 @@ function requireTask(task, environment) {
       'INVALID_DISPATCH_TASK',
     );
   }
-  const projectRef = String(task.state.projectRef || '').trim();
-  if (projectRef !== expectedProjectRef(environment)) {
+  const expectedRef = expectedProjectRef(environment);
+  const declaredRef = String(task.state.projectRef || '').trim();
+  const configRef = projectRefFromUrl(task.state.config?.url);
+  if (declaredRef !== expectedRef || configRef !== expectedRef || declaredRef !== configRef) {
     throw new LaunchEmailDispatchError(
       'Lifecycle dispatch task does not target the canonical environment project.',
       'UNEXPECTED_SUPABASE_PROJECT',

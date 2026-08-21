@@ -1,5 +1,5 @@
 # One-shot QA trigger commit. Never merge this workflow to main.
-# Final Development proof against Edge Function v5 after auth-link migration 20260821195116.
+# Final Development proof against Edge Function v6 after auth-link and outbox grant fixes.
 name: QA account deletion proof invoke
 
 on:
@@ -29,10 +29,12 @@ jobs:
             failure,
             evidence: {
               exactCommit: .evidence.exactCommit,
+              databaseFixMigrations: .evidence.databaseFixMigrations,
               finalizer: .evidence.finalizer,
               accessBefore: .evidence.accessBefore,
               requestState: .evidence.requestState,
               authSoftDeleted: .evidence.authSoftDeleted,
+              authAdminStatusAfterFinalizer: .evidence.authAdminStatusAfterFinalizer,
               staleAccessTokenUserLookupStatus: .evidence.staleAccessTokenUserLookupStatus,
               refreshRejected: .evidence.refreshRejected,
               refreshStatus: .evidence.refreshStatus,

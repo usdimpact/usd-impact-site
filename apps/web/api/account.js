@@ -26,6 +26,7 @@ import {
 } from '../src/lib/account-deletion-finalizer.js';
 import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-handler.js';
 import { handleDailyCardReviewRequest } from '../src/lib/daily-card-progress-handler.js';
+import { handleKnowledgeSearchRequest } from '../src/lib/knowledge-search-handler.js';
 import { enqueuePrivacyExportAcknowledgementEmail } from '../src/lib/privacy-export-email.js';
 import { handlePushSubscriptionRequest } from '../src/lib/push-subscription-handler.js';
 import {
@@ -399,6 +400,7 @@ const handlers = Object.freeze({
   'video-progress': handleVideoProgressRequest,
   'push-subscription': handlePushSubscriptionRequest,
   'daily-card-review': handleDailyCardReviewRequest,
+  'knowledge-search': handleKnowledgeSearchRequest,
 });
 
 export default async function handler(request, response) {

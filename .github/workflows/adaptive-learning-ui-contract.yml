@@ -1,0 +1,57 @@
+name: Adaptive learning UI contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/api/account.js'
+      - 'apps/web/src/components/AdaptiveDailyCardReview.astro'
+      - 'apps/web/src/components/AdaptiveDailyReviewQueue.astro'
+      - 'apps/web/src/lib/adaptive-learning.js'
+      - 'apps/web/src/lib/daily-card-progress.js'
+      - 'apps/web/src/lib/daily-card-progress-handler.js'
+      - 'apps/web/src/pages/learn/**'
+      - 'apps/web/scripts/test-adaptive-learning.mjs'
+      - 'apps/web/scripts/test-daily-card-progress.mjs'
+      - '.github/workflows/adaptive-learning-ui-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/api/account.js'
+      - 'apps/web/src/components/AdaptiveDailyCardReview.astro'
+      - 'apps/web/src/components/AdaptiveDailyReviewQueue.astro'
+      - 'apps/web/src/lib/adaptive-learning.js'
+      - 'apps/web/src/lib/daily-card-progress.js'
+      - 'apps/web/src/lib/daily-card-progress-handler.js'
+      - 'apps/web/src/pages/learn/**'
+      - 'apps/web/scripts/test-adaptive-learning.mjs'
+      - 'apps/web/scripts/test-daily-card-progress.mjs'
+      - '.github/workflows/adaptive-learning-ui-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+      - name: Syntax check adaptive review server code
+        run: |
+          node --check api/account.js
+          node --check src/lib/adaptive-learning.js
+          node --check src/lib/daily-card-progress.js
+          node --check src/lib/daily-card-progress-handler.js
+      - name: Verify spaced repetition engine
+        run: node scripts/test-adaptive-learning.mjs
+      - name: Verify Daily Card progress and UI routing
+        run: node scripts/test-daily-card-progress.mjs
+      - name: Preserve Vercel Hobby function budget
+        run: test "$(find api -maxdepth 1 -type f -name '*.js' | wc -l | tr -d ' ')" -le 12
+      - name: Verify Production-safe feature gate
+        run: grep -q "ADAPTIVE_LEARNING_ENABLED !== 'true'" src/lib/daily-card-progress-handler.js

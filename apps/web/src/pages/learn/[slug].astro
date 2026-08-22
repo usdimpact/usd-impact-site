@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdaptiveDailyCardReview from '../../components/AdaptiveDailyCardReview.astro';
 import DailyCard from '../../components/DailyCard.astro';
 import { dailyCards, getDailyCardById } from '../../data/daily-cards.js';
 
@@ -49,6 +50,8 @@ const related = (card.relatedCardIds || [])
       <h2>Key takeaway</h2>
       <p><strong>{card.keyTakeaway}</strong></p>
     </section>
+
+    <AdaptiveDailyCardReview cardId={card.id} />
 
     {card.videoSlug && (
       <section class="dc-access">

@@ -1,0 +1,91 @@
+---
+const { cardId } = Astro.props;
+---
+<section class="dc-adaptive-review" data-daily-card-review data-card-id={cardId} hidden aria-labelledby="adaptive-review-heading">
+  <p class="dc-kicker">Adaptive review</p>
+  <h2 id="adaptive-review-heading">How well did you know this?</h2>
+  <p class="dc-review-copy">Your rating adjusts when this concept should appear again. It does not affect account access or recommendations about financial products.</p>
+  <div class="dc-review-actions" data-review-actions>
+    <button type="button" data-rating="again">Again</button>
+    <button type="button" data-rating="hard">Hard</button>
+    <button type="button" data-rating="good">Good</button>
+    <button type="button" data-rating="easy">Easy</button>
+  </div>
+  <p class="dc-review-status" data-review-status aria-live="polite"></p>
+  <p data-review-sign-in hidden><a href="/account/sign-in/?next=/learn/">Sign in to save your learning progress →</a></p>
+</section>
+
+<style>
+  .dc-adaptive-review { margin-top: 2rem; padding: 1.25rem; border: 1px solid var(--border, #d8dee6); border-radius: 0.9rem; }
+  .dc-review-copy { max-width: 48rem; }
+  .dc-review-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; margin: 1rem 0 0.75rem; }
+  .dc-review-actions button { min-width: 5.5rem; padding: 0.65rem 0.9rem; border: 1px solid currentColor; border-radius: 999px; background: transparent; color: inherit; cursor: pointer; }
+  .dc-review-actions button:disabled { cursor: wait; opacity: 0.6; }
+  .dc-review-status { min-height: 1.5rem; margin: 0; }
+</style>
+
+<script is:inline>
+  (() => {
+    const section = document.querySelector('[data-daily-card-review]');
+    if (!section) return;
+    const cardId = section.getAttribute('data-card-id');
+    const actions = section.querySelector('[data-review-actions]');
+    const status = section.querySelector('[data-review-status]');
+    const signIn = section.querySelector('[data-review-sign-in]');
+    const buttons = Array.from(section.querySelectorAll('button[data-rating]'));
+
+    const setBusy = (busy) => buttons.forEach((button) => { button.disabled = busy; });
+    const showAuthenticated = () => {
+      section.hidden = false;
+      actions.hidden = false;
+      signIn.hidden = true;
+    };
+    const showSignedOut = () => {
+      section.hidden = false;
+      actions.hidden = true;
+      signIn.hidden = false;
+      status.textContent = 'Sign in to use adaptive review.';
+    };
+
+    fetch('/api/account?action=daily-card-review&limit=1', {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin',
+      cache: 'no-store',
+    }).then((response) => {
+      if (response.ok) showAuthenticated();
+      else if (response.status === 401) showSignedOut();
+    }).catch(() => {});
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', async () => {
+        setBusy(true);
+        status.textContent = 'Saving review…';
+        try {
+          const response = await fetch('/api/account?action=daily-card-review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            credentials: 'same-origin',
+            cache: 'no-store',
+            body: JSON.stringify({ cardId, rating: button.getAttribute('data-rating') }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (response.status === 401) {
+            showSignedOut();
+            return;
+          }
+          if (!response.ok) throw new Error(payload.error || 'Review could not be saved.');
+          const next = payload.nextReviewAt ? new Date(payload.nextReviewAt) : null;
+          const nextLabel = next && !Number.isNaN(next.getTime())
+            ? next.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+            : 'later';
+          status.textContent = `Saved. Mastery ${payload.mastery}% · next review ${nextLabel}.`;
+        } catch (error) {
+          status.textContent = error instanceof Error ? error.message : 'Review could not be saved.';
+        } finally {
+          setBusy(false);
+        }
+      });
+    });
+  })();
+</script>

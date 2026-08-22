@@ -1,0 +1,180 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Browser notifications | USD Impact"
+  description="Manage optional USD Impact browser notifications."
+>
+  <section class="hero account-hero">
+    <div class="container">
+      <p class="eyebrow">USD Impact account</p>
+      <h1>Browser notifications.</h1>
+      <p class="lead">Choose whether this browser can receive optional USD Impact updates.</p>
+    </div>
+  </section>
+
+  <main>
+    <div class="container account-shell">
+      <section class="card account-panel" aria-labelledby="push-heading">
+        <h2 id="push-heading">Notification permission</h2>
+        <p>
+          USD Impact will only ask the browser for notification permission after you select
+          <strong>Enable notifications</strong>. Disabling notifications stops delivery to this browser.
+        </p>
+        <p id="push-status" class="account-status" role="status" aria-live="polite">
+          Checking availability…
+        </p>
+        <div class="button-row account-actions">
+          <button id="push-enable" class="button primary" type="button" hidden>Enable notifications</button>
+          <button id="push-disable" class="button account-secondary" type="button" hidden>Disable notifications</button>
+          <a class="button account-secondary" href="/account/">Back to account</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script is:inline>
+    (() => {
+      const apiUrl = '/api/account?action=push-subscription';
+      const status = document.getElementById('push-status');
+      const enableButton = document.getElementById('push-enable');
+      const disableButton = document.getElementById('push-disable');
+      let applicationServerKey = '';
+
+      const showStatus = (text, state = '') => {
+        if (!status) return;
+        status.textContent = text;
+        status.dataset.state = state;
+      };
+
+      const supported = () => (
+        'serviceWorker' in navigator
+        && 'PushManager' in window
+        && 'Notification' in window
+      );
+
+      const applicationKeyBytes = (value) => {
+        const padding = '='.repeat((4 - (value.length % 4)) % 4);
+        const base64 = `${value}${padding}`.replace(/-/g, '+').replace(/_/g, '/');
+        const raw = atob(base64);
+        return Uint8Array.from(raw, (character) => character.charCodeAt(0));
+      };
+
+      const getSubscription = async () => {
+        const registration = await navigator.serviceWorker.ready;
+        return {
+          registration,
+          subscription: await registration.pushManager.getSubscription(),
+        };
+      };
+
+      const renderState = async () => {
+        if (!supported()) {
+          showStatus('Browser notifications are not supported in this browser.', 'error');
+          return;
+        }
+
+        const response = await fetch(apiUrl, { credentials: 'same-origin' });
+        if (response.status === 401) {
+          window.location.replace('/account/sign-in/?next=/account/notifications/');
+          return;
+        }
+        const body = await response.json().catch(() => ({}));
+        if (response.status === 404 && body.code === 'WEB_PUSH_SUBSCRIPTIONS_DISABLED') {
+          showStatus('Browser notifications are not available yet.', 'pending');
+          return;
+        }
+        if (!response.ok || typeof body.applicationServerKey !== 'string') {
+          showStatus(body.error || 'Browser notifications are temporarily unavailable.', 'error');
+          return;
+        }
+
+        applicationServerKey = body.applicationServerKey;
+        const { subscription } = await getSubscription();
+        if (subscription) {
+          enableButton.hidden = true;
+          disableButton.hidden = false;
+          showStatus('Notifications are enabled for this browser.', 'success');
+          return;
+        }
+        disableButton.hidden = true;
+        enableButton.hidden = false;
+        showStatus(
+          Notification.permission === 'denied'
+            ? 'Notifications are blocked in this browser. Update the browser or device permission to enable them.'
+            : 'Notifications are disabled for this browser.',
+          Notification.permission === 'denied' ? 'error' : ''
+        );
+      };
+
+      enableButton?.addEventListener('click', async () => {
+        enableButton.disabled = true;
+        showStatus('Enabling notifications…', 'pending');
+        let createdSubscription = null;
+        try {
+          if (!supported()) throw new Error('Browser notifications are not supported in this browser.');
+          const permission = Notification.permission === 'granted'
+            ? 'granted'
+            : await Notification.requestPermission();
+          if (permission !== 'granted') {
+            throw new Error('Notification permission was not granted.');
+          }
+          if (!applicationServerKey) throw new Error('Notification configuration is unavailable.');
+
+          const { registration, subscription: existing } = await getSubscription();
+          const subscription = existing || await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: applicationKeyBytes(applicationServerKey),
+          });
+          if (!existing) createdSubscription = subscription;
+
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subscription: subscription.toJSON() }),
+          });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(body.error || 'Notification subscription could not be saved.');
+
+          await renderState();
+        } catch (error) {
+          if (createdSubscription) await createdSubscription.unsubscribe().catch(() => false);
+          showStatus(error instanceof Error ? error.message : 'Notifications could not be enabled.', 'error');
+        } finally {
+          enableButton.disabled = false;
+        }
+      });
+
+      disableButton?.addEventListener('click', async () => {
+        disableButton.disabled = true;
+        showStatus('Disabling notifications…', 'pending');
+        try {
+          const { subscription } = await getSubscription();
+          if (!subscription) {
+            await renderState();
+            return;
+          }
+          const response = await fetch(apiUrl, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: subscription.endpoint }),
+          });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(body.error || 'Notification subscription could not be disabled.');
+          await subscription.unsubscribe();
+          await renderState();
+        } catch (error) {
+          showStatus(error instanceof Error ? error.message : 'Notifications could not be disabled.', 'error');
+        } finally {
+          disableButton.disabled = false;
+        }
+      });
+
+      renderState().catch((error) => {
+        showStatus(error instanceof Error ? error.message : 'Browser notifications are temporarily unavailable.', 'error');
+      });
+    })();
+  </script>
+</BaseLayout>

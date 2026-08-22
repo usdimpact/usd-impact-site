@@ -1,11 +1,12 @@
 import { readSessionAccessToken } from './supabase-auth.js';
-import { safeSupabaseError, sendJson } from './supabase-server.js';
+import { getVerifiedSupabaseUser, safeSupabaseError, sendJson } from './supabase-server.js';
 import {
   disableOwnPushSubscription,
   upsertOwnPushSubscription,
 } from './push-subscription.js';
 
 const MAX_BODY_BYTES = 16_384;
+const VAPID_PUBLIC_KEY_PATTERN = /^[A-Za-z0-9_-]{80,128}$/;
 
 function header(request, name) {
   const value = request.headers?.[name] ?? request.headers?.[name.toLowerCase()];
@@ -26,16 +27,38 @@ function parseBody(request) {
   return {};
 }
 
-function sameSiteJson(request, response) {
+function sameSite(request, response) {
   if (header(request, 'sec-fetch-site') === 'cross-site') {
     sendJson(response, 403, { error: 'Cross-site requests are not allowed.', code: 'CROSS_SITE_REQUEST' });
     return false;
   }
+  return true;
+}
+
+function sameSiteJson(request, response) {
+  if (!sameSite(request, response)) return false;
   if (!header(request, 'content-type').includes('application/json')) {
     sendJson(response, 415, { error: 'Content type must be application/json.', code: 'INVALID_CONTENT_TYPE' });
     return false;
   }
   return true;
+}
+
+export function readWebPushPublicConfig(environment = process.env) {
+  const applicationServerKey = String(environment.WEB_PUSH_VAPID_PUBLIC_KEY || '').trim();
+  if (!VAPID_PUBLIC_KEY_PATTERN.test(applicationServerKey)) {
+    throw new Error('WEB_PUSH_VAPID_PUBLIC_KEY is missing or invalid.');
+  }
+  let decoded;
+  try {
+    decoded = Buffer.from(applicationServerKey, 'base64url');
+  } catch {
+    throw new Error('WEB_PUSH_VAPID_PUBLIC_KEY is missing or invalid.');
+  }
+  if (decoded.length !== 65 || decoded[0] !== 4) {
+    throw new Error('WEB_PUSH_VAPID_PUBLIC_KEY is missing or invalid.');
+  }
+  return Object.freeze({ applicationServerKey });
 }
 
 export async function handlePushSubscriptionRequest(request, response) {
@@ -46,11 +69,11 @@ export async function handlePushSubscriptionRequest(request, response) {
     });
   }
 
-  if (!['POST', 'DELETE'].includes(request.method)) {
-    response.setHeader('Allow', 'POST, DELETE');
+  if (!['GET', 'POST', 'DELETE'].includes(request.method)) {
+    response.setHeader('Allow', 'GET, POST, DELETE');
     return sendJson(response, 405, { error: 'Method not allowed.', code: 'METHOD_NOT_ALLOWED' });
   }
-  if (!sameSiteJson(request, response)) return;
+  if (!sameSite(request, response)) return;
 
   const accessToken = readSessionAccessToken(request);
   if (!accessToken) {
@@ -59,6 +82,31 @@ export async function handlePushSubscriptionRequest(request, response) {
       code: 'AUTHENTICATION_REQUIRED',
     });
   }
+
+  if (request.method === 'GET') {
+    try {
+      await getVerifiedSupabaseUser(accessToken);
+    } catch (error) {
+      const safe = safeSupabaseError(error);
+      return sendJson(response, safe.status, safe.payload);
+    }
+    try {
+      return sendJson(response, 200, {
+        enabled: true,
+        ...readWebPushPublicConfig(),
+      });
+    } catch {
+      console.error('Web Push public configuration is invalid.', {
+        code: 'WEB_PUSH_PUBLIC_CONFIG_INVALID',
+      });
+      return sendJson(response, 503, {
+        error: 'Browser notifications are temporarily unavailable.',
+        code: 'WEB_PUSH_PUBLIC_CONFIG_INVALID',
+      });
+    }
+  }
+
+  if (!sameSiteJson(request, response)) return;
 
   let payload;
   try {

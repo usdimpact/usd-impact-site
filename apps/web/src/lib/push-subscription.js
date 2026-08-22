@@ -2,9 +2,8 @@ import { createHash } from 'node:crypto';
 import {
   getVerifiedSupabaseUser,
   readSupabaseServerConfig,
-  SupabaseConfigurationError,
-  SupabaseRequestError,
 } from './supabase-server.js';
+import { supabaseSecretRest } from './supabase-secret-rest.js';
 
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const MAX_ENDPOINT_LENGTH = 4096;
@@ -47,44 +46,6 @@ function normalizeExpirationTime(value) {
   return numeric;
 }
 
-async function readJsonSafely(response) {
-  const text = await response.text();
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { message: text.slice(0, 500) };
-  }
-}
-
-async function serviceRoleFetch({ config, path, method, body, fetchImpl = fetch }) {
-  if (!config?.secretKey) {
-    throw new SupabaseConfigurationError('SUPABASE_SECRET_KEY is required for Web Push subscriptions.');
-  }
-  const response = await fetchImpl(`${config.url}${path}`, {
-    method,
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      apikey: config.secretKey,
-      Authorization: `Bearer ${config.secretKey}`,
-      Prefer: 'resolution=merge-duplicates,return=minimal',
-    },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
-  if (!response.ok) {
-    const payload = await readJsonSafely(response);
-    throw new SupabaseRequestError(
-      payload?.message || payload?.error || 'Web Push subscription storage failed.',
-      {
-        status: response.status,
-        code: payload?.code || 'PUSH_SUBSCRIPTION_STORAGE_FAILED',
-        details: payload,
-      },
-    );
-  }
-}
-
 export function normalizePushSubscription(payload) {
   const endpoint = requirePushEndpoint(payload?.endpoint);
   const keys = payload?.keys && typeof payload.keys === 'object' && !Array.isArray(payload.keys)
@@ -112,7 +73,7 @@ export async function upsertOwnPushSubscription({
   const normalized = normalizePushSubscription(subscription);
   const timestamp = now.toISOString();
 
-  await serviceRoleFetch({
+  await supabaseSecretRest({
     config: resolvedConfig,
     path: '/rest/v1/push_subscriptions?on_conflict=account_id,endpoint_hash',
     method: 'POST',
@@ -126,7 +87,10 @@ export async function upsertOwnPushSubscription({
       enabled: true,
       updated_at: timestamp,
     },
+    prefer: 'resolution=merge-duplicates,return=minimal',
     fetchImpl,
+    errorCode: 'PUSH_SUBSCRIPTION_STORAGE_FAILED',
+    errorMessage: 'Web Push subscription storage failed.',
   });
 
   return Object.freeze({
@@ -149,7 +113,7 @@ export async function disableOwnPushSubscription({
   const normalizedEndpoint = requirePushEndpoint(endpoint);
   const hash = endpointHash(normalizedEndpoint);
 
-  await serviceRoleFetch({
+  await supabaseSecretRest({
     config: resolvedConfig,
     path: `/rest/v1/push_subscriptions?account_id=eq.${encodeURIComponent(user.id)}&endpoint_hash=eq.${hash}`,
     method: 'PATCH',
@@ -157,7 +121,10 @@ export async function disableOwnPushSubscription({
       enabled: false,
       updated_at: now.toISOString(),
     },
+    prefer: 'return=minimal',
     fetchImpl,
+    errorCode: 'PUSH_SUBSCRIPTION_STORAGE_FAILED',
+    errorMessage: 'Web Push subscription storage failed.',
   });
 
   return Object.freeze({ ok: true, endpointHash: hash, enabled: false });

@@ -1,0 +1,76 @@
+name: Production knowledge corpus promotion
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/content/**'
+      - 'apps/web/scripts/build-knowledge-corpus.mjs'
+      - 'apps/web/scripts/sync-knowledge-corpus-production.mjs'
+      - 'apps/web/scripts/test-knowledge-corpus-production-sync.mjs'
+      - '.github/workflows/knowledge-corpus-production.yml'
+  workflow_dispatch:
+    inputs:
+      apply_to_production:
+        description: 'Write the verified corpus to Supabase Production'
+        required: true
+        type: boolean
+        default: false
+      approved_commit:
+        description: 'Exact 40-character main commit SHA approved for Production corpus promotion'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+      - name: Syntax check Production corpus promotion
+        run: node --check scripts/sync-knowledge-corpus-production.mjs
+      - name: Verify Production guards, batching, pruning, and retrieval isolation
+        run: node scripts/test-knowledge-corpus-production-sync.mjs
+      - name: Dry-run current Production corpus candidate
+        run: node scripts/sync-knowledge-corpus-production.mjs
+
+  promote-production:
+    if: github.event_name == 'workflow_dispatch' && inputs.apply_to_production == true && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+      - name: Verify approved commit is the dispatched main commit
+        env:
+          APPROVED_COMMIT: ${{ inputs.approved_commit }}
+        run: |
+          if ! printf '%s' "$APPROVED_COMMIT" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo 'approved_commit must be a lowercase 40-character Git SHA.' >&2
+            exit 1
+          fi
+          if [ "$APPROVED_COMMIT" != "$GITHUB_SHA" ]; then
+            echo 'approved_commit must exactly match the dispatched main commit.' >&2
+            exit 1
+          fi
+      - name: Promote and independently verify Production knowledge corpus
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_PRODUCTION_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_PRODUCTION_SECRET_KEY }}
+          KNOWLEDGE_SYNC_ALLOW_PRODUCTION: 'true'
+          KNOWLEDGE_SYNC_CURRENT_COMMIT: ${{ github.sha }}
+          KNOWLEDGE_SYNC_APPROVED_COMMIT: ${{ inputs.approved_commit }}
+        run: node scripts/sync-knowledge-corpus-production.mjs --apply

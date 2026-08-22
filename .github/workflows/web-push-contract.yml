@@ -3,16 +3,18 @@ name: Web Push contract
 on:
   pull_request:
     paths:
-      - 'apps/web/api/push-subscription.js'
+      - 'apps/web/api/account.js'
       - 'apps/web/src/lib/push-subscription.js'
+      - 'apps/web/src/lib/push-subscription-handler.js'
       - 'apps/web/scripts/test-push-subscription.mjs'
       - 'supabase/migrations/*push_subscriptions*'
       - '.github/workflows/web-push-contract.yml'
   push:
     branches: [main]
     paths:
-      - 'apps/web/api/push-subscription.js'
+      - 'apps/web/api/account.js'
       - 'apps/web/src/lib/push-subscription.js'
+      - 'apps/web/src/lib/push-subscription-handler.js'
       - 'apps/web/scripts/test-push-subscription.mjs'
       - 'supabase/migrations/*push_subscriptions*'
       - '.github/workflows/web-push-contract.yml'
@@ -31,9 +33,14 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22.16.0
-      - name: Syntax check Web Push endpoint
+      - name: Syntax check Web Push account route
         run: |
-          node --check api/push-subscription.js
+          node --check api/account.js
           node --check src/lib/push-subscription.js
-      - name: Verify server-only subscription storage
+          node --check src/lib/push-subscription-handler.js
+      - name: Verify server-only subscription storage and account routing
         run: node scripts/test-push-subscription.mjs
+      - name: Preserve Vercel Hobby function budget
+        run: |
+          test ! -f api/push-subscription.js
+          test "$(find api -maxdepth 1 -type f -name '*.js' | wc -l | tr -d ' ')" -le 12

@@ -119,6 +119,7 @@ const applied = await promoteKnowledgeCorpusToProduction({
       return { ok: true, status: 204, async text() { return ''; } };
     }
 
+    assert.equal(options.method, 'GET');
     scanCount += 1;
     assert.match(url, /knowledge_chunks\?select=id,source_type,source_id,language,access_tier,chunk_index,metadata&limit=5000$/);
     const current = uploadedRows.map((row) => ({
@@ -157,7 +158,7 @@ assert.equal(applied.verification.openHits, 1);
 assert.equal(applied.verification.researchHits, 1);
 assert.equal(calls.filter((call) => call.url.includes('knowledge_chunks?on_conflict=')).length, 9);
 assert.equal(calls.filter((call) => call.url.endsWith('/rest/v1/rpc/search_knowledge_chunks')).length, 2);
-assert.equal(calls.filter((call) => !call.options.method).length, 2);
+assert.equal(calls.filter((call) => call.options.method === 'GET').length, 2);
 assert.equal(calls.filter((call) => call.options.method === 'DELETE').length, 1);
 assert.equal(scanCount, 2);
 
@@ -176,7 +177,7 @@ await assert.rejects(
     },
     fetchImpl: async (url, options = {}) => {
       if (options.method === 'DELETE') deleteAttempted = true;
-      if (!options.method) scanAttempted = true;
+      if (options.method === 'GET') scanAttempted = true;
       if (options.method === 'POST' && url.includes('knowledge_chunks?on_conflict=')) {
         failedPosts += 1;
         if (failedPosts === 2) {

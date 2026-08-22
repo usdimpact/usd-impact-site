@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import '../styles/account.css';
 import TelemetryClient from '../components/TelemetryClient.astro';
+import PwaClient from '../components/PwaClient.astro';
 const { title, description, noindex = false, stylesheets = [] } = Astro.props;
 ---
 <!doctype html>
@@ -9,8 +10,15 @@ const { title, description, noindex = false, stylesheets = [] } = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b1f33" />
+    <meta name="application-name" content="USD Impact" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="USD Impact" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/assets/logo/USDImpact_Icon_Color_2048.png" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     {stylesheets.map((href) => <link rel="stylesheet" href={href} />)}
   </head>
@@ -62,5 +70,6 @@ const { title, description, noindex = false, stylesheets = [] } = Astro.props;
       </div>
     </footer>
     <TelemetryClient />
+    <PwaClient />
   </body>
 </html>

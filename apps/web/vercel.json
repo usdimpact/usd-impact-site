@@ -6,6 +6,13 @@
   "framework": "astro",
   "cleanUrls": true,
   "trailingSlash": false,
+  "git": {
+    "deploymentEnabled": {
+      "agent/*": false,
+      "preview/*": true,
+      "automation/control-center-state": false
+    }
+  },
   "rewrites": [
     {
       "source": "/guided-edition/audiobook",

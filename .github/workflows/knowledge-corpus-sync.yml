@@ -1,0 +1,58 @@
+name: Knowledge corpus sync
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/content/**'
+      - 'apps/web/scripts/build-knowledge-corpus.mjs'
+      - 'apps/web/scripts/sync-knowledge-corpus.mjs'
+      - 'apps/web/scripts/test-knowledge-corpus-sync.mjs'
+      - '.github/workflows/knowledge-corpus-sync.yml'
+  workflow_dispatch:
+    inputs:
+      apply_to_development:
+        description: 'Write the generated corpus to Supabase Development'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+      - name: Syntax check corpus sync
+        run: node --check scripts/sync-knowledge-corpus.mjs
+      - name: Verify Development-only guards and batching
+        run: node scripts/test-knowledge-corpus-sync.mjs
+      - name: Dry-run current corpus
+        run: node scripts/sync-knowledge-corpus.mjs
+
+  sync-development:
+    if: github.event_name == 'workflow_dispatch' && inputs.apply_to_development == true
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: development
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+      - name: Sync citation corpus to Supabase Development
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_DEVELOPMENT_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_DEVELOPMENT_SECRET_KEY }}
+          KNOWLEDGE_SYNC_ALLOW_DEVELOPMENT: 'true'
+        run: node scripts/sync-knowledge-corpus.mjs --apply

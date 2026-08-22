@@ -1,0 +1,31 @@
+name: Adaptive learning contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/adaptive-learning.js'
+      - 'apps/web/scripts/test-adaptive-learning.mjs'
+      - '.github/workflows/adaptive-learning-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/lib/adaptive-learning.js'
+      - 'apps/web/scripts/test-adaptive-learning.mjs'
+      - '.github/workflows/adaptive-learning-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+      - name: Verify deterministic spaced repetition
+        run: node scripts/test-adaptive-learning.mjs

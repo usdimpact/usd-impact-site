@@ -144,6 +144,110 @@ async function createFixture(config) {
 }
 
 
+async function requireSingle(rows, code, message) {
+  if (!Array.isArray(rows) || rows.length !== 1) {
+    const error = new Error(message);
+    error.code = code;
+    throw error;
+  }
+  return rows[0];
+}
+
+async function resumeFixture(config) {
+  const fixture = await existingFixture(config);
+  if (!fixture?.account_id) {
+    const error = new Error('The bounded Production QA fixture does not exist.');
+    error.code = 'LIFECYCLE_QA_FIXTURE_MISSING';
+    throw error;
+  }
+
+  const accountId = fixture.account_id;
+  const [user, supportRows, entitlementRows, outboxRows] = await Promise.all([
+    service(config, `/auth/v1/admin/users/${encodeURIComponent(accountId)}`),
+    service(
+      config,
+      `/rest/v1/support_requests?account_id=eq.${encodeURIComponent(accountId)}&select=*&order=created_at.asc&limit=2`,
+    ),
+    service(
+      config,
+      `/rest/v1/entitlements?account_id=eq.${encodeURIComponent(accountId)}&product_id=eq.${encodeURIComponent(PAID_PRODUCT_ID)}&select=id,state&limit=2`,
+    ),
+    service(
+      config,
+      `/rest/v1/notification_outbox?recipient_email_normalized=eq.${encodeURIComponent(APPROVED_RECIPIENT)}&template_id=eq.support_case_received&select=id,status,attempt_count,provider_message_ref,accepted_at,delivered_at,failed_at,error_code&order=created_at.asc&limit=2`,
+    ),
+  ]);
+  const request = await requireSingle(
+    supportRows,
+    'LIFECYCLE_QA_SUPPORT_BOUNDARY_FAILED',
+    'Resume requires exactly one bounded support request.',
+  );
+  const entitlement = await requireSingle(
+    entitlementRows,
+    'LIFECYCLE_QA_ENTITLEMENT_BOUNDARY_FAILED',
+    'Resume requires exactly one bounded entitlement.',
+  );
+  const outbox = await requireSingle(
+    outboxRows,
+    'LIFECYCLE_QA_OUTBOX_BOUNDARY_FAILED',
+    'Resume requires exactly one bounded lifecycle outbox row.',
+  );
+  if (
+    String(user?.id || '') !== accountId
+    || String(user?.email || '').trim().toLowerCase() !== APPROVED_RECIPIENT
+    || entitlement.state !== 'active'
+    || outbox.status !== 'queued'
+    || outbox.attempt_count !== 0
+    || outbox.provider_message_ref !== null
+    || outbox.accepted_at !== null
+    || outbox.delivered_at !== null
+    || outbox.failed_at !== null
+    || outbox.error_code !== null
+  ) {
+    const error = new Error('The bounded Production QA fixture is not safe to resume.');
+    error.code = 'LIFECYCLE_QA_RESUME_BOUNDARY_FAILED';
+    throw error;
+  }
+
+  const supportResult = {
+    user: {
+      id: accountId,
+      email: APPROVED_RECIPIENT,
+      emailConfirmedAt: user.email_confirmed_at || user.confirmed_at,
+    },
+    request,
+  };
+  const intent = createSupportCaseReceivedEmailIntent({ supportResult });
+  const state = await enqueueSupportCaseReceivedEmail({ supportResult });
+  if (!state?.enabled || state.outbox.id !== outbox.id) {
+    const error = new Error('The Production lifecycle ledger did not reload the bounded outbox row.');
+    error.code = 'LIFECYCLE_QA_OUTBOX_IDENTITY_FAILED';
+    throw error;
+  }
+
+  const providerAdapter = createResendLaunchEmailAdapter();
+  const dispatched = await dispatchSupportCaseReceivedEmail({
+    state,
+    providerAdapter,
+    suppressionState: 'none',
+  });
+  if (!['accepted', 'delivered'].includes(dispatched.action)) {
+    const error = new Error('The bounded lifecycle delivery was not accepted.');
+    error.code = 'LIFECYCLE_QA_DISPATCH_NOT_ACCEPTED';
+    throw error;
+  }
+  return {
+    accountId,
+    entitlementId: entitlement.id,
+    supportRequestId: request.id,
+    outboxId: state.outbox.id,
+    customerReference: intent.customerReference,
+    dispatchAction: dispatched.action,
+    providerMessageReference: dispatched.providerMessageRef,
+  };
+}
+
+
 async function cleanupFixture(config) {
   const fixture = await existingFixture(config);
   if (!fixture?.account_id) {
@@ -202,8 +306,8 @@ export async function handleLifecycleQaRequest(request, response) {
       },
     });
   }
-  if (!['POST', 'DELETE'].includes(request.method)) {
-    response.setHeader('Allow', 'POST, DELETE');
+  if (!['POST', 'PATCH', 'DELETE'].includes(request.method)) {
+    response.setHeader('Allow', 'POST, PATCH, DELETE');
     return sendJson(response, 405, { error: 'Method not allowed.', code: 'METHOD_NOT_ALLOWED' });
   }
   if (!authorized(request)) {
@@ -217,7 +321,9 @@ export async function handleLifecycleQaRequest(request, response) {
     const config = readSupabaseServerConfig(process.env, { requireSecret: true });
     const result = request.method === 'DELETE'
       ? await cleanupFixture(config)
-      : await createFixture(config);
+      : request.method === 'PATCH'
+        ? await resumeFixture(config)
+        : await createFixture(config);
     return sendJson(response, request.method === 'DELETE' ? 200 : 202, { ok: true, ...result });
   } catch (error) {
     console.error('Bounded Production lifecycle QA failed.', {

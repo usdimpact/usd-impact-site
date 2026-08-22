@@ -1,0 +1,28 @@
+---
+const { card, compact = false } = Astro.props;
+const collectionLabels = {
+  'core-framework': 'Core Dollar Framework',
+  'asset-transmission': 'Asset Transmission',
+  'rates-liquidity-policy': 'Rates, Liquidity & Policy',
+  'global-dollar-fx': 'Global Dollar & FX Mechanics',
+  'dollar-funding-stack': 'Dollar Funding Stack',
+  'market-application': 'Market Application',
+  'history-institutions': 'History & Institutions',
+};
+---
+<article class:list={['dc-card', compact && 'dc-card-compact']}>
+  <div class="dc-meta">
+    <span>{card.format}</span>
+    <span>{collectionLabels[card.collectionId] || card.collectionId}</span>
+    <span>{card.level}</span>
+  </div>
+  <h3><a href={`/learn/${card.slug}/`}>{card.title}</a></h3>
+  <p class="dc-hook">{card.hook}</p>
+  {!compact && (
+    <>
+      <p><strong>Key takeaway:</strong> {card.keyTakeaway}</p>
+      <p class="dc-watch"><strong>Watch:</strong> {card.whatToWatch.join(' · ')}</p>
+    </>
+  )}
+  <a class="dc-link" href={`/learn/${card.slug}/`}>Open card →</a>
+</article>

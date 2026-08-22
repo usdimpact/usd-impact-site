@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
   disableOwnPushSubscription,
   normalizePushSubscription,
   upsertOwnPushSubscription,
 } from '../src/lib/push-subscription.js';
+import { handlePushSubscriptionRequest } from '../src/lib/push-subscription-handler.js';
 
 const config = {
   url: 'https://example.supabase.co',
@@ -20,6 +22,16 @@ function response({ ok = true, status = 200, payload = null } = {}) {
     async text() {
       return payload === null ? '' : JSON.stringify(payload);
     },
+  };
+}
+
+function apiResponse() {
+  return {
+    statusCode: 200,
+    headers: {},
+    body: '',
+    setHeader(name, value) { this.headers[name] = value; },
+    end(value = '') { this.body = String(value); },
   };
 }
 
@@ -97,4 +109,17 @@ assert.deepEqual(JSON.parse(calls[1].options.body), {
   updated_at: '2026-08-22T03:00:00.000Z',
 });
 
-console.log('Web Push subscription storage contract verified.');
+const priorFlag = process.env.WEB_PUSH_SUBSCRIPTIONS_ENABLED;
+delete process.env.WEB_PUSH_SUBSCRIPTIONS_ENABLED;
+const gatedResponse = apiResponse();
+await handlePushSubscriptionRequest({ method: 'POST', headers: {}, body: {} }, gatedResponse);
+assert.equal(gatedResponse.statusCode, 404);
+assert.equal(JSON.parse(gatedResponse.body).code, 'WEB_PUSH_SUBSCRIPTIONS_DISABLED');
+if (priorFlag === undefined) delete process.env.WEB_PUSH_SUBSCRIPTIONS_ENABLED;
+else process.env.WEB_PUSH_SUBSCRIPTIONS_ENABLED = priorFlag;
+
+const accountSource = await readFile(new URL('../api/account.js', import.meta.url), 'utf8');
+assert.match(accountSource, /import \{ handlePushSubscriptionRequest \} from '\.\.\/src\/lib\/push-subscription-handler\.js';/);
+assert.match(accountSource, /'push-subscription': handlePushSubscriptionRequest/);
+
+console.log('Web Push subscription storage and account-routing contract verified.');

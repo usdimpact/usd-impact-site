@@ -1,10 +1,9 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import DailyCard from '../../components/DailyCard.astro';
+import DailyCardToday from '../../components/DailyCardToday.astro';
 import { dailyCardCollections, dailyCardMeta, dailyCards } from '../../data/daily-cards.js';
-import { getDailyCard } from '../../lib/daily-card-schedule.js';
 
-const today = getDailyCard(new Date(), { access: 'open' });
 const openCards = dailyCards.filter((card) => card.access === 'open' && card.status === 'ready-for-build');
 ---
 <BaseLayout title="USD Impact Learn | Daily Dollar-System Cards" description={dailyCardMeta.description} stylesheets={['/assets/daily-cards.css']}>
@@ -16,13 +15,11 @@ const openCards = dailyCards.filter((card) => card.access === 'open' && card.sta
     </div>
   </section>
   <main class="dc-shell">
-    {today && (
-      <section class="dc-today" aria-labelledby="today-card-heading">
-        <p class="dc-kicker">Today's card</p>
-        <h2 id="today-card-heading">One concept for today</h2>
-        <DailyCard card={today} />
-      </section>
-    )}
+    <section class="dc-today" aria-labelledby="today-card-heading">
+      <p class="dc-kicker">Today's card</p>
+      <h2 id="today-card-heading">One concept for today</h2>
+      <DailyCardToday headingTag="h3" />
+    </section>
 
     {dailyCardCollections.map((collection) => {
       const items = openCards.filter((card) => card.collectionId === collection.id);

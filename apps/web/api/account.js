@@ -26,6 +26,7 @@ import {
 } from '../src/lib/account-deletion-finalizer.js';
 import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-handler.js';
 import { enqueuePrivacyExportAcknowledgementEmail } from '../src/lib/privacy-export-email.js';
+import { handlePushSubscriptionRequest } from '../src/lib/push-subscription-handler.js';
 import {
   createSupportCaseReceivedEmailIntent,
   enqueueSupportCaseReceivedEmail,
@@ -395,6 +396,7 @@ const handlers = Object.freeze({
   'deletion-finalizer': handleAccountDeletionFinalizer,
   'commerce-readiness': handleCommerceReadinessRequest,
   'video-progress': handleVideoProgressRequest,
+  'push-subscription': handlePushSubscriptionRequest,
 });
 
 export default async function handler(request, response) {

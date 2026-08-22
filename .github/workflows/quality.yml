@@ -54,8 +54,11 @@ jobs:
         run: |
           node --check src/lib/knowledge-retrieval.js
           node --check src/lib/knowledge-search-handler.js
+          node --check scripts/sync-knowledge-corpus-production.mjs
           node scripts/test-knowledge-retrieval.mjs
           node scripts/test-knowledge-search-handler.mjs
+          node scripts/test-knowledge-corpus-production-sync.mjs
+          node scripts/sync-knowledge-corpus-production.mjs
       - name: Validate Daily Cards
         run: npm run validate:daily-cards
       - name: Build production site

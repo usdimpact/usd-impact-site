@@ -40,12 +40,16 @@ try {
     headers: { authorization: `Bearer ${'a'.repeat(64)}` },
   }, unsupported);
   assert.equal(unsupported.statusCode, 405);
-  assert.equal(unsupported.headers.Allow, 'POST, DELETE');
+  assert.equal(unsupported.headers.Allow, 'POST, PATCH, DELETE');
   assert.equal(JSON.parse(unsupported.body).code, 'METHOD_NOT_ALLOWED');
 
   const routeSource = readFileSync(new URL('../src/lib/lifecycle-qa-handler.js', import.meta.url), 'utf8');
   assert.match(routeSource, /outboxRows\[0\]\.status !== 'delivered'/);
   assert.match(routeSource, /fixture_removed_delivery_evidence_retained/);
+  assert.match(routeSource, /request\.method === 'PATCH'/);
+  assert.match(routeSource, /outbox\.status !== 'queued'/);
+  assert.match(routeSource, /outbox\.attempt_count !== 0/);
+  assert.match(routeSource, /state\.outbox\.id !== outbox\.id/);
   assert.doesNotMatch(routeSource, /notification_outbox[^\n]*[\s\S]{0,160}method: 'DELETE'/);
 
   process.env.LIFECYCLE_QA_RECIPIENT_EMAIL = 'someone@example.com';

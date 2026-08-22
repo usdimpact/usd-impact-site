@@ -50,5 +50,7 @@ jobs:
         run: npm run validate:functions
       - name: Validate Supabase contracts
         run: npm run validate:supabase
+      - name: Validate Daily Cards
+        run: npm run validate:daily-cards
       - name: Build production site
         run: npm run build

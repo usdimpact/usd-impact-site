@@ -38,7 +38,10 @@ assert.throws(
 );
 assert.throws(() => normalizeAcquisitionAttribution({ partnerId: 'A' }), /partnerId/);
 assert.throws(() => normalizeAcquisitionAttribution({ referralCode: 'short' }), /referralCode/);
-assert.throws(() => normalizeAcquisitionAttribution({ landingPath: '//external.example' }), /landingPath/);
+assert.throws(
+  () => normalizeAcquisitionAttribution({ partnerId: 'partner-one', landingPath: '//external.example' }),
+  /landingPath/,
+);
 
 const metadata = toCommerceAttributionMetadata(partner);
 assert.equal(metadata.acquisitionAttribution.channel, ACQUISITION_CHANNELS.PARTNER);

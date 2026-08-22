@@ -194,6 +194,12 @@ export async function handleLifecycleQaRequest(request, response) {
     return sendJson(response, 404, {
       error: 'Lifecycle QA route is disabled.',
       code: 'LIFECYCLE_QA_ROUTE_DISABLED',
+      checks: {
+        production: process.env.VERCEL_ENV === 'production',
+        routeEnabled: process.env.LIFECYCLE_QA_ROUTE_ENABLED === 'true',
+        productionApproved: process.env.LIFECYCLE_QA_PRODUCTION_APPROVED === 'true',
+        recipientMatches: process.env.LIFECYCLE_QA_RECIPIENT_EMAIL === APPROVED_RECIPIENT,
+      },
     });
   }
   if (!['POST', 'DELETE'].includes(request.method)) {

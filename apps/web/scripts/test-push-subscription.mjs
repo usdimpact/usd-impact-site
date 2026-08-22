@@ -5,7 +5,10 @@ import {
   normalizePushSubscription,
   upsertOwnPushSubscription,
 } from '../src/lib/push-subscription.js';
-import { handlePushSubscriptionRequest } from '../src/lib/push-subscription-handler.js';
+import {
+  handlePushSubscriptionRequest,
+  readWebPushPublicConfig,
+} from '../src/lib/push-subscription-handler.js';
 
 const config = {
   url: 'https://example.supabase.co',
@@ -14,6 +17,7 @@ const config = {
 };
 const accessToken = 'abcdefghijklmnopqrstuvwxyz1234567890';
 const userId = '123e4567-e89b-42d3-a456-426614174000';
+const vapidPublicKey = Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 7)]).toString('base64url');
 
 function response({ ok = true, status = 200, payload = null } = {}) {
   return {
@@ -54,6 +58,13 @@ assert.throws(
   () => normalizePushSubscription({ endpoint: 'https://push.example.test/x#fragment', keys: { p256dh: 'abc', auth: 'def' } }),
   /without credentials or fragments/,
 );
+assert.deepEqual(readWebPushPublicConfig({ WEB_PUSH_VAPID_PUBLIC_KEY: vapidPublicKey }), {
+  applicationServerKey: vapidPublicKey,
+});
+assert.throws(
+  () => readWebPushPublicConfig({ WEB_PUSH_VAPID_PUBLIC_KEY: 'not-a-key' }),
+  /missing or invalid/,
+);
 
 const calls = [];
 const fetchImpl = async (url, options = {}) => {
@@ -90,6 +101,8 @@ assert.equal(upsertBody.endpoint, 'https://push.example.test/send/member');
 assert.equal(upsertBody.enabled, true);
 assert.match(upsertBody.endpoint_hash, /^[a-f0-9]{64}$/);
 assert.equal(calls[1].options.headers.apikey, config.secretKey);
+assert.equal(Object.hasOwn(calls[1].options.headers, 'Authorization'), false);
+assert.equal(calls[1].options.headers.Prefer, 'resolution=merge-duplicates,return=minimal');
 
 calls.length = 0;
 const disabled = await disableOwnPushSubscription({
@@ -108,6 +121,7 @@ assert.deepEqual(JSON.parse(calls[1].options.body), {
   enabled: false,
   updated_at: '2026-08-22T03:00:00.000Z',
 });
+assert.equal(Object.hasOwn(calls[1].options.headers, 'Authorization'), false);
 
 const priorFlag = process.env.WEB_PUSH_SUBSCRIPTIONS_ENABLED;
 delete process.env.WEB_PUSH_SUBSCRIPTIONS_ENABLED;
@@ -122,4 +136,4 @@ const accountSource = await readFile(new URL('../api/account.js', import.meta.ur
 assert.match(accountSource, /import \{ handlePushSubscriptionRequest \} from '\.\.\/src\/lib\/push-subscription-handler\.js';/);
 assert.match(accountSource, /'push-subscription': handlePushSubscriptionRequest/);
 
-console.log('Web Push subscription storage and account-routing contract verified.');
+console.log('Web Push subscription storage, VAPID public config, and account routing contract verified.');

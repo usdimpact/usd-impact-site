@@ -1,0 +1,40 @@
+name: Knowledge retrieval contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/knowledge-retrieval.js'
+      - 'apps/web/scripts/test-knowledge-retrieval.mjs'
+      - 'supabase/migrations/*knowledge*'
+      - '.github/workflows/knowledge-retrieval-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/lib/knowledge-retrieval.js'
+      - 'apps/web/scripts/test-knowledge-retrieval.mjs'
+      - 'supabase/migrations/*knowledge*'
+      - '.github/workflows/knowledge-retrieval-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+      - name: Syntax check retrieval client
+        run: node --check src/lib/knowledge-retrieval.js
+      - name: Verify entitlement-tier retrieval boundary
+        run: node scripts/test-knowledge-retrieval.mjs
+      - name: Verify raw corpus remains server-only
+        run: |
+          grep -q "revoke all on table public.knowledge_chunks from anon, authenticated" ../../supabase/migrations/20260822023705_knowledge_retrieval_foundation.sql
+          grep -q "grant execute on function public.search_knowledge_chunks.*to service_role" ../../supabase/migrations/20260822023747_knowledge_search_rpc.sql
+          ! grep -q "grant .*authenticated" ../../supabase/migrations/20260822023747_knowledge_search_rpc.sql

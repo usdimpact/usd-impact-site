@@ -1,0 +1,187 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Ask USD Impact QA | USD Impact"
+  description="Internal QA surface for citation-first USD Impact knowledge retrieval."
+  noindex
+>
+  <section class="hero ask-hero">
+    <div class="container">
+      <div class="eyebrow">Internal knowledge QA</div>
+      <h1>Ask USD Impact</h1>
+      <p class="lead">Citation-first source retrieval. This stage searches verified USD Impact material; it does not generate an AI answer or investment recommendation.</p>
+    </div>
+  </section>
+
+  <main class="container ask-main">
+    <section class="card ask-panel" aria-labelledby="ask-heading">
+      <div>
+        <div class="eyebrow">Retrieval preview</div>
+        <h2 id="ask-heading">Search the knowledge corpus</h2>
+        <p>Anonymous sessions are restricted to open material. A verified active paid entitlement may expand retrieval to Research content.</p>
+      </div>
+
+      <form id="knowledge-search-form" class="ask-form">
+        <label for="knowledge-query">Question or topic</label>
+        <div class="ask-row">
+          <input
+            id="knowledge-query"
+            name="query"
+            type="search"
+            minlength="2"
+            maxlength="500"
+            required
+            autocomplete="off"
+            placeholder="Example: How do real yields affect gold?"
+          />
+          <button id="knowledge-search-button" class="button primary" type="submit">Search sources</button>
+        </div>
+      </form>
+
+      <p id="knowledge-status" class="ask-status" role="status" aria-live="polite">Knowledge search is gated by environment configuration.</p>
+    </section>
+
+    <section id="knowledge-results-section" class="ask-results" aria-labelledby="results-heading" hidden>
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Source-backed results</div>
+          <h2 id="results-heading">Retrieved material</h2>
+          <p id="knowledge-access"></p>
+        </div>
+      </div>
+      <ol id="knowledge-results" class="ask-result-list"></ol>
+      <p id="knowledge-notice" class="ask-notice"></p>
+    </section>
+  </main>
+</BaseLayout>
+
+<script>
+  // @ts-nocheck
+  const form = document.querySelector('#knowledge-search-form');
+  const queryInput = document.querySelector('#knowledge-query');
+  const button = document.querySelector('#knowledge-search-button');
+  const status = document.querySelector('#knowledge-status');
+  const resultsSection = document.querySelector('#knowledge-results-section');
+  const resultsList = document.querySelector('#knowledge-results');
+  const accessLabel = document.querySelector('#knowledge-access');
+  const notice = document.querySelector('#knowledge-notice');
+
+  const setStatus = (message, kind = '') => {
+    status.textContent = message;
+    status.dataset.kind = kind;
+  };
+
+  const safeLocalPath = (value) => {
+    const path = String(value || '');
+    return path.startsWith('/') && !path.startsWith('//') ? path : null;
+  };
+
+  const resultItem = (result) => {
+    const item = document.createElement('li');
+    item.className = 'card ask-result';
+
+    const header = document.createElement('div');
+    header.className = 'ask-result-header';
+
+    const title = document.createElement('h3');
+    const path = safeLocalPath(result.sourcePath);
+    if (path) {
+      const link = document.createElement('a');
+      link.href = path;
+      link.textContent = result.title || result.sourcePath;
+      title.append(link);
+    } else {
+      title.textContent = result.title || 'USD Impact source';
+    }
+
+    const tier = document.createElement('span');
+    tier.className = 'ask-tier';
+    tier.textContent = result.accessTier === 'research' ? 'Research' : 'Open';
+    header.append(title, tier);
+
+    const excerpt = document.createElement('p');
+    excerpt.className = 'ask-excerpt';
+    excerpt.textContent = result.excerpt || '';
+
+    const citation = document.createElement('p');
+    citation.className = 'ask-citation';
+    const type = String(result.sourceType || 'source').replaceAll('_', ' ');
+    citation.textContent = `${type} · ${result.sourcePath || 'source path unavailable'} · chunk ${Number(result.chunkIndex ?? 0) + 1}`;
+
+    item.append(header, excerpt, citation);
+    return item;
+  };
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const query = queryInput?.value?.trim() || '';
+    if (query.length < 2) {
+      setStatus('Enter at least two characters.', 'error');
+      return;
+    }
+
+    button.disabled = true;
+    resultsSection.hidden = true;
+    resultsList.replaceChildren();
+    setStatus('Searching verified USD Impact sources…');
+
+    try {
+      const response = await fetch('/api/knowledge-search', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, language: 'en', matchCount: 8 }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (response.status === 404 && payload.code === 'KNOWLEDGE_SEARCH_DISABLED') {
+        setStatus('Knowledge search is disabled in this environment. The QA interface is installed but remains fail-closed.', 'disabled');
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(payload.error || 'Knowledge search is temporarily unavailable.');
+      }
+
+      for (const result of payload.results || []) resultsList.append(resultItem(result));
+      accessLabel.textContent = payload.access === 'research'
+        ? 'Active entitlement verified: Open + Research corpus.'
+        : 'Open corpus only.';
+      notice.textContent = payload.notice || '';
+      resultsSection.hidden = false;
+      setStatus(payload.results?.length
+        ? `${payload.results.length} source${payload.results.length === 1 ? '' : 's'} retrieved.`
+        : 'No matching source was found. Try a broader USD Impact term.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Knowledge search is temporarily unavailable.', 'error');
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>
+
+<style>
+  .ask-main { padding-block: 2rem 4rem; }
+  .ask-panel { display: grid; gap: 1.25rem; }
+  .ask-form { display: grid; gap: .55rem; }
+  .ask-form label { font-weight: 700; }
+  .ask-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .75rem; }
+  .ask-row input { min-height: 3rem; border: 1px solid var(--border, #cbd5e1); border-radius: .65rem; padding: .7rem .85rem; font: inherit; }
+  .ask-status { margin: 0; }
+  .ask-status[data-kind="error"] { font-weight: 700; }
+  .ask-status[data-kind="disabled"] { opacity: .78; }
+  .ask-results { margin-top: 2rem; }
+  .ask-result-list { display: grid; gap: 1rem; padding: 0; list-style: none; }
+  .ask-result { display: grid; gap: .8rem; }
+  .ask-result-header { display: flex; gap: 1rem; align-items: flex-start; justify-content: space-between; }
+  .ask-result-header h3 { margin: 0; }
+  .ask-tier { flex: 0 0 auto; border: 1px solid currentColor; border-radius: 999px; padding: .2rem .55rem; font-size: .78rem; font-weight: 700; }
+  .ask-excerpt, .ask-citation, .ask-notice { margin: 0; }
+  .ask-citation { font-size: .85rem; opacity: .72; text-transform: capitalize; }
+  .ask-notice { margin-top: 1rem; font-size: .9rem; opacity: .8; }
+  @media (max-width: 680px) {
+    .ask-row { grid-template-columns: 1fr; }
+    .ask-result-header { display: grid; }
+    .ask-tier { justify-self: start; }
+  }
+</style>

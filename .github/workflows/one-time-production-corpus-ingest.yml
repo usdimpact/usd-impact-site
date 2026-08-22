@@ -1,0 +1,33 @@
+name: One-time Production corpus ingest
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-time-production-corpus-ingest.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ingest:
+    if: startsWith(github.event.head_commit.message, 'Trigger one-time Production corpus ingest')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invoke pinned Production corpus ingest
+        env:
+          TRIGGER_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          response="$(curl -sS --fail-with-body --max-time 90 "https://gjzetjugmnwanvjkchux.supabase.co/functions/v1/knowledge-corpus-production-ingest-20260822-2ecce9c1?nonce=e3dbc745ba1762d3151549dbd12bda0dc41de4dc309338d2&trigger_commit=${TRIGGER_COMMIT}")"
+          printf '%s\n' "$response"
+          RESULT="$response" node - <<'NODE'
+          const result = JSON.parse(process.env.RESULT || '{}');
+          if (result.ok !== true) throw new Error('Production corpus ingest did not report success.');
+          if (result.rows !== 442 || result.uniqueRows !== 442) throw new Error('Production corpus row parity is invalid.');
+          if (result.counts?.open !== 430 || result.counts?.research !== 12) throw new Error('Production corpus tier counts are invalid.');
+          if (result.digest !== 'b2050b93359163fa1a190999954b485cf8b409d768a3f25fb1e2a9e83d8ce60c') throw new Error('Production corpus digest is invalid.');
+          if (result.corpusVersion !== '2ecce9c1b659e20a2d5444aae14e5316efcae56f') throw new Error('Production corpus version is invalid.');
+          if (result.triggerCommit !== process.env.TRIGGER_COMMIT) throw new Error('Trigger commit verification is invalid.');
+          if (!(result.openHits > 0) || !(result.researchHits > 0)) throw new Error('Production retrieval isolation verification is incomplete.');
+          NODE

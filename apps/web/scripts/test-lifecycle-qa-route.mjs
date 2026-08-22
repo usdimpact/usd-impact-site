@@ -26,12 +26,12 @@ try {
     LIFECYCLE_QA_ROUTE_ENABLED: 'true',
     LIFECYCLE_QA_PRODUCTION_APPROVED: 'true',
     LIFECYCLE_QA_RECIPIENT_EMAIL: 'mircea.management+usdimpact-library-pass-qa@gmail.com',
-    CRON_SECRET: 'a'.repeat(64),
+    LIFECYCLE_QA_SECRET: 'a'.repeat(64),
   });
   const unauthorized = response();
   await handler({ method: 'POST', headers: {} }, unauthorized);
   assert.equal(unauthorized.statusCode, 401);
-  assert.equal(JSON.parse(unauthorized.body).code, 'SCHEDULER_AUTHORIZATION_REQUIRED');
+  assert.equal(JSON.parse(unauthorized.body).code, 'LIFECYCLE_QA_AUTHORIZATION_REQUIRED');
 
 
   const unsupported = response();

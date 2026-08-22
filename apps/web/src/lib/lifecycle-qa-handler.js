@@ -16,7 +16,7 @@ function header(request, name) {
 }
 
 function authorized(request) {
-  const expected = String(process.env.CRON_SECRET || '');
+  const expected = String(process.env.LIFECYCLE_QA_SECRET || '');
   const supplied = header(request, 'authorization').replace(/^Bearer\s+/i, '');
   if (expected.length < 32 || supplied.length !== expected.length) return false;
   return timingSafeEqual(Buffer.from(supplied), Buffer.from(expected));
@@ -208,8 +208,8 @@ export async function handleLifecycleQaRequest(request, response) {
   }
   if (!authorized(request)) {
     return sendJson(response, 401, {
-      error: 'Scheduler authorization is required.',
-      code: 'SCHEDULER_AUTHORIZATION_REQUIRED',
+      error: 'Lifecycle QA authorization is required.',
+      code: 'LIFECYCLE_QA_AUTHORIZATION_REQUIRED',
     });
   }
 

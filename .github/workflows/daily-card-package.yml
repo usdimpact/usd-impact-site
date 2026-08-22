@@ -1,0 +1,58 @@
+name: Daily Card package
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      publish_date:
+        description: Optional YYYY-MM-DD date override
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-daily-card-package:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate Daily Cards
+        run: node scripts/validate-daily-cards.mjs
+
+      - name: Resolve publish date
+        id: date
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.publish_date }}" ]; then
+            echo "value=${{ inputs.publish_date }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate channel package
+        run: node scripts/generate-daily-card-package.mjs "${{ steps.date.outputs.value }}"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-card-${{ steps.date.outputs.value }}
+          path: apps/web/artifacts/daily-card/${{ steps.date.outputs.value }}
+          if-no-files-found: error
+          retention-days: 30

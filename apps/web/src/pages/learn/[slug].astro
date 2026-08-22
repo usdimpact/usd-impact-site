@@ -1,0 +1,74 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DailyCard from '../../components/DailyCard.astro';
+import { dailyCards, getDailyCardById } from '../../data/daily-cards.js';
+
+export function getStaticPaths() {
+  return dailyCards
+    .filter((card) => card.access === 'open' && card.status === 'ready-for-build')
+    .map((card) => ({ params: { slug: card.slug }, props: { card } }));
+}
+
+const { card } = Astro.props;
+const related = (card.relatedCardIds || [])
+  .map((id) => getDailyCardById(id))
+  .filter((item) => item && item.access === 'open' && item.status === 'ready-for-build');
+---
+<BaseLayout title={`${card.title} | USD Impact Learn`} description={card.hook} stylesheets={['/assets/daily-cards.css']}>
+  <main class="dc-detail">
+    <p class="dc-kicker">USD Impact Learn · {card.format}</p>
+    <h1>{card.title}</h1>
+    <p class="dc-lead">{card.hook}</p>
+
+    <section>
+      <h2>What it is</h2>
+      <p>{card.definition}</p>
+    </section>
+
+    <section>
+      <h2>Why it matters</h2>
+      <p>{card.whyItMatters}</p>
+    </section>
+
+    <section>
+      <h2>Example</h2>
+      <p>{card.example}</p>
+    </section>
+
+    <section>
+      <h2>Common mistake</h2>
+      <p>{card.commonMistake}</p>
+    </section>
+
+    <section>
+      <h2>What to watch</h2>
+      <ul>{card.whatToWatch.map((item) => <li>{item}</li>)}</ul>
+    </section>
+
+    <section>
+      <h2>Key takeaway</h2>
+      <p><strong>{card.keyTakeaway}</strong></p>
+    </section>
+
+    {card.videoSlug && (
+      <section class="dc-access">
+        <h2>Go deeper</h2>
+        <p>This concept also appears in the USD Impact video learning path.</p>
+        <a href={`/guided-edition/video-library/${card.videoSlug}/`}>Open related video →</a>
+      </section>
+    )}
+
+    {related.length > 0 && (
+      <section>
+        <h2>Related cards</h2>
+        <div class="dc-related">{related.map((item) => <DailyCard card={item} compact />)}</div>
+      </section>
+    )}
+
+    <section class="dc-source-list">
+      <h2>Sources</h2>
+      <p>{card.sourceNames.join(' · ')}</p>
+      <p>{'Educational and informational purposes only. Not investment advice.'}</p>
+    </section>
+  </main>
+</BaseLayout>

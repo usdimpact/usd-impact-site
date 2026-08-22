@@ -1,0 +1,38 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DailyCard from '../../components/DailyCard.astro';
+import DailyCardToday from '../../components/DailyCardToday.astro';
+import { dailyCardCollections, dailyCardMeta, dailyCards } from '../../data/daily-cards.js';
+
+const openCards = dailyCards.filter((card) => card.access === 'open' && card.status === 'ready-for-build');
+---
+<BaseLayout title="USD Impact Learn | Daily Dollar-System Cards" description={dailyCardMeta.description} stylesheets={['/assets/daily-cards.css']}>
+  <section class="dc-hero">
+    <div class="dc-shell">
+      <p class="dc-kicker">USD Impact Learn</p>
+      <h1>Learn one dollar-system concept at a time.</h1>
+      <p class="dc-lead">Short, source-backed cards covering the dollar, rates, liquidity, asset transmission and market mechanics. Each card is designed to take about one minute.</p>
+    </div>
+  </section>
+  <main class="dc-shell">
+    <section class="dc-today" aria-labelledby="today-card-heading">
+      <p class="dc-kicker">Today's card</p>
+      <h2 id="today-card-heading">One concept for today</h2>
+      <DailyCardToday headingTag="h3" />
+    </section>
+
+    {dailyCardCollections.map((collection) => {
+      const items = openCards.filter((card) => card.collectionId === collection.id);
+      if (!items.length) return null;
+      return (
+        <section class="dc-section" id={collection.id}>
+          <p class="dc-kicker">Collection {String(collection.order).padStart(2, '0')}</p>
+          <h2>{collection.title}</h2>
+          <div class="dc-grid">
+            {items.map((card) => <DailyCard card={card} compact />)}
+          </div>
+        </section>
+      );
+    })}
+  </main>
+</BaseLayout>

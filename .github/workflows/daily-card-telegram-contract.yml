@@ -1,0 +1,60 @@
+name: Daily Card Telegram contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/daily-card-adapters.js'
+      - 'apps/web/src/lib/daily-card-schedule.js'
+      - 'apps/web/src/lib/daily-card-telegram.js'
+      - 'apps/web/src/lib/daily-card-dispatch.js'
+      - 'apps/web/src/lib/supabase-secret-rest.js'
+      - 'apps/web/scripts/dispatch-daily-card-telegram.mjs'
+      - 'apps/web/scripts/test-daily-card-telegram-dispatch.mjs'
+      - 'apps/web/scripts/test-daily-card-dispatch-migration.mjs'
+      - 'apps/web/package.json'
+      - 'supabase/migrations/*daily_card_dispatches*'
+      - '.github/workflows/daily-card-package.yml'
+      - '.github/workflows/daily-card-telegram-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/lib/daily-card-adapters.js'
+      - 'apps/web/src/lib/daily-card-schedule.js'
+      - 'apps/web/src/lib/daily-card-telegram.js'
+      - 'apps/web/src/lib/daily-card-dispatch.js'
+      - 'apps/web/src/lib/supabase-secret-rest.js'
+      - 'apps/web/scripts/dispatch-daily-card-telegram.mjs'
+      - 'apps/web/scripts/test-daily-card-telegram-dispatch.mjs'
+      - 'apps/web/scripts/test-daily-card-dispatch-migration.mjs'
+      - 'apps/web/package.json'
+      - 'supabase/migrations/*daily_card_dispatches*'
+      - '.github/workflows/daily-card-package.yml'
+      - '.github/workflows/daily-card-telegram-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+      - name: Syntax check publisher
+        run: |
+          node --check src/lib/daily-card-telegram.js
+          node --check src/lib/daily-card-dispatch.js
+          node --check scripts/dispatch-daily-card-telegram.mjs
+      - name: Verify dispatch ledger contract
+        run: node scripts/test-daily-card-dispatch-migration.mjs
+      - name: Verify at-most-once Telegram orchestration
+        run: node scripts/test-daily-card-telegram-dispatch.mjs
+      - name: Verify feature flags default fail-closed
+        run: |
+          test -z "${DAILY_CARD_DISTRIBUTION_ENABLED:-}"
+          test -z "${DAILY_CARD_TELEGRAM_ENABLED:-}"

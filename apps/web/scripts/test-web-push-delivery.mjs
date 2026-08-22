@@ -41,6 +41,13 @@ const rows = [
     auth_secret: 'auth_THREE-123',
     expiration_time: null,
   },
+  {
+    id: '123e4567-e89b-42d3-a456-426614174004',
+    endpoint: 'https://push.example.test/send/four',
+    p256dh: 'p256dh_FOUR-123',
+    auth_secret: 'auth_FOUR-123',
+    expiration_time: null,
+  },
 ];
 
 function response({ ok = true, status = 200, payload = null } = {}) {
@@ -100,6 +107,9 @@ const fetchImpl = async (url, options = {}) => {
   assert.equal(options.headers.apikey, config.secretKey);
   assert.equal(Object.hasOwn(options.headers, 'Authorization'), false);
   if (options.method === undefined || options.method === 'GET') return response({ payload: rows });
+  if (url.includes('174004')) {
+    return response({ ok: false, status: 500, payload: { message: 'Bookkeeping unavailable' } });
+  }
   return response({ status: 204 });
 };
 const deliveries = [];
@@ -128,12 +138,12 @@ const result = await deliverWebPushBatch({
   fetchImpl,
   now: new Date('2026-08-22T14:30:00.000Z'),
 });
-assert.deepEqual(result, { attempted: 3, sent: 1, staleDisabled: 1, failed: 1 });
-assert.equal(deliveries.length, 3);
+assert.deepEqual(result, { attempted: 4, sent: 2, staleDisabled: 1, failed: 1, bookkeepingFailed: 1 });
+assert.equal(deliveries.length, 4);
 assert.equal(deliveries[0].subscription.keys.auth, 'auth_ONE-123');
 assert.equal(deliveries[0].payload.url, '/learn/');
 assert.equal(deliveries[0].vapid.privateKey, vapidPrivateKey);
-assert.equal(calls.length, 3);
+assert.equal(calls.length, 4);
 assert.match(calls[0].url, /enabled=eq\.true/);
 assert.match(calls[0].url, /limit=50$/);
 assert.deepEqual(JSON.parse(calls[1].options.body), {
@@ -142,6 +152,9 @@ assert.deepEqual(JSON.parse(calls[1].options.body), {
 assert.deepEqual(JSON.parse(calls[2].options.body), {
   enabled: false,
   updated_at: '2026-08-22T14:30:00.000Z',
+});
+assert.deepEqual(JSON.parse(calls[3].options.body), {
+  last_used_at: '2026-08-22T14:30:00.000Z',
 });
 
 console.log('Web Push delivery orchestration contract verified.');

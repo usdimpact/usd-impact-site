@@ -1,0 +1,10 @@
+<script is:inline>
+  (() => {
+    if (!('serviceWorker' in navigator)) return;
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((error) => {
+        console.warn('USD Impact service worker registration failed.', error);
+      });
+    }, { once: true });
+  })();
+</script>

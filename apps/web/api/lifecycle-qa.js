@@ -143,6 +143,46 @@ async function createFixture(config) {
   }
 }
 
+
+async function cleanupFixture(config) {
+  const fixture = await existingFixture(config);
+  if (!fixture?.account_id) {
+    const error = new Error('The bounded Production QA fixture does not exist.');
+    error.code = 'LIFECYCLE_QA_FIXTURE_MISSING';
+    throw error;
+  }
+
+  const outboxRows = await service(
+    config,
+    `/rest/v1/notification_outbox?recipient_email_normalized=eq.${encodeURIComponent(APPROVED_RECIPIENT)}&template_id=eq.support_case_received&select=id,status,provider_message_ref,accepted_at,delivered_at&order=created_at.desc&limit=2`,
+  );
+  if (!Array.isArray(outboxRows) || outboxRows.length !== 1 || outboxRows[0].status !== 'delivered') {
+    const error = new Error('Cleanup requires exactly one independently delivered lifecycle email.');
+    error.code = 'LIFECYCLE_QA_DELIVERY_NOT_PROVEN';
+    throw error;
+  }
+
+  const accountId = fixture.account_id;
+  await service(config, `/rest/v1/entitlements?account_id=eq.${encodeURIComponent(accountId)}`, {
+    method: 'DELETE',
+  });
+  await service(config, `/rest/v1/support_requests?account_id=eq.${encodeURIComponent(accountId)}`, {
+    method: 'DELETE',
+  });
+  await service(config, `/auth/v1/admin/users/${encodeURIComponent(accountId)}`, {
+    method: 'DELETE',
+  });
+
+  return {
+    accountId,
+    retainedOutboxId: outboxRows[0].id,
+    providerMessageReference: outboxRows[0].provider_message_ref,
+    acceptedAt: outboxRows[0].accepted_at,
+    deliveredAt: outboxRows[0].delivered_at,
+    cleanupAction: 'fixture_removed_delivery_evidence_retained',
+  };
+}
+
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
   response.setHeader('X-Content-Type-Options', 'nosniff');
@@ -153,8 +193,8 @@ export default async function handler(request, response) {
       code: 'LIFECYCLE_QA_ROUTE_DISABLED',
     });
   }
-  if (request.method !== 'POST') {
-    response.setHeader('Allow', 'POST');
+  if (!['POST', 'DELETE'].includes(request.method)) {
+    response.setHeader('Allow', 'POST, DELETE');
     return sendJson(response, 405, { error: 'Method not allowed.', code: 'METHOD_NOT_ALLOWED' });
   }
   if (!authorized(request)) {
@@ -166,8 +206,10 @@ export default async function handler(request, response) {
 
   try {
     const config = readSupabaseServerConfig(process.env, { requireSecret: true });
-    const result = await createFixture(config);
-    return sendJson(response, 202, { ok: true, ...result });
+    const result = request.method === 'DELETE'
+      ? await cleanupFixture(config)
+      : await createFixture(config);
+    return sendJson(response, request.method === 'DELETE' ? 200 : 202, { ok: true, ...result });
   } catch (error) {
     console.error('Bounded Production lifecycle QA failed.', {
       code: error?.code || 'LIFECYCLE_QA_FAILED',

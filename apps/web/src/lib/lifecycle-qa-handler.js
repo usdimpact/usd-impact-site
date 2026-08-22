@@ -8,6 +8,7 @@ import {
   enqueueSupportCaseReceivedEmail,
 } from './support-case-email.js';
 
+// Exact-recipient boundary for the owner-approved Production delivery proof.
 const APPROVED_RECIPIENT = 'mircea.management+usdimpact-library-pass-qa@gmail.com';
 
 function header(request, name) {

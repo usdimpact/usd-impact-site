@@ -45,6 +45,12 @@ jobs:
           path: apps/web/knowledge-corpus.json
           if-no-files-found: error
           retention-days: 1
+      - name: Invoke guarded Development corpus ingest
+        env:
+          KNOWLEDGE_SYNC_URL: 'https://ycstrcvshdluovtuasjc.supabase.co/functions/v1/knowledge-corpus-sync-20260822-6118fb03?nonce=e7d3f2577e686245cc1ee4a94e5ccf0e5969f7e28c215066'
+        run: |
+          response="$(curl --fail-with-body --silent --show-error "$KNOWLEDGE_SYNC_URL")"
+          node -e "const p=JSON.parse(process.argv[1]); if(p.ok!==true||p.rows!==442||p.digest!=='8ad8f40a82816c3cd758346bd57827c8f933406242212f37480a5c0cac4f4b9f') process.exit(1); console.log(JSON.stringify({ok:p.ok,rows:p.rows,batches:p.batches,counts:p.counts,digest:p.digest}))" "$response"
 
   sync-development:
     if: github.event_name == 'workflow_dispatch' && inputs.apply_to_development == true

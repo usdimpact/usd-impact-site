@@ -4,11 +4,12 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 
-const [manifestText, serviceWorker, layout, pwaClient] = await Promise.all([
+const [manifestText, serviceWorker, layout, pwaClient, notificationPage] = await Promise.all([
   read('public/manifest.webmanifest'),
   read('public/sw.js'),
   read('src/layouts/BaseLayout.astro'),
   read('src/components/PwaClient.astro'),
+  read('src/pages/account/notifications.astro'),
 ]);
 
 const manifest = JSON.parse(manifestText);
@@ -20,11 +21,24 @@ assert.match(layout, /rel="manifest" href="\/manifest\.webmanifest"/);
 assert.match(layout, /<PwaClient\s*\/>/);
 assert.match(pwaClient, /navigator\.serviceWorker\.register\('\/sw\.js'/);
 
-// Initial USD Impact PWA must remain network-only. Protected content and
-// entitlement-bearing URLs must not be persisted by the service worker.
+// USD Impact PWA remains network-only. Protected content and entitlement-bearing
+// URLs must never be persisted by the service worker.
 assert.doesNotMatch(serviceWorker, /caches\.open\s*\(/);
 assert.doesNotMatch(serviceWorker, /cache\.put\s*\(/);
 assert.doesNotMatch(serviceWorker, /cache\.add(All)?\s*\(/);
 assert.match(serviceWorker, /event\.respondWith\(fetch\(event\.request\)\)/);
 
-console.log('PWA contract verified: installable shell, network-only service worker.');
+// Push receipt is user-visible and notification navigation is constrained to
+// this origin. Permission must only be requested from the explicit enable action.
+assert.match(serviceWorker, /addEventListener\('push'/);
+assert.match(serviceWorker, /registration\.showNotification/);
+assert.match(serviceWorker, /addEventListener\('notificationclick'/);
+assert.match(serviceWorker, /safeSameOriginPath/);
+assert.match(notificationPage, /enableButton\?\.addEventListener\('click'/);
+const permissionPrompt = notificationPage.indexOf('Notification.requestPermission()');
+const enableHandler = notificationPage.indexOf("enableButton?.addEventListener('click'");
+assert.ok(enableHandler >= 0 && permissionPrompt > enableHandler);
+assert.match(notificationPage, /userVisibleOnly:\s*true/);
+assert.match(notificationPage, /applicationServerKey:/);
+
+console.log('PWA contract verified: installable shell, network-only worker, explicit Web Push opt-in.');

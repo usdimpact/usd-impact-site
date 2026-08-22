@@ -157,11 +157,18 @@ export async function deliverWebPushBatch({
   });
   if (!Array.isArray(rows)) throw new WebPushDeliveryError('Web Push subscription response is invalid.', 'PUSH_SUBSCRIPTION_READ_INVALID');
 
-  const result = { attempted: 0, sent: 0, staleDisabled: 0, failed: 0 };
+  const result = { attempted: 0, sent: 0, staleDisabled: 0, failed: 0, bookkeepingFailed: 0 };
   const timestamp = now.toISOString();
   for (const row of rows) {
-    const stored = normalizedRow(row);
     result.attempted += 1;
+    let stored;
+    try {
+      stored = normalizedRow(row);
+    } catch {
+      result.failed += 1;
+      continue;
+    }
+
     try {
       await sendNotification({
         subscription: {
@@ -175,13 +182,6 @@ export async function deliverWebPushBatch({
         payload: JSON.stringify(normalizedPayload),
         vapid: transportConfig,
       });
-      await markSubscription({
-        config: resolvedConfig,
-        id: stored.id,
-        body: { last_used_at: timestamp },
-        fetchImpl,
-      });
-      result.sent += 1;
     } catch (error) {
       if ([404, 410].includes(statusCode(error))) {
         try {
@@ -194,10 +194,24 @@ export async function deliverWebPushBatch({
           result.staleDisabled += 1;
         } catch {
           result.failed += 1;
+          result.bookkeepingFailed += 1;
         }
       } else {
         result.failed += 1;
       }
+      continue;
+    }
+
+    result.sent += 1;
+    try {
+      await markSubscription({
+        config: resolvedConfig,
+        id: stored.id,
+        body: { last_used_at: timestamp },
+        fetchImpl,
+      });
+    } catch {
+      result.bookkeepingFailed += 1;
     }
   }
   return Object.freeze(result);

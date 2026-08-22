@@ -1,0 +1,39 @@
+name: Web Push contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/api/push-subscription.js'
+      - 'apps/web/src/lib/push-subscription.js'
+      - 'apps/web/scripts/test-push-subscription.mjs'
+      - 'supabase/migrations/*push_subscriptions*'
+      - '.github/workflows/web-push-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/api/push-subscription.js'
+      - 'apps/web/src/lib/push-subscription.js'
+      - 'apps/web/scripts/test-push-subscription.mjs'
+      - 'supabase/migrations/*push_subscriptions*'
+      - '.github/workflows/web-push-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+      - name: Syntax check Web Push endpoint
+        run: |
+          node --check api/push-subscription.js
+          node --check src/lib/push-subscription.js
+      - name: Verify server-only subscription storage
+        run: node scripts/test-push-subscription.mjs

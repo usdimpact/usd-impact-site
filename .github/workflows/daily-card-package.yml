@@ -56,3 +56,50 @@ jobs:
           path: apps/web/artifacts/daily-card/${{ steps.date.outputs.value }}
           if-no-files-found: error
           retention-days: 30
+
+  publish-telegram:
+    needs: build-daily-card-package
+    if: vars.DAILY_CARD_DISTRIBUTION_ENABLED == 'true' && vars.DAILY_CARD_TELEGRAM_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      DAILY_CARD_DISTRIBUTION_ENABLED: ${{ vars.DAILY_CARD_DISTRIBUTION_ENABLED }}
+      DAILY_CARD_TELEGRAM_ENABLED: ${{ vars.DAILY_CARD_TELEGRAM_ENABLED }}
+      DAILY_CARD_TELEGRAM_BOT_TOKEN: ${{ secrets.DAILY_CARD_TELEGRAM_BOT_TOKEN }}
+      DAILY_CARD_TELEGRAM_CHAT_ID: ${{ secrets.DAILY_CARD_TELEGRAM_CHAT_ID }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_PRODUCTION_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_PRODUCTION_SECRET_KEY }}
+    steps:
+      - name: Checkout exact workflow commit
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Resolve publish date
+        id: date
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.publish_date }}" ]; then
+            echo "value=${{ inputs.publish_date }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate Daily Cards
+        run: node scripts/validate-daily-cards.mjs
+
+      - name: Publish exactly one Telegram Daily Card
+        run: node scripts/dispatch-daily-card-telegram.mjs "${{ steps.date.outputs.value }}"

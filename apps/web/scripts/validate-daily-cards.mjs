@@ -1,11 +1,25 @@
 import { dailyCards } from '../src/data/daily-cards.js';
 import { getDailyCard, validateDailyCards } from '../src/lib/daily-card-schedule.js';
 import { buildChannelPack } from '../src/lib/daily-card-adapters.js';
+import { normalizeTelegramMessage } from '../src/lib/daily-card-telegram.js';
 
 const errors = validateDailyCards();
 
 const openCards = dailyCards.filter((card) => card.access === 'open' && card.status === 'ready-for-build');
 if (openCards.length < 5) errors.push(`expected at least 5 publishable open cards, found ${openCards.length}`);
+
+for (const card of openCards) {
+  const pack = buildChannelPack(card, { baseUrl: 'https://www.usd-impact.com' });
+  if (!pack.email?.text || !pack.telegram || !pack.whatsapp || !pack.social) {
+    errors.push(`${card.id}: incomplete channel pack`);
+    continue;
+  }
+  try {
+    normalizeTelegramMessage(pack.telegram);
+  } catch (error) {
+    errors.push(`${card.id}: ${error instanceof Error ? error.message : 'invalid Telegram payload'}`);
+  }
+}
 
 for (let offset = 0; offset < 35; offset += 1) {
   const date = new Date(Date.UTC(2026, 7, 22 + offset));

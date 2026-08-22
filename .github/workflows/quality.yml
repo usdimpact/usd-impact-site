@@ -50,6 +50,12 @@ jobs:
         run: npm run validate:functions
       - name: Validate Supabase contracts
         run: npm run validate:supabase
+      - name: Validate knowledge retrieval
+        run: |
+          node --check src/lib/knowledge-retrieval.js
+          node --check src/lib/knowledge-search-handler.js
+          node scripts/test-knowledge-retrieval.mjs
+          node scripts/test-knowledge-search-handler.mjs
       - name: Validate Daily Cards
         run: npm run validate:daily-cards
       - name: Build production site

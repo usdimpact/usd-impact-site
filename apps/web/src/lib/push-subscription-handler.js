@@ -1,5 +1,5 @@
 import { readSessionAccessToken } from './supabase-auth.js';
-import { safeSupabaseError, sendJson } from './supabase-server.js';
+import { getVerifiedSupabaseUser, safeSupabaseError, sendJson } from './supabase-server.js';
 import {
   disableOwnPushSubscription,
   upsertOwnPushSubscription,
@@ -84,6 +84,12 @@ export async function handlePushSubscriptionRequest(request, response) {
   }
 
   if (request.method === 'GET') {
+    try {
+      await getVerifiedSupabaseUser(accessToken);
+    } catch (error) {
+      const safe = safeSupabaseError(error);
+      return sendJson(response, safe.status, safe.payload);
+    }
     try {
       return sendJson(response, 200, {
         enabled: true,

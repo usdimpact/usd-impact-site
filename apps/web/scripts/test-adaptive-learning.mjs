@@ -41,6 +41,8 @@ const mature = applyReviewResult({
 });
 assert.equal(mature.mastery_score, 96);
 assert.equal(mature.status, 'completed');
+assert.equal(mature.data.correctCount, 5);
+assert.equal(mature.data.incorrectCount, 1);
 assert.equal(mature.data.reviewIntervalDays, 30);
 assert.equal(mature.data.nextReviewAt, '2026-09-21T08:00:00.000Z');
 
@@ -54,8 +56,8 @@ const failed = applyReviewResult({
 assert.equal(failed.mastery_score, 81);
 assert.equal(failed.status, 'in_progress');
 assert.equal(failed.data.reviewIntervalDays, 1);
-assert.equal(failed.data.correctCount, 1);
-assert.equal(failed.data.incorrectCount, 1);
+assert.equal(failed.data.correctCount, 5);
+assert.equal(failed.data.incorrectCount, 2);
 
 const cards = [
   { id: 'dxy', title: 'DXY' },

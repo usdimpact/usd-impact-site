@@ -1,40 +1,312 @@
 {
   "schema_version": 1,
-  "generated_at": null,
-  "generated_by": "bootstrap",
-  "freshness": "STALE",
-  "health": "AMBER",
+  "generated_at": "2026-08-22T14:25:01.705Z",
+  "generated_by": "github-actions:sync",
+  "freshness": "VERIFIED",
+  "health": "RED",
   "production": {
     "provider": "vercel",
     "domain": "https://www.usd-impact.com/",
     "branch": "main",
-    "deployment": "UNKNOWN",
-    "verification": "UNKNOWN"
+    "deployment": "EXTERNAL_VERIFY",
+    "verification": "REQUIRED_AFTER_RELEASE"
   },
   "repositories": {
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": null
+      "head_sha": "fee003bc6443fc4a8e56d73a04e2669872eee46f"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
       "default_branch": "main",
-      "head_sha": null
+      "head_sha": "4821b6e3b8bca60f54e7bfb3be0b6724c7df4edb"
     },
     "weekly_commentary": {
       "name": "usdimpact/usd-impact",
       "default_branch": "main",
-      "head_sha": null
+      "head_sha": "24ab0318febfb7d2766607db7e11d5d67aa716e6"
     }
   },
-  "workflows": {},
-  "open_work": [],
-  "priority_queue": [],
-  "main_blocker": "State has not yet been refreshed by the control-center workflow.",
-  "next_action": "Run /sync or the AI Control Center workflow.",
+  "workflows": {
+    "website": {
+      "quality": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32578489691",
+        "created_at": "2026-08-22T14:22:00Z",
+        "head_sha": "fee003bc6443fc4a8e56d73a04e2669872eee46f"
+      },
+      "daily_news": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32469874060",
+        "created_at": "2026-08-21T09:51:25Z",
+        "head_sha": "e5d6602ac7418d1851918c0ca858c9a4fb7385fa"
+      },
+      "daily_news_health": {
+        "status": "completed",
+        "conclusion": "failure",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32475444274",
+        "created_at": "2026-08-21T11:03:23Z",
+        "head_sha": "e5d6602ac7418d1851918c0ca858c9a4fb7385fa"
+      },
+      "catalyst_brief": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32559285477",
+        "created_at": "2026-08-22T07:19:18Z",
+        "head_sha": "2ef5efc0bb036b0575e1fdcd5a9b355b83e79a15"
+      }
+    },
+    "pipeline": {
+      "quality": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/32524469056",
+        "created_at": "2026-08-21T20:37:03Z",
+        "head_sha": "ff21416dd641b76548029eb6a2ca9d5543819e6b"
+      },
+      "weekly": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/32532603080",
+        "created_at": "2026-08-21T22:21:18Z",
+        "head_sha": "ff21416dd641b76548029eb6a2ca9d5543819e6b"
+      },
+      "weekly_health": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/32547139098",
+        "created_at": "2026-08-22T02:45:49Z",
+        "head_sha": "4821b6e3b8bca60f54e7bfb3be0b6724c7df4edb"
+      }
+    }
+  },
+  "publishing": {
+    "daily_allowed": false,
+    "daily_mode": "blocked",
+    "daily_recovery_eligible": false,
+    "daily_blocker": "Open Daily publication blocker: #184 P1 — prove Daily reliability after hardening release",
+    "daily_reason": "Open Daily publication blocker: #184 P1 — prove Daily reliability after hardening release",
+    "daily_failure_gate": "none",
+    "daily_degradation": "gate none — #184 P1 — prove Daily reliability after hardening release",
+    "exact_current_head_quality_green": true,
+    "stale_daily_failure": false,
+    "stale_daily_health_failure": true
+  },
+  "open_work": [
+    {
+      "number": 53,
+      "title": "P0 — replacement-provider checkout and verified entitlement integration",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
+      "updated_at": "2026-08-22T14:24:30Z",
+      "priority": "P0",
+      "score": 1210,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 130,
+      "title": "P0 — complete transactional email, support, and consent readiness",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
+      "updated_at": "2026-08-22T14:21:26Z",
+      "priority": "P0",
+      "score": 1170,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 50,
+      "title": "P0 — controlled Library Pass revenue and Production-readiness program",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/50",
+      "updated_at": "2026-08-22T14:23:17Z",
+      "priority": "P0",
+      "score": 1140,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 54,
+      "title": "P1 — integrated Library Pass rehearsal and Production launch",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/54",
+      "updated_at": "2026-08-22T14:24:04Z",
+      "priority": "P1",
+      "score": 1060,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 184,
+      "title": "P1 — prove Daily reliability after hardening release",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/184",
+      "updated_at": "2026-08-22T14:21:07Z",
+      "priority": "P1",
+      "score": 1020,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 234,
+      "title": "P3: Activate USD Impact Partner Program + Member Referral after commerce provider",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/234",
+      "updated_at": "2026-08-22T11:42:09Z",
+      "priority": "P3",
+      "score": 660,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 166,
+      "title": "USD Impact Control Center — operations console",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
+      "updated_at": "2026-08-22T14:24:48Z",
+      "priority": "P3",
+      "score": 620,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 244,
+      "title": "Activate Production Web Push after VAPID and transport readiness",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/244",
+      "updated_at": "2026-08-22T14:23:12Z",
+      "priority": "P3",
+      "score": 610,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 242,
+      "title": "Enable Production knowledge search when Vercel access is available",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/242",
+      "updated_at": "2026-08-22T14:07:23Z",
+      "priority": "P3",
+      "score": 570,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 122,
+      "title": "Phase 2 — recurring Research Membership for ongoing reports and TradingView",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/122",
+      "updated_at": "2026-08-22T12:49:32Z",
+      "priority": "P3",
+      "score": 510,
+      "blocked": false,
+      "daily_gate": null
+    }
+  ],
+  "priority_queue": [
+    {
+      "number": 53,
+      "title": "P0 — replacement-provider checkout and verified entitlement integration",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
+      "updated_at": "2026-08-22T14:24:30Z",
+      "priority": "P0",
+      "score": 1210,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 130,
+      "title": "P0 — complete transactional email, support, and consent readiness",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
+      "updated_at": "2026-08-22T14:21:26Z",
+      "priority": "P0",
+      "score": 1170,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 50,
+      "title": "P0 — controlled Library Pass revenue and Production-readiness program",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/50",
+      "updated_at": "2026-08-22T14:23:17Z",
+      "priority": "P0",
+      "score": 1140,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 54,
+      "title": "P1 — integrated Library Pass rehearsal and Production launch",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/54",
+      "updated_at": "2026-08-22T14:24:04Z",
+      "priority": "P1",
+      "score": 1060,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 184,
+      "title": "P1 — prove Daily reliability after hardening release",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/184",
+      "updated_at": "2026-08-22T14:21:07Z",
+      "priority": "P1",
+      "score": 1020,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 234,
+      "title": "P3: Activate USD Impact Partner Program + Member Referral after commerce provider",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/234",
+      "updated_at": "2026-08-22T11:42:09Z",
+      "priority": "P3",
+      "score": 660,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 166,
+      "title": "USD Impact Control Center — operations console",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
+      "updated_at": "2026-08-22T14:24:48Z",
+      "priority": "P3",
+      "score": 620,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 244,
+      "title": "Activate Production Web Push after VAPID and transport readiness",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/244",
+      "updated_at": "2026-08-22T14:23:12Z",
+      "priority": "P3",
+      "score": 610,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 242,
+      "title": "Enable Production knowledge search when Vercel access is available",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/242",
+      "updated_at": "2026-08-22T14:07:23Z",
+      "priority": "P3",
+      "score": 570,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 122,
+      "title": "Phase 2 — recurring Research Membership for ongoing reports and TradingView",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/122",
+      "updated_at": "2026-08-22T12:49:32Z",
+      "priority": "P3",
+      "score": 510,
+      "blocked": false,
+      "daily_gate": null
+    }
+  ],
+  "main_blocker": "#53 P0 — replacement-provider checkout and verified entitlement integration",
+  "next_action": "#53 P0 — replacement-provider checkout and verified entitlement integration",
   "notes": [
     "Generated state is a snapshot and never overrides canonical production or governance configuration.",
-    "Unknown state cannot be classified GREEN."
+    "Vercel production readiness must be verified outside this GitHub-only state snapshot after release.",
+    "Cloudflare Pages remains separate to the pipeline dashboard and is not a usd-impact-site deployment target.",
+    "A project-wide P0 or pipeline failure does not automatically block public Daily News unless it affects website publishing or a critical website quality/health workflow.",
+    "An explicit /daily may perform one recovery dispatch only when both failed Daily signals belong to older commits and exact-current-head Web Quality is green.",
+    "Daily failure gates are read only from bounded issue markers and never from untrusted provider payloads."
   ]
 }

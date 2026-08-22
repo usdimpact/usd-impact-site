@@ -38,7 +38,12 @@ jobs:
         run: node scripts/sync-knowledge-corpus.mjs
 
   sync-development:
-    if: github.event_name == 'workflow_dispatch' && inputs.apply_to_development == true
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.apply_to_development == true) ||
+      (github.event_name == 'pull_request' &&
+       github.head_ref == 'agent/development-knowledge-sync-once-20260822' &&
+       github.actor == 'usdimpact' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
     needs: verify
     runs-on: ubuntu-latest
     environment: development

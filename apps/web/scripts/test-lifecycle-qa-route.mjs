@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const original = { ...process.env };
-const { default: handler } = await import('../api/lifecycle-qa.js');
+const { handleLifecycleQaRequest: handler } = await import('../src/lib/lifecycle-qa-handler.js');
 
 function response() {
   return {
@@ -43,7 +43,7 @@ try {
   assert.equal(unsupported.headers.Allow, 'POST, DELETE');
   assert.equal(JSON.parse(unsupported.body).code, 'METHOD_NOT_ALLOWED');
 
-  const routeSource = readFileSync(new URL('../api/lifecycle-qa.js', import.meta.url), 'utf8');
+  const routeSource = readFileSync(new URL('../src/lib/lifecycle-qa-handler.js', import.meta.url), 'utf8');
   assert.match(routeSource, /outboxRows\[0\]\.status !== 'delivered'/);
   assert.match(routeSource, /fixture_removed_delivery_evidence_retained/);
   assert.doesNotMatch(routeSource, /notification_outbox[^\n]*[\s\S]{0,160}method: 'DELETE'/);

@@ -74,6 +74,14 @@ function stampRows(rows, corpusVersion) {
   }));
 }
 
+function countTiers(rows) {
+  return rows.reduce((counts, row) => {
+    const tier = String(row.access_tier || 'unknown');
+    counts[tier] = (counts[tier] || 0) + 1;
+    return counts;
+  }, {});
+}
+
 async function readJsonSafely(response) {
   const text = await response.text();
   if (!text) return null;
@@ -117,19 +125,19 @@ async function upsertRows({ config, rows, fetchImpl }) {
   }
 }
 
-async function readCurrentIdentities({ config, fetchImpl }) {
+async function readCurrentRows({ config, fetchImpl }) {
   const payload = await requestJson({
     config,
-    path: '/rest/v1/knowledge_chunks?select=id,source_type,source_id,language,chunk_index&limit=5000',
+    path: '/rest/v1/knowledge_chunks?select=id,source_type,source_id,language,access_tier,chunk_index,metadata&limit=5000',
     fetchImpl,
   });
-  if (!Array.isArray(payload)) throw new Error('Production knowledge corpus identity scan returned an invalid response.');
+  if (!Array.isArray(payload)) throw new Error('Production knowledge corpus scan returned an invalid response.');
   return payload;
 }
 
 async function pruneStaleRows({ config, desiredRows, fetchImpl }) {
   const desired = new Set(desiredRows.map(identity));
-  const current = await readCurrentIdentities({ config, fetchImpl });
+  const current = await readCurrentRows({ config, fetchImpl });
   const staleIds = current
     .filter((row) => !desired.has(identity(row)))
     .map((row) => String(row.id || '').trim())
@@ -148,6 +156,66 @@ async function pruneStaleRows({ config, desiredRows, fetchImpl }) {
   return staleIds.length;
 }
 
+async function searchTier({ config, tier, query, fetchImpl }) {
+  const payload = await requestJson({
+    config,
+    path: '/rest/v1/rpc/search_knowledge_chunks',
+    method: 'POST',
+    body: {
+      query_text: query,
+      allowed_access_tiers: [tier],
+      match_count: 5,
+      query_language: 'en',
+    },
+    fetchImpl,
+  });
+  if (!Array.isArray(payload) || payload.length < 1) {
+    throw new Error(`Production ${tier} knowledge retrieval verification returned no matches.`);
+  }
+  if (payload.some((row) => row?.access_tier !== tier)) {
+    throw new Error(`Production ${tier} knowledge retrieval verification leaked another access tier.`);
+  }
+  return payload.length;
+}
+
+async function verifyProductionCorpus({ config, desiredRows, corpusVersion, fetchImpl }) {
+  const current = await readCurrentRows({ config, fetchImpl });
+  const desiredByIdentity = new Map(desiredRows.map((row) => [identity(row), row]));
+  const currentIdentities = new Set(current.map(identity));
+
+  if (current.length !== desiredRows.length || currentIdentities.size !== desiredRows.length) {
+    throw new Error(`Production knowledge corpus verification expected ${desiredRows.length} exact rows, found ${current.length}/${currentIdentities.size}.`);
+  }
+
+  for (const row of current) {
+    const expected = desiredByIdentity.get(identity(row));
+    if (!expected) throw new Error('Production knowledge corpus verification found an unexpected row.');
+    if (row.access_tier !== expected.access_tier) {
+      throw new Error('Production knowledge corpus verification found an access-tier mismatch.');
+    }
+    if (row.metadata?.corpusVersion !== corpusVersion) {
+      throw new Error('Production knowledge corpus verification found a stale or missing corpus version stamp.');
+    }
+  }
+
+  const expectedCounts = countTiers(desiredRows);
+  const actualCounts = countTiers(current);
+  if (JSON.stringify(actualCounts) !== JSON.stringify(expectedCounts)) {
+    throw new Error('Production knowledge corpus verification found a tier-count mismatch.');
+  }
+
+  const openHits = await searchTier({ config, tier: 'open', query: 'real yield', fetchImpl });
+  const researchHits = await searchTier({ config, tier: 'research', query: 'DXY', fetchImpl });
+
+  return Object.freeze({
+    totalRows: current.length,
+    uniqueRows: currentIdentities.size,
+    tierCounts: actualCounts,
+    openHits,
+    researchHits,
+  });
+}
+
 export async function promoteKnowledgeCorpusToProduction({
   apply = false,
   environment = process.env,
@@ -163,7 +231,7 @@ export async function promoteKnowledgeCorpusToProduction({
     apply: Boolean(apply),
   };
 
-  if (!apply) return Object.freeze({ ...summaryBase, pruned: 0, corpusVersion: null });
+  if (!apply) return Object.freeze({ ...summaryBase, pruned: 0, corpusVersion: null, verification: null });
 
   const config = requireProductionConfig(environment);
   const rows = stampRows(sourceRows, config.currentCommit);
@@ -171,11 +239,18 @@ export async function promoteKnowledgeCorpusToProduction({
   // Additive-first: every desired row must upsert successfully before stale rows are considered for deletion.
   await upsertRows({ config, rows, fetchImpl });
   const pruned = await pruneStaleRows({ config, desiredRows: rows, fetchImpl });
+  const verification = await verifyProductionCorpus({
+    config,
+    desiredRows: rows,
+    corpusVersion: config.currentCommit,
+    fetchImpl,
+  });
 
   return Object.freeze({
     ...summaryBase,
     pruned,
     corpusVersion: config.currentCommit,
+    verification,
   });
 }
 

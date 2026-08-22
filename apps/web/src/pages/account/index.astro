@@ -26,7 +26,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <div class="button-row account-actions">
           <a class="button primary" href="/guided-edition/">Open Guided Edition</a>
           <a class="button account-secondary" href="/guided-edition/video-library/">Open video library</a>
-          <a class="button account-secondary" href="/account/notifications/">Browser notifications</a>
+          <a id="push-settings-link" class="button account-secondary" href="/account/notifications/" hidden>Browser notifications</a>
           <button id="refresh-session" class="button account-secondary" type="button">Refresh session</button>
           <button id="export-account" class="button account-secondary" type="button">Download my data</button>
           <button id="sign-out" class="button account-secondary" type="button">Sign out</button>
@@ -97,6 +97,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     const paidAccess = document.getElementById('paid-access');
     const supportForm = document.getElementById('account-support-form');
     const supportStatus = document.getElementById('support-status');
+    const pushSettingsLink = document.getElementById('push-settings-link');
 
     const showMessage = (text, state = '') => {
       if (!message) return;
@@ -108,6 +109,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       if (!supportStatus) return;
       supportStatus.textContent = text;
       supportStatus.dataset.state = state;
+    };
+
+    const loadNotificationSettingsAvailability = async () => {
+      if (!pushSettingsLink) return;
+      try {
+        const response = await fetch('/api/account?action=push-subscription', { credentials: 'same-origin' });
+        pushSettingsLink.hidden = !response.ok;
+      } catch {
+        pushSettingsLink.hidden = true;
+      }
     };
 
     const loadAccount = async () => {
@@ -127,6 +138,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           ? 'Active'
           : `Not active (${body.paidAccess?.reason || 'unknown'})`;
       }
+      await loadNotificationSettingsAvailability();
       showMessage('Account loaded.', 'success');
     };
 

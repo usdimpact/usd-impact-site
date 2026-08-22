@@ -21,9 +21,9 @@ const requireText = (file, label, values) => {
 requireText(files.layout, 'Footer', ['/terms/', '/refund-policy/', '/privacy/', '/book/read-the-dollar-first/']);
 requireText(files.product, 'Product page', [
   'Guided Interactive Edition',
-  'USD 39.00',
-  'USD 49.00',
-  'first 100 completed purchases',
+  'Planned launch price: USD 39.00',
+  'Planned standard price: USD 49.00',
+  'No launch window or quantity cutoff is currently active.',
   'one-time',
   'ongoing access',
   'replacement provider is selected, integrated, tested, and approved for Live use',
@@ -42,6 +42,9 @@ requireText(files.checkout, 'Checkout page', [
   'browser redirect alone never grants access',
 ]);
 
+if (files.product.includes('first 100 completed purchases')) {
+  failures.push('Product page still exposes the superseded first-100 launch cutoff.');
+}
 if (files.product.includes('payment-provider review')) {
   failures.push('Product page still treats provider review as the active checkout gate.');
 }

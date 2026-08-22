@@ -169,6 +169,9 @@ async function cleanupFixture(config) {
   await service(config, `/rest/v1/support_requests?account_id=eq.${encodeURIComponent(accountId)}`, {
     method: 'DELETE',
   });
+  await service(config, `/rest/v1/profiles?account_id=eq.${encodeURIComponent(accountId)}`, {
+    method: 'DELETE',
+  });
   await service(config, `/auth/v1/admin/users/${encodeURIComponent(accountId)}`, {
     method: 'DELETE',
   });

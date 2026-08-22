@@ -1,0 +1,32 @@
+---
+import { getDailyCard } from '../lib/daily-card-schedule.js';
+const initialCard = getDailyCard(new Date(), { access: 'open' });
+const headingTag = Astro.props.headingTag || 'h3';
+const Heading = headingTag;
+---
+{initialCard && (
+  <article class="dc-card" data-daily-card-today>
+    <div class="dc-meta"><span data-dc-format>{initialCard.format}</span><span data-dc-level>{initialCard.level}</span></div>
+    <Heading><a data-dc-title href={`/learn/${initialCard.slug}/`}>{initialCard.title}</a></Heading>
+    <p class="dc-hook" data-dc-hook>{initialCard.hook}</p>
+    <p><strong>Key takeaway:</strong> <span data-dc-takeaway>{initialCard.keyTakeaway}</span></p>
+    <p class="dc-watch"><strong>Watch:</strong> <span data-dc-watch>{initialCard.whatToWatch.join(' · ')}</span></p>
+    <a class="dc-link" data-dc-link href={`/learn/${initialCard.slug}/`}>Open today’s card →</a>
+  </article>
+)}
+<script>
+  import { getDailyCard } from '../lib/daily-card-schedule.js';
+  const card = getDailyCard(new Date(), { access: 'open' });
+  const root = document.querySelector('[data-daily-card-today]');
+  if (root && card) {
+    const href = `/learn/${card.slug}/`;
+    root.querySelector('[data-dc-format]').textContent = card.format;
+    root.querySelector('[data-dc-level]').textContent = card.level;
+    root.querySelector('[data-dc-title]').textContent = card.title;
+    root.querySelector('[data-dc-title]').setAttribute('href', href);
+    root.querySelector('[data-dc-hook]').textContent = card.hook;
+    root.querySelector('[data-dc-takeaway]').textContent = card.keyTakeaway;
+    root.querySelector('[data-dc-watch]').textContent = card.whatToWatch.join(' · ');
+    root.querySelector('[data-dc-link]').setAttribute('href', href);
+  }
+</script>

@@ -140,21 +140,45 @@ Supported canonical event types:
 - `chargeback.completed`;
 - `dispute.reversed`.
 
+## Partner and referral growth capability
+
+The approved USD Impact Partner Program and Member Referral Program are growth layers, not payment authorities. Provider selection must now score the following capabilities in addition to the mandatory commerce/security gates:
+
+- native or supported affiliate/partner platform;
+- invite-only partner approval controls;
+- configurable attribution window and attribution model;
+- SKU/product inclusion and exclusion;
+- percentage/fixed and recurring commission support;
+- refund, dispute, and chargeback commission reversal or locking;
+- partner KYC, tax, payout, and reporting responsibility;
+- marketplace/discovery controls;
+- API, webhook, or export access for reconciliation;
+- self-referral and fraud controls;
+- recurring-subscription compatibility for future Research Membership;
+- incremental affiliate platform or transaction fees.
+
+These are scored selection criteria, not permission to weaken the core adapter contract. A provider with excellent affiliate features remains ineligible if it fails product eligibility, Merchant-of-Record/legal/tax allocation, webhook authenticity, canonical lifecycle coverage, privacy, accounting, refund/dispute, security, or release requirements.
+
+Attribution metadata is explicitly non-authoritative. It may identify a valid approved partner or member referral for later reward calculation, but it cannot change product, price, payment state, purchase ownership, or entitlement state. See `docs/operations/partner-referral-program-readiness.md` and `src/lib/acquisition-attribution.js`.
+
 ## Provider onboarding sequence
 
 1. Confirm the provider accepts the USD Impact business, operating country, and educational product category.
 2. Confirm Merchant-of-Record, tax/VAT, settlement, refund, dispute, and accounting responsibilities.
-3. Implement the adapter behind the generic contract.
-4. Add provider-specific secrets only to the required Vercel environment.
-5. Add generic checkout and webhook routing without exposing raw card data to USD Impact.
-6. Register the adapter in `src/lib/commerce-adapters.js` only in the same reviewed release.
-7. Use `sandbox` mode and pass checkout, signature, event-normalization, replay, forgery, substitution, refund, dispute, chargeback, and reversal tests.
-8. Record sandbox proof and set `COMMERCE_SANDBOX_VERIFIED=true` only in the controlled next-stage environment.
-9. Verify email, support, privacy, retention, accounting, and incident ownership.
-10. Move to `live-test` for one separately approved owner-controlled transaction.
-11. Verify webhook receipt, exactly-one entitlement, customer delivery, and refund or reversal behavior.
-12. Record controlled-Live proof and set `COMMERCE_CONTROLLED_LIVE_VERIFIED=true` only for the reviewed Production activation.
-13. Move to `live` only after explicit approval and post-deployment verification.
+3. Record the provider's Partner Program and Member Referral Program capabilities as scored growth criteria without weakening mandatory commerce gates.
+4. Implement the adapter behind the generic contract.
+5. Add provider-specific secrets only to the required Vercel environment.
+6. Add generic checkout and webhook routing without exposing raw card data to USD Impact.
+7. Register the adapter in `src/lib/commerce-adapters.js` only in the same reviewed release.
+8. Use `sandbox` mode and pass checkout, signature, event-normalization, replay, forgery, substitution, refund, dispute, chargeback, and reversal tests.
+9. Record sandbox proof and set `COMMERCE_SANDBOX_VERIFIED=true` only in the controlled next-stage environment.
+10. Verify email, support, privacy, retention, accounting, and incident ownership.
+11. Move to `live-test` for one separately approved owner-controlled transaction.
+12. Verify webhook receipt, exactly-one entitlement, customer delivery, and refund or reversal behavior.
+13. Record controlled-Live proof and set `COMMERCE_CONTROLLED_LIVE_VERIFIED=true` only for the reviewed Production activation.
+14. Move to `live` only after explicit approval and post-deployment verification.
+
+Partner/referral activation remains a separate later release even after core commerce is Live. Persistent attribution, commission/reward calculation, enrollment, and payouts must pass their own privacy, fraud, compliance, reconciliation, and activation gates.
 
 ## Rollback
 

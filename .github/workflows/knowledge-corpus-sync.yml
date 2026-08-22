@@ -36,6 +36,15 @@ jobs:
         run: node scripts/test-knowledge-corpus-sync.mjs
       - name: Dry-run current corpus
         run: node scripts/sync-knowledge-corpus.mjs
+      - name: Build exact corpus artifact
+        run: node scripts/build-knowledge-corpus.mjs --output knowledge-corpus.json
+      - name: Upload exact corpus artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: usd-impact-knowledge-corpus-20260822
+          path: apps/web/knowledge-corpus.json
+          if-no-files-found: error
+          retention-days: 1
 
   sync-development:
     if: github.event_name == 'workflow_dispatch' && inputs.apply_to_development == true

@@ -4,12 +4,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductCTA from '../components/ProductCTA.astro';
 import BenchmarkModuleCard from '../components/BenchmarkModuleCard.astro';
 import NewsHighlightCard from '../components/NewsHighlightCard.astro';
+import DailyCardToday from '../components/DailyCardToday.astro';
 
 const latestNews = (await getCollection('news'))
   .filter((entry) => entry.data.status === 'published')
   .sort((a, b) => b.data.date.localeCompare(a.data.date))[0];
 ---
-<BaseLayout title="USD Impact | Read the Dollar First" description="Educational macro-finance framework for reading dollar regimes across oil, gold, Bitcoin, gas, FX and equities.">
+<BaseLayout title="USD Impact | Read the Dollar First" description="Educational macro-finance framework for reading dollar regimes across oil, gold, Bitcoin, gas, FX and equities." stylesheets={['/assets/daily-cards.css']}>
   <section class="hero">
     <div class="container">
       <div class="eyebrow">USD Impact</div>
@@ -24,6 +25,17 @@ const latestNews = (await getCollection('news'))
       <BenchmarkModuleCard title="Start with the dollar" body="Separate DXY from the broader dollar and identify whether the move is rate-led, liquidity-led, or risk-led." />
       <BenchmarkModuleCard title="Use the three dials" body="Track dollar direction, real-rate pressure, and liquidity stress before reading asset moves." />
       <BenchmarkModuleCard title="Keep it educational" body="No trading signals, no return promises, no recommendations. Framework first, context second." />
+    </section>
+
+    <section class="dc-home" aria-labelledby="daily-card-home-heading">
+      <div class="dc-home-head">
+        <div>
+          <div class="eyebrow">USD Impact Learn</div>
+          <h2 id="daily-card-home-heading">One concept for today</h2>
+        </div>
+        <a href="/learn/">Explore all learning cards</a>
+      </div>
+      <DailyCardToday headingTag="h3" />
     </section>
 
     <section class="home-score">

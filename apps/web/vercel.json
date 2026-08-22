@@ -40,6 +40,10 @@
       "destination": "/api/account?action=commerce-readiness"
     },
     {
+      "source": "/api/knowledge-search",
+      "destination": "/api/account?action=knowledge-search"
+    },
+    {
       "source": "/api/auth-login",
       "destination": "/api/account?action=login"
     },

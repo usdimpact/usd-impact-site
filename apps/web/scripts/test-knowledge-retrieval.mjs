@@ -89,9 +89,9 @@ await assert.rejects(
   (error) => error?.code === 'TEMPORARY_FAILURE' && error?.status === 503,
 );
 
-assert.throws(() => searchKnowledgeChunks({ query: 'x', config }), /between 2 and 500/);
-assert.throws(() => searchKnowledgeChunks({ query: 'gold', allowedAccessTiers: ['admin'], config }), /access tier is invalid/);
-assert.throws(() => searchKnowledgeChunks({ query: 'gold', matchCount: 21, config }), /between 1 and 20/);
-assert.throws(() => searchKnowledgeChunks({ query: 'gold', language: 'fr', config }), /language is invalid/);
+await assert.rejects(() => searchKnowledgeChunks({ query: 'x', config }), /between 2 and 500/);
+await assert.rejects(() => searchKnowledgeChunks({ query: 'gold', allowedAccessTiers: ['admin'], config }), /access tier is invalid/);
+await assert.rejects(() => searchKnowledgeChunks({ query: 'gold', matchCount: 21, config }), /between 1 and 20/);
+await assert.rejects(() => searchKnowledgeChunks({ query: 'gold', language: 'fr', config }), /language is invalid/);
 
 console.log('Knowledge retrieval contract verified.');

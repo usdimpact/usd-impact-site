@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 const original = { ...process.env };
 const { default: handler } = await import('../api/lifecycle-qa.js');
@@ -31,6 +32,21 @@ try {
   await handler({ method: 'POST', headers: {} }, unauthorized);
   assert.equal(unauthorized.statusCode, 401);
   assert.equal(JSON.parse(unauthorized.body).code, 'SCHEDULER_AUTHORIZATION_REQUIRED');
+
+
+  const unsupported = response();
+  await handler({
+    method: 'PUT',
+    headers: { authorization: `Bearer ${'a'.repeat(64)}` },
+  }, unsupported);
+  assert.equal(unsupported.statusCode, 405);
+  assert.equal(unsupported.headers.Allow, 'POST, DELETE');
+  assert.equal(JSON.parse(unsupported.body).code, 'METHOD_NOT_ALLOWED');
+
+  const routeSource = readFileSync(new URL('../api/lifecycle-qa.js', import.meta.url), 'utf8');
+  assert.match(routeSource, /outboxRows\[0\]\.status !== 'delivered'/);
+  assert.match(routeSource, /fixture_removed_delivery_evidence_retained/);
+  assert.doesNotMatch(routeSource, /notification_outbox[^\n]*[\s\S]{0,160}method: 'DELETE'/);
 
   process.env.LIFECYCLE_QA_RECIPIENT_EMAIL = 'someone@example.com';
   const wrongRecipient = response();

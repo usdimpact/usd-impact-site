@@ -1,5 +1,4 @@
 import { createHash } from 'node:crypto';
-import { readSupabaseServerConfig } from './supabase-server.js';
 import { supabaseSecretRest } from './supabase-secret-rest.js';
 import { normalizeTelegramMessage, readTelegramConfig, sendTelegramMessage } from './daily-card-telegram.js';
 
@@ -18,6 +17,23 @@ export class DailyCardDispatchError extends Error {
 
 function sha256(value) {
   return createHash('sha256').update(value, 'utf8').digest('hex');
+}
+
+export function readDailyCardDispatchSupabaseConfig(environment = process.env) {
+  const secretKey = String(environment.SUPABASE_SECRET_KEY || '').trim();
+  if (!secretKey.startsWith('sb_secret_') || secretKey.length < 26) {
+    throw new DailyCardDispatchError('SUPABASE_SECRET_KEY is missing or invalid.', 'DAILY_CARD_SUPABASE_CONFIG_INVALID');
+  }
+  let url;
+  try {
+    url = new URL(String(environment.SUPABASE_URL || '').trim());
+  } catch {
+    throw new DailyCardDispatchError('SUPABASE_URL is missing or invalid.', 'DAILY_CARD_SUPABASE_CONFIG_INVALID');
+  }
+  if (url.protocol !== 'https:') {
+    throw new DailyCardDispatchError('SUPABASE_URL must use HTTPS.', 'DAILY_CARD_SUPABASE_CONFIG_INVALID');
+  }
+  return Object.freeze({ url: url.origin, secretKey });
 }
 
 function normalizePackage(cardPackage) {
@@ -100,7 +116,7 @@ export async function dispatchDailyCardToTelegram({
 
   const normalized = normalizePackage(cardPackage);
   const resolvedTelegram = telegramConfig || readTelegramConfig(environment);
-  const resolvedSupabase = supabaseConfig || readSupabaseServerConfig(environment, { requireSecret: true });
+  const resolvedSupabase = supabaseConfig || readDailyCardDispatchSupabaseConfig(environment);
   const destinationHash = sha256(resolvedTelegram.chatId);
   const payloadSha256 = sha256(normalized.telegram);
   const claim = await claimDispatch({

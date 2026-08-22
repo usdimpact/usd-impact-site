@@ -1,0 +1,53 @@
+<section class="dc-today dc-adaptive-queue" data-adaptive-review-queue hidden aria-labelledby="adaptive-queue-heading">
+  <p class="dc-kicker">Your review queue</p>
+  <h2 id="adaptive-queue-heading">Concepts to reinforce</h2>
+  <p data-adaptive-queue-status aria-live="polite"></p>
+  <div class="dc-grid" data-adaptive-queue-items></div>
+  <p data-adaptive-queue-sign-in hidden><a href="/account/sign-in/?next=/learn/">Sign in to build a personal review queue →</a></p>
+</section>
+
+<script is:inline>
+  (() => {
+    const section = document.querySelector('[data-adaptive-review-queue]');
+    if (!section) return;
+    const status = section.querySelector('[data-adaptive-queue-status]');
+    const items = section.querySelector('[data-adaptive-queue-items]');
+    const signIn = section.querySelector('[data-adaptive-queue-sign-in]');
+
+    const card = (entry) => {
+      const article = document.createElement('article');
+      article.className = 'dc-card';
+      const meta = document.createElement('p');
+      meta.className = 'dc-kicker';
+      meta.textContent = entry.isNew ? 'New concept' : entry.due ? `Review · ${entry.mastery}% mastery` : `Upcoming · ${entry.mastery}% mastery`;
+      const heading = document.createElement('h3');
+      const link = document.createElement('a');
+      link.href = `/learn/${encodeURIComponent(entry.slug)}/`;
+      link.textContent = entry.shortTitle || entry.title;
+      heading.appendChild(link);
+      article.append(meta, heading);
+      return article;
+    };
+
+    fetch('/api/account?action=daily-card-review&limit=3', {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin',
+      cache: 'no-store',
+    }).then(async (response) => {
+      if (response.status === 401) {
+        section.hidden = false;
+        status.textContent = 'Adaptive review is available for signed-in learners.';
+        signIn.hidden = false;
+        return;
+      }
+      if (!response.ok) return;
+      const payload = await response.json();
+      const queue = Array.isArray(payload.queue) ? payload.queue : [];
+      if (!queue.length) return;
+      section.hidden = false;
+      status.textContent = 'Based on concepts you have reviewed and what is due next.';
+      items.replaceChildren(...queue.map(card));
+    }).catch(() => {});
+  })();
+</script>

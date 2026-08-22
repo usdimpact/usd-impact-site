@@ -6,7 +6,7 @@ slug: "/book/read-the-dollar-first"
 category: "Book"
 status: "published"
 readingLevel: "Beginner to intermediate"
-lastReviewed: "2026-08-20"
+lastReviewed: "2026-08-22"
 complianceNote: "Educational only. Not investment, legal, tax, trading, or financial advice. Not a recommendation, forecast, or trading signal."
 sources:
   - "Session 14B Website Product Page & Lead Magnet System"
@@ -37,8 +37,8 @@ The Guided Interactive Edition combines the *Read the Dollar First* learning seq
 
 ### One-time pricing
 
-- **Launch price: USD 39.00.** The launch offer is limited to the approved launch window and the first 100 completed purchases, whichever limit is reached first.
-- **Standard price: USD 49.00.** Applies after the launch offer ends.
+- **Planned launch price: USD 39.00.** No launch window or quantity cutoff is currently active. Any launch conditions will be approved immediately before public activation after the release gates are complete.
+- **Planned standard price: USD 49.00.** Applies after any approved launch offer ends.
 
 Taxes and any supported currency conversion will be calculated and displayed by the approved payment provider during checkout. The purchase is one-time, not a subscription. Public checkout remains unavailable while a replacement provider is selected, integrated, tested, and approved for Live use.
 

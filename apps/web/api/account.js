@@ -25,6 +25,7 @@ import {
   validCronAuthorization,
 } from '../src/lib/account-deletion-finalizer.js';
 import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-handler.js';
+import { handleDailyCardReviewRequest } from '../src/lib/daily-card-progress-handler.js';
 import { enqueuePrivacyExportAcknowledgementEmail } from '../src/lib/privacy-export-email.js';
 import { handlePushSubscriptionRequest } from '../src/lib/push-subscription-handler.js';
 import {
@@ -397,6 +398,7 @@ const handlers = Object.freeze({
   'commerce-readiness': handleCommerceReadinessRequest,
   'video-progress': handleVideoProgressRequest,
   'push-subscription': handlePushSubscriptionRequest,
+  'daily-card-review': handleDailyCardReviewRequest,
 });
 
 export default async function handler(request, response) {

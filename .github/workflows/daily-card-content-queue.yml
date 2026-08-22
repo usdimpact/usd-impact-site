@@ -1,0 +1,43 @@
+name: Daily Card content queue
+
+on:
+  schedule:
+    - cron: '20 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-review-queue:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate canonical cards
+        run: node scripts/validate-daily-cards.mjs
+
+      - name: Generate review candidates from video inventory
+        run: node scripts/generate-daily-card-candidates.mjs
+
+      - name: Upload review queue
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-card-review-queue
+          path: apps/web/artifacts/daily-card-candidates/candidates.json
+          if-no-files-found: error
+          retention-days: 30

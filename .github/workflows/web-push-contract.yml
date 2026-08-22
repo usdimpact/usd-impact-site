@@ -4,18 +4,30 @@ on:
   pull_request:
     paths:
       - 'apps/web/api/account.js'
+      - 'apps/web/public/sw.js'
       - 'apps/web/src/lib/push-subscription.js'
       - 'apps/web/src/lib/push-subscription-handler.js'
+      - 'apps/web/src/lib/supabase-secret-rest.js'
+      - 'apps/web/src/lib/web-push-delivery.js'
+      - 'apps/web/src/pages/account/notifications.astro'
       - 'apps/web/scripts/test-push-subscription.mjs'
+      - 'apps/web/scripts/test-web-push-delivery.mjs'
+      - 'apps/web/scripts/test-pwa-contract.mjs'
       - 'supabase/migrations/*push_subscriptions*'
       - '.github/workflows/web-push-contract.yml'
   push:
     branches: [main]
     paths:
       - 'apps/web/api/account.js'
+      - 'apps/web/public/sw.js'
       - 'apps/web/src/lib/push-subscription.js'
       - 'apps/web/src/lib/push-subscription-handler.js'
+      - 'apps/web/src/lib/supabase-secret-rest.js'
+      - 'apps/web/src/lib/web-push-delivery.js'
+      - 'apps/web/src/pages/account/notifications.astro'
       - 'apps/web/scripts/test-push-subscription.mjs'
+      - 'apps/web/scripts/test-web-push-delivery.mjs'
+      - 'apps/web/scripts/test-pwa-contract.mjs'
       - 'supabase/migrations/*push_subscriptions*'
       - '.github/workflows/web-push-contract.yml'
 
@@ -33,13 +45,20 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22.16.0
-      - name: Syntax check Web Push account route
+      - name: Syntax check Web Push modules
         run: |
           node --check api/account.js
+          node --check public/sw.js
           node --check src/lib/push-subscription.js
           node --check src/lib/push-subscription-handler.js
-      - name: Verify server-only subscription storage and account routing
+          node --check src/lib/supabase-secret-rest.js
+          node --check src/lib/web-push-delivery.js
+      - name: Verify subscription storage and account routing
         run: node scripts/test-push-subscription.mjs
+      - name: Verify bounded delivery orchestration
+        run: node scripts/test-web-push-delivery.mjs
+      - name: Verify PWA push and no-cache contract
+        run: node scripts/test-pwa-contract.mjs
       - name: Preserve Vercel Hobby function budget
         run: |
           test ! -f api/push-subscription.js

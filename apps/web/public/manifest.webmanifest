@@ -1,0 +1,38 @@
+{
+  "name": "USD Impact",
+  "short_name": "USD Impact",
+  "description": "Educational macro-finance framework for understanding the U.S. dollar and cross-asset transmission.",
+  "id": "/",
+  "start_url": "/start-here/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#0b1f33",
+  "categories": ["education", "finance"],
+  "icons": [
+    {
+      "src": "/assets/logo/USDImpact_Icon_Color_2048.png",
+      "sizes": "2048x2048",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Daily USD Impact",
+      "short_name": "Daily",
+      "url": "/news/?source=pwa-shortcut"
+    },
+    {
+      "name": "Weekly Score",
+      "short_name": "Score",
+      "url": "/score/?source=pwa-shortcut"
+    },
+    {
+      "name": "Account",
+      "short_name": "Account",
+      "url": "/account/?source=pwa-shortcut"
+    }
+  ]
+}

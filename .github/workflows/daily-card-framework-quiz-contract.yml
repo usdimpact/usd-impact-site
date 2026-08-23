@@ -7,8 +7,10 @@ on:
       - 'apps/web/src/content/quizzes/**'
       - 'apps/web/src/data/quiz-access-map.json'
       - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/src/data/daily-card-framework-quiz-batch-*.js'
       - 'apps/web/scripts/generate-daily-card-framework-candidates.mjs'
       - 'apps/web/scripts/generate-daily-card-quiz-candidates.mjs'
+      - 'apps/web/scripts/test-daily-card-framework-quiz-batches.mjs'
       - '.github/workflows/daily-card-framework-quiz-contract.yml'
       - '.github/workflows/daily-card-content-queue.yml'
   push:
@@ -18,8 +20,10 @@ on:
       - 'apps/web/src/content/quizzes/**'
       - 'apps/web/src/data/quiz-access-map.json'
       - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/src/data/daily-card-framework-quiz-batch-*.js'
       - 'apps/web/scripts/generate-daily-card-framework-candidates.mjs'
       - 'apps/web/scripts/generate-daily-card-quiz-candidates.mjs'
+      - 'apps/web/scripts/test-daily-card-framework-quiz-batches.mjs'
       - '.github/workflows/daily-card-framework-quiz-contract.yml'
       - '.github/workflows/daily-card-content-queue.yml'
 
@@ -42,8 +46,12 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Syntax
         run: |
+          node --check src/data/daily-card-framework-quiz-batch-01.js
           node --check scripts/generate-daily-card-framework-candidates.mjs
           node --check scripts/generate-daily-card-quiz-candidates.mjs
+          node --check scripts/test-daily-card-framework-quiz-batches.mjs
+      - name: Verify promoted Framework and Quiz cards
+        run: node scripts/test-daily-card-framework-quiz-batches.mjs
       - name: Generate Framework review candidates
         run: node scripts/generate-daily-card-framework-candidates.mjs
       - name: Generate Quiz review candidates
@@ -57,4 +65,4 @@ jobs:
         run: |
           test -s artifacts/daily-card-quiz-candidates/candidates.json
           test -s artifacts/daily-card-quiz-candidates/review.md
-          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-quiz-candidates/candidates.json','utf8')); if(p.classifierVersion!==4 || p.sourceHierarchyRank!==5 || p.releasedQuizCount!==12 || p.candidateCount<120 || p.likelyNetNewCount+p.overlapCount!==p.candidateCount) process.exit(1); if(!p.candidates.every(c=>c.status==='review' && c.lastReviewed===null && c.sourceHierarchyRank===5 && c.sourceType==='released-quiz-authored-explanation' && c.sourcePath.startsWith('src/content/quizzes/en/') && c.sourceExcerpt && c.sourceQuizStatus && c.sourceQuizVersion && ['question-explanation','practical-application','common-mistake-checkpoint'].includes(c.sourceKind) && ['likely-net-new','resolve-overlap'].includes(c.reviewDisposition))) process.exit(1); const ids=p.candidates.map(c=>c.id); if(new Set(ids).size!==ids.length) process.exit(1); const nonzero=Object.values(p.collectionCounts).filter(n=>n>0).length; if(nonzero<5 || !p.netNewCollectionCounts) process.exit(1); if(!p.sources.every(s=>s.fallbackCollectionId)) process.exit(1); if((p.collectionCounts['dollar-funding-stack']||0)!==0) process.exit(1);"
+          node --input-type=module -e "import fs from 'node:fs'; import { dailyCards } from './src/data/daily-card-catalog.js'; const p=JSON.parse(fs.readFileSync('artifacts/daily-card-quiz-candidates/candidates.json','utf8')); if(p.classifierVersion!==4 || p.sourceHierarchyRank!==5 || p.releasedQuizCount!==12 || p.promotedSourceCount!==5 || p.candidateCount<120 || p.likelyNetNewCount+p.overlapCount!==p.candidateCount) process.exit(1); if(!p.candidates.every(c=>c.status==='review' && c.lastReviewed===null && c.sourceHierarchyRank===5 && c.sourceType==='released-quiz-authored-explanation' && c.sourcePath.startsWith('src/content/quizzes/en/') && c.sourceExcerpt && c.sourceQuizStatus && c.sourceQuizVersion && ['question-explanation','practical-application','common-mistake-checkpoint'].includes(c.sourceKind) && ['likely-net-new','resolve-overlap'].includes(c.reviewDisposition))) process.exit(1); const ids=p.candidates.map(c=>c.id); if(new Set(ids).size!==ids.length) process.exit(1); const nonzero=Object.values(p.collectionCounts).filter(n=>n>0).length; if(nonzero<5 || !p.netNewCollectionCounts) process.exit(1); if(!p.sources.every(s=>s.fallbackCollectionId)) process.exit(1); if((p.collectionCounts['dollar-funding-stack']||0)!==0) process.exit(1); const promoted=new Set(dailyCards.filter(c=>c.status==='ready-for-build' && typeof c.sourcePath==='string' && c.sourcePath.startsWith('src/content/quizzes/en/') && typeof c.sourceLocator==='string').map(c=>c.sourcePath+'::'+c.sourceLocator)); if(promoted.size!==5 || p.candidates.some(c=>promoted.has(c.sourcePath+'::'+c.sourceLocator))) process.exit(1);"

@@ -17,6 +17,7 @@ import { dailyCardFundingPrimaryBatch01 } from './daily-card-funding-primary-bat
 import { dailyCardHistoryPrimaryBatch01 } from './daily-card-history-primary-batch-01.js';
 import { dailyCardWeeklyScoreBatch01 } from './daily-card-weekly-score-batch-01.js';
 import { dailyCardDailyNewsBatch01 } from './daily-card-daily-news-batch-01.js';
+import { dailyCardCatalystBriefBatch01 } from './daily-card-catalyst-brief-batch-01.js';
 
 export { dailyCardMeta, dailyCardCollections, dailyCardFormats, weeklyCardRotation };
 
@@ -34,6 +35,7 @@ export const dailyCards = Object.freeze([
   ...dailyCardHistoryPrimaryBatch01,
   ...dailyCardWeeklyScoreBatch01,
   ...dailyCardDailyNewsBatch01,
+  ...dailyCardCatalystBriefBatch01,
 ]);
 
 export function getDailyCardBySlug(slug) {

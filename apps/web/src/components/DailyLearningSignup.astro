@@ -1,0 +1,103 @@
+---
+const formId = 'daily-learning-email-form';
+---
+<section class="dc-today" aria-labelledby="daily-learning-email-title">
+  <p class="dc-kicker">Daily email</p>
+  <h2 id="daily-learning-email-title">Learn one dollar-system concept each day.</h2>
+  <p class="dc-lead">Receive the same reviewed Daily Card by email. This subscription is separate from the book waitlist and other USD Impact communications.</p>
+
+  <form id={formId} class="waitlist-form" data-daily-learning-form>
+    <label for="daily-learning-email">Email address</label>
+    <div class="waitlist-inline">
+      <input
+        id="daily-learning-email"
+        name="email"
+        type="email"
+        inputmode="email"
+        autocomplete="email"
+        maxlength="254"
+        placeholder="you@example.com"
+        required
+      />
+      <button class="button primary" type="submit">Get the daily card</button>
+    </div>
+
+    <label class="waitlist-consent">
+      <input name="consent" type="checkbox" value="yes" required />
+      <span>
+        I agree to receive one educational USD Impact Daily Learning email. I can unsubscribe at any time. This consent does not subscribe me to book availability or unrelated promotions. See the <a href="/privacy/">privacy notice</a>.
+      </span>
+    </label>
+
+    <label class="waitlist-honeypot" aria-hidden="true">
+      Company
+      <input name="company" type="text" tabindex="-1" autocomplete="off" />
+    </label>
+
+    <p class="waitlist-status" data-daily-learning-status aria-live="polite"></p>
+  </form>
+
+  <noscript>
+    <p class="waitlist-status" data-state="error">JavaScript is required to subscribe to Daily Learning email.</p>
+  </noscript>
+</section>
+
+<script>
+  const form = document.querySelector('[data-daily-learning-form]');
+
+  if (form instanceof HTMLFormElement) {
+    const status = form.querySelector('[data-daily-learning-status]');
+    const submitButton = form.querySelector('button[type="submit"]');
+    let pendingSubmissionId = '';
+
+    form.addEventListener('input', () => {
+      pendingSubmissionId = '';
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+
+      const formData = new FormData(form);
+      const email = String(formData.get('email') ?? '').trim();
+      const consent = formData.get('consent') === 'yes';
+      const company = String(formData.get('company') ?? '').trim();
+      pendingSubmissionId ||= crypto.randomUUID();
+
+      if (status instanceof HTMLElement) {
+        status.textContent = 'Subscribing…';
+        status.dataset.state = 'pending';
+      }
+      if (submitButton instanceof HTMLButtonElement) submitButton.disabled = true;
+
+      try {
+        const response = await fetch('/api/waitlist?action=daily-learning', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, consent, company, submissionId: pendingSubmissionId }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error || 'Daily Learning email is temporarily unavailable. Please try again later.');
+        }
+        pendingSubmissionId = '';
+        form.reset();
+        if (status instanceof HTMLElement) {
+          status.textContent = payload.alreadySubscribed
+            ? 'This address is already subscribed to Daily Learning.'
+            : 'Subscribed. Your consent is recorded separately from the book waitlist.';
+          status.dataset.state = 'success';
+        }
+      } catch (error) {
+        if (status instanceof HTMLElement) {
+          status.textContent = error instanceof Error
+            ? error.message
+            : 'Daily Learning email is temporarily unavailable. Please try again later.';
+          status.dataset.state = 'error';
+        }
+      } finally {
+        if (submitButton instanceof HTMLButtonElement) submitButton.disabled = false;
+      }
+    });
+  }
+</script>

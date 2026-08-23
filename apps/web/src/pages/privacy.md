@@ -1,16 +1,18 @@
 ---
 layout: ../layouts/LegalLayout.astro
 title: "Privacy Notice | USD Impact"
-description: "How USD Impact handles account, purchase, support, waitlist, and limited learning information."
+description: "How USD Impact handles account, purchase, support, waitlist, Daily Learning email, and limited learning information."
 ---
 
 # Privacy notice
 
-_Last updated: August 18, 2026_
+_Last updated: August 23, 2026_
 
 ## What we collect
 
 When you join the *Read the Dollar First* waitlist, we collect the email address you submit and the time the contact record is created.
+
+When you separately subscribe to USD Impact Daily Learning email, we collect the email address you submit, the consent purpose and version, the time consent is recorded, and any later withdrawal record. Daily Learning email consent is stored separately from book-waitlist consent.
 
 If you create an account or purchase the Guided Interactive Edition, we may process:
 
@@ -41,6 +43,8 @@ Waitlist information is used only to:
 - send the purchase link when the book becomes available; and
 - send essential availability updates directly related to the book.
 
+Daily Learning email information is used only to send the educational Daily Card series you explicitly requested and to maintain delivery, suppression, and unsubscribe evidence for that series. Subscribing to Daily Learning does not subscribe you to the book waitlist, unrelated promotions, or trading alerts.
+
 Account and commerce information is used to:
 
 - authenticate your account and protect it from unauthorized access;
@@ -61,7 +65,7 @@ Joining the waitlist does not subscribe you to unrelated market commentary, trad
 
 ## Service providers
 
-The website is deployed through Vercel. Vercel processes website requests and application runtime logs needed to operate and troubleshoot the service. Cloudflare Stream processes protected video playback requests and delivers the adaptive video and caption files requested by an authorized account. Aggregate learning counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Account, entitlement, commerce, and saved video-progress records are stored through Supabase. Waitlist contacts and transactional emails are processed through Resend. When public checkout is enabled, the authorized payment provider or merchant of record identified during checkout processes payment, tax, invoice, refund, fraud-prevention, and related transaction information.
+The website is deployed through Vercel. Vercel processes website requests and application runtime logs needed to operate and troubleshoot the service. Cloudflare Stream processes protected video playback requests and delivers the adaptive video and caption files requested by an authorized account. Aggregate learning counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Account, entitlement, commerce, consent, notification-delivery, and saved video-progress records are stored through Supabase. Waitlist contacts and requested email delivery are processed through Resend. When public checkout is enabled, the authorized payment provider or merchant of record identified during checkout processes payment, tax, invoice, refund, fraud-prevention, and related transaction information.
 
 These providers process information only as needed to operate the website, accounts, learning tools, commerce workflow, support, and requested email delivery. Their own privacy notices apply where they act independently, including the payment provider or merchant of record identified during checkout.
 
@@ -71,7 +75,9 @@ Depending on the activity, we process information because it is necessary to pro
 
 ## Retention and deletion
 
-Your waitlist record is retained until you unsubscribe, request deletion, or the waitlist is retired. You may withdraw at any time by replying to a waitlist email with a deletion request. Future availability messages will include an unsubscribe mechanism where required.
+Your waitlist record is retained until you unsubscribe, request deletion, or the waitlist is retired. Future availability messages include an unsubscribe mechanism where required.
+
+Daily Learning consent and withdrawal evidence is retained as needed to demonstrate the requested subscription state, honor suppression, and prevent messages after withdrawal. Daily Learning messages include a purpose-specific unsubscribe mechanism. Withdrawing Daily Learning consent does not cancel required account, security, purchase, refund, privacy, or support communications.
 
 Account and entitlement records are retained while your account or purchased access remains active. If you request account deletion, access is disabled and the account enters the documented safety period before eligible account data is deleted or anonymized. Transaction, refund, invoice, fraud-prevention, and accounting records may be retained for the periods required by the payment provider, payment networks, tax, accounting, dispute, and other applicable legal obligations.
 
@@ -79,7 +85,7 @@ Daily aggregate learning counters are retained for up to 24 months. Duplicate ev
 
 ## Sharing and sale
 
-USD Impact does not sell personal information, waitlist email addresses, account information, or learning telemetry. Information may be shared only with service providers required to operate the website, process purchases and refunds, provide account access, store data, deliver requested email, answer support requests, prevent fraud, and meet legal obligations.
+USD Impact does not sell personal information, waitlist or Daily Learning email addresses, account information, or learning telemetry. Information may be shared only with service providers required to operate the website, process purchases and refunds, provide account access, store data, deliver requested email, answer support requests, prevent fraud, and meet legal obligations.
 
 ## Security
 
@@ -87,7 +93,7 @@ API credentials are stored as protected deployment environment variables and are
 
 ## Your choice
 
-Submitting the waitlist form is optional. The consent checkbox is not preselected. You may continue using the public educational website without joining the waitlist. Learning events are designed not to block downloads, quiz scoring, retries, or navigation if telemetry is unavailable.
+Submitting the waitlist form or Daily Learning email form is optional. Consent checkboxes are not preselected. You may continue using the public educational website without subscribing to either email purpose. Each consent purpose can be withdrawn independently. Learning events are designed not to block downloads, quiz scoring, retries, or navigation if telemetry is unavailable.
 
 Subject to applicable law, you may ask to access, correct, delete, restrict, or export your personal information, or object to certain processing. You may also complain to the relevant data-protection authority. Some transaction or accounting records cannot be deleted immediately where retention is legally required.
 

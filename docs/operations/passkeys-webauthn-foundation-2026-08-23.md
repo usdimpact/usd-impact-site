@@ -17,26 +17,29 @@ Supabase currently labels passkey support experimental. Development proof is man
 
 ## Development activation
 
-Use the Development Supabase project first.
+Use the Development Supabase project first and deliberately isolate Development credentials from Production.
 
-1. Choose the final WebAuthn RP ID before enrolling any passkey. Changing the RP ID invalidates existing passkeys.
-2. Prefer a stable HTTPS origin on the `usd-impact.com` domain for Development/Preview testing so the intended RP ID can remain `usd-impact.com`.
-3. In Supabase Development → Authentication → Passkeys:
+1. Create and keep a stable HTTPS Development hostname: `passkeys-dev.usd-impact.com`.
+2. In Supabase Development → Authentication → Passkeys:
    - Enable Passkey authentication.
-   - Relying Party Display Name: `USD Impact`.
-   - Relying Party ID: `usd-impact.com` when the test origin is a subdomain of `usd-impact.com`.
-   - Add the exact HTTPS test origin to Relying Party Origins.
-4. Enable `PASSKEY_AUTH_ENABLED=true` only for the matching Vercel Preview/test environment.
-5. Deploy the exact green candidate.
-6. Sign in with the existing email-link flow using a confirmed Development account.
-7. Open `/account/passkeys/` and add one passkey.
-8. Verify list and rename behavior.
-9. Sign out completely.
-10. Open `/account/sign-in/`, complete Turnstile, and select **Sign in with a passkey**.
-11. Verify the server creates the normal HttpOnly session-cookie pair and that `/account/` loads successfully.
-12. Verify email-link sign-in still works as recovery.
-13. Add a second passkey on another trusted device/password manager before testing deletion.
-14. Verify one passkey can be removed without losing account access.
+   - Relying Party Display Name: `USD Impact Development`.
+   - Relying Party ID: `passkeys-dev.usd-impact.com`.
+   - Relying Party Origins: `https://passkeys-dev.usd-impact.com`.
+3. Do not later change this Development RP ID after users enroll. Changing an RP ID invalidates passkeys registered against it.
+4. Enable `PASSKEY_AUTH_ENABLED=true` only for the matching Vercel Preview/test environment and branch.
+5. Confirm that the same Preview/test environment is wired to the Development Supabase project, not Production.
+6. Deploy the exact green candidate to `passkeys-dev.usd-impact.com`.
+7. Sign in with the existing email-link flow using a confirmed Development account.
+8. Open `/account/passkeys/` and add one passkey.
+9. Verify list and rename behavior.
+10. Sign out completely.
+11. Open `/account/sign-in/`, complete Turnstile, and select **Sign in with a passkey**.
+12. Verify the server creates the normal HttpOnly session-cookie pair and that `/account/` loads successfully.
+13. Verify email-link sign-in still works as recovery.
+14. Add a second passkey on another trusted device/password manager before testing deletion.
+15. Verify one passkey can be removed without losing account access.
+
+Development passkeys are test credentials only. They are intentionally bound to `passkeys-dev.usd-impact.com` and must not be treated as Production credentials.
 
 ## Production acceptance gate
 
@@ -52,6 +55,7 @@ For Production:
 - Keep email sign-in enabled as recovery.
 - Enable `PASSKEY_AUTH_ENABLED=true` only after Supabase Production has the matching RP configuration.
 - Redeploy exact green `main` and perform one bounded owner-account enrollment/sign-in proof.
+- Enroll a fresh Production passkey; do not reuse Development enrollment as Production evidence.
 
 ## Rollback
 

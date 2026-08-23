@@ -66,8 +66,8 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
             />
             <button id="email-code-verify-button" class="button account-secondary" type="button">Verify email code</button>
             <p class="account-help">
-              If your mail app opens the sign-in link in another browser, enter the six-digit code from the same
-              email here instead.
+              Already have a code? Enter the email address and six-digit code from the sign-in email here. This
+              works even if that email was requested in another browser context.
             </p>
           </div>
         </form>
@@ -161,7 +161,7 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
         });
         const body = await response.json().catch(() => ({}));
         emailCodeEnabled = response.ok && body.enabled === true;
-        if (!emailCodeEnabled) emailCodeContainer.hidden = true;
+        emailCodeContainer.hidden = !emailCodeEnabled;
       } catch {
         emailCodeEnabled = false;
         emailCodeContainer.hidden = true;

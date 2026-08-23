@@ -53,6 +53,7 @@ jobs:
           node --check src/data/daily-card-inventory-plan.js
           node --check src/data/daily-card-catalog.js
           node --check src/data/daily-card-video-batch-01.js
+          node --check src/data/daily-card-video-batch-02.js
           node --check scripts/generate-daily-card-inventory-report.mjs
           node --check scripts/test-daily-card-inventory-plan.mjs
           node --check scripts/test-daily-card-video-batches.mjs

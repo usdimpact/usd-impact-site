@@ -13,6 +13,16 @@
       "automation/control-center-state": false
     }
   },
+  "crons": [
+    {
+      "path": "/api/daily-learning-dispatch",
+      "schedule": "10 6 * * *"
+    },
+    {
+      "path": "/api/daily-learning-dispatch",
+      "schedule": "40 6 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/guided-edition/audiobook",
@@ -41,6 +51,14 @@
     {
       "source": "/unsubscribe",
       "destination": "/api/waitlist?action=unsubscribe"
+    },
+    {
+      "source": "/learn/email/unsubscribe",
+      "destination": "/api/waitlist?action=daily-learning-unsubscribe"
+    },
+    {
+      "source": "/api/daily-learning-dispatch",
+      "destination": "/api/waitlist?action=daily-learning-dispatch"
     },
     {
       "source": "/api/commerce-readiness",
@@ -158,6 +176,23 @@
     },
     {
       "source": "/unsubscribe",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
+      "source": "/learn/email/unsubscribe",
       "headers": [
         {
           "key": "Cache-Control",

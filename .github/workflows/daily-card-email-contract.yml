@@ -1,0 +1,63 @@
+name: Daily Card email contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/api/waitlist.js'
+      - 'apps/web/src/components/DailyLearningSignup.astro'
+      - 'apps/web/src/lib/daily-card-email-*.js'
+      - 'apps/web/src/pages/learn/index.astro'
+      - 'apps/web/src/pages/privacy.md'
+      - 'apps/web/scripts/test-daily-card-email-*.mjs'
+      - 'apps/web/vercel.json'
+      - '.github/workflows/daily-card-email-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/api/waitlist.js'
+      - 'apps/web/src/components/DailyLearningSignup.astro'
+      - 'apps/web/src/lib/daily-card-email-*.js'
+      - 'apps/web/src/pages/learn/index.astro'
+      - 'apps/web/src/pages/privacy.md'
+      - 'apps/web/scripts/test-daily-card-email-*.mjs'
+      - 'apps/web/vercel.json'
+      - '.github/workflows/daily-card-email-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  daily-card-email-contract:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Syntax checks
+        run: |
+          node --check api/waitlist.js
+          node --check src/lib/daily-card-email-consent.js
+          node --check src/lib/daily-card-email-dispatch.js
+          node --check src/lib/daily-card-email-handler.js
+
+      - name: Consent contract
+        run: node scripts/test-daily-card-email-consent.mjs
+
+      - name: Dispatch contract
+        run: node scripts/test-daily-card-email-dispatch.mjs
+
+      - name: Production build
+        run: npm run build

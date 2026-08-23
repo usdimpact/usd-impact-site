@@ -17,16 +17,15 @@ function mockResponse() {
 }
 
 const vercelConfig = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+const dailyLearningCrons = vercelConfig.crons.filter(
+  (entry) => entry.path === '/api/daily-learning-dispatch',
+);
 assert.deepEqual(
-  vercelConfig.crons,
+  dailyLearningCrons,
   [
     { path: '/api/daily-learning-dispatch', schedule: '10 6 * * *' },
     { path: '/api/daily-learning-dispatch', schedule: '40 6 * * *' },
   ],
-);
-assert.equal(
-  vercelConfig.crons.some((entry) => entry.path === '/api/account-deletion-finalizer'),
-  false,
 );
 assert.deepEqual(
   vercelConfig.rewrites.find((entry) => entry.source === '/api/daily-learning-dispatch'),

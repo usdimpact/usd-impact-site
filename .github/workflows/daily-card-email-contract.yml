@@ -59,5 +59,11 @@ jobs:
       - name: Dispatch contract
         run: node scripts/test-daily-card-email-dispatch.mjs
 
+      - name: Route and scheduler guards
+        run: node scripts/test-daily-card-email-handler.mjs
+
       - name: Production build
         run: npm run build
+
+      - name: Built signup surface
+        run: node scripts/test-daily-card-email-built-surface.mjs

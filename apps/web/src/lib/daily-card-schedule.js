@@ -1,4 +1,4 @@
-import { dailyCards, weeklyCardRotation } from '../data/daily-cards.js';
+import { dailyCards, weeklyCardRotation } from '../data/daily-card-catalog.js';
 
 const DAY_MS = 86_400_000;
 const EPOCH_UTC = Date.UTC(2026, 0, 1);

@@ -4,11 +4,14 @@ on:
   pull_request:
     paths:
       - 'apps/web/src/data/daily-card-inventory-plan.js'
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/src/data/daily-card-video-batch-*.js'
       - 'apps/web/src/data/daily-cards.js'
       - 'apps/web/src/data/video-library.js'
       - 'apps/web/scripts/generate-daily-card-candidates.mjs'
       - 'apps/web/scripts/generate-daily-card-inventory-report.mjs'
       - 'apps/web/scripts/test-daily-card-inventory-plan.mjs'
+      - 'apps/web/scripts/test-daily-card-video-batches.mjs'
       - 'apps/web/scripts/validate-daily-cards.mjs'
       - '.github/workflows/daily-card-content-queue.yml'
       - '.github/workflows/daily-card-inventory-contract.yml'
@@ -16,11 +19,14 @@ on:
     branches: [main]
     paths:
       - 'apps/web/src/data/daily-card-inventory-plan.js'
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/src/data/daily-card-video-batch-*.js'
       - 'apps/web/src/data/daily-cards.js'
       - 'apps/web/src/data/video-library.js'
       - 'apps/web/scripts/generate-daily-card-candidates.mjs'
       - 'apps/web/scripts/generate-daily-card-inventory-report.mjs'
       - 'apps/web/scripts/test-daily-card-inventory-plan.mjs'
+      - 'apps/web/scripts/test-daily-card-video-batches.mjs'
       - 'apps/web/scripts/validate-daily-cards.mjs'
       - '.github/workflows/daily-card-content-queue.yml'
       - '.github/workflows/daily-card-inventory-contract.yml'
@@ -45,10 +51,14 @@ jobs:
       - name: Syntax
         run: |
           node --check src/data/daily-card-inventory-plan.js
+          node --check src/data/daily-card-catalog.js
+          node --check src/data/daily-card-video-batch-01.js
           node --check scripts/generate-daily-card-inventory-report.mjs
           node --check scripts/test-daily-card-inventory-plan.mjs
+          node --check scripts/test-daily-card-video-batches.mjs
       - name: Validate canonical inventory
         run: |
+          node scripts/test-daily-card-video-batches.mjs
           node scripts/test-daily-card-inventory-plan.mjs
           node scripts/validate-daily-cards.mjs
       - name: Generate coverage and review queue

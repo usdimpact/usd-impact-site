@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { dailyCards, dailyCardCollections } from '../src/data/daily-cards.js';
+import { dailyCards, dailyCardCollections } from '../src/data/daily-card-catalog.js';
 import { videos } from '../src/data/video-library.js';
 import {
   dailyCardInventoryTargets,

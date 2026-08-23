@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { dailyCards, dailyCardCollections } from '../src/data/daily-cards.js';
+import { dailyCards, dailyCardCollections } from '../src/data/daily-card-catalog.js';
 import {
   dailyCardInventoryTargets,
   dailyCardInventoryTargetTotal,

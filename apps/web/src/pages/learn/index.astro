@@ -4,7 +4,7 @@ import AdaptiveDailyReviewQueue from '../../components/AdaptiveDailyReviewQueue.
 import DailyCard from '../../components/DailyCard.astro';
 import DailyCardToday from '../../components/DailyCardToday.astro';
 import DailyLearningSignup from '../../components/DailyLearningSignup.astro';
-import { dailyCardCollections, dailyCardMeta, dailyCards } from '../../data/daily-cards.js';
+import { dailyCardCollections, dailyCardMeta, dailyCards } from '../../data/daily-card-catalog.js';
 
 const openCards = dailyCards.filter((card) => card.access === 'open' && card.status === 'ready-for-build');
 ---

@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { dailyCardVideoBatch01 } from '../src/data/daily-card-video-batch-01.js';
 import { dailyCardVideoBatch02 } from '../src/data/daily-card-video-batch-02.js';
+import { dailyCardVideoBatch03 } from '../src/data/daily-card-video-batch-03.js';
 import { videos } from '../src/data/video-library.js';
 
 const videoBySlug = new Map(videos.map((video) => [video.slug, video]));
 const ids = new Set();
 const slugs = new Set();
-const batches = [dailyCardVideoBatch01, dailyCardVideoBatch02];
+const batches = [dailyCardVideoBatch01, dailyCardVideoBatch02, dailyCardVideoBatch03];
 
 for (const [batchIndex, batch] of batches.entries()) {
   for (const card of batch) {
@@ -25,10 +26,11 @@ for (const [batchIndex, batch] of batches.entries()) {
     assert.equal(Boolean(card.whyItMatters), true);
     assert.equal(Boolean(card.keyTakeaway), true);
     assert.equal(Array.isArray(card.whatToWatch) && card.whatToWatch.length > 0, true);
-    if (batchIndex === 1) assert.equal(card.access, 'research', `${card.id} in Batch 02 must remain Research-only.`);
+    if (batchIndex >= 1) assert.equal(card.access, 'research', `${card.id} in Batch ${batchIndex + 1} must remain Research-only.`);
   }
 }
 
 assert.equal(dailyCardVideoBatch01.length, 10, 'Batch 01 must remain exactly ten reviewed promotions.');
 assert.equal(dailyCardVideoBatch02.length, 10, 'Batch 02 must remain exactly ten reviewed promotions.');
-console.log('Daily Card reviewed-video provenance: PASS (20 promoted cards across two batches).');
+assert.equal(dailyCardVideoBatch03.length, 10, 'Batch 03 must remain exactly ten reviewed promotions.');
+console.log('Daily Card reviewed-video provenance: PASS (30 promoted cards across three batches).');

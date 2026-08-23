@@ -80,5 +80,6 @@ jobs:
           test -s artifacts/daily-card-inventory/coverage.md
           test -s artifacts/daily-card-candidates/candidates.json
           test -s artifacts/daily-card-glossary-candidates/candidates.json
+          test -s artifacts/daily-card-glossary-candidates/review.md
           node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-candidates/candidates.json','utf8')); if(!p.candidates.every(c=>c.status==='review' && c.lastReviewed===null)) process.exit(1);"
-          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-glossary-candidates/candidates.json','utf8')); if(!p.candidates.length || !p.candidates.every(c=>c.status==='review' && c.lastReviewed===null && c.sourceNames.includes('USD Impact Glossary') && c.sourcePath.startsWith('src/content/glossary/'))) process.exit(1);"
+          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-glossary-candidates/candidates.json','utf8')); if(!p.candidates.length || p.likelyNetNewCount + p.overlapCount !== p.count || !p.candidates.every(c=>c.status==='review' && c.lastReviewed===null && ['likely-net-new','resolve-overlap'].includes(c.reviewDisposition) && c.sourceNames.includes('USD Impact Glossary') && c.sourcePath.startsWith('src/content/glossary/'))) process.exit(1);"

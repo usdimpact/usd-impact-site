@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { dailyCards } from '../src/data/daily-card-catalog.js';
 import { dailyCardInventoryTargets } from '../src/data/daily-card-inventory-plan.js';
+import { dailyCardCatalystBriefResolutions } from '../src/data/daily-card-catalyst-brief-resolutions.js';
 
 const catalystDir = path.resolve('src/content/catalyst-briefs');
 const outputDir = path.resolve('artifacts/daily-card-catalyst-brief-candidates');
@@ -143,7 +144,7 @@ const deficits = Object.fromEntries(Object.entries(dailyCardInventoryTargets).ma
   Math.max(0, target - (counts[collectionId] || 0)),
 ]));
 
-const candidates = templates.map((template) => {
+const allCandidates = templates.map((template) => {
   const potentialOverlapCardIds = overlapCardIds(template.title, template.concepts);
   return {
     id: template.id,
@@ -174,7 +175,45 @@ const candidates = templates.map((template) => {
   };
 });
 
+const templateIds = new Set(templates.map((template) => template.id));
+const resolutionByCandidateId = new Map();
+for (const resolution of dailyCardCatalystBriefResolutions) {
+  if (!templateIds.has(resolution.candidateId)) throw new Error(`Catalyst Brief resolution references unknown candidate ${resolution.candidateId}.`);
+  if (resolutionByCandidateId.has(resolution.candidateId)) throw new Error(`Duplicate Catalyst Brief resolution for ${resolution.candidateId}.`);
+  if (!['promoted', 'resolved-overlap'].includes(resolution.disposition)) throw new Error(`${resolution.candidateId}: invalid Catalyst Brief resolution disposition.`);
+  if (!resolution.reviewedAt) throw new Error(`${resolution.candidateId}: reviewedAt is required.`);
+  if (resolution.disposition === 'promoted') {
+    const card = dailyCards.find((item) => item.id === resolution.canonicalCardId);
+    if (!card) throw new Error(`${resolution.candidateId}: promoted canonical card ${resolution.canonicalCardId} does not exist.`);
+    if (card.access !== 'open') throw new Error(`${resolution.candidateId}: Catalyst Brief promotion must remain Open access.`);
+  } else {
+    if (!['alias', 'composite'].includes(resolution.resolutionMode)) throw new Error(`${resolution.candidateId}: overlap resolution mode must be alias or composite.`);
+    if (!dailyCards.some((card) => card.id === resolution.primaryCardId)) throw new Error(`${resolution.candidateId}: overlap primary card ${resolution.primaryCardId} does not exist.`);
+    for (const relatedId of resolution.relatedCardIds || []) {
+      if (!dailyCards.some((card) => card.id === relatedId)) throw new Error(`${resolution.candidateId}: overlap related card ${relatedId} does not exist.`);
+    }
+  }
+  resolutionByCandidateId.set(resolution.candidateId, resolution);
+}
+
+const candidates = allCandidates.filter((candidate) => !resolutionByCandidateId.has(candidate.id));
+const resolved = allCandidates.filter((candidate) => resolutionByCandidateId.has(candidate.id)).map((candidate) => ({
+  candidateId: candidate.id,
+  candidateTitle: candidate.title,
+  sourceHierarchyRank: candidate.sourceHierarchyRank,
+  sourceType: candidate.sourceType,
+  sourceEvidenceCount: candidate.sourceEvidenceCount,
+  sourcePaths: candidate.sourcePaths,
+  sourceEventKeys: candidate.sourceEventKeys,
+  sourcePhases: candidate.sourcePhases,
+  ...resolutionByCandidateId.get(candidate.id),
+}));
+const promoted = resolved.filter((item) => item.disposition === 'promoted');
+const resolvedOverlaps = resolved.filter((item) => item.disposition === 'resolved-overlap');
+const likelyNetNew = candidates.filter((candidate) => candidate.reviewDisposition === 'likely-net-new');
+const overlaps = candidates.filter((candidate) => candidate.reviewDisposition === 'resolve-overlap');
 const generatedAt = new Date().toISOString();
+
 const output = {
   generatedAt,
   sourceHierarchyRank: 8,
@@ -184,36 +223,57 @@ const output = {
   sourcePreviewPath: previewBrief.sourcePath,
   currentCollectionCounts: counts,
   currentCollectionDeficits: deficits,
+  totalMethodologyConceptCount: allCandidates.length,
+  accountedForCount: resolved.length,
+  promotedCount: promoted.length,
+  resolvedOverlapCount: resolvedOverlaps.length,
   candidateCount: candidates.length,
-  likelyNetNewCount: candidates.filter((candidate) => candidate.reviewDisposition === 'likely-net-new').length,
-  overlapCount: candidates.filter((candidate) => candidate.reviewDisposition === 'resolve-overlap').length,
+  likelyNetNewCount: likelyNetNew.length,
+  overlapCount: overlaps.length,
   candidates,
+};
+
+const resolvedOutput = {
+  generatedAt,
+  sourceHierarchyRank: 8,
+  sourceType: 'catalyst-brief-methodology',
+  totalMethodologyConceptCount: allCandidates.length,
+  accountedForCount: resolved.length,
+  promotedCount: promoted.length,
+  resolvedOverlapCount: resolvedOverlaps.length,
+  resolutions: resolved,
 };
 
 fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(path.join(outputDir, 'candidates.json'), `${JSON.stringify(output, null, 2)}\n`);
+fs.writeFileSync(path.join(outputDir, 'resolved.json'), `${JSON.stringify(resolvedOutput, null, 2)}\n`);
 fs.writeFileSync(path.join(outputDir, 'review.md'), `${[
   '# Catalyst Brief Daily Card review queue',
   '',
   `Generated: ${generatedAt}`,
   '',
   `Published Catalyst Briefs scanned: **${briefs.length}**`,
-  `Evergreen methodology candidates: **${candidates.length}**`,
-  `Likely net-new: **${output.likelyNetNewCount}**`,
-  `Potential overlaps: **${output.overlapCount}**`,
+  `Evergreen methodology concepts: **${allCandidates.length}**`,
+  `Accounted for: **${resolved.length}**`,
+  `Promoted: **${promoted.length}**`,
+  `Resolved as overlap: **${resolvedOverlaps.length}**`,
+  `Remaining review candidates: **${candidates.length}**`,
   '',
   '## Source boundary',
   '',
   '- Hierarchy tier: **8 — Catalyst Briefs**',
   '- Source access is **Open** because published Catalyst Briefs are public.',
-  '- This queue extracts only evergreen workflow/methodology concepts from a published preview.',
-  '- Event dates, release values, expected direction, realized outcomes and market moves are excluded from candidate prose.',
-  '- Every generated item remains `review` with `lastReviewed=null` until explicit editorial disposition.',
+  '- This bounded queue extracts only evergreen workflow/methodology concepts from a published preview.',
+  '- Event dates, release values, expected direction, realized outcomes and market moves are excluded from candidate and promoted-card prose.',
   '',
-  '## Candidates',
+  '## Editorial resolutions',
   '',
-  ...candidates.map((candidate) => `- **${candidate.title}** — ${candidate.suggestedCollectionId}; ${candidate.reviewDisposition}; source: ${candidate.sourcePaths.join(', ')}`),
+  ...resolved.map((item) => `- **${item.candidateTitle}** — ${item.disposition}${item.canonicalCardId ? ` -> ${item.canonicalCardId}` : ` -> ${item.primaryCardId}`}`),
+  '',
+  '## Remaining candidates',
+  '',
+  ...(candidates.length ? candidates.map((candidate) => `- **${candidate.title}** — ${candidate.suggestedCollectionId}; ${candidate.reviewDisposition}`) : ['- None.']),
   '',
 ].join('\n')}\n`);
 
-console.log(`Catalyst Brief Daily Card queue generated: ${candidates.length} review-only candidates from ${briefs.length} published brief(s).`);
+console.log(`Catalyst Brief Daily Card editorial queue: ${resolved.length}/${allCandidates.length} accounted for; ${promoted.length} promoted, ${resolvedOverlaps.length} overlaps, ${candidates.length} pending.`);

@@ -5,6 +5,8 @@ on:
     paths:
       - 'apps/web/src/content/catalyst-briefs/**'
       - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/src/data/daily-card-catalyst-brief-batch-01.js'
+      - 'apps/web/src/data/daily-card-catalyst-brief-resolutions.js'
       - 'apps/web/src/data/daily-card-inventory-plan.js'
       - 'apps/web/scripts/generate-daily-card-catalyst-brief-candidates.mjs'
       - 'apps/web/scripts/test-daily-card-catalyst-brief-candidates.mjs'
@@ -39,8 +41,10 @@ jobs:
         run: |
           node --check scripts/generate-daily-card-catalyst-brief-candidates.mjs
           node --check scripts/test-daily-card-catalyst-brief-candidates.mjs
+          node --check src/data/daily-card-catalyst-brief-batch-01.js
+          node --check src/data/daily-card-catalyst-brief-resolutions.js
 
-      - name: Verify Catalyst Brief Tier 8 contract
+      - name: Verify Catalyst Brief Tier 8 editorial contract
         run: node scripts/test-daily-card-catalyst-brief-candidates.mjs
 
       - name: Validate canonical Daily Cards

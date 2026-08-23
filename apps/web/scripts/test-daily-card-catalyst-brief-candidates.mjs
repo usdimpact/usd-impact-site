@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { dailyCards } from '../src/data/daily-card-catalog.js';
+import { dailyCardCatalystBriefResolutions } from '../src/data/daily-card-catalyst-brief-resolutions.js';
 
 const generator = spawnSync(process.execPath, ['scripts/generate-daily-card-catalyst-brief-candidates.mjs'], {
   cwd: process.cwd(),
@@ -14,7 +15,9 @@ if (generator.status !== 0) {
 }
 
 const artifactPath = path.resolve('artifacts/daily-card-catalyst-brief-candidates/candidates.json');
+const resolvedPath = path.resolve('artifacts/daily-card-catalyst-brief-candidates/resolved.json');
 const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+const resolvedArtifact = JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
 const errors = [];
 
 const expectedCandidateIds = new Set([
@@ -23,58 +26,92 @@ const expectedCandidateIds = new Set([
   'candidate-catalyst-component-breadth',
   'candidate-catalyst-rates-transmission-check',
 ]);
+const expectedPromotedCardIds = new Set(['card-inflation-release-component-mix']);
 
 if (artifact.sourceHierarchyRank !== 8) errors.push('source hierarchy rank must be 8');
 if (artifact.sourceType !== 'catalyst-brief-methodology') errors.push('source type must be catalyst-brief-methodology');
 if (artifact.publishedBriefCount < 1) errors.push('at least one published Catalyst Brief is required');
 if (!Array.isArray(artifact.publishedBriefPaths) || artifact.publishedBriefPaths.length !== artifact.publishedBriefCount) errors.push('published Catalyst Brief paths are incomplete');
-if (artifact.candidateCount !== 4 || artifact.candidates?.length !== 4) errors.push('expected exactly four conservative Tier 8 methodology candidates');
-if (artifact.likelyNetNewCount + artifact.overlapCount !== 4) errors.push('every candidate must be classified as likely-net-new or resolve-overlap');
+if (artifact.totalMethodologyConceptCount !== 4) errors.push('expected exactly four bounded Tier 8 methodology concepts');
+if (artifact.accountedForCount !== 4) errors.push('all four Tier 8 concepts must be accounted for');
+if (artifact.promotedCount !== 1) errors.push('expected exactly one promoted Tier 8 concept');
+if (artifact.resolvedOverlapCount !== 3) errors.push('expected exactly three Tier 8 overlap resolutions');
+if (artifact.candidateCount !== 0 || artifact.candidates?.length !== 0) errors.push('Tier 8 Catalyst Brief queue must have zero unresolved candidates after editorial closure');
 
-const canonicalIds = new Set(dailyCards.map((card) => card.id));
-const seenIds = new Set();
-for (const candidate of artifact.candidates || []) {
-  if (!expectedCandidateIds.has(candidate.id)) errors.push(`${candidate.id}: unexpected Catalyst Brief candidate`);
-  if (seenIds.has(candidate.id)) errors.push(`${candidate.id}: duplicate candidate id`);
-  seenIds.add(candidate.id);
-  if (canonicalIds.has(candidate.id)) errors.push(`${candidate.id}: candidate id already exists in canonical catalog`);
-  if (candidate.status !== 'review') errors.push(`${candidate.id}: machine-derived candidate must remain review-only`);
-  if (candidate.lastReviewed !== null) errors.push(`${candidate.id}: lastReviewed must remain null before editorial review`);
-  if (candidate.sourceHierarchyRank !== 8) errors.push(`${candidate.id}: hierarchy rank must remain 8`);
-  if (candidate.sourceType !== 'catalyst-brief-methodology') errors.push(`${candidate.id}: source type changed`);
-  if (candidate.suggestedAccess !== 'open') errors.push(`${candidate.id}: public Catalyst Brief source should suggest Open access`);
-  if (!['market-application', 'rates-liquidity-policy'].includes(candidate.suggestedCollectionId)) errors.push(`${candidate.id}: unexpected collection ${candidate.suggestedCollectionId}`);
-  if (!Array.isArray(candidate.sourcePaths) || candidate.sourcePaths.length !== 1 || !candidate.sourcePaths[0].startsWith('src/content/catalyst-briefs/')) errors.push(`${candidate.id}: exact Catalyst Brief source path is required`);
-  if (!Array.isArray(candidate.sourceEventKeys) || candidate.sourceEventKeys.length !== 1) errors.push(`${candidate.id}: source event key is required`);
-  if (!Array.isArray(candidate.sourcePhases) || candidate.sourcePhases.length !== 1 || candidate.sourcePhases[0] !== 'preview') errors.push(`${candidate.id}: source phase must be preview`);
-  if (!Array.isArray(candidate.sourceLastReviewed) || candidate.sourceLastReviewed.length !== 1) errors.push(`${candidate.id}: source review date is required as provenance`);
-  if (!Array.isArray(candidate.sourceNames) || candidate.sourceNames.length < 2) errors.push(`${candidate.id}: primary source publisher names are required`);
-  if (candidate.sourceEvidenceCount !== 1) errors.push(`${candidate.id}: current Tier 8 evidence count must be one published preview brief`);
-  if (!['likely-net-new', 'resolve-overlap'].includes(candidate.reviewDisposition)) errors.push(`${candidate.id}: invalid review disposition`);
-  if (candidate.reviewDisposition === 'resolve-overlap' && (!Array.isArray(candidate.potentialOverlapCardIds) || candidate.potentialOverlapCardIds.length === 0)) errors.push(`${candidate.id}: overlap disposition requires canonical overlap ids`);
+if (resolvedArtifact.totalMethodologyConceptCount !== 4 || resolvedArtifact.accountedForCount !== 4) {
+  errors.push('resolved artifact must account for all four Catalyst Brief methodology concepts');
+}
+if (resolvedArtifact.promotedCount !== 1 || resolvedArtifact.resolvedOverlapCount !== 3) {
+  errors.push('resolved artifact must preserve the 1-promote / 3-overlap editorial decision');
+}
 
-  const editorialProse = [
-    candidate.title,
-    candidate.sourceClaim,
-    candidate.candidateDefinition,
-    candidate.candidateWhyItMatters,
-    candidate.candidateKeyTakeaway,
-  ].join(' ');
-  if (/\b20\d{2}-\d{2}-\d{2}\b/.test(editorialProse)) errors.push(`${candidate.id}: event date leaked into evergreen candidate prose`);
-  if (/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}\b/i.test(editorialProse)) errors.push(`${candidate.id}: calendar date leaked into evergreen candidate prose`);
-  if (/\b\d{1,2}:\d{2}\b/.test(editorialProse)) errors.push(`${candidate.id}: event time leaked into evergreen candidate prose`);
-  if (/\b\d+(?:\.\d+)?\s*%/.test(editorialProse)) errors.push(`${candidate.id}: event-specific percentage leaked into evergreen candidate prose`);
-  if (/stronger-than-expected|softer-than-expected|hotter-than-expected|cooler-than-expected/i.test(editorialProse)) errors.push(`${candidate.id}: directional event scenario leaked into evergreen candidate prose`);
+const resolutionIds = new Set();
+const promotedCardIds = new Set();
+for (const resolution of dailyCardCatalystBriefResolutions) {
+  if (!expectedCandidateIds.has(resolution.candidateId)) errors.push(`${resolution.candidateId}: unexpected Catalyst Brief candidate resolution`);
+  if (resolutionIds.has(resolution.candidateId)) errors.push(`${resolution.candidateId}: duplicate Catalyst Brief resolution`);
+  resolutionIds.add(resolution.candidateId);
+  if (!resolution.reviewedAt) errors.push(`${resolution.candidateId}: reviewedAt is required`);
+
+  if (resolution.disposition === 'promoted') {
+    if (!expectedPromotedCardIds.has(resolution.canonicalCardId)) errors.push(`${resolution.candidateId}: unexpected promoted canonical card ${resolution.canonicalCardId}`);
+    if (promotedCardIds.has(resolution.canonicalCardId)) errors.push(`${resolution.candidateId}: duplicate promoted canonical card ${resolution.canonicalCardId}`);
+    promotedCardIds.add(resolution.canonicalCardId);
+    const card = dailyCards.find((item) => item.id === resolution.canonicalCardId);
+    if (!card) errors.push(`${resolution.candidateId}: promoted canonical card missing from catalog`);
+    else if (card.access !== 'open') errors.push(`${resolution.candidateId}: Catalyst Brief promotion must remain Open`);
+  } else if (resolution.disposition === 'resolved-overlap') {
+    if (!['alias', 'composite'].includes(resolution.resolutionMode)) errors.push(`${resolution.candidateId}: overlap resolution mode must be alias or composite`);
+    if (!dailyCards.some((card) => card.id === resolution.primaryCardId)) errors.push(`${resolution.candidateId}: overlap primary card missing from catalog`);
+    for (const relatedId of resolution.relatedCardIds || []) {
+      if (!dailyCards.some((card) => card.id === relatedId)) errors.push(`${resolution.candidateId}: overlap related card ${relatedId} missing from catalog`);
+    }
+  } else {
+    errors.push(`${resolution.candidateId}: invalid resolution disposition ${resolution.disposition}`);
+  }
 }
 
 for (const candidateId of expectedCandidateIds) {
-  if (!seenIds.has(candidateId)) errors.push(`${candidateId}: missing expected Catalyst Brief candidate`);
+  if (!resolutionIds.has(candidateId)) errors.push(`${candidateId}: missing durable editorial resolution`);
+}
+for (const cardId of expectedPromotedCardIds) {
+  if (!promotedCardIds.has(cardId)) errors.push(`${cardId}: missing promoted resolution mapping`);
+}
+
+const promotedCards = dailyCards.filter((card) => expectedPromotedCardIds.has(card.id));
+if (promotedCards.length !== 1) errors.push(`expected exactly one promoted Catalyst Brief card, found ${promotedCards.length}`);
+for (const card of promotedCards) {
+  if (card.collectionId !== 'rates-liquidity-policy') errors.push(`${card.id}: promoted Catalyst Brief card must remain in Rates, Liquidity & Policy`);
+  if (card.status !== 'ready-for-build') errors.push(`${card.id}: promoted card must be ready-for-build`);
+  if (!card.lastReviewed) errors.push(`${card.id}: lastReviewed is required`);
+  if (card.access !== 'open') errors.push(`${card.id}: public Catalyst Brief promotion must remain Open`);
+  if (!Array.isArray(card.sourcePaths) || card.sourcePaths.length !== 1 || card.sourcePaths[0] !== 'src/content/catalyst-briefs/2026-08-12-bls-consumer-price-index-cpi-for-july-2026-preview.md') errors.push(`${card.id}: exact Catalyst Brief source path is required`);
+  if (!Array.isArray(card.sourceNames) || card.sourceNames.length < 2) errors.push(`${card.id}: source names are required`);
+  const evergreenProse = [card.title, card.hook, card.definition, card.whyItMatters, card.example, card.commonMistake, card.keyTakeaway].join(' ');
+  if (/\b20\d{2}-\d{2}-\d{2}\b/.test(evergreenProse)) errors.push(`${card.id}: event date leaked into evergreen card`);
+  if (/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}\b/i.test(evergreenProse)) errors.push(`${card.id}: calendar date leaked into evergreen card`);
+  if (/\b\d{1,2}:\d{2}\b/.test(evergreenProse)) errors.push(`${card.id}: event time leaked into evergreen card`);
+  if (/\b\d+(?:\.\d+)?\s*%/.test(evergreenProse)) errors.push(`${card.id}: event-specific percentage leaked into evergreen card`);
+}
+
+const timingResolution = dailyCardCatalystBriefResolutions.find((item) => item.candidateId === 'candidate-catalyst-primary-source-timing');
+if (timingResolution?.primaryCardId !== 'card-scheduled-catalyst-not-direction') errors.push('primary-source timing candidate must resolve to the existing scheduled-catalyst card');
+const phaseResolution = dailyCardCatalystBriefResolutions.find((item) => item.candidateId === 'candidate-catalyst-preview-outcome-separation');
+if (phaseResolution?.primaryCardId !== 'card-scheduled-catalyst-not-direction' || !phaseResolution.relatedCardIds?.includes('card-market-reaction-expectations-positioning')) errors.push('preview/outcome candidate must resolve across scheduled-catalyst and market-reaction cards');
+const ratesResolution = dailyCardCatalystBriefResolutions.find((item) => item.candidateId === 'candidate-catalyst-rates-transmission-check');
+if (ratesResolution?.primaryCardId !== 'card-macro-release-transmission-chain') errors.push('rates transmission candidate must resolve to the existing macro-release transmission card');
+
+for (const item of resolvedArtifact.resolutions || []) {
+  if (!resolutionIds.has(item.candidateId)) errors.push(`${item.candidateId}: generated resolution is not in the durable registry`);
+  if (item.sourceHierarchyRank !== 8 || item.sourceType !== 'catalyst-brief-methodology') errors.push(`${item.candidateId}: generated resolution lost hierarchy metadata`);
+  if (item.sourceEvidenceCount !== 1) errors.push(`${item.candidateId}: generated resolution must preserve the bounded Catalyst Brief evidence count`);
+  if (!Array.isArray(item.sourcePaths) || item.sourcePaths.length !== 1) errors.push(`${item.candidateId}: generated resolution lost exact source provenance`);
 }
 
 if (errors.length) {
-  console.error('Catalyst Brief Daily Card Tier 8 contract failed:');
+  console.error('Catalyst Brief Daily Card Tier 8 editorial contract failed:');
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
 }
 
-console.log(`Catalyst Brief Daily Card Tier 8 contract passed: ${artifact.candidateCount} review-only evergreen methodology candidates; no event-specific publication content promoted.`);
+console.log('Catalyst Brief Daily Card Tier 8 editorial contract passed: 4/4 methodology concepts accounted for; 1 promoted Open card, 3 overlap resolutions, 0 pending.');

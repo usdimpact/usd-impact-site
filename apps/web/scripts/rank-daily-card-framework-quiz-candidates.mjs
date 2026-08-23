@@ -6,9 +6,8 @@ const quizPath = path.resolve('artifacts/daily-card-quiz-candidates/candidates.j
 const outputDir = path.resolve('artifacts/daily-card-framework-quiz-shortlist');
 
 const quotas = Object.freeze({
-  'rates-liquidity-policy': 7,
-  'dollar-funding-stack': 2,
-  'market-application': 3,
+  'rates-liquidity-policy': 8,
+  'market-application': 4,
 });
 const maxPerSource = 2;
 
@@ -43,7 +42,7 @@ function specificityScore(candidate) {
   const words = title.trim().split(/\s+/).filter(Boolean);
   let score = 0;
   if (words.length >= 2 && words.length <= 10) score += 10;
-  if (/\b(real yield|liquidity|credit|funding|repo|collateral|swap|haircut|volatility|confirmation|driver|benchmark|stress|rate|risk)\b/i.test(title)) score += 10;
+  if (/\b(real yield|liquidity|credit|volatility|confirmation|driver|benchmark|stress|rate|risk|monitoring|discipline|regime)\b/i.test(title)) score += 10;
   if (/[?:]/.test(title)) score += 2;
   if (candidate.origin === 'framework') score += 22;
   if (candidate.sourceKind === 'question-explanation') score += 10;
@@ -101,6 +100,9 @@ fs.writeFileSync(path.join(outputDir, 'shortlist.json'), `${JSON.stringify({
   generatedAt,
   quotas,
   maxPerSource,
+  deferredCollections: {
+    'dollar-funding-stack': 'No genuine Tier-4/Tier-5 source candidates remain after classifier v3; defer to reviewed funding-plumbing source material.',
+  },
   frameworkCandidateCount: framework.candidateCount,
   quizCandidateCount: quiz.candidateCount,
   eligibleCount: eligible.length,
@@ -116,6 +118,8 @@ fs.writeFileSync(path.join(outputDir, 'shortlist.md'), `${[
   `Recommended batch: **${selected.length}**`, '',
   '## Fixed high-value allocation', '',
   ...Object.entries(quotas).map(([id, count]) => `- **${id}** — ${count}`), '',
+  '## Deferred deficit', '',
+  '- **dollar-funding-stack** — no genuine Framework/Quiz source candidates after classifier v3; use reviewed funding-plumbing sources instead of forcing weak taxonomy.', '',
   '## Recommended review order', '',
   ...selected.map((candidate) => `${candidate.shortlistRank}. **${candidate.title}** — ${candidate.suggestedCollectionId} — ${candidate.origin} — ${candidate.sourcePath} — score ${candidate.adjustedScore}`), '',
   'This shortlist is review prioritization only. Every selected item remains status=review and requires editorial inspection before promotion.', '',
@@ -123,4 +127,5 @@ fs.writeFileSync(path.join(outputDir, 'shortlist.md'), `${[
 
 console.log(`Framework/Quiz shortlist: ${selected.length} selected from ${eligible.length} targeted likely-net-new candidates.`);
 for (const [id, count] of Object.entries(quotas)) console.log(`SHORTLIST-QUOTA: ${id} -> ${count}`);
+console.log('SHORTLIST-DEFER: dollar-funding-stack -> no genuine Tier-4/Tier-5 candidates');
 for (const candidate of selected) console.log(`SHORTLIST ${candidate.shortlistRank}: ${candidate.title} | ${candidate.suggestedCollectionId} | ${candidate.origin} | ${candidate.sourcePath} | ${candidate.sourceLocator || candidate.sourceHeading || ''} | score=${candidate.adjustedScore}`);

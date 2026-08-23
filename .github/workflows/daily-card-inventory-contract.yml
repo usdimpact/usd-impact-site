@@ -7,6 +7,7 @@ on:
       - 'apps/web/src/data/daily-card-inventory-plan.js'
       - 'apps/web/src/data/daily-card-catalog.js'
       - 'apps/web/src/data/daily-card-video-batch-*.js'
+      - 'apps/web/src/data/daily-card-glossary-batch-*.js'
       - 'apps/web/src/data/daily-cards.js'
       - 'apps/web/src/data/video-library.js'
       - 'apps/web/scripts/generate-daily-card-candidates.mjs'
@@ -14,6 +15,7 @@ on:
       - 'apps/web/scripts/generate-daily-card-inventory-report.mjs'
       - 'apps/web/scripts/test-daily-card-inventory-plan.mjs'
       - 'apps/web/scripts/test-daily-card-video-batches.mjs'
+      - 'apps/web/scripts/test-daily-card-glossary-batches.mjs'
       - 'apps/web/scripts/validate-daily-cards.mjs'
       - '.github/workflows/daily-card-content-queue.yml'
       - '.github/workflows/daily-card-inventory-contract.yml'
@@ -24,6 +26,7 @@ on:
       - 'apps/web/src/data/daily-card-inventory-plan.js'
       - 'apps/web/src/data/daily-card-catalog.js'
       - 'apps/web/src/data/daily-card-video-batch-*.js'
+      - 'apps/web/src/data/daily-card-glossary-batch-*.js'
       - 'apps/web/src/data/daily-cards.js'
       - 'apps/web/src/data/video-library.js'
       - 'apps/web/scripts/generate-daily-card-candidates.mjs'
@@ -31,6 +34,7 @@ on:
       - 'apps/web/scripts/generate-daily-card-inventory-report.mjs'
       - 'apps/web/scripts/test-daily-card-inventory-plan.mjs'
       - 'apps/web/scripts/test-daily-card-video-batches.mjs'
+      - 'apps/web/scripts/test-daily-card-glossary-batches.mjs'
       - 'apps/web/scripts/validate-daily-cards.mjs'
       - '.github/workflows/daily-card-content-queue.yml'
       - '.github/workflows/daily-card-inventory-contract.yml'
@@ -60,13 +64,16 @@ jobs:
           node --check src/data/daily-card-video-batch-02.js
           node --check src/data/daily-card-video-batch-03.js
           node --check src/data/daily-card-video-batch-04.js
+          node --check src/data/daily-card-glossary-batch-01.js
           node --check scripts/generate-daily-card-inventory-report.mjs
           node --check scripts/generate-daily-card-glossary-candidates.mjs
           node --check scripts/test-daily-card-inventory-plan.mjs
           node --check scripts/test-daily-card-video-batches.mjs
+          node --check scripts/test-daily-card-glossary-batches.mjs
       - name: Validate canonical inventory
         run: |
           node scripts/test-daily-card-video-batches.mjs
+          node scripts/test-daily-card-glossary-batches.mjs
           node scripts/test-daily-card-inventory-plan.mjs
           node scripts/validate-daily-cards.mjs
       - name: Generate coverage and review queues
@@ -82,4 +89,5 @@ jobs:
           test -s artifacts/daily-card-glossary-candidates/candidates.json
           test -s artifacts/daily-card-glossary-candidates/review.md
           node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-candidates/candidates.json','utf8')); if(!p.candidates.every(c=>c.status==='review' && c.lastReviewed===null)) process.exit(1);"
-          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-glossary-candidates/candidates.json','utf8')); if(!p.candidates.length || p.likelyNetNewCount + p.overlapCount !== p.count || !p.candidates.every(c=>c.status==='review' && c.lastReviewed===null && ['likely-net-new','resolve-overlap'].includes(c.reviewDisposition) && c.sourceNames.includes('USD Impact Glossary') && c.sourcePath.startsWith('src/content/glossary/'))) process.exit(1);"
+          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-glossary-candidates/candidates.json','utf8')); if(p.likelyNetNewCount + p.overlapCount !== p.count || !p.candidates.every(c=>c.status==='review' && c.lastReviewed===null && ['likely-net-new','resolve-overlap'].includes(c.reviewDisposition) && c.sourceNames.includes('USD Impact Glossary') && c.sourcePath.startsWith('src/content/glossary/'))) process.exit(1);"
+          node --input-type=module -e "import fs from 'node:fs'; import { dailyCards } from './src/data/daily-card-catalog.js'; const p=JSON.parse(fs.readFileSync('artifacts/daily-card-glossary-candidates/candidates.json','utf8')); const promoted=new Set(dailyCards.filter(c=>c.status==='ready-for-build' && typeof c.sourcePath==='string' && c.sourcePath.startsWith('src/content/glossary/')).map(c=>c.sourcePath)); if(p.promotedSourceCount!==promoted.size || p.candidates.some(c=>promoted.has(c.sourcePath))) process.exit(1);"

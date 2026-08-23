@@ -78,6 +78,12 @@ function suggestedCollection(term) {
   return SUGGESTED_COLLECTION_BY_TERM[term] || 'core-framework';
 }
 
+const promotedGlossarySourcePaths = new Set(
+  dailyCards
+    .filter((card) => card.status === 'ready-for-build' && typeof card.sourcePath === 'string' && card.sourcePath.startsWith('src/content/glossary/'))
+    .map((card) => card.sourcePath),
+);
+
 const files = fs.readdirSync(glossaryDir)
   .filter((name) => name.endsWith('.md'))
   .sort();
@@ -90,6 +96,8 @@ const candidates = files.map((fileName) => {
   if (!frontmatter.title || !frontmatter.definition || !frontmatter.slug) {
     throw new Error(`${fileName}: ready glossary entry must include title, definition and slug`);
   }
+  if (promotedGlossarySourcePaths.has(sourcePath)) return null;
+
   const collectionId = suggestedCollection(term);
   const potentialOverlapCardIds = overlapCardIds({ term, title: frontmatter.title, definition: frontmatter.definition });
   return {
@@ -129,7 +137,7 @@ const generatedAt = new Date().toISOString();
 fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(
   path.join(outputDir, 'candidates.json'),
-  `${JSON.stringify({ generatedAt, count: candidates.length, likelyNetNewCount: likelyNetNew.length, overlapCount: overlaps.length, candidates }, null, 2)}\n`,
+  `${JSON.stringify({ generatedAt, promotedSourceCount: promotedGlossarySourcePaths.size, count: candidates.length, likelyNetNewCount: likelyNetNew.length, overlapCount: overlaps.length, candidates }, null, 2)}\n`,
 );
 
 const reviewMarkdown = [
@@ -137,7 +145,8 @@ const reviewMarkdown = [
   '',
   `Generated: ${generatedAt}`,
   '',
-  `Ready glossary entries: **${candidates.length}**`,
+  `Promoted glossary sources excluded: **${promotedGlossarySourcePaths.size}**`,
+  `Ready glossary entries still requiring review: **${candidates.length}**`,
   `Likely net-new: **${likelyNetNew.length}**`,
   `Potential overlaps: **${overlaps.length}**`,
   '',
@@ -158,7 +167,8 @@ const reviewMarkdown = [
 ];
 fs.writeFileSync(path.join(outputDir, 'review.md'), `${reviewMarkdown.join('\n')}\n`);
 
-console.log(`Generated ${candidates.length} review-only Daily Card candidates from ready-for-build glossary entries.`);
+console.log(`Excluded ${promotedGlossarySourcePaths.size} promoted glossary sources from the review queue.`);
+console.log(`Generated ${candidates.length} review-only Daily Card candidates from remaining ready-for-build glossary entries.`);
 console.log(`Likely net-new candidates: ${likelyNetNew.length}.`);
 for (const candidate of likelyNetNew) console.log(`NET-NEW: ${candidate.title} -> ${candidate.collectionId}`);
 console.log(`Potential-overlap candidates: ${overlaps.length}.`);

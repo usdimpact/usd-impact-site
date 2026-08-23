@@ -6,6 +6,8 @@ on:
       - 'apps/web/src/content/news/**'
       - 'apps/web/src/data/daily-card-catalog.js'
       - 'apps/web/src/data/daily-card-inventory-plan.js'
+      - 'apps/web/src/data/daily-card-daily-news-batch-01.js'
+      - 'apps/web/src/data/daily-card-daily-news-resolutions.js'
       - 'apps/web/scripts/generate-daily-card-daily-news-candidates.mjs'
       - 'apps/web/scripts/test-daily-card-daily-news-candidates.mjs'
       - '.github/workflows/daily-card-content-queue.yml'
@@ -35,13 +37,15 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
-      - name: Syntax check Daily USD Impact review tooling
+      - name: Syntax check Daily USD Impact editorial tooling
         run: |
+          node --check src/data/daily-card-daily-news-batch-01.js
+          node --check src/data/daily-card-daily-news-resolutions.js
           node --check scripts/generate-daily-card-daily-news-candidates.mjs
           node --check scripts/test-daily-card-daily-news-candidates.mjs
 
-      - name: Verify Daily USD Impact review-only contract
+      - name: Verify Daily USD Impact editorial contract
         run: node scripts/test-daily-card-daily-news-candidates.mjs
 
-      - name: Validate canonical Daily Cards remain unchanged and valid
+      - name: Validate canonical Daily Cards
         run: node scripts/validate-daily-cards.mjs

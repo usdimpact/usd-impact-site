@@ -28,6 +28,7 @@ import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-ha
 import { handleDailyCardReviewRequest } from '../src/lib/daily-card-progress-handler.js';
 import { handleKnowledgeSearchRequest } from '../src/lib/knowledge-search-handler.js';
 import { handleLifecycleQaRequest } from '../src/lib/lifecycle-qa-handler.js';
+import { handlePasskeyRequest } from '../src/lib/passkey-handler.js';
 import { enqueuePrivacyExportAcknowledgementEmail } from '../src/lib/privacy-export-email.js';
 import { handlePushSubscriptionRequest } from '../src/lib/push-subscription-handler.js';
 import {
@@ -396,6 +397,7 @@ const handlers = Object.freeze({
   support: handleSupport,
   export: handleExport,
   delete: handleDelete,
+  passkey: handlePasskeyRequest,
   'deletion-finalizer': handleAccountDeletionFinalizer,
   'commerce-readiness': handleCommerceReadinessRequest,
   'video-progress': handleVideoProgressRequest,

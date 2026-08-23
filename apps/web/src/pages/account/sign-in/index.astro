@@ -5,31 +5,21 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
 ---
 <BaseLayout
   title="Sign in | USD Impact"
-  description="Sign in securely to your USD Impact learning account with a one-time email link."
+  description="Sign in securely to your USD Impact learning account with a passkey or one-time email link."
 >
   <section class="hero account-hero">
     <div class="container">
       <p class="eyebrow">USD Impact account</p>
       <h1>Sign in without a password.</h1>
-      <p class="lead">Enter your email address and we will send a short-lived, one-time sign-in link.</p>
+      <p class="lead">Use a registered passkey, or request a short-lived one-time email sign-in link.</p>
     </div>
   </section>
 
   <main>
     <div class="container account-shell">
       <section class="card account-panel" aria-labelledby="sign-in-heading">
-        <h2 id="sign-in-heading">Email sign-in</h2>
+        <h2 id="sign-in-heading">Secure sign-in</h2>
         <form id="passwordless-sign-in" class="account-form">
-          <label for="account-email">Email address</label>
-          <input
-            id="account-email"
-            name="email"
-            type="email"
-            autocomplete="email"
-            inputmode="email"
-            maxlength="254"
-            required
-          />
           <input id="account-next" type="hidden" value="/account/" />
           {turnstileSiteKey && (
             <div
@@ -40,12 +30,33 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
               data-theme="auto"
             ></div>
           )}
-          <button class="button primary" type="submit">Send sign-in link</button>
+
+          <div id="passkey-sign-in" hidden>
+            <button id="passkey-sign-in-button" class="button primary" type="button">Sign in with a passkey</button>
+            <p class="account-help">
+              Use the passkey saved in your device or password manager. Your browser may ask for a fingerprint,
+              face, device PIN, or security key.
+            </p>
+          </div>
+
+          <div id="email-sign-in-fields">
+            <label for="account-email">Email address</label>
+            <input
+              id="account-email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              inputmode="email"
+              maxlength="254"
+              required
+            />
+            <button class="button primary" type="submit">Send sign-in link</button>
+          </div>
         </form>
         <p id="sign-in-status" class="account-status" role="status" aria-live="polite"></p>
         <p class="account-help">
-          The response is deliberately neutral. If the address can be used, the email will arrive shortly.
-          The link expires and can be used only once.
+          Email sign-in remains available as the recovery method. The response is deliberately neutral; if the
+          address can be used, the email link will arrive shortly and can be used only once.
         </p>
       </section>
     </div>
@@ -54,6 +65,7 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
   {turnstileSiteKey && (
     <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   )}
+  <script is:inline src="/assets/passkey-browser.js" defer></script>
 
   <script is:inline>
     const form = document.getElementById('passwordless-sign-in');
@@ -62,6 +74,8 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
     const status = document.getElementById('sign-in-status');
     const submit = form?.querySelector('button[type="submit"]');
     const turnstileContainer = document.getElementById('account-turnstile');
+    const passkeyContainer = document.getElementById('passkey-sign-in');
+    const passkeyButton = document.getElementById('passkey-sign-in-button');
 
     const safeNextPath = (value) => {
       const next = String(value || '').trim();
@@ -77,27 +91,116 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
       }
     };
 
+    const readCaptchaToken = () => turnstileContainer
+      ? String(document.querySelector('input[name="cf-turnstile-response"]')?.value || '').trim()
+      : '';
+
+    const resetTurnstile = () => {
+      if (turnstileContainer && window.turnstile?.reset) {
+        try {
+          window.turnstile.reset('#account-turnstile');
+        } catch {
+          // The security widget can recover on its own after navigation or reload.
+        }
+      }
+    };
+
+    const showStatus = (text, state = '') => {
+      if (!status) return;
+      status.dataset.state = state;
+      status.textContent = text;
+    };
+
     if (nextInput) {
       const requestedNext = new URLSearchParams(window.location.search).get('next');
       nextInput.value = safeNextPath(requestedNext);
     }
 
+    const loadPasskeyAvailability = async () => {
+      if (!passkeyContainer || !passkeyButton) return;
+      try {
+        const response = await fetch('/api/account?action=passkey&op=status', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        const body = await response.json().catch(() => ({}));
+        passkeyContainer.hidden = !(response.ok && body.enabled === true && window.USDImpactPasskeys?.supported?.());
+      } catch {
+        passkeyContainer.hidden = true;
+      }
+    };
+
+    passkeyButton?.addEventListener('click', async () => {
+      if (!window.USDImpactPasskeys?.supported?.()) {
+        showStatus('Passkeys are not supported by this browser or device.', 'error');
+        return;
+      }
+      const captchaToken = readCaptchaToken();
+      if (turnstileContainer && !captchaToken) {
+        showStatus('Complete the security check before signing in with a passkey.', 'error');
+        return;
+      }
+
+      passkeyButton.disabled = true;
+      if (submit) submit.disabled = true;
+      showStatus('Waiting for your passkey…', 'pending');
+      try {
+        const optionsResponse = await fetch('/api/account?action=passkey&op=authentication-options', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(captchaToken ? { 'X-Turnstile-Token': captchaToken } : {}),
+          },
+          body: '{}',
+        });
+        const optionsBody = await optionsResponse.json().catch(() => ({}));
+        if (!optionsResponse.ok) throw new Error(optionsBody.error || 'Passkey sign-in is unavailable.');
+
+        const credential = await window.USDImpactPasskeys.get(optionsBody.options);
+        const verifyResponse = await fetch('/api/account?action=passkey&op=authentication-verify', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            challengeId: optionsBody.challengeId,
+            credential,
+            next: nextInput?.value || '/account/',
+          }),
+        });
+        const verifyBody = await verifyResponse.json().catch(() => ({}));
+        if (!verifyResponse.ok) throw new Error(verifyBody.error || 'Passkey sign-in failed.');
+
+        showStatus('Passkey accepted. Opening your account…', 'success');
+        window.location.replace(safeNextPath(verifyBody.redirect || nextInput?.value || '/account/'));
+      } catch (error) {
+        const cancelled = error && (error.name === 'NotAllowedError' || error.name === 'AbortError');
+        showStatus(
+          cancelled
+            ? 'Passkey sign-in was cancelled.'
+            : (error instanceof Error ? error.message : 'Passkey sign-in failed.'),
+          'error'
+        );
+      } finally {
+        resetTurnstile();
+        passkeyButton.disabled = false;
+        if (submit) submit.disabled = false;
+      }
+    });
+
     form?.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!emailInput?.value || !submit || !status) return;
 
-      const captchaToken = turnstileContainer
-        ? String(form.querySelector('input[name="cf-turnstile-response"]')?.value || '').trim()
-        : '';
+      const captchaToken = readCaptchaToken();
       if (turnstileContainer && !captchaToken) {
-        status.dataset.state = 'error';
-        status.textContent = 'Complete the security check before requesting a sign-in link.';
+        showStatus('Complete the security check before requesting a sign-in link.', 'error');
         return;
       }
 
       submit.disabled = true;
-      status.dataset.state = 'pending';
-      status.textContent = 'Sending a secure sign-in link…';
+      if (passkeyButton) passkeyButton.disabled = true;
+      showStatus('Sending a secure sign-in link…', 'pending');
 
       try {
         const response = await fetch('/api/auth-login', {
@@ -118,24 +221,20 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
           throw new Error(body.error || 'The sign-in link could not be sent.');
         }
 
-        status.dataset.state = 'success';
-        status.textContent = 'Check your email for the one-time sign-in link.';
+        showStatus('Check your email for the one-time sign-in link.', 'success');
         emailInput.value = '';
       } catch (error) {
-        status.dataset.state = 'error';
-        status.textContent = error instanceof Error
-          ? error.message
-          : 'The sign-in link could not be sent.';
+        showStatus(
+          error instanceof Error ? error.message : 'The sign-in link could not be sent.',
+          'error'
+        );
       } finally {
-        if (turnstileContainer && window.turnstile?.reset) {
-          try {
-            window.turnstile.reset('#account-turnstile');
-          } catch {
-            // The security widget can recover on its own after a navigation or reload.
-          }
-        }
+        resetTurnstile();
         submit.disabled = false;
+        if (passkeyButton) passkeyButton.disabled = false;
       }
     });
+
+    loadPasskeyAvailability();
   </script>
 </BaseLayout>

@@ -1,0 +1,209 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Passkeys | USD Impact"
+  description="Add, review, rename, or remove passkeys for your USD Impact account."
+>
+  <section class="hero account-hero">
+    <div class="container">
+      <p class="eyebrow">Account security</p>
+      <h1>Passkeys.</h1>
+      <p class="lead">Use your device or password manager for phishing-resistant sign-in without a password.</p>
+    </div>
+  </section>
+
+  <main>
+    <div class="container account-shell">
+      <section class="card account-panel" aria-labelledby="passkeys-heading">
+        <h2 id="passkeys-heading">Your passkeys</h2>
+        <p>
+          A passkey can use a fingerprint, face, device PIN, password manager, or hardware security key.
+          Email sign-in remains available as your recovery method.
+        </p>
+        <p id="passkey-status" class="account-status" role="status" aria-live="polite">Checking passkey availability…</p>
+        <div class="button-row account-actions">
+          <button id="add-passkey" class="button primary" type="button" disabled>Add a passkey</button>
+          <a class="button account-secondary" href="/account/">Back to account</a>
+        </div>
+        <div id="passkey-list" class="account-passkey-list" aria-live="polite"></div>
+      </section>
+
+      <section class="card account-panel" aria-labelledby="recovery-heading">
+        <h2 id="recovery-heading">Recovery</h2>
+        <p>
+          Keep email access working even after you add a passkey. For stronger resilience, register passkeys on
+          more than one trusted device or password manager before relying on passkeys as your primary sign-in method.
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <script is:inline src="/assets/passkey-browser.js" defer></script>
+  <script is:inline>
+    const status = document.getElementById('passkey-status');
+    const list = document.getElementById('passkey-list');
+    const addButton = document.getElementById('add-passkey');
+
+    const showStatus = (text, state = '') => {
+      if (!status) return;
+      status.textContent = text;
+      status.dataset.state = state;
+    };
+
+    const api = async (op, { method = 'GET', body } = {}) => {
+      const response = await fetch(`/api/account?action=passkey&op=${encodeURIComponent(op)}`, {
+        method,
+        credentials: 'same-origin',
+        cache: 'no-store',
+        ...(method === 'GET' ? {} : {
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body || {}),
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        const next = encodeURIComponent('/account/passkeys/');
+        window.location.replace(`/account/sign-in/?next=${next}`);
+        throw new Error('Authentication is required.');
+      }
+      if (!response.ok) throw new Error(payload.error || 'Passkey request failed.');
+      return payload;
+    };
+
+    const formatDate = (value) => {
+      if (!value) return 'Never';
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? 'Unavailable' : date.toLocaleString();
+    };
+
+    const renderPasskeys = (passkeys) => {
+      if (!list) return;
+      list.replaceChildren();
+      if (!Array.isArray(passkeys) || passkeys.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'account-help';
+        empty.textContent = 'No passkeys are registered yet.';
+        list.appendChild(empty);
+        return;
+      }
+
+      for (const passkey of passkeys) {
+        const card = document.createElement('div');
+        card.className = 'card account-passkey-item';
+
+        const title = document.createElement('h3');
+        title.textContent = passkey.friendlyName || 'Passkey';
+        card.appendChild(title);
+
+        const details = document.createElement('p');
+        details.className = 'account-help';
+        details.textContent = `Added: ${formatDate(passkey.createdAt)} · Last used: ${formatDate(passkey.lastUsedAt)}`;
+        card.appendChild(details);
+
+        const actions = document.createElement('div');
+        actions.className = 'button-row account-actions';
+
+        const rename = document.createElement('button');
+        rename.className = 'button account-secondary';
+        rename.type = 'button';
+        rename.textContent = 'Rename';
+        rename.addEventListener('click', async () => {
+          const friendlyName = window.prompt('Name this passkey', passkey.friendlyName || 'My passkey');
+          if (friendlyName === null) return;
+          const cleaned = friendlyName.trim();
+          if (!cleaned) return showStatus('Passkey name cannot be empty.', 'error');
+          rename.disabled = true;
+          try {
+            await api('rename', { method: 'POST', body: { passkeyId: passkey.id, friendlyName: cleaned } });
+            showStatus('Passkey renamed.', 'success');
+            await loadPasskeys();
+          } catch (error) {
+            showStatus(error instanceof Error ? error.message : 'Passkey could not be renamed.', 'error');
+          } finally {
+            rename.disabled = false;
+          }
+        });
+        actions.appendChild(rename);
+
+        const remove = document.createElement('button');
+        remove.className = 'button account-secondary';
+        remove.type = 'button';
+        remove.textContent = 'Remove';
+        remove.addEventListener('click', async () => {
+          if (!window.confirm('Remove this passkey? Keep at least one working sign-in or recovery method.')) return;
+          remove.disabled = true;
+          try {
+            await api('delete', { method: 'POST', body: { passkeyId: passkey.id } });
+            showStatus('Passkey removed.', 'success');
+            await loadPasskeys();
+          } catch (error) {
+            showStatus(error instanceof Error ? error.message : 'Passkey could not be removed.', 'error');
+          } finally {
+            remove.disabled = false;
+          }
+        });
+        actions.appendChild(remove);
+
+        card.appendChild(actions);
+        list.appendChild(card);
+      }
+    };
+
+    const loadPasskeys = async () => {
+      const payload = await api('list');
+      renderPasskeys(payload.passkeys);
+      return payload.passkeys;
+    };
+
+    const initialize = async () => {
+      try {
+        const availability = await api('status');
+        if (!availability.enabled) {
+          showStatus('Passkeys are not enabled for this environment yet.', 'pending');
+          return;
+        }
+        if (!window.USDImpactPasskeys?.supported?.()) {
+          showStatus('This browser or device does not support WebAuthn passkeys in the current context.', 'error');
+          return;
+        }
+        addButton.disabled = false;
+        const passkeys = await loadPasskeys();
+        showStatus(
+          passkeys.length ? `${passkeys.length} passkey${passkeys.length === 1 ? '' : 's'} registered.` : 'Ready to add your first passkey.',
+          'success'
+        );
+      } catch (error) {
+        showStatus(error instanceof Error ? error.message : 'Passkey settings could not be loaded.', 'error');
+      }
+    };
+
+    addButton?.addEventListener('click', async () => {
+      if (!window.USDImpactPasskeys?.supported?.()) {
+        return showStatus('Passkeys are not supported by this browser or device.', 'error');
+      }
+      addButton.disabled = true;
+      showStatus('Waiting for your device to create a passkey…', 'pending');
+      try {
+        const options = await api('registration-options', { method: 'POST' });
+        const credential = await window.USDImpactPasskeys.create(options.options);
+        const result = await api('registration-verify', {
+          method: 'POST',
+          body: { challengeId: options.challengeId, credential },
+        });
+        showStatus(`Passkey added${result.passkey?.friendlyName ? `: ${result.passkey.friendlyName}` : ''}.`, 'success');
+        await loadPasskeys();
+      } catch (error) {
+        const cancelled = error && (error.name === 'NotAllowedError' || error.name === 'AbortError');
+        showStatus(
+          cancelled ? 'Passkey registration was cancelled.' : (error instanceof Error ? error.message : 'Passkey could not be added.'),
+          'error'
+        );
+      } finally {
+        addButton.disabled = false;
+      }
+    });
+
+    initialize();
+  </script>
+</BaseLayout>

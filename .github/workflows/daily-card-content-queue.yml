@@ -49,6 +49,7 @@ jobs:
           path: |
             apps/web/artifacts/daily-card-candidates/candidates.json
             apps/web/artifacts/daily-card-glossary-candidates/candidates.json
+            apps/web/artifacts/daily-card-glossary-candidates/review.md
             apps/web/artifacts/daily-card-inventory/coverage.json
             apps/web/artifacts/daily-card-inventory/coverage.md
           if-no-files-found: error

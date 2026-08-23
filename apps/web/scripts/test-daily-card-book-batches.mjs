@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { dailyCardBookBatch01 } from '../src/data/daily-card-book-batch-01.js';
+import { dailyCardBookBatch02 } from '../src/data/daily-card-book-batch-02.js';
 import { dailyCards } from '../src/data/daily-card-catalog.js';
 
 const expectedCollectionById = Object.freeze({
@@ -15,6 +16,16 @@ const expectedCollectionById = Object.freeze({
   'card-lng-contract-transmission': 'asset-transmission',
   'card-gold-not-guaranteed-protection': 'asset-transmission',
   'card-dollar-centrality-1971': 'history-institutions',
+  'card-dxy-broad-divergence': 'core-framework',
+  'card-nominal-real-dollar-index': 'core-framework',
+  'card-wti-futures-curve': 'asset-transmission',
+  'card-opec-effective-supply': 'asset-transmission',
+  'card-gas-storage-seasonality': 'asset-transmission',
+  'card-lng-liquefaction-bottleneck': 'asset-transmission',
+  'card-bitcoin-leverage-liquidations': 'asset-transmission',
+  'card-bitcoin-access-fund-flows': 'asset-transmission',
+  'card-regime-evidence-ladder': 'market-application',
+  'card-regime-time-horizon-invalidation': 'market-application',
 });
 
 function parseFrontmatter(text, sourcePath) {
@@ -35,20 +46,23 @@ function parseFrontmatter(text, sourcePath) {
 }
 
 assert.equal(dailyCardBookBatch01.length, 10, 'Book Batch 01 must remain exactly ten reviewed promotions.');
-assert.deepEqual(new Set(dailyCardBookBatch01.map((card) => card.id)), new Set(Object.keys(expectedCollectionById)), 'Book Batch 01 IDs changed unexpectedly.');
+assert.equal(dailyCardBookBatch02.length, 10, 'Book Batch 02 must remain exactly ten reviewed promotions.');
+const promotedBookCards = [...dailyCardBookBatch01, ...dailyCardBookBatch02];
+assert.equal(promotedBookCards.length, 20, 'Book promotion total must be exactly twenty after Batch 02.');
+assert.deepEqual(new Set(promotedBookCards.map((card) => card.id)), new Set(Object.keys(expectedCollectionById)), 'Book promotion IDs changed unexpectedly.');
 
 const allCardIds = new Set(dailyCards.map((card) => card.id));
 const ids = new Set();
 const slugs = new Set();
 const sourceSectionKeys = new Set();
-for (const card of dailyCardBookBatch01) {
+for (const card of promotedBookCards) {
   assert.equal(ids.has(card.id), false, `${card.id}: duplicate ID.`);
   assert.equal(slugs.has(card.slug), false, `${card.slug}: duplicate slug.`);
   ids.add(card.id);
   slugs.add(card.slug);
 
   assert.equal(card.collectionId, expectedCollectionById[card.id], `${card.id}: collection changed from reviewed taxonomy.`);
-  assert.equal(card.access, 'open', `${card.id}: Book Batch 01 must remain open.`);
+  assert.equal(card.access, 'open', `${card.id}: promoted Book cards must remain open.`);
   assert.equal(card.status, 'ready-for-build', `${card.id}: must remain ready-for-build.`);
   assert.equal(card.lastReviewed, '2026-08-23', `${card.id}: explicit review date changed.`);
   assert.equal(card.sourceNames.includes('USD Impact Book lesson'), true, `${card.id}: must retain Book lesson provenance label.`);
@@ -81,4 +95,7 @@ for (const card of dailyCardBookBatch01) {
 }
 
 assert.equal(dailyCardBookBatch01.find((card) => card.id === 'card-dollar-centrality-1971').collectionId, 'history-institutions', 'The 1971 centrality card must remain in History & Institutions.');
-console.log('Daily Card Book provenance: PASS (10 promoted cards in Batch 01).');
+assert.equal(dailyCardBookBatch02.filter((card) => card.collectionId === 'core-framework').length, 2, 'Book Batch 02 must add exactly two Core Framework cards.');
+assert.equal(dailyCardBookBatch02.filter((card) => card.collectionId === 'asset-transmission').length, 6, 'Book Batch 02 must add exactly six Asset Transmission cards.');
+assert.equal(dailyCardBookBatch02.filter((card) => card.collectionId === 'market-application').length, 2, 'Book Batch 02 must add exactly two Market Application cards.');
+console.log('Daily Card Book provenance: PASS (20 promoted cards across Batches 01-02).');

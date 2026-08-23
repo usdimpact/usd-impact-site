@@ -7,6 +7,8 @@ on:
       - 'apps/web/src/pages/score.astro'
       - 'apps/web/src/data/daily-card-catalog.js'
       - 'apps/web/src/data/daily-card-inventory-plan.js'
+      - 'apps/web/src/data/daily-card-weekly-score-batch-01.js'
+      - 'apps/web/src/data/daily-card-weekly-score-resolutions.js'
       - 'apps/web/scripts/generate-daily-card-weekly-score-candidates.mjs'
       - 'apps/web/scripts/test-daily-card-weekly-score-candidates.mjs'
       - '.github/workflows/daily-card-content-queue.yml'
@@ -36,13 +38,15 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
-      - name: Syntax check Weekly Score review tooling
+      - name: Syntax check Weekly Score editorial tooling
         run: |
+          node --check src/data/daily-card-weekly-score-batch-01.js
+          node --check src/data/daily-card-weekly-score-resolutions.js
           node --check scripts/generate-daily-card-weekly-score-candidates.mjs
           node --check scripts/test-daily-card-weekly-score-candidates.mjs
 
-      - name: Verify Weekly Score review-only contract
+      - name: Verify Weekly Score editorial contract
         run: node scripts/test-daily-card-weekly-score-candidates.mjs
 
-      - name: Validate canonical Daily Cards remain unchanged and valid
+      - name: Validate canonical Daily Cards
         run: node scripts/validate-daily-cards.mjs

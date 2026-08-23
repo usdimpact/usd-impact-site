@@ -20,15 +20,15 @@ const SUGGESTED_COLLECTION_BY_TERM = Object.freeze({
   'risk-off': 'market-application',
   tips: 'rates-liquidity-policy',
   'treasury-yields': 'rates-liquidity-policy',
+  usd: 'core-framework',
+  vix: 'market-application',
   wti: 'asset-transmission',
   xauusd: 'asset-transmission',
 });
 
 function unquote(value) {
   const trimmed = value.trim();
-  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-    return JSON.parse(trimmed);
-  }
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) return JSON.parse(trimmed);
   if (trimmed === 'true') return true;
   if (trimmed === 'false') return false;
   return trimmed;
@@ -91,6 +91,7 @@ const candidates = files.map((fileName) => {
     throw new Error(`${fileName}: ready glossary entry must include title, definition and slug`);
   }
   const collectionId = suggestedCollection(term);
+  const potentialOverlapCardIds = overlapCardIds({ term, title: frontmatter.title, definition: frontmatter.definition });
   return {
     id: `candidate-glossary-${term}`,
     slug: `glossary-${term}`,
@@ -113,18 +114,52 @@ const candidates = files.map((fileName) => {
     sourceNames: ['USD Impact Glossary'],
     sourcePath,
     sourceSlug: frontmatter.slug,
-    potentialOverlapCardIds: overlapCardIds({ term, title: frontmatter.title, definition: frontmatter.definition }),
+    potentialOverlapCardIds,
+    reviewDisposition: potentialOverlapCardIds.length > 0 ? 'resolve-overlap' : 'likely-net-new',
     status: 'review',
     lastReviewed: null,
     productionNote: 'Auto-derived from a ready-for-build USD Impact glossary entry. Resolve overlap, complete editorial fields, verify authoritative external sources where required, and explicitly review before promotion.',
   };
 }).filter(Boolean);
 
+const likelyNetNew = candidates.filter((candidate) => candidate.reviewDisposition === 'likely-net-new');
+const overlaps = candidates.filter((candidate) => candidate.reviewDisposition === 'resolve-overlap');
+const generatedAt = new Date().toISOString();
+
 fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(
   path.join(outputDir, 'candidates.json'),
-  `${JSON.stringify({ generatedAt: new Date().toISOString(), count: candidates.length, candidates }, null, 2)}\n`,
+  `${JSON.stringify({ generatedAt, count: candidates.length, likelyNetNewCount: likelyNetNew.length, overlapCount: overlaps.length, candidates }, null, 2)}\n`,
 );
 
+const reviewMarkdown = [
+  '# Daily Card glossary review queue',
+  '',
+  `Generated: ${generatedAt}`,
+  '',
+  `Ready glossary entries: **${candidates.length}**`,
+  `Likely net-new: **${likelyNetNew.length}**`,
+  `Potential overlaps: **${overlaps.length}**`,
+  '',
+  '## Likely net-new',
+  '',
+  ...(likelyNetNew.length
+    ? likelyNetNew.map((candidate) => `- **${candidate.title}** — ${candidate.collectionId} — ${candidate.sourcePath}`)
+    : ['- None']),
+  '',
+  '## Resolve overlap before promotion',
+  '',
+  ...(overlaps.length
+    ? overlaps.map((candidate) => `- **${candidate.title}** — matches: ${candidate.potentialOverlapCardIds.join(', ')}`)
+    : ['- None']),
+  '',
+  'All entries remain review-only. This heuristic is a triage aid, not editorial approval.',
+  '',
+];
+fs.writeFileSync(path.join(outputDir, 'review.md'), `${reviewMarkdown.join('\n')}\n`);
+
 console.log(`Generated ${candidates.length} review-only Daily Card candidates from ready-for-build glossary entries.`);
-console.log(`Potential-overlap candidates: ${candidates.filter((candidate) => candidate.potentialOverlapCardIds.length > 0).length}.`);
+console.log(`Likely net-new candidates: ${likelyNetNew.length}.`);
+for (const candidate of likelyNetNew) console.log(`NET-NEW: ${candidate.title} -> ${candidate.collectionId}`);
+console.log(`Potential-overlap candidates: ${overlaps.length}.`);
+for (const candidate of overlaps) console.log(`OVERLAP: ${candidate.title} -> ${candidate.potentialOverlapCardIds.join(',')}`);

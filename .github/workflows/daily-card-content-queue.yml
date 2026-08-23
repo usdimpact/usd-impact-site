@@ -105,6 +105,7 @@ jobs:
             apps/web/artifacts/daily-card-daily-news-candidates/resolved.json
             apps/web/artifacts/daily-card-daily-news-candidates/review.md
             apps/web/artifacts/daily-card-catalyst-brief-candidates/candidates.json
+            apps/web/artifacts/daily-card-catalyst-brief-candidates/resolved.json
             apps/web/artifacts/daily-card-catalyst-brief-candidates/review.md
             apps/web/artifacts/daily-card-inventory/coverage.json
             apps/web/artifacts/daily-card-inventory/coverage.md

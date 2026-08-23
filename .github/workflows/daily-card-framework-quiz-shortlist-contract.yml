@@ -1,0 +1,55 @@
+name: Daily Card framework and quiz shortlist contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/content/frameworks/**'
+      - 'apps/web/src/content/quizzes/**'
+      - 'apps/web/src/data/quiz-access-map.json'
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/scripts/generate-daily-card-framework-candidates.mjs'
+      - 'apps/web/scripts/generate-daily-card-quiz-candidates.mjs'
+      - 'apps/web/scripts/rank-daily-card-framework-quiz-candidates.mjs'
+      - '.github/workflows/daily-card-framework-quiz-shortlist-contract.yml'
+      - '.github/workflows/daily-card-content-queue.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/content/frameworks/**'
+      - 'apps/web/src/content/quizzes/**'
+      - 'apps/web/src/data/quiz-access-map.json'
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/scripts/generate-daily-card-framework-candidates.mjs'
+      - 'apps/web/scripts/generate-daily-card-quiz-candidates.mjs'
+      - 'apps/web/scripts/rank-daily-card-framework-quiz-candidates.mjs'
+      - '.github/workflows/daily-card-framework-quiz-shortlist-contract.yml'
+      - '.github/workflows/daily-card-content-queue.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Generate source pools
+        run: |
+          node scripts/generate-daily-card-framework-candidates.mjs
+          node scripts/generate-daily-card-quiz-candidates.mjs
+      - name: Rank deficit shortlist
+        run: node scripts/rank-daily-card-framework-quiz-candidates.mjs
+      - name: Verify shortlist contract
+        run: |
+          test -s artifacts/daily-card-framework-quiz-shortlist/shortlist.json
+          test -s artifacts/daily-card-framework-quiz-shortlist/shortlist.md
+          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-framework-quiz-shortlist/shortlist.json','utf8')); const q=p.quotas; if(q['rates-liquidity-policy']!==7 || q['dollar-funding-stack']!==2 || q['market-application']!==3 || p.selectedCount!==12 || p.selected.length!==12) process.exit(1); const counts={}; const sources={}; const titles=new Set(); for(const c of p.selected){if(c.reviewDisposition!=='likely-net-new' || c.status!=='review' || c.lastReviewed!==null || c.potentialOverlapCardIds.length!==0) process.exit(1); counts[c.suggestedCollectionId]=(counts[c.suggestedCollectionId]||0)+1; sources[c.sourcePath]=(sources[c.sourcePath]||0)+1; const t=c.title.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); if(titles.has(t)) process.exit(1); titles.add(t);} if(Object.values(sources).some(n=>n>p.maxPerSource)) process.exit(1); for(const [id,n] of Object.entries(q)){if(counts[id]!==n) process.exit(1);} if(p.selected.some(c=>c.suggestedCollectionId==='global-dollar-fx')) process.exit(1);"

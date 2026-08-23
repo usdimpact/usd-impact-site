@@ -7,23 +7,42 @@ const accessMapPath = path.resolve('src/data/quiz-access-map.json');
 const outputDir = path.resolve('artifacts/daily-card-quiz-candidates');
 const shortTokens = new Set(['btc', 'cpi', 'dxy', 'lng', 'tga', 'tips', 'usd', 'vix', 'wti']);
 
+const QUIZ_FALLBACK_COLLECTION = Object.freeze({
+  'quiz-dollar-regime-framework': 'market-application',
+  'quiz-dxy-explained': 'core-framework',
+  'quiz-dxy-vs-broad-usd': 'core-framework',
+  'quiz-fx-depreciation-vs-inflation': 'global-dollar-fx',
+  'quiz-start-here': 'core-framework',
+  'quiz-usd-and-bitcoin': 'asset-transmission',
+  'quiz-usd-and-equities': 'asset-transmission',
+  'quiz-usd-and-fx-currency-risk': 'global-dollar-fx',
+  'quiz-usd-and-gold': 'asset-transmission',
+  'quiz-usd-and-lng-natural-gas': 'asset-transmission',
+  'quiz-usd-and-wti': 'asset-transmission',
+  'quiz-what-is-us-dollar': 'core-framework',
+});
+
 function normalize(value) {
   return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
-function slugify(value) {
-  return normalize(value).replace(/\s+/g, '-');
-}
-
 function suggestedCollection(text, quiz) {
-  const haystack = normalize(`${text} ${(quiz.conceptsTested || []).join(' ')}`);
-  if (/real rate|real yield|liquidity|credit spread|volatility|vix|fed funds|funding pressure|financial conditions|stress indicator/.test(haystack)) return 'rates-liquidity-policy';
-  if (/repo|collateral|haircut|dealer balance|fx swap engine|swap line|fima|funding stack/.test(haystack)) return 'dollar-funding-stack';
-  if (/1971|bretton|reserve currency|reserve asset|network effect|monetary history|dollar centrality/.test(haystack)) return 'history-institutions';
-  if (/regime|second signal|confirmation|dominant driver|benchmark selection|interpretation|compliance safe/.test(haystack)) return 'market-application';
-  if (/bitcoin|btc|gold|xau|oil|wti|lng|natural gas|equities|equity|earnings/.test(haystack)) return 'asset-transmission';
-  if (/fx depreciation|currency risk|transaction exposure|translation|hedg|pass through|exchange rate/.test(haystack)) return 'global-dollar-fx';
-  return 'core-framework';
+  // Classify from this candidate's authored title/explanation first. Do not use
+  // quiz-wide conceptsTested here: a quiz can mention real yields, liquidity,
+  // and an asset in different questions, which would otherwise contaminate every
+  // question with the same collection label.
+  const local = normalize(text);
+  if (/repo|collateral|haircut|dealer balance|fx swap engine|swap line|fima|funding stack/.test(local)) return 'dollar-funding-stack';
+  if (/1971|bretton|reserve currency|reserve asset|network effect|monetary history|dollar centrality/.test(local)) return 'history-institutions';
+  if (/real rate|real yield|liquidity|credit spread|volatility|vix|fed funds|funding pressure|financial conditions|stress indicator|opportunity cost/.test(local)) return 'rates-liquidity-policy';
+  if (/fx depreciation|currency risk|transaction exposure|translation|hedg|pass through|exchange rate|currency pair|competitiveness/.test(local)) return 'global-dollar-fx';
+  if (/bitcoin|btc|gold|xau|oil|wti|lng|natural gas|equities|equity|earnings|margin|commodity/.test(local)) return 'asset-transmission';
+  if (/regime|second signal|confirmation|dominant driver|benchmark selection|interpretation|risk appetite|signal noise|cross asset/.test(local)) return 'market-application';
+  if (/dxy|broad usd|dollar index|basket|euro weight|trade weighted|us dollar|global dollar/.test(local)) return 'core-framework';
+
+  const fallback = QUIZ_FALLBACK_COLLECTION[quiz.canonicalId];
+  if (!fallback) throw new Error(`${quiz.canonicalId}: missing quiz fallback collection`);
+  return fallback;
 }
 
 function overlapCardIds(title, excerpt) {
@@ -86,6 +105,7 @@ for (const fileName of files) {
   if (!releasedIds.has(quiz.canonicalId)) continue;
   if (quiz.language !== 'en' || quiz.questionCount !== 10 || !Array.isArray(quiz.questions) || quiz.questions.length !== 10) throw new Error(`${fileName}: released quiz contract is incomplete`);
   if (!quiz.status || !quiz.version || !quiz.title || !quiz.slug || !quiz.relatedLessonUrl) throw new Error(`${fileName}: released quiz provenance metadata incomplete`);
+  if (!QUIZ_FALLBACK_COLLECTION[quiz.canonicalId]) throw new Error(`${fileName}: missing deterministic quiz fallback collection`);
   const answerByQuestion = new Map((quiz.answerKey || []).map((item) => [item.question, item]));
   let sourceCandidateCount = 0;
 
@@ -157,30 +177,35 @@ for (const fileName of files) {
     sourceCandidateCount += 1;
   }
 
-  sources.push({ sourcePath, canonicalId: quiz.canonicalId, title: quiz.title, slug: quiz.slug, status: quiz.status, version: quiz.version, candidateCount: sourceCandidateCount });
+  sources.push({ sourcePath, canonicalId: quiz.canonicalId, title: quiz.title, slug: quiz.slug, status: quiz.status, version: quiz.version, fallbackCollectionId: QUIZ_FALLBACK_COLLECTION[quiz.canonicalId], candidateCount: sourceCandidateCount });
 }
 
 const likelyNetNew = candidates.filter((candidate) => candidate.reviewDisposition === 'likely-net-new');
 const overlaps = candidates.filter((candidate) => candidate.reviewDisposition === 'resolve-overlap');
 const collectionCounts = {};
-for (const candidate of candidates) collectionCounts[candidate.suggestedCollectionId] = (collectionCounts[candidate.suggestedCollectionId] || 0) + 1;
+const netNewCollectionCounts = {};
+for (const candidate of candidates) {
+  collectionCounts[candidate.suggestedCollectionId] = (collectionCounts[candidate.suggestedCollectionId] || 0) + 1;
+  if (candidate.reviewDisposition === 'likely-net-new') netNewCollectionCounts[candidate.suggestedCollectionId] = (netNewCollectionCounts[candidate.suggestedCollectionId] || 0) + 1;
+}
 const generatedAt = new Date().toISOString();
 fs.mkdirSync(outputDir, { recursive: true });
-fs.writeFileSync(path.join(outputDir, 'candidates.json'), `${JSON.stringify({ generatedAt, sourceHierarchyRank: 5, releasedQuizCount: sources.length, candidateCount: candidates.length, likelyNetNewCount: likelyNetNew.length, overlapCount: overlaps.length, collectionCounts, sources, candidates }, null, 2)}\n`);
+fs.writeFileSync(path.join(outputDir, 'candidates.json'), `${JSON.stringify({ generatedAt, classifierVersion: 2, sourceHierarchyRank: 5, releasedQuizCount: sources.length, candidateCount: candidates.length, likelyNetNewCount: likelyNetNew.length, overlapCount: overlaps.length, collectionCounts, netNewCollectionCounts, sources, candidates }, null, 2)}\n`);
 fs.writeFileSync(path.join(outputDir, 'review.md'), `${[
   '# Daily Card Quiz review queue', '',
   `Generated: ${generatedAt}`, '',
+  'Classifier: **v2 candidate-local + quiz fallback**',
   `Released quizzes: **${sources.length}**`,
   `Authored candidates: **${candidates.length}**`,
   `Likely net-new: **${likelyNetNew.length}**`,
   `Potential overlaps: **${overlaps.length}**`, '',
   '## Suggested collection counts', '',
-  ...Object.entries(collectionCounts).sort().map(([id, count]) => `- **${id}** — ${count}`), '',
+  ...Object.entries(collectionCounts).sort().map(([id, count]) => `- **${id}** — ${count} total / ${netNewCollectionCounts[id] || 0} likely net-new`), '',
   '## Quiz sources', '',
-  ...sources.map((source) => `- **${source.title}** — ${source.candidateCount} candidates — ${source.status} ${source.version}`), '',
-  'All candidates remain review-only. Only authored question explanations, practical application interpretations, and common-mistake checkpoints are extracted.', '',
+  ...sources.map((source) => `- **${source.title}** — ${source.candidateCount} candidates — fallback ${source.fallbackCollectionId} — ${source.status} ${source.version}`), '',
+  'All candidates remain review-only. Classification is based on each authored candidate first; quiz topic is used only as fallback.', '',
 ].join('\n')}\n`);
 console.log(`Quiz Daily Card queue: ${sources.length} released quizzes -> ${candidates.length} authored candidates.`);
-console.log(`Likely net-new: ${likelyNetNew.length}; overlaps: ${overlaps.length}.`);
-for (const [id, count] of Object.entries(collectionCounts).sort()) console.log(`QUIZ-COLLECTION: ${id} -> ${count}`);
-for (const source of sources) console.log(`QUIZ-SOURCE: ${source.title} -> ${source.candidateCount}`);
+console.log(`Classifier v2; likely net-new: ${likelyNetNew.length}; overlaps: ${overlaps.length}.`);
+for (const [id, count] of Object.entries(collectionCounts).sort()) console.log(`QUIZ-COLLECTION: ${id} -> ${count} total / ${netNewCollectionCounts[id] || 0} net-new`);
+for (const source of sources) console.log(`QUIZ-SOURCE: ${source.title} -> ${source.candidateCount} (fallback ${source.fallbackCollectionId})`);

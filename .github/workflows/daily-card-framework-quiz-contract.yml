@@ -1,0 +1,60 @@
+name: Daily Card framework and quiz contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/content/frameworks/**'
+      - 'apps/web/src/content/quizzes/**'
+      - 'apps/web/src/data/quiz-access-map.json'
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/scripts/generate-daily-card-framework-candidates.mjs'
+      - 'apps/web/scripts/generate-daily-card-quiz-candidates.mjs'
+      - '.github/workflows/daily-card-framework-quiz-contract.yml'
+      - '.github/workflows/daily-card-content-queue.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/content/frameworks/**'
+      - 'apps/web/src/content/quizzes/**'
+      - 'apps/web/src/data/quiz-access-map.json'
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/scripts/generate-daily-card-framework-candidates.mjs'
+      - 'apps/web/scripts/generate-daily-card-quiz-candidates.mjs'
+      - '.github/workflows/daily-card-framework-quiz-contract.yml'
+      - '.github/workflows/daily-card-content-queue.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Syntax
+        run: |
+          node --check scripts/generate-daily-card-framework-candidates.mjs
+          node --check scripts/generate-daily-card-quiz-candidates.mjs
+      - name: Generate Framework review candidates
+        run: node scripts/generate-daily-card-framework-candidates.mjs
+      - name: Generate Quiz review candidates
+        run: node scripts/generate-daily-card-quiz-candidates.mjs
+      - name: Verify Framework candidate contract
+        run: |
+          test -s artifacts/daily-card-framework-candidates/candidates.json
+          test -s artifacts/daily-card-framework-candidates/review.md
+          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-framework-candidates/candidates.json','utf8')); if(p.sourceHierarchyRank!==4 || p.sourceCount!==3 || p.candidateCount<1 || p.likelyNetNewCount+p.overlapCount!==p.candidateCount) process.exit(1); if(!p.candidates.every(c=>c.status==='review' && c.lastReviewed===null && c.sourceHierarchyRank===4 && c.sourceType==='reviewed-framework-section' && ['published','ready-for-build'].includes(c.sourceStatus) && c.sourcePath.startsWith('src/content/frameworks/') && c.sourceHeading && c.sourceExcerpt && ['likely-net-new','resolve-overlap'].includes(c.reviewDisposition))) process.exit(1); const shells=p.sources.filter(s=>s.candidateCount===0); if(shells.length<1) process.exit(1);"
+      - name: Verify Quiz candidate contract
+        run: |
+          test -s artifacts/daily-card-quiz-candidates/candidates.json
+          test -s artifacts/daily-card-quiz-candidates/review.md
+          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-quiz-candidates/candidates.json','utf8')); if(p.sourceHierarchyRank!==5 || p.releasedQuizCount!==12 || p.candidateCount<120 || p.likelyNetNewCount+p.overlapCount!==p.candidateCount) process.exit(1); if(!p.candidates.every(c=>c.status==='review' && c.lastReviewed===null && c.sourceHierarchyRank===5 && c.sourceType==='released-quiz-authored-explanation' && c.sourcePath.startsWith('src/content/quizzes/en/') && c.sourceExcerpt && c.sourceQuizStatus && c.sourceQuizVersion && ['question-explanation','practical-application','common-mistake-checkpoint'].includes(c.sourceKind) && ['likely-net-new','resolve-overlap'].includes(c.reviewDisposition))) process.exit(1); const ids=p.candidates.map(c=>c.id); if(new Set(ids).size!==ids.length) process.exit(1);"

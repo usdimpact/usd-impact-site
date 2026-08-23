@@ -26,7 +26,7 @@ All four generated records remain:
 - event key, phase, source review date and publisher provenance attached;
 - suggested Open access only because the underlying Catalyst Brief is public.
 
-No canonical Daily Card is added by this change.
+No canonical Daily Card is added by this change. Exact-head CI currently validates the unchanged canonical baseline at **104 / 150 cards**, including **55 publishable Open cards**.
 
 ## Excluded from evergreen candidate prose
 
@@ -40,6 +40,6 @@ The contract rejects event-specific material such as:
 
 ## Next editorial step
 
-After CI generates the Tier 8 review artifact, inspect overlap classifications against the 100-card canonical baseline. Promote only genuinely net-new concepts that improve the remaining collection deficits. Resolve duplicates into the existing catalog rather than creating parallel cards.
+After CI generates the Tier 8 review artifact, inspect overlap classifications against the 104-card canonical baseline. Promote only genuinely net-new concepts that improve the remaining collection deficits. Resolve duplicates into the existing catalog rather than creating parallel cards.
 
 Large-scale email, Telegram, WhatsApp, commerce, authentication, entitlement and Production delivery flags remain outside this task.

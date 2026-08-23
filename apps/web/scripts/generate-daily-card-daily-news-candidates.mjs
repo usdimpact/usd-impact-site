@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { dailyCards } from '../src/data/daily-card-catalog.js';
 import { dailyCardInventoryTargets } from '../src/data/daily-card-inventory-plan.js';
+import { dailyCardDailyNewsResolutions } from '../src/data/daily-card-daily-news-resolutions.js';
 
 const outputDir = path.resolve('artifacts/daily-card-daily-news-candidates');
 const evidenceFiles = [
@@ -159,7 +160,7 @@ const deficits = Object.fromEntries(Object.entries(dailyCardInventoryTargets).ma
   Math.max(0, target - (counts[collectionId] || 0)),
 ]));
 
-const candidates = templates.map((template) => {
+const allCandidates = templates.map((template) => {
   const evidence = template.evidence.map(([fileName]) => editions.get(fileName));
   const potentialOverlapCardIds = overlapCardIds(template.title, template.concepts);
   return {
@@ -189,9 +190,38 @@ const candidates = templates.map((template) => {
   };
 });
 
-const generatedAt = new Date().toISOString();
+const templateIds = new Set(templates.map((template) => template.id));
+const resolutionByCandidateId = new Map();
+for (const resolution of dailyCardDailyNewsResolutions) {
+  if (!templateIds.has(resolution.candidateId)) throw new Error(`Daily USD Impact resolution references unknown candidate ${resolution.candidateId}.`);
+  if (resolutionByCandidateId.has(resolution.candidateId)) throw new Error(`Duplicate Daily USD Impact resolution for ${resolution.candidateId}.`);
+  if (!['promoted', 'resolved-overlap'].includes(resolution.disposition)) throw new Error(`${resolution.candidateId}: invalid Daily USD Impact resolution disposition.`);
+  if (resolution.disposition === 'promoted') {
+    const card = dailyCards.find((item) => item.id === resolution.canonicalCardId);
+    if (!card) throw new Error(`${resolution.candidateId}: promoted canonical card ${resolution.canonicalCardId} does not exist.`);
+    if (card.access !== 'open') throw new Error(`${resolution.candidateId}: Daily USD Impact promotion must remain Open access.`);
+  } else if (!dailyCards.some((card) => card.id === resolution.primaryCardId)) {
+    throw new Error(`${resolution.candidateId}: overlap primary card ${resolution.primaryCardId} does not exist.`);
+  }
+  resolutionByCandidateId.set(resolution.candidateId, resolution);
+}
+
+const candidates = allCandidates.filter((candidate) => !resolutionByCandidateId.has(candidate.id));
+const resolved = allCandidates.filter((candidate) => resolutionByCandidateId.has(candidate.id)).map((candidate) => ({
+  candidateId: candidate.id,
+  candidateTitle: candidate.title,
+  sourceHierarchyRank: candidate.sourceHierarchyRank,
+  sourceType: candidate.sourceType,
+  sourceEvidenceCount: candidate.sourceEvidenceCount,
+  sourcePaths: candidate.sourcePaths,
+  ...resolutionByCandidateId.get(candidate.id),
+}));
+const promoted = resolved.filter((item) => item.disposition === 'promoted');
+const resolvedOverlaps = resolved.filter((item) => item.disposition === 'resolved-overlap');
 const likelyNetNew = candidates.filter((candidate) => candidate.reviewDisposition === 'likely-net-new');
 const overlaps = candidates.filter((candidate) => candidate.reviewDisposition === 'resolve-overlap');
+const generatedAt = new Date().toISOString();
+
 const output = {
   generatedAt,
   sourceHierarchyRank: 7,
@@ -200,33 +230,56 @@ const output = {
   reviewedEditionPaths: [...editions.values()].map((edition) => edition.sourcePath),
   currentCollectionCounts: counts,
   currentCollectionDeficits: deficits,
+  totalMethodologyConceptCount: allCandidates.length,
+  accountedForCount: resolved.length,
+  promotedCount: promoted.length,
+  resolvedOverlapCount: resolvedOverlaps.length,
   candidateCount: candidates.length,
   likelyNetNewCount: likelyNetNew.length,
   overlapCount: overlaps.length,
   candidates,
 };
 
+const resolvedOutput = {
+  generatedAt,
+  sourceHierarchyRank: 7,
+  sourceType: 'daily-usd-impact-methodology',
+  totalMethodologyConceptCount: allCandidates.length,
+  accountedForCount: resolved.length,
+  promotedCount: promoted.length,
+  resolvedOverlapCount: resolvedOverlaps.length,
+  resolutions: resolved,
+};
+
 fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(path.join(outputDir, 'candidates.json'), `${JSON.stringify(output, null, 2)}\n`);
+fs.writeFileSync(path.join(outputDir, 'resolved.json'), `${JSON.stringify(resolvedOutput, null, 2)}\n`);
 fs.writeFileSync(path.join(outputDir, 'review.md'), `${[
   '# Daily USD Impact Daily Card review queue', '',
   `Generated: ${generatedAt}`, '',
   `Reviewed published Daily editions: **${editions.size}**`,
-  `Recurring evergreen methodology candidates: **${candidates.length}**`,
-  `Likely net-new: **${likelyNetNew.length}**`,
-  `Potential overlaps: **${overlaps.length}**`, '',
+  `Recurring evergreen methodology concepts: **${allCandidates.length}**`,
+  `Accounted for: **${resolved.length}**`,
+  `Promoted: **${promoted.length}**`,
+  `Resolved as overlap: **${resolvedOverlaps.length}**`,
+  `Remaining review candidates: **${candidates.length}**`, '',
   '## Source boundary', '',
   '- Hierarchy tier: **7 — Daily USD Impact**',
-  '- Suggested access: **Open** because the source editions are public.',
-  '- Each candidate must be supported by at least three published editions.',
+  '- Source access is **Open** because the source editions are public.',
+  '- Each methodology concept is supported by at least three published editions.',
   '- Edition-specific dates, values, event outcomes, forecasts and market moves are not eligible for evergreen promotion.', '',
-  '## Candidates', '',
-  ...candidates.map((candidate) => `- **${candidate.title}** — ${candidate.suggestedCollectionId} — ${candidate.reviewDisposition} — evidence ${candidate.sourceEvidenceCount}`), '',
-  'All candidates remain `status: review` and `lastReviewed: null` until explicit editorial/source review.', '',
+  '## Editorial resolutions', '',
+  ...resolved.map((item) => `- **${item.candidateTitle}** — ${item.disposition}${item.canonicalCardId ? ` -> ${item.canonicalCardId}` : ` -> ${item.primaryCardId}`}`), '',
+  '## Remaining candidates', '',
+  ...(candidates.length ? candidates.map((candidate) => `- **${candidate.title}** — ${candidate.suggestedCollectionId} — ${candidate.reviewDisposition} — evidence ${candidate.sourceEvidenceCount}`) : ['- None. Tier 7 is fully accounted for.']), '',
+  'Any future Daily-derived concept remains review-only until explicit editorial/source review.', '',
 ].join('\n')}\n`);
 
-console.log(`Daily USD Impact Daily Card queue: ${editions.size} reviewed editions -> ${candidates.length} recurring methodology candidates.`);
-console.log(`Likely net-new: ${likelyNetNew.length}; overlaps: ${overlaps.length}.`);
+console.log(`Daily USD Impact Daily Card tier: ${editions.size} reviewed editions -> ${allCandidates.length} recurring methodology concepts.`);
+console.log(`Accounted for: ${resolved.length}; promoted: ${promoted.length}; overlap resolutions: ${resolvedOverlaps.length}; remaining review candidates: ${candidates.length}.`);
+for (const item of resolved) {
+  console.log(`DAILY-NEWS-RESOLUTION: ${item.candidateTitle} -> ${item.disposition} [${item.canonicalCardId || item.primaryCardId}]`);
+}
 for (const candidate of candidates) {
   console.log(`DAILY-NEWS-CANDIDATE: ${candidate.title} -> ${candidate.suggestedCollectionId} [${candidate.reviewDisposition}]`);
 }

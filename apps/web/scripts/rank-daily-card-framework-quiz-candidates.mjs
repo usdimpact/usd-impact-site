@@ -4,12 +4,10 @@ import path from 'node:path';
 const frameworkPath = path.resolve('artifacts/daily-card-framework-candidates/candidates.json');
 const quizPath = path.resolve('artifacts/daily-card-quiz-candidates/candidates.json');
 const outputDir = path.resolve('artifacts/daily-card-framework-quiz-shortlist');
-
-const quotas = Object.freeze({
-  'rates-liquidity-policy': 7,
-  'market-application': 5,
-});
+const batchSize = 12;
+const preferredRatesMax = 5;
 const maxPerSource = 2;
+const allowedCollections = new Set(['rates-liquidity-policy', 'market-application']);
 
 for (const required of [frameworkPath, quizPath]) {
   if (!fs.existsSync(required)) throw new Error(`Missing candidate artifact: ${required}`);
@@ -57,7 +55,7 @@ function specificityScore(candidate) {
 
 const eligible = combined
   .filter((candidate) => candidate.reviewDisposition === 'likely-net-new')
-  .filter((candidate) => Object.hasOwn(quotas, candidate.suggestedCollectionId))
+  .filter((candidate) => allowedCollections.has(candidate.suggestedCollectionId))
   .filter((candidate) => !genericTitle(candidate.title))
   .map((candidate) => ({ ...candidate, score: specificityScore(candidate) }))
   .sort((a, b) => b.score - a.score || a.sourcePath.localeCompare(b.sourcePath) || a.title.localeCompare(b.title));
@@ -66,41 +64,53 @@ const selected = [];
 const selectedIds = new Set();
 const selectedTitles = new Set();
 const perSource = new Map();
-const perCollection = Object.fromEntries(Object.keys(quotas).map((id) => [id, 0]));
+const perCollection = { 'rates-liquidity-policy': 0, 'market-application': 0 };
 
-for (const collectionId of Object.keys(quotas)) {
-  while (perCollection[collectionId] < quotas[collectionId]) {
-    let best = null;
-    let bestScore = -Infinity;
-    for (const candidate of eligible) {
-      if (candidate.suggestedCollectionId !== collectionId || selectedIds.has(candidate.id)) continue;
-      const titleKey = normalize(candidate.title);
-      if (selectedTitles.has(titleKey)) continue;
-      const sourceCount = perSource.get(candidate.sourcePath) || 0;
-      if (sourceCount >= maxPerSource) continue;
-      const diversityBonus = sourceCount === 0 ? 8 : 0;
-      const adjustedScore = candidate.score + diversityBonus;
-      if (!best || adjustedScore > bestScore || (adjustedScore === bestScore && candidate.id.localeCompare(best.id) < 0)) {
-        best = candidate;
-        bestScore = adjustedScore;
-      }
+function selectBest(collectionId) {
+  let best = null;
+  let bestScore = -Infinity;
+  for (const candidate of eligible) {
+    if (candidate.suggestedCollectionId !== collectionId || selectedIds.has(candidate.id)) continue;
+    const titleKey = normalize(candidate.title);
+    if (selectedTitles.has(titleKey)) continue;
+    const sourceCount = perSource.get(candidate.sourcePath) || 0;
+    if (sourceCount >= maxPerSource) continue;
+    const diversityBonus = sourceCount === 0 ? 8 : 0;
+    const adjustedScore = candidate.score + diversityBonus;
+    if (!best || adjustedScore > bestScore || (adjustedScore === bestScore && candidate.id.localeCompare(best.id) < 0)) {
+      best = candidate;
+      bestScore = adjustedScore;
     }
-    if (!best) throw new Error(`Insufficient eligible candidates for ${collectionId}: selected ${perCollection[collectionId]} of ${quotas[collectionId]}`);
-    selected.push({ ...best, adjustedScore: bestScore, shortlistRank: selected.length + 1 });
-    selectedIds.add(best.id);
-    selectedTitles.add(normalize(best.title));
-    perSource.set(best.sourcePath, (perSource.get(best.sourcePath) || 0) + 1);
-    perCollection[collectionId] += 1;
+  }
+  if (!best) return false;
+  selected.push({ ...best, adjustedScore: bestScore, shortlistRank: selected.length + 1 });
+  selectedIds.add(best.id);
+  selectedTitles.add(normalize(best.title));
+  perSource.set(best.sourcePath, (perSource.get(best.sourcePath) || 0) + 1);
+  perCollection[collectionId] += 1;
+  return true;
+}
+
+while (perCollection['rates-liquidity-policy'] < preferredRatesMax) {
+  if (!selectBest('rates-liquidity-policy')) break;
+}
+while (selected.length < batchSize) {
+  if (!selectBest('market-application')) {
+    throw new Error(`Insufficient eligible Market Application candidates: selected ${selected.length} of ${batchSize} total.`);
   }
 }
 
+const quotas = Object.freeze({ ...perCollection });
 const generatedAt = new Date().toISOString();
 fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(path.join(outputDir, 'shortlist.json'), `${JSON.stringify({
   generatedAt,
   classifierVersion: quiz.classifierVersion,
+  batchSize,
+  preferredRatesMax,
   quotas,
   maxPerSource,
+  promotedQuizSourceCount: quiz.promotedSourceCount || 0,
   deferredCollections: {
     'dollar-funding-stack': 'No genuine Tier-4/Tier-5 source candidates remain after classifier v4; defer to reviewed funding-plumbing source material.',
   },
@@ -114,12 +124,14 @@ fs.writeFileSync(path.join(outputDir, 'shortlist.md'), `${[
   '# Daily Card Framework + Quiz deficit shortlist', '',
   `Generated: ${generatedAt}`, '',
   `Quiz classifier: **v${quiz.classifierVersion}**`,
+  `Promoted Quiz identities excluded: **${quiz.promotedSourceCount || 0}**`,
   `Framework candidates: **${framework.candidateCount}**`,
-  `Quiz candidates: **${quiz.candidateCount}**`,
+  `Quiz candidates remaining: **${quiz.candidateCount}**`,
   `Eligible targeted net-new candidates: **${eligible.length}**`,
   `Recommended batch: **${selected.length}**`, '',
-  '## Fixed high-value allocation', '',
-  ...Object.entries(quotas).map(([id, count]) => `- **${id}** — ${count}`), '',
+  '## Adaptive high-value allocation', '',
+  `- **rates-liquidity-policy** — ${perCollection['rates-liquidity-policy']} (up to ${preferredRatesMax})`,
+  `- **market-application** — ${perCollection['market-application']} (fills the ${batchSize}-item batch)`, '',
   '## Deferred deficit', '',
   '- **dollar-funding-stack** — no genuine Framework/Quiz source candidates after classifier v4; use reviewed funding-plumbing sources instead of forcing weak taxonomy.', '',
   '## Recommended review order', '',
@@ -128,6 +140,8 @@ fs.writeFileSync(path.join(outputDir, 'shortlist.md'), `${[
 ].join('\n')}\n`);
 
 console.log(`Framework/Quiz shortlist: ${selected.length} selected from ${eligible.length} targeted likely-net-new candidates.`);
-for (const [id, count] of Object.entries(quotas)) console.log(`SHORTLIST-QUOTA: ${id} -> ${count}`);
+console.log(`SHORTLIST-QUOTA: rates-liquidity-policy -> ${perCollection['rates-liquidity-policy']} (cap ${preferredRatesMax})`);
+console.log(`SHORTLIST-QUOTA: market-application -> ${perCollection['market-application']}`);
+console.log(`SHORTLIST-PROMOTED-EXCLUDED: ${quiz.promotedSourceCount || 0}`);
 console.log('SHORTLIST-DEFER: dollar-funding-stack -> no genuine Tier-4/Tier-5 candidates');
 for (const candidate of selected) console.log(`SHORTLIST ${candidate.shortlistRank}: ${candidate.title} | ${candidate.suggestedCollectionId} | ${candidate.origin} | ${candidate.sourcePath} | ${candidate.sourceLocator || candidate.sourceHeading || ''} | score=${candidate.adjustedScore}`);

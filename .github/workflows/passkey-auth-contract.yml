@@ -1,0 +1,53 @@
+name: Passkey auth contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/api/account.js'
+      - 'apps/web/src/lib/supabase-auth.js'
+      - 'apps/web/src/lib/supabase-passkey.js'
+      - 'apps/web/src/lib/passkey-handler.js'
+      - 'apps/web/public/assets/passkey-browser.js'
+      - 'apps/web/src/pages/account/sign-in/index.astro'
+      - 'apps/web/src/pages/account/passkeys/**'
+      - 'apps/web/scripts/test-supabase-auth.mjs'
+      - 'apps/web/scripts/test-supabase-passkey.mjs'
+      - '.github/workflows/passkey-auth-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Syntax check passkey gateway
+        run: |
+          node --check src/lib/supabase-passkey.js
+          node --check src/lib/passkey-handler.js
+          node --check public/assets/passkey-browser.js
+          node --check api/account.js
+          node --check scripts/test-supabase-passkey.mjs
+
+      - name: Verify passkey gateway contract
+        run: node scripts/test-supabase-passkey.mjs
+
+      - name: Re-run passwordless auth regression contract
+        run: node scripts/test-supabase-auth.mjs

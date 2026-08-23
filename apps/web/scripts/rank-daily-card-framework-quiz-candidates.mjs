@@ -6,8 +6,8 @@ const quizPath = path.resolve('artifacts/daily-card-quiz-candidates/candidates.j
 const outputDir = path.resolve('artifacts/daily-card-framework-quiz-shortlist');
 
 const quotas = Object.freeze({
-  'rates-liquidity-policy': 8,
-  'market-application': 4,
+  'rates-liquidity-policy': 7,
+  'market-application': 5,
 });
 const maxPerSource = 2;
 
@@ -42,7 +42,7 @@ function specificityScore(candidate) {
   const words = title.trim().split(/\s+/).filter(Boolean);
   let score = 0;
   if (words.length >= 2 && words.length <= 10) score += 10;
-  if (/\b(real yield|liquidity|credit|volatility|confirmation|driver|benchmark|stress|rate|risk|monitoring|discipline|regime)\b/i.test(title)) score += 10;
+  if (/\b(real yield|liquidity|credit|volatility|confirmation|driver|benchmark|stress|rate|risk|monitoring|discipline|regime|signal|mistake)\b/i.test(title)) score += 10;
   if (/[?:]/.test(title)) score += 2;
   if (candidate.origin === 'framework') score += 22;
   if (candidate.sourceKind === 'question-explanation') score += 10;
@@ -98,10 +98,11 @@ const generatedAt = new Date().toISOString();
 fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(path.join(outputDir, 'shortlist.json'), `${JSON.stringify({
   generatedAt,
+  classifierVersion: quiz.classifierVersion,
   quotas,
   maxPerSource,
   deferredCollections: {
-    'dollar-funding-stack': 'No genuine Tier-4/Tier-5 source candidates remain after classifier v3; defer to reviewed funding-plumbing source material.',
+    'dollar-funding-stack': 'No genuine Tier-4/Tier-5 source candidates remain after classifier v4; defer to reviewed funding-plumbing source material.',
   },
   frameworkCandidateCount: framework.candidateCount,
   quizCandidateCount: quiz.candidateCount,
@@ -112,6 +113,7 @@ fs.writeFileSync(path.join(outputDir, 'shortlist.json'), `${JSON.stringify({
 fs.writeFileSync(path.join(outputDir, 'shortlist.md'), `${[
   '# Daily Card Framework + Quiz deficit shortlist', '',
   `Generated: ${generatedAt}`, '',
+  `Quiz classifier: **v${quiz.classifierVersion}**`,
   `Framework candidates: **${framework.candidateCount}**`,
   `Quiz candidates: **${quiz.candidateCount}**`,
   `Eligible targeted net-new candidates: **${eligible.length}**`,
@@ -119,7 +121,7 @@ fs.writeFileSync(path.join(outputDir, 'shortlist.md'), `${[
   '## Fixed high-value allocation', '',
   ...Object.entries(quotas).map(([id, count]) => `- **${id}** — ${count}`), '',
   '## Deferred deficit', '',
-  '- **dollar-funding-stack** — no genuine Framework/Quiz source candidates after classifier v3; use reviewed funding-plumbing sources instead of forcing weak taxonomy.', '',
+  '- **dollar-funding-stack** — no genuine Framework/Quiz source candidates after classifier v4; use reviewed funding-plumbing sources instead of forcing weak taxonomy.', '',
   '## Recommended review order', '',
   ...selected.map((candidate) => `${candidate.shortlistRank}. **${candidate.title}** — ${candidate.suggestedCollectionId} — ${candidate.origin} — ${candidate.sourcePath} — score ${candidate.adjustedScore}`), '',
   'This shortlist is review prioritization only. Every selected item remains status=review and requires editorial inspection before promotion.', '',

@@ -87,6 +87,7 @@ jobs:
             apps/web/artifacts/daily-card-funding-decomposition/resolved.json
             apps/web/artifacts/daily-card-funding-decomposition/review.md
             apps/web/artifacts/daily-card-history-manuscript/candidates.json
+            apps/web/artifacts/daily-card-history-manuscript/resolved.json
             apps/web/artifacts/daily-card-history-manuscript/review.md
             apps/web/artifacts/daily-card-inventory/coverage.json
             apps/web/artifacts/daily-card-inventory/coverage.md

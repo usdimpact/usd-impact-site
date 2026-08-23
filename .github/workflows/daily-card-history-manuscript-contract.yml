@@ -5,7 +5,10 @@ on:
     paths:
       - 'apps/web/src/data/daily-card-catalog.js'
       - 'apps/web/src/data/daily-card-history-manuscript-candidates.js'
+      - 'apps/web/src/data/daily-card-history-manuscript-resolutions.js'
+      - 'apps/web/src/data/daily-card-history-primary-batch-*.js'
       - 'apps/web/scripts/generate-daily-card-history-manuscript-candidates.mjs'
+      - 'apps/web/scripts/test-daily-card-history-primary-batches.mjs'
       - '.github/workflows/daily-card-history-manuscript-contract.yml'
       - '.github/workflows/daily-card-content-queue.yml'
   push:
@@ -13,7 +16,10 @@ on:
     paths:
       - 'apps/web/src/data/daily-card-catalog.js'
       - 'apps/web/src/data/daily-card-history-manuscript-candidates.js'
+      - 'apps/web/src/data/daily-card-history-manuscript-resolutions.js'
+      - 'apps/web/src/data/daily-card-history-primary-batch-*.js'
       - 'apps/web/scripts/generate-daily-card-history-manuscript-candidates.mjs'
+      - 'apps/web/scripts/test-daily-card-history-primary-batches.mjs'
       - '.github/workflows/daily-card-history-manuscript-contract.yml'
       - '.github/workflows/daily-card-content-queue.yml'
 
@@ -37,11 +43,17 @@ jobs:
       - name: Syntax
         run: |
           node --check src/data/daily-card-history-manuscript-candidates.js
+          node --check src/data/daily-card-history-manuscript-resolutions.js
+          node --check src/data/daily-card-history-primary-batch-01.js
           node --check scripts/generate-daily-card-history-manuscript-candidates.mjs
+          node --check scripts/test-daily-card-history-primary-batches.mjs
+      - name: Verify primary-source History promotions
+        run: node scripts/test-daily-card-history-primary-batches.mjs
       - name: Generate History manuscript review queue
         run: node scripts/generate-daily-card-history-manuscript-candidates.mjs
       - name: Verify History manuscript contract
         run: |
           test -s artifacts/daily-card-history-manuscript/candidates.json
+          test -s artifacts/daily-card-history-manuscript/resolved.json
           test -s artifacts/daily-card-history-manuscript/review.md
-          node --input-type=module -e "import fs from 'node:fs'; import { dailyCards } from './src/data/daily-card-catalog.js'; const p=JSON.parse(fs.readFileSync('artifacts/daily-card-history-manuscript/candidates.json','utf8')); if(p.sourceHierarchyRank!==3 || p.sourceType!=='certified-book-manuscript' || p.targetCollectionId!=='history-institutions' || p.targetCount!==10 || p.currentCanonicalCount!==3 || p.candidateCount!==7 || p.candidates.length!==7) process.exit(1); if(p.source.driveFileId!=='1vpdg9zMAl86mya1BVJKHYy5_kZ9VNmdi' || !p.source.driveTitle.includes('Session15A_Certified') || !p.source.chapter.includes('Bretton Woods to Fiat Discipline')) process.exit(1); const history=dailyCards.filter(c=>c.collectionId==='history-institutions'&&c.status==='ready-for-build'); if(history.length!==3) process.exit(1); const ids=new Set(), titles=new Set(); for(const c of p.candidates){if(c.status!=='review'||c.lastReviewed!==null||c.reviewDisposition!=='primary-source-verification-required'||c.suggestedCollectionId!=='history-institutions'||c.suggestedAccess!=='open'||c.sourceHierarchyRank!==3||c.sourceType!=='certified-book-manuscript'||c.sourceDriveFileId!==p.source.driveFileId||!c.sourceSection||!c.sourceSummary||c.sourceSummary.length<40) process.exit(1); if(ids.has(c.id)) process.exit(1); ids.add(c.id); const t=c.title.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); if(titles.has(t)) process.exit(1); titles.add(t);}"
+          node --input-type=module -e "import fs from 'node:fs'; import { dailyCards } from './src/data/daily-card-catalog.js'; const p=JSON.parse(fs.readFileSync('artifacts/daily-card-history-manuscript/candidates.json','utf8')); const r=JSON.parse(fs.readFileSync('artifacts/daily-card-history-manuscript/resolved.json','utf8')); if(p.sourceHierarchyRank!==3 || p.sourceType!=='certified-book-manuscript' || p.targetCollectionId!=='history-institutions' || p.targetCount!==10 || p.currentCanonicalCount!==10 || p.originalCandidateCount!==7 || p.resolvedCount!==7 || p.candidateCount!==0 || p.candidates.length!==0 || r.count!==7 || r.resolutions.length!==7) process.exit(1); if(p.source.driveFileId!=='1vpdg9zMAl86mya1BVJKHYy5_kZ9VNmdi' || !p.source.driveTitle.includes('Session15A_Certified') || !p.source.chapter.includes('Bretton Woods to Fiat Discipline')) process.exit(1); const history=dailyCards.filter(c=>c.collectionId==='history-institutions'&&c.status==='ready-for-build'); if(history.length!==10 || history.filter(c=>c.access==='open').length!==10) process.exit(1); const resolvedIds=new Set(); for(const x of r.resolutions){if(x.resolution!=='promoted'||resolvedIds.has(x.candidateId)||!x.cardTitle||!x.cardSlug||!Array.isArray(x.sourceUrls)||x.sourceUrls.length<2) process.exit(1); resolvedIds.add(x.candidateId); const card=dailyCards.find(c=>c.id===x.cardId); if(!card||card.collectionId!=='history-institutions'||card.access!=='open'||card.status!=='ready-for-build'||card.sourceCandidateId!==x.candidateId||card.sourceDriveFileId!==p.source.driveFileId) process.exit(1);}"

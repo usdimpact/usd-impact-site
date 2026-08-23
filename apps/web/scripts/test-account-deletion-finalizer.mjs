@@ -20,10 +20,11 @@ assert.deepEqual(finalizerRewrite, {
   destination: '/api/account?action=deletion-finalizer',
 });
 const configuredCrons = Array.isArray(vercelConfig.crons) ? vercelConfig.crons : [];
-assert.equal(
-  configuredCrons.some((entry) => entry.path === '/api/account-deletion-finalizer'),
-  false,
-  'Account deletion finalizer must not be scheduled by vercel.json.',
+const finalizerCrons = configuredCrons.filter((entry) => entry.path === '/api/account-deletion-finalizer');
+assert.deepEqual(
+  finalizerCrons,
+  [{ path: '/api/account-deletion-finalizer', schedule: '20 4 * * *' }],
+  'Account deletion finalizer must have exactly one bounded daily Vercel scheduler.',
 );
 
 const environment = Object.freeze({

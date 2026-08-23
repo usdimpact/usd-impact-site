@@ -1,0 +1,32 @@
+name: Account deletion scheduler contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/vercel.json'
+      - 'apps/web/scripts/test-account-deletion-scheduler-contract.mjs'
+      - '.github/workflows/account-deletion-scheduler-contract.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/web/vercel.json'
+      - 'apps/web/scripts/test-account-deletion-scheduler-contract.mjs'
+      - '.github/workflows/account-deletion-scheduler-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  scheduler-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22.16.0'
+      - name: Verify bounded scheduler configuration
+        run: node apps/web/scripts/test-account-deletion-scheduler-contract.mjs

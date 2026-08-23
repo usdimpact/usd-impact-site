@@ -93,6 +93,7 @@ jobs:
             apps/web/artifacts/daily-card-history-manuscript/resolved.json
             apps/web/artifacts/daily-card-history-manuscript/review.md
             apps/web/artifacts/daily-card-weekly-score-candidates/candidates.json
+            apps/web/artifacts/daily-card-weekly-score-candidates/resolved.json
             apps/web/artifacts/daily-card-weekly-score-candidates/review.md
             apps/web/artifacts/daily-card-inventory/coverage.json
             apps/web/artifacts/daily-card-inventory/coverage.md

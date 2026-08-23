@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { dailyCards } from '../src/data/daily-card-catalog.js';
 import { dailyCardInventoryTargets } from '../src/data/daily-card-inventory-plan.js';
+import { dailyCardWeeklyScoreResolutions } from '../src/data/daily-card-weekly-score-resolutions.js';
 
 const reportsDir = path.resolve('src/content/weekly-reports');
 const scorePagePath = path.resolve('src/pages/score.astro');
@@ -201,7 +202,7 @@ const deficits = Object.fromEntries(Object.entries(dailyCardInventoryTargets).ma
 const sourcePaths = reports.map((report) => report.sourcePath);
 const sourcePeriodEnds = reports.map((report) => report.periodEnd);
 const sourceLastReviewed = reports.map((report) => report.lastReviewed);
-const candidates = templates.map((template) => {
+const allCandidates = templates.map((template) => {
   const potentialOverlapCardIds = overlapCardIds(template.title, template.concepts);
   return {
     ...template,
@@ -222,9 +223,36 @@ const candidates = templates.map((template) => {
   };
 });
 
-const generatedAt = new Date().toISOString();
+const templateIds = new Set(templates.map((template) => template.id));
+const resolutionByCandidateId = new Map();
+for (const resolution of dailyCardWeeklyScoreResolutions) {
+  if (!templateIds.has(resolution.candidateId)) throw new Error(`Weekly Score resolution references unknown candidate ${resolution.candidateId}.`);
+  if (resolutionByCandidateId.has(resolution.candidateId)) throw new Error(`Duplicate Weekly Score resolution for ${resolution.candidateId}.`);
+  if (!['promoted', 'resolved-overlap'].includes(resolution.disposition)) throw new Error(`${resolution.candidateId}: invalid Weekly Score resolution disposition.`);
+  if (resolution.disposition === 'promoted') {
+    if (!dailyCards.some((card) => card.id === resolution.canonicalCardId)) throw new Error(`${resolution.candidateId}: promoted canonical card ${resolution.canonicalCardId} does not exist.`);
+  } else if (!dailyCards.some((card) => card.id === resolution.primaryCardId)) {
+    throw new Error(`${resolution.candidateId}: overlap primary card ${resolution.primaryCardId} does not exist.`);
+  }
+  resolutionByCandidateId.set(resolution.candidateId, resolution);
+}
+
+const candidates = allCandidates.filter((candidate) => !resolutionByCandidateId.has(candidate.id));
+const resolved = allCandidates.filter((candidate) => resolutionByCandidateId.has(candidate.id)).map((candidate) => ({
+  candidateId: candidate.id,
+  candidateTitle: candidate.title,
+  sourceHierarchyRank: candidate.sourceHierarchyRank,
+  sourceType: candidate.sourceType,
+  sourceEvidenceCount: candidate.sourceEvidenceCount,
+  sourcePaths: candidate.sourcePaths,
+  ...resolutionByCandidateId.get(candidate.id),
+}));
+const promoted = resolved.filter((item) => item.disposition === 'promoted');
+const resolvedOverlaps = resolved.filter((item) => item.disposition === 'resolved-overlap');
 const likelyNetNew = candidates.filter((candidate) => candidate.reviewDisposition === 'likely-net-new');
 const overlaps = candidates.filter((candidate) => candidate.reviewDisposition === 'resolve-overlap');
+const generatedAt = new Date().toISOString();
+
 const output = {
   generatedAt,
   sourceHierarchyRank: 6,
@@ -234,35 +262,56 @@ const output = {
   sourcePeriodEnds,
   currentCollectionCounts: counts,
   currentCollectionDeficits: deficits,
+  totalMethodologyConceptCount: allCandidates.length,
+  accountedForCount: resolved.length,
+  promotedCount: promoted.length,
+  resolvedOverlapCount: resolvedOverlaps.length,
   candidateCount: candidates.length,
   likelyNetNewCount: likelyNetNew.length,
   overlapCount: overlaps.length,
   candidates,
 };
 
+const resolvedOutput = {
+  generatedAt,
+  sourceHierarchyRank: 6,
+  sourceType: 'weekly-score-methodology',
+  totalMethodologyConceptCount: allCandidates.length,
+  accountedForCount: resolved.length,
+  promotedCount: promoted.length,
+  resolvedOverlapCount: resolvedOverlaps.length,
+  resolutions: resolved,
+};
+
 fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(path.join(outputDir, 'candidates.json'), `${JSON.stringify(output, null, 2)}\n`);
+fs.writeFileSync(path.join(outputDir, 'resolved.json'), `${JSON.stringify(resolvedOutput, null, 2)}\n`);
 fs.writeFileSync(path.join(outputDir, 'review.md'), `${[
   '# Daily Card Weekly Score review queue', '',
   `Generated: ${generatedAt}`, '',
   `Published Weekly Score reports reviewed: **${reports.length}**`,
-  `Recurring methodology candidates: **${candidates.length}**`,
-  `Likely net-new: **${likelyNetNew.length}**`,
-  `Potential overlaps: **${overlaps.length}**`, '',
+  `Recurring methodology concepts: **${allCandidates.length}**`,
+  `Accounted for: **${resolved.length}**`,
+  `Promoted: **${promoted.length}**`,
+  `Resolved as overlap: **${resolvedOverlaps.length}**`,
+  `Remaining review candidates: **${candidates.length}**`, '',
   '## Source boundary', '',
   '- Hierarchy tier: **6 — Weekly Score**',
   '- Candidate access: **Research**',
   '- Evidence must recur across at least three published weekly reports.',
   '- Week-specific values, regime readings, dates and event claims are not eligible for evergreen promotion from this queue.', '',
-  '## Current collection deficits', '',
-  ...Object.entries(deficits).map(([collectionId, deficit]) => `- ${collectionId}: **${deficit}**`), '',
-  '## Candidates', '',
-  ...candidates.map((candidate) => `- **${candidate.title}** — ${candidate.suggestedCollectionId} — ${candidate.reviewDisposition} — evidence ${candidate.sourceEvidenceCount}/${reports.length}`), '',
-  'All candidates remain review-only with `lastReviewed: null` until explicit editorial/source review.', '',
+  '## Editorial resolutions', '',
+  ...resolved.map((item) => `- **${item.candidateTitle}** — ${item.disposition}${item.canonicalCardId ? ` -> ${item.canonicalCardId}` : ` -> ${item.primaryCardId}`}`), '',
+  '## Remaining candidates', '',
+  ...(candidates.length ? candidates.map((candidate) => `- **${candidate.title}** — ${candidate.suggestedCollectionId} — ${candidate.reviewDisposition} — evidence ${candidate.sourceEvidenceCount}/${reports.length}`) : ['- None. Tier 6 is fully accounted for.']), '',
+  'Any future Weekly Score methodology candidate remains review-only with `lastReviewed: null` until explicit editorial/source review.', '',
 ].join('\n')}\n`);
 
-console.log(`Weekly Score Daily Card queue: ${reports.length} published reports -> ${candidates.length} recurring methodology candidates.`);
-console.log(`Likely net-new: ${likelyNetNew.length}; overlaps: ${overlaps.length}.`);
+console.log(`Weekly Score Daily Card tier: ${reports.length} published reports -> ${allCandidates.length} recurring methodology concepts.`);
+console.log(`Accounted for: ${resolved.length}; promoted: ${promoted.length}; overlap resolutions: ${resolvedOverlaps.length}; remaining review candidates: ${candidates.length}.`);
+for (const item of resolved) {
+  console.log(`WEEKLY-SCORE-RESOLUTION: ${item.candidateTitle} -> ${item.disposition} [${item.canonicalCardId || item.primaryCardId}]`);
+}
 for (const candidate of candidates) {
   console.log(`WEEKLY-SCORE-CANDIDATE: ${candidate.title} -> ${candidate.suggestedCollectionId} [${candidate.reviewDisposition}]`);
 }

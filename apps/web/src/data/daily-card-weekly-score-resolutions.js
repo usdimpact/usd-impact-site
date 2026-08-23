@@ -1,0 +1,41 @@
+export const dailyCardWeeklyScoreResolutions = Object.freeze([
+  Object.freeze({
+    candidateId: 'candidate-weekly-score-cross-asset-regime',
+    disposition: 'resolved-overlap',
+    resolutionMode: 'composite',
+    primaryCardId: 'card-regime-evidence-ladder',
+    relatedCardIds: ['card-dxy-signal-system', 'card-dollar-yields-liquidity'],
+    rationale: 'The existing regime-evidence ladder already requires independent cross-asset confirmation before upgrading a DXY observation into a regime conclusion. The DXY signal/system and three-dial cards supply the same single-index boundary, so a separate Weekly Score card would duplicate the learning objective.',
+    reviewedAt: '2026-08-23',
+  }),
+  Object.freeze({
+    candidateId: 'candidate-weekly-score-news-vs-regime',
+    disposition: 'promoted',
+    canonicalCardId: 'card-weekly-score-news-vs-regime',
+    rationale: 'Distinct learning objective: separates event/news sensitivity from a completed-week standardized regime measurement without duplicating the existing evidence-ladder or time-horizon cards.',
+    reviewedAt: '2026-08-23',
+  }),
+  Object.freeze({
+    candidateId: 'candidate-weekly-score-components-offset',
+    disposition: 'promoted',
+    canonicalCardId: 'card-weekly-score-component-offsets',
+    rationale: 'Distinct Weekly Score methodology: explains how opposing standardized component contributions combine inside the headline score, which is not covered by the current catalog.',
+    reviewedAt: '2026-08-23',
+  }),
+  Object.freeze({
+    candidateId: 'candidate-weekly-score-multiple-horizons',
+    disposition: 'resolved-overlap',
+    resolutionMode: 'alias',
+    primaryCardId: 'card-regime-time-horizon-invalidation',
+    relatedCardIds: ['card-regime-evidence-ladder'],
+    rationale: 'The existing time-horizon and invalidation card already teaches that regime evidence must be interpreted by horizon and not upgraded from a short window into a durable claim. A separate week-over-week versus four-week card would repeat that objective rather than add a new mechanism.',
+    reviewedAt: '2026-08-23',
+  }),
+  Object.freeze({
+    candidateId: 'candidate-weekly-score-component-breadth',
+    disposition: 'promoted',
+    canonicalCardId: 'card-weekly-score-component-breadth',
+    rationale: 'Distinct Weekly Score methodology: distinguishes broad component participation from a headline reading concentrated in a narrow subset of inputs.',
+    reviewedAt: '2026-08-23',
+  }),
+]);

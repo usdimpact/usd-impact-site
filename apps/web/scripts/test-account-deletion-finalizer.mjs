@@ -123,143 +123,455 @@ assert.equal(
 );
 
 const calls = [];
+let outbox = null;
 const fetchImpl = async (url, options = {}) => {
-  calls.push({ url: String(url), options });
-  const parsed = new URL(url);
+  const href = String(url);
+  calls.push({ href, options });
 
-  if (parsed.pathname === '/rest/v1/profiles') {
-    assert.equal(options.method, undefined);
-    assert.equal(parsed.searchParams.get('status'), 'eq.deletion_pending');
+  if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') {
+    return response(200, []);
+  }
+
+  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
     return response(200, [{
       account_id: accountId,
       email: recipientEmail,
       status: 'deletion_pending',
       deletion_requested_at: deletionRequestedAt,
       deletion_due_at: deletionDueAt,
-      deleted_at: null,
     }]);
   }
 
-  if (parsed.pathname === '/rest/v1/rpc/prepare_account_deletion_auth_removal') {
-    assert.equal(options.method, 'POST');
-    assert.deepEqual(JSON.parse(options.body), { target_account_id: accountId });
-    return response(200, [{
-      account_id: accountId,
-      auth_user_id: accountId,
-      email: recipientEmail,
-      status: 'deletion_pending',
-      deletion_requested_at: deletionRequestedAt,
-      deletion_due_at: deletionDueAt,
-      deleted_at: null,
-    }]);
-  }
-
-  if (parsed.pathname === `/auth/v1/admin/users/${accountId}`) {
-    assert.equal(options.method, 'DELETE');
+  if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') {
+    assert.match(href, /should_soft_delete=true/);
     return response(200, { id: accountId });
   }
 
-  if (parsed.pathname === '/rest/v1/rpc/finalize_account_deletion') {
-    assert.equal(options.method, 'POST');
-    assert.deepEqual(JSON.parse(options.body), { target_account_id: accountId });
+  if (href.endsWith('/rest/v1/rpc/finalize_account_deletion') && options.method === 'POST') {
+    assert.deepEqual(JSON.parse(options.body), { finalize_account_id: accountId });
     return response(200, [{
       account_id: accountId,
-      email: recipientEmail,
-      status: 'deleted',
+      recipient_email: recipientEmail,
       deletion_requested_at: deletionRequestedAt,
-      deletion_due_at: deletionDueAt,
       deleted_at: deletedAt,
     }]);
   }
 
-  if (parsed.pathname === '/rest/v1/notification_outbox' && options.method === 'POST') {
+  if (href.includes('/rest/v1/notification_outbox') && options.method === 'POST') {
     const inserted = JSON.parse(options.body);
     assert.equal(inserted.message_id, 'account_deletion_completed');
     assert.equal(inserted.recipient_email_normalized, recipientEmail);
-    return response(201, [queuedOutbox(inserted)]);
+    assert.deepEqual(inserted.payload, {});
+    outbox = queuedOutbox(inserted);
+    return response(201, [outbox]);
   }
 
-  throw new Error(`Unexpected request: ${options.method || 'GET'} ${url}`);
+  if (href.includes('/rest/v1/notification_outbox?') && options.method === 'GET') {
+    return response(200, outbox ? [outbox] : []);
+  }
+
+  if (href.includes('/rest/v1/support_requests')) {
+    throw new Error('Escalation should not be created on a successful finalization.');
+  }
+
+  throw new Error(`Unexpected request: ${options.method || 'GET'} ${href}`);
 };
 
 const result = await runDueAccountDeletionFinalizer({
   environment,
   fetchImpl,
-  now: new Date('2026-08-28T12:00:00.000Z'),
+  now: new Date('2026-08-27T18:10:00.000Z'),
 });
 assert.deepEqual(result, emptyRunResult({ scanned: 1, finalized: 1 }));
-assert.equal(calls.filter((entry) => entry.url.includes('/auth/v1/admin/users/')).length, 1);
+assert.equal(calls.filter((call) => call.href.includes('/auth/v1/admin/users/')).length, 1);
+assert.equal(calls.filter((call) => call.href.endsWith('/rpc/finalize_account_deletion')).length, 1);
+assert.equal(calls.filter((call) => call.href.includes('/notification_outbox')).length >= 1, true);
 
-const emptyFetchImpl = async (url, options = {}) => {
-  const parsed = new URL(url);
-  if (parsed.pathname === '/rest/v1/profiles' && !options.method) return response(200, []);
-  throw new Error(`Unexpected request in empty finalizer run: ${options.method || 'GET'} ${url}`);
-};
-assert.deepEqual(
-  await runDueAccountDeletionFinalizer({ environment, fetchImpl: emptyFetchImpl }),
-  emptyRunResult(),
-);
-
-const recoveryFetchImpl = async (url, options = {}) => {
-  const parsed = new URL(url);
-  if (parsed.pathname === '/rest/v1/profiles') {
+const concurrentCalls = [];
+const concurrentFetch = async (url, options = {}) => {
+  const href = String(url);
+  concurrentCalls.push({ href, options });
+  if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') {
+    return response(200, []);
+  }
+  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
     return response(200, [{
       account_id: accountId,
       email: recipientEmail,
-      status: 'deleted',
+      status: 'deletion_pending',
       deletion_requested_at: deletionRequestedAt,
       deletion_due_at: deletionDueAt,
+    }]);
+  }
+  if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') {
+    return response(404, { message: 'already removed' });
+  }
+  if (href.endsWith('/rest/v1/rpc/finalize_account_deletion') && options.method === 'POST') {
+    return response(200, []);
+  }
+  if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
+    return response(200, [{
+      account_id: accountId,
+      status: 'deleted',
+      deletion_requested_at: deletionRequestedAt,
       deleted_at: deletedAt,
     }]);
   }
-  if (parsed.pathname === '/rest/v1/notification_outbox' && options.method === 'POST') {
-    const inserted = JSON.parse(options.body);
-    return response(201, [queuedOutbox(inserted)]);
+  if (href.includes('/notification_outbox') || href.includes('/support_requests')) {
+    throw new Error('Concurrent already-finalized path must not write another outbox or escalation.');
   }
-  throw new Error(`Unexpected recovery request: ${options.method || 'GET'} ${url}`);
+  throw new Error(`Unexpected concurrent request: ${options.method || 'GET'} ${href}`);
 };
-const recovery = await recoverOneDeletionCompletionAcknowledgement({
-  accountId,
+const concurrent = await runDueAccountDeletionFinalizer({
   environment,
-  fetchImpl: recoveryFetchImpl,
+  fetchImpl: concurrentFetch,
+  now: new Date('2026-08-27T18:10:00.000Z'),
 });
-assert.equal(recovery.status, 'queued');
-assert.equal(recovery.message_id, 'account_deletion_completed');
+assert.deepEqual(concurrent, emptyRunResult({ scanned: 1, alreadyFinalized: 1 }));
 
-function createMockResponse() {
+const manualEscalations = [];
+const authFailureFetch = async (url, options = {}) => {
+  const href = String(url);
+  if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') return response(200, []);
+  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
+    return response(200, [{
+      account_id: accountId,
+      email: recipientEmail,
+      status: 'deletion_pending',
+      deletion_requested_at: deletionRequestedAt,
+      deletion_due_at: deletionDueAt,
+    }]);
+  }
+  if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(500, { error: 'auth down' });
+  if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
+    return response(200, [{ account_id: accountId, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deleted_at: null }]);
+  }
+  if (href.endsWith('/rest/v1/support_requests') && options.method === 'POST') {
+    const body = JSON.parse(options.body);
+    manualEscalations.push(body);
+    return response(201, null);
+  }
+  throw new Error(`Unexpected auth-failure request: ${options.method || 'GET'} ${href}`);
+};
+const authFailure = await runDueAccountDeletionFinalizer({
+  environment,
+  fetchImpl: authFailureFetch,
+  now: new Date('2026-08-27T18:10:00.000Z'),
+});
+assert.deepEqual(authFailure, emptyRunResult({ scanned: 1, failed: 1 }));
+assert.equal(manualEscalations.length, 1);
+assert.equal(manualEscalations[0].account_id, null);
+assert.match(manualEscalations[0].subject, /manual review/i);
+
+const recoverableEscalations = [];
+const ambiguousFinalizeFetch = async (url, options = {}) => {
+  const href = String(url);
+  if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') return response(200, []);
+  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
+    return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt }]);
+  }
+  if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(200, { id: accountId });
+  if (href.endsWith('/rest/v1/rpc/finalize_account_deletion') && options.method === 'POST') return response(500, { error: 'ambiguous' });
+  if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
+    return response(200, [{ account_id: accountId, status: 'deleted', deletion_requested_at: deletionRequestedAt, deleted_at: deletedAt }]);
+  }
+  if (href.endsWith('/rest/v1/support_requests') && options.method === 'POST') {
+    const body = JSON.parse(options.body);
+    recoverableEscalations.push(body);
+    return response(201, null);
+  }
+  throw new Error(`Unexpected ambiguous-finalize request: ${options.method || 'GET'} ${href}`);
+};
+const ambiguousFinalize = await runDueAccountDeletionFinalizer({
+  environment,
+  fetchImpl: ambiguousFinalizeFetch,
+  now: new Date('2026-08-27T18:10:00.000Z'),
+});
+assert.deepEqual(ambiguousFinalize, emptyRunResult({ scanned: 1, failed: 1 }));
+assert.equal(recoverableEscalations.length, 1);
+assert.equal(recoverableEscalations[0].account_id, accountId);
+assert.equal(recoverableEscalations[0].email, recipientEmail);
+assert.match(recoverableEscalations[0].subject, /acknowledgement requires recovery/i);
+assert.match(recoverableEscalations[0].id, /^[0-9a-f-]{36}$/i);
+assert.match(recoverableEscalations[0].message, /Recovery proof: adr1:[0-9a-f]{64}/i);
+const signedRecovery = {
+  ...recoverableEscalations[0],
+  status: 'open',
+  created_at: deletedAt,
+};
+const recoveryId = signedRecovery.id;
+
+const completionFailureEscalations = [];
+const completionFailureFetch = async (url, options = {}) => {
+  const href = String(url);
+  if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') return response(200, []);
+  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
+    return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt }]);
+  }
+  if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(200, { id: accountId });
+  if (href.endsWith('/rest/v1/rpc/finalize_account_deletion') && options.method === 'POST') {
+    return response(200, [{ account_id: accountId, recipient_email: recipientEmail, deletion_requested_at: deletionRequestedAt, deleted_at: deletedAt }]);
+  }
+  if (href.includes('/rest/v1/notification_outbox') && options.method === 'POST') return response(500, { error: 'ledger down' });
+  if (href.endsWith('/rest/v1/support_requests') && options.method === 'POST') {
+    const body = JSON.parse(options.body);
+    completionFailureEscalations.push(body);
+    return response(201, null);
+  }
+  throw new Error(`Unexpected completion-failure request: ${options.method || 'GET'} ${href}`);
+};
+const completionFailure = await runDueAccountDeletionFinalizer({
+  environment,
+  fetchImpl: completionFailureFetch,
+  now: new Date('2026-08-27T18:10:00.000Z'),
+});
+assert.deepEqual(completionFailure, emptyRunResult({ scanned: 1, failed: 1 }));
+assert.equal(completionFailureEscalations[0].account_id, accountId);
+
+let recoveryOutbox = null;
+const recoveryPatches = [];
+const recoveryFetch = async (url, options = {}) => {
+  const href = String(url);
+  if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') {
+    return response(200, [signedRecovery]);
+  }
+  if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
+    return response(200, [{ account_id: accountId, status: 'deleted', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt, deleted_at: deletedAt }]);
+  }
+  if (href.includes('/rest/v1/notification_outbox') && options.method === 'POST') {
+    const inserted = JSON.parse(options.body);
+    recoveryOutbox = queuedOutbox(inserted);
+    return response(201, [recoveryOutbox]);
+  }
+  if (href.includes('/rest/v1/notification_outbox?') && options.method === 'GET') return response(200, [recoveryOutbox]);
+  if (href.includes(`/rest/v1/support_requests?id=eq.${recoveryId}`) && options.method === 'PATCH') {
+    const body = JSON.parse(options.body);
+    recoveryPatches.push(body);
+    return response(200, [{ id: recoveryId, ...body }]);
+  }
+  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') return response(200, []);
+  throw new Error(`Unexpected recovery request: ${options.method || 'GET'} ${href}`);
+};
+const recoveryRun = await runDueAccountDeletionFinalizer({
+  environment,
+  fetchImpl: recoveryFetch,
+  now: new Date('2026-08-27T18:10:00.000Z'),
+  batchSize: 3,
+});
+assert.deepEqual(recoveryRun, emptyRunResult({ recoveryScanned: 1, recovered: 1 }));
+assert.equal(recoveryPatches.length, 1);
+assert.equal(recoveryPatches[0].account_id, null);
+assert.equal(recoveryPatches[0].status, 'completed');
+assert.match(recoveryPatches[0].email, /^deleted\+[0-9a-f]{32}@support\.invalid$/);
+
+const duplicateCalls = [];
+const duplicateRecovery = signedRecovery;
+let duplicateOutbox = null;
+const duplicateRecoveryFetch = async (url, options = {}) => {
+  const href = String(url);
+  duplicateCalls.push({ href, options });
+  if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
+    return response(200, [{ account_id: accountId, status: 'deleted', deletion_requested_at: deletionRequestedAt, deleted_at: deletedAt }]);
+  }
+  if (href.includes('/rest/v1/notification_outbox') && options.method === 'POST') {
+    const inserted = JSON.parse(options.body);
+    if (!duplicateOutbox) {
+      duplicateOutbox = queuedOutbox(inserted);
+      return response(201, [duplicateOutbox]);
+    }
+    return response(201, []);
+  }
+  if (href.includes('/rest/v1/notification_outbox?') && options.method === 'GET') return response(200, [duplicateOutbox]);
+  if (href.includes(`/rest/v1/support_requests?id=eq.${recoveryId}`) && options.method === 'PATCH') {
+    return response(200, [{ id: recoveryId, ...JSON.parse(options.body) }]);
+  }
+  throw new Error(`Unexpected duplicate-recovery request: ${options.method || 'GET'} ${href}`);
+};
+const recoveredOnce = await recoverOneDeletionCompletionAcknowledgement({
+  recovery: duplicateRecovery,
+  config: readAccountDeletionFinalizerConfig(environment),
+  environment,
+  fetchImpl: duplicateRecoveryFetch,
+  now: new Date(deletedAt),
+});
+const recoveredTwice = await recoverOneDeletionCompletionAcknowledgement({
+  recovery: duplicateRecovery,
+  config: readAccountDeletionFinalizerConfig(environment),
+  environment,
+  fetchImpl: duplicateRecoveryFetch,
+  now: new Date(deletedAt),
+});
+assert.equal(recoveredOnce.outboxId, recoveredTwice.outboxId);
+assert.equal(duplicateCalls.filter((call) => call.href.includes('/notification_outbox?') && call.options.method === 'GET').length, 1);
+
+let forgedFetchCalled = false;
+await assert.rejects(
+  () => recoverOneDeletionCompletionAcknowledgement({
+    recovery: { ...signedRecovery, message: signedRecovery.message.replace(/[0-9a-f]{64}/i, '0'.repeat(64)) },
+    config: readAccountDeletionFinalizerConfig(environment),
+    environment,
+    fetchImpl: async () => {
+      forgedFetchCalled = true;
+      throw new Error('forged recovery must not fetch');
+    },
+  }),
+  /incomplete or unauthenticated/,
+);
+assert.equal(forgedFetchCalled, false);
+
+const escalationFailureFetch = async (url, options = {}) => {
+  const href = String(url);
+  if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') return response(200, []);
+  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
+    return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt }]);
+  }
+  if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(500, { error: 'auth down' });
+  if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') return response(200, [{ account_id: accountId, status: 'deletion_pending' }]);
+  if (href.endsWith('/rest/v1/support_requests') && options.method === 'POST') return response(500, { error: 'support down' });
+  throw new Error(`Unexpected escalation-failure request: ${options.method || 'GET'} ${href}`);
+};
+const escalationFailure = await runDueAccountDeletionFinalizer({
+  environment,
+  fetchImpl: escalationFailureFetch,
+  now: new Date('2026-08-27T18:10:00.000Z'),
+});
+assert.deepEqual(escalationFailure, emptyRunResult({ scanned: 1, failed: 1 }));
+
+const forgedScanUrls = [];
+const forgedScanFetch = async (url, options = {}) => {
+  const href = String(url);
+  forgedScanUrls.push(href);
+  if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') {
+    return response(200, [{ ...signedRecovery, message: signedRecovery.message.replace(/[0-9a-f]{64}/i, 'f'.repeat(64)) }]);
+  }
+  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') return response(200, []);
+  throw new Error(`Unexpected forged-scan request: ${options.method || 'GET'} ${href}`);
+};
+assert.deepEqual(
+  await runDueAccountDeletionFinalizer({ environment, fetchImpl: forgedScanFetch, batchSize: 5 }),
+  emptyRunResult(),
+);
+assert.equal(forgedScanUrls.some((href) => href.includes('/profiles?')), true);
+
+const limitUrls = [];
+const limitFetch = async (url, options = {}) => {
+  const href = String(url);
+  limitUrls.push(href);
+  if (options.method === 'GET') return response(200, []);
+  throw new Error(`Unexpected limit request: ${options.method || 'GET'} ${href}`);
+};
+assert.deepEqual(
+  await runDueAccountDeletionFinalizer({ environment, fetchImpl: limitFetch, batchSize: 999 }),
+  emptyRunResult(),
+);
+assert.equal(limitUrls.some((href) => href.includes('/support_requests?') && href.includes('limit=100')), true);
+assert.equal(limitUrls.some((href) => href.includes('/profiles?') && href.includes('limit=25')), true);
+
+let disabledFetchCalled = false;
+const disabled = await runDueAccountDeletionFinalizer({
+  environment: {},
+  fetchImpl: async () => {
+    disabledFetchCalled = true;
+    throw new Error('should not run');
+  },
+});
+assert.deepEqual(disabled, {
+  enabled: false,
+  recoveryScanned: 0,
+  recovered: 0,
+  recoveryFailed: 0,
+  scanned: 0,
+  finalized: 0,
+  alreadyFinalized: 0,
+  failed: 0,
+});
+assert.equal(disabledFetchCalled, false);
+
+function apiResponse() {
   return {
-    statusCode: 0,
+    statusCode: null,
     headers: {},
-    body: '',
+    body: null,
     setHeader(name, value) {
-      this.headers[name.toLowerCase()] = value;
+      this.headers[String(name).toLowerCase()] = value;
     },
     end(body = '') {
-      this.body = body;
+      this.body = body ? JSON.parse(body) : null;
     },
   };
 }
 
-const previousEnvironment = {
-  route: process.env.ACCOUNT_DELETION_FINALIZER_ROUTE_ENABLED,
-  enabled: process.env.ACCOUNT_DELETION_FINALIZER_ENABLED,
-};
+const envKeys = [
+  'ACCOUNT_DELETION_FINALIZER_ROUTE_ENABLED',
+  'ACCOUNT_DELETION_FINALIZER_ENABLED',
+  'EMAIL_READINESS_LEDGER_ENABLED',
+  'SUPABASE_URL',
+  'SUPABASE_PUBLISHABLE_KEY',
+  'SUPABASE_SECRET_KEY',
+  'CRON_SECRET',
+  'VERCEL_ENV',
+];
+const priorEnv = Object.fromEntries(envKeys.map((key) => [key, process.env[key]]));
+const priorFetch = globalThis.fetch;
 try {
-  delete process.env.ACCOUNT_DELETION_FINALIZER_ROUTE_ENABLED;
-  delete process.env.ACCOUNT_DELETION_FINALIZER_ENABLED;
-  const disabledResponse = createMockResponse();
-  await accountHandler({
-    method: 'GET',
-    url: '/api/account?action=deletion-finalizer',
-    headers: {},
-  }, disabledResponse);
-  assert.equal(disabledResponse.statusCode, 404);
-  assert.equal(JSON.parse(disabledResponse.body).code, 'ACCOUNT_DELETION_FINALIZER_ROUTE_DISABLED');
+  for (const key of envKeys) delete process.env[key];
+  let routeFetchCalled = false;
+  globalThis.fetch = async () => {
+    routeFetchCalled = true;
+    throw new Error('disabled route must not fetch');
+  };
+  const disabledRouteResponse = apiResponse();
+  await accountHandler(
+    { method: 'GET', url: '/api/account?action=deletion-finalizer', headers: {} },
+    disabledRouteResponse,
+  );
+  assert.equal(disabledRouteResponse.statusCode, 404);
+  assert.equal(routeFetchCalled, false);
+
+  Object.assign(process.env, environment, { ACCOUNT_DELETION_FINALIZER_ROUTE_ENABLED: 'true' });
+  const unauthorizedResponse = apiResponse();
+  await accountHandler(
+    { method: 'GET', url: '/api/account?action=deletion-finalizer', headers: { authorization: 'Bearer wrong' } },
+    unauthorizedResponse,
+  );
+  assert.equal(unauthorizedResponse.statusCode, 401);
+  assert.equal(routeFetchCalled, false);
+
+  const methodResponse = apiResponse();
+  await accountHandler(
+    { method: 'POST', url: '/api/account?action=deletion-finalizer', headers: { authorization: `Bearer ${environment.CRON_SECRET}` } },
+    methodResponse,
+  );
+  assert.equal(methodResponse.statusCode, 405);
+  assert.equal(methodResponse.headers.allow, 'GET');
+  assert.equal(routeFetchCalled, false);
+
+  globalThis.fetch = async (url, options = {}) => {
+    routeFetchCalled = true;
+    const href = String(url);
+    if (options.method === 'GET' && (href.includes('/support_requests?') || href.includes('/profiles?'))) {
+      return response(200, []);
+    }
+    throw new Error(`Unexpected route request: ${options.method || 'GET'} ${href}`);
+  };
+  const routeResponse = apiResponse();
+  await accountHandler(
+    { method: 'GET', url: '/api/account?action=deletion-finalizer', headers: { authorization: `Bearer ${environment.CRON_SECRET}` } },
+    routeResponse,
+  );
+  assert.equal(routeResponse.statusCode, 200);
+  assert.equal(routeResponse.body.ok, true);
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(routeResponse.body).filter(([key]) => key !== 'ok')),
+    emptyRunResult(),
+  );
+  assert.equal(routeFetchCalled, true);
 } finally {
-  if (previousEnvironment.route == null) delete process.env.ACCOUNT_DELETION_FINALIZER_ROUTE_ENABLED;
-  else process.env.ACCOUNT_DELETION_FINALIZER_ROUTE_ENABLED = previousEnvironment.route;
-  if (previousEnvironment.enabled == null) delete process.env.ACCOUNT_DELETION_FINALIZER_ENABLED;
-  else process.env.ACCOUNT_DELETION_FINALIZER_ENABLED = previousEnvironment.enabled;
+  globalThis.fetch = priorFetch;
+  for (const key of envKeys) {
+    if (priorEnv[key] === undefined) delete process.env[key];
+    else process.env[key] = priorEnv[key];
+  }
 }
 
-console.log('Account deletion finalizer tests passed.');
+console.log('Account deletion finalizer hardening tests passed.');

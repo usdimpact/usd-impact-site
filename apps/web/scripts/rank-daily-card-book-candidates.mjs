@@ -33,6 +33,16 @@ function normalize(value) {
   return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+function isGenericExampleHeading(title) {
+  return /^(?:(?:a|an|the)\s+)?(?:(?:worked|practical)\s+)?(?:example|scenario|case study|final check)\b/i.test(String(title || '').trim());
+}
+
+const titleFrequency = new Map();
+for (const candidate of payload.candidates) {
+  const key = normalize(candidate.title);
+  titleFrequency.set(key, (titleFrequency.get(key) || 0) + 1);
+}
+
 function specificityScore(title) {
   const words = String(title || '').trim().split(/\s+/).filter(Boolean);
   let score = 0;
@@ -40,7 +50,10 @@ function specificityScore(title) {
   if (/[?:]/.test(title)) score += 2;
   if (/\b(vs|versus|why|how|when|what|which|difference|channel|mechanism|risk|funding|pricing|hedging|liquidity|margin|earnings|reserve|invoic|settlement|collateral)\b/i.test(title)) score += 6;
   if (/^(the|a|an)\s+(next|main|usual|basic|simple)\b/i.test(title)) score -= 6;
-  if (/^(example|scenario|case study|final check|practical example|worked example)\b/i.test(title)) score -= 8;
+  if (/^layer\s+\d+\s*:/i.test(title)) score -= 3;
+  if (isGenericExampleHeading(title)) score -= 40;
+  const repeats = Math.max(0, (titleFrequency.get(normalize(title)) || 1) - 1);
+  score -= repeats * 14;
   return score;
 }
 
@@ -60,11 +73,12 @@ const ranked = payload.candidates
   .map((candidate) => ({
     ...candidate,
     score: candidateScore(candidate),
+    titleFrequency: titleFrequency.get(normalize(candidate.title)) || 1,
     collectionCoverage: coverage[candidate.suggestedCollectionId],
   }))
   .sort((a, b) => b.score - a.score || a.sourcePageTitle.localeCompare(b.sourcePageTitle) || a.title.localeCompare(b.title));
 
-const eligible = ranked.filter((candidate) => candidate.reviewDisposition === 'likely-net-new');
+const eligible = ranked.filter((candidate) => candidate.reviewDisposition === 'likely-net-new' && !isGenericExampleHeading(candidate.title));
 const selected = [];
 const selectedIds = new Set();
 const selectedTitles = new Set();
@@ -129,7 +143,7 @@ const markdown = [
   '',
   `Canonical inventory: **${dailyCards.length} / 150**`,
   `Book candidates: **${payload.candidateCount}**`,
-  `Eligible likely-net-new: **${eligible.length}**`,
+  `Eligible likely-net-new after generic-example filtering: **${eligible.length}**`,
   `Recommended first batch: **${selected.length}**`,
   '',
   '## Collection deficits before shortlist',
@@ -145,6 +159,6 @@ const markdown = [
 ];
 fs.writeFileSync(path.join(outputDir, 'shortlist.md'), `${markdown.join('\n')}\n`);
 
-console.log(`Book candidate shortlist: ${selected.length} selected from ${eligible.length} likely-net-new candidates.`);
+console.log(`Book candidate shortlist: ${selected.length} selected from ${eligible.length} eligible likely-net-new candidates.`);
 for (const [id, value] of Object.entries(coverage)) console.log(`COVERAGE: ${id} ${value.current}/${value.target} deficit=${value.deficit}`);
 for (const candidate of selected) console.log(`SHORTLIST ${candidate.shortlistRank}: ${candidate.title} | ${candidate.suggestedCollectionId} | ${candidate.sourcePageTitle} | score=${candidate.adjustedScore}`);

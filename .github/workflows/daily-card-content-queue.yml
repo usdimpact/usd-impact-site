@@ -67,6 +67,9 @@ jobs:
       - name: Generate Weekly Score methodology review queue
         run: node scripts/generate-daily-card-weekly-score-candidates.mjs
 
+      - name: Generate Daily USD Impact methodology review queue
+        run: node scripts/generate-daily-card-daily-news-candidates.mjs
+
       - name: Upload review queue
         uses: actions/upload-artifact@v4
         with:
@@ -95,6 +98,8 @@ jobs:
             apps/web/artifacts/daily-card-weekly-score-candidates/candidates.json
             apps/web/artifacts/daily-card-weekly-score-candidates/resolved.json
             apps/web/artifacts/daily-card-weekly-score-candidates/review.md
+            apps/web/artifacts/daily-card-daily-news-candidates/candidates.json
+            apps/web/artifacts/daily-card-daily-news-candidates/review.md
             apps/web/artifacts/daily-card-inventory/coverage.json
             apps/web/artifacts/daily-card-inventory/coverage.md
           if-no-files-found: error

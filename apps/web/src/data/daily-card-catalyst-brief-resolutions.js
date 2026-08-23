@@ -1,0 +1,36 @@
+export const dailyCardCatalystBriefResolutions = Object.freeze([
+  Object.freeze({
+    candidateId: 'candidate-catalyst-primary-source-timing',
+    disposition: 'resolved-overlap',
+    resolutionMode: 'alias',
+    primaryCardId: 'card-scheduled-catalyst-not-direction',
+    relatedCardIds: ['card-regime-evidence-ladder'],
+    rationale: 'The existing scheduled-catalyst card already teaches the same core discipline: verify when information arrives without turning the calendar into a directional forecast. The Catalyst Brief adds source-verification provenance but not a distinct learning objective.',
+    reviewedAt: '2026-08-24',
+  }),
+  Object.freeze({
+    candidateId: 'candidate-catalyst-preview-outcome-separation',
+    disposition: 'resolved-overlap',
+    resolutionMode: 'composite',
+    primaryCardId: 'card-scheduled-catalyst-not-direction',
+    relatedCardIds: ['card-market-reaction-expectations-positioning'],
+    rationale: 'Pre-event conditionality is already covered by the scheduled-catalyst card, while post-release interpretation relative to expectations and positioning is covered by the market-reaction card. A separate phase-separation card would duplicate those two adjacent objectives.',
+    reviewedAt: '2026-08-24',
+  }),
+  Object.freeze({
+    candidateId: 'candidate-catalyst-component-breadth',
+    disposition: 'promoted',
+    canonicalCardId: 'card-inflation-release-component-mix',
+    rationale: 'Distinct Rates, Liquidity & Policy objective: decomposes a realized inflation release into headline, core and major components before policy or market interpretation. Existing inflation-expectations material distinguishes realized inflation from market pricing rather than teaching the internal release mix.',
+    reviewedAt: '2026-08-24',
+  }),
+  Object.freeze({
+    candidateId: 'candidate-catalyst-rates-transmission-check',
+    disposition: 'resolved-overlap',
+    resolutionMode: 'alias',
+    primaryCardId: 'card-macro-release-transmission-chain',
+    relatedCardIds: ['card-dollar-yields-liquidity'],
+    rationale: 'The existing macro-release transmission card already requires checking expectations and Treasury yields before assigning a dollar or cross-asset conclusion. A separate rates-intermediate-check card would restate that same transmission step.',
+    reviewedAt: '2026-08-24',
+  }),
+]);

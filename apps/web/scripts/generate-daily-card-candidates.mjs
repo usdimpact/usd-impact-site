@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { videos } from '../src/data/video-library.js';
-import { dailyCards } from '../src/data/daily-cards.js';
+import { dailyCards } from '../src/data/daily-card-catalog.js';
 
 const coveredVideoSlugs = new Set(dailyCards.map((card) => card.videoSlug).filter(Boolean));
 const existingSlugs = new Set(dailyCards.map((card) => card.slug));

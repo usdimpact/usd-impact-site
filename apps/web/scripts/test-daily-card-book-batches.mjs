@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { dailyCardBookBatch01 } from '../src/data/daily-card-book-batch-01.js';
+import { dailyCards } from '../src/data/daily-card-catalog.js';
 
 const expectedCollectionById = Object.freeze({
   'card-dxy-broad-purpose': 'core-framework',
@@ -36,6 +37,7 @@ function parseFrontmatter(text, sourcePath) {
 assert.equal(dailyCardBookBatch01.length, 10, 'Book Batch 01 must remain exactly ten reviewed promotions.');
 assert.deepEqual(new Set(dailyCardBookBatch01.map((card) => card.id)), new Set(Object.keys(expectedCollectionById)), 'Book Batch 01 IDs changed unexpectedly.');
 
+const allCardIds = new Set(dailyCards.map((card) => card.id));
 const ids = new Set();
 const slugs = new Set();
 const sourceSectionKeys = new Set();
@@ -51,9 +53,13 @@ for (const card of dailyCardBookBatch01) {
   assert.equal(card.lastReviewed, '2026-08-23', `${card.id}: explicit review date changed.`);
   assert.equal(card.sourceNames.includes('USD Impact Book lesson'), true, `${card.id}: must retain Book lesson provenance label.`);
   assert.equal(card.sourceNames.length >= 2, true, `${card.id}: must retain at least one authoritative source label.`);
-  assert.equal(typeof card.sourcePath, 'string' && card.sourcePath.startsWith('src/content/pages/'), true, `${card.id}: invalid Book source path.`);
-  assert.equal(typeof card.sourcePageSlug, 'string' && card.sourcePageSlug.startsWith('/'), true, `${card.id}: invalid source page slug.`);
-  assert.equal(typeof card.sourceHeading, 'string' && card.sourceHeading.length > 3, true, `${card.id}: missing source heading.`);
+  assert.equal(typeof card.sourcePath === 'string' && card.sourcePath.startsWith('src/content/pages/'), true, `${card.id}: invalid Book source path.`);
+  assert.equal(typeof card.sourcePageSlug === 'string' && card.sourcePageSlug.startsWith('/'), true, `${card.id}: invalid source page slug.`);
+  assert.equal(typeof card.sourceHeading === 'string' && card.sourceHeading.length > 3, true, `${card.id}: missing source heading.`);
+  assert.equal(Array.isArray(card.relatedCardIds), true, `${card.id}: relatedCardIds must be an array.`);
+  for (const relatedId of card.relatedCardIds) {
+    assert.equal(allCardIds.has(relatedId), true, `${card.id}: related card ${relatedId} does not exist.`);
+  }
 
   const sourceSectionKey = `${card.sourcePath}::${card.sourceHeading}`;
   assert.equal(sourceSectionKeys.has(sourceSectionKey), false, `${card.id}: duplicate promoted Book section ${sourceSectionKey}.`);

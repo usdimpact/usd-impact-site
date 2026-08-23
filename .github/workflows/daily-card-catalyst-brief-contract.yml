@@ -1,0 +1,47 @@
+name: Daily Card Catalyst Brief contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/content/catalyst-briefs/**'
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/src/data/daily-card-inventory-plan.js'
+      - 'apps/web/scripts/generate-daily-card-catalyst-brief-candidates.mjs'
+      - 'apps/web/scripts/test-daily-card-catalyst-brief-candidates.mjs'
+      - '.github/workflows/daily-card-content-queue.yml'
+      - '.github/workflows/daily-card-catalyst-brief-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Syntax check Catalyst Brief editorial tooling
+        run: |
+          node --check scripts/generate-daily-card-catalyst-brief-candidates.mjs
+          node --check scripts/test-daily-card-catalyst-brief-candidates.mjs
+
+      - name: Verify Catalyst Brief Tier 8 contract
+        run: node scripts/test-daily-card-catalyst-brief-candidates.mjs
+
+      - name: Validate canonical Daily Cards
+        run: node scripts/validate-daily-cards.mjs

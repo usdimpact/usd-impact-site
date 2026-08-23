@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { dailyCardBookBatch01 } from '../src/data/daily-card-book-batch-01.js';
 import { dailyCardBookBatch02 } from '../src/data/daily-card-book-batch-02.js';
+import { dailyCardBookBatch03 } from '../src/data/daily-card-book-batch-03.js';
 import { dailyCards } from '../src/data/daily-card-catalog.js';
 
 const expectedCollectionById = Object.freeze({
@@ -26,6 +27,16 @@ const expectedCollectionById = Object.freeze({
   'card-bitcoin-access-fund-flows': 'asset-transmission',
   'card-regime-evidence-ladder': 'market-application',
   'card-regime-time-horizon-invalidation': 'market-application',
+  'card-gold-dollar-safe-haven-overlap': 'asset-transmission',
+  'card-gold-specific-demand-channels': 'asset-transmission',
+  'card-oil-supply-beyond-headline-production': 'asset-transmission',
+  'card-oil-logistics-local-global-signals': 'asset-transmission',
+  'card-gas-pipeline-regional-divergence': 'asset-transmission',
+  'card-lng-regasification-downstream-delivery': 'asset-transmission',
+  'card-bitcoin-protocol-supply-vs-demand': 'asset-transmission',
+  'card-bitcoin-liquidity-fragmentation': 'asset-transmission',
+  'card-equity-index-composition-exposure': 'asset-transmission',
+  'card-equity-revenue-cost-currency-map': 'asset-transmission',
 });
 
 function parseFrontmatter(text, sourcePath) {
@@ -47,8 +58,12 @@ function parseFrontmatter(text, sourcePath) {
 
 assert.equal(dailyCardBookBatch01.length, 10, 'Book Batch 01 must remain exactly ten reviewed promotions.');
 assert.equal(dailyCardBookBatch02.length, 10, 'Book Batch 02 must remain exactly ten reviewed promotions.');
-const promotedBookCards = [...dailyCardBookBatch01, ...dailyCardBookBatch02];
-assert.equal(promotedBookCards.length, 20, 'Book promotion total must be exactly twenty after Batch 02.');
+assert.equal(dailyCardBookBatch03.length, 10, 'Book Batch 03 must remain exactly ten reviewed promotions.');
+assert.equal(dailyCardBookBatch03.every((card) => card.collectionId === 'asset-transmission'), true, 'Book Batch 03 must remain Asset Transmission only.');
+assert.equal(dailyCardBookBatch03.every((card) => card.lastReviewed === '2026-08-24'), true, 'Book Batch 03 review date changed.');
+
+const promotedBookCards = [...dailyCardBookBatch01, ...dailyCardBookBatch02, ...dailyCardBookBatch03];
+assert.equal(promotedBookCards.length, 30, 'Book promotion total must be exactly thirty after Batch 03.');
 assert.deepEqual(new Set(promotedBookCards.map((card) => card.id)), new Set(Object.keys(expectedCollectionById)), 'Book promotion IDs changed unexpectedly.');
 
 const allCardIds = new Set(dailyCards.map((card) => card.id));
@@ -64,7 +79,7 @@ for (const card of promotedBookCards) {
   assert.equal(card.collectionId, expectedCollectionById[card.id], `${card.id}: collection changed from reviewed taxonomy.`);
   assert.equal(card.access, 'open', `${card.id}: promoted Book cards must remain open.`);
   assert.equal(card.status, 'ready-for-build', `${card.id}: must remain ready-for-build.`);
-  assert.equal(card.lastReviewed, '2026-08-23', `${card.id}: explicit review date changed.`);
+  assert.equal(['2026-08-23', '2026-08-24'].includes(card.lastReviewed), true, `${card.id}: unexpected explicit review date.`);
   assert.equal(card.sourceNames.includes('USD Impact Book lesson'), true, `${card.id}: must retain Book lesson provenance label.`);
   assert.equal(card.sourceNames.length >= 2, true, `${card.id}: must retain at least one authoritative source label.`);
   assert.equal(typeof card.sourcePath === 'string' && card.sourcePath.startsWith('src/content/pages/'), true, `${card.id}: invalid Book source path.`);
@@ -98,4 +113,8 @@ assert.equal(dailyCardBookBatch01.find((card) => card.id === 'card-dollar-centra
 assert.equal(dailyCardBookBatch02.filter((card) => card.collectionId === 'core-framework').length, 2, 'Book Batch 02 must add exactly two Core Framework cards.');
 assert.equal(dailyCardBookBatch02.filter((card) => card.collectionId === 'asset-transmission').length, 6, 'Book Batch 02 must add exactly six Asset Transmission cards.');
 assert.equal(dailyCardBookBatch02.filter((card) => card.collectionId === 'market-application').length, 2, 'Book Batch 02 must add exactly two Market Application cards.');
-console.log('Daily Card Book provenance: PASS (20 promoted cards across Batches 01-02).');
+assert.equal(new Set(dailyCardBookBatch03.map((card) => card.sourcePath)).size, 5, 'Book Batch 03 must preserve five-source diversity.');
+for (const sourcePath of new Set(dailyCardBookBatch03.map((card) => card.sourcePath))) {
+  assert.equal(dailyCardBookBatch03.filter((card) => card.sourcePath === sourcePath).length, 2, `Book Batch 03 must select exactly two sections from ${sourcePath}.`);
+}
+console.log('Daily Card Book provenance: PASS (30 promoted cards across Batches 01-03).');

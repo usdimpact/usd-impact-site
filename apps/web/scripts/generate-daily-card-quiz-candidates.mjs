@@ -22,23 +22,39 @@ const QUIZ_FALLBACK_COLLECTION = Object.freeze({
   'quiz-what-is-us-dollar': 'core-framework',
 });
 
+const COLLECTION_RULES = Object.freeze([
+  ['dollar-funding-stack', /\b(?:repo|collateral|haircuts?|dealer balance(?: sheet)?|fx swap(?: engine)?|swap lines?|fima|funding stack)\b/],
+  ['history-institutions', /\b(?:1971|bretton|reserve currency|reserve asset|network effects?|monetary history|dollar centrality)\b/],
+  ['rates-liquidity-policy', /\b(?:real rates?|real yields?|liquidity|credit spreads?|volatility|vix|fed funds|funding pressure|financial conditions|stress indicators?|opportunity cost|discount rates?)\b/],
+  ['global-dollar-fx', /\b(?:eurusd|fx depreciation|currency risk|transaction exposure|translation|hedg(?:e|ed|es|ing)?|pass through|exchange rates?|currency pairs?|competitiveness)\b/],
+  ['asset-transmission', /\b(?:bitcoin|btc|gold|xau|oil|wti|lng|natural gas|gas balance|equities|equity|earnings|margins?|commodit(?:y|ies))\b/],
+  ['market-application', /\b(?:regime|second signal|confirmation|dominant driver|benchmark selection|interpretation|risk appetite|signal noise|cross asset|discipline|one signal|weekly monitoring|monitoring signals?)\b/],
+  ['core-framework', /\b(?:dxy|broad usd|dollar index|basket|euro weight|trade weighted|us dollar|global dollar|usd beyond forex)\b/],
+]);
+
 function normalize(value) {
   return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
-function suggestedCollection(text, quiz) {
-  // Classify from this candidate's authored title/explanation first. Do not use
-  // quiz-wide conceptsTested here: a quiz can mention real yields, liquidity,
-  // and an asset in different questions, which would otherwise contaminate every
-  // question with the same collection label.
-  const local = normalize(text);
-  if (/repo|collateral|haircut|dealer balance|fx swap engine|swap line|fima|funding stack/.test(local)) return 'dollar-funding-stack';
-  if (/1971|bretton|reserve currency|reserve asset|network effect|monetary history|dollar centrality/.test(local)) return 'history-institutions';
-  if (/real rate|real yield|liquidity|credit spread|volatility|vix|fed funds|funding pressure|financial conditions|stress indicator|opportunity cost/.test(local)) return 'rates-liquidity-policy';
-  if (/fx depreciation|currency risk|transaction exposure|translation|hedg|pass through|exchange rate|currency pair|competitiveness/.test(local)) return 'global-dollar-fx';
-  if (/bitcoin|btc|gold|xau|oil|wti|lng|natural gas|equities|equity|earnings|margin|commodity/.test(local)) return 'asset-transmission';
-  if (/regime|second signal|confirmation|dominant driver|benchmark selection|interpretation|risk appetite|signal noise|cross asset/.test(local)) return 'market-application';
-  if (/dxy|broad usd|dollar index|basket|euro weight|trade weighted|us dollar|global dollar/.test(local)) return 'core-framework';
+function classifyText(value) {
+  const normalized = normalize(value);
+  for (const [collectionId, pattern] of COLLECTION_RULES) {
+    if (pattern.test(normalized)) return collectionId;
+  }
+  return null;
+}
+
+function suggestedCollection(title, excerpt, quiz) {
+  // v3 classifies the authored concept title first, then the authored explanation.
+  // This prevents a secondary word in an explanation (for example collateral in a
+  // broad liquidity-refuge explanation) from overriding the concept being tested.
+  // Funding-plumbing keywords use word boundaries so words such as "reported" do
+  // not accidentally match "repo".
+  const titleCollection = classifyText(title);
+  if (titleCollection) return titleCollection;
+
+  const excerptCollection = classifyText(excerpt);
+  if (excerptCollection) return excerptCollection;
 
   const fallback = QUIZ_FALLBACK_COLLECTION[quiz.canonicalId];
   if (!fallback) throw new Error(`${quiz.canonicalId}: missing quiz fallback collection`);
@@ -60,7 +76,7 @@ function overlapCardIds(title, excerpt) {
 }
 
 function makeCandidate({ id, title, excerpt, sourceKind, sourceReference, quiz, sourcePath, sourceLocator, suggestedFormat = 'concept', extra = {} }) {
-  const collectionId = suggestedCollection(`${title} ${excerpt}`, quiz);
+  const collectionId = suggestedCollection(title, excerpt, quiz);
   const potentialOverlapCardIds = overlapCardIds(title, excerpt);
   return {
     id,
@@ -190,11 +206,11 @@ for (const candidate of candidates) {
 }
 const generatedAt = new Date().toISOString();
 fs.mkdirSync(outputDir, { recursive: true });
-fs.writeFileSync(path.join(outputDir, 'candidates.json'), `${JSON.stringify({ generatedAt, classifierVersion: 2, sourceHierarchyRank: 5, releasedQuizCount: sources.length, candidateCount: candidates.length, likelyNetNewCount: likelyNetNew.length, overlapCount: overlaps.length, collectionCounts, netNewCollectionCounts, sources, candidates }, null, 2)}\n`);
+fs.writeFileSync(path.join(outputDir, 'candidates.json'), `${JSON.stringify({ generatedAt, classifierVersion: 3, sourceHierarchyRank: 5, releasedQuizCount: sources.length, candidateCount: candidates.length, likelyNetNewCount: likelyNetNew.length, overlapCount: overlaps.length, collectionCounts, netNewCollectionCounts, sources, candidates }, null, 2)}\n`);
 fs.writeFileSync(path.join(outputDir, 'review.md'), `${[
   '# Daily Card Quiz review queue', '',
   `Generated: ${generatedAt}`, '',
-  'Classifier: **v2 candidate-local + quiz fallback**',
+  'Classifier: **v3 title-first + exact-mechanic boundaries + quiz fallback**',
   `Released quizzes: **${sources.length}**`,
   `Authored candidates: **${candidates.length}**`,
   `Likely net-new: **${likelyNetNew.length}**`,
@@ -203,9 +219,9 @@ fs.writeFileSync(path.join(outputDir, 'review.md'), `${[
   ...Object.entries(collectionCounts).sort().map(([id, count]) => `- **${id}** — ${count} total / ${netNewCollectionCounts[id] || 0} likely net-new`), '',
   '## Quiz sources', '',
   ...sources.map((source) => `- **${source.title}** — ${source.candidateCount} candidates — fallback ${source.fallbackCollectionId} — ${source.status} ${source.version}`), '',
-  'All candidates remain review-only. Classification is based on each authored candidate first; quiz topic is used only as fallback.', '',
+  'All candidates remain review-only. Classification prioritizes each authored concept title, then its authored explanation; quiz topic is used only as fallback.', '',
 ].join('\n')}\n`);
 console.log(`Quiz Daily Card queue: ${sources.length} released quizzes -> ${candidates.length} authored candidates.`);
-console.log(`Classifier v2; likely net-new: ${likelyNetNew.length}; overlaps: ${overlaps.length}.`);
+console.log(`Classifier v3; likely net-new: ${likelyNetNew.length}; overlaps: ${overlaps.length}.`);
 for (const [id, count] of Object.entries(collectionCounts).sort()) console.log(`QUIZ-COLLECTION: ${id} -> ${count} total / ${netNewCollectionCounts[id] || 0} net-new`);
 for (const source of sources) console.log(`QUIZ-SOURCE: ${source.title} -> ${source.candidateCount} (fallback ${source.fallbackCollectionId})`);

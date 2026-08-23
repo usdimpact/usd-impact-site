@@ -3,12 +3,14 @@ name: Daily Card inventory contract
 on:
   pull_request:
     paths:
+      - 'apps/web/src/content/glossary/**'
       - 'apps/web/src/data/daily-card-inventory-plan.js'
       - 'apps/web/src/data/daily-card-catalog.js'
       - 'apps/web/src/data/daily-card-video-batch-*.js'
       - 'apps/web/src/data/daily-cards.js'
       - 'apps/web/src/data/video-library.js'
       - 'apps/web/scripts/generate-daily-card-candidates.mjs'
+      - 'apps/web/scripts/generate-daily-card-glossary-candidates.mjs'
       - 'apps/web/scripts/generate-daily-card-inventory-report.mjs'
       - 'apps/web/scripts/test-daily-card-inventory-plan.mjs'
       - 'apps/web/scripts/test-daily-card-video-batches.mjs'
@@ -18,12 +20,14 @@ on:
   push:
     branches: [main]
     paths:
+      - 'apps/web/src/content/glossary/**'
       - 'apps/web/src/data/daily-card-inventory-plan.js'
       - 'apps/web/src/data/daily-card-catalog.js'
       - 'apps/web/src/data/daily-card-video-batch-*.js'
       - 'apps/web/src/data/daily-cards.js'
       - 'apps/web/src/data/video-library.js'
       - 'apps/web/scripts/generate-daily-card-candidates.mjs'
+      - 'apps/web/scripts/generate-daily-card-glossary-candidates.mjs'
       - 'apps/web/scripts/generate-daily-card-inventory-report.mjs'
       - 'apps/web/scripts/test-daily-card-inventory-plan.mjs'
       - 'apps/web/scripts/test-daily-card-video-batches.mjs'
@@ -55,6 +59,7 @@ jobs:
           node --check src/data/daily-card-video-batch-01.js
           node --check src/data/daily-card-video-batch-02.js
           node --check scripts/generate-daily-card-inventory-report.mjs
+          node --check scripts/generate-daily-card-glossary-candidates.mjs
           node --check scripts/test-daily-card-inventory-plan.mjs
           node --check scripts/test-daily-card-video-batches.mjs
       - name: Validate canonical inventory
@@ -62,13 +67,16 @@ jobs:
           node scripts/test-daily-card-video-batches.mjs
           node scripts/test-daily-card-inventory-plan.mjs
           node scripts/validate-daily-cards.mjs
-      - name: Generate coverage and review queue
+      - name: Generate coverage and review queues
         run: |
           node scripts/generate-daily-card-inventory-report.mjs
           node scripts/generate-daily-card-candidates.mjs
+          node scripts/generate-daily-card-glossary-candidates.mjs
       - name: Verify artifacts
         run: |
           test -s artifacts/daily-card-inventory/coverage.json
           test -s artifacts/daily-card-inventory/coverage.md
           test -s artifacts/daily-card-candidates/candidates.json
+          test -s artifacts/daily-card-glossary-candidates/candidates.json
           node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-candidates/candidates.json','utf8')); if(!p.candidates.every(c=>c.status==='review' && c.lastReviewed===null)) process.exit(1);"
+          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-glossary-candidates/candidates.json','utf8')); if(!p.candidates.length || !p.candidates.every(c=>c.status==='review' && c.lastReviewed===null && c.sourceNames.includes('USD Impact Glossary') && c.sourcePath.startsWith('src/content/glossary/'))) process.exit(1);"

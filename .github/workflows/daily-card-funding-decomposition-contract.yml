@@ -1,0 +1,47 @@
+name: Daily Card Funding Stack decomposition contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/src/data/daily-card-video-batch-01.js'
+      - 'apps/web/src/data/daily-card-video-batch-04.js'
+      - 'apps/web/scripts/generate-daily-card-funding-decomposition-candidates.mjs'
+      - '.github/workflows/daily-card-funding-decomposition-contract.yml'
+      - '.github/workflows/daily-card-content-queue.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/src/data/daily-card-video-batch-01.js'
+      - 'apps/web/src/data/daily-card-video-batch-04.js'
+      - 'apps/web/scripts/generate-daily-card-funding-decomposition-candidates.mjs'
+      - '.github/workflows/daily-card-funding-decomposition-contract.yml'
+      - '.github/workflows/daily-card-content-queue.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Syntax
+        run: node --check scripts/generate-daily-card-funding-decomposition-candidates.mjs
+      - name: Generate Funding Stack decomposition queue
+        run: node scripts/generate-daily-card-funding-decomposition-candidates.mjs
+      - name: Verify decomposition contract
+        run: |
+          test -s artifacts/daily-card-funding-decomposition/candidates.json
+          test -s artifacts/daily-card-funding-decomposition/review.md
+          node --input-type=module -e "import fs from 'node:fs'; import { dailyCards } from './src/data/daily-card-catalog.js'; const p=JSON.parse(fs.readFileSync('artifacts/daily-card-funding-decomposition/candidates.json','utf8')); if(p.sourceHierarchyRank!==1 || p.sourceType!=='reviewed-video-card-decomposition' || p.targetCollectionId!=='dollar-funding-stack' || p.canonicalTarget!==15 || p.currentCanonicalParentCount!==7 || p.candidateCount!==8 || p.candidates.length!==8) process.exit(1); const canonicalFunding=dailyCards.filter(c=>c.collectionId==='dollar-funding-stack' && c.status==='ready-for-build'); if(canonicalFunding.length!==7) process.exit(1); const ids=new Set(), titles=new Set(); for(const c of p.candidates){if(c.status!=='review'||c.lastReviewed!==null||c.reviewDisposition!=='decomposition-review'||c.suggestedCollectionId!=='dollar-funding-stack'||c.suggestedAccess!=='research'||c.suggestedLevel!=='advanced'||c.sourceHierarchyRank!==1||c.sourceType!=='reviewed-video-card-decomposition'||!c.sourceVideoSlug||!c.sourceExcerpt||!Array.isArray(c.sourceNames)||c.sourceNames.length<2) process.exit(1); if(ids.has(c.id)) process.exit(1); ids.add(c.id); const t=c.title.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); if(titles.has(t)) process.exit(1); titles.add(t); const parent=dailyCards.find(card=>card.id===c.sourceParentCardId); if(!parent||parent.collectionId!=='dollar-funding-stack'||parent.access!=='research'||parent.status!=='ready-for-build'||parent.videoSlug!==c.sourceVideoSlug||String(parent[c.sourceField]||'').trim()!==c.sourceExcerpt) process.exit(1);}"

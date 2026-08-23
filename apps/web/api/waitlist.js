@@ -1,4 +1,5 @@
 import { handleResendWebhook } from '../src/lib/resend-webhook-handler.js';
+import { handleDailyLearningEmailRequest } from '../src/lib/daily-card-email-handler.js';
 import { requestOrigin } from '../src/lib/supabase-auth.js';
 import { buildWaitlistConfirmationEmail } from '../src/lib/waitlist-email-template.js';
 import {
@@ -190,6 +191,9 @@ export default async function handler(request, response) {
   }
   if (action === 'unsubscribe') {
     return handleUnsubscribeAction(request, response);
+  }
+  if (action.startsWith('daily-learning')) {
+    return handleDailyLearningEmailRequest(request, response, action);
   }
 
   if (request.method !== 'POST') {

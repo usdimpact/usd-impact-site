@@ -61,6 +61,9 @@ jobs:
       - name: Generate Funding Stack decomposition review queue
         run: node scripts/generate-daily-card-funding-decomposition-candidates.mjs
 
+      - name: Generate History manuscript review queue
+        run: node scripts/generate-daily-card-history-manuscript-candidates.mjs
+
       - name: Upload review queue
         uses: actions/upload-artifact@v4
         with:
@@ -83,6 +86,8 @@ jobs:
             apps/web/artifacts/daily-card-funding-decomposition/candidates.json
             apps/web/artifacts/daily-card-funding-decomposition/resolved.json
             apps/web/artifacts/daily-card-funding-decomposition/review.md
+            apps/web/artifacts/daily-card-history-manuscript/candidates.json
+            apps/web/artifacts/daily-card-history-manuscript/review.md
             apps/web/artifacts/daily-card-inventory/coverage.json
             apps/web/artifacts/daily-card-inventory/coverage.md
           if-no-files-found: error

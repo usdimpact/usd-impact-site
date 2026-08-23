@@ -29,6 +29,10 @@ const coverage = Object.fromEntries(Object.entries(dailyCardInventoryTargets).ma
   }];
 }));
 
+function normalize(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
 function specificityScore(title) {
   const words = String(title || '').trim().split(/\s+/).filter(Boolean);
   let score = 0;
@@ -63,6 +67,7 @@ const ranked = payload.candidates
 const eligible = ranked.filter((candidate) => candidate.reviewDisposition === 'likely-net-new');
 const selected = [];
 const selectedIds = new Set();
+const selectedTitles = new Set();
 const perSource = new Map();
 const provisionalCollectionCounts = { ...canonicalCounts };
 
@@ -71,6 +76,8 @@ while (selected.length < recommendedBatchSize) {
   let bestAdjustedScore = -Infinity;
   for (const candidate of eligible) {
     if (selectedIds.has(candidate.id)) continue;
+    const normalizedTitle = normalize(candidate.title);
+    if (selectedTitles.has(normalizedTitle)) continue;
     const sourceCount = perSource.get(candidate.sourcePath) || 0;
     if (sourceCount >= maxPerSourceLesson) continue;
 
@@ -91,6 +98,7 @@ while (selected.length < recommendedBatchSize) {
   if (!best) break;
   selected.push({ ...best, adjustedScore: bestAdjustedScore, shortlistRank: selected.length + 1 });
   selectedIds.add(best.id);
+  selectedTitles.add(normalize(best.title));
   perSource.set(best.sourcePath, (perSource.get(best.sourcePath) || 0) + 1);
   provisionalCollectionCounts[best.suggestedCollectionId] = (provisionalCollectionCounts[best.suggestedCollectionId] || 0) + 1;
 }

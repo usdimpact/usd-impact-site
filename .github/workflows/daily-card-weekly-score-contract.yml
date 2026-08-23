@@ -1,0 +1,48 @@
+name: Daily Card Weekly Score contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/content/weekly-reports/**'
+      - 'apps/web/src/pages/score.astro'
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/src/data/daily-card-inventory-plan.js'
+      - 'apps/web/scripts/generate-daily-card-weekly-score-candidates.mjs'
+      - 'apps/web/scripts/test-daily-card-weekly-score-candidates.mjs'
+      - '.github/workflows/daily-card-content-queue.yml'
+      - '.github/workflows/daily-card-weekly-score-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Syntax check Weekly Score review tooling
+        run: |
+          node --check scripts/generate-daily-card-weekly-score-candidates.mjs
+          node --check scripts/test-daily-card-weekly-score-candidates.mjs
+
+      - name: Verify Weekly Score review-only contract
+        run: node scripts/test-daily-card-weekly-score-candidates.mjs
+
+      - name: Validate canonical Daily Cards remain unchanged and valid
+        run: node scripts/validate-daily-cards.mjs

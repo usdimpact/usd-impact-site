@@ -28,8 +28,13 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
-      - name: Validate canonical cards
-        run: node scripts/validate-daily-cards.mjs
+      - name: Validate canonical cards and inventory plan
+        run: |
+          node scripts/validate-daily-cards.mjs
+          node scripts/test-daily-card-inventory-plan.mjs
+
+      - name: Generate inventory coverage
+        run: node scripts/generate-daily-card-inventory-report.mjs
 
       - name: Generate review candidates from video inventory
         run: node scripts/generate-daily-card-candidates.mjs
@@ -38,6 +43,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: daily-card-review-queue
-          path: apps/web/artifacts/daily-card-candidates/candidates.json
+          path: |
+            apps/web/artifacts/daily-card-candidates/candidates.json
+            apps/web/artifacts/daily-card-inventory/coverage.json
+            apps/web/artifacts/daily-card-inventory/coverage.md
           if-no-files-found: error
           retention-days: 30

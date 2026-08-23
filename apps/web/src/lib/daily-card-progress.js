@@ -1,4 +1,4 @@
-import { dailyCards, getDailyCardById } from '../data/daily-cards.js';
+import { dailyCards, getDailyCardById } from '../data/daily-card-catalog.js';
 import {
   applyReviewResult,
   cardContentId,

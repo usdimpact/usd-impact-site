@@ -1,9 +1,14 @@
 import { safeSupabaseError, sendJson } from './supabase-server.js';
 import {
+  clearPkceCookie,
   readSessionAccessToken,
   safeNextPath,
   setSessionCookies,
 } from './supabase-auth.js';
+import {
+  emailOtpRecoveryEnabled,
+  verifyEmailOtpRecovery,
+} from './email-otp-recovery.js';
 import {
   deletePasskey,
   listPasskeys,
@@ -65,9 +70,50 @@ function safeError(response, error) {
   return sendJson(response, safe.status, safe.payload);
 }
 
+function safeRecoveryError(response, error) {
+  const safe = safeSupabaseError(error);
+  if (safe.status < 500 && safe.payload?.code !== 'EMAIL_OTP_FALLBACK_DISABLED') {
+    return sendJson(response, 400, {
+      error: 'The email code is invalid or expired.',
+      code: 'INVALID_EMAIL_OTP',
+    });
+  }
+  return sendJson(response, safe.status, safe.payload);
+}
+
 async function status(request, response) {
   if (request.method !== 'GET') return methodNotAllowed(response, 'GET');
   return sendJson(response, 200, { enabled: passkeyAuthEnabled() });
+}
+
+async function recoveryStatus(request, response) {
+  if (request.method !== 'GET') return methodNotAllowed(response, 'GET');
+  return sendJson(response, 200, { enabled: emailOtpRecoveryEnabled() });
+}
+
+async function recoveryVerify(request, response) {
+  if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
+  if (!requireSameSiteJson(request, response)) return;
+  let payload;
+  try {
+    payload = parseBody(request);
+  } catch {
+    return sendJson(response, 400, { error: 'Invalid request body.', code: 'INVALID_REQUEST_BODY' });
+  }
+  try {
+    const session = await verifyEmailOtpRecovery({
+      email: payload.email,
+      token: payload.token,
+    });
+    clearPkceCookie(response, request);
+    setSessionCookies(response, request, session);
+    return sendJson(response, 200, {
+      ok: true,
+      redirect: safeNextPath(payload.next),
+    });
+  } catch (error) {
+    return safeRecoveryError(response, error);
+  }
 }
 
 async function authenticationOptions(request, response) {
@@ -200,6 +246,8 @@ async function remove(request, response) {
 
 const operations = Object.freeze({
   status,
+  'recovery-status': recoveryStatus,
+  'recovery-verify': recoveryVerify,
   'authentication-options': authenticationOptions,
   'authentication-verify': authenticationVerify,
   list,

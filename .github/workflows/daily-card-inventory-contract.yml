@@ -11,6 +11,7 @@ on:
       - 'apps/web/src/data/daily-card-glossary-batch-*.js'
       - 'apps/web/src/data/daily-card-book-batch-*.js'
       - 'apps/web/src/data/daily-card-rates-primary-batch-*.js'
+      - 'apps/web/src/data/daily-card-core-primary-batch-*.js'
       - 'apps/web/src/data/daily-card-glossary-resolutions.js'
       - 'apps/web/src/data/daily-cards.js'
       - 'apps/web/src/data/video-library.js'
@@ -23,6 +24,7 @@ on:
       - 'apps/web/scripts/test-daily-card-glossary-batches.mjs'
       - 'apps/web/scripts/test-daily-card-book-batches.mjs'
       - 'apps/web/scripts/test-daily-card-rates-primary-batches.mjs'
+      - 'apps/web/scripts/test-daily-card-core-primary-batches.mjs'
       - 'apps/web/scripts/test-daily-card-glossary-resolutions.mjs'
       - 'apps/web/scripts/validate-daily-cards.mjs'
       - '.github/workflows/daily-card-content-queue.yml'
@@ -38,6 +40,7 @@ on:
       - 'apps/web/src/data/daily-card-glossary-batch-*.js'
       - 'apps/web/src/data/daily-card-book-batch-*.js'
       - 'apps/web/src/data/daily-card-rates-primary-batch-*.js'
+      - 'apps/web/src/data/daily-card-core-primary-batch-*.js'
       - 'apps/web/src/data/daily-card-glossary-resolutions.js'
       - 'apps/web/src/data/daily-cards.js'
       - 'apps/web/src/data/video-library.js'
@@ -50,6 +53,7 @@ on:
       - 'apps/web/scripts/test-daily-card-glossary-batches.mjs'
       - 'apps/web/scripts/test-daily-card-book-batches.mjs'
       - 'apps/web/scripts/test-daily-card-rates-primary-batches.mjs'
+      - 'apps/web/scripts/test-daily-card-core-primary-batches.mjs'
       - 'apps/web/scripts/test-daily-card-glossary-resolutions.mjs'
       - 'apps/web/scripts/validate-daily-cards.mjs'
       - '.github/workflows/daily-card-content-queue.yml'
@@ -85,6 +89,7 @@ jobs:
           node --check src/data/daily-card-book-batch-02.js
           node --check src/data/daily-card-book-batch-03.js
           node --check src/data/daily-card-rates-primary-batch-01.js
+          node --check src/data/daily-card-core-primary-batch-01.js
           node --check src/data/daily-card-glossary-resolutions.js
           node --check scripts/generate-daily-card-inventory-report.mjs
           node --check scripts/generate-daily-card-glossary-candidates.mjs
@@ -94,6 +99,7 @@ jobs:
           node --check scripts/test-daily-card-glossary-batches.mjs
           node --check scripts/test-daily-card-book-batches.mjs
           node --check scripts/test-daily-card-rates-primary-batches.mjs
+          node --check scripts/test-daily-card-core-primary-batches.mjs
           node --check scripts/test-daily-card-glossary-resolutions.mjs
       - name: Validate canonical inventory
         run: |
@@ -101,6 +107,7 @@ jobs:
           node scripts/test-daily-card-glossary-batches.mjs
           node scripts/test-daily-card-book-batches.mjs
           node scripts/test-daily-card-rates-primary-batches.mjs
+          node scripts/test-daily-card-core-primary-batches.mjs
           node scripts/test-daily-card-glossary-resolutions.mjs
           node scripts/test-daily-card-inventory-plan.mjs
           node scripts/validate-daily-cards.mjs

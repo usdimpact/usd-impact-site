@@ -8,6 +8,11 @@ const expectedAuthorityById = Object.freeze({
   'card-eia': 'U.S. Energy Information Administration',
   'card-federal-reserve': 'Federal Reserve Board',
   'card-risk-off-environment': 'Bank for International Settlements',
+  'card-btcusd': 'CME Group',
+  'card-usd': 'Bank for International Settlements',
+  'card-vix': 'Cboe Global Markets',
+  'card-wti': 'U.S. Energy Information Administration',
+  'card-xauusd': 'World Gold Council',
 });
 
 function parseFrontmatter(text, sourcePath) {
@@ -27,7 +32,12 @@ function parseFrontmatter(text, sourcePath) {
   return data;
 }
 
-assert.equal(dailyCardGlossaryBatch01.length, 4, 'Glossary Batch 01 must remain exactly four reviewed promotions.');
+assert.equal(dailyCardGlossaryBatch01.length, 9, 'Glossary Batch 01 must remain exactly nine reviewed promotions.');
+assert.deepEqual(
+  new Set(dailyCardGlossaryBatch01.map((card) => card.id)),
+  new Set(Object.keys(expectedAuthorityById)),
+  'Glossary Batch 01 IDs must match the reviewed authority map.',
+);
 
 const sourcePaths = new Set();
 for (const card of dailyCardGlossaryBatch01) {
@@ -49,4 +59,4 @@ for (const card of dailyCardGlossaryBatch01) {
   assert.equal(Boolean(frontmatter.slug), true, `${card.sourcePath} must retain a slug.`);
 }
 
-console.log('Daily Card glossary provenance: PASS (4 promoted cards in Batch 01).');
+console.log('Daily Card glossary provenance: PASS (9 promoted cards in Batch 01).');

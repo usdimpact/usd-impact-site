@@ -110,6 +110,8 @@ assert.match(handler, /clearPkceCookie/);
 assert.match(signInPage, /autocomplete="one-time-code"/);
 assert.match(signInPage, /op=recovery-status/);
 assert.match(signInPage, /op=recovery-verify/);
+assert.match(signInPage, /emailCodeContainer\.hidden = !emailCodeEnabled/);
+assert.match(signInPage, /Already have a code\?/);
 assert.match(accountPage, /passkey-settings-link/);
 assert.match(accountPage, /action=passkey&op=status/);
 assert.doesNotMatch(`${handler}${signInPage}${accountPage}`, /SUPABASE_SECRET_KEY|sb_secret_/);

@@ -46,6 +46,9 @@ jobs:
       - name: Generate Book lesson review candidates
         run: node scripts/generate-daily-card-book-candidates.mjs
 
+      - name: Rank Book lesson shortlist
+        run: node scripts/rank-daily-card-book-candidates.mjs
+
       - name: Upload review queue
         uses: actions/upload-artifact@v4
         with:
@@ -57,6 +60,8 @@ jobs:
             apps/web/artifacts/daily-card-glossary-candidates/review.md
             apps/web/artifacts/daily-card-book-candidates/candidates.json
             apps/web/artifacts/daily-card-book-candidates/review.md
+            apps/web/artifacts/daily-card-book-shortlist/shortlist.json
+            apps/web/artifacts/daily-card-book-shortlist/shortlist.md
             apps/web/artifacts/daily-card-inventory/coverage.json
             apps/web/artifacts/daily-card-inventory/coverage.md
           if-no-files-found: error

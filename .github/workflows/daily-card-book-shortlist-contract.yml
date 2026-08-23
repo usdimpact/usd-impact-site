@@ -1,0 +1,53 @@
+name: Daily Card Book shortlist contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/content/pages/**'
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/src/data/daily-card-inventory-plan.js'
+      - 'apps/web/scripts/generate-daily-card-book-candidates.mjs'
+      - 'apps/web/scripts/rank-daily-card-book-candidates.mjs'
+      - '.github/workflows/daily-card-book-shortlist-contract.yml'
+      - '.github/workflows/daily-card-content-queue.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/content/pages/**'
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/src/data/daily-card-inventory-plan.js'
+      - 'apps/web/scripts/generate-daily-card-book-candidates.mjs'
+      - 'apps/web/scripts/rank-daily-card-book-candidates.mjs'
+      - '.github/workflows/daily-card-book-shortlist-contract.yml'
+      - '.github/workflows/daily-card-content-queue.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Syntax
+        run: |
+          node --check scripts/generate-daily-card-book-candidates.mjs
+          node --check scripts/rank-daily-card-book-candidates.mjs
+      - name: Generate Book review pool
+        run: node scripts/generate-daily-card-book-candidates.mjs
+      - name: Rank shortlist
+        run: node scripts/rank-daily-card-book-candidates.mjs
+      - name: Verify shortlist contract
+        run: |
+          test -s artifacts/daily-card-book-shortlist/shortlist.json
+          test -s artifacts/daily-card-book-shortlist/shortlist.md
+          node --input-type=module -e "import fs from 'node:fs'; import { dailyCardInventoryTargets } from './src/data/daily-card-inventory-plan.js'; const p=JSON.parse(fs.readFileSync('artifacts/daily-card-book-shortlist/shortlist.json','utf8')); if(p.recommendedBatchSize!==12 || p.selectedCount!==12 || p.selected.length!==12 || p.eligibleNetNewCount<12) process.exit(1); if(!p.selected.every((c,i)=>c.reviewDisposition==='likely-net-new' && c.status==='review' && c.lastReviewed===null && c.shortlistRank===i+1 && c.sourceExcerpt && c.potentialOverlapCardIds.length===0)) process.exit(1); const bySource={}; const titles=new Set(); for(const c of p.selected){bySource[c.sourcePath]=(bySource[c.sourcePath]||0)+1; const t=c.title.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); if(titles.has(t)) process.exit(1); titles.add(t);} if(Object.values(bySource).some(n=>n>p.maxPerSourceLesson)) process.exit(1); for(const [id,n] of Object.entries(p.collectionShortlistCounts)){if(n>0 && (p.coverage[id].current+n)>dailyCardInventoryTargets[id]) process.exit(1);}"

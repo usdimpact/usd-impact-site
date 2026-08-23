@@ -33,6 +33,18 @@ const EXCLUDED_HEADINGS = new Set([
   'related content',
 ]);
 
+const SHORT_IDENTIFIER_TOKENS = new Set([
+  'btc',
+  'cpi',
+  'dxy',
+  'lng',
+  'tga',
+  'tips',
+  'usd',
+  'vix',
+  'wti',
+]);
+
 function splitDocument(text, fileName) {
   const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/);
   if (!match) throw new Error(`${fileName}: missing frontmatter`);
@@ -90,11 +102,22 @@ function firstParagraph(lines, startIndex) {
 function overlapCardIds({ heading, excerpt }) {
   const headingNorm = normalize(heading);
   const excerptNorm = normalize(excerpt);
-  const tokens = [...new Set(headingNorm.split(' ').filter((token) => token.length >= 4))];
+  const headingTokens = [...new Set(headingNorm.split(' ').filter(Boolean))];
+  const tokens = headingTokens.filter((token) => token.length >= 4 || SHORT_IDENTIFIER_TOKENS.has(token));
+  const shortIdentifiers = headingTokens.filter((token) => SHORT_IDENTIFIER_TOKENS.has(token));
+
   return dailyCards
     .filter((card) => {
-      const haystack = normalize(`${card.slug} ${card.title} ${card.shortTitle || ''} ${(card.concepts || []).join(' ')}`);
+      const identity = normalize(`${card.slug} ${card.title} ${card.shortTitle || ''}`);
+      const identityTokens = new Set(identity.split(' ').filter(Boolean));
+      const haystack = normalize(`${identity} ${(card.concepts || []).join(' ')}`);
       if (headingNorm && (normalize(card.title) === headingNorm || normalize(card.shortTitle) === headingNorm)) return true;
+
+      // Short market identifiers are highly specific. If a heading names DXY/WTI/VIX/etc.
+      // and an existing canonical card explicitly identifies the same object, route the
+      // candidate to overlap review instead of treating the short token as noise.
+      if (shortIdentifiers.some((token) => identityTokens.has(token) || haystack.split(' ').includes(token))) return true;
+
       const shared = tokens.filter((token) => haystack.includes(token));
       const excerptSignal = tokens.some((token) => excerptNorm.includes(token) && haystack.includes(token));
       return shared.length >= 2 || (tokens.length === 1 && shared.length === 1 && excerptSignal);

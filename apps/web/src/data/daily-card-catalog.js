@@ -8,6 +8,7 @@ import {
 import { dailyCardVideoBatch01 } from './daily-card-video-batch-01.js';
 import { dailyCardVideoBatch02 } from './daily-card-video-batch-02.js';
 import { dailyCardVideoBatch03 } from './daily-card-video-batch-03.js';
+import { dailyCardVideoBatch04 } from './daily-card-video-batch-04.js';
 
 export { dailyCardMeta, dailyCardCollections, dailyCardFormats, weeklyCardRotation };
 
@@ -16,6 +17,7 @@ export const dailyCards = Object.freeze([
   ...dailyCardVideoBatch01,
   ...dailyCardVideoBatch02,
   ...dailyCardVideoBatch03,
+  ...dailyCardVideoBatch04,
 ]);
 
 export function getDailyCardBySlug(slug) {

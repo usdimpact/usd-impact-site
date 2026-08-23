@@ -6,7 +6,10 @@ on:
       - 'apps/web/src/data/daily-card-catalog.js'
       - 'apps/web/src/data/daily-card-video-batch-01.js'
       - 'apps/web/src/data/daily-card-video-batch-04.js'
+      - 'apps/web/src/data/daily-card-funding-primary-batch-*.js'
+      - 'apps/web/src/data/daily-card-funding-decomposition-resolutions.js'
       - 'apps/web/scripts/generate-daily-card-funding-decomposition-candidates.mjs'
+      - 'apps/web/scripts/test-daily-card-funding-primary-batches.mjs'
       - '.github/workflows/daily-card-funding-decomposition-contract.yml'
       - '.github/workflows/daily-card-content-queue.yml'
   push:
@@ -15,7 +18,10 @@ on:
       - 'apps/web/src/data/daily-card-catalog.js'
       - 'apps/web/src/data/daily-card-video-batch-01.js'
       - 'apps/web/src/data/daily-card-video-batch-04.js'
+      - 'apps/web/src/data/daily-card-funding-primary-batch-*.js'
+      - 'apps/web/src/data/daily-card-funding-decomposition-resolutions.js'
       - 'apps/web/scripts/generate-daily-card-funding-decomposition-candidates.mjs'
+      - 'apps/web/scripts/test-daily-card-funding-primary-batches.mjs'
       - '.github/workflows/daily-card-funding-decomposition-contract.yml'
       - '.github/workflows/daily-card-content-queue.yml'
 
@@ -37,11 +43,18 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
       - run: npm ci --no-audit --no-fund
       - name: Syntax
-        run: node --check scripts/generate-daily-card-funding-decomposition-candidates.mjs
+        run: |
+          node --check src/data/daily-card-funding-primary-batch-01.js
+          node --check src/data/daily-card-funding-decomposition-resolutions.js
+          node --check scripts/generate-daily-card-funding-decomposition-candidates.mjs
+          node --check scripts/test-daily-card-funding-primary-batches.mjs
+      - name: Verify primary-source Funding promotions
+        run: node scripts/test-daily-card-funding-primary-batches.mjs
       - name: Generate Funding Stack decomposition queue
         run: node scripts/generate-daily-card-funding-decomposition-candidates.mjs
       - name: Verify decomposition contract
         run: |
           test -s artifacts/daily-card-funding-decomposition/candidates.json
+          test -s artifacts/daily-card-funding-decomposition/resolved.json
           test -s artifacts/daily-card-funding-decomposition/review.md
-          node --input-type=module -e "import fs from 'node:fs'; import { dailyCards } from './src/data/daily-card-catalog.js'; const p=JSON.parse(fs.readFileSync('artifacts/daily-card-funding-decomposition/candidates.json','utf8')); if(p.sourceHierarchyRank!==1 || p.sourceType!=='reviewed-video-card-decomposition' || p.targetCollectionId!=='dollar-funding-stack' || p.canonicalTarget!==15 || p.currentCanonicalParentCount!==7 || p.candidateCount!==8 || p.candidates.length!==8) process.exit(1); const canonicalFunding=dailyCards.filter(c=>c.collectionId==='dollar-funding-stack' && c.status==='ready-for-build'); if(canonicalFunding.length!==7) process.exit(1); const ids=new Set(), titles=new Set(); for(const c of p.candidates){if(c.status!=='review'||c.lastReviewed!==null||c.reviewDisposition!=='decomposition-review'||c.suggestedCollectionId!=='dollar-funding-stack'||c.suggestedAccess!=='research'||c.suggestedLevel!=='advanced'||c.sourceHierarchyRank!==1||c.sourceType!=='reviewed-video-card-decomposition'||!c.sourceVideoSlug||!c.sourceExcerpt||!Array.isArray(c.sourceNames)||c.sourceNames.length<2) process.exit(1); if(ids.has(c.id)) process.exit(1); ids.add(c.id); const t=c.title.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); if(titles.has(t)) process.exit(1); titles.add(t); const parent=dailyCards.find(card=>card.id===c.sourceParentCardId); if(!parent||parent.collectionId!=='dollar-funding-stack'||parent.access!=='research'||parent.status!=='ready-for-build'||parent.videoSlug!==c.sourceVideoSlug||String(parent[c.sourceField]||'').trim()!==c.sourceExcerpt) process.exit(1);}"
+          node --input-type=module -e "import fs from 'node:fs'; import { dailyCards } from './src/data/daily-card-catalog.js'; const p=JSON.parse(fs.readFileSync('artifacts/daily-card-funding-decomposition/candidates.json','utf8')); const r=JSON.parse(fs.readFileSync('artifacts/daily-card-funding-decomposition/resolved.json','utf8')); if(p.sourceHierarchyRank!==1 || p.sourceType!=='reviewed-video-card-decomposition' || p.targetCollectionId!=='dollar-funding-stack' || p.canonicalTarget!==15 || p.canonicalCount!==11 || p.originalCandidateCount!==8 || p.resolvedCount!==4 || p.candidateCount!==4 || p.candidates.length!==4 || r.count!==4 || r.resolutions.length!==4) process.exit(1); const canonicalFunding=dailyCards.filter(c=>c.collectionId==='dollar-funding-stack' && c.status==='ready-for-build'); if(canonicalFunding.length!==11 || canonicalFunding.some(c=>c.access!=='research')) process.exit(1); const ids=new Set(), titles=new Set(); for(const c of p.candidates){if(c.status!=='review'||c.lastReviewed!==null||c.reviewDisposition!=='decomposition-review'||c.suggestedCollectionId!=='dollar-funding-stack'||c.suggestedAccess!=='research'||c.suggestedLevel!=='advanced'||c.sourceHierarchyRank!==1||c.sourceType!=='reviewed-video-card-decomposition'||!c.sourceVideoSlug||!c.sourceExcerpt||!Array.isArray(c.sourceNames)||c.sourceNames.length<2) process.exit(1); if(ids.has(c.id)) process.exit(1); ids.add(c.id); const t=c.title.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); if(titles.has(t)) process.exit(1); titles.add(t); const parent=dailyCards.find(card=>card.id===c.sourceParentCardId); if(!parent||parent.collectionId!=='dollar-funding-stack'||parent.access!=='research'||parent.status!=='ready-for-build'||parent.videoSlug!==c.sourceVideoSlug||String(parent[c.sourceField]||'').trim()!==c.sourceExcerpt) process.exit(1);} const resolvedIds=new Set(); for(const x of r.resolutions){if(x.resolution!=='promoted'||resolvedIds.has(x.candidateId)) process.exit(1); resolvedIds.add(x.candidateId); const card=dailyCards.find(c=>c.id===x.cardId); if(!card||card.collectionId!=='dollar-funding-stack'||card.access!=='research'||card.status!=='ready-for-build'||!Array.isArray(card.sourceUrls)||card.sourceUrls.length<2) process.exit(1);} if(p.candidates.some(c=>resolvedIds.has(c.id))) process.exit(1);"

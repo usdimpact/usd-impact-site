@@ -13,3 +13,15 @@ export const dailyCards = Object.freeze([
   ...foundationDailyCards,
   ...dailyCardVideoBatch01,
 ]);
+
+export function getDailyCardBySlug(slug) {
+  return dailyCards.find((card) => card.slug === slug);
+}
+
+export function getDailyCardById(id) {
+  return dailyCards.find((card) => card.id === id);
+}
+
+export function getCardsByCollection(collectionId) {
+  return dailyCards.filter((card) => card.collectionId === collectionId);
+}

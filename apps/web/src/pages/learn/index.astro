@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import AdaptiveDailyReviewQueue from '../../components/AdaptiveDailyReviewQueue.astro';
 import DailyCard from '../../components/DailyCard.astro';
 import DailyCardToday from '../../components/DailyCardToday.astro';
+import DailyLearningSignup from '../../components/DailyLearningSignup.astro';
 import { dailyCardCollections, dailyCardMeta, dailyCards } from '../../data/daily-cards.js';
 
 const openCards = dailyCards.filter((card) => card.access === 'open' && card.status === 'ready-for-build');
@@ -21,6 +22,8 @@ const openCards = dailyCards.filter((card) => card.access === 'open' && card.sta
       <h2 id="today-card-heading">One concept for today</h2>
       <DailyCardToday headingTag="h3" />
     </section>
+
+    <DailyLearningSignup />
 
     <AdaptiveDailyReviewQueue />
 

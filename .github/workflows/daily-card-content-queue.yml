@@ -58,6 +58,9 @@ jobs:
       - name: Rank Framework and Quiz deficit shortlist
         run: node scripts/rank-daily-card-framework-quiz-candidates.mjs
 
+      - name: Generate Funding Stack decomposition review queue
+        run: node scripts/generate-daily-card-funding-decomposition-candidates.mjs
+
       - name: Upload review queue
         uses: actions/upload-artifact@v4
         with:
@@ -77,6 +80,8 @@ jobs:
             apps/web/artifacts/daily-card-quiz-candidates/review.md
             apps/web/artifacts/daily-card-framework-quiz-shortlist/shortlist.json
             apps/web/artifacts/daily-card-framework-quiz-shortlist/shortlist.md
+            apps/web/artifacts/daily-card-funding-decomposition/candidates.json
+            apps/web/artifacts/daily-card-funding-decomposition/review.md
             apps/web/artifacts/daily-card-inventory/coverage.json
             apps/web/artifacts/daily-card-inventory/coverage.md
           if-no-files-found: error

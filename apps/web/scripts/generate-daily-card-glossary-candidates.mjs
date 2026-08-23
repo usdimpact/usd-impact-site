@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { dailyCards } from '../src/data/daily-card-catalog.js';
+import { dailyCardGlossaryResolutions } from '../src/data/daily-card-glossary-resolutions.js';
 
 const glossaryDir = path.resolve('src/content/glossary');
 const outputDir = path.resolve('artifacts/daily-card-glossary-candidates');
@@ -83,6 +84,8 @@ const promotedGlossarySourcePaths = new Set(
     .filter((card) => card.status === 'ready-for-build' && typeof card.sourcePath === 'string' && card.sourcePath.startsWith('src/content/glossary/'))
     .map((card) => card.sourcePath),
 );
+const resolvedGlossarySourcePaths = new Set(dailyCardGlossaryResolutions.map((item) => item.sourcePath));
+const cardById = new Map(dailyCards.map((card) => [card.id, card]));
 
 const files = fs.readdirSync(glossaryDir)
   .filter((name) => name.endsWith('.md'))
@@ -96,7 +99,7 @@ const candidates = files.map((fileName) => {
   if (!frontmatter.title || !frontmatter.definition || !frontmatter.slug) {
     throw new Error(`${fileName}: ready glossary entry must include title, definition and slug`);
   }
-  if (promotedGlossarySourcePaths.has(sourcePath)) return null;
+  if (promotedGlossarySourcePaths.has(sourcePath) || resolvedGlossarySourcePaths.has(sourcePath)) return null;
 
   const collectionId = suggestedCollection(term);
   const potentialOverlapCardIds = overlapCardIds({ term, title: frontmatter.title, definition: frontmatter.definition });
@@ -133,11 +136,24 @@ const candidates = files.map((fileName) => {
 const likelyNetNew = candidates.filter((candidate) => candidate.reviewDisposition === 'likely-net-new');
 const overlaps = candidates.filter((candidate) => candidate.reviewDisposition === 'resolve-overlap');
 const generatedAt = new Date().toISOString();
+const resolved = dailyCardGlossaryResolutions.map((item) => ({
+  ...item,
+  primaryCard: cardById.has(item.primaryCardId)
+    ? { id: item.primaryCardId, title: cardById.get(item.primaryCardId).title, access: cardById.get(item.primaryCardId).access }
+    : null,
+  relatedCards: item.relatedCardIds.map((id) => cardById.has(id)
+    ? { id, title: cardById.get(id).title, access: cardById.get(id).access }
+    : { id, title: null, access: null }),
+}));
 
 fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(
   path.join(outputDir, 'candidates.json'),
-  `${JSON.stringify({ generatedAt, promotedSourceCount: promotedGlossarySourcePaths.size, count: candidates.length, likelyNetNewCount: likelyNetNew.length, overlapCount: overlaps.length, candidates }, null, 2)}\n`,
+  `${JSON.stringify({ generatedAt, promotedSourceCount: promotedGlossarySourcePaths.size, resolvedSourceCount: resolvedGlossarySourcePaths.size, count: candidates.length, likelyNetNewCount: likelyNetNew.length, overlapCount: overlaps.length, candidates }, null, 2)}\n`,
+);
+fs.writeFileSync(
+  path.join(outputDir, 'resolved.json'),
+  `${JSON.stringify({ generatedAt, count: resolved.length, resolutions: resolved }, null, 2)}\n`,
 );
 
 const reviewMarkdown = [
@@ -146,6 +162,7 @@ const reviewMarkdown = [
   `Generated: ${generatedAt}`,
   '',
   `Promoted glossary sources excluded: **${promotedGlossarySourcePaths.size}**`,
+  `Explicitly resolved glossary overlaps: **${resolvedGlossarySourcePaths.size}**`,
   `Ready glossary entries still requiring review: **${candidates.length}**`,
   `Likely net-new: **${likelyNetNew.length}**`,
   `Potential overlaps: **${overlaps.length}**`,
@@ -162,14 +179,20 @@ const reviewMarkdown = [
     ? overlaps.map((candidate) => `- **${candidate.title}** — matches: ${candidate.potentialOverlapCardIds.join(', ')}`)
     : ['- None']),
   '',
-  'All entries remain review-only. This heuristic is a triage aid, not editorial approval.',
+  '## Explicitly resolved overlaps',
+  '',
+  ...resolved.map((item) => `- **${item.title}** — ${item.mode} → ${item.primaryCardId}${item.relatedCardIds.length ? ` (+ ${item.relatedCardIds.join(', ')})` : ''}`),
+  '',
+  'Generated candidates remain review-only. Explicit resolutions are editorial decisions recorded in the canonical resolution registry.',
   '',
 ];
 fs.writeFileSync(path.join(outputDir, 'review.md'), `${reviewMarkdown.join('\n')}\n`);
 
 console.log(`Excluded ${promotedGlossarySourcePaths.size} promoted glossary sources from the review queue.`);
+console.log(`Excluded ${resolvedGlossarySourcePaths.size} explicitly resolved glossary overlaps from the review queue.`);
 console.log(`Generated ${candidates.length} review-only Daily Card candidates from remaining ready-for-build glossary entries.`);
 console.log(`Likely net-new candidates: ${likelyNetNew.length}.`);
 for (const candidate of likelyNetNew) console.log(`NET-NEW: ${candidate.title} -> ${candidate.collectionId}`);
 console.log(`Potential-overlap candidates: ${overlaps.length}.`);
 for (const candidate of overlaps) console.log(`OVERLAP: ${candidate.title} -> ${candidate.potentialOverlapCardIds.join(',')}`);
+for (const item of dailyCardGlossaryResolutions) console.log(`RESOLVED: ${item.title} (${item.mode}) -> ${item.primaryCardId}`);

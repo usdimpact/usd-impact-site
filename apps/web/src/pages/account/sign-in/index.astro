@@ -52,11 +52,29 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
             />
             <button class="button primary" type="submit">Send sign-in link</button>
           </div>
+
+          <div id="email-code-sign-in" hidden>
+            <label for="account-email-code">6-digit email code</label>
+            <input
+              id="account-email-code"
+              name="email-code"
+              type="text"
+              autocomplete="one-time-code"
+              inputmode="numeric"
+              pattern="[0-9]{6}"
+              maxlength="6"
+            />
+            <button id="email-code-verify-button" class="button account-secondary" type="button">Verify email code</button>
+            <p class="account-help">
+              Already have a code? Enter the email address and six-digit code from the sign-in email here. This
+              works even if that email was requested in another browser context.
+            </p>
+          </div>
         </form>
         <p id="sign-in-status" class="account-status" role="status" aria-live="polite"></p>
         <p class="account-help">
           Email sign-in remains available as the recovery method. The response is deliberately neutral; if the
-          address can be used, the email link will arrive shortly and can be used only once.
+          address can be used, the email will arrive shortly and its sign-in credentials can be used only once.
         </p>
       </section>
     </div>
@@ -76,6 +94,10 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
     const turnstileContainer = document.getElementById('account-turnstile');
     const passkeyContainer = document.getElementById('passkey-sign-in');
     const passkeyButton = document.getElementById('passkey-sign-in-button');
+    const emailCodeContainer = document.getElementById('email-code-sign-in');
+    const emailCodeInput = document.getElementById('account-email-code');
+    const emailCodeVerifyButton = document.getElementById('email-code-verify-button');
+    let emailCodeEnabled = false;
 
     const safeNextPath = (value) => {
       const next = String(value || '').trim();
@@ -130,6 +152,22 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
       }
     };
 
+    const loadEmailCodeAvailability = async () => {
+      if (!emailCodeContainer) return;
+      try {
+        const response = await fetch('/api/account?action=passkey&op=recovery-status', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        const body = await response.json().catch(() => ({}));
+        emailCodeEnabled = response.ok && body.enabled === true;
+        emailCodeContainer.hidden = !emailCodeEnabled;
+      } catch {
+        emailCodeEnabled = false;
+        emailCodeContainer.hidden = true;
+      }
+    };
+
     passkeyButton?.addEventListener('click', async () => {
       if (!window.USDImpactPasskeys?.supported?.()) {
         showStatus('Passkeys are not supported by this browser or device.', 'error');
@@ -143,6 +181,7 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
 
       passkeyButton.disabled = true;
       if (submit) submit.disabled = true;
+      if (emailCodeVerifyButton) emailCodeVerifyButton.disabled = true;
       showStatus('Waiting for your passkey…', 'pending');
       try {
         const optionsResponse = await fetch('/api/account?action=passkey&op=authentication-options', {
@@ -185,7 +224,58 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
         resetTurnstile();
         passkeyButton.disabled = false;
         if (submit) submit.disabled = false;
+        if (emailCodeVerifyButton) emailCodeVerifyButton.disabled = false;
       }
+    });
+
+    emailCodeVerifyButton?.addEventListener('click', async () => {
+      const emailValue = String(emailInput?.value || '').trim();
+      const token = String(emailCodeInput?.value || '').trim();
+      if (!emailValue) {
+        showStatus('Enter the email address that received the code.', 'error');
+        return;
+      }
+      if (!/^\d{6}$/.test(token)) {
+        showStatus('Enter the six-digit code from the email.', 'error');
+        return;
+      }
+
+      emailCodeVerifyButton.disabled = true;
+      if (submit) submit.disabled = true;
+      if (passkeyButton) passkeyButton.disabled = true;
+      showStatus('Checking your email code…', 'pending');
+      try {
+        const response = await fetch('/api/account?action=passkey&op=recovery-verify', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailValue,
+            token,
+            next: nextInput?.value || '/account/',
+          }),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || 'The email code is invalid or expired.');
+
+        showStatus('Email code accepted. Opening your account…', 'success');
+        window.location.replace(safeNextPath(body.redirect || nextInput?.value || '/account/'));
+      } catch (error) {
+        showStatus(
+          error instanceof Error ? error.message : 'The email code is invalid or expired.',
+          'error'
+        );
+      } finally {
+        emailCodeVerifyButton.disabled = false;
+        if (submit) submit.disabled = false;
+        if (passkeyButton) passkeyButton.disabled = false;
+      }
+    });
+
+    emailCodeInput?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      emailCodeVerifyButton?.click();
     });
 
     form?.addEventListener('submit', async (event) => {
@@ -194,13 +284,14 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
 
       const captchaToken = readCaptchaToken();
       if (turnstileContainer && !captchaToken) {
-        showStatus('Complete the security check before requesting a sign-in link.', 'error');
+        showStatus('Complete the security check before requesting a sign-in email.', 'error');
         return;
       }
 
       submit.disabled = true;
       if (passkeyButton) passkeyButton.disabled = true;
-      showStatus('Sending a secure sign-in link…', 'pending');
+      if (emailCodeVerifyButton) emailCodeVerifyButton.disabled = true;
+      showStatus('Sending a secure sign-in email…', 'pending');
 
       try {
         const response = await fetch('/api/auth-login', {
@@ -218,23 +309,32 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
 
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
-          throw new Error(body.error || 'The sign-in link could not be sent.');
+          throw new Error(body.error || 'The sign-in email could not be sent.');
         }
 
-        showStatus('Check your email for the one-time sign-in link.', 'success');
-        emailInput.value = '';
+        if (emailCodeEnabled && emailCodeContainer && emailCodeInput) {
+          emailCodeContainer.hidden = false;
+          emailCodeInput.value = '';
+          emailCodeInput.focus();
+          showStatus('Check your email for the one-time sign-in link or six-digit code.', 'success');
+        } else {
+          showStatus('Check your email for the one-time sign-in link.', 'success');
+          emailInput.value = '';
+        }
       } catch (error) {
         showStatus(
-          error instanceof Error ? error.message : 'The sign-in link could not be sent.',
+          error instanceof Error ? error.message : 'The sign-in email could not be sent.',
           'error'
         );
       } finally {
         resetTurnstile();
         submit.disabled = false;
         if (passkeyButton) passkeyButton.disabled = false;
+        if (emailCodeVerifyButton) emailCodeVerifyButton.disabled = false;
       }
     });
 
     loadPasskeyAvailability();
+    loadEmailCodeAvailability();
   </script>
 </BaseLayout>

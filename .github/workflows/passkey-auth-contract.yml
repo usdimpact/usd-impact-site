@@ -7,11 +7,14 @@ on:
       - 'apps/web/src/lib/supabase-auth.js'
       - 'apps/web/src/lib/supabase-passkey.js'
       - 'apps/web/src/lib/passkey-handler.js'
+      - 'apps/web/src/lib/email-otp-recovery.js'
       - 'apps/web/public/assets/passkey-browser.js'
+      - 'apps/web/src/pages/account/index.astro'
       - 'apps/web/src/pages/account/sign-in/index.astro'
       - 'apps/web/src/pages/account/passkeys/**'
       - 'apps/web/scripts/test-supabase-auth.mjs'
       - 'apps/web/scripts/test-supabase-passkey.mjs'
+      - 'apps/web/scripts/test-email-otp-recovery.mjs'
       - '.github/workflows/passkey-auth-contract.yml'
   workflow_dispatch:
 
@@ -38,16 +41,21 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
-      - name: Syntax check passkey gateway
+      - name: Syntax check passkey and recovery gateway
         run: |
           node --check src/lib/supabase-passkey.js
           node --check src/lib/passkey-handler.js
+          node --check src/lib/email-otp-recovery.js
           node --check public/assets/passkey-browser.js
           node --check api/account.js
           node --check scripts/test-supabase-passkey.mjs
+          node --check scripts/test-email-otp-recovery.mjs
 
       - name: Verify passkey gateway contract
         run: node scripts/test-supabase-passkey.mjs
+
+      - name: Verify email OTP recovery contract
+        run: node scripts/test-email-otp-recovery.mjs
 
       - name: Re-run passwordless auth regression contract
         run: node scripts/test-supabase-auth.mjs

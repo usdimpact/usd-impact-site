@@ -6,6 +6,14 @@ const quizDir = path.resolve('src/content/quizzes/en');
 const accessMapPath = path.resolve('src/data/quiz-access-map.json');
 const outputDir = path.resolve('artifacts/daily-card-quiz-candidates');
 const shortTokens = new Set(['btc', 'cpi', 'dxy', 'lng', 'tga', 'tips', 'usd', 'vix', 'wti']);
+const promotedSourceKeys = new Set(
+  dailyCards
+    .filter((card) => card.status === 'ready-for-build'
+      && typeof card.sourcePath === 'string'
+      && card.sourcePath.startsWith('src/content/quizzes/en/')
+      && typeof card.sourceLocator === 'string')
+    .map((card) => `${card.sourcePath}::${card.sourceLocator}`),
+);
 
 const QUIZ_FALLBACK_COLLECTION = Object.freeze({
   'quiz-dollar-regime-framework': 'market-application',
@@ -45,14 +53,8 @@ function classifyTitle(value) {
 }
 
 function suggestedCollection(title, quiz) {
-  // v4 treats the curated answer-key/practical-application title as the concept
-  // identity. If that title is not specific enough, use the known quiz topic.
-  // Explanatory prose is provenance/context only and cannot override taxonomy.
-  // This prevents incidental words in an explanation from moving a concept into
-  // an unrelated collection.
   const titleCollection = classifyTitle(title);
   if (titleCollection) return titleCollection;
-
   const fallback = QUIZ_FALLBACK_COLLECTION[quiz.canonicalId];
   if (!fallback) throw new Error(`${quiz.canonicalId}: missing quiz fallback collection`);
   return fallback;
@@ -105,6 +107,10 @@ function makeCandidate({ id, title, excerpt, sourceKind, sourceReference, quiz, 
   };
 }
 
+function isPromoted(sourcePath, sourceLocator) {
+  return promotedSourceKeys.has(`${sourcePath}::${sourceLocator}`);
+}
+
 const accessMap = JSON.parse(fs.readFileSync(accessMapPath, 'utf8'));
 const releasedIds = new Set((accessMap.quizzes || []).filter((item) => item.released).map((item) => item.canonicalId));
 const files = fs.readdirSync(quizDir).filter((name) => name.endsWith('.json')).sort();
@@ -123,6 +129,8 @@ for (const fileName of files) {
   let sourceCandidateCount = 0;
 
   for (const question of quiz.questions) {
+    const sourceLocator = `question:${question.number}`;
+    if (isPromoted(sourcePath, sourceLocator)) continue;
     const answer = answerByQuestion.get(question.number);
     const title = answer?.conceptTested || question.skillTested || `Question ${question.number}`;
     const excerpt = String(question.explanation || '').trim();
@@ -138,7 +146,7 @@ for (const fileName of files) {
       sourceReference: question.sourceReference,
       quiz,
       sourcePath,
-      sourceLocator: `question:${question.number}`,
+      sourceLocator,
       suggestedFormat: /mistake|error|false|confus/i.test(`${question.question} ${question.explanation}`) ? 'mistake' : 'concept',
       extra: { sourceQuestion: question.question, sourceCorrectAnswer: question.correctAnswer },
     }));
@@ -146,6 +154,8 @@ for (const fileName of files) {
   }
 
   for (let index = 0; index < (quiz.practicalApplications || []).length; index += 1) {
+    const sourceLocator = `practicalApplication:${index + 1}`;
+    if (isPromoted(sourcePath, sourceLocator)) continue;
     const application = quiz.practicalApplications[index];
     if (!application.title || !application.bestInterpretation || !application.scenario) throw new Error(`${fileName}: practical application ${index + 1} incomplete`);
     const id = `candidate-quiz-${quiz.canonicalId}-application-${index + 1}`;
@@ -159,7 +169,7 @@ for (const fileName of files) {
       sourceReference: 'Quiz practical application',
       quiz,
       sourcePath,
-      sourceLocator: `practicalApplication:${index + 1}`,
+      sourceLocator,
       suggestedFormat: 'scenario',
       extra: {
         sourceScenario: application.scenario,
@@ -173,21 +183,24 @@ for (const fileName of files) {
   }
 
   if (quiz.commonMistakeCheckpoint) {
-    const id = `candidate-quiz-${quiz.canonicalId}-common-mistake`;
-    if (ids.has(id)) throw new Error(`Duplicate quiz candidate ID ${id}`);
-    ids.add(id);
-    candidates.push(makeCandidate({
-      id,
-      title: `${quiz.title}: Common Mistake Checkpoint`,
-      excerpt: quiz.commonMistakeCheckpoint,
-      sourceKind: 'common-mistake-checkpoint',
-      sourceReference: 'Quiz commonMistakeCheckpoint',
-      quiz,
-      sourcePath,
-      sourceLocator: 'commonMistakeCheckpoint',
-      suggestedFormat: 'mistake',
-    }));
-    sourceCandidateCount += 1;
+    const sourceLocator = 'commonMistakeCheckpoint';
+    if (!isPromoted(sourcePath, sourceLocator)) {
+      const id = `candidate-quiz-${quiz.canonicalId}-common-mistake`;
+      if (ids.has(id)) throw new Error(`Duplicate quiz candidate ID ${id}`);
+      ids.add(id);
+      candidates.push(makeCandidate({
+        id,
+        title: `${quiz.title}: Common Mistake Checkpoint`,
+        excerpt: quiz.commonMistakeCheckpoint,
+        sourceKind: 'common-mistake-checkpoint',
+        sourceReference: 'Quiz commonMistakeCheckpoint',
+        quiz,
+        sourcePath,
+        sourceLocator,
+        suggestedFormat: 'mistake',
+      }));
+      sourceCandidateCount += 1;
+    }
   }
 
   sources.push({ sourcePath, canonicalId: quiz.canonicalId, title: quiz.title, slug: quiz.slug, status: quiz.status, version: quiz.version, fallbackCollectionId: QUIZ_FALLBACK_COLLECTION[quiz.canonicalId], candidateCount: sourceCandidateCount });
@@ -203,22 +216,23 @@ for (const candidate of candidates) {
 }
 const generatedAt = new Date().toISOString();
 fs.mkdirSync(outputDir, { recursive: true });
-fs.writeFileSync(path.join(outputDir, 'candidates.json'), `${JSON.stringify({ generatedAt, classifierVersion: 4, sourceHierarchyRank: 5, releasedQuizCount: sources.length, candidateCount: candidates.length, likelyNetNewCount: likelyNetNew.length, overlapCount: overlaps.length, collectionCounts, netNewCollectionCounts, sources, candidates }, null, 2)}\n`);
+fs.writeFileSync(path.join(outputDir, 'candidates.json'), `${JSON.stringify({ generatedAt, classifierVersion: 4, sourceHierarchyRank: 5, releasedQuizCount: sources.length, promotedSourceCount: promotedSourceKeys.size, candidateCount: candidates.length, likelyNetNewCount: likelyNetNew.length, overlapCount: overlaps.length, collectionCounts, netNewCollectionCounts, sources, candidates }, null, 2)}\n`);
 fs.writeFileSync(path.join(outputDir, 'review.md'), `${[
   '# Daily Card Quiz review queue', '',
   `Generated: ${generatedAt}`, '',
   'Classifier: **v4 curated-title + quiz-topic fallback**',
   `Released quizzes: **${sources.length}**`,
-  `Authored candidates: **${candidates.length}**`,
+  `Promoted Quiz source identities excluded: **${promotedSourceKeys.size}**`,
+  `Authored candidates remaining: **${candidates.length}**`,
   `Likely net-new: **${likelyNetNew.length}**`,
   `Potential overlaps: **${overlaps.length}**`, '',
   '## Suggested collection counts', '',
   ...Object.entries(collectionCounts).sort().map(([id, count]) => `- **${id}** — ${count} total / ${netNewCollectionCounts[id] || 0} likely net-new`), '',
   '## Quiz sources', '',
   ...sources.map((source) => `- **${source.title}** — ${source.candidateCount} candidates — fallback ${source.fallbackCollectionId} — ${source.status} ${source.version}`), '',
-  'All candidates remain review-only. Classification uses each curated concept title first; if the title is not specific, the known quiz topic is used. Explanatory prose cannot override taxonomy.', '',
+  'All candidates remain review-only. Promoted exact source identities are excluded before ranking. Classification uses each curated concept title first; if the title is not specific, the known quiz topic is used.', '',
 ].join('\n')}\n`);
-console.log(`Quiz Daily Card queue: ${sources.length} released quizzes -> ${candidates.length} authored candidates.`);
+console.log(`Quiz Daily Card queue: ${sources.length} released quizzes -> ${candidates.length} authored candidates after ${promotedSourceKeys.size} promoted source exclusions.`);
 console.log(`Classifier v4; likely net-new: ${likelyNetNew.length}; overlaps: ${overlaps.length}.`);
 for (const [id, count] of Object.entries(collectionCounts).sort()) console.log(`QUIZ-COLLECTION: ${id} -> ${count} total / ${netNewCollectionCounts[id] || 0} net-new`);
 for (const source of sources) console.log(`QUIZ-SOURCE: ${source.title} -> ${source.candidateCount} (fallback ${source.fallbackCollectionId})`);

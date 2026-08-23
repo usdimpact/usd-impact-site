@@ -7,6 +7,7 @@ on:
       - 'apps/web/src/content/quizzes/**'
       - 'apps/web/src/data/quiz-access-map.json'
       - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/src/data/daily-card-framework-quiz-batch-*.js'
       - 'apps/web/scripts/generate-daily-card-framework-candidates.mjs'
       - 'apps/web/scripts/generate-daily-card-quiz-candidates.mjs'
       - 'apps/web/scripts/rank-daily-card-framework-quiz-candidates.mjs'
@@ -19,6 +20,7 @@ on:
       - 'apps/web/src/content/quizzes/**'
       - 'apps/web/src/data/quiz-access-map.json'
       - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/src/data/daily-card-framework-quiz-batch-*.js'
       - 'apps/web/scripts/generate-daily-card-framework-candidates.mjs'
       - 'apps/web/scripts/generate-daily-card-quiz-candidates.mjs'
       - 'apps/web/scripts/rank-daily-card-framework-quiz-candidates.mjs'
@@ -52,4 +54,4 @@ jobs:
         run: |
           test -s artifacts/daily-card-framework-quiz-shortlist/shortlist.json
           test -s artifacts/daily-card-framework-quiz-shortlist/shortlist.md
-          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-framework-quiz-shortlist/shortlist.json','utf8')); const q=p.quotas; if(p.classifierVersion!==4 || q['rates-liquidity-policy']!==7 || q['market-application']!==5 || Object.hasOwn(q,'dollar-funding-stack') || p.selectedCount!==12 || p.selected.length!==12) process.exit(1); if(!p.deferredCollections || !p.deferredCollections['dollar-funding-stack']) process.exit(1); const counts={}; const sources={}; const titles=new Set(); for(const c of p.selected){if(c.reviewDisposition!=='likely-net-new' || c.status!=='review' || c.lastReviewed!==null || c.potentialOverlapCardIds.length!==0) process.exit(1); counts[c.suggestedCollectionId]=(counts[c.suggestedCollectionId]||0)+1; sources[c.sourcePath]=(sources[c.sourcePath]||0)+1; const t=c.title.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); if(titles.has(t)) process.exit(1); titles.add(t);} if(Object.values(sources).some(n=>n>p.maxPerSource)) process.exit(1); for(const [id,n] of Object.entries(q)){if(counts[id]!==n) process.exit(1);} if(p.selected.some(c=>c.suggestedCollectionId==='global-dollar-fx'||c.suggestedCollectionId==='dollar-funding-stack')) process.exit(1);"
+          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-framework-quiz-shortlist/shortlist.json','utf8')); const q=p.quotas; const rates=q['rates-liquidity-policy']; const market=q['market-application']; if(p.classifierVersion!==4 || p.batchSize!==12 || p.preferredRatesMax!==5 || !Number.isInteger(rates) || rates<0 || rates>5 || market!==12-rates || Object.hasOwn(q,'dollar-funding-stack') || p.selectedCount!==12 || p.selected.length!==12) process.exit(1); if(!p.deferredCollections || !p.deferredCollections['dollar-funding-stack']) process.exit(1); if(p.promotedQuizSourceCount<5) process.exit(1); const counts={}; const sources={}; const titles=new Set(); for(const c of p.selected){if(c.reviewDisposition!=='likely-net-new' || c.status!=='review' || c.lastReviewed!==null || c.potentialOverlapCardIds.length!==0) process.exit(1); counts[c.suggestedCollectionId]=(counts[c.suggestedCollectionId]||0)+1; sources[c.sourcePath]=(sources[c.sourcePath]||0)+1; const t=c.title.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); if(titles.has(t)) process.exit(1); titles.add(t);} if(Object.values(sources).some(n=>n>p.maxPerSource)) process.exit(1); if((counts['rates-liquidity-policy']||0)!==rates || (counts['market-application']||0)!==market) process.exit(1); if(p.selected.some(c=>c.suggestedCollectionId==='global-dollar-fx'||c.suggestedCollectionId==='dollar-funding-stack')) process.exit(1);"

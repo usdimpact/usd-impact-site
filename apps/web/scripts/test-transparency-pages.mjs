@@ -10,13 +10,20 @@ const vintageJson = 'https://usd-impact-pipeline.pages.dev/data/research/score_v
 const vintageCsv = 'https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.csv';
 const dataSemantics = 'https://usd-impact-pipeline.pages.dev/data/score_v2_data_semantics.json';
 const retentionPolicy = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/docs/source-retention-policy.md';
+const predictiveProtocol = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v2_predictive_preregistration.json';
+const predictiveContract = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v2_predictive_implementation_contract.json';
+const predictiveEngineLock = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v2_predictive_engine_lock.json';
 
 assert.match(about, /SC Kela Leads SRL/);
 assert.match(about, /Mircea Albulescu/);
 assert.match(about, /Exact product revenue and customers/);
 assert.match(about, /Not publicly disclosed/);
 assert.match(about, /Meaningful predictive power[\s\S]*Not established and not claimed/);
-assert.match(about, /Genuine predictive out-of-sample test[\s\S]*Not completed/);
+assert.match(about, /Genuine predictive out-of-sample test[\s\S]*Preregistered; pending/);
+assert.match(about, /first untouched origin on August 28, 2026/);
+assert.match(about, /no result exists before 52 resolved future predictions/);
+assert.ok(about.includes(predictiveProtocol), 'About page must link the predictive preregistration.');
+assert.ok(about.includes(predictiveEngineLock), 'About page must link the predictive engine lock.');
 assert.ok(about.includes(vintageJson), 'About page must link the revision-audit JSON.');
 assert.ok(about.includes(vintageCsv), 'About page must link the revision-audit CSV.');
 assert.ok(about.includes(dataSemantics), 'About page must link the data-semantics contract.');
@@ -40,6 +47,12 @@ assert.match(methodology, /Original transport bytes are not hashed/);
 assert.match(methodology, /provider-derived daily values are not published/);
 assert.match(methodology, /complete raw provider responses are not archived or publicly redistributed/);
 assert.match(methodology, /cannot independently reconstruct a changed provider history/);
+assert.match(methodology, /True predictive out-of-sample test: preregistered, not started/);
+assert.match(methodology, /requires 52 consecutive resolved predictions/);
+assert.match(methodology, /has not begun and supplies no present performance evidence/);
+assert.ok(methodology.includes(predictiveProtocol), 'Methodology page must link the predictive preregistration.');
+assert.ok(methodology.includes(predictiveContract), 'Methodology page must link the predictive implementation contract.');
+assert.ok(methodology.includes(predictiveEngineLock), 'Methodology page must link the predictive engine lock.');
 assert.doesNotMatch(methodology, /raw provider (responses|payloads) are archived/i);
 assert.doesNotMatch(
   methodology,

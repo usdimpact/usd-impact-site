@@ -1,0 +1,260 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="USD Impact Score v2 Methodology | Formula, Inputs & Validation"
+  description="The complete public methodology for USD Impact Score v2: variables, weights, normalization, missing-data rules, outlier treatment, regime bands, historical calibration and validation limitations."
+>
+  <section class="hero methodology-hero">
+    <div class="container">
+      <div class="eyebrow">USD Impact Score v2</div>
+      <h1>Methodology you can inspect and challenge.</h1>
+      <p class="lead">This page describes the production score exactly as it is calculated today. The formula, inputs, weights, data treatment and known limitations are public. No hidden discretionary adjustment is applied to the published score.</p>
+      <div class="button-row">
+        <a class="button primary" href="#formula">See the formula</a>
+        <a class="button secondary" href="/score/">Return to the score</a>
+      </div>
+    </div>
+  </section>
+
+  <main class="container methodology-page">
+    <section class="methodology-status card">
+      <div class="eyebrow">Production status</div>
+      <h2>What this methodology is — and is not</h2>
+      <p><strong>USD Impact Score v2 is a descriptive weekly regime indicator.</strong> It is not a return forecast, trading signal, probability model or optimized portfolio rule. Positive values describe conditions that the framework associates with firmer dollar pressure; negative values describe softer-dollar conditions.</p>
+      <p>The model is intentionally simple: eight market levels, fixed signed weights and z-score standardization. That simplicity makes the arithmetic auditable, but it does not remove specification risk, correlation risk or regime dependence.</p>
+    </section>
+
+    <section id="formula" class="methodology-section">
+      <div class="eyebrow">Exact calculation</div>
+      <h2>The production formula</h2>
+      <p>For each driver <em>i</em> and week <em>t</em>, the pipeline takes the last available observation in the Friday-ended week and standardizes the weekly <strong>level</strong> against the complete production sample available at run time <em>T</em>:</p>
+      <div class="formula" role="math" aria-label="Component z score equals clipped weekly level minus full-sample mean divided by full-sample sample standard deviation">
+        z<sub>i,t,T</sub> = clip((x<sub>i,t</sub> − μ<sub>i,T</sub>) / s<sub>i,T</sub>, −3.5, +3.5)
+      </div>
+      <p><strong>μ</strong> is the full-sample mean and <strong>s</strong> is the pandas sample standard deviation (the default <code>ddof=1</code>) for all complete Friday observations from the production start date through run <em>T</em>.</p>
+      <div class="formula score-formula" role="math" aria-label="USD Impact Score formula">
+        Score<sub>t,T</sub> = 0.125 × (DXY − WTI − SPX + VIX − BTC − GOLD + UST2Y + UST10Y)
+      </div>
+      <p>Every term in the second formula is the clipped z-score above. The eight absolute weights sum to 1.00.</p>
+    </section>
+
+    <section class="methodology-section">
+      <div class="eyebrow">Variables and weights</div>
+      <h2>What enters the model</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Driver</th>
+              <th>Production series</th>
+              <th>Input</th>
+              <th>Weight</th>
+              <th>Framework rationale</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>DXY</td><td>Yahoo: DX-Y.NYB</td><td>Weekly level</td><td>+0.125</td><td>Direct dollar-index pressure.</td></tr>
+            <tr><td>WTI</td><td>Yahoo: CL=F</td><td>Weekly level</td><td>−0.125</td><td>Commodity/reflation channel; higher oil is assigned a softer-dollar sign.</td></tr>
+            <tr><td>S&amp;P 500</td><td>Yahoo: ^GSPC</td><td>Weekly level</td><td>−0.125</td><td>Risk/liquidity channel; stronger risk assets are assigned a softer-dollar sign.</td></tr>
+            <tr><td>VIX</td><td>Yahoo: ^VIX</td><td>Weekly level</td><td>+0.125</td><td>Stress channel; higher volatility is assigned a firmer-dollar sign.</td></tr>
+            <tr><td>Bitcoin</td><td>Yahoo: BTC-USD</td><td>Weekly level</td><td>−0.125</td><td>High-beta liquidity/risk channel.</td></tr>
+            <tr><td>Gold</td><td>Yahoo: GC=F</td><td>Weekly level</td><td>−0.125</td><td>Dollar/real-rate-sensitive store-of-value channel.</td></tr>
+            <tr><td>U.S. 2Y yield</td><td>FRED: DGS2</td><td>Weekly yield level</td><td>+0.125</td><td>Front-end rate and policy-expectations channel.</td></tr>
+            <tr><td>U.S. 10Y yield</td><td>FRED: DGS10</td><td>Weekly yield level</td><td>+0.125</td><td>Longer-rate and discount-rate channel.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="methodology-note">The signs are framework assumptions, not estimated regression coefficients. Relationships can change by regime. Equal nominal weights do not imply equal independent information or equal risk contribution.</p>
+    </section>
+
+    <section class="methodology-section grid methodology-grid">
+      <article class="card">
+        <div class="eyebrow">Frequency</div>
+        <h3>Weekly, Friday-ended</h3>
+        <p>Daily source series are aligned, then resampled with <code>W-FRI</code> using the last available observation. Incomplete future Fridays are excluded.</p>
+      </article>
+      <article class="card">
+        <div class="eyebrow">Calibration period</div>
+        <h3>January 1, 2015 onward</h3>
+        <p>The production start date is 2015-01-01. The current model therefore does not provide a canonical 2008 observation.</p>
+      </article>
+      <article class="card">
+        <div class="eyebrow">Rebalancing</div>
+        <h3>No weight rebalancing</h3>
+        <p>The signed 12.5% weights are static. However, the full-sample mean and standard deviation are recomputed on each run as the sample expands.</p>
+      </article>
+      <article class="card">
+        <div class="eyebrow">Correlation</div>
+        <h3>No explicit de-correlation</h3>
+        <p>v2 does not apply PCA, covariance adjustment, risk parity or cluster caps. Correlated drivers can therefore reinforce one another.</p>
+      </article>
+    </section>
+
+    <section class="methodology-section">
+      <div class="eyebrow">Data treatment</div>
+      <h2>Missing observations, freshness and outliers</h2>
+      <div class="methodology-list">
+        <div><strong>Calendar alignment.</strong> After source provenance is captured, daily values may be forward-filled for at most three observations to bridge ordinary market-calendar mismatches.</div>
+        <div><strong>Freshness gate.</strong> A release fails closed if a required driver is missing, future-dated or too stale. The production limits are 2 calendar days for Bitcoin, 3 for DXY/WTI/S&amp;P 500/VIX/gold, and 4 for the two Treasury series.</div>
+        <div><strong>Complete cases.</strong> After weekly resampling, any week still missing one of the eight required inputs is dropped from the calculation sample. The latest publishable week must be complete.</div>
+        <div><strong>Outliers.</strong> Raw observations are not winsorized. Standardized component values are clipped only after z-scoring, at −3.5 and +3.5.</div>
+        <div><strong>Source revisions.</strong> Yahoo/FRED histories can be revised or restated. Dated score archives preserve published score vintages, but the current full-history chart is recalculated from the latest available source history.</div>
+      </div>
+    </section>
+
+    <section class="methodology-section">
+      <div class="eyebrow">Regime labels</div>
+      <h2>How score values are mapped to language</h2>
+      <div class="table-wrap compact-table">
+        <table>
+          <thead><tr><th>Score range</th><th>Label</th></tr></thead>
+          <tbody>
+            <tr><td>≥ +1.0</td><td>Strong dollar regime</td></tr>
+            <tr><td>+0.3 to &lt; +1.0</td><td>Firm dollar regime</td></tr>
+            <tr><td>−0.3 to &lt; +0.3</td><td>Neutral / transitional</td></tr>
+            <tr><td>−1.0 to &lt; −0.3</td><td>Soft dollar regime</td></tr>
+            <tr><td>&lt; −1.0</td><td>Weak dollar regime</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="methodology-note">The regime thresholds are fixed specification choices. They are not estimated probabilities and should not be interpreted as confidence intervals.</p>
+    </section>
+
+    <section class="methodology-section">
+      <div class="eyebrow">Calibration and optimization</div>
+      <h2>Was the model optimized in-sample?</h2>
+      <p><strong>The production code does not fit the eight weights or regime thresholds with a predictive optimizer.</strong> They are fixed constants chosen from the USD Impact transmission framework. That reduces one form of curve-fitting, but it does not eliminate model-selection bias: the choice of variables, signs, start date and thresholds remains discretionary.</p>
+      <p>The z-score normalization is explicitly <strong>full-sample</strong>. A new week changes the sample mean and standard deviation, which can revise historical z-scores and occasionally historical regime labels. For that reason, the recalculated historical series must not be presented as a point-in-time out-of-sample record.</p>
+    </section>
+
+    <section class="methodology-section validation-section">
+      <div class="eyebrow">Validation status</div>
+      <h2>What has and has not been backtested</h2>
+      <div class="validation-grid">
+        <article class="card status-known">
+          <h3>Descriptive regime checks: available</h3>
+          <p>The pipeline evaluates score sign during five selected historical windows: 2015–16 oil/EM stress, 2018 Fed tightening, March 2020 funding stress, 2020–21 post-Fed liquidity, and the 2022 tightening cycle.</p>
+        </article>
+        <article class="card status-gap">
+          <h3>True out-of-sample test: not yet claimed</h3>
+          <p>The existing historical check uses the score normalized with the full available sample and selected regime windows. It is not a point-in-time predictive backtest and is not presented as one.</p>
+        </article>
+        <article class="card status-gap">
+          <h3>2008: outside canonical v2</h3>
+          <p>v2 begins in 2015 and includes Bitcoin. A 2008 result would therefore require a separately labelled proxy study or a new methodology version; it cannot honestly be reported as a v2 observation.</p>
+        </article>
+        <article class="card status-gap">
+          <h3>Formal regime-stability study: open</h3>
+          <p>v2 does not yet publish rolling coefficient stability, sub-period sensitivity, correlation-cluster sensitivity or alternative-normalization robustness tests.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="methodology-section">
+      <div class="eyebrow">Reproducibility</div>
+      <h2>Public artifacts</h2>
+      <p>A reviewer can verify the current score arithmetic from the published component z-scores, weights and contributions, inspect the complete score history, and inspect the production implementation.</p>
+      <div class="artifact-links grid">
+        <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/usd_impact_score_v2.py" target="_blank" rel="noreferrer">
+          <strong>Production source code</strong>
+          <span>Exact calculation and data-treatment logic.</span>
+        </a>
+        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/weekly_input_latest.json" target="_blank" rel="noreferrer">
+          <strong>Latest decomposition JSON</strong>
+          <span>Score, driver z-scores, weights, contributions and source provenance.</span>
+        </a>
+        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/usd_impact_score_v2.json" target="_blank" rel="noreferrer">
+          <strong>Full score JSON</strong>
+          <span>Metadata, weights, source provenance and weekly score history.</span>
+        </a>
+        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/usd_impact_score_v2.csv" target="_blank" rel="noreferrer">
+          <strong>Full score CSV</strong>
+          <span>Weekly component z-scores, score and regime.</span>
+        </a>
+        <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/requirements.lock" target="_blank" rel="noreferrer">
+          <strong>Locked environment</strong>
+          <span>Exact production Python dependency versions.</span>
+        </a>
+        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/archive/en/" target="_blank" rel="noreferrer">
+          <strong>As-published archive</strong>
+          <span>Dated score and commentary vintages.</span>
+        </a>
+      </div>
+      <div class="repro-gap">
+        <strong>Remaining reproducibility gap.</strong> v2 currently publishes the standardized score history and current decomposition, but not an immutable raw weekly input matrix plus the exact normalization moments for every release. Upstream historical revisions can therefore prevent byte-for-byte reconstruction at a later date. We treat that as a disclosure and engineering gap, not as a hidden model feature.
+      </div>
+    </section>
+
+    <section class="methodology-section">
+      <div class="eyebrow">Institutional review questions</div>
+      <h2>Direct answers</h2>
+      <dl class="qa-list">
+        <div><dt>What variables enter the model?</dt><dd>DXY, WTI, S&amp;P 500, VIX, Bitcoin, gold, U.S. 2-year yield and U.S. 10-year yield.</dd></div>
+        <div><dt>What are the weights?</dt><dd>Fixed magnitude 0.125 each; signs are +, −, −, +, −, −, +, + in the order above.</dd></div>
+        <div><dt>How are variables normalized?</dt><dd>Full-sample z-scores of weekly levels using the sample mean and sample standard deviation, then clipped to ±3.5.</dd></div>
+        <div><dt>What is the historical calibration period?</dt><dd>Production starts January 1, 2015 and expands weekly.</dd></div>
+        <div><dt>How are correlations handled?</dt><dd>They are not explicitly neutralized in v2.</dd></div>
+        <div><dt>How often are weights rebalanced?</dt><dd>They are not. Weights are static; normalization moments update every run.</dd></div>
+        <div><dt>How are missing observations treated?</dt><dd>Limited daily forward fill for calendar alignment, strict freshness checks, then complete-case weekly filtering.</dd></div>
+        <div><dt>How are outliers treated?</dt><dd>Component z-scores are clipped at ±3.5; raw values are not winsorized.</dd></div>
+        <div><dt>Predictive or descriptive?</dt><dd>Descriptive.</dd></div>
+        <div><dt>Optimized in-sample?</dt><dd>No predictive optimizer fits the production weights or thresholds, but the specification choices remain discretionary.</dd></div>
+        <div><dt>Backtested out-of-sample?</dt><dd>Not in a form we currently claim as true point-in-time out-of-sample validation.</dd></div>
+        <div><dt>Stable across regimes?</dt><dd>Not yet demonstrated with a formal published stability battery.</dd></div>
+        <div><dt>2008, 2020, 2022?</dt><dd>2008 is outside canonical v2. 2020 and 2022 appear in the descriptive anchor-window checks, but not as a true out-of-sample prediction test.</dd></div>
+      </dl>
+    </section>
+
+    <section class="compliance" aria-label="Compliance note">
+      <strong>Compliance note:</strong> The USD Impact Score is educational and informational. It is not investment, financial, trading, legal or tax advice, is not a recommendation to buy or sell any asset, and does not promise predictive accuracy. Historical relationships can change.
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .methodology-hero { padding-bottom: 64px; }
+  .methodology-page { max-width: 1060px; }
+  .methodology-status { margin-bottom: 58px; border-left: 5px solid var(--gold); }
+  .methodology-status h2 { margin: 8px 0 12px; }
+  .methodology-status p:last-child { margin-bottom: 0; }
+  .methodology-section { margin-top: 62px; scroll-margin-top: 24px; }
+  .methodology-section > h2 { margin: 6px 0 16px; }
+  .methodology-section > p { max-width: 84ch; }
+  .formula { margin: 24px 0; padding: 22px 24px; overflow-x: auto; border: 1px solid #d9dee5; border-left: 5px solid var(--gold); border-radius: 14px; background: #fff; color: var(--navy); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(20px, 3.3vw, 31px); line-height: 1.45; }
+  .score-formula { font-size: clamp(18px, 2.8vw, 27px); }
+  .table-wrap { overflow-x: auto; border: 1px solid #dce2e9; border-radius: 16px; background: #fff; }
+  table { width: 100%; border-collapse: collapse; min-width: 820px; }
+  th, td { padding: 14px 16px; border-bottom: 1px solid #e5e9ee; text-align: left; vertical-align: top; }
+  th { background: #f3f5f7; color: var(--navy); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+  td { font-size: 14px; }
+  tbody tr:last-child td { border-bottom: 0; }
+  .compact-table { max-width: 620px; }
+  .compact-table table { min-width: 520px; }
+  .methodology-note { margin-top: 14px; color: var(--slate); font-size: 14px; }
+  .methodology-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .methodology-grid h3 { margin: 6px 0 8px; }
+  .methodology-grid p { margin: 0; color: var(--slate); }
+  .methodology-list { display: grid; gap: 12px; }
+  .methodology-list > div { padding: 18px 20px; border-left: 3px solid #d8c18d; border-radius: 0 12px 12px 0; background: #fff; }
+  .validation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .validation-grid h3 { margin-top: 0; }
+  .validation-grid p { margin-bottom: 0; color: var(--slate); }
+  .status-known { border-top: 4px solid #4e7a5d; }
+  .status-gap { border-top: 4px solid var(--gold); }
+  .artifact-card { display: grid; gap: 4px; color: inherit; text-decoration: none; }
+  .artifact-card strong { color: var(--navy); }
+  .artifact-card span { color: var(--slate); font-size: 14px; }
+  .artifact-card:hover { border-color: #c7ad73; }
+  .repro-gap { margin-top: 22px; padding: 18px 20px; border: 1px solid #e2d0a6; border-radius: 12px; background: #fff8e6; color: #4b3b14; }
+  .qa-list { display: grid; gap: 0; margin: 0; border: 1px solid #dce2e9; border-radius: 16px; overflow: hidden; background: #fff; }
+  .qa-list > div { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(0, 1.7fr); gap: 22px; padding: 16px 18px; border-bottom: 1px solid #e5e9ee; }
+  .qa-list > div:last-child { border-bottom: 0; }
+  .qa-list dt { color: var(--navy); font-weight: 800; }
+  .qa-list dd { margin: 0; }
+  code { padding: 2px 5px; border-radius: 5px; background: #edf0f3; font-size: .92em; }
+  @media (max-width: 760px) {
+    .methodology-grid, .validation-grid { grid-template-columns: 1fr; }
+    .qa-list > div { grid-template-columns: 1fr; gap: 5px; }
+  }
+</style>

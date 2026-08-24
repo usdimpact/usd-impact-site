@@ -49,6 +49,7 @@ jobs:
       - name: Syntax
         run: |
           node --check src/data/daily-card-book-batch-04.js
+          node --check src/data/daily-card-book-batch-05.js
           node --check src/data/daily-card-book-resolutions.js
           node --check scripts/generate-daily-card-book-candidates.mjs
           node --check scripts/rank-daily-card-book-candidates.mjs
@@ -67,4 +68,4 @@ jobs:
           test -s artifacts/daily-card-book-shortlist/shortlist.json
           test -s artifacts/daily-card-book-shortlist/shortlist.md
           node --input-type=module -e "import fs from 'node:fs'; import { dailyCardInventoryTargets } from './src/data/daily-card-inventory-plan.js'; const p=JSON.parse(fs.readFileSync('artifacts/daily-card-book-shortlist/shortlist.json','utf8')); if(p.recommendedBatchSize!==12 || p.selectedCount<1 || p.selectedCount>p.recommendedBatchSize || p.selected.length!==p.selectedCount || p.eligibleNetNewCount<p.selectedCount) process.exit(1); if(!p.selected.every((c,i)=>c.reviewDisposition==='likely-net-new' && c.status==='review' && c.lastReviewed===null && c.shortlistRank===i+1 && c.sourceExcerpt && c.potentialOverlapCardIds.length===0)) process.exit(1); const bySource={}; const titles=new Set(); for(const c of p.selected){bySource[c.sourcePath]=(bySource[c.sourcePath]||0)+1; const t=c.title.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); if(titles.has(t)) process.exit(1); titles.add(t);} if(Object.values(bySource).some(n=>n>p.maxPerSourceLesson)) process.exit(1); for(const [id,n] of Object.entries(p.collectionShortlistCounts)){if(n>0 && (p.coverage[id].current+n)>dailyCardInventoryTargets[id]) process.exit(1);}"
-          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-book-candidates/candidates.json','utf8')); if(p.promotedSectionCount!==35 || p.resolvedSectionCount!==3) process.exit(1);"
+          node --input-type=module -e "import fs from 'node:fs'; import { dailyCards } from './src/data/daily-card-catalog.js'; import { dailyCardBookResolutions } from './src/data/daily-card-book-resolutions.js'; const p=JSON.parse(fs.readFileSync('artifacts/daily-card-book-candidates/candidates.json','utf8')); const key=(path,heading)=>path+'::'+heading; const promoted=new Set(dailyCards.filter(c=>c.status==='ready-for-build' && typeof c.sourcePath==='string' && c.sourcePath.startsWith('src/content/pages/') && typeof c.sourceHeading==='string').map(c=>key(c.sourcePath,c.sourceHeading))); const resolved=new Set(dailyCardBookResolutions.map(r=>key(r.sourcePath,r.sourceHeading))); if(p.promotedSectionCount!==promoted.size || p.resolvedSectionCount!==resolved.size || [...promoted].some(k=>resolved.has(k))) process.exit(1);"

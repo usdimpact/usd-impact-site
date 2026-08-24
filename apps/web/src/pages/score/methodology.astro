@@ -99,7 +99,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <div><strong>Freshness gate.</strong> A release fails closed if a required driver is missing, future-dated or too stale. The production limits are 2 calendar days for Bitcoin, 3 for DXY/WTI/S&amp;P 500/VIX/gold, and 4 for the two Treasury series.</div>
         <div><strong>Complete cases.</strong> After weekly resampling, any week still missing one of the eight required inputs is dropped from the calculation sample. The latest publishable week must be complete.</div>
         <div><strong>Outliers.</strong> Raw observations are not winsorized. Standardized component values are clipped only after z-scoring, at −3.5 and +3.5.</div>
-        <div><strong>Source revisions.</strong> Yahoo/FRED histories can be revised or restated. Dated score archives preserve published score vintages, but the current full-history chart is recalculated from the latest available source history.</div>
+        <div><strong>Source revisions.</strong> Yahoo/FRED histories can be revised or restated. Dated score archives preserve published score vintages, but the current full-history chart and research diagnostics are recalculated from the latest available source history.</div>
       </div>
     </section>
 
@@ -129,32 +129,44 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     </section>
 
     <section class="methodology-section validation-section">
-      <div class="eyebrow">Validation status</div>
-      <h2>What has and has not been backtested</h2>
+      <div class="eyebrow">Published validation evidence</div>
+      <h2>What the robustness tests currently show</h2>
+      <div class="evidence-callout">
+        <strong>Material normalization sensitivity:</strong> across 556 evaluated weeks from January 2016 through August 21, 2026, expanding-window point-in-time normalization and the current full-sample recalculation produced the same regime label in only <strong>40.1%</strong> of weeks. The mean absolute score difference was <strong>0.512</strong>, with a maximum of <strong>1.430</strong>. This is a robustness finding, not a predictive backtest.
+      </div>
       <div class="validation-grid">
         <article class="card status-known">
-          <h3>Descriptive regime checks: available</h3>
-          <p>The pipeline evaluates score sign during five selected historical windows: 2015–16 oil/EM stress, 2018 Fed tightening, March 2020 funding stress, 2020–21 post-Fed liquidity, and the 2022 tightening cycle.</p>
+          <h3>Point-in-time normalization: published</h3>
+          <p>Each evaluated week uses at least 52 prior complete weeks and normalization moments strictly before that week. Adding future observations is regression-tested not to alter earlier point-in-time scores.</p>
         </article>
         <article class="card status-gap">
-          <h3>True out-of-sample test: not yet claimed</h3>
-          <p>The existing historical check uses the score normalized with the full available sample and selected regime windows. It is not a point-in-time predictive backtest and is not presented as one.</p>
+          <h3>Normalization choice materially changes history</h3>
+          <p>Prior rolling windows of 104, 156 and 260 weeks showed only about 39.2%–43.4% regime-label agreement with the full-sample recalculation. Full-sample history should therefore not be treated as a stable point-in-time historical classification.</p>
+        </article>
+        <article class="card status-gap">
+          <h3>Correlation concentration is present</h3>
+          <p>In the latest 52-week input-level diagnostic, U.S. 2Y and 10Y yields had a 0.955 correlation. S&amp;P 500 correlations with the 2Y and 10Y yield levels were 0.791 and 0.783. v2 does not neutralize these overlaps.</p>
+        </article>
+        <article class="card status-known">
+          <h3>Driver and threshold sensitivity: published</h3>
+          <p>Leave-one-driver-out regime-label agreement was about 83.4%–90.5% across the available sample. The latest reading stayed Soft dollar under seven single-driver omissions and became Weak dollar when the U.S. 10Y input was omitted. Narrower and wider regime thresholds retained about 85.4% and 90.3% historical label agreement with production thresholds.</p>
+        </article>
+        <article class="card status-gap">
+          <h3>True predictive out-of-sample test: not claimed</h3>
+          <p>The published point-in-time study tests normalization leakage and specification sensitivity. It does not define a forecast target, prediction horizon, loss function, training protocol or untouched predictive test set.</p>
         </article>
         <article class="card status-gap">
           <h3>2008: outside canonical v2</h3>
-          <p>v2 begins in 2015 and includes Bitcoin. A 2008 result would therefore require a separately labelled proxy study or a new methodology version; it cannot honestly be reported as a v2 observation.</p>
-        </article>
-        <article class="card status-gap">
-          <h3>Formal regime-stability study: open</h3>
-          <p>v2 does not yet publish rolling coefficient stability, sub-period sensitivity, correlation-cluster sensitivity or alternative-normalization robustness tests.</p>
+          <p>v2 begins in 2015 and includes Bitcoin. A 2008 result would require a separately labelled proxy study or a new methodology version; it cannot honestly be reported as a v2 observation.</p>
         </article>
       </div>
+      <p class="methodology-note">The research files are current-vintage recalculations from the latest available provider histories. They are descriptive robustness evidence, not as-published historical vintages and not evidence of future predictive performance.</p>
     </section>
 
     <section class="methodology-section">
       <div class="eyebrow">Reproducibility</div>
       <h2>Public artifacts</h2>
-      <p>A reviewer can verify the current score arithmetic from the published component z-scores, weights and contributions, inspect the complete score history, and inspect the production implementation.</p>
+      <p>A reviewer can verify the current score arithmetic from the published component z-scores, weights and contributions, inspect the complete score history, inspect the production implementation, and inspect the current robustness evidence.</p>
       <div class="artifact-links grid">
         <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/usd_impact_score_v2.py" target="_blank" rel="noreferrer">
           <strong>Production source code</strong>
@@ -172,6 +184,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <strong>Full score CSV</strong>
           <span>Weekly component z-scores, score and regime.</span>
         </a>
+        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_robustness_latest.json" target="_blank" rel="noreferrer">
+          <strong>Robustness research JSON</strong>
+          <span>Point-in-time summary, leave-one-out, rolling normalization, correlation, threshold and subperiod diagnostics.</span>
+        </a>
+        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_point_in_time_latest.json" target="_blank" rel="noreferrer">
+          <strong>Point-in-time research JSON</strong>
+          <span>Week-by-week expanding-window comparison with no future observations entering each week's normalization moments.</span>
+        </a>
+        <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/scripts/build_score_repro_bundle.py" target="_blank" rel="noreferrer">
+          <strong>Release reproducer</strong>
+          <span>Future releases freeze levels, moments, z-scores, weights, contributions, provenance, code SHA and dependency-lock hash.</span>
+        </a>
         <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/requirements.lock" target="_blank" rel="noreferrer">
           <strong>Locked environment</strong>
           <span>Exact production Python dependency versions.</span>
@@ -182,7 +206,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </a>
       </div>
       <div class="repro-gap">
-        <strong>Remaining reproducibility gap.</strong> v2 currently publishes the standardized score history and current decomposition, but not an immutable raw weekly input matrix plus the exact normalization moments for every release. Upstream historical revisions can therefore prevent byte-for-byte reconstruction at a later date. We treat that as a disclosure and engineering gap, not as a hidden model feature.
+        <strong>Legacy-release boundary.</strong> The pipeline is now configured to freeze an immutable reproduction bundle for newly generated weekly releases, including the exact weekly levels, normalization moments, unclipped and clipped z-scores, weights, contributions, source provenance, pipeline commit and dependency-lock hash. Releases through August 21, 2026 predate that bundle and remain legacy artifacts; upstream revisions can prevent byte-for-byte reconstruction of those earlier releases.
       </div>
     </section>
 
@@ -192,17 +216,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <dl class="qa-list">
         <div><dt>What variables enter the model?</dt><dd>DXY, WTI, S&amp;P 500, VIX, Bitcoin, gold, U.S. 2-year yield and U.S. 10-year yield.</dd></div>
         <div><dt>What are the weights?</dt><dd>Fixed magnitude 0.125 each; signs are +, −, −, +, −, −, +, + in the order above.</dd></div>
-        <div><dt>How are variables normalized?</dt><dd>Full-sample z-scores of weekly levels using the sample mean and sample standard deviation, then clipped to ±3.5.</dd></div>
+        <div><dt>How are variables normalized?</dt><dd>Production uses full-sample z-scores of weekly levels using the sample mean and sample standard deviation, then clips each component to ±3.5. Separate published research tests prior-only expanding and rolling normalization.</dd></div>
         <div><dt>What is the historical calibration period?</dt><dd>Production starts January 1, 2015 and expands weekly.</dd></div>
-        <div><dt>How are correlations handled?</dt><dd>They are not explicitly neutralized in v2.</dd></div>
+        <div><dt>How are correlations handled?</dt><dd>They are not explicitly neutralized in v2. The latest 52-week level diagnostic found a 0.955 correlation between the U.S. 2Y and 10Y inputs and three input pairs with absolute correlation at or above 0.70.</dd></div>
         <div><dt>How often are weights rebalanced?</dt><dd>They are not. Weights are static; normalization moments update every run.</dd></div>
         <div><dt>How are missing observations treated?</dt><dd>Limited daily forward fill for calendar alignment, strict freshness checks, then complete-case weekly filtering.</dd></div>
         <div><dt>How are outliers treated?</dt><dd>Component z-scores are clipped at ±3.5; raw values are not winsorized.</dd></div>
         <div><dt>Predictive or descriptive?</dt><dd>Descriptive.</dd></div>
         <div><dt>Optimized in-sample?</dt><dd>No predictive optimizer fits the production weights or thresholds, but the specification choices remain discretionary.</dd></div>
-        <div><dt>Backtested out-of-sample?</dt><dd>Not in a form we currently claim as true point-in-time out-of-sample validation.</dd></div>
-        <div><dt>Stable across regimes?</dt><dd>Not yet demonstrated with a formal published stability battery.</dd></div>
-        <div><dt>2008, 2020, 2022?</dt><dd>2008 is outside canonical v2. 2020 and 2022 appear in the descriptive anchor-window checks, but not as a true out-of-sample prediction test.</dd></div>
+        <div><dt>Backtested out-of-sample?</dt><dd>No predictive out-of-sample claim is made. A prior-only point-in-time normalization robustness study is published, but it is not a predictive forecast test.</dd></div>
+        <div><dt>Stable across regimes?</dt><dd>Not invariant. The published robustness battery finds 40.1% regime-label agreement between point-in-time and full-sample normalization across 556 evaluated weeks, while leave-one-driver-out agreement is materially higher at about 83.4%–90.5%.</dd></div>
+        <div><dt>2008, 2020, 2022?</dt><dd>2008 is outside canonical v2. The published research includes 2020 and 2022 anchor-window comparisons under both point-in-time and full-sample normalization, but these are descriptive robustness checks rather than predictive tests.</dd></div>
       </dl>
     </section>
 
@@ -237,6 +261,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .methodology-grid p { margin: 0; color: var(--slate); }
   .methodology-list { display: grid; gap: 12px; }
   .methodology-list > div { padding: 18px 20px; border-left: 3px solid #d8c18d; border-radius: 0 12px 12px 0; background: #fff; }
+  .evidence-callout { margin: 20px 0 24px; padding: 20px 22px; border: 1px solid #e2d0a6; border-left: 5px solid var(--gold); border-radius: 14px; background: #fff8e6; color: #4b3b14; }
   .validation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
   .validation-grid h3 { margin-top: 0; }
   .validation-grid p { margin-bottom: 0; color: var(--slate); }

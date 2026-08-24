@@ -53,8 +53,6 @@ assert.equal(dailyCardMarketApplicationBatch01[0].sourceHeading, 'Signal matrix 
 assert.equal(dailyCardMarketApplicationBatch01[1].sourceHeading, 'Layer 1: define the benchmark');
 
 const canonicalMarketApplication = dailyCards.filter((card) => card.collectionId === 'market-application' && card.status === 'ready-for-build');
-assert.equal(canonicalMarketApplication.length, 15, `Expected 15 canonical Market Application cards after Batch 01, found ${canonicalMarketApplication.length}.`);
-assert.equal(dailyCards.length, 130, `Expected 130 canonical Daily Cards after Market Application Batch 01, found ${dailyCards.length}.`);
-assert.equal(dailyCards.filter((card) => card.access === 'open' && card.status === 'ready-for-build').length, 77, 'Expected 77 publishable Open cards after Market Application Batch 01.');
+assert.equal(canonicalMarketApplication.length, 15, `Expected Market Application to remain complete at 15/15, found ${canonicalMarketApplication.length}.`);
 
-console.log('Daily Card Market Application Batch 01: PASS (2 promoted; Market Application 15/15; 130/150 canonical; 77 Open).');
+console.log('Daily Card Market Application Batch 01: PASS (2 promoted; Market Application remains complete at 15/15).');

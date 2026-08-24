@@ -33,6 +33,8 @@ jobs:
           node scripts/validate-daily-cards.mjs
           node scripts/test-daily-card-inventory-plan.mjs
           node scripts/test-daily-card-glossary-resolutions.mjs
+          node scripts/test-daily-card-book-batches.mjs
+          node scripts/test-daily-card-book-resolutions.mjs
 
       - name: Generate inventory coverage
         run: node scripts/generate-daily-card-inventory-report.mjs

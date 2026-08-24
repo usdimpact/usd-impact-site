@@ -17,6 +17,7 @@ const latestWeeklyReport = (await getCollection('weeklyReports'))
       <p class="lead">A systematic cross-asset reading produced by the USD Impact data pipeline. Use it as educational context alongside the Daily USD Impact edition and the broader framework.</p>
       <div class="button-row">
         <a class="button primary" href="#score-dashboard">View the latest score</a>
+        <a class="button secondary" href="/score/methodology/">Read the full methodology</a>
         <a class="button secondary" href="https://usd-impact-pipeline.pages.dev/en/" target="_blank" rel="noreferrer">Open standalone dashboard</a>
       </div>
     </div>
@@ -32,13 +33,22 @@ const latestWeeklyReport = (await getCollection('weeklyReports'))
       <article class="card">
         <div class="eyebrow">How to use it</div>
         <h2>Context, not a signal</h2>
-        <p>Read the score together with rates, liquidity, commodities, FX and risk conditions. It is not a forecast, recommendation or trading instruction.</p>
+        <p>Read the score together with rates, liquidity, commodities, FX and risk conditions. It is descriptive, not a forecast, recommendation or trading instruction.</p>
       </article>
       <article class="card">
-        <div class="eyebrow">Update cycle</div>
-        <h2>Weekly pipeline</h2>
-        <p>The dashboard is maintained separately by the USD Impact Score pipeline and displays the latest published reading and commentary.</p>
+        <div class="eyebrow">Methodology</div>
+        <h2>Formula published</h2>
+        <p>The production variables, signed weights, normalization, data treatment, regime bands, source provenance and validation limitations are publicly documented.</p>
       </article>
+    </section>
+
+    <section class="score-methodology-callout card" aria-labelledby="score-methodology-heading">
+      <div>
+        <div class="eyebrow">Independent review</div>
+        <h2 id="score-methodology-heading">Do not take the score on faith.</h2>
+        <p>USD Impact Score v2 uses eight fixed-weight weekly market levels standardized against the expanding full sample since January 2015. The methodology page states exactly how a number such as −0.72 is produced, including missing-data rules, ±3.5 clipping, the lack of explicit correlation adjustment, and why the existing historical checks are descriptive rather than true out-of-sample validation.</p>
+      </div>
+      <a class="button report-link" href="/score/methodology/">Audit the methodology</a>
     </section>
 
     <section id="score-dashboard" class="score-dashboard-section">
@@ -98,3 +108,20 @@ const latestWeeklyReport = (await getCollection('weeklyReports'))
     </section>
   </main>
 </BaseLayout>
+
+<style>
+  .score-methodology-callout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 28px;
+    align-items: center;
+    margin-top: 48px;
+    border-left: 5px solid var(--gold);
+    background: linear-gradient(135deg, #fff, #f7f3ea);
+  }
+  .score-methodology-callout h2 { margin: 6px 0 8px; }
+  .score-methodology-callout p { max-width: 800px; margin: 0; color: var(--slate); }
+  @media (max-width: 720px) {
+    .score-methodology-callout { grid-template-columns: 1fr; }
+  }
+</style>

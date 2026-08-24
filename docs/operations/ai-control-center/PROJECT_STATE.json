@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-24T14:12:21.517Z",
+  "generated_at": "2026-08-24T14:39:53.640Z",
   "generated_by": "github-actions:sync",
   "freshness": "VERIFIED",
   "health": "RED",
@@ -15,7 +15,7 @@
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": "f922a174c2e777007687234e3ae76892c2fe54af"
+      "head_sha": "7d47e23e75bbd51c484fee4199a49cdfbf1b55d7"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
@@ -33,9 +33,9 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32737083659",
-        "created_at": "2026-08-24T14:10:38Z",
-        "head_sha": "f922a174c2e777007687234e3ae76892c2fe54af"
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32739288924",
+        "created_at": "2026-08-24T14:32:04Z",
+        "head_sha": "7d47e23e75bbd51c484fee4199a49cdfbf1b55d7"
       },
       "daily_news": {
         "status": "completed",
@@ -55,9 +55,9 @@
       "daily_news_health": {
         "status": "completed",
         "conclusion": "failure",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32475444274",
-        "created_at": "2026-08-21T11:03:23Z",
-        "head_sha": "e5d6602ac7418d1851918c0ca858c9a4fb7385fa",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32738632534",
+        "created_at": "2026-08-24T14:25:42Z",
+        "head_sha": "c5e9744cba3695be37bc876d930aa91612d9da08",
         "operational_conclusion": "stale_failure"
       },
       "catalyst_brief": {
@@ -118,19 +118,9 @@
       "number": 53,
       "title": "P0 — replacement-provider checkout and verified entitlement integration",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
-      "updated_at": "2026-08-24T13:53:43Z",
+      "updated_at": "2026-08-24T14:38:53Z",
       "priority": "P0",
-      "score": 1210,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 130,
-      "title": "P0 — complete transactional email, support, and consent readiness",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
-      "updated_at": "2026-08-24T13:58:14Z",
-      "priority": "P0",
-      "score": 1170,
+      "score": 1260,
       "blocked": false,
       "daily_gate": null
     },
@@ -138,17 +128,27 @@
       "number": 50,
       "title": "P0 — controlled Library Pass revenue and Production-readiness program",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/50",
-      "updated_at": "2026-08-23T22:46:44Z",
+      "updated_at": "2026-08-24T14:35:35Z",
       "priority": "P0",
-      "score": 1140,
+      "score": 1180,
       "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 130,
+      "title": "P0 — complete transactional email, support, and consent readiness",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
+      "updated_at": "2026-08-24T14:37:40Z",
+      "priority": "P0",
+      "score": 1100,
+      "blocked": true,
       "daily_gate": null
     },
     {
       "number": 54,
       "title": "P1 — integrated Library Pass rehearsal and Production launch",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/54",
-      "updated_at": "2026-08-23T17:56:10Z",
+      "updated_at": "2026-08-24T14:35:53Z",
       "priority": "P1",
       "score": 1060,
       "blocked": false,
@@ -158,7 +158,7 @@
       "number": 184,
       "title": "P1 — prove Daily reliability after hardening release",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/184",
-      "updated_at": "2026-08-24T12:27:19Z",
+      "updated_at": "2026-08-24T14:32:29Z",
       "priority": "P1",
       "score": 1020,
       "blocked": false,
@@ -208,7 +208,7 @@
       "number": 259,
       "title": "Expand Daily Cards canonical inventory to 150 reviewed concepts",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/259",
-      "updated_at": "2026-08-24T01:07:54Z",
+      "updated_at": "2026-08-24T14:19:57Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,
@@ -218,7 +218,7 @@
       "number": 166,
       "title": "USD Impact Control Center — operations console",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
-      "updated_at": "2026-08-24T14:12:04Z",
+      "updated_at": "2026-08-24T14:39:34Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,
@@ -260,19 +260,9 @@
       "number": 53,
       "title": "P0 — replacement-provider checkout and verified entitlement integration",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
-      "updated_at": "2026-08-24T13:53:43Z",
+      "updated_at": "2026-08-24T14:38:53Z",
       "priority": "P0",
-      "score": 1210,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 130,
-      "title": "P0 — complete transactional email, support, and consent readiness",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
-      "updated_at": "2026-08-24T13:58:14Z",
-      "priority": "P0",
-      "score": 1170,
+      "score": 1260,
       "blocked": false,
       "daily_gate": null
     },
@@ -280,17 +270,27 @@
       "number": 50,
       "title": "P0 — controlled Library Pass revenue and Production-readiness program",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/50",
-      "updated_at": "2026-08-23T22:46:44Z",
+      "updated_at": "2026-08-24T14:35:35Z",
       "priority": "P0",
-      "score": 1140,
+      "score": 1180,
       "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 130,
+      "title": "P0 — complete transactional email, support, and consent readiness",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
+      "updated_at": "2026-08-24T14:37:40Z",
+      "priority": "P0",
+      "score": 1100,
+      "blocked": true,
       "daily_gate": null
     },
     {
       "number": 54,
       "title": "P1 — integrated Library Pass rehearsal and Production launch",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/54",
-      "updated_at": "2026-08-23T17:56:10Z",
+      "updated_at": "2026-08-24T14:35:53Z",
       "priority": "P1",
       "score": 1060,
       "blocked": false,
@@ -300,7 +300,7 @@
       "number": 184,
       "title": "P1 — prove Daily reliability after hardening release",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/184",
-      "updated_at": "2026-08-24T12:27:19Z",
+      "updated_at": "2026-08-24T14:32:29Z",
       "priority": "P1",
       "score": 1020,
       "blocked": false,
@@ -350,7 +350,7 @@
       "number": 259,
       "title": "Expand Daily Cards canonical inventory to 150 reviewed concepts",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/259",
-      "updated_at": "2026-08-24T01:07:54Z",
+      "updated_at": "2026-08-24T14:19:57Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,

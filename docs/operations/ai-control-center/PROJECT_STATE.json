@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-24T14:39:53.640Z",
+  "generated_at": "2026-08-24T19:05:57.529Z",
   "generated_by": "github-actions:sync",
   "freshness": "VERIFIED",
   "health": "RED",
@@ -15,12 +15,12 @@
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": "7d47e23e75bbd51c484fee4199a49cdfbf1b55d7"
+      "head_sha": "520d2f9a73520403591620bb7ba2847f776a321c"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
       "default_branch": "main",
-      "head_sha": "4821b6e3b8bca60f54e7bfb3be0b6724c7df4edb"
+      "head_sha": "212ff50dcc99d9d963251b8d00573934633386c0"
     },
     "weekly_commentary": {
       "name": "usdimpact/usd-impact",
@@ -33,9 +33,9 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32739288924",
-        "created_at": "2026-08-24T14:32:04Z",
-        "head_sha": "7d47e23e75bbd51c484fee4199a49cdfbf1b55d7"
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32756199296",
+        "created_at": "2026-08-24T17:21:57Z",
+        "head_sha": "520d2f9a73520403591620bb7ba2847f776a321c"
       },
       "daily_news": {
         "status": "completed",
@@ -80,9 +80,9 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/32524469056",
-        "created_at": "2026-08-21T20:37:03Z",
-        "head_sha": "ff21416dd641b76548029eb6a2ca9d5543819e6b"
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/32765458038",
+        "created_at": "2026-08-24T18:58:33Z",
+        "head_sha": "212ff50dcc99d9d963251b8d00573934633386c0"
       },
       "weekly": {
         "status": "completed",
@@ -118,7 +118,7 @@
       "number": 53,
       "title": "P0 — replacement-provider checkout and verified entitlement integration",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
-      "updated_at": "2026-08-24T14:38:53Z",
+      "updated_at": "2026-08-24T19:05:33Z",
       "priority": "P0",
       "score": 1260,
       "blocked": false,
@@ -218,7 +218,7 @@
       "number": 166,
       "title": "USD Impact Control Center — operations console",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
-      "updated_at": "2026-08-24T14:39:34Z",
+      "updated_at": "2026-08-24T19:05:41Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,
@@ -260,7 +260,7 @@
       "number": 53,
       "title": "P0 — replacement-provider checkout and verified entitlement integration",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
-      "updated_at": "2026-08-24T14:38:53Z",
+      "updated_at": "2026-08-24T19:05:33Z",
       "priority": "P0",
       "score": 1260,
       "blocked": false,

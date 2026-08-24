@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  classifyWorkflowRecovery,
   evaluateDailyDispatch,
   isCompletedFailure,
   isFailureOnCurrentHead,
@@ -113,15 +114,32 @@ async function repoHead(repo) {
   return { default_branch: branch, head_sha: branchData.commit?.sha || null };
 }
 
+function latestMergedPublication(pulls, titlePrefix) {
+  const pr = (Array.isArray(pulls) ? pulls : []).find((item) => (
+    item?.merged_at
+    && typeof item?.title === 'string'
+    && item.title.startsWith(titlePrefix)
+  ));
+  if (!pr) return null;
+  return {
+    number: pr.number ?? null,
+    title: pr.title,
+    url: pr.html_url || null,
+    merged_at: pr.merged_at,
+    merge_commit_sha: pr.merge_commit_sha || null,
+  };
+}
+
 const websiteRepo = 'usdimpact/usd-impact-site';
 const pipelineRepo = 'usdimpact/usd-impact-pipeline';
 const commentaryRepo = 'usdimpact/usd-impact';
 
-const [websiteHead, pipelineHead, commentaryHead, issuesRaw] = await Promise.all([
+const [websiteHead, pipelineHead, commentaryHead, issuesRaw, closedPulls] = await Promise.all([
   repoHead(websiteRepo),
   repoHead(pipelineRepo),
   repoHead(commentaryRepo),
   gh(`https://api.github.com/repos/${websiteRepo}/issues?state=open&per_page=100&sort=updated&direction=desc`),
+  gh(`https://api.github.com/repos/${websiteRepo}/pulls?state=closed&base=main&sort=updated&direction=desc&per_page=50`),
 ]);
 
 const [
@@ -157,6 +175,11 @@ const [
   }),
 ]);
 
+const dailyRecovery = latestMergedPublication(closedPulls, 'Publish Daily USD Impact — ');
+const catalystRecovery = latestMergedPublication(closedPulls, 'Publish Catalyst Brief — ');
+const dailyOperational = classifyWorkflowRecovery(daily, dailyRecovery);
+const catalystOperational = classifyWorkflowRecovery(catalyst, catalystRecovery);
+
 const openIssues = issuesRaw
   .filter((issue) => !issue.pull_request)
   .map((issue) => {
@@ -191,14 +214,23 @@ const dailyDecision = evaluateDailyDispatch({
 });
 const dailyAllowed = dailyDecision.allowed;
 const staleDailyRecoveryPending = dailyDecision.dailyFailureStale
-  && dailyDecision.dailyHealthFailureStale;
+  && dailyDecision.dailyHealthFailureStale
+  && dailyOperational.operational_conclusion !== 'recovered_after_review';
+const dailyHealthOperational = {
+  ...dailyHealth,
+  operational_conclusion: dailyDecision.dailyHealthFailureStale && isCompletedFailure(dailyHealth)
+    ? 'stale_failure'
+    : (dailyHealth.conclusion || dailyHealth.status || 'UNKNOWN'),
+};
 const dailyFailureGate = dailyIssueBlocker?.daily_gate
-  ?? (isCompletedFailure(daily) || staleDailyRecoveryPending ? 'unclassified' : 'none');
+  ?? (dailyIssueBlocker && dailyOperational.operational_conclusion === 'recovered_after_review'
+    ? 'scheduled-proof'
+    : (isCompletedFailure(daily) || staleDailyRecoveryPending ? 'unclassified' : 'none'));
 const dailyDegradation = dailyIssueBlocker
   ? `gate ${dailyFailureGate} — #${dailyIssueBlocker.number} ${dailyIssueBlocker.title}`
   : staleDailyRecoveryPending
     ? `gate ${dailyFailureGate} — stale Daily and health failures await explicit recovery`
-    : isCompletedFailure(daily)
+    : isCompletedFailure(daily) && dailyOperational.operational_conclusion !== 'recovered_after_review'
       ? `gate ${dailyFailureGate} — latest Daily workflow failed`
       : 'none';
 
@@ -242,9 +274,9 @@ const state = {
   workflows: {
     website: {
       quality,
-      daily_news: daily,
-      daily_news_health: dailyHealth,
-      catalyst_brief: catalyst
+      daily_news: dailyOperational,
+      daily_news_health: dailyHealthOperational,
+      catalyst_brief: catalystOperational
     },
     pipeline: {
       quality: pipelineQuality,
@@ -260,6 +292,7 @@ const state = {
     daily_reason: dailyDecision.reason,
     daily_failure_gate: dailyFailureGate,
     daily_degradation: dailyDegradation,
+    daily_workflow_operational_conclusion: dailyOperational.operational_conclusion,
     exact_current_head_quality_green: dailyDecision.currentQualityGreen,
     stale_daily_failure: dailyDecision.dailyFailureStale,
     stale_daily_health_failure: dailyDecision.dailyHealthFailureStale
@@ -273,6 +306,7 @@ const state = {
     'Vercel production readiness must be verified outside this GitHub-only state snapshot after release.',
     'Cloudflare Pages remains separate to the pipeline dashboard and is not a usd-impact-site deployment target.',
     'A project-wide P0 or pipeline failure does not automatically block public Daily News unless it affects website publishing or a critical website quality/health workflow.',
+    'Raw workflow conclusions are preserved; operational_conclusion may mark a failed automation run as recovered_after_review only when a later matching publication PR was actually merged.',
     'An explicit /daily may perform one recovery dispatch only when both failed Daily signals belong to older commits and exact-current-head Web Quality is green.',
     'Daily failure gates are read only from bounded issue markers and never from untrusted provider payloads.'
   ]
@@ -282,7 +316,7 @@ const statePath = path.join(process.cwd(), 'docs/operations/ai-control-center/PR
 fs.mkdirSync(path.dirname(statePath), { recursive: true });
 fs.writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`);
 
-const workflowLine = (name, run) => `- ${name}: ${run.conclusion || run.status || 'UNKNOWN'}`;
+const workflowLine = (name, run) => `- ${name}: ${run.operational_conclusion || run.conclusion || run.status || 'UNKNOWN'}`;
 const nextLine = next ? `#${next.number} ${next.title} (${next.priority}, score ${next.score})` : 'No open issue selected';
 const dailyLine = dailyAllowed
   ? `${dailyDecision.mode} — ${dailyDecision.reason}`
@@ -299,9 +333,9 @@ const statusMd = [
   '',
   '**Website workflow health:**',
   workflowLine('quality', quality),
-  workflowLine('daily-news', daily),
-  workflowLine('daily-news-health', dailyHealth),
-  workflowLine('catalyst-brief', catalyst),
+  workflowLine('daily-news', dailyOperational),
+  workflowLine('daily-news-health', dailyHealthOperational),
+  workflowLine('catalyst-brief', catalystOperational),
   '',
   '**Pipeline workflow health:**',
   workflowLine('quality', pipelineQuality),

@@ -53,6 +53,32 @@ export function isFailureOnOlderHead(run, headSha) {
     && run.head_sha !== headSha;
 }
 
+export function classifyWorkflowRecovery(run, recovery = null) {
+  const rawConclusion = run?.conclusion || run?.status || 'UNKNOWN';
+  const runAt = Date.parse(run?.created_at || '');
+  const mergedAt = Date.parse(recovery?.merged_at || '');
+  const recovered = isCompletedFailure(run)
+    && Number.isFinite(runAt)
+    && Number.isFinite(mergedAt)
+    && mergedAt > runAt
+    && typeof recovery?.url === 'string'
+    && recovery.url.length > 0;
+
+  return {
+    ...run,
+    operational_conclusion: recovered ? 'recovered_after_review' : rawConclusion,
+    recovery: recovered
+      ? {
+          number: recovery.number ?? null,
+          title: recovery.title || null,
+          url: recovery.url,
+          merged_at: recovery.merged_at,
+          merge_commit_sha: recovery.merge_commit_sha || null,
+        }
+      : null,
+  };
+}
+
 export function evaluateDailyDispatch({
   command,
   websiteHeadSha,

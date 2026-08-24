@@ -5,6 +5,7 @@ import { dailyCardBookBatch01 } from '../src/data/daily-card-book-batch-01.js';
 import { dailyCardBookBatch02 } from '../src/data/daily-card-book-batch-02.js';
 import { dailyCardBookBatch03 } from '../src/data/daily-card-book-batch-03.js';
 import { dailyCardBookBatch04 } from '../src/data/daily-card-book-batch-04.js';
+import { dailyCardBookBatch05 } from '../src/data/daily-card-book-batch-05.js';
 import { dailyCards } from '../src/data/daily-card-catalog.js';
 
 const expectedCollectionById = Object.freeze({
@@ -41,6 +42,7 @@ const expectedCollectionById = Object.freeze({
   'card-dollar-story-diagnostic-errors': 'core-framework',
   'card-dollar-index-points-scope': 'core-framework',
   'card-dollar-five-step-reading-sequence': 'core-framework',
+  'card-dollar-infrastructure-transmission': 'core-framework',
 });
 
 function parseFrontmatter(text, sourcePath) {
@@ -64,13 +66,18 @@ assert.equal(dailyCardBookBatch01.length, 10, 'Book Batch 01 must remain exactly
 assert.equal(dailyCardBookBatch02.length, 10, 'Book Batch 02 must remain exactly ten reviewed promotions.');
 assert.equal(dailyCardBookBatch03.length, 10, 'Book Batch 03 must remain exactly ten reviewed promotions.');
 assert.equal(dailyCardBookBatch04.length, 3, 'Book Batch 04 must remain exactly three reviewed Core promotions.');
+assert.equal(dailyCardBookBatch05.length, 1, 'Book Batch 05 must remain exactly one reviewed Core promotion.');
 assert.equal(dailyCardBookBatch03.every((card) => card.collectionId === 'asset-transmission'), true, 'Book Batch 03 must remain Asset Transmission only.');
 assert.equal(dailyCardBookBatch03.every((card) => card.lastReviewed === '2026-08-24'), true, 'Book Batch 03 review date changed.');
 assert.equal(dailyCardBookBatch04.every((card) => card.collectionId === 'core-framework'), true, 'Book Batch 04 must remain Core Dollar Framework only.');
 assert.equal(dailyCardBookBatch04.every((card) => card.lastReviewed === '2026-08-24'), true, 'Book Batch 04 review date changed.');
+assert.equal(dailyCardBookBatch05.every((card) => card.collectionId === 'core-framework'), true, 'Book Batch 05 must remain Core Dollar Framework only.');
+assert.equal(dailyCardBookBatch05.every((card) => card.lastReviewed === '2026-08-24'), true, 'Book Batch 05 review date changed.');
+assert.equal(dailyCardBookBatch05[0].sourcePath, 'src/content/pages/what-is-the-us-dollar.md', 'Book Batch 05 source page changed.');
+assert.equal(dailyCardBookBatch05[0].sourceHeading, 'The dollar as infrastructure', 'Book Batch 05 source heading changed.');
 
-const promotedBookCards = [...dailyCardBookBatch01, ...dailyCardBookBatch02, ...dailyCardBookBatch03, ...dailyCardBookBatch04];
-assert.equal(promotedBookCards.length, 33, 'Book promotion total must be exactly thirty-three after Batch 04.');
+const promotedBookCards = [...dailyCardBookBatch01, ...dailyCardBookBatch02, ...dailyCardBookBatch03, ...dailyCardBookBatch04, ...dailyCardBookBatch05];
+assert.equal(promotedBookCards.length, 34, 'Book promotion total must be exactly thirty-four after Batch 05.');
 assert.deepEqual(new Set(promotedBookCards.map((card) => card.id)), new Set(Object.keys(expectedCollectionById)), 'Book promotion IDs changed unexpectedly.');
 
 const allCardIds = new Set(dailyCards.map((card) => card.id));
@@ -125,4 +132,4 @@ for (const sourcePath of new Set(dailyCardBookBatch03.map((card) => card.sourceP
   assert.equal(dailyCardBookBatch03.filter((card) => card.sourcePath === sourcePath).length, 2, `Book Batch 03 must select exactly two sections from ${sourcePath}.`);
 }
 assert.equal(new Set(dailyCardBookBatch04.map((card) => card.sourcePath)).size, 2, 'Book Batch 04 must preserve two-source Core diversity.');
-console.log('Daily Card Book provenance: PASS (33 promoted cards across Batches 01-04).');
+console.log('Daily Card Book provenance: PASS (34 promoted cards across Batches 01-05).');

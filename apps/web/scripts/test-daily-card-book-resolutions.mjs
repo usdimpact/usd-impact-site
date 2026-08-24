@@ -4,7 +4,7 @@ import path from 'node:path';
 import { dailyCards } from '../src/data/daily-card-catalog.js';
 import { dailyCardBookResolutions, getDailyCardBookResolution } from '../src/data/daily-card-book-resolutions.js';
 
-assert.equal(dailyCardBookResolutions.length, 3, 'Exactly three reviewed Book overlap resolutions are expected in this batch.');
+assert.equal(dailyCardBookResolutions.length, 7, 'Exactly seven reviewed Book overlap resolutions are expected through Batch 05.');
 
 const allCardIds = new Set(dailyCards.map((card) => card.id));
 const promotedSectionKeys = new Set(
@@ -51,5 +51,25 @@ assert.equal(
   'card-dollar-story-diagnostic-errors',
   'DXY common-mistakes overlap must remain mapped to the diagnostic-errors card.',
 );
+assert.equal(
+  getDailyCardBookResolution('src/content/pages/dxy-vs-broad-usd.md', 'Match the benchmark to the exposure')?.primaryCardId,
+  'card-regime-benchmark-selection',
+  'Benchmark-to-exposure overlap must remain mapped to the canonical benchmark-selection card.',
+);
+assert.equal(
+  getDailyCardBookResolution('src/content/pages/what-is-the-us-dollar.md', 'The usual mistake: starting with the asset')?.primaryCardId,
+  'card-dollar-five-step-reading-sequence',
+  'Upstream-first overlap must remain mapped to the canonical five-step sequence.',
+);
+assert.equal(
+  getDailyCardBookResolution('src/content/pages/dxy-vs-broad-usd.md', 'Common mistakes')?.primaryCardId,
+  'card-dollar-story-diagnostic-errors',
+  'DXY-vs-Broad common-mistakes overlap must remain mapped to the diagnostic-errors card.',
+);
+assert.equal(
+  getDailyCardBookResolution('src/content/pages/what-is-dxy.md', 'Lesson checkpoint')?.primaryCardId,
+  'card-dxy-signal-system',
+  'DXY lesson checkpoint must remain assessment material mapped to the canonical DXY foundation card.',
+);
 
-console.log('Daily Card Book resolutions: PASS (3 reviewed overlaps excluded from future promotion queues).');
+console.log('Daily Card Book resolutions: PASS (7 reviewed overlaps excluded from future promotion queues).');

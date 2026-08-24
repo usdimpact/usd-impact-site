@@ -218,7 +218,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </a>
         <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/scripts/build_score_repro_bundle.py" target="_blank" rel="noreferrer">
           <strong>Release reproducer</strong>
-          <span>Strict releases freeze the release week's levels, moments, z-scores, weights, contributions, provenance, code SHA and dependency-lock hash, plus complete-matrix and per-driver SHA-256 fingerprints.</span>
+          <span>Strict releases freeze the release week's levels, moments, z-scores, weights, contributions, provenance, code SHA and dependency-lock hash, plus per-driver and complete-matrix SHA-256 fingerprints at the daily and weekly stages.</span>
+        </a>
+        <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/docs/source-retention-policy.md" target="_blank" rel="noreferrer">
+          <strong>Source-retention policy</strong>
+          <span>Provider-rights boundary, evidence retained, explicit limitations and controls required before any raw-payload retention.</span>
         </a>
         <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/requirements.lock" target="_blank" rel="noreferrer">
           <strong>Locked environment</strong>
@@ -230,7 +234,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </a>
       </div>
       <div class="repro-gap">
-        <strong>Strict-release evidence boundary.</strong> For releases generated from August 28, 2026, one same-run provider snapshot feeds both the score and its reproduction bundle. The bundle freezes the release week's exact levels, normalization moments, unclipped and clipped z-scores, weights, contributions, source provenance, pipeline commit and dependency-lock hash, plus SHA-256 fingerprints of the complete weekly input matrix and each driver history. The complete matrix is held outside the public tree during the run; complete raw provider responses are not archived or publicly redistributed. The fingerprints can detect a later input-history change, but cannot independently reconstruct a changed provider history. Releases through August 21, 2026 predate this evidence bundle and remain legacy artifacts.
+        <strong>Strict-release evidence boundary.</strong> For releases generated from August 28, 2026, one same-run provider snapshot creates the score, a hashes-only daily receipt and the weekly input matrix. The bundle freezes the release week's exact levels, normalization moments, unclipped and clipped z-scores, weights, contributions, source provenance, pipeline commit and dependency-lock hash. It also freezes per-driver and complete-matrix SHA-256 fingerprints of the provider-derived daily histories after field selection and numeric parsing but before forward fill, plus the complete weekly input history. Original transport bytes are not hashed, provider-derived daily values are not published, and complete raw provider responses are not archived or publicly redistributed. The fingerprints can detect a later input-history change, but cannot independently reconstruct a changed provider history. Releases through August 21, 2026 predate this evidence bundle and remain legacy artifacts.
       </div>
     </section>
 

@@ -6,8 +6,12 @@ on:
       - 'apps/web/src/content/pages/**'
       - 'apps/web/src/data/daily-card-catalog.js'
       - 'apps/web/src/data/daily-card-inventory-plan.js'
+      - 'apps/web/src/data/daily-card-book-batch-*.js'
+      - 'apps/web/src/data/daily-card-book-resolutions.js'
       - 'apps/web/scripts/generate-daily-card-book-candidates.mjs'
       - 'apps/web/scripts/rank-daily-card-book-candidates.mjs'
+      - 'apps/web/scripts/test-daily-card-book-batches.mjs'
+      - 'apps/web/scripts/test-daily-card-book-resolutions.mjs'
       - '.github/workflows/daily-card-book-shortlist-contract.yml'
       - '.github/workflows/daily-card-content-queue.yml'
   push:
@@ -16,8 +20,12 @@ on:
       - 'apps/web/src/content/pages/**'
       - 'apps/web/src/data/daily-card-catalog.js'
       - 'apps/web/src/data/daily-card-inventory-plan.js'
+      - 'apps/web/src/data/daily-card-book-batch-*.js'
+      - 'apps/web/src/data/daily-card-book-resolutions.js'
       - 'apps/web/scripts/generate-daily-card-book-candidates.mjs'
       - 'apps/web/scripts/rank-daily-card-book-candidates.mjs'
+      - 'apps/web/scripts/test-daily-card-book-batches.mjs'
+      - 'apps/web/scripts/test-daily-card-book-resolutions.mjs'
       - '.github/workflows/daily-card-book-shortlist-contract.yml'
       - '.github/workflows/daily-card-content-queue.yml'
 
@@ -40,8 +48,16 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Syntax
         run: |
+          node --check src/data/daily-card-book-batch-04.js
+          node --check src/data/daily-card-book-resolutions.js
           node --check scripts/generate-daily-card-book-candidates.mjs
           node --check scripts/rank-daily-card-book-candidates.mjs
+          node --check scripts/test-daily-card-book-batches.mjs
+          node --check scripts/test-daily-card-book-resolutions.mjs
+      - name: Verify Book provenance and overlap resolutions
+        run: |
+          node scripts/test-daily-card-book-batches.mjs
+          node scripts/test-daily-card-book-resolutions.mjs
       - name: Generate Book review pool
         run: node scripts/generate-daily-card-book-candidates.mjs
       - name: Rank shortlist
@@ -51,3 +67,4 @@ jobs:
           test -s artifacts/daily-card-book-shortlist/shortlist.json
           test -s artifacts/daily-card-book-shortlist/shortlist.md
           node --input-type=module -e "import fs from 'node:fs'; import { dailyCardInventoryTargets } from './src/data/daily-card-inventory-plan.js'; const p=JSON.parse(fs.readFileSync('artifacts/daily-card-book-shortlist/shortlist.json','utf8')); if(p.recommendedBatchSize!==12 || p.selectedCount<1 || p.selectedCount>p.recommendedBatchSize || p.selected.length!==p.selectedCount || p.eligibleNetNewCount<p.selectedCount) process.exit(1); if(!p.selected.every((c,i)=>c.reviewDisposition==='likely-net-new' && c.status==='review' && c.lastReviewed===null && c.shortlistRank===i+1 && c.sourceExcerpt && c.potentialOverlapCardIds.length===0)) process.exit(1); const bySource={}; const titles=new Set(); for(const c of p.selected){bySource[c.sourcePath]=(bySource[c.sourcePath]||0)+1; const t=c.title.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); if(titles.has(t)) process.exit(1); titles.add(t);} if(Object.values(bySource).some(n=>n>p.maxPerSourceLesson)) process.exit(1); for(const [id,n] of Object.entries(p.collectionShortlistCounts)){if(n>0 && (p.coverage[id].current+n)>dailyCardInventoryTargets[id]) process.exit(1);}"
+          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('artifacts/daily-card-book-candidates/candidates.json','utf8')); if(p.promotedSectionCount!==35 || p.resolvedSectionCount!==3) process.exit(1);"

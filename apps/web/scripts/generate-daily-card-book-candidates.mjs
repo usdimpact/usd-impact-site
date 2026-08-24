@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { dailyCards } from '../src/data/daily-card-catalog.js';
+import { dailyCardBookResolutions } from '../src/data/daily-card-book-resolutions.js';
 
 const pagesDir = path.resolve('src/content/pages');
 const outputDir = path.resolve('artifacts/daily-card-book-candidates');
@@ -125,15 +126,23 @@ function proposedLevel(readingLevel) {
   return /beginner/i.test(readingLevel) ? 'foundation' : 'intermediate';
 }
 
-function promotedSectionKey(sourcePath, sourceHeading) {
+function sourceSectionKey(sourcePath, sourceHeading) {
   return `${sourcePath}::${sourceHeading}`;
 }
 
 const promotedBookSectionKeys = new Set(
   dailyCards
     .filter((card) => card.status === 'ready-for-build' && typeof card.sourcePath === 'string' && card.sourcePath.startsWith('src/content/pages/') && typeof card.sourceHeading === 'string')
-    .map((card) => promotedSectionKey(card.sourcePath, card.sourceHeading)),
+    .map((card) => sourceSectionKey(card.sourcePath, card.sourceHeading)),
 );
+
+const resolvedBookSectionKeys = new Set(
+  dailyCardBookResolutions.map((resolution) => sourceSectionKey(resolution.sourcePath, resolution.sourceHeading)),
+);
+
+for (const key of resolvedBookSectionKeys) {
+  if (promotedBookSectionKeys.has(key)) throw new Error(`Book source section cannot be both promoted and resolved: ${key}`);
+}
 
 const pageFiles = fs.readdirSync(pagesDir).filter((name) => name.endsWith('.md')).sort();
 const lessons = [];
@@ -167,7 +176,8 @@ for (const fileName of pageFiles) {
     const heading = cleanInlineMarkdown(match[1]);
     const headingNorm = normalize(heading);
     if (!heading || EXCLUDED_HEADINGS.has(headingNorm)) continue;
-    if (promotedBookSectionKeys.has(promotedSectionKey(sourcePath, heading))) continue;
+    const sourceKey = sourceSectionKey(sourcePath, heading);
+    if (promotedBookSectionKeys.has(sourceKey) || resolvedBookSectionKeys.has(sourceKey)) continue;
     const sectionAnchor = slugify(heading);
     const sourceExcerpt = firstParagraph(lines, index + 1);
     if (!sourceExcerpt) continue;
@@ -226,6 +236,7 @@ fs.writeFileSync(path.join(outputDir, 'candidates.json'), `${JSON.stringify({
   generatedAt,
   sourceHierarchyRank: 3,
   promotedSectionCount: promotedBookSectionKeys.size,
+  resolvedSectionCount: resolvedBookSectionKeys.size,
   lessonCount: lessons.length,
   candidateCount: candidates.length,
   likelyNetNewCount: likelyNetNew.length,
@@ -240,6 +251,7 @@ const reviewMarkdown = [
   `Generated: ${generatedAt}`,
   '',
   `Promoted Book sections excluded: **${promotedBookSectionKeys.size}**`,
+  `Reviewed overlap resolutions excluded: **${resolvedBookSectionKeys.size}**`,
   `Published Book lessons: **${lessons.length}**`,
   `Heading-level candidates remaining: **${candidates.length}**`,
   `Likely net-new: **${likelyNetNew.length}**`,
@@ -266,7 +278,7 @@ const reviewMarkdown = [
 ];
 fs.writeFileSync(path.join(outputDir, 'review.md'), `${reviewMarkdown.join('\n')}\n`);
 
-console.log(`Excluded ${promotedBookSectionKeys.size} promoted Book sections from the review queue.`);
+console.log(`Excluded ${promotedBookSectionKeys.size} promoted Book sections and ${resolvedBookSectionKeys.size} reviewed overlap resolutions from the review queue.`);
 console.log(`Book lesson Daily Card queue: ${lessons.length} published lessons -> ${candidates.length} remaining review candidates.`);
 console.log(`Likely net-new: ${likelyNetNew.length}; potential overlaps: ${overlaps.length}.`);
 for (const lesson of lessons) console.log(`BOOK-SOURCE: ${lesson.title} -> ${lesson.candidateCount} candidates (${lesson.suggestedCollectionId})`);

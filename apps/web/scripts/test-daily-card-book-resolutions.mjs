@@ -4,7 +4,7 @@ import path from 'node:path';
 import { dailyCards } from '../src/data/daily-card-catalog.js';
 import { dailyCardBookResolutions, getDailyCardBookResolution } from '../src/data/daily-card-book-resolutions.js';
 
-assert.equal(dailyCardBookResolutions.length, 7, 'Exactly seven reviewed Book overlap resolutions are expected through Batch 05.');
+assert.equal(dailyCardBookResolutions.length, 8, 'Exactly eight reviewed Book overlap resolutions are expected through Batch 05.');
 
 const allCardIds = new Set(dailyCards.map((card) => card.id));
 const promotedSectionKeys = new Set(
@@ -71,5 +71,10 @@ assert.equal(
   'card-dxy-signal-system',
   'DXY lesson checkpoint must remain assessment material mapped to the canonical DXY foundation card.',
 );
+assert.equal(
+  getDailyCardBookResolution('src/content/pages/dxy-vs-broad-usd.md', 'Lesson checkpoint')?.primaryCardId,
+  'card-regime-benchmark-selection',
+  'DXY-vs-Broad lesson checkpoint must remain assessment material mapped to benchmark selection.',
+);
 
-console.log('Daily Card Book resolutions: PASS (7 reviewed overlaps excluded from future promotion queues).');
+console.log('Daily Card Book resolutions: PASS (8 reviewed overlaps excluded from future promotion queues).');

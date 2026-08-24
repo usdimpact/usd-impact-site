@@ -1,0 +1,42 @@
+name: Daily Card Core primary-source contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/data/daily-card-core-primary-batch-*.js'
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/scripts/test-daily-card-core-primary-batches.mjs'
+      - '.github/workflows/daily-card-core-primary-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/data/daily-card-core-primary-batch-*.js'
+      - 'apps/web/src/data/daily-card-catalog.js'
+      - 'apps/web/scripts/test-daily-card-core-primary-batches.mjs'
+      - '.github/workflows/daily-card-core-primary-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Syntax check Core primary-source batch
+        run: |
+          node --check src/data/daily-card-core-primary-batch-01.js
+          node --check scripts/test-daily-card-core-primary-batches.mjs
+      - name: Verify Core primary-source Batch 01
+        run: node scripts/test-daily-card-core-primary-batches.mjs
+      - name: Validate canonical Daily Cards
+        run: node scripts/validate-daily-cards.mjs

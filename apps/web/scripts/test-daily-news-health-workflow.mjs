@@ -79,7 +79,7 @@ assert.match(
 );
 assert.match(
   workflow,
-  /\.merged_at != null[\s\S]*\.title == \$title[\s\S]*startsWith\(\$prefix\)/,
+  /\.merged_at != null[\s\S]*\.title == \$title[\s\S]*startswith\(\$prefix\)/,
   'reviewed recovery must require a merged exact-title PR from the expected branch family',
 );
 assert.match(

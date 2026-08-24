@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-24T14:39:53.640Z",
+  "generated_at": "2026-08-24T14:46:23.020Z",
   "generated_by": "github-actions:sync",
   "freshness": "VERIFIED",
   "health": "RED",
@@ -15,7 +15,7 @@
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": "7d47e23e75bbd51c484fee4199a49cdfbf1b55d7"
+      "head_sha": "ef294990c52d1b384c78b0aaeaf3a0057121e2f9"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
@@ -33,9 +33,9 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32739288924",
-        "created_at": "2026-08-24T14:32:04Z",
-        "head_sha": "7d47e23e75bbd51c484fee4199a49cdfbf1b55d7"
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32740366292",
+        "created_at": "2026-08-24T14:42:30Z",
+        "head_sha": "ef294990c52d1b384c78b0aaeaf3a0057121e2f9"
       },
       "daily_news": {
         "status": "completed",
@@ -218,7 +218,7 @@
       "number": 166,
       "title": "USD Impact Control Center — operations console",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
-      "updated_at": "2026-08-24T14:39:34Z",
+      "updated_at": "2026-08-24T14:46:09Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,

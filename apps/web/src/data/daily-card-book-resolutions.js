@@ -87,6 +87,17 @@ export const dailyCardBookResolutions = Object.freeze([
     reason: 'This checkpoint only asks the learner to restate benchmark coverage, agreement versus divergence and exposure matching. Those objectives are already canonical, so the checkpoint should remain assessment material rather than being promoted because it happens to be the last mechanically eligible Core Book heading.',
     reviewedAt: '2026-08-24',
   }),
+  Object.freeze({
+    sourcePath: 'src/content/pages/what-is-the-us-dollar.md',
+    sourcePageSlug: '/dollar/what-is-the-us-dollar',
+    sourceHeading: 'Lesson checkpoint',
+    title: 'Lesson checkpoint',
+    mode: 'overlap',
+    primaryCardId: 'card-dollar-international-role-multiple-measures',
+    relatedCardIds: Object.freeze(['card-usd', 'card-dollar-five-step-reading-sequence', 'card-dxy-signal-system']),
+    reason: 'This checkpoint summarizes the dollar’s structural roles, USD-versus-DXY distinction and the application sequence already covered by canonical cards. It is an assessment prompt, not a new explanatory concept, and should not be promoted solely to keep the deficit-targeted Book shortlist non-empty.',
+    reviewedAt: '2026-08-24',
+  }),
 ]);
 
 function sectionKey(sourcePath, sourceHeading) {

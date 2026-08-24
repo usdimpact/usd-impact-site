@@ -76,6 +76,17 @@ export const dailyCardBookResolutions = Object.freeze([
     reason: 'The checkpoint is an assessment summary rather than a distinct explanatory concept. Its DXY definition, euro-weight and broad-index distinctions are already represented by canonical cards and should remain assessment material instead of becoming a duplicate card.',
     reviewedAt: '2026-08-24',
   }),
+  Object.freeze({
+    sourcePath: 'src/content/pages/dxy-vs-broad-usd.md',
+    sourcePageSlug: '/dxy/dxy-vs-broad-usd',
+    sourceHeading: 'Lesson checkpoint',
+    title: 'Lesson checkpoint',
+    mode: 'overlap',
+    primaryCardId: 'card-regime-benchmark-selection',
+    relatedCardIds: Object.freeze(['card-dxy-broad-purpose', 'card-dxy-broad-agreement', 'card-dxy-broad-divergence']),
+    reason: 'This checkpoint only asks the learner to restate benchmark coverage, agreement versus divergence and exposure matching. Those objectives are already canonical, so the checkpoint should remain assessment material rather than being promoted because it happens to be the last mechanically eligible Core Book heading.',
+    reviewedAt: '2026-08-24',
+  }),
 ]);
 
 function sectionKey(sourcePath, sourceHeading) {

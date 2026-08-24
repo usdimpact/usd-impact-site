@@ -144,8 +144,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <p>Prior rolling windows of 104, 156 and 260 weeks showed only about 39.2%–43.4% regime-label agreement with the full-sample recalculation. Full-sample history should therefore not be treated as a stable point-in-time historical classification.</p>
         </article>
         <article class="card status-gap">
-          <h3>Correlation concentration is present</h3>
-          <p>In the latest 52-week input-level diagnostic, U.S. 2Y and 10Y yields had a 0.955 correlation. S&amp;P 500 correlations with the 2Y and 10Y yield levels were 0.791 and 0.783. v2 does not neutralize these overlaps.</p>
+          <h3>Correlation and contribution concentration are material</h3>
+          <p>The latest 52-week rolling component diagnostic has U.S. 2Y/10Y correlation at 0.955. Absolute contribution shares imply 5.82 ordinary effective components, but the published absolute-correlation overlap heuristic reduces that to 1.89 effective correlated components — a 3.08× overlap multiplier. Gold is the largest absolute contributor at 25.25%. This is an audit/transparency diagnostic, not a covariance risk model or diversification estimate; v2 does not neutralize the overlap.</p>
         </article>
         <article class="card status-known">
           <h3>Driver and threshold sensitivity: published</h3>
@@ -166,11 +166,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <section class="methodology-section">
       <div class="eyebrow">Reproducibility</div>
       <h2>Public artifacts</h2>
-      <p>A reviewer can verify the current score arithmetic from the published component z-scores, weights and contributions, inspect the complete score history, inspect the production implementation, and inspect the current robustness evidence.</p>
+      <p>A reviewer can verify the current score arithmetic, inspect the production source, consume the machine-readable methodology contract, inspect the complete score history, and review current point-in-time and robustness evidence.</p>
       <div class="artifact-links grid">
         <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/usd_impact_score_v2.py" target="_blank" rel="noreferrer">
           <strong>Production source code</strong>
           <span>Exact calculation and data-treatment logic.</span>
+        </a>
+        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/score_v2_methodology.json" target="_blank" rel="noreferrer">
+          <strong>Machine-readable methodology JSON</strong>
+          <span>Production variables, sources, weights, normalization, clipping, missing-data rules, thresholds and scope boundaries.</span>
+        </a>
+        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/score_v2_methodology.schema.json" target="_blank" rel="noreferrer">
+          <strong>Methodology JSON Schema</strong>
+          <span>Closed public schema for independent tooling and contract validation.</span>
         </a>
         <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/weekly_input_latest.json" target="_blank" rel="noreferrer">
           <strong>Latest decomposition JSON</strong>
@@ -186,7 +194,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </a>
         <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_robustness_latest.json" target="_blank" rel="noreferrer">
           <strong>Robustness research JSON</strong>
-          <span>Point-in-time summary, leave-one-out, rolling normalization, correlation, threshold and subperiod diagnostics.</span>
+          <span>Point-in-time summary, leave-one-out, rolling normalization, rolling correlation, contribution concentration, threshold and subperiod diagnostics.</span>
         </a>
         <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_point_in_time_latest.json" target="_blank" rel="noreferrer">
           <strong>Point-in-time research JSON</strong>
@@ -218,7 +226,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <div><dt>What are the weights?</dt><dd>Fixed magnitude 0.125 each; signs are +, −, −, +, −, −, +, + in the order above.</dd></div>
         <div><dt>How are variables normalized?</dt><dd>Production uses full-sample z-scores of weekly levels using the sample mean and sample standard deviation, then clips each component to ±3.5. Separate published research tests prior-only expanding and rolling normalization.</dd></div>
         <div><dt>What is the historical calibration period?</dt><dd>Production starts January 1, 2015 and expands weekly.</dd></div>
-        <div><dt>How are correlations handled?</dt><dd>They are not explicitly neutralized in v2. The latest 52-week level diagnostic found a 0.955 correlation between the U.S. 2Y and 10Y inputs and three input pairs with absolute correlation at or above 0.70.</dd></div>
+        <div><dt>How are correlations handled?</dt><dd>They are not explicitly neutralized in v2. The latest 52-week rolling component diagnostic has a 0.955 U.S. 2Y/10Y correlation. A transparent absolute-correlation overlap heuristic maps 5.82 ordinary effective contribution components to 1.89 effective correlated components, a 3.08× overlap multiplier; this is an audit diagnostic, not a covariance risk model.</dd></div>
         <div><dt>How often are weights rebalanced?</dt><dd>They are not. Weights are static; normalization moments update every run.</dd></div>
         <div><dt>How are missing observations treated?</dt><dd>Limited daily forward fill for calendar alignment, strict freshness checks, then complete-case weekly filtering.</dd></div>
         <div><dt>How are outliers treated?</dt><dd>Component z-scores are clipped at ±3.5; raw values are not winsorized.</dd></div>

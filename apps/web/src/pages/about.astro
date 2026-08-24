@@ -1,0 +1,132 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const identitySchema = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'USD Impact',
+  legalName: 'SC Kela Leads SRL',
+  url: 'https://usd-impact.com/',
+  taxID: 'RO CUI 40790448',
+  email: 'support@usd-impact.com',
+  founder: {
+    '@type': 'Person',
+    name: 'Mircea Albulescu',
+  },
+});
+---
+<BaseLayout
+  title="About & Transparency | Who Operates USD Impact"
+  description="The legal operator, founder identity, model-evidence limits and reproducibility roadmap for USD Impact."
+>
+  <script type="application/ld+json" set:html={identitySchema}></script>
+
+  <section class="hero transparency-hero">
+    <div class="container narrow">
+      <div class="eyebrow">About &amp; transparency</div>
+      <h1>Who is behind USD Impact?</h1>
+      <p class="lead">USD Impact is an early-stage educational macro-finance project operated by a named Romanian company. This page separates verified facts, first-party disclosures and claims that have not been established.</p>
+    </div>
+  </section>
+
+  <main class="container transparency-page">
+    <section class="identity-grid" aria-label="Operator and founder">
+      <article class="card identity-card">
+        <div class="eyebrow">Legal operator</div>
+        <h2>SC Kela Leads SRL</h2>
+        <dl>
+          <div><dt>Jurisdiction</dt><dd>Romania</dd></div>
+          <div><dt>Unique identification code</dt><dd>CUI 40790448</dd></div>
+          <div><dt>Trade Register number</dt><dd>J38/820/2020</dd></div>
+          <div><dt>Contact</dt><dd><a href="mailto:support@usd-impact.com">support@usd-impact.com</a></dd></div>
+        </dl>
+        <p class="evidence-note"><strong>Evidence level:</strong> first-party legal disclosure, consistent across the Terms, Privacy Notice and Refund Policy. The identifiers can be checked through the <a href="https://myportal.onrc.ro/" target="_blank" rel="noreferrer">Romanian National Trade Register Office portal</a>.</p>
+      </article>
+
+      <article class="card identity-card">
+        <div class="eyebrow">Founder &amp; authorial lead</div>
+        <h2>Mircea Albulescu</h2>
+        <p>Mircea Albulescu is the founder and authorial lead behind USD Impact and <em>Read the Dollar First</em>. SC Kela Leads SRL is the accountable service provider and publisher for the project.</p>
+        <p class="evidence-note"><strong>Evidence level:</strong> high-confidence first-party identity disclosure. USD Impact has not yet published an independent identity attestation, third-party executive profile or notarized verification, so this should not be represented as independently verified.</p>
+      </article>
+    </section>
+
+    <section class="transparency-section">
+      <div class="eyebrow">Evidence register</div>
+      <h2>Direct answers to due-diligence questions</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Question</th><th>Public answer</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Legal entity operating USD Impact</td><td>SC Kela Leads SRL, Romania; CUI 40790448; Trade Register J38/820/2020.</td><td><span class="status disclosed">Disclosed</span></td></tr>
+            <tr><td>Founder / author identity</td><td>Mircea Albulescu, founder and authorial lead.</td><td><span class="status partial">First-party disclosed</span></td></tr>
+            <tr><td>Exact product revenue and customers</td><td>Not publicly disclosed. USD Impact does not use revenue, customer-count or sales claims as social proof. Any future figures should be dated, scoped and separately verified before publication.</td><td><span class="status partial">Private</span></td></tr>
+            <tr><td>Complete historical sales reconstruction</td><td>No independently audited, all-channel historical sales reconstruction is published.</td><td><span class="status gap">Not established</span></td></tr>
+            <tr><td>Independent audited score performance</td><td>No independent model-performance audit has been commissioned or completed.</td><td><span class="status gap">None</span></td></tr>
+            <tr><td>Meaningful predictive power</td><td>Not established and not claimed. Score v2 is descriptive, not a return forecast or trading signal.</td><td><span class="status gap">No claim</span></td></tr>
+            <tr><td>Full mathematical methodology</td><td>The variables, signed weights, normalization, clipping, missing-data rules, thresholds and limitations are public.</td><td><a class="status disclosed" href="/score/methodology/">Published</a></td></tr>
+            <tr><td>Historical-score revisions</td><td>Yes. Full-sample normalization and provider revisions can change recalculated history. Dated archives preserve what was published.</td><td><span class="status disclosed">Disclosed</span></td></tr>
+            <tr><td>Genuine predictive out-of-sample test</td><td>No. Published prior-only tests address normalization leakage and specification sensitivity, not forecast performance against an untouched target.</td><td><span class="status gap">Not completed</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="transparency-section">
+      <div class="eyebrow">Reproducibility roadmap</div>
+      <h2>What is fixed, and what remains</h2>
+      <div class="table-wrap roadmap-table">
+        <table>
+          <thead><tr><th>Priority</th><th>Action</th><th>Current status</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>High</td><td>Publish real-time versus recalculated historical vintages</td><td>Partially implemented: dated publications exist; strict calculation bundles begin with new releases.</td><td>Prevents hindsight ambiguity.</td></tr>
+            <tr><td>High</td><td>Specify fields, futures rolls, holidays and timestamps</td><td><a href="https://usd-impact-pipeline.pages.dev/data/score_v2_data_semantics.json" target="_blank" rel="noreferrer">Published as a machine-readable contract</a>.</td><td>Defines the exact replication boundary.</td></tr>
+            <tr><td>High</td><td>Archive raw inputs and calculation outputs</td><td>Calculation inputs and outputs are frozen for strict releases; complete raw provider responses are not yet archived.</td><td>Protects evidence from vendor revisions.</td></tr>
+            <tr><td>Medium</td><td>Component and leave-one-out diagnostics</td><td>Published in the robustness research.</td><td>Reveals concentration and dependence.</td></tr>
+            <tr><td>Medium</td><td>Sign-sensitivity analysis</td><td>Implemented for the next robustness publication.</td><td>Tests directional assumptions.</td></tr>
+            <tr><td>Medium</td><td>Score-distribution and regime-duration charts</td><td>Implemented in generated dashboards and research outputs.</td><td>Shows how the indicator behaves in practice.</td></tr>
+            <tr><td>Low</td><td>Add alternative data vendors</td><td>Not implemented; equivalence criteria are documented before any source change.</td><td>Improves long-term resilience.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="bottom-line card">
+      <div class="eyebrow">Bottom line</div>
+      <h2>Transparent, reproducible and deliberately limited.</h2>
+      <p>USD Impact can make a credible claim to a public formula, visible revision policy, dated publication archive and expanding robustness evidence. It cannot yet make a credible claim to independently audited performance, predictive power or a completed predictive out-of-sample test. Those boundaries are part of the project record, not footnotes.</p>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .transparency-hero { padding-bottom: 64px; }
+  .narrow { max-width: 920px; }
+  .transparency-page { max-width: 1100px; }
+  .identity-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: -24px; }
+  .identity-card { border-top: 5px solid var(--gold); }
+  .identity-card h2, .transparency-section h2, .bottom-line h2 { margin: 7px 0 14px; }
+  dl { margin: 20px 0; }
+  dl div { display: grid; grid-template-columns: minmax(150px, .8fr) 1.2fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid #e4e8ed; }
+  dt { color: #5a6472; }
+  dd { margin: 0; font-weight: 700; color: var(--navy); }
+  .evidence-note { color: #4f5c6c; font-size: .94rem; line-height: 1.65; }
+  .transparency-section { margin-top: 64px; }
+  .table-wrap { overflow-x: auto; border: 1px solid #dce2e9; border-radius: 16px; background: #fff; }
+  table { width: 100%; min-width: 860px; border-collapse: collapse; }
+  th, td { padding: 15px 16px; border-bottom: 1px solid #e6eaef; text-align: left; vertical-align: top; }
+  th { color: var(--navy); background: #f5f7f9; }
+  tbody tr:last-child td { border-bottom: 0; }
+  .status { display: inline-block; padding: 4px 9px; border-radius: 999px; font-size: .8rem; font-weight: 700; white-space: nowrap; text-decoration: none; }
+  .status.disclosed { background: #e5f4eb; color: #225e38; }
+  .status.partial { background: #fff1c8; color: #715313; }
+  .status.gap { background: #f6e4e4; color: #7b2d2d; }
+  .roadmap-table table { min-width: 980px; }
+  .bottom-line { margin: 64px 0 20px; border-left: 5px solid var(--gold); }
+  .bottom-line p { max-width: 86ch; margin-bottom: 0; }
+  @media (max-width: 760px) {
+    .identity-grid { grid-template-columns: 1fr; }
+    .identity-grid { margin-top: 0; }
+    dl div { grid-template-columns: 1fr; gap: 3px; }
+  }
+</style>

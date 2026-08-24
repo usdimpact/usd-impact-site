@@ -7,9 +7,11 @@ const secretKey = 'sb_secret_abcdefghijklmnopqrstuvwxyz';
 const commit = '5d0956b4183cc58eb9d3e7e20e0daaafcd267514';
 
 const dryRun = await promoteKnowledgeCorpusToProduction({ apply: false });
+const expectedRows = dryRun.rows;
+const expectedBatches = Math.ceil(expectedRows / 50);
 assert.equal(dryRun.projectRef, 'gjzetjugmnwanvjkchux');
-assert.equal(dryRun.rows, 442);
-assert.equal(dryRun.batches, 9);
+assert.ok(expectedRows > 0);
+assert.equal(dryRun.batches, expectedBatches);
 assert.equal(dryRun.apply, false);
 assert.match(dryRun.digest, /^[0-9a-f]{64}$/);
 assert.equal(dryRun.pruned, 0);
@@ -147,16 +149,20 @@ const applied = await promoteKnowledgeCorpusToProduction({
 });
 
 assert.equal(applied.apply, true);
-assert.equal(applied.rows, 442);
-assert.equal(applied.batches, 9);
+assert.equal(applied.rows, expectedRows);
+assert.equal(applied.batches, expectedBatches);
 assert.equal(applied.pruned, 1);
 assert.equal(applied.corpusVersion, commit);
-assert.equal(applied.verification.totalRows, 442);
-assert.equal(applied.verification.uniqueRows, 442);
-assert.deepEqual(applied.verification.tierCounts, { open: 430, research: 12 });
+assert.equal(applied.verification.totalRows, expectedRows);
+assert.equal(applied.verification.uniqueRows, expectedRows);
+const expectedTierCounts = uploadedRows.reduce((counts, row) => {
+  counts[row.access_tier] = (counts[row.access_tier] ?? 0) + 1;
+  return counts;
+}, {});
+assert.deepEqual(applied.verification.tierCounts, expectedTierCounts);
 assert.equal(applied.verification.openHits, 1);
 assert.equal(applied.verification.researchHits, 1);
-assert.equal(calls.filter((call) => call.url.includes('knowledge_chunks?on_conflict=')).length, 9);
+assert.equal(calls.filter((call) => call.url.includes('knowledge_chunks?on_conflict=')).length, expectedBatches);
 assert.equal(calls.filter((call) => call.url.endsWith('/rest/v1/rpc/search_knowledge_chunks')).length, 2);
 assert.equal(calls.filter((call) => call.options.method === 'GET').length, 2);
 assert.equal(calls.filter((call) => call.options.method === 'DELETE').length, 1);

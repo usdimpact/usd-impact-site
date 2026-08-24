@@ -59,7 +59,8 @@ assert.ok(fxShareCard.definition.includes('200 percent'), 'FX share card must ex
 assert.equal(fxShareCard.definition.includes('89.2'), false, 'FX share card must not freeze a current dollar turnover statistic into evergreen prose.');
 
 const canonicalCore = dailyCards.filter((card) => card.collectionId === 'core-framework' && card.status === 'ready-for-build');
-assert.equal(canonicalCore.length, 16, `Expected 16 canonical Core Dollar cards after Batch 01, found ${canonicalCore.length}.`);
-assert.equal(canonicalCore.filter((card) => card.access === 'open').length, 16, 'All current Core Dollar Framework cards should remain Open.');
+assert.equal(canonicalCore.length >= 16, true, `Core Dollar Framework unexpectedly fell below the Batch 01 baseline: ${canonicalCore.length}.`);
+assert.equal(canonicalCore.length <= 25, true, `Core Dollar Framework exceeded the approved inventory target: ${canonicalCore.length}/25.`);
+assert.equal(canonicalCore.filter((card) => card.access === 'open').length, canonicalCore.length, 'All current Core Dollar Framework cards should remain Open.');
 
-console.log('Daily Card Core primary-source Batch 01: PASS (5 promoted; Core Dollar Framework 16/25; all Open).');
+console.log(`Daily Card Core primary-source Batch 01: PASS (5 primary promotions intact; canonical Core now ${canonicalCore.length}/25; all Open).`);

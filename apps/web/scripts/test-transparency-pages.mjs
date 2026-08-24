@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+const [about, methodology] = await Promise.all([
+  readFile(new URL('../src/pages/about.astro', import.meta.url), 'utf8'),
+  readFile(new URL('../src/pages/score/methodology.astro', import.meta.url), 'utf8'),
+]);
+
+const vintageJson = 'https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.json';
+const vintageCsv = 'https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.csv';
+
+assert.match(about, /SC Kela Leads SRL/);
+assert.match(about, /Mircea Albulescu/);
+assert.match(about, /Exact product revenue and customers/);
+assert.match(about, /Not publicly disclosed/);
+assert.match(about, /Meaningful predictive power[\s\S]*Not established and not claimed/);
+assert.match(about, /Genuine predictive out-of-sample test[\s\S]*Not completed/);
+assert.ok(about.includes(vintageJson), 'About page must link the revision-audit JSON.');
+assert.ok(about.includes(vintageCsv), 'About page must link the revision-audit CSV.');
+assert.doesNotMatch(about, /Partially implemented: dated publications exist/);
+
+assert.ok(methodology.includes(vintageJson), 'Methodology page must link the revision-audit JSON.');
+assert.ok(methodology.includes(vintageCsv), 'Methodology page must link the revision-audit CSV.');
+assert.match(methodology, /As-published revision audit: published/);
+assert.match(methodology, /cannot separate expanding-sample normalization effects from upstream provider revisions/);
+assert.match(methodology, /not independently audited performance or evidence of future predictive power/);
+assert.doesNotMatch(
+  methodology,
+  /The research files are current-vintage recalculations[\s\S]*not as-published historical vintages/,
+);
+
+console.log('Transparency-page contract passed.');

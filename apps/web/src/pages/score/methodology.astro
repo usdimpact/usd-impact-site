@@ -99,7 +99,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <div><strong>Freshness gate.</strong> A release fails closed if a required driver is missing, future-dated or too stale. The production limits are 2 calendar days for Bitcoin, 3 for DXY/WTI/S&amp;P 500/VIX/gold, and 4 for the two Treasury series.</div>
         <div><strong>Complete cases.</strong> After weekly resampling, any week still missing one of the eight required inputs is dropped from the calculation sample. The latest publishable week must be complete.</div>
         <div><strong>Outliers.</strong> Raw observations are not winsorized. Standardized component values are clipped only after z-scoring, at −3.5 and +3.5.</div>
-        <div><strong>Source revisions.</strong> Yahoo/FRED histories can be revised or restated. Dated score archives preserve published score vintages, but the current full-history chart and research diagnostics are recalculated from the latest available source history.</div>
+        <div><strong>Source revisions.</strong> Yahoo/FRED histories can be revised or restated. Dated score archives preserve published score vintages, while the current full-history chart and robustness diagnostics are recalculated from the latest available source history. A separate <a href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.json" target="_blank" rel="noreferrer">revision audit</a> measures the difference for each valid archived latest reading.</div>
       </div>
     </section>
 
@@ -155,18 +155,22 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <h3>True predictive out-of-sample test: not claimed</h3>
           <p>The published point-in-time study tests normalization leakage and specification sensitivity. It does not define a forecast target, prediction horizon, loss function, training protocol or untouched predictive test set.</p>
         </article>
+        <article class="card status-known">
+          <h3>As-published revision audit: published</h3>
+          <p>Each valid archive's declared latest observation is compared with the same week in the current recalculated history. Accepted source files are hashed, while invalid legacy archives are listed and excluded rather than repaired. The audit cannot separate expanding-sample normalization effects from upstream provider revisions.</p>
+        </article>
         <article class="card status-gap">
           <h3>2008: outside canonical v2</h3>
           <p>v2 begins in 2015 and includes Bitcoin. A 2008 result would require a separately labelled proxy study or a new methodology version; it cannot honestly be reported as a v2 observation.</p>
         </article>
       </div>
-      <p class="methodology-note">The research files are current-vintage recalculations from the latest available provider histories. They are descriptive robustness evidence, not as-published historical vintages and not evidence of future predictive performance.</p>
+      <p class="methodology-note">The robustness and point-in-time files are current-vintage recalculations from the latest available provider histories. The separate vintage-comparison files use first-party as-published archives to audit revisions. All are descriptive evidence, not independently audited performance or evidence of future predictive power.</p>
     </section>
 
     <section class="methodology-section">
       <div class="eyebrow">Reproducibility</div>
       <h2>Public artifacts</h2>
-      <p>A reviewer can verify the current score arithmetic, inspect the production source, consume the machine-readable methodology contract, inspect the complete score history, and review current point-in-time and robustness evidence.</p>
+      <p>A reviewer can verify the current score arithmetic, inspect the production source, consume the machine-readable methodology contract, inspect the complete score history, review current point-in-time and robustness evidence, and compare valid as-published readings with current recalculations.</p>
       <div class="artifact-links grid">
         <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/usd_impact_score_v2.py" target="_blank" rel="noreferrer">
           <strong>Production source code</strong>
@@ -203,6 +207,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_point_in_time_latest.json" target="_blank" rel="noreferrer">
           <strong>Point-in-time research JSON</strong>
           <span>Week-by-week expanding-window comparison with no future observations entering each week's normalization moments.</span>
+        </a>
+        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.json" target="_blank" rel="noreferrer">
+          <strong>As-published revision audit JSON</strong>
+          <span>Hashed archive-by-archive score, regime and component revisions, plus explicit exclusions and limitations.</span>
+        </a>
+        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.csv" target="_blank" rel="noreferrer">
+          <strong>As-published revision audit CSV</strong>
+          <span>Tabular valid-vintage comparison for independent analysis and charting.</span>
         </a>
         <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/scripts/build_score_repro_bundle.py" target="_blank" rel="noreferrer">
           <strong>Release reproducer</strong>

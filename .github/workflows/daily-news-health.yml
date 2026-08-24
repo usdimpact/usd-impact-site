@@ -10,6 +10,7 @@ permissions:
   actions: read
   contents: read
   issues: write
+  pull-requests: read
 
 concurrency:
   group: daily-usd-impact-health
@@ -58,6 +59,8 @@ jobs:
           updated_epoch="$(date -u -d "$updated_at" +%s)"
           age_seconds="$((now_epoch - updated_epoch))"
           max_age_seconds="$((MAX_AGE_HOURS * 3600))"
+          operational_conclusion="$conclusion"
+          failure_stage='none'
 
           {
             echo "# Daily USD Impact automation health report"
@@ -66,7 +69,7 @@ jobs:
             echo "- Run ID: \`$run_id\`"
             echo "- Trigger: \`$event\`"
             echo "- Status: \`$status\`"
-            echo "- Conclusion: \`$conclusion\`"
+            echo "- Raw conclusion: \`$conclusion\`"
             echo "- Started: \`$created_at\`"
             echo "- Last updated: \`$updated_at\`"
             echo "- Recovery age: $((age_seconds / 60)) minutes"
@@ -96,8 +99,50 @@ jobs:
             exit 1
           fi
 
-          if [ "$conclusion" != "success" ]; then
-            echo "- Failure: the latest run did not succeed." >> daily-health-report.md
+          # A generation/import/validation/workflow failure remains fatal. The only recoverable
+          # raw failure is the publication stage, and only when the exact scheduled edition later
+          # completed the reviewed PR path into main without changing its single Daily content file.
+          if [ "$conclusion" != "success" ] && [ "$failure_stage" = "publication" ]; then
+            expected_title="Publish Daily USD Impact — $expected_date"
+            expected_file="apps/web/src/content/news/$expected_date.md"
+            expected_head_prefix="automation/daily-usd-impact-$expected_date-"
+            pulls_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls?state=closed&base=main&sort=updated&direction=desc&per_page=100")"
+            recovery_json="$(jq -c --arg title "$expected_title" --arg prefix "$expected_head_prefix" '
+              [.[] | select(
+                .merged_at != null
+                and .title == $title
+                and (.head.ref | startswith($prefix))
+              )][0] // empty
+            ' <<< "$pulls_json")"
+
+            if [ -n "$recovery_json" ]; then
+              recovery_number="$(jq -r '.number' <<< "$recovery_json")"
+              recovery_url="$(jq -r '.html_url' <<< "$recovery_json")"
+              recovery_merged_at="$(jq -r '.merged_at' <<< "$recovery_json")"
+              recovery_merge_sha="$(jq -r '.merge_commit_sha // ""' <<< "$recovery_json")"
+              recovery_merged_epoch="$(date -u -d "$recovery_merged_at" +%s)"
+              recovery_files_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$recovery_number/files?per_page=100")"
+              recovery_file_count="$(jq length <<< "$recovery_files_json")"
+              recovery_file="$(jq -r '.[0].filename // ""' <<< "$recovery_files_json")"
+
+              if [ "$recovery_merged_epoch" -gt "$updated_epoch" ] \
+                && [ "$recovery_file_count" -eq 1 ] \
+                && [ "$recovery_file" = "$expected_file" ]; then
+                operational_conclusion='recovered_after_review'
+                {
+                  echo "- Operational conclusion: \`recovered_after_review\`"
+                  echo "- Reviewed recovery PR: [#$recovery_number]($recovery_url)"
+                  echo "- Recovery merged: \`$recovery_merged_at\`"
+                  echo "- Recovery merge SHA: \`$recovery_merge_sha\`"
+                  echo "- Recovery file: \`$recovery_file\`"
+                } >> daily-health-report.md
+              fi
+            fi
+          fi
+
+          if [ "$operational_conclusion" != "success" ] \
+            && [ "$operational_conclusion" != "recovered_after_review" ]; then
+            echo "- Failure: the latest run did not succeed and no bounded reviewed publication recovery was proven." >> daily-health-report.md
             exit 1
           fi
 

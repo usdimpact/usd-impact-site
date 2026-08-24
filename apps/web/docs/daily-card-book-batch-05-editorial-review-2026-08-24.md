@@ -3,7 +3,7 @@
 Reviewed: 2026-08-24
 Source hierarchy: published USD Impact Book lessons
 Collection: Core Dollar Framework
-Disposition: 1 promoted, 4 overlap-resolved, 0 forced promotions
+Disposition: 1 promoted, 5 overlap-resolved, 0 forced promotions
 Access: Open for the promoted card
 
 ## Promoted
@@ -38,9 +38,15 @@ Resolved to `card-dollar-story-diagnostic-errors` with existing benchmark-scope 
 
 Resolved to `card-dxy-signal-system` with euro-weight and benchmark-purpose cards. The checkpoint is an assessment summary of already canonical concepts rather than a standalone explanatory lesson.
 
+### DXY vs Broad USD — Lesson checkpoint
+
+Resolved to `card-regime-benchmark-selection` with the benchmark-purpose and agreement/divergence cards. This section only asks the learner to restate benchmark coverage, agreement versus divergence, and exposure matching. It remains assessment material rather than being promoted solely because it became the last mechanically eligible Core Book heading.
+
 ## Queue hygiene
 
-The Book overlap registry now contains seven explicitly reviewed source-section resolutions. Promoted and resolved sections remain separately auditable and are both excluded from future Book shortlists. The central inventory and Book shortlist contracts now compare generated promoted/resolved counts dynamically against the canonical catalog and resolution registry instead of freezing counts in workflow code.
+The Book overlap registry now contains eight explicitly reviewed source-section resolutions. Promoted and resolved sections remain separately auditable and are both excluded from future Book shortlists. The central inventory and Book shortlist contracts now compare generated promoted/resolved counts dynamically against the canonical catalog and resolution registry instead of freezing counts in workflow code.
+
+An empty Book shortlist is now an accepted healthy state when remaining candidates either belong to already-complete collections or have been explicitly resolved as overlaps. This prevents the ranking contract from forcing low-value content merely to keep a non-empty queue.
 
 The scheduled Daily Card content queue also validates Book batch provenance and Book overlap resolutions before generating its weekly review artifacts.
 
@@ -50,5 +56,6 @@ The scheduled Daily Card content queue also validates Book batch provenance and 
 - Core Dollar Framework: 20 / 25
 - Open cards: 81
 - Promoted published-Book sections across the full catalog: 36
-- Reviewed Book overlap resolutions: 7
+- Reviewed Book overlap resolutions: 8
+- Expected deficit-targeted Book shortlist: 0 after reviewed overlap cleanup
 - No commerce, authentication, entitlement, scheduler, customer-state, Supabase mutation or outbound-delivery changes.

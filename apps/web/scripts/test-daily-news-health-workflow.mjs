@@ -56,6 +56,63 @@ assert.match(
   /'Open, validate, and merge publication pull request'\) failure_stage='publication'/,
   'publication failures must be classified separately',
 );
+
+assert.match(
+  workflow,
+  /if \[ "\$conclusion" != "success" \] && \[ "\$failure_stage" = "publication" \]/,
+  'only publication-stage raw failures may enter reviewed-recovery evaluation',
+);
+assert.match(
+  workflow,
+  /expected_title="Publish Daily USD Impact — \$expected_date"/,
+  'reviewed recovery must require the exact scheduled edition PR title',
+);
+assert.match(
+  workflow,
+  /expected_head_prefix="automation\/daily-usd-impact-\$expected_date-"/,
+  'reviewed recovery must require a scheduled Daily automation branch',
+);
+assert.match(
+  workflow,
+  /pulls\?state=closed&base=main&sort=updated&direction=desc&per_page=100/,
+  'reviewed recovery must be sourced from merged PR evidence on main',
+);
+assert.match(
+  workflow,
+  /\.merged_at != null[\s\S]*\.title == \$title[\s\S]*startsWith\(\$prefix\)/,
+  'reviewed recovery must require a merged exact-title PR from the expected branch family',
+);
+assert.match(
+  workflow,
+  /recovery_merged_epoch" -gt "\$updated_epoch"/,
+  'the recovery merge must occur after the failed scheduled run completed',
+);
+assert.match(
+  workflow,
+  /recovery_file_count" -eq 1[\s\S]*recovery_file" = "\$expected_file"/,
+  'reviewed recovery must contain only the expected Daily edition file',
+);
+assert.match(
+  workflow,
+  /operational_conclusion='recovered_after_review'/,
+  'a bounded reviewed publication recovery must be explicit in Health evidence',
+);
+assert.match(
+  workflow,
+  /if \[ "\$operational_conclusion" != "success" \][\s\\\n]*&& \[ "\$operational_conclusion" != "recovered_after_review" \]/,
+  'unrecovered failures must remain fatal',
+);
+assert.match(
+  workflow,
+  /check-daily-news-deployment-health\.mjs[\s\S]*--expected-date "\$expected_date"[\s\S]*--base-url "https:\/\/www\.usd-impact\.com"/,
+  'reviewed recovery must still pass the strict deployed date/page/RSS checks',
+);
+assert.match(
+  workflow,
+  /pull-requests: read/,
+  'Health must have only the read permission needed to verify reviewed recovery PRs',
+);
+
 assert.match(
   workflow,
   /ISSUE_TITLE: P1 — Daily USD Impact automation requires attention/,

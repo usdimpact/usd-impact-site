@@ -156,6 +156,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <p>A <a href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v2_predictive_preregistration.json" target="_blank" rel="noreferrer">separate protocol</a> was registered before its first eligible origin on August 28, 2026. It freezes the sign of the as-published Score v2 against the next completed-Friday DXY direction, requires 52 consecutive resolved predictions, prohibits backfill and interim performance reporting, and has no result yet.</p>
         </article>
         <article class="card status-known">
+          <h3>Score v3 descriptive research: preregistered, not started</h3>
+          <p>A separate prospective study freezes four candidate descriptive specifications before its first eligible week on August 28, 2026. It compares revision immunity, contribution concentration, leave-one-driver-out stability and regime turnover over 52 future weeks. It does not test predictive power, does not change production Score v2 and cannot automatically promote a candidate.</p>
+        </article>
+        <article class="card status-known">
           <h3>As-published revision audit: published</h3>
           <p>Each valid archive's declared latest observation is compared with the same week in the current recalculated history. Accepted source files are hashed, while invalid legacy archives are listed and excluded rather than repaired. The audit cannot separate expanding-sample normalization effects from upstream provider revisions.</p>
         </article>
@@ -164,7 +168,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <p>v2 begins in 2015 and includes Bitcoin. A 2008 result would require a separately labelled proxy study or a new methodology version; it cannot honestly be reported as a v2 observation.</p>
         </article>
       </div>
-      <p class="methodology-note">The robustness and point-in-time files are current-vintage recalculations from the latest available provider histories. The separate vintage-comparison files use first-party as-published archives to audit revisions. Those completed studies are descriptive evidence, not independently audited performance or evidence of future predictive power. The prospective predictive study is registered and automated but has not begun and supplies no present performance evidence.</p>
+      <p class="methodology-note">The robustness and point-in-time files are current-vintage recalculations from the latest available provider histories. The separate vintage-comparison files use first-party as-published archives to audit revisions. Those completed studies are descriptive evidence, not independently audited performance or evidence of future predictive power. The prospective Score v2 predictive study and the separate Score v3 descriptive comparison are registered and automated but have not begun; neither supplies present performance evidence.</p>
     </section>
 
     <section class="methodology-section">
@@ -199,6 +203,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v2_predictive_engine_lock.json" target="_blank" rel="noreferrer">
           <strong>Pre-holdout engine lock</strong>
           <span>SHA-256 hashes for the collector, evaluator, contracts and schemas frozen before the first eligible prediction.</span>
+        </a>
+        <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v3_preregistration.json" target="_blank" rel="noreferrer">
+          <strong>Score v3 descriptive-research preregistration</strong>
+          <span>Four fixed candidates, untouched start date, prospective endpoints, eligibility gates, checkpoint rules and 52-week selection procedure.</span>
+        </a>
+        <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v3_metric_implementation_contract.json" target="_blank" rel="noreferrer">
+          <strong>Score v3 metric contract</strong>
+          <span>Exact definitions for the prospective integrity, concentration, stability and turnover endpoints used in the descriptive comparison.</span>
+        </a>
+        <a class="card artifact-card" href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v3_engine_lock.json" target="_blank" rel="noreferrer">
+          <strong>Score v3 pre-holdout engine lock</strong>
+          <span>SHA-256 hashes for the research engine, dependencies, protocol, metric contract and schemas frozen before the first prospective week.</span>
         </a>
         <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/weekly_input_latest.json" target="_blank" rel="noreferrer">
           <strong>Latest decomposition JSON</strong>

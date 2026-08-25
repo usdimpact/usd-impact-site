@@ -8,36 +8,48 @@ const workflowFiles = (await readdir(workflowsDirectory))
 
 assert.ok(workflowFiles.length > 0, 'Expected at least one GitHub Actions workflow');
 
-let checkoutV7Count = 0;
-let setupNodeV7Count = 0;
+const expectedActionRefs = new Map([
+  ['actions/checkout', '3d3c42e5aac5ba805825da76410c181273ba90b1'],
+  ['actions/setup-node', '820762786026740c76f36085b0efc47a31fe5020'],
+  ['actions/upload-artifact', 'ea165f8d65b6e75b540449e92b4886f43607fa02'],
+]);
+const actionCounts = new Map([...expectedActionRefs.keys()].map((name) => [name, 0]));
+let node24Count = 0;
 
 for (const workflowFile of workflowFiles) {
   const source = await readFile(new URL(workflowFile, workflowsDirectory), 'utf8');
 
   assert.doesNotMatch(
     source,
-    /actions\/checkout@v[1-6]\b/,
-    `${workflowFile} must use actions/checkout@v7 or newer`,
-  );
-  assert.doesNotMatch(
-    source,
-    /actions\/setup-node@v[1-6]\b/,
-    `${workflowFile} must use actions/setup-node@v7 or newer`,
-  );
-  assert.doesNotMatch(
-    source,
     /ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION/,
     `${workflowFile} must not bypass the GitHub Actions runtime safety gate`,
   );
 
-  checkoutV7Count += (source.match(/actions\/checkout@v7\b/g) ?? []).length;
-  setupNodeV7Count += (source.match(/actions\/setup-node@v7\b/g) ?? []).length;
+  for (const match of source.matchAll(/uses:\s*([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)@([^\s#]+)/g)) {
+    const [, action, ref] = match;
+    assert.ok(expectedActionRefs.has(action), `${workflowFile} uses unapproved action ${action}`);
+    assert.match(ref, /^[0-9a-f]{40}$/, `${workflowFile} must pin ${action} to an immutable 40-char SHA`);
+    assert.equal(
+      ref,
+      expectedActionRefs.get(action),
+      `${workflowFile} must use the reviewed ${action} SHA`,
+    );
+    actionCounts.set(action, actionCounts.get(action) + 1);
+  }
+
+  for (const match of source.matchAll(/^\s*node-version:\s*['\"]?([^'\"\s#]+)['\"]?/gm)) {
+    assert.equal(match[1], '24.x', `${workflowFile} must use Node 24.x`);
+    node24Count += 1;
+  }
 }
 
-assert.ok(checkoutV7Count > 0, 'Expected at least one actions/checkout@v7 reference');
-assert.ok(setupNodeV7Count > 0, 'Expected at least one actions/setup-node@v7 reference');
+for (const [action, count] of actionCounts) {
+  assert.ok(count > 0, `Expected at least one ${action} reference`);
+}
+assert.ok(node24Count > 0, 'Expected at least one explicit Node 24.x workflow runtime');
 
 console.log(
-  `GitHub Action runtime tests passed (${workflowFiles.length} workflows, ` +
-    `${checkoutV7Count} checkout and ${setupNodeV7Count} setup-node references).`,
+  `GitHub Action supply-chain tests passed (${workflowFiles.length} workflows, ` +
+    `${[...actionCounts.entries()].map(([action, count]) => `${count} ${action}`).join(', ')}, ` +
+    `${node24Count} Node 24.x declarations).`,
 );

@@ -6,7 +6,7 @@ slug: "/book/read-the-dollar-first"
 category: "Book"
 status: "published"
 readingLevel: "Beginner to intermediate"
-lastReviewed: "2026-08-22"
+lastReviewed: "2026-08-25"
 complianceNote: "Educational only. Not investment, legal, tax, trading, or financial advice. Not a recommendation, forecast, or trading signal."
 sources:
   - "Session 14B Website Product Page & Lead Magnet System"
@@ -30,7 +30,9 @@ The Guided Interactive Edition combines the *Read the Dollar First* learning seq
 
 - secure access through your verified USD Impact account;
 - the complete Guided Interactive Edition learning sequence;
+- the complete English audiobook;
 - the 51-film USD Impact Video Library, organised into five collections with verified English captions;
+- protected reference resources;
 - interactive quizzes and progress tracking;
 - ongoing access to the purchased edition with no recurring subscription fee; and
 - account and billing support at [support@usd-impact.com](mailto:support@usd-impact.com).

@@ -6,16 +6,16 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  pin-and-align:
+  generate-verified-tree:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: agent/action-supply-chain-hardening-2026-08-25
-      - name: Pin actions and align Node runtime
+      - name: Generate pinned workflow tree
         shell: bash
         run: |
           set -euo pipefail
@@ -28,20 +28,18 @@ jobs:
           upload_artifact = 'ea165f8d65b6e75b540449e92b4886f43607fa02'
           helper = Path('.github/workflows/agent-action-ref-inventory.yml')
           workflows = sorted(Path('.github/workflows').glob('*.y*ml'))
-
           action_re = re.compile(r'(?m)^(\s*-?\s*uses:\s*)([^\s#]+)(\s*(?:#.*)?)$')
+
           allowed = {
-              'actions/checkout@v7',
-              f'actions/checkout@{checkout}',
-              'actions/setup-node@v7',
-              f'actions/setup-node@{setup_node}',
-              'actions/upload-artifact@v4',
-              f'actions/upload-artifact@{upload_artifact}',
+              'actions/checkout@v7', f'actions/checkout@{checkout}',
+              'actions/setup-node@v7', f'actions/setup-node@{setup_node}',
+              'actions/upload-artifact@v4', f'actions/upload-artifact@{upload_artifact}',
           }
-          refs = set()
-          for path in workflows:
-              source = path.read_text()
-              refs.update(match.group(2) for match in action_re.finditer(source))
+          refs = {
+              match.group(2)
+              for path in workflows
+              for match in action_re.finditer(path.read_text())
+          }
           unexpected = sorted(refs - allowed)
           if unexpected:
               raise SystemExit(f'Unexpected action references: {unexpected}')
@@ -51,7 +49,6 @@ jobs:
               'actions/setup-node@v7': f'actions/setup-node@{setup_node} # v7',
               'actions/upload-artifact@v4': f'actions/upload-artifact@{upload_artifact} # v4',
           }
-
           for path in workflows:
               if path == helper:
                   continue
@@ -65,18 +62,16 @@ jobs:
               )
               path.write_text(source)
 
-          post_refs = set()
-          node_versions = set()
-          for path in workflows:
-              if path == helper:
-                  continue
-              source = path.read_text()
-              post_refs.update(match.group(2) for match in action_re.finditer(source))
-              node_versions.update(
-                  value.strip("'\"")
-                  for value in re.findall(r'(?m)^\s*node-version:\s*([^\s#]+)', source)
-              )
-
+          post_refs = {
+              match.group(2)
+              for path in workflows if path != helper
+              for match in action_re.finditer(path.read_text())
+          }
+          node_versions = {
+              value.strip("'\"")
+              for path in workflows if path != helper
+              for value in re.findall(r'(?m)^\s*node-version:\s*([^\s#]+)', path.read_text())
+          }
           floating = sorted(ref for ref in post_refs if not re.search(r'@[0-9a-f]{40}$', ref))
           if floating:
               raise SystemExit(f'Floating action references remain: {floating}')
@@ -84,15 +79,13 @@ jobs:
               raise SystemExit(f'Non-Node-24 workflow runtime remains: {sorted(node_versions)}')
 
           helper.unlink()
-          print(f'Pinned {len(post_refs)} unique action refs; workflow Node versions: {sorted(node_versions)}')
+          print(f'Verified {len(workflows)-1} workflows; action refs={sorted(post_refs)}; Node versions={sorted(node_versions)}')
           PY
 
-      - name: Commit supply-chain hardening
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/workflows
-          git commit -m "Pin GitHub Actions and align workflow Node runtime"
-          git push origin HEAD:agent/action-supply-chain-hardening-2026-08-25
+      - name: Upload verified workflow tree
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-action-hardening-tree
+          path: .github/workflows
+          if-no-files-found: error
+          retention-days: 1

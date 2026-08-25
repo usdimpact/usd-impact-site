@@ -8,6 +8,13 @@ on:
       - 'apps/web/package-lock.json'
       - '.github/dependabot.yml'
       - '.github/workflows/supply-chain-evidence.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/package.json'
+      - 'apps/web/package-lock.json'
+      - '.github/dependabot.yml'
+      - '.github/workflows/supply-chain-evidence.yml'
   schedule:
     - cron: '41 5 * * 6'
   workflow_dispatch:
@@ -45,4 +52,4 @@ jobs:
           name: usd-impact-web-sbom-${{ github.sha }}
           path: ${{ runner.temp }}/usd-impact-web-sbom.cdx.json
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30

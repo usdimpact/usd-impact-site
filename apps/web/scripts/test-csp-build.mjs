@@ -16,11 +16,18 @@ const walk = (dir, predicate) => {
   return out;
 };
 
+const decodeHtmlAttribute = (value) => value
+  .replaceAll('&quot;', '"')
+  .replaceAll('&#39;', "'")
+  .replaceAll('&#x27;', "'")
+  .replaceAll('&amp;', '&');
+
 const parseMetaCsp = (html) => {
   const tags = html.match(/<meta\b[^>]*>/gi) || [];
   const tag = tags.find((candidate) => /http-equiv=["']content-security-policy["']/i.test(candidate));
   if (!tag) return null;
-  return tag.match(/content=["']([^"']*)["']/i)?.[1] ?? null;
+  const match = tag.match(/content=(["'])([\s\S]*?)\1/i);
+  return match ? decodeHtmlAttribute(match[2]) : null;
 };
 
 if (!fs.existsSync(distRoot)) failures.push('dist/ is missing; CSP output cannot be verified.');

@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 const [about, methodology, onrcGate] = await Promise.all([
   readFile(new URL('../src/pages/about.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/score/methodology.astro', import.meta.url), 'utf8'),
-  readFile(new URL('../../docs/operations/onrc-company-verification-gate.md', import.meta.url), 'utf8'),
+  readFile(new URL('../../../docs/operations/onrc-company-verification-gate.md', import.meta.url), 'utf8'),
 ]);
 
 const vintageJson = 'https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.json';

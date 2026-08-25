@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-24T14:39:53.640Z",
+  "generated_at": "2026-08-25T02:49:25.498Z",
   "generated_by": "github-actions:sync",
   "freshness": "VERIFIED",
   "health": "RED",
@@ -15,12 +15,12 @@
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": "7d47e23e75bbd51c484fee4199a49cdfbf1b55d7"
+      "head_sha": "32a7543792c451d474bd5985feeb3e59d984fea9"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
       "default_branch": "main",
-      "head_sha": "4821b6e3b8bca60f54e7bfb3be0b6724c7df4edb"
+      "head_sha": "700034985f3b315e93f730813b03bbeed1712879"
     },
     "weekly_commentary": {
       "name": "usdimpact/usd-impact",
@@ -33,9 +33,9 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32739288924",
-        "created_at": "2026-08-24T14:32:04Z",
-        "head_sha": "7d47e23e75bbd51c484fee4199a49cdfbf1b55d7"
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32802682406",
+        "created_at": "2026-08-25T02:46:39Z",
+        "head_sha": "32a7543792c451d474bd5985feeb3e59d984fea9"
       },
       "daily_news": {
         "status": "completed",
@@ -62,27 +62,21 @@
       },
       "catalyst_brief": {
         "status": "completed",
-        "conclusion": "failure",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32702895340",
-        "created_at": "2026-08-24T07:44:38Z",
-        "head_sha": "3fc261df22324a3ea4bcc40a3751638c4d510737",
-        "operational_conclusion": "recovered_after_review",
-        "recovery": {
-          "number": 299,
-          "title": "Publish Catalyst Brief — BEA Personal Income and Outlays (July) and GDP second estimate (Q2)",
-          "url": "https://github.com/usdimpact/usd-impact-site/pull/299",
-          "merged_at": "2026-08-24T12:40:18Z",
-          "merge_commit_sha": "5f230b7546b60603c9037b2382cf087c01e4baf3"
-        }
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32787333064",
+        "created_at": "2026-08-24T23:00:23Z",
+        "head_sha": "a3fc26e714f0ed5c9393f3e3f2fff2de994ee142",
+        "operational_conclusion": "success",
+        "recovery": null
       }
     },
     "pipeline": {
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/32524469056",
-        "created_at": "2026-08-21T20:37:03Z",
-        "head_sha": "ff21416dd641b76548029eb6a2ca9d5543819e6b"
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/32791772388",
+        "created_at": "2026-08-24T23:59:42Z",
+        "head_sha": "700034985f3b315e93f730813b03bbeed1712879"
       },
       "weekly": {
         "status": "completed",
@@ -118,9 +112,9 @@
       "number": 53,
       "title": "P0 — replacement-provider checkout and verified entitlement integration",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
-      "updated_at": "2026-08-24T14:38:53Z",
+      "updated_at": "2026-08-25T01:39:26Z",
       "priority": "P0",
-      "score": 1260,
+      "score": 1210,
       "blocked": false,
       "daily_gate": null
     },
@@ -138,7 +132,7 @@
       "number": 130,
       "title": "P0 — complete transactional email, support, and consent readiness",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
-      "updated_at": "2026-08-24T14:37:40Z",
+      "updated_at": "2026-08-25T01:57:00Z",
       "priority": "P0",
       "score": 1100,
       "blocked": true,
@@ -195,6 +189,16 @@
       "daily_gate": null
     },
     {
+      "number": 2,
+      "title": "Post-launch hardening and deployment consolidation",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/2",
+      "updated_at": "2026-08-25T02:49:03Z",
+      "priority": "P3",
+      "score": 660,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
       "number": 260,
       "title": "Activate consent-safe Daily Learning email distribution",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/260",
@@ -218,7 +222,7 @@
       "number": 166,
       "title": "USD Impact Control Center — operations console",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
-      "updated_at": "2026-08-24T14:39:34Z",
+      "updated_at": "2026-08-25T02:49:12Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,
@@ -260,9 +264,9 @@
       "number": 53,
       "title": "P0 — replacement-provider checkout and verified entitlement integration",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
-      "updated_at": "2026-08-24T14:38:53Z",
+      "updated_at": "2026-08-25T01:39:26Z",
       "priority": "P0",
-      "score": 1260,
+      "score": 1210,
       "blocked": false,
       "daily_gate": null
     },
@@ -280,7 +284,7 @@
       "number": 130,
       "title": "P0 — complete transactional email, support, and consent readiness",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
-      "updated_at": "2026-08-24T14:37:40Z",
+      "updated_at": "2026-08-25T01:57:00Z",
       "priority": "P0",
       "score": 1100,
       "blocked": true,
@@ -337,20 +341,20 @@
       "daily_gate": null
     },
     {
-      "number": 260,
-      "title": "Activate consent-safe Daily Learning email distribution",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/260",
-      "updated_at": "2026-08-23T11:34:21Z",
+      "number": 2,
+      "title": "Post-launch hardening and deployment consolidation",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/2",
+      "updated_at": "2026-08-25T02:49:03Z",
       "priority": "P3",
-      "score": 620,
+      "score": 660,
       "blocked": false,
       "daily_gate": null
     },
     {
-      "number": 259,
-      "title": "Expand Daily Cards canonical inventory to 150 reviewed concepts",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/259",
-      "updated_at": "2026-08-24T14:19:57Z",
+      "number": 260,
+      "title": "Activate consent-safe Daily Learning email distribution",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/260",
+      "updated_at": "2026-08-23T11:34:21Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,

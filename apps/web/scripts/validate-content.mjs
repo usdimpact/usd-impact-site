@@ -20,4 +20,5 @@ if (failures.length) {
 }
 
 execFileSync(process.execPath, ['scripts/test-beginner-core-content.mjs'], { stdio: 'inherit' });
+execFileSync(process.execPath, ['scripts/test-product-sample-preview.mjs'], { stdio: 'inherit' });
 console.log('content validation pass');

@@ -63,19 +63,28 @@ assert.ok(strictInstallCount > 0, 'Expected at least one strict npm ci workflow 
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const expectedAllowScripts = {
   'esbuild@0.28.1': true,
+  fsevents: false,
 };
 assert.deepEqual(
   packageJson.allowScripts,
   expectedAllowScripts,
-  'Dependency install scripts must remain an exact reviewed allowlist',
+  'Dependency install scripts must remain the reviewed allow/deny policy',
 );
-for (const [packageSpec, allowed] of Object.entries(packageJson.allowScripts ?? {})) {
-  assert.equal(allowed, true, `${packageSpec} install script approval must be explicit true`);
-  assert.match(
-    packageSpec,
-    /^(?:@[^/\s]+\/[^@\s]+|[^@\s]+)@\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/,
-    `${packageSpec} must pin an exact package version`,
-  );
+for (const [packageSpec, policy] of Object.entries(packageJson.allowScripts ?? {})) {
+  assert.ok(typeof policy === 'boolean', `${packageSpec} install-script policy must be boolean`);
+  if (policy === true) {
+    assert.match(
+      packageSpec,
+      /^(?:@[^/\s]+\/[^@\s]+|[^@\s]+)@\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/,
+      `${packageSpec} approval must pin an exact package version`,
+    );
+  } else {
+    assert.match(
+      packageSpec,
+      /^(?:@[^/\s]+\/[^@\s]+|[^@\s]+)$/,
+      `${packageSpec} denial must apply name-wide`,
+    );
+  }
 }
 
 const vercel = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
@@ -89,5 +98,6 @@ console.log(
   `GitHub Action supply-chain tests passed (${workflowFiles.length} workflows, ` +
     `${[...actionCounts.entries()].map(([action, count]) => `${count} ${action}`).join(', ')}, ` +
     `${node24Count} Node 24.x declarations, ${strictInstallCount} strict npm ci installs, ` +
-    `${Object.keys(expectedAllowScripts).length} reviewed install script).`,
+    `${Object.values(expectedAllowScripts).filter(Boolean).length} approved and ` +
+    `${Object.values(expectedAllowScripts).filter((value) => value === false).length} denied install-script package).`,
 );

@@ -1,7 +1,7 @@
 ---
 title: "Read the Dollar First"
 metaTitle: "Read the Dollar First | USD Impact Book"
-metaDescription: "Explore the Read the Dollar First Guided Interactive Edition, its learning features, one-time pricing, and launch availability."
+metaDescription: "Explore the Read the Dollar First Guided Interactive Edition, try the free sample, review one-time pricing, and check launch availability."
 slug: "/book/read-the-dollar-first"
 category: "Book"
 status: "published"
@@ -13,14 +13,27 @@ sources:
   - "Session 15B Full Release-System Certification"
 internalLinks:
   - "/start-here"
-  - "/book/read-the-dollar-first"
+  - "/start-here/quiz"
+  - "/book/read-the-dollar-first/preview"
+  - "/video-library"
   - "/lead-magnets/weekly-dollar-regime-checklist"
 ctaPrimary: "Join the launch waitlist"
-ctaSecondary: "Download the weekly checklist"
+ctaSecondary: "Try a free sample"
+ctaSecondaryHref: "/book/read-the-dollar-first/preview/"
 hero: "Most investors watch markets asset by asset. This book teaches a different starting point: read the dollar regime first."
 subhero: "Learn how dollar direction, real rates, liquidity stress and funding conditions transmit into oil, gold, Bitcoin, gas, FX, equities and broader market regimes."
 ---
 Learn how dollar direction, real rates, liquidity stress and funding conditions transmit into oil, gold, Bitcoin, gas, FX, equities and broader market regimes.
+
+## Try the teaching method before purchase
+
+You do not need to rely on the product description alone.
+
+The **[free Read the Dollar First sample](/book/read-the-dollar-first/preview/)** gives you a real public lesson, the live **Start Here** book checkpoint with ten questions and explanations, and a transparent view of the complete 51-film syllabus.
+
+The sample does not unlock paid chapters, audiobook playback, protected film playback, saved progress or protected reference resources. It is designed to make the teaching method tangible without weakening the product's access boundaries.
+
+**[Try the free sample →](/book/read-the-dollar-first/preview/)**
 
 ## Guided Interactive Edition
 

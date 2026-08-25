@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const [about, methodology, score, onrcGate] = await Promise.all([
+const [about, methodology, score, compliance, reports, onrcGate] = await Promise.all([
   readFile(new URL('../src/pages/about.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/score/methodology.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/score.astro', import.meta.url), 'utf8'),
+  readFile(new URL('../src/pages/compliance.md', import.meta.url), 'utf8'),
+  readFile(new URL('../src/pages/reports/index.astro', import.meta.url), 'utf8'),
   readFile(new URL('../../../docs/operations/onrc-company-verification-gate.md', import.meta.url), 'utf8'),
 ]);
 
@@ -107,5 +109,27 @@ assert.match(score, /Audit historical revisions/);
 assert.match(score, /valid as-published readings compare with the same weeks in the current recalculated history/);
 assert.match(score, /Compare published vintages/);
 assert.doesNotMatch(score, /predictive performance|proven predictive power/i);
+
+assert.match(compliance, /### Editorial and factual sourcing/);
+assert.match(compliance, /### Quantitative model input providers/);
+assert.match(compliance, /Yahoo Finance/);
+assert.match(compliance, /accessible and reproducible market-data proxy/);
+assert.match(compliance, /not represented as an exchange-official, primary-source, or licensed institutional market-data feed/);
+assert.match(compliance, /DX-Y\.NYB/);
+assert.match(compliance, /CL=F/);
+assert.match(compliance, /\^GSPC/);
+assert.match(compliance, /\^VIX/);
+assert.match(compliance, /BTC-USD/);
+assert.match(compliance, /GC=F/);
+assert.match(compliance, /Two U\.S\. Treasury yield series are obtained through FRED/);
+assert.match(compliance, /does not operate a real-time market-data feed/);
+assert.match(compliance, /model output/);
+
+assert.match(reports, /Completed input gate:<\/strong> 4 of 4 validated weekly briefs included in this published report/);
+assert.match(reports, /Next monthly review cycle/);
+assert.match(reports, /briefs collected for/);
+assert.match(reports, /This counter starts a new cycle and includes only published weekly briefs after that completed period/);
+assert.match(reports, /Next-cycle eligible briefs/);
+assert.doesNotMatch(reports, /\{monthlyProgress\} of 4 briefs available/);
 
 console.log('Transparency-page contract passed.');

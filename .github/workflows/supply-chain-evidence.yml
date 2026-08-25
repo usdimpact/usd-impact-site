@@ -30,7 +30,7 @@ jobs:
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
       - name: Install locked dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Audit high and critical vulnerabilities
         run: npm audit --audit-level=high
       - name: Verify registry signatures and provenance attestations

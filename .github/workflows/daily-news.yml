@@ -47,7 +47,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.config.outputs.configured == 'true'
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
 
       - name: Start background news generation
         id: start

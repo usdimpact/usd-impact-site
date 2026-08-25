@@ -1,0 +1,50 @@
+name: Agent dependency hardening
+
+on:
+  push:
+    branches: [agent/security-hardening-2026-08-25]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade-and-verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Upgrade bounded runtime dependencies
+        run: |
+          npm pkg set engines.node=24.x
+          npm install --save-exact astro@7.2.6 @astrojs/sitemap@3.7.3 @vercel/functions@3.9.5 --no-audit --no-fund
+          npm install --save-dev --save-exact @electric-sql/pglite@0.5.7 --no-audit --no-fund
+
+      - name: Commit regenerated dependency lock
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          if git diff --cached --quiet; then
+            echo "Dependency files already current."
+          else
+            git commit -m "Upgrade web dependencies and refresh lockfile"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
+
+      - name: Audit high and critical vulnerabilities
+        run: npm audit --audit-level=high
+
+      - name: Validate application
+        run: npm run validate
+
+      - name: Build production site
+        run: npm run build

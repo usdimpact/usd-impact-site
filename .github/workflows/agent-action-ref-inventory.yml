@@ -1,0 +1,30 @@
+name: Agent action ref inventory
+
+on:
+  push:
+    branches: [agent/action-supply-chain-hardening-2026-08-25]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Inventory workflow action references
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Unique action references:"
+          grep -RhoE 'uses:[[:space:]]+[^[:space:]#]+' .github/workflows \
+            | sed -E 's/^uses:[[:space:]]+//' \
+            | sort -u
+          echo
+          echo "Floating references:"
+          if grep -RhE 'uses:[[:space:]]+[^[:space:]#]+@(v[0-9]+|main|master|latest)([[:space:]]|$)' .github/workflows; then
+            true
+          else
+            echo "none"
+          fi

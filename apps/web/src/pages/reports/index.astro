@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import FrameworkEvidenceChain from '../../components/FrameworkEvidenceChain.astro';
 import { monthlyEligibility } from '../../lib/report-periods.js';
 
 const weeklyReports = (await getCollection('weeklyReports'))
@@ -27,17 +28,19 @@ const signed = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}`.replace(
 ---
 <BaseLayout
   title="USD Impact Reports | Weekly Briefs and Monthly Reviews"
-  description="Source-backed weekly briefs connecting Daily USD Impact developments with the completed-Friday USD Impact Score, plus monthly reviews built from validated weekly reports."
+  description="Source-backed weekly briefs connecting published Daily USD Impact evidence with the completed-Friday USD Impact Score, plus monthly reviews built only from validated weekly reports."
 >
   <section class="hero reports-hero">
     <div class="container">
       <div class="eyebrow">USD Impact Reports</div>
-      <h1>Connect the week's developments to the score.</h1>
-      <p class="lead">Weekly briefs combine the published Daily USD Impact editions with the completed-Friday cross-asset score. Monthly reviews will build only from validated weekly briefs.</p>
+      <h1>See how the week's verified evidence and score fit together.</h1>
+      <p class="lead">Start with the published Daily editions, compare the completed-Friday cross-asset Score, then read the weekly synthesis. Monthly reviews build only from validated weekly briefs.</p>
     </div>
   </section>
 
   <main class="container">
+    <FrameworkEvidenceChain current="weekly" />
+
     {latest ? (
       <section class="latest-report">
         <div class="section-heading">
@@ -72,6 +75,8 @@ const signed = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}`.replace(
 
         <div class="button-row">
           <a class="button primary" href={latest.data.slug}>Read the weekly brief</a>
+          <a class="button report-back" href="/news/">Audit the Daily archive</a>
+          <a class="button report-back" href="/score/methodology/">Read Score methodology</a>
         </div>
       </section>
     ) : (

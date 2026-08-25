@@ -6,10 +6,12 @@ import BenchmarkModuleCard from '../components/BenchmarkModuleCard.astro';
 import NewsHighlightCard from '../components/NewsHighlightCard.astro';
 import DailyCardToday from '../components/DailyCardToday.astro';
 import FrameworkEvidenceChain from '../components/FrameworkEvidenceChain.astro';
+import { resolveScorePipelineOrigin, scorePipelineUrl } from '../lib/score-pipeline-origin.js';
 
 const latestNews = (await getCollection('news'))
   .filter((entry) => entry.data.status === 'published')
   .sort((a, b) => b.data.date.localeCompare(a.data.date))[0];
+const scorePipelineOrigin = resolveScorePipelineOrigin(import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
 ---
 <BaseLayout title="USD Impact | Read the Dollar First" description="Learn a repeatable dollar-first process for separating dollar, real-rate, liquidity and asset-specific drivers before interpreting cross-asset market moves." stylesheets={['/assets/daily-cards.css']}>
   <section class="hero">
@@ -57,7 +59,7 @@ const latestNews = (await getCollection('news'))
         </div>
         <div class="button-row">
           <a class="button primary" href="/score/">View weekly score</a>
-          <a class="button score-external" href="https://usd-impact-pipeline.pages.dev/en/" target="_blank" rel="noreferrer">Standalone dashboard</a>
+          <a class="button score-external" href={scorePipelineUrl('/en/', scorePipelineOrigin)} target="_blank" rel="noreferrer">Standalone dashboard</a>
         </div>
       </div>
     </section>

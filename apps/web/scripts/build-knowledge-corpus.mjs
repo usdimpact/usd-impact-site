@@ -103,11 +103,19 @@ function splitLongText(text, maximum = MAX_CHUNK_CHARS) {
 }
 
 function markdownChunks(body) {
-  const sections = body
+  // Standalone Markdown horizontal rules are presentation syntax, not retrieval
+  // content. Frontmatter has already been removed above; stripping body rules here
+  // keeps corpus chunks citation-safe without constraining page authoring style.
+  const sanitizedBody = body
+    .split(/\r?\n/)
+    .filter((line) => !/^\s*---\s*$/.test(line))
+    .join('\n')
+    .trim();
+  const sections = sanitizedBody
     .split(/(?=^#{1,3}\s+)/m)
     .map((section) => section.trim())
     .filter(Boolean);
-  const sourceSections = sections.length ? sections : [body.trim()];
+  const sourceSections = sections.length ? sections : [sanitizedBody];
   return sourceSections.flatMap((section) => splitLongText(section)).filter(Boolean);
 }
 

@@ -27,6 +27,7 @@ jobs:
           npm pkg set engines.node=24.x
           npm install --save-exact astro@7.2.6 @astrojs/sitemap@3.7.3 @vercel/functions@3.9.5 --no-audit --no-fund
           npm install --save-dev --save-exact @electric-sql/pglite@0.5.7 --no-audit --no-fund
+          npm audit fix --no-fund
 
       - name: Commit regenerated dependency lock
         run: |
@@ -36,7 +37,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Dependency files already current."
           else
-            git commit -m "Upgrade web dependencies and refresh lockfile"
+            git commit -m "Resolve remaining dependency advisories"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
 

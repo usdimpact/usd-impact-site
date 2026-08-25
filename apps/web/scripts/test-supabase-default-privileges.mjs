@@ -6,6 +6,14 @@ const migration = await readFile(
   'utf8',
 );
 
+const repairMigration = await readFile(
+  new URL(
+    '../../../supabase/migrations/20260825013347_repair_future_public_function_defaults_20260825.sql',
+    import.meta.url,
+  ),
+  'utf8',
+);
+
 assert.match(migration, /^begin;\s/i);
 assert.match(migration, /\scommit;\s*$/i);
 
@@ -32,7 +40,32 @@ assert.match(migration, /not relation\.relrowsecurity/i);
 assert.match(migration, /raise exception 'public tables without row-level security: %'/i);
 
 assert.doesNotMatch(migration, /revoke all on all tables in schema public/i);
-assert.doesNotMatch(migration, /\b(?:grant|revoke)\b[^;]*\bon\s+(?:table|function|sequence)\s+public\./i);
-assert.doesNotMatch(migration, /\b(?:drop|truncate|delete|update|insert)\b\s+(?:table\s+)?public\./i);
+assert.doesNotMatch(
+  migration,
+  /\b(?:grant|revoke)\b[^;]*\bon\s+(?:table|function|sequence)\s+public\./i,
+);
+assert.doesNotMatch(
+  migration,
+  /\b(?:drop|truncate|delete|update|insert)\b\s+(?:table\s+)?public\./i,
+);
+
+// The original migration captured the intended fail-closed contract, but live
+// verification found two PostgreSQL/Supabase default-ACL paths that needed an
+// explicit forward repair. Keep both revocations under source control.
+assert.match(repairMigration, /^begin;\s/i);
+assert.match(repairMigration, /\scommit;\s*$/i);
+assert.match(
+  repairMigration,
+  /alter default privileges for role postgres\s+revoke execute on functions\s+from public;/i,
+);
+assert.match(
+  repairMigration,
+  /alter default privileges for role postgres in schema public\s+revoke execute on functions\s+from anon, authenticated, service_role;/i,
+);
+assert.doesNotMatch(repairMigration, /\bgrant\b/i);
+assert.doesNotMatch(
+  repairMigration,
+  /\b(?:drop|truncate|delete|update|insert)\b\s+(?:table\s+)?public\./i,
+);
 
 console.log('Supabase future-object default privilege tests passed.');

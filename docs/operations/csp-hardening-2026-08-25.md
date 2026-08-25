@@ -1,6 +1,6 @@
 # CSP hardening — 2026-08-25
 
-Status: validation in progress on PR #323.
+Status: corrected generator validation running on PR #323.
 
 ## Design boundary
 
@@ -11,6 +11,11 @@ Status: validation in progress on PR #323.
 - Keep the existing paid video-library response CSP independent and stricter.
 - Enforce universal structural browser rules in Vercel response headers: no framing, no plugin/object content, same-origin base URLs.
 - Keep public checkout disabled and make no commerce, lifecycle-email, entitlement, customer-data, or Supabase changes in this release.
+
+## Validation history
+
+- The first two helper runs stopped before producing application changes because the temporary Python generator contained a syntax error in its indentation-normalization expression.
+- The helper was corrected to use Python `textwrap.dedent`; application/CSP validation must be judged only from a fresh run at or after that corrected branch head.
 
 ## Merge gate
 

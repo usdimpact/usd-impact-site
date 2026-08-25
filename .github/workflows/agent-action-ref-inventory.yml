@@ -1,32 +1,91 @@
-name: Agent action ref inventory
+name: Agent action supply-chain hardening
 
 on:
   push:
     branches: [agent/action-supply-chain-hardening-2026-08-25]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  inventory:
+  pin-and-align:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Inventory workflow action references
+        with:
+          ref: agent/action-supply-chain-hardening-2026-08-25
+      - name: Pin actions and align Node runtime
         shell: bash
         run: |
           set -euo pipefail
-          echo "Unique action references:"
-          grep -RhoE 'uses:[[:space:]]+[^[:space:]#]+' .github/workflows \
-            | sed -E 's/^uses:[[:space:]]+//' \
-            | sort -u
-          echo
-          echo "Floating references:"
-          if grep -RhE 'uses:[[:space:]]+[^[:space:]#]+@(v[0-9]+|main|master|latest)([[:space:]]|$)' .github/workflows; then
-            true
-          else
-            echo "none"
-          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          checkout = '3d3c42e5aac5ba805825da76410c181273ba90b1'
+          setup_node = '820762786026740c76f36085b0efc47a31fe5020'
+          upload_artifact = 'ea165f8d65b6e75b540449e92b4886f43607fa02'
+          helper = Path('.github/workflows/agent-action-ref-inventory.yml')
+          workflows = sorted(Path('.github/workflows').glob('*.y*ml'))
+
+          action_re = re.compile(r'(?m)^(\s*-?\s*uses:\s*)([^\s#]+)(\s*(?:#.*)?)$')
+          allowed = {
+              'actions/checkout@v7',
+              f'actions/checkout@{checkout}',
+              'actions/setup-node@v7',
+              f'actions/setup-node@{setup_node}',
+              'actions/upload-artifact@v4',
+              f'actions/upload-artifact@{upload_artifact}',
+          }
+          refs = set()
+          for path in workflows:
+              source = path.read_text()
+              refs.update(match.group(2) for match in action_re.finditer(source))
+          unexpected = sorted(refs - allowed)
+          if unexpected:
+              raise SystemExit(f'Unexpected action references: {unexpected}')
+
+          replacements = {
+              'actions/checkout@v7': f'actions/checkout@{checkout} # v7',
+              'actions/setup-node@v7': f'actions/setup-node@{setup_node} # v7',
+              'actions/upload-artifact@v4': f'actions/upload-artifact@{upload_artifact} # v4',
+          }
+
+          for path in workflows:
+              if path == helper:
+                  continue
+              source = path.read_text()
+              for old, new in replacements.items():
+                  source = source.replace(old, new)
+              source = re.sub(r'(?m)^(\s*node-version:\s*)22\.16\.0\s*$', r'\g<1>24.x', source)
+              path.write_text(source)
+
+          post_refs = set()
+          node_versions = set()
+          for path in workflows:
+              if path == helper:
+                  continue
+              source = path.read_text()
+              post_refs.update(match.group(2) for match in action_re.finditer(source))
+              node_versions.update(re.findall(r'(?m)^\s*node-version:\s*([^\s#]+)', source))
+
+          floating = sorted(ref for ref in post_refs if not re.search(r'@[0-9a-f]{40}$', ref))
+          if floating:
+              raise SystemExit(f'Floating action references remain: {floating}')
+          if node_versions - {'24.x'}:
+              raise SystemExit(f'Non-Node-24 workflow runtime remains: {sorted(node_versions)}')
+
+          helper.unlink()
+          print(f'Pinned {len(post_refs)} unique action refs; workflow Node versions: {sorted(node_versions)}')
+          PY
+
+      - name: Commit supply-chain hardening
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows
+          git commit -m "Pin GitHub Actions and align workflow Node runtime"
+          git push origin HEAD:agent/action-supply-chain-hardening-2026-08-25

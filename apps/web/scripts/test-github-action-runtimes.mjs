@@ -12,6 +12,7 @@ const expectedActionRefs = new Map([
   ['actions/checkout', '3d3c42e5aac5ba805825da76410c181273ba90b1'],
   ['actions/setup-node', '820762786026740c76f36085b0efc47a31fe5020'],
   ['actions/upload-artifact', '043fb46d1a93c77aae656e7c1c64a875d1fc6a0a'],
+  ['github/codeql-action', 'db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28'],
 ]);
 const actionCounts = new Map([...expectedActionRefs.keys()].map((name) => [name, 0]));
 let node24Count = 0;
@@ -26,7 +27,7 @@ for (const workflowFile of workflowFiles) {
     `${workflowFile} must not bypass the GitHub Actions runtime safety gate`,
   );
 
-  for (const match of source.matchAll(/uses:\s*([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)@([^\s#]+)/g)) {
+  for (const match of source.matchAll(/uses:\s*([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)(?:\/[A-Za-z0-9_./-]+)?@([^\s#]+)/g)) {
     const [, action, ref] = match;
     assert.ok(expectedActionRefs.has(action), `${workflowFile} uses unapproved action ${action}`);
     assert.match(ref, /^[0-9a-f]{40}$/, `${workflowFile} must pin ${action} to an immutable 40-char SHA`);

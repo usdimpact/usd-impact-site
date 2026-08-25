@@ -6,7 +6,7 @@ slug: "/starter-guide"
 category: "Resource"
 status: "published"
 readingLevel: "Beginner"
-lastReviewed: "2026-06-12"
+lastReviewed: "2026-08-25"
 complianceNote: "Educational and informational only. Not investment, financial, trading, legal, or tax advice. Not a recommendation to buy or sell any asset. Not a trading signal or market forecast."
 sources:
   - "Federal Reserve — federalreserve.gov"
@@ -17,6 +17,8 @@ sources:
 internalLinks:
   - "/dollar-framework"
   - "/start-here"
+  - "/framework/dollar-transmission-chain"
+  - "/framework/three-dial-dashboard"
   - "/glossary/dxy"
   - "/glossary/real-rates"
 ctaPrimary: "Download Free Checklist"
@@ -62,8 +64,10 @@ It is an educational framework for building macro awareness. Use it alongside in
 
 ## Continue learning
 
-After downloading the checklist, the recommended next steps are:
+After downloading the checklist, use this sequence:
 
-- Read the **Dollar Framework** page to understand the four macro dials in detail
-- Work through **Start Here** for the foundational context
-- Use the **Glossary** to clarify any terms you encounter
+1. Read **[Start Here](/start-here/)** for the beginner route and the core question USD Impact is designed to answer.
+2. Read the **[Dollar Framework](/dollar-framework/)** to understand the three macro dials: dollar direction, real-rate pressure, and liquidity stress.
+3. Open the **[Dollar Transmission Chain](/framework/dollar-transmission-chain/)** to see how policy and funding conditions can move through rates and the dollar into other assets.
+4. Use the **[Three-Dial Macro Dashboard](/framework/three-dial-dashboard/)** as the practical weekly operating sequence.
+5. Use the **[DXY glossary](/glossary/dxy/)** and **[real-rates glossary](/glossary/real-rates/)** whenever a term is unfamiliar.

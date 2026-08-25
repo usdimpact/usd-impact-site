@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-25T02:49:25.498Z",
+  "generated_at": "2026-08-25T12:00:43.463Z",
   "generated_by": "github-actions:sync",
   "freshness": "VERIFIED",
   "health": "RED",
@@ -15,12 +15,12 @@
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": "32a7543792c451d474bd5985feeb3e59d984fea9"
+      "head_sha": "09b1f10393ca8b809a890731f4b5aa43959765ce"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
       "default_branch": "main",
-      "head_sha": "700034985f3b315e93f730813b03bbeed1712879"
+      "head_sha": "ddf31837cb572216835655560c9eec60046cc312"
     },
     "weekly_commentary": {
       "name": "usdimpact/usd-impact",
@@ -33,24 +33,18 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32802682406",
-        "created_at": "2026-08-25T02:46:39Z",
-        "head_sha": "32a7543792c451d474bd5985feeb3e59d984fea9"
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32842400320",
+        "created_at": "2026-08-25T11:27:27Z",
+        "head_sha": "09b1f10393ca8b809a890731f4b5aa43959765ce"
       },
       "daily_news": {
         "status": "completed",
-        "conclusion": "failure",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32714727469",
-        "created_at": "2026-08-24T10:02:35Z",
-        "head_sha": "3fc261df22324a3ea4bcc40a3751638c4d510737",
-        "operational_conclusion": "recovered_after_review",
-        "recovery": {
-          "number": 301,
-          "title": "Publish Daily USD Impact — 2026-08-24",
-          "url": "https://github.com/usdimpact/usd-impact-site/pull/301",
-          "merged_at": "2026-08-24T12:25:41Z",
-          "merge_commit_sha": "55055838bbefabae85205041d281db243a96c82b"
-        }
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32834080722",
+        "created_at": "2026-08-25T09:50:21Z",
+        "head_sha": "9803e29f93ea0d96096368229c920b832a2b70c7",
+        "operational_conclusion": "success",
+        "recovery": null
       },
       "daily_news_health": {
         "status": "completed",
@@ -63,9 +57,9 @@
       "catalyst_brief": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32787333064",
-        "created_at": "2026-08-24T23:00:23Z",
-        "head_sha": "a3fc26e714f0ed5c9393f3e3f2fff2de994ee142",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32821966232",
+        "created_at": "2026-08-25T07:30:51Z",
+        "head_sha": "9803e29f93ea0d96096368229c920b832a2b70c7",
         "operational_conclusion": "success",
         "recovery": null
       }
@@ -74,9 +68,9 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/32791772388",
-        "created_at": "2026-08-24T23:59:42Z",
-        "head_sha": "700034985f3b315e93f730813b03bbeed1712879"
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/32843963719",
+        "created_at": "2026-08-25T11:45:30Z",
+        "head_sha": "ddf31837cb572216835655560c9eec60046cc312"
       },
       "weekly": {
         "status": "completed",
@@ -100,11 +94,11 @@
     "daily_recovery_eligible": false,
     "daily_blocker": "Open Daily publication blocker: #184 P1 — prove Daily reliability after hardening release",
     "daily_reason": "Open Daily publication blocker: #184 P1 — prove Daily reliability after hardening release",
-    "daily_failure_gate": "scheduled-proof",
-    "daily_degradation": "gate scheduled-proof — #184 P1 — prove Daily reliability after hardening release",
-    "daily_workflow_operational_conclusion": "recovered_after_review",
+    "daily_failure_gate": "none",
+    "daily_degradation": "gate none — #184 P1 — prove Daily reliability after hardening release",
+    "daily_workflow_operational_conclusion": "success",
     "exact_current_head_quality_green": true,
-    "stale_daily_failure": true,
+    "stale_daily_failure": false,
     "stale_daily_health_failure": true
   },
   "open_work": [
@@ -122,7 +116,7 @@
       "number": 50,
       "title": "P0 — controlled Library Pass revenue and Production-readiness program",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/50",
-      "updated_at": "2026-08-24T14:35:35Z",
+      "updated_at": "2026-08-25T11:46:10Z",
       "priority": "P0",
       "score": 1180,
       "blocked": false,
@@ -132,7 +126,7 @@
       "number": 130,
       "title": "P0 — complete transactional email, support, and consent readiness",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
-      "updated_at": "2026-08-25T01:57:00Z",
+      "updated_at": "2026-08-25T03:10:37Z",
       "priority": "P0",
       "score": 1100,
       "blocked": true,
@@ -152,9 +146,19 @@
       "number": 184,
       "title": "P1 — prove Daily reliability after hardening release",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/184",
-      "updated_at": "2026-08-24T14:32:29Z",
+      "updated_at": "2026-08-25T11:29:53Z",
       "priority": "P1",
       "score": 1020,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 328,
+      "title": "P2 — finish Supabase Auth platform security hardening",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/328",
+      "updated_at": "2026-08-25T03:10:17Z",
+      "priority": "P2",
+      "score": 770,
       "blocked": false,
       "daily_gate": null
     },
@@ -189,16 +193,6 @@
       "daily_gate": null
     },
     {
-      "number": 2,
-      "title": "Post-launch hardening and deployment consolidation",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/2",
-      "updated_at": "2026-08-25T02:49:03Z",
-      "priority": "P3",
-      "score": 660,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
       "number": 260,
       "title": "Activate consent-safe Daily Learning email distribution",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/260",
@@ -222,7 +216,7 @@
       "number": 166,
       "title": "USD Impact Control Center — operations console",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
-      "updated_at": "2026-08-25T02:49:12Z",
+      "updated_at": "2026-08-25T12:00:31Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,
@@ -274,7 +268,7 @@
       "number": 50,
       "title": "P0 — controlled Library Pass revenue and Production-readiness program",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/50",
-      "updated_at": "2026-08-24T14:35:35Z",
+      "updated_at": "2026-08-25T11:46:10Z",
       "priority": "P0",
       "score": 1180,
       "blocked": false,
@@ -284,7 +278,7 @@
       "number": 130,
       "title": "P0 — complete transactional email, support, and consent readiness",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
-      "updated_at": "2026-08-25T01:57:00Z",
+      "updated_at": "2026-08-25T03:10:37Z",
       "priority": "P0",
       "score": 1100,
       "blocked": true,
@@ -304,9 +298,19 @@
       "number": 184,
       "title": "P1 — prove Daily reliability after hardening release",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/184",
-      "updated_at": "2026-08-24T14:32:29Z",
+      "updated_at": "2026-08-25T11:29:53Z",
       "priority": "P1",
       "score": 1020,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 328,
+      "title": "P2 — finish Supabase Auth platform security hardening",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/328",
+      "updated_at": "2026-08-25T03:10:17Z",
+      "priority": "P2",
+      "score": 770,
       "blocked": false,
       "daily_gate": null
     },
@@ -335,16 +339,6 @@
       "title": "P3: Activate USD Impact Partner Program + Member Referral after commerce provider",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/234",
       "updated_at": "2026-08-22T11:42:09Z",
-      "priority": "P3",
-      "score": 660,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 2,
-      "title": "Post-launch hardening and deployment consolidation",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/2",
-      "updated_at": "2026-08-25T02:49:03Z",
       "priority": "P3",
       "score": 660,
       "blocked": false,

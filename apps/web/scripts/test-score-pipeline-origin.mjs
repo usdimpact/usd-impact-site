@@ -26,17 +26,17 @@ const [home, score, astroConfig] = await Promise.all([
 for (const [name, text] of [['home', home], ['score', score]]) {
   assert.match(text, /resolveScorePipelineOrigin/);
   assert.match(text, /scorePipelineUrl/);
-  assert.doesNotMatch(text, /https:\/\/usd-impact-pipeline\.pages\.dev/);
-  assert.doesNotMatch(text, /https:\/\/score\.usd-impact\.com/);
+  assert.equal(text.includes(LEGACY_SCORE_PIPELINE_ORIGIN), false, `${name} must not hard-code the legacy Score origin.`);
+  assert.equal(text.includes(BRANDED_SCORE_PIPELINE_ORIGIN), false, `${name} must not hard-code the branded Score origin.`);
   assert.match(text, /PUBLIC_SCORE_PIPELINE_ORIGIN/);
-  assert.ok(text.includes("score-pipeline-origin.js"), `${name} must import the Score origin contract.`);
+  assert.ok(text.includes('score-pipeline-origin.js'), `${name} must import the Score origin contract.`);
 }
 
 assert.match(astroConfig, /resolveScorePipelineOrigin/);
 assert.match(astroConfig, /PUBLIC_SCORE_PIPELINE_ORIGIN/);
 assert.match(astroConfig, /frame-src/);
 assert.match(astroConfig, /scorePipelineOrigin/);
-assert.doesNotMatch(astroConfig, /frame-src[^\n]*usd-impact-pipeline\.pages\.dev/);
-assert.doesNotMatch(astroConfig, /frame-src[^\n]*score\.usd-impact\.com/);
+assert.equal(astroConfig.includes(LEGACY_SCORE_PIPELINE_ORIGIN), false, 'Astro CSP config must not hard-code the legacy Score origin.');
+assert.equal(astroConfig.includes(BRANDED_SCORE_PIPELINE_ORIGIN), false, 'Astro CSP config must not hard-code the branded Score origin.');
 
 console.log('Score pipeline origin contract passed.');

@@ -21,6 +21,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <dd id="commerce-state">Checking…</dd>
         </div>
         <div>
+          <dt>Buyer disclosures</dt>
+          <dd id="seller-disclosure-state">Required before Live</dd>
+        </div>
+        <div>
           <dt>Public checkout</dt>
           <dd id="checkout-state">Disabled</dd>
         </div>
@@ -33,12 +37,58 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <a class="button account-secondary" href="/account/">Return to your account</a>
       </div>
     </section>
+
+    <section class="account-panel" aria-labelledby="buyer-disclosure-gate-title">
+      <p class="eyebrow">PRE-CHECKOUT RELEASE GATE</p>
+      <h2 id="buyer-disclosure-gate-title">Before any payment can open</h2>
+      <p>
+        Live checkout is blocked until the customer-facing seller and Merchant-of-Record information has been
+        verified, approved, and made available before payment. Missing or partial disclosure data cannot enable checkout.
+      </p>
+      <ul>
+        <li>verified legal operator and geographic trader address;</li>
+        <li>applicable tax / VAT status wording;</li>
+        <li>selected Merchant of Record, buyer terms, and provider privacy terms;</li>
+        <li>checkout tax and supported-currency wording;</li>
+        <li>refund and payment-support responsibility allocation; and</li>
+        <li>explicit final approval of the complete buyer-facing disclosure set.</li>
+      </ul>
+      <p>
+        Current verified public operator identity: <strong>SC Kela Leads SRL</strong>, Romania · CUI 40790448 ·
+        Trade Register J38/820/2020 · <a href="mailto:support@usd-impact.com">support@usd-impact.com</a>.
+        A street address or provider identity is not guessed or published before it is verified for customer-facing use.
+      </p>
+    </section>
+
+    <section id="seller-disclosure-panel" class="account-panel" aria-labelledby="seller-disclosure-title" hidden>
+      <p class="eyebrow">BUYER INFORMATION</p>
+      <h2 id="seller-disclosure-title">Seller and payment-provider disclosure</h2>
+      <dl class="account-details">
+        <div><dt>Brand</dt><dd id="seller-brand"></dd></div>
+        <div><dt>Legal operator</dt><dd id="seller-legal-name"></dd></div>
+        <div><dt>Registration</dt><dd id="seller-registration"></dd></div>
+        <div><dt>Jurisdiction</dt><dd id="seller-jurisdiction"></dd></div>
+        <div><dt>Geographic address</dt><dd id="seller-address"></dd></div>
+        <div><dt>Tax / VAT status</dt><dd id="seller-tax-status"></dd></div>
+        <div><dt>Merchant of Record</dt><dd id="seller-mor"></dd></div>
+        <div><dt>Checkout tax / currency</dt><dd id="seller-checkout-tax"></dd></div>
+        <div><dt>Refund / payment support</dt><dd id="seller-refund-support"></dd></div>
+        <div><dt>USD Impact support</dt><dd id="seller-support-email"></dd></div>
+      </dl>
+      <p>
+        <a id="seller-buyer-terms" href="#" rel="noopener noreferrer">Merchant-of-Record buyer terms</a>
+        ·
+        <a id="seller-provider-privacy" href="#" rel="noopener noreferrer">Payment-provider privacy terms</a>
+      </p>
+    </section>
   </main>
 
   <script>
     const stateElement = document.getElementById('commerce-state');
     const checkoutElement = document.getElementById('checkout-state');
     const messageElement = document.getElementById('commerce-message');
+    const disclosureStateElement = document.getElementById('seller-disclosure-state');
+    const disclosurePanel = document.getElementById('seller-disclosure-panel');
 
     const stateLabels = {
       ready_for_provider_configuration: 'Ready for provider configuration',
@@ -46,6 +96,53 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       ready_for_controlled_live_test: 'Ready for a controlled Live test',
       active: 'Active',
       blocked: 'Blocked',
+    };
+
+    const setText = (id, value) => {
+      const element = document.getElementById(id);
+      if (element) element.textContent = typeof value === 'string' ? value : '';
+    };
+
+    const setHttpsHref = (id, value) => {
+      const element = document.getElementById(id);
+      if (!(element instanceof HTMLAnchorElement) || typeof value !== 'string') return false;
+      try {
+        const url = new URL(value);
+        if (url.protocol !== 'https:' || url.username || url.password) return false;
+        element.href = url.toString();
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    const renderSellerDisclosure = (commerce) => {
+      const disclosure = commerce?.sellerDisclosure;
+      if (!commerce?.disclosuresComplete || !disclosure || typeof disclosure !== 'object') {
+        if (disclosureStateElement) disclosureStateElement.textContent = 'Required before Live';
+        if (disclosurePanel instanceof HTMLElement) disclosurePanel.hidden = true;
+        return;
+      }
+
+      if (!setHttpsHref('seller-buyer-terms', disclosure.buyerTermsUrl)
+        || !setHttpsHref('seller-provider-privacy', disclosure.providerPrivacyUrl)) {
+        if (disclosureStateElement) disclosureStateElement.textContent = 'Verification unavailable';
+        if (disclosurePanel instanceof HTMLElement) disclosurePanel.hidden = true;
+        return;
+      }
+
+      setText('seller-brand', disclosure.brand);
+      setText('seller-legal-name', disclosure.legalName);
+      setText('seller-registration', disclosure.registration);
+      setText('seller-jurisdiction', disclosure.jurisdiction);
+      setText('seller-address', disclosure.geographicAddress);
+      setText('seller-tax-status', disclosure.taxStatus);
+      setText('seller-mor', disclosure.merchantOfRecord);
+      setText('seller-checkout-tax', disclosure.checkoutTaxDisclosure);
+      setText('seller-refund-support', disclosure.refundSupportDisclosure);
+      setText('seller-support-email', disclosure.supportEmail);
+      if (disclosureStateElement) disclosureStateElement.textContent = 'Complete and approved';
+      if (disclosurePanel instanceof HTMLElement) disclosurePanel.hidden = false;
     };
 
     fetch('/api/commerce-readiness', {
@@ -60,6 +157,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         const commerce = body.commerce;
         if (stateElement) stateElement.textContent = stateLabels[commerce.state] || 'Unavailable';
         if (checkoutElement) checkoutElement.textContent = commerce.checkoutEnabled ? 'Enabled' : 'Disabled';
+        renderSellerDisclosure(commerce);
         if (messageElement) {
           messageElement.textContent = commerce.message || 'Public checkout remains disabled.';
           messageElement.dataset.state = commerce.state === 'blocked' ? 'error' : 'success';
@@ -68,6 +166,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       .catch((error) => {
         if (stateElement) stateElement.textContent = 'Verification unavailable';
         if (checkoutElement) checkoutElement.textContent = 'Disabled';
+        if (disclosureStateElement) disclosureStateElement.textContent = 'Verification unavailable';
+        if (disclosurePanel instanceof HTMLElement) disclosurePanel.hidden = true;
         if (messageElement) {
           messageElement.textContent = error instanceof Error
             ? `${error.message} Public checkout remains disabled.`

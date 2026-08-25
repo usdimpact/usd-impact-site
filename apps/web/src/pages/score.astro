@@ -19,6 +19,7 @@ const latestWeeklyReport = (await getCollection('weeklyReports'))
       <div class="button-row">
         <a class="button primary" href="#score-dashboard">View the latest score</a>
         <a class="button secondary" href="/score/methodology/">Read the full methodology</a>
+        <a class="button secondary" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.html" target="_blank" rel="noreferrer">Audit historical revisions</a>
         <a class="button secondary" href="https://usd-impact-pipeline.pages.dev/en/" target="_blank" rel="noreferrer">Open standalone dashboard</a>
       </div>
     </div>
@@ -49,9 +50,12 @@ const latestWeeklyReport = (await getCollection('weeklyReports'))
       <div>
         <div class="eyebrow">Independent review</div>
         <h2 id="score-methodology-heading">Do not take the score on faith.</h2>
-        <p>USD Impact Score v2 uses eight fixed-weight weekly market levels standardized against the expanding full sample since January 2015. The methodology page states exactly how a number such as −0.72 is produced, including missing-data rules, ±3.5 clipping, the lack of explicit correlation adjustment, and why the existing historical checks are descriptive rather than true out-of-sample validation.</p>
+        <p>USD Impact Score v2 uses eight fixed-weight weekly market levels standardized against the expanding full sample since January 2015. The methodology page states exactly how a number such as −0.72 is produced, including missing-data rules, ±3.5 clipping, the lack of explicit correlation adjustment, and why the existing historical checks are descriptive rather than true out-of-sample validation. The separate vintage audit shows how valid as-published readings compare with the same weeks in the current recalculated history.</p>
       </div>
-      <a class="button report-link" href="/score/methodology/">Audit the methodology</a>
+      <div class="button-row">
+        <a class="button report-link" href="/score/methodology/">Audit the methodology</a>
+        <a class="button report-link" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.html" target="_blank" rel="noreferrer">Compare published vintages</a>
+      </div>
     </section>
 
     <section id="score-dashboard" class="score-dashboard-section">

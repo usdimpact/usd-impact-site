@@ -24,7 +24,7 @@ const { cardId } = Astro.props;
   .dc-review-status { min-height: 1.5rem; margin: 0; }
 </style>
 
-<script is:inline>
+<script>
   (() => {
     const section = document.querySelector('[data-daily-card-review]');
     if (!section) return;

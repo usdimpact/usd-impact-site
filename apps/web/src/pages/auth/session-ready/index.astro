@@ -24,7 +24,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     </div>
   </main>
 
-  <script is:inline>
+  <script>
     const params = new URLSearchParams(window.location.search);
     const requestedNext = params.get('next');
     const statusNode = document.getElementById('session-ready-status');

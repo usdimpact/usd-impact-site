@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const root = path.resolve('src/content');
 const required = ['title:', 'metaTitle:', 'metaDescription:', 'slug:', 'status:', 'complianceNote:'];
@@ -17,4 +18,6 @@ if (failures.length) {
   console.error(failures.join('\n'));
   process.exit(1);
 }
+
+execFileSync(process.execPath, ['scripts/test-beginner-core-content.mjs'], { stdio: 'inherit' });
 console.log('content validation pass');

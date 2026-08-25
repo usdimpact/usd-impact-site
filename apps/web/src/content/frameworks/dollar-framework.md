@@ -1,103 +1,189 @@
 ---
 title: "The Dollar Framework"
 metaTitle: "Dollar Framework — USD Impact"
-metaDescription: "The four macro dials that help explain how U.S. dollar direction, real rates, liquidity, and broad USD signals transmit into global asset prices across regimes."
+metaDescription: "The three-dial USD Impact framework for reading dollar direction, real-rate pressure and liquidity stress before interpreting cross-asset moves."
 slug: "/dollar-framework"
 category: "Framework"
-status: "ready-for-build"
+status: "published"
 readingLevel: "Beginner to intermediate"
-lastReviewed: "2026-06-12"
+lastReviewed: "2026-08-25"
 complianceNote: "Educational and informational only. Not investment, financial, trading, legal, or tax advice. Relationships described are regime-dependent historical patterns, not guarantees of future behaviour. Not a recommendation to buy or sell any asset."
 sources:
-  - "Federal Reserve — federalreserve.gov (Broad Dollar Index, monetary policy)"
-  - "FRED, Federal Reserve Bank of St. Louis — fred.stlouisfed.org (TIPS yields, rate data)"
-  - "U.S. Treasury — home.treasury.gov (yield curve)"
-  - "BIS — bis.org (global dollar funding)"
-  - "ICE — ice.com (credit indices)"
-  - "CME Group — cmegroup.com (gold, energy futures)"
+  - "Federal Reserve — federalreserve.gov (Broad Dollar Index, monetary policy and balance sheet)"
+  - "FRED, Federal Reserve Bank of St. Louis — fred.stlouisfed.org (TIPS yields, Treasury yields, credit and volatility series)"
+  - "U.S. Treasury — home.treasury.gov (Treasury market and yield information)"
+  - "BIS — bis.org (global dollar funding research)"
   - "CBOE — cboe.com (VIX)"
 internalLinks:
   - "/start-here"
+  - "/framework/dollar-transmission-chain"
+  - "/framework/three-dial-dashboard"
   - "/lead-magnets/weekly-dollar-regime-checklist"
   - "/glossary/dxy"
+  - "/glossary/broad-usd"
   - "/glossary/real-rates"
   - "/glossary/liquidity-stress"
 ctaPrimary: "Download the weekly checklist"
 ctaSecondary: "Start Here"
-hero: "A four-dial analytical framework for understanding how U.S. dollar conditions interact with real rates, global liquidity, and broad dollar strength to influence asset prices across macro regimes."
+hero: "Use three macro dials—dollar direction, real-rate pressure and liquidity stress—to identify the environment before interpreting an asset move."
 visual: "/assets/visuals/USDImpact_01_Dollar_Transmission_Chain.svg"
 ---
 
 ## What this framework is
 
-The Dollar Framework is an educational structure for thinking about how the macro environment shapes cross-asset relationships. It is not a forecasting model, a trading system, or a guarantee of any outcome. Asset relationships are regime-dependent — they shift over time as policy, geopolitics, and market structure change.
+The Dollar Framework is an educational structure for reading macro conditions before assigning a simple explanation to an asset move.
 
-The framework uses four analytical inputs — four dials — to assess the macro environment. Monitoring all four together gives a more complete picture than watching any single indicator in isolation.
+It uses **three core dials**:
 
----
+1. **Dollar direction** — including breadth and confirmation beyond DXY.
+2. **Real-rate pressure** — the inflation-adjusted rate environment.
+3. **Liquidity stress** — funding, volatility and credit conditions.
 
-## Dial 1 — Dollar direction (DXY and beyond)
-
-The DXY measures the U.S. dollar against six major currencies, weighted approximately 57% toward the Euro. It is a useful proxy for broad dollar direction, but it does not capture dollar strength against emerging-market currencies, commodity-linked currencies, or Asian FX.
-
-For a fuller picture, watch the Federal Reserve's Broad Dollar Index alongside DXY. When both confirm the same direction, the signal is stronger. When they diverge, the move may be more currency-specific than systemic.
-
-Dollar direction is the first dial. A strengthening dollar historically tends to tighten global financial conditions — raising the cost of dollar-denominated debt, pressuring commodity prices, and reducing risk appetite in emerging markets. A weakening dollar can have the reverse effect. Relationships are not mechanical, and regime context matters.
-
-## Dial 2 — Real rates
-
-Real interest rates — the nominal rate minus inflation expectations — are the second dial. Rising real rates have historically been associated with dollar strength and gold weakness. Falling real rates — especially deeply negative real rates — have historically been associated with dollar weakness and gold strength.
-
-The 10-year U.S. TIPS yield, published by the Federal Reserve on FRED, is a standard proxy for real rates. It is one input, not a complete picture on its own.
-
-**Common mistake:** Confusing nominal rates with real rates. A high nominal yield during a high-inflation period may represent a low or even negative real yield. What matters for many asset relationships is the inflation-adjusted rate.
-
-## Dial 3 — Liquidity and stress
-
-Global dollar liquidity — the availability of dollar funding in the international financial system — is the third dial. When dollar liquidity tightens, credit spreads widen, risk appetite falls, and assets that depend on cheap funding tend to come under pressure. When liquidity is abundant, the reverse conditions can apply.
-
-Key signals to monitor include the Federal Reserve's balance sheet, the Fed funds rate path, cross-currency basis swaps, and credit spreads. The VIX and credit markets can also indicate stress before it appears in asset prices.
-
-## Dial 4 — Broad USD confirmation
-
-The fourth dial involves checking dollar strength against a broader set of currencies — particularly emerging-market and commodity-linked FX. If DXY is rising but the Broad Dollar Index is not confirming, the dollar move may be more Euro or yen-specific than systemic.
-
-Cross-asset confirmation — gold, oil, and credit responding as expected — adds further signal. No single confirmation is definitive. The framework requires judgment across all four dials.
+The dials are not a forecast model. They are a disciplined way to separate different macro mechanisms that can produce similar-looking market moves.
 
 ---
 
-## How dollar conditions transmit to asset prices
+## Dial 1 — Dollar direction
 
-The transmission chain is not linear and not guaranteed. It is an educational framework for thinking through how macro forces have historically connected — not a predictive formula.
+Start with the direction of the U.S. dollar, but do not stop at a single index.
 
-**Fed Policy** → rate decisions, forward guidance, balance sheet changes  
-**U.S. Rates** → nominal and real yields move in response  
-**Dollar Direction** → DXY and Broad Dollar Index respond to rate differentials  
-**Global Liquidity** → dollar funding conditions tighten or ease  
-**Risk Appetite** → capital flows into or out of risk assets  
-**Asset Prices** → gold, oil, equities, Bitcoin, EM FX respond
+DXY is useful because it provides a consistent, widely followed measure of the dollar against six major currencies. Its basket is concentrated in developed-market currencies and heavily influenced by the euro, so a DXY move is not automatically evidence of broad global dollar strength or weakness.
+
+### Confirmation belongs inside Dial 1
+
+Use broader measures, such as the Federal Reserve's Broad Dollar Index, to ask whether the move extends across a wider trading-partner set.
+
+If DXY and broader dollar measures move together, the move has stronger breadth. If they diverge, investigate whether the explanation is currency-specific.
+
+Cross-asset evidence can also help challenge the story. For example, if DXY rises but credit, volatility and funding-sensitive markets remain calm, the mechanism may be different from a broad dollar-liquidity squeeze.
+
+**Important:** broad-dollar confirmation is a validation layer within the dollar-direction dial. It is **not a fourth macro dial**.
+
+Learn more: **[DXY](/glossary/dxy/)** and **[Broad USD](/glossary/broad-usd/)**.
+
+---
+
+## Dial 2 — Real-rate pressure
+
+Real rates describe the return on interest-bearing assets after accounting for inflation expectations.
+
+The 10-year U.S. TIPS yield is a practical reference series for longer-term real-rate conditions. It is not the only maturity or the only relevant rate, but it helps distinguish two environments that can otherwise look similar.
+
+For example, a stronger dollar accompanied by rising real yields can suggest a different transmission path from a stronger dollar accompanied by falling yields and widening credit stress.
+
+Real rates matter because they influence discount rates and the opportunity cost of holding non-yielding assets. Their effects are not mechanical and can be outweighed by growth, liquidity, geopolitics or asset-specific factors.
+
+**Common mistake:** treating nominal yields and real yields as interchangeable. They are related but not identical.
+
+Learn more: **[Real rates](/glossary/real-rates/)**.
+
+---
+
+## Dial 3 — Liquidity stress
+
+Liquidity stress asks whether funding and market conditions are becoming easier or tighter.
+
+No single series measures all forms of liquidity. Useful evidence can include:
+
+- credit-spread direction;
+- volatility measures such as VIX;
+- funding-market stress;
+- central-bank liquidity operations;
+- balance-sheet and reserve conditions;
+- cross-currency funding measures where appropriate.
+
+A strong dollar during calm credit markets can describe a very different regime from a strong dollar during a funding shock. That distinction is why liquidity remains its own dial.
+
+**Common mistake:** defining liquidity only as the size of a central-bank balance sheet. Balance sheets matter, but funding stress, market depth, collateral conditions and private credit transmission can also matter.
+
+Learn more: **[Liquidity stress](/glossary/liquidity-stress/)**.
+
+---
+
+## How the three dials work together
+
+The dials are most useful when they are read as a configuration rather than independently.
+
+| Dollar direction | Real-rate pressure | Liquidity stress | Educational interpretation |
+|---|---|---|---|
+| Firmer | Rising | Low / contained | More consistent with a rate-led firm-dollar environment |
+| Firmer | Flat or falling | Rising | More consistent with stress/funding demand for dollars |
+| Softer | Falling | Low / easing | More consistent with easier rate/liquidity conditions |
+| Softer | Rising | Rising | Mixed regime; investigate foreign-FX and asset-specific drivers |
+
+This table is not a trading rule. It shows why identical DXY directions can carry different macro meanings.
+
+---
+
+## Worked example — same dollar direction, different cause
+
+Assume DXY rises in two consecutive historical-style scenarios.
+
+### Rate-led case
+
+Inflation data are stronger than expected, Treasury real yields rise and the dollar firms. Volatility and credit conditions remain orderly.
+
+The framework would describe the move as primarily **rate-led** until contradictory evidence appears.
+
+### Stress-led case
+
+A funding shock causes volatility and credit spreads to rise while risky assets fall. Dollar demand increases even though Treasury yields do not provide the same upward signal.
+
+The framework would describe the move as primarily **liquidity/stress-led**.
+
+The price direction of DXY alone cannot distinguish these cases. The other two dials provide that context.
+
+---
+
+## From the dials to the transmission chain
+
+Once the three-dial configuration is clear, trace the likely mechanism:
+
+**Macro information / policy → rates → dollar and funding → liquidity / risk appetite → cross-asset effects**
+
+The arrows can run in both directions. An oil shock can affect inflation expectations and yields. A banking shock can affect dollar funding before monetary policy responds. Geopolitical events can move several assets directly.
+
+Use the **[Dollar Transmission Chain](/framework/dollar-transmission-chain/)** to test the sequence explicitly.
 
 ---
 
 ## Weekly monitoring signals
 
-The following inputs are worth tracking weekly to maintain situational awareness of the macro environment. This is an educational checklist, not a trading signal or decision system.
+These are reference inputs for situational awareness, not trading signals.
 
-| Signal | What to watch | Source |
-|---|---|---|
-| DXY | Direction and weekly change | FRED, TradingView |
-| Fed Funds Rate | FOMC decisions, dot plot, minutes | federalreserve.gov |
-| 10Y TIPS Yield | Real rate direction | FRED |
-| U.S. 10Y Nominal | Nominal yield level and trend | U.S. Treasury |
-| Broad Dollar Index | Confirmation vs DXY | Federal Reserve (FRED) |
-| Credit Spreads | IG and HY spread direction | FRED, ICE |
-| VIX | Equity volatility / stress signal | CBOE |
-| Gold / XAUUSD | Response to real rate shifts | CME, spot markets |
+| Framework role | Signal | What to check | Primary / authoritative reference |
+|---|---|---|---|
+| Dollar direction | DXY | Direction, range and change | ICE-derived market data / market platform |
+| Dollar confirmation | Broad Dollar Index | Breadth vs DXY | Federal Reserve / FRED |
+| Real-rate pressure | 10Y TIPS yield | Direction and regime | Federal Reserve / FRED |
+| Nominal-rate context | U.S. 2Y and 10Y yields | Policy and term-rate pressure | U.S. Treasury / FRED |
+| Liquidity stress | Credit spreads | Widening or tightening | FRED / underlying ICE series |
+| Liquidity stress | VIX | Volatility/stress confirmation | CBOE |
+| Cross-asset confirmation | Gold, oil, equities, Bitcoin | Does behavior support or contradict the proposed mechanism? | Relevant primary exchange/provider data |
+
+---
+
+## A practical reading order
+
+When reviewing a market move:
+
+1. **Identify the dollar direction.**
+2. **Check breadth.** Does broader USD evidence confirm DXY?
+3. **Check real rates.** Are they reinforcing or contradicting the dollar story?
+4. **Check liquidity stress.** Are credit, volatility or funding conditions changing?
+5. **Check cross-asset confirmation.** Which assets support the proposed mechanism and which do not?
+6. **Keep unresolved contradictions visible.** Do not force every market into one narrative.
+
+For a reusable operating version, open the **[Three-Dial Macro Dashboard](/framework/three-dial-dashboard/)**.
 
 ---
 
 ## Key takeaway
 
-The dollar is not one thing. DXY, the Broad Dollar Index, real rates, and liquidity conditions are related but distinct. Reading dollar regimes means tracking all four dials, not just the headline index. Relationships between these variables and asset prices are historically observable but regime-dependent — they do not operate on a fixed schedule, and they can break down.
+USD Impact uses **three macro dials**, not four:
 
-This framework gives you a structure for asking the right questions. It does not give you answers about future prices.
+**Dollar direction → Real-rate pressure → Liquidity stress**
+
+Broad USD and cross-asset behavior are confirmation tools inside the framework. They help test whether a proposed explanation is broad, narrow, rate-led, stress-led or mixed.
+
+The framework is useful precisely because it does not promise that one indicator explains every market move.

@@ -15,6 +15,7 @@ const expectedActionRefs = new Map([
 ]);
 const actionCounts = new Map([...expectedActionRefs.keys()].map((name) => [name, 0]));
 let node24Count = 0;
+let strictInstallCount = 0;
 
 for (const workflowFile of workflowFiles) {
   const source = await readFile(new URL(workflowFile, workflowsDirectory), 'utf8');
@@ -41,15 +42,52 @@ for (const workflowFile of workflowFiles) {
     assert.equal(match[1], '24.x', `${workflowFile} must use Node 24.x`);
     node24Count += 1;
   }
+
+  for (const line of source.split('\n')) {
+    if (!line.includes('npm ci')) continue;
+    assert.match(
+      line,
+      /(?:^|\s)--strict-allow-scripts(?:\s|$)/,
+      `${workflowFile} must fail closed on unreviewed dependency install scripts`,
+    );
+    strictInstallCount += 1;
+  }
 }
 
 for (const [action, count] of actionCounts) {
   assert.ok(count > 0, `Expected at least one ${action} reference`);
 }
 assert.ok(node24Count > 0, 'Expected at least one explicit Node 24.x workflow runtime');
+assert.ok(strictInstallCount > 0, 'Expected at least one strict npm ci workflow install');
+
+const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+const expectedAllowScripts = {
+  'esbuild@0.28.1': true,
+};
+assert.deepEqual(
+  packageJson.allowScripts,
+  expectedAllowScripts,
+  'Dependency install scripts must remain an exact reviewed allowlist',
+);
+for (const [packageSpec, allowed] of Object.entries(packageJson.allowScripts ?? {})) {
+  assert.equal(allowed, true, `${packageSpec} install script approval must be explicit true`);
+  assert.match(
+    packageSpec,
+    /^(?:@[^/\s]+\/[^@\s]+|[^@\s]+)@\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/,
+    `${packageSpec} must pin an exact package version`,
+  );
+}
+
+const vercel = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
+assert.equal(
+  vercel.installCommand,
+  'npm ci --no-audit --no-fund --strict-allow-scripts',
+  'Vercel installs must fail closed on unreviewed dependency install scripts',
+);
 
 console.log(
   `GitHub Action supply-chain tests passed (${workflowFiles.length} workflows, ` +
     `${[...actionCounts.entries()].map(([action, count]) => `${count} ${action}`).join(', ')}, ` +
-    `${node24Count} Node 24.x declarations).`,
+    `${node24Count} Node 24.x declarations, ${strictInstallCount} strict npm ci installs, ` +
+    `${Object.keys(expectedAllowScripts).length} reviewed install script).`,
 );

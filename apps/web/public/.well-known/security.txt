@@ -1,0 +1,5 @@
+Contact: mailto:support@usd-impact.com
+Expires: 2027-08-24T23:59:59Z
+Preferred-Languages: en
+Canonical: https://www.usd-impact.com/.well-known/security.txt
+Policy: https://github.com/usdimpact/usd-impact-site/security/policy

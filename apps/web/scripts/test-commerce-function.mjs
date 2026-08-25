@@ -7,6 +7,14 @@ const managedKeys = [
   'COMMERCE_SANDBOX_VERIFIED',
   'COMMERCE_CONTROLLED_LIVE_VERIFIED',
   'COMMERCE_LIVE_APPROVED',
+  'COMMERCE_TRADER_ADDRESS_PUBLIC',
+  'COMMERCE_TAX_STATUS_PUBLIC',
+  'COMMERCE_MERCHANT_OF_RECORD_NAME',
+  'COMMERCE_MERCHANT_OF_RECORD_TERMS_URL',
+  'COMMERCE_MERCHANT_OF_RECORD_PRIVACY_URL',
+  'COMMERCE_TAX_CHECKOUT_PUBLIC',
+  'COMMERCE_REFUND_SUPPORT_PUBLIC',
+  'COMMERCE_SELLER_DISCLOSURE_APPROVED',
   'VERCEL_ENV',
   'PADDLE_API_KEY',
   'PADDLE_WEBHOOK_SECRET',
@@ -53,6 +61,8 @@ try {
     assert.equal(result.json.commerce.state, 'ready_for_provider_configuration');
     assert.equal(result.json.commerce.checkoutEnabled, false);
     assert.equal(result.json.commerce.provider, null);
+    assert.equal(result.json.commerce.disclosuresComplete, false);
+    assert.equal(result.json.commerce.sellerDisclosure, null);
     assert.match(result.json.commerce.message, /Public checkout remains disabled/i);
   }
 
@@ -81,8 +91,10 @@ try {
     assert.equal(result.json.commerce.state, 'blocked');
     assert.equal(result.json.commerce.checkoutEnabled, false);
     assert.equal(result.json.commerce.provider, null);
+    assert.equal(result.json.commerce.disclosuresComplete, false);
+    assert.equal(result.json.commerce.sellerDisclosure, null);
     assert.equal(result.json.commerce.message, 'Commerce configuration is not ready. Public checkout remains disabled.');
-    assert.doesNotMatch(JSON.stringify(result.json), /registered application adapter/i);
+    assert.doesNotMatch(JSON.stringify(result.json), /registered application adapter|COMMERCE_TRADER_ADDRESS_PUBLIC/i);
     delete process.env.COMMERCE_MODE;
     delete process.env.COMMERCE_PROVIDER;
     delete process.env.COMMERCE_SANDBOX_VERIFIED;
@@ -98,6 +110,8 @@ try {
     assert.equal(result.json.ok, false);
     assert.equal(result.json.commerce.state, 'blocked');
     assert.equal(result.json.commerce.checkoutEnabled, false);
+    assert.equal(result.json.commerce.disclosuresComplete, false);
+    assert.equal(result.json.commerce.sellerDisclosure, null);
     assert.doesNotMatch(JSON.stringify(result.json), /true\/false|COMMERCE_LIVE_APPROVED/i);
     delete process.env.COMMERCE_LIVE_APPROVED;
   }

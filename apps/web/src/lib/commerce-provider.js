@@ -1,6 +1,7 @@
 import { PAID_PRODUCT_ID } from './paid-access.js';
+import { resolveCommercePublicDisclosure } from './commerce-public-disclosure.js';
 
-export const COMMERCE_CONTRACT_VERSION = 1;
+export const COMMERCE_CONTRACT_VERSION = 2;
 
 export const COMMERCE_MODES = Object.freeze({
   DISABLED: 'disabled',
@@ -52,9 +53,9 @@ const PUBLIC_READINESS_MESSAGES = Object.freeze({
   [COMMERCE_READINESS_STATES.READY_FOR_SANDBOX]:
     'The selected provider adapter is ready for controlled sandbox verification. Public checkout remains disabled.',
   [COMMERCE_READINESS_STATES.READY_FOR_CONTROLLED_LIVE_TEST]:
-    'The selected provider adapter is ready for a separately approved controlled Live test. Public checkout remains disabled.',
+    'The selected provider adapter and buyer disclosures are ready for a separately approved controlled Live test. Public checkout remains disabled.',
   [COMMERCE_READINESS_STATES.ACTIVE]:
-    'Secure checkout is active through the approved provider. Access still requires verified payment confirmation.',
+    'Secure checkout is active through the approved provider with buyer-facing seller disclosures verified. Access still requires verified payment confirmation.',
   [COMMERCE_READINESS_STATES.BLOCKED]:
     'Commerce configuration is not ready. Public checkout remains disabled.',
 });
@@ -177,6 +178,7 @@ export function resolveCommerceReadiness(environment = {}, adapters = []) {
   const controlledLiveTestVerified = normalizeBoolean(environment.COMMERCE_CONTROLLED_LIVE_VERIFIED);
   const liveApproved = normalizeBoolean(environment.COMMERCE_LIVE_APPROVED);
   const vercelEnvironment = normalizedString(environment.VERCEL_ENV).toLowerCase() || null;
+  const publicDisclosure = resolveCommercePublicDisclosure(environment);
   const legacyPaddleConfigurationIgnored = Object.entries(environment).some(
     ([key, value]) => key.startsWith('PADDLE_') && normalizedString(String(value ?? '')) !== '',
   );
@@ -200,11 +202,15 @@ export function resolveCommerceReadiness(environment = {}, adapters = []) {
   if (mode === COMMERCE_MODES.LIVE_TEST && !sandboxVerified) {
     reasons.push('A controlled Live test requires completed sandbox verification.');
   }
+  if (mode === COMMERCE_MODES.LIVE_TEST && !publicDisclosure.ready) {
+    reasons.push('Controlled Live testing requires complete, explicitly approved buyer-facing seller disclosures.');
+  }
   if (mode === COMMERCE_MODES.LIVE) {
     if (!sandboxVerified) reasons.push('Live checkout requires completed sandbox verification.');
     if (!controlledLiveTestVerified) reasons.push('Live checkout requires completed controlled Live verification.');
     if (!liveApproved) reasons.push('Live checkout requires explicit Live approval.');
     if (vercelEnvironment !== 'production') reasons.push('Live checkout is permitted only in the Production environment.');
+    if (!publicDisclosure.ready) reasons.push('Live checkout requires complete, explicitly approved buyer-facing seller disclosures.');
   }
   if (
     (mode === COMMERCE_MODES.SANDBOX || mode === COMMERCE_MODES.LIVE_TEST)
@@ -268,6 +274,8 @@ export function resolveCommerceReadiness(environment = {}, adapters = []) {
     vercelEnvironment,
     checkoutEnabled: state === COMMERCE_READINESS_STATES.ACTIVE,
     controlledLiveTestEnabled: state === COMMERCE_READINESS_STATES.READY_FOR_CONTROLLED_LIVE_TEST,
+    disclosuresComplete: publicDisclosure.ready,
+    sellerDisclosure: publicDisclosure.publicDisclosure,
     legacyPaddleConfigurationIgnored,
     configuration,
   });
@@ -281,6 +289,11 @@ export function publicCommerceReadiness(readiness) {
     ? readiness.state
     : COMMERCE_READINESS_STATES.BLOCKED;
   const discloseProvider = state !== COMMERCE_READINESS_STATES.BLOCKED && readiness.providerConfigured === true;
+  const discloseSeller = (
+    (state === COMMERCE_READINESS_STATES.READY_FOR_CONTROLLED_LIVE_TEST || state === COMMERCE_READINESS_STATES.ACTIVE)
+    && readiness.disclosuresComplete === true
+    && readiness.sellerDisclosure
+  );
 
   return deepFreeze({
     contractVersion: readiness.contractVersion === COMMERCE_CONTRACT_VERSION
@@ -293,6 +306,8 @@ export function publicCommerceReadiness(readiness) {
     provider: discloseProvider ? readiness.provider : null,
     providerConfigured: discloseProvider,
     adapterVersion: discloseProvider ? readiness.adapterVersion : null,
+    disclosuresComplete: discloseSeller === true || Boolean(discloseSeller),
+    sellerDisclosure: discloseSeller ? readiness.sellerDisclosure : null,
     checkoutEnabled: state === COMMERCE_READINESS_STATES.ACTIVE && readiness.checkoutEnabled === true,
   });
 }

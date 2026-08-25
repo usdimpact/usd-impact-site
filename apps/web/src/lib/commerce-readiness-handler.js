@@ -50,6 +50,8 @@ export async function handleCommerceReadinessRequest(
         provider: null,
         providerConfigured: false,
         adapterVersion: null,
+        disclosuresComplete: false,
+        sellerDisclosure: null,
         checkoutEnabled: false,
       },
     }, 503);

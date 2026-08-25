@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { resolveCommercePublicDisclosure } from '../src/lib/commerce-public-disclosure.js';
 import {
   CANONICAL_COMMERCE_EVENT_TYPES,
   COMMERCE_MODES,
@@ -31,6 +32,47 @@ function adapter(overrides = {}) {
   };
 }
 
+function disclosureEnvironment(overrides = {}) {
+  return {
+    COMMERCE_TRADER_ADDRESS_PUBLIC: 'Verified public trader address, Romania',
+    COMMERCE_TAX_STATUS_PUBLIC: 'Verified seller tax / VAT status for customer disclosure.',
+    COMMERCE_MERCHANT_OF_RECORD_NAME: 'Replacement Provider',
+    COMMERCE_MERCHANT_OF_RECORD_TERMS_URL: 'https://provider.example/buyer-terms',
+    COMMERCE_MERCHANT_OF_RECORD_PRIVACY_URL: 'https://provider.example/privacy',
+    COMMERCE_TAX_CHECKOUT_PUBLIC: 'Applicable taxes and supported currency conversion are shown before payment.',
+    COMMERCE_REFUND_SUPPORT_PUBLIC: 'USD Impact handles product access support; the Merchant of Record handles payment processing under the linked buyer terms.',
+    COMMERCE_SELLER_DISCLOSURE_APPROVED: 'true',
+    ...overrides,
+  };
+}
+
+{
+  const disclosure = resolveCommercePublicDisclosure(disclosureEnvironment());
+  assert.equal(disclosure.ready, true);
+  assert.equal(disclosure.approved, true);
+  assert.equal(disclosure.publicDisclosure.legalName, 'SC Kela Leads SRL');
+  assert.equal(disclosure.publicDisclosure.merchantOfRecord, 'Replacement Provider');
+  assert.equal(disclosure.publicDisclosure.buyerTermsUrl, 'https://provider.example/buyer-terms');
+}
+
+{
+  const partial = resolveCommercePublicDisclosure({
+    COMMERCE_TRADER_ADDRESS_PUBLIC: 'Partial data must not leak',
+  });
+  assert.equal(partial.ready, false);
+  assert.equal(partial.publicDisclosure, null);
+  assert.ok(partial.reasons.length >= 1);
+}
+
+{
+  const invalidUrl = resolveCommercePublicDisclosure(disclosureEnvironment({
+    COMMERCE_MERCHANT_OF_RECORD_TERMS_URL: 'http://provider.example/terms',
+  }));
+  assert.equal(invalidUrl.ready, false);
+  assert.equal(invalidUrl.publicDisclosure, null);
+  assert.ok(invalidUrl.reasons.some((reason) => /HTTPS URL/i.test(reason)));
+}
+
 {
   const readiness = resolveCommerceReadiness({});
   assert.equal(readiness.state, COMMERCE_READINESS_STATES.READY_FOR_PROVIDER_CONFIGURATION);
@@ -41,11 +83,15 @@ function adapter(overrides = {}) {
   assert.equal(readiness.sandboxVerified, false);
   assert.equal(readiness.controlledLiveTestVerified, false);
   assert.equal(readiness.liveApproved, false);
+  assert.equal(readiness.disclosuresComplete, false);
+  assert.equal(readiness.sellerDisclosure, null);
 
   const publicState = publicCommerceReadiness(readiness);
   assert.equal(publicState.state, COMMERCE_READINESS_STATES.READY_FOR_PROVIDER_CONFIGURATION);
   assert.equal(publicState.checkoutEnabled, false);
   assert.equal(publicState.provider, null);
+  assert.equal(publicState.disclosuresComplete, false);
+  assert.equal(publicState.sellerDisclosure, null);
   assert.equal('liveApproved' in publicState, false);
   assert.equal('legacyPaddleConfigurationIgnored' in publicState, false);
 }
@@ -69,6 +115,7 @@ function adapter(overrides = {}) {
     COMMERCE_CONTROLLED_LIVE_VERIFIED: 'true',
     COMMERCE_LIVE_APPROVED: 'true',
     VERCEL_ENV: 'production',
+    ...disclosureEnvironment(),
   });
   assert.equal(readiness.state, COMMERCE_READINESS_STATES.BLOCKED);
   assert.match(readiness.reason, /no registered application adapter/i);
@@ -76,6 +123,7 @@ function adapter(overrides = {}) {
   const publicState = publicCommerceReadiness(readiness);
   assert.equal(publicState.message, 'Commerce configuration is not ready. Public checkout remains disabled.');
   assert.equal(publicState.provider, null);
+  assert.equal(publicState.sellerDisclosure, null);
 }
 
 {
@@ -88,16 +136,23 @@ function adapter(overrides = {}) {
   assert.equal(sandbox.state, COMMERCE_READINESS_STATES.READY_FOR_SANDBOX);
   assert.equal(sandbox.adapterVersion, '1.0.0');
   assert.equal(sandbox.checkoutEnabled, false);
+  assert.equal(sandbox.disclosuresComplete, false);
 
   const liveTest = resolveCommerceReadiness({
     COMMERCE_MODE: 'live-test',
     COMMERCE_PROVIDER: 'replacement-provider',
     COMMERCE_SANDBOX_VERIFIED: 'true',
     VERCEL_ENV: 'preview',
+    ...disclosureEnvironment(),
   }, registry);
   assert.equal(liveTest.state, COMMERCE_READINESS_STATES.READY_FOR_CONTROLLED_LIVE_TEST);
   assert.equal(liveTest.controlledLiveTestEnabled, true);
   assert.equal(liveTest.checkoutEnabled, false);
+  assert.equal(liveTest.disclosuresComplete, true);
+  assert.equal(liveTest.sellerDisclosure.merchantOfRecord, 'Replacement Provider');
+  const publicLiveTest = publicCommerceReadiness(liveTest);
+  assert.equal(publicLiveTest.disclosuresComplete, true);
+  assert.equal(publicLiveTest.sellerDisclosure.legalName, 'SC Kela Leads SRL');
 
   const live = resolveCommerceReadiness({
     COMMERCE_MODE: 'live',
@@ -106,13 +161,52 @@ function adapter(overrides = {}) {
     COMMERCE_CONTROLLED_LIVE_VERIFIED: 'true',
     COMMERCE_LIVE_APPROVED: 'true',
     VERCEL_ENV: 'production',
+    ...disclosureEnvironment(),
   }, registry);
   assert.equal(live.state, COMMERCE_READINESS_STATES.ACTIVE);
   assert.equal(live.checkoutEnabled, true);
+  assert.equal(live.disclosuresComplete, true);
   const publicLive = publicCommerceReadiness(live);
   assert.equal(publicLive.provider, 'replacement-provider');
   assert.equal(publicLive.adapterVersion, '1.0.0');
   assert.equal(publicLive.checkoutEnabled, true);
+  assert.equal(publicLive.disclosuresComplete, true);
+  assert.equal(publicLive.sellerDisclosure.geographicAddress, 'Verified public trader address, Romania');
+  assert.equal(publicLive.sellerDisclosure.buyerTermsUrl, 'https://provider.example/buyer-terms');
+}
+
+{
+  const blocked = resolveCommerceReadiness({
+    COMMERCE_MODE: 'live',
+    COMMERCE_PROVIDER: 'replacement-provider',
+    COMMERCE_SANDBOX_VERIFIED: 'true',
+    COMMERCE_CONTROLLED_LIVE_VERIFIED: 'true',
+    COMMERCE_LIVE_APPROVED: 'true',
+    VERCEL_ENV: 'production',
+  }, [adapter()]);
+  assert.equal(blocked.state, COMMERCE_READINESS_STATES.BLOCKED);
+  assert.match(blocked.reason, /buyer-facing seller disclosures/i);
+  assert.equal(blocked.checkoutEnabled, false);
+  assert.equal(blocked.disclosuresComplete, false);
+  const publicBlocked = publicCommerceReadiness(blocked);
+  assert.equal(publicBlocked.disclosuresComplete, false);
+  assert.equal(publicBlocked.sellerDisclosure, null);
+  assert.doesNotMatch(JSON.stringify(publicBlocked), /COMMERCE_TRADER_ADDRESS_PUBLIC|COMMERCE_TAX_STATUS_PUBLIC/);
+}
+
+{
+  const blocked = resolveCommerceReadiness({
+    COMMERCE_MODE: 'live',
+    COMMERCE_PROVIDER: 'replacement-provider',
+    COMMERCE_SANDBOX_VERIFIED: 'true',
+    COMMERCE_CONTROLLED_LIVE_VERIFIED: 'true',
+    COMMERCE_LIVE_APPROVED: 'true',
+    VERCEL_ENV: 'production',
+    ...disclosureEnvironment({ COMMERCE_MERCHANT_OF_RECORD_TERMS_URL: 'javascript:alert(1)' }),
+  }, [adapter()]);
+  assert.equal(blocked.state, COMMERCE_READINESS_STATES.BLOCKED);
+  assert.match(blocked.reason, /buyer-facing seller disclosures/i);
+  assert.equal(publicCommerceReadiness(blocked).sellerDisclosure, null);
 }
 
 {
@@ -122,6 +216,7 @@ function adapter(overrides = {}) {
     COMMERCE_SANDBOX_VERIFIED: 'true',
     COMMERCE_CONTROLLED_LIVE_VERIFIED: 'true',
     VERCEL_ENV: 'production',
+    ...disclosureEnvironment(),
   }, [adapter()]);
   assert.equal(blocked.state, COMMERCE_READINESS_STATES.BLOCKED);
   assert.match(blocked.reason, /explicit Live approval/i);
@@ -135,6 +230,7 @@ function adapter(overrides = {}) {
     COMMERCE_CONTROLLED_LIVE_VERIFIED: 'true',
     COMMERCE_LIVE_APPROVED: 'true',
     VERCEL_ENV: 'preview',
+    ...disclosureEnvironment(),
   }, [adapter()]);
   assert.equal(blocked.state, COMMERCE_READINESS_STATES.BLOCKED);
   assert.match(blocked.reason, /Production environment/i);
@@ -145,6 +241,7 @@ function adapter(overrides = {}) {
     COMMERCE_MODE: 'live-test',
     COMMERCE_PROVIDER: 'replacement-provider',
     VERCEL_ENV: 'preview',
+    ...disclosureEnvironment(),
   }, [adapter()]);
   assert.equal(blocked.state, COMMERCE_READINESS_STATES.BLOCKED);
   assert.match(blocked.reason, /sandbox verification/i);

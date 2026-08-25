@@ -22,6 +22,9 @@ const privatePaths = new Set([
 export default defineConfig({
   site: 'https://www.usd-impact.com',
   output: 'static',
+  markdown: {
+    syntaxHighlight: false,
+  },
   security: {
     csp: {
       algorithm: 'SHA-384',

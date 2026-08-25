@@ -17,6 +17,8 @@ const predictiveEngineLock = 'https://github.com/usdimpact/usd-impact-pipeline/b
 const scoreV3Protocol = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v3_preregistration.json';
 const scoreV3MetricContract = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v3_metric_implementation_contract.json';
 const scoreV3EngineLock = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v3_engine_lock.json';
+const onrcIssueUrl = 'https://github.com/usdimpact/usd-impact-site/issues/341';
+const onrcPortalUrl = 'https://myportal.onrc.ro/';
 
 assert.match(about, /SC Kela Leads SRL/);
 assert.match(about, /CUI 40790448/);
@@ -28,8 +30,8 @@ assert.match(about, /Official registry verification/);
 assert.match(about, /ONRC certificate review is pending/);
 assert.match(about, /Current official ONRC company certificate/);
 assert.match(about, /Issue #341/);
-assert.match(about, /https:\/\/github\.com\/usdimpact\/usd-impact-site\/issues\/341/);
-assert.match(about, /https:\/\/myportal\.onrc\.ro\//);
+assert.ok(about.includes(onrcIssueUrl), 'About page must link the exact ONRC verification tracker URL.');
+assert.ok(about.includes(onrcPortalUrl), 'About page must link the exact official ONRC portal URL.');
 assert.match(about, /does not claim ONRC, registry or independent verification/);
 assert.match(about, /first-party legal-operator disclosure, while clearly showing that current ONRC certificate review remains pending/);
 assert.doesNotMatch(about, /<span class="status disclosed">(?:ONRC|Registry|Officially) verified<\/span>/i);

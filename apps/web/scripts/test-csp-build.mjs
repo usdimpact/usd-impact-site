@@ -1,10 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveScorePipelineOrigin } from '../src/lib/score-pipeline-origin.js';
 
 const root = process.cwd();
 const distRoot = path.join(root, 'dist');
 const sourceRoot = path.join(root, 'src');
 const failures = [];
+const scorePipelineOrigin = resolveScorePipelineOrigin(process.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
 
 const walk = (dir, predicate) => {
   const out = [];
@@ -53,7 +55,7 @@ for (const file of htmlFiles) {
     "form-action 'self'",
     "script-src-attr 'none'",
     "style-src-attr 'unsafe-inline'",
-    "frame-src 'self' https://challenges.cloudflare.com https://usd-impact-pipeline.pages.dev",
+    `frame-src 'self' https://challenges.cloudflare.com ${scorePipelineOrigin}`,
     "img-src 'self' data: blob: https:",
   ]) {
     if (!csp.includes(required)) failures.push(`${relative} CSP is missing: ${required}.`);
@@ -92,4 +94,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`CSP build verification passed across ${htmlFiles.length} generated HTML pages.`);
+console.log(`CSP build verification passed across ${htmlFiles.length} generated HTML pages using Score origin ${scorePipelineOrigin}.`);

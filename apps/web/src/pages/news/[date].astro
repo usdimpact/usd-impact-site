@@ -4,6 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import ComplianceNote from '../../components/ComplianceNote.astro';
 import NewsHighlightCard from '../../components/NewsHighlightCard.astro';
 import SourceLedger from '../../components/SourceLedger.astro';
+import FrameworkEvidenceChain from '../../components/FrameworkEvidenceChain.astro';
 import { catalystEventKey } from '../../lib/catalyst-briefs.js';
 import { hasCatalystBriefFiles } from '../../lib/catalyst-brief-content.js';
 
@@ -48,6 +49,8 @@ const sourceMap = new Map(entry.data.sources.map((source) => [source.id, source]
       <span>Market regime</span>
       <strong>{entry.data.marketRegime}</strong>
     </section>
+
+    <FrameworkEvidenceChain current="daily" />
 
     <section>
       <div class="section-heading">

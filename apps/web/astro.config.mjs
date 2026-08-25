@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import accessMap from './src/data/quiz-access-map.json' with { type: 'json' };
+import { resolveScorePipelineOrigin } from './src/lib/score-pipeline-origin.js';
 
 const normalizePath = (value) => {
   const normalized = value.replace(/\/+$/, '');
@@ -19,6 +20,8 @@ const privatePaths = new Set([
   '/internal/checklist-analytics',
 ]);
 
+const scorePipelineOrigin = resolveScorePipelineOrigin(process.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
+
 export default defineConfig({
   site: 'https://www.usd-impact.com',
   output: 'static',
@@ -33,7 +36,7 @@ export default defineConfig({
         "img-src 'self' data: blob: https:",
         "font-src 'self' data:",
         "connect-src 'self' https://challenges.cloudflare.com",
-        "frame-src 'self' https://challenges.cloudflare.com https://usd-impact-pipeline.pages.dev",
+        `frame-src 'self' https://challenges.cloudflare.com ${scorePipelineOrigin}`,
         "media-src 'self' blob: https:",
         "worker-src 'self' blob:",
         "manifest-src 'self'",

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-25T02:49:25.498Z",
+  "generated_at": "2026-08-25T07:28:30.081Z",
   "generated_by": "github-actions:sync",
   "freshness": "VERIFIED",
   "health": "RED",
@@ -15,7 +15,7 @@
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": "32a7543792c451d474bd5985feeb3e59d984fea9"
+      "head_sha": "9803e29f93ea0d96096368229c920b832a2b70c7"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
@@ -33,9 +33,9 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32802682406",
-        "created_at": "2026-08-25T02:46:39Z",
-        "head_sha": "32a7543792c451d474bd5985feeb3e59d984fea9"
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/32803795237",
+        "created_at": "2026-08-25T03:04:41Z",
+        "head_sha": "9803e29f93ea0d96096368229c920b832a2b70c7"
       },
       "daily_news": {
         "status": "completed",
@@ -132,7 +132,7 @@
       "number": 130,
       "title": "P0 — complete transactional email, support, and consent readiness",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
-      "updated_at": "2026-08-25T01:57:00Z",
+      "updated_at": "2026-08-25T03:10:37Z",
       "priority": "P0",
       "score": 1100,
       "blocked": true,
@@ -155,6 +155,16 @@
       "updated_at": "2026-08-24T14:32:29Z",
       "priority": "P1",
       "score": 1020,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 328,
+      "title": "P2 — finish Supabase Auth platform security hardening",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/328",
+      "updated_at": "2026-08-25T03:10:17Z",
+      "priority": "P2",
+      "score": 770,
       "blocked": false,
       "daily_gate": null
     },
@@ -192,7 +202,7 @@
       "number": 2,
       "title": "Post-launch hardening and deployment consolidation",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/2",
-      "updated_at": "2026-08-25T02:49:03Z",
+      "updated_at": "2026-08-25T03:08:07Z",
       "priority": "P3",
       "score": 660,
       "blocked": false,
@@ -222,7 +232,7 @@
       "number": 166,
       "title": "USD Impact Control Center — operations console",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
-      "updated_at": "2026-08-25T02:49:12Z",
+      "updated_at": "2026-08-25T02:49:27Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,
@@ -284,7 +294,7 @@
       "number": 130,
       "title": "P0 — complete transactional email, support, and consent readiness",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/130",
-      "updated_at": "2026-08-25T01:57:00Z",
+      "updated_at": "2026-08-25T03:10:37Z",
       "priority": "P0",
       "score": 1100,
       "blocked": true,
@@ -307,6 +317,16 @@
       "updated_at": "2026-08-24T14:32:29Z",
       "priority": "P1",
       "score": 1020,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 328,
+      "title": "P2 — finish Supabase Auth platform security hardening",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/328",
+      "updated_at": "2026-08-25T03:10:17Z",
+      "priority": "P2",
+      "score": 770,
       "blocked": false,
       "daily_gate": null
     },
@@ -344,19 +364,9 @@
       "number": 2,
       "title": "Post-launch hardening and deployment consolidation",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/2",
-      "updated_at": "2026-08-25T02:49:03Z",
+      "updated_at": "2026-08-25T03:08:07Z",
       "priority": "P3",
       "score": 660,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 260,
-      "title": "Activate consent-safe Daily Learning email distribution",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/260",
-      "updated_at": "2026-08-23T11:34:21Z",
-      "priority": "P3",
-      "score": 620,
       "blocked": false,
       "daily_gate": null
     }

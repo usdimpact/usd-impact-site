@@ -24,7 +24,9 @@ internalLinks:
   - "/glossary/real-rates"
   - "/glossary/liquidity-stress"
 ctaPrimary: "Download the weekly checklist"
+ctaPrimaryHref: "/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf"
 ctaSecondary: "Start Here"
+ctaSecondaryHref: "/start-here/"
 hero: "Use three macro dials—dollar direction, real-rate pressure and liquidity stress—to identify the environment before interpreting an asset move."
 visual: "/assets/visuals/USDImpact_01_Dollar_Transmission_Chain.svg"
 ---

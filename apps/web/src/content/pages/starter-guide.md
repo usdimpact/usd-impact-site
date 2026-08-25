@@ -22,9 +22,10 @@ internalLinks:
   - "/glossary/dxy"
   - "/glossary/real-rates"
 ctaPrimary: "Download Free Checklist"
+ctaPrimaryHref: "/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf"
 ctaSecondary: "Read the Dollar Framework"
+ctaSecondaryHref: "/dollar-framework/"
 hero: "A structured checklist for monitoring the macro signals that historically influence dollar-sensitive assets — including DXY, real rates, liquidity conditions, and key cross-asset relationships."
-downloadPath: "/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf"
 ---
 
 ## What is inside the checklist

@@ -13,6 +13,9 @@ const retentionPolicy = 'https://github.com/usdimpact/usd-impact-pipeline/blob/m
 const predictiveProtocol = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v2_predictive_preregistration.json';
 const predictiveContract = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v2_predictive_implementation_contract.json';
 const predictiveEngineLock = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v2_predictive_engine_lock.json';
+const scoreV3Protocol = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v3_preregistration.json';
+const scoreV3MetricContract = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v3_metric_implementation_contract.json';
+const scoreV3EngineLock = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v3_engine_lock.json';
 
 assert.match(about, /SC Kela Leads SRL/);
 assert.match(about, /Mircea Albulescu/);
@@ -24,6 +27,11 @@ assert.match(about, /first untouched origin on August 28, 2026/);
 assert.match(about, /no result exists before 52 resolved future predictions/);
 assert.ok(about.includes(predictiveProtocol), 'About page must link the predictive preregistration.');
 assert.ok(about.includes(predictiveEngineLock), 'About page must link the predictive engine lock.');
+assert.ok(about.includes(scoreV3Protocol), 'About page must link the Score v3 preregistration.');
+assert.ok(about.includes(scoreV3MetricContract), 'About page must link the Score v3 metric contract.');
+assert.ok(about.includes(scoreV3EngineLock), 'About page must link the Score v3 engine lock.');
+assert.match(about, /no candidate can be selected before 52 completed future weeks/);
+assert.match(about, /Score v2 remains the unchanged production methodology/);
 assert.ok(about.includes(vintageJson), 'About page must link the revision-audit JSON.');
 assert.ok(about.includes(vintageCsv), 'About page must link the revision-audit CSV.');
 assert.ok(about.includes(dataSemantics), 'About page must link the data-semantics contract.');
@@ -49,10 +57,16 @@ assert.match(methodology, /complete raw provider responses are not archived or p
 assert.match(methodology, /cannot independently reconstruct a changed provider history/);
 assert.match(methodology, /True predictive out-of-sample test: preregistered, not started/);
 assert.match(methodology, /requires 52 consecutive resolved predictions/);
-assert.match(methodology, /has not begun and supplies no present performance evidence/);
+assert.match(methodology, /have not begun; neither supplies present performance evidence/);
 assert.ok(methodology.includes(predictiveProtocol), 'Methodology page must link the predictive preregistration.');
 assert.ok(methodology.includes(predictiveContract), 'Methodology page must link the predictive implementation contract.');
 assert.ok(methodology.includes(predictiveEngineLock), 'Methodology page must link the predictive engine lock.');
+assert.ok(methodology.includes(scoreV3Protocol), 'Methodology page must link the Score v3 preregistration.');
+assert.ok(methodology.includes(scoreV3MetricContract), 'Methodology page must link the Score v3 metric contract.');
+assert.ok(methodology.includes(scoreV3EngineLock), 'Methodology page must link the Score v3 engine lock.');
+assert.match(methodology, /Score v3 descriptive research: preregistered, not started/);
+assert.match(methodology, /does not test predictive power, does not change production Score v2 and cannot automatically promote a candidate/);
+assert.match(methodology, /neither supplies present performance evidence/);
 assert.doesNotMatch(methodology, /raw provider (responses|payloads) are archived/i);
 assert.doesNotMatch(
   methodology,

@@ -58,7 +58,11 @@ jobs:
               source = path.read_text()
               for old, new in replacements.items():
                   source = source.replace(old, new)
-              source = re.sub(r'(?m)^(\s*node-version:\s*)22\.16\.0\s*$', r'\g<1>24.x', source)
+              source = re.sub(
+                  r'(?m)^(\s*node-version:\s*)(?:[\'\"])?22\.16\.0(?:[\'\"])?\s*$',
+                  r'\g<1>24.x',
+                  source,
+              )
               path.write_text(source)
 
           post_refs = set()
@@ -68,7 +72,10 @@ jobs:
                   continue
               source = path.read_text()
               post_refs.update(match.group(2) for match in action_re.finditer(source))
-              node_versions.update(re.findall(r'(?m)^\s*node-version:\s*([^\s#]+)', source))
+              node_versions.update(
+                  value.strip("'\"")
+                  for value in re.findall(r'(?m)^\s*node-version:\s*([^\s#]+)', source)
+              )
 
           floating = sorted(ref for ref in post_refs if not re.search(r'@[0-9a-f]{40}$', ref))
           if floating:

@@ -18,6 +18,7 @@ const latest = weeklyReports[0];
 const latestMonthly = monthlyReports[0];
 const monthlyWindow = monthlyEligibility(weeklyReports, monthlyReports);
 const monthlyProgress = monthlyWindow.progress;
+const hasCompletedMonthly = Boolean(latestMonthly);
 const formatDate = (value) => new Intl.DateTimeFormat('en', {
   day: 'numeric',
   month: 'long',
@@ -99,6 +100,7 @@ const signed = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}`.replace(
         <article class="card monthly-latest-card">
           <div>
             <p>{latestMonthly.data.summary}</p>
+            <p><strong>Completed input gate:</strong> 4 of 4 validated weekly briefs included in this published report.</p>
             <div class="button-row">
               <a class="button primary" href={latestMonthly.data.slug}>Read the monthly report</a>
             </div>
@@ -118,18 +120,21 @@ const signed = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}`.replace(
     <section class="monthly-roadmap">
       <div class="section-heading">
         <div>
-          <div class="eyebrow">Monthly review</div>
-          <h2>{monthlyWindow.ready ? 'Four briefs are ready for synthesis' : 'Built from validated weekly briefs'}</h2>
+          <div class="eyebrow">{hasCompletedMonthly ? 'Next monthly review cycle' : 'Monthly review'}</div>
+          <h2>{monthlyWindow.ready ? 'Four briefs are ready for the next synthesis' : hasCompletedMonthly ? 'Tracking briefs after the latest completed monthly report' : 'Built from validated weekly briefs'}</h2>
         </div>
-        <p>{monthlyProgress} of 4 briefs available</p>
+        <p>{monthlyProgress} of 4 briefs collected for {hasCompletedMonthly ? 'the next monthly report' : 'the first monthly report'}</p>
       </div>
       <article class="card monthly-roadmap-card">
         <div>
-          <h3>{monthlyWindow.ready ? 'Monthly input gate passed' : 'Next Monthly USD Impact Report'}</h3>
+          <h3>{monthlyWindow.ready ? 'Next monthly input gate passed' : hasCompletedMonthly ? 'Next Monthly USD Impact Report' : 'First Monthly USD Impact Report'}</h3>
+          <p>{hasCompletedMonthly
+            ? `The latest published monthly report already completed its four-brief input gate through ${formatDate(latestMonthly.data.periodEnd)}. This counter starts a new cycle and includes only published weekly briefs after that completed period.`
+            : 'The first monthly report will summarize four consecutive published weekly briefs, the score path, regime changes, and persistent themes. It will not add unsourced market claims.'}</p>
           <p>The next monthly report will summarize four consecutive published weekly briefs, the score path, regime changes, and persistent themes. It will not add unsourced market claims.</p>
           {monthlyWindow.inputs.length > 0 && (
             <p class="monthly-inputs">
-              Eligible briefs:
+              Next-cycle eligible briefs:
               {monthlyWindow.inputs.map((report, index) => (
                 <>
                   {index > 0 && ' · '}
@@ -139,7 +144,7 @@ const signed = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}`.replace(
             </p>
           )}
         </div>
-        <div class="monthly-progress" aria-label={`${monthlyProgress} of 4 weekly briefs available`}>
+        <div class="monthly-progress" aria-label={`${monthlyProgress} of 4 weekly briefs collected for the next monthly report`}>
           {[1, 2, 3, 4].map((step) => <span class:list={{ complete: step <= monthlyProgress }}></span>)}
         </div>
       </article>

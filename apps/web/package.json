@@ -28,11 +28,14 @@
     "validate:video-library": "node --check src/data/video-library.js && node --check src/lib/cloudflare-stream.js && node --check src/lib/video-stream-map.js && node --check src/lib/video-library-page.js && node --check src/lib/video-library-handler.js && node --check src/lib/video-progress-handler.js && node --check api/guided-edition.js && node --check api/account.js && node scripts/test-video-library.mjs && node scripts/test-video-library-player.mjs && node scripts/test-cloudflare-stream.mjs && node scripts/test-video-library-function.mjs && node scripts/test-video-progress-function.mjs && node scripts/test-supabase-video-progress.mjs"
   },
   "dependencies": {
-    "@astrojs/sitemap": "3.2.1",
-    "@vercel/functions": "3.7.6",
-    "astro": "5.16.0"
+    "@astrojs/sitemap": "3.7.3",
+    "@vercel/functions": "3.9.5",
+    "astro": "7.2.6"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.5.5"
+    "@electric-sql/pglite": "0.5.7"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }

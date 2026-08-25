@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+
 const contentRoot = path.resolve('src/content');
 const slugs = new Set(['/']);
 for (const dir of ['pages','products','frameworks','lead-magnets','benchmark-modules','weekly-reports','monthly-reports']) {
@@ -19,4 +21,6 @@ for (const page of ['privacy.md', 'terms.md', 'refund-policy.md']) {
     process.exit(1);
   }
 }
+
+execFileSync(process.execPath, ['scripts/test-framework-evidence-chain.mjs'], { stdio: 'inherit' });
 console.log('internal link slug check pass');

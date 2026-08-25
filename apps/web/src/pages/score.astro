@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import FrameworkEvidenceChain from '../components/FrameworkEvidenceChain.astro';
 
 const latestWeeklyReport = (await getCollection('weeklyReports'))
   .filter((entry) => entry.data.status === 'published')
@@ -41,6 +42,8 @@ const latestWeeklyReport = (await getCollection('weeklyReports'))
         <p>The production variables, signed weights, normalization, data treatment, regime bands, source provenance and validation limitations are publicly documented.</p>
       </article>
     </section>
+
+    <FrameworkEvidenceChain current="score" weeklyHref={latestWeeklyReport?.data.slug ?? '/reports/'} />
 
     <section class="score-methodology-callout card" aria-labelledby="score-methodology-heading">
       <div>

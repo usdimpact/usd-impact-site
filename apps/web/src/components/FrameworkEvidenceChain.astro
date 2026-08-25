@@ -1,0 +1,143 @@
+---
+interface Props {
+  current: 'learn' | 'daily' | 'score' | 'weekly';
+  weeklyHref?: string;
+}
+
+const { current, weeklyHref = '/reports/' } = Astro.props;
+const stages = [
+  {
+    id: 'learn',
+    number: '1',
+    label: 'Learn',
+    href: '/start-here/',
+    description: 'Define the dollar, the three macro dials, and the transmission logic before interpreting a market move.',
+  },
+  {
+    id: 'daily',
+    number: '2',
+    label: 'Daily',
+    href: '/news/',
+    description: 'Read the verified facts, current catalysts, and market context without forcing them into a forecast.',
+  },
+  {
+    id: 'score',
+    number: '3',
+    label: 'Score',
+    href: '/score/',
+    description: 'Add the systematic weekly cross-asset regime measurement and audit its published methodology.',
+  },
+  {
+    id: 'weekly',
+    number: '4',
+    label: 'Weekly',
+    href: weeklyHref,
+    description: 'Synthesize the week from the published Daily editions plus the archived Weekly Score input.',
+  },
+];
+---
+
+<section class="evidence-chain card" aria-labelledby="evidence-chain-title">
+  <div class="evidence-chain-heading">
+    <div>
+      <div class="eyebrow">USD Impact evidence chain</div>
+      <h2 id="evidence-chain-title">Learn → Daily → Score → Weekly</h2>
+    </div>
+    <p>Each layer answers a different question. Use the links to move from concepts to current evidence, measurement, and synthesis.</p>
+  </div>
+
+  <ol class="evidence-chain-stages">
+    {stages.map((stage) => (
+      <li class:list={['evidence-chain-stage', { current: current === stage.id }]} aria-current={current === stage.id ? 'step' : undefined}>
+        <span class="evidence-chain-number" aria-hidden="true">{stage.number}</span>
+        <div>
+          <a href={stage.href}><strong>{stage.label}</strong></a>
+          <p>{stage.description}</p>
+        </div>
+      </li>
+    ))}
+  </ol>
+
+  <div class="evidence-chain-lenses" aria-label="Framework learning links">
+    <strong>Interpretive lenses:</strong>
+    <a href="/glossary/dxy/">DXY</a>
+    <a href="/glossary/broad-usd/">Broad USD</a>
+    <a href="/glossary/real-rates/">Real rates</a>
+    <a href="/glossary/liquidity-stress/">Liquidity stress</a>
+    <a href="/framework/dollar-transmission-chain/">Transmission chain</a>
+  </div>
+  <p class="evidence-chain-note">
+    These learning lenses help interpret the evidence chain; they are not a substitute for the Score's published eight-variable formula or source methodology.
+  </p>
+</section>
+
+<style>
+  .evidence-chain {
+    margin: 32px 0 42px;
+    border-left: 5px solid var(--gold);
+  }
+  .evidence-chain-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 0.9fr);
+    gap: 24px;
+    align-items: end;
+  }
+  .evidence-chain-heading h2 { margin: 6px 0 0; }
+  .evidence-chain-heading p { margin: 0; color: var(--slate); }
+  .evidence-chain-stages {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    list-style: none;
+    padding: 0;
+    margin: 26px 0 20px;
+  }
+  .evidence-chain-stage {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    padding: 14px;
+    border: 1px solid rgba(11, 31, 51, 0.14);
+    border-radius: 10px;
+    background: #fff;
+  }
+  .evidence-chain-stage.current {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 1px var(--gold) inset;
+  }
+  .evidence-chain-stage a { color: var(--navy); }
+  .evidence-chain-stage p { margin: 5px 0 0; font-size: 0.9rem; color: var(--slate); }
+  .evidence-chain-number {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: white;
+    font-weight: 700;
+    font-size: 0.82rem;
+  }
+  .evidence-chain-stage.current .evidence-chain-number {
+    background: var(--gold);
+    color: var(--navy);
+  }
+  .evidence-chain-lenses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    align-items: baseline;
+    padding-top: 16px;
+    border-top: 1px solid rgba(11, 31, 51, 0.12);
+  }
+  .evidence-chain-lenses a { font-weight: 600; }
+  .evidence-chain-note { margin: 10px 0 0; color: var(--slate); font-size: 0.88rem; }
+  @media (max-width: 900px) {
+    .evidence-chain-stages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .evidence-chain-heading { grid-template-columns: 1fr; }
+    .evidence-chain-stages { grid-template-columns: 1fr; }
+  }
+</style>

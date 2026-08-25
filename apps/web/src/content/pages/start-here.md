@@ -20,6 +20,9 @@ internalLinks:
   - "/glossary/dxy"
   - "/glossary/real-rates"
   - "/glossary/liquidity-stress"
+  - "/news"
+  - "/score"
+  - "/reports"
   - "/book/read-the-dollar-first"
   - "/lead-magnets/weekly-dollar-regime-checklist"
 ctaPrimary: "Explore the book"
@@ -144,9 +147,10 @@ For a first visit, use this order:
 2. **[Dollar Framework](/dollar-framework/)** — learn each dial and its confirmation checks in more detail.
 3. **[Dollar Transmission Chain](/framework/dollar-transmission-chain/)** — trace cause-and-effect paths.
 4. **[Three-Dial Macro Dashboard](/framework/three-dial-dashboard/)** — turn the framework into a repeatable weekly process.
-5. **Daily USD Impact** — see verified events mapped to rates, dollar, liquidity and assets.
-6. **Weekly Score and Briefs** — see the completed week's systematic configuration and the written context around it.
-7. **[Read the Dollar First](/book/read-the-dollar-first/)** — work through the full structured curriculum.
+5. **[Daily USD Impact](/news/)** — see verified events mapped to rates, dollar, liquidity and assets.
+6. **[Weekly Score](/score/)** — add the systematic weekly cross-asset regime measurement and audit its methodology.
+7. **[Weekly Briefs](/reports/)** — see the completed week's Daily evidence and archived Score synthesized with explicit provenance.
+8. **[Read the Dollar First](/book/read-the-dollar-first/)** — work through the full structured curriculum.
 
 ---
 

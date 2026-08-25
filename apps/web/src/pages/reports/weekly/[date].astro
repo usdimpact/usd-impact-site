@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import FrameworkEvidenceChain from '../../../components/FrameworkEvidenceChain.astro';
 
 export async function getStaticPaths() {
   const reports = (await getCollection('weeklyReports')).filter((entry) => entry.data.status === 'published');
@@ -50,6 +51,8 @@ const signed = (value, digits = 2) => `${value >= 0 ? '+' : ''}${value.toFixed(d
         <strong>{signed(entry.data.score.fourWeekChange)}</strong>
       </div>
     </section>
+
+    <FrameworkEvidenceChain current="weekly" weeklyHref={entry.data.slug} />
 
     <section class="report-themes">
       <div class="section-heading">

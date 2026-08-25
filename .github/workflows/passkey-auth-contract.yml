@@ -39,7 +39,7 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
 
       - name: Syntax check passkey and recovery gateway
         run: |

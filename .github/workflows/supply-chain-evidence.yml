@@ -1,0 +1,48 @@
+name: Supply chain evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/web/package.json'
+      - 'apps/web/package-lock.json'
+      - '.github/dependabot.yml'
+      - '.github/workflows/supply-chain-evidence.yml'
+  schedule:
+    - cron: '41 5 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Audit high and critical vulnerabilities
+        run: npm audit --audit-level=high
+      - name: Verify registry signatures and provenance attestations
+        run: npm audit signatures
+      - name: Generate CycloneDX SBOM
+        run: |
+          npm sbom --sbom-format cyclonedx --sbom-type application > "$RUNNER_TEMP/usd-impact-web-sbom.cdx.json"
+          node -e "const fs=require('fs'); const bom=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/usd-impact-web-sbom.cdx.json','utf8')); if (bom.bomFormat !== 'CycloneDX' || !Array.isArray(bom.components)) throw new Error('Invalid CycloneDX SBOM'); console.log('SBOM components:', bom.components.length);"
+      - name: Upload SBOM evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: usd-impact-web-sbom-${{ github.sha }}
+          path: ${{ runner.temp }}/usd-impact-web-sbom.cdx.json
+          if-no-files-found: error
+          retention-days: 14

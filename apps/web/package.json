@@ -35,6 +35,10 @@
   "devDependencies": {
     "@electric-sql/pglite": "0.5.7"
   },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "fsevents": false
+  },
   "engines": {
     "node": "24.x"
   }

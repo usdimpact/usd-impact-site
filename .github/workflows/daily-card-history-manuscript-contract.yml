@@ -39,7 +39,7 @@ jobs:
           node-version: 24.x
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - run: npm ci --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Syntax
         run: |
           node --check src/data/daily-card-history-manuscript-candidates.js

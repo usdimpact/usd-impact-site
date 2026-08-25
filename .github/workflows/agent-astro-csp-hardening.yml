@@ -31,6 +31,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import json
+          import textwrap
 
           web = Path('apps/web')
           astro_files = sorted((web / 'src').rglob('*.astro'))
@@ -47,7 +48,8 @@ jobs:
           if any('<script is:inline>' in path.read_text() for path in astro_files):
               raise SystemExit('An is:inline script body remains after CSP migration.')
 
-          (web / 'astro.config.mjs').write_text("""import { defineConfig } from 'astro/config';
+          astro_config = textwrap.dedent("""\
+          import { defineConfig } from 'astro/config';
           import sitemap from '@astrojs/sitemap';
           import accessMap from './src/data/quiz-access-map.json' with { type: 'json' };
 
@@ -102,7 +104,8 @@ jobs:
               }),
             ],
           });
-          """.replace(/^          /gm, ''))
+          """)
+          (web / 'astro.config.mjs').write_text(astro_config)
 
           vercel_path = web / 'vercel.json'
           vercel = json.loads(vercel_path.read_text())

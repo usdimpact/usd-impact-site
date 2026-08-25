@@ -17,7 +17,7 @@ const identitySchema = JSON.stringify({
 ---
 <BaseLayout
   title="About & Transparency | Who Operates USD Impact"
-  description="The legal operator, founder identity, model-evidence limits and reproducibility roadmap for USD Impact."
+  description="The legal operator, founder identity, company-verification status, model-evidence limits and reproducibility roadmap for USD Impact."
 >
   <script type="application/ld+json" set:html={identitySchema}></script>
 
@@ -40,7 +40,7 @@ const identitySchema = JSON.stringify({
           <div><dt>Trade Register number</dt><dd>J38/820/2020</dd></div>
           <div><dt>Contact</dt><dd><a href="mailto:support@usd-impact.com">support@usd-impact.com</a></dd></div>
         </dl>
-        <p class="evidence-note"><strong>Evidence level:</strong> first-party legal disclosure, consistent across the Terms, Privacy Notice and Refund Policy. The identifiers can be checked through the <a href="https://myportal.onrc.ro/" target="_blank" rel="noreferrer">Romanian National Trade Register Office portal</a>.</p>
+        <p class="evidence-note"><strong>Evidence level:</strong> first-party legal disclosure, consistent across the Terms, Privacy Notice and Refund Policy. A current electronically issued ONRC company certificate has <strong>not yet been reviewed</strong> for this public verification record, so these identifiers are not represented as independently or officially verified. The authenticated acquisition and comparison are tracked in <a href="https://github.com/usdimpact/usd-impact-site/issues/341" target="_blank" rel="noreferrer">Issue #341</a>. The official source is the <a href="https://myportal.onrc.ro/" target="_blank" rel="noreferrer">Romanian National Trade Register Office portal</a>.</p>
       </article>
 
       <article class="card identity-card">
@@ -51,6 +51,18 @@ const identitySchema = JSON.stringify({
       </article>
     </section>
 
+    <section class="registry-verification card" aria-labelledby="registry-verification-title">
+      <div>
+        <div class="eyebrow">Official registry verification</div>
+        <h2 id="registry-verification-title">ONRC certificate review is pending.</h2>
+        <p>USD Impact does not treat an official portal link or internally consistent company identifiers as equivalent to reviewing a current signed registry document. The next step is to obtain the company certificate through ONRC InfoCert-Recom, compare the legal name, CUI and current registration number, review the registered office privately, retain the signed original in company-controlled storage, and record only privacy-safe verification evidence.</p>
+      </div>
+      <div class="registry-actions">
+        <a class="button report-link" href="https://myportal.onrc.ro/" target="_blank" rel="noreferrer">Open official ONRC portal</a>
+        <a class="button report-link" href="https://github.com/usdimpact/usd-impact-site/issues/341" target="_blank" rel="noreferrer">View verification tracker</a>
+      </div>
+    </section>
+
     <section class="transparency-section">
       <div class="eyebrow">Evidence register</div>
       <h2>Direct answers to due-diligence questions</h2>
@@ -58,7 +70,8 @@ const identitySchema = JSON.stringify({
         <table>
           <thead><tr><th>Question</th><th>Public answer</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td>Legal entity operating USD Impact</td><td>SC Kela Leads SRL, Romania; CUI 40790448; Trade Register J38/820/2020.</td><td><span class="status disclosed">Disclosed</span></td></tr>
+            <tr><td>Legal entity operating USD Impact</td><td>SC Kela Leads SRL, Romania; CUI 40790448; Trade Register J38/820/2020. These are first-party legal-operator disclosures.</td><td><span class="status partial">First-party disclosed</span></td></tr>
+            <tr><td>Current official ONRC company certificate</td><td>Not yet reviewed for this public verification record. Acquisition and privacy-safe comparison are tracked in Issue #341. Until completed, USD Impact does not claim ONRC, registry or independent verification of the operator identifiers.</td><td><a class="status partial" href="https://github.com/usdimpact/usd-impact-site/issues/341" target="_blank" rel="noreferrer">Pending</a></td></tr>
             <tr><td>Founder / author identity</td><td>Mircea Albulescu, founder and authorial lead.</td><td><span class="status partial">First-party disclosed</span></td></tr>
             <tr><td>Exact product revenue and customers</td><td>Not publicly disclosed. USD Impact does not use revenue, customer-count or sales claims as social proof. Any future figures should be dated, scoped and separately verified before publication.</td><td><span class="status partial">Private</span></td></tr>
             <tr><td>Complete historical sales reconstruction</td><td>No independently audited, all-channel historical sales reconstruction is published.</td><td><span class="status gap">Not established</span></td></tr>
@@ -96,7 +109,7 @@ const identitySchema = JSON.stringify({
     <section class="bottom-line card">
       <div class="eyebrow">Bottom line</div>
       <h2>Transparent, reproducible and deliberately limited.</h2>
-      <p>USD Impact can make a credible claim to a public formula, visible revision policy, dated publication archive, expanding robustness evidence and a predictive study registered before its holdout. It cannot yet make a credible claim to independently audited performance, predictive power or a completed predictive out-of-sample result. Those boundaries are part of the project record, not footnotes.</p>
+      <p>USD Impact can make a credible claim to a public formula, visible revision policy, dated publication archive, expanding robustness evidence and a predictive study registered before its holdout. It can also make a first-party legal-operator disclosure, while clearly showing that current ONRC certificate review remains pending. It cannot yet make a credible claim to independent operator verification, independently audited score performance, predictive power or a completed predictive out-of-sample result. Those boundaries are part of the project record, not footnotes.</p>
     </section>
   </main>
 </BaseLayout>
@@ -107,12 +120,15 @@ const identitySchema = JSON.stringify({
   .transparency-page { max-width: 1100px; }
   .identity-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: -24px; }
   .identity-card { border-top: 5px solid var(--gold); }
-  .identity-card h2, .transparency-section h2, .bottom-line h2 { margin: 7px 0 14px; }
+  .identity-card h2, .transparency-section h2, .bottom-line h2, .registry-verification h2 { margin: 7px 0 14px; }
   dl { margin: 20px 0; }
   dl div { display: grid; grid-template-columns: minmax(150px, .8fr) 1.2fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid #e4e8ed; }
   dt { color: #5a6472; }
   dd { margin: 0; font-weight: 700; color: var(--navy); }
   .evidence-note { color: #4f5c6c; font-size: .94rem; line-height: 1.65; }
+  .registry-verification { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 28px; align-items: center; margin-top: 32px; border-left: 5px solid var(--gold); }
+  .registry-verification p { max-width: 82ch; margin-bottom: 0; }
+  .registry-actions { display: flex; flex-direction: column; gap: 10px; min-width: 230px; }
   .transparency-section { margin-top: 64px; }
   .table-wrap { overflow-x: auto; border: 1px solid #dce2e9; border-radius: 16px; background: #fff; }
   table { width: 100%; min-width: 860px; border-collapse: collapse; }
@@ -129,6 +145,8 @@ const identitySchema = JSON.stringify({
   @media (max-width: 760px) {
     .identity-grid { grid-template-columns: 1fr; }
     .identity-grid { margin-top: 0; }
+    .registry-verification { grid-template-columns: 1fr; }
+    .registry-actions { min-width: 0; }
     dl div { grid-template-columns: 1fr; gap: 3px; }
   }
 </style>

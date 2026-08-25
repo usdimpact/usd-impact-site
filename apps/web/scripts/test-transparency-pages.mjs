@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const [about, methodology] = await Promise.all([
+const [about, methodology, onrcGate] = await Promise.all([
   readFile(new URL('../src/pages/about.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/score/methodology.astro', import.meta.url), 'utf8'),
+  readFile(new URL('../../../docs/operations/onrc-company-verification-gate.md', import.meta.url), 'utf8'),
 ]);
 
 const vintageJson = 'https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.json';
@@ -16,9 +17,35 @@ const predictiveEngineLock = 'https://github.com/usdimpact/usd-impact-pipeline/b
 const scoreV3Protocol = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v3_preregistration.json';
 const scoreV3MetricContract = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v3_metric_implementation_contract.json';
 const scoreV3EngineLock = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v3_engine_lock.json';
+const onrcIssueUrl = 'https://github.com/usdimpact/usd-impact-site/issues/341';
+const onrcPortalUrl = 'https://myportal.onrc.ro/';
+const aboutHrefs = new Set([...about.matchAll(/href="([^"]+)"/g)].map((match) => match[1]));
 
 assert.match(about, /SC Kela Leads SRL/);
+assert.match(about, /CUI 40790448/);
+assert.match(about, /J38\/820\/2020/);
 assert.match(about, /Mircea Albulescu/);
+assert.match(about, /first-party legal disclosure/);
+assert.match(about, /current electronically issued ONRC company certificate has <strong>not yet been reviewed<\/strong>/);
+assert.match(about, /Official registry verification/);
+assert.match(about, /ONRC certificate review is pending/);
+assert.match(about, /Current official ONRC company certificate/);
+assert.match(about, /Issue #341/);
+assert.equal(aboutHrefs.has(onrcIssueUrl), true, 'About page must link the exact ONRC verification tracker URL.');
+assert.equal(aboutHrefs.has(onrcPortalUrl), true, 'About page must link the exact official ONRC portal URL.');
+assert.match(about, /does not claim ONRC, registry or independent verification/);
+assert.match(about, /first-party legal-operator disclosure, while clearly showing that current ONRC certificate review remains pending/);
+assert.doesNotMatch(about, /<span class="status disclosed">(?:ONRC|Registry|Officially) verified<\/span>/i);
+assert.doesNotMatch(about, /independently verified legal operator/i);
+assert.doesNotMatch(about, /ONRC verified operator/i);
+
+assert.match(onrcGate, /Tracking issue: #341/);
+assert.match(onrcGate, /PENDING — authenticated ONRC certificate acquisition and review required/);
+assert.match(onrcGate, /SHA-256 hash of the retained original/);
+assert.match(onrcGate, /Do not commit it by default/);
+assert.match(onrcGate, /registered-office comparison: PASS\/FAIL without printing the address/);
+assert.match(onrcGate, /must not be described as independently verified, registry-verified, officially verified/);
+
 assert.match(about, /Exact product revenue and customers/);
 assert.match(about, /Not publicly disclosed/);
 assert.match(about, /Meaningful predictive power[\s\S]*Not established and not claimed/);

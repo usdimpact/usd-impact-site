@@ -21,12 +21,12 @@ jobs:
         working-directory: apps/web
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 22.16.0
+          node-version: 24.x
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
 
@@ -50,7 +50,7 @@ jobs:
         run: node scripts/generate-daily-card-package.mjs "${{ steps.date.outputs.value }}"
 
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: daily-card-${{ steps.date.outputs.value }}
           path: apps/web/artifacts/daily-card/${{ steps.date.outputs.value }}
@@ -76,12 +76,12 @@ jobs:
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_PRODUCTION_SECRET_KEY }}
     steps:
       - name: Checkout exact workflow commit
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 22.16.0
+          node-version: 24.x
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
 

@@ -40,7 +40,7 @@ jobs:
           npm sbom --sbom-format cyclonedx --sbom-type application > "$RUNNER_TEMP/usd-impact-web-sbom.cdx.json"
           node -e "const fs=require('fs'); const bom=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/usd-impact-web-sbom.cdx.json','utf8')); if (bom.bomFormat !== 'CycloneDX' || !Array.isArray(bom.components)) throw new Error('Invalid CycloneDX SBOM'); console.log('SBOM components:', bom.components.length);"
       - name: Upload SBOM evidence
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: usd-impact-web-sbom-${{ github.sha }}
           path: ${{ runner.temp }}/usd-impact-web-sbom.cdx.json

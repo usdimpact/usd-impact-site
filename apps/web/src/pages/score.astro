@@ -2,10 +2,15 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FrameworkEvidenceChain from '../components/FrameworkEvidenceChain.astro';
+import { resolveScorePipelineOrigin, scorePipelineUrl } from '../lib/score-pipeline-origin.js';
 
 const latestWeeklyReport = (await getCollection('weeklyReports'))
   .filter((entry) => entry.data.status === 'published')
   .sort((a, b) => b.data.periodEnd.localeCompare(a.data.periodEnd))[0];
+const scorePipelineOrigin = resolveScorePipelineOrigin(import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
+const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_comparison_latest.html', scorePipelineOrigin);
+const dashboardUrl = scorePipelineUrl('/en/', scorePipelineOrigin);
+const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin);
 ---
 <BaseLayout
   title="Weekly USD Impact Score | Dollar Regime Dashboard"
@@ -19,8 +24,8 @@ const latestWeeklyReport = (await getCollection('weeklyReports'))
       <div class="button-row">
         <a class="button primary" href="#score-dashboard">View the latest score</a>
         <a class="button secondary" href="/score/methodology/">Read the full methodology</a>
-        <a class="button secondary" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.html" target="_blank" rel="noreferrer">Audit historical revisions</a>
-        <a class="button secondary" href="https://usd-impact-pipeline.pages.dev/en/" target="_blank" rel="noreferrer">Open standalone dashboard</a>
+        <a class="button secondary" href={vintageAuditUrl} target="_blank" rel="noreferrer">Audit historical revisions</a>
+        <a class="button secondary" href={dashboardUrl} target="_blank" rel="noreferrer">Open standalone dashboard</a>
       </div>
     </div>
   </section>
@@ -54,7 +59,7 @@ const latestWeeklyReport = (await getCollection('weeklyReports'))
       </div>
       <div class="button-row">
         <a class="button report-link" href="/score/methodology/">Audit the methodology</a>
-        <a class="button report-link" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.html" target="_blank" rel="noreferrer">Compare published vintages</a>
+        <a class="button report-link" href={vintageAuditUrl} target="_blank" rel="noreferrer">Compare published vintages</a>
       </div>
     </section>
 
@@ -64,17 +69,17 @@ const latestWeeklyReport = (await getCollection('weeklyReports'))
           <div class="eyebrow">Live dashboard</div>
           <h2>Latest USD Impact Score</h2>
         </div>
-        <a href="https://usd-impact-pipeline.pages.dev/en/" target="_blank" rel="noreferrer">Open in a new tab</a>
+        <a href={dashboardUrl} target="_blank" rel="noreferrer">Open in a new tab</a>
       </div>
       <div class="score-embed-shell">
         <iframe
           class="score-embed"
-          src="https://usd-impact-pipeline.pages.dev/en/"
+          src={dashboardUrl}
           title="USD Impact Score weekly dashboard"
           loading="lazy"
           referrerpolicy="strict-origin-when-cross-origin"
         ></iframe>
-        <p class="score-embed-fallback">If the dashboard does not load inside this page, <a href="https://usd-impact-pipeline.pages.dev/en/" target="_blank" rel="noreferrer">open the standalone version</a>.</p>
+        <p class="score-embed-fallback">If the dashboard does not load inside this page, <a href={dashboardUrl} target="_blank" rel="noreferrer">open the standalone version</a>.</p>
       </div>
     </section>
 
@@ -95,18 +100,18 @@ const latestWeeklyReport = (await getCollection('weeklyReports'))
           <div class="eyebrow">Weekly archive</div>
           <h2 id="previous-weeks-heading">Previous weeks</h2>
         </div>
-        <a href="https://usd-impact-pipeline.pages.dev/archive/en/" target="_blank" rel="noreferrer">Open the full archive</a>
+        <a href={archiveUrl} target="_blank" rel="noreferrer">Open the full archive</a>
       </div>
       <p class="score-archive-intro">Review the score, regime, and deterministic commentary exactly as they were published for each completed week.</p>
       <div class="score-archive-embed-shell">
         <iframe
           class="score-archive-embed"
-          src="https://usd-impact-pipeline.pages.dev/archive/en/"
+          src={archiveUrl}
           title="Previous Weekly USD Impact Score editions"
           loading="lazy"
           referrerpolicy="strict-origin-when-cross-origin"
         ></iframe>
-        <p class="score-embed-fallback">If the archive does not load inside this page, <a href="https://usd-impact-pipeline.pages.dev/archive/en/" target="_blank" rel="noreferrer">open the full archive</a>.</p>
+        <p class="score-embed-fallback">If the archive does not load inside this page, <a href={archiveUrl} target="_blank" rel="noreferrer">open the full archive</a>.</p>
       </div>
     </section>
 

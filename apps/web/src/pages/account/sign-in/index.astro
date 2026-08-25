@@ -85,7 +85,7 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
   )}
   <script is:inline src="/assets/passkey-browser.js" defer></script>
 
-  <script is:inline>
+  <script>
     const form = document.getElementById('passwordless-sign-in');
     const emailInput = document.getElementById('account-email');
     const nextInput = document.getElementById('account-next');

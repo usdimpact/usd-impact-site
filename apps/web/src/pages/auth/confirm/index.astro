@@ -18,7 +18,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     </div>
   </main>
 
-  <script is:inline>
+  <script>
     const status = document.getElementById('confirm-status');
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');

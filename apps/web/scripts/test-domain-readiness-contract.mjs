@@ -9,6 +9,8 @@ const files = {
   refund: read('src/pages/refund-policy.md'),
   account: read('src/pages/account/index.astro'),
   checkout: read('src/pages/checkout/index.astro'),
+  securityPolicy: read('../../.github/SECURITY.md'),
+  securityTxt: read('public/.well-known/security.txt'),
 };
 
 const failures = [];
@@ -41,6 +43,33 @@ requireText(files.checkout, 'Checkout page', [
   '/api/commerce-readiness',
   'browser redirect alone never grants access',
 ]);
+requireText(files.securityPolicy, 'Security policy', [
+  'support@usd-impact.com',
+  'Security report',
+  'https://www.usd-impact.com/.well-known/security.txt',
+  'does not promise a bug bounty',
+]);
+requireText(files.securityTxt, 'security.txt', [
+  'Contact: mailto:support@usd-impact.com',
+  'Preferred-Languages: en',
+  'Canonical: https://www.usd-impact.com/.well-known/security.txt',
+  'Policy: https://github.com/usdimpact/usd-impact-site/security/policy',
+]);
+
+const securityTxtExpires = files.securityTxt.match(/^Expires:\s*(\S+)\s*$/m)?.[1];
+if (!securityTxtExpires) {
+  failures.push('security.txt is missing the required Expires field.');
+} else {
+  const expiresAt = Date.parse(securityTxtExpires);
+  const now = Date.now();
+  const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+  const maxLifetime = 366 * 24 * 60 * 60 * 1000;
+  if (!Number.isFinite(expiresAt)) failures.push(`security.txt Expires is invalid: ${securityTxtExpires}`);
+  else {
+    if (expiresAt - now <= thirtyDays) failures.push('security.txt must be renewed before it is within 30 days of expiry.');
+    if (expiresAt - now > maxLifetime) failures.push('security.txt Expires must remain within one year.');
+  }
+}
 
 if (files.product.includes('first 100 completed purchases')) {
   failures.push('Product page still exposes the superseded first-100 launch cutoff.');

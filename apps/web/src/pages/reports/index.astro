@@ -131,7 +131,9 @@ const signed = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}`.replace(
           <p>{hasCompletedMonthly
             ? `The latest published monthly report already completed its four-brief input gate through ${formatDate(latestMonthly.data.periodEnd)}. This counter starts a new cycle and includes only published weekly briefs after that completed period.`
             : 'The first monthly report will summarize four consecutive published weekly briefs, the score path, regime changes, and persistent themes. It will not add unsourced market claims.'}</p>
-          <p>The next monthly report will summarize four consecutive published weekly briefs, the score path, regime changes, and persistent themes. It will not add unsourced market claims.</p>
+          {hasCompletedMonthly && (
+            <p>The next monthly report will summarize four consecutive published weekly briefs, the score path, regime changes, and persistent themes. It will not add unsourced market claims.</p>
+          )}
           {monthlyWindow.inputs.length > 0 && (
             <p class="monthly-inputs">
               Next-cycle eligible briefs:

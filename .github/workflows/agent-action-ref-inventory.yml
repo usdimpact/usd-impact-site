@@ -3,6 +3,8 @@ name: Agent action ref inventory
 on:
   push:
     branches: [agent/action-supply-chain-hardening-2026-08-25]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:

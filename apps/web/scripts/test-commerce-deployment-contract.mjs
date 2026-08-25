@@ -46,6 +46,8 @@ assert.match(checkoutSource, /browser redirect alone never grants access/i);
 assert.match(checkoutSource, /Before any payment can open/i);
 assert.match(checkoutSource, /verified legal operator and geographic trader address/i);
 assert.match(checkoutSource, /Merchant of Record, buyer terms, and provider privacy terms/i);
+assert.match(checkoutSource, /Current first-party public operator disclosure/i);
+assert.doesNotMatch(checkoutSource, /Current verified public operator identity/i);
 assert.match(checkoutSource, /A street address or provider identity is not guessed/i);
 assert.match(checkoutSource, /seller-disclosure-panel/);
 assert.match(productSource, /replacement provider is selected, integrated, tested, and approved for Live use/i);

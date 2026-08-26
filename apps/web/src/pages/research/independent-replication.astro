@@ -1,0 +1,134 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const protocolUrl = 'https://score.usd-impact.com/data/research/independent_replication_protocol.json';
+const protocolDocUrl = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/docs/independent-replication-protocol.md';
+const trackerUrl = 'https://github.com/usdimpact/usd-impact-pipeline/issues/70';
+---
+<BaseLayout
+  title="Independent Replication | USD Impact"
+  description="Current status and public protocol for a future independent replication review of one strict USD Impact Score v2 release."
+>
+  <section class="hero replication-hero">
+    <div class="container narrow">
+      <div class="eyebrow">Research transparency</div>
+      <h1>Independent Score Replication</h1>
+      <p class="lead">The protocol is prepared. An independent external replication has <strong>not</strong> yet been completed.</p>
+    </div>
+  </section>
+
+  <main class="container replication-page">
+    <section class="status-card card" aria-labelledby="replication-status">
+      <div class="status-topline">
+        <div>
+          <div class="eyebrow">Current status</div>
+          <h2 id="replication-status">Prepared — not executed</h2>
+        </div>
+        <span class="status-pill pending">No independent result yet</span>
+      </div>
+      <p>USD Impact has published a reviewer protocol that fixes the independence requirements, eligible release boundary, frozen artifacts, recomputation steps, finding classes, numerical tolerance and claim limits before a reviewer result exists.</p>
+      <p><strong>First eligible release:</strong> week ending <strong>August 28, 2026</strong> or later, after the strict reproduction bundle and successful post-merge reproduction attestation exist.</p>
+      <div class="button-row">
+        <a class="button primary" href={protocolUrl} target="_blank" rel="noreferrer">Open protocol JSON</a>
+        <a class="button secondary" href={protocolDocUrl} target="_blank" rel="noreferrer">Read reviewer protocol</a>
+        <a class="button secondary" href={trackerUrl} target="_blank" rel="noreferrer">Open execution tracker</a>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow">Why the review waits</div>
+      <h2>Use a strict frozen release, not a moving reconstruction</h2>
+      <p>Releases through August 21, 2026 predate the mandatory immutable reproduction-bundle contract. Starting with the August 28 boundary, a valid strict release must preserve the weekly calculation inputs and normalization moments needed for offline reproduction, bind the dependency lock, retain dated/latest bundle identity, and pass post-merge attestation.</p>
+      <p>Waiting for that boundary prevents a reviewer from being asked to reproduce a historical value against market-provider histories that may have changed after publication.</p>
+    </section>
+
+    <section class="grid-two">
+      <article class="card">
+        <div class="eyebrow">Independence gate</div>
+        <h2>What counts as independent</h2>
+        <ul>
+          <li>The reviewer did not design Score v2 or select its variables, signs, weights or regime thresholds.</li>
+          <li>The reviewer did not implement the production pipeline.</li>
+          <li>The primary recomputation runs in an environment controlled by the reviewer.</li>
+          <li>Compensation and material conflicts are disclosed.</li>
+          <li>The reviewer remains free to publish negative, ambiguous or not-testable findings.</li>
+        </ul>
+      </article>
+      <article class="card">
+        <div class="eyebrow">Not independent evidence</div>
+        <h2>First-party controls stay first-party</h2>
+        <ul>
+          <li>USD Impact CI and security checks.</li>
+          <li>The non-publishing reproduction rehearsal.</li>
+          <li>The strict release validator.</li>
+          <li>Pre-merge and post-merge reproduction attestations.</li>
+          <li>Any result produced only by USD Impact production code.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section>
+      <div class="eyebrow">Reviewer test</div>
+      <h2>What the external reviewer must recompute</h2>
+      <div class="test-grid">
+        <article class="card"><strong>1</strong><span>Freeze the exact production commit and hash the reviewed public artifacts.</span></article>
+        <article class="card"><strong>2</strong><span>Confirm latest and dated strict bundles are identical and the dependency-lock hash matches.</span></article>
+        <article class="card"><strong>3</strong><span>Implement the disclosed arithmetic independently rather than importing the production Score code.</span></article>
+        <article class="card"><strong>4</strong><span>Recompute all eight z-scores, clipping, signed weights and contributions.</span></article>
+        <article class="card"><strong>5</strong><span>Recompute the total Score and regime against the fixed numerical tolerance.</span></article>
+        <article class="card"><strong>6</strong><span>Report methodology/data-semantics ambiguity and any evidence that cannot be tested.</span></article>
+      </div>
+    </section>
+
+    <section class="finding-section card">
+      <div class="eyebrow">Required findings</div>
+      <h2>No cosmetic pass/fail</h2>
+      <div class="finding-grid">
+        <div><strong>MATCH</strong><span>Independent result agrees within tolerance and no material ambiguity blocks the check.</span></div>
+        <div><strong>MISMATCH</strong><span>Independent result diverges outside tolerance; both values and the smallest known divergence remain visible.</span></div>
+        <div><strong>AMBIGUOUS</strong><span>The public specification permits materially different reasonable implementations.</span></div>
+        <div><strong>NOT TESTABLE</strong><span>The required public/frozen evidence is insufficient; the missing evidence must be named.</span></div>
+      </div>
+    </section>
+
+    <section class="boundary-section">
+      <div class="eyebrow">Claim boundary</div>
+      <h2>Replication is not predictive validation</h2>
+      <p>Until a completed external report exists, USD Impact claims only that an <strong>independent replication protocol is prepared</strong>. It does not claim independent validation, audit, endorsement or verified model performance.</p>
+      <p>A future MATCH can support a narrow reproducibility statement for the release actually reviewed. It would not establish predictive power, future returns or trading value. Predictive evidence remains governed by the separate preregistered prospective Score v2 study.</p>
+      <p>The strict bundle freezes the calculation fields required for release arithmetic and hashes broader provider-derived histories. Complete original Yahoo/FRED response payloads and full provider-derived histories are not publicly redistributed, so the planned review is not described as a complete reconstruction from original transport bytes.</p>
+      <div class="button-row">
+        <a class="button secondary" href="/research/evidence-map/">Academic evidence map</a>
+        <a class="button secondary" href="/score/methodology/">Score methodology</a>
+        <a class="button secondary" href="/about/">About &amp; transparency</a>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .replication-hero { padding-bottom: 62px; }
+  .narrow { max-width: 900px; }
+  .replication-page { max-width: 1080px; }
+  .replication-page > section { margin-bottom: 58px; }
+  .status-card { margin-top: -22px; border-left: 5px solid var(--gold); }
+  .status-topline { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
+  .status-topline h2, .replication-page h2 { margin: 6px 0 14px; }
+  .status-pill { display: inline-block; border-radius: 999px; padding: 7px 11px; font-size: .78rem; font-weight: 800; }
+  .status-pill.pending { background: #fff1c8; color: #715313; }
+  .grid-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .grid-two ul, .boundary-section p { line-height: 1.65; }
+  .grid-two li { margin: 8px 0; }
+  .test-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .test-grid article { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }
+  .test-grid strong { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--navy); color: white; }
+  .test-grid span { line-height: 1.5; color: #4f5d6a; }
+  .finding-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .finding-grid div { display: grid; gap: 5px; padding: 15px; border-radius: 12px; background: #f7f9fa; }
+  .finding-grid strong { color: var(--navy); }
+  .finding-grid span { color: #586572; line-height: 1.5; }
+  @media (max-width: 820px) {
+    .status-topline { display: grid; }
+    .grid-two, .test-grid, .finding-grid { grid-template-columns: 1fr; }
+  }
+</style>

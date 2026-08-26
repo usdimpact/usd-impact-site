@@ -104,3 +104,5 @@ try {
     else process.env[key] = value;
   }
 }
+
+await import('./test-lemon-squeezy-commerce-negative-matrix.mjs');

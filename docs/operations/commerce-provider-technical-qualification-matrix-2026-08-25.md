@@ -1,177 +1,132 @@
-# Commerce provider technical qualification matrix — baseline 2026-08-25, eligibility updated 2026-08-26
+# Commerce provider technical qualification matrix — baseline 2026-08-25, selected-provider update 2026-08-26
 
-## Purpose
+## Current status
 
-This is a normalized decision aid for Issue #53. It compares the provider technical evidence already collected against the **same** USD Impact one-time Library Pass requirements.
+This document began as a normalized candidate comparison for Issue #53. The selection decision is now complete:
 
-**2026-08-26 eligibility update:** FastSpring has failed the written product-eligibility gate and is removed from the active implementation path. Its technical rows are retained as historical due-diligence evidence only. Lemon Squeezy and PayPro Global remain unselected candidates with open eligibility/technical gates. Stripe Managed Payments remains a separate policy-review fallback and is not silently promoted by FastSpring's rejection.
+- **Lemon Squeezy: WRITTEN ELIGIBILITY APPROVED / SELECTED FOR ONE-TIME LIBRARY PASS / `mor-final-state-reconciliation` APPROVED / SANDBOX IMPLEMENTATION DRAFT.**
+- FastSpring: written product-eligibility rejection; removed.
+- Paddle: declined; removed.
+- PayPro Global: not selected; no qualifying reply before selection and technical gaps remained.
+- Stripe Managed Payments: fallback research only; not selected.
 
-This matrix does **not** select a provider, change the application contract, authorize provider-specific implementation, create a provider account/product/secret/webhook, enable checkout, authorize a payment, or change entitlement/customer state.
+Production remains commerce-disabled. Provider selection does not register an adapter or populate Production `COMMERCE_PROVIDER`.
 
-Source evidence packs:
+Current canonical engineering sources are:
 
-- `docs/operations/commerce-provider-responsibility-matrix.md` — provider-neutral contract plus historical FastSpring public technical prefill;
-- `docs/operations/lemon-squeezy-commerce-technical-prefill-2026-08-25.md`;
-- `docs/operations/paypro-global-commerce-technical-prefill-2026-08-25.md`;
-- `docs/operations/commerce-provider-eligibility-update-2026-08-26.md` — current written eligibility state.
+- `docs/operations/commerce-provider-readiness.md`;
+- `docs/operations/commerce-provider-responsibility-matrix.md`;
+- `docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md`;
+- `docs/operations/lemon-squeezy-sandbox-runtime-2026-08-26.md`;
+- Draft PR #374.
 
-Issue #53 remains the authoritative tracker for current written eligibility/contact state.
+Historical candidate-prefill documents remain evidence only and must not override this selected-provider update.
 
-## Status vocabulary
+## Contract v3 qualification model
 
-- **PASS — public technical evidence:** public provider documentation supports the required capability, subject to later sandbox proof and account-specific configuration.
-- **PARTIAL:** useful provider capability exists, but the exact USD Impact canonical transition/security property still needs authoritative clarification or a reviewed design.
-- **BLOCKED:** the reviewed evidence does not currently establish the required capability.
-- **PENDING WRITTEN:** technical evidence cannot replace product/company/account-specific written approval or contractual allocation.
-- **REJECTED / INELIGIBLE:** the provider supplied a written product-eligibility decision that closes the current product path. Technical capability does not override this gate.
+The earlier matrix assumed every provider had to expose direct dispute/chargeback/reversal events. Commerce contract version 3 now explicitly supports two security-reviewed profiles:
 
-A technical PASS is never equivalent to product/company eligibility approval.
+1. `direct-events`;
+2. `mor-final-state-reconciliation`.
 
-## Non-negotiable USD Impact contract
+The Merchant-of-Record profile is valid only when the adapter has authoritative order retrieval/reconciliation, final-state revocation, documented MoR chargeback ownership, durable idempotency, fail-closed unsupported-state behavior, and no inferred browser/email/dashboard authority.
 
-A selected adapter must continue to satisfy:
+Lemon Squeezy is selected under profile 2.
 
-1. `checkout.create`
-2. `webhook.verify-raw-body`
-3. `event.normalize`
-4. `payment.complete`
-5. `refund.complete`
-6. `dispute.open`
-7. `chargeback.complete`
-8. `dispute.reverse`
+## Selected-provider qualification matrix
 
-Canonical normalized events remain:
+| Qualification item | Lemon Squeezy finding | Current status |
+|---|---|---|
+| Written product/company eligibility | Human reviewer approved the disclosed USD Impact Library Pass scope on 2026-08-26 11:03 UTC | **PASS** |
+| Initial product scope | one-time standardized digital Library Pass; recurring Research Membership/services excluded | **PASS / SCOPE FROZEN** |
+| Romania merchant support | provider documentation supports Romanian merchant payout/onboarding subject to normal KYB/tax requirements | **PASS / MANUAL ONBOARDING** |
+| Merchant of Record | provider documents MoR payment/tax/refund/chargeback responsibilities | **PASS** |
+| Hosted/server-created checkout | API-created checkout for a trusted Store/Variant is supported | **PASS** |
+| Server-authoritative pricing | two fixed Variants selected from durable server-side launch/standard tier; browser `custom_price` prohibited | **PASS BY DESIGN** |
+| Exact raw-body authenticity | HMAC-SHA256 over exact request body with `X-Signature` | **PASS** |
+| Test/Live isolation | separate Test Mode path; reviewer explicitly required Test Mode and no real-card testing | **PASS** |
+| `order_created` | successful one-time order webhook; application additionally re-reads authoritative Order + Order Items before granting | **PASS BY DESIGN** |
+| refund lifecycle | `order_refunded` plus authoritative `refunded` / `partial_refund` Order states | **PASS WITH POLICY** |
+| partial refund | Library Pass supports full refunds only; unexpected `partial_refund` becomes review with no automatic entitlement mutation | **POLICY CLOSED** |
+| pending/failed | authoritative Order states exist; never grant or restore | **PASS VIA RECONCILIATION** |
+| fraudulent final state | authoritative `fraudulent` state revokes via canonical `payment.revoked` | **PASS VIA RECONCILIATION** |
+| direct dispute-opened webhook | not present in reviewed one-time webhook surface | **NOT REQUIRED UNDER APPROVED MoR PROFILE** |
+| direct final-chargeback webhook | not present in reviewed one-time webhook surface | **NOT REQUIRED UNDER APPROVED MoR PROFILE** |
+| direct dispute-reversal webhook | not present in reviewed one-time webhook surface | **NOT REQUIRED UNDER APPROVED MoR PROFILE** |
+| unobservable dispute behavior | no synthetic event and no provisional access mutation solely from an unobservable dispute | **FAIL CLOSED** |
+| restoration behavior | later `paid` does not automatically restore a terminal/incompatible local state | **FAIL CLOSED** |
+| durable purchase/receipt/reconciliation persistence | Draft PR #374 reuses existing paid-access primitives and adds `commerce_reconciliations` plus service-role-only RPCs | **IMPLEMENTED IN DRAFT / DB NOT APPLIED** |
+| checkout/webhook/reconcile routes | isolated Test-Mode runtime in PR #374; exact raw body preserved; Production hard-blocked | **IMPLEMENTED IN DRAFT** |
+| deterministic sandbox coverage | focused local contract tests exist; real provider Test Mode matrix not yet run | **PENDING EXTERNAL TEST CONFIG** |
+| adapter registration | intentionally absent | **BLOCKED UNTIL SANDBOX EVIDENCE** |
+| public Live activation | no Production credentials/config/public checkout authorized | **BLOCKED** |
 
-- `checkout.pending`
-- `payment.completed`
-- `payment.failed`
-- `payment.cancelled`
-- `payment.expired`
-- `refund.completed`
-- `dispute.opened`
-- `chargeback.completed`
-- `dispute.reversed`
+## Commercial validation contract
 
-No browser redirect, email, dashboard screenshot, client parameter or unverified provider state may grant or restore access.
+For the selected one-time Library Pass:
 
-## Normalized candidate matrix
+- trusted base prices are USD 39 launch and USD 49 standard;
+- each tier uses a distinct fixed-price Lemon Squeezy Variant;
+- exactly one authoritative Order Item and quantity one are required;
+- Store/Product/Variant are server-trusted;
+- browser `custom_price` is prohibited;
+- checkout discount entry is disabled and authoritative `discount_total` must be zero;
+- authoritative Order `subtotal` must equal the durable purchase-intent base amount;
+- currency must be USD;
+- final Order `total` is retained as the Merchant-of-Record charged amount and may include tax;
+- `first_order_item.price` is retained only as provider evidence, not treated as the pre-tax base-price authority;
+- any commercial mismatch fails closed before entitlement mutation.
 
-| Qualification item | FastSpring | Lemon Squeezy | PayPro Global |
-|---|---|---|---|
-| Written product/company eligibility for USD Impact | **REJECTED / INELIGIBLE** — case #01856172, written decision received 2026-08-25 22:33 UTC: disclosed product is not one FastSpring is licensed to process | **PENDING WRITTEN** — application review pending; store provisioning is not approval | **PENDING WRITTEN** — outreach/follow-up unanswered |
-| Account-specific Merchant-of-Record/legal/tax responsibility allocation | **CLOSED WITH ELIGIBILITY FAILURE** — no implementation path under current product scope | **PENDING WRITTEN** | **PENDING WRITTEN** |
-| Hosted/server-created checkout | **PASS — historical public technical evidence** | **PASS — public technical evidence** | **PASS — public technical evidence** |
-| Server-authoritative product/price design can be enforced by USD Impact | **PASS — historical public technical evidence**, but not actionable after eligibility rejection | **PASS — public technical evidence** using approved server-selected variant/price; do not use client-controlled custom price | **PASS / design-constrained** — use fixed approved product/price and server-built checkout; do not trust dynamic client pricing |
-| Exact raw-body cryptographic webhook verification | **PASS — historical public technical evidence** — HMAC-SHA256 over raw payload with `X-FS-Signature` | **PASS — public technical evidence** — HMAC-SHA256 over exact request body with `X-Signature` | **BLOCKED against current contract** — reviewed docs sign selected fields + validation key, not the exact raw POST body |
-| Stable provider event/delivery identity for retry deduplication | **PARTIAL / strong historical evidence** — automatic retries retain event ID; manual resend gets a new event ID, so durable business-state dedup remains required | **BLOCKED / not documented in reviewed payload examples** | **BLOCKED / not documented as a separate immutable IPN event ID** |
-| Retry/redelivery behavior documented | **PASS — historical public technical evidence** | **PASS — public technical evidence** | **PASS — public technical evidence** |
-| Separate test/sandbox path | **PASS — historical public technical evidence** | **PASS — public technical evidence** | **PASS / PARTIAL** — test orders/webhooks documented; complete required event simulation still unproven |
-| `checkout.pending` | **PASS / historical** — `order.payment.pending` | **PARTIAL** — server-created checkout/local pending state possible; no native one-time pending webhook identified | **PARTIAL** — `OrderOnWaiting` exists for review/non-instant payment but extended-webhook availability/design must be confirmed |
-| `payment.completed` | **PASS / historical** — `order.completed` | **PASS — public technical evidence** — `order_created` after successful order | **PASS — public technical evidence** — `OrderCharged` |
-| `payment.failed` | **PASS / historical** — `order.failed` | **BLOCKED** — failed test-card UX exists but no distinct one-time failure webhook in reviewed full event list | **PASS — public technical evidence** — `OrderDeclined` |
-| `payment.cancelled` | **PASS / historical** — `order.canceled` | **BLOCKED** — no distinct one-time cancellation webhook identified | **PARTIAL / BLOCKED** — Canceled order API status exists, but no dedicated order-cancel webhook identified |
-| `payment.expired` | **BLOCKED / historical unresolved gap** — no distinct expiry event/equivalent confirmed | **PARTIAL / BLOCKED** — checkout `expires_at` exists but no expiry webhook identified | **PARTIAL / BLOCKED** — checkout expiration exists but no dedicated expiry webhook identified |
-| Full `refund.completed` | **PASS / historical** — `return.created` | **PASS — public technical evidence** — `order_refunded` | **PASS — public technical evidence** — `OrderRefunded` |
-| Partial-refund semantics | **PARTIAL / historical** — must be handled without silently equating partial refund to full access reversal | **PARTIAL** — `order_refunded` can represent full or partial; entitlement policy required | **PASS for distinct event / policy still required** — `OrderPartiallyRefunded` is distinct from full refund |
-| `dispute.opened` | **PARTIAL / historical** — `chargeback.created` represents chargeback initiation; broader dispute-warning semantics unresolved | **BLOCKED** — no dedicated one-time dispute event identified | **PARTIAL** — `OrderChargedBack` occurs when chargeback is received; whether this is the opening or later chargeback state needs clarification |
-| `chargeback.completed` | **BLOCKED / historical unresolved gap** — `chargeback.created` is initiation, not clearly final lost outcome | **BLOCKED** — no dedicated final chargeback outcome event identified | **PARTIAL / plausible** — `OrderChargedBack` + Chargeback state exist, but final-vs-open semantics must be confirmed |
-| `dispute.reversed` / eligible restoration | **BLOCKED / historical unresolved gap** — no native won-dispute/restoration event identified in reviewed docs | **BLOCKED** — no won-dispute/reversal event identified | **PARTIAL / strong** — `OrderChargedBackWon` exists; exact restoration criteria/sandbox proof still required |
-| Complete deterministic test coverage for USD Impact lifecycle matrix | **NOT APPLICABLE — current product eligibility failed** | **BLOCKED pending proof** | **BLOCKED pending proof** |
-| Current technical qualification | **INELIGIBLE FOR CURRENT PRODUCT — technical analysis retained only** | **NOT QUALIFIED YET** | **NOT QUALIFIED YET** |
-| Current selection status | **REMOVED FROM ACTIVE PATH / NOT SELECTED** | **NOT SELECTED** | **NOT SELECTED** |
+## Lifecycle normalization
 
-## FastSpring — historical technical profile, current path closed
+| Provider evidence | Canonical/application behavior |
+|---|---|
+| trusted local checkout intent | `checkout.pending` application state only; never entitlement authority |
+| signed `order_created` + fresh authoritative `paid` Order | `payment.completed` after all commercial/account/intent checks |
+| authoritative `pending` / `failed` | hold/deny; never grant |
+| signed refund or reconciled full `refunded` with full refunded amount | `refund.completed` / entitlement refunded idempotently |
+| authoritative `partial_refund` | review only; no automatic purchase/entitlement transition |
+| authoritative `fraudulent` | `payment.revoked` / entitlement revoked idempotently |
+| unobservable provider dispute/chargeback/reversal process | no fabricated canonical event; MoR operational ownership plus authoritative final-state reconciliation/manual incident path |
 
-FastSpring had the strongest reviewed combination of exact raw-body authenticity and several native one-time order events. That technical fit is now **non-actionable** because the written eligibility gate failed.
+## Required sandbox matrix
 
-Written evidence controlling the current disposition:
+Use Lemon Squeezy **Test Mode only** and never a real card.
 
-- case #01856172;
-- decision received 2026-08-25 22:33 UTC;
-- bounded result: the disclosed product is not one FastSpring is licensed to process transactions for.
+At minimum prove:
 
-Therefore:
+1. trusted checkout creation for the configured QA account;
+2. browser price/Variant substitution cannot change trusted terms;
+3. wrong Store/Product/Variant rejected;
+4. item count or quantity other than one rejected;
+5. subtotal, discount or currency mismatch rejected;
+6. missing/foreign account or purchase-intent linkage rejected;
+7. invalid/missing/mutated signature rejected before processing;
+8. duplicate/replayed webhook remains idempotent and payload-hash conflicts fail closed;
+9. successful `paid` order creates exactly one purchase and entitlement;
+10. authoritative state change between webhook and re-read cannot grant stale access;
+11. full refund creates exactly the reviewed access transition;
+12. unexpected partial refund enters review without automatic entitlement mutation;
+13. fraudulent state revokes through `payment.revoked` without fake chargeback state;
+14. pending/failed state never grants or restores;
+15. provider API outage cannot grant access and reconciliation retry remains bounded;
+16. Test configuration cannot mutate Production;
+17. Production runtime rejects sandbox commerce configuration;
+18. disabling commerce blocks new checkout while preserving durable historical evidence.
 
-- do not send another eligibility follow-up under the current product scope;
-- do not open/configure a seller path merely because the public APIs look compatible;
-- do not register a FastSpring adapter or credentials;
-- do not reinterpret the rejection as a technical gap that engineering can cure.
+## Historical candidate summary
 
-The prior technical blockers (`payment.expired`, generic dispute-open semantics, final/lost chargeback state, won-dispute/reversal, complete sandbox matrix) remain historical observations only.
+FastSpring, Paddle, PayPro Global and Stripe Managed Payments records are retained only to preserve the due-diligence trail. No historical technical advantage can override the current provider-selection decision without a new explicit governance review.
 
-## Lemon Squeezy — active candidate, written approval still absent
+## Current gate
 
-Clean raw-body HMAC signing, hosted/server-created checkout, bounded webhook retry behavior and clear Test/Live separation are useful technical foundations.
+The provider/lifecycle selection gate is **closed**. The remaining gate is evidence-driven implementation:
 
-Main remaining technical blockers:
+1. review and separately authorize the new migration on canonical Development only;
+2. configure Lemon Squeezy Test Mode Store/Product/two fixed Variants and non-Production credentials;
+3. execute the sandbox matrix;
+4. review Development database/advisor evidence;
+5. then decide adapter registration;
+6. keep Production disabled until later release and independent-security gates pass.
 
-- sparse published one-time event lifecycle beyond successful order and refund;
-- failed/cancelled/expired authoritative transitions;
-- dispute/chargeback/reversal authoritative transitions;
-- stable immutable webhook event/delivery identity in the reviewed public payload material;
-- complete test matrix.
-
-The store application is under review. Store/dashboard provisioning does **not** close product/company eligibility. No later affirmative eligibility message was present in the fresh 2026-08-26 mailbox check.
-
-## PayPro Global — active candidate with security-contract mismatch
-
-PayPro Global has the richest currently documented one-time lifecycle surface of the remaining normalized candidates: success, decline, full/partial refund, chargeback, chargeback-won and waiting events are publicly described.
-
-Main remaining technical blockers:
-
-- the reviewed signature model does **not** prove exact-raw-body cryptographic verification required by the existing contract;
-- no separately documented immutable unique IPN event/delivery ID;
-- cancellation and expiry authoritative transitions;
-- distinction between dispute opening and final chargeback state;
-- complete test matrix.
-
-Fresh 2026-08-26 mailbox review found no PayPro Global response to the pre-clearance/follow-up messages.
-
-Do not weaken `webhook.verify-raw-body` implicitly to make the provider fit. Any alternative field-signature design would require a separate security-reviewed, versioned contract change before adapter work.
-
-## Stripe Managed Payments — separate fallback, not automatically promoted
-
-Stripe is not normalized into the three-column baseline matrix above. Public Managed Payments material appears strong technically and for Merchant-of-Record responsibilities, but product-policy wording around cryptocurrency-related products creates a material eligibility ambiguity because the Library Pass includes educational Bitcoin curriculum.
-
-FastSpring's rejection does not authorize Stripe implementation. Product-specific written clarification through an official qualifying route is still required before Stripe can enter the active implementation comparison.
-
-## Current decision
-
-**FASTSPRING REMOVED; NO TECHNICAL WINNER; NO PROVIDER SELECTED.**
-
-The current evidence does not support selecting any remaining provider:
-
-- FastSpring is closed as **ineligible for the current disclosed product**, regardless of its historical technical fit.
-- Lemon Squeezy has strong signing/test foundations but product eligibility remains under review and its one-time lifecycle surface has unresolved canonical-state gaps.
-- PayPro Global has strong one-time lifecycle breadth but the reviewed authenticity mechanism does not satisfy the current exact-raw-body contract, and written eligibility is absent.
-- Stripe remains a fallback requiring product-policy written clarification before technical selection work.
-
-The next meaningful provider event is an **affirmative written eligibility decision from a remaining provider**. Such a decision is necessary but not sufficient: technical closure and explicit owner selection still follow.
-
-## Decision procedure when a remaining provider replies
-
-For any affirmative provider reply:
-
-1. preserve the written eligibility response privately and record only bounded evidence in Issue #53;
-2. confirm the response explicitly covers SC Kela Leads SRL, USD Impact and the disclosed Library Pass product scope;
-3. complete the account-specific Merchant-of-Record/legal/tax/refund/support/fees/reserve/payout/privacy responsibility rows;
-4. resolve only the provider-specific technical questions that remain BLOCKED/PARTIAL in this matrix;
-5. require an authoritative mechanism for every canonical lifecycle transition or a separately reviewed safe equivalent;
-6. require adequate webhook authenticity, event/business idempotency and deterministic test coverage;
-7. compare all affirmative candidates on the same matrix rather than selecting the first responder automatically;
-8. record explicit owner approval before registering an adapter or configuring environment secrets;
-9. keep Production `COMMERCE_MODE=disabled` until the later controlled gates authorize otherwise.
-
-For a rejection, close that provider path; do not keep it classified as pending.
-
-## Fail-closed rule
-
-Until one remaining provider passes both **written eligibility/account responsibility** and **technical qualification**, USD Impact remains:
-
-- `state=ready_for_provider_configuration`;
-- `mode=disabled`;
-- `provider=null`;
-- `providerConfigured=false`;
-- `checkoutEnabled=false`.
-
-This matrix is decision support only and cannot activate commerce.
+No Production secret, public checkout, Live transaction, real-card test, or Production migration is authorized by this matrix.

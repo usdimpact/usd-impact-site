@@ -51,7 +51,7 @@ jobs:
 
           while IFS= read -r path; do
             case "$path" in
-              src/data/three-dials-latest.json|public/data/three-dials/latest.json|public/data/three-dials/archive/*.json)
+              apps/web/src/data/three-dials-latest.json|apps/web/public/data/three-dials/latest.json|apps/web/public/data/three-dials/archive/*.json|src/data/three-dials-latest.json|public/data/three-dials/latest.json|public/data/three-dials/archive/*.json)
                 ;;
               *)
                 echo "::error::Three-Dials generator changed an unauthorized path: $path"

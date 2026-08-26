@@ -1,13 +1,36 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const [about, methodology, score, compliance, reports, onrcGate] = await Promise.all([
+const [
+  about,
+  methodology,
+  score,
+  compliance,
+  reports,
+  onrcGate,
+  frameworkPage,
+  threeDialsComponent,
+  threeDialsLib,
+  threeDialsGenerator,
+  threeDialsWorkflow,
+  threeDialsFramework,
+  threeDialsSourceLatest,
+  threeDialsPublicLatest,
+] = await Promise.all([
   readFile(new URL('../src/pages/about.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/score/methodology.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/score.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/compliance.md', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/reports/index.astro', import.meta.url), 'utf8'),
   readFile(new URL('../../../docs/operations/onrc-company-verification-gate.md', import.meta.url), 'utf8'),
+  readFile(new URL('../src/pages/[...slug].astro', import.meta.url), 'utf8'),
+  readFile(new URL('../src/components/ThreeDialsSnapshot.astro', import.meta.url), 'utf8'),
+  readFile(new URL('../src/lib/three-dials.js', import.meta.url), 'utf8'),
+  readFile(new URL('./generate-three-dials-snapshot.mjs', import.meta.url), 'utf8'),
+  readFile(new URL('../../../.github/workflows/three-dials-snapshot.yml', import.meta.url), 'utf8'),
+  readFile(new URL('../src/content/frameworks/framework-three-dial-dashboard.md', import.meta.url), 'utf8'),
+  readFile(new URL('../src/data/three-dials-latest.json', import.meta.url), 'utf8'),
+  readFile(new URL('../public/data/three-dials/latest.json', import.meta.url), 'utf8'),
 ]);
 
 const brandedScoreOrigin = 'https://score.usd-impact.com';
@@ -136,5 +159,96 @@ assert.match(reports, /briefs collected for/);
 assert.match(reports, /This counter starts a new cycle and includes only published weekly briefs after that completed period/);
 assert.match(reports, /Next-cycle eligible briefs/);
 assert.doesNotMatch(reports, /\{monthlyProgress\} of 4 briefs available/);
+
+// Three-Dial framework boundaries: exactly three dials; broad USD is confirmation,
+// real rates require TIPS, liquidity uses multiple evidence channels, and the Score is separate.
+assert.match(threeDialsFramework, /Dial 1 — Dollar direction/);
+assert.match(threeDialsFramework, /Do not create a separate “fourth dial” for broad USD/);
+assert.match(threeDialsFramework, /Dial 2 — Real-rate pressure/);
+assert.match(threeDialsFramework, /10-year TIPS yield direction/);
+assert.match(threeDialsFramework, /Do not infer real-rate pressure from the nominal 10-year yield alone/);
+assert.match(threeDialsFramework, /Dial 3 — Liquidity stress/);
+assert.match(threeDialsFramework, /credit spreads widening or tightening/);
+assert.match(threeDialsFramework, /funding-market or banking stress/);
+assert.match(threeDialsFramework, /confidence label is a note about evidence quality, not a probability of future returns/);
+assert.match(threeDialsFramework, /weekly USD Impact Score[\s\S]*separate systematic cross-asset indicator/);
+assert.match(threeDialsFramework, /qualitative framework should not be presented as the Score formula/);
+
+// Only the canonical Three-Dial framework route receives the current snapshot component.
+assert.match(frameworkPage, /import ThreeDialsSnapshot from '\.\.\/components\/ThreeDialsSnapshot\.astro'/);
+assert.match(frameworkPage, /const threeDialsSlug = '\/framework\/three-dial-dashboard'/);
+assert.match(frameworkPage, /\{isThreeDialsPage && <ThreeDialsSnapshot \/>\}/);
+
+// The public surface must keep evidence classes visually and semantically separate.
+assert.match(threeDialsComponent, /Dated snapshot · not real-time/);
+assert.match(threeDialsComponent, />Fact</);
+assert.match(threeDialsComponent, />Interpretation</);
+assert.match(threeDialsComponent, />Model output</);
+assert.match(threeDialsComponent, /Completed observations with actual source dates and source links/);
+assert.match(threeDialsComponent, /Open machine-readable snapshot JSON/);
+assert.match(threeDialsComponent, /Read Score methodology/);
+assert.match(threeDialsComponent, /Publication gate pending/);
+
+// Display thresholds are fixed, transparent heuristics—not probabilities or Score inputs.
+assert.match(threeDialsLib, /dollarFlatPct: 0\.10/);
+assert.match(threeDialsLib, /yieldFlatBps: 5/);
+assert.match(threeDialsLib, /hyOasFlatBps: 10/);
+assert.match(threeDialsLib, /vixFlatPoints: 1\.0/);
+assert.match(threeDialsLib, /fundingFlatBps: 3/);
+assert.match(threeDialsLib, /Stress-led firm-dollar environment/);
+assert.match(threeDialsLib, /Rate-led firm-dollar environment/);
+assert.match(threeDialsLib, /Easier soft-dollar environment/);
+assert.match(threeDialsLib, /Mixed \/ transitional environment/);
+assert.match(threeDialsLib, /Descriptive interpretation of completed observations; not a forecast or trading signal/);
+assert.doesNotMatch(threeDialsLib, /probability|expected return|buy|sell/i);
+
+// Generator source and immutability contract.
+for (const requiredSeries of ['DTWEXBGS', 'DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR', 'IORB', 'DX-Y.NYB']) {
+  assert.ok(threeDialsGenerator.includes(requiredSeries), `Three-Dials generator must bind ${requiredSeries}.`);
+}
+assert.match(threeDialsGenerator, /const FRED_ORIGIN = 'https:\/\/fred\.stlouisfed\.org'/);
+assert.match(threeDialsGenerator, /const YAHOO_ORIGIN = 'https:\/\/query1\.finance\.yahoo\.com'/);
+assert.match(threeDialsGenerator, /const SCORE_ORIGIN = 'https:\/\/score\.usd-impact\.com'/);
+assert.match(threeDialsGenerator, /sourceClass: 'accessible_proxy'/);
+assert.match(threeDialsGenerator, /not represented as exchange-official or a licensed institutional feed/);
+assert.match(threeDialsGenerator, /third_party_via_fred/);
+assert.match(threeDialsGenerator, /SOFR minus IORB funding spread/);
+assert.match(threeDialsGenerator, /funding context, not a standalone liquidity measure/);
+assert.match(threeDialsGenerator, /Immutable Three-Dials archive/);
+assert.match(threeDialsGenerator, /archive\/\$\{targetWeek\}\.json/);
+assert.match(threeDialsGenerator, /Weekly Score bridge is .* expected/);
+assert.match(threeDialsGenerator, /Separate descriptive model output/);
+assert.match(threeDialsGenerator, /Dated snapshot, not real-time market data/);
+assert.doesNotMatch(threeDialsGenerator, new RegExp(legacyScoreOrigin.replaceAll('.', '\\.')));
+
+// Scheduled publication must remain bounded, validated, PR-based and fail-closed.
+assert.match(threeDialsWorkflow, /name: Three Dials snapshot publication/);
+assert.match(threeDialsWorkflow, /cron: '45 22 \* \* 1,2'/);
+assert.match(threeDialsWorkflow, /workflow_dispatch:/);
+assert.match(threeDialsWorkflow, /src\/data\/three-dials-latest\.json\|public\/data\/three-dials\/latest\.json\|public\/data\/three-dials\/archive\/\*\.json/);
+assert.match(threeDialsWorkflow, /npm run validate/);
+assert.match(threeDialsWorkflow, /npm run build/);
+assert.match(threeDialsWorkflow, /gh pr create/);
+assert.match(threeDialsWorkflow, /gh pr merge .* --auto --squash/);
+assert.match(threeDialsWorkflow, /workflow remained fail-closed/);
+assert.doesNotMatch(threeDialsWorkflow, /git push origin main|git push .*HEAD:main/);
+
+// The source-render copy and public machine-readable copy are always synchronized.
+assert.equal(threeDialsSourceLatest, threeDialsPublicLatest, 'Three-Dials source/public latest JSON must be byte-identical.');
+const threeDialsLatest = JSON.parse(threeDialsSourceLatest);
+assert.equal(threeDialsLatest.version, 1);
+assert.ok(['pending', 'published'].includes(threeDialsLatest.status));
+if (threeDialsLatest.status === 'pending') {
+  assert.match(threeDialsLatest.message, /No dated Three-Dials snapshot has been published yet/);
+  assert.match(threeDialsLatest.scope, /source-freshness checks/);
+  assert.match(threeDialsLatest.scope, /exact-week USD Impact Score bridge check/);
+} else {
+  assert.match(threeDialsLatest.week_ending, /^20\d{2}-\d{2}-\d{2}$/);
+  assert.equal(threeDialsLatest.model_output.week_ending, threeDialsLatest.week_ending);
+  assert.ok(threeDialsLatest.dials?.dollar);
+  assert.ok(threeDialsLatest.dials?.real_rates);
+  assert.ok(threeDialsLatest.dials?.liquidity_stress);
+  assert.ok(Array.isArray(threeDialsLatest.disclosures) && threeDialsLatest.disclosures.length >= 5);
+}
 
 console.log('Transparency-page contract passed.');

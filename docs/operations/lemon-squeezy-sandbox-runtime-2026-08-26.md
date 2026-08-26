@@ -17,6 +17,8 @@ The implementation remains fail closed:
 - no Production provider secret, public checkout, Live transaction, real-card test, or Production schema application is authorized by this PR;
 - the reconciliation route has no Vercel cron schedule in this implementation and also requires the existing `CRON_SECRET` plus `COMMERCE_RECONCILIATION_ENABLED=true`.
 
+The migration has not been applied to Development or Production.
+
 ## Fixed-price variant model
 
 The Library Pass has two server-trusted fixed price tiers:

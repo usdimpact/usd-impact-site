@@ -99,7 +99,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <div><strong>Freshness gate.</strong> A release fails closed if a required driver is missing, future-dated or too stale. The production limits are 2 calendar days for Bitcoin, 3 for DXY/WTI/S&amp;P 500/VIX/gold, and 4 for the two Treasury series.</div>
         <div><strong>Complete cases.</strong> After weekly resampling, any week still missing one of the eight required inputs is dropped from the calculation sample. The latest publishable week must be complete.</div>
         <div><strong>Outliers.</strong> Raw observations are not winsorized. Standardized component values are clipped only after z-scoring, at −3.5 and +3.5.</div>
-        <div><strong>Source revisions.</strong> Yahoo/FRED histories can be revised or restated. Dated score archives preserve published score vintages, while the current full-history chart and robustness diagnostics are recalculated from the latest available source history. A separate <a href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.json" target="_blank" rel="noreferrer">revision audit</a> measures the difference for each valid archived latest reading.</div>
+        <div><strong>Source revisions.</strong> Yahoo/FRED histories can be revised or restated. Dated score archives preserve published score vintages, while the current full-history chart and robustness diagnostics are recalculated from the latest available source history. A separate <a href="https://score.usd-impact.com/data/research/score_v2_vintage_comparison_latest.json" target="_blank" rel="noreferrer">revision audit</a> measures the difference for each valid archived latest reading.</div>
       </div>
     </section>
 
@@ -180,15 +180,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <strong>Production source code</strong>
           <span>Exact calculation and data-treatment logic.</span>
         </a>
-        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/score_v2_methodology.json" target="_blank" rel="noreferrer">
+        <a class="card artifact-card" href="https://score.usd-impact.com/data/score_v2_methodology.json" target="_blank" rel="noreferrer">
           <strong>Machine-readable methodology JSON</strong>
           <span>Production variables, sources, weights, normalization, clipping, missing-data rules, thresholds and scope boundaries.</span>
         </a>
-        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/score_v2_methodology.schema.json" target="_blank" rel="noreferrer">
+        <a class="card artifact-card" href="https://score.usd-impact.com/data/score_v2_methodology.schema.json" target="_blank" rel="noreferrer">
           <strong>Methodology JSON Schema</strong>
           <span>Closed public schema for independent tooling and contract validation.</span>
         </a>
-        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/score_v2_data_semantics.json" target="_blank" rel="noreferrer">
+        <a class="card artifact-card" href="https://score.usd-impact.com/data/score_v2_data_semantics.json" target="_blank" rel="noreferrer">
           <strong>Data semantics contract</strong>
           <span>Exact source fields, adjustment settings, holiday alignment, timestamp limits and futures-roll replication boundaries.</span>
         </a>
@@ -216,31 +216,31 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <strong>Score v3 pre-holdout engine lock</strong>
           <span>SHA-256 hashes for the research engine, dependencies, protocol, metric contract and schemas frozen before the first prospective week.</span>
         </a>
-        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/weekly_input_latest.json" target="_blank" rel="noreferrer">
+        <a class="card artifact-card" href="https://score.usd-impact.com/data/weekly_input_latest.json" target="_blank" rel="noreferrer">
           <strong>Latest decomposition JSON</strong>
           <span>Score, driver z-scores, weights, contributions and source provenance.</span>
         </a>
-        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/usd_impact_score_v2.json" target="_blank" rel="noreferrer">
+        <a class="card artifact-card" href="https://score.usd-impact.com/data/usd_impact_score_v2.json" target="_blank" rel="noreferrer">
           <strong>Full score JSON</strong>
           <span>Metadata, weights, source provenance and weekly score history.</span>
         </a>
-        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/usd_impact_score_v2.csv" target="_blank" rel="noreferrer">
+        <a class="card artifact-card" href="https://score.usd-impact.com/data/usd_impact_score_v2.csv" target="_blank" rel="noreferrer">
           <strong>Full score CSV</strong>
           <span>Weekly component z-scores, score and regime.</span>
         </a>
-        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_robustness_latest.json" target="_blank" rel="noreferrer">
+        <a class="card artifact-card" href="https://score.usd-impact.com/data/research/score_v2_robustness_latest.json" target="_blank" rel="noreferrer">
           <strong>Robustness research JSON</strong>
           <span>Point-in-time summary, leave-one-out, sign sensitivity, rolling normalization, concentration, score distribution, regime duration, threshold and subperiod diagnostics.</span>
         </a>
-        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_point_in_time_latest.json" target="_blank" rel="noreferrer">
+        <a class="card artifact-card" href="https://score.usd-impact.com/data/research/score_v2_point_in_time_latest.json" target="_blank" rel="noreferrer">
           <strong>Point-in-time research JSON</strong>
           <span>Week-by-week expanding-window comparison with no future observations entering each week's normalization moments.</span>
         </a>
-        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.json" target="_blank" rel="noreferrer">
+        <a class="card artifact-card" href="https://score.usd-impact.com/data/research/score_v2_vintage_comparison_latest.json" target="_blank" rel="noreferrer">
           <strong>As-published revision audit JSON</strong>
           <span>Hashed archive-by-archive score, regime and component revisions, plus explicit exclusions and limitations.</span>
         </a>
-        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.csv" target="_blank" rel="noreferrer">
+        <a class="card artifact-card" href="https://score.usd-impact.com/data/research/score_v2_vintage_comparison_latest.csv" target="_blank" rel="noreferrer">
           <strong>As-published revision audit CSV</strong>
           <span>Tabular valid-vintage comparison for independent analysis and charting.</span>
         </a>
@@ -256,7 +256,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <strong>Locked environment</strong>
           <span>Exact production Python dependency versions.</span>
         </a>
-        <a class="card artifact-card" href="https://usd-impact-pipeline.pages.dev/archive/en/" target="_blank" rel="noreferrer">
+        <a class="card artifact-card" href="https://score.usd-impact.com/archive/en/" target="_blank" rel="noreferrer">
           <strong>As-published archive</strong>
           <span>Dated score and commentary vintages.</span>
         </a>

@@ -22,7 +22,7 @@ Vercel owns web application hosting, preview deployments, production deployments
 
 Netlify and Cloudflare Workers are not deployment targets for this site. Their repository configuration was removed after Vercel production, custom-domain routing, automation, and Lighthouse verification passed.
 
-The standalone Weekly USD Impact Score dashboard at `usd-impact-pipeline.pages.dev` is a separate application in the `usdimpact/usd-impact-pipeline` repository. Its Cloudflare Pages deployment is not part of this site's production configuration and must not be removed as part of `usd-impact-site` cleanup.
+The standalone Weekly USD Impact Score dashboard is a separate application in the `usdimpact/usd-impact-pipeline` repository and is published at `https://score.usd-impact.com/`. Its legacy Cloudflare Pages hostname, `https://usd-impact-pipeline.pages.dev/`, remains an intentional compatibility and rollback origin and must not be removed as part of `usd-impact-site` cleanup.
 
 ## DNS boundaries
 

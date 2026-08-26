@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Record the newly received written FastSpring product-eligibility decision and refresh the active provider shortlist without selecting a replacement provider or activating commerce.
+Record the current written commerce-provider eligibility decisions and refresh the active provider shortlist without activating commerce.
 
 Product: **Read the Dollar First Library Pass**  
 Business entity: **SC Kela Leads SRL, Romania**  
-Commerce state after this update: **provider-neutral / checkout disabled / no provider selected**.
+Commerce state after this update: **checkout disabled / no provider selected / Lemon Squeezy preferred candidate pending lifecycle closure**.
 
-This document is bounded due-diligence evidence. It does not create a provider account, register an adapter, configure credentials, enable sandbox/Live commerce, authorize a payment, or change customer/entitlement state.
+This document is bounded due-diligence evidence. It does not register an adapter, configure credentials, enable sandbox/Live commerce, authorize a payment, or change customer/entitlement state.
 
 ## FastSpring written eligibility decision
 
@@ -30,20 +30,21 @@ The prior public technical research remains valid only as historical technical d
 
 The rejection must not be rewritten as “pending,” “awaiting Sales,” or “primary candidate.” A future FastSpring path would require a new written provider determination covering a materially revised disclosed product; no such path is currently planned or authorized.
 
-## Remaining provider state — mailbox refresh 2026-08-26
+## Remaining provider state — refreshed 2026-08-26
 
 ### Lemon Squeezy
 
 - Store application submitted 2026-08-25 after Support requested formal review.
-- Application-received message stated the team would review the application.
-- USD Impact supplied public product/business evidence on the review thread.
-- Store/dashboard access was provisioned afterward.
-- Fresh Gmail review on 2026-08-26 found **no later affirmative product/company eligibility decision**.
-- Store provisioning is **not** eligibility approval.
+- USD Impact supplied public product/business evidence and the requested detailed pricing, product, licensing, audience, instant-fulfillment and KYB/KYC information.
+- On **2026-08-26 at 11:03 UTC**, Lemon Squeezy reviewer Tanay Khemka supplied an affirmative written decision: the account is approved, the disclosed products meet Lemon Squeezy's Terms of Service, and the Merchant-of-Record risk profile is low enough to allow USD Impact to sell through Lemon Squeezy.
+- The reviewer reiterated that fulfillment must be immediate and standardized, with no manual service fulfillment after purchase.
+- The reviewer explicitly instructed USD Impact to use **Test Mode** for test purchases and not to use a real card.
+- Technical qualification is favorable for server-created checkout, server-authoritative product/variant controls, exact raw-body HMAC-SHA256 webhook verification, Test/Live isolation, successful-order handling and refunds.
+- One P0 lifecycle-contract question remains open: the published single-payment webhook list does not identify direct dispute-opened, chargeback-completed or dispute-reversed events. A focused clarification was sent to the approving reviewer on 2026-08-26.
 
-Disposition: **PENDING WRITTEN ELIGIBILITY / NOT SELECTED.**
+Disposition: **WRITTEN ELIGIBILITY APPROVED / PREFERRED CANDIDATE / TECHNICAL QUALIFICATION IN PROGRESS / NOT YET SELECTED.**
 
-No Lemon Squeezy adapter, API key, webhook, product/variant, Production credential or checkout activation is authorized while review remains pending.
+No Lemon Squeezy adapter, Production API key, Production webhook secret or public checkout activation is authorized until the lifecycle exception is explicitly closed and provider selection is recorded.
 
 ### PayPro Global
 
@@ -62,19 +63,18 @@ Disposition: **NOT YET UNDER A QUALIFYING HUMAN ELIGIBILITY REVIEW / NOT SELECTE
 
 ## Active decision rule
 
-FastSpring is no longer part of the active candidate comparison. The remaining path is:
+FastSpring is no longer part of the active candidate comparison. Lemon Squeezy is the first remaining candidate to pass written product/company eligibility. The path is now:
 
-1. obtain an **affirmative written product/company eligibility** decision from a remaining provider;
+1. close Lemon Squeezy's provider-specific one-time dispute/chargeback/reversal lifecycle question or explicitly approve a reviewed security-equivalent reconciliation contract;
 2. complete account-specific Merchant-of-Record/legal/tax/refund/support/fees/reserve/payout/privacy responsibility evidence;
-3. close provider-specific technical gaps against the same canonical lifecycle/security matrix;
-4. require adequate webhook authenticity, idempotency and deterministic sandbox coverage;
-5. compare any affirmative candidates on the same criteria;
-6. obtain explicit owner approval before selecting a provider or registering an adapter;
-7. keep Production commerce disabled until later sandbox, controlled-Live, independent-security and integrated-launch gates pass.
+3. record explicit provider selection before registering an adapter;
+4. create/configure the approved Library Pass in Lemon Squeezy Test Mode only;
+5. require adequate webhook authenticity, idempotency and deterministic sandbox coverage;
+6. keep Production commerce disabled until later sandbox, controlled-Live, independent-security and integrated-launch gates pass.
 
 ## Fail-closed state
 
-Until one remaining provider passes both written eligibility and technical qualification:
+Until Lemon Squeezy passes the remaining technical qualification gate and provider selection is explicitly recorded:
 
 - `state=ready_for_provider_configuration`;
 - `mode=disabled`;
@@ -86,6 +86,6 @@ No browser redirect, dashboard state, store provisioning, email receipt, or unve
 
 ## Evidence handling
 
-The FastSpring case number, decision date and bounded decision summary are sufficient for the repository. Do not commit full Gmail message identifiers, private mail headers, provider credentials, identity documents, banking data, secrets or customer data.
+The provider decision date, reviewer role/name where operationally useful, and bounded decision summary are sufficient for the repository. Do not commit full Gmail message identifiers, private mail headers, provider credentials, identity documents, banking data, secrets or customer data.
 
 Authoritative operational tracker: **Issue #53**.

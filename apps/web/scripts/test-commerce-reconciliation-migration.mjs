@@ -5,13 +5,26 @@ const migrationUrl = new URL(
   '../../../supabase/migrations/20260826170000_commerce_reconciliation_runtime.sql',
   import.meta.url,
 );
+const indexMigrationUrl = new URL(
+  '../../../supabase/migrations/20260826173000_commerce_reconciliation_purchase_intent_index.sql',
+  import.meta.url,
+);
 const sql = await readFile(migrationUrl, 'utf8');
+const indexSql = await readFile(indexMigrationUrl, 'utf8');
 
 assert.match(sql, /create table if not exists public\.commerce_reconciliations/i);
 assert.match(sql, /alter table public\.commerce_reconciliations enable row level security;/i);
 assert.match(sql, /revoke all on public\.commerce_reconciliations from anon, authenticated;/i);
 assert.match(sql, /grant select, insert, update on public\.commerce_reconciliations to service_role;/i);
 assert.match(sql, /where disposition = 'tracking' and next_reconcile_at is not null/i);
+
+assert.match(indexSql, /^begin;/i);
+assert.match(
+  indexSql,
+  /create index if not exists commerce_reconciliations_purchase_intent_idx\s+on public\.commerce_reconciliations\(purchase_intent_id\);/i,
+);
+assert.match(indexSql, /commit;\s*$/i);
+assert.doesNotMatch(indexSql, /\b(?:insert|update|delete|alter table|drop|grant|revoke)\b/i);
 
 assert.doesNotMatch(sql, /security\s+definer/i);
 assert.ok((sql.match(/security\s+invoker/gi) ?? []).length >= 7);

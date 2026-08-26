@@ -3,6 +3,9 @@ name: Web quality
 on:
   pull_request:
     branches: [main]
+    paths-ignore:
+      - 'apps/web/src/data/three-dials-latest.json'
+      - 'apps/web/public/data/three-dials/**'
   push:
     branches: [main]
   workflow_dispatch:

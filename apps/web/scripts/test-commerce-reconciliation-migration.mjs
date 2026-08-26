@@ -17,10 +17,15 @@ const profileLockFixMigrationUrl = new URL(
   '../../../supabase/migrations/20260826205741_fix_commerce_profile_lock_privilege.sql',
   import.meta.url,
 );
+const terminalReplayMigrationUrl = new URL(
+  '../../../supabase/migrations/20260826225100_allow_terminal_commerce_webhook_replay_delivery_variance.sql',
+  import.meta.url,
+);
 const sql = await readFile(migrationUrl, 'utf8');
 const indexSql = await readFile(indexMigrationUrl, 'utf8');
 const aclHardeningSql = await readFile(aclHardeningMigrationUrl, 'utf8');
 const profileLockFixSql = await readFile(profileLockFixMigrationUrl, 'utf8');
+const terminalReplaySql = await readFile(terminalReplayMigrationUrl, 'utf8');
 
 assert.match(sql, /create table if not exists public\.commerce_reconciliations/i);
 assert.match(sql, /alter table public\.commerce_reconciliations enable row level security;/i);
@@ -99,6 +104,38 @@ assert.doesNotMatch(profileLockFixSql, /grant\s+update\s+on\s+public\.profiles/i
 assert.doesNotMatch(profileLockFixSql, /security\s+definer/i);
 assert.doesNotMatch(profileLockFixSql, /usd-impact-production|gjzetjugmnwanvjkchux/i);
 assert.match(profileLockFixSql, /commit;\s*$/i);
+
+assert.match(terminalReplaySql, /^begin;/i);
+assert.match(
+  terminalReplaySql,
+  /create or replace function public\.begin_commerce_webhook_receipt\(\s*p_provider text,\s*p_provider_event_id text,\s*p_event_type text,\s*p_payload_sha256 text\s*\)/i,
+);
+assert.match(terminalReplaySql, /language plpgsql\s+security invoker\s+set search_path = public/i);
+const terminalDuplicateStart = terminalReplaySql.indexOf("if v_receipt.status in ('processed', 'ignored') then");
+const replayHashMismatchStart = terminalReplaySql.indexOf('elsif v_receipt.payload_sha256 <> p_payload_sha256 then');
+const nonTerminalRetryUpdateStart = terminalReplaySql.indexOf('update public.webhook_receipts', replayHashMismatchStart);
+assert.ok(
+  terminalDuplicateStart > 0
+  && replayHashMismatchStart > terminalDuplicateStart
+  && nonTerminalRetryUpdateStart > replayHashMismatchStart,
+);
+const terminalDuplicateBlock = terminalReplaySql.slice(terminalDuplicateStart, replayHashMismatchStart);
+assert.match(terminalDuplicateBlock, /v_should_process := false;/i);
+assert.doesNotMatch(terminalDuplicateBlock, /\b(?:update|insert|delete)\b/i);
+const nonTerminalHashMismatchBlock = terminalReplaySql.slice(replayHashMismatchStart, nonTerminalRetryUpdateStart);
+assert.match(nonTerminalHashMismatchBlock, /webhook replay payload hash mismatch/i);
+assert.match(nonTerminalHashMismatchBlock, /errcode = '42501'/i);
+assert.match(
+  terminalReplaySql,
+  /revoke all on function public\.begin_commerce_webhook_receipt\(text, text, text, text\)[\s\S]*?from public, anon, authenticated;/i,
+);
+assert.match(
+  terminalReplaySql,
+  /grant execute on function public\.begin_commerce_webhook_receipt\(text, text, text, text\)[\s\S]*?to service_role;/i,
+);
+assert.doesNotMatch(terminalReplaySql, /security\s+definer/i);
+assert.doesNotMatch(terminalReplaySql, /usd-impact-production|gjzetjugmnwanvjkchux/i);
+assert.match(terminalReplaySql, /commit;\s*$/i);
 
 assert.doesNotMatch(sql, /security\s+definer/i);
 assert.ok((sql.match(/security\s+invoker/gi) ?? []).length >= 7);

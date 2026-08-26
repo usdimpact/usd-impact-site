@@ -9,8 +9,13 @@ const indexMigrationUrl = new URL(
   '../../../supabase/migrations/20260826173000_commerce_reconciliation_purchase_intent_index.sql',
   import.meta.url,
 );
+const aclHardeningMigrationUrl = new URL(
+  '../../../supabase/migrations/20260826174600_harden_public_table_defaults_and_commerce_acl.sql',
+  import.meta.url,
+);
 const sql = await readFile(migrationUrl, 'utf8');
 const indexSql = await readFile(indexMigrationUrl, 'utf8');
+const aclHardeningSql = await readFile(aclHardeningMigrationUrl, 'utf8');
 
 assert.match(sql, /create table if not exists public\.commerce_reconciliations/i);
 assert.match(sql, /alter table public\.commerce_reconciliations enable row level security;/i);
@@ -25,6 +30,30 @@ assert.match(
 );
 assert.match(indexSql, /commit;\s*$/i);
 assert.doesNotMatch(indexSql, /\b(?:insert|update|delete|alter table|drop|grant|revoke)\b/i);
+
+assert.match(aclHardeningSql, /^begin;/i);
+assert.match(
+  aclHardeningSql,
+  /alter default privileges for role postgres in schema public\s+revoke all on tables\s+from public, anon, authenticated, service_role;/i,
+);
+assert.match(
+  aclHardeningSql,
+  /revoke all on public\.commerce_reconciliations\s+from public, anon, authenticated, service_role;/i,
+);
+assert.match(
+  aclHardeningSql,
+  /grant select, insert, update on public\.commerce_reconciliations to service_role;/i,
+);
+assert.match(aclHardeningSql, /pg_default_acl/i);
+assert.match(aclHardeningSql, /aclexplode/i);
+assert.match(aclHardeningSql, /defaults\.defaclobjtype = 'r'/i);
+assert.match(aclHardeningSql, /grantee\.rolname in \('anon', 'authenticated', 'service_role'\)/i);
+assert.match(aclHardeningSql, /acl\.privilege_type not in \('SELECT', 'INSERT', 'UPDATE'\)/i);
+assert.match(aclHardeningSql, /has_table_privilege\([\s\S]*?'service_role'[\s\S]*?'public\.commerce_reconciliations'/i);
+assert.match(aclHardeningSql, /commit;\s*$/i);
+assert.doesNotMatch(aclHardeningSql, /\b(?:insert into|update\s+public\.|delete from|drop\s+(?:table|function|schema)|create\s+(?:table|function|schema)|security\s+definer)\b/i);
+assert.doesNotMatch(aclHardeningSql, /grant[^;]+to\s+(?:public|anon|authenticated)/i);
+assert.doesNotMatch(aclHardeningSql, /usd-impact-production|gjzetjugmnwanvjkchux/i);
 
 assert.doesNotMatch(sql, /security\s+definer/i);
 assert.ok((sql.match(/security\s+invoker/gi) ?? []).length >= 7);

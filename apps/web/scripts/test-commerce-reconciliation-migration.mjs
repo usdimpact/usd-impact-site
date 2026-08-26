@@ -13,9 +13,14 @@ const aclHardeningMigrationUrl = new URL(
   '../../../supabase/migrations/20260826174600_harden_public_table_defaults_and_commerce_acl.sql',
   import.meta.url,
 );
+const profileLockFixMigrationUrl = new URL(
+  '../../../supabase/migrations/20260826205000_fix_commerce_profile_lock_privilege.sql',
+  import.meta.url,
+);
 const sql = await readFile(migrationUrl, 'utf8');
 const indexSql = await readFile(indexMigrationUrl, 'utf8');
 const aclHardeningSql = await readFile(aclHardeningMigrationUrl, 'utf8');
+const profileLockFixSql = await readFile(profileLockFixMigrationUrl, 'utf8');
 
 assert.match(sql, /create table if not exists public\.commerce_reconciliations/i);
 assert.match(sql, /alter table public\.commerce_reconciliations enable row level security;/i);
@@ -54,6 +59,46 @@ assert.match(aclHardeningSql, /commit;\s*$/i);
 assert.doesNotMatch(aclHardeningSql, /\b(?:insert into|update\s+public\.|delete from|drop\s+(?:table|function|schema)|create\s+(?:table|function|schema)|security\s+definer)\b/i);
 assert.doesNotMatch(aclHardeningSql, /grant[^;]+to\s+(?:public|anon|authenticated)/i);
 assert.doesNotMatch(aclHardeningSql, /usd-impact-production|gjzetjugmnwanvjkchux/i);
+
+assert.match(profileLockFixSql, /^begin;/i);
+assert.match(profileLockFixSql, /create or replace function public\.reserve_commerce_purchase_intent\(/i);
+assert.match(profileLockFixSql, /language plpgsql\s+security invoker\s+set search_path = public/i);
+assert.match(
+  profileLockFixSql,
+  /select \* into v_profile\s+from public\.profiles\s+where account_id = p_account_id;/i,
+);
+assert.doesNotMatch(
+  profileLockFixSql,
+  /select \* into v_profile\s+from public\.profiles\s+where account_id = p_account_id\s+for update;/i,
+);
+assert.match(
+  profileLockFixSql,
+  /select state into v_entitlement_state[\s\S]*?from public\.entitlements[\s\S]*?for update;/i,
+);
+assert.match(
+  profileLockFixSql,
+  /select \* into v_open[\s\S]*?from public\.purchase_intents[\s\S]*?for update;/i,
+);
+assert.match(
+  profileLockFixSql,
+  /select \* into v_offer[\s\S]*?from public\.product_offers[\s\S]*?for update;/i,
+);
+assert.match(
+  profileLockFixSql,
+  /revoke all on function public\.reserve_commerce_purchase_intent\(uuid, text, timestamptz\)[\s\S]*?from public, anon, authenticated;/i,
+);
+assert.match(
+  profileLockFixSql,
+  /grant execute on function public\.reserve_commerce_purchase_intent\(uuid, text, timestamptz\)[\s\S]*?to service_role;/i,
+);
+assert.match(
+  profileLockFixSql,
+  /has_table_privilege\('service_role', 'public\.profiles', 'UPDATE'\)/i,
+);
+assert.doesNotMatch(profileLockFixSql, /grant\s+update\s+on\s+public\.profiles/i);
+assert.doesNotMatch(profileLockFixSql, /security\s+definer/i);
+assert.doesNotMatch(profileLockFixSql, /usd-impact-production|gjzetjugmnwanvjkchux/i);
+assert.match(profileLockFixSql, /commit;\s*$/i);
 
 assert.doesNotMatch(sql, /security\s+definer/i);
 assert.ok((sql.match(/security\s+invoker/gi) ?? []).length >= 7);

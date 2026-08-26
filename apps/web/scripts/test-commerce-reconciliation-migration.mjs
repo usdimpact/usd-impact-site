@@ -18,7 +18,7 @@ const profileLockFixMigrationUrl = new URL(
   import.meta.url,
 );
 const terminalReplayMigrationUrl = new URL(
-  '../../../supabase/migrations/20260826225100_allow_terminal_commerce_webhook_replay_delivery_variance.sql',
+  '../../../supabase/migrations/20260826230126_allow_terminal_commerce_webhook_replay_delivery_variance.sql',
   import.meta.url,
 );
 const sql = await readFile(migrationUrl, 'utf8');

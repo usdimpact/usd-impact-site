@@ -1,7 +1,7 @@
 import { PAID_PRODUCT_ID } from './paid-access.js';
 import { resolveCommercePublicDisclosure } from './commerce-public-disclosure.js';
 
-export const COMMERCE_CONTRACT_VERSION = 2;
+export const COMMERCE_CONTRACT_VERSION = 3;
 
 export const COMMERCE_MODES = Object.freeze({
   DISABLED: 'disabled',
@@ -18,27 +18,54 @@ export const COMMERCE_READINESS_STATES = Object.freeze({
   BLOCKED: 'blocked',
 });
 
+export const COMMERCE_LIFECYCLE_MODELS = Object.freeze({
+  DIRECT_EVENTS: 'direct-events',
+  MOR_FINAL_STATE_RECONCILIATION: 'mor-final-state-reconciliation',
+});
+
 export const CANONICAL_COMMERCE_EVENT_TYPES = Object.freeze({
   CHECKOUT_PENDING: 'checkout.pending',
   PAYMENT_COMPLETED: 'payment.completed',
   PAYMENT_FAILED: 'payment.failed',
   PAYMENT_CANCELLED: 'payment.cancelled',
   PAYMENT_EXPIRED: 'payment.expired',
+  PAYMENT_REVOKED: 'payment.revoked',
   REFUND_COMPLETED: 'refund.completed',
   DISPUTE_OPENED: 'dispute.opened',
   CHARGEBACK_COMPLETED: 'chargeback.completed',
   DISPUTE_REVERSED: 'dispute.reversed',
 });
 
-export const REQUIRED_COMMERCE_CAPABILITIES = Object.freeze([
+export const BASE_REQUIRED_COMMERCE_CAPABILITIES = Object.freeze([
   'checkout.create',
   'webhook.verify-raw-body',
   'event.normalize',
   'payment.complete',
   'refund.complete',
+]);
+
+export const DIRECT_EVENT_COMMERCE_CAPABILITIES = Object.freeze([
   'dispute.open',
   'chargeback.complete',
   'dispute.reverse',
+]);
+
+export const MOR_RECONCILIATION_COMMERCE_CAPABILITIES = Object.freeze([
+  'order.retrieve',
+  'order.reconcile',
+  'payment.revoke-final-state',
+  'mor.chargeback-managed',
+]);
+
+// Backwards-compatible export for providers that expose deterministic dispute lifecycle events.
+export const REQUIRED_COMMERCE_CAPABILITIES = Object.freeze([
+  ...BASE_REQUIRED_COMMERCE_CAPABILITIES,
+  ...DIRECT_EVENT_COMMERCE_CAPABILITIES,
+]);
+
+export const REQUIRED_MOR_RECONCILIATION_CAPABILITIES = Object.freeze([
+  ...BASE_REQUIRED_COMMERCE_CAPABILITIES,
+  ...MOR_RECONCILIATION_COMMERCE_CAPABILITIES,
 ]);
 
 const PROVIDER_PATTERN = /^[a-z][a-z0-9-]{1,63}$/;
@@ -47,6 +74,7 @@ const IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,254}$/;
 const CURRENCY_PATTERN = /^[A-Z]{3}$/;
 const EVENT_TYPES = new Set(Object.values(CANONICAL_COMMERCE_EVENT_TYPES));
 const MODES = new Set(Object.values(COMMERCE_MODES));
+const LIFECYCLE_MODELS = new Set(Object.values(COMMERCE_LIFECYCLE_MODELS));
 const PUBLIC_READINESS_MESSAGES = Object.freeze({
   [COMMERCE_READINESS_STATES.READY_FOR_PROVIDER_CONFIGURATION]:
     'The commerce foundation is ready for an approved provider adapter. Public checkout remains disabled.',
@@ -73,6 +101,11 @@ function normalizedString(value) {
 function normalizeProvider(value) {
   const provider = normalizedString(value).toLowerCase();
   return provider || null;
+}
+
+function normalizeLifecycleModel(value) {
+  const model = normalizedString(value).toLowerCase();
+  return model || COMMERCE_LIFECYCLE_MODELS.DIRECT_EVENTS;
 }
 
 function normalizeBoolean(value) {
@@ -135,13 +168,25 @@ export function validateCommerceAdapter(adapter) {
     throw new TypeError('adapter.version must use semantic versioning.');
   }
 
+  const lifecycleModel = normalizeLifecycleModel(adapter.lifecycleModel);
+  if (!LIFECYCLE_MODELS.has(lifecycleModel)) {
+    throw new TypeError('adapter.lifecycleModel is not a supported commerce lifecycle model.');
+  }
+
   const capabilities = capabilitySet(adapter.capabilities);
-  const missingCapabilities = REQUIRED_COMMERCE_CAPABILITIES.filter((item) => !capabilities.has(item));
+  const requiredCapabilities = lifecycleModel === COMMERCE_LIFECYCLE_MODELS.MOR_FINAL_STATE_RECONCILIATION
+    ? REQUIRED_MOR_RECONCILIATION_CAPABILITIES
+    : REQUIRED_COMMERCE_CAPABILITIES;
+  const missingCapabilities = requiredCapabilities.filter((item) => !capabilities.has(item));
   if (missingCapabilities.length > 0) {
     throw new TypeError(`adapter.capabilities is missing: ${missingCapabilities.join(', ')}.`);
   }
 
-  for (const method of ['createCheckout', 'verifyWebhookSignature', 'normalizeEvent', 'assessConfiguration']) {
+  const requiredMethods = ['createCheckout', 'verifyWebhookSignature', 'normalizeEvent', 'assessConfiguration'];
+  if (lifecycleModel === COMMERCE_LIFECYCLE_MODELS.MOR_FINAL_STATE_RECONCILIATION) {
+    requiredMethods.push('retrieveOrder', 'reconcileTransaction');
+  }
+  for (const method of requiredMethods) {
     if (typeof adapter[method] !== 'function') {
       throw new TypeError(`adapter.${method} must be a function.`);
     }
@@ -150,10 +195,13 @@ export function validateCommerceAdapter(adapter) {
   return Object.freeze({
     provider,
     version,
+    lifecycleModel,
     capabilities: Object.freeze([...capabilities].sort()),
     createCheckout: adapter.createCheckout,
     verifyWebhookSignature: adapter.verifyWebhookSignature,
     normalizeEvent: adapter.normalizeEvent,
+    retrieveOrder: typeof adapter.retrieveOrder === 'function' ? adapter.retrieveOrder : null,
+    reconcileTransaction: typeof adapter.reconcileTransaction === 'function' ? adapter.reconcileTransaction : null,
     assessConfiguration: adapter.assessConfiguration,
   });
 }
@@ -228,6 +276,7 @@ export function resolveCommerceReadiness(environment = {}, adapters = []) {
   let state = COMMERCE_READINESS_STATES.BLOCKED;
   let reason = reasons.join(' ');
   let adapterVersion = null;
+  let adapterLifecycleModel = null;
   let configuration = null;
 
   if (reasons.length === 0 && mode === COMMERCE_MODES.DISABLED) {
@@ -236,6 +285,7 @@ export function resolveCommerceReadiness(environment = {}, adapters = []) {
   } else if (reasons.length === 0) {
     const adapter = registry.get(provider);
     adapterVersion = adapter.version;
+    adapterLifecycleModel = adapter.lifecycleModel;
     const assessment = adapter.assessConfiguration(environment, mode);
     if (!assessment || typeof assessment !== 'object' || Array.isArray(assessment)) {
       throw new TypeError('adapter.assessConfiguration must return an object.');
@@ -268,6 +318,7 @@ export function resolveCommerceReadiness(environment = {}, adapters = []) {
     provider,
     providerConfigured: Boolean(provider),
     adapterVersion,
+    adapterLifecycleModel,
     sandboxVerified,
     controlledLiveTestVerified,
     liveApproved,

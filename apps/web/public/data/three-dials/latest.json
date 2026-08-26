@@ -1,6 +1,262 @@
 {
   "version": 1,
-  "status": "pending",
-  "message": "No dated Three-Dials snapshot has been published yet.",
-  "scope": "The first snapshot is generated only after a completed Friday, source-freshness checks, an exact-week USD Impact Score bridge check, and repository validation all pass."
+  "status": "published",
+  "week_ending": "2026-08-21",
+  "retrieved_at": "2026-08-26T01:47:04.119Z",
+  "observation_policy": {
+    "description": "Compare the latest usable observation on or before the completed Friday with the latest usable observation on or before the prior Friday. Every fact retains its actual observation date.",
+    "current_cutoff": "2026-08-21",
+    "previous_cutoff": "2026-08-14",
+    "thresholds": {
+      "dollarFlatPct": 0.1,
+      "yieldFlatBps": 5,
+      "hyOasFlatBps": 10,
+      "vixFlatPoints": 1,
+      "fundingFlatBps": 3
+    },
+    "threshold_scope": "Display/interpretation heuristics only. They are not estimated probabilities, optimized trading rules, or inputs to USD Impact Score v2."
+  },
+  "labels": {
+    "fact": "Externally sourced or transparently derived completed observations.",
+    "interpretation": "Deterministic qualitative reading of the three dials using the published display thresholds.",
+    "model_output": "Separate USD Impact Score v2 output; not evidence that the qualitative interpretation is predictive."
+  },
+  "dials": {
+    "dollar": {
+      "direction": "softer",
+      "breadth_direction": "softer",
+      "confirmation": "confirmed",
+      "confidence": "high",
+      "title": "Dial 1 — Dollar direction",
+      "facts": [
+        {
+          "id": "DXY",
+          "label": "U.S. Dollar Index (DXY proxy)",
+          "provider": "Yahoo Finance",
+          "source_class": "accessible_proxy",
+          "source_url": "https://finance.yahoo.com/quote/DX-Y.NYB/",
+          "source_note": "Accessible/reproducible Yahoo Finance proxy for DX-Y.NYB; not represented as exchange-official or a licensed institutional feed.",
+          "units": "Index",
+          "latest": {
+            "date": "2026-08-21",
+            "value": 98.80000305175781,
+            "display": "98.80",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
+            "date": "2026-08-14",
+            "value": 99.66999816894531,
+            "display": "99.67",
+            "age_days_from_cutoff": 0
+          },
+          "change": {
+            "value": -0.872875622725322,
+            "unit": "percent",
+            "display": "-0.87%"
+          }
+        },
+        {
+          "id": "DTWEXBGS",
+          "label": "Nominal Broad U.S. Dollar Index",
+          "provider": "Federal Reserve Board via FRED",
+          "source_class": "primary_public",
+          "source_url": "https://fred.stlouisfed.org/series/DTWEXBGS",
+          "source_note": "Federal Reserve H.10 broad-dollar confirmation inside Dial 1; it is not a separate fourth dial.",
+          "units": "Index Jan 2006=100",
+          "latest": {
+            "date": "2026-08-21",
+            "value": 118.0628,
+            "display": "118.0628",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
+            "date": "2026-08-14",
+            "value": 118.9028,
+            "display": "118.9028",
+            "age_days_from_cutoff": 0
+          },
+          "change": {
+            "value": -0.7064593937232799,
+            "unit": "percent",
+            "display": "-0.71%"
+          }
+        }
+      ]
+    },
+    "real_rates": {
+      "direction": "flat",
+      "nominal_direction": "rising",
+      "evidence_confirmation": "mixed",
+      "dollar_confirmation": "unclear",
+      "confidence": "medium",
+      "title": "Dial 2 — Real-rate pressure",
+      "facts": [
+        {
+          "id": "DFII10",
+          "label": "10-year TIPS real yield",
+          "provider": "Federal Reserve Board via FRED",
+          "source_class": "primary_public",
+          "source_url": "https://fred.stlouisfed.org/series/DFII10",
+          "source_note": "10-year inflation-indexed Treasury yield; the primary real-rate observation for Dial 2.",
+          "units": "Percent",
+          "latest": {
+            "date": "2026-08-21",
+            "value": 2.4,
+            "display": "2.40%",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
+            "date": "2026-08-14",
+            "value": 2.41,
+            "display": "2.41%",
+            "age_days_from_cutoff": 0
+          },
+          "change": {
+            "value": -1.000000000000023,
+            "unit": "basis_points",
+            "display": "-1 bp"
+          }
+        },
+        {
+          "id": "DGS10",
+          "label": "10-year nominal Treasury yield",
+          "provider": "Federal Reserve Board via FRED",
+          "source_class": "primary_public",
+          "source_url": "https://fred.stlouisfed.org/series/DGS10",
+          "source_note": "Nominal 10-year Treasury yield shown only as rate context for Dial 2.",
+          "units": "Percent",
+          "latest": {
+            "date": "2026-08-21",
+            "value": 4.74,
+            "display": "4.74%",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
+            "date": "2026-08-14",
+            "value": 4.68,
+            "display": "4.68%",
+            "age_days_from_cutoff": 0
+          },
+          "change": {
+            "value": 6.00000000000005,
+            "unit": "basis_points",
+            "display": "+6 bp"
+          }
+        }
+      ]
+    },
+    "liquidity_stress": {
+      "direction": "contained",
+      "confirmation": "broad",
+      "confidence": "high",
+      "component_directions": {
+        "high_yield_oas": "contained",
+        "vix": "contained",
+        "sofr_iorb_spread": "contained"
+      },
+      "title": "Dial 3 — Liquidity stress",
+      "facts": [
+        {
+          "id": "BAMLH0A0HYM2",
+          "label": "ICE BofA U.S. High Yield option-adjusted spread",
+          "provider": "ICE Data Indices via FRED",
+          "source_class": "third_party_via_fred",
+          "source_url": "https://fred.stlouisfed.org/series/BAMLH0A0HYM2",
+          "source_note": "ICE BofA series displayed through FRED. Only the two observations used by this snapshot are republished.",
+          "units": "Percent",
+          "latest": {
+            "date": "2026-08-21",
+            "value": 2.7,
+            "display": "2.70%",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
+            "date": "2026-08-14",
+            "value": 2.67,
+            "display": "2.67%",
+            "age_days_from_cutoff": 0
+          },
+          "change": {
+            "value": 3.000000000000025,
+            "unit": "basis_points",
+            "display": "+3 bp"
+          }
+        },
+        {
+          "id": "VIXCLS",
+          "label": "CBOE Volatility Index: VIX",
+          "provider": "CBOE via FRED",
+          "source_class": "third_party_via_fred",
+          "source_url": "https://fred.stlouisfed.org/series/VIXCLS",
+          "source_note": "CBOE VIX displayed through FRED. Only the two observations used by this snapshot are republished.",
+          "units": "Index",
+          "latest": {
+            "date": "2026-08-21",
+            "value": 15.13,
+            "display": "15.13",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
+            "date": "2026-08-14",
+            "value": 14.25,
+            "display": "14.25",
+            "age_days_from_cutoff": 0
+          },
+          "change": {
+            "value": 0.8800000000000008,
+            "unit": "index_points",
+            "display": "+0.88 pts"
+          }
+        },
+        {
+          "id": "SOFR_IORB_SPREAD",
+          "label": "SOFR minus IORB funding spread",
+          "provider": "New York Fed and Federal Reserve Board via FRED",
+          "source_class": "derived_from_primary_public",
+          "source_url": "https://fred.stlouisfed.org/series/SOFR",
+          "source_note": "Derived as SOFR minus IORB (FRED series IORB) in basis points. It is funding context, not a standalone liquidity measure.",
+          "units": "Basis points",
+          "latest": {
+            "date": "2026-08-21",
+            "value": 0,
+            "display": "0 bp",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
+            "date": "2026-08-14",
+            "value": -2.9999999999999805,
+            "display": "-3 bp",
+            "age_days_from_cutoff": 0
+          },
+          "change": {
+            "value": 2.9999999999999805,
+            "unit": "basis_points",
+            "display": "+3 bp"
+          }
+        }
+      ]
+    }
+  },
+  "interpretation": {
+    "label": "Mixed / transitional environment",
+    "sentence": "The completed week showed a softer DXY reading with confirmed broad-dollar confirmation, 10-year real yields flat, and liquidity stress stayed contained.",
+    "scope": "Descriptive interpretation of completed observations; not a forecast or trading signal."
+  },
+  "model_output": {
+    "name": "USD Impact Score v2",
+    "week_ending": "2026-08-21",
+    "score": -0.7231747772025738,
+    "score_display": "-0.72",
+    "regime": "Soft dollar regime",
+    "source_url": "https://score.usd-impact.com/data/weekly_input_latest.json",
+    "methodology_url": "https://www.usd-impact.com/score/methodology/",
+    "scope": "Separate descriptive model output. It is not an input to the Three-Dial interpretation and is not a forecast."
+  },
+  "disclosures": [
+    "Dated snapshot, not real-time market data. Observation dates are shown for every fact.",
+    "Broad USD is a confirmation layer inside Dial 1, not a fourth dial.",
+    "The SOFR-minus-IORB spread is one funding-context indicator and is not treated as a complete measure of liquidity.",
+    "VIX and ICE BofA High Yield OAS are third-party series accessed through FRED; this snapshot republishes only the two observations needed for the completed-week comparison, not their full histories.",
+    "The Three-Dial interpretation is descriptive and deterministic. It is not investment advice, a trading signal, a probability, or a return forecast."
+  ]
 }

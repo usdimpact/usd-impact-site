@@ -6,6 +6,8 @@ import {
   buildLemonSqueezyCheckoutRequest,
   createLemonSqueezyTestCheckout,
   normalizeLemonSqueezyOrderEvent,
+  reconcileLemonSqueezyOrder,
+  retrieveLemonSqueezyOrder,
   verifyLemonSqueezyWebhookSignature,
 } from '../src/lib/lemon-squeezy-adapter-scaffold.js';
 
@@ -90,12 +92,14 @@ const baseOrder = {
       customer_id: 88,
       identifier: '104e18a2-d755-4d4b-80c4-a6c1dcbe1c10',
       currency: 'USD',
-      total: 4900,
+      total: 5900,
       refunded_amount: 0,
       status: 'paid',
       first_order_item: {
         product_id: 99,
         variant_id: 314,
+        quantity: 1,
+        price: 4900,
       },
       created_at: '2026-08-26T12:00:00.000Z',
       updated_at: '2026-08-26T12:00:01.000Z',
@@ -108,14 +112,18 @@ const completed = normalizeLemonSqueezyOrderEvent(baseOrder, {
   expectedStoreId: 42,
   expectedProductId: 99,
   expectedVariantId: 314,
+  expectedUnitPriceCents: 4900,
+  expectedCurrency: 'USD',
 });
 assert.equal(completed.provider, 'lemon-squeezy');
 assert.equal(completed.eventType, 'payment.completed');
 assert.equal(completed.transactionId, '7001');
 assert.equal(completed.accountId, accountId);
 assert.equal(completed.purchaseIntentId, purchaseIntentId);
-assert.equal(completed.amountCents, 4900);
+assert.equal(completed.amountCents, 5900);
 assert.equal(completed.currency, 'USD');
+assert.equal(completed.metadata.lemonSqueezyUnitPriceCents, 4900);
+assert.equal(completed.metadata.lemonSqueezyTaxInclusiveTotalCents, 5900);
 assert.equal(completed.metadata.lemonSqueezyTestMode, true);
 
 const refunded = normalizeLemonSqueezyOrderEvent({
@@ -126,7 +134,7 @@ const refunded = normalizeLemonSqueezyOrderEvent({
     attributes: {
       ...baseOrder.data.attributes,
       status: 'refunded',
-      refunded_amount: 4900,
+      refunded_amount: 5900,
       updated_at: '2026-08-26T12:30:00.000Z',
     },
   },
@@ -134,9 +142,10 @@ const refunded = normalizeLemonSqueezyOrderEvent({
   expectedStoreId: 42,
   expectedProductId: 99,
   expectedVariantId: 314,
+  expectedUnitPriceCents: 4900,
 });
 assert.equal(refunded.eventType, 'refund.completed');
-assert.equal(refunded.amountCents, 4900);
+assert.equal(refunded.amountCents, 5900);
 assert.equal(refunded.metadata.fullRefund, true);
 
 assert.throws(() => normalizeLemonSqueezyOrderEvent({
@@ -144,6 +153,18 @@ assert.throws(() => normalizeLemonSqueezyOrderEvent({
   data: { ...baseOrder.data, attributes: { ...baseOrder.data.attributes, status: 'failed' } },
 }), /status is paid/);
 assert.throws(() => normalizeLemonSqueezyOrderEvent(baseOrder, { expectedVariantId: 999 }), /variant/);
+assert.throws(() => normalizeLemonSqueezyOrderEvent(baseOrder, { expectedUnitPriceCents: 3900 }), /price/);
+assert.throws(() => normalizeLemonSqueezyOrderEvent(baseOrder, { expectedCurrency: 'EUR' }), /currency/);
+assert.throws(() => normalizeLemonSqueezyOrderEvent({
+  ...baseOrder,
+  data: {
+    ...baseOrder.data,
+    attributes: {
+      ...baseOrder.data.attributes,
+      first_order_item: { ...baseOrder.data.attributes.first_order_item, quantity: 2 },
+    },
+  },
+}), /quantity/);
 assert.throws(() => normalizeLemonSqueezyOrderEvent({
   ...baseOrder,
   data: { ...baseOrder.data, attributes: { ...baseOrder.data.attributes, test_mode: false } },
@@ -153,8 +174,66 @@ assert.throws(() => normalizeLemonSqueezyOrderEvent({
   meta: { ...baseOrder.meta, event_name: 'subscription_created' },
 }), /only normalizes/);
 
-// The scaffold must remain impossible to register until the lifecycle contract is closed.
-assert.throws(() => validateCommerceAdapter(LEMON_SQUEEZY_ADAPTER_SCAFFOLD), /missing/i);
+let orderRequest = null;
+const retrieved = await retrieveLemonSqueezyOrder({
+  apiKey: 'test-api-key',
+  orderId: '7001',
+  fetchImpl: async (url, init) => {
+    orderRequest = { url, init };
+    return {
+      ok: true,
+      status: 200,
+      async json() { return { data: baseOrder.data }; },
+    };
+  },
+});
+assert.equal(orderRequest.url, 'https://api.lemonsqueezy.com/v1/orders/7001');
+assert.equal(orderRequest.init.method, 'GET');
+assert.equal(retrieved.data.id, '7001');
+
+const reconcileOptions = {
+  expectedStoreId: 42,
+  expectedProductId: 99,
+  expectedVariantId: 314,
+  expectedUnitPriceCents: 4900,
+  expectedCurrency: 'USD',
+};
+const paidState = reconcileLemonSqueezyOrder(baseOrder.data, reconcileOptions);
+assert.equal(paidState.action, 'retain');
+assert.equal(paidState.eventType, null);
+
+const refundedState = reconcileLemonSqueezyOrder({
+  ...baseOrder.data,
+  attributes: { ...baseOrder.data.attributes, status: 'refunded', refunded_amount: 5900 },
+}, reconcileOptions);
+assert.equal(refundedState.action, 'revoke');
+assert.equal(refundedState.eventType, 'refund.completed');
+
+const fraudulentState = reconcileLemonSqueezyOrder({
+  ...baseOrder.data,
+  attributes: { ...baseOrder.data.attributes, status: 'fraudulent' },
+}, reconcileOptions);
+assert.equal(fraudulentState.action, 'revoke');
+assert.equal(fraudulentState.eventType, 'payment.revoked');
+
+const pendingState = reconcileLemonSqueezyOrder({
+  ...baseOrder.data,
+  attributes: { ...baseOrder.data.attributes, status: 'pending' },
+}, reconcileOptions);
+assert.equal(pendingState.action, 'hold');
+assert.equal(pendingState.eventType, null);
+
+const partialState = reconcileLemonSqueezyOrder({
+  ...baseOrder.data,
+  attributes: { ...baseOrder.data.attributes, status: 'partial_refund', refunded_amount: 1000 },
+}, reconcileOptions);
+assert.equal(partialState.action, 'review');
+
+const validated = validateCommerceAdapter(LEMON_SQUEEZY_ADAPTER_SCAFFOLD);
+assert.equal(validated.lifecycleModel, 'mor-final-state-reconciliation');
+assert.equal(validated.provider, 'lemon-squeezy');
+assert.equal(typeof validated.retrieveOrder, 'function');
+assert.equal(typeof validated.reconcileTransaction, 'function');
 assert.equal(LEMON_SQUEEZY_ADAPTER_SCAFFOLD.assessConfiguration().ready, false);
 
-console.log('Lemon Squeezy fail-closed adapter scaffold tests passed.');
+console.log('Lemon Squeezy fail-closed final-state reconciliation scaffold tests passed.');

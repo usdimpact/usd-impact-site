@@ -1,5 +1,7 @@
 # Commerce provider candidate evidence — 2026-08-21
 
+> **Historical snapshot — superseded for current provider status.** FastSpring's written eligibility decision was received on 2026-08-25 22:33 UTC and **rejected the disclosed product for processing**, so FastSpring is no longer an active candidate. For current eligibility/contact state use `docs/operations/commerce-provider-eligibility-update-2026-08-26.md`, `docs/operations/commerce-provider-technical-qualification-matrix-2026-08-25.md`, and Issue #53. The technical research below is retained as the evidence available on 2026-08-21 and must not be read as today's ranking.
+
 ## Status
 
 Decision support only. No provider is selected. Checkout remains disabled. This evidence does not authorize account creation, adapter registration, secrets, sandbox activation, Live testing, or Production commerce activation.
@@ -8,18 +10,18 @@ Product: `Read the Dollar First Library Pass`
 
 Business entity: SC Kela Leads SRL, Romania.
 
-## Current provisional ranking
+## Current provisional ranking as recorded on 2026-08-21
 
-1. **FastSpring — current primary Merchant-of-Record candidate pending Sales pre-clearance and closure of final lifecycle-event gaps.**
+1. **FastSpring — then-current primary Merchant-of-Record candidate pending Sales pre-clearance and closure of final lifecycle-event gaps.** **This ranking is superseded by the later written rejection.**
 2. **PayPro Global — strong Merchant-of-Record and lifecycle coverage, but its documented webhook signature is field-derived rather than a raw-body signature and therefore does not yet satisfy the current USD Impact adapter contract.**
 3. **Stripe Managed Payments — excellent technical/Merchant-of-Record fit and Romania support, but policy-blocked pending written confirmation because Managed Payments explicitly prohibits NFT or cryptocurrency-related products.**
 4. **Lemon Squeezy — policy-blocked pending an affirmative written determination because its public prohibited-products policy includes NFT and crypto-related products.**
 
-This ranking is provisional. Written product/company eligibility, commercial terms, privacy terms, and technical sandbox evidence remain mandatory before selection.
+This ranking was provisional even when written. Written product/company eligibility, commercial terms, privacy terms, and technical sandbox evidence were mandatory before selection. The later FastSpring rejection demonstrates why public technical fit alone was never sufficient.
 
 ## FastSpring
 
-### Confirmed current public evidence
+### Confirmed public evidence available at the time
 
 - FastSpring webhook signing supports HMAC-SHA256 over the raw payload, Base64 encoded in `X-FS-Signature`.
 - Webhook endpoints can receive live, test, or both event classes.
@@ -28,11 +30,13 @@ This ranking is provisional. Written product/company eligibility, commercial ter
 - `chargeback.created` covers chargeback initiation.
 - Duplicate/retry handling is documented; automatic retries preserve event identity while manual resends can create a new event ID.
 
-### Current mailbox state
+### Mailbox state as of the 2026-08-21 snapshot
 
-FastSpring Seller Support case `01856169` redirected the eligibility packet to Sales through FastSpring's sign-up route. A follow-up asked Support to forward the packet or provide a Sales path that can answer the written questions before integration. No affirmative Sales eligibility decision has been received yet.
+FastSpring Seller Support case `01856169` redirected the eligibility packet to Sales through FastSpring's sign-up route. A follow-up asked Support to forward the packet or provide a Sales path that could answer the written questions before integration. No affirmative Sales eligibility decision had been received at that snapshot date.
 
-### Remaining technical gaps
+**Later disposition:** case #01856172 delivered the written decision on 2026-08-25 22:33 UTC and the current product path is now **REJECTED / CLOSED**. See the 2026-08-26 eligibility update.
+
+### Remaining technical gaps recorded at the time
 
 - authoritative equivalent for `payment.expired`;
 - generic dispute-warning/opened semantics beyond chargeback initiation;
@@ -40,7 +44,7 @@ FastSpring Seller Support case `01856169` redirected the eligibility packet to S
 - won-dispute/reversal event/state suitable for access restoration;
 - complete sandbox simulation proof.
 
-FastSpring remains the primary candidate, but these are release-significant gaps until Sales/technical onboarding supplies authoritative mechanisms.
+These gaps are now historical because product eligibility failed before adapter work.
 
 ### Official references
 
@@ -52,7 +56,7 @@ FastSpring remains the primary candidate, but these are release-significant gaps
 
 ## PayPro Global
 
-### Confirmed current public evidence
+### Confirmed current public evidence in the 2026-08-21 review
 
 - PayPro Global publicly positions itself as Merchant of Record for digital businesses and lists a Romania office.
 - Its documentation covers one-time `OrderCharged`, `OrderRefunded`, `OrderChargedBack`, `OrderDeclined`, `OrderChargedBackWon`, and `OrderOnWaiting` events.
@@ -65,12 +69,12 @@ FastSpring remains the primary candidate, but these are release-significant gaps
 
 The current USD Impact adapter contract requires exact raw-body webhook verification. PayPro's documented SHA-256 signature is calculated from selected canonical fields rather than the exact `application/x-www-form-urlencoded` request body.
 
-Therefore PayPro must remain **technically blocked** unless either:
+Therefore PayPro remains **technically blocked** unless either:
 
 1. PayPro confirms an additional raw-body signing mechanism for this account/integration, or
 2. a separately reviewed security decision changes the USD Impact adapter contract without weakening authenticity, replay, substitution and parsing-boundary protections.
 
-No such contract change is authorized by this evidence update.
+No such contract change is authorized by this evidence.
 
 ### Remaining selection gates
 
@@ -90,7 +94,7 @@ No such contract change is authorized by this evidence update.
 
 ## Stripe Managed Payments
 
-### Confirmed current public evidence
+### Confirmed public evidence in the 2026-08-21 review
 
 - Managed Payments is in Public Preview.
 - Stripe lists **Romania** as a supported business location for Managed Payments.
@@ -135,23 +139,23 @@ No account activation, Managed Payments enablement, or adapter work should begin
 
 Lemon Squeezy's public documentation generally permits digital goods such as eBooks, PDFs, audio and video, but explicitly lists **NFT & Crypto related products** as prohibited. USD Impact does not sell or facilitate cryptocurrency, but the Library Pass includes educational Bitcoin content.
 
-The support pre-clearance request already asks for a written policy determination. Until Lemon Squeezy confirms that educational discussion of Bitcoin does not make the product prohibited, this candidate remains **policy blocked** and no integration/account activation should begin.
+At the 2026-08-21 snapshot, the support pre-clearance request had already asked for a written policy determination. Since then, Lemon Squeezy requested a store application, the application was submitted, product/business evidence was supplied, and store access was provisioned. As of the fresh 2026-08-26 mailbox review, **no affirmative product/company eligibility decision has arrived**. Store provisioning is not treated as approval.
 
 ### Official references
 
 - https://docs.lemonsqueezy.com/help/getting-started/prohibited-products
 - https://docs.lemonsqueezy.com/help/getting-started/activate-your-store
 
-## Outreach state
+## Outreach state — historical snapshot plus current correction
 
-- **FastSpring:** Support response received; Sales eligibility still pending.
-- **PayPro Global:** written pre-clearance packet sent; no response yet.
-- **Lemon Squeezy:** written policy pre-clearance packet sent; no response yet.
-- **Stripe:** direct Sales email is not monitored. The product-specific policy question must be routed through Stripe's official Sales/Support path before eligibility can be considered pending with a human reviewer.
+- **FastSpring:** historical state was Sales pending; **current state is rejected/closed after case #01856172 decision on 2026-08-25 22:33 UTC**.
+- **PayPro Global:** written pre-clearance packet/follow-up sent; fresh 2026-08-26 Gmail review shows no reply.
+- **Lemon Squeezy:** application review remains pending; fresh 2026-08-26 Gmail review shows no affirmative approval after store provisioning.
+- **Stripe:** direct Sales email was not a qualifying review; product-specific policy question still requires an official human review path before eligibility can advance.
 
 ## Decision rule
 
-Do not build or register an adapter merely because public documentation looks compatible. Selection requires:
+Do not build or register an adapter merely because public documentation looks compatible or a store/account is provisioned. Selection requires:
 
 1. affirmative product/company eligibility;
 2. acceptable Merchant-of-Record/legal/tax/support allocation;
@@ -162,4 +166,6 @@ Do not build or register an adapter merely because public documentation looks co
 7. privacy and operational review;
 8. explicit owner approval of the selected provider.
 
-Until then, `COMMERCE_MODE=disabled`, no adapter is registered, and public checkout remains disabled.
+A provider that issues a written rejection is removed from the current product path rather than left “pending.”
+
+Until one remaining provider passes these gates, `COMMERCE_MODE=disabled`, no adapter is registered, and public checkout remains disabled.

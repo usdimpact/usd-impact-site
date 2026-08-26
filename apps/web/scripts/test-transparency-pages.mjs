@@ -221,15 +221,19 @@ assert.match(threeDialsGenerator, /Separate descriptive model output/);
 assert.match(threeDialsGenerator, /Dated snapshot, not real-time market data/);
 assert.doesNotMatch(threeDialsGenerator, new RegExp(legacyScoreOrigin.replaceAll('.', '\\.')));
 
-// Scheduled publication must remain bounded, validated, PR-based and fail-closed.
+// Scheduled publication must remain bounded, validated, PR-based, protected and fail-closed.
 assert.match(threeDialsWorkflow, /name: Three Dials snapshot publication/);
 assert.match(threeDialsWorkflow, /cron: '45 22 \* \* 1,2'/);
 assert.match(threeDialsWorkflow, /workflow_dispatch:/);
 assert.match(threeDialsWorkflow, /src\/data\/three-dials-latest\.json\|public\/data\/three-dials\/latest\.json\|public\/data\/three-dials\/archive\/\*\.json/);
 assert.match(threeDialsWorkflow, /npm run validate/);
 assert.match(threeDialsWorkflow, /npm run build/);
+assert.match(threeDialsWorkflow, /generated-data-dependency-review\.yml/);
+assert.match(threeDialsWorkflow, /gh run watch .* --exit-status/);
 assert.match(threeDialsWorkflow, /gh pr create/);
-assert.match(threeDialsWorkflow, /gh pr merge .* --auto --squash/);
+assert.match(threeDialsWorkflow, /gh pr merge[\s\S]*--squash[\s\S]*--delete-branch[\s\S]*--match-head-commit/);
+assert.doesNotMatch(threeDialsWorkflow, /gh pr merge[^\n]*--auto/);
+assert.match(threeDialsWorkflow, /normal PR-triggered copies of those workflows ignore Three-Dials generated-data-only diffs/);
 assert.match(threeDialsWorkflow, /workflow remained fail-closed/);
 assert.doesNotMatch(threeDialsWorkflow, /git push origin main|git push .*HEAD:main/);
 

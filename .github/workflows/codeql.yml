@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    paths-ignore:
+      - 'apps/web/src/data/three-dials-latest.json'
+      - 'apps/web/public/data/three-dials/**'
   schedule:
     - cron: '37 5 * * 3'
   workflow_dispatch:

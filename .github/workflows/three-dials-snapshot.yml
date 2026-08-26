@@ -148,12 +148,13 @@ jobs:
             gh run watch "$run_id" --repo "$GITHUB_REPOSITORY" --exit-status --interval 5
           done
 
-      - name: Open guarded publication pull request
+      - name: Open and merge guarded publication pull request
         if: steps.branch.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GENERATED_BRANCH: ${{ steps.branch.outputs.branch }}
           GENERATED_WEEK: ${{ steps.branch.outputs.week }}
+          GENERATED_HEAD_SHA: ${{ steps.branch.outputs.head_sha }}
         run: |
           cat > "$RUNNER_TEMP/three-dials-pr.md" <<EOF
           ## Automated Three-Dials snapshot publication
@@ -162,7 +163,7 @@ jobs:
 
           Publication is fail-closed. The generator requires bounded source hosts, per-series freshness checks, an exact-week USD Impact Score bridge, an immutable dated archive, and the full site validation/build before opening this pull request.
 
-          Before this PR was opened, the exact generated commit independently passed the repository's dispatchable **Web quality**, **CodeQL security analysis**, and bounded **Dependency review** checks. This avoids GitHub's approval-required pull-request runs for PRs created with `GITHUB_TOKEN` while preserving the required status checks on the same commit.
+          Before this PR was opened, the exact generated commit independently passed the repository's dispatchable **Web quality**, **CodeQL security analysis**, and bounded **Dependency review** checks. The normal PR-triggered copies of those workflows ignore Three-Dials generated-data-only diffs, preventing GitHub's approval-required runs for PRs created with the repository GITHUB_TOKEN while preserving the required checks on the same commit.
 
           The snapshot separates **Fact**, **Interpretation**, and **Model output**. It does not change USD Impact Score v2 and does not create a forecast or trading signal.
           EOF
@@ -174,11 +175,13 @@ jobs:
             --title "Publish Three Dials Snapshot — ${GENERATED_WEEK}" \
             --body-file "$RUNNER_TEMP/three-dials-pr.md")"
 
-          if gh pr merge "$pr_url" --repo "$GITHUB_REPOSITORY" --auto --squash --delete-branch; then
-            echo "Protected auto-merge enabled; repository requirements still apply."
-          else
-            echo "::notice::Auto-merge could not be enabled. The prevalidated publication PR remains open for protected review."
-          fi
+          gh pr merge "$pr_url" \
+            --repo "$GITHUB_REPOSITORY" \
+            --squash \
+            --delete-branch \
+            --match-head-commit "$GENERATED_HEAD_SHA"
+
+          echo "Protected squash merge completed after the exact generated commit passed all dispatched checks."
 
       - name: Report bounded failure
         if: failure()

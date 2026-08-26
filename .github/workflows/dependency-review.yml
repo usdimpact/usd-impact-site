@@ -3,6 +3,9 @@ name: Dependency review
 on:
   pull_request:
     branches: [main]
+    paths-ignore:
+      - 'apps/web/src/data/three-dials-latest.json'
+      - 'apps/web/public/data/three-dials/**'
 
 permissions:
   contents: read

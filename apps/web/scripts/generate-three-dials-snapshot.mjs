@@ -7,6 +7,15 @@ const SCORE_ORIGIN = 'https://score.usd-impact.com';
 const SCORE_URL = `${SCORE_ORIGIN}/data/weekly_input_latest.json`;
 const DXY_SOURCE_URL = 'https://finance.yahoo.com/quote/DX-Y.NYB/';
 const TIMEOUT_MS = 20_000;
+const MAX_SOURCE_BYTES = 5_000_000;
+
+const ALLOWED_SCORE_REGIMES = new Set([
+  'Strong dollar regime',
+  'Firm dollar regime',
+  'Neutral / transitional',
+  'Soft dollar regime',
+  'Weak dollar regime',
+]);
 
 const FRED_SERIES = Object.freeze({
   broadUsd: {
@@ -142,7 +151,7 @@ async function fetchBounded(url, expectedOrigin) {
     throw new Error(`Source redirected outside the approved origin: ${response.url}`);
   }
   const text = await response.text();
-  if (!text || text.length > 5_000_000) {
+  if (!text || text.length > MAX_SOURCE_BYTES) {
     throw new Error(`Source response size is invalid for ${url}`);
   }
   return text;
@@ -154,6 +163,7 @@ function parseFredCsv(text, seriesId) {
   const header = lines[0].replace(/^\uFEFF/, '').split(',').map((value) => value.replaceAll('"', '').trim());
   const valueIndex = header.indexOf(seriesId);
   if (valueIndex < 1) throw new Error(`FRED ${seriesId} response header is unexpected.`);
+
   const points = [];
   for (const line of lines.slice(1)) {
     const fields = line.split(',').map((value) => value.replaceAll('"', '').trim());
@@ -172,8 +182,7 @@ async function fetchFredSeries(config, startDate, endDate) {
   url.searchParams.set('id', config.id);
   url.searchParams.set('cosd', isoDate(startDate));
   url.searchParams.set('coed', isoDate(endDate));
-  const text = await fetchBounded(url.toString(), FRED_ORIGIN);
-  return parseFredCsv(text, config.id);
+  return parseFredCsv(await fetchBounded(url.toString(), FRED_ORIGIN), config.id);
 }
 
 async function fetchDxySeries(startDate, endDate) {
@@ -183,16 +192,16 @@ async function fetchDxySeries(startDate, endDate) {
   url.searchParams.set('interval', '1d');
   url.searchParams.set('includePrePost', 'false');
   url.searchParams.set('events', 'div,splits');
-  const text = await fetchBounded(url.toString(), YAHOO_ORIGIN);
-  const payload = JSON.parse(text);
+
+  const payload = JSON.parse(await fetchBounded(url.toString(), YAHOO_ORIGIN));
   const result = payload?.chart?.result?.[0];
   if (!result || payload?.chart?.error) throw new Error('Yahoo Finance did not return DXY history.');
-  const timestamps = result.timestamp ?? [];
-  const closes = result.indicators?.quote?.[0]?.close ?? [];
+  const timestamps = Array.isArray(result.timestamp) ? result.timestamp : [];
+  const closes = Array.isArray(result.indicators?.quote?.[0]?.close) ? result.indicators.quote[0].close : [];
   const points = timestamps.map((timestamp, index) => ({
-    date: new Date(timestamp * 1000).toISOString().slice(0, 10),
+    date: new Date(Number(timestamp) * 1000).toISOString().slice(0, 10),
     value: Number(closes[index]),
-  })).filter((point) => Number.isFinite(point.value));
+  })).filter((point) => /^\d{4}-\d{2}-\d{2}$/.test(point.date) && Number.isFinite(point.value));
   if (points.length < 2) throw new Error('Yahoo Finance DXY history did not contain two usable observations.');
   return points;
 }
@@ -205,15 +214,10 @@ function selectAtOrBefore(points, cutoffDate) {
 }
 
 function calculateChange(latestValue, previousValue, mode) {
-  if (mode === 'pct') {
-    return { value: ((latestValue / previousValue) - 1) * 100, unit: 'percent' };
-  }
-  if (mode === 'bps') {
-    return { value: (latestValue - previousValue) * 100, unit: 'basis_points' };
-  }
-  if (mode === 'points') {
-    return { value: latestValue - previousValue, unit: 'index_points' };
-  }
+  if (mode === 'pct') return { value: ((latestValue / previousValue) - 1) * 100, unit: 'percent' };
+  if (mode === 'bps') return { value: (latestValue - previousValue) * 100, unit: 'basis_points' };
+  if (mode === 'points') return { value: latestValue - previousValue, unit: 'index_points' };
+  if (mode === 'bp_points') return { value: latestValue - previousValue, unit: 'basis_points' };
   throw new Error(`Unsupported change mode: ${mode}`);
 }
 
@@ -242,7 +246,9 @@ function buildObservation({
   if (previousAgeDays < 0 || previousAgeDays > maxAgeDays) {
     throw new Error(`${id} previous observation is ${previousAgeDays} days from the prior cutoff; max is ${maxAgeDays}.`);
   }
+
   const change = calculateChange(latest.value, previous.value, changeMode);
+  if (!Number.isFinite(change.value)) throw new Error(`${id} produced a non-finite change.`);
   return {
     id,
     label,
@@ -281,12 +287,12 @@ function buildFundingSpread(sofrPoints, iorbPoints, currentCutoff, previousCutof
     label: 'SOFR minus IORB funding spread',
     provider: 'New York Fed and Federal Reserve Board via FRED',
     sourceClass: 'derived_from_primary_public',
-    sourceUrl: 'https://fred.stlouisfed.org/graph/?g=1M8Hj',
-    sourceNote: 'Derived as SOFR minus IORB in basis points. It is funding context, not a standalone liquidity measure.',
+    sourceUrl: 'https://fred.stlouisfed.org/series/SOFR',
+    sourceNote: 'Derived as SOFR minus IORB (FRED series IORB) in basis points. It is funding context, not a standalone liquidity measure.',
     units: 'Basis points',
     maxAgeDays: 4,
     levelDigits: 0,
-    changeMode: 'points',
+    changeMode: 'bp_points',
     points: common,
     currentCutoff,
     previousCutoff,
@@ -294,19 +300,19 @@ function buildFundingSpread(sofrPoints, iorbPoints, currentCutoff, previousCutof
 }
 
 async function fetchScoreModelOutput(targetWeek) {
-  const text = await fetchBounded(SCORE_URL, SCORE_ORIGIN);
-  const payload = JSON.parse(text);
+  const payload = JSON.parse(await fetchBounded(SCORE_URL, SCORE_ORIGIN));
   if (payload?.week_ending !== targetWeek) {
     throw new Error(`Weekly Score bridge is ${payload?.week_ending ?? 'missing'}; expected ${targetWeek}.`);
   }
-  if (!Number.isFinite(Number(payload.score)) || typeof payload.regime !== 'string' || !payload.regime) {
-    throw new Error('Weekly Score bridge is missing score or regime fields.');
+  const score = Number(payload.score);
+  if (!Number.isFinite(score) || !ALLOWED_SCORE_REGIMES.has(payload.regime)) {
+    throw new Error('Weekly Score bridge contains an invalid score or regime.');
   }
   return {
     name: 'USD Impact Score v2',
-    week_ending: payload.week_ending,
-    score: Number(payload.score),
-    score_display: formatSigned(Number(payload.score), 2),
+    week_ending: targetWeek,
+    score,
+    score_display: formatSigned(score, 2),
     regime: payload.regime,
     source_url: SCORE_URL,
     methodology_url: 'https://www.usd-impact.com/score/methodology/',
@@ -453,6 +459,8 @@ async function main() {
     ],
   };
 
+  // All external fields above are reduced to finite numbers, ISO dates, exact-week values,
+  // or fixed allow-listed labels before reaching these fixed repository destinations.
   const text = `${JSON.stringify(snapshot, null, 2)}\n`;
   await Promise.all([
     mkdir(new URL('../public/data/three-dials/archive/', import.meta.url), { recursive: true }),

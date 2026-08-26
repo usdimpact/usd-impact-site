@@ -38,22 +38,31 @@ function rejectCrossSite(request, response) {
   return true;
 }
 
-async function readRawBody(request, maximumBytes) {
-  if (Buffer.isBuffer(request.body)) {
-    if (request.body.length > maximumBytes) throw new Error('REQUEST_BODY_TOO_LARGE');
-    return request.body;
+async function readRawBody(request, maximumBytes, { allowParsedBody = true } = {}) {
+  if (!request) return Buffer.alloc(0);
+
+  // Vercel's Node.js request.body helper lazily parses application/json. Webhook
+  // signatures must instead be computed over the exact bytes received from the
+  // provider, so the webhook path explicitly skips this parsed-body helper and
+  // consumes the request stream directly.
+  if (allowParsedBody) {
+    if (Buffer.isBuffer(request.body)) {
+      if (request.body.length > maximumBytes) throw new Error('REQUEST_BODY_TOO_LARGE');
+      return request.body;
+    }
+    if (typeof request.body === 'string') {
+      const buffer = Buffer.from(request.body, 'utf8');
+      if (buffer.length > maximumBytes) throw new Error('REQUEST_BODY_TOO_LARGE');
+      return buffer;
+    }
+    if (request.body && typeof request.body === 'object') {
+      const buffer = Buffer.from(JSON.stringify(request.body), 'utf8');
+      if (buffer.length > maximumBytes) throw new Error('REQUEST_BODY_TOO_LARGE');
+      return buffer;
+    }
   }
-  if (typeof request.body === 'string') {
-    const buffer = Buffer.from(request.body, 'utf8');
-    if (buffer.length > maximumBytes) throw new Error('REQUEST_BODY_TOO_LARGE');
-    return buffer;
-  }
-  if (request.body && typeof request.body === 'object') {
-    const buffer = Buffer.from(JSON.stringify(request.body), 'utf8');
-    if (buffer.length > maximumBytes) throw new Error('REQUEST_BODY_TOO_LARGE');
-    return buffer;
-  }
-  if (!request || typeof request[Symbol.asyncIterator] !== 'function') return Buffer.alloc(0);
+
+  if (typeof request[Symbol.asyncIterator] !== 'function') return Buffer.alloc(0);
 
   const chunks = [];
   let total = 0;
@@ -164,7 +173,7 @@ async function handleWebhook(request, response) {
 
   let rawBody;
   try {
-    rawBody = await readRawBody(request, MAX_WEBHOOK_BODY_BYTES);
+    rawBody = await readRawBody(request, MAX_WEBHOOK_BODY_BYTES, { allowParsedBody: false });
   } catch {
     return sendJson(response, 413, { error: 'Request body is too large.', code: 'REQUEST_BODY_TOO_LARGE' }, {
       'X-Robots-Tag': 'noindex, nofollow',

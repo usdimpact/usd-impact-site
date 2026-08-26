@@ -14,7 +14,7 @@ const aclHardeningMigrationUrl = new URL(
   import.meta.url,
 );
 const profileLockFixMigrationUrl = new URL(
-  '../../../supabase/migrations/20260826205000_fix_commerce_profile_lock_privilege.sql',
+  '../../../supabase/migrations/20260826205741_fix_commerce_profile_lock_privilege.sql',
   import.meta.url,
 );
 const sql = await readFile(migrationUrl, 'utf8');

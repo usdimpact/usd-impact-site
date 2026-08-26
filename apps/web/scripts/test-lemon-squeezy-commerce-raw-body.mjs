@@ -56,7 +56,7 @@ try {
   // the signed bytes. Vercel exposes a lazy parsed request.body helper for
   // application/json, but Lemon Squeezy requires HMAC verification over the
   // exact raw request body.
-  const rawBody = '{\n  "meta": { "event_name": "order_created" },\n  "data": {}\n}\n';
+  const rawBody = '{\n  "meta": { "event_name": "order_created" },\n  "data": { "id": "7001" }\n}\n';
   const signature = crypto
     .createHmac('sha256', process.env.LEMON_SQUEEZY_TEST_WEBHOOK_SECRET)
     .update(Buffer.from(rawBody, 'utf8'))

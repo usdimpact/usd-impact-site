@@ -33,6 +33,7 @@ const checkoutBody = buildLemonSqueezyCheckoutRequest({
 });
 assert.equal(checkoutBody.data.type, 'checkouts');
 assert.equal(checkoutBody.data.attributes.test_mode, true);
+assert.equal(checkoutBody.data.attributes.checkout_options.discount, false);
 assert.deepEqual(checkoutBody.data.attributes.product_options.enabled_variants, [314]);
 assert.deepEqual(checkoutBody.data.attributes.checkout_data.variant_quantities, [{ variant_id: 314, quantity: 1 }]);
 assert.equal(checkoutBody.data.attributes.checkout_data.custom.usd_impact_account_id, accountId);
@@ -75,6 +76,7 @@ assert.equal(capturedRequest.url, 'https://api.lemonsqueezy.com/v1/checkouts');
 assert.equal(capturedRequest.init.method, 'POST');
 assert.match(capturedRequest.init.headers.Authorization, /^Bearer /);
 assert.doesNotMatch(capturedRequest.init.body, /custom_price/);
+assert.match(capturedRequest.init.body, /"discount":false/);
 
 const baseOrder = {
   meta: {
@@ -92,6 +94,9 @@ const baseOrder = {
       customer_id: 88,
       identifier: '104e18a2-d755-4d4b-80c4-a6c1dcbe1c10',
       currency: 'USD',
+      subtotal: 4900,
+      discount_total: 0,
+      tax: 1000,
       total: 5900,
       refunded_amount: 0,
       status: 'paid',
@@ -99,7 +104,9 @@ const baseOrder = {
         product_id: 99,
         variant_id: 314,
         quantity: 1,
-        price: 4900,
+        // Current Lemon Squeezy examples can show this as the tax-inclusive charged amount.
+        // The trusted pre-tax base-price invariant is therefore the documented order subtotal.
+        price: 5900,
       },
       created_at: '2026-08-26T12:00:00.000Z',
       updated_at: '2026-08-26T12:00:01.000Z',
@@ -112,17 +119,21 @@ const completed = normalizeLemonSqueezyOrderEvent(baseOrder, {
   expectedStoreId: 42,
   expectedProductId: 99,
   expectedVariantId: 314,
-  expectedUnitPriceCents: 4900,
+  expectedSubtotalCents: 4900,
   expectedCurrency: 'USD',
 });
 assert.equal(completed.provider, 'lemon-squeezy');
+assert.match(completed.providerEventId, /^lemon-squeezy:order_created:/);
 assert.equal(completed.eventType, 'payment.completed');
 assert.equal(completed.transactionId, '7001');
 assert.equal(completed.accountId, accountId);
 assert.equal(completed.purchaseIntentId, purchaseIntentId);
-assert.equal(completed.amountCents, 5900);
+assert.equal(completed.amountCents, 4900);
 assert.equal(completed.currency, 'USD');
-assert.equal(completed.metadata.lemonSqueezyUnitPriceCents, 4900);
+assert.equal(completed.metadata.lemonSqueezyOrderItemPriceCents, 5900);
+assert.equal(completed.metadata.lemonSqueezySubtotalCents, 4900);
+assert.equal(completed.metadata.lemonSqueezyDiscountTotalCents, 0);
+assert.equal(completed.metadata.lemonSqueezyTaxCents, 1000);
 assert.equal(completed.metadata.lemonSqueezyTaxInclusiveTotalCents, 5900);
 assert.equal(completed.metadata.lemonSqueezyTestMode, true);
 
@@ -142,19 +153,30 @@ const refunded = normalizeLemonSqueezyOrderEvent({
   expectedStoreId: 42,
   expectedProductId: 99,
   expectedVariantId: 314,
-  expectedUnitPriceCents: 4900,
+  expectedSubtotalCents: 4900,
 });
 assert.equal(refunded.eventType, 'refund.completed');
 assert.equal(refunded.amountCents, 5900);
 assert.equal(refunded.metadata.fullRefund, true);
+assert.match(refunded.providerEventId, /^lemon-squeezy:order_refunded:/);
 
 assert.throws(() => normalizeLemonSqueezyOrderEvent({
   ...baseOrder,
   data: { ...baseOrder.data, attributes: { ...baseOrder.data.attributes, status: 'failed' } },
 }), /status is paid/);
 assert.throws(() => normalizeLemonSqueezyOrderEvent(baseOrder, { expectedVariantId: 999 }), /variant/);
-assert.throws(() => normalizeLemonSqueezyOrderEvent(baseOrder, { expectedUnitPriceCents: 3900 }), /price/);
+assert.throws(() => normalizeLemonSqueezyOrderEvent(baseOrder, { expectedSubtotalCents: 3900 }), /subtotal/);
 assert.throws(() => normalizeLemonSqueezyOrderEvent(baseOrder, { expectedCurrency: 'EUR' }), /currency/);
+assert.throws(() => normalizeLemonSqueezyOrderEvent({
+  ...baseOrder,
+  data: {
+    ...baseOrder.data,
+    attributes: {
+      ...baseOrder.data.attributes,
+      discount_total: 100,
+    },
+  },
+}), /Discounted/);
 assert.throws(() => normalizeLemonSqueezyOrderEvent({
   ...baseOrder,
   data: {
@@ -195,7 +217,7 @@ const reconcileOptions = {
   expectedStoreId: 42,
   expectedProductId: 99,
   expectedVariantId: 314,
-  expectedUnitPriceCents: 4900,
+  expectedSubtotalCents: 4900,
   expectedCurrency: 'USD',
 };
 const paidState = reconcileLemonSqueezyOrder(baseOrder.data, reconcileOptions);
@@ -228,6 +250,7 @@ const partialState = reconcileLemonSqueezyOrder({
   attributes: { ...baseOrder.data.attributes, status: 'partial_refund', refunded_amount: 1000 },
 }, reconcileOptions);
 assert.equal(partialState.action, 'review');
+assert.match(partialState.reason, /full refunds only/i);
 
 const validated = validateCommerceAdapter(LEMON_SQUEEZY_ADAPTER_SCAFFOLD);
 assert.equal(validated.lifecycleModel, 'mor-final-state-reconciliation');
@@ -235,5 +258,6 @@ assert.equal(validated.provider, 'lemon-squeezy');
 assert.equal(typeof validated.retrieveOrder, 'function');
 assert.equal(typeof validated.reconcileTransaction, 'function');
 assert.equal(LEMON_SQUEEZY_ADAPTER_SCAFFOLD.assessConfiguration().ready, false);
+assert.doesNotMatch(LEMON_SQUEEZY_ADAPTER_SCAFFOLD.assessConfiguration().reason, /partial-refund policy/i);
 
 console.log('Lemon Squeezy fail-closed final-state reconciliation scaffold tests passed.');

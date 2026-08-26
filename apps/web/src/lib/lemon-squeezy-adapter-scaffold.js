@@ -6,7 +6,7 @@ import {
 import { PAID_PRODUCT_ID } from './paid-access.js';
 
 export const LEMON_SQUEEZY_PROVIDER = 'lemon-squeezy';
-export const LEMON_SQUEEZY_ADAPTER_SCAFFOLD_VERSION = '0.2.0-scaffold';
+export const LEMON_SQUEEZY_ADAPTER_SCAFFOLD_VERSION = '0.3.0-scaffold';
 
 export const LEMON_SQUEEZY_SCAFFOLD_CAPABILITIES = Object.freeze([
   'checkout.create',
@@ -28,6 +28,14 @@ function positiveInteger(value, fieldName) {
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed <= 0) {
     throw new TypeError(`${fieldName} must be a positive integer.`);
+  }
+  return parsed;
+}
+
+function nonNegativeInteger(value, fieldName) {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    throw new TypeError(`${fieldName} must be a non-negative integer.`);
   }
   return parsed;
 }
@@ -99,6 +107,9 @@ export function buildLemonSqueezyCheckoutRequest({
       type: 'checkouts',
       attributes: {
         product_options: productOptions,
+        checkout_options: {
+          discount: false,
+        },
         checkout_data: {
           ...(customerEmail ? { email: customerEmail } : {}),
           custom: {
@@ -168,11 +179,11 @@ function providerEventId(eventName, orderId, attributes) {
   const updatedAt = text(attributes.updated_at || attributes.created_at);
   if (eventName === 'order_refunded') {
     return stableIdentifier(
-      `${eventName}:${orderId}:${positiveInteger(attributes.refunded_amount, 'refunded_amount')}:${updatedAt}`,
+      `${LEMON_SQUEEZY_PROVIDER}:${eventName}:${orderId}:${positiveInteger(attributes.refunded_amount, 'refunded_amount')}:${updatedAt}`,
       'providerEventId',
     );
   }
-  return stableIdentifier(`${eventName}:${orderId}:${updatedAt}`, 'providerEventId');
+  return stableIdentifier(`${LEMON_SQUEEZY_PROVIDER}:${eventName}:${orderId}:${updatedAt}`, 'providerEventId');
 }
 
 function validateTrustedOrder({
@@ -181,7 +192,7 @@ function validateTrustedOrder({
   expectedStoreId,
   expectedProductId,
   expectedVariantId,
-  expectedUnitPriceCents,
+  expectedSubtotalCents,
   expectedCurrency = 'USD',
   requireTestMode = true,
 }) {
@@ -207,22 +218,28 @@ function validateTrustedOrder({
     throw new TypeError('Lemon Squeezy order currency does not match the trusted purchase intent.');
   }
 
-  if (expectedUnitPriceCents != null) {
-    const trustedPrice = positiveInteger(expectedUnitPriceCents, 'expectedUnitPriceCents');
-    const providerUnitPrice = positiveInteger(item.price, 'first_order_item.price');
-    if (providerUnitPrice !== trustedPrice) {
-      throw new TypeError('Lemon Squeezy order item price does not match the trusted purchase intent.');
-    }
+  const subtotal = positiveInteger(attributes.subtotal, 'subtotal');
+  const discountTotal = nonNegativeInteger(attributes.discount_total ?? 0, 'discount_total');
+  const tax = nonNegativeInteger(attributes.tax ?? 0, 'tax');
+  const total = positiveInteger(attributes.total, 'total');
+  if (expectedSubtotalCents != null && subtotal !== positiveInteger(expectedSubtotalCents, 'expectedSubtotalCents')) {
+    throw new TypeError('Lemon Squeezy order subtotal does not match the trusted purchase intent.');
+  }
+  if (discountTotal !== 0) {
+    throw new TypeError('Discounted Lemon Squeezy orders are outside the approved Library Pass contract.');
+  }
+  if (total < subtotal) {
+    throw new TypeError('Lemon Squeezy order total is inconsistent with the trusted base subtotal.');
   }
 
-  return currency;
+  return Object.freeze({ currency, subtotal, discountTotal, tax, total });
 }
 
 export function normalizeLemonSqueezyOrderEvent(payload, {
   expectedStoreId,
   expectedProductId,
   expectedVariantId,
-  expectedUnitPriceCents,
+  expectedSubtotalCents,
   expectedCurrency = 'USD',
   requireTestMode = true,
 } = {}) {
@@ -240,13 +257,13 @@ export function normalizeLemonSqueezyOrderEvent(payload, {
     throw new TypeError('The Lemon Squeezy scaffold only normalizes order_created and order_refunded.');
   }
 
-  const currency = validateTrustedOrder({
+  const commercial = validateTrustedOrder({
     attributes,
     item,
     expectedStoreId,
     expectedProductId,
     expectedVariantId,
-    expectedUnitPriceCents,
+    expectedSubtotalCents,
     expectedCurrency,
     requireTestMode,
   });
@@ -260,8 +277,6 @@ export function normalizeLemonSqueezyOrderEvent(payload, {
   if (eventName === 'order_refunded' && !['refunded', 'partial_refund'].includes(attributes.status)) {
     throw new TypeError('order_refunded must carry a refunded or partial_refund order status.');
   }
-
-  const total = positiveInteger(attributes.total, 'total');
 
   return Object.freeze({
     provider: LEMON_SQUEEZY_PROVIDER,
@@ -279,15 +294,18 @@ export function normalizeLemonSqueezyOrderEvent(payload, {
     priceId: String(item.variant_id),
     amountCents: eventName === 'order_refunded'
       ? positiveInteger(attributes.refunded_amount, 'refunded_amount')
-      : total,
-    currency,
+      : commercial.subtotal,
+    currency: commercial.currency,
     metadata: {
       lemonSqueezyOrderIdentifier: text(attributes.identifier) || null,
       lemonSqueezyOrderStatus: text(attributes.status),
       lemonSqueezyProductId: String(item.product_id),
       lemonSqueezyVariantId: String(item.variant_id),
-      lemonSqueezyUnitPriceCents: item.price == null ? null : Number(item.price),
-      lemonSqueezyTaxInclusiveTotalCents: total,
+      lemonSqueezyOrderItemPriceCents: item.price == null ? null : Number(item.price),
+      lemonSqueezySubtotalCents: commercial.subtotal,
+      lemonSqueezyDiscountTotalCents: commercial.discountTotal,
+      lemonSqueezyTaxCents: commercial.tax,
+      lemonSqueezyTaxInclusiveTotalCents: commercial.total,
       lemonSqueezyTestMode: attributes.test_mode === true,
       fullRefund: eventName === 'order_refunded' && attributes.status === 'refunded',
       partialRefund: eventName === 'order_refunded' && attributes.status === 'partial_refund',
@@ -335,7 +353,7 @@ export function reconcileLemonSqueezyOrder(orderResource, {
   expectedStoreId,
   expectedProductId,
   expectedVariantId,
-  expectedUnitPriceCents,
+  expectedSubtotalCents,
   expectedCurrency = 'USD',
   requireTestMode = true,
 } = {}) {
@@ -345,13 +363,13 @@ export function reconcileLemonSqueezyOrder(orderResource, {
   const orderId = stableIdentifier(resource.id, 'orderId');
   if (resource.type !== 'orders') throw new TypeError('Only Lemon Squeezy Order resources can be reconciled.');
 
-  const currency = validateTrustedOrder({
+  const commercial = validateTrustedOrder({
     attributes,
     item,
     expectedStoreId,
     expectedProductId,
     expectedVariantId,
-    expectedUnitPriceCents,
+    expectedSubtotalCents,
     expectedCurrency,
     requireTestMode,
   });
@@ -379,14 +397,14 @@ export function reconcileLemonSqueezyOrder(orderResource, {
     status,
     action,
     eventType,
-    currency,
-    amountCents: positiveInteger(attributes.total, 'total'),
+    currency: commercial.currency,
+    amountCents: commercial.total,
     reason: status === 'fraudulent'
       ? 'Authoritative Lemon Squeezy Order state is fraudulent; fail closed and revoke access.'
       : status === 'refunded'
         ? 'Authoritative Lemon Squeezy Order state is fully refunded; revoke access.'
         : status === 'partial_refund'
-          ? 'Partial refund requires the separately reviewed entitlement policy; do not guess.'
+          ? 'Library Pass policy supports full refunds only; an unexpected partial refund requires review and never changes entitlement automatically.'
           : status === 'paid'
             ? 'Authoritative Lemon Squeezy Order state remains paid; retain current entitlement state.'
             : 'Non-final payment state cannot grant entitlement.',
@@ -406,7 +424,7 @@ export const LEMON_SQUEEZY_ADAPTER_SCAFFOLD = Object.freeze({
   assessConfiguration() {
     return Object.freeze({
       ready: false,
-      reason: 'Lemon Squeezy is selected, but this scaffold remains intentionally unregistered until Test Mode credentials/product mapping, partial-refund policy, reconciliation persistence/scheduling, routes, and sandbox evidence are complete.',
+      reason: 'Lemon Squeezy is selected, but this scaffold remains intentionally unregistered until Test Mode credentials/product mapping, Development migration verification, sandbox evidence, and release review are complete.',
     });
   },
 });

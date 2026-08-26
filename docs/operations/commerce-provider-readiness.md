@@ -155,28 +155,52 @@ Supported canonical event types are:
 
 For the current one-time Library Pass scope:
 
-- checkout quantity is exactly `1`;
-- Store/Product/Variant are server-authoritative;
+- checkout and authoritative Order Item quantity are exactly `1` and there must be exactly one Order Item;
+- Store and Product are server-authoritative;
+- the USD 39 limited-launch and USD 49 standard tiers use two distinct fixed-price Lemon Squeezy Variants;
+- the trusted Variant is selected only from durable server-side `purchase_intents.price_tier`;
 - browser `custom_price` is prohibited;
+- the checkout hides discount-code entry and authoritative `discount_total` must equal zero;
 - purchase-intent currency is `USD`;
 - trusted base product price is the approved USD 39 limited-launch or USD 49 standard price;
-- the provider order item's base price must equal the trusted purchase-intent base price in cents;
-- the provider order currency must equal `USD`;
-- the Merchant-of-Record tax-inclusive final order total is retained separately and is not incorrectly required to equal the pre-tax base product price;
-- any Store/Product/Variant/quantity/base-price/currency mismatch fails closed before entitlement mutation.
+- the authoritative Order `subtotal` must equal the trusted purchase-intent base price in cents;
+- the provider Order currency must equal `USD`;
+- the Merchant-of-Record final Order `total` is retained separately and may exceed the base subtotal because of applicable tax;
+- `first_order_item.price` is audit evidence, not the trusted pre-tax base-price authority, because current provider examples can show that field as the tax-inclusive charged value while `subtotal` remains the base amount;
+- any Store/Product/Variant/item-count/quantity/subtotal/discount/currency mismatch fails closed before entitlement mutation.
+
+The runtime also retrieves authoritative Order Items, rather than relying solely on the Order object's abbreviated `first_order_item`, so quantity and item count are verified explicitly.
 
 ## Lemon Squeezy final-state rules
 
 The current reviewed reconciliation model is:
 
-- `paid` -> retain/allow payment completion only after every trusted invariant passes;
+- `paid` -> retain/allow payment completion only after every trusted invariant passes; if a terminal/non-active local state conflicts with a later `paid` observation, require review and never auto-restore;
 - `pending` -> hold; never grant;
 - `failed` -> hold/deny; never grant;
-- `refunded` -> revoke idempotently through refund semantics;
-- `fraudulent` -> revoke idempotently through `payment.revoked`;
-- `partial_refund` -> explicit review state until the entitlement policy is approved.
+- `refunded` -> revoke idempotently through refund semantics only when the authoritative full refunded amount matches the authoritative final Order total;
+- `fraudulent` -> revoke idempotently through `payment.revoked` without fabricating a chargeback state;
+- `partial_refund` -> explicit review state under the approved full-refund-only Library Pass policy; no automatic purchase or entitlement mutation.
 
-An unobservable dispute by itself is not payment authority and does not produce a synthetic local dispute event. Access is therefore not provisionally revoked merely because such a dispute might exist. A later unobservable reversal likewise does not require synthetic restoration. Any restoration must be supported by an authoritative compatible commercial state.
+An unobservable dispute by itself is not payment authority and does not produce a synthetic local dispute event. Access is therefore not provisionally revoked merely because such a dispute might exist. A later unobservable reversal likewise does not require synthetic restoration. Any restoration must be supported by an authoritative compatible commercial state and compatible reviewed local state.
+
+## Draft sandbox runtime implementation
+
+PR #374 now carries credential-independent implementation code while keeping the adapter unregistered and Production disabled:
+
+- a `commerce_reconciliations` table that reuses existing purchase, entitlement, event and webhook-receipt primitives;
+- service-role-only `SECURITY INVOKER` RPCs with explicit execution revokes from `public`, `anon` and `authenticated`;
+- Test-Mode-only runtime configuration hard-blocked in Vercel Production and hard-bound to canonical Development Supabase;
+- one verified QA-email sandbox allowlist;
+- exact raw-body HMAC verification before webhook JSON parsing;
+- durable SHA-256 webhook receipt idempotency;
+- authoritative Order plus Order Items re-read before state mutation;
+- bounded daily/three-day/weekly reconciliation cadence with a per-run cap of 25;
+- full-refund-only partial-refund review behavior;
+- an isolated commerce function at `/api/commerce` with `checkout`, `webhook` and `reconcile` actions;
+- no public checkout UI and no Vercel reconciliation cron schedule yet.
+
+The migration has not been applied to Development or Production by this implementation commit. Sandbox readiness is not proven until canonical Development migration verification and real Lemon Squeezy Test Mode evidence are complete.
 
 ## Partner/referral boundary
 
@@ -188,14 +212,15 @@ Partner/referral features remain growth layers and never become payment or entit
 2. Select the provider and approved lifecycle profile explicitly.
 3. Freeze the responsibility/message-ownership matrix.
 4. Implement provider adapter, reconciliation, generic checkout route, verified webhook route and tests coherently.
-5. Configure only non-Production Test/sandbox credentials first.
-6. Register the adapter only when route/reconciliation/persistence behavior is ready for the sandbox matrix.
-7. Prove checkout, signature, replay, duplicate, forgery, substitution, price/currency/quantity, out-of-order, refund and final-state reconciliation behavior.
-8. Record sandbox proof before any controlled Live stage.
-9. Verify support/privacy/retention/accounting/incident ownership.
-10. Perform a controlled Live test only under separate explicit approval.
-11. Complete #343 against the commerce-enabled near-final candidate.
-12. Activate public checkout only after #54 Phase A and all final launch approvals are green.
+5. Review and apply persistence changes to canonical Development only under explicit authorization.
+6. Configure only non-Production Test/sandbox credentials first.
+7. Prove checkout, signature, raw-body handling, replay/hash mismatch, duplicate, forgery, substitution, subtotal/discount/currency/item-count/quantity, out-of-order, refund, fraud and final-state reconciliation behavior.
+8. Register the adapter only after the coherent Development/sandbox matrix is green and reviewed.
+9. Record sandbox proof before any controlled Live stage.
+10. Verify support/privacy/retention/accounting/incident ownership.
+11. Perform a controlled Live test only under separate explicit approval.
+12. Complete #343 against the commerce-enabled near-final candidate.
+13. Activate public checkout only after #54 Phase A and all final launch approvals are green.
 
 ## Rollback
 
@@ -209,4 +234,4 @@ After any commerce-related Production release, verify `/checkout/` remains non-p
 
 ## Current release boundary — 2026-08-26
 
-Lemon Squeezy is selected, but Draft PR #374 remains implementation work. Production still has `COMMERCE_MODE=disabled`; `REGISTERED_COMMERCE_ADAPTERS` remains empty; no Production provider credentials, public checkout, Live transaction or real-card test is authorized. See `docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md` and Issues #53, #130, #343 and #54.
+Lemon Squeezy is selected, but Draft PR #374 remains implementation work. Production still has `COMMERCE_MODE=disabled`; `REGISTERED_COMMERCE_ADAPTERS` remains empty; the new reconciliation migration is code-only and unapplied; no Production provider credentials, public checkout, Live transaction or real-card test is authorized. See `docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md`, `docs/operations/lemon-squeezy-sandbox-runtime-2026-08-26.md`, and Issues #53, #130, #343 and #54.

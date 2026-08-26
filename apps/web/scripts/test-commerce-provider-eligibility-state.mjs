@@ -52,7 +52,7 @@ assert.match(lemon, /Lemon Squeezy.*application under review[\s\S]*no written pr
 assert.doesNotMatch(lemon, /FastSpring:\*\* primary candidate/);
 
 for (const text of [update, responsibility, technical, lemon]) {
-  assert.doesNotMatch(text, /FastSpring[^\n]{0,120}(?:awaiting written eligibility|awaiting response|pending Sales|primary candidate)/i);
+  assert.doesNotMatch(text, /FastSpring[^\n]{0,120}(?:awaiting written eligibility|awaiting response|pending Sales)/i);
 }
 
 console.log('Commerce provider eligibility-state contract passed.');

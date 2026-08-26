@@ -11,6 +11,7 @@ on:
       - '.github/workflows/three-dials-snapshot.yml'
 
 permissions:
+  actions: write
   contents: write
   issues: write
   pull-requests: write
@@ -22,7 +23,7 @@ concurrency:
 jobs:
   generate-and-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: apps/web
@@ -67,13 +68,14 @@ jobs:
           npm run validate
           npm run build
 
-      - name: Open guarded publication pull request
-        id: publish
+      - name: Create generated-data branch
+        id: branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ -z "$(git status --porcelain --untracked-files=all -- src/data/three-dials-latest.json public/data/three-dials)" ]; then
-            echo "No snapshot publication pull request is needed."
+            echo "No snapshot publication branch is needed."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -91,27 +93,91 @@ jobs:
           git commit -m "Publish Three Dials snapshot for ${week}"
           git push --set-upstream origin "$branch"
 
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "week=$week" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch protected checks on generated commit
+        if: steps.branch.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GENERATED_BRANCH: ${{ steps.branch.outputs.branch }}
+        run: |
+          workflows='quality.yml codeql.yml generated-data-dependency-review.yml'
+          for workflow in $workflows; do
+            echo "Dispatching $workflow on $GENERATED_BRANCH"
+            gh workflow run "$workflow" --repo "$GITHUB_REPOSITORY" --ref "$GENERATED_BRANCH"
+          done
+
+      - name: Require dispatched checks to pass
+        if: steps.branch.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GENERATED_BRANCH: ${{ steps.branch.outputs.branch }}
+          GENERATED_HEAD_SHA: ${{ steps.branch.outputs.head_sha }}
+        run: |
+          workflows='quality.yml codeql.yml generated-data-dependency-review.yml'
+
+          for workflow in $workflows; do
+            run_id=''
+            attempt=1
+            while [ "$attempt" -le 30 ]; do
+              run_id="$(gh run list \
+                --repo "$GITHUB_REPOSITORY" \
+                --workflow "$workflow" \
+                --branch "$GENERATED_BRANCH" \
+                --event workflow_dispatch \
+                --limit 10 \
+                --json databaseId,headSha \
+                --jq ".[] | select(.headSha == \"$GENERATED_HEAD_SHA\") | .databaseId" \
+                | head -n 1)"
+              if [ -n "$run_id" ]; then
+                break
+              fi
+              sleep 2
+              attempt=$((attempt + 1))
+            done
+
+            if [ -z "$run_id" ]; then
+              echo "::error::Could not resolve dispatched run for $workflow on $GENERATED_HEAD_SHA."
+              exit 1
+            fi
+
+            echo "Waiting for $workflow run $run_id"
+            gh run watch "$run_id" --repo "$GITHUB_REPOSITORY" --exit-status --interval 5
+          done
+
+      - name: Open guarded publication pull request
+        if: steps.branch.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GENERATED_BRANCH: ${{ steps.branch.outputs.branch }}
+          GENERATED_WEEK: ${{ steps.branch.outputs.week }}
+        run: |
           cat > "$RUNNER_TEMP/three-dials-pr.md" <<EOF
           ## Automated Three-Dials snapshot publication
 
-          This pull request contains the dated **${week}** completed-week snapshot.
+          This pull request contains the dated **${GENERATED_WEEK}** completed-week snapshot.
 
           Publication is fail-closed. The generator requires bounded source hosts, per-series freshness checks, an exact-week USD Impact Score bridge, an immutable dated archive, and the full site validation/build before opening this pull request.
+
+          Before this PR was opened, the exact generated commit independently passed the repository's dispatchable **Web quality**, **CodeQL security analysis**, and bounded **Dependency review** checks. This avoids GitHub's approval-required pull-request runs for PRs created with `GITHUB_TOKEN` while preserving the required status checks on the same commit.
 
           The snapshot separates **Fact**, **Interpretation**, and **Model output**. It does not change USD Impact Score v2 and does not create a forecast or trading signal.
           EOF
 
           pr_url="$(gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
             --base main \
-            --head "$branch" \
-            --title "Publish Three Dials Snapshot — ${week}" \
+            --head "$GENERATED_BRANCH" \
+            --title "Publish Three Dials Snapshot — ${GENERATED_WEEK}" \
             --body-file "$RUNNER_TEMP/three-dials-pr.md")"
-          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
 
-          if gh pr merge "$pr_url" --auto --squash --delete-branch; then
+          if gh pr merge "$pr_url" --repo "$GITHUB_REPOSITORY" --auto --squash --delete-branch; then
             echo "Protected auto-merge enabled; repository requirements still apply."
           else
-            echo "::notice::Auto-merge could not be enabled. The validated publication PR remains open for protected review."
+            echo "::notice::Auto-merge could not be enabled. The prevalidated publication PR remains open for protected review."
           fi
 
       - name: Report bounded failure

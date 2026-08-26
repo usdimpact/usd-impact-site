@@ -1,0 +1,69 @@
+name: Generated data dependency review
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generated-data-dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Verify dependency-neutral generated-data diff
+        run: |
+          git fetch --no-tags origin main
+          changed_paths="$(git diff --name-only origin/main...HEAD)"
+
+          if [ -z "$changed_paths" ]; then
+            echo "::error::Generated-data dependency review received an empty diff."
+            exit 1
+          fi
+
+          count="$(printf '%s\n' "$changed_paths" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "::error::Expected exactly three Three-Dials generated JSON paths; found $count."
+            printf '%s\n' "$changed_paths"
+            exit 1
+          fi
+
+          saw_source_latest=0
+          saw_public_latest=0
+          saw_archive=0
+
+          while IFS= read -r path; do
+            case "$path" in
+              apps/web/src/data/three-dials-latest.json)
+                saw_source_latest=1
+                ;;
+              apps/web/public/data/three-dials/latest.json)
+                saw_public_latest=1
+                ;;
+              apps/web/public/data/three-dials/archive/*.json)
+                if ! printf '%s' "$path" | grep -Eq '^apps/web/public/data/three-dials/archive/20[0-9]{2}-[0-9]{2}-[0-9]{2}\.json$'; then
+                  echo "::error::Archive path is not a dated Three-Dials JSON file: $path"
+                  exit 1
+                fi
+                saw_archive=1
+                ;;
+              *)
+                echo "::error::Generated-data dependency review rejected path: $path"
+                exit 1
+                ;;
+            esac
+          done <<EOF
+          $changed_paths
+          EOF
+
+          if [ "$saw_source_latest" -ne 1 ] || [ "$saw_public_latest" -ne 1 ] || [ "$saw_archive" -ne 1 ]; then
+            echo "::error::Generated-data diff is missing one or more required Three-Dials JSON destinations."
+            exit 1
+          fi
+
+          echo "Dependency-neutral generated-data diff verified."

@@ -80,7 +80,7 @@ assert.match(page, /Concept support is not Score validation/);
 assert.match(page, /External finding/);
 assert.match(page, /Does not support/);
 assert.match(page, /Internal assumption/);
-assert.match(page, /None[\s\S]*external endorsements claimed/);
+assert.match(page, /0[\s\S]*external endorsements claimed/);
 assert.ok(page.includes('/data/research/academic-evidence-map.json'));
 assert.ok(page.includes('/score/methodology/'));
 assert.ok(page.includes('/about/'));

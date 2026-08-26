@@ -1,24 +1,38 @@
 # Lemon Squeezy Store Application Packet — 2026-08-25
 
-## Current status — updated 2026-08-26
+## Current status — approved 2026-08-26
 
-The store application has been submitted and remains under review.
+Lemon Squeezy has issued **affirmative written product/company eligibility approval** for the disclosed USD Impact launch scope.
+
+Timeline:
 
 - application submitted: **2026-08-25**;
 - application receipt/review message: **2026-08-25 13:06 UTC**;
-- public product/business evidence supplied on the review thread: **2026-08-25 13:29 UTC**;
-- store/dashboard provisioning message: **2026-08-25 13:45 UTC**;
-- fresh Gmail review on **2026-08-26**: **no later affirmative product/company eligibility decision**;
-- **store provisioning is not approval**;
-- Lemon Squeezy remains **PENDING WRITTEN ELIGIBILITY / NOT SELECTED**.
+- public product/business evidence supplied: **2026-08-25 13:29 UTC**;
+- store/dashboard provisioned: **2026-08-25 13:45 UTC**;
+- reviewer requested pricing, demo/PDF, social/KYB information and detailed product/fulfillment explanation: **2026-08-26 04:43 UTC**;
+- USD Impact supplied the detailed response and PDF evidence pack: **2026-08-26 10:26 UTC**;
+- reviewer **Tanay Khemka** confirmed account approval: **2026-08-26 11:03 UTC**.
 
-FastSpring is no longer a competing primary candidate: case #01856172 delivered a written product-eligibility rejection on 2026-08-25 22:33 UTC. That does **not** automatically promote or select Lemon Squeezy. Lemon Squeezy must still finish its own review and close the technical/responsibility gates in Issue #53.
+The approval states that the disclosed products meet Lemon Squeezy's Terms of Service and that the Merchant-of-Record risk profile is low enough to allow USD Impact to sell through Lemon Squeezy.
 
-## Purpose and boundary
+The reviewer also reiterated two operating boundaries:
 
-This packet preserves the consistent, evidence-backed application submitted to Lemon Squeezy. It does **not** constitute provider selection, approval, acceptance of provider terms beyond what the owner may have accepted in the authenticated application flow, API integration, Live activation, or authorization to open public checkout.
+1. products must be fully prepared and instantly fulfilled; seller time/customization after purchase is not allowed;
+2. test purchases must use **Test Mode** and must **not** use a real card.
 
-Current USD Impact commerce state remains provider-neutral and fail-closed:
+## Decision boundary
+
+Approval closes the external **product/company eligibility** gate. It does **not**, by itself:
+
+- select Lemon Squeezy as the final provider;
+- authorize adapter registration;
+- authorize Production API keys or webhook secrets;
+- authorize a Live transaction;
+- authorize public checkout activation;
+- expand the approved product scope to Research Membership or services.
+
+Current commerce state remains fail-closed:
 
 - `COMMERCE_MODE=disabled`;
 - no provider selected;
@@ -26,18 +40,9 @@ Current USD Impact commerce state remains provider-neutral and fail-closed:
 - no public payment entry;
 - no browser redirect can grant entitlement.
 
-Lemon Squeezy's reviewed documentation says stores are reviewed through a business/customer questionnaire and identity verification before Live mode. It says most fulfillable digital goods such as ebooks, PDFs, audio and video are generally eligible, with premium courses and membership sites typically allowed, subject to its Terms and prohibited-product rules. Its Terms prohibit regulated financial services including banking/financing and currency exchange. USD Impact therefore describes the product precisely as digital education and leaves classification to Lemon Squeezy's reviewer.
-
-Official references reviewed for this packet:
-
-- Store activation: https://docs.lemonsqueezy.com/help/getting-started/activate-your-store
-- Getting started / Test mode: https://docs.lemonsqueezy.com/guides/getting-started
-- Merchant of Record: https://docs.lemonsqueezy.com/help/payments/merchant-of-record
-- Terms / prohibited products: https://www.lemonsqueezy.com/terms
+Lemon Squeezy is now the **preferred candidate**, pending closure of the one-time dispute/chargeback/reversal lifecycle question documented in `docs/operations/lemon-squeezy-technical-qualification-2026-08-26.md` and Issue #53.
 
 ## Canonical business identity
-
-Use these values consistently where the provider asks for public/business identity fields:
 
 | Field | Canonical answer |
 | --- | --- |
@@ -54,122 +59,171 @@ Use these values consistently where the provider asks for public/business identi
 | Terms | https://www.usd-impact.com/terms/ |
 | Privacy Notice | https://www.usd-impact.com/privacy/ |
 | Refund Policy | https://www.usd-impact.com/refund-policy/ |
+| Business Instagram | https://www.instagram.com/usdimpact/ |
 
-Do **not** place beneficial-owner ID documents, home/registered street address, date of birth, personal phone number, bank/payout details, identity-document numbers, or provider credentials in GitHub. Enter those directly in the authenticated provider UI only when required.
+Sensitive KYC, tax, payout and credential values must remain only in the authenticated provider UI or secret-management systems. Do not commit identity documents, residential addresses, bank details, API keys, webhook secrets or recovery codes.
 
-## Business description submitted / safe canonical wording
+## Approved disclosed business description
 
-> USD Impact is an educational macro-finance publishing platform operated by SC Kela Leads SRL in Romania. We publish beginner-to-intermediate educational material explaining how the U.S. dollar, interest rates, liquidity and funding conditions interact with major asset classes. Our initial paid product is a one-time digital learning library called Read the Dollar First Library Pass. The product is educational only and does not provide investment management, brokerage, exchange, custody, lending, personalized investment advice, buy/sell signals, guaranteed returns, copy trading or managed portfolios.
+USD Impact is an educational macro-finance publishing platform operated by SC Kela Leads SRL in Romania. It publishes beginner-to-intermediate educational material explaining how the U.S. dollar, interest rates, liquidity and funding conditions interact with major asset classes.
 
-## Product description submitted / safe canonical wording
+USD Impact is a publisher of educational content, not a regulated financial-services business. It does not provide investment management, brokerage, exchange, custody, lending, personalized investment advice, transaction execution, buy/sell signals, guaranteed returns, copy trading or managed portfolios.
 
-> Read the Dollar First Library Pass is a one-time digital macro-finance education product delivered through a verified USD Impact account. It includes the complete Guided Interactive Edition of Read the Dollar First, chapter-by-chapter learning, quizzes and saved progress, protected reference resources, the complete English audiobook, and a 51-film educational video library with English captions. Access is account-based and permanent for the purchased edition, subject to the published refund and account policies. It is not a subscription and the recurring Research Membership is not part of this launch.
+Bitcoin, foreign exchange, commodities and securities are discussed only as educational subjects. USD Impact does not sell, transfer, custody or facilitate cryptocurrency.
 
-## “What customers receive” answer
+## Approved initial product scope
 
-> Customers receive secure account access to a digital educational library: the Guided Interactive Edition, quizzes and progress tracking, reference resources, an English audiobook, and 51 educational videos. Delivery is digital through the authenticated USD Impact website. We do not ship physical goods, provide private coaching, operate a private trading group, or provide managed financial services.
+**Read the Dollar First Library Pass** is the only product included in this initial Lemon Squeezy approval record.
 
-## Financial-services clarification
+It is a standardized, one-time digital macro-finance education product delivered through a verified USD Impact account. It includes:
 
-> USD Impact is a publisher of educational content, not a regulated financial-services business. We do not hold or transmit customer funds other than receiving settlement from the approved payment provider for our digital product. We do not offer banking, financing, lending, mortgages, currency exchange, brokerage, custody, wallets, investment management or crypto transaction services. Bitcoin, foreign exchange, commodities and securities are discussed only as educational subjects. We do not execute transactions or provide personalized investment recommendations or trading signals.
+- the complete Guided Interactive Edition of *Read the Dollar First*;
+- chapter-by-chapter learning;
+- interactive quizzes and explanations;
+- saved progress;
+- protected reference resources;
+- the complete English audiobook; and
+- a 51-film educational video library with English captions.
 
-## Pricing / billing answer
+Access is account-based and ongoing for the purchased edition, subject to the published account/refund policies.
 
-> The initial product is a single-payment purchase, not a subscription. Planned pricing is USD 39 for an approved limited launch offer and USD 49 standard. No public launch window or quantity cutoff is active yet. Any launch offer will be enabled only after provider approval, integration testing and final release approval. Taxes and supported currency conversion should be handled and displayed by the approved Merchant of Record at checkout.
+### Explicitly outside the current approval scope
 
-## Fulfillment answer
+- recurring Research Membership;
+- customized research/reports;
+- private coaching or consultation;
+- private trading groups;
+- personalized investment recommendations;
+- trading signals or portfolio management;
+- brokerage/exchange/custody/lending/payment services;
+- physical goods.
 
-> Fulfillment is digital and account-based. USD Impact creates durable paid entitlement only after a server-verified, signed and deduplicated completed-payment event from the selected provider. A browser success redirect is never treated as proof of payment. Protected media is not exposed through public file URLs. If payment is refunded, disputed, charged back or reversed, access transitions follow the verified commercial event and the published policy.
+Any materially different product category or recurring service should receive its own provider-policy review before being offered through Lemon Squeezy.
 
-## Customer support / refund answer
+## Pricing / billing disclosed to Lemon Squeezy
 
-> Customer support is available at support@usd-impact.com. USD Impact publishes a 14-day Refund Policy, Terms & Conditions and Privacy Notice on the public website. Before Live activation, we will reconcile the final refund, dispute and buyer-support responsibilities with the selected Merchant of Record so that customer-facing wording matches the provider's actual transaction process.
+- **Planned limited-launch price:** USD 39.00, single payment.
+- **Planned standard price:** USD 49.00, single payment.
+- **No recurring subscription fee** for the Library Pass.
+- No public launch window or quantity cutoff is currently active.
+- Taxes and supported currency conversion are to be handled/displayed by the approved Merchant of Record at checkout.
 
-## Audience answer — use without overclaiming
+## Instant fulfillment contract
 
-> The product is designed for new and intermediate investors, market observers, client-facing market educators and sales teams who want a structured macro framework. It is education, not individualized financial advice or a signal service.
+The product is fully prepared before purchase and requires no customization or manual order preparation.
 
-If the reviewer asks for exact customer geography, current revenue, customer count, expected monthly volume, average order volume, historical sales, traffic, or conversion rate, provide the **actual current figure directly in the provider application/review thread**. Do not invent a number and do not use an unverified estimate from repository history. USD Impact intentionally does not use revenue/customer-count claims as public social proof.
+Target fulfillment sequence after integration:
 
-## Intellectual-property answer
+1. the authenticated customer creates a trusted USD Impact purchase intent;
+2. USD Impact creates a server-authoritative Lemon Squeezy checkout for the approved Library Pass variant;
+3. Lemon Squeezy completes payment;
+4. USD Impact receives and verifies the signed provider event;
+5. product, variant, quantity, amount, currency, account and purchase-intent invariants are validated;
+6. exactly one durable Library Pass entitlement is attached automatically to the verified USD Impact account;
+7. the customer signs in and accesses the prepared digital library immediately.
 
-> The Library Pass consists of USD Impact / Read the Dollar First educational content published by SC Kela Leads SRL. The store application is for content the company has the right to sell and distribute. Third-party market data, citations or educational references are not sold as standalone licensed datasets.
+No customized report, consultation, coaching, portfolio analysis or manual fulfillment is required.
 
-If Lemon Squeezy asks for proof of rights beyond this statement, provide the applicable first-party publication/source evidence directly to the reviewer rather than adding private documents to GitHub.
+A browser success redirect, client state, email receipt or self-reported order number is never payment authority.
 
-## Provider-review URLs
+## Public product evidence supplied to reviewer
 
-The reviewer has public evidence available at:
+1. https://www.usd-impact.com/
+2. https://www.usd-impact.com/book/read-the-dollar-first/
+3. https://www.usd-impact.com/book/read-the-dollar-first/preview/
+4. https://www.usd-impact.com/video-library/
+5. https://www.usd-impact.com/audiobook/read-the-dollar-first/
+6. https://www.usd-impact.com/about/
+7. https://www.usd-impact.com/terms/
+8. https://www.usd-impact.com/privacy/
+9. https://www.usd-impact.com/refund-policy/
+10. https://www.instagram.com/usdimpact/
 
-1. https://www.usd-impact.com/book/read-the-dollar-first/
-2. https://www.usd-impact.com/about/
-3. https://www.usd-impact.com/terms/
-4. https://www.usd-impact.com/privacy/
-5. https://www.usd-impact.com/refund-policy/
-6. https://www.usd-impact.com/checkout/ — intentionally closed until a provider is approved and integrated.
+Reviewer PDF supplied on the thread: `USD_Impact_Lemon_Squeezy_Product_Demo_2026-08-26.pdf`.
 
-## Sensitive/manual fields — never commit values
+## Eligibility evidence
 
-Complete these only inside Lemon Squeezy's authenticated application/KYB flow when legitimately required:
+The 2026-08-26 approval email is the authoritative human product/company eligibility record. It confirms:
+
+- account approved;
+- disclosed products meet Lemon Squeezy Terms of Service;
+- Merchant-of-Record risk profile acceptable for sales through Lemon Squeezy;
+- instant digital fulfillment/no customization requirement;
+- Test Mode/real-card testing restriction.
+
+Do not reinterpret this approval as permission for undisclosed services or future subscription products.
+
+## Technical qualification status
+
+Passed or materially satisfied from official Lemon Squeezy documentation:
+
+- [x] written product/company eligibility;
+- [x] Romanian merchant payout support;
+- [x] Merchant-of-Record payment/tax/PCI/refund/chargeback allocation;
+- [x] hosted/API-created checkout for a fixed product variant;
+- [x] server-authoritative product/price design compatible with USD Impact;
+- [x] checkout custom metadata returned in Order webhooks;
+- [x] exact raw-body HMAC-SHA256 webhook signature using `X-Signature`;
+- [x] webhook retry/resend support;
+- [x] Test/Live separation;
+- [x] test-card checkout support;
+- [x] `order_created` successful-order webhook;
+- [x] `order_refunded` full/partial-refund webhook;
+- [x] public Order API states for paid/pending/failed/refunded/partial-refund/fraudulent;
+- [x] public payout schedule/fee documentation;
+- [x] public DPA/privacy materials;
+- [x] native affiliate tooling available for a later separate growth release.
+
+Open P0 item:
+
+- [ ] identify and approve the authoritative machine-readable lifecycle path for a one-time purchase **dispute opened / chargeback completed / dispute reversed** state, or explicitly approve a reviewed MoR-managed security-equivalent reconciliation contract if Lemon Squeezy exposes no such signal.
+
+See `docs/operations/lemon-squeezy-technical-qualification-2026-08-26.md` for the detailed engineering matrix and sandbox plan.
+
+## Sensitive/manual onboarding fields
+
+Complete only in Lemon Squeezy's authenticated UI when required:
 
 - registered business street address;
-- beneficial-owner / representative date of birth;
-- personal residential address if requested for KYC;
-- government ID or identity-verification upload;
-- personal phone number;
-- ownership percentages if requested;
-- bank, PayPal or payout details;
-- tax or VAT documents beyond the already public CUI where requested;
-- provider credentials, API keys, webhook secrets or recovery codes.
+- beneficial-owner/representative identity verification;
+- personal address/date of birth/phone if requested for KYC;
+- ownership percentages;
+- W-8/tax forms and tax identifiers beyond already-public company registration data;
+- bank or PayPal payout details;
+- provider API keys and webhook signing secrets.
 
-## Submission checklist — current state
+## Current checklist
 
 - [x] public legal operator and founder disclosure exists;
 - [x] public product page exists;
 - [x] public Terms, Privacy Notice and Refund Policy exist;
-- [x] support contact is `support@usd-impact.com`;
-- [x] public checkout is fail-closed and accepts no payment;
-- [x] product is described as one-time digital education, not a financial service;
-- [x] audiobook and 51-film library are part of the canonical Library Pass scope;
-- [x] owner created/signed into Lemon Squeezy account and store;
-- [x] store application was submitted;
-- [x] reviewer-requested public product/business evidence was supplied;
-- [x] store/dashboard access was provisioned;
-- [ ] **affirmative written product/company eligibility approval received**;
-- [ ] account-specific Merchant-of-Record/responsibility/fee/settlement/privacy questions closed;
-- [ ] technical lifecycle/security gaps closed;
+- [x] support contact exists;
+- [x] public checkout remains fail-closed;
+- [x] product described consistently as one-time standardized digital education;
+- [x] audiobook and 51-film library included in canonical scope;
+- [x] store application submitted;
+- [x] reviewer-requested public evidence supplied;
+- [x] detailed pricing/product/KYB/fulfillment response supplied;
+- [x] demo PDF supplied;
+- [x] **affirmative written product/company eligibility approval received**;
+- [x] Romania / MoR / checkout / webhook-signature / Test Mode baseline technically qualified;
+- [ ] one-time dispute/chargeback/reversal lifecycle contract closed;
 - [ ] provider selected explicitly in Issue #53;
+- [ ] Lemon Squeezy adapter implemented and tested in Test Mode;
+- [ ] accounting/privacy/support release gates closed;
+- [ ] separately approved controlled Live proof completed;
+- [ ] explicit public launch approval granted.
 
-## Post-submission rule
+## Current provider ranking — 2026-08-26
 
-Submission and store provisioning are only **review/onboarding steps**. They do not authorize engineering integration.
+- **Lemon Squeezy:** **WRITTEN ELIGIBILITY APPROVED / PREFERRED CANDIDATE / TECHNICAL QUALIFICATION IN PROGRESS / NOT YET SELECTED**.
+- **FastSpring:** **REJECTED / removed** after written product-category rejection.
+- **Paddle:** **DECLINED / removed**.
+- **PayPro Global:** no qualifying reply; technical gaps remain.
+- **Stripe Managed Payments:** fallback only; no qualifying product-specific human eligibility decision.
 
-### If approved
+## Next gate
 
-Record the written approval in Issue #53 and verify, before selecting Lemon Squeezy:
+Obtain the Lemon Squeezy one-time dispute/chargeback/reversal lifecycle clarification. Then Issue #53 may make the explicit provider-selection decision and authorize one coherent Test Mode adapter implementation.
 
-1. Romanian-company settlement/onboarding requirements;
-2. Merchant-of-Record tax, refund, chargeback and buyer-support allocation;
-3. fees, reserves and payout schedule;
-4. server-created checkout/product/price controls;
-5. raw-body webhook signature algorithm and retry behavior;
-6. event coverage for pending/completed/failed/cancelled/expired/refund/dispute/chargeback/reversal;
-7. sandbox/test-mode behavior;
-8. privacy/DPA/subprocessor/export obligations;
-9. Live review, secret rotation, incident and rollback paths.
-
-Only then may Issue #53 compare eligible candidates and, after explicit owner approval, select exactly one provider for coherent adapter implementation.
-
-### If rejected or materially restricted
-
-Do not attempt to reclassify the product or weaken the educational/compliance description to obtain approval. Record the stated reason, preserve checkout-disabled state, and continue only with another independently eligible provider path.
-
-## Current provider ranking boundary — 2026-08-26
-
-- **FastSpring:** **REJECTED / removed from active path** after written case #01856172 product-eligibility decision on 2026-08-25 22:33 UTC.
-- **Lemon Squeezy:** application under review; store provisioned, but **no written product/company approval yet**.
-- **PayPro Global:** parallel candidate; no reply after pre-clearance/follow-up and technical gaps remain.
-- **Stripe Managed Payments:** policy-review fallback only; no qualifying human eligibility decision yet.
-- **Paddle:** declined and removed from the active release path.
-
-No provider is selected by this packet or by FastSpring's rejection.
+Until then, Production remains unchanged and commerce-disabled.

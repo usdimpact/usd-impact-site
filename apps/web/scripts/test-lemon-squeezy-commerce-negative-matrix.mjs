@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import {
   LemonSqueezyCommerceRuntimeError,
+  processLemonSqueezyWebhook,
   readLemonSqueezyCommerceRuntimeConfig,
   retrieveAuthoritativeLemonSqueezyOrder,
   runDueLemonSqueezyReconciliation,
@@ -112,6 +114,52 @@ assert.throws(
   () => validate({ order: { ...order, attributes: { ...order.attributes, test_mode: false } } }),
   /Non-Test-Mode order rejected/,
 );
+
+const substitutionPayload = {
+  meta: {
+    event_name: 'order_created',
+    custom_data: {
+      usd_impact_account_id: '123e4567-e89b-42d3-a456-426614174000',
+      usd_impact_purchase_intent_id: '223e4567-e89b-42d3-a456-426614174000',
+    },
+  },
+  data: { type: 'orders', id: '7001' },
+};
+const substitutionRawBody = Buffer.from(JSON.stringify(substitutionPayload));
+const substitutionSignature = crypto
+  .createHmac('sha256', runtime.webhookSecret)
+  .update(substitutionRawBody)
+  .digest('hex');
+let substitutionReadCount = 0;
+await assert.rejects(
+  () => processLemonSqueezyWebhook({
+    config: runtime,
+    rawBody: substitutionRawBody,
+    signature: substitutionSignature,
+    fetchImpl: async (url) => {
+      substitutionReadCount += 1;
+      if (url.includes('/rest/v1/purchase_intents?')) {
+        return new Response(JSON.stringify([{
+          id: '223e4567-e89b-42d3-a456-426614174000',
+          account_id: '523e4567-e89b-42d3-a456-426614174000',
+          product_id: 'read-the-dollar-first-guided-interactive-edition',
+          status: 'checkout_created',
+          price_tier: 'standard',
+          amount_cents: 4900,
+          currency: 'USD',
+          offer_terms: {},
+          provider_checkout_id: 'checkout_123',
+          expires_at: '2026-08-27T12:00:00.000Z',
+        }]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      throw new Error(`Substitution test crossed the trusted-intent boundary: ${url}`);
+    },
+  }),
+  (error) => error instanceof LemonSqueezyCommerceRuntimeError
+    && error.code === 'WEBHOOK_PURCHASE_INTENT_ACCOUNT_MISMATCH'
+    && error.status === 409,
+);
+assert.equal(substitutionReadCount, 1);
 
 await assert.rejects(
   () => retrieveAuthoritativeLemonSqueezyOrder({

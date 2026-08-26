@@ -10,9 +10,11 @@ const [about, methodology, score, compliance, reports, onrcGate] = await Promise
   readFile(new URL('../../../docs/operations/onrc-company-verification-gate.md', import.meta.url), 'utf8'),
 ]);
 
-const vintageJson = 'https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.json';
-const vintageCsv = 'https://usd-impact-pipeline.pages.dev/data/research/score_v2_vintage_comparison_latest.csv';
-const dataSemantics = 'https://usd-impact-pipeline.pages.dev/data/score_v2_data_semantics.json';
+const brandedScoreOrigin = 'https://score.usd-impact.com';
+const legacyScoreOrigin = 'https://usd-impact-pipeline.pages.dev';
+const vintageJson = `${brandedScoreOrigin}/data/research/score_v2_vintage_comparison_latest.json`;
+const vintageCsv = `${brandedScoreOrigin}/data/research/score_v2_vintage_comparison_latest.csv`;
+const dataSemantics = `${brandedScoreOrigin}/data/score_v2_data_semantics.json`;
 const retentionPolicy = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/docs/source-retention-policy.md';
 const predictiveProtocol = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v2_predictive_preregistration.json';
 const predictiveContract = 'https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v2_predictive_implementation_contract.json';
@@ -62,9 +64,10 @@ assert.ok(about.includes(scoreV3MetricContract), 'About page must link the Score
 assert.ok(about.includes(scoreV3EngineLock), 'About page must link the Score v3 engine lock.');
 assert.match(about, /no candidate can be selected before 52 completed future weeks/);
 assert.match(about, /Score v2 remains the unchanged production methodology/);
-assert.ok(about.includes(vintageJson), 'About page must link the revision-audit JSON.');
-assert.ok(about.includes(vintageCsv), 'About page must link the revision-audit CSV.');
-assert.ok(about.includes(dataSemantics), 'About page must link the data-semantics contract.');
+assert.ok(about.includes(vintageJson), 'About page must link the revision-audit JSON on the branded Score origin.');
+assert.ok(about.includes(vintageCsv), 'About page must link the revision-audit CSV on the branded Score origin.');
+assert.ok(about.includes(dataSemantics), 'About page must link the data-semantics contract on the branded Score origin.');
+assert.doesNotMatch(about, new RegExp(legacyScoreOrigin.replaceAll('.', '\\.')));
 assert.ok(about.includes(retentionPolicy), 'About page must link the source-retention policy.');
 assert.match(about, /one same-run provider snapshot feeds the score and reproduction bundle/);
 assert.match(about, /provider-derived daily histories before forward fill/);
@@ -72,8 +75,9 @@ assert.match(about, /complete weekly matrix/);
 assert.match(about, /Complete raw provider responses remain unarchived and are not publicly redistributed/);
 assert.doesNotMatch(about, /Partially implemented: dated publications exist/);
 
-assert.ok(methodology.includes(vintageJson), 'Methodology page must link the revision-audit JSON.');
-assert.ok(methodology.includes(vintageCsv), 'Methodology page must link the revision-audit CSV.');
+assert.ok(methodology.includes(vintageJson), 'Methodology page must link the revision-audit JSON on the branded Score origin.');
+assert.ok(methodology.includes(vintageCsv), 'Methodology page must link the revision-audit CSV on the branded Score origin.');
+assert.doesNotMatch(methodology, new RegExp(legacyScoreOrigin.replaceAll('.', '\\.')));
 assert.match(methodology, /As-published revision audit: published/);
 assert.match(methodology, /cannot separate expanding-sample normalization effects from upstream provider revisions/);
 assert.match(methodology, /not independently audited performance or evidence of future predictive power/);

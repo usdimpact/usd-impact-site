@@ -8,9 +8,11 @@ const paths = {
   technical: new URL('docs/operations/commerce-provider-technical-qualification-matrix-2026-08-25.md', root),
   historical: new URL('docs/operations/commerce-provider-candidate-evidence-2026-08-21.md', root),
   lemon: new URL('docs/operations/lemon-squeezy-store-application-packet-2026-08-25.md', root),
+  selected: new URL('docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md', root),
+  sandbox: new URL('docs/operations/lemon-squeezy-sandbox-runtime-2026-08-26.md', root),
 };
 
-const [update, responsibility, technical, historical, lemon] = await Promise.all(
+const [update, responsibility, technical, historical, lemon, selected, sandbox] = await Promise.all(
   Object.values(paths).map((path) => readFile(path, 'utf8')),
 );
 
@@ -20,39 +22,56 @@ assert.match(update, /Product eligibility: REJECTED \/ FAILED/);
 assert.ok(update.includes(rejectionCase));
 assert.match(update, /2026-08-25(?: at)? 22:33 UTC/);
 assert.match(update, /REMOVED FROM ACTIVE PATH/);
-assert.match(update, /do not send/i);
-assert.match(update, /PENDING WRITTEN ELIGIBILITY \/ NOT SELECTED/);
-assert.match(update, /PayPro Global[\s\S]*no PayPro Global reply/i);
+assert.match(update, /DO NOT SEND/i);
+
+assert.match(update, /Lemon Squeezy written approval and selection/);
+assert.match(update, /2026-08-26 at 11:03 UTC/);
+assert.match(update, /WRITTEN ELIGIBILITY APPROVED \/ PROVIDER SELECTED \/ MoR FINAL-STATE RECONCILIATION APPROVED/);
+assert.match(update, /mor-final-state-reconciliation/);
 assert.match(update, /provider=null/);
 assert.match(update, /checkoutEnabled=false/);
+assert.match(update, /REGISTERED_COMMERCE_ADAPTERS.*empty/);
+assert.match(update, /Draft PR #374/);
 
-assert.match(responsibility, /FastSpring is removed from the active release path/);
-assert.match(responsibility, /written product-eligibility rejection/);
-assert.match(responsibility, /FastSpring public technical evidence prefill — historical evidence only/);
-assert.match(responsibility, /FastSpring closed-path record/);
-assert.doesNotMatch(responsibility, /FastSpring is the current primary Merchant-of-Record candidate/);
-assert.doesNotMatch(responsibility, /written Sales pre-clearance is pending/);
+assert.match(responsibility, /Selected provider: \*\*Lemon Squeezy\*\*/);
+assert.match(responsibility, /Lifecycle profile: \*\*`mor-final-state-reconciliation`\*\*/);
+assert.match(responsibility, /Provider selection is therefore complete; \*\*activation is not\*\*/);
+assert.match(responsibility, /partial_refund[\s\S]*review/i);
+assert.match(responsibility, /payment\.revoked/);
+assert.match(responsibility, /REGISTERED_COMMERCE_ADAPTERS.*empty/);
 
-assert.match(technical, /FastSpring has failed the written product-eligibility gate/);
-assert.match(technical, /REJECTED \/ INELIGIBLE/);
-assert.match(technical, /REMOVED FROM ACTIVE PATH \/ NOT SELECTED/);
-assert.match(technical, /FASTSPRING REMOVED; NO TECHNICAL WINNER; NO PROVIDER SELECTED/);
-assert.doesNotMatch(technical, /FastSpring has the best current authenticity \+ broad-event balance/);
-assert.doesNotMatch(technical, /FastSpring.*still lacks required lifecycle closure and written eligibility/);
+assert.match(technical, /Lemon Squeezy: WRITTEN ELIGIBILITY APPROVED \/ SELECTED FOR ONE-TIME LIBRARY PASS/);
+assert.match(technical, /NOT REQUIRED UNDER APPROVED MoR PROFILE/);
+assert.match(technical, /Provider selection does not register an adapter/);
+assert.match(technical, /Test Mode only/);
+assert.match(technical, /No Production secret, public checkout, Live transaction, real-card test, or Production migration is authorized/);
 
 assert.match(historical, /Historical snapshot — superseded for current provider status/);
 assert.match(historical, /later written rejection/);
 assert.match(historical, /current state is rejected\/closed/);
 
-assert.match(lemon, /Current status — updated 2026-08-26/);
-assert.match(lemon, /store provisioning is not approval/i);
-assert.match(lemon, /FastSpring is no longer a competing primary candidate/);
-assert.match(lemon, /REJECTED \/ removed from active path/);
-assert.match(lemon, /Lemon Squeezy.*application under review[\s\S]*no written product\/company approval yet/i);
-assert.doesNotMatch(lemon, /FastSpring:\*\* primary candidate/);
+assert.match(lemon, /Current status — approved and selected 2026-08-26/);
+assert.match(lemon, /affirmative written product\/company eligibility approval/i);
+assert.match(lemon, /Tanay Khemka[\s\S]*2026-08-26 11:03 UTC/);
+assert.match(lemon, /Test Mode/);
+assert.match(lemon, /must \*\*not\*\* use a real card/);
+assert.match(lemon, /Explicitly outside the current provider scope/);
+assert.match(lemon, /Research Membership/);
+assert.match(lemon, /APPROVED \/ SELECTED FOR ONE-TIME LIBRARY PASS \/ SANDBOX IMPLEMENTATION DRAFT \/ NOT LIVE/);
 
-for (const text of [update, responsibility, technical, lemon]) {
-  assert.doesNotMatch(text, /FastSpring[^\n]{0,120}(?:awaiting written eligibility|awaiting response|pending Sales)/i);
+assert.match(selected, /\*\*Selected provider: Lemon Squeezy\.\*\*/);
+assert.match(selected, /mor-final-state-reconciliation/);
+assert.match(selected, /full refunds only/i);
+assert.match(selected, /REGISTERED_COMMERCE_ADAPTERS.*empty/);
+
+assert.match(sandbox, /Status: \*\*Draft implementation only\. No Production activation\.\*\*/);
+assert.match(sandbox, /VERCEL_ENV=production.*rejected/i);
+assert.match(sandbox, /full refunds only/i);
+assert.match(sandbox, /migration.*has not been applied to Development or Production/i);
+
+for (const text of [update, responsibility, technical, lemon, selected, sandbox]) {
+  assert.doesNotMatch(text, /Lemon Squeezy[^\n]{0,140}(?:application under review|pending written eligibility|not yet selected)/i);
+  assert.doesNotMatch(text, /FastSpring[^\n]{0,140}(?:awaiting written eligibility|awaiting response|pending Sales)/i);
 }
 
 console.log('Commerce provider eligibility-state contract passed.');

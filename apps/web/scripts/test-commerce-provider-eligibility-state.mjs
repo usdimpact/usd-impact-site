@@ -15,11 +15,10 @@ const [update, responsibility, technical, historical, lemon] = await Promise.all
 );
 
 const rejectionCase = '#01856172';
-const rejectionTimestamp = '2026-08-25 22:33 UTC';
 
 assert.match(update, /Product eligibility: REJECTED \/ FAILED/);
 assert.ok(update.includes(rejectionCase));
-assert.ok(update.includes(rejectionTimestamp));
+assert.match(update, /2026-08-25(?: at)? 22:33 UTC/);
 assert.match(update, /REMOVED FROM ACTIVE PATH/);
 assert.match(update, /do not send/i);
 assert.match(update, /PENDING WRITTEN ELIGIBILITY \/ NOT SELECTED/);

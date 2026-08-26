@@ -1,18 +1,23 @@
 import crypto from 'node:crypto';
-import { CANONICAL_COMMERCE_EVENT_TYPES } from './commerce-provider.js';
+import {
+  CANONICAL_COMMERCE_EVENT_TYPES,
+  COMMERCE_LIFECYCLE_MODELS,
+} from './commerce-provider.js';
 import { PAID_PRODUCT_ID } from './paid-access.js';
 
 export const LEMON_SQUEEZY_PROVIDER = 'lemon-squeezy';
-export const LEMON_SQUEEZY_ADAPTER_SCAFFOLD_VERSION = '0.1.0-scaffold';
+export const LEMON_SQUEEZY_ADAPTER_SCAFFOLD_VERSION = '0.2.0-scaffold';
 
-// Deliberately incomplete. Do not add the dispute/chargeback capabilities until the
-// provider-specific one-time-payment lifecycle contract is closed and reviewed.
 export const LEMON_SQUEEZY_SCAFFOLD_CAPABILITIES = Object.freeze([
   'checkout.create',
   'webhook.verify-raw-body',
   'event.normalize',
   'payment.complete',
   'refund.complete',
+  'order.retrieve',
+  'order.reconcile',
+  'payment.revoke-final-state',
+  'mor.chargeback-managed',
 ]);
 
 function text(value) {
@@ -86,9 +91,7 @@ export function buildLemonSqueezyCheckoutRequest({
     throw new TypeError('redirectUrl must use HTTPS.');
   }
 
-  const productOptions = {
-    enabled_variants: [variant],
-  };
+  const productOptions = { enabled_variants: [variant] };
   if (redirect) productOptions.redirect_url = redirect;
 
   return Object.freeze({
@@ -172,10 +175,55 @@ function providerEventId(eventName, orderId, attributes) {
   return stableIdentifier(`${eventName}:${orderId}:${updatedAt}`, 'providerEventId');
 }
 
+function validateTrustedOrder({
+  attributes,
+  item,
+  expectedStoreId,
+  expectedProductId,
+  expectedVariantId,
+  expectedUnitPriceCents,
+  expectedCurrency = 'USD',
+  requireTestMode = true,
+}) {
+  if (requireTestMode && attributes.test_mode !== true) {
+    throw new TypeError('The scaffold accepts Test Mode order state only.');
+  }
+  if (expectedStoreId != null && String(attributes.store_id) !== String(expectedStoreId)) {
+    throw new TypeError('Lemon Squeezy store does not match the trusted configuration.');
+  }
+  if (expectedProductId != null && String(item.product_id) !== String(expectedProductId)) {
+    throw new TypeError('Lemon Squeezy product does not match the trusted configuration.');
+  }
+  if (expectedVariantId != null && String(item.variant_id) !== String(expectedVariantId)) {
+    throw new TypeError('Lemon Squeezy variant does not match the trusted configuration.');
+  }
+  if (item.quantity != null && Number(item.quantity) !== 1) {
+    throw new TypeError('Lemon Squeezy order quantity must be exactly one.');
+  }
+
+  const currency = text(attributes.currency).toUpperCase();
+  if (!/^[A-Z]{3}$/.test(currency)) throw new TypeError('Order currency is invalid.');
+  if (currency !== text(expectedCurrency).toUpperCase()) {
+    throw new TypeError('Lemon Squeezy order currency does not match the trusted purchase intent.');
+  }
+
+  if (expectedUnitPriceCents != null) {
+    const trustedPrice = positiveInteger(expectedUnitPriceCents, 'expectedUnitPriceCents');
+    const providerUnitPrice = positiveInteger(item.price, 'first_order_item.price');
+    if (providerUnitPrice !== trustedPrice) {
+      throw new TypeError('Lemon Squeezy order item price does not match the trusted purchase intent.');
+    }
+  }
+
+  return currency;
+}
+
 export function normalizeLemonSqueezyOrderEvent(payload, {
   expectedStoreId,
   expectedProductId,
   expectedVariantId,
+  expectedUnitPriceCents,
+  expectedCurrency = 'USD',
   requireTestMode = true,
 } = {}) {
   const root = object(payload, 'payload');
@@ -191,23 +239,20 @@ export function normalizeLemonSqueezyOrderEvent(payload, {
   if (!['order_created', 'order_refunded'].includes(eventName)) {
     throw new TypeError('The Lemon Squeezy scaffold only normalizes order_created and order_refunded.');
   }
-  if (requireTestMode && attributes.test_mode !== true) {
-    throw new TypeError('The scaffold accepts Test Mode order events only.');
-  }
-  if (expectedStoreId != null && String(attributes.store_id) !== String(expectedStoreId)) {
-    throw new TypeError('Lemon Squeezy store does not match the trusted configuration.');
-  }
-  if (expectedProductId != null && String(item.product_id) !== String(expectedProductId)) {
-    throw new TypeError('Lemon Squeezy product does not match the trusted configuration.');
-  }
-  if (expectedVariantId != null && String(item.variant_id) !== String(expectedVariantId)) {
-    throw new TypeError('Lemon Squeezy variant does not match the trusted configuration.');
-  }
+
+  const currency = validateTrustedOrder({
+    attributes,
+    item,
+    expectedStoreId,
+    expectedProductId,
+    expectedVariantId,
+    expectedUnitPriceCents,
+    expectedCurrency,
+    requireTestMode,
+  });
 
   const accountId = stableIdentifier(customData.usd_impact_account_id, 'accountId');
   const purchaseIntentId = stableIdentifier(customData.usd_impact_purchase_intent_id, 'purchaseIntentId');
-  const currency = text(attributes.currency).toUpperCase();
-  if (!/^[A-Z]{3}$/.test(currency)) throw new TypeError('Order currency is invalid.');
 
   if (eventName === 'order_created' && attributes.status !== 'paid') {
     throw new TypeError('order_created can grant payment completion only when order status is paid.');
@@ -216,8 +261,7 @@ export function normalizeLemonSqueezyOrderEvent(payload, {
     throw new TypeError('order_refunded must carry a refunded or partial_refund order status.');
   }
 
-  const total = Number(attributes.total);
-  if (!Number.isSafeInteger(total) || total <= 0) throw new TypeError('Order total must be a positive integer in cents.');
+  const total = positiveInteger(attributes.total, 'total');
 
   return Object.freeze({
     provider: LEMON_SQUEEZY_PROVIDER,
@@ -242,6 +286,8 @@ export function normalizeLemonSqueezyOrderEvent(payload, {
       lemonSqueezyOrderStatus: text(attributes.status),
       lemonSqueezyProductId: String(item.product_id),
       lemonSqueezyVariantId: String(item.variant_id),
+      lemonSqueezyUnitPriceCents: item.price == null ? null : Number(item.price),
+      lemonSqueezyTaxInclusiveTotalCents: total,
       lemonSqueezyTestMode: attributes.test_mode === true,
       fullRefund: eventName === 'order_refunded' && attributes.status === 'refunded',
       partialRefund: eventName === 'order_refunded' && attributes.status === 'partial_refund',
@@ -249,17 +295,118 @@ export function normalizeLemonSqueezyOrderEvent(payload, {
   });
 }
 
+export async function retrieveLemonSqueezyOrder({
+  apiKey,
+  orderId,
+  fetchImpl = globalThis.fetch,
+  requireTestMode = true,
+}) {
+  const key = text(apiKey);
+  const id = stableIdentifier(orderId, 'orderId');
+  if (!key) throw new TypeError('A Lemon Squeezy API key is required.');
+  if (typeof fetchImpl !== 'function') throw new TypeError('fetchImpl must be a function.');
+
+  const response = await fetchImpl(`https://api.lemonsqueezy.com/v1/orders/${encodeURIComponent(id)}`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/vnd.api+json',
+      Authorization: `Bearer ${key}`,
+    },
+  });
+  if (!response?.ok) {
+    const status = Number.isInteger(response?.status) ? response.status : 502;
+    const error = new Error(`Lemon Squeezy order retrieval failed with HTTP ${status}.`);
+    error.code = 'LEMON_SQUEEZY_ORDER_RETRIEVAL_FAILED';
+    error.status = status;
+    throw error;
+  }
+
+  const body = await response.json();
+  const data = object(body?.data, 'order response data');
+  const attributes = object(data.attributes, 'order response attributes');
+  if (data.type !== 'orders') throw new TypeError('Lemon Squeezy returned a non-order object.');
+  if (requireTestMode && attributes.test_mode !== true) {
+    throw new TypeError('The scaffold rejected a non-Test-Mode order response.');
+  }
+  return Object.freeze({ data: structuredClone(data) });
+}
+
+export function reconcileLemonSqueezyOrder(orderResource, {
+  expectedStoreId,
+  expectedProductId,
+  expectedVariantId,
+  expectedUnitPriceCents,
+  expectedCurrency = 'USD',
+  requireTestMode = true,
+} = {}) {
+  const resource = object(orderResource?.data ?? orderResource, 'order resource');
+  const attributes = object(resource.attributes, 'order attributes');
+  const item = object(attributes.first_order_item, 'first_order_item');
+  const orderId = stableIdentifier(resource.id, 'orderId');
+  if (resource.type !== 'orders') throw new TypeError('Only Lemon Squeezy Order resources can be reconciled.');
+
+  const currency = validateTrustedOrder({
+    attributes,
+    item,
+    expectedStoreId,
+    expectedProductId,
+    expectedVariantId,
+    expectedUnitPriceCents,
+    expectedCurrency,
+    requireTestMode,
+  });
+  const status = text(attributes.status);
+  if (!['pending', 'failed', 'paid', 'refunded', 'partial_refund', 'fraudulent'].includes(status)) {
+    throw new TypeError('Lemon Squeezy order status is outside the reviewed reconciliation contract.');
+  }
+
+  let action = 'hold';
+  let eventType = null;
+  if (status === 'paid') action = 'retain';
+  else if (status === 'refunded') {
+    action = 'revoke';
+    eventType = CANONICAL_COMMERCE_EVENT_TYPES.REFUND_COMPLETED;
+  } else if (status === 'fraudulent') {
+    action = 'revoke';
+    eventType = CANONICAL_COMMERCE_EVENT_TYPES.PAYMENT_REVOKED;
+  } else if (status === 'partial_refund') {
+    action = 'review';
+  }
+
+  return Object.freeze({
+    provider: LEMON_SQUEEZY_PROVIDER,
+    transactionId: orderId,
+    status,
+    action,
+    eventType,
+    currency,
+    amountCents: positiveInteger(attributes.total, 'total'),
+    reason: status === 'fraudulent'
+      ? 'Authoritative Lemon Squeezy Order state is fraudulent; fail closed and revoke access.'
+      : status === 'refunded'
+        ? 'Authoritative Lemon Squeezy Order state is fully refunded; revoke access.'
+        : status === 'partial_refund'
+          ? 'Partial refund requires the separately reviewed entitlement policy; do not guess.'
+          : status === 'paid'
+            ? 'Authoritative Lemon Squeezy Order state remains paid; retain current entitlement state.'
+            : 'Non-final payment state cannot grant entitlement.',
+  });
+}
+
 export const LEMON_SQUEEZY_ADAPTER_SCAFFOLD = Object.freeze({
   provider: LEMON_SQUEEZY_PROVIDER,
   version: LEMON_SQUEEZY_ADAPTER_SCAFFOLD_VERSION,
+  lifecycleModel: COMMERCE_LIFECYCLE_MODELS.MOR_FINAL_STATE_RECONCILIATION,
   capabilities: LEMON_SQUEEZY_SCAFFOLD_CAPABILITIES,
   createCheckout: createLemonSqueezyTestCheckout,
   verifyWebhookSignature: verifyLemonSqueezyWebhookSignature,
   normalizeEvent: normalizeLemonSqueezyOrderEvent,
+  retrieveOrder: retrieveLemonSqueezyOrder,
+  reconcileTransaction: reconcileLemonSqueezyOrder,
   assessConfiguration() {
     return Object.freeze({
       ready: false,
-      reason: 'Lemon Squeezy scaffold is intentionally non-registerable until the one-time dispute/chargeback/reversal lifecycle contract and amount/currency validation policy are closed.',
+      reason: 'Lemon Squeezy is selected, but this scaffold remains intentionally unregistered until Test Mode credentials/product mapping, partial-refund policy, reconciliation persistence/scheduling, routes, and sandbox evidence are complete.',
     });
   },
 });

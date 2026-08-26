@@ -4,11 +4,15 @@ import { readFile } from 'node:fs/promises';
 const sourceUrl = new URL('../src/data/academic-evidence-map.json', import.meta.url);
 const publicUrl = new URL('../public/data/research/academic-evidence-map.json', import.meta.url);
 const pageUrl = new URL('../src/pages/research/evidence-map.astro', import.meta.url);
+const replicationPageUrl = new URL('../src/pages/research/independent-replication.astro', import.meta.url);
+const layoutUrl = new URL('../src/layouts/BaseLayout.astro', import.meta.url);
 
-const [sourceText, publicText, page] = await Promise.all([
+const [sourceText, publicText, page, replicationPage, layout] = await Promise.all([
   readFile(sourceUrl, 'utf8'),
   readFile(publicUrl, 'utf8'),
   readFile(pageUrl, 'utf8'),
+  readFile(replicationPageUrl, 'utf8'),
+  readFile(layoutUrl, 'utf8'),
 ]);
 
 assert.equal(publicText, sourceText, 'Public academic evidence JSON must exactly match the source-controlled contract.');
@@ -83,4 +87,31 @@ assert.ok(page.includes('/about/'));
 assert.ok(page.includes('/framework/three-dial-dashboard/'));
 assert.doesNotMatch(page, /our research proves|externally validated score|academic validation of USD Impact|endorsed by (?:BIS|the Federal Reserve|NBER)/i);
 
-console.log('Academic evidence map contract passed.');
+const protocolUrl = 'https://score.usd-impact.com/data/research/independent_replication_protocol.json';
+const trackerUrl = 'https://github.com/usdimpact/usd-impact-pipeline/issues/70';
+const protocolAssignment = replicationPage.match(/^const protocolUrl = '([^']+)';$/m);
+const trackerAssignment = replicationPage.match(/^const trackerUrl = '([^']+)';$/m);
+assert.match(replicationPage, /Independent Score Replication/);
+assert.match(replicationPage, /Prepared — not executed/);
+assert.match(replicationPage, /No independent result yet/);
+assert.match(replicationPage, /has <strong>not<\/strong> yet been completed/);
+assert.match(replicationPage, /August 28, 2026/);
+assert.match(replicationPage, /First-party controls stay first-party/);
+assert.match(replicationPage, /MATCH/);
+assert.match(replicationPage, /MISMATCH/);
+assert.match(replicationPage, /AMBIGUOUS/);
+assert.match(replicationPage, /NOT TESTABLE/);
+assert.match(replicationPage, /does not claim independent validation, audit, endorsement or verified model performance/i);
+assert.match(replicationPage, /would not establish predictive power, future returns or trading value/i);
+assert.match(replicationPage, /Complete original Yahoo\/FRED response payloads and full provider-derived histories are not publicly redistributed/i);
+assert.equal(protocolAssignment?.[1], protocolUrl, 'Replication page must assign the exact reviewed protocol URL.');
+assert.equal(trackerAssignment?.[1], trackerUrl, 'Replication page must assign the exact reviewed execution-tracker URL.');
+assert.match(replicationPage, /href=\{protocolUrl\}/);
+assert.match(replicationPage, /href=\{trackerUrl\}/);
+assert.ok(replicationPage.includes('/research/evidence-map/'));
+assert.ok(replicationPage.includes('/score/methodology/'));
+assert.ok(replicationPage.includes('/about/'));
+assert.doesNotMatch(replicationPage, /independently validated|independent validation complete|externally audited|verified predictive power/i);
+assert.ok(layout.includes('/research/independent-replication/'), 'Global footer must expose independent replication status.');
+
+console.log('Academic evidence and independent replication transparency contracts passed.');

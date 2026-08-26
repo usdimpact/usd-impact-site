@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "as_of": "2026-08-26",
+  "title": "USD Impact Academic Evidence Map",
+  "scope": "Maps external research and official measurement references to concepts used in USD Impact education and research. It does not claim that any cited institution, author, paper, or dataset has reviewed, validated, endorsed, audited, or approved USD Impact or USD Impact Score v2.",
+  "score_boundary": "USD Impact Score v2 signs, variables, weights, normalization and regime thresholds remain USD Impact specification choices unless separately stated. The literature below supplies conceptual context, measurement references, and important limitations; it is not a fitted evidence base for the production formula and does not establish predictive power.",
+  "entries": [
+    {
+      "id": "global-dollar-funding",
+      "concept": "The U.S. dollar is a dominant international funding and investment currency.",
+      "usd_impact_area": "Dollar-first framework; funding-stack education",
+      "external_source": {
+        "institution": "Bank for International Settlements, Committee on the Global Financial System",
+        "title": "US dollar funding: an international perspective",
+        "year": 2020,
+        "url": "https://www.bis.org/publ/cgfs65.htm"
+      },
+      "external_finding": "The report documents the dollar's central role in cross-border bank lending, international debt securities, reserves and trade invoicing, and explains how dollar funding networks can transmit and amplify shocks.",
+      "supports": "Treating dollar funding conditions as an important layer of global macro-financial analysis and explaining why dollar stress can propagate across borders.",
+      "does_not_support": "A claim that every global asset move is caused by the dollar, or that any particular USD Impact composite score, sign, weight or threshold is validated by the BIS.",
+      "usd_impact_status": "Conceptual support; production Score specification remains an internal assumption."
+    },
+    {
+      "id": "dominant-currency-pricing",
+      "concept": "Dollar invoicing can matter for trade prices and quantities beyond bilateral exchange rates.",
+      "usd_impact_area": "Dollar transmission chain; trade and inflation education",
+      "external_source": {
+        "institution": "National Bureau of Economic Research",
+        "title": "Dominant Currency Paradigm",
+        "authors": "Gita Gopinath, Emine Boz, Camila Casas, Federico J. Diez, Pierre-Olivier Gourinchas, Mikkel Plagborg-Moller",
+        "year": 2016,
+        "url": "https://www.nber.org/papers/w22943"
+      },
+      "external_finding": "The paper finds that the dollar exchange rate can dominate bilateral exchange rates in price pass-through and trade-elasticity regressions when trade is invoiced in dollars.",
+      "supports": "Teaching the dollar as an international pricing and transmission variable rather than treating FX only as bilateral competitiveness.",
+      "does_not_support": "A fixed universal pass-through coefficient, a claim that all trade is dollar invoiced, or any USD Impact Score formula or predictive result.",
+      "usd_impact_status": "Conceptual support; transmission strength remains context-dependent."
+    },
+    {
+      "id": "broad-dollar-measurement",
+      "concept": "A broad trade-weighted dollar measure is distinct from a narrower dollar index.",
+      "usd_impact_area": "Three Dials Dial 1; DXY-versus-broad-dollar education",
+      "external_source": {
+        "institution": "Board of Governors of the Federal Reserve System",
+        "title": "Foreign Exchange Rates - H.10 - Nominal/Real Indexes",
+        "year": 2026,
+        "url": "https://www.federalreserve.gov/releases/h10/summary/"
+      },
+      "external_finding": "The Federal Reserve publishes a broad dollar index constructed as a weighted average against currencies of a broad group of major U.S. trading partners, with separate advanced- and emerging-economy indexes.",
+      "supports": "Using an official broad-dollar measure as a breadth/confirmation check rather than assuming one narrower index exhausts the concept of dollar strength.",
+      "does_not_support": "A claim that the Federal Reserve endorses DXY, the USD Impact Three-Dials interpretation, or USD Impact Score v2.",
+      "usd_impact_status": "Measurement support; broad USD is a confirmation layer inside Dial 1, not a fourth dial."
+    },
+    {
+      "id": "dollar-financial-channel",
+      "concept": "Dollar appreciation can operate through a financial channel, not only a trade-competitiveness channel.",
+      "usd_impact_area": "Dollar transmission chain; global risk and credit education",
+      "external_source": {
+        "institution": "Bank for International Settlements",
+        "title": "The dollar exchange rate as a global risk factor: evidence from investment",
+        "authors": "Stefan Avdjiev, Valentina Bruno, Catherine Casanova, Hyun Song Shin",
+        "year": 2018,
+        "url": "https://www.bis.org/publ/work695.htm"
+      },
+      "external_finding": "The paper reports that a stronger dollar is associated with weaker dollar-denominated cross-border bank flows and lower real investment in emerging market economies, consistent with a financial channel of exchange rates.",
+      "supports": "Teaching that dollar moves can interact with balance sheets, bank credit and global financial conditions.",
+      "does_not_support": "A universal causal effect across all countries and assets, or a direct mapping from a DXY change to a guaranteed market outcome.",
+      "usd_impact_status": "Conceptual support with important scope limits."
+    },
+    {
+      "id": "global-financial-cycle",
+      "concept": "Global risk, credit and asset-price conditions can co-move with volatility and U.S. monetary conditions.",
+      "usd_impact_area": "Three Dials Dial 3; liquidity/stress education",
+      "external_sources": [
+        {
+          "institution": "National Bureau of Economic Research",
+          "title": "Dilemma not Trilemma: The Global Financial Cycle and Monetary Policy Independence",
+          "authors": "Helene Rey",
+          "year": 2015,
+          "url": "https://www.nber.org/papers/w21162"
+        },
+        {
+          "institution": "National Bureau of Economic Research",
+          "title": "US Monetary Policy and the Global Financial Cycle",
+          "authors": "Silvia Miranda-Agrippino, Helene Rey",
+          "year": 2015,
+          "url": "https://www.nber.org/papers/w21722"
+        }
+      ],
+      "external_finding": "The research documents common global movements in capital flows, credit and risky asset prices, links the cycle to VIX/risk conditions, and reports international spillovers from U.S. monetary-policy shocks.",
+      "supports": "Monitoring volatility, credit and funding conditions together when describing broad stress or easing.",
+      "does_not_support": "Treating VIX as a complete liquidity measure, assuming one indicator identifies the global financial cycle in real time, or assigning a guaranteed dollar direction.",
+      "usd_impact_status": "Conceptual support; Dial 3 intentionally uses multiple observations."
+    },
+    {
+      "id": "gold-real-rates",
+      "concept": "Real interest rates are relevant to gold valuation, but gold is not governed by one stable macro relationship.",
+      "usd_impact_area": "Gold education; real-rate channel; Score limitation disclosure",
+      "external_sources": [
+        {
+          "institution": "National Bureau of Economic Research",
+          "title": "Gold's Value as an Investment",
+          "authors": "Urban Jermann",
+          "year": 2023,
+          "url": "https://www.nber.org/papers/w31386"
+        },
+        {
+          "institution": "National Bureau of Economic Research",
+          "title": "The Golden Dilemma",
+          "authors": "Claude B. Erb, Campbell R. Harvey",
+          "year": 2013,
+          "url": "https://www.nber.org/papers/w18706"
+        }
+      ],
+      "external_finding": "Recent asset-pricing work models a meaningful role for 10-year real Treasury rates in gold valuation, while broader historical research cautions that simple stories such as a reliable short-horizon inflation hedge do not hold consistently.",
+      "supports": "Including real-rate conditions when explaining gold while retaining regime, valuation and demand caveats.",
+      "does_not_support": "A permanent one-for-one inverse gold/real-yield rule, a fixed negative Score sign as an empirically estimated coefficient, or a forecast of gold returns.",
+      "usd_impact_status": "Conceptual support plus a documented boundary against deterministic claims."
+    },
+    {
+      "id": "oil-multicausal",
+      "concept": "Oil prices are multi-causal; dollar and monetary channels do not replace supply and demand fundamentals.",
+      "usd_impact_area": "Oil education; Score limitation disclosure",
+      "external_source": {
+        "institution": "Board of Governors of the Federal Reserve System",
+        "title": "Did Easy Money in the Dollar Bloc Fuel the Global Commodity Boom?",
+        "authors": "Christopher Erceg, Luca Guerrieri, Steven B. Kamin",
+        "year": 2009,
+        "url": "https://www.federalreserve.gov/econres/ifdp/did-easy-money-in-the-dollar-bloc-fuel-the-global-commodity-boom.htm"
+      },
+      "external_finding": "The paper finds that easier U.S. monetary conditions can affect oil prices but argues that sustained historical oil-price increases in the studied episode were better explained by strong emerging-market growth and oil-production shortfalls.",
+      "supports": "USD Impact's rule that oil must not be read as a dollar trade only and that supply/demand and geopolitical shocks must remain explicit.",
+      "does_not_support": "A stable inverse DXY-oil law, a fixed causal share for the dollar, or the production Score's negative WTI sign as an estimated structural relationship.",
+      "usd_impact_status": "Constraint evidence; the production Score sign remains a framework assumption."
+    },
+    {
+      "id": "foreign-currency-funding-risk",
+      "concept": "Foreign-currency liquidity shortages and funding mismatches can become important sources of financial stress.",
+      "usd_impact_area": "Three Dials Dial 3; dollar funding stack",
+      "external_source": {
+        "institution": "Bank for International Settlements, Committee on the Global Financial System",
+        "title": "Foreign currency funding risk and cross-border liquidity",
+        "year": 2026,
+        "url": "https://www.bis.org/publ/cgfs71.htm"
+      },
+      "external_finding": "The report highlights liquidity shortages, foreign-currency funding mismatches, rollover risk and the role of cross-border/internal capital markets and central-bank liquidity facilities during stress.",
+      "supports": "Treating funding-market conditions as a distinct part of stress analysis and explaining why dollar liquidity can matter beyond spot FX moves.",
+      "does_not_support": "Treating SOFR-minus-IORB, repo, swap lines, or any single spread as a complete standalone liquidity index.",
+      "usd_impact_status": "Conceptual support; the Three-Dials snapshot explicitly labels SOFR-minus-IORB as funding context only."
+    }
+  ]
+}

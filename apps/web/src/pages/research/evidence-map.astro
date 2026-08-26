@@ -1,0 +1,171 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import evidenceMap from '../../data/academic-evidence-map.json';
+
+const entries = evidenceMap.entries.map((entry) => ({
+  ...entry,
+  sources: entry.external_sources ?? [entry.external_source],
+}));
+---
+<BaseLayout
+  title="Academic Evidence Map | USD Impact"
+  description="A source-by-source map showing which external macro-finance findings support USD Impact concepts, what they do not establish, and which model choices remain internal assumptions."
+>
+  <section class="hero evidence-hero">
+    <div class="container narrow">
+      <div class="eyebrow">Research transparency</div>
+      <h1>Academic Evidence Map</h1>
+      <p class="lead">External research can support a mechanism without validating a product, formula or forecast. This page shows that boundary explicitly.</p>
+      <div class="button-row">
+        <a class="button primary" href="#map">Inspect the map</a>
+        <a class="button secondary" href="/data/research/academic-evidence-map.json" target="_blank" rel="noreferrer">Open JSON contract</a>
+      </div>
+    </div>
+  </section>
+
+  <main class="container evidence-page">
+    <section class="boundary-card card" aria-labelledby="boundary-title">
+      <div class="eyebrow">Evidence boundary</div>
+      <h2 id="boundary-title">Concept support is not Score validation.</h2>
+      <p>{evidenceMap.scope}</p>
+      <p><strong>Production Score boundary:</strong> {evidenceMap.score_boundary}</p>
+    </section>
+
+    <section class="evidence-summary" aria-label="Evidence-map summary">
+      <article class="card summary-card">
+        <strong>{entries.length}</strong>
+        <span>mapped concepts</span>
+      </article>
+      <article class="card summary-card">
+        <strong>BIS · Federal Reserve · NBER</strong>
+        <span>external source families</span>
+      </article>
+      <article class="card summary-card">
+        <strong>0</strong>
+        <span>external endorsements claimed</span>
+      </article>
+    </section>
+
+    <section id="map" class="evidence-section">
+      <div class="eyebrow">Source-by-source map</div>
+      <h2>What the literature supports — and what remains ours</h2>
+      <p class="section-intro">Each row is deliberately asymmetric. The “supports” column records the narrow mechanism or measurement point that is useful to USD Impact. The “does not support” column prevents the citation from being stretched into a model-performance, endorsement or deterministic-market claim.</p>
+
+      <div class="evidence-list">
+        {entries.map((entry, index) => (
+          <article class="evidence-entry card" id={entry.id}>
+            <div class="entry-heading">
+              <div>
+                <div class="entry-number">{String(index + 1).padStart(2, '0')}</div>
+                <h3>{entry.concept}</h3>
+                <p class="area">USD Impact area: {entry.usd_impact_area}</p>
+              </div>
+              <span class="status-pill">{entry.usd_impact_status}</span>
+            </div>
+
+            <div class="source-stack" aria-label="External sources">
+              {entry.sources.map((source) => (
+                <a class="source-card" href={source.url} target="_blank" rel="noreferrer">
+                  <span class="source-institution">{source.institution}</span>
+                  <strong>{source.title}</strong>
+                  <span>{source.authors ? `${source.authors} · ` : ''}{source.year}</span>
+                </a>
+              ))}
+            </div>
+
+            <div class="evidence-grid">
+              <div>
+                <div class="label external">External finding</div>
+                <p>{entry.external_finding}</p>
+              </div>
+              <div>
+                <div class="label supports">Supports</div>
+                <p>{entry.supports}</p>
+              </div>
+              <div>
+                <div class="label boundary">Does not support</div>
+                <p>{entry.does_not_support}</p>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="method-section card">
+      <div class="eyebrow">How to read this page</div>
+      <h2>Four evidence classes</h2>
+      <div class="method-grid">
+        <div><strong>External finding</strong><span>What the cited institution or paper actually reports.</span></div>
+        <div><strong>Conceptual support</strong><span>A mechanism or framing that is consistent with part of the USD Impact educational framework.</span></div>
+        <div><strong>Measurement support</strong><span>An official or established measurement reference used to define a variable or breadth check.</span></div>
+        <div><strong>Internal assumption</strong><span>A USD Impact choice — including Score variables, signs, weights, normalization or thresholds — that is not converted into an external fact by citation.</span></div>
+      </div>
+    </section>
+
+    <section class="limitations-section">
+      <div class="eyebrow">Important limits</div>
+      <h2>What this map does not do</h2>
+      <ul>
+        <li>It does not claim BIS, the Federal Reserve, NBER, any author, or any cited institution has reviewed or endorsed USD Impact.</li>
+        <li>It does not transform published associations or model results into universal causal laws.</li>
+        <li>It does not establish the predictive power of USD Impact Score v2. That question is governed by the separate preregistered prospective test.</li>
+        <li>It does not imply that all cited papers agree with one another or cover the same countries, periods, variables or identification methods.</li>
+        <li>It does not replace the exact production methodology, source semantics, revision audit or robustness diagnostics.</li>
+      </ul>
+      <div class="button-row">
+        <a class="button secondary" href="/score/methodology/">Read Score methodology</a>
+        <a class="button secondary" href="/about/">About &amp; transparency</a>
+        <a class="button secondary" href="/framework/three-dial-dashboard/">Three-Dial dashboard</a>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .evidence-hero { padding-bottom: 64px; }
+  .narrow { max-width: 920px; }
+  .evidence-page { max-width: 1120px; }
+  .boundary-card { margin-top: -24px; border-left: 5px solid var(--gold); }
+  .boundary-card h2, .evidence-section h2, .method-section h2, .limitations-section h2 { margin: 7px 0 14px; }
+  .boundary-card p:last-child { margin-bottom: 0; }
+  .evidence-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 28px 0 64px; }
+  .summary-card { display: flex; flex-direction: column; gap: 5px; }
+  .summary-card strong { color: var(--navy); font-size: 1.35rem; }
+  .summary-card span { color: #5a6472; }
+  .evidence-section { scroll-margin-top: 24px; }
+  .section-intro { max-width: 85ch; color: #4f5c6c; }
+  .evidence-list { display: grid; gap: 24px; margin-top: 28px; }
+  .evidence-entry { padding: 28px; }
+  .entry-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: start; }
+  .entry-number { color: var(--gold); font-weight: 800; letter-spacing: .08em; font-size: .82rem; }
+  .entry-heading h3 { margin: 5px 0 6px; color: var(--navy); font-size: 1.35rem; line-height: 1.28; }
+  .area { margin: 0; color: #667180; font-size: .92rem; }
+  .status-pill { display: inline-block; max-width: 310px; padding: 7px 11px; border-radius: 999px; background: #eef2f5; color: #334252; font-size: .78rem; font-weight: 700; line-height: 1.35; }
+  .source-stack { display: grid; gap: 10px; margin: 22px 0; }
+  .source-card { display: grid; gap: 4px; padding: 14px 16px; border: 1px solid #dce2e9; border-radius: 12px; text-decoration: none; background: #fbfcfd; }
+  .source-card:hover { border-color: #b8c3cf; }
+  .source-card strong { color: var(--navy); }
+  .source-card span { color: #5f6b78; font-size: .88rem; }
+  .source-institution { text-transform: uppercase; letter-spacing: .04em; font-weight: 700; font-size: .75rem !important; }
+  .evidence-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .evidence-grid > div { padding: 16px; border-radius: 12px; background: #f7f9fa; }
+  .evidence-grid p { margin: 8px 0 0; line-height: 1.62; color: #3e4b59; }
+  .label { display: inline-block; padding: 4px 8px; border-radius: 999px; font-weight: 800; font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; }
+  .label.external { background: #e9eef5; color: #294765; }
+  .label.supports { background: #e5f4eb; color: #225e38; }
+  .label.boundary { background: #fff1c8; color: #715313; }
+  .method-section { margin-top: 64px; }
+  .method-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .method-grid div { display: grid; gap: 5px; padding: 15px; background: #f7f9fa; border-radius: 12px; }
+  .method-grid strong { color: var(--navy); }
+  .method-grid span { color: #596675; line-height: 1.5; }
+  .limitations-section { margin: 64px 0; }
+  .limitations-section ul { max-width: 90ch; padding-left: 22px; }
+  .limitations-section li { margin: 10px 0; line-height: 1.6; }
+  @media (max-width: 840px) {
+    .evidence-summary, .evidence-grid, .method-grid { grid-template-columns: 1fr; }
+    .entry-heading { grid-template-columns: 1fr; }
+    .status-pill { max-width: none; width: fit-content; }
+  }
+</style>

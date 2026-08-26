@@ -1,0 +1,142 @@
+name: Three Dials snapshot publication
+
+on:
+  schedule:
+    - cron: '45 22 * * 1,2'
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/three-dials-snapshot.yml'
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: three-dials-snapshot
+  cancel-in-progress: false
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+
+      - name: Generate source-bound snapshot
+        run: node scripts/generate-three-dials-snapshot.mjs
+
+      - name: Guard generated paths
+        run: |
+          changed_paths="$(git status --porcelain | sed -E 's/^.. //')"
+          if [ -z "$changed_paths" ]; then
+            echo "No Three-Dials snapshot changes were generated."
+            exit 0
+          fi
+
+          while IFS= read -r path; do
+            case "$path" in
+              src/data/three-dials-latest.json|public/data/three-dials/latest.json|public/data/three-dials/archive/*.json)
+                ;;
+              *)
+                echo "::error::Three-Dials generator changed an unauthorized path: $path"
+                exit 1
+                ;;
+            esac
+          done <<EOF
+          $changed_paths
+          EOF
+
+      - name: Validate and build
+        run: |
+          npm run validate
+          npm run build
+
+      - name: Open guarded publication pull request
+        id: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$(git status --porcelain -- src/data/three-dials-latest.json public/data/three-dials)" ]; then
+            echo "No snapshot publication pull request is needed."
+            exit 0
+          fi
+
+          week="$(node -e "const fs=require('fs'); const value=JSON.parse(fs.readFileSync('src/data/three-dials-latest.json','utf8')); process.stdout.write(value.week_ending || 'unknown');")"
+          if ! printf '%s' "$week" | grep -Eq '^20[0-9]{2}-[0-9]{2}-[0-9]{2}$'; then
+            echo "::error::Generated snapshot does not contain a valid week_ending."
+            exit 1
+          fi
+
+          branch="automation/three-dials-${week}-${GITHUB_RUN_ID}"
+          git config user.name "usd-impact-three-dials-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add src/data/three-dials-latest.json public/data/three-dials
+          git commit -m "Publish Three Dials snapshot for ${week}"
+          git push --set-upstream origin "$branch"
+
+          cat > "$RUNNER_TEMP/three-dials-pr.md" <<EOF
+          ## Automated Three-Dials snapshot publication
+
+          This pull request contains the dated **${week}** completed-week snapshot.
+
+          Publication is fail-closed. The generator requires bounded source hosts, per-series freshness checks, an exact-week USD Impact Score bridge, an immutable dated archive, and the full site validation/build before opening this pull request.
+
+          The snapshot separates **Fact**, **Interpretation**, and **Model output**. It does not change USD Impact Score v2 and does not create a forecast or trading signal.
+          EOF
+
+          pr_url="$(gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "Publish Three Dials Snapshot — ${week}" \
+            --body-file "$RUNNER_TEMP/three-dials-pr.md")"
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+
+          if gh pr merge "$pr_url" --auto --squash --delete-branch; then
+            echo "Protected auto-merge enabled; repository requirements still apply."
+          else
+            echo "::notice::Auto-merge could not be enabled. The validated publication PR remains open for protected review."
+          fi
+
+      - name: Report bounded failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          issue_title='P1 — Three Dials snapshot automation requires attention'
+          printf '%s\n\n%s\n%s\n%s\n%s\n' \
+            '## Three-Dials snapshot automation failure' \
+            "- Run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            "- Commit: \`${GITHUB_SHA}\`" \
+            "- Trigger: \`${GITHUB_EVENT_NAME}\`" \
+            'The workflow remained fail-closed. No generated snapshot was merged by this failed run.' \
+            > "$RUNNER_TEMP/three-dials-failure.md"
+
+          issue_number="$(gh issue list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --search "$issue_title in:title" \
+            --json number \
+            --jq '.[0].number // empty')"
+
+          if [ -n "$issue_number" ]; then
+            gh issue edit "$issue_number" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/three-dials-failure.md"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$issue_title" --body-file "$RUNNER_TEMP/three-dials-failure.md"
+          fi

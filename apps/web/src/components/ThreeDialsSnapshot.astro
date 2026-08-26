@@ -1,0 +1,171 @@
+---
+import snapshot from '../data/three-dials-latest.json';
+
+const isPublished = snapshot.status === 'published';
+const dials = isPublished ? Object.values(snapshot.dials) : [];
+
+const pretty = (value) => String(value ?? '').replaceAll('_', ' ');
+const directionLabel = (dial) => {
+  if (dial.title.includes('Liquidity')) {
+    if (dial.direction === 'tightening') return 'Tightening / more stress';
+    if (dial.direction === 'easing') return 'Easing / less stress';
+    if (dial.direction === 'contained') return 'Contained';
+  }
+  return pretty(dial.direction);
+};
+---
+<section class="three-dials-snapshot" aria-labelledby="three-dials-snapshot-title">
+  <div class="snapshot-heading">
+    <div>
+      <div class="eyebrow">Dated snapshot · not real-time</div>
+      <h2 id="three-dials-snapshot-title">Current Three-Dial reading</h2>
+    </div>
+    {isPublished && (
+      <div class="snapshot-date">
+        <span>Completed week</span>
+        <strong>{snapshot.week_ending}</strong>
+      </div>
+    )}
+  </div>
+
+  {!isPublished ? (
+    <div class="snapshot-pending card">
+      <span class="evidence-label fact">Fact</span>
+      <h3>Publication gate pending</h3>
+      <p>{snapshot.message}</p>
+      <p>{snapshot.scope}</p>
+      <p>The framework article below remains available while the data gate is closed.</p>
+    </div>
+  ) : (
+    <>
+      <div class="snapshot-label-row" aria-label="Evidence labels">
+        <span class="evidence-label fact">Fact</span>
+        <span>Completed observations with actual source dates and source links.</span>
+      </div>
+
+      <div class="dial-grid">
+        {dials.map((dial) => (
+          <article class="dial-card card">
+            <div class="dial-card-topline">
+              <div>
+                <div class="dial-number">{dial.title}</div>
+                <h3>{directionLabel(dial)}</h3>
+              </div>
+              <span class={`confidence confidence-${dial.confidence}`}>{dial.confidence} evidence confidence</span>
+            </div>
+            <dl class="dial-meta">
+              <div>
+                <dt>Confirmation</dt>
+                <dd>{pretty(dial.confirmation ?? dial.dollar_confirmation)}</dd>
+              </div>
+            </dl>
+            <div class="fact-list">
+              {dial.facts.map((fact) => (
+                <div class="fact-row">
+                  <div class="fact-main">
+                    <strong>{fact.label}</strong>
+                    <span>{fact.latest.display} on {fact.latest.date}</span>
+                  </div>
+                  <div class="fact-change">
+                    <strong>{fact.change.display}</strong>
+                    <span>vs {fact.previous.date}</span>
+                  </div>
+                  <a href={fact.source_url} target="_blank" rel="noreferrer">Source</a>
+                  <p>{fact.source_note}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div class="snapshot-interpretation card">
+        <span class="evidence-label interpretation">Interpretation</span>
+        <h3>{snapshot.interpretation.label}</h3>
+        <p>{snapshot.interpretation.sentence}</p>
+        <p class="scope-note">{snapshot.interpretation.scope}</p>
+      </div>
+
+      <div class="snapshot-model card">
+        <span class="evidence-label model">Model output</span>
+        <div class="model-grid">
+          <div>
+            <h3>{snapshot.model_output.name}</h3>
+            <p><strong>{snapshot.model_output.score_display}</strong> · {snapshot.model_output.regime} · week ending {snapshot.model_output.week_ending}</p>
+            <p class="scope-note">{snapshot.model_output.scope}</p>
+          </div>
+          <div class="model-links">
+            <a href={snapshot.model_output.source_url} target="_blank" rel="noreferrer">Open Score JSON</a>
+            <a href={snapshot.model_output.methodology_url}>Read Score methodology</a>
+          </div>
+        </div>
+      </div>
+
+      <details class="snapshot-methodology">
+        <summary>Snapshot method, thresholds and source boundaries</summary>
+        <p>{snapshot.observation_policy.description}</p>
+        <p>{snapshot.observation_policy.threshold_scope}</p>
+        <ul>
+          {snapshot.disclosures.map((item) => <li>{item}</li>)}
+        </ul>
+        <p><a href="/data/three-dials/latest.json" target="_blank" rel="noreferrer">Open machine-readable snapshot JSON</a></p>
+      </details>
+    </>
+  )}
+</section>
+
+<style>
+  .three-dials-snapshot { margin: 42px 0 58px; }
+  .snapshot-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 18px; }
+  .snapshot-heading h2 { margin: 6px 0 0; }
+  .snapshot-date { display: grid; gap: 3px; text-align: right; }
+  .snapshot-date span { color: var(--slate); font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+  .snapshot-date strong { color: var(--navy); }
+  .snapshot-pending { border-left: 5px solid var(--gold); }
+  .snapshot-pending h3 { margin: 10px 0; }
+  .snapshot-pending p:last-child { margin-bottom: 0; }
+  .snapshot-label-row { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; color: var(--slate); font-size: .92rem; }
+  .evidence-label { display: inline-block; width: fit-content; border-radius: 999px; padding: 4px 9px; font-size: .76rem; line-height: 1.2; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+  .evidence-label.fact { background: #e8eef5; color: #24476a; }
+  .evidence-label.interpretation { background: #fff1c8; color: #715313; }
+  .evidence-label.model { background: #e5f4eb; color: #225e38; }
+  .dial-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .dial-card { display: flex; flex-direction: column; gap: 16px; padding: 20px; }
+  .dial-card-topline { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+  .dial-number { color: var(--slate); font-size: .82rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+  .dial-card h3 { margin: 6px 0 0; text-transform: capitalize; }
+  .confidence { border-radius: 999px; padding: 4px 8px; font-size: .72rem; white-space: nowrap; text-transform: capitalize; }
+  .confidence-high { background: #e5f4eb; color: #225e38; }
+  .confidence-medium { background: #fff1c8; color: #715313; }
+  .confidence-low { background: #f6e4e4; color: #7b2d2d; }
+  .dial-meta { margin: 0; }
+  .dial-meta div { display: flex; justify-content: space-between; gap: 12px; }
+  .dial-meta dt { color: var(--slate); }
+  .dial-meta dd { margin: 0; color: var(--navy); font-weight: 700; text-transform: capitalize; }
+  .fact-list { display: grid; gap: 12px; }
+  .fact-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px 12px; align-items: start; padding-top: 12px; border-top: 1px solid #e4e8ed; }
+  .fact-main, .fact-change { display: grid; gap: 2px; }
+  .fact-main span, .fact-change span { color: var(--slate); font-size: .82rem; }
+  .fact-change { text-align: right; }
+  .fact-row > a { font-size: .82rem; font-weight: 700; }
+  .fact-row > p { grid-column: 1 / -1; margin: 0; color: var(--slate); font-size: .8rem; line-height: 1.5; }
+  .snapshot-interpretation, .snapshot-model { margin-top: 18px; border-left: 5px solid var(--gold); }
+  .snapshot-interpretation h3, .snapshot-model h3 { margin: 10px 0 8px; }
+  .scope-note { color: var(--slate); font-size: .9rem; }
+  .model-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24px; }
+  .model-links { display: flex; flex-direction: column; gap: 8px; min-width: 190px; }
+  .snapshot-methodology { margin-top: 18px; padding: 16px 18px; border: 1px solid #dce2e9; border-radius: 12px; background: #fff; }
+  .snapshot-methodology summary { cursor: pointer; color: var(--navy); font-weight: 800; }
+  .snapshot-methodology p, .snapshot-methodology li { color: var(--slate); }
+  @media (max-width: 960px) {
+    .dial-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 680px) {
+    .snapshot-heading, .dial-card-topline { align-items: start; flex-direction: column; }
+    .snapshot-date { text-align: left; }
+    .fact-row { grid-template-columns: 1fr auto; }
+    .fact-row > a { grid-column: 1 / -1; }
+    .model-grid { grid-template-columns: 1fr; }
+    .model-links { min-width: 0; }
+  }
+</style>

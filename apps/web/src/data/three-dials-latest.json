@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "status": "pending",
+  "message": "No dated Three-Dials snapshot has been published yet.",
+  "scope": "The first snapshot is generated only after a completed Friday, source-freshness checks, an exact-week USD Impact Score bridge check, and repository validation all pass."
+}

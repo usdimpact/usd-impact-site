@@ -8,9 +8,10 @@ const paths = {
   technical: new URL('docs/operations/commerce-provider-technical-qualification-matrix-2026-08-25.md', root),
   historical: new URL('docs/operations/commerce-provider-candidate-evidence-2026-08-21.md', root),
   lemon: new URL('docs/operations/lemon-squeezy-store-application-packet-2026-08-25.md', root),
+  lemonQualification: new URL('docs/operations/lemon-squeezy-technical-qualification-2026-08-26.md', root),
 };
 
-const [update, responsibility, technical, historical, lemon] = await Promise.all(
+const [update, responsibility, technical, historical, lemon, lemonQualification] = await Promise.all(
   Object.values(paths).map((path) => readFile(path, 'utf8')),
 );
 
@@ -21,7 +22,9 @@ assert.ok(update.includes(rejectionCase));
 assert.match(update, /2026-08-25(?: at)? 22:33 UTC/);
 assert.match(update, /REMOVED FROM ACTIVE PATH/);
 assert.match(update, /do not send/i);
-assert.match(update, /PENDING WRITTEN ELIGIBILITY \/ NOT SELECTED/);
+assert.match(update, /Lemon Squeezy[\s\S]*2026-08-26 at 11:03 UTC[\s\S]*WRITTEN ELIGIBILITY APPROVED/);
+assert.match(update, /PREFERRED CANDIDATE \/ TECHNICAL QUALIFICATION IN PROGRESS \/ NOT YET SELECTED/);
+assert.match(update, /dispute-opened, chargeback-completed or dispute-reversed/i);
 assert.match(update, /PayPro Global[\s\S]*no PayPro Global reply/i);
 assert.match(update, /provider=null/);
 assert.match(update, /checkoutEnabled=false/);
@@ -45,13 +48,18 @@ assert.match(historical, /later written rejection/);
 assert.match(historical, /current state is rejected\/closed/);
 
 assert.match(lemon, /Current status — updated 2026-08-26/);
-assert.match(lemon, /store provisioning is not approval/i);
-assert.match(lemon, /FastSpring is no longer a competing primary candidate/);
-assert.match(lemon, /REJECTED \/ removed from active path/);
-assert.match(lemon, /Lemon Squeezy.*application under review[\s\S]*no written product\/company approval yet/i);
+assert.match(lemon, /WRITTEN PRODUCT\/COMPANY ELIGIBILITY APPROVED/);
+assert.match(lemon, /2026-08-26 at 11:03 UTC/);
+assert.match(lemon, /Research Membership remains outside this approved initial scope/);
+assert.doesNotMatch(lemon, /Lemon Squeezy.*application under review[\s\S]*no written product\/company approval yet/i);
 assert.doesNotMatch(lemon, /FastSpring:\*\* primary candidate/);
 
-for (const text of [update, responsibility, technical, lemon]) {
+assert.match(lemonQualification, /Product\/company eligibility: APPROVED IN WRITING/);
+assert.match(lemonQualification, /ELIGIBILITY APPROVED \/ TECHNICAL QUALIFICATION IN PROGRESS \/ ADAPTER NOT YET REGISTERED/);
+assert.match(lemonQualification, /P0 GAP \/ SECURITY-EQUIVALENT CONTRACT REQUIRED/);
+assert.match(lemonQualification, /COMMERCE_MODE=disabled/);
+
+for (const text of [update, responsibility, technical, lemon, lemonQualification]) {
   assert.doesNotMatch(text, /FastSpring[^\n]{0,120}(?:awaiting written eligibility|awaiting response|pending Sales)/i);
 }
 

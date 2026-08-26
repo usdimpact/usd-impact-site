@@ -13,6 +13,8 @@ const [
   disclosureSource,
   commerceFunctionSource,
   lemonRuntimeSource,
+  lemonAdapterSource,
+  commerceReconciliationMigrationSource,
 ] = await Promise.all([
   readFile(new URL('../vercel.json', import.meta.url), 'utf8'),
   readFile(new URL('../package.json', import.meta.url), 'utf8'),
@@ -24,6 +26,8 @@ const [
   readFile(new URL('../src/lib/commerce-public-disclosure.js', import.meta.url), 'utf8'),
   readFile(new URL('../api/commerce.js', import.meta.url), 'utf8'),
   readFile(new URL('../src/lib/lemon-squeezy-commerce-runtime.js', import.meta.url), 'utf8'),
+  readFile(new URL('../src/lib/lemon-squeezy-adapter-scaffold.js', import.meta.url), 'utf8'),
+  readFile(new URL('../../../supabase/migrations/20260826170000_commerce_reconciliation_runtime.sql', import.meta.url), 'utf8'),
 ]);
 
 const vercel = JSON.parse(vercelSource);
@@ -75,7 +79,14 @@ assert.match(lemonRuntimeSource, /discountTotal !== 0/);
 assert.match(lemonRuntimeSource, /Order must contain exactly one item/);
 assert.match(lemonRuntimeSource, /Order quantity must be exactly one/);
 assert.match(lemonRuntimeSource, /partial_refund/);
-assert.match(lemonRuntimeSource, /payment\.revoked/);
+assert.match(lemonRuntimeSource, /name:\s*'apply_commerce_reconciliation'/);
+assert.match(lemonRuntimeSource, /p_provider_status:\s*commercial\.status/);
+assert.match(
+  lemonAdapterSource,
+  /status === 'fraudulent'[\s\S]*CANONICAL_COMMERCE_EVENT_TYPES\.PAYMENT_REVOKED/,
+);
+assert.match(commerceReconciliationMigrationSource, /p_provider_status = 'fraudulent'/);
+assert.match(commerceReconciliationMigrationSource, /:payment\.revoked/);
 
 assert.match(accountSource, /handleCommerceReadinessRequest/);
 assert.match(accountSource, /'commerce-readiness': handleCommerceReadinessRequest/);

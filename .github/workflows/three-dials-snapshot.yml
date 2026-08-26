@@ -43,7 +43,7 @@ jobs:
 
       - name: Guard generated paths
         run: |
-          changed_paths="$(git status --porcelain | sed -E 's/^.. //')"
+          changed_paths="$(git status --porcelain --untracked-files=all | sed -E 's/^.. //')"
           if [ -z "$changed_paths" ]; then
             echo "No Three-Dials snapshot changes were generated."
             exit 0
@@ -72,7 +72,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ -z "$(git status --porcelain -- src/data/three-dials-latest.json public/data/three-dials)" ]; then
+          if [ -z "$(git status --porcelain --untracked-files=all -- src/data/three-dials-latest.json public/data/three-dials)" ]; then
             echo "No snapshot publication pull request is needed."
             exit 0
           fi

@@ -4,10 +4,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ComplianceNote from '../components/ComplianceNote.astro';
 import ProductCTA from '../components/ProductCTA.astro';
 import FrameworkVisual from '../components/FrameworkVisual.astro';
+import ThreeDialsSnapshot from '../components/ThreeDialsSnapshot.astro';
 import WaitlistForm from '../components/WaitlistForm.astro';
 
 const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
 const bookSlug = '/book/read-the-dollar-first';
+const threeDialsSlug = '/framework/three-dial-dashboard';
 
 export async function getStaticPaths() {
   const collections = ['pages', 'products', 'frameworks', 'leadMagnets', 'benchmarkModules'];
@@ -23,10 +25,12 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
+const normalizedSlug = entry.data.slug.replace(/\/$/, '');
 const downloadPath = 'downloadPath' in entry.data && typeof entry.data.downloadPath === 'string'
   ? entry.data.downloadPath
   : checklistDownload;
-const isBookPage = entry.data.slug.replace(/\/$/, '') === bookSlug;
+const isBookPage = normalizedSlug === bookSlug;
+const isThreeDialsPage = normalizedSlug === threeDialsSlug;
 const requestedPrimary = entry.data.ctaPrimary;
 const requestedPrimaryHref = entry.data.ctaPrimaryHref;
 const requestedSecondaryHref = entry.data.ctaSecondaryHref;
@@ -67,6 +71,7 @@ const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref =
       </section>
     )}
     {entry.data.visual && <FrameworkVisual src={entry.data.visual} alt={entry.data.title} />}
+    {isThreeDialsPage && <ThreeDialsSnapshot />}
     <Content />
     {isBookPage && <WaitlistForm />}
     <ComplianceNote text={entry.data.complianceNote} />

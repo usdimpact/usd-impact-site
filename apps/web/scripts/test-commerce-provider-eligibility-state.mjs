@@ -47,10 +47,11 @@ assert.match(historical, /Historical snapshot — superseded for current provide
 assert.match(historical, /later written rejection/);
 assert.match(historical, /current state is rejected\/closed/);
 
-assert.match(lemon, /Current status — updated 2026-08-26/);
-assert.match(lemon, /WRITTEN PRODUCT\/COMPANY ELIGIBILITY APPROVED/);
-assert.match(lemon, /2026-08-26 at 11:03 UTC/);
-assert.match(lemon, /Research Membership remains outside this approved initial scope/);
+assert.match(lemon, /Current status — approved 2026-08-26/);
+assert.match(lemon, /affirmative written product\/company eligibility approval/i);
+assert.match(lemon, /2026-08-26 11:03 UTC/);
+assert.match(lemon, /Explicitly outside the current approval scope[\s\S]*recurring Research Membership/);
+assert.match(lemon, /Lemon Squeezy is now the \*\*preferred candidate\*\*/);
 assert.doesNotMatch(lemon, /Lemon Squeezy.*application under review[\s\S]*no written product\/company approval yet/i);
 assert.doesNotMatch(lemon, /FastSpring:\*\* primary candidate/);
 

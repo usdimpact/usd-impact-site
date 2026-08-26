@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { access, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { REGISTERED_COMMERCE_ADAPTERS } from '../src/lib/commerce-adapters.js';
 
 const [
@@ -11,6 +11,8 @@ const [
   handlerSource,
   contractSource,
   disclosureSource,
+  commerceFunctionSource,
+  lemonRuntimeSource,
 ] = await Promise.all([
   readFile(new URL('../vercel.json', import.meta.url), 'utf8'),
   readFile(new URL('../package.json', import.meta.url), 'utf8'),
@@ -20,6 +22,8 @@ const [
   readFile(new URL('../src/lib/commerce-readiness-handler.js', import.meta.url), 'utf8'),
   readFile(new URL('../src/lib/commerce-provider.js', import.meta.url), 'utf8'),
   readFile(new URL('../src/lib/commerce-public-disclosure.js', import.meta.url), 'utf8'),
+  readFile(new URL('../api/commerce.js', import.meta.url), 'utf8'),
+  readFile(new URL('../src/lib/lemon-squeezy-commerce-runtime.js', import.meta.url), 'utf8'),
 ]);
 
 const vercel = JSON.parse(vercelSource);
@@ -29,13 +33,50 @@ assert.deepEqual(commerceRewrite, {
   destination: '/api/account?action=commerce-readiness',
 });
 
-await assert.rejects(
-  () => access(new URL('../api/commerce.js', import.meta.url)),
-  (error) => error?.code === 'ENOENT',
-  'Commerce readiness must reuse an existing Vercel function slot.',
-);
-assert.doesNotMatch(packageSource, /node --check api\/commerce\.js/);
+// The selected-provider sandbox runtime now has an isolated Vercel function, but it must
+// not be promoted into a public rewrite or scheduled Production cron before later gates.
+assert.match(packageSource, /node --check api\/commerce\.js/);
+assert.match(packageSource, /test-lemon-squeezy-commerce-function\.mjs/);
+assert.match(packageSource, /test-lemon-squeezy-commerce-runtime\.mjs/);
+assert.match(packageSource, /test-commerce-reconciliation-migration\.mjs/);
 assert.match(packageSource, /commerce-readiness-handler\.js/);
+assert.equal(
+  vercel.rewrites.some((item) => item.source === '/api/commerce' || String(item.destination || '').startsWith('/api/commerce?')),
+  false,
+  'The sandbox commerce function must not have a public rewrite before activation gates pass.',
+);
+assert.equal(
+  vercel.crons.some((item) => item.path === '/api/commerce' || String(item.path || '').startsWith('/api/commerce?')),
+  false,
+  'Commerce reconciliation must not be scheduled in Production before sandbox proof and registration review.',
+);
+
+assert.match(commerceFunctionSource, /bodyParser:\s*false/);
+assert.match(commerceFunctionSource, /requestedAction === 'checkout'/);
+assert.match(commerceFunctionSource, /requestedAction === 'webhook'/);
+assert.match(commerceFunctionSource, /requestedAction === 'reconcile'/);
+assert.match(commerceFunctionSource, /validCronAuthorization/);
+assert.match(commerceFunctionSource, /readSessionAccessToken/);
+assert.match(commerceFunctionSource, /requestHeader\(request, 'x-signature'\)/);
+assert.match(commerceFunctionSource, /Cache-Control', 'private, no-store'/);
+assert.match(commerceFunctionSource, /X-Robots-Tag', 'noindex, nofollow'/);
+
+assert.match(lemonRuntimeSource, /COMMERCE_MODE/);
+assert.match(lemonRuntimeSource, /mode !== 'sandbox'/);
+assert.match(lemonRuntimeSource, /COMMERCE_PROVIDER/);
+assert.match(lemonRuntimeSource, /VERCEL_ENV/);
+assert.match(lemonRuntimeSource, /=== 'production'/);
+assert.match(lemonRuntimeSource, /LEMON_SQUEEZY_TEST_MODE/);
+assert.match(lemonRuntimeSource, /DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc'/);
+assert.match(lemonRuntimeSource, /COMMERCE_SANDBOX_QA_EMAIL/);
+assert.match(lemonRuntimeSource, /verifyLemonSqueezyWebhookSignature/);
+assert.match(lemonRuntimeSource, /retrieveAuthoritativeLemonSqueezyOrder/);
+assert.match(lemonRuntimeSource, /discountTotal !== 0/);
+assert.match(lemonRuntimeSource, /Order must contain exactly one item/);
+assert.match(lemonRuntimeSource, /Order quantity must be exactly one/);
+assert.match(lemonRuntimeSource, /partial_refund/);
+assert.match(lemonRuntimeSource, /payment\.revoked/);
+
 assert.match(accountSource, /handleCommerceReadinessRequest/);
 assert.match(accountSource, /'commerce-readiness': handleCommerceReadinessRequest/);
 
@@ -89,11 +130,25 @@ for (const [name, source] of [
   ['commerce handler', handlerSource],
   ['commerce contract', contractSource],
   ['public disclosure contract', disclosureSource],
+  ['sandbox commerce function', commerceFunctionSource],
+  ['Lemon Squeezy sandbox runtime', lemonRuntimeSource],
 ]) {
   assert.doesNotMatch(
     source,
     /PADDLE_API_KEY|PADDLE_WEBHOOK_SECRET|api\/paddle|paddle-webhook/i,
     `${name} must not depend on Paddle.`,
+  );
+}
+
+for (const [name, source] of [
+  ['checkout page', checkoutSource],
+  ['product page', productSource],
+  ['public disclosure contract', disclosureSource],
+]) {
+  assert.doesNotMatch(
+    source,
+    /LEMON_SQUEEZY_TEST_API_KEY|LEMON_SQUEEZY_TEST_WEBHOOK_SECRET|SUPABASE_SECRET_KEY/i,
+    `${name} must not expose sandbox or database secrets.`,
   );
 }
 

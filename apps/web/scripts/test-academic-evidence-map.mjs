@@ -89,6 +89,8 @@ assert.doesNotMatch(page, /our research proves|externally validated score|academ
 
 const protocolUrl = 'https://score.usd-impact.com/data/research/independent_replication_protocol.json';
 const trackerUrl = 'https://github.com/usdimpact/usd-impact-pipeline/issues/70';
+const protocolAssignment = replicationPage.match(/^const protocolUrl = '([^']+)';$/m);
+const trackerAssignment = replicationPage.match(/^const trackerUrl = '([^']+)';$/m);
 assert.match(replicationPage, /Independent Score Replication/);
 assert.match(replicationPage, /Prepared — not executed/);
 assert.match(replicationPage, /No independent result yet/);
@@ -102,8 +104,10 @@ assert.match(replicationPage, /NOT TESTABLE/);
 assert.match(replicationPage, /does not claim independent validation, audit, endorsement or verified model performance/i);
 assert.match(replicationPage, /would not establish predictive power, future returns or trading value/i);
 assert.match(replicationPage, /Complete original Yahoo\/FRED response payloads and full provider-derived histories are not publicly redistributed/i);
-assert.ok(replicationPage.includes(protocolUrl));
-assert.ok(replicationPage.includes(trackerUrl));
+assert.equal(protocolAssignment?.[1], protocolUrl, 'Replication page must assign the exact reviewed protocol URL.');
+assert.equal(trackerAssignment?.[1], trackerUrl, 'Replication page must assign the exact reviewed execution-tracker URL.');
+assert.match(replicationPage, /href=\{protocolUrl\}/);
+assert.match(replicationPage, /href=\{trackerUrl\}/);
 assert.ok(replicationPage.includes('/research/evidence-map/'));
 assert.ok(replicationPage.includes('/score/methodology/'));
 assert.ok(replicationPage.includes('/about/'));

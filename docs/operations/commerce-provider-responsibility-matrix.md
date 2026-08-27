@@ -151,7 +151,7 @@ Related controls:
 
 - Issue #53 — provider selection / commerce implementation;
 - Issue #130 — customer-message ownership;
-- Issue #343 — independent security assessment;
+- Issue #343 — optional post-launch independent security assurance, not a launch gate;
 - Issue #54 — final integrated launch gate;
 - `docs/operations/commerce-provider-eligibility-update-2026-08-26.md`;
 - `docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md`;

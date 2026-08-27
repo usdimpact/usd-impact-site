@@ -41,7 +41,7 @@ Read-only catalog inspection is configuration evidence, not payment authority. A
 
 Production preparation remains separately approved and ordered:
 
-1. complete the independent commerce-enabled security assessment and required retest;
+1. treat #343 as optional post-launch assurance, not a candidate-freeze or activation prerequisite; no external testing is authorized by this record;
 2. back up and verify Production database recovery;
 3. separately approve and apply the reviewed commerce migrations to canonical Production;
 4. separately configure Production Live credentials and the minimum `order_created` / `order_refunded` webhook while `COMMERCE_MODE=disabled` and public checkout remains unavailable;

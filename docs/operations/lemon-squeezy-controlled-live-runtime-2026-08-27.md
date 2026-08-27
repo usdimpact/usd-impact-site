@@ -113,7 +113,7 @@ The next operational stages require separate approvals and must remain ordered:
 4. add only Preview-scoped Live credentials and the dedicated QA allowlist;
 5. create a Preview-specific Live webhook only after the exact endpoint and event set are approved;
 6. complete the provider-compliant evidence packet: preserve the full Test Mode lifecycle proof, verify the trusted Live catalog read-only, and record exact-Preview signed-webhook security and fail-closed evidence without creating a Live checkout or transaction;
-7. complete the independent commerce-enabled security assessment and required retest;
+7. treat #343 as optional post-launch assurance, not a candidate-freeze or activation prerequisite; no external testing is authorized by this sequence;
 8. back up and verify Production database recovery, then separately approve and apply the reviewed commerce migrations to Production;
 9. separately authorize Production secrets, the minimum Production Live webhook and final configuration while `COMMERCE_MODE=disabled`, then verify the exact deployment without a rehearsal transaction;
 10. enable public checkout only through a final explicit approval after all Phase A/Phase B gates are green, then monitor the first independent genuine buyer order as real commerce without manufacturing a refund.

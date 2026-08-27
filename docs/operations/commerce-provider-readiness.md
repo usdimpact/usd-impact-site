@@ -234,7 +234,7 @@ Partner/referral features remain growth layers and never become payment or entit
 9. Record sandbox proof before any controlled Live stage.
 10. Verify support/privacy/retention/accounting/incident ownership.
 11. Record provider-compliant controlled-Live evidence under separate explicit approval: retain the full Test Mode lifecycle proof, validate the trusted Live catalog read-only, and verify the exact protected Live webhook fails closed without a Live checkout, merchant self-purchase or artificial refund.
-12. Complete #343 against the commerce-enabled near-final candidate.
+12. Treat #343 as optional post-launch assurance; it is not a candidate-freeze or activation prerequisite, and this sequence does not authorize external testing.
 13. Activate public checkout only after #54 Phase A and all final launch approvals are green, then monitor the first independent genuine buyer order as real commerce.
 
 ## Rollback

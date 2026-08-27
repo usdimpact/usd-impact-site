@@ -83,7 +83,7 @@ jobs:
               'Poll background news generation') failure_stage='generation-or-repair' ;;
               'Import as published content') failure_stage='import' ;;
               'Validate and build') failure_stage='validation' ;;
-              'Open, validate, and merge publication pull request') failure_stage='publication' ;;
+              'Open and validate publication pull request') failure_stage='publication' ;;
               'Report Daily failure gate') failure_stage='failure-reporting' ;;
               *) failure_stage='workflow' ;;
             esac
@@ -200,7 +200,7 @@ jobs:
             gh issue create \
               --repo "$GITHUB_REPOSITORY" \
               --title "$ISSUE_TITLE" \
-              --body-file daily-health-report.md
+              --body-file daily-health-report.md"
           fi
 
       - name: Close recovered daily health issue

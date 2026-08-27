@@ -18,6 +18,9 @@ const [
   commerceReconciliationMigrationSource,
   controlledLiveRunbookSource,
   providerCompliantLiveEvidenceSource,
+  selectedProviderContractSource,
+  providerResponsibilityMatrixSource,
+  providerReadinessSource,
 ] = await Promise.all([
   readFile(new URL('../vercel.json', import.meta.url), 'utf8'),
   readFile(new URL('../package.json', import.meta.url), 'utf8'),
@@ -33,6 +36,9 @@ const [
   readFile(new URL('../../../supabase/migrations/20260826170000_commerce_reconciliation_runtime.sql', import.meta.url), 'utf8'),
   readFile(new URL('../../../docs/operations/lemon-squeezy-controlled-live-runtime-2026-08-27.md', import.meta.url), 'utf8'),
   readFile(new URL('../../../docs/operations/lemon-squeezy-provider-compliant-live-evidence-2026-08-27.md', import.meta.url), 'utf8'),
+  readFile(new URL('../../../docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md', import.meta.url), 'utf8'),
+  readFile(new URL('../../../docs/operations/commerce-provider-responsibility-matrix.md', import.meta.url), 'utf8'),
+  readFile(new URL('../../../docs/operations/commerce-provider-readiness.md', import.meta.url), 'utf8'),
 ]);
 
 const vercel = JSON.parse(vercelSource);
@@ -111,6 +117,16 @@ assert.match(providerCompliantLiveEvidenceSource, /first Live order must origina
 assert.match(providerCompliantLiveEvidenceSource, /COMMERCE_MODE=disabled/);
 assert.match(providerCompliantLiveEvidenceSource, /does not itself satisfy `COMMERCE_CONTROLLED_LIVE_VERIFIED` or `COMMERCE_LIVE_APPROVED`/i);
 assert.doesNotMatch(providerCompliantLiveEvidenceSource, /merchant-controlled Live purchase and refund[^.]*authorize/i);
+assert.match(selectedProviderContractSource, /#343 remains optional post-launch assurance/i);
+assert.doesNotMatch(selectedProviderContractSource, /bypass of #343/i);
+assert.match(providerResponsibilityMatrixSource, /#343 remains optional\/post-launch/i);
+assert.match(providerResponsibilityMatrixSource, /Issue #343 — optional post-launch independent security assurance, not a launch gate/i);
+assert.match(providerReadinessSource, /Treat #343 as optional post-launch assurance/i);
+assert.doesNotMatch(providerReadinessSource, /Complete #343 against the commerce-enabled near-final candidate/i);
+assert.match(controlledLiveRunbookSource, /treat #343 as optional post-launch assurance/i);
+assert.doesNotMatch(controlledLiveRunbookSource, /complete the independent commerce-enabled security assessment and required retest/i);
+assert.match(providerCompliantLiveEvidenceSource, /treat #343 as optional post-launch assurance/i);
+assert.doesNotMatch(providerCompliantLiveEvidenceSource, /complete the independent commerce-enabled security assessment and required retest/i);
 assert.match(
   lemonAdapterSource,
   /status === 'fraudulent'[\s\S]*CANONICAL_COMMERCE_EVENT_TYPES\.PAYMENT_REVOKED/,

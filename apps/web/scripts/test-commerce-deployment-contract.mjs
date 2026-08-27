@@ -17,6 +17,7 @@ const [
   lemonAdapterSource,
   commerceReconciliationMigrationSource,
   controlledLiveRunbookSource,
+  providerCompliantLiveEvidenceSource,
 ] = await Promise.all([
   readFile(new URL('../vercel.json', import.meta.url), 'utf8'),
   readFile(new URL('../package.json', import.meta.url), 'utf8'),
@@ -31,6 +32,7 @@ const [
   readFile(new URL('../src/lib/lemon-squeezy-adapter-scaffold.js', import.meta.url), 'utf8'),
   readFile(new URL('../../../supabase/migrations/20260826170000_commerce_reconciliation_runtime.sql', import.meta.url), 'utf8'),
   readFile(new URL('../../../docs/operations/lemon-squeezy-controlled-live-runtime-2026-08-27.md', import.meta.url), 'utf8'),
+  readFile(new URL('../../../docs/operations/lemon-squeezy-provider-compliant-live-evidence-2026-08-27.md', import.meta.url), 'utf8'),
 ]);
 
 const vercel = JSON.parse(vercelSource);
@@ -96,6 +98,19 @@ assert.match(controlledLiveRunbookSource, /LEMON_SQUEEZY_TEST_\*/);
 assert.match(controlledLiveRunbookSource, /test_mode=false/);
 assert.match(controlledLiveRunbookSource, /COMMERCE_MODE=disabled/);
 assert.match(controlledLiveRunbookSource, /Do not delete durable transaction evidence/i);
+assert.match(controlledLiveRunbookSource, /Payment and refund testing remains in Lemon Squeezy Test Mode/i);
+assert.match(controlledLiveRunbookSource, /provider-compliant-live-evidence-2026-08-27\.md/);
+assert.doesNotMatch(controlledLiveRunbookSource, /controlled Live purchase and full refund/i);
+assert.doesNotMatch(controlledLiveRunbookSource, /Production controlled purchase\/refund rehearsal/i);
+assert.match(providerCompliantLiveEvidenceSource, /Code-only release-contract correction/i);
+assert.match(providerCompliantLiveEvidenceSource, /must use test cards/i);
+assert.match(providerCompliantLiveEvidenceSource, /no owner, employee, contractor, QA account or related party uses a real card/i);
+assert.match(providerCompliantLiveEvidenceSource, /read-only Live API inspection/i);
+assert.match(providerCompliantLiveEvidenceSource, /INVALID_COMMERCE_WEBHOOK_SIGNATURE|invalid-signature request/i);
+assert.match(providerCompliantLiveEvidenceSource, /first Live order must originate from an independent genuine buyer/i);
+assert.match(providerCompliantLiveEvidenceSource, /COMMERCE_MODE=disabled/);
+assert.match(providerCompliantLiveEvidenceSource, /does not itself satisfy `COMMERCE_CONTROLLED_LIVE_VERIFIED` or `COMMERCE_LIVE_APPROVED`/i);
+assert.doesNotMatch(providerCompliantLiveEvidenceSource, /merchant-controlled Live purchase and refund[^.]*authorize/i);
 assert.match(
   lemonAdapterSource,
   /status === 'fraudulent'[\s\S]*CANONICAL_COMMERCE_EVENT_TYPES\.PAYMENT_REVOKED/,

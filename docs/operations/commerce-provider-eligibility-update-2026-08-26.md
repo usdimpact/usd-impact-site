@@ -89,7 +89,9 @@ Provider selection, lifecycle architecture, Development-only persistence, Test M
 3. retain Test credentials and webhook configuration only in the approved non-Production scope;
 4. preserve the complete sandbox, duplicate, negative, lifecycle, database/advisor, exact-head CI and Preview evidence;
 5. complete the remaining KYB, tax, accounting, privacy, buyer-disclosure and launch-window support gates;
-6. require separate explicit approval for any controlled Live or Production activation step.
+6. require separate explicit approval for any controlled-Live or Production activation step;
+7. keep payment/refund testing in Test Mode and prohibit merchant self-purchases, related-party real-card tests and artificial Live refunds;
+8. use the provider-compliant evidence model in `docs/operations/lemon-squeezy-provider-compliant-live-evidence-2026-08-27.md` before any public activation.
 
 ## Fail-closed runtime state
 

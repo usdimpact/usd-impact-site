@@ -112,11 +112,13 @@ The next operational stages require separate approvals and must remain ordered:
 3. authorize an isolated controlled-Live Preview configuration separately;
 4. add only Preview-scoped Live credentials and the dedicated QA allowlist;
 5. create a Preview-specific Live webhook only after the exact endpoint and event set are approved;
-6. run one separately approved controlled Live purchase and full refund, then verify durable state and cleanup/reconciliation evidence;
+6. complete the provider-compliant evidence packet: preserve the full Test Mode lifecycle proof, verify the trusted Live catalog read-only, and record exact-Preview signed-webhook security and fail-closed evidence without creating a Live checkout or transaction;
 7. complete the independent commerce-enabled security assessment and required retest;
 8. back up and verify Production database recovery, then separately approve and apply the reviewed commerce migrations to Production;
-9. separately authorize Production secrets, Production Live webhook, final configuration, exact launch window, and one Production controlled purchase/refund rehearsal;
-10. enable public checkout only through a final explicit approval after all Phase A/Phase B gates are green.
+9. separately authorize Production secrets, the minimum Production Live webhook and final configuration while `COMMERCE_MODE=disabled`, then verify the exact deployment without a rehearsal transaction;
+10. enable public checkout only through a final explicit approval after all Phase A/Phase B gates are green, then monitor the first independent genuine buyer order as real commerce without manufacturing a refund.
+
+Payment and refund testing remains in Lemon Squeezy Test Mode. A merchant, owner, employee, contractor, QA account or related party must never use a real card for a test purchase, and the release process must not require a circular merchant self-purchase or artificial Live refund. See `docs/operations/lemon-squeezy-provider-compliant-live-evidence-2026-08-27.md`.
 
 ## Rollback
 
@@ -133,4 +135,4 @@ Do not delete durable transaction evidence as a rollback mechanism. Do not attem
 
 ## Current disposition
 
-This Draft is credential-independent preparation only. Production configuration, secrets, migrations, Live webhook, payments, refunds, and public checkout remain unchanged and unauthorized by this document.
+The runtime preparation is merged, and isolated non-Production configuration and signed-webhook security evidence may be collected under separate approvals. Production configuration, secrets, migrations, payments, refunds, and public checkout remain unchanged and unauthorized by this document. No Live self-purchase or Production purchase/refund rehearsal is required.

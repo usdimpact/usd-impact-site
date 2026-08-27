@@ -145,4 +145,4 @@ This decision does not authorize:
 - enabling any commerce mode or provider selection in Production through this registration decision;
 - bypass of #343 or #54.
 
-All payment testing must use Lemon Squeezy Test Mode until a separate controlled-Live approval is recorded.
+All payment and refund testing must use Lemon Squeezy Test Mode. A controlled-Live approval may authorize read-only Live catalog validation and signed-webhook security evidence, but it must not authorize a merchant self-purchase, related-party real-card test or artificial Live refund. The first Live transaction must be a genuine buyer order after separately approved public activation. See `docs/operations/lemon-squeezy-provider-compliant-live-evidence-2026-08-27.md`.

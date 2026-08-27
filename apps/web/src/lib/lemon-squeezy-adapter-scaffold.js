@@ -6,7 +6,34 @@ import {
 import { PAID_PRODUCT_ID } from './paid-access.js';
 
 export const LEMON_SQUEEZY_PROVIDER = 'lemon-squeezy';
-export const LEMON_SQUEEZY_ADAPTER_SCAFFOLD_VERSION = '0.3.0-scaffold';
+export const LEMON_SQUEEZY_ADAPTER_SCAFFOLD_VERSION = '0.4.0-controlled-live';
+export const LEMON_SQUEEZY_LIVE_PRODUCT_ID = 1319591;
+export const LEMON_SQUEEZY_LIVE_LAUNCH_VARIANT_ID = 2062957;
+export const LEMON_SQUEEZY_LIVE_STANDARD_VARIANT_ID = 2062958;
+
+const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
+const PRODUCTION_PROJECT_REF = 'gjzetjugmnwanvjkchux';
+
+const TEST_CONFIGURATION_FIELDS = Object.freeze([
+  'LEMON_SQUEEZY_TEST_MODE',
+  'LEMON_SQUEEZY_TEST_API_KEY',
+  'LEMON_SQUEEZY_TEST_WEBHOOK_SECRET',
+  'LEMON_SQUEEZY_TEST_STORE_ID',
+  'LEMON_SQUEEZY_TEST_PRODUCT_ID',
+  'LEMON_SQUEEZY_TEST_LAUNCH_VARIANT_ID',
+  'LEMON_SQUEEZY_TEST_STANDARD_VARIANT_ID',
+  'LEMON_SQUEEZY_TEST_REDIRECT_URL',
+]);
+
+const LIVE_CONFIGURATION_FIELDS = Object.freeze([
+  'LEMON_SQUEEZY_LIVE_API_KEY',
+  'LEMON_SQUEEZY_LIVE_WEBHOOK_SECRET',
+  'LEMON_SQUEEZY_LIVE_STORE_ID',
+  'LEMON_SQUEEZY_LIVE_PRODUCT_ID',
+  'LEMON_SQUEEZY_LIVE_LAUNCH_VARIANT_ID',
+  'LEMON_SQUEEZY_LIVE_STANDARD_VARIANT_ID',
+  'LEMON_SQUEEZY_LIVE_REDIRECT_URL',
+]);
 
 export const LEMON_SQUEEZY_SCAFFOLD_CAPABILITIES = Object.freeze([
   'checkout.create',
@@ -55,6 +82,51 @@ function object(value, fieldName) {
   return value;
 }
 
+function configured(value) {
+  return text(String(value ?? '')) !== '';
+}
+
+function configuredFields(environment, fields) {
+  return fields.filter((field) => configured(environment?.[field]));
+}
+
+function validHttpsUrl(value) {
+  try {
+    return new URL(text(value)).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function validPositiveInteger(value) {
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0;
+}
+
+function validEmail(value) {
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(text(value));
+}
+
+function supabaseProjectRef(value) {
+  try {
+    return new URL(text(value)).hostname.split('.')[0] || '';
+  } catch {
+    return '';
+  }
+}
+
+function validSupabaseConfiguration(environment, expectedProjectRef) {
+  return supabaseProjectRef(environment.SUPABASE_URL) === expectedProjectRef
+    && text(environment.SUPABASE_PUBLISHABLE_KEY).startsWith('sb_publishable_')
+    && text(environment.SUPABASE_PUBLISHABLE_KEY).length >= 31
+    && text(environment.SUPABASE_SECRET_KEY).startsWith('sb_secret_')
+    && text(environment.SUPABASE_SECRET_KEY).length >= 26;
+}
+
+function configurationAssessment(ready, reason) {
+  return Object.freeze({ ready, reason });
+}
+
 function asRawBuffer(rawBody) {
   if (Buffer.isBuffer(rawBody)) return rawBody;
   if (typeof rawBody === 'string') return Buffer.from(rawBody, 'utf8');
@@ -89,8 +161,8 @@ export function buildLemonSqueezyCheckoutRequest({
   const customerEmail = email == null ? null : text(email);
   const redirect = redirectUrl == null ? null : text(redirectUrl);
 
-  if (testMode !== true) {
-    throw new TypeError('The scaffold only permits Lemon Squeezy Test Mode checkout creation.');
+  if (typeof testMode !== 'boolean') {
+    throw new TypeError('testMode must be an explicit boolean.');
   }
   if (customerEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(customerEmail)) {
     throw new TypeError('email is invalid.');
@@ -118,7 +190,7 @@ export function buildLemonSqueezyCheckoutRequest({
           },
           variant_quantities: [{ variant_id: variant, quantity: 1 }],
         },
-        test_mode: true,
+        test_mode: testMode,
       },
       relationships: {
         store: { data: { type: 'stores', id: store } },
@@ -128,16 +200,18 @@ export function buildLemonSqueezyCheckoutRequest({
   });
 }
 
-export async function createLemonSqueezyTestCheckout({
+export async function createLemonSqueezyCheckout({
   apiKey,
+  testMode,
   fetchImpl = globalThis.fetch,
   ...checkout
 }) {
   const key = text(apiKey);
-  if (!key) throw new TypeError('A Test Mode Lemon Squeezy API key is required.');
+  if (!key) throw new TypeError('A Lemon Squeezy API key is required.');
+  if (typeof testMode !== 'boolean') throw new TypeError('testMode must be an explicit boolean.');
   if (typeof fetchImpl !== 'function') throw new TypeError('fetchImpl must be a function.');
 
-  const requestBody = buildLemonSqueezyCheckoutRequest({ ...checkout, testMode: true });
+  const requestBody = buildLemonSqueezyCheckoutRequest({ ...checkout, testMode });
   const response = await fetchImpl('https://api.lemonsqueezy.com/v1/checkouts', {
     method: 'POST',
     headers: {
@@ -163,16 +237,26 @@ export async function createLemonSqueezyTestCheckout({
   if (checkoutData.type !== 'checkouts' || !checkoutUrl.startsWith('https://')) {
     throw new TypeError('Lemon Squeezy returned an invalid checkout object.');
   }
-  if (attributes.test_mode !== true) {
-    throw new TypeError('The scaffold rejected a non-Test-Mode checkout response.');
+  if (attributes.test_mode !== testMode) {
+    throw new TypeError(
+      `The adapter expected a ${testMode ? 'Test Mode' : 'Live'} checkout response but received ${attributes.test_mode === true ? 'Test Mode' : 'Live'}.`,
+    );
   }
 
   return Object.freeze({
     provider: LEMON_SQUEEZY_PROVIDER,
     checkoutId: stableIdentifier(checkoutData.id, 'checkoutId'),
     url: checkoutUrl,
-    testMode: true,
+    testMode,
   });
+}
+
+export async function createLemonSqueezyTestCheckout(options) {
+  return createLemonSqueezyCheckout({ ...options, testMode: true });
+}
+
+export async function createLemonSqueezyLiveCheckout(options) {
+  return createLemonSqueezyCheckout({ ...options, testMode: false });
 }
 
 function providerEventId(eventName, orderId, attributes) {
@@ -194,10 +278,18 @@ function validateTrustedOrder({
   expectedVariantId,
   expectedSubtotalCents,
   expectedCurrency = 'USD',
+  expectedTestMode,
   requireTestMode = true,
 }) {
-  if (requireTestMode && attributes.test_mode !== true) {
-    throw new TypeError('The scaffold accepts Test Mode order state only.');
+  const requiredTestMode = typeof expectedTestMode === 'boolean'
+    ? expectedTestMode
+    : requireTestMode
+      ? true
+      : null;
+  if (requiredTestMode !== null && attributes.test_mode !== requiredTestMode) {
+    throw new TypeError(
+      `The adapter expected ${requiredTestMode ? 'Test Mode' : 'Live'} but received a ${attributes.test_mode === true ? 'Test Mode' : 'Live'} order.`,
+    );
   }
   if (expectedStoreId != null && String(attributes.store_id) !== String(expectedStoreId)) {
     throw new TypeError('Lemon Squeezy store does not match the trusted configuration.');
@@ -241,6 +333,7 @@ export function normalizeLemonSqueezyOrderEvent(payload, {
   expectedVariantId,
   expectedSubtotalCents,
   expectedCurrency = 'USD',
+  expectedTestMode,
   requireTestMode = true,
 } = {}) {
   const root = object(payload, 'payload');
@@ -265,6 +358,7 @@ export function normalizeLemonSqueezyOrderEvent(payload, {
     expectedVariantId,
     expectedSubtotalCents,
     expectedCurrency,
+    expectedTestMode,
     requireTestMode,
   });
 
@@ -317,6 +411,7 @@ export async function retrieveLemonSqueezyOrder({
   apiKey,
   orderId,
   fetchImpl = globalThis.fetch,
+  expectedTestMode,
   requireTestMode = true,
 }) {
   const key = text(apiKey);
@@ -343,8 +438,15 @@ export async function retrieveLemonSqueezyOrder({
   const data = object(body?.data, 'order response data');
   const attributes = object(data.attributes, 'order response attributes');
   if (data.type !== 'orders') throw new TypeError('Lemon Squeezy returned a non-order object.');
-  if (requireTestMode && attributes.test_mode !== true) {
-    throw new TypeError('The scaffold rejected a non-Test-Mode order response.');
+  const requiredTestMode = typeof expectedTestMode === 'boolean'
+    ? expectedTestMode
+    : requireTestMode
+      ? true
+      : null;
+  if (requiredTestMode !== null && attributes.test_mode !== requiredTestMode) {
+    throw new TypeError(
+      `The adapter expected ${requiredTestMode ? 'Test Mode' : 'Live'} but received a ${attributes.test_mode === true ? 'Test Mode' : 'Live'} order response.`,
+    );
   }
   return Object.freeze({ data: structuredClone(data) });
 }
@@ -355,6 +457,7 @@ export function reconcileLemonSqueezyOrder(orderResource, {
   expectedVariantId,
   expectedSubtotalCents,
   expectedCurrency = 'USD',
+  expectedTestMode,
   requireTestMode = true,
 } = {}) {
   const resource = object(orderResource?.data ?? orderResource, 'order resource');
@@ -371,6 +474,7 @@ export function reconcileLemonSqueezyOrder(orderResource, {
     expectedVariantId,
     expectedSubtotalCents,
     expectedCurrency,
+    expectedTestMode,
     requireTestMode,
   });
   const status = text(attributes.status);
@@ -416,15 +520,86 @@ export const LEMON_SQUEEZY_ADAPTER_SCAFFOLD = Object.freeze({
   version: LEMON_SQUEEZY_ADAPTER_SCAFFOLD_VERSION,
   lifecycleModel: COMMERCE_LIFECYCLE_MODELS.MOR_FINAL_STATE_RECONCILIATION,
   capabilities: LEMON_SQUEEZY_SCAFFOLD_CAPABILITIES,
-  createCheckout: createLemonSqueezyTestCheckout,
+  createCheckout: createLemonSqueezyCheckout,
   verifyWebhookSignature: verifyLemonSqueezyWebhookSignature,
   normalizeEvent: normalizeLemonSqueezyOrderEvent,
   retrieveOrder: retrieveLemonSqueezyOrder,
   reconcileTransaction: reconcileLemonSqueezyOrder,
-  assessConfiguration() {
-    return Object.freeze({
-      ready: false,
-      reason: 'Lemon Squeezy is registered in code only. Environment activation remains blocked until a separately approved mode-specific configuration and release decision are supplied.',
-    });
+  assessConfiguration(environment = {}, mode = '') {
+    const normalizedMode = text(mode).toLowerCase();
+    if (normalizedMode === 'sandbox') {
+      if (configuredFields(environment, LIVE_CONFIGURATION_FIELDS).length > 0) {
+        return configurationAssessment(false, 'Sandbox configuration must not contain Lemon Squeezy Live credentials or identifiers.');
+      }
+      const missing = TEST_CONFIGURATION_FIELDS.filter((field) => !configured(environment[field]));
+      if (missing.length > 0 || text(environment.LEMON_SQUEEZY_TEST_MODE).toLowerCase() !== 'true') {
+        return configurationAssessment(false, 'Lemon Squeezy Test Mode configuration is incomplete or not explicitly enabled.');
+      }
+      if (!validEmail(environment.COMMERCE_SANDBOX_QA_EMAIL)) {
+        return configurationAssessment(false, 'Lemon Squeezy Test Mode requires a dedicated QA email.');
+      }
+      if (
+        !validPositiveInteger(environment.LEMON_SQUEEZY_TEST_STORE_ID)
+        || !validPositiveInteger(environment.LEMON_SQUEEZY_TEST_PRODUCT_ID)
+        || !validPositiveInteger(environment.LEMON_SQUEEZY_TEST_LAUNCH_VARIANT_ID)
+        || !validPositiveInteger(environment.LEMON_SQUEEZY_TEST_STANDARD_VARIANT_ID)
+        || !validHttpsUrl(environment.LEMON_SQUEEZY_TEST_REDIRECT_URL)
+      ) {
+        return configurationAssessment(false, 'Lemon Squeezy Test Mode identifiers or redirect URL are invalid.');
+      }
+      if (Number(environment.LEMON_SQUEEZY_TEST_LAUNCH_VARIANT_ID) === Number(environment.LEMON_SQUEEZY_TEST_STANDARD_VARIANT_ID)) {
+        return configurationAssessment(false, 'Launch and standard Lemon Squeezy variants must be distinct fixed-price variants.');
+      }
+      if (!validSupabaseConfiguration(environment, DEVELOPMENT_PROJECT_REF)) {
+        return configurationAssessment(false, 'Lemon Squeezy Test Mode requires canonical Development database configuration.');
+      }
+      return configurationAssessment(true, 'Lemon Squeezy Test Mode configuration is complete and isolated from Live configuration.');
+    }
+
+    if (normalizedMode === 'live-test' || normalizedMode === 'live') {
+      if (configuredFields(environment, TEST_CONFIGURATION_FIELDS).length > 0) {
+        return configurationAssessment(false, 'Live configuration must not contain Lemon Squeezy Test credentials or identifiers.');
+      }
+      const missing = LIVE_CONFIGURATION_FIELDS.filter((field) => !configured(environment[field]));
+      if (missing.length > 0) {
+        return configurationAssessment(false, 'Lemon Squeezy Live configuration is incomplete.');
+      }
+      if (
+        !validPositiveInteger(environment.LEMON_SQUEEZY_LIVE_STORE_ID)
+        || Number(environment.LEMON_SQUEEZY_LIVE_PRODUCT_ID) !== LEMON_SQUEEZY_LIVE_PRODUCT_ID
+        || Number(environment.LEMON_SQUEEZY_LIVE_LAUNCH_VARIANT_ID) !== LEMON_SQUEEZY_LIVE_LAUNCH_VARIANT_ID
+        || Number(environment.LEMON_SQUEEZY_LIVE_STANDARD_VARIANT_ID) !== LEMON_SQUEEZY_LIVE_STANDARD_VARIANT_ID
+      ) {
+        return configurationAssessment(false, 'Lemon Squeezy Live product or variant identifiers do not match the reviewed catalog.');
+      }
+      if (!validHttpsUrl(environment.LEMON_SQUEEZY_LIVE_REDIRECT_URL)) {
+        return configurationAssessment(false, 'Lemon Squeezy Live redirect URL must use HTTPS.');
+      }
+      const liveRedirectHost = new URL(text(environment.LEMON_SQUEEZY_LIVE_REDIRECT_URL)).hostname;
+      if (normalizedMode === 'live' && !['usd-impact.com', 'www.usd-impact.com'].includes(liveRedirectHost)) {
+        return configurationAssessment(false, 'Lemon Squeezy Live redirect URL must use an approved USD Impact Production hostname.');
+      }
+      const expectedProjectRef = normalizedMode === 'live' ? PRODUCTION_PROJECT_REF : DEVELOPMENT_PROJECT_REF;
+      if (!validSupabaseConfiguration(environment, expectedProjectRef)) {
+        return configurationAssessment(false, `Lemon Squeezy ${normalizedMode} requires the canonical ${normalizedMode === 'live' ? 'Production' : 'Development'} database configuration.`);
+      }
+      if (text(environment.COMMERCE_RECONCILIATION_ENABLED).toLowerCase() !== 'true') {
+        return configurationAssessment(false, 'Lemon Squeezy Live modes require reconciliation to be explicitly enabled.');
+      }
+      if (normalizedMode === 'live-test' && !validEmail(environment.COMMERCE_CONTROLLED_LIVE_QA_EMAIL)) {
+        return configurationAssessment(false, 'Controlled Live testing requires a dedicated QA email.');
+      }
+      return configurationAssessment(
+        true,
+        normalizedMode === 'live-test'
+          ? 'Lemon Squeezy Live configuration is complete, isolated, and restricted to the controlled QA account.'
+          : 'Lemon Squeezy Live configuration is complete and isolated; final activation remains governed by the Production release gates.',
+      );
+    }
+
+    return configurationAssessment(
+      false,
+      'Lemon Squeezy activation requires an explicitly reviewed sandbox, controlled Live-test, or Live mode.',
+    );
   },
 });

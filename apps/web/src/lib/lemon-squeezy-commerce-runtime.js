@@ -6,14 +6,24 @@ import {
   PAID_PRODUCT_ID,
 } from './paid-access.js';
 import {
+  LEMON_SQUEEZY_ADAPTER_SCAFFOLD,
+  LEMON_SQUEEZY_LIVE_LAUNCH_VARIANT_ID,
+  LEMON_SQUEEZY_LIVE_PRODUCT_ID,
+  LEMON_SQUEEZY_LIVE_STANDARD_VARIANT_ID,
   LEMON_SQUEEZY_PROVIDER,
   buildLemonSqueezyCheckoutRequest,
   normalizeLemonSqueezyOrderEvent,
   verifyLemonSqueezyWebhookSignature,
 } from './lemon-squeezy-adapter-scaffold.js';
+import {
+  COMMERCE_MODES,
+  COMMERCE_READINESS_STATES,
+  resolveCommerceReadiness,
+} from './commerce-provider.js';
 import { readSupabaseServerConfig } from './supabase-server.js';
 
 const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
+const PRODUCTION_PROJECT_REF = 'gjzetjugmnwanvjkchux';
 const MAX_RECONCILIATION_BATCH = 25;
 const PROVIDER_API_ROOT = 'https://api.lemonsqueezy.com/v1';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -45,12 +55,18 @@ function enabled(value) {
   return text(String(value ?? '')).toLowerCase() === 'true';
 }
 
+function configurationErrorCode(name) {
+  return String(name).includes('LIVE')
+    ? 'COMMERCE_LIVE_CONFIGURATION_INVALID'
+    : 'COMMERCE_SANDBOX_CONFIGURATION_INVALID';
+}
+
 function requireText(value, name, minimum = 1, maximum = 4096) {
   const normalized = text(String(value ?? ''));
   if (normalized.length < minimum || normalized.length > maximum) {
     throw new LemonSqueezyCommerceRuntimeError(
       `${name} is missing or invalid.`,
-      'COMMERCE_SANDBOX_CONFIGURATION_INVALID',
+      configurationErrorCode(name),
       503,
     );
   }
@@ -62,7 +78,7 @@ function requirePositiveInteger(value, name) {
   if (!Number.isSafeInteger(parsed) || parsed <= 0) {
     throw new LemonSqueezyCommerceRuntimeError(
       `${name} is missing or invalid.`,
-      'COMMERCE_SANDBOX_CONFIGURATION_INVALID',
+      configurationErrorCode(name),
       503,
     );
   }
@@ -93,46 +109,97 @@ function projectRefFromUrl(url) {
   }
 }
 
-function requireSandboxRedirect(value) {
-  const raw = requireText(value, 'LEMON_SQUEEZY_TEST_REDIRECT_URL', 8, 2048);
+function requireRedirect(value, name, { productionOnly = false } = {}) {
+  const raw = requireText(value, name, 8, 2048);
   let parsed;
   try {
     parsed = new URL(raw);
   } catch {
     throw new LemonSqueezyCommerceRuntimeError(
-      'LEMON_SQUEEZY_TEST_REDIRECT_URL is invalid.',
-      'COMMERCE_SANDBOX_CONFIGURATION_INVALID',
+      `${name} is invalid.`,
+      configurationErrorCode(name),
       503,
     );
   }
   if (parsed.protocol !== 'https:') {
     throw new LemonSqueezyCommerceRuntimeError(
-      'LEMON_SQUEEZY_TEST_REDIRECT_URL must use HTTPS.',
-      'COMMERCE_SANDBOX_CONFIGURATION_INVALID',
+      `${name} must use HTTPS.`,
+      configurationErrorCode(name),
+      503,
+    );
+  }
+  if (productionOnly && !['usd-impact.com', 'www.usd-impact.com'].includes(parsed.hostname)) {
+    throw new LemonSqueezyCommerceRuntimeError(
+      `${name} must use an approved USD Impact Production hostname.`,
+      'COMMERCE_LIVE_REDIRECT_HOST_INVALID',
       503,
     );
   }
   return parsed.toString();
 }
 
+function requireQaEmail(value, name) {
+  const qaEmail = requireText(value, name, 3, 254).toLowerCase();
+  if (!EMAIL_PATTERN.test(qaEmail)) {
+    throw new LemonSqueezyCommerceRuntimeError(
+      `${name} is invalid.`,
+      configurationErrorCode(name),
+      503,
+    );
+  }
+  return qaEmail;
+}
+
+function expectedReadinessState(mode) {
+  if (mode === COMMERCE_MODES.SANDBOX) return COMMERCE_READINESS_STATES.READY_FOR_SANDBOX;
+  if (mode === COMMERCE_MODES.LIVE_TEST) return COMMERCE_READINESS_STATES.READY_FOR_CONTROLLED_LIVE_TEST;
+  if (mode === COMMERCE_MODES.LIVE) return COMMERCE_READINESS_STATES.ACTIVE;
+  return null;
+}
+
+function resolveApprovedRuntimeReadiness(environment, mode) {
+  let readiness;
+  try {
+    readiness = resolveCommerceReadiness(environment, [LEMON_SQUEEZY_ADAPTER_SCAFFOLD]);
+  } catch {
+    throw new LemonSqueezyCommerceRuntimeError(
+      'Commerce release-gate configuration is invalid.',
+      'COMMERCE_RELEASE_GATE_INVALID',
+      503,
+    );
+  }
+  if (readiness.state !== expectedReadinessState(mode)) {
+    throw new LemonSqueezyCommerceRuntimeError(
+      readiness.reason || 'Commerce release gates are incomplete.',
+      'COMMERCE_RELEASE_GATE_BLOCKED',
+      503,
+    );
+  }
+  return readiness;
+}
+
 export function readLemonSqueezyCommerceRuntimeConfig(environment = process.env) {
   const mode = text(environment.COMMERCE_MODE).toLowerCase();
   const provider = text(environment.COMMERCE_PROVIDER).toLowerCase();
-  if (mode !== 'sandbox' || provider !== LEMON_SQUEEZY_PROVIDER) {
+  if (![
+    COMMERCE_MODES.SANDBOX,
+    COMMERCE_MODES.LIVE_TEST,
+    COMMERCE_MODES.LIVE,
+  ].includes(mode) || provider !== LEMON_SQUEEZY_PROVIDER) {
     return Object.freeze({
       enabled: false,
-      reason: 'Lemon Squeezy commerce runtime is disabled outside the explicitly configured sandbox.',
+      reason: 'Lemon Squeezy commerce runtime is disabled outside an explicitly approved provider mode.',
     });
   }
 
-  if (text(environment.VERCEL_ENV).toLowerCase() === 'production') {
+  if (mode === COMMERCE_MODES.SANDBOX && text(environment.VERCEL_ENV).toLowerCase() === 'production') {
     throw new LemonSqueezyCommerceRuntimeError(
       'Lemon Squeezy sandbox runtime cannot execute in Production.',
       'COMMERCE_SANDBOX_PRODUCTION_FORBIDDEN',
       503,
     );
   }
-  if (!enabled(environment.LEMON_SQUEEZY_TEST_MODE)) {
+  if (mode === COMMERCE_MODES.SANDBOX && !enabled(environment.LEMON_SQUEEZY_TEST_MODE)) {
     throw new LemonSqueezyCommerceRuntimeError(
       'Lemon Squeezy Test Mode must be explicitly enabled.',
       'COMMERCE_SANDBOX_TEST_MODE_REQUIRED',
@@ -145,66 +212,106 @@ export function readLemonSqueezyCommerceRuntimeConfig(environment = process.env)
     supabase = readSupabaseServerConfig(environment, { requireSecret: true });
   } catch {
     throw new LemonSqueezyCommerceRuntimeError(
-      'The commerce sandbox database configuration is missing or invalid.',
-      'COMMERCE_SANDBOX_CONFIGURATION_INVALID',
+      'The commerce database configuration is missing or invalid.',
+      mode === COMMERCE_MODES.SANDBOX
+        ? 'COMMERCE_SANDBOX_CONFIGURATION_INVALID'
+        : 'COMMERCE_LIVE_CONFIGURATION_INVALID',
       503,
     );
   }
   const projectRef = projectRefFromUrl(supabase.url);
-  if (projectRef !== DEVELOPMENT_PROJECT_REF) {
+  const expectedProjectRef = mode === COMMERCE_MODES.LIVE
+    ? PRODUCTION_PROJECT_REF
+    : DEVELOPMENT_PROJECT_REF;
+  if (projectRef !== expectedProjectRef) {
     throw new LemonSqueezyCommerceRuntimeError(
-      'Commerce sandbox must target the canonical Development Supabase project.',
-      'COMMERCE_SANDBOX_PROJECT_MISMATCH',
+      mode === COMMERCE_MODES.LIVE
+        ? 'Commerce Live mode must target the canonical Production Supabase project.'
+        : 'Commerce sandbox and controlled Live-test modes must target the canonical Development Supabase project.',
+      mode === COMMERCE_MODES.SANDBOX
+        ? 'COMMERCE_SANDBOX_PROJECT_MISMATCH'
+        : 'COMMERCE_DATABASE_PROJECT_MISMATCH',
       503,
     );
   }
 
-  const qaEmail = requireText(environment.COMMERCE_SANDBOX_QA_EMAIL, 'COMMERCE_SANDBOX_QA_EMAIL', 3, 254)
-    .toLowerCase();
-  if (!EMAIL_PATTERN.test(qaEmail)) {
-    throw new LemonSqueezyCommerceRuntimeError(
-      'COMMERCE_SANDBOX_QA_EMAIL is invalid.',
-      'COMMERCE_SANDBOX_CONFIGURATION_INVALID',
-      503,
-    );
-  }
+  const readiness = resolveApprovedRuntimeReadiness(environment, mode);
+
+  const testMode = mode === COMMERCE_MODES.SANDBOX;
+  const qaEmail = mode === COMMERCE_MODES.SANDBOX
+    ? requireQaEmail(environment.COMMERCE_SANDBOX_QA_EMAIL, 'COMMERCE_SANDBOX_QA_EMAIL')
+    : mode === COMMERCE_MODES.LIVE_TEST
+      ? requireQaEmail(environment.COMMERCE_CONTROLLED_LIVE_QA_EMAIL, 'COMMERCE_CONTROLLED_LIVE_QA_EMAIL')
+      : null;
+  const namespace = testMode ? 'TEST' : 'LIVE';
 
   const launchVariantId = requirePositiveInteger(
-    environment.LEMON_SQUEEZY_TEST_LAUNCH_VARIANT_ID,
-    'LEMON_SQUEEZY_TEST_LAUNCH_VARIANT_ID',
+    environment[`LEMON_SQUEEZY_${namespace}_LAUNCH_VARIANT_ID`],
+    `LEMON_SQUEEZY_${namespace}_LAUNCH_VARIANT_ID`,
   );
   const standardVariantId = requirePositiveInteger(
-    environment.LEMON_SQUEEZY_TEST_STANDARD_VARIANT_ID,
-    'LEMON_SQUEEZY_TEST_STANDARD_VARIANT_ID',
+    environment[`LEMON_SQUEEZY_${namespace}_STANDARD_VARIANT_ID`],
+    `LEMON_SQUEEZY_${namespace}_STANDARD_VARIANT_ID`,
   );
   if (launchVariantId === standardVariantId) {
     throw new LemonSqueezyCommerceRuntimeError(
       'Launch and standard Lemon Squeezy variants must be distinct fixed-price variants.',
-      'COMMERCE_SANDBOX_VARIANTS_NOT_DISTINCT',
+      mode === COMMERCE_MODES.SANDBOX
+        ? 'COMMERCE_SANDBOX_VARIANTS_NOT_DISTINCT'
+        : 'COMMERCE_LIVE_VARIANTS_NOT_DISTINCT',
+      503,
+    );
+  }
+  const productId = requirePositiveInteger(
+    environment[`LEMON_SQUEEZY_${namespace}_PRODUCT_ID`],
+    `LEMON_SQUEEZY_${namespace}_PRODUCT_ID`,
+  );
+  if (!testMode && (
+    productId !== LEMON_SQUEEZY_LIVE_PRODUCT_ID
+    || launchVariantId !== LEMON_SQUEEZY_LIVE_LAUNCH_VARIANT_ID
+    || standardVariantId !== LEMON_SQUEEZY_LIVE_STANDARD_VARIANT_ID
+  )) {
+    throw new LemonSqueezyCommerceRuntimeError(
+      'Lemon Squeezy Live catalog identifiers do not match the reviewed Library Pass catalog.',
+      'COMMERCE_LIVE_CATALOG_MISMATCH',
       503,
     );
   }
 
   return Object.freeze({
     enabled: true,
-    mode: 'sandbox',
+    mode,
     provider: LEMON_SQUEEZY_PROVIDER,
-    testMode: true,
+    testMode,
+    controlledQaOnly: mode !== COMMERCE_MODES.LIVE,
+    readiness,
     supabase,
     projectRef,
     qaEmail,
-    apiKey: requireText(environment.LEMON_SQUEEZY_TEST_API_KEY, 'LEMON_SQUEEZY_TEST_API_KEY', 16, 4096),
-    webhookSecret: requireText(
-      environment.LEMON_SQUEEZY_TEST_WEBHOOK_SECRET,
-      'LEMON_SQUEEZY_TEST_WEBHOOK_SECRET',
+    apiKey: requireText(
+      environment[`LEMON_SQUEEZY_${namespace}_API_KEY`],
+      `LEMON_SQUEEZY_${namespace}_API_KEY`,
       16,
       4096,
     ),
-    storeId: requirePositiveInteger(environment.LEMON_SQUEEZY_TEST_STORE_ID, 'LEMON_SQUEEZY_TEST_STORE_ID'),
-    productId: requirePositiveInteger(environment.LEMON_SQUEEZY_TEST_PRODUCT_ID, 'LEMON_SQUEEZY_TEST_PRODUCT_ID'),
+    webhookSecret: requireText(
+      environment[`LEMON_SQUEEZY_${namespace}_WEBHOOK_SECRET`],
+      `LEMON_SQUEEZY_${namespace}_WEBHOOK_SECRET`,
+      16,
+      4096,
+    ),
+    storeId: requirePositiveInteger(
+      environment[`LEMON_SQUEEZY_${namespace}_STORE_ID`],
+      `LEMON_SQUEEZY_${namespace}_STORE_ID`,
+    ),
+    productId,
     launchVariantId,
     standardVariantId,
-    redirectUrl: requireSandboxRedirect(environment.LEMON_SQUEEZY_TEST_REDIRECT_URL),
+    redirectUrl: requireRedirect(
+      environment[`LEMON_SQUEEZY_${namespace}_REDIRECT_URL`],
+      `LEMON_SQUEEZY_${namespace}_REDIRECT_URL`,
+      { productionOnly: mode === COMMERCE_MODES.LIVE },
+    ),
     reconciliationEnabled: enabled(environment.COMMERCE_RECONCILIATION_ENABLED),
   });
 }
@@ -391,15 +498,15 @@ async function providerJsonRequest({ config, path, method = 'GET', body, fetchIm
   const payload = await readJson(response);
   if (!response.ok) {
     throw new LemonSqueezyCommerceRuntimeError(
-      'The Lemon Squeezy Test Mode API request failed.',
-      'LEMON_SQUEEZY_TEST_API_REQUEST_FAILED',
+      `The Lemon Squeezy ${config.testMode ? 'Test Mode' : 'Live'} API request failed.`,
+      config.testMode ? 'LEMON_SQUEEZY_TEST_API_REQUEST_FAILED' : 'LEMON_SQUEEZY_LIVE_API_REQUEST_FAILED',
       response.status >= 400 && response.status < 600 ? response.status : 502,
     );
   }
   return payload;
 }
 
-export async function createLockedLemonSqueezyTestCheckout({
+export async function createLockedLemonSqueezyCheckout({
   config,
   accountId,
   purchaseIntentId,
@@ -414,7 +521,7 @@ export async function createLockedLemonSqueezyTestCheckout({
     purchaseIntentId,
     email,
     redirectUrl: config.redirectUrl,
-    testMode: true,
+    testMode: config.testMode,
   }));
   requestBody.data.attributes.checkout_options = { discount: false };
 
@@ -430,18 +537,33 @@ export async function createLockedLemonSqueezyTestCheckout({
   if (
     data?.type !== 'checkouts'
     || !STABLE_ID_PATTERN.test(String(data?.id || ''))
-    || attributes?.test_mode !== true
+    || attributes?.test_mode !== config.testMode
     || typeof attributes?.url !== 'string'
     || !attributes.url.startsWith('https://')
   ) {
-    throw new LemonSqueezyCommerceRuntimeError('Lemon Squeezy returned an invalid Test Mode checkout.', 'INVALID_TEST_CHECKOUT', 502);
+    throw new LemonSqueezyCommerceRuntimeError(
+      `Lemon Squeezy returned an invalid ${config.testMode ? 'Test Mode' : 'Live'} checkout.`,
+      config.testMode ? 'INVALID_TEST_CHECKOUT' : 'INVALID_LIVE_CHECKOUT',
+      502,
+    );
   }
   return Object.freeze({
     provider: LEMON_SQUEEZY_PROVIDER,
     checkoutId: String(data.id),
     url: attributes.url,
-    testMode: true,
+    testMode: config.testMode,
   });
+}
+
+export async function createLockedLemonSqueezyTestCheckout(options) {
+  if (options?.config?.testMode !== true) {
+    throw new LemonSqueezyCommerceRuntimeError(
+      'The Test checkout helper requires an isolated Test Mode configuration.',
+      'COMMERCE_TEST_CONFIGURATION_REQUIRED',
+      503,
+    );
+  }
+  return createLockedLemonSqueezyCheckout(options);
 }
 
 export async function retrieveAuthoritativeLemonSqueezyOrder({ config, orderId, fetchImpl }) {
@@ -486,8 +608,12 @@ export function validateLemonSqueezyOrderCommercialTerms({
   if (order?.type !== 'orders' || !attributes || typeof attributes !== 'object' || Array.isArray(attributes)) {
     throw new LemonSqueezyCommerceRuntimeError('Order resource is malformed.', 'LEMON_SQUEEZY_ORDER_INVARIANT_FAILED', 409);
   }
-  if (attributes.test_mode !== true) {
-    throw new LemonSqueezyCommerceRuntimeError('Non-Test-Mode order rejected.', 'LEMON_SQUEEZY_ORDER_INVARIANT_FAILED', 409);
+  if (attributes.test_mode !== config.testMode) {
+    throw new LemonSqueezyCommerceRuntimeError(
+      config.testMode ? 'Non-Test-Mode order rejected.' : 'Test-Mode order rejected.',
+      'LEMON_SQUEEZY_ORDER_MODE_MISMATCH',
+      409,
+    );
   }
   if (String(attributes.store_id) !== String(config.storeId)) {
     throw new LemonSqueezyCommerceRuntimeError('Order Store mismatch.', 'LEMON_SQUEEZY_ORDER_INVARIANT_FAILED', 409);
@@ -685,12 +811,44 @@ export async function createSandboxCommerceCheckout({
   fetchImpl,
   now = new Date(),
 }) {
+  if (config?.mode !== COMMERCE_MODES.SANDBOX) {
+    throw new LemonSqueezyCommerceRuntimeError(
+      'The sandbox checkout helper requires sandbox mode.',
+      'COMMERCE_SANDBOX_CONFIGURATION_REQUIRED',
+      503,
+    );
+  }
+  return createCommerceCheckout({ config, user, idempotencyKey, fetchImpl, now });
+}
+
+export async function createCommerceCheckout({
+  config,
+  user,
+  idempotencyKey,
+  fetchImpl,
+  now = new Date(),
+}) {
   if (!config?.enabled) {
-    throw new LemonSqueezyCommerceRuntimeError('Commerce sandbox is disabled.', 'COMMERCE_SANDBOX_DISABLED', 503);
+    throw new LemonSqueezyCommerceRuntimeError('Commerce is disabled.', 'COMMERCE_DISABLED', 503);
   }
   const email = text(user?.email).toLowerCase();
-  if (!UUID_PATTERN.test(text(user?.id)) || email !== config.qaEmail) {
-    throw new LemonSqueezyCommerceRuntimeError('This sandbox checkout is restricted to the configured QA account.', 'COMMERCE_SANDBOX_QA_ONLY', 403);
+  if (!UUID_PATTERN.test(text(user?.id))) {
+    throw new LemonSqueezyCommerceRuntimeError(
+      config.mode === COMMERCE_MODES.SANDBOX
+        ? 'This sandbox checkout is restricted to the configured QA account.'
+        : 'A verified account is required.',
+      config.mode === COMMERCE_MODES.SANDBOX
+        ? 'COMMERCE_SANDBOX_QA_ONLY'
+        : 'COMMERCE_ACCOUNT_INVALID',
+      403,
+    );
+  }
+  if (config.controlledQaOnly && email !== config.qaEmail) {
+    throw new LemonSqueezyCommerceRuntimeError(
+      'This controlled checkout is restricted to the configured QA account.',
+      config.mode === COMMERCE_MODES.LIVE_TEST ? 'COMMERCE_CONTROLLED_LIVE_QA_ONLY' : 'COMMERCE_SANDBOX_QA_ONLY',
+      403,
+    );
   }
 
   const intent = await reserveCommercePurchaseIntent({
@@ -714,7 +872,7 @@ export async function createSandboxCommerceCheckout({
     );
   }
   const trusted = selectTrustedLemonSqueezyVariant(intent, config);
-  const checkout = await createLockedLemonSqueezyTestCheckout({
+  const checkout = await createLockedLemonSqueezyCheckout({
     config,
     accountId: user.id,
     purchaseIntentId: intent.id,
@@ -753,7 +911,7 @@ export async function processLemonSqueezyWebhook({
   now = new Date(),
 }) {
   if (!config?.enabled) {
-    throw new LemonSqueezyCommerceRuntimeError('Commerce sandbox is disabled.', 'COMMERCE_SANDBOX_DISABLED', 503);
+    throw new LemonSqueezyCommerceRuntimeError('Commerce is disabled.', 'COMMERCE_DISABLED', 503);
   }
   if (!verifyLemonSqueezyWebhookSignature({ rawBody, signature, secret: config.webhookSecret })) {
     throw new LemonSqueezyCommerceRuntimeError('Webhook signature is invalid.', 'INVALID_COMMERCE_WEBHOOK_SIGNATURE', 401);
@@ -779,7 +937,8 @@ export async function processLemonSqueezyWebhook({
     expectedVariantId: trusted.variantId,
     expectedSubtotalCents: trusted.expectedSubtotalCents,
     expectedCurrency: trusted.currency,
-    requireTestMode: true,
+    expectedTestMode: config.testMode,
+    requireTestMode: false,
   });
 
   const receipt = await beginCommerceWebhookReceipt({
@@ -969,7 +1128,7 @@ export function publicCommerceRuntimeError(error) {
     return Object.freeze({
       status: safeStatus,
       payload: {
-        error: safeStatus >= 500 ? 'Commerce sandbox is temporarily unavailable.' : error.message,
+        error: safeStatus >= 500 ? 'Commerce is temporarily unavailable.' : error.message,
         code: error.code,
       },
     });
@@ -977,6 +1136,6 @@ export function publicCommerceRuntimeError(error) {
   console.error(error);
   return Object.freeze({
     status: 500,
-    payload: { error: 'Commerce sandbox is temporarily unavailable.', code: 'COMMERCE_INTERNAL_ERROR' },
+    payload: { error: 'Commerce is temporarily unavailable.', code: 'COMMERCE_INTERNAL_ERROR' },
   });
 }

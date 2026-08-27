@@ -4,6 +4,7 @@ import { validateCommerceAdapter } from '../src/lib/commerce-provider.js';
 import {
   LEMON_SQUEEZY_ADAPTER_SCAFFOLD,
   buildLemonSqueezyCheckoutRequest,
+  createLemonSqueezyLiveCheckout,
   createLemonSqueezyTestCheckout,
   normalizeLemonSqueezyOrderEvent,
   reconcileLemonSqueezyOrder,
@@ -39,9 +40,10 @@ assert.deepEqual(checkoutBody.data.attributes.checkout_data.variant_quantities, 
 assert.equal(checkoutBody.data.attributes.checkout_data.custom.usd_impact_account_id, accountId);
 assert.equal(checkoutBody.data.attributes.checkout_data.custom.usd_impact_purchase_intent_id, purchaseIntentId);
 assert.equal('custom_price' in checkoutBody.data.attributes, false);
-assert.throws(() => buildLemonSqueezyCheckoutRequest({
+const liveCheckoutBody = buildLemonSqueezyCheckoutRequest({
   storeId: '42', variantId: 314, accountId, purchaseIntentId, testMode: false,
-}), /Test Mode/);
+});
+assert.equal(liveCheckoutBody.data.attributes.test_mode, false);
 
 let capturedRequest = null;
 const checkout = await createLemonSqueezyTestCheckout({
@@ -77,6 +79,46 @@ assert.equal(capturedRequest.init.method, 'POST');
 assert.match(capturedRequest.init.headers.Authorization, /^Bearer /);
 assert.doesNotMatch(capturedRequest.init.body, /custom_price/);
 assert.match(capturedRequest.init.body, /"discount":false/);
+
+const liveCheckout = await createLemonSqueezyLiveCheckout({
+  apiKey: 'live-api-key',
+  storeId: '42',
+  variantId: 314,
+  accountId,
+  purchaseIntentId,
+  fetchImpl: async () => ({
+    ok: true,
+    status: 201,
+    async json() {
+      return {
+        data: {
+          type: 'checkouts',
+          id: 'checkout_live_123',
+          attributes: {
+            test_mode: false,
+            url: 'https://store.lemonsqueezy.com/checkout/custom/live-example',
+          },
+        },
+      };
+    },
+  }),
+});
+assert.equal(liveCheckout.testMode, false);
+assert.equal(liveCheckout.checkoutId, 'checkout_live_123');
+await assert.rejects(
+  () => createLemonSqueezyLiveCheckout({
+    apiKey: 'live-api-key',
+    storeId: '42', variantId: 314, accountId, purchaseIntentId,
+    fetchImpl: async () => ({
+      ok: true,
+      status: 201,
+      async json() {
+        return { data: { type: 'checkouts', id: 'wrong_mode', attributes: { test_mode: true, url: 'https://example.com' } } };
+      },
+    }),
+  }),
+  /Live checkout response/,
+);
 
 const baseOrder = {
   meta: {
@@ -191,6 +233,19 @@ assert.throws(() => normalizeLemonSqueezyOrderEvent({
   ...baseOrder,
   data: { ...baseOrder.data, attributes: { ...baseOrder.data.attributes, test_mode: false } },
 }), /Test Mode/);
+const liveOrder = {
+  ...baseOrder,
+  data: { ...baseOrder.data, attributes: { ...baseOrder.data.attributes, test_mode: false } },
+};
+const liveCompleted = normalizeLemonSqueezyOrderEvent(liveOrder, {
+  expectedStoreId: 42,
+  expectedProductId: 99,
+  expectedVariantId: 314,
+  expectedSubtotalCents: 4900,
+  expectedTestMode: false,
+  requireTestMode: false,
+});
+assert.equal(liveCompleted.metadata.lemonSqueezyTestMode, false);
 assert.throws(() => normalizeLemonSqueezyOrderEvent({
   ...baseOrder,
   meta: { ...baseOrder.meta, event_name: 'subscription_created' },
@@ -212,6 +267,18 @@ const retrieved = await retrieveLemonSqueezyOrder({
 assert.equal(orderRequest.url, 'https://api.lemonsqueezy.com/v1/orders/7001');
 assert.equal(orderRequest.init.method, 'GET');
 assert.equal(retrieved.data.id, '7001');
+const retrievedLive = await retrieveLemonSqueezyOrder({
+  apiKey: 'live-api-key',
+  orderId: '7001',
+  expectedTestMode: false,
+  requireTestMode: false,
+  fetchImpl: async () => ({
+    ok: true,
+    status: 200,
+    async json() { return { data: liveOrder.data }; },
+  }),
+});
+assert.equal(retrievedLive.data.attributes.test_mode, false);
 
 const reconcileOptions = {
   expectedStoreId: 42,
@@ -258,6 +325,32 @@ assert.equal(validated.provider, 'lemon-squeezy');
 assert.equal(typeof validated.retrieveOrder, 'function');
 assert.equal(typeof validated.reconcileTransaction, 'function');
 assert.equal(LEMON_SQUEEZY_ADAPTER_SCAFFOLD.assessConfiguration().ready, false);
-assert.doesNotMatch(LEMON_SQUEEZY_ADAPTER_SCAFFOLD.assessConfiguration().reason, /partial-refund policy/i);
+const liveAssessmentEnvironment = {
+  LEMON_SQUEEZY_LIVE_API_KEY: 'live_api_key_abcdefghijklmnopqrstuvwxyz',
+  LEMON_SQUEEZY_LIVE_WEBHOOK_SECRET: 'live_webhook_secret_abcdefghijklmnopqrstuvwxyz',
+  LEMON_SQUEEZY_LIVE_STORE_ID: '42',
+  LEMON_SQUEEZY_LIVE_PRODUCT_ID: '1319591',
+  LEMON_SQUEEZY_LIVE_LAUNCH_VARIANT_ID: '2062957',
+  LEMON_SQUEEZY_LIVE_STANDARD_VARIANT_ID: '2062958',
+  LEMON_SQUEEZY_LIVE_REDIRECT_URL: 'https://www.usd-impact.com/account/',
+  COMMERCE_CONTROLLED_LIVE_QA_EMAIL: 'qa@example.com',
+  COMMERCE_RECONCILIATION_ENABLED: 'true',
+  SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_abcdefghijklmnopqrstuvwxyz',
+  SUPABASE_SECRET_KEY: 'sb_secret_abcdefghijklmnopqrstuvwxyz',
+};
+assert.equal(LEMON_SQUEEZY_ADAPTER_SCAFFOLD.assessConfiguration(liveAssessmentEnvironment, 'live-test').ready, true);
+assert.equal(LEMON_SQUEEZY_ADAPTER_SCAFFOLD.assessConfiguration({
+  ...liveAssessmentEnvironment,
+  LEMON_SQUEEZY_TEST_API_KEY: 'must-not-fall-back',
+}, 'live-test').ready, false);
+assert.equal(LEMON_SQUEEZY_ADAPTER_SCAFFOLD.assessConfiguration({
+  ...liveAssessmentEnvironment,
+  LEMON_SQUEEZY_LIVE_STANDARD_VARIANT_ID: '9999999',
+}, 'live').ready, false);
+assert.equal(LEMON_SQUEEZY_ADAPTER_SCAFFOLD.assessConfiguration({
+  ...liveAssessmentEnvironment,
+  SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
+}, 'live').ready, true);
 
 console.log('Lemon Squeezy fail-closed final-state reconciliation scaffold tests passed.');

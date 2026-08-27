@@ -25,12 +25,57 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      - name: Check existing Daily publication state
+        id: preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          today="$(date -u +%F)"
+          expected_title="Publish Daily USD Impact — $today"
+          expected_head_prefix="automation/daily-usd-impact-$today-"
+          expected_file="apps/web/src/content/news/$today.md"
+
+          if gh api "repos/$GITHUB_REPOSITORY/contents/$expected_file?ref=main" >/dev/null 2>&1; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "reason=published" >> "$GITHUB_OUTPUT"
+            echo "::notice::Daily USD Impact $today is already on main; skipping duplicate generation."
+            exit 0
+          fi
+
+          existing_pr="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state all \
+            --base main \
+            --limit 100 \
+            --json number,title,headRefName,state,url \
+            --jq ".[] | select(.title == \"$expected_title\" and (.headRefName | startswith(\"$expected_head_prefix\"))) | [.number, .state, .url] | @tsv" \
+            | head -n 1)"
+
+          if [ -n "$existing_pr" ]; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "reason=publication-pr-exists" >> "$GITHUB_OUTPUT"
+            echo "::notice::A Daily USD Impact $today publication PR already exists; respecting that editorial state and skipping duplicate generation."
+            exit 0
+          fi
+
+          echo "needed=true" >> "$GITHUB_OUTPUT"
+          echo "reason=missing" >> "$GITHUB_OUTPUT"
+
       - name: Check newsfeed configuration
         id: config
         env:
+          PUBLICATION_NEEDED: ${{ steps.preflight.outputs.needed }}
           NEWSFEED_ENDPOINT: ${{ secrets.NEWSFEED_ENDPOINT }}
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
         run: |
+          if [ "$PUBLICATION_NEEDED" != "true" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Daily publication preflight requires no new generation; downstream publication steps are skipped."
+            exit 0
+          fi
+
           if [ -z "$NEWSFEED_ENDPOINT" ] || [ -z "$NEWSFEED_BEARER_TOKEN" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "::notice::NEWSFEED_ENDPOINT or NEWSFEED_BEARER_TOKEN is not configured; no edition was generated."

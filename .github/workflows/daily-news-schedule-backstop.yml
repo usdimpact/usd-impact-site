@@ -1,0 +1,77 @@
+name: Daily USD Impact schedule backstop
+
+on:
+  schedule:
+    - cron: '17 12 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: daily-usd-impact-schedule-backstop
+  cancel-in-progress: false
+
+jobs:
+  recover-missed-daily-start:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check whether Daily recovery is needed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          today="$(date -u +%F)"
+          expected_title="Publish Daily USD Impact — $today"
+          expected_head_prefix="automation/daily-usd-impact-$today-"
+          expected_file="apps/web/src/content/news/$today.md"
+
+          {
+            echo "# Daily USD Impact schedule backstop"
+            echo
+            echo "- Expected edition: \`$today\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if gh api "repos/$GITHUB_REPOSITORY/contents/$expected_file?ref=main" >/dev/null 2>&1; then
+            echo "- Result: today's edition already exists on main; no recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          open_pr="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --base main \
+            --limit 100 \
+            --json number,title,headRefName,url \
+            --jq ".[] | select(.title == \"$expected_title\" and (.headRefName | startswith(\"$expected_head_prefix\"))) | [.number, .url] | @tsv" \
+            | head -n 1)"
+
+          if [ -n "$open_pr" ]; then
+            echo "- Result: today's publication PR is already open; no duplicate recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
+            echo "- Existing PR: $(printf '%s' "$open_pr" | cut -f2)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          runs_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/daily-news.yml/runs?per_page=30")"
+          active_count="$(jq --arg day "$today" '[.workflow_runs[] | select((.created_at | startswith($day)) and (.status != "completed"))] | length' <<< "$runs_json")"
+          success_count="$(jq --arg day "$today" '[.workflow_runs[] | select((.created_at | startswith($day)) and .status == "completed" and .conclusion == "success")] | length' <<< "$runs_json")"
+          failed_count="$(jq --arg day "$today" '[.workflow_runs[] | select((.created_at | startswith($day)) and .status == "completed" and .conclusion != "success")] | length' <<< "$runs_json")"
+
+          if [ "$active_count" -gt 0 ]; then
+            echo "- Result: a Daily run for today is already active; no duplicate recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if [ "$success_count" -gt 0 ]; then
+            echo "- Result: a Daily run for today already succeeded; no duplicate recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          gh workflow run daily-news.yml --repo "$GITHUB_REPOSITORY" --ref main
+
+          echo "- Result: dispatched exactly one bounded Daily recovery run." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Earlier failed Daily runs today: $failed_count" >> "$GITHUB_STEP_SUMMARY"

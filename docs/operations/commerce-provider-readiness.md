@@ -233,9 +233,9 @@ Partner/referral features remain growth layers and never become payment or entit
 8. Register the adapter only after the coherent Development/sandbox matrix is green and reviewed.
 9. Record sandbox proof before any controlled Live stage.
 10. Verify support/privacy/retention/accounting/incident ownership.
-11. Perform a controlled Live test only under separate explicit approval.
+11. Record provider-compliant controlled-Live evidence under separate explicit approval: retain the full Test Mode lifecycle proof, validate the trusted Live catalog read-only, and verify the exact protected Live webhook fails closed without a Live checkout, merchant self-purchase or artificial refund.
 12. Complete #343 against the commerce-enabled near-final candidate.
-13. Activate public checkout only after #54 Phase A and all final launch approvals are green.
+13. Activate public checkout only after #54 Phase A and all final launch approvals are green, then monitor the first independent genuine buyer order as real commerce.
 
 ## Rollback
 
@@ -249,4 +249,4 @@ After any commerce-related Production release, verify `/checkout/` remains non-p
 
 ## Current release boundary — 2026-08-27
 
-Lemon Squeezy is selected, PR #374 is merged, and its public-facing disclosure release remains fail closed in Production. The subsequent controlled-Live/Live runtime work is code-only Draft preparation. Production still has `COMMERCE_MODE=disabled` with `COMMERCE_PROVIDER` unset; the reconciliation migrations exist only in canonical Development; no Production provider credentials, webhook, public checkout, Live transaction, real-card test, refund or Production database change is authorized. See `docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md`, `docs/operations/lemon-squeezy-sandbox-runtime-2026-08-26.md`, `docs/operations/lemon-squeezy-controlled-live-runtime-2026-08-27.md`, and Issues #53, #130 and #54.
+Lemon Squeezy is selected, PR #374 is merged, and its public-facing disclosure release remains fail closed in Production. The controlled-Live/Live runtime is merged but remains non-payment preparation only. Production still has `COMMERCE_MODE=disabled` with `COMMERCE_PROVIDER` unset; the reconciliation migrations exist only in canonical Development; no Production provider credentials, webhook, public checkout, Live transaction, real-card test, refund or Production database change is authorized. Provider-compliant Live evidence must follow `docs/operations/lemon-squeezy-provider-compliant-live-evidence-2026-08-27.md`. See `docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md`, `docs/operations/lemon-squeezy-sandbox-runtime-2026-08-26.md`, `docs/operations/lemon-squeezy-controlled-live-runtime-2026-08-27.md`, and Issues #53, #130 and #54.

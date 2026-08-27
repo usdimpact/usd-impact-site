@@ -161,7 +161,7 @@ jobs:
           npm run validate
           npm run build
 
-      - name: Open, validate, and merge publication pull request
+      - name: Open and validate publication pull request
         id: publish_pr
         if: steps.config.outputs.configured == 'true'
         env:
@@ -197,7 +197,7 @@ jobs:
             printf '%s\n\n%s\n\n%s\n' \
               '## Automated Daily USD Impact publication' \
               "This pull request contains the source-backed **${edition_date}** edition with status \`published\`." \
-              'Publication is automatic only after the required Web quality workflow passes on this exact commit. A failed validation or build leaves the pull request open and does not change production.' \
+              'The workflow validates this exact commit with Web quality, then stops for protected human editorial review and merge. A failed validation or build leaves the pull request open and does not change production.' \
               > "$RUNNER_TEMP/daily-news-pr.md"
 
             pr_url="$(gh pr create \
@@ -235,7 +235,7 @@ jobs:
             echo "Web quality run $run_id concluded '${run_conclusion:-unknown}'; expected success."
             exit 1
           fi
-          echo "Daily USD Impact ${edition_date} passed Web quality and is ready for protected review and merge: $pr_url"
+          echo "Daily USD Impact ${edition_date} passed Web quality and is ready for protected editorial review and merge: $pr_url"
 
       - name: Report Daily failure gate
         if: failure() && steps.config.outputs.configured == 'true'

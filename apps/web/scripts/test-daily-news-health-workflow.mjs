@@ -53,7 +53,7 @@ assert.match(
 );
 assert.match(
   workflow,
-  /'Open, validate, and merge publication pull request'\) failure_stage='publication'/,
+  /'Open and validate publication pull request'\) failure_stage='publication'/,
   'publication failures must be classified separately',
 );
 

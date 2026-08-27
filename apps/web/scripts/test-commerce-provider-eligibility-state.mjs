@@ -21,6 +21,30 @@ const [update, responsibility, technical, historical, lemon, selected, sandbox, 
   Object.values(paths).map((path) => readFile(path, 'utf8')),
 );
 
+function assertContainsExactHttpsUrl(source, expectedHref) {
+  const expected = new URL(expectedHref);
+  const candidates = source.match(/https:\/\/[^\s<>()\[\]{}"'\x60]+/g) ?? [];
+  const hasExactUrl = candidates.some((candidate) => {
+    try {
+      const parsed = new URL(candidate);
+      return (
+        parsed.protocol === 'https:' &&
+        parsed.username === '' &&
+        parsed.password === '' &&
+        parsed.hostname === expected.hostname &&
+        parsed.port === expected.port &&
+        parsed.pathname === expected.pathname &&
+        parsed.search === '' &&
+        parsed.hash === ''
+      );
+    } catch {
+      return false;
+    }
+  });
+
+  assert.ok(hasExactUrl, `Expected exact HTTPS URL: ${expected.href}`);
+}
+
 const rejectionCase = '#01856172';
 
 assert.match(update, /Product eligibility: REJECTED \/ FAILED/);
@@ -82,11 +106,11 @@ assert.match(sandbox, /full refunds only/i);
 assert.match(sandbox, /migration.*applied to canonical Development only.*not been applied to Production/i);
 
 assert.match(terms, /Lemon Squeezy[\s\S]{0,100}Merchant of Record/i);
-assert.ok(terms.includes('https://www.lemonsqueezy.com/buyer-terms'));
+assertContainsExactHttpsUrl(terms, 'https://www.lemonsqueezy.com/buyer-terms');
 assert.match(refund, /Lemon Squeezy[\s\S]{0,120}selected Merchant of Record/i);
-assert.ok(refund.includes('https://www.lemonsqueezy.com/buyer-terms'));
+assertContainsExactHttpsUrl(refund, 'https://www.lemonsqueezy.com/buyer-terms');
 assert.match(privacy, /Lemon Squeezy[\s\S]{0,120}selected Merchant of Record/i);
-assert.ok(privacy.includes('https://www.lemonsqueezy.com/privacy'));
+assertContainsExactHttpsUrl(privacy, 'https://www.lemonsqueezy.com/privacy');
 
 for (const page of [terms, refund, privacy]) {
   assert.doesNotMatch(page, /authorized payment provider or merchant of record identified/i);

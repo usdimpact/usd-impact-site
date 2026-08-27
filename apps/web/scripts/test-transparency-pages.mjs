@@ -68,7 +68,9 @@ assert.doesNotMatch(about, /independently verified legal operator/i);
 assert.doesNotMatch(about, /ONRC verified operator/i);
 
 assert.match(onrcGate, /Tracking issue: #341/);
-assert.match(onrcGate, /PENDING — authenticated ONRC certificate acquisition and review required/);
+assert.match(onrcGate, /IN PROGRESS — administrative pre-marketing evidence task; not a current implementation or Preview blocker/);
+assert.match(onrcGate, /does not need to be published merely to sell online/);
+assert.match(onrcGate, /accurate buyer-facing trader information before public selling/);
 assert.match(onrcGate, /SHA-256 hash of the retained original/);
 assert.match(onrcGate, /Do not commit it by default/);
 assert.match(onrcGate, /registered-office comparison: PASS\/FAIL without printing the address/);

@@ -22,7 +22,7 @@ The application may display these already-approved public facts:
 - Support: support@usd-impact.com
 - Customer-transaction tax wording: Applicable indirect taxes are calculated, collected and remitted by Lemon Squeezy as Merchant of Record and shown before payment.
 
-The owner explicitly approved this exact first-party address, CUI, and Merchant-of-Record tax wording for public Draft publication on 2026-08-27. This approval does not configure Production, assert a separate Romanian VAT-registration status, or approve the complete Live disclosure bundle.
+The owner approved the complete exact buyer-facing disclosure bundle recorded below for public-facing Preview review and later authorized environment configuration on 2026-08-27. This approval does not configure Production, set any environment flag, assert a separate Romanian VAT-registration status, or activate commerce.
 
 ## Resolved provider facts
 
@@ -44,14 +44,30 @@ Controlled Live and Live modes require all of the following fields. The `_PUBLIC
 
 | Configuration | Purpose | Current state |
 | --- | --- | --- |
-| `COMMERCE_TRADER_ADDRESS_PUBLIC` | Verified geographic trader/business address shown to the buyer | Exact text approved and published in Draft copy; not configured |
-| `COMMERCE_TAX_STATUS_PUBLIC` | Accurate seller tax/VAT-status wording appropriate for customer disclosure | Narrow MoR tax-handling wording approved in Draft; Romanian VAT-registration status not asserted or configured |
-| `COMMERCE_MERCHANT_OF_RECORD_NAME` | Current contractual Merchant-of-Record / seller-of-record identity | Current entity resolved in Draft evidence; exact entity not configured |
-| `COMMERCE_MERCHANT_OF_RECORD_TERMS_URL` | HTTPS buyer terms supplied by the selected provider | Official URL resolved; not configured |
-| `COMMERCE_MERCHANT_OF_RECORD_PRIVACY_URL` | HTTPS provider privacy notice relevant to the buyer transaction | Official URL resolved; not configured |
-| `COMMERCE_TAX_CHECKOUT_PUBLIC` | Final wording explaining how applicable tax and supported currency conversion are shown before payment | Exact indirect-tax wording approved and published in Draft copy; not configured |
-| `COMMERCE_REFUND_SUPPORT_PUBLIC` | Final allocation of product/access support versus payment/refund support | Responsibility resolved; not configured |
-| `COMMERCE_SELLER_DISCLOSURE_APPROVED` | Explicit `true` only after the complete buyer-facing set has been reviewed and approved | Not granted |
+| `COMMERCE_TRADER_ADDRESS_PUBLIC` | Verified geographic trader/business address shown to the buyer | Exact value approved; no environment value configured |
+| `COMMERCE_TAX_STATUS_PUBLIC` | Accurate seller tax/VAT-status wording appropriate for customer disclosure | Exact narrow wording approved; Romanian VAT-registration status is not asserted; no environment value configured |
+| `COMMERCE_MERCHANT_OF_RECORD_NAME` | Current contractual Merchant-of-Record / seller-of-record identity | Exact current entity approved; no environment value configured |
+| `COMMERCE_MERCHANT_OF_RECORD_TERMS_URL` | HTTPS buyer terms supplied by the selected provider | Exact official URL approved; no environment value configured |
+| `COMMERCE_MERCHANT_OF_RECORD_PRIVACY_URL` | HTTPS provider privacy notice relevant to the buyer transaction | Exact official URL approved; no environment value configured |
+| `COMMERCE_TAX_CHECKOUT_PUBLIC` | Final wording explaining how applicable tax and supported currency conversion are shown before payment | Exact wording approved; no environment value configured |
+| `COMMERCE_REFUND_SUPPORT_PUBLIC` | Final allocation of product/access support versus payment/refund support | Exact wording approved; no environment value configured |
+| `COMMERCE_SELLER_DISCLOSURE_APPROVED` | Explicit `true` only after the complete buyer-facing set has been reviewed and approved | Public copy approved; environment activation flag remains unset |
+
+## Approved complete disclosure bundle
+
+The following values are the complete non-secret buyer-facing configuration approved by the owner on 2026-08-27. They may be used only as an exact set; partial configuration remains fail-closed.
+
+| Configuration | Exact approved value |
+| --- | --- |
+| `COMMERCE_TRADER_ADDRESS_PUBLIC` | `Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România` |
+| `COMMERCE_TAX_STATUS_PUBLIC` | `SC Kela Leads SRL is the product supplier. No separate Romanian VAT-registration status is asserted in this disclosure; applicable indirect taxes on the payment transaction are handled by Lemon Squeezy as Merchant of Record.` |
+| `COMMERCE_MERCHANT_OF_RECORD_NAME` | `Lemon Squeezy — Link, LLC f/k/a Lemon Squeezy LLC` |
+| `COMMERCE_MERCHANT_OF_RECORD_TERMS_URL` | `https://www.lemonsqueezy.com/buyer-terms` |
+| `COMMERCE_MERCHANT_OF_RECORD_PRIVACY_URL` | `https://www.lemonsqueezy.com/privacy` |
+| `COMMERCE_TAX_CHECKOUT_PUBLIC` | `Applicable indirect taxes are calculated, collected and remitted by Lemon Squeezy as Merchant of Record and shown before payment. The final amount and currency are displayed by Lemon Squeezy before payment is confirmed.` |
+| `COMMERCE_REFUND_SUPPORT_PUBLIC` | `USD Impact owns product, account, and access support and reviews refund requests under its published 14-day Refund Policy. Lemon Squeezy processes approved payment refunds and handles payment-specific transaction support, disputes, and chargebacks. Contact support@usd-impact.com for product, account, access or refund-review assistance.` |
+
+This approval covers the exact public text only. It does not set `COMMERCE_SELLER_DISCLOSURE_APPROVED=true` in Preview or Production, configure a provider secret, enable a provider mode, or authorize a payment.
 
 ## Administrative evidence track
 
@@ -97,7 +113,7 @@ The buyer-facing geographic trader address is not treated as a secret after it i
 5. Reverify the current contractual Merchant-of-Record identity and linked legal pages immediately before Live approval.
 6. Configure the complete buyer-facing bundle in an authorized non-public verification environment without committing sensitive provider credentials.
 7. Review the rendered checkout disclosure block and official provider links.
-8. Set `COMMERCE_SELLER_DISCLOSURE_APPROVED=true` only after the complete set is correct and the owner separately approves it.
+8. The public copy approval for the exact bundle is recorded. Set `COMMERCE_SELLER_DISCLOSURE_APPROVED=true` only in a separately authorized environment after confirming that every configured value is byte-for-byte equivalent to the approved set.
 9. Complete the separately controlled Live-test gate if authorized.
 10. Activate Production or public checkout only after all remaining launch-critical checks and separate explicit owner approval are green.
 
@@ -112,7 +128,7 @@ The buyer-facing geographic trader address is not treated as a secret after it i
 - Registered business address for customer display: **exact text approved and published in Draft copy; not configured in Production**.
 - Public tax/VAT wording: **MoR indirect-tax handling text approved and published in Draft copy; Romanian VAT-registration status not asserted and no Production value configured**.
 - Exact contractual Merchant-of-Record entity: **resolved in Draft evidence as Link, LLC f/k/a Lemon Squeezy LLC; not configured and subject to immediate pre-Live re-verification**.
-- Buyer disclosure approval: **not granted**.
+- Buyer disclosure approval: **not granted** as an environment activation flag; the exact public copy is owner-approved.
 - W-8 and ONRC evidence: **administrative pre-marketing work; not current implementation or Preview blockers**.
 
-This change records the owner-approved public trader address and MoR indirect-tax wording without enabling commerce. It does not alter Production configuration, secrets, webhooks, payments, refunds, database state, public checkout, or merge status.
+This change records the owner-approved complete public disclosure bundle without enabling commerce. It does not alter Production configuration, secrets, webhooks, payments, refunds, database state, public checkout, or merge status.

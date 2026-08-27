@@ -27,13 +27,14 @@ The registered street address is intentionally not committed to this repository.
 The following provider facts may be used in Draft buyer copy:
 
 - Selected provider brand: **Lemon Squeezy**
+- Current legal operator shown on the official buyer terms and privacy notice: **Link, LLC f/k/a Lemon Squeezy LLC** (verified 2026-08-27)
 - Transaction role: **Merchant of Record and authorized reseller**
 - Buyer terms: https://www.lemonsqueezy.com/buyer-terms
 - Provider privacy notice: https://www.lemonsqueezy.com/privacy
 - Lemon Squeezy owns hosted payment processing, applicable indirect-tax calculation/collection/remittance, buyer financial documents, payment refunds, disputes, chargebacks, and payment fraud controls.
 - USD Impact owns product description and delivery, account access, entitlement controls, product/access support, and review of refund requests under the public USD Impact refund policy.
 
-The exact contractual provider entity shown to a buyer must be verified from the current Live contract or hosted checkout immediately before disclosure approval. Do not infer that value from historic provider naming or hardcode an unreviewed legal entity. Buyer-facing Draft copy may use the Lemon Squeezy brand with links to its current official terms and privacy notice.
+The authenticated USD Impact Test Mode checkout renders the **Lemon Squeezy** brand and links buyers directly to the current official buyer terms and privacy notice. Those linked legal pages identify **Link, LLC f/k/a Lemon Squeezy LLC** as the current operator. This resolves the Draft legal-entity evidence without configuring it in any environment. Reverify the entity and linked legal pages immediately before Live disclosure approval because provider legal naming can change.
 
 ## Required buyer-facing configuration
 
@@ -43,7 +44,7 @@ Controlled Live and Live modes require all of the following fields. The `_PUBLIC
 | --- | --- | --- |
 | `COMMERCE_TRADER_ADDRESS_PUBLIC` | Verified geographic trader/business address shown to the buyer | Not configured |
 | `COMMERCE_TAX_STATUS_PUBLIC` | Accurate seller tax/VAT-status wording appropriate for customer disclosure | Not configured |
-| `COMMERCE_MERCHANT_OF_RECORD_NAME` | Current contractual Merchant-of-Record / seller-of-record identity | Provider selected; exact entity not configured |
+| `COMMERCE_MERCHANT_OF_RECORD_NAME` | Current contractual Merchant-of-Record / seller-of-record identity | Current entity resolved in Draft evidence; exact entity not configured |
 | `COMMERCE_MERCHANT_OF_RECORD_TERMS_URL` | HTTPS buyer terms supplied by the selected provider | Official URL resolved; not configured |
 | `COMMERCE_MERCHANT_OF_RECORD_PRIVACY_URL` | HTTPS provider privacy notice relevant to the buyer transaction | Official URL resolved; not configured |
 | `COMMERCE_TAX_CHECKOUT_PUBLIC` | Final wording explaining how applicable tax and supported currency conversion are shown before payment | Not configured |
@@ -91,7 +92,7 @@ The buyer-facing geographic trader address is not treated as a secret after it i
 2. Keep the Lemon Squeezy adapter registration code-only and public checkout fail-closed.
 3. Complete Draft legal-copy and disclosure regression checks.
 4. Verify the public trader address and tax/VAT wording from authoritative company/accounting records.
-5. Verify the exact current contractual Merchant-of-Record identity from the provider contract or hosted checkout.
+5. Reverify the current contractual Merchant-of-Record identity and linked legal pages immediately before Live approval.
 6. Configure the complete buyer-facing bundle in an authorized non-public verification environment without committing sensitive provider credentials.
 7. Review the rendered checkout disclosure block and official provider links.
 8. Set `COMMERCE_SELLER_DISCLOSURE_APPROVED=true` only after the complete set is correct and the owner separately approves it.
@@ -108,7 +109,7 @@ The buyer-facing geographic trader address is not treated as a secret after it i
 - Public checkout: **disabled**.
 - Verified registered street address for customer display: **not stored in Git and not configured**.
 - Public tax/VAT wording: **not configured**.
-- Exact contractual Merchant-of-Record entity: **not configured**.
+- Exact contractual Merchant-of-Record entity: **resolved in Draft evidence as Link, LLC f/k/a Lemon Squeezy LLC; not configured and subject to immediate pre-Live re-verification**.
 - Buyer disclosure approval: **not granted**.
 - W-8 and ONRC evidence: **administrative pre-marketing work; not current implementation or Preview blockers**.
 

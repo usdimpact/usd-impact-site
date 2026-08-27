@@ -98,6 +98,28 @@ function disclosureEnvironment(overrides = {}) {
 
 {
   const readiness = resolveCommerceReadiness({
+    COMMERCE_MODE: 'disabled',
+    VERCEL_ENV: 'preview',
+    ...disclosureEnvironment(),
+  });
+  assert.equal(readiness.state, COMMERCE_READINESS_STATES.READY_FOR_PROVIDER_CONFIGURATION);
+  assert.equal(readiness.checkoutEnabled, false);
+  assert.equal(readiness.provider, null);
+  assert.equal(readiness.disclosuresComplete, true);
+  assert.equal(readiness.sellerDisclosure.merchantOfRecord, 'Replacement Provider');
+
+  const publicState = publicCommerceReadiness(readiness);
+  assert.equal(publicState.state, COMMERCE_READINESS_STATES.READY_FOR_PROVIDER_CONFIGURATION);
+  assert.equal(publicState.checkoutEnabled, false);
+  assert.equal(publicState.provider, null);
+  assert.equal(publicState.providerConfigured, false);
+  assert.equal(publicState.disclosuresComplete, true);
+  assert.equal(publicState.sellerDisclosure.legalName, 'SC Kela Leads SRL');
+  assert.equal(publicState.sellerDisclosure.geographicAddress, 'Verified public trader address, Romania');
+}
+
+{
+  const readiness = resolveCommerceReadiness({
     PADDLE_API_KEY: 'legacy-secret-that-must-not-be-used',
     PADDLE_WEBHOOK_SECRET: 'legacy-webhook-secret',
   });

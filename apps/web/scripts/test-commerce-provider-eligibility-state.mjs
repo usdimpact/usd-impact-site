@@ -30,7 +30,7 @@ assert.match(update, /WRITTEN ELIGIBILITY APPROVED \/ PROVIDER SELECTED \/ MoR F
 assert.match(update, /mor-final-state-reconciliation/);
 assert.match(update, /provider=null/);
 assert.match(update, /checkoutEnabled=false/);
-assert.match(update, /REGISTERED_COMMERCE_ADAPTERS.*empty/);
+assert.match(update, /REGISTERED_COMMERCE_ADAPTERS.*Lemon Squeezy/);
 assert.match(update, /Draft PR #374/);
 
 assert.match(responsibility, /Selected provider: \*\*Lemon Squeezy\*\*/);
@@ -38,7 +38,7 @@ assert.match(responsibility, /Lifecycle profile: \*\*`mor-final-state-reconcilia
 assert.match(responsibility, /Provider selection is therefore complete; \*\*activation is not\*\*/);
 assert.match(responsibility, /partial_refund[\s\S]*review/i);
 assert.match(responsibility, /payment\.revoked/);
-assert.match(responsibility, /REGISTERED_COMMERCE_ADAPTERS.*empty/);
+assert.match(responsibility, /REGISTERED_COMMERCE_ADAPTERS.*Lemon Squeezy/);
 
 assert.match(technical, /Lemon Squeezy: WRITTEN ELIGIBILITY APPROVED \/ SELECTED FOR ONE-TIME LIBRARY PASS/);
 assert.match(technical, /NOT REQUIRED UNDER APPROVED MoR PROFILE/);
@@ -62,12 +62,12 @@ assert.match(lemon, /APPROVED \/ SELECTED FOR ONE-TIME LIBRARY PASS \/ SANDBOX I
 assert.match(selected, /\*\*Selected provider: Lemon Squeezy\.\*\*/);
 assert.match(selected, /mor-final-state-reconciliation/);
 assert.match(selected, /full refunds only/i);
-assert.match(selected, /REGISTERED_COMMERCE_ADAPTERS.*empty/);
+assert.match(selected, /REGISTERED_COMMERCE_ADAPTERS.*Lemon Squeezy/);
 
-assert.match(sandbox, /Status: \*\*Draft implementation only\. No Production activation\.\*\*/);
+assert.match(sandbox, /Status: \*\*Development\/Test proof complete\. Adapter registered in code only\. No Production activation\.\*\*/);
 assert.match(sandbox, /VERCEL_ENV=production.*rejected/i);
 assert.match(sandbox, /full refunds only/i);
-assert.match(sandbox, /migration.*has not been applied to Development or Production/i);
+assert.match(sandbox, /migration.*applied to canonical Development only.*not been applied to Production/i);
 
 for (const text of [update, responsibility, technical, lemon, selected, sandbox]) {
   assert.doesNotMatch(text, /Lemon Squeezy[^\n]{0,140}(?:application under review|pending written eligibility|not yet selected)/i);

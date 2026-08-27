@@ -7,7 +7,7 @@ Record the written commerce-provider eligibility decisions and the resulting sel
 Product: **Read the Dollar First Library Pass**  
 Business entity: **SC Kela Leads SRL, Romania**  
 Governance-selected provider: **Lemon Squeezy**  
-Production runtime state: **checkout disabled / `COMMERCE_MODE=disabled` / `COMMERCE_PROVIDER` unset / adapter unregistered**.
+Production runtime state: **checkout disabled / `COMMERCE_MODE=disabled` / `COMMERCE_PROVIDER` unset / Lemon Squeezy adapter registered in code only**.
 
 This is bounded due-diligence evidence. It does not configure credentials, apply a database migration, enable sandbox or Live commerce, authorize a payment, or change customer/entitlement state.
 
@@ -40,7 +40,7 @@ The prior FastSpring technical research remains historical due diligence only. T
 
 Lemon Squeezy's published one-time webhook list does not expose deterministic dispute-opened, chargeback-completed or dispute-reversed events. USD Impact therefore explicitly approved the provider-neutral **`mor-final-state-reconciliation`** lifecycle model instead of fabricating unavailable events.
 
-Disposition: **WRITTEN ELIGIBILITY APPROVED / PROVIDER SELECTED / MoR FINAL-STATE RECONCILIATION APPROVED / DRAFT SANDBOX IMPLEMENTATION IN PROGRESS.**
+Disposition: **WRITTEN ELIGIBILITY APPROVED / PROVIDER SELECTED / MoR FINAL-STATE RECONCILIATION APPROVED / DEVELOPMENT-TEST MATRIX COMPLETE / CODE-ONLY ADAPTER REGISTRATION APPROVED / NOT LIVE.**
 
 The selected-provider implementation is carried by Draft PR #374. Selection is not activation.
 
@@ -82,15 +82,14 @@ Disposition: **REMOVED / NOT SELECTED.**
 
 ## Remaining selected-provider gates
 
-Provider selection and lifecycle architecture are complete. The remaining work is implementation evidence, not another provider comparison:
+Provider selection, lifecycle architecture, Development-only persistence, Test Mode proof and the coherent registration review are complete:
 
-1. keep PR #374 Draft and the adapter registry empty;
-2. review and separately authorize applying the reconciliation migration to **canonical Development only**;
-3. configure the approved Library Pass in Lemon Squeezy **Test Mode only**, using two fixed-price Variants for USD 39 launch and USD 49 standard;
-4. configure only non-Production Test API/webhook credentials;
-5. run the complete sandbox matrix and Development database/advisor review;
-6. register the adapter only after coherent sandbox evidence is reviewed;
-7. keep Production disabled until the later controlled release, integrated rehearsal, support, accounting/privacy, and independent-security gates are complete.
+1. keep PR #374 Draft and register only the reviewed Lemon Squeezy adapter in code;
+2. keep Production `COMMERCE_MODE=disabled` and `COMMERCE_PROVIDER` unset;
+3. retain Test credentials and webhook configuration only in the approved non-Production scope;
+4. preserve the complete sandbox, duplicate, negative, lifecycle, database/advisor, exact-head CI and Preview evidence;
+5. complete the remaining KYB, tax, accounting, privacy, buyer-disclosure and launch-window support gates;
+6. require separate explicit approval for any controlled Live or Production activation step.
 
 ## Fail-closed runtime state
 
@@ -103,7 +102,7 @@ Current Production expectations remain:
 - `provider=null` / `COMMERCE_PROVIDER` unset;
 - `providerConfigured=false`;
 - `checkoutEnabled=false`;
-- `REGISTERED_COMMERCE_ADAPTERS` empty.
+- `REGISTERED_COMMERCE_ADAPTERS` contains only the reviewed Lemon Squeezy adapter in code; registration alone does not alter the disabled state.
 
 No browser redirect, dashboard state, store provisioning, email receipt, or unverified commercial state can grant access.
 

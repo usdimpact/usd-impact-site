@@ -4,9 +4,9 @@
 
 **Selected provider: Lemon Squeezy.**
 
-Selection is approved for the one-time **Read the Dollar First Library Pass** under the existing fail-closed release process. This selection does not activate checkout, register the adapter, create Production credentials, authorize a Live transaction, or approve public paid activation.
+Selection is approved for the one-time **Read the Dollar First Library Pass** under the existing fail-closed release process. Selection did not by itself activate checkout or register the adapter. After the coherent Development/Test matrix passed, the adapter-registration decision was separately approved on 2026-08-27 as code-only preparation.
 
-Production remains `COMMERCE_MODE=disabled`. The active adapter registry remains empty until implementation and sandbox evidence are complete.
+Production remains `COMMERCE_MODE=disabled` with `COMMERCE_PROVIDER` unset. `REGISTERED_COMMERCE_ADAPTERS` now contains only the reviewed Lemon Squeezy adapter; this creates no Production credentials, webhook, checkout, Live transaction, or public paid activation.
 
 ## Approved lifecycle architecture
 
@@ -96,16 +96,13 @@ Credential-independent implementation is now included in Draft form:
 - explicit full-refund-only / partial-review policy;
 - automated contract tests for runtime, route, migration and adapter behavior.
 
-The migration is **code only** at this stage; it has not been applied to Development or Production by this PR update.
+The reconciliation migrations were applied to canonical Development only and verified. They have not been applied to Production.
 
-## Required work before adapter registration
+## Adapter-registration decision — approved 2026-08-27
 
-- review and, under separate authorization, apply the reconciliation migration to canonical Development only;
-- create/configure the authorized Lemon Squeezy Test Mode Store/Product and two fixed-price Variants only in the controlled sandbox stage;
-- add Test Mode credentials and webhook signing secret only to the approved non-Production environment;
-- prove signature forgery, duplicate, replay/hash mismatch, out-of-order, substitution, environment-isolation, subtotal/discount/currency/quantity mismatch, full-refund, partial-refund, fraudulent-state, API-outage and reconciliation-retry cases;
-- review Development database/advisor evidence after the migration is applied;
-- keep `REGISTERED_COMMERCE_ADAPTERS` empty until all of the above are reviewed together.
+The registration gate is satisfied by the reviewed Development-only migration, Test Mode Store/Product/two-Variant mapping, non-Production credentials, real paid-order and duplicate-delivery evidence, automatic negative matrix, rolled-back lifecycle probes, database/advisor review, exact-head protected CI and exact-tree Preview evidence.
+
+`REGISTERED_COMMERCE_ADAPTERS` may therefore contain only the reviewed Lemon Squeezy adapter in Draft PR #374. This is a code-only registration decision: the adapter's configuration assessment remains fail closed, Production remains disabled, and activation requires a separate mode-specific implementation and explicit release approval.
 
 ## #130 message ownership disposition
 
@@ -132,7 +129,7 @@ This decision does not authorize:
 - a Live provider transaction;
 - real-card testing;
 - Production `COMMERCE_PROVIDER` or `COMMERCE_MODE` changes;
-- adapter registration before coherent Development migration/sandbox proof;
+- enabling any commerce mode or provider selection in Production through this registration decision;
 - bypass of #343 or #54.
 
 All payment testing must use Lemon Squeezy Test Mode until a separate controlled-Live approval is recorded.

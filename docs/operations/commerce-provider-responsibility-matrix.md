@@ -8,9 +8,9 @@ Product: `Read the Dollar First Library Pass`
 Business entity: SC Kela Leads SRL, Romania  
 Selected provider: **Lemon Squeezy**  
 Lifecycle profile: **`mor-final-state-reconciliation`**  
-Production commerce state: **disabled / adapter unregistered / public checkout disabled**.
+Production commerce state: **disabled / Lemon Squeezy adapter registered in code only / public checkout disabled**.
 
-This matrix freezes the selected-provider responsibility and lifecycle-ownership decision required by Issues #53 and #130. It does not register an adapter, configure Production secrets, apply a Production migration, authorize a Live purchase, or activate public checkout.
+This matrix freezes the selected-provider responsibility and lifecycle-ownership decision required by Issues #53 and #130. The later code-only adapter registration does not configure Production secrets, apply a Production migration, authorize a Live purchase, or activate public checkout.
 
 ## Provider-selection state
 
@@ -19,7 +19,7 @@ This matrix freezes the selected-provider responsibility and lifecycle-ownership
 - FastSpring is removed after written product-eligibility rejection received 2026-08-25 22:33 UTC in case #01856172.
 - PayPro Global was not selected and received no qualifying reply before selection.
 - Stripe Managed Payments remains fallback research only.
-- `REGISTERED_COMMERCE_ADAPTERS` remains empty while PR #374 is Draft.
+- `REGISTERED_COMMERCE_ADAPTERS` now contains only the reviewed Lemon Squeezy adapter on Draft PR #374; its configuration assessment remains fail closed.
 - Production remains `ready_for_provider_configuration` with `COMMERCE_MODE=disabled`, `COMMERCE_PROVIDER` unset/null, and checkout disabled.
 
 Provider selection is therefore complete; **activation is not**.
@@ -56,8 +56,8 @@ USD Impact must not invent unavailable events. Browser redirects, screenshots, e
 | Product/account access | No direct application authority | sole owner | **APPLICATION OWNED** |
 | Privacy/export/deletion for USD Impact account | Provider retains its own legally required transaction records | own USD Impact account/privacy/export/deletion flows and disclose provider boundary | **PRE-LIVE REVIEW** |
 | Incident escalation | Provider payment/MoR incident channel | application incident response, entitlement controls, customer product/access communication | **OWNERSHIP FROZEN** |
-| Secret rotation | provider API/webhook credential mechanisms | environment-scoped secret management, overlap/cutover, rollback | **SANDBOX PROOF REQUIRED** |
-| Sandbox / Test Mode | separate Test Mode; reviewer explicitly required Test Mode and no real-card testing | complete deterministic matrix in non-Production only | **PENDING** |
+| Secret rotation | provider API/webhook credential mechanisms | environment-scoped secret management, overlap/cutover, rollback | **TEST-MODE PROOF COMPLETE / PRODUCTION PENDING** |
+| Sandbox / Test Mode | separate Test Mode; reviewer explicitly required Test Mode and no real-card testing | complete deterministic matrix in non-Production only | **COMPLETE** |
 | Public Live activation | provider Live capability only | #54/#343/support/accounting/privacy/release approval before enabling | **BLOCKED** |
 
 ## Customer-message ownership
@@ -101,16 +101,11 @@ The active Library Pass checkout must be server-authoritative:
 - final provider `total` is retained separately and may include tax;
 - Store/Product/Variant/item-count/quantity/subtotal/discount/currency mismatch fails closed.
 
-## Remaining registration gate
+## Adapter-registration decision — complete 2026-08-27
 
-The provider is selected, but the adapter is not yet registerable. Before registration:
+The Development/Test registration gate is complete: canonical Development migrations, Test Mode product mapping, non-Production credentials, paid and duplicate-delivery evidence, automatic negative cases, rolled-back lifecycle probes, database/advisor review, exact-head protected CI and exact-tree Preview verification were reviewed coherently.
 
-1. review and separately authorize/apply the reconciliation migration to canonical Development only;
-2. configure Lemon Squeezy Test Mode Store/Product/two fixed-price Variants;
-3. configure non-Production Test API and webhook credentials only;
-4. run the complete sandbox matrix, including forgery, replay/hash mismatch, substitution, amount/currency/item/quantity/discount mismatch, paid, full refund, partial refund, fraudulent state, provider API outage, and reconciliation retry;
-5. review Development database/advisor evidence;
-6. explicitly review registration as one coherent release.
+The registry may contain only Lemon Squeezy in this Draft PR. Its configuration assessment remains fail closed, and registration does not authorize a Production mode/provider value, secret, webhook, checkout, transaction, refund, merge or Production database change.
 
 ## Historical candidate evidence
 

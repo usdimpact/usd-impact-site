@@ -1,6 +1,6 @@
 # Lemon Squeezy sandbox commerce runtime — 2026-08-26
 
-Status: **Draft implementation only. No Production activation.**
+Status: **Development/Test proof complete. Adapter registered in code only. No Production activation.**
 
 This record supplements the selected-provider contract for the one-time Read the Dollar First Library Pass. It documents the credential-independent runtime and persistence implementation carried by PR #374.
 
@@ -13,11 +13,11 @@ The implementation remains fail closed:
 - `LEMON_SQUEEZY_TEST_MODE=true` is mandatory.
 - the runtime accepts only the canonical Development Supabase project;
 - sandbox checkout is restricted to one explicitly configured verified QA email;
-- no adapter is registered in `commerce-adapters.js`;
+- `commerce-adapters.js` registers only the reviewed Lemon Squeezy adapter in code; its configuration assessment remains fail closed;
 - no Production provider secret, public checkout, Live transaction, real-card test, or Production schema application is authorized by this PR;
 - the reconciliation route has no Vercel cron schedule in this implementation and also requires the existing `CRON_SECRET` plus `COMMERCE_RECONCILIATION_ENABLED=true`.
 
-The migration has not been applied to Development or Production.
+The reconciliation migrations were applied to canonical Development only and verified. They have not been applied to Production.
 
 ## Fixed-price variant model
 
@@ -106,11 +106,10 @@ No public checkout UI is connected by this implementation.
 
 ## Remaining gates
 
-Before adapter registration or any paid activation:
+The Development/Test registration gate is complete. Remaining work is deliberately outside this code-only decision:
 
-1. review the migration and apply it to canonical Development only under explicit authorization;
-2. create/configure the Lemon Squeezy Test Mode Store/Product/two fixed-price Variants and obtain non-Production Test credentials;
-3. configure the Test webhook to the reviewed sandbox route;
-4. run the full sandbox matrix, including paid, duplicate delivery, invalid signature, wrong Store/Product/Variant, wrong subtotal, discount, quantity, full refund, partial refund, fraudulent state, API outage and reconciliation retry;
-5. review evidence and only then decide whether to register the adapter for non-Production use;
-6. Production remains disabled until the final release gates and independent security assessment are complete.
+1. finish the account-specific KYB, tax, accounting, privacy and buyer-disclosure review;
+2. perform the final launch-window support continuity check;
+3. implement and review any mode-specific activation configuration separately;
+4. obtain explicit approval before any Production secret, Live webhook, controlled Live transaction, public checkout, refund or Production database change;
+5. keep Production `COMMERCE_MODE=disabled` until those later gates pass.

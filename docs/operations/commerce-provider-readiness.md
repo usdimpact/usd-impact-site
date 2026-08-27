@@ -8,7 +8,7 @@ Production must remain in:
 
 `ready_for_provider_configuration`
 
-with `COMMERCE_MODE=disabled`, no registered commerce adapter, no public checkout, and no payment-authoritative browser path until the selected adapter, routes, reconciliation, sandbox evidence and release gates are complete.
+with `COMMERCE_MODE=disabled`, `COMMERCE_PROVIDER` unset, the Lemon Squeezy adapter registered in code only, no public checkout, and no payment-authoritative browser path. Registration alone cannot activate commerce.
 
 Paddle and FastSpring are not active payment dependencies. Historical provider material remains evidence only.
 
@@ -186,7 +186,7 @@ An unobservable dispute by itself is not payment authority and does not produce 
 
 ## Draft sandbox runtime implementation
 
-PR #374 now carries credential-independent implementation code while keeping the adapter unregistered and Production disabled:
+PR #374 now carries credential-independent implementation code and a reviewed code-only Lemon Squeezy registry entry while keeping Production disabled:
 
 - a `commerce_reconciliations` table that reuses existing purchase, entitlement, event and webhook-receipt primitives;
 - service-role-only `SECURITY INVOKER` RPCs with explicit execution revokes from `public`, `anon` and `authenticated`;
@@ -200,7 +200,7 @@ PR #374 now carries credential-independent implementation code while keeping the
 - an isolated commerce function at `/api/commerce` with `checkout`, `webhook` and `reconcile` actions;
 - no public checkout UI and no Vercel reconciliation cron schedule yet.
 
-The migration has not been applied to Development or Production by this implementation commit. Sandbox readiness is not proven until canonical Development migration verification and real Lemon Squeezy Test Mode evidence are complete.
+The reconciliation migrations were applied to canonical Development only and verified with real Lemon Squeezy Test Mode evidence. They have not been applied to Production. Registration remains code-only and does not authorize any Production configuration or transaction.
 
 ## Partner/referral boundary
 
@@ -234,4 +234,4 @@ After any commerce-related Production release, verify `/checkout/` remains non-p
 
 ## Current release boundary — 2026-08-26
 
-Lemon Squeezy is selected, but Draft PR #374 remains implementation work. Production still has `COMMERCE_MODE=disabled`; `REGISTERED_COMMERCE_ADAPTERS` remains empty; the new reconciliation migration is code-only and unapplied; no Production provider credentials, public checkout, Live transaction or real-card test is authorized. See `docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md`, `docs/operations/lemon-squeezy-sandbox-runtime-2026-08-26.md`, and Issues #53, #130, #343 and #54.
+Lemon Squeezy is selected and its reviewed adapter is now present in `REGISTERED_COMMERCE_ADAPTERS` on Draft PR #374 as a code-only registration decision. Production still has `COMMERCE_MODE=disabled` with `COMMERCE_PROVIDER` unset; the reconciliation migrations exist only in canonical Development; no Production provider credentials, webhook, public checkout, Live transaction, real-card test, refund, merge or Production database change is authorized. See `docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md`, `docs/operations/lemon-squeezy-sandbox-runtime-2026-08-26.md`, and Issues #53, #130 and #54.

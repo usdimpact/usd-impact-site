@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { REGISTERED_COMMERCE_ADAPTERS } from '../src/lib/commerce-adapters.js';
+import { resolveCommerceReadiness } from '../src/lib/commerce-provider.js';
 
 const [
   vercelSource,
@@ -91,7 +92,21 @@ assert.match(commerceReconciliationMigrationSource, /:payment\.revoked/);
 assert.match(accountSource, /handleCommerceReadinessRequest/);
 assert.match(accountSource, /'commerce-readiness': handleCommerceReadinessRequest/);
 
-assert.equal(REGISTERED_COMMERCE_ADAPTERS.length, 0);
+assert.equal(REGISTERED_COMMERCE_ADAPTERS.length, 1);
+assert.equal(REGISTERED_COMMERCE_ADAPTERS[0].provider, 'lemon-squeezy');
+assert.match(REGISTERED_COMMERCE_ADAPTERS[0].version, /scaffold/);
+assert.equal(REGISTERED_COMMERCE_ADAPTERS[0].assessConfiguration().ready, false);
+assert.match(REGISTERED_COMMERCE_ADAPTERS[0].assessConfiguration().reason, /registered in code only/i);
+
+const productionCommerceHold = resolveCommerceReadiness({
+  COMMERCE_MODE: 'disabled',
+  VERCEL_ENV: 'production',
+}, REGISTERED_COMMERCE_ADAPTERS);
+assert.equal(productionCommerceHold.state, 'ready_for_provider_configuration');
+assert.equal(productionCommerceHold.mode, 'disabled');
+assert.equal(productionCommerceHold.provider, null);
+assert.equal(productionCommerceHold.providerConfigured, false);
+assert.equal(productionCommerceHold.checkoutEnabled, false);
 assert.match(checkoutSource, /Lemon Squeezy is the selected Merchant of Record/i);
 assert.match(checkoutSource, /verified in Test Mode/i);
 assert.match(checkoutSource, /Public payment\s+remains disabled/i);

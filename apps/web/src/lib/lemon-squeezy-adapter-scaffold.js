@@ -424,7 +424,7 @@ export const LEMON_SQUEEZY_ADAPTER_SCAFFOLD = Object.freeze({
   assessConfiguration() {
     return Object.freeze({
       ready: false,
-      reason: 'Lemon Squeezy is selected, but this scaffold remains intentionally unregistered until Test Mode credentials/product mapping, Development migration verification, sandbox evidence, and release review are complete.',
+      reason: 'Lemon Squeezy is registered in code only. Environment activation remains blocked until a separately approved mode-specific configuration and release decision are supplied.',
     });
   },
 });

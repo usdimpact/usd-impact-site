@@ -2,7 +2,7 @@
 
 ## Status
 
-Decision version: `2026-08-27.v6-account-gates-recorded`
+Decision version: `2026-08-27.v7-administrative-gates-deferred`
 
 Product: `Read the Dollar First Library Pass`  
 Business entity: SC Kela Leads SRL, Romania  
@@ -32,10 +32,14 @@ The current account-level evidence is recorded without publishing Live product/V
 - the required customer-support contact is saved as `support@usd-impact.com`;
 - the approved one-time Library Pass configuration has been copied to Live Mode with distinct USD 39 launch and USD 49 standard Variants, digital-goods tax categorization, licences disabled and storefront display disabled;
 - no Live webhook is configured, and no Live checkout, payment or refund has been performed;
-- the account still reports tax certification as action required; accountant confirmation is pending and no W-8 certification has been submitted;
-- the official ONRC company-document request is in progress for the final buyer-facing legal disclosure review;
+- the account still reports tax certification as action required, but its current enforcement notice says bank payouts pause only at €8,577,810 processed payment volume; W-8 completion remains required and pending accountant confirmation, but is not a present payment, payout, implementation or Preview blocker;
+- the official ONRC company-document request remains in progress as corroborating evidence, but the certificate itself is not an implementation or Preview prerequisite; the mandatory boundary is accurate buyer-facing trader identification before public selling;
+- W-8 completion and the ONRC evidence request are tracked for administrative completion before marketing starts, without guessing tax classifications or public company wording;
+- before public selling, USD Impact must still expose the required verified trader information: legal name, geographic address, direct contact details, trade-register identity/registration number and VAT identifier where applicable;
 - the controlled `support@usd-impact.com` inbound/reply continuity test remains intentionally deferred to the final launch window;
 - Production remains `COMMERCE_MODE=disabled` with `COMMERCE_PROVIDER` unset, no provider secrets, no commerce migration and no public checkout.
+
+The W-8 enforcement interpretation follows the current account notice and Stripe's documented volume-based enforcement model. The trader-information boundary follows Article 5 of Directive 2000/31/EC and Romanian Law 365/2002; neither source requires an ONRC certificate to be published, but the underlying verified identification information must be accessible.
 
 ## Contract v3 lifecycle boundary
 
@@ -56,7 +60,7 @@ USD Impact must not invent unavailable events. Browser redirects, screenshots, e
 |---|---|---|---|
 | Merchant of Record / legal seller for provider transaction | Primary | accurately disclose product/business and reconcile provider records | **SELECTED / PRE-LIVE** |
 | Product-category acceptance | Written approval for disclosed Library Pass scope | do not expand approval to Research Membership/services without review | **PASS** |
-| Romanian company onboarding | Supports merchant onboarding/payout subject to provider KYB/tax requirements | complete accurate KYB/tax/payout fields privately | **MANUAL PRE-LIVE** |
+| Romanian company onboarding | Supports merchant onboarding/payout subject to provider KYB/tax requirements | complete accurate KYB/tax/payout fields privately; current W-8 enforcement is volume-threshold based | **ADMIN / PRE-MARKETING — NOT CURRENT IMPLEMENTATION BLOCKER** |
 | Sales tax / VAT at checkout | Primary MoR calculation/collection/remittance responsibility | Romanian accounting/payout reconciliation | **PASS + ACCOUNTING REVIEW** |
 | Financial receipt / invoice | Primary provider financial document | do not send a duplicate financial receipt; access-ready communication stays separate | **PASS** |
 | Checkout / payment collection | Hosted/provider payment surface | create only trusted server-side purchase intent + fixed Variant checkout | **IMPLEMENTING** |
@@ -74,7 +78,7 @@ USD Impact must not invent unavailable events. Browser redirects, screenshots, e
 | Incident escalation | Provider payment/MoR incident channel | application incident response, entitlement controls, customer product/access communication | **OWNERSHIP FROZEN** |
 | Secret rotation | provider API/webhook credential mechanisms | environment-scoped secret management, overlap/cutover, rollback | **TEST-MODE PROOF COMPLETE / PRODUCTION PENDING** |
 | Sandbox / Test Mode | separate Test Mode; reviewer explicitly required Test Mode and no real-card testing | complete deterministic matrix in non-Production only | **COMPLETE** |
-| Public Live activation | provider Live capability only | #54/#343/support/accounting/privacy/release approval before enabling | **BLOCKED** |
+| Public Live activation | provider Live capability only | verified buyer disclosures, #54/support/accounting/privacy/release approval before enabling; #343 remains optional/post-launch | **BLOCKED PENDING SEPARATE OWNER APPROVAL** |
 
 ## Customer-message ownership
 

@@ -65,7 +65,7 @@ Joining the waitlist does not subscribe you to unrelated market commentary, trad
 
 ## Service providers
 
-The website is deployed through Vercel. Vercel processes website requests and application runtime logs needed to operate and troubleshoot the service. Cloudflare Stream processes protected video playback requests and delivers the adaptive video and caption files requested by an authorized account. Aggregate learning counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Account, entitlement, commerce, consent, notification-delivery, and saved video-progress records are stored through Supabase. Waitlist contacts and requested email delivery are processed through Resend. When public checkout is separately enabled, Lemon Squeezy processes payment, tax, buyer financial-document, refund, fraud-prevention, and related transaction information as Merchant of Record. USD Impact remains responsible for the account, product access, learning records, and product-support information it processes.
+The website is deployed through Vercel. Vercel processes website requests and application runtime logs needed to operate and troubleshoot the service. Cloudflare Stream processes protected video playback requests and delivers the adaptive video and caption files requested by an authorized account. Aggregate learning counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Account, entitlement, commerce, consent, notification-delivery, and saved video-progress records are stored through Supabase. Waitlist contacts and requested email delivery are processed through Resend. When public checkout is separately enabled, Lemon Squeezy processes payment, tax, buyer financial-document, refund, fraud-prevention, and related transaction information as Merchant of Record. Applicable indirect taxes are calculated, collected and remitted by Lemon Squeezy as Merchant of Record and shown before payment. USD Impact remains responsible for the account, product access, learning records, and product-support information it processes.
 
 These providers process information only as needed to operate the website, accounts, learning tools, commerce workflow, support, and requested email delivery. Their own privacy notices apply where they act independently, including Lemon Squeezy's privacy notice for the payment transaction.
 
@@ -101,6 +101,6 @@ For privacy, account, or data-rights requests, contact [support@usd-impact.com](
 
 ## Operator
 
-USD Impact is operated by **SC Kela Leads SRL**, a company registered in Romania under CUI **40790448** and Trade Register number **J38/820/2020**.
+USD Impact is operated by **SC Kela Leads SRL**, a company registered in Romania under CUI **40790448** and Trade Register number **J38/820/2020**. Registered business address: **Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România**.
 
 This notice describes current website operations and is not legal advice.

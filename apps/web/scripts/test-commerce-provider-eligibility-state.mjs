@@ -46,6 +46,8 @@ function assertContainsExactHttpsUrl(source, expectedHref) {
 }
 
 const rejectionCase = '#01856172';
+const approvedTraderAddress = 'Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România';
+const approvedTaxDisclosure = 'Applicable indirect taxes are calculated, collected and remitted by Lemon Squeezy as Merchant of Record and shown before payment.';
 
 assert.match(update, /Product eligibility: REJECTED \/ FAILED/);
 assert.ok(update.includes(rejectionCase));
@@ -113,12 +115,22 @@ assert.match(privacy, /Lemon Squeezy[\s\S]{0,120}selected Merchant of Record/i);
 assertContainsExactHttpsUrl(privacy, 'https://www.lemonsqueezy.com/privacy');
 
 for (const page of [terms, refund, privacy]) {
+  assert.ok(page.includes(approvedTraderAddress), 'Every buyer-facing legal page must publish the approved trader address.');
+}
+for (const page of [terms, privacy]) {
+  assert.ok(page.includes(approvedTaxDisclosure), 'Terms and Privacy must publish the approved MoR indirect-tax wording.');
+}
+
+for (const page of [terms, refund, privacy]) {
   assert.doesNotMatch(page, /authorized payment provider or merchant of record identified/i);
 }
 
 assert.match(disclosure, /Provider selection: \*\*complete — Lemon Squeezy\*\*/);
 assert.match(disclosure, /Production remains fail-closed with `COMMERCE_MODE=disabled`/);
 assert.match(disclosure, /Buyer disclosure approval: \*\*not granted\*\*/);
+assert.ok(disclosure.includes(approvedTraderAddress));
+assert.ok(disclosure.includes(approvedTaxDisclosure));
+assert.match(disclosure, /Romanian VAT-registration status not asserted/i);
 assert.doesNotMatch(disclosure, /Provider selection: \*\*not complete\*\*/i);
 assert.match(onrc, /not a current implementation or Preview blocker/i);
 assert.match(onrc, /does not need to be published merely to sell online/i);

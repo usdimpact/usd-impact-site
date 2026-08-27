@@ -8,6 +8,13 @@ const identitySchema = JSON.stringify({
   legalName: 'SC Kela Leads SRL',
   url: 'https://usd-impact.com/',
   taxID: 'RO CUI 40790448',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9',
+    postalCode: '240232',
+    addressLocality: 'Râmnicu Vâlcea',
+    addressCountry: 'RO',
+  },
   email: 'support@usd-impact.com',
   founder: {
     '@type': 'Person',
@@ -38,6 +45,7 @@ const identitySchema = JSON.stringify({
           <div><dt>Jurisdiction</dt><dd>Romania</dd></div>
           <div><dt>Unique identification code</dt><dd>CUI 40790448</dd></div>
           <div><dt>Trade Register number</dt><dd>J38/820/2020</dd></div>
+          <div><dt>Registered business address</dt><dd>Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România</dd></div>
           <div><dt>Contact</dt><dd><a href="mailto:support@usd-impact.com">support@usd-impact.com</a></dd></div>
         </dl>
         <p class="evidence-note"><strong>Evidence level:</strong> first-party legal disclosure, consistent across the Terms, Privacy Notice and Refund Policy. A current electronically issued ONRC company certificate has <strong>not yet been reviewed</strong> for this public verification record, so these identifiers are not represented as independently or officially verified. The authenticated acquisition and comparison are tracked in <a href="https://github.com/usdimpact/usd-impact-site/issues/341" target="_blank" rel="noreferrer">Issue #341</a>. The official source is the <a href="https://myportal.onrc.ro/" target="_blank" rel="noreferrer">Romanian National Trade Register Office portal</a>.</p>

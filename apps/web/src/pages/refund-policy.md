@@ -36,4 +36,4 @@ This policy does not limit any refund, cancellation, conformity, or other mandat
 
 ## Operator
 
-USD Impact is operated by **SC Kela Leads SRL**, registered in Romania under CUI **40790448** and Trade Register number **J38/820/2020**.
+USD Impact is operated by **SC Kela Leads SRL**, registered in Romania under CUI **40790448** and Trade Register number **J38/820/2020**. Registered business address: **Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România**.

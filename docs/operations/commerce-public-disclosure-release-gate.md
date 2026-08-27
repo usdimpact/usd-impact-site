@@ -18,9 +18,11 @@ The application may display these already-approved public facts:
 - Legal operator: SC Kela Leads SRL
 - Jurisdiction: Romania
 - Registration: CUI 40790448 · Trade Register J38/820/2020
+- Registered business address: Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România
 - Support: support@usd-impact.com
+- Customer-transaction tax wording: Applicable indirect taxes are calculated, collected and remitted by Lemon Squeezy as Merchant of Record and shown before payment.
 
-The registered street address is intentionally not committed to this repository. It must be verified from company records and then configured as customer-facing Production data only when it is approved for publication before checkout.
+The owner explicitly approved this exact first-party address, CUI, and Merchant-of-Record tax wording for public Draft publication on 2026-08-27. This approval does not configure Production, assert a separate Romanian VAT-registration status, or approve the complete Live disclosure bundle.
 
 ## Resolved provider facts
 
@@ -42,12 +44,12 @@ Controlled Live and Live modes require all of the following fields. The `_PUBLIC
 
 | Configuration | Purpose | Current state |
 | --- | --- | --- |
-| `COMMERCE_TRADER_ADDRESS_PUBLIC` | Verified geographic trader/business address shown to the buyer | Not configured |
-| `COMMERCE_TAX_STATUS_PUBLIC` | Accurate seller tax/VAT-status wording appropriate for customer disclosure | Not configured |
+| `COMMERCE_TRADER_ADDRESS_PUBLIC` | Verified geographic trader/business address shown to the buyer | Exact text approved and published in Draft copy; not configured |
+| `COMMERCE_TAX_STATUS_PUBLIC` | Accurate seller tax/VAT-status wording appropriate for customer disclosure | Narrow MoR tax-handling wording approved in Draft; Romanian VAT-registration status not asserted or configured |
 | `COMMERCE_MERCHANT_OF_RECORD_NAME` | Current contractual Merchant-of-Record / seller-of-record identity | Current entity resolved in Draft evidence; exact entity not configured |
 | `COMMERCE_MERCHANT_OF_RECORD_TERMS_URL` | HTTPS buyer terms supplied by the selected provider | Official URL resolved; not configured |
 | `COMMERCE_MERCHANT_OF_RECORD_PRIVACY_URL` | HTTPS provider privacy notice relevant to the buyer transaction | Official URL resolved; not configured |
-| `COMMERCE_TAX_CHECKOUT_PUBLIC` | Final wording explaining how applicable tax and supported currency conversion are shown before payment | Not configured |
+| `COMMERCE_TAX_CHECKOUT_PUBLIC` | Final wording explaining how applicable tax and supported currency conversion are shown before payment | Exact indirect-tax wording approved and published in Draft copy; not configured |
 | `COMMERCE_REFUND_SUPPORT_PUBLIC` | Final allocation of product/access support versus payment/refund support | Responsibility resolved; not configured |
 | `COMMERCE_SELLER_DISCLOSURE_APPROVED` | Explicit `true` only after the complete buyer-facing set has been reviewed and approved | Not granted |
 
@@ -91,7 +93,7 @@ The buyer-facing geographic trader address is not treated as a secret after it i
 1. Keep Production `COMMERCE_MODE=disabled` and `COMMERCE_PROVIDER` unset.
 2. Keep the Lemon Squeezy adapter registration code-only and public checkout fail-closed.
 3. Complete Draft legal-copy and disclosure regression checks.
-4. Verify the public trader address and tax/VAT wording from authoritative company/accounting records.
+4. Keep the approved first-party address and MoR indirect-tax wording exact; obtain accounting confirmation before making any additional Romanian VAT-registration claim.
 5. Reverify the current contractual Merchant-of-Record identity and linked legal pages immediately before Live approval.
 6. Configure the complete buyer-facing bundle in an authorized non-public verification environment without committing sensitive provider credentials.
 7. Review the rendered checkout disclosure block and official provider links.
@@ -107,10 +109,10 @@ The buyer-facing geographic trader address is not treated as a secret after it i
 - Adapter registration: **code only; Production inactive**.
 - Official buyer-terms and privacy URLs: **resolved in Draft copy**.
 - Public checkout: **disabled**.
-- Verified registered street address for customer display: **not stored in Git and not configured**.
-- Public tax/VAT wording: **not configured**.
+- Registered business address for customer display: **exact text approved and published in Draft copy; not configured in Production**.
+- Public tax/VAT wording: **MoR indirect-tax handling text approved and published in Draft copy; Romanian VAT-registration status not asserted and no Production value configured**.
 - Exact contractual Merchant-of-Record entity: **resolved in Draft evidence as Link, LLC f/k/a Lemon Squeezy LLC; not configured and subject to immediate pre-Live re-verification**.
 - Buyer disclosure approval: **not granted**.
 - W-8 and ONRC evidence: **administrative pre-marketing work; not current implementation or Preview blockers**.
 
-This change corrects buyer-facing provider wording without enabling commerce. It does not alter Production configuration, secrets, webhooks, payments, refunds, database state, public checkout, or merge status.
+This change records the owner-approved public trader address and MoR indirect-tax wording without enabling commerce. It does not alter Production configuration, secrets, webhooks, payments, refunds, database state, public checkout, or merge status.

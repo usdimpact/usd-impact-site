@@ -52,6 +52,10 @@ const aboutHrefs = new Set([...about.matchAll(/href="([^"]+)"/g)].map((match) =>
 assert.match(about, /SC Kela Leads SRL/);
 assert.match(about, /CUI 40790448/);
 assert.match(about, /J38\/820\/2020/);
+assert.ok(about.includes('Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România'));
+assert.match(about, /streetAddress: 'Str\. Doctor Hacman nr\. 28, bl\. 83, sc\. B, ap\. 9'/);
+assert.match(about, /postalCode: '240232'/);
+assert.match(about, /addressLocality: 'Râmnicu Vâlcea'/);
 assert.match(about, /Mircea Albulescu/);
 assert.match(about, /first-party legal disclosure/);
 assert.match(about, /current electronically issued ONRC company certificate has <strong>not yet been reviewed<\/strong>/);

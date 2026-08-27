@@ -12,7 +12,7 @@ These Terms & Conditions govern use of the USD Impact website and the purchase a
 
 ## 1. Service provider
 
-USD Impact is operated by **SC Kela Leads SRL**, a company registered in Romania under CUI **40790448** and Trade Register number **J38/820/2020**. Contact: [support@usd-impact.com](mailto:support@usd-impact.com).
+USD Impact is operated by **SC Kela Leads SRL**, a company registered in Romania under CUI **40790448** and Trade Register number **J38/820/2020**. Registered business address: **Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România**. Contact: [support@usd-impact.com](mailto:support@usd-impact.com).
 
 ## 2. Educational service
 
@@ -24,7 +24,7 @@ You must provide an email address you control and keep access to your account se
 
 ## 4. Product, price, and payment
 
-The Library Pass is sold as a one-time purchase. The product page states the applicable USD price, offer period, and included deliverables. USD Impact has selected **Lemon Squeezy** as the Merchant of Record and authorized reseller for the transaction. Lemon Squeezy provides the hosted checkout and handles payment processing, applicable tax calculation and collection, buyer financial documents, approved refunds, disputes, and chargebacks for the purchase. Lemon Squeezy's current [Buyer Terms](https://www.lemonsqueezy.com/buyer-terms) apply to the payment transaction in addition to these Terms. The final amount, currency, applicable taxes, provider identity, and provider terms are displayed before payment is confirmed.
+The Library Pass is sold as a one-time purchase. The product page states the applicable USD price, offer period, and included deliverables. USD Impact has selected **Lemon Squeezy** as the Merchant of Record and authorized reseller for the transaction. Lemon Squeezy provides the hosted checkout and handles payment processing, buyer financial documents, approved refunds, disputes, and chargebacks for the purchase. Applicable indirect taxes are calculated, collected and remitted by Lemon Squeezy as Merchant of Record and shown before payment. Lemon Squeezy's current [Buyer Terms](https://www.lemonsqueezy.com/buyer-terms) apply to the payment transaction in addition to these Terms. The final amount, currency, applicable taxes, provider identity, and provider terms are displayed before payment is confirmed.
 
 ## 5. Delivery and ongoing access
 

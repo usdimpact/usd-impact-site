@@ -2,7 +2,7 @@
 
 ## Status
 
-Decision version: `2026-08-27.v5-provider-support-confirmed`
+Decision version: `2026-08-27.v6-account-gates-recorded`
 
 Product: `Read the Dollar First Library Pass`  
 Business entity: SC Kela Leads SRL, Romania  
@@ -23,6 +23,19 @@ This matrix freezes the selected-provider responsibility and lifecycle-ownership
 - Production remains `ready_for_provider_configuration` with `COMMERCE_MODE=disabled`, `COMMERCE_PROVIDER` unset/null, and checkout disabled.
 
 Provider selection is therefore complete; **activation is not**.
+
+## Authenticated account launch-gate status — 2026-08-27
+
+The current account-level evidence is recorded without publishing Live product/Variant identifiers, bank details, tax identifiers, identity documents, private email metadata or credentials:
+
+- the Lemon Squeezy store is approved and active; identity verification, two-factor authentication and the payout bank connection are complete;
+- the required customer-support contact is saved as `support@usd-impact.com`;
+- the approved one-time Library Pass configuration has been copied to Live Mode with distinct USD 39 launch and USD 49 standard Variants, digital-goods tax categorization, licences disabled and storefront display disabled;
+- no Live webhook is configured, and no Live checkout, payment or refund has been performed;
+- the account still reports tax certification as action required; accountant confirmation is pending and no W-8 certification has been submitted;
+- the official ONRC company-document request is in progress for the final buyer-facing legal disclosure review;
+- the controlled `support@usd-impact.com` inbound/reply continuity test remains intentionally deferred to the final launch window;
+- Production remains `COMMERCE_MODE=disabled` with `COMMERCE_PROVIDER` unset, no provider secrets, no commerce migration and no public checkout.
 
 ## Contract v3 lifecycle boundary
 

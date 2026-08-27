@@ -1,6 +1,6 @@
 # USD Impact ONRC company-verification gate
 
-Last updated: 2026-08-25
+Last updated: 2026-08-27
 Tracking issue: #341
 
 ## Purpose
@@ -8,6 +8,8 @@ Tracking issue: #341
 This gate defines when USD Impact may describe the legal-operator identifiers as checked against a current official Romanian National Trade Register Office (ONRC) document.
 
 Until the gate is completed, the public legal-entity information remains a **first-party disclosure**. It must not be described as independently verified, registry-verified, officially verified, audited, certified, or equivalent.
+
+This is an evidence and public-claim gate, not a current implementation or Preview blocker. An ONRC certificate does not need to be published merely to sell online. Its absence does not remove the separate requirement to publish accurate buyer-facing trader information before public selling, including the legal name, verified geographic address, direct contact, trade-register identity/registration number, and VAT identifier where applicable.
 
 ## Current first-party record
 
@@ -107,11 +109,13 @@ After Issue #341 is completed against the retained signed document, public wordi
 4. Complete the comparison checklist in Issue #341 without posting sensitive values.
 5. Correct any discrepancy before changing public verification wording.
 6. Update the About/Transparency evidence level through a reviewed PR.
-7. Run normal CI and Production verification.
+7. Run normal CI and Preview verification if public copy changes. Production verification remains separately authorized release work.
 8. Close Issue #341 only after the public wording and evidence record match the reviewed certificate.
 
 ## Current status
 
-**PENDING — authenticated ONRC certificate acquisition and review required.**
+**IN PROGRESS — administrative pre-marketing evidence task; not a current implementation or Preview blocker.**
+
+The current first-party operator wording may remain while it is accurate and does not claim ONRC verification. A discrepancy found later blocks any public claim or buyer disclosure that depends on the affected field and must be corrected before public selling.
 
 The existence of an official portal, company-search flow, or first-party company identifiers is not itself evidence that the current public record has been checked against a signed ONRC certificate.

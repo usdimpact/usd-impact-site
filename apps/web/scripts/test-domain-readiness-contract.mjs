@@ -4,6 +4,7 @@ const read = (file) => fs.readFileSync(file, 'utf8');
 const files = {
   layout: read('src/layouts/BaseLayout.astro'),
   product: read('src/content/products/book-read-the-dollar-first.md'),
+  preview: read('src/content/pages/book-read-the-dollar-first-preview.md'),
   privacy: read('src/pages/privacy.md'),
   terms: read('src/pages/terms.md'),
   refund: read('src/pages/refund-policy.md'),
@@ -28,17 +29,41 @@ requireText(files.product, 'Product page', [
   'No launch window or quantity cutoff is currently active.',
   'one-time',
   'ongoing access',
-  'replacement provider is selected, integrated, tested, and approved for Live use',
+  'Lemon Squeezy is the selected Merchant of Record',
+  'Public checkout remains unavailable',
   'verified commercial event',
 ]);
+requireText(files.preview, 'Free sample page', [
+  'Lemon Squeezy is the selected Merchant of Record',
+  'Public checkout is not currently active',
+]);
 requireText(files.terms, 'Terms', ['SC Kela Leads SRL', '40790448', 'J38/820/2020', 'support@usd-impact.com']);
-requireText(files.terms, 'Terms', ['authorized payment provider', 'identified during checkout']);
-requireText(files.refund, 'Refund Policy', ['14 calendar days', 'full refund', 'support@usd-impact.com', 'payment provider']);
-requireText(files.privacy, 'Privacy Notice', ['authorized payment provider', 'Supabase', 'SC Kela Leads SRL', 'support@usd-impact.com']);
+requireText(files.terms, 'Terms', [
+  'Lemon Squeezy',
+  'Merchant of Record',
+  'https://www.lemonsqueezy.com/buyer-terms',
+]);
+requireText(files.refund, 'Refund Policy', [
+  '14 calendar days',
+  'full refund',
+  'support@usd-impact.com',
+  'Lemon Squeezy',
+  'selected Merchant of Record',
+  'https://www.lemonsqueezy.com/buyer-terms',
+]);
+requireText(files.privacy, 'Privacy Notice', [
+  'Lemon Squeezy',
+  'selected Merchant of Record',
+  'https://www.lemonsqueezy.com/privacy',
+  'Supabase',
+  'SC Kela Leads SRL',
+  'support@usd-impact.com',
+]);
 requireText(files.checkout, 'Checkout page', [
   'Checkout is not open yet.',
-  'ready to connect',
-  'Public payment remains disabled',
+  'Lemon Squeezy is the selected Merchant of Record',
+  'Public payment',
+  'remains disabled',
   'No payment can be made on this page',
   '/api/commerce-readiness',
   'browser redirect alone never grants access',
@@ -80,19 +105,35 @@ if (files.product.includes('payment-provider review')) {
 if (files.checkout.includes('payment-provider review')) {
   failures.push('Checkout page still treats provider review as the active checkout gate.');
 }
-
-const customerFacingFiles = ['product', 'privacy', 'terms', 'refund', 'account', 'checkout'];
-const commerceProviderNames = ['Paddle', 'FastSpring'];
-for (const name of customerFacingFiles) {
-  for (const provider of commerceProviderNames) {
-    if (files[name].includes(provider)) failures.push(`${name} contains provider-specific customer copy: ${provider}`);
+for (const name of ['product', 'preview', 'checkout']) {
+  if (files[name].includes('replacement payment provider') || files[name].includes('replacement provider is selected')) {
+    failures.push(`${name} still describes commerce as waiting for replacement-provider selection.`);
   }
+}
+
+const customerFacingFiles = ['product', 'preview', 'privacy', 'terms', 'refund', 'account', 'checkout'];
+const supersededCommerceProviderNames = ['Paddle', 'FastSpring'];
+for (const name of customerFacingFiles) {
+  for (const provider of supersededCommerceProviderNames) {
+    if (files[name].includes(provider)) failures.push(`${name} contains superseded provider-specific customer copy: ${provider}`);
+  }
+}
+
+const approvedPublicTraderAddress = 'Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România';
+const approvedAddressFiles = new Set(['privacy', 'terms', 'refund', 'checkout']);
+for (const name of approvedAddressFiles) {
+  requireText(files[name], `${name} public trader disclosure`, [approvedPublicTraderAddress]);
 }
 
 const privateAddressFragments = ['Doctor Hacman', 'Bl. 83', 'Sc. B', 'Ap. 9'];
 for (const [label, file] of Object.entries(files)) {
+  const unapprovedText = approvedAddressFiles.has(label)
+    ? file.replaceAll(approvedPublicTraderAddress, '')
+    : file;
   for (const fragment of privateAddressFragments) {
-    if (file.includes(fragment)) failures.push(`${label} exposes a private registered-address fragment: ${fragment}`);
+    if (unapprovedText.includes(fragment)) {
+      failures.push(`${label} exposes an address fragment outside the exact approved public trader disclosure: ${fragment}`);
+    }
   }
 }
 

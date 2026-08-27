@@ -3,7 +3,7 @@ import {
   readTelemetryAggregates,
   recordTelemetryEvent,
   telemetryStorageConstants,
-} from './_telemetry-store.js';
+} from '../src/lib/telemetry-store.js';
 
 const MAX_BODY_BYTES = 4_096;
 const FALLBACK_DUPLICATE_TTL_MS = 10_000;

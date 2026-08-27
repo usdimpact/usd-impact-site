@@ -123,8 +123,8 @@ assert.match(
 );
 assert.match(
   backstop,
-  /gh pr list[\s\S]*--state open[\s\S]*expected_head_prefix/,
-  'the backstop must stop when the current edition is already in editorial review',
+  /gh pr list[\s\S]*--state all[\s\S]*expected_head_prefix/,
+  'the backstop must respect any exact current-day publication PR, including a human-closed PR',
 );
 assert.match(
   backstop,
@@ -133,8 +133,13 @@ assert.match(
 );
 assert.match(
   backstop,
-  /active_count[\s\S]*success_count[\s\S]*gh workflow run daily-news\.yml --repo "\$GITHUB_REPOSITORY" --ref main/,
-  'the backstop must dispatch only when no current-day Daily run is active or successful',
+  /active_count[\s\S]*success_count[\s\S]*failed_count[\s\S]*gh workflow run daily-news\.yml --repo "\$GITHUB_REPOSITORY" --ref main/,
+  'the backstop must record earlier outcomes and dispatch only when no current-day Daily run is active and no publication artifact exists',
+);
+assert.doesNotMatch(
+  backstop,
+  /if \[ "\$success_count" -gt 0 \]/,
+  'a false-green Daily run without a publication artifact must not suppress the bounded recovery dispatch',
 );
 assert.doesNotMatch(backstop, /contents: write/, 'the backstop must not be able to write publication content');
 assert.doesNotMatch(backstop, /gh pr merge/, 'the backstop must never merge editorial content');

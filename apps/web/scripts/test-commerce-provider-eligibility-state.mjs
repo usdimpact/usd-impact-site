@@ -68,7 +68,7 @@ assert.match(selected, /mor-final-state-reconciliation/);
 assert.match(selected, /full refunds only/i);
 assert.match(selected, /REGISTERED_COMMERCE_ADAPTERS.*Lemon Squeezy/);
 assert.match(selected, /Arnab Bose[\s\S]{0,120}confirmed in writing/);
-assert.match(selected, /order_refunded[\s\S]{0,180}settle or prevent a chargeback/i);
+assert.match(selected, /settle or prevent a chargeback[\s\S]{0,120}order_refunded/i);
 assert.match(selected, /operational\/accounting inputs/i);
 
 assert.match(sandbox, /Status: \*\*Development\/Test proof complete\. Adapter registered in code only\. No Production activation\.\*\*/);

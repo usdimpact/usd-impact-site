@@ -41,18 +41,19 @@ jobs:
             exit 0
           fi
 
-          open_pr="$(gh pr list \
+          existing_pr="$(gh pr list \
             --repo "$GITHUB_REPOSITORY" \
-            --state open \
+            --state all \
             --base main \
             --limit 100 \
-            --json number,title,headRefName,url \
-            --jq ".[] | select(.title == \"$expected_title\" and (.headRefName | startswith(\"$expected_head_prefix\"))) | [.number, .url] | @tsv" \
+            --json number,title,headRefName,state,url \
+            --jq ".[] | select(.title == \"$expected_title\" and (.headRefName | startswith(\"$expected_head_prefix\"))) | [.number, .state, .url] | @tsv" \
             | head -n 1)"
 
-          if [ -n "$open_pr" ]; then
-            echo "- Result: today's publication PR is already open; no duplicate recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
-            echo "- Existing PR: $(printf '%s' "$open_pr" | cut -f2)" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$existing_pr" ]; then
+            echo "- Result: today's publication PR already exists; no duplicate recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
+            echo "- Existing PR state: $(printf '%s' "$existing_pr" | cut -f2)" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Existing PR: $(printf '%s' "$existing_pr" | cut -f3)" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
@@ -66,12 +67,8 @@ jobs:
             exit 0
           fi
 
-          if [ "$success_count" -gt 0 ]; then
-            echo "- Result: a Daily run for today already succeeded; no duplicate recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-
           gh workflow run daily-news.yml --repo "$GITHUB_REPOSITORY" --ref main
 
           echo "- Result: dispatched exactly one bounded Daily recovery run." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Earlier successful Daily runs without a publication artifact today: $success_count" >> "$GITHUB_STEP_SUMMARY"
           echo "- Earlier failed Daily runs today: $failed_count" >> "$GITHUB_STEP_SUMMARY"

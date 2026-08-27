@@ -1,14 +1,14 @@
 # USD Impact public commerce disclosure release gate
 
-Last updated: 2026-08-25
+Last updated: 2026-08-27
 
 ## Purpose
 
 This gate prevents controlled Live or public Live checkout from becoming available until the buyer-facing seller and Merchant-of-Record disclosures are complete, verified, and explicitly approved.
 
-It is deliberately provider-neutral. It does not select FastSpring, Lemon Squeezy, PayPro Global, or any other provider. It does not create a payment entry point, register an adapter, configure provider credentials, or approve Production commerce.
+Lemon Squeezy is the selected Merchant of Record for the one-time *Read the Dollar First Library Pass*. Provider selection, Test Mode proof, responsibility mapping, and code-only adapter registration are complete. Activation is not complete.
 
-Current Production remains fail-closed with commerce disabled.
+Current Production remains fail-closed with `COMMERCE_MODE=disabled`, `COMMERCE_PROVIDER` unset, no provider secrets, no Live webhook, and no public checkout.
 
 ## Fixed public USD Impact identity
 
@@ -22,20 +22,41 @@ The application may display these already-approved public facts:
 
 The registered street address is intentionally not committed to this repository. It must be verified from company records and then configured as customer-facing Production data only when it is approved for publication before checkout.
 
+## Resolved provider facts
+
+The following provider facts may be used in Draft buyer copy:
+
+- Selected provider brand: **Lemon Squeezy**
+- Transaction role: **Merchant of Record and authorized reseller**
+- Buyer terms: https://www.lemonsqueezy.com/buyer-terms
+- Provider privacy notice: https://www.lemonsqueezy.com/privacy
+- Lemon Squeezy owns hosted payment processing, applicable indirect-tax calculation/collection/remittance, buyer financial documents, payment refunds, disputes, chargebacks, and payment fraud controls.
+- USD Impact owns product description and delivery, account access, entitlement controls, product/access support, and review of refund requests under the public USD Impact refund policy.
+
+The exact contractual provider entity shown to a buyer must be verified from the current Live contract or hosted checkout immediately before disclosure approval. Do not infer that value from historic provider naming or hardcode an unreviewed legal entity. Buyer-facing Draft copy may use the Lemon Squeezy brand with links to its current official terms and privacy notice.
+
 ## Required buyer-facing configuration
 
 Controlled Live and Live modes require all of the following fields. The `_PUBLIC` suffix identifies values intended to be shown to buyers; it does not mean an unverified value may be invented or copied from an unrelated source.
 
-| Configuration | Purpose |
-| --- | --- |
-| `COMMERCE_TRADER_ADDRESS_PUBLIC` | Verified geographic trader/business address shown to the buyer |
-| `COMMERCE_TAX_STATUS_PUBLIC` | Accurate seller tax/VAT-status wording appropriate for customer disclosure |
-| `COMMERCE_MERCHANT_OF_RECORD_NAME` | Selected contractual Merchant of Record / seller-of-record identity |
-| `COMMERCE_MERCHANT_OF_RECORD_TERMS_URL` | HTTPS buyer terms supplied by the selected provider |
-| `COMMERCE_MERCHANT_OF_RECORD_PRIVACY_URL` | HTTPS provider privacy/data-processing notice relevant to the buyer transaction |
-| `COMMERCE_TAX_CHECKOUT_PUBLIC` | Final wording explaining how applicable tax and supported currency conversion are shown before payment |
-| `COMMERCE_REFUND_SUPPORT_PUBLIC` | Final allocation of product/access support versus payment/refund support |
-| `COMMERCE_SELLER_DISCLOSURE_APPROVED` | Explicit `true` only after the complete buyer-facing set has been reviewed and approved |
+| Configuration | Purpose | Current state |
+| --- | --- | --- |
+| `COMMERCE_TRADER_ADDRESS_PUBLIC` | Verified geographic trader/business address shown to the buyer | Not configured |
+| `COMMERCE_TAX_STATUS_PUBLIC` | Accurate seller tax/VAT-status wording appropriate for customer disclosure | Not configured |
+| `COMMERCE_MERCHANT_OF_RECORD_NAME` | Current contractual Merchant-of-Record / seller-of-record identity | Provider selected; exact entity not configured |
+| `COMMERCE_MERCHANT_OF_RECORD_TERMS_URL` | HTTPS buyer terms supplied by the selected provider | Official URL resolved; not configured |
+| `COMMERCE_MERCHANT_OF_RECORD_PRIVACY_URL` | HTTPS provider privacy notice relevant to the buyer transaction | Official URL resolved; not configured |
+| `COMMERCE_TAX_CHECKOUT_PUBLIC` | Final wording explaining how applicable tax and supported currency conversion are shown before payment | Not configured |
+| `COMMERCE_REFUND_SUPPORT_PUBLIC` | Final allocation of product/access support versus payment/refund support | Responsibility resolved; not configured |
+| `COMMERCE_SELLER_DISCLOSURE_APPROVED` | Explicit `true` only after the complete buyer-facing set has been reviewed and approved | Not granted |
+
+## Administrative evidence track
+
+W-8 certification remains pending accountant confirmation. The current account enforcement notice makes it an administrative pre-marketing task rather than a present implementation or Preview blocker.
+
+The ONRC certificate request is in progress as corroborating evidence for future registry-verification wording. The certificate itself is not required to prepare code or Preview copy and does not need to be published. Its absence does not remove the separate requirement to publish accurate buyer-facing trader information before public selling, including the verified geographic address and VAT identifier where applicable.
+
+Neither administrative track authorizes a guessed tax classification, address, provider legal entity, or approval flag.
 
 ## Validation rules
 
@@ -60,46 +81,35 @@ Do not put the following values in Git merely to satisfy this gate:
 - bank or payout details;
 - provider API keys, webhook secrets, passwords, recovery codes, or tokens;
 - unverified VAT claims or fabricated tax wording;
-- a candidate provider name presented as selected before written selection approval.
+- a historic or unreviewed provider legal entity presented as the current contractual Merchant of Record.
 
 The buyer-facing geographic trader address is not treated as a secret after it is intentionally approved for public commercial disclosure, but the canonical value should still be managed through the approved Production configuration/recovery process rather than duplicated through source files.
 
-## Provider-selection dependency
-
-Do not populate provider-specific fields merely because a candidate is under review.
-
-Before setting the Merchant-of-Record fields, Issue #53 must contain authoritative evidence and explicit selection covering at minimum:
-
-1. product/company eligibility;
-2. Romanian-company onboarding and settlement;
-3. Merchant-of-Record / seller-of-record allocation;
-4. tax calculation, filing/remittance, invoicing and receipt responsibilities;
-5. fees, reserves and payout schedule;
-6. refunds, disputes, chargebacks and buyer-support allocation;
-7. webhook/event coverage and raw-body signature verification;
-8. sandbox/test behavior;
-9. privacy/DPA/subprocessor obligations; and
-10. incident, rollback and secret-rotation procedures.
-
 ## Activation sequence
 
-1. Keep `COMMERCE_MODE=disabled` while provider selection is unresolved.
-2. Select exactly one provider through the existing provider responsibility gate.
-3. Implement and validate the provider adapter in sandbox outside Production.
+1. Keep Production `COMMERCE_MODE=disabled` and `COMMERCE_PROVIDER` unset.
+2. Keep the Lemon Squeezy adapter registration code-only and public checkout fail-closed.
+3. Complete Draft legal-copy and disclosure regression checks.
 4. Verify the public trader address and tax/VAT wording from authoritative company/accounting records.
-5. Verify the provider's exact legal Merchant-of-Record identity, buyer terms, privacy terms and support allocation from authoritative provider materials/contract.
-6. Configure the seven buyer-facing values in the correct environment without committing sensitive provider credentials.
-7. Review the rendered checkout disclosure block and links.
-8. Set `COMMERCE_SELLER_DISCLOSURE_APPROVED=true` only after the complete set is correct.
-9. Complete the separately controlled Live-test gate.
-10. Activate Live mode only after all remaining launch-critical issues and explicit Live approval are green.
+5. Verify the exact current contractual Merchant-of-Record identity from the provider contract or hosted checkout.
+6. Configure the complete buyer-facing bundle in an authorized non-public verification environment without committing sensitive provider credentials.
+7. Review the rendered checkout disclosure block and official provider links.
+8. Set `COMMERCE_SELLER_DISCLOSURE_APPROVED=true` only after the complete set is correct and the owner separately approves it.
+9. Complete the separately controlled Live-test gate if authorized.
+10. Activate Production or public checkout only after all remaining launch-critical checks and separate explicit owner approval are green.
 
 ## Current status
 
-- Provider selection: **not complete**.
+- Provider selection: **complete — Lemon Squeezy**.
+- Provider responsibility mapping: **complete**.
+- Test Mode proof: **complete**.
+- Adapter registration: **code only; Production inactive**.
+- Official buyer-terms and privacy URLs: **resolved in Draft copy**.
 - Public checkout: **disabled**.
-- Verified registered street address for customer display: **not stored in Git and not assumed by this gate**.
-- Merchant of Record: **not selected**.
+- Verified registered street address for customer display: **not stored in Git and not configured**.
+- Public tax/VAT wording: **not configured**.
+- Exact contractual Merchant-of-Record entity: **not configured**.
 - Buyer disclosure approval: **not granted**.
+- W-8 and ONRC evidence: **administrative pre-marketing work; not current implementation or Preview blockers**.
 
-Therefore this change strengthens the release boundary but does not move USD Impact closer to accepting a payment until the required real-world evidence is supplied and approved.
+This change corrects buyer-facing provider wording without enabling commerce. It does not alter Production configuration, secrets, webhooks, payments, refunds, database state, public checkout, or merge status.

@@ -10,9 +10,14 @@ const paths = {
   lemon: new URL('docs/operations/lemon-squeezy-store-application-packet-2026-08-25.md', root),
   selected: new URL('docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md', root),
   sandbox: new URL('docs/operations/lemon-squeezy-sandbox-runtime-2026-08-26.md', root),
+  terms: new URL('apps/web/src/pages/terms.md', root),
+  refund: new URL('apps/web/src/pages/refund-policy.md', root),
+  privacy: new URL('apps/web/src/pages/privacy.md', root),
+  disclosure: new URL('docs/operations/commerce-public-disclosure-release-gate.md', root),
+  onrc: new URL('docs/operations/onrc-company-verification-gate.md', root),
 };
 
-const [update, responsibility, technical, historical, lemon, selected, sandbox] = await Promise.all(
+const [update, responsibility, technical, historical, lemon, selected, sandbox, terms, refund, privacy, disclosure, onrc] = await Promise.all(
   Object.values(paths).map((path) => readFile(path, 'utf8')),
 );
 
@@ -75,6 +80,25 @@ assert.match(sandbox, /Status: \*\*Development\/Test proof complete\. Adapter re
 assert.match(sandbox, /VERCEL_ENV=production.*rejected/i);
 assert.match(sandbox, /full refunds only/i);
 assert.match(sandbox, /migration.*applied to canonical Development only.*not been applied to Production/i);
+
+assert.match(terms, /Lemon Squeezy[\s\S]{0,100}Merchant of Record/i);
+assert.ok(terms.includes('https://www.lemonsqueezy.com/buyer-terms'));
+assert.match(refund, /Lemon Squeezy[\s\S]{0,120}selected Merchant of Record/i);
+assert.ok(refund.includes('https://www.lemonsqueezy.com/buyer-terms'));
+assert.match(privacy, /Lemon Squeezy[\s\S]{0,120}selected Merchant of Record/i);
+assert.ok(privacy.includes('https://www.lemonsqueezy.com/privacy'));
+
+for (const page of [terms, refund, privacy]) {
+  assert.doesNotMatch(page, /authorized payment provider or merchant of record identified/i);
+}
+
+assert.match(disclosure, /Provider selection: \*\*complete — Lemon Squeezy\*\*/);
+assert.match(disclosure, /Production remains fail-closed with `COMMERCE_MODE=disabled`/);
+assert.match(disclosure, /Buyer disclosure approval: \*\*not granted\*\*/);
+assert.doesNotMatch(disclosure, /Provider selection: \*\*not complete\*\*/i);
+assert.match(onrc, /not a current implementation or Preview blocker/i);
+assert.match(onrc, /does not need to be published merely to sell online/i);
+assert.match(onrc, /accurate buyer-facing trader information before public selling/i);
 
 for (const text of [update, responsibility, technical, lemon, selected, sandbox]) {
   assert.doesNotMatch(text, /Lemon Squeezy[^\n]{0,140}(?:application under review|pending written eligibility|not yet selected)/i);

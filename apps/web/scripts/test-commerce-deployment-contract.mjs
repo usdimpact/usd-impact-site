@@ -118,7 +118,7 @@ assert.match(checkoutSource, /Approved seller disclosure/i);
 assert.match(checkoutSource, /Str\. Doctor Hacman nr\. 28, bl\. 83, sc\. B, ap\. 9, 240232 Râmnicu Vâlcea, România/);
 assert.match(checkoutSource, /Applicable indirect taxes are calculated, collected and remitted by Lemon Squeezy as Merchant of Record and shown before payment\./i);
 assert.match(checkoutSource, /This exact public-facing disclosure bundle is approved for later commerce activation/i);
-assert.match(checkoutSource, /Link, LLC f\\/k\\/a Lemon Squeezy LLC/i);
+assert.ok(checkoutSource.includes('Link, LLC f/k/a Lemon Squeezy LLC'));
 assert.match(checkoutSource, /Lemon Squeezy processes approved payment refunds/i);
 assert.match(checkoutSource, /Production[\s\S]{0,120}Live checkout remain disabled/i);
 assert.doesNotMatch(checkoutSource, /Current verified public operator identity/i);

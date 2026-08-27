@@ -38,9 +38,27 @@ requireText(files.preview, 'Free sample page', [
   'Public checkout is not currently active',
 ]);
 requireText(files.terms, 'Terms', ['SC Kela Leads SRL', '40790448', 'J38/820/2020', 'support@usd-impact.com']);
-requireText(files.terms, 'Terms', ['authorized payment provider', 'identified during checkout']);
-requireText(files.refund, 'Refund Policy', ['14 calendar days', 'full refund', 'support@usd-impact.com', 'payment provider']);
-requireText(files.privacy, 'Privacy Notice', ['authorized payment provider', 'Supabase', 'SC Kela Leads SRL', 'support@usd-impact.com']);
+requireText(files.terms, 'Terms', [
+  'Lemon Squeezy',
+  'Merchant of Record',
+  'https://www.lemonsqueezy.com/buyer-terms',
+]);
+requireText(files.refund, 'Refund Policy', [
+  '14 calendar days',
+  'full refund',
+  'support@usd-impact.com',
+  'Lemon Squeezy',
+  'selected Merchant of Record',
+  'https://www.lemonsqueezy.com/buyer-terms',
+]);
+requireText(files.privacy, 'Privacy Notice', [
+  'Lemon Squeezy',
+  'selected Merchant of Record',
+  'https://www.lemonsqueezy.com/privacy',
+  'Supabase',
+  'SC Kela Leads SRL',
+  'support@usd-impact.com',
+]);
 requireText(files.checkout, 'Checkout page', [
   'Checkout is not open yet.',
   'Lemon Squeezy is the selected Merchant of Record',

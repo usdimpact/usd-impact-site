@@ -31,6 +31,19 @@ The selected security-equivalent model is:
 - MoR notices without a machine-readable state remain an operational incident/escalation input, not direct database authority;
 - redirects, receipts, email messages, screenshots, dashboard observations and browser-provided IDs remain non-authoritative.
 
+## Written provider-support confirmation — 2026-08-27
+
+Lemon Squeezy Support (Arnab Bose) confirmed in writing that:
+
+- Lemon Squeezy generally informs merchants by email when a new dispute opens and manages the dispute directly with payment providers as Merchant of Record;
+- when Lemon Squeezy issues a refund to settle or prevent a chargeback, an `order_refunded` webhook is dispatched;
+- unresolved dispute notices, the stated $15 dispute fee and balance adjustments are handled through email, dashboard and payout reports rather than a public API feed; and
+- merchants should use `order_refunded` to revoke customer entitlement.
+
+This confirms the approved architecture rather than expanding it. Signed webhooks and authoritative supported Order state remain the only application mutation authority. Email, dashboard and payout reporting are operational/accounting inputs that require monitoring but never directly grant, revoke or restore access. No deterministic dispute-opened, chargeback-completed or dispute-reversed application event is invented.
+
+The repository records only this bounded decision summary, the support representative's role/name and the confirmation date; it does not store full provider message IDs, private mail headers or mailbox metadata.
+
 ## Provider-neutral contract amendment
 
 Commerce contract version `3` supports two lifecycle models:

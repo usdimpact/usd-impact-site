@@ -2,7 +2,7 @@
 
 ## Status
 
-Decision version: `2026-08-26.v4-selected`
+Decision version: `2026-08-27.v5-provider-support-confirmed`
 
 Product: `Read the Dollar First Library Pass`  
 Business entity: SC Kela Leads SRL, Romania  
@@ -33,6 +33,8 @@ Commerce contract version 3 supports two reviewed lifecycle profiles:
 
 Lemon Squeezy uses profile 2 because its documented one-time webhook surface exposes successful-order and refund events but not deterministic one-time dispute-opened, chargeback-completed or dispute-reversed events.
 
+Lemon Squeezy Support (Arnab Bose) confirmed in writing on 2026-08-27 that Lemon Squeezy generally informs merchants by email when a dispute opens and manages the dispute directly as Merchant of Record. When Lemon Squeezy issues a refund to settle or prevent a chargeback, it dispatches an `order_refunded` webhook. Unresolved dispute notices, the stated $15 dispute fee and balance adjustments are exposed through email, dashboard and payout reports rather than a public API feed.
+
 USD Impact must not invent unavailable events. Browser redirects, screenshots, email assertions, provider-dashboard observations, or client-provided order IDs never grant, revoke, or restore entitlement.
 
 ## Selected-provider responsibility table
@@ -49,7 +51,8 @@ USD Impact must not invent unavailable events. Browser redirects, screenshots, e
 | Buyer payment support | Primary for provider payment/MoR transaction issues | product/account/access support | **OWNERSHIP FROZEN** |
 | Refund execution / financial refund notice | Primary provider financial state/notice | apply verified access consequence | **OWNERSHIP FROZEN** |
 | Voluntary Library Pass refund policy | Provider executes supported refund | USD Impact policy is full-refund only; unexpected partial refund goes to review | **POLICY FROZEN** |
-| Dispute / chargeback operations | Primary as Merchant of Record | do not invent unobservable dispute events; handle product/access consequence from authoritative state | **MoR RECONCILIATION APPROVED** |
+| Dispute / chargeback operations | Primary as Merchant of Record; generally emails the merchant when a dispute opens | monitor email, dashboard and payout reports; never mutate access from a notice alone; apply only authoritative supported state | **MoR RECONCILIATION + OPS MONITORING** |
+| Dispute fees / balance adjustments | Reports unresolved disputes, the stated $15 dispute fee and balance adjustments through email, dashboard and payout reports rather than a public API | reconcile operational/financial records and escalate anomalies; these records are not direct entitlement authority | **MANUAL PRE-LIVE** |
 | Fraudulent final order state | Exposes authoritative Order state | idempotently revoke entitlement using `payment.revoked` | **IMPLEMENTING** |
 | Reversal / restoration | Provider owns underlying financial dispute process | no synthetic restoration; require authoritative compatible provider and local state | **FAIL CLOSED** |
 | Entitlement grant | No direct application authority | sole authority after signed event + authoritative current Order checks | **APPLICATION OWNED** |
@@ -67,7 +70,7 @@ USD Impact must not invent unavailable events. Browser redirects, screenshots, e
 | successful purchase | provider receipt/invoice | `purchase_access_ready` only after verified entitlement creation |
 | pending / failed payment | provider-side processing/failure message where applicable | non-duplicative account/support context only |
 | refund | financial refund notice | verified access consequence |
-| dispute / chargeback | provider/MoR operational and financial process | no invented dispute state; communicate only verified product/access consequence |
+| dispute / chargeback | provider/MoR operational and financial process plus email/dashboard/payout reporting | no invented dispute state; monitor operational notices and communicate only verified product/access consequence |
 | fraudulent final state | provider authoritative Order state | access-revocation/support message after durable application transition |
 | restoration | provider underlying financial state | only after authoritative compatible state plus reviewed local state; never synthetic |
 | product/account/privacy support | not application authority | USD Impact owns product, account, entitlement, privacy/export/deletion support |
@@ -81,12 +84,24 @@ Authentication, privacy, deletion, support, waitlist, and marketing messages rem
 | checkout pending | trusted local purchase intent + provider Test checkout | never grant from checkout creation/redirect | **IMPLEMENTED DRAFT** |
 | `payment.completed` | signed `order_created` plus fresh authoritative Order + Order Items read | grant only if current status is `paid` and Store/Product/Variant/item-count/quantity/subtotal/discount/currency/account/intent all match | **IMPLEMENTED DRAFT** |
 | payment pending/failed | authoritative Order `pending` / `failed` | never grant or restore | **IMPLEMENTED DRAFT** |
-| `refund.completed` | signed `order_refunded` or authoritative `refunded` reconciliation | full refund only; final refunded amount must match final Order total before idempotent refund access transition | **IMPLEMENTED DRAFT** |
+| `refund.completed` | signed `order_refunded`, including a provider refund used to settle or prevent a chargeback, or authoritative `refunded` reconciliation | full refund only; final refunded amount must match final Order total before idempotent refund access transition | **IMPLEMENTED DRAFT** |
 | partial refund | authoritative `partial_refund` | explicit review; no automatic purchase/entitlement mutation | **POLICY + DRAFT IMPLEMENTATION** |
 | `payment.revoked` | authoritative `fraudulent` Order state | idempotently revoke entitlement; do not fabricate chargeback state | **IMPLEMENTED DRAFT** |
-| dispute opened | no deterministic one-time provider webhook reviewed | no synthetic local event and no provisional revocation solely because an unobservable dispute might exist | **MoR MODEL** |
-| chargeback completed | provider owns MoR chargeback process; no deterministic one-time event reviewed | use authoritative supported final state only; operational notice may trigger incident review but not direct DB authority | **MoR MODEL** |
+| dispute opened | no deterministic one-time provider webhook reviewed; provider generally emails the merchant | open an operational review only; no synthetic local event and no provisional revocation solely from the notice | **MoR MODEL + OPS MONITORING** |
+| chargeback completed | provider owns the MoR process; unresolved notices, fees and balance adjustments have no public API feed; a provider-issued refund emits `order_refunded` | use the verified webhook or authoritative supported final state only; email/dashboard/payout records may trigger incident review but are not direct DB authority | **MoR MODEL + OPS MONITORING** |
 | dispute reversed | no deterministic one-time provider webhook reviewed | no synthetic reversal; no automatic restoration of terminal/incompatible local state | **MoR MODEL** |
+
+## Written provider-support confirmation — 2026-08-27
+
+The bounded support confirmation closes the open dispute-observability question without changing the approved lifecycle profile:
+
+- process a valid `order_refunded` webhook and authoritative refunded Order state as the access-revocation signal when Lemon Squeezy issues a refund to settle or prevent a chargeback;
+- monitor the merchant mailbox, Lemon Squeezy dashboard and payout reports for new/unresolved disputes, the stated $15 dispute fee and balance adjustments;
+- treat email, dashboard and payout evidence as operational and accounting inputs only, never as direct entitlement or database authority;
+- do not synthesize dispute-opened, chargeback-completed or dispute-reversed application events;
+- do not auto-restore a terminal or incompatible local state without authoritative compatible provider evidence and reviewed local state.
+
+No full provider message ID, private mail header, account credential, customer data or dashboard detail is recorded in this repository.
 
 ## Commercial invariant
 

@@ -39,6 +39,10 @@ assert.match(responsibility, /Provider selection is therefore complete; \*\*acti
 assert.match(responsibility, /partial_refund[\s\S]*review/i);
 assert.match(responsibility, /payment\.revoked/);
 assert.match(responsibility, /REGISTERED_COMMERCE_ADAPTERS.*Lemon Squeezy/);
+assert.match(responsibility, /Arnab Bose[\s\S]{0,120}2026-08-27/);
+assert.match(responsibility, /order_refunded[\s\S]{0,180}settle or prevent a chargeback/i);
+assert.match(responsibility, /\$15 dispute fee/i);
+assert.match(responsibility, /email, dashboard and payout reports/i);
 
 assert.match(technical, /Lemon Squeezy: WRITTEN ELIGIBILITY APPROVED \/ SELECTED FOR ONE-TIME LIBRARY PASS/);
 assert.match(technical, /NOT REQUIRED UNDER APPROVED MoR PROFILE/);
@@ -63,6 +67,9 @@ assert.match(selected, /\*\*Selected provider: Lemon Squeezy\.\*\*/);
 assert.match(selected, /mor-final-state-reconciliation/);
 assert.match(selected, /full refunds only/i);
 assert.match(selected, /REGISTERED_COMMERCE_ADAPTERS.*Lemon Squeezy/);
+assert.match(selected, /Arnab Bose[\s\S]{0,120}confirmed in writing/);
+assert.match(selected, /order_refunded[\s\S]{0,180}settle or prevent a chargeback/i);
+assert.match(selected, /operational\/accounting inputs/i);
 
 assert.match(sandbox, /Status: \*\*Development\/Test proof complete\. Adapter registered in code only\. No Production activation\.\*\*/);
 assert.match(sandbox, /VERCEL_ENV=production.*rejected/i);

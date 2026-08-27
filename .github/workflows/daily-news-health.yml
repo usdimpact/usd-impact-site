@@ -200,7 +200,7 @@ jobs:
             gh issue create \
               --repo "$GITHUB_REPOSITORY" \
               --title "$ISSUE_TITLE" \
-              --body-file daily-health-report.md"
+              --body-file daily-health-report.md
           fi
 
       - name: Close recovered daily health issue

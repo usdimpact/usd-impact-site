@@ -119,10 +119,21 @@ for (const name of customerFacingFiles) {
   }
 }
 
+const approvedPublicTraderAddress = 'Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România';
+const approvedAddressFiles = new Set(['privacy', 'terms', 'refund', 'checkout']);
+for (const name of approvedAddressFiles) {
+  requireText(files[name], `${name} public trader disclosure`, [approvedPublicTraderAddress]);
+}
+
 const privateAddressFragments = ['Doctor Hacman', 'Bl. 83', 'Sc. B', 'Ap. 9'];
 for (const [label, file] of Object.entries(files)) {
+  const unapprovedText = approvedAddressFiles.has(label)
+    ? file.replaceAll(approvedPublicTraderAddress, '')
+    : file;
   for (const fragment of privateAddressFragments) {
-    if (file.includes(fragment)) failures.push(`${label} exposes a private registered-address fragment: ${fragment}`);
+    if (unapprovedText.includes(fragment)) {
+      failures.push(`${label} exposes an address fragment outside the exact approved public trader disclosure: ${fragment}`);
+    }
   }
 }
 

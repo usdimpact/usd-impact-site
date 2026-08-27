@@ -2,7 +2,7 @@ import { requestHeader, getVerifiedSupabaseUser, sendJson } from '../src/lib/sup
 import { readSessionAccessToken } from '../src/lib/supabase-auth.js';
 import { validCronAuthorization } from '../src/lib/account-deletion-finalizer.js';
 import {
-  createSandboxCommerceCheckout,
+  createCommerceCheckout,
   processLemonSqueezyWebhook,
   publicCommerceRuntimeError,
   readLemonSqueezyCommerceRuntimeConfig,
@@ -84,13 +84,13 @@ function parseJsonBody(buffer) {
   }
 }
 
-function sandboxConfig(response) {
+function runtimeConfig(response) {
   try {
     const runtime = readLemonSqueezyCommerceRuntimeConfig(process.env);
     if (!runtime.enabled) {
       sendJson(response, 503, {
-        error: 'Commerce sandbox is disabled.',
-        code: 'COMMERCE_SANDBOX_DISABLED',
+        error: 'Commerce is disabled.',
+        code: 'COMMERCE_DISABLED',
       }, { 'X-Robots-Tag': 'noindex, nofollow' });
       return null;
     }
@@ -111,7 +111,7 @@ async function handleCheckout(request, response) {
       code: 'INVALID_CONTENT_TYPE',
     }, { 'X-Robots-Tag': 'noindex, nofollow' });
   }
-  const runtime = sandboxConfig(response);
+  const runtime = runtimeConfig(response);
   if (!runtime) return;
 
   let rawBody;
@@ -146,14 +146,14 @@ async function handleCheckout(request, response) {
       });
     }
     const user = await getVerifiedSupabaseUser(accessToken, { config: runtime.supabase });
-    const result = await createSandboxCommerceCheckout({
+    const result = await createCommerceCheckout({
       config: runtime,
       user,
       idempotencyKey,
     });
     return sendJson(response, 201, {
       ok: true,
-      testMode: true,
+      testMode: runtime.testMode,
       checkoutUrl: result.checkout.url,
       purchaseIntent: result.purchaseIntent,
     }, {
@@ -168,7 +168,7 @@ async function handleCheckout(request, response) {
 
 async function handleWebhook(request, response) {
   if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
-  const runtime = sandboxConfig(response);
+  const runtime = runtimeConfig(response);
   if (!runtime) return;
 
   let rawBody;
@@ -202,7 +202,7 @@ async function handleReconciliation(request, response) {
       'X-Robots-Tag': 'noindex, nofollow',
     });
   }
-  const runtime = sandboxConfig(response);
+  const runtime = runtimeConfig(response);
   if (!runtime) return;
   if (!runtime.reconciliationEnabled) {
     return sendJson(response, 503, {

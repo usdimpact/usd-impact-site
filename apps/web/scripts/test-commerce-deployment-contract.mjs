@@ -16,6 +16,7 @@ const [
   lemonRuntimeSource,
   lemonAdapterSource,
   commerceReconciliationMigrationSource,
+  controlledLiveRunbookSource,
 ] = await Promise.all([
   readFile(new URL('../vercel.json', import.meta.url), 'utf8'),
   readFile(new URL('../package.json', import.meta.url), 'utf8'),
@@ -29,6 +30,7 @@ const [
   readFile(new URL('../src/lib/lemon-squeezy-commerce-runtime.js', import.meta.url), 'utf8'),
   readFile(new URL('../src/lib/lemon-squeezy-adapter-scaffold.js', import.meta.url), 'utf8'),
   readFile(new URL('../../../supabase/migrations/20260826170000_commerce_reconciliation_runtime.sql', import.meta.url), 'utf8'),
+  readFile(new URL('../../../docs/operations/lemon-squeezy-controlled-live-runtime-2026-08-27.md', import.meta.url), 'utf8'),
 ]);
 
 const vercel = JSON.parse(vercelSource);
@@ -43,6 +45,7 @@ assert.deepEqual(commerceRewrite, {
 assert.match(packageSource, /node --check api\/commerce\.js/);
 assert.match(packageSource, /test-lemon-squeezy-commerce-function\.mjs/);
 assert.match(packageSource, /test-lemon-squeezy-commerce-runtime\.mjs/);
+assert.match(packageSource, /test-lemon-squeezy-controlled-live-runtime\.mjs/);
 assert.match(packageSource, /test-commerce-reconciliation-migration\.mjs/);
 assert.match(packageSource, /commerce-readiness-handler\.js/);
 assert.equal(
@@ -67,13 +70,18 @@ assert.match(commerceFunctionSource, /Cache-Control', 'private, no-store'/);
 assert.match(commerceFunctionSource, /X-Robots-Tag', 'noindex, nofollow'/);
 
 assert.match(lemonRuntimeSource, /COMMERCE_MODE/);
-assert.match(lemonRuntimeSource, /mode !== 'sandbox'/);
+assert.match(lemonRuntimeSource, /COMMERCE_MODES\.LIVE_TEST/);
+assert.match(lemonRuntimeSource, /COMMERCE_MODES\.LIVE/);
 assert.match(lemonRuntimeSource, /COMMERCE_PROVIDER/);
 assert.match(lemonRuntimeSource, /VERCEL_ENV/);
 assert.match(lemonRuntimeSource, /=== 'production'/);
 assert.match(lemonRuntimeSource, /LEMON_SQUEEZY_TEST_MODE/);
 assert.match(lemonRuntimeSource, /DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc'/);
+assert.match(lemonRuntimeSource, /PRODUCTION_PROJECT_REF = 'gjzetjugmnwanvjkchux'/);
 assert.match(lemonRuntimeSource, /COMMERCE_SANDBOX_QA_EMAIL/);
+assert.match(lemonRuntimeSource, /COMMERCE_CONTROLLED_LIVE_QA_EMAIL/);
+assert.match(lemonRuntimeSource, /LEMON_SQUEEZY_\$\{namespace\}_API_KEY/);
+assert.match(lemonRuntimeSource, /expectedTestMode: config\.testMode/);
 assert.match(lemonRuntimeSource, /verifyLemonSqueezyWebhookSignature/);
 assert.match(lemonRuntimeSource, /retrieveAuthoritativeLemonSqueezyOrder/);
 assert.match(lemonRuntimeSource, /discountTotal !== 0/);
@@ -82,6 +90,12 @@ assert.match(lemonRuntimeSource, /Order quantity must be exactly one/);
 assert.match(lemonRuntimeSource, /partial_refund/);
 assert.match(lemonRuntimeSource, /name:\s*'apply_commerce_reconciliation'/);
 assert.match(lemonRuntimeSource, /p_provider_status:\s*commercial\.status/);
+assert.match(controlledLiveRunbookSource, /Production remains disabled/i);
+assert.match(controlledLiveRunbookSource, /LEMON_SQUEEZY_LIVE_API_KEY/);
+assert.match(controlledLiveRunbookSource, /LEMON_SQUEEZY_TEST_\*/);
+assert.match(controlledLiveRunbookSource, /test_mode=false/);
+assert.match(controlledLiveRunbookSource, /COMMERCE_MODE=disabled/);
+assert.match(controlledLiveRunbookSource, /Do not delete durable transaction evidence/i);
 assert.match(
   lemonAdapterSource,
   /status === 'fraudulent'[\s\S]*CANONICAL_COMMERCE_EVENT_TYPES\.PAYMENT_REVOKED/,
@@ -94,9 +108,9 @@ assert.match(accountSource, /'commerce-readiness': handleCommerceReadinessReques
 
 assert.equal(REGISTERED_COMMERCE_ADAPTERS.length, 1);
 assert.equal(REGISTERED_COMMERCE_ADAPTERS[0].provider, 'lemon-squeezy');
-assert.match(REGISTERED_COMMERCE_ADAPTERS[0].version, /scaffold/);
+assert.match(REGISTERED_COMMERCE_ADAPTERS[0].version, /controlled-live/);
 assert.equal(REGISTERED_COMMERCE_ADAPTERS[0].assessConfiguration().ready, false);
-assert.match(REGISTERED_COMMERCE_ADAPTERS[0].assessConfiguration().reason, /registered in code only/i);
+assert.match(REGISTERED_COMMERCE_ADAPTERS[0].assessConfiguration().reason, /explicitly reviewed/i);
 
 const productionCommerceHold = resolveCommerceReadiness({
   COMMERCE_MODE: 'disabled',
@@ -164,8 +178,8 @@ for (const [name, source] of [
   ['commerce handler', handlerSource],
   ['commerce contract', contractSource],
   ['public disclosure contract', disclosureSource],
-  ['sandbox commerce function', commerceFunctionSource],
-  ['Lemon Squeezy sandbox runtime', lemonRuntimeSource],
+  ['commerce function', commerceFunctionSource],
+  ['Lemon Squeezy mode-isolated runtime', lemonRuntimeSource],
 ]) {
   assert.doesNotMatch(
     source,
@@ -181,7 +195,7 @@ for (const [name, source] of [
 ]) {
   assert.doesNotMatch(
     source,
-    /LEMON_SQUEEZY_TEST_API_KEY|LEMON_SQUEEZY_TEST_WEBHOOK_SECRET|SUPABASE_SECRET_KEY/i,
+    /LEMON_SQUEEZY_(?:TEST|LIVE)_API_KEY|LEMON_SQUEEZY_(?:TEST|LIVE)_WEBHOOK_SECRET|SUPABASE_SECRET_KEY/i,
     `${name} must not expose sandbox or database secrets.`,
   );
 }

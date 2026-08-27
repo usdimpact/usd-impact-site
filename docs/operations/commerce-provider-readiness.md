@@ -202,6 +202,21 @@ PR #374 now carries credential-independent implementation code and a reviewed co
 
 The reconciliation migrations were applied to canonical Development only and verified with real Lemon Squeezy Test Mode evidence. They have not been applied to Production. Registration remains code-only and does not authorize any Production configuration or transaction.
 
+## Controlled-Live/Live code-only preparation — 2026-08-27
+
+After PR #374 merged as a public-facing fail-closed release, a separate Draft phase prepared the runtime for later controlled-Live and Live verification without configuring either environment.
+
+The prepared contract:
+
+- uses `LEMON_SQUEEZY_TEST_*` only for sandbox and `LEMON_SQUEEZY_LIVE_*` only for controlled-Live/Live, with no cross-namespace fallback;
+- requires provider checkout, webhook, and authoritative Order state to match the configured `test_mode` exactly;
+- pins the reviewed Live Product `1319591`, Launch Variant `2062957`, and Standard Variant `2062958`;
+- restricts controlled-Live to one configured QA email, non-Production Vercel, canonical Development Supabase, completed sandbox proof, approved disclosures, and enabled reconciliation;
+- restricts public Live to Vercel Production, canonical Production Supabase, completed sandbox and controlled-Live proof, explicit Live approval, approved disclosures, enabled reconciliation, and an approved USD Impact Production redirect host;
+- preserves raw-body signature verification, trusted purchase intent validation, authoritative Order plus Order Items re-read, durable deduplication, and final-state reconciliation.
+
+This code does not set any environment value or authorize a Production migration, secret, Live webhook, transaction, refund, or checkout activation. See `docs/operations/lemon-squeezy-controlled-live-runtime-2026-08-27.md`.
+
 ## Partner/referral boundary
 
 Partner/referral features remain growth layers and never become payment or entitlement authority. Attribution metadata cannot alter product, price, payment state, purchase ownership or entitlement state. Partner/referral activation remains a separate later release.
@@ -232,6 +247,6 @@ Removing an adapter from the registry also fails closed. Existing customer acces
 
 After any commerce-related Production release, verify `/checkout/` remains non-payment-capable unless complete activation is approved, `/api/commerce-readiness` is `no-store` and secret-free, configured provider/adapter metadata matches the approved release when disclosed, disabled/blocked states cannot enable checkout, Live mode cannot activate outside Vercel Production, Production deployment metadata matches the merged commit, and runtime-error review is clean.
 
-## Current release boundary — 2026-08-26
+## Current release boundary — 2026-08-27
 
-Lemon Squeezy is selected and its reviewed adapter is now present in `REGISTERED_COMMERCE_ADAPTERS` on Draft PR #374 as a code-only registration decision. Production still has `COMMERCE_MODE=disabled` with `COMMERCE_PROVIDER` unset; the reconciliation migrations exist only in canonical Development; no Production provider credentials, webhook, public checkout, Live transaction, real-card test, refund, merge or Production database change is authorized. See `docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md`, `docs/operations/lemon-squeezy-sandbox-runtime-2026-08-26.md`, and Issues #53, #130 and #54.
+Lemon Squeezy is selected, PR #374 is merged, and its public-facing disclosure release remains fail closed in Production. The subsequent controlled-Live/Live runtime work is code-only Draft preparation. Production still has `COMMERCE_MODE=disabled` with `COMMERCE_PROVIDER` unset; the reconciliation migrations exist only in canonical Development; no Production provider credentials, webhook, public checkout, Live transaction, real-card test, refund or Production database change is authorized. See `docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md`, `docs/operations/lemon-squeezy-sandbox-runtime-2026-08-26.md`, `docs/operations/lemon-squeezy-controlled-live-runtime-2026-08-27.md`, and Issues #53, #130 and #54.

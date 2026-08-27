@@ -13,7 +13,19 @@ const managedKeys = [
   'LEMON_SQUEEZY_TEST_LAUNCH_VARIANT_ID',
   'LEMON_SQUEEZY_TEST_STANDARD_VARIANT_ID',
   'LEMON_SQUEEZY_TEST_REDIRECT_URL',
+  'LEMON_SQUEEZY_LIVE_API_KEY',
+  'LEMON_SQUEEZY_LIVE_WEBHOOK_SECRET',
+  'LEMON_SQUEEZY_LIVE_STORE_ID',
+  'LEMON_SQUEEZY_LIVE_PRODUCT_ID',
+  'LEMON_SQUEEZY_LIVE_LAUNCH_VARIANT_ID',
+  'LEMON_SQUEEZY_LIVE_STANDARD_VARIANT_ID',
+  'LEMON_SQUEEZY_LIVE_REDIRECT_URL',
   'COMMERCE_SANDBOX_QA_EMAIL',
+  'COMMERCE_CONTROLLED_LIVE_QA_EMAIL',
+  'COMMERCE_SANDBOX_VERIFIED',
+  'COMMERCE_CONTROLLED_LIVE_VERIFIED',
+  'COMMERCE_LIVE_APPROVED',
+  'COMMERCE_SELLER_DISCLOSURE_APPROVED',
   'COMMERCE_RECONCILIATION_ENABLED',
   'SUPABASE_URL',
   'SUPABASE_PUBLISHABLE_KEY',
@@ -69,7 +81,7 @@ try {
     body: JSON.stringify({ idempotencyKey: 'qa-request-12345678' }),
   }));
   assert.equal(disabledCheckout.status, 503);
-  assert.equal(disabledCheckout.json.code, 'COMMERCE_SANDBOX_DISABLED');
+  assert.equal(disabledCheckout.json.code, 'COMMERCE_DISABLED');
 
   const crossSite = await invoke(request({
     method: 'POST',
@@ -82,7 +94,7 @@ try {
 
   const disabledWebhook = await invoke(request({ method: 'POST', action: 'webhook', body: '{}' }));
   assert.equal(disabledWebhook.status, 503);
-  assert.equal(disabledWebhook.json.code, 'COMMERCE_SANDBOX_DISABLED');
+  assert.equal(disabledWebhook.json.code, 'COMMERCE_DISABLED');
 
   const unauthorizedReconcile = await invoke(request({ method: 'GET', action: 'reconcile' }));
   assert.equal(unauthorizedReconcile.status, 401);

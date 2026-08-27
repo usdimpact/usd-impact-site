@@ -3,7 +3,7 @@ import {
   buildTelemetryCounterPairs,
   readTelemetryAggregates,
   recordTelemetryEvent,
-} from '../api/_telemetry-store.js';
+} from '../src/lib/telemetry-store.js';
 
 const env = {
   KV_REST_API_URL: 'https://example.upstash.test',

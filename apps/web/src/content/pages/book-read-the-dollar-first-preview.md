@@ -6,7 +6,7 @@ slug: "/book/read-the-dollar-first/preview"
 category: "Free sample"
 status: "published"
 readingLevel: "Beginner to intermediate"
-lastReviewed: "2026-08-25"
+lastReviewed: "2026-08-27"
 complianceNote: "Educational only. This free sample is not investment, legal, tax, trading, or financial advice. It is not a recommendation, forecast, or trading signal."
 sources:
   - "USD Impact — Start Here public lesson"
@@ -118,7 +118,7 @@ The full Guided Interactive Edition is designed to connect the same method acros
 
 It includes the complete chapter-by-chapter learning path, the English audiobook, the protected 51-film Video Library, interactive knowledge checks, saved progress and protected reference resources under the verified USD Impact account used for the purchase.
 
-The planned launch price is **USD 39.00**, followed by a planned standard price of **USD 49.00**. Public checkout is not currently active while the replacement payment provider is selected, integrated, tested and approved for Live use.
+The planned launch price is **USD 39.00**, followed by a planned standard price of **USD 49.00**. Lemon Squeezy is the selected Merchant of Record. Public checkout is not currently active while the Test Mode integration, buyer disclosures, operational checks, and final Live release gates are completed and explicitly approved.
 
 See **[product details, pricing and current availability](/book/read-the-dollar-first/)**.
 

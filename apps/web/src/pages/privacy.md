@@ -6,7 +6,7 @@ description: "How USD Impact handles account, purchase, support, waitlist, Daily
 
 # Privacy notice
 
-_Last updated: August 23, 2026_
+_Last updated: August 27, 2026_
 
 ## What we collect
 
@@ -23,7 +23,7 @@ If you create an account or purchase the Guided Interactive Edition, we may proc
 - video viewing position, completion status, and the film identifier needed to resume playback; and
 - account, billing, refund, deletion, or support requests you send to us.
 
-Payment-card details are collected and processed by the authorized payment provider identified during checkout. USD Impact does not receive or store complete payment-card numbers or card security codes.
+Payment-card details are collected and processed by **Lemon Squeezy**, the selected Merchant of Record, under its [Privacy Notice](https://www.lemonsqueezy.com/privacy). USD Impact does not receive or store complete payment-card numbers or card security codes.
 
 The website also records limited first-party learning events needed to understand whether educational resources work. These events can include:
 
@@ -65,9 +65,9 @@ Joining the waitlist does not subscribe you to unrelated market commentary, trad
 
 ## Service providers
 
-The website is deployed through Vercel. Vercel processes website requests and application runtime logs needed to operate and troubleshoot the service. Cloudflare Stream processes protected video playback requests and delivers the adaptive video and caption files requested by an authorized account. Aggregate learning counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Account, entitlement, commerce, consent, notification-delivery, and saved video-progress records are stored through Supabase. Waitlist contacts and requested email delivery are processed through Resend. When public checkout is enabled, the authorized payment provider or merchant of record identified during checkout processes payment, tax, invoice, refund, fraud-prevention, and related transaction information.
+The website is deployed through Vercel. Vercel processes website requests and application runtime logs needed to operate and troubleshoot the service. Cloudflare Stream processes protected video playback requests and delivers the adaptive video and caption files requested by an authorized account. Aggregate learning counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Account, entitlement, commerce, consent, notification-delivery, and saved video-progress records are stored through Supabase. Waitlist contacts and requested email delivery are processed through Resend. When public checkout is separately enabled, Lemon Squeezy processes payment, tax, buyer financial-document, refund, fraud-prevention, and related transaction information as Merchant of Record. Applicable indirect taxes are calculated, collected and remitted by Lemon Squeezy as Merchant of Record and shown before payment. USD Impact remains responsible for the account, product access, learning records, and product-support information it processes.
 
-These providers process information only as needed to operate the website, accounts, learning tools, commerce workflow, support, and requested email delivery. Their own privacy notices apply where they act independently, including the payment provider or merchant of record identified during checkout.
+These providers process information only as needed to operate the website, accounts, learning tools, commerce workflow, support, and requested email delivery. Their own privacy notices apply where they act independently, including Lemon Squeezy's privacy notice for the payment transaction.
 
 ## Legal bases
 
@@ -101,6 +101,6 @@ For privacy, account, or data-rights requests, contact [support@usd-impact.com](
 
 ## Operator
 
-USD Impact is operated by **SC Kela Leads SRL**, a company registered in Romania under CUI **40790448** and Trade Register number **J38/820/2020**.
+USD Impact is operated by **SC Kela Leads SRL**, a company registered in Romania under CUI **40790448** and Trade Register number **J38/820/2020**. Registered business address: **Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România**.
 
 This notice describes current website operations and is not legal advice.

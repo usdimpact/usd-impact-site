@@ -52,6 +52,10 @@ const aboutHrefs = new Set([...about.matchAll(/href="([^"]+)"/g)].map((match) =>
 assert.match(about, /SC Kela Leads SRL/);
 assert.match(about, /CUI 40790448/);
 assert.match(about, /J38\/820\/2020/);
+assert.ok(about.includes('Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România'));
+assert.match(about, /streetAddress: 'Str\. Doctor Hacman nr\. 28, bl\. 83, sc\. B, ap\. 9'/);
+assert.match(about, /postalCode: '240232'/);
+assert.match(about, /addressLocality: 'Râmnicu Vâlcea'/);
 assert.match(about, /Mircea Albulescu/);
 assert.match(about, /first-party legal disclosure/);
 assert.match(about, /current electronically issued ONRC company certificate has <strong>not yet been reviewed<\/strong>/);
@@ -68,7 +72,9 @@ assert.doesNotMatch(about, /independently verified legal operator/i);
 assert.doesNotMatch(about, /ONRC verified operator/i);
 
 assert.match(onrcGate, /Tracking issue: #341/);
-assert.match(onrcGate, /PENDING — authenticated ONRC certificate acquisition and review required/);
+assert.match(onrcGate, /IN PROGRESS — administrative pre-marketing evidence task; not a current implementation or Preview blocker/);
+assert.match(onrcGate, /does not need to be published merely to sell online/);
+assert.match(onrcGate, /accurate buyer-facing trader information before public selling/);
 assert.match(onrcGate, /SHA-256 hash of the retained original/);
 assert.match(onrcGate, /Do not commit it by default/);
 assert.match(onrcGate, /registered-office comparison: PASS\/FAIL without printing the address/);

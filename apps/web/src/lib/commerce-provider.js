@@ -340,8 +340,10 @@ export function publicCommerceReadiness(readiness) {
     ? readiness.state
     : COMMERCE_READINESS_STATES.BLOCKED;
   const discloseProvider = state !== COMMERCE_READINESS_STATES.BLOCKED && readiness.providerConfigured === true;
+  // Complete, explicitly approved buyer disclosures may be reviewed before commerce activation.
+  // Provider identity and checkout activation remain gated independently below.
   const discloseSeller = (
-    (state === COMMERCE_READINESS_STATES.READY_FOR_CONTROLLED_LIVE_TEST || state === COMMERCE_READINESS_STATES.ACTIVE)
+    state !== COMMERCE_READINESS_STATES.BLOCKED
     && readiness.disclosuresComplete === true
     && readiness.sellerDisclosure
   );

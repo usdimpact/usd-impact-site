@@ -53,6 +53,12 @@ jobs:
         run: npm run validate:automation-health
       - name: Validate Vercel functions
         run: npm run validate:functions
+      - name: Validate paid access and protected audiobook
+        run: npm run validate:paid-access
+      - name: Validate quiz entitlement and mastery contracts
+        run: npm run validate:quizzes
+      - name: Validate protected video library
+        run: npm run validate:video-library
       - name: Validate Supabase contracts
         run: npm run validate:supabase
       - name: Validate knowledge retrieval

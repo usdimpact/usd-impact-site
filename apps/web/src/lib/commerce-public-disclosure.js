@@ -4,9 +4,9 @@ export const COMMERCE_PUBLIC_DISCLOSURE_VERSION = 1;
 
 export const COMMERCE_PUBLIC_IDENTITY = Object.freeze({
   brand: 'USD Impact',
-  legalName: 'SC Kela Leads SRL',
+  legalName: 'KELA LEADS S.R.L.',
   jurisdiction: 'Romania',
-  registration: 'CUI 40790448 · Trade Register J38/820/2020',
+  registration: 'CUI 40790448 · Trade Register J38/820/2020 · EUID ROONRC.J38/820/2020',
   supportEmail: 'support@usd-impact.com',
 });
 

@@ -2,227 +2,158 @@
 
 ## Status
 
-Decision-support version: `2026-08-26.v3`
+Decision version: `2026-08-27.v7-administrative-gates-deferred`
 
-Product: `Read the Dollar First Library Pass`
+Product: `Read the Dollar First Library Pass`  
+Business entity: SC Kela Leads SRL, Romania  
+Selected provider: **Lemon Squeezy**  
+Lifecycle profile: **`mor-final-state-reconciliation`**  
+Production commerce state: **disabled / Lemon Squeezy adapter registered in code only / public checkout disabled**.
 
-Business entity: SC Kela Leads SRL, Romania
+This matrix freezes the selected-provider responsibility and lifecycle-ownership decision required by Issues #53 and #130. The later code-only adapter registration does not configure Production secrets, apply a Production migration, authorize a Live purchase, or activate public checkout.
 
-Current commerce state: **provider-neutral / checkout disabled**.
+## Provider-selection state
 
-This document prepares the provider-selection and lifecycle-ownership decision required by Issue #53. It does not select a provider, register an adapter, create an account, configure a secret, activate checkout, authorize a Production purchase, or change customer/entitlement state.
+- **Lemon Squeezy is selected** for the one-time Library Pass after affirmative written product/company approval on 2026-08-26 and explicit owner approval of the Merchant-of-Record final-state reconciliation architecture.
+- Paddle is removed from the active path after its application decision.
+- FastSpring is removed after written product-eligibility rejection received 2026-08-25 22:33 UTC in case #01856172.
+- PayPro Global was not selected and received no qualifying reply before selection.
+- Stripe Managed Payments remains fallback research only.
+- `REGISTERED_COMMERCE_ADAPTERS` now contains only the reviewed Lemon Squeezy adapter on Draft PR #374; its configuration assessment remains fail closed.
+- Production remains `ready_for_provider_configuration` with `COMMERCE_MODE=disabled`, `COMMERCE_PROVIDER` unset/null, and checkout disabled.
 
-## Current provider-selection state
+Provider selection is therefore complete; **activation is not**.
 
-- Paddle is removed from the active release path after its application decision.
-- **FastSpring is removed from the active release path after written product-eligibility rejection received 2026-08-25 22:33 UTC in case #01856172.**
-- Lemon Squeezy has an application under review; store provisioning is not treated as product/company approval.
-- PayPro Global has not replied to the written pre-clearance request/follow-up and retains open technical gaps.
-- Stripe Managed Payments is only a policy-review fallback until product-specific written clarification is obtained through an official qualifying route.
-- No provider is selected.
-- No commerce adapter is registered.
-- Production remains `ready_for_provider_configuration` with commerce mode `disabled` and checkout disabled.
+## Authenticated account launch-gate status — 2026-08-27
 
-A provider may move from candidate to selected only after the evidence fields below are completed from authoritative provider documentation and, where required, an affirmative written provider response. A provider that fails product eligibility is closed for the current disclosed product scope even if its APIs look technically compatible.
+The current account-level evidence is recorded without publishing Live product/Variant identifiers, bank details, tax identifiers, identity documents, private email metadata or credentials:
 
-Current written-decision evidence: `docs/operations/commerce-provider-eligibility-update-2026-08-26.md`.
+- the Lemon Squeezy store is approved and active; identity verification, two-factor authentication and the payout bank connection are complete;
+- the required customer-support contact is saved as `support@usd-impact.com`;
+- the approved one-time Library Pass configuration has been copied to Live Mode with distinct USD 39 launch and USD 49 standard Variants, digital-goods tax categorization, licences disabled and storefront display disabled;
+- no Live webhook is configured, and no Live checkout, payment or refund has been performed;
+- the account still reports tax certification as action required, but its current enforcement notice says bank payouts pause only at €8,577,810 processed payment volume; W-8 completion remains required and pending accountant confirmation, but is not a present payment, payout, implementation or Preview blocker;
+- the official ONRC company-document request remains in progress as corroborating evidence, but the certificate itself is not an implementation or Preview prerequisite; the mandatory boundary is accurate buyer-facing trader identification before public selling;
+- W-8 completion and the ONRC evidence request are tracked for administrative completion before marketing starts, without guessing tax classifications or public company wording;
+- before public selling, USD Impact must still expose the required verified trader information: legal name, geographic address, direct contact details, trade-register identity/registration number and VAT identifier where applicable;
+- the controlled `support@usd-impact.com` inbound/reply continuity test remains intentionally deferred to the final launch window;
+- Production remains `COMMERCE_MODE=disabled` with `COMMERCE_PROVIDER` unset, no provider secrets, no commerce migration and no public checkout.
 
-## Non-negotiable application contract
+The W-8 enforcement interpretation follows the current account notice and Stripe's documented volume-based enforcement model. The trader-information boundary follows Article 5 of Directive 2000/31/EC and Romanian Law 365/2002; neither source requires an ONRC certificate to be published, but the underlying verified identification information must be accessible.
 
-Every selected adapter must satisfy the canonical commerce capabilities already enforced by the application:
+## Contract v3 lifecycle boundary
 
-1. `checkout.create`
-2. `webhook.verify-raw-body`
-3. `event.normalize`
-4. `payment.complete`
-5. `refund.complete`
-6. `dispute.open`
-7. `chargeback.complete`
-8. `dispute.reverse`
+Commerce contract version 3 supports two reviewed lifecycle profiles:
 
-The provider must support normalization into the canonical USD Impact event set:
+1. `direct-events` — requires direct authoritative dispute/chargeback/reversal events;
+2. `mor-final-state-reconciliation` — requires authoritative order retrieval/reconciliation, final-state revocation, and documented Merchant-of-Record chargeback ownership.
 
-- `checkout.pending`
-- `payment.completed`
-- `payment.failed`
-- `payment.cancelled`
-- `payment.expired`
-- `refund.completed`
-- `dispute.opened`
-- `chargeback.completed`
-- `dispute.reversed`
+Lemon Squeezy uses profile 2 because its documented one-time webhook surface exposes successful-order and refund events but not deterministic one-time dispute-opened, chargeback-completed or dispute-reversed events.
 
-Browser redirects, screenshots, email assertions, store provisioning, dashboard state, or unverified provider state never grant access. Entitlement changes require verified server-side commercial events.
+Lemon Squeezy Support (Arnab Bose) confirmed in writing on 2026-08-27 that Lemon Squeezy generally informs merchants by email when a dispute opens and manages the dispute directly as Merchant of Record. When Lemon Squeezy issues a refund to settle or prevent a chargeback, it dispatches an `order_refunded` webhook. Unresolved dispute notices, the stated $15 dispute fee and balance adjustments are exposed through email, dashboard and payout reports rather than a public API feed.
 
-## Responsibility decision table
+USD Impact must not invent unavailable events. Browser redirects, screenshots, email assertions, provider-dashboard observations, or client-provided order IDs never grant, revoke, or restore entitlement.
 
-Complete every row for the provider that remains eligible for selection. Use `provider`, `USD Impact`, `shared`, or `not applicable` only after the responsibility is supported by provider evidence.
+## Selected-provider responsibility table
 
-| Responsibility | Required evidence | Provider answer | USD Impact residual responsibility | Gate |
-|---|---|---|---|---|
-| Merchant of Record / seller of record | affirmative written contractual/product eligibility statement | pending for remaining candidates | pending | BLOCKED |
-| Product-category acceptance | affirmative written confirmation covering macro-finance education and educational Bitcoin content | pending for remaining candidates | disclose curriculum accurately; maintain compliance boundaries | BLOCKED |
-| Romanian company onboarding | required entity, UBO, tax, banking, and verification documents | pending | supply accurate company records | BLOCKED |
-| Sales tax / VAT calculation | contractual tax responsibility by buyer jurisdiction | pending | accounting reconciliation | BLOCKED |
-| Tax registration / filing / remittance | contractual allocation of filing/remittance responsibility | pending | any explicitly retained local obligations | BLOCKED |
-| Customer invoice / receipt | sample/documentation and legal issuer identity | pending | account/access communication remains separate | BLOCKED |
-| Checkout hosting / payment collection | hosted or tokenized checkout documentation | pending | server-authoritative product/price/purchase-intent creation | BLOCKED |
-| Fraud screening | provider documentation and allocation of loss/risk | pending | application abuse controls and entitlement verification | BLOCKED |
-| Buyer-facing payment support | support terms and escalation path | pending | USD Impact product/account/access support | BLOCKED |
-| Refund initiation | API/dashboard/customer-support pathways and authority | pending | enforce USD Impact refund policy where retained | BLOCKED |
-| Refund approval / execution | who decides, who executes, provider-initiated behavior | pending | verified refund event drives access revocation | BLOCKED |
-| Dispute warning / early alert | exact event or API evidence | pending | customer/access warning after verified event | BLOCKED |
-| Chargeback handling | provider responsibilities, fees, evidence process | pending | verified chargeback event drives access revocation | BLOCKED |
-| Won dispute / reversal | exact reversal event and restoration criteria | pending | restore access only after eligible verified reversal | BLOCKED |
-| Reserves / rolling hold | written reserve policy or confirmation none applies | pending | cash-flow planning | BLOCKED |
-| Fees | complete fixed/percentage/currency/cross-border/refund/dispute fees | pending | accounting reconciliation | BLOCKED |
-| Settlement | payout country, currency, cadence, threshold, banking route | pending | reconcile provider settlement to company books | BLOCKED |
-| Data processing / DPA | DPA, subprocessors, data locations, retention/export terms | pending | maintain USD Impact privacy/account records | BLOCKED |
-| Incident escalation | provider support channel, severity route, status page | pending | USD Impact incident ownership and customer communication | BLOCKED |
-| Secret rotation | documented API/webhook secret rotation procedure | pending | environment-scoped secret management and rollback | BLOCKED |
-| Sandbox / test mode | test-account and event-simulation documentation | pending | complete required sandbox matrix | BLOCKED |
-| Live-domain review | production-domain/business review requirements | pending | complete release gate before activation | BLOCKED |
-
-**FastSpring note:** its provider answer is no longer `pending`; its upstream product-eligibility gate is **FAILED**, so this table is not to be completed for FastSpring under the current product scope.
-
-## Customer-message ownership after verified commercial events
-
-Provider receipts do not replace USD Impact account, entitlement, privacy, support, or exceptional-state messages. Current source policy establishes these boundaries:
-
-| USD Impact message | Classification | Provider boundary | Required selection decision |
+| Responsibility | Lemon Squeezy / MoR | USD Impact residual responsibility | Release gate |
 |---|---|---|---|
-| `purchase_pending` | transactional operational | shared after provider selection | determine whether provider sends payment-processing receipt/status; USD Impact sends only non-duplicative account/access context it owns |
-| `purchase_access_ready` | transactional | application-owned after verified event | USD Impact owns access-ready communication after trusted payment + entitlement state |
-| `purchase_failed` | transactional operational | shared after provider selection | determine provider payment-failure messaging and define non-duplicative USD Impact support/access message if needed |
-| `refund_approved` | transactional | application-owned after verified event | USD Impact communicates verified refund/access consequence; provider may separately issue financial receipt |
-| `dispute_warning` | transactional operational | application-owned after verified event | USD Impact owns account/access warning after trusted dispute event |
-| `chargeback_revoked` | transactional | application-owned after verified event | USD Impact owns access-revocation communication after trusted chargeback event |
-| `dispute_reversal_restored` | transactional | application-owned after verified event | USD Impact owns eligible access-restoration communication after trusted reversal event |
+| Merchant of Record / legal seller for provider transaction | Primary | accurately disclose product/business and reconcile provider records | **SELECTED / PRE-LIVE** |
+| Product-category acceptance | Written approval for disclosed Library Pass scope | do not expand approval to Research Membership/services without review | **PASS** |
+| Romanian company onboarding | Supports merchant onboarding/payout subject to provider KYB/tax requirements | complete accurate KYB/tax/payout fields privately; current W-8 enforcement is volume-threshold based | **ADMIN / PRE-MARKETING — NOT CURRENT IMPLEMENTATION BLOCKER** |
+| Sales tax / VAT at checkout | Primary MoR calculation/collection/remittance responsibility | Romanian accounting/payout reconciliation | **PASS + ACCOUNTING REVIEW** |
+| Financial receipt / invoice | Primary provider financial document | do not send a duplicate financial receipt; access-ready communication stays separate | **PASS** |
+| Checkout / payment collection | Hosted/provider payment surface | create only trusted server-side purchase intent + fixed Variant checkout | **IMPLEMENTING** |
+| Card/processor fraud screening | Provider payment layer | account abuse controls, trusted intent and entitlement verification | **SHARED** |
+| Buyer payment support | Primary for provider payment/MoR transaction issues | product/account/access support | **OWNERSHIP FROZEN** |
+| Refund execution / financial refund notice | Primary provider financial state/notice | apply verified access consequence | **OWNERSHIP FROZEN** |
+| Voluntary Library Pass refund policy | Provider executes supported refund | USD Impact policy is full-refund only; unexpected partial refund goes to review | **POLICY FROZEN** |
+| Dispute / chargeback operations | Primary as Merchant of Record; generally emails the merchant when a dispute opens | monitor email, dashboard and payout reports; never mutate access from a notice alone; apply only authoritative supported state | **MoR RECONCILIATION + OPS MONITORING** |
+| Dispute fees / balance adjustments | Reports unresolved disputes, the stated $15 dispute fee and balance adjustments through email, dashboard and payout reports rather than a public API | reconcile operational/financial records and escalate anomalies; these records are not direct entitlement authority | **MANUAL PRE-LIVE** |
+| Fraudulent final order state | Exposes authoritative Order state | idempotently revoke entitlement using `payment.revoked` | **IMPLEMENTING** |
+| Reversal / restoration | Provider owns underlying financial dispute process | no synthetic restoration; require authoritative compatible provider and local state | **FAIL CLOSED** |
+| Entitlement grant | No direct application authority | sole authority after signed event + authoritative current Order checks | **APPLICATION OWNED** |
+| Product/account access | No direct application authority | sole owner | **APPLICATION OWNED** |
+| Privacy/export/deletion for USD Impact account | Provider retains its own legally required transaction records | own USD Impact account/privacy/export/deletion flows and disclose provider boundary | **PRE-LIVE REVIEW** |
+| Incident escalation | Provider payment/MoR incident channel | application incident response, entitlement controls, customer product/access communication | **OWNERSHIP FROZEN** |
+| Secret rotation | provider API/webhook credential mechanisms | environment-scoped secret management, overlap/cutover, rollback | **TEST-MODE PROOF COMPLETE / PRODUCTION PENDING** |
+| Sandbox / Test Mode | separate Test Mode; reviewer explicitly required Test Mode and no real-card testing | complete deterministic matrix in non-Production only | **COMPLETE** |
+| Public Live activation | provider Live capability only | verified buyer disclosures, #54/support/accounting/privacy/release approval before enabling; #343 remains optional/post-launch | **BLOCKED PENDING SEPARATE OWNER APPROVAL** |
 
-Required authentication, privacy, deletion, support, waitlist, and marketing paths remain governed by the existing email operations policy and are not delegated merely by selecting a commerce provider.
+## Customer-message ownership
 
-## Webhook and event evidence matrix
-
-For each still-eligible candidate, complete this table from authoritative technical documentation before adapter work starts.
-
-| Canonical USD Impact event | Provider event(s) | Raw-body signature verified? | Stable event ID? | Transaction/order ID? | Sandbox simulation? | Retry / redelivery behavior | Evidence status |
-|---|---|---:|---:|---:|---:|---|---|
-| `checkout.pending` | pending | pending | pending | pending | pending | pending | BLOCKED |
-| `payment.completed` | pending | pending | pending | pending | pending | pending | BLOCKED |
-| `payment.failed` | pending | pending | pending | pending | pending | pending | BLOCKED |
-| `payment.cancelled` | pending | pending | pending | pending | pending | pending | BLOCKED |
-| `payment.expired` | pending | pending | pending | pending | pending | pending | BLOCKED |
-| `refund.completed` | pending | pending | pending | pending | pending | pending | BLOCKED |
-| `dispute.opened` | pending | pending | pending | pending | pending | pending | BLOCKED |
-| `chargeback.completed` | pending | pending | pending | pending | pending | pending | BLOCKED |
-| `dispute.reversed` | pending | pending | pending | pending | pending | pending | BLOCKED |
-
-A missing native provider event does not permit inference from a redirect or email. The adapter design must identify an authoritative API/event mechanism or the provider fails the required capability gate.
-
-## FastSpring public technical evidence prefill — historical evidence only
-
-This section preserves the public technical due diligence collected on 2026-08-21. It **does not represent a current provider path** after the 2026-08-25 written product-eligibility rejection.
-
-### Confirmed from public FastSpring documentation
-
-- Webhook authenticity can use an HMAC-SHA256 secret. FastSpring computes the digest over the webhook payload, Base64-encodes it, and sends it in `X-FS-Signature`; their Node/Express examples explicitly validate the raw body before JSON parsing.
-- FastSpring advises duplicate-safe webhook handlers. Automatic retries keep the same event ID, while manual resends generate a new event ID, so USD Impact would have needed deduplication at both provider-event and durable business-state levels.
-- Failed webhook delivery is retried for up to seven days. Reviewed documentation described up to 12 retries: 1h, 2h, 4h, then 6h intervals during the first day, followed by daily retries.
-- Webhooks can be configured for live orders, test orders, or both.
-- FastSpring provides Test mode/test orders and supports server-created sessions with `live: false`.
-- `order.payment.pending` is a documented pending-payment event.
-- `order.completed` is documented for successful orders after payment succeeds and fulfillment completes.
-- `order.failed` is documented for failed payment attempts.
-- `order.canceled` is documented for canceled orders.
-- `return.created` is documented when a refund/return has been issued.
-- `chargeback.created` is documented when a buyer's bank/card issuer initiates a chargeback and includes an order reference plus processor case metadata.
-
-### Historical provisional canonical mapping
-
-| USD Impact canonical event | FastSpring public event/evidence | Historical technical disposition |
+| Lifecycle area | Provider financial message | USD Impact message |
 |---|---|---|
-| `checkout.pending` | `order.payment.pending` | plausible documented mapping; sandbox proof was still required |
-| `payment.completed` | `order.completed` | documented mapping; sandbox proof was still required |
-| `payment.failed` | `order.failed` | documented mapping; sandbox proof was still required |
-| `payment.cancelled` | `order.canceled` | documented mapping; sandbox proof was still required |
-| `payment.expired` | no distinct order-expiry webhook found | BLOCKED |
-| `refund.completed` | `return.created` | documented mapping for issued refunds/returns; sandbox proof was still required |
-| `dispute.opened` | `chargeback.created` covers chargeback initiation | PARTIAL — generic dispute-warning semantics remained unresolved |
-| `chargeback.completed` | `chargeback.created` fires at initiation, not clearly final lost-dispute outcome | BLOCKED |
-| `dispute.reversed` | no native won-dispute/restoration webhook found in reviewed catalog | BLOCKED |
+| successful purchase | provider receipt/invoice | `purchase_access_ready` only after verified entitlement creation |
+| pending / failed payment | provider-side processing/failure message where applicable | non-duplicative account/support context only |
+| refund | financial refund notice | verified access consequence |
+| dispute / chargeback | provider/MoR operational and financial process plus email/dashboard/payout reporting | no invented dispute state; monitor operational notices and communicate only verified product/access consequence |
+| fraudulent final state | provider authoritative Order state | access-revocation/support message after durable application transition |
+| restoration | provider underlying financial state | only after authoritative compatible state plus reviewed local state; never synthetic |
+| product/account/privacy support | not application authority | USD Impact owns product, account, entitlement, privacy/export/deletion support |
 
-These rows are retained to show the difference between technical compatibility and product eligibility. None is actionable now.
+Authentication, privacy, deletion, support, waitlist, and marketing messages remain governed by the existing email operations policy.
 
-### Official FastSpring references reviewed
+## Lemon Squeezy authoritative event/state matrix
 
-- Message Security — `https://developer.fastspring.com/reference/message-security`
-- Webhooks Overview — `https://developer.fastspring.com/reference/webhooks-overview`
-- Processed and unprocessed webhook events — `https://developer.fastspring.com/reference/processed-and-unprocessed-webhook-events`
-- Order Related Webhooks — `https://developer.fastspring.com/reference/orders-1`
-- Successful Orders / `order.completed` — `https://developer.fastspring.com/reference/ordercompleted`
-- Unsuccessful Orders / `order.failed` — `https://developer.fastspring.com/reference/orderfailed`
-- Canceled Orders / `order.canceled` — `https://developer.fastspring.com/reference/ordercanceled`
-- Return or Refund an Order / `return.created` — `https://developer.fastspring.com/reference/returncreated`
-- Order Chargeback / `chargeback.created` — `https://developer.fastspring.com/reference/order-chargeback`
-- Chargebacks and disputes — `https://developer.fastspring.com/docs/chargebacks-and-disputes`
-- Test orders — `https://developer.fastspring.com/docs/test-orders`
-- Activate your store — `https://developer.fastspring.com/docs/activate-your-store`
-- Create session — `https://developer.fastspring.com/reference/createsession`
+| USD Impact behavior | Provider evidence | Application rule | Status |
+|---|---|---|---|
+| checkout pending | trusted local purchase intent + provider Test checkout | never grant from checkout creation/redirect | **IMPLEMENTED DRAFT** |
+| `payment.completed` | signed `order_created` plus fresh authoritative Order + Order Items read | grant only if current status is `paid` and Store/Product/Variant/item-count/quantity/subtotal/discount/currency/account/intent all match | **IMPLEMENTED DRAFT** |
+| payment pending/failed | authoritative Order `pending` / `failed` | never grant or restore | **IMPLEMENTED DRAFT** |
+| `refund.completed` | signed `order_refunded`, including a provider refund used to settle or prevent a chargeback, or authoritative `refunded` reconciliation | full refund only; final refunded amount must match final Order total before idempotent refund access transition | **IMPLEMENTED DRAFT** |
+| partial refund | authoritative `partial_refund` | explicit review; no automatic purchase/entitlement mutation | **POLICY + DRAFT IMPLEMENTATION** |
+| `payment.revoked` | authoritative `fraudulent` Order state | idempotently revoke entitlement; do not fabricate chargeback state | **IMPLEMENTED DRAFT** |
+| dispute opened | no deterministic one-time provider webhook reviewed; provider generally emails the merchant | open an operational review only; no synthetic local event and no provisional revocation solely from the notice | **MoR MODEL + OPS MONITORING** |
+| chargeback completed | provider owns the MoR process; unresolved notices, fees and balance adjustments have no public API feed; a provider-issued refund emits `order_refunded` | use the verified webhook or authoritative supported final state only; email/dashboard/payout records may trigger incident review but are not direct DB authority | **MoR MODEL + OPS MONITORING** |
+| dispute reversed | no deterministic one-time provider webhook reviewed | no synthetic reversal; no automatic restoration of terminal/incompatible local state | **MoR MODEL** |
 
-## FastSpring closed-path record
+## Written provider-support confirmation — 2026-08-27
 
-- [x] Written product/company decision received — **rejected**.
-- [x] Decision retained privately; repository records bounded case/date/result only.
-- [x] FastSpring removed from active candidate/selection path.
-- [x] No duplicate eligibility follow-up required.
-- [x] Public technical evidence retained as historical due diligence.
-- [ ] No account, adapter, secret, webhook, sandbox or Production work is to be initiated under the current product scope.
+The bounded support confirmation closes the open dispute-observability question without changing the approved lifecycle profile:
 
-A technically attractive provider that rejects the product fails the selection gate. Engineering must not attempt to route around that result.
+- process a valid `order_refunded` webhook and authoritative refunded Order state as the access-revocation signal when Lemon Squeezy issues a refund to settle or prevent a chargeback;
+- monitor the merchant mailbox, Lemon Squeezy dashboard and payout reports for new/unresolved disputes, the stated $15 dispute fee and balance adjustments;
+- treat email, dashboard and payout evidence as operational and accounting inputs only, never as direct entitlement or database authority;
+- do not synthesize dispute-opened, chargeback-completed or dispute-reversed application events;
+- do not auto-restore a terminal or incompatible local state without authoritative compatible provider evidence and reviewed local state.
 
-## Selection gate for remaining providers
+No full provider message ID, private mail header, account credential, customer data or dashboard detail is recorded in this repository.
 
-A provider may be marked **selected for sandbox implementation** only when all of the following are true:
+## Commercial invariant
 
-1. product/company eligibility is affirmative and documented;
-2. legal/tax/Merchant-of-Record responsibilities are explicit;
-3. fees, reserves, payout, refund, dispute, and support obligations are acceptable to the business owner;
-4. all required canonical events have an authoritative provider source or a documented safe equivalent;
-5. exact raw-body webhook verification is supported, unless a separately approved security-equivalent contract change is reviewed first;
-6. provider event/transaction identifiers are adequate for idempotency and out-of-order handling;
-7. sandbox coverage is sufficient for the USD Impact test matrix;
-8. privacy/DPA/subprocessor terms are reviewed;
-9. incident, rollback, and secret-rotation procedures are known;
-10. the provider choice is explicitly approved before any adapter registration or environment configuration.
+The active Library Pass checkout must be server-authoritative:
 
-If any required item is unresolved, remain in `ready_for_provider_configuration` with checkout disabled.
+- two distinct fixed-price Test Mode Variants: USD 39 launch / USD 49 standard;
+- exactly one authoritative Order Item and quantity one;
+- no browser `custom_price`;
+- discount UI disabled and authoritative `discount_total=0`;
+- trusted Order `subtotal` must match the durable purchase-intent base amount;
+- Order currency must be USD;
+- final provider `total` is retained separately and may include tax;
+- Store/Product/Variant/item-count/quantity/subtotal/discount/currency mismatch fails closed.
 
-## Post-selection implementation sequence
+## Adapter-registration decision — complete 2026-08-27
 
-After explicit selection of an eligible provider only:
+The Development/Test registration gate is complete: canonical Development migrations, Test Mode product mapping, non-Production credentials, paid and duplicate-delivery evidence, automatic negative cases, rolled-back lifecycle probes, database/advisor review, exact-head protected CI and exact-tree Preview verification were reviewed coherently.
 
-1. freeze the completed responsibility matrix as provider evidence;
-2. implement one provider adapter with checkout route, verified webhook route, normalization, configuration assessment, and tests as one coherent release;
-3. keep `COMMERCE_MODE=sandbox` outside Production;
-4. prove pending, completion, failure/cancellation/expiry, refund, dispute, chargeback, reversal, duplicate, forgery, substitution, delayed, and out-of-order cases;
-5. reconcile USD Impact lifecycle-email ownership against the completed responsibility table;
-6. complete controlled Live proof under separate approval;
-7. activate Production only after #130, #53, #343 and #54 gates are green and explicit Live approval is recorded.
+The registry may contain only Lemon Squeezy in this Draft PR. Its configuration assessment remains fail closed, and registration does not authorize a Production mode/provider value, secret, webhook, checkout, transaction, refund, merge or Production database change.
+
+## Historical candidate evidence
+
+FastSpring/PayPro/Stripe/Paddle technical records remain historical due diligence. They are not active implementation paths and must not be used to override the selected-provider state.
 
 ## Evidence handling
 
-Record provider decisions using links, document titles, case/reference numbers, dates, and bounded summaries. Do not commit API keys, dashboard passwords, bank details, identity documents, recovery codes, webhook secrets, full provider message IDs, or customer data.
+Record provider decisions using links, document titles, dates, case/reference numbers, and bounded summaries. Do not commit API keys, dashboard passwords, bank details, identity documents, recovery codes, webhook secrets, full provider message IDs, or customer data.
 
-## Related controls
+Related controls:
 
-- GitHub Issue #53
-- GitHub Issue #130
-- GitHub Issue #343
-- GitHub Issue #54
-- `docs/operations/commerce-provider-eligibility-update-2026-08-26.md`
-- `apps/web/src/lib/commerce-provider.js`
-- `apps/web/src/lib/commerce-adapters.js`
-- `apps/web/src/lib/email-operations-policy.js`
-- `docs/operations/email-readiness-release-gate.md`
-
-This matrix remains provider-neutral until an eligible provider's evidence is complete and explicit selection occurs.
+- Issue #53 — provider selection / commerce implementation;
+- Issue #130 — customer-message ownership;
+- Issue #343 — optional post-launch independent security assurance, not a launch gate;
+- Issue #54 — final integrated launch gate;
+- `docs/operations/commerce-provider-eligibility-update-2026-08-26.md`;
+- `docs/operations/lemon-squeezy-selected-provider-contract-2026-08-26.md`;
+- `docs/operations/lemon-squeezy-sandbox-runtime-2026-08-26.md`;
+- `docs/operations/commerce-provider-readiness.md`.

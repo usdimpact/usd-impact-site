@@ -7,9 +7,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   description="Lemon Squeezy is selected as Merchant of Record while USD Impact public checkout remains safely disabled pending final release approval."
 >
   <main class="account-main">
-    <section class="account-panel" aria-labelledby="checkout-title">
+    <section
+      id="checkout-status-panel"
+      class="account-panel"
+      aria-labelledby="checkout-title"
+      aria-busy="true"
+      data-checkout-readiness="checking"
+    >
       <p class="eyebrow">USD IMPACT CHECKOUT</p>
-      <h1 id="checkout-title">Checkout is not open yet.</h1>
+      <h1 id="checkout-title">Verifying checkout availability…</h1>
       <p id="checkout-introduction">
         Lemon Squeezy is the selected Merchant of Record for the one-time Library Pass. The secure account,
         purchase-intent, verified-webhook, and entitlement foundation has been verified in Test Mode. Public payment
@@ -33,6 +39,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <p id="commerce-message" class="account-status" role="status" aria-live="polite">
         No payment can be made on this page. A browser redirect alone never grants access.
       </p>
+      <noscript>
+        <p>Checkout is not open yet. JavaScript is required to verify the Live release gates.</p>
+      </noscript>
       <div class="button-row account-actions">
         <button id="checkout-button" class="button primary" type="button" hidden>
           Continue to secure checkout — USD 39
@@ -119,9 +128,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     import {
       approvedLaunchCheckoutUrl,
       createCheckoutIdempotencyKey,
-      publicCheckoutCanOpen,
+      publicCheckoutPresentation,
     } from '../../lib/checkout-client.js';
 
+    const checkoutStatusPanel = document.getElementById('checkout-status-panel');
     const titleElement = document.getElementById('checkout-title');
     const introductionElement = document.getElementById('checkout-introduction');
     const stateElement = document.getElementById('commerce-state');
@@ -190,18 +200,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     };
 
     const renderCheckoutAvailability = (commerce, disclosureRendered) => {
-      const available = publicCheckoutCanOpen(commerce, disclosureRendered);
-      if (checkoutButton instanceof HTMLButtonElement) checkoutButton.hidden = !available;
-      if (waitlistLink instanceof HTMLAnchorElement) waitlistLink.hidden = available;
-      if (titleElement) titleElement.textContent = available
-        ? 'Library Pass checkout is open.'
-        : 'Checkout is not open yet.';
-      if (introductionElement) {
-        introductionElement.textContent = available
-          ? 'Purchase the Read the Dollar First Library Pass for a one-time USD 39 payment. Sign in with the USD Impact account that should receive access, review the disclosures below, then continue to Lemon Squeezy’s secure hosted checkout.'
-          : 'Lemon Squeezy is the selected Merchant of Record for the one-time Library Pass. Public payment remains disabled until every Live release gate is complete and explicitly approved.';
+      const presentation = publicCheckoutPresentation(commerce, disclosureRendered);
+      if (checkoutButton instanceof HTMLButtonElement) checkoutButton.hidden = !presentation.available;
+      if (waitlistLink instanceof HTMLAnchorElement) waitlistLink.hidden = presentation.available;
+      if (titleElement) titleElement.textContent = presentation.title;
+      if (introductionElement) introductionElement.textContent = presentation.introduction;
+      if (checkoutStatusPanel instanceof HTMLElement) {
+        checkoutStatusPanel.dataset.checkoutReadiness = presentation.verificationState;
+        checkoutStatusPanel.setAttribute('aria-busy', 'false');
       }
-      return available;
+      return presentation.available;
     };
 
     checkoutButton?.addEventListener('click', async () => {
@@ -271,6 +279,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         if (disclosureStateElement) disclosureStateElement.textContent = 'Verification unavailable';
         if (disclosurePanel instanceof HTMLElement) disclosurePanel.hidden = true;
         renderCheckoutAvailability(null, false);
+        if (checkoutStatusPanel instanceof HTMLElement) {
+          checkoutStatusPanel.dataset.checkoutReadiness = 'error';
+        }
         if (messageElement) {
           messageElement.textContent = error instanceof Error
             ? `${error.message} Public checkout remains disabled.`

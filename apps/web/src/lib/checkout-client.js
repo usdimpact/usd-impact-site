@@ -9,6 +9,20 @@ export function publicCheckoutCanOpen(commerce, disclosureRendered) {
     && disclosureRendered === true;
 }
 
+export function publicCheckoutPresentation(commerce, disclosureRendered) {
+  const available = publicCheckoutCanOpen(commerce, disclosureRendered);
+  const readinessClaimsActive = commerce?.state === 'active' || commerce?.checkoutEnabled === true;
+
+  return {
+    available,
+    verificationState: available ? 'active' : readinessClaimsActive ? 'error' : 'disabled',
+    title: available ? 'Library Pass checkout is open.' : 'Checkout is not open yet.',
+    introduction: available
+      ? 'Purchase the Read the Dollar First Library Pass for a one-time USD 39 payment. Sign in with the USD Impact account that should receive access, review the disclosures below, then continue to Lemon Squeezy’s secure hosted checkout.'
+      : 'Lemon Squeezy is the selected Merchant of Record for the one-time Library Pass. Public payment remains disabled until every Live release gate is complete and explicitly approved.',
+  };
+}
+
 export function approvedLaunchCheckoutUrl(payload) {
   if (
     payload?.ok !== true

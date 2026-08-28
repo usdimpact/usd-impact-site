@@ -10,7 +10,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <section class="account-panel" aria-labelledby="checkout-title">
       <p class="eyebrow">USD IMPACT CHECKOUT</p>
       <h1 id="checkout-title">Checkout is not open yet.</h1>
-      <p>
+      <p id="checkout-introduction">
         Lemon Squeezy is the selected Merchant of Record for the one-time Library Pass. The secure account,
         purchase-intent, verified-webhook, and entitlement foundation has been verified in Test Mode. Public payment
         remains disabled until the remaining buyer disclosures, operational checks, final release review, and explicit
@@ -34,7 +34,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         No payment can be made on this page. A browser redirect alone never grants access.
       </p>
       <div class="button-row account-actions">
-        <a class="button primary" href="/book/read-the-dollar-first/#book-waitlist">Join the launch waitlist</a>
+        <button id="checkout-button" class="button primary" type="button" hidden>
+          Continue to secure checkout — USD 39
+        </button>
+        <a id="waitlist-link" class="button primary" href="/book/read-the-dollar-first/#book-waitlist">Join the launch waitlist</a>
         <a class="button account-secondary" href="/account/">Return to your account</a>
       </div>
     </section>
@@ -113,11 +116,22 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   </main>
 
   <script>
+    import {
+      approvedLaunchCheckoutUrl,
+      createCheckoutIdempotencyKey,
+      publicCheckoutCanOpen,
+    } from '../../lib/checkout-client.js';
+
+    const titleElement = document.getElementById('checkout-title');
+    const introductionElement = document.getElementById('checkout-introduction');
     const stateElement = document.getElementById('commerce-state');
     const checkoutElement = document.getElementById('checkout-state');
     const messageElement = document.getElementById('commerce-message');
     const disclosureStateElement = document.getElementById('seller-disclosure-state');
     const disclosurePanel = document.getElementById('seller-disclosure-panel');
+    const checkoutButton = document.getElementById('checkout-button');
+    const waitlistLink = document.getElementById('waitlist-link');
+    let pendingCheckoutKey = null;
 
     const stateLabels = {
       ready_for_provider_configuration: 'Ready for provider configuration',
@@ -150,14 +164,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       if (!commerce?.disclosuresComplete || !disclosure || typeof disclosure !== 'object') {
         if (disclosureStateElement) disclosureStateElement.textContent = 'Required before Live';
         if (disclosurePanel instanceof HTMLElement) disclosurePanel.hidden = true;
-        return;
+        return false;
       }
 
       if (!setHttpsHref('seller-buyer-terms', disclosure.buyerTermsUrl)
         || !setHttpsHref('seller-provider-privacy', disclosure.providerPrivacyUrl)) {
         if (disclosureStateElement) disclosureStateElement.textContent = 'Verification unavailable';
         if (disclosurePanel instanceof HTMLElement) disclosurePanel.hidden = true;
-        return;
+        return false;
       }
 
       setText('seller-brand', disclosure.brand);
@@ -172,7 +186,65 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       setText('seller-support-email', disclosure.supportEmail);
       if (disclosureStateElement) disclosureStateElement.textContent = 'Complete and approved';
       if (disclosurePanel instanceof HTMLElement) disclosurePanel.hidden = false;
+      return true;
     };
+
+    const renderCheckoutAvailability = (commerce, disclosureRendered) => {
+      const available = publicCheckoutCanOpen(commerce, disclosureRendered);
+      if (checkoutButton instanceof HTMLButtonElement) checkoutButton.hidden = !available;
+      if (waitlistLink instanceof HTMLAnchorElement) waitlistLink.hidden = available;
+      if (titleElement) titleElement.textContent = available
+        ? 'Library Pass checkout is open.'
+        : 'Checkout is not open yet.';
+      if (introductionElement) {
+        introductionElement.textContent = available
+          ? 'Purchase the Read the Dollar First Library Pass for a one-time USD 39 payment. Sign in with the USD Impact account that should receive access, review the disclosures below, then continue to Lemon Squeezy’s secure hosted checkout.'
+          : 'Lemon Squeezy is the selected Merchant of Record for the one-time Library Pass. Public payment remains disabled until every Live release gate is complete and explicitly approved.';
+      }
+      return available;
+    };
+
+    checkoutButton?.addEventListener('click', async () => {
+      if (!(checkoutButton instanceof HTMLButtonElement) || checkoutButton.hidden) return;
+      checkoutButton.disabled = true;
+      if (messageElement) {
+        messageElement.textContent = 'Preparing your secure Lemon Squeezy checkout…';
+        messageElement.dataset.state = 'pending';
+      }
+
+      try {
+        pendingCheckoutKey ||= createCheckoutIdempotencyKey(() => crypto.randomUUID());
+        if (!pendingCheckoutKey) throw new Error('A secure checkout request could not be created in this browser.');
+        const response = await fetch('/api/commerce?action=checkout', {
+          method: 'POST',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'Idempotency-Key': pendingCheckoutKey,
+          },
+          body: JSON.stringify({ idempotencyKey: pendingCheckoutKey }),
+        });
+        if (response.status === 401) {
+          window.location.assign('/account/sign-in/?next=/checkout/');
+          return;
+        }
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || 'Secure checkout could not be prepared.');
+        const checkoutUrl = approvedLaunchCheckoutUrl(body);
+        if (!checkoutUrl) throw new Error('The approved Live USD 39 checkout terms could not be verified.');
+        window.location.assign(checkoutUrl);
+      } catch (error) {
+        if (messageElement) {
+          messageElement.textContent = error instanceof Error
+            ? `${error.message} No payment or access change has occurred.`
+            : 'Secure checkout could not be prepared. No payment or access change has occurred.';
+          messageElement.dataset.state = 'error';
+        }
+        checkoutButton.disabled = false;
+      }
+    });
 
     fetch('/api/commerce-readiness', {
       method: 'GET',
@@ -186,7 +258,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         const commerce = body.commerce;
         if (stateElement) stateElement.textContent = stateLabels[commerce.state] || 'Unavailable';
         if (checkoutElement) checkoutElement.textContent = commerce.checkoutEnabled ? 'Enabled' : 'Disabled';
-        renderSellerDisclosure(commerce);
+        const disclosureRendered = renderSellerDisclosure(commerce);
+        renderCheckoutAvailability(commerce, disclosureRendered);
         if (messageElement) {
           messageElement.textContent = commerce.message || 'Public checkout remains disabled.';
           messageElement.dataset.state = commerce.state === 'blocked' ? 'error' : 'success';
@@ -197,6 +270,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         if (checkoutElement) checkoutElement.textContent = 'Disabled';
         if (disclosureStateElement) disclosureStateElement.textContent = 'Verification unavailable';
         if (disclosurePanel instanceof HTMLElement) disclosurePanel.hidden = true;
+        renderCheckoutAvailability(null, false);
         if (messageElement) {
           messageElement.textContent = error instanceof Error
             ? `${error.message} Public checkout remains disabled.`

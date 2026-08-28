@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import '../styles/account.css';
+import LibraryPassLaunchAnnouncement from '../components/LibraryPassLaunchAnnouncement.astro';
 import TelemetryClient from '../components/TelemetryClient.astro';
 import PwaClient from '../components/PwaClient.astro';
 const { title, description, noindex = false, stylesheets = [] } = Astro.props;
@@ -49,6 +50,7 @@ const { title, description, noindex = false, stylesheets = [] } = Astro.props;
         </nav>
       </div>
     </header>
+    <LibraryPassLaunchAnnouncement />
     <slot />
     <footer class="footer">
       <div class="container">

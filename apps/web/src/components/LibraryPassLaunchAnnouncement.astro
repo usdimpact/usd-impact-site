@@ -1,0 +1,116 @@
+<aside
+  class="library-pass-launch-announcement"
+  data-library-pass-launch-announcement
+  aria-label="Library Pass launch announcement"
+  aria-live="polite"
+  hidden
+>
+  <div class="container library-pass-launch-announcement__inner">
+    <div class="library-pass-launch-announcement__copy">
+      <p lang="en">
+        <strong>Read the Dollar First is now available.</strong>
+        Get the complete Guided Interactive Edition, English audiobook, and 51-film Video Library with a one-time USD 39 Library Pass.
+      </p>
+      <p lang="es">
+        <strong>Read the Dollar First ya está disponible.</strong>
+        Accede a la edición interactiva completa, el audiolibro en inglés y la videoteca de 51 películas con un único pago de USD 39.
+      </p>
+    </div>
+    <a class="library-pass-launch-announcement__cta" href="/checkout/">
+      Open secure checkout / Abrir checkout seguro
+    </a>
+  </div>
+</aside>
+
+<script>
+  import { libraryPassLaunchAnnouncementCanOpen } from '../lib/library-pass-launch-announcement.js';
+
+  const announcement = document.querySelector('[data-library-pass-launch-announcement]');
+
+  if (announcement instanceof HTMLElement) {
+    fetch('/api/commerce-readiness', {
+      method: 'GET',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || !libraryPassLaunchAnnouncementCanOpen(body)) {
+          throw new Error('Library Pass launch state could not be verified.');
+        }
+        announcement.hidden = false;
+      })
+      .catch(() => {
+        announcement.hidden = true;
+      });
+  }
+</script>
+
+<style>
+  .library-pass-launch-announcement[hidden] {
+    display: none;
+  }
+
+  .library-pass-launch-announcement {
+    border-bottom: 1px solid #9f7c35;
+    background: #fff8e6;
+    color: #302308;
+  }
+
+  .library-pass-launch-announcement__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 20px;
+    align-items: center;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .library-pass-launch-announcement__copy {
+    display: grid;
+    gap: 5px;
+  }
+
+  .library-pass-launch-announcement__copy p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .library-pass-launch-announcement__copy p[lang="es"] {
+    color: #59430f;
+  }
+
+  .library-pass-launch-announcement__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: var(--navy);
+    color: var(--white);
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.25;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .library-pass-launch-announcement__cta:focus-visible {
+    outline: 3px solid rgba(7, 26, 51, .3);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 760px) {
+    .library-pass-launch-announcement__inner {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .library-pass-launch-announcement__cta {
+      width: 100%;
+    }
+  }
+</style>

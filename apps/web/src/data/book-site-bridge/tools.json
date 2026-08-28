@@ -3,20 +3,20 @@
     "id": "dxy-vs-broad-usd",
     "title": "DXY vs. Broad USD Comparator",
     "path": "/practice/dxy-vs-broad-usd/",
-    "status": "preview-prototype",
+    "status": "preview-live-evidence",
     "question": "Is the visible DXY move broadly confirmed, or is it mainly a narrow basket move?",
     "whyItMatters": "DXY is useful but heavily concentrated in a small developed-market currency basket. A broader dollar measure can confirm or challenge the regime interpretation.",
     "inputs": [
-      "DXY direction over a completed observation window",
+      "DXY direction over the published completed-week observation window",
       "Broad trade-weighted USD direction over the same window",
-      "Rates, credit or volatility confirmation"
+      "Dated rates, credit and volatility confirmation from the same repository snapshot"
     ],
-    "dataCadence": "No live-data cadence in Phase 1; the reader selects a scenario.",
-    "timestampRule": "The page must state that no market timestamp is available and must not imply that the output is current.",
+    "dataCadence": "Latest repository-published completed-week Three-Dials snapshot. Every source fact keeps its individual observation date; no market data is retrieved in the browser.",
+    "timestampRule": "Show the snapshot week and each source observation date. Label the normal Monday/Tuesday publication window explicitly, and disable comparison if the latest published snapshot falls outside the approved cadence.",
     "steps": [
-      "Record DXY as firmer, softer or mixed.",
-      "Record broad USD using the same categories.",
-      "Add the rates or stress confirmation and classify the divergence before discussing assets."
+      "Read the dated DXY and broad-dollar observations without seeing the deterministic classification.",
+      "Classify DXY, broad USD and the rates/stress confirmation from the visible source evidence.",
+      "Submit the independent reading, reveal the deterministic dollar classification, and investigate any divergence before discussing assets."
     ],
     "agreement": [
       "DXY and broad USD moving in the same direction increase confidence that the move is wider than one currency pair.",
@@ -29,8 +29,9 @@
     ],
     "limitations": [
       "The comparator is descriptive and does not forecast any asset.",
-      "It does not measure the full offshore dollar funding system.",
-      "The Phase 1 prototype uses reader-selected scenarios and does not retrieve live market data."
+      "The evidence is a dated completed-week repository snapshot, not real-time market data.",
+      "DXY uses the existing accessible Yahoo Finance proxy while the broad-dollar and supporting macro series retain their published source disclosures.",
+      "The page does not transmit or persist the reader's classifications."
     ],
     "chapterIds": [
       "chapter-01",
@@ -49,8 +50,8 @@
       }
     ],
     "access": "public",
-    "version": "0.1.0-preview",
-    "lastReviewed": "2026-08-28"
+    "version": "0.2.0-preview",
+    "lastReviewed": "2026-08-29"
   },
   {
     "id": "dollar-transmission-chain",
@@ -217,34 +218,35 @@
     "id": "weekly-regime-lab",
     "title": "Weekly Regime Lab",
     "path": "/practice/weekly-regime/",
-    "status": "preview-prototype",
-    "question": "Can the reader form a disciplined weekly regime read before seeing the published interpretation?",
-    "whyItMatters": "Recording the three dials, dominant driver and conditional explanation before comparison reduces anchoring and turns Chapter 11 into a repeatable practice routine.",
+    "status": "preview-live-evidence",
+    "question": "Can the reader form a disciplined weekly regime read from dated evidence before seeing the deterministic classifications and separate Score output?",
+    "whyItMatters": "Recording the three dials, dominant-driver hypothesis and conditional explanation before comparison reduces anchoring and turns Chapter 11 into a repeatable practice routine.",
     "inputs": [
-      "Dollar direction with breadth confirmation",
-      "Real-rate pressure",
-      "Liquidity stress, dominant driver, confidence and a conditional written reading"
+      "Dated DXY and broad-dollar observations",
+      "Dated real-yield and nominal-rate context",
+      "Dated credit, volatility and funding-stress evidence, plus a browser-local driver hypothesis and conditional written reading"
     ],
-    "dataCadence": "No live-data cadence in Phase 1; the comparison uses a static UX fixture.",
-    "timestampRule": "The fixture must remain labeled non-current. A later live phase must show evidence timestamps before the user submits a reading.",
+    "dataCadence": "Latest repository-published completed-week Three-Dials snapshot with an exact-week Score bridge. No market data is retrieved in the browser.",
+    "timestampRule": "Show the snapshot week and every source observation date. Keep the normal Monday/Tuesday publication window explicit, and disable deterministic comparison if the snapshot is outside the approved cadence.",
     "steps": [
-      "Record the three dials and the dominant driver.",
-      "Write what supports the reading and what would challenge it.",
-      "Submit the independent reading, then reveal the comparison and return to the relevant chapter when the readings differ."
+      "Read the dated facts and record the three dials plus an unscored dominant-driver hypothesis.",
+      "Write what supports the reading and what would challenge it before seeing any deterministic labels.",
+      "Submit the browser-local reading, compare only the three deterministic dials, then inspect the separate exact-week Score output and return to the relevant chapter or Weekly report."
     ],
     "agreement": [
-      "Use aligned, partly aligned or materially different rather than correct or incorrect.",
-      "Agreement shows process coherence, not predictive accuracy."
+      "Use aligned, partly aligned or materially different for the three deterministic dials rather than correct or incorrect.",
+      "Agreement shows process coherence, not predictive accuracy; the dominant-driver hypothesis remains unscored."
     ],
     "divergence": [
       "A dollar disagreement points back to Chapter 3.",
-      "A driver disagreement points back to Chapter 4.",
-      "A dial disagreement points back to Chapter 11 and the relevant asset chapter."
+      "A real-rate or liquidity disagreement points back to Chapter 11 and the relevant primary evidence.",
+      "A driver disagreement is not machine-scored; compare the hypothesis qualitatively with the Weekly report and transmission framework."
     ],
     "limitations": [
-      "The Phase 1 comparison uses a clearly labeled static fixture, not current market data or the live Score.",
-      "No answer is stored, transmitted or used to create a financial profile.",
-      "The lab evaluates sequence and evidence discipline, not investment outcomes."
+      "The evidence is a dated completed-week repository snapshot, not real-time market data.",
+      "No classification, confidence selection, driver hypothesis or written response is stored or transmitted.",
+      "Only the three deterministic dials are compared; the driver hypothesis is deliberately unscored.",
+      "The exact-week USD Impact Score v2 is revealed separately and is not an answer key, forecast or trading signal."
     ],
     "chapterIds": [
       "chapter-04",
@@ -272,8 +274,8 @@
       }
     ],
     "access": "public",
-    "version": "0.1.0-preview",
-    "lastReviewed": "2026-08-28"
+    "version": "0.2.0-preview",
+    "lastReviewed": "2026-08-29"
   },
   {
     "id": "weekly-checklist",

@@ -105,11 +105,6 @@ const fieldMetadata = {
     chapterNumber: 11,
     reason: 'Recheck credit, volatility and funding evidence instead of relying on one liquidity proxy.',
   },
-  driver: {
-    label: 'Dominant driver',
-    chapterNumber: 4,
-    reason: 'Recheck the active transmission channel before reaching the asset conclusion.',
-  },
 };
 
 export function compareWeeklyReading(userReading, referenceReading) {
@@ -135,16 +130,16 @@ export function compareWeeklyReading(userReading, referenceReading) {
 
   if (matches === fields.length) {
     status = 'aligned';
-    heading = 'Aligned reading';
-    summary = 'Your selected dials and dominant driver match the Preview comparison fixture. This shows process alignment, not predictive accuracy.';
+    heading = 'Aligned three-dial reading';
+    summary = 'Your three dial selections match the deterministic completed-week classifications. This shows process alignment, not predictive accuracy. Your dominant-driver hypothesis remains separate and unscored.';
   } else if (matches >= 2) {
     status = 'partly-aligned';
-    heading = 'Partly aligned reading';
-    summary = 'Your reading shares part of the fixture but contains useful disagreements. Review the differences before changing the narrative.';
+    heading = 'Partly aligned three-dial reading';
+    summary = 'Your reading shares most of the deterministic dial classifications but contains a useful disagreement. Review it before changing the narrative. The driver hypothesis remains unscored.';
   } else {
     status = 'materially-different';
-    heading = 'Materially different reading';
-    summary = 'Your reading differs on most of the selected fields. Treat this as a diagnostic prompt and return to the relevant framework chapters.';
+    heading = 'Materially different three-dial reading';
+    summary = 'Your reading differs on most deterministic dials. Treat this as a diagnostic prompt and return to the relevant framework chapters. The driver hypothesis remains unscored.';
   }
 
   return {

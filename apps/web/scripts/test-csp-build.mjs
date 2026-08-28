@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolveScorePipelineOrigin } from '../src/lib/score-pipeline-origin.js';
 import './test-book-site-bridge.mjs';
+import './test-book-live-evidence.mjs';
 
 const root = process.cwd();
 const distRoot = path.join(root, 'dist');
@@ -240,11 +241,63 @@ for (const route of [
   }
 }
 
+const phase2bRoutes = [
+  {
+    route: '/practice/dxy-vs-broad-usd/',
+    requiredFacts: ['DXY', 'DTWEXBGS', 'DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SPREAD'],
+    requiredMarkers: ['data-reference-classification', 'data-live-evidence-state=', 'data-live-evidence-usable='],
+  },
+  {
+    route: '/practice/weekly-regime/',
+    requiredFacts: ['DXY', 'DTWEXBGS', 'DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SPREAD'],
+    requiredMarkers: ['data-dial-reference', 'data-score-model-output', 'data-live-evidence-state=', 'data-live-evidence-usable='],
+  },
+];
+let phase2bPagesVerified = 0;
+for (const target of phase2bRoutes) {
+  const file = routeToHtmlFile(target.route);
+  if (!fs.existsSync(file)) {
+    failures.push(`Phase 2B live-evidence route was not generated: ${target.route}.`);
+    continue;
+  }
+  const html = fs.readFileSync(file, 'utf8');
+  for (const id of target.requiredFacts) {
+    if (countOccurrences(html, `data-evidence-id="${id}"`) !== 1) {
+      failures.push(`${target.route} must render exactly one source-bound evidence marker for ${id}.`);
+    }
+  }
+  for (const marker of target.requiredMarkers) {
+    if (!html.includes(marker)) failures.push(`${target.route} is missing Phase 2B marker ${marker}.`);
+  }
+  if (!html.includes('Dated completed-week evidence')) {
+    failures.push(`${target.route} must identify its evidence as dated completed-week evidence.`);
+  }
+  phase2bPagesVerified += 1;
+}
+
+const weeklyLabFile = routeToHtmlFile('/practice/weekly-regime/');
+if (fs.existsSync(weeklyLabFile)) {
+  const html = fs.readFileSync(weeklyLabFile, 'utf8');
+  const resultStart = html.indexOf('id="weekly-regime-result"');
+  const resultTagEnd = resultStart >= 0 ? html.indexOf('>', resultStart) : -1;
+  const scoreStart = html.indexOf('data-score-model-output');
+  if (resultStart < 0 || resultTagEnd < 0 || !html.slice(resultStart, resultTagEnd + 1).includes('hidden')) {
+    failures.push('Weekly Regime Lab post-submit result must be rendered hidden by default.');
+  }
+  if (scoreStart < resultStart) {
+    failures.push('Weekly Score v2 output must remain inside the hidden post-submit result and never appear as pre-submit evidence.');
+  }
+  if (!html.includes('not scored') || !html.includes('not transmitted')) {
+    failures.push('Weekly Regime Lab must preserve the unscored/untransmitted response boundary in generated HTML.');
+  }
+}
+
 if (failures.length > 0) {
-  console.error(`CSP, sitemap, and contextual bridge build verification failed:\n${failures.join('\n')}`);
+  console.error(`CSP, sitemap, contextual bridge, and live-evidence build verification failed:\n${failures.join('\n')}`);
   process.exit(1);
 }
 
 console.log(`CSP build verification passed across ${htmlFiles.length} generated HTML pages using Score origin ${scorePipelineOrigin}.`);
 console.log(`Book-site bridge sitemap exclusion verification passed for ${previewOnlyRoutes.length} generated noindex routes.`);
 console.log(`Book-site contextual surface verification passed for ${surfaceBridges.length} governed mappings across ${contextualPagesVerified} generated pages.`);
+console.log(`Book-site Phase 2B generated live-evidence verification passed for ${phase2bPagesVerified} practice pages.`);

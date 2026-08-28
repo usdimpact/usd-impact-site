@@ -40,6 +40,10 @@ if (!fs.existsSync(homepage)) failures.push('Homepage was not generated.');
 else {
   const html = fs.readFileSync(homepage, 'utf8');
   if (!html.includes('Join the book waitlist')) failures.push('Homepage waitlist CTA label is missing.');
+  if (!html.includes('data-home-library-pass-cta')) failures.push('Homepage fail-closed Library Pass CTA is missing.');
+  if (!html.includes('data-home-checkout-readiness="checking"')) failures.push('Homepage Library Pass CTA is missing its initial checking state.');
+  if (!html.includes('Read the Dollar First is now available.</strong> Get')) failures.push('English launch announcement spacing is missing.');
+  if (!html.includes('Read the Dollar First ya está disponible.</strong> Accede')) failures.push('Spanish launch announcement spacing is missing.');
   if (!html.includes('href="/news/"')) failures.push('Homepage Daily USD Impact link is missing.');
   if (!html.includes('href="/terms/"')) failures.push('Homepage footer Terms link is missing.');
   if (!html.includes('href="/refund-policy/"')) failures.push('Homepage footer Refund Policy link is missing.');

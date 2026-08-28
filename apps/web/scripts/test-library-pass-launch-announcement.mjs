@@ -11,6 +11,8 @@ const component = await readFile(
   path.join(webRoot, 'src/components/LibraryPassLaunchAnnouncement.astro'),
   'utf8',
 );
+const homeCta = await readFile(path.join(webRoot, 'src/components/HomeLibraryPassCTA.astro'), 'utf8');
+const homepage = await readFile(path.join(webRoot, 'src/pages/index.astro'), 'utf8');
 const layout = await readFile(path.join(webRoot, 'src/layouts/BaseLayout.astro'), 'utf8');
 
 const activePayload = {
@@ -50,6 +52,7 @@ for (const required of [
   'announcement.hidden = false',
   'announcement.hidden = true',
   'Read the Dollar First is now available.',
+  "</strong>{' '}",
   'one-time USD 39 Library Pass',
   'Read the Dollar First ya está disponible.',
   'un único pago de USD 39',
@@ -70,5 +73,35 @@ for (const forbidden of [
 
 assert.match(layout, /import LibraryPassLaunchAnnouncement from '..\/components\/LibraryPassLaunchAnnouncement\.astro';/);
 assert.match(layout, /<\/header>\s*<LibraryPassLaunchAnnouncement \/>\s*<slot \/>/);
+
+for (const required of [
+  'data-home-library-pass-cta',
+  'data-home-checkout-readiness="checking"',
+  'aria-busy="true"',
+  'data-home-library-pass-primary',
+  'Join the book waitlist',
+  '/book/read-the-dollar-first/#book-waitlist',
+  '/api/commerce-readiness',
+  "credentials: 'same-origin'",
+  "cache: 'no-store'",
+  'bookPurchasePresentation(body.commerce)',
+  "primary.href = presentation.available ? presentation.primaryHref : waitlistUrl",
+  "container.dataset.homeCheckoutReadiness = 'error'",
+  'Checkout availability could not be verified. The book waitlist remains available.',
+]) {
+  assert.ok(homeCta.includes(required), `Homepage Library Pass CTA is missing: ${required}`);
+}
+
+for (const forbidden of [
+  '/api/commerce?action=checkout',
+  'window.location.assign',
+  'lemonsqueezy.com',
+]) {
+  assert.ok(!homeCta.includes(forbidden), `Homepage CTA must not initiate checkout: ${forbidden}`);
+}
+
+assert.match(homepage, /import HomeLibraryPassCTA from '..\/components\/HomeLibraryPassCTA\.astro';/);
+assert.match(homepage, /<HomeLibraryPassCTA \/>/);
+assert.doesNotMatch(homepage, /<ProductCTA \/>/);
 
 console.log('Library Pass launch announcement contract passed.');

@@ -6,7 +6,7 @@ description: "How USD Impact handles account, purchase, support, waitlist, Daily
 
 # Privacy notice
 
-_Last updated: August 27, 2026_
+_Last updated: August 28, 2026_
 
 ## What we collect
 
@@ -101,6 +101,6 @@ For privacy, account, or data-rights requests, contact [support@usd-impact.com](
 
 ## Operator
 
-USD Impact is operated by **SC Kela Leads SRL**, a company registered in Romania under CUI **40790448** and Trade Register number **J38/820/2020**. Registered business address: **Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România**.
+USD Impact is operated by **KELA LEADS S.R.L.**, a Romanian limited liability company registered under CUI **40790448**, Trade Register number **J38/820/2020**, and EUID **ROONRC.J38/820/2020**. Registered business address: **Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România**.
 
 This notice describes current website operations and is not legal advice.

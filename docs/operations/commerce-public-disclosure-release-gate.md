@@ -1,6 +1,6 @@
 # USD Impact public commerce disclosure release gate
 
-Last updated: 2026-08-27
+Last updated: 2026-08-28
 
 ## Purpose
 
@@ -15,9 +15,9 @@ Current Production remains fail-closed with `COMMERCE_MODE=disabled`, `COMMERCE_
 The application may display these already-approved public facts:
 
 - Brand: USD Impact
-- Legal operator: SC Kela Leads SRL
+- Legal operator: KELA LEADS S.R.L.
 - Jurisdiction: Romania
-- Registration: CUI 40790448 · Trade Register J38/820/2020
+- Registration: CUI 40790448 · Trade Register J38/820/2020 · EUID ROONRC.J38/820/2020
 - Registered business address: Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România
 - Support: support@usd-impact.com
 - Customer-transaction tax wording: Applicable indirect taxes are calculated, collected and remitted by Lemon Squeezy as Merchant of Record and shown before payment.
@@ -60,7 +60,7 @@ The following values are the complete non-secret buyer-facing configuration appr
 | Configuration | Exact approved value |
 | --- | --- |
 | `COMMERCE_TRADER_ADDRESS_PUBLIC` | `Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România` |
-| `COMMERCE_TAX_STATUS_PUBLIC` | `SC Kela Leads SRL is the product supplier. No separate Romanian VAT-registration status is asserted in this disclosure; applicable indirect taxes on the payment transaction are handled by Lemon Squeezy as Merchant of Record.` |
+| `COMMERCE_TAX_STATUS_PUBLIC` | `KELA LEADS S.R.L. is the product supplier. No separate Romanian VAT-registration status is asserted in this disclosure; applicable indirect taxes on the payment transaction are handled by Lemon Squeezy as Merchant of Record.` |
 | `COMMERCE_MERCHANT_OF_RECORD_NAME` | `Lemon Squeezy — Link, LLC f/k/a Lemon Squeezy LLC` |
 | `COMMERCE_MERCHANT_OF_RECORD_TERMS_URL` | `https://www.lemonsqueezy.com/buyer-terms` |
 | `COMMERCE_MERCHANT_OF_RECORD_PRIVACY_URL` | `https://www.lemonsqueezy.com/privacy` |
@@ -71,9 +71,9 @@ This approval covers the exact public text only. It does not set `COMMERCE_SELLE
 
 ## Administrative evidence track
 
-W-8 certification remains pending accountant confirmation. The current account enforcement notice makes it an administrative pre-marketing task rather than a present implementation or Preview blocker.
+W-8 certification remains pending accountant confirmation. The current account enforcement notice makes it an administrative pre-marketing task rather than a present implementation or Preview blocker. No W-8 classification, treaty position or signing authority is inferred from the company-record evidence.
 
-The ONRC certificate request is in progress as corroborating evidence for future registry-verification wording. The certificate itself is not required to prepare code or Preview copy and does not need to be published. Its absence does not remove the separate requirement to publish accurate buyer-facing trader information before public selling, including the verified geographic address and VAT identifier where applicable.
+The ONRC company-record review was completed on 2026-08-28 against the retained electronically signed `Certificat constatator` issued on 2026-08-27, report 3178140. It supports the exact registered name `KELA LEADS S.R.L.`, CUI, current Trade Register number, EUID, company status and registered-office components. The source PDF remains private because it contains unnecessary personal and KYB data; the privacy-safe hash and comparison record are maintained in Issue #341 and the ONRC verification gate. This is a narrow company-record check, not an ONRC endorsement or independent assurance engagement.
 
 Neither administrative track authorizes a guessed tax classification, address, provider legal entity, or approval flag.
 
@@ -129,6 +129,7 @@ The buyer-facing geographic trader address is not treated as a secret after it i
 - Public tax/VAT wording: **MoR indirect-tax handling text approved and published in Draft copy; Romanian VAT-registration status not asserted and no Production value configured**.
 - Exact contractual Merchant-of-Record entity: **resolved in Draft evidence as Link, LLC f/k/a Lemon Squeezy LLC; not configured and subject to immediate pre-Live re-verification**.
 - Buyer disclosure approval: **not granted** as an environment activation flag; the exact public copy is owner-approved.
-- W-8 and ONRC evidence: **administrative pre-marketing work; not current implementation or Preview blockers**.
+- ONRC company-record evidence: **complete for the specified fields; source retained privately; not an ONRC endorsement or independent assurance engagement**.
+- W-8 certification: **pending accountant confirmation; administrative pre-marketing work; not a current implementation or Preview blocker**.
 
 This change records the owner-approved complete public disclosure bundle without enabling commerce. It does not alter Production configuration, secrets, webhooks, payments, refunds, database state, public checkout, or merge status.

@@ -37,7 +37,13 @@ requireText(files.preview, 'Free sample page', [
   'Lemon Squeezy is the selected Merchant of Record',
   'Public checkout is not currently active',
 ]);
-requireText(files.terms, 'Terms', ['SC Kela Leads SRL', '40790448', 'J38/820/2020', 'support@usd-impact.com']);
+requireText(files.terms, 'Terms', [
+  'KELA LEADS S.R.L.',
+  '40790448',
+  'J38/820/2020',
+  'ROONRC.J38/820/2020',
+  'support@usd-impact.com',
+]);
 requireText(files.terms, 'Terms', [
   'Lemon Squeezy',
   'Merchant of Record',
@@ -56,7 +62,8 @@ requireText(files.privacy, 'Privacy Notice', [
   'selected Merchant of Record',
   'https://www.lemonsqueezy.com/privacy',
   'Supabase',
-  'SC Kela Leads SRL',
+  'KELA LEADS S.R.L.',
+  'ROONRC.J38/820/2020',
   'support@usd-impact.com',
 ]);
 requireText(files.checkout, 'Checkout page', [

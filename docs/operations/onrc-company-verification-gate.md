@@ -1,27 +1,30 @@
 # USD Impact ONRC company-verification gate
 
-Last updated: 2026-08-27
+Last updated: 2026-08-28
 Tracking issue: #341
 
 ## Purpose
 
 This gate defines when USD Impact may describe the legal-operator identifiers as checked against a current official Romanian National Trade Register Office (ONRC) document.
 
-Until the gate is completed, the public legal-entity information remains a **first-party disclosure**. It must not be described as independently verified, registry-verified, officially verified, audited, certified, or equivalent.
+After completion, public wording may say only that specified company-record fields were checked against the retained ONRC certificate. It must not describe the operator, founder, product, research or performance as independently verified, audited, certified, endorsed by ONRC, or equivalent.
 
 This is an evidence and public-claim gate, not a current implementation or Preview blocker. An ONRC certificate does not need to be published merely to sell online. Its absence does not remove the separate requirement to publish accurate buyer-facing trader information before public selling, including the legal name, verified geographic address, direct contact, trade-register identity/registration number, and VAT identifier where applicable.
 
-## Current first-party record
+## Current verified record
 
 USD Impact currently discloses:
 
-- Legal operator: SC Kela Leads SRL
+- Legal operator: KELA LEADS S.R.L.
 - Jurisdiction: Romania
+- Legal form: Societate cu Răspundere Limitată (S.R.L.)
 - CUI: 40790448
-- Trade Register number currently used by USD Impact: J38/820/2020
+- Trade Register number: J38/820/2020
+- European Unique Identifier (EUID): ROONRC.J38/820/2020
+- Company status stated by the certificate: funcțiune
 - Public support contact: support@usd-impact.com
 
-These values are consistent across the current USD Impact public legal/transparency surfaces, but that consistency does not substitute for reviewing a current ONRC certificate.
+The legal name was corrected from the informal `SC Kela Leads SRL` form to the exact registered `KELA LEADS S.R.L.` form. The other listed company-record fields are consistent with the retained certificate. The certificate confirms the registered-office components used by USD Impact; it does not state the separately published postal code.
 
 ## Authoritative acquisition source
 
@@ -38,7 +41,7 @@ ONRC's current InfoCert-Recom guide requires an authenticated portal account and
 
 Review the actual electronically issued ONRC document and record PASS/FAIL for each item:
 
-1. Legal name matches `SC Kela Leads SRL`.
+1. Legal name matches `KELA LEADS S.R.L.`.
 2. CUI matches `40790448`.
 3. Current Trade Register / registration number is captured exactly as ONRC presents it.
 4. Company status is captured if the document states it.
@@ -68,6 +71,29 @@ The privacy-safe GitHub evidence should contain only:
 
 The SHA-256 hash proves which retained document was reviewed without republishing the document itself.
 
+### Completed privacy-safe record
+
+- Verification date (UTC): 2026-08-28
+- Document type: ONRC `Certificat constatator`
+- Document issue date: 2026-08-27
+- Report number: 3178140/27.08.2026
+- Original retained in company-controlled storage: YES
+- Retained original size: 791243 bytes; 5 pages
+- SHA-256 of unaltered retained original: `ff8af906f214e983dff43bdc91d8dcaa8fd86c822fe65383e5bbafbf1ba21654`
+- PDF signature integrity: PASS — ETSI.CAdES.detached signature is cryptographically valid
+- Signer identity presented by the PDF: `OFICIUL NATIONAL AL REGISTRULUI COMERTULUI`
+- Local certificate-chain validation: REQUIRES REVIEW — the local NSS trust database could not establish the certificate chain; this does not change the valid signed-byte result
+- Exact legal-name comparison: PASS after correcting public copy to `KELA LEADS S.R.L.`
+- CUI comparison: PASS
+- Current registration-number comparison: PASS
+- EUID comparison: PASS
+- Company-status comparison: PASS (`funcțiune`)
+- Registered-office private comparison: PASS; the certificate omits the separately published postal code
+- Public legal-page and checkout-disclosure consistency review: PASS after the exact-name correction in this change
+- Reviewer: USD Impact owner-authorized evidence review
+- Discrepancies requiring remediation: exact legal-name styling corrected; no CUI, registration-number, status or registered-office conflict
+- Public-status decision: VERIFIED FOR THE SPECIFIED COMPANY-RECORD FIELDS ONLY
+
 ## Data that must not be copied to GitHub
 
 Do not commit or paste:
@@ -83,11 +109,11 @@ Do not commit or paste:
 
 ## Public wording states
 
-### State A — current / pending
+### State A — historical pre-review fallback (superseded)
 
 Allowed:
 
-> SC Kela Leads SRL, CUI 40790448 and Trade Register J38/820/2020 are first-party legal-operator disclosures. A current official ONRC company certificate has not yet been reviewed by USD Impact for this public verification record.
+> KELA LEADS S.R.L., CUI 40790448 and Trade Register J38/820/2020 are first-party legal-operator disclosures. A current official ONRC company certificate has not yet been reviewed by USD Impact for this public verification record.
 
 Not allowed:
 
@@ -97,9 +123,9 @@ Not allowed:
 - “registry audited”
 - any equivalent wording that implies the current signed certificate has already been reviewed
 
-### State B — after successful verification
+### State B — current after successful verification
 
-After Issue #341 is completed against the retained signed document, public wording may say that the specified legal-operator identifiers were checked against an ONRC certificate issued on the recorded date. Do not imply ONRC endorses USD Impact, its product, Score, research, revenue, performance, or founder claims.
+The specified legal-operator identifiers were checked against the retained ONRC certificate issued on 2026-08-27. Public wording must state the document date and narrow scope. It must not imply ONRC endorses USD Impact, its product, Score, research, revenue, performance, founder claims or any investment outcome.
 
 ## Completion procedure
 
@@ -114,8 +140,8 @@ After Issue #341 is completed against the retained signed document, public wordi
 
 ## Current status
 
-**IN PROGRESS — administrative pre-marketing evidence task; not a current implementation or Preview blocker.**
+**COMPLETE — reviewed on 2026-08-28 against the retained electronically signed ONRC certificate; not an independent assurance engagement or ONRC endorsement.**
 
-The current first-party operator wording may remain while it is accurate and does not claim ONRC verification. A discrepancy found later blocks any public claim or buyer disclosure that depends on the affected field and must be corrected before public selling.
+The exact registered name, CUI, current Trade Register number, EUID, company status and registered-office components are now supported by the recorded certificate comparison. The certificate remains private. A discrepancy found in a later certificate blocks any public claim or buyer disclosure that depends on the affected field and must be corrected before public selling.
 
-The existence of an official portal, company-search flow, or first-party company identifiers is not itself evidence that the current public record has been checked against a signed ONRC certificate.
+This completed review supports only the specified company-record fields. It does not verify the W-8 classification, Romanian VAT-registration status, tax-treaty position, founder identity, product eligibility, revenue, customer count, research quality, investment performance or predictive power.

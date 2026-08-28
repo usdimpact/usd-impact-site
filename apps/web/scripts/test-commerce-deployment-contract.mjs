@@ -198,8 +198,9 @@ for (const field of [
 }
 assert.match(disclosureSource, /https:/);
 assert.match(disclosureSource, /publicDisclosure: ready/);
-assert.match(disclosureSource, /SC Kela Leads SRL/);
+assert.match(disclosureSource, /KELA LEADS S.R.L./);
 assert.match(disclosureSource, /CUI 40790448/);
+assert.match(disclosureSource, /ROONRC.J38\/820\/2020/);
 assert.match(disclosureSource, /support@usd-impact\.com/);
 
 for (const [name, source] of [

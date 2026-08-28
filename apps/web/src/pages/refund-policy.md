@@ -6,7 +6,7 @@ description: "The 14-day refund policy for the Read the Dollar First Library Pas
 
 # Refund Policy
 
-_Last updated: August 27, 2026_
+_Last updated: August 28, 2026_
 
 This policy applies to one-time purchases of the *Read the Dollar First Library Pass*, including the Guided Interactive Edition and included digital materials, from USD Impact.
 
@@ -36,4 +36,4 @@ This policy does not limit any refund, cancellation, conformity, or other mandat
 
 ## Operator
 
-USD Impact is operated by **SC Kela Leads SRL**, registered in Romania under CUI **40790448** and Trade Register number **J38/820/2020**. Registered business address: **Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România**.
+USD Impact is operated by **KELA LEADS S.R.L.**, a Romanian limited liability company registered under CUI **40790448**, Trade Register number **J38/820/2020**, and EUID **ROONRC.J38/820/2020**. Registered business address: **Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România**.

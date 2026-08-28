@@ -5,11 +5,14 @@ import { fileURLToPath } from 'node:url';
 import {
   BOOK_EDITION,
   BRIDGE_VERSION,
+  SURFACE_BRIDGE_VERSION,
   chapters,
   tools,
   printLinks,
+  surfaceBridges,
   getChapterById,
   getToolById,
+  getSurfaceBridgeForPath,
 } from '../src/data/book-site-bridge/index.mjs';
 import {
   classifyDxyScenario,
@@ -22,6 +25,7 @@ const repoRoot = resolve(webRoot, '../..');
 
 assert.equal(BOOK_EDITION, '1.2');
 assert.equal(BRIDGE_VERSION, '0.1.0-preview');
+assert.equal(SURFACE_BRIDGE_VERSION, '0.2.0-preview');
 assert.equal(chapters.length, 13, 'The bridge must govern all 13 book chapters.');
 
 const chapterIds = new Set();
@@ -94,10 +98,54 @@ assert(printCodes.has('dxy-practice'));
 assert(printCodes.has('weekly-practice'));
 assert(printCodes.has('methodology'));
 
+assert.equal(surfaceBridges.length, 5, 'Phase 2A must remain bounded to five contextual surface mappings.');
+const expectedSurfaceMappings = new Map([
+  ['weekly-score', ['chapter-10', '/score/', 'exact']],
+  ['score-methodology', ['chapter-10', '/score/methodology/', 'exact']],
+  ['weekly-report', ['chapter-11', '/reports/weekly/', 'prefix']],
+  ['daily-2026-08-20', ['chapter-04', '/news/2026-08-20/', 'exact']],
+  ['daily-2026-08-27', ['chapter-05', '/news/2026-08-27/', 'exact']],
+]);
+const surfaceIds = new Set();
+for (const bridge of surfaceBridges) {
+  assert(!surfaceIds.has(bridge.id), `Duplicate contextual surface mapping: ${bridge.id}`);
+  surfaceIds.add(bridge.id);
+  assert(getChapterById(bridge.chapterId), `${bridge.id} references a missing chapter.`);
+  assert(bridge.rationale.length >= 80, `${bridge.id} needs a relevance-specific rationale.`);
+  assert(!/buy the book|unlock|checkout|profit|return guarantee/i.test(`${bridge.rationale} ${bridge.linkLabel}`), `${bridge.id} violates the promotion policy.`);
+  assert.deepEqual(
+    [bridge.chapterId, bridge.path, bridge.match],
+    expectedSurfaceMappings.get(bridge.id),
+    `${bridge.id} changed outside the bounded Phase 2A mapping.`,
+  );
+}
+assert.deepEqual([...surfaceIds].sort(), [...expectedSurfaceMappings.keys()].sort());
+
+for (const [path, expectedId] of [
+  ['/score', 'weekly-score'],
+  ['/score/', 'weekly-score'],
+  ['/score/methodology/', 'score-methodology'],
+  ['/reports/weekly/2026-08-21/', 'weekly-report'],
+  ['/news/2026-08-20/', 'daily-2026-08-20'],
+  ['/news/2026-08-27/', 'daily-2026-08-27'],
+]) {
+  assert.equal(getSurfaceBridgeForPath(path)?.id, expectedId, `${path} must resolve to ${expectedId}.`);
+}
+for (const path of [
+  '/reports/weekly/',
+  '/reports/monthly/2026-08-21/',
+  '/news/2026-08-28/',
+  '/practice/weekly-regime/',
+  '/book/read-the-dollar-first/companion/',
+]) {
+  assert.equal(getSurfaceBridgeForPath(path), undefined, `${path} must not receive a Phase 2A contextual card.`);
+}
+
 const requiredFiles = [
   'src/content/products/book-read-the-dollar-first.md',
   'src/components/BookChapterBridgeCard.astro',
   'src/components/BookToolGuide.astro',
+  'src/data/book-site-bridge/surface-bridges.json',
   'src/pages/book/read-the-dollar-first/companion/index.astro',
   'src/pages/book/read-the-dollar-first/companion/chapter/[number].astro',
   'src/pages/practice/dxy-vs-broad-usd.astro',
@@ -135,6 +183,18 @@ const bookPage = readFileSync(resolve(webRoot, 'src/content/products/book-read-t
 assert(bookPage.includes('/book/read-the-dollar-first/companion/'), 'Book page must link to the companion Preview.');
 assert(bookPage.includes('/practice/dxy-vs-broad-usd/'), 'Book page must link to Chapter 3 practice.');
 assert(bookPage.includes('/practice/weekly-regime/'), 'Book page must link to Chapter 11 practice.');
+
+const baseLayout = readFileSync(resolve(webRoot, 'src/layouts/BaseLayout.astro'), 'utf8');
+assert(baseLayout.includes('getSurfaceBridgeForPath(Astro.url.pathname)'), 'BaseLayout must resolve contextual bridges from the governed registry.');
+assert(baseLayout.includes('BookChapterBridgeCard'), 'BaseLayout must render the reusable book bridge card.');
+assert(!baseLayout.includes('/checkout'), 'Contextual bridge rendering must not introduce a checkout path.');
+
+const dailyAug20 = readFileSync(resolve(webRoot, 'src/content/news/2026-08-20.md'), 'utf8');
+assert(dailyAug20.includes('Treasury buyback'), 'The selected August 20 Daily must retain the liquidity-support context behind its Chapter 4 mapping.');
+assert(dailyAug20.includes('oil-linked inflation'), 'The selected August 20 Daily must retain the oil/rates transmission context behind its Chapter 4 mapping.');
+const dailyAug27 = readFileSync(resolve(webRoot, 'src/content/news/2026-08-27.md'), 'utf8');
+assert(dailyAug27.includes('Weekly Petroleum Status Report'), 'The selected August 27 Daily must retain the EIA physical-oil evidence behind its Chapter 5 mapping.');
+assert(dailyAug27.includes('refinery'), 'The selected August 27 Daily must retain refinery evidence behind its Chapter 5 mapping.');
 
 const dxyPage = readFileSync(resolve(webRoot, 'src/pages/practice/dxy-vs-broad-usd.astro'), 'utf8');
 const weeklyPage = readFileSync(resolve(webRoot, 'src/pages/practice/weekly-regime.astro'), 'utf8');
@@ -196,4 +256,4 @@ assert.deepEqual(
   tools.map(({ id, chapterIds }) => ({ toolId: id, chapterIds })),
 );
 
-console.log(`Book-site bridge QA passed: ${chapters.length} chapters, ${tools.length} tools, ${printLinks.length} print aliases.`);
+console.log(`Book-site bridge QA passed: ${chapters.length} chapters, ${tools.length} tools, ${printLinks.length} print aliases, ${surfaceBridges.length} contextual surfaces.`);

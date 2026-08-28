@@ -23,6 +23,22 @@ export function publicCheckoutPresentation(commerce, disclosureRendered) {
   };
 }
 
+export function bookPurchasePresentation(commerce) {
+  const checkout = publicCheckoutPresentation(commerce, commerce?.disclosuresComplete === true);
+
+  return {
+    available: checkout.available,
+    verificationState: checkout.verificationState,
+    primaryLabel: checkout.available ? 'Buy the Library Pass — USD 39' : 'Join the book waitlist',
+    primaryHref: checkout.available ? '/checkout/' : '#book-waitlist',
+    message: checkout.available
+      ? 'The one-time USD 39 Library Pass checkout is open through Lemon Squeezy.'
+      : checkout.verificationState === 'error'
+        ? 'Checkout cannot open because the current Live release state could not be verified. The waitlist remains available.'
+        : 'Checkout is not currently open. Join the waitlist for an availability update.',
+  };
+}
+
 export function approvedLaunchCheckoutUrl(payload) {
   if (
     payload?.ok !== true

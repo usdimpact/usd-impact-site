@@ -10,6 +10,7 @@ const files = {
   refund: read('src/pages/refund-policy.md'),
   account: read('src/pages/account/index.astro'),
   checkout: read('src/pages/checkout/index.astro'),
+  bookPurchaseCta: read('src/components/BookPurchaseCTA.astro'),
   securityPolicy: read('../../.github/SECURITY.md'),
   securityTxt: read('public/.well-known/security.txt'),
 };
@@ -24,18 +25,24 @@ const requireText = (file, label, values) => {
 requireText(files.layout, 'Footer', ['/terms/', '/refund-policy/', '/privacy/', '/book/read-the-dollar-first/']);
 requireText(files.product, 'Product page', [
   'Guided Interactive Edition',
-  'Planned launch price: USD 39.00',
-  'Planned standard price: USD 49.00',
-  'No launch window or quantity cutoff is currently active.',
+  'Launch price: USD 39.00',
+  'Standard price: USD 49.00',
+  'approved launch offer has no quantity cutoff',
   'one-time',
   'ongoing access',
   'Lemon Squeezy is the selected Merchant of Record',
-  'Public checkout remains unavailable',
+  'verifies the current Live release state',
   'verified commercial event',
+]);
+requireText(files.bookPurchaseCta, 'Book purchase CTA', [
+  'data-book-checkout-readiness="checking"',
+  'Join the book waitlist',
+  '/api/commerce-readiness',
+  'bookPurchasePresentation',
 ]);
 requireText(files.preview, 'Free sample page', [
   'Lemon Squeezy is the selected Merchant of Record',
-  'Public checkout is not currently active',
+  'Current checkout availability is verified live',
 ]);
 requireText(files.terms, 'Terms', [
   'KELA LEADS S.R.L.',
@@ -69,7 +76,7 @@ requireText(files.privacy, 'Privacy Notice', [
 requireText(files.checkout, 'Checkout page', [
   'Checkout is not open yet.',
   'Lemon Squeezy is the selected Merchant of Record',
-  'Public payment',
+  'No purchase control is shown unless every',
   'remains disabled',
   'No payment can be made on this page',
   '/api/commerce-readiness',

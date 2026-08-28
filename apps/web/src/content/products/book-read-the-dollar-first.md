@@ -6,7 +6,7 @@ slug: "/book/read-the-dollar-first"
 category: "Book"
 status: "published"
 readingLevel: "Beginner to intermediate"
-lastReviewed: "2026-08-27"
+lastReviewed: "2026-08-28"
 complianceNote: "Educational only. Not investment, legal, tax, trading, or financial advice. Not a recommendation, forecast, or trading signal."
 sources:
   - "Session 14B Website Product Page & Lead Magnet System"
@@ -52,10 +52,10 @@ The Guided Interactive Edition combines the *Read the Dollar First* learning seq
 
 ### One-time pricing
 
-- **Planned launch price: USD 39.00.** No launch window or quantity cutoff is currently active. Any launch conditions will be approved immediately before public activation after the release gates are complete.
-- **Planned standard price: USD 49.00.** Applies after any approved launch offer ends.
+- **Launch price: USD 39.00.** The approved launch offer has no quantity cutoff.
+- **Standard price: USD 49.00.** Applies after the approved launch offer ends.
 
-Lemon Squeezy is the selected Merchant of Record for the one-time Library Pass. Applicable taxes and any supported currency conversion will be calculated and displayed during checkout. The purchase is one-time, not a subscription. Public checkout remains unavailable while the Lemon Squeezy Test Mode integration, buyer disclosures, operational checks, and final Live release gates are completed and explicitly approved.
+Lemon Squeezy is the selected Merchant of Record for the one-time Library Pass. Applicable taxes and any supported currency conversion are calculated and displayed during checkout. The purchase is one-time, not a subscription. This page verifies the current Live release state before showing a purchase link and fails closed to the waitlist if checkout availability cannot be confirmed.
 
 Purchases are covered by the [14-day Refund Policy](/refund-policy/). Use of the product is also subject to the [Terms & Conditions](/terms/) and [Privacy Notice](/privacy/).
 
@@ -85,4 +85,4 @@ This is not a signal service, portfolio recommendation, forecast product or trad
 
 ## Availability and delivery
 
-The Guided Interactive Edition will open only after the selected Lemon Squeezy integration and protected delivery have completed the release gates and public activation is explicitly approved. After Lemon Squeezy confirms a completed payment through a verified commercial event, access is attached to the verified USD Impact account used for the purchase. The Merchant of Record and final purchase terms will be identified before payment details are entered. If access does not appear, contact [support@usd-impact.com](mailto:support@usd-impact.com).
+Checkout availability is verified live before a purchase link is displayed. After Lemon Squeezy confirms a completed payment through a verified commercial event, access is attached to the verified USD Impact account used for the purchase. The Merchant of Record and final purchase terms are identified before payment details are entered. If access does not appear, contact [support@usd-impact.com](mailto:support@usd-impact.com).

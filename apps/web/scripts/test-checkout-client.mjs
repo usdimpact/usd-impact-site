@@ -2,12 +2,16 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
   approvedLaunchCheckoutUrl,
+  bookPurchasePresentation,
   createCheckoutIdempotencyKey,
   publicCheckoutCanOpen,
   publicCheckoutPresentation,
 } from '../src/lib/checkout-client.js';
 
-const checkoutPageSource = await readFile(new URL('../src/pages/checkout/index.astro', import.meta.url), 'utf8');
+const [checkoutPageSource, bookPurchaseCtaSource] = await Promise.all([
+  readFile(new URL('../src/pages/checkout/index.astro', import.meta.url), 'utf8'),
+  readFile(new URL('../src/components/BookPurchaseCTA.astro', import.meta.url), 'utf8'),
+]);
 assert.match(
   checkoutPageSource,
   /#checkout-button\[hidden\],\s*#waitlist-link\[hidden\]\s*\{\s*display:\s*none;\s*\}/,
@@ -22,6 +26,11 @@ assert.match(
   checkoutPageSource,
   /checkoutStatusPanel\.dataset\.checkoutReadiness = presentation\.verificationState/,
   'Checkout verification must publish its settled presentation state for browser checks.',
+);
+assert.match(
+  bookPurchaseCtaSource,
+  /:global\(#book-waitlist\[hidden\]\)\s*\{\s*display:\s*none;\s*\}/,
+  'The active product-page state must keep the waitlist visually hidden despite component display styles.',
 );
 
 const activeCommerce = {
@@ -61,6 +70,41 @@ assert.deepEqual(publicCheckoutPresentation({
   verificationState: 'disabled',
   title: 'Checkout is not open yet.',
   introduction: 'Lemon Squeezy is the selected Merchant of Record for the one-time Library Pass. Public payment remains disabled until every Live release gate is complete and explicitly approved.',
+});
+
+assert.deepEqual(bookPurchasePresentation(activeCommerce), {
+  available: true,
+  verificationState: 'active',
+  primaryLabel: 'Buy the Library Pass — USD 39',
+  primaryHref: '/checkout/',
+  message: 'The one-time USD 39 Library Pass checkout is open through Lemon Squeezy.',
+});
+assert.deepEqual(bookPurchasePresentation({
+  ...activeCommerce,
+  state: 'ready_for_provider_configuration',
+  mode: 'disabled',
+  provider: null,
+  checkoutEnabled: false,
+}), {
+  available: false,
+  verificationState: 'disabled',
+  primaryLabel: 'Join the book waitlist',
+  primaryHref: '#book-waitlist',
+  message: 'Checkout is not currently open. Join the waitlist for an availability update.',
+});
+assert.deepEqual(bookPurchasePresentation({ ...activeCommerce, checkoutEnabled: false }), {
+  available: false,
+  verificationState: 'error',
+  primaryLabel: 'Join the book waitlist',
+  primaryHref: '#book-waitlist',
+  message: 'Checkout cannot open because the current Live release state could not be verified. The waitlist remains available.',
+});
+assert.deepEqual(bookPurchasePresentation({ ...activeCommerce, disclosuresComplete: false }), {
+  available: false,
+  verificationState: 'error',
+  primaryLabel: 'Join the book waitlist',
+  primaryHref: '#book-waitlist',
+  message: 'Checkout cannot open because the current Live release state could not be verified. The waitlist remains available.',
 });
 
 const approvedResponse = {

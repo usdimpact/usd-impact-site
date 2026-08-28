@@ -50,7 +50,8 @@ function disclosureEnvironment(overrides = {}) {
   const disclosure = resolveCommercePublicDisclosure(disclosureEnvironment());
   assert.equal(disclosure.ready, true);
   assert.equal(disclosure.approved, true);
-  assert.equal(disclosure.publicDisclosure.legalName, 'SC Kela Leads SRL');
+  assert.equal(disclosure.publicDisclosure.legalName, 'KELA LEADS S.R.L.');
+  assert.equal(disclosure.publicDisclosure.registration, 'CUI 40790448 · Trade Register J38/820/2020 · EUID ROONRC.J38/820/2020');
   assert.equal(disclosure.publicDisclosure.merchantOfRecord, 'Replacement Provider');
   assert.equal(disclosure.publicDisclosure.buyerTermsUrl, 'https://provider.example/buyer-terms');
 }
@@ -114,7 +115,8 @@ function disclosureEnvironment(overrides = {}) {
   assert.equal(publicState.provider, null);
   assert.equal(publicState.providerConfigured, false);
   assert.equal(publicState.disclosuresComplete, true);
-  assert.equal(publicState.sellerDisclosure.legalName, 'SC Kela Leads SRL');
+  assert.equal(publicState.sellerDisclosure.legalName, 'KELA LEADS S.R.L.');
+  assert.equal(publicState.sellerDisclosure.registration, 'CUI 40790448 · Trade Register J38/820/2020 · EUID ROONRC.J38/820/2020');
   assert.equal(publicState.sellerDisclosure.geographicAddress, 'Verified public trader address, Romania');
 }
 
@@ -174,7 +176,8 @@ function disclosureEnvironment(overrides = {}) {
   assert.equal(liveTest.sellerDisclosure.merchantOfRecord, 'Replacement Provider');
   const publicLiveTest = publicCommerceReadiness(liveTest);
   assert.equal(publicLiveTest.disclosuresComplete, true);
-  assert.equal(publicLiveTest.sellerDisclosure.legalName, 'SC Kela Leads SRL');
+  assert.equal(publicLiveTest.sellerDisclosure.legalName, 'KELA LEADS S.R.L.');
+  assert.equal(publicLiveTest.sellerDisclosure.registration, 'CUI 40790448 · Trade Register J38/820/2020 · EUID ROONRC.J38/820/2020');
 
   const live = resolveCommerceReadiness({
     COMMERCE_MODE: 'live',

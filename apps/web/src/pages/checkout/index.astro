@@ -4,17 +4,22 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <BaseLayout
   title="Secure checkout readiness | USD Impact"
-  description="Lemon Squeezy is selected as Merchant of Record while USD Impact public checkout remains safely disabled pending final release approval."
+  description="Verify current Library Pass checkout availability and review the approved USD Impact and Lemon Squeezy buyer disclosures."
 >
   <main class="account-main">
-    <section class="account-panel" aria-labelledby="checkout-title">
+    <section
+      id="checkout-status-panel"
+      class="account-panel"
+      aria-labelledby="checkout-title"
+      aria-busy="true"
+      data-checkout-readiness="checking"
+    >
       <p class="eyebrow">USD IMPACT CHECKOUT</p>
-      <h1 id="checkout-title">Checkout is not open yet.</h1>
-      <p>
-        Lemon Squeezy is the selected Merchant of Record for the one-time Library Pass. The secure account,
-        purchase-intent, verified-webhook, and entitlement foundation has been verified in Test Mode. Public payment
-        remains disabled until the remaining buyer disclosures, operational checks, final release review, and explicit
-        approval for Live activation are complete.
+      <h1 id="checkout-title">Verifying checkout availability…</h1>
+      <p id="checkout-introduction">
+        Lemon Squeezy is the selected Merchant of Record for the one-time Library Pass. This page fails closed while it
+        verifies the current Live release state and complete buyer disclosures. No purchase control is shown unless every
+        release gate is confirmed.
       </p>
       <dl class="account-details" aria-label="Commerce readiness">
         <div>
@@ -23,18 +28,24 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </div>
         <div>
           <dt>Buyer disclosures</dt>
-          <dd id="seller-disclosure-state">Required before Live</dd>
+          <dd id="seller-disclosure-state">Checking…</dd>
         </div>
         <div>
           <dt>Public checkout</dt>
-          <dd id="checkout-state">Disabled</dd>
+          <dd id="checkout-state">Checking…</dd>
         </div>
       </dl>
       <p id="commerce-message" class="account-status" role="status" aria-live="polite">
         No payment can be made on this page. A browser redirect alone never grants access.
       </p>
+      <noscript>
+        <p>Checkout is not open yet. JavaScript is required to verify the Live release gates.</p>
+      </noscript>
       <div class="button-row account-actions">
-        <a class="button primary" href="/book/read-the-dollar-first/#book-waitlist">Join the launch waitlist</a>
+        <button id="checkout-button" class="button primary" type="button" hidden>
+          Continue to secure checkout — USD 39
+        </button>
+        <a id="waitlist-link" class="button primary" href="/book/read-the-dollar-first/#book-waitlist">Join the launch waitlist</a>
         <a class="button account-secondary" href="/account/">Return to your account</a>
       </div>
     </section>
@@ -43,8 +54,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <p class="eyebrow">PRE-CHECKOUT RELEASE GATE</p>
       <h2 id="buyer-disclosure-gate-title">Before any payment can open</h2>
       <p>
-        Live checkout is blocked until the customer-facing seller and Merchant-of-Record information has been
-        verified, approved, and made available before payment. Missing or partial disclosure data cannot enable checkout.
+        Live checkout can open only while the customer-facing seller and Merchant-of-Record information is
+        verified, approved, and available before payment. Missing or partial disclosure data cannot enable checkout.
       </p>
       <ul>
         <li>verified legal operator and geographic trader address;</li>
@@ -55,7 +66,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <li>explicit final approval of the complete buyer-facing disclosure set.</li>
       </ul>
       <p>
-        Approved seller disclosure: <strong>USD Impact</strong> is operated by <strong>SC Kela Leads SRL</strong>,
+        Approved seller disclosure: <strong>USD Impact</strong> is operated by <strong>KELA LEADS S.R.L.</strong>,
         a company registered in Romania under CUI <strong>40790448</strong> and Trade Register number
         <strong>J38/820/2020</strong>. Registered business address:
         <strong>Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România</strong>.
@@ -71,9 +82,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         payment transaction.
       </p>
       <p>
-        SC Kela Leads SRL is the product supplier. No separate Romanian VAT-registration status is asserted in this
+        KELA LEADS S.R.L. is the product supplier. No separate Romanian VAT-registration status is asserted in this
         disclosure. Applicable indirect taxes are calculated, collected and remitted by Lemon Squeezy as Merchant of Record and shown before payment.
         The final amount and currency are displayed by Lemon Squeezy before payment is confirmed.
+      </p>
+      <p>
+        Company registration: CUI 40790448 · Trade Register J38/820/2020 · EUID ROONRC.J38/820/2020.
       </p>
       <p>
         USD Impact owns product, account, and access support and reviews refund requests under its
@@ -81,8 +95,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         handles payment-specific transaction support, disputes, and chargebacks.
       </p>
       <p>
-        This exact public-facing disclosure bundle is approved for later commerce activation. Production
-        configuration, public payment, and Live checkout remain disabled pending their separate release gates.
+        This is the approved public-facing disclosure bundle. The Live readiness endpoint must continue to confirm
+        every release gate before the purchase control is displayed.
       </p>
     </section>
 
@@ -110,11 +124,23 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   </main>
 
   <script>
+    import {
+      approvedLaunchCheckoutUrl,
+      createCheckoutIdempotencyKey,
+      publicCheckoutPresentation,
+    } from '../../lib/checkout-client.js';
+
+    const checkoutStatusPanel = document.getElementById('checkout-status-panel');
+    const titleElement = document.getElementById('checkout-title');
+    const introductionElement = document.getElementById('checkout-introduction');
     const stateElement = document.getElementById('commerce-state');
     const checkoutElement = document.getElementById('checkout-state');
     const messageElement = document.getElementById('commerce-message');
     const disclosureStateElement = document.getElementById('seller-disclosure-state');
     const disclosurePanel = document.getElementById('seller-disclosure-panel');
+    const checkoutButton = document.getElementById('checkout-button');
+    const waitlistLink = document.getElementById('waitlist-link');
+    let pendingCheckoutKey = null;
 
     const stateLabels = {
       ready_for_provider_configuration: 'Ready for provider configuration',
@@ -147,14 +173,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       if (!commerce?.disclosuresComplete || !disclosure || typeof disclosure !== 'object') {
         if (disclosureStateElement) disclosureStateElement.textContent = 'Required before Live';
         if (disclosurePanel instanceof HTMLElement) disclosurePanel.hidden = true;
-        return;
+        return false;
       }
 
       if (!setHttpsHref('seller-buyer-terms', disclosure.buyerTermsUrl)
         || !setHttpsHref('seller-provider-privacy', disclosure.providerPrivacyUrl)) {
         if (disclosureStateElement) disclosureStateElement.textContent = 'Verification unavailable';
         if (disclosurePanel instanceof HTMLElement) disclosurePanel.hidden = true;
-        return;
+        return false;
       }
 
       setText('seller-brand', disclosure.brand);
@@ -169,7 +195,63 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       setText('seller-support-email', disclosure.supportEmail);
       if (disclosureStateElement) disclosureStateElement.textContent = 'Complete and approved';
       if (disclosurePanel instanceof HTMLElement) disclosurePanel.hidden = false;
+      return true;
     };
+
+    const renderCheckoutAvailability = (commerce, disclosureRendered) => {
+      const presentation = publicCheckoutPresentation(commerce, disclosureRendered);
+      if (checkoutButton instanceof HTMLButtonElement) checkoutButton.hidden = !presentation.available;
+      if (waitlistLink instanceof HTMLAnchorElement) waitlistLink.hidden = presentation.available;
+      if (titleElement) titleElement.textContent = presentation.title;
+      if (introductionElement) introductionElement.textContent = presentation.introduction;
+      if (checkoutStatusPanel instanceof HTMLElement) {
+        checkoutStatusPanel.dataset.checkoutReadiness = presentation.verificationState;
+        checkoutStatusPanel.setAttribute('aria-busy', 'false');
+      }
+      return presentation.available;
+    };
+
+    checkoutButton?.addEventListener('click', async () => {
+      if (!(checkoutButton instanceof HTMLButtonElement) || checkoutButton.hidden) return;
+      checkoutButton.disabled = true;
+      if (messageElement) {
+        messageElement.textContent = 'Preparing your secure Lemon Squeezy checkout…';
+        messageElement.dataset.state = 'pending';
+      }
+
+      try {
+        pendingCheckoutKey ||= createCheckoutIdempotencyKey(() => crypto.randomUUID());
+        if (!pendingCheckoutKey) throw new Error('A secure checkout request could not be created in this browser.');
+        const response = await fetch('/api/commerce?action=checkout', {
+          method: 'POST',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'Idempotency-Key': pendingCheckoutKey,
+          },
+          body: JSON.stringify({ idempotencyKey: pendingCheckoutKey }),
+        });
+        if (response.status === 401) {
+          window.location.assign('/account/sign-in/?next=/checkout/');
+          return;
+        }
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || 'Secure checkout could not be prepared.');
+        const checkoutUrl = approvedLaunchCheckoutUrl(body);
+        if (!checkoutUrl) throw new Error('The approved Live USD 39 checkout terms could not be verified.');
+        window.location.assign(checkoutUrl);
+      } catch (error) {
+        if (messageElement) {
+          messageElement.textContent = error instanceof Error
+            ? `${error.message} No payment or access change has occurred.`
+            : 'Secure checkout could not be prepared. No payment or access change has occurred.';
+          messageElement.dataset.state = 'error';
+        }
+        checkoutButton.disabled = false;
+      }
+    });
 
     fetch('/api/commerce-readiness', {
       method: 'GET',
@@ -183,7 +265,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         const commerce = body.commerce;
         if (stateElement) stateElement.textContent = stateLabels[commerce.state] || 'Unavailable';
         if (checkoutElement) checkoutElement.textContent = commerce.checkoutEnabled ? 'Enabled' : 'Disabled';
-        renderSellerDisclosure(commerce);
+        const disclosureRendered = renderSellerDisclosure(commerce);
+        renderCheckoutAvailability(commerce, disclosureRendered);
         if (messageElement) {
           messageElement.textContent = commerce.message || 'Public checkout remains disabled.';
           messageElement.dataset.state = commerce.state === 'blocked' ? 'error' : 'success';
@@ -194,6 +277,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         if (checkoutElement) checkoutElement.textContent = 'Disabled';
         if (disclosureStateElement) disclosureStateElement.textContent = 'Verification unavailable';
         if (disclosurePanel instanceof HTMLElement) disclosurePanel.hidden = true;
+        renderCheckoutAvailability(null, false);
+        if (checkoutStatusPanel instanceof HTMLElement) {
+          checkoutStatusPanel.dataset.checkoutReadiness = 'error';
+        }
         if (messageElement) {
           messageElement.textContent = error instanceof Error
             ? `${error.message} Public checkout remains disabled.`
@@ -202,4 +289,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         }
       });
   </script>
+
+  <style>
+    #checkout-button[hidden],
+    #waitlist-link[hidden] {
+      display: none;
+    }
+  </style>
 </BaseLayout>

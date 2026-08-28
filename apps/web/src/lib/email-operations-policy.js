@@ -1,4 +1,4 @@
-export const EMAIL_OPERATIONS_POLICY_VERSION = '2026-08-20.v1';
+export const EMAIL_OPERATIONS_POLICY_VERSION = '2026-08-28.v2';
 export const EMAIL_SUPPORT_ADDRESS = 'support@usd-impact.com';
 export const EMAIL_PRODUCT_ID = 'read_the_dollar_first_library_pass';
 
@@ -12,31 +12,31 @@ const CLASSIFICATIONS = new Set([
 
 export const EMAIL_OWNER_ROLES = deepFreeze({
   authentication: {
-    businessEntity: 'SC Kela Leads SRL',
+    businessEntity: 'KELA LEADS S.R.L.',
     primary: 'USD Impact owner/operator',
-    backup: 'SC Kela Leads SRL authorized administrator',
+    backup: 'KELA LEADS S.R.L. authorized administrator',
     escalation: 'USD Impact incident owner',
   },
   commerce: {
-    businessEntity: 'SC Kela Leads SRL',
+    businessEntity: 'KELA LEADS S.R.L.',
     primary: 'USD Impact commerce operations',
-    backup: 'SC Kela Leads SRL authorized administrator',
+    backup: 'KELA LEADS S.R.L. authorized administrator',
     escalation: 'USD Impact incident owner',
   },
   support: {
-    businessEntity: 'SC Kela Leads SRL',
+    businessEntity: 'KELA LEADS S.R.L.',
     primary: 'USD Impact support operations',
-    backup: 'SC Kela Leads SRL authorized administrator',
+    backup: 'KELA LEADS S.R.L. authorized administrator',
     escalation: 'USD Impact owner/operator',
   },
   privacy: {
-    businessEntity: 'SC Kela Leads SRL',
+    businessEntity: 'KELA LEADS S.R.L.',
     primary: 'USD Impact privacy operations',
-    backup: 'SC Kela Leads SRL authorized administrator',
+    backup: 'KELA LEADS S.R.L. authorized administrator',
     escalation: 'USD Impact owner/operator',
   },
   marketing: {
-    businessEntity: 'SC Kela Leads SRL',
+    businessEntity: 'KELA LEADS S.R.L.',
     primary: 'USD Impact editorial operations',
     backup: 'USD Impact owner/operator',
     escalation: 'USD Impact privacy operations',

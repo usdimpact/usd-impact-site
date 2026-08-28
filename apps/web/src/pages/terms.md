@@ -6,13 +6,13 @@ description: "Terms governing use of USD Impact and purchases of the Read the Do
 
 # Terms & Conditions
 
-_Last updated: August 27, 2026_
+_Last updated: August 28, 2026_
 
 These Terms & Conditions govern use of the USD Impact website and the purchase and use of the *Read the Dollar First Library Pass*, including the Guided Interactive Edition and included digital materials. By creating an account or completing a purchase, you agree to these Terms. Mandatory consumer rights that apply in your country are not limited by these Terms.
 
 ## 1. Service provider
 
-USD Impact is operated by **SC Kela Leads SRL**, a company registered in Romania under CUI **40790448** and Trade Register number **J38/820/2020**. Registered business address: **Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România**. Contact: [support@usd-impact.com](mailto:support@usd-impact.com).
+USD Impact is operated by **KELA LEADS S.R.L.**, a Romanian limited liability company registered under CUI **40790448**, Trade Register number **J38/820/2020**, and EUID **ROONRC.J38/820/2020**. Registered business address: **Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România**. Contact: [support@usd-impact.com](mailto:support@usd-impact.com).
 
 ## 2. Educational service
 
@@ -42,7 +42,7 @@ The [Refund Policy](/refund-policy/) forms part of these Terms. Eligible request
 
 ## 8. Intellectual property
 
-The website, Guided Interactive Edition, written content, original frameworks, branding, graphics, software, and arrangement of materials are owned by or licensed to SC Kela Leads SRL and are protected by applicable intellectual-property laws. No ownership rights transfer with a purchase.
+The website, Guided Interactive Edition, written content, original frameworks, branding, graphics, software, and arrangement of materials are owned by or licensed to KELA LEADS S.R.L. and are protected by applicable intellectual-property laws. No ownership rights transfer with a purchase.
 
 ## 9. Availability and acceptable use
 

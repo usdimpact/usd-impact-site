@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import '../styles/account.css';
+import LibraryPassLaunchAnnouncement from '../components/LibraryPassLaunchAnnouncement.astro';
 import TelemetryClient from '../components/TelemetryClient.astro';
 import PwaClient from '../components/PwaClient.astro';
 const { title, description, noindex = false, stylesheets = [] } = Astro.props;
@@ -49,11 +50,12 @@ const { title, description, noindex = false, stylesheets = [] } = Astro.props;
         </nav>
       </div>
     </header>
+    <LibraryPassLaunchAnnouncement />
     <slot />
     <footer class="footer">
       <div class="container">
         <strong>USD Impact</strong><br />
-        Operated by SC Kela Leads SRL · CUI 40790448 · Trade Register J38/820/2020<br />
+        Operated by KELA LEADS S.R.L. · CUI 40790448 · Trade Register J38/820/2020 · EUID ROONRC.J38/820/2020<br />
         Educational macro-finance framework. Not investment, legal, tax, trading, or financial advice.
         <div class="footer-links">
           <a href="/about/">About &amp; transparency</a>

@@ -32,6 +32,21 @@ const parseMetaCsp = (html) => {
   return match ? decodeHtmlAttribute(match[2]) : null;
 };
 
+const hasNoindexMeta = (html) => {
+  const tags = html.match(/<meta\b[^>]*>/gi) || [];
+  const tag = tags.find((candidate) => /name=["']robots["']/i.test(candidate));
+  return Boolean(tag && /content=(["'])[^"']*\bnoindex\b[^"']*\1/i.test(tag));
+};
+
+const normalizePath = (value) => {
+  const normalized = value.replace(/\/+$/, '');
+  return normalized || '/';
+};
+
+const isWithinPrefix = (pathname, prefix) => (
+  pathname === prefix || pathname.startsWith(`${prefix}/`)
+);
+
 if (!fs.existsSync(distRoot)) failures.push('dist/ is missing; CSP output cannot be verified.');
 
 let htmlFiles = [];
@@ -89,9 +104,65 @@ if (headers.get('x-permitted-cross-domain-policies') !== 'none') {
   failures.push('Vercel global headers must deny cross-domain policy files.');
 }
 
+const previewOnlySitemapPrefixes = [
+  '/book/read-the-dollar-first/companion',
+  '/practice/dxy-vs-broad-usd',
+  '/practice/weekly-regime',
+  '/go',
+];
+const printLinks = JSON.parse(fs.readFileSync(
+  path.join(sourceRoot, 'data/book-site-bridge/print-links.json'),
+  'utf8',
+));
+const previewOnlyRoutes = [
+  '/book/read-the-dollar-first/companion',
+  ...Array.from(
+    { length: 13 },
+    (_, index) => `/book/read-the-dollar-first/companion/chapter/${String(index + 1).padStart(2, '0')}`,
+  ),
+  '/practice/dxy-vs-broad-usd',
+  '/practice/weekly-regime',
+  ...printLinks.map((link) => `/go/${link.code}`),
+];
+
+for (const route of previewOnlyRoutes) {
+  const file = path.join(distRoot, route.replace(/^\//, ''), 'index.html');
+  if (!fs.existsSync(file)) {
+    failures.push(`Preview-only bridge route was not generated: ${route}.`);
+    continue;
+  }
+  const html = fs.readFileSync(file, 'utf8');
+  if (!hasNoindexMeta(html)) failures.push(`Preview-only bridge route is missing noindex metadata: ${route}.`);
+}
+
+const sitemapPath = path.join(distRoot, 'sitemap-0.xml');
+if (!fs.existsSync(sitemapPath)) {
+  failures.push('Generated sitemap-0.xml is missing; Preview-only route exclusion cannot be verified.');
+} else {
+  const xml = fs.readFileSync(sitemapPath, 'utf8');
+  const locations = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+  if (locations.length === 0) failures.push('Generated sitemap-0.xml contains no locations.');
+
+  for (const location of locations) {
+    let pathname;
+    try {
+      pathname = normalizePath(new URL(location).pathname);
+    } catch {
+      failures.push(`Generated sitemap contains an invalid URL: ${location}.`);
+      continue;
+    }
+
+    const excludedPrefix = previewOnlySitemapPrefixes.find((prefix) => isWithinPrefix(pathname, prefix));
+    if (excludedPrefix) {
+      failures.push(`Preview-only route appears in the generated sitemap: ${pathname} (prefix ${excludedPrefix}).`);
+    }
+  }
+}
+
 if (failures.length > 0) {
-  console.error(`CSP build verification failed:\n${failures.join('\n')}`);
+  console.error(`CSP and sitemap build verification failed:\n${failures.join('\n')}`);
   process.exit(1);
 }
 
 console.log(`CSP build verification passed across ${htmlFiles.length} generated HTML pages using Score origin ${scorePipelineOrigin}.`);
+console.log(`Book-site bridge sitemap exclusion verification passed for ${previewOnlyRoutes.length} generated noindex routes.`);

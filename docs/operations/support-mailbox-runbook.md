@@ -6,7 +6,7 @@ Operational version: `2026-08-21.v2`
 
 Public support address: `support@usd-impact.com`
 
-Business entity: SC Kela Leads SRL
+Business entity: KELA LEADS S.R.L.
 
 Technical route status: **VERIFIED** on 20 August 2026.
 
@@ -26,7 +26,7 @@ This runbook converts that technical result into an operating process for Librar
 | Responsibility | Assignment |
 |---|---|
 | Accountable owner | Mircea Albulescu, USD Impact owner/operator |
-| Operating business | SC Kela Leads SRL |
+| Operating business | KELA LEADS S.R.L. |
 | Primary queue | `support@usd-impact.com` |
 | Primary operating role | USD Impact support operations |
 | Continuity model | Single-Operator Recovery Exception |
@@ -159,7 +159,7 @@ Before Library Pass activation, verify and record all compensating controls requ
 - a separate recovery email account exists, is controlled only by the owner, and is not merely a `+alias` of the primary account;
 - multi-factor authentication is enabled where the provider supports it;
 - at least two independent recovery/authentication factors are available where technically supported, with one factor stored separately from the owner's everyday device;
-- offline recovery material is controlled by SC Kela Leads SRL and stored outside the ordinary mailbox, browser session, Git repository, and ChatGPT conversation;
+- offline recovery material is controlled by KELA LEADS S.R.L. and stored outside the ordinary mailbox, browser session, Git repository, and ChatGPT conversation;
 - recovery methods are current and do not depend solely on one active browser session, one device, one phone number, or memory;
 - provider account-recovery contacts and the minimum non-secret recovery procedure are documented;
 - mailbox forwarding and reply identity can be reconstructed from documented settings;

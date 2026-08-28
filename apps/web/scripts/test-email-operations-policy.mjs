@@ -14,11 +14,16 @@ import {
   validateEmailOperationsPolicy,
 } from '../src/lib/email-operations-policy.js';
 
-assert.equal(EMAIL_OPERATIONS_POLICY_VERSION, '2026-08-20.v1');
+assert.equal(EMAIL_OPERATIONS_POLICY_VERSION, '2026-08-28.v2');
 assert.equal(EMAIL_SUPPORT_ADDRESS, 'support@usd-impact.com');
 assert.equal(validateEmailOperationsPolicy(), true);
 assert.equal(Object.keys(EMAIL_MESSAGE_POLICIES).length, LAUNCH_CRITICAL_MESSAGE_IDS.length);
 assert.equal(new Set(LAUNCH_CRITICAL_MESSAGE_IDS).size, LAUNCH_CRITICAL_MESSAGE_IDS.length);
+
+for (const owner of Object.values(EMAIL_OWNER_ROLES)) {
+  assert.equal(owner.businessEntity, 'KELA LEADS S.R.L.');
+  assert.doesNotMatch(owner.backup, /SC Kela Leads SRL/);
+}
 
 for (const messageId of LAUNCH_CRITICAL_MESSAGE_IDS) {
   const policy = getEmailMessagePolicy(messageId);

@@ -20,6 +20,17 @@ const privatePaths = new Set([
   '/internal/checklist-analytics',
 ]);
 
+const previewOnlySitemapPrefixes = [
+  '/book/read-the-dollar-first/companion',
+  '/practice/dxy-vs-broad-usd',
+  '/practice/weekly-regime',
+  '/go',
+];
+
+const isWithinPrefix = (pathname, prefix) => (
+  pathname === prefix || pathname.startsWith(`${prefix}/`)
+);
+
 const scorePipelineOrigin = resolveScorePipelineOrigin(process.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
 
 export default defineConfig({
@@ -60,7 +71,11 @@ export default defineConfig({
   },
   integrations: [
     sitemap({
-      filter: (page) => !privatePaths.has(normalizePath(new URL(page).pathname)),
+      filter: (page) => {
+        const pathname = normalizePath(new URL(page).pathname);
+        return !privatePaths.has(pathname)
+          && !previewOnlySitemapPrefixes.some((prefix) => isWithinPrefix(pathname, prefix));
+      },
     }),
   ],
 });

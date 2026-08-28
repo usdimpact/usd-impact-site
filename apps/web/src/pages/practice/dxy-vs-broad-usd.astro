@@ -1,0 +1,139 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ComplianceNote from '../../components/ComplianceNote.astro';
+import BookToolGuide from '../../components/BookToolGuide.astro';
+import BookChapterBridgeCard from '../../components/BookChapterBridgeCard.astro';
+import { getChapterByNumber, getToolById } from '../../data/book-site-bridge/index.mjs';
+
+const tool = getToolById('dxy-vs-broad-usd');
+const chapter = getChapterByNumber(3);
+---
+<BaseLayout
+  title="DXY vs. Broad USD Comparator | USD Impact Preview"
+  description="A scenario-based practice tool for Chapter 3 of Read the Dollar First."
+  noindex={true}
+>
+  <section class="hero practice-hero">
+    <div class="container">
+      <div class="eyebrow">Chapter 3 Practice Preview</div>
+      <h1>DXY vs. Broad USD Comparator</h1>
+      <p class="lead">Classify whether a visible DXY move is broadly confirmed, basket-led or unresolved before using it to explain another asset.</p>
+      <p class="practice-fixture-note">Scenario-based prototype. No live market data is retrieved.</p>
+    </div>
+  </section>
+
+  <main class="container practice-main">
+    <section class="practice-shell" aria-labelledby="practice-form-heading">
+      <div>
+        <div class="eyebrow">Independent reading</div>
+        <h2 id="practice-form-heading">Record the evidence in order</h2>
+        <p>Choose one state for each input. The result describes the evidence configuration; it does not forecast an asset.</p>
+      </div>
+
+      <form id="dxy-practice-form" class="practice-form">
+        <fieldset>
+          <legend>1. DXY direction</legend>
+          <label><input type="radio" name="dxy" value="firmer" required /> Firmer</label>
+          <label><input type="radio" name="dxy" value="softer" /> Softer</label>
+          <label><input type="radio" name="dxy" value="mixed" /> Mixed or rangebound</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>2. Broad trade-weighted USD direction</legend>
+          <label><input type="radio" name="broad" value="firmer" required /> Firmer</label>
+          <label><input type="radio" name="broad" value="softer" /> Softer</label>
+          <label><input type="radio" name="broad" value="mixed" /> Mixed or rangebound</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>3. Rates or stress confirmation</legend>
+          <label><input type="radio" name="confirmation" value="tightening" required /> Supports tighter or more stressed conditions</label>
+          <label><input type="radio" name="confirmation" value="easing" /> Supports easier conditions</label>
+          <label><input type="radio" name="confirmation" value="mixed" /> Mixed or inconclusive</label>
+        </fieldset>
+
+        <button class="button primary" type="submit">Classify the scenario</button>
+      </form>
+    </section>
+
+    <section id="dxy-practice-result" class="practice-result card" aria-live="polite" tabindex="-1" hidden>
+      <div class="eyebrow">Practice result</div>
+      <h2 data-result-heading></h2>
+      <p data-result-summary></p>
+      <dl class="result-evidence">
+        <div><dt>DXY</dt><dd data-result-dxy></dd></div>
+        <div><dt>Broad USD</dt><dd data-result-broad></dd></div>
+        <div><dt>Confirmation</dt><dd data-result-confirmation></dd></div>
+      </dl>
+      <p class="result-confirmation" data-result-confirmation-note></p>
+      <h3>Next check</h3>
+      <p data-result-next-check></p>
+    </section>
+
+    <BookChapterBridgeCard
+      chapter={chapter}
+      rationale="Chapter 3 explains why DXY is a useful lens but not the complete dollar regime. Return to the chapter when the narrow and broad measures disagree."
+      linkLabel="Open the Chapter 3 companion"
+    />
+
+    <BookToolGuide tool={tool} />
+
+    <ComplianceNote text="Educational and informational only. This scenario classifier does not retrieve current data, forecast markets, recommend an asset or provide a trading signal. Verify live evidence before use." />
+  </main>
+</BaseLayout>
+
+<script>
+  import { classifyDxyScenario } from '../../lib/book-site-bridge/practice-classifiers.mjs';
+
+  const form = document.querySelector('#dxy-practice-form');
+  const panel = document.querySelector('#dxy-practice-result');
+
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const result = classifyDxyScenario({
+      dxy: String(data.get('dxy')),
+      broad: String(data.get('broad')),
+      confirmation: String(data.get('confirmation')),
+    });
+
+    panel?.querySelector('[data-result-heading]')?.replaceChildren(result.heading);
+    panel?.querySelector('[data-result-summary]')?.replaceChildren(result.summary);
+    panel?.querySelector('[data-result-dxy]')?.replaceChildren(result.dxyLabel);
+    panel?.querySelector('[data-result-broad]')?.replaceChildren(result.broadLabel);
+    panel?.querySelector('[data-result-confirmation]')?.replaceChildren(result.confirmationLabel);
+    panel?.querySelector('[data-result-confirmation-note]')?.replaceChildren(result.confirmationNote);
+    panel?.querySelector('[data-result-next-check]')?.replaceChildren(result.nextCheck);
+
+    if (panel) {
+      panel.hidden = false;
+      panel.dataset.status = result.status;
+      panel.focus();
+    }
+  });
+</script>
+
+<style>
+  .practice-hero { padding-bottom: 60px; }
+  .practice-fixture-note { color: var(--silver); font-size: 14px; font-weight: 700; }
+  .practice-main > section + section { margin-top: 48px; }
+  .practice-shell { display: grid; grid-template-columns: minmax(240px, .75fr) minmax(0, 1.25fr); gap: 42px; align-items: start; }
+  .practice-shell h2 { margin: 6px 0 8px; }
+  .practice-shell > div > p { color: var(--slate); }
+  .practice-form { display: grid; gap: 18px; }
+  .practice-form fieldset { margin: 0; padding: 20px; border: 1px solid #dce2e9; border-radius: 16px; background: var(--white); }
+  .practice-form legend { padding: 0 8px; color: var(--navy); font-weight: 800; }
+  .practice-form label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; }
+  .practice-form input { margin-top: 5px; }
+  .practice-form .button { justify-self: start; }
+  .practice-result { border-left: 5px solid var(--gold); }
+  .practice-result h2 { margin: 6px 0 8px; }
+  .result-evidence { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 24px 0; }
+  .result-evidence div { padding: 16px; border-radius: 12px; background: #f4f6f8; }
+  .result-evidence dt { color: var(--slate); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+  .result-evidence dd { margin: 4px 0 0; color: var(--navy); font-weight: 800; }
+  .result-confirmation { padding: 14px 16px; border-radius: 12px; background: #fff8e8; }
+  @media (max-width: 760px) {
+    .practice-shell, .result-evidence { grid-template-columns: 1fr; }
+  }
+</style>

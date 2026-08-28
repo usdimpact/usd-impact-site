@@ -1,0 +1,182 @@
+{
+  "bridgeVersion": "0.1.0-preview",
+  "canonicalSource": "apps/web/src/data/book-site-bridge/",
+  "chapters": [
+    {
+      "chapterId": "chapter-01",
+      "chapterNumber": 1,
+      "toolIds": [
+        "three-dial-dashboard",
+        "dollar-transmission-chain",
+        "dxy-vs-broad-usd"
+      ]
+    },
+    {
+      "chapterId": "chapter-02",
+      "chapterNumber": 2,
+      "toolIds": [
+        "three-dial-dashboard",
+        "weekly-score"
+      ]
+    },
+    {
+      "chapterId": "chapter-03",
+      "chapterNumber": 3,
+      "toolIds": [
+        "dxy-vs-broad-usd",
+        "three-dial-dashboard"
+      ]
+    },
+    {
+      "chapterId": "chapter-04",
+      "chapterNumber": 4,
+      "toolIds": [
+        "dollar-transmission-chain",
+        "weekly-regime-lab"
+      ]
+    },
+    {
+      "chapterId": "chapter-05",
+      "chapterNumber": 5,
+      "toolIds": [
+        "dollar-transmission-chain",
+        "weekly-regime-lab",
+        "weekly-checklist"
+      ]
+    },
+    {
+      "chapterId": "chapter-06",
+      "chapterNumber": 6,
+      "toolIds": [
+        "three-dial-dashboard",
+        "weekly-regime-lab"
+      ]
+    },
+    {
+      "chapterId": "chapter-07",
+      "chapterNumber": 7,
+      "toolIds": [
+        "three-dial-dashboard",
+        "weekly-regime-lab"
+      ]
+    },
+    {
+      "chapterId": "chapter-08",
+      "chapterNumber": 8,
+      "toolIds": [
+        "dollar-transmission-chain",
+        "weekly-regime-lab",
+        "weekly-checklist"
+      ]
+    },
+    {
+      "chapterId": "chapter-09",
+      "chapterNumber": 9,
+      "toolIds": [
+        "dxy-vs-broad-usd",
+        "three-dial-dashboard"
+      ]
+    },
+    {
+      "chapterId": "chapter-10",
+      "chapterNumber": 10,
+      "toolIds": [
+        "weekly-score",
+        "weekly-regime-lab"
+      ]
+    },
+    {
+      "chapterId": "chapter-11",
+      "chapterNumber": 11,
+      "toolIds": [
+        "weekly-regime-lab",
+        "three-dial-dashboard",
+        "weekly-score",
+        "weekly-checklist"
+      ]
+    },
+    {
+      "chapterId": "chapter-12",
+      "chapterNumber": 12,
+      "toolIds": [
+        "dxy-vs-broad-usd",
+        "weekly-regime-lab",
+        "dollar-transmission-chain"
+      ]
+    },
+    {
+      "chapterId": "chapter-13",
+      "chapterNumber": 13,
+      "toolIds": [
+        "weekly-regime-lab",
+        "weekly-score",
+        "weekly-checklist"
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "toolId": "dxy-vs-broad-usd",
+      "chapterIds": [
+        "chapter-01",
+        "chapter-03",
+        "chapter-09",
+        "chapter-12"
+      ]
+    },
+    {
+      "toolId": "dollar-transmission-chain",
+      "chapterIds": [
+        "chapter-01",
+        "chapter-04",
+        "chapter-05",
+        "chapter-08",
+        "chapter-12"
+      ]
+    },
+    {
+      "toolId": "three-dial-dashboard",
+      "chapterIds": [
+        "chapter-01",
+        "chapter-02",
+        "chapter-03",
+        "chapter-06",
+        "chapter-07",
+        "chapter-09",
+        "chapter-11"
+      ]
+    },
+    {
+      "toolId": "weekly-score",
+      "chapterIds": [
+        "chapter-02",
+        "chapter-10",
+        "chapter-11",
+        "chapter-13"
+      ]
+    },
+    {
+      "toolId": "weekly-regime-lab",
+      "chapterIds": [
+        "chapter-04",
+        "chapter-05",
+        "chapter-06",
+        "chapter-07",
+        "chapter-08",
+        "chapter-10",
+        "chapter-11",
+        "chapter-12",
+        "chapter-13"
+      ]
+    },
+    {
+      "toolId": "weekly-checklist",
+      "chapterIds": [
+        "chapter-05",
+        "chapter-08",
+        "chapter-11",
+        "chapter-13"
+      ]
+    }
+  ]
+}

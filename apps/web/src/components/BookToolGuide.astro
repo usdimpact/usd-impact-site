@@ -1,0 +1,148 @@
+---
+import { getChaptersForTool } from '../data/book-site-bridge/index.mjs';
+
+const { tool, title = 'How to use this tool' } = Astro.props;
+const relatedChapters = getChaptersForTool(tool);
+const headingId = `tool-guide-${tool.id}`;
+---
+<section class="book-tool-guide card" aria-labelledby={headingId}>
+  <header class="book-tool-guide__header">
+    <div>
+      <div class="eyebrow">Explanatory layer</div>
+      <h2 id={headingId}>{title}</h2>
+      <p class="book-tool-guide__name">{tool.title}</p>
+    </div>
+    <span class="book-tool-guide__status">{tool.status === 'preview-prototype' ? 'Preview prototype' : 'Existing USD Impact tool'}</span>
+  </header>
+
+  <div class="book-tool-guide__grid">
+    <section>
+      <h3>Question answered</h3>
+      <p>{tool.question}</p>
+    </section>
+    <section>
+      <h3>Why it matters</h3>
+      <p>{tool.whyItMatters}</p>
+    </section>
+  </div>
+
+  <div class="book-tool-guide__grid">
+    <section>
+      <h3>Inputs</h3>
+      <ul>
+        {tool.inputs.map((input) => <li>{input}</li>)}
+      </ul>
+      <h3 class="book-tool-guide__subheading">Data cadence and timestamp</h3>
+      <p>{tool.dataCadence}</p>
+      <p class="book-tool-guide__timestamp-rule">{tool.timestampRule}</p>
+    </section>
+    <section>
+      <h3>Use it in three steps</h3>
+      <ol>
+        {tool.steps.map((step) => <li>{step}</li>)}
+      </ol>
+    </section>
+  </div>
+
+  <div class="book-tool-guide__grid">
+    <section>
+      <h3>When the evidence agrees</h3>
+      <ul>
+        {tool.agreement.map((item) => <li>{item}</li>)}
+      </ul>
+    </section>
+    <section>
+      <h3>When the evidence diverges</h3>
+      <ul>
+        {tool.divergence.map((item) => <li>{item}</li>)}
+      </ul>
+    </section>
+  </div>
+
+  <section class="book-tool-guide__limits">
+    <h3>Limitations</h3>
+    <ul>
+      {tool.limitations.map((item) => <li>{item}</li>)}
+    </ul>
+  </section>
+
+  <footer class="book-tool-guide__footer">
+    <div>
+      <strong>Book connections</strong>
+      <p>
+        {relatedChapters.map((chapter, index) => (
+          <>
+            {index > 0 && ' | '}
+            <a href={`/book/read-the-dollar-first/companion/chapter/${chapter.code}/`}>Chapter {chapter.number}: {chapter.title}</a>
+          </>
+        ))}
+      </p>
+    </div>
+    <div>
+      <strong>Current evidence</strong>
+      <p>
+        {tool.currentEvidence.map((item, index) => (
+          <>
+            {index > 0 && ' | '}
+            <a href={item.path}>{item.label}</a>
+          </>
+        ))}
+      </p>
+    </div>
+  </footer>
+</section>
+
+<style>
+  .book-tool-guide { margin-top: 48px; }
+  .book-tool-guide__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid #e3e7ec;
+  }
+  .book-tool-guide__header h2 { margin: 6px 0 2px; }
+  .book-tool-guide__name { margin: 0; color: var(--slate); font-weight: 700; }
+  .book-tool-guide__status {
+    flex: 0 0 auto;
+    border: 1px solid #d7bf8c;
+    border-radius: 999px;
+    padding: 7px 11px;
+    color: var(--gold-text);
+    background: #fff8e8;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .book-tool-guide__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px;
+    padding: 24px 0;
+    border-bottom: 1px solid #e3e7ec;
+  }
+  .book-tool-guide h3 { margin: 0 0 8px; font-size: 18px; }
+  .book-tool-guide p { margin: 0; }
+  .book-tool-guide ul, .book-tool-guide ol { margin: 0; padding-left: 22px; }
+  .book-tool-guide li + li { margin-top: 8px; }
+  .book-tool-guide__subheading { margin-top: 24px !important; }
+  .book-tool-guide__timestamp-rule { margin-top: 8px !important; color: var(--slate); font-size: 14px; }
+  .book-tool-guide__limits { padding: 24px 0; }
+  .book-tool-guide__footer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px;
+    padding-top: 22px;
+    border-top: 1px solid #e3e7ec;
+    color: var(--slate);
+    font-size: 14px;
+  }
+  .book-tool-guide__footer p { margin-top: 6px; }
+  @media (max-width: 720px) {
+    .book-tool-guide__header,
+    .book-tool-guide__grid,
+    .book-tool-guide__footer { grid-template-columns: 1fr; }
+    .book-tool-guide__header { display: grid; }
+    .book-tool-guide__status { justify-self: start; }
+  }
+</style>

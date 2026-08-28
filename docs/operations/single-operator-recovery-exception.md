@@ -4,7 +4,7 @@
 
 Governance exception version: `2026-08-21.v1`
 
-Business entity: SC Kela Leads SRL
+Business entity: KELA LEADS S.R.L.
 
 Accountable owner: Mircea Albulescu
 

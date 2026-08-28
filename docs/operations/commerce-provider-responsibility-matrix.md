@@ -5,7 +5,7 @@
 Decision version: `2026-08-27.v7-administrative-gates-deferred`
 
 Product: `Read the Dollar First Library Pass`  
-Business entity: SC Kela Leads SRL, Romania  
+Business entity: KELA LEADS S.R.L., Romania  
 Selected provider: **Lemon Squeezy**  
 Lifecycle profile: **`mor-final-state-reconciliation`**  
 Production commerce state: **disabled / Lemon Squeezy adapter registered in code only / public checkout disabled**.

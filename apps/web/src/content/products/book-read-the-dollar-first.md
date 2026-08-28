@@ -6,7 +6,7 @@ slug: "/book/read-the-dollar-first"
 category: "Book"
 status: "published"
 readingLevel: "Beginner to intermediate"
-lastReviewed: "2026-08-27"
+lastReviewed: "2026-08-28"
 complianceNote: "Educational only. Not investment, legal, tax, trading, or financial advice. Not a recommendation, forecast, or trading signal."
 sources:
   - "Session 14B Website Product Page & Lead Magnet System"
@@ -15,6 +15,9 @@ internalLinks:
   - "/start-here"
   - "/start-here/quiz"
   - "/book/read-the-dollar-first/preview"
+  - "/book/read-the-dollar-first/companion"
+  - "/practice/dxy-vs-broad-usd"
+  - "/practice/weekly-regime"
   - "/video-library"
   - "/lead-magnets/weekly-dollar-regime-checklist"
 ctaPrimary: "Join the launch waitlist"
@@ -33,7 +36,26 @@ The **[free Read the Dollar First sample](/book/read-the-dollar-first/preview/)*
 
 The sample does not unlock paid chapters, audiobook playback, protected film playback, saved progress or protected reference resources. It is designed to make the teaching method tangible without weakening the product's access boundaries.
 
-**[Try the free sample →](/book/read-the-dollar-first/preview/)**
+**[Try the free sample ->](/book/read-the-dollar-first/preview/)**
+
+## Practice the framework online - Preview
+
+The **[Book Companion Preview](/book/read-the-dollar-first/companion/)** connects the book's durable explanations with guided online practice. It does not replace the chapters or use the Weekly Score as a trading signal.
+
+Use the site in the same order taught by the book:
+
+1. read the framework;
+2. observe the relevant evidence;
+3. record the regime and transmission channel before seeing a comparison;
+4. compare the reading without treating agreement as predictive accuracy; and
+5. return to the chapter that explains the disagreement.
+
+Two bounded Phase 1 exercises are available on the Preview branch:
+
+- **[Chapter 3 practice: DXY vs. Broad USD Comparator](/practice/dxy-vs-broad-usd/)** - classify whether a DXY move is broadly confirmed, basket-led or unresolved;
+- **[Chapter 11 practice: Weekly Regime Lab](/practice/weekly-regime/)** - record the three dials and dominant driver before revealing a clearly labeled static comparison fixture.
+
+The exercises retrieve no live market data and store no answer. Verify current evidence through the dated Score, Daily and report layers before live use.
 
 ## Guided Interactive Edition
 

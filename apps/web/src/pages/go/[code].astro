@@ -1,0 +1,29 @@
+---
+import { printLinks } from '../../data/book-site-bridge/index.mjs';
+
+export function getStaticPaths() {
+  return printLinks.map((link) => ({
+    params: { code: link.code },
+    props: { link },
+  }));
+}
+
+const { link } = Astro.props;
+const canonical = new URL(link.target, Astro.site ?? Astro.url.origin).toString();
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="robots" content="noindex, follow" />
+    <meta http-equiv="refresh" content={`0;url=${link.target}`} />
+    <link rel="canonical" href={canonical} />
+    <title>Opening {link.purpose} | USD Impact</title>
+  </head>
+  <body>
+    <main>
+      <p>Opening <a href={link.target}>{link.purpose}</a>.</p>
+    </main>
+  </body>
+</html>

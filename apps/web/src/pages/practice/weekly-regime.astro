@@ -1,0 +1,265 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ComplianceNote from '../../components/ComplianceNote.astro';
+import BookToolGuide from '../../components/BookToolGuide.astro';
+import BookChapterBridgeCard from '../../components/BookChapterBridgeCard.astro';
+import { getChapterByNumber, getToolById } from '../../data/book-site-bridge/index.mjs';
+
+const tool = getToolById('weekly-regime-lab');
+const chapter = getChapterByNumber(11);
+---
+<BaseLayout
+  title="Weekly Regime Lab | USD Impact Preview"
+  description="A Preview-only implementation of the weekly operating sequence from Chapter 11 of Read the Dollar First."
+  noindex={true}
+>
+  <section class="hero practice-hero">
+    <div class="container">
+      <div class="eyebrow">Chapter 11 Practice Preview</div>
+      <h1>Weekly Regime Lab</h1>
+      <p class="lead">Record the three dials, dominant driver and conditional reading before seeing the comparison fixture.</p>
+      <p class="practice-fixture-note">The comparison is a static Preview fixture, not the current Weekly Score or a live market view.</p>
+    </div>
+  </section>
+
+  <main class="container practice-main">
+    <section class="lab-intro grid" aria-label="Weekly Regime Lab sequence">
+      <article class="card"><span>1</span><h2>Observe</h2><p>Record the inputs without reading the published conclusion first.</p></article>
+      <article class="card"><span>2</span><h2>Classify</h2><p>Set dollar direction, real-rate pressure, liquidity stress and the dominant driver.</p></article>
+      <article class="card"><span>3</span><h2>Explain</h2><p>Write what supports the reading and what would challenge it.</p></article>
+      <article class="card"><span>4</span><h2>Compare</h2><p>Reveal the fixture only after your independent reading is recorded.</p></article>
+      <article class="card"><span>5</span><h2>Return</h2><p>Use any disagreement to select the next chapter or source to review.</p></article>
+    </section>
+
+    <section class="weekly-lab-shell" aria-labelledby="weekly-lab-form-heading">
+      <div>
+        <div class="eyebrow">Independent reading</div>
+        <h2 id="weekly-lab-form-heading">Build the regime sentence first</h2>
+        <p>The lab evaluates order and evidence discipline. It does not determine whether an investment view is correct.</p>
+      </div>
+
+      <form id="weekly-regime-form" class="weekly-regime-form">
+        <div class="dial-grid">
+          <label>
+            <span>Dollar direction</span>
+            <select name="dollar" required>
+              <option value="">Select</option>
+              <option value="firmer">Firmer</option>
+              <option value="softer">Softer</option>
+              <option value="mixed">Mixed or rangebound</option>
+            </select>
+          </label>
+          <label>
+            <span>Real-rate pressure</span>
+            <select name="realRates" required>
+              <option value="">Select</option>
+              <option value="rising">Rising</option>
+              <option value="falling">Falling</option>
+              <option value="mixed">Mixed or flat</option>
+            </select>
+          </label>
+          <label>
+            <span>Liquidity stress</span>
+            <select name="liquidity" required>
+              <option value="">Select</option>
+              <option value="tightening">Tightening</option>
+              <option value="easing">Easing</option>
+              <option value="mixed">Mixed or unclear</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="dial-grid dial-grid--two">
+          <label>
+            <span>Dominant driver</span>
+            <select name="driver" required>
+              <option value="">Select</option>
+              <option value="rates">Rates and policy repricing</option>
+              <option value="funding-stress">Funding or liquidity stress</option>
+              <option value="relative-growth">Relative growth</option>
+              <option value="composition-positioning">Composition or positioning</option>
+              <option value="physical-supply">Physical supply or logistics</option>
+              <option value="asset-specific">Asset-specific flow or access</option>
+            </select>
+          </label>
+          <label>
+            <span>Evidence confidence</span>
+            <select name="confidence" required>
+              <option value="">Select</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="reading-field">
+          <span>Your conditional reading</span>
+          <textarea
+            name="reading"
+            rows="5"
+            minlength="40"
+            required
+            placeholder="The current regime appears primarily rate-led because..., while... would challenge this reading."
+          ></textarea>
+          <small>Minimum 40 characters. Include one supporting reason and one challenge or invalidation condition.</small>
+        </label>
+
+        <button class="button primary" type="submit">Record my reading and reveal the comparison</button>
+      </form>
+    </section>
+
+    <section id="weekly-regime-result" class="weekly-result card" aria-live="polite" tabindex="-1" hidden>
+      <div class="eyebrow">Comparison result</div>
+      <h2 data-comparison-heading></h2>
+      <p data-comparison-summary></p>
+      <p class="comparison-score"><strong data-comparison-score></strong> fields aligned with the four-field fixture.</p>
+
+      <div class="fixture-panel" aria-labelledby="fixture-heading">
+        <h3 id="fixture-heading">Preview comparison fixture</h3>
+        <dl>
+          <div><dt>Dollar</dt><dd>Firmer</dd></div>
+          <div><dt>Real rates</dt><dd>Rising</dd></div>
+          <div><dt>Liquidity stress</dt><dd>Mixed</dd></div>
+          <div><dt>Dominant driver</dt><dd>Rates and policy repricing</dd></div>
+        </dl>
+        <p>This fixture exists only to test the learning flow. It is not dated market evidence and is not the live USD Impact Score.</p>
+      </div>
+
+      <section aria-labelledby="differences-heading">
+        <h3 id="differences-heading">Review the differences</h3>
+        <ul data-comparison-differences></ul>
+      </section>
+
+      <section class="recorded-reading" aria-labelledby="recorded-reading-heading">
+        <h3 id="recorded-reading-heading">Your recorded reading</h3>
+        <blockquote data-recorded-reading></blockquote>
+        <p>Confidence: <strong data-recorded-confidence></strong></p>
+      </section>
+    </section>
+
+    <BookChapterBridgeCard
+      chapter={chapter}
+      rationale="Chapter 11 explains why the weekly framework must force sequence: start with the driver, record dollar direction, real rates and liquidity stress, then add asset-specific evidence."
+      linkLabel="Open the Chapter 11 companion"
+    />
+
+    <BookToolGuide tool={tool} />
+
+    <ComplianceNote text="Educational and informational only. The Weekly Regime Lab is a process exercise, not a score, forecast, recommendation, suitability assessment or trading signal. No response is stored or transmitted." />
+  </main>
+</BaseLayout>
+
+<script>
+  import { compareWeeklyReading } from '../../lib/book-site-bridge/practice-classifiers.mjs';
+
+  const referenceReading = {
+    dollar: 'firmer',
+    realRates: 'rising',
+    liquidity: 'mixed',
+    driver: 'rates',
+  };
+
+  const form = document.querySelector('#weekly-regime-form');
+  const panel = document.querySelector('#weekly-regime-result');
+  const differencesList = panel?.querySelector('[data-comparison-differences]');
+
+  const displayValue = (value) => value.replaceAll('-', ' ');
+
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const userReading = {
+      dollar: String(data.get('dollar')),
+      realRates: String(data.get('realRates')),
+      liquidity: String(data.get('liquidity')),
+      driver: String(data.get('driver')),
+    };
+    const comparison = compareWeeklyReading(userReading, referenceReading);
+
+    panel?.querySelector('[data-comparison-heading]')?.replaceChildren(comparison.heading);
+    panel?.querySelector('[data-comparison-summary]')?.replaceChildren(comparison.summary);
+    panel?.querySelector('[data-comparison-score]')?.replaceChildren(`${comparison.matches} of ${comparison.total}`);
+    panel?.querySelector('[data-recorded-reading]')?.replaceChildren(String(data.get('reading')));
+    panel?.querySelector('[data-recorded-confidence]')?.replaceChildren(String(data.get('confidence')));
+
+    if (differencesList) {
+      differencesList.replaceChildren();
+      if (comparison.differences.length === 0) {
+        const item = document.createElement('li');
+        item.textContent = 'No dial or driver differences in this fixture. Continue by checking asset-specific evidence and limitations.';
+        differencesList.append(item);
+      } else {
+        comparison.differences.forEach((difference) => {
+          const item = document.createElement('li');
+          const text = document.createElement('span');
+          text.textContent = `${difference.label}: you selected ${displayValue(difference.userValue)}; the fixture uses ${displayValue(difference.referenceValue)}. ${difference.reason} `;
+          const link = document.createElement('a');
+          link.href = `/book/read-the-dollar-first/companion/chapter/${String(difference.chapterNumber).padStart(2, '0')}/`;
+          link.textContent = `Review Chapter ${difference.chapterNumber}`;
+          item.append(text, link);
+          differencesList.append(item);
+        });
+      }
+    }
+
+    if (panel) {
+      panel.hidden = false;
+      panel.dataset.status = comparison.status;
+      panel.focus();
+    }
+  });
+</script>
+
+<style>
+  .practice-hero { padding-bottom: 60px; }
+  .practice-fixture-note { color: var(--silver); font-size: 14px; font-weight: 700; }
+  .practice-main > section + section { margin-top: 52px; }
+  .lab-intro { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .lab-intro article { padding: 18px; }
+  .lab-intro span { color: var(--gold-text); font-size: 12px; font-weight: 800; }
+  .lab-intro h2 { margin: 6px 0; font-size: 20px; }
+  .lab-intro p { margin: 0; color: var(--slate); font-size: 14px; }
+  .weekly-lab-shell { display: grid; grid-template-columns: minmax(240px, .7fr) minmax(0, 1.3fr); gap: 42px; align-items: start; }
+  .weekly-lab-shell h2 { margin: 6px 0 8px; }
+  .weekly-lab-shell > div > p { color: var(--slate); }
+  .weekly-regime-form { display: grid; gap: 20px; }
+  .dial-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .dial-grid--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .weekly-regime-form label { display: grid; gap: 7px; }
+  .weekly-regime-form label > span { color: var(--navy); font-weight: 800; }
+  .weekly-regime-form select,
+  .weekly-regime-form textarea {
+    width: 100%;
+    border: 1px solid #aeb7c3;
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: var(--white);
+    color: var(--graphite);
+    font: inherit;
+  }
+  .weekly-regime-form select:focus,
+  .weekly-regime-form textarea:focus { outline: 3px solid rgba(201,163,91,.25); border-color: var(--gold); }
+  .reading-field small { color: var(--slate); }
+  .weekly-regime-form .button { justify-self: start; }
+  .weekly-result { border-left: 5px solid var(--gold); }
+  .weekly-result h2 { margin: 6px 0 8px; }
+  .comparison-score { color: var(--navy); }
+  .fixture-panel { margin: 24px 0; padding: 20px; border-radius: 14px; background: #f4f6f8; }
+  .fixture-panel h3 { margin-top: 0; }
+  .fixture-panel dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .fixture-panel dl div { padding: 12px; border-radius: 10px; background: var(--white); }
+  .fixture-panel dt { color: var(--slate); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+  .fixture-panel dd { margin: 4px 0 0; color: var(--navy); font-weight: 800; }
+  .fixture-panel > p { margin-bottom: 0; color: var(--slate); font-size: 14px; }
+  .weekly-result li + li { margin-top: 10px; }
+  .recorded-reading { margin-top: 28px; padding-top: 22px; border-top: 1px solid #e3e7ec; }
+  .recorded-reading blockquote { margin: 0; padding: 16px 18px; border-left: 4px solid var(--gold); background: #fff8e8; }
+  @media (max-width: 960px) {
+    .lab-intro { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .weekly-lab-shell { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 680px) {
+    .lab-intro, .dial-grid, .dial-grid--two, .fixture-panel dl { grid-template-columns: 1fr; }
+  }
+</style>

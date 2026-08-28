@@ -1,0 +1,283 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.usd-impact.com/schemas/book-site-bridge-0.1.0-preview.json",
+  "title": "USD Impact Book-Site Bridge registry",
+  "type": "object",
+  "required": [
+    "chapters",
+    "tools",
+    "printLinks"
+  ],
+  "properties": {
+    "chapters": {
+      "type": "array",
+      "minItems": 13,
+      "maxItems": 13,
+      "items": {
+        "$ref": "#/$defs/chapter"
+      }
+    },
+    "tools": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/tool"
+      }
+    },
+    "printLinks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/printLink"
+      }
+    }
+  },
+  "$defs": {
+    "internalPath": {
+      "type": "string",
+      "pattern": "^/"
+    },
+    "chapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "number",
+        "code",
+        "shortCode",
+        "title",
+        "bookPage",
+        "summary",
+        "learningObjectives",
+        "commonMistakes",
+        "toolIds",
+        "practicePath",
+        "access",
+        "edition",
+        "lastReviewed"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^chapter-[0-9]{2}$"
+        },
+        "number": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 13
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[0-9]{2}$"
+        },
+        "shortCode": {
+          "type": "string",
+          "pattern": "^c[0-9]{2}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3
+        },
+        "bookPage": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 40
+        },
+        "learningObjectives": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string"
+          }
+        },
+        "commonMistakes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "toolIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "practicePath": {
+          "$ref": "#/$defs/internalPath"
+        },
+        "access": {
+          "enum": [
+            "public",
+            "library-pass",
+            "research-membership"
+          ]
+        },
+        "edition": {
+          "type": "string"
+        },
+        "lastReviewed": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "path",
+        "status",
+        "question",
+        "whyItMatters",
+        "inputs",
+        "dataCadence",
+        "timestampRule",
+        "steps",
+        "agreement",
+        "divergence",
+        "limitations",
+        "chapterIds",
+        "currentEvidence",
+        "access",
+        "version",
+        "lastReviewed"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "path": {
+          "$ref": "#/$defs/internalPath"
+        },
+        "status": {
+          "enum": [
+            "existing",
+            "preview-prototype"
+          ]
+        },
+        "question": {
+          "type": "string"
+        },
+        "whyItMatters": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "dataCadence": {
+          "type": "string",
+          "minLength": 10
+        },
+        "timestampRule": {
+          "type": "string",
+          "minLength": 10
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "string"
+          }
+        },
+        "agreement": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "divergence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string"
+          }
+        },
+        "chapterIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "currentEvidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "label",
+              "path"
+            ],
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "path": {
+                "$ref": "#/$defs/internalPath"
+              }
+            }
+          }
+        },
+        "access": {
+          "enum": [
+            "public",
+            "library-pass",
+            "research-membership"
+          ]
+        },
+        "version": {
+          "type": "string"
+        },
+        "lastReviewed": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "printLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "target",
+        "purpose"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "target": {
+          "$ref": "#/$defs/internalPath"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 3
+        }
+      }
+    }
+  }
+}

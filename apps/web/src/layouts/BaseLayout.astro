@@ -2,9 +2,13 @@
 import '../styles/global.css';
 import '../styles/account.css';
 import LibraryPassLaunchAnnouncement from '../components/LibraryPassLaunchAnnouncement.astro';
+import BookChapterBridgeCard from '../components/BookChapterBridgeCard.astro';
 import TelemetryClient from '../components/TelemetryClient.astro';
 import PwaClient from '../components/PwaClient.astro';
+import { getChapterById, getSurfaceBridgeForPath } from '../data/book-site-bridge/index.mjs';
 const { title, description, noindex = false, stylesheets = [] } = Astro.props;
+const surfaceBridge = getSurfaceBridgeForPath(Astro.url.pathname);
+const surfaceChapter = surfaceBridge ? getChapterById(surfaceBridge.chapterId) : null;
 ---
 <!doctype html>
 <html lang="en">
@@ -52,6 +56,19 @@ const { title, description, noindex = false, stylesheets = [] } = Astro.props;
     </header>
     <LibraryPassLaunchAnnouncement />
     <slot />
+    {surfaceBridge && surfaceChapter && (
+      <aside
+        class="container contextual-book-bridge"
+        aria-label="Book connection"
+        data-surface-bridge-id={surfaceBridge.id}
+      >
+        <BookChapterBridgeCard
+          chapter={surfaceChapter}
+          rationale={surfaceBridge.rationale}
+          linkLabel={surfaceBridge.linkLabel}
+        />
+      </aside>
+    )}
     <footer class="footer">
       <div class="container">
         <strong>USD Impact</strong><br />

@@ -1,12 +1,12 @@
 # Book-Site Bridge current inventory
 
-Status: Phase 0 audit complete on the Preview branch only.
+Status: Phase 0-1 released to Production through PR #383; Phase 2A contextual integration is Preview-only.
 
 Date: 2026-08-28
 
 ## Authoritative book source
 
-The read-only source used for this pass is the uploaded certified digital reader:
+The read-only source for the Book-Site Bridge remains the certified digital reader:
 
 - `USD_Impact_Read_the_Dollar_First_v5_94_Session15A_Certified_NoISBN_DigitalReader_WithBookmarks(1).pdf`
 - Edition 1.2
@@ -19,81 +19,65 @@ The implementation preserves the book's operating sequence:
 2. identify the transmission channel;
 3. reach an asset-specific conclusion.
 
-The book already defines the weekly operating framework as the bridge from theory to practice and describes the live companion as a continuation rather than a promotion. The PDF remains unchanged.
+The book defines the weekly operating framework as the bridge from theory to practice and describes the live companion as a continuation rather than a promotion. The PDF remains unchanged.
 
 ## Prior Drive companion package
 
-The Drive register `USD Impact - Book Companion Fix Pass 7 REPO INSERTION READY Register` records a prior package with:
+The Drive register `USD Impact - Book Companion Fix Pass 7 REPO INSERTION READY Register` records a prior package with 72 files, 20 routes, 16 markdown chapter-body files, registries, static QA, a workflow, risk register, browser plan and release gates.
 
-- 72 files;
-- 20 routes;
-- 16 markdown chapter-body files;
-- chapter, quiz, source, route, site-config and metadata registries;
-- an install helper, static QA, workflow, risk register, browser plan and release gates;
-- a GO decision for repository insertion;
-- a NO-GO decision for public release until repository, build, browser and compliance gates passed.
+That prior design is retained as governance evidence only. The old parallel `/book-companion` topology was not adopted because the current Astro repository already contains the canonical book, framework, Daily, Score, report, audiobook, video and access layers.
 
-The separate implementation handoff proposed a parallel `/book-companion` route family and explicitly held sitemap, navigation, localization and public release.
+## Released Phase 0-1 capabilities
 
-The raw ZIP was not available in Drive during this pass. The Drive register states that the ZIP remained in the earlier sandbox. The register and handoff are therefore treated as governance and inventory evidence, not as a file payload to copy blindly.
+PR #383 merged into `main` as `cd1ed4b0ef3f49bdc994bdfeecdf617741c3dc60` and was verified in Production deployment `dpl_CA8iXkjujC8azs3cKrmiQ9L4M3U6`.
 
-## Current repository capabilities
+The released bridge contains:
 
-The current Astro repository already contains overlapping production-quality capabilities that did not exist in the same form when the prior package was prepared:
-
-- canonical book page at `/book/read-the-dollar-first/`;
-- public sample and Start Here learning flow;
-- English audiobook route;
-- 51-film video-library integration and protected access map;
-- Three-Dial Macro Dashboard;
-- Dollar Transmission Chain;
-- Daily USD Impact editions;
-- Weekly USD Impact Score and public methodology;
-- weekly and monthly reports;
-- compliance, transparency and evidence pages;
-- existing validation and release-control scripts.
-
-## Reconciliation decision
-
-Do not insert the old 72-file package as a second product tree.
-
-Reuse its strongest ideas:
-
-- governed chapter metadata;
-- reciprocal route relationships;
-- static QA;
-- compliance gates;
-- browser and mobile review;
-- English-first release control;
-- no sitemap or public navigation before approval.
-
-Use the current repository as the implementation base and make the canonical companion a child of the existing book route:
-
-`/book/read-the-dollar-first/companion/`
-
-The old `/book-companion` path is not created in Phase 1. A future redirect can be approved only if an external or printed dependency is found.
-
-## Phase 1 additions
-
-- governed JSON registries for all 13 chapters, six tools and 19 print aliases;
+- governed JSON registries for all 13 chapters, six tools and 19 stable print aliases;
 - reciprocal chapter-to-tool and tool-to-chapter validation;
-- companion hub and generated chapter pages;
+- canonical companion hub at `/book/read-the-dollar-first/companion/`;
+- 13 generated chapter companion pages;
 - reusable explanatory tool layer;
-- reusable contextual book-connection card;
-- Chapter 3 DXY versus broad USD scenario prototype;
+- reusable contextual `BookChapterBridgeCard.astro`;
+- Chapter 3 DXY versus broad USD scenario practice;
 - Chapter 11 Weekly Regime Lab with delayed comparison;
 - static `/go/` alias pages suitable for the current static Astro output;
-- Preview-only `noindex` treatment;
-- no network calls, storage, account changes or new data flows.
+- `noindex` treatment and sitemap exclusion for the companion, practice and `/go/**` route families.
+
+The Phase 0-1 Production release generated 208 pages, retained the 35-route `noindex` gate, and preserved all 19 stable aliases.
+
+## Phase 2A Preview-only additions
+
+Phase 2A reuses the released contextual card rather than creating a new promotion component. A separate governed mapping file controls exactly five surface-to-chapter connections:
+
+- Weekly Score `/score/` -> Chapter 10;
+- Score methodology `/score/methodology/` -> Chapter 10;
+- all weekly report detail routes `/reports/weekly/**` -> Chapter 11;
+- selected Daily `/news/2026-08-20/` -> Chapter 4;
+- selected Daily `/news/2026-08-27/` -> Chapter 5.
+
+The two Daily selections are evidence-specific rather than generic:
+
+- August 20 discusses competing liquidity-support, oil-inflation and rates transmission, matching Chapter 4;
+- August 27 includes EIA petroleum inventories and refinery evidence, matching Chapter 5.
+
+Representative unselected Daily, monthly-report, practice and companion routes remain outside the Phase 2A mapping.
+
+## Phase 2A data and state boundary
+
+Phase 2A adds no new data source and no user state. It does not fetch live market data, persist answers, create analytics events, authenticate users, read entitlements, alter the Score pipeline or call a commerce endpoint.
+
+The contextual cards resolve from static governed metadata during Astro rendering.
 
 ## Explicitly unchanged
 
-- master PDF and Drive book files;
-- production deployment;
-- checkout and Merchant-of-Record integration;
-- payments, refunds and pricing operations;
+- certified master PDF and Drive book files;
+- checkout, Merchant-of-Record integration, payments, refunds and pricing operations;
 - environment variables and secrets;
-- webhooks and databases;
-- entitlements and protected content;
-- videos and captions;
-- ISBN, barcode, imprint and publication metadata.
+- webhooks, databases and migrations;
+- accounts, entitlements and protected content;
+- videos, captions and transcripts;
+- live Score methodology or data pipeline;
+- ISBN, barcode, imprint, cover, trim, spine and publication metadata.
+
+No Phase 2A merge or Production deployment is authorized. Exactly one Vercel Preview is authorized only after the final Phase 2A branch is validated and synchronized.

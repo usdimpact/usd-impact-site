@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolveScorePipelineOrigin } from '../src/lib/score-pipeline-origin.js';
+import './test-book-site-bridge.mjs';
 
 const root = process.cwd();
 const distRoot = path.join(root, 'dist');
@@ -46,6 +47,13 @@ const normalizePath = (value) => {
 const isWithinPrefix = (pathname, prefix) => (
   pathname === prefix || pathname.startsWith(`${prefix}/`)
 );
+
+const routeToHtmlFile = (route) => {
+  const relative = route.replace(/^\/+|\/+$/g, '');
+  return path.join(distRoot, relative, 'index.html');
+};
+
+const countOccurrences = (value, needle) => value.split(needle).length - 1;
 
 if (!fs.existsSync(distRoot)) failures.push('dist/ is missing; CSP output cannot be verified.');
 
@@ -159,10 +167,84 @@ if (!fs.existsSync(sitemapPath)) {
   }
 }
 
+const surfaceBridges = JSON.parse(fs.readFileSync(
+  path.join(sourceRoot, 'data/book-site-bridge/surface-bridges.json'),
+  'utf8',
+));
+const chapters = JSON.parse(fs.readFileSync(
+  path.join(sourceRoot, 'data/book-site-bridge/chapters.json'),
+  'utf8',
+));
+const chapterById = new Map(chapters.map((chapter) => [chapter.id, chapter]));
+let contextualPagesVerified = 0;
+
+const verifyContextualHtml = (file, bridge, label) => {
+  if (!fs.existsSync(file)) {
+    failures.push(`Phase 2A contextual surface was not generated: ${label}.`);
+    return;
+  }
+  const chapter = chapterById.get(bridge.chapterId);
+  if (!chapter) {
+    failures.push(`Phase 2A contextual surface ${bridge.id} references missing ${bridge.chapterId}.`);
+    return;
+  }
+  const html = fs.readFileSync(file, 'utf8');
+  const marker = `data-surface-bridge-id="${bridge.id}"`;
+  const chapterHref = `/book/read-the-dollar-first/companion/chapter/${chapter.code}/`;
+  if (countOccurrences(html, marker) !== 1) {
+    failures.push(`${label} must render exactly one governed contextual bridge marker for ${bridge.id}.`);
+  }
+  if (countOccurrences(html, 'class="book-chapter-bridge card"') !== 1) {
+    failures.push(`${label} must render exactly one contextual BookChapterBridgeCard.`);
+  }
+  if (!html.includes(`href="${chapterHref}"`)) {
+    failures.push(`${label} contextual bridge must link to ${chapterHref}.`);
+  }
+  if (!html.includes(bridge.linkLabel)) {
+    failures.push(`${label} contextual bridge is missing its governed link label.`);
+  }
+  contextualPagesVerified += 1;
+};
+
+for (const bridge of surfaceBridges.filter((candidate) => candidate.match === 'exact')) {
+  verifyContextualHtml(routeToHtmlFile(bridge.path), bridge, bridge.path);
+}
+
+const weeklyBridge = surfaceBridges.find((bridge) => bridge.id === 'weekly-report');
+const weeklyRoot = path.join(distRoot, 'reports', 'weekly');
+if (!weeklyBridge) {
+  failures.push('Phase 2A weekly-report contextual mapping is missing.');
+} else if (!fs.existsSync(weeklyRoot)) {
+  failures.push('No generated weekly report directory exists for contextual bridge verification.');
+} else {
+  const weeklyFiles = walk(weeklyRoot, (file) => path.basename(file) === 'index.html');
+  if (weeklyFiles.length === 0) failures.push('No generated weekly report pages exist for contextual bridge verification.');
+  for (const file of weeklyFiles) {
+    verifyContextualHtml(file, weeklyBridge, `/${path.relative(distRoot, path.dirname(file)).split(path.sep).join('/')}/`);
+  }
+}
+
+for (const route of [
+  '/news/2026-08-28/',
+  '/practice/weekly-regime/',
+  '/book/read-the-dollar-first/companion/',
+]) {
+  const file = routeToHtmlFile(route);
+  if (!fs.existsSync(file)) {
+    failures.push(`Representative non-Phase-2A route was not generated: ${route}.`);
+    continue;
+  }
+  const html = fs.readFileSync(file, 'utf8');
+  if (html.includes('data-surface-bridge-id=')) {
+    failures.push(`Representative non-Phase-2A route received an unintended contextual bridge: ${route}.`);
+  }
+}
+
 if (failures.length > 0) {
-  console.error(`CSP and sitemap build verification failed:\n${failures.join('\n')}`);
+  console.error(`CSP, sitemap, and contextual bridge build verification failed:\n${failures.join('\n')}`);
   process.exit(1);
 }
 
 console.log(`CSP build verification passed across ${htmlFiles.length} generated HTML pages using Score origin ${scorePipelineOrigin}.`);
 console.log(`Book-site bridge sitemap exclusion verification passed for ${previewOnlyRoutes.length} generated noindex routes.`);
+console.log(`Book-site contextual surface verification passed for ${surfaceBridges.length} governed mappings across ${contextualPagesVerified} generated pages.`);

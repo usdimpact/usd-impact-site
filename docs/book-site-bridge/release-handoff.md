@@ -1,64 +1,74 @@
-# Phase 0-1 release handoff
+# Book-Site Bridge release handoff
 
 Date: 2026-08-28
 
-Branch: `agent/book-site-bridge-phase-0-1`
+## Released Phase 0-1 baseline
 
-Release state: Preview candidate only.
+Phase 0-1 was merged through PR #383 and released to Production.
 
-## Completed
+- PR: `#383` — `Preview: Book-Site Bridge Phase 0-1`
+- approved PR head: `967c53ea406ae59560ca697ff6b268df864048f4`
+- merge commit: `cd1ed4b0ef3f49bdc994bdfeecdf617741c3dc60`
+- Production deployment: `dpl_CA8iXkjujC8azs3cKrmiQ9L4M3U6`
+- Production build: 208 generated pages
+- governed bridge routes: 35 routes verified with `noindex`
+- sitemap gate: companion, practice and `/go/**` route families verified absent from the generated and live sitemap
+- stable print aliases: all 19 verified on the released host
 
-- audited the certified book source without modifying it;
-- reconciled the Drive Fix Pass 7 package against the current Astro repository;
-- selected one canonical companion hierarchy under the existing book route;
-- created governed chapter, tool and print-link registries;
-- created reciprocal static QA;
-- created the companion hub and 13 generated chapter pages;
-- created the explanatory tool component and contextual chapter card;
-- created the Chapter 3 DXY versus broad USD prototype;
-- created the Chapter 11 Weekly Regime Lab prototype;
-- created stable static `/go/` aliases;
-- documented inventory, gaps, architecture, routes, promotion, QA and handoff.
+The released Phase 0-1 implementation includes the governed 13-chapter / 6-tool / 19-alias registry, companion hub, generated chapter companion pages, Chapter 3 comparator, Chapter 11 Weekly Regime Lab, explanatory tool layer, contextual chapter card, and print-safe aliases.
 
-## Not performed
+## Phase 2A state
 
-- no master PDF or Drive book edit;
-- no Production deployment;
-- no merge to `main`;
-- no checkout or payment change;
-- no environment, secret, webhook or database change;
+Phase 2A is authorized for Preview only on branch:
+
+`agent/book-site-bridge-phase-2a-contextual`
+
+It is not authorized for merge or Production deployment.
+
+### Bounded contextual mappings
+
+Phase 2A adds five centrally governed, relevance-specific site-to-book mappings:
+
+| Surface | Match | Book connection | Rationale |
+| --- | --- | --- | --- |
+| `/score/` | exact | Chapter 10 | Interpret regime evidence and the Weekly Score as descriptive context rather than a forecast or signal. |
+| `/score/methodology/` | exact | Chapter 10 | Connect construction, recalculation limits and descriptive validation to the book's regime-history context. |
+| `/reports/weekly/**` | prefix | Chapter 11 | Reinforce the driver-first weekly sequence before asset-specific interpretation. |
+| `/news/2026-08-20/` | exact | Chapter 4 | Revisit the active transmission channel when liquidity support, oil-linked inflation and rates conflict. |
+| `/news/2026-08-27/` | exact | Chapter 5 | Revisit physical oil balance when EIA inventories and refinery activity matter. |
+
+The mappings use the existing `BookChapterBridgeCard.astro`, the canonical chapter registry and the contextual-promotion policy. They do not add generic book advertising or a checkout path.
+
+## Phase 2A regression gates
+
+Before any merge request can be considered, the final Phase 2A head must provide:
+
+1. registry validation for exactly five approved contextual mappings;
+2. exact/prefix route-resolution tests, including representative negative routes;
+3. generated-output checks proving exactly one governed chapter card on each target page and no contextual card on representative unselected pages;
+4. the existing Phase 0-1 `noindex` and sitemap-exclusion checks unchanged;
+5. the repository's normal validation and build gates;
+6. exactly one Vercel Preview from the final synchronized head;
+7. Preview verification for Score, methodology, both selected Daily editions, at least one weekly report, and representative negative routes.
+
+## Explicitly unchanged in Phase 2A
+
+- no live-data wiring or Score ingestion into the practice prototypes;
+- no account, progress-storage, analytics, database or migration change;
+- no checkout, payment, pricing, refund, commerce runtime or Merchant-of-Record change;
+- no environment variable, secret or webhook change;
 - no entitlement or protected-content change;
-- no video render or caption change;
-- no AI guide;
-- no ISBN, barcode, imprint or publication-metadata work;
-- no public navigation, sitemap or localization approval.
+- no video render, upload, caption or transcript change;
+- no master PDF or Drive book edit;
+- no ISBN, barcode, imprint, cover, trim, spine or publication-metadata work;
+- no Production deployment or merge without separate authorization.
 
-## Known Preview limitations
+## Deferred sequence
 
-- the Chapter 3 prototype is scenario-based and does not fetch live DXY or broad-dollar data;
-- the Chapter 11 comparison uses a static fixture and does not read the live Score;
-- no progress is stored;
-- no analytics are added;
-- static aliases use HTML redirect output appropriate to the current static Astro configuration;
-- browser, mobile and assistive-technology QA require the deployed Preview.
+After Phase 2A, the next candidates remain separately gated:
 
-## Required evidence before any merge request
-
-1. static bridge QA output;
-2. existing repository validation output;
-3. Preview build status;
-4. direct Preview URLs;
-5. browser route checks;
-6. mobile and keyboard checks;
-7. confirmation that existing checkout, account, Score, Daily and report routes are unchanged;
-8. explicit user approval for any next phase.
-
-## Next phase candidates, not approved
-
-- wire current dated data into the practice tools;
-- add contextual bridge cards to selected existing Score, Daily and report pages;
-- add progress storage after privacy review;
-- prepare the surgical manuscript patch and QR placements;
-- map existing videos to chapters and identify genuine gaps;
-- design a grounded AI framework guide behind a disabled flag;
-- begin publication identifiers only after route and manuscript freeze.
+1. Phase 2B live-data/freshness layer with explicit source timestamps and privacy review;
+2. surgical manuscript and QR/print-link patch after route freeze;
+3. video-gap and grounded-AI work only if separately approved;
+4. route/manuscript freeze;
+5. ISBN, barcode and publication metadata last.

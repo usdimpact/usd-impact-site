@@ -1,12 +1,15 @@
 import chaptersData from './chapters.json' with { type: 'json' };
 import toolsData from './tools.json' with { type: 'json' };
 import printLinksData from './print-links.json' with { type: 'json' };
+import surfaceBridgesData from './surface-bridges.json' with { type: 'json' };
 
 export const BOOK_EDITION = '1.2';
 export const BRIDGE_VERSION = '0.1.0-preview';
+export const SURFACE_BRIDGE_VERSION = '0.2.0-preview';
 export const chapters = Object.freeze(chaptersData);
 export const tools = Object.freeze(toolsData);
 export const printLinks = Object.freeze(printLinksData);
+export const surfaceBridges = Object.freeze(surfaceBridgesData);
 
 function requireCondition(condition, message) {
   if (!condition) {
@@ -14,10 +17,18 @@ function requireCondition(condition, message) {
   }
 }
 
+function normalizeSurfacePath(value) {
+  const rawPath = String(value ?? '/').split(/[?#]/)[0] || '/';
+  const withLeadingSlash = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+  if (withLeadingSlash === '/') return '/';
+  return `${withLeadingSlash.replace(/\/+$/, '')}/`;
+}
+
 function validateBridgeRegistry() {
   requireCondition(chapters.length === 13, 'the certified edition must contain 13 governed chapters');
   requireCondition(tools.length === 6, 'Phase 0-1 must expose exactly 6 governed tools');
   requireCondition(printLinks.length === 19, 'the print-safe scheme must expose exactly 19 aliases');
+  requireCondition(surfaceBridges.length === 5, 'Phase 2A must expose exactly 5 governed contextual surface mappings');
 
   const certifiedStartPages = [8, 12, 16, 21, 27, 32, 36, 41, 45, 49, 56, 60, 65];
   const chapterIds = new Set();
@@ -89,6 +100,26 @@ function validateBridgeRegistry() {
     requireCondition(printCodes.has(requiredCode), `missing print alias ${requiredCode}`);
   }
 
+  const surfaceBridgeIds = new Set();
+  const allowedSurfaces = new Set(['score', 'score-methodology', 'weekly-report', 'daily']);
+  const allowedMatches = new Set(['exact', 'prefix']);
+  for (const bridge of surfaceBridges) {
+    requireCondition(!surfaceBridgeIds.has(bridge.id), `duplicate contextual surface mapping ${bridge.id}`);
+    surfaceBridgeIds.add(bridge.id);
+    requireCondition(allowedSurfaces.has(bridge.surface), `${bridge.id} has an unsupported surface type`);
+    requireCondition(allowedMatches.has(bridge.match), `${bridge.id} has an unsupported path match type`);
+    requireCondition(typeof bridge.path === 'string' && bridge.path.startsWith('/') && bridge.path.endsWith('/'), `${bridge.id} path must be a normalized internal route`);
+    requireCondition(!bridge.path.includes('//'), `${bridge.id} path contains a duplicate slash`);
+    requireCondition(Boolean(chapters.find((chapter) => chapter.id === bridge.chapterId)), `${bridge.id} references missing ${bridge.chapterId}`);
+    requireCondition(typeof bridge.rationale === 'string' && bridge.rationale.length >= 80, `${bridge.id} needs a relevance-specific rationale`);
+    requireCondition(typeof bridge.linkLabel === 'string' && bridge.linkLabel.length >= 10, `${bridge.id} needs a descriptive link label`);
+    requireCondition(!/buy the book|unlock|checkout|profit|return guarantee/i.test(`${bridge.rationale} ${bridge.linkLabel}`), `${bridge.id} violates the contextual promotion policy`);
+  }
+
+  for (const requiredId of ['weekly-score', 'score-methodology', 'weekly-report', 'daily-2026-08-20', 'daily-2026-08-27']) {
+    requireCondition(surfaceBridgeIds.has(requiredId), `missing Phase 2A contextual surface mapping ${requiredId}`);
+  }
+
   return true;
 }
 
@@ -118,4 +149,19 @@ export function getChaptersForTool(tool) {
 
 export function getPrintLinkByCode(code) {
   return printLinks.find((link) => link.code === code);
+}
+
+export function getSurfaceBridgeById(id) {
+  return surfaceBridges.find((bridge) => bridge.id === id);
+}
+
+export function getSurfaceBridgeForPath(pathname) {
+  const normalizedPath = normalizeSurfacePath(pathname);
+  return surfaceBridges.find((bridge) => {
+    const targetPath = normalizeSurfacePath(bridge.path);
+    if (bridge.match === 'prefix') {
+      return normalizedPath !== targetPath && normalizedPath.startsWith(targetPath);
+    }
+    return normalizedPath === targetPath;
+  });
 }

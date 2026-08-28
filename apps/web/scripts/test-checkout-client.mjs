@@ -1,9 +1,17 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
   approvedLaunchCheckoutUrl,
   createCheckoutIdempotencyKey,
   publicCheckoutCanOpen,
 } from '../src/lib/checkout-client.js';
+
+const checkoutPageSource = await readFile(new URL('../src/pages/checkout/index.astro', import.meta.url), 'utf8');
+assert.match(
+  checkoutPageSource,
+  /#checkout-button\[hidden\],\s*#waitlist-link\[hidden\]\s*\{\s*display:\s*none;\s*\}/,
+  'Hidden checkout controls must remain visually hidden when global button styles are applied.',
+);
 
 const activeCommerce = {
   state: 'active',

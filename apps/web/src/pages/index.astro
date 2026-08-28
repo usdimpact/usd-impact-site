@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ProductCTA from '../components/ProductCTA.astro';
+import HomeLibraryPassCTA from '../components/HomeLibraryPassCTA.astro';
 import BenchmarkModuleCard from '../components/BenchmarkModuleCard.astro';
 import NewsHighlightCard from '../components/NewsHighlightCard.astro';
 import DailyCardToday from '../components/DailyCardToday.astro';
@@ -19,7 +19,7 @@ const scorePipelineOrigin = resolveScorePipelineOrigin(import.meta.env.PUBLIC_SC
       <div class="eyebrow">USD Impact</div>
       <h1>Read the Dollar First.</h1>
       <p class="lead">Learn a repeatable way to tell whether a market move is mainly dollar-led, real-rate-led, liquidity-led, or asset-specific — then trace the evidence before interpreting gold, oil, Bitcoin, FX, equities, or other markets.</p>
-      <ProductCTA />
+      <HomeLibraryPassCTA />
     </div>
   </section>
   <main class="container">

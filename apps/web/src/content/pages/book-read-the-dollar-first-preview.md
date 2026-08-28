@@ -1,12 +1,12 @@
 ---
 title: "Try Read the Dollar First"
 metaTitle: "Free Read the Dollar First Sample | USD Impact"
-metaDescription: "Try a real USD Impact lesson and book knowledge check, then preview the 51-film syllabus before the Guided Interactive Edition opens for purchase."
+metaDescription: "Try a real USD Impact lesson and book knowledge check, then preview the 51-film syllabus before deciding whether the Guided Interactive Edition is right for you."
 slug: "/book/read-the-dollar-first/preview"
 category: "Free sample"
 status: "published"
 readingLevel: "Beginner to intermediate"
-lastReviewed: "2026-08-27"
+lastReviewed: "2026-08-28"
 complianceNote: "Educational only. This free sample is not investment, legal, tax, trading, or financial advice. It is not a recommendation, forecast, or trading signal."
 sources:
   - "USD Impact — Start Here public lesson"
@@ -27,7 +27,7 @@ hero: "Test the actual USD Impact teaching method before purchase: read a real l
 
 ## What this free sample includes
 
-The purpose of this page is simple: give you enough real material to judge the teaching method before the Guided Interactive Edition becomes available for purchase.
+The purpose of this page is simple: give you enough real material to judge the teaching method before deciding whether to purchase the Guided Interactive Edition.
 
 This is not a mock demo and it is not a shortened sales page. The lesson and quiz below are live parts of the USD Impact educational system.
 
@@ -118,7 +118,7 @@ The full Guided Interactive Edition is designed to connect the same method acros
 
 It includes the complete chapter-by-chapter learning path, the English audiobook, the protected 51-film Video Library, interactive knowledge checks, saved progress and protected reference resources under the verified USD Impact account used for the purchase.
 
-The planned launch price is **USD 39.00**, followed by a planned standard price of **USD 49.00**. Lemon Squeezy is the selected Merchant of Record. Public checkout is not currently active while the Test Mode integration, buyer disclosures, operational checks, and final Live release gates are completed and explicitly approved.
+The launch price is **USD 39.00**, followed by a standard price of **USD 49.00** after the approved launch offer ends. Lemon Squeezy is the selected Merchant of Record. Current checkout availability is verified live on the product page before a purchase link is shown.
 
 See **[product details, pricing and current availability](/book/read-the-dollar-first/)**.
 

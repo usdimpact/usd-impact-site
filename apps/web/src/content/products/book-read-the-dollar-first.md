@@ -38,9 +38,9 @@ The sample does not unlock paid chapters, audiobook playback, protected film pla
 
 **[Try the free sample →](/book/read-the-dollar-first/preview/)**
 
-## Practice the framework online — Preview
+## Practice the framework online
 
-The **[Book Companion Preview](/book/read-the-dollar-first/companion/)** connects the book's durable explanations with guided online practice. It does not replace the chapters or use the Weekly Score as a trading signal.
+The **[Book Companion](/book/read-the-dollar-first/companion/)** connects the book's durable explanations with guided online practice. It does not replace the chapters or use the Weekly Score as a trading signal.
 
 Use the site in the same order taught by the book:
 
@@ -50,12 +50,12 @@ Use the site in the same order taught by the book:
 4. compare the reading without treating agreement as predictive accuracy; and
 5. return to the chapter that explains the disagreement.
 
-Two bounded Phase 1 exercises are available:
+Two bounded exercises are available. Each uses the latest repository-published completed-week evidence snapshot and shows source dates before the reader submits a classification:
 
-- **[Chapter 3 practice: DXY vs. Broad USD Comparator](/practice/dxy-vs-broad-usd/)** — classify whether a DXY move is broadly confirmed, basket-led or unresolved;
-- **[Chapter 11 practice: Weekly Regime Lab](/practice/weekly-regime/)** — record the three dials and dominant driver before revealing a clearly labeled static comparison fixture.
+- **[Chapter 3 practice: DXY vs. Broad USD Comparator](/practice/dxy-vs-broad-usd/)** — review dated DXY, broad-dollar, rates and stress evidence; submit an independent classification; then reveal the deterministic DXY and broad-dollar comparison;
+- **[Chapter 11 practice: Weekly Regime Lab](/practice/weekly-regime/)** — record the three dials, an unscored dominant-driver hypothesis, confidence and a conditional reading before comparing only the three deterministic dials; the exact-week Score v2 output is revealed separately after submission and is not an answer key.
 
-The exercises retrieve no live market data and store no answer. Verify current evidence through the dated Score, Daily and report layers before live use.
+The exercises make no runtime market-data request in the browser. Reader classifications, confidence selections, driver hypotheses and written responses are handled only in page JavaScript and are not stored or transmitted. The evidence is dated completed-week material, not real-time market data; verify the displayed source dates before live use.
 
 ## Guided Interactive Edition
 

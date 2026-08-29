@@ -1,131 +1,117 @@
 # Book-Site Bridge current inventory
 
-Status: Phase 0-1 and Phase 2A released to Production; Phase 2B live-evidence integration is Preview-only.
+Status: Phase 0-1, Phase 2A, and Phase 2B are released to Production. Phase 2C is publication-freeze preparation only; the master book remains unchanged.
 
 Date: 2026-08-29
 
 ## Authoritative book source
 
-The read-only source for the Book-Site Bridge remains the certified digital reader:
+The read-only manuscript source remains the certified digital reader:
 
 - `USD_Impact_Read_the_Dollar_First_v5_94_Session15A_Certified_NoISBN_DigitalReader_WithBookmarks(1).pdf`
 - Edition 1.2
 - Production build v5.94
-- No ISBN
+- no ISBN assigned
 
-The implementation preserves the book's operating sequence:
+The current implementation preserves the book's operating sequence:
 
 1. read the regime;
 2. identify the transmission channel;
 3. reach an asset-specific conclusion.
 
-The book defines the weekly operating framework as the bridge from theory to practice and describes the live companion as a continuation rather than a promotion. The PDF remains unchanged.
-
-## Prior Drive companion package
-
-The Drive register `USD Impact - Book Companion Fix Pass 7 REPO INSERTION READY Register` records a prior package with 72 files, 20 routes, 16 markdown chapter-body files, registries, static QA, a workflow, risk register, browser plan and release gates.
-
-That prior design is retained as governance evidence only. The old parallel `/book-companion` topology was not adopted because the current Astro repository already contains the canonical book, framework, Daily, Score, report, audiobook, video and access layers.
+The PDF itself has not been edited during the Book-Site Bridge work.
 
 ## Released Phase 0-1 capabilities
 
 PR #383 merged into `main` as `cd1ed4b0ef3f49bdc994bdfeecdf617741c3dc60` and was verified in Production deployment `dpl_CA8iXkjujC8azs3cKrmiQ9L4M3U6`.
 
-The released bridge contains:
+Released capabilities include:
 
 - governed JSON registries for all 13 chapters, six tools and 19 stable print aliases;
 - reciprocal chapter-to-tool and tool-to-chapter validation;
 - canonical companion hub at `/book/read-the-dollar-first/companion/`;
 - 13 generated chapter companion pages;
-- reusable explanatory tool layer;
-- reusable contextual `BookChapterBridgeCard.astro`;
-- Chapter 3 DXY versus broad USD practice;
-- Chapter 11 Weekly Regime Lab with delayed comparison;
-- static `/go/` alias pages suitable for the current static Astro output;
-- `noindex` treatment and sitemap exclusion for the companion, practice and `/go/**` route families.
+- reusable explanatory tool and contextual chapter-card layers;
+- Chapter 3 DXY-versus-broad-USD practice;
+- Chapter 11 Weekly Regime Lab;
+- static `/go/` aliases suitable for print use;
+- `noindex` treatment and sitemap exclusion for companion, practice and `/go/**` route families.
 
-The Phase 0-1 Production release generated 208 pages, retained the 35-route `noindex` gate, and preserved all 19 stable aliases.
+The Production release generated 208 pages and retained the 35-route `noindex` / sitemap exclusion gate.
 
 ## Released Phase 2A contextual integration
 
 PR #392 merged into `main` as `0e4d77e91b5f2795528be0db8e7bbecb8902f696` and was verified in Production deployment `dpl_CsiPZoySPYkZ6AS9kdpRzchZz3cr`.
 
-Phase 2A reuses the released contextual card rather than creating a promotion component. The governed mapping file controls exactly five relevance-specific surface-to-chapter connections:
+Exactly five centrally governed site-to-book mappings remain active:
 
-- Weekly Score `/score/` -> Chapter 10;
-- Score methodology `/score/methodology/` -> Chapter 10;
-- all weekly report detail routes `/reports/weekly/**` -> Chapter 11;
-- selected Daily `/news/2026-08-20/` -> Chapter 4;
-- selected Daily `/news/2026-08-27/` -> Chapter 5.
+- `/score/` -> Chapter 10;
+- `/score/methodology/` -> Chapter 10;
+- `/reports/weekly/**` -> Chapter 11;
+- `/news/2026-08-20/` -> Chapter 4;
+- `/news/2026-08-27/` -> Chapter 5.
 
-The Production build retained 208 generated pages, the existing 35-route `noindex` / sitemap gate, and all five contextual mappings. No generic book promotion or commerce path was added by Phase 2A.
+Unselected Daily editions and unrelated site surfaces receive no contextual book card.
 
-## Existing completed-week evidence infrastructure reused by Phase 2B
+## Released Phase 2B live-evidence integration
 
-The site already publishes a fail-closed repository snapshot at `apps/web/src/data/three-dials-latest.json` and a matching public JSON artifact. The snapshot contains the completed-week evidence needed by both practice tools:
+PR #393 merged the validated implementation head `3e1f15b8708cdb8876ac81c0682faa2d219f0ed1` into `main` as `3b6f40c3f22bf2960f0d465d215ed415f8ed165c`.
 
-- DXY proxy;
-- Federal Reserve broad USD index;
-- 10-year TIPS real yield;
-- 10-year nominal Treasury yield;
-- ICE BofA U.S. High Yield OAS via FRED;
-- VIX via FRED;
-- derived SOFR-minus-IORB funding spread;
-- separate exact-week USD Impact Score v2 output.
+The automatic Production deployment was `dpl_HQbqsAoqUi9p3rj8iDVu7gswREfH`, state `READY`.
 
-Each fact retains previous/latest observation dates, values, changes, source disclosure and source URL. The Score remains explicitly separate from the qualitative Three-Dials interpretation.
+Phase 2B released the following without adding another market-data pipeline:
 
-The existing Three-Dials publication workflow remains unchanged. It already enforces bounded source origins, per-series freshness checks, exact-week Score matching, immutable dated archives, full validation/build, protected quality/security checks and guarded generated-data publication.
+- the Chapter 3 comparator now consumes the checked-in completed-week Three-Dials snapshot and shows dated DXY, broad-dollar, rates and stress evidence before classification;
+- the Chapter 11 Weekly Regime Lab shows all seven source-bound Three-Dials facts before submission;
+- deterministic classifications remain hidden until the reader submits an independent view;
+- Weekly Regime Lab compares exactly three deterministic dials: dollar, real rates and liquidity stress;
+- dominant-driver hypothesis, confidence selection and written response remain unscored and browser-local;
+- the exact-week Score v2 output is revealed only after submission as a separate descriptive model output and is explicitly not an answer key;
+- freshness states are `current`, `publication-pending`, `stale` and `invalid`, with stale/invalid comparison disabled;
+- no practice-response telemetry, local storage, account persistence, database write or entitlement write was added.
 
-## Phase 2B Preview-only additions
+Production verification retained:
 
-Phase 2B does not create another data pipeline. It adds a presentation and learning layer over the checked-in completed-week snapshot.
+- 208 generated pages;
+- the 35-route `noindex` / sitemap exclusion gate;
+- the five Phase 2A contextual mappings;
+- both Phase 2B practice-page generated-output gates;
+- the existing Three-Dials workflow, generator and source-rights boundary unchanged.
 
-### Chapter 3 DXY Comparator
+## Current production evidence infrastructure
 
-- visible pre-submit evidence: DXY, broad USD and the existing rates/stress facts with dates, changes and source links;
-- hidden until submit: deterministic DXY direction, broad-dollar direction and breadth confirmation;
-- reader selects DXY, broad USD and a rates/stress confirmation from the visible facts;
-- comparison remains disabled if the snapshot is invalid or stale.
+The site consumes `apps/web/src/data/three-dials-latest.json` for the qualitative completed-week practice layer. That artifact contains DXY, broad USD, real and nominal yields, HY OAS, VIX, SOFR-minus-IORB and a separate exact-week Score v2 bridge.
 
-### Chapter 11 Weekly Regime Lab
+The Score itself remains a separate production system. The site methodology page documents Score v2 as a descriptive weekly regime indicator with eight inputs, fixed signed equal weights, full-sample level normalization, clipping at +/-3.5, five published regime bands, source/freshness controls, robustness diagnostics and explicit limitations.
 
-- visible pre-submit evidence: all seven source-bound facts grouped under the three dials;
-- hidden until submit: deterministic dial classifications and separate Score v2 output;
-- machine comparison is limited to exactly three deterministic fields: dollar, real rates and liquidity stress;
-- rangebound, flat and contained states map to the reader-facing neutral/mixed choice;
-- dominant-driver hypothesis, confidence selection and written conditional reading are explicitly unscored;
-- the exact-week Score v2 is shown only after submit and explicitly not as an answer key.
+The authoritative pipeline workflow remains Friday-ended and is scheduled for Friday 22:00 UTC. Generated weekly releases are merged only after the guarded score-quality and reproduction-attestation gates pass.
 
-## Phase 2B publication/freshness boundary
+## Publication alignment issue identified after Phase 2B
 
-The new rendering helper validates the checked-in snapshot before enabling comparison. Required facts, source origins, dates, finite values and exact Score week must all pass.
+The certified Edition 1.2 PDF predates the current production Score v2 specification in several material places. In particular, Chapter 10 and Appendix B describe an earlier rolling/weekly-move baseline, +/-3 clipping, a three-zone +/-0.50 convention, and an 84.5% historical hit-rate narrative. Current Production uses full-sample weekly levels, +/-3.5 clipping and five regime bands, and explicitly distinguishes recalculated descriptive history from point-in-time or prospective predictive evidence.
 
-The presentation layer distinguishes:
+The PDF also states that older case-study history can be read as contemporaneous real-time output. Current methodology requires a stricter distinction between dated as-published archives and recalculated historical research.
 
-- `current`: workflow-defined latest completed Friday is published;
-- `publication-pending`: the prior published week remains usable while the new completed Friday is still inside the established Monday/Tuesday publication window;
-- `stale`: the publication window expired without a matching current snapshot, so comparison is disabled;
-- `invalid`: source-bound or exact-week validation failed, so comparison is disabled.
+These differences are publication blockers for a final manuscript freeze, but they do not affect the already released website bridge.
 
-This logic does not alter the publication workflow or generator.
+## Phase 2C publication-freeze preparation
 
-## Phase 2B response/privacy boundary
+Phase 2C is documentation and patch planning only. It adds:
 
-The two practice pages still make no market-data request in the browser. Reader classifications, driver hypotheses, confidence selections and free-text readings are handled only by page JavaScript and are not sent to telemetry, local storage, a database, an account record or an entitlement service.
+- a page-by-page manuscript replacement register for the material Score-methodology mismatches;
+- a governed QR/print-link placement plan using only the existing 19 stable `/go/` aliases;
+- a publication-freeze gate that pins the website and Score-methodology authorities before any master-book edit.
 
-Global site telemetry remains unchanged and continues to cover its pre-existing checklist/quiz events only.
+No master PDF edit, Drive mutation, ISBN, barcode, imprint, cover, trim, spine or publication-metadata action is part of Phase 2C preparation.
 
 ## Explicitly unchanged
 
-- certified master PDF and Drive book files;
 - checkout, Merchant-of-Record integration, payments, refunds and pricing operations;
 - environment variables and secrets;
 - webhooks, databases and migrations;
 - accounts, entitlements and protected content;
 - videos, captions and transcripts;
 - Three-Dials publication workflow, generator and source-rights boundary;
-- live Score methodology or Score pipeline;
-- ISBN, barcode, imprint, cover, trim, spine and publication metadata.
-
-No Phase 2B merge or Production deployment is authorized. Exactly one Vercel Preview is authorized only after the final Phase 2B branch is validated.
+- live Score pipeline and methodology;
+- master PDF and Drive book files;
+- ISBN, barcode and publication metadata.

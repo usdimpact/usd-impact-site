@@ -21,11 +21,16 @@ const terminalReplayMigrationUrl = new URL(
   '../../../supabase/migrations/20260826230126_allow_terminal_commerce_webhook_replay_delivery_variance.sql',
   import.meta.url,
 );
+const uncappedOfferMigrationUrl = new URL(
+  '../../../supabase/migrations/20260829162812_uncapped_library_pass_offer.sql',
+  import.meta.url,
+);
 const sql = await readFile(migrationUrl, 'utf8');
 const indexSql = await readFile(indexMigrationUrl, 'utf8');
 const aclHardeningSql = await readFile(aclHardeningMigrationUrl, 'utf8');
 const profileLockFixSql = await readFile(profileLockFixMigrationUrl, 'utf8');
 const terminalReplaySql = await readFile(terminalReplayMigrationUrl, 'utf8');
+const uncappedOfferSql = await readFile(uncappedOfferMigrationUrl, 'utf8');
 
 assert.match(sql, /create table if not exists public\.commerce_reconciliations/i);
 assert.match(sql, /alter table public\.commerce_reconciliations enable row level security;/i);
@@ -136,6 +141,39 @@ assert.match(
 assert.doesNotMatch(terminalReplaySql, /security\s+definer/i);
 assert.doesNotMatch(terminalReplaySql, /usd-impact-production|gjzetjugmnwanvjkchux/i);
 assert.match(terminalReplaySql, /commit;\s*$/i);
+
+assert.match(uncappedOfferSql, /^begin;/i);
+assert.match(uncappedOfferSql, /alter column purchase_limit drop not null/i);
+assert.match(uncappedOfferSql, /purchase_limit is null or purchase_limit > 0/i);
+assert.match(uncappedOfferSql, /alter column launch_ends_at drop not null/i);
+assert.match(uncappedOfferSql, /launch_ends_at is null or launch_ends_at > launch_starts_at/i);
+assert.match(
+  uncappedOfferSql,
+  /set\s+purchase_limit = null,\s+launch_ends_at = null,/i,
+);
+assert.match(
+  uncappedOfferSql,
+  /v_offer\.launch_ends_at is not null\s+and p_now >= v_offer\.launch_ends_at/i,
+);
+assert.match(
+  uncappedOfferSql,
+  /v_offer\.purchase_limit is not null\s+and v_completed_count >= v_offer\.purchase_limit/i,
+);
+assert.match(
+  uncappedOfferSql,
+  /v_offer\.purchase_limit is not null\s+and \(v_completed_count \+ v_reservation_count\) >= v_offer\.purchase_limit/i,
+);
+assert.match(uncappedOfferSql, /language plpgsql\s+security invoker\s+set search_path = public/i);
+assert.match(
+  uncappedOfferSql,
+  /revoke all on function public\.reserve_commerce_purchase_intent\(uuid, text, timestamptz\)[\s\S]*?from public, anon, authenticated;/i,
+);
+assert.match(
+  uncappedOfferSql,
+  /grant execute on function public\.reserve_commerce_purchase_intent\(uuid, text, timestamptz\)[\s\S]*?to service_role;/i,
+);
+assert.doesNotMatch(uncappedOfferSql, /security\s+definer/i);
+assert.match(uncappedOfferSql, /commit;\s*$/i);
 
 assert.doesNotMatch(sql, /security\s+definer/i);
 assert.ok((sql.match(/security\s+invoker/gi) ?? []).length >= 7);

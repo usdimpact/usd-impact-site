@@ -78,13 +78,38 @@ assert.throws(() => transitionEntitlement({
 const offer = createLaunchOffer({ launchStartsAt: nowIso });
 assert.equal(offer.launchPriceCents, DEFAULT_LAUNCH_PRICE_CENTS);
 assert.equal(offer.standardPriceCents, DEFAULT_STANDARD_PRICE_CENTS);
-assert.equal(offer.launchEndsAt, new Date(now + (30 * 24 * 60 * 60 * 1000)).toISOString());
+assert.equal(offer.purchaseLimit, null);
+assert.equal(offer.launchEndsAt, null);
 
 assert.equal(evaluateLaunchOffer({ offer, completedLivePurchaseCount: 0, nowMs: now }).priceTier, 'launch');
 assert.equal(evaluateLaunchOffer({ offer, completedLivePurchaseCount: 99, nowMs: now }).priceTier, 'launch');
-assert.equal(evaluateLaunchOffer({ offer, completedLivePurchaseCount: 100, nowMs: now }).reason, 'launch-purchase-limit-reached');
-assert.equal(evaluateLaunchOffer({ offer, completedLivePurchaseCount: 0, nowMs: Date.parse(offer.launchEndsAt) }).reason, 'launch-deadline-reached');
-assert.equal(evaluateLaunchOffer({ offer, completedLivePurchaseCount: 1, inFlightLaunchReservationCount: 99, nowMs: now }).reason, 'launch-capacity-reserved');
+assert.equal(evaluateLaunchOffer({ offer, completedLivePurchaseCount: 1_000_000, nowMs: now }).priceTier, 'launch');
+assert.equal(evaluateLaunchOffer({
+  offer,
+  completedLivePurchaseCount: 1_000_000,
+  inFlightLaunchReservationCount: 1_000_000,
+  nowMs: now,
+}).reason, 'launch-active');
+
+const limitedOffer = createLaunchOffer({
+  launchStartsAt: nowIso,
+  purchaseLimit: 100,
+  durationDays: 30,
+});
+assert.equal(limitedOffer.purchaseLimit, 100);
+assert.equal(limitedOffer.launchEndsAt, new Date(now + (30 * 24 * 60 * 60 * 1000)).toISOString());
+assert.equal(evaluateLaunchOffer({ offer: limitedOffer, completedLivePurchaseCount: 100, nowMs: now }).reason, 'launch-purchase-limit-reached');
+assert.equal(evaluateLaunchOffer({
+  offer: limitedOffer,
+  completedLivePurchaseCount: 0,
+  nowMs: Date.parse(limitedOffer.launchEndsAt),
+}).reason, 'launch-deadline-reached');
+assert.equal(evaluateLaunchOffer({
+  offer: limitedOffer,
+  completedLivePurchaseCount: 1,
+  inFlightLaunchReservationCount: 99,
+  nowMs: now,
+}).reason, 'launch-capacity-reserved');
 assert.equal(evaluateLaunchOffer({
   offer,
   completedLivePurchaseCount: 0,
@@ -138,10 +163,10 @@ const intents = await Promise.all(Array.from({ length: 101 }, (_, index) => rese
   nowMs: now + 5_000,
 })));
 
-assert.equal(intents.filter((intent) => intent.priceTier === 'launch').length, 100);
-assert.equal(intents.filter((intent) => intent.priceTier === 'standard').length, 1);
+assert.equal(intents.filter((intent) => intent.priceTier === 'launch').length, 101);
+assert.equal(intents.filter((intent) => intent.priceTier === 'standard').length, 0);
 assert.equal(intents[0].amountCents, DEFAULT_LAUNCH_PRICE_CENTS);
-assert.equal(intents[100].amountCents, DEFAULT_STANDARD_PRICE_CENTS);
+assert.equal(intents[100].amountCents, DEFAULT_LAUNCH_PRICE_CENTS);
 assert.equal(intents[0].offerTerms.selectedAmountCents, DEFAULT_LAUNCH_PRICE_CENTS);
 assert.equal(Object.isFrozen(intents[0].offerTerms), true);
 assert.equal(repository.intents.length, 101);

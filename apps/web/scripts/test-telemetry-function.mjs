@@ -267,6 +267,19 @@ try {
   assert.equal(unauthorizedReport.status, 401);
   assert.equal(unauthorizedReport.headers['www-authenticate'], 'Bearer');
 
+  const standardsResponse = createResponse();
+  await handler({
+    method: 'GET',
+    body: null,
+    url: '/api/telemetry?action=checkout-funnel-report&end=2026-07-30&days=2',
+    headers: { 'user-agent': 'excluded-test-agent' },
+    get query() {
+      throw new Error('Legacy request.query must not be accessed when request.url is available.');
+    },
+  }, standardsResponse);
+  assert.equal(standardsResponse.statusCode, 401);
+  assert.equal(standardsResponse.headers['www-authenticate'], 'Bearer');
+
   const checklistReport = await request(null, 'GET', {
     url: '/api/telemetry?action=checklist-report&end=2026-07-30&days=2',
     headers: { authorization: 'Bearer report-token-for-tests' },

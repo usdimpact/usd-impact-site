@@ -34,12 +34,10 @@ with check (
   )
   and char_length(subject) between 3 and 160
   and subject = btrim(subject)
-  and strpos(subject, chr(0)) = 0
   and strpos(subject, chr(10)) = 0
   and strpos(subject, chr(13)) = 0
   and char_length(message) between 10 and 5000
   and message = btrim(message)
-  and strpos(message, chr(0)) = 0
   and strpos(message, chr(13)) = 0
 );
 

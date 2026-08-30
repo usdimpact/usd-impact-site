@@ -1,0 +1,191 @@
+name: Weekly USD Impact report publication
+
+on:
+  schedule:
+    - cron: '17 8 * * 0'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: weekly-usd-impact-report
+  cancel-in-progress: false
+
+jobs:
+  generate-and-open-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+
+      - name: Resolve completed Friday and prevent duplicates
+        id: preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          week="$(date -u -d 'last friday' +%F)"
+          title="Publish Weekly USD Impact Brief — $week"
+          branch_prefix="automation/weekly-usd-impact-$week-"
+          report="apps/web/src/content/weekly-reports/$week.md"
+          echo "week=$week" >> "$GITHUB_OUTPUT"
+
+          if gh api "repos/$GITHUB_REPOSITORY/contents/$report?ref=main" >/dev/null 2>&1; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Weekly report $week already exists on main."
+            exit 0
+          fi
+
+          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --state all --base main --limit 100 \
+            --json title,headRefName,url \
+            --jq ".[] | select(.title == \"$title\" and (.headRefName | startswith(\"$branch_prefix\"))) | .url" | head -n 1)"
+          if [ -n "$existing" ]; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Weekly report PR already exists: $existing"
+            exit 0
+          fi
+          echo "needed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch and validate immutable Score archive
+        if: steps.preflight.outputs.needed == 'true'
+        env:
+          WEEK: ${{ steps.preflight.outputs.week }}
+        run: |
+          set -euo pipefail
+          url="https://score.usd-impact.com/archive/$WEEK/weekly_input.json"
+          curl --fail --silent --show-error --location --retry 2 --retry-all-errors \
+            --connect-timeout 10 --max-time 30 "$url" > "$RUNNER_TEMP/weekly_input.json"
+          jq -e --arg week "$WEEK" '
+            .week_ending == $week and
+            (.drivers | length) == 8 and
+            (.source_provenance | length) == 8 and
+            ([.source_provenance[].status] | all(. == "fresh")) and
+            .generation.external_event_claims_added == false
+          ' "$RUNNER_TEMP/weekly_input.json" >/dev/null
+
+      - name: Require five published Daily editions
+        if: steps.preflight.outputs.needed == 'true'
+        env:
+          WEEK: ${{ steps.preflight.outputs.week }}
+        run: |
+          set -euo pipefail
+          monday="$(date -u -d "$WEEK -4 days" +%F)"
+          for offset in 0 1 2 3 4; do
+            day="$(date -u -d "$monday +$offset days" +%F)"
+            file="src/content/news/$day.md"
+            test -f "$file"
+            grep -Eq '^status: ["'"']?published["'"']?$' "$file"
+          done
+
+      - name: Generate deterministic weekly report
+        if: steps.preflight.outputs.needed == 'true'
+        env:
+          WEEK: ${{ steps.preflight.outputs.week }}
+        run: |
+          node scripts/generate-weekly-report.mjs \
+            --week "$WEEK" \
+            --score "$RUNNER_TEMP/weekly_input.json" \
+            --output "src/content/weekly-reports/$WEEK.md"
+
+      - name: Validate report and complete production build
+        if: steps.preflight.outputs.needed == 'true'
+        run: |
+          node scripts/test-weekly-report-publication.mjs
+          npm run validate:reports
+          npm run build:preview
+          git diff --check
+
+      - name: Open protected draft publication PR
+        if: steps.preflight.outputs.needed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WEEK: ${{ steps.preflight.outputs.week }}
+        run: |
+          set -euo pipefail
+          expected="apps/web/src/content/weekly-reports/$WEEK.md"
+          changed="$(git status --porcelain --untracked-files=all | sed -E 's/^.. //')"
+          if [ "$changed" != "$expected" ]; then
+            echo "Unexpected generated paths:" >&2
+            printf '%s\n' "$changed" >&2
+            exit 1
+          fi
+
+          branch="automation/weekly-usd-impact-$WEEK-$GITHUB_RUN_ID"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add "$expected"
+          git commit -m "Publish Weekly USD Impact Brief — $WEEK"
+          git push --set-upstream origin "$branch"
+          head_sha="$(git rev-parse HEAD)"
+
+          cat > "$RUNNER_TEMP/weekly-pr.md" <<EOF
+          ## Automated Weekly USD Impact publication
+
+          This draft contains the deterministic, source-bounded Weekly USD Impact Brief for **$WEEK**.
+
+          - exactly five checked-in published Daily editions;
+          - immutable completed-Friday Score archive with eight fresh inputs;
+          - no new external event claims;
+          - no Score formula, commerce, authentication, entitlement, or environment change;
+          - no automatic merge or Production deployment.
+
+          Exact-head Web quality must pass before protected editorial review and merge.
+          EOF
+
+          pr_url="$(gh pr create --draft --base main --head "$branch" \
+            --title "Publish Weekly USD Impact Brief — $WEEK" \
+            --body-file "$RUNNER_TEMP/weekly-pr.md")"
+          gh workflow run quality.yml --ref "$branch"
+
+          run_id=""
+          for attempt in $(seq 1 30); do
+            run_id="$(gh run list --workflow quality.yml --branch "$branch" --event workflow_dispatch --limit 10 \
+              --json databaseId,headSha --jq ".[] | select(.headSha == \"$head_sha\") | .databaseId" | head -n 1)"
+            [ -n "$run_id" ] && break
+            sleep 5
+          done
+          [ -n "$run_id" ] || { echo "Could not locate exact-head Web quality run"; exit 1; }
+          gh run watch "$run_id" --exit-status
+          echo "Draft weekly publication PR ready for protected review: $pr_url"
+
+      - name: Report bounded weekly failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WEEK: ${{ steps.preflight.outputs.week }}
+        run: |
+          set -euo pipefail
+          title='P1 — Weekly USD Impact report automation requires attention'
+          body="$RUNNER_TEMP/weekly-failure.md"
+          cat > "$body" <<EOF
+          ## Weekly USD Impact report automation failure
+
+          - Target week: \`${WEEK:-unresolved}\`
+          - Run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          - Commit: \`$GITHUB_SHA\`
+
+          The workflow remained fail-closed. No report was merged or deployed. Inspect the failed prerequisite or validation step; do not bypass the immutable Score, five-Daily-edition, freshness, or exact-head quality gates.
+          EOF
+          number="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$title in:title" --json number --jq '.[0].number // empty')"
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --repo "$GITHUB_REPOSITORY" --body-file "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$body"
+          fi

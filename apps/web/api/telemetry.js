@@ -47,14 +47,18 @@ function requestHeader(request, name) {
 }
 
 function queryValue(request, key) {
+  if (typeof request.url === 'string') {
+    try {
+      return new URL(request.url, 'https://usd-impact.com').searchParams.get(key)?.trim() ?? '';
+    } catch {
+      return '';
+    }
+  }
+
   const direct = request.query?.[key];
   if (Array.isArray(direct)) return String(direct[0] ?? '').trim();
   if (direct !== undefined && direct !== null) return String(direct).trim();
-  try {
-    return new URL(request.url ?? '/', 'https://usd-impact.com').searchParams.get(key)?.trim() ?? '';
-  } catch {
-    return '';
-  }
+  return '';
 }
 
 function parseBody(request) {

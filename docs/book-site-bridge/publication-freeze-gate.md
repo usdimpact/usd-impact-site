@@ -21,7 +21,7 @@ Repository: `usdimpact/usd-impact-site`
 
 Pinned release baseline:
 
-`3b6f40c3f22bf2960f0d465d215ed415f8ed165c`
+`a86e57dafe91da67553e73e01bb0c703a868c949`
 
 This baseline includes released PRs #383, #392 and #393.
 
@@ -37,7 +37,7 @@ Repository: `usdimpact/usd-impact-pipeline`
 
 Pinned main baseline for this preparation pass:
 
-`ac13266d284a42eb48b8341441ebca747a5ce153`
+`f51f7abf2d4ec99890eb5537424f6faab885ef32`
 
 Authoritative production workflow:
 

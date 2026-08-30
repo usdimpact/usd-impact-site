@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import handler, {
   buildChecklistAnalytics,
+  buildCheckoutFunnelAnalytics,
   resetTelemetryStateForTests,
   setTelemetryAggregateReaderForTests,
   setTelemetryRecorderForTests,
@@ -48,10 +49,12 @@ const errors = [];
 const originalLog = console.log;
 const originalError = console.error;
 const originalReportToken = process.env.TELEMETRY_REPORT_TOKEN;
+const originalVercelEnvironment = process.env.VERCEL_ENV;
 console.log = (value) => logged.push(value);
 console.error = (value) => errors.push(value);
 
 try {
+  process.env.VERCEL_ENV = 'production';
   const checklist = await request({
     eventId: 'evt-checklist-0001',
     eventName: 'checklist_download',
@@ -99,6 +102,57 @@ try {
   assert.equal(completionRecord.quizId, 'quiz-start-here');
   assert.equal(completionRecord.outcome, 'pass');
   assert.equal(completionRecord.score, 9);
+
+  for (const eventName of [
+    'checkout_view',
+    'checkout_button_click',
+    'checkout_sign_in_redirect',
+  ]) {
+    const checkoutEvent = await request({
+      eventId: `evt-${eventName.replaceAll('_', '-')}-0001`,
+      eventName,
+      route: '/checkout/',
+      utmSource: 'launch_email',
+      email: 'must-not-be-recorded@example.com',
+      accountId: 'must-not-be-recorded',
+      paymentDetails: { card: 'must-not-be-recorded' },
+    });
+    assert.equal(checkoutEvent.status, 202);
+    const checkoutRecord = JSON.parse(logged.at(-1));
+    assert.equal(checkoutRecord.eventName, eventName);
+    assert.equal(checkoutRecord.route, '/checkout/');
+    assert.equal(checkoutRecord.utmSource, 'launch_email');
+    assert.equal(checkoutRecord.email, undefined);
+    assert.equal(checkoutRecord.accountId, undefined);
+    assert.equal(checkoutRecord.paymentDetails, undefined);
+  }
+
+  const invalidCheckoutRoute = await request({
+    eventId: 'evt-checkout-route-0001',
+    eventName: 'checkout_view',
+    route: '/account/',
+  });
+  assert.equal(invalidCheckoutRoute.status, 400);
+
+  process.env.VERCEL_ENV = 'preview';
+  setTelemetryRecorderForTests(async () => {
+    throw new Error('Preview checkout telemetry must not reach durable storage.');
+  });
+  const isolatedPreviewEvent = await request({
+    eventId: 'evt-checkout-preview-0001',
+    eventName: 'checkout_view',
+    route: '/checkout/',
+  });
+  assert.equal(isolatedPreviewEvent.status, 202);
+  assert.equal(isolatedPreviewEvent.json.environmentIsolated, true);
+  assert.equal(isolatedPreviewEvent.json.durable, false);
+  process.env.VERCEL_ENV = 'production';
+  setTelemetryRecorderForTests(async () => ({
+    durable: true,
+    duplicate: false,
+    rateLimited: false,
+    status: 'accepted',
+  }));
 
   const invalidEvent = await request({
     eventId: 'evt-invalid-0001',
@@ -174,6 +228,34 @@ try {
   assert.equal(summary.mostRecentDownloadDate, '2026-07-30');
   assert.deepEqual(summary.attribution.sources, [{ label: 'newsletter', value: 8 }]);
 
+  const checkoutAggregateFixture = {
+    totals: {
+      'checkout:views': 40,
+      'checkout:button_clicks': 12,
+      'checkout:sign_in_redirects': 9,
+      'checkout:utm_source:launch_email': 8,
+    },
+    days: [
+      { date: '2026-07-29', counters: { 'checkout:views': 6, 'checkout:button_clicks': 2 } },
+      {
+        date: '2026-07-30',
+        counters: {
+          'checkout:views': 4,
+          'checkout:button_clicks': 1,
+          'checkout:sign_in_redirects': 1,
+        },
+      },
+    ],
+  };
+  const checkoutSummary = buildCheckoutFunnelAnalytics(checkoutAggregateFixture, 2);
+  assert.deepEqual(checkoutSummary.lifetime, { views: 40, buttonClicks: 12, signInRedirects: 9 });
+  assert.equal(checkoutSummary.range.views, 10);
+  assert.equal(checkoutSummary.range.buttonClicks, 3);
+  assert.equal(checkoutSummary.range.signInRedirects, 1);
+  assert.equal(checkoutSummary.range.buttonClickRatePercent, 30);
+  assert.equal(checkoutSummary.range.signInRedirectRatePercent, 33.3);
+  assert.deepEqual(checkoutSummary.attribution.sources, [{ label: 'launch_email', value: 8 }]);
+
   process.env.TELEMETRY_REPORT_TOKEN = 'report-token-for-tests';
   setTelemetryAggregateReaderForTests(async (dates) => {
     assert.deepEqual(dates, ['2026-07-27', '2026-07-28', '2026-07-29', '2026-07-30']);
@@ -194,6 +276,19 @@ try {
   assert.deepEqual(checklistReport.json.comparisonRange, { start: '2026-07-27', end: '2026-07-28', days: 2 });
   assert.equal(checklistReport.json.checklist.rangeDownloads, 10);
 
+  setTelemetryAggregateReaderForTests(async (dates) => {
+    assert.deepEqual(dates, ['2026-07-29', '2026-07-30']);
+    return checkoutAggregateFixture;
+  });
+  const checkoutReport = await request(null, 'GET', {
+    url: '/api/telemetry?action=checkout-funnel-report&end=2026-07-30&days=2',
+    headers: { authorization: 'Bearer report-token-for-tests' },
+  });
+  assert.equal(checkoutReport.status, 200);
+  assert.deepEqual(checkoutReport.json.range, { start: '2026-07-29', end: '2026-07-30', days: 2 });
+  assert.equal(checkoutReport.json.checkout.range.views, 10);
+  assert.match(checkoutReport.json.checkout.eventSemantics, /not unique visitors/i);
+
   const invalidReportRange = await request(null, 'GET', {
     url: '/api/telemetry?action=checklist-report&end=2026-07-30&days=32',
     headers: { authorization: 'Bearer report-token-for-tests' },
@@ -208,6 +303,8 @@ try {
   console.error = originalError;
   if (originalReportToken === undefined) delete process.env.TELEMETRY_REPORT_TOKEN;
   else process.env.TELEMETRY_REPORT_TOKEN = originalReportToken;
+  if (originalVercelEnvironment === undefined) delete process.env.VERCEL_ENV;
+  else process.env.VERCEL_ENV = originalVercelEnvironment;
   resetTelemetryStateForTests();
 }
 

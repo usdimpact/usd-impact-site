@@ -25,15 +25,16 @@ If you create an account or purchase the Guided Interactive Edition, we may proc
 
 Payment-card details are collected and processed by **Lemon Squeezy**, the selected Merchant of Record, under its [Privacy Notice](https://www.lemonsqueezy.com/privacy). USD Impact does not receive or store complete payment-card numbers or card security codes.
 
-The website also records limited first-party learning events needed to understand whether educational resources work. These events can include:
+The website also records limited first-party learning and checkout-funnel events needed to understand whether educational resources and the purchase path work. These events can include:
 
 - a Weekly Dollar Regime Checklist download;
 - a quiz start or retry;
 - quiz completion, pass or fail outcome, and aggregate score;
+- a checkout-page view, checkout-button click, or redirect to secure sign-in;
 - the page route where the event occurred; and
 - campaign values explicitly present in `utm_source`, `utm_medium`, or `utm_campaign` URL parameters.
 
-Learning telemetry does not include quiz answer choices, correct answers, email addresses, account identifiers, advertising identifiers, persistent session identifiers, or raw IP addresses in the application event record.
+This telemetry does not include quiz answer choices, correct answers, email addresses, account identifiers, advertising identifiers, persistent session identifiers, payment details, or raw IP addresses in the application event record. Checkout-funnel counts are aggregate events, not unique visitors and not evidence of a buyer or completed purchase.
 
 ## Why we collect it
 
@@ -54,18 +55,19 @@ Account and commerce information is used to:
 - answer account, billing, refund, and deletion requests; and
 - meet fraud-prevention, accounting, tax, and other legal obligations.
 
-Learning telemetry is used to:
+Learning and checkout-funnel telemetry is used to:
 
 - measure whether the checklist and quizzes are used;
 - identify completion and retry patterns;
-- improve question clarity and the learning sequence; and
-- detect failures in educational workflows.
+- improve question clarity and the learning sequence;
+- detect failures in educational workflows; and
+- understand aggregate movement from the checkout page to the secure sign-in boundary without tracking a person.
 
 Joining the waitlist does not subscribe you to unrelated market commentary, trading alerts, or third-party promotions.
 
 ## Service providers
 
-The website is deployed through Vercel. Vercel processes website requests and application runtime logs needed to operate and troubleshoot the service. Cloudflare Stream processes protected video playback requests and delivers the adaptive video and caption files requested by an authorized account. Aggregate learning counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Account, entitlement, commerce, consent, notification-delivery, and saved video-progress records are stored through Supabase. Waitlist contacts and requested email delivery are processed through Resend. When public checkout is separately enabled, Lemon Squeezy processes payment, tax, buyer financial-document, refund, fraud-prevention, and related transaction information as Merchant of Record. Applicable indirect taxes are calculated, collected and remitted by Lemon Squeezy as Merchant of Record and shown before payment. USD Impact remains responsible for the account, product access, learning records, and product-support information it processes.
+The website is deployed through Vercel. Vercel processes website requests and application runtime logs needed to operate and troubleshoot the service. Cloudflare Stream processes protected video playback requests and delivers the adaptive video and caption files requested by an authorized account. Aggregate learning and checkout-funnel counters and short-lived duplicate-event identifiers are stored through Upstash Redis connected to the Vercel project. Account, entitlement, commerce, consent, notification-delivery, and saved video-progress records are stored through Supabase. Waitlist contacts and requested email delivery are processed through Resend. When public checkout is separately enabled, Lemon Squeezy processes payment, tax, buyer financial-document, refund, fraud-prevention, and related transaction information as Merchant of Record. Applicable indirect taxes are calculated, collected and remitted by Lemon Squeezy as Merchant of Record and shown before payment. USD Impact remains responsible for the account, product access, learning records, and product-support information it processes.
 
 These providers process information only as needed to operate the website, accounts, learning tools, commerce workflow, support, and requested email delivery. Their own privacy notices apply where they act independently, including Lemon Squeezy's privacy notice for the payment transaction.
 
@@ -81,7 +83,7 @@ Daily Learning consent and withdrawal evidence is retained as needed to demonstr
 
 Account and entitlement records are retained while your account or purchased access remains active. If you request account deletion, access is disabled and the account enters the documented safety period before eligible account data is deleted or anonymized. Transaction, refund, invoice, fraud-prevention, and accounting records may be retained for the periods required by the payment provider, payment networks, tax, accounting, dispute, and other applicable legal obligations.
 
-Daily aggregate learning counters are retained for up to 24 months. Duplicate event identifiers are retained for up to 24 hours and are used only to prevent repeated counting. Raw learning event bodies are not stored in the durable analytics database. Operational runtime-log retention follows the hosting plan and project settings.
+Daily aggregate learning and checkout-funnel counters are retained for up to 24 months. Duplicate event identifiers are retained for up to 24 hours and are used only to prevent repeated counting. Raw telemetry event bodies are not stored in the durable analytics database. Operational runtime-log retention follows the hosting plan and project settings.
 
 ## Sharing and sale
 

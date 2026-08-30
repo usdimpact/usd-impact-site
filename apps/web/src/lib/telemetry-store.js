@@ -102,6 +102,24 @@ export function buildTelemetryCounterPairs(record) {
     }
   }
 
+  if (record.eventName.startsWith('checkout_')) {
+    const checkoutCounter = {
+      checkout_view: 'views',
+      checkout_button_click: 'button_clicks',
+      checkout_sign_in_redirect: 'sign_in_redirects',
+    }[record.eventName];
+    if (checkoutCounter) addPair(pairs, `checkout:${checkoutCounter}`);
+    addPair(pairs, `checkout:route:${record.route}`);
+
+    for (const [property, label] of [
+      ['utmSource', 'utm_source'],
+      ['utmMedium', 'utm_medium'],
+      ['utmCampaign', 'utm_campaign'],
+    ]) {
+      if (record[property]) addPair(pairs, `checkout:${label}:${record[property]}`);
+    }
+  }
+
   if (record.quizId) {
     const prefix = `quiz:${record.quizId}`;
     if (record.eventName === 'quiz_start') addPair(pairs, `${prefix}:starts`);

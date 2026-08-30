@@ -141,7 +141,7 @@ export function generateWeeklyReport({ week, score, newsRoot, generatedAt = new 
       `    title: ${yamlQuote(edition.title)}`,
       `    url: ${yamlQuote(`/news/${edition.date}`)}`,
     ]),
-    'catalysts:',
+    catalysts.length > 0 ? 'catalysts:' : 'catalysts: []',
     ...catalysts.flatMap((item) => [
       `  - date: ${yamlQuote(item.date)}`,
       `    event: ${yamlQuote(item.event)}`,

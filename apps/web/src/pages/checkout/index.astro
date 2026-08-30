@@ -234,6 +234,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           body: JSON.stringify({ idempotencyKey: pendingCheckoutKey }),
         });
         if (response.status === 401) {
+          window.dispatchEvent(new Event('usd-impact:checkout-sign-in-redirect'));
           window.location.assign('/account/sign-in/?next=/checkout/');
           return;
         }

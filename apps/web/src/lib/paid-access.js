@@ -21,8 +21,8 @@ export const PURCHASE_INTENT_STATUSES = Object.freeze({
 
 export const DEFAULT_LAUNCH_PRICE_CENTS = 3_900;
 export const DEFAULT_STANDARD_PRICE_CENTS = 4_900;
-export const DEFAULT_LAUNCH_PURCHASE_LIMIT = 100;
-export const DEFAULT_LAUNCH_DURATION_DAYS = 30;
+export const DEFAULT_LAUNCH_PURCHASE_LIMIT = null;
+export const DEFAULT_LAUNCH_DURATION_DAYS = null;
 export const DEFAULT_CURRENCY = 'USD';
 
 const IDENTIFIER_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$/;
@@ -242,7 +242,12 @@ export function createLaunchOffer({
 }) {
   const startsAt = requireTimestamp(launchStartsAt, 'launchStartsAt');
   const startsAtMs = Date.parse(startsAt);
-  const normalizedDurationDays = requireInteger(durationDays, 'durationDays', 1);
+  const normalizedDurationDays = durationDays == null
+    ? null
+    : requireInteger(durationDays, 'durationDays', 1);
+  const normalizedPurchaseLimit = purchaseLimit == null
+    ? null
+    : requireInteger(purchaseLimit, 'purchaseLimit', 1);
   const normalizedLaunchPrice = requireInteger(launchPriceCents, 'launchPriceCents', 1);
   const normalizedStandardPrice = requireInteger(standardPriceCents, 'standardPriceCents', 1);
   if (normalizedLaunchPrice >= normalizedStandardPrice) {
@@ -258,9 +263,11 @@ export function createLaunchOffer({
     currency,
     launchPriceCents: normalizedLaunchPrice,
     standardPriceCents: normalizedStandardPrice,
-    purchaseLimit: requireInteger(purchaseLimit, 'purchaseLimit', 1),
+    purchaseLimit: normalizedPurchaseLimit,
     launchStartsAt: startsAt,
-    launchEndsAt: new Date(startsAtMs + (normalizedDurationDays * DAY_MS)).toISOString(),
+    launchEndsAt: normalizedDurationDays == null
+      ? null
+      : new Date(startsAtMs + (normalizedDurationDays * DAY_MS)).toISOString(),
   });
 }
 
@@ -278,7 +285,12 @@ export function evaluateLaunchOffer({
   const reservationCount = requireInteger(inFlightLaunchReservationCount, 'inFlightLaunchReservationCount');
   const normalizedClosedAt = optionalTimestamp(closedAt, 'closedAt');
   const startsAtMs = Date.parse(requireTimestamp(offer.launchStartsAt, 'offer.launchStartsAt'));
-  const endsAtMs = Date.parse(requireTimestamp(offer.launchEndsAt, 'offer.launchEndsAt'));
+  const endsAtMs = offer.launchEndsAt == null
+    ? null
+    : Date.parse(requireTimestamp(offer.launchEndsAt, 'offer.launchEndsAt'));
+  const purchaseLimit = offer.purchaseLimit == null
+    ? null
+    : requireInteger(offer.purchaseLimit, 'offer.purchaseLimit', 1);
 
   let priceTier = 'launch';
   let reason = 'launch-active';
@@ -288,13 +300,13 @@ export function evaluateLaunchOffer({
   } else if (nowMs < startsAtMs) {
     priceTier = 'standard';
     reason = 'launch-not-started';
-  } else if (nowMs >= endsAtMs) {
+  } else if (endsAtMs != null && nowMs >= endsAtMs) {
     priceTier = 'standard';
     reason = 'launch-deadline-reached';
-  } else if (completedCount >= offer.purchaseLimit) {
+  } else if (purchaseLimit != null && completedCount >= purchaseLimit) {
     priceTier = 'standard';
     reason = 'launch-purchase-limit-reached';
-  } else if ((completedCount + reservationCount) >= offer.purchaseLimit) {
+  } else if (purchaseLimit != null && (completedCount + reservationCount) >= purchaseLimit) {
     priceTier = 'standard';
     reason = 'launch-capacity-reserved';
   }

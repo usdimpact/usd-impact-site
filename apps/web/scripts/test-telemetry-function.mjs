@@ -54,6 +54,7 @@ console.log = (value) => logged.push(value);
 console.error = (value) => errors.push(value);
 
 try {
+  process.env.VERCEL_ENV = 'production';
   const checklist = await request({
     eventId: 'evt-checklist-0001',
     eventName: 'checklist_download',
@@ -145,7 +146,7 @@ try {
   assert.equal(isolatedPreviewEvent.status, 202);
   assert.equal(isolatedPreviewEvent.json.environmentIsolated, true);
   assert.equal(isolatedPreviewEvent.json.durable, false);
-  delete process.env.VERCEL_ENV;
+  process.env.VERCEL_ENV = 'production';
   setTelemetryRecorderForTests(async () => ({
     durable: true,
     duplicate: false,

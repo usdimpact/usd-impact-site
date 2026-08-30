@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { generateWeeklyReport } from './generate-weekly-report.mjs';
 
+const scriptRoot = path.dirname(fileURLToPath(import.meta.url));
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'weekly-report-'));
 const newsRoot = path.join(root, 'news');
 fs.mkdirSync(newsRoot);
@@ -19,7 +21,7 @@ const score = {
 };
 
 try {
-  const workflow = fs.readFileSync(path.resolve('../../.github/workflows/weekly-report.yml'), 'utf8');
+  const workflow = fs.readFileSync(path.resolve(scriptRoot, '../../../.github/workflows/weekly-report.yml'), 'utf8');
   assert.match(workflow, /cron: '17 8 \* \* 0'/);
   assert.match(workflow, /weekly-usd-impact-report/);
   assert.match(workflow, /status --porcelain --untracked-files=all/);

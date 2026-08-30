@@ -34,7 +34,7 @@ All other chapters remain editorially frozen unless the final layout pass reveal
 
 `usdimpact/usd-impact-site` `main` at:
 
-`3b6f40c3f22bf2960f0d465d215ed415f8ed165c`
+`a86e57dafe91da67553e73e01bb0c703a868c949`
 
 Relevant authority:
 
@@ -45,7 +45,7 @@ Relevant authority:
 
 `usdimpact/usd-impact-pipeline` `main` at:
 
-`ac13266d284a42eb48b8341441ebca747a5ce153`
+`f51f7abf2d4ec99890eb5537424f6faab885ef32`
 
 Relevant authority:
 

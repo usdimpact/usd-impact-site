@@ -18,9 +18,13 @@ assert.equal(manifest.display, 'standalone');
 assert.equal(manifest.scope, '/');
 assert.ok(Array.isArray(manifest.icons) && manifest.icons.length > 0);
 assert.match(layout, /rel="manifest" href="\/manifest\.webmanifest"/);
-assert.doesNotMatch(layout, /import PwaClient/);
-assert.doesNotMatch(layout, /<PwaClient\s*\/>/);
+assert.match(layout, /import PwaClient/);
+assert.match(layout, /<PwaClient\s*\/>/);
 assert.doesNotMatch(pwaClient, /navigator\.serviceWorker\.register/);
+assert.match(pwaClient, /navigator\.serviceWorker\.getRegistration\('\/'\)/);
+assert.match(pwaClient, /registration\.pushManager\.getSubscription/);
+assert.match(pwaClient, /if \(!subscription\) await registration\.unregister\(\)/);
+assert.match(pwaClient, /'\/account\/notifications'/);
 
 // USD Impact PWA remains network-only. Protected content and entitlement-bearing
 // URLs must never be persisted by the service worker.
@@ -46,4 +50,4 @@ assert.match(notificationPage, /userVisibleOnly:\s*true/);
 assert.match(notificationPage, /applicationServerKey:/);
 assert.match(notificationPage, /registration\.unregister\(\)/);
 
-console.log('PWA contract verified: installable shell, network-only worker, explicit registration and Web Push opt-in.');
+console.log('PWA contract verified: network-only worker, legacy cleanup, explicit registration and Web Push opt-in.');

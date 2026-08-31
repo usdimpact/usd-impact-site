@@ -70,8 +70,9 @@ for (const requiredDisclosure of [
   assert.match(privacy, new RegExp(requiredDisclosure.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
 }
 
-assert.doesNotMatch(layout, /<PwaClient\s*\/>/);
+assert.match(layout, /<PwaClient\s*\/>/);
 assert.doesNotMatch(pwaClient, /navigator\.serviceWorker\.register/);
+assert.match(pwaClient, /if \(!subscription\) await registration\.unregister\(\)/);
 const enableHandler = notifications.indexOf("enableButton?.addEventListener('click'");
 const permissionPrompt = notifications.indexOf('Notification.requestPermission()', enableHandler);
 const registrationCall = notifications.indexOf('const registrationState = await ensureRegistration()', enableHandler);

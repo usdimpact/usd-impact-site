@@ -5,6 +5,7 @@ import LibraryPassLaunchAnnouncement from '../components/LibraryPassLaunchAnnoun
 import BookChapterBridgeCard from '../components/BookChapterBridgeCard.astro';
 import ConsentClient from '../components/ConsentClient.astro';
 import TelemetryClient from '../components/TelemetryClient.astro';
+import PwaClient from '../components/PwaClient.astro';
 import { getChapterById, getSurfaceBridgeForPath } from '../data/book-site-bridge/index.mjs';
 const { title, description, noindex = false, stylesheets = [] } = Astro.props;
 const surfaceBridge = getSurfaceBridgeForPath(Astro.url.pathname);
@@ -95,5 +96,6 @@ const surfaceChapter = surfaceBridge ? getChapterById(surfaceBridge.chapterId) :
     </footer>
     <ConsentClient />
     <TelemetryClient />
+    <PwaClient />
   </body>
 </html>

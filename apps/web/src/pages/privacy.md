@@ -51,7 +51,7 @@ Authentication cookies use `Secure` on HTTPS, `SameSite=Lax`, and the narrow pur
 
 The account sign-in page loads Cloudflare Turnstile for abuse prevention. Turnstile processes the security request and returns a short-lived verification token; Cloudflare may use security data or a clearance cookie when its challenge features apply. USD Impact does not use Turnstile for advertising. See the [Cloudflare Privacy Policy](https://www.cloudflare.com/privacypolicy/).
 
-USD Impact does not use browser `localStorage` or `sessionStorage` for consent or aggregate analytics. The website's service worker is network-only, does not create an application content cache, and is registered only after a signed-in user explicitly selects **Enable notifications** and grants browser permission. Disabling notifications removes that browser's push subscription and service-worker registration.
+USD Impact does not use browser `localStorage` or `sessionStorage` for consent or aggregate analytics. The website's service worker is network-only, does not create an application content cache, and is registered only after a signed-in user explicitly selects **Enable notifications** and grants browser permission. Disabling notifications removes that browser's push subscription and service-worker registration. Any legacy service-worker registration without an active push subscription is removed automatically.
 
 ## Why we collect it
 

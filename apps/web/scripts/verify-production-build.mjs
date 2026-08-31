@@ -116,16 +116,19 @@ for (const [route, label, lesson] of releasedQuizzes) {
 }
 const finalQuizHtml = fs.existsSync(pagePath(routes.currencyRiskQuiz)) ? fs.readFileSync(pagePath(routes.currencyRiskQuiz), 'utf8') : '';
 if (finalQuizHtml && !finalQuizHtml.includes('data-quiz-completion-link')) failures.push('Quiz 12 is missing the completion link contract.');
-for (const file of ['api/waitlist.js','api/daily-news-source.js','api/catalyst-brief-source.js','api/guided-edition.js','api/account.js','src/lib/video-library-handler.js','src/lib/video-progress-handler.js','middleware.js']) if (!fs.existsSync(path.resolve(file))) failures.push(`Required Vercel function, protected handler, or middleware is missing: ${file}.`);
+for (const file of ['api/waitlist.js','api/daily-news-source.js','api/catalyst-brief-source.js','api/guided-edition.js','api/account.js','src/lib/video-library-handler.js','src/lib/video-progress-handler.js','src/lib/book-delivery-handler.js','src/lib/private-book.js','middleware.js']) if (!fs.existsSync(path.resolve(file))) failures.push(`Required Vercel function, protected handler, or middleware is missing: ${file}.`);
 const apiFunctionFiles = fs.readdirSync(path.resolve('api')).filter((name) => name.endsWith('.js'));
 if (apiFunctionFiles.length > 12) failures.push(`Vercel function-source count is ${apiFunctionFiles.length}; the Hobby limit is 12.`);
 const vercelConfig = JSON.parse(fs.readFileSync(path.resolve('vercel.json'), 'utf8'));
 const rewrites = new Map((vercelConfig.rewrites || []).map((rewrite) => [rewrite.source, rewrite.destination]));
 if (rewrites.get('/guided-edition/video-library') !== '/api/guided-edition?__video_library=1') failures.push('Protected video catalog is not consolidated into the Guided Edition function.');
+if (rewrites.get('/guided-edition/book') !== '/api/guided-edition?__book=1') failures.push('Protected book delivery is not consolidated into the Guided Edition function.');
+if (rewrites.get('/guided-edition/book/:path*') !== '/api/guided-edition?__book=1&__book_path=:path*') failures.push('Protected book download routing is missing.');
 if (rewrites.get('/api/video-progress') !== '/api/account?action=video-progress') failures.push('Video progress is not consolidated into the account function.');
 if (!fs.existsSync(path.join(distRoot, checklistDownload.replace(/^\//, '')))) failures.push(`Checklist PDF is missing: ${checklistDownload}.`);
 if (fs.existsSync(pagePath('/benchmark/usd-impact-benchmark-dashboard'))) failures.push('Draft benchmark route was generated.');
 if (fs.existsSync(pagePath('/guided-edition'))) failures.push('Protected Guided Edition was generated as public static HTML.');
+if (fs.existsSync(pagePath('/guided-edition/book'))) failures.push('Protected book delivery was generated as public static HTML.');
 
 const sitemap = path.join(distRoot, 'sitemap-0.xml');
 if (!fs.existsSync(sitemap)) failures.push('Generated sitemap-0.xml is missing.');
@@ -136,7 +139,7 @@ else {
     routes.dxyLesson,routes.dxyQuiz,routes.broadLesson,routes.broadQuiz,routes.regimeLesson,routes.regimeQuiz,
     routes.goldLesson,routes.goldQuiz,routes.wtiLesson,routes.wtiQuiz,routes.lngLesson,routes.lngQuiz,
     routes.equitiesLesson,routes.equitiesQuiz,routes.bitcoinLesson,routes.bitcoinQuiz,
-    routes.currencyRiskLesson,routes.currencyRiskQuiz,'/guided-edition','/guided-edition/video-library',
+    routes.currencyRiskLesson,routes.currencyRiskQuiz,'/guided-edition','/guided-edition/video-library','/guided-edition/book',
   ];
   for (const route of protectedRoutes) {
     if (xml.includes(`${route}/`)) failures.push(`Protected learning route appears in sitemap: ${route}.`);

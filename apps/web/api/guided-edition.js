@@ -35,6 +35,7 @@ import {
 } from '../src/lib/guided-edition.js';
 import { handleVideoLibraryRequest } from '../src/lib/video-library-handler.js';
 import { handleAudiobookRequest } from '../src/lib/audiobook-handler.js';
+import { handleBookDeliveryRequest } from '../src/lib/book-delivery-handler.js';
 
 const ROUTE_PARAM = '__paid_path';
 const ROOT_PATH = '/guided-edition/';
@@ -448,6 +449,9 @@ export default async function handler(request, response) {
   }
   if (internalUrl.searchParams.get('__audiobook') === '1') {
     return handleAudiobookRequest(request, response);
+  }
+  if (internalUrl.searchParams.get('__book') === '1') {
+    return handleBookDeliveryRequest(request, response);
   }
   return handleGuidedEditionRequest(request, response);
 }

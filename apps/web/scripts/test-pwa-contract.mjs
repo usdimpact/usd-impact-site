@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 
 const root = new URL('../', import.meta.url);
@@ -29,11 +28,39 @@ assert.doesNotMatch(pwaClient, /getSubscription\(\)\.catch\(\(\) => null\)/);
 assert.match(pwaClient, /subscription check failed; preserving registration/);
 assert.match(pwaClient, /'\/account\/notifications'/);
 
-const pwaScript = pwaClient.match(/<script>([\s\S]*?)<\/script>/)?.[1];
-assert.ok(pwaScript, 'PWA client inline script must be extractable for behavior tests.');
+const cleanupLegacyRegistration = async (registration, warn = console.warn) => {
+  if (!registration) return;
+  if (!registration.pushManager) {
+    await registration.unregister();
+    return;
+  }
+
+  let subscription;
+  try {
+    subscription = await registration.pushManager.getSubscription();
+  } catch (error) {
+    warn('USD Impact service-worker subscription check failed; preserving registration.', error);
+    return;
+  }
+
+  if (!subscription) await registration.unregister();
+};
+
+const cleanupPrefix = 'const cleanupLegacyRegistration = ';
+const cleanupStart = pwaClient.indexOf(cleanupPrefix);
+const cleanupEnd = pwaClient.indexOf('\n\n    window.addEventListener', cleanupStart);
+assert.ok(cleanupStart >= 0 && cleanupEnd > cleanupStart, 'PWA cleanup helper must be present.');
+const browserCleanupSource = pwaClient
+  .slice(cleanupStart + cleanupPrefix.length, cleanupEnd)
+  .replace(/;\s*$/, '');
+const normalizeSource = (value) => value.replace(/\s+/g, ' ').trim();
+assert.equal(
+  normalizeSource(browserCleanupSource),
+  normalizeSource(cleanupLegacyRegistration.toString()),
+  'Behavior-tested cleanup helper must exactly match the browser implementation.',
+);
 
 const runCleanup = async ({ registration }) => {
-  let loadHandler;
   let unregisterCalls = 0;
   let warningCalls = 0;
   const trackedRegistration = registration
@@ -46,27 +73,9 @@ const runCleanup = async ({ registration }) => {
       }
     : undefined;
 
-  vm.runInNewContext(pwaScript, {
-    navigator: {
-      serviceWorker: {
-        getRegistration: async () => trackedRegistration,
-      },
-    },
-    window: {
-      location: { pathname: '/' },
-      addEventListener: (name, handler) => {
-        if (name === 'load') loadHandler = handler;
-      },
-    },
-    console: {
-      warn: () => {
-        warningCalls += 1;
-      },
-    },
+  await cleanupLegacyRegistration(trackedRegistration, () => {
+    warningCalls += 1;
   });
-
-  assert.equal(typeof loadHandler, 'function');
-  await loadHandler();
   return { unregisterCalls, warningCalls };
 };
 

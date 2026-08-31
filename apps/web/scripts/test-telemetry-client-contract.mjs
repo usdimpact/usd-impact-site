@@ -27,6 +27,12 @@ for (const required of [
   'utm_medium',
   'utm_campaign',
   'usd-impact:checkout-sign-in-redirect',
+  'usd-impact:consent-change',
+  'usd-impact:consent-ready',
+  'USDImpactConsent',
+  'analyticsAllowed',
+  'if (!analyticsAllowed()) return false;',
+  'readCampaign()',
 ]) {
   assert.match(client, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 }
@@ -46,10 +52,15 @@ for (const forbidden of [
 
 assert.match(layout, /import TelemetryClient/);
 assert.match(layout, /<TelemetryClient\s*\/>/);
+const consentGuard = client.indexOf('if (!analyticsAllowed()) return false;');
+const campaignRead = client.indexOf('...readCampaign()');
+const telemetryRequest = client.indexOf('fetch(TELEMETRY_ENDPOINT');
+assert.ok(consentGuard >= 0 && campaignRead > consentGuard && telemetryRequest > campaignRead);
 
 assert.match(checkout, /window\.dispatchEvent\(new Event\('usd-impact:checkout-sign-in-redirect'\)\)/);
 assert.match(privacy, /checkout-page view, checkout-button click, or redirect to secure sign-in/i);
 assert.match(privacy, /not unique visitors and not evidence of a buyer or completed purchase/i);
 assert.match(privacy, /does not include[\s\S]*email addresses[\s\S]*account identifiers[\s\S]*payment details/i);
+assert.match(privacy, /aggregate analytics remains off unless you select \*\*Accept analytics\*\*/i);
 
 console.log('Telemetry client contract passed.');

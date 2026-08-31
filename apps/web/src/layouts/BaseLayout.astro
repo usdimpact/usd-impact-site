@@ -3,6 +3,7 @@ import '../styles/global.css';
 import '../styles/account.css';
 import LibraryPassLaunchAnnouncement from '../components/LibraryPassLaunchAnnouncement.astro';
 import BookChapterBridgeCard from '../components/BookChapterBridgeCard.astro';
+import ConsentClient from '../components/ConsentClient.astro';
 import TelemetryClient from '../components/TelemetryClient.astro';
 import PwaClient from '../components/PwaClient.astro';
 import { getChapterById, getSurfaceBridgeForPath } from '../data/book-site-bridge/index.mjs';
@@ -86,12 +87,14 @@ const surfaceChapter = surfaceBridge ? getChapterById(surfaceBridge.chapterId) :
           <a href="/reports/">Reports</a>
           <a href="/account/">Account</a>
           <a href="/privacy/">Privacy notice</a>
+          <button id="privacy-settings-button" class="footer-privacy-settings" type="button">Privacy settings</button>
           <a href="/terms/">Terms &amp; Conditions</a>
           <a href="/refund-policy/">Refund Policy</a>
           <a href="/compliance/">Compliance</a>
         </div>
       </div>
     </footer>
+    <ConsentClient />
     <TelemetryClient />
     <PwaClient />
   </body>

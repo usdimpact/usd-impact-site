@@ -4,9 +4,13 @@
   const CHECKLIST_PATH = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
   const CHECKOUT_PATH = '/checkout/';
   const CHECKOUT_SIGN_IN_EVENT = 'usd-impact:checkout-sign-in-redirect';
+  const CONSENT_CHANGE_EVENT = 'usd-impact:consent-change';
+  const CONSENT_READY_EVENT = 'usd-impact:consent-ready';
   const observedResults = new WeakSet();
 
-  const campaign = (() => {
+  const analyticsAllowed = () => window.USDImpactConsent?.analyticsAllowed?.() === true;
+
+  const readCampaign = () => {
     const query = new URLSearchParams(window.location.search);
     const clean = (key) => {
       const value = query.get(key);
@@ -17,7 +21,7 @@
       utmMedium: clean('utm_medium'),
       utmCampaign: clean('utm_campaign'),
     };
-  })();
+  };
 
   const createEventId = () => {
     if (typeof crypto?.randomUUID === 'function') return crypto.randomUUID();
@@ -25,11 +29,13 @@
   };
 
   const track = (eventName, details = {}) => {
+    if (!analyticsAllowed()) return false;
+
     const payload = {
       eventId: createEventId(),
       eventName,
       route: window.location.pathname,
-      ...campaign,
+      ...readCampaign(),
       ...details,
     };
 
@@ -41,9 +47,20 @@
     }).catch(() => {
       // Telemetry must never interrupt downloads, quiz scoring, or navigation.
     });
+    return true;
   };
 
-  if (window.location.pathname === CHECKOUT_PATH) track('checkout_view');
+  let checkoutViewTracked = false;
+  const trackCheckoutView = () => {
+    if (window.location.pathname !== CHECKOUT_PATH || checkoutViewTracked) return;
+    checkoutViewTracked = track('checkout_view');
+  };
+
+  window.addEventListener(CONSENT_READY_EVENT, trackCheckoutView);
+  window.addEventListener(CONSENT_CHANGE_EVENT, (event) => {
+    if (event instanceof CustomEvent && event.detail?.analytics === true) trackCheckoutView();
+  });
+  trackCheckoutView();
 
   window.addEventListener(CHECKOUT_SIGN_IN_EVENT, () => {
     if (window.location.pathname === CHECKOUT_PATH) track('checkout_sign_in_redirect');

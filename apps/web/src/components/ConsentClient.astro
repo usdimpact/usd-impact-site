@@ -1,0 +1,252 @@
+<div
+  id="privacy-consent-banner"
+  class="privacy-consent-banner"
+  role="region"
+  aria-labelledby="privacy-consent-title"
+  hidden
+>
+  <div>
+    <strong id="privacy-consent-title">Privacy choices</strong>
+    <p>
+      Essential security and account features always remain available. With your permission, USD Impact also
+      records limited first-party, aggregate learning and checkout events. No advertising trackers are used.
+      <a href="/privacy/">Read the privacy notice</a>.
+    </p>
+  </div>
+  <div class="privacy-consent-actions">
+    <button id="privacy-consent-reject" class="privacy-consent-button privacy-consent-primary" type="button">
+      Reject analytics
+    </button>
+    <button id="privacy-consent-review" class="privacy-consent-button privacy-consent-secondary" type="button">
+      Review settings
+    </button>
+    <button id="privacy-consent-accept" class="privacy-consent-button privacy-consent-primary" type="button">
+      Accept analytics
+    </button>
+  </div>
+</div>
+
+<dialog id="privacy-consent-dialog" class="privacy-consent-dialog" aria-labelledby="privacy-settings-title">
+  <div class="privacy-consent-dialog-copy">
+    <div>
+      <p class="privacy-consent-eyebrow">USD Impact privacy</p>
+      <h2 id="privacy-settings-title">Privacy settings</h2>
+      <p>Choose whether limited first-party analytics may run in this browser.</p>
+    </div>
+    <button id="privacy-consent-close" class="privacy-consent-close" type="button" aria-label="Close privacy settings">
+      ×
+    </button>
+  </div>
+
+  <section class="privacy-consent-category" aria-labelledby="essential-consent-title">
+    <div>
+      <h3 id="essential-consent-title">Essential security and account features</h3>
+      <p>Authentication, abuse prevention, requested checkout, and saved privacy choices.</p>
+    </div>
+    <strong>Always active</strong>
+  </section>
+
+  <label class="privacy-consent-category" for="privacy-consent-analytics">
+    <div>
+      <h3>Aggregate analytics</h3>
+      <p>
+        Checklist downloads, quiz activity, checkout-funnel events, page route, and non-identifying campaign
+        labels. No email, account ID, advertising ID, or persistent analytics identifier is included.
+      </p>
+    </div>
+    <input id="privacy-consent-analytics" type="checkbox" />
+  </label>
+
+  <div class="privacy-consent-dialog-actions">
+    <a href="/privacy/">Full privacy notice</a>
+    <button id="privacy-consent-save" class="privacy-consent-button privacy-consent-primary" type="button">
+      Save choices
+    </button>
+  </div>
+</dialog>
+
+<script>
+  // @ts-nocheck
+  const CONSENT_COOKIE_NAME = 'usd_impact_consent';
+  const CONSENT_VERSION = 'v1';
+  const CONSENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 180;
+  const CONSENT_CHANGE_EVENT = 'usd-impact:consent-change';
+  const CONSENT_READY_EVENT = 'usd-impact:consent-ready';
+  const GRANTED_VALUE = `${CONSENT_VERSION}.analytics-granted`;
+  const DENIED_VALUE = `${CONSENT_VERSION}.analytics-denied`;
+
+  const banner = document.getElementById('privacy-consent-banner');
+  const dialog = document.getElementById('privacy-consent-dialog');
+  const analyticsToggle = document.getElementById('privacy-consent-analytics');
+  const acceptButton = document.getElementById('privacy-consent-accept');
+  const rejectButton = document.getElementById('privacy-consent-reject');
+  const reviewButton = document.getElementById('privacy-consent-review');
+  const saveButton = document.getElementById('privacy-consent-save');
+  const closeButton = document.getElementById('privacy-consent-close');
+  const settingsButton = document.getElementById('privacy-settings-button');
+
+  const readCookieValue = () => {
+    const prefix = `${CONSENT_COOKIE_NAME}=`;
+    const match = document.cookie
+      .split(';')
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(prefix));
+    if (!match) return 'unset';
+    let value;
+    try {
+      value = decodeURIComponent(match.slice(prefix.length));
+    } catch {
+      return 'unset';
+    }
+    if (value === GRANTED_VALUE) return 'granted';
+    if (value === DENIED_VALUE) return 'denied';
+    return 'unset';
+  };
+
+  let preference = readCookieValue();
+
+  const analyticsAllowed = () => preference === 'granted';
+
+  const render = () => {
+    if (banner) banner.hidden = preference !== 'unset';
+    if (analyticsToggle instanceof HTMLInputElement) analyticsToggle.checked = analyticsAllowed();
+  };
+
+  const openSettings = () => {
+    if (!(dialog instanceof HTMLDialogElement)) return;
+    if (analyticsToggle instanceof HTMLInputElement) analyticsToggle.checked = analyticsAllowed();
+    if (dialog.open) return;
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+  };
+
+  const closeSettings = () => {
+    if (!(dialog instanceof HTMLDialogElement)) return;
+    if (typeof dialog.close === 'function') dialog.close();
+    else dialog.removeAttribute('open');
+  };
+
+  const savePreference = (nextPreference) => {
+    const value = nextPreference === 'granted' ? GRANTED_VALUE : DENIED_VALUE;
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${CONSENT_COOKIE_NAME}=${encodeURIComponent(value)}; Path=/; Max-Age=${CONSENT_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
+    preference = nextPreference === 'granted' ? 'granted' : 'denied';
+    render();
+    closeSettings();
+    window.dispatchEvent(new CustomEvent(CONSENT_CHANGE_EVENT, {
+      detail: { analytics: analyticsAllowed(), version: CONSENT_VERSION },
+    }));
+  };
+
+  acceptButton?.addEventListener('click', () => savePreference('granted'));
+  rejectButton?.addEventListener('click', () => savePreference('denied'));
+  reviewButton?.addEventListener('click', openSettings);
+  settingsButton?.addEventListener('click', openSettings);
+  closeButton?.addEventListener('click', closeSettings);
+  saveButton?.addEventListener('click', () => {
+    savePreference(analyticsToggle instanceof HTMLInputElement && analyticsToggle.checked ? 'granted' : 'denied');
+  });
+
+  window.USDImpactConsent = Object.freeze({
+    analyticsAllowed,
+    openSettings,
+    preference: () => preference,
+    version: CONSENT_VERSION,
+  });
+
+  render();
+  window.dispatchEvent(new CustomEvent(CONSENT_READY_EVENT, {
+    detail: { analytics: analyticsAllowed(), version: CONSENT_VERSION },
+  }));
+</script>
+
+<style>
+  .privacy-consent-banner {
+    position: fixed;
+    z-index: 1000;
+    right: 20px;
+    bottom: 20px;
+    left: 20px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 24px;
+    align-items: center;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 20px 22px;
+    color: #f3f5f7;
+    background: #071525;
+    border: 1px solid #30455b;
+    border-radius: 16px;
+    box-shadow: 0 18px 60px rgba(2, 10, 20, .35);
+  }
+
+  .privacy-consent-banner[hidden] { display: none; }
+  .privacy-consent-banner strong { color: #d7b45a; font-size: 18px; }
+  .privacy-consent-banner p { max-width: 760px; margin: 7px 0 0; color: #dce2e9; font-size: 14px; }
+  .privacy-consent-banner a { color: #fff; }
+  .privacy-consent-actions { display: flex; gap: 9px; flex-wrap: wrap; justify-content: flex-end; }
+
+  .privacy-consent-button {
+    min-height: 42px;
+    padding: 10px 15px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .privacy-consent-primary { color: #071525; background: #d7b45a; }
+  .privacy-consent-secondary { color: #f3f5f7; background: transparent; border-color: #8d9bab; }
+  .privacy-consent-button:focus-visible, .privacy-consent-close:focus-visible { outline: 3px solid #f3cc68; outline-offset: 3px; }
+
+  .privacy-consent-dialog {
+    width: min(680px, calc(100vw - 32px));
+    padding: 0;
+    color: #0b1f33;
+    background: #fff;
+    border: 1px solid #cfd6df;
+    border-radius: 18px;
+    box-shadow: 0 24px 80px rgba(2, 10, 20, .35);
+  }
+
+  .privacy-consent-dialog::backdrop { background: rgba(2, 10, 20, .7); }
+  .privacy-consent-dialog-copy, .privacy-consent-category, .privacy-consent-dialog-actions { padding: 20px 24px; }
+  .privacy-consent-dialog-copy { display: flex; justify-content: space-between; gap: 20px; border-bottom: 1px solid #e1e5ea; }
+  .privacy-consent-dialog h2 { margin: 4px 0 8px; }
+  .privacy-consent-dialog h3 { margin: 0 0 6px; font-size: 18px; }
+  .privacy-consent-dialog p { margin: 0; color: #46586b; }
+  .privacy-consent-eyebrow { color: #8a6411 !important; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .privacy-consent-close { align-self: start; padding: 0 8px; color: #0b1f33; background: transparent; border: 0; font-size: 30px; cursor: pointer; }
+  .privacy-consent-category { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: center; border-bottom: 1px solid #e1e5ea; }
+  .privacy-consent-category > strong { color: #24613d; font-size: 13px; }
+  .privacy-consent-category input { width: 24px; height: 24px; accent-color: #0b1f33; }
+  .privacy-consent-dialog-actions { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .privacy-consent-dialog-actions a { color: #0b1f33; font-weight: 700; }
+
+  :global(.footer-privacy-settings) {
+    padding: 0;
+    color: #dce2e9;
+    background: transparent;
+    border: 0;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  :global(.footer-privacy-settings:focus-visible) { outline: 3px solid #f3cc68; outline-offset: 3px; }
+
+  @media (max-width: 820px) {
+    .privacy-consent-banner { grid-template-columns: 1fr; }
+    .privacy-consent-actions { justify-content: flex-start; }
+  }
+
+  @media (max-width: 520px) {
+    .privacy-consent-banner { right: 10px; bottom: 10px; left: 10px; padding: 18px; }
+    .privacy-consent-actions { display: grid; }
+    .privacy-consent-button { width: 100%; }
+    .privacy-consent-dialog-copy, .privacy-consent-category, .privacy-consent-dialog-actions { padding: 18px; }
+    .privacy-consent-dialog-actions { align-items: stretch; flex-direction: column; }
+  }
+</style>

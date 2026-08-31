@@ -18,8 +18,95 @@ assert.equal(manifest.display, 'standalone');
 assert.equal(manifest.scope, '/');
 assert.ok(Array.isArray(manifest.icons) && manifest.icons.length > 0);
 assert.match(layout, /rel="manifest" href="\/manifest\.webmanifest"/);
+assert.match(layout, /import PwaClient/);
 assert.match(layout, /<PwaClient\s*\/>/);
-assert.match(pwaClient, /navigator\.serviceWorker\.register\('\/sw\.js'/);
+assert.doesNotMatch(pwaClient, /navigator\.serviceWorker\.register/);
+assert.match(pwaClient, /navigator\.serviceWorker\.getRegistration\('\/'\)/);
+assert.match(pwaClient, /registration\.pushManager\.getSubscription/);
+assert.match(pwaClient, /if \(!subscription\) await registration\.unregister\(\)/);
+assert.doesNotMatch(pwaClient, /getSubscription\(\)\.catch\(\(\) => null\)/);
+assert.match(pwaClient, /subscription check failed; preserving registration/);
+assert.match(pwaClient, /'\/account\/notifications'/);
+
+const cleanupLegacyRegistration = async (registration, warn = console.warn) => {
+  if (!registration) return;
+  if (!registration.pushManager) {
+    await registration.unregister();
+    return;
+  }
+
+  let subscription;
+  try {
+    subscription = await registration.pushManager.getSubscription();
+  } catch (error) {
+    warn('USD Impact service-worker subscription check failed; preserving registration.', error);
+    return;
+  }
+
+  if (!subscription) await registration.unregister();
+};
+
+const cleanupPrefix = 'const cleanupLegacyRegistration = ';
+const cleanupStart = pwaClient.indexOf(cleanupPrefix);
+const cleanupEnd = pwaClient.indexOf('\n\n    window.addEventListener', cleanupStart);
+assert.ok(cleanupStart >= 0 && cleanupEnd > cleanupStart, 'PWA cleanup helper must be present.');
+const browserCleanupSource = pwaClient
+  .slice(cleanupStart + cleanupPrefix.length, cleanupEnd)
+  .replace(/;\s*$/, '');
+const normalizeSource = (value) => value.replace(/\s+/g, ' ').trim();
+assert.equal(
+  normalizeSource(browserCleanupSource),
+  normalizeSource(cleanupLegacyRegistration.toString()),
+  'Behavior-tested cleanup helper must exactly match the browser implementation.',
+);
+
+const runCleanup = async ({ registration }) => {
+  let unregisterCalls = 0;
+  let warningCalls = 0;
+  const trackedRegistration = registration
+    ? {
+        ...registration,
+        unregister: async () => {
+          unregisterCalls += 1;
+          return true;
+        },
+      }
+    : undefined;
+
+  await cleanupLegacyRegistration(trackedRegistration, () => {
+    warningCalls += 1;
+  });
+  return { unregisterCalls, warningCalls };
+};
+
+assert.deepEqual(await runCleanup({ registration: undefined }), {
+  unregisterCalls: 0,
+  warningCalls: 0,
+});
+assert.deepEqual(await runCleanup({
+  registration: {
+    pushManager: { getSubscription: async () => ({ endpoint: 'https://push.example/subscribed' }) },
+  },
+}), {
+  unregisterCalls: 0,
+  warningCalls: 0,
+});
+assert.deepEqual(await runCleanup({
+  registration: {
+    pushManager: { getSubscription: async () => null },
+  },
+}), {
+  unregisterCalls: 1,
+  warningCalls: 0,
+});
+assert.deepEqual(await runCleanup({
+  registration: {
+    pushManager: { getSubscription: async () => { throw new Error('transient lookup failure'); } },
+  },
+}), {
+  unregisterCalls: 0,
+  warningCalls: 1,
+});
 
 // USD Impact PWA remains network-only. Protected content and entitlement-bearing
 // URLs must never be persisted by the service worker.
@@ -37,8 +124,12 @@ assert.match(serviceWorker, /safeSameOriginPath/);
 assert.match(notificationPage, /enableButton\?\.addEventListener\('click'/);
 const permissionPrompt = notificationPage.indexOf('Notification.requestPermission()');
 const enableHandler = notificationPage.indexOf("enableButton?.addEventListener('click'");
+const serviceWorkerRegistration = notificationPage.indexOf("navigator.serviceWorker.register('/sw.js'");
+const ensureRegistrationCall = notificationPage.indexOf('const registrationState = await ensureRegistration()', enableHandler);
 assert.ok(enableHandler >= 0 && permissionPrompt > enableHandler);
+assert.ok(serviceWorkerRegistration >= 0 && ensureRegistrationCall > permissionPrompt);
 assert.match(notificationPage, /userVisibleOnly:\s*true/);
 assert.match(notificationPage, /applicationServerKey:/);
+assert.match(notificationPage, /registration\.unregister\(\)/);
 
-console.log('PWA contract verified: installable shell, network-only worker, explicit Web Push opt-in.');
+console.log('PWA contract verified: network-only worker, fail-safe legacy cleanup, explicit registration and Web Push opt-in.');

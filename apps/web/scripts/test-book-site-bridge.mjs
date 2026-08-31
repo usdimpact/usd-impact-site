@@ -98,6 +98,28 @@ assert(printCodes.has('dxy-practice'));
 assert(printCodes.has('weekly-practice'));
 assert(printCodes.has('methodology'));
 
+const edition13Targets = new Map([
+  ['c03', '/practice/dxy-vs-broad-usd/?source=book&edition=1.3&chapter=03'],
+  ['c11', '/practice/weekly-regime/?source=book&edition=1.3&chapter=11'],
+  ['score', '/score/?source=book&edition=1.3&chapter=10'],
+  ['methodology', '/score/methodology/?source=book&edition=1.3&appendix=B'],
+]);
+assert.deepEqual(
+  printLinks
+    .filter((link) => link.target.includes('edition=1.3'))
+    .map((link) => link.code)
+    .sort(),
+  [...edition13Targets.keys()].sort(),
+  'Edition 1.3 print-link scope must remain limited to the four Candidate 2 insertions.',
+);
+for (const [code, target] of edition13Targets) {
+  assert.equal(
+    printLinks.find((link) => link.code === code)?.target,
+    target,
+    `${code} must preserve its governed Edition 1.3 destination.`,
+  );
+}
+
 assert.equal(surfaceBridges.length, 5, 'Phase 2A must remain bounded to five contextual surface mappings.');
 const expectedSurfaceMappings = new Map([
   ['weekly-score', ['chapter-10', '/score/', 'exact']],

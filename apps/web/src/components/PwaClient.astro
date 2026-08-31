@@ -7,9 +7,19 @@
       try {
         const registration = await navigator.serviceWorker.getRegistration('/');
         if (!registration) return;
-        const subscription = registration.pushManager
-          ? await registration.pushManager.getSubscription().catch(() => null)
-          : null;
+        if (!registration.pushManager) {
+          await registration.unregister();
+          return;
+        }
+
+        let subscription;
+        try {
+          subscription = await registration.pushManager.getSubscription();
+        } catch (error) {
+          console.warn('USD Impact service-worker subscription check failed; preserving registration.', error);
+          return;
+        }
+
         if (!subscription) await registration.unregister();
       } catch (error) {
         console.warn('USD Impact legacy service-worker cleanup failed.', error);

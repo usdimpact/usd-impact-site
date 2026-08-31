@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 
 const root = new URL('../', import.meta.url);
@@ -24,7 +25,79 @@ assert.doesNotMatch(pwaClient, /navigator\.serviceWorker\.register/);
 assert.match(pwaClient, /navigator\.serviceWorker\.getRegistration\('\/'\)/);
 assert.match(pwaClient, /registration\.pushManager\.getSubscription/);
 assert.match(pwaClient, /if \(!subscription\) await registration\.unregister\(\)/);
+assert.doesNotMatch(pwaClient, /getSubscription\(\)\.catch\(\(\) => null\)/);
+assert.match(pwaClient, /subscription check failed; preserving registration/);
 assert.match(pwaClient, /'\/account\/notifications'/);
+
+const pwaScript = pwaClient.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+assert.ok(pwaScript, 'PWA client inline script must be extractable for behavior tests.');
+
+const runCleanup = async ({ registration }) => {
+  let loadHandler;
+  let unregisterCalls = 0;
+  let warningCalls = 0;
+  const trackedRegistration = registration
+    ? {
+        ...registration,
+        unregister: async () => {
+          unregisterCalls += 1;
+          return true;
+        },
+      }
+    : undefined;
+
+  vm.runInNewContext(pwaScript, {
+    navigator: {
+      serviceWorker: {
+        getRegistration: async () => trackedRegistration,
+      },
+    },
+    window: {
+      location: { pathname: '/' },
+      addEventListener: (name, handler) => {
+        if (name === 'load') loadHandler = handler;
+      },
+    },
+    console: {
+      warn: () => {
+        warningCalls += 1;
+      },
+    },
+  });
+
+  assert.equal(typeof loadHandler, 'function');
+  await loadHandler();
+  return { unregisterCalls, warningCalls };
+};
+
+assert.deepEqual(await runCleanup({ registration: undefined }), {
+  unregisterCalls: 0,
+  warningCalls: 0,
+});
+assert.deepEqual(await runCleanup({
+  registration: {
+    pushManager: { getSubscription: async () => ({ endpoint: 'https://push.example/subscribed' }) },
+  },
+}), {
+  unregisterCalls: 0,
+  warningCalls: 0,
+});
+assert.deepEqual(await runCleanup({
+  registration: {
+    pushManager: { getSubscription: async () => null },
+  },
+}), {
+  unregisterCalls: 1,
+  warningCalls: 0,
+});
+assert.deepEqual(await runCleanup({
+  registration: {
+    pushManager: { getSubscription: async () => { throw new Error('transient lookup failure'); } },
+  },
+}), {
+  unregisterCalls: 0,
+  warningCalls: 1,
+});
 
 // USD Impact PWA remains network-only. Protected content and entitlement-bearing
 // URLs must never be persisted by the service worker.
@@ -50,4 +123,4 @@ assert.match(notificationPage, /userVisibleOnly:\s*true/);
 assert.match(notificationPage, /applicationServerKey:/);
 assert.match(notificationPage, /registration\.unregister\(\)/);
 
-console.log('PWA contract verified: network-only worker, legacy cleanup, explicit registration and Web Push opt-in.');
+console.log('PWA contract verified: network-only worker, fail-safe legacy cleanup, explicit registration and Web Push opt-in.');

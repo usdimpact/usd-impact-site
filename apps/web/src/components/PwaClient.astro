@@ -1,10 +1,5 @@
-<script>
-  (() => {
-    if (!('serviceWorker' in navigator)) return;
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((error) => {
-        console.warn('USD Impact service worker registration failed.', error);
-      });
-    }, { once: true });
-  })();
-</script>
+<!--
+  Service-worker registration is deliberately not global. The browser-notification
+  page registers /sw.js only after the signed-in user explicitly selects Enable
+  notifications and grants browser permission.
+-->

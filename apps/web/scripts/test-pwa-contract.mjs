@@ -18,8 +18,9 @@ assert.equal(manifest.display, 'standalone');
 assert.equal(manifest.scope, '/');
 assert.ok(Array.isArray(manifest.icons) && manifest.icons.length > 0);
 assert.match(layout, /rel="manifest" href="\/manifest\.webmanifest"/);
-assert.match(layout, /<PwaClient\s*\/>/);
-assert.match(pwaClient, /navigator\.serviceWorker\.register\('\/sw\.js'/);
+assert.doesNotMatch(layout, /import PwaClient/);
+assert.doesNotMatch(layout, /<PwaClient\s*\/>/);
+assert.doesNotMatch(pwaClient, /navigator\.serviceWorker\.register/);
 
 // USD Impact PWA remains network-only. Protected content and entitlement-bearing
 // URLs must never be persisted by the service worker.
@@ -37,8 +38,12 @@ assert.match(serviceWorker, /safeSameOriginPath/);
 assert.match(notificationPage, /enableButton\?\.addEventListener\('click'/);
 const permissionPrompt = notificationPage.indexOf('Notification.requestPermission()');
 const enableHandler = notificationPage.indexOf("enableButton?.addEventListener('click'");
+const serviceWorkerRegistration = notificationPage.indexOf("navigator.serviceWorker.register('/sw.js'");
+const ensureRegistrationCall = notificationPage.indexOf('const registrationState = await ensureRegistration()', enableHandler);
 assert.ok(enableHandler >= 0 && permissionPrompt > enableHandler);
+assert.ok(serviceWorkerRegistration >= 0 && ensureRegistrationCall > permissionPrompt);
 assert.match(notificationPage, /userVisibleOnly:\s*true/);
 assert.match(notificationPage, /applicationServerKey:/);
+assert.match(notificationPage, /registration\.unregister\(\)/);
 
-console.log('PWA contract verified: installable shell, network-only worker, explicit Web Push opt-in.');
+console.log('PWA contract verified: installable shell, network-only worker, explicit registration and Web Push opt-in.');

@@ -6,7 +6,7 @@ description: "How USD Impact handles account, purchase, support, waitlist, Daily
 
 # Privacy notice
 
-_Last updated: August 28, 2026_
+_Last updated: August 31, 2026_
 
 ## What we collect
 
@@ -25,7 +25,7 @@ If you create an account or purchase the Guided Interactive Edition, we may proc
 
 Payment-card details are collected and processed by **Lemon Squeezy**, the selected Merchant of Record, under its [Privacy Notice](https://www.lemonsqueezy.com/privacy). USD Impact does not receive or store complete payment-card numbers or card security codes.
 
-The website also records limited first-party learning and checkout-funnel events needed to understand whether educational resources and the purchase path work. These events can include:
+If you permit aggregate analytics, the website records limited first-party learning and checkout-funnel events needed to understand whether educational resources and the purchase path work. These events can include:
 
 - a Weekly Dollar Regime Checklist download;
 - a quiz start or retry;
@@ -35,6 +35,23 @@ The website also records limited first-party learning and checkout-funnel events
 - campaign values explicitly present in `utm_source`, `utm_medium`, or `utm_campaign` URL parameters.
 
 This telemetry does not include quiz answer choices, correct answers, email addresses, account identifiers, advertising identifiers, persistent session identifiers, payment details, or raw IP addresses in the application event record. Checkout-funnel counts are aggregate events, not unique visitors and not evidence of a buyer or completed purchase.
+
+## Cookies, browser storage, and consent
+
+USD Impact uses a small first-party privacy control rather than an advertising-oriented consent platform. On a first visit, aggregate analytics remains off unless you select **Accept analytics** or enable it under **Review settings**. **Reject analytics** is available at the same level. You may later change or withdraw this choice through **Privacy settings** in the website footer. A withdrawal stops future optional analytics events from this browser; it does not affect processing that was lawful before withdrawal.
+
+The current first-party cookie inventory is:
+
+- `usd_impact_consent`: stores only privacy-choice version `v1` and whether aggregate analytics was accepted or rejected; retained for up to 180 days so the website can remember the choice;
+- `usd_impact_access`: short-lived, HTTP-only authentication access cookie; retained for up to one hour after successful sign-in;
+- `usd_impact_refresh`: HTTP-only authentication refresh cookie needed to maintain a signed-in account securely; retained for up to 30 days; and
+- `usd_impact_pkce`: temporary HTTP-only proof used to complete one-time email-link authentication safely; retained for up to 10 minutes.
+
+Authentication cookies use `Secure` on HTTPS, `SameSite=Lax`, and the narrow purpose described above. They are not used for advertising or cross-site profiling. The consent cookie is considered essential because, without it, the site cannot remember a rejection or withdrawal and would have to ask again on every page.
+
+The account sign-in page loads Cloudflare Turnstile for abuse prevention. Turnstile processes the security request and returns a short-lived verification token; Cloudflare may use security data or a clearance cookie when its challenge features apply. USD Impact does not use Turnstile for advertising. See the [Cloudflare Privacy Policy](https://www.cloudflare.com/privacypolicy/).
+
+USD Impact does not use browser `localStorage` or `sessionStorage` for consent or aggregate analytics. The website's service worker is network-only, does not create an application content cache, and is registered only after a signed-in user explicitly selects **Enable notifications** and grants browser permission. Disabling notifications removes that browser's push subscription and service-worker registration.
 
 ## Why we collect it
 
@@ -55,7 +72,7 @@ Account and commerce information is used to:
 - answer account, billing, refund, and deletion requests; and
 - meet fraud-prevention, accounting, tax, and other legal obligations.
 
-Learning and checkout-funnel telemetry is used to:
+When you permit it, learning and checkout-funnel telemetry is used to:
 
 - measure whether the checklist and quizzes are used;
 - identify completion and retry patterns;
@@ -73,7 +90,7 @@ These providers process information only as needed to operate the website, accou
 
 ## Legal bases
 
-Depending on the activity, we process information because it is necessary to provide the service you requested, to comply with legal obligations, with your consent, or for legitimate interests such as security, fraud prevention, service reliability, and support. Where processing relies on consent, you may withdraw that consent without affecting earlier lawful processing.
+Depending on the activity, we process information because it is necessary to provide the service you requested, to comply with legal obligations, with your consent, or for legitimate interests such as security, fraud prevention, service reliability, and support. Optional aggregate learning and checkout-funnel analytics runs only with your consent. Where processing relies on consent, you may withdraw that consent without affecting earlier lawful processing.
 
 ## Retention and deletion
 
@@ -95,7 +112,7 @@ API credentials are stored as protected deployment environment variables and are
 
 ## Your choice
 
-Submitting the waitlist form or Daily Learning email form is optional. Consent checkboxes are not preselected. You may continue using the public educational website without subscribing to either email purpose. Each consent purpose can be withdrawn independently. Learning events are designed not to block downloads, quiz scoring, retries, or navigation if telemetry is unavailable.
+Submitting the waitlist form or Daily Learning email form is optional. Consent checkboxes are not preselected. You may continue using the public educational website without subscribing to either email purpose or accepting aggregate analytics. Each consent purpose can be withdrawn independently. Rejecting analytics does not block public content, downloads, quiz scoring, retries, account security, or navigation.
 
 Subject to applicable law, you may ask to access, correct, delete, restrict, or export your personal information, or object to certain processing. You may also complain to the relevant data-protection authority. Some transaction or accounting records cannot be deleted immediately where retention is legally required.
 

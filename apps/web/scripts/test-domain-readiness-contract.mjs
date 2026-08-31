@@ -4,11 +4,13 @@ const read = (file) => fs.readFileSync(file, 'utf8');
 const files = {
   layout: read('src/layouts/BaseLayout.astro'),
   product: read('src/content/products/book-read-the-dollar-first.md'),
+  preview: read('src/content/pages/book-read-the-dollar-first-preview.md'),
   privacy: read('src/pages/privacy.md'),
   terms: read('src/pages/terms.md'),
   refund: read('src/pages/refund-policy.md'),
   account: read('src/pages/account/index.astro'),
   checkout: read('src/pages/checkout/index.astro'),
+  bookPurchaseCta: read('src/components/BookPurchaseCTA.astro'),
   securityPolicy: read('../../.github/SECURITY.md'),
   securityTxt: read('public/.well-known/security.txt'),
 };
@@ -23,22 +25,59 @@ const requireText = (file, label, values) => {
 requireText(files.layout, 'Footer', ['/terms/', '/refund-policy/', '/privacy/', '/book/read-the-dollar-first/']);
 requireText(files.product, 'Product page', [
   'Guided Interactive Edition',
-  'Planned launch price: USD 39.00',
-  'Planned standard price: USD 49.00',
-  'No launch window or quantity cutoff is currently active.',
+  'Launch price: USD 39.00',
+  'Standard price: USD 49.00',
+  'approved launch offer has no quantity cutoff',
   'one-time',
   'ongoing access',
-  'replacement provider is selected, integrated, tested, and approved for Live use',
+  'Lemon Squeezy is the selected Merchant of Record',
+  'verifies the current Live release state',
   'verified commercial event',
 ]);
-requireText(files.terms, 'Terms', ['SC Kela Leads SRL', '40790448', 'J38/820/2020', 'support@usd-impact.com']);
-requireText(files.terms, 'Terms', ['authorized payment provider', 'identified during checkout']);
-requireText(files.refund, 'Refund Policy', ['14 calendar days', 'full refund', 'support@usd-impact.com', 'payment provider']);
-requireText(files.privacy, 'Privacy Notice', ['authorized payment provider', 'Supabase', 'SC Kela Leads SRL', 'support@usd-impact.com']);
+requireText(files.bookPurchaseCta, 'Book purchase CTA', [
+  'data-book-checkout-readiness="checking"',
+  'Join the book waitlist',
+  '/api/commerce-readiness',
+  'bookPurchasePresentation',
+]);
+requireText(files.preview, 'Free sample page', [
+  'Lemon Squeezy is the selected Merchant of Record',
+  'Current checkout availability is verified live',
+]);
+requireText(files.terms, 'Terms', [
+  'KELA LEADS S.R.L.',
+  '40790448',
+  'J38/820/2020',
+  'ROONRC.J38/820/2020',
+  'support@usd-impact.com',
+]);
+requireText(files.terms, 'Terms', [
+  'Lemon Squeezy',
+  'Merchant of Record',
+  'https://www.lemonsqueezy.com/buyer-terms',
+]);
+requireText(files.refund, 'Refund Policy', [
+  '14 calendar days',
+  'full refund',
+  'support@usd-impact.com',
+  'Lemon Squeezy',
+  'selected Merchant of Record',
+  'https://www.lemonsqueezy.com/buyer-terms',
+]);
+requireText(files.privacy, 'Privacy Notice', [
+  'Lemon Squeezy',
+  'selected Merchant of Record',
+  'https://www.lemonsqueezy.com/privacy',
+  'Supabase',
+  'KELA LEADS S.R.L.',
+  'ROONRC.J38/820/2020',
+  'support@usd-impact.com',
+]);
 requireText(files.checkout, 'Checkout page', [
   'Checkout is not open yet.',
-  'ready to connect',
-  'Public payment remains disabled',
+  'Lemon Squeezy is the selected Merchant of Record',
+  'No purchase control is shown unless every',
+  'remains disabled',
   'No payment can be made on this page',
   '/api/commerce-readiness',
   'browser redirect alone never grants access',
@@ -80,19 +119,35 @@ if (files.product.includes('payment-provider review')) {
 if (files.checkout.includes('payment-provider review')) {
   failures.push('Checkout page still treats provider review as the active checkout gate.');
 }
-
-const customerFacingFiles = ['product', 'privacy', 'terms', 'refund', 'account', 'checkout'];
-const commerceProviderNames = ['Paddle', 'FastSpring'];
-for (const name of customerFacingFiles) {
-  for (const provider of commerceProviderNames) {
-    if (files[name].includes(provider)) failures.push(`${name} contains provider-specific customer copy: ${provider}`);
+for (const name of ['product', 'preview', 'checkout']) {
+  if (files[name].includes('replacement payment provider') || files[name].includes('replacement provider is selected')) {
+    failures.push(`${name} still describes commerce as waiting for replacement-provider selection.`);
   }
+}
+
+const customerFacingFiles = ['product', 'preview', 'privacy', 'terms', 'refund', 'account', 'checkout'];
+const supersededCommerceProviderNames = ['Paddle', 'FastSpring'];
+for (const name of customerFacingFiles) {
+  for (const provider of supersededCommerceProviderNames) {
+    if (files[name].includes(provider)) failures.push(`${name} contains superseded provider-specific customer copy: ${provider}`);
+  }
+}
+
+const approvedPublicTraderAddress = 'Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România';
+const approvedAddressFiles = new Set(['privacy', 'terms', 'refund', 'checkout']);
+for (const name of approvedAddressFiles) {
+  requireText(files[name], `${name} public trader disclosure`, [approvedPublicTraderAddress]);
 }
 
 const privateAddressFragments = ['Doctor Hacman', 'Bl. 83', 'Sc. B', 'Ap. 9'];
 for (const [label, file] of Object.entries(files)) {
+  const unapprovedText = approvedAddressFiles.has(label)
+    ? file.replaceAll(approvedPublicTraderAddress, '')
+    : file;
   for (const fragment of privateAddressFragments) {
-    if (file.includes(fragment)) failures.push(`${label} exposes a private registered-address fragment: ${fragment}`);
+    if (unapprovedText.includes(fragment)) {
+      failures.push(`${label} exposes an address fragment outside the exact approved public trader disclosure: ${fragment}`);
+    }
   }
 }
 

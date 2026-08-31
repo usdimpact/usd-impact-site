@@ -3,7 +3,7 @@ import {
   readTelemetryAggregates,
   recordTelemetryEvent,
   telemetryStorageConstants,
-} from './_telemetry-store.js';
+} from '../src/lib/telemetry-store.js';
 
 const MAX_BODY_BYTES = 4_096;
 const FALLBACK_DUPLICATE_TTL_MS = 10_000;
@@ -13,6 +13,9 @@ const MAX_REPORT_DAYS = 31;
 
 const ALLOWED_EVENTS = new Set([
   'checklist_download',
+  'checkout_view',
+  'checkout_button_click',
+  'checkout_sign_in_redirect',
   'quiz_start',
   'quiz_complete',
   'quiz_retry',
@@ -44,14 +47,18 @@ function requestHeader(request, name) {
 }
 
 function queryValue(request, key) {
+  if (typeof request.url === 'string') {
+    try {
+      return new URL(request.url, 'https://usd-impact.com').searchParams.get(key)?.trim() ?? '';
+    } catch {
+      return '';
+    }
+  }
+
   const direct = request.query?.[key];
   if (Array.isArray(direct)) return String(direct[0] ?? '').trim();
   if (direct !== undefined && direct !== null) return String(direct).trim();
-  try {
-    return new URL(request.url ?? '/', 'https://usd-impact.com').searchParams.get(key)?.trim() ?? '';
-  } catch {
-    return '';
-  }
+  return '';
 }
 
 function parseBody(request) {
@@ -121,6 +128,10 @@ function normalizeEvent(payload, now) {
     occurredAt: new Date(now).toISOString(),
     route,
   };
+
+  if (eventName.startsWith('checkout_') && route !== '/checkout/') {
+    throw new Error('Checkout telemetry is restricted to the checkout route.');
+  }
 
   const utmSource = optionalCampaignValue(payload, 'utmSource');
   const utmMedium = optionalCampaignValue(payload, 'utmMedium');
@@ -274,6 +285,99 @@ export function buildChecklistAnalytics(aggregates, selectedDays) {
   };
 }
 
+function counterValue(counters, field) {
+  return Number(counters?.[field]) || 0;
+}
+
+function percentage(numerator, denominator) {
+  if (denominator < 1) return null;
+  return Math.round((numerator / denominator) * 1_000) / 10;
+}
+
+export function buildCheckoutFunnelAnalytics(aggregates, selectedDays) {
+  if (!Number.isInteger(selectedDays) || selectedDays < 1 || selectedDays > MAX_REPORT_DAYS) {
+    throw new Error('selectedDays is invalid.');
+  }
+
+  const days = Array.isArray(aggregates?.days) ? aggregates.days : [];
+  if (days.length !== selectedDays) throw new Error('Checkout funnel analytics requires a complete period.');
+
+  const summarize = (field) => days.reduce(
+    (total, day) => total + counterValue(day?.counters, field),
+    0,
+  );
+  const views = summarize('checkout:views');
+  const buttonClicks = summarize('checkout:button_clicks');
+  const signInRedirects = summarize('checkout:sign_in_redirects');
+  const totals = aggregates?.totals ?? {};
+
+  return {
+    eventSemantics: 'Aggregate event counts; not unique visitors and not buyer evidence.',
+    lifetime: {
+      views: counterValue(totals, 'checkout:views'),
+      buttonClicks: counterValue(totals, 'checkout:button_clicks'),
+      signInRedirects: counterValue(totals, 'checkout:sign_in_redirects'),
+    },
+    range: {
+      views,
+      buttonClicks,
+      signInRedirects,
+      buttonClickRatePercent: percentage(buttonClicks, views),
+      signInRedirectRatePercent: percentage(signInRedirects, buttonClicks),
+    },
+    daily: days.map((day) => ({
+      date: day.date,
+      views: counterValue(day.counters, 'checkout:views'),
+      buttonClicks: counterValue(day.counters, 'checkout:button_clicks'),
+      signInRedirects: counterValue(day.counters, 'checkout:sign_in_redirects'),
+    })),
+    attribution: {
+      sources: rankedCounters(totals, 'checkout:utm_source:'),
+      mediums: rankedCounters(totals, 'checkout:utm_medium:'),
+      campaigns: rankedCounters(totals, 'checkout:utm_campaign:'),
+    },
+  };
+}
+
+async function handleCheckoutFunnelReport(request, response) {
+  if (request.method !== 'GET') {
+    return send(response, 405, { error: 'Method not allowed.' }, { Allow: 'GET' });
+  }
+
+  const endpointToken = process.env.TELEMETRY_REPORT_TOKEN || process.env.NEWSFEED_BEARER_TOKEN;
+  if (!endpointToken) {
+    console.error('Telemetry report token is not configured.');
+    return send(response, 503, { error: 'Telemetry reporting is not configured.' });
+  }
+  if (!safeTokenEqual(bearerToken(request), endpointToken)) {
+    return send(response, 401, { error: 'Unauthorized.' }, { 'WWW-Authenticate': 'Bearer' });
+  }
+
+  const endDate = queryValue(request, 'end') || utcDateString();
+  if (!isRealDate(endDate)) return send(response, 400, { error: 'end must use YYYY-MM-DD.' });
+
+  const daysValue = queryValue(request, 'days') || '7';
+  const days = Number.parseInt(daysValue, 10);
+  if (!Number.isInteger(days) || days < 1 || days > MAX_REPORT_DAYS || String(days) !== daysValue) {
+    return send(response, 400, { error: `days must be an integer from 1 to ${MAX_REPORT_DAYS}.` });
+  }
+
+  try {
+    const dates = dateRange(endDate, days);
+    const aggregates = await telemetryAggregateReader(dates);
+    return send(response, 200, {
+      generatedAt: new Date().toISOString(),
+      range: { start: dates[0], end: dates.at(-1), days },
+      retentionDays: telemetryStorageConstants.dailyRetentionDays,
+      checkout: buildCheckoutFunnelAnalytics(aggregates, days),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'unknown checkout reporting error';
+    console.error(`Checkout funnel analytics failed: ${message}`);
+    return send(response, 503, { error: 'Checkout funnel analytics are temporarily unavailable.' });
+  }
+}
+
 async function handleChecklistReport(request, response) {
   if (request.method !== 'GET') {
     return send(response, 405, { error: 'Method not allowed.' }, { Allow: 'GET' });
@@ -342,6 +446,20 @@ async function handleEvent(request, response) {
     });
   }
 
+  const vercelEnvironment = String(process.env.VERCEL_ENV ?? '').trim();
+  if (
+    normalized.record.eventName.startsWith('checkout_')
+    && vercelEnvironment
+    && vercelEnvironment !== 'production'
+  ) {
+    return send(response, 202, {
+      accepted: true,
+      duplicate: false,
+      durable: false,
+      environmentIsolated: true,
+    });
+  }
+
   if (recentEventIds.has(normalized.eventId)) {
     return send(response, 202, { accepted: true, duplicate: true, durable: false });
   }
@@ -397,5 +515,6 @@ export default async function handler(request, response) {
   const requestedAction = queryValue(request, 'action');
   if (requestedAction === 'report') return handleReport(request, response);
   if (requestedAction === 'checklist-report') return handleChecklistReport(request, response);
+  if (requestedAction === 'checkout-funnel-report') return handleCheckoutFunnelReport(request, response);
   return handleEvent(request, response);
 }

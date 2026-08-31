@@ -1,7 +1,7 @@
 # USD Impact resilience baseline and recovery runbook
 
 Last verified: 2026-07-30
-Owner: SC Kela Leads SRL / USD Impact
+Owner: KELA LEADS S.R.L. / USD Impact
 Tracking issue: #55
 
 This document records reconstruction information only. Secret values, recovery codes, API keys, database passwords, SMTP credentials, and private backup archives must never be committed to Git or pasted into issues.
@@ -97,7 +97,7 @@ Future Paddle variables must be inventoried before sandbox integration and separ
 
 Before the first production customer record:
 
-1. Create or approve a production Supabase project owned by SC Kela Leads SRL in the selected EU region.
+1. Create or approve a production Supabase project owned by KELA LEADS S.R.L. in the selected EU region.
 2. Record project reference, region, organization owner, billing owner, and recovery owner in the company recovery register.
 3. Confirm database backup retention and point-in-time recovery capabilities for the selected plan.
 4. Export the database schema and migration history after each production schema milestone.

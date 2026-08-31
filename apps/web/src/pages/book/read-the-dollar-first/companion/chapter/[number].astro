@@ -1,0 +1,133 @@
+---
+import BaseLayout from '../../../../../layouts/BaseLayout.astro';
+import ComplianceNote from '../../../../../components/ComplianceNote.astro';
+import BookToolGuide from '../../../../../components/BookToolGuide.astro';
+import { chapters, getToolsForChapter } from '../../../../../data/book-site-bridge/index.mjs';
+
+export function getStaticPaths() {
+  return chapters.map((chapter) => ({
+    params: { number: chapter.code },
+    props: { chapter },
+  }));
+}
+
+const { chapter } = Astro.props;
+const relatedTools = getToolsForChapter(chapter);
+const primaryTool = relatedTools[0];
+---
+<BaseLayout
+  title={`Chapter ${chapter.number} Companion: ${chapter.title} | USD Impact Preview`}
+  description={`Practice the framework from Chapter ${chapter.number} of Read the Dollar First without replacing the book.`}
+  noindex={true}
+>
+  <section class="hero chapter-companion-hero">
+    <div class="container">
+      <div class="eyebrow">Read the Dollar First Companion</div>
+      <h1>Chapter {chapter.number}: {chapter.title}</h1>
+      <p class="lead">{chapter.summary}</p>
+      <p class="chapter-page-reference">Book edition {chapter.edition} | Printed chapter starts on page {chapter.bookPage}</p>
+    </div>
+  </section>
+
+  <main class="container chapter-companion-main">
+    <div class="chapter-companion-layout">
+      <article>
+        <section aria-labelledby="objectives-heading">
+          <div class="eyebrow">Before the tool</div>
+          <h2 id="objectives-heading">What the chapter installs</h2>
+          <ul class="objective-list">
+            {chapter.learningObjectives.map((objective) => <li>{objective}</li>)}
+          </ul>
+        </section>
+
+        <section aria-labelledby="practice-heading">
+          <div class="eyebrow">Practice sequence</div>
+          <h2 id="practice-heading">Read, observe, practice, compare, return</h2>
+          <ol class="practice-sequence">
+            <li><strong>Read:</strong> Complete the chapter or return to the section that explains the active concept.</li>
+            <li><strong>Observe:</strong> Open the relevant tool and record the dated inputs before reading a conclusion.</li>
+            <li><strong>Practice:</strong> Write the regime, channel and asset-specific qualification in that order.</li>
+            <li><strong>Compare:</strong> Note agreement and divergence without treating either as a forecast.</li>
+            <li><strong>Return:</strong> Use the disagreement to choose the next chapter or primary source to review.</li>
+          </ol>
+        </section>
+
+        <section class="common-mistake card" aria-labelledby="common-mistake-heading">
+          <div class="eyebrow">Diagnostic check</div>
+          <h2 id="common-mistake-heading">Common mistake to avoid</h2>
+          <ul>
+            {chapter.commonMistakes.map((mistake) => <li>{mistake}</li>)}
+          </ul>
+        </section>
+      </article>
+
+      <aside class="chapter-actions card" aria-label="Chapter practice links">
+        <div class="eyebrow">Practice this chapter online</div>
+        <h2>{primaryTool.title}</h2>
+        <p>{primaryTool.question}</p>
+        <a class="button primary" href={primaryTool.path}>Open the relevant tool</a>
+        <a class="chapter-book-link" href="/book/read-the-dollar-first/">Open the book overview</a>
+        <div class="stable-alias">
+          <span>Print-safe alias</span>
+          <code>usd-impact.com/go/{chapter.shortCode}</code>
+        </div>
+      </aside>
+    </div>
+
+    <section class="related-tools" aria-labelledby="related-tools-heading">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Related online tools</div>
+          <h2 id="related-tools-heading">Use only what answers the current question</h2>
+        </div>
+      </div>
+      <div class="grid">
+        {relatedTools.map((tool) => (
+          <article class="card related-tool-card">
+            <span>{tool.status === 'preview-prototype' ? 'Preview prototype' : 'Existing tool'}</span>
+            <h3>{tool.title}</h3>
+            <p>{tool.question}</p>
+            <a href={tool.path}>Open tool</a>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <BookToolGuide tool={primaryTool} />
+
+    <div class="button-row">
+      <a class="button chapter-back" href="/book/read-the-dollar-first/companion/">Back to all chapters</a>
+      {chapter.number < 13 && <a class="button chapter-back" href={`/book/read-the-dollar-first/companion/chapter/${String(chapter.number + 1).padStart(2, '0')}/`}>Next chapter companion</a>}
+    </div>
+
+    <ComplianceNote text="Educational and informational only. This page is a practice bridge to the book, not a substitute for the chapter, current-source verification, professional advice or an investment decision process." />
+  </main>
+</BaseLayout>
+
+<style>
+  .chapter-companion-hero { padding-bottom: 60px; }
+  .chapter-page-reference { color: var(--silver); font-size: 14px; }
+  .chapter-companion-main > section + section { margin-top: 56px; }
+  .chapter-companion-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); gap: 42px; align-items: start; }
+  .objective-list, .practice-sequence { max-width: 760px; padding-left: 24px; }
+  .objective-list li + li, .practice-sequence li + li { margin-top: 10px; }
+  .common-mistake { margin-top: 40px; border-left: 5px solid var(--gold); }
+  .common-mistake h2 { margin: 6px 0 10px; }
+  .chapter-actions { position: sticky; top: 24px; }
+  .chapter-actions h2 { margin: 8px 0; font-size: 28px; }
+  .chapter-actions p { color: var(--slate); }
+  .chapter-book-link { display: block; margin-top: 18px; font-weight: 700; }
+  .stable-alias { margin-top: 26px; padding-top: 18px; border-top: 1px solid #e3e7ec; }
+  .stable-alias span { display: block; color: var(--slate); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+  .stable-alias code { display: block; margin-top: 6px; overflow-wrap: anywhere; }
+  .related-tools { margin-top: 64px; }
+  .related-tool-card > span { color: var(--gold-text); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+  .related-tool-card h3 { margin: 8px 0; }
+  .related-tool-card p { color: var(--slate); }
+  .related-tool-card a { font-weight: 700; }
+  .chapter-back { border: 1px solid #b7c0ca; color: var(--navy); }
+  @media (max-width: 820px) {
+    .chapter-companion-layout { grid-template-columns: 1fr; }
+    .chapter-actions { position: static; }
+  }
+</style>

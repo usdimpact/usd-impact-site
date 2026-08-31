@@ -18,8 +18,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <section class="card account-panel" aria-labelledby="push-heading">
         <h2 id="push-heading">Notification permission</h2>
         <p>
-          USD Impact will only ask the browser for notification permission after you select
-          <strong>Enable notifications</strong>. Disabling notifications stops delivery to this browser.
+          USD Impact will only ask the browser for notification permission after you select{' '}
+          <strong>Enable notifications</strong>. The notification service worker is also registered only after{' '}
+          that explicit choice. Disabling notifications removes the subscription and registration from this browser.
         </p>
         <p id="push-status" class="account-status" role="status" aria-live="polite">
           Checking availability…
@@ -60,12 +61,23 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         return Uint8Array.from(raw, (character) => character.charCodeAt(0));
       };
 
+      const getRegistration = () => navigator.serviceWorker.getRegistration('/');
+
       const getSubscription = async () => {
-        const registration = await navigator.serviceWorker.ready;
+        const registration = await getRegistration();
         return {
           registration,
-          subscription: await registration.pushManager.getSubscription(),
+          subscription: registration ? await registration.pushManager.getSubscription() : null,
         };
+      };
+
+      const ensureRegistration = async () => {
+        const existing = await getRegistration();
+        if (existing) {
+          return { registration: await navigator.serviceWorker.ready, created: false };
+        }
+        await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+        return { registration: await navigator.serviceWorker.ready, created: true };
       };
 
       const renderState = async () => {
@@ -111,6 +123,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         enableButton.disabled = true;
         showStatus('Enabling notifications…', 'pending');
         let createdSubscription = null;
+        let registration = null;
+        let createdRegistration = false;
         try {
           if (!supported()) throw new Error('Browser notifications are not supported in this browser.');
           const permission = Notification.permission === 'granted'
@@ -121,7 +135,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           }
           if (!applicationServerKey) throw new Error('Notification configuration is unavailable.');
 
-          const { registration, subscription: existing } = await getSubscription();
+          const registrationState = await ensureRegistration();
+          registration = registrationState.registration;
+          createdRegistration = registrationState.created;
+          const existing = await registration.pushManager.getSubscription();
           const subscription = existing || await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: applicationKeyBytes(applicationServerKey),
@@ -140,6 +157,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           await renderState();
         } catch (error) {
           if (createdSubscription) await createdSubscription.unsubscribe().catch(() => false);
+          if (createdRegistration && registration) await registration.unregister().catch(() => false);
           showStatus(error instanceof Error ? error.message : 'Notifications could not be enabled.', 'error');
         } finally {
           enableButton.disabled = false;
@@ -150,8 +168,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         disableButton.disabled = true;
         showStatus('Disabling notifications…', 'pending');
         try {
-          const { subscription } = await getSubscription();
+          const { registration, subscription } = await getSubscription();
           if (!subscription) {
+            if (registration) await registration.unregister();
             await renderState();
             return;
           }
@@ -164,6 +183,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           const body = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(body.error || 'Notification subscription could not be disabled.');
           await subscription.unsubscribe();
+          if (registration) await registration.unregister();
           await renderState();
         } catch (error) {
           showStatus(error instanceof Error ? error.message : 'Notifications could not be disabled.', 'error');

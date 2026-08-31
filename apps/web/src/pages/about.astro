@@ -5,9 +5,28 @@ const identitySchema = JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: 'USD Impact',
-  legalName: 'SC Kela Leads SRL',
+  legalName: 'KELA LEADS S.R.L.',
   url: 'https://usd-impact.com/',
   taxID: 'RO CUI 40790448',
+  identifier: [
+    {
+      '@type': 'PropertyValue',
+      propertyID: 'Romanian Trade Register',
+      value: 'J38/820/2020',
+    },
+    {
+      '@type': 'PropertyValue',
+      propertyID: 'European Unique Identifier',
+      value: 'ROONRC.J38/820/2020',
+    },
+  ],
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9',
+    postalCode: '240232',
+    addressLocality: 'Râmnicu Vâlcea',
+    addressCountry: 'RO',
+  },
   email: 'support@usd-impact.com',
   founder: {
     '@type': 'Person',
@@ -33,20 +52,24 @@ const identitySchema = JSON.stringify({
     <section class="identity-grid" aria-label="Operator and founder">
       <article class="card identity-card">
         <div class="eyebrow">Legal operator</div>
-        <h2>SC Kela Leads SRL</h2>
+        <h2>KELA LEADS S.R.L.</h2>
         <dl>
           <div><dt>Jurisdiction</dt><dd>Romania</dd></div>
+          <div><dt>Legal form</dt><dd>Societate cu Răspundere Limitată (S.R.L.)</dd></div>
           <div><dt>Unique identification code</dt><dd>CUI 40790448</dd></div>
           <div><dt>Trade Register number</dt><dd>J38/820/2020</dd></div>
+          <div><dt>European Unique Identifier</dt><dd>ROONRC.J38/820/2020</dd></div>
+          <div><dt>Company status</dt><dd>Funcțiune (active)</dd></div>
+          <div><dt>Registered business address</dt><dd>Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România</dd></div>
           <div><dt>Contact</dt><dd><a href="mailto:support@usd-impact.com">support@usd-impact.com</a></dd></div>
         </dl>
-        <p class="evidence-note"><strong>Evidence level:</strong> first-party legal disclosure, consistent across the Terms, Privacy Notice and Refund Policy. A current electronically issued ONRC company certificate has <strong>not yet been reviewed</strong> for this public verification record, so these identifiers are not represented as independently or officially verified. The authenticated acquisition and comparison are tracked in <a href="https://github.com/usdimpact/usd-impact-site/issues/341" target="_blank" rel="noreferrer">Issue #341</a>. The official source is the <a href="https://myportal.onrc.ro/" target="_blank" rel="noreferrer">Romanian National Trade Register Office portal</a>.</p>
+        <p class="evidence-note"><strong>Evidence level:</strong> checked on August 28, 2026 against an electronically signed ONRC <em>Certificat constatator</em> issued on August 27, 2026 (report 3178140). The certificate matches the exact legal name, CUI, current Trade Register number and registered-office components published by USD Impact, and records the company status as <em>funcțiune</em>. The original is retained privately and is not published because it contains unnecessary personal and KYB data. This is a narrow company-record verification, not an independent audit, assurance engagement or ONRC endorsement. Privacy-safe evidence is recorded in <a href="https://github.com/usdimpact/usd-impact-site/issues/341" target="_blank" rel="noreferrer">Issue #341</a>. The official source is the <a href="https://myportal.onrc.ro/" target="_blank" rel="noreferrer">Romanian National Trade Register Office portal</a>.</p>
       </article>
 
       <article class="card identity-card">
         <div class="eyebrow">Founder &amp; authorial lead</div>
         <h2>Mircea Albulescu</h2>
-        <p>Mircea Albulescu is the founder and authorial lead behind USD Impact and <em>Read the Dollar First</em>. SC Kela Leads SRL is the accountable service provider and publisher for the project.</p>
+        <p>Mircea Albulescu is the founder and authorial lead behind USD Impact and <em>Read the Dollar First</em>. KELA LEADS S.R.L. is the accountable service provider and publisher for the project.</p>
         <p class="evidence-note"><strong>Evidence level:</strong> high-confidence first-party identity disclosure. USD Impact has not yet published an independent identity attestation, third-party executive profile or notarized verification, so this should not be represented as independently verified.</p>
       </article>
     </section>
@@ -54,8 +77,8 @@ const identitySchema = JSON.stringify({
     <section class="registry-verification card" aria-labelledby="registry-verification-title">
       <div>
         <div class="eyebrow">Official registry verification</div>
-        <h2 id="registry-verification-title">ONRC certificate review is pending.</h2>
-        <p>USD Impact does not treat an official portal link or internally consistent company identifiers as equivalent to reviewing a current signed registry document. The next step is to obtain the company certificate through ONRC InfoCert-Recom, compare the legal name, CUI and current registration number, review the registered office privately, retain the signed original in company-controlled storage, and record only privacy-safe verification evidence.</p>
+        <h2 id="registry-verification-title">The company record has been checked.</h2>
+        <p>USD Impact reviewed the current electronically signed ONRC certificate, corrected the public operator name to the exact registered form, and found no conflict in the CUI, current registration number, company status or registered-office components. The retained source document is not a public marketing asset: only the issue date, report number, file hash and privacy-safe comparison results are recorded publicly.</p>
       </div>
       <div class="registry-actions">
         <a class="button report-link" href="https://myportal.onrc.ro/" target="_blank" rel="noreferrer">Open official ONRC portal</a>
@@ -70,8 +93,8 @@ const identitySchema = JSON.stringify({
         <table>
           <thead><tr><th>Question</th><th>Public answer</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td>Legal entity operating USD Impact</td><td>SC Kela Leads SRL, Romania; CUI 40790448; Trade Register J38/820/2020. These are first-party legal-operator disclosures.</td><td><span class="status partial">First-party disclosed</span></td></tr>
-            <tr><td>Current official ONRC company certificate</td><td>Not yet reviewed for this public verification record. Acquisition and privacy-safe comparison are tracked in Issue #341. Until completed, USD Impact does not claim ONRC, registry or independent verification of the operator identifiers.</td><td><a class="status partial" href="https://github.com/usdimpact/usd-impact-site/issues/341" target="_blank" rel="noreferrer">Pending</a></td></tr>
+            <tr><td>Legal entity operating USD Impact</td><td>KELA LEADS S.R.L., Romania; CUI 40790448; Trade Register J38/820/2020; EUID ROONRC.J38/820/2020. These fields were checked against the current ONRC certificate described below.</td><td><span class="status disclosed">Official record checked</span></td></tr>
+            <tr><td>Current official ONRC company certificate</td><td>Electronically signed <em>Certificat constatator</em>, report 3178140, issued August 27, 2026 and reviewed August 28, 2026. Privacy-safe evidence and the retained-file SHA-256 are recorded in Issue #341; the source PDF is kept private.</td><td><a class="status disclosed" href="https://github.com/usdimpact/usd-impact-site/issues/341" target="_blank" rel="noreferrer">Reviewed</a></td></tr>
             <tr><td>Founder / author identity</td><td>Mircea Albulescu, founder and authorial lead.</td><td><span class="status partial">First-party disclosed</span></td></tr>
             <tr><td>Exact product revenue and customers</td><td>Not publicly disclosed. USD Impact does not use revenue, customer-count or sales claims as social proof. Any future figures should be dated, scoped and separately verified before publication.</td><td><span class="status partial">Private</span></td></tr>
             <tr><td>Complete historical sales reconstruction</td><td>No independently audited, all-channel historical sales reconstruction is published.</td><td><span class="status gap">Not established</span></td></tr>
@@ -109,7 +132,7 @@ const identitySchema = JSON.stringify({
     <section class="bottom-line card">
       <div class="eyebrow">Bottom line</div>
       <h2>Transparent, reproducible and deliberately limited.</h2>
-      <p>USD Impact can make a credible claim to a public formula, visible revision policy, dated publication archive, expanding robustness evidence and a predictive study registered before its holdout. It can also make a first-party legal-operator disclosure, while clearly showing that current ONRC certificate review remains pending. It cannot yet make a credible claim to independent operator verification, independently audited score performance, predictive power or a completed predictive out-of-sample result. Those boundaries are part of the project record, not footnotes.</p>
+      <p>USD Impact can make a credible claim to a public formula, visible revision policy, dated publication archive, expanding robustness evidence, a predictive study registered before its holdout, and a legal-operator record checked against a current electronically signed ONRC certificate. It cannot expand that company-record check into an independent identity attestation, an ONRC endorsement, independently audited score performance, predictive power or a completed predictive out-of-sample result. Those boundaries are part of the project record, not footnotes.</p>
     </section>
   </main>
 </BaseLayout>

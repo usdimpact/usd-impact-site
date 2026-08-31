@@ -1,0 +1,75 @@
+---
+const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
+const {
+  secondary = 'Download the weekly checklist',
+  secondaryHref = checklistDownload,
+  secondaryDownload = true,
+} = Astro.props;
+---
+<div
+  id="book-purchase-cta"
+  class="button-row"
+  aria-busy="true"
+  data-book-checkout-readiness="checking"
+>
+  <a id="book-primary-cta" class="button primary" href="#book-waitlist">Join the book waitlist</a>
+  {secondaryDownload ? (
+    <a class="button secondary" href={secondaryHref} download>{secondary}</a>
+  ) : (
+    <a class="button secondary" href={secondaryHref}>{secondary}</a>
+  )}
+</div>
+<p id="book-purchase-message" class="account-status" role="status" aria-live="polite">
+  Checking current Library Pass checkout availability…
+</p>
+<noscript>
+  <p>JavaScript is required to verify Live checkout availability. The book waitlist remains available.</p>
+</noscript>
+
+<script>
+  import { bookPurchasePresentation } from '../lib/checkout-client.js';
+
+  const purchaseContainer = document.getElementById('book-purchase-cta');
+  const primaryCta = document.getElementById('book-primary-cta');
+  const purchaseMessage = document.getElementById('book-purchase-message');
+  const waitlist = document.getElementById('book-waitlist');
+
+  const renderPresentation = (presentation) => {
+    if (!(primaryCta instanceof HTMLAnchorElement)) return;
+    primaryCta.textContent = presentation.primaryLabel;
+    primaryCta.href = presentation.primaryHref;
+    if (purchaseContainer instanceof HTMLElement) {
+      purchaseContainer.dataset.bookCheckoutReadiness = presentation.verificationState;
+      purchaseContainer.setAttribute('aria-busy', 'false');
+    }
+    if (purchaseMessage) purchaseMessage.textContent = presentation.message;
+    if (waitlist instanceof HTMLElement) waitlist.hidden = presentation.available;
+  };
+
+  fetch('/api/commerce-readiness', {
+    method: 'GET',
+    credentials: 'same-origin',
+    cache: 'no-store',
+    headers: { Accept: 'application/json' },
+  })
+    .then(async (response) => {
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok || !body.commerce) throw new Error('Commerce readiness could not be verified.');
+      renderPresentation(bookPurchasePresentation(body.commerce));
+    })
+    .catch(() => {
+      renderPresentation(bookPurchasePresentation(null));
+      if (purchaseContainer instanceof HTMLElement) {
+        purchaseContainer.dataset.bookCheckoutReadiness = 'error';
+      }
+      if (purchaseMessage) {
+        purchaseMessage.textContent = 'Checkout availability could not be verified. The waitlist remains available.';
+      }
+    });
+</script>
+
+<style>
+  :global(#book-waitlist[hidden]) {
+    display: none;
+  }
+</style>

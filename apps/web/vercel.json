@@ -29,6 +29,14 @@
   ],
   "rewrites": [
     {
+      "source": "/guided-edition/book",
+      "destination": "/api/guided-edition?__book=1"
+    },
+    {
+      "source": "/guided-edition/book/:path*",
+      "destination": "/api/guided-edition?__book=1&__book_path=:path*"
+    },
+    {
       "source": "/guided-edition/audiobook",
       "destination": "/api/guided-edition?__audiobook=1"
     },

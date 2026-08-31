@@ -1,0 +1,381 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ComplianceNote from '../../components/ComplianceNote.astro';
+import BookToolGuide from '../../components/BookToolGuide.astro';
+import BookChapterBridgeCard from '../../components/BookChapterBridgeCard.astro';
+import snapshot from '../../data/three-dials-latest.json';
+import { getChapterByNumber, getToolById } from '../../data/book-site-bridge/index.mjs';
+import {
+  assessBookLiveEvidence,
+  getWeeklyDialReference,
+} from '../../lib/book-site-bridge/live-evidence.mjs';
+
+const tool = getToolById('weekly-regime-lab');
+const chapter = getChapterByNumber(11);
+const liveEvidence = assessBookLiveEvidence(snapshot);
+let reference = null;
+try {
+  reference = getWeeklyDialReference(snapshot);
+} catch {
+  // The fail-closed availability message explains an invalid snapshot.
+}
+const canCompare = liveEvidence.usable && Boolean(reference);
+const evidenceGroups = [
+  { key: 'dollar', title: 'Dial 1 — Dollar direction evidence', facts: snapshot.dials?.dollar?.facts ?? [] },
+  { key: 'real-rates', title: 'Dial 2 — Real-rate evidence', facts: snapshot.dials?.real_rates?.facts ?? [] },
+  { key: 'liquidity', title: 'Dial 3 — Liquidity-stress evidence', facts: snapshot.dials?.liquidity_stress?.facts ?? [] },
+];
+const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : String(value).replaceAll('-', ' ');
+---
+<BaseLayout
+  title="Weekly Regime Lab | USD Impact Preview"
+  description="A dated completed-week implementation of the weekly operating sequence from Chapter 11 of Read the Dollar First."
+  noindex={true}
+>
+  <section class="hero practice-hero">
+    <div class="container">
+      <div class="eyebrow">Chapter 11 Practice Preview</div>
+      <h1>Weekly Regime Lab</h1>
+      <p class="lead">Read the dated completed-week evidence, record the three dials and your dominant-driver hypothesis, then compare only the deterministic dials.</p>
+      <p class="practice-fixture-note">Dated completed-week evidence · not real-time. Your classifications, confidence and written reading stay in this browser and are not transmitted.</p>
+    </div>
+  </section>
+
+  <main class="container practice-main">
+    <section
+      class={`evidence-status card evidence-status--${liveEvidence.state}`}
+      aria-labelledby="weekly-evidence-status-heading"
+      data-live-evidence-state={liveEvidence.state}
+      data-live-evidence-usable={String(canCompare)}
+    >
+      <div class="eyebrow">Publication gate</div>
+      <h2 id="weekly-evidence-status-heading">Latest published completed-week evidence</h2>
+      <p><strong>Snapshot week:</strong> {snapshot.week_ending}</p>
+      <p>{liveEvidence.message}</p>
+      <p class="evidence-status__boundary">Each fact retains its own observation date. If the snapshot falls outside the approved publication cadence, the comparison controls fail closed.</p>
+    </section>
+
+    <section class="lab-intro grid" aria-label="Weekly Regime Lab sequence">
+      <article class="card"><span>1</span><h2>Observe</h2><p>Read the dated source-bound facts without seeing the deterministic dial classifications.</p></article>
+      <article class="card"><span>2</span><h2>Classify</h2><p>Set dollar direction, real-rate pressure, liquidity stress and your dominant-driver hypothesis.</p></article>
+      <article class="card"><span>3</span><h2>Explain</h2><p>Write what supports the reading and what would challenge it.</p></article>
+      <article class="card"><span>4</span><h2>Compare</h2><p>Reveal the three deterministic dial classifications and the separate exact-week Score output.</p></article>
+      <article class="card"><span>5</span><h2>Return</h2><p>Use disagreement to select the next chapter, source or Weekly report to review.</p></article>
+    </section>
+
+    <section class="weekly-evidence" aria-labelledby="weekly-evidence-heading">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Observe first</div>
+          <h2 id="weekly-evidence-heading">Completed-week source evidence</h2>
+        </div>
+        <p>The facts and changes are visible before submission. Deterministic direction labels, confidence labels, the model output and the published interpretation remain out of view until you record your own reading.</p>
+      </div>
+      <div class="dial-evidence-grid">
+        {evidenceGroups.map((group) => (
+          <article class="dial-evidence card" data-evidence-group={group.key}>
+            <h3>{group.title}</h3>
+            <div class="dial-facts">
+              {group.facts.map((fact) => (
+                <div class="dial-fact" data-evidence-id={fact.id}>
+                  <div class="dial-fact__topline">
+                    <div>
+                      <span>{fact.id}</span>
+                      <strong>{fact.label}</strong>
+                    </div>
+                    <b>{fact.change.display}</b>
+                  </div>
+                  <dl>
+                    <div><dt>Previous</dt><dd>{fact.previous.display} · {fact.previous.date}</dd></div>
+                    <div><dt>Latest</dt><dd>{fact.latest.display} · {fact.latest.date}</dd></div>
+                  </dl>
+                  <p>{fact.source_note}</p>
+                  <a href={fact.source_url} target="_blank" rel="noreferrer">Open source</a>
+                </div>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="weekly-lab-shell" aria-labelledby="weekly-lab-form-heading">
+      <div>
+        <div class="eyebrow">Independent reading</div>
+        <h2 id="weekly-lab-form-heading">Build the regime sentence first</h2>
+        <p>The lab compares only the three deterministic dials. Your dominant-driver hypothesis is recorded for reflection but deliberately left unscored.</p>
+        {!canCompare && <p class="comparison-disabled"><strong>Comparison disabled.</strong> Wait for a valid snapshot inside the publication cadence.</p>}
+      </div>
+
+      <form
+        id="weekly-regime-form"
+        class="weekly-regime-form"
+        data-evidence-usable={String(canCompare)}
+        data-reference-dollar={reference?.dollar ?? ''}
+        data-reference-real-rates={reference?.realRates ?? ''}
+        data-reference-liquidity={reference?.liquidity ?? ''}
+      >
+        <div class="dial-grid">
+          <label>
+            <span>Dollar direction</span>
+            <select name="dollar" required disabled={!canCompare}>
+              <option value="">Select</option>
+              <option value="firmer">Firmer</option>
+              <option value="softer">Softer</option>
+              <option value="mixed">Mixed or rangebound</option>
+            </select>
+          </label>
+          <label>
+            <span>Real-rate pressure</span>
+            <select name="realRates" required disabled={!canCompare}>
+              <option value="">Select</option>
+              <option value="rising">Rising</option>
+              <option value="falling">Falling</option>
+              <option value="mixed">Mixed or flat</option>
+            </select>
+          </label>
+          <label>
+            <span>Liquidity stress</span>
+            <select name="liquidity" required disabled={!canCompare}>
+              <option value="">Select</option>
+              <option value="tightening">Tightening</option>
+              <option value="easing">Easing</option>
+              <option value="mixed">Mixed, contained or unclear</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="dial-grid dial-grid--two">
+          <label>
+            <span>Dominant-driver hypothesis · unscored</span>
+            <select name="driver" required disabled={!canCompare}>
+              <option value="">Select</option>
+              <option value="rates">Rates and policy repricing</option>
+              <option value="funding-stress">Funding or liquidity stress</option>
+              <option value="relative-growth">Relative growth</option>
+              <option value="composition-positioning">Composition or positioning</option>
+              <option value="physical-supply">Physical supply or logistics</option>
+              <option value="asset-specific">Asset-specific flow or access</option>
+            </select>
+          </label>
+          <label>
+            <span>Evidence confidence · unscored</span>
+            <select name="confidence" required disabled={!canCompare}>
+              <option value="">Select</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="reading-field">
+          <span>Your conditional reading · unscored</span>
+          <textarea
+            name="reading"
+            rows="5"
+            minlength="40"
+            required
+            disabled={!canCompare}
+            placeholder="The current regime appears primarily rate-led because..., while... would challenge this reading."
+          ></textarea>
+          <small>Minimum 40 characters. Include one supporting reason and one challenge or invalidation condition. This text is not transmitted.</small>
+        </label>
+
+        <button class="button primary" type="submit" disabled={!canCompare}>Record my reading and reveal the comparison</button>
+      </form>
+    </section>
+
+    <section id="weekly-regime-result" class="weekly-result card" aria-live="polite" tabindex="-1" hidden>
+      <div class="eyebrow">Comparison result</div>
+      <h2 data-comparison-heading></h2>
+      <p data-comparison-summary></p>
+      <p class="comparison-score"><strong data-comparison-score></strong> deterministic dials aligned with the completed-week reference.</p>
+
+      {reference && (
+        <div class="reference-panel" aria-labelledby="reference-heading" data-dial-reference>
+          <h3 id="reference-heading">Deterministic three-dial reference</h3>
+          <dl>
+            <div><dt>Dollar</dt><dd>{prettyReference(reference.dollar)}</dd></div>
+            <div><dt>Real rates</dt><dd>{prettyReference(reference.realRates)}</dd></div>
+            <div><dt>Liquidity stress</dt><dd>{prettyReference(reference.liquidity)}</dd></div>
+          </dl>
+          <p>The reference maps the existing deterministic Three-Dials logic into the reader-facing choices. Rangebound, flat and contained states map to the neutral/mixed choice rather than being forced directional.</p>
+        </div>
+      )}
+
+      <section aria-labelledby="differences-heading">
+        <h3 id="differences-heading">Review the dial differences</h3>
+        <ul data-comparison-differences></ul>
+      </section>
+
+      <section class="recorded-reading" aria-labelledby="recorded-reading-heading">
+        <h3 id="recorded-reading-heading">Your browser-local reading</h3>
+        <blockquote data-recorded-reading></blockquote>
+        <p>Driver hypothesis: <strong data-recorded-driver></strong> · not scored</p>
+        <p>Confidence: <strong data-recorded-confidence></strong> · not scored</p>
+      </section>
+
+      <section class="score-output" aria-labelledby="score-output-heading" data-score-model-output>
+        <div class="eyebrow">Separate model output · revealed after submission</div>
+        <h3 id="score-output-heading">{snapshot.model_output.name}</h3>
+        <p><strong>{snapshot.model_output.score_display}</strong> · {snapshot.model_output.regime} · week ending {snapshot.model_output.week_ending}</p>
+        <p>{snapshot.model_output.scope}</p>
+        <p><a href={snapshot.model_output.source_url} target="_blank" rel="noreferrer">Open exact-week Score JSON</a> · <a href={snapshot.model_output.methodology_url}>Read Score methodology</a></p>
+        <p><strong>Not an answer key:</strong> the Score remains a separate descriptive model output and does not determine whether your three-dial reading or driver hypothesis is correct.</p>
+      </section>
+    </section>
+
+    <BookChapterBridgeCard
+      chapter={chapter}
+      rationale="Chapter 11 explains why the weekly framework must force sequence: start with the driver, record dollar direction, real rates and liquidity stress, then add asset-specific evidence."
+      linkLabel="Open the Chapter 11 companion"
+    />
+
+    <BookToolGuide tool={tool} />
+
+    <ComplianceNote text="Educational and informational only. The Weekly Regime Lab compares browser-local classifications with dated deterministic dial states. The dominant-driver hypothesis, confidence and written response are unscored and untransmitted. The separate Score v2 output is not an answer key, forecast, recommendation, suitability assessment or trading signal." />
+  </main>
+</BaseLayout>
+
+<script>
+  import { compareWeeklyReading } from '../../lib/book-site-bridge/practice-classifiers.mjs';
+
+  const form = document.querySelector('#weekly-regime-form');
+  const panel = document.querySelector('#weekly-regime-result');
+  const differencesList = panel?.querySelector('[data-comparison-differences]');
+
+  const displayValue = (value) => value.replaceAll('-', ' ');
+
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!(form instanceof HTMLFormElement) || form.dataset.evidenceUsable !== 'true') return;
+    const data = new FormData(form);
+    const userReading = {
+      dollar: String(data.get('dollar')),
+      realRates: String(data.get('realRates')),
+      liquidity: String(data.get('liquidity')),
+    };
+    const referenceReading = {
+      dollar: String(form.dataset.referenceDollar),
+      realRates: String(form.dataset.referenceRealRates),
+      liquidity: String(form.dataset.referenceLiquidity),
+    };
+    const comparison = compareWeeklyReading(userReading, referenceReading);
+
+    panel?.querySelector('[data-comparison-heading]')?.replaceChildren(comparison.heading);
+    panel?.querySelector('[data-comparison-summary]')?.replaceChildren(comparison.summary);
+    panel?.querySelector('[data-comparison-score]')?.replaceChildren(`${comparison.matches} of ${comparison.total}`);
+    panel?.querySelector('[data-recorded-reading]')?.replaceChildren(String(data.get('reading')));
+    panel?.querySelector('[data-recorded-driver]')?.replaceChildren(displayValue(String(data.get('driver'))));
+    panel?.querySelector('[data-recorded-confidence]')?.replaceChildren(String(data.get('confidence')));
+
+    if (differencesList) {
+      differencesList.replaceChildren();
+      if (comparison.differences.length === 0) {
+        const item = document.createElement('li');
+        item.textContent = 'No deterministic dial differences in this completed-week comparison. Continue by checking your unscored driver hypothesis, asset-specific evidence and limitations.';
+        differencesList.append(item);
+      } else {
+        comparison.differences.forEach((difference) => {
+          const item = document.createElement('li');
+          const text = document.createElement('span');
+          text.textContent = `${difference.label}: you selected ${displayValue(difference.userValue)}; the deterministic reference uses ${displayValue(difference.referenceValue)}. ${difference.reason} `;
+          const link = document.createElement('a');
+          link.href = `/book/read-the-dollar-first/companion/chapter/${String(difference.chapterNumber).padStart(2, '0')}/`;
+          link.textContent = `Review Chapter ${difference.chapterNumber}`;
+          item.append(text, link);
+          differencesList.append(item);
+        });
+      }
+    }
+
+    if (panel) {
+      panel.hidden = false;
+      panel.dataset.status = comparison.status;
+      panel.focus();
+    }
+  });
+</script>
+
+<style>
+  .practice-hero { padding-bottom: 60px; }
+  .practice-fixture-note { color: var(--silver); font-size: 14px; font-weight: 700; }
+  .practice-main > section + section { margin-top: 52px; }
+  .evidence-status { border-left: 5px solid var(--gold); }
+  .evidence-status h2 { margin: 6px 0 10px; }
+  .evidence-status p { margin: 8px 0 0; }
+  .evidence-status--stale, .evidence-status--invalid { border-left-color: #8c3a3a; }
+  .evidence-status__boundary { color: var(--slate); font-size: 14px; }
+  .lab-intro { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .lab-intro article { padding: 18px; }
+  .lab-intro span { color: var(--gold-text); font-size: 12px; font-weight: 800; }
+  .lab-intro h2 { margin: 6px 0; font-size: 20px; }
+  .lab-intro p { margin: 0; color: var(--slate); font-size: 14px; }
+  .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 28px; margin-bottom: 18px; }
+  .section-heading h2 { margin: 6px 0 0; }
+  .section-heading > p { max-width: 560px; margin: 0; color: var(--slate); }
+  .dial-evidence-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .dial-evidence { padding: 18px; }
+  .dial-evidence > h3 { margin: 0 0 14px; font-size: 19px; }
+  .dial-facts { display: grid; gap: 14px; }
+  .dial-fact { padding-top: 14px; border-top: 1px solid #e3e7ec; }
+  .dial-fact__topline { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+  .dial-fact__topline > div { display: grid; gap: 3px; }
+  .dial-fact__topline span { color: var(--gold-text); font-size: 11px; font-weight: 800; letter-spacing: .05em; }
+  .dial-fact__topline strong { font-size: 14px; }
+  .dial-fact dl { display: grid; gap: 6px; margin: 12px 0; }
+  .dial-fact dl div { display: flex; justify-content: space-between; gap: 10px; }
+  .dial-fact dt { color: var(--slate); font-size: 12px; }
+  .dial-fact dd { margin: 0; text-align: right; font-size: 12px; font-weight: 700; }
+  .dial-fact p { margin: 8px 0; color: var(--slate); font-size: 12px; line-height: 1.5; }
+  .dial-fact a { font-size: 12px; font-weight: 700; }
+  .weekly-lab-shell { display: grid; grid-template-columns: minmax(240px, .7fr) minmax(0, 1.3fr); gap: 42px; align-items: start; }
+  .weekly-lab-shell h2 { margin: 6px 0 8px; }
+  .weekly-lab-shell > div > p { color: var(--slate); }
+  .comparison-disabled { padding: 12px 14px; border-radius: 10px; background: #f6e4e4; color: #7b2d2d !important; }
+  .weekly-regime-form { display: grid; gap: 20px; }
+  .dial-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .dial-grid--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .weekly-regime-form label { display: grid; gap: 7px; }
+  .weekly-regime-form label > span { color: var(--navy); font-weight: 800; }
+  .weekly-regime-form select,
+  .weekly-regime-form textarea {
+    width: 100%;
+    border: 1px solid #aeb7c3;
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: var(--white);
+    color: var(--graphite);
+    font: inherit;
+  }
+  .weekly-regime-form select:disabled, .weekly-regime-form textarea:disabled { opacity: .62; }
+  .weekly-regime-form select:focus,
+  .weekly-regime-form textarea:focus { outline: 3px solid rgba(201,163,91,.25); border-color: var(--gold); }
+  .reading-field small { color: var(--slate); }
+  .weekly-regime-form .button { justify-self: start; }
+  .weekly-result { border-left: 5px solid var(--gold); }
+  .weekly-result h2 { margin: 6px 0 8px; }
+  .comparison-score { color: var(--navy); }
+  .reference-panel { margin: 24px 0; padding: 20px; border-radius: 14px; background: #f4f6f8; }
+  .reference-panel h3 { margin-top: 0; }
+  .reference-panel dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .reference-panel dl div { padding: 12px; border-radius: 10px; background: var(--white); }
+  .reference-panel dt { color: var(--slate); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+  .reference-panel dd { margin: 4px 0 0; color: var(--navy); font-weight: 800; text-transform: capitalize; }
+  .reference-panel > p { margin-bottom: 0; color: var(--slate); font-size: 14px; }
+  .weekly-result li + li { margin-top: 10px; }
+  .recorded-reading { margin-top: 28px; padding-top: 22px; border-top: 1px solid #e3e7ec; }
+  .recorded-reading blockquote { margin: 0; padding: 16px 18px; border-left: 4px solid var(--gold); background: #fff8e8; }
+  .score-output { margin-top: 28px; padding: 20px; border-radius: 14px; border: 1px solid #dce2e9; background: #fff; }
+  .score-output h3 { margin: 6px 0 8px; }
+  .score-output p { color: var(--slate); }
+  @media (max-width: 960px) {
+    .lab-intro { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .weekly-lab-shell, .dial-evidence-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 680px) {
+    .dial-grid, .dial-grid--two, .reference-panel dl { grid-template-columns: 1fr; }
+    .section-heading { align-items: start; flex-direction: column; }
+  }
+</style>

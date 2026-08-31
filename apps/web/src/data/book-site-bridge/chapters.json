@@ -1,0 +1,334 @@
+[
+  {
+    "id": "chapter-01",
+    "number": 1,
+    "code": "01",
+    "shortCode": "c01",
+    "title": "Why the Dollar Comes First",
+    "bookPage": 8,
+    "summary": "Treat the dollar as pricing, funding, invoicing and liquidity infrastructure before interpreting an asset move.",
+    "learningObjectives": [
+      "Separate the dollar as a currency quote from the dollar as global financial infrastructure.",
+      "Identify the upstream regime before forming an asset-specific view.",
+      "Recognize when a local catalyst is overpowering the common macro backdrop."
+    ],
+    "commonMistakes": [
+      "Starting with the asset headline before identifying the upstream dollar regime."
+    ],
+    "toolIds": [
+      "three-dial-dashboard",
+      "dollar-transmission-chain",
+      "dxy-vs-broad-usd"
+    ],
+    "practicePath": "/book/read-the-dollar-first/companion/chapter/01/",
+    "access": "public",
+    "edition": "1.2",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "chapter-02",
+    "number": 2,
+    "code": "02",
+    "shortCode": "c02",
+    "title": "From Bretton Woods to Fiat Discipline",
+    "bookPage": 12,
+    "summary": "Read modern monetary discipline through credibility, inflation, rates, funding and balance sheets rather than a single metal anchor.",
+    "learningObjectives": [
+      "Distinguish the end of gold convertibility from the end of dollar centrality.",
+      "Identify the modern channels through which fiat systems face discipline.",
+      "Connect historical monetary structure to current rates and funding conditions."
+    ],
+    "commonMistakes": [
+      "Treating fiat money as a system with no market or institutional constraints."
+    ],
+    "toolIds": [
+      "three-dial-dashboard",
+      "weekly-score"
+    ],
+    "practicePath": "/book/read-the-dollar-first/companion/chapter/02/",
+    "access": "public",
+    "edition": "1.2",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "chapter-03",
+    "number": 3,
+    "code": "03",
+    "shortCode": "c03",
+    "title": "USD Is Not DXY",
+    "bookPage": 16,
+    "summary": "Use DXY as a specific developed-market basket, then confirm it with broader dollar and funding evidence before drawing a regime conclusion.",
+    "learningObjectives": [
+      "State what DXY measures and what it omits.",
+      "Compare a narrow basket move with broader trade-weighted dollar evidence.",
+      "Treat divergence between DXY and broad USD as information rather than noise."
+    ],
+    "commonMistakes": [
+      "Calling every DXY move a complete change in the global dollar regime."
+    ],
+    "toolIds": [
+      "dxy-vs-broad-usd",
+      "three-dial-dashboard"
+    ],
+    "practicePath": "/practice/dxy-vs-broad-usd/",
+    "access": "public",
+    "edition": "1.2",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "chapter-04",
+    "number": 4,
+    "code": "04",
+    "shortCode": "c04",
+    "title": "How the Dollar Moves Oil, Gold, Bitcoin, Gas, and FX",
+    "bookPage": 21,
+    "summary": "Identify the active pricing, funding, opportunity-cost, risk-and-hedge, or flow channel before interpreting an asset response.",
+    "learningObjectives": [
+      "Name the main transmission channels used by the framework.",
+      "Explain why the same dollar move can affect different assets differently.",
+      "Move from regime to channel before reaching an asset conclusion."
+    ],
+    "commonMistakes": [
+      "Using the dollar as a universal minus sign across unrelated assets."
+    ],
+    "toolIds": [
+      "dollar-transmission-chain",
+      "weekly-regime-lab"
+    ],
+    "practicePath": "/book/read-the-dollar-first/companion/chapter/04/",
+    "access": "public",
+    "edition": "1.2",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "chapter-05",
+    "number": 5,
+    "code": "05",
+    "shortCode": "c05",
+    "title": "Oil Is Not a Dollar Trade Only",
+    "bookPage": 27,
+    "summary": "Read inventories, balance, logistics, spare capacity and disruption risk before applying the dollar overlay to oil.",
+    "learningObjectives": [
+      "Rank physical balance before currency translation in oil analysis.",
+      "Separate demand-led and supply-led oil moves.",
+      "Use the dollar as an amplifier or offset rather than an automatic cause."
+    ],
+    "commonMistakes": [
+      "Starting an oil explanation with DXY while ignoring barrels, inventories and logistics."
+    ],
+    "toolIds": [
+      "dollar-transmission-chain",
+      "weekly-regime-lab",
+      "weekly-checklist"
+    ],
+    "practicePath": "/book/read-the-dollar-first/companion/chapter/05/",
+    "access": "public",
+    "edition": "1.2",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "chapter-06",
+    "number": 6,
+    "code": "06",
+    "shortCode": "c06",
+    "title": "Gold and the Dollar",
+    "bookPage": 32,
+    "summary": "Read gold through real yields, dollar direction and confidence demand instead of a permanent inverse-DXY rule.",
+    "learningObjectives": [
+      "Assess real-yield opportunity cost before using a currency explanation.",
+      "Recognize when confidence and hedge demand compete with rate pressure.",
+      "Record disagreement among the three filters rather than forcing a clean signal."
+    ],
+    "commonMistakes": [
+      "Treating gold as a permanent mirror image of DXY."
+    ],
+    "toolIds": [
+      "three-dial-dashboard",
+      "weekly-regime-lab"
+    ],
+    "practicePath": "/book/read-the-dollar-first/companion/chapter/06/",
+    "access": "public",
+    "edition": "1.2",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "chapter-07",
+    "number": 7,
+    "code": "07",
+    "shortCode": "c07",
+    "title": "Bitcoin and the Dollar",
+    "bookPage": 36,
+    "summary": "Separate Bitcoin's long-run monetary thesis from its current liquidity, real-rate, access and risk-appetite channels.",
+    "learningObjectives": [
+      "Distinguish the strategic monetary thesis from the current-week trading channel.",
+      "Assess the dollar hurdle rate and broader liquidity conditions.",
+      "Recognize when access or crypto-specific flows dominate the macro backdrop."
+    ],
+    "commonMistakes": [
+      "Assuming the long-run thesis determines every short-run price move."
+    ],
+    "toolIds": [
+      "three-dial-dashboard",
+      "weekly-regime-lab"
+    ],
+    "practicePath": "/book/read-the-dollar-first/companion/chapter/07/",
+    "access": "public",
+    "edition": "1.2",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "chapter-08",
+    "number": 8,
+    "code": "08",
+    "shortCode": "c08",
+    "title": "Gas / LNG and the Dollar",
+    "bookPage": 41,
+    "summary": "Read gas from storage, weather, pipes, terminals, export capacity and regional spreads outward to the dollar layer.",
+    "learningObjectives": [
+      "Explain why gas remains regional even as LNG connects markets.",
+      "Separate benchmark language from physical delivery constraints.",
+      "Apply the dollar through contracts, funding and trade only after the regional balance."
+    ],
+    "commonMistakes": [
+      "Treating gas as oil with a different label or as one uniform global price."
+    ],
+    "toolIds": [
+      "dollar-transmission-chain",
+      "weekly-regime-lab",
+      "weekly-checklist"
+    ],
+    "practicePath": "/book/read-the-dollar-first/companion/chapter/08/",
+    "access": "public",
+    "edition": "1.2",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "chapter-09",
+    "number": 9,
+    "code": "09",
+    "shortCode": "c09",
+    "title": "FX, Carry, and Translation Risk",
+    "bookPage": 45,
+    "summary": "Read the broad dollar backdrop before the bilateral pair, then separate rates, funding, carry and translation effects.",
+    "learningObjectives": [
+      "Distinguish a broad-dollar move from a pair-specific repricing.",
+      "Identify the conditions that support or unwind carry.",
+      "Separate transaction, translation and economic exposure."
+    ],
+    "commonMistakes": [
+      "Treating a bilateral currency move as a complete judgment about one country."
+    ],
+    "toolIds": [
+      "dxy-vs-broad-usd",
+      "three-dial-dashboard"
+    ],
+    "practicePath": "/book/read-the-dollar-first/companion/chapter/09/",
+    "access": "public",
+    "edition": "1.2",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "chapter-10",
+    "number": 10,
+    "code": "10",
+    "shortCode": "c10",
+    "title": "Reading Regimes: The Eleven-Year Record",
+    "bookPage": 49,
+    "summary": "Use the historical record to examine regime classification, failure modes and limitations without converting the score into a return forecast.",
+    "learningObjectives": [
+      "Read historical alignment as regime evidence rather than investment performance.",
+      "Identify supply shocks, pivots and asset-specific events as weak zones.",
+      "Separate the frozen book record from the evolving live methodology."
+    ],
+    "commonMistakes": [
+      "Treating a historical classification statistic as proof of future returns."
+    ],
+    "toolIds": [
+      "weekly-score",
+      "weekly-regime-lab"
+    ],
+    "practicePath": "/book/read-the-dollar-first/companion/chapter/10/",
+    "access": "public",
+    "edition": "1.2",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "chapter-11",
+    "number": 11,
+    "code": "11",
+    "shortCode": "c11",
+    "title": "The Weekly Operating Framework",
+    "bookPage": 56,
+    "summary": "Turn the framework into a repeatable sequence: identify the driver, record the three dials, add asset-specific evidence, and compare without forecasting.",
+    "learningObjectives": [
+      "Start with the driver rather than the loudest asset move.",
+      "Record dollar direction, real-rate pressure and liquidity stress in order.",
+      "Treat contradictions as information and delay the published comparison until after an independent reading."
+    ],
+    "commonMistakes": [
+      "Opening too many screens and confusing movement with meaning."
+    ],
+    "toolIds": [
+      "weekly-regime-lab",
+      "three-dial-dashboard",
+      "weekly-score",
+      "weekly-checklist"
+    ],
+    "practicePath": "/practice/weekly-regime/",
+    "access": "public",
+    "edition": "1.2",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "chapter-12",
+    "number": 12,
+    "code": "12",
+    "shortCode": "c12",
+    "title": "Common Mistakes in Dollar and Cross-Asset Analysis",
+    "bookPage": 60,
+    "summary": "Detect one-variable thinking, benchmark overreach and narrative-first explanations before they harden into conclusions.",
+    "learningObjectives": [
+      "Separate a useful relationship from a permanent law.",
+      "Use divergence to challenge the initial explanation.",
+      "Identify when a benchmark is being used outside its proper domain."
+    ],
+    "commonMistakes": [
+      "Turning a true relationship into a universal and immediate rule."
+    ],
+    "toolIds": [
+      "dxy-vs-broad-usd",
+      "weekly-regime-lab",
+      "dollar-transmission-chain"
+    ],
+    "practicePath": "/book/read-the-dollar-first/companion/chapter/12/",
+    "access": "public",
+    "edition": "1.2",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "chapter-13",
+    "number": 13,
+    "code": "13",
+    "shortCode": "c13",
+    "title": "What to Watch from Here",
+    "bookPage": 65,
+    "summary": "Convert the framework into a continuing habit by recording confirmation, challenge, invalidation and the next evidence to verify.",
+    "learningObjectives": [
+      "State what would confirm or challenge the current reading.",
+      "Refresh dated evidence from primary sources.",
+      "Use the live site as a continuation of the book rather than a replacement for it."
+    ],
+    "commonMistakes": [
+      "Treating a completed reading as permanent after the evidence changes."
+    ],
+    "toolIds": [
+      "weekly-regime-lab",
+      "weekly-score",
+      "weekly-checklist"
+    ],
+    "practicePath": "/book/read-the-dollar-first/companion/chapter/13/",
+    "access": "public",
+    "edition": "1.2",
+    "lastReviewed": "2026-08-28"
+  }
+]

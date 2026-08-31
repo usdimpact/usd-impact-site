@@ -1,0 +1,295 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ComplianceNote from '../../components/ComplianceNote.astro';
+import BookToolGuide from '../../components/BookToolGuide.astro';
+import BookChapterBridgeCard from '../../components/BookChapterBridgeCard.astro';
+import snapshot from '../../data/three-dials-latest.json';
+import { getChapterByNumber, getToolById } from '../../data/book-site-bridge/index.mjs';
+import {
+  assessBookLiveEvidence,
+  getBookLiveEvidenceFacts,
+  getDxyEvidenceReference,
+} from '../../lib/book-site-bridge/live-evidence.mjs';
+
+const tool = getToolById('dxy-vs-broad-usd');
+const chapter = getChapterByNumber(3);
+const liveEvidence = assessBookLiveEvidence(snapshot);
+let evidenceFacts = new Map();
+let reference = null;
+try {
+  evidenceFacts = getBookLiveEvidenceFacts(snapshot);
+  reference = getDxyEvidenceReference(snapshot);
+} catch {
+  // The fail-closed availability message explains an invalid snapshot.
+}
+const canCompare = liveEvidence.usable && Boolean(reference);
+const dollarFacts = ['DXY', 'DTWEXBGS'].map((id) => evidenceFacts.get(id)).filter(Boolean);
+const supportFacts = ['DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SPREAD']
+  .map((id) => evidenceFacts.get(id))
+  .filter(Boolean);
+---
+<BaseLayout
+  title="DXY vs. Broad USD Comparator | USD Impact Preview"
+  description="A dated completed-week practice tool for Chapter 3 of Read the Dollar First."
+  noindex={true}
+>
+  <section class="hero practice-hero">
+    <div class="container">
+      <div class="eyebrow">Chapter 3 Practice Preview</div>
+      <h1>DXY vs. Broad USD Comparator</h1>
+      <p class="lead">Classify whether the published completed-week DXY move is broadly confirmed, basket-led or unresolved before revealing the framework classification.</p>
+      <p class="practice-fixture-note">Dated completed-week evidence · not real-time. No market data is fetched in your browser.</p>
+    </div>
+  </section>
+
+  <main class="container practice-main">
+    <section
+      class={`evidence-status card evidence-status--${liveEvidence.state}`}
+      aria-labelledby="dxy-evidence-status-heading"
+      data-live-evidence-state={liveEvidence.state}
+      data-live-evidence-usable={String(canCompare)}
+    >
+      <div class="eyebrow">Publication gate</div>
+      <h2 id="dxy-evidence-status-heading">Latest published completed-week evidence</h2>
+      <p><strong>Snapshot week:</strong> {snapshot.week_ending}</p>
+      <p>{liveEvidence.message}</p>
+      <p class="evidence-status__boundary">Source observations keep their own dates. Comparison is disabled automatically if the repository snapshot falls outside the approved publication cadence.</p>
+    </section>
+
+    <section class="evidence-section" aria-labelledby="dxy-dollar-evidence-heading">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Observe first</div>
+          <h2 id="dxy-dollar-evidence-heading">Dollar evidence</h2>
+        </div>
+        <p>Read the levels, dates and changes before selecting a direction. The framework classification stays hidden until submission.</p>
+      </div>
+      <div class="evidence-grid evidence-grid--two">
+        {dollarFacts.map((fact) => (
+          <article class="evidence-card card" data-evidence-id={fact.id}>
+            <div class="evidence-card__topline">
+              <div>
+                <span class="evidence-id">{fact.id}</span>
+                <h3>{fact.label}</h3>
+              </div>
+              <strong>{fact.change.display}</strong>
+            </div>
+            <dl>
+              <div><dt>Previous</dt><dd>{fact.previous.display} · {fact.previous.date}</dd></div>
+              <div><dt>Latest</dt><dd>{fact.latest.display} · {fact.latest.date}</dd></div>
+            </dl>
+            <p>{fact.source_note}</p>
+            <a href={fact.source_url} target="_blank" rel="noreferrer">Open source</a>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="evidence-section" aria-labelledby="dxy-support-evidence-heading">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Confirmation layer</div>
+          <h2 id="dxy-support-evidence-heading">Rates and stress evidence</h2>
+        </div>
+        <p>These facts help you decide whether the dollar reading fits tighter, easier or mixed conditions. They are evidence, not a fourth dollar index.</p>
+      </div>
+      <div class="evidence-grid">
+        {supportFacts.map((fact) => (
+          <article class="evidence-card card" data-evidence-id={fact.id}>
+            <div class="evidence-card__topline">
+              <div>
+                <span class="evidence-id">{fact.id}</span>
+                <h3>{fact.label}</h3>
+              </div>
+              <strong>{fact.change.display}</strong>
+            </div>
+            <dl>
+              <div><dt>Previous</dt><dd>{fact.previous.display} · {fact.previous.date}</dd></div>
+              <div><dt>Latest</dt><dd>{fact.latest.display} · {fact.latest.date}</dd></div>
+            </dl>
+            <p>{fact.source_note}</p>
+            <a href={fact.source_url} target="_blank" rel="noreferrer">Open source</a>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="practice-shell" aria-labelledby="practice-form-heading">
+      <div>
+        <div class="eyebrow">Independent reading</div>
+        <h2 id="practice-form-heading">Record the evidence in order</h2>
+        <p>Choose one state for each input. The result describes the evidence configuration; it does not forecast an asset.</p>
+        {!canCompare && <p class="comparison-disabled"><strong>Comparison disabled.</strong> Wait for a valid snapshot inside the publication cadence.</p>}
+      </div>
+
+      <form
+        id="dxy-practice-form"
+        class="practice-form"
+        data-evidence-usable={String(canCompare)}
+        data-reference-dxy={reference?.dxy ?? ''}
+        data-reference-broad={reference?.broad ?? ''}
+      >
+        <fieldset disabled={!canCompare}>
+          <legend>1. DXY direction</legend>
+          <label><input type="radio" name="dxy" value="firmer" required /> Firmer</label>
+          <label><input type="radio" name="dxy" value="softer" /> Softer</label>
+          <label><input type="radio" name="dxy" value="mixed" /> Mixed or rangebound</label>
+        </fieldset>
+
+        <fieldset disabled={!canCompare}>
+          <legend>2. Broad trade-weighted USD direction</legend>
+          <label><input type="radio" name="broad" value="firmer" required /> Firmer</label>
+          <label><input type="radio" name="broad" value="softer" /> Softer</label>
+          <label><input type="radio" name="broad" value="mixed" /> Mixed or rangebound</label>
+        </fieldset>
+
+        <fieldset disabled={!canCompare}>
+          <legend>3. Rates or stress confirmation</legend>
+          <label><input type="radio" name="confirmation" value="tightening" required /> Supports tighter or more stressed conditions</label>
+          <label><input type="radio" name="confirmation" value="easing" /> Supports easier conditions</label>
+          <label><input type="radio" name="confirmation" value="mixed" /> Mixed or inconclusive</label>
+        </fieldset>
+
+        <button class="button primary" type="submit" disabled={!canCompare}>Classify the completed week</button>
+      </form>
+    </section>
+
+    <section id="dxy-practice-result" class="practice-result card" aria-live="polite" tabindex="-1" hidden>
+      <div class="eyebrow">Practice result</div>
+      <h2 data-result-heading></h2>
+      <p data-result-summary></p>
+      <dl class="result-evidence">
+        <div><dt>DXY</dt><dd data-result-dxy></dd></div>
+        <div><dt>Broad USD</dt><dd data-result-broad></dd></div>
+        <div><dt>Confirmation</dt><dd data-result-confirmation></dd></div>
+      </dl>
+      <p class="result-confirmation" data-result-confirmation-note></p>
+      <h3>Next check</h3>
+      <p data-result-next-check></p>
+
+      {reference && (
+        <section class="reference-panel" data-reference-classification aria-labelledby="dxy-reference-heading">
+          <div class="eyebrow">Revealed after your classification</div>
+          <h3 id="dxy-reference-heading">Deterministic completed-week dollar classification</h3>
+          <dl>
+            <div><dt>DXY</dt><dd>{reference.dxy}</dd></div>
+            <div><dt>Broad USD</dt><dd>{reference.broad}</dd></div>
+            <div><dt>Breadth</dt><dd>{reference.breadthConfirmation}</dd></div>
+          </dl>
+          <p data-reference-alignment></p>
+          <p>This reference is descriptive evidence from the same published snapshot. It is not a forecast, answer key for an asset, or trading signal.</p>
+        </section>
+      )}
+    </section>
+
+    <BookChapterBridgeCard
+      chapter={chapter}
+      rationale="Chapter 3 explains why DXY is a useful lens but not the complete dollar regime. Return to the chapter when the narrow and broad measures disagree."
+      linkLabel="Open the Chapter 3 companion"
+    />
+
+    <BookToolGuide tool={tool} />
+
+    <ComplianceNote text="Educational and informational only. This completed-week classifier uses dated repository-published evidence and does not retrieve current data in the browser, forecast markets, recommend an asset or provide a trading signal. Verify source dates before use." />
+  </main>
+</BaseLayout>
+
+<script>
+  import { classifyDxyScenario } from '../../lib/book-site-bridge/practice-classifiers.mjs';
+
+  const form = document.querySelector('#dxy-practice-form');
+  const panel = document.querySelector('#dxy-practice-result');
+
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!(form instanceof HTMLFormElement) || form.dataset.evidenceUsable !== 'true') return;
+    const data = new FormData(form);
+    const result = classifyDxyScenario({
+      dxy: String(data.get('dxy')),
+      broad: String(data.get('broad')),
+      confirmation: String(data.get('confirmation')),
+    });
+
+    panel?.querySelector('[data-result-heading]')?.replaceChildren(result.heading);
+    panel?.querySelector('[data-result-summary]')?.replaceChildren(result.summary);
+    panel?.querySelector('[data-result-dxy]')?.replaceChildren(result.dxyLabel);
+    panel?.querySelector('[data-result-broad]')?.replaceChildren(result.broadLabel);
+    panel?.querySelector('[data-result-confirmation]')?.replaceChildren(result.confirmationLabel);
+    panel?.querySelector('[data-result-confirmation-note]')?.replaceChildren(result.confirmationNote);
+    panel?.querySelector('[data-result-next-check]')?.replaceChildren(result.nextCheck);
+
+    const referenceDxy = form.dataset.referenceDxy;
+    const referenceBroad = form.dataset.referenceBroad;
+    const alignment = panel?.querySelector('[data-reference-alignment]');
+    if (alignment && referenceDxy && referenceBroad) {
+      const dxyMatch = String(data.get('dxy')) === referenceDxy;
+      const broadMatch = String(data.get('broad')) === referenceBroad;
+      const message = dxyMatch && broadMatch
+        ? 'Your DXY and broad-dollar classifications match the deterministic completed-week classifications.'
+        : dxyMatch || broadMatch
+          ? 'One of your two dollar classifications differs from the deterministic completed-week classification. Use the source dates and Chapter 3 to inspect the divergence.'
+          : 'Both dollar classifications differ from the deterministic completed-week classifications. Recheck the observation window and breadth evidence before revising the narrative.';
+      alignment.replaceChildren(message);
+    }
+
+    if (panel) {
+      panel.hidden = false;
+      panel.dataset.status = result.status;
+      panel.focus();
+    }
+  });
+</script>
+
+<style>
+  .practice-hero { padding-bottom: 60px; }
+  .practice-fixture-note { color: var(--silver); font-size: 14px; font-weight: 700; }
+  .practice-main > section + section { margin-top: 48px; }
+  .evidence-status { border-left: 5px solid var(--gold); }
+  .evidence-status h2 { margin: 6px 0 10px; }
+  .evidence-status p { margin: 8px 0 0; }
+  .evidence-status--stale, .evidence-status--invalid { border-left-color: #8c3a3a; }
+  .evidence-status__boundary { color: var(--slate); font-size: 14px; }
+  .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 28px; margin-bottom: 18px; }
+  .section-heading h2 { margin: 6px 0 0; }
+  .section-heading > p { max-width: 540px; margin: 0; color: var(--slate); }
+  .evidence-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .evidence-grid--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .evidence-card { padding: 18px; }
+  .evidence-card__topline { display: flex; justify-content: space-between; align-items: start; gap: 14px; }
+  .evidence-card h3 { margin: 5px 0 0; font-size: 18px; }
+  .evidence-id { color: var(--gold-text); font-size: 12px; font-weight: 800; letter-spacing: .06em; }
+  .evidence-card dl { display: grid; gap: 8px; margin: 18px 0; }
+  .evidence-card dl div { display: flex; justify-content: space-between; gap: 12px; }
+  .evidence-card dt { color: var(--slate); }
+  .evidence-card dd { margin: 0; text-align: right; font-weight: 700; }
+  .evidence-card p { color: var(--slate); font-size: 13px; }
+  .evidence-card a { font-weight: 700; }
+  .practice-shell { display: grid; grid-template-columns: minmax(240px, .75fr) minmax(0, 1.25fr); gap: 42px; align-items: start; }
+  .practice-shell h2 { margin: 6px 0 8px; }
+  .practice-shell > div > p { color: var(--slate); }
+  .comparison-disabled { padding: 12px 14px; border-radius: 10px; background: #f6e4e4; color: #7b2d2d !important; }
+  .practice-form { display: grid; gap: 18px; }
+  .practice-form fieldset { margin: 0; padding: 20px; border: 1px solid #dce2e9; border-radius: 16px; background: var(--white); }
+  .practice-form fieldset:disabled { opacity: .62; }
+  .practice-form legend { padding: 0 8px; color: var(--navy); font-weight: 800; }
+  .practice-form label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; }
+  .practice-form input { margin-top: 5px; }
+  .practice-form .button { justify-self: start; }
+  .practice-result { border-left: 5px solid var(--gold); }
+  .practice-result h2 { margin: 6px 0 8px; }
+  .result-evidence, .reference-panel dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 24px 0; }
+  .result-evidence div, .reference-panel dl div { padding: 16px; border-radius: 12px; background: #f4f6f8; }
+  .result-evidence dt, .reference-panel dt { color: var(--slate); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+  .result-evidence dd, .reference-panel dd { margin: 4px 0 0; color: var(--navy); font-weight: 800; text-transform: capitalize; }
+  .result-confirmation { padding: 14px 16px; border-radius: 12px; background: #fff8e8; }
+  .reference-panel { margin-top: 28px; padding-top: 22px; border-top: 1px solid #e3e7ec; }
+  .reference-panel h3 { margin: 6px 0 0; }
+  .reference-panel > p { color: var(--slate); }
+  @media (max-width: 960px) {
+    .evidence-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 760px) {
+    .practice-shell, .result-evidence, .reference-panel dl, .evidence-grid, .evidence-grid--two { grid-template-columns: 1fr; }
+    .section-heading { align-items: start; flex-direction: column; }
+  }
+</style>

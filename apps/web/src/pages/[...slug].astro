@@ -3,6 +3,7 @@ import { getCollection, render } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ComplianceNote from '../components/ComplianceNote.astro';
 import ProductCTA from '../components/ProductCTA.astro';
+import BookPurchaseCTA from '../components/BookPurchaseCTA.astro';
 import FrameworkVisual from '../components/FrameworkVisual.astro';
 import ThreeDialsSnapshot from '../components/ThreeDialsSnapshot.astro';
 import WaitlistForm from '../components/WaitlistForm.astro';
@@ -35,12 +36,10 @@ const requestedPrimary = entry.data.ctaPrimary;
 const requestedPrimaryHref = entry.data.ctaPrimaryHref;
 const requestedSecondaryHref = entry.data.ctaSecondaryHref;
 const requestedSecondaryDownload = entry.data.ctaSecondaryDownload;
-const primaryLabel = isBookPage || requestedPrimary === 'Get the book' || requestedPrimary === 'Explore the book'
+const primaryLabel = requestedPrimary === 'Get the book' || requestedPrimary === 'Explore the book'
   ? 'Join the book waitlist'
   : requestedPrimary;
-const primaryHref = isBookPage
-  ? '#book-waitlist'
-  : requestedPrimaryHref ?? `${bookSlug}/#book-waitlist`;
+const primaryHref = requestedPrimaryHref ?? `${bookSlug}/#book-waitlist`;
 const secondaryHref = requestedSecondaryHref ?? downloadPath;
 const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref === undefined;
 ---
@@ -50,13 +49,21 @@ const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref =
       <div class="eyebrow">{entry.data.category}</div>
       <h1>{entry.data.title}</h1>
       {entry.data.hero && <p class="lead">{entry.data.hero}</p>}
-      <ProductCTA
-        primary={primaryLabel}
-        primaryHref={primaryHref}
-        secondary={entry.data.ctaSecondary}
-        secondaryHref={secondaryHref}
-        secondaryDownload={secondaryDownload}
-      />
+      {isBookPage ? (
+        <BookPurchaseCTA
+          secondary={entry.data.ctaSecondary}
+          secondaryHref={secondaryHref}
+          secondaryDownload={secondaryDownload}
+        />
+      ) : (
+        <ProductCTA
+          primary={primaryLabel}
+          primaryHref={primaryHref}
+          secondary={entry.data.ctaSecondary}
+          secondaryHref={secondaryHref}
+          secondaryDownload={secondaryDownload}
+        />
+      )}
     </div>
   </section>
   <main class="container">

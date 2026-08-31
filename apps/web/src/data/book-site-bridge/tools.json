@@ -1,0 +1,332 @@
+[
+  {
+    "id": "dxy-vs-broad-usd",
+    "title": "DXY vs. Broad USD Comparator",
+    "path": "/practice/dxy-vs-broad-usd/",
+    "status": "preview-live-evidence",
+    "question": "Is the visible DXY move broadly confirmed, or is it mainly a narrow basket move?",
+    "whyItMatters": "DXY is useful but heavily concentrated in a small developed-market currency basket. A broader dollar measure can confirm or challenge the regime interpretation.",
+    "inputs": [
+      "DXY direction over the published completed-week observation window",
+      "Broad trade-weighted USD direction over the same window",
+      "Dated rates, credit and volatility confirmation from the same repository snapshot"
+    ],
+    "dataCadence": "Latest repository-published completed-week Three-Dials snapshot. Every source fact keeps its individual observation date; no market data is retrieved in the browser.",
+    "timestampRule": "Show the snapshot week and each source observation date. Label the normal Monday/Tuesday publication window explicitly, and disable comparison if the latest published snapshot falls outside the approved cadence.",
+    "steps": [
+      "Read the dated DXY and broad-dollar observations without seeing the deterministic classification.",
+      "Classify DXY, broad USD and the rates/stress confirmation from the visible source evidence.",
+      "Submit the independent reading, reveal the deterministic dollar classification, and investigate any divergence before discussing assets."
+    ],
+    "agreement": [
+      "DXY and broad USD moving in the same direction increase confidence that the move is wider than one currency pair.",
+      "Rates or stress moving consistently with the dollar direction strengthen the regime interpretation."
+    ],
+    "divergence": [
+      "A strong DXY move with weak broad confirmation can be basket-led or foreign-currency-specific.",
+      "A quiet DXY with a firmer broad measure can understate pressure outside the legacy basket.",
+      "Mixed rates or stress should reduce confidence rather than be averaged away."
+    ],
+    "limitations": [
+      "The comparator is descriptive and does not forecast any asset.",
+      "The evidence is a dated completed-week repository snapshot, not real-time market data.",
+      "DXY uses the existing accessible Yahoo Finance proxy while the broad-dollar and supporting macro series retain their published source disclosures.",
+      "The page does not transmit or persist the reader's classifications."
+    ],
+    "chapterIds": [
+      "chapter-01",
+      "chapter-03",
+      "chapter-09",
+      "chapter-12"
+    ],
+    "currentEvidence": [
+      {
+        "label": "Three-Dial Macro Dashboard",
+        "path": "/framework/three-dial-dashboard/"
+      },
+      {
+        "label": "Weekly USD Impact Score",
+        "path": "/score/"
+      }
+    ],
+    "access": "public",
+    "version": "0.2.0-preview",
+    "lastReviewed": "2026-08-29"
+  },
+  {
+    "id": "dollar-transmission-chain",
+    "title": "Dollar Transmission Chain",
+    "path": "/framework/dollar-transmission-chain/",
+    "status": "existing",
+    "question": "Through which channel is the dollar reaching the asset now?",
+    "whyItMatters": "The same dollar move can transmit through pricing, funding, opportunity cost, risk and hedge demand, or portfolio flows. The channel determines how the asset evidence should be read.",
+    "inputs": [
+      "Policy and rate direction",
+      "Dollar and funding conditions",
+      "Liquidity, risk appetite and asset-specific evidence"
+    ],
+    "dataCadence": "Conceptual framework; pair it with the dated Daily or Weekly evidence linked on the page.",
+    "timestampRule": "Use the publication timestamp of the linked evidence, not the framework page review date, as the market-data timestamp.",
+    "steps": [
+      "Identify the upstream policy, rate or funding driver.",
+      "Select the active transmission channel.",
+      "Check whether asset-specific evidence confirms or overrides that channel."
+    ],
+    "agreement": [
+      "Aligned upstream and asset-specific evidence make the explanation more coherent.",
+      "Cross-asset confirmation can strengthen the channel diagnosis."
+    ],
+    "divergence": [
+      "A physical supply shock can overpower the dollar channel in oil or gas.",
+      "Confidence demand can offset real-rate pressure in gold.",
+      "Asset-specific access or positioning can temporarily dominate in Bitcoin or FX."
+    ],
+    "limitations": [
+      "A conceptual chain is not a causal proof for every daily move.",
+      "The framework does not supply entries, exits, position sizes or targets.",
+      "Asset-specific primary evidence remains required."
+    ],
+    "chapterIds": [
+      "chapter-01",
+      "chapter-04",
+      "chapter-05",
+      "chapter-08",
+      "chapter-12"
+    ],
+    "currentEvidence": [
+      {
+        "label": "Daily USD Impact",
+        "path": "/news/"
+      },
+      {
+        "label": "Weekly reports",
+        "path": "/reports/"
+      }
+    ],
+    "access": "public",
+    "version": "existing-site",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "three-dial-dashboard",
+    "title": "Three-Dial Macro Dashboard",
+    "path": "/framework/three-dial-dashboard/",
+    "status": "existing",
+    "question": "What kind of dollar environment are the assets trading inside?",
+    "whyItMatters": "Dollar direction, real-rate pressure and liquidity stress create the minimum weekly regime screen before asset-specific interpretation.",
+    "inputs": [
+      "DXY with broad-dollar confirmation",
+      "10-year real-yield direction with nominal-rate context",
+      "Credit, volatility and funding-stress evidence"
+    ],
+    "dataCadence": "Qualitative weekly review, refreshed from the latest available dollar, real-yield and stress evidence.",
+    "timestampRule": "Record the newest source timestamp for each dial and flag asynchronous inputs rather than presenting one false common timestamp.",
+    "steps": [
+      "Record the dollar dial and its breadth confirmation.",
+      "Record real-rate pressure without substituting a nominal yield alone.",
+      "Record liquidity stress, then write one non-predictive regime sentence."
+    ],
+    "agreement": [
+      "Aligned dials support a clearer rate-led, stress-led or easier-dollar description.",
+      "Cross-asset behavior can confirm the description after it is written."
+    ],
+    "divergence": [
+      "Mixed dials indicate a transitional or asset-specific environment.",
+      "Broad-dollar breadth and cross-asset behavior are confirmation layers, not extra dials."
+    ],
+    "limitations": [
+      "The dashboard organizes observable conditions; it does not predict returns.",
+      "It is qualitative and must not be presented as the Weekly Score formula.",
+      "A mixed result is valid and should not be forced into a directional label."
+    ],
+    "chapterIds": [
+      "chapter-01",
+      "chapter-02",
+      "chapter-03",
+      "chapter-06",
+      "chapter-07",
+      "chapter-09",
+      "chapter-11"
+    ],
+    "currentEvidence": [
+      {
+        "label": "Weekly USD Impact Score",
+        "path": "/score/"
+      },
+      {
+        "label": "Latest reports",
+        "path": "/reports/"
+      }
+    ],
+    "access": "public",
+    "version": "existing-site",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "weekly-score",
+    "title": "Weekly USD Impact Score",
+    "path": "/score/",
+    "status": "existing",
+    "question": "Is the cross-asset system behaving more like stronger-dollar pressure, weaker-dollar or liquidity support, or a mixed transition?",
+    "whyItMatters": "The score compresses a fixed cross-asset input set into an auditable weekly regime reading that can be compared with the qualitative framework.",
+    "inputs": [
+      "Published score inputs and signed weights",
+      "Normalization, clipping and regime-band rules",
+      "Timestamp, version and archived publication vintage"
+    ],
+    "dataCadence": "Weekly after the input window closes and the production pipeline publishes the score.",
+    "timestampRule": "Verify the dashboard timestamp, methodology version, active input set and archived publication vintage before comparison.",
+    "steps": [
+      "Check the score timestamp, version and active input set.",
+      "Read the zone and components rather than treating the decimal as a precise forecast.",
+      "Compare with the three-dial reading and investigate local shocks or contradictions."
+    ],
+    "agreement": [
+      "Agreement with the qualitative dials increases coherence, not certainty.",
+      "A stable archived vintage makes the comparison auditable."
+    ],
+    "divergence": [
+      "Supply shocks, policy pivots and asset-specific flows are expected weak zones.",
+      "A score and a qualitative reading can differ because they answer related but non-identical questions."
+    ],
+    "limitations": [
+      "The score is not a model portfolio, forecast, trading system or recommendation.",
+      "Historical regime alignment is not an asset-return statistic.",
+      "The score must not be used alone for suitability, entries, exits or position sizing."
+    ],
+    "chapterIds": [
+      "chapter-02",
+      "chapter-10",
+      "chapter-11",
+      "chapter-13"
+    ],
+    "currentEvidence": [
+      {
+        "label": "Score methodology",
+        "path": "/score/methodology/"
+      },
+      {
+        "label": "Weekly reports",
+        "path": "/reports/"
+      }
+    ],
+    "access": "public",
+    "version": "live-methodology",
+    "lastReviewed": "2026-08-28"
+  },
+  {
+    "id": "weekly-regime-lab",
+    "title": "Weekly Regime Lab",
+    "path": "/practice/weekly-regime/",
+    "status": "preview-live-evidence",
+    "question": "Can the reader form a disciplined weekly regime read from dated evidence before seeing the deterministic classifications and separate Score output?",
+    "whyItMatters": "Recording the three dials, dominant-driver hypothesis and conditional explanation before comparison reduces anchoring and turns Chapter 11 into a repeatable practice routine.",
+    "inputs": [
+      "Dated DXY and broad-dollar observations",
+      "Dated real-yield and nominal-rate context",
+      "Dated credit, volatility and funding-stress evidence, plus a browser-local driver hypothesis and conditional written reading"
+    ],
+    "dataCadence": "Latest repository-published completed-week Three-Dials snapshot with an exact-week Score bridge. No market data is retrieved in the browser.",
+    "timestampRule": "Show the snapshot week and every source observation date. Keep the normal Monday/Tuesday publication window explicit, and disable deterministic comparison if the snapshot is outside the approved cadence.",
+    "steps": [
+      "Read the dated facts and record the three dials plus an unscored dominant-driver hypothesis.",
+      "Write what supports the reading and what would challenge it before seeing any deterministic labels.",
+      "Submit the browser-local reading, compare only the three deterministic dials, then inspect the separate exact-week Score output and return to the relevant chapter or Weekly report."
+    ],
+    "agreement": [
+      "Use aligned, partly aligned or materially different for the three deterministic dials rather than correct or incorrect.",
+      "Agreement shows process coherence, not predictive accuracy; the dominant-driver hypothesis remains unscored."
+    ],
+    "divergence": [
+      "A dollar disagreement points back to Chapter 3.",
+      "A real-rate or liquidity disagreement points back to Chapter 11 and the relevant primary evidence.",
+      "A driver disagreement is not machine-scored; compare the hypothesis qualitatively with the Weekly report and transmission framework."
+    ],
+    "limitations": [
+      "The evidence is a dated completed-week repository snapshot, not real-time market data.",
+      "No classification, confidence selection, driver hypothesis or written response is stored or transmitted.",
+      "Only the three deterministic dials are compared; the driver hypothesis is deliberately unscored.",
+      "The exact-week USD Impact Score v2 is revealed separately and is not an answer key, forecast or trading signal."
+    ],
+    "chapterIds": [
+      "chapter-04",
+      "chapter-05",
+      "chapter-06",
+      "chapter-07",
+      "chapter-08",
+      "chapter-10",
+      "chapter-11",
+      "chapter-12",
+      "chapter-13"
+    ],
+    "currentEvidence": [
+      {
+        "label": "Three-Dial Macro Dashboard",
+        "path": "/framework/three-dial-dashboard/"
+      },
+      {
+        "label": "Weekly USD Impact Score",
+        "path": "/score/"
+      },
+      {
+        "label": "Weekly reports",
+        "path": "/reports/"
+      }
+    ],
+    "access": "public",
+    "version": "0.2.0-preview",
+    "lastReviewed": "2026-08-29"
+  },
+  {
+    "id": "weekly-checklist",
+    "title": "Weekly Dollar Regime Checklist",
+    "path": "/lead-magnets/weekly-dollar-regime-checklist/",
+    "status": "existing",
+    "question": "What is the minimum ordered evidence set needed for a repeatable weekly review?",
+    "whyItMatters": "A compact checklist protects the reading order from headline noise and makes unresolved contradictions visible.",
+    "inputs": [
+      "Broad USD and DXY",
+      "Real yields and liquidity stress",
+      "Asset-specific physical, flow, volatility and positioning evidence"
+    ],
+    "dataCadence": "Weekly operating routine using the latest completed releases for each input.",
+    "timestampRule": "Record source-specific timestamps and identify any input that has not refreshed since its expected release.",
+    "steps": [
+      "Complete the macro dials first.",
+      "Add the relevant asset-specific primary evidence.",
+      "Record the regime sentence, contradictions and next verification point."
+    ],
+    "agreement": [
+      "A completed ordered checklist makes the evidence trail reviewable.",
+      "Repeated use improves consistency even when the result remains mixed."
+    ],
+    "divergence": [
+      "Do not delete contradictions to make the narrative cleaner.",
+      "Return to the relevant chapter when the sequence or channel is unclear."
+    ],
+    "limitations": [
+      "A checklist cannot replace primary-source verification.",
+      "Completion does not imply that a regime interpretation will predict returns.",
+      "The checklist is educational and non-personalized."
+    ],
+    "chapterIds": [
+      "chapter-05",
+      "chapter-08",
+      "chapter-11",
+      "chapter-13"
+    ],
+    "currentEvidence": [
+      {
+        "label": "Daily USD Impact",
+        "path": "/news/"
+      },
+      {
+        "label": "Weekly reports",
+        "path": "/reports/"
+      }
+    ],
+    "access": "public",
+    "version": "existing-site",
+    "lastReviewed": "2026-08-28"
+  }
+]

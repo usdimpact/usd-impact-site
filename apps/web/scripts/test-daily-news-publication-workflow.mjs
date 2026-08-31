@@ -6,8 +6,42 @@ const workflow = await readFile(
   new URL('../../../.github/workflows/daily-news.yml', import.meta.url),
   'utf8',
 );
+const backstop = await readFile(
+  new URL('../../../.github/workflows/daily-news-schedule-backstop.yml', import.meta.url),
+  'utf8',
+);
 
 assert.match(workflow, /permissions:[\s\S]*issues: write/, 'failure reporting needs issue-write permission');
+assert.match(
+  workflow,
+  /- name: Check existing Daily publication state[\s\S]*id: preflight/,
+  'every Daily run must preflight the current UTC publication state before generation',
+);
+assert.match(
+  workflow,
+  /expected_file="apps\/web\/src\/content\/news\/\$today\.md"[\s\S]*contents\/\$expected_file\?ref=main/,
+  'the publication preflight must stop when the current UTC edition already exists on main',
+);
+assert.match(
+  workflow,
+  /existing_pr="\$\(gh pr list[\s\S]*--state all[\s\S]*expected_head_prefix/,
+  'the publication preflight must respect any exact current-day Daily PR state',
+);
+assert.match(
+  workflow,
+  /needed=false[\s\S]*reason=published[\s\S]*needed=false[\s\S]*reason=publication-pr-exists[\s\S]*needed=true[\s\S]*reason=missing/,
+  'the publication preflight must expose deterministic skip or generate decisions',
+);
+assert.match(
+  workflow,
+  /PUBLICATION_NEEDED: \$\{\{ steps\.preflight\.outputs\.needed \}\}/,
+  'newsfeed configuration must consume the publication preflight decision',
+);
+assert.match(
+  workflow,
+  /if \[ "\$PUBLICATION_NEEDED" != "true" \]; then[\s\S]*configured=false[\s\S]*downstream publication steps are skipped/,
+  'an existing publication artifact must skip generation without reporting a failure',
+);
 assert.match(
   workflow,
   /existing_pr_url="\$\(gh pr list[\s\S]*--state open[\s\S]*--head "\$branch"/,
@@ -25,8 +59,13 @@ assert.doesNotMatch(
 );
 assert.match(
   workflow,
-  /passed Web quality and is ready for protected review and merge/,
-  'publication must clearly report the protected review handoff',
+  /passed Web quality and is ready for protected editorial review and merge/,
+  'publication must clearly report the protected editorial review handoff',
+);
+assert.match(
+  workflow,
+  /stops for protected human editorial review and merge/,
+  'publication PR copy must not imply that Web quality alone causes a merge',
 );
 assert.match(
   workflow,
@@ -43,6 +82,11 @@ assert.doesNotMatch(
   /<<-?\s*['"]?EOF/,
   'publication workflow must not use an indentation-sensitive here-document',
 );
+
+const preflightStep = workflow.match(
+  /      - name: Check existing Daily publication state\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Check newsfeed configuration)/,
+);
+assert.ok(preflightStep, 'cross-run Daily publication preflight shell must be present');
 
 const pollStep = workflow.match(
   /      - name: Poll background news generation\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Import as published content)/,
@@ -74,7 +118,7 @@ assert.match(
 );
 
 const handoffStep = workflow.match(
-  /      - name: Open, validate, and merge publication pull request\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Report Daily failure gate)/,
+  /      - name: Open and validate publication pull request\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Report Daily failure gate)/,
 );
 assert.ok(handoffStep, 'publication handoff shell must be present');
 
@@ -94,6 +138,47 @@ assert.match(failureStep[1], /Failing gate:/);
 assert.match(failureStep[1], /gh issue comment 184/);
 assert.match(failureStep[1], /gh issue create/);
 
+assert.match(
+  backstop,
+  /cron: '17 12 \* \* 1-5'/,
+  'the backstop must run after the primary 09:17 UTC Daily schedule',
+);
+assert.match(backstop, /actions: write/, 'the backstop needs only Actions write permission to dispatch recovery');
+assert.match(backstop, /contents: read/, 'the backstop must keep repository contents read-only');
+assert.match(backstop, /pull-requests: read/, 'the backstop must inspect review state without writing PRs');
+assert.match(
+  backstop,
+  /expected_file="apps\/web\/src\/content\/news\/\$today\.md"/,
+  'the backstop must bind recovery to the current UTC Daily file',
+);
+assert.match(
+  backstop,
+  /contents\/\$expected_file\?ref=main/,
+  'the backstop must stop when the current edition is already on main',
+);
+assert.match(
+  backstop,
+  /gh pr list[\s\S]*--state all[\s\S]*expected_head_prefix/,
+  'the backstop must respect any exact current-day publication PR, including a human-closed PR',
+);
+assert.match(
+  backstop,
+  /actions\/workflows\/daily-news\.yml\/runs\?per_page=30/,
+  'the backstop must inspect current-day Daily runs before dispatching recovery',
+);
+assert.match(
+  backstop,
+  /active_count[\s\S]*success_count[\s\S]*failed_count[\s\S]*gh workflow run daily-news\.yml --repo "\$GITHUB_REPOSITORY" --ref main/,
+  'the backstop must record earlier outcomes and dispatch only when no current-day Daily run is active and no publication artifact exists',
+);
+assert.doesNotMatch(
+  backstop,
+  /if \[ "\$success_count" -gt 0 \]/,
+  'a false-green Daily run without a publication artifact must not suppress the bounded recovery dispatch',
+);
+assert.doesNotMatch(backstop, /contents: write/, 'the backstop must not be able to write publication content');
+assert.doesNotMatch(backstop, /gh pr merge/, 'the backstop must never merge editorial content');
+
 function shellFromWorkflowBlock(block) {
   return block
     .split('\n')
@@ -101,9 +186,16 @@ function shellFromWorkflowBlock(block) {
     .join('\n');
 }
 
+const backstopStep = backstop.match(
+  /      - name: Check whether Daily recovery is needed\n[\s\S]*?        run: \|\n([\s\S]*)$/,
+);
+assert.ok(backstopStep, 'schedule backstop shell must be present');
+
 for (const [label, block] of [
+  ['publication preflight', preflightStep[1]],
   ['publication handoff', handoffStep[1]],
   ['failure reporting', failureStep[1]],
+  ['schedule backstop', backstopStep[1]],
 ]) {
   const syntaxCheck = spawnSync('bash', ['-n'], {
     input: shellFromWorkflowBlock(block),

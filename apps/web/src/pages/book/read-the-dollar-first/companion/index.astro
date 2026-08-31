@@ -1,0 +1,136 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import ComplianceNote from '../../../../components/ComplianceNote.astro';
+import { BRIDGE_VERSION, BOOK_EDITION, chapters, tools } from '../../../../data/book-site-bridge/index.mjs';
+
+const prototypeTools = tools.filter((tool) => tool.status === 'preview-prototype');
+---
+<BaseLayout
+  title="Read the Dollar First Companion | USD Impact Preview"
+  description="A Preview-only bridge between Read the Dollar First and the USD Impact practice tools."
+  noindex={true}
+>
+  <section class="hero companion-hero">
+    <div class="container">
+      <div class="eyebrow">Book Companion Preview</div>
+      <h1>Read the framework. Practice the week.</h1>
+      <p class="lead">Use the book for durable structure, then use the site to observe, practice, compare and return to the chapter that explains the result.</p>
+      <div class="companion-meta" aria-label="Companion version">
+        <span>Book edition {BOOK_EDITION}</span>
+        <span>Bridge {BRIDGE_VERSION}</span>
+        <span>Preview only</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="container companion-main">
+    <section aria-labelledby="learning-loop-heading">
+      <div class="eyebrow">Learning loop</div>
+      <h2 id="learning-loop-heading">One framework, two modes</h2>
+      <div class="learning-loop" role="list">
+        <article class="card" role="listitem"><strong>1. Read</strong><p>Learn the durable concept and its limits in the book.</p></article>
+        <article class="card" role="listitem"><strong>2. Observe</strong><p>Open the dated evidence and identify the relevant inputs.</p></article>
+        <article class="card" role="listitem"><strong>3. Practice</strong><p>Record the regime and transmission channel before seeing a comparison.</p></article>
+        <article class="card" role="listitem"><strong>4. Compare</strong><p>Use aligned, partly aligned or materially different rather than correct or incorrect.</p></article>
+        <article class="card" role="listitem"><strong>5. Return</strong><p>Go back to the chapter that resolves the specific disagreement.</p></article>
+      </div>
+    </section>
+
+    <section class="prototype-section" aria-labelledby="prototype-heading">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Phase 1 prototypes</div>
+          <h2 id="prototype-heading">Practice before interpretation</h2>
+        </div>
+      </div>
+      <div class="grid">
+        {prototypeTools.map((tool) => (
+          <article class="card prototype-card">
+            <span class="prototype-label">Preview prototype</span>
+            <h3>{tool.title}</h3>
+            <p>{tool.question}</p>
+            <a class="button primary" href={tool.path}>Open the practice</a>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="chapter-section" aria-labelledby="chapter-map-heading">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Governed chapter map</div>
+          <h2 id="chapter-map-heading">Thirteen chapter connections</h2>
+        </div>
+        <p>Each route is generated from the same chapter and tool registry.</p>
+      </div>
+      <div class="chapter-grid">
+        {chapters.map((chapter) => (
+          <a class="chapter-card card" href={`/book/read-the-dollar-first/companion/chapter/${chapter.code}/`}>
+            <span>Chapter {chapter.number}</span>
+            <h3>{chapter.title}</h3>
+            <p>{chapter.summary}</p>
+            <strong>Open companion</strong>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="stable-links card" aria-labelledby="stable-links-heading">
+      <div>
+        <div class="eyebrow">Print-safe link scheme</div>
+        <h2 id="stable-links-heading">Permanent aliases, replaceable destinations</h2>
+        <p>Printed editions can use short aliases such as <code>usd-impact.com/go/c03</code> and <code>usd-impact.com/go/c11</code>. The alias remains stable even when the underlying practice route changes in a later approved release.</p>
+      </div>
+      <a class="button primary" href="/go/c11/">Test the Chapter 11 alias</a>
+    </section>
+
+    <section class="access-boundary" aria-labelledby="access-boundary-heading">
+      <h2 id="access-boundary-heading">Access boundary</h2>
+      <p>This Preview contains public explanatory and practice prototypes only. It does not change checkout, entitlements, audiobook access, video access, account data, payments or the master book.</p>
+    </section>
+
+    <ComplianceNote text="Educational and informational only. The companion organizes a reading process and does not provide investment advice, forecasts, recommendations or trading signals. Verify current evidence from dated primary sources." />
+  </main>
+</BaseLayout>
+
+<style>
+  .companion-hero { padding-bottom: 64px; }
+  .companion-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+  .companion-meta span {
+    border: 1px solid rgba(255,255,255,.24);
+    border-radius: 999px;
+    padding: 7px 11px;
+    color: var(--soft-silver);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .companion-main > section + section { margin-top: 64px; }
+  .learning-loop { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+  .learning-loop .card { padding: 20px; }
+  .learning-loop strong { color: var(--navy); }
+  .learning-loop p { margin: 8px 0 0; color: var(--slate); font-size: 14px; }
+  .prototype-label { color: var(--gold-text); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+  .prototype-card h3 { margin: 8px 0; font-size: 24px; }
+  .prototype-card p { color: var(--slate); }
+  .chapter-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .chapter-card { display: block; color: inherit; text-decoration: none; transition: transform .15s ease, box-shadow .15s ease; }
+  .chapter-card:hover { transform: translateY(-2px); box-shadow: 0 18px 42px rgba(2,10,20,.1); }
+  .chapter-card:focus-visible { outline: 3px solid rgba(201,163,91,.5); outline-offset: 3px; }
+  .chapter-card > span { color: var(--gold-text); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+  .chapter-card h3 { margin: 8px 0; }
+  .chapter-card p { color: var(--slate); }
+  .chapter-card strong { color: var(--navy); }
+  .stable-links { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 28px; align-items: center; border-left: 5px solid var(--gold); }
+  .stable-links h2 { margin: 6px 0 8px; }
+  .stable-links p { margin: 0; max-width: 800px; color: var(--slate); }
+  .stable-links code { white-space: nowrap; }
+  .access-boundary { max-width: 840px; }
+  .access-boundary p { color: var(--slate); }
+  @media (max-width: 960px) {
+    .learning-loop { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .chapter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .learning-loop, .chapter-grid, .stable-links { grid-template-columns: 1fr; }
+  }
+</style>

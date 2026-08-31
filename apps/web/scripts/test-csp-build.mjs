@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolveScorePipelineOrigin } from '../src/lib/score-pipeline-origin.js';
+import './test-book-site-bridge.mjs';
+import './test-book-live-evidence.mjs';
 
 const root = process.cwd();
 const distRoot = path.join(root, 'dist');
@@ -31,6 +33,28 @@ const parseMetaCsp = (html) => {
   const match = tag.match(/content=(["'])([\s\S]*?)\1/i);
   return match ? decodeHtmlAttribute(match[2]) : null;
 };
+
+const hasNoindexMeta = (html) => {
+  const tags = html.match(/<meta\b[^>]*>/gi) || [];
+  const tag = tags.find((candidate) => /name=["']robots["']/i.test(candidate));
+  return Boolean(tag && /content=(["'])[^"']*\bnoindex\b[^"']*\1/i.test(tag));
+};
+
+const normalizePath = (value) => {
+  const normalized = value.replace(/\/+$/, '');
+  return normalized || '/';
+};
+
+const isWithinPrefix = (pathname, prefix) => (
+  pathname === prefix || pathname.startsWith(`${prefix}/`)
+);
+
+const routeToHtmlFile = (route) => {
+  const relative = route.replace(/^\/+|\/+$/g, '');
+  return path.join(distRoot, relative, 'index.html');
+};
+
+const countOccurrences = (value, needle) => value.split(needle).length - 1;
 
 if (!fs.existsSync(distRoot)) failures.push('dist/ is missing; CSP output cannot be verified.');
 
@@ -89,9 +113,191 @@ if (headers.get('x-permitted-cross-domain-policies') !== 'none') {
   failures.push('Vercel global headers must deny cross-domain policy files.');
 }
 
+const previewOnlySitemapPrefixes = [
+  '/book/read-the-dollar-first/companion',
+  '/practice/dxy-vs-broad-usd',
+  '/practice/weekly-regime',
+  '/go',
+];
+const printLinks = JSON.parse(fs.readFileSync(
+  path.join(sourceRoot, 'data/book-site-bridge/print-links.json'),
+  'utf8',
+));
+const previewOnlyRoutes = [
+  '/book/read-the-dollar-first/companion',
+  ...Array.from(
+    { length: 13 },
+    (_, index) => `/book/read-the-dollar-first/companion/chapter/${String(index + 1).padStart(2, '0')}`,
+  ),
+  '/practice/dxy-vs-broad-usd',
+  '/practice/weekly-regime',
+  ...printLinks.map((link) => `/go/${link.code}`),
+];
+
+for (const route of previewOnlyRoutes) {
+  const file = path.join(distRoot, route.replace(/^\//, ''), 'index.html');
+  if (!fs.existsSync(file)) {
+    failures.push(`Preview-only bridge route was not generated: ${route}.`);
+    continue;
+  }
+  const html = fs.readFileSync(file, 'utf8');
+  if (!hasNoindexMeta(html)) failures.push(`Preview-only bridge route is missing noindex metadata: ${route}.`);
+}
+
+const sitemapPath = path.join(distRoot, 'sitemap-0.xml');
+if (!fs.existsSync(sitemapPath)) {
+  failures.push('Generated sitemap-0.xml is missing; Preview-only route exclusion cannot be verified.');
+} else {
+  const xml = fs.readFileSync(sitemapPath, 'utf8');
+  const locations = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+  if (locations.length === 0) failures.push('Generated sitemap-0.xml contains no locations.');
+
+  for (const location of locations) {
+    let pathname;
+    try {
+      pathname = normalizePath(new URL(location).pathname);
+    } catch {
+      failures.push(`Generated sitemap contains an invalid URL: ${location}.`);
+      continue;
+    }
+
+    const excludedPrefix = previewOnlySitemapPrefixes.find((prefix) => isWithinPrefix(pathname, prefix));
+    if (excludedPrefix) {
+      failures.push(`Preview-only route appears in the generated sitemap: ${pathname} (prefix ${excludedPrefix}).`);
+    }
+  }
+}
+
+const surfaceBridges = JSON.parse(fs.readFileSync(
+  path.join(sourceRoot, 'data/book-site-bridge/surface-bridges.json'),
+  'utf8',
+));
+const chapters = JSON.parse(fs.readFileSync(
+  path.join(sourceRoot, 'data/book-site-bridge/chapters.json'),
+  'utf8',
+));
+const chapterById = new Map(chapters.map((chapter) => [chapter.id, chapter]));
+let contextualPagesVerified = 0;
+
+const verifyContextualHtml = (file, bridge, label) => {
+  if (!fs.existsSync(file)) {
+    failures.push(`Phase 2A contextual surface was not generated: ${label}.`);
+    return;
+  }
+  const chapter = chapterById.get(bridge.chapterId);
+  if (!chapter) {
+    failures.push(`Phase 2A contextual surface ${bridge.id} references missing ${bridge.chapterId}.`);
+    return;
+  }
+  const html = fs.readFileSync(file, 'utf8');
+  const marker = `data-surface-bridge-id="${bridge.id}"`;
+  const chapterHref = `/book/read-the-dollar-first/companion/chapter/${chapter.code}/`;
+  if (countOccurrences(html, marker) !== 1) {
+    failures.push(`${label} must render exactly one governed contextual bridge marker for ${bridge.id}.`);
+  }
+  if (countOccurrences(html, 'class="book-chapter-bridge card"') !== 1) {
+    failures.push(`${label} must render exactly one contextual BookChapterBridgeCard.`);
+  }
+  if (!html.includes(`href="${chapterHref}"`)) {
+    failures.push(`${label} contextual bridge must link to ${chapterHref}.`);
+  }
+  if (!html.includes(bridge.linkLabel)) {
+    failures.push(`${label} contextual bridge is missing its governed link label.`);
+  }
+  contextualPagesVerified += 1;
+};
+
+for (const bridge of surfaceBridges.filter((candidate) => candidate.match === 'exact')) {
+  verifyContextualHtml(routeToHtmlFile(bridge.path), bridge, bridge.path);
+}
+
+const weeklyBridge = surfaceBridges.find((bridge) => bridge.id === 'weekly-report');
+const weeklyRoot = path.join(distRoot, 'reports', 'weekly');
+if (!weeklyBridge) {
+  failures.push('Phase 2A weekly-report contextual mapping is missing.');
+} else if (!fs.existsSync(weeklyRoot)) {
+  failures.push('No generated weekly report directory exists for contextual bridge verification.');
+} else {
+  const weeklyFiles = walk(weeklyRoot, (file) => path.basename(file) === 'index.html');
+  if (weeklyFiles.length === 0) failures.push('No generated weekly report pages exist for contextual bridge verification.');
+  for (const file of weeklyFiles) {
+    verifyContextualHtml(file, weeklyBridge, `/${path.relative(distRoot, path.dirname(file)).split(path.sep).join('/')}/`);
+  }
+}
+
+for (const route of [
+  '/news/2026-08-28/',
+  '/practice/weekly-regime/',
+  '/book/read-the-dollar-first/companion/',
+]) {
+  const file = routeToHtmlFile(route);
+  if (!fs.existsSync(file)) {
+    failures.push(`Representative non-Phase-2A route was not generated: ${route}.`);
+    continue;
+  }
+  const html = fs.readFileSync(file, 'utf8');
+  if (html.includes('data-surface-bridge-id=')) {
+    failures.push(`Representative non-Phase-2A route received an unintended contextual bridge: ${route}.`);
+  }
+}
+
+const phase2bRoutes = [
+  {
+    route: '/practice/dxy-vs-broad-usd/',
+    requiredFacts: ['DXY', 'DTWEXBGS', 'DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SPREAD'],
+    requiredMarkers: ['data-reference-classification', 'data-live-evidence-state=', 'data-live-evidence-usable='],
+  },
+  {
+    route: '/practice/weekly-regime/',
+    requiredFacts: ['DXY', 'DTWEXBGS', 'DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SPREAD'],
+    requiredMarkers: ['data-dial-reference', 'data-score-model-output', 'data-live-evidence-state=', 'data-live-evidence-usable='],
+  },
+];
+let phase2bPagesVerified = 0;
+for (const target of phase2bRoutes) {
+  const file = routeToHtmlFile(target.route);
+  if (!fs.existsSync(file)) {
+    failures.push(`Phase 2B live-evidence route was not generated: ${target.route}.`);
+    continue;
+  }
+  const html = fs.readFileSync(file, 'utf8');
+  for (const id of target.requiredFacts) {
+    if (countOccurrences(html, `data-evidence-id="${id}"`) !== 1) {
+      failures.push(`${target.route} must render exactly one source-bound evidence marker for ${id}.`);
+    }
+  }
+  for (const marker of target.requiredMarkers) {
+    if (!html.includes(marker)) failures.push(`${target.route} is missing Phase 2B marker ${marker}.`);
+  }
+  if (!html.includes('Dated completed-week evidence')) {
+    failures.push(`${target.route} must identify its evidence as dated completed-week evidence.`);
+  }
+  phase2bPagesVerified += 1;
+}
+
+const weeklyLabFile = routeToHtmlFile('/practice/weekly-regime/');
+if (fs.existsSync(weeklyLabFile)) {
+  const html = fs.readFileSync(weeklyLabFile, 'utf8');
+  const resultStart = html.indexOf('id="weekly-regime-result"');
+  const resultTagEnd = resultStart >= 0 ? html.indexOf('>', resultStart) : -1;
+  const scoreStart = html.indexOf('data-score-model-output');
+  if (resultStart < 0 || resultTagEnd < 0 || !html.slice(resultStart, resultTagEnd + 1).includes('hidden')) {
+    failures.push('Weekly Regime Lab post-submit result must be rendered hidden by default.');
+  }
+  if (scoreStart < resultStart) {
+    failures.push('Weekly Score v2 output must remain inside the hidden post-submit result and never appear as pre-submit evidence.');
+  }
+  if (!html.includes('not scored') || !html.includes('not transmitted')) {
+    failures.push('Weekly Regime Lab must preserve the unscored/untransmitted response boundary in generated HTML.');
+  }
+}
+
 if (failures.length > 0) {
-  console.error(`CSP build verification failed:\n${failures.join('\n')}`);
+  console.error(`CSP, sitemap, contextual bridge, and live-evidence build verification failed:\n${failures.join('\n')}`);
   process.exit(1);
 }
 
 console.log(`CSP build verification passed across ${htmlFiles.length} generated HTML pages using Score origin ${scorePipelineOrigin}.`);
+console.log(`Book-site bridge sitemap exclusion verification passed for ${previewOnlyRoutes.length} generated noindex routes.`);
+console.log(`Book-site contextual surface verification passed for ${surfaceBridges.length} governed mappings across ${contextualPagesVerified} generated pages.`);
+console.log(`Book-site Phase 2B generated live-evidence verification passed for ${phase2bPagesVerified} practice pages.`);

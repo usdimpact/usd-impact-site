@@ -1,0 +1,97 @@
+[
+  {
+    "code": "book",
+    "target": "/book/read-the-dollar-first/?source=print&edition=1.2",
+    "purpose": "Canonical book overview"
+  },
+  {
+    "code": "companion",
+    "target": "/book/read-the-dollar-first/companion/?source=book&edition=1.2",
+    "purpose": "Book Companion hub"
+  },
+  {
+    "code": "c01",
+    "target": "/book/read-the-dollar-first/companion/chapter/01/?source=book&edition=1.2&chapter=01",
+    "purpose": "Chapter 1 companion"
+  },
+  {
+    "code": "c02",
+    "target": "/book/read-the-dollar-first/companion/chapter/02/?source=book&edition=1.2&chapter=02",
+    "purpose": "Chapter 2 companion"
+  },
+  {
+    "code": "c03",
+    "target": "/practice/dxy-vs-broad-usd/?source=book&edition=1.3&chapter=03",
+    "purpose": "Chapter 3 practice"
+  },
+  {
+    "code": "c04",
+    "target": "/book/read-the-dollar-first/companion/chapter/04/?source=book&edition=1.2&chapter=04",
+    "purpose": "Chapter 4 companion"
+  },
+  {
+    "code": "c05",
+    "target": "/book/read-the-dollar-first/companion/chapter/05/?source=book&edition=1.2&chapter=05",
+    "purpose": "Chapter 5 companion"
+  },
+  {
+    "code": "c06",
+    "target": "/book/read-the-dollar-first/companion/chapter/06/?source=book&edition=1.2&chapter=06",
+    "purpose": "Chapter 6 companion"
+  },
+  {
+    "code": "c07",
+    "target": "/book/read-the-dollar-first/companion/chapter/07/?source=book&edition=1.2&chapter=07",
+    "purpose": "Chapter 7 companion"
+  },
+  {
+    "code": "c08",
+    "target": "/book/read-the-dollar-first/companion/chapter/08/?source=book&edition=1.2&chapter=08",
+    "purpose": "Chapter 8 companion"
+  },
+  {
+    "code": "c09",
+    "target": "/book/read-the-dollar-first/companion/chapter/09/?source=book&edition=1.2&chapter=09",
+    "purpose": "Chapter 9 companion"
+  },
+  {
+    "code": "c10",
+    "target": "/book/read-the-dollar-first/companion/chapter/10/?source=book&edition=1.2&chapter=10",
+    "purpose": "Chapter 10 companion"
+  },
+  {
+    "code": "c11",
+    "target": "/practice/weekly-regime/?source=book&edition=1.3&chapter=11",
+    "purpose": "Chapter 11 practice"
+  },
+  {
+    "code": "c12",
+    "target": "/book/read-the-dollar-first/companion/chapter/12/?source=book&edition=1.2&chapter=12",
+    "purpose": "Chapter 12 companion"
+  },
+  {
+    "code": "c13",
+    "target": "/book/read-the-dollar-first/companion/chapter/13/?source=book&edition=1.2&chapter=13",
+    "purpose": "Chapter 13 companion"
+  },
+  {
+    "code": "dxy-practice",
+    "target": "/practice/dxy-vs-broad-usd/?source=book&edition=1.2&chapter=03",
+    "purpose": "DXY versus broad USD practice"
+  },
+  {
+    "code": "weekly-practice",
+    "target": "/practice/weekly-regime/?source=book&edition=1.2&chapter=11",
+    "purpose": "Weekly Regime Lab"
+  },
+  {
+    "code": "score",
+    "target": "/score/?source=book&edition=1.3&chapter=10",
+    "purpose": "Weekly USD Impact Score"
+  },
+  {
+    "code": "methodology",
+    "target": "/score/methodology/?source=book&edition=1.3&appendix=B",
+    "purpose": "Score methodology"
+  }
+]

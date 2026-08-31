@@ -20,11 +20,11 @@ Current evidence is recorded in:
 
 | Area | Business entity | Primary operational owner | Backup | Escalation |
 |---|---|---|---|---|
-| Authentication email | SC Kela Leads SRL | USD Impact owner/operator | SC Kela Leads SRL authorized administrator | USD Impact incident owner |
-| Purchase, entitlement, refund and dispute email | SC Kela Leads SRL | USD Impact commerce operations | SC Kela Leads SRL authorized administrator | USD Impact incident owner |
-| Support mailbox | SC Kela Leads SRL | Mircea Albulescu, USD Impact owner/operator | SC Kela Leads SRL authorized administrator | USD Impact owner/operator |
-| Privacy and account-rights email | SC Kela Leads SRL | USD Impact privacy operations | SC Kela Leads SRL authorized administrator | USD Impact owner/operator |
-| Waitlist and marketing email | SC Kela Leads SRL | USD Impact editorial operations | USD Impact owner/operator | USD Impact privacy operations |
+| Authentication email | KELA LEADS S.R.L. | USD Impact owner/operator | KELA LEADS S.R.L. authorized administrator | USD Impact incident owner |
+| Purchase, entitlement, refund and dispute email | KELA LEADS S.R.L. | USD Impact commerce operations | KELA LEADS S.R.L. authorized administrator | USD Impact incident owner |
+| Support mailbox | KELA LEADS S.R.L. | Mircea Albulescu, USD Impact owner/operator | KELA LEADS S.R.L. authorized administrator | USD Impact owner/operator |
+| Privacy and account-rights email | KELA LEADS S.R.L. | USD Impact privacy operations | KELA LEADS S.R.L. authorized administrator | USD Impact owner/operator |
+| Waitlist and marketing email | KELA LEADS S.R.L. | USD Impact editorial operations | USD Impact owner/operator | USD Impact privacy operations |
 
 Operational requirements:
 

@@ -3,7 +3,7 @@ import {
   buildTelemetryCounterPairs,
   readTelemetryAggregates,
   recordTelemetryEvent,
-} from '../api/_telemetry-store.js';
+} from '../src/lib/telemetry-store.js';
 
 const env = {
   KV_REST_API_URL: 'https://example.upstash.test',
@@ -42,6 +42,21 @@ assert.equal(checklistPairs['checklist:route:/lead-magnets/weekly-dollar-regime-
 assert.equal(checklistPairs['checklist:utm_source:newsletter'], 1);
 assert.equal(checklistPairs['checklist:utm_medium:email'], 1);
 assert.equal(checklistPairs['checklist:utm_campaign:july_launch'], 1);
+
+const checkoutPairs = Object.fromEntries(buildTelemetryCounterPairs({
+  eventName: 'checkout_button_click',
+  occurredAt: '2026-07-28T12:34:56.000Z',
+  route: '/checkout/',
+  utmSource: 'launch_email',
+  utmMedium: 'email',
+  utmCampaign: 'library_pass_launch',
+}));
+assert.equal(checkoutPairs['checkout:button_clicks'], 1);
+assert.equal(checkoutPairs['checkout:route:/checkout/'], 1);
+assert.equal(checkoutPairs['checkout:utm_source:launch_email'], 1);
+assert.equal(checkoutPairs['checkout:utm_medium:email'], 1);
+assert.equal(checkoutPairs['checkout:utm_campaign:library_pass_launch'], 1);
+assert.equal(checkoutPairs['utm_source:launch_email'], 1);
 
 let capturedRequest;
 const accepted = await recordTelemetryEvent({

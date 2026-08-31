@@ -1,14 +1,14 @@
 ---
 layout: ../layouts/LegalLayout.astro
 title: "Refund Policy | USD Impact"
-description: "The 14-day refund policy for the Read the Dollar First Guided Interactive Edition."
+description: "The 14-day refund policy for the Read the Dollar First Library Pass."
 ---
 
 # Refund Policy
 
-_Last updated: August 13, 2026_
+_Last updated: August 28, 2026_
 
-This policy applies to one-time purchases of the *Read the Dollar First Guided Interactive Edition* from USD Impact.
+This policy applies to one-time purchases of the *Read the Dollar First Library Pass*, including the Guided Interactive Edition and included digital materials, from USD Impact.
 
 ## 14-day refund period
 
@@ -18,7 +18,7 @@ To request a refund, email [support@usd-impact.com](mailto:support@usd-impact.co
 
 ## How refunds are handled
 
-The authorized payment provider or merchant of record identified on the receipt processes the payment and any approved refund to the original payment method. Bank and payment-provider processing times may vary after a refund is issued.
+USD Impact owns product and access support and reviews requests under this policy. **Lemon Squeezy**, the selected Merchant of Record, processes the payment and any refund approved under this policy to the original payment method. Lemon Squeezy's current [Buyer Terms](https://www.lemonsqueezy.com/buyer-terms) also apply to the payment transaction. Bank and payment-provider processing times may vary after a refund is issued.
 
 We will confirm receipt of the request and may ask for limited information needed to locate the transaction or protect the account from fraud. A refund does not require you to provide investment, financial, or other sensitive personal information.
 
@@ -28,7 +28,7 @@ Paid access associated with the refunded purchase is revoked when the refund is 
 
 ## Duplicate charges, technical problems, or unauthorized payments
 
-Contact [support@usd-impact.com](mailto:support@usd-impact.com) promptly if you see a possible duplicate charge, cannot access the purchased edition after a confirmed payment, or believe a payment was unauthorized. We will investigate the transaction and coordinate with the payment provider where required.
+Contact [support@usd-impact.com](mailto:support@usd-impact.com) promptly if you see a possible duplicate charge, cannot access the purchased edition after a confirmed payment, or believe a payment was unauthorized. We will investigate the transaction and coordinate with Lemon Squeezy where required.
 
 ## Statutory rights
 
@@ -36,4 +36,4 @@ This policy does not limit any refund, cancellation, conformity, or other mandat
 
 ## Operator
 
-USD Impact is operated by **SC Kela Leads SRL**, registered in Romania under CUI **40790448** and Trade Register number **J38/820/2020**.
+USD Impact is operated by **KELA LEADS S.R.L.**, a Romanian limited liability company registered under CUI **40790448**, Trade Register number **J38/820/2020**, and EUID **ROONRC.J38/820/2020**. Registered business address: **Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România**.

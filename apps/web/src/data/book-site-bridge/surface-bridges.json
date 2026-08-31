@@ -1,0 +1,47 @@
+[
+  {
+    "id": "weekly-score",
+    "surface": "score",
+    "match": "exact",
+    "path": "/score/",
+    "chapterId": "chapter-10",
+    "rationale": "Chapter 10 explains how to read regime evidence over time and why the Weekly Score should remain descriptive context rather than a forecast or trading signal.",
+    "linkLabel": "Review the Chapter 10 companion"
+  },
+  {
+    "id": "score-methodology",
+    "surface": "score-methodology",
+    "match": "exact",
+    "path": "/score/methodology/",
+    "chapterId": "chapter-10",
+    "rationale": "Chapter 10 supplies the book's regime-history context for interpreting the Score's construction, recalculation limits and descriptive validation without turning historical alignment into predictive evidence.",
+    "linkLabel": "Review the Chapter 10 companion"
+  },
+  {
+    "id": "weekly-report",
+    "surface": "weekly-report",
+    "match": "prefix",
+    "path": "/reports/weekly/",
+    "chapterId": "chapter-11",
+    "rationale": "Chapter 11 supplies the driver-first weekly sequence behind this report: identify the dominant driver, then check dollar direction, real rates, liquidity stress and asset-specific evidence.",
+    "linkLabel": "Review the Chapter 11 companion"
+  },
+  {
+    "id": "daily-2026-08-20",
+    "surface": "daily",
+    "match": "exact",
+    "path": "/news/2026-08-20/",
+    "chapterId": "chapter-04",
+    "rationale": "Chapter 4 explains how to separate the active transmission channel when liquidity support, oil-linked inflation pressure and rates are pulling in different directions.",
+    "linkLabel": "Review the Chapter 4 companion"
+  },
+  {
+    "id": "daily-2026-08-27",
+    "surface": "daily",
+    "match": "exact",
+    "path": "/news/2026-08-27/",
+    "chapterId": "chapter-05",
+    "rationale": "Chapter 5 explains why EIA inventories, refinery activity and the physical oil balance must be checked before treating an oil move as a dollar-only trade.",
+    "linkLabel": "Review the Chapter 5 companion"
+  }
+]

@@ -14,6 +14,7 @@ const config = {
   url: 'https://project-ref.supabase.co',
   secretKey: 'sb_secret_test_value_that_is_long_enough',
 };
+const expectedAccessibility = 'This private digital-reader PDF is untagged and is not PDF/UA-conformant. This limitation is accepted for private Library Pass delivery. The PDF must not be represented as PDF/UA-conformant.';
 
 assert.equal(BOOK_MEMBER_PATH, '/guided-edition/book/');
 assert.equal(BOOK_DOWNLOAD_PATH, '/guided-edition/book/download/');
@@ -26,8 +27,8 @@ assert.equal(
   privateBookDocument.objectPath,
   `${PRIVATE_BOOK_PREFIX}/USD_Impact_Read_the_Dollar_First_Edition_1.3_v5.95_Phase2C_Scoped_Candidate_2.pdf`,
 );
-assert.match(privateBookDocument.accessibility, /untagged/i);
-assert.match(privateBookDocument.accessibility, /not PDF\/UA-conformant/i);
+assert.equal(privateBookDocument.accessibility, expectedAccessibility);
+assert.doesNotMatch(privateBookDocument.accessibility, /review PDF|private Development proof|publication approval/i);
 
 let signingRequest = null;
 const signedUrl = await createSignedBookUrl({
@@ -106,4 +107,4 @@ const audiobookMigration = await readFile(
 assert.match(audiobookMigration, /'library-pass-assets'/);
 assert.match(audiobookMigration, /array\['audio\/mpeg'\]::text\[\]/);
 
-console.log('Private book manifest, isolated bucket, hash, expiry, and signed-delivery tests passed.');
+console.log('Private book manifest, isolated bucket, hash, expiry, accessibility copy, and signed-delivery tests passed.');

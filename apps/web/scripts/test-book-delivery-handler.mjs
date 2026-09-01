@@ -26,8 +26,11 @@ assert.match(protectedHtml, /Protected Library Pass digital reader/);
 assert.match(protectedHtml, /Edition 1\.3/);
 assert.match(protectedHtml, /Phase 2C Scoped Candidate 2/);
 assert.match(protectedHtml, new RegExp(privateBookDocument.sha256));
-assert.match(protectedHtml, /untagged/);
-assert.match(protectedHtml, /not PDF\/UA-conformant/);
+assert.equal(protectedHtml.includes(privateBookDocument.accessibility), true);
+assert.match(protectedHtml, /This private digital-reader PDF is untagged and is not PDF\/UA-conformant\./);
+assert.match(protectedHtml, /This limitation is accepted for private Library Pass delivery\./);
+assert.match(protectedHtml, /The PDF must not be represented as PDF\/UA-conformant\./);
+assert.doesNotMatch(protectedHtml, /review PDF|private Development proof|does not represent publication approval|not publication-approved/i);
 assert.match(protectedHtml, new RegExp(BOOK_DOWNLOAD_PATH.replaceAll('/', '\\/')));
 assert.doesNotMatch(protectedHtml, /supabase\.co|service_role|sb_secret_/);
 
@@ -106,4 +109,4 @@ const guidedApi = await readFile(new URL('../api/guided-edition.js', import.meta
 assert.match(guidedApi, /handleBookDeliveryRequest/);
 assert.match(guidedApi, /__book/);
 
-console.log('Protected book anonymous-denial, entitlement, routing, and signed-URL handler tests passed.');
+console.log('Protected book anonymous-denial, entitlement, accessibility copy, routing, and signed-URL handler tests passed.');

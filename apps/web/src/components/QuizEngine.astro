@@ -1,5 +1,6 @@
 ---
 import '../styles/quiz.css';
+import LibraryPassAvailabilityCTA from './LibraryPassAvailabilityCTA.astro';
 
 interface QuizOption {
   key: string;
@@ -85,7 +86,7 @@ const { quiz, access, totalQuizzes, passScore, storageKey, purchaseUrl } = Astro
 
     <div class="button-row quiz-actions">
       <button class="button primary" type="button" data-quiz-start>Start quiz</button>
-      <a class="button secondary" href={purchaseUrl}>Join the book waitlist</a>
+      <LibraryPassAvailabilityCTA className="button secondary" />
     </div>
   </div>
 
@@ -143,7 +144,7 @@ const { quiz, access, totalQuizzes, passScore, storageKey, purchaseUrl } = Astro
     <div class="button-row quiz-actions">
       <a class="button primary" data-quiz-unlock-link hidden>Continue to the next chapter</a>
       <a class="button primary" data-quiz-completion-link hidden>Return to the book</a>
-      <a class="button secondary" href={purchaseUrl}>Join the book waitlist</a>
+      <LibraryPassAvailabilityCTA className="button secondary" />
       <button class="button secondary" type="button" data-quiz-retake>Retake quiz</button>
     </div>
 

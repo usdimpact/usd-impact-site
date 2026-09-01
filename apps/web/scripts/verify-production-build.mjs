@@ -18,7 +18,7 @@ const routes = {
 };
 const pagePath = (route) => path.join(distRoot, route.replace(/^\//, ''), 'index.html');
 const failures = [];
-const requiredRoutes = ['/start-here','/book/read-the-dollar-first','/audiobook/read-the-dollar-first','/video-library',routes.dollarLesson,routes.fxLesson,routes.dxyLesson,routes.broadLesson,routes.regimeLesson,routes.goldLesson,routes.wtiLesson,routes.lngLesson,routes.equitiesLesson,routes.bitcoinLesson,routes.currencyRiskLesson,'/framework/dollar-transmission-chain','/lead-magnets/weekly-dollar-regime-checklist','/privacy','/terms','/refund-policy'];
+const requiredRoutes = ['/start-here','/book/read-the-dollar-first','/audiobook/read-the-dollar-first','/video-library',routes.dollarLesson,routes.fxLesson,routes.dxyLesson,routes.broadLesson,routes.regimeLesson,routes.goldLesson,routes.wtiLesson,routes.lngLesson,routes.equitiesLesson,routes.bitcoinLesson,routes.currencyRiskLesson,'/framework/dollar-transmission-chain','/framework/three-dial-dashboard','/lead-magnets/weekly-dollar-regime-checklist','/privacy','/terms','/refund-policy'];
 for (const route of requiredRoutes) if (!fs.existsSync(pagePath(route))) failures.push(`Missing published route: ${route}.`);
 for (const output of ['news/index.html','news/2026-07-22/index.html','news/feed.xml','news/latest.json']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing Daily USD Impact output: /${output}.`);
 for (const output of ['reports/index.html','reports/weekly/2026-07-31/index.html']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing USD Impact Reports output: /${output}.`);
@@ -39,7 +39,9 @@ const homepage = path.join(distRoot, 'index.html');
 if (!fs.existsSync(homepage)) failures.push('Homepage was not generated.');
 else {
   const html = fs.readFileSync(homepage, 'utf8');
-  if (!html.includes('Join the book waitlist')) failures.push('Homepage waitlist CTA label is missing.');
+  if (!html.includes('Check Library Pass availability')) failures.push('Homepage neutral Library Pass CTA label is missing.');
+  if (!html.includes('href="/checkout/"')) failures.push('Homepage neutral Library Pass CTA destination is missing.');
+  if (html.includes('>Join the book waitlist</a>')) failures.push('Homepage renders a stale waitlist CTA before readiness settles.');
   if (!html.includes('data-home-library-pass-cta')) failures.push('Homepage fail-closed Library Pass CTA is missing.');
   if (!html.includes('data-home-checkout-readiness="checking"')) failures.push('Homepage Library Pass CTA is missing its initial checking state.');
   if (!html.includes('Read the Dollar First is now available.</strong> Get')) failures.push('English launch announcement spacing is missing.');
@@ -55,6 +57,30 @@ if (fs.existsSync(productPage)) {
   for (const requiredText of ['Guided Interactive Edition', '51-film USD Impact Video Library', 'USD 39.00', 'USD 49.00', 'one-time', '14-day Refund Policy', 'ongoing access']) {
     if (!html.includes(requiredText)) failures.push(`Product page is missing domain-review text: ${requiredText}.`);
   }
+  if (!html.includes('Check Library Pass availability')) failures.push('Product page neutral Library Pass CTA label is missing.');
+  if (!html.includes('id="book-primary-cta"') || !html.includes('href="/checkout/"')) failures.push('Product page neutral Library Pass CTA destination is missing.');
+  if (!html.includes('id="book-waitlist"')) failures.push('Product page actual waitlist form is missing.');
+}
+
+const acquisitionRoutes = [
+  '/start-here',
+  '/framework/three-dial-dashboard',
+  '/framework/dollar-transmission-chain',
+  '/lead-magnets/weekly-dollar-regime-checklist',
+  '/quiz',
+];
+for (const route of acquisitionRoutes) {
+  const file = pagePath(route);
+  if (!fs.existsSync(file)) {
+    failures.push(`Library Pass acquisition route was not generated: ${route}.`);
+    continue;
+  }
+  const html = fs.readFileSync(file, 'utf8');
+  if (!html.includes('data-library-pass-availability-cta')) failures.push(`${route} is missing the readiness-aware Library Pass CTA.`);
+  if (!html.includes('data-library-pass-checkout-readiness="checking"')) failures.push(`${route} is missing the initial Library Pass checking state.`);
+  if (!html.includes('Check Library Pass availability')) failures.push(`${route} is missing the neutral Library Pass CTA label.`);
+  if (!html.includes('href="/checkout/"')) failures.push(`${route} is missing the neutral Library Pass checkout destination.`);
+  if (html.includes('>Join the book waitlist</a>')) failures.push(`${route} renders a stale waitlist CTA.`);
 }
 
 const videoLibraryPage = pagePath('/video-library');
@@ -113,6 +139,16 @@ for (const [route, label, lesson] of releasedQuizzes) {
   const html = fs.readFileSync(file, 'utf8');
   if (!html.includes(label)) failures.push(`${route} is missing ${label}.`);
   if (!html.includes(`href="${lesson}"`)) failures.push(`${route} does not link to ${lesson}.`);
+  if (!html.includes('data-library-pass-availability-cta')) failures.push(`${route} is missing the readiness-aware Library Pass CTA.`);
+  if (!html.includes('Check Library Pass availability')) failures.push(`${route} is missing the neutral Library Pass CTA label.`);
+  if (!html.includes('href="/checkout/"')) failures.push(`${route} is missing the neutral Library Pass checkout destination.`);
+  if (html.includes('>Join the book waitlist</a>')) failures.push(`${route} renders a stale waitlist CTA.`);
+}
+const startQuizHtml = fs.existsSync(pagePath('/start-here/quiz')) ? fs.readFileSync(pagePath('/start-here/quiz'), 'utf8') : '';
+if (startQuizHtml) {
+  if (!startQuizHtml.includes('data-library-pass-availability-cta')) failures.push('/start-here/quiz is missing the readiness-aware Library Pass CTA.');
+  if (!startQuizHtml.includes('Check Library Pass availability')) failures.push('/start-here/quiz is missing the neutral Library Pass CTA label.');
+  if (startQuizHtml.includes('>Join the book waitlist</a>')) failures.push('/start-here/quiz renders a stale waitlist CTA.');
 }
 const finalQuizHtml = fs.existsSync(pagePath(routes.currencyRiskQuiz)) ? fs.readFileSync(pagePath(routes.currencyRiskQuiz), 'utf8') : '';
 if (finalQuizHtml && !finalQuizHtml.includes('data-quiz-completion-link')) failures.push('Quiz 12 is missing the completion link contract.');

@@ -1,4 +1,6 @@
 ---
+import LibraryPassAvailabilityCTA from './LibraryPassAvailabilityCTA.astro';
+
 const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
 const {
   primary = 'Join the book waitlist',
@@ -6,10 +8,15 @@ const {
   primaryHref = '/book/read-the-dollar-first/#book-waitlist',
   secondaryHref = checklistDownload,
   secondaryDownload = true,
+  libraryPassAvailability = false,
 } = Astro.props;
 ---
 <div class="button-row">
-  <a class="button primary" href={primaryHref}>{primary}</a>
+  {libraryPassAvailability ? (
+    <LibraryPassAvailabilityCTA className="button primary" />
+  ) : (
+    <a class="button primary" href={primaryHref}>{primary}</a>
+  )}
   {secondaryDownload ? (
     <a class="button secondary" href={secondaryHref} download>{secondary}</a>
   ) : (

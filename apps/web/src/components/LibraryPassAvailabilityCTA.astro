@@ -13,11 +13,21 @@ const { className = 'button primary' } = Astro.props;
 >Check Library Pass availability</a>
 
 <script>
-  import { bookPurchasePresentation } from '../lib/checkout-client.js';
+  import {
+    bookPurchasePresentation,
+    checkoutHrefWithCampaign,
+  } from '../lib/checkout-client.js';
 
   const candidates = Array.from(
     document.querySelectorAll('a[data-library-pass-availability-cta]'),
   );
+  const campaignCheckoutUrl = () => checkoutHrefWithCampaign('/checkout/', window.location.search);
+
+  for (const candidate of candidates) {
+    if (candidate instanceof HTMLAnchorElement) {
+      candidate.href = campaignCheckoutUrl();
+    }
+  }
 
   if (
     candidates.length > 0
@@ -44,7 +54,10 @@ const { className = 'button primary' } = Astro.props;
           candidate.dataset.libraryPassCheckoutReadiness = presentation.verificationState;
           if (!presentation.available) continue;
           candidate.textContent = presentation.primaryLabel;
-          candidate.href = presentation.primaryHref;
+          candidate.href = checkoutHrefWithCampaign(
+            presentation.primaryHref,
+            window.location.search,
+          );
         }
       })
       .catch(() => {

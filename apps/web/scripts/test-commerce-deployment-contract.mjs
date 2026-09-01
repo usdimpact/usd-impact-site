@@ -48,23 +48,33 @@ assert.deepEqual(commerceRewrite, {
   destination: '/api/account?action=commerce-readiness',
 });
 
-// The selected-provider sandbox runtime now has an isolated Vercel function, but it must
-// not be promoted into a public rewrite or scheduled Production cron before later gates.
+// Production Live is active. The isolated commerce function may have exactly one
+// canonical rewrite and one scheduled invocation: the CRON_SECRET-guarded final-state
+// reconciliation action. Checkout remains an authenticated same-origin POST and the
+// webhook remains a provider-signed POST; neither receives a public convenience rewrite.
 assert.match(packageSource, /node --check api\/commerce\.js/);
 assert.match(packageSource, /test-lemon-squeezy-commerce-function\.mjs/);
 assert.match(packageSource, /test-lemon-squeezy-commerce-runtime\.mjs/);
 assert.match(packageSource, /test-lemon-squeezy-controlled-live-runtime\.mjs/);
 assert.match(packageSource, /test-commerce-reconciliation-migration\.mjs/);
 assert.match(packageSource, /commerce-readiness-handler\.js/);
-assert.equal(
-  vercel.rewrites.some((item) => item.source === '/api/commerce' || String(item.destination || '').startsWith('/api/commerce?')),
-  false,
-  'The sandbox commerce function must not have a public rewrite before activation gates pass.',
+assert.deepEqual(
+  vercel.rewrites.filter(
+    (item) => item.source === '/api/commerce' || String(item.destination || '').startsWith('/api/commerce?'),
+  ),
+  [{
+    source: '/api/commerce-reconciliation',
+    destination: '/api/commerce?action=reconcile',
+  }],
+  'Only the guarded commerce reconciliation action may have a canonical convenience rewrite.',
 );
-assert.equal(
-  vercel.crons.some((item) => item.path === '/api/commerce' || String(item.path || '').startsWith('/api/commerce?')),
-  false,
-  'Commerce reconciliation must not be scheduled in Production before sandbox proof and registration review.',
+assert.deepEqual(
+  vercel.crons.filter((item) => String(item.path || '').startsWith('/api/commerce')),
+  [{
+    path: '/api/commerce-reconciliation',
+    schedule: '0 5 * * *',
+  }],
+  'Production may schedule exactly one guarded daily commerce reconciliation invocation.',
 );
 
 assert.match(commerceFunctionSource, /bodyParser:\s*false/);

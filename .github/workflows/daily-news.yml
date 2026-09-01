@@ -135,19 +135,38 @@ jobs:
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
         run: |
           response_id="$OPENAI_RESPONSE_ID"
+          poll_payload="$RUNNER_TEMP/daily-usd-impact-poll.json"
 
           for generation_attempt in 1 2; do
             for poll_attempt in $(seq 1 18); do
               poll_url="${BACKGROUND_ENDPOINT}?response_id=${response_id}"
+              rm -f "$poll_payload"
+              curl_exit=0
               http_code="$(curl --silent --show-error --location \
                 --max-time 240 \
                 -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
                 "$poll_url" \
-                --output "$RUNNER_TEMP/daily-usd-impact-poll.json" \
-                --write-out '%{http_code}')"
+                --output "$poll_payload" \
+                --write-out '%{http_code}')" || curl_exit=$?
+
+              if [ "$curl_exit" -ne 0 ]; then
+                rm -f "$poll_payload"
+                case "$curl_exit" in
+                  5|6|7|18|28|35|52|55|56|92)
+                    echo "::warning::Transient background poll transport failure (curl exit $curl_exit) on generation attempt $generation_attempt, poll $poll_attempt; retrying the same response."
+                    sleep 5
+                    continue
+                    ;;
+                  *)
+                    printf '{"code":"poll-transport-error","error":"Background poll transport failed with curl exit %s","status":"failed"}\n' "$curl_exit" > "$poll_payload"
+                    echo "::error::Background poll transport failed with non-retryable curl exit $curl_exit."
+                    exit 1
+                    ;;
+                esac
+              fi
 
               if [ "$http_code" = "200" ]; then
-                mv "$RUNNER_TEMP/daily-usd-impact-poll.json" "$RUNNER_TEMP/daily-usd-impact.json"
+                mv "$poll_payload" "$RUNNER_TEMP/daily-usd-impact.json"
                 echo "Background news generation completed on generation attempt $generation_attempt, poll $poll_attempt."
                 exit 0
               fi
@@ -163,7 +182,7 @@ jobs:
                 continue
               fi
 
-              if [ "$generation_attempt" = "1" ] && node scripts/daily-news-retry-policy.mjs "$RUNNER_TEMP/daily-usd-impact-poll.json"; then
+              if [ "$generation_attempt" = "1" ] && node scripts/daily-news-retry-policy.mjs "$poll_payload"; then
                 echo "Recoverable generation or bounded-repair failure detected; starting one bounded full regeneration attempt."
                 curl --fail --silent --show-error --location \
                   --request POST --max-time 60 \
@@ -184,11 +203,14 @@ jobs:
               fi
 
               echo "Background endpoint returned HTTP $http_code"
-              cat "$RUNNER_TEMP/daily-usd-impact-poll.json"
+              cat "$poll_payload"
               exit 1
             done
 
             if [ "$generation_attempt" = "2" ]; then
+              if [ ! -s "$poll_payload" ]; then
+                printf '{"code":"poll-transport-retries-exhausted","error":"Background polling exhausted its bounded transport retries","status":"failed"}\n' > "$poll_payload"
+              fi
               echo "Background news generation did not complete successfully after one bounded regeneration attempt."
               exit 1
             fi

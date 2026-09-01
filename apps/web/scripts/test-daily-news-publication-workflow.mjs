@@ -108,6 +108,30 @@ assert.doesNotMatch(
 );
 assert.match(
   pollStep[1],
+  /poll_payload="\$RUNNER_TEMP\/daily-usd-impact-poll\.json"[\s\S]*rm -f "\$poll_payload"[\s\S]*curl_exit=0[\s\S]*\)" \|\| curl_exit=\$\?/,
+  'the polling request must capture curl transport failures without set -e aborting the workflow',
+);
+assert.ok(
+  (pollStep[1].match(/rm -f "\$poll_payload"/g) || []).length >= 2,
+  'partial or stale poll payloads must be removed before requests and after transport failures',
+);
+assert.match(
+  pollStep[1],
+  /case "\$curl_exit" in[\s\S]*5\|6\|7\|18\|28\|35\|52\|55\|56\|92\)[\s\S]*retrying the same response[\s\S]*continue/,
+  'reviewed transient curl failures, including connection reset code 35, must retry the same background response',
+);
+assert.match(
+  pollStep[1],
+  /poll-transport-error[\s\S]*non-retryable curl exit/,
+  'non-retryable transport failures must remain fail-closed with bounded diagnostic detail',
+);
+assert.match(
+  pollStep[1],
+  /poll-transport-retries-exhausted/,
+  'exhausted bounded transport retries must leave a safe failure payload for issue reporting',
+);
+assert.match(
+  pollStep[1],
   /for generation_attempt in 1 2/,
   'the workflow must permit only the initial generation and one bounded full regeneration',
 );
@@ -193,6 +217,7 @@ assert.ok(backstopStep, 'schedule backstop shell must be present');
 
 for (const [label, block] of [
   ['publication preflight', preflightStep[1]],
+  ['background polling', pollStep[1]],
   ['publication handoff', handoffStep[1]],
   ['failure reporting', failureStep[1]],
   ['schedule backstop', backstopStep[1]],

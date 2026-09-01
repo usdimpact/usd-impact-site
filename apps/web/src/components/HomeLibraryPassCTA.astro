@@ -23,18 +23,28 @@ const neutralCheckoutUrl = '/checkout/';
 >Checking current Library Pass checkout availability…</p>
 
 <script>
-  import { bookPurchasePresentation } from '../lib/checkout-client.js';
+  import {
+    bookPurchasePresentation,
+    checkoutHrefWithCampaign,
+  } from '../lib/checkout-client.js';
 
   const container = document.querySelector('[data-home-library-pass-cta]');
   const primary = document.querySelector('[data-home-library-pass-primary]');
   const status = document.querySelector('[data-home-library-pass-status]');
   const waitlistUrl = '/book/read-the-dollar-first/#book-waitlist';
+  const campaignCheckoutUrl = () => checkoutHrefWithCampaign('/checkout/', window.location.search);
+
+  if (primary instanceof HTMLAnchorElement) {
+    primary.href = campaignCheckoutUrl();
+  }
 
   const renderPresentation = (presentation) => {
     if (!(primary instanceof HTMLAnchorElement)) return;
 
     primary.textContent = presentation.primaryLabel;
-    primary.href = presentation.available ? presentation.primaryHref : waitlistUrl;
+    primary.href = presentation.available
+      ? checkoutHrefWithCampaign(presentation.primaryHref, window.location.search)
+      : waitlistUrl;
     if (status) status.textContent = presentation.message;
     if (container instanceof HTMLElement) {
       container.dataset.homeCheckoutReadiness = presentation.verificationState;

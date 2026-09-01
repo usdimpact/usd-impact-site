@@ -81,7 +81,7 @@ function yieldDiscussionBundle() {
     ],
     catalysts: [],
     summary: 'The 10-year Treasury note yield and 30-year Treasury bond yield moved with rate expectations.',
-    body: 'The 10-year note yield and 30-year bond yield changed during the session. These are secondary-market yield observations, not claims about a new auction or quarterly refunding announcement.',
+    body: 'The 10-year note yield and 30-year bond yield changed during the session. These are secondary-market yield observations rather than issuance-calendar claims.',
   };
 }
 

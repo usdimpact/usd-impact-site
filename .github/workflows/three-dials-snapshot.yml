@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  generate-and-publish:
+  generate-and-open-review:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -148,7 +148,7 @@ jobs:
             gh run watch "$run_id" --repo "$GITHUB_REPOSITORY" --exit-status --interval 5
           done
 
-      - name: Open and merge guarded publication pull request
+      - name: Open guarded publication pull request for review
         if: steps.branch.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -159,13 +159,15 @@ jobs:
           cat > "$RUNNER_TEMP/three-dials-pr.md" <<EOF
           ## Automated Three-Dials snapshot publication
 
-          This pull request contains the dated **${GENERATED_WEEK}** completed-week snapshot.
+          This pull request contains the dated **${GENERATED_WEEK}** completed-week snapshot at exact generated head **${GENERATED_HEAD_SHA}**.
 
           Publication is fail-closed. The generator requires bounded source hosts, per-series freshness checks, an exact-week USD Impact Score bridge, an immutable dated archive, and the full site validation/build before opening this pull request.
 
           Before this PR was opened, the exact generated commit independently passed the repository's dispatchable **Web quality**, **CodeQL security analysis**, and bounded **Dependency review** checks. The normal PR-triggered copies of those workflows ignore Three-Dials generated-data-only diffs, preventing GitHub's approval-required runs for PRs created with the repository GITHUB_TOKEN while preserving the required checks on the same commit.
 
           The snapshot separates **Fact**, **Interpretation**, and **Model output**. It does not change USD Impact Score v2 and does not create a forecast or trading signal.
+
+          **Protected publication boundary:** This workflow does not merge this pull request. Protected human review and separate explicit owner approval are required before merge.
           EOF
 
           pr_url="$(gh pr create \
@@ -175,13 +177,8 @@ jobs:
             --title "Publish Three Dials Snapshot — ${GENERATED_WEEK}" \
             --body-file "$RUNNER_TEMP/three-dials-pr.md")"
 
-          gh pr merge "$pr_url" \
-            --repo "$GITHUB_REPOSITORY" \
-            --squash \
-            --delete-branch \
-            --match-head-commit "$GENERATED_HEAD_SHA"
-
-          echo "Protected squash merge completed after the exact generated commit passed all dispatched checks."
+          echo "Generated Three-Dials snapshot PR opened for protected human review: $pr_url"
+          echo "No automatic merge was attempted. Publication remains pending separate explicit owner approval."
 
       - name: Report bounded failure
         if: failure()

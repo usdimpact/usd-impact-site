@@ -36,9 +36,11 @@ requireText(files.product, 'Product page', [
 ]);
 requireText(files.bookPurchaseCta, 'Book purchase CTA', [
   'data-book-checkout-readiness="checking"',
-  'Join the book waitlist',
+  'Check Library Pass availability',
+  'href="/checkout/"',
   '/api/commerce-readiness',
   'bookPurchasePresentation',
+  'The book waitlist remains available.',
 ]);
 requireText(files.preview, 'Free sample page', [
   'Lemon Squeezy is the selected Merchant of Record',

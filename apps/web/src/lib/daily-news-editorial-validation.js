@@ -3,7 +3,7 @@ const MAX_DAILY_HIGHLIGHT_SOURCE_AGE_DAYS = 14;
 
 const SCHEDULE_FOCUSED_PATTERN = /\b(?:auction|calendar|scheduled|schedule|upcoming|watchlist)\b|\bnext (?:catalyst|decision|event|major|release|scheduled|test)\b/i;
 const UNSUPPORTED_ABSENCE_PATTERN = /\bno (?:new|current|official|primary(?:-source)?|material|relevant)[^.]{0,100}\b(?:available|found|identified|published|released)\b|\b(?:did not|does not) (?:find|identify|show)\b/i;
-const TREASURY_REFUNDING_PATTERN = /\bquarterly refunding\b|\brefunding auctions?\b|\b(?:3|10|30)[ -]?year (?:notes?|bonds?|auctions?|auction windows?)\b/i;
+const TREASURY_REFUNDING_PATTERN = /\bquarterly refunding\b|\brefunding auctions?\b|\b(?:3|10|30)[ -]?year (?:Treasury )?(?:(?:notes?|bonds?) )?(?:auctions?|auction windows?)\b|\bauctions? of (?:the )?(?:3|10|30)[ -]?year (?:Treasury )?(?:notes?|bonds?)\b/i;
 const UNICODE_DASH_PATTERN = /[\u2010-\u2015\u2212]/g;
 const CONVERSATIONAL_RESIDUE_PATTERN = /(?:^|\n)\s*(?:#+\s*)?if you want\b|\bI can (?:add|check|expand|help|provide|re-?run)\b/i;
 

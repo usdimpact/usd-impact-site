@@ -51,7 +51,61 @@ function bundle(overrides = {}) {
   };
 }
 
+function yieldDiscussionBundle() {
+  return {
+    editionDate: '2026-08-06',
+    sources: [
+      source('bls-current', '2026-08-06'),
+      source('eia-current', '2026-08-06', 'https://www.eia.gov/petroleum/supply/weekly/'),
+      source('reuters-current', '2026-08-06', 'https://www.reuters.com/markets/us/'),
+    ],
+    highlights: [
+      {
+        headline: 'Productivity and labor costs provide a current macro signal.',
+        development: 'BLS published the current productivity release.',
+        whyItMatters: 'The release may affect rate expectations.',
+        sourceIds: ['bls-current'],
+      },
+      {
+        headline: 'Energy inventory data supplied a current physical-market signal.',
+        development: 'EIA published its current weekly petroleum data.',
+        whyItMatters: 'Inventory changes can affect oil pricing and inflation expectations.',
+        sourceIds: ['eia-current'],
+      },
+      {
+        headline: 'The 10-year Treasury note yield moved with rate expectations.',
+        development: 'The 30-year Treasury bond yield also shifted during the session.',
+        whyItMatters: 'Maturity yields transmit policy expectations into financing conditions.',
+        sourceIds: ['reuters-current'],
+      },
+    ],
+    catalysts: [],
+    summary: 'The 10-year Treasury note yield and 30-year Treasury bond yield moved with rate expectations.',
+    body: 'The 10-year note yield and 30-year bond yield changed during the session. These are secondary-market yield observations rather than issuance-calendar claims.',
+  };
+}
+
 assert.doesNotThrow(() => validateEditorialBundle(bundle()));
+
+assert.doesNotThrow(
+  () => validateEditorialBundle(yieldDiscussionBundle()),
+  'ordinary Treasury maturity-yield discussion must not require a current auction or refunding source',
+);
+
+const auctionWithoutTreasurySource = yieldDiscussionBundle();
+auctionWithoutTreasurySource.highlights[2] = {
+  headline: 'Treasury’s 10-year note auction is the next duration test.',
+  development: 'The 30-year Treasury bond auction is also in focus.',
+  whyItMatters: 'Auction demand may influence yields and liquidity.',
+  sourceIds: ['reuters-current'],
+};
+auctionWithoutTreasurySource.summary = 'The 10-year Treasury note auction is the next supply test.';
+auctionWithoutTreasurySource.body = 'The 30-year Treasury bond auction remains in focus.';
+assert.throws(
+  () => validateEditorialBundle(auctionWithoutTreasurySource),
+  /requires a current Treasury refunding or auction source/,
+  'explicit note and bond auction claims must still require a current Treasury source',
+);
 
 assert.throws(
   () => validateEditorialBundle(bundle({

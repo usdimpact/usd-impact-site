@@ -2,24 +2,24 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 <BaseLayout
-  title="Checklist Download Analytics | USD Impact"
-  description="Private aggregate usage reporting for the Weekly Dollar Regime Checklist."
+  title="Checklist & Checkout Analytics | USD Impact"
+  description="Private aggregate reporting for checklist downloads and consented checkout-funnel events."
   noindex
 >
   <section class="hero analytics-hero">
     <div class="container">
       <div class="eyebrow">Internal analytics</div>
-      <h1>Checklist download activity</h1>
-      <p class="lead">Aggregate, privacy-limited counts for the Weekly Dollar Regime Checklist.</p>
+      <h1>Checklist and checkout-funnel activity</h1>
+      <p class="lead">Aggregate, privacy-limited counts for the Weekly Dollar Regime Checklist and consented checkout-funnel events.</p>
     </div>
   </section>
 
   <main class="container analytics-main">
     <section class="card analytics-access" aria-labelledby="analytics-access-heading">
       <div>
-        <div class="eyebrow">Protected report</div>
+        <div class="eyebrow">Protected reports</div>
         <h2 id="analytics-access-heading">Load aggregate statistics</h2>
-        <p>The reporting token stays in this browser tab's memory and is sent only in the Authorization header.</p>
+        <p>The reporting token stays in this browser tab's memory and is sent only in the Authorization header to the existing protected aggregate-report endpoints.</p>
       </div>
       <form id="analytics-form" class="analytics-form">
         <label>
@@ -38,53 +38,115 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <option value="30" selected>30 days</option>
           </select>
         </label>
-        <button id="load-report" class="button primary" type="submit">Load report</button>
+        <button id="load-report" class="button primary" type="submit">Load reports</button>
       </form>
       <p id="analytics-status" class="analytics-status" role="status" aria-live="polite"></p>
     </section>
 
-    <section id="analytics-dashboard" class="analytics-dashboard" hidden>
-      <div class="section-heading">
-        <div>
-          <div class="eyebrow">Checklist performance</div>
-          <h2 id="report-range">Selected period</h2>
-        </div>
-        <button id="download-csv" class="button" type="button">Download CSV</button>
-      </div>
-
-      <div class="analytics-metrics">
-        <article class="card"><span>Lifetime downloads</span><strong id="metric-lifetime">0</strong></article>
-        <article class="card"><span>Selected period</span><strong id="metric-range">0</strong></article>
-        <article class="card"><span>Previous period</span><strong id="metric-previous">0</strong></article>
-        <article class="card"><span>Period change</span><strong id="metric-change">—</strong></article>
-        <article class="card"><span>Active days</span><strong id="metric-active">0</strong></article>
-        <article class="card"><span>Daily average</span><strong id="metric-average">0</strong></article>
-      </div>
-
-      <section class="card analytics-chart-card" aria-labelledby="daily-downloads-heading">
-        <div>
-          <h3 id="daily-downloads-heading">Daily downloads</h3>
-          <p id="latest-download">No downloads in the selected period.</p>
-        </div>
-        <ol id="daily-downloads" class="analytics-bars"></ol>
-      </section>
-
-      <section class="analytics-attribution" aria-labelledby="attribution-heading">
-        <div class="section-heading">
+    <div id="analytics-dashboard" class="analytics-dashboard" hidden>
+      <section class="analytics-report" aria-labelledby="checklist-report-heading">
+        <div class="section-heading analytics-section-heading">
           <div>
-            <div class="eyebrow">Attribution</div>
-            <h2 id="attribution-heading">Where downloads originate</h2>
+            <div class="eyebrow">Checklist performance</div>
+            <h2 id="checklist-report-heading">Checklist downloads</h2>
+            <p id="checklist-report-range" class="analytics-range">Selected period</p>
           </div>
+          <button id="download-checklist-csv" class="button" type="button">Download checklist CSV</button>
         </div>
-        <p class="analytics-note">Attribution counters accumulate from this dashboard release onward. Earlier downloads remain included in the lifetime total.</p>
-        <div class="analytics-attribution-grid">
-          <article class="card"><h3>Page routes</h3><ol id="top-routes"></ol></article>
-          <article class="card"><h3>UTM sources</h3><ol id="top-sources"></ol></article>
-          <article class="card"><h3>UTM mediums</h3><ol id="top-mediums"></ol></article>
-          <article class="card"><h3>UTM campaigns</h3><ol id="top-campaigns"></ol></article>
+
+        <div class="analytics-metrics">
+          <article class="card"><span>Lifetime downloads</span><strong id="metric-lifetime">0</strong></article>
+          <article class="card"><span>Selected period</span><strong id="metric-range">0</strong></article>
+          <article class="card"><span>Previous period</span><strong id="metric-previous">0</strong></article>
+          <article class="card"><span>Period change</span><strong id="metric-change">—</strong></article>
+          <article class="card"><span>Active days</span><strong id="metric-active">0</strong></article>
+          <article class="card"><span>Daily average</span><strong id="metric-average">0</strong></article>
         </div>
+
+        <section class="card analytics-chart-card" aria-labelledby="daily-downloads-heading">
+          <div>
+            <h3 id="daily-downloads-heading">Daily downloads</h3>
+            <p id="latest-download">No downloads in the selected period.</p>
+          </div>
+          <ol id="daily-downloads" class="analytics-bars"></ol>
+        </section>
+
+        <section class="analytics-attribution" aria-labelledby="checklist-attribution-heading">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Attribution</div>
+              <h2 id="checklist-attribution-heading">Where downloads originate</h2>
+            </div>
+          </div>
+          <p class="analytics-note">Attribution counters accumulate from this dashboard release onward. Earlier downloads remain included in the lifetime total.</p>
+          <div class="analytics-attribution-grid">
+            <article class="card"><h3>Page routes</h3><ol id="top-routes"></ol></article>
+            <article class="card"><h3>UTM sources</h3><ol id="top-sources"></ol></article>
+            <article class="card"><h3>UTM mediums</h3><ol id="top-mediums"></ol></article>
+            <article class="card"><h3>UTM campaigns</h3><ol id="top-campaigns"></ol></article>
+          </div>
+        </section>
       </section>
-    </section>
+
+      <section class="analytics-report" aria-labelledby="checkout-report-heading">
+        <div class="section-heading analytics-section-heading">
+          <div>
+            <div class="eyebrow">Checkout funnel</div>
+            <h2 id="checkout-report-heading">Aggregate checkout activity</h2>
+            <p id="checkout-report-range" class="analytics-range">Selected period</p>
+          </div>
+          <button id="download-checkout-csv" class="button" type="button">Download checkout CSV</button>
+        </div>
+
+        <p id="checkout-semantics" class="analytics-note analytics-callout">Aggregate event counts; not unique visitors and not buyer evidence.</p>
+
+        <div class="analytics-metrics checkout-metrics">
+          <article class="card"><span>Lifetime checkout views</span><strong id="checkout-lifetime-views">0</strong></article>
+          <article class="card"><span>Lifetime button clicks</span><strong id="checkout-lifetime-clicks">0</strong></article>
+          <article class="card"><span>Lifetime sign-in redirects</span><strong id="checkout-lifetime-sign-ins">0</strong></article>
+          <article class="card"><span>Selected-period views</span><strong id="checkout-range-views">0</strong></article>
+          <article class="card"><span>Selected-period button clicks</span><strong id="checkout-range-clicks">0</strong></article>
+          <article class="card"><span>Selected-period sign-in redirects</span><strong id="checkout-range-sign-ins">0</strong></article>
+          <article class="card"><span>View-to-click rate</span><strong id="checkout-click-rate">—</strong></article>
+          <article class="card"><span>Click-to-sign-in rate</span><strong id="checkout-sign-in-rate">—</strong></article>
+        </div>
+
+        <section class="card analytics-chart-card" aria-labelledby="daily-checkout-heading">
+          <div>
+            <h3 id="daily-checkout-heading">Daily checkout funnel</h3>
+            <p>Daily aggregate events for the selected UTC range.</p>
+          </div>
+          <div class="analytics-table-scroll">
+            <table class="analytics-table">
+              <thead>
+                <tr>
+                  <th scope="col">Date</th>
+                  <th scope="col">Views</th>
+                  <th scope="col">Button clicks</th>
+                  <th scope="col">Sign-in redirects</th>
+                </tr>
+              </thead>
+              <tbody id="daily-checkout"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="analytics-attribution" aria-labelledby="checkout-attribution-heading">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Checkout attribution</div>
+              <h2 id="checkout-attribution-heading">Where checkout events originate</h2>
+            </div>
+          </div>
+          <p class="analytics-note">Attribution rankings use lifetime aggregate counters from consented events. Selected-period funnel metrics remain separate.</p>
+          <div class="analytics-attribution-grid checkout-attribution-grid">
+            <article class="card"><h3>UTM sources</h3><ol id="checkout-top-sources"></ol></article>
+            <article class="card"><h3>UTM mediums</h3><ol id="checkout-top-mediums"></ol></article>
+            <article class="card"><h3>UTM campaigns</h3><ol id="checkout-top-campaigns"></ol></article>
+          </div>
+        </section>
+      </section>
+    </div>
   </main>
 </BaseLayout>
 
@@ -97,9 +159,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   const loadButton = document.querySelector('#load-report');
   const status = document.querySelector('#analytics-status');
   const dashboard = document.querySelector('#analytics-dashboard');
-  const csvButton = document.querySelector('#download-csv');
+  const checklistCsvButton = document.querySelector('#download-checklist-csv');
+  const checkoutCsvButton = document.querySelector('#download-checkout-csv');
   let reportToken = '';
-  let latestReport = null;
+  let latestChecklistReport = null;
+  let latestCheckoutReport = null;
 
   endInput.value = new Date().toISOString().slice(0, 10);
 
@@ -107,19 +171,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   const date = (value) => new Intl.DateTimeFormat('en', {
     day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
   }).format(new Date(`${value}T12:00:00Z`));
+  const percent = (value) => value === null ? 'No baseline' : `${number(value)}%`;
 
   const setText = (selector, value) => {
     const element = document.querySelector(selector);
     if (element) element.textContent = value;
   };
 
-  const renderRanking = (selector, entries) => {
+  const renderRanking = (selector, entries, emptyText) => {
     const list = document.querySelector(selector);
     if (!list) return;
     list.replaceChildren();
     if (!entries.length) {
       const empty = document.createElement('li');
-      empty.textContent = 'No attributed downloads yet.';
+      empty.textContent = emptyText;
       list.append(empty);
       return;
     }
@@ -134,7 +199,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     }
   };
 
-  const renderDaily = (entries) => {
+  const renderChecklistDaily = (entries) => {
     const list = document.querySelector('#daily-downloads');
     if (!list) return;
     list.replaceChildren();
@@ -156,9 +221,29 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     }
   };
 
-  const renderReport = (report) => {
+  const renderCheckoutDaily = (entries) => {
+    const body = document.querySelector('#daily-checkout');
+    if (!body) return;
+    body.replaceChildren();
+    for (const entry of entries) {
+      const row = document.createElement('tr');
+      const dateCell = document.createElement('th');
+      dateCell.scope = 'row';
+      dateCell.textContent = entry.date;
+      const views = document.createElement('td');
+      views.textContent = number(entry.views);
+      const clicks = document.createElement('td');
+      clicks.textContent = number(entry.buttonClicks);
+      const signIns = document.createElement('td');
+      signIns.textContent = number(entry.signInRedirects);
+      row.append(dateCell, views, clicks, signIns);
+      body.append(row);
+    }
+  };
+
+  const renderChecklistReport = (report) => {
     const checklist = report.checklist;
-    setText('#report-range', `${date(report.range.start)}–${date(report.range.end)}`);
+    setText('#checklist-report-range', `${date(report.range.start)}–${date(report.range.end)}`);
     setText('#metric-lifetime', number(checklist.lifetimeDownloads));
     setText('#metric-range', number(checklist.rangeDownloads));
     setText('#metric-previous', number(checklist.previousRangeDownloads));
@@ -170,12 +255,39 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     setText('#latest-download', checklist.mostRecentDownloadDate
       ? `Most recent download: ${date(checklist.mostRecentDownloadDate)}.`
       : 'No downloads in the selected period.');
-    renderDaily(checklist.daily);
-    renderRanking('#top-routes', checklist.attribution.routes);
-    renderRanking('#top-sources', checklist.attribution.sources);
-    renderRanking('#top-mediums', checklist.attribution.mediums);
-    renderRanking('#top-campaigns', checklist.attribution.campaigns);
-    dashboard.hidden = false;
+    renderChecklistDaily(checklist.daily);
+    renderRanking('#top-routes', checklist.attribution.routes, 'No attributed downloads yet.');
+    renderRanking('#top-sources', checklist.attribution.sources, 'No attributed downloads yet.');
+    renderRanking('#top-mediums', checklist.attribution.mediums, 'No attributed downloads yet.');
+    renderRanking('#top-campaigns', checklist.attribution.campaigns, 'No attributed downloads yet.');
+  };
+
+  const renderCheckoutReport = (report) => {
+    const checkout = report.checkout;
+    setText('#checkout-report-range', `${date(report.range.start)}–${date(report.range.end)}`);
+    setText('#checkout-semantics', checkout.eventSemantics);
+    setText('#checkout-lifetime-views', number(checkout.lifetime.views));
+    setText('#checkout-lifetime-clicks', number(checkout.lifetime.buttonClicks));
+    setText('#checkout-lifetime-sign-ins', number(checkout.lifetime.signInRedirects));
+    setText('#checkout-range-views', number(checkout.range.views));
+    setText('#checkout-range-clicks', number(checkout.range.buttonClicks));
+    setText('#checkout-range-sign-ins', number(checkout.range.signInRedirects));
+    setText('#checkout-click-rate', percent(checkout.range.buttonClickRatePercent));
+    setText('#checkout-sign-in-rate', percent(checkout.range.signInRedirectRatePercent));
+    renderCheckoutDaily(checkout.daily);
+    renderRanking('#checkout-top-sources', checkout.attribution.sources, 'No attributed checkout events yet.');
+    renderRanking('#checkout-top-mediums', checkout.attribution.mediums, 'No attributed checkout events yet.');
+    renderRanking('#checkout-top-campaigns', checkout.attribution.campaigns, 'No attributed checkout events yet.');
+  };
+
+  const requestReport = async (url) => {
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${reportToken}` },
+      cache: 'no-store',
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || `Report request failed (${response.status}).`);
+    return payload;
   };
 
   form.addEventListener('submit', async (event) => {
@@ -189,36 +301,63 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     loadButton.disabled = true;
     status.textContent = 'Loading aggregate statistics…';
     try {
-      const query = new URLSearchParams({ end: endInput.value, days: daysInput.value });
-      const response = await fetch(`/api/checklist-analytics?${query}`, {
-        headers: { Authorization: `Bearer ${reportToken}` },
+      const checklistQuery = new URLSearchParams({ end: endInput.value, days: daysInput.value });
+      const checkoutQuery = new URLSearchParams({
+        action: 'checkout-funnel-report',
+        end: endInput.value,
+        days: daysInput.value,
       });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || `Report request failed (${response.status}).`);
-      latestReport = payload;
+      const [checklistReport, checkoutReport] = await Promise.all([
+        requestReport(`/api/checklist-analytics?${checklistQuery}`),
+        requestReport(`/api/telemetry?${checkoutQuery}`),
+      ]);
+      latestChecklistReport = checklistReport;
+      latestCheckoutReport = checkoutReport;
       tokenInput.value = '';
-      renderReport(payload);
-      status.textContent = `Updated ${new Date(payload.generatedAt).toLocaleString()}.`;
+      renderChecklistReport(checklistReport);
+      renderCheckoutReport(checkoutReport);
+      dashboard.hidden = false;
+      const generatedAt = Math.max(
+        Date.parse(checklistReport.generatedAt),
+        Date.parse(checkoutReport.generatedAt),
+      );
+      status.textContent = `Reports generated ${new Date(generatedAt).toLocaleString()}.`;
     } catch (error) {
-      status.textContent = error instanceof Error ? error.message : 'Unable to load checklist analytics.';
+      status.textContent = error instanceof Error ? error.message : 'Unable to load aggregate analytics.';
     } finally {
       loadButton.disabled = false;
     }
   });
 
-  csvButton.addEventListener('click', () => {
-    if (!latestReport) return;
-    const rows = [
-      ['date', 'downloads'],
-      ...latestReport.checklist.daily.map((entry) => [entry.date, entry.downloads]),
-    ];
+  const downloadCsv = (filename, rows) => {
     const csv = rows.map((row) => row.join(',')).join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = `checklist-downloads-${latestReport.range.end}.csv`;
+    link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  checklistCsvButton.addEventListener('click', () => {
+    if (!latestChecklistReport) return;
+    downloadCsv(`checklist-downloads-${latestChecklistReport.range.end}.csv`, [
+      ['date', 'downloads'],
+      ...latestChecklistReport.checklist.daily.map((entry) => [entry.date, entry.downloads]),
+    ]);
+  });
+
+  checkoutCsvButton.addEventListener('click', () => {
+    if (!latestCheckoutReport) return;
+    downloadCsv(`checkout-funnel-${latestCheckoutReport.range.end}.csv`, [
+      ['date', 'views', 'button_clicks', 'sign_in_redirects'],
+      ...latestCheckoutReport.checkout.daily.map((entry) => [
+        entry.date,
+        entry.views,
+        entry.buttonClicks,
+        entry.signInRedirects,
+      ]),
+    ]);
   });
 </script>
 
@@ -232,27 +371,43 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .analytics-form label { display: grid; gap: 7px; color: var(--slate); font-size: 13px; font-weight: 800; }
   .analytics-form input, .analytics-form select { min-height: 44px; padding: 9px 11px; border: 1px solid #cdd4dc; border-radius: 8px; background: var(--white); color: var(--midnight); }
   .analytics-status { min-height: 24px; margin: 0; color: var(--slate); }
-  .analytics-dashboard { display: grid; gap: 28px; }
+  .analytics-dashboard { display: grid; gap: 52px; }
   .analytics-dashboard[hidden] { display: none; }
+  .analytics-report { display: grid; gap: 28px; }
+  .analytics-report + .analytics-report { padding-top: 42px; border-top: 1px solid #0b1f3324; }
+  .analytics-section-heading { align-items: end; }
+  .analytics-range { margin: 6px 0 0; color: var(--slate); }
   .analytics-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .checkout-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .analytics-metrics article { display: grid; gap: 8px; }
   .analytics-metrics span { color: var(--slate); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
   .analytics-metrics strong { color: var(--navy); font-size: 32px; }
   .analytics-chart-card { display: grid; gap: 22px; }
   .analytics-chart-card h3, .analytics-chart-card p { margin: 0; }
   .analytics-chart-card p, .analytics-note { color: var(--slate); }
+  .analytics-callout { margin: 0; padding: 14px 16px; border-left: 4px solid var(--gold); background: #f6f8fa; }
   .analytics-bars { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
   .analytics-bars li { display: grid; grid-template-columns: 52px minmax(0, 1fr) 40px; gap: 12px; align-items: center; }
   .analytics-bars time { color: var(--slate); font-size: 12px; }
   .analytics-bars strong { text-align: right; }
   .analytics-bar-track { height: 10px; overflow: hidden; border-radius: 999px; background: #e5e9ee; }
   .analytics-bar-track i { display: block; height: 100%; border-radius: inherit; background: var(--gold); }
+  .analytics-table-scroll { overflow-x: auto; }
+  .analytics-table { width: 100%; min-width: 620px; border-collapse: collapse; }
+  .analytics-table th, .analytics-table td { padding: 11px 12px; border-bottom: 1px solid #0b1f331f; text-align: right; }
+  .analytics-table th:first-child, .analytics-table td:first-child { text-align: left; }
+  .analytics-table thead th { color: var(--slate); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  .analytics-table tbody th { color: var(--navy); font-weight: 700; }
   .analytics-attribution-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .checkout-attribution-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .analytics-attribution-grid h3 { margin-top: 0; }
   .analytics-attribution-grid ol { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
   .analytics-attribution-grid li { display: flex; justify-content: space-between; gap: 16px; color: var(--slate); }
   .analytics-attribution-grid li strong { color: var(--navy); }
   .analytics-note { margin-top: -12px; }
+  @media (max-width: 1040px) {
+    .checkout-metrics, .checkout-attribution-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
   @media (max-width: 820px) {
     .analytics-form, .analytics-metrics, .analytics-attribution-grid { grid-template-columns: 1fr; }
     .analytics-form .button { justify-self: start; }

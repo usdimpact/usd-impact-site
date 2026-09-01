@@ -27,17 +27,24 @@ const {
 </noscript>
 
 <script>
-  import { bookPurchasePresentation } from '../lib/checkout-client.js';
+  import {
+    bookPurchasePresentation,
+    checkoutHrefWithCampaign,
+  } from '../lib/checkout-client.js';
 
   const purchaseContainer = document.getElementById('book-purchase-cta');
   const primaryCta = document.getElementById('book-primary-cta');
   const purchaseMessage = document.getElementById('book-purchase-message');
   const waitlist = document.getElementById('book-waitlist');
 
+  if (primaryCta instanceof HTMLAnchorElement) {
+    primaryCta.href = checkoutHrefWithCampaign('/checkout/', window.location.search);
+  }
+
   const renderPresentation = (presentation) => {
     if (!(primaryCta instanceof HTMLAnchorElement)) return;
     primaryCta.textContent = presentation.primaryLabel;
-    primaryCta.href = presentation.primaryHref;
+    primaryCta.href = checkoutHrefWithCampaign(presentation.primaryHref, window.location.search);
     if (purchaseContainer instanceof HTMLElement) {
       purchaseContainer.dataset.bookCheckoutReadiness = presentation.verificationState;
       purchaseContainer.setAttribute('aria-busy', 'false');

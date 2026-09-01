@@ -1,4 +1,28 @@
 const LEMON_SQUEEZY_PROVIDER = 'lemon-squeezy';
+const CHECKOUT_PATH = '/checkout/';
+const CAMPAIGN_PARAMETER_NAMES = Object.freeze([
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+]);
+const CAMPAIGN_VALUE_PATTERN = /^[a-zA-Z0-9._~-]{1,64}$/;
+
+export function checkoutHrefWithCampaign(href, search) {
+  if (href !== CHECKOUT_PATH || typeof search !== 'string') return href;
+
+  const source = new URLSearchParams(search);
+  const campaign = new URLSearchParams();
+
+  for (const name of CAMPAIGN_PARAMETER_NAMES) {
+    const value = source.get(name);
+    if (value && CAMPAIGN_VALUE_PATTERN.test(value)) {
+      campaign.set(name, value);
+    }
+  }
+
+  const query = campaign.toString();
+  return query ? `${CHECKOUT_PATH}?${query}` : CHECKOUT_PATH;
+}
 
 export function publicCheckoutCanOpen(commerce, disclosureRendered) {
   return commerce?.state === 'active'
@@ -30,7 +54,7 @@ export function bookPurchasePresentation(commerce) {
     available: checkout.available,
     verificationState: checkout.verificationState,
     primaryLabel: checkout.available ? 'Buy the Library Pass — USD 39' : 'Join the book waitlist',
-    primaryHref: checkout.available ? '/checkout/' : '#book-waitlist',
+    primaryHref: checkout.available ? CHECKOUT_PATH : '#book-waitlist',
     message: checkout.available
       ? 'The one-time USD 39 Library Pass checkout is open through Lemon Squeezy.'
       : checkout.verificationState === 'error'

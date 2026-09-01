@@ -3,14 +3,22 @@ import { readFile } from 'node:fs/promises';
 import {
   approvedLaunchCheckoutUrl,
   bookPurchasePresentation,
+  checkoutHrefWithCampaign,
   createCheckoutIdempotencyKey,
   publicCheckoutCanOpen,
   publicCheckoutPresentation,
 } from '../src/lib/checkout-client.js';
 
-const [checkoutPageSource, bookPurchaseCtaSource] = await Promise.all([
+const [
+  checkoutPageSource,
+  bookPurchaseCtaSource,
+  homeLibraryPassCtaSource,
+  sharedLibraryPassCtaSource,
+] = await Promise.all([
   readFile(new URL('../src/pages/checkout/index.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/components/BookPurchaseCTA.astro', import.meta.url), 'utf8'),
+  readFile(new URL('../src/components/HomeLibraryPassCTA.astro', import.meta.url), 'utf8'),
+  readFile(new URL('../src/components/LibraryPassAvailabilityCTA.astro', import.meta.url), 'utf8'),
 ]);
 assert.match(
   checkoutPageSource,
@@ -41,6 +49,68 @@ assert.doesNotMatch(
   bookPurchaseCtaSource,
   />Join the book waitlist<\/a>/,
   'The product-page hero must not render a stale waitlist CTA during its initial checking state.',
+);
+
+for (const [name, source] of [
+  ['book', bookPurchaseCtaSource],
+  ['home', homeLibraryPassCtaSource],
+  ['shared', sharedLibraryPassCtaSource],
+]) {
+  assert.match(
+    source,
+    /checkoutHrefWithCampaign/,
+    `${name} Library Pass CTA must use the shared campaign-continuity helper.`,
+  );
+  assert.match(
+    source,
+    /window\.location\.search/,
+    `${name} Library Pass CTA must derive campaign context from the current page query only.`,
+  );
+  assert.doesNotMatch(
+    source,
+    /localStorage|sessionStorage|document\.cookie|method:\s*['"]POST['"]/,
+    `${name} Library Pass CTA must not persist campaign context or create a commerce/telemetry POST.`,
+  );
+}
+
+assert.equal(
+  checkoutHrefWithCampaign(
+    '/checkout/',
+    '?utm_source=newsletter&utm_medium=email&utm_campaign=september_launch',
+  ),
+  '/checkout/?utm_source=newsletter&utm_medium=email&utm_campaign=september_launch',
+);
+assert.equal(
+  checkoutHrefWithCampaign(
+    '/checkout/',
+    '?utm_campaign=library-pass&utm_source=linkedin&utm_medium=social&utm_content=hero&gclid=secret&email=buyer%40example.com&next=%2Faccount%2F',
+  ),
+  '/checkout/?utm_source=linkedin&utm_medium=social&utm_campaign=library-pass',
+  'Only the three existing non-identifying campaign labels may cross into checkout.',
+);
+assert.equal(
+  checkoutHrefWithCampaign(
+    '/checkout/',
+    `?utm_source=${'a'.repeat(65)}&utm_medium=paid%20social&utm_campaign=launch%2Ftest`,
+  ),
+  '/checkout/',
+  'Overlong or character-invalid campaign labels must fail closed.',
+);
+assert.equal(
+  checkoutHrefWithCampaign('/checkout/', '?utm_source=valid&utm_medium=&utm_campaign=valid_2'),
+  '/checkout/?utm_source=valid&utm_campaign=valid_2',
+);
+assert.equal(checkoutHrefWithCampaign('/checkout/', ''), '/checkout/');
+assert.equal(checkoutHrefWithCampaign('/checkout/', null), '/checkout/');
+assert.equal(
+  checkoutHrefWithCampaign('#book-waitlist', '?utm_source=newsletter'),
+  '#book-waitlist',
+  'Waitlist fallback destinations must not be rewritten.',
+);
+assert.equal(
+  checkoutHrefWithCampaign('https://example.com/checkout/', '?utm_source=newsletter'),
+  'https://example.com/checkout/',
+  'External destinations must never be rewritten.',
 );
 
 const activeCommerce = {

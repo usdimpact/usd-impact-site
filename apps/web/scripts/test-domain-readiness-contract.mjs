@@ -74,11 +74,11 @@ requireText(files.privacy, 'Privacy Notice', [
   'support@usd-impact.com',
 ]);
 requireText(files.checkout, 'Checkout page', [
-  'Checkout is not open yet.',
+  'This page cannot verify checkout availability without JavaScript.',
   'Lemon Squeezy is the selected Merchant of Record',
   'No purchase control is shown unless every',
   'remains disabled',
-  'No payment can be made on this page',
+  'No payment can be initiated until verification completes',
   '/api/commerce-readiness',
   'browser redirect alone never grants access',
 ]);

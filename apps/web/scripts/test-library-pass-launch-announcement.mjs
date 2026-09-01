@@ -95,7 +95,10 @@ for (const required of [
   "credentials: 'same-origin'",
   "cache: 'no-store'",
   'bookPurchasePresentation(body.commerce)',
-  "primary.href = presentation.available ? presentation.primaryHref : waitlistUrl",
+  'checkoutHrefWithCampaign',
+  'window.location.search',
+  'primary.href = presentation.available',
+  ': waitlistUrl',
   "container.dataset.homeCheckoutReadiness = 'error'",
   'Checkout availability could not be verified. The book waitlist remains available.',
 ]) {
@@ -116,9 +119,11 @@ for (const required of [
   "credentials: 'same-origin'",
   "cache: 'no-store'",
   'return bookPurchasePresentation(body.commerce)',
+  'checkoutHrefWithCampaign',
+  'candidate.href = campaignCheckoutUrl()',
   'if (!presentation.available) continue',
   'candidate.textContent = presentation.primaryLabel',
-  'candidate.href = presentation.primaryHref',
+  'candidate.href = checkoutHrefWithCampaign(',
   "candidate.dataset.libraryPassCheckoutReadiness = 'error'",
 ]) {
   assert.ok(availabilityCta.includes(required), `Neutral Library Pass CTA is missing: ${required}`);

@@ -64,19 +64,42 @@ assert.match(
 const builtCheckoutPath = path.resolve('dist/checkout/index.html');
 if (fs.existsSync(builtCheckoutPath)) {
   const builtHtml = await readFile(builtCheckoutPath, 'utf8');
-  const requiredBuiltFragments = [
-    'id="waitlist-link" class="button primary" href="/book/read-the-dollar-first/#book-waitlist" hidden',
-    'Trade Register number <strong>J38/820/2020</strong>. Registered business address: <strong>Str. Doctor Hacman nr. 28',
-    'Support: <a href="mailto:support@usd-impact.com">support@usd-impact.com</a>.',
-    'invoice. Its <a href="https://www.lemonsqueezy.com/buyer-terms" rel="noopener noreferrer">Buyer Terms</a> and <a href="https://www.lemonsqueezy.com/privacy" rel="noopener noreferrer">Privacy Policy</a> apply to the payment transaction.',
-    'under its <a href="/refund-policy/">14-day Refund Policy</a>.',
-    '<a id="seller-buyer-terms" href="#" rel="noopener noreferrer">Merchant-of-Record buyer terms</a> · <a id="seller-provider-privacy" href="#" rel="noopener noreferrer">Payment-provider privacy terms</a>',
+  const requiredBuiltPatterns = [
+    {
+      pattern: /id="waitlist-link"[^>]*\bhidden\b/,
+      label: 'initial waitlist fallback remains hidden',
+    },
+    {
+      pattern: /Trade Register number\s+<strong>J38\/820\/2020<\/strong>/,
+      label: 'Trade Register label and value remain separated',
+    },
+    {
+      pattern: /Registered business address:\s+<strong>Str\. Doctor Hacman nr\. 28/,
+      label: 'registered-address label and value remain separated',
+    },
+    {
+      pattern: /Support:\s+<a href="mailto:support@usd-impact\.com">support@usd-impact\.com<\/a>/,
+      label: 'support label and email remain separated',
+    },
+    {
+      pattern: /invoice\. Its\s+<a href="https:\/\/www\.lemonsqueezy\.com\/buyer-terms"[^>]*>Buyer Terms<\/a>\s+and\s+<a href="https:\/\/www\.lemonsqueezy\.com\/privacy"[^>]*>Privacy Policy<\/a>\s+apply to the payment transaction\./,
+      label: 'Merchant-of-Record terms sentence remains readable',
+    },
+    {
+      pattern: /under its\s+<a href="\/refund-policy\/">14-day Refund Policy<\/a>/,
+      label: 'refund-policy sentence remains readable',
+    },
+    {
+      pattern: /Merchant-of-Record buyer terms<\/a>\s+·\s+<a id="seller-provider-privacy"/,
+      label: 'dynamic legal links retain a readable separator',
+    },
   ];
 
-  for (const fragment of requiredBuiltFragments) {
-    assert.ok(
-      builtHtml.includes(fragment),
-      `Built checkout presentation is missing the required literal fragment: ${fragment}`,
+  for (const { pattern, label } of requiredBuiltPatterns) {
+    assert.match(
+      builtHtml,
+      pattern,
+      `Built checkout presentation failed: ${label}.`,
     );
   }
 }

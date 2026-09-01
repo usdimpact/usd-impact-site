@@ -25,6 +25,10 @@
     {
       "path": "/api/account-deletion-finalizer",
       "schedule": "20 4 * * *"
+    },
+    {
+      "path": "/api/commerce-reconciliation",
+      "schedule": "0 5 * * *"
     }
   ],
   "rewrites": [
@@ -75,6 +79,10 @@
     {
       "source": "/api/commerce-readiness",
       "destination": "/api/account?action=commerce-readiness"
+    },
+    {
+      "source": "/api/commerce-reconciliation",
+      "destination": "/api/commerce?action=reconcile"
     },
     {
       "source": "/api/knowledge-search",
@@ -238,6 +246,23 @@
         {
           "key": "X-Robots-Tag",
           "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/api/commerce-reconciliation",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
         }
       ]
     }

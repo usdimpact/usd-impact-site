@@ -243,5 +243,64 @@ for (const [name, source] of [
   );
 }
 
+const firstGenuineBuyerRunbookSource = await readFile(
+  new URL('../../../docs/operations/lemon-squeezy-first-genuine-buyer-runbook.md', import.meta.url),
+  'utf8',
+);
+
+for (const required of [
+  /Draft operational runbook — read-only verification by default/i,
+  /first independent genuine buyer/i,
+  /The order must remain intact unless the buyer legitimately requests a refund/i,
+  /verifyLemonSqueezyWebhookSignature/,
+  /retrieveAuthoritativeLemonSqueezyOrder/,
+  /begin_commerce_webhook_receipt/,
+  /complete_commerce_purchase/,
+  /finish_commerce_webhook_receipt/,
+  /Exactly \*\*1\*\* trusted row/i,
+  /Exactly \*\*1\*\* row/i,
+  /ends_at` is null/i,
+  /payment\.completed/,
+  /provider_status='paid'`, `disposition='tracking'/,
+  /\/guided-edition\/book\//,
+  /\/guided-edition\/audiobook\//,
+  /\/guided-edition\/video-library\//,
+  /Candidate 2 remains the active private digital-reader artifact/i,
+  /signed URL lifetime remains exactly 300 seconds/i,
+  /protected 51-film catalog/i,
+  /once daily at 05:00 UTC/i,
+  /Do not manually invoke `\/api\/commerce-reconciliation`/i,
+  /partial_refund[\s\S]*review/i,
+  /fraudulent[\s\S]*payment\.revoked/i,
+  /Evidence workspace and privacy rules/i,
+  /redacted identifier suffixes or one-way SHA-256 digests/i,
+  /Do not impersonate the buyer/i,
+  /No manual database repair, synthetic transaction, synthetic refund/i,
+  /public website download, public Drive sharing, anonymous access/i,
+  /ISBN\/barcode action/i,
+]) {
+  assert.match(firstGenuineBuyerRunbookSource, required);
+}
+
+for (const forbidden of [
+  /sk_[a-zA-Z0-9]{12,}/,
+  /whsec_[a-zA-Z0-9]{12,}/,
+  /sb_secret_[a-zA-Z0-9]{12,}/,
+  /Bearer [a-zA-Z0-9._-]{16,}/,
+]) {
+  assert.doesNotMatch(firstGenuineBuyerRunbookSource, forbidden);
+}
+
+const sqlBlocks = [...firstGenuineBuyerRunbookSource.matchAll(/```sql\n([\s\S]*?)```/g)]
+  .map((match) => match[1]);
+assert.ok(sqlBlocks.length >= 1, 'First genuine buyer runbook must include read-only SQL verification.');
+for (const sql of sqlBlocks) {
+  assert.doesNotMatch(
+    sql,
+    /\b(?:insert|update|delete|upsert|alter|drop|create|truncate|grant|revoke|call)\b/i,
+    'First genuine buyer runbook SQL must remain read-only.',
+  );
+}
+
 assert.doesNotMatch(vercelSource, /api\/paddle|paddle-webhook/i);
 console.log('Provider-neutral commerce deployment contract passed.');

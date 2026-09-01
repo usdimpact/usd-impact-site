@@ -8,6 +8,8 @@ export const THREE_DIALS_THRESHOLDS = Object.freeze({
   fundingFlatBps: 3,
 });
 
+const THRESHOLD_BOUNDARY_EPSILON = 1e-9;
+
 function finite(value, label) {
   if (!Number.isFinite(value)) {
     throw new TypeError(`${label} must be a finite number.`);
@@ -15,10 +17,22 @@ function finite(value, label) {
   return value;
 }
 
+function normalizeThresholdBoundary(value, threshold) {
+  const checked = finite(value, 'change');
+
+  // Decimal source values can produce binary floating-point noise at an exact
+  // published boundary, for example (2.60 - 2.70) * 100. Snap only values
+  // within one nanounit of either boundary; genuinely beyond-boundary moves
+  // remain directional.
+  if (Math.abs(checked - threshold) <= THRESHOLD_BOUNDARY_EPSILON) return threshold;
+  if (Math.abs(checked + threshold) <= THRESHOLD_BOUNDARY_EPSILON) return -threshold;
+  return checked;
+}
+
 function classify(value, threshold, positive, negative, flat) {
-  finite(value, 'change');
-  if (value > threshold) return positive;
-  if (value < -threshold) return negative;
+  const normalizedValue = normalizeThresholdBoundary(value, threshold);
+  if (normalizedValue > threshold) return positive;
+  if (normalizedValue < -threshold) return negative;
   return flat;
 }
 

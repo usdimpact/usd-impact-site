@@ -1,0 +1,57 @@
+---
+interface Props {
+  className?: string;
+}
+
+const { className = 'button primary' } = Astro.props;
+---
+<a
+  class={className}
+  href="/checkout/"
+  data-library-pass-availability-cta
+  data-library-pass-checkout-readiness="checking"
+>Check Library Pass availability</a>
+
+<script>
+  import { bookPurchasePresentation } from '../lib/checkout-client.js';
+
+  const candidates = Array.from(
+    document.querySelectorAll('a[data-library-pass-availability-cta]'),
+  );
+
+  if (
+    candidates.length > 0
+    && document.documentElement.dataset.libraryPassAvailabilityRequested !== 'true'
+  ) {
+    document.documentElement.dataset.libraryPassAvailabilityRequested = 'true';
+
+    fetch('/api/commerce-readiness', {
+      method: 'GET',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || !body.commerce) {
+          throw new Error('Commerce readiness could not be verified.');
+        }
+        return bookPurchasePresentation(body.commerce);
+      })
+      .then((presentation) => {
+        for (const candidate of candidates) {
+          if (!(candidate instanceof HTMLAnchorElement)) continue;
+          candidate.dataset.libraryPassCheckoutReadiness = presentation.verificationState;
+          if (!presentation.available) continue;
+          candidate.textContent = presentation.primaryLabel;
+          candidate.href = presentation.primaryHref;
+        }
+      })
+      .catch(() => {
+        for (const candidate of candidates) {
+          if (!(candidate instanceof HTMLAnchorElement)) continue;
+          candidate.dataset.libraryPassCheckoutReadiness = 'error';
+        }
+      });
+  }
+</script>

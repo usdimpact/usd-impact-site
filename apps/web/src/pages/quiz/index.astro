@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import LibraryPassAvailabilityCTA from '../../components/LibraryPassAvailabilityCTA.astro';
 import accessMap from '../../data/quiz-access-map.json';
 import '../../styles/quiz.css';
 
@@ -11,7 +12,6 @@ const catalog = accessMap.quizzes.map((access) => ({
   access,
   quiz: quizByCanonicalId.get(access.canonicalId),
 }));
-const purchaseUrl = import.meta.env.PUBLIC_BOOK_PURCHASE_URL || accessMap.purchaseFallbackUrl;
 ---
 
 <BaseLayout
@@ -26,7 +26,7 @@ const purchaseUrl = import.meta.env.PUBLIC_BOOK_PURCHASE_URL || accessMap.purcha
         Read each released chapter, complete its checkpoint, and continue through the learning path. The pass mark is {accessMap.passScore}/10.
       </p>
       <div class="button-row">
-        <a class="button primary" href={purchaseUrl}>Join the book waitlist</a>
+        <LibraryPassAvailabilityCTA className="button primary" />
         <a class="button secondary" href="/start-here/">Start reading</a>
       </div>
     </div>

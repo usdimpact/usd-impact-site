@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 
 import QuizEngine from '../../components/QuizEngine.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import LibraryPassAvailabilityCTA from '../../components/LibraryPassAvailabilityCTA.astro';
 import accessMap from '../../data/quiz-access-map.json';
 
 export async function getStaticPaths() {
@@ -25,7 +26,7 @@ export async function getStaticPaths() {
 }
 
 const { quiz, access } = Astro.props;
-const purchaseUrl = import.meta.env.PUBLIC_BOOK_PURCHASE_URL || accessMap.purchaseFallbackUrl;
+const purchaseUrl = accessMap.purchaseFallbackUrl;
 ---
 
 <BaseLayout title={quiz.seoTitle || quiz.title} description={quiz.metaDescription}>
@@ -42,7 +43,7 @@ const purchaseUrl = import.meta.env.PUBLIC_BOOK_PURCHASE_URL || accessMap.purcha
         ) : (
           <a class="button secondary" href="/quiz/">View all quizzes</a>
         )}
-        <a class="button primary" href={purchaseUrl}>Join the book waitlist</a>
+        <LibraryPassAvailabilityCTA className="button primary" />
       </div>
     </div>
   </section>

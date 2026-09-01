@@ -32,6 +32,16 @@ assert.match(
   /:global\(#book-waitlist\[hidden\]\)\s*\{\s*display:\s*none;\s*\}/,
   'The active product-page state must keep the waitlist visually hidden despite component display styles.',
 );
+assert.match(
+  bookPurchaseCtaSource,
+  /id="book-primary-cta"[\s\S]*href="\/checkout\/"[\s\S]*>Check Library Pass availability<\/a>/,
+  'The product-page hero must render a neutral checkout destination before Live readiness settles.',
+);
+assert.doesNotMatch(
+  bookPurchaseCtaSource,
+  />Join the book waitlist<\/a>/,
+  'The product-page hero must not render a stale waitlist CTA during its initial checking state.',
+);
 
 const activeCommerce = {
   state: 'active',

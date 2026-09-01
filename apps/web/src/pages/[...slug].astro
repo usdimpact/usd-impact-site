@@ -36,10 +36,14 @@ const requestedPrimary = entry.data.ctaPrimary;
 const requestedPrimaryHref = entry.data.ctaPrimaryHref;
 const requestedSecondaryHref = entry.data.ctaSecondaryHref;
 const requestedSecondaryDownload = entry.data.ctaSecondaryDownload;
-const primaryLabel = requestedPrimary === 'Get the book' || requestedPrimary === 'Explore the book'
-  ? 'Join the book waitlist'
+const isLibraryPassAcquisition = requestedPrimary === 'Get the book'
+  || requestedPrimary === 'Explore the book';
+const primaryLabel = isLibraryPassAcquisition
+  ? 'Check Library Pass availability'
   : requestedPrimary;
-const primaryHref = requestedPrimaryHref ?? `${bookSlug}/#book-waitlist`;
+const primaryHref = isLibraryPassAcquisition
+  ? '/checkout/'
+  : requestedPrimaryHref ?? `${bookSlug}/#book-waitlist`;
 const secondaryHref = requestedSecondaryHref ?? downloadPath;
 const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref === undefined;
 ---
@@ -62,6 +66,7 @@ const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref =
           secondary={entry.data.ctaSecondary}
           secondaryHref={secondaryHref}
           secondaryDownload={secondaryDownload}
+          libraryPassAvailability={isLibraryPassAcquisition}
         />
       )}
     </div>

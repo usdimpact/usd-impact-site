@@ -36,16 +36,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </div>
       </dl>
       <p id="commerce-message" class="account-status" role="status" aria-live="polite">
-        No payment can be made on this page. A browser redirect alone never grants access.
+        No payment can be initiated until verification completes. A browser redirect alone never grants access.
       </p>
       <noscript>
-        <p>Checkout is not open yet. JavaScript is required to verify the Live release gates.</p>
+        <p>This page cannot verify checkout availability without JavaScript. No purchase control is shown until verification succeeds.</p>
       </noscript>
       <div class="button-row account-actions">
         <button id="checkout-button" class="button primary" type="button" hidden>
           Continue to secure checkout — USD 39
         </button>
-        <a id="waitlist-link" class="button primary" href="/book/read-the-dollar-first/#book-waitlist">Join the launch waitlist</a>
+        <a id="waitlist-link" class="button primary" href="/book/read-the-dollar-first/#book-waitlist" hidden>Join the launch waitlist</a>
         <a class="button account-secondary" href="/account/">Return to your account</a>
       </div>
     </section>
@@ -67,18 +67,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </ul>
       <p>
         Approved seller disclosure: <strong>USD Impact</strong> is operated by <strong>KELA LEADS S.R.L.</strong>,
-        a company registered in Romania under CUI <strong>40790448</strong> and Trade Register number
-        <strong>J38/820/2020</strong>. Registered business address:
+        a company registered in Romania under CUI <strong>40790448</strong> and Trade Register number{' '}
+        <strong>J38/820/2020</strong>. Registered business address:{' '}
         <strong>Str. Doctor Hacman nr. 28, bl. 83, sc. B, ap. 9, 240232 Râmnicu Vâlcea, România</strong>.
-        Support: <a href="mailto:support@usd-impact.com">support@usd-impact.com</a>.
+        Support:{' '}<a href="mailto:support@usd-impact.com">support@usd-impact.com</a>.
       </p>
       <p>
         The one-time <em>Read the Dollar First Library Pass</em> is sold through <strong>Lemon Squeezy</strong>,
         whose current legal operator is <strong>Link, LLC f/k/a Lemon Squeezy LLC</strong>, acting as Merchant of
         Record and authorized reseller. Lemon Squeezy provides the hosted checkout, processes payment, and issues
-        the applicable payment receipt or invoice. Its
-        <a href="https://www.lemonsqueezy.com/buyer-terms" rel="noopener noreferrer">Buyer Terms</a> and
-        <a href="https://www.lemonsqueezy.com/privacy" rel="noopener noreferrer">Privacy Policy</a> apply to the
+        the applicable payment receipt or invoice. Its{' '}
+        <a href="https://www.lemonsqueezy.com/buyer-terms" rel="noopener noreferrer">Buyer Terms</a>{' '}and{' '}
+        <a href="https://www.lemonsqueezy.com/privacy" rel="noopener noreferrer">Privacy Policy</a>{' '}apply to the
         payment transaction.
       </p>
       <p>
@@ -90,7 +90,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         Company registration: CUI 40790448 · Trade Register J38/820/2020 · EUID ROONRC.J38/820/2020.
       </p>
       <p>
-        USD Impact owns product, account, and access support and reviews refund requests under its
+        USD Impact owns product, account, and access support and reviews refund requests under its{' '}
         <a href="/refund-policy/">14-day Refund Policy</a>. Lemon Squeezy processes approved payment refunds and
         handles payment-specific transaction support, disputes, and chargebacks.
       </p>
@@ -116,8 +116,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <div><dt>USD Impact support</dt><dd id="seller-support-email"></dd></div>
       </dl>
       <p>
-        <a id="seller-buyer-terms" href="#" rel="noopener noreferrer">Merchant-of-Record buyer terms</a>
-        ·
+        <a id="seller-buyer-terms" href="#" rel="noopener noreferrer">Merchant-of-Record buyer terms</a>{' '}·{' '}
         <a id="seller-provider-privacy" href="#" rel="noopener noreferrer">Payment-provider privacy terms</a>
       </p>
     </section>

@@ -70,27 +70,27 @@ if (fs.existsSync(builtCheckoutPath)) {
       label: 'initial waitlist fallback remains hidden',
     },
     {
-      pattern: /Trade Register number\s+<strong>J38\/820\/2020<\/strong>/,
+      pattern: /Trade Register number\s+<strong\b[^>]*>J38\/820\/2020<\/strong>/,
       label: 'Trade Register label and value remain separated',
     },
     {
-      pattern: /Registered business address:\s+<strong>Str\. Doctor Hacman nr\. 28/,
+      pattern: /Registered business address:\s+<strong\b[^>]*>Str\. Doctor Hacman nr\. 28/,
       label: 'registered-address label and value remain separated',
     },
     {
-      pattern: /Support:\s+<a href="mailto:support@usd-impact\.com">support@usd-impact\.com<\/a>/,
+      pattern: /Support:\s+<a\b[^>]*href="mailto:support@usd-impact\.com"[^>]*>support@usd-impact\.com<\/a>/,
       label: 'support label and email remain separated',
     },
     {
-      pattern: /invoice\. Its\s+<a href="https:\/\/www\.lemonsqueezy\.com\/buyer-terms"[^>]*>Buyer Terms<\/a>\s+and\s+<a href="https:\/\/www\.lemonsqueezy\.com\/privacy"[^>]*>Privacy Policy<\/a>\s+apply to the payment transaction\./,
+      pattern: /invoice\. Its\s+<a\b[^>]*href="https:\/\/www\.lemonsqueezy\.com\/buyer-terms"[^>]*>Buyer Terms<\/a>\s+and\s+<a\b[^>]*href="https:\/\/www\.lemonsqueezy\.com\/privacy"[^>]*>Privacy Policy<\/a>\s+apply to the payment transaction\./,
       label: 'Merchant-of-Record terms sentence remains readable',
     },
     {
-      pattern: /under its\s+<a href="\/refund-policy\/">14-day Refund Policy<\/a>/,
+      pattern: /under its\s+<a\b[^>]*href="\/refund-policy\/"[^>]*>14-day Refund Policy<\/a>/,
       label: 'refund-policy sentence remains readable',
     },
     {
-      pattern: /Merchant-of-Record buyer terms<\/a>\s+·\s+<a id="seller-provider-privacy"/,
+      pattern: /Merchant-of-Record buyer terms<\/a>\s+·\s+<a\b[^>]*id="seller-provider-privacy"/,
       label: 'dynamic legal links retain a readable separator',
     },
   ];

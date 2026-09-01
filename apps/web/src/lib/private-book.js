@@ -13,7 +13,7 @@ export const privateBookDocument = Object.freeze({
   file: 'USD_Impact_Read_the_Dollar_First_Edition_1.3_v5.95_Phase2C_Scoped_Candidate_2.pdf',
   size: 2281645,
   sha256: 'b96bf8cdc90a69112f367ef66dafe30b1e0fc2402edc43f249d8525db9fe3666',
-  accessibility: 'This review PDF is untagged and is not PDF/UA-conformant.',
+  accessibility: 'This private digital-reader PDF is untagged and is not PDF/UA-conformant. This limitation is accepted for private Library Pass delivery. The PDF must not be represented as PDF/UA-conformant.',
   objectPath: `${PRIVATE_BOOK_PREFIX}/USD_Impact_Read_the_Dollar_First_Edition_1.3_v5.95_Phase2C_Scoped_Candidate_2.pdf`,
 });
 

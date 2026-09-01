@@ -64,33 +64,19 @@ assert.match(
 const builtCheckoutPath = path.resolve('dist/checkout/index.html');
 if (fs.existsSync(builtCheckoutPath)) {
   const builtHtml = await readFile(builtCheckoutPath, 'utf8');
-  assert.match(
-    builtHtml,
-    /id="waitlist-link"[^>]*\bhidden\b/,
-    'The built checkout page must keep the waitlist fallback hidden during the initial checking state.',
-  );
+  const requiredBuiltFragments = [
+    'id="waitlist-link" class="button primary" href="/book/read-the-dollar-first/#book-waitlist" hidden',
+    'Trade Register number <strong>J38/820/2020</strong>. Registered business address: <strong>Str. Doctor Hacman nr. 28',
+    'Support: <a href="mailto:support@usd-impact.com">support@usd-impact.com</a>.',
+    'invoice. Its <a href="https://www.lemonsqueezy.com/buyer-terms" rel="noopener noreferrer">Buyer Terms</a> and <a href="https://www.lemonsqueezy.com/privacy" rel="noopener noreferrer">Privacy Policy</a> apply to the payment transaction.',
+    'under its <a href="/refund-policy/">14-day Refund Policy</a>.',
+    '<a id="seller-buyer-terms" href="#" rel="noopener noreferrer">Merchant-of-Record buyer terms</a> · <a id="seller-provider-privacy" href="#" rel="noopener noreferrer">Payment-provider privacy terms</a>',
+  ];
 
-  const normalizedText = builtHtml
-    .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style\b[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  for (const requiredText of [
-    'Trade Register number J38/820/2020',
-    'Registered business address: Str. Doctor Hacman nr. 28',
-    'Support: support@usd-impact.com',
-    'Its Buyer Terms and Privacy Policy apply to the payment transaction.',
-    'under its 14-day Refund Policy',
-    'Merchant-of-Record buyer terms · Payment-provider privacy terms',
-  ]) {
+  for (const fragment of requiredBuiltFragments) {
     assert.ok(
-      normalizedText.includes(requiredText),
-      `Built checkout disclosure is missing readable inline spacing: ${requiredText}`,
+      builtHtml.includes(fragment),
+      `Built checkout presentation is missing the required literal fragment: ${fragment}`,
     );
   }
 }

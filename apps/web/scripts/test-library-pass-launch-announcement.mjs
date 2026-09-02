@@ -67,6 +67,9 @@ for (const required of [
   'un único pago de USD 39',
   'Open secure checkout / Abrir checkout seguro',
   'href="/checkout/"',
+  'checkoutHrefWithCampaign',
+  "const announcementCta = document.querySelector('.library-pass-launch-announcement__cta')",
+  "announcementCta.href = checkoutHrefWithCampaign('/checkout/', window.location.search)",
   '@media (max-width: 760px)',
 ]) {
   assert.ok(component.includes(required), `Launch announcement is missing: ${required}`);
@@ -74,10 +77,14 @@ for (const required of [
 
 for (const forbidden of [
   '/api/commerce?action=checkout',
+  "method: 'POST'",
   'window.location.assign',
   'lemonsqueezy.com',
+  'localStorage',
+  'sessionStorage',
+  'document.cookie',
 ]) {
-  assert.ok(!component.includes(forbidden), `Launch announcement must not initiate checkout: ${forbidden}`);
+  assert.ok(!component.includes(forbidden), `Launch announcement must not initiate checkout or persist attribution: ${forbidden}`);
 }
 
 assert.match(layout, /import LibraryPassLaunchAnnouncement from '..\/components\/LibraryPassLaunchAnnouncement\.astro';/);

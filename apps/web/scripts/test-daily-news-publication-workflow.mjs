@@ -92,6 +92,11 @@ const pollStep = workflow.match(
   /      - name: Poll background news generation\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Import as published content)/,
 );
 assert.ok(pollStep, 'background polling shell must be present');
+assert.match(
+  workflow,
+  /build-and-publish:[\s\S]*timeout-minutes: 120/,
+  'the Daily job must leave enough time for both bounded 40-minute generation leases and validation',
+);
 const pollRequest = pollStep[1].match(
   /http_code="\$\(curl[\s\S]*?--write-out '%\{http_code\}'\)"/,
 );
@@ -132,8 +137,28 @@ assert.match(
 );
 assert.match(
   pollStep[1],
+  /max_active_seconds=2400[\s\S]*regeneration_used=false[\s\S]*while true/,
+  'each actual background response must receive a 40-minute active polling lease',
+);
+assert.match(
+  pollStep[1],
+  /if \[ "\$status" != "queued" \] && \[ "\$status" != "in_progress" \]; then[\s\S]*saw_active_response=true[\s\S]*continue/,
+  'queued and in-progress responses must remain nonterminal and continue polling',
+);
+assert.match(
+  pollStep[1],
+  /if \[ "\$regeneration_used" = "false" \] && node scripts\/daily-news-retry-policy\.mjs[\s\S]*regeneration_used=true[\s\S]*generation_attempt=2/,
+  'the workflow must permit exactly one full regeneration only after the reviewed retry policy accepts a terminal payload',
+);
+assert.match(
+  pollStep[1],
+  /poll-active-timeout[\s\S]*No regeneration was started because the response never reached a retryable terminal state/,
+  'an active-response timeout must fail accurately without pretending that regeneration occurred',
+);
+assert.doesNotMatch(
+  pollStep[1],
   /for generation_attempt in 1 2/,
-  'the workflow must permit only the initial generation and one bounded full regeneration',
+  'fixed poll-loop exhaustion must not advance a synthetic generation attempt',
 );
 assert.match(
   pollStep[1],
@@ -167,6 +192,11 @@ assert.match(
   /cron: '17 12 \* \* 1-5'/,
   'the backstop must run after the primary 09:17 UTC Daily schedule',
 );
+assert.match(
+  backstop,
+  /cron: '47 15 \* \* 1-5'/,
+  'the backstop must have a second delayed-schedule observation without expanding the recovery budget',
+);
 assert.match(backstop, /actions: write/, 'the backstop needs only Actions write permission to dispatch recovery');
 assert.match(backstop, /contents: read/, 'the backstop must keep repository contents read-only');
 assert.match(backstop, /pull-requests: read/, 'the backstop must inspect review state without writing PRs');
@@ -194,6 +224,11 @@ assert.match(
   backstop,
   /active_count[\s\S]*success_count[\s\S]*failed_count[\s\S]*gh workflow run daily-news\.yml --repo "\$GITHUB_REPOSITORY" --ref main/,
   'the backstop must record earlier outcomes and dispatch only when no current-day Daily run is active and no publication artifact exists',
+);
+assert.match(
+  backstop,
+  /recovery_dispatch_count=.*\.event == "workflow_dispatch"[\s\S]*if \[ "\$recovery_dispatch_count" -gt 0 \]; then[\s\S]*one-recovery budget is exhausted[\s\S]*exit 0[\s\S]*gh workflow run daily-news\.yml/,
+  'multiple backstop observations must still permit at most one Daily recovery dispatch per UTC edition',
 );
 assert.doesNotMatch(
   backstop,

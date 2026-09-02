@@ -2,8 +2,8 @@ name: Daily USD Impact Health
 
 on:
   schedule:
-    # Daily publication starts at 09:17 UTC and requires protected review/merge before deployment health is meaningful.
-    - cron: '45 13 * * 1-5'
+    # Run after the primary and both bounded backstop observation windows.
+    - cron: '45 18 * * 1-5'
   workflow_dispatch:
 
 permissions:
@@ -30,7 +30,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_NAME: daily-news.yml
-          MAX_AGE_HOURS: '6'
+          MAX_AGE_HOURS: '12'
+          MAX_ACTIVE_MINUTES: '130'
         run: |
           set -euo pipefail
 
@@ -56,9 +57,12 @@ jobs:
           expected_date="${created_at:0:10}"
 
           now_epoch="$(date -u +%s)"
+          created_epoch="$(date -u -d "$created_at" +%s)"
           updated_epoch="$(date -u -d "$updated_at" +%s)"
+          active_age_seconds="$((now_epoch - created_epoch))"
           age_seconds="$((now_epoch - updated_epoch))"
           max_age_seconds="$((MAX_AGE_HOURS * 3600))"
+          max_active_seconds="$((MAX_ACTIVE_MINUTES * 60))"
           operational_conclusion="$conclusion"
           failure_stage='none'
 
@@ -95,7 +99,14 @@ jobs:
           fi
 
           if [ "$status" != "completed" ]; then
-            echo "- Failure: the latest run is not complete." >> daily-health-report.md
+            if [ "$active_age_seconds" -ge 0 ] && [ "$active_age_seconds" -le "$max_active_seconds" ]; then
+              echo "- Operational conclusion: generation_pending" >> daily-health-report.md
+              echo "- Result: the latest run is active within its ${MAX_ACTIVE_MINUTES}-minute execution allowance." >> daily-health-report.md
+              echo "state=pending" >> "$GITHUB_OUTPUT"
+              cat daily-health-report.md
+              exit 0
+            fi
+            echo "- Failure: the latest run has remained active beyond ${MAX_ACTIVE_MINUTES} minutes." >> daily-health-report.md
             exit 1
           fi
 
@@ -151,12 +162,37 @@ jobs:
             exit 1
           fi
 
+          expected_title="Publish Daily USD Impact — $expected_date"
+          expected_file="apps/web/src/content/news/$expected_date.md"
+          expected_head_prefix="automation/daily-usd-impact-$expected_date-"
+          if ! gh api "repos/$GITHUB_REPOSITORY/contents/$expected_file?ref=main" >/dev/null 2>&1; then
+            editorial_pr="$(gh pr list \
+              --repo "$GITHUB_REPOSITORY" \
+              --state open \
+              --base main \
+              --limit 100 \
+              --json number,title,headRefName,url \
+              --jq ".[] | select(.title == \"$expected_title\" and (.headRefName | startswith(\"$expected_head_prefix\"))) | [.number, .url] | @tsv" \
+              | head -n 1)"
+            if [ -n "$editorial_pr" ]; then
+              echo "- Operational conclusion: awaiting_editorial_review" >> daily-health-report.md
+              echo "- Publication PR: $(printf '%s' "$editorial_pr" | cut -f2)" >> daily-health-report.md
+              echo "- Result: generation and publication handoff succeeded; protected editorial review is pending." >> daily-health-report.md
+              echo "state=pending" >> "$GITHUB_OUTPUT"
+              cat daily-health-report.md
+              exit 0
+            fi
+            echo "- Failure: the workflow succeeded but neither the expected main file nor an open exact publication PR exists." >> daily-health-report.md
+            exit 1
+          fi
+
           node apps/web/scripts/check-daily-news-deployment-health.mjs \
             --expected-date "$expected_date" \
             --base-url "https://www.usd-impact.com" \
             --report daily-health-report.md
 
           echo "- Result: healthy." >> daily-health-report.md
+          echo "state=healthy" >> "$GITHUB_OUTPUT"
           cat daily-health-report.md
 
       - name: Open or update daily health issue
@@ -204,7 +240,7 @@ jobs:
           fi
 
       - name: Close recovered daily health issue
-        if: steps.health.outcome == 'success'
+        if: steps.health.outcome == 'success' && steps.health.outputs.state == 'healthy'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_TITLE: P1 — Daily USD Impact automation requires attention

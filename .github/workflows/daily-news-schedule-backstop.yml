@@ -3,6 +3,7 @@ name: Daily USD Impact schedule backstop
 on:
   schedule:
     - cron: '17 12 * * 1-5'
+    - cron: '47 15 * * 1-5'
   workflow_dispatch:
 
 permissions:
@@ -61,9 +62,16 @@ jobs:
           active_count="$(jq --arg day "$today" '[.workflow_runs[] | select((.created_at | startswith($day)) and (.status != "completed"))] | length' <<< "$runs_json")"
           success_count="$(jq --arg day "$today" '[.workflow_runs[] | select((.created_at | startswith($day)) and .status == "completed" and .conclusion == "success")] | length' <<< "$runs_json")"
           failed_count="$(jq --arg day "$today" '[.workflow_runs[] | select((.created_at | startswith($day)) and .status == "completed" and .conclusion != "success")] | length' <<< "$runs_json")"
+          recovery_dispatch_count="$(jq --arg day "$today" '[.workflow_runs[] | select((.created_at | startswith($day)) and .event == "workflow_dispatch")] | length' <<< "$runs_json")"
 
           if [ "$active_count" -gt 0 ]; then
             echo "- Result: a Daily run for today is already active; no duplicate recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if [ "$recovery_dispatch_count" -gt 0 ]; then
+            echo "- Result: a Daily recovery was already dispatched today; the one-recovery budget is exhausted." >> "$GITHUB_STEP_SUMMARY"
+            echo "- Earlier recovery dispatches today: $recovery_dispatch_count" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 

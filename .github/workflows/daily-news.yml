@@ -18,7 +18,7 @@ concurrency:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 120
     defaults:
       run:
         working-directory: apps/web
@@ -136,9 +136,18 @@ jobs:
         run: |
           response_id="$OPENAI_RESPONSE_ID"
           poll_payload="$RUNNER_TEMP/daily-usd-impact-poll.json"
+          max_active_seconds=2400
+          generation_attempt=1
+          regeneration_used=false
 
-          for generation_attempt in 1 2; do
-            for poll_attempt in $(seq 1 18); do
+          while true; do
+            poll_attempt=0
+            active_started_at="$(date -u +%s)"
+            retry_started=false
+            saw_active_response=false
+
+            while [ "$(date -u +%s)" -lt "$((active_started_at + max_active_seconds))" ]; do
+              poll_attempt="$((poll_attempt + 1))"
               poll_url="${BACKGROUND_ENDPOINT}?response_id=${response_id}"
               rm -f "$poll_payload"
               curl_exit=0
@@ -177,12 +186,18 @@ jobs:
                   const payload = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/daily-usd-impact-poll.json", "utf8"));
                   process.stdout.write(String(payload.status || "pending"));
                 ')"
+                if [ "$status" != "queued" ] && [ "$status" != "in_progress" ]; then
+                  echo "::error::Background endpoint returned HTTP 202 with unknown status $status."
+                  cat "$poll_payload"
+                  exit 1
+                fi
+                saw_active_response=true
                 echo "Generation attempt $generation_attempt, poll $poll_attempt: $status"
                 sleep 20
                 continue
               fi
 
-              if [ "$generation_attempt" = "1" ] && node scripts/daily-news-retry-policy.mjs "$poll_payload"; then
+              if [ "$regeneration_used" = "false" ] && node scripts/daily-news-retry-policy.mjs "$poll_payload"; then
                 echo "Recoverable generation or bounded-repair failure detected; starting one bounded full regeneration attempt."
                 curl --fail --silent --show-error --location \
                   --request POST --max-time 60 \
@@ -198,6 +213,9 @@ jobs:
                   }
                   process.stdout.write(payload.id);
                 ')"
+                regeneration_used=true
+                generation_attempt=2
+                retry_started=true
                 echo "Started retry background response $response_id"
                 break
               fi
@@ -207,13 +225,24 @@ jobs:
               exit 1
             done
 
-            if [ "$generation_attempt" = "2" ]; then
-              if [ ! -s "$poll_payload" ]; then
-                printf '{"code":"poll-transport-retries-exhausted","error":"Background polling exhausted its bounded transport retries","status":"failed"}\n' > "$poll_payload"
-              fi
-              echo "Background news generation did not complete successfully after one bounded regeneration attempt."
-              exit 1
+            if [ "$retry_started" = "true" ]; then
+              continue
             fi
+
+            if [ "$saw_active_response" = "true" ]; then
+              printf '{"code":"poll-active-timeout","error":"Background response remained queued or in progress beyond its 40-minute polling lease","status":"%s","responseId":"%s","generationAttempt":%s}\n' \
+                "$status" "$response_id" "$generation_attempt" > "$poll_payload"
+              echo "::error::Background response $response_id remained $status beyond its 40-minute polling lease."
+              if [ "$regeneration_used" = "false" ]; then
+                echo "::error::No regeneration was started because the response never reached a retryable terminal state."
+              else
+                echo "::error::The single bounded full regeneration remained active beyond its polling lease."
+              fi
+            else
+              printf '{"code":"poll-transport-retries-exhausted","error":"Background polling exhausted its bounded transport retry lease","status":"failed"}\n' > "$poll_payload"
+              echo "::error::Background polling exhausted its 40-minute transport retry lease."
+            fi
+            exit 1
           done
 
       - name: Import as published content

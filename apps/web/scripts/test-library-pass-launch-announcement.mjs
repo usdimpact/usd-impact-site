@@ -87,8 +87,11 @@ for (const forbidden of [
   assert.ok(!component.includes(forbidden), `Launch announcement must not initiate checkout or persist attribution: ${forbidden}`);
 }
 
-assert.match(layout, /import LibraryPassLaunchAnnouncement from '..\/components\/LibraryPassLaunchAnnouncement\.astro';/);
-assert.match(layout, /<\/header>\s*<LibraryPassLaunchAnnouncement \/>\s*<slot \/>/);
+assert.doesNotMatch(
+  layout,
+  /LibraryPassLaunchAnnouncement/,
+  'Global Library Pass launch announcement must remain disabled.',
+);
 
 for (const required of [
   'data-home-library-pass-cta',
@@ -170,4 +173,4 @@ assert.match(homepage, /import HomeLibraryPassCTA from '..\/components\/HomeLibr
 assert.match(homepage, /<HomeLibraryPassCTA \/>/);
 assert.doesNotMatch(homepage, /<ProductCTA \/>/);
 
-console.log('Library Pass launch announcement and acquisition CTA contract passed.');
+console.log('Library Pass global announcement disablement and acquisition CTA contract passed.');

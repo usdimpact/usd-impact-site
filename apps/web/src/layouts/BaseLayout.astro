@@ -1,7 +1,6 @@
 ---
 import '../styles/global.css';
 import '../styles/account.css';
-import LibraryPassLaunchAnnouncement from '../components/LibraryPassLaunchAnnouncement.astro';
 import BookChapterBridgeCard from '../components/BookChapterBridgeCard.astro';
 import ConsentClient from '../components/ConsentClient.astro';
 import TelemetryClient from '../components/TelemetryClient.astro';
@@ -55,7 +54,6 @@ const surfaceChapter = surfaceBridge ? getChapterById(surfaceBridge.chapterId) :
         </nav>
       </div>
     </header>
-    <LibraryPassLaunchAnnouncement />
     <slot />
     {surfaceBridge && surfaceChapter && (
       <aside

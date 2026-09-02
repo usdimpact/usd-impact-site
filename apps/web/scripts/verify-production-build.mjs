@@ -158,6 +158,7 @@ if (apiFunctionFiles.length > 12) failures.push(`Vercel function-source count is
 const vercelConfig = JSON.parse(fs.readFileSync(path.resolve('vercel.json'), 'utf8'));
 const rewrites = new Map((vercelConfig.rewrites || []).map((rewrite) => [rewrite.source, rewrite.destination]));
 if (rewrites.get('/guided-edition/video-library') !== '/api/guided-edition?__video_library=1') failures.push('Protected video catalog is not consolidated into the Guided Edition function.');
+if (rewrites.get('/guided-edition/video-library/:path*') !== '/api/guided-edition?__video_library=1&__video_path=:path*') failures.push('Protected video lesson routing is not consolidated into the Guided Edition function.');
 if (rewrites.get('/guided-edition/book') !== '/api/guided-edition?__book=1') failures.push('Protected book delivery is not consolidated into the Guided Edition function.');
 if (rewrites.get('/guided-edition/book/:path*') !== '/api/guided-edition?__book=1&__book_path=:path*') failures.push('Protected book download routing is missing.');
 if (rewrites.get('/api/video-progress') !== '/api/account?action=video-progress') failures.push('Video progress is not consolidated into the account function.');

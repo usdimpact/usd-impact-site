@@ -444,13 +444,22 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
 
 export default async function handler(request, response) {
   const internalUrl = requestUrl(request);
-  if (internalUrl.searchParams.get('__video_library') === '1') {
+  if (
+    internalUrl.searchParams.get('__video_library') === '1'
+    || internalUrl.searchParams.has('__video_path')
+  ) {
     return handleVideoLibraryRequest(request, response);
   }
-  if (internalUrl.searchParams.get('__audiobook') === '1') {
+  if (
+    internalUrl.searchParams.get('__audiobook') === '1'
+    || internalUrl.searchParams.has('__audio_path')
+  ) {
     return handleAudiobookRequest(request, response);
   }
-  if (internalUrl.searchParams.get('__book') === '1') {
+  if (
+    internalUrl.searchParams.get('__book') === '1'
+    || internalUrl.searchParams.has('__book_path')
+  ) {
     return handleBookDeliveryRequest(request, response);
   }
   return handleGuidedEditionRequest(request, response);

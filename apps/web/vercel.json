@@ -54,7 +54,7 @@
     },
     {
       "source": "/guided-edition/video-library/:path*",
-      "destination": "/api/guided-edition?__video_path=:path*"
+      "destination": "/api/guided-edition?__video_library=1&__video_path=:path*"
     },
     {
       "source": "/guided-edition",

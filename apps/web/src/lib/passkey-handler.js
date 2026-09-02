@@ -2,7 +2,6 @@ import { safeSupabaseError, sendJson } from './supabase-server.js';
 import {
   clearPkceCookie,
   readSessionAccessToken,
-  safeNextPath,
   sessionReadyLocation,
   setSessionCookies,
 } from './supabase-auth.js';
@@ -107,7 +106,9 @@ async function recoveryVerify(request, response) {
       token: payload.token,
     });
     clearPkceCookie(response, request);
-    setSessionCookies(response, request, session);
+    setSessionCookies(response, request, session, {
+      rememberDevice: payload.rememberDevice,
+    });
     return sendJson(response, 200, {
       ok: true,
       redirect: sessionReadyLocation(payload.next),
@@ -142,10 +143,12 @@ async function authenticationVerify(request, response) {
       challengeId: payload.challengeId,
       credential: payload.credential,
     });
-    setSessionCookies(response, request, session);
+    setSessionCookies(response, request, session, {
+      rememberDevice: payload.rememberDevice,
+    });
     return sendJson(response, 200, {
       ok: true,
-      redirect: safeNextPath(payload.next),
+      redirect: sessionReadyLocation(payload.next),
     });
   } catch (error) {
     return safeError(response, error);

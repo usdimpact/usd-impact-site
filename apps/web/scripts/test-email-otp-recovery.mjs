@@ -153,7 +153,7 @@ try {
     ok: true,
     redirect: '/auth/session-ready/?next=%2Fguided-edition%2Fvideo-library%2F',
   });
-  assert.equal(acceptedCodeResponse.getHeader('set-cookie').length, 3);
+  assert.equal(acceptedCodeResponse.getHeader('set-cookie').length, 4);
 } finally {
   globalThis.fetch = originalFetch;
   for (const [name, value] of Object.entries(originalEnvironment)) {
@@ -171,7 +171,7 @@ assert.match(handler, /recovery-verify/);
 assert.match(handler, /clearPkceCookie/);
 assert.match(
   handler,
-  /setSessionCookies\(response, request, session\);[\s\S]*redirect: sessionReadyLocation\(payload\.next\)/,
+  /setSessionCookies\(response, request, session, \{[\s\S]*rememberDevice: payload\.rememberDevice,[\s\S]*redirect: sessionReadyLocation\(payload\.next\)/,
 );
 assert.match(signInPage, /autocomplete="one-time-code"/);
 assert.match(signInPage, /pattern="\[0-9\]\{6,10\}"/);
@@ -186,6 +186,8 @@ assert.match(signInPage, /EMAIL_RESEND_COOLDOWN_SECONDS = 35/);
 assert.match(signInPage, /Send again in \$\{remainingSeconds\}s/);
 assert.match(signInPage, /response\.status === 429/);
 assert.match(signInPage, /Too many sign-in emails were requested/);
+assert.match(signInPage, /Keep me signed in on this device for 30 days/);
+assert.equal((signInPage.match(/rememberDevice:/g) || []).length, 3);
 assert.match(accountPage, /passkey-settings-link/);
 assert.match(accountPage, /action=passkey&op=status/);
 assert.doesNotMatch(`${handler}${signInPage}${accountPage}`, /SUPABASE_SECRET_KEY|sb_secret_/);

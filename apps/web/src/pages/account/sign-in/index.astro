@@ -31,6 +31,22 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
             ></div>
           )}
 
+          <div class="account-remember">
+            <label class="account-choice" for="remember-device">
+              <input
+                id="remember-device"
+                name="remember-device"
+                type="checkbox"
+                checked
+                aria-describedby="remember-device-help"
+              />
+              <span>Keep me signed in on this device for 30 days</span>
+            </label>
+            <p id="remember-device-help" class="account-help">
+              Use only on a private device. You can sign out at any time.
+            </p>
+          </div>
+
           <div id="passkey-sign-in" hidden>
             <button id="passkey-sign-in-button" class="button primary" type="button">Sign in with a passkey</button>
             <p class="account-help">
@@ -102,6 +118,7 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
     const emailCodeInput = document.getElementById('account-email-code');
     const emailCodeVerifyButton = document.getElementById('email-code-verify-button');
     const emailResendHelp = document.getElementById('email-resend-help');
+    const rememberDeviceInput = document.getElementById('remember-device');
     const EMAIL_RESEND_COOLDOWN_SECONDS = 35;
     let emailCooldownEndsAt = 0;
     let emailCooldownTimer = 0;
@@ -241,6 +258,9 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
             challengeId: optionsBody.challengeId,
             credential,
             next: nextInput?.value || '/account/',
+            rememberDevice: rememberDeviceInput instanceof HTMLInputElement
+              ? rememberDeviceInput.checked
+              : true,
           }),
         });
         const verifyBody = await verifyResponse.json().catch(() => ({}));
@@ -289,6 +309,9 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
             email: emailValue,
             token,
             next: nextInput?.value || '/account/',
+            rememberDevice: rememberDeviceInput instanceof HTMLInputElement
+              ? rememberDeviceInput.checked
+              : true,
           }),
         });
         const body = await response.json().catch(() => ({}));
@@ -345,6 +368,9 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
           body: JSON.stringify({
             email: emailInput.value,
             next: nextInput?.value || '/account/',
+            rememberDevice: rememberDeviceInput instanceof HTMLInputElement
+              ? rememberDeviceInput.checked
+              : true,
           }),
         });
 

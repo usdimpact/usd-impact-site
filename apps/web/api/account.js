@@ -11,9 +11,11 @@ import {
   clearSessionCookies,
   exchangePasswordlessCode,
   readPkceVerifier,
+  readRememberDevicePreference,
   readSessionAccessToken,
   readSessionRefreshToken,
   refreshPasswordlessSession,
+  resolveSessionWithRefresh,
   revokePasswordlessSession,
   safeNextPath,
   sessionReadyLocation,
@@ -155,6 +157,7 @@ async function handleLogin(request, response) {
       next: payload.next,
       request,
       response,
+      rememberDevice: payload.rememberDevice,
     });
     return sendJson(response, 202, {
       ok: true,
@@ -188,7 +191,9 @@ async function handleConfirm(request, response) {
       codeVerifier,
     });
     clearPkceCookie(response, request);
-    setSessionCookies(response, request, session);
+    setSessionCookies(response, request, session, {
+      rememberDevice: readRememberDevicePreference(request),
+    });
     return redirect(response, sessionReadyLocation(next));
   } catch (error) {
     logConfirmationFailure(error);
@@ -213,7 +218,9 @@ async function handleRefresh(request, response) {
 
   try {
     const session = await refreshPasswordlessSession({ refreshToken });
-    setSessionCookies(response, request, session);
+    setSessionCookies(response, request, session, {
+      rememberDevice: readRememberDevicePreference(request),
+    });
     return sendJson(response, 200, { ok: true });
   } catch (error) {
     clearSessionCookies(response, request);
@@ -241,13 +248,16 @@ async function handleLogout(request, response) {
 async function handleAccess(request, response) {
   if (request.method !== 'GET') return methodNotAllowed(response, 'GET');
 
-  const accessToken = readSessionAccessToken(request);
-  if (!accessToken) {
-    return sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
-  }
-
   try {
-    const state = await readAccountAccessState({ accessToken });
+    const resolved = await resolveSessionWithRefresh({
+      request,
+      response,
+      verifyAccessToken: (accessToken) => readAccountAccessState({ accessToken }),
+    });
+    if (!resolved) {
+      return sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
+    }
+    const state = resolved.value;
     return sendJson(response, 200, {
       account: {
         id: state.user.id,

@@ -182,7 +182,7 @@ await assert.rejects(
 
 const protectedFunction = await readFile(new URL('../api/guided-edition.js', import.meta.url), 'utf8');
 assert.match(protectedFunction, /readAccountAccessState/);
-assert.match(protectedFunction, /readSessionAccessToken/);
+assert.match(protectedFunction, /resolveSessionWithRefresh/);
 assert.match(protectedFunction, /private, no-store/);
 assert.match(protectedFunction, /normalizePaidAccessReason/);
 

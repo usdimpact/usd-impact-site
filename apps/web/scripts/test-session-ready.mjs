@@ -13,6 +13,7 @@ assert.match(accountRouter, /sessionReadyLocation\(next\)/);
 assert.match(accountRouter, /sessionReadyLocation,/);
 assert.doesNotMatch(accountRouter, /return redirect\(response, next\);/);
 assert.match(passkeyHandler, /redirect: sessionReadyLocation\(payload\.next\)/);
+assert.equal((passkeyHandler.match(/redirect: sessionReadyLocation\(payload\.next\)/g) || []).length, 2);
 assert.match(supabaseAuth, /new URL\('\/auth\/session-ready\/'/);
 
 assert.match(sessionReadyPage, /new URLSearchParams\(window\.location\.search\)/);

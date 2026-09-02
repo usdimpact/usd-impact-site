@@ -12,8 +12,8 @@ import {
   recordGuidedLearningProgress,
 } from '../src/lib/guided-supabase-server.js';
 import {
-  readSessionAccessToken,
   requestOrigin,
+  resolveSessionWithRefresh,
   safeNextPath,
 } from '../src/lib/supabase-auth.js';
 import {
@@ -222,14 +222,19 @@ async function loadChapterContent(identity, dependencies) {
   return row ? normalizeGuidedContentRelease(row, identity) : null;
 }
 
-async function requireApiAccess(request, response, readAccessState) {
-  const accessToken = readSessionAccessToken(request);
-  if (!accessToken) {
-    sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
-    return null;
-  }
+async function requireApiAccess(request, response, dependencies) {
   try {
-    const state = await readAccessState({ accessToken });
+    const resolved = await dependencies.resolveSession({
+      request,
+      response,
+      environment: dependencies.environment,
+      verifyAccessToken: (accessToken) => dependencies.readAccessState({ accessToken }),
+    });
+    if (!resolved) {
+      sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
+      return null;
+    }
+    const state = resolved.value;
     if (state?.allowed !== true) {
       sendJson(response, 403, {
         error: 'Active Guided Edition access is required.',
@@ -238,7 +243,7 @@ async function requireApiAccess(request, response, readAccessState) {
       });
       return null;
     }
-    return { accessToken, state };
+    return { accessToken: resolved.accessToken, state };
   } catch (error) {
     const safe = safeSupabaseError(error);
     sendJson(response, safe.status, safe.payload);
@@ -249,7 +254,7 @@ async function requireApiAccess(request, response, readAccessState) {
 async function handleProgressApi(request, response, dependencies) {
   if (!['GET', 'PATCH'].includes(request.method)) return methodNotAllowed(response, 'GET, PATCH', true);
   if (request.method === 'PATCH' && !requireSameSiteJson(request, response)) return;
-  const access = await requireApiAccess(request, response, dependencies.readAccessState);
+  const access = await requireApiAccess(request, response, dependencies);
   if (!access) return;
   try {
     let chapter;
@@ -289,7 +294,7 @@ async function handleProgressApi(request, response, dependencies) {
 async function handleMasteryApi(request, response, dependencies) {
   if (request.method !== 'POST') return methodNotAllowed(response, 'POST', true);
   if (!requireSameSiteJson(request, response)) return;
-  const access = await requireApiAccess(request, response, dependencies.readAccessState);
+  const access = await requireApiAccess(request, response, dependencies);
   if (!access) return;
   try {
     const payload = parseJsonBody(request);
@@ -326,6 +331,8 @@ async function handleMasteryApi(request, response, dependencies) {
 export async function handleGuidedEditionRequest(request, response, overrides = {}) {
   const dependencies = {
     readAccessState: overrides.readAccessState || readAccountAccessState,
+    resolveSession: overrides.resolveSession || resolveSessionWithRefresh,
+    environment: overrides.environment || process.env,
     readCatalog: overrides.readCatalog || readGuidedContentCatalog,
     readContent: overrides.readContent || readGuidedContentRelease,
     readSupplementCatalog: overrides.readSupplementCatalog || readGuidedSupplementCatalog,
@@ -353,17 +360,21 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
     return response.end('Invalid protected route.');
   }
 
-  const accessToken = readSessionAccessToken(request);
-  if (!accessToken) return redirect(response, buildPaidSignInRedirect(protectedUrl));
-
-  let state;
+  let resolved;
   try {
-    state = await dependencies.readAccessState({ accessToken });
+    resolved = await dependencies.resolveSession({
+      request,
+      response,
+      environment: dependencies.environment,
+      verifyAccessToken: (accessToken) => dependencies.readAccessState({ accessToken }),
+    });
   } catch (error) {
     const safe = safeSupabaseError(error);
     if (safe.status === 401) return redirect(response, buildPaidSignInRedirect(protectedUrl));
     return redirect(response, buildPaidAccessRequiredRedirect(protectedUrl, 'denied'));
   }
+  if (!resolved) return redirect(response, buildPaidSignInRedirect(protectedUrl));
+  const { accessToken, value: state } = resolved;
   if (state?.allowed !== true) {
     return redirect(response, buildPaidAccessRequiredRedirect(protectedUrl, normalizePaidAccessReason(state?.reason)));
   }

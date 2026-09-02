@@ -1,4 +1,4 @@
-import { readSessionAccessToken } from './supabase-auth.js';
+import { resolveSessionWithRefresh } from './supabase-auth.js';
 import { searchKnowledgeChunks } from './knowledge-retrieval.js';
 import { readAccountAccessState, safeSupabaseError, sendJson } from './supabase-server.js';
 
@@ -65,11 +65,16 @@ function publicResult(row) {
   });
 }
 
-async function authorizedTiers({ accessToken, readAccessState }) {
-  if (!accessToken) return Object.freeze({ tiers: ['open'], paid: false });
+async function authorizedTiers({ request, response, readAccessState, resolveSession, environment }) {
   try {
-    const state = await readAccessState({ accessToken });
-    if (state.allowed) return Object.freeze({ tiers: ['open', 'research'], paid: true });
+    const resolved = await resolveSession({
+      request,
+      response,
+      environment,
+      verifyAccessToken: (accessToken) => readAccessState({ accessToken }),
+    });
+    const state = resolved?.value;
+    if (state?.allowed) return Object.freeze({ tiers: ['open', 'research'], paid: true });
   } catch {
     // A stale or invalid optional session must never widen access. Public search
     // remains available at the open tier while paid access fails closed.
@@ -108,10 +113,12 @@ export async function handleKnowledgeSearchRequest(request, response, options = 
   try {
     const matchCount = normalizeMatchCount(payload.matchCount);
     const language = normalizeLanguage(payload.language);
-    const accessToken = readSessionAccessToken(request);
     const access = await authorizedTiers({
-      accessToken,
+      request,
+      response,
       readAccessState: options.readAccessState || readAccountAccessState,
+      resolveSession: options.resolveSession || resolveSessionWithRefresh,
+      environment: options.environment || process.env,
     });
     const rows = await (options.searchKnowledge || searchKnowledgeChunks)({
       query: payload.query,

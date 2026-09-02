@@ -200,6 +200,7 @@ async function handleConfirm(request, response) {
     clearPkceCookie(response, request);
     const safe = safeSupabaseError(error);
     const target = new URL('/account/sign-in/', 'https://usd-impact.invalid');
+    target.searchParams.set('next', next);
     target.searchParams.set('error', safe.status >= 500 ? 'service_unavailable' : 'invalid_link');
     return redirect(response, `${target.pathname}${target.search}`);
   }

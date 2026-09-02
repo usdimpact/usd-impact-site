@@ -5,7 +5,7 @@ import {
 } from './email-operations-policy.js';
 import { buildWaitlistConfirmationEmail } from './waitlist-email-template.js';
 
-export const LAUNCH_EMAIL_TEMPLATE_VERSION = '2026-09-02.v2';
+export const LAUNCH_EMAIL_TEMPLATE_VERSION = '2026-08-20.v1';
 export const LAUNCH_EMAIL_PRODUCT_NAME = 'Read the Dollar First Library Pass';
 
 const SITE_ORIGIN = 'https://www.usd-impact.com';
@@ -48,14 +48,13 @@ export const LAUNCH_EMAIL_TEMPLATE_SPECS = deepFreeze({
   }),
   purchase_access_ready: appTemplate({
     classification: 'transactional',
-    subject: 'Welcome — your Read the Dollar First Library Pass is ready',
-    heading: 'Welcome to USD Impact. Your Library Pass is active.',
+    subject: 'Your Read the Dollar First Library Pass is ready',
+    heading: 'Your Library Pass is active.',
     paragraphs: [
       'A verified completed-payment event has been matched to your USD Impact account.',
-      'Start with the Guided Interactive Edition to learn the framework chapter by chapter. Use the complete English audiobook and Video Library to reinforce each idea in another format.',
-      'When you return to your account, your next-step suggestion uses only learning progress already saved there so you can continue without adding a separate activity tracker.',
+      'You can now use the Guided Interactive Edition, complete English audiobook, Video Library, and included learning resources.',
     ],
-    ctaLabel: 'Open your learning path',
+    ctaLabel: 'Open your account',
     ctaUrl: URLS.account,
     referenceLabel: 'Purchase reference',
   }),

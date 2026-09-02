@@ -2,7 +2,7 @@
 
 ## Status
 
-Template contract version: `2026-09-02.v2`
+Template contract version: `2026-08-20.v1`
 
 This document records the approved source-level customer-message copy and security boundaries for the one-time Read the Dollar First Library Pass. The executable registry is `apps/web/src/lib/launch-email-templates.js`.
 
@@ -16,7 +16,7 @@ The provider-neutral intent, eligibility, durable enqueue, and injected-adapter 
 |---|---|---|---|
 | Secure sign-in | Supabase Auth configuration | Provider-managed | A secure account sign-in was requested |
 | Purchase pending | USD Impact commerce operations | Shared after provider selection | Access is not granted before a verified completed-payment event |
-| Access ready | USD Impact commerce operations | Application after verified event | The Library Pass is active and the account provides a simple learning path |
+| Access ready | USD Impact commerce operations | Application after verified event | The permanent Library Pass is active |
 | Purchase failed | USD Impact commerce operations | Shared after provider selection | No access was granted from an incomplete attempt or browser redirect |
 | Refund approved | USD Impact commerce operations | Application after verified event | Matching access was removed; provider controls refund timing |
 | Dispute warning | USD Impact commerce operations | Application after verified event | Access is temporarily suspended while the dispute is reviewed |

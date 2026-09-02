@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import {
   LemonSqueezyCommerceRuntimeError,
+  createLockedLemonSqueezyCheckout,
   createLockedLemonSqueezyTestCheckout,
   createSandboxCommerceCheckout,
   nextCommerceReconciliationAt,
   processLemonSqueezyWebhook,
+  publicCommerceRuntimeError,
   readLemonSqueezyCommerceRuntimeConfig,
   retrieveAuthoritativeLemonSqueezyOrder,
   selectTrustedLemonSqueezyVariant,
@@ -179,6 +181,40 @@ const checkoutRequestBody = JSON.parse(checkoutRequest.init.body);
 assert.equal(checkoutRequestBody.data.attributes.checkout_options.discount, false);
 assert.deepEqual(checkoutRequestBody.data.attributes.product_options.enabled_variants, [313]);
 assert.equal('custom_price' in checkoutRequestBody.data.attributes, false);
+
+for (const providerStatus of [401, 403]) {
+  let providerAuthorizationError = null;
+  try {
+    await createLockedLemonSqueezyCheckout({
+      config: { ...runtime, testMode: false },
+      accountId: launchIntent.account_id,
+      purchaseIntentId: launchIntent.id,
+      variantId: 313,
+      email: 'buyer@example.com',
+      fetchImpl: async () => new Response(JSON.stringify({
+        errors: [{ status: String(providerStatus), title: 'Provider authorization failed' }],
+      }), { status: providerStatus, headers: { 'Content-Type': 'application/vnd.api+json' } }),
+    });
+  } catch (error) {
+    providerAuthorizationError = error;
+  }
+
+  assert.equal(providerAuthorizationError instanceof LemonSqueezyCommerceRuntimeError, true);
+  assert.equal(providerAuthorizationError.code, 'LEMON_SQUEEZY_LIVE_API_REQUEST_FAILED');
+  assert.equal(providerAuthorizationError.status, 503);
+  assert.deepEqual(publicCommerceRuntimeError(providerAuthorizationError), {
+    status: 503,
+    payload: {
+      error: 'Commerce is temporarily unavailable.',
+      code: 'LEMON_SQUEEZY_LIVE_API_REQUEST_FAILED',
+    },
+  });
+  assert.doesNotMatch(
+    JSON.stringify(publicCommerceRuntimeError(providerAuthorizationError)),
+    /authorization failed/i,
+    'Provider authorization details must not cross the public error boundary.',
+  );
+}
 
 const providerRequests = [];
 const authoritative = await retrieveAuthoritativeLemonSqueezyOrder({

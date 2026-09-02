@@ -30,6 +30,10 @@ export function checkoutSignInHrefWithCampaign(search) {
   return `${ACCOUNT_SIGN_IN_PATH}?${new URLSearchParams({ next }).toString()}`;
 }
 
+export function checkoutRequiresSignIn(response, payload) {
+  return response?.status === 401 && payload?.code === 'AUTHENTICATION_REQUIRED';
+}
+
 export function publicCheckoutCanOpen(commerce, disclosureRendered) {
   return commerce?.state === 'active'
     && commerce?.mode === 'live'

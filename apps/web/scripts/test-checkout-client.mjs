@@ -4,6 +4,7 @@ import {
   approvedLaunchCheckoutUrl,
   bookPurchasePresentation,
   checkoutHrefWithCampaign,
+  checkoutRequiresSignIn,
   checkoutSignInHrefWithCampaign,
   createCheckoutIdempotencyKey,
   publicCheckoutCanOpen,
@@ -40,6 +41,16 @@ assert.match(
   checkoutPageSource,
   /window\.location\.assign\(checkoutSignInHrefWithCampaign\(window\.location\.search\)\)/,
   'Unauthenticated checkout must preserve only sanitized campaign context through the sign-in return path.',
+);
+assert.match(
+  checkoutPageSource,
+  /const body = await response\.json\(\)\.catch\(\(\) => \(\{\}\)\);[\s\S]*if \(checkoutRequiresSignIn\(response, body\)\)/,
+  'Checkout must inspect the USD Impact response code before deciding to redirect to sign-in.',
+);
+assert.doesNotMatch(
+  checkoutPageSource,
+  /if \(response\.status === 401\)/,
+  'Checkout must not redirect solely because an upstream response uses HTTP 401.',
 );
 assert.doesNotMatch(
   checkoutPageSource,
@@ -155,6 +166,23 @@ assert.equal(
   '/checkout/',
   'Missing campaign context must return to the plain checkout path.',
 );
+assert.equal(
+  checkoutRequiresSignIn({ status: 401 }, { code: 'AUTHENTICATION_REQUIRED' }),
+  true,
+  'Only the USD Impact authentication-required response should request sign-in.',
+);
+for (const [response, payload] of [
+  [{ status: 401 }, { code: 'LEMON_SQUEEZY_LIVE_API_REQUEST_FAILED' }],
+  [{ status: 503 }, { code: 'LEMON_SQUEEZY_LIVE_API_REQUEST_FAILED' }],
+  [{ status: 401 }, {}],
+  [{ status: 403 }, { code: 'AUTHENTICATION_REQUIRED' }],
+]) {
+  assert.equal(
+    checkoutRequiresSignIn(response, payload),
+    false,
+    'Provider and non-authentication errors must stay on checkout and fail closed.',
+  );
+}
 
 const activeCommerce = {
   state: 'active',

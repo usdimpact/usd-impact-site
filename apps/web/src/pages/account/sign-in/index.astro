@@ -7,16 +7,16 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
   title="Sign in | USD Impact"
   description="Sign in securely to your USD Impact learning account with a passkey or one-time email link."
 >
-  <section class="hero account-hero">
-    <div class="container">
-      <p class="eyebrow">USD Impact account</p>
-      <h1>Sign in without a password.</h1>
-      <p class="lead">Use a registered passkey, or request a short-lived one-time email sign-in link.</p>
-    </div>
-  </section>
+  <main id="main-content" class="main-with-hero">
+    <section class="hero account-hero">
+      <div class="container">
+        <p class="eyebrow">USD Impact account</p>
+        <h1>Sign in without a password.</h1>
+        <p class="lead">Use a registered passkey, or request an email with a one-time sign-in link and six-digit fallback code.</p>
+      </div>
+    </section>
 
-  <main>
-    <div class="container account-shell">
+    <div class="container account-shell page-content">
       <section class="card account-panel" aria-labelledby="sign-in-heading">
         <h2 id="sign-in-heading">Secure sign-in</h2>
         <form id="passwordless-sign-in" class="account-form">
@@ -50,11 +50,14 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
               maxlength="254"
               required
             />
-            <button class="button primary" type="submit">Send sign-in link</button>
+            <button class="button primary" type="submit" aria-describedby="email-resend-help">Send sign-in link</button>
+            <p id="email-resend-help" class="account-help">
+              After requesting an email, wait 35 seconds before sending another request.
+            </p>
           </div>
 
           <div id="email-code-sign-in" hidden>
-            <label for="account-email-code">Email verification code</label>
+            <label for="account-email-code">Six-digit email code</label>
             <input
               id="account-email-code"
               name="email-code"
@@ -67,8 +70,8 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
             />
             <button id="email-code-verify-button" class="button account-secondary" type="button">Verify email code</button>
             <p class="account-help">
-              Already have a code? Enter the email address and numeric verification code exactly as shown in the
-              sign-in email. This works even if that email was requested in another browser context.
+              Prefer not to open the link? Enter the email address and numeric code exactly as shown in the
+              sign-in email. The code also works when the email was requested in another browser.
             </p>
           </div>
         </form>
@@ -98,7 +101,39 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
     const emailCodeContainer = document.getElementById('email-code-sign-in');
     const emailCodeInput = document.getElementById('account-email-code');
     const emailCodeVerifyButton = document.getElementById('email-code-verify-button');
+    const emailResendHelp = document.getElementById('email-resend-help');
+    const EMAIL_RESEND_COOLDOWN_SECONDS = 35;
+    let emailCooldownEndsAt = 0;
+    let emailCooldownTimer = 0;
     let emailCodeEnabled = false;
+
+    const updateEmailSubmitState = () => {
+      if (!(submit instanceof HTMLButtonElement)) return;
+      const remainingSeconds = Math.max(0, Math.ceil((emailCooldownEndsAt - Date.now()) / 1000));
+      if (remainingSeconds > 0) {
+        submit.disabled = true;
+        submit.textContent = `Send again in ${remainingSeconds}s`;
+        if (emailResendHelp) {
+          emailResendHelp.textContent = `Your request was received. You can request another email in ${remainingSeconds} seconds.`;
+        }
+        return;
+      }
+      if (emailCooldownTimer) window.clearInterval(emailCooldownTimer);
+      emailCooldownTimer = 0;
+      emailCooldownEndsAt = 0;
+      submit.disabled = false;
+      submit.textContent = 'Send sign-in link';
+      if (emailResendHelp) {
+        emailResendHelp.textContent = 'You can request another email now. Each sign-in link and code can be used only once.';
+      }
+    };
+
+    const startEmailCooldown = (seconds = EMAIL_RESEND_COOLDOWN_SECONDS) => {
+      emailCooldownEndsAt = Date.now() + (seconds * 1000);
+      if (emailCooldownTimer) window.clearInterval(emailCooldownTimer);
+      updateEmailSubmitState();
+      emailCooldownTimer = window.setInterval(updateEmailSubmitState, 1000);
+    };
 
     const safeNextPath = (value) => {
       const next = String(value || '').trim();
@@ -224,7 +259,7 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
       } finally {
         resetTurnstile();
         passkeyButton.disabled = false;
-        if (submit) submit.disabled = false;
+        updateEmailSubmitState();
         if (emailCodeVerifyButton) emailCodeVerifyButton.disabled = false;
       }
     });
@@ -268,7 +303,7 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
         );
       } finally {
         emailCodeVerifyButton.disabled = false;
-        if (submit) submit.disabled = false;
+        updateEmailSubmitState();
         if (passkeyButton) passkeyButton.disabled = false;
       }
     });
@@ -282,6 +317,11 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
     form?.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!emailInput?.value || !submit || !status) return;
+      if (emailCooldownEndsAt > Date.now()) {
+        updateEmailSubmitState();
+        showStatus('Please wait for the countdown before requesting another sign-in email.', 'error');
+        return;
+      }
 
       const captchaToken = readCaptchaToken();
       if (turnstileContainer && !captchaToken) {
@@ -310,9 +350,14 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
 
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
+          if (response.status === 429) {
+            startEmailCooldown();
+            throw new Error('Too many sign-in emails were requested. Wait for the countdown, then try once more.');
+          }
           throw new Error(body.error || 'The sign-in email could not be sent.');
         }
 
+        startEmailCooldown();
         if (emailCodeEnabled && emailCodeContainer && emailCodeInput) {
           emailCodeContainer.hidden = false;
           emailCodeInput.value = '';
@@ -320,7 +365,6 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
           showStatus('Check your email for the one-time sign-in link or verification code.', 'success');
         } else {
           showStatus('Check your email for the one-time sign-in link.', 'success');
-          emailInput.value = '';
         }
       } catch (error) {
         showStatus(
@@ -329,7 +373,7 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
         );
       } finally {
         resetTurnstile();
-        submit.disabled = false;
+        updateEmailSubmitState();
         if (passkeyButton) passkeyButton.disabled = false;
         if (emailCodeVerifyButton) emailCodeVerifyButton.disabled = false;
       }

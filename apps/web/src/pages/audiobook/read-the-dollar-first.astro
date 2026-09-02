@@ -9,22 +9,23 @@ const memberAudiobookSignIn = '/account/sign-in/?next=%2Fguided-edition%2Faudiob
   title="Read the Dollar First English Audiobook | USD Impact"
   description="Explore the complete English audiobook included with the Read the Dollar First Library Pass."
 >
-  <section class="hero audiobook-hero">
-    <div class="container">
-      <div class="eyebrow">English audiobook</div>
-      <h1>The complete audiobook is part of the Library Pass.</h1>
-      <p class="lead">
-        Sign in with an eligible Library Pass to listen to all 20 tracks of <em>Read the Dollar First</em>, with chapter controls and saved listening position.
-      </p>
-      <div class="audiobook-hero-meta" aria-label="Audiobook details">
-        <span>20 chapters</span>
-        <span>{readTheDollarFirstAudiobook.duration}</span>
-        <span>Human-reviewed narration</span>
+  <main id="main-content" class="main-with-hero">
+    <section class="hero audiobook-hero">
+      <div class="container">
+        <div class="eyebrow">English audiobook</div>
+        <h1>The complete audiobook is part of the Library Pass.</h1>
+        <p class="lead">
+          Sign in with an eligible Library Pass to listen to all 20 tracks of <em>Read the Dollar First</em>, with chapter controls and saved listening position.
+        </p>
+        <div class="audiobook-hero-meta" aria-label="Audiobook details">
+          <span>20 chapters</span>
+          <span>{readTheDollarFirstAudiobook.duration}</span>
+          <span>Human-reviewed narration</span>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <main class="container audiobook-page">
+    <div class="container audiobook-page page-content">
     <section class="card audiobook-access" aria-labelledby="audiobook-access-heading">
       <img
         class="audiobook-access-cover"
@@ -75,5 +76,6 @@ const memberAudiobookSignIn = '/account/sign-in/?next=%2Fguided-edition%2Faudiob
     </section>
 
     <ComplianceNote text="Educational and informational only. Not personalized investment, financial, legal, tax, or trading advice; not a trading signal; and not a recommendation to buy or sell any asset. Market relationships are conditional and may change across regimes." />
+    </div>
   </main>
 </BaseLayout>

@@ -48,30 +48,31 @@ const secondaryHref = requestedSecondaryHref ?? downloadPath;
 const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref === undefined;
 ---
 <BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
-  <section class="hero">
-    <div class="container">
-      <div class="eyebrow">{entry.data.category}</div>
-      <h1>{entry.data.title}</h1>
-      {entry.data.hero && <p class="lead">{entry.data.hero}</p>}
-      {isBookPage ? (
-        <BookPurchaseCTA
-          secondary={entry.data.ctaSecondary}
-          secondaryHref={secondaryHref}
-          secondaryDownload={secondaryDownload}
-        />
-      ) : (
-        <ProductCTA
-          primary={primaryLabel}
-          primaryHref={primaryHref}
-          secondary={entry.data.ctaSecondary}
-          secondaryHref={secondaryHref}
-          secondaryDownload={secondaryDownload}
-          libraryPassAvailability={isLibraryPassAcquisition}
-        />
-      )}
-    </div>
-  </section>
-  <main class="container">
+  <main id="main-content" class="main-with-hero">
+    <section class="hero">
+      <div class="container">
+        <div class="eyebrow">{entry.data.category}</div>
+        <h1>{entry.data.title}</h1>
+        {entry.data.hero && <p class="lead">{entry.data.hero}</p>}
+        {isBookPage ? (
+          <BookPurchaseCTA
+            secondary={entry.data.ctaSecondary}
+            secondaryHref={secondaryHref}
+            secondaryDownload={secondaryDownload}
+          />
+        ) : (
+          <ProductCTA
+            primary={primaryLabel}
+            primaryHref={primaryHref}
+            secondary={entry.data.ctaSecondary}
+            secondaryHref={secondaryHref}
+            secondaryDownload={secondaryDownload}
+            libraryPassAvailability={isLibraryPassAcquisition}
+          />
+        )}
+      </div>
+    </section>
+    <div class="container page-content">
     {isBookPage && (
       <section class="book-audio-promo card" aria-labelledby="book-audio-heading">
         <div>
@@ -85,7 +86,8 @@ const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref =
     {entry.data.visual && <FrameworkVisual src={entry.data.visual} alt={entry.data.title} />}
     {isThreeDialsPage && <ThreeDialsSnapshot />}
     <Content />
-    {isBookPage && <WaitlistForm />}
+    {isBookPage && <WaitlistForm initiallyHidden />}
     <ComplianceNote text={entry.data.complianceNote} />
+    </div>
   </main>
 </BaseLayout>

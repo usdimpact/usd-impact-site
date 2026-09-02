@@ -14,15 +14,16 @@ const latestNews = (await getCollection('news'))
 const scorePipelineOrigin = resolveScorePipelineOrigin(import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
 ---
 <BaseLayout title="USD Impact | Read the Dollar First" description="Learn a repeatable dollar-first process for separating dollar, real-rate, liquidity and asset-specific drivers before interpreting cross-asset market moves." stylesheets={['/assets/daily-cards.css']}>
-  <section class="hero">
-    <div class="container">
-      <div class="eyebrow">USD Impact</div>
-      <h1>Read the Dollar First.</h1>
-      <p class="lead">Learn a repeatable way to tell whether a market move is mainly dollar-led, real-rate-led, liquidity-led, or asset-specific — then trace the evidence before interpreting gold, oil, Bitcoin, FX, equities, or other markets.</p>
-      <HomeLibraryPassCTA />
-    </div>
-  </section>
-  <main class="container">
+  <main id="main-content" class="main-with-hero">
+    <section class="hero">
+      <div class="container">
+        <div class="eyebrow">USD Impact</div>
+        <h1>Read the Dollar First.</h1>
+        <p class="lead">Learn a repeatable way to tell whether a market move is mainly dollar-led, real-rate-led, liquidity-led, or asset-specific — then trace the evidence before interpreting gold, oil, Bitcoin, FX, equities, or other markets.</p>
+        <HomeLibraryPassCTA />
+      </div>
+    </section>
+    <div class="container page-content">
     <section class="grid" aria-labelledby="framework-essentials-heading">
       <h2 id="framework-essentials-heading" class="visually-hidden">USD Impact framework essentials</h2>
       <BenchmarkModuleCard title="Start with the dollar" body="Separate DXY from the broader dollar and identify whether the move is rate-led, liquidity-led, or risk-led." />
@@ -88,5 +89,6 @@ const scorePipelineOrigin = resolveScorePipelineOrigin(import.meta.env.PUBLIC_SC
         </div>
       </section>
     )}
+    </div>
   </main>
 </BaseLayout>

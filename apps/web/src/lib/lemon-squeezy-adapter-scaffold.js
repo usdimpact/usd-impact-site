@@ -171,7 +171,12 @@ export function buildLemonSqueezyCheckoutRequest({
     throw new TypeError('redirectUrl must use HTTPS.');
   }
 
-  const productOptions = { enabled_variants: [variant] };
+  const productOptions = {
+    enabled_variants: [variant],
+    receipt_button_text: 'Open USD Impact',
+    receipt_link_url: 'https://www.usd-impact.com/account/',
+    receipt_thank_you_note: 'Library access is tied to the USD Impact account confirmed before checkout. Sign in with that account to use the complete library.',
+  };
   if (redirect) productOptions.redirect_url = redirect;
 
   return Object.freeze({

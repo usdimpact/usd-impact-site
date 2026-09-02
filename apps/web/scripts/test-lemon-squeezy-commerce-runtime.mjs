@@ -7,6 +7,7 @@ import {
   nextCommerceReconciliationAt,
   processLemonSqueezyWebhook,
   publicCommerceRuntimeError,
+  readCommerceAccessReadyResult,
   readLemonSqueezyCommerceRuntimeConfig,
   retrieveAuthoritativeLemonSqueezyOrder,
   selectTrustedLemonSqueezyVariant,
@@ -180,6 +181,11 @@ assert.equal(checkout.checkoutId, 'checkout_123');
 const checkoutRequestBody = JSON.parse(checkoutRequest.init.body);
 assert.equal(checkoutRequestBody.data.attributes.checkout_options.discount, false);
 assert.deepEqual(checkoutRequestBody.data.attributes.product_options.enabled_variants, [313]);
+assert.equal(
+  checkoutRequestBody.data.attributes.product_options.receipt_link_url,
+  'https://www.usd-impact.com/account/',
+);
+assert.match(checkoutRequestBody.data.attributes.product_options.receipt_thank_you_note, /access is tied/i);
 assert.equal('custom_price' in checkoutRequestBody.data.attributes, false);
 
 for (const providerStatus of [401, 403]) {
@@ -234,6 +240,39 @@ const authoritative = await retrieveAuthoritativeLemonSqueezyOrder({
 assert.equal(authoritative.order.id, '7001');
 assert.equal(authoritative.orderItems.length, 1);
 assert.equal(providerRequests.length, 2);
+
+const accessReadyResult = await readCommerceAccessReadyResult({
+  config: runtime,
+  purchaseIntent: launchIntent,
+  completionResult: {
+    purchase_id: '423e4567-e89b-42d3-a456-426614174000',
+    entitlement_id: '523e4567-e89b-42d3-a456-426614174000',
+  },
+  occurredAt: '2026-08-26T12:00:00.000Z',
+  fetchImpl: async (url) => {
+    if (url.includes('/rest/v1/profiles?')) {
+      return new Response(JSON.stringify([{
+        account_id: launchIntent.account_id,
+        email: 'qa@example.com',
+        status: 'active',
+      }]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    if (url.includes('/rest/v1/entitlements?')) {
+      return new Response(JSON.stringify([{
+        id: '523e4567-e89b-42d3-a456-426614174000',
+        account_id: launchIntent.account_id,
+        purchase_id: '423e4567-e89b-42d3-a456-426614174000',
+        product_id: launchIntent.product_id,
+        state: 'active',
+        version: 1,
+      }]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    throw new Error(`Unexpected access-ready URL: ${url}`);
+  },
+});
+assert.equal(accessReadyResult.profile.email, 'qa@example.com');
+assert.equal(accessReadyResult.purchase.status, 'completed');
+assert.equal(accessReadyResult.entitlement.state, 'active');
 
 assert.equal(
   nextCommerceReconciliationAt({ attemptCount: 0, now: new Date('2026-08-26T00:00:00Z') }),

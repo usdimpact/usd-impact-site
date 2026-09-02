@@ -38,6 +38,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <p id="commerce-message" class="account-status" role="status" aria-live="polite">
         No payment can be initiated until verification completes. A browser redirect alone never grants access.
       </p>
+      <div id="checkout-account-gate" class="checkout-account-gate" hidden>
+        <h2>Confirm the access account</h2>
+        <p>
+          This Library Pass will be activated for <strong id="checkout-account-email"></strong>. The email entered
+          in Lemon Squeezy may be used for the financial receipt and invoice, but it does not change this access account.
+        </p>
+        <label class="checkout-account-confirmation" for="checkout-account-confirmation">
+          <input id="checkout-account-confirmation" type="checkbox" />
+          <span>I confirm this is the account that should receive Library Pass access.</span>
+        </label>
+      </div>
       <noscript>
         <p>This page cannot verify checkout availability without JavaScript. No purchase control is shown until verification succeeds.</p>
       </noscript>
@@ -45,6 +56,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <button id="checkout-button" class="button primary" type="button" hidden>
           Continue to secure checkout — USD 39
         </button>
+        <a id="checkout-sign-in-link" class="button primary" href="/account/sign-in/?next=/checkout/" hidden>
+          Sign in to choose the access account
+        </a>
         <a id="waitlist-link" class="button primary" href="/book/read-the-dollar-first/#book-waitlist" hidden>Join the launch waitlist</a>
         <a class="button account-secondary" href="/account/">Return to your account</a>
       </div>
@@ -140,8 +154,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     const disclosureStateElement = document.getElementById('seller-disclosure-state');
     const disclosurePanel = document.getElementById('seller-disclosure-panel');
     const checkoutButton = document.getElementById('checkout-button');
+    const checkoutAccountGate = document.getElementById('checkout-account-gate');
+    const checkoutAccountEmail = document.getElementById('checkout-account-email');
+    const checkoutAccountConfirmation = document.getElementById('checkout-account-confirmation');
+    const checkoutSignInLink = document.getElementById('checkout-sign-in-link');
     const waitlistLink = document.getElementById('waitlist-link');
     let pendingCheckoutKey = null;
+    let checkoutAvailable = false;
+    let accessAccountReady = false;
+    let existingPaidAccess = false;
+    const HTTP_UNAUTHORIZED = 401;
 
     const stateLabels = {
       ready_for_provider_configuration: 'Ready for provider configuration',
@@ -203,17 +225,86 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       const presentation = publicCheckoutPresentation(commerce, disclosureRendered);
       if (checkoutButton instanceof HTMLButtonElement) checkoutButton.hidden = !presentation.available;
       if (waitlistLink instanceof HTMLAnchorElement) waitlistLink.hidden = presentation.available;
+      checkoutAvailable = presentation.available;
       if (titleElement) titleElement.textContent = presentation.title;
       if (introductionElement) introductionElement.textContent = presentation.introduction;
       if (checkoutStatusPanel instanceof HTMLElement) {
         checkoutStatusPanel.dataset.checkoutReadiness = presentation.verificationState;
         checkoutStatusPanel.setAttribute('aria-busy', 'false');
       }
+      syncCheckoutControl();
       return presentation.available;
     };
 
+    const syncCheckoutControl = () => {
+      const confirmed = checkoutAccountConfirmation instanceof HTMLInputElement
+        && checkoutAccountConfirmation.checked;
+      if (checkoutButton instanceof HTMLButtonElement) {
+        checkoutButton.hidden = !checkoutAvailable || !accessAccountReady || existingPaidAccess;
+        checkoutButton.disabled = !confirmed;
+      }
+      if (checkoutSignInLink instanceof HTMLAnchorElement) {
+        checkoutSignInLink.hidden = !checkoutAvailable || accessAccountReady;
+      }
+    };
+
+    const loadAccessAccount = async () => {
+      if (checkoutSignInLink instanceof HTMLAnchorElement) {
+        checkoutSignInLink.href = checkoutSignInHrefWithCampaign(window.location.search);
+      }
+      try {
+        const response = await fetch('/api/account-access', {
+          method: 'GET',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { Accept: 'application/json' },
+        });
+        if (response.status === HTTP_UNAUTHORIZED) {
+          accessAccountReady = false;
+          syncCheckoutControl();
+          return;
+        }
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || body.account?.status !== 'active' || typeof body.account?.email !== 'string') {
+          throw new Error('A verified active access account could not be loaded.');
+        }
+        accessAccountReady = true;
+        existingPaidAccess = body.paidAccess?.allowed === true;
+        if (checkoutAccountEmail) checkoutAccountEmail.textContent = body.account.email;
+        if (checkoutAccountGate instanceof HTMLElement) checkoutAccountGate.hidden = false;
+        if (checkoutAccountConfirmation instanceof HTMLInputElement) {
+          checkoutAccountConfirmation.disabled = existingPaidAccess;
+        }
+        if (existingPaidAccess && messageElement) {
+          messageElement.textContent = 'Library Pass access is already active for this account. Open your account to continue.';
+          messageElement.dataset.state = 'success';
+        }
+        syncCheckoutControl();
+      } catch (error) {
+        accessAccountReady = false;
+        syncCheckoutControl();
+        if (messageElement) {
+          messageElement.textContent = error instanceof Error
+            ? `${error.message} No payment can be initiated.`
+            : 'The access account could not be verified. No payment can be initiated.';
+          messageElement.dataset.state = 'error';
+        }
+      }
+    };
+
+    checkoutAccountConfirmation?.addEventListener('change', syncCheckoutControl);
+
     checkoutButton?.addEventListener('click', async () => {
       if (!(checkoutButton instanceof HTMLButtonElement) || checkoutButton.hidden) return;
+      if (!accessAccountReady
+        || !(checkoutAccountConfirmation instanceof HTMLInputElement)
+        || !checkoutAccountConfirmation.checked) {
+        if (messageElement) {
+          messageElement.textContent = 'Confirm the access account before opening payment.';
+          messageElement.dataset.state = 'error';
+        }
+        return;
+      }
       checkoutButton.disabled = true;
       if (messageElement) {
         messageElement.textContent = 'Preparing your secure Lemon Squeezy checkout…';
@@ -290,12 +381,45 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           messageElement.dataset.state = 'error';
         }
       });
+
+    loadAccessAccount();
   </script>
 
   <style>
     #checkout-button[hidden],
     #waitlist-link[hidden] {
       display: none;
+    }
+
+    #checkout-sign-in-link[hidden] {
+      display: none;
+    }
+
+    .checkout-account-gate {
+      margin-top: 1.25rem;
+      padding: 1rem;
+      border: 1px solid var(--border-color, #d7dde5);
+      border-radius: 0.75rem;
+      background: #f8fafc;
+    }
+
+    .checkout-account-gate[hidden] {
+      display: none;
+    }
+
+    .checkout-account-gate h2 {
+      margin-top: 0;
+    }
+
+    .checkout-account-confirmation {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      font-weight: 600;
+    }
+
+    .checkout-account-confirmation input {
+      margin-top: 0.25rem;
     }
   </style>
 </BaseLayout>

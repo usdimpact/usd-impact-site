@@ -4,6 +4,7 @@ import {
   approvedLaunchCheckoutUrl,
   bookPurchasePresentation,
   checkoutHrefWithCampaign,
+  checkoutSignInHrefWithCampaign,
   createCheckoutIdempotencyKey,
   publicCheckoutCanOpen,
   publicCheckoutPresentation,
@@ -34,6 +35,16 @@ assert.match(
   checkoutPageSource,
   /checkoutStatusPanel\.dataset\.checkoutReadiness = presentation\.verificationState/,
   'Checkout verification must publish its settled presentation state for browser checks.',
+);
+assert.match(
+  checkoutPageSource,
+  /window\.location\.assign\(checkoutSignInHrefWithCampaign\(window\.location\.search\)\)/,
+  'Unauthenticated checkout must preserve only sanitized campaign context through the sign-in return path.',
+);
+assert.doesNotMatch(
+  checkoutPageSource,
+  /window\.location\.assign\(['"]\/account\/sign-in\/\?next=\/checkout\/['"]\)/,
+  'Checkout must not discard campaign context with the legacy fixed sign-in return URL.',
 );
 assert.match(
   bookPurchaseCtaSource,
@@ -111,6 +122,38 @@ assert.equal(
   checkoutHrefWithCampaign('https://example.com/checkout/', '?utm_source=newsletter'),
   'https://example.com/checkout/',
   'External destinations must never be rewritten.',
+);
+
+const signInWithCampaign = new URL(
+  checkoutSignInHrefWithCampaign(
+    '?utm_source=newsletter&utm_medium=email&utm_campaign=september_launch',
+  ),
+  'https://usd-impact.invalid',
+);
+assert.equal(signInWithCampaign.pathname, '/account/sign-in/');
+assert.deepEqual([...signInWithCampaign.searchParams.keys()], ['next']);
+assert.equal(
+  signInWithCampaign.searchParams.get('next'),
+  '/checkout/?utm_source=newsletter&utm_medium=email&utm_campaign=september_launch',
+  'The sign-in return path must retain the sanitized campaign labels inside one encoded same-origin next value.',
+);
+
+const signInWithMixedContext = new URL(
+  checkoutSignInHrefWithCampaign(
+    '?utm_campaign=library-pass&utm_source=linkedin&utm_medium=social&utm_content=hero&gclid=secret&email=buyer%40example.com&next=%2Faccount%2F',
+  ),
+  'https://usd-impact.invalid',
+);
+assert.deepEqual([...signInWithMixedContext.searchParams.keys()], ['next']);
+assert.equal(
+  signInWithMixedContext.searchParams.get('next'),
+  '/checkout/?utm_source=linkedin&utm_medium=social&utm_campaign=library-pass',
+  'Identity-shaped, click-ID, redirect, and unknown parameters must not cross the checkout sign-in boundary.',
+);
+assert.equal(
+  new URL(checkoutSignInHrefWithCampaign(null), 'https://usd-impact.invalid').searchParams.get('next'),
+  '/checkout/',
+  'Missing campaign context must return to the plain checkout path.',
 );
 
 const activeCommerce = {

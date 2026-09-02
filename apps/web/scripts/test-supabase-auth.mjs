@@ -38,6 +38,10 @@ function responseRecorder() {
 }
 
 assert.equal(safeNextPath('/account/?tab=data'), '/account/?tab=data');
+assert.equal(
+  safeNextPath('/checkout/?utm_source=newsletter&utm_medium=email&utm_campaign=september_launch'),
+  '/checkout/?utm_source=newsletter&utm_medium=email&utm_campaign=september_launch',
+);
 assert.equal(safeNextPath('https://evil.example'), '/account/');
 assert.equal(safeNextPath('//evil.example'), '/account/');
 assert.equal(safeNextPath('/\\evil'), '/account/');
@@ -178,6 +182,9 @@ assert.match(confirmationPage, /new URL\('\/api\/auth-confirm'/);
 assert.doesNotMatch(confirmationPage, /token_hash|auth\/confirm\/exchange/);
 assert.match(accountRouter, /request\.method !== 'GET'/);
 assert.match(accountRouter, /exchangePasswordlessCode/);
+assert.match(accountRouter, /const next = safeNextPath\(url\.searchParams\.get\('next'\)\);/);
+assert.match(accountRouter, /target\.searchParams\.set\('next', next\);/);
+assert.match(accountRouter, /target\.searchParams\.set\('error', safe\.status >= 500 \? 'service_unavailable' : 'invalid_link'\);/);
 assert.doesNotMatch(accountRouter, /verifyPasswordlessTokenHash|handleTokenHashConfirmation/);
 for (const action of ['login', 'confirm', 'refresh', 'logout', 'access', 'export', 'delete']) {
   assert.match(accountRouter, new RegExp(`${action}: handle`, 'i'));

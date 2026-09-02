@@ -15,6 +15,7 @@ on:
       - 'apps/web/scripts/test-supabase-auth.mjs'
       - 'apps/web/scripts/test-supabase-passkey.mjs'
       - 'apps/web/scripts/test-email-otp-recovery.mjs'
+      - 'apps/web/scripts/test-checkout-auth-resume.mjs'
       - '.github/workflows/passkey-auth-contract.yml'
   workflow_dispatch:
 
@@ -50,12 +51,16 @@ jobs:
           node --check api/account.js
           node --check scripts/test-supabase-passkey.mjs
           node --check scripts/test-email-otp-recovery.mjs
+          node --check scripts/test-checkout-auth-resume.mjs
 
       - name: Verify passkey gateway contract
         run: node scripts/test-supabase-passkey.mjs
 
       - name: Verify email OTP recovery contract
         run: node scripts/test-email-otp-recovery.mjs
+
+      - name: Verify checkout authentication resume contract
+        run: node scripts/test-checkout-auth-resume.mjs
 
       - name: Re-run passwordless auth regression contract
         run: node scripts/test-supabase-auth.mjs

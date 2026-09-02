@@ -497,10 +497,12 @@ async function providerJsonRequest({ config, path, method = 'GET', body, fetchIm
   });
   const payload = await readJson(response);
   if (!response.ok) {
+    const providerStatus = response.status >= 400 && response.status < 600 ? response.status : 502;
+    const publicStatus = providerStatus === 401 || providerStatus === 403 ? 503 : providerStatus;
     throw new LemonSqueezyCommerceRuntimeError(
       `The Lemon Squeezy ${config.testMode ? 'Test Mode' : 'Live'} API request failed.`,
       config.testMode ? 'LEMON_SQUEEZY_TEST_API_REQUEST_FAILED' : 'LEMON_SQUEEZY_LIVE_API_REQUEST_FAILED',
-      response.status >= 400 && response.status < 600 ? response.status : 502,
+      publicStatus,
     );
   }
   return payload;

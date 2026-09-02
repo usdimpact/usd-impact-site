@@ -126,6 +126,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     import {
       approvedLaunchCheckoutUrl,
       checkoutSignInHrefWithCampaign,
+      checkoutRequiresSignIn,
       createCheckoutIdempotencyKey,
       publicCheckoutPresentation,
     } from '../../lib/checkout-client.js';
@@ -233,12 +234,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           },
           body: JSON.stringify({ idempotencyKey: pendingCheckoutKey }),
         });
-        if (response.status === 401) {
+        const body = await response.json().catch(() => ({}));
+        if (checkoutRequiresSignIn(response, body)) {
           window.dispatchEvent(new Event('usd-impact:checkout-sign-in-redirect'));
           window.location.assign(checkoutSignInHrefWithCampaign(window.location.search));
           return;
         }
-        const body = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(body.error || 'Secure checkout could not be prepared.');
         const checkoutUrl = approvedLaunchCheckoutUrl(body);
         if (!checkoutUrl) throw new Error('The approved Live USD 39 checkout terms could not be verified.');

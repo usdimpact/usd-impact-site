@@ -28,30 +28,32 @@ await assert.rejects(
   (error) => error?.code === 'EMAIL_OTP_FALLBACK_DISABLED' && error?.status === 404,
 );
 
-let verifyRequest;
-const session = await verifyEmailOtpRecovery({
-  email: 'Reader@Example.com',
-  token: '123456',
-  environment: enabledEnvironment,
-  config,
-  fetchImpl: async (url, options) => {
-    verifyRequest = { url, options };
-    return new Response(JSON.stringify({
-      access_token: 'access.token/value+that=is_long_enough_for_validation_12345',
-      refresh_token: 'refresh/token+value=that_is_long_enough_for_validation_12345',
-      expires_in: 3600,
-    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-  },
-});
-assert.equal(verifyRequest.url, `${config.url}/auth/v1/verify`);
-assert.equal(verifyRequest.options.method, 'POST');
-assert.equal(verifyRequest.options.headers.apikey, config.publishableKey);
-assert.deepEqual(JSON.parse(verifyRequest.options.body), {
-  email: 'reader@example.com',
-  token: '123456',
-  type: 'email',
-});
-assert.equal(typeof session.access_token, 'string');
+for (const token of ['123456', '12345678']) {
+  let verifyRequest;
+  const session = await verifyEmailOtpRecovery({
+    email: 'Reader@Example.com',
+    token,
+    environment: enabledEnvironment,
+    config,
+    fetchImpl: async (url, options) => {
+      verifyRequest = { url, options };
+      return new Response(JSON.stringify({
+        access_token: 'access.token/value+that=is_long_enough_for_validation_12345',
+        refresh_token: 'refresh/token+value=that_is_long_enough_for_validation_12345',
+        expires_in: 3600,
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    },
+  });
+  assert.equal(verifyRequest.url, `${config.url}/auth/v1/verify`);
+  assert.equal(verifyRequest.options.method, 'POST');
+  assert.equal(verifyRequest.options.headers.apikey, config.publishableKey);
+  assert.deepEqual(JSON.parse(verifyRequest.options.body), {
+    email: 'reader@example.com',
+    token,
+    type: 'email',
+  });
+  assert.equal(typeof session.access_token, 'string');
+}
 
 await assert.rejects(
   verifyEmailOtpRecovery({
@@ -63,16 +65,18 @@ await assert.rejects(
   }),
   (error) => error?.code === 'INVALID_EMAIL_OTP' && error?.status === 400,
 );
-await assert.rejects(
-  verifyEmailOtpRecovery({
-    email: 'reader@example.com',
-    token: '12345',
-    environment: enabledEnvironment,
-    config,
-    fetchImpl: async () => { throw new Error('fetch should not run'); },
-  }),
-  (error) => error?.code === 'INVALID_EMAIL_OTP' && error?.status === 400,
-);
+for (const token of ['12345', '12345678901', '12ab5678']) {
+  await assert.rejects(
+    verifyEmailOtpRecovery({
+      email: 'reader@example.com',
+      token,
+      environment: enabledEnvironment,
+      config,
+      fetchImpl: async () => { throw new Error('fetch should not run'); },
+    }),
+    (error) => error?.code === 'INVALID_EMAIL_OTP' && error?.status === 400,
+  );
+}
 await assert.rejects(
   verifyEmailOtpRecovery({
     email: 'reader@example.com',
@@ -108,10 +112,14 @@ assert.match(handler, /recovery-status/);
 assert.match(handler, /recovery-verify/);
 assert.match(handler, /clearPkceCookie/);
 assert.match(signInPage, /autocomplete="one-time-code"/);
+assert.match(signInPage, /pattern="\[0-9\]\{6,10\}"/);
+assert.match(signInPage, /maxlength="10"/);
+assert.match(signInPage, /\^\\d\{6,10\}\$/);
 assert.match(signInPage, /op=recovery-status/);
 assert.match(signInPage, /op=recovery-verify/);
 assert.match(signInPage, /emailCodeContainer\.hidden = !emailCodeEnabled/);
 assert.match(signInPage, /Already have a code\?/);
+assert.doesNotMatch(signInPage, /six-digit code|6-digit email code/i);
 assert.match(accountPage, /passkey-settings-link/);
 assert.match(accountPage, /action=passkey&op=status/);
 assert.doesNotMatch(`${handler}${signInPage}${accountPage}`, /SUPABASE_SECRET_KEY|sb_secret_/);

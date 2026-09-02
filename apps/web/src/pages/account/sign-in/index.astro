@@ -54,20 +54,21 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
           </div>
 
           <div id="email-code-sign-in" hidden>
-            <label for="account-email-code">6-digit email code</label>
+            <label for="account-email-code">Email verification code</label>
             <input
               id="account-email-code"
               name="email-code"
               type="text"
               autocomplete="one-time-code"
               inputmode="numeric"
-              pattern="[0-9]{6}"
-              maxlength="6"
+              pattern="[0-9]{6,10}"
+              minlength="6"
+              maxlength="10"
             />
             <button id="email-code-verify-button" class="button account-secondary" type="button">Verify email code</button>
             <p class="account-help">
-              Already have a code? Enter the email address and six-digit code from the sign-in email here. This
-              works even if that email was requested in another browser context.
+              Already have a code? Enter the email address and numeric verification code exactly as shown in the
+              sign-in email. This works even if that email was requested in another browser context.
             </p>
           </div>
         </form>
@@ -210,7 +211,7 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
         const verifyBody = await verifyResponse.json().catch(() => ({}));
         if (!verifyResponse.ok) throw new Error(verifyBody.error || 'Passkey sign-in failed.');
 
-        showStatus('Passkey accepted. Opening your account…', 'success');
+        showStatus('Passkey accepted. Continuing…', 'success');
         window.location.replace(safeNextPath(verifyBody.redirect || nextInput?.value || '/account/'));
       } catch (error) {
         const cancelled = error && (error.name === 'NotAllowedError' || error.name === 'AbortError');
@@ -235,8 +236,8 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
         showStatus('Enter the email address that received the code.', 'error');
         return;
       }
-      if (!/^\d{6}$/.test(token)) {
-        showStatus('Enter the six-digit code from the email.', 'error');
+      if (!/^\d{6,10}$/.test(token)) {
+        showStatus('Enter the numeric verification code exactly as shown in the email.', 'error');
         return;
       }
 
@@ -258,7 +259,7 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
         const body = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(body.error || 'The email code is invalid or expired.');
 
-        showStatus('Email code accepted. Opening your account…', 'success');
+        showStatus('Email code accepted. Continuing…', 'success');
         window.location.replace(safeNextPath(body.redirect || nextInput?.value || '/account/'));
       } catch (error) {
         showStatus(
@@ -316,7 +317,7 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
           emailCodeContainer.hidden = false;
           emailCodeInput.value = '';
           emailCodeInput.focus();
-          showStatus('Check your email for the one-time sign-in link or six-digit code.', 'success');
+          showStatus('Check your email for the one-time sign-in link or verification code.', 'success');
         } else {
           showStatus('Check your email for the one-time sign-in link.', 'success');
           emailInput.value = '';

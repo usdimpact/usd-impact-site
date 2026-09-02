@@ -24,6 +24,12 @@ assert.equal((publicHtml.match(/data-track data-index=/g) || []).length, 20);
 assert.doesNotMatch(publicHtml, /\.public\.blob\.vercel-storage\.com/);
 assert.doesNotMatch(publicHtml, /https:\/\/[^\s'\"]+\.mp3/);
 assert.match(publicHtml, /\/guided-edition\/audiobook\/track\/read-the-dollar-first\//);
+assert.match(publicHtml, /<nav class="site-nav" aria-label="Library navigation">/);
+assert.match(publicHtml, /href="\/guided-edition\/">Guided Edition<\/a>/);
+assert.match(publicHtml, /href="\/guided-edition\/book\/">Book<\/a>/);
+assert.match(publicHtml, /href="\/guided-edition\/audiobook\/" aria-current="page">Audiobook<\/a>/);
+assert.match(publicHtml, /href="\/guided-edition\/video-library\/">Video Library<\/a>/);
+assert.match(publicHtml, /href="\/account\/">Account<\/a>/);
 
 const anonymous = response();
 await handleAudiobookRequest(request(), anonymous);

@@ -8,6 +8,7 @@ const sessionReadyPage = await readFile(
   new URL('../src/pages/auth/session-ready/index.astro', import.meta.url),
   'utf8',
 );
+const accountPage = await readFile(new URL('../src/pages/account/index.astro', import.meta.url), 'utf8');
 
 assert.match(accountRouter, /sessionReadyLocation\(next\)/);
 assert.match(accountRouter, /sessionReadyLocation,/);
@@ -27,5 +28,7 @@ assert.match(sessionReadyPage, /window\.location\.replace\(`\$\{signIn\.pathname
 assert.match(sessionReadyPage, /parsed\.origin !== window\.location\.origin/);
 assert.match(sessionReadyPage, /candidate\.startsWith\('\/\/'\)/);
 assert.doesNotMatch(sessionReadyPage, /Astro\.url\.searchParams/);
+assert.match(accountPage, /The same sign-in[\s\S]*Guided Edition,[\s\S]*digital reader,[\s\S]*audiobook,[\s\S]*Video Library/);
+assert.doesNotMatch(accountPage, /id="refresh-session"|Refreshing session…/);
 
 console.log('Session-ready redirect bridge tests passed.');

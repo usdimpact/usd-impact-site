@@ -101,11 +101,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <div><dt>Account</dt><dd id="account-status">Loading…</dd></div>
           <div><dt>Paid access</dt><dd id="paid-access">Loading…</dd></div>
         </dl>
+        <p class="account-help">
+          This browser can stay signed in for up to 30 days when “Keep me signed in” is selected. The same sign-in
+          covers the Guided Edition, digital reader, audiobook, and Video Library. On a shared device, sign out when
+          finished.
+        </p>
         <p id="account-message" class="account-status" role="status" aria-live="polite"></p>
         <div class="button-row account-actions">
           <a id="push-settings-link" class="button account-secondary" href="/account/notifications/" hidden>Browser notifications</a>
           <a id="passkey-settings-link" class="button account-secondary" href="/account/passkeys/" hidden>Passkeys &amp; security</a>
-          <button id="refresh-session" class="button account-secondary" type="button">Refresh session</button>
           <button id="export-account" class="button account-secondary" type="button">Download my data</button>
           <button id="sign-out" class="button account-secondary" type="button">Sign out</button>
         </div>
@@ -315,19 +319,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       ]);
       showMessage('Account loaded.', 'success');
     };
-
-    document.getElementById('refresh-session')?.addEventListener('click', async () => {
-      showMessage('Refreshing session…', 'pending');
-      const response = await fetch('/api/auth-refresh', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) return showMessage(body.error || 'Session refresh failed.', 'error');
-      await loadAccount().catch((error) => showMessage(error.message, 'error'));
-    });
 
     supportForm?.addEventListener('submit', async (event) => {
       event.preventDefault();

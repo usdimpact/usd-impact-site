@@ -16,6 +16,7 @@ import {
   refreshPasswordlessSession,
   revokePasswordlessSession,
   safeNextPath,
+  sessionReadyLocation,
   sendPasswordlessEmail,
   setSessionCookies,
 } from '../src/lib/supabase-auth.js';
@@ -80,12 +81,6 @@ function redirect(response, location, status = 303) {
   response.setHeader('Cache-Control', 'no-store');
   response.setHeader('X-Content-Type-Options', 'nosniff');
   response.end();
-}
-
-function sessionReadyLocation(next) {
-  const target = new URL('/auth/session-ready/', 'https://usd-impact.invalid');
-  target.searchParams.set('next', safeNextPath(next));
-  return `${target.pathname}${target.search}`;
 }
 
 function logConfirmationFailure(error) {

@@ -10,6 +10,7 @@ import {
   readSessionRefreshToken,
   requestOrigin,
   safeNextPath,
+  sessionReadyLocation,
   sendPasswordlessEmail,
   setSessionCookies,
 } from '../src/lib/supabase-auth.js';
@@ -45,6 +46,14 @@ assert.equal(
 assert.equal(safeNextPath('https://evil.example'), '/account/');
 assert.equal(safeNextPath('//evil.example'), '/account/');
 assert.equal(safeNextPath('/\\evil'), '/account/');
+assert.equal(
+  sessionReadyLocation('/guided-edition/video-library/'),
+  '/auth/session-ready/?next=%2Fguided-edition%2Fvideo-library%2F',
+);
+assert.equal(
+  sessionReadyLocation('https://evil.example'),
+  '/auth/session-ready/?next=%2Faccount%2F',
+);
 
 assert.equal(requestOrigin(request({ host: 'localhost:4321' })), 'http://localhost:4321');
 assert.equal(

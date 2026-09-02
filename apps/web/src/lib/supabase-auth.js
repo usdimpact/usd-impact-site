@@ -212,6 +212,12 @@ export function safeNextPath(value, fallback = '/account/') {
   }
 }
 
+export function sessionReadyLocation(next) {
+  const target = new URL('/auth/session-ready/', 'https://usd-impact.invalid');
+  target.searchParams.set('next', safeNextPath(next));
+  return `${target.pathname}${target.search}`;
+}
+
 function shouldUseSecureCookie(request) {
   const protocol = forwardedValue(request, 'x-forwarded-proto');
   if (protocol) return protocol === 'https';

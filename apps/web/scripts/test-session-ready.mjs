@@ -2,14 +2,18 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const accountRouter = await readFile(new URL('../api/account.js', import.meta.url), 'utf8');
+const passkeyHandler = await readFile(new URL('../src/lib/passkey-handler.js', import.meta.url), 'utf8');
+const supabaseAuth = await readFile(new URL('../src/lib/supabase-auth.js', import.meta.url), 'utf8');
 const sessionReadyPage = await readFile(
   new URL('../src/pages/auth/session-ready/index.astro', import.meta.url),
   'utf8',
 );
 
 assert.match(accountRouter, /sessionReadyLocation\(next\)/);
-assert.match(accountRouter, /new URL\('\/auth\/session-ready\/'/);
+assert.match(accountRouter, /sessionReadyLocation,/);
 assert.doesNotMatch(accountRouter, /return redirect\(response, next\);/);
+assert.match(passkeyHandler, /redirect: sessionReadyLocation\(payload\.next\)/);
+assert.match(supabaseAuth, /new URL\('\/auth\/session-ready\/'/);
 
 assert.match(sessionReadyPage, /new URLSearchParams\(window\.location\.search\)/);
 assert.match(sessionReadyPage, /window\.history\.replaceState\(null, '', '\/auth\/session-ready\/'\)/);

@@ -3,6 +3,7 @@ import {
   clearPkceCookie,
   readSessionAccessToken,
   safeNextPath,
+  sessionReadyLocation,
   setSessionCookies,
 } from './supabase-auth.js';
 import {
@@ -109,7 +110,7 @@ async function recoveryVerify(request, response) {
     setSessionCookies(response, request, session);
     return sendJson(response, 200, {
       ok: true,
-      redirect: safeNextPath(payload.next),
+      redirect: sessionReadyLocation(payload.next),
     });
   } catch (error) {
     return safeRecoveryError(response, error);

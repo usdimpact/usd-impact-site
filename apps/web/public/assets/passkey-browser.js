@@ -119,6 +119,32 @@
     return serializeCredential(credential);
   };
 
+  const restoreCheckoutReturnFromReferrer = () => {
+    if (window.location.pathname !== '/account/sign-in/') return false;
+    const nextInput = document.getElementById('account-next');
+    if (!(nextInput instanceof HTMLInputElement)) return false;
+
+    try {
+      const referrer = new URL(document.referrer || '', window.location.origin);
+      if (referrer.origin !== window.location.origin || referrer.pathname !== '/checkout/') return false;
+      const current = new URL(window.location.href);
+      const requestedNext = current.searchParams.get('next');
+      if (requestedNext && requestedNext !== '/account/') return false;
+
+      nextInput.value = `${referrer.pathname}${referrer.search}`;
+      const status = document.getElementById('sign-in-status');
+      if (status instanceof HTMLElement && !status.textContent?.trim()) {
+        status.textContent = 'Sign in to continue your Library Pass checkout. After verification, you will return to checkout automatically.';
+        status.dataset.state = 'pending';
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  window.addEventListener('DOMContentLoaded', restoreCheckoutReturnFromReferrer, { once: true });
+
   window.USDImpactPasskeys = Object.freeze({
     supported: supportsWebAuthn,
     create,

@@ -1,9 +1,21 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 
 const workflow = await readFile(
   new URL('../../../.github/workflows/daily-news-health.yml', import.meta.url),
   'utf8',
+);
+
+assert.match(
+  workflow,
+  /cron: '45 18 \* \* 1-5'/,
+  'Health must run after the primary and bounded backstop observation windows',
+);
+assert.match(
+  workflow,
+  /MAX_AGE_HOURS: '12'/,
+  'the late Health sentinel must accept a normal 09:17 UTC run from the same edition day',
 );
 
 assert.match(
@@ -28,8 +40,18 @@ assert.match(
 );
 assert.doesNotMatch(
   workflow,
-  /age_seconds="\$\(\(now_epoch - created_epoch\)\)"/,
+  /(?:^|\n)\s+age_seconds="\$\(\(now_epoch - created_epoch\)\)"/,
   'freshness must not remain pinned to the original failed attempt start',
+);
+assert.match(
+  workflow,
+  /created_epoch="\$\(date -u -d "\$created_at" \+%s\)"[\s\S]*active_age_seconds="\$\(\(now_epoch - created_epoch\)\)"/,
+  'active-run allowance must be measured from the actual run start',
+);
+assert.match(
+  workflow,
+  /MAX_ACTIVE_MINUTES: '130'[\s\S]*generation_pending[\s\S]*state=pending[\s\S]*exit 0[\s\S]*remained active beyond/,
+  'a recent active Daily run must remain pending while a stale active run fails',
 );
 assert.match(
   workflow,
@@ -109,6 +131,16 @@ assert.match(
 );
 assert.match(
   workflow,
+  /if ! gh api "repos\/\$GITHUB_REPOSITORY\/contents\/\$expected_file\?ref=main"[\s\S]*--state open[\s\S]*awaiting_editorial_review[\s\S]*state=pending/,
+  'an exact open Daily publication PR must be reported as protected editorial review pending',
+);
+assert.match(
+  workflow,
+  /echo "state=healthy" >> "\$GITHUB_OUTPUT"[\s\S]*if: steps\.health\.outcome == 'success' && steps\.health\.outputs\.state == 'healthy'/,
+  'only proven deployed health may close an existing Daily health issue',
+);
+assert.match(
+  workflow,
   /pull-requests: read/,
   'Health must have only the read permission needed to verify reviewed recovery PRs',
 );
@@ -127,6 +159,24 @@ assert.match(
   workflow,
   /gh issue edit "\$issue_number"[\s\S]*--body-file daily-health-report\.md/,
   'a later operational issue must keep its current failure marker in the body',
+);
+
+const healthStep = workflow.match(
+  /      - name: Inspect latest daily workflow run\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Open or update daily health issue)/,
+);
+assert.ok(healthStep, 'Daily Health inspection shell must be present');
+const healthShell = healthStep[1]
+  .split('\n')
+  .map((line) => (line.startsWith('          ') ? line.slice(10) : line))
+  .join('\n');
+const syntaxCheck = spawnSync('bash', ['-n'], {
+  input: healthShell,
+  encoding: 'utf8',
+});
+assert.equal(
+  syntaxCheck.status,
+  0,
+  `Daily Health shell must parse with bash -n:\n${syntaxCheck.stderr}`,
 );
 
 console.log('daily news health workflow tests pass');

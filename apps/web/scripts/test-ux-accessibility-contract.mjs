@@ -41,6 +41,7 @@ for (const group of ['Product', 'Learn', 'Research', 'Company']) {
 }
 
 assert.match(globalCss, /\.skip-link:focus\s*\{\s*transform:\s*translateY\(0\)/);
+assert.match(globalCss, /\.logo img[\s\S]*filter:\s*brightness\(0\) invert\(1\)/);
 assert.match(globalCss, /\.nav-summary:focus-visible[\s\S]*outline:\s*3px solid var\(--gold\)/);
 assert.match(globalCss, /\.nav\[data-open="true"\]\s*\{\s*display:\s*flex/);
 assert.match(globalCss, /\.audiobook-access-cover[\s\S]*width:\s*min\(100%, 320px\)/);

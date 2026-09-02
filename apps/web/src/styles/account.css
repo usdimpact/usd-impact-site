@@ -1,5 +1,5 @@
 .account-hero { padding-bottom: 58px; }
-.account-shell { display: grid; gap: 24px; max-width: 860px; }
+.account-shell { display: grid; gap: 24px; max-width: 980px; }
 .account-panel { padding: clamp(24px, 5vw, 42px); }
 .account-panel h2 { margin: 0 0 18px; }
 .account-title { color: var(--navy); font-size: clamp(34px, 5vw, 54px); }
@@ -23,8 +23,41 @@
 .account-danger { border-left: 5px solid #a12622; }
 .account-danger p { color: var(--slate); }
 .account-danger-button { background: #a12622; color: var(--white); }
+.account-next-step { border-left: 5px solid var(--gold); background: linear-gradient(135deg, var(--white), #fbf7ed); }
+.account-section-heading { display: flex; align-items: flex-start; gap: 16px; }
+.account-section-heading .eyebrow { margin: 1px 0 7px; }
+.account-section-heading h2 { margin-bottom: 0; }
+.account-icon { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 12px; background: #eef2f6; color: var(--navy); }
+.account-icon-emphasis { background: var(--gold); color: var(--midnight); }
+.account-icon svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.account-next-step > p:not(.account-help) { max-width: 690px; margin: 18px 0; color: var(--slate); font-size: 17px; line-height: 1.65; }
+.account-next-step > .button { margin-top: 4px; }
+.account-progress-summary { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; margin: 22px 0; list-style: none; }
+.account-progress-summary[hidden] { display: none; }
+.account-progress-summary li { display: grid; min-width: 132px; gap: 2px; padding: 12px 14px; border: 1px solid #d9dee5; border-radius: 12px; background: rgba(255,255,255,.82); }
+.account-progress-summary strong { color: var(--navy); font-size: 20px; }
+.account-progress-summary span { color: var(--slate); font-size: 13px; }
+.account-guide { display: grid; gap: 0; padding: 0; margin: 0 0 24px; list-style: none; }
+.account-guide li { display: grid; grid-template-columns: auto 1fr; gap: 16px; padding: 20px 0; border-top: 1px solid #e1e5ea; }
+.account-guide li:first-child { border-top: 0; padding-top: 4px; }
+.account-guide div { display: grid; gap: 5px; }
+.account-guide strong { color: var(--navy); font-size: 17px; }
+.account-guide span:not(.account-icon) { color: var(--slate); line-height: 1.55; }
+.account-format-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.account-format-card { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: 20px; border: 1px solid #e1e5ea; border-radius: 14px; background: #fafbfc; }
+.account-format-card h3 { margin: 16px 0 8px; font-size: 18px; }
+.account-format-card p { margin: 0 0 18px; color: var(--slate); line-height: 1.55; }
+.account-format-card .account-text-link { margin-top: auto; }
+.account-text-link { color: var(--navy); font-weight: 800; text-underline-offset: 3px; }
+.account-text-link:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
+
+@media (max-width: 760px) {
+  .account-format-grid { grid-template-columns: 1fr; }
+}
 
 @media (max-width: 620px) {
   .account-details div { grid-template-columns: 1fr; gap: 2px; }
   .account-actions .button { width: 100%; }
+  .account-progress-summary { display: grid; grid-template-columns: 1fr; }
+  .account-progress-summary li { grid-template-columns: auto 1fr; align-items: baseline; gap: 9px; }
 }

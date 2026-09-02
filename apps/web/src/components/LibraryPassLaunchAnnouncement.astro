@@ -23,9 +23,15 @@
 </aside>
 
 <script>
+  import { checkoutHrefWithCampaign } from '../lib/checkout-client.js';
   import { libraryPassLaunchAnnouncementCanOpen } from '../lib/library-pass-launch-announcement.js';
 
   const announcement = document.querySelector('[data-library-pass-launch-announcement]');
+  const announcementCta = document.querySelector('.library-pass-launch-announcement__cta');
+
+  if (announcementCta instanceof HTMLAnchorElement) {
+    announcementCta.href = checkoutHrefWithCampaign('/checkout/', window.location.search);
+  }
 
   if (announcement instanceof HTMLElement) {
     fetch('/api/commerce-readiness', {

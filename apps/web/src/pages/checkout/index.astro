@@ -125,6 +125,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   <script>
     import {
       approvedLaunchCheckoutUrl,
+      checkoutSignInHrefWithCampaign,
       createCheckoutIdempotencyKey,
       publicCheckoutPresentation,
     } from '../../lib/checkout-client.js';
@@ -234,7 +235,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         });
         if (response.status === 401) {
           window.dispatchEvent(new Event('usd-impact:checkout-sign-in-redirect'));
-          window.location.assign('/account/sign-in/?next=/checkout/');
+          window.location.assign(checkoutSignInHrefWithCampaign(window.location.search));
           return;
         }
         const body = await response.json().catch(() => ({}));

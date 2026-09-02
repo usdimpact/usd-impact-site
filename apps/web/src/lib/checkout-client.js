@@ -1,5 +1,6 @@
 const LEMON_SQUEEZY_PROVIDER = 'lemon-squeezy';
 const CHECKOUT_PATH = '/checkout/';
+const ACCOUNT_SIGN_IN_PATH = '/account/sign-in/';
 const CAMPAIGN_PARAMETER_NAMES = Object.freeze([
   'utm_source',
   'utm_medium',
@@ -22,6 +23,11 @@ export function checkoutHrefWithCampaign(href, search) {
 
   const query = campaign.toString();
   return query ? `${CHECKOUT_PATH}?${query}` : CHECKOUT_PATH;
+}
+
+export function checkoutSignInHrefWithCampaign(search) {
+  const next = checkoutHrefWithCampaign(CHECKOUT_PATH, search);
+  return `${ACCOUNT_SIGN_IN_PATH}?${new URLSearchParams({ next }).toString()}`;
 }
 
 export function publicCheckoutCanOpen(commerce, disclosureRendered) {

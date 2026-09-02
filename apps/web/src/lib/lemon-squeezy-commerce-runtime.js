@@ -20,6 +20,7 @@ import {
   COMMERCE_READINESS_STATES,
   resolveCommerceReadiness,
 } from './commerce-provider.js';
+import { deliverPurchaseAccessReadyEmail } from './purchase-access-ready-email.js';
 import { readSupabaseServerConfig } from './supabase-server.js';
 
 const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
@@ -447,6 +448,49 @@ export async function readCommercePurchaseIntent({ config, intentId, fetchImpl }
     throw new LemonSqueezyCommerceRuntimeError('Trusted purchase intent not found.', 'TRUSTED_PURCHASE_INTENT_NOT_FOUND', 404);
   }
   return Object.freeze({ ...row });
+}
+
+export async function readCommerceAccessReadyResult({
+  config,
+  purchaseIntent,
+  completionResult,
+  occurredAt,
+  fetchImpl,
+}) {
+  const accountId = requireUuid(purchaseIntent?.account_id, 'accountId');
+  const purchaseId = requireUuid(completionResult?.purchase_id, 'purchaseId');
+  const entitlementId = requireUuid(completionResult?.entitlement_id, 'entitlementId');
+  const [profiles, entitlements] = await Promise.all([
+    serviceRequest({
+      config,
+      path: `/rest/v1/profiles?account_id=eq.${encodeURIComponent(accountId)}&select=account_id,email,status&limit=1`,
+      fetchImpl,
+    }),
+    serviceRequest({
+      config,
+      path: `/rest/v1/entitlements?id=eq.${encodeURIComponent(entitlementId)}&account_id=eq.${encodeURIComponent(accountId)}&purchase_id=eq.${encodeURIComponent(purchaseId)}&select=id,account_id,purchase_id,product_id,state,version&limit=1`,
+      fetchImpl,
+    }),
+  ]);
+  const profile = firstRow(profiles);
+  const entitlement = firstRow(entitlements);
+  if (!profile || !entitlement) {
+    throw new LemonSqueezyCommerceRuntimeError(
+      'Completed purchase access could not be verified for email delivery.',
+      'PURCHASE_ACCESS_READY_RECORD_MISSING',
+      503,
+    );
+  }
+  return Object.freeze({
+    profile: Object.freeze({ ...profile }),
+    purchase: Object.freeze({
+      id: purchaseId,
+      account_id: accountId,
+      status: 'completed',
+      completed_at: requireText(occurredAt, 'occurredAt', 20, 64),
+    }),
+    entitlement: Object.freeze({ ...entitlement }),
+  });
 }
 
 export function commerceWebhookPayloadSha256(rawBody) {
@@ -983,6 +1027,19 @@ export async function processLemonSqueezyWebhook({
         metadata,
         fetchImpl,
         now,
+      });
+      const accessResult = await readCommerceAccessReadyResult({
+        config,
+        purchaseIntent,
+        completionResult: result,
+        occurredAt: event.occurredAt || new Date(now).toISOString(),
+        fetchImpl,
+      });
+      await deliverPurchaseAccessReadyEmail({
+        accessResult,
+        ledgerFetchImpl: fetchImpl,
+        providerFetchImpl: fetchImpl,
+        nowMs: new Date(now).getTime(),
       });
     } else if (identity.eventName === 'order_refunded') {
       if (commercial.status === 'paid') {

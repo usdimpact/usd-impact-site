@@ -36,6 +36,15 @@ assert.equal(checkoutBody.data.type, 'checkouts');
 assert.equal(checkoutBody.data.attributes.test_mode, true);
 assert.equal(checkoutBody.data.attributes.checkout_options.discount, false);
 assert.deepEqual(checkoutBody.data.attributes.product_options.enabled_variants, [314]);
+assert.equal(checkoutBody.data.attributes.product_options.receipt_button_text, 'Open USD Impact');
+assert.equal(
+  checkoutBody.data.attributes.product_options.receipt_link_url,
+  'https://www.usd-impact.com/account/',
+);
+assert.match(
+  checkoutBody.data.attributes.product_options.receipt_thank_you_note,
+  /access is tied to the USD Impact account confirmed before checkout/i,
+);
 assert.deepEqual(checkoutBody.data.attributes.checkout_data.variant_quantities, [{ variant_id: 314, quantity: 1 }]);
 assert.equal(checkoutBody.data.attributes.checkout_data.custom.usd_impact_account_id, accountId);
 assert.equal(checkoutBody.data.attributes.checkout_data.custom.usd_impact_purchase_intent_id, purchaseIntentId);

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "npm run generate:quizzes && astro build && npm run validate:checkout-presentation && npm run validate:csp-build && node scripts/verify-production-build.mjs",
+    "build": "npm run generate:quizzes && npm run validate:purchase-access-email && astro build && npm run validate:checkout-presentation && npm run validate:csp-build && node scripts/verify-production-build.mjs",
     "preview": "astro preview",
     "verify:waitlist-development": "node scripts/verify-waitlist-development.mjs",
     "generate:waitlist-unsubscribe-link": "node scripts/generate-waitlist-unsubscribe-link.mjs",
@@ -14,6 +14,7 @@
     "validate:news": "node scripts/validate-news.mjs && node scripts/validate-catalyst-briefs.mjs",
     "validate:links": "node scripts/validate-links.mjs",
     "validate:checkout-presentation": "node scripts/test-checkout-page-presentation.mjs",
+    "validate:purchase-access-email": "node --check src/lib/purchase-access-ready-email.js && node scripts/test-purchase-access-ready-email.mjs",
     "validate:commerce-reconciliation-scheduler": "node scripts/test-commerce-reconciliation-scheduler-contract.mjs",
     "validate:compliance": "node scripts/check-compliance-phrases.mjs && node scripts/test-domain-readiness-contract.mjs && node scripts/test-library-pass-launch-announcement.mjs && node scripts/test-transparency-pages.mjs && node scripts/test-three-dials-boundaries.mjs && node scripts/test-score-pipeline-origin.mjs && node scripts/test-academic-evidence-map.mjs && node scripts/test-commerce-provider-eligibility-state.mjs && npm run validate:checkout-presentation",
     "validate:publishing": "node scripts/validate-publishing.mjs",

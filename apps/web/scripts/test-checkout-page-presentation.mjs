@@ -20,6 +20,26 @@ assert.match(
 );
 assert.match(
   checkoutSource,
+  /<div id="checkout-account-gate"[^>]*\bhidden\b/,
+  'The verified access account must not flash before the account request completes.',
+);
+assert.match(
+  checkoutSource,
+  /I confirm this is the account that should receive Library Pass access\./,
+  'Checkout must require an explicit access-account acknowledgement.',
+);
+assert.match(
+  checkoutSource,
+  /body\.paidAccess\?\.allowed === true/,
+  'Checkout must stop an already entitled account from purchasing again.',
+);
+assert.match(
+  checkoutSource,
+  /The email entered\s+in Lemon Squeezy may be used for the financial receipt and invoice, but it does not change this access account\./,
+  'Checkout must distinguish the financial buyer email from the access account.',
+);
+assert.match(
+  checkoutSource,
   /No payment can be initiated until verification completes\./,
   'The initial checkout status must describe the verification boundary accurately.',
 );

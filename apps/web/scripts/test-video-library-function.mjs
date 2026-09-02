@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import guidedEditionHandler from '../api/guided-edition.js';
 import { handleVideoLibraryRequest } from '../src/lib/video-library-handler.js';
 import { getStreamUid } from '../src/lib/video-stream-map.js';
 import { SESSION_COOKIE_NAMES } from '../src/lib/supabase-auth.js';
@@ -36,6 +37,19 @@ await handleVideoLibraryRequest(request(), anonymous);
 assert.equal(anonymous.statusCode, 302);
 assert.equal(new URL(anonymous.getHeader('location'), `https://${host}`).pathname, '/account/sign-in/');
 assert.equal(new URL(anonymous.getHeader('location'), `https://${host}`).searchParams.get('next'), '/guided-edition/video-library/');
+
+const nestedRoute = responseRecorder();
+await guidedEditionHandler(
+  request({ url: '/api/guided-edition?__video_path=dollar-yields-liquidity' }),
+  nestedRoute,
+);
+assert.equal(nestedRoute.statusCode, 302);
+const nestedSignIn = new URL(nestedRoute.getHeader('location'), `https://${host}`);
+assert.equal(nestedSignIn.pathname, '/account/sign-in/');
+assert.equal(
+  nestedSignIn.searchParams.get('next'),
+  '/guided-edition/video-library/dollar-yields-liquidity/',
+);
 
 const unpaid = responseRecorder();
 await handleVideoLibraryRequest(request({ authenticated: true }), unpaid, {

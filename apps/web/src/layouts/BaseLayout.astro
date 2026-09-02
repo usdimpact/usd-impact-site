@@ -190,9 +190,15 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIs
 
       document.addEventListener("keydown", (event) => {
         if (event.key !== "Escape") return;
+        const openGroup = navigationGroups.find((group) => group.hasAttribute("open"));
+        if (window.matchMedia("(max-width: 760px)").matches) {
+          setNavigationOpen(false);
+          if (navigationToggle instanceof HTMLButtonElement) navigationToggle.focus();
+          return;
+        }
         closeNavigationGroups();
-        setNavigationOpen(false);
-        if (navigationToggle instanceof HTMLButtonElement) navigationToggle.focus();
+        const summary = openGroup?.querySelector("summary");
+        if (summary instanceof HTMLElement) summary.focus();
       });
 
       navigation?.querySelectorAll("a").forEach((link) => {

@@ -35,6 +35,8 @@ for (const group of ['Learn', 'Updates', 'Library']) {
 }
 assert.match(layout, /aria-current=\{pageIsActive/);
 assert.match(layout, /event\.key !== "Escape"/);
+assert.match(layout, /openGroup\?\.querySelector\("summary"\)/);
+assert.match(layout, /if \(summary instanceof HTMLElement\) summary\.focus\(\)/);
 assert.match(layout, /aria-label="Footer navigation"/);
 for (const group of ['Product', 'Learn', 'Research', 'Company']) {
   assert.match(layout, new RegExp(`<p class="footer-heading">${group}<\\/p>`));

@@ -5,7 +5,7 @@ import {
 
 const EMAIL_MAX_LENGTH = 254;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const OTP_PATTERN = /^\d{6}$/;
+const OTP_PATTERN = /^\d{6,10}$/;
 
 export function emailOtpRecoveryEnabled(environment = process.env) {
   return String(environment.EMAIL_OTP_FALLBACK_ENABLED ?? '').trim().toLowerCase() === 'true';

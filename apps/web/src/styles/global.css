@@ -20,7 +20,7 @@ a { color: var(--navy); }
 .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .logo { display: flex; align-items: center; flex: 0 0 auto; color: var(--white); text-decoration: none; }
-.logo img { display: block; height: 32px; width: auto; filter: brightness(0) invert(1); }
+.logo img { display: block; height: 44px; width: auto; filter: brightness(0) invert(1); }
 .nav-toggle { display: none; min-height: 44px; align-items: center; gap: 9px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.35); border-radius: 10px; background: transparent; color: var(--white); font: inherit; font-size: 14px; font-weight: 750; cursor: pointer; }
 .nav-toggle-icon, .nav-toggle-icon::before, .nav-toggle-icon::after { display: block; width: 18px; height: 2px; border-radius: 2px; background: currentColor; }
 .nav-toggle-icon { position: relative; }

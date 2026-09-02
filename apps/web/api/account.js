@@ -13,11 +13,14 @@ import {
   clearSessionCookies,
   exchangePasswordlessCode,
   readPkceVerifier,
+  readRememberDevicePreference,
   readSessionAccessToken,
   readSessionRefreshToken,
   refreshPasswordlessSession,
+  resolveSessionWithRefresh,
   revokePasswordlessSession,
   safeNextPath,
+  sessionReadyLocation,
   sendPasswordlessEmail,
   setSessionCookies,
 } from '../src/lib/supabase-auth.js';
@@ -82,12 +85,6 @@ function redirect(response, location, status = 303) {
   response.setHeader('Cache-Control', 'no-store');
   response.setHeader('X-Content-Type-Options', 'nosniff');
   response.end();
-}
-
-function sessionReadyLocation(next) {
-  const target = new URL('/auth/session-ready/', 'https://usd-impact.invalid');
-  target.searchParams.set('next', safeNextPath(next));
-  return `${target.pathname}${target.search}`;
 }
 
 function logConfirmationFailure(error) {
@@ -162,6 +159,7 @@ async function handleLogin(request, response) {
       next: payload.next,
       request,
       response,
+      rememberDevice: payload.rememberDevice,
     });
     return sendJson(response, 202, {
       ok: true,
@@ -195,7 +193,9 @@ async function handleConfirm(request, response) {
       codeVerifier,
     });
     clearPkceCookie(response, request);
-    setSessionCookies(response, request, session);
+    setSessionCookies(response, request, session, {
+      rememberDevice: readRememberDevicePreference(request),
+    });
     return redirect(response, sessionReadyLocation(next));
   } catch (error) {
     logConfirmationFailure(error);
@@ -220,7 +220,9 @@ async function handleRefresh(request, response) {
 
   try {
     const session = await refreshPasswordlessSession({ refreshToken });
-    setSessionCookies(response, request, session);
+    setSessionCookies(response, request, session, {
+      rememberDevice: readRememberDevicePreference(request),
+    });
     return sendJson(response, 200, { ok: true });
   } catch (error) {
     clearSessionCookies(response, request);
@@ -248,16 +250,20 @@ async function handleLogout(request, response) {
 export async function handleAccess(request, response, dependencies = {}) {
   if (request.method !== 'GET') return methodNotAllowed(response, 'GET');
 
-  const accessToken = readSessionAccessToken(request);
-  if (!accessToken) {
-    return sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
-  }
-
   try {
     const readAccessState = dependencies.readAccountAccessState || readAccountAccessState;
     const readLearningProgress = dependencies.readOwnLearningProgress || readOwnLearningProgress;
     const createLearningJourney = dependencies.buildLearningJourney || buildLearningJourney;
-    const state = await readAccessState({ accessToken });
+    const resolveSession = dependencies.resolveSessionWithRefresh || resolveSessionWithRefresh;
+    const resolved = await resolveSession({
+      request,
+      response,
+      verifyAccessToken: (accessToken) => readAccessState({ accessToken }),
+    });
+    if (!resolved) {
+      return sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
+    }
+    const { accessToken, value: state } = resolved;
     let learningJourney;
     if (state.allowed) {
       try {

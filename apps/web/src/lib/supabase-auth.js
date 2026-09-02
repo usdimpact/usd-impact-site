@@ -10,6 +10,7 @@ import {
 export const SESSION_COOKIE_NAMES = Object.freeze({
   ACCESS: 'usd_impact_access',
   REFRESH: 'usd_impact_refresh',
+  PERSISTENCE: 'usd_impact_persistence',
 });
 export const PKCE_COOKIE_NAME = 'usd_impact_pkce';
 
@@ -212,6 +213,12 @@ export function safeNextPath(value, fallback = '/account/') {
   }
 }
 
+export function sessionReadyLocation(next) {
+  const target = new URL('/auth/session-ready/', 'https://usd-impact.invalid');
+  target.searchParams.set('next', safeNextPath(next));
+  return `${target.pathname}${target.search}`;
+}
+
 function shouldUseSecureCookie(request) {
   const protocol = forwardedValue(request, 'x-forwarded-proto');
   if (protocol) return protocol === 'https';
@@ -225,8 +232,10 @@ function serializeCookie(name, value, { maxAge, request, path = '/' }) {
     `Path=${path}`,
     'HttpOnly',
     'SameSite=Lax',
-    `Max-Age=${Math.max(0, Math.floor(maxAge))}`,
   ];
+  if (maxAge !== null && maxAge !== undefined) {
+    parts.push(`Max-Age=${Math.max(0, Math.floor(maxAge))}`);
+  }
   if (shouldUseSecureCookie(request)) parts.push('Secure');
   return parts.join('; ');
 }
@@ -237,18 +246,39 @@ function appendSetCookies(response, cookies) {
   response.setHeader('Set-Cookie', [...current, ...cookies]);
 }
 
-export function setSessionCookies(response, request, sessionPayload) {
-  const session = normalizeSession(sessionPayload);
+function rememberDeviceEnabled(value) {
+  return value !== false;
+}
+
+function setRememberDevicePreference(response, request, rememberDevice) {
+  const remembered = rememberDeviceEnabled(rememberDevice);
   appendSetCookies(response, [
-    serializeCookie(SESSION_COOKIE_NAMES.ACCESS, session.accessToken, {
-      maxAge: session.expiresIn,
-      request,
-    }),
-    serializeCookie(SESSION_COOKIE_NAMES.REFRESH, session.refreshToken, {
-      maxAge: REFRESH_COOKIE_MAX_AGE,
+    serializeCookie(SESSION_COOKIE_NAMES.PERSISTENCE, remembered ? '1' : '0', {
+      maxAge: remembered ? REFRESH_COOKIE_MAX_AGE : null,
       request,
     }),
   ]);
+  return remembered;
+}
+
+export function readRememberDevicePreference(request) {
+  return cookieMap(request).get(SESSION_COOKIE_NAMES.PERSISTENCE) !== '0';
+}
+
+export function setSessionCookies(response, request, sessionPayload, { rememberDevice = true } = {}) {
+  const session = normalizeSession(sessionPayload);
+  const remembered = rememberDeviceEnabled(rememberDevice);
+  appendSetCookies(response, [
+    serializeCookie(SESSION_COOKIE_NAMES.ACCESS, session.accessToken, {
+      maxAge: remembered ? session.expiresIn : null,
+      request,
+    }),
+    serializeCookie(SESSION_COOKIE_NAMES.REFRESH, session.refreshToken, {
+      maxAge: remembered ? REFRESH_COOKIE_MAX_AGE : null,
+      request,
+    }),
+  ]);
+  setRememberDevicePreference(response, request, remembered);
   return session;
 }
 
@@ -256,6 +286,7 @@ export function clearSessionCookies(response, request) {
   appendSetCookies(response, [
     serializeCookie(SESSION_COOKIE_NAMES.ACCESS, '', { maxAge: 0, request }),
     serializeCookie(SESSION_COOKIE_NAMES.REFRESH, '', { maxAge: 0, request }),
+    serializeCookie(SESSION_COOKIE_NAMES.PERSISTENCE, '', { maxAge: 0, request }),
   ]);
 }
 
@@ -311,6 +342,7 @@ export async function sendPasswordlessEmail({
   config,
   fetchImpl,
   shouldCreateUser = true,
+  rememberDevice = true,
 }) {
   if (!response || typeof response.setHeader !== 'function') {
     throw new SupabaseConfigurationError('A response object is required for PKCE authentication.');
@@ -336,6 +368,7 @@ export async function sendPasswordlessEmail({
     fetchImpl,
   });
   setPkceCookie(response, request, pkce.verifier);
+  setRememberDevicePreference(response, request, rememberDevice);
   return Object.freeze({ email: normalizedEmail, redirectTo });
 }
 
@@ -387,6 +420,73 @@ export async function refreshPasswordlessSession({
     fetchImpl,
   });
   return normalizeSession(payload);
+}
+
+export async function resolveSessionWithRefresh({
+  request,
+  response,
+  verifyAccessToken,
+  environment,
+  config,
+  fetchImpl,
+}) {
+  if (!response || typeof response.setHeader !== 'function') {
+    throw new SupabaseConfigurationError('A response object is required to refresh authentication.');
+  }
+  if (typeof verifyAccessToken !== 'function') {
+    throw new SupabaseConfigurationError('An access-token verifier is required to resolve authentication.');
+  }
+
+  const accessToken = readSessionAccessToken(request);
+  if (accessToken) {
+    try {
+      return Object.freeze({
+        accessToken,
+        value: await verifyAccessToken(accessToken),
+        refreshed: false,
+      });
+    } catch (error) {
+      if (error?.status !== 401) throw error;
+    }
+  }
+
+  const refreshToken = readSessionRefreshToken(request);
+  if (!refreshToken) {
+    if (accessToken) clearSessionCookies(response, request);
+    return null;
+  }
+
+  let session;
+  try {
+    session = await refreshPasswordlessSession({
+      refreshToken,
+      environment,
+      config,
+      fetchImpl,
+    });
+  } catch (error) {
+    if ([400, 401, 403].includes(error?.status)) {
+      clearSessionCookies(response, request);
+      return null;
+    }
+    throw error;
+  }
+
+  const rememberDevice = readRememberDevicePreference(request);
+  setSessionCookies(response, request, session, { rememberDevice });
+  try {
+    return Object.freeze({
+      accessToken: session.accessToken,
+      value: await verifyAccessToken(session.accessToken),
+      refreshed: true,
+    });
+  } catch (error) {
+    if (error?.status === 401) {
+      clearSessionCookies(response, request);
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function revokePasswordlessSession({

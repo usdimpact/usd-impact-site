@@ -7,6 +7,11 @@
 .account-form label { color: var(--navy); font-weight: 800; }
 .account-form input[type="email"] { width: 100%; min-height: 50px; padding: 12px 14px; border: 1px solid #aeb7c3; border-radius: 12px; background: var(--white); color: var(--graphite); font: inherit; }
 .account-form input[type="email"]:focus { outline: 3px solid rgba(201,163,91,.25); border-color: var(--gold); }
+.account-remember { display: grid; gap: 5px; margin: 4px 0 8px; }
+.account-choice { display: flex; align-items: flex-start; gap: 10px; width: fit-content; max-width: 100%; line-height: 1.45; cursor: pointer; }
+.account-choice input[type="checkbox"] { flex: 0 0 auto; width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--navy); }
+.account-choice input[type="checkbox"]:focus-visible { outline: 3px solid rgba(201,163,91,.35); outline-offset: 3px; }
+.account-remember .account-help { margin: 0 0 0 30px; }
 .account-form .button { justify-self: start; margin-top: 8px; }
 .account-help { margin-top: 20px; color: var(--slate); font-size: 14px; }
 .account-status { min-height: 1.6em; margin: 18px 0 0; font-weight: 700; }
@@ -56,6 +61,7 @@
 }
 
 @media (max-width: 620px) {
+  .account-remember .account-help { margin-left: 0; }
   .account-details div { grid-template-columns: 1fr; gap: 2px; }
   .account-actions .button { width: 100%; }
   .account-progress-summary { display: grid; grid-template-columns: 1fr; }

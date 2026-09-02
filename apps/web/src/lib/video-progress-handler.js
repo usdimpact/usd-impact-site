@@ -5,7 +5,7 @@ import {
   sendJson,
   upsertOwnVideoProgress,
 } from './supabase-server.js';
-import { readSessionAccessToken } from './supabase-auth.js';
+import { resolveSessionWithRefresh } from './supabase-auth.js';
 import { getVideo, videoSlugs } from '../data/video-library.js';
 
 const MAX_BODY_BYTES = 4_096;
@@ -62,6 +62,7 @@ export async function handleVideoProgressRequest(
   response,
   {
     readAccessState = readAccountAccessState,
+    resolveSession = resolveSessionWithRefresh,
     readProgress = readOwnVideoProgress,
     upsertProgress = upsertOwnVideoProgress,
   } = {},
@@ -75,16 +76,19 @@ export async function handleVideoProgressRequest(
     return sendJson(response, 405, { error: 'Method not allowed.', code: 'METHOD_NOT_ALLOWED' });
   }
 
-  const accessToken = readSessionAccessToken(request);
-  if (!accessToken) return sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
-
-  let state;
+  let resolved;
   try {
-    state = await readAccessState({ accessToken });
+    resolved = await resolveSession({
+      request,
+      response,
+      verifyAccessToken: (accessToken) => readAccessState({ accessToken }),
+    });
   } catch (error) {
     const safe = safeSupabaseError(error);
     return sendJson(response, safe.status, safe.payload);
   }
+  if (!resolved) return sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
+  const { accessToken, value: state } = resolved;
   if (state?.allowed !== true || !state?.user?.id) {
     return sendJson(response, 403, { error: 'Active access is required.', code: 'PAID_ACCESS_REQUIRED' });
   }

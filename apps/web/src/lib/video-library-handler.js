@@ -3,8 +3,8 @@ import {
   safeSupabaseError,
 } from './supabase-server.js';
 import {
-  readSessionAccessToken,
   requestOrigin,
+  resolveSessionWithRefresh,
   safeNextPath,
 } from './supabase-auth.js';
 import {
@@ -83,6 +83,7 @@ export async function handleVideoLibraryRequest(
   response,
   {
     readAccessState = readAccountAccessState,
+    resolveSession = resolveSessionWithRefresh,
     createToken = createCloudflareStreamToken,
     environment = process.env,
   } = {},
@@ -106,17 +107,21 @@ export async function handleVideoLibraryRequest(
     return response.end('Invalid protected route.');
   }
 
-  const accessToken = readSessionAccessToken(request);
-  if (!accessToken) return redirect(response, buildPaidSignInRedirect(protectedUrl));
-
-  let state;
+  let resolved;
   try {
-    state = await readAccessState({ accessToken });
+    resolved = await resolveSession({
+      request,
+      response,
+      environment,
+      verifyAccessToken: (accessToken) => readAccessState({ accessToken }),
+    });
   } catch (error) {
     const safe = safeSupabaseError(error);
     if (safe.status === 401) return redirect(response, buildPaidSignInRedirect(protectedUrl));
     return redirect(response, buildPaidAccessRequiredRedirect(protectedUrl, 'denied'));
   }
+  if (!resolved) return redirect(response, buildPaidSignInRedirect(protectedUrl));
+  const state = resolved.value;
 
   if (state?.allowed !== true) {
     return redirect(

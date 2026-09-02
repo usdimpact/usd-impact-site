@@ -1,5 +1,5 @@
-import { readSessionAccessToken } from './supabase-auth.js';
-import { safeSupabaseError, sendJson } from './supabase-server.js';
+import { resolveSessionWithRefresh } from './supabase-auth.js';
+import { getVerifiedSupabaseUser, safeSupabaseError, sendJson } from './supabase-server.js';
 import {
   readDailyCardReviewQueue,
   submitDailyCardReview,
@@ -31,7 +31,7 @@ function queryLimit(request) {
   return url.searchParams.get('limit') || 3;
 }
 
-export async function handleDailyCardReviewRequest(request, response) {
+export async function handleDailyCardReviewRequest(request, response, options = {}) {
   if (process.env.ADAPTIVE_LEARNING_ENABLED !== 'true') {
     return sendJson(response, 404, {
       error: 'Adaptive learning is not enabled.',
@@ -39,15 +39,20 @@ export async function handleDailyCardReviewRequest(request, response) {
     });
   }
 
-  const accessToken = readSessionAccessToken(request);
-  if (!accessToken) {
-    return sendJson(response, 401, {
-      error: 'Authentication is required.',
-      code: 'AUTHENTICATION_REQUIRED',
-    });
-  }
-
   try {
+    const resolved = await (options.resolveSession || resolveSessionWithRefresh)({
+      request,
+      response,
+      environment: options.environment || process.env,
+      verifyAccessToken: (accessToken) => (options.verifyAccessToken || getVerifiedSupabaseUser)(accessToken),
+    });
+    if (!resolved) {
+      return sendJson(response, 401, {
+        error: 'Authentication is required.',
+        code: 'AUTHENTICATION_REQUIRED',
+      });
+    }
+    const { accessToken } = resolved;
     if (request.method === 'GET') {
       const queue = await readDailyCardReviewQueue({
         accessToken,

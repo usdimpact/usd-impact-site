@@ -6,10 +6,13 @@ import {
   clearSessionCookies,
   exchangePasswordlessCode,
   readPkceVerifier,
+  readRememberDevicePreference,
   readSessionAccessToken,
   readSessionRefreshToken,
   requestOrigin,
+  resolveSessionWithRefresh,
   safeNextPath,
+  sessionReadyLocation,
   sendPasswordlessEmail,
   setSessionCookies,
 } from '../src/lib/supabase-auth.js';
@@ -45,6 +48,14 @@ assert.equal(
 assert.equal(safeNextPath('https://evil.example'), '/account/');
 assert.equal(safeNextPath('//evil.example'), '/account/');
 assert.equal(safeNextPath('/\\evil'), '/account/');
+assert.equal(
+  sessionReadyLocation('/guided-edition/video-library/'),
+  '/auth/session-ready/?next=%2Fguided-edition%2Fvideo-library%2F',
+);
+assert.equal(
+  sessionReadyLocation('https://evil.example'),
+  '/auth/session-ready/?next=%2Faccount%2F',
+);
 
 assert.equal(requestOrigin(request({ host: 'localhost:4321' })), 'http://localhost:4321');
 assert.equal(
@@ -61,22 +72,38 @@ setSessionCookies(cookieResponse, request({ host: 'www.usd-impact.com', 'x-forwa
   expires_in: 3600,
 });
 const cookies = cookieResponse.getHeader('set-cookie');
-assert.equal(cookies.length, 2);
+assert.equal(cookies.length, 3);
 assert.match(cookies[0], new RegExp(`^${SESSION_COOKIE_NAMES.ACCESS}=`));
 assert.match(cookies[0], /HttpOnly/);
 assert.match(cookies[0], /SameSite=Lax/);
 assert.match(cookies[0], /Secure/);
 assert.match(cookies[1], new RegExp(`^${SESSION_COOKIE_NAMES.REFRESH}=`));
+assert.match(cookies[1], /Max-Age=2592000/);
+assert.match(cookies[2], new RegExp(`^${SESSION_COOKIE_NAMES.PERSISTENCE}=1`));
+assert.match(cookies[2], /Max-Age=2592000/);
+
+const sessionOnlyResponse = responseRecorder();
+setSessionCookies(sessionOnlyResponse, request({ host: 'www.usd-impact.com', 'x-forwarded-proto': 'https' }), {
+  access_token: accessToken,
+  refresh_token: refreshToken,
+  expires_in: 3600,
+}, { rememberDevice: false });
+const sessionOnlyCookies = sessionOnlyResponse.getHeader('set-cookie');
+assert.equal(sessionOnlyCookies.length, 3);
+assert.ok(sessionOnlyCookies.every((cookie) => !cookie.includes('Max-Age=')));
+assert.match(sessionOnlyCookies[2], new RegExp(`^${SESSION_COOKIE_NAMES.PERSISTENCE}=0`));
 
 const cookieHeader = `${SESSION_COOKIE_NAMES.ACCESS}=${encodeURIComponent(accessToken)}; ${SESSION_COOKIE_NAMES.REFRESH}=${encodeURIComponent(refreshToken)}`;
 assert.equal(readSessionAccessToken(request({ cookie: cookieHeader })), accessToken);
 assert.equal(readSessionRefreshToken(request({ cookie: cookieHeader })), refreshToken);
+assert.equal(readRememberDevicePreference(request({ cookie: cookieHeader })), true);
+assert.equal(readRememberDevicePreference(request({ cookie: `${SESSION_COOKIE_NAMES.PERSISTENCE}=0` })), false);
 assert.equal(readSessionAccessToken(request({ authorization: `Bearer ${accessToken}` })), accessToken);
 assert.equal(readSessionRefreshToken(request({ cookie: `${SESSION_COOKIE_NAMES.REFRESH}=bad%0Atoken` })), null);
 
 const clearResponse = responseRecorder();
 clearSessionCookies(clearResponse, request({ host: 'localhost:4321' }));
-assert.equal(clearResponse.getHeader('set-cookie').length, 2);
+assert.equal(clearResponse.getHeader('set-cookie').length, 3);
 assert.match(clearResponse.getHeader('set-cookie')[0], /Max-Age=0/);
 assert.doesNotMatch(clearResponse.getHeader('set-cookie')[0], /Secure/);
 
@@ -108,6 +135,8 @@ assert.match(pkceCookie, new RegExp(`^${PKCE_COOKIE_NAME}=`));
 assert.match(pkceCookie, /Path=\//);
 assert.doesNotMatch(pkceCookie, /Path=\/auth\/confirm\//);
 assert.match(pkceCookie, /HttpOnly/);
+assert.equal(otpResponse.getHeader('set-cookie').length, 2);
+assert.match(otpResponse.getHeader('set-cookie')[1], new RegExp(`^${SESSION_COOKIE_NAMES.PERSISTENCE}=1`));
 const verifier = decodeURIComponent(pkceCookie.match(new RegExp(`^${PKCE_COOKIE_NAME}=([^;]+)`))[1]);
 assert.match(verifier, /^[A-Za-z0-9_-]{43,128}$/);
 assert.equal(readPkceVerifier(request({ cookie: `${PKCE_COOKIE_NAME}=${encodeURIComponent(verifier)}` })), verifier);
@@ -161,10 +190,78 @@ const exchanged = await exchangePasswordlessCode({
 assert.equal(exchanged.accessToken, accessToken);
 assert.equal(exchanged.refreshToken, refreshToken);
 
+const verified = await resolveSessionWithRefresh({
+  request: request({ cookie: cookieHeader }),
+  response: responseRecorder(),
+  config,
+  verifyAccessToken: async (token) => ({ token, allowed: true }),
+  fetchImpl: async () => { throw new Error('refresh should not run'); },
+});
+assert.equal(verified.accessToken, accessToken);
+assert.equal(verified.refreshed, false);
+assert.deepEqual(verified.value, { token: accessToken, allowed: true });
+
+const rotatedAccessToken = 'rotated.access_token_that_is_long_enough_for_validation_12345';
+const rotatedRefreshToken = 'rotated.refresh_token_that_is_long_enough_for_validation_12345';
+const refreshResponse = responseRecorder();
+let refreshRequest;
+const refreshed = await resolveSessionWithRefresh({
+  request: request({
+    cookie: `${SESSION_COOKIE_NAMES.ACCESS}=${encodeURIComponent(accessToken)}; ${SESSION_COOKIE_NAMES.REFRESH}=${encodeURIComponent(refreshToken)}; ${SESSION_COOKIE_NAMES.PERSISTENCE}=0`,
+  }),
+  response: refreshResponse,
+  config,
+  verifyAccessToken: async (token) => {
+    if (token === accessToken) throw Object.assign(new Error('expired'), { status: 401 });
+    return { token, allowed: true };
+  },
+  fetchImpl: async (url, options) => {
+    refreshRequest = { url, options };
+    return new Response(JSON.stringify({
+      access_token: rotatedAccessToken,
+      refresh_token: rotatedRefreshToken,
+      expires_in: 3600,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  },
+});
+assert.equal(refreshRequest.url, `${config.url}/auth/v1/token?grant_type=refresh_token`);
+assert.deepEqual(JSON.parse(refreshRequest.options.body), { refresh_token: refreshToken });
+assert.equal(refreshed.accessToken, rotatedAccessToken);
+assert.equal(refreshed.refreshed, true);
+assert.deepEqual(refreshed.value, { token: rotatedAccessToken, allowed: true });
+const rotatedCookies = refreshResponse.getHeader('set-cookie');
+assert.equal(rotatedCookies.length, 3);
+assert.ok(rotatedCookies.every((cookie) => !cookie.includes('Max-Age=')));
+
+const invalidRefreshResponse = responseRecorder();
+const invalidRefresh = await resolveSessionWithRefresh({
+  request: request({ cookie: `${SESSION_COOKIE_NAMES.REFRESH}=${encodeURIComponent(refreshToken)}` }),
+  response: invalidRefreshResponse,
+  config,
+  verifyAccessToken: async () => { throw new Error('verification should not run'); },
+  fetchImpl: async () => new Response(JSON.stringify({ message: 'invalid refresh token' }), {
+    status: 400,
+    headers: { 'Content-Type': 'application/json' },
+  }),
+});
+assert.equal(invalidRefresh, null);
+assert.equal(invalidRefreshResponse.getHeader('set-cookie').length, 3);
+assert.ok(invalidRefreshResponse.getHeader('set-cookie').every((cookie) => cookie.includes('Max-Age=0')));
+
 const signInPage = await readFile(new URL('../src/pages/account/sign-in/index.astro', import.meta.url), 'utf8');
+const supabaseAuthSourceForStorageCheck = await readFile(new URL('../src/lib/supabase-auth.js', import.meta.url), 'utf8');
 const accountPage = await readFile(new URL('../src/pages/account/index.astro', import.meta.url), 'utf8');
 const confirmationPage = await readFile(new URL('../src/pages/auth/confirm/index.astro', import.meta.url), 'utf8');
 const accountRouter = await readFile(new URL('../api/account.js', import.meta.url), 'utf8');
+const rememberedSessionHandlers = await Promise.all([
+  '../api/guided-edition.js',
+  '../src/lib/audiobook-handler.js',
+  '../src/lib/book-delivery-handler.js',
+  '../src/lib/video-library-handler.js',
+  '../src/lib/video-progress-handler.js',
+  '../src/lib/daily-card-progress-handler.js',
+  '../src/lib/knowledge-search-handler.js',
+].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
 const vercelConfig = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 
@@ -173,6 +270,11 @@ assert.match(signInPage, /PUBLIC_TURNSTILE_SITE_KEY/);
 assert.match(signInPage, /cf-turnstile/);
 assert.match(signInPage, /X-Turnstile-Token/);
 assert.match(signInPage, /account_sign_in/);
+assert.match(signInPage, /id="remember-device"/);
+assert.match(signInPage, /type="checkbox"[\s\S]*checked/);
+assert.match(signInPage, /Keep me signed in on this device for 30 days/);
+assert.match(signInPage, /Use only on a private device/);
+assert.equal((signInPage.match(/rememberDevice:/g) || []).length, 3);
 assert.match(accountPage, /\/api\/account-access/);
 assert.match(accountPage, /\/api\/account-export/);
 assert.match(accountPage, /\/api\/account-delete/);
@@ -182,6 +284,11 @@ assert.match(confirmationPage, /new URL\('\/api\/auth-confirm'/);
 assert.doesNotMatch(confirmationPage, /token_hash|auth\/confirm\/exchange/);
 assert.match(accountRouter, /request\.method !== 'GET'/);
 assert.match(accountRouter, /exchangePasswordlessCode/);
+assert.match(accountRouter, /resolveSessionWithRefresh/);
+for (const source of rememberedSessionHandlers) {
+  assert.match(source, /resolveSessionWithRefresh/);
+}
+assert.doesNotMatch(`${supabaseAuthSourceForStorageCheck}${signInPage}`, /localStorage\.setItem\([^)]*(?:access|refresh|session)/i);
 assert.match(accountRouter, /const next = safeNextPath\(url\.searchParams\.get\('next'\)\);/);
 assert.match(accountRouter, /target\.searchParams\.set\('next', next\);/);
 assert.match(accountRouter, /target\.searchParams\.set\('error', safe\.status >= 500 \? 'service_unavailable' : 'invalid_link'\);/);

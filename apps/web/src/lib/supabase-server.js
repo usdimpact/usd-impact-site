@@ -279,6 +279,28 @@ export async function readOwnVideoProgress({
   return Object.freeze(Array.isArray(rows) ? rows.map((row) => Object.freeze({ ...row })) : []);
 }
 
+function ownLearningProgressPath(accountId) {
+  return `/rest/v1/learning_progress?account_id=eq.${encodeURIComponent(accountId)}&select=content_id,status,progress_percent,resume_position,completed_at,updated_at&order=updated_at.desc&limit=500`;
+}
+
+export async function readOwnLearningProgress({
+  accessToken,
+  accountId,
+  environment,
+  config,
+  fetchImpl,
+}) {
+  const resolvedConfig = config || readSupabaseServerConfig(environment);
+  const normalizedAccountId = requireAccountId(accountId);
+  const rows = await supabaseFetch({
+    config: resolvedConfig,
+    path: ownLearningProgressPath(normalizedAccountId),
+    accessToken,
+    fetchImpl,
+  });
+  return Object.freeze(Array.isArray(rows) ? rows.map((row) => Object.freeze({ ...row })) : []);
+}
+
 export async function upsertOwnVideoProgress({
   accessToken,
   accountId,

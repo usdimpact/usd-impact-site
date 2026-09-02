@@ -2,10 +2,12 @@ import {
   exportOwnAccount,
   getVerifiedSupabaseUser,
   readAccountAccessState,
+  readOwnLearningProgress,
   requestOwnAccountDeletion,
   safeSupabaseError,
   sendJson,
 } from '../src/lib/supabase-server.js';
+import { buildLearningJourney } from '../src/lib/learning-journey.js';
 import {
   clearPkceCookie,
   clearSessionCookies,
@@ -245,19 +247,54 @@ async function handleLogout(request, response) {
   return sendJson(response, 200, { ok: true });
 }
 
-async function handleAccess(request, response) {
+export async function handleAccess(request, response, dependencies = {}) {
   if (request.method !== 'GET') return methodNotAllowed(response, 'GET');
 
   try {
-    const resolved = await resolveSessionWithRefresh({
+    const readAccessState = dependencies.readAccountAccessState || readAccountAccessState;
+    const readLearningProgress = dependencies.readOwnLearningProgress || readOwnLearningProgress;
+    const createLearningJourney = dependencies.buildLearningJourney || buildLearningJourney;
+    const resolveSession = dependencies.resolveSessionWithRefresh || resolveSessionWithRefresh;
+    const resolved = await resolveSession({
       request,
       response,
-      verifyAccessToken: (accessToken) => readAccountAccessState({ accessToken }),
+      verifyAccessToken: (accessToken) => readAccessState({ accessToken }),
     });
     if (!resolved) {
       return sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
     }
-    const state = resolved.value;
+    const { accessToken, value: state } = resolved;
+    let learningJourney;
+    if (state.allowed) {
+      try {
+        const rows = await readLearningProgress({
+          accessToken,
+          accountId: state.user.id,
+        });
+        learningJourney = createLearningJourney({
+          hasPaidAccess: true,
+          progressAvailable: true,
+          rows,
+        });
+      } catch (error) {
+        console.error('Account learning progress could not be summarized.', {
+          code: typeof error?.code === 'string'
+            ? error.code
+            : 'LEARNING_PROGRESS_UNAVAILABLE',
+        });
+        learningJourney = createLearningJourney({
+          hasPaidAccess: true,
+          progressAvailable: false,
+          rows: [],
+        });
+      }
+    } else {
+      learningJourney = createLearningJourney({
+        hasPaidAccess: false,
+        progressAvailable: false,
+        rows: [],
+      });
+    }
     return sendJson(response, 200, {
       account: {
         id: state.user.id,
@@ -270,6 +307,7 @@ async function handleAccess(request, response) {
         productId: state.entitlement?.productId ?? null,
         state: state.entitlement?.state ?? null,
       },
+      learningJourney,
     });
   } catch (error) {
     const safe = safeSupabaseError(error);

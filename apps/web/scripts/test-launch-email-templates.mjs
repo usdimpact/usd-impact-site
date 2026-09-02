@@ -13,7 +13,7 @@ import {
 
 const unsubscribeUrl = 'https://www.usd-impact.com/unsubscribe?token=test-token-123';
 
-assert.equal(LAUNCH_EMAIL_TEMPLATE_VERSION, '2026-08-20.v1');
+assert.equal(LAUNCH_EMAIL_TEMPLATE_VERSION, '2026-09-02.v2');
 assert.equal(validateLaunchEmailTemplateRegistry(), true);
 assert.deepEqual(
   Object.keys(LAUNCH_EMAIL_TEMPLATE_SPECS).sort(),
@@ -86,8 +86,11 @@ assert.match(pending.text, /verified completed-payment event/i);
 
 const ready = renderLaunchEmail({ messageId: 'purchase_access_ready', reference: 'purchase_123' });
 assert.match(ready.text, /Library Pass is active/i);
+assert.match(ready.text, /Start with the Guided Interactive Edition/i);
 assert.match(ready.text, /audiobook/i);
 assert.match(ready.text, /Video Library/i);
+assert.match(ready.text, /only learning progress already saved/i);
+assert.match(ready.text, /Open your learning path/i);
 
 const refund = renderLaunchEmail({ messageId: 'refund_approved', reference: 'refund_123' });
 assert.match(refund.text, /entitlement.*removed/is);

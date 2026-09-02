@@ -1,0 +1,75 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
+
+const [
+  layout,
+  globalCss,
+  videoCss,
+  homePage,
+  dynamicPage,
+  audiobookPage,
+  videoPage,
+  signInPage,
+  waitlistForm,
+  bookPurchaseCta,
+] = await Promise.all([
+  read('../src/layouts/BaseLayout.astro'),
+  read('../src/styles/global.css'),
+  read('../public/assets/video-library.css'),
+  read('../src/pages/index.astro'),
+  read('../src/pages/[...slug].astro'),
+  read('../src/pages/audiobook/read-the-dollar-first.astro'),
+  read('../src/pages/video-library/index.astro'),
+  read('../src/pages/account/sign-in/index.astro'),
+  read('../src/components/WaitlistForm.astro'),
+  read('../src/components/BookPurchaseCTA.astro'),
+]);
+
+assert.match(layout, /class="skip-link" href="#main-content"/);
+assert.match(layout, /class="nav-toggle"[\s\S]*aria-expanded="false"[\s\S]*aria-controls="site-navigation"/);
+assert.match(layout, /<nav id="site-navigation" class="nav" aria-label="Main navigation" data-open="false">/);
+for (const group of ['Learn', 'Updates', 'Library']) {
+  assert.match(layout, new RegExp(`<summary[^>]*>${group}<\\/summary>`));
+}
+assert.match(layout, /aria-current=\{pageIsActive/);
+assert.match(layout, /event\.key !== "Escape"/);
+assert.match(layout, /aria-label="Footer navigation"/);
+for (const group of ['Product', 'Learn', 'Research', 'Company']) {
+  assert.match(layout, new RegExp(`<p class="footer-heading">${group}<\\/p>`));
+}
+
+assert.match(globalCss, /\.skip-link:focus\s*\{\s*transform:\s*translateY\(0\)/);
+assert.match(globalCss, /\.nav-summary:focus-visible[\s\S]*outline:\s*3px solid var\(--gold\)/);
+assert.match(globalCss, /\.nav\[data-open="true"\]\s*\{\s*display:\s*flex/);
+assert.match(globalCss, /\.audiobook-access-cover[\s\S]*width:\s*min\(100%, 320px\)/);
+assert.match(globalCss, /\.audiobook-access-cover\s*\{\s*width:\s*min\(100%, 260px\)/);
+assert.match(globalCss, /\.audiobook-public-chapters\s*\{\s*grid-template-columns:\s*1fr/);
+
+for (const [name, source] of [
+  ['home', homePage],
+  ['dynamic content', dynamicPage],
+  ['audiobook', audiobookPage],
+  ['video library', videoPage],
+  ['sign-in', signInPage],
+]) {
+  assert.match(source, /<main id="main-content" class="main-with-hero">/, `${name} must expose the main landmark and skip target.`);
+  const mainIndex = source.indexOf('<main id="main-content"');
+  const h1Index = source.indexOf('<h1');
+  assert.ok(mainIndex >= 0 && h1Index > mainIndex, `${name} H1 must be inside the main landmark.`);
+}
+
+assert.match(dynamicPage, /<WaitlistForm initiallyHidden \/>/);
+assert.match(waitlistForm, /hidden=\{initiallyHidden\}/);
+assert.match(bookPurchaseCta, /waitlist\.hidden = presentation\.available/);
+assert.match(bookPurchaseCta, /No purchase control is shown without that verification/);
+
+assert.match(signInPage, /EMAIL_RESEND_COOLDOWN_SECONDS = 35/);
+assert.match(signInPage, /response\.status === 429/);
+assert.match(signInPage, /Too many sign-in emails were requested/);
+assert.match(signInPage, /six-digit fallback code/i);
+
+assert.doesNotMatch(videoCss, /Georgia|Times New Roman/);
+
+console.log('UX and accessibility source contracts passed.');

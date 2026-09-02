@@ -1,7 +1,8 @@
 ---
 const formId = 'book-waitlist-form';
+const { initiallyHidden = false } = Astro.props;
 ---
-<section id="book-waitlist" class="waitlist-card" aria-labelledby="book-waitlist-title">
+<section id="book-waitlist" class="waitlist-card" aria-labelledby="book-waitlist-title" hidden={initiallyHidden}>
   <div class="eyebrow">Book waitlist</div>
   <h2 id="book-waitlist-title">Receive the purchase link by email</h2>
   <p>

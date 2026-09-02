@@ -12,22 +12,23 @@ import {
   description="Explore the 51-film USD Impact educational video library covering dollar measurement, asset transmission, rates, liquidity, funding markets and FX mechanics."
   stylesheets={['/assets/video-library.css']}
 >
-  <section class="vl-hero">
-    <div class="vl-shell">
-      <p class="vl-eyebrow">Guided Interactive Edition</p>
-      <h1>Read the dollar system visually.</h1>
-      <p class="vl-lead">A structured 51-film learning path for understanding how dollar signals, rates, liquidity, funding markets and cross-border balance sheets connect.</p>
-      <div class="vl-stat-row">
-        <span><strong>51</strong> films</span>
-        <span><strong>5</strong> collections</span>
-        <span><strong>{libraryMeta.totalDurationLabel}</strong> total</span>
-        <span><strong>EN</strong> captions</span>
+  <main id="main-content" class="main-with-hero">
+    <section class="vl-hero">
+      <div class="vl-shell">
+        <p class="vl-eyebrow">Guided Interactive Edition</p>
+        <h1>Read the dollar system visually.</h1>
+        <p class="vl-lead">A structured 51-film learning path for understanding how dollar signals, rates, liquidity, funding markets and cross-border balance sheets connect.</p>
+        <div class="vl-stat-row">
+          <span><strong>51</strong> films</span>
+          <span><strong>5</strong> collections</span>
+          <span><strong>{libraryMeta.totalDurationLabel}</strong> total</span>
+          <span><strong>EN</strong> captions</span>
+        </div>
+        <p><a class="vl-button" href="/guided-edition/video-library/">Open the protected library</a></p>
       </div>
-      <p><a class="vl-button" href="/guided-edition/video-library/">Open the protected library</a></p>
-    </div>
-  </section>
+    </section>
 
-  <main class="vl-shell vl-main">
+    <div class="vl-shell vl-main page-content">
     <p class="vl-public-note">Playback is available only inside the secure Guided Interactive Edition. Sign in with the USD Impact account that holds active access.</p>
     {collections.map((collection) => {
       const items = getCollectionVideos(collection.id);
@@ -59,5 +60,6 @@ import {
         </section>
       );
     })}
+    </div>
   </main>
 </BaseLayout>

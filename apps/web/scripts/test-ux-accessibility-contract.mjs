@@ -65,7 +65,9 @@ assert.match(globalCss, /body\s*\{[^}]*font-family:\s*var\(--font-sans\)/);
 assert.match(globalCss, /h1, h2, h3\s*\{[^}]*font-family:\s*var\(--font-display\)/);
 assert.match(videoCss, /\.vl-body\{[^}]*font-family:var\(--font-sans\)/);
 assert.match(videoCss, /\.vl-hero h1,[^}]*font-family:var\(--font-display\)/);
-assert.doesNotMatch(`${globalCss}${videoCss}`, /fonts\.(?:googleapis|gstatic)\.com/);
+const fontCss = `${globalCss}${videoCss}`;
+assert.equal(fontCss.includes('fonts.googleapis.com'), false);
+assert.equal(fontCss.includes('fonts.gstatic.com'), false);
 
 const packageManifest = JSON.parse(packageJson);
 assert.equal(packageManifest.dependencies['@fontsource-variable/inter'], '5.3.0');

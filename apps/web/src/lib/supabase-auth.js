@@ -171,6 +171,7 @@ function isAllowedHost(hostname) {
   return isLocalHost(hostname)
     || hostname === 'usd-impact.com'
     || hostname === 'www.usd-impact.com'
+    || hostname === 'passkeys-dev.usd-impact.com'
     || isUsdImpactPreviewHost(hostname);
 }
 

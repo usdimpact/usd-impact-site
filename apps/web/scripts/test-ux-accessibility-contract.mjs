@@ -14,6 +14,8 @@ const [
   signInPage,
   waitlistForm,
   bookPurchaseCta,
+  packageJson,
+  prepareFonts,
 ] = await Promise.all([
   read('../src/layouts/BaseLayout.astro'),
   read('../src/styles/global.css'),
@@ -25,6 +27,8 @@ const [
   read('../src/pages/account/sign-in/index.astro'),
   read('../src/components/WaitlistForm.astro'),
   read('../src/components/BookPurchaseCTA.astro'),
+  read('../package.json'),
+  read('./prepare-font-assets.mjs'),
 ]);
 
 assert.match(layout, /class="skip-link" href="#main-content"/);
@@ -49,6 +53,38 @@ assert.match(globalCss, /\.nav\[data-open="true"\]\s*\{\s*display:\s*flex/);
 assert.match(globalCss, /\.audiobook-access-cover[\s\S]*width:\s*min\(100%, 320px\)/);
 assert.match(globalCss, /\.audiobook-access-cover\s*\{\s*width:\s*min\(100%, 260px\)/);
 assert.match(globalCss, /\.audiobook-public-chapters\s*\{\s*grid-template-columns:\s*1fr/);
+for (const font of ['Inter Variable', 'Playfair Display Variable']) {
+  assert.match(globalCss, new RegExp(`font-family: "${font}"`));
+  assert.match(videoCss, new RegExp(`font-family:\\"${font}\\"`));
+}
+assert.match(globalCss, /--font-sans:/);
+assert.match(globalCss, /--font-display:/);
+assert.match(globalCss, /--space-1:\s*\.25rem/);
+assert.match(globalCss, /--space-8:\s*4rem/);
+assert.match(globalCss, /body\s*\{[^}]*font-family:\s*var\(--font-sans\)/);
+assert.match(globalCss, /h1, h2, h3\s*\{[^}]*font-family:\s*var\(--font-display\)/);
+assert.match(videoCss, /\.vl-body\{[^}]*font-family:var\(--font-sans\)/);
+assert.match(videoCss, /\.vl-hero h1,[^}]*font-family:var\(--font-display\)/);
+const fontCss = `${globalCss}${videoCss}`;
+const fontReferences = [
+  ...fontCss.matchAll(/url\(\s*["']?([^"')\s]+)["']?\s*\)/g),
+  ...fontCss.matchAll(/@import\s+["']([^"']+)["']/g),
+].map(([, value]) => new URL(value, 'https://usd-impact.invalid'));
+const blockedFontHosts = new Set(['fonts.googleapis.com', 'fonts.gstatic.com']);
+for (const reference of fontReferences) {
+  assert.equal(blockedFontHosts.has(reference.hostname), false);
+}
+
+const packageManifest = JSON.parse(packageJson);
+assert.equal(packageManifest.dependencies['@fontsource-variable/inter'], '5.3.0');
+assert.equal(packageManifest.dependencies['@fontsource-variable/playfair-display'], '5.3.0');
+assert.match(packageManifest.scripts.build, /^npm run prepare:fonts && /);
+assert.match(packageManifest.scripts.dev, /^npm run prepare:fonts && /);
+assert.match(prepareFonts, /Font integrity mismatch/);
+assert.match(prepareFonts, /inter-latin-ext-wght-normal\.woff2/);
+assert.match(prepareFonts, /playfair-display-latin-ext-wght-normal\.woff2/);
+assert.match(prepareFonts, /inter-OFL-1\.1\.txt/);
+assert.match(prepareFonts, /playfair-display-OFL-1\.1\.txt/);
 
 for (const [name, source] of [
   ['home', homePage],

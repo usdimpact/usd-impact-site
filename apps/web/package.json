@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
-    "build": "npm run generate:quizzes && npm run validate:purchase-access-email && astro build && npm run validate:checkout-presentation && npm run validate:csp-build && node scripts/verify-production-build.mjs",
+    "dev": "npm run prepare:fonts && astro dev",
+    "build": "npm run prepare:fonts && npm run generate:quizzes && npm run validate:purchase-access-email && astro build && npm run validate:checkout-presentation && npm run validate:csp-build && node scripts/verify-production-build.mjs",
     "preview": "astro preview",
+    "prepare:fonts": "node scripts/prepare-font-assets.mjs",
     "verify:waitlist-development": "node scripts/verify-waitlist-development.mjs",
     "generate:waitlist-unsubscribe-link": "node scripts/generate-waitlist-unsubscribe-link.mjs",
     "validate:content": "node scripts/validate-content.mjs",
@@ -34,6 +35,8 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "3.7.3",
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/playfair-display": "5.3.0",
     "@vercel/functions": "3.9.5",
     "astro": "7.2.9"
   },

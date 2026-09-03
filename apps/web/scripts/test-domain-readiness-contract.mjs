@@ -25,23 +25,42 @@ const requireText = (file, label, values) => {
 requireText(files.layout, 'Footer', ['/terms/', '/refund-policy/', '/privacy/', '/book/read-the-dollar-first/']);
 requireText(files.product, 'Product page', [
   'Guided Interactive Edition',
-  'Launch price: USD 39.00',
-  'Standard price: USD 49.00',
   'approved launch offer has no quantity cutoff',
   'one-time',
   'ongoing access',
   'Lemon Squeezy is the selected Merchant of Record',
   'verifies the current Live release state',
+  'fails closed to the waitlist',
   'verified commercial event',
+  'KELA LEADS S.R.L.',
+  '40790448',
+  'J38/820/2020',
+  'ROONRC.J38/820/2020',
+  '/refund-policy/',
+  '/terms/',
+  '/privacy/',
+  'https://www.lemonsqueezy.com/buyer-terms',
 ]);
 requireText(files.bookPurchaseCta, 'Book purchase CTA', [
+  'Guided Interactive Edition',
+  'Complete English audiobook',
+  '51-film Video Library',
+  'USD 39',
+  'USD 49',
+  'one time',
   'data-book-checkout-readiness="checking"',
   'Check Library Pass availability',
   'href="/checkout/"',
+  'href="/account/sign-in/?next=/account/"',
   '/api/commerce-readiness',
   'bookPurchasePresentation',
   'The book waitlist remains available.',
 ]);
+
+const productDisclosureCount = files.product.match(/<details class="book-disclosure">/g)?.length ?? 0;
+if (productDisclosureCount !== 4) {
+  failures.push(`Product page must expose exactly four concise disclosures; found ${productDisclosureCount}.`);
+}
 requireText(files.preview, 'Free sample page', [
   'Lemon Squeezy is the selected Merchant of Record',
   'Current checkout availability is verified live',

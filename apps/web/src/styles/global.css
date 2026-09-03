@@ -111,6 +111,36 @@ main { padding: 56px 0; }
 .button.primary { background: var(--gold); color: var(--midnight); }
 .button.secondary { border: 1px solid var(--silver); color: var(--white); }
 .button:disabled { cursor: wait; opacity: .65; }
+.book-offer { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: clamp(24px, 5vw, 56px); align-items: center; max-width: 1020px; margin-top: 32px; padding: clamp(22px, 4vw, 34px); border: 1px solid rgba(255,255,255,.18); border-radius: 20px; background: rgba(255,255,255,.07); box-shadow: 0 18px 42px rgba(2,10,20,.18); }
+.book-hero { padding: 52px 0; }
+.book-offer-label { margin: 0 0 12px; color: var(--gold); font-size: var(--type-label); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.book-offer-inclusions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 22px; margin: 0; padding: 0; list-style: none; }
+.book-offer-inclusions li { position: relative; padding-left: 20px; color: var(--soft-silver); font-size: 14px; font-weight: 700; line-height: 1.4; }
+.book-offer-inclusions li::before { position: absolute; top: .45em; left: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); content: ""; }
+.book-offer-action { min-width: 0; }
+.book-offer-price { display: flex; align-items: baseline; gap: 8px; margin: 0; color: var(--soft-silver); font-size: 13px; }
+.book-offer-price strong { color: var(--white); font-size: clamp(28px, 4vw, 38px); line-height: 1; }
+.book-offer-standard { margin: 8px 0 0; color: var(--silver); font-size: 13px; }
+.book-offer .button-row { margin-top: 18px; }
+.book-offer .account-status { min-height: 1.5em; margin: 12px 0 0; color: var(--soft-silver); font-size: 13px; }
+.book-existing-access { margin: 8px 0 0; color: var(--silver); font-size: 14px; }
+.book-existing-access a { color: var(--white); font-weight: 800; }
+.book-product-content { max-width: 920px; }
+.book-product-content > h2 { font-size: clamp(30px, 4vw, 44px); }
+.book-product-content > p { max-width: 76ch; }
+.book-disclosures { margin-top: 56px; }
+.book-disclosures > h2 { margin: 8px 0 22px; }
+.book-disclosure { border-top: 1px solid #d7dde5; background: var(--white); }
+.book-disclosure:last-child { border-bottom: 1px solid #d7dde5; }
+.book-disclosure summary { display: flex; min-height: 64px; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 4px; color: var(--navy); font-size: 17px; font-weight: 800; cursor: pointer; list-style: none; }
+.book-disclosure summary::-webkit-details-marker { display: none; }
+.book-disclosure summary::after { flex: 0 0 auto; width: 10px; height: 10px; margin-right: 7px; border-right: 2px solid var(--gold-text); border-bottom: 2px solid var(--gold-text); content: ""; transform: translateY(-3px) rotate(45deg); transition: transform .15s ease; }
+.book-disclosure[open] summary::after { transform: translateY(3px) rotate(225deg); }
+.book-disclosure summary:focus-visible { border-radius: 6px; outline: 3px solid rgba(201,163,91,.45); outline-offset: 3px; }
+.book-disclosure > div { max-width: 78ch; padding: 0 34px 22px 4px; color: var(--slate); }
+.book-disclosure > div p:first-child { margin-top: 0; }
+.book-faq h3 { margin: 22px 0 4px; font-family: var(--font-sans); font-size: 16px; }
+.book-faq p { margin: 0; }
 .compliance { margin-top: 48px; background: #fff8e6; border-left: 4px solid var(--gold); padding: 18px 20px; border-radius: 10px; font-size: 14px; color: #4b3b14; }
 .visual { width: 100%; border-radius: 16px; border: 1px solid #dbe1e8; background: white; }
 .waitlist-card { margin-top: 56px; padding: clamp(24px, 5vw, 44px); border-radius: 20px; background: var(--white); border: 1px solid #dce2e9; box-shadow: 0 16px 42px rgba(2,10,20,.08); scroll-margin-top: 24px; }
@@ -184,9 +214,6 @@ main { padding: 56px 0; }
 .audiobook-about { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: center; margin-top: 56px; padding: 30px; border-left: 5px solid var(--gold); border-radius: 16px; background: var(--white); }
 .audiobook-about h2 { margin: 6px 0 8px; }
 .audiobook-about p { max-width: 760px; margin: 0; color: var(--slate); }
-.book-audio-promo { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 28px; align-items: center; margin-bottom: 48px; border-left: 5px solid var(--gold); background: linear-gradient(135deg, #fff, #f7f3ea); }
-.book-audio-promo h2 { margin: 6px 0 8px; }
-.book-audio-promo p { max-width: 720px; margin: 0; color: var(--slate); }
 .audiobook-player--compact .audiobook-now-playing { grid-template-columns: minmax(120px, 180px) minmax(0, 1fr); padding: 24px; }
 .audiobook-player--compact .audiobook-player-copy h2 { font-size: 28px; }
 
@@ -298,6 +325,11 @@ main { padding: 56px 0; }
   .nav-summary, .nav-direct { width: 100%; justify-content: space-between; }
   .nav-submenu { position: static; min-width: 0; margin-top: 3px; border-color: rgba(255,255,255,.1); box-shadow: none; }
   .hero { padding: 52px 0; }
+  .book-hero { padding: 36px 0; }
+  .book-offer { grid-template-columns: 1fr; }
+  .book-offer-action { order: -1; }
+  .book-offer-inclusions { grid-template-columns: 1fr; }
+  .book-offer .button { width: 100%; text-align: center; }
   .page-content { padding-top: 42px; padding-bottom: 42px; }
   .footer-grid { grid-template-columns: 1fr; gap: 30px; }
   .footer-nav { grid-template-columns: 1fr 1fr; gap: 28px 20px; }
@@ -319,5 +351,5 @@ main { padding: 56px 0; }
   .audiobook-public-chapters { grid-template-columns: 1fr; }
   .audiobook-playlist { grid-template-columns: 1fr; }
   .audiobook-speed { margin-left: 0; }
-  .audiobook-about, .book-audio-promo { grid-template-columns: 1fr; }
+  .audiobook-about { grid-template-columns: 1fr; }
 }

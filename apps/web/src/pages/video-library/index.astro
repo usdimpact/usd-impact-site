@@ -5,6 +5,7 @@ import {
   getCollectionVideos,
   getVideoNumber,
   libraryMeta,
+  videos,
 } from '../../data/video-library.js';
 ---
 <BaseLayout
@@ -28,21 +29,36 @@ import {
       </div>
     </section>
 
-    <div class="vl-shell vl-main page-content">
+    <div class="vl-shell vl-main page-content" id="video-library-all">
     <p class="vl-public-note">Playback is available only inside the secure Guided Interactive Edition. Sign in with the USD Impact account that holds active access.</p>
+    <div class="vl-collection-toolbar">
+      <nav class="vl-collection-filter" aria-label="Filter videos by collection">
+        <a href="#video-library-all" data-video-filter="all" aria-current="location">
+          <span>All films</span><span aria-hidden="true">{videos.length}</span>
+        </a>
+        {collections.map((collection) => (
+          <a href={`#${collection.id}`} data-video-filter={collection.id}>
+            <span>{collection.title}</span><span aria-hidden="true">{getCollectionVideos(collection.id).length}</span>
+          </a>
+        ))}
+      </nav>
+      <p class="vl-result-count" data-video-result-count role="status" aria-live="polite" aria-atomic="true">
+        Showing {videos.length} films across all {collections.length} collections.
+      </p>
+    </div>
     {collections.map((collection) => {
       const items = getCollectionVideos(collection.id);
       return (
-        <section class="vl-collection" id={collection.id}>
+        <section class="vl-collection" id={collection.id} aria-labelledby={`${collection.id}-title`} data-video-collection={collection.id} data-collection-title={collection.title}>
           <div class="vl-section-heading">
-            <div><p class="vl-eyebrow">{collection.kicker}</p><h2>{collection.title}</h2></div>
+            <div><p class="vl-eyebrow">{collection.kicker}</p><h2 id={`${collection.id}-title`}>{collection.title}</h2></div>
             <p>{collection.description}</p>
           </div>
           <ol class="vl-grid">
             {items.map((video) => {
               const number = getVideoNumber(video);
               return (
-                <li class="vl-card vl-public-card">
+                <li class="vl-card vl-public-card" data-video-card>
                   <a href={`/guided-edition/video-library/${video.slug}/`}>
                     <div class={`vl-card-art vl-theme-${video.collectionId}`} aria-hidden="true">
                       <span>{String(number).padStart(2, '0')}</span><i></i><i></i><i></i>
@@ -62,4 +78,5 @@ import {
     })}
     </div>
   </main>
+  <script is:inline src="/assets/video-library-progress.js" defer></script>
 </BaseLayout>

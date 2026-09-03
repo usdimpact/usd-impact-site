@@ -5,6 +5,7 @@ import {
   getCollectionVideos,
   getVideoNumber,
   libraryMeta,
+  videos,
 } from '../data/video-library.js';
 
 function escapeHtml(value) {
@@ -62,7 +63,7 @@ function renderDocument({ title, description, body, scripts = '' }) {
 
 function renderCatalogCard(video) {
   const number = getVideoNumber(video);
-  return `<li class="vl-card" data-video-slug="${escapeHtml(video.slug)}">
+  return `<li class="vl-card" data-video-card data-video-slug="${escapeHtml(video.slug)}" data-video-number="${String(number).padStart(2, '0')}" data-video-title="${escapeHtml(video.title)}">
     <a href="/guided-edition/video-library/${escapeHtml(video.slug)}/">
       <div class="vl-card-art vl-theme-${escapeHtml(video.collectionId)}" aria-hidden="true">
         <span>${String(number).padStart(2, '0')}</span><i></i><i></i><i></i>
@@ -77,12 +78,27 @@ function renderCatalogCard(video) {
   </li>`;
 }
 
+function renderCollectionToolbar() {
+  const collectionLinks = collections.map((collection) => {
+    const count = getCollectionVideos(collection.id).length;
+    return `<a href="#${escapeHtml(collection.id)}" data-video-filter="${escapeHtml(collection.id)}"><span>${escapeHtml(collection.title)}</span><span aria-hidden="true">${count}</span></a>`;
+  }).join('');
+
+  return `<div class="vl-collection-toolbar">
+    <nav class="vl-collection-filter" aria-label="Filter videos by collection">
+      <a href="#video-library-all" data-video-filter="all" aria-current="location"><span>All films</span><span aria-hidden="true">${videos.length}</span></a>
+      ${collectionLinks}
+    </nav>
+    <p class="vl-result-count" data-video-result-count role="status" aria-live="polite" aria-atomic="true">Showing ${videos.length} films across all ${collections.length} collections.</p>
+  </div>`;
+}
+
 export function renderProtectedVideoCatalog() {
   const collectionHtml = collections.map((collection) => {
     const items = getCollectionVideos(collection.id);
-    return `<section class="vl-collection" id="${escapeHtml(collection.id)}">
+    return `<section class="vl-collection" id="${escapeHtml(collection.id)}" aria-labelledby="${escapeHtml(collection.id)}-title" data-video-collection="${escapeHtml(collection.id)}" data-collection-title="${escapeHtml(collection.title)}">
       <div class="vl-section-heading">
-        <div><p class="vl-eyebrow">${escapeHtml(collection.kicker)}</p><h2>${escapeHtml(collection.title)}</h2></div>
+        <div><p class="vl-eyebrow">${escapeHtml(collection.kicker)}</p><h2 id="${escapeHtml(collection.id)}-title">${escapeHtml(collection.title)}</h2></div>
         <p>${escapeHtml(collection.description)}</p>
       </div>
       <ol class="vl-grid">${items.map(renderCatalogCard).join('')}</ol>
@@ -99,7 +115,15 @@ export function renderProtectedVideoCatalog() {
         <p class="vl-lead">51 verified films across five collections, with English captions and saved viewing progress.</p>
         <div class="vl-stat-row"><span><strong>51</strong> films</span><span><strong>5</strong> collections</span><span><strong>${escapeHtml(libraryMeta.totalDurationLabel)}</strong> total</span><span><strong>EN</strong> captions</span></div>
       </div></section>
-      <div class="vl-shell vl-main"><div class="vl-library-status" id="library-progress-status" role="status">Loading your progress…</div>${collectionHtml}</div>
+      <div class="vl-shell vl-main" id="video-library-all">
+        <div class="vl-library-status" id="library-progress-status" role="status">Loading your progress…</div>
+        <div class="vl-continue-panel" data-video-continue hidden>
+          <div><span>Your next film</span><strong data-video-continue-title></strong></div>
+          <a class="vl-button" data-video-continue-link href="/guided-edition/video-library/">Continue watching</a>
+        </div>
+        ${renderCollectionToolbar()}
+        ${collectionHtml}
+      </div>
     </main>`,
     scripts: '<script src="/assets/video-library-progress.js" defer></script>',
   });

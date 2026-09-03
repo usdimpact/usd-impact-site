@@ -53,8 +53,11 @@ try {
   if (checkout.status !== 200) fail(`Checkout returned ${checkout.status}, expected 200.`);
   verifySecurityHeaders(checkout, 'Checkout');
   const checkoutHtml = await checkout.text();
-  requireText(checkoutHtml, 'Checkout is not open yet.', 'Checkout fail-closed copy');
-  requireText(checkoutHtml, 'No payment can be made on this page', 'Checkout fail-closed copy');
+  requireText(checkoutHtml, 'Verifying checkout availability…', 'Checkout verification copy');
+  requireText(checkoutHtml, 'No payment can be initiated until verification completes.', 'Checkout fail-closed copy');
+  if (!/<button\b(?=[^>]*\bid=["']checkout-button["'])(?=[^>]*\bhidden(?:\s|=|>))[^>]*>/i.test(checkoutHtml)) {
+    fail('Checkout purchase control must remain hidden before runtime approval.');
+  }
 
   const readiness = await fetchWithTimeout('/api/commerce-readiness');
   if (readiness.status !== 200) fail(`Commerce readiness returned ${readiness.status}, expected 200.`);

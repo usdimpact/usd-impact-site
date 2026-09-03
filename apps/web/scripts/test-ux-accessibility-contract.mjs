@@ -66,8 +66,14 @@ assert.match(globalCss, /h1, h2, h3\s*\{[^}]*font-family:\s*var\(--font-display\
 assert.match(videoCss, /\.vl-body\{[^}]*font-family:var\(--font-sans\)/);
 assert.match(videoCss, /\.vl-hero h1,[^}]*font-family:var\(--font-display\)/);
 const fontCss = `${globalCss}${videoCss}`;
-assert.equal(fontCss.includes('fonts.googleapis.com'), false);
-assert.equal(fontCss.includes('fonts.gstatic.com'), false);
+const fontReferences = [
+  ...fontCss.matchAll(/url\(\s*["']?([^"')\s]+)["']?\s*\)/g),
+  ...fontCss.matchAll(/@import\s+["']([^"']+)["']/g),
+].map(([, value]) => new URL(value, 'https://usd-impact.invalid'));
+const blockedFontHosts = new Set(['fonts.googleapis.com', 'fonts.gstatic.com']);
+for (const reference of fontReferences) {
+  assert.equal(blockedFontHosts.has(reference.hostname), false);
+}
 
 const packageManifest = JSON.parse(packageJson);
 assert.equal(packageManifest.dependencies['@fontsource-variable/inter'], '5.3.0');

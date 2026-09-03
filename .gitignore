@@ -145,3 +145,11 @@ vite.config.ts.timestamp-*
 # Reproducible offline preview output
 apps/web/dist-offline-preview/
 apps/web/.astro/
+
+# Generated from pinned Fontsource packages by prepare-font-assets.mjs.
+apps/web/public/assets/fonts/inter-latin-wght-normal.woff2
+apps/web/public/assets/fonts/inter-latin-ext-wght-normal.woff2
+apps/web/public/assets/fonts/playfair-display-latin-wght-normal.woff2
+apps/web/public/assets/fonts/playfair-display-latin-ext-wght-normal.woff2
+apps/web/public/assets/fonts/inter-OFL-1.1.txt
+apps/web/public/assets/fonts/playfair-display-OFL-1.1.txt

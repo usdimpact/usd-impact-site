@@ -62,8 +62,13 @@ assert.equal(
   requestOrigin(request({ 'x-forwarded-host': 'usd-impact-site-test-usd-impact.vercel.app', 'x-forwarded-proto': 'https' })),
   'https://usd-impact-site-test-usd-impact.vercel.app',
 );
+assert.equal(
+  requestOrigin(request({ 'x-forwarded-host': 'passkeys-dev.usd-impact.com', 'x-forwarded-proto': 'https' })),
+  'https://passkeys-dev.usd-impact.com',
+);
 assert.throws(() => requestOrigin(request({ host: 'evil.example', 'x-forwarded-proto': 'https' })));
 assert.throws(() => requestOrigin(request({ host: 'unrelated-project.vercel.app', 'x-forwarded-proto': 'https' })));
+assert.throws(() => requestOrigin(request({ host: 'passkeys-dev.usd-impact.com.evil.example', 'x-forwarded-proto': 'https' })));
 
 const cookieResponse = responseRecorder();
 setSessionCookies(cookieResponse, request({ host: 'www.usd-impact.com', 'x-forwarded-proto': 'https' }), {

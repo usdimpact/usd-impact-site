@@ -66,11 +66,12 @@ try {
   const readinessBody = await readiness.json();
   const commerce = readinessBody?.commerce;
   if (readinessBody?.ok !== true) fail('Commerce readiness must return ok=true.');
-  if (commerce?.state !== 'ready_for_provider_configuration') fail(`Commerce readiness state drifted: ${commerce?.state}`);
-  if (commerce?.mode !== 'disabled') fail(`Commerce mode drifted: ${commerce?.mode}`);
-  if (commerce?.provider !== null) fail(`Commerce provider must remain null before approval: ${commerce?.provider}`);
-  if (commerce?.providerConfigured !== false) fail('providerConfigured must remain false before provider approval.');
-  if (commerce?.checkoutEnabled !== false) fail('checkoutEnabled must remain false before provider approval.');
+  if (commerce?.state !== 'active') fail(`Commerce readiness state drifted: ${commerce?.state}`);
+  if (commerce?.mode !== 'live') fail(`Commerce mode drifted: ${commerce?.mode}`);
+  if (commerce?.provider !== 'lemon-squeezy') fail(`Commerce provider drifted: ${commerce?.provider}`);
+  if (commerce?.providerConfigured !== true) fail('providerConfigured must remain true for the approved Live provider.');
+  if (commerce?.disclosuresComplete !== true) fail('Buyer-facing seller disclosures must remain complete for Live checkout.');
+  if (commerce?.checkoutEnabled !== true) fail('checkoutEnabled must remain true for the approved Live release.');
 
   const protectedAudiobook = await fetchWithTimeout('/guided-edition/audiobook/');
   if (protectedAudiobook.status !== 200) fail(`Protected audiobook boundary returned ${protectedAudiobook.status}, expected secure sign-in page 200.`);

@@ -49,7 +49,7 @@ const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref =
 ---
 <BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
   <main id="main-content" class="main-with-hero">
-    <section class="hero">
+    <section class:list={["hero", { "book-hero": isBookPage }]}>
       <div class="container">
         <div class="eyebrow">{entry.data.category}</div>
         <h1>{entry.data.title}</h1>
@@ -72,17 +72,7 @@ const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref =
         )}
       </div>
     </section>
-    <div class="container page-content">
-    {isBookPage && (
-      <section class="book-audio-promo card" aria-labelledby="book-audio-heading">
-        <div>
-          <div class="eyebrow">English audiobook</div>
-          <h2 id="book-audio-heading">Listen to <em>Read the Dollar First</em></h2>
-          <p>The complete four-hour English edition is available in 20 human-reviewed chapters, with saved listening progress.</p>
-        </div>
-        <a class="button primary" href="/audiobook/read-the-dollar-first/">View the audiobook</a>
-      </section>
-    )}
+    <div class:list={["container", "page-content", { "book-product-content": isBookPage }]}>
     {entry.data.visual && <FrameworkVisual src={entry.data.visual} alt={entry.data.title} />}
     {isThreeDialsPage && <ThreeDialsSnapshot />}
     <Content />

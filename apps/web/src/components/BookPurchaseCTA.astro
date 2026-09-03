@@ -6,25 +6,53 @@ const {
   secondaryDownload = true,
 } = Astro.props;
 ---
-<div
-  id="book-purchase-cta"
-  class="button-row"
-  aria-busy="true"
-  data-book-checkout-readiness="checking"
->
-  <a id="book-primary-cta" class="button primary" href="/checkout/">Check Library Pass availability</a>
-  {secondaryDownload ? (
-    <a class="button secondary" href={secondaryHref} download>{secondary}</a>
-  ) : (
-    <a class="button secondary" href={secondaryHref}>{secondary}</a>
-  )}
-</div>
-<p id="book-purchase-message" class="account-status" role="status" aria-live="polite">
-  Checking current Library Pass checkout availability…
-</p>
-<noscript>
-  <p>JavaScript is required to verify current checkout availability. No purchase control is shown without that verification; contact support@usd-impact.com if you need help.</p>
-</noscript>
+<section class="book-offer" aria-label="Read the Dollar First Library Pass offer">
+  <div class="book-offer-summary">
+    <p class="book-offer-label">One Library Pass includes</p>
+    <ul class="book-offer-inclusions">
+      <li>Guided Interactive Edition</li>
+      <li>Complete English audiobook</li>
+      <li>51-film Video Library</li>
+      <li>Quizzes, saved progress and reference resources</li>
+    </ul>
+  </div>
+
+  <div class="book-offer-action">
+    <p class="book-offer-price">
+      <span>Launch price</span>
+      <strong>USD 39.00</strong>
+      <span>one time</span>
+    </p>
+    <p class="book-offer-standard">Standard price: USD 49.00 after the launch offer ends.</p>
+    <div
+      id="book-purchase-cta"
+      class="button-row"
+      aria-busy="true"
+      data-book-checkout-readiness="checking"
+    >
+      <a
+        id="book-primary-cta"
+        class="button primary"
+        href="/checkout/"
+        aria-describedby="book-purchase-message"
+      >Check Library Pass availability</a>
+      {secondaryDownload ? (
+        <a class="button secondary" href={secondaryHref} download>{secondary}</a>
+      ) : (
+        <a class="button secondary" href={secondaryHref}>{secondary}</a>
+      )}
+    </div>
+    <p id="book-purchase-message" class="account-status" role="status" aria-live="polite">
+      Checking current Library Pass checkout availability…
+    </p>
+    <p class="book-existing-access">
+      Already purchased? <a href="/account/sign-in/?next=/account/">Sign in to your library</a>.
+    </p>
+    <noscript>
+      <p>JavaScript is required to verify current checkout availability. No purchase control is shown without that verification; contact support@usd-impact.com if you need help.</p>
+    </noscript>
+  </div>
+</section>
 
 <script>
   import {
@@ -43,13 +71,17 @@ const {
 
   const renderPresentation = (presentation) => {
     if (!(primaryCta instanceof HTMLAnchorElement)) return;
-    primaryCta.textContent = presentation.primaryLabel;
+    primaryCta.textContent = presentation.available ? 'Buy the Library Pass' : presentation.primaryLabel;
     primaryCta.href = checkoutHrefWithCampaign(presentation.primaryHref, window.location.search);
     if (purchaseContainer instanceof HTMLElement) {
       purchaseContainer.dataset.bookCheckoutReadiness = presentation.verificationState;
       purchaseContainer.setAttribute('aria-busy', 'false');
     }
-    if (purchaseMessage) purchaseMessage.textContent = presentation.message;
+    if (purchaseMessage) {
+      purchaseMessage.textContent = presentation.available
+        ? 'Checkout is open through Lemon Squeezy.'
+        : presentation.message;
+    }
     if (waitlist instanceof HTMLElement) waitlist.hidden = presentation.available;
   };
 

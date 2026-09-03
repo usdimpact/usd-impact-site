@@ -14,6 +14,7 @@ const [
   signInPage,
   waitlistForm,
   bookPurchaseCta,
+  bookProduct,
   packageJson,
   prepareFonts,
 ] = await Promise.all([
@@ -27,6 +28,7 @@ const [
   read('../src/pages/account/sign-in/index.astro'),
   read('../src/components/WaitlistForm.astro'),
   read('../src/components/BookPurchaseCTA.astro'),
+  read('../src/content/products/book-read-the-dollar-first.md'),
   read('../package.json'),
   read('./prepare-font-assets.mjs'),
 ]);
@@ -53,6 +55,8 @@ assert.match(globalCss, /\.nav\[data-open="true"\]\s*\{\s*display:\s*flex/);
 assert.match(globalCss, /\.audiobook-access-cover[\s\S]*width:\s*min\(100%, 320px\)/);
 assert.match(globalCss, /\.audiobook-access-cover\s*\{\s*width:\s*min\(100%, 260px\)/);
 assert.match(globalCss, /\.audiobook-public-chapters\s*\{\s*grid-template-columns:\s*1fr/);
+assert.match(globalCss, /\.book-disclosure summary:focus-visible[\s\S]*outline:\s*3px solid/);
+assert.match(globalCss, /\.book-offer\s*\{[\s\S]*grid-template-columns:\s*1fr/);
 for (const font of ['Inter Variable', 'Playfair Display Variable']) {
   assert.match(globalCss, new RegExp(`font-family: "${font}"`));
   assert.match(videoCss, new RegExp(`font-family:\\"${font}\\"`));
@@ -103,6 +107,16 @@ assert.match(dynamicPage, /<WaitlistForm initiallyHidden \/>/);
 assert.match(waitlistForm, /hidden=\{initiallyHidden\}/);
 assert.match(bookPurchaseCta, /waitlist\.hidden = presentation\.available/);
 assert.match(bookPurchaseCta, /No purchase control is shown without that verification/);
+assert.match(bookPurchaseCta, /aria-label="Read the Dollar First Library Pass offer"/);
+assert.match(bookPurchaseCta, /aria-describedby="book-purchase-message"/);
+assert.match(bookPurchaseCta, /Already purchased\?[\s\S]*href="\/account\/sign-in\/\?next=\/account\/"/);
+assert.match(bookPurchaseCta, /Complete English audiobook/);
+assert.match(bookPurchaseCta, /51-film Video Library/);
+assert.match(bookProduct, /<section class="book-disclosures" aria-labelledby="book-details-heading">/);
+assert.equal(bookProduct.match(/<details class="book-disclosure">/g)?.length, 4);
+for (const summary of ['How the method works', 'Who it is for — and what it is not', 'Price, checkout and delivery', 'Common questions']) {
+  assert.match(bookProduct, new RegExp(`<summary>${summary}<\\/summary>`));
+}
 
 assert.match(signInPage, /EMAIL_RESEND_COOLDOWN_SECONDS = 35/);
 assert.match(signInPage, /response\.status === 429/);

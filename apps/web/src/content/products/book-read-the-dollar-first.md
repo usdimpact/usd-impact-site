@@ -6,7 +6,7 @@ slug: "/book/read-the-dollar-first"
 category: "Book"
 status: "published"
 readingLevel: "Beginner to intermediate"
-lastReviewed: "2026-08-28"
+lastReviewed: "2026-09-03"
 complianceNote: "Educational only. Not investment, legal, tax, trading, or financial advice. Not a recommendation, forecast, or trading signal."
 sources:
   - "Session 14B Website Product Page & Lead Magnet System"
@@ -20,91 +20,61 @@ internalLinks:
   - "/practice/weekly-regime"
   - "/video-library"
   - "/lead-magnets/weekly-dollar-regime-checklist"
-ctaPrimary: "Join the launch waitlist"
+ctaPrimary: "Check Library Pass availability"
 ctaSecondary: "Try a free sample"
 ctaSecondaryHref: "/book/read-the-dollar-first/preview/"
 hero: "Most investors watch markets asset by asset. This book teaches a different starting point: read the dollar regime first."
 subhero: "Learn how dollar direction, real rates, liquidity stress and funding conditions transmit into oil, gold, Bitcoin, gas, FX, equities and broader market regimes."
 ---
-Learn how dollar direction, real rates, liquidity stress and funding conditions transmit into oil, gold, Bitcoin, gas, FX, equities and broader market regimes.
+## Read the regime before the asset
 
-## Try the teaching method before purchase
+Build a repeatable way to separate DXY from the broader dollar, read real rates and liquidity together, and trace those conditions into oil, gold, Bitcoin, gas, FX and equities. The Guided Interactive Edition turns that framework into a chapter-by-chapter learning path with checks and practice.
 
-You do not need to rely on the product description alone.
+## See the method before you buy
 
-The **[free Read the Dollar First sample](/book/read-the-dollar-first/preview/)** gives you a real public lesson, the live **Start Here** book checkpoint with ten questions and explanations, and a transparent view of the complete 51-film syllabus.
+The **[free Read the Dollar First sample](/book/read-the-dollar-first/preview/)** includes a real public lesson, the live ten-question **Start Here** checkpoint and the complete 51-film syllabus. It does not unlock paid chapters, audiobook or protected film playback, saved progress or protected resources.
 
-The sample does not unlock paid chapters, audiobook playback, protected film playback, saved progress or protected reference resources. It is designed to make the teaching method tangible without weakening the product's access boundaries.
+<section class="book-disclosures" aria-labelledby="book-details-heading">
+  <p class="eyebrow">Product details</p>
+  <h2 id="book-details-heading">Everything you need to decide</h2>
 
-**[Try the free sample →](/book/read-the-dollar-first/preview/)**
+  <details class="book-disclosure">
+    <summary>How the method works</summary>
+    <div>
+      <p>The book covers DXY vs. the dollar regime, the Dollar Transmission Chain, the Dollar Regime Matrix, the Three-Dial Macro Dashboard and the Weekly Macro Checklist. Read the framework, observe dated evidence, record your interpretation, then compare without treating agreement as predictive accuracy.</p>
+      <p>The <a href="/book/read-the-dollar-first/companion/">Book Companion</a> connects chapters to online practice. Try the <a href="/practice/dxy-vs-broad-usd/">Chapter 3 DXY comparator</a> or the <a href="/practice/weekly-regime/">Chapter 11 Weekly Regime Lab</a>. These browser exercises use repository-published completed-week evidence, make no runtime market-data request, and do not store or transmit your responses.</p>
+    </div>
+  </details>
 
-## Practice the framework online
+  <details class="book-disclosure">
+    <summary>Who it is for — and what it is not</summary>
+    <div>
+      <p>Designed for new and intermediate investors, market observers, educators and client-facing teams that need a clear cross-asset macro framework.</p>
+      <p>It is educational: not a signal service, portfolio recommendation, forecast product or trading course.</p>
+    </div>
+  </details>
 
-The **[Book Companion](/book/read-the-dollar-first/companion/)** connects the book's durable explanations with guided online practice. It does not replace the chapters or use the Weekly Score as a trading signal.
+  <details class="book-disclosure">
+    <summary>Price, checkout and delivery</summary>
+    <div>
+      <p>The approved launch offer has no quantity cutoff. The standard price applies after the approved launch offer ends. The Library Pass is a one-time purchase with ongoing access to the purchased edition and no recurring subscription fee.</p>
+      <p>Lemon Squeezy is the selected Merchant of Record. Applicable taxes and any supported currency conversion are calculated and displayed during checkout. This page verifies the current Live release state before showing a purchase link and fails closed to the waitlist if checkout availability cannot be confirmed.</p>
+      <p>USD Impact is operated by <strong>KELA LEADS S.R.L.</strong>, CUI <strong>40790448</strong>, Trade Register <strong>J38/820/2020</strong>, EUID <strong>ROONRC.J38/820/2020</strong>. See the <a href="/refund-policy/">14-day Refund Policy</a>, <a href="/terms/">Terms &amp; Conditions</a>, <a href="/privacy/">Privacy Notice</a> and Lemon Squeezy <a href="https://www.lemonsqueezy.com/buyer-terms">Buyer Terms</a>.</p>
+      <p>After Lemon Squeezy confirms a completed payment through a verified commercial event, access is attached to the verified USD Impact account used for purchase. If access does not appear, contact <a href="mailto:support@usd-impact.com">support@usd-impact.com</a>.</p>
+    </div>
+  </details>
 
-Use the site in the same order taught by the book:
-
-1. read the framework;
-2. observe the relevant evidence;
-3. record the regime and transmission channel before seeing a comparison;
-4. compare the reading without treating agreement as predictive accuracy; and
-5. return to the chapter that explains the disagreement.
-
-Two bounded exercises are available. Each uses the latest repository-published completed-week evidence snapshot and shows source dates before the reader submits a classification:
-
-- **[Chapter 3 practice: DXY vs. Broad USD Comparator](/practice/dxy-vs-broad-usd/)** — review dated DXY, broad-dollar, rates and stress evidence; submit an independent classification; then reveal the deterministic DXY and broad-dollar comparison;
-- **[Chapter 11 practice: Weekly Regime Lab](/practice/weekly-regime/)** — record the three dials, an unscored dominant-driver hypothesis, confidence and a conditional reading before comparing only the three deterministic dials; the exact-week Score v2 output is revealed separately after submission and is not an answer key.
-
-The exercises make no runtime market-data request in the browser. Reader classifications, confidence selections, driver hypotheses and written responses are handled only in page JavaScript and are not stored or transmitted. The evidence is dated completed-week material, not real-time market data; verify the displayed source dates before live use.
-
-## Guided Interactive Edition
-
-The Guided Interactive Edition combines the *Read the Dollar First* learning sequence with secure account access, chapter-by-chapter lessons, knowledge checks, saved progress, and account-based access to the purchased edition.
-
-### What the purchase includes
-
-- secure access through your verified USD Impact account;
-- the complete Guided Interactive Edition learning sequence;
-- the complete English audiobook;
-- the 51-film USD Impact Video Library, organised into five collections with verified English captions;
-- protected reference resources;
-- interactive quizzes and progress tracking;
-- ongoing access to the purchased edition with no recurring subscription fee; and
-- account and billing support at [support@usd-impact.com](mailto:support@usd-impact.com).
-
-### One-time pricing
-
-- **Launch price: USD 39.00.** The approved launch offer has no quantity cutoff.
-- **Standard price: USD 49.00.** Applies after the approved launch offer ends.
-
-Lemon Squeezy is the selected Merchant of Record for the one-time Library Pass. Applicable taxes and any supported currency conversion are calculated and displayed during checkout. The purchase is one-time, not a subscription. This page verifies the current Live release state before showing a purchase link and fails closed to the waitlist if checkout availability cannot be confirmed.
-
-Purchases are covered by the [14-day Refund Policy](/refund-policy/). Use of the product is also subject to the [Terms & Conditions](/terms/) and [Privacy Notice](/privacy/).
-
-## Why this book exists
-
-Markets rarely move in isolation. A stronger dollar can pressure commodities, a funding shock can lift the dollar and gold together, and falling DXY can mean very different things depending on whether real rates, liquidity or growth are leading the move. The book gives readers a clean framework for separating those regimes.
-
-## What you will learn
-
-The reader learns why USD is not the same as DXY, why FX weakness is not the same as loss of purchasing power, how to read dollar regimes with three macro dials, and how those regimes affect oil, gas, gold, Bitcoin, equities and FX.
-
-## Who it is for
-
-New and intermediate investors, market observers, client-facing market educators and sales teams that need a clear macro framework without turning the material into trading advice.
-
-## What it is not
-
-This is not a signal service, portfolio recommendation, forecast product or trading course. It is an educational framework for reading cross-asset conditions more clearly.
-
-## Frameworks covered
-
-- DXY vs. Dollar Regime
-- Dollar Transmission Chain
-- Dollar Regime Matrix
-- Three-Dial Macro Dashboard
-- Weekly Macro Checklist
-
-## Availability and delivery
-
-Checkout availability is verified live before a purchase link is displayed. After Lemon Squeezy confirms a completed payment through a verified commercial event, access is attached to the verified USD Impact account used for the purchase. The Merchant of Record and final purchase terms are identified before payment details are entered. If access does not appear, contact [support@usd-impact.com](mailto:support@usd-impact.com).
+  <details class="book-disclosure">
+    <summary>Common questions</summary>
+    <div class="book-faq">
+      <h3>What is included?</h3>
+      <p>The complete Guided Interactive Edition, English audiobook, 51-film USD Impact Video Library in five collections with verified English captions, protected reference resources, interactive quizzes and progress tracking.</p>
+      <h3>Can existing purchasers go straight to their library?</h3>
+      <p>Yes. <a href="/account/sign-in/?next=/account/">Sign in with the verified account used for purchase</a>.</p>
+      <h3>Can I listen before deciding?</h3>
+      <p>You can <a href="/audiobook/read-the-dollar-first/">review the 20-chapter audiobook page</a>; full playback requires an eligible signed-in Library Pass account.</p>
+      <h3>Where can I get help?</h3>
+      <p>Email <a href="mailto:support@usd-impact.com">support@usd-impact.com</a> for account or billing support.</p>
+    </div>
+  </details>
+</section>

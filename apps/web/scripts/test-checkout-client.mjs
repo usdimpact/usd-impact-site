@@ -72,6 +72,36 @@ assert.doesNotMatch(
   />Join the book waitlist<\/a>/,
   'The product-page hero must not render a stale waitlist CTA during its initial checking state.',
 );
+assert.equal(
+  bookPurchaseCtaSource.match(/class="button primary"/g)?.length,
+  1,
+  'The product-page offer must expose exactly one primary action.',
+);
+assert.equal(
+  bookPurchaseCtaSource.match(/USD 39/g)?.length,
+  1,
+  'The product-page offer must state the canonical launch price once.',
+);
+assert.equal(
+  bookPurchaseCtaSource.match(/USD 49/g)?.length,
+  1,
+  'The product-page offer must state the canonical standard price once.',
+);
+assert.match(
+  bookPurchaseCtaSource,
+  /Already purchased\?[\s\S]*href="\/account\/sign-in\/\?next=\/account\/"/,
+  'Existing purchasers must have a direct sign-in path in the offer.',
+);
+assert.match(
+  bookPurchaseCtaSource,
+  /presentation\.available \? 'Buy the Library Pass' : presentation\.primaryLabel/,
+  'The verified active state must expose a clear Buy action without repeating the canonical price.',
+);
+assert.match(
+  bookPurchaseCtaSource,
+  /presentation\.available[\s\S]*\? 'Checkout is open through Lemon Squeezy\.'[\s\S]*: presentation\.message/,
+  'The active availability message must not repeat the canonical hero price.',
+);
 
 for (const [name, source] of [
   ['book', bookPurchaseCtaSource],

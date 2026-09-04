@@ -34,7 +34,7 @@
 .vl-collection-filter{display:flex;gap:9px;overflow-x:auto;padding:2px 2px 10px;scrollbar-width:thin}
 .vl-collection-filter a{display:inline-flex;min-height:44px;flex:0 0 auto;align-items:center;gap:9px;padding:9px 13px;border:1px solid #ccd3db;border-radius:999px;color:var(--vl-navy);font-size:13px;font-weight:750;text-decoration:none}
 .vl-collection-filter a span:last-child{display:inline-grid;min-width:23px;height:23px;place-items:center;padding:0 6px;border-radius:999px;background:#edf0f4;color:var(--vl-slate);font-size:11px}
-.vl-collection-filter a:hover,.vl-collection-filter a:focus-visible{border-color:var(--vl-gold);outline:2px solid transparent;background:#fff8e8}
+.vl-collection-filter a:hover{border-color:var(--vl-gold);background:#fff8e8}.vl-collection-filter a:focus-visible{border-color:var(--vl-gold);outline:3px solid currentColor;outline-offset:2px;background:#fff8e8}
 .vl-collection-filter a[aria-current="location"]{border-color:var(--vl-gold);background:var(--vl-navy);color:var(--vl-white)}
 .vl-collection-filter a[aria-current="location"] span:last-child{background:var(--vl-gold);color:var(--vl-midnight)}
 .vl-result-count{margin:8px 2px 0;color:var(--vl-slate);font-size:14px;font-weight:700}

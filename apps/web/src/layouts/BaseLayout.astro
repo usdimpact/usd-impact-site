@@ -32,7 +32,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIs
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/assets/logo/USDImpact_Icon_Color_2048.png" />
+    <link rel="apple-touch-icon" href="/assets/logo/USDImpact_Icon_Color_192.png" sizes="192x192" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     {stylesheets.map((href) => <link rel="stylesheet" href={href} />)}
   </head>
@@ -42,10 +42,12 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIs
       <div class="container header-inner">
         <a class="logo" href="/" aria-label="USD Impact home">
           <img
-            src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_2048.png"
+            src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
+            srcset="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png 256w, /assets/logo/USDImpact_Horizontal_Color_NoTagline_512.png 512w"
+            sizes="148px"
             alt="USD Impact"
-            width="2048"
-            height="614"
+            width="256"
+            height="77"
             decoding="async"
           />
         </a>
@@ -105,10 +107,12 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIs
       <div class="container footer-grid">
         <div class="footer-brand">
           <img
-            src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_2048.png"
+            src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
+            srcset="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png 256w, /assets/logo/USDImpact_Horizontal_Color_NoTagline_512.png 512w"
+            sizes="164px"
             alt="USD Impact"
-            width="2048"
-            height="614"
+            width="256"
+            height="77"
             loading="lazy"
             decoding="async"
           />
@@ -137,11 +141,13 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIs
             <a href="/research/independent-replication/">Replication</a>
           </div>
           <div class="footer-group">
-            <p class="footer-heading">Company</p>
+            <p class="footer-heading">Legal &amp; trust</p>
             <a href="/about/">About &amp; transparency</a>
+            <a href="/contact/">Contact</a>
             <a href="/privacy/">Privacy</a>
             <a href="/terms/">Terms</a>
             <a href="/refund-policy/">Refund Policy</a>
+            <a href="/accessibility/">Accessibility</a>
             <a href="/compliance/">Compliance</a>
             <button id="privacy-settings-button" class="footer-privacy-settings" type="button">Privacy settings</button>
           </div>
@@ -206,7 +212,10 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIs
       });
 
       const firstMain = document.querySelector("main");
-      if (firstMain && !firstMain.id) firstMain.id = "main-content";
+      if (firstMain instanceof HTMLElement) {
+        if (!firstMain.id) firstMain.id = "main-content";
+        if (firstMain.id === "main-content") firstMain.tabIndex = -1;
+      }
     </script>
     <ConsentClient />
     <TelemetryClient />

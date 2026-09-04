@@ -4,7 +4,7 @@ const NOTIFICATION_DEFAULTS = Object.freeze({
   body: 'A new USD Impact update is available.',
   url: '/',
 });
-const NOTIFICATION_ICON = '/assets/logo/USDImpact_Icon_Color_2048.png';
+const NOTIFICATION_ICON = '/assets/logo/USDImpact_Icon_Color_192.png';
 
 function boundedText(value, fallback, maximumLength) {
   const text = typeof value === 'string' ? value.trim() : '';

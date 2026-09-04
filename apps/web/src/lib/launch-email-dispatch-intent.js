@@ -11,8 +11,8 @@ import {
 } from './email-readiness-contracts.js';
 import {
   LAUNCH_EMAIL_TEMPLATE_SPECS,
-  LAUNCH_EMAIL_TEMPLATE_VERSION,
   getLaunchEmailTemplateSpec,
+  getLaunchEmailTemplateVersion,
   renderLaunchEmail,
 } from './launch-email-templates.js';
 import {
@@ -118,7 +118,7 @@ export function createLaunchEmailDispatchIntent({
     stateVersion: normalizedStateVersion,
     recipientEmail: normalizedRecipient,
     templateId: messageId,
-    templateVersion: LAUNCH_EMAIL_TEMPLATE_VERSION,
+    templateVersion: getLaunchEmailTemplateVersion(messageId),
     provider: normalizedProvider,
     ...(consent
       ? { consent, consentCheckedAt: consentCheckedAt || normalizedOccurredAt }

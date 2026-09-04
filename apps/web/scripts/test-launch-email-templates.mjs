@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import {
   LAUNCH_EMAIL_TEMPLATE_SPECS,
   LAUNCH_EMAIL_TEMPLATE_VERSION,
+  PURCHASE_ACCESS_READY_EMAIL_TEMPLATE_VERSION,
   getLaunchEmailTemplateSpec,
+  getLaunchEmailTemplateVersion,
+  isCanonicalSiteUrl,
+  isSupportMailtoUrl,
   renderLaunchEmail,
   validateLaunchEmailTemplateRegistry,
 } from '../src/lib/launch-email-templates.js';
@@ -19,6 +23,12 @@ assert.deepEqual(
   Object.keys(LAUNCH_EMAIL_TEMPLATE_SPECS).sort(),
   [...LAUNCH_CRITICAL_MESSAGE_IDS].sort(),
 );
+assert.equal(isCanonicalSiteUrl('https://www.usd-impact.com/guided-edition/'), true);
+assert.equal(isCanonicalSiteUrl('https://www.usd-impact.com.evil.example/guided-edition/'), false);
+assert.equal(isCanonicalSiteUrl('https://attacker@www.usd-impact.com/guided-edition/'), false);
+assert.equal(isCanonicalSiteUrl('http://www.usd-impact.com/guided-edition/'), false);
+assert.equal(isSupportMailtoUrl('mailto:support@usd-impact.com?subject=Library%20Pass'), true);
+assert.equal(isSupportMailtoUrl('mailto:support@usd-impact.com.evil.example'), false);
 
 for (const messageId of LAUNCH_CRITICAL_MESSAGE_IDS) {
   const spec = getLaunchEmailTemplateSpec(messageId);
@@ -34,7 +44,7 @@ for (const messageId of LAUNCH_CRITICAL_MESSAGE_IDS) {
   const second = renderLaunchEmail(input);
   assert.deepEqual(first, second, `${messageId} must render deterministically`);
   assert.equal(first.classification, spec.classification);
-  assert.equal(first.templateVersion, LAUNCH_EMAIL_TEMPLATE_VERSION);
+  assert.equal(first.templateVersion, getLaunchEmailTemplateVersion(messageId));
   assert.ok(first.subject.length > 5);
   assert.match(first.text, /USD Impact/);
   assert.match(first.text, /support@usd-impact\.com/);
@@ -88,6 +98,13 @@ const ready = renderLaunchEmail({ messageId: 'purchase_access_ready', reference:
 assert.match(ready.text, /Library Pass is active/i);
 assert.match(ready.text, /audiobook/i);
 assert.match(ready.text, /Video Library/i);
+assert.equal(ready.templateVersion, PURCHASE_ACCESS_READY_EMAIL_TEMPLATE_VERSION);
+assert.match(ready.text, /Start with the Guided Edition: https:\/\/www\.usd-impact\.com\/guided-edition\//);
+assert.match(ready.text, /Listen to the audiobook: https:\/\/www\.usd-impact\.com\/guided-edition\/audiobook\//);
+assert.match(ready.text, /Explore the Video Library: https:\/\/www\.usd-impact\.com\/guided-edition\/video-library\//);
+assert.match(ready.text, /Open your account: https:\/\/www\.usd-impact\.com\/account\//);
+assert.match(ready.text, /Support: support@usd-impact\.com/);
+assert.match(ready.html, /<ol[\s\S]*Start with the Guided Edition[\s\S]*Listen to the audiobook[\s\S]*Explore the Video Library[\s\S]*<\/ol>/);
 
 const refund = renderLaunchEmail({ messageId: 'refund_approved', reference: 'refund_123' });
 assert.match(refund.text, /entitlement.*removed/is);

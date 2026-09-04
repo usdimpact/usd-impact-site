@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm run prepare:fonts && astro dev",
-    "build": "npm run prepare:fonts && npm run generate:quizzes && npm run validate:purchase-access-email && astro build && npm run validate:checkout-presentation && npm run validate:csp-build && node scripts/verify-production-build.mjs",
+    "build": "npm run prepare:fonts && npm run generate:quizzes && npm run validate:purchase-access-email && astro build && npm run validate:a11y-build && npm run validate:checkout-presentation && npm run validate:csp-build && node scripts/verify-production-build.mjs",
     "preview": "astro preview",
     "prepare:fonts": "node scripts/prepare-font-assets.mjs",
     "verify:waitlist-development": "node scripts/verify-waitlist-development.mjs",
@@ -14,7 +14,8 @@
     "validate:reports": "node scripts/validate-weekly-reports.mjs && node scripts/validate-monthly-reports.mjs && node scripts/test-monthly-reports.mjs && node scripts/test-report-periods.mjs",
     "validate:news": "node scripts/validate-news.mjs && node scripts/validate-catalyst-briefs.mjs",
     "validate:links": "node scripts/validate-links.mjs",
-    "validate:ux": "node scripts/test-ux-accessibility-contract.mjs",
+    "validate:ux": "node scripts/test-ux-accessibility-contract.mjs && node scripts/test-governance-evidence-contracts.mjs",
+    "validate:a11y-build": "node scripts/test-rendered-accessibility-contract.mjs",
     "validate:checkout-presentation": "node scripts/test-checkout-page-presentation.mjs",
     "validate:purchase-access-email": "node --check src/lib/purchase-access-ready-email.js && node scripts/test-purchase-access-ready-email.mjs",
     "validate:commerce-reconciliation-scheduler": "node scripts/test-commerce-reconciliation-scheduler-contract.mjs",

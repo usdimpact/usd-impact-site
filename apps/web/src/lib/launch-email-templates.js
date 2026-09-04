@@ -6,11 +6,15 @@ import {
 import { buildWaitlistConfirmationEmail } from './waitlist-email-template.js';
 
 export const LAUNCH_EMAIL_TEMPLATE_VERSION = '2026-08-20.v1';
+export const PURCHASE_ACCESS_READY_EMAIL_TEMPLATE_VERSION = '2026-09-04.v2';
 export const LAUNCH_EMAIL_PRODUCT_NAME = 'Read the Dollar First Library Pass';
 
 const SITE_ORIGIN = 'https://www.usd-impact.com';
 const URLS = Object.freeze({
   account: `${SITE_ORIGIN}/account/`,
+  guidedEdition: `${SITE_ORIGIN}/guided-edition/`,
+  audiobook: `${SITE_ORIGIN}/guided-edition/audiobook/`,
+  videoLibrary: `${SITE_ORIGIN}/guided-edition/video-library/`,
   product: `${SITE_ORIGIN}/book/read-the-dollar-first/`,
   privacy: `${SITE_ORIGIN}/privacy/`,
   refund: `${SITE_ORIGIN}/refund-policy/`,
@@ -25,6 +29,31 @@ const FORBIDDEN_COPY = [
   /buy now/i,
   /will pump/i,
 ];
+
+export function isCanonicalSiteUrl(value) {
+  if (typeof value !== 'string') return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.origin === SITE_ORIGIN
+      && parsed.protocol === 'https:'
+      && parsed.username === ''
+      && parsed.password === '';
+  } catch {
+    return false;
+  }
+}
+
+export function isSupportMailtoUrl(value) {
+  if (typeof value !== 'string') return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'mailto:'
+      && parsed.pathname.toLowerCase() === EMAIL_SUPPORT_ADDRESS.toLowerCase()
+      && parsed.hash === '';
+  } catch {
+    return false;
+  }
+}
 
 export const LAUNCH_EMAIL_TEMPLATE_SPECS = deepFreeze({
   auth_sign_in: {
@@ -47,12 +76,18 @@ export const LAUNCH_EMAIL_TEMPLATE_SPECS = deepFreeze({
     referenceLabel: 'Purchase reference',
   }),
   purchase_access_ready: appTemplate({
+    templateVersion: PURCHASE_ACCESS_READY_EMAIL_TEMPLATE_VERSION,
     classification: 'transactional',
     subject: 'Your Read the Dollar First Library Pass is ready',
     heading: 'Your Library Pass is active.',
     paragraphs: [
       'A verified completed-payment event has been matched to your USD Impact account.',
-      'You can now use the Guided Interactive Edition, complete English audiobook, Video Library, and included learning resources.',
+      'Choose one of these first steps now, or return to your Account whenever you are ready.',
+    ],
+    firstSteps: [
+      { label: 'Start with the Guided Edition', url: URLS.guidedEdition },
+      { label: 'Listen to the audiobook', url: URLS.audiobook },
+      { label: 'Explore the Video Library', url: URLS.videoLibrary },
     ],
     ctaLabel: 'Open your account',
     ctaUrl: URLS.account,
@@ -194,6 +229,10 @@ export function getLaunchEmailTemplateSpec(messageId) {
   return spec;
 }
 
+export function getLaunchEmailTemplateVersion(messageId) {
+  return getLaunchEmailTemplateSpec(messageId).templateVersion || LAUNCH_EMAIL_TEMPLATE_VERSION;
+}
+
 export function renderLaunchEmail({ messageId, reference = null, unsubscribeUrl = null }) {
   const spec = getLaunchEmailTemplateSpec(messageId);
   if (spec.providerManaged) {
@@ -203,7 +242,7 @@ export function renderLaunchEmail({ messageId, reference = null, unsubscribeUrl 
     return Object.freeze({
       ...buildWaitlistConfirmationEmail({ unsubscribeUrl: requireUnsubscribeUrl(unsubscribeUrl) }),
       classification: spec.classification,
-      templateVersion: LAUNCH_EMAIL_TEMPLATE_VERSION,
+      templateVersion: getLaunchEmailTemplateVersion(messageId),
     });
   }
 
@@ -221,12 +260,20 @@ export function renderLaunchEmail({ messageId, reference = null, unsubscribeUrl 
         `Unsubscribe from book availability email: ${normalizedUnsubscribeUrl}`,
       ]
     : [];
+  const firstStepLines = spec.firstSteps?.length
+    ? [
+        '',
+        'Three ways to begin:',
+        ...spec.firstSteps.map((step, index) => `${index + 1}. ${step.label}: ${step.url}`),
+      ]
+    : [];
   const text = [
     'USD Impact',
     '',
     spec.heading,
     '',
     ...spec.paragraphs,
+    ...firstStepLines,
     ...(referenceLine ? ['', referenceLine] : []),
     '',
     `${spec.ctaLabel}: ${spec.ctaUrl}`,
@@ -253,7 +300,7 @@ export function renderLaunchEmail({ messageId, reference = null, unsubscribeUrl 
     text,
     html,
     classification: policy.classification,
-    templateVersion: LAUNCH_EMAIL_TEMPLATE_VERSION,
+    templateVersion: getLaunchEmailTemplateVersion(messageId),
     ...(headers ? { headers } : {}),
   });
 }
@@ -290,8 +337,13 @@ export function validateLaunchEmailTemplateRegistry() {
       for (const pattern of FORBIDDEN_COPY) {
         if (pattern.test(copy)) throw new Error(`${messageId} contains prohibited or provider-specific copy.`);
       }
-      if (!spec.ctaUrl.startsWith(SITE_ORIGIN) && !spec.ctaUrl.startsWith(`mailto:${EMAIL_SUPPORT_ADDRESS}`)) {
+      if (!isCanonicalSiteUrl(spec.ctaUrl) && !isSupportMailtoUrl(spec.ctaUrl)) {
         throw new Error(`${messageId} CTA must use the canonical site or support address.`);
+      }
+      for (const step of spec.firstSteps || []) {
+        if (!step?.label || !isCanonicalSiteUrl(step.url)) {
+          throw new Error(`${messageId} first-step links must use a label and canonical site URL.`);
+        }
       }
     }
   }
@@ -308,6 +360,8 @@ function appTemplate({
   referenceLabel,
   requiresUnsubscribe = false,
   securePayloadForbidden = false,
+  templateVersion = LAUNCH_EMAIL_TEMPLATE_VERSION,
+  firstSteps = [],
 }) {
   return {
     classification,
@@ -321,6 +375,8 @@ function appTemplate({
     referenceLabel,
     requiresUnsubscribe,
     securePayloadForbidden,
+    templateVersion,
+    firstSteps,
   };
 }
 
@@ -359,6 +415,14 @@ function buildHtml({ spec, referenceLine, unsubscribeUrl }) {
   const reference = referenceLine
     ? `<p style="margin:22px 0 0; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:20px; color:#5A6472;">${escapeHtml(referenceLine)}</p>`
     : '';
+  const firstSteps = spec.firstSteps?.length
+    ? `<div style="margin:22px 0 0; padding:18px; border:1px solid #D9DEE5; background:#F8FAFC;">
+        <p style="margin:0 0 10px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:20px; color:#071A33; font-weight:700;">Three ways to begin</p>
+        <ol style="margin:0; padding-left:22px; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:25px; color:#161A1F;">
+          ${spec.firstSteps.map((step) => `<li><a href="${escapeHtmlAttribute(step.url)}" style="color:#071A33; text-decoration:underline;">${escapeHtml(step.label)}</a></li>`).join('')}
+        </ol>
+      </div>`
+    : '';
   const consent = unsubscribeUrl
     ? `<p style="margin:12px 0 0; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:20px; color:#5A6472;">You requested Read the Dollar First availability updates. <a href="${escapeHtmlAttribute(unsubscribeUrl)}" style="color:#071A33; text-decoration:underline;">Unsubscribe from book availability email</a>.</p>`
     : '';
@@ -387,6 +451,7 @@ function buildHtml({ spec, referenceLine, unsubscribeUrl }) {
             <td style="padding:32px 28px 28px;">
               <h1 style="margin:0 0 18px; font-family:Georgia, 'Times New Roman', serif; font-size:30px; line-height:38px; color:#071A33;">${escapeHtml(spec.heading)}</h1>
               ${paragraphs}
+              ${firstSteps}
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; margin-top:24px;">
                 <tr><td bgcolor="#071A33" style="background-color:#071A33;"><a href="${escapeHtmlAttribute(spec.ctaUrl)}" style="display:inline-block; padding:13px 20px; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:20px; color:#FFFFFF; font-weight:700; text-decoration:none;">${escapeHtml(spec.ctaLabel)}</a></td></tr>
               </table>

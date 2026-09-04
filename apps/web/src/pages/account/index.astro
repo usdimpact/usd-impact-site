@@ -1,25 +1,24 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../../components/Icon.astro';
 ---
 <BaseLayout
   title="Your account | USD Impact"
   description="Manage your USD Impact learning access, data export, and account settings."
 >
-  <section class="hero account-hero">
-    <div class="container">
-      <p class="eyebrow">USD Impact account</p>
-      <h1>Your learning account.</h1>
-      <p class="lead">Pick up where you left off, explore another format, and manage your account securely.</p>
-    </div>
-  </section>
-
   <main id="main-content">
+    <section class="hero account-hero">
+      <div class="container">
+        <p class="eyebrow">USD Impact account</p>
+        <h1>Your learning account.</h1>
+        <p class="lead">Pick up where you left off, explore another format, and manage your account securely.</p>
+      </div>
+    </section>
+
     <div class="container account-shell">
       <section class="card account-panel account-next-step" aria-labelledby="next-step-heading">
         <div class="account-section-heading">
-          <span class="account-icon account-icon-emphasis" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="8"></circle><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"></path></svg>
-          </span>
+          <Icon name="compass" class="account-icon account-icon-emphasis" />
           <div>
             <p class="eyebrow">Recommended next step</p>
             <h2 id="next-step-heading">Start with the Guided Edition</h2>
@@ -37,30 +36,64 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </p>
       </section>
 
-      <section class="card account-panel" aria-labelledby="how-to-heading">
-        <p class="eyebrow">A simple learning path</p>
-        <h2 id="how-to-heading">How to use USD Impact</h2>
-        <ol class="account-guide">
-          <li>
-            <span class="account-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"></path><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16Z"></path></svg>
-            </span>
-            <div><strong>Learn the framework</strong><span>Begin with the Guided Interactive Edition and move through one chapter at a time.</span></div>
-          </li>
-          <li>
-            <span class="account-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="M4 13v-2a8 8 0 0 1 16 0v2"></path><path d="M4 13h3v7H5a1 1 0 0 1-1-1v-6Zm16 0h-3v7h2a1 1 0 0 0 1-1v-6Z"></path></svg>
-            </span>
-            <div><strong>Reinforce in another format</strong><span>Use the complete audiobook or a focused Video Library lesson to revisit the idea.</span></div>
-          </li>
-          <li>
-            <span class="account-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="M7 3h10v4H7z"></path><path d="M5 5h14v16H5z"></path><path d="m8 12 2 2 5-5M8 18h8"></path></svg>
-            </span>
-            <div><strong>Apply it each week</strong><span>Use the Weekly Checklist and current research to test the framework against live conditions.</span></div>
-          </li>
-        </ol>
-        <a class="account-text-link" href="/lead-magnets/weekly-dollar-regime-checklist/">Open the Weekly Checklist →</a>
+      <section id="getting-started" class="card account-panel" aria-labelledby="how-to-heading" data-getting-started>
+        <div data-getting-started-content>
+          <div class="account-onboarding-heading">
+            <div>
+              <p class="eyebrow">Four useful first steps</p>
+              <h2 id="how-to-heading">Getting started</h2>
+            </div>
+            <button class="account-quiet-button" type="button" data-dismiss-checklist>Dismiss checklist</button>
+          </div>
+          <p class="account-onboarding-intro">Progress is recognized from activity the product already saves. This checklist does not grant access or add a new tracking system.</p>
+          <ol class="account-guide account-onboarding-list">
+            <li data-onboarding-step="guided">
+              <Icon name="book" class="account-icon" />
+              <div>
+                <strong>1. Open the Guided Edition</strong>
+                <span>Build the dollar-first framework one chapter at a time.</span>
+                <a class="account-text-link" href="/guided-edition/">Open Guided Edition →</a>
+              </div>
+              <span class="account-step-state" data-onboarding-status>Not started</span>
+            </li>
+            <li data-onboarding-step="audiobook">
+              <Icon name="headphones" class="account-icon" />
+              <div>
+                <strong>2. Play an audiobook chapter</strong>
+                <span>Reinforce the framework in the complete English audiobook.</span>
+                <a class="account-text-link" href="/guided-edition/audiobook/">Open audiobook →</a>
+              </div>
+              <span class="account-step-state" data-onboarding-status>Not started</span>
+            </li>
+            <li data-onboarding-step="video">
+              <Icon name="video" class="account-icon" />
+              <div>
+                <strong>3. Watch a recommended film</strong>
+                <span>Use a focused lesson to revisit a concept visually.</span>
+                <a class="account-text-link" href="/guided-edition/video-library/">Open Video Library →</a>
+              </div>
+              <span class="account-step-state" data-onboarding-status>Not started</span>
+            </li>
+            <li data-onboarding-step="support">
+              <Icon name="support" class="account-icon" />
+              <div>
+                <strong>4. Locate Account &amp; Support</strong>
+                <span>Know where to find receipts, security, data controls, and help.</span>
+                <a class="account-text-link" href="#support-heading" data-find-support>Find support →</a>
+              </div>
+              <span class="account-step-state" data-onboarding-status>Ready</span>
+            </li>
+          </ol>
+          <p class="account-help" data-onboarding-summary role="status" aria-live="polite">Your saved activity is loading.</p>
+        </div>
+        <div class="account-onboarding-dismissed" data-getting-started-dismissed hidden>
+          <div>
+            <p class="eyebrow">Getting started</p>
+            <h2>Checklist hidden</h2>
+            <p>You can bring back the four-step learning checklist at any time.</p>
+          </div>
+          <button class="button account-secondary" type="button" data-reset-checklist>Reset checklist view</button>
+        </div>
       </section>
 
       <section class="card account-panel" aria-labelledby="formats-heading">
@@ -68,25 +101,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <h2 id="formats-heading">Explore another section</h2>
         <div class="account-format-grid">
           <article class="account-format-card">
-            <span class="account-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"></path><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16Z"></path></svg>
-            </span>
+            <Icon name="book" class="account-icon" />
             <h3>Guided Edition</h3>
             <p>Read, save your place, and complete mastery checks.</p>
             <a class="account-text-link" href="/guided-edition/">Open Guided Edition →</a>
           </article>
           <article class="account-format-card">
-            <span class="account-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="M4 13v-2a8 8 0 0 1 16 0v2"></path><path d="M4 13h3v7H5a1 1 0 0 1-1-1v-6Zm16 0h-3v7h2a1 1 0 0 0 1-1v-6Z"></path></svg>
-            </span>
+            <Icon name="headphones" class="account-icon" />
             <h3>Audiobook</h3>
             <p>Listen to the complete English edition at your pace.</p>
             <a class="account-text-link" href="/guided-edition/audiobook/">Open audiobook →</a>
           </article>
           <article class="account-format-card">
-            <span class="account-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m10 9 5 3-5 3V9Z"></path></svg>
-            </span>
+            <Icon name="video" class="account-icon" />
             <h3>Video Library</h3>
             <p>Watch focused lessons organized into clear collections.</p>
             <a class="account-text-link" href="/guided-edition/video-library/">Open Video Library →</a>
@@ -206,6 +233,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     const learningActivityCount = document.getElementById('learning-activity-count');
     const learningCompletedCount = document.getElementById('learning-completed-count');
     const learningInProgressCount = document.getElementById('learning-in-progress-count');
+    const gettingStartedContent = document.querySelector('[data-getting-started-content]');
+    const gettingStartedDismissed = document.querySelector('[data-getting-started-dismissed]');
+    const onboardingSummary = document.querySelector('[data-onboarding-summary]');
+    const ONBOARDING_VIEW_KEY = 'usd-impact-getting-started-view-v1';
+    const AUDIOBOOK_PROGRESS_KEY = 'usd-impact-library-pass-audiobook-progress';
 
     const defaultJourney = {
       available: false,
@@ -257,7 +289,71 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             ? 'This suggestion uses only learning progress already saved to your account; no additional activity tracking was added.'
             : 'Saved progress is temporarily unavailable. You can still start or continue from the Guided Edition.';
       }
+      showGettingStarted(resolved, hasPaidAccess);
     };
+
+    const readLocalFlag = (key) => {
+      try {
+        return localStorage.getItem(key) === 'true';
+      } catch {
+        return false;
+      }
+    };
+
+    const audiobookStartedOnDevice = () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(AUDIOBOOK_PROGRESS_KEY) || 'null');
+        return Boolean(saved && Number.isFinite(saved.index) && Number.isFinite(saved.time));
+      } catch {
+        return false;
+      }
+    };
+
+    const setOnboardingStep = (name, complete, incompleteLabel = 'Not started') => {
+      const step = document.querySelector(`[data-onboarding-step="${name}"]`);
+      const status = step?.querySelector('[data-onboarding-status]');
+      if (!(step instanceof HTMLElement) || !(status instanceof HTMLElement)) return;
+      step.dataset.complete = String(complete);
+      status.textContent = complete ? 'Complete' : incompleteLabel;
+    };
+
+    const showGettingStarted = (journey, hasPaidAccess) => {
+      const counts = journey?.formatCounts && typeof journey.formatCounts === 'object'
+        ? journey.formatCounts
+        : {};
+      setOnboardingStep('guided', hasPaidAccess && boundedCount(counts.guidedEdition) > 0);
+      setOnboardingStep('audiobook', hasPaidAccess && audiobookStartedOnDevice(), 'Open on this device');
+      setOnboardingStep('video', hasPaidAccess && boundedCount(counts.video) > 0);
+      setOnboardingStep('support', readLocalFlag(`${ONBOARDING_VIEW_KEY}:support`), 'Ready');
+      const completed = document.querySelectorAll('[data-onboarding-step][data-complete="true"]').length;
+      if (onboardingSummary) {
+        onboardingSummary.textContent = hasPaidAccess
+          ? `${completed} of 4 getting-started steps recognized.`
+          : 'These learning steps become available with active Library Pass access.';
+      }
+    };
+
+    const setChecklistDismissed = (dismissed) => {
+      if (gettingStartedContent instanceof HTMLElement) gettingStartedContent.hidden = dismissed;
+      if (gettingStartedDismissed instanceof HTMLElement) gettingStartedDismissed.hidden = !dismissed;
+      try {
+        localStorage.setItem(ONBOARDING_VIEW_KEY, String(dismissed));
+      } catch {
+        // Checklist visibility remains usable even when local storage is unavailable.
+      }
+    };
+
+    setChecklistDismissed(readLocalFlag(ONBOARDING_VIEW_KEY));
+    document.querySelector('[data-dismiss-checklist]')?.addEventListener('click', () => setChecklistDismissed(true));
+    document.querySelector('[data-reset-checklist]')?.addEventListener('click', () => setChecklistDismissed(false));
+    document.querySelector('[data-find-support]')?.addEventListener('click', () => {
+      try {
+        localStorage.setItem(`${ONBOARDING_VIEW_KEY}:support`, 'true');
+      } catch {
+        // The support link still works when local storage is unavailable.
+      }
+      setOnboardingStep('support', true);
+    });
 
     const showMessage = (text, state = '') => {
       if (!message) return;

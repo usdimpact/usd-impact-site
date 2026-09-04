@@ -8,6 +8,8 @@ on:
       - 'scripts/integrity-watchdog*.mjs'
       - 'scripts/test-integrity-watchdog.mjs'
       - 'docs/operations/integrity-watchdog/**'
+  issue_comment:
+    types: [created]
   workflow_dispatch:
     inputs:
       scope:
@@ -70,7 +72,15 @@ jobs:
           node -e "const i=JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/WORKFLOW_INVENTORY.json', 'utf8')); if(i.workflows.length !== 33) throw new Error('Expected 33 workflows'); const ids=new Set(i.workflows.map(w=>w.id)); if(ids.size !== i.workflows.length) throw new Error('Duplicate workflow ID'); for(const w of i.workflows){if(w.reference_workflow && !ids.has(w.reference_workflow)) throw new Error('Unknown reference workflow: '+w.reference_workflow)}"
 
   audit:
-    if: github.event_name != 'pull_request'
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.event_name != 'issue_comment' ||
+       ((github.event.comment.author_association == 'OWNER' ||
+         github.event.comment.author_association == 'MEMBER' ||
+         github.event.comment.author_association == 'COLLABORATOR') &&
+        (github.event.comment.body == '/watchdog critical' ||
+         github.event.comment.body == '/watchdog full' ||
+         github.event.comment.body == '/watchdog full ai')))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -107,11 +117,19 @@ jobs:
           DISPATCH_SCOPE: ${{ inputs.scope }}
           DISPATCH_MODE: ${{ inputs.mode }}
           DISPATCH_AI_REVIEW: ${{ inputs.ai_review }}
+          COMMENT_COMMAND: ${{ github.event.comment.body }}
         run: |
           scope=critical
           mode=fix_ready
           ai_review=false
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+          if [ "$EVENT_NAME" = "issue_comment" ]; then
+            case "$COMMENT_COMMAND" in
+              "/watchdog critical") scope=critical; mode=fix_ready; ai_review=false ;;
+              "/watchdog full") scope=full; mode=fix_ready; ai_review=false ;;
+              "/watchdog full ai") scope=full; mode=fix_ready; ai_review=true ;;
+              *) echo "Unsupported watchdog command"; exit 1 ;;
+            esac
+          elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             scope="$DISPATCH_SCOPE"
             mode="$DISPATCH_MODE"
             ai_review="$DISPATCH_AI_REVIEW"

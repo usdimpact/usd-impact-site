@@ -16,7 +16,7 @@ The first slice adds:
 - optional Vercel, Supabase, Resend, and Google Drive evidence collectors with explicit provider and credential limitations;
 - an optional independent OpenAI reviewer using structured JSON output and `store: false`;
 - redacted evidence manifests, workflow classifications, and proposed-only fix packets;
-- hourly critical checks, Monday full recertification, and manual dispatch.
+- hourly critical checks, Monday full recertification, manual dispatch, and exact owner/collaborator comment commands.
 
 The initial 19 contracts cover workflow permission and pinning safety, credential-shape scanning, canonical redirects, the Library Pass product contract, legal identity, checkout fail-closed behavior, anonymous paid-access denial, source-endpoint authorization, Score claim boundaries, privacy choice, Daily freshness, GitHub quality and protection, Vercel source and configuration metadata, Supabase Security Advisor, Resend domain and webhooks, Drive source metadata, and independent review.
 
@@ -49,10 +49,20 @@ Credentials embedded in URLs and non-default ports are rejected. Redirects are h
 
 - Hourly at minute 17: critical repository, GitHub, and public-runtime contracts.
 - Monday at 05:23 UTC: full provider recertification.
-- Manual: choose `critical` or `full`, `audit_only` or `fix_ready`, and optional AI review.
+- Manual workflow dispatch: choose `critical` or `full`, `audit_only` or `fix_ready`, and optional AI review.
 - Pull request: unit, schema, and syntax validation only.
 
 A verified P0 failure yields `RED / NOT_READY`. P0 unknowns, P1 failures, warnings, or incomplete evidence yield `AMBER / READY_WITH_CONDITIONS`. Unknown is never green.
+
+## Connected GitHub commands
+
+An exact issue or pull-request comment from a repository `OWNER`, `MEMBER`, or `COLLABORATOR` can trigger a read-only run:
+
+- `/watchdog critical` — critical scope, fix-ready packets, no AI review;
+- `/watchdog full` — full provider scope, fix-ready packets, no AI review;
+- `/watchdog full ai` — full provider scope with the independent reviewer, only when the dedicated OpenAI key is configured.
+
+No prefix, suffix, extra argument, or command from an untrusted association is accepted. The workflow does not post a reply and retains read-only repository permissions.
 
 ## Outputs
 

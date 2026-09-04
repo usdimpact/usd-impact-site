@@ -141,7 +141,40 @@ fs.writeFileSync(path.join(workspace, '.github', 'workflows', 'quality.yml'), 'p
 assert.equal(repositoryContracts({ workspace })[0].outcome, OUTCOME.FAIL);
 fs.rmSync(workspace, { recursive: true, force: true });
 
-assert.equal((await vercelContracts({ env: {} }))[0].outcome, OUTCOME.UNKNOWN);
+const vercelUnavailable = await vercelContracts({ env: {} });
+assert.equal(vercelUnavailable.length, 2);
+assert.equal(vercelUnavailable[0].id, 'VERCEL-SOURCE-IDENTITY');
+assert.equal(vercelUnavailable[0].outcome, OUTCOME.UNKNOWN);
+assert.equal(vercelUnavailable[1].id, 'VERCEL-CONFIG-PRESENCE');
+assert.equal(vercelUnavailable[1].outcome, OUTCOME.UNKNOWN);
+
+let vercelStatusRequest;
+const exactHead = 'a'.repeat(40);
+const vercelStatusFallback = await vercelContracts({
+  env: { GITHUB_TOKEN: 'github-read-token-for-test' },
+  expectedGitSha: exactHead,
+  fetchImpl: async (url, options = {}) => {
+    vercelStatusRequest = { url: String(url), options };
+    return reply(JSON.stringify({
+      state: 'success',
+      statuses: [{
+        context: 'Vercel',
+        state: 'success',
+        target_url: 'https://vercel.com/usd-impact/usd-impact-site/test-deployment',
+      }],
+    }), 200, {}, String(url));
+  },
+});
+assert.equal(vercelStatusFallback.length, 2);
+assert.equal(vercelStatusFallback[0].outcome, OUTCOME.PASS);
+assert.equal(vercelStatusFallback[0].classification, CLASSIFICATION.FUNCTIONAL);
+assert.equal(vercelStatusFallback[0].evidence[0].expected_git_sha, exactHead);
+assert.equal(vercelStatusFallback[0].evidence[0].direct_vercel_api_used, false);
+assert.equal(vercelStatusFallback[0].evidence[0].target_host, 'vercel.com');
+assert.equal(vercelStatusFallback[1].outcome, OUTCOME.UNKNOWN);
+assert.match(vercelStatusRequest.url, new RegExp(`/commits/${exactHead}/status$`));
+assert.match(vercelStatusRequest.options.headers.Authorization, /^Bearer /);
+
 assert.equal((await independentReview({ results: [passed], enabled: false, env: {} })).outcome, OUTCOME.SKIP);
 assert.equal((await independentReview({ results: [passed], enabled: true, env: {} })).outcome, OUTCOME.UNKNOWN);
 

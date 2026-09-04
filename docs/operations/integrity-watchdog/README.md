@@ -140,6 +140,12 @@ This approval enables the Resend collector's existing GET-only path when a fallb
 
 These fallbacks are migration aids, not the final least-privilege state. Replace them with dedicated watchdog credentials and remove each fallback after an independently verified full run.
 
+## Credentialless Vercel source evidence
+
+When direct Vercel API configuration is unavailable, full recertification can still inspect the exact `GITHUB_SHA` through GitHub's combined commit-status endpoint. A successful status whose context begins with `Vercel` establishes bounded evidence that Vercel accepted the exact current head. This result is classified as `B_FUNCTIONAL`, not GOLD, because it does not independently expose the Production target or environment metadata.
+
+`VERCEL-CONFIG-PRESENCE` remains `E_UNKNOWN` until a dedicated Vercel credential can inspect variable-name metadata directly. Public runtime contracts separately continue to test canonical routing, security headers, checkout, access denial, legal identity, consent, Daily freshness, and product behavior. A successful commit status must never be treated as proof that every Vercel configuration value is correct.
+
 ## Independent reviewer
 
 The OpenAI reviewer is secondary to deterministic evidence. It receives only normalized, redacted findings and proposed fix packets. It may confirm, challenge, or mark evidence insufficient. It cannot change deterministic contract outcomes, approve its own repair, or call write tools.

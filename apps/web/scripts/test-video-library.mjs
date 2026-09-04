@@ -38,6 +38,15 @@ assert.equal((protectedCatalog.match(/data-video-collection="[^"]+"/g) || []).le
 assert.equal((protectedCatalog.match(/data-video-card/g) || []).length, videos.length);
 assert.match(protectedCatalog, /data-video-continue hidden/);
 assert.match(protectedCatalog, /data-video-result-count role="status" aria-live="polite"/);
+assert.match(protectedCatalog, /<nav class="vl-site-nav" aria-label="Library navigation">/);
+assert.match(protectedCatalog, /href="\/guided-edition\/book\/">Book<\/a>/);
+assert.match(protectedCatalog, /href="\/guided-edition\/audiobook\/">Audiobook<\/a>/);
+assert.match(protectedCatalog, /href="\/guided-edition\/video-library\/" aria-current="page">Video Library<\/a>/);
+for (const collection of collections) {
+  const escapedTitle = collection.title.replaceAll('&', '&amp;');
+  assert.match(protectedCatalog, new RegExp(`>${collection.order}\\. ${escapedTitle}<`));
+  assert.match(protectedCatalog, new RegExp(`Path ${collection.order} of ${collections.length}`));
+}
 
 const progressSource = fs.readFileSync(new URL('../public/assets/video-library-progress.js', import.meta.url), 'utf8');
 assert.match(progressSource, /if \(!status\) return;/);

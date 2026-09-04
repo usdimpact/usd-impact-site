@@ -5,14 +5,30 @@
 .account-title { color: var(--navy); font-size: clamp(34px, 5vw, 54px); }
 .account-form { display: grid; gap: 12px; max-width: 620px; }
 .account-form label { color: var(--navy); font-weight: 800; }
-.account-form input[type="email"] { width: 100%; min-height: 50px; padding: 12px 14px; border: 1px solid #aeb7c3; border-radius: 12px; background: var(--white); color: var(--graphite); font: inherit; }
-.account-form input[type="email"]:focus { outline: 3px solid rgba(201,163,91,.25); border-color: var(--gold); }
+.account-form input[type="email"], .account-form input[type="text"] { width: 100%; min-height: 50px; padding: 12px 14px; border: 1px solid #aeb7c3; border-radius: 12px; background: var(--white); color: var(--graphite); font: inherit; }
+.account-form input[type="email"]:focus, .account-form input[type="text"]:focus { outline: 3px solid rgba(201,163,91,.25); border-color: var(--gold); }
 .account-remember { display: grid; gap: 5px; margin: 4px 0 8px; }
 .account-choice { display: flex; align-items: flex-start; gap: 10px; width: fit-content; max-width: 100%; line-height: 1.45; cursor: pointer; }
 .account-choice input[type="checkbox"] { flex: 0 0 auto; width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--navy); }
 .account-choice input[type="checkbox"]:focus-visible { outline: 3px solid rgba(201,163,91,.35); outline-offset: 3px; }
 .account-remember .account-help { margin: 0 0 0 30px; }
 .account-form .button { justify-self: start; margin-top: 8px; }
+.account-primary-method { display: grid; gap: 8px; padding: 20px; border: 1px solid rgba(201,163,91,.65); border-radius: 16px; background: linear-gradient(135deg, #fffdf8, #fbf4e5); }
+.account-primary-method[hidden] { display: none; }
+.account-primary-method .button { margin-top: 2px; }
+.account-method-label { margin: 0; color: #7a5815; font-size: 12px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.account-primary-method .account-help { margin: 0; }
+.account-alternative { max-width: 620px; border: 1px solid #d7dde5; border-radius: 14px; background: var(--white); overflow: hidden; }
+.account-alternative > summary, .account-code-alternative > summary { min-height: 48px; padding: 13px 16px; color: var(--navy); font-weight: 800; cursor: pointer; }
+.account-alternative > summary:focus-visible, .account-code-alternative > summary:focus-visible { outline: 3px solid rgba(201,163,91,.35); outline-offset: -3px; }
+.account-alternative[open] > summary { border-bottom: 1px solid #e1e5ea; }
+.account-alternative-body, .account-code-body, .account-method-fields { display: grid; gap: 12px; }
+.account-alternative-body { padding: 18px; }
+.account-code-alternative { margin-top: 4px; border: 1px solid #e1e5ea; border-radius: 12px; background: #fafbfc; overflow: hidden; }
+.account-code-alternative[hidden] { display: none; }
+.account-code-alternative[open] > summary { border-bottom: 1px solid #e1e5ea; }
+.account-code-body { padding: 16px; }
+.account-method-fields .account-help, .account-code-body .account-help { margin: 0; }
 .account-help { margin-top: 20px; color: var(--slate); font-size: 14px; }
 .account-status { min-height: 1.6em; margin: 18px 0 0; font-weight: 700; }
 .account-status[data-state="success"] { color: #176b3a; }

@@ -24,9 +24,11 @@ function renderHeader() {
         <img src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_2048.png" alt="" width="2048" height="614">
         <span>USD Impact</span>
       </a>
-      <nav class="vl-site-nav" aria-label="Video library navigation">
-        <a href="/video-library/">Overview</a>
-        <a href="/guided-edition/video-library/">Library</a>
+      <nav class="vl-site-nav" aria-label="Library navigation">
+        <a href="/guided-edition/">Guided Edition</a>
+        <a href="/guided-edition/book/">Book</a>
+        <a href="/guided-edition/audiobook/">Audiobook</a>
+        <a href="/guided-edition/video-library/" aria-current="page">Video Library</a>
         <a href="/account/">Account</a>
       </nav>
     </div>
@@ -81,12 +83,13 @@ function renderCatalogCard(video) {
 function renderCollectionToolbar() {
   const collectionLinks = collections.map((collection) => {
     const count = getCollectionVideos(collection.id).length;
-    return `<a href="#${escapeHtml(collection.id)}" data-video-filter="${escapeHtml(collection.id)}"><span>${escapeHtml(collection.title)}</span><span aria-hidden="true">${count}</span></a>`;
+    return `<a href="#${escapeHtml(collection.id)}" data-video-filter="${escapeHtml(collection.id)}"><span>${collection.order}. ${escapeHtml(collection.title)}</span><span aria-hidden="true">${count}</span></a>`;
   }).join('');
 
   return `<div class="vl-collection-toolbar">
+    <p class="vl-toolbar-label">Choose a learning path</p>
     <nav class="vl-collection-filter" aria-label="Filter videos by collection">
-      <a href="#video-library-all" data-video-filter="all" aria-current="location"><span>All films</span><span aria-hidden="true">${videos.length}</span></a>
+      <a href="#video-library-all" data-video-filter="all" aria-current="location"><span>All ${videos.length} films</span><span aria-hidden="true">${videos.length}</span></a>
       ${collectionLinks}
     </nav>
     <p class="vl-result-count" data-video-result-count role="status" aria-live="polite" aria-atomic="true">Showing ${videos.length} films across all ${collections.length} collections.</p>
@@ -98,7 +101,7 @@ export function renderProtectedVideoCatalog() {
     const items = getCollectionVideos(collection.id);
     return `<section class="vl-collection" id="${escapeHtml(collection.id)}" aria-labelledby="${escapeHtml(collection.id)}-title" data-video-collection="${escapeHtml(collection.id)}" data-collection-title="${escapeHtml(collection.title)}">
       <div class="vl-section-heading">
-        <div><p class="vl-eyebrow">${escapeHtml(collection.kicker)}</p><h2 id="${escapeHtml(collection.id)}-title">${escapeHtml(collection.title)}</h2></div>
+        <div><p class="vl-eyebrow">Path ${collection.order} of ${collections.length} · ${escapeHtml(collection.kicker)}</p><h2 id="${escapeHtml(collection.id)}-title">${escapeHtml(collection.title)}</h2></div>
         <p>${escapeHtml(collection.description)}</p>
       </div>
       <ol class="vl-grid">${items.map(renderCatalogCard).join('')}</ol>

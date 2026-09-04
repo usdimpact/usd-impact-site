@@ -32,6 +32,12 @@ assert.match(protectedHtml, /This limitation is accepted for private Library Pas
 assert.match(protectedHtml, /The PDF must not be represented as PDF\/UA-conformant\./);
 assert.doesNotMatch(protectedHtml, /review PDF|private Development proof|does not represent publication approval|not publication-approved/i);
 assert.match(protectedHtml, new RegExp(BOOK_DOWNLOAD_PATH.replaceAll('/', '\\/')));
+assert.match(protectedHtml, /<nav class="site-nav" aria-label="Library navigation">/);
+assert.match(protectedHtml, /href="\/guided-edition\/">Guided Edition<\/a>/);
+assert.match(protectedHtml, /href="\/guided-edition\/book\/" aria-current="page">Book<\/a>/);
+assert.match(protectedHtml, /href="\/guided-edition\/audiobook\/">Audiobook<\/a>/);
+assert.match(protectedHtml, /href="\/guided-edition\/video-library\/">Video Library<\/a>/);
+assert.match(protectedHtml, /href="\/account\/">Account<\/a>/);
 assert.doesNotMatch(protectedHtml, /supabase\.co|service_role|sb_secret_/);
 
 let anonymousRead = false;

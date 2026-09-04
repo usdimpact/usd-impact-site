@@ -32,13 +32,14 @@ import {
     <div class="vl-shell vl-main page-content" id="video-library-all">
     <p class="vl-public-note">Playback is available only inside the secure Guided Interactive Edition. Sign in with the USD Impact account that holds active access.</p>
     <div class="vl-collection-toolbar">
+      <p class="vl-toolbar-label">Choose a learning path</p>
       <nav class="vl-collection-filter" aria-label="Filter videos by collection">
         <a href="#video-library-all" data-video-filter="all" aria-current="location">
-          <span>All films</span><span aria-hidden="true">{videos.length}</span>
+          <span>All {videos.length} films</span><span aria-hidden="true">{videos.length}</span>
         </a>
         {collections.map((collection) => (
           <a href={`#${collection.id}`} data-video-filter={collection.id}>
-            <span>{collection.title}</span><span aria-hidden="true">{getCollectionVideos(collection.id).length}</span>
+            <span>{collection.order}. {collection.title}</span><span aria-hidden="true">{getCollectionVideos(collection.id).length}</span>
           </a>
         ))}
       </nav>
@@ -51,7 +52,7 @@ import {
       return (
         <section class="vl-collection" id={collection.id} aria-labelledby={`${collection.id}-title`} data-video-collection={collection.id} data-collection-title={collection.title}>
           <div class="vl-section-heading">
-            <div><p class="vl-eyebrow">{collection.kicker}</p><h2 id={`${collection.id}-title`}>{collection.title}</h2></div>
+            <div><p class="vl-eyebrow">Path {collection.order} of {collections.length} · {collection.kicker}</p><h2 id={`${collection.id}-title`}>{collection.title}</h2></div>
             <p>{collection.description}</p>
           </div>
           <ol class="vl-grid">

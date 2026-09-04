@@ -13,7 +13,7 @@ The first slice adds:
 - a 33-workflow top-to-bottom register;
 - deterministic repository and public-runtime contracts;
 - current-head GitHub quality and branch-protection checks;
-- optional read-only Vercel, Supabase, Resend, and Google Drive metadata collectors;
+- optional Vercel, Supabase, Resend, and Google Drive evidence collectors with explicit credential boundaries;
 - an optional independent OpenAI reviewer using structured JSON output and `store: false`;
 - redacted evidence manifests, workflow classifications, and proposed-only fix packets;
 - hourly critical checks, Monday full recertification, and manual dispatch.
@@ -83,17 +83,22 @@ The critical watchdog works with the GitHub-provided token and public routes. Fu
 |---|---|---|
 | OpenAI | `USDIMPACT_WATCHDOG_OPENAI_API_KEY` | Project-scoped key for independent review only |
 | OpenAI | `USDIMPACT_WATCHDOG_OPENAI_MODEL` | Optional; defaults to `gpt-5.6-terra` |
-| Vercel | `USDIMPACT_WATCHDOG_VERCEL_TOKEN` | Dedicated read-only project and account inspection |
+| Vercel | `USDIMPACT_WATCHDOG_VERCEL_TOKEN` | Dedicated project/account read access |
 | Vercel | `USDIMPACT_WATCHDOG_VERCEL_PROJECT_ID` | Target identifier |
 | Vercel | `USDIMPACT_WATCHDOG_VERCEL_TEAM_ID` | Target identifier |
-| Supabase | `USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN` | Dedicated Management API read access |
+| Supabase | `USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN` | Management API token limited to required read scopes |
 | Supabase | `USDIMPACT_WATCHDOG_SUPABASE_PROJECT_REF` | Production project reference |
-| Resend | `USDIMPACT_WATCHDOG_RESEND_API_KEY` | Dedicated metadata-read credential; no sending |
+| Resend | `USDIMPACT_WATCHDOG_RESEND_API_KEY` | Resend currently has no metadata-only API-key permission; do not configure without separate approval |
+| Resend | `USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED` | Must be exactly `true` before the GET-only collector may use an approved full-access key |
 | Resend | `USDIMPACT_WATCHDOG_RESEND_DOMAIN` | Optional; defaults to `usd-impact.com` |
 | Google Drive | `USDIMPACT_WATCHDOG_GOOGLE_SERVICE_ACCOUNT_JSON` | Service account limited to `drive.metadata.readonly` |
 | Google Drive | `USDIMPACT_WATCHDOG_GOOGLE_DRIVE_ROOT_FOLDER_ID` | Canonical folder shared read-only with that account |
 
 Missing optional provider configuration is reported as `E_UNKNOWN`; it is not silently treated as healthy. Do not install a write-capable credential solely to remove an unknown result.
+
+The Supabase advisor Management API endpoint used by the first slice is experimental and deprecated. A clean response is therefore never sufficient for `PASS`; the contract remains `WARN` until direct RLS, grant, view, function, trigger, Auth, and Storage-policy evidence is independently collected.
+
+Resend currently exposes `full_access` and `sending_access` API keys, not a metadata-only read key. The collector uses only `GET /domains` and `GET /webhooks`, but a full-access credential is still write-capable. It remains blocked unless a separate owner approval is recorded through `USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED=true`.
 
 ## Independent reviewer
 

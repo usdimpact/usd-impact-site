@@ -4,6 +4,11 @@ import { SCHEMA_VERSION, assertSafeArtifact, compareResults, fixPacket, health, 
 import { driveContracts, githubContracts, publicContracts, repositoryContracts, resendContracts, supabaseContracts, vercelContracts } from './integrity-watchdog-collectors.mjs';
 import { independentReview } from './integrity-watchdog-reviewer.mjs';
 
+const CANONICAL_BASE_URL = 'https://www.usd-impact.com';
+const APEX_BASE_URL = 'https://usd-impact.com';
+const WEBSITE_REPOSITORY = 'usdimpact/usd-impact-site';
+const PRODUCTION_BRANCH = 'main';
+
 function args(argv) {
   const config = {
     scope: process.env.WATCHDOG_SCOPE || 'critical',
@@ -34,6 +39,24 @@ function writeJson(file, value) { fs.mkdirSync(path.dirname(file), { recursive: 
 function classificationCounts(entries) { const counts = {}; for (const entry of entries) counts[entry.current_classification] = (counts[entry.current_classification] || 0) + 1; return counts; }
 function escape(value) { return String(value ?? '').replaceAll('|', '\\|').replaceAll('\n', ' '); }
 function aiEnabled(mode) { return mode === 'true' || (mode === 'auto' && Boolean(process.env.USDIMPACT_WATCHDOG_OPENAI_API_KEY)); }
+
+function assertCanonicalTargets(policy) {
+  const actual = {
+    canonical_base_url: policy?.targets?.public_web?.canonical_base_url,
+    apex_base_url: policy?.targets?.public_web?.apex_base_url,
+    website_repository: policy?.targets?.github?.website_repository,
+    production_branch: policy?.targets?.github?.production_branch,
+  };
+  const expected = {
+    canonical_base_url: CANONICAL_BASE_URL,
+    apex_base_url: APEX_BASE_URL,
+    website_repository: WEBSITE_REPOSITORY,
+    production_branch: PRODUCTION_BRANCH,
+  };
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error('Policy targets do not match the immutable watchdog network and repository targets.');
+  }
+}
 
 function markdown(report) {
   const lines = [
@@ -75,11 +98,12 @@ async function main() {
   const policy = readJson(path.join(config.workspace, 'docs/operations/integrity-watchdog/POLICY.json'));
   const inventory = readJson(path.join(config.workspace, 'docs/operations/integrity-watchdog/WORKFLOW_INVENTORY.json'));
   if (policy.schema_version !== SCHEMA_VERSION || inventory.schema_version !== SCHEMA_VERSION) throw new Error('Policy or inventory schema mismatch.');
+  assertCanonicalTargets(policy);
 
   const results = repositoryContracts({ workspace: config.workspace });
   const [publicResults, githubResults] = await Promise.all([
-    publicContracts({ baseUrl: policy.targets.public_web.canonical_base_url, apexUrl: policy.targets.public_web.apex_base_url }),
-    githubContracts({ repository: policy.targets.github.website_repository, branch: policy.targets.github.production_branch }),
+    publicContracts({ baseUrl: CANONICAL_BASE_URL, apexUrl: APEX_BASE_URL }),
+    githubContracts({ repository: WEBSITE_REPOSITORY, branch: PRODUCTION_BRANCH }),
   ]);
   results.push(...publicResults, ...githubResults);
   if (config.scope === 'full') {

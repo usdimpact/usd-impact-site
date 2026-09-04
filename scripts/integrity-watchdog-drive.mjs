@@ -2,16 +2,20 @@ import { createSign } from 'node:crypto';
 import { OUTCOME, SEVERITY, result, sha256 } from './integrity-watchdog-policy.mjs';
 import { jsonRequest, missingProvider } from './integrity-watchdog-provider-common.mjs';
 
+const GOOGLE_TOKEN_URI = 'https://oauth2.googleapis.com/token';
+
 function base64url(value) { return Buffer.from(value).toString('base64url'); }
 
 async function googleToken(fetchImpl, serviceAccount) {
+  if (serviceAccount.token_uri && serviceAccount.token_uri !== GOOGLE_TOKEN_URI) {
+    throw new Error('Google service-account token URI is not the approved endpoint.');
+  }
   const now = Math.floor(Date.now() / 1000);
-  const tokenUri = serviceAccount.token_uri || 'https://oauth2.googleapis.com/token';
   const header = base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
   const claim = base64url(JSON.stringify({
     iss: serviceAccount.client_email,
     scope: 'https://www.googleapis.com/auth/drive.metadata.readonly',
-    aud: tokenUri,
+    aud: GOOGLE_TOKEN_URI,
     iat: now,
     exp: now + 3300,
   }));
@@ -21,7 +25,7 @@ async function googleToken(fetchImpl, serviceAccount) {
   const assertion = `${header}.${claim}.${signer.sign(serviceAccount.private_key).toString('base64url')}`;
   const data = await jsonRequest({
     fetchImpl,
-    url: tokenUri,
+    url: GOOGLE_TOKEN_URI,
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -62,7 +66,11 @@ export async function driveContracts({ fetchImpl = globalThis.fetch, env = proce
     })];
   }
 
-  if (!serviceAccount?.client_email || !serviceAccount?.private_key) {
+  if (
+    !serviceAccount?.client_email
+    || !serviceAccount?.private_key
+    || (serviceAccount.token_uri && serviceAccount.token_uri !== GOOGLE_TOKEN_URI)
+  ) {
     return [result({
       id: 'DRIVE-SOURCE-OF-TRUTH',
       workflowId: 'DRIVE-PROVENANCE-01',
@@ -70,8 +78,14 @@ export async function driveContracts({ fetchImpl = globalThis.fetch, env = proce
       domain: 'google_drive',
       severity: SEVERITY.P1,
       outcome: OUTCOME.FAIL,
-      summary: 'Configured Google service-account JSON lacks required signing fields.',
-      evidence: [{ id: 'DRIVE-CONFIG', source: 'environment', parse_ok: true, required_fields_present: false }],
+      summary: 'Configured Google service-account JSON lacks required signing fields or uses an unapproved token endpoint.',
+      evidence: [{
+        id: 'DRIVE-CONFIG',
+        source: 'environment',
+        parse_ok: true,
+        required_fields_present: Boolean(serviceAccount?.client_email && serviceAccount?.private_key),
+        token_uri_approved: !serviceAccount.token_uri || serviceAccount.token_uri === GOOGLE_TOKEN_URI,
+      }],
     })];
   }
 

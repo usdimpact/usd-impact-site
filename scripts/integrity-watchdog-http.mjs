@@ -2,37 +2,154 @@ import { OUTCOME, SEVERITY, result, sha256 } from './integrity-watchdog-policy.m
 
 const TIMEOUT_MS = 15_000;
 const MAX_BODY = 750_000;
+const MAX_REDIRECTS = 3;
 const USER_AGENT = 'usd-impact-integrity-watchdog/1.0';
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+const ALLOWED_OUTBOUND_HOSTS = new Set([
+  'usd-impact.com',
+  'www.usd-impact.com',
+  'score.usd-impact.com',
+  'api.github.com',
+  'api.vercel.com',
+  'api.supabase.com',
+  'api.resend.com',
+  'api.openai.com',
+  'oauth2.googleapis.com',
+  'www.googleapis.com',
+]);
+
+export function approvedOutboundUrl(value, base) {
+  let parsed;
+  try {
+    parsed = base ? new URL(String(value), base) : new URL(String(value));
+  } catch {
+    throw new Error('Outbound URL is invalid.');
+  }
+  const defaultHttpsPort = parsed.port === '' || parsed.port === '443';
+  if (
+    parsed.protocol !== 'https:'
+    || parsed.username
+    || parsed.password
+    || !defaultHttpsPort
+    || !ALLOWED_OUTBOUND_HOSTS.has(parsed.hostname.toLowerCase())
+  ) {
+    throw new Error('Outbound URL is not allowlisted.');
+  }
+  return parsed.href;
+}
 
 function lowerHeaders(headers) {
   return Object.fromEntries([...headers.entries()].map(([key, value]) => [key.toLowerCase(), value]));
 }
 
 async function boundedText(response) {
-  const text = await response.text();
-  return Buffer.byteLength(text) <= MAX_BODY ? text : text.slice(0, MAX_BODY);
+  const declaredLength = Number(response.headers.get('content-length') || 0);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY) {
+    throw new Error('Response body exceeds the watchdog limit.');
+  }
+  if (!response.body) return '';
+  const reader = response.body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = Buffer.from(value);
+      total += chunk.length;
+      if (total > MAX_BODY) {
+        await reader.cancel();
+        throw new Error('Response body exceeds the watchdog limit.');
+      }
+      chunks.push(chunk);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return Buffer.concat(chunks, total).toString('utf8');
+}
+
+async function allowlistedFetch({ fetchImpl, initialUrl, method, headers, body, redirect, signal }) {
+  let currentUrl = approvedOutboundUrl(initialUrl);
+  let redirectCount = 0;
+  while (true) {
+    const response = await fetchImpl(currentUrl, {
+      method,
+      headers,
+      body,
+      redirect: 'manual',
+      signal,
+    });
+    if (redirect === 'manual' || !REDIRECT_STATUSES.has(response.status)) {
+      return { response, finalUrl: currentUrl, redirectCount };
+    }
+    if (!['GET', 'HEAD'].includes(method)) {
+      throw new Error('Redirects are not followed for requests with a body or side-effect-capable method.');
+    }
+    if (redirectCount >= MAX_REDIRECTS) throw new Error('Outbound redirect limit exceeded.');
+    const location = response.headers.get('location');
+    if (!location) return { response, finalUrl: currentUrl, redirectCount };
+    currentUrl = approvedOutboundUrl(location, currentUrl);
+    redirectCount += 1;
+  }
 }
 
 export async function observe({ fetchImpl = globalThis.fetch, url, method = 'GET', headers = {}, body, redirect = 'follow', timeoutMs = TIMEOUT_MS }) {
+  const normalizedMethod = String(method || 'GET').toUpperCase();
+  if (!['GET', 'HEAD', 'POST'].includes(normalizedMethod)) {
+    return {
+      ok: false,
+      url: String(url),
+      duration_ms: 0,
+      error_name: 'Error',
+      error_message: 'Outbound HTTP method is not permitted.',
+    };
+  }
+  if (!['follow', 'manual'].includes(redirect)) {
+    return {
+      ok: false,
+      url: String(url),
+      duration_ms: 0,
+      error_name: 'Error',
+      error_message: 'Outbound redirect mode is not permitted.',
+    };
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const started = Date.now();
   try {
-    const response = await fetchImpl(url, { method, headers: { 'User-Agent': USER_AGENT, ...headers }, body, redirect, signal: controller.signal });
+    const requestHeaders = { 'User-Agent': USER_AGENT, ...headers };
+    const { response, finalUrl, redirectCount } = await allowlistedFetch({
+      fetchImpl,
+      initialUrl: url,
+      method: normalizedMethod,
+      headers: requestHeaders,
+      body,
+      redirect,
+      signal: controller.signal,
+    });
     const text = await boundedText(response);
     return {
       ok: true,
-      url,
-      final_url: response.url || url,
+      url: approvedOutboundUrl(url),
+      final_url: response.url || finalUrl,
       status: response.status,
       duration_ms: Date.now() - started,
+      redirect_count: redirectCount,
       headers: lowerHeaders(response.headers),
       body: text,
       body_bytes: Buffer.byteLength(text),
       body_sha256: sha256(text),
     };
   } catch (error) {
-    return { ok: false, url, duration_ms: Date.now() - started, error_name: error?.name || 'Error', error_message: error?.name === 'AbortError' ? 'Request timed out.' : String(error?.message || error) };
+    return {
+      ok: false,
+      url: String(url),
+      duration_ms: Date.now() - started,
+      error_name: error?.name || 'Error',
+      error_message: error?.name === 'AbortError' ? 'Request timed out.' : String(error?.message || error),
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -48,7 +165,28 @@ function markerMatches(body, marker) {
 
 export async function probe({ fetchImpl = globalThis.fetch, id, workflowId, title, domain = 'public_web', severity, url, method = 'GET', requestHeaders = {}, requestBody, redirect = 'follow', expectedStatus = 200, requiredText = [], forbiddenText = [], requiredHeaders = {}, locationPattern, goldEligible = false, material = true, remediation }) {
   const observation = await observe({ fetchImpl, url, method, headers: requestHeaders, body: requestBody, redirect });
-  if (!observation.ok) return result({ id, workflowId, title, domain, severity, outcome: OUTCOME.UNKNOWN, summary: `${title}: no conclusive HTTP response was obtained.`, evidence: [{ id: `${id}-HTTP`, source: 'http', url, duration_ms: observation.duration_ms, error_name: observation.error_name, error_message: observation.error_message }], goldEligible, material, remediation });
+  if (!observation.ok) {
+    return result({
+      id,
+      workflowId,
+      title,
+      domain,
+      severity,
+      outcome: OUTCOME.UNKNOWN,
+      summary: `${title}: no conclusive HTTP response was obtained.`,
+      evidence: [{
+        id: `${id}-HTTP`,
+        source: 'http',
+        url,
+        duration_ms: observation.duration_ms,
+        error_name: observation.error_name,
+        error_message: observation.error_message,
+      }],
+      goldEligible,
+      material,
+      remediation,
+    });
+  }
 
   const failures = [];
   const expected = Array.isArray(expectedStatus) ? expectedStatus : [expectedStatus];
@@ -58,54 +196,141 @@ export async function probe({ fetchImpl = globalThis.fetch, id, workflowId, titl
     if (markerMatches(observation.body, marker)) matched.push(String(marker));
     else failures.push(`Required marker missing: ${String(marker).slice(0, 100)}`);
   }
-  for (const marker of forbiddenText) if (markerMatches(observation.body, marker)) failures.push(`Forbidden marker present: ${String(marker).slice(0, 100)}`);
+  for (const marker of forbiddenText) {
+    if (markerMatches(observation.body, marker)) failures.push(`Forbidden marker present: ${String(marker).slice(0, 100)}`);
+  }
   for (const [name, expectedValue] of Object.entries(requiredHeaders)) {
     const actual = observation.headers[name.toLowerCase()] || '';
-    const valid = expectedValue instanceof RegExp ? (expectedValue.lastIndex = 0, expectedValue.test(actual)) : actual.toLowerCase().includes(String(expectedValue).toLowerCase());
+    const valid = expectedValue instanceof RegExp
+      ? (expectedValue.lastIndex = 0, expectedValue.test(actual))
+      : actual.toLowerCase().includes(String(expectedValue).toLowerCase());
     if (!valid) failures.push(`Header ${name} did not meet the contract.`);
   }
   if (locationPattern) {
     const location = observation.headers.location || '';
-    const valid = locationPattern instanceof RegExp ? (locationPattern.lastIndex = 0, locationPattern.test(location)) : location === String(locationPattern);
+    const valid = locationPattern instanceof RegExp
+      ? (locationPattern.lastIndex = 0, locationPattern.test(location))
+      : location === String(locationPattern);
     if (!valid) failures.push('Redirect location did not meet the canonical contract.');
   }
 
   return result({
-    id, workflowId, title, domain, severity,
+    id,
+    workflowId,
+    title,
+    domain,
+    severity,
     outcome: failures.length ? OUTCOME.FAIL : OUTCOME.PASS,
     summary: failures.length ? `${title}: ${failures.join(' ')}` : `${title}: contract passed.`,
-    evidence: [{ id: `${id}-HTTP`, source: 'http', url, final_url: observation.final_url, status: observation.status, duration_ms: observation.duration_ms, body_bytes: observation.body_bytes, body_sha256: observation.body_sha256, matched_markers: matched, checked_headers: Object.fromEntries(Object.keys(requiredHeaders).map((name) => [name.toLowerCase(), observation.headers[name.toLowerCase()] || null])), redirect_location: locationPattern ? observation.headers.location || null : undefined, failures }],
-    goldEligible, material, remediation,
+    evidence: [{
+      id: `${id}-HTTP`,
+      source: 'http',
+      url: observation.url,
+      final_url: observation.final_url,
+      status: observation.status,
+      duration_ms: observation.duration_ms,
+      redirect_count: observation.redirect_count,
+      body_bytes: observation.body_bytes,
+      body_sha256: observation.body_sha256,
+      matched_markers: matched,
+      checked_headers: Object.fromEntries(Object.keys(requiredHeaders).map((name) => [name.toLowerCase(), observation.headers[name.toLowerCase()] || null])),
+      redirect_location: locationPattern ? observation.headers.location || null : undefined,
+      failures,
+    }],
+    goldEligible,
+    material,
+    remediation,
   });
 }
 
 function tiraneParts(now) {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Tirane', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short', hour: '2-digit', hourCycle: 'h23' }).formatToParts(now);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Tirane',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'short',
+    hour: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(now);
   const value = (type) => parts.find((part) => part.type === type)?.value || '';
-  return { date: `${value('year')}-${value('month')}-${value('day')}`, weekday: value('weekday'), hour: Number(value('hour')) };
+  return {
+    date: `${value('year')}-${value('month')}-${value('day')}`,
+    weekday: value('weekday'),
+    hour: Number(value('hour')),
+  };
 }
 
 export async function dailyFreshness({ fetchImpl = globalThis.fetch, baseUrl, now = new Date() }) {
   const id = 'DAILY-FRESHNESS';
   const url = `${baseUrl}/news/`;
   const observation = await observe({ fetchImpl, url });
-  if (!observation.ok) return result({ id, workflowId: 'DAILY-PUBLISH-01', title: 'Daily publication freshness', domain: 'publishing', severity: SEVERITY.P1, outcome: OUTCOME.UNKNOWN, summary: 'Daily freshness could not be verified.', evidence: [{ id: `${id}-HTTP`, source: 'http', url, error_message: observation.error_message }] });
+  if (!observation.ok) {
+    return result({
+      id,
+      workflowId: 'DAILY-PUBLISH-01',
+      title: 'Daily publication freshness',
+      domain: 'publishing',
+      severity: SEVERITY.P1,
+      outcome: OUTCOME.UNKNOWN,
+      summary: 'Daily freshness could not be verified.',
+      evidence: [{ id: `${id}-HTTP`, source: 'http', url, error_message: observation.error_message }],
+    });
+  }
   const dates = [...new Set([...observation.body.matchAll(/\/news\/(20\d{2}-\d{2}-\d{2})(?:\/|["'])/g)].map((match) => match[1]))].sort().reverse();
   const latest = dates[0] || null;
   const local = tiraneParts(now);
   const businessDay = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(local.weekday);
   const exactRequired = businessDay && local.hour >= 19;
-  const age = latest ? Math.round((Date.parse(`${local.date}T00:00:00Z`) - Date.parse(`${latest}T00:00:00Z`)) / 86_400_000) : null;
+  const age = latest
+    ? Math.round((Date.parse(`${local.date}T00:00:00Z`) - Date.parse(`${latest}T00:00:00Z`)) / 86_400_000)
+    : null;
   let outcome = OUTCOME.PASS;
   let summary = `Latest detected Daily edition is ${latest || 'none'}.`;
-  if (observation.status !== 200 || !latest || age < 0) { outcome = OUTCOME.FAIL; summary = 'Daily index is unavailable, contains no dated edition, or is future-dated.'; }
-  else if (exactRequired && latest !== local.date) { outcome = OUTCOME.FAIL; summary = `After 19:00 Europe/Tirane, ${local.date} is not the latest Daily edition.`; }
-  else if (age > 4) { outcome = OUTCOME.WARN; summary = `Latest Daily edition is ${age} calendar days old.`; }
-  return result({ id, workflowId: 'DAILY-PUBLISH-01', title: 'Daily publication freshness', domain: 'publishing', severity: SEVERITY.P1, outcome, summary, evidence: [{ id: `${id}-INDEX`, source: 'public_web', url, status: observation.status, body_sha256: observation.body_sha256, latest_edition_date: latest, current_tirane_date: local.date, current_tirane_hour: local.hour, exact_date_required: exactRequired, age_days: age, detected_edition_count: dates.length }], remediation: { likely_root_causes: ['Generation failure', 'Validation failure', 'Review or merge delay', 'Deployment or canonical-route lag'], smallest_safe_scope: ['Daily workflow, generated edition, exact-head checks, and resulting deployment only.'] } });
+  if (observation.status !== 200 || !latest || age < 0) {
+    outcome = OUTCOME.FAIL;
+    summary = 'Daily index is unavailable, contains no dated edition, or is future-dated.';
+  } else if (exactRequired && latest !== local.date) {
+    outcome = OUTCOME.FAIL;
+    summary = `After 19:00 Europe/Tirane, ${local.date} is not the latest Daily edition.`;
+  } else if (age > 4) {
+    outcome = OUTCOME.WARN;
+    summary = `Latest Daily edition is ${age} calendar days old.`;
+  }
+  return result({
+    id,
+    workflowId: 'DAILY-PUBLISH-01',
+    title: 'Daily publication freshness',
+    domain: 'publishing',
+    severity: SEVERITY.P1,
+    outcome,
+    summary,
+    evidence: [{
+      id: `${id}-INDEX`,
+      source: 'public_web',
+      url: observation.url,
+      status: observation.status,
+      body_sha256: observation.body_sha256,
+      latest_edition_date: latest,
+      current_tirane_date: local.date,
+      current_tirane_hour: local.hour,
+      exact_date_required: exactRequired,
+      age_days: age,
+      detected_edition_count: dates.length,
+    }],
+    remediation: {
+      likely_root_causes: ['Generation failure', 'Validation failure', 'Review or merge delay', 'Deployment or canonical-route lag'],
+      smallest_safe_scope: ['Daily workflow, generated edition, exact-head checks, and resulting deployment only.'],
+    },
+  });
 }
 
 export async function publicContracts({ fetchImpl = globalThis.fetch, baseUrl = 'https://www.usd-impact.com', apexUrl = 'https://usd-impact.com', now = new Date() } = {}) {
-  const secure = { 'strict-transport-security': 'max-age=', 'x-content-type-options': 'nosniff', 'x-frame-options': 'deny' };
+  const secure = {
+    'strict-transport-security': 'max-age=',
+    'x-content-type-options': 'nosniff',
+    'x-frame-options': 'deny',
+  };
   const checks = [
     probe({ fetchImpl, id: 'PUBLIC-CANONICAL-ROUTES', workflowId: 'PUBLIC-CONTRACT-01', title: 'Apex-to-www canonical redirect', severity: SEVERITY.P1, url: `${apexUrl}/`, redirect: 'manual', expectedStatus: [301, 302, 307, 308], locationPattern: /^https:\/\/www\.usd-impact\.com\/?$/i, goldEligible: true }),
     probe({ fetchImpl, id: 'PUBLIC-PRODUCT-CONTRACT', workflowId: 'PRODUCT-BOUNDARY-01', title: 'Library Pass product contract', severity: SEVERITY.P1, url: `${baseUrl}/book/read-the-dollar-first/`, requiredText: ['Guided Interactive Edition', 'Complete English audiobook', '51-film Video Library', 'USD 39.00', 'USD 49.00', 'one time', 'Try a free sample'], requiredHeaders: secure, goldEligible: true }),

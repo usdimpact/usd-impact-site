@@ -13,7 +13,7 @@ The first slice adds:
 - a 33-workflow top-to-bottom register;
 - deterministic repository and public-runtime contracts;
 - current-head GitHub quality and branch-protection checks;
-- optional Vercel, Supabase, Resend, and Google Drive evidence collectors with explicit credential boundaries;
+- optional Vercel, Supabase, Resend, and Google Drive evidence collectors with explicit provider and credential limitations;
 - an optional independent OpenAI reviewer using structured JSON output and `store: false`;
 - redacted evidence manifests, workflow classifications, and proposed-only fix packets;
 - hourly critical checks, Monday full recertification, and manual dispatch.
@@ -27,6 +27,23 @@ The workflow has read-only GitHub permissions. It cannot merge, deploy, dispatch
 HTTP bodies are used transiently to test explicit markers. Artifacts retain only bounded metadata, matched markers, selected non-secret headers, and SHA-256 fingerprints. Secret values, cookies, raw tokens, unnecessary personal data, email bodies, and Drive document contents are prohibited.
 
 Fix packets are always `PROPOSED_ONLY` and always require human approval.
+
+## Outbound network boundary
+
+All network requests are restricted in code to HTTPS, the default HTTPS port, and this exact host allowlist:
+
+- `usd-impact.com`
+- `www.usd-impact.com`
+- `score.usd-impact.com`
+- `api.github.com`
+- `api.vercel.com`
+- `api.supabase.com`
+- `api.resend.com`
+- `api.openai.com`
+- `oauth2.googleapis.com`
+- `www.googleapis.com`
+
+Credentials embedded in URLs and non-default ports are rejected. Redirects are handled manually, every redirect target is revalidated against the same allowlist, and redirects are never followed for POST requests. A response body is rejected above 750,000 bytes. Canonical USD Impact URLs and the canonical repository are immutable runtime constants; the policy file must match them exactly or the run fails closed.
 
 ## Schedule
 

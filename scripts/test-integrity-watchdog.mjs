@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { CLASSIFICATION, OUTCOME, SEVERITY, assertSafeArtifact, classify, fixPacket, health, result, sanitize } from './integrity-watchdog-policy.mjs';
-import { dailyFreshness, probe, repositoryContracts, resendContracts, supabaseContracts, vercelContracts } from './integrity-watchdog-collectors.mjs';
+import { dailyFreshness, observe, probe, repositoryContracts, resendContracts, supabaseContracts, vercelContracts } from './integrity-watchdog-collectors.mjs';
 import { independentReview } from './integrity-watchdog-reviewer.mjs';
 
 const reply = (body, status = 200, headers = {}, url = '') => {
@@ -44,27 +44,74 @@ const headers = {
   'x-frame-options': 'DENY',
   'cache-control': 'no-store',
 };
+const testUrl = 'https://www.usd-impact.com/_watchdog-test';
 const goodProbe = await probe({
-  fetchImpl: async () => reply('required marker', 200, headers, 'https://example.test/'),
+  fetchImpl: async () => reply('required marker', 200, headers, testUrl),
   id: 'HTTP-PASS', workflowId: 'WF', title: 'HTTP pass', severity: SEVERITY.P1,
-  url: 'https://example.test/', requiredText: ['required marker'], requiredHeaders: headers, goldEligible: true,
+  url: testUrl, requiredText: ['required marker'], requiredHeaders: headers, goldEligible: true,
 });
 assert.equal(goodProbe.outcome, OUTCOME.PASS);
 assert.equal(goodProbe.classification, CLASSIFICATION.GOLD_CANDIDATE);
 const badProbe = await probe({
   fetchImpl: async () => reply('wrong', 503),
   id: 'HTTP-FAIL', workflowId: 'WF', title: 'HTTP fail', severity: SEVERITY.P0,
-  url: 'https://example.test/', expectedStatus: 200, requiredText: ['required marker'],
+  url: testUrl, expectedStatus: 200, requiredText: ['required marker'],
 });
 assert.equal(badProbe.outcome, OUTCOME.FAIL);
 
+let rejectedFetchCalled = false;
+const rejectedOutbound = await observe({
+  url: 'https://evil.example/collect',
+  fetchImpl: async () => {
+    rejectedFetchCalled = true;
+    return reply('unexpected');
+  },
+});
+assert.equal(rejectedOutbound.ok, false);
+assert.equal(rejectedFetchCalled, false);
+assert.match(rejectedOutbound.error_message, /not allowlisted/);
+
+let redirectCalls = 0;
+const rejectedRedirect = await observe({
+  url: testUrl,
+  fetchImpl: async (url) => {
+    redirectCalls += 1;
+    return reply('', 302, { location: 'https://evil.example/collect' }, String(url));
+  },
+});
+assert.equal(rejectedRedirect.ok, false);
+assert.equal(redirectCalls, 1);
+assert.match(rejectedRedirect.error_message, /not allowlisted/);
+
+let postRedirectCalls = 0;
+const rejectedPostRedirect = await observe({
+  url: 'https://api.openai.com/v1/responses',
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: '{}',
+  fetchImpl: async (url) => {
+    postRedirectCalls += 1;
+    return reply('', 307, { location: 'https://api.openai.com/v1/responses' }, String(url));
+  },
+});
+assert.equal(rejectedPostRedirect.ok, false);
+assert.equal(postRedirectCalls, 1);
+assert.match(rejectedPostRedirect.error_message, /not followed for requests/);
+
+const oversized = await observe({
+  url: testUrl,
+  fetchImpl: async () => reply('blocked before body read', 200, { 'content-length': '750001' }, testUrl),
+});
+assert.equal(oversized.ok, false);
+assert.match(oversized.error_message, /exceeds the watchdog limit/);
+
 const currentDaily = await dailyFreshness({
-  fetchImpl: async () => reply('<a href="/news/2026-09-04/">Daily</a>'),
+  fetchImpl: async () => reply('<a href="/news/2026-09-04/">Daily</a>', 200, {}, 'https://www.usd-impact.com/news/'),
   baseUrl: 'https://www.usd-impact.com',
   now: new Date('2026-09-04T18:00:00Z'),
 });
 const staleDaily = await dailyFreshness({
-  fetchImpl: async () => reply('<a href="/news/2026-09-03/">Daily</a>'),
+  fetchImpl: async () => reply('<a href="/news/2026-09-03/">Daily</a>', 200, {}, 'https://www.usd-impact.com/news/'),
   baseUrl: 'https://www.usd-impact.com',
   now: new Date('2026-09-04T18:00:00Z'),
 });
@@ -105,8 +152,8 @@ const resendAllowed = await resendContracts({
   },
   fetchImpl: async (url, options = {}) => {
     resendMethods.push(options.method || 'GET');
-    if (String(url).endsWith('/domains')) return reply(JSON.stringify({ data: [{ name: 'usd-impact.com', status: 'verified', region: 'us-east-1' }] }), 200);
-    return reply(JSON.stringify({ data: [{ events: ['email.delivered', 'email.bounced', 'email.complained', 'email.suppressed'] }] }), 200);
+    if (String(url).endsWith('/domains')) return reply(JSON.stringify({ data: [{ name: 'usd-impact.com', status: 'verified', region: 'us-east-1' }] }), 200, {}, String(url));
+    return reply(JSON.stringify({ data: [{ events: ['email.delivered', 'email.bounced', 'email.complained', 'email.suppressed'] }] }), 200, {}, String(url));
   },
 });
 assert.equal(resendAllowed[0].outcome, OUTCOME.PASS);
@@ -119,8 +166,8 @@ const supabaseReviewed = await supabaseContracts({
     USDIMPACT_WATCHDOG_SUPABASE_PROJECT_REF: 'abcdefghijklmnopqrst',
   },
   fetchImpl: async (url) => {
-    if (String(url).endsWith('/v1/projects')) return reply(JSON.stringify([{ ref: 'abcdefghijklmnopqrst', status: 'ACTIVE_HEALTHY', database: { version: '17' } }]), 200);
-    return reply(JSON.stringify({ lints: [] }), 200);
+    if (String(url).endsWith('/v1/projects')) return reply(JSON.stringify([{ ref: 'abcdefghijklmnopqrst', status: 'ACTIVE_HEALTHY', database: { version: '17' } }]), 200, {}, String(url));
+    return reply(JSON.stringify({ lints: [] }), 200, {}, String(url));
   },
 });
 assert.equal(supabaseReviewed[0].outcome, OUTCOME.WARN);
@@ -141,7 +188,7 @@ const reviewed = await independentReview({
     return reply(JSON.stringify({
       id: 'resp_test',
       output: [{ content: [{ type: 'output_text', text: JSON.stringify({ verdict: 'CONFIRM', summary: 'Supported.', challenged_contract_ids: [], findings: [] }) }] }],
-    }), 200);
+    }), 200, {}, String(url));
   },
 });
 assert.equal(reviewed.outcome, OUTCOME.PASS);

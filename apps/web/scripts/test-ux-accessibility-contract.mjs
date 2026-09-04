@@ -91,6 +91,7 @@ assert.match(globalCss, /body\s*\{[^}]*font-family:\s*var\(--font-sans\)/);
 assert.match(globalCss, /h1, h2, h3\s*\{[^}]*font-family:\s*var\(--font-display\)/);
 assert.match(videoCss, /\.vl-body\{[^}]*font-family:var\(--font-sans\)/);
 assert.match(videoCss, /\.vl-hero h1,[^}]*font-family:var\(--font-display\)/);
+assert.match(videoCss, /\.vl-eyebrow\{[^}]*color:#8a6518/);
 assert.match(videoCss, /\.vl-collection-filter a:focus-visible\{[^}]*outline:3px solid currentColor/);
 const fontCss = `${globalCss}${videoCss}`;
 const fontReferences = [

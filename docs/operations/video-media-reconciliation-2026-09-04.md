@@ -44,6 +44,17 @@ The HeyGen read-only inventory returned 43 completed renders. All observed Part 
 
 The workspace also contains candidates for DXY, Dollar/Yields/Liquidity, and One Dollar Shock. Multiple titles/durations conflict, so no unique link is approved. No authoritative HeyGen match was observed for the other 41 short films.
 
+## Read-only provider recheck — 2026-09-04
+
+- HeyGen again returned 43 videos, all in `completed` state.
+- 35 of the 43 completed renders expose both a captioned-video artifact and a subtitle artifact; eight short-form candidates expose neither artifact in HeyGen.
+- The inventory resolves to 20 exact title groups. Repeated-title ambiguity remains material, including six Part 7 renders, four Part 3 renders, four One Dollar Shock renders, and multiple DXY and other masterclass renders.
+- The candidate rows above remain consistent with the current inventory. No candidate has been promoted to an editorially approved source solely from title or duration similarity.
+- The application contracts passed again: 51 catalog entries, 51 matching unique Stream mappings, entitlement-before-token behavior, anonymous denial, and public-catalog non-disclosure.
+- The Cloudflare provider dashboard remained behind a human-verification challenge in the available verification browser. No Stream signing, caption, transcript, thumbnail, duration, or R2 classification claim was inferred from that inaccessible provider surface.
+
+No HeyGen or Cloudflare asset was renamed, deleted, replaced, made public, or otherwise changed during this recheck.
+
 ## Required provider/editorial closure gate
 
 Before MEDIA-01 or CF-01 can be marked fully closed, an authorized owner must verify in Cloudflare and the media workspace:

@@ -16,7 +16,7 @@
 .vl-site-nav a:hover,.vl-site-nav a:focus-visible,.vl-site-nav a[aria-current=page]{color:var(--vl-gold)}
 .vl-hero{padding:88px 0;background:radial-gradient(circle at 88% 20%,rgba(201,163,91,.16),transparent 24%),linear-gradient(135deg,var(--vl-midnight),var(--vl-navy));color:var(--vl-white)}
 .vl-hero-compact{padding:74px 0}
-.vl-eyebrow{margin:0 0 12px;color:#9b7526;font-size:12px;font-weight:850;letter-spacing:.15em;text-transform:uppercase}
+.vl-eyebrow{margin:0 0 12px;color:#8a6518;font-size:12px;font-weight:850;letter-spacing:.15em;text-transform:uppercase}
 .vl-hero .vl-eyebrow{color:var(--vl-gold)}
 .vl-hero h1,.vl-watch h1{margin:0;font-family:var(--font-display);font-size:clamp(42px,6vw,72px);font-optical-sizing:auto;font-weight:700;letter-spacing:-.035em;line-height:1.02;text-wrap:balance}
 .vl-watch h1{color:var(--vl-navy);font-size:clamp(38px,5vw,62px)}

@@ -29,6 +29,19 @@ assert.equal(assertSafeArtifact(safe), true);
 assert.equal(classify(OUTCOME.PASS, true), CLASSIFICATION.GOLD_CANDIDATE);
 assert.equal(classify(OUTCOME.FAIL), CLASSIFICATION.FAILED);
 
+const watchdogWorkflow = fs.readFileSync(new URL('../.github/workflows/integrity-watchdog.yml', import.meta.url), 'utf8');
+assert.match(watchdogWorkflow, /\n  issue_comment:\n    types: \[created\]/);
+assert.match(watchdogWorkflow, /github\.event\.comment\.author_association == 'OWNER'/);
+assert.match(watchdogWorkflow, /github\.event\.comment\.author_association == 'MEMBER'/);
+assert.match(watchdogWorkflow, /github\.event\.comment\.author_association == 'COLLABORATOR'/);
+assert.match(watchdogWorkflow, /github\.event\.comment\.body == '\/watchdog critical'/);
+assert.match(watchdogWorkflow, /github\.event\.comment\.body == '\/watchdog full'/);
+assert.match(watchdogWorkflow, /github\.event\.comment\.body == '\/watchdog full ai'/);
+assert.match(watchdogWorkflow, /case "\$COMMENT_COMMAND" in/);
+assert.match(watchdogWorkflow, /permissions:\n  actions: read\n  contents: read\n  issues: read\n  pull-requests: read/);
+assert.doesNotMatch(watchdogWorkflow, /issues:\s*write/);
+assert.doesNotMatch(watchdogWorkflow, /pull-requests:\s*write/);
+
 const passed = result({ id: 'PASS', workflowId: 'WF', title: 'Pass', domain: 'test', severity: SEVERITY.P0, outcome: OUTCOME.PASS, summary: 'passed', goldEligible: true });
 const warned = result({ id: 'WARN', workflowId: 'WF', title: 'Warn', domain: 'test', severity: SEVERITY.P1, outcome: OUTCOME.WARN, summary: 'warned' });
 const failed = result({ id: 'FAIL', workflowId: 'WF', title: 'Fail', domain: 'test', severity: SEVERITY.P0, outcome: OUTCOME.FAIL, summary: 'failed' });

@@ -30,6 +30,31 @@ const FORBIDDEN_COPY = [
   /will pump/i,
 ];
 
+export function isCanonicalSiteUrl(value) {
+  if (typeof value !== 'string') return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.origin === SITE_ORIGIN
+      && parsed.protocol === 'https:'
+      && parsed.username === ''
+      && parsed.password === '';
+  } catch {
+    return false;
+  }
+}
+
+export function isSupportMailtoUrl(value) {
+  if (typeof value !== 'string') return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'mailto:'
+      && parsed.pathname.toLowerCase() === EMAIL_SUPPORT_ADDRESS.toLowerCase()
+      && parsed.hash === '';
+  } catch {
+    return false;
+  }
+}
+
 export const LAUNCH_EMAIL_TEMPLATE_SPECS = deepFreeze({
   auth_sign_in: {
     classification: 'transactional_security',
@@ -312,11 +337,11 @@ export function validateLaunchEmailTemplateRegistry() {
       for (const pattern of FORBIDDEN_COPY) {
         if (pattern.test(copy)) throw new Error(`${messageId} contains prohibited or provider-specific copy.`);
       }
-      if (!spec.ctaUrl.startsWith(SITE_ORIGIN) && !spec.ctaUrl.startsWith(`mailto:${EMAIL_SUPPORT_ADDRESS}`)) {
+      if (!isCanonicalSiteUrl(spec.ctaUrl) && !isSupportMailtoUrl(spec.ctaUrl)) {
         throw new Error(`${messageId} CTA must use the canonical site or support address.`);
       }
       for (const step of spec.firstSteps || []) {
-        if (!step?.label || !step?.url?.startsWith(SITE_ORIGIN)) {
+        if (!step?.label || !isCanonicalSiteUrl(step.url)) {
           throw new Error(`${messageId} first-step links must use a label and canonical site URL.`);
         }
       }

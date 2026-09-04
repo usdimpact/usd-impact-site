@@ -5,6 +5,8 @@ import {
   PURCHASE_ACCESS_READY_EMAIL_TEMPLATE_VERSION,
   getLaunchEmailTemplateSpec,
   getLaunchEmailTemplateVersion,
+  isCanonicalSiteUrl,
+  isSupportMailtoUrl,
   renderLaunchEmail,
   validateLaunchEmailTemplateRegistry,
 } from '../src/lib/launch-email-templates.js';
@@ -21,6 +23,12 @@ assert.deepEqual(
   Object.keys(LAUNCH_EMAIL_TEMPLATE_SPECS).sort(),
   [...LAUNCH_CRITICAL_MESSAGE_IDS].sort(),
 );
+assert.equal(isCanonicalSiteUrl('https://www.usd-impact.com/guided-edition/'), true);
+assert.equal(isCanonicalSiteUrl('https://www.usd-impact.com.evil.example/guided-edition/'), false);
+assert.equal(isCanonicalSiteUrl('https://attacker@www.usd-impact.com/guided-edition/'), false);
+assert.equal(isCanonicalSiteUrl('http://www.usd-impact.com/guided-edition/'), false);
+assert.equal(isSupportMailtoUrl('mailto:support@usd-impact.com?subject=Library%20Pass'), true);
+assert.equal(isSupportMailtoUrl('mailto:support@usd-impact.com.evil.example'), false);
 
 for (const messageId of LAUNCH_CRITICAL_MESSAGE_IDS) {
   const spec = getLaunchEmailTemplateSpec(messageId);

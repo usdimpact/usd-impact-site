@@ -127,6 +127,19 @@ The Supabase advisor Management API endpoint used by the first slice is experime
 
 Resend currently exposes `full_access` and `sending_access` API keys, not a metadata-only read key. The collector uses only `GET /domains` and `GET /webhooks`, but a full-access credential is still write-capable. It remains blocked unless a separate owner approval is recorded through `USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED=true`.
 
+## Approved temporary provider-secret fallbacks
+
+The September 4, 2026 provider-wiring approval allows the watchdog to reuse existing repository credentials without reading, copying, printing, or changing their values. Dedicated watchdog secrets always take precedence. The temporary fallbacks are:
+
+- Vercel: `USDIMPACT_WATCHDOG_VERCEL_TOKEN` → `USDIMPACT_VERCEL_TOKEN`;
+- Supabase: `USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN` → `USDIMPACT_SUPABASE_ACCESS_TOKEN`;
+- Resend: `USDIMPACT_WATCHDOG_RESEND_API_KEY` → `RESEND_API_KEY`;
+- Google Drive: `USDIMPACT_WATCHDOG_GOOGLE_SERVICE_ACCOUNT_JSON` → `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON` → `GOOGLE_SERVICE_ACCOUNT_JSON`.
+
+This approval enables the Resend collector's existing GET-only path when a fallback key is present. The code still rejects all non-GET Resend requests and never sends email or mutates Resend state. The Google OAuth request remains fixed to `drive.metadata.readonly`. OpenAI has no fallback and remains disabled until a separate project-scoped watchdog key is installed.
+
+These fallbacks are migration aids, not the final least-privilege state. Replace them with dedicated watchdog credentials and remove each fallback after an independently verified full run.
+
 ## Independent reviewer
 
 The OpenAI reviewer is secondary to deterministic evidence. It receives only normalized, redacted findings and proposed fix packets. It may confirm, challenge, or mark evidence insufficient. It cannot change deterministic contract outcomes, approve its own repair, or call write tools.

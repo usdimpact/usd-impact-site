@@ -212,7 +212,10 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIs
       });
 
       const firstMain = document.querySelector("main");
-      if (firstMain && !firstMain.id) firstMain.id = "main-content";
+      if (firstMain instanceof HTMLElement) {
+        if (!firstMain.id) firstMain.id = "main-content";
+        if (firstMain.id === "main-content") firstMain.tabIndex = -1;
+      }
     </script>
     <ConsentClient />
     <TelemetryClient />

@@ -59,6 +59,7 @@ assert.match(layout, /aria-current=\{pageIsActive/);
 assert.match(layout, /event\.key !== "Escape"/);
 assert.match(layout, /openGroup\?\.querySelector\("summary"\)/);
 assert.match(layout, /if \(summary instanceof HTMLElement\) summary\.focus\(\)/);
+assert.match(layout, /if \(firstMain\.id === "main-content"\) firstMain\.tabIndex = -1/);
 assert.match(layout, /aria-label="Footer navigation"/);
 for (const group of ['Product', 'Learn', 'Research', 'Legal &amp; trust']) {
   assert.match(layout, new RegExp(`<p class="footer-heading">${group}<\\/p>`));

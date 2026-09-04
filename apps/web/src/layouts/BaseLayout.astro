@@ -32,7 +32,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIs
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/assets/logo/USDImpact_Icon_Color_2048.png" />
+    <link rel="apple-touch-icon" href="/assets/logo/USDImpact_Icon_Color_192.png" sizes="192x192" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     {stylesheets.map((href) => <link rel="stylesheet" href={href} />)}
   </head>
@@ -42,10 +42,12 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIs
       <div class="container header-inner">
         <a class="logo" href="/" aria-label="USD Impact home">
           <img
-            src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_2048.png"
+            src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
+            srcset="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png 256w, /assets/logo/USDImpact_Horizontal_Color_NoTagline_512.png 512w"
+            sizes="148px"
             alt="USD Impact"
-            width="2048"
-            height="614"
+            width="256"
+            height="77"
             decoding="async"
           />
         </a>
@@ -105,10 +107,12 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIs
       <div class="container footer-grid">
         <div class="footer-brand">
           <img
-            src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_2048.png"
+            src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
+            srcset="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png 256w, /assets/logo/USDImpact_Horizontal_Color_NoTagline_512.png 512w"
+            sizes="164px"
             alt="USD Impact"
-            width="2048"
-            height="614"
+            width="256"
+            height="77"
             loading="lazy"
             decoding="async"
           />

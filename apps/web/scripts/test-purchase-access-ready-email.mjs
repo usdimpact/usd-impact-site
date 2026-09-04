@@ -5,6 +5,7 @@ import {
   createPurchaseAccessReadyEmailIntent,
   deliverPurchaseAccessReadyEmail,
 } from '../src/lib/purchase-access-ready-email.js';
+import { PURCHASE_ACCESS_READY_EMAIL_TEMPLATE_VERSION } from '../src/lib/launch-email-templates.js';
 
 const accountId = '123e4567-e89b-42d3-a456-426614174000';
 const purchaseId = '223e4567-e89b-42d3-a456-426614174000';
@@ -41,6 +42,7 @@ assert.equal(prepared.intent.outboxRecord.business_object_id, purchaseId);
 assert.equal(prepared.intent.outboxRecord.state_version, 1);
 assert.equal(prepared.intent.outboxRecord.recipient_email_normalized, 'buyer@example.com');
 assert.equal(prepared.intent.outboxRecord.classification, 'transactional');
+assert.equal(prepared.intent.outboxRecord.template_version, PURCHASE_ACCESS_READY_EMAIL_TEMPLATE_VERSION);
 assert.deepEqual(prepared.intent.outboxRecord.payload, {});
 
 let fetchCalled = false;

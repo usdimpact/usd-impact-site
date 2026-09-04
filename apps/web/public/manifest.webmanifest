@@ -12,8 +12,14 @@
   "categories": ["education", "finance"],
   "icons": [
     {
-      "src": "/assets/logo/USDImpact_Icon_Color_2048.png",
-      "sizes": "2048x2048",
+      "src": "/assets/logo/USDImpact_Icon_Color_192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo/USDImpact_Icon_Color_512.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }

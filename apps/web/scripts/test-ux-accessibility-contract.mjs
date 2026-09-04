@@ -17,6 +17,7 @@ const [
   bookProduct,
   packageJson,
   prepareFonts,
+  iconComponent,
 ] = await Promise.all([
   read('../src/layouts/BaseLayout.astro'),
   read('../src/styles/global.css'),
@@ -31,6 +32,7 @@ const [
   read('../src/content/products/book-read-the-dollar-first.md'),
   read('../package.json'),
   read('./prepare-font-assets.mjs'),
+  read('../src/components/Icon.astro'),
 ]);
 
 assert.match(layout, /class="skip-link" href="#main-content"/);
@@ -126,6 +128,14 @@ assert.match(signInPage, /<summary>Use email instead<\/summary>/);
 assert.match(signInPage, /<details id="email-code-sign-in"[\s\S]*hidden>/);
 assert.match(signInPage, /<summary>Enter a code instead<\/summary>/);
 assert.match(signInPage, /Continue with passkey/);
+
+assert.match(iconComponent, /stroke-width="1\.8"/);
+assert.match(iconComponent, /aria-hidden="true"/);
+assert.match(layout, /USDImpact_Horizontal_Color_NoTagline_256\.png/);
+assert.match(layout, /srcset="\/assets\/logo\/USDImpact_Horizontal_Color_NoTagline_256\.png 256w, \/assets\/logo\/USDImpact_Horizontal_Color_NoTagline_512\.png 512w"/);
+assert.doesNotMatch(layout, /Horizontal_Color_NoTagline_2048\.png/);
+assert.match(audiobookPage, /ThumbnailFocused_320x480\.png 320w/);
+assert.match(audiobookPage, /ThumbnailFocused_640x960\.png 640w/);
 
 assert.doesNotMatch(videoCss, /Georgia|Times New Roman/);
 

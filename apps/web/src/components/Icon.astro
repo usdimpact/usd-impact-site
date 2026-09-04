@@ -1,0 +1,62 @@
+---
+const {
+  name,
+  class: className = '',
+  size = 24,
+} = Astro.props;
+
+const ICON_NAMES = new Set(['compass', 'book', 'headphones', 'checklist', 'video', 'support']);
+if (!ICON_NAMES.has(name)) throw new TypeError(`Unknown USD Impact icon: ${name}`);
+---
+<span class:list={['site-icon', className]} aria-hidden="true">
+  <svg
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    focusable="false"
+  >
+    {name === 'compass' && (
+      <>
+        <circle cx="12" cy="12" r="8"></circle>
+        <path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"></path>
+      </>
+    )}
+    {name === 'book' && (
+      <>
+        <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"></path>
+        <path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16Z"></path>
+      </>
+    )}
+    {name === 'headphones' && (
+      <>
+        <path d="M4 13v-2a8 8 0 0 1 16 0v2"></path>
+        <path d="M4 13h3v7H5a1 1 0 0 1-1-1v-6Zm16 0h-3v7h2a1 1 0 0 0 1-1v-6Z"></path>
+      </>
+    )}
+    {name === 'checklist' && (
+      <>
+        <path d="M7 3h10v4H7z"></path>
+        <path d="M5 5h14v16H5z"></path>
+        <path d="m8 12 2 2 5-5M8 18h8"></path>
+      </>
+    )}
+    {name === 'video' && (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+        <path d="m10 9 5 3-5 3V9Z"></path>
+      </>
+    )}
+    {name === 'support' && (
+      <>
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M9.8 9a2.35 2.35 0 1 1 3.3 2.15c-.75.36-1.1.83-1.1 1.6"></path>
+        <path d="M12 16.5h.01"></path>
+      </>
+    )}
+  </svg>
+</span>

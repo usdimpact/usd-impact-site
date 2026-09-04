@@ -29,10 +29,12 @@ const memberAudiobookSignIn = '/account/sign-in/?next=%2Fguided-edition%2Faudiob
     <section class="card audiobook-access" aria-labelledby="audiobook-access-heading">
       <img
         class="audiobook-access-cover"
-        src={readTheDollarFirstAudiobook.coverUrl}
+        src="/assets/cover/USD_Impact_Ebook_Cover_ThumbnailFocused_320x480.png"
+        srcset="/assets/cover/USD_Impact_Ebook_Cover_ThumbnailFocused_320x480.png 320w, /assets/cover/USD_Impact_Ebook_Cover_ThumbnailFocused_640x960.png 640w, /assets/cover/USD_Impact_Ebook_Cover_ThumbnailFocused_1200x1800.png 1200w"
+        sizes="(max-width: 760px) min(260px, 100vw), 320px"
         alt={readTheDollarFirstAudiobook.coverAlt}
-        width="1200"
-        height="1800"
+        width="320"
+        height="480"
         loading="eager"
         decoding="async"
       />

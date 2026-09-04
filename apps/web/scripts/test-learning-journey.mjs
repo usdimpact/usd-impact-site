@@ -15,13 +15,21 @@ const config = Object.freeze({
 const accountPage = await readFile(new URL('../src/pages/account/index.astro', import.meta.url), 'utf8');
 assert.match(accountPage, /<main id="main-content">/);
 assert.match(accountPage, /id="next-step-heading"/);
-assert.match(accountPage, /How to use USD Impact/);
+assert.match(accountPage, /Getting started/);
 assert.match(accountPage, /Explore another section/);
 assert.match(accountPage, /aria-label="Saved learning progress"/);
-assert.match(accountPage, /aria-hidden="true"/);
+assert.match(accountPage, /<Icon name="book" class="account-icon" \/>/);
 assert.match(accountPage, /safeInternalHref/);
 assert.match(accountPage, /no additional activity tracking was added/);
 assert.doesNotMatch(accountPage, /<img[^>]+account-icon/i);
+assert.match(accountPage, /<Icon name="compass" class="account-icon account-icon-emphasis" \/>/);
+assert.match(accountPage, /data-getting-started/);
+assert.equal(accountPage.match(/<li data-onboarding-step=/g)?.length, 4);
+assert.match(accountPage, /data-dismiss-checklist/);
+assert.match(accountPage, /data-reset-checklist/);
+assert.match(accountPage, /counts\.guidedEdition/);
+assert.match(accountPage, /counts\.video/);
+assert.match(accountPage, /usd-impact-library-pass-audiobook-progress/);
 
 function progressRow(contentId, overrides = {}) {
   return {

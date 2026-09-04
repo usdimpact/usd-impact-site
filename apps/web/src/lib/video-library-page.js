@@ -21,7 +21,7 @@ function renderHeader() {
   return `<header class="vl-site-header">
     <div class="vl-shell vl-header-inner">
       <a class="vl-brand" href="/" aria-label="USD Impact home">
-        <img src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_2048.png" alt="" width="2048" height="614">
+        <img src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png" srcset="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png 256w, /assets/logo/USDImpact_Horizontal_Color_NoTagline_512.png 512w" sizes="148px" alt="" width="256" height="77">
         <span>USD Impact</span>
       </a>
       <nav class="vl-site-nav" aria-label="Library navigation">

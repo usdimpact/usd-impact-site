@@ -64,6 +64,19 @@
 .account-guide div { display: grid; gap: 5px; }
 .account-guide strong { color: var(--navy); font-size: 17px; }
 .account-guide span:not(.account-icon) { color: var(--slate); line-height: 1.55; }
+.account-onboarding-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.account-onboarding-heading .eyebrow { margin-top: 0; }
+.account-onboarding-intro { max-width: 700px; margin: -4px 0 14px; color: var(--slate); line-height: 1.6; }
+.account-quiet-button { min-height: 44px; padding: 8px 2px; border: 0; background: transparent; color: var(--navy); font: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.account-quiet-button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
+.account-onboarding-list li { grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; }
+.account-onboarding-list .account-text-link { width: fit-content; margin-top: 4px; }
+.account-step-state { align-self: center; min-width: 92px; padding: 6px 9px; border: 1px solid #ccd3dc; border-radius: 999px; color: var(--slate); font-size: 12px; font-weight: 850; text-align: center; }
+.account-onboarding-list li[data-complete="true"] .account-step-state { border-color: #8fc6a6; background: #eef8f2; color: #176b3a; }
+.account-onboarding-dismissed { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.account-onboarding-dismissed[hidden] { display: none; }
+.account-onboarding-dismissed h2 { margin-bottom: 6px; }
+.account-onboarding-dismissed p:last-child { margin: 0; color: var(--slate); }
 .account-format-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .account-format-card { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: 20px; border: 1px solid #e1e5ea; border-radius: 14px; background: #fafbfc; }
 .account-format-card h3 { margin: 16px 0 8px; font-size: 18px; }
@@ -82,4 +95,7 @@
   .account-actions .button { width: 100%; }
   .account-progress-summary { display: grid; grid-template-columns: 1fr; }
   .account-progress-summary li { grid-template-columns: auto 1fr; align-items: baseline; gap: 9px; }
+  .account-onboarding-heading, .account-onboarding-dismissed { align-items: stretch; flex-direction: column; }
+  .account-onboarding-list li { grid-template-columns: auto minmax(0, 1fr); }
+  .account-onboarding-list .account-step-state { grid-column: 2; justify-self: start; }
 }

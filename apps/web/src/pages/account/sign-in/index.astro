@@ -12,7 +12,7 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
       <div class="container">
         <p class="eyebrow">USD Impact account</p>
         <h1>Sign in without a password.</h1>
-        <p class="lead">Use a registered passkey, or request an email with a one-time sign-in link and six-digit fallback code.</p>
+        <p class="lead">Use your passkey for the quickest sign-in. Email remains available as a backup.</p>
       </div>
     </section>
 
@@ -47,55 +47,59 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
             </p>
           </div>
 
-          <div id="passkey-sign-in" hidden>
-            <button id="passkey-sign-in-button" class="button primary" type="button">Sign in with a passkey</button>
-            <p class="account-help">
+          <div id="passkey-sign-in" class="account-primary-method">
+            <p class="account-method-label">Preferred method</p>
+            <button id="passkey-sign-in-button" class="button primary" type="button" disabled>Checking passkey…</button>
+            <p id="passkey-sign-in-help" class="account-help">
               Use the passkey saved in your device or password manager. Your browser may ask for a fingerprint,
-              face, device PIN, or security key.
+              face or device PIN.
             </p>
           </div>
 
-          <div id="email-sign-in-fields">
-            <label for="account-email">Email address</label>
-            <input
-              id="account-email"
-              name="email"
-              type="email"
-              autocomplete="email"
-              inputmode="email"
-              maxlength="254"
-              required
-            />
-            <button class="button primary" type="submit" aria-describedby="email-resend-help">Send sign-in link</button>
-            <p id="email-resend-help" class="account-help">
-              After requesting an email, wait 35 seconds before sending another request.
-            </p>
-          </div>
+          <details id="email-sign-in-alternative" class="account-alternative">
+            <summary>Use email instead</summary>
+            <div class="account-alternative-body">
+              <div id="email-sign-in-fields" class="account-method-fields">
+                <label for="account-email">Email address</label>
+                <input
+                  id="account-email"
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  inputmode="email"
+                  maxlength="254"
+                  required
+                />
+                <button class="button primary" type="submit" aria-describedby="email-resend-help">Send sign-in link</button>
+                <p id="email-resend-help" class="account-help">
+                  We will email a one-time link. Wait 35 seconds before requesting another.
+                </p>
+              </div>
 
-          <div id="email-code-sign-in" hidden>
-            <label for="account-email-code">Six-digit email code</label>
-            <input
-              id="account-email-code"
-              name="email-code"
-              type="text"
-              autocomplete="one-time-code"
-              inputmode="numeric"
-              pattern="[0-9]{6,10}"
-              minlength="6"
-              maxlength="10"
-            />
-            <button id="email-code-verify-button" class="button account-secondary" type="button">Verify email code</button>
-            <p class="account-help">
-              Prefer not to open the link? Enter the email address and numeric code exactly as shown in the
-              sign-in email. The code also works when the email was requested in another browser.
-            </p>
-          </div>
+              <details id="email-code-sign-in" class="account-code-alternative" hidden>
+                <summary>Enter a code instead</summary>
+                <div class="account-code-body">
+                  <label for="account-email-code">Email verification code</label>
+                  <input
+                    id="account-email-code"
+                    name="email-code"
+                    type="text"
+                    autocomplete="one-time-code"
+                    inputmode="numeric"
+                    pattern="[0-9]{6,10}"
+                    minlength="6"
+                    maxlength="10"
+                  />
+                  <button id="email-code-verify-button" class="button account-secondary" type="button">Verify code</button>
+                  <p class="account-help">
+                    Use this only if the sign-in link does not open correctly. Enter the numeric code from the same email.
+                  </p>
+                </div>
+              </details>
+            </div>
+          </details>
         </form>
         <p id="sign-in-status" class="account-status" role="status" aria-live="polite"></p>
-        <p class="account-help">
-          Email sign-in remains available as the recovery method. The response is deliberately neutral; if the
-          address can be used, the email will arrive shortly and its sign-in credentials can be used only once.
-        </p>
       </section>
     </div>
   </main>
@@ -114,6 +118,8 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
     const turnstileContainer = document.getElementById('account-turnstile');
     const passkeyContainer = document.getElementById('passkey-sign-in');
     const passkeyButton = document.getElementById('passkey-sign-in-button');
+    const passkeyHelp = document.getElementById('passkey-sign-in-help');
+    const emailAlternative = document.getElementById('email-sign-in-alternative');
     const emailCodeContainer = document.getElementById('email-code-sign-in');
     const emailCodeInput = document.getElementById('account-email-code');
     const emailCodeVerifyButton = document.getElementById('email-code-verify-button');
@@ -199,9 +205,17 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
           cache: 'no-store',
         });
         const body = await response.json().catch(() => ({}));
-        passkeyContainer.hidden = !(response.ok && body.enabled === true && window.USDImpactPasskeys?.supported?.());
+        const available = response.ok && body.enabled === true && window.USDImpactPasskeys?.supported?.();
+        passkeyContainer.hidden = !available;
+        passkeyButton.disabled = !available;
+        passkeyButton.textContent = available ? 'Continue with passkey' : 'Passkey unavailable';
+        if (available && passkeyHelp) {
+          passkeyHelp.textContent = 'Use the passkey saved in your device or password manager.';
+        }
+        if (!available && emailAlternative instanceof HTMLDetailsElement) emailAlternative.open = true;
       } catch {
         passkeyContainer.hidden = true;
+        if (emailAlternative instanceof HTMLDetailsElement) emailAlternative.open = true;
       }
     };
 
@@ -387,8 +401,7 @@ const turnstileSiteKey = String(import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '')
         if (emailCodeEnabled && emailCodeContainer && emailCodeInput) {
           emailCodeContainer.hidden = false;
           emailCodeInput.value = '';
-          emailCodeInput.focus();
-          showStatus('Check your email for the one-time sign-in link or verification code.', 'success');
+          showStatus('Open the one-time sign-in link in your email. If it does not work, use “Enter a code instead.”', 'success');
         } else {
           showStatus('Check your email for the one-time sign-in link.', 'success');
         }

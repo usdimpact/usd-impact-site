@@ -121,7 +121,11 @@ for (const summary of ['How the method works', 'Who it is for — and what it is
 assert.match(signInPage, /EMAIL_RESEND_COOLDOWN_SECONDS = 35/);
 assert.match(signInPage, /response\.status === 429/);
 assert.match(signInPage, /Too many sign-in emails were requested/);
-assert.match(signInPage, /six-digit fallback code/i);
+assert.match(signInPage, /<details id="email-sign-in-alternative"/);
+assert.match(signInPage, /<summary>Use email instead<\/summary>/);
+assert.match(signInPage, /<details id="email-code-sign-in"[\s\S]*hidden>/);
+assert.match(signInPage, /<summary>Enter a code instead<\/summary>/);
+assert.match(signInPage, /Continue with passkey/);
 
 assert.doesNotMatch(videoCss, /Georgia|Times New Roman/);
 

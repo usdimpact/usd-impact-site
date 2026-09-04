@@ -192,6 +192,13 @@ assert.match(library.body, /Protected test chapter/);
 assert.match(library.body, /Resume chapter/);
 assert.match(library.body, /value="50"/);
 assert.match(library.body, /Protected test supplement/);
+assert.match(library.body, /<nav aria-label="Library navigation">/);
+assert.match(library.body, /href="\/guided-edition\/" aria-current="page">Guided Edition<\/a>/);
+assert.match(library.body, /href="\/guided-edition\/book\/">Book<\/a>/);
+assert.match(library.body, /href="\/guided-edition\/audiobook\/">Audiobook<\/a>/);
+assert.match(library.body, /href="\/guided-edition\/video-library\/">Video Library<\/a>/);
+assert.match(library.body, /href="\/account\/">Account<\/a>/);
+assert.doesNotMatch(library.body, /@media\(max-width:760px\)\{\.nav nav\{display:none\}/);
 
 const multiChapterLibrary = await run(request({ authenticated: true }), {
   readCatalog: async () => [testReleaseTwo, testRelease],

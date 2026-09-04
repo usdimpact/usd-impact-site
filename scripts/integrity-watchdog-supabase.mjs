@@ -16,12 +16,11 @@ export async function supabaseContracts({ fetchImpl = globalThis.fetch, env = pr
   }
 
   const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
-  const [projectsData, advisorsData] = await Promise.all([
-    jsonRequest({ fetchImpl, url: 'https://api.supabase.com/v1/projects', headers }),
-    jsonRequest({ fetchImpl, url: `https://api.supabase.com/v1/projects/${encodeURIComponent(projectRef)}/advisors/security`, headers }),
-  ]);
-  const projects = Array.isArray(projectsData.json) ? projectsData.json : [];
-  const project = projects.find((entry) => entry.ref === projectRef || entry.id === projectRef) || null;
+  const advisorsData = await jsonRequest({
+    fetchImpl,
+    url: `https://api.supabase.com/v1/projects/${encodeURIComponent(projectRef)}/advisors/security`,
+    headers,
+  });
   const advisors = Array.isArray(advisorsData.json)
     ? advisorsData.json
     : (Array.isArray(advisorsData.json?.lints) ? advisorsData.json.lints : []);
@@ -30,8 +29,8 @@ export async function supabaseContracts({ fetchImpl = globalThis.fetch, env = pr
   const warnings = levels.filter((level) => ['warn', 'warning'].includes(level)).length;
 
   let outcome = OUTCOME.UNKNOWN;
-  let summary = 'Supabase project or Security Advisor evidence is inconclusive.';
-  if (project && projectsData.observation.status === 200 && advisorsData.observation.status === 200) {
+  let summary = 'Supabase Security Advisor evidence is inconclusive.';
+  if (advisorsData.observation.status === 200) {
     if (critical) {
       outcome = OUTCOME.FAIL;
       summary = `Security Advisor reports ${critical} critical or error finding(s).`;
@@ -54,8 +53,10 @@ export async function supabaseContracts({ fetchImpl = globalThis.fetch, env = pr
     evidence: [{
       id: 'SUPABASE-ADVISORS',
       source: 'supabase',
-      project_status: project?.status || null,
-      database_version: project?.database?.version || null,
+      configured_project_ref: projectRef,
+      project_identity_source: 'configured_project_ref',
+      project_list_requested: false,
+      advisor_only_token_compatible: true,
       advisor_endpoint_status: advisorsData.observation.status || null,
       advisor_endpoint_experimental: true,
       advisor_endpoint_deprecated: true,
@@ -68,7 +69,7 @@ export async function supabaseContracts({ fetchImpl = globalThis.fetch, env = pr
     }],
     remediation: {
       verification_plan: [
-        'Re-run Security Advisor.',
+        'Re-run Security Advisor with a dedicated token limited to the Advisors read permission.',
         'Independently inspect implicated and critical RLS, grants, views, functions, triggers, Auth configuration, and Storage policies through an approved read-only mechanism.',
       ],
       prohibited_actions: ['Do not apply a Production migration automatically.'],

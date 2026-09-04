@@ -40,16 +40,17 @@ const identitySchema = JSON.stringify({
 >
   <script type="application/ld+json" set:html={identitySchema}></script>
 
-  <section class="hero transparency-hero">
-    <div class="container narrow">
-      <div class="eyebrow">About &amp; transparency</div>
-      <h1>Who is behind USD Impact?</h1>
-      <p class="lead">USD Impact is an early-stage educational macro-finance project operated by a named Romanian company. This page separates verified facts, first-party disclosures and claims that have not been established.</p>
-    </div>
-  </section>
+  <main id="main-content" class="main-with-hero">
+    <section class="hero transparency-hero">
+      <div class="container narrow">
+        <div class="eyebrow">About &amp; transparency</div>
+        <h1>Who is behind USD Impact?</h1>
+        <p class="lead">USD Impact is an early-stage educational macro-finance project operated by a named Romanian company. This page separates verified facts, first-party disclosures and claims that have not been established.</p>
+      </div>
+    </section>
 
-  <main class="container transparency-page">
-    <section class="identity-grid" aria-label="Operator and founder">
+    <div class="container transparency-page">
+      <section class="identity-grid" aria-label="Operator and founder">
       <article class="card identity-card">
         <div class="eyebrow">Legal operator</div>
         <h2>KELA LEADS S.R.L.</h2>
@@ -133,7 +134,8 @@ const identitySchema = JSON.stringify({
       <div class="eyebrow">Bottom line</div>
       <h2>Transparent, reproducible and deliberately limited.</h2>
       <p>USD Impact can make a credible claim to a public formula, visible revision policy, dated publication archive, expanding robustness evidence, a predictive study registered before its holdout, and a legal-operator record checked against a current electronically signed ONRC certificate. It cannot expand that company-record check into an independent identity attestation, an ONRC endorsement, independently audited score performance, predictive power or a completed predictive out-of-sample result. Those boundaries are part of the project record, not footnotes.</p>
-    </section>
+      </section>
+    </div>
   </main>
 </BaseLayout>
 

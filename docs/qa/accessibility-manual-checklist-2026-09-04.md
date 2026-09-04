@@ -2,7 +2,7 @@
 
 Target: WCAG 2.2 AA
 
-Status: automated source contracts exist; manual execution is required per release candidate
+Status: automated source and rendered-build contracts exist; manual execution is required per release candidate
 
 Important: completion of this checklist is evidence, not a declaration of legal conformance.
 
@@ -13,8 +13,16 @@ Important: completion of this checklist is evidence, not a declaration of legal 
 - `/book/read-the-dollar-first/`
 - `/audiobook/read-the-dollar-first/`
 - `/video-library/`
+- `/checkout/`
 - `/account/sign-in/`
 - `/account/`
+- `/about/`
+- `/privacy/`
+- `/terms/`
+- `/refund-policy/`
+- `/compliance/`
+- `/contact/`
+- `/accessibility/`
 - Protected Guided Edition, audiobook, and video routes using an authorized non-customer QA account only
 
 ## Evidence header
@@ -23,7 +31,8 @@ Record release SHA, Preview URL, test date/time and timezone, tester, browser/OS
 
 ## Automated release checks
 
-- Build and source contracts: exactly one main landmark/skip target and one H1 on canonical public templates; accessible form labels/names; duplicate-ID checks; menu keyboard contract; reduced-motion rules; responsive image dimensions/srcset; captions indicated; no public Stream UID/token/origin disclosure.
+- Source contract (`npm run validate:ux`): main/skip-link and H1 structure on canonical templates; menu keyboard and focus-return behavior; global focus visibility and reduced-motion rules; responsive image dimensions/srcset; captions indicated; no public Stream UID/token/origin disclosure.
+- Rendered build contract (`npm run validate:a11y-build`, run automatically by `npm run build`): one main and one H1, a valid skip target, English document language, page title, duplicate IDs, image alternatives, button names, and associated form-control names across the listed public routes.
 - Run an automated accessibility engine on every rendered canonical route available in Preview. Fail the release for a new critical violation; triage serious/moderate findings with route and selector.
 - Record Lighthouse accessibility and performance results as diagnostic evidence, not as a conformance score.
 

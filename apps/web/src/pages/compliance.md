@@ -1,5 +1,7 @@
 ---
+layout: ../layouts/LegalLayout.astro
 title: "Compliance & Methodology"
+description: "USD Impact's compliance statement, source methodology, data limitations, and educational purpose. All content is educational and informational only."
 metaTitle: "Compliance & Methodology | USD Impact"
 metaDescription: "USD Impact's compliance statement, source methodology, data limitations, and educational purpose. All content is educational and informational only."
 slug: "/compliance"
@@ -20,6 +22,8 @@ internalLinks:
   - "/score/methodology/"
 hero: "Everything published on USD Impact is educational and informational. This page explains what that means, how we source our material, and what the limits of this content are."
 ---
+
+# Compliance & Methodology
 
 ## 1. Educational purpose
 

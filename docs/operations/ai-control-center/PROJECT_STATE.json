@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-01T19:13:23.424Z",
+  "generated_at": "2026-09-04T11:43:25.581Z",
   "generated_by": "github-actions:sync",
   "freshness": "VERIFIED",
   "health": "RED",
@@ -15,7 +15,7 @@
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": "17b088548e22bd3906e0f3eff441163e02d4b8d2"
+      "head_sha": "5bae77573aa8ef70bb1cde62ad5ed2c9012a504c"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
@@ -31,35 +31,35 @@
   "workflows": {
     "website": {
       "quality": {
-        "status": "completed",
-        "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/33547521902",
-        "created_at": "2026-09-01T19:06:04Z",
-        "head_sha": "17b088548e22bd3906e0f3eff441163e02d4b8d2"
+        "status": "in_progress",
+        "conclusion": "UNKNOWN",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/33869138545",
+        "created_at": "2026-09-04T11:41:31Z",
+        "head_sha": "5bae77573aa8ef70bb1cde62ad5ed2c9012a504c"
       },
       "daily_news": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/33527274875",
-        "created_at": "2026-09-01T15:41:30Z",
-        "head_sha": "0309dbb1f6b9a585424304a2652dad0e665935b8",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/33761903286",
+        "created_at": "2026-09-03T13:34:29Z",
+        "head_sha": "df443a700ed71c8eafc16aec89edc8ea24a145c9",
         "operational_conclusion": "success",
         "recovery": null
       },
       "daily_news_health": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/33537799809",
-        "created_at": "2026-09-01T17:26:41Z",
-        "head_sha": "6cf4e7434e5d67f0c617e71050f63a66db8aa205",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/33807643172",
+        "created_at": "2026-09-03T21:23:06Z",
+        "head_sha": "2a0e54e28d3460c1e633d1c53cf31f5dd565cd48",
         "operational_conclusion": "success"
       },
       "catalyst_brief": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/33505544893",
-        "created_at": "2026-09-01T12:02:25Z",
-        "head_sha": "5bbfdb0d813a5ff85d964fb1cbd56ea42221fb07",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/33821650861",
+        "created_at": "2026-09-04T00:24:14Z",
+        "head_sha": "52704d66b83196697732ddb9e9c190e2e95d25d9",
         "operational_conclusion": "success",
         "recovery": null
       }
@@ -89,15 +89,15 @@
     }
   },
   "publishing": {
-    "daily_allowed": true,
-    "daily_mode": "standard",
+    "daily_allowed": false,
+    "daily_mode": "blocked",
     "daily_recovery_eligible": false,
-    "daily_blocker": "NONE",
-    "daily_reason": "Current-head quality is green and the latest Daily health workflow passed.",
+    "daily_blocker": "Website quality or Daily health workflow state is incomplete or unknown.",
+    "daily_reason": "Website quality or Daily health workflow state is incomplete or unknown.",
     "daily_failure_gate": "none",
     "daily_degradation": "none",
     "daily_workflow_operational_conclusion": "success",
-    "exact_current_head_quality_green": true,
+    "exact_current_head_quality_green": false,
     "stale_daily_failure": false,
     "stale_daily_health_failure": false
   },
@@ -106,7 +106,7 @@
       "number": 53,
       "title": "P0 — replacement-provider checkout and verified entitlement integration",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
-      "updated_at": "2026-08-31T20:21:56Z",
+      "updated_at": "2026-09-01T21:04:43Z",
       "priority": "P0",
       "score": 1260,
       "blocked": false,
@@ -116,7 +116,7 @@
       "number": 50,
       "title": "P0 — controlled Library Pass revenue and Production-readiness program",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/50",
-      "updated_at": "2026-08-31T16:00:14Z",
+      "updated_at": "2026-09-01T21:04:54Z",
       "priority": "P0",
       "score": 1180,
       "blocked": false,
@@ -126,7 +126,7 @@
       "number": 54,
       "title": "P1 — integrated Library Pass rehearsal and Production launch",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/54",
-      "updated_at": "2026-08-31T15:58:23Z",
+      "updated_at": "2026-09-01T21:05:04Z",
       "priority": "P1",
       "score": 1060,
       "blocked": false,
@@ -166,7 +166,7 @@
       "number": 166,
       "title": "USD Impact Control Center — operations console",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
-      "updated_at": "2026-09-01T19:13:14Z",
+      "updated_at": "2026-09-01T19:15:09Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,
@@ -228,7 +228,7 @@
       "number": 53,
       "title": "P0 — replacement-provider checkout and verified entitlement integration",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
-      "updated_at": "2026-08-31T20:21:56Z",
+      "updated_at": "2026-09-01T21:04:43Z",
       "priority": "P0",
       "score": 1260,
       "blocked": false,
@@ -238,7 +238,7 @@
       "number": 50,
       "title": "P0 — controlled Library Pass revenue and Production-readiness program",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/50",
-      "updated_at": "2026-08-31T16:00:14Z",
+      "updated_at": "2026-09-01T21:04:54Z",
       "priority": "P0",
       "score": 1180,
       "blocked": false,
@@ -248,7 +248,7 @@
       "number": 54,
       "title": "P1 — integrated Library Pass rehearsal and Production launch",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/54",
-      "updated_at": "2026-08-31T15:58:23Z",
+      "updated_at": "2026-09-01T21:05:04Z",
       "priority": "P1",
       "score": 1060,
       "blocked": false,
@@ -288,7 +288,7 @@
       "number": 166,
       "title": "USD Impact Control Center — operations console",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
-      "updated_at": "2026-09-01T19:13:14Z",
+      "updated_at": "2026-09-01T19:15:09Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,

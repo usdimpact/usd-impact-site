@@ -1,0 +1,147 @@
+name: USD Impact Integrity Watchdog
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/integrity-watchdog.yml'
+      - 'scripts/integrity-watchdog*.mjs'
+      - 'scripts/test-integrity-watchdog.mjs'
+      - 'docs/operations/integrity-watchdog/**'
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Evidence scope
+        required: true
+        default: full
+        type: choice
+        options: [critical, full]
+      mode:
+        description: Report mode; neither mode performs external writes
+        required: true
+        default: fix_ready
+        type: choice
+        options: [audit_only, fix_ready]
+      ai_review:
+        description: Run the independent OpenAI reviewer when its dedicated key is configured
+        required: true
+        default: false
+        type: boolean
+  schedule:
+    - cron: '17 * * * *'
+    - cron: '23 5 * * 1'
+
+permissions:
+  actions: read
+  contents: read
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: usd-impact-integrity-watchdog-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Validate watchdog implementation
+        run: |
+          node --check scripts/integrity-watchdog-policy.mjs
+          node --check scripts/integrity-watchdog-http.mjs
+          node --check scripts/integrity-watchdog-repository.mjs
+          node --check scripts/integrity-watchdog-provider-common.mjs
+          node --check scripts/integrity-watchdog-github.mjs
+          node --check scripts/integrity-watchdog-vercel.mjs
+          node --check scripts/integrity-watchdog-supabase.mjs
+          node --check scripts/integrity-watchdog-resend.mjs
+          node --check scripts/integrity-watchdog-drive.mjs
+          node --check scripts/integrity-watchdog-collectors.mjs
+          node --check scripts/integrity-watchdog-reviewer.mjs
+          node --check scripts/integrity-watchdog.mjs
+          node scripts/test-integrity-watchdog.mjs
+          node -e "JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/POLICY.json', 'utf8'))"
+          node -e "const i=JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/WORKFLOW_INVENTORY.json', 'utf8')); if(i.workflows.length !== 33) throw new Error('Expected 33 workflows'); const ids=new Set(i.workflows.map(w=>w.id)); if(ids.size !== i.workflows.length) throw new Error('Duplicate workflow ID'); for(const w of i.workflows){if(w.reference_workflow && !ids.has(w.reference_workflow)) throw new Error('Unknown reference workflow: '+w.reference_workflow)}"
+
+  audit:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      USDIMPACT_WATCHDOG_OPENAI_API_KEY: ${{ secrets.USDIMPACT_WATCHDOG_OPENAI_API_KEY }}
+      USDIMPACT_WATCHDOG_OPENAI_MODEL: ${{ vars.USDIMPACT_WATCHDOG_OPENAI_MODEL }}
+      USDIMPACT_WATCHDOG_VERCEL_TOKEN: ${{ secrets.USDIMPACT_WATCHDOG_VERCEL_TOKEN }}
+      USDIMPACT_WATCHDOG_VERCEL_PROJECT_ID: ${{ vars.USDIMPACT_WATCHDOG_VERCEL_PROJECT_ID }}
+      USDIMPACT_WATCHDOG_VERCEL_TEAM_ID: ${{ vars.USDIMPACT_WATCHDOG_VERCEL_TEAM_ID }}
+      USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN: ${{ secrets.USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN }}
+      USDIMPACT_WATCHDOG_SUPABASE_PROJECT_REF: ${{ vars.USDIMPACT_WATCHDOG_SUPABASE_PROJECT_REF }}
+      USDIMPACT_WATCHDOG_RESEND_API_KEY: ${{ secrets.USDIMPACT_WATCHDOG_RESEND_API_KEY }}
+      USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED: ${{ vars.USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED }}
+      USDIMPACT_WATCHDOG_RESEND_DOMAIN: ${{ vars.USDIMPACT_WATCHDOG_RESEND_DOMAIN }}
+      USDIMPACT_WATCHDOG_GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.USDIMPACT_WATCHDOG_GOOGLE_SERVICE_ACCOUNT_JSON }}
+      USDIMPACT_WATCHDOG_GOOGLE_DRIVE_ROOT_FOLDER_ID: ${{ vars.USDIMPACT_WATCHDOG_GOOGLE_DRIVE_ROOT_FOLDER_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Validate watchdog implementation
+        run: node scripts/test-integrity-watchdog.mjs
+      - name: Refresh local control-center evidence
+        continue-on-error: true
+        run: node scripts/control-center.mjs status
+      - name: Resolve watchdog scope
+        id: config
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
+          DISPATCH_SCOPE: ${{ inputs.scope }}
+          DISPATCH_MODE: ${{ inputs.mode }}
+          DISPATCH_AI_REVIEW: ${{ inputs.ai_review }}
+        run: |
+          scope=critical
+          mode=fix_ready
+          ai_review=false
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            scope="$DISPATCH_SCOPE"
+            mode="$DISPATCH_MODE"
+            ai_review="$DISPATCH_AI_REVIEW"
+          elif [ "$SCHEDULE_EXPRESSION" = "23 5 * * 1" ]; then
+            scope=full
+            ai_review=auto
+          fi
+          case "$scope" in critical|full) ;; *) echo "Unsupported scope: $scope"; exit 1 ;; esac
+          case "$mode" in audit_only|fix_ready) ;; *) echo "Unsupported mode: $mode"; exit 1 ;; esac
+          case "$ai_review" in true|false|auto) ;; *) echo "Unsupported AI review mode: $ai_review"; exit 1 ;; esac
+          echo "scope=$scope" >> "$GITHUB_OUTPUT"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "ai_review=$ai_review" >> "$GITHUB_OUTPUT"
+      - name: Run read-only integrity watchdog
+        id: audit
+        continue-on-error: true
+        env:
+          WATCHDOG_SCOPE: ${{ steps.config.outputs.scope }}
+          WATCHDOG_MODE: ${{ steps.config.outputs.mode }}
+          WATCHDOG_AI_REVIEW: ${{ steps.config.outputs.ai_review }}
+          WATCHDOG_OUTPUT_DIR: artifacts/integrity-watchdog
+        run: node scripts/integrity-watchdog.mjs
+      - name: Upload watchdog evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: usd-impact-integrity-watchdog-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/integrity-watchdog
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Enforce fail-closed RED result
+        if: steps.audit.outcome == 'failure'
+        run: exit 1

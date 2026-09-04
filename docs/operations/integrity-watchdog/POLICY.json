@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "policy_version": "1.0.2",
+  "name": "USD Impact Integrity Watchdog",
+  "default_mode": "audit_only",
+  "external_writes_allowed": false,
+  "mission": "Find what already works, establish why it works as the reference standard, identify every deviation, and produce evidence-backed fix-ready remediation without bypassing approval gates.",
+  "targets": {
+    "public_web": {
+      "canonical_base_url": "https://www.usd-impact.com",
+      "apex_base_url": "https://usd-impact.com"
+    },
+    "github": {
+      "website_repository": "usdimpact/usd-impact-site",
+      "pipeline_repository": "usdimpact/usd-impact-pipeline",
+      "commentary_repository": "usdimpact/usd-impact",
+      "production_branch": "main"
+    },
+    "vercel": {
+      "project_name": "usd-impact-site",
+      "production_domains": ["www.usd-impact.com", "usd-impact.com"]
+    },
+    "supabase": {
+      "environment": "production",
+      "access": "management_api_read_scopes_only",
+      "advisor_endpoint_experimental": true,
+      "advisor_endpoint_deprecated": true
+    },
+    "resend": {
+      "domain": "usd-impact.com",
+      "collector_methods": ["GET"],
+      "provider_read_only_api_key_available": false,
+      "full_access_credential_requires_separate_approval": true,
+      "email_sending_allowed": false
+    },
+    "google_drive": {
+      "access": "drive.metadata.readonly",
+      "file_content_collection_allowed": false
+    },
+    "openai": {
+      "role": "independent_integrity_reviewer",
+      "default_model": "gpt-5.6-terra",
+      "store": false,
+      "raw_provider_payloads_allowed": false
+    }
+  },
+  "network": {
+    "https_only": true,
+    "allowed_hosts": [
+      "usd-impact.com",
+      "www.usd-impact.com",
+      "score.usd-impact.com",
+      "api.github.com",
+      "api.vercel.com",
+      "api.supabase.com",
+      "api.resend.com",
+      "api.openai.com",
+      "oauth2.googleapis.com",
+      "www.googleapis.com"
+    ],
+    "non_default_ports_allowed": false,
+    "credentials_in_url_allowed": false,
+    "redirect_handling": "manual_allowlist_validation",
+    "maximum_redirects": 3,
+    "post_redirect_following_allowed": false,
+    "maximum_response_body_bytes": 750000
+  },
+  "modes": {
+    "audit_only": {
+      "provider_reads": true,
+      "public_runtime_tests": true,
+      "local_reports": true,
+      "local_fix_packets": false,
+      "external_writes": false
+    },
+    "fix_ready": {
+      "provider_reads": true,
+      "public_runtime_tests": true,
+      "local_reports": true,
+      "local_fix_packets": true,
+      "external_writes": false
+    },
+    "execute_approved": {
+      "implemented_by_watchdog": false,
+      "external_writes": "exact_owner_approval_only"
+    }
+  },
+  "classifications": {
+    "A_GOLD": "Longitudinally verified at the reference standard",
+    "A_GOLD_CANDIDATE": "Direct current evidence passes, but continued verification is required",
+    "B_FUNCTIONAL": "Works with material limitations",
+    "C_FRAGILE": "Works or appears to work with meaningful reliability risk",
+    "D_FAILED": "Known contract failure or contradiction",
+    "E_UNKNOWN": "Insufficient current evidence",
+    "F_REDUNDANT": "Superseded, duplicate, or unnecessary"
+  },
+  "severities": {
+    "P0": "Integrity, security, customer, payment, legal, or material publication",
+    "P1": "Recurring reliability or critical dependency",
+    "P2": "UX, accessibility, reproducibility, clarity, or trust",
+    "P3": "Optimization"
+  },
+  "schedules": {
+    "critical_runtime": "hourly at minute 17",
+    "full_recertification": "Monday 05:23 UTC",
+    "manual": "workflow_dispatch"
+  },
+  "evidence": {
+    "required_properties": [
+      "contract id",
+      "workflow id",
+      "provider/domain",
+      "observed timestamp",
+      "outcome",
+      "classification",
+      "summary",
+      "redacted evidence",
+      "evidence digest"
+    ],
+    "never_store": [
+      "secret values",
+      "raw authentication tokens",
+      "cookies",
+      "full payment credentials",
+      "unnecessary email bodies",
+      "unnecessary personal data",
+      "Google Drive document contents"
+    ],
+    "body_policy": "Store only bounded metadata, explicit contract markers, selected non-secret headers, and SHA-256 fingerprints; do not persist fetched response bodies."
+  },
+  "implemented_contract_ids": [
+    "WORKFLOW-SAFE-PERMISSIONS",
+    "REPOSITORY-SECRET-SCAN",
+    "PUBLIC-CANONICAL-ROUTES",
+    "PUBLIC-PRODUCT-CONTRACT",
+    "PUBLIC-LEGAL-IDENTITY",
+    "CHECKOUT-FAIL-CLOSED",
+    "ACCESS-ANONYMOUS-DENIAL",
+    "SOURCE-ENDPOINT-AUTHZ",
+    "SCORE-CLAIM-BOUNDARY",
+    "CONSENT-PUBLIC-CONTRACT",
+    "DAILY-FRESHNESS",
+    "GITHUB-CURRENT-HEAD-QUALITY",
+    "GITHUB-REQUIRED-CHECKS",
+    "VERCEL-SOURCE-IDENTITY",
+    "VERCEL-CONFIG-PRESENCE",
+    "SUPABASE-SECURITY-ADVISORS",
+    "RESEND-DOMAIN-HEALTH",
+    "DRIVE-SOURCE-OF-TRUTH",
+    "INTEGRITY-INDEPENDENT-REVIEW"
+  ],
+  "no_write_boundary": [
+    "No automatic pull request, issue, comment, merge, or workflow dispatch",
+    "No automatic Vercel deployment, promotion, rollback, alias, domain, or environment-variable change",
+    "No Supabase SQL, migration, RLS, grant, Storage, Auth, Edge Function, user, or secret mutation",
+    "No Resend email, broadcast, contact, segment, domain, webhook, or API-key mutation",
+    "No Google Drive document-content read and no create, edit, move, share, or delete",
+    "No Lemon Squeezy payment, customer, order, refund, subscription, or entitlement mutation",
+    "No real-customer account test and no real email send",
+    "No secret value in reports, artifacts, logs, issues, pull requests, or model input"
+  ],
+  "credential_rules": {
+    "least_privilege_required": true,
+    "write_capable_credential_may_remove_unknown": false,
+    "resend_full_access_requires_separate_owner_approval": true,
+    "secret_values_must_never_be_reported": true
+  },
+  "fix_ready_required_fields": [
+    "problem statement",
+    "evidence digest",
+    "likely root causes",
+    "smallest safe scope",
+    "proposed changes",
+    "verification plan",
+    "rollback plan",
+    "prohibited actions",
+    "acceptance criteria",
+    "human approval required"
+  ],
+  "release_gate": {
+    "READY": "No material failure or unknown remains in the executed scope",
+    "READY_WITH_CONDITIONS": "No verified P0 failure, but warning, unknown, or P1 failure remains",
+    "NOT_READY": "At least one verified P0 failure exists",
+    "unknown_is_green": false,
+    "single_pass_can_grant_permanent_gold": false
+  }
+}

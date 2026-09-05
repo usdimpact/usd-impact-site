@@ -66,10 +66,12 @@ jobs:
           node --check scripts/integrity-watchdog-drive.mjs
           node --check scripts/integrity-watchdog-collectors.mjs
           node --check scripts/integrity-watchdog-reviewer.mjs
+          node --check scripts/integrity-watchdog-artifacts.mjs
           node --check scripts/integrity-watchdog.mjs
           node scripts/test-integrity-watchdog.mjs
           node scripts/integrity-watchdog-resend.test.mjs
           node scripts/integrity-watchdog-drive.test.mjs
+          node scripts/integrity-watchdog-artifacts.test.mjs
           node scripts/integrity-watchdog-github-rulesets.test.mjs
           node -e "JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/POLICY.json', 'utf8'))"
           node -e "const i=JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/WORKFLOW_INVENTORY.json', 'utf8')); if(i.workflows.length !== 33) throw new Error('Expected 33 workflows'); const ids=new Set(i.workflows.map(w=>w.id)); if(ids.size !== i.workflows.length) throw new Error('Duplicate workflow ID'); for(const w of i.workflows){if(w.reference_workflow && !ids.has(w.reference_workflow)) throw new Error('Unknown reference workflow: '+w.reference_workflow)}"
@@ -113,6 +115,7 @@ jobs:
           node scripts/test-integrity-watchdog.mjs
           node scripts/integrity-watchdog-resend.test.mjs
           node scripts/integrity-watchdog-drive.test.mjs
+          node scripts/integrity-watchdog-artifacts.test.mjs
           node scripts/integrity-watchdog-github-rulesets.test.mjs
       - name: Refresh local control-center evidence
         continue-on-error: true

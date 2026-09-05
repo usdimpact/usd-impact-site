@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "baseline_version": "2026-09-05.1",
+  "description": "Exact approved GitHub Actions write-permission grants for USD Impact. Read-only grants are intentionally omitted. Any new, removed, or relocated write grant must fail the watchdog until explicitly reviewed and this baseline is updated.",
+  "expected_write_permissions": {
+    ".github/workflows/ai-control-center.yml": ["actions", "contents", "issues", "pull-requests"],
+    ".github/workflows/catalyst-brief.yml": ["actions", "contents", "issues", "pull-requests"],
+    ".github/workflows/codeql.yml": ["security-events"],
+    ".github/workflows/daily-news-health.yml": ["issues"],
+    ".github/workflows/daily-news-schedule-backstop.yml": ["actions"],
+    ".github/workflows/daily-news.yml": ["actions", "contents", "issues", "pull-requests"],
+    ".github/workflows/three-dials-snapshot.yml": ["actions", "contents", "issues", "pull-requests"],
+    ".github/workflows/weekly-report.yml": ["actions", "contents", "issues", "pull-requests"]
+  }
+}

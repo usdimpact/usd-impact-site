@@ -32,12 +32,35 @@ function responseText(json) {
   return parts.join('\n');
 }
 
+function responseRefusal(json) {
+  for (const item of json?.output || []) {
+    for (const content of item?.content || []) {
+      if (content?.type === 'refusal' && typeof content.refusal === 'string') return true;
+    }
+  }
+  return false;
+}
+
+function validReviewShape(review) {
+  return Boolean(
+    review
+    && ['CONFIRM', 'CHALLENGE', 'INSUFFICIENT_EVIDENCE'].includes(review.verdict)
+    && typeof review.summary === 'string'
+    && Array.isArray(review.challenged_contract_ids)
+    && Array.isArray(review.findings)
+  );
+}
+
+export function reviewerConfigured(env = process.env) {
+  return Boolean(env.USDIMPACT_WATCHDOG_OPENAI_API_KEY && env.USDIMPACT_WATCHDOG_OPENAI_MODEL);
+}
+
 export async function independentReview({ fetchImpl = globalThis.fetch, env = process.env, results = [], projectSummary = {}, fixReadyPackets = [], enabled = false } = {}) {
   const observedAt = new Date().toISOString();
   if (!enabled) return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome: OUTCOME.SKIP, summary: 'Independent AI review was not requested for this run.', observedAt, evidence: [{ id: 'OPENAI-REVIEW-MODE', source: 'openai', enabled: false }], material: false });
   const apiKey = env.USDIMPACT_WATCHDOG_OPENAI_API_KEY || '';
-  const model = env.USDIMPACT_WATCHDOG_OPENAI_MODEL || 'gpt-5.6-terra';
-  if (!apiKey) return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome: OUTCOME.UNKNOWN, summary: 'Independent AI review was requested, but no dedicated watchdog OpenAI API key is configured.', observedAt, evidence: [{ id: 'OPENAI-REVIEW-CONFIG', source: 'environment', configured: false, required_environment_name: 'USDIMPACT_WATCHDOG_OPENAI_API_KEY' }], material: false, remediation: { proposed_changes: ['Install a project-scoped key in the approved secret store.'], prohibited_actions: ['Do not print, commit, summarize, or expose the key value.'] } });
+  const model = env.USDIMPACT_WATCHDOG_OPENAI_MODEL || '';
+  if (!reviewerConfigured(env)) return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome: OUTCOME.UNKNOWN, summary: 'Independent AI review was requested, but its dedicated OpenAI key and explicit reviewer model are not both configured.', observedAt, evidence: [{ id: 'OPENAI-REVIEW-CONFIG', source: 'environment', configured: false, api_key_configured: Boolean(apiKey), model_configured: Boolean(model), required_environment_names: ['USDIMPACT_WATCHDOG_OPENAI_API_KEY', 'USDIMPACT_WATCHDOG_OPENAI_MODEL'] }], material: false, remediation: { proposed_changes: ['Install a project-scoped key and explicitly configure an approved reviewer model in the approved secret/variable stores.'], prohibited_actions: ['Do not print, commit, summarize, or expose the key value.', 'Do not silently substitute a model when the configured reviewer model is absent.'] } });
 
   const input = sanitize({
     project_summary: projectSummary,
@@ -47,6 +70,9 @@ export async function independentReview({ fetchImpl = globalThis.fetch, env = pr
   const request = {
     model,
     store: false,
+    tools: [],
+    tool_choice: 'none',
+    parallel_tool_calls: false,
     instructions: [
       'You are the independent USD Impact Integrity Reviewer.',
       'Challenge the watchdog conclusions instead of restating them.',
@@ -61,14 +87,23 @@ export async function independentReview({ fetchImpl = globalThis.fetch, env = pr
   const observation = await observe({ fetchImpl, url: 'https://api.openai.com/v1/responses', method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify(request), timeoutMs: 60_000 });
   if (!observation.ok || observation.status !== 200) return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome: OUTCOME.UNKNOWN, summary: `Independent AI review did not return a successful response (${observation.status || observation.error_name || 'no response'}).`, observedAt, evidence: [{ id: 'OPENAI-REVIEW-HTTP', source: 'openai', status: observation.status || null, duration_ms: observation.duration_ms, response_body_sha256: observation.body_sha256 || null, response_body_bytes: observation.body_bytes || null }], material: false });
   let responseJson;
-  let review;
   try {
     responseJson = JSON.parse(observation.body);
+  } catch {
+    return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome: OUTCOME.UNKNOWN, summary: 'Independent AI review response envelope was not valid JSON.', observedAt, evidence: [{ id: 'OPENAI-REVIEW-PARSE', source: 'openai', status: observation.status, response_body_sha256: observation.body_sha256 }], material: false });
+  }
+  if (responseJson?.status && responseJson.status !== 'completed') return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome: OUTCOME.UNKNOWN, summary: `Independent AI review response was not completed (${responseJson.status}).`, observedAt, evidence: [{ id: 'OPENAI-REVIEW-STATUS', source: 'openai', status: observation.status, response_status: responseJson.status, response_body_sha256: observation.body_sha256 }], material: false });
+  if (responseRefusal(responseJson)) return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome: OUTCOME.UNKNOWN, summary: 'Independent AI review returned a refusal instead of the required structured assessment.', observedAt, evidence: [{ id: 'OPENAI-REVIEW-REFUSAL', source: 'openai', status: observation.status, refusal_detected: true, response_body_sha256: observation.body_sha256 }], material: false });
+
+  let review;
+  try {
     review = JSON.parse(responseText(responseJson));
   } catch {
     return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome: OUTCOME.UNKNOWN, summary: 'Independent AI review response was not valid structured JSON.', observedAt, evidence: [{ id: 'OPENAI-REVIEW-PARSE', source: 'openai', status: observation.status, response_body_sha256: observation.body_sha256 }], material: false });
   }
+  if (!validReviewShape(review)) return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome: OUTCOME.UNKNOWN, summary: 'Independent AI review response did not satisfy the required review shape.', observedAt, evidence: [{ id: 'OPENAI-REVIEW-SHAPE', source: 'openai', status: observation.status, response_body_sha256: observation.body_sha256 }], material: false });
+
   const safe = sanitize(review);
   const outcome = safe.verdict === 'CONFIRM' ? OUTCOME.PASS : (safe.verdict === 'CHALLENGE' ? OUTCOME.WARN : OUTCOME.UNKNOWN);
-  return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome, summary: `Independent reviewer verdict: ${safe.verdict}. ${safe.summary}`, observedAt, evidence: [{ id: 'OPENAI-INDEPENDENT-REVIEW', source: 'openai', model, response_id: responseJson?.id || null, verdict: safe.verdict, challenged_contract_count: safe.challenged_contract_ids?.length || 0, review_digest: sha256(JSON.stringify(safe)), review: safe, input_stored_by_request: false }], material: false });
+  return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome, summary: `Independent reviewer verdict: ${safe.verdict}. ${safe.summary}`, observedAt, evidence: [{ id: 'OPENAI-INDEPENDENT-REVIEW', source: 'openai', model, response_id: responseJson?.id || null, verdict: safe.verdict, challenged_contract_count: safe.challenged_contract_ids?.length || 0, review_digest: sha256(JSON.stringify(safe)), review: safe, input_stored_by_request: false, tools_enabled: false }], material: false });
 }

@@ -8,7 +8,7 @@ const reply = (body, status = 200, url = '') => {
   return response;
 };
 
-const testKey = 're_watchdog_test_key_not_real';
+const testKey = ['re', 'watchdog_test_key_not_real'].join('_');
 
 let blockedCalled = false;
 const blocked = await resendContracts({

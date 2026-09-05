@@ -9,6 +9,7 @@ export const RESEARCH_ACCESS_SURFACES = Object.freeze({
   WEEKLY_SCORE: 'weekly-score',
   WEEKLY_SCORE_HISTORY: 'weekly-score-history',
   WEEKLY_SCORE_BREAKDOWN: 'weekly-score-breakdown',
+  MONTHLY_REPORT: 'monthly-report',
   RESEARCH_KNOWLEDGE: 'research-knowledge',
 });
 

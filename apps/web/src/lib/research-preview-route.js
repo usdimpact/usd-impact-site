@@ -7,6 +7,7 @@ import {
 import { RESEARCH_MEMBERSHIP_PRODUCT_ID } from './research-membership-runtime.js';
 
 const WEEKLY_REPORT_PREFIX = '/reports/weekly';
+const MONTHLY_REPORT_PREFIX = '/reports/monthly';
 const WEEKLY_SCORE_PATH = '/score';
 const KNOWN_RESEARCH_STATES = new Set([
   'pending',
@@ -40,12 +41,18 @@ export function isWeeklyResearchPreviewPath(pathname) {
   return normalized === WEEKLY_REPORT_PREFIX || normalized.startsWith(`${WEEKLY_REPORT_PREFIX}/`);
 }
 
+export function isMonthlyResearchPreviewPath(pathname) {
+  const normalized = normalizePathname(pathname);
+  return normalized === MONTHLY_REPORT_PREFIX || normalized.startsWith(`${MONTHLY_REPORT_PREFIX}/`);
+}
+
 export function isWeeklyScoreResearchPreviewPath(pathname) {
   return normalizePathname(pathname) === WEEKLY_SCORE_PATH;
 }
 
 export function researchPreviewSurfaceForPath(pathname) {
   if (isWeeklyResearchPreviewPath(pathname)) return RESEARCH_ACCESS_SURFACES.WEEKLY_REPORT;
+  if (isMonthlyResearchPreviewPath(pathname)) return RESEARCH_ACCESS_SURFACES.MONTHLY_REPORT;
   if (isWeeklyScoreResearchPreviewPath(pathname)) return RESEARCH_ACCESS_SURFACES.WEEKLY_SCORE;
   return null;
 }

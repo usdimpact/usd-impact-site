@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "policy_version": "1.0.3",
+  "policy_version": "1.0.4",
   "name": "USD Impact Integrity Watchdog",
   "default_mode": "audit_only",
   "external_writes_allowed": false,
@@ -27,7 +27,7 @@
       "advisor_endpoint_deprecated": true
     },
     "resend": {
-      "domain": "usd-impact.com",
+      "domain": "updates.usd-impact.com",
       "collector_methods": ["GET"],
       "provider_read_only_api_key_available": false,
       "full_access_credential_requires_separate_approval": true,

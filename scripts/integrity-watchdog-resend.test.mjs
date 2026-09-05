@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { OUTCOME } from './integrity-watchdog-policy.mjs';
 import { resendContracts } from './integrity-watchdog-resend.mjs';
 
@@ -7,6 +8,11 @@ const reply = (body, status = 200, url = '') => {
   if (url) Object.defineProperty(response, 'url', { value: url });
   return response;
 };
+
+const policy = JSON.parse(fs.readFileSync(new URL('../docs/operations/integrity-watchdog/POLICY.json', import.meta.url), 'utf8'));
+const workflow = fs.readFileSync(new URL('../.github/workflows/integrity-watchdog.yml', import.meta.url), 'utf8');
+assert.equal(policy.targets.resend.domain, 'updates.usd-impact.com');
+assert.match(workflow, /USDIMPACT_WATCHDOG_RESEND_DOMAIN: \$\{\{ vars\.USDIMPACT_WATCHDOG_RESEND_DOMAIN \|\| 'updates\.usd-impact\.com' \}\}/);
 
 const testKey = ['re', 'watchdog_test_key_not_real'].join('_');
 
@@ -48,7 +54,7 @@ const liveShape = await resendContracts({
   },
 });
 assert.equal(liveShape[0].outcome, OUTCOME.PASS);
-assert.equal(liveShape[0].evidence[0].expected_domain, 'updates.usd-impact.com');
+assert.equal(liveShape[0].evidence[0].expected_domain, policy.targets.resend.domain);
 assert.equal(liveShape[0].evidence[0].enabled_webhook_count, 1);
 assert.equal(liveShape[0].evidence[0].disabled_webhook_count, 1);
 assert.equal(liveShape[0].evidence[0].matching_enabled_webhook_count, 1);

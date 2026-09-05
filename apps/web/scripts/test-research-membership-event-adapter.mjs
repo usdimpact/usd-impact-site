@@ -87,8 +87,13 @@ for (const [label, subscription, providerEvent, pattern] of [
 
 assert.throws(
   () => buildResearchMembershipMutationPlan({
-    existingSubscription: baseSubscription,
-    providerEvent: event({ eventType: 'subscription.activated' }),
+    existingSubscription: { ...baseSubscription, state: 'cancelled' },
+    providerEvent: event({
+      providerEventId: 'evt_invalid_recovery',
+      eventType: 'subscription.payment_recovered',
+      currentPeriodEnd: '2026-10-01T00:00:00Z',
+      cancelAtPeriodEnd: false,
+    }),
   }),
   /Invalid Research Membership transition/,
 );

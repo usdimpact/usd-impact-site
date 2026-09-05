@@ -7,6 +7,7 @@ import {
 import { RESEARCH_MEMBERSHIP_PRODUCT_ID } from './research-membership-runtime.js';
 
 const WEEKLY_REPORT_PREFIX = '/reports/weekly';
+const WEEKLY_SCORE_PATH = '/score';
 const KNOWN_RESEARCH_STATES = new Set([
   'pending',
   'active',
@@ -39,14 +40,25 @@ export function isWeeklyResearchPreviewPath(pathname) {
   return normalized === WEEKLY_REPORT_PREFIX || normalized.startsWith(`${WEEKLY_REPORT_PREFIX}/`);
 }
 
-export async function decideWeeklyResearchPreviewRequest({
+export function isWeeklyScoreResearchPreviewPath(pathname) {
+  return normalizePathname(pathname) === WEEKLY_SCORE_PATH;
+}
+
+export function researchPreviewSurfaceForPath(pathname) {
+  if (isWeeklyResearchPreviewPath(pathname)) return RESEARCH_ACCESS_SURFACES.WEEKLY_REPORT;
+  if (isWeeklyScoreResearchPreviewPath(pathname)) return RESEARCH_ACCESS_SURFACES.WEEKLY_SCORE;
+  return null;
+}
+
+export async function decideResearchPreviewRequest({
   request,
   environment = process.env,
   readAccessToken = readSessionAccessToken,
   readAccessState = readAccountAccessState,
 } = {}) {
   const url = new URL(request.url);
-  if (environment.VERCEL_ENV !== 'preview' || !isWeeklyResearchPreviewPath(url.pathname)) {
+  const surface = researchPreviewSurfaceForPath(url.pathname);
+  if (environment.VERCEL_ENV !== 'preview' || !surface) {
     return Object.freeze({ action: 'allow', reason: 'preview-gate-inactive', location: null });
   }
 
@@ -76,7 +88,7 @@ export async function decideWeeklyResearchPreviewRequest({
   }
 
   const decision = resolveResearchAccess({
-    surface: RESEARCH_ACCESS_SURFACES.WEEKLY_REPORT,
+    surface,
     subscriptionState,
   });
 
@@ -86,3 +98,5 @@ export async function decideWeeklyResearchPreviewRequest({
 
   return redirect(url, '/account/access-required/', 'denied');
 }
+
+export const decideWeeklyResearchPreviewRequest = decideResearchPreviewRequest;

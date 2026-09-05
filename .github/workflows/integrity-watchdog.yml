@@ -69,6 +69,7 @@ jobs:
           node --check scripts/integrity-watchdog-artifacts.mjs
           node --check scripts/integrity-watchdog.mjs
           node scripts/test-integrity-watchdog.mjs
+          node scripts/integrity-watchdog-vercel.test.mjs
           node scripts/integrity-watchdog-resend.test.mjs
           node scripts/integrity-watchdog-drive.test.mjs
           node scripts/integrity-watchdog-artifacts.test.mjs
@@ -92,7 +93,7 @@ jobs:
       GITHUB_TOKEN: ${{ github.token }}
       USDIMPACT_WATCHDOG_OPENAI_API_KEY: ${{ secrets.USDIMPACT_WATCHDOG_OPENAI_API_KEY }}
       USDIMPACT_WATCHDOG_OPENAI_MODEL: ${{ vars.USDIMPACT_WATCHDOG_OPENAI_MODEL }}
-      USDIMPACT_WATCHDOG_VERCEL_TOKEN: ${{ secrets.USDIMPACT_WATCHDOG_VERCEL_TOKEN || secrets.USDIMPACT_VERCEL_TOKEN }}
+      USDIMPACT_WATCHDOG_VERCEL_TOKEN: ${{ secrets.USDIMPACT_WATCHDOG_VERCEL_TOKEN }}
       USDIMPACT_WATCHDOG_VERCEL_PROJECT_ID: ${{ vars.USDIMPACT_WATCHDOG_VERCEL_PROJECT_ID }}
       USDIMPACT_WATCHDOG_VERCEL_TEAM_ID: ${{ vars.USDIMPACT_WATCHDOG_VERCEL_TEAM_ID }}
       USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN: ${{ secrets.USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN || secrets.USDIMPACT_SUPABASE_ACCESS_TOKEN }}
@@ -113,6 +114,7 @@ jobs:
       - name: Validate watchdog implementation
         run: |
           node scripts/test-integrity-watchdog.mjs
+          node scripts/integrity-watchdog-vercel.test.mjs
           node scripts/integrity-watchdog-resend.test.mjs
           node scripts/integrity-watchdog-drive.test.mjs
           node scripts/integrity-watchdog-artifacts.test.mjs

@@ -88,10 +88,13 @@ node --check scripts/integrity-watchdog-resend.mjs
 node --check scripts/integrity-watchdog-drive.mjs
 node --check scripts/integrity-watchdog-collectors.mjs
 node --check scripts/integrity-watchdog-reviewer.mjs
+node --check scripts/integrity-watchdog-artifacts.mjs
 node --check scripts/integrity-watchdog.mjs
 node scripts/test-integrity-watchdog.mjs
+node scripts/integrity-watchdog-vercel.test.mjs
 node scripts/integrity-watchdog-resend.test.mjs
 node scripts/integrity-watchdog-drive.test.mjs
+node scripts/integrity-watchdog-artifacts.test.mjs
 node scripts/integrity-watchdog-github-rulesets.test.mjs
 node -e "JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/POLICY.json', 'utf8'))"
 node -e "const i=JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/WORKFLOW_INVENTORY.json', 'utf8')); if(i.workflows.length !== 33) throw new Error('Incomplete inventory')"
@@ -113,7 +116,7 @@ The critical watchdog works with the GitHub-provided token and public routes. Fu
 |---|---|---|
 | OpenAI | `USDIMPACT_WATCHDOG_OPENAI_API_KEY` | Project-scoped key for independent review only |
 | OpenAI | `USDIMPACT_WATCHDOG_OPENAI_MODEL` | Optional; defaults to `gpt-5.6-terra` |
-| Vercel | `USDIMPACT_WATCHDOG_VERCEL_TOKEN` | Dedicated project/account read access |
+| Vercel | `USDIMPACT_WATCHDOG_VERCEL_TOKEN` | Dedicated credential with the minimum read access available for the target project; no general Vercel credential fallback |
 | Vercel | `USDIMPACT_WATCHDOG_VERCEL_PROJECT_ID` | Target identifier |
 | Vercel | `USDIMPACT_WATCHDOG_VERCEL_TEAM_ID` | Target identifier |
 | Supabase | `USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN` | Management API token limited to required read scopes |
@@ -133,14 +136,13 @@ Resend currently exposes `full_access` and `sending_access` API keys, not a meta
 
 ## Approved temporary provider-secret fallbacks
 
-The September 4, 2026 provider-wiring approval allowed the watchdog to reuse selected existing repository credentials without reading, copying, printing, or changing their values. Dedicated watchdog secrets always take precedence. The remaining temporary fallbacks are:
+The September 4, 2026 provider-wiring approval allowed the watchdog to reuse selected existing repository credentials without reading, copying, printing, or changing their values. Dedicated watchdog secrets always take precedence. The only remaining temporary fallback is:
 
-- Vercel: `USDIMPACT_WATCHDOG_VERCEL_TOKEN` → `USDIMPACT_VERCEL_TOKEN`;
 - Supabase: `USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN` → `USDIMPACT_SUPABASE_ACCESS_TOKEN`.
 
-The Resend fallback to `RESEND_API_KEY` is intentionally retired because Resend does not provide a metadata-only permission and that Production key may be write-capable. The Google Drive fallbacks to `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON` and `GOOGLE_SERVICE_ACCOUNT_JSON` are also intentionally retired: the provenance collector is designed for a dedicated service account whose OAuth scope is fixed to `drive.metadata.readonly` and whose Drive sharing is limited to the Release Control Center. Resend and Drive therefore remain `E_UNKNOWN` until their dedicated credentials are separately approved and installed. OpenAI has no fallback and remains disabled until a separate project-scoped watchdog key is installed.
+The Vercel fallback to `USDIMPACT_VERCEL_TOKEN` is intentionally retired because deployment and environment inspection should not inherit a general Production-capable credential merely to remove `UNKNOWN`. The Resend fallback to `RESEND_API_KEY` is intentionally retired because Resend does not provide a metadata-only permission and that Production key may be write-capable. The Google Drive fallbacks to `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON` and `GOOGLE_SERVICE_ACCOUNT_JSON` are also intentionally retired: the provenance collector is designed for a dedicated service account whose OAuth scope is fixed to `drive.metadata.readonly` and whose Drive sharing is limited to the Release Control Center. Vercel, Resend, and Drive therefore remain `E_UNKNOWN` until their dedicated credentials are separately approved and installed. OpenAI has no fallback and remains disabled until a separate project-scoped watchdog key is installed.
 
-These fallbacks are migration aids, not the final least-privilege state. Replace them with dedicated watchdog credentials and remove each fallback after an independently verified full run.
+The remaining Supabase fallback is a migration aid, not the final least-privilege state. Replace it with the dedicated watchdog credential and remove it after an independently verified full run.
 
 ## Google Drive provenance evidence
 
@@ -154,11 +156,13 @@ These fallbacks are migration aids, not the final least-privilege state. Replace
 
 The collector never downloads Drive files, never reads checksum or document contents, never persists Drive filenames in the evidence artifact, and never changes Drive files or sharing. A complete metadata structure can establish `PASS / B_FUNCTIONAL`; it is not proof that the checksum text equals the delivered file bytes. Byte-level provenance remains a separately governed expansion.
 
-## Credentialless Vercel source evidence
+## Vercel evidence boundary
 
 When direct Vercel API configuration is unavailable, full recertification can still inspect the exact `GITHUB_SHA` through GitHub's combined commit-status endpoint. A successful status whose context begins with `Vercel` establishes bounded evidence that Vercel accepted the exact current head. This result is classified as `B_FUNCTIONAL`, not GOLD, because it does not independently expose the Production target or environment metadata.
 
-`VERCEL-CONFIG-PRESENCE` remains `E_UNKNOWN` until a dedicated Vercel credential can inspect variable-name metadata directly. Public runtime contracts separately continue to test canonical routing, security headers, checkout, access denial, legal identity, consent, Daily freshness, and product behavior. A successful commit status must never be treated as proof that every Vercel configuration value is correct.
+When a dedicated Vercel credential is configured, the collector uses GET-only project/deployment/environment requests, the current deployment endpoint, and the current project-environment endpoint with `decrypt=false`. The variable-presence contract uses only Production variable names. Provider-returned value fields are ignored and never persisted in watchdog evidence. The collector never requests decrypted values and the workflow does not fall back to the general `USDIMPACT_VERCEL_TOKEN`.
+
+`VERCEL-CONFIG-PRESENCE` remains `E_UNKNOWN` until that dedicated Vercel credential and target identifiers are separately approved and installed. Public runtime contracts separately continue to test canonical routing, security headers, checkout, access denial, legal identity, consent, Daily freshness, and product behavior. A successful commit status must never be treated as proof that every Vercel configuration value is correct.
 
 ## Independent reviewer
 

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   buildResearchMembershipMutationPlan,
+  researchMembershipEntitlementState,
   researchMembershipEventKey,
 } from '../src/lib/research-membership-event-adapter.js';
 
@@ -27,6 +28,19 @@ const event = (overrides = {}) => ({
 });
 
 assert.equal(researchMembershipEventKey('test-provider', 'evt_123'), 'test-provider:evt_123');
+assert.deepEqual(
+  ['active', 'cancel_scheduled', 'past_due', 'cancelled', 'refunded', 'disputed', 'charged_back']
+    .map((state) => [state, researchMembershipEntitlementState(state)]),
+  [
+    ['active', 'active'],
+    ['cancel_scheduled', 'active'],
+    ['past_due', 'suspended'],
+    ['cancelled', 'revoked'],
+    ['refunded', 'refunded'],
+    ['disputed', 'suspended_dispute'],
+    ['charged_back', 'charged_back'],
+  ],
+);
 
 const scheduled = buildResearchMembershipMutationPlan({
   providerEvent: event(),
@@ -58,8 +72,14 @@ const paymentFailure = buildResearchMembershipMutationPlan({
   existingSubscription: baseSubscription,
 });
 assert.equal(paymentFailure.subscriptionPatch.state, 'past_due');
-assert.equal(paymentFailure.entitlementPatch.state, 'inactive');
+assert.equal(paymentFailure.entitlementPatch.state, 'suspended');
 assert.equal(paymentFailure.entitlementPatch.endsAt, '2026-09-06T00:00:00.000Z');
+
+const dispute = buildResearchMembershipMutationPlan({
+  providerEvent: event({ providerEventId: 'evt_dispute', eventType: 'subscription.disputed' }),
+  existingSubscription: baseSubscription,
+});
+assert.equal(dispute.entitlementPatch.state, 'suspended_dispute');
 
 const recovered = buildResearchMembershipMutationPlan({
   providerEvent: event({

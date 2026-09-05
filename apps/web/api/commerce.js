@@ -8,6 +8,10 @@ import {
   readLemonSqueezyCommerceRuntimeConfig,
   runDueLemonSqueezyReconciliation,
 } from '../src/lib/lemon-squeezy-commerce-runtime.js';
+import {
+  processResearchMembershipWebhook,
+  publicResearchMembershipWebhookError,
+} from '../src/lib/research-membership-webhook-handler.js';
 
 export const config = {
   api: {
@@ -43,8 +47,8 @@ async function readRawBody(request, maximumBytes, { allowParsedBody = true } = {
 
   // Vercel's Node.js request.body helper lazily parses application/json. Webhook
   // signatures must instead be computed over the exact bytes received from the
-  // provider, so the webhook path explicitly skips this parsed-body helper and
-  // consumes the request stream directly.
+  // provider, so webhook paths explicitly skip this parsed-body helper and
+  // consume the request stream directly.
   if (allowParsedBody) {
     if (Buffer.isBuffer(request.body)) {
       if (request.body.length > maximumBytes) throw new Error('REQUEST_BODY_TOO_LARGE');
@@ -195,6 +199,38 @@ async function handleWebhook(request, response) {
   }
 }
 
+async function handleResearchMembershipWebhook(request, response) {
+  if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
+  if (!requestHeader(request, 'content-type').toLowerCase().includes('application/json')) {
+    return sendJson(response, 415, {
+      error: 'Content type must be application/json.',
+      code: 'INVALID_CONTENT_TYPE',
+    }, { 'X-Robots-Tag': 'noindex, nofollow' });
+  }
+
+  let rawBody;
+  try {
+    rawBody = await readRawBody(request, MAX_WEBHOOK_BODY_BYTES, { allowParsedBody: false });
+  } catch {
+    return sendJson(response, 413, { error: 'Request body is too large.', code: 'REQUEST_BODY_TOO_LARGE' }, {
+      'X-Robots-Tag': 'noindex, nofollow',
+    });
+  }
+
+  try {
+    const result = await processResearchMembershipWebhook({
+      rawBody,
+      signature: requestHeader(request, 'x-signature'),
+    });
+    return sendJson(response, 200, { ok: true, ...result }, {
+      'X-Robots-Tag': 'noindex, nofollow',
+    });
+  } catch (error) {
+    const safe = publicResearchMembershipWebhookError(error);
+    return sendJson(response, safe.status, safe.payload, { 'X-Robots-Tag': 'noindex, nofollow' });
+  }
+}
+
 async function handleReconciliation(request, response) {
   if (request.method !== 'GET') return methodNotAllowed(response, 'GET');
   if (!validCronAuthorization(request, process.env)) {
@@ -228,6 +264,7 @@ export default async function handler(request, response) {
   const requestedAction = action(request);
   if (requestedAction === 'checkout') return handleCheckout(request, response);
   if (requestedAction === 'webhook') return handleWebhook(request, response);
+  if (requestedAction === 'research-membership-webhook') return handleResearchMembershipWebhook(request, response);
   if (requestedAction === 'reconcile') return handleReconciliation(request, response);
   return sendJson(response, 404, { error: 'Commerce action not found.', code: 'COMMERCE_ACTION_NOT_FOUND' }, {
     'X-Robots-Tag': 'noindex, nofollow',

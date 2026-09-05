@@ -45,6 +45,27 @@ function yamlKeyValue(line) {
   return { key: match[1] ?? match[2] ?? match[3], value: unquoteYamlScalar(match[4]) };
 }
 
+function yamlAnchorAliasToken(value) {
+  let quote = null;
+  for (let index = 0; index < value.length; index += 1) {
+    const char = value[index];
+    if (quote) {
+      if (char === quote && value[index - 1] !== '\\') quote = null;
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+    if (char !== '&' && char !== '*') continue;
+    const previous = index === 0 ? '' : value[index - 1];
+    if (previous && !/[\s,[{]/.test(previous)) continue;
+    const match = value.slice(index).match(/^[&*][A-Za-z0-9_-]+/);
+    if (match) return match[0];
+  }
+  return null;
+}
+
 function workflowPermissionScan(text) {
   const writes = new Set();
   const parseIssues = [];
@@ -98,10 +119,11 @@ function workflowTriggerScan(text) {
     const match = lines[index].match(/^(\s*)(?:"on"|'on'|on)\s*:\s*(.*)$/);
     if (!match || match[1].length !== 0) continue;
     let tail = stripYamlComment(match[2]).trim();
-    if (/^[&*][A-Za-z0-9_-]+/.test(tail)) {
+    const tailAnchorAlias = yamlAnchorAliasToken(tail);
+    if (tailAnchorAlias) {
       parseIssues.push(`line ${index + 1}: on uses a YAML anchor/alias, which the static guard does not permit.`);
       if (tail.startsWith('&')) tail = tail.replace(/^&[A-Za-z0-9_-]+\s*/, '');
-      else continue;
+      else if (tail.startsWith('*')) continue;
     }
     if (tail) {
       if (/\bpull_request_target\b/.test(unquoteYamlScalar(tail))) pullRequestTarget = true;
@@ -116,12 +138,20 @@ function workflowTriggerScan(text) {
       if (directIndent === null) directIndent = indent;
       if (indent !== directIndent) continue;
       const clean = stripYamlComment(raw).trim();
-      if (/^[&*][A-Za-z0-9_-]+/.test(clean)) {
-        parseIssues.push(`line ${cursor + 1}: on contains a YAML anchor/alias, which the static guard does not permit.`);
+      if (clean.startsWith('-')) {
+        let item = clean.slice(1).trim();
+        const itemAnchorAlias = yamlAnchorAliasToken(item);
+        if (itemAnchorAlias) {
+          parseIssues.push(`line ${cursor + 1}: on contains a YAML anchor/alias, which the static guard does not permit.`);
+          if (item.startsWith('&')) item = item.replace(/^&[A-Za-z0-9_-]+\s*/, '');
+          else continue;
+        }
+        if (unquoteYamlScalar(item) === 'pull_request_target') pullRequestTarget = true;
         continue;
       }
-      if (clean.startsWith('-')) {
-        if (unquoteYamlScalar(clean.slice(1).trim()) === 'pull_request_target') pullRequestTarget = true;
+      const cleanAnchorAlias = yamlAnchorAliasToken(clean);
+      if (cleanAnchorAlias) {
+        parseIssues.push(`line ${cursor + 1}: on contains a YAML anchor/alias, which the static guard does not permit.`);
         continue;
       }
       const entry = yamlKeyValue(clean);

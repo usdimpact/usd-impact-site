@@ -84,6 +84,23 @@ result = repositoryContracts({ workspace })[0];
 assert.equal(result.outcome, OUTCOME.FAIL);
 assert.match(result.evidence[0].trigger_parse_issues[0], /anchor\/alias/);
 
+writeWorkflow('on:\n  - push\n  - workflow_dispatch\npermissions:\n  contents: read');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.PASS);
+assert.deepEqual(result.evidence[0].trigger_parse_issues, []);
+
+writeWorkflow('on:\n  - &danger pull_request_target\n  - *danger\npermissions:\n  contents: read');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].pull_request_target_files, ['.github/workflows/quality.yml']);
+assert.ok(result.evidence[0].trigger_parse_issues.some((issue) => /anchor\/alias/.test(issue)));
+
+writeWorkflow('on: [&danger pull_request_target, *danger]\npermissions:\n  contents: read');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].pull_request_target_files, ['.github/workflows/quality.yml']);
+assert.ok(result.evidence[0].trigger_parse_issues.some((issue) => /anchor\/alias/.test(issue)));
+
 writeBaseline({ '.github/workflows/quality.yml': ['contents', 'issues'] });
 writeWorkflow('permissions:\n  contents: write');
 result = repositoryContracts({ workspace })[0];

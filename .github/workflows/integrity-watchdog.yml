@@ -70,6 +70,7 @@ jobs:
           node --check scripts/integrity-watchdog.mjs
           node scripts/test-integrity-watchdog.mjs
           node scripts/integrity-watchdog-vercel.test.mjs
+          node scripts/integrity-watchdog-supabase.test.mjs
           node scripts/integrity-watchdog-resend.test.mjs
           node scripts/integrity-watchdog-drive.test.mjs
           node scripts/integrity-watchdog-artifacts.test.mjs
@@ -96,7 +97,7 @@ jobs:
       USDIMPACT_WATCHDOG_VERCEL_TOKEN: ${{ secrets.USDIMPACT_WATCHDOG_VERCEL_TOKEN }}
       USDIMPACT_WATCHDOG_VERCEL_PROJECT_ID: ${{ vars.USDIMPACT_WATCHDOG_VERCEL_PROJECT_ID }}
       USDIMPACT_WATCHDOG_VERCEL_TEAM_ID: ${{ vars.USDIMPACT_WATCHDOG_VERCEL_TEAM_ID }}
-      USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN: ${{ secrets.USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN || secrets.USDIMPACT_SUPABASE_ACCESS_TOKEN }}
+      USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN: ${{ secrets.USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN }}
       USDIMPACT_WATCHDOG_SUPABASE_PROJECT_REF: ${{ vars.USDIMPACT_WATCHDOG_SUPABASE_PROJECT_REF }}
       USDIMPACT_WATCHDOG_RESEND_API_KEY: ${{ secrets.USDIMPACT_WATCHDOG_RESEND_API_KEY }}
       USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED: ${{ vars.USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED || 'false' }}
@@ -115,6 +116,7 @@ jobs:
         run: |
           node scripts/test-integrity-watchdog.mjs
           node scripts/integrity-watchdog-vercel.test.mjs
+          node scripts/integrity-watchdog-supabase.test.mjs
           node scripts/integrity-watchdog-resend.test.mjs
           node scripts/integrity-watchdog-drive.test.mjs
           node scripts/integrity-watchdog-artifacts.test.mjs

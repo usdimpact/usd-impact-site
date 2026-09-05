@@ -92,6 +92,7 @@ node --check scripts/integrity-watchdog-artifacts.mjs
 node --check scripts/integrity-watchdog.mjs
 node scripts/test-integrity-watchdog.mjs
 node scripts/integrity-watchdog-vercel.test.mjs
+node scripts/integrity-watchdog-supabase.test.mjs
 node scripts/integrity-watchdog-resend.test.mjs
 node scripts/integrity-watchdog-drive.test.mjs
 node scripts/integrity-watchdog-artifacts.test.mjs
@@ -119,7 +120,7 @@ The critical watchdog works with the GitHub-provided token and public routes. Fu
 | Vercel | `USDIMPACT_WATCHDOG_VERCEL_TOKEN` | Dedicated credential with the minimum read access available for the target project; no general Vercel credential fallback |
 | Vercel | `USDIMPACT_WATCHDOG_VERCEL_PROJECT_ID` | Target identifier |
 | Vercel | `USDIMPACT_WATCHDOG_VERCEL_TEAM_ID` | Target identifier |
-| Supabase | `USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN` | Management API token limited to required read scopes |
+| Supabase | `USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN` | Dedicated fine-grained PAT with `Advisors: Read` / `advisors_read`; no general Supabase credential fallback |
 | Supabase | `USDIMPACT_WATCHDOG_SUPABASE_PROJECT_REF` | Production project reference |
 | Resend | `USDIMPACT_WATCHDOG_RESEND_API_KEY` | Dedicated full-access key only after separate owner approval; never reuse the general Production sending key |
 | Resend | `USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED` | Must be exactly `true`; defaults to `false` |
@@ -130,19 +131,15 @@ The critical watchdog works with the GitHub-provided token and public routes. Fu
 
 Missing optional provider configuration is reported as `E_UNKNOWN`; it is not silently treated as healthy. Do not install a write-capable credential solely to remove an unknown result.
 
-The Supabase advisor Management API endpoint used by the first slice is experimental and deprecated. A clean response is therefore never sufficient for `PASS`; the contract remains `WARN` until direct RLS, grant, view, function, trigger, Auth, and Storage-policy evidence is independently collected.
+The Supabase Security Advisor collector calls only `GET /v1/projects/{ref}/advisors/security`. Current Supabase permissions allow a fine-grained token with `Advisors: Read` / `advisors_read` to access that endpoint, so the watchdog must use a dedicated token with only that read permission. The endpoint is experimental and deprecated. A clean response is therefore never sufficient for `PASS`; the contract remains `WARN` until direct RLS, grant, view, function, trigger, Auth, and Storage-policy evidence is independently collected.
 
 Resend currently exposes `full_access` and `sending_access` API keys, not a metadata-only read key. The collector uses only `GET /domains` and `GET /webhooks`, but a full-access credential is still write-capable. It remains blocked unless a separate owner approval is recorded through `USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED=true`. Only the dedicated `USDIMPACT_WATCHDOG_RESEND_API_KEY` is eligible; the general Production `RESEND_API_KEY` is intentionally not a fallback. Disabled webhooks do not satisfy lifecycle coverage, and webhook URLs are never persisted in watchdog evidence.
 
-## Approved temporary provider-secret fallbacks
+## Provider-secret fallback policy
 
-The September 4, 2026 provider-wiring approval allowed the watchdog to reuse selected existing repository credentials without reading, copying, printing, or changing their values. Dedicated watchdog secrets always take precedence. The only remaining temporary fallback is:
+The temporary provider-secret reuse approved on September 4, 2026 has now been fully retired from the integrity watchdog. Vercel, Supabase, Resend, and Google Drive collectors accept only their dedicated watchdog credentials. OpenAI likewise has no general credential fallback.
 
-- Supabase: `USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN` → `USDIMPACT_SUPABASE_ACCESS_TOKEN`.
-
-The Vercel fallback to `USDIMPACT_VERCEL_TOKEN` is intentionally retired because deployment and environment inspection should not inherit a general Production-capable credential merely to remove `UNKNOWN`. The Resend fallback to `RESEND_API_KEY` is intentionally retired because Resend does not provide a metadata-only permission and that Production key may be write-capable. The Google Drive fallbacks to `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON` and `GOOGLE_SERVICE_ACCOUNT_JSON` are also intentionally retired: the provenance collector is designed for a dedicated service account whose OAuth scope is fixed to `drive.metadata.readonly` and whose Drive sharing is limited to the Release Control Center. Vercel, Resend, and Drive therefore remain `E_UNKNOWN` until their dedicated credentials are separately approved and installed. OpenAI has no fallback and remains disabled until a separate project-scoped watchdog key is installed.
-
-The remaining Supabase fallback is a migration aid, not the final least-privilege state. Replace it with the dedicated watchdog credential and remove it after an independently verified full run.
+The Supabase fallback to `USDIMPACT_SUPABASE_ACCESS_TOKEN` is intentionally retired because the Security Advisor endpoint supports a narrower fine-grained `Advisors: Read` permission. Vercel does not inherit `USDIMPACT_VERCEL_TOKEN`; Resend does not inherit `RESEND_API_KEY`; Google Drive does not inherit `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON` or `GOOGLE_SERVICE_ACCOUNT_JSON`. Missing dedicated configuration remains `E_UNKNOWN` rather than borrowing a broader Production credential merely to remove uncertainty.
 
 ## Google Drive provenance evidence
 

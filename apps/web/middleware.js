@@ -4,7 +4,7 @@ import {
   canAccessQuizOrder,
   readQuizEntitlement,
 } from './src/lib/quiz-entitlement.js';
-import { decideWeeklyResearchPreviewRequest } from './src/lib/research-preview-route.js';
+import { decideResearchPreviewRequest } from './src/lib/research-preview-route.js';
 
 const normalizePath = (value) => {
   const normalized = value.replace(/\/+$/, '');
@@ -30,13 +30,14 @@ export const config = {
     '/equities/:path*',
     '/bitcoin/:path*',
     '/reports/weekly/:path*',
+    '/score/:path*',
   ],
 };
 
 export default async function learningAccessMiddleware(request) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return next();
 
-  const researchDecision = await decideWeeklyResearchPreviewRequest({ request });
+  const researchDecision = await decideResearchPreviewRequest({ request });
   if (researchDecision.action === 'redirect') {
     return Response.redirect(researchDecision.location, 302);
   }

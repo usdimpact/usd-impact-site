@@ -60,7 +60,7 @@ An exact issue or pull-request comment from a repository `OWNER`, `MEMBER`, or `
 
 - `/watchdog critical` — critical scope, fix-ready packets, no AI review;
 - `/watchdog full` — full provider scope, fix-ready packets, no AI review;
-- `/watchdog full ai` — full provider scope with the independent reviewer, only when the dedicated OpenAI key is configured.
+- `/watchdog full ai` — full provider scope with the independent reviewer, only when both the dedicated OpenAI key and an explicit approved model variable are configured.
 
 No prefix, suffix, extra argument, or command from an untrusted association is accepted. The workflow does not post a reply and retains read-only repository permissions.
 
@@ -96,6 +96,7 @@ node scripts/integrity-watchdog-supabase.test.mjs
 node scripts/integrity-watchdog-resend.test.mjs
 node scripts/integrity-watchdog-drive.test.mjs
 node scripts/integrity-watchdog-artifacts.test.mjs
+node scripts/integrity-watchdog-reviewer.test.mjs
 node scripts/integrity-watchdog-github-rulesets.test.mjs
 node -e "JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/POLICY.json', 'utf8'))"
 node -e "const i=JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/WORKFLOW_INVENTORY.json', 'utf8')); if(i.workflows.length !== 33) throw new Error('Incomplete inventory')"
@@ -116,7 +117,7 @@ The critical watchdog works with the GitHub-provided token and public routes. Fu
 | Provider | Name | Required access |
 |---|---|---|
 | OpenAI | `USDIMPACT_WATCHDOG_OPENAI_API_KEY` | Project-scoped key for independent review only |
-| OpenAI | `USDIMPACT_WATCHDOG_OPENAI_MODEL` | Optional; defaults to `gpt-5.6-terra` |
+| OpenAI | `USDIMPACT_WATCHDOG_OPENAI_MODEL` | Explicit approved Responses/Structured-Outputs-capable model; required when AI review is enabled. `gpt-5.6-terra` is the current recommended bounded-review choice, not a silent code default. |
 | Vercel | `USDIMPACT_WATCHDOG_VERCEL_TOKEN` | Dedicated credential with the minimum read access available for the target project; no general Vercel credential fallback |
 | Vercel | `USDIMPACT_WATCHDOG_VERCEL_PROJECT_ID` | Target identifier |
 | Vercel | `USDIMPACT_WATCHDOG_VERCEL_TEAM_ID` | Target identifier |
@@ -165,7 +166,9 @@ When a dedicated Vercel credential is configured, the collector uses GET-only pr
 
 The OpenAI reviewer is secondary to deterministic evidence. It receives only normalized, redacted findings and proposed fix packets. It may confirm, challenge, or mark evidence insufficient. It cannot change deterministic contract outcomes, approve its own repair, or call write tools.
 
-`gpt-5.6-terra` is used as the default reviewer model because the reviewer is a bounded structured-analysis workload. The model can be changed through the repository variable without changing the secret or code.
+Current OpenAI documentation confirms `gpt-5.6-terra` supports the Responses API and Structured Outputs and is appropriate for intelligence/cost-balanced workloads. The watchdog nevertheless has no silent model default: AI review remains `E_UNKNOWN` unless both the dedicated project-scoped key and `USDIMPACT_WATCHDOG_OPENAI_MODEL` are explicitly configured. This prevents unreviewed model substitution or drift from being hidden by code defaults.
+
+The reviewer uses `POST /v1/responses` with `store: false`, an explicit strict JSON schema, `tools: []`, `tool_choice: none`, and no previous response/conversation state. A refusal, incomplete response, malformed envelope, or invalid structured assessment remains `E_UNKNOWN`; it never upgrades deterministic evidence.
 
 ## Expansion queue
 

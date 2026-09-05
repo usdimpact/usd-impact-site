@@ -3,6 +3,7 @@ import path from 'node:path';
 import { SCHEMA_VERSION, assertSafeArtifact, compareResults, fixPacket, health, register, sanitize, sha256 } from './integrity-watchdog-policy.mjs';
 import { driveContracts, githubContracts, publicContracts, repositoryContracts, resendContracts, supabaseContracts, vercelContracts } from './integrity-watchdog-collectors.mjs';
 import { independentReview } from './integrity-watchdog-reviewer.mjs';
+import { writeEvidenceArtifacts } from './integrity-watchdog-artifacts.mjs';
 
 const CANONICAL_BASE_URL = 'https://www.usd-impact.com';
 const APEX_BASE_URL = 'https://usd-impact.com';
@@ -35,7 +36,6 @@ function args(argv) {
 }
 
 function readJson(file) { return JSON.parse(fs.readFileSync(file, 'utf8')); }
-function writeJson(file, value) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`); }
 function classificationCounts(entries) { const counts = {}; for (const entry of entries) counts[entry.current_classification] = (counts[entry.current_classification] || 0) + 1; return counts; }
 function escape(value) { return String(value ?? '').replaceAll('|', '\\|').replaceAll('\n', ' '); }
 function aiEnabled(mode) { return mode === 'true' || (mode === 'auto' && Boolean(process.env.USDIMPACT_WATCHDOG_OPENAI_API_KEY)); }
@@ -175,20 +175,16 @@ async function main() {
   });
   assertSafeArtifact(report);
 
-  fs.rmSync(config.outputDir, { recursive: true, force: true });
-  fs.mkdirSync(path.join(config.outputDir, 'fix-ready'), { recursive: true });
-  writeJson(path.join(config.outputDir, 'report.json'), report);
-  writeJson(path.join(config.outputDir, 'workflow-register.json'), workflowRegister);
-  writeJson(path.join(config.outputDir, 'evidence-manifest.json'), {
-    schema_version: SCHEMA_VERSION,
-    generated_at: generatedAt,
-    report_sha256: sha256(JSON.stringify(report)),
-    contract_evidence_digests: Object.fromEntries(results.map((entry) => [entry.id, entry.evidence_digest])),
-    secret_values_persisted: false,
-  });
-  for (const packet of packets) writeJson(path.join(config.outputDir, 'fix-ready', `${packet.id}.json`), packet);
   const reportMarkdown = markdown(report);
-  fs.writeFileSync(path.join(config.outputDir, 'report.md'), reportMarkdown);
+  writeEvidenceArtifacts({
+    outputDir: config.outputDir,
+    report,
+    workflowRegister,
+    results,
+    packets,
+    generatedAt,
+    reportMarkdown,
+  });
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, reportMarkdown);
   console.log(`USD Impact watchdog: ${report.health.status}; ${report.health.release_gate}; ${results.length} contracts; ${packets.length} fix-ready packets.`);
   if (report.health.status === 'RED') process.exitCode = 2;

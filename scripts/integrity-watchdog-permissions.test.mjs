@@ -18,15 +18,18 @@ const writeBaseline = (expected) => fs.writeFileSync(
 );
 const workflowPath = path.join(workflowDir, 'quality.yml');
 const pinnedAction = 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1';
+const writeWorkflow = (body) => fs.writeFileSync(workflowPath, `${body}\njobs:\n  test:\n    steps:\n      - uses: ${pinnedAction}\n`);
 
 writeBaseline({});
-fs.writeFileSync(workflowPath, `permissions:\n  contents: read\njobs:\n  test:\n    steps:\n      - uses: ${pinnedAction}\n`);
+writeWorkflow('permissions:\n  contents: read');
 let result = repositoryContracts({ workspace })[0];
 assert.equal(result.outcome, OUTCOME.PASS);
 assert.equal(result.evidence[0].permission_baseline_enforced, true);
 assert.deepEqual(result.evidence[0].workflow_write_permissions, {});
+assert.deepEqual(result.evidence[0].permission_parse_issues, []);
+assert.deepEqual(result.evidence[0].trigger_parse_issues, []);
 
-fs.writeFileSync(workflowPath, `permissions:\n  contents: write\njobs:\n  test:\n    steps:\n      - uses: ${pinnedAction}\n`);
+writeWorkflow('permissions:\n  contents: write');
 result = repositoryContracts({ workspace })[0];
 assert.equal(result.outcome, OUTCOME.FAIL);
 assert.deepEqual(result.evidence[0].unexpected_write_permissions, ['.github/workflows/quality.yml :: contents']);
@@ -37,7 +40,52 @@ assert.equal(result.outcome, OUTCOME.PASS);
 assert.deepEqual(result.evidence[0].unexpected_write_permissions, []);
 assert.deepEqual(result.evidence[0].missing_expected_write_permissions, []);
 
+writeWorkflow('permissions:\n  "contents": "write"');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.PASS);
+assert.deepEqual(result.evidence[0].workflow_write_permissions, { '.github/workflows/quality.yml': ['contents'] });
+
+writeBaseline({});
+writeWorkflow('permissions: "write-all"');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].write_all_files, ['.github/workflows/quality.yml']);
+
+writeBaseline({ '.github/workflows/quality.yml': ['contents'] });
+writeWorkflow('permissions: &guarded\n  contents: write');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.match(result.evidence[0].permission_parse_issues[0], /anchor\/alias/);
+assert.deepEqual(result.evidence[0].workflow_write_permissions, { '.github/workflows/quality.yml': ['contents'] });
+
+writeBaseline({});
+writeWorkflow('permissions: *guarded');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.match(result.evidence[0].permission_parse_issues[0], /anchor\/alias/);
+
+writeWorkflow('on: [push, pull_request_target]\npermissions:\n  contents: read');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].pull_request_target_files, ['.github/workflows/quality.yml']);
+
+writeWorkflow('on: "pull_request_target"\npermissions:\n  contents: read');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].pull_request_target_files, ['.github/workflows/quality.yml']);
+
+writeWorkflow('on:\n  "pull_request_target":\npermissions:\n  contents: read');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].pull_request_target_files, ['.github/workflows/quality.yml']);
+
+writeWorkflow('on: *events\npermissions:\n  contents: read');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.match(result.evidence[0].trigger_parse_issues[0], /anchor\/alias/);
+
 writeBaseline({ '.github/workflows/quality.yml': ['contents', 'issues'] });
+writeWorkflow('permissions:\n  contents: write');
 result = repositoryContracts({ workspace })[0];
 assert.equal(result.outcome, OUTCOME.FAIL);
 assert.deepEqual(result.evidence[0].missing_expected_write_permissions, ['.github/workflows/quality.yml :: issues']);

@@ -101,6 +101,31 @@ assert.equal(result.outcome, OUTCOME.FAIL);
 assert.deepEqual(result.evidence[0].pull_request_target_files, ['.github/workflows/quality.yml']);
 assert.ok(result.evidence[0].trigger_parse_issues.some((issue) => /anchor\/alias/.test(issue)));
 
+writeWorkflow('on: [push, workflow_dispatch]\npermissions:\n  contents: read');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.PASS);
+assert.deepEqual(result.evidence[0].trigger_parse_issues, []);
+
+writeWorkflow('on: [\n  push,\n  pull_request_target\n]\npermissions:\n  contents: read');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.ok(result.evidence[0].trigger_parse_issues.some((issue) => /multiline YAML flow sequence/.test(issue)));
+
+writeWorkflow('on: {\n  push: null,\n  pull_request_target: null\n}\npermissions:\n  contents: read');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.ok(result.evidence[0].trigger_parse_issues.some((issue) => /multiline YAML flow mapping/.test(issue)));
+
+writeWorkflow('on: >-\n  pull_request_target\npermissions:\n  contents: read');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.ok(result.evidence[0].trigger_parse_issues.some((issue) => /YAML block scalar/.test(issue)));
+
+writeWorkflow('on: |-\n  pull_request_target\npermissions:\n  contents: read');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.ok(result.evidence[0].trigger_parse_issues.some((issue) => /YAML block scalar/.test(issue)));
+
 writeBaseline({ '.github/workflows/quality.yml': ['contents', 'issues'] });
 writeWorkflow('permissions:\n  contents: write');
 result = repositoryContracts({ workspace })[0];

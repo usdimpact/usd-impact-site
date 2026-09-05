@@ -66,6 +66,16 @@ function yamlAnchorAliasToken(value) {
   return null;
 }
 
+function yamlMultilineTailIssue(value) {
+  const tail = value.trim();
+  if (/^[>|][0-9+-]*$/.test(tail)) return 'a YAML block scalar';
+  const openSquare = tail.indexOf('[');
+  if (openSquare >= 0 && tail.indexOf(']', openSquare + 1) < 0) return 'a multiline YAML flow sequence';
+  const openCurly = tail.indexOf('{');
+  if (openCurly >= 0 && tail.indexOf('}', openCurly + 1) < 0) return 'a multiline YAML flow mapping';
+  return null;
+}
+
 function workflowPermissionScan(text) {
   const writes = new Set();
   const parseIssues = [];
@@ -124,6 +134,11 @@ function workflowTriggerScan(text) {
       parseIssues.push(`line ${index + 1}: on uses a YAML anchor/alias, which the static guard does not permit.`);
       if (tail.startsWith('&')) tail = tail.replace(/^&[A-Za-z0-9_-]+\s*/, '');
       else if (tail.startsWith('*')) continue;
+    }
+    const multilineTailIssue = yamlMultilineTailIssue(tail);
+    if (multilineTailIssue) {
+      parseIssues.push(`line ${index + 1}: on uses ${multilineTailIssue}, which the static guard does not permit.`);
+      continue;
     }
     if (tail) {
       if (/\bpull_request_target\b/.test(unquoteYamlScalar(tail))) pullRequestTarget = true;

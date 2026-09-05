@@ -117,3 +117,5 @@ try {
     else process.env[key] = value;
   }
 }
+
+await import('./test-lemon-squeezy-research-membership-adapter.mjs');

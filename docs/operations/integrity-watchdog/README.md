@@ -90,6 +90,7 @@ node --check scripts/integrity-watchdog-collectors.mjs
 node --check scripts/integrity-watchdog-reviewer.mjs
 node --check scripts/integrity-watchdog.mjs
 node scripts/test-integrity-watchdog.mjs
+node scripts/integrity-watchdog-resend.test.mjs
 node -e "JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/POLICY.json', 'utf8'))"
 node -e "const i=JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/WORKFLOW_INVENTORY.json', 'utf8')); if(i.workflows.length !== 33) throw new Error('Incomplete inventory')"
 ```
@@ -115,9 +116,10 @@ The critical watchdog works with the GitHub-provided token and public routes. Fu
 | Vercel | `USDIMPACT_WATCHDOG_VERCEL_TEAM_ID` | Target identifier |
 | Supabase | `USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN` | Management API token limited to required read scopes |
 | Supabase | `USDIMPACT_WATCHDOG_SUPABASE_PROJECT_REF` | Production project reference |
-| Resend | `USDIMPACT_WATCHDOG_RESEND_API_KEY` | Resend currently has no metadata-only API-key permission; do not configure without separate approval |
-| Resend | `USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED` | Must be exactly `true` before the GET-only collector may use an approved full-access key |
-| Resend | `USDIMPACT_WATCHDOG_RESEND_DOMAIN` | Optional; defaults to `usd-impact.com` |
+| Resend | `USDIMPACT_WATCHDOG_RESEND_API_KEY` | Dedicated full-access key only after separate owner approval; never reuse the general Production sending key |
+| Resend | `USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED` | Must be exactly `true`; defaults to `false` |
+| Resend | `USDIMPACT_WATCHDOG_RESEND_DOMAIN` | Optional; defaults to verified `updates.usd-impact.com` |
+| Resend | `USDIMPACT_WATCHDOG_RESEND_WEBHOOK_ENDPOINT` | Optional; defaults to `https://www.usd-impact.com/api/resend-webhook` and scopes lifecycle evidence to that enabled endpoint |
 | Google Drive | `USDIMPACT_WATCHDOG_GOOGLE_SERVICE_ACCOUNT_JSON` | Service account limited to `drive.metadata.readonly` |
 | Google Drive | `USDIMPACT_WATCHDOG_GOOGLE_DRIVE_ROOT_FOLDER_ID` | Canonical folder shared read-only with that account |
 
@@ -125,18 +127,17 @@ Missing optional provider configuration is reported as `E_UNKNOWN`; it is not si
 
 The Supabase advisor Management API endpoint used by the first slice is experimental and deprecated. A clean response is therefore never sufficient for `PASS`; the contract remains `WARN` until direct RLS, grant, view, function, trigger, Auth, and Storage-policy evidence is independently collected.
 
-Resend currently exposes `full_access` and `sending_access` API keys, not a metadata-only read key. The collector uses only `GET /domains` and `GET /webhooks`, but a full-access credential is still write-capable. It remains blocked unless a separate owner approval is recorded through `USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED=true`.
+Resend currently exposes `full_access` and `sending_access` API keys, not a metadata-only read key. The collector uses only `GET /domains` and `GET /webhooks`, but a full-access credential is still write-capable. It remains blocked unless a separate owner approval is recorded through `USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED=true`. Only the dedicated `USDIMPACT_WATCHDOG_RESEND_API_KEY` is eligible; the general Production `RESEND_API_KEY` is intentionally not a fallback. Disabled webhooks do not satisfy lifecycle coverage, and webhook URLs are never persisted in watchdog evidence.
 
 ## Approved temporary provider-secret fallbacks
 
-The September 4, 2026 provider-wiring approval allows the watchdog to reuse existing repository credentials without reading, copying, printing, or changing their values. Dedicated watchdog secrets always take precedence. The temporary fallbacks are:
+The September 4, 2026 provider-wiring approval allowed the watchdog to reuse selected existing repository credentials without reading, copying, printing, or changing their values. Dedicated watchdog secrets always take precedence. The remaining temporary fallbacks are:
 
 - Vercel: `USDIMPACT_WATCHDOG_VERCEL_TOKEN` → `USDIMPACT_VERCEL_TOKEN`;
 - Supabase: `USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN` → `USDIMPACT_SUPABASE_ACCESS_TOKEN`;
-- Resend: `USDIMPACT_WATCHDOG_RESEND_API_KEY` → `RESEND_API_KEY`;
 - Google Drive: `USDIMPACT_WATCHDOG_GOOGLE_SERVICE_ACCOUNT_JSON` → `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON` → `GOOGLE_SERVICE_ACCOUNT_JSON`.
 
-This approval enables the Resend collector's existing GET-only path when a fallback key is present. The code still rejects all non-GET Resend requests and never sends email or mutates Resend state. The Google OAuth request remains fixed to `drive.metadata.readonly`. OpenAI has no fallback and remains disabled until a separate project-scoped watchdog key is installed.
+The Resend fallback to `RESEND_API_KEY` is intentionally retired because Resend does not provide a metadata-only permission and that Production key may be write-capable. Resend therefore remains `E_UNKNOWN` until a dedicated credential is separately approved and installed. The Google OAuth request remains fixed to `drive.metadata.readonly`. OpenAI has no fallback and remains disabled until a separate project-scoped watchdog key is installed.
 
 These fallbacks are migration aids, not the final least-privilege state. Replace them with dedicated watchdog credentials and remove each fallback after an independently verified full run.
 

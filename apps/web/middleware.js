@@ -30,6 +30,7 @@ export const config = {
     '/equities/:path*',
     '/bitcoin/:path*',
     '/reports/weekly/:path*',
+    '/reports/monthly/:path*',
     '/score/:path*',
   ],
 };

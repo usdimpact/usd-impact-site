@@ -51,12 +51,16 @@ function validReviewShape(review) {
   );
 }
 
+export function reviewerConfigured(env = process.env) {
+  return Boolean(env.USDIMPACT_WATCHDOG_OPENAI_API_KEY && env.USDIMPACT_WATCHDOG_OPENAI_MODEL);
+}
+
 export async function independentReview({ fetchImpl = globalThis.fetch, env = process.env, results = [], projectSummary = {}, fixReadyPackets = [], enabled = false } = {}) {
   const observedAt = new Date().toISOString();
   if (!enabled) return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome: OUTCOME.SKIP, summary: 'Independent AI review was not requested for this run.', observedAt, evidence: [{ id: 'OPENAI-REVIEW-MODE', source: 'openai', enabled: false }], material: false });
   const apiKey = env.USDIMPACT_WATCHDOG_OPENAI_API_KEY || '';
   const model = env.USDIMPACT_WATCHDOG_OPENAI_MODEL || '';
-  if (!apiKey || !model) return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome: OUTCOME.UNKNOWN, summary: 'Independent AI review was requested, but its dedicated OpenAI key and explicit reviewer model are not both configured.', observedAt, evidence: [{ id: 'OPENAI-REVIEW-CONFIG', source: 'environment', configured: false, api_key_configured: Boolean(apiKey), model_configured: Boolean(model), required_environment_names: ['USDIMPACT_WATCHDOG_OPENAI_API_KEY', 'USDIMPACT_WATCHDOG_OPENAI_MODEL'] }], material: false, remediation: { proposed_changes: ['Install a project-scoped key and explicitly configure an approved reviewer model in the approved secret/variable stores.'], prohibited_actions: ['Do not print, commit, summarize, or expose the key value.', 'Do not silently substitute a model when the configured reviewer model is absent.'] } });
+  if (!reviewerConfigured(env)) return result({ id: 'INTEGRITY-INDEPENDENT-REVIEW', workflowId: 'WATCHDOG-CROSS-01', title: 'Independent integrity review', domain: 'openai', severity: SEVERITY.P2, outcome: OUTCOME.UNKNOWN, summary: 'Independent AI review was requested, but its dedicated OpenAI key and explicit reviewer model are not both configured.', observedAt, evidence: [{ id: 'OPENAI-REVIEW-CONFIG', source: 'environment', configured: false, api_key_configured: Boolean(apiKey), model_configured: Boolean(model), required_environment_names: ['USDIMPACT_WATCHDOG_OPENAI_API_KEY', 'USDIMPACT_WATCHDOG_OPENAI_MODEL'] }], material: false, remediation: { proposed_changes: ['Install a project-scoped key and explicitly configure an approved reviewer model in the approved secret/variable stores.'], prohibited_actions: ['Do not print, commit, summarize, or expose the key value.', 'Do not silently substitute a model when the configured reviewer model is absent.'] } });
 
   const input = sanitize({
     project_summary: projectSummary,

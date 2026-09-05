@@ -1,13 +1,22 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { independentReview } from './integrity-watchdog-reviewer.mjs';
+import { independentReview, reviewerConfigured } from './integrity-watchdog-reviewer.mjs';
 
 const reply = (body, status = 200, headers = {}) => new Response(body, { status, headers });
 const workflow = fs.readFileSync(new URL('../.github/workflows/integrity-watchdog.yml', import.meta.url), 'utf8');
+const runner = fs.readFileSync(new URL('./integrity-watchdog.mjs', import.meta.url), 'utf8');
 
 assert.match(workflow, /USDIMPACT_WATCHDOG_OPENAI_API_KEY: \$\{\{ secrets\.USDIMPACT_WATCHDOG_OPENAI_API_KEY \}\}/);
 assert.match(workflow, /USDIMPACT_WATCHDOG_OPENAI_MODEL: \$\{\{ vars\.USDIMPACT_WATCHDOG_OPENAI_MODEL \}\}/);
 assert.doesNotMatch(workflow, /OPENAI_API_KEY[^\n]*\|\|/);
+assert.match(runner, /mode === 'auto' && reviewerConfigured\(\)/);
+assert.match(runner, /openai_reviewer: reviewerConfigured\(\)/);
+
+assert.equal(reviewerConfigured({}), false);
+assert.equal(reviewerConfigured({ OPENAI_API_KEY: 'general-key-must-not-be-used', USDIMPACT_WATCHDOG_OPENAI_MODEL: 'gpt-5.6-terra' }), false);
+assert.equal(reviewerConfigured({ USDIMPACT_WATCHDOG_OPENAI_API_KEY: 'dedicated-key-without-model' }), false);
+assert.equal(reviewerConfigured({ USDIMPACT_WATCHDOG_OPENAI_MODEL: 'gpt-5.6-terra' }), false);
+assert.equal(reviewerConfigured({ USDIMPACT_WATCHDOG_OPENAI_API_KEY: 'dedicated-key', USDIMPACT_WATCHDOG_OPENAI_MODEL: 'gpt-5.6-terra' }), true);
 
 for (const env of [
   { OPENAI_API_KEY: 'general-key-must-not-be-used', USDIMPACT_WATCHDOG_OPENAI_MODEL: 'gpt-5.6-terra' },

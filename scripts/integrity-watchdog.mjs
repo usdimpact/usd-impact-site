@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { SCHEMA_VERSION, assertSafeArtifact, compareResults, fixPacket, health, register, sanitize, sha256 } from './integrity-watchdog-policy.mjs';
 import { driveContracts, githubContracts, publicContracts, repositoryContracts, resendContracts, supabaseContracts, vercelContracts } from './integrity-watchdog-collectors.mjs';
-import { independentReview } from './integrity-watchdog-reviewer.mjs';
+import { independentReview, reviewerConfigured } from './integrity-watchdog-reviewer.mjs';
 import { writeEvidenceArtifacts } from './integrity-watchdog-artifacts.mjs';
 
 const CANONICAL_BASE_URL = 'https://www.usd-impact.com';
@@ -38,7 +38,7 @@ function args(argv) {
 function readJson(file) { return JSON.parse(fs.readFileSync(file, 'utf8')); }
 function classificationCounts(entries) { const counts = {}; for (const entry of entries) counts[entry.current_classification] = (counts[entry.current_classification] || 0) + 1; return counts; }
 function escape(value) { return String(value ?? '').replaceAll('|', '\\|').replaceAll('\n', ' '); }
-function aiEnabled(mode) { return mode === 'true' || (mode === 'auto' && Boolean(process.env.USDIMPACT_WATCHDOG_OPENAI_API_KEY)); }
+function aiEnabled(mode) { return mode === 'true' || (mode === 'auto' && reviewerConfigured()); }
 
 function assertCanonicalTargets(policy) {
   const actual = {
@@ -159,7 +159,7 @@ async function main() {
       resend_api_key_present: resendKeyPresent,
       resend_full_access_approved: resendFullAccessApproved,
       google_drive: Boolean(process.env.USDIMPACT_WATCHDOG_GOOGLE_SERVICE_ACCOUNT_JSON),
-      openai_reviewer: Boolean(process.env.USDIMPACT_WATCHDOG_OPENAI_API_KEY),
+      openai_reviewer: reviewerConfigured(),
     },
     safety: {
       external_writes_performed: false,

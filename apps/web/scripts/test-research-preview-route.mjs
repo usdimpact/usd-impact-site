@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   decideResearchPreviewRequest,
   decideWeeklyResearchPreviewRequest,
+  isMonthlyResearchPreviewPath,
   isWeeklyResearchPreviewPath,
   isWeeklyScoreResearchPreviewPath,
   researchPreviewSurfaceForPath,
@@ -14,14 +15,17 @@ const production = { VERCEL_ENV: 'production' };
 
 assert.equal(isWeeklyResearchPreviewPath('/reports/weekly/2026-08-28'), true);
 assert.equal(isWeeklyResearchPreviewPath('/reports/'), false);
+assert.equal(isMonthlyResearchPreviewPath('/reports/monthly/2026-08-21'), true);
+assert.equal(isMonthlyResearchPreviewPath('/reports/'), false);
 assert.equal(isWeeklyScoreResearchPreviewPath('/score'), true);
 assert.equal(isWeeklyScoreResearchPreviewPath('/score/'), true);
 assert.equal(isWeeklyScoreResearchPreviewPath('/score/history'), false);
 assert.equal(researchPreviewSurfaceForPath('/reports/weekly/2026-08-28'), RESEARCH_ACCESS_SURFACES.WEEKLY_REPORT);
+assert.equal(researchPreviewSurfaceForPath('/reports/monthly/2026-08-21'), RESEARCH_ACCESS_SURFACES.MONTHLY_REPORT);
 assert.equal(researchPreviewSurfaceForPath('/score/'), RESEARCH_ACCESS_SURFACES.WEEKLY_SCORE);
 assert.equal(researchPreviewSurfaceForPath('/news/'), null);
 
-for (const protectedPath of ['/reports/weekly/2026-08-28', '/score/']) {
+for (const protectedPath of ['/reports/weekly/2026-08-28', '/reports/monthly/2026-08-21', '/score/']) {
   const prodDecision = await decideResearchPreviewRequest({ request: request(protectedPath), environment: production });
   assert.equal(prodDecision.action, 'allow');
   assert.equal(prodDecision.reason, 'preview-gate-inactive');
@@ -90,4 +94,4 @@ const legacyAlias = await decideWeeklyResearchPreviewRequest({
 });
 assert.equal(legacyAlias.action, 'allow');
 
-console.log('Research Preview route guard matrix passed for Weekly Reports and Weekly Score.');
+console.log('Research Preview route guard matrix passed for Weekly Reports, Monthly Reports, and Weekly Score.');

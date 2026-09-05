@@ -6,6 +6,16 @@ import {
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const ENTITLEMENT_STATE_BY_SUBSCRIPTION_STATE = Object.freeze({
+  active: 'active',
+  cancel_scheduled: 'active',
+  past_due: 'suspended',
+  cancelled: 'revoked',
+  refunded: 'refunded',
+  disputed: 'suspended_dispute',
+  charged_back: 'charged_back',
+});
+
 function text(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -33,6 +43,12 @@ export function researchMembershipEventKey(provider, providerEventId) {
   const normalizedEventId = text(providerEventId);
   if (!normalizedProvider || !normalizedEventId) throw new TypeError('provider and providerEventId are required.');
   return `${normalizedProvider}:${normalizedEventId}`;
+}
+
+export function researchMembershipEntitlementState(subscriptionState) {
+  const state = ENTITLEMENT_STATE_BY_SUBSCRIPTION_STATE[subscriptionState];
+  if (!state) throw new TypeError('Subscription state does not map to a persisted entitlement state.');
+  return state;
 }
 
 export function buildResearchMembershipMutationPlan({
@@ -72,8 +88,8 @@ export function buildResearchMembershipMutationPlan({
   const entitlement = researchMembershipEntitlementDecision(event.toState);
   const entitlementPatch = Object.freeze({
     productId: RESEARCH_MEMBERSHIP_PRODUCT_ID,
-    state: entitlement.entitled ? 'active' : 'inactive',
-    startsAt: entitlement.entitled ? event.currentPeriodStart : null,
+    state: researchMembershipEntitlementState(event.toState),
+    startsAt: entitlement.entitled ? (event.currentPeriodStart || event.occurredAt) : null,
     endsAt: entitlement.entitled ? event.currentPeriodEnd : event.occurredAt,
   });
 

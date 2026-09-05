@@ -119,3 +119,4 @@ try {
 }
 
 await import('./test-lemon-squeezy-research-membership-adapter.mjs');
+await import('./test-research-membership-webhook-execution.mjs');

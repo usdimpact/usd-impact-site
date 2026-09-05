@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
-import handler from '../api/research-membership-webhook.js';
+import handler from '../api/commerce.js';
 import { processResearchMembershipWebhook } from '../src/lib/research-membership-webhook-handler.js';
 
 const environment = {
@@ -126,7 +126,7 @@ try {
   let parsedBodyAccesses = 0;
   const request = {
     method: 'POST',
-    url: '/api/research-membership-webhook',
+    url: '/api/commerce?action=research-membership-webhook',
     headers: { 'content-type': 'application/json', 'x-signature': '0'.repeat(64) },
     get body() { parsedBodyAccesses += 1; return payload; },
     async *[Symbol.asyncIterator]() { yield rawBody; },

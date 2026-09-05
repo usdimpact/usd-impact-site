@@ -91,6 +91,8 @@ node --check scripts/integrity-watchdog-reviewer.mjs
 node --check scripts/integrity-watchdog.mjs
 node scripts/test-integrity-watchdog.mjs
 node scripts/integrity-watchdog-resend.test.mjs
+node scripts/integrity-watchdog-drive.test.mjs
+node scripts/integrity-watchdog-github-rulesets.test.mjs
 node -e "JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/POLICY.json', 'utf8'))"
 node -e "const i=JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/WORKFLOW_INVENTORY.json', 'utf8')); if(i.workflows.length !== 33) throw new Error('Incomplete inventory')"
 ```
@@ -120,8 +122,8 @@ The critical watchdog works with the GitHub-provided token and public routes. Fu
 | Resend | `USDIMPACT_WATCHDOG_RESEND_FULL_ACCESS_APPROVED` | Must be exactly `true`; defaults to `false` |
 | Resend | `USDIMPACT_WATCHDOG_RESEND_DOMAIN` | Optional; defaults to verified `updates.usd-impact.com` |
 | Resend | `USDIMPACT_WATCHDOG_RESEND_WEBHOOK_ENDPOINT` | Optional; defaults to `https://www.usd-impact.com/api/resend-webhook` and scopes lifecycle evidence to that enabled endpoint |
-| Google Drive | `USDIMPACT_WATCHDOG_GOOGLE_SERVICE_ACCOUNT_JSON` | Service account limited to `drive.metadata.readonly` |
-| Google Drive | `USDIMPACT_WATCHDOG_GOOGLE_DRIVE_ROOT_FOLDER_ID` | Canonical folder shared read-only with that account |
+| Google Drive | `USDIMPACT_WATCHDOG_GOOGLE_SERVICE_ACCOUNT_JSON` | Dedicated service account limited to `drive.metadata.readonly`; no general Google credential fallback |
+| Google Drive | `USDIMPACT_WATCHDOG_GOOGLE_DRIVE_ROOT_FOLDER_ID` | Exact `USD Impact — Release Control Center` folder shared read-only with that account |
 
 Missing optional provider configuration is reported as `E_UNKNOWN`; it is not silently treated as healthy. Do not install a write-capable credential solely to remove an unknown result.
 
@@ -134,12 +136,23 @@ Resend currently exposes `full_access` and `sending_access` API keys, not a meta
 The September 4, 2026 provider-wiring approval allowed the watchdog to reuse selected existing repository credentials without reading, copying, printing, or changing their values. Dedicated watchdog secrets always take precedence. The remaining temporary fallbacks are:
 
 - Vercel: `USDIMPACT_WATCHDOG_VERCEL_TOKEN` → `USDIMPACT_VERCEL_TOKEN`;
-- Supabase: `USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN` → `USDIMPACT_SUPABASE_ACCESS_TOKEN`;
-- Google Drive: `USDIMPACT_WATCHDOG_GOOGLE_SERVICE_ACCOUNT_JSON` → `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON` → `GOOGLE_SERVICE_ACCOUNT_JSON`.
+- Supabase: `USDIMPACT_WATCHDOG_SUPABASE_ACCESS_TOKEN` → `USDIMPACT_SUPABASE_ACCESS_TOKEN`.
 
-The Resend fallback to `RESEND_API_KEY` is intentionally retired because Resend does not provide a metadata-only permission and that Production key may be write-capable. Resend therefore remains `E_UNKNOWN` until a dedicated credential is separately approved and installed. The Google OAuth request remains fixed to `drive.metadata.readonly`. OpenAI has no fallback and remains disabled until a separate project-scoped watchdog key is installed.
+The Resend fallback to `RESEND_API_KEY` is intentionally retired because Resend does not provide a metadata-only permission and that Production key may be write-capable. The Google Drive fallbacks to `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON` and `GOOGLE_SERVICE_ACCOUNT_JSON` are also intentionally retired: the provenance collector is designed for a dedicated service account whose OAuth scope is fixed to `drive.metadata.readonly` and whose Drive sharing is limited to the Release Control Center. Resend and Drive therefore remain `E_UNKNOWN` until their dedicated credentials are separately approved and installed. OpenAI has no fallback and remains disabled until a separate project-scoped watchdog key is installed.
 
 These fallbacks are migration aids, not the final least-privilege state. Replace them with dedicated watchdog credentials and remove each fallback after an independently verified full run.
+
+## Google Drive provenance evidence
+
+`DRIVE-SOURCE-OF-TRUTH` is intentionally metadata-only. When the dedicated service account and Release Control Center folder ID are configured, the collector:
+
+- verifies that the configured root is exactly `USD Impact — Release Control Center`;
+- locates exactly one `01_FINAL_BOOK_CURRENT` folder and one `09_QA_CHECKSUMS` folder;
+- verifies unique metadata for the accepted Edition 1.3 Candidate 2 PDF, its Candidate 2 SHA-256 record, and its owner-acceptance record in the current-book folder;
+- verifies that the QA folder exposes SHA-256 marker metadata and at least one checksum-manifest CSV;
+- records only bounded counts, timestamps, booleans, and SHA-256 digests of Drive item IDs.
+
+The collector never downloads Drive files, never reads checksum or document contents, never persists Drive filenames in the evidence artifact, and never changes Drive files or sharing. A complete metadata structure can establish `PASS / B_FUNCTIONAL`; it is not proof that the checksum text equals the delivered file bytes. Byte-level provenance remains a separately governed expansion.
 
 ## Credentialless Vercel source evidence
 
@@ -162,7 +175,7 @@ The first slice deliberately retains these explicit gaps rather than simulating 
 3. Cloudflare R2 and Stream object, caption, manifest, and token-boundary reconciliation;
 4. HeyGen source-to-delivered-video provenance where still relevant;
 5. Resend delivery-event-to-Supabase-ledger reconciliation and latency SLOs;
-6. Drive revision-to-repository-to-public-output manifests;
+6. Drive byte-level revision-to-repository-to-public-output manifests beyond metadata-only provenance;
 7. persistent deduplicated incident history and repeated-failure thresholds;
 8. browser-based authentication, consent-network, checkout, and accessibility verification;
 9. complete Score release recomputation and independent replication execution.

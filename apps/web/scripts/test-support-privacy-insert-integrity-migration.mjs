@@ -9,8 +9,13 @@ const researchPersistenceMigrationUrl = new URL(
   '../../../supabase/migrations/20260906004500_research_membership_transition_persistence.sql',
   import.meta.url,
 );
+const researchServiceRoleGrantsMigrationUrl = new URL(
+  '../../../supabase/migrations/20260906180500_research_membership_service_role_grants.sql',
+  import.meta.url,
+);
 const sql = await readFile(migrationUrl, 'utf8');
 const researchPersistenceSql = await readFile(researchPersistenceMigrationUrl, 'utf8');
+const researchServiceRoleGrantsSql = await readFile(researchServiceRoleGrantsMigrationUrl, 'utf8');
 
 assert.match(sql, /^begin;/i);
 assert.match(sql, /revoke insert on public\.support_requests from authenticated;/i);
@@ -62,6 +67,15 @@ assert.match(
 assert.doesNotMatch(researchPersistenceSql, /security\s+definer/i);
 assert.doesNotMatch(researchPersistenceSql, /usd-impact-production|gjzetjugmnwanvjkchux/i);
 assert.match(researchPersistenceSql, /commit;\s*$/i);
+
+assert.match(researchServiceRoleGrantsSql, /^begin;/i);
+assert.match(researchServiceRoleGrantsSql, /grant select, update on table public\.subscriptions to service_role;/i);
+assert.match(researchServiceRoleGrantsSql, /grant select, insert on table public\.subscription_events to service_role;/i);
+assert.match(researchServiceRoleGrantsSql, /grant select, insert, update on table public\.entitlements to service_role;/i);
+assert.match(researchServiceRoleGrantsSql, /grant insert on table public\.entitlement_events to service_role;/i);
+assert.doesNotMatch(researchServiceRoleGrantsSql, /\bdelete\b|\btruncate\b|\banon\b|\bauthenticated\b/i);
+assert.doesNotMatch(researchServiceRoleGrantsSql, /usd-impact-production|gjzetjugmnwanvjkchux/i);
+assert.match(researchServiceRoleGrantsSql, /commit;\s*$/i);
 
 await import('./test-research-membership-event-adapter.mjs');
 await import('./test-research-membership-persistence.mjs');

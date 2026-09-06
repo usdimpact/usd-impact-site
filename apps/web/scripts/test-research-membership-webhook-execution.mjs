@@ -93,7 +93,38 @@ await assert.rejects(
     environment: { ...environment, VERCEL_ENV: 'production' },
     fetchImpl: async () => { fetchCalled = true; throw new Error('must not fetch'); },
   }),
-  (error) => error.code === 'RESEARCH_WEBHOOK_PREVIEW_ONLY',
+  (error) => error.code === 'RESEARCH_WEBHOOK_PRODUCTION_NOT_APPROVED',
+);
+assert.equal(fetchCalled, false);
+
+const productionEnvironment = {
+  VERCEL_ENV: 'production',
+  RESEARCH_MEMBERSHIP_WEBHOOK_ENABLED: 'true',
+  RESEARCH_MEMBERSHIP_PRODUCTION_ACTIVATION_APPROVED: 'true',
+  LEMON_SQUEEZY_RESEARCH_PRODUCTION_TEST_MODE: 'false',
+  LEMON_SQUEEZY_RESEARCH_PRODUCTION_WEBHOOK_SECRET: 'research_production_webhook_secret_abcdefghijklmnopqrstuvwxyz',
+  LEMON_SQUEEZY_RESEARCH_PRODUCTION_STORE_ID: '142',
+  LEMON_SQUEEZY_RESEARCH_PRODUCTION_PRODUCT_ID: '199',
+  LEMON_SQUEEZY_RESEARCH_PRODUCTION_MONTHLY_VARIANT_ID: '1314',
+  LEMON_SQUEEZY_RESEARCH_PRODUCTION_ANNUAL_VARIANT_ID: '1315',
+  SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
+  SUPABASE_SECRET_KEY: 'sb_secret_abcdefghijklmnopqrstuvwxyz',
+};
+const productionPayload = structuredClone(payload);
+productionPayload.data.attributes.store_id = 142;
+productionPayload.data.attributes.product_id = 199;
+productionPayload.data.attributes.variant_id = 1314;
+productionPayload.data.attributes.test_mode = false;
+const productionRawBody = Buffer.from(JSON.stringify(productionPayload), 'utf8');
+fetchCalled = false;
+await assert.rejects(
+  () => processResearchMembershipWebhook({
+    rawBody: productionRawBody,
+    signature: '0'.repeat(64),
+    environment: productionEnvironment,
+    fetchImpl: async () => { fetchCalled = true; throw new Error('must not fetch'); },
+  }),
+  (error) => error.code === 'RESEARCH_WEBHOOK_SIGNATURE_INVALID',
 );
 assert.equal(fetchCalled, false);
 

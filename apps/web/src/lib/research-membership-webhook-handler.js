@@ -4,6 +4,7 @@ import { persistResearchMembershipTransition } from './research-membership-persi
 import { RESEARCH_MEMBERSHIP_PRODUCT_ID } from './research-membership-runtime.js';
 
 const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
+const PRODUCTION_PROJECT_REF = 'gjzetjugmnwanvjkchux';
 const PROVIDER = 'lemon-squeezy';
 const MAX_BODY_BYTES = 1024 * 1024;
 
@@ -29,55 +30,70 @@ function projectRef(value) {
   }
 }
 
-function readConfig(environment = process.env) {
-  if (text(environment.VERCEL_ENV).toLowerCase() !== 'preview') {
-    const error = new Error('Research Membership webhook execution is Preview-only.');
-    error.code = 'RESEARCH_WEBHOOK_PREVIEW_ONLY';
-    error.status = 403;
-    throw error;
-  }
-  if (!enabled(environment.RESEARCH_MEMBERSHIP_WEBHOOK_ENABLED)) {
-    const error = new Error('Research Membership webhook execution is disabled.');
-    error.code = 'RESEARCH_WEBHOOK_DISABLED';
-    error.status = 503;
-    throw error;
-  }
-  if (projectRef(environment.SUPABASE_URL) !== DEVELOPMENT_PROJECT_REF) {
-    const error = new Error('Research Membership webhook must target canonical Development Supabase.');
-    error.code = 'RESEARCH_WEBHOOK_DATABASE_MISMATCH';
-    error.status = 503;
-    throw error;
-  }
-  if (!enabled(environment.LEMON_SQUEEZY_RESEARCH_TEST_MODE)) {
-    const error = new Error('Research Membership webhook requires Lemon Squeezy Test Mode.');
-    error.code = 'RESEARCH_WEBHOOK_TEST_MODE_REQUIRED';
-    error.status = 503;
-    throw error;
-  }
+function configurationError(message, code = 'RESEARCH_WEBHOOK_CONFIGURATION_INVALID') {
+  const error = new Error(message);
+  error.code = code;
+  error.status = 503;
+  return error;
+}
 
-  const secret = text(environment.LEMON_SQUEEZY_RESEARCH_TEST_WEBHOOK_SECRET);
+function recurringProviderConfig(environment, prefix, expectedTestMode) {
+  const secret = text(environment[`${prefix}_WEBHOOK_SECRET`]);
   const supabaseSecret = text(environment.SUPABASE_SECRET_KEY);
   if (secret.length < 16 || !supabaseSecret.startsWith('sb_secret_')) {
-    const error = new Error('Research Membership webhook credentials are invalid.');
-    error.code = 'RESEARCH_WEBHOOK_CONFIGURATION_INVALID';
-    error.status = 503;
-    throw error;
+    throw configurationError('Research Membership webhook credentials are invalid.');
   }
 
   const variants = [
-    positiveInteger(environment.LEMON_SQUEEZY_RESEARCH_TEST_MONTHLY_VARIANT_ID, 'monthly variant'),
-    positiveInteger(environment.LEMON_SQUEEZY_RESEARCH_TEST_ANNUAL_VARIANT_ID, 'annual variant'),
+    positiveInteger(environment[`${prefix}_MONTHLY_VARIANT_ID`], 'monthly variant'),
+    positiveInteger(environment[`${prefix}_ANNUAL_VARIANT_ID`], 'annual variant'),
   ];
   if (variants[0] === variants[1]) throw new TypeError('Research Membership recurring variants must be distinct.');
 
   return Object.freeze({
     secret,
-    storeId: positiveInteger(environment.LEMON_SQUEEZY_RESEARCH_TEST_STORE_ID, 'store id'),
-    productId: positiveInteger(environment.LEMON_SQUEEZY_RESEARCH_TEST_PRODUCT_ID, 'product id'),
+    storeId: positiveInteger(environment[`${prefix}_STORE_ID`], 'store id'),
+    productId: positiveInteger(environment[`${prefix}_PRODUCT_ID`], 'product id'),
     variantIds: Object.freeze(variants),
+    expectedTestMode,
     supabaseUrl: new URL(environment.SUPABASE_URL).origin,
     supabaseSecret,
   });
+}
+
+function readConfig(environment = process.env) {
+  const vercelEnvironment = text(environment.VERCEL_ENV).toLowerCase();
+  if (!enabled(environment.RESEARCH_MEMBERSHIP_WEBHOOK_ENABLED)) {
+    throw configurationError('Research Membership webhook execution is disabled.', 'RESEARCH_WEBHOOK_DISABLED');
+  }
+
+  if (vercelEnvironment === 'preview') {
+    if (projectRef(environment.SUPABASE_URL) !== DEVELOPMENT_PROJECT_REF) {
+      throw configurationError('Research Membership Preview webhook must target canonical Development Supabase.', 'RESEARCH_WEBHOOK_DATABASE_MISMATCH');
+    }
+    if (!enabled(environment.LEMON_SQUEEZY_RESEARCH_TEST_MODE)) {
+      throw configurationError('Research Membership Preview webhook requires Lemon Squeezy Test Mode.', 'RESEARCH_WEBHOOK_TEST_MODE_REQUIRED');
+    }
+    return recurringProviderConfig(environment, 'LEMON_SQUEEZY_RESEARCH_TEST', true);
+  }
+
+  if (vercelEnvironment === 'production') {
+    if (!enabled(environment.RESEARCH_MEMBERSHIP_PRODUCTION_ACTIVATION_APPROVED)) {
+      throw configurationError('Research Membership Production webhook activation is not approved.', 'RESEARCH_WEBHOOK_PRODUCTION_NOT_APPROVED');
+    }
+    if (projectRef(environment.SUPABASE_URL) !== PRODUCTION_PROJECT_REF) {
+      throw configurationError('Research Membership Production webhook must target canonical Production Supabase.', 'RESEARCH_WEBHOOK_DATABASE_MISMATCH');
+    }
+    if (enabled(environment.LEMON_SQUEEZY_RESEARCH_PRODUCTION_TEST_MODE)) {
+      throw configurationError('Research Membership Production webhook must reject Lemon Squeezy Test Mode.', 'RESEARCH_WEBHOOK_PRODUCTION_TEST_MODE_REJECTED');
+    }
+    return recurringProviderConfig(environment, 'LEMON_SQUEEZY_RESEARCH_PRODUCTION', false);
+  }
+
+  const error = new Error('Research Membership webhook execution is limited to Vercel Preview or Production.');
+  error.code = 'RESEARCH_WEBHOOK_ENVIRONMENT_REJECTED';
+  error.status = 403;
+  throw error;
 }
 
 function rawBuffer(rawBody) {
@@ -206,7 +222,7 @@ export async function processResearchMembershipWebhook({
     expectedStoreId: config.storeId,
     expectedProductId: config.productId,
     expectedVariantIds: config.variantIds,
-    expectedTestMode: true,
+    expectedTestMode: config.expectedTestMode,
   });
 
   if (plan.action === 'ignore') {

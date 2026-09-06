@@ -68,14 +68,66 @@ assert.doesNotMatch(researchPersistenceSql, /security\s+definer/i);
 assert.doesNotMatch(researchPersistenceSql, /usd-impact-production|gjzetjugmnwanvjkchux/i);
 assert.match(researchPersistenceSql, /commit;\s*$/i);
 
-assert.match(researchServiceRoleGrantsSql, /^begin;/i);
-assert.match(researchServiceRoleGrantsSql, /grant select, update on table public\.subscriptions to service_role;/i);
-assert.match(researchServiceRoleGrantsSql, /grant select, insert on table public\.subscription_events to service_role;/i);
-assert.match(researchServiceRoleGrantsSql, /grant select, insert, update on table public\.entitlements to service_role;/i);
-assert.match(researchServiceRoleGrantsSql, /grant insert on table public\.entitlement_events to service_role;/i);
-assert.doesNotMatch(researchServiceRoleGrantsSql, /\bdelete\b|\btruncate\b|\banon\b|\bauthenticated\b/i);
+// This migration has a deliberately narrow SQL grammar. Ignore only full-line
+// comments; unsupported syntax stays in the comparison and fails closed.
+function assertResearchServiceRoleGrants(value) {
+  const executableSql = value
+    .split(/\r\n|\n|\r/)
+    .filter((line) => !/^[ \t]*--/.test(line))
+    .join('\n')
+    .replace(/[ \t\r\n]+/g, ' ')
+    .replace(/^ | $/g, '')
+    .toLowerCase();
+  assert.equal(executableSql, [
+    'begin;',
+    'grant select, update on table public.subscriptions to service_role;',
+    'grant select, insert on table public.subscription_events to service_role;',
+    'grant select, insert, update on table public.entitlements to service_role;',
+    'grant insert on table public.entitlement_events to service_role;',
+    'commit;',
+  ].join(' '), 'Research persistence must contain exactly the approved grants');
+}
+
+assertResearchServiceRoleGrants(researchServiceRoleGrantsSql);
+assertResearchServiceRoleGrants(`-- anon authenticated DELETE TRUNCATE are not granted\n${researchServiceRoleGrantsSql}`);
+assertResearchServiceRoleGrants(researchServiceRoleGrantsSql.toUpperCase().replace(/\n/g, '\r\n'));
 assert.doesNotMatch(researchServiceRoleGrantsSql, /usd-impact-production|gjzetjugmnwanvjkchux/i);
-assert.match(researchServiceRoleGrantsSql, /commit;\s*$/i);
+
+for (const statement of [
+  'grant select on table public.subscriptions to anon;',
+  'grant select on table public.subscriptions to authenticated;',
+  'grant select on table public.subscriptions to public;',
+  'grant all privileges on table public.subscriptions to service_role;',
+  'grant delete on table public.subscriptions to service_role;',
+  'grant truncate on table public.subscriptions to service_role;',
+  'grant references on table public.subscriptions to service_role;',
+  'grant trigger on table public.subscriptions to service_role;',
+  'grant insert on table public.subscriptions to service_role;',
+  'grant update on table public.subscription_events to service_role;',
+  'grant select on table public.entitlement_events to service_role;',
+  'grant select on table public.customers to service_role;',
+  'grant usage on schema public to service_role;',
+  'grant service_role to authenticated;',
+  'grant select on table public.subscriptions to service_role with grant option;',
+  'delete from public.subscriptions;',
+  'truncate public.subscription_events;',
+  'alter table public.subscriptions disable row level security;',
+]) {
+  assert.throws(
+    () => assertResearchServiceRoleGrants(researchServiceRoleGrantsSql.replace(/commit;\s*$/i, `${statement}\ncommit;\n`)),
+    assert.AssertionError,
+    `Unexpected SQL must be rejected: ${statement}`,
+  );
+}
+for (const statement of [
+  'grant select, update on table public.subscriptions to service_role;',
+  'grant select, insert on table public.subscription_events to service_role;',
+  'grant select, insert, update on table public.entitlements to service_role;',
+  'grant insert on table public.entitlement_events to service_role;',
+]) {
+  assert.throws(() => assertResearchServiceRoleGrants(researchServiceRoleGrantsSql.replace(statement, '')), assert.AssertionError);
+  assert.throws(() => assertResearchServiceRoleGrants(researchServiceRoleGrantsSql.replace(statement, `-- ${statement}`)), assert.AssertionError);
+}
 
 await import('./test-research-membership-event-adapter.mjs');
 await import('./test-research-membership-persistence.mjs');

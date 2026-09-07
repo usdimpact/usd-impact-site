@@ -20,6 +20,7 @@ for (const quiz of accessMap.quizzes) {
 export const config = {
   runtime: 'nodejs',
   matcher: [
+    '/research-membership/:path*',
     '/start-here/:path*',
     '/dollar/:path*',
     '/fx/:path*',
@@ -38,12 +39,17 @@ export const config = {
 export default async function learningAccessMiddleware(request) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return next();
 
+  const url = new URL(request.url);
+  if (normalizePath(url.pathname) === '/research-membership') {
+    url.pathname = '/research/';
+    return Response.redirect(url, 301);
+  }
+
   const researchDecision = await decideResearchPreviewRequest({ request });
   if (researchDecision.action === 'redirect') {
     return Response.redirect(researchDecision.location, 302);
   }
 
-  const url = new URL(request.url);
   const order = protectedRoutes.get(normalizePath(url.pathname));
   if (!order) return next();
 

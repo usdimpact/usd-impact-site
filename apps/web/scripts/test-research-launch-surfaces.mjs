@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 
-const [landing, sample, account, accessRequired, previewGate, tradingViewRunbook, apiFiles] = await Promise.all([
+const [landing, sample, account, accessRequired, previewGate, tradingViewRunbook, apiFiles, middleware] = await Promise.all([
   readFile(new URL('../src/pages/research/index.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/research/sample/index.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/research/account/index.astro', import.meta.url), 'utf8'),
@@ -9,6 +9,7 @@ const [landing, sample, account, accessRequired, previewGate, tradingViewRunbook
   readFile(new URL('../src/lib/research-preview-route.js', import.meta.url), 'utf8'),
   readFile(new URL('../../../docs/operations/research-membership-tradingview-access-runbook.md', import.meta.url), 'utf8'),
   readdir(new URL('../api/', import.meta.url)),
+  readFile(new URL('../middleware.js', import.meta.url), 'utf8'),
 ]);
 
 assert.match(landing, /USD 290\/year/);
@@ -62,6 +63,10 @@ assert.match(tradingViewRunbook, /Future re-entry gate/);
 assert.match(tradingViewRunbook, /source code.*never|never expose source code/is);
 assert.match(tradingViewRunbook, /Library Pass.*never/is);
 assert.doesNotMatch(tradingViewRunbook, /Private TradingView Weekly Score access is a Research Membership benefit/);
+
+assert.match(middleware, /'\/research-membership\/:path\*'/);
+assert.match(middleware, /normalizePath\(url\.pathname\) === '\/research-membership'/);
+assert.match(middleware, /url\.pathname = '\/research\/';\s*return Response\.redirect\(url, 301\);/s);
 
 const vercelFunctionSources = apiFiles.filter((name) => name.endsWith('.js'));
 assert.ok(vercelFunctionSources.length <= 12, `Vercel function-source count is ${vercelFunctionSources.length}; limit is 12.`);

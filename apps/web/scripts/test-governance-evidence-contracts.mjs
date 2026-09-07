@@ -64,4 +64,6 @@ for (const [path, expected] of [
   assert.deepEqual(pngDimensions(await read(path)), expected, `${path} dimensions changed`);
 }
 
+await import('./test-research-launch-surfaces.mjs');
+
 console.log('Governance, media, and responsive-asset evidence contracts passed.');

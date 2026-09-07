@@ -19,6 +19,8 @@ assert.match(landing, /href="\/research\/sample\/"/);
 assert.match(landing, /href="\/research\/account\/"/);
 assert.match(landing, /checkout is not yet open/i);
 assert.match(landing, /Library Pass resources remain a separate permanent product/);
+assert.match(landing, /TradingView indicator access is deferred and is not included at initial launch/i);
+assert.doesNotMatch(landing, /private invite-only TradingView indicator access/i);
 assert.doesNotMatch(landing, /research-membership-checkout/);
 assert.doesNotMatch(landing, /\/api\/commerce/);
 
@@ -26,7 +28,7 @@ assert.match(sample, /PUBLIC_SAMPLE_DATE = '2026-08-07'/);
 assert.match(sample, /PUBLIC_SAMPLE_MIN_AGE_DAYS = 30/);
 assert.match(sample, /getCollection\('weeklyReports'\)/);
 assert.match(sample, /complete historical Weekly Report/i);
-assert.match(sample, /contains no\s+private TradingView source or invite link/i);
+assert.match(sample, /contains no\s+private Pine source or provider access link/i);
 assert.doesNotMatch(sample, /href="\/score\//);
 assert.doesNotMatch(sample, /research-membership-checkout/);
 assert.doesNotMatch(sample, /\/api\/commerce/);
@@ -49,10 +51,14 @@ assert.match(previewGate, /\/research\/access-required\//);
 assert.doesNotMatch(previewGate, /\/account\/access-required\//);
 assert.match(previewGate, /RESEARCH_MEMBERSHIP_PRODUCT_ID/);
 
+assert.match(tradingViewRunbook, /Status: deferred/);
+assert.match(tradingViewRunbook, /not an initial-launch benefit or launch gate/i);
 assert.match(tradingViewRunbook, /Grant procedure/);
 assert.match(tradingViewRunbook, /Revocation procedure/);
+assert.match(tradingViewRunbook, /Future re-entry gate/);
 assert.match(tradingViewRunbook, /source code.*never|never expose source code/is);
 assert.match(tradingViewRunbook, /Library Pass.*never/is);
+assert.doesNotMatch(tradingViewRunbook, /Private TradingView Weekly Score access is a Research Membership benefit/);
 
 const vercelFunctionSources = apiFiles.filter((name) => name.endsWith('.js'));
 assert.ok(vercelFunctionSources.length <= 12, `Vercel function-source count is ${vercelFunctionSources.length}; limit is 12.`);

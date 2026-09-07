@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { verifyLemonSqueezyWebhookSignature } from './lemon-squeezy-adapter-scaffold.js';
 import { buildResearchMembershipMutationPlan } from './research-membership-event-adapter.js';
 import {
@@ -260,7 +261,7 @@ function canonicalFromInvoice({ eventName, attributes, existingSubscription }) {
   throw new TypeError('Unsupported Lemon Squeezy subscription-invoice event.');
 }
 
-export function normalizeLemonSqueezyResearchMembershipWebhook({
+export function inspectLemonSqueezyResearchMembershipWebhook({
   rawBody,
   signature,
   secret,
@@ -308,6 +309,49 @@ export function normalizeLemonSqueezyResearchMembershipWebhook({
     throw new Error('Lemon Squeezy account binding mismatch.');
   }
 
+  // Validate the event/object pairing and payload before a duplicate lookup.
+  // These helpers do not authorize a state transition or perform any writes.
+  if (isSubscriptionObject) canonicalFromSubscription({ eventName, attributes, existingSubscription: subscription });
+  else canonicalFromInvoice({ eventName, attributes, existingSubscription: subscription });
+
+  const metadata = {
+    lemonEventName: eventName,
+    lemonDataType: data.type,
+    lemonDataId: stableIdentifier(data.id, 'data id'),
+    lemonStatus: text(attributes.status) || null,
+    lemonBillingReason: text(attributes.billing_reason) || null,
+    testMode: attributes.test_mode,
+  };
+  const identity = {
+    provider: LEMON_SQUEEZY_RESEARCH_PROVIDER,
+    providerEventId: providerEventId(eventName, data, attributes),
+    providerSubscriptionId,
+    occurredAt: isoTimestamp(attributes.updated_at || attributes.created_at, 'occurredAt'),
+  };
+  // Preserve only a digest of the binding and transition-driving signed fields.
+  // Formatting and expiring delivery URLs are deliberately not event identity.
+  const replayFingerprint = createHash('sha256').update(JSON.stringify({
+    version: 1,
+    ...identity,
+    ...metadata,
+    accountId: subscription.accountId,
+    storeId: String(attributes.store_id),
+    productId: isSubscriptionObject ? String(attributes.product_id) : null,
+    variantId: isSubscriptionObject ? String(attributes.variant_id) : null,
+    createdAt: isoTimestamp(attributes.created_at, 'created_at'),
+    cancelled: isSubscriptionObject ? (attributes.cancelled ?? null) : null,
+    renewsAt: isSubscriptionObject ? optionalIsoTimestamp(attributes.renews_at, 'renews_at') : null,
+    endsAt: isSubscriptionObject ? optionalIsoTimestamp(attributes.ends_at, 'ends_at') : null,
+  })).digest('hex');
+  return Object.freeze({
+    ...identity, eventName, data, attributes, subscription, isSubscriptionObject,
+    metadata: Object.freeze({ ...metadata, replayFingerprintVersion: 1, replayFingerprint }),
+  });
+}
+
+export function normalizeLemonSqueezyResearchMembershipWebhook(options = {}) {
+  const inspected = inspectLemonSqueezyResearchMembershipWebhook(options);
+  const { eventName, data, attributes, subscription, isSubscriptionObject, providerSubscriptionId } = inspected;
   const canonical = isSubscriptionObject
     ? { action: 'apply', ...canonicalFromSubscription({ eventName, attributes, existingSubscription: subscription }) }
     : canonicalFromInvoice({ eventName, attributes, existingSubscription: subscription });
@@ -333,14 +377,7 @@ export function normalizeLemonSqueezyResearchMembershipWebhook({
       currentPeriodStart: canonical.currentPeriodStart,
       currentPeriodEnd: canonical.currentPeriodEnd,
       cancelAtPeriodEnd: canonical.cancelAtPeriodEnd,
-      metadata: Object.freeze({
-        lemonEventName: eventName,
-        lemonDataType: data.type,
-        lemonDataId: stableIdentifier(data.id, 'data id'),
-        lemonStatus: text(attributes.status) || null,
-        lemonBillingReason: text(attributes.billing_reason) || null,
-        testMode: attributes.test_mode,
-      }),
+      metadata: inspected.metadata,
     }),
   });
 }

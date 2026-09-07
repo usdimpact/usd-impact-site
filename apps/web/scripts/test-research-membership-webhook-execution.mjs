@@ -64,6 +64,9 @@ const result = await processResearchMembershipWebhook({
         cancel_at_period_end: false,
       }]), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
+    if (url.includes('/rest/v1/subscription_events?')) {
+      return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
     if (url.endsWith('/rest/v1/rpc/apply_research_membership_transition')) {
       const body = JSON.parse(init.body);
       assert.equal(body.p_subscription_id, '223e4567-e89b-42d3-a456-426614174000');
@@ -82,7 +85,7 @@ const result = await processResearchMembershipWebhook({
 });
 assert.equal(result.action, 'applied');
 assert.equal(result.providerSubscriptionId, 'sub_7001');
-assert.equal(requests.length, 2);
+assert.equal(requests.length, 3);
 assert.match(requests[0].url, /provider_subscription_id=eq\.sub_7001/);
 
 let fetchCalled = false;
@@ -174,5 +177,7 @@ try {
     else process.env[key] = value;
   }
 }
+
+await import('./test-research-membership-webhook-replay.mjs');
 
 console.log('Research Membership webhook execution tests passed.');

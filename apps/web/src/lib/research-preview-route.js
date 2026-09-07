@@ -86,12 +86,12 @@ export async function decideResearchPreviewRequest({
       environment,
     });
   } catch {
-    return redirect(url, '/account/access-required/', 'denied');
+    return redirect(url, '/research/access-required/', 'denied');
   }
 
   const subscriptionState = state?.entitlement?.state;
   if (!KNOWN_RESEARCH_STATES.has(subscriptionState)) {
-    return redirect(url, '/account/access-required/', 'denied');
+    return redirect(url, '/research/access-required/', 'denied');
   }
 
   const decision = resolveResearchAccess({
@@ -103,7 +103,7 @@ export async function decideResearchPreviewRequest({
     return Object.freeze({ action: 'allow', reason: decision.reason, location: null });
   }
 
-  return redirect(url, '/account/access-required/', 'denied');
+  return redirect(url, '/research/access-required/', 'denied');
 }
 
 export const decideWeeklyResearchPreviewRequest = decideResearchPreviewRequest;

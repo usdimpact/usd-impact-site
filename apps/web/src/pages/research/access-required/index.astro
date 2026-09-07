@@ -1,0 +1,84 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Research access required | USD Impact"
+  description="Review Research Membership access requirements and the public sample."
+  noindex={true}
+>
+  <main id="main-content">
+    <section class="hero account-hero">
+      <div class="container">
+        <p class="eyebrow">Research Membership</p>
+        <h1>Research access required.</h1>
+        <p id="research-access-required-lead" class="lead">This account does not currently have access to this Research Membership surface.</p>
+      </div>
+    </section>
+
+    <div class="container account-shell">
+      <section class="card account-panel" aria-labelledby="research-access-required-heading">
+        <h2 id="research-access-required-heading">Your Research access status</h2>
+        <p id="research-access-required-message">This account does not currently have access to this Research Membership surface.</p>
+        <p>
+          Research access is based only on the canonical Research Membership entitlement for the signed-in USD Impact account.
+          A checkout redirect, email possession, screenshot, or Library Pass purchase does not grant Research Membership access.
+        </p>
+        <p>
+          Library Pass remains separate and permanent. A missing, suspended, refunded, canceled, or otherwise ineligible Research
+          Membership does not remove Guided Edition, audiobook, or Video Library access obtained through Library Pass.
+        </p>
+        <div class="button-row account-actions">
+          <a id="research-access-required-sign-in" class="button primary" href="/account/sign-in/?next=%2Fresearch%2Faccount%2F">Sign in again</a>
+          <a class="button" href="/research/account/">Review Research account</a>
+          <a class="button" href="/research/sample/">Read the public sample</a>
+          <a class="button" href="/research/">Research overview</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const messages = Object.freeze({
+      missing: 'No Research Membership entitlement is associated with this account.',
+      'missing-profile': 'The account profile is not ready for Research Membership access.',
+      pending: 'Research Membership activation is still pending for this account.',
+      suspended: 'Research Membership access is currently suspended.',
+      past_due: 'Research Membership access is unavailable while the subscription is past due.',
+      refunded: 'Research Membership access ended because the relevant subscription payment was refunded.',
+      disputed: 'Research Membership access is unavailable while a payment dispute is unresolved.',
+      charged_back: 'Research Membership access is unavailable because the subscription payment was charged back.',
+      cancelled: 'Research Membership access has ended for this account.',
+      expired: 'Research Membership access has expired for this account.',
+      deletion_pending: 'Research Membership access is unavailable while account deletion is pending.',
+      deleted: 'Research Membership access is unavailable because this account was deleted.',
+      disabled: 'Research Membership access is unavailable because this account is disabled.',
+      denied: 'Research Membership access could not be verified. Please review your Research account or try again shortly.',
+    });
+
+    const safeNextPath = (value) => {
+      const next = String(value || '').trim();
+      if (!next.startsWith('/') || next.startsWith('//') || next.includes('\\') || next.length > 512) {
+        return '/research/account/';
+      }
+      try {
+        const parsed = new URL(next, window.location.origin);
+        if (parsed.origin !== window.location.origin) return '/research/account/';
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      } catch {
+        return '/research/account/';
+      }
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const reason = params.get('reason') || 'missing';
+    const message = messages[reason] || messages.denied;
+    const next = safeNextPath(params.get('next'));
+
+    const lead = document.getElementById('research-access-required-lead');
+    const detail = document.getElementById('research-access-required-message');
+    const signIn = document.getElementById('research-access-required-sign-in');
+    if (lead) lead.textContent = message;
+    if (detail) detail.textContent = message;
+    if (signIn) signIn.href = `/account/sign-in/?next=${encodeURIComponent(next)}`;
+  </script>
+</BaseLayout>

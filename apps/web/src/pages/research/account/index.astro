@@ -1,0 +1,69 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Research account | USD Impact"
+  description="Review the USD Impact Research Membership billing and cancellation path before launch."
+  noindex={true}
+>
+  <main id="main-content">
+    <section class="hero account-hero">
+      <div class="container">
+        <p class="eyebrow">Research Membership</p>
+        <h1>Research account &amp; billing.</h1>
+        <p class="lead">Research Membership is separate from your permanent Library Pass. Checkout remains closed while the final launch gates are completed.</p>
+      </div>
+    </section>
+
+    <div class="container account-shell">
+      <section class="card account-panel" aria-labelledby="research-status-heading">
+        <p class="eyebrow">Pre-launch status</p>
+        <h2 id="research-status-heading">Research checkout is not open yet</h2>
+        <p>
+          No live Research Membership purchase is expected while the independent Production checkout gate remains disabled.
+          This page documents the account and billing path in advance without creating a checkout, subscription, or entitlement.
+        </p>
+        <p>
+          Your existing USD Impact account and any permanent Library Pass remain independent from Research Membership.
+        </p>
+        <div class="button-row account-actions">
+          <a class="button" href="/research/">Research overview</a>
+          <a class="button" href="/research/sample/">Public sample</a>
+          <a class="button account-secondary" href="/account/">Main account</a>
+        </div>
+      </section>
+
+      <section class="card account-panel" aria-labelledby="research-billing-heading">
+        <p class="eyebrow">Billing and cancellation</p>
+        <h2 id="research-billing-heading">Recurring billing will be managed with Lemon Squeezy</h2>
+        <p>
+          After launch, use Lemon Squeezy My Orders with the email used at checkout to view the subscription and available billing controls.
+          Canceling prevents the next renewal; Research access continues through the current paid billing period unless mandatory law
+          or an approved refund requires an earlier access change.
+        </p>
+        <p>
+          Research Membership billing is independent from Library Pass. Canceling, refunding, suspending, or ending Research Membership
+          never removes permanent Library Pass access.
+        </p>
+        <a
+          class="button primary"
+          href="https://app.lemonsqueezy.com/my-orders"
+          target="_blank"
+          rel="noopener noreferrer"
+        >Open Lemon Squeezy My Orders</a>
+      </section>
+
+      <section class="card account-panel" aria-labelledby="research-help-heading">
+        <h2 id="research-help-heading">Need help?</h2>
+        <p>
+          For a billing or access question, use the main account support form or email support. Do not send passwords,
+          one-time codes, full sign-in links, payment-card data, API keys, or provider secrets.
+        </p>
+        <div class="button-row account-actions">
+          <a class="button" href="/account/#support-heading">Open account support</a>
+          <a class="button" href="mailto:support@usd-impact.com">Email support@usd-impact.com</a>
+        </div>
+      </section>
+    </div>
+  </main>
+</BaseLayout>

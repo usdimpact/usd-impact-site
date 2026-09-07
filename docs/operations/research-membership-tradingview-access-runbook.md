@@ -1,22 +1,33 @@
 # Research Membership TradingView access runbook
 
-Status: launch-control runbook under issue #122. This defines the approved manual grant/revocation operating model only. It does not activate TradingView access, upload source code, create subscriptions, or authorize Production commerce changes.
+Status: deferred under issue #122. TradingView access is not an initial-launch benefit or launch gate. This document retains a dormant future manual grant/revocation model only; it does not activate TradingView access, upload source code, create subscriptions, or authorize Production commerce changes.
 
 ## Purpose
 
-Private TradingView Weekly Score access is a Research Membership benefit. Initial launch control is manual: USD Impact verifies the canonical Research Membership entitlement first, then an authorized operator grants or revokes TradingView access. Provider billing state, email claims, checkout redirects, screenshots, or customer assertions are never sufficient by themselves.
+TradingView Weekly Score access is deferred from the initial Research Membership launch. It must not be advertised, sold, granted, or treated as launch-ready until the future re-entry gate in this document is separately approved and completed. The procedures below are retained only so a later decision does not weaken identity, entitlement, source-protection, or revocation controls.
 
 ## Product boundary
 
-- TradingView access belongs only to `research-membership`.
-- Monthly and annual Research Memberships receive the same TradingView benefit while eligible.
+- TradingView access is not included in the initial `research-membership` product.
+- Monthly and annual Research Memberships launch without a TradingView benefit.
+- No availability date is promised. Reintroduction requires a separately approved product-scope change.
 - Library Pass is independent and permanent; TradingView grant/revocation must never create, revoke, suspend, or otherwise modify Library Pass entitlement.
 - Daily News remains public.
 - TradingView source code, private invite links, internal distribution metadata, and operator credentials remain private and must not be placed in tickets, customer email, public pages, logs, or repository content.
 
+## Deferred-state controls
+
+While deferred:
+
+- do not publish or upload the private Pine source;
+- do not create or distribute private provider links;
+- do not grant or revoke customer access;
+- do not treat TradingView QA as a Research Membership launch blocker;
+- keep TradingView absent from active product promises, checkout copy, and lifecycle communication.
+
 ## Canonical eligibility source
 
-The canonical authorization source is the USD Impact `research-membership` entitlement backed by the recurring subscription lifecycle.
+If TradingView is later reintroduced, the canonical authorization source is the USD Impact `research-membership` entitlement backed by the recurring subscription lifecycle.
 
 Grant is allowed only when all are true:
 
@@ -97,14 +108,14 @@ Do not store passwords, cookies, API tokens, webhook secrets, private Pine sourc
 
 ## Reconciliation
 
-Until automation is separately approved, Research Membership operations must reconcile TradingView access against canonical entitlements at least:
+After TradingView is separately reintroduced, and until automation is separately approved, Research Membership operations must reconcile TradingView access against canonical entitlements at least:
 
 - after every controlled lifecycle QA sequence;
-- before Production launch approval;
+- before any future TradingView feature activation approval;
 - after any refund, dispute, chargeback, effective cancellation, or entitlement-repair incident;
 - whenever watchdog/provider evidence reports an access mismatch.
 
-A launch-readiness reconciliation should produce three sets: eligible-and-granted, eligible-but-missing, and ineligible-but-still-granted. The latter two are blockers until corrected or explicitly accepted with evidence.
+A future TradingView activation reconciliation should produce three sets: eligible-and-granted, eligible-but-missing, and ineligible-but-still-granted. The latter two are blockers until corrected or explicitly accepted with evidence.
 
 ## Separation of duties and protected actions
 
@@ -118,12 +129,16 @@ No runbook step authorizes:
 - email or outbound customer communication;
 - changes to Library Pass access.
 
-## Launch gate
+## Future re-entry gate
 
-TradingView launch control is considered ready only when:
+TradingView remains deferred and does not block the initial Research Membership launch. It may be proposed as a future benefit only when:
 
-- this runbook is merged;
+- a separately approved product-scope change reintroduces TradingView;
+- an appropriate provider plan and private invite-only access control are available within the approved budget;
+- this runbook is merged and reviewed against the then-current provider behavior;
 - a controlled non-customer QA account proves grant, read-back verification, revoke, and read-back verification;
 - the operation leaves Library Pass state untouched;
 - the exact evidence format is retained for watchdog/reconciliation use;
-- Production Research Membership activation is separately approved.
+- customer-facing scope, pricing, and lifecycle communication are separately approved before any availability promise.
+
+Until every re-entry condition is complete, TradingView status is DEFERRED, not PASS, and is not a launch-readiness requirement.

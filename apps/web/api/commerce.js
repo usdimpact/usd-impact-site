@@ -9,9 +9,12 @@ import {
   runDueLemonSqueezyReconciliation,
 } from '../src/lib/lemon-squeezy-commerce-runtime.js';
 import {
-  processResearchMembershipWebhook,
-  publicResearchMembershipWebhookError,
-} from '../src/lib/research-membership-webhook-handler.js';
+  createResearchMembershipCheckout,
+  processResearchMembershipWebhookWithFirstPurchase,
+  publicResearchMembershipFirstPurchaseError,
+  readResearchMembershipCheckoutConfig,
+} from '../src/lib/research-membership-first-purchase.js';
+import { publicResearchMembershipWebhookError } from '../src/lib/research-membership-webhook-handler.js';
 
 export const config = {
   api: {
@@ -106,6 +109,16 @@ function runtimeConfig(response) {
   }
 }
 
+function researchCheckoutConfig(response) {
+  try {
+    return readResearchMembershipCheckoutConfig(process.env);
+  } catch (error) {
+    const safe = publicResearchMembershipFirstPurchaseError(error);
+    sendJson(response, safe.status, safe.payload, { 'X-Robots-Tag': 'noindex, nofollow' });
+    return null;
+  }
+}
+
 async function handleCheckout(request, response) {
   if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
   if (rejectCrossSite(request, response)) return;
@@ -170,6 +183,71 @@ async function handleCheckout(request, response) {
   }
 }
 
+async function handleResearchMembershipCheckout(request, response) {
+  if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
+  if (rejectCrossSite(request, response)) return;
+  if (!requestHeader(request, 'content-type').toLowerCase().includes('application/json')) {
+    return sendJson(response, 415, {
+      error: 'Content type must be application/json.',
+      code: 'INVALID_CONTENT_TYPE',
+    }, { 'X-Robots-Tag': 'noindex, nofollow' });
+  }
+  const runtime = researchCheckoutConfig(response);
+  if (!runtime) return;
+
+  let rawBody;
+  try {
+    rawBody = await readRawBody(request, MAX_CHECKOUT_BODY_BYTES);
+  } catch {
+    return sendJson(response, 413, { error: 'Request body is too large.', code: 'REQUEST_BODY_TOO_LARGE' }, {
+      'X-Robots-Tag': 'noindex, nofollow',
+    });
+  }
+  const payload = parseJsonBody(rawBody);
+  if (!payload) {
+    return sendJson(response, 400, { error: 'Invalid request body.', code: 'INVALID_REQUEST_BODY' }, {
+      'X-Robots-Tag': 'noindex, nofollow',
+    });
+  }
+  const idempotencyKey = String(
+    requestHeader(request, 'idempotency-key') || payload.idempotencyKey || '',
+  ).trim();
+  if (!/^[A-Za-z0-9][A-Za-z0-9._:/-]{7,254}$/.test(idempotencyKey)) {
+    return sendJson(response, 400, {
+      error: 'A valid idempotency key is required.',
+      code: 'INVALID_IDEMPOTENCY_KEY',
+    }, { 'X-Robots-Tag': 'noindex, nofollow' });
+  }
+
+  try {
+    const accessToken = readSessionAccessToken(request);
+    if (!accessToken) {
+      return sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' }, {
+        'X-Robots-Tag': 'noindex, nofollow',
+      });
+    }
+    const user = await getVerifiedSupabaseUser(accessToken, { config: runtime.supabase });
+    const result = await createResearchMembershipCheckout({
+      config: runtime,
+      user,
+      billingInterval: payload.billingInterval,
+      idempotencyKey,
+    });
+    return sendJson(response, 201, {
+      ok: true,
+      testMode: true,
+      billingInterval: result.billingInterval,
+      checkoutUrl: result.url,
+    }, {
+      'X-Robots-Tag': 'noindex, nofollow',
+      'Referrer-Policy': 'no-referrer',
+    });
+  } catch (error) {
+    const safe = publicResearchMembershipFirstPurchaseError(error);
+    return sendJson(response, safe.status, safe.payload, { 'X-Robots-Tag': 'noindex, nofollow' });
+  }
+}
+
 async function handleWebhook(request, response) {
   if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
   const runtime = runtimeConfig(response);
@@ -218,7 +296,7 @@ async function handleResearchMembershipWebhook(request, response) {
   }
 
   try {
-    const result = await processResearchMembershipWebhook({
+    const result = await processResearchMembershipWebhookWithFirstPurchase({
       rawBody,
       signature: requestHeader(request, 'x-signature'),
     });
@@ -263,6 +341,7 @@ export default async function handler(request, response) {
 
   const requestedAction = action(request);
   if (requestedAction === 'checkout') return handleCheckout(request, response);
+  if (requestedAction === 'research-membership-checkout') return handleResearchMembershipCheckout(request, response);
   if (requestedAction === 'webhook') return handleWebhook(request, response);
   if (requestedAction === 'research-membership-webhook') return handleResearchMembershipWebhook(request, response);
   if (requestedAction === 'reconcile') return handleReconciliation(request, response);

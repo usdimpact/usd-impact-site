@@ -33,10 +33,6 @@ verifiedFacts:
     verification: "verified-primary"
     sourceIds:
       - "treasury-quarterly-refunding-sb0590"
-  - statement: "News coverage recorded immediate market reaction to the August 19 announcement: AP reported that 10-year yields fell in morning trade (from 4.71% to about 4.64%) and 30-year yields also declined (from 5.28% to about 5.18%), with U.S. equities initially higher after the Treasury statement."
-    verification: "verified-reporting"
-    sourceIds:
-      - "ap-news-treasury-buybacks"
   - statement: "Treasury’s press release states the increase is intended to provide greater liquidity support in longer-dated nominal sectors and that an updated tentative buyback schedule will be released at a later date."
     verification: "verified-primary"
     sourceIds:

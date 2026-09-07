@@ -1,12 +1,21 @@
 import { verifyLemonSqueezyWebhookSignature } from './lemon-squeezy-adapter-scaffold.js';
-import { prepareLemonSqueezyResearchMembershipTransition } from './lemon-squeezy-research-membership-adapter.js';
+import {
+  inspectLemonSqueezyResearchMembershipWebhook,
+  normalizeLemonSqueezyResearchMembershipWebhook,
+  prepareLemonSqueezyResearchMembershipTransition,
+} from './lemon-squeezy-research-membership-adapter.js';
 import { persistResearchMembershipTransition } from './research-membership-persistence.js';
-import { RESEARCH_MEMBERSHIP_PRODUCT_ID } from './research-membership-runtime.js';
+import {
+  RESEARCH_MEMBERSHIP_PRODUCT_ID,
+  normalizeResearchMembershipLifecycleEvent,
+} from './research-membership-runtime.js';
+import { researchMembershipEventKey } from './research-membership-event-adapter.js';
 
 const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
 const PRODUCTION_PROJECT_REF = 'gjzetjugmnwanvjkchux';
 const PROVIDER = 'lemon-squeezy';
 const MAX_BODY_BYTES = 1024 * 1024;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function text(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -187,6 +196,9 @@ async function loadExistingSubscription({ config, providerSubscriptionId, fetchI
     throw error;
   }
   const row = payload[0];
+  if (!row || !UUID_PATTERN.test(row.id) || !UUID_PATTERN.test(row.account_id)) {
+    throw replayError('RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND', 409);
+  }
   return {
     id: row.id,
     accountId: row.account_id,
@@ -198,6 +210,78 @@ async function loadExistingSubscription({ config, providerSubscriptionId, fetchI
     currentPeriodEnd: row.current_period_end,
     cancelAtPeriodEnd: row.cancel_at_period_end === true,
   };
+}
+
+function replayError(code = 'RESEARCH_WEBHOOK_REPLAY_CONFLICT', status = 409) {
+  const error = new Error('Research Membership replay evidence could not be verified.');
+  error.code = code;
+  error.status = status;
+  return error;
+}
+
+async function loadProcessedEvent({ config, eventKey, fetchImpl }) {
+  // Look up the globally unique key without filtering away conflicting bindings.
+  const query = new URLSearchParams({
+    select: 'event_key,subscription_id,account_id,product_id,provider_event_id,from_state,to_state,reason,actor_type,occurred_at,metadata',
+    event_key: `eq.${eventKey}`,
+    limit: '2',
+  });
+  let response;
+  let rows;
+  try {
+    response = await fetchImpl(`${config.supabaseUrl}/rest/v1/subscription_events?${query}`, {
+      headers: headers(config.supabaseSecret),
+    });
+    rows = await readJson(response);
+  } catch {
+    throw replayError('RESEARCH_WEBHOOK_EVENT_LOOKUP_FAILED', 502);
+  }
+  if (!response.ok || !Array.isArray(rows)) throw replayError('RESEARCH_WEBHOOK_EVENT_LOOKUP_FAILED', 502);
+  if (rows.length > 1) throw replayError();
+  if (rows.length === 0) return null;
+  if (!rows[0] || typeof rows[0] !== 'object' || Array.isArray(rows[0])) throw replayError();
+  return rows[0];
+}
+
+function verifiedDuplicate(row, { inspected, options, eventKey }) {
+  const subscription = options.existingSubscription;
+  const metadata = row.metadata;
+  if (row.event_key !== eventKey
+      || row.subscription_id !== subscription.id
+      || row.account_id !== subscription.accountId
+      || row.product_id !== RESEARCH_MEMBERSHIP_PRODUCT_ID
+      || row.provider_event_id !== inspected.providerEventId
+      || row.actor_type !== 'provider_webhook'
+      || typeof row.occurred_at !== 'string'
+      || Date.parse(row.occurred_at) !== Date.parse(inspected.occurredAt)
+      || !metadata || typeof metadata !== 'object' || Array.isArray(metadata)) throw replayError();
+
+  for (const field of ['lemonEventName', 'lemonDataType', 'lemonDataId', 'lemonStatus', 'lemonBillingReason', 'testMode']) {
+    if (metadata[field] !== inspected.metadata[field]) throw replayError();
+  }
+  // Legacy rows have only the six provider fields above. Compare every field
+  // they retained, without inventing a historical full-payload fingerprint.
+  // A present but invalid/version-mismatched fingerprint never falls back.
+  if (Object.hasOwn(metadata, 'replayFingerprint') || Object.hasOwn(metadata, 'replayFingerprintVersion')) {
+    if (metadata.replayFingerprintVersion !== 1
+        || metadata.replayFingerprint !== inspected.metadata.replayFingerprint) throw replayError();
+  }
+  try {
+    // Reconstruct classification using the archived from-state, not today's
+    // terminal state or billing period. This never constructs a mutation plan.
+    const normalized = normalizeLemonSqueezyResearchMembershipWebhook({
+      ...options,
+      existingSubscription: { ...subscription, state: row.from_state, currentPeriodStart: null, currentPeriodEnd: null },
+    });
+    if (normalized.action !== 'apply') throw replayError();
+    const event = normalizeResearchMembershipLifecycleEvent({
+      ...normalized.providerEvent, accountId: subscription.accountId, currentState: row.from_state,
+    });
+    if (event.toState !== row.to_state || event.eventType !== row.reason) throw replayError();
+  } catch {
+    throw replayError();
+  }
+  return Object.freeze({ action: 'duplicate', eventKey, providerSubscriptionId: subscription.providerSubscriptionId });
 }
 
 export async function processResearchMembershipWebhook({
@@ -213,8 +297,7 @@ export async function processResearchMembershipWebhook({
     providerSubscriptionId: envelope.providerSubscriptionId,
     fetchImpl,
   });
-
-  const plan = prepareLemonSqueezyResearchMembershipTransition({
+  const options = {
     rawBody: envelope.body,
     signature,
     secret: config.secret,
@@ -223,21 +306,53 @@ export async function processResearchMembershipWebhook({
     expectedProductId: config.productId,
     expectedVariantIds: config.variantIds,
     expectedTestMode: config.expectedTestMode,
-  });
+  };
+  // Authenticate and validate all provider/account bindings before consulting
+  // duplicate evidence. No state transition is authorized by this inspection.
+  const inspected = inspectLemonSqueezyResearchMembershipWebhook(options);
+  const eventKey = researchMembershipEventKey(inspected.provider, inspected.providerEventId);
+  const replayContext = { inspected, options, eventKey };
+  const readEvent = () => loadProcessedEvent({ config, eventKey, fetchImpl });
+  const previous = await readEvent();
+  if (previous) return verifiedDuplicate(previous, replayContext);
 
+  let plan;
+  try {
+    plan = prepareLemonSqueezyResearchMembershipTransition(options);
+  } catch (error) {
+    if (error?.code === 'RESEARCH_MEMBERSHIP_INVALID_TRANSITION') {
+      const concurrent = await readEvent();
+      if (concurrent) return verifiedDuplicate(concurrent, replayContext);
+    }
+    throw error;
+  }
   if (plan.action === 'ignore') {
     return Object.freeze({ action: 'ignored', providerEventId: plan.providerEventId, reason: plan.reason });
   }
 
-  const persisted = await persistResearchMembershipTransition({
-    plan,
-    subscriptionId: existingSubscription.id,
-    environment,
-    fetchImpl,
-  });
+  let persisted;
+  try {
+    persisted = await persistResearchMembershipTransition({
+      plan,
+      subscriptionId: existingSubscription.id,
+      environment,
+      fetchImpl,
+    });
+  } catch (error) {
+    // The response may be lost after commit, or another delivery may have won.
+    // Reconcile by one read only; never resubmit the RPC or loosen state guards.
+    const concurrent = await readEvent();
+    if (concurrent) return verifiedDuplicate(concurrent, replayContext);
+    throw error;
+  }
+  if (persisted.action === 'duplicate') {
+    const concurrent = await readEvent();
+    if (!concurrent) throw replayError();
+    return verifiedDuplicate(concurrent, replayContext);
+  }
   return Object.freeze({
     action: persisted.action,
-    eventKey: persisted.eventKey || plan.eventKey,
+    eventKey: plan.eventKey,
     providerSubscriptionId: existingSubscription.providerSubscriptionId,
   });
 }

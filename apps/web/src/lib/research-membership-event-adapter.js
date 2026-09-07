@@ -1,6 +1,7 @@
 import {
   RESEARCH_MEMBERSHIP_PRODUCT_ID,
-  normalizeResearchMembershipLifecycleEvent,
+  normalizeResearchMembershipLifecycleEventData,
+  assertAllowedResearchMembershipTransition,
   researchMembershipEntitlementDecision,
 } from './research-membership-runtime.js';
 
@@ -62,7 +63,7 @@ export function buildResearchMembershipMutationPlan({
     throw new Error('Existing subscription product mismatch.');
   }
 
-  const event = normalizeResearchMembershipLifecycleEvent({
+  const event = normalizeResearchMembershipLifecycleEventData({
     ...providerEvent,
     accountId,
     currentState: subscription.state,
@@ -85,6 +86,9 @@ export function buildResearchMembershipMutationPlan({
     });
   }
 
+  // A known event is an acknowledgement, not permission to reopen a terminal
+  // subscription. New events must still pass the unchanged transition matrix.
+  assertAllowedResearchMembershipTransition(event.fromState, event.toState);
   const entitlement = researchMembershipEntitlementDecision(event.toState);
   const entitlementPatch = Object.freeze({
     productId: RESEARCH_MEMBERSHIP_PRODUCT_ID,

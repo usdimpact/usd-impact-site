@@ -102,7 +102,9 @@ export function assertAllowedResearchMembershipTransition(fromState, toState) {
   return true;
 }
 
-export function normalizeResearchMembershipLifecycleEvent({
+// Validate event data without authorizing a new state transition. Callers must
+// still use normalizeResearchMembershipLifecycleEvent for an unprocessed event.
+export function normalizeResearchMembershipLifecycleEventData({
   provider,
   providerEventId,
   providerSubscriptionId,
@@ -120,7 +122,6 @@ export function normalizeResearchMembershipLifecycleEvent({
   if (!targetState) throw new TypeError('eventType is not supported.');
 
   const fromState = requireState(currentState, 'currentState');
-  assertAllowedResearchMembershipTransition(fromState, targetState);
 
   const periodStart = optionalIsoTimestamp(currentPeriodStart, 'currentPeriodStart');
   const periodEnd = optionalIsoTimestamp(currentPeriodEnd, 'currentPeriodEnd');
@@ -155,6 +156,12 @@ export function normalizeResearchMembershipLifecycleEvent({
       : false,
     metadata: Object.freeze({ ...metadata }),
   });
+}
+
+export function normalizeResearchMembershipLifecycleEvent(options) {
+  const event = normalizeResearchMembershipLifecycleEventData(options);
+  assertAllowedResearchMembershipTransition(event.fromState, event.toState);
+  return event;
 }
 
 export function researchMembershipEntitlementDecision(state) {

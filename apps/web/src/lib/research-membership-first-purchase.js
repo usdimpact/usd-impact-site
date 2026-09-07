@@ -3,6 +3,7 @@ import { processResearchMembershipWebhook } from './research-membership-webhook-
 import { readSupabaseServerConfig } from './supabase-server.js';
 
 const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
+const PRODUCTION_PROJECT_REF = 'gjzetjugmnwanvjkchux';
 const PRODUCT_ID = 'research-membership';
 const PROVIDER = 'lemon-squeezy';
 const PROVIDER_API_ROOT = 'https://api.lemonsqueezy.com/v1';
@@ -101,40 +102,61 @@ function rawBuffer(rawBody) {
   return body;
 }
 
-function readResearchTestCatalog(environment = process.env) {
-  if (text(environment.VERCEL_ENV).toLowerCase() !== 'preview') {
-    fail(
-      'Research Membership first-purchase execution is limited to Vercel Preview.',
-      'RESEARCH_FIRST_PURCHASE_PREVIEW_ONLY',
-      403,
-    );
-  }
+function researchCatalog(environment = process.env, { forCheckout = false } = {}) {
+  const vercelEnvironment = text(environment.VERCEL_ENV).toLowerCase();
   if (!enabled(environment.RESEARCH_MEMBERSHIP_WEBHOOK_ENABLED)) {
     fail('Research Membership webhook execution is disabled.', 'RESEARCH_WEBHOOK_DISABLED', 503);
   }
-  if (!enabled(environment.LEMON_SQUEEZY_RESEARCH_TEST_MODE)) {
-    fail('Research Membership first-purchase execution requires Lemon Squeezy Test Mode.', 'RESEARCH_FIRST_PURCHASE_TEST_MODE_REQUIRED', 503);
-  }
-  if (projectRef(environment.SUPABASE_URL) !== DEVELOPMENT_PROJECT_REF) {
-    fail('Research Membership first-purchase execution must target canonical Development Supabase.', 'RESEARCH_FIRST_PURCHASE_DATABASE_MISMATCH', 503);
+
+  let prefix;
+  let testMode;
+  let controlledQaOnly;
+  if (vercelEnvironment === 'preview') {
+    if (!enabled(environment.LEMON_SQUEEZY_RESEARCH_TEST_MODE)) {
+      fail('Research Membership first-purchase execution requires Lemon Squeezy Test Mode.', 'RESEARCH_FIRST_PURCHASE_TEST_MODE_REQUIRED', 503);
+    }
+    if (projectRef(environment.SUPABASE_URL) !== DEVELOPMENT_PROJECT_REF) {
+      fail('Research Membership first-purchase execution must target canonical Development Supabase.', 'RESEARCH_FIRST_PURCHASE_DATABASE_MISMATCH', 503);
+    }
+    prefix = 'LEMON_SQUEEZY_RESEARCH_TEST';
+    testMode = true;
+    controlledQaOnly = true;
+  } else if (vercelEnvironment === 'production') {
+    if (!enabled(environment.RESEARCH_MEMBERSHIP_PRODUCTION_ACTIVATION_APPROVED)) {
+      fail('Research Membership Production activation is not approved.', 'RESEARCH_FIRST_PURCHASE_PRODUCTION_NOT_APPROVED', 503);
+    }
+    if (projectRef(environment.SUPABASE_URL) !== PRODUCTION_PROJECT_REF) {
+      fail('Research Membership first-purchase execution must target canonical Production Supabase.', 'RESEARCH_FIRST_PURCHASE_DATABASE_MISMATCH', 503);
+    }
+    if (enabled(environment.LEMON_SQUEEZY_RESEARCH_PRODUCTION_TEST_MODE)) {
+      fail('Research Membership Production first-purchase execution must reject Lemon Squeezy Test Mode.', 'RESEARCH_FIRST_PURCHASE_PRODUCTION_TEST_MODE_REJECTED', 503);
+    }
+    if (forCheckout && !enabled(environment.RESEARCH_MEMBERSHIP_PRODUCTION_CHECKOUT_ENABLED)) {
+      fail('Research Membership Production checkout is disabled.', 'RESEARCH_CHECKOUT_DISABLED', 503);
+    }
+    prefix = 'LEMON_SQUEEZY_RESEARCH_PRODUCTION';
+    testMode = false;
+    controlledQaOnly = false;
+  } else {
+    fail(
+      'Research Membership first-purchase execution is limited to Vercel Preview or Production.',
+      'RESEARCH_FIRST_PURCHASE_ENVIRONMENT_REJECTED',
+      403,
+    );
   }
 
-  const monthlyVariantId = positiveInteger(
-    environment.LEMON_SQUEEZY_RESEARCH_TEST_MONTHLY_VARIANT_ID,
-    'Research monthly variant',
-  );
-  const annualVariantId = positiveInteger(
-    environment.LEMON_SQUEEZY_RESEARCH_TEST_ANNUAL_VARIANT_ID,
-    'Research annual variant',
-  );
+  const monthlyVariantId = positiveInteger(environment[`${prefix}_MONTHLY_VARIANT_ID`], 'Research monthly variant');
+  const annualVariantId = positiveInteger(environment[`${prefix}_ANNUAL_VARIANT_ID`], 'Research annual variant');
   if (monthlyVariantId === annualVariantId) {
     fail('Research Membership recurring variants must be distinct.', 'RESEARCH_FIRST_PURCHASE_CONFIGURATION_INVALID', 503);
   }
 
   return Object.freeze({
-    testMode: true,
-    storeId: positiveInteger(environment.LEMON_SQUEEZY_RESEARCH_TEST_STORE_ID, 'Research store'),
-    productId: positiveInteger(environment.LEMON_SQUEEZY_RESEARCH_TEST_PRODUCT_ID, 'Research product'),
+    vercelEnvironment,
+    testMode,
+    controlledQaOnly,
+    storeId: positiveInteger(environment[`${prefix}_STORE_ID`], 'Research store'),
+    productId: positiveInteger(environment[`${prefix}_PRODUCT_ID`], 'Research product'),
     monthlyVariantId,
     annualVariantId,
     supabaseUrl: new URL(environment.SUPABASE_URL).origin,
@@ -143,16 +165,20 @@ function readResearchTestCatalog(environment = process.env) {
 }
 
 export function readResearchMembershipCheckoutConfig(environment = process.env) {
-  const catalog = readResearchTestCatalog(environment);
+  const catalog = researchCatalog(environment, { forCheckout: true });
   let supabase;
   try {
     supabase = readSupabaseServerConfig(environment, { requireSecret: true });
   } catch {
     fail('Research Membership checkout database configuration is invalid.', 'RESEARCH_CHECKOUT_CONFIGURATION_INVALID', 503);
   }
-  const apiKey = text(environment.LEMON_SQUEEZY_TEST_API_KEY);
+  const apiKey = text(catalog.testMode
+    ? environment.LEMON_SQUEEZY_TEST_API_KEY
+    : environment.LEMON_SQUEEZY_RESEARCH_PRODUCTION_API_KEY);
   if (apiKey.length < 16) fail('Research Membership checkout API key is invalid.', 'RESEARCH_CHECKOUT_CONFIGURATION_INVALID', 503);
-  const qaEmail = emailAddress(environment.COMMERCE_SANDBOX_QA_EMAIL, 'COMMERCE_SANDBOX_QA_EMAIL');
+  const qaEmail = catalog.controlledQaOnly
+    ? emailAddress(environment.COMMERCE_SANDBOX_QA_EMAIL, 'COMMERCE_SANDBOX_QA_EMAIL')
+    : null;
   return Object.freeze({ ...catalog, supabase, apiKey, qaEmail });
 }
 
@@ -170,12 +196,12 @@ export function buildResearchMembershipCheckoutRequest({
   idempotencyKey,
   now = new Date(),
 }) {
-  if (!config || config.testMode !== true) {
-    fail('Research Membership checkout requires an explicit Test Mode configuration.', 'RESEARCH_CHECKOUT_CONFIGURATION_INVALID', 503);
+  if (!config || typeof config.testMode !== 'boolean') {
+    fail('Research Membership checkout requires an explicit environment configuration.', 'RESEARCH_CHECKOUT_CONFIGURATION_INVALID', 503);
   }
   const userId = accountId(user?.id);
   const userEmail = emailAddress(user?.email, 'Authenticated account email');
-  if (userEmail !== config.qaEmail) {
+  if (config.controlledQaOnly && userEmail !== config.qaEmail) {
     fail('Research Membership Test checkout is restricted to the configured QA account.', 'RESEARCH_CHECKOUT_QA_ACCOUNT_REQUIRED', 403);
   }
   const selected = variantForInterval(config, billingInterval);
@@ -209,7 +235,7 @@ export function buildResearchMembershipCheckoutRequest({
           variant_quantities: [{ variant_id: selected.variantId, quantity: 1 }],
         },
         expires_at: expiresAt,
-        test_mode: true,
+        test_mode: config.testMode,
       },
       relationships: {
         store: { data: { type: 'stores', id: String(config.storeId) } },
@@ -277,29 +303,31 @@ export async function createResearchMembershipCheckout({
   });
   const payload = await readJson(response);
   if (!response.ok) {
-    fail('Research Membership Test checkout creation failed.', 'RESEARCH_CHECKOUT_PROVIDER_FAILED', 502);
+    fail('Research Membership checkout creation failed.', 'RESEARCH_CHECKOUT_PROVIDER_FAILED', 502);
   }
   const data = object(payload?.data, 'checkout response data');
   const attributes = object(data.attributes, 'checkout response attributes');
   const selected = variantForInterval(config, billingInterval);
   if (data.type !== 'checkouts'
-      || attributes.test_mode !== true
+      || attributes.test_mode !== config.testMode
       || String(attributes.store_id) !== String(config.storeId)
       || String(attributes.variant_id) !== String(selected.variantId)
       || !text(attributes.url).startsWith('https://')) {
-    fail('Research Membership checkout response did not match the trusted Test catalog.', 'RESEARCH_CHECKOUT_PROVIDER_RESPONSE_INVALID', 502);
+    fail('Research Membership checkout response did not match the trusted catalog.', 'RESEARCH_CHECKOUT_PROVIDER_RESPONSE_INVALID', 502);
   }
   return Object.freeze({
     checkoutId: stableIdentifier(data.id, 'checkout id'),
     url: text(attributes.url),
-    testMode: true,
+    testMode: config.testMode,
     billingInterval: selected.interval,
   });
 }
 
 function readBootstrapConfig(environment = process.env) {
-  const catalog = readResearchTestCatalog(environment);
-  const secret = text(environment.LEMON_SQUEEZY_RESEARCH_TEST_WEBHOOK_SECRET);
+  const catalog = researchCatalog(environment);
+  const secret = text(catalog.testMode
+    ? environment.LEMON_SQUEEZY_RESEARCH_TEST_WEBHOOK_SECRET
+    : environment.LEMON_SQUEEZY_RESEARCH_PRODUCTION_WEBHOOK_SECRET);
   if (secret.length < 16 || !catalog.supabaseSecret.startsWith('sb_secret_')) {
     fail('Research Membership first-purchase webhook credentials are invalid.', 'RESEARCH_FIRST_PURCHASE_CONFIGURATION_INVALID', 503);
   }
@@ -326,7 +354,7 @@ export function inspectResearchMembershipFirstPurchase({
   if (text(meta.event_name) !== 'subscription_created' || data.type !== 'subscriptions') {
     fail('Only subscription_created may establish a first Research Membership binding.', 'RESEARCH_FIRST_PURCHASE_EVENT_REQUIRED', 409);
   }
-  if (attributes.test_mode !== true
+  if (attributes.test_mode !== config.testMode
       || String(attributes.store_id) !== String(config.storeId)
       || String(attributes.product_id) !== String(config.productId)) {
     fail('Research Membership first-purchase catalog or Test Mode evidence does not match.', 'RESEARCH_FIRST_PURCHASE_CATALOG_MISMATCH', 409);
@@ -372,7 +400,7 @@ export function inspectResearchMembershipFirstPurchase({
       storeId: String(config.storeId),
       productId: String(config.productId),
       variantId: String(variantId),
-      testMode: true,
+      testMode: config.testMode,
     }),
   });
 }

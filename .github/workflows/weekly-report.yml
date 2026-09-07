@@ -90,7 +90,7 @@ jobs:
             day="$(date -u -d "$monday +$offset days" +%F)"
             file="src/content/news/$day.md"
             test -f "$file"
-            grep -Eq '^status: ["'"']?published["'"']?$' "$file"
+            grep -Eq "^status: (published|\"published\"|'published')$" "$file"
           done
 
       - name: Generate deterministic weekly report

@@ -1,96 +1,14 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { handleResearchAccount } from '../api/research-account.js';
+import { readFile, readdir } from 'node:fs/promises';
 
-function responseRecorder() {
-  return {
-    statusCode: 200,
-    headers: new Map(),
-    body: '',
-    setHeader(name, value) {
-      this.headers.set(String(name).toLowerCase(), String(value));
-    },
-    end(value = '') {
-      this.body += value == null ? '' : String(value);
-    },
-  };
-}
-
-function jsonBody(response) {
-  return response.body ? JSON.parse(response.body) : {};
-}
-
-const activeState = {
-  user: {
-    id: '11111111-1111-4111-8111-111111111111',
-    email: 'research-qa@example.com',
-  },
-  profile: {
-    status: 'active',
-  },
-  entitlement: {
-    productId: 'research-membership',
-    state: 'active',
-    startsAt: '2026-09-01T00:00:00.000Z',
-    endsAt: '2026-10-01T00:00:00.000Z',
-  },
-  allowed: true,
-  reason: 'active',
-};
-
-let observedProductId = null;
-const activeResponse = responseRecorder();
-await handleResearchAccount(
-  { method: 'GET', headers: {}, url: '/api/research-account' },
-  activeResponse,
-  {
-    readAccountAccessState: async ({ productId }) => {
-      observedProductId = productId;
-      return activeState;
-    },
-    resolveSessionWithRefresh: async ({ verifyAccessToken }) => ({
-      accessToken: 'access-token',
-      value: await verifyAccessToken('access-token'),
-    }),
-  },
-);
-assert.equal(activeResponse.statusCode, 200);
-assert.equal(observedProductId, 'research-membership');
-const activeBody = jsonBody(activeResponse);
-assert.equal(activeBody.researchAccess.allowed, true);
-assert.equal(activeBody.researchAccess.productId, 'research-membership');
-assert.equal(activeBody.researchAccess.state, 'active');
-assert.equal(activeBody.researchAccess.endsAt, '2026-10-01T00:00:00.000Z');
-assert.equal(activeBody.account.email, 'research-qa@example.com');
-
-const signedOutResponse = responseRecorder();
-await handleResearchAccount(
-  { method: 'GET', headers: {}, url: '/api/research-account' },
-  signedOutResponse,
-  {
-    readAccountAccessState: async () => activeState,
-    resolveSessionWithRefresh: async () => null,
-  },
-);
-assert.equal(signedOutResponse.statusCode, 401);
-assert.equal(jsonBody(signedOutResponse).code, 'AUTHENTICATION_REQUIRED');
-
-const methodResponse = responseRecorder();
-await handleResearchAccount(
-  { method: 'POST', headers: {}, url: '/api/research-account' },
-  methodResponse,
-  {},
-);
-assert.equal(methodResponse.statusCode, 405);
-assert.equal(methodResponse.headers.get('allow'), 'GET');
-
-const [landing, sample, account, accessRequired, previewGate, tradingViewRunbook] = await Promise.all([
+const [landing, sample, account, accessRequired, previewGate, tradingViewRunbook, apiFiles] = await Promise.all([
   readFile(new URL('../src/pages/research/index.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/research/sample/index.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/research/account/index.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/research/access-required/index.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/lib/research-preview-route.js', import.meta.url), 'utf8'),
   readFile(new URL('../../../docs/operations/research-membership-tradingview-access-runbook.md', import.meta.url), 'utf8'),
+  readdir(new URL('../api/', import.meta.url)),
 ]);
 
 assert.match(landing, /USD 290\/year/);
@@ -113,10 +31,12 @@ assert.doesNotMatch(sample, /href="\/score\//);
 assert.doesNotMatch(sample, /research-membership-checkout/);
 assert.doesNotMatch(sample, /\/api\/commerce/);
 
-assert.match(account, /fetch\('\/api\/research-account'/);
+assert.match(account, /Research checkout is not open yet/);
+assert.match(account, /No live Research Membership purchase is expected/);
 assert.match(account, /https:\/\/app\.lemonsqueezy\.com\/my-orders/);
 assert.match(account, /Research Membership billing is independent from Library Pass/);
 assert.match(account, /Canceling prevents the next renewal/);
+assert.doesNotMatch(account, /fetch\(/);
 assert.doesNotMatch(account, /research-membership-checkout/);
 assert.doesNotMatch(account, /\/api\/commerce/);
 
@@ -133,5 +53,9 @@ assert.match(tradingViewRunbook, /Grant procedure/);
 assert.match(tradingViewRunbook, /Revocation procedure/);
 assert.match(tradingViewRunbook, /source code.*never|never expose source code/is);
 assert.match(tradingViewRunbook, /Library Pass.*never/is);
+
+const vercelFunctionSources = apiFiles.filter((name) => name.endsWith('.js'));
+assert.ok(vercelFunctionSources.length <= 12, `Vercel function-source count is ${vercelFunctionSources.length}; limit is 12.`);
+assert.ok(!vercelFunctionSources.includes('research-account.js'));
 
 console.log('Research Membership launch-surface regressions passed.');

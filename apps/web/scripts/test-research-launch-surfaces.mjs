@@ -33,7 +33,7 @@ assert.doesNotMatch(sample, /\/api\/commerce/);
 
 assert.match(account, /Research checkout is not open yet/);
 assert.match(account, /No live Research Membership purchase is expected/);
-assert.match(account, /https:\/\/app\.lemonsqueezy\.com\/my-orders/);
+assert.ok(account.includes('href="https://app.lemonsqueezy.com/my-orders"'));
 assert.match(account, /Research Membership billing is independent from Library Pass/);
 assert.match(account, /Canceling prevents the next renewal/);
 assert.doesNotMatch(account, /fetch\(/);

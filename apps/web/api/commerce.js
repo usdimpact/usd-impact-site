@@ -235,7 +235,7 @@ async function handleResearchMembershipCheckout(request, response) {
     });
     return sendJson(response, 201, {
       ok: true,
-      testMode: true,
+      testMode: result.testMode,
       billingInterval: result.billingInterval,
       checkoutUrl: result.url,
     }, {

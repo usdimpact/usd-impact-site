@@ -125,8 +125,9 @@ const checkout = await createResearchMembershipCheckout({
   fetchImpl: async (url, init = {}) => {
     if (String(url).startsWith(`${config.supabase.url}/rest/v1/subscriptions?`)) {
       assert.equal(init.method, undefined);
-      assert.match(String(url), /product_id=eq%2Eresearch-membership/);
-      assert.match(String(url), /state=in%2E%28pending%2Cactive%2Cpast_due%2Ccancel_scheduled%29/);
+      const parsed = new URL(url);
+      assert.equal(parsed.searchParams.get('product_id'), 'eq.research-membership');
+      assert.equal(parsed.searchParams.get('state'), 'in.(pending,active,past_due,cancel_scheduled)');
       return new Response('[]', { status: 200 });
     }
     assert.equal(url, 'https://api.lemonsqueezy.com/v1/checkouts');

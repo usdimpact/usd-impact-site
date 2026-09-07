@@ -46,12 +46,16 @@ begin
     raise exception 'Research Membership binding metadata must be a JSON object';
   end if;
 
-  if not exists (
-    select 1
-      from public.profiles
-     where account_id = p_account_id
-       and status = 'active'
-  ) then
+  -- Serialize first-binding attempts per account. A concurrent delivery waits
+  -- here, then observes the binding committed by the winner and returns the
+  -- exact existing subscription instead of surfacing a uniqueness race.
+  perform 1
+    from public.profiles
+   where account_id = p_account_id
+     and status = 'active'
+   for update;
+
+  if not found then
     raise exception 'Research Membership account is not an active profile';
   end if;
 

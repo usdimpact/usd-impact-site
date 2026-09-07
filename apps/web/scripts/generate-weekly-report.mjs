@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const COMPLIANCE = 'Educational and informational only. This report summarizes published USD Impact editions and the systematic weekly score. It is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset.';
+const SCORE_BREADTH_WATCH = "Watch the breadth of the score's eight component contributions alongside these events to see whether the completed-week configuration persists, narrows, or moves toward the nearest regime boundary.";
 
 function isoDate(date) {
   return date.toISOString().slice(0, 10);
@@ -107,6 +108,8 @@ export function generateWeeklyReport({ week, score, newsRoot, generatedAt = new 
   }));
   const sourceUrl = `https://score.usd-impact.com/archive/${week}/weekly_input.json`;
   const top = drivers.slice(0, 3).map((driver) => `${driver.name} ${signed(driver.contribution, 3)}`).join(', ');
+  const softerNames = softer.length > 0 ? softer.join(', ') : 'no inputs';
+  const firmerNames = firmer.length > 0 ? firmer.join(', ') : 'no inputs';
 
   const lines = [
     '---',
@@ -156,13 +159,15 @@ export function generateWeeklyReport({ week, score, newsRoot, generatedAt = new 
     '',
     '## How the news and score fit together',
     '',
-    `The completed-Friday score was ${signed(score.score)}, a weekly change of ${signed(score.week_over_week_change)} and a four-week change of ${signed(score.four_week_change)}. The regime remained ${score.regime}. The three largest absolute component contributions were ${top}. Across all eight inputs, ${softer.join(', ')} contributed toward a softer-dollar reading, while ${firmer.join(', ')} contributed toward a firmer-dollar reading. The nearest regime boundary was ${score.nearest_regime_boundary.toFixed(2)}.`,
+    `The completed-Friday score was ${signed(score.score)}, a weekly change of ${signed(score.week_over_week_change)} and a four-week change of ${signed(score.four_week_change)}. The regime remained ${score.regime}. The news brief tracks verified developments and conditional transmission channels; the score measures the completed week's configuration across eight standardized market inputs.`,
+    '',
+    `The three largest absolute component contributions were ${top}. The softer-dollar contributions came from ${softerNames}, while ${firmerNames} provided firmer-dollar offsets. The nearest regime boundary was ${score.nearest_regime_boundary.toFixed(2)}.`,
     '',
     '## What to watch next',
     '',
     catalysts.length > 0
-      ? `The confirmed forward calendar carried by the published Daily editions includes ${catalysts.map((item) => `${item.event} on ${item.date}`).join('; ')}. These are scheduled observation points, not forecasts or trading signals.`
-      : 'No forward catalyst after the completed Friday was carried consistently in the five published Daily editions. The next report should remain anchored to newly published, source-led evidence.',
+      ? `The confirmed forward calendar carried by the published Daily editions includes ${catalysts.map((item) => `${item.event} on ${item.date}`).join('; ')}. These are scheduled observation points, not forecasts or trading signals. ${SCORE_BREADTH_WATCH}`
+      : `No forward catalyst after the completed Friday was carried consistently in the five published Daily editions. The next report should remain anchored to newly published, source-led evidence. ${SCORE_BREADTH_WATCH}`,
     '',
     '## Methodology note',
     '',

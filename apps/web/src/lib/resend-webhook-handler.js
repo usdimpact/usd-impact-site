@@ -1,3 +1,4 @@
+import { isProviderManagedAuthSuccess } from './resend-auth-notification-boundary.js';
 import {
   RESEND_WEBHOOK_MAX_BYTES,
   ResendWebhookVerificationError,
@@ -175,7 +176,13 @@ async function readOutboxMatch(config, emailId, fetchImpl) {
     path: `/rest/v1/notification_outbox?provider=eq.resend&provider_message_ref=eq.${encodeURIComponent(emailId)}&select=id,status,provider_message_ref&limit=2`,
     fetchImpl,
   });
-  return Array.isArray(rows) ? rows : [];
+  if (!Array.isArray(rows) || rows.some((row) => !row || typeof row !== 'object'
+      || Array.isArray(row) || typeof row.id !== 'string' || !row.id
+      || typeof row.status !== 'string' || !row.status
+      || row.provider_message_ref !== emailId)) {
+    throw new WebhookProcessingError('Resend outbox lookup returned invalid evidence.', 'INVALID_OUTBOX_RESPONSE');
+  }
+  return rows;
 }
 
 async function applyDeliveryEvent({ config, verified, fetchImpl }) {
@@ -185,6 +192,12 @@ async function applyDeliveryEvent({ config, verified, fetchImpl }) {
 
   const matches = await readOutboxMatch(config, verified.event.emailId, fetchImpl);
   if (matches.length === 0) {
+    // Do not create an auth outbox row or weaken the application correlation
+    // race contract. Only signed positive events in the reserved auth namespace
+    // can finish without one; every unknown/negative event still retries.
+    if (isProviderManagedAuthSuccess(verified.event)) {
+      return Object.freeze({ outcome: 'ignored', reason: 'provider-managed-auth-success' });
+    }
     throw new WebhookProcessingError(
       'Resend outbox correlation is not ready.',
       'OUTBOX_CORRELATION_PENDING',
@@ -281,6 +294,11 @@ export async function handleResendWebhook(request, response, options = {}) {
       fetchImpl,
       now: new Date(nowMs),
     });
+    if (result.reason === 'provider-managed-auth-success') {
+      console.info('Resend provider-managed authentication notification acknowledged.', {
+        code: 'PROVIDER_MANAGED_AUTH_SUCCESS', eventType: verified.event.type,
+      });
+    }
     return sendJson(response, 200, { ok: true, duplicate: receiptState.duplicate });
   } catch (error) {
     console.error('Resend webhook processing failed.', {

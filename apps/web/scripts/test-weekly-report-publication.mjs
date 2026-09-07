@@ -21,6 +21,14 @@ const score = {
   source_provenance: Object.fromEntries(['GOLD', 'SPX', 'BTC', 'WTI', 'VIX', 'UST_10Y', 'UST_2Y', 'DXY'].map((name) => [name, { status: 'fresh' }])),
 };
 
+function assertEditorialContract(report) {
+  assert.match(report, /news brief tracks verified developments and conditional transmission channels/i);
+  assert.match(report, /score measures the completed week's configuration across eight standardized market inputs/i);
+  assert.match(report, /softer-dollar contributions/i);
+  assert.match(report, /firmer-dollar offsets/i);
+  assert.match(report, /breadth of the score's eight component contributions/i);
+}
+
 try {
   const workflow = fs.readFileSync(path.resolve(scriptRoot, '../../../.github/workflows/weekly-report.yml'), 'utf8');
   assert.match(workflow, /cron: '17 8 \* \* 0'/);
@@ -115,6 +123,20 @@ try {
   assert.equal((report.match(/^  - title:/gm) ?? []).length, 3);
   assert.equal((report.match(/^  - date: "2026-08-2[4-8]"$/gm) ?? []).length, 5);
   assert.match(report, /adds no new external event claims/);
+  assertEditorialContract(report);
+
+  const noForwardNewsRoot = path.join(root, 'news-no-forward-catalyst');
+  fs.mkdirSync(noForwardNewsRoot);
+  for (const date of dates) {
+    fs.writeFileSync(path.join(noForwardNewsRoot, `${date}.md`), `---\ntitle: "Daily USD Impact — ${date}"\ndate: "${date}"\nstatus: "published"\nsummary: "Verified summary for ${date}."\ncatalysts:\n  - date: "2026-08-28"\n    event: "Completed-week event"\nsources:\n  - id: "source"\n---\n`, 'utf8');
+  }
+  const noForwardReport = generateWeeklyReport({
+    week: '2026-08-28', score, newsRoot: noForwardNewsRoot, generatedAt: '2026-08-29T12:00:00Z',
+  });
+  assert.match(noForwardReport, /catalysts: \[\]/);
+  assert.match(noForwardReport, /No forward catalyst after the completed Friday/);
+  assertEditorialContract(noForwardReport);
+
   assert.throws(() => generateWeeklyReport({ week: '2026-08-28', score: { ...score, week_ending: '2026-08-21' }, newsRoot }), /does not match/);
   const stale = structuredClone(score);
   stale.source_provenance.GOLD.status = 'stale';

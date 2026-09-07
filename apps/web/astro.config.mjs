@@ -36,9 +36,6 @@ const scorePipelineOrigin = resolveScorePipelineOrigin(process.env.PUBLIC_SCORE_
 export default defineConfig({
   site: 'https://www.usd-impact.com',
   output: 'static',
-  redirects: {
-    '/research-membership': '/research/',
-  },
   markdown: {
     syntaxHighlight: false,
   },

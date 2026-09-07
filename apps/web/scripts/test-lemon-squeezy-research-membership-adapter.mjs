@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import {
+  inspectLemonSqueezyResearchMembershipWebhook,
   normalizeLemonSqueezyResearchMembershipWebhook,
   prepareLemonSqueezyResearchMembershipTransition,
 } from '../src/lib/lemon-squeezy-research-membership-adapter.js';
@@ -142,6 +143,129 @@ const ordinaryPaymentSuccess = normalizeLemonSqueezyResearchMembershipWebhook(
 );
 assert.equal(ordinaryPaymentSuccess.action, 'ignore');
 assert.match(ordinaryPaymentSuccess.reason, /subscription_updated/);
+
+const currentFullRefundPayload = invoicePayload('subscription_payment_refunded', {
+  status: 'refunded',
+  refunded: true,
+  refunded_at: '2026-09-15T12:00:00.000Z',
+  total: 2900,
+  refunded_amount: 2900,
+  created_at: '2026-09-15T11:59:59.000Z',
+  updated_at: '2026-09-15T12:00:00.000Z',
+});
+const currentFullRefund = prepareLemonSqueezyResearchMembershipTransition(
+  signedOptions(currentFullRefundPayload),
+);
+assert.equal(currentFullRefund.action, 'apply');
+assert.equal(currentFullRefund.subscriptionPatch.state, 'refunded');
+assert.equal(currentFullRefund.entitlementPatch.state, 'refunded');
+assert.equal(currentFullRefund.entitlementPatch.endsAt, '2026-09-15T12:00:00.000Z');
+
+for (const partialStatus of ['partial_refund', 'paid']) {
+  const partialRefund = normalizeLemonSqueezyResearchMembershipWebhook(
+    signedOptions(invoicePayload('subscription_payment_refunded', {
+      status: partialStatus,
+      refunded: false,
+      refunded_at: null,
+      total: 2900,
+      refunded_amount: 500,
+      created_at: '2026-09-15T11:59:59.000Z',
+      updated_at: '2026-09-15T12:00:00.000Z',
+    })),
+  );
+  assert.equal(partialRefund.action, 'ignore');
+  assert.match(partialRefund.reason, /partial subscription invoice refund/i);
+}
+
+const historicalFullRefund = normalizeLemonSqueezyResearchMembershipWebhook(
+  signedOptions(invoicePayload('subscription_payment_refunded', {
+    status: 'refunded',
+    refunded: true,
+    refunded_at: '2026-09-15T12:00:00.000Z',
+    total: 2900,
+    refunded_amount: 2900,
+    created_at: '2026-08-15T00:00:00.000Z',
+    updated_at: '2026-09-15T12:00:00.000Z',
+  })),
+);
+assert.equal(historicalFullRefund.action, 'ignore');
+assert.match(historicalFullRefund.reason, /historical subscription invoice/i);
+
+const periodlessFullRefund = prepareLemonSqueezyResearchMembershipTransition(
+  signedOptions(currentFullRefundPayload, {
+    ...baseSubscription,
+    currentPeriodStart: null,
+    currentPeriodEnd: null,
+  }),
+);
+assert.equal(periodlessFullRefund.subscriptionPatch.state, 'refunded');
+assert.equal(periodlessFullRefund.entitlementPatch.state, 'refunded');
+
+assert.throws(
+  () => normalizeLemonSqueezyResearchMembershipWebhook(
+    signedOptions(invoicePayload('subscription_payment_refunded', {
+      status: 'refunded',
+      refunded: true,
+      refunded_at: '2026-09-15T12:00:00.000Z',
+      total: 2900,
+      refunded_amount: 500,
+      created_at: '2026-09-15T11:59:59.000Z',
+      updated_at: '2026-09-15T12:00:00.000Z',
+    })),
+  ),
+  /refund payload is inconsistent/i,
+);
+
+assert.throws(
+  () => normalizeLemonSqueezyResearchMembershipWebhook(
+    signedOptions(invoicePayload('subscription_payment_refunded', {
+      status: 'refunded',
+      refunded: true,
+      refunded_at: '2026-09-15T12:00:00.000Z',
+      total: 2900,
+      refunded_amount: 3000,
+      created_at: '2026-09-15T11:59:59.000Z',
+      updated_at: '2026-09-15T12:00:00.000Z',
+    })),
+  ),
+  /refund amount exceeds invoice total/i,
+);
+
+assert.throws(
+  () => normalizeLemonSqueezyResearchMembershipWebhook(
+    signedOptions(invoicePayload('subscription_payment_refunded', {
+      status: 'refunded',
+      refunded: true,
+      refunded_at: '2026-10-01T00:00:01.000Z',
+      total: 2900,
+      refunded_amount: 2900,
+      created_at: '2026-10-01T00:00:00.000Z',
+      updated_at: '2026-10-01T00:00:01.000Z',
+    })),
+  ),
+  /outside the current billing period/i,
+);
+
+const fullRefundInspection = inspectLemonSqueezyResearchMembershipWebhook(
+  signedOptions(currentFullRefundPayload),
+);
+const changedAmountFullRefundInspection = inspectLemonSqueezyResearchMembershipWebhook(
+  signedOptions(invoicePayload('subscription_payment_refunded', {
+    status: 'refunded',
+    refunded: true,
+    refunded_at: '2026-09-15T12:00:00.000Z',
+    total: 3000,
+    refunded_amount: 3000,
+    created_at: '2026-09-15T11:59:59.000Z',
+    updated_at: '2026-09-15T12:00:00.000Z',
+  })),
+);
+assert.equal(fullRefundInspection.providerEventId, changedAmountFullRefundInspection.providerEventId);
+assert.notEqual(
+  fullRefundInspection.metadata.replayFingerprint,
+  changedAmountFullRefundInspection.metadata.replayFingerprint,
+);
+assert.equal(fullRefundInspection.metadata.replayFingerprintVersion, 1);
 
 const expired = prepareLemonSqueezyResearchMembershipTransition(
   signedOptions(subscriptionPayload('subscription_expired', {

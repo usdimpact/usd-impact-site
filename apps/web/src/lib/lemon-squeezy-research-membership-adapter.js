@@ -17,6 +17,7 @@ export const LEMON_SQUEEZY_RESEARCH_EVENTS = Object.freeze([
   'subscription_payment_failed',
   'subscription_payment_success',
   'subscription_payment_recovered',
+  'subscription_payment_refunded',
 ]);
 
 const STABLE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,254}$/;
@@ -258,6 +259,50 @@ function canonicalFromInvoice({ eventName, attributes, existingSubscription }) {
     };
   }
 
+  if (eventName === 'subscription_payment_refunded') {
+    const status = text(attributes.status).toLowerCase();
+    const invoiceCreatedAt = isoTimestamp(attributes.created_at, 'created_at');
+    const refundedAt = optionalIsoTimestamp(attributes.refunded_at, 'refunded_at');
+    const total = positiveInteger(attributes.total, 'total');
+    const refundedAmount = positiveInteger(attributes.refunded_amount, 'refunded_amount');
+    if (refundedAmount > total) throw new Error('Lemon Squeezy refund amount exceeds invoice total.');
+
+    const fullRefund = status === 'refunded'
+      && attributes.refunded === true
+      && refundedAmount === total
+      && refundedAt !== null;
+    const partialRefund = ['partial_refund', 'paid'].includes(status)
+      && attributes.refunded !== true
+      && refundedAmount < total
+      && refundedAt === null;
+
+    if (partialRefund) {
+      return {
+        action: 'ignore',
+        reason: 'A partial subscription invoice refund does not terminate Research Membership access.',
+      };
+    }
+    if (!fullRefund) throw new Error('Lemon Squeezy refund payload is inconsistent.');
+
+    if (currentPeriodStart && Date.parse(invoiceCreatedAt) < Date.parse(currentPeriodStart)) {
+      return {
+        action: 'ignore',
+        reason: 'A full refund for a historical subscription invoice does not terminate the current Research Membership period.',
+      };
+    }
+    if (currentPeriodEnd && Date.parse(invoiceCreatedAt) >= Date.parse(currentPeriodEnd)) {
+      throw new Error('Lemon Squeezy refund invoice is outside the current billing period.');
+    }
+
+    return {
+      action: 'apply',
+      eventType: RESEARCH_MEMBERSHIP_EVENT_TYPES.REFUNDED,
+      currentPeriodStart,
+      currentPeriodEnd,
+      cancelAtPeriodEnd: false,
+    };
+  }
+
   throw new TypeError('Unsupported Lemon Squeezy subscription-invoice event.');
 }
 
@@ -328,6 +373,14 @@ export function inspectLemonSqueezyResearchMembershipWebhook({
     providerSubscriptionId,
     occurredAt: isoTimestamp(attributes.updated_at || attributes.created_at, 'occurredAt'),
   };
+  const refundFingerprintFields = eventName === 'subscription_payment_refunded'
+    ? {
+      refunded: attributes.refunded === true,
+      refundedAt: optionalIsoTimestamp(attributes.refunded_at, 'refunded_at'),
+      total: positiveInteger(attributes.total, 'total'),
+      refundedAmount: positiveInteger(attributes.refunded_amount, 'refunded_amount'),
+    }
+    : {};
   // Preserve only a digest of the binding and transition-driving signed fields.
   // Formatting and expiring delivery URLs are deliberately not event identity.
   const replayFingerprint = createHash('sha256').update(JSON.stringify({
@@ -342,6 +395,7 @@ export function inspectLemonSqueezyResearchMembershipWebhook({
     cancelled: isSubscriptionObject ? (attributes.cancelled ?? null) : null,
     renewsAt: isSubscriptionObject ? optionalIsoTimestamp(attributes.renews_at, 'renews_at') : null,
     endsAt: isSubscriptionObject ? optionalIsoTimestamp(attributes.ends_at, 'ends_at') : null,
+    ...refundFingerprintFields,
   })).digest('hex');
   return Object.freeze({
     ...identity, eventName, data, attributes, subscription, isSubscriptionObject,

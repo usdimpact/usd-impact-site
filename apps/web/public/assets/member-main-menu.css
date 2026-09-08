@@ -1,5 +1,5 @@
 /* Scoped to the shared disclosure; existing reader/player layouts stay unchanged. */
-.member-main-menu{position:relative;flex-shrink:0;z-index:30;font:600 .95rem/1.5 Inter,system-ui,sans-serif;color:#fff}
+.member-main-menu{position:relative;flex-shrink:0;margin-left:auto;z-index:30;font:600 .95rem/1.5 Inter,system-ui,sans-serif;color:#fff}
 .member-main-menu>summary{cursor:pointer;min-height:44px;padding:10px 14px;border:1px solid #8492a6;border-radius:9px;white-space:nowrap}
 .member-main-menu>summary:hover,.member-main-menu[open]>summary{background:#19334e}
 .member-main-menu>summary:focus-visible,.member-main-menu-panel a:focus-visible{outline:3px solid #e2bd76;outline-offset:3px}

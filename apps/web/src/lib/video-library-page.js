@@ -1,3 +1,4 @@
+import { memberMainMenuAssets, renderMemberMainMenu } from './site-navigation.js';
 import {
   collections,
   getAdjacentVideos,
@@ -31,6 +32,7 @@ function renderHeader() {
         <a href="/guided-edition/video-library/" aria-current="page">Video Library</a>
         <a href="/account/">Account</a>
       </nav>
+      ${renderMemberMainMenu()}
     </div>
   </header>`;
 }
@@ -53,6 +55,7 @@ function renderDocument({ title, description, body, scripts = '' }) {
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(description)}">
   <link rel="stylesheet" href="/assets/video-library.css">
+${memberMainMenuAssets()}
 </head>
 <body class="vl-body">
   ${renderHeader()}

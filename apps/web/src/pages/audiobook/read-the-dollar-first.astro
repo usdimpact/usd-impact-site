@@ -3,7 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import ComplianceNote from '../../components/ComplianceNote.astro';
 import { readTheDollarFirstAudiobook } from '../../data/read-the-dollar-first-audiobook.js';
 
-const memberAudiobookSignIn = '/account/sign-in/?next=%2Fguided-edition%2Faudiobook%2F';
+const memberAudiobookPath = '/guided-edition/audiobook/';
 ---
 <BaseLayout
   title="Read the Dollar First English Audiobook | USD Impact"
@@ -42,10 +42,10 @@ const memberAudiobookSignIn = '/account/sign-in/?next=%2Fguided-edition%2Faudiob
         <div class="eyebrow">Library Pass benefit</div>
         <h2 id="audiobook-access-heading">Listen in the protected member library.</h2>
         <p>
-          Full playback is available only through an eligible, signed-in Library Pass account. The Library Pass is a one-time purchase; the audiobook is not part of Research Membership and does not require a recurring subscription.
+          Full playback is available only through an eligible, signed-in Library Pass account. The Library Pass is a one-time purchase; the audiobook is not part of Research Membership and does not require a recurring subscription. Sign in to listen if needed; an existing valid session continues directly.
         </p>
         <div class="button-row">
-          <a class="button primary" href={memberAudiobookSignIn}>Sign in to listen</a>
+          <a class="button primary" href={memberAudiobookPath}>Open audiobook</a>
           <a class="button audiobook-product-link" href="/book/read-the-dollar-first/">View Library Pass details</a>
         </div>
       </div>
@@ -73,7 +73,7 @@ const memberAudiobookSignIn = '/account/sign-in/?next=%2Fguided-edition%2Faudiob
         </p>
       </div>
       <div class="button-row">
-        <a class="button primary" href={memberAudiobookSignIn}>Open member audiobook</a>
+        <a class="button primary" href={memberAudiobookPath}>Open member audiobook</a>
       </div>
     </section>
 

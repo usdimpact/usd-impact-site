@@ -1,0 +1,14 @@
+/* Scoped to the shared disclosure; existing reader/player layouts stay unchanged. */
+.member-main-menu{position:relative;flex-shrink:0;z-index:30;font:600 .95rem/1.5 Inter,system-ui,sans-serif;color:#fff}
+.member-main-menu>summary{cursor:pointer;min-height:44px;padding:10px 14px;border:1px solid #8492a6;border-radius:9px;white-space:nowrap}
+.member-main-menu>summary:hover,.member-main-menu[open]>summary{background:#19334e}
+.member-main-menu>summary:focus-visible,.member-main-menu-panel a:focus-visible{outline:3px solid #e2bd76;outline-offset:3px}
+.member-main-menu>.member-main-menu-panel{position:absolute;right:0;top:calc(100% + 8px);display:grid;grid-template-columns:1fr 1fr;gap:20px;width:min(34rem,calc(100vw - 2rem));max-height:70vh;overflow:auto;padding:22px;border:1px solid #8492a6;border-radius:12px;background:#071a33;color:#fff;box-shadow:0 12px 30px #0004;box-sizing:border-box}
+.member-main-menu-group{display:flex;flex-direction:column;min-width:0;gap:4px}
+.member-main-menu-group>strong{display:block;color:#e2bd76;font-size:.8rem;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}
+.member-main-menu-panel .member-main-menu-group>a{display:block;min-height:44px;padding:10px 8px;border-radius:6px;color:#fff;text-decoration:none;font-size:.95rem;line-height:1.5;box-sizing:border-box}
+.member-main-menu-panel .member-main-menu-group>a:hover{background:#19334e}
+@media(max-width:760px){.member-main-menu{align-self:stretch;width:100%}.member-main-menu>.member-main-menu-panel{position:static;width:100%;max-height:none;margin-top:8px;grid-template-columns:1fr 1fr;padding:16px;gap:12px}}
+@media(max-width:380px){.member-main-menu>.member-main-menu-panel{grid-template-columns:1fr}}
+
+@media(max-width:1000px){header>.nav,header>.site-nav-wrap,.vl-site-header>.vl-header-inner{flex-wrap:wrap}}

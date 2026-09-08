@@ -1,3 +1,4 @@
+import { memberMainMenuAssets, renderMemberMainMenu } from './site-navigation.js';
 import {
   readAccountAccessState,
   safeSupabaseError,
@@ -79,6 +80,7 @@ export function renderProtectedBook() {
   <meta name="robots" content="noindex,nofollow">
   <title>Read the Dollar First Digital Reader | USD Impact</title>
   <style>:root{--navy:#071a33;--gold:#c9a35b;--paper:#f5f7fa;--ink:#101923;--line:#d7dde5}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.6}.skip-link{position:absolute;left:16px;top:-80px;z-index:10;padding:10px 14px;border-radius:8px;background:#fff;color:var(--navy);font-weight:800}.skip-link:focus{top:12px}header,footer{background:var(--navy);color:#fff}.wrap{width:min(980px,calc(100% - 44px));margin:auto}.site-nav-wrap{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:18px 0}.site-brand{color:#fff;font-weight:850;text-decoration:none}.site-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.site-nav a{min-height:42px;display:inline-flex;align-items:center;padding:8px 10px;border-radius:9px;color:#dce4ee;font-size:.9rem;font-weight:700;text-decoration:none}.site-nav a:hover,.site-nav a:focus-visible,.site-nav a[aria-current=page]{background:rgba(255,255,255,.1);color:#fff}.site-nav a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}.hero{background:#0b2443;color:#fff;padding:54px 0}.hero p{max-width:760px}.hero h1{margin:.25em 0;font-size:clamp(2.25rem,6vw,4rem);line-height:1.08}main{max-width:820px;padding:34px 0 64px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:22px}.button{display:inline-block;background:var(--gold);color:#071a33;border-radius:999px;padding:14px 22px;text-decoration:none;font-weight:700}.button:focus-visible{outline:3px solid var(--navy);outline-offset:3px}.meta{color:#5a6472}.hash{overflow-wrap:anywhere;font-family:ui-monospace,monospace;font-size:.85rem}.notice{border-left:4px solid var(--gold);padding-left:24px}.compliance{font-size:.9rem;color:#5a6472}footer{padding:22px}@media(max-width:720px){.site-nav-wrap{align-items:flex-start;flex-direction:column;gap:10px}.site-nav{width:100%;gap:4px}.site-nav a{padding:7px 8px}.hero{padding:42px 0}.card{padding:22px}}</style>
+${memberMainMenuAssets()}
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -91,6 +93,7 @@ export function renderProtectedBook() {
       <a href="/guided-edition/video-library/">Video Library</a>
       <a href="/account/">Account</a>
     </nav>
+    ${renderMemberMainMenu()}
   </div></header>
   <section class="hero"><div class="wrap"><p>Protected Library Pass digital reader</p><h1>${escapeHtml(privateBookDocument.title)}</h1><p>Edition ${escapeHtml(privateBookDocument.edition)} · ${escapeHtml(privateBookDocument.build)}</p></div></section>
   <main id="main-content" class="wrap"><section class="card"><h2>Your private book file</h2><p>This file is available only to an eligible signed-in Library Pass account. The download link expires after five minutes and can be requested again from this page.</p><p><a class="button" href="${BOOK_DOWNLOAD_PATH}" rel="nofollow">Open private PDF</a></p><p class="meta">File size: ${privateBookDocument.size.toLocaleString('en-US')} bytes</p><p class="hash"><strong>SHA-256:</strong> ${escapeHtml(privateBookDocument.sha256)}</p></section><section class="card notice"><h2>Accessibility limitation</h2><p>${escapeHtml(privateBookDocument.accessibility)}</p></section><p class="compliance"><strong>Educational and informational only.</strong> Not investment, financial, legal, tax or trading advice; not a trading signal or recommendation. Market relationships are regime-dependent and may change.</p></main>

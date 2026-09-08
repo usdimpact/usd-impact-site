@@ -5,7 +5,9 @@ import BookChapterBridgeCard from '../components/BookChapterBridgeCard.astro';
 import ConsentClient from '../components/ConsentClient.astro';
 import TelemetryClient from '../components/TelemetryClient.astro';
 import PwaClient from '../components/PwaClient.astro';
+import { SITE_NAVIGATION, navigationLinkIsActive } from '../lib/site-navigation.js';
 import { getChapterById, getSurfaceBridgeForPath } from '../data/book-site-bridge/index.mjs';
+const [learnNavigation, updatesNavigation, libraryNavigation] = SITE_NAVIGATION;
 const { title, description, noindex = false, stylesheets = [] } = Astro.props;
 const surfaceBridge = getSurfaceBridgeForPath(Astro.url.pathname);
 const surfaceChapter = surfaceBridge ? getChapterById(surfaceBridge.chapterId) : null;
@@ -17,7 +19,7 @@ const learnIsActive = [
   "/lead-magnets/weekly-dollar-regime-checklist/",
 ].some(pageIsActive);
 const updatesAreActive = ["/news/", "/score/", "/reports/"].some(pageIsActive);
-const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIsActive);
+const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-edition/"].some(pageIsActive);
 ---
 <!doctype html>
 <html lang="en">
@@ -35,6 +37,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIs
     <link rel="apple-touch-icon" href="/assets/logo/USDImpact_Icon_Color_192.png" sizes="192x192" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     {stylesheets.map((href) => <link rel="stylesheet" href={href} />)}
+    <script is:inline src="/assets/session-entry.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -64,25 +67,25 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIs
           <details class="nav-group" data-nav-group>
             <summary class:list={["nav-summary", { "is-active": learnIsActive }]}>Learn</summary>
             <div class="nav-submenu">
-              <a href="/start-here/" aria-current={pageIsActive("/start-here/") ? "page" : undefined}>Start Here</a>
-              <a href="/framework/dollar-transmission-chain/" aria-current={pageIsActive("/framework/dollar-transmission-chain/") ? "page" : undefined}>Framework</a>
-              <a href="/lead-magnets/weekly-dollar-regime-checklist/" aria-current={pageIsActive("/lead-magnets/weekly-dollar-regime-checklist/") ? "page" : undefined}>Weekly Checklist</a>
+              {learnNavigation.links.map((link) => (
+                <a href={link.href} aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}>{link.label}</a>
+              ))}
             </div>
           </details>
           <details class="nav-group" data-nav-group>
             <summary class:list={["nav-summary", { "is-active": updatesAreActive }]}>Updates</summary>
             <div class="nav-submenu">
-              <a href="/news/" aria-current={pageIsActive("/news/") ? "page" : undefined}>Daily USD Impact</a>
-              <a href="/score/" aria-current={pageIsActive("/score/") ? "page" : undefined}>Weekly Score</a>
-              <a href="/reports/" aria-current={pageIsActive("/reports/") ? "page" : undefined}>Reports</a>
+              {updatesNavigation.links.map((link) => (
+                <a href={link.href} aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}>{link.label}</a>
+              ))}
             </div>
           </details>
           <details class="nav-group" data-nav-group>
             <summary class:list={["nav-summary", { "is-active": libraryIsActive }]}>Library</summary>
             <div class="nav-submenu">
-              <a href="/book/read-the-dollar-first/" aria-current={pageIsActive("/book/") ? "page" : undefined}>Book</a>
-              <a href="/audiobook/read-the-dollar-first/" aria-current={pageIsActive("/audiobook/") ? "page" : undefined}>Audiobook</a>
-              <a href="/video-library/" aria-current={pageIsActive("/video-library/") ? "page" : undefined}>Video Library</a>
+              {libraryNavigation.links.map((link) => (
+                <a href={link.href} aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}>{link.label}</a>
+              ))}
             </div>
           </details>
           <a class="nav-direct" href="/account/" aria-current={pageIsActive("/account/") ? "page" : undefined}>Account</a>
@@ -123,8 +126,8 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/"].some(pageIs
             <p class="footer-heading">Product</p>
             <a href="/account/">Account</a>
             <a href="/book/read-the-dollar-first/">Book &amp; pricing</a>
-            <a href="/audiobook/read-the-dollar-first/">Audiobook</a>
-            <a href="/video-library/">Video Library</a>
+            <a href="/guided-edition/audiobook/">Audiobook</a>
+            <a href="/guided-edition/video-library/">Video Library</a>
           </div>
           <div class="footer-group">
             <p class="footer-heading">Learn</p>

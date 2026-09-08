@@ -12,7 +12,7 @@ export function isIssueExplicitlyBlocked(issue) {
   const body = normalized(issue?.body);
   const text = `${title}\n${body}`;
 
-  return /awaiting owner|owner decision|required owner decision|blocked(?: only)? by|cannot proceed until|external prerequisites|after provider setup|after credentials exist|no activation should occur until|do not (?:activate|enable|launch|proceed)[^\n]{0,160} until/.test(text);
+  return /awaiting owner|owner decision|required owner decision|blocked(?: only)? by|cannot proceed until|external prerequisites|activation prerequisites|after provider setup|after credentials exist|no activation should occur until|do not (?:activate|enable|launch|proceed)[^\n]{0,160} until/.test(text);
 }
 
 export function selectWorkflowRun(runs, { headSha = null } = {}) {

@@ -1,11 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  classifyHeadScopedWorkflow,
   classifyWorkflowRecovery,
   evaluateDailyDispatch,
   isCompletedFailure,
   isFailureOnCurrentHead,
   isIssueExplicitlyBlocked,
+  isOperationsConsoleIssue,
   isRunUnknown,
   selectWorkflowRun,
 } from './control-center-policy.mjs';
@@ -180,9 +182,11 @@ const dailyRecovery = latestMergedPublication(closedPulls, 'Publish Daily USD Im
 const catalystRecovery = latestMergedPublication(closedPulls, 'Publish Catalyst Brief — ');
 const dailyOperational = classifyWorkflowRecovery(daily, dailyRecovery);
 const catalystOperational = classifyWorkflowRecovery(catalyst, catalystRecovery);
+const pipelineQualityOperational = classifyHeadScopedWorkflow(pipelineQuality, pipelineHead.head_sha);
+const pipelineWeeklyHealthOperational = classifyHeadScopedWorkflow(pipelineWeeklyHealth, pipelineHead.head_sha);
 
 const openIssues = issuesRaw
-  .filter((issue) => !issue.pull_request)
+  .filter((issue) => !issue.pull_request && !isOperationsConsoleIssue(issue))
   .map((issue) => {
     const scored = scoreIssue(issue);
     return {
@@ -241,18 +245,28 @@ const websiteCriticalFailure = qualityFailureUnscoped
   || dailyHealthFailureUnscoped
   || isFailureOnCurrentHead(quality, websiteHead.head_sha)
   || isFailureOnCurrentHead(dailyHealth, websiteHead.head_sha);
-const pipelineCriticalFailure = [pipelineQuality, pipelineWeeklyHealth].some((run) => run.conclusion === 'failure');
+const pipelineQualityFailureUnscoped = isCompletedFailure(pipelineQuality) && !pipelineQuality.head_sha;
+const pipelineHealthFailureUnscoped = isCompletedFailure(pipelineWeeklyHealth) && !pipelineWeeklyHealth.head_sha;
+const pipelineCriticalFailure = pipelineQualityFailureUnscoped
+  || pipelineHealthFailureUnscoped
+  || isFailureOnCurrentHead(pipelineQuality, pipelineHead.head_sha)
+  || isFailureOnCurrentHead(pipelineWeeklyHealth, pipelineHead.head_sha);
+const stalePipelineFailure = pipelineQualityOperational.operational_conclusion === 'stale_failure'
+  || pipelineWeeklyHealthOperational.operational_conclusion === 'stale_failure';
 const hasP0 = openIssues.some((issue) => issue.priority === 'P0' && !issue.blocked);
 const hasP1 = openIssues.some((issue) => issue.priority === 'P1' && !issue.blocked);
 const workflowUnknown = [quality, daily, dailyHealth, pipelineQuality, pipelineWeeklyHealth].some(isRunUnknown);
 let health = 'GREEN';
 if (websiteCriticalFailure || pipelineCriticalFailure || hasP0) health = 'RED';
-else if (hasP1 || staleDailyRecoveryPending || workflowUnknown) health = 'AMBER';
+else if (hasP1 || staleDailyRecoveryPending || stalePipelineFailure || workflowUnknown) health = 'AMBER';
 
 const next = openIssues.find((issue) => !issue.blocked) || openIssues[0] || null;
-const mainBlocker = health === 'RED'
-  ? (next ? `#${next.number} ${next.title}` : (websiteCriticalFailure ? 'Website critical workflow failure detected' : 'Pipeline critical workflow failure detected'))
-  : (next && next.priority === 'P1' ? `#${next.number} ${next.title}` : 'NONE');
+const topP0 = openIssues.find((issue) => issue.priority === 'P0' && !issue.blocked) || null;
+let mainBlocker = 'NONE';
+if (websiteCriticalFailure) mainBlocker = 'Website critical workflow failure detected';
+else if (pipelineCriticalFailure) mainBlocker = 'Pipeline critical workflow failure detected';
+else if (topP0) mainBlocker = `#${topP0.number} ${topP0.title}`;
+else if (next && next.priority === 'P1') mainBlocker = `#${next.number} ${next.title}`;
 
 const state = {
   schema_version: 1,
@@ -280,9 +294,9 @@ const state = {
       catalyst_brief: catalystOperational
     },
     pipeline: {
-      quality: pipelineQuality,
+      quality: pipelineQualityOperational,
       weekly: pipelineWeekly,
-      weekly_health: pipelineWeeklyHealth
+      weekly_health: pipelineWeeklyHealthOperational
     }
   },
   publishing: {
@@ -307,6 +321,7 @@ const state = {
     'Vercel production readiness must be verified outside this GitHub-only state snapshot after release.',
     'Cloudflare Pages remains separate to the pipeline dashboard and is not a usd-impact-site deployment target.',
     'A project-wide P0 or pipeline failure does not automatically block public Daily News unless it affects website publishing or a critical website quality/health workflow.',
+    'Old-head pipeline health failures are preserved as stale_failure warnings until a newer genuine health run supersedes them; they do not represent a current-head RED incident.',
     'Raw workflow conclusions are preserved; operational_conclusion may mark a failed automation run as recovered_after_review only when a later matching publication PR was actually merged.',
     'An explicit /daily may perform one recovery dispatch only when both failed Daily signals belong to older commits and exact-current-head Web Quality is green.',
     'Daily failure gates are read only from bounded issue markers and never from untrusted provider payloads.'
@@ -339,9 +354,9 @@ const statusMd = [
   workflowLine('catalyst-brief', catalystOperational),
   '',
   '**Pipeline workflow health:**',
-  workflowLine('quality', pipelineQuality),
+  workflowLine('quality', pipelineQualityOperational),
   workflowLine('weekly', pipelineWeekly),
-  workflowLine('weekly-health', pipelineWeeklyHealth)
+  workflowLine('weekly-health', pipelineWeeklyHealthOperational)
 ].join('\n');
 
 let responseMd = statusMd;

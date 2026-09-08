@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  classifyHeadScopedWorkflow,
   classifyWorkflowRecovery,
   evaluateDailyDispatch,
   isCompletedFailure,
@@ -7,6 +8,7 @@ import {
   isFailureOnCurrentHead,
   isFailureOnOlderHead,
   isIssueExplicitlyBlocked,
+  isOperationsConsoleIssue,
   isRunUnknown,
   runMatchesHead,
   selectWorkflowRun,
@@ -39,6 +41,29 @@ assert.equal(runMatchesHead(run(), currentHead), true);
 assert.equal(isFailureOnCurrentHead(run({ conclusion: 'failure' }), currentHead), true);
 assert.equal(isFailureOnOlderHead(run({ conclusion: 'failure', headSha: oldHead }), currentHead), true);
 assert.equal(isRunUnknown({ status: 'in_progress', conclusion: null, head_sha: currentHead }), true);
+
+{
+  const stale = classifyHeadScopedWorkflow(run({ conclusion: 'failure', headSha: oldHead }), currentHead);
+  assert.equal(stale.conclusion, 'failure');
+  assert.equal(stale.operational_conclusion, 'stale_failure');
+
+  const current = classifyHeadScopedWorkflow(run({ conclusion: 'failure' }), currentHead);
+  assert.equal(current.operational_conclusion, 'failure');
+
+  const success = classifyHeadScopedWorkflow(run(), currentHead);
+  assert.equal(success.operational_conclusion, 'success');
+}
+
+{
+  assert.equal(isOperationsConsoleIssue({
+    title: 'USD Impact Control Center — operations console',
+    body: 'This issue is an operations console, not a product backlog item.\n\n#usd-impact-ops',
+  }), true);
+  assert.equal(isOperationsConsoleIssue({
+    title: 'Repair Daily publication validation',
+    body: '#usd-impact-backlog',
+  }), false);
+}
 
 {
   const blockedIssues = [
@@ -242,4 +267,4 @@ assert.equal(isRunUnknown({ status: 'in_progress', conclusion: null, head_sha: c
   assert.equal(result.currentQualityGreen, false);
 }
 
-console.log('Control-center workflow selection, blocker classification, and Daily recovery policy tests passed.');
+console.log('Control-center workflow selection, blocker classification, stale-head health, and Daily recovery policy tests passed.');

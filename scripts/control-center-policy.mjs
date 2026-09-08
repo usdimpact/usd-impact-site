@@ -11,14 +11,24 @@ export function isIssueExplicitlyBlocked(issue) {
   const title = normalized(issue?.title);
   const body = normalized(issue?.body);
   const text = `${title}\n${body}`;
+  const explicitDependency = /awaiting owner|owner decision|required owner decision|blocked(?: only)? by|cannot proceed until|external prerequisites|activation prerequisites|after provider setup|after credentials exist|no activation should occur until|do not (?:activate|enable|launch|proceed)[^\n]{0,160} until/.test(text);
+  const explicitHold = /\bhold\b[^\n]{0,200}(?:unless|until)/.test(text)
+    || /deferred\s*\/\s*not for immediate activation/.test(text);
+  const protectedActivation = /controlled activation checklist/.test(body)
+    && /owner-controlled qa|set production|production [`a-z0-9_-]+=?true|authorized dispatch|controlled scheduler run|send one controlled test|daily_card_email_distribution_enabled=true/.test(body);
 
-  return /awaiting owner|owner decision|required owner decision|blocked(?: only)? by|cannot proceed until|external prerequisites|activation prerequisites|after provider setup|after credentials exist|no activation should occur until|do not (?:activate|enable|launch|proceed)[^\n]{0,160} until/.test(text);
+  return explicitDependency || explicitHold || protectedActivation;
 }
 
 export function isOperationsConsoleIssue(issue) {
   const body = normalized(issue?.body);
   return /(?:^|\s)#usd-impact-ops(?:\s|$)/.test(body)
     || /operations console, not a product backlog item/.test(body);
+}
+
+export function selectNextActionableIssue(issues) {
+  if (!Array.isArray(issues)) return null;
+  return issues.find((issue) => issue && !issue.blocked) || null;
 }
 
 export function selectWorkflowRun(runs, { headSha = null } = {}) {

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-01T19:13:23.424Z",
+  "generated_at": "2026-09-08T11:43:21.438Z",
   "generated_by": "github-actions:sync",
   "freshness": "VERIFIED",
   "health": "RED",
@@ -15,12 +15,12 @@
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": "17b088548e22bd3906e0f3eff441163e02d4b8d2"
+      "head_sha": "91837a0d4bca0e91647ce0ed21bee847b9cd0213"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
       "default_branch": "main",
-      "head_sha": "58ae75e09d9ab7abfdb896afc77cbe7fe745c6c9"
+      "head_sha": "babd002436dd083a54b26cd47b9c77b082c73436"
     },
     "weekly_commentary": {
       "name": "usdimpact/usd-impact",
@@ -33,33 +33,33 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/33547521902",
-        "created_at": "2026-09-01T19:06:04Z",
-        "head_sha": "17b088548e22bd3906e0f3eff441163e02d4b8d2"
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34197539815",
+        "created_at": "2026-09-08T07:04:17Z",
+        "head_sha": "91837a0d4bca0e91647ce0ed21bee847b9cd0213"
       },
       "daily_news": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/33527274875",
-        "created_at": "2026-09-01T15:41:30Z",
-        "head_sha": "0309dbb1f6b9a585424304a2652dad0e665935b8",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34136207432",
+        "created_at": "2026-09-07T15:02:37Z",
+        "head_sha": "64d8a39caac1f2ab29ade9868e3c84cc98f44fba",
         "operational_conclusion": "success",
         "recovery": null
       },
       "daily_news_health": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/33537799809",
-        "created_at": "2026-09-01T17:26:41Z",
-        "head_sha": "6cf4e7434e5d67f0c617e71050f63a66db8aa205",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34164381216",
+        "created_at": "2026-09-07T21:47:15Z",
+        "head_sha": "ee02fcc50ea768555459e70f32bea2370fa5256c",
         "operational_conclusion": "success"
       },
       "catalyst_brief": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/33505544893",
-        "created_at": "2026-09-01T12:02:25Z",
-        "head_sha": "5bbfdb0d813a5ff85d964fb1cbd56ea42221fb07",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34174065225",
+        "created_at": "2026-09-08T00:40:08Z",
+        "head_sha": "9daf59d91fd8708bd37e32ca724f0ed622ce9d5c",
         "operational_conclusion": "success",
         "recovery": null
       }
@@ -68,22 +68,22 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/33279640395",
-        "created_at": "2026-08-29T22:52:37Z",
-        "head_sha": "f51f7abf2d4ec99890eb5537424f6faab885ef32"
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/34025269129",
+        "created_at": "2026-09-06T09:39:29Z",
+        "head_sha": "babd002436dd083a54b26cd47b9c77b082c73436"
       },
       "weekly": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/33433413891",
-        "created_at": "2026-08-31T19:57:52Z",
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/33930528627",
+        "created_at": "2026-09-04T23:43:02Z",
         "head_sha": "58ae75e09d9ab7abfdb896afc77cbe7fe745c6c9"
       },
       "weekly_health": {
         "status": "completed",
-        "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/33433444277",
-        "created_at": "2026-08-31T19:58:12Z",
+        "conclusion": "failure",
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/33950022057",
+        "created_at": "2026-09-05T06:30:53Z",
         "head_sha": "58ae75e09d9ab7abfdb896afc77cbe7fe745c6c9"
       }
     }
@@ -102,36 +102,6 @@
     "stale_daily_health_failure": false
   },
   "open_work": [
-    {
-      "number": 53,
-      "title": "P0 — replacement-provider checkout and verified entitlement integration",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
-      "updated_at": "2026-08-31T20:21:56Z",
-      "priority": "P0",
-      "score": 1260,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 50,
-      "title": "P0 — controlled Library Pass revenue and Production-readiness program",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/50",
-      "updated_at": "2026-08-31T16:00:14Z",
-      "priority": "P0",
-      "score": 1180,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 54,
-      "title": "P1 — integrated Library Pass rehearsal and Production launch",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/54",
-      "updated_at": "2026-08-31T15:58:23Z",
-      "priority": "P1",
-      "score": 1060,
-      "blocked": false,
-      "daily_gate": null
-    },
     {
       "number": 263,
       "title": "Add WhatsApp Business Daily Card distribution after provider setup",
@@ -166,7 +136,7 @@
       "number": 166,
       "title": "USD Impact Control Center — operations console",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
-      "updated_at": "2026-09-01T19:13:14Z",
+      "updated_at": "2026-09-07T14:59:14Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,
@@ -214,46 +184,16 @@
     },
     {
       "number": 122,
-      "title": "Phase 2 — recurring Research Membership for ongoing reports and TradingView",
+      "title": "Phase 2 — recurring Research Membership launch readiness",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/122",
-      "updated_at": "2026-08-22T12:49:32Z",
+      "updated_at": "2026-09-08T06:21:32Z",
       "priority": "P3",
-      "score": 490,
+      "score": 510,
       "blocked": false,
       "daily_gate": null
     }
   ],
   "priority_queue": [
-    {
-      "number": 53,
-      "title": "P0 — replacement-provider checkout and verified entitlement integration",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/53",
-      "updated_at": "2026-08-31T20:21:56Z",
-      "priority": "P0",
-      "score": 1260,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 50,
-      "title": "P0 — controlled Library Pass revenue and Production-readiness program",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/50",
-      "updated_at": "2026-08-31T16:00:14Z",
-      "priority": "P0",
-      "score": 1180,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 54,
-      "title": "P1 — integrated Library Pass rehearsal and Production launch",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/54",
-      "updated_at": "2026-08-31T15:58:23Z",
-      "priority": "P1",
-      "score": 1060,
-      "blocked": false,
-      "daily_gate": null
-    },
     {
       "number": 263,
       "title": "Add WhatsApp Business Daily Card distribution after provider setup",
@@ -288,7 +228,7 @@
       "number": 166,
       "title": "USD Impact Control Center — operations console",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/166",
-      "updated_at": "2026-09-01T19:13:14Z",
+      "updated_at": "2026-09-07T14:59:14Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,
@@ -323,10 +263,30 @@
       "score": 590,
       "blocked": false,
       "daily_gate": null
+    },
+    {
+      "number": 242,
+      "title": "P3 — enable Production knowledge search after launch-critical gates",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/242",
+      "updated_at": "2026-08-22T14:26:52Z",
+      "priority": "P3",
+      "score": 550,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 122,
+      "title": "Phase 2 — recurring Research Membership launch readiness",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/122",
+      "updated_at": "2026-09-08T06:21:32Z",
+      "priority": "P3",
+      "score": 510,
+      "blocked": false,
+      "daily_gate": null
     }
   ],
-  "main_blocker": "#53 P0 — replacement-provider checkout and verified entitlement integration",
-  "next_action": "#53 P0 — replacement-provider checkout and verified entitlement integration",
+  "main_blocker": "#263 Add WhatsApp Business Daily Card distribution after provider setup",
+  "next_action": "#263 Add WhatsApp Business Daily Card distribution after provider setup",
   "notes": [
     "Generated state is a snapshot and never overrides canonical production or governance configuration.",
     "Vercel production readiness must be verified outside this GitHub-only state snapshot after release.",

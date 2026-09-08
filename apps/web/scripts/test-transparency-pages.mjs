@@ -250,7 +250,13 @@ assert.match(threeDialsWorkflow, /gh pr create/);
 assert.match(threeDialsWorkflow, /Protected human review and separate explicit owner approval are required before merge/);
 assert.match(threeDialsWorkflow, /No automatic merge was attempted/);
 assert.doesNotMatch(threeDialsWorkflow, /gh pr merge|--auto|--admin/);
-assert.match(threeDialsWorkflow, /required \*\*validate-and-build\*\* and \*\*Dependency review\*\* contexts on that exact synthetic merge SHA/);
+assert.match(threeDialsWorkflow, /native `pull_request` runs for the required \*\*validate-and-build\*\* and \*\*Dependency review\*\* contexts/);
+assert.match(threeDialsWorkflow, /refs\/pull\/<PR_NUMBER>\/merge/);
+assert.match(threeDialsWorkflow, /workflows='quality\.yml dependency-review\.yml'/);
+assert.match(threeDialsWorkflow, /--event pull_request/);
+assert.match(threeDialsWorkflow, /action_required\|success/);
+assert.match(threeDialsWorkflow, /GitHub did not register native pull_request run/);
+assert.doesNotMatch(threeDialsWorkflow, /three-dials-merge-check|merge_branch=/);
 assert.match(threeDialsWorkflow, /workflow remained fail-closed/);
 assert.doesNotMatch(threeDialsWorkflow, /git push origin main|git push .*HEAD:main/);
 

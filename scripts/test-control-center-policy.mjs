@@ -87,6 +87,14 @@ assert.equal(isRunUnknown({ status: 'in_progress', conclusion: null, head_sha: c
       title: 'Partner Program',
       body: 'Do not activate until an approved commerce provider is selected.',
     },
+    {
+      title: 'Activate consent-safe Daily Learning email distribution',
+      body: '## Controlled activation checklist\n1. Use one owner-controlled QA address.\n2. Set Production `DAILY_CARD_EMAIL_DISTRIBUTION_ENABLED=true` only for the controlled test.\n3. Invoke one authorized dispatch window / controlled scheduler run.',
+    },
+    {
+      title: 'Expand Daily Cards canonical inventory to 150 reviewed concepts',
+      body: '## Current priority\n**HOLD numeric expansion unless a genuinely distinct high-signal Core / Rates / Funding concept is identified.**',
+    },
   ];
 
   for (const issue of blockedIssues) {
@@ -96,6 +104,11 @@ assert.equal(isRunUnknown({ status: 'in_progress', conclusion: null, head_sha: c
   assert.equal(isIssueExplicitlyBlocked({
     title: 'Repair Daily publication validation',
     body: 'Prerequisite documentation is already complete; implement the bounded fix now.',
+  }), false);
+
+  assert.equal(isIssueExplicitlyBlocked({
+    title: 'Document activation checklist behavior',
+    body: 'The controlled activation checklist is historical documentation only. Implement the local parser regression now.',
   }), false);
 }
 

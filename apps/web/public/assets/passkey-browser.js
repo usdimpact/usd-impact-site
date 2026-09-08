@@ -7,6 +7,16 @@
     && typeof navigator.credentials.get === 'function'
   );
 
+  const supportsConditionalMediation = async () => {
+    if (!supportsWebAuthn()) return false;
+    if (typeof PublicKeyCredential.isConditionalMediationAvailable !== 'function') return false;
+    try {
+      return await PublicKeyCredential.isConditionalMediationAvailable();
+    } catch {
+      return false;
+    }
+  };
+
   const base64UrlToBytes = (value) => {
     const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
     const padding = normalized.length % 4 ? '='.repeat(4 - (normalized.length % 4)) : '';
@@ -112,9 +122,13 @@
     return serializeCredential(credential);
   };
 
-  const get = async (options) => {
+  const get = async (options, requestOptions = {}) => {
     if (!supportsWebAuthn()) throw new Error('Passkeys are not supported in this browser or context.');
-    const credential = await navigator.credentials.get({ publicKey: parseRequestOptions(options) });
+    const credential = await navigator.credentials.get({
+      publicKey: parseRequestOptions(options),
+      ...(requestOptions.mediation ? { mediation: requestOptions.mediation } : {}),
+      ...(requestOptions.signal ? { signal: requestOptions.signal } : {}),
+    });
     if (!credential) throw new Error('Passkey sign-in was cancelled.');
     return serializeCredential(credential);
   };
@@ -147,6 +161,7 @@
 
   window.USDImpactPasskeys = Object.freeze({
     supported: supportsWebAuthn,
+    conditionalSupported: supportsConditionalMediation,
     create,
     get,
   });

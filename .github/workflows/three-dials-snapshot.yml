@@ -150,6 +150,7 @@ jobs:
 
       - name: Open guarded publication pull request for review
         if: steps.branch.outputs.changed == 'true'
+        id: publication_pr
         env:
           GH_TOKEN: ${{ github.token }}
           GENERATED_BRANCH: ${{ steps.branch.outputs.branch }}
@@ -163,7 +164,7 @@ jobs:
 
           Publication is fail-closed. The generator requires bounded source hosts, per-series freshness checks, an exact-week USD Impact Score bridge, an immutable dated archive, and the full site validation/build before opening this pull request.
 
-          Before this PR was opened, the exact generated commit independently passed the repository's dispatchable **Web quality**, **CodeQL security analysis**, and bounded **Dependency review** checks. After the PR opens, the normal **Web quality** and **Dependency review** pull-request workflows run again so the existing required `validate-and-build` and `Dependency review` contexts are evaluated in the protected PR merge context.
+          Before this PR was opened, the exact generated commit independently passed the repository's dispatchable **Web quality**, **CodeQL security analysis**, and bounded **Dependency review** checks. The protected merge commit must also pass the required **validate-and-build** and **Dependency review** contexts on that exact synthetic merge SHA before human review can proceed.
 
           The snapshot separates **Fact**, **Interpretation**, and **Model output**. It does not change USD Impact Score v2 and does not create a forecast or trading signal.
 
@@ -176,9 +177,117 @@ jobs:
             --head "$GENERATED_BRANCH" \
             --title "Publish Three Dials Snapshot — ${GENERATED_WEEK}" \
             --body-file "$RUNNER_TEMP/three-dials-pr.md")"
+          pr_number="$(gh pr view "$pr_url" --repo "$GITHUB_REPOSITORY" --json number --jq '.number')"
 
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+          echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
           echo "Generated Three-Dials snapshot PR opened for protected human review: $pr_url"
           echo "No automatic merge was attempted. Publication remains pending separate explicit owner approval."
+
+      - name: Require checks on exact synthetic merge commit
+        if: steps.branch.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GENERATED_HEAD_SHA: ${{ steps.branch.outputs.head_sha }}
+          PR_NUMBER: ${{ steps.publication_pr.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::error::Publication PR number was not resolved."
+            exit 1
+          fi
+
+          current_main="$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.commit.sha')"
+          if [ "$current_main" != "$GITHUB_SHA" ]; then
+            echo "::error::main moved from $GITHUB_SHA to $current_main before merge-context checks."
+            exit 1
+          fi
+
+          pr_base="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.base.sha')"
+          pr_head="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.head.sha')"
+          if [ "$pr_base" != "$GITHUB_SHA" ] || [ "$pr_head" != "$GENERATED_HEAD_SHA" ]; then
+            echo "::error::Publication PR drifted before merge-context checks: base=$pr_base head=$pr_head."
+            exit 1
+          fi
+
+          merge_sha=''
+          attempt=1
+          while [ "$attempt" -le 30 ]; do
+            merge_sha="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.merge_commit_sha // empty')"
+            if [ -n "$merge_sha" ] && gh api "repos/$GITHUB_REPOSITORY/git/commits/$merge_sha" >/dev/null 2>&1; then
+              break
+            fi
+            merge_sha=''
+            sleep 2
+            attempt=$((attempt + 1))
+          done
+
+          if [ -z "$merge_sha" ]; then
+            echo "::error::Could not resolve the exact synthetic merge SHA for PR #$PR_NUMBER."
+            exit 1
+          fi
+
+          merge_branch="automation/three-dials-merge-check-${PR_NUMBER}-${GITHUB_RUN_ID}"
+          cleanup() {
+            gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$merge_branch" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/heads/$merge_branch" \
+            -f sha="$merge_sha" >/dev/null
+
+          for workflow in quality.yml generated-data-dependency-review.yml; do
+            gh workflow run "$workflow" --repo "$GITHUB_REPOSITORY" --ref "$merge_branch"
+          done
+
+          for workflow in quality.yml generated-data-dependency-review.yml; do
+            run_id=''
+            attempt=1
+            while [ "$attempt" -le 30 ]; do
+              run_id="$(gh run list \
+                --repo "$GITHUB_REPOSITORY" \
+                --workflow "$workflow" \
+                --branch "$merge_branch" \
+                --event workflow_dispatch \
+                --limit 10 \
+                --json databaseId,headSha \
+                --jq ".[] | select(.headSha == \"$merge_sha\") | .databaseId" \
+                | head -n 1)"
+              if [ -n "$run_id" ]; then
+                break
+              fi
+              sleep 2
+              attempt=$((attempt + 1))
+            done
+
+            if [ -z "$run_id" ]; then
+              echo "::error::Could not resolve $workflow on synthetic merge SHA $merge_sha."
+              exit 1
+            fi
+
+            gh run watch "$run_id" --repo "$GITHUB_REPOSITORY" --exit-status --interval 5
+          done
+
+          current_main="$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.commit.sha')"
+          current_merge="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.merge_commit_sha // empty')"
+          if [ "$current_main" != "$GITHUB_SHA" ] || [ "$current_merge" != "$merge_sha" ]; then
+            echo "::error::main or synthetic merge SHA drifted while required checks were running."
+            exit 1
+          fi
+
+          validate_conclusion="$(gh api "repos/$GITHUB_REPOSITORY/commits/$merge_sha/check-runs" \
+            --jq '[.check_runs[] | select(.name == "validate-and-build") | .conclusion] | last // empty')"
+          dependency_conclusion="$(gh api "repos/$GITHUB_REPOSITORY/commits/$merge_sha/check-runs" \
+            --jq '[.check_runs[] | select(.name == "Dependency review") | .conclusion] | last // empty')"
+
+          if [ "$validate_conclusion" != 'success' ] || [ "$dependency_conclusion" != 'success' ]; then
+            echo "::error::Required contexts did not both pass on exact synthetic merge SHA $merge_sha."
+            exit 1
+          fi
+
+          echo "Required merge contexts passed on exact synthetic merge SHA $merge_sha."
 
       - name: Report bounded failure
         if: failure()

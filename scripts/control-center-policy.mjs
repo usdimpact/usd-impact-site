@@ -15,6 +15,12 @@ export function isIssueExplicitlyBlocked(issue) {
   return /awaiting owner|owner decision|required owner decision|blocked(?: only)? by|cannot proceed until|external prerequisites|activation prerequisites|after provider setup|after credentials exist|no activation should occur until|do not (?:activate|enable|launch|proceed)[^\n]{0,160} until/.test(text);
 }
 
+export function isOperationsConsoleIssue(issue) {
+  const body = normalized(issue?.body);
+  return /(?:^|\s)#usd-impact-ops(?:\s|$)/.test(body)
+    || /operations console, not a product backlog item/.test(body);
+}
+
 export function selectWorkflowRun(runs, { headSha = null } = {}) {
   if (!Array.isArray(runs)) return null;
   const candidates = runs.filter((run) => run && typeof run === 'object');
@@ -59,6 +65,16 @@ export function isFailureOnOlderHead(run, headSha) {
     && typeof run?.head_sha === 'string'
     && run.head_sha.length > 0
     && run.head_sha !== headSha;
+}
+
+export function classifyHeadScopedWorkflow(run, headSha) {
+  const rawConclusion = run?.conclusion || run?.status || 'UNKNOWN';
+  return {
+    ...run,
+    operational_conclusion: isFailureOnOlderHead(run, headSha)
+      ? 'stale_failure'
+      : rawConclusion,
+  };
 }
 
 export function classifyWorkflowRecovery(run, recovery = null) {

@@ -6,6 +6,7 @@ import {
   isCompletedSuccess,
   isFailureOnCurrentHead,
   isFailureOnOlderHead,
+  isIssueExplicitlyBlocked,
   isRunUnknown,
   runMatchesHead,
   selectWorkflowRun,
@@ -38,6 +39,40 @@ assert.equal(runMatchesHead(run(), currentHead), true);
 assert.equal(isFailureOnCurrentHead(run({ conclusion: 'failure' }), currentHead), true);
 assert.equal(isFailureOnOlderHead(run({ conclusion: 'failure', headSha: oldHead }), currentHead), true);
 assert.equal(isRunUnknown({ status: 'in_progress', conclusion: null, head_sha: currentHead }), true);
+
+{
+  const blockedIssues = [
+    {
+      title: 'Add WhatsApp Business Daily Card distribution after provider setup',
+      body: '## External prerequisites\n- [ ] Meta Business account approval',
+    },
+    {
+      title: 'P3 — enable Production knowledge search after launch-critical gates',
+      body: 'Blocked only by account-level Vercel environment-variable access.',
+    },
+    {
+      title: 'Activate Daily Card Telegram publishing',
+      body: '## Activation prerequisites\n1. Create or select the USD Impact Telegram channel.',
+    },
+    {
+      title: 'Phase 2 — recurring Research Membership launch readiness',
+      body: 'No activation should occur until provider approval and the stability gate pass.',
+    },
+    {
+      title: 'Partner Program',
+      body: 'Do not activate until an approved commerce provider is selected.',
+    },
+  ];
+
+  for (const issue of blockedIssues) {
+    assert.equal(isIssueExplicitlyBlocked(issue), true, issue.title);
+  }
+
+  assert.equal(isIssueExplicitlyBlocked({
+    title: 'Repair Daily publication validation',
+    body: 'Prerequisite documentation is already complete; implement the bounded fix now.',
+  }), false);
+}
 
 {
   const classified = classifyWorkflowRecovery(
@@ -207,4 +242,4 @@ assert.equal(isRunUnknown({ status: 'in_progress', conclusion: null, head_sha: c
   assert.equal(result.currentQualityGreen, false);
 }
 
-console.log('Control-center workflow selection and Daily recovery policy tests passed.');
+console.log('Control-center workflow selection, blocker classification, and Daily recovery policy tests passed.');

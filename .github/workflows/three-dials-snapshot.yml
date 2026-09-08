@@ -163,7 +163,7 @@ jobs:
 
           Publication is fail-closed. The generator requires bounded source hosts, per-series freshness checks, an exact-week USD Impact Score bridge, an immutable dated archive, and the full site validation/build before opening this pull request.
 
-          Before this PR was opened, the exact generated commit independently passed the repository's dispatchable **Web quality**, **CodeQL security analysis**, and bounded **Dependency review** checks. The normal PR-triggered copies of those workflows ignore Three-Dials generated-data-only diffs, preventing GitHub's approval-required runs for PRs created with the repository GITHUB_TOKEN while preserving the required checks on the same commit.
+          Before this PR was opened, the exact generated commit independently passed the repository's dispatchable **Web quality**, **CodeQL security analysis**, and bounded **Dependency review** checks. After the PR opens, the normal **Web quality** and **Dependency review** pull-request workflows run again so the existing required `validate-and-build` and `Dependency review` contexts are evaluated in the protected PR merge context.
 
           The snapshot separates **Fact**, **Interpretation**, and **Model output**. It does not change USD Impact Score v2 and does not create a forecast or trading signal.
 

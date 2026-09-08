@@ -250,7 +250,7 @@ assert.match(threeDialsWorkflow, /gh pr create/);
 assert.match(threeDialsWorkflow, /Protected human review and separate explicit owner approval are required before merge/);
 assert.match(threeDialsWorkflow, /No automatic merge was attempted/);
 assert.doesNotMatch(threeDialsWorkflow, /gh pr merge|--auto|--admin/);
-assert.match(threeDialsWorkflow, /normal PR-triggered copies of those workflows ignore Three-Dials generated-data-only diffs/);
+assert.match(threeDialsWorkflow, /required `validate-and-build` and `Dependency review` contexts are evaluated in the protected PR merge context/);
 assert.match(threeDialsWorkflow, /workflow remained fail-closed/);
 assert.doesNotMatch(threeDialsWorkflow, /git push origin main|git push .*HEAD:main/);
 

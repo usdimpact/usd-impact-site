@@ -5,6 +5,7 @@ import {
   evaluateDailyDispatch,
   isCompletedFailure,
   isFailureOnCurrentHead,
+  isIssueExplicitlyBlocked,
   isRunUnknown,
   selectWorkflowRun,
 } from './control-center-policy.mjs';
@@ -58,7 +59,7 @@ function scoreIssue(issue) {
   const updatedAt = Date.parse(issue.updated_at || '');
   if (Number.isFinite(updatedAt) && Date.now() - updatedAt < 7 * 24 * 60 * 60 * 1000) score += 20;
 
-  const explicitlyBlocked = /awaiting owner|owner decision|required owner decision|blocked by|cannot proceed until/.test(text);
+  const explicitlyBlocked = isIssueExplicitlyBlocked(issue);
   const phaseTwo = /phase 2|not a launch blocker|non-blocking/.test(text);
   const enhancementOnly = (issue.labels || []).some((label) => (typeof label === 'string' ? label : label.name) === 'enhancement') && priority === 'P3';
   if (explicitlyBlocked) score -= 120;

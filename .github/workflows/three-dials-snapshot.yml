@@ -166,12 +166,19 @@ jobs:
 
           Before this PR was opened, the exact generated commit independently passed the repository's dispatchable **Web quality**, **CodeQL security analysis**, and bounded **Dependency review** checks.
 
-          GitHub must also register native `pull_request` runs for the required **validate-and-build** and **Dependency review** contexts. Because this pull request is created with the repository `GITHUB_TOKEN`, those native runs may require a human with write access to choose **Approve workflows to run**. Once approved, GitHub executes them in the protected PR merge context (`refs/pull/<PR_NUMBER>/merge`), so branch protection evaluates the current merge result instead of a manually pinned synthetic merge SHA.
+          GitHub must also register native \`pull_request\` runs for the required **validate-and-build** and **Dependency review** contexts. Because this pull request is created with the repository \`GITHUB_TOKEN\`, those native runs may require a human with write access to choose **Approve workflows to run**. Once approved, GitHub executes them in the protected PR merge context (\`refs/pull/<PR_NUMBER>/merge\`), so branch protection evaluates the current merge result instead of a manually pinned synthetic merge SHA.
 
           The snapshot separates **Fact**, **Interpretation**, and **Model output**. It does not change USD Impact Score v2 and does not create a forecast or trading signal.
 
           **Protected publication boundary:** This workflow does not merge this pull request. Protected human review and separate explicit owner approval are required before merge.
           EOF
+
+          for required_literal in '`pull_request`' '`GITHUB_TOKEN`' '`refs/pull/<PR_NUMBER>/merge`'; do
+            if ! grep -Fq -- "$required_literal" "$RUNNER_TEMP/three-dials-pr.md"; then
+              echo "::error::Generated Three-Dials PR body lost required literal: $required_literal"
+              exit 1
+            fi
+          done
 
           pr_url="$(gh pr create \
             --repo "$GITHUB_REPOSITORY" \

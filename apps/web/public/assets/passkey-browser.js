@@ -145,6 +145,12 @@
     }
   };
 
+  const sessionReadyUrl = (next) => {
+    const target = new URL('/auth/session-ready/', window.location.origin);
+    target.searchParams.set('next', safeNextPath(next));
+    return target.href;
+  };
+
   const restoreCheckoutReturnFromReferrer = () => {
     if (window.location.pathname !== '/account/sign-in/') return false;
     const nextInput = document.getElementById('account-next');
@@ -279,6 +285,7 @@
         signal: controller.signal,
       });
 
+      const requestedNext = nextInput instanceof HTMLInputElement ? nextInput.value : '/account/';
       const verifyResponse = await fetch('/api/account?action=passkey&op=authentication-verify', {
         method: 'POST',
         credentials: 'same-origin',
@@ -286,14 +293,14 @@
         body: JSON.stringify({
           challengeId: optionsBody.challengeId,
           credential,
-          next: nextInput instanceof HTMLInputElement ? nextInput.value : '/account/',
+          next: requestedNext,
           rememberDevice: rememberDeviceInput instanceof HTMLInputElement
             ? rememberDeviceInput.checked
             : true,
         }),
         signal: controller.signal,
       });
-      const verifyBody = await verifyResponse.json().catch(() => ({}));
+      await verifyResponse.json().catch(() => ({}));
       if (!verifyResponse.ok) {
         openEmailFallback({ focus: true });
         if (status instanceof HTMLElement) {
@@ -307,9 +314,7 @@
         status.dataset.state = 'success';
         status.textContent = 'Passkey accepted. Continuing…';
       }
-      window.location.replace(safeNextPath(
-        verifyBody.redirect || (nextInput instanceof HTMLInputElement ? nextInput.value : '/account/')
-      ));
+      window.location.replace(sessionReadyUrl(requestedNext));
     } catch (error) {
       const cancelled = controller.signal.aborted
         || error?.name === 'AbortError'

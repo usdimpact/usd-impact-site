@@ -26,6 +26,11 @@ export function isOperationsConsoleIssue(issue) {
     || /operations console, not a product backlog item/.test(body);
 }
 
+export function selectNextActionableIssue(issues) {
+  if (!Array.isArray(issues)) return null;
+  return issues.find((issue) => issue && !issue.blocked) || null;
+}
+
 export function selectWorkflowRun(runs, { headSha = null } = {}) {
   if (!Array.isArray(runs)) return null;
   const candidates = runs.filter((run) => run && typeof run === 'object');

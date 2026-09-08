@@ -9,6 +9,7 @@ import {
   isIssueExplicitlyBlocked,
   isOperationsConsoleIssue,
   isRunUnknown,
+  selectNextActionableIssue,
   selectWorkflowRun,
 } from './control-center-policy.mjs';
 
@@ -260,7 +261,7 @@ let health = 'GREEN';
 if (websiteCriticalFailure || pipelineCriticalFailure || hasP0) health = 'RED';
 else if (hasP1 || staleDailyRecoveryPending || stalePipelineFailure || workflowUnknown) health = 'AMBER';
 
-const next = openIssues.find((issue) => !issue.blocked) || openIssues[0] || null;
+const next = selectNextActionableIssue(openIssues);
 const topP0 = openIssues.find((issue) => issue.priority === 'P0' && !issue.blocked) || null;
 let mainBlocker = 'NONE';
 if (websiteCriticalFailure) mainBlocker = 'Website critical workflow failure detected';

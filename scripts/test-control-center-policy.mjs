@@ -11,6 +11,7 @@ import {
   isOperationsConsoleIssue,
   isRunUnknown,
   runMatchesHead,
+  selectNextActionableIssue,
   selectWorkflowRun,
 } from './control-center-policy.mjs';
 
@@ -63,6 +64,15 @@ assert.equal(isRunUnknown({ status: 'in_progress', conclusion: null, head_sha: c
     title: 'Repair Daily publication validation',
     body: '#usd-impact-backlog',
   }), false);
+}
+
+{
+  const blocked = { number: 1, title: 'Blocked activation', blocked: true };
+  const actionable = { number: 2, title: 'Actionable repair', blocked: false };
+  assert.equal(selectNextActionableIssue([blocked, actionable]), actionable);
+  assert.equal(selectNextActionableIssue([blocked]), null);
+  assert.equal(selectNextActionableIssue([]), null);
+  assert.equal(selectNextActionableIssue(null), null);
 }
 
 {

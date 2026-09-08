@@ -60,7 +60,7 @@ for (const protectedPath of ['/reports/weekly/2026-08-28', '/reports/monthly/202
       readAccessState: async () => ({ entitlement: { state } }),
     });
     assert.equal(decision.action, 'redirect', `${protectedPath}/${state}`);
-    assert.match(decision.location, /\/account\/access-required\//);
+    assert.match(decision.location, /\/research\/access-required\//);
   }
 }
 

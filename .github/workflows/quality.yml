@@ -23,6 +23,22 @@ jobs:
           node-version: 24.x
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
+      - name: Temporary tracked source snapshot for calendar 558
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 559
+        run: |
+          git -C ../.. archive --format=zip HEAD apps/web scripts .github > "$RUNNER_TEMP/calendar558-current-source.zip"
+          git -C ../.. ls-tree -r HEAD > "$RUNNER_TEMP/calendar558-current-blobs.txt"
+          git -C ../.. rev-parse HEAD > "$RUNNER_TEMP/calendar558-current-revision.txt"
+      - name: Temporary calendar source artifact
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 559
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: calendar558-current-source-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/calendar558-current-source.zip
+            ${{ runner.temp }}/calendar558-current-blobs.txt
+            ${{ runner.temp }}/calendar558-current-revision.txt
+          retention-days: 1
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Audit high and critical vulnerabilities

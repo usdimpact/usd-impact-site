@@ -1,6 +1,6 @@
 # USD Impact Partner Program and Member Referral Program Readiness
 
-Status: approved foundation; runtime rewards inactive.
+Status: approved provider-neutral foundation; runtime rewards and discounts inactive.
 
 This document defines the provider-neutral operating contract for two separate acquisition programs:
 
@@ -11,7 +11,7 @@ Neither program is currently active. This foundation does not activate checkout,
 
 ## Product and commerce boundary
 
-The active paid product remains the USD Impact Guided Interactive Edition / Library Pass defined by the application commerce contract.
+The active paid product remains the USD Impact Guided Interactive Edition / Library Pass defined by the application commerce contract. Research Membership and its member-invitation exception remain separately gated under issue #122.
 
 Attribution data is informational only. It must never:
 
@@ -29,8 +29,10 @@ Any future reward requires a verified completed payment and must be reversed or 
 
 - Launch mode: invite/approval only.
 - Initial beta cohort: target 10–20 partners.
-- Base commission target: **20% of eligible net purchase revenue**.
-- Enhanced rate: up to **25%** only for separately approved strategic partners after performance and compliance evidence.
+- Standard starting rate: **15%** of the final defined eligible commission base.
+- Earned reviewed rates: **20%** and **25%** after retained-sales, compliance, refund, and contribution evidence.
+- Exceptional strategic maximum: **30%**. Thirty percent is a ceiling, not a default offer.
+- Initial eligible product: full-price Library Pass purchases only.
 - Attribution target: **60–90 days** if supported by the approved provider/affiliate platform and privacy implementation.
 - Reward locking: at least the applicable refund/chargeback protection window; provider rules govern where longer.
 - Self-referral: prohibited.
@@ -41,18 +43,25 @@ Any future reward requires a verified completed payment and must be reversed or 
 - Sub-affiliate networks: require explicit approval.
 - Redistribution of paid USD Impact content: prohibited.
 
-The 20% target is an operating recommendation, not a hard-coded payment promise. Final economics must be confirmed against provider fees, taxes, refunds, reserves, settlement, and unit economics before activation.
+The tier schedule is an approved planning direction, not a hard-coded payment promise. Final economics and competitor terms must be refreshed against provider fees, taxes, refunds, reserves, settlement, support, and unit economics before activation or any issued rate.
 
 ### Member Referral Program
 
-- Launch mode: inactive until the paid product and customer lifecycle are stable.
-- Eligibility: verified existing customer only.
-- Reward type at first activation: non-cash benefit or future membership/service credit; no cash payout in the initial design.
-- New-customer requirement: referred purchaser must be a genuinely new eligible customer under the final rules.
+- Launch mode: inactive until Research Membership and its paid customer lifecycle are stable and the separate referral gates pass.
+- Referrer eligibility: a verified existing Research member with a valid paid or legitimately earned/granted entitlement; staff, internal test, and QA accounts do not qualify.
+- New-client benefit: **50% off the first annual Research Membership term only**. At the USD 290 ordinary annual reference, the new client pays USD 145 before applicable tax. Later terms use the ordinary price disclosed before checkout.
+- Referring-member benefit: free Research access only; no annual discount, cash payout, rebate, gift card, or transferable value.
+- Cumulative milestones: 1 / 3 / 5 distinct qualifying paid referrals earn 3 / 6 / 12 Research months total. Incremental grants are 3 / 3 / 6 months, capped at 12 months per referring account in the pilot.
+- Intended same-event benefits: the qualifying discounted annual purchase both gives the new client the authorized first-term discount and advances the referring member's free-month count. This is one customer-referral program event, not affiliate/reward stacking.
+- New-customer requirement: the referred purchaser must be a genuinely new eligible Research customer under the final rules.
 - Self-referral, duplicate accounts, household/payment-instrument abuse, and circular referrals: prohibited.
-- Partner and member-referral rewards cannot stack on the same purchase.
+- Affiliate commission cannot stack with either customer-program benefit on the same purchase. No other checkout discount may stack with the 50% member-invitation price.
 - Reward becomes eligible only after verified payment and the defined lock period.
 - Refund, dispute, or chargeback invalidates or suspends the reward according to the final lifecycle policy.
+- A buyer may count once per referrer. Duplicate, out-of-order, self-referral, and circular-referral events must fail closed and be processed idempotently.
+- Earned months must extend or defer valid access without charging during the rewarded interval or automatically enrolling an earned/granted member in a paid plan.
+
+The inactive policy contract is defined in `apps/web/src/lib/member-referral-policy.js`. It has no runtime, price, payment, or entitlement authority and is not imported by checkout, provider, account, email, or entitlement paths.
 
 ## Attribution contract
 
@@ -224,6 +233,7 @@ Scale only where economics and customer quality are acceptable relative to direc
 
 ### Member Referral Program may activate only when
 
+- Research Membership has completed its own provider, stability, preflight, and explicit Production activation gates under issue #122;
 - paid customer lifecycle is stable;
 - reward economics and benefit are explicitly approved;
 - new-customer/self-referral/fraud rules are implemented and tested;
@@ -248,9 +258,9 @@ Approved now:
 - provider-neutral attribution contract;
 - non-stacking rule;
 - verified-payment reward boundary;
-- 20% Partner Program beta target;
+- 15% Partner Program starting rate, earned 20%/25% tiers, and exceptional 30% ceiling;
 - invite-only beta strategy;
-- non-cash-first Member Referral strategy;
+- 50% first-annual-term benefit for the new Research client and cumulative 3/6/12 free-month benefit for the referring member;
 - compliance/disclosure controls;
 - provider-selection scoring criteria;
 - readiness and testing work.
@@ -261,6 +271,7 @@ Not approved by this document:
 - live tracking persistence;
 - any commission payment;
 - any member referral reward;
+- any member-invitation checkout discount;
 - a specific affiliate platform contract;
 - provider activation;
 - Production checkout changes.

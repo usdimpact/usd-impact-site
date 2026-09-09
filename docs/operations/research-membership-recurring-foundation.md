@@ -6,13 +6,25 @@ Status: Development-first foundation under issue #122. No Production activation 
 
 - USD 29/month.
 - USD 290/year.
-- No free trial or introductory discount.
+- No free trial or general/public introductory discount.
 - One complete Weekly Report at least 30 days old may be selected later as the public sample after editorial/rights review.
 - Cancellation is allowed at any time and takes effect at the end of the paid billing period.
 - Refund handling follows the selected provider's current policy plus mandatory local consumer law; no additional blanket seller refund guarantee is promised at launch.
 - Recurring activation remains gated behind 14 consecutive stable Production days for the existing Library Pass.
 - Lemon Squeezy is preferred only if recurring Research Membership is separately qualified/approved. Existing one-time Library Pass approval must not be treated as subscription approval.
 - TradingView access starts with a controlled manual grant/revocation process. Source code remains private.
+
+## Dormant member-invitation exception
+
+The owner has approved a future Member Referral Program exception for separate implementation and activation review:
+
+- a genuinely new Research client may receive **50% off the first annual Research Membership term only** through an approved existing-member invitation;
+- at the USD 290 ordinary annual reference, the first annual payment is USD 145 before applicable tax;
+- later terms use the ordinary price disclosed before checkout;
+- the referring existing Research member receives free Research months only under the cumulative 1 / 3 / 5 qualifying-referral ladder for 3 / 6 / 12 months total;
+- the same qualifying annual purchase may deliver those two intended customer-program benefits, but it cannot also generate affiliate commission or another checkout discount.
+
+This exception is a dormant policy contract. It does not amend current checkout, create a provider discount, grant access, enroll a member, or authorize Production activation. Attribution metadata has no price or entitlement authority. The exception remains unavailable until Research Membership is separately active and stable, referral terms/privacy/provider behavior are approved, Development/Test Mode purchase and reversal evidence passes, and a fresh explicit referral activation approval is recorded. See `docs/operations/partner-referral-program-readiness.md` and `apps/web/src/lib/member-referral-policy.js`.
 
 ## Product boundary
 

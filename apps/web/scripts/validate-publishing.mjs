@@ -131,3 +131,5 @@ await import('./test-publication-serving-policy.mjs');
 await import('./test-publication-serving-validity.mjs');
 
 await import('./test-publication-response-boundary.mjs');
+
+await import('./test-publication-admission-database.mjs');

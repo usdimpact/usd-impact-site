@@ -25,23 +25,6 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --strict-allow-scripts
-      - name: Temporary isolated database test snapshot for calendar 558
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 559 && github.event.pull_request.head.repo.full_name == github.repository
-        run: |
-          mkdir -p "$RUNNER_TEMP/calendar558-db-inputs"
-          git -C ../.. archive --format=zip HEAD > "$RUNNER_TEMP/calendar558-db-inputs/source.zip"
-          git -C ../.. ls-tree -r HEAD > "$RUNNER_TEMP/calendar558-db-inputs/blobs.txt"
-          git rev-parse HEAD > "$RUNNER_TEMP/calendar558-db-inputs/revision.txt"
-          tar -czf "$RUNNER_TEMP/calendar558-db-inputs/pglite.tar.gz" node_modules/@electric-sql/pglite
-          sha256sum "$RUNNER_TEMP/calendar558-db-inputs/"* > "$RUNNER_TEMP/calendar558-db-inputs/SHA256SUMS"
-      - name: Temporary database test input artifact for calendar 558
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 559 && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: calendar558-db-inputs-${{ github.run_id }}
-          path: ${{ runner.temp }}/calendar558-db-inputs/
-          retention-days: 1
-          if-no-files-found: error
       - name: Audit high and critical vulnerabilities
         run: npm audit --audit-level=high
       - name: Validate GitHub Action runtimes

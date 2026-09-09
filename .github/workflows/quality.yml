@@ -71,3 +71,34 @@ jobs:
         run: npm run validate:daily-cards
       - name: Build production site
         run: npm run build
+      - name: Temporary isolated PostgreSQL 17.6 test-engine build for 558
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 559 && github.event.pull_request.head.repo.full_name == github.repository
+        timeout-minutes: 12
+        run: |
+          set -eu
+          test "$(uname -m)" = x86_64
+          work="$RUNNER_TEMP/calendar558-native-engine"
+          mkdir -p "$work/source" "$work/artifact"
+          cd "$work/source"
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --connect-timeout 10 --max-time 90 https://ftp.postgresql.org/pub/source/v17.6/postgresql-17.6.tar.bz2 -o postgresql-17.6.tar.bz2
+          printf '%s  %s\n' e0630a3600aea27511715563259ec2111cd5f4353a4b040e0be827f94cd7a8b0 postgresql-17.6.tar.bz2 | sha256sum --check --strict
+          tar -xjf postgresql-17.6.tar.bz2
+          cd postgresql-17.6
+          ./configure --prefix="$work/pgsql" --without-readline --without-zlib --without-icu > "$work/artifact/configure.log" 2>&1
+          make -s -j2 > "$work/artifact/build.log" 2>&1
+          make -s install > "$work/artifact/install.log" 2>&1
+          "$work/pgsql/bin/postgres" --version | tee "$work/artifact/version.txt"
+          test "$("$work/pgsql/bin/postgres" --version)" = 'postgres (PostgreSQL) 17.6'
+          tar -czf "$work/artifact/postgresql-17.6-linux-x64.tar.gz" -C "$work" pgsql
+          printf '%s\n' e0630a3600aea27511715563259ec2111cd5f4353a4b040e0be827f94cd7a8b0 > "$work/artifact/source-sha256.txt"
+          git -C "$GITHUB_WORKSPACE" rev-parse HEAD > "$work/artifact/source-revision.txt"
+          cd "$work/artifact"
+          sha256sum postgresql-17.6-linux-x64.tar.gz configure.log build.log install.log version.txt source-sha256.txt source-revision.txt > SHA256SUMS
+      - name: Temporary PostgreSQL test-engine artifact for 558
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 559 && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: calendar558-native-engine-${{ github.run_id }}
+          path: ${{ runner.temp }}/calendar558-native-engine/artifact/
+          retention-days: 1
+          if-no-files-found: error

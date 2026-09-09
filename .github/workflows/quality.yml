@@ -23,9 +23,6 @@ jobs:
           node-version: 24.x
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - name: Temporary read-only BLS calendar adapter probe for issue 558
-        continue-on-error: true
-        run: node scripts/probe-publication-calendar.mjs 2026-08
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Audit high and critical vulnerabilities

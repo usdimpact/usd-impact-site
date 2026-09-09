@@ -18,20 +18,6 @@ jobs:
         working-directory: apps/web
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Temporary calendar 558 tracked source snapshot
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 559
-        run: |
-          git -C ../.. archive --format=zip --output="$RUNNER_TEMP/calendar558-source.zip" HEAD apps/web/src apps/web/scripts apps/web/api apps/web/package.json apps/web/package-lock.json apps/web/astro.config.mjs apps/web/vercel.json .github/workflows scripts
-          git -C ../.. ls-tree -r HEAD > "$RUNNER_TEMP/calendar558-source-blobs.txt"
-      - name: Temporary calendar 558 source artifact
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 559
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: calendar558-source-${{ github.run_id }}
-          path: |
-            ${{ runner.temp }}/calendar558-source.zip
-            ${{ runner.temp }}/calendar558-source-blobs.txt
-          retention-days: 1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.x

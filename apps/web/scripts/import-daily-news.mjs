@@ -1,3 +1,4 @@
+import { verifyPipelineCalendar, assertPipelineCalendarLease } from '../src/lib/publication-calendar-pipeline.js';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -167,6 +168,7 @@ if (catalysts.length === 0) {
     lines.push(`  - date: ${quoted(catalyst.date)}`);
     lines.push(`    event: ${quoted(catalyst.event)}`);
     lines.push(`    eventType: ${quoted(catalyst.eventType)}`);
+    lines.push(`    calendar: ${JSON.stringify(catalyst.calendar ?? null)}`);
     pushScalarArray(lines, 'assets', catalyst.assets, 4);
     lines.push(`    importance: ${quoted(catalyst.importance)}`);
     lines.push(`    impactScore: ${catalyst.impactScore}`);
@@ -193,7 +195,7 @@ const outputDir = path.resolve('src/content/news');
 const outputPath = path.join(outputDir, `${date}.md`);
 await mkdir(outputDir, { recursive: true });
 
-let existingContent = '';
+let existingContent = null;
 try {
   existingContent = await readFile(outputPath, 'utf8');
 } catch (error) {
@@ -212,5 +214,24 @@ if (existingContent && !replace) {
   throw new Error(`${outputPath} already exists; pass --replace to update a non-published review`);
 }
 
-await writeFile(outputPath, `${lines.join('\n')}\n`, 'utf8');
+let calendarLease;
+if (publish) {
+  try {
+    const lease = await verifyPipelineCalendar(payload, { kind: 'daily', boundary: 'before-daily-import' });
+    console.log(JSON.stringify(lease));
+    assertPipelineCalendarLease(lease, payload);
+    calendarLease = lease;
+  } catch (error) {
+    console.error(JSON.stringify(error.calendarAudit ?? { decision: error.code ?? 'HOLD_INTERNAL_ERROR', reason: error.message }));
+    process.exit(2);
+  }
+}
+
+const beforeWrite = await readFile(outputPath, 'utf8').catch((error) => { if (error.code === 'ENOENT') return null; throw error; });
+if (beforeWrite !== existingContent) throw new Error('Daily destination changed during calendar validation; editorial resolution is required.');
+if (publish) {
+  try { assertPipelineCalendarLease(calendarLease, payload); }
+  catch (error) { console.error(JSON.stringify({ decision: error.code, reason: error.message })); process.exit(2); }
+}
+await writeFile(outputPath, `${lines.join('\n')}\n`, { encoding: 'utf8', flag: existingContent ? 'w' : 'wx' });
 console.log(`Imported Daily USD Impact bundle to ${outputPath} with status ${publicationStatus}.`);

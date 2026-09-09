@@ -106,6 +106,10 @@ try {
 
   await rm(editionPath, { force: true });
 
+  const unsupportedCalendar = runImporter('--replace', '--publish');
+  assert.equal(unsupportedCalendar.status, 2, 'unsupported events must not publish automatically');
+  assert.match(unsupportedCalendar.stderr, /HOLD_UNSUPPORTED_EVENT/);
+  await writeBundle({ ...bundle, catalysts: [] });
   const directPublish = runImporter('--replace', '--publish');
   assert.equal(directPublish.status, 0, directPublish.stderr);
   assert.match(directPublish.stdout, /status published/);

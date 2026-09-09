@@ -119,3 +119,6 @@ await import('./test-publication-calendar.mjs');
 await import('./test-publication-calendar-diagnostics.mjs');
 
 await import('./test-publication-calendar-captured.mjs');
+
+await import('./test-publication-calendar-pipeline.mjs');
+await import('./test-publication-calendar-release.mjs');

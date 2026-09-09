@@ -92,6 +92,8 @@ From `apps/web`:
 
 ```sh
 node scripts/test-publication-calendar.mjs
+node scripts/test-publication-calendar-diagnostics.mjs
+node scripts/test-publication-calendar-captured.mjs
 node scripts/check-publication-calendar.mjs candidate.json
 node scripts/probe-publication-calendar.mjs 2026-08
 ```
@@ -108,9 +110,52 @@ chosen reference period. Its PASS says the adapter parsed/cross-checked those
 resources, not that a particular article is eligible or released. It is not a
 normal build dependency and can hold when an old period leaves the live schedule.
 
-Fixtures are **synthetic HTML**, not captured live pages or publication evidence.
-The regression values were checked against BLS on September 9, 2026. Local
-execution uses Node 22; repository CI uses the existing Node 24 contract.
+The original 81 regression groups use synthetic HTML. Another 31 groups test
+sanitized response diagnostics. The 29 captured-markup groups use exact dated
+source fragments plus explicitly synthetic nested-layout wrappers. None of
+these offline fixtures is fresh publication evidence. Local execution uses
+Node 22; repository CI uses the existing Node 24 contract.
+
+## Diagnosed source access and parser repair - September 9, 2026
+
+The client now sends the truthful contactable identity
+`USDImpact-CalendarValidator/1.0 (+https://www.usd-impact.com/contact/)`.
+BLS's robot policy reserves the right to block clients without owner contact
+information: https://www.bls.gov/bls/blsterms.htm. There is no browser
+impersonation, alternate host/IP, proxy, redirect following or denial retry.
+The earlier generic non-200 response did not establish its precise cause.
+After the identity change, the remote request obtained direct HTTP 200 HTML;
+the separately observed local EAI_AGAIN is a DNS failure, not an HTTP denial.
+
+The successful fetch exposed an actual parser defect: BLS nests its
+`release-list` table inside `main-content-table`. The prior non-nesting regex
+consumed the outer layout and missed the correct header row. Adapter
+`bls-national-cpi/html-v2` tracks table/row/cell ownership, retaining exact
+headers, a unique matching table, bounded nesting/size, and strict row shape.
+Malformed nesting, duplicate tables and merged/nested release cells stay held.
+
+Read-only CI capture run `34389851062`, artifact `10119174507`, retrieved three
+public source pages at 18:34:46-49 UTC on September 9. Each returned direct HTTP
+200 HTML. The original complete-page SHA-256 values are:
+
+- CPI schedule: `36b83ba3723ac4e1d96431214b22f22bb4240718dab1ec2b6289fef9e7829580`.
+- September list: `3f9ee4b1f431e0e8cb8d8a2234aa2b149a1be9811ef5b820bbf286722c2e0e72`.
+- CPI release: `8c8532945dda0f4fee74259b8eefce7d6958188093c29b22410a71f6c05f427e`.
+
+The committed fragment fixture records each original URL, fetch time, complete
+page digest, exact fragment offset/length and fragment digest. It contains no
+response headers/cookies. The repaired parser reads all three complete captured
+pages locally and confirms August CPI scheduled for September 11 at 08:30
+America/New_York (12:30 UTC), independently of the July results released on
+August 12. Those dated observations are not reusable publication approvals.
+A fresh exact-head probe and CI evidence belong in PR #559's evidence record.
+
+Diagnostics expose fixed status/transport categories only. They never emit raw
+exception text, denied-response bodies, cookies or redirect URLs. A 200 response
+alone is not a parser PASS; any parsing discrepancy remains an explicit HOLD.
+Temporary read-only CI diagnostics are removed after verification, restoring the
+original Web quality workflow; live BLS availability is not a normal build
+dependency.
 
 ## Archive isolation
 

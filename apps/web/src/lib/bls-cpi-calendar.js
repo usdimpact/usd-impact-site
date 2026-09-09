@@ -5,7 +5,7 @@ import {
 
 export const BLS_CPI_SCHEDULE = 'https://www.bls.gov/schedule/news_release/cpi.htm';
 export const BLS_CPI_RELEASE = 'https://www.bls.gov/news.release/cpi.nr0.htm';
-export const BLS_ADAPTER_VERSION = 'bls-national-cpi/html-v1';
+export const BLS_ADAPTER_VERSION = 'bls-national-cpi/html-v2';
 // Truthful robot identity and public owner contact; never impersonate a browser.
 export const BLS_CALENDAR_USER_AGENT = 'USDImpact-CalendarValidator/1.0 (+https://www.usd-impact.com/contact/)';
 const MAX_SOURCE_BYTES = 512000;
@@ -26,17 +26,68 @@ function visibleText(html) {
 }
 function tableWithHeaders(html, expected) {
   const clean = html.replace(/<!--[\s\S]*?-->/g, '').replace(/<(script|style|template)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
-  if ((clean.match(/<table\b/gi) ?? []).length > 30 || (clean.match(/<tr\b/gi) ?? []).length > 1000
-      || (clean.match(/<t[dh]\b/gi) ?? []).length > 5000) hold('HOLD_SOURCE_SCHEMA', 'Official table exceeds the parser complexity bound.');
-  const tables = [...clean.matchAll(/<table\b[^>]*>([\s\S]*?)<\/table\s*>/gi)].map((table) => (
-    [...table[1].matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr\s*>/gi)].map((row) => (
-      [...row[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]\s*>/gi)].map((cell) => visibleText(cell[1]))
-    ))
-  ));
-  const matches = tables.filter((rows) => rows.length && JSON.stringify(rows[0]) === JSON.stringify(expected));
-  if (matches.length !== 1 || matches[0].length < 2) hold('HOLD_SOURCE_SCHEMA', 'Expected one unambiguous BLS schedule table.');
-  if (matches[0].slice(1).some((row) => row.length !== expected.length)) hold('HOLD_SOURCE_SCHEMA', 'Unexpected BLS schedule row shape.');
-  return matches[0].slice(1);
+  // BLS places the release table inside a layout table. Track table ownership;
+  // flattening nested rows/cells would mix navigation with release metadata.
+  const stack = [];
+  const tables = [];
+  const counts = { table: 0, tr: 0, cell: 0 };
+  const malformed = () => hold('HOLD_SOURCE_SCHEMA', 'Malformed or ambiguous official table structure.');
+  const tags = /<(\/?)(table|tr|th|td)\b(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi;
+  for (const token of clean.matchAll(tags)) {
+    const closing = token[1] === '/';
+    const tag = token[2].toLowerCase();
+    const parent = stack.at(-1);
+    if (/\/\s*>$/.test(token[0]) || (closing && !/^<\/(?:table|tr|th|td)\s*>$/i.test(token[0]))) malformed();
+    if (!closing) {
+      counts[tag === 'th' || tag === 'td' ? 'cell' : tag] += 1;
+      if (counts.table > 30 || counts.tr > 1000 || counts.cell > 5000 || stack.length > 8) {
+        hold('HOLD_SOURCE_SCHEMA', 'Official table exceeds the parser complexity bound.');
+      }
+    }
+    if (tag === 'table') {
+      if (!closing) {
+        if (parent) {
+          if (!parent.cell) malformed();
+          parent.cell.nested = true;
+          parent.nested = true;
+        }
+        stack.push({ rows: [], row: null, cell: null, nested: false, spans: false });
+      } else {
+        if (!parent || parent.row || parent.cell) malformed();
+        tables.push(stack.pop());
+      }
+      continue;
+    }
+    if (!parent) malformed();
+    if (tag === 'tr') {
+      if (!closing) {
+        if (parent.row || parent.cell) malformed();
+        parent.row = [];
+        parent.rows.push(parent.row);
+      } else {
+        if (!parent.row || parent.cell) malformed();
+        parent.row = null;
+      }
+      continue;
+    }
+    if (!closing) {
+      if (!parent.row || parent.cell) malformed();
+      parent.cell = { tag, start: token.index + token[0].length, nested: false };
+      if (/\b(?:rowspan|colspan)\s*=/i.test(token[0])) parent.spans = true;
+    } else {
+      if (!parent.cell || parent.cell.tag !== tag || !parent.row) malformed();
+      parent.row.push(parent.cell.nested ? null : visibleText(clean.slice(parent.cell.start, token.index)));
+      parent.cell = null;
+    }
+  }
+  if (stack.length) malformed();
+  const matches = tables.filter((table) => table.rows.length && JSON.stringify(table.rows[0]) === JSON.stringify(expected));
+  if (matches.length !== 1 || matches[0].rows.length < 2) hold('HOLD_SOURCE_SCHEMA', 'Expected one unambiguous BLS schedule table.');
+  const selected = matches[0];
+  if (selected.nested || selected.spans || selected.rows.slice(1).some((row) => row.length !== expected.length)) {
+    hold('HOLD_SOURCE_SCHEMA', 'Unexpected BLS schedule row shape.');
+  }
+  return selected.rows.slice(1);
 }
 function englishDate(text) {
   const match = text.match(/^(?:(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), )?([A-Za-z]+)\.? (\d{1,2}), (20\d{2})$/);

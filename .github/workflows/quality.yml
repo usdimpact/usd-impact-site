@@ -23,43 +23,9 @@ jobs:
           node-version: 24.x
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - name: Temporary bounded public BLS fixture capture for issue 558
+      - name: Temporary read-only BLS calendar adapter probe for issue 558
         continue-on-error: true
-        run: |
-          node --input-type=module <<'NODE'
-          import { mkdir, writeFile } from 'node:fs/promises';
-          import { join } from 'node:path';
-          import { setTimeout as sleep } from 'node:timers/promises';
-          import { BLS_CPI_SCHEDULE, BLS_CPI_RELEASE, readOfficialBlsHtml } from './src/lib/bls-cpi-calendar.js';
-          const directory = join(process.env.RUNNER_TEMP, 'calendar-558-public-source');
-          await mkdir(directory, { recursive: true });
-          const report = { purpose: 'public-source-parser-fixtures-only', revision: process.env.GITHUB_SHA,
-            sources: [], publicationAttempted: false, publicationAuthorized: false };
-          for (const [file, url] of [['schedule.html', BLS_CPI_SCHEDULE],
-            ['monthly.html', 'https://www.bls.gov/schedule/2026/09_sched_list.htm'], ['release.html', BLS_CPI_RELEASE]]) {
-            try {
-              if (report.sources.length) await sleep(1000);
-              const source = await readOfficialBlsHtml(url);
-              await writeFile(join(directory, file), source.html, 'utf8');
-              report.sources.push({ file, ...source.evidence, diagnostic: source.diagnostic });
-            } catch (error) {
-              report.hold = error?.name === 'CalendarHold' ? error.code : 'HOLD_INTERNAL_ERROR';
-              report.sourceDiagnostic = error?.name === 'CalendarHold' ? error.sourceDiagnostic ?? null : null;
-              process.exitCode = 2;
-              break;
-            }
-          }
-          await writeFile(join(directory, 'manifest.json'), JSON.stringify(report, null, 2) + '\n', 'utf8');
-          console.log(JSON.stringify(report));
-          NODE
-      - name: Upload temporary public BLS parser evidence
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: calendar-558-public-source-${{ github.run_id }}
-          path: ${{ runner.temp }}/calendar-558-public-source/
-          retention-days: 3
-          if-no-files-found: error
+        run: node scripts/probe-publication-calendar.mjs 2026-08
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Audit high and critical vulnerabilities

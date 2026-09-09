@@ -117,3 +117,5 @@ console.log(`publishing validation pass (${entries.length} dynamic entries; ${st
 await import('./test-publication-calendar.mjs');
 
 await import('./test-publication-calendar-diagnostics.mjs');
+
+await import('./test-publication-calendar-captured.mjs');

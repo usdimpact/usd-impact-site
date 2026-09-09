@@ -25,6 +25,9 @@ for (const output of ['reports/index.html','reports/weekly/2026-07-31/index.html
 const checklistAnalytics = pagePath('/internal/checklist-analytics');
 if (!fs.existsSync(checklistAnalytics)) failures.push('Checklist analytics dashboard was not generated.');
 else if (!fs.readFileSync(checklistAnalytics, 'utf8').includes('content="noindex, nofollow"')) failures.push('Checklist analytics dashboard is missing noindex metadata.');
+const knowledgeQa = pagePath('/internal/ask-usd-impact');
+if (!fs.existsSync(knowledgeQa)) failures.push('Ask USD Impact QA page was not generated.');
+else if (!fs.readFileSync(knowledgeQa, 'utf8').includes('content="noindex, nofollow"')) failures.push('Ask USD Impact QA page is missing noindex metadata.');
 const monthlyReportRoot = path.resolve('src/content/monthly-reports');
 for (const file of fs.readdirSync(monthlyReportRoot).filter((name) => name.endsWith('.md'))) {
   const source = fs.readFileSync(path.join(monthlyReportRoot, file), 'utf8');
@@ -171,6 +174,20 @@ const sitemap = path.join(distRoot, 'sitemap-0.xml');
 if (!fs.existsSync(sitemap)) failures.push('Generated sitemap-0.xml is missing.');
 else {
   const xml = fs.readFileSync(sitemap, 'utf8');
+  // SEO-FOUNDATION-01: compare normalized URL paths, not substring matches.
+  const sitemapPaths = new Set(Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/g), ([, loc]) => (
+    new URL(loc).pathname.replace(/\/+$/, '') || '/'
+  )));
+  if (sitemapPaths.has('/internal/ask-usd-impact')) failures.push('Ask USD Impact QA page appears in sitemap.');
+  const publicSitemapRoutes = [
+    '/', '/learn', '/news', '/score', '/score/methodology', '/reports',
+    '/book/read-the-dollar-first', '/book/read-the-dollar-first/preview',
+    '/audiobook/read-the-dollar-first', '/video-library', '/research',
+    '/research/sample', '/research/evidence-map', '/research/independent-replication',
+  ];
+  for (const route of publicSitemapRoutes) {
+    if (!sitemapPaths.has(route)) failures.push(`Public discovery route is missing from sitemap: ${route}.`);
+  }
   const protectedRoutes = [
     '/start-here','/start-here/quiz',routes.dollarLesson,routes.dollarQuiz,routes.fxLesson,routes.fxQuiz,
     routes.dxyLesson,routes.dxyQuiz,routes.broadLesson,routes.broadQuiz,routes.regimeLesson,routes.regimeQuiz,

@@ -112,3 +112,6 @@ if (failures.length > 0) {
 }
 
 console.log(`publishing validation pass (${entries.length} dynamic entries; ${staticRoutes.size} static routes; ${new Set(requiredRoutes).size} required main-navigation routes)`);
+
+// Offline calendar regressions only; live publication enforcement remains tracked in #558.
+await import('./test-publication-calendar.mjs');

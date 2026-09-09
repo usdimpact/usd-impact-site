@@ -1,3 +1,4 @@
+import { blsMonthlyDefinition, explicitBlsMonthlyLabel } from './publication-calendar-series.js';
 import { createHash } from 'node:crypto';
 
 export const CALENDAR_POLICY_VERSION = 'publication-calendar/v1';
@@ -65,8 +66,8 @@ export function calendarIdentity(candidate) {
 /** This validates assertions only. It does not turn assertions into verified evidence. */
 export function normalizeCalendarCandidate(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) hold('HOLD_INVALID_CANDIDATE', 'A structured event record is required.');
-  if (value.publisher !== 'BLS' || value.series !== 'CPI') hold('HOLD_UNSUPPORTED_EVENT', 'Only the BLS national CPI adapter is implemented.');
-  if (value.releaseStage !== 'initial') hold('HOLD_UNSUPPORTED_EVENT', 'Only the initial monthly CPI release is supported.');
+  if (value.publisher !== 'BLS' || !blsMonthlyDefinition(value.series)) hold('HOLD_UNSUPPORTED_EVENT', 'Only BLS national CPI, PPI and Employment Situation monthly adapters are implemented.');
+  if (value.releaseStage !== 'initial') hold('HOLD_UNSUPPORTED_EVENT', 'Only initial monthly releases are supported; revisions require separate release-stage coverage.');
   if (typeof value.referencePeriod !== 'string' || !/^20\d{2}-(0[1-9]|1[0-2])$/.test(value.referencePeriod)) {
     hold('HOLD_REFERENCE_PERIOD_MISMATCH', 'Reference period must be explicit YYYY-MM.');
   }
@@ -80,9 +81,9 @@ export function normalizeCalendarCandidate(value) {
     hold('HOLD_SCHEDULE_CONFLICT', 'Cancellation and rescheduling need a separate reviewed notice.');
   }
   if (value.event !== undefined) {
-    const match = typeof value.event === 'string' && value.event.match(/^BLS Consumer Price Index(?: \(CPI\))? for ([A-Za-z]+ 20\d{2})$/);
-    if (!match) hold('HOLD_IDENTITY_MISMATCH', 'Editorial event label does not match the supported national CPI identity.');
-    if (referencePeriod(match[1]) !== value.referencePeriod) hold('HOLD_REFERENCE_PERIOD_MISMATCH', 'Editorial event label contradicts the structured reference period.');
+    const match = explicitBlsMonthlyLabel(value.event);
+    if (!match || match.series !== value.series) hold('HOLD_IDENTITY_MISMATCH', 'Editorial event label does not match the structured national BLS series.');
+    if (referencePeriod(match.referenceText) !== value.referencePeriod) hold('HOLD_REFERENCE_PERIOD_MISMATCH', 'Editorial event label contradicts the structured reference period.');
   }
   return Object.freeze(Object.fromEntries([
     'publisher', 'series', 'referencePeriod', 'releaseStage', 'eventDate', 'releaseTime', 'timeZone', 'phase', 'statusLabel',
@@ -110,8 +111,8 @@ export async function verifyPublicationCalendar(value, { now = Date.now, fetchIm
     checkedAt = new Date(began).toISOString();
     candidate = normalizeCalendarCandidate(value);
     revision = normalizedBinding(binding);
-    const { loadBlsCpiCalendar } = await import('./bls-cpi-calendar.js');
-    record = await loadBlsCpiCalendar(candidate, { fetchImpl, now });
+    const { loadBlsMonthlyCalendar } = await import('./bls-cpi-calendar.js');
+    record = await loadBlsMonthlyCalendar(candidate, { fetchImpl, now });
     const checked = now();
     if (!Number.isFinite(checked) || checked < began) hold('HOLD_INVALID_CLOCK', 'Trusted clock moved backwards.');
     checkedAt = new Date(checked).toISOString();

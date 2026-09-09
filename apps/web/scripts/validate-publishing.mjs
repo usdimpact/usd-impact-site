@@ -122,3 +122,6 @@ await import('./test-publication-calendar-captured.mjs');
 
 await import('./test-publication-calendar-pipeline.mjs');
 await import('./test-publication-calendar-release.mjs');
+
+await import('./test-publication-calendar-multiseries.mjs');
+await import('./test-publication-calendar-coverage.mjs');

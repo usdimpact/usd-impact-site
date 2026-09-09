@@ -1,3 +1,4 @@
+import { BLS_MONTHLY_SERIES, blsMonthlyDefinition, explicitBlsMonthlyLabel, mentionsSupportedBlsSeries } from './publication-calendar-series.js';
 import {
   CalendarHold, MONTHS, calendarIdentity, digest, hold,
   normalizeCalendarCandidate, referencePeriod, verifyPublicationCalendar,
@@ -16,15 +17,13 @@ export const CALENDAR_ASSERTION_JSON_SCHEMA = {
   ],
 };
 const leases = new WeakMap();
-const CPI_LABEL = /^BLS Consumer Price Index(?: \(CPI\))? for ([A-Za-z]+ 20\d{2})$/;
-const CPI_MENTION = /\b(?:CPI|Consumer Price Index)\b/i;
 const CALENDAR_LANGUAGE = /\b(?:scheduled|schedule|upcoming|due|next|will be released|to be released)\b/i;
 
 /** Explicit label identity is sufficient for duplicate suppression, never timing verification. */
 export function explicitCpiIdentity(event) {
-  const match = typeof event === 'string' && event.match(CPI_LABEL);
+  const match = explicitBlsMonthlyLabel(event);
   if (!match) return null;
-  try { return `BLS:CPI:${referencePeriod(match[1])}:initial`; } catch { return null; }
+  try { return `BLS:${match.series}:${referencePeriod(match.referenceText)}:initial`; } catch { return null; }
 }
 
 /** Read only explicit identity fields in existing importer-format archives. No timing claim is inferred. */
@@ -35,13 +34,13 @@ export function archivedCpiIdentity(source) {
   if (events.length !== 1) hold('HOLD_SOURCE_SCHEMA', 'Duplicate archived event identity requires editorial resolution.');
   let event;
   try { event = JSON.parse(events[0][1]); } catch {
-    if (CPI_MENTION.test(events[0][1])) hold('HOLD_SOURCE_SCHEMA', 'Unsupported archived CPI identity encoding requires editorial resolution.');
+    if (mentionsSupportedBlsSeries(events[0][1])) hold('HOLD_SOURCE_SCHEMA', 'Unsupported archived BLS monthly identity encoding requires editorial resolution.');
     return null;
   }
   const identity = explicitCpiIdentity(event);
   if (!identity) return null;
   const phases = [...frontmatter.matchAll(/^phase: "(preview|outcome)"[ \t]*$/gm)];
-  if (phases.length !== 1) hold('HOLD_SOURCE_SCHEMA', 'Ambiguous archived CPI phase requires editorial resolution.');
+  if (phases.length !== 1) hold('HOLD_SOURCE_SCHEMA', 'Ambiguous archived BLS monthly phase requires editorial resolution.');
   return `${identity}:${phases[0][1]}`;
 }
 
@@ -95,11 +94,11 @@ export function assertCurrentCpiClaims(text, candidate) {
       hold('HOLD_REFERENCE_PERIOD_MISMATCH', 'Current-event copy contradicts the reference month.');
     }
   }
-  const namedCpiPeriod = new RegExp(`\\b(${MONTHS.join('|')})(?: (20[0-9]{2}))? (?:CPI|Consumer Price Index)\\b`, 'gi');
+  const namedCpiPeriod = new RegExp(`\\b(${MONTHS.join('|')})(?: (20[0-9]{2}))? (?:${candidate.series === 'CPI' ? 'CPI|Consumer Price Index' : candidate.series === 'PPI' ? 'PPI|Producer Price Index' : 'Employment Situation|nonfarm payrolls?'})\\b`, 'gi');
   for (const match of text.matchAll(namedCpiPeriod)) {
     if (monthNumber(match[1]) !== Number(candidate.referencePeriod.slice(5))
         || (match[2] && match[2] !== candidate.referencePeriod.slice(0, 4))) {
-      hold('HOLD_REFERENCE_PERIOD_MISMATCH', 'The named CPI reference period in copy disagrees with the canonical record.');
+      hold('HOLD_REFERENCE_PERIOD_MISMATCH', 'The named reference period in copy disagrees with the canonical record.');
     }
   }
   if (candidate.phase === 'preview' && /\b(?:(?:was|were|has been|have been) (?:released|published)|BLS (?:reported|released)|figures are out|is now available)\b/i.test(text)) {
@@ -164,16 +163,23 @@ export async function verifyPipelineCalendar(payload, { kind, boundary, now = Da
       if (kind === 'daily') {
         const narrative = dailyCopy(payload);
         for (const sentence of narrative.split(/(?<=[.!?])\s+|\n/)) {
-          if (CPI_MENTION.test(sentence) && CALENDAR_LANGUAGE.test(sentence)) assertCurrentCpiClaims(sentence, candidate);
+          if (blsMonthlyDefinition(candidate.series).mention.test(sentence) && CALENDAR_LANGUAGE.test(sentence)) assertCurrentCpiClaims(sentence, candidate);
         }
       }
       const decision = await verifyPublicationCalendar({ ...candidate, event: row.event }, { now, fetchImpl });
       if (decision.decision !== 'PASS') failed(decision, boundary);
       decisions.push(decision);
     }
-    if (!rows.length && CPI_MENTION.test(dailyCopy(payload))
-        && CALENDAR_LANGUAGE.test(dailyCopy(payload))) {
-      hold('HOLD_MISSING_CALENDAR_RECORD', 'Forward-looking CPI copy is missing its canonical calendar entry.');
+    if (kind === 'daily') {
+      const declaredSeries = new Set(rows.map((row) => row.calendar?.series));
+      for (const sentence of dailyCopy(payload).split(/(?<=[.!?])\s+|\n/)) {
+        if (!CALENDAR_LANGUAGE.test(sentence)) continue;
+        for (const [series, definition] of Object.entries(BLS_MONTHLY_SERIES)) {
+          if (definition.mention.test(sentence) && !declaredSeries.has(series)) {
+            hold('HOLD_MISSING_CALENDAR_RECORD', 'Forward-looking supported BLS copy is missing its own canonical calendar entry.');
+          }
+        }
+      }
     }
     const checked = now();
     if (!Number.isFinite(checked)) hold('HOLD_INVALID_CLOCK', 'Trusted pipeline clock is unavailable.');

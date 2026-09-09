@@ -24,12 +24,15 @@ function environment(config = {}) {
   const requests = [];
   const source = config.source ?? render({ ...original, ...config.payload });
   const sourceHash = gitHash(source);
+  const oldSource = config.oldSource ?? render(original);
+  const oldSourceHash = gitHash(oldSource);
   const archiveHash = 'e'.repeat(40);
   const row = (file, sha) => ({ path: file, sha, type: 'blob', mode: '100644' });
-  const before = config.before ?? [row(archived, archiveHash)];
+  const before = config.oldSource !== undefined ? [row(path, oldSourceHash)] : config.before ?? [row(archived, archiveHash)];
   const after = config.after ?? [...before.filter((entry) => entry.path !== path), row(path, sourceHash)];
   const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', ...config.headers } });
   const deployment = (id, sha) => ({ id, source: 'git', projectId: 'prj_ZoLLM35ksI6wk17PcfS2xYknaVl7', target: 'production', readyState: 'READY',
+    gitSource: { type: 'github', repoId: 1265351071, sha },
     meta: { githubCommitOrg: 'usdimpact', githubCommitRepo: 'usd-impact-site', githubCommitRef: 'main', githubCommitSha: sha } });
   const fetchImpl = async (url, init) => {
     const parsed = new URL(url); requests.push({ url: String(url), method: init.method });
@@ -58,6 +61,7 @@ function environment(config = {}) {
     if (tail === `/git/commits/${B}`) return json({ sha: B, tree: { sha: T1 } });
     if (tail === `/git/trees/${T0}`) return json({ sha: T0, truncated: false, tree: before });
     if (tail === `/git/trees/${T1}`) return json({ sha: T1, truncated: config.truncated ?? false, tree: after });
+    if (tail === `/git/blobs/${oldSourceHash}` && oldSourceHash !== sourceHash) return json({ sha: oldSourceHash, size: Buffer.byteLength(oldSource), encoding: 'base64', content: Buffer.from(oldSource).toString('base64') });
     if (tail === `/git/blobs/${sourceHash}`) return json({ sha: sourceHash, size: Buffer.byteLength(source), encoding: 'base64', content: Buffer.from(config.corrupt ? source + 'changed' : source).toString('base64') });
     throw new Error(`Unexpected request ${parsed.pathname}`);
   };
@@ -115,7 +119,7 @@ for (const [name, config, code] of [
   ['corrupt blob bytes', { corrupt: true }, 'HOLD_REVISION_DRIFT'],
   ['route mismatch', { payload: { slug: '/news/catalysts/something-else' } }, 'HOLD_IDENTITY_MISMATCH'],
   ['missing canonical record', { payload: { calendar: null } }, 'HOLD_MISSING_CALENDAR_RECORD'],
-  ['changed archived article without calendar', { payload: { calendar: null }, before: [{ path, mode: '100644', type: 'blob', sha: 'f'.repeat(40) }] }, 'HOLD_MISSING_CALENDAR_RECORD'],
+  ['changed archived article without calendar', { payload: { calendar: null }, oldSource: render(original) }, 'HOLD_ARCHIVE_CHANGE'],
   ['deleted archive', { after: [] }, 'HOLD_ARCHIVE_CHANGE'],
   ['nested or unusual markdown path', { after: [{ path: 'apps/web/src/content/news/subdir/hidden.md', mode: '100644', type: 'blob', sha: 'f'.repeat(40) }] }, 'HOLD_SOURCE_SCHEMA'],
   ['symlink publication', { after: [{ path, mode: '120000', type: 'blob', sha: 'f'.repeat(40) }] }, 'HOLD_SOURCE_SCHEMA'],
@@ -136,5 +140,25 @@ await test('an untrusted expected base cannot replace the canonical lookup', asy
 await test('missing provider access is a HOLD, not an invented baseline', async () => {
   const result = await verifyCalendarReleasePreflight({ expectedMain: B, expectedHead: B, deploymentId }, { vercelToken: '' });
   assert.equal(result.decision, 'HOLD_PROVIDER_AUTH');
+});
+for (const [name, config, code] of [
+  ['published archive cannot be downgraded to review', { payload: { status: 'review', calendar: null }, oldSource: render(original) }, 'HOLD_ARCHIVE_CHANGE'],
+  ['published archive cannot be relabelled draft', { payload: { status: 'draft', calendar: null }, oldSource: render(original) }, 'HOLD_ARCHIVE_CHANGE'],
+  ['published archive prose is not silently overwritten', { payload: { summary: 'Changed archive prose' }, oldSource: render(original) }, 'HOLD_ARCHIVE_CHANGE'],
+  ['missing authoritative Git source', { deployment: { gitSource: null } }, 'HOLD_DEPLOYMENT_UNVERIFIED'],
+  ['wrong Git source provider', { deployment: { gitSource: { type: 'gitlab', repoId: 1265351071, sha: B } } }, 'HOLD_DEPLOYMENT_UNVERIFIED'],
+  ['wrong authoritative Git repository', { deployment: { gitSource: { type: 'github', repoId: 123, sha: B } } }, 'HOLD_DEPLOYMENT_UNVERIFIED'],
+  ['MDX source cannot escape inventory', { after: [{ path: 'apps/web/src/content/news/hidden.mdx', mode: '100644', type: 'blob', sha: 'f'.repeat(40) }] }, 'HOLD_SOURCE_SCHEMA'],
+  ['JSON source cannot escape inventory', { after: [{ path: 'apps/web/src/content/news/hidden.json', mode: '100644', type: 'blob', sha: 'f'.repeat(40) }] }, 'HOLD_SOURCE_SCHEMA'],
+  ['symlink root cannot escape inventory', { after: [{ path: 'apps/web/src/content/news', mode: '120000', type: 'blob', sha: 'f'.repeat(40) }] }, 'HOLD_SOURCE_SCHEMA'],
+  ['nonempty placeholder cannot escape inventory', { after: [{ path: 'apps/web/src/content/news/.gitkeep', mode: '100644', type: 'blob', sha: 'f'.repeat(40) }] }, 'HOLD_SOURCE_SCHEMA'],
+]) await test(name, async () => assert.equal((await environment(config).run()).decision, code, name));
+await test('review source may become published only after fresh verification', async () => {
+  const result = await environment({ oldSource: render({ ...original, status: 'review' }) }).run();
+  assert.equal(result.decision, 'PASS_READ_ONLY_PREFLIGHT'); assert.equal(result.checks.length, 1);
+});
+await test('known empty placeholder is not a publication', async () => {
+  const env = environment({ after: [{ path: archived, mode: '100644', type: 'blob', sha: 'e'.repeat(40) }, { path: 'apps/web/src/content/news/.gitkeep', mode: '100644', type: 'blob', sha: 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391' }] });
+  assert.equal((await env.run()).decision, 'PASS_READ_ONLY_PREFLIGHT');
 });
 console.log(`Publication calendar release preflight: ${tests} regression groups passed (mocked provider/Git/BLS; no promotion or live certification).`);

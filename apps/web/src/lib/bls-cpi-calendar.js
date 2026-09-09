@@ -1,3 +1,4 @@
+import { blsMonthlyDefinition } from './publication-calendar-series.js';
 import {
   CALENDAR_MAX_AGE_MS, CALENDAR_TIME_ZONE, CalendarHold, MONTHS, digest, hold,
   isCalendarDate, localReleaseInstant, referencePeriod,
@@ -5,11 +6,11 @@ import {
 
 export const BLS_CPI_SCHEDULE = 'https://www.bls.gov/schedule/news_release/cpi.htm';
 export const BLS_CPI_RELEASE = 'https://www.bls.gov/news.release/cpi.nr0.htm';
-export const BLS_ADAPTER_VERSION = 'bls-national-cpi/html-v2';
+export const BLS_ADAPTER_VERSION = 'bls-national-monthly/html-v3';
 // Truthful robot identity and public owner contact; never impersonate a browser.
 export const BLS_CALENDAR_USER_AGENT = 'USDImpact-CalendarValidator/1.0 (+https://www.usd-impact.com/contact/)';
 const MAX_SOURCE_BYTES = 512000;
-const ALLOWED_URL = /^https:\/\/www\.bls\.gov\/(?:schedule\/news_release\/cpi\.htm|schedule\/20\d{2}\/(?:0[1-9]|1[0-2])_sched_list\.htm|news\.release\/cpi\.nr0\.htm)$/;
+const ALLOWED_URL = /^https:\/\/www\.bls\.gov\/(?:schedule\/news_release\/(?:cpi|ppi|empsit)\.htm|schedule\/20\d{2}\/(?:0[1-9]|1[0-2])_sched_list\.htm|news\.release\/(?:cpi|ppi|empsit)\.nr0\.htm)$/;
 
 function visibleText(html) {
   return html.replace(/<!--[\s\S]*?-->/g, ' ')
@@ -111,56 +112,73 @@ function rejectScheduleNotice(text) {
     hold('HOLD_SCHEDULE_CONFLICT', 'An official schedule notice requires reviewed resolution.');
   }
 }
-export function parseBlsCpiSchedule(html, period) {
-  if (!visibleText(html).includes('Schedule of Releases for the Consumer Price Index')) hold('HOLD_IDENTITY_MISMATCH', 'The source is not the national CPI schedule.');
+function definitionFor(series) {
+  const definition = blsMonthlyDefinition(series);
+  if (!definition) hold('HOLD_UNSUPPORTED_EVENT', 'No official BLS adapter exists for this series.');
+  return definition;
+}
+export function parseBlsMonthlyReleaseSchedule(html, period, series) {
+  const definition = definitionFor(series);
+  if (!visibleText(html).includes(`Schedule of Releases for the ${definition.name}`)) {
+    hold('HOLD_IDENTITY_MISMATCH', 'The source is not the requested national BLS release schedule.');
+  }
   rejectScheduleNotice(visibleText(html));
   const rows = tableWithHeaders(html, ['Reference Month', 'Release Date', 'Release Time']);
   const parsed = rows.map((row) => {
     rejectScheduleNotice(row.join(' '));
     return { referencePeriod: referencePeriod(row[0]), eventDate: englishDate(row[1]), releaseTime: englishTime(row[2]) };
   });
-  if (new Set(parsed.map((row) => row.referencePeriod)).size !== parsed.length) hold('HOLD_SCHEDULE_CONFLICT', 'Duplicate reference periods in the official CPI schedule.');
+  if (new Set(parsed.map((row) => row.referencePeriod)).size !== parsed.length) hold('HOLD_SCHEDULE_CONFLICT', 'Duplicate reference periods in the official schedule.');
   const matching = parsed.filter((row) => row.referencePeriod === period);
-  if (matching.length !== 1) hold('HOLD_REFERENCE_PERIOD_MISMATCH', 'The reference period is not present exactly once in the official CPI schedule.');
+  if (matching.length !== 1) hold('HOLD_REFERENCE_PERIOD_MISMATCH', 'The reference period is not present exactly once in the official schedule.');
   const row = matching[0];
-  return Object.freeze({ publisher: 'BLS', series: 'CPI', referencePeriod: row.referencePeriod, releaseStage: 'initial',
+  return Object.freeze({ publisher: 'BLS', series, referencePeriod: row.referencePeriod, releaseStage: 'initial',
     eventDate: row.eventDate, releaseTime: row.releaseTime, timeZone: CALENDAR_TIME_ZONE,
     releaseAt: localReleaseInstant(row.eventDate, row.releaseTime),
   });
 }
+export function parseBlsCpiSchedule(html, period) { return parseBlsMonthlyReleaseSchedule(html, period, 'CPI'); }
 export function confirmBlsMonthlySchedule(html, event) {
+  const definition = definitionFor(event.series);
   const text = visibleText(html);
   if (!text.includes('All times on calendar are Eastern Time')) hold('HOLD_SOURCE_SCHEMA', 'Official monthly calendar timezone is missing.');
   const rows = tableWithHeaders(html, ['Date', 'Time', 'Release']);
-  const cpiRows = rows.filter((row) => /^Consumer Price Index\b/.test(row[2]));
-  const matching = cpiRows.filter((row) => {
+  // Profile strings are fixed constants, never candidate-controlled regular expressions.
+  const prefix = new RegExp(`^${definition.name}\\b`);
+  const label = new RegExp(`^${definition.name} for ([A-Za-z]+ 20\\d{2})$`);
+  const matching = rows.filter((row) => prefix.test(row[2])).filter((row) => {
     rejectScheduleNotice(row.join(' '));
-    const match = row[2].match(/^Consumer Price Index for ([A-Za-z]+ 20\d{2})$/);
-    if (!match) hold('HOLD_IDENTITY_MISMATCH', 'Ambiguous CPI entry in the official monthly calendar.');
+    const match = row[2].match(label);
+    if (!match) hold('HOLD_IDENTITY_MISMATCH', 'Ambiguous release entry in the official monthly calendar.');
     return referencePeriod(match[1]) === event.referencePeriod;
   });
-  if (matching.length !== 1) hold('HOLD_SCHEDULE_CONFLICT', 'Monthly calendar does not confirm one matching CPI event.');
+  if (matching.length !== 1) hold('HOLD_SCHEDULE_CONFLICT', 'Monthly calendar does not confirm one matching event.');
   if (englishDate(matching[0][0]) !== event.eventDate || englishTime(matching[0][1]) !== event.releaseTime) {
-    hold('HOLD_SCHEDULE_CONFLICT', 'Official schedule sources disagree on CPI release timing.');
+    hold('HOLD_SCHEDULE_CONFLICT', 'Official schedule sources disagree on release timing.');
   }
 }
-export function parseBlsCpiRelease(html) {
+export function parseBlsMonthlyRelease(html, series) {
+  const definition = definitionFor(series);
   const text = visibleText(html);
-  const titles = [...text.matchAll(/\bCONSUMER PRICE INDEX - ([A-Z]+ 20\d{2})\b/g)];
-  if (titles.length !== 1) hold('HOLD_OUTCOME_NOT_RELEASED', 'A unique national CPI results heading is required.');
-  const timestamps = [...text.matchAll(/Transmission of material in this release is embargoed until (\d{1,2}:[0-5]\d) (a\.m\.|p\.m\.) \(ET\) ((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),? [A-Za-z]+ \d{1,2}, 20\d{2})/g)];
-  if (timestamps.length !== 1) hold('HOLD_OUTCOME_NOT_RELEASED', 'A unique official CPI release timestamp is required.');
+  const titles = [...text.matchAll(new RegExp(`\\b${definition.resultHeading} - ([A-Z]+ 20\\d{2})\\b`, 'g'))];
+  if (titles.length !== 1) hold('HOLD_OUTCOME_NOT_RELEASED', 'A unique matching national results heading is required.');
+  const prefix = `Transmission of material in this ${definition.news ? 'news ' : ''}release is embargoed until`;
+  const pattern = new RegExp(prefix + ' (?:USDL[- ]\\d{2}-\\d{4} )?(\\d{1,2}:[0-5]\\d) (a\\.m\\.|p\\.m\\.) \\(ET\\) ((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),? [A-Za-z]+ \\d{1,2}, 20\\d{2})', 'g');
+  const timestamps = [...text.matchAll(pattern)];
+  if (timestamps.length !== 1) hold('HOLD_OUTCOME_NOT_RELEASED', 'A unique official release timestamp is required.');
   const stamp = timestamps[0];
   const date = englishDate(stamp[3].replace(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) /, '$1, '));
   const time = englishTime(`${stamp[1]} ${stamp[2] === 'a.m.' ? 'AM' : 'PM'}`);
+  if (timestamps[0].index > titles[0].index) hold('HOLD_OUTCOME_NOT_RELEASED', 'The embargo timestamp must precede the results heading.');
   const resultText = text.slice(titles[0].index + titles[0][0].length, titles[0].index + titles[0][0].length + 2000);
-  if (!resultText.includes('The Consumer Price Index for All Urban Consumers (CPI-U)')
+  if (!resultText.includes(definition.resultLead)
       || !resultText.includes('Bureau of Labor Statistics reported today')
       || !/\b(increased|decreased|declined|rose|fell|unchanged)\b/.test(resultText)) {
-    hold('HOLD_OUTCOME_NOT_RELEASED', 'The official artifact does not contain a recognizable CPI results statement.');
+    hold('HOLD_OUTCOME_NOT_RELEASED', 'The official artifact does not contain a recognizable matching results statement.');
   }
   return Object.freeze({ referencePeriod: referencePeriod(titles[0][1]), releaseAt: localReleaseInstant(date, time) });
 }
+export function parseBlsCpiRelease(html) { return parseBlsMonthlyRelease(html, 'CPI'); }
 // Diagnostics classify response metadata only. Raw headers, bodies, URLs supplied by
 // a response, and exception messages never enter the diagnostic record.
 function urlCategory(value, requested) {
@@ -260,21 +278,27 @@ export async function readOfficialBlsHtml(url, { fetchImpl = globalThis.fetch, n
     throw failure;
   } finally { clearTimeout(timer); controller.abort(); }
 }
-export async function loadBlsCpiCalendar(candidate, options) {
+export async function loadBlsMonthlyCalendar(candidate, options) {
+  const definition = definitionFor(candidate.series);
   const sources = [];
   try {
-    const schedule = await readOfficialBlsHtml(BLS_CPI_SCHEDULE, options);
+    const schedule = await readOfficialBlsHtml(`https://www.bls.gov/schedule/news_release/${definition.slug}.htm`, options);
     sources.push(schedule.evidence);
-    const event = parseBlsCpiSchedule(schedule.html, candidate.referencePeriod);
+    const event = parseBlsMonthlyReleaseSchedule(schedule.html, candidate.referencePeriod, candidate.series);
     const monthlyUrl = `https://www.bls.gov/schedule/${event.eventDate.slice(0, 4)}/${event.eventDate.slice(5, 7)}_sched_list.htm`;
     const monthly = await readOfficialBlsHtml(monthlyUrl, options);
     sources.push(monthly.evidence);
     confirmBlsMonthlySchedule(monthly.html, event);
-    const release = await readOfficialBlsHtml(BLS_CPI_RELEASE, options);
+    const release = await readOfficialBlsHtml(`https://www.bls.gov/news.release/${definition.slug}.nr0.htm`, options);
     sources.push(release.evidence);
-    return Object.freeze({ event, release: parseBlsCpiRelease(release.html), sources: Object.freeze(sources) });
+    return Object.freeze({ event, release: parseBlsMonthlyRelease(release.html, candidate.series), sources: Object.freeze(sources) });
   } catch (error) {
     if (error?.name === 'CalendarHold') error.calendarSources = Object.freeze(sources);
     throw error;
   }
+}
+
+export async function loadBlsCpiCalendar(candidate, options) {
+  if (candidate.series !== 'CPI') hold('HOLD_IDENTITY_MISMATCH', 'The CPI compatibility entrypoint cannot verify another release.');
+  return loadBlsMonthlyCalendar(candidate, options);
 }

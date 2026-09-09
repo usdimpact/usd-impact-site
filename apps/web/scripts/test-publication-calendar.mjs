@@ -44,7 +44,7 @@ await test('correct August CPI before release', async () => {
   assert.ok(Object.isFrozen(result) && Object.isFrozen(result.event) && Object.isFrozen(result.sources[0]));
 });
 await test('wrong CPI date', () => expectHold('HOLD_RELEASE_TIME_MISMATCH', { ...candidate, eventDate: '2026-09-10', releaseAt: '2026-09-10T12:30:00Z' }));
-await test('PPI cannot satisfy CPI', () => expectHold('HOLD_UNSUPPORTED_EVENT', { ...candidate, series: 'PPI' }));
+await test('PPI cannot satisfy CPI', () => expectHold('HOLD_IDENTITY_MISMATCH', { ...candidate, series: 'PPI' }));
 await test('Real Earnings cannot satisfy CPI', () => expectHold('HOLD_UNSUPPORTED_EVENT', { ...candidate, series: 'Real Earnings' }));
 await test('wrong issuing organization', () => expectHold('HOLD_UNSUPPORTED_EVENT', { ...candidate, publisher: 'Eurostat' }));
 await test('conflicting label and structured period', () => expectHold('HOLD_REFERENCE_PERIOD_MISMATCH', { ...candidate, referencePeriod: '2026-09' }));

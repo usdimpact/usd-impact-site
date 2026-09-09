@@ -9,7 +9,8 @@ const TEAM = 'team_1LuMlacGuM198mRjoID4O3Ct';
 const HOST = 'www.usd-impact.com';
 const SHA = /^[a-f0-9]{40}$/;
 const DEPLOYMENT = /^dpl_[A-Za-z0-9]{8,80}$/;
-const CONTENT_ROOT = /^apps\/web\/src\/content\/(news|catalyst-briefs)\//;
+const CONTENT_ROOT = /^apps\/web\/src\/content\/(news|catalyst-briefs)(?:\/|$)/;
+const PLACEHOLDER = /^apps\/web\/src\/content\/(news|catalyst-briefs)\/\.gitkeep$/;
 const CONTENT = /^apps\/web\/src\/content\/(news|catalyst-briefs)\/[a-z0-9-]+\.md$/;
 
 /** Read-only staged-Production preflight. This module has no merge/promotion/write operation.
@@ -66,7 +67,7 @@ export async function verifyCalendarReleasePreflight({ expectedMain, expectedHea
       } finally { clearTimeout(timer); }
     }
     const github = (route) => get('https://api.github.com', `/repos/${REPOSITORY}${route}`);
-    const vercel = (route) => get('https://api.vercel.com', `${route}?teamId=${TEAM}`);
+    const vercel = (route) => get('https://api.vercel.com', `${route}?teamId=${TEAM}${route.startsWith('/v13/deployments/') ? '&withGitRepoInfo=true' : ''}`);
     async function current() {
       const alias = await vercel(`/v4/aliases/${HOST}`);
       if (alias.alias !== HOST || alias.projectId !== PROJECT || alias.redirect || alias.deletedAt
@@ -79,7 +80,8 @@ export async function verifyCalendarReleasePreflight({ expectedMain, expectedHea
       if (record.id !== expectedId || record.source !== 'git' || project !== PROJECT || record.target !== 'production' || record.readyState !== 'READY'
           || record.meta?.githubCommitOrg !== 'usdimpact' || record.meta?.githubCommitRepo !== 'usd-impact-site'
           || record.meta?.githubCommitRef !== 'main' || !SHA.test(record.meta?.githubCommitSha ?? '')
-          || (record.gitSource?.sha && record.gitSource.sha !== record.meta.githubCommitSha)) {
+          || record.gitSource?.type !== 'github' || record.gitSource?.sha !== record.meta.githubCommitSha
+          || String(record.gitSource?.repoId) !== '1265351071') {
         hold('HOLD_DEPLOYMENT_UNVERIFIED', 'A READY main-branch Production deployment with exact repository identity is required.');
       }
       return { id: record.id, sha: record.meta.githubCommitSha };
@@ -101,8 +103,13 @@ export async function verifyCalendarReleasePreflight({ expectedMain, expectedHea
       const tree = await github(`/git/trees/${commit.tree.sha}?recursive=1`);
       if (tree.sha !== commit.tree.sha || tree.truncated !== false || !Array.isArray(tree.tree)) hold('HOLD_REVISION_DRIFT', 'A complete immutable Git tree is required.');
       const files = new Map();
-      if (tree.tree.some((row) => CONTENT_ROOT.test(row.path ?? '') && /\.md$/i.test(row.path ?? '') && !CONTENT.test(row.path))) {
-        hold('HOLD_SOURCE_SCHEMA', 'Publication inventory includes an unsupported path; it cannot be silently omitted.');
+      for (const row of tree.tree.filter((entry) => CONTENT_ROOT.test(entry.path ?? ''))) {
+        if (row.type === 'tree' && row.mode === '040000' && SHA.test(row.sha ?? '')) continue;
+        if (PLACEHOLDER.test(row.path ?? '') && row.type === 'blob' && row.mode === '100644'
+            && row.sha === 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391') continue;
+        if (!CONTENT.test(row.path ?? '')) {
+          hold('HOLD_SOURCE_SCHEMA', 'Publication inventory includes an unsupported path or file type; it cannot be silently omitted.');
+        }
       }
       for (const row of tree.tree.filter((item) => CONTENT.test(item.path ?? ''))) {
         if (row.mode !== '100644' || row.type !== 'blob' || !SHA.test(row.sha ?? '') || files.has(row.path)) hold('HOLD_SOURCE_SCHEMA', 'Publication paths must be unique regular Git blobs.');
@@ -115,16 +122,26 @@ export async function verifyCalendarReleasePreflight({ expectedMain, expectedHea
     const after = await contentTree(candidate.sha);
     const changes = [...new Set([...before.keys(), ...after.keys()])].sort().filter((file) => before.get(file) !== after.get(file));
     if (changes.length > 20) hold('HOLD_SOURCE_SCHEMA', 'The release exceeds the twenty-file publication review bound.');
-    for (const file of changes) {
-      const sha = after.get(file);
-      if (!sha) hold('HOLD_ARCHIVE_CHANGE', 'Publication deletion requires a separately reviewed archive correction.');
+    async function readVerifiedPublicationBlob(sha) {
       const blob = await github(`/git/blobs/${sha}`);
       if (blob.sha !== sha || blob.encoding !== 'base64' || typeof blob.content !== 'string' || blob.size > 256000) hold('HOLD_SOURCE_SCHEMA', 'A bounded verified publication blob is required.');
       const encoded = blob.content.replace(/\n/g, '');
       const bytes = Buffer.from(encoded, 'base64');
       const calculated = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
       if (encoded !== bytes.toString('base64') || blob.size !== bytes.length || calculated !== sha) hold('HOLD_REVISION_DRIFT', 'Publication bytes do not match the immutable Git blob.');
-      const source = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    }
+    for (const file of changes) {
+      const sha = after.get(file);
+      if (!sha) hold('HOLD_ARCHIVE_CHANGE', 'Publication deletion requires a separately reviewed archive correction.');
+      const previousSha = before.get(file);
+      if (previousSha) {
+        const previous = parsePublicationCalendarSource(await readVerifiedPublicationBlob(previousSha));
+        // Ordinary publication cannot silently rewrite, downgrade or replace a published archive.
+        // A correction must use its own reviewed correction policy, not a status-field exemption.
+        if (previous.status === 'published') hold('HOLD_ARCHIVE_CHANGE', 'A changed published archive requires a separately reviewed correction.');
+      }
+      const source = await readVerifiedPublicationBlob(sha);
       const payload = parsePublicationCalendarSource(source);
       observations.push({ file, blob: sha, contentSha256: digest(source), status: payload.status });
       if (payload.status !== 'published') continue;

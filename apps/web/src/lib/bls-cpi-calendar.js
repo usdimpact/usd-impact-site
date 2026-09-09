@@ -1,11 +1,13 @@
 import {
-  CALENDAR_MAX_AGE_MS, CALENDAR_TIME_ZONE, MONTHS, digest, hold,
+  CALENDAR_MAX_AGE_MS, CALENDAR_TIME_ZONE, CalendarHold, MONTHS, digest, hold,
   isCalendarDate, localReleaseInstant, referencePeriod,
 } from './publication-calendar.js';
 
 export const BLS_CPI_SCHEDULE = 'https://www.bls.gov/schedule/news_release/cpi.htm';
 export const BLS_CPI_RELEASE = 'https://www.bls.gov/news.release/cpi.nr0.htm';
 export const BLS_ADAPTER_VERSION = 'bls-national-cpi/html-v1';
+// Truthful robot identity and public owner contact; never impersonate a browser.
+export const BLS_CALENDAR_USER_AGENT = 'USDImpact-CalendarValidator/1.0 (+https://www.usd-impact.com/contact/)';
 const MAX_SOURCE_BYTES = 512000;
 const ALLOWED_URL = /^https:\/\/www\.bls\.gov\/(?:schedule\/news_release\/cpi\.htm|schedule\/20\d{2}\/(?:0[1-9]|1[0-2])_sched_list\.htm|news\.release\/cpi\.nr0\.htm)$/;
 
@@ -108,6 +110,50 @@ export function parseBlsCpiRelease(html) {
   }
   return Object.freeze({ referencePeriod: referencePeriod(titles[0][1]), releaseAt: localReleaseInstant(date, time) });
 }
+// Diagnostics classify response metadata only. Raw headers, bodies, URLs supplied by
+// a response, and exception messages never enter the diagnostic record.
+function urlCategory(value, requested) {
+  if (!value) return 'absent';
+  if (typeof value !== 'string' || value.length > 4096) return 'invalid';
+  try {
+    const parsed = new URL(value, requested);
+    if (parsed.username || parsed.password) return 'credentials-present';
+    if (parsed.origin !== 'https://www.bls.gov') return 'off-origin';
+    if (parsed.href === requested) return 'same-source';
+    return ALLOWED_URL.test(parsed.href) ? 'other-allowlisted-source' : 'other-same-origin';
+  } catch { return 'invalid'; }
+}
+function mediaType(value) {
+  if (!value) return 'missing';
+  const type = value.split(';', 1)[0].trim().toLowerCase();
+  return ['text/html', 'text/plain', 'application/json'].includes(type) ? type : 'other';
+}
+function transportCode(error, timedOut) {
+  if (timedOut) return 'TIMEOUT';
+  const code = error?.cause?.code ?? error?.code;
+  return ['ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT',
+    'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT',
+    'CERT_HAS_EXPIRED', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE', 'DEPTH_ZERO_SELF_SIGNED_CERT',
+    'ERR_TLS_CERT_ALTNAME_INVALID'].includes(code) ? code : 'OTHER';
+}
+function responseDiagnostic(response, url, started) {
+  const status = Number.isInteger(response.status) && response.status >= 100 && response.status <= 599 ? response.status : null;
+  const target = urlCategory(response.url, url);
+  const location = urlCategory(response.headers.get('location'), url);
+  const retry = response.headers.get('retry-after');
+  const retryAfterSeconds = typeof retry === 'string' && /^\d{1,6}$/.test(retry) && Number(retry) <= 86400 ? Number(retry) : null;
+  const failureClass = status === 401 || status === 403 ? 'access-denied'
+    : status === 429 ? 'rate-limited'
+    : status >= 300 && status < 400 ? 'redirect'
+    : status >= 500 ? 'server-error'
+    : status !== 200 ? 'http-error'
+    : response.redirected || !['absent', 'same-source'].includes(target) ? 'unexpected-response-url' : null;
+  return Object.freeze({ url, requestedAt: new Date(started).toISOString(), httpStatus: status,
+    contentType: mediaType(response.headers.get('content-type')), redirectLocation: location,
+    responseUrl: target, redirected: response.redirected === true, retryAfterSeconds,
+    failureClass, transportCode: null });
+}
+
 /** Fixed official endpoints only; redirects, stale cache metadata and oversized bodies fail closed. */
 export async function readOfficialBlsHtml(url, { fetchImpl = globalThis.fetch, now = Date.now, timeoutMs = 12000 } = {}) {
   if (!ALLOWED_URL.test(url)) hold('HOLD_SOURCE_UNAVAILABLE', 'Official source URL is outside the adapter allowlist.');
@@ -115,9 +161,13 @@ export async function readOfficialBlsHtml(url, { fetchImpl = globalThis.fetch, n
   if (!Number.isFinite(started)) hold('HOLD_INVALID_CLOCK', 'Trusted fetch clock is unavailable.');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), Math.min(12000, Math.max(1, timeoutMs)));
+  let diagnostic = null;
+  let stage = 'request';
   try {
     const response = await fetchImpl(url, { method: 'GET', redirect: 'manual', signal: controller.signal,
-      cache: 'no-store', headers: { Accept: 'text/html', 'Cache-Control': 'no-cache', Pragma: 'no-cache' } });
+      cache: 'no-store', headers: { Accept: 'text/html', 'Cache-Control': 'no-cache', Pragma: 'no-cache', 'User-Agent': BLS_CALENDAR_USER_AGENT } });
+    stage = 'response';
+    diagnostic = responseDiagnostic(response, url, started);
     if (response.status !== 200 || response.redirected || (response.url && response.url !== url)) hold('HOLD_SOURCE_UNAVAILABLE', 'Official source did not return a direct HTTP 200 response.');
     if (!/^text\/html(?:;|$)/i.test(response.headers.get('content-type') ?? '')) hold('HOLD_SOURCE_SCHEMA', 'Official source did not return HTML.');
     const age = response.headers.get('age');
@@ -129,6 +179,7 @@ export async function readOfficialBlsHtml(url, { fetchImpl = globalThis.fetch, n
     const declared = response.headers.get('content-length');
     if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > MAX_SOURCE_BYTES)) hold('HOLD_SOURCE_UNAVAILABLE', 'Official source exceeds the size bound.');
     if (!response.body?.getReader) hold('HOLD_SOURCE_UNAVAILABLE', 'A bounded streaming response is required.');
+    stage = 'body';
     const reader = response.body.getReader();
     const chunks = [];
     let size = 0;
@@ -141,13 +192,22 @@ export async function readOfficialBlsHtml(url, { fetchImpl = globalThis.fetch, n
         chunks.push(Buffer.from(value));
       }
     } finally { reader.releaseLock(); }
+    stage = 'decode';
     const html = new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks));
     if (!html.trim()) hold('HOLD_SOURCE_SCHEMA', 'Official source is empty.');
-    return Object.freeze({ html, evidence: Object.freeze({ url, fetchedAt: new Date(started).toISOString(), sha256: digest(html), adapterVersion: BLS_ADAPTER_VERSION }) });
+    return Object.freeze({ html, diagnostic, evidence: Object.freeze({ url, fetchedAt: new Date(started).toISOString(), sha256: digest(html), adapterVersion: BLS_ADAPTER_VERSION }) });
   } catch (error) {
-    if (error?.name === 'CalendarHold') throw error;
-    hold('HOLD_SOURCE_UNAVAILABLE', 'Official source fetch, decoding or bounded read failed.');
-  } finally { clearTimeout(timer); }
+    const failure = error instanceof CalendarHold ? error
+      : new CalendarHold('HOLD_SOURCE_UNAVAILABLE', 'Official source fetch, decoding or bounded read failed.');
+    failure.sourceDiagnostic = Object.freeze({
+      ...(diagnostic ?? { url, requestedAt: new Date(started).toISOString(), httpStatus: null,
+        contentType: 'missing', redirectLocation: 'absent', responseUrl: 'absent', redirected: false, retryAfterSeconds: null }),
+      stage,
+      failureClass: diagnostic?.failureClass ?? (stage === 'request' ? 'transport-error' : stage === 'decode' ? 'invalid-encoding' : 'source-contract'),
+      transportCode: stage === 'request' || stage === 'body' ? transportCode(error, controller.signal.aborted) : null,
+    });
+    throw failure;
+  } finally { clearTimeout(timer); controller.abort(); }
 }
 export async function loadBlsCpiCalendar(candidate, options) {
   const sources = [];

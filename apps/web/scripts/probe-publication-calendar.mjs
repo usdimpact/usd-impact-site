@@ -1,40 +1,45 @@
+import { pathToFileURL } from 'node:url';
 import {
-  BLS_CPI_RELEASE, BLS_CPI_SCHEDULE, confirmBlsMonthlySchedule,
+  BLS_CALENDAR_USER_AGENT, BLS_CPI_RELEASE, BLS_CPI_SCHEDULE, confirmBlsMonthlySchedule,
   parseBlsCpiRelease, parseBlsCpiSchedule, readOfficialBlsHtml,
 } from '../src/lib/bls-cpi-calendar.js';
 
-// Explicit, read-only adapter probe. It is not part of normal builds or publication.
-const period = process.argv[2];
-if (process.argv.length !== 3 || !/^20\d{2}-(0[1-9]|1[0-2])$/.test(period ?? '')) {
-  console.error('Usage: node scripts/probe-publication-calendar.mjs YYYY-MM');
-  process.exitCode = 2;
-} else {
-  const sources = [];
-  let stage = 'schedule';
-  let html = '';
-  try {
-    const schedule = await readOfficialBlsHtml(BLS_CPI_SCHEDULE);
-    html = schedule.html;
-    sources.push(schedule.evidence);
-    const event = parseBlsCpiSchedule(html, period);
-    stage = 'monthly cross-check';
-    const monthly = await readOfficialBlsHtml(`https://www.bls.gov/schedule/${event.eventDate.slice(0, 4)}/${event.eventDate.slice(5, 7)}_sched_list.htm`);
-    html = monthly.html;
-    sources.push(monthly.evidence);
-    confirmBlsMonthlySchedule(html, event);
-    stage = 'released artifact';
-    const release = await readOfficialBlsHtml(BLS_CPI_RELEASE);
-    html = release.html;
-    sources.push(release.evidence);
-    const latestRelease = parseBlsCpiRelease(html);
-    console.log(JSON.stringify({ adapterProbe: 'PASS', event, latestRelease, sources, publicationAttempted: false, publicationAuthorized: false }, null, 2));
-  } catch (error) {
-    console.error(JSON.stringify({ adapterProbe: error?.code ?? 'HOLD_INTERNAL_ERROR', stage,
-      reason: error?.name === 'CalendarHold' ? error.message : 'Read-only adapter probe failed.', sources,
-      // Bounded public markup only, to diagnose a changed source contract. No private headers or errors.
-      publicMarkupExcerpt: html.slice(html.search(/<table\b|<pre\b/i) >>> 0).slice(0, 2048),
-      publicationAttempted: false, publicationAuthorized: false,
-    }, null, 2));
-    process.exitCode = 2;
+// Explicit, read-only probe; injection is for trusted tests, never CLI input.
+export async function runCalendarProbe(args, { read = readOfficialBlsHtml, write = console.log } = {}) {
+  const period = args[0];
+  if (args.length !== 1 || !/^20\d{2}-(0[1-9]|1[0-2])$/.test(period ?? '')) {
+    write('Usage: node scripts/probe-publication-calendar.mjs YYYY-MM');
+    return 2;
   }
+  const sources = [];
+  const responses = [];
+  let stage = 'schedule';
+  const observe = (source) => { sources.push(source.evidence); responses.push(source.diagnostic); };
+  try {
+    const schedule = await read(BLS_CPI_SCHEDULE);
+    observe(schedule);
+    const event = parseBlsCpiSchedule(schedule.html, period);
+    stage = 'monthly cross-check';
+    const monthly = await read(`https://www.bls.gov/schedule/${event.eventDate.slice(0, 4)}/${event.eventDate.slice(5, 7)}_sched_list.htm`);
+    observe(monthly);
+    confirmBlsMonthlySchedule(monthly.html, event);
+    stage = 'released artifact';
+    const release = await read(BLS_CPI_RELEASE);
+    observe(release);
+    const latestRelease = parseBlsCpiRelease(release.html);
+    write(JSON.stringify({ adapterProbe: 'PASS', event, latestRelease, sources, responses,
+      requestIdentity: BLS_CALENDAR_USER_AGENT, publicationAttempted: false, publicationAuthorized: false }, null, 2));
+    return 0;
+  } catch (error) {
+    // Never emit raw response headers/body, redirect destinations or exception text.
+    write(JSON.stringify({ adapterProbe: error?.name === 'CalendarHold' ? error.code : 'HOLD_INTERNAL_ERROR', stage,
+      reason: error?.name === 'CalendarHold' ? error.message : 'Read-only adapter probe failed.', sources, responses,
+      sourceDiagnostic: error?.name === 'CalendarHold' ? error.sourceDiagnostic ?? null : null,
+      requestIdentity: BLS_CALENDAR_USER_AGENT, publicationAttempted: false, publicationAuthorized: false,
+    }, null, 2));
+    return 2;
+  }
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  process.exitCode = await runCalendarProbe(process.argv.slice(2));
 }

@@ -146,7 +146,9 @@ export async function verifyPublicationCalendar(value, { now = Date.now, fetchIm
       policyVersion: CALENDAR_POLICY_VERSION, decision: error instanceof CalendarHold ? error.code : 'HOLD_INTERNAL_ERROR',
       reason: error instanceof CalendarHold ? error.message : 'Calendar verification could not complete.',
       checkedAt: checkedAt ?? null, validUntil: null, eventIdentity: candidate ? calendarIdentity(candidate) : null,
-      binding: revision, sources: record?.sources ?? error?.calendarSources ?? [], publicationAttempted: false, publicationAuthorized: false,
+      binding: revision, sources: record?.sources ?? error?.calendarSources ?? [],
+      sourceDiagnostic: error instanceof CalendarHold ? error.sourceDiagnostic ?? null : null,
+      publicationAttempted: false, publicationAuthorized: false,
     });
   }
 }

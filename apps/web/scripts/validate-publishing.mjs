@@ -115,3 +115,5 @@ console.log(`publishing validation pass (${entries.length} dynamic entries; ${st
 
 // Offline calendar regressions only; live publication enforcement remains tracked in #558.
 await import('./test-publication-calendar.mjs');
+
+await import('./test-publication-calendar-diagnostics.mjs');

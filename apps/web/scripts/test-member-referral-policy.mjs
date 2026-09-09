@@ -71,7 +71,8 @@ assert.equal(valid.benefits.referringMember.additionalFreeMonths, 3);
 assert.equal(valid.benefits.referringMember.annualDiscount, false);
 assert.equal(valid.benefits.referringMember.cashValue, false);
 
-for (const [field, reason] of [
+const explicitFalseGates = [
+  ['referrerInternalAccount', 'internal_account'],
   ['affiliateAttributed', 'affiliate_customer_program_stacking'],
   ['otherCheckoutDiscount', 'checkout_discount_stacking'],
   ['selfReferral', 'self_referral'],
@@ -80,11 +81,18 @@ for (const [field, reason] of [
   ['refunded', 'refunded'],
   ['disputed', 'disputed'],
   ['chargebackCompleted', 'chargeback_completed'],
-]) {
-  const result = evaluateMemberReferralEvent({ ...validInput, [field]: true });
-  assert.equal(result.qualifiesUnderPolicy, false);
-  assert.equal(result.runtimeEligible, false);
-  assert.equal(result.reasons.includes(reason), true);
+];
+
+for (const [field, reason] of explicitFalseGates) {
+  for (const unsafeValue of [true, undefined, null, 'unknown']) {
+    const candidate = { ...validInput };
+    if (unsafeValue === undefined) delete candidate[field];
+    else candidate[field] = unsafeValue;
+    const result = evaluateMemberReferralEvent(candidate);
+    assert.equal(result.qualifiesUnderPolicy, false, `${field}=${String(unsafeValue)} must fail closed`);
+    assert.equal(result.runtimeEligible, false);
+    assert.equal(result.reasons.includes(reason), true);
+  }
 }
 
 assert.equal(
@@ -97,6 +105,51 @@ assert.equal(
 );
 assert.equal(
   evaluateMemberReferralEvent({ ...validInput, memberReferralApproved: false }).reasons.includes('member_referral_not_approved'),
+  true,
+);
+
+for (const [field, reason] of [
+  ['memberReferralApproved', 'member_referral_not_approved'],
+  ['paymentCompleted', 'payment_not_completed'],
+  ['referrerResearchEntitled', 'referrer_not_research_entitled'],
+  ['newResearchCustomer', 'buyer_not_new_research_customer'],
+  ['annualResearchPurchase', 'purchase_not_annual_research'],
+  ['firstAnnualTerm', 'purchase_not_first_annual_term'],
+]) {
+  for (const invalidValue of [false, undefined, null, 'unknown']) {
+    const candidate = { ...validInput };
+    if (invalidValue === undefined) delete candidate[field];
+    else candidate[field] = invalidValue;
+    const result = evaluateMemberReferralEvent(candidate);
+    assert.equal(result.qualifiesUnderPolicy, false, `${field}=${String(invalidValue)} must fail closed`);
+    assert.equal(result.runtimeEligible, false);
+    assert.equal(result.reasons.includes(reason), true);
+  }
+}
+
+for (const invalidValue of [undefined, null, -1, 1.5, 13, '0']) {
+  const candidate = { ...validInput };
+  if (invalidValue === undefined) delete candidate.alreadyGrantedMonths;
+  else candidate.alreadyGrantedMonths = invalidValue;
+  const result = evaluateMemberReferralEvent(candidate);
+  assert.equal(
+    result.qualifiesUnderPolicy,
+    false,
+    `alreadyGrantedMonths=${String(invalidValue)} must fail closed`,
+  );
+  assert.equal(result.runtimeEligible, false);
+  assert.equal(result.reasons.includes('invalid_already_granted_months'), true);
+}
+
+const inconsistentGrantState = evaluateMemberReferralEvent({
+  ...validInput,
+  qualifiedReferralsAfterEvent: 1,
+  alreadyGrantedMonths: 6,
+});
+assert.equal(inconsistentGrantState.qualifiesUnderPolicy, false);
+assert.equal(inconsistentGrantState.runtimeEligible, false);
+assert.equal(
+  inconsistentGrantState.reasons.includes('already_granted_months_exceed_earned_total'),
   true,
 );
 

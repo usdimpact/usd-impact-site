@@ -98,28 +98,36 @@ export function evaluateMemberReferralEvent(input = {}) {
   reject(input.memberReferralApproved !== true, 'member_referral_not_approved');
   reject(input.paymentCompleted !== true, 'payment_not_completed');
   reject(input.referrerResearchEntitled !== true, 'referrer_not_research_entitled');
-  reject(input.referrerInternalAccount === true, 'internal_account');
+  reject(input.referrerInternalAccount !== false, 'internal_account');
   reject(input.newResearchCustomer !== true, 'buyer_not_new_research_customer');
   reject(input.annualResearchPurchase !== true, 'purchase_not_annual_research');
   reject(input.firstAnnualTerm !== true, 'purchase_not_first_annual_term');
   reject(input.buyerDiscountRate !== memberReferralPolicy.newClientBenefit.discountRate, 'incorrect_buyer_discount');
-  reject(input.affiliateAttributed === true, 'affiliate_customer_program_stacking');
-  reject(input.otherCheckoutDiscount === true, 'checkout_discount_stacking');
-  reject(input.selfReferral === true, 'self_referral');
-  reject(input.circularReferral === true, 'circular_referral');
-  reject(input.buyerAlreadyCounted === true, 'buyer_already_counted');
-  reject(input.refunded === true, 'refunded');
-  reject(input.disputed === true, 'disputed');
-  reject(input.chargebackCompleted === true, 'chargeback_completed');
+  reject(input.affiliateAttributed !== false, 'affiliate_customer_program_stacking');
+  reject(input.otherCheckoutDiscount !== false, 'checkout_discount_stacking');
+  reject(input.selfReferral !== false, 'self_referral');
+  reject(input.circularReferral !== false, 'circular_referral');
+  reject(input.buyerAlreadyCounted !== false, 'buyer_already_counted');
+  reject(input.refunded !== false, 'refunded');
+  reject(input.disputed !== false, 'disputed');
+  reject(input.chargebackCompleted !== false, 'chargeback_completed');
 
   const referralCountValid = Number.isInteger(input.qualifiedReferralsAfterEvent)
     && input.qualifiedReferralsAfterEvent >= 1;
   reject(!referralCountValid, 'invalid_qualified_referral_count');
+
+  const alreadyGrantedMonthsValid = Number.isInteger(input.alreadyGrantedMonths)
+    && input.alreadyGrantedMonths >= 0
+    && input.alreadyGrantedMonths <= memberReferralPolicy.referringMemberBenefit.maximumFreeMonths;
+  reject(!alreadyGrantedMonthsValid, 'invalid_already_granted_months');
+
   const progress = getMemberReferralProgress(
     referralCountValid ? input.qualifiedReferralsAfterEvent : 0,
-    Number.isInteger(input.alreadyGrantedMonths) && input.alreadyGrantedMonths >= 0
-      ? input.alreadyGrantedMonths
-      : 0,
+    alreadyGrantedMonthsValid ? input.alreadyGrantedMonths : 0,
+  );
+  reject(
+    alreadyGrantedMonthsValid && input.alreadyGrantedMonths > progress.totalFreeMonths,
+    'already_granted_months_exceed_earned_total',
   );
 
   const qualifiesUnderPolicy = reasons.length === 0;

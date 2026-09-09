@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import { SEARCH_UTILITY_PATHS } from './src/lib/search-utility-policy.js';
 import accessMap from './src/data/quiz-access-map.json' with { type: 'json' };
 import { resolveScorePipelineOrigin } from './src/lib/score-pipeline-origin.js';
 
@@ -17,6 +18,7 @@ const protectedPaths = new Set(
 
 const privatePaths = new Set([
   ...protectedPaths,
+  ...SEARCH_UTILITY_PATHS,
   '/internal/checklist-analytics',
 ]);
 

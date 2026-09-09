@@ -5,6 +5,7 @@ import BookChapterBridgeCard from '../components/BookChapterBridgeCard.astro';
 import ConsentClient from '../components/ConsentClient.astro';
 import TelemetryClient from '../components/TelemetryClient.astro';
 import PwaClient from '../components/PwaClient.astro';
+import { isSearchUtilityPath } from '../lib/search-utility-policy.js';
 import { SITE_NAVIGATION, navigationLinkIsActive } from '../lib/site-navigation.js';
 import { getChapterById, getSurfaceBridgeForPath } from '../data/book-site-bridge/index.mjs';
 const [learnNavigation, updatesNavigation, libraryNavigation] = SITE_NAVIGATION;
@@ -35,7 +36,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
     <meta name="description" content={description} />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/assets/logo/USDImpact_Icon_Color_192.png" sizes="192x192" />
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {(noindex || isSearchUtilityPath(Astro.url.pathname)) && <meta name="robots" content="noindex, nofollow" />}
     {stylesheets.map((href) => <link rel="stylesheet" href={href} />)}
     <script is:inline src="/assets/session-entry.js" defer></script>
   </head>

@@ -127,3 +127,5 @@ await import('./test-publication-calendar-multiseries.mjs');
 await import('./test-publication-calendar-coverage.mjs');
 
 await import('./test-publication-serving-policy.mjs');
+
+await import('./test-publication-serving-validity.mjs');

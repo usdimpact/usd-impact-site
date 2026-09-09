@@ -141,20 +141,32 @@ function historyDecision(record, item, current, now) {
  */
 export function createPublicationServingPolicy({ loadAuthority, readHistory, now = Date.now } = {}) {
   const tickets = new WeakMap(); let highestTime = -1; let lastAuthority = null;
+  let inspectionSequence = 0; let authorityEpoch = 0;
+  function invalidateAuthority() {
+    authorityEpoch++;
+    lastAuthority = null;
+  }
   function clock() {
     const value = now();
     requireThat(Number.isSafeInteger(value) && value >= 0 && value >= highestTime, 'HOLD_INVALID_CLOCK');
     highestTime = value; return value;
   }
   async function inspect(sources) {
+    // Fence every await: a superseded read must neither restore stale authority
+    // nor clear the newer inspection's successful result when it fails late.
+    const sequence = ++inspectionSequence;
+    const latest = () => requireThat(sequence === inspectionSequence, 'HOLD_INSPECTION_SUPERSEDED');
     try {
       requireThat(typeof loadAuthority === 'function' && typeof readHistory === 'function', 'HOLD_ADAPTER_NOT_CONFIGURED');
       requireThat(Array.isArray(sources) && sources.length <= 500
         && sources.every((source) => typeof source === 'string')
         && sources.reduce((size, source) => size + Buffer.byteLength(source), 0) <= 4_000_000, 'HOLD_SOURCE_INVALID');
-      const started = clock(); const a = authority(copy(await loadAuthority()), clock());
+      const sourceSnapshot = sources.slice();
+      const started = clock();
+      const firstAuthority = await loadAuthority(); latest();
+      const a = authority(copy(firstAuthority), clock());
       const candidates = []; const audit = []; const paths = new Set();
-      for (const source of sources) {
+      for (const source of sourceSnapshot) {
         try {
           const item = publication(source);
           requireThat(!paths.has(item.path), 'HOLD_DUPLICATE_PATH'); paths.add(item.path);
@@ -166,7 +178,8 @@ export function createPublicationServingPolicy({ loadAuthority, readHistory, now
         }
       }
       const keys = candidates.map(({ path, sourceSha256 }) => ({ path, sourceSha256 }));
-      const snapshot = copy(await readHistory(freeze({ revision: a.historyRevision, entries: keys })));
+      const history = await readHistory(freeze({ revision: a.historyRevision, entries: keys })); latest();
+      const snapshot = copy(history);
       requireThat(snapshot && snapshot.revision === a.historyRevision && Array.isArray(snapshot.records)
         && snapshot.records.length === keys.length, 'HOLD_HISTORY_SNAPSHOT_INVALID');
       const unique = new Set(); const outcomes = [];
@@ -179,18 +192,26 @@ export function createPublicationServingPolicy({ loadAuthority, readHistory, now
         outcomes.push(freeze({ ...item, ...decision }));
         audit.push({ sourceSha256: item.sourceSha256, decision: decision.decision });
       }
-      const b = authority(copy(await loadAuthority()), clock());
+      const finalAuthority = await loadAuthority(); latest();
+      const b = authority(copy(finalAuthority), clock());
       requireThat(sameAuthority(a, b), 'HOLD_AUTHORITY_DRIFT');
       const expiry = Math.min(instant(a.validUntil), instant(b.validUntil), started + MAX_SNAPSHOT_MS);
       requireThat(clock() < expiry, 'HOLD_AUTHORITY_EXPIRED');
-      lastAuthority = b;
+      // Epochs are monotonic: an invalidated ticket cannot become valid again
+      // after recovery or an A-to-B-to-A change of otherwise identical fields.
+      if (lastAuthority && (!sameAuthority(lastAuthority, b)
+          || expiry < instant(lastAuthority.validUntil))) authorityEpoch++;
+      lastAuthority = freeze({ ...b, validUntil: new Date(expiry).toISOString() });
       const ticket = Object.freeze({ state: 'INSPECTED', publicationAuthorized: false, enforcementActive: false });
-      tickets.set(ticket, { outcomes, audit: freeze(audit), authority: b, expiry });
+      tickets.set(ticket, { outcomes, audit: freeze(audit), authority: b, expiry, epoch: authorityEpoch });
       return ticket;
     } catch (error) {
-      // Invalidate older in-process tickets after an incomplete or drifting authority read.
-      lastAuthority = null;
-      return Object.freeze({ state: 'HOLD', decision: error.policyCode ?? 'HOLD_ADAPTER_UNAVAILABLE',
+      const superseded = sequence !== inspectionSequence;
+      // Only the newest inspection can update shared authority. Its failure
+      // permanently invalidates prior tickets, but a fresh inspection can recover.
+      if (!superseded) invalidateAuthority();
+      return Object.freeze({ state: 'HOLD', decision: superseded ? 'HOLD_INSPECTION_SUPERSEDED'
+        : error.policyCode ?? 'HOLD_ADAPTER_UNAVAILABLE',
         publicationAuthorized: false, enforcementActive: false });
     }
   }
@@ -200,8 +221,9 @@ export function createPublicationServingPolicy({ loadAuthority, readHistory, now
       requireThat(SURFACES.has(surface), 'HOLD_SURFACE_UNSUPPORTED');
       requireThat(ticket && tickets.has(ticket), 'HOLD_UNTRUSTED_TICKET');
       const data = tickets.get(ticket); const time = clock();
-      requireThat(lastAuthority && sameAuthority(data.authority, lastAuthority), 'HOLD_AUTHORITY_DRIFT');
-      requireThat(time < data.expiry, 'HOLD_AUTHORITY_EXPIRED');
+      requireThat(lastAuthority && data.epoch === authorityEpoch
+        && sameAuthority(data.authority, lastAuthority), 'HOLD_AUTHORITY_DRIFT');
+      requireThat(time < data.expiry && time < instant(lastAuthority.validUntil), 'HOLD_AUTHORITY_EXPIRED');
       const selected = data.outcomes.filter((item) => item.decision.startsWith('SERVE_'))
         .map((item) => ({ ...item, current: item.current && (item.previewDeadline === null || time < item.previewDeadline) }))
         .filter((item) => !CURRENT.has(surface) || item.current);

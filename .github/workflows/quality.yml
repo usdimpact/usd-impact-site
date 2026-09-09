@@ -23,18 +23,6 @@ jobs:
           node-version: 24.x
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - name: Temporary read-only CPI adapter verification for calendar 558
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 559
-        continue-on-error: true
-        run: node scripts/probe-publication-calendar.mjs 2026-08 CPI
-      - name: Temporary read-only PPI adapter verification for calendar 558
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 559
-        continue-on-error: true
-        run: node scripts/probe-publication-calendar.mjs 2026-08 PPI
-      - name: Temporary read-only EMPSIT adapter verification for calendar 558
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 559
-        continue-on-error: true
-        run: node scripts/probe-publication-calendar.mjs 2026-08 EMPSIT
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Audit high and critical vulnerabilities

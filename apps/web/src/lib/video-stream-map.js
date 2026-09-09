@@ -58,7 +58,7 @@ export const VIDEO_STREAM_UIDS = Object.freeze({
   "part-4-dealers-and-balance-sheet-intermediation": "520c37afef9676788a156dcbce4ae233",
   "part-5-funding-stress-and-market-transmission": "a170a5c956efb12ead56cbb7680c96ca",
   "part-6-global-dollar-funding-and-fx-swaps": "772168655f240abcbc70606c1485da02",
-  "part-7-dollar-liquidity-backstops-and-policy-facilities": "5c578fc7c7272238462067d20a53c3f9"
+  "part-7-dollar-liquidity-backstops-and-policy-facilities": "2a93f327f24c06edd88d9aaf2ffbacd0"
 });
 
 export function getStreamUid(slug) {

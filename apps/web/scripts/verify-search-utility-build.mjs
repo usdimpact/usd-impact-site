@@ -12,7 +12,8 @@ export const PUBLIC_DISCOVERY_CONTROLS = Object.freeze([
 
 // Extract the fixed Astro sitemap output contract, not arbitrary external XML.
 export function sitemapPathSet(xml) {
-  const text = xml.replace(/<!--[\s\S]*?-->/g, '');
+  // Keep a boundary so ignored blocks cannot manufacture XML tokens or URLs.
+  const text = xml.replace(/<!--[\s\S]*?-->/g, ' ');
   if (/<!DOCTYPE|<!\[CDATA\[/i.test(text) || !/<urlset\b/.test(text)
       || !/<\/urlset>\s*$/.test(text)) throw new Error('Unexpected sitemap format.');
   const locations = [...text.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/g)];
@@ -29,9 +30,10 @@ export function sitemapPathSet(xml) {
 }
 
 export function robotsValues(html) {
-  const text = html.replace(/<!--[\s\S]*?-->/g, '');
+  // Mask, rather than concatenate, text on either side of ignored markup.
+  const text = html.replace(/<!--[\s\S]*?-->/g, ' ');
   const head = text.match(/<head\b[^>]*>([\s\S]*?)<\/head\s*>/i)?.[1] ?? '';
-  const clean = head.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
+  const clean = head.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ');
   return [...clean.matchAll(/<meta\b[^>]*>/gi)].flatMap(([tag]) => {
     const attrs = Object.fromEntries([...tag.matchAll(/([\w-]+)\s*=\s*(["'])(.*?)\2/g)]
       .map(([, key, , value]) => [key.toLowerCase(), value.toLowerCase()]));

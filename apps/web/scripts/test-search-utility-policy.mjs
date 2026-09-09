@@ -81,6 +81,42 @@ export function runSearchUtilityPolicyTests() {
   check(() => { const f = fixture(); f.delete('account/index.html'); assert.ok(verify(f).includes('Search utility HTML missing: /account.')); });
   check(() => { const f = fixture(); f.set('learn/real-yield/index.html', html(noindex)); assert.ok(verify(f).includes('Public learning control unexpectedly noindex: /learn/real-yield.')); });
   check(() => { const f = fixture(); f.set('sitemap-0.xml', xmlFor(PUBLIC_DISCOVERY_CONTROLS).replace('</urlset>', '<!--<url><loc>https://www.usd-impact.com/account/</loc></url>--></urlset>')); assert.deepEqual(verify(f), []); });
+  check(() => {
+    // Masked blocks must not turn malformed markup into valid robots evidence.
+    for (const block of ['<!-- seam -->', '<script>ignored</script>', '<style>ignored</style>']) {
+      for (const meta of [
+        `<me${block}ta name="robots" content="noindex, nofollow">`,
+        `<meta name="ro${block}bots" content="noindex, nofollow">`,
+        `<meta name="robots" content="noin${block}dex, nofollow">`,
+      ]) {
+        const f = fixture(); f.set('account/index.html', html(meta));
+        assert.ok(verify(f).includes('Search utility needs one noindex, nofollow head directive: /account.'), meta);
+      }
+    }
+    assert.deepEqual(robotsValues(`<html><he<!-- seam -->ad>${noindex}</head></html>`), []);
+  });
+  check(() => {
+    const valid = xmlFor(PUBLIC_DISCOVERY_CONTROLS);
+    for (const invalid of [
+      valid.replaceAll('<url>', '<u<!-- seam -->rl>'),
+      valid.replaceAll('<loc>', '<lo<!-- seam -->c>'),
+      valid.replaceAll('www.usd-impact.com', 'www.usd-im<!-- seam -->pact.com'),
+    ]) {
+      assert.throws(() => sitemapPathSet(invalid));
+      const f = fixture(); f.set('sitemap-0.xml', invalid);
+      assert.ok(verify(f).includes('Search utility policy: sitemap could not be validated.'));
+    }
+    const f = fixture();
+    f.set('sitemap-0.xml', valid.replace('/research/sample/', '/resea<!-- seam -->rch/sample/'));
+    assert.ok(verify(f).includes('Public discovery control missing from sitemap: /research/sample.'));
+  });
+  check(() => {
+    // Ordinary inert blocks between complete nodes still leave the directive intact.
+    const inert = `<!--${noindex}--><script>${JSON.stringify(noindex)}</script><style>/* ${noindex} */</style>`;
+    assert.deepEqual(robotsValues(html(inert + noindex + inert)), ['noindex, nofollow']);
+    const f = fixture(); f.set('account/index.html', html(inert + noindex + inert));
+    assert.deepEqual(verify(f), []);
+  });
   console.log(`Search utility policy: ${groups} regression groups passed.`);
   return groups;
 }

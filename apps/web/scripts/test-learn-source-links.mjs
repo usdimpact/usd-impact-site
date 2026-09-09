@@ -105,6 +105,37 @@ test('commented and script-contained reference fixtures cannot pass', () => {
   for (const html of [`<!--${htmlFixture(c)}-->`, `<script>${JSON.stringify(htmlFixture(c))}</script>`]) assert.ok(inspectLearnSourceLinksHtml(html, c).length);
   assert.ok(inspectLearnSourceLinksHtml(htmlFixture(c), { ...c, id: 'unknown' }).length);
 });
+test('removed blocks cannot manufacture required tags and reference attributes', () => {
+  for (const identity of [real, dxy]) {
+    const card = cardFixture(identity), html = htmlFixture(card);
+    for (const block of ['<!-- seam -->', '<script>ignored</script>', '<style>ignored</style>']) {
+      for (const invalid of [
+        html.replace('<h1>', `<h${block}1>`),
+        html.replace('name="description"', `name="descrip${block}tion"`),
+        html.replace('data-learn-primary-references', `data-learn-primary-refe${block}rences`),
+        html.replace(getLearnSourceLinks(card)[0].url, getLearnSourceLinks(card)[0].url.replace('https:', `htt${block}ps:`)),
+      ]) assert.ok(inspectLearnSourceLinksHtml(invalid, card).length, `${identity.id}: ${block}`);
+    }
+  }
+});
+test('removed blocks cannot manufacture preserved identity or protected destinations', () => {
+  const card = cardFixture(real), html = htmlFixture(card);
+  for (const block of ['<!-- seam -->', '<script>ignored</script>', '<style>ignored</style>']) {
+    for (const invalid of [
+      html.replace(`data-card-id="${card.id}"`, `data-card-id="card-real${block}-yield"`),
+      html.replace('/guided-edition/video-library/fixture-video/', `/guided-edition/video${block}-library/fixture-video/`),
+    ]) assert.ok(inspectLearnSourceLinksHtml(invalid, card).length, block);
+  }
+});
+test('inert blocks between complete nodes preserve valid pilot evidence', () => {
+  for (const identity of [real, dxy]) {
+    const card = cardFixture(identity);
+    const decoy = '<ul data-learn-primary-references><li>not rendered</li></ul>';
+    const inert = `<!--${decoy}--><script>${JSON.stringify(decoy)}</script><style>/* ${decoy} */</style>`;
+    const html = htmlFixture(card).replace('<body>', `<body>${inert}`).replace('</body>', `${inert}</body>`);
+    assert.deepEqual(inspectLearnSourceLinksHtml(html, card), []);
+  }
+});
 test('build traversal rejects missing pilots and stray lists', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'learn-sources-'));
   const cards = [cardFixture(real), cardFixture(dxy)];

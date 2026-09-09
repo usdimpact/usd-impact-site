@@ -129,3 +129,5 @@ await import('./test-publication-calendar-coverage.mjs');
 await import('./test-publication-serving-policy.mjs');
 
 await import('./test-publication-serving-validity.mjs');
+
+await import('./test-publication-response-boundary.mjs');

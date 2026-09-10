@@ -1,0 +1,172 @@
+# DIAGNOSTIC ONLY: no OIDC issuance, API request, publication or deployment.
+name: Publication OIDC endpoint diagnostic 558
+'on':
+  workflow_dispatch:
+    inputs:
+      confirmed:
+        description: Confirm the separately approved one-time no-token diagnostic
+        required: true
+        default: false
+        type: boolean
+      approved-main-sha:
+        description: Exact separately approved installed main SHA (40 lowercase hex characters)
+        required: true
+        type: string
+      approval-until-utc:
+        description: Approval expiry in UTC (YYYY-MM-DDTHH:mm:ssZ), within 15 minutes
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: publication-oidc-identity-rehearsal-558
+  cancel-in-progress: false
+jobs:
+  endpoint-only:
+    if: >-
+      github.repository == 'usdimpact/usd-impact-site' &&
+      github.repository_id == '1265351071' &&
+      github.repository_owner_id == '275107298' &&
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' && github.ref_protected &&
+      github.run_attempt == 1 && inputs.confirmed == true &&
+      github.sha == inputs.approved-main-sha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+      - name: Classify endpoint without requesting a token
+        env:
+          DIAGNOSTIC_APPROVAL: endpoint-only-no-token-558-v1
+          DIAGNOSTIC_CONFIRMED: ${{ inputs.confirmed }}
+          DIAGNOSTIC_APPROVED_MAIN: ${{ inputs.approved-main-sha }}
+          DIAGNOSTIC_APPROVAL_UNTIL: ${{ inputs.approval-until-utc }}
+          DIAGNOSTIC_REPOSITORY_ID: ${{ github.repository_id }}
+          DIAGNOSTIC_OWNER_ID: ${{ github.repository_owner_id }}
+          DIAGNOSTIC_REF_PROTECTED: ${{ github.ref_protected }}
+          NODE_OPTIONS: ''
+        shell: bash
+        run: |
+          unset ACTIONS_ID_TOKEN_REQUEST_TOKEN
+          node --input-type=module - --diagnose-only <<'ENDPOINT_DIAGNOSTIC'
+          /** Pure, bounded classification of the installed endpoint validator's predicates.
+           * Never returns input bytes, URL components, hashes, lengths or exception text.
+           * This module has no imports, request code, token reader, or publication path.
+           */
+          function classifyEndpoint(value) {
+            const checks = {
+              stringValue: typeof value === 'string',
+              nonempty: null, boundedLength: null, noControlWhitespace: null,
+              parseable: null, https: null, noUserInformation: null,
+              noNondefaultPort: null, noFragment: null,
+              installedHostnamePattern: null, exactLowercaseIdtokenSuffix: null,
+            };
+            const shape = {
+              caseInsensitiveIdtokenSuffix: null,
+              idtokenSuffixAfterRemovingOneTrailingSlash: null,
+              hostnamePatternAfterRemovingOneTrailingDot: null,
+            };
+            if (checks.stringValue) {
+              checks.nonempty = value.length > 0;
+              checks.boundedLength = value.length <= 4096;
+              checks.noControlWhitespace = checks.nonempty && checks.boundedLength
+                ? !/[\r\n\t]/.test(value) : null;
+              if (checks.nonempty && checks.boundedLength && checks.noControlWhitespace) {
+                let url;
+                try { url = new URL(value); checks.parseable = true; }
+                catch { checks.parseable = false; }
+                if (url) {
+                  const pattern = /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.actions\.githubusercontent\.com$/;
+                  checks.https = url.protocol === 'https:';
+                  checks.noUserInformation = !url.username && !url.password;
+                  checks.noNondefaultPort = !url.port;
+                  checks.noFragment = !url.hash;
+                  checks.installedHostnamePattern = pattern.test(url.hostname);
+                  checks.exactLowercaseIdtokenSuffix = url.pathname.endsWith('/idtoken');
+                  // These are diagnostics only. They NEVER affect installed acceptance.
+                  shape.caseInsensitiveIdtokenSuffix = url.pathname.toLowerCase().endsWith('/idtoken');
+                  shape.idtokenSuffixAfterRemovingOneTrailingSlash = url.pathname.replace(/\/$/, '').endsWith('/idtoken');
+                  shape.hostnamePatternAfterRemovingOneTrailingDot = pattern.test(url.hostname.replace(/\.$/, ''));
+                }
+              }
+            }
+            const failedPredicates = Object.keys(checks).filter((name) => checks[name] === false);
+            return Object.freeze({
+              checks: Object.freeze(checks), shape: Object.freeze(shape),
+              failedPredicates: Object.freeze(failedPredicates),
+              endpointAcceptedByInstalledValidator: Object.values(checks).every((value) => value === true),
+            });
+          }
+
+          function fixedReport(decision, endpoint = null) {
+            return Object.freeze({
+              schema: 'oidc-endpoint-diagnostic/558-v1', decision,
+              diagnosticOnly: true, endpoint,
+              identityAuthenticated: false, publicationAuthorized: false,
+              admissionRecorded: false, enforcementActive: false, publicResponseObserved: false,
+              requestsAttempted: 0, tokensRequested: 0, tokensVerified: 0,
+            });
+          }
+
+          /** Only the explicitly named context properties and endpoint variable are read.
+           * The issuance bearer and unrelated environment entries are never accessed.
+           * Date and revision gates govern observation only, never identity authorization.
+           */
+          function executeDiagnostic(env, { mode = '--diagnose-only', now = Date.now } = {}) {
+            try {
+              if (mode !== '--diagnose-only') return fixedReport('HOLD_DIAGNOSTIC_MODE');
+              if (!env || typeof env !== 'object') return fixedReport('HOLD_DIAGNOSTIC_CONTEXT');
+              if (env.GITHUB_ACTIONS !== 'true' || env.DIAGNOSTIC_CONFIRMED !== 'true'
+                || env.DIAGNOSTIC_APPROVAL !== 'endpoint-only-no-token-558-v1') {
+                return fixedReport('HOLD_DIAGNOSTIC_NOT_AUTHORIZED');
+              }
+              if (env.GITHUB_REPOSITORY !== 'usdimpact/usd-impact-site'
+                || env.DIAGNOSTIC_REPOSITORY_ID !== '1265351071'
+                || env.DIAGNOSTIC_OWNER_ID !== '275107298'
+                || env.GITHUB_REF !== 'refs/heads/main'
+                || env.DIAGNOSTIC_REF_PROTECTED !== 'true'
+                || env.GITHUB_EVENT_NAME !== 'workflow_dispatch'
+                || env.GITHUB_RUN_ATTEMPT !== '1'
+                || env.GITHUB_WORKFLOW_REF !== 'usdimpact/usd-impact-site/.github/workflows/publication-oidc-endpoint-diagnostic-558.yml@refs/heads/main') {
+                return fixedReport('HOLD_DIAGNOSTIC_EXECUTION');
+              }
+              const approved = env.DIAGNOSTIC_APPROVED_MAIN;
+              if (typeof approved !== 'string' || !/^[a-f0-9]{40}$/.test(approved)
+                || env.GITHUB_SHA !== approved || env.GITHUB_WORKFLOW_SHA !== approved) {
+                return fixedReport('HOLD_DIAGNOSTIC_REVISION');
+              }
+              if (env.ACTIONS_STEP_DEBUG === 'true' || env.ACTIONS_RUNNER_DEBUG === 'true') {
+                return fixedReport('HOLD_DIAGNOSTIC_DEBUG');
+              }
+              const until = env.DIAGNOSTIC_APPROVAL_UNTIL;
+              if (typeof until !== 'string' || !/^20\d{2}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(until)) {
+                return fixedReport('HOLD_DIAGNOSTIC_DEADLINE');
+              }
+              const expires = Date.parse(until), started = now();
+              if (!Number.isSafeInteger(started) || started < 0 || !Number.isFinite(expires)
+                || new Date(expires).toISOString() !== until.replace('Z', '.000Z')
+                || expires <= started || expires - started > 900000) {
+                return fixedReport('HOLD_DIAGNOSTIC_DEADLINE');
+              }
+              const endpoint = classifyEndpoint(env.ACTIONS_ID_TOKEN_REQUEST_URL);
+              const finished = now();
+              if (!Number.isSafeInteger(finished) || finished < started || finished >= expires) {
+                return fixedReport('HOLD_DIAGNOSTIC_DEADLINE');
+              }
+              // Capture success is NOT endpoint acceptance or successful authentication.
+              return fixedReport('DIAGNOSTIC_CAPTURED', endpoint);
+            } catch {
+              return fixedReport('HOLD_DIAGNOSTIC_INTERNAL');
+            }
+          }
+
+          const report = executeDiagnostic(process.env, {
+            mode: process.argv.length === 3 ? process.argv[2] : 'invalid',
+          });
+          console.log(JSON.stringify(report));
+          process.exitCode = report.decision === 'DIAGNOSTIC_CAPTURED' ? 0 : 2;
+          ENDPOINT_DIAGNOSTIC

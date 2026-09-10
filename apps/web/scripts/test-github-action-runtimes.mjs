@@ -32,13 +32,13 @@ const expectedActionRefs = new Map([
 const rehearsalCaller = 'publication-oidc-rehearsal-558.yml';
 const rehearsalRunner = 'publication-oidc-rehearsal-runner-558.yml';
 const rehearsalResource = `usdimpact/usd-impact-site/.github/workflows/${rehearsalRunner}`;
-const rehearsalRef = '10ed538c1005ff268dfa82277b1d9db2f9a6a1e1';
+const rehearsalRef = '966d3f9ef730ce0a3948be3b7fa292cb58cd5b49';
 const rehearsalSources = new Map([
-  [`.github/workflows/${rehearsalCaller}`, '2f5691e8a4785406c19e9581a4da229f68a420ae3617827fc1d84da9c65b8e22'],
-  [`.github/workflows/${rehearsalRunner}`, '9e9a4c8a859e1d7630455e37c5b06cc8c648f151ab8d4fdd78aa62ea15e1da0d'],
-  ['scripts/publication-oidc-rehearsal-558/run.mjs', 'c46b4bf78f743e97d72a0abd1358258cea9df8f623d35fc716aba65a7d9a7033'],
+  [`.github/workflows/${rehearsalCaller}`, '4a3c26ef32eb4aec38c6a8411e487bd031b5270391d6c52bec73e36c3d5feac1'],
+  [`.github/workflows/${rehearsalRunner}`, '1305c05fb02fee1f7bc438f26e8bc1475c91fd88ab4220693c0ce29e7e745d96'],
+  ['scripts/publication-oidc-rehearsal-558/run.mjs', '7a2f7a7230c708ede6d29448d88a6f29e1f4b60726a56b65841fc1751c04f0bc'],
   ['scripts/publication-oidc-rehearsal-558/verifier.mjs', 'e65f2f81f376473534cde41262108803515a2a5f5bf798909bd6425ee1163378'],
-  ['scripts/publication-oidc-rehearsal-558/test-rehearsal.mjs', 'af89ef513d7dce6dca165626a64c580f971cb3d0fd3b0e1547a728d076907bd3'],
+  ['scripts/publication-oidc-rehearsal-558/test-rehearsal.mjs', 'e157866be25c9eb3deef3444ae6b277c2197af28d6cf9c28e0248ae66334ca20'],
 ]);
 
 function validateReference(workflowFile, resource, ref) {

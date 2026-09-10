@@ -48,7 +48,7 @@ function fixture(options = {}) {
     const token = `${h}.${p}.${signature}`; tokens.push(token);
     return options.tokenResponse ? options.tokenResponse(token) : { value: token };
   }
-  return { calls, tokens, run: () => runIdentityRehearsal({ context: c,
+  return { calls, tokens, getJson, run: () => runIdentityRehearsal({ context: c,
     endpoint: options.endpoint ?? endpoint, requestBearer: options.bearer ?? SECRET, getJson,
     now: options.now ?? (() => BASE), nonce: options.nonce ?? (() => 'c'.repeat(64)) }) };
 }
@@ -121,7 +121,6 @@ for (const url of ['http://example.actions.githubusercontent.com/558/idtoken',
   'https://example.actions.githubusercontent.com:444/558/idtoken',
   'https://user:password@example.actions.githubusercontent.com/558/idtoken',
   'https://example.actions.githubusercontent.com/558/idtoken#fragment',
-  'https://example.actions.githubusercontent.com/anything',
   'https://127.0.0.1/558/idtoken', 'https://evil.test/558/idtoken']) {
   await test(`disallowed token endpoint ${tests.length}`,async()=>{
     const f=fixture({endpoint:url}),r=await f.run();assert.equal(r.decision,'HOLD_REHEARSAL_TOKEN_ENDPOINT');assert.equal(f.calls.length,0);
@@ -169,6 +168,173 @@ await test('unapproved CLI run stops without token or network',()=>{
   const p=spawnSync(process.execPath,[new URL('./run.mjs',import.meta.url).pathname,'--live'],{encoding:'utf8',env:{PATH:process.env.PATH,GITHUB_ACTIONS:'false'}});
   assert.equal(p.status,2);const r=JSON.parse(p.stdout);assert.equal(r.decision,'HOLD_REHEARSAL_NOT_AUTHORIZED');assert.equal(r.requestsAttempted,0);assert.equal(r.tokensRequested,0);assert.equal(p.stderr,'');
 });
+// Endpoint paths below are deliberately synthetic. No historical runtime URL is known.
+const audienceFor = (purpose = 'challenge') => `urn:usd-impact:public-witness:${purpose}:sha256:${'a'.repeat(64)}`;
+const opaqueEndpoint = 'https://run-actions.fixture.actions.githubusercontent.com/opaque/runtime/issuance?api-version=2.0&request=synthetic';
+for (const path of ['/anything', '/opaque/runtime/issuance', '/synthetic/IdToken/', '/v9/context%2Ffixture/token']) {
+  await test(`runtime-owned synthetic path ${path} is not rewritten`, async () => {
+    const base = `https://run-actions.fixture.actions.githubusercontent.com${path}?api-version=2.0`;
+    const f = fixture({ endpoint: base }), r = await f.run();
+    assert.equal(r.decision, 'PASS_IDENTITY_REHEARSAL_ONLY'); checkFlags(r);
+    assert.equal(r.tokensRequested, 2); assert.equal(r.tokensVerified, 2);
+    assert.equal(f.calls.length, 4);
+    assert(f.calls.slice(2).every(c => new URL(c.url).pathname === new URL(base).pathname));
+    assert(!JSON.stringify(r).includes(base));
+  });
+}
+await test('opaque runtime path works through the actual bounded transport with synthetic signed responses', async () => {
+  const f = fixture(), network = [];
+  const transport = createJsonTransport({ tokenEndpoint: opaqueEndpoint, fetchImpl: async (url, options) => {
+    network.push({ url, options });
+    assert.equal(options.method, 'GET'); assert.equal(options.redirect, 'error');
+    assert.equal(options.credentials, 'omit'); assert.equal(options.cache, 'no-store');
+    const bearer = options.headers.Authorization === undefined ? null : options.headers.Authorization.slice('Bearer '.length);
+    return response(url, { body: JSON.stringify(await f.getJson(url, bearer)) });
+  }});
+  const r = await runIdentityRehearsal({ context: context(), endpoint: opaqueEndpoint,
+    requestBearer: SECRET, getJson: transport, now: () => BASE, nonce: () => 'c'.repeat(64) });
+  assert.equal(r.decision, 'PASS_IDENTITY_REHEARSAL_ONLY'); checkFlags(r);
+  assert.equal(r.requestsAttempted, 4); assert.equal(r.tokensRequested, 2); assert.equal(r.tokensVerified, 2);
+  assert.equal(network.length, 4);
+  assert(network.slice(0, 2).every(c => c.options.headers.Authorization === undefined));
+  assert(network.slice(2).every(c => c.options.headers.Authorization === `Bearer ${SECRET}`));
+  assert(network.slice(2).every(c => new URL(c.url).pathname === '/opaque/runtime/issuance'));
+  assert(!JSON.stringify(r).includes(SECRET));
+  assert(!JSON.stringify(r).includes('fixture-token-jti'));
+  for (const token of f.tokens) assert(!JSON.stringify(r).includes(token));
+});
+await test('unbound transport refuses even a well-formed legacy token URL before fetch', async () => {
+  let n = 0;
+  const t = createJsonTransport({ fetchImpl: async () => { n++; return {}; } });
+  await assert.rejects(() => t(tokenRequestUrl(endpoint, audienceFor()), SECRET),
+    e => e.code === 'HOLD_REHEARSAL_TOKEN_ENDPOINT');
+  assert.equal(n, 0);
+});
+await test('bound endpoint does not expand anonymous destinations', async () => {
+  let n = 0;
+  const t = createJsonTransport({ tokenEndpoint: opaqueEndpoint, fetchImpl: async () => { n++; } });
+  await assert.rejects(() => t(opaqueEndpoint), e => e.code === 'HOLD_REHEARSAL_DESTINATION');
+  assert.equal(n, 0);
+});
+await test('the transport captures the endpoint once rather than reading mutable options again', async () => {
+  let reads = 0, seen = null;
+  const config = { get tokenEndpoint() { reads++; return reads === 1 ? opaqueEndpoint : endpoint; },
+    fetchImpl: async (url) => { seen = url; return response(url); } };
+  const t = createJsonTransport(config), url = tokenRequestUrl(opaqueEndpoint, audienceFor());
+  await t(url, SECRET); assert.equal(reads, 1); assert.equal(seen, url);
+});
+for (const [name, mutate] of [
+  ['path on same allowed host', u => { u.pathname = '/different/issuance'; }],
+  ['legacy suffix on same allowed host', u => { u.pathname = '/558/idtoken'; }],
+  ['different allowed host', u => { u.hostname = 'other.actions.githubusercontent.com'; }],
+  ['non-audience query value', u => { u.searchParams.set('request', 'changed'); }],
+  ['extra query parameter', u => { u.searchParams.set('callback', 'https://untrusted.invalid'); }],
+  ['missing query parameter', u => { u.searchParams.delete('request'); }],
+  ['fragment', u => { u.hash = 'fragment'; }],
+  ['HTTP', u => { u.protocol = 'http:'; }],
+  ['nondefault port', u => { u.port = '444'; }],
+  ['user information', u => { u.username = 'someone'; }],
+  ['foreign host', u => { u.hostname = 'untrusted.invalid'; }],
+  ['IP address', u => { u.hostname = '127.0.0.1'; }],
+  ['deceptive hostname suffix', u => { u.hostname += '.untrusted.invalid'; }],
+  ['duplicate audience', u => { u.searchParams.append('audience', audienceFor()); }],
+]) {
+  await test(`bound bearer transport rejects ${name} without fetch`, async () => {
+    let n = 0;
+    const t = createJsonTransport({ tokenEndpoint: opaqueEndpoint, fetchImpl: async () => { n++; } });
+    const url = new URL(tokenRequestUrl(opaqueEndpoint, audienceFor())); mutate(url);
+    await assert.rejects(() => t(url.href, SECRET), e => e.code === 'HOLD_REHEARSAL_TOKEN_ENDPOINT');
+    assert.equal(n, 0);
+  });
+}
+for (const [name, value] of [['empty', ''], ['invalid', 'not a URL'], ['null', null], ['object', {}]]) {
+  await test(`malformed bearer destination ${name} is sanitized before fetch`, async () => {
+    let n = 0;
+    const t = createJsonTransport({ tokenEndpoint: opaqueEndpoint, fetchImpl: async () => { n++; } });
+    await assert.rejects(() => t(value, SECRET), e => e.message === 'HOLD_REHEARSAL_TOKEN_ENDPOINT');
+    assert.equal(n, 0);
+  });
+}
+await test('bound endpoint permits both validated audiences and only one audience parameter', async () => {
+  let n = 0;
+  const captured = `${opaqueEndpoint}&audience=old&audience=duplicate`;
+  const t = createJsonTransport({ tokenEndpoint: captured, fetchImpl: async url => {
+    n++; const u = new URL(url);
+    assert.equal(u.pathname, '/opaque/runtime/issuance');
+    assert.equal(u.searchParams.get('request'), 'synthetic');
+    assert.equal(u.searchParams.getAll('audience').length, 1);
+    return response(url);
+  }});
+  for (const phase of ['challenge', 'receipt']) await t(tokenRequestUrl(captured, audienceFor(phase)), SECRET);
+  assert.equal(n, 2);
+});
+for (const name of ['missing', 'unrecognized']) {
+  await test(`bound transport rejects ${name} audience before fetch`, async () => {
+    let n = 0;
+    const t = createJsonTransport({ tokenEndpoint: opaqueEndpoint, fetchImpl: async () => { n++; } });
+    const url = new URL(opaqueEndpoint);
+    if (name === 'unrecognized') url.searchParams.set('audience', 'arbitrary');
+    await assert.rejects(() => t(url.href, SECRET), e => e.code === 'HOLD_REHEARSAL_AUDIENCE');
+    assert.equal(n, 0);
+  });
+}
+for (const [label, invalidEndpoint] of [
+  ['HTTP', 'http://fixture.actions.githubusercontent.com/opaque'],
+  ['foreign hostname', 'https://untrusted.invalid/opaque'],
+  ['lookalike hostname', 'https://fixture.actions.githubusercontent.com.untrusted.invalid/opaque'],
+  ['bare parent hostname', 'https://actions.githubusercontent.com/opaque'],
+  ['userinfo', 'https://user:pass@fixture.actions.githubusercontent.com/opaque'],
+  ['port', 'https://fixture.actions.githubusercontent.com:444/opaque'],
+  ['fragment', 'https://fixture.actions.githubusercontent.com/opaque#fragment'],
+  ['malformed', 'not-a-url'],
+  ['oversize', `https://fixture.actions.githubusercontent.com/${'x'.repeat(4096)}`],
+  ['control whitespace', 'https://fixture.actions.githubusercontent.com/opa\nque'],
+]) {
+  await test(`invalid captured endpoint ${label} cannot construct a bearer transport`, () => {
+    let n = 0;
+    assert.throws(() => createJsonTransport({ tokenEndpoint: invalidEndpoint, fetchImpl: async () => { n++; } }),
+      e => e.code === 'HOLD_REHEARSAL_TOKEN_ENDPOINT');
+    assert.equal(n, 0);
+  });
+}
+await test('mismatched harness and transport endpoints cannot send a bearer', async () => {
+  const f = fixture(), seen = [];
+  const t = createJsonTransport({ tokenEndpoint: opaqueEndpoint, fetchImpl: async (u, o) => {
+    seen.push(o); return response(u, { body: JSON.stringify(await f.getJson(u, null)) });
+  }});
+  const r = await runIdentityRehearsal({ context: context(), endpoint,
+    requestBearer: SECRET, getJson: t, now: () => BASE, nonce: () => 'c'.repeat(64) });
+  assert.equal(r.decision, 'HOLD_REHEARSAL_TOKEN_ENDPOINT'); checkFlags(r);
+  assert.equal(r.tokensVerified, 0); assert.equal(seen.length, 2);
+  assert(seen.every(o => o.headers.Authorization === undefined));
+  // Harness attempts increment before transport rejection; no provider issuance is claimed.
+  assert.equal(r.tokensRequested, 1); assert.equal(r.requestsAttempted, 3);
+});
+await test('token response cannot redirect receipt traffic to another endpoint', async () => {
+  const f = fixture({ tokenResponse: token => ({ value: token, endpoint: 'https://untrusted.invalid' }) });
+  const r = await f.run();
+  assert.equal(r.decision, 'HOLD_REHEARSAL_TOKEN_RESPONSE'); assert.equal(r.tokensRequested, 1);
+  assert.equal(r.tokensVerified, 0); assert.equal(f.calls.length, 3); checkFlags(r);
+});
+await test('CLI refuses additional endpoint override arguments without any request', () => {
+  const p = spawnSync(process.execPath, [new URL('./run.mjs', import.meta.url).pathname,
+    '--live', '--endpoint=https://untrusted.invalid'], { encoding: 'utf8', env: { PATH: process.env.PATH } });
+  assert.equal(p.status, 2); assert.equal(p.stderr, '');
+  const r = JSON.parse(p.stdout);
+  assert.equal(r.decision, 'HOLD_REHEARSAL_MODE'); assert.equal(r.requestsAttempted, 0);
+});
+
+await test('final audience-bearing URL retains the existing 4096-character request bound', async () => {
+  let n = 0;
+  const prefix = 'https://fixture.actions.githubusercontent.com/opaque?request=';
+  const base = prefix + 'x'.repeat(4090 - prefix.length);
+  const t = createJsonTransport({ tokenEndpoint: base, fetchImpl: async () => { n++; } });
+  const outgoing = tokenRequestUrl(base, audienceFor());
+  assert(outgoing.length > 4096);
+  await assert.rejects(() => t(outgoing, SECRET), e => e.code === 'HOLD_REHEARSAL_TOKEN_ENDPOINT');
+  assert.equal(n, 0);
+});
+
 const report={decision:'PASS_OFFLINE_REHEARSAL_TESTS',engine:process.version,testsPassed:tests.length,tests,
   liveTokensRequested:0,network:'synthetic adapters only',managedDatabaseTouched:false,workflowInstalled:false};
 if (process.env.OIDC_REHEARSAL_TEST_REPORT) await writeFile(process.env.OIDC_REHEARSAL_TEST_REPORT,JSON.stringify(report,null,2)+'\n');

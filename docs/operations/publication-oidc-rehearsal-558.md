@@ -1,3 +1,91 @@
+# USD Impact #558 - non-publishing OIDC rehearsal
+
+## Current endpoint-path repair checkpoint - 2026-09-10
+
+This section supersedes the historical initial-preparation instructions below.
+The identity rehearsal was installed by #561; the no-token diagnostic was installed
+by #564. Their installations must not be repeated. The original identity run
+`34496519744` and diagnostic run `34503470615` remain attempt 1 and are not rerun
+under their consumed approvals. Preparation baseline is main
+`e0c988705f60eafb237bfb0a22569746552c7a12`.
+
+The diagnostic captured ten passing endpoint predicates and one failing predicate:
+`exactLowercaseIdtokenSuffix`. Its own job supplied an HTTPS URL matching the
+retained hostname pattern but not the custom `/idtoken` suffix. It disclosed no URL
+components and requested no token. This does not recover the historical failed
+job's endpoint, verify any identity, or establish that a live repair has succeeded.
+
+### Candidate behavior and safety boundary
+
+The repair treats the path of `ACTIONS_ID_TOKEN_REQUEST_URL` as opaque, following
+GitHub's documented runtime-URL interface. It does not invent another suffix or
+rewrite the path. Existing URL envelope controls remain: nonempty bounded string,
+no CR/LF/tab, parseable URL, HTTPS, the same hostname pattern, and no user information,
+nondefault port or fragment. The unchanged URL parser/query normalization behavior
+is not a new transport-security guarantee.
+
+The transport captures one validated endpoint at construction. Bearer-bearing
+requests must exactly match a URL derived from that endpoint; only the validated
+challenge/receipt audience may vary. Other hosts, paths, or non-audience parameters
+are rejected before fetch, even on the same permitted hostname. Without an explicit
+bound endpoint the transport supports discovery/JWKS only. The live entry reads the
+GitHub-provided endpoint once and supplies the same value to preflight and transport;
+there is no endpoint command-line or workflow input.
+
+Discovery/JWKS destinations, all signature/audience/identity checks and the copied
+verifier stay unchanged. GET-only behavior, no redirects/retries/cookies, four-second
+response deadline, 65,536-byte response limit, and 4,096-character final request URL
+limit remain. The JSON counters record application attempts, not independent provider
+issuance telemetry. A transport refusal may follow a harness attempt increment.
+Every report retains false publication/admission/enforcement/public-response flags.
+No admission, article, database, cloud-exchange or deployment operation is added.
+
+### Exact integration and review sequence
+
+This follow-up modifies six EXISTING files: run.mjs, test-rehearsal.mjs, both existing
+rehearsal YAML files, the existing CI runtime checker, and this runbook. The verifier,
+completed diagnostic, #559, and #560 are unchanged. No trigger or permission expands.
+
+A corrected script alone is insufficient because the caller checks out the immutable
+runner commit. During separately approved draft staging, create a runner commit R
+from the exact approved main containing ONLY run.mjs, test-rehearsal.mjs and the
+runner YAML with matching executable checksums. Read its parent and all changed blobs
+back from GitHub. Then derive the caller's two pins and the CI pin/fingerprints from
+that verified R in a second commit. The CI parser, verified-file-handle safeguards
+and policy checks must otherwise remain byte-for-byte unchanged. Publish only the
+complete final draft head; do not create an intermediate branch whose caller still
+uses the old runner. Retain historical source branches and pins as evidence.
+
+The prepared packet's runner pin is unresolved until that verified commit exists.
+Never install a placeholder, fixture SHA, arbitrary branch, or stale runner pin.
+Draft CI/Preview, installation and any resulting Production deployment, and a later
+single live-token rehearsal remain separately governed. Both previous one-run
+approvals are consumed. Do not infer run permission from a green PR or this runbook.
+Keep #558 open; the wider calendar-publication guard remains inactive.
+
+### Evidence and references
+
+The local repair suite preserves 58 applicable original groups and adds 43 groups;
+the obsolete custom-suffix rejection was replaced by path-compatibility and exact
+endpoint-binding tests. Tests use synthetic endpoints and signatures, not the
+undisclosed runtime URL. Their execution metadata belongs in the preparation/release
+evidence; no live-token success or Production installation is implied here.
+
+- https://docs.github.com/en/actions/reference/security/oidc
+- https://github.com/actions/toolkit/blob/main/packages/core/src/oidc-utils.ts
+- https://github.com/usdimpact/usd-impact-site/issues/558#issuecomment-5622207909
+
+The inspected toolkit OIDC source (Git blob
+`ac698542f9c5cee04fc5081cacfd8878dba7ecbc`) uses the provided URL without an `/idtoken`
+path contract. This repair does not adopt its retry/debug behavior. The original
+non-publishing token audience and verifier implementation are not changed.
+
+## Historical initial preparation - superseded for installation/resume
+
+The initial preparation record below is retained for provenance only. Its draft,
+main, first-run and six-added-file instructions describe the pre-#561 state. They
+must not be used to repeat either completed installation or execution.
+
 # USD Impact #558 - non-publishing OIDC rehearsal preparation
 
 ## Status and fixed baseline

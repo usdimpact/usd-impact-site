@@ -140,3 +140,5 @@ await import('./test-publication-receipt-verifier.mjs');
 await import('./test-publication-receipt-ledger.mjs');
 
 await import('./test-publication-first-response-witness.mjs');
+
+await import('./test-publication-witness-lifecycle.mjs');

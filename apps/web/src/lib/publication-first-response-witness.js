@@ -70,10 +70,11 @@ function result(decision, extra = {}) { return Object.freeze({ decision, ...extr
  */
 export function createFirstPublicationWitnessHandler({ attemptId, path, canonicalOrigin,
   loadAttempt, loadWitnessKeySnapshot, claimChallenge, render, awaitReceipt, recordReceipt,
-  now = Date.now, preparationTimeoutMs = 5000, witnessTimeoutMs = 5000 } = {}) {
+  scheduleAfterResponse = null, now = Date.now, preparationTimeoutMs = 5000, witnessTimeoutMs = 5000 } = {}) {
   need(typeof attemptId === 'string' && ID.test(attemptId) && typeof path === 'string' && PATH.test(path), 'HOLD_ROUTE_CONFIGURATION');
   need(typeof canonicalOrigin === 'string' && canonicalOrigin.startsWith('https://') && !canonicalOrigin.endsWith('/'), 'HOLD_ROUTE_CONFIGURATION');
   need([loadAttempt, loadWitnessKeySnapshot, claimChallenge, render, awaitReceipt, recordReceipt, now].every((fn) => typeof fn === 'function'), 'HOLD_ADAPTER_REQUIRED');
+  need(scheduleAfterResponse === null || typeof scheduleAfterResponse === 'function', 'HOLD_WITNESS_LIFECYCLE_CONFIG');
   need([preparationTimeoutMs, witnessTimeoutMs].every((n) => Number.isInteger(n) && n >= 10 && n <= 15000), 'HOLD_TIMEOUT_CONFIG');
   let highest = -1;
   function clock() { const n = now(); need(Number.isSafeInteger(n) && n >= highest && n >= 0, 'HOLD_WITNESS_CLOCK'); highest = n; return n; }
@@ -124,20 +125,39 @@ export function createFirstPublicationWitnessHandler({ attemptId, path, canonica
       clearHeaders(response);
       response.writeHead(200, { ...SAFE_HEADERS, 'Content-Length': String(bytes.length) });
       response.end(bytes); probeDispatched = true;
-      // The independent adapter must wait for the witness service to finish
-      // receiving and authenticate its signed receipt. No Host/forwarded header,
-      // response.finish event or local clock can substitute for this evidence.
-      const rawReceipt = await bounded(awaitReceipt, freeze({ attemptId, challengeId: proof.challengeId,
-        manifestSha256: proof.manifestSha256, canonicalOrigin, path, deploymentId: binding.deploymentId,
-        responseSha256: binding.responseSha256 }), witnessTimeoutMs, abort.signal);
-      need(typeof rawReceipt === 'string' && Buffer.byteLength(rawReceipt) > 0 && Buffer.byteLength(rawReceipt) <= 24000, 'HOLD_WITNESS_RECEIPT');
-      const recorded = await bounded(({ attemptId: id, envelope }) => recordReceipt(id, envelope),
-        freeze({ attemptId, envelope: rawReceipt }), witnessTimeoutMs, abort.signal);
-      need(recorded && recorded.admissionRecorded === true
-        && ['RECORDED_SIGNER_ASSERTION','RECORDED_BUT_REVOKED'].includes(recorded.decision), 'HOLD_WITNESS_RECORDING');
-      need(recorded.decision === 'RECORDED_SIGNER_ASSERTION', 'HOLD_WITNESS_REVOKED');
-      return result('WITNESS_RECEIPT_RECORDED', { probeDispatched: true, admissionRecorded: true,
-        attemptId, challengeId: proof.challengeId, recordedAt: recorded.admittedAt ?? null });
+      // Receipt work uses its own bounded lifecycle after dispatch. The preparation
+      // AbortController is intentionally not reused because the request handler may
+      // return while Vercel keeps this completion alive with waitUntil().
+      const completeWitness = async () => {
+        const completionAbort = new AbortController();
+        try {
+          // The independent adapter must wait for the witness service to finish
+          // receiving and authenticate its signed receipt. No Host/forwarded header,
+          // response.finish event or local clock can substitute for this evidence.
+          const rawReceipt = await bounded(awaitReceipt, freeze({ attemptId, challengeId: proof.challengeId,
+            manifestSha256: proof.manifestSha256, canonicalOrigin, path, deploymentId: binding.deploymentId,
+            responseSha256: binding.responseSha256 }), witnessTimeoutMs, completionAbort.signal);
+          need(typeof rawReceipt === 'string' && Buffer.byteLength(rawReceipt) > 0 && Buffer.byteLength(rawReceipt) <= 24000, 'HOLD_WITNESS_RECEIPT');
+          const recorded = await bounded(({ attemptId: id, envelope }) => recordReceipt(id, envelope),
+            freeze({ attemptId, envelope: rawReceipt }), witnessTimeoutMs, completionAbort.signal);
+          need(recorded && recorded.admissionRecorded === true
+            && ['RECORDED_SIGNER_ASSERTION','RECORDED_BUT_REVOKED'].includes(recorded.decision), 'HOLD_WITNESS_RECORDING');
+          need(recorded.decision === 'RECORDED_SIGNER_ASSERTION', 'HOLD_WITNESS_REVOKED');
+          return result('WITNESS_RECEIPT_RECORDED', { probeDispatched: true, admissionRecorded: true,
+            attemptId, challengeId: proof.challengeId, recordedAt: recorded.admittedAt ?? null });
+        } catch (error) {
+          const code = error instanceof Hold || /^HOLD_[A-Z_]+$/.test(error?.code ?? '') ? error.code : 'HOLD_WITNESS_FAILURE';
+          return result(code, { probeDispatched: true, admissionRecorded: false, attemptId, challengeId: proof.challengeId });
+        } finally { completionAbort.abort(); }
+      };
+      if (scheduleAfterResponse) {
+        const scheduled = scheduleAfterResponse(completeWitness);
+        need(scheduled && scheduled.decision === 'SCHEDULED_WITNESS_COMPLETION' && scheduled.scheduled === true,
+          'HOLD_WITNESS_LIFECYCLE_UNAVAILABLE');
+        return result('WITNESS_PROBE_DISPATCHED_PENDING_RECEIPT', { probeDispatched: true, admissionRecorded: false,
+          attemptId, challengeId: proof.challengeId });
+      }
+      return await completeWitness();
     } catch (error) {
       const code = error instanceof Hold || /^HOLD_[A-Z_]+$/.test(error?.code ?? '') ? error.code : 'HOLD_WITNESS_FAILURE';
       if (!probeDispatched && !response.headersSent && !response.writableEnded && !response.destroyed) {

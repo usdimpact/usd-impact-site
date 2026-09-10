@@ -19,10 +19,10 @@ internalLinks:
   - "/framework/dollar-transmission-chain"
   - "/framework/three-dial-dashboard"
   - "/lead-magnets/weekly-dollar-regime-checklist"
-  - "/glossary/dxy"
-  - "/glossary/broad-usd"
-  - "/glossary/real-rates"
-  - "/glossary/liquidity-stress"
+  - "/learn/dxy-signal-vs-dollar-system"
+  - "/learn/dxy-signal-vs-dollar-system"
+  - "/learn/real-yield"
+  - "/learn/dollar-yields-liquidity-three-dials"
 ctaPrimary: "Download the weekly checklist"
 ctaPrimaryHref: "/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf"
 ctaSecondary: "Start Here"
@@ -61,7 +61,7 @@ Cross-asset evidence can also help challenge the story. For example, if DXY rise
 
 **Important:** broad-dollar confirmation is a validation layer within the dollar-direction dial. It is **not a fourth macro dial**.
 
-Learn more: **[DXY](/glossary/dxy/)** and **[Broad USD](/glossary/broad-usd/)**.
+Learn more: **[DXY](/learn/dxy-signal-vs-dollar-system)** and **[Broad USD](/learn/dxy-signal-vs-dollar-system)**.
 
 ---
 
@@ -77,7 +77,7 @@ Real rates matter because they influence discount rates and the opportunity cost
 
 **Common mistake:** treating nominal yields and real yields as interchangeable. They are related but not identical.
 
-Learn more: **[Real rates](/glossary/real-rates/)**.
+Learn more: **[Real rates](/learn/real-yield)**.
 
 ---
 
@@ -98,7 +98,7 @@ A strong dollar during calm credit markets can describe a very different regime 
 
 **Common mistake:** defining liquidity only as the size of a central-bank balance sheet. Balance sheets matter, but funding stress, market depth, collateral conditions and private credit transmission can also matter.
 
-Learn more: **[Liquidity stress](/glossary/liquidity-stress/)**.
+Learn more: **[Liquidity stress](/learn/dollar-yields-liquidity-three-dials)**.
 
 ---
 

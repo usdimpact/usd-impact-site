@@ -19,8 +19,8 @@ internalLinks:
   - "/start-here"
   - "/framework/dollar-transmission-chain"
   - "/framework/three-dial-dashboard"
-  - "/glossary/dxy"
-  - "/glossary/real-rates"
+  - "/learn/dxy-signal-vs-dollar-system"
+  - "/learn/real-yield"
 ctaPrimary: "Download Free Checklist"
 ctaPrimaryHref: "/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf"
 ctaSecondary: "Read the Dollar Framework"
@@ -71,4 +71,4 @@ After downloading the checklist, use this sequence:
 2. Read the **[Dollar Framework](/dollar-framework/)** to understand the three macro dials: dollar direction, real-rate pressure, and liquidity stress.
 3. Open the **[Dollar Transmission Chain](/framework/dollar-transmission-chain/)** to see how policy and funding conditions can move through rates and the dollar into other assets.
 4. Use the **[Three-Dial Macro Dashboard](/framework/three-dial-dashboard/)** as the practical weekly operating sequence.
-5. Use the **[DXY glossary](/glossary/dxy/)** and **[real-rates glossary](/glossary/real-rates/)** whenever a term is unfamiliar.
+5. Use the **[DXY Learn guide](/learn/dxy-signal-vs-dollar-system)** and **[real-rates Learn guide](/learn/real-yield)** whenever a term is unfamiliar.

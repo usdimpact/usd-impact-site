@@ -13,6 +13,17 @@ lastReviewed: "2026-08-24"
 status: "published"
 category: "USD Impact Catalyst Brief"
 statusLabel: "scheduled-confirmed"
+archiveNote:
+  addedAt: "2026-09-10"
+  introduction: "This briefing was prepared before the August 26 releases."
+  links:
+    - context: "For July PCE, read our"
+      label: "verified outcome brief"
+      href: "/news/catalysts/2026-08-26-bea-personal-income-and-outlays-includes-pce-core-pce-outcome"
+    - context: "For the Q2 GDP second estimate and corporate profits, see"
+      label: "BEA's released results"
+      href: "https://www.bea.gov/news/2026/gdp-second-estimate-and-corporate-profits-2nd-quarter-2026"
+  closing: "The preview below preserves the information available before release."
 summary: "Official BEA schedule confirms Personal Income and Outlays (July) and the GDP (Second Estimate, Q2) will be released on 2026-08-26 at 8:30 a.m. EDT (12:30 UTC). These releases include the PCE price measures (the Fed’s preferred inflation gauge) and the Q2 GDP revision — a combined data set that can prompt re-pricing of Fed expectations and U.S. Treasury yields."
 assets:
   - "DXY"

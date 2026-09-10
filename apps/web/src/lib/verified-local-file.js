@@ -1,5 +1,5 @@
 import {
-  O_NOFOLLOW, O_RDONLY, closeSync, fstatSync, lstatSync, openSync, readSync,
+  closeSync, constants, fstatSync, lstatSync, openSync, readSync,
 } from 'node:fs';
 
 function sameIdentity(left, right) {
@@ -46,7 +46,7 @@ export function readVerifiedLocalFile(pathname, maxBytes, { afterFirstRead } = {
     throw new Error('unsupported file');
   }
 
-  const flags = O_RDONLY | (typeof O_NOFOLLOW === 'number' ? O_NOFOLLOW : 0);
+  const flags = constants.O_RDONLY | (typeof constants.O_NOFOLLOW === 'number' ? constants.O_NOFOLLOW : 0);
   const fd = openSync(pathname, flags);
   try {
     const opened = fstatSync(fd, { bigint: true });

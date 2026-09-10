@@ -1,0 +1,28 @@
+# PREPARATION ONLY. Never substitute a branch, tag or unverified commit for the pin.
+name: Calendar 558 non-publishing OIDC identity rehearsal
+'on':
+  workflow_dispatch:
+    inputs:
+      approved_main_sha:
+        description: Exact independently approved current main SHA
+        required: true
+        type: string
+      approved_until:
+        description: Approved UTC deadline; ISO milliseconds; within 15 minutes
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: calendar558-nonpublishing-oidc-rehearsal
+  cancel-in-progress: false
+jobs:
+  rehearse:
+    if: ${{ github.repository == 'usdimpact/usd-impact-site' && github.ref == 'refs/heads/main' && github.ref_protected &&
+      github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.sha == inputs.approved_main_sha }}
+    permissions:
+      id-token: write
+    uses: usdimpact/usd-impact-site/.github/workflows/publication-oidc-rehearsal-runner.yml@e0dda44455cdc6742fba2755b84f9997fecf2b7f
+    with:
+      approved_main_sha: ${{ inputs.approved_main_sha }}
+      approved_until: ${{ inputs.approved_until }}
+      runner_sha: e0dda44455cdc6742fba2755b84f9997fecf2b7f

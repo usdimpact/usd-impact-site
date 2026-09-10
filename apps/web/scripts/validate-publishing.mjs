@@ -135,3 +135,6 @@ await import('./test-publication-response-boundary.mjs');
 await import('./test-publication-admission-database.mjs');
 
 await import('./test-publication-writer-permissions.mjs');
+
+await import('./test-publication-receipt-verifier.mjs');
+await import('./test-publication-receipt-ledger.mjs');

@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
+
+// Already installed by the reviewed lockfile; no network or fallback parser.
+const require = createRequire(import.meta.url);
+assert.equal(require('js-yaml/package.json').version, '4.3.2', 'Review YAML parser version changes');
+const { load, FAILSAFE_SCHEMA } = require('js-yaml');
 import { runReusableWorkflowPolicyRegressions } from './test-github-action-reusable-workflow.mjs';
 
 const expectedActionRefs = new Map([
@@ -18,6 +24,56 @@ const reviewedWorkflowHashes = new Map([
   [reviewedCaller, 'ddff1841c02e28bc96aef9dbfe327856019c9a13258cbe7e3c7084460297d0fd'],
   ['publication-oidc-rehearsal-runner.yml', '56ac13fc3cc5d8fb45f5b9c18526f05e8e8cda71f2003f84eaf83a2c6c0beb2f'],
 ]);
+
+// Inspect the parsed jobs/steps, not lexical occurrences inside YAML or run scripts.
+// FAILSAFE keeps keys such as "on" as strings and disables implicit merge/type tags.
+function workflowReferences(source, filename) {
+  assert.ok(typeof source === 'string' && Buffer.byteLength(source, 'utf8') <= 1048576,
+    `${filename} exceeds the workflow source limit`);
+  let document;
+  try {
+    document = load(source, { schema: FAILSAFE_SCHEMA, json: false, maxDepth: 50,
+      onWarning: (warning) => { throw warning; } });
+  } catch {
+    assert.fail(`${filename} has invalid or unsupported workflow YAML`);
+  }
+  const mapping = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+  const seen = new Set();
+  let nodes = 0;
+  function check(value, depth = 0) {
+    assert.ok(++nodes <= 10000 && depth <= 50, `${filename} exceeds the workflow structure limit`);
+    if (value === null || typeof value !== 'object') return;
+    assert.ok(!seen.has(value), `${filename} has cyclic or shared collection aliases`);
+    seen.add(value);
+    for (const [key, child] of Object.entries(value)) {
+      assert.ok(!['<<', '__proto__', 'constructor', 'prototype'].includes(key),
+        `${filename} has an unsupported merge or reserved key`);
+      check(child, depth + 1);
+    }
+  }
+  check(document);
+  assert.ok(mapping(document) && mapping(document.jobs) && Object.keys(document.jobs).length > 0,
+    `${filename} must have a jobs mapping`);
+  const references = [];
+  for (const [id, job] of Object.entries(document.jobs)) {
+    assert.ok(mapping(job), `${filename} job ${id} must be a mapping`);
+    if (Object.hasOwn(job, 'uses')) {
+      assert.equal(typeof job.uses, 'string', `${filename} reusable reference must be a string`);
+      assert.ok(!Object.hasOwn(job, 'steps'), `${filename} cannot mix reusable jobs and steps`);
+      references.push({ value: job.uses, kind: 'workflow' });
+    }
+    if (!Object.hasOwn(job, 'steps')) continue;
+    assert.ok(Array.isArray(job.steps), `${filename} steps must be a sequence`);
+    for (const step of job.steps) {
+      assert.ok(mapping(step), `${filename} step must be a mapping`);
+      if (!Object.hasOwn(step, 'uses')) continue;
+      assert.equal(typeof step.uses, 'string', `${filename} action reference must be a string`);
+      assert.ok(!Object.hasOwn(step, 'run'), `${filename} cannot mix action and run in a step`);
+      references.push({ value: step.uses, kind: 'action' });
+    }
+  }
+  return references;
+}
 
 function validateWorkflowSources(workflowSources) {
   assert.ok(workflowSources.size > 0, 'Expected at least one GitHub Actions workflow');
@@ -43,9 +99,12 @@ function validateWorkflowSources(workflowSources) {
       `${workflowFile} must not bypass the GitHub Actions runtime safety gate`,
     );
 
-    for (const match of source.matchAll(/uses:\s*([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)((?:\/[A-Za-z0-9_./-]+)?)@([^\s#]+)/g)) {
+    for (const { value, kind } of workflowReferences(source, workflowFile)) {
+      const match = /^([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)((?:\/[A-Za-z0-9_./-]+)?)@([a-f0-9]{40})$/.exec(value);
+      assert.ok(match && match[0] === value, `${workflowFile} must use a supported immutable workflow/action reference`);
       const [, action, subpath, ref] = match;
       if (action === 'usdimpact/usd-impact-site') {
+        assert.equal(kind, 'workflow', 'Reviewed reusable workflow must be a job, not an action');
         assert.equal(workflowFile, reviewedCaller, 'Reusable workflow is restricted to the reviewed caller');
         assert.equal(subpath, '/.github/workflows/publication-oidc-rehearsal-runner.yml',
           'Reusable workflow must use the reviewed runner path');
@@ -54,6 +113,7 @@ function validateWorkflowSources(workflowSources) {
         continue;
       }
       assert.ok(expectedActionRefs.has(action), `${workflowFile} uses unapproved action ${action}`);
+      assert.equal(kind, 'action', `${workflowFile} uses an unreviewed reusable workflow`);
       assert.match(ref, /^[0-9a-f]{40}$/, `${workflowFile} must pin ${action} to an immutable 40-char SHA`);
       assert.equal(
         ref,

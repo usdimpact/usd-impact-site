@@ -86,6 +86,78 @@ export function runReusableWorkflowPolicyRegressions(validate, sources) {
   reject('preserve Node 24 requirement', (x) => replace(x, 'quality.yml', 'node-version: 24.x', 'node-version: 22.x'), /must use Node 24/);
   reject('preserve unsecure-runtime prohibition', (x) => x.set('quality.yml', `${x.get('quality.yml')}\nACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true\n`), /must not bypass/);
   reject('preserve strict npm install requirement', (x) => replace(x, 'quality.yml', '--strict-allow-scripts', ''), /must fail closed on unreviewed dependency install scripts/);
+
+  // R560-01: NEW files are not protected by the reviewed caller's fingerprint.
+  const extraCaller = (entry) => `name: Additional caller\non: workflow_dispatch\njobs:\n  extra:\n    permissions: {id-token: write}\n    ${entry}\n    with: {runner_sha: '${pin}', approved_main_sha: '${'a'.repeat(40)}', approved_until: '2026-09-10T15:00:00.000Z'}\n`;
+  const rejectFile = (name, text, pattern = /restricted to the reviewed caller/) =>
+    reject(name, (x) => x.set('additional-caller.yml', text), pattern);
+  for (const [name, entry] of [
+    ['plain', `uses: ${target}`],
+    ['single-quoted', `uses: '${target}'`],
+    ['double-quoted', `uses: "${target}"`],
+    ['quoted key', `'uses': ${target}`],
+    ['escaped key', `"u\\u0073es": "${target}"`],
+    ['escaped value', `uses: "${target.replace('usdimpact', '\\u0075sdimpact')}"`],
+    ['folded', `uses: >-\n      ${target}`],
+    ['literal', `uses: |-\n      ${target}`],
+    ['explicit key', `? uses\n    : '${target}'`],
+    ['scalar alias', `name: &reference '${target}'\n    uses: *reference`],
+  ]) rejectFile(`reject new ${name} caller`, extraCaller(entry));
+  rejectFile('reject flow-mapping caller', `jobs: {extra: {uses: '${target}', with: {runner_sha: '${pin}'}}}\n`);
+  rejectFile('reject JSON caller', JSON.stringify({jobs: {extra: {uses: target}}}));
+  rejectFile('reject quoted jobs and job keys', `"jobs": {"extra": {"uses": "${target}"}}\n`);
+  for (const [name, value] of [
+    ['local relative', `./.github/workflows/${runner}`],
+    ['local dollar', `$/.github/workflows/${runner}`],
+    ['branch ref', target.replace(pin, 'main')],
+    ['tag ref', target.replace(pin, 'v1')],
+    ['expression', '${{ inputs.runner }}'],
+    ['trailing newline', `|\n      ${target}`],
+    ['split folded reference', `>-\n      usdimpact/\n      usd-impact-site/.github/workflows/${runner}@${pin}`],
+  ]) rejectFile(`reject unsupported ${name}`, extraCaller(`uses: ${value}`), /supported immutable/);
+  for (const [name, text] of [
+    ['duplicate uses', extraCaller(`uses: '${target}'\n    uses: '${target}'`)],
+    ['duplicate jobs', `jobs: {one: {uses: '${target}'}}\njobs: {two: {uses: '${target}'}}`],
+    ['multiple documents', `jobs: {one: {uses: '${target}'}}\n---\njobs: {two: {uses: '${target}'}}`],
+    ['invalid syntax', 'jobs: {'],
+    ['unknown tag', extraCaller(`uses: !unknown '${target}'`)],
+  ]) rejectFile(`reject ${name}`, text, /invalid or unsupported workflow YAML/);
+  for (const [name, text, pattern] of [
+    ['non-scalar uses', extraCaller(`uses: ['${target}']`), /reference must be a string/],
+    ['map uses', extraCaller(`uses: {value: '${target}'}`), /reference must be a string/],
+    ['jobs sequence', 'jobs: []', /jobs mapping/],
+    ['step map', 'jobs: {extra: {steps: {uses: anything}}}', /steps must be a sequence/],
+    ['scalar job', 'jobs: {extra: nope}', /job extra must be a mapping/],
+    ['merge key', `jobs: {extra: {<<: {uses: '${target}'}}}`, /unsupported merge/],
+    ['cyclic alias', 'jobs: &jobs {extra: *jobs}', /cyclic or shared/],
+    ['shared job alias', `jobs: {a: &job {uses: '${target}'}, b: *job}`, /cyclic or shared/],
+    ['mixed job', `jobs: {extra: {uses: '${target}', steps: []}}`, /cannot mix reusable/],
+    ['workflow as action', `jobs: {extra: {steps: [{uses: '${target}'}]}}`, /must be a job/],
+    ['reserved key', 'jobs: {extra: {constructor: anything}}', /reserved key/],
+    ['empty document', '# comment only', /jobs mapping/],
+    ['oversize document', '#'.repeat(1048577), /source limit/],
+  ]) rejectFile(`reject ${name}`, text, pattern);
+  const checkout = 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1';
+  for (const [name, entry] of [
+    ['quoted action', `uses: '${checkout}'`],
+    ['escaped action key', `"u\\u0073es": "${checkout}"`],
+    ['folded action', `uses: >-\n          ${checkout}`],
+  ]) test(`accept reviewed ${name}`, () => {
+    const candidate = new Map(original);
+    candidate.set('additional-action.yml', `jobs:\n  extra:\n    steps:\n      - ${entry}\n`);
+    assert.equal(validate(candidate).actionCounts.get('actions/checkout'), validate(original).actionCounts.get('actions/checkout') + 1);
+  });
+  test('accept reviewed flow action', () => {
+    const candidate = new Map(original);
+    candidate.set('additional-action.yml', `jobs: {extra: {steps: [{uses: '${checkout}'}]}}`);
+    assert.equal(validate(candidate).actionCounts.get('actions/checkout'), validate(original).actionCounts.get('actions/checkout') + 1);
+  });
+  test('script text and comments cannot create phantom references', () => {
+    const candidate = new Map(original);
+    candidate.set('script-only.yml', `# uses: other/ignored@main\njobs:\n  extra:\n    steps:\n      - run: |\n          echo "uses: ${target}"\n          echo "jobs: {extra: {uses: untrusted}}"\n`);
+    assert.equal(validate(candidate).reusableWorkflowCount, validate(original).reusableWorkflowCount);
+  });
+
   test('test fixtures do not mutate the real workflow snapshot', () => assert.deepEqual(sources, original));
   return count;
 }

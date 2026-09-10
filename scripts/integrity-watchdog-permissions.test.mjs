@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { OUTCOME } from './integrity-watchdog-policy.mjs';
 import { repositoryContracts } from './integrity-watchdog-repository.mjs';
 
@@ -136,6 +137,70 @@ fs.rmSync(path.join(controlDir, 'GITHUB_PERMISSION_BASELINE.json'));
 result = repositoryContracts({ workspace })[0];
 assert.equal(result.outcome, OUTCOME.FAIL);
 assert.match(result.evidence[0].permission_baseline_error, /missing/);
+
+// Exercise the installed OIDC workflows as data only; never run their jobs.
+// Reconcile exact file/scope pairs without granting OIDC to other workflows.
+fs.rmSync(workflowPath);
+const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const installedBaseline = JSON.parse(fs.readFileSync(path.join(
+  repositoryRoot, 'docs/operations/integrity-watchdog/GITHUB_PERMISSION_BASELINE.json',
+), 'utf8'));
+const oidcFiles = [
+  '.github/workflows/publication-oidc-endpoint-diagnostic-558.yml',
+  '.github/workflows/publication-oidc-rehearsal-558.yml',
+  '.github/workflows/publication-oidc-rehearsal-runner-558.yml',
+];
+const oidcExpected = {};
+const oidcSources = {};
+for (const file of oidcFiles) {
+  assert.deepEqual(installedBaseline.expected_write_permissions[file], ['id-token']);
+  oidcExpected[file] = installedBaseline.expected_write_permissions[file];
+  oidcSources[file] = fs.readFileSync(path.join(repositoryRoot, file), 'utf8');
+  fs.writeFileSync(path.join(workspace, file), oidcSources[file]);
+}
+writeBaseline(oidcExpected);
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.PASS);
+assert.deepEqual(result.evidence[0].workflow_write_permissions, oidcExpected);
+
+for (const file of oidcFiles) {
+  const omitted = { ...oidcExpected };
+  delete omitted[file];
+  writeBaseline(omitted);
+  result = repositoryContracts({ workspace })[0];
+  assert.equal(result.outcome, OUTCOME.FAIL);
+  assert.deepEqual(result.evidence[0].unexpected_write_permissions, [`${file} :: id-token`]);
+  writeBaseline(oidcExpected);
+
+  const source = oidcSources[file];
+  assert.equal((source.match(/id-token: write/g) || []).length, 1);
+  fs.writeFileSync(path.join(workspace, file), source.replace(
+    'id-token: write', 'id-token: write\n      issues: write',
+  ));
+  result = repositoryContracts({ workspace })[0];
+  assert.equal(result.outcome, OUTCOME.FAIL);
+  assert.deepEqual(result.evidence[0].unexpected_write_permissions, [`${file} :: issues`]);
+
+  fs.writeFileSync(path.join(workspace, file), source.replace('id-token: write', 'id-token: read'));
+  result = repositoryContracts({ workspace })[0];
+  assert.equal(result.outcome, OUTCOME.FAIL);
+  assert.deepEqual(result.evidence[0].missing_expected_write_permissions, [`${file} :: id-token`]);
+  fs.writeFileSync(path.join(workspace, file), source);
+}
+
+writeWorkflow('on: workflow_dispatch\npermissions:\n  id-token: write');
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].unexpected_write_permissions, ['.github/workflows/quality.yml :: id-token']);
+fs.rmSync(workflowPath);
+
+const originalFile = oidcFiles[0];
+const relocatedFile = '.github/workflows/renamed-oidc-diagnostic.yml';
+fs.renameSync(path.join(workspace, originalFile), path.join(workspace, relocatedFile));
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].unexpected_write_permissions, [`${relocatedFile} :: id-token`]);
+assert.deepEqual(result.evidence[0].missing_expected_write_permissions, [`${originalFile} :: id-token`]);
 
 fs.rmSync(workspace, { recursive: true, force: true });
 console.log('USD Impact watchdog workflow permission-baseline tests passed.');

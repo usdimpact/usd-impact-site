@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AdaptiveDailyCardReview from '../../components/AdaptiveDailyCardReview.astro';
 import DailyCard from '../../components/DailyCard.astro';
+import { getLearnSourceLinks } from '../../lib/learn-source-links.mjs';
 import { dailyCards, getDailyCardById } from '../../data/daily-card-catalog.js';
 
 export function getStaticPaths() {
@@ -11,6 +12,7 @@ export function getStaticPaths() {
 }
 
 const { card } = Astro.props;
+const sourceLinks = getLearnSourceLinks(card);
 const related = (card.relatedCardIds || [])
   .map((id) => getDailyCardById(id))
   .filter((item) => item && item.access === 'open' && item.status === 'ready-for-build');
@@ -71,6 +73,16 @@ const related = (card.relatedCardIds || [])
     <section class="dc-source-list">
       <h2>Sources</h2>
       <p>{card.sourceNames.join(' · ')}</p>
+      {sourceLinks.length > 0 && (
+        <ul aria-label="Primary references" data-learn-primary-references>
+          {sourceLinks.map((source) => (
+            <li>
+              <a href={source.url} rel="noreferrer">{source.label}</a>
+              <p>{source.scope}</p>
+            </li>
+          ))}
+        </ul>
+      )}
       <p>{'Educational and informational purposes only. Not investment advice.'}</p>
     </section>
   </main>

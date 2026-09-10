@@ -4,8 +4,9 @@ import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import { createFirstPublicationWitnessHandler } from '../src/lib/publication-first-response-witness.js';
 import { encodeWitnessChallengePayload, witnessChallengeSigningBytes, witnessManifestSha256,
   createWitnessChallengeVerifier } from '../src/lib/publication-witness-challenge.js';
-import { createPublicationReceiptRecorder } from '../src/lib/publication-receipt-recorder.js';
-import { encodeReceiptPayload, receiptSigningBytes, SCOPE } from '../src/lib/publication-receipt-verifier.js';
+import { createWitnessReceiptRecorder } from '../src/lib/publication-witness-receipt-recorder.js';
+import { encodeWitnessReceiptPayload, witnessReceiptSigningBytes } from '../src/lib/publication-witness-receipt-verifier.js';
+import { SCOPE } from '../src/lib/publication-receipt-verifier.js';
 
 const pair = generateKeyPairSync('ed25519');
 const other = generateKeyPairSync('ed25519');
@@ -41,32 +42,37 @@ function challenge(m = manifest(), patch = {}, signingPair = pair) {
   return JSON.stringify({ payload: Buffer.from(text).toString('base64url'),
     signature: sign(null, witnessChallengeSigningBytes(text), signingPair.privateKey).toString('base64url') });
 }
-function receipt(b, { dispatchedAt = iso(10), finishedAt = iso(100), keyId = KEY, signingPair = pair } = {}) {
-  const p = { schema: 'first-public-dispatch/v1', keyId, audience: 'publication-history-recorder', ...b, dispatchedAt, finishedAt };
-  const text = encodeReceiptPayload(p);
+function receipt(b, witnessContext, { dispatchedAt = iso(10), finishedAt = iso(100), keyId = KEY, signingPair = pair } = {}) {
+  const p = { schema: 'first-public-dispatch/v2', keyId, audience: 'publication-history-recorder', ...b,
+    canonicalOrigin: witnessContext.canonicalOrigin, challengeId: witnessContext.challengeId,
+    challengeSha256: witnessContext.challengeSha256, witnessManifestSha256: witnessContext.manifestSha256,
+    dispatchedAt, finishedAt };
+  const text = encodeWitnessReceiptPayload(p);
   return JSON.stringify({ payload: Buffer.from(text).toString('base64url'),
-    signature: sign(null, receiptSigningBytes(text), signingPair.privateKey).toString('base64url') });
+    signature: sign(null, witnessReceiptSigningBytes(text), signingPair.privateKey).toString('base64url') });
 }
 function attempt(m = manifest(), patch = {}) {
   const b = binding(m); return { attemptId: ATTEMPT, state: 'pending', binding: b, keyId: KEY,
     keyFingerprint: fingerprint, validUntil: b.validUntil, ...patch };
 }
-function receiptSnapshot() { const s = snapshot(); s.keys = s.keys.map(({ purpose, ...key }) => key); return s; }
-function memoryRecorder({ current, clock, keys = () => receiptSnapshot(), commitMode = 'ok' }) {
+function memoryRecorder({ current, clock, getClaim, keys = () => snapshot(), commitMode = 'ok' }) {
   let stored = null;
-  const recorder = createPublicationReceiptRecorder({
+  const recorder = createWitnessReceiptRecorder({
     now: () => clock.value,
     loadAttempt: async () => current.value,
-    loadKeySnapshot: async () => keys(),
-    commitReceipt: async ({ attemptId, envelope, payload, verificationDeadline }) => {
+    loadWitnessKeySnapshot: async () => keys(),
+    loadChallengeClaim: async () => getClaim(),
+    commitWitnessReceipt: async ({ attemptId, envelope, payload, verificationDeadline, challengeId }) => {
       if (commitMode === 'throw') throw new Error('network');
       if (commitMode === 'none') return;
       const p = JSON.parse(payload);
-      stored = { schema: 'stored-dispatch-receipt/v1', attemptId, receiptSha256: sha(envelope), payloadSha256: sha(payload),
-        path: current.value.binding.path, sourceSha256: current.value.binding.sourceSha256,
-        admittedAt: p.finishedAt, recordedAt: new Date(clock.value).toISOString(), verificationDeadline, state: 'admitted' };
+      stored = { schema: 'stored-witness-dispatch-receipt/v2', attemptId, challengeId,
+        challengeSha256: p.challengeSha256, canonicalOrigin: p.canonicalOrigin,
+        receiptSha256: sha(envelope), payloadSha256: sha(payload), path: current.value.binding.path,
+        sourceSha256: current.value.binding.sourceSha256, admittedAt: p.finishedAt,
+        recordedAt: new Date(clock.value).toISOString(), verificationDeadline, state: 'admitted' };
     },
-    readReceipt: async () => stored,
+    readWitnessReceipt: async () => stored,
   });
   return { record: recorder.record.bind(recorder), getStored: () => stored };
 }
@@ -74,6 +80,7 @@ const tests = [];
 function test(name, fn) { tests.push([name, fn]); }
 function held(result, pattern = /^HOLD_/) { assert.match(result.decision, pattern); assert.equal(result.publicationAuthorized, false); }
 
+// Protocol-level challenge tests.
 test('valid dedicated witness challenge verifies assertion only', async () => {
   const m = manifest(), b = binding(m); const r = createWitnessChallengeVerifier({ now: () => BASE })(challenge(m),
     { keySnapshot: snapshot(), expected: { attemptId: ATTEMPT, deploymentId: b.deploymentId, path: PATH,
@@ -116,15 +123,21 @@ test('expired witness challenge is rejected', async () => {
 async function runHttp({ rawChallenge = challenge(), mutateAttempt, renderBody = BODY, claimDecision = 'CLAIMED_WITNESS_CHALLENGE',
   receiptMode = 'valid', host = 'fixture.vercel.app', forwardedHost = 'www.usd-impact.com', clockStart = BASE } = {}) {
   const clock = { value: clockStart }; const current = { value: attempt() }; if (mutateAttempt) mutateAttempt(current);
-  const recorder = memoryRecorder({ current, clock }); let renders = 0, records = 0, claims = 0;
+  let durableClaim = null;
+  const recorder = memoryRecorder({ current, clock, getClaim: () => durableClaim }); let renders = 0, records = 0, claims = 0;
   let resolveReceipt;
   const receiptPromise = new Promise((resolve) => { resolveReceipt = resolve; });
-  const recordReceipt = async (id, envelope) => { records++; return recorder.record(id, envelope); };
+  const recordWitnessReceipt = async (id, envelope, witnessContext) => { records++; return recorder.record(id, envelope, witnessContext); };
   const handler = createFirstPublicationWitnessHandler({ attemptId: ATTEMPT, path: PATH, canonicalOrigin: ORIGIN,
     now: () => clock.value, preparationTimeoutMs: 1000, witnessTimeoutMs: 1000,
     loadAttempt: async () => current.value, loadWitnessKeySnapshot: async () => snapshot(),
-    claimChallenge: async ({ challengeId }) => { claims++; return { decision: claimDecision, attemptId: ATTEMPT, challengeId }; },
-    render: async () => { renders++; return renderBody; }, awaitReceipt: async () => receiptPromise, recordReceipt });
+    claimChallenge: async (input) => {
+      claims++;
+      if (claimDecision !== 'CLAIMED_WITNESS_CHALLENGE') return { decision: claimDecision, attemptId: ATTEMPT, challengeId: input.challengeId };
+      durableClaim = { schema: 'stored-witness-challenge-claim/v1', ...input, claimedAt: iso(0) };
+      return { decision: claimDecision, attemptId: ATTEMPT, challengeId: input.challengeId, canonicalOrigin: input.canonicalOrigin };
+    },
+    render: async () => { renders++; return renderBody; }, awaitReceipt: async () => receiptPromise, recordWitnessReceipt });
   let serverResultResolve; const serverResult = new Promise((resolve) => { serverResultResolve = resolve; });
   const server = http.createServer((req, res) => { handler(req, res).then(serverResultResolve); });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -139,8 +152,10 @@ async function runHttp({ rawChallenge = challenge(), mutateAttempt, renderBody =
           const body = Buffer.concat(chunks).toString('utf8');
           if (res.statusCode === 200) {
             clock.value = BASE + 100;
-            const raw = receipt(current.value.binding, receiptMode === 'wrong-signature' ? { signingPair: other }
-              : receiptMode === 'wrong-key' ? { keyId: 'other-key' } : {});
+            const witnessContext = { canonicalOrigin: durableClaim.canonicalOrigin, challengeId: durableClaim.challengeId,
+              challengeSha256: durableClaim.challengeSha256, manifestSha256: durableClaim.manifestSha256 };
+            const raw = receipt(current.value.binding, witnessContext, receiptMode === 'wrong-signature' ? { signingPair: other }
+              : receiptMode === 'wrong-key' ? { keyId: 'public-witness-other' } : {});
             resolveReceipt(receiptMode === 'timeout' ? new Promise(() => {}) : raw);
           } else resolveReceipt('');
           resolve({ status: res.statusCode, headers: res.headers, body });
@@ -149,7 +164,7 @@ async function runHttp({ rawChallenge = challenge(), mutateAttempt, renderBody =
     });
     if (receiptMode === 'timeout') resolveReceipt = () => {};
     const result = await serverResult;
-    return { response, result, renders, records, claims, stored: recorder.getStored() };
+    return { response, result, renders, records, claims, stored: recorder.getStored(), durableClaim };
   } finally { await new Promise((resolve) => server.close(resolve)); }
 }
 
@@ -189,7 +204,7 @@ test('attempt binding drift fails before probe dispatch', async () => {
     now: () => clock.value, preparationTimeoutMs: 1000, witnessTimeoutMs: 1000,
     loadAttempt: async () => { calls++; const x = structuredClone(current.value); if (calls > 1) x.binding.approvalSha256 = '9'.repeat(64); return x; },
     loadWitnessKeySnapshot: async () => snapshot(), claimChallenge: async ({ challengeId }) => ({ decision:'CLAIMED_WITNESS_CHALLENGE',attemptId:ATTEMPT,challengeId }),
-    render: async () => BODY, awaitReceipt: async () => '', recordReceipt: async () => ({}) });
+    render: async () => BODY, awaitReceipt: async () => '', recordWitnessReceipt: async () => ({}) });
   const server = http.createServer((req,res)=>handler(req,res)); await new Promise(r=>server.listen(0,'127.0.0.1',r)); const a=server.address();
   const r=await new Promise((resolve,reject)=>{const req=http.request({host:'127.0.0.1',port:a.port,path:PATH,headers:{'X-USD-Impact-Witness-Challenge':challenge()}},res=>{res.resume();res.on('end',()=>resolve(res.statusCode));});req.on('error',reject);req.end();});
   await new Promise(r=>server.close(r)); assert.equal(r,503);
@@ -205,6 +220,7 @@ test('wrong receipt key cannot be recorded', async () => {
 test('request Host and forwarded Host are not used as canonical proof', async () => {
   const x = await runHttp({ host: 'evil.example', forwardedHost: 'www.usd-impact.com' });
   assert.equal(x.response.status, 200); assert.equal(x.result.decision, 'WITNESS_RECEIPT_RECORDED');
+  // Success is based on the signed canonical-origin manifest and receipt, not these headers.
 });
 test('private Preview activity without witness receipt never records history', async () => {
   const clock = { value: BASE }, current = { value: attempt() }; let records = 0;
@@ -212,7 +228,7 @@ test('private Preview activity without witness receipt never records history', a
     now: () => clock.value, preparationTimeoutMs: 1000, witnessTimeoutMs: 30,
     loadAttempt: async () => current.value, loadWitnessKeySnapshot: async () => snapshot(),
     claimChallenge: async ({challengeId}) => ({decision:'CLAIMED_WITNESS_CHALLENGE',attemptId:ATTEMPT,challengeId}),
-    render: async () => BODY, awaitReceipt: async () => new Promise(() => {}), recordReceipt: async () => { records++; return {}; } });
+    render: async () => BODY, awaitReceipt: async () => new Promise(() => {}), recordWitnessReceipt: async () => { records++; return {}; } });
   let out; const server=http.createServer((req,res)=>handler(req,res).then(r=>{out=r;})); await new Promise(r=>server.listen(0,'127.0.0.1',r)); const a=server.address();
   const status=await new Promise((resolve,reject)=>{const req=http.request({host:'127.0.0.1',port:a.port,path:PATH,headers:{Host:'preview.vercel.app','X-USD-Impact-Witness-Challenge':challenge()}},res=>{res.resume();res.on('end',()=>resolve(res.statusCode));});req.on('error',reject);req.end();});
   await new Promise(r=>setTimeout(r,50)); await new Promise(r=>server.close(r)); assert.equal(status,200); assert.equal(records,0);

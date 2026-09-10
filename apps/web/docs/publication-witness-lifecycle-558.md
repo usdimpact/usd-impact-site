@@ -28,10 +28,12 @@ The receipt wait and recorder use a separate bounded AbortController so returnin
 from the request handler does not abort the `waitUntil` task.
 
 Successful deferred completion still requires the independent witness receipt and
-the existing exact receipt recorder. Only that completion can produce
-`WITNESS_RECEIPT_RECORDED`; normal public serving must later read durable admitted
-history. Node `finish`, Host/forwarded headers, a Vercel deployment field, Preview,
-preflight or a scheduler acknowledgement remain insufficient publication evidence.
+the witness-linked v2 receipt recorder. The signed v2 receipt must repeat the exact
+canonical origin, one-use challenge ID/hash and witness-manifest hash from the
+durable claim. Only that completion can produce `WITNESS_RECEIPT_RECORDED`; normal
+public serving must later read durable admitted history. Node `finish`, Host/forwarded
+headers, a Vercel deployment field, Preview, preflight or a scheduler acknowledgement
+remain insufficient publication evidence.
 If `waitUntil` registration fails after probe bytes are sent, no receipt work starts
 and no admission is recorded. The probe is still restricted to the authenticated
 short-lived witness challenge and is not a general public article response.
@@ -39,7 +41,7 @@ short-lived witness challenge and is not a general public article response.
 ## Durable one-use challenge claim
 
 `publication-witness-claim-store.js` is a provider-independent one-write adapter.
-It validates the exact five-field challenge binding, performs at most one commit
+It validates the exact six-field challenge binding (including the canonical origin), performs at most one commit
 attempt, and requires exact persisted evidence from `readClaim`. A boolean or RPC
 success acknowledgement cannot manufacture a claim. A known replay response stays
 a replay and is never converted to success. Only an ambiguous transport failure may
@@ -56,7 +58,7 @@ existing recorder execution role.
 
 The claim API acquires the existing writer gate, checks the immutable dispatch
 attempt, release revocation, pending admission, exact witness manifest hash and
-bounded deadline, then inserts one challenge ID/hash. A challenge ID or challenge
+bounded deadline, then inserts one challenge ID/hash plus the exact canonical origin. A challenge ID or challenge
 hash can never be reused. Claims are capped at eight per prepared attempt. A final
 database clock check rolls back a claim that crosses its exclusive deadline.
 Challenge claims do not advance publication admission history and do not change a
@@ -81,12 +83,11 @@ SQL one-use semantics, digest replay, manifest/deadline rejection, API permissio
 immutability, database-backed claim-store integration, deferred HTTP completion and
 post-dispatch scheduler failure without receipt/admission work.
 
-Local verification on Node 22.16.0 passed the 18 new groups, the unchanged 22
-first-response witness groups and the unchanged 52 receipt-ledger groups. The local
-copy used a non-committed `@vercel/functions` stub only to resolve the package while
-all scheduler tests injected their own `waitUntilFn`; the repository already pins
-`@vercel/functions` 3.9.5 and CI/Preview must verify against the real dependency on
-Node 24.x. Do not count local success as exact-head CI until those runs complete.
+The strengthened local verification passes 18 lifecycle groups, 22 first-response
+witness groups, 15 v2 receipt groups, the unchanged 52 legacy receipt-ledger groups
+and the unchanged 83 legacy receipt-verifier tests. The repository already pins
+`@vercel/functions` 3.9.5; exact-head CI/Preview must still verify the final branch
+state on Node 24.x before this increment is accepted.
 
 ## Remaining blockers
 

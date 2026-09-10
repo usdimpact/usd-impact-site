@@ -69,11 +69,11 @@ function result(decision, extra = {}) { return Object.freeze({ decision, ...extr
  * the exact canonical-origin response; Node's `finish` event is never used as proof.
  */
 export function createFirstPublicationWitnessHandler({ attemptId, path, canonicalOrigin,
-  loadAttempt, loadWitnessKeySnapshot, claimChallenge, render, awaitReceipt, recordReceipt,
+  loadAttempt, loadWitnessKeySnapshot, claimChallenge, render, awaitReceipt, recordWitnessReceipt,
   scheduleAfterResponse = null, now = Date.now, preparationTimeoutMs = 5000, witnessTimeoutMs = 5000 } = {}) {
   need(typeof attemptId === 'string' && ID.test(attemptId) && typeof path === 'string' && PATH.test(path), 'HOLD_ROUTE_CONFIGURATION');
   need(typeof canonicalOrigin === 'string' && canonicalOrigin.startsWith('https://') && !canonicalOrigin.endsWith('/'), 'HOLD_ROUTE_CONFIGURATION');
-  need([loadAttempt, loadWitnessKeySnapshot, claimChallenge, render, awaitReceipt, recordReceipt, now].every((fn) => typeof fn === 'function'), 'HOLD_ADAPTER_REQUIRED');
+  need([loadAttempt, loadWitnessKeySnapshot, claimChallenge, render, awaitReceipt, recordWitnessReceipt, now].every((fn) => typeof fn === 'function'), 'HOLD_ADAPTER_REQUIRED');
   need(scheduleAfterResponse === null || typeof scheduleAfterResponse === 'function', 'HOLD_WITNESS_LIFECYCLE_CONFIG');
   need([preparationTimeoutMs, witnessTimeoutMs].every((n) => Number.isInteger(n) && n >= 10 && n <= 15000), 'HOLD_TIMEOUT_CONFIG');
   let highest = -1;
@@ -107,7 +107,7 @@ export function createFirstPublicationWitnessHandler({ attemptId, path, canonica
       need(proof.decision === 'VERIFIED_PUBLIC_WITNESS_CHALLENGE', proof.decision, 404);
       need(proof.keyId === attempt.keyId, 'HOLD_WITNESS_KEY', 404);
       const claim = await bounded(claimChallenge, freeze({ attemptId, challengeId: proof.challengeId,
-        challengeSha256: proof.challengeSha256, manifestSha256: proof.manifestSha256, validUntil: proof.validUntil }), preparationTimeoutMs, abort.signal);
+        challengeSha256: proof.challengeSha256, manifestSha256: proof.manifestSha256, canonicalOrigin, validUntil: proof.validUntil }), preparationTimeoutMs, abort.signal);
       need(claim && claim.decision === 'CLAIMED_WITNESS_CHALLENGE' && claim.attemptId === attemptId
         && claim.challengeId === proof.challengeId, 'HOLD_WITNESS_CHALLENGE_REPLAY', 404);
       const text = await bounded(render, freeze({ attemptId, path, sourceSha256: binding.sourceSha256 }), preparationTimeoutMs, abort.signal);
@@ -138,11 +138,14 @@ export function createFirstPublicationWitnessHandler({ attemptId, path, canonica
             manifestSha256: proof.manifestSha256, canonicalOrigin, path, deploymentId: binding.deploymentId,
             responseSha256: binding.responseSha256 }), witnessTimeoutMs, completionAbort.signal);
           need(typeof rawReceipt === 'string' && Buffer.byteLength(rawReceipt) > 0 && Buffer.byteLength(rawReceipt) <= 24000, 'HOLD_WITNESS_RECEIPT');
-          const recorded = await bounded(({ attemptId: id, envelope }) => recordReceipt(id, envelope),
-            freeze({ attemptId, envelope: rawReceipt }), witnessTimeoutMs, completionAbort.signal);
-          need(recorded && recorded.admissionRecorded === true
-            && ['RECORDED_SIGNER_ASSERTION','RECORDED_BUT_REVOKED'].includes(recorded.decision), 'HOLD_WITNESS_RECORDING');
-          need(recorded.decision === 'RECORDED_SIGNER_ASSERTION', 'HOLD_WITNESS_REVOKED');
+          const witnessContext = freeze({ canonicalOrigin, challengeId: proof.challengeId,
+            challengeSha256: proof.challengeSha256, manifestSha256: proof.manifestSha256 });
+          const recorded = await bounded(({ attemptId: id, envelope, context }) => recordWitnessReceipt(id, envelope, context),
+            freeze({ attemptId, envelope: rawReceipt, context: witnessContext }), witnessTimeoutMs, completionAbort.signal);
+          need(recorded && recorded.admissionRecorded === true && recorded.witnessLinked === true
+            && recorded.challengeId === proof.challengeId && recorded.canonicalOrigin === canonicalOrigin
+            && ['RECORDED_WITNESS_ASSERTION','RECORDED_WITNESS_BUT_REVOKED'].includes(recorded.decision), 'HOLD_WITNESS_RECORDING');
+          need(recorded.decision === 'RECORDED_WITNESS_ASSERTION', 'HOLD_WITNESS_REVOKED');
           return result('WITNESS_RECEIPT_RECORDED', { probeDispatched: true, admissionRecorded: true,
             attemptId, challengeId: proof.challengeId, recordedAt: recorded.admittedAt ?? null });
         } catch (error) {

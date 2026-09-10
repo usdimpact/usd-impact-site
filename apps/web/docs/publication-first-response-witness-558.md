@@ -29,12 +29,22 @@ The candidate response is no-store/noindex and is available only to the signed
 witness probe. Ordinary public traffic is still governed by recorded-only serving.
 
 After the witness says it received the exact response through the canonical origin,
-it returns the existing `first-public-dispatch/v1` signed receipt. The handler passes
-that receipt to the existing recorder; the recorder independently reloads the
-attempt/key state, verifies the signature, and uses the atomic receipt-ledger write.
-Only matching committed receipt evidence yields `WITNESS_RECEIPT_RECORDED`, and even
-that return value keeps `publicationAuthorized=false`: the normal serving policy
-must subsequently read the durable admission before exposing general public traffic.
+it must return the successor `first-public-dispatch/v2` signed receipt. That receipt
+cryptographically carries the exact canonical origin, challenge ID, challenge
+SHA-256 and witness-manifest SHA-256 in addition to the prepared attempt/deployment/
+path/body binding. The handler passes those exact challenge coordinates to the
+witness-linked recorder; the recorder independently reloads the durable one-use
+claim and protected witness-key state before and after signature verification, then
+uses the atomic v2 receipt-ledger successor. Only matching committed v2 evidence
+yields `WITNESS_RECEIPT_RECORDED`, and even that return value keeps
+`publicationAuthorized=false`: the normal serving policy must subsequently read the
+durable admission before exposing general public traffic.
+
+The older `first-public-dispatch/v1` receipt is retained only for regression/history
+compatibility. It is signer-bound but does not contain canonical-origin or one-use
+challenge coordinates, so it is explicitly insufficient for first-publication
+witness activation. The v2 SQL successor revokes the old signer-only consume/lookup
+execution path from the recorder role when that successor is eventually installed.
 
 A timeout, malformed or wrong-key receipt, failed/uncertain recording, revocation,
 or expired challenge leaves admission unrecorded. The witness may have received the
@@ -67,9 +77,10 @@ challenge replay, attempt drift, response-hash mismatch, wrong receipt signature
 key, receipt timeout after probe dispatch, and proof that Header/Preview activity
 without a witness receipt cannot record history.
 
-The challenge verifier requires the dedicated witness key purpose. The existing receipt
-verifier is unchanged; the isolated recorder capability must be wired only to the same
-protected witness-key authority. Live machine identity and key custody remain unimplemented.
+The challenge verifier and v2 receipt verifier require the dedicated
+`public-response-witness` key purpose. The v2 recorder also verifies the prepared key
+fingerprint and requires the exact durable challenge claim. Live machine identity,
+independent witness operation and key custody remain unimplemented.
 
 ## Still required before activation
 

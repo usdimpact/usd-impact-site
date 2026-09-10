@@ -8,6 +8,7 @@ CREATE TABLE publication_guard.witness_challenge_claims (
  attempt_id text NOT NULL REFERENCES publication_guard.dispatch_attempts(attempt_id),
  challenge_sha256 text NOT NULL UNIQUE CHECK (challenge_sha256 ~ '^[a-f0-9]{64}$'),
  manifest_sha256 text NOT NULL CHECK (manifest_sha256 ~ '^[a-f0-9]{64}$'),
+ canonical_origin text NOT NULL CHECK (canonical_origin='https://www.usd-impact.com'),
  claimed_at timestamptz NOT NULL,
  valid_until timestamptz NOT NULL,
  CHECK (isfinite(claimed_at) AND isfinite(valid_until) AND claimed_at < valid_until),
@@ -24,7 +25,7 @@ CREATE TRIGGER immutable_witness_challenge BEFORE UPDATE OR DELETE ON publicatio
  FOR EACH ROW EXECUTE FUNCTION publication_guard.immutable_dispatch_record();
 
 CREATE FUNCTION publication_guard_api.claim_witness_challenge(
- p_attempt text,p_challenge text,p_challenge_hash text,p_manifest_hash text,p_until timestamptz)
+ p_attempt text,p_challenge text,p_challenge_hash text,p_manifest_hash text,p_origin text,p_until timestamptz)
 RETURNS text LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' SET row_security=on SET lock_timeout='2s' AS $$
 DECLARE x0 publication_guard.dispatch_attempts; x publication_guard.dispatch_attempts;
  r publication_guard.release_authorizations; a publication_guard.publication_admissions;
@@ -32,7 +33,7 @@ DECLARE x0 publication_guard.dispatch_attempts; x publication_guard.dispatch_att
 BEGIN
  IF (p_attempt ~ '^[a-f0-9]{32}$') IS NOT TRUE OR (p_challenge ~ '^[a-f0-9]{32}$') IS NOT TRUE
   OR (p_challenge_hash ~ '^[a-f0-9]{64}$') IS NOT TRUE OR (p_manifest_hash ~ '^[a-f0-9]{64}$') IS NOT TRUE
-  OR p_until IS NULL OR NOT isfinite(p_until)
+  OR p_origin IS DISTINCT FROM 'https://www.usd-impact.com' OR p_until IS NULL OR NOT isfinite(p_until)
  THEN RAISE EXCEPTION 'HOLD_WITNESS_CLAIM_REQUEST'; END IF;
  PERFORM publication_guard_api.acquire_writer_gate();
  SELECT * INTO x0 FROM publication_guard.dispatch_attempts WHERE attempt_id=p_attempt;
@@ -61,8 +62,8 @@ BEGIN
   WHERE challenge_id=p_challenge OR challenge_sha256=p_challenge_hash LIMIT 1;
  IF FOUND THEN RAISE EXCEPTION 'HOLD_WITNESS_CHALLENGE_REPLAY'; END IF;
  INSERT INTO publication_guard.witness_challenge_claims
-  (challenge_id,attempt_id,challenge_sha256,manifest_sha256,claimed_at,valid_until)
- VALUES(p_challenge,p_attempt,p_challenge_hash,p_manifest_hash,t,p_until);
+  (challenge_id,attempt_id,challenge_sha256,manifest_sha256,canonical_origin,claimed_at,valid_until)
+ VALUES(p_challenge,p_attempt,p_challenge_hash,p_manifest_hash,p_origin,t,p_until);
  IF pg_catalog.clock_timestamp()>=p_until THEN RAISE EXCEPTION 'HOLD_WITNESS_CLAIM_EXPIRED'; END IF;
  RETURN 'CLAIMED_WITNESS_CHALLENGE';
 END $$;
@@ -76,17 +77,17 @@ BEGIN
   OR (p_challenge_hash ~ '^[a-f0-9]{64}$') IS NOT TRUE THEN RAISE EXCEPTION 'HOLD_WITNESS_CLAIM_REQUEST'; END IF;
  SELECT jsonb_build_object('schema','stored-witness-challenge-claim/v1','attemptId',attempt_id,
   'challengeId',challenge_id,'challengeSha256',challenge_sha256,'manifestSha256',manifest_sha256,
-  'claimedAt',publication_guard.iso(claimed_at),'validUntil',publication_guard.iso(valid_until))
+  'canonicalOrigin',canonical_origin,'claimedAt',publication_guard.iso(claimed_at),'validUntil',publication_guard.iso(valid_until))
  INTO result FROM publication_guard.witness_challenge_claims
  WHERE attempt_id=p_attempt AND challenge_id=p_challenge AND challenge_sha256=p_challenge_hash;
  RETURN result;
 END $$;
 
 GRANT EXECUTE ON FUNCTION publication_guard.iso(timestamptz) TO fx558_recorder_owner;
-REVOKE ALL ON FUNCTION publication_guard_api.claim_witness_challenge(text,text,text,text,timestamptz),
+REVOKE ALL ON FUNCTION publication_guard_api.claim_witness_challenge(text,text,text,text,text,timestamptz),
  publication_guard_api.lookup_witness_challenge(text,text,text) FROM PUBLIC,anon,authenticated,service_role;
-ALTER FUNCTION publication_guard_api.claim_witness_challenge(text,text,text,text,timestamptz) OWNER TO fx558_recorder_owner;
+ALTER FUNCTION publication_guard_api.claim_witness_challenge(text,text,text,text,text,timestamptz) OWNER TO fx558_recorder_owner;
 ALTER FUNCTION publication_guard_api.lookup_witness_challenge(text,text,text) OWNER TO fx558_recorder_owner;
-GRANT EXECUTE ON FUNCTION publication_guard_api.claim_witness_challenge(text,text,text,text,timestamptz),
+GRANT EXECUTE ON FUNCTION publication_guard_api.claim_witness_challenge(text,text,text,text,text,timestamptz),
  publication_guard_api.lookup_witness_challenge(text,text,text) TO fx558_recorder;
 COMMIT;

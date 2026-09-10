@@ -1,5 +1,6 @@
 const ID = /^[a-f0-9]{32}$/;
 const HEX = /^[a-f0-9]{64}$/;
+const ORIGIN = 'https://www.usd-impact.com';
 const fail = (code) => { throw Object.assign(new Error(code), { code }); };
 const need = (ok, code) => { if (!ok) fail(code); };
 const freeze = (value) => {
@@ -15,10 +16,11 @@ function instant(value) {
 }
 function request(value, now) {
   need(value && typeof value === 'object' && !Array.isArray(value)
-    && Object.keys(value).length === 5
-    && ['attemptId','challengeId','challengeSha256','manifestSha256','validUntil'].every((key) => Object.hasOwn(value, key)), 'HOLD_WITNESS_CLAIM_REQUEST');
+    && Object.keys(value).length === 6
+    && ['attemptId','challengeId','challengeSha256','manifestSha256','canonicalOrigin','validUntil'].every((key) => Object.hasOwn(value, key)), 'HOLD_WITNESS_CLAIM_REQUEST');
   need(ID.test(value.attemptId) && ID.test(value.challengeId)
-    && HEX.test(value.challengeSha256) && HEX.test(value.manifestSha256), 'HOLD_WITNESS_CLAIM_REQUEST');
+    && HEX.test(value.challengeSha256) && HEX.test(value.manifestSha256)
+    && value.canonicalOrigin === ORIGIN, 'HOLD_WITNESS_CLAIM_REQUEST');
   need(instant(value.validUntil) > now, 'HOLD_WITNESS_CLAIM_EXPIRED');
   return clone(value);
 }
@@ -27,11 +29,11 @@ function stored(record, input, now) {
     && record.schema === 'stored-witness-challenge-claim/v1'
     && record.attemptId === input.attemptId && record.challengeId === input.challengeId
     && record.challengeSha256 === input.challengeSha256 && record.manifestSha256 === input.manifestSha256
-    && record.validUntil === input.validUntil, 'HOLD_WITNESS_CLAIM_MISMATCH');
+    && record.canonicalOrigin === input.canonicalOrigin && record.validUntil === input.validUntil, 'HOLD_WITNESS_CLAIM_MISMATCH');
   const claimed = instant(record.claimedAt); const until = instant(record.validUntil);
   need(claimed < until, 'HOLD_WITNESS_CLAIM_TIME');
   return outcome('CLAIMED_WITNESS_CHALLENGE', { claimed: true, attemptId: input.attemptId,
-    challengeId: input.challengeId, claimedAt: record.claimedAt, validUntil: record.validUntil });
+    challengeId: input.challengeId, canonicalOrigin: input.canonicalOrigin, claimedAt: record.claimedAt, validUntil: record.validUntil });
 }
 
 /**

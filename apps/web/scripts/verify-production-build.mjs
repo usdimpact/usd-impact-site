@@ -22,6 +22,8 @@ const routes = {
 const pagePath = (route) => path.join(distRoot, route.replace(/^\//, ''), 'index.html');
 const failures = [];
 execFileSync(process.execPath, ['scripts/verify-learn-source-links-build.mjs'], { stdio: 'inherit' });
+execFileSync(process.execPath, ['scripts/test-canonical-url.mjs'], { stdio: 'inherit' });
+execFileSync(process.execPath, ['scripts/verify-canonical-build.mjs'], { stdio: 'inherit' });
 runSearchUtilityPolicyTests();
 failures.push(...verifySearchUtilityBuild(distRoot));
 const requiredRoutes = ['/start-here','/book/read-the-dollar-first','/audiobook/read-the-dollar-first','/video-library',routes.dollarLesson,routes.fxLesson,routes.dxyLesson,routes.broadLesson,routes.regimeLesson,routes.goldLesson,routes.wtiLesson,routes.lngLesson,routes.equitiesLesson,routes.bitcoinLesson,routes.currencyRiskLesson,'/framework/dollar-transmission-chain','/framework/three-dial-dashboard','/lead-magnets/weekly-dollar-regime-checklist','/privacy','/terms','/refund-policy'];

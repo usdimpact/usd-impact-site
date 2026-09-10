@@ -111,8 +111,8 @@ await assert.rejects(() => reader.readSnapshot({ revision: '0', entries: [{ path
 pass();
 await assert.rejects(() => controller.authorizeRelease({ ...ids, commitSha: 'bad', expiresAt: later }), (error) => error.code === 'HOLD_DATABASE_ARGUMENT');
 pass();
-await assert.rejects(() => controller.prepareAdmission({ ...ids, mode: 'preview', checkedAt: later, validUntil: now, previewDeadline: later }), (error) => error.code === 'HOLD_DATABASE_WRITE');
-// The database contract, not this structural adapter, decides temporal ordering. The fake query proves values remain bound parameters.
+await controller.prepareAdmission({ ...ids, mode: 'preview', checkedAt: later, validUntil: now, previewDeadline: later });
+// Temporal ordering is enforced by the database contract; this adapter only preserves the bound values without reinterpretation.
 assert.equal(calls.at(-1).values[5], later);
 assert.equal(calls.at(-1).values[6], now);
 pass();

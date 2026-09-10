@@ -6,16 +6,110 @@ import {
 
 export const BLS_CPI_SCHEDULE = 'https://www.bls.gov/schedule/news_release/cpi.htm';
 export const BLS_CPI_RELEASE = 'https://www.bls.gov/news.release/cpi.nr0.htm';
-export const BLS_ADAPTER_VERSION = 'bls-national-monthly/html-v3';
+export const BLS_ADAPTER_VERSION = 'bls-national-monthly/html-v4';
 // Truthful robot identity and public owner contact; never impersonate a browser.
 export const BLS_CALENDAR_USER_AGENT = 'USDImpact-CalendarValidator/1.0 (+https://www.usd-impact.com/contact/)';
 const MAX_SOURCE_BYTES = 512000;
 const ALLOWED_URL = /^https:\/\/www\.bls\.gov\/(?:schedule\/news_release\/(?:cpi|ppi|empsit)\.htm|schedule\/20\d{2}\/(?:0[1-9]|1[0-2])_sched_list\.htm|news\.release\/(?:cpi|ppi|empsit)\.nr0\.htm)$/;
 
+function tagEnd(html, start) {
+  let quote = null;
+  for (let index = start; index < html.length; index += 1) {
+    const character = html[index];
+    if (quote) {
+      if (character === quote) quote = null;
+      continue;
+    }
+    if (character === '"' || character === "'") quote = character;
+    else if (character === '>') return index + 1;
+  }
+  hold('HOLD_SOURCE_SCHEMA', 'Malformed or ambiguous official markup.');
+}
+
+/** Locate non-data HTML regions without rewriting source bytes before parsing. */
+function excludedHtmlRanges(html) {
+  const lower = html.toLowerCase();
+  const ranges = [];
+  let cursor = 0;
+  while (cursor < html.length) {
+    const candidates = [
+      ['comment', lower.indexOf('<!--', cursor)],
+      ['script', lower.indexOf('<script', cursor)],
+      ['style', lower.indexOf('<style', cursor)],
+      ['template', lower.indexOf('<template', cursor)],
+    ].filter(([, index]) => index >= 0).sort((left, right) => left[1] - right[1]);
+    if (!candidates.length) break;
+    const [kind, start] = candidates[0];
+    if (kind === 'comment') {
+      const end = lower.indexOf('-->', start + 4);
+      if (end < 0) hold('HOLD_SOURCE_SCHEMA', 'Unterminated official HTML comment.');
+      ranges.push([start, end + 3]);
+      cursor = end + 3;
+      continue;
+    }
+    const boundary = lower[start + kind.length + 1];
+    if (boundary && !/[\s/>]/.test(boundary)) {
+      cursor = start + kind.length + 1;
+      continue;
+    }
+    const openEnd = tagEnd(html, start);
+    const closePrefix = `</${kind}`;
+    const closeStart = lower.indexOf(closePrefix, openEnd);
+    if (closeStart < 0) hold('HOLD_SOURCE_SCHEMA', `Unterminated official ${kind} block.`);
+    const closeBoundary = lower[closeStart + closePrefix.length];
+    if (closeBoundary && !/[\s>]/.test(closeBoundary)) {
+      cursor = closeStart + closePrefix.length;
+      continue;
+    }
+    const closeEnd = tagEnd(html, closeStart);
+    ranges.push([start, closeEnd]);
+    cursor = closeEnd;
+  }
+  return ranges;
+}
+
+function outsideExcludedRanges(index, ranges) {
+  for (const [start, end] of ranges) {
+    if (index < start) return true;
+    if (index < end) return false;
+  }
+  return true;
+}
+
+function textOutsideTags(html) {
+  let output = '';
+  let inTag = false;
+  let quote = null;
+  for (const character of html) {
+    if (inTag) {
+      if (quote) {
+        if (character === quote) quote = null;
+      } else if (character === '"' || character === "'") {
+        quote = character;
+      } else if (character === '>') {
+        inTag = false;
+        output += ' ';
+      }
+    } else if (character === '<') {
+      inTag = true;
+    } else {
+      output += character;
+    }
+  }
+  if (inTag || quote) hold('HOLD_SOURCE_SCHEMA', 'Malformed or ambiguous official markup.');
+  return output;
+}
+
 function visibleText(html) {
-  return html.replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/<(script|style|template)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
-    .replace(/<[^>]*>/g, ' ')
+  const ranges = excludedHtmlRanges(html);
+  let cursor = 0;
+  let visible = '';
+  for (const [start, end] of ranges) {
+    visible += `${html.slice(cursor, start)} `;
+    cursor = end;
+  }
+  visible += html.slice(cursor);
+  return textOutsideTags(visible)
     .replace(/&#(x[0-9a-f]+|\d+);/gi, (_, number) => {
       const point = number[0].toLowerCase() === 'x' ? parseInt(number.slice(1), 16) : Number(number);
       return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : ' ';
@@ -26,7 +120,7 @@ function visibleText(html) {
     .replace(/[\u2013\u2014]/g, '-').replace(/\s+/g, ' ').trim();
 }
 function tableWithHeaders(html, expected) {
-  const clean = html.replace(/<!--[\s\S]*?-->/g, '').replace(/<(script|style|template)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
+  const excluded = excludedHtmlRanges(html);
   // BLS places the release table inside a layout table. Track table ownership;
   // flattening nested rows/cells would mix navigation with release metadata.
   const stack = [];
@@ -34,7 +128,8 @@ function tableWithHeaders(html, expected) {
   const counts = { table: 0, tr: 0, cell: 0 };
   const malformed = () => hold('HOLD_SOURCE_SCHEMA', 'Malformed or ambiguous official table structure.');
   const tags = /<(\/?)(table|tr|th|td)\b(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi;
-  for (const token of clean.matchAll(tags)) {
+  for (const token of html.matchAll(tags)) {
+    if (!outsideExcludedRanges(token.index, excluded)) continue;
     const closing = token[1] === '/';
     const tag = token[2].toLowerCase();
     const parent = stack.at(-1);
@@ -77,7 +172,7 @@ function tableWithHeaders(html, expected) {
       if (/\b(?:rowspan|colspan)\s*=/i.test(token[0])) parent.spans = true;
     } else {
       if (!parent.cell || parent.cell.tag !== tag || !parent.row) malformed();
-      parent.row.push(parent.cell.nested ? null : visibleText(clean.slice(parent.cell.start, token.index)));
+      parent.row.push(parent.cell.nested ? null : visibleText(html.slice(parent.cell.start, token.index)));
       parent.cell = null;
     }
   }

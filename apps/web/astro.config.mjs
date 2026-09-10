@@ -20,6 +20,7 @@ const privatePaths = new Set([
   ...protectedPaths,
   ...SEARCH_UTILITY_PATHS,
   '/internal/checklist-analytics',
+  '/internal/ask-usd-impact',
 ]);
 
 const previewOnlySitemapPrefixes = [

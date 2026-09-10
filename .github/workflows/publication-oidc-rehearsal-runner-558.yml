@@ -1,0 +1,56 @@
+# REVIEW CANDIDATE ONLY until separately authorized and installed.
+name: Publication OIDC identity rehearsal runner 558
+'on':
+  workflow_call:
+    inputs:
+      runner-sha:
+        required: true
+        type: string
+      confirmed:
+        required: true
+        type: boolean
+permissions: {}
+jobs:
+  identity-only:
+    if: >-
+      github.repository == 'usdimpact/usd-impact-site' &&
+      github.repository_id == '1265351071' &&
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' && github.ref_protected &&
+      github.run_attempt == 1 && inputs.confirmed == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ inputs.runner-sha }}
+          persist-credentials: false
+          fetch-depth: 1
+          sparse-checkout: scripts/publication-oidc-rehearsal-558
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+      - name: Verify synthetic identity pair only
+        env:
+          REHEARSAL_APPROVAL: identity-only-558-v1
+          REHEARSAL_RUNNER_SHA: ${{ inputs.runner-sha }}
+          REHEARSAL_REPOSITORY_ID: ${{ github.repository_id }}
+          REHEARSAL_OWNER_ID: ${{ github.repository_owner_id }}
+          REHEARSAL_REF_PROTECTED: ${{ github.ref_protected }}
+        run: |
+          node --input-type=module - <<'CHECKED_RUNNER'
+          import { createHash } from 'node:crypto';
+          import { readFileSync } from 'node:fs';
+          import { execFileSync } from 'node:child_process';
+          const root = 'scripts/publication-oidc-rehearsal-558/';
+          for (const [file, expected] of [['run.mjs','7a2f7a7230c708ede6d29448d88a6f29e1f4b60726a56b65841fc1751c04f0bc'],['verifier.mjs','e65f2f81f376473534cde41262108803515a2a5f5bf798909bd6425ee1163378'],['test-rehearsal.mjs','e157866be25c9eb3deef3444ae6b277c2197af28d6cf9c28e0248ae66334ca20']]) {
+            const actual = createHash('sha256').update(readFileSync(root + file)).digest('hex');
+            if (actual !== expected) throw new Error('HOLD_REHEARSAL_SOURCE_DRIFT');
+          }
+          execFileSync(process.execPath, [root + 'test-rehearsal.mjs'], { stdio: 'inherit' });
+          execFileSync(process.execPath, [root + 'run.mjs', '--live'], { stdio: 'inherit' });
+          CHECKED_RUNNER

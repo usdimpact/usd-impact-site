@@ -86,7 +86,7 @@ if (!mainNavigation) {
   failures.push(`Main navigation block not found in ${path.relative(process.cwd(), navigationPath)}`);
 }
 
-const requiredRoutes = [...mainNavigation.matchAll(/<a\s+href="(\/[^\"]*)"/g)]
+const requiredRoutes = [...mainNavigation.matchAll(/<a\s+href="(\/[^"]*)"/g)]
   .map((match) => normalizeSlug(match[1]))
   .filter((slug) => slug !== '/');
 
@@ -139,6 +139,7 @@ await import('./test-publication-writer-permissions.mjs');
 await import('./test-publication-receipt-verifier.mjs');
 await import('./test-publication-receipt-ledger.mjs');
 await import('./test-publication-witness-receipt-v2.mjs');
+await import('./test-publication-github-oidc-witness.mjs');
 
 await import('./test-publication-first-response-witness.mjs');
 

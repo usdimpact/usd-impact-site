@@ -1,0 +1,29 @@
+# REVIEW CANDIDATE ONLY until separately authorized and installed.
+name: Publication OIDC identity rehearsal 558
+'on':
+  workflow_dispatch:
+    inputs:
+      confirmed:
+        description: Confirm this is the separately approved identity-only run
+        required: true
+        default: false
+        type: boolean
+permissions: {}
+concurrency:
+  group: publication-oidc-identity-rehearsal-558
+  cancel-in-progress: false
+jobs:
+  identity-only:
+    if: >-
+      github.repository == 'usdimpact/usd-impact-site' &&
+      github.repository_id == '1265351071' &&
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' && github.ref_protected &&
+      github.run_attempt == 1 && inputs.confirmed == true
+    permissions:
+      contents: read
+      id-token: write
+    uses: usdimpact/usd-impact-site/.github/workflows/publication-oidc-rehearsal-runner-558.yml@10ed538c1005ff268dfa82277b1d9db2f9a6a1e1
+    with:
+      runner-sha: 10ed538c1005ff268dfa82277b1d9db2f9a6a1e1
+      confirmed: ${{ inputs.confirmed }}

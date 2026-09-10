@@ -147,6 +147,62 @@ test('forward-compatible extra signed claims do not weaken required claims', () 
 });
 test('malformed token fails closed', () => held(verify('not-a-jwt',{jwksSnapshot:jwks(),expected:expected()}),'HOLD_GITHUB_OIDC_TOKEN'));
 
+test('receipt cannot establish identity without its original challenge run', () => {
+  const exp = expected('receipt');
+  held(verify(token(exp, { run_id: '999999', jti: 'detached-receipt-fixture' }),
+    { jwksSnapshot: jwks(), expected: exp }), 'HOLD_GITHUB_OIDC_RUN_REQUIRED');
+});
+test('receipt rejects empty challenge run context', () => {
+  const exp = expected('receipt', { run: {} });
+  held(verify(token(exp), { jwksSnapshot: jwks(), expected: exp }), 'HOLD_GITHUB_OIDC_RUN');
+});
+test('receipt rejects omitted challenge run context', () => {
+  const exp = expected('receipt'); delete exp.run;
+  held(verify(token(exp), { jwksSnapshot: jwks(), expected: exp }), 'HOLD_GITHUB_OIDC_EXPECTED');
+});
+test('receipt rejects another job in the same run', () => {
+  const first = verify(token(), { jwksSnapshot: jwks(), expected: expected() });
+  const exp = expected('receipt', { run: first.run });
+  held(verify(token(exp, { check_run_id: '987654322', jti: 'receipt-other-job-12345', iat: sec(0) }),
+    { jwksSnapshot: jwks(), expected: exp }), 'HOLD_GITHUB_OIDC_RUN_CONTINUITY');
+});
+test('receipt cannot predate its authenticated challenge token', () => {
+  const first = verify(token(), { jwksSnapshot: jwks(), expected: expected() });
+  const exp = expected('receipt', { run: first.run });
+  held(verify(token(exp, { jti: 'receipt-earlier-token-12345', iat: sec(-2000), nbf: sec(-2000) }),
+    { jwksSnapshot: jwks(), expected: exp }), 'HOLD_GITHUB_OIDC_RUN_CONTINUITY');
+});
+function advancingVerifier(finalOffset) {
+  let calls = 0;
+  return createGitHubOidcWitnessVerifier({ now: () => BASE + (++calls === 1 ? 999 : finalOffset) });
+}
+test('challenge freshness budget is enforced again at final clock', () => {
+  held(advancingVerifier(1001)(token(expected(), { iat: sec(-29000), nbf: sec(-29000) }),
+    { jwksSnapshot: jwks(), expected: expected() }), 'HOLD_GITHUB_OIDC_EXPIRED');
+});
+test('linked receipt freshness budget is enforced again at final clock', () => {
+  const timing = { iat: sec(-29000), nbf: sec(-29000) };
+  const first = verify(token(expected(), timing), { jwksSnapshot: jwks(), expected: expected() });
+  const exp = expected('receipt', { run: first.run });
+  held(advancingVerifier(1001)(token(exp, { ...timing, jti: 'receipt-crossing-age-12345' }),
+    { jwksSnapshot: jwks(), expected: exp }), 'HOLD_GITHUB_OIDC_EXPIRED');
+});
+test('exact application age budget retains its documented inclusive boundary', () => {
+  const r = advancingVerifier(1000)(token(expected(), { iat: sec(-29000), nbf: sec(-29000) }),
+    { jwksSnapshot: jwks(), expected: expected() });
+  assert.equal(r.identityAuthenticated, true);
+  assert.equal(r.publicationAuthorized, false);
+});
+test('provider expiration during verification remains exclusive', () => {
+  held(advancingVerifier(1000)(token(expected(), { exp: sec(1000) }),
+    { jwksSnapshot: jwks(), expected: expected() }), 'HOLD_GITHUB_OIDC_EXPIRED');
+});
+test('JWKS expiration during verification remains exclusive', () => {
+  held(advancingVerifier(1000)(token(),
+    { jwksSnapshot: jwks(publicJwk, { validUntil: new Date(BASE + 1000).toISOString() }), expected: expected() }),
+  'HOLD_GITHUB_OIDC_EXPIRED');
+});
+
 for (const [name, work] of tests) {
   try { await work(); } catch (error) { error.message = `${name}: ${error.message}`; throw error; }
 }

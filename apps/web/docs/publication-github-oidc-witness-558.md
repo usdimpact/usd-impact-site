@@ -70,7 +70,8 @@ It requires:
 - exact caller workflow ref and exact caller/event SHA;
 - exact reusable witness workflow ref pinned to its exact workflow SHA;
 - exact custom audience for the challenge or receipt evidence digest;
-- bounded `nbf`/`iat`/`exp` lifetime and token age;
+- bounded `nbf`/`iat`/`exp` lifetime and token age, rechecked at the final clock;
+- mandatory prior authenticated challenge-run context for every receipt token;
 - exact run ID, run attempt and check-run ID continuity from challenge token to
   receipt token; and
 - a distinct receipt token `jti` issued no earlier than the challenge token.
@@ -118,3 +119,31 @@ and prove that no merge/Production alias or database admission can occur from a
 failed/missing OIDC receipt.
 
 Do not merge PR #559 or close #558 based on this verifier-only candidate.
+
+## Identity-boundary repair - September 10, 2026
+
+Review baseline: `1cc3dc541cc68bdf9e5e2042a80b1ca6f4b073ad`.
+Two synthetic reproductions returned verified identity at that baseline when they
+should have held. Neither authorized publication, and neither used a live token.
+
+1. Receipt verification accepted `expected.run=null`, bypassing the intended
+   challenge-to-receipt run continuity. Receipts now reject that state with
+   `HOLD_GITHUB_OIDC_RUN_REQUIRED`. Only an initial challenge may establish a run.
+   The prior run object must still come from protected, previously verified state,
+   not from the receipt request itself.
+2. Final-clock validation checked token expiration and JWKS expiration but not
+   the application's shorter token-age budget. It now rejects a token that crosses
+   that budget during verification, even while the provider token remains unexpired.
+
+The identity suite now has 47 groups (37 retained plus 10 new). It tests missing,
+empty and omitted receipt-run context, same-run/different-job substitution,
+receipt-before-challenge timestamps, challenge and receipt age crossings, the
+inclusive exact age limit, and exclusive provider/JWKS expiration boundaries.
+Removing either repair makes its targeted negative-control test fail. These are
+local synthetic RSA/JWKS checks, not native database or managed-provider tests.
+
+Before a live rehearsal, the OIDC audience/evidence protocol still needs integration.
+The existing Ed25519 witness receipt v2 is not an OIDC JWT and cannot be silently
+replaced with this identity-verification result. A first OIDC rehearsal should be
+non-publishing and have no admission/database/Production capability. Preparing it
+must not grant `id-token: write` or install a workflow without exact approval.

@@ -100,6 +100,9 @@ function validateExpected(expected) {
     && expected.jobWorkflowRef.endsWith(`@${expected.jobWorkflowSha}`)
     && SHA.test(expected.jobWorkflowSha), 'HOLD_GITHUB_OIDC_JOB_WORKFLOW');
   need(['workflow_dispatch'].includes(expected.eventName), 'HOLD_GITHUB_OIDC_EVENT');
+  // A receipt must continue a previously authenticated challenge execution.
+  // Only the initial challenge may establish a run without prior run context.
+  need(expected.purpose !== 'receipt' || expected.run !== null, 'HOLD_GITHUB_OIDC_RUN_REQUIRED');
   if (expected.run !== null) {
     need(expected.run && typeof expected.run === 'object' && !Array.isArray(expected.run)
       && Object.keys(expected.run).length === 5
@@ -199,7 +202,9 @@ export function createGitHubOidcWitnessVerifier({ now = Date.now, maxTokenAgeMs 
       'HOLD_GITHUB_OIDC_SIGNATURE');
       const timing = validateClaims(claims, checked, n, maxTokenAgeMs);
       const final = clock();
-      need(final < timing.exp && final < validUntil, 'HOLD_GITHUB_OIDC_EXPIRED');
+      // Recheck the application freshness budget, not only provider expiration.
+      need(final < timing.exp && final < validUntil && final - timing.iat <= maxTokenAgeMs,
+        'HOLD_GITHUB_OIDC_EXPIRED');
       return freeze({ decision: 'VERIFIED_GITHUB_OIDC_WITNESS_IDENTITY', provider: 'github-actions',
         purpose: checked.purpose, evidenceSha256: checked.evidenceSha256,
         run: { runId: String(claims.run_id), runAttempt: String(claims.run_attempt),

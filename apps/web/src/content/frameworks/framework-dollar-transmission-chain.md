@@ -17,9 +17,9 @@ internalLinks:
   - "/start-here"
   - "/dollar-framework"
   - "/framework/three-dial-dashboard"
-  - "/glossary/dxy"
-  - "/glossary/real-rates"
-  - "/glossary/liquidity-stress"
+  - "/learn/dxy-signal-vs-dollar-system"
+  - "/learn/real-yield"
+  - "/learn/dollar-yields-liquidity-three-dials"
   - "/book/read-the-dollar-first"
   - "/lead-magnets/weekly-dollar-regime-checklist"
 ctaPrimary: "Explore the book"
@@ -69,7 +69,7 @@ A higher nominal yield does not automatically mean tighter real-rate conditions 
 
 For that reason, the USD Impact framework treats **real-rate pressure as its own dial** rather than using DXY as a substitute for rates.
 
-Learn more: **[Real rates](/glossary/real-rates/)**.
+Learn more: **[Real rates](/learn/real-yield)**.
 
 ---
 
@@ -88,7 +88,7 @@ Useful questions:
 - Are major bilateral FX pairs telling the same story?
 - Is the move explained primarily by rates, risk, funding stress or a foreign-currency event?
 
-Learn more: **[DXY](/glossary/dxy/)** and **[Broad USD](/glossary/broad-usd/)**.
+Learn more: **[DXY](/learn/dxy-signal-vs-dollar-system)** and **[Broad USD](/learn/dxy-signal-vs-dollar-system)**.
 
 ---
 
@@ -111,7 +111,7 @@ Useful evidence can include:
 
 No single series is a complete measure of global liquidity. The goal is confirmation across several indicators.
 
-Learn more: **[Liquidity stress](/glossary/liquidity-stress/)**.
+Learn more: **[Liquidity stress](/learn/dollar-yields-liquidity-three-dials)**.
 
 ---
 

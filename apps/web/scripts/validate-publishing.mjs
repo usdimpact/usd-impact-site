@@ -140,6 +140,7 @@ await import('./test-publication-receipt-verifier.mjs');
 await import('./test-publication-receipt-ledger.mjs');
 await import('./test-publication-witness-receipt-v2.mjs');
 await import('./test-publication-github-oidc-witness.mjs');
+await import('./test-publication-oidc-evidence-bridge.mjs');
 
 await import('./test-publication-first-response-witness.mjs');
 

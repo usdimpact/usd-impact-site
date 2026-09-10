@@ -41,14 +41,21 @@ export function validateContext(value) {
   return Object.freeze({ ...value });
 }
 
-export function tokenRequestUrl(base, audience) {
+// GitHub supplies the full issuance URL; its path is not a documented suffix contract.
+// This helper checks the existing URL envelope only and performs no request.
+function validatedTokenEndpoint(base) {
   need(typeof base === 'string' && base.length > 0 && base.length <= 4096
     && !/[\r\n\t]/.test(base), 'HOLD_REHEARSAL_TOKEN_ENDPOINT');
   let url;
   try { url = new URL(base); } catch { throw new RehearsalHold('HOLD_REHEARSAL_TOKEN_ENDPOINT'); }
   need(url.protocol === 'https:' && !url.username && !url.password && !url.port && !url.hash
-    && /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.actions\.githubusercontent\.com$/.test(url.hostname)
-    && url.pathname.endsWith('/idtoken'), 'HOLD_REHEARSAL_TOKEN_ENDPOINT');
+    && /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.actions\.githubusercontent\.com$/.test(url.hostname),
+    'HOLD_REHEARSAL_TOKEN_ENDPOINT');
+  return url;
+}
+
+export function tokenRequestUrl(base, audience) {
+  const url = validatedTokenEndpoint(base);
   need(typeof audience === 'string' && /^urn:usd-impact:public-witness:(challenge|receipt):sha256:[a-f0-9]{64}$/.test(audience),
     'HOLD_REHEARSAL_AUDIENCE');
   url.searchParams.delete('audience');
@@ -60,15 +67,25 @@ export function tokenRequestUrl(base, audience) {
  * endpoint; no redirects, retries, response-body logs, or arbitrary destinations.
  * This is a source-level destination restriction, not a runner-wide firewall.
  */
-export function createJsonTransport({ fetchImpl = globalThis.fetch, timeoutMs = 4000, maxBytes = 65536 } = {}) {
+export function createJsonTransport({ fetchImpl = globalThis.fetch, timeoutMs = 4000, maxBytes = 65536,
+  tokenEndpoint = null } = {}) {
   need(typeof fetchImpl === 'function' && Number.isInteger(timeoutMs) && timeoutMs >= 10 && timeoutMs <= 5000
     && Number.isInteger(maxBytes) && maxBytes >= 100 && maxBytes <= 65536, 'HOLD_REHEARSAL_TRANSPORT_CONFIG');
+  // Capture one trusted runtime endpoint. Omitting it permits discovery/JWKS only.
+  // Never authorize a bearer destination by validating that destination against itself.
+  const boundTokenEndpoint = tokenEndpoint === null ? null : validatedTokenEndpoint(tokenEndpoint).href;
   return async function getJson(url, bearer = null) {
     if (bearer === null) need(url === DISCOVERY || url === GITHUB_OIDC_JWKS_URI, 'HOLD_REHEARSAL_DESTINATION');
     else {
       need(typeof bearer === 'string' && bearer.length > 0 && bearer.length <= 20000 && !/[\r\n]/.test(bearer), 'HOLD_REHEARSAL_TOKEN_PERMISSION');
-      const audience = new URL(url).searchParams.get('audience');
-      need(tokenRequestUrl(url, audience) === url, 'HOLD_REHEARSAL_TOKEN_ENDPOINT');
+      need(boundTokenEndpoint !== null && typeof url === 'string' && url.length <= 4096,
+        'HOLD_REHEARSAL_TOKEN_ENDPOINT');
+      let audience;
+      try { audience = new URL(url).searchParams.get('audience'); }
+      catch { throw new RehearsalHold('HOLD_REHEARSAL_TOKEN_ENDPOINT'); }
+      // Exact origin, path and non-audience parameters are bound to the captured URL.
+      // Only the verifier's challenge/receipt audience may differ between requests.
+      need(tokenRequestUrl(boundTokenEndpoint, audience) === url, 'HOLD_REHEARSAL_TOKEN_ENDPOINT');
     }
     const abort = new AbortController();
     let timer, reader;
@@ -192,8 +209,11 @@ async function main() {
       runId: e.GITHUB_RUN_ID, runAttempt: e.GITHUB_RUN_ATTEMPT, callerSha: e.GITHUB_SHA,
       runnerSha: e.REHEARSAL_RUNNER_SHA, checkoutSha, workflowRef: e.GITHUB_WORKFLOW_REF,
       approval: e.REHEARSAL_APPROVAL };
-    report = await runIdentityRehearsal({ context, endpoint: e.ACTIONS_ID_TOKEN_REQUEST_URL,
-      requestBearer: e.ACTIONS_ID_TOKEN_REQUEST_TOKEN, getJson: createJsonTransport() });
+    // Read the platform endpoint once; CLI/workflow inputs cannot supply an override.
+    const endpoint = e.ACTIONS_ID_TOKEN_REQUEST_URL;
+    report = await runIdentityRehearsal({ context, endpoint,
+      requestBearer: e.ACTIONS_ID_TOKEN_REQUEST_TOKEN,
+      getJson: createJsonTransport({ tokenEndpoint: endpoint }) });
   } catch (error) {
     report = { schema: 'oidc-rehearsal-report/558-v1', decision: error instanceof RehearsalHold
       ? error.code : 'HOLD_REHEARSAL_FAILED', stage: 'preflight', ...flags,

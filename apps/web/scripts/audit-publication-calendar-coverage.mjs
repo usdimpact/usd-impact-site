@@ -1,10 +1,11 @@
-import { readdirSync, lstatSync, readFileSync } from 'node:fs';
+import { readdirSync, lstatSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { digest, isCalendarDate } from '../src/lib/publication-calendar.js';
 import { BLS_MONTHLY_SERIES, explicitBlsMonthlyLabel } from '../src/lib/publication-calendar-series.js';
 import { parsePublicationCalendarSource } from '../src/lib/publication-calendar-source.js';
 import { pipelineCalendarCandidate } from '../src/lib/publication-calendar-pipeline.js';
+import { readVerifiedLocalFile } from '../src/lib/verified-local-file.js';
 
 /** Diagnostic classification only. Fuzzy family recognition never selects or certifies an event. */
 export function coverageFamily(event) {
@@ -19,9 +20,10 @@ export function coverageFamily(event) {
   if (/\b(?:BLS|Job Openings|JOLTS|Productivity)\b/i.test(event)) return 'BLS:OTHER_UNSUPPORTED';
   return 'UNKNOWN';
 }
-export function auditCalendarCoverage({ directory = resolve('src/content/news'), asOf = new Date().toISOString().slice(0, 10), limit = 12 } = {}) {
+export function auditCalendarCoverage({ directory = resolve('src/content/news'), asOf = new Date().toISOString().slice(0, 10), limit = 12, readVerified = readVerifiedLocalFile } = {}) {
   if (!isCalendarDate(asOf) || !Number.isInteger(limit) || limit < 1 || limit > 50) throw new Error('A valid diagnostic date and 1-50 edition limit are required.');
-  if (!lstatSync(directory).isDirectory() || lstatSync(directory).isSymbolicLink()) throw new Error('A regular content directory is required.');
+  const directoryStat = lstatSync(directory);
+  if (!directoryStat.isDirectory() || directoryStat.isSymbolicLink()) throw new Error('A regular content directory is required.');
   const names = readdirSync(directory);
   if (names.length > 1000) throw new Error('Coverage inventory exceeds the diagnostic bound.');
   const files = names.filter((name) => /^20\d{2}-\d{2}-\d{2}\.md$/.test(name) && name.slice(0, 10) <= asOf).sort().reverse();
@@ -30,9 +32,7 @@ export function auditCalendarCoverage({ directory = resolve('src/content/news'),
     if (editions.length >= limit) break;
     const file = resolve(directory, name);
     try {
-      const stat = lstatSync(file);
-      if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 256000) throw new Error('unsupported-file');
-      const source = readFileSync(file, 'utf8'), payload = parsePublicationCalendarSource(source);
+      const source = readVerified(file, 256000), payload = parsePublicationCalendarSource(source);
       if (payload.status !== 'published') continue;
       if (payload.date !== name.slice(0, 10) || !Array.isArray(payload.catalysts) || payload.catalysts.length > 10) throw new Error('unsupported-edition');
       const contentSha256 = digest(source);

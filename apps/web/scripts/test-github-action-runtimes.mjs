@@ -306,7 +306,7 @@ console.log(`Regular-file snapshots: ${fileRegressionNames.length} regression gr
 const parsedRegressionNames = [];
 function parsedRegression(name, work) {
   try { work(); parsedRegressionNames.push(name); }
-  catch (error) { error.message = `${name}: ${error.message}`; throw error; }
+  catch (error) { throw new Error(`${name}: ${error.message}`, { cause: error }); }
 }
 const target = `${rehearsalResource}@${rehearsalRef}`;
 const extraCaller = (entry) => `name: Additional caller
@@ -336,7 +336,7 @@ for (const [name, entry] of [
 ]) rejectParsed(`reject new ${name} caller`, extraCaller(entry), /Unreviewed reusable-workflow caller/);
 for (const [name, source] of [
   ['flow mapping', `jobs: {extra: {uses: '${target}'}}`],
-  ['multiline flow', `jobs: {\n  extra: {\n    uses: '${target}'\n  }\n}`],
+  ['multiline flow', `jobs: {\n  extra: {\n    uses: '${target}'\n    }\n  }`],
   ['JSON', JSON.stringify({jobs: {extra: {uses: target}}})],
   ['quoted jobs', `"jobs": {"extra": {"uses": "${target}"}}`],
   ['BOM and CRLF', '\ufeff' + extraCaller(`uses: "${target}"`).replace(/\n/g, '\r\n')],

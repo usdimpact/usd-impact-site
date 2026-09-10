@@ -23,7 +23,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: usdimpact/usd-impact-site/.github/workflows/publication-oidc-rehearsal-runner-558.yml@10ed538c1005ff268dfa82277b1d9db2f9a6a1e1
+    uses: usdimpact/usd-impact-site/.github/workflows/publication-oidc-rehearsal-runner-558.yml@966d3f9ef730ce0a3948be3b7fa292cb58cd5b49
     with:
-      runner-sha: 10ed538c1005ff268dfa82277b1d9db2f9a6a1e1
+      runner-sha: 966d3f9ef730ce0a3948be3b7fa292cb58cd5b49
       confirmed: ${{ inputs.confirmed }}

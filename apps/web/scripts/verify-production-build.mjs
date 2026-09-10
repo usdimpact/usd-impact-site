@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { verifySearchUtilityBuild } from './verify-search-utility-build.mjs';
+import { runSearchUtilityPolicyTests } from './test-search-utility-policy.mjs';
 
 const distRoot = path.resolve('dist');
 const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
@@ -18,6 +20,8 @@ const routes = {
 };
 const pagePath = (route) => path.join(distRoot, route.replace(/^\//, ''), 'index.html');
 const failures = [];
+runSearchUtilityPolicyTests();
+failures.push(...verifySearchUtilityBuild(distRoot));
 const requiredRoutes = ['/start-here','/book/read-the-dollar-first','/audiobook/read-the-dollar-first','/video-library',routes.dollarLesson,routes.fxLesson,routes.dxyLesson,routes.broadLesson,routes.regimeLesson,routes.goldLesson,routes.wtiLesson,routes.lngLesson,routes.equitiesLesson,routes.bitcoinLesson,routes.currencyRiskLesson,'/framework/dollar-transmission-chain','/framework/three-dial-dashboard','/lead-magnets/weekly-dollar-regime-checklist','/privacy','/terms','/refund-policy'];
 for (const route of requiredRoutes) if (!fs.existsSync(pagePath(route))) failures.push(`Missing published route: ${route}.`);
 for (const output of ['news/index.html','news/2026-07-22/index.html','news/feed.xml','news/latest.json']) if (!fs.existsSync(path.join(distRoot, output))) failures.push(`Missing Daily USD Impact output: /${output}.`);

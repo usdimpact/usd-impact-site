@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { lstat, readdir, readFile } from 'node:fs/promises';
+import { open, readdir, readFile, mkdtemp, writeFile, rename, symlink, rm } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 
 const workflowsDirectory = new URL('../../../.github/workflows/', import.meta.url);
@@ -55,6 +58,29 @@ function validateRehearsalSources(sources) {
   }
 }
 
+// Open first and check/read the same handle; never check then reopen a pathname.
+// O_NOFOLLOW rejects a swapped leaf symlink; O_NONBLOCK avoids waiting on a FIFO.
+// The exact digest still validates the bytes read, not future filesystem state.
+async function readRegularSource(file, openFile = open) {
+  assert.ok(Number.isInteger(constants.O_NOFOLLOW) && Number.isInteger(constants.O_NONBLOCK),
+    'Required safe file-open flags are unavailable');
+  const handle = await openFile(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  try {
+    assert.ok((await handle.stat()).isFile(), 'Rehearsal source must be a regular file');
+    return await handle.readFile();
+  } finally {
+    await handle.close();
+  }
+}
+
+async function readWorkflowSource(workflowFile, snapshots) {
+  const captured = snapshots.get(`.github/workflows/${workflowFile}`);
+  // Parse exactly the bytes already fingerprinted, not a second pathname read.
+  return captured === undefined
+    ? readFile(new URL(workflowFile, workflowsDirectory), 'utf8')
+    : captured.toString('utf8');
+}
+
 const hasRehearsal = workflowFiles.includes(rehearsalCaller) || workflowFiles.includes(rehearsalRunner);
 const checkedRehearsalSources = new Map();
 if (hasRehearsal) {
@@ -62,8 +88,7 @@ if (hasRehearsal) {
     'Both reviewed rehearsal workflows are required');
   for (const path of rehearsalSources.keys()) {
     const file = new URL(`../../../${path}`, import.meta.url);
-    assert.ok((await lstat(file)).isFile(), `Rehearsal source must be a regular file: ${path}`);
-    checkedRehearsalSources.set(path, await readFile(file));
+    checkedRehearsalSources.set(path, await readRegularSource(file));
   }
   validateRehearsalSources(checkedRehearsalSources);
 }
@@ -124,12 +149,80 @@ for (const [name, work] of referenceRegressions) {
 }
 console.log(`Reusable-workflow allowlist: ${referenceRegressions.length} regression groups passed (offline; no workflow execution).`);
 
+// Local temporary files only: no workflow execution, network or credentials.
+const fileRegressionNames = [];
+const fixtureDirectory = await mkdtemp(join(tmpdir(), 'usdimpact-source-read-'));
+async function fileRegression(name, check) {
+  try { await check(); fileRegressionNames.push(name); }
+  catch (error) { error.message = `${name}: ${error.message}`; throw error; }
+}
+try {
+  const source = join(fixtureDirectory, 'source');
+  const alternate = join(fixtureDirectory, 'alternate');
+  const link = join(fixtureDirectory, 'link');
+  await writeFile(source, 'reviewed bytes');
+  await writeFile(alternate, 'unreviewed bytes');
+  await fileRegression('read reviewed regular file', async () => {
+    assert.equal((await readRegularSource(source)).toString(), 'reviewed bytes');
+  });
+  await symlink(source, link);
+  await fileRegression('reject identical-content leaf symlink', async () => {
+    await assert.rejects(() => readRegularSource(link), { code: 'ELOOP' });
+  });
+  await fileRegression('reject directory', async () => {
+    await assert.rejects(() => readRegularSource(fixtureDirectory), /regular file/);
+  });
+  await fileRegression('reject missing file', async () => {
+    await assert.rejects(() => readRegularSource(join(fixtureDirectory, 'missing')), { code: 'ENOENT' });
+  });
+  await fileRegression('path swap after open does not change the checked handle', async () => {
+    const captured = await readRegularSource(source, async (path, flags) => {
+      const handle = await open(path, flags);
+      await rename(source, join(fixtureDirectory, 'original'));
+      await symlink(alternate, source);
+      return handle;
+    });
+    assert.equal(captured.toString(), 'reviewed bytes');
+  });
+  await fileRegression('close handle when regular-file check fails', async () => {
+    let closed = false;
+    await assert.rejects(() => readRegularSource(source, async () => ({
+      stat: async () => ({ isFile: () => false }),
+      readFile: async () => assert.fail('Non-file must not be read'),
+      close: async () => { closed = true; },
+    })), /regular file/);
+    assert.equal(closed, true);
+  });
+  await fileRegression('close handle when reading fails', async () => {
+    let closed = false;
+    await assert.rejects(() => readRegularSource(source, async () => ({
+      stat: async () => ({ isFile: () => true }),
+      readFile: async () => { throw new Error('fixture-read-failure'); },
+      close: async () => { closed = true; },
+    })), /fixture-read-failure/);
+    assert.equal(closed, true);
+  });
+  await fileRegression('open uses required nofollow and nonblocking flags', async () => {
+    await readRegularSource(source, async (_path, flags) => {
+      assert.equal(flags, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+      return { stat: async () => ({ isFile: () => true }), readFile: async () => Buffer.alloc(0), close: async () => {} };
+    });
+  });
+  await fileRegression('workflow parsing reuses the fingerprinted bytes', async () => {
+    const snapshots = new Map([['.github/workflows/absent-fixture.yml', Buffer.from('reviewed snapshot')]]);
+    assert.equal(await readWorkflowSource('absent-fixture.yml', snapshots), 'reviewed snapshot');
+  });
+} finally {
+  await rm(fixtureDirectory, { recursive: true, force: true });
+}
+console.log(`Regular-file snapshots: ${fileRegressionNames.length} regression groups passed (temporary local fixtures only).`);
+
 const actionCounts = new Map([...expectedActionRefs.keys()].map((name) => [name, 0]));
 let node24Count = 0;
 let strictInstallCount = 0;
 
 for (const workflowFile of workflowFiles) {
-  const source = await readFile(new URL(workflowFile, workflowsDirectory), 'utf8');
+  const source = await readWorkflowSource(workflowFile, checkedRehearsalSources);
 
   assert.doesNotMatch(
     source,

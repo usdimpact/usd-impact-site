@@ -28,6 +28,7 @@ function canonical(payload){
 }
 export function encodeReceiptPayload(payload){return canonical(payload);}
 export function receiptSigningBytes(payloadText){return Buffer.from(PREFIX+payloadText,'utf8');}
+function receiptSigningPayloadBytes(payloadBytes){return Buffer.concat([Buffer.from(PREFIX,'utf8'),payloadBytes]);}
 function bytes(encoded,limit){
   requireThat(typeof encoded==='string'&&encoded.length>0&&encoded.length<=limit
     && /^[A-Za-z0-9_-]+$/.test(encoded),'HOLD_ENCODING');
@@ -55,6 +56,24 @@ function payloadSchema(p){
     requireThat(!daily,'HOLD_UNSUPPORTED_DAILY_CALENDAR');
   }
 }
+function normalizedSnapshotKeys(keySnapshot,n){
+  requireThat(exactKeys(keySnapshot,['observedAt','validUntil','keys'])&&Array.isArray(keySnapshot.keys)
+    &&keySnapshot.keys.length>0&&keySnapshot.keys.length<=8,'HOLD_KEY_SNAPSHOT');
+  const ks=instant(keySnapshot.observedAt),ke=instant(keySnapshot.validUntil);
+  requireThat(ks<=n&&n<ke&&ke-ks<=15000,'HOLD_KEY_SNAPSHOT');
+  const ids=keySnapshot.keys.map(k=>k?.keyId);requireThat(new Set(ids).size===ids.length,'HOLD_KEY_SNAPSHOT');
+  const keys=keySnapshot.keys.map((k)=>{
+    requireThat(k&&exactKeys(k,['keyId','publicKeyPem','notBefore','notAfter','revoked'])
+      &&typeof k.keyId==='string'&&/^[a-z0-9-]{1,64}$/.test(k.keyId)
+      &&typeof k.publicKeyPem==='string'&&k.publicKeyPem.length<1000&&k.publicKeyPem.startsWith('-----BEGIN PUBLIC KEY-----')
+      &&typeof k.revoked==='boolean','HOLD_KEY');
+    instant(k.notBefore);instant(k.notAfter);
+    const publicKey=createPublicKey(k.publicKeyPem);
+    requireThat(publicKey.type==='public'&&publicKey.asymmetricKeyType==='ed25519','HOLD_KEY');
+    return {record:k,publicKey};
+  });
+  return {ks,ke,keys};
+}
 /** Trusted key snapshots and binding are supplied by protected server code, never a request body.
  * This authenticates the signer's assertion; it cannot prove the signer really dispatched publicly.
  * Caller must recheck fresh authority and consume exact attempt/receipt durably in one transaction.
@@ -68,31 +87,28 @@ export function createReceiptVerifier({now=Date.now}={}){
       requireThat(typeof rawEnvelope==='string'&&Buffer.byteLength(rawEnvelope)<=24000,'HOLD_ENVELOPE');
       const e=JSON.parse(rawEnvelope);
       requireThat(exactKeys(e,['payload','signature'])&&rawEnvelope===JSON.stringify({payload:e.payload,signature:e.signature}),'HOLD_ENVELOPE');
-      const payloadBytes=bytes(e.payload,16000), signature=bytes(e.signature,128);
+      const payloadBytes=bytes(e.payload,16000),signature=bytes(e.signature,128);
       requireThat(signature.length===64,'HOLD_SIGNATURE');
+      const snapshot=normalizedSnapshotKeys(keySnapshot,n);
+      const signingBytes=receiptSigningPayloadBytes(payloadBytes);
+      const matches=snapshot.keys.filter(({publicKey})=>verify(null,signingBytes,publicKey,signature));
+      requireThat(matches.length===1,matches.length===0?'HOLD_SIGNATURE':'HOLD_KEY_SNAPSHOT');
+      const k=matches[0].record;
+      // Only authenticated payload bytes are decoded or interpreted below this point.
       const text=new TextDecoder('utf-8',{fatal:true}).decode(payloadBytes);
       const p=JSON.parse(text);requireThat(text===canonical(p),'HOLD_NONCANONICAL');payloadSchema(p);
-      requireThat(exactKeys(keySnapshot,['observedAt','validUntil','keys'])&&Array.isArray(keySnapshot.keys)
-        && keySnapshot.keys.length>0&&keySnapshot.keys.length<=8,'HOLD_KEY_SNAPSHOT');
-      const ks=instant(keySnapshot.observedAt), ke=instant(keySnapshot.validUntil);
-      requireThat(ks<=n&&n<ke&&ke-ks<=15000,'HOLD_KEY_SNAPSHOT');
-      const ids=keySnapshot.keys.map(k=>k?.keyId);requireThat(new Set(ids).size===ids.length,'HOLD_KEY_SNAPSHOT');
-      const k=keySnapshot.keys.find(x=>x?.keyId===p.keyId);
-      requireThat(k&&exactKeys(k,['keyId','publicKeyPem','notBefore','notAfter','revoked'])&&k.revoked===false,'HOLD_KEY');
-      requireThat(typeof k.publicKeyPem==='string'&&k.publicKeyPem.length<1000&&k.publicKeyPem.startsWith('-----BEGIN PUBLIC KEY-----'),'HOLD_KEY');
-      const publicKey=createPublicKey(k.publicKeyPem); requireThat(publicKey.type==='public'&&publicKey.asymmetricKeyType==='ed25519','HOLD_KEY');
-      requireThat(verify(null,receiptSigningBytes(text),publicKey,signature),'HOLD_SIGNATURE');
+      requireThat(p.keyId===k.keyId&&k.revoked===false,'HOLD_KEY');
       requireThat(exactKeys(binding,BOUND)&&BOUND.every(f=>binding[f]===p[f]),'HOLD_BINDING');
-      const checked=instant(p.checkedAt), end=instant(p.validUntil), dispatched=instant(p.dispatchedAt), finished=instant(p.finishedAt);
+      const checked=instant(p.checkedAt),end=instant(p.validUntil),dispatched=instant(p.dispatchedAt),finished=instant(p.finishedAt);
       requireThat(checked<=dispatched&&dispatched<=finished&&finished<=n&&checked<end&&end-checked<=900000,'HOLD_TIME_ORDER');
       requireThat(n-finished<15000&&n<end,'HOLD_RECEIPT_EXPIRED');
       requireThat(instant(k.notBefore)<=dispatched&&n<instant(k.notAfter),'HOLD_KEY_LIFETIME');
       if(p.phase==='preview')requireThat(end<=instant(p.releaseAt)&&n<instant(p.releaseAt),'HOLD_PREVIEW_EXPIRED');
       if(p.phase==='outcome')requireThat(checked>=instant(p.releaseAt)&&dispatched>=instant(p.releaseAt),'HOLD_OUTCOME_NOT_RELEASED');
-      const final=clock();requireThat(final<end&&final<ke&&final<instant(k.notAfter)&&final-finished<15000,'HOLD_RECEIPT_EXPIRED');
+      const final=clock();requireThat(final<end&&final<snapshot.ke&&final<instant(k.notAfter)&&final-finished<15000,'HOLD_RECEIPT_EXPIRED');
       return Object.freeze({decision:'VERIFIED_SIGNER_ASSERTION_ONLY',receiptSha256:digest(rawEnvelope),
         payloadSha256:digest(text),attemptId:p.attemptId,verifiedAt:new Date(final).toISOString(),
-        recordDeadline:new Date(Math.min(end,ke,instant(k.notAfter),finished+15000)).toISOString(),
+        recordDeadline:new Date(Math.min(end,snapshot.ke,instant(k.notAfter),finished+15000)).toISOString(),
         publicationAuthorized:false,admissionRecorded:false,enforcementActive:false});
     }catch(e){return Object.freeze({decision:typeof e?.code==='string'&&/^HOLD_[A-Z_]+$/.test(e.code)?e.code:'HOLD_INVALID_RECEIPT',
       publicationAuthorized:false,admissionRecorded:false,enforcementActive:false});}

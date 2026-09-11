@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {generateKeyPairSync,sign,randomBytes} from 'node:crypto';
+import {generateKeyPairSync,sign} from 'node:crypto';
 import {FIELDS,SCOPE,encodeReceiptPayload,receiptSigningBytes,createReceiptVerifier} from '../src/lib/publication-receipt-verifier.js';
 const key=generateKeyPairSync('ed25519'), other=generateKeyPairSync('ed25519');
 const pem=key.publicKey.export({type:'spki',format:'pem'});
@@ -14,6 +14,10 @@ const binding=p=>Object.fromEntries(FIELDS.filter(k=>!['schema','keyId','audienc
 const snapshot=()=>({observedAt:iso(-1000),validUntil:iso(10000),keys:[{keyId:base.keyId,publicKeyPem:pem,notBefore:iso(-100000),notAfter:iso(100000),revoked:false}]});
 function signed(p=base,{text=encodeReceiptPayload(p),pair=key,prefix=true}={}){
  return JSON.stringify({payload:Buffer.from(text).toString('base64url'),signature:sign(null,prefix?receiptSigningBytes(text):Buffer.from(text),pair.privateKey).toString('base64url')});
+}
+function prependJsonProperty(text,name,value){
+ assert.equal(text[0],'{');
+ return `{${JSON.stringify(name)}:${JSON.stringify(value)},${text.slice(1)}`;
 }
 const tests=[];
 function test(name,f){f();tests.push(name);}
@@ -45,9 +49,9 @@ test('invalid Daily date is refused',()=>held(run({p:{...base,path:'/news/2026-0
 test('different private key cannot sign',()=>held(run({raw:signed(base,{pair:other})}),/^HOLD_SIGNATURE$/));
 test('domain-separated signature required',()=>held(run({raw:signed(base,{prefix:false})}),/^HOLD_SIGNATURE$/));
 test('tampered signed body rejected',()=>{const e=JSON.parse(signed());e.payload=Buffer.from(encodeReceiptPayload({...base,path:'/news/catalysts/tampered'})).toString('base64url');held(run({raw:JSON.stringify(e)}),/^HOLD_SIGNATURE$/);});
-test('duplicate payload key rejected before trust',()=>{const text=encodeReceiptPayload(base).replace('{','{"phase":"outcome",');held(run({raw:signed(base,{text})}),/^HOLD_NONCANONICAL$/);});
+test('duplicate payload key rejected before trust',()=>{const text=prependJsonProperty(encodeReceiptPayload(base),'phase','outcome');held(run({raw:signed(base,{text})}),/^HOLD_NONCANONICAL$/);});
 test('unknown payload field rejected',()=>{const text=JSON.stringify({...base,verified:true});held(run({raw:signed(base,{text})}));});
-test('envelope duplicate key rejected',()=>{const raw=signed().replace('{','{"payload":"anything",');held(run({raw}),/^HOLD_ENVELOPE$/);});
+test('envelope duplicate key rejected',()=>{const raw=prependJsonProperty(signed(),'payload','anything');held(run({raw}),/^HOLD_ENVELOPE$/);});
 test('payload whitespace rejected',()=>held(run({raw:signed(base,{text:' '+encodeReceiptPayload(base)})}),/^HOLD_NONCANONICAL$/));
 test('algorithm override rejected',()=>{const e={...JSON.parse(signed()),alg:'none'};held(run({raw:JSON.stringify(e)}));});
 test('key URL not accepted',()=>{const e={...JSON.parse(signed()),jku:'https://invalid.example/key'};held(run({raw:JSON.stringify(e)}));});

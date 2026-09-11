@@ -134,6 +134,8 @@ await import('./test-treasury-buyback-verifier.mjs');
 await import('./test-treasury-buyback-preview-verifier.mjs');
 await import('./test-treasury-buyback-discovery.mjs');
 await import('./test-treasury-buyback-preview-orchestrator.mjs');
+await import('./test-treasury-buyback-outcome-discovery.mjs');
+await import('./test-treasury-buyback-outcome-orchestrator.mjs');
 
 await import('./test-publication-serving-policy.mjs');
 

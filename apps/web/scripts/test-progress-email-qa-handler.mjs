@@ -130,6 +130,7 @@ const batchResult = Object.freeze({
   await handleProgressEmailQaBatchRequest(request(), res, {
     environment,
     authorize: () => true,
+    resolveSources: null,
   });
   assert.equal(res.statusCode, 503);
   assert.equal(JSON.parse(res.body).code, 'PROGRESS_EMAIL_QA_SOURCE_RESOLVER_MISSING');

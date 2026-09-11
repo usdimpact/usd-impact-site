@@ -5,12 +5,14 @@ import { join } from 'node:path';
 import { auditCalendarCoverage, coverageFamily } from './audit-publication-calendar-coverage.mjs';
 let tests = 0;
 const test = (name, fn) => { fn(); tests++; };
-for (const [name, expected] of [['BLS Consumer Price Index for August 2026','BLS:CPI'], ['BLS Producer Price Index (PPI) for August 2026','BLS:PPI'], ['BLS Employment Situation August','BLS:EMPSIT'], ['BEA PCE','BEA:UNSUPPORTED'], ['FOMC minutes','FED:UNSUPPORTED'], ['EIA petroleum','EIA:UNSUPPORTED'], ['Treasury buybacks','TREASURY:UNSUPPORTED'], ['BLS JOLTS','BLS:OTHER_UNSUPPORTED'], ['something else','UNKNOWN']]) test('bounded non-authoritative family hint', () => assert.equal(coverageFamily(name), expected));
+for (const [name, expected] of [['BLS Consumer Price Index for August 2026','BLS:CPI'], ['BLS Producer Price Index (PPI) for August 2026','BLS:PPI'], ['BLS Employment Situation August','BLS:EMPSIT'], ['BEA PCE','BEA:UNSUPPORTED'], ['FOMC minutes','FED:UNSUPPORTED'], ['EIA petroleum','EIA:UNSUPPORTED'], ['Treasury buybacks','TREASURY:BUYBACK_UNSUPPORTED'], ['Treasury increased nominal long-end buyback sizes take effect','TREASURY:BUYBACK_UNSUPPORTED'], ['Treasury 13-week and 26-week bill auctions','TREASURY:AUCTION_UNSUPPORTED'], ['Tentative Treasury auction schedule includes September 10 operations','TREASURY:AUCTION_UNSUPPORTED'], ['Treasury quarterly refunding statement','TREASURY:OTHER_UNSUPPORTED'], ['BLS JOLTS','BLS:OTHER_UNSUPPORTED'], ['something else','UNKNOWN']]) test('bounded non-authoritative family hint', () => assert.equal(coverageFamily(name), expected));
 const directory=mkdtempSync(join(tmpdir(),'calendar-coverage-'));
 const source = (date, event) => `---\nstatus: "published"\ndate: "${date}"\ncatalysts: ${JSON.stringify([{date:'2026-09-11',event,calendar:null}])}\n---\nBody\n`;
 try {
   writeFileSync(join(directory,'2026-09-09.md'),source('2026-09-09','BLS Consumer Price Index for August 2026'));
   writeFileSync(join(directory,'2026-09-08.md'),source('2026-09-08','Federal Reserve FOMC'));
+  writeFileSync(join(directory,'2026-09-07.md'),source('2026-09-07','Treasury increased nominal long-end buyback sizes take effect'));
+  writeFileSync(join(directory,'2026-09-06.md'),source('2026-09-06','Treasury 13-week and 26-week bill auctions'));
   test('recognized series is not verified or authorized',()=>{
     const report=auditCalendarCoverage({directory,asOf:'2026-09-09',limit:1});
     assert.equal(report.decision,'DIAGNOSTIC_ONLY');assert.equal(report.rows.length,1);
@@ -19,9 +21,12 @@ try {
   test('unsupported family remains in the inventory',()=>{
     const report=auditCalendarCoverage({directory,asOf:'2026-09-09',limit:12});
     assert.equal(report.familyCounts['FED:UNSUPPORTED'],1);assert.equal(report.rows[1].recordState,'HOLD_UNSUPPORTED_EVENT');
+    assert.equal(report.familyCounts['TREASURY:BUYBACK_UNSUPPORTED'],1);
+    assert.equal(report.familyCounts['TREASURY:AUCTION_UNSUPPORTED'],1);
+    assert.equal(report.rows.every((row) => row.publicationAuthorized === false && row.freshSourceVerified === false),true);
   });
   test('diagnostic date limits scope but cannot authorize publication',()=>{
-    const report=auditCalendarCoverage({directory,asOf:'2026-09-08',limit:12});assert.equal(report.editions.length,1);assert.equal(report.publicationAuthorized,false);
+    const report=auditCalendarCoverage({directory,asOf:'2026-09-08',limit:12});assert.equal(report.editions.length,3);assert.equal(report.publicationAuthorized,false);
   });
   test('invalid dates are rejected',()=>assert.throws(()=>auditCalendarCoverage({directory,asOf:'2026-02-30'})));
   test('unbounded inventory selection rejected',()=>assert.throws(()=>auditCalendarCoverage({directory,limit:1000})));

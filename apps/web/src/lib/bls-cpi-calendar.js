@@ -11,6 +11,27 @@ export const BLS_ADAPTER_VERSION = 'bls-national-monthly/html-v4';
 export const BLS_CALENDAR_USER_AGENT = 'USDImpact-CalendarValidator/1.0 (+https://www.usd-impact.com/contact/)';
 const MAX_SOURCE_BYTES = 512000;
 const ALLOWED_URL = /^https:\/\/www\.bls\.gov\/(?:schedule\/news_release\/(?:cpi|ppi|empsit)\.htm|schedule\/20\d{2}\/(?:0[1-9]|1[0-2])_sched_list\.htm|news\.release\/(?:cpi|ppi|empsit)\.nr0\.htm)$/;
+const WEEKDAYS = Object.freeze(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']);
+
+function htmlSpace(character) {
+  return character === ' ' || character === '\n' || character === '\r' || character === '\t' || character === '\f';
+}
+function asciiDigit(character) {
+  return typeof character === 'string' && character.length === 1 && character >= '0' && character <= '9';
+}
+function asciiDigits(value) {
+  if (typeof value !== 'string' || value.length === 0) return false;
+  for (const character of value) if (!asciiDigit(character)) return false;
+  return true;
+}
+function wordCharacter(character) {
+  if (typeof character !== 'string' || character.length !== 1) return false;
+  const code = character.charCodeAt(0);
+  return (code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || character === '_';
+}
+function htmlNameBoundary(character) {
+  return character === undefined || character === '>' || character === '/' || htmlSpace(character);
+}
 
 function tagEnd(html, start) {
   let quote = null;
@@ -48,7 +69,7 @@ function excludedHtmlRanges(html) {
       continue;
     }
     const boundary = lower[start + kind.length + 1];
-    if (boundary && !/[\s/>]/.test(boundary)) {
+    if (boundary && !htmlNameBoundary(boundary)) {
       cursor = start + kind.length + 1;
       continue;
     }
@@ -57,7 +78,7 @@ function excludedHtmlRanges(html) {
     const closeStart = lower.indexOf(closePrefix, openEnd);
     if (closeStart < 0) hold('HOLD_SOURCE_SCHEMA', `Unterminated official ${kind} block.`);
     const closeBoundary = lower[closeStart + closePrefix.length];
-    if (closeBoundary && !/[\s>]/.test(closeBoundary)) {
+    if (closeBoundary && closeBoundary !== '>' && !htmlSpace(closeBoundary)) {
       cursor = closeStart + closePrefix.length;
       continue;
     }
@@ -119,6 +140,87 @@ function visibleText(html) {
     })[name.toLowerCase()])
     .replace(/[\u2013\u2014]/g, '-').replace(/\s+/g, ' ').trim();
 }
+
+function relevantTableTags(html, excluded) {
+  const lower = html.toLowerCase();
+  const tags = [];
+  const names = ['table', 'tr', 'th', 'td'];
+  let cursor = 0;
+  while (cursor < html.length) {
+    const start = lower.indexOf('<', cursor);
+    if (start < 0) break;
+    if (!outsideExcludedRanges(start, excluded)) {
+      cursor = start + 1;
+      continue;
+    }
+    let nameStart = start + 1;
+    let closing = false;
+    if (lower[nameStart] === '/') {
+      closing = true;
+      nameStart += 1;
+    }
+    const tag = names.find((name) => lower.startsWith(name, nameStart) && htmlNameBoundary(lower[nameStart + name.length]));
+    if (!tag) {
+      cursor = start + 1;
+      continue;
+    }
+    const end = tagEnd(html, start);
+    tags.push(Object.freeze({ start, end, closing, tag, raw: html.slice(start, end) }));
+    if (tags.length > 7000) hold('HOLD_SOURCE_SCHEMA', 'Official table token count exceeds the parser complexity bound.');
+    cursor = end;
+  }
+  return tags;
+}
+
+function selfClosingTag(raw) {
+  let cursor = raw.length - 2;
+  while (cursor > 0 && htmlSpace(raw[cursor])) cursor -= 1;
+  return raw[cursor] === '/';
+}
+
+function plainClosingTag(raw, tag) {
+  let cursor = 2 + tag.length;
+  while (cursor < raw.length - 1 && htmlSpace(raw[cursor])) cursor += 1;
+  return cursor === raw.length - 1 && raw[cursor] === '>';
+}
+
+function openingTagHasAttribute(raw, wanted) {
+  const lower = raw.toLowerCase();
+  let cursor = 1;
+  while (cursor < lower.length - 1 && !htmlSpace(lower[cursor]) && lower[cursor] !== '>') cursor += 1;
+  while (cursor < lower.length - 1) {
+    while (cursor < lower.length - 1 && htmlSpace(lower[cursor])) cursor += 1;
+    if (cursor >= lower.length - 1 || lower[cursor] === '/' || lower[cursor] === '>') return false;
+    const start = cursor;
+    while (cursor < lower.length - 1) {
+      const character = lower[cursor];
+      const code = character.charCodeAt(0);
+      const nameCharacter = (code >= 48 && code <= 57) || (code >= 97 && code <= 122)
+        || character === '_' || character === '-' || character === ':';
+      if (!nameCharacter) break;
+      cursor += 1;
+    }
+    if (cursor === start) return false;
+    const name = lower.slice(start, cursor);
+    while (cursor < lower.length - 1 && htmlSpace(lower[cursor])) cursor += 1;
+    if (name === wanted) return lower[cursor] === '=';
+    if (lower[cursor] === '=') {
+      cursor += 1;
+      while (cursor < lower.length - 1 && htmlSpace(lower[cursor])) cursor += 1;
+      const quote = lower[cursor];
+      if (quote === '"' || quote === "'") {
+        cursor += 1;
+        while (cursor < lower.length - 1 && lower[cursor] !== quote) cursor += 1;
+        if (cursor >= lower.length - 1) return false;
+        cursor += 1;
+      } else {
+        while (cursor < lower.length - 1 && !htmlSpace(lower[cursor]) && lower[cursor] !== '>') cursor += 1;
+      }
+    }
+  }
+  return false;
+}
+
 function tableWithHeaders(html, expected) {
   const excluded = excludedHtmlRanges(html);
   // BLS places the release table inside a layout table. Track table ownership;
@@ -127,13 +229,10 @@ function tableWithHeaders(html, expected) {
   const tables = [];
   const counts = { table: 0, tr: 0, cell: 0 };
   const malformed = () => hold('HOLD_SOURCE_SCHEMA', 'Malformed or ambiguous official table structure.');
-  const tags = /<(\/?)(table|tr|th|td)\b(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi;
-  for (const token of html.matchAll(tags)) {
-    if (!outsideExcludedRanges(token.index, excluded)) continue;
-    const closing = token[1] === '/';
-    const tag = token[2].toLowerCase();
+  for (const token of relevantTableTags(html, excluded)) {
+    const { closing, tag } = token;
     const parent = stack.at(-1);
-    if (/\/\s*>$/.test(token[0]) || (closing && !/^<\/(?:table|tr|th|td)\s*>$/i.test(token[0]))) malformed();
+    if (selfClosingTag(token.raw) || (closing && !plainClosingTag(token.raw, tag))) malformed();
     if (!closing) {
       counts[tag === 'th' || tag === 'td' ? 'cell' : tag] += 1;
       if (counts.table > 30 || counts.tr > 1000 || counts.cell > 5000 || stack.length > 8) {
@@ -168,11 +267,11 @@ function tableWithHeaders(html, expected) {
     }
     if (!closing) {
       if (!parent.row || parent.cell) malformed();
-      parent.cell = { tag, start: token.index + token[0].length, nested: false };
-      if (/\b(?:rowspan|colspan)\s*=/i.test(token[0])) parent.spans = true;
+      parent.cell = { tag, start: token.end, nested: false };
+      if (openingTagHasAttribute(token.raw, 'rowspan') || openingTagHasAttribute(token.raw, 'colspan')) parent.spans = true;
     } else {
       if (!parent.cell || parent.cell.tag !== tag || !parent.row) malformed();
-      parent.row.push(parent.cell.nested ? null : visibleText(html.slice(parent.cell.start, token.index)));
+      parent.row.push(parent.cell.nested ? null : visibleText(html.slice(parent.cell.start, token.start)));
       parent.cell = null;
     }
   }
@@ -192,7 +291,7 @@ function englishDate(text) {
   const month = MONTHS.findIndex((name) => name.toLowerCase() === token || name.slice(0, 3).toLowerCase() === token || (name === 'September' && token === 'sept')) + 1;
   const date = `${match[4]}-${String(month).padStart(2, '0')}-${match[3].padStart(2, '0')}`;
   if (!month || !isCalendarDate(date)) hold('HOLD_SOURCE_SCHEMA', 'Invalid official calendar date.');
-  if (match[1] && ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date(`${date}T00:00:00Z`).getUTCDay()] !== match[1]) {
+  if (match[1] && WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()] !== match[1]) {
     hold('HOLD_SCHEDULE_CONFLICT', 'Official date and weekday disagree.');
   }
   return date;
@@ -233,45 +332,158 @@ export function parseBlsMonthlyReleaseSchedule(html, period, series) {
   });
 }
 export function parseBlsCpiSchedule(html, period) { return parseBlsMonthlyReleaseSchedule(html, period, 'CPI'); }
+
+function exactMonthlyCalendarPeriod(text, definition) {
+  if (!text.startsWith(definition.name)) return { family: false, period: null };
+  const boundary = text[definition.name.length];
+  if (boundary && wordCharacter(boundary)) return { family: false, period: null };
+  const prefix = `${definition.name} for `;
+  if (!text.startsWith(prefix)) return { family: true, period: null };
+  try { return { family: true, period: referencePeriod(text.slice(prefix.length)) }; }
+  catch { return { family: true, period: null }; }
+}
+
 export function confirmBlsMonthlySchedule(html, event) {
   const definition = definitionFor(event.series);
   const text = visibleText(html);
   if (!text.includes('All times on calendar are Eastern Time')) hold('HOLD_SOURCE_SCHEMA', 'Official monthly calendar timezone is missing.');
   const rows = tableWithHeaders(html, ['Date', 'Time', 'Release']);
-  // Profile strings are fixed constants, never candidate-controlled regular expressions.
-  const prefix = new RegExp(`^${definition.name}\\b`);
-  const label = new RegExp(`^${definition.name} for ([A-Za-z]+ 20\\d{2})$`);
-  const matching = rows.filter((row) => prefix.test(row[2])).filter((row) => {
+  const matching = rows.filter((row) => {
+    const parsed = exactMonthlyCalendarPeriod(row[2], definition);
+    if (!parsed.family) return false;
     rejectScheduleNotice(row.join(' '));
-    const match = row[2].match(label);
-    if (!match) hold('HOLD_IDENTITY_MISMATCH', 'Ambiguous release entry in the official monthly calendar.');
-    return referencePeriod(match[1]) === event.referencePeriod;
+    if (!parsed.period) hold('HOLD_IDENTITY_MISMATCH', 'Ambiguous release entry in the official monthly calendar.');
+    return parsed.period === event.referencePeriod;
   });
   if (matching.length !== 1) hold('HOLD_SCHEDULE_CONFLICT', 'Monthly calendar does not confirm one matching event.');
   if (englishDate(matching[0][0]) !== event.eventDate || englishTime(matching[0][1]) !== event.releaseTime) {
     hold('HOLD_SCHEDULE_CONFLICT', 'Official schedule sources disagree on release timing.');
   }
 }
+
+function resultHeadings(text, definition) {
+  const prefix = `${definition.resultHeading} - `;
+  const matches = [];
+  let cursor = 0;
+  while (cursor < text.length) {
+    const index = text.indexOf(prefix, cursor);
+    if (index < 0) break;
+    cursor = index + prefix.length;
+    if (wordCharacter(text[index - 1])) continue;
+    for (const month of MONTHS) {
+      const token = month.toUpperCase();
+      if (!text.startsWith(token, cursor) || text[cursor + token.length] !== ' ') continue;
+      const yearStart = cursor + token.length + 1;
+      const year = text.slice(yearStart, yearStart + 4);
+      if (year.length !== 4 || !year.startsWith('20') || !asciiDigits(year) || wordCharacter(text[yearStart + 4])) continue;
+      matches.push(Object.freeze({ index, periodText: `${token} ${year}`, length: prefix.length + token.length + 5 }));
+      break;
+    }
+  }
+  return matches;
+}
+
+function usdLCodeLength(text, cursor) {
+  if (!text.startsWith('USDL-', cursor) && !text.startsWith('USDL ', cursor)) return 0;
+  const candidate = text.slice(cursor, cursor + 12);
+  if (candidate.length !== 12 || !asciiDigits(candidate.slice(5, 7)) || candidate[7] !== '-'
+      || !asciiDigits(candidate.slice(8, 12))) return -1;
+  return 12;
+}
+
+function embargoDateAt(text, cursor) {
+  let weekday = null;
+  for (const value of WEEKDAYS) {
+    if (!text.startsWith(value, cursor)) continue;
+    const after = cursor + value.length;
+    if (text.startsWith(', ', after)) cursor = after + 2;
+    else if (text[after] === ' ') cursor = after + 1;
+    else continue;
+    weekday = value;
+    break;
+  }
+  if (!weekday) return null;
+  let month = null;
+  for (const value of MONTHS) {
+    if (text.startsWith(value, cursor) && text[cursor + value.length] === ' ') {
+      month = value;
+      cursor += value.length + 1;
+      break;
+    }
+  }
+  if (!month) return null;
+  const dayStart = cursor;
+  while (cursor < text.length && cursor - dayStart < 2 && asciiDigit(text[cursor])) cursor += 1;
+  const day = text.slice(dayStart, cursor);
+  if (!day || text[cursor] !== ',' || text[cursor + 1] !== ' ') return null;
+  cursor += 2;
+  const year = text.slice(cursor, cursor + 4);
+  if (year.length !== 4 || !year.startsWith('20') || !asciiDigits(year) || wordCharacter(text[cursor + 4])) return null;
+  return Object.freeze({ dateText: `${weekday}, ${month} ${day}, ${year}`, end: cursor + 4 });
+}
+
+function embargoAt(text, prefix, index) {
+  let cursor = index + prefix.length;
+  if (text[cursor] !== ' ') return null;
+  cursor += 1;
+  const codeLength = usdLCodeLength(text, cursor);
+  if (codeLength < 0) return null;
+  if (codeLength > 0) {
+    cursor += codeLength;
+    if (text[cursor] !== ' ') return null;
+    cursor += 1;
+  }
+  const colon = text.indexOf(':', cursor);
+  if (colon < cursor + 1 || colon > cursor + 2) return null;
+  const hour = text.slice(cursor, colon);
+  if (!asciiDigits(hour) || Number(hour) < 1 || Number(hour) > 12) return null;
+  const minute = text.slice(colon + 1, colon + 3);
+  if (minute.length !== 2 || !asciiDigits(minute) || Number(minute) > 59 || text[colon + 3] !== ' ') return null;
+  cursor = colon + 4;
+  let meridiem = null;
+  if (text.startsWith('a.m.', cursor)) meridiem = 'AM';
+  else if (text.startsWith('p.m.', cursor)) meridiem = 'PM';
+  if (!meridiem) return null;
+  cursor += 4;
+  if (!text.startsWith(' (ET) ', cursor)) return null;
+  cursor += 6;
+  const date = embargoDateAt(text, cursor);
+  if (!date) return null;
+  return Object.freeze({ index, timeText: `${hour}:${minute} ${meridiem}`, dateText: date.dateText, end: date.end });
+}
+
+function embargoTimestamps(text, definition) {
+  const prefix = `Transmission of material in this ${definition.news ? 'news ' : ''}release is embargoed until`;
+  const matches = [];
+  let cursor = 0;
+  while (cursor < text.length) {
+    const index = text.indexOf(prefix, cursor);
+    if (index < 0) break;
+    cursor = index + prefix.length;
+    const parsed = embargoAt(text, prefix, index);
+    if (parsed) matches.push(parsed);
+  }
+  return matches;
+}
+
 export function parseBlsMonthlyRelease(html, series) {
   const definition = definitionFor(series);
   const text = visibleText(html);
-  const titles = [...text.matchAll(new RegExp(`\\b${definition.resultHeading} - ([A-Z]+ 20\\d{2})\\b`, 'g'))];
+  const titles = resultHeadings(text, definition);
   if (titles.length !== 1) hold('HOLD_OUTCOME_NOT_RELEASED', 'A unique matching national results heading is required.');
-  const prefix = `Transmission of material in this ${definition.news ? 'news ' : ''}release is embargoed until`;
-  const pattern = new RegExp(prefix + ' (?:USDL[- ]\\d{2}-\\d{4} )?(\\d{1,2}:[0-5]\\d) (a\\.m\\.|p\\.m\\.) \\(ET\\) ((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),? [A-Za-z]+ \\d{1,2}, 20\\d{2})', 'g');
-  const timestamps = [...text.matchAll(pattern)];
+  const timestamps = embargoTimestamps(text, definition);
   if (timestamps.length !== 1) hold('HOLD_OUTCOME_NOT_RELEASED', 'A unique official release timestamp is required.');
   const stamp = timestamps[0];
-  const date = englishDate(stamp[3].replace(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) /, '$1, '));
-  const time = englishTime(`${stamp[1]} ${stamp[2] === 'a.m.' ? 'AM' : 'PM'}`);
-  if (timestamps[0].index > titles[0].index) hold('HOLD_OUTCOME_NOT_RELEASED', 'The embargo timestamp must precede the results heading.');
-  const resultText = text.slice(titles[0].index + titles[0][0].length, titles[0].index + titles[0][0].length + 2000);
+  const date = englishDate(stamp.dateText);
+  const time = englishTime(stamp.timeText);
+  if (stamp.index > titles[0].index) hold('HOLD_OUTCOME_NOT_RELEASED', 'The embargo timestamp must precede the results heading.');
+  const resultText = text.slice(titles[0].index + titles[0].length, titles[0].index + titles[0].length + 2000);
   if (!resultText.includes(definition.resultLead)
       || !resultText.includes('Bureau of Labor Statistics reported today')
       || !/\b(increased|decreased|declined|rose|fell|unchanged)\b/.test(resultText)) {
     hold('HOLD_OUTCOME_NOT_RELEASED', 'The official artifact does not contain a recognizable matching results statement.');
   }
-  return Object.freeze({ referencePeriod: referencePeriod(titles[0][1]), releaseAt: localReleaseInstant(date, time) });
+  return Object.freeze({ referencePeriod: referencePeriod(titles[0].periodText), releaseAt: localReleaseInstant(date, time) });
 }
 export function parseBlsCpiRelease(html) { return parseBlsMonthlyRelease(html, 'CPI'); }
 // Diagnostics classify response metadata only. Raw headers, bodies, URLs supplied by

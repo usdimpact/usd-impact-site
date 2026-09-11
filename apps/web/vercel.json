@@ -77,6 +77,14 @@
       "destination": "/api/waitlist?action=daily-learning-dispatch"
     },
     {
+      "source": "/api/email-subscribe",
+      "destination": "/api/waitlist?action=marketing-opt-in"
+    },
+    {
+      "source": "/api/email-confirm",
+      "destination": "/api/waitlist?action=marketing-opt-in-confirm"
+    },
+    {
       "source": "/api/commerce-readiness",
       "destination": "/api/account?action=commerce-readiness"
     },

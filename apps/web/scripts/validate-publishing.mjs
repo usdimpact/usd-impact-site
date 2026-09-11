@@ -127,6 +127,7 @@ await import('./test-publication-calendar-release.mjs');
 
 await import('./test-publication-calendar-multiseries.mjs');
 await import('./test-publication-calendar-coverage.mjs');
+await import('./test-treasury-buyback-operation.mjs');
 
 await import('./test-publication-serving-policy.mjs');
 

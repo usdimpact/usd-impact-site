@@ -62,8 +62,16 @@ function uniqueTag(xml, tag, { required = true, max = 300 } = {}) {
   return text;
 }
 
+function isRealCalendarDate(value) {
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 function instant(value, tag) {
-  if (!ISO_OFFSET_TIMESTAMP.test(value)) hold('HOLD_TREASURY_BUYBACK_XML_TIME', `TreasuryDirect ${tag} requires an explicit ISO timestamp offset.`);
+  if (!ISO_OFFSET_TIMESTAMP.test(value) || !isRealCalendarDate(value.slice(0, 10))) {
+    hold('HOLD_TREASURY_BUYBACK_XML_TIME', `TreasuryDirect ${tag} requires a real calendar date and explicit ISO timestamp offset.`);
+  }
   const ms = Date.parse(value);
   if (!Number.isFinite(ms)) hold('HOLD_TREASURY_BUYBACK_XML_TIME', `TreasuryDirect ${tag} is not a valid timestamp.`);
   return Object.freeze({ text: value, epochMs: ms, isoUtc: new Date(ms).toISOString() });

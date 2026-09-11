@@ -88,6 +88,12 @@ export function inspectNewsletterPreviewReadiness(environment = process.env) {
     Boolean(previewOrigin),
     'Must identify the active .vercel.app Preview deployment.',
   ));
+  const bypassSecret = String(environment.VERCEL_AUTOMATION_BYPASS_SECRET ?? '').trim();
+  checks.push(check(
+    'VERCEL_AUTOMATION_BYPASS_SECRET',
+    bypassSecret.length >= 16 && !/[\r\n]/.test(bypassSecret),
+    'Must provide the Vercel Deployment Protection automation bypass for protected Preview artifact access.',
+  ));
 
   checks.push(check(
     'SUPABASE_URL',

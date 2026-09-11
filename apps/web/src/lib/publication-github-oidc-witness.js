@@ -177,7 +177,6 @@ export function createGitHubOidcWitnessVerifier({ now = Date.now, maxTokenAgeMs 
       need(segments.length === 3 && segments.every((segment) => segment.length > 0), 'HOLD_GITHUB_OIDC_TOKEN');
       const [encodedHeader, encodedPayload, encodedSignature] = segments;
       const header = jsonSegment(encodedHeader, 2000, 'HOLD_GITHUB_OIDC_HEADER');
-      const claims = jsonSegment(encodedPayload, 14000, 'HOLD_GITHUB_OIDC_CLAIMS');
       need(header.alg === 'RS256' && header.typ === 'JWT' && typeof header.kid === 'string'
         && /^[A-Za-z0-9_.-]{1,160}$/.test(header.kid), 'HOLD_GITHUB_OIDC_HEADER');
       need(jwksSnapshot && typeof jwksSnapshot === 'object' && jwksSnapshot.issuer === GITHUB_OIDC_ISSUER
@@ -200,6 +199,7 @@ export function createGitHubOidcWitnessVerifier({ now = Date.now, maxTokenAgeMs 
       need(signature.toString('base64url') === encodedSignature
         && verifySignature('RSA-SHA256', Buffer.from(`${encodedHeader}.${encodedPayload}`, 'ascii'), key, signature),
       'HOLD_GITHUB_OIDC_SIGNATURE');
+      const claims = jsonSegment(encodedPayload, 14000, 'HOLD_GITHUB_OIDC_CLAIMS');
       const timing = validateClaims(claims, checked, n, maxTokenAgeMs);
       const final = clock();
       // Recheck the application freshness budget, not only provider expiration.

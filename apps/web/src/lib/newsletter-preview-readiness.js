@@ -47,8 +47,8 @@ function parseEmailSet(value) {
   return new Set(entries);
 }
 
-function expectedPreviewOrigin(environment) {
-  const hostname = String(environment.VERCEL_URL ?? '').trim().toLowerCase();
+function systemPreviewOrigin(value) {
+  const hostname = String(value ?? '').trim().toLowerCase();
   if (!hostname || hostname.includes('/') || !hostname.endsWith('.vercel.app')) return null;
   return `https://${hostname}`;
 }
@@ -82,12 +82,20 @@ export function inspectNewsletterPreviewReadiness(environment = process.env) {
     'Must be the Vercel Preview environment.',
   ));
 
-  const previewOrigin = expectedPreviewOrigin(environment);
+  const deploymentOrigin = systemPreviewOrigin(environment.VERCEL_URL);
   checks.push(check(
     'VERCEL_URL',
-    Boolean(previewOrigin),
+    Boolean(deploymentOrigin),
     'Must identify the active .vercel.app Preview deployment.',
   ));
+
+  const branchOrigin = systemPreviewOrigin(environment.VERCEL_BRANCH_URL);
+  checks.push(check(
+    'VERCEL_BRANCH_URL',
+    Boolean(branchOrigin),
+    'Must identify the stable .vercel.app Preview branch alias.',
+  ));
+
   const bypassSecret = String(environment.VERCEL_AUTOMATION_BYPASS_SECRET ?? '').trim();
   checks.push(check(
     'VERCEL_AUTOMATION_BYPASS_SECRET',
@@ -180,18 +188,18 @@ export function inspectNewsletterPreviewReadiness(environment = process.env) {
 
   checks.push(check(
     'WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL',
-    originMatches(environment.WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL, previewOrigin),
-    'Must equal the exact active Preview origin derived from VERCEL_URL.',
+    originMatches(environment.WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL, branchOrigin),
+    'Must equal the stable Preview branch origin derived from VERCEL_BRANCH_URL.',
   ));
   checks.push(check(
     'WEEKLY_NEWSLETTER_PUBLIC_BASE_URL',
-    originMatches(environment.WEEKLY_NEWSLETTER_PUBLIC_BASE_URL, previewOrigin),
-    'Must equal the exact active Preview origin derived from VERCEL_URL.',
+    originMatches(environment.WEEKLY_NEWSLETTER_PUBLIC_BASE_URL, branchOrigin),
+    'Must equal the stable Preview branch origin derived from VERCEL_BRANCH_URL.',
   ));
   checks.push(check(
     'PROGRESS_EMAIL_BASE_URL',
-    originMatches(environment.PROGRESS_EMAIL_BASE_URL, previewOrigin),
-    'Must equal the exact active Preview origin derived from VERCEL_URL.',
+    originMatches(environment.PROGRESS_EMAIL_BASE_URL, branchOrigin),
+    'Must equal the stable Preview branch origin derived from VERCEL_BRANCH_URL.',
   ));
 
   const failures = checks.filter((item) => !item.ok);

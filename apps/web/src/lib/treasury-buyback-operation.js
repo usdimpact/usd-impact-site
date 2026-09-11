@@ -69,6 +69,15 @@ function decimal(value, field, { integer = false } = {}) {
   return text;
 }
 
+function compareCanonicalDecimals(left, right) {
+  const [leftInteger, leftFraction = ''] = left.split('.');
+  const [rightInteger, rightFraction = ''] = right.split('.');
+  const scale = Math.max(leftFraction.length, rightFraction.length);
+  const leftScaled = BigInt(`${leftInteger}${leftFraction.padEnd(scale, '0')}`);
+  const rightScaled = BigInt(`${rightInteger}${rightFraction.padEnd(scale, '0')}`);
+  return leftScaled < rightScaled ? -1 : leftScaled > rightScaled ? 1 : 0;
+}
+
 function optionalArtifact(value, field, expectedPrefix) {
   const text = boundedString(value, field, { nullable: true, max: 96 });
   if (NULLISH.has(text.toLowerCase())) return null;
@@ -149,8 +158,8 @@ export function normalizeTreasuryBuybackOperationRow(value) {
   if (BigInt(numeric.numberIssuesAccepted) > BigInt(numeric.numberIssuesEligible)) {
     hold('HOLD_TREASURY_BUYBACK_RESULT', 'Treasury buyback accepted-issue count exceeds eligible issues.');
   }
-  if (Number(numeric.totalParAmountAccepted) > Number(numeric.totalParAmountOffered)
-      || Number(numeric.totalParAmountAccepted) > Number(numeric.maxParAmountRedeemed)) {
+  if (compareCanonicalDecimals(numeric.totalParAmountAccepted, numeric.totalParAmountOffered) > 0
+      || compareCanonicalDecimals(numeric.totalParAmountAccepted, numeric.maxParAmountRedeemed) > 0) {
     hold('HOLD_TREASURY_BUYBACK_RESULT', 'Treasury buyback accepted par amount exceeds an official operation bound.');
   }
 

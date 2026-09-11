@@ -7,6 +7,8 @@ const RESEND_KEY = `re_${'a'.repeat(32)}`;
 const SUPABASE_SECRET = `sb_secret_${'s'.repeat(24)}`;
 const CRON_SECRET = 'c'.repeat(40);
 const BYPASS_SECRET = 'b'.repeat(32);
+const BRANCH_HOST = 'usd-impact-site-git-integration-newsletter-sy-test-usd-impact.vercel.app';
+const BRANCH_ORIGIN = `https://${BRANCH_HOST}`;
 
 function responseRecorder() {
   const headers = new Map();
@@ -30,6 +32,7 @@ function request(method = 'POST') {
 const environment = Object.freeze({
   VERCEL_ENV: 'preview',
   VERCEL_URL: 'usd-impact-site-preview-test-usd-impact.vercel.app',
+  VERCEL_BRANCH_URL: BRANCH_HOST,
   VERCEL_AUTOMATION_BYPASS_SECRET: BYPASS_SECRET,
   SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
   SUPABASE_PUBLISHABLE_KEY: `sb_publishable_${'p'.repeat(24)}`,
@@ -54,9 +57,9 @@ const environment = Object.freeze({
   PROGRESS_EMAIL_QA_RECIPIENTS: QA_EMAIL,
   WEEKLY_NEWSLETTER_QA_BATCH_LIMIT: '1',
   PROGRESS_EMAIL_QA_BATCH_LIMIT: '1',
-  WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL: 'https://usd-impact-site-preview-test-usd-impact.vercel.app',
-  WEEKLY_NEWSLETTER_PUBLIC_BASE_URL: 'https://usd-impact-site-preview-test-usd-impact.vercel.app',
-  PROGRESS_EMAIL_BASE_URL: 'https://usd-impact-site-preview-test-usd-impact.vercel.app',
+  WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL: BRANCH_ORIGIN,
+  WEEKLY_NEWSLETTER_PUBLIC_BASE_URL: BRANCH_ORIGIN,
+  PROGRESS_EMAIL_BASE_URL: BRANCH_ORIGIN,
 });
 
 {
@@ -121,6 +124,17 @@ const environment = Object.freeze({
   assert.equal(res.body.includes(QA_EMAIL), false);
   assert.equal(res.body.includes(MARKETING_SECRET), false);
   assert.equal(res.body.includes(BYPASS_SECRET), false);
+}
+
+{
+  const res = responseRecorder();
+  await handleNewsletterPreviewReadinessRequest(request(), res, {
+    environment: { ...environment, VERCEL_BRANCH_URL: '' },
+    authorize: () => true,
+  });
+  assert.equal(res.statusCode, 503);
+  const payload = JSON.parse(res.body);
+  assert(payload.checks.some((item) => item.key === 'VERCEL_BRANCH_URL' && item.ok === false));
 }
 
 {

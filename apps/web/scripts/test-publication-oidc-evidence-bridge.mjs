@@ -24,6 +24,10 @@ const signed = (payload, purpose, key = ed.privateKey) => {
   const bytes = purpose === 'challenge' ? witnessChallengeSigningBytes(text) : witnessReceiptSigningBytes(text);
   return JSON.stringify({ payload: Buffer.from(text).toString('base64url'), signature: sign(null, bytes, key).toString('base64url') });
 };
+function prependJsonProperty(text, name, value) {
+  assert.equal(text[0], '{');
+  return `{${JSON.stringify(name)}:${JSON.stringify(value)},${text.slice(1)}`;
+}
 function fixture(phase = 'preview') {
   const path = phase === 'none' ? '/news/2026-09-11' : '/news/catalysts/synthetic-cpi-preview';
   const manifest = { schema: 'public-response-witness-manifest/v1', challengeId: 'c'.repeat(32),
@@ -224,9 +228,9 @@ try {
   });
   for (const [name, transform] of [
     ['not JSON', () => 'secret-input-do-not-print'], ['null', () => 'null'], ['oversized', () => 'x'.repeat(100001)],
-    ['leading whitespace', s => ' ' + s], ['extra verdict', s => s.replace('{', '{"verified":true,')],
-    ['duplicate key', s => s.replace('{', '{"schema":"publication-oidc-evidence/v1",')],
-    ['prototype member', s => s.replace('{', '{"__proto__":{},')], ['nontext input', () => ({ verified: true })],
+    ['leading whitespace', s => ' ' + s], ['extra verdict', s => prependJsonProperty(s, 'verified', true)],
+    ['duplicate key', s => prependJsonProperty(s, 'schema', 'publication-oidc-evidence/v1')],
+    ['prototype member', s => prependJsonProperty(s, '__proto__', {})], ['nontext input', () => ({ verified: true })],
   ]) test(`evidence packet rejects ${name}`, () => { const f = fixture(); held(verify(f, () => B, transform(f.raw()))); });
   test('canonical signed payload and envelope rules are retained', () => {
     const f = fixture(); f.packet.receiptEnvelope = ' ' + f.packet.receiptEnvelope; held(verify(f));

@@ -1,0 +1,72 @@
+name: Progress email QA sources
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/data/progress-email-meaningful-changes.js'
+      - 'apps/web/src/lib/progress-email-meaningful-changes.js'
+      - 'apps/web/src/lib/progress-email-qa-source-artifact.js'
+      - 'apps/web/src/lib/progress-email-qa-source-resolver.js'
+      - 'apps/web/src/lib/progress-email-qa-handler.js'
+      - 'apps/web/src/lib/vercel-protected-preview-fetch.js'
+      - 'apps/web/src/pages/newsletter/progress/[date].json.ts'
+      - 'apps/web/src/content/weekly-reports/*.md'
+      - 'apps/web/scripts/test-progress-email-qa-source-artifact.mjs'
+      - 'apps/web/scripts/test-progress-email-qa-source-resolver.mjs'
+      - 'apps/web/scripts/test-progress-email-qa-static-artifact.mjs'
+      - 'apps/web/scripts/test-progress-email-qa-handler.mjs'
+      - 'apps/web/scripts/test-vercel-protected-preview-fetch.mjs'
+      - '.github/workflows/progress-email-qa-sources.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  progress-email-qa-sources:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax checks
+        run: |
+          node --check src/lib/progress-email-qa-source-artifact.js
+          node --check src/lib/progress-email-qa-source-resolver.js
+          node --check src/lib/progress-email-qa-handler.js
+          node --check src/lib/vercel-protected-preview-fetch.js
+          node --check scripts/test-progress-email-qa-source-artifact.mjs
+          node --check scripts/test-progress-email-qa-source-resolver.mjs
+          node --check scripts/test-progress-email-qa-static-artifact.mjs
+          node --check scripts/test-vercel-protected-preview-fetch.mjs
+
+      - name: Protected Preview fetch contract
+        run: node scripts/test-vercel-protected-preview-fetch.mjs
+
+      - name: Progress QA source artifact contract
+        run: node scripts/test-progress-email-qa-source-artifact.mjs
+
+      - name: Progress QA source resolver contract
+        run: node scripts/test-progress-email-qa-source-resolver.mjs
+
+      - name: Progress QA handler regression
+        run: node scripts/test-progress-email-qa-handler.mjs
+
+      - name: Production build
+        run: npm run build
+
+      - name: Built Progress QA source artifact contract
+        run: node scripts/test-progress-email-qa-static-artifact.mjs

@@ -4,6 +4,7 @@ import {
   ProgressEmailQaBatchError,
   runProgressEmailQaBatch,
 } from './progress-email-qa-batch.js';
+import { resolveProgressEmailQaSources } from './progress-email-qa-source-resolver.js';
 
 const WEEK_PATTERN = /^20\d{2}-\d{2}-\d{2}$/;
 
@@ -59,7 +60,7 @@ export async function handleProgressEmailQaBatchRequest(
   {
     authorize = validCronAuthorization,
     runBatch = runProgressEmailQaBatch,
-    resolveSources,
+    resolveSources = resolveProgressEmailQaSources,
     environment = process.env,
   } = {},
 ) {
@@ -119,7 +120,6 @@ export async function handleProgressEmailQaBatchRequest(
     const result = await runBatch({
       weeklyReports: sources.weeklyReports,
       currentWeeklyReport: sources.currentWeeklyReport,
-      ...(sources.registry === undefined ? {} : { registry: sources.registry }),
       environment,
     });
     return sendJson(response, result.failed > 0 ? 503 : 200, {

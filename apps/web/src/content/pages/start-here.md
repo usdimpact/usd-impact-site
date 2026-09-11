@@ -17,9 +17,9 @@ internalLinks:
   - "/dollar-framework"
   - "/framework/dollar-transmission-chain"
   - "/framework/three-dial-dashboard"
-  - "/glossary/dxy"
-  - "/glossary/real-rates"
-  - "/glossary/liquidity-stress"
+  - "/learn/dxy-signal-vs-dollar-system"
+  - "/learn/real-yield"
+  - "/learn/dollar-yields-liquidity-three-dials"
   - "/news"
   - "/score"
   - "/reports"
@@ -55,7 +55,7 @@ For broader confirmation, compare DXY with measures such as the Federal Reserve'
 
 **Practical rule:** use DXY as an important directional input, then ask whether broader dollar measures and other markets confirm the story.
 
-Learn the terms: **[DXY](/glossary/dxy/)** and **[Broad USD](/glossary/broad-usd/)**.
+Learn the terms: **[DXY](/learn/dxy-signal-vs-dollar-system)** and **[Broad USD](/learn/dxy-signal-vs-dollar-system)**.
 
 ---
 
@@ -75,7 +75,7 @@ Real yields help describe the return available on inflation-adjusted safe assets
 
 The 10-year TIPS yield is a practical reference point. Rising real yields can create a different macro environment from falling real yields even when the nominal dollar index is moving in the same direction.
 
-Learn the term: **[Real rates](/glossary/real-rates/)**.
+Learn the term: **[Real rates](/learn/real-yield)**.
 
 ### Dial 3 — Liquidity stress
 
@@ -83,7 +83,7 @@ Liquidity describes more than the quantity of money. In this framework, the focu
 
 Credit spreads, volatility, dealer/funding conditions, central-bank balance-sheet changes and stress in dollar funding markets can all add context. A strong dollar caused by a funding squeeze is not the same regime as a strong dollar caused by relatively attractive U.S. rates in otherwise orderly markets.
 
-Learn the term: **[Liquidity stress](/glossary/liquidity-stress/)**.
+Learn the term: **[Liquidity stress](/learn/dollar-yields-liquidity-three-dials)**.
 
 ---
 

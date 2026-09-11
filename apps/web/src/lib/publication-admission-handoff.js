@@ -54,9 +54,6 @@ function instant(value, code) {
   need(Number.isFinite(time) && new Date(time).toISOString() === value, code);
   return time;
 }
-function same(left, right) {
-  return JSON.stringify(left) === JSON.stringify(right);
-}
 function routeForFile(file) {
   const match = file.match(FILE);
   need(match, 'HOLD_ADMISSION_HANDOFF_EVIDENCE');

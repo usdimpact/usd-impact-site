@@ -8,21 +8,23 @@ export class VercelProtectedPreviewFetchError extends Error {
   }
 }
 
-function expectedPreviewOrigin(environment) {
+function systemPreviewOrigin(value) {
+  const hostname = String(value ?? '').trim().toLowerCase();
+  if (!hostname || hostname.includes('/') || !hostname.endsWith(PREVIEW_HOST_SUFFIX)) return null;
+  return `https://${hostname}`;
+}
+
+function approvedPreviewOrigins(environment) {
   const vercelEnvironment = String(environment.VERCEL_ENV ?? '').trim().toLowerCase();
-  const hostname = String(environment.VERCEL_URL ?? '').trim().toLowerCase();
-  if (
-    vercelEnvironment !== 'preview'
-    || !hostname
-    || hostname.includes('/')
-    || !hostname.endsWith(PREVIEW_HOST_SUFFIX)
-  ) {
+  const deploymentOrigin = systemPreviewOrigin(environment.VERCEL_URL);
+  const branchOrigin = systemPreviewOrigin(environment.VERCEL_BRANCH_URL);
+  if (vercelEnvironment !== 'preview' || !deploymentOrigin) {
     throw new VercelProtectedPreviewFetchError(
       'Protected artifact fetch requires the active Vercel Preview deployment origin.',
       'INVALID_VERCEL_PREVIEW_ORIGIN',
     );
   }
-  return `https://${hostname}`;
+  return new Set([deploymentOrigin, branchOrigin].filter(Boolean));
 }
 
 function requireBypassSecret(environment) {
@@ -45,7 +47,7 @@ export function createVercelProtectedPreviewFetch({
   }
 
   return async (input, options = {}) => {
-    const expectedOrigin = expectedPreviewOrigin(environment);
+    const approvedOrigins = approvedPreviewOrigins(environment);
     const bypassSecret = requireBypassSecret(environment);
     let url;
     try {
@@ -57,13 +59,13 @@ export function createVercelProtectedPreviewFetch({
       );
     }
     if (
-      url.origin !== expectedOrigin
+      !approvedOrigins.has(url.origin)
       || url.protocol !== 'https:'
       || url.username
       || url.password
     ) {
       throw new VercelProtectedPreviewFetchError(
-        'Protected artifact URL does not match the active Preview deployment.',
+        'Protected artifact URL does not match the active Preview deployment or branch origin.',
         'PROTECTED_PREVIEW_ORIGIN_MISMATCH',
       );
     }

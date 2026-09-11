@@ -14,6 +14,7 @@ const FILE = /^apps\/web\/src\/content\/(?:news|catalyst-briefs)\/[a-z0-9-]+\.md
 const INPUT_FIELDS = Object.freeze(['expectedMain', 'expectedHead', 'deploymentId']);
 const MAX_PREFLIGHT_AGE_MS = 15 * 60 * 1000;
 const DEFAULT_LEASE_MS = 5000;
+const readyEvidence = new WeakMap();
 
 class ReleaseLeaseHold extends Error {
   constructor(code, upstreamDecision = null) {
@@ -98,6 +99,8 @@ function normalizePreflight(value, input, observedNow) {
   need(HEX.test(value.contentSetSha256), 'HOLD_RELEASE_LEASE_PREFLIGHT');
   const rows = observations(value.observations);
   need(digest(JSON.stringify(rows)) === value.contentSetSha256, 'HOLD_RELEASE_LEASE_PREFLIGHT');
+  need(Array.isArray(value.checks) && value.checks.length <= 20, 'HOLD_RELEASE_LEASE_PREFLIGHT');
+  const checks = copy(value.checks, 750_000, 'HOLD_RELEASE_LEASE_PREFLIGHT');
   const checkedAt = instant(value.checkedAt, 'HOLD_RELEASE_LEASE_PREFLIGHT');
   const validUntil = instant(value.validUntil, 'HOLD_RELEASE_LEASE_PREFLIGHT');
   need(checkedAt <= observedNow && observedNow < validUntil && validUntil - checkedAt <= MAX_PREFLIGHT_AGE_MS,
@@ -110,6 +113,8 @@ function normalizePreflight(value, input, observedNow) {
     baseline: { id: value.baseline.id, sha: value.baseline.sha },
     candidate: { id: value.candidate.id, sha: value.candidate.sha },
     contentSetSha256: value.contentSetSha256,
+    observations: rows,
+    checks,
     checkedAt: value.checkedAt,
     validUntil: value.validUntil,
   });
@@ -142,6 +147,40 @@ function holdResult(error) {
   };
   if (error instanceof ReleaseLeaseHold && error.upstreamDecision) result.upstreamDecision = error.upstreamDecision;
   return freeze(result);
+}
+
+/**
+ * Consume the exact final preflight retained behind a READY object's in-process
+ * identity. This is one use, uses the original lease clock, and exposes no write
+ * or provider operation. Serialized or reconstructed READY objects are rejected.
+ */
+export function consumePublicationReleaseReadinessEvidence(ready) {
+  let state = null;
+  try {
+    need(ready && typeof ready === 'object' && readyEvidence.has(ready), 'HOLD_RELEASE_LEASE_UNTRUSTED_READY');
+    state = readyEvidence.get(ready);
+    need(!state.spent, 'HOLD_RELEASE_LEASE_EVIDENCE_REPLAY');
+    state.spent = true;
+    const current = state.clock();
+    need(current < state.expiresAt, 'HOLD_RELEASE_LEASE_EXPIRED');
+    return freeze({
+      state: 'RELEASE_READINESS_EVIDENCE',
+      decision: 'PASS_RELEASE_READINESS_EVIDENCE',
+      releaseLeaseSha256: ready.releaseLeaseSha256,
+      contentSetSha256: state.fresh.contentSetSha256,
+      observations: state.fresh.observations,
+      checks: state.fresh.checks,
+      preflightCheckedAt: state.fresh.checkedAt,
+      preflightValidUntil: state.fresh.validUntil,
+      consumedAt: new Date(current).toISOString(),
+      publicationAuthorized: false,
+      promotionPerformed: false,
+      admissionPrepared: false,
+      enforcementActive: false,
+    });
+  } catch (error) {
+    return holdResult(error);
+  }
 }
 
 /**
@@ -230,7 +269,7 @@ export function createPublicationReleaseReadinessLease({ runPreflight, now = Dat
         finalCheckedAt: fresh.checkedAt,
         validUntil: new Date(expiresAt).toISOString(),
       };
-      return freeze({
+      const ready = freeze({
         state: 'READY',
         decision: 'READY_FOR_SEPARATELY_AUTHORIZED_RELEASE',
         ...leaseBinding,
@@ -240,6 +279,8 @@ export function createPublicationReleaseReadinessLease({ runPreflight, now = Dat
         admissionPrepared: false,
         enforcementActive: false,
       });
+      readyEvidence.set(ready, { fresh, expiresAt, clock, spent: false });
+      return ready;
     } catch (error) {
       return holdResult(error);
     } finally {

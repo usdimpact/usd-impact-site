@@ -1,11 +1,8 @@
-import pg from 'pg';
 import {
   PUBLICATION_GUARD_DATABASE_SCOPE,
   createPublicationGuardSqlAdapter,
   validatePublicationGuardDatabaseUrl,
 } from '../src/lib/publication-postgres-adapter.js';
-
-const { Pool } = pg;
 
 const ENV_KEY = 'PUBLICATION_GUARD_READER_DATABASE_URL';
 const APPROVED_BRANCH = 'publishing/558-calendar-validation';
@@ -64,13 +61,29 @@ function normalizeValue(result, code) {
   return raw;
 }
 
-export function createPublicationGuardReaderDatabase({ environment = process.env, PoolClass = Pool } = {}) {
+async function resolvePoolClass(PoolClass) {
+  if (PoolClass !== null && PoolClass !== undefined) {
+    need(typeof PoolClass === 'function', 'HOLD_READER_POOL');
+    return PoolClass;
+  }
+  try {
+    const module = await import('pg');
+    const candidate = module.default?.Pool ?? module.Pool;
+    need(typeof candidate === 'function', 'HOLD_READER_POOL');
+    return candidate;
+  } catch (error) {
+    if (error instanceof PublicationGuardReaderDatabaseError) throw error;
+    fail('HOLD_READER_POOL');
+  }
+}
+
+export async function createPublicationGuardReaderDatabase({ environment = process.env, PoolClass = null } = {}) {
   const runtime = assertPublicationGuardReaderPreviewContext(environment);
   const rawUrl = environment[ENV_KEY];
   const target = validatePublicationGuardDatabaseUrl(rawUrl, { role: 'reader' });
-  need(typeof PoolClass === 'function', 'HOLD_READER_POOL');
+  const EffectivePool = await resolvePoolClass(PoolClass);
 
-  const pool = new PoolClass({
+  const pool = new EffectivePool({
     connectionString: rawUrl,
     max: 1,
     connectionTimeoutMillis: 3000,
@@ -79,7 +92,7 @@ export function createPublicationGuardReaderDatabase({ environment = process.env
   });
 
   const safeQuery = async ({ text, values = [] }) => {
-    need(typeof text === 'string' && !Object.hasOwn({ text, values }, 'name'), 'HOLD_READER_QUERY');
+    need(typeof text === 'string' && Array.isArray(values), 'HOLD_READER_QUERY');
     try {
       return await pool.query({ text, values });
     } catch {

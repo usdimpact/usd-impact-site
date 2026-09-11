@@ -1,0 +1,71 @@
+name: Email preferences
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/api/waitlist.js'
+      - 'apps/web/vercel.json'
+      - 'apps/web/src/lib/marketing-email-preference-token.js'
+      - 'apps/web/src/lib/marketing-email-preferences.js'
+      - 'apps/web/src/lib/marketing-email-preferences-handler.js'
+      - 'apps/web/scripts/test-marketing-email-preference-token.mjs'
+      - 'apps/web/scripts/test-marketing-email-preferences.mjs'
+      - 'apps/web/scripts/test-marketing-email-preferences-handler.mjs'
+      - 'apps/web/scripts/test-marketing-email-preferences-routing.mjs'
+      - '.github/workflows/email-preferences.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/api/waitlist.js'
+      - 'apps/web/vercel.json'
+      - 'apps/web/src/lib/marketing-email-preference-token.js'
+      - 'apps/web/src/lib/marketing-email-preferences.js'
+      - 'apps/web/src/lib/marketing-email-preferences-handler.js'
+      - 'apps/web/scripts/test-marketing-email-preference-token.mjs'
+      - 'apps/web/scripts/test-marketing-email-preferences.mjs'
+      - 'apps/web/scripts/test-marketing-email-preferences-handler.mjs'
+      - 'apps/web/scripts/test-marketing-email-preferences-routing.mjs'
+      - '.github/workflows/email-preferences.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  email-preferences:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+
+      - name: Syntax checks
+        run: |
+          node --check src/lib/marketing-email-preference-token.js
+          node --check src/lib/marketing-email-preferences.js
+          node --check src/lib/marketing-email-preferences-handler.js
+          node --check api/waitlist.js
+
+      - name: Unsubscribe token contract
+        run: node scripts/test-marketing-email-preference-token.mjs
+
+      - name: Preference ledger contract
+        run: node scripts/test-marketing-email-preferences.mjs
+
+      - name: Preference HTTP handler contract
+        run: node scripts/test-marketing-email-preferences-handler.mjs
+
+      - name: Shared routing contract
+        run: node scripts/test-marketing-email-preferences-routing.mjs

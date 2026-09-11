@@ -131,6 +131,7 @@ await import('./test-publication-calendar-coverage.mjs');
 await import('./test-treasury-buyback-operation.mjs');
 await import('./test-treasury-buyback-xml.mjs');
 await import('./test-treasury-buyback-verifier.mjs');
+await import('./test-treasury-buyback-preview-verifier.mjs');
 
 await import('./test-publication-serving-policy.mjs');
 

@@ -110,6 +110,7 @@ held(() => parseTreasuryBuybackXmlEnvelope({ sourceUrl: urls.BBPA, xml: `${bbpa}
 held(() => parseTreasuryBuybackXmlEnvelope({ sourceUrl: urls.BBPA, xml: bbpa.replace('</operationStartDTM>', '</operationStartDTM><operationStartDTM>2026-08-18T13:40:00-04:00</operationStartDTM>') }), 'HOLD_TREASURY_BUYBACK_XML_DUPLICATE');
 held(() => parseTreasuryBuybackXmlEnvelope({ sourceUrl: urls.BBPA, xml: bbpa.replace('<operationCloseDTM>2026-08-18T14:00:00-04:00</operationCloseDTM>', '') }), 'HOLD_TREASURY_BUYBACK_XML_SCHEMA');
 held(() => parseTreasuryBuybackXmlEnvelope({ sourceUrl: urls.BBPA, xml: bbpa.replace('2026-08-18T13:40:00-04:00', '2026-08-18T13:40:00') }), 'HOLD_TREASURY_BUYBACK_XML_TIME');
+held(() => parseTreasuryBuybackXmlEnvelope({ sourceUrl: urls.BBPA, xml: bbpa.replace('2026-08-18T13:40:00-04:00', '2026-02-31T13:40:00-04:00') }), 'HOLD_TREASURY_BUYBACK_XML_TIME');
 held(() => parseTreasuryBuybackXmlEnvelope({ sourceUrl: urls.BBPA, xml: bbpa.replace('2026-08-18T14:00:00-04:00', '2026-08-18T13:30:00-04:00') }), 'HOLD_TREASURY_BUYBACK_XML_TIME');
 held(() => parseTreasuryBuybackXmlEnvelope({ sourceUrl: urls.BBPA, xml: bbpa.replace('2026-08-18T14:00:00-04:00', '2026-08-18T17:00:00-04:00') }), 'HOLD_TREASURY_BUYBACK_XML_TIME');
 held(() => parseTreasuryBuybackXmlEnvelope({ sourceUrl: urls.BBPA.replace(stamp, '20260818174100'), xml: bbpa }), 'HOLD_TREASURY_BUYBACK_XML_IDENTITY');

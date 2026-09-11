@@ -1,0 +1,77 @@
+name: Weekly newsletter outbox
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/weekly-newsletter-contract.js'
+      - 'apps/web/src/lib/weekly-newsletter-candidate.js'
+      - 'apps/web/src/lib/weekly-newsletter-edition.js'
+      - 'apps/web/src/lib/weekly-newsletter-outbox.js'
+      - 'apps/web/src/pages/newsletter/weekly/[date].json.ts'
+      - 'apps/web/scripts/test-weekly-newsletter-edition.mjs'
+      - 'apps/web/scripts/test-weekly-newsletter-outbox.mjs'
+      - 'apps/web/scripts/test-weekly-newsletter-outbox-migration.mjs'
+      - 'apps/web/scripts/test-weekly-newsletter-static-artifact.mjs'
+      - 'supabase/migrations/20260911212204_weekly_newsletter_outbox_contract.sql'
+      - '.github/workflows/weekly-newsletter-outbox.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/lib/weekly-newsletter-contract.js'
+      - 'apps/web/src/lib/weekly-newsletter-candidate.js'
+      - 'apps/web/src/lib/weekly-newsletter-edition.js'
+      - 'apps/web/src/lib/weekly-newsletter-outbox.js'
+      - 'apps/web/src/pages/newsletter/weekly/[date].json.ts'
+      - 'apps/web/scripts/test-weekly-newsletter-edition.mjs'
+      - 'apps/web/scripts/test-weekly-newsletter-outbox.mjs'
+      - 'apps/web/scripts/test-weekly-newsletter-outbox-migration.mjs'
+      - 'apps/web/scripts/test-weekly-newsletter-static-artifact.mjs'
+      - 'supabase/migrations/20260911212204_weekly_newsletter_outbox_contract.sql'
+      - '.github/workflows/weekly-newsletter-outbox.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  weekly-newsletter-outbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+
+      - name: Syntax checks
+        run: |
+          node --check src/lib/weekly-newsletter-edition.js
+          node --check src/lib/weekly-newsletter-outbox.js
+
+      - name: Weekly report validation
+        run: node scripts/validate-weekly-reports.mjs
+
+      - name: Deterministic edition contract
+        run: node scripts/test-weekly-newsletter-edition.mjs
+
+      - name: Outbox record contract
+        run: node scripts/test-weekly-newsletter-outbox.mjs
+
+      - name: Migration contract
+        run: node scripts/test-weekly-newsletter-outbox-migration.mjs
+
+      - name: Production build
+        run: npm run build
+
+      - name: Built static artifact contract
+        run: node scripts/test-weekly-newsletter-static-artifact.mjs

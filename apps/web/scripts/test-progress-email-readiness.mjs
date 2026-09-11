@@ -66,6 +66,11 @@ function jsonResponse(body, status = 200) {
   };
 }
 
+function eqFilter(url, key) {
+  const raw = url.searchParams.get(key);
+  return raw?.startsWith('eq.') ? raw.slice(3) : raw;
+}
+
 function createFetch({
   grantUserId = ACCOUNT_ID,
   weeklyHistory = [],
@@ -109,7 +114,7 @@ function createFetch({
       }]);
     }
     if (url.pathname === '/rest/v1/marketing_consent_events') {
-      const purpose = url.searchParams.get('purpose');
+      const purpose = eqFilter(url, 'purpose');
       if (purpose === 'weekly_newsletter') return jsonResponse([]);
       if (purpose === 'learning_progress_updates') {
         return jsonResponse([{
@@ -130,7 +135,7 @@ function createFetch({
       }
     }
     if (url.pathname === '/rest/v1/notification_outbox') {
-      const messageId = url.searchParams.get('message_id');
+      const messageId = eqFilter(url, 'message_id');
       const status = url.searchParams.get('status');
       if (messageId === 'learning_progress_update') return jsonResponse(progressHistory);
       if (messageId === 'weekly_newsletter') return jsonResponse(weeklyHistory);

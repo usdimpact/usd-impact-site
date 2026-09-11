@@ -38,7 +38,7 @@ const change = {
   kind: 'weekly_report',
   priority: 'P2',
   title: 'Weekly USD Impact Brief — September 4, 2026',
-  occurredAt: '2026-09-04T18:00:00.000Z',
+  occurredAt: '2026-09-05T18:00:00.000Z',
   url: '/reports/weekly/2026-09-04',
 };
 

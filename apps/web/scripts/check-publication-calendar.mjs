@@ -6,9 +6,9 @@ import { readVerifiedLocalFile } from '../src/lib/verified-local-file.js';
 export async function runCalendarCheck(args, {
   write = (text) => process.stdout.write(text),
   readVerified,
-  // Test-only dependency seam retained for the pre-existing synthetic CLI fixtures.
+  // Test-only content seam retained for synthetic CLI fixtures. Production never
+  // validates a pathname and then reopens it: real files use one verified descriptor.
   read,
-  fileStat,
   verify = verifyPublicationCalendar,
 } = {}) {
   if (args.length !== 1 || args[0].startsWith('-')) {
@@ -19,11 +19,9 @@ export async function runCalendarCheck(args, {
     let raw;
     if (readVerified) {
       raw = await readVerified(args[0], 65536);
-    } else if (read && fileStat) {
-      const metadata = await fileStat(args[0]);
-      if (!metadata.isFile() || metadata.size > 65536) throw new Error('invalid input');
+    } else if (read) {
       raw = await read(args[0], 'utf8');
-      if (Buffer.byteLength(raw) > 65536) throw new Error('input grew');
+      if (typeof raw !== 'string' || Buffer.byteLength(raw) > 65536) throw new Error('invalid input');
     } else {
       raw = readVerifiedLocalFile(args[0], 65536);
     }

@@ -5,8 +5,9 @@ import {
   requireNewsletterPreviewReadiness,
 } from '../src/lib/newsletter-preview-readiness.js';
 
-const PREVIEW_HOST = 'usd-impact-site-preview-test-usd-impact.vercel.app';
-const PREVIEW_ORIGIN = `https://${PREVIEW_HOST}`;
+const DEPLOYMENT_HOST = 'usd-impact-site-preview-test-usd-impact.vercel.app';
+const BRANCH_HOST = 'usd-impact-site-git-integration-newsletter-sy-test-usd-impact.vercel.app';
+const BRANCH_ORIGIN = `https://${BRANCH_HOST}`;
 const QA_EMAIL = 'owner@example.com';
 const MARKETING_SECRET = `moi_${'m'.repeat(43)}`;
 const RESEND_KEY = `re_${'a'.repeat(32)}`;
@@ -16,7 +17,8 @@ const BYPASS_SECRET = 'b'.repeat(32);
 
 const validEnvironment = Object.freeze({
   VERCEL_ENV: 'preview',
-  VERCEL_URL: PREVIEW_HOST,
+  VERCEL_URL: DEPLOYMENT_HOST,
+  VERCEL_BRANCH_URL: BRANCH_HOST,
   VERCEL_AUTOMATION_BYPASS_SECRET: BYPASS_SECRET,
   SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
   SUPABASE_PUBLISHABLE_KEY: `sb_publishable_${'p'.repeat(24)}`,
@@ -41,9 +43,9 @@ const validEnvironment = Object.freeze({
   PROGRESS_EMAIL_QA_RECIPIENTS: QA_EMAIL,
   WEEKLY_NEWSLETTER_QA_BATCH_LIMIT: '1',
   PROGRESS_EMAIL_QA_BATCH_LIMIT: '1',
-  WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL: PREVIEW_ORIGIN,
-  WEEKLY_NEWSLETTER_PUBLIC_BASE_URL: PREVIEW_ORIGIN,
-  PROGRESS_EMAIL_BASE_URL: PREVIEW_ORIGIN,
+  WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL: BRANCH_ORIGIN,
+  WEEKLY_NEWSLETTER_PUBLIC_BASE_URL: BRANCH_ORIGIN,
+  PROGRESS_EMAIL_BASE_URL: BRANCH_ORIGIN,
 });
 
 function failedKeys(report) {
@@ -93,11 +95,12 @@ assert.equal(serializedReady.includes('CRON_SECRET'), true);
 }
 
 {
+  const deploymentOrigin = `https://${DEPLOYMENT_HOST}`;
   const report = inspectNewsletterPreviewReadiness({
     ...validEnvironment,
-    WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL: 'https://usd-impact-site-other-preview-usd-impact.vercel.app',
-    WEEKLY_NEWSLETTER_PUBLIC_BASE_URL: 'https://usd-impact-site-other-preview-usd-impact.vercel.app',
-    PROGRESS_EMAIL_BASE_URL: 'https://usd-impact-site-other-preview-usd-impact.vercel.app',
+    WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL: deploymentOrigin,
+    WEEKLY_NEWSLETTER_PUBLIC_BASE_URL: deploymentOrigin,
+    PROGRESS_EMAIL_BASE_URL: deploymentOrigin,
   });
   const failures = failedKeys(report);
   assert(failures.includes('WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL'));
@@ -149,8 +152,16 @@ assert.equal(serializedReady.includes('CRON_SECRET'), true);
     ...validEnvironment,
     VERCEL_URL: 'usd-impact-site-preview-test-usd-impact.example.com',
   });
+  assert(failedKeys(report).includes('VERCEL_URL'));
+}
+
+{
+  const report = inspectNewsletterPreviewReadiness({
+    ...validEnvironment,
+    VERCEL_BRANCH_URL: 'usd-impact-site-preview-branch.example.com',
+  });
   const failures = failedKeys(report);
-  assert(failures.includes('VERCEL_URL'));
+  assert(failures.includes('VERCEL_BRANCH_URL'));
   assert(failures.includes('WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL'));
   assert(failures.includes('WEEKLY_NEWSLETTER_PUBLIC_BASE_URL'));
   assert(failures.includes('PROGRESS_EMAIL_BASE_URL'));

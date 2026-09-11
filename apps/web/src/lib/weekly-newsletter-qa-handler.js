@@ -1,6 +1,7 @@
 import { validCronAuthorization } from './account-deletion-finalizer.js';
 import { requestOrigin } from './supabase-auth.js';
 import { requestHeader } from './supabase-server.js';
+import { createVercelProtectedPreviewFetch } from './vercel-protected-preview-fetch.js';
 import {
   WeeklyNewsletterQaBatchError,
   runWeeklyNewsletterQaBatch,
@@ -46,6 +47,7 @@ export async function handleWeeklyNewsletterQaBatchRequest(
     authorize = validCronAuthorization,
     runBatch = runWeeklyNewsletterQaBatch,
     resolveOrigin = requestOrigin,
+    createArtifactFetch = createVercelProtectedPreviewFetch,
     environment = process.env,
   } = {},
 ) {
@@ -82,11 +84,13 @@ export async function handleWeeklyNewsletterQaBatchRequest(
 
   try {
     const origin = resolveOrigin(request);
+    const artifactFetch = createArtifactFetch({ environment });
     const result = await runBatch({
       weekEnding: body.weekEnding,
       artifactBaseUrl: environment.WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL || origin,
       unsubscribeBaseUrl: environment.WEEKLY_NEWSLETTER_PUBLIC_BASE_URL || origin,
       environment,
+      artifactFetch,
     });
     return sendJson(response, result.failed > 0 ? 503 : 200, {
       ok: result.failed === 0,

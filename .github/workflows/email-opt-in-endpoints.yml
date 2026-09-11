@@ -21,31 +21,35 @@ jobs:
   email-opt-in-endpoints:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: '24'
+          node-version: 24.x
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
+
       - name: Install dependencies
-        working-directory: apps/web
         run: npm ci --no-audit --no-fund --strict-allow-scripts
+
       - name: Syntax checks
-        working-directory: apps/web
         run: |
           node --check src/lib/marketing-opt-in-readiness.js
           node --check src/lib/marketing-opt-in-handler.js
           node --check api/email-subscribe.js
           node --check api/email-confirm.js
+
       - name: Opt-in readiness contract
-        working-directory: apps/web
         run: node scripts/test-marketing-opt-in-readiness.mjs
+
       - name: Opt-in HTTP handler contract
-        working-directory: apps/web
         run: node scripts/test-marketing-opt-in-handler.mjs
+
       - name: Opt-in migration contract
-        working-directory: apps/web
         run: node scripts/test-email-opt-in-migration-contract.mjs

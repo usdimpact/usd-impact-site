@@ -96,6 +96,35 @@ held(() => normalizeTreasuryBuybackOperationRow({ ...baseRow, total_par_amt_acce
 held(() => normalizeTreasuryBuybackOperationRow({ ...baseRow, max_par_amt_redeemed: '1999999999' }), 'HOLD_TREASURY_BUYBACK_RESULT');
 held(() => normalizeTreasuryBuybackOperationRow({ ...baseRow, total_par_amt_offered: '1e10' }), 'HOLD_TREASURY_BUYBACK_SCHEMA');
 
+const highPrecisionValid = normalizeTreasuryBuybackOperationRow({
+  ...baseRow,
+  total_par_amt_offered: '9007199254740993',
+  max_par_amt_redeemed: '9007199254740994',
+  total_par_amt_accepted: '9007199254740992',
+});
+assert.equal(highPrecisionValid.numeric.totalParAmountAccepted, '9007199254740992');
+pass();
+held(() => normalizeTreasuryBuybackOperationRow({
+  ...baseRow,
+  total_par_amt_offered: '9007199254740992',
+  max_par_amt_redeemed: '9007199254740994',
+  total_par_amt_accepted: '9007199254740993',
+}), 'HOLD_TREASURY_BUYBACK_RESULT');
+held(() => normalizeTreasuryBuybackOperationRow({
+  ...baseRow,
+  total_par_amt_offered: '1.0000000000000000001',
+  max_par_amt_redeemed: '2',
+  total_par_amt_accepted: '1.0000000000000000002',
+}), 'HOLD_TREASURY_BUYBACK_RESULT');
+const equivalentScale = normalizeTreasuryBuybackOperationRow({
+  ...baseRow,
+  total_par_amt_offered: '1.0',
+  max_par_amt_redeemed: '1.0000',
+  total_par_amt_accepted: '1.000',
+});
+assert.equal(equivalentScale.numeric.totalParAmountAccepted, '1.000');
+pass();
+
 const response = normalizeTreasuryBuybackOperationResponse({ data: [{ ...baseRow }] });
 assert.equal(response.operationCount, 1);
 assert.equal(response.operations[0].identity, operation.identity);

@@ -1,4 +1,8 @@
-import { blsMonthlyDefinition, explicitBlsMonthlyLabel } from './publication-calendar-series.js';
+import {
+  canonicalPublicationEventIdentity,
+  parsePublicationEventLabel,
+  publicationEventDescriptor,
+} from './publication-event-registry.js';
 import { createHash } from 'node:crypto';
 
 export const CALENDAR_POLICY_VERSION = 'publication-calendar/v1';
@@ -61,17 +65,22 @@ function instant(value) {
   return Number.isFinite(milliseconds) && new Date(milliseconds).toISOString().replace('.000Z', 'Z') === value.replace('.000Z', 'Z') ? milliseconds : NaN;
 }
 export function calendarIdentity(candidate) {
-  return `${candidate.publisher}:${candidate.series}:${candidate.referencePeriod}:${candidate.releaseStage}`;
+  return canonicalPublicationEventIdentity(candidate)
+    ?? `${candidate.publisher}:${candidate.series}:${candidate.referencePeriod}:${candidate.releaseStage}`;
 }
 /** This validates assertions only. It does not turn assertions into verified evidence. */
 export function normalizeCalendarCandidate(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) hold('HOLD_INVALID_CANDIDATE', 'A structured event record is required.');
-  if (value.publisher !== 'BLS' || !blsMonthlyDefinition(value.series)) hold('HOLD_UNSUPPORTED_EVENT', 'Only BLS national CPI, PPI and Employment Situation monthly adapters are implemented.');
-  if (value.releaseStage !== 'initial') hold('HOLD_UNSUPPORTED_EVENT', 'Only initial monthly releases are supported; revisions require separate release-stage coverage.');
-  if (typeof value.referencePeriod !== 'string' || !/^20\d{2}-(0[1-9]|1[0-2])$/.test(value.referencePeriod)) {
+  const eventDescriptor = publicationEventDescriptor(value.publisher, value.series);
+  if (!eventDescriptor || !eventDescriptor.verification.enabled) hold('HOLD_UNSUPPORTED_EVENT', 'Only BLS national CPI, PPI and Employment Situation monthly adapters are implemented.');
+  if (!eventDescriptor.releaseStages.includes(value.releaseStage)) hold('HOLD_UNSUPPORTED_EVENT', 'Only initial monthly releases are supported; revisions require separate release-stage coverage.');
+  if (eventDescriptor.reference.kind !== 'month'
+      || typeof value.referencePeriod !== 'string' || !/^20\d{2}-(0[1-9]|1[0-2])$/.test(value.referencePeriod)) {
     hold('HOLD_REFERENCE_PERIOD_MISMATCH', 'Reference period must be explicit YYYY-MM.');
   }
-  if (value.timeZone !== CALENDAR_TIME_ZONE) hold('HOLD_RELEASE_TIME_MISMATCH', 'BLS release times require America/New_York.');
+  if (eventDescriptor.clock.kind !== 'iana-local-release' || value.timeZone !== eventDescriptor.clock.timeZone) {
+    hold('HOLD_RELEASE_TIME_MISMATCH', 'BLS release times require America/New_York.');
+  }
   const resolved = localReleaseInstant(value.eventDate, value.releaseTime, value.timeZone);
   if (!Number.isFinite(instant(value.releaseAt)) || instant(value.releaseAt) !== Date.parse(resolved)) {
     hold('HOLD_RELEASE_TIME_MISMATCH', 'UTC timestamp does not match the local release time.');
@@ -81,13 +90,22 @@ export function normalizeCalendarCandidate(value) {
     hold('HOLD_SCHEDULE_CONFLICT', 'Cancellation and rescheduling need a separate reviewed notice.');
   }
   if (value.event !== undefined) {
-    const match = explicitBlsMonthlyLabel(value.event);
-    if (!match || match.series !== value.series) hold('HOLD_IDENTITY_MISMATCH', 'Editorial event label does not match the structured national BLS series.');
+    const match = parsePublicationEventLabel(eventDescriptor, value.event);
+    if (!match || match.publisher !== value.publisher || match.series !== value.series) {
+      hold('HOLD_IDENTITY_MISMATCH', 'Editorial event label does not match the structured national BLS series.');
+    }
     if (referencePeriod(match.referenceText) !== value.referencePeriod) hold('HOLD_REFERENCE_PERIOD_MISMATCH', 'Editorial event label contradicts the structured reference period.');
   }
   return Object.freeze(Object.fromEntries([
     'publisher', 'series', 'referencePeriod', 'releaseStage', 'eventDate', 'releaseTime', 'timeZone', 'phase', 'statusLabel',
   ].map((key) => [key, value[key]]).concat([['releaseAt', resolved]])));
+}
+async function loadCalendarRecord(eventDescriptor, candidate, { fetchImpl, now }) {
+  if (eventDescriptor.verification.adapter !== 'bls-national-monthly/html-v4') {
+    hold('HOLD_UNSUPPORTED_EVENT', 'No verified publication-calendar adapter is enabled for this event family.');
+  }
+  const { loadBlsMonthlyCalendar } = await import('./bls-cpi-calendar.js');
+  return loadBlsMonthlyCalendar(candidate, { fetchImpl, now });
 }
 function normalizedBinding(binding) {
   if (binding === undefined) return null;
@@ -111,8 +129,8 @@ export async function verifyPublicationCalendar(value, { now = Date.now, fetchIm
     checkedAt = new Date(began).toISOString();
     candidate = normalizeCalendarCandidate(value);
     revision = normalizedBinding(binding);
-    const { loadBlsMonthlyCalendar } = await import('./bls-cpi-calendar.js');
-    record = await loadBlsMonthlyCalendar(candidate, { fetchImpl, now });
+    const eventDescriptor = publicationEventDescriptor(candidate.publisher, candidate.series);
+    record = await loadCalendarRecord(eventDescriptor, candidate, { fetchImpl, now });
     const checked = now();
     if (!Number.isFinite(checked) || checked < began) hold('HOLD_INVALID_CLOCK', 'Trusted clock moved backwards.');
     checkedAt = new Date(checked).toISOString();

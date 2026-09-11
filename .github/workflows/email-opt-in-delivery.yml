@@ -11,6 +11,7 @@ on:
       - 'apps/web/scripts/test-marketing-opt-in-resend-adapter.mjs'
       - 'apps/web/scripts/test-marketing-opt-in-delivery.mjs'
       - 'apps/web/scripts/test-marketing-opt-in-handler.mjs'
+      - 'apps/web/scripts/test-marketing-opt-in-handler-delivery.mjs'
       - '.github/workflows/email-opt-in-delivery.yml'
   push:
     branches: [main]
@@ -23,6 +24,7 @@ on:
       - 'apps/web/scripts/test-marketing-opt-in-resend-adapter.mjs'
       - 'apps/web/scripts/test-marketing-opt-in-delivery.mjs'
       - 'apps/web/scripts/test-marketing-opt-in-handler.mjs'
+      - 'apps/web/scripts/test-marketing-opt-in-handler-delivery.mjs'
       - '.github/workflows/email-opt-in-delivery.yml'
 
 permissions:
@@ -67,3 +69,6 @@ jobs:
 
       - name: HTTP handler regression contract
         run: node scripts/test-marketing-opt-in-handler.mjs
+
+      - name: Request delivery integration contract
+        run: node scripts/test-marketing-opt-in-handler-delivery.mjs

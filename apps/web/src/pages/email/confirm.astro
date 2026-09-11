@@ -1,0 +1,60 @@
+---
+const pageTitle = 'Confirm email preference | USD Impact';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="canonical" href="https://www.usd-impact.com/email/confirm" />
+    <title>{pageTitle}</title>
+    <style>
+      :root { color-scheme: light; font-family: Inter, Arial, Helvetica, sans-serif; }
+      body { margin: 0; background: #f5f6f8; color: #161a1f; }
+      main { min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; }
+      section { width: min(620px, 100%); background: #fff; border: 1px solid #e6e9ed; border-radius: 16px; padding: 36px; box-sizing: border-box; box-shadow: 0 12px 40px rgba(7, 26, 51, .08); }
+      .eyebrow { margin: 0 0 12px; color: #8a6b32; font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+      h1 { margin: 0 0 18px; color: #071a33; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(30px, 6vw, 38px); line-height: 1.15; }
+      p { margin: 0 0 20px; color: #5a6472; font-size: 17px; line-height: 1.65; }
+      button { appearance: none; border: 0; border-radius: 10px; background: #071a33; color: #fff; cursor: pointer; font-size: 16px; font-weight: 700; padding: 14px 22px; }
+      button:disabled { cursor: not-allowed; opacity: .5; }
+      .small { margin-top: 24px; font-size: 13px; }
+      .error { display: none; color: #8a1f11; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section aria-labelledby="confirm-heading">
+        <p class="eyebrow">USD Impact</p>
+        <h1 id="confirm-heading">Confirm your email preference</h1>
+        <p>
+          Confirm only if you requested this USD Impact email subscription. Opening this page does not subscribe you; the preference changes only after you press the confirmation button.
+        </p>
+        <p id="missing-token" class="error" role="alert">
+          This confirmation link is incomplete. Return to the email you received and use its full confirmation link.
+        </p>
+        <form method="post" action="/api/email-confirm" accept-charset="UTF-8" id="confirm-form">
+          <input type="hidden" name="token" id="confirmation-token" value="" />
+          <input type="hidden" name="Email-Opt-In" value="Confirm" />
+          <button type="submit" id="confirm-button" disabled>Confirm email preference</button>
+        </form>
+        <p class="small">
+          This affects only the email purpose you requested. Required account, security, purchase, refund, privacy, and support communications remain separate.
+        </p>
+      </section>
+    </main>
+    <script>
+      const token = new URLSearchParams(window.location.search).get('token') || '';
+      const tokenField = document.getElementById('confirmation-token');
+      const button = document.getElementById('confirm-button');
+      const error = document.getElementById('missing-token');
+      if (tokenField instanceof HTMLInputElement && button instanceof HTMLButtonElement) {
+        tokenField.value = token;
+        button.disabled = token.length === 0;
+      }
+      if (!token && error instanceof HTMLElement) error.style.display = 'block';
+    </script>
+  </body>
+</html>

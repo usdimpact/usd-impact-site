@@ -1,0 +1,58 @@
+name: Email opt-in endpoints
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/api/waitlist.js'
+      - 'apps/web/vercel.json'
+      - 'apps/web/src/lib/marketing-opt-in-handler.js'
+      - 'apps/web/src/lib/marketing-opt-in-readiness.js'
+      - 'apps/web/src/pages/email/confirm.astro'
+      - 'apps/web/scripts/test-marketing-opt-in-handler.mjs'
+      - 'apps/web/scripts/test-marketing-opt-in-readiness.mjs'
+      - 'apps/web/scripts/test-marketing-opt-in-routing.mjs'
+      - 'apps/web/scripts/test-email-opt-in-migration-contract.mjs'
+      - 'supabase/migrations/20260911204439_email_opt_in_confirmation_outbox_contract.sql'
+      - '.github/workflows/email-opt-in-endpoints.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  email-opt-in-endpoints:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+
+      - name: Syntax checks
+        run: |
+          node --check src/lib/marketing-opt-in-readiness.js
+          node --check src/lib/marketing-opt-in-handler.js
+          node --check api/waitlist.js
+
+      - name: Opt-in readiness contract
+        run: node scripts/test-marketing-opt-in-readiness.mjs
+
+      - name: Opt-in HTTP handler contract
+        run: node scripts/test-marketing-opt-in-handler.mjs
+
+      - name: Opt-in shared routing contract
+        run: node scripts/test-marketing-opt-in-routing.mjs
+
+      - name: Opt-in migration contract
+        run: node scripts/test-email-opt-in-migration-contract.mjs

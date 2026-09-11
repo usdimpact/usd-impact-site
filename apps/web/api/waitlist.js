@@ -1,5 +1,9 @@
 import { handleResendWebhook } from '../src/lib/resend-webhook-handler.js';
 import { handleDailyLearningEmailRequest } from '../src/lib/daily-card-email-handler.js';
+import {
+  handleMarketingOptInConfirmation,
+  handleMarketingOptInRequest,
+} from '../src/lib/marketing-opt-in-handler.js';
 import { requestOrigin } from '../src/lib/supabase-auth.js';
 import { buildWaitlistConfirmationEmail } from '../src/lib/waitlist-email-template.js';
 import {
@@ -194,6 +198,12 @@ export default async function handler(request, response) {
   }
   if (action.startsWith('daily-learning')) {
     return handleDailyLearningEmailRequest(request, response, action);
+  }
+  if (action === 'marketing-opt-in') {
+    return handleMarketingOptInRequest(request, response);
+  }
+  if (action === 'marketing-opt-in-confirm') {
+    return handleMarketingOptInConfirmation(request, response);
   }
 
   if (request.method !== 'POST') {

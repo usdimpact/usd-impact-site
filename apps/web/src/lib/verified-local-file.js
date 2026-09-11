@@ -26,12 +26,12 @@ function boundedRead(fd, maxBytes) {
 }
 
 /**
- * Read a local regular file through one verified descriptor.
+ * Read a local regular file through one atomically opened no-follow descriptor.
  *
- * The path is inspected only to establish identity. File bytes are read from the
- * already-open descriptor, never by reopening the pathname after validation.
- * Two positioned reads plus pre/post descriptor and pathname snapshots fail
- * closed on replacement, symlink, growth, truncation or in-place mutation.
+ * File bytes are read only from the descriptor returned by O_NOFOLLOW open.
+ * Two positioned reads plus descriptor snapshots and a post-read pathname
+ * identity check fail closed on replacement, symlink, growth, truncation or
+ * in-place mutation without validating one pathname object and reopening it.
  */
 export function readVerifiedLocalFile(pathname, maxBytes, { afterFirstRead } = {}) {
   if (typeof pathname !== 'string' || pathname.length === 0 || pathname.length > 4096) {
@@ -40,21 +40,15 @@ export function readVerifiedLocalFile(pathname, maxBytes, { afterFirstRead } = {
   if (!Number.isInteger(maxBytes) || maxBytes < 1 || maxBytes > 1024 * 1024) {
     throw new Error('invalid size bound');
   }
-
-  const beforePath = lstatSync(pathname, { bigint: true });
-  if (!beforePath.isFile() || beforePath.isSymbolicLink() || beforePath.size > BigInt(maxBytes)) {
-    throw new Error('unsupported file');
+  if (typeof constants.O_NOFOLLOW !== 'number') {
+    throw new Error('no-follow file open is unavailable');
   }
 
-  const flags = constants.O_RDONLY | (typeof constants.O_NOFOLLOW === 'number' ? constants.O_NOFOLLOW : 0);
-  const fd = openSync(pathname, flags);
+  const fd = openSync(pathname, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const opened = fstatSync(fd, { bigint: true });
-    const afterOpenPath = lstatSync(pathname, { bigint: true });
-    if (!opened.isFile() || opened.size > BigInt(maxBytes)
-        || !sameIdentity(beforePath, opened) || !sameIdentity(opened, afterOpenPath)
-        || afterOpenPath.isSymbolicLink()) {
-      throw new Error('file identity changed');
+    if (!opened.isFile() || opened.size > BigInt(maxBytes)) {
+      throw new Error('unsupported file');
     }
 
     const first = boundedRead(fd, maxBytes);

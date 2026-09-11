@@ -174,41 +174,20 @@ assert.equal(
     created_at: requestedAt,
   };
   const grantId = '123e4567-e89b-42d3-a456-426614174031';
-  const fetchImpl = scriptedFetch([
-    {
-      path: /notification_outbox\?message_id=eq\.marketing_opt_in_confirmation/,
-      payload: [deliveredOutbox],
-    },
-    {
-      path: /marketing_consent_events\?email_normalized=/,
-      payload: [],
-    },
-    {
-      method: 'POST',
-      path: /marketing_consent_events\?on_conflict=idempotency_key/,
-      assert: ({ options }) => {
-        const body = JSON.parse(options.body);
-        assert.equal(body.email_normalized, email);
-        assert.equal(body.purpose, 'weekly_newsletter');
-        assert.equal(body.status, 'granted');
-        assert.equal(body.consent_text_version, 'weekly-newsletter-v1');
-        assert.equal(body.privacy_notice_version, 'privacy-2026-08-31');
-        assert.equal(body.source, 'email_double_opt_in');
-        assert.equal(body.evidence.context.consentCheckbox, true);
-        assert.equal(body.evidence.context.formVersion, 'email-opt-in-v1');
-        assert.equal(body.evidence.context.request.locale, 'en');
-      },
-      payload: ({ options }) => options,
-    },
-  ]);
-  // Replace the final scripted response with one based on the inserted body.
-  fetchImpl.assertDone = fetchImpl.assertDone;
   let call = 0;
   const confirmationFetch = async (url, options = {}) => {
     call += 1;
-    if (call === 1) return response([deliveredOutbox]);
-    if (call === 2) return response([]);
+    if (call === 1) {
+      assert.match(url, /notification_outbox\?message_id=eq\.marketing_opt_in_confirmation/);
+      return response([deliveredOutbox]);
+    }
+    if (call === 2) {
+      assert.match(url, /marketing_consent_events\?email_normalized=/);
+      return response([]);
+    }
     if (call === 3) {
+      assert.equal(options.method, 'POST');
+      assert.match(url, /marketing_consent_events\?on_conflict=idempotency_key/);
       const body = JSON.parse(options.body);
       assert.equal(body.email_normalized, email);
       assert.equal(body.purpose, 'weekly_newsletter');

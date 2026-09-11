@@ -127,7 +127,7 @@ const bbaWithoutType = bba.replace('  <announcementType>Final</announcementType>
 assert.equal(parseTreasuryBuybackXmlEnvelope({ sourceUrl: urls.BBA, xml: bbaWithoutType }).announcementType, null);
 pass();
 
-held(() => parseTreasuryBuybackXmlEnvelope({ sourceUrl: urls.BBR, xml: bbr.replace('Results', 'Scheduled') }), 'HOLD_TREASURY_BUYBACK_XML_KIND');
+held(() => parseTreasuryBuybackXmlEnvelope({ sourceUrl: urls.BBR, xml: bbr.replace('<operationStatus>Results</operationStatus>', '<operationStatus>Scheduled</operationStatus>') }), 'HOLD_TREASURY_BUYBACK_XML_KIND');
 held(() => parseTreasuryBuybackXmlEnvelope({ sourceUrl: urls.BBR, xml: bbr.replace('2000000000', '19868000001') }), 'HOLD_TREASURY_BUYBACK_XML_RESULT');
 held(() => parseTreasuryBuybackXmlEnvelope({ sourceUrl: urls.BBR, xml: bbr.replace('<numberIssuesAccepted>3</numberIssuesAccepted>', '') }), 'HOLD_TREASURY_BUYBACK_XML_SCHEMA');
 const bbrWithoutAnnouncement = bbr.replace('  <announcementDTM>2026-08-18T11:00:00-04:00</announcementDTM>', '');

@@ -12,10 +12,12 @@ const MARKETING_SECRET = `moi_${'m'.repeat(43)}`;
 const RESEND_KEY = `re_${'a'.repeat(32)}`;
 const SUPABASE_SECRET = `sb_secret_${'s'.repeat(24)}`;
 const CRON_SECRET = 'c'.repeat(40);
+const BYPASS_SECRET = 'b'.repeat(32);
 
 const validEnvironment = Object.freeze({
   VERCEL_ENV: 'preview',
   VERCEL_URL: PREVIEW_HOST,
+  VERCEL_AUTOMATION_BYPASS_SECRET: BYPASS_SECRET,
   SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
   SUPABASE_PUBLISHABLE_KEY: `sb_publishable_${'p'.repeat(24)}`,
   SUPABASE_SECRET_KEY: SUPABASE_SECRET,
@@ -57,9 +59,10 @@ assert.equal(ready.sharedQaRecipients, 1);
 assert(ready.checks.every((item) => item.ok));
 
 const serializedReady = JSON.stringify(ready);
-for (const sensitive of [MARKETING_SECRET, RESEND_KEY, SUPABASE_SECRET, CRON_SECRET, QA_EMAIL]) {
+for (const sensitive of [MARKETING_SECRET, RESEND_KEY, SUPABASE_SECRET, CRON_SECRET, BYPASS_SECRET, QA_EMAIL]) {
   assert.equal(serializedReady.includes(sensitive), false, `Readiness report must not expose ${sensitive.slice(0, 8)}...`);
 }
+assert.equal(serializedReady.includes('VERCEL_AUTOMATION_BYPASS_SECRET'), true);
 assert.equal(serializedReady.includes('MARKETING_OPT_IN_SECRET'), true);
 assert.equal(serializedReady.includes('RESEND_API_KEY'), true);
 assert.equal(serializedReady.includes('SUPABASE_SECRET_KEY'), true);
@@ -69,6 +72,15 @@ assert.equal(serializedReady.includes('CRON_SECRET'), true);
   const report = inspectNewsletterPreviewReadiness({ ...validEnvironment, VERCEL_ENV: 'production' });
   assert.equal(report.ready, false);
   assert(failedKeys(report).includes('VERCEL_ENV'));
+}
+
+{
+  const report = inspectNewsletterPreviewReadiness({
+    ...validEnvironment,
+    VERCEL_AUTOMATION_BYPASS_SECRET: '',
+  });
+  assert.equal(report.ready, false);
+  assert(failedKeys(report).includes('VERCEL_AUTOMATION_BYPASS_SECRET'));
 }
 
 {
@@ -162,6 +174,7 @@ assert.throws(
     const serialized = JSON.stringify(error.report);
     assert(!serialized.includes(MARKETING_SECRET));
     assert(!serialized.includes(SUPABASE_SECRET));
+    assert(!serialized.includes(BYPASS_SECRET));
     assert(!serialized.includes(QA_EMAIL));
     return true;
   },

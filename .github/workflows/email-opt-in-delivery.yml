@@ -1,0 +1,69 @@
+name: Email opt-in delivery
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/marketing-opt-in-email-template.js'
+      - 'apps/web/src/lib/marketing-opt-in-resend-adapter.js'
+      - 'apps/web/src/lib/marketing-opt-in-delivery.js'
+      - 'apps/web/src/lib/marketing-opt-in-handler.js'
+      - 'apps/web/scripts/test-marketing-opt-in-email-template.mjs'
+      - 'apps/web/scripts/test-marketing-opt-in-resend-adapter.mjs'
+      - 'apps/web/scripts/test-marketing-opt-in-delivery.mjs'
+      - 'apps/web/scripts/test-marketing-opt-in-handler.mjs'
+      - '.github/workflows/email-opt-in-delivery.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/lib/marketing-opt-in-email-template.js'
+      - 'apps/web/src/lib/marketing-opt-in-resend-adapter.js'
+      - 'apps/web/src/lib/marketing-opt-in-delivery.js'
+      - 'apps/web/src/lib/marketing-opt-in-handler.js'
+      - 'apps/web/scripts/test-marketing-opt-in-email-template.mjs'
+      - 'apps/web/scripts/test-marketing-opt-in-resend-adapter.mjs'
+      - 'apps/web/scripts/test-marketing-opt-in-delivery.mjs'
+      - 'apps/web/scripts/test-marketing-opt-in-handler.mjs'
+      - '.github/workflows/email-opt-in-delivery.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  email-opt-in-delivery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+
+      - name: Syntax checks
+        run: |
+          node --check src/lib/marketing-opt-in-email-template.js
+          node --check src/lib/marketing-opt-in-resend-adapter.js
+          node --check src/lib/marketing-opt-in-delivery.js
+          node --check src/lib/marketing-opt-in-handler.js
+
+      - name: Confirmation renderer contract
+        run: node scripts/test-marketing-opt-in-email-template.mjs
+
+      - name: Development Resend adapter contract
+        run: node scripts/test-marketing-opt-in-resend-adapter.mjs
+
+      - name: Delivery state-machine contract
+        run: node scripts/test-marketing-opt-in-delivery.mjs
+
+      - name: HTTP handler regression contract
+        run: node scripts/test-marketing-opt-in-handler.mjs

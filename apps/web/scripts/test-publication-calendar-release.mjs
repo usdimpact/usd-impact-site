@@ -127,7 +127,7 @@ for (const [name, config, code] of [
 await test('code-only candidate preserves untouched archives without BLS requests', async () => {
   const env = environment({ after: [{ path: archived, mode: '100644', type: 'blob', sha: 'e'.repeat(40) }] });
   const result = await env.run(); assert.equal(result.decision, 'PASS_READ_ONLY_PREFLIGHT'); assert.equal(result.observations.length, 0);
-  assert.ok(!env.requests.some((item) => item.url.startsWith('https://www.bls.gov')));
+  assert.ok(!env.requests.some((item) => new URL(item.url).origin === 'https://www.bls.gov'));
 });
 await test('review-only new file does not claim calendar validation', async () => {
   const result = await environment({ payload: { status: 'review', calendar: null } }).run();

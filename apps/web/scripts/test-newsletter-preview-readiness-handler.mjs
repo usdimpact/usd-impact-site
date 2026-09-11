@@ -6,6 +6,7 @@ const MARKETING_SECRET = `moi_${'m'.repeat(43)}`;
 const RESEND_KEY = `re_${'a'.repeat(32)}`;
 const SUPABASE_SECRET = `sb_secret_${'s'.repeat(24)}`;
 const CRON_SECRET = 'c'.repeat(40);
+const BYPASS_SECRET = 'b'.repeat(32);
 
 function responseRecorder() {
   const headers = new Map();
@@ -29,6 +30,7 @@ function request(method = 'POST') {
 const environment = Object.freeze({
   VERCEL_ENV: 'preview',
   VERCEL_URL: 'usd-impact-site-preview-test-usd-impact.vercel.app',
+  VERCEL_AUTOMATION_BYPASS_SECRET: BYPASS_SECRET,
   SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
   SUPABASE_PUBLISHABLE_KEY: `sb_publishable_${'p'.repeat(24)}`,
   SUPABASE_SECRET_KEY: SUPABASE_SECRET,
@@ -71,7 +73,7 @@ const environment = Object.freeze({
   assert.equal(payload.failed, 0);
   assert.equal(payload.sharedQaRecipients, 1);
   assert(payload.checks.every((item) => item.ok));
-  for (const sensitive of [QA_EMAIL, MARKETING_SECRET, RESEND_KEY, SUPABASE_SECRET, CRON_SECRET]) {
+  for (const sensitive of [QA_EMAIL, MARKETING_SECRET, RESEND_KEY, SUPABASE_SECRET, CRON_SECRET, BYPASS_SECRET]) {
     assert.equal(res.body.includes(sensitive), false);
   }
 }
@@ -118,6 +120,7 @@ const environment = Object.freeze({
   assert(payload.checks.some((item) => item.key === 'PROGRESS_EMAIL_DELIVERY_ENABLED' && item.ok === false));
   assert.equal(res.body.includes(QA_EMAIL), false);
   assert.equal(res.body.includes(MARKETING_SECRET), false);
+  assert.equal(res.body.includes(BYPASS_SECRET), false);
 }
 
 {

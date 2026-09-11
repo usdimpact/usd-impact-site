@@ -1,0 +1,53 @@
+name: Weekly newsletter QA batch
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/weekly-newsletter-qa-batch.js'
+      - 'apps/web/src/lib/weekly-newsletter-qa-handler.js'
+      - 'apps/web/scripts/test-weekly-newsletter-qa-batch.mjs'
+      - 'apps/web/scripts/test-weekly-newsletter-qa-handler.mjs'
+      - '.github/workflows/weekly-newsletter-qa-batch.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/lib/weekly-newsletter-qa-batch.js'
+      - 'apps/web/src/lib/weekly-newsletter-qa-handler.js'
+      - 'apps/web/scripts/test-weekly-newsletter-qa-batch.mjs'
+      - 'apps/web/scripts/test-weekly-newsletter-qa-handler.mjs'
+      - '.github/workflows/weekly-newsletter-qa-batch.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  weekly-newsletter-qa-batch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+
+      - name: Syntax checks
+        run: |
+          node --check src/lib/weekly-newsletter-qa-batch.js
+          node --check src/lib/weekly-newsletter-qa-handler.js
+
+      - name: Guarded QA batch contract
+        run: node scripts/test-weekly-newsletter-qa-batch.mjs
+
+      - name: Scheduler-authorized handler contract
+        run: node scripts/test-weekly-newsletter-qa-handler.mjs

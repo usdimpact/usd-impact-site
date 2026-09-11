@@ -9,6 +9,16 @@ export async function getStaticPaths() {
   const briefs = hasCatalystBriefFiles
     ? (await getCollection('catalystBriefs')).filter((entry) => entry.data.status === 'published')
     : [];
+  const publishedBySlug = new Map(briefs.map((entry) => [entry.data.slug, entry]));
+  for (const entry of briefs) {
+    for (const link of entry.data.archiveNote?.links ?? []) {
+      if (!link.href.startsWith('/')) continue;
+      const outcome = publishedBySlug.get(link.href);
+      if (!outcome || outcome.data.phase !== 'outcome' || outcome.data.statusLabel !== 'released') {
+        throw new Error(`${entry.data.slug}: archive link must resolve to a published, released outcome`);
+      }
+    }
+  }
   return briefs.map((entry) => ({
     params: { slug: entry.data.slug.split('/').filter(Boolean).at(-1) },
     props: { entry },
@@ -30,6 +40,18 @@ const formatDate = (value) => new Intl.DateTimeFormat('en', {
     <div class="container">
       <div class="eyebrow">{entry.data.category} · {entry.data.phase === 'preview' ? 'Pre-event' : 'Outcome'}</div>
       <h1>{entry.data.title}</h1>
+      {entry.data.archiveNote && (
+        <aside class="catalyst-archive-note" aria-labelledby="catalyst-archive-note-title">
+          <h2 id="catalyst-archive-note-title">Archive note — {formatDate(entry.data.archiveNote.addedAt)}</h2>
+          <p>
+            {entry.data.archiveNote.introduction}
+            {entry.data.archiveNote.links.map((link) => (
+              <>{' '}{link.context} <a href={link.href}>{link.label}</a>.</>
+            ))}
+            {' '}{entry.data.archiveNote.closing}
+          </p>
+        </aside>
+      )}
       <p class="lead">{entry.data.summary}</p>
       <p class="edition-meta">
         Event date {formatDate(entry.data.eventDate)} · Last reviewed {entry.data.lastReviewed}
@@ -110,3 +132,17 @@ const formatDate = (value) => new Intl.DateTimeFormat('en', {
     <ComplianceNote text={entry.data.complianceNote} />
   </main>
 </BaseLayout>
+
+<style>
+  .catalyst-archive-note {
+    margin-block: 24px;
+    padding: 20px 24px;
+    border: 1px solid var(--silver);
+    border-left: 4px solid var(--gold);
+    border-radius: 12px;
+    color: var(--white);
+  }
+  .catalyst-archive-note h2 { margin: 0 0 8px; font-size: 1rem; color: inherit; }
+  .catalyst-archive-note p { margin: 0; max-width: 80ch; }
+  .catalyst-archive-note a { color: var(--white); text-underline-offset: 3px; }
+</style>

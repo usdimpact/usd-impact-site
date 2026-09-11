@@ -4,7 +4,7 @@ import {
   PublicationGuardReaderDatabaseError,
   assertPublicationGuardReaderPreviewContext,
   createPublicationGuardReaderDatabase,
-} from '../api/publication-guard-reader-database.js';
+} from '../src/lib/publication-guard-reader-database.js';
 
 let groups = 0;
 const pass = () => { groups += 1; };
@@ -123,7 +123,7 @@ await hold(
 
 FakePool.mode = 'ok';
 FakePool.identity = goodIdentity;
-const database = await createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
+const database = createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
 const pool = FakePool.instances.at(-1);
 assert.equal(pool.config.connectionString, readerUrl);
 assert.equal(pool.config.max, 1);
@@ -158,29 +158,29 @@ assert.equal(pool.ended, true);
 pass();
 
 FakePool.identity = { ...goodIdentity, authorizeRelease: true };
-const privilegeDrift = await createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
+const privilegeDrift = createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
 await hold(() => privilegeDrift.verifyIdentityAndPrivileges(), 'HOLD_READER_PRIVILEGE');
 await privilegeDrift.close();
 
 FakePool.identity = { ...goodIdentity, ssl: false };
-const sslDrift = await createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
+const sslDrift = createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
 await hold(() => sslDrift.verifyIdentityAndPrivileges(), 'HOLD_READER_SSL');
 await sslDrift.close();
 
 FakePool.identity = { ...goodIdentity, role: 'fx558_controller_login' };
-const roleDrift = await createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
+const roleDrift = createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
 await hold(() => roleDrift.verifyIdentityAndPrivileges(), 'HOLD_READER_ROLE');
 await roleDrift.close();
 
 FakePool.identity = goodIdentity;
 FakePool.mode = 'fail';
-const backendFailure = await createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
+const backendFailure = createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
 await hold(() => backendFailure.verifyIdentityAndPrivileges(), 'HOLD_READER_DATABASE_QUERY');
 await backendFailure.close();
 FakePool.mode = 'ok';
 
 await hold(
-  () => createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: {} }),
+  () => Promise.resolve().then(() => createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: {} })),
   'HOLD_READER_POOL',
 );
 

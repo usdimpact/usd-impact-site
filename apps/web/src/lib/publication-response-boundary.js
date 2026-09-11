@@ -6,12 +6,12 @@ import { createPublicationServingPolicy, SERVING_NO_STORE } from './publication-
 const claims = new WeakSet();
 const ARTICLE = /^\/news\/(?:\d{4}-\d{2}-\d{2}|catalysts\/[a-z0-9]+(?:-[a-z0-9]+)*)$/;
 const ROUTES = Object.freeze({ homepage: '/', 'news-current': '/news',
-  'news-archive': '/news/archive', feed: '/news/feed.xml',
+  'news-archive': '/news/archive', 'news-composite': '/news', feed: '/news/feed.xml',
   'latest-json': '/news/latest.json', sitemap: '/sitemap-0.xml' });
 const MIME = Object.freeze({ article: 'text/html; charset=utf-8', homepage: 'text/html; charset=utf-8',
   'news-current': 'text/html; charset=utf-8', 'news-archive': 'text/html; charset=utf-8',
-  feed: 'application/rss+xml; charset=utf-8', 'latest-json': 'application/json; charset=utf-8',
-  sitemap: 'application/xml; charset=utf-8' });
+  'news-composite': 'text/html; charset=utf-8', feed: 'application/rss+xml; charset=utf-8',
+  'latest-json': 'application/json; charset=utf-8', sitemap: 'application/xml; charset=utf-8' });
 const MAX_OUTPUT_BYTES = 1_000_000;
 const SAFE_HEADERS = Object.freeze({ ...SERVING_NO_STORE, 'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY', 'Referrer-Policy': 'strict-origin-when-cross-origin',
@@ -23,14 +23,19 @@ const denied = (code, status = 503) => { throw new BoundaryHold(code, status); }
 const requireThat = (condition, code, status) => { if (!condition) denied(code, status); };
 const ready = (request, response) => !request.aborted && !response.destroyed
   && !response.writableEnded && !response.headersSent;
+const defaultRequestTarget = (request) => request.url;
 
 /** Owns a previously uncommitted native Node HTTP response, not framework routing.
  * Renderers receive only filtered, frozen content, never req/res or raw sources.
  * Authenticating authority/history, initial admission and public-host enforcement
  * remain integration prerequisites. All callback dependencies are trusted code.
+ * resolveRequestTarget exists only for a trusted internal route adapter that has
+ * already authenticated the original public path; request headers are never used
+ * directly here to manufacture a different route.
  */
 export function createRecordedPublicationHandler({ surface, path: expectedPath, loadSources,
-  loadAuthority, readHistory, render, now = Date.now, timeoutMs = 10_000 } = {}) {
+  loadAuthority, readHistory, render, resolveRequestTarget = defaultRequestTarget,
+  now = Date.now, timeoutMs = 10_000 } = {}) {
   return async function handleRecordedPublication(request, response) {
     if (!(response instanceof ServerResponse) || response.req !== request) {
       return Object.freeze({ decision: 'HOLD_RESPONSE_UNSUPPORTED', responseDispatched: false, publicationAuthorized: false });
@@ -55,10 +60,11 @@ export function createRecordedPublicationHandler({ surface, path: expectedPath, 
       requireThat(Object.hasOwn(MIME, surface) && (surface === 'article'
         ? ARTICLE.test(expectedPath ?? '') : ROUTES[surface] === expectedPath), 'HOLD_ROUTE_CONFIGURATION');
       requireThat(Number.isSafeInteger(timeoutMs) && timeoutMs > 0 && timeoutMs <= 30_000, 'HOLD_TIMEOUT_CONFIGURATION');
+      requireThat(typeof resolveRequestTarget === 'function', 'HOLD_ROUTE_CONFIGURATION');
       requireThat(['GET', 'HEAD'].includes(method), 'HOLD_METHOD_NOT_ALLOWED', 405);
       // Exact origin-form routing only. Query values cannot override the route,
       // clock, surface, host, authority, evidence or source selection.
-      const target = request.url;
+      const target = resolveRequestTarget(request);
       requireThat(typeof target === 'string' && target.length <= 4096
         && target.startsWith('/') && !target.startsWith('//')
         && !/[\x00-\x20\x7f\\#]/.test(target), 'HOLD_ROUTE_NOT_FOUND', 404);
@@ -71,10 +77,20 @@ export function createRecordedPublicationHandler({ surface, path: expectedPath, 
         loadAuthority: () => { assertActive(); return loadAuthority({ signal: abort.signal }); },
         readHistory: (query) => { assertActive(); return readHistory(query, { signal: abort.signal }); },
       });
-      function project(ticket) {
-        const result = policy.project(ticket, { surface, method: 'GET' });
+      function policyView(ticket, requestedSurface) {
+        const result = policy.project(ticket, { surface: requestedSurface, method: 'GET' });
         requireThat(result.decision === 'PROJECTED_RECORDED_ONLY', 'HOLD_FINAL_POLICY');
-        const items = surface === 'article' ? result.view.items.filter((item) => item.slug === expectedPath) : result.view.items;
+        return result.view.items;
+      }
+      function project(ticket) {
+        if (surface === 'news-composite') {
+          return Object.freeze({
+            currentItems: policyView(ticket, 'news-current'),
+            archiveItems: policyView(ticket, 'news-archive'),
+          });
+        }
+        const projected = policyView(ticket, surface);
+        const items = surface === 'article' ? projected.filter((item) => item.slug === expectedPath) : projected;
         requireThat(surface !== 'article' || items.length === 1, 'HOLD_NOT_ADMITTED', 404);
         return Object.freeze({ items: Object.freeze(items) });
       }
@@ -92,7 +108,9 @@ export function createRecordedPublicationHandler({ surface, path: expectedPath, 
         for (let attempt = 0; attempt < 2; attempt++) {
           requireThat(!abort.signal.aborted, 'HOLD_PREPARATION_TIMEOUT');
           const view = project(ticket); const fingerprint = JSON.stringify(view);
-          const text = method === 'HEAD' ? '' : await render(view, { surface, signal: abort.signal });
+          const text = method === 'HEAD' ? '' : await render(view, {
+            surface, path: expectedPath, signal: abort.signal,
+          });
           requireThat(typeof text === 'string' && Buffer.byteLength(text) <= MAX_OUTPUT_BYTES, 'HOLD_RENDER_INVALID');
           const bytes = Buffer.from(text, 'utf8');
           requireThat(!abort.signal.aborted, 'HOLD_PREPARATION_TIMEOUT');

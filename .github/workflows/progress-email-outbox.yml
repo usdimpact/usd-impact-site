@@ -1,0 +1,56 @@
+name: Progress email outbox
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260911212204_weekly_newsletter_outbox_contract.sql'
+      - 'supabase/migrations/20260911222440_learning_progress_email_outbox_contract.sql'
+      - 'apps/web/src/lib/progress-email-outbox-intent.js'
+      - 'apps/web/src/lib/progress-email-readiness.js'
+      - 'apps/web/scripts/test-progress-email-outbox-intent.mjs'
+      - 'apps/web/scripts/test-progress-email-outbox-migration.mjs'
+      - 'apps/web/scripts/test-progress-email-readiness.mjs'
+      - '.github/workflows/progress-email-outbox.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  progress-email-outbox:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax checks
+        run: |
+          node --check src/lib/progress-email-outbox-intent.js
+          node --check src/lib/progress-email-readiness.js
+          node --check scripts/test-progress-email-outbox-intent.mjs
+          node --check scripts/test-progress-email-outbox-migration.mjs
+
+      - name: Deterministic outbox intent contract
+        run: node scripts/test-progress-email-outbox-intent.mjs
+
+      - name: Migration ordering and payload contract
+        run: node scripts/test-progress-email-outbox-migration.mjs
+
+      - name: Send-time readiness regression
+        run: node scripts/test-progress-email-readiness.mjs
+
+      - name: Production build
+        run: npm run build

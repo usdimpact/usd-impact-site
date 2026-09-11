@@ -14,9 +14,24 @@ const pair = generateKeyPairSync('ed25519');
 const pem = pair.publicKey.export({ type: 'spki', format: 'pem' });
 const fingerprint = digest(pair.publicKey.export({ type: 'spki', format: 'der' }));
 const scalar = async (sql, params = []) => Object.values((await db.query(sql, params)).rows[0])[0];
+const ROLE_SESSION_SQL = Object.freeze({
+  fx558_controller: 'SET SESSION AUTHORIZATION fx558_controller',
+  fx558_recorder: 'SET SESSION AUTHORIZATION fx558_recorder',
+  fx558_reader: 'SET SESSION AUTHORIZATION fx558_reader',
+  fx558_revoker: 'SET SESSION AUTHORIZATION fx558_revoker',
+  anon: 'SET SESSION AUTHORIZATION anon',
+  authenticated: 'SET SESSION AUTHORIZATION authenticated',
+  service_role: 'SET SESSION AUTHORIZATION service_role',
+});
+const SQL_CONTRACT_URLS = Object.freeze([
+  new URL('../docs/sql/publication-admission-contract-558.sql', import.meta.url),
+  new URL('../docs/sql/publication-writer-api-contract-558.sql', import.meta.url),
+  new URL('../docs/sql/publication-receipt-ledger-contract-558.sql', import.meta.url),
+]);
 async function as(role, work) {
-  assert(['fx558_controller','fx558_recorder','fx558_reader','fx558_revoker','anon','authenticated','service_role'].includes(role));
-  await db.exec(`SET SESSION AUTHORIZATION ${role}`);
+  const statement = ROLE_SESSION_SQL[role];
+  assert.equal(typeof statement, 'string');
+  await db.exec(statement);
   try { return await work(); } finally { await db.exec('SET SESSION AUTHORIZATION postgres'); }
 }
 async function test(name, work) {
@@ -66,8 +81,7 @@ function adapters(x,changes={}) {
 }
 try {
  await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
- for (const file of ['publication-admission-contract-558.sql','publication-writer-api-contract-558.sql','publication-receipt-ledger-contract-558.sql'])
-   await db.exec(await readFile(new URL('../docs/sql/'+file,import.meta.url),'utf8'));
+ for (const fileUrl of SQL_CONTRACT_URLS) await db.exec(await readFile(fileUrl,'utf8'));
  await test('new ledger tables use RLS', async()=>assert.equal(await scalar("select count(*) from pg_class c join pg_namespace n on c.relnamespace=n.oid where n.nspname='publication_guard' and c.relkind='r' and c.relrowsecurity"),5));
  let x=await fixture(), receipt=signed(x);
  await test('staging creates no admission',async()=>assert.equal((await admission(x)).state,'pending'));

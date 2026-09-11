@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - 'apps/web/src/lib/newsletter-preview-readiness.js'
+      - 'apps/web/src/lib/newsletter-preview-readiness-handler.js'
       - 'apps/web/scripts/test-newsletter-preview-readiness.mjs'
+      - 'apps/web/scripts/test-newsletter-preview-readiness-handler.mjs'
       - 'apps/web/src/lib/marketing-opt-in-handler.js'
       - 'apps/web/src/lib/weekly-newsletter-qa-batch.js'
       - 'apps/web/src/lib/progress-email-qa-batch.js'
@@ -40,10 +42,15 @@ jobs:
       - name: Syntax checks
         run: |
           node --check src/lib/newsletter-preview-readiness.js
+          node --check src/lib/newsletter-preview-readiness-handler.js
           node --check scripts/test-newsletter-preview-readiness.mjs
+          node --check scripts/test-newsletter-preview-readiness-handler.mjs
 
       - name: Preview readiness contract
         run: node scripts/test-newsletter-preview-readiness.mjs
+
+      - name: Protected readiness handler contract
+        run: node scripts/test-newsletter-preview-readiness-handler.mjs
 
       - name: Opt-in handler regression
         run: node scripts/test-marketing-opt-in-handler.mjs

@@ -159,3 +159,4 @@ await import('./test-publication-oidc-evidence-bridge.mjs');
 await import('./test-publication-first-response-witness.mjs');
 
 await import('./test-publication-witness-lifecycle.mjs');
+await import('./test-publication-release-lease.mjs');

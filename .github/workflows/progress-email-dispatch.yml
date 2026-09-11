@@ -1,0 +1,68 @@
+name: Progress email dispatch
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/progress-email-resend-adapter.js'
+      - 'apps/web/src/lib/progress-email-dispatch.js'
+      - 'apps/web/src/lib/progress-email-email.js'
+      - 'apps/web/src/lib/progress-email-readiness.js'
+      - 'apps/web/src/lib/progress-email-outbox-intent.js'
+      - 'apps/web/scripts/test-progress-email-resend-adapter.mjs'
+      - 'apps/web/scripts/test-progress-email-dispatch.mjs'
+      - 'apps/web/scripts/test-progress-email-readiness.mjs'
+      - 'apps/web/scripts/test-progress-email-outbox-intent.mjs'
+      - 'apps/web/scripts/test-progress-email-outbox-migration.mjs'
+      - 'supabase/migrations/20260911222440_learning_progress_email_outbox_contract.sql'
+      - '.github/workflows/progress-email-dispatch.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  progress-email-dispatch:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax checks
+        run: |
+          node --check src/lib/progress-email-resend-adapter.js
+          node --check src/lib/progress-email-dispatch.js
+          node --check scripts/test-progress-email-resend-adapter.mjs
+          node --check scripts/test-progress-email-dispatch.mjs
+
+      - name: Guarded Resend adapter contract
+        run: node scripts/test-progress-email-resend-adapter.mjs
+
+      - name: Development dispatch worker contract
+        run: node scripts/test-progress-email-dispatch.mjs
+
+      - name: Send-time readiness regression
+        run: node scripts/test-progress-email-readiness.mjs
+
+      - name: Outbox intent and migration regressions
+        run: |
+          node scripts/test-progress-email-outbox-intent.mjs
+          node scripts/test-progress-email-outbox-migration.mjs
+
+      - name: Renderer regression
+        run: node scripts/test-progress-email-email.mjs
+
+      - name: Production build
+        run: npm run build

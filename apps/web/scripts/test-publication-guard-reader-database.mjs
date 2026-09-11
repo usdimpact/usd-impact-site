@@ -73,6 +73,11 @@ async function hold(work, code) {
   pass();
 }
 
+function syncHold(work, code) {
+  assert.throws(work, (error) => error?.code === code);
+  pass();
+}
+
 function contextHold(environment, code) {
   assert.throws(
     () => assertPublicationGuardReaderPreviewContext(environment),
@@ -96,11 +101,11 @@ contextHold({ ...baseEnvironment, VERCEL_GIT_REPO_OWNER: 'other' }, 'HOLD_READER
 contextHold({ ...baseEnvironment, VERCEL_PROJECT_ID: 'prj_other' }, 'HOLD_READER_PROJECT');
 contextHold({ ...baseEnvironment, VERCEL_GIT_PROVIDER: 'gitlab' }, 'HOLD_READER_GIT_PROVIDER');
 
-await hold(
+syncHold(
   () => createPublicationGuardReaderDatabase({ environment: { ...baseEnvironment, PUBLICATION_GUARD_READER_DATABASE_URL: '' }, PoolClass: FakePool }),
   'HOLD_DATABASE_URL',
 );
-await hold(
+syncHold(
   () => createPublicationGuardReaderDatabase({
     environment: {
       ...baseEnvironment,
@@ -110,7 +115,7 @@ await hold(
   }),
   'HOLD_DATABASE_PROJECT',
 );
-await hold(
+syncHold(
   () => createPublicationGuardReaderDatabase({
     environment: {
       ...baseEnvironment,
@@ -179,8 +184,8 @@ await hold(() => backendFailure.verifyIdentityAndPrivileges(), 'HOLD_READER_DATA
 await backendFailure.close();
 FakePool.mode = 'ok';
 
-await hold(
-  () => Promise.resolve().then(() => createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: {} })),
+syncHold(
+  () => createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: {} }),
   'HOLD_READER_POOL',
 );
 

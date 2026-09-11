@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import handler from '../api/catalyst-brief-source.js';
 import {
   CALENDAR_FIELDS, pipelineCalendarCandidate, verifyPipelineCalendar,
-  assertPipelineCalendarLease, assertCurrentCpiClaims, archivedCpiIdentity,
+  assertPipelineCalendarLease, archivedCpiIdentity,
 } from '../src/lib/publication-calendar-pipeline.js';
 import { candidate, scheduleHtml, monthlyHtml, releaseHtml } from './fixtures/publication-calendar.js';
 import { selectImportantCatalyst } from '../src/lib/catalyst-briefs.js';
@@ -136,7 +136,7 @@ try {
     { type: 'message', content: [{ type: 'output_text', text: JSON.stringify(brief), annotations: [] }] },
   ] });
   globalThis.fetch = async (url, init) => {
-    if (String(url) !== 'https://api.openai.com/v1/responses') return officialFetch(url, init);
+    if (String(url) !== 'https://api.openai.com/v1/responses') return officialFetch(url);
     aiCalls++; if (crossRelease) clock = Date.parse(canonical.releaseAt);
     return new Response(JSON.stringify(result()), { headers: { 'Content-Type': 'application/json' } });
   };

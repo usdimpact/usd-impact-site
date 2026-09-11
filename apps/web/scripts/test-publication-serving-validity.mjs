@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { createPublicationServingPolicy, SERVING_SCOPE, SERVING_NO_STORE } from '../src/lib/publication-serving-policy.js';
+import { createPublicationServingPolicy, SERVING_SCOPE } from '../src/lib/publication-serving-policy.js';
 
 const digest = (value) => createHash('sha256').update(value).digest('hex');
 const at = '2026-09-11T12:30:00.000Z'; const deadline = Date.parse(at);
@@ -48,7 +48,6 @@ async function check(name, operation) {
   try { await operation(); groups++; }
   catch (error) { throw new Error(`Serving policy regression: ${name}`, { cause: error }); }
 }
-async function view(env, options) { const ticket = await env.policy.inspect(env.sources); return env.policy.project(ticket, options); }
 // Invalidation is irreversible for already-issued tickets, even when authority later
 // returns to byte-equivalent values. All histories and clocks below are fixtures.
 for (const surface of ['article', 'homepage', 'news-current', 'news-archive', 'feed', 'latest-json', 'sitemap']) {

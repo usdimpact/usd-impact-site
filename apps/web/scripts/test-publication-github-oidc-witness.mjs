@@ -8,7 +8,6 @@ const BASE = Date.parse('2026-09-10T02:30:00.000Z');
 const pair = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const other = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const publicJwk = pair.publicKey.export({ format: 'jwk' });
-const otherJwk = other.publicKey.export({ format: 'jwk' });
 const weakJwk = { ...publicJwk, n: 'A'.repeat(64) };
 const KID = 'fixture-github-oidc-key';
 const MAIN_SHA = 'a'.repeat(40);

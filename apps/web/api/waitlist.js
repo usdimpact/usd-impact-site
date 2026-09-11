@@ -1,5 +1,6 @@
 import { handleResendWebhook } from '../src/lib/resend-webhook-handler.js';
 import { handleDailyLearningEmailRequest } from '../src/lib/daily-card-email-handler.js';
+import { handleMarketingEmailPreferencesRequest } from '../src/lib/marketing-email-preferences-handler.js';
 import {
   handleMarketingOptInConfirmation,
   handleMarketingOptInRequest,
@@ -204,6 +205,9 @@ export default async function handler(request, response) {
   }
   if (action === 'marketing-opt-in-confirm') {
     return handleMarketingOptInConfirmation(request, response);
+  }
+  if (action.startsWith('marketing-email-')) {
+    return handleMarketingEmailPreferencesRequest(request, response, action);
   }
 
   if (request.method !== 'POST') {

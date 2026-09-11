@@ -117,6 +117,7 @@ console.log(`publishing validation pass (${entries.length} dynamic entries; ${st
 await import('./test-verified-local-file.mjs');
 await import('./test-publication-calendar-parser-integrity.mjs');
 await import('./test-publication-calendar.mjs');
+await import('./test-publication-event-registry.mjs');
 
 await import('./test-publication-calendar-diagnostics.mjs');
 

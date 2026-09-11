@@ -71,6 +71,23 @@ const catalystTransmissionSchema = z.object({
   conditionalImpact: z.string(),
 });
 
+const catalystArchiveNoteSchema = z.object({
+  addedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
+    const date = new Date(`${value}T12:00:00Z`);
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  }, 'Archive note date must be a valid calendar date'),
+  introduction: z.string().min(1).max(500),
+  links: z.array(z.object({
+    context: z.string().min(1).max(200),
+    label: z.string().min(1).max(120),
+    href: z.union([
+      z.string().regex(/^\/news\/catalysts\/[a-z0-9-]+$/),
+      z.string().url().refine((value) => new URL(value).protocol === 'https:', 'External archive links must use HTTPS'),
+    ]),
+  })).min(1).max(4),
+  closing: z.string().min(1).max(300),
+});
+
 const weeklyReportThemeSchema = z.object({
   title: z.string(),
   summary: z.string(),
@@ -182,6 +199,7 @@ const catalystBriefs = defineCollection({
     status: publicationStatus,
     category: z.literal('USD Impact Catalyst Brief'),
     statusLabel: z.enum(['scheduled-confirmed', 'rescheduled', 'cancelled', 'released']),
+    archiveNote: catalystArchiveNoteSchema.optional(),
     summary: z.string(),
     assets: z.array(z.string()).min(1),
     verifiedFacts: z.array(catalystVerifiedFactSchema).min(2).max(6),
@@ -189,7 +207,9 @@ const catalystBriefs = defineCollection({
     whatToWatch: z.array(z.string()).min(3).max(6),
     sources: z.array(newsSourceSchema).min(2),
     complianceNote: z.string(),
-  }),
+  }).refine((brief) => !brief.archiveNote || (
+    brief.phase === 'preview' && brief.archiveNote.addedAt > brief.eventDate
+  ), { message: 'Archive notes belong to previews and must be dated after the event date', path: ['archiveNote'] }),
 });
 
 const weeklyReports = defineCollection({

@@ -16,7 +16,9 @@ export function coverageFamily(event) {
   if (/\b(?:PCE|Personal Income|BEA)\b/i.test(event)) return 'BEA:UNSUPPORTED';
   if (/\b(?:FOMC|Federal Reserve|Fed|Beige Book)\b/i.test(event)) return 'FED:UNSUPPORTED';
   if (/\b(?:EIA|Petroleum Status|Natural Gas Storage)\b/i.test(event)) return 'EIA:UNSUPPORTED';
-  if (/\bTreasury\b/i.test(event)) return 'TREASURY:UNSUPPORTED';
+  if (/\bTreasury\b/i.test(event) && /\bbuy[ -]?backs?\b/i.test(event)) return 'TREASURY:BUYBACK_UNSUPPORTED';
+  if (/\bTreasury\b/i.test(event) && /\bauctions?\b/i.test(event)) return 'TREASURY:AUCTION_UNSUPPORTED';
+  if (/\bTreasury\b/i.test(event)) return 'TREASURY:OTHER_UNSUPPORTED';
   if (/\b(?:BLS|Job Openings|JOLTS|Productivity)\b/i.test(event)) return 'BLS:OTHER_UNSUPPORTED';
   return 'UNKNOWN';
 }

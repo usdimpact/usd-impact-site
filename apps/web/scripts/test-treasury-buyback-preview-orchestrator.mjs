@@ -127,7 +127,7 @@ pass();
 
 for (const [name, discovery, preview] of [
   ['discovery', discoveryPass({ calendarLease: true }), previewPass()],
-  ['preview', discoveryPass(), previewPass({ publicationAuthorized: true }))],
+  ['preview', discoveryPass(), previewPass({ publicationAuthorized: true })],
 ]) {
   const result = await verifyDiscoveredTreasuryBuybackPreview(base, {
     now: clock, discover: async () => discovery, verifyPreview: async () => preview,
@@ -138,7 +138,7 @@ pass();
 
 for (const [name, discovery, preview] of [
   ['discovery validity', discoveryPass({ validUntil: 'not-a-time' }), previewPass()],
-  ['preview validity', discoveryPass(), previewPass({ validUntil: null }))],
+  ['preview validity', discoveryPass(), previewPass({ validUntil: null })],
 ]) {
   const result = await verifyDiscoveredTreasuryBuybackPreview(base, {
     now: clock, discover: async () => discovery, verifyPreview: async () => preview,

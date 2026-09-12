@@ -1,7 +1,7 @@
 ---
 title: "BEA Personal Income and Outlays (July) and GDP second estimate (Q2) — What to Watch"
-metaTitle: "BEA Personal Income and Outlays (July) and GDP second estimate (Q2) — What to Watch | USD Impact"
-metaDescription: "Official BEA schedule confirms July Personal Income and Outlays and the Q2 GDP second estimate for August 26 at 8:30 a.m. EDT, a combined inflation-and-growth catalyst for U.S. rates and the dollar."
+metaTitle: "Personal Income and Outlays, July 2026 + Q2 GDP | BEA"
+metaDescription: "BEA’s Aug. 26, 2026 releases: Personal Income and Outlays for July 2026, including PCE, plus the Q2 GDP second estimate and corporate profits."
 slug: "/news/catalysts/2026-08-26-bea-personal-income-and-outlays-july-and-gdp-second-estimate-q2-preview"
 eventKey: "2026-08-26-bea-personal-income-and-outlays-july-and-gdp-second-estimate-q2"
 event: "BEA Personal Income and Outlays (July) and GDP second estimate (Q2)"

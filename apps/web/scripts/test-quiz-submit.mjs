@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import handler from '../api/quiz-submit.js';
-import { QUIZ_RUNTIME } from '../api/_quiz-runtime.generated.js';
+import { QUIZ_RUNTIME } from '../src/data/_quiz-runtime.generated.js';
 
 const secret = 'test-secret-that-is-longer-than-thirty-two-characters';
 process.env.QUIZ_PROGRESS_SECRET = secret;

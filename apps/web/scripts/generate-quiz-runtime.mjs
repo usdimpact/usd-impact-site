@@ -7,7 +7,7 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(scriptDir, '..');
 const quizDir = path.join(webRoot, 'src/content/quizzes/en');
 const accessMapPath = path.join(webRoot, 'src/data/quiz-access-map.json');
-const outputPath = path.join(webRoot, 'api/_quiz-runtime.generated.js');
+const outputPath = path.join(webRoot, 'src/data/_quiz-runtime.generated.js');
 const contentRoot = path.join(webRoot, 'src/content');
 
 async function walk(directory) {

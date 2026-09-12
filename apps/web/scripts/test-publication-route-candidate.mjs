@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { createServer, request as httpRequest } from 'node:http';
 import { once } from 'node:events';
 import { pathToFileURL } from 'node:url';
-import { createDormantPublicationGuardFunction } from '../api/publication-guard.js';
+import { createDormantPublicationGuardFunction } from '../src/lib/publication-guard.js';
 import { createPublicationBuildRenderer } from '../src/lib/publication-build-renderer.js';
 import { createRecordedPublicationHandler } from '../src/lib/publication-response-boundary.js';
 import { SERVING_SCOPE } from '../src/lib/publication-serving-policy.js';

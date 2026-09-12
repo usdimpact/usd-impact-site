@@ -41,7 +41,7 @@ The Function also requires the generated bundle commit SHA to match the exact Ve
 
 ## Dormant route boundary
 
-`api/publication-guard.js` is a Preview-only candidate. There is deliberately no rewrite from the governed public paths to this Function in this increment.
+`src/lib/publication-guard.js` is a Preview-only, unregistered Function candidate kept outside `api/`. There is deliberately no rewrite from the governed public paths to this candidate in this increment.
 
 A request can reach its rendering path only when all of the following are true:
 

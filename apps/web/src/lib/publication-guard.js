@@ -1,10 +1,10 @@
-import { createRecordedPublicationHandler, } from '../src/lib/publication-response-boundary.js';
-import { createPublicationBuildRenderer } from '../src/lib/publication-build-renderer.js';
+import { createRecordedPublicationHandler, } from './publication-response-boundary.js';
+import { createPublicationBuildRenderer } from './publication-build-renderer.js';
 import {
   PUBLICATION_ROUTE_CANDIDATE,
   PublicationRouteCandidateError,
   verifyDormantPreviewRouteEnvelope,
-} from '../src/lib/publication-route-candidate.js';
+} from './publication-route-candidate.js';
 
 const SAFE = Object.freeze({
   'Cache-Control': 'private, no-store',
@@ -30,7 +30,7 @@ function hold(response, status, message) {
 }
 
 async function defaultBundleLoader() {
-  const generated = await import('../src/generated/publication-render-inputs.generated.js');
+  const generated = await import('../generated/publication-render-inputs.generated.js');
   return generated.PUBLICATION_RENDER_INPUTS;
 }
 

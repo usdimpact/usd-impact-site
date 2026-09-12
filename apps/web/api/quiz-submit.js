@@ -1,4 +1,4 @@
-import { QUIZ_RUNTIME } from '../src/data/_quiz-runtime.generated.js';
+import { QUIZ_RUNTIME } from './_quiz-runtime.generated.js';
 import {
   advanceQuizEntitlement,
   canAccessQuizOrder,

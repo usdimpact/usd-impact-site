@@ -2,10 +2,12 @@ import {
   PublicationGuardReaderDatabaseError,
   runPublicationGuardReaderReadiness,
 } from '../src/lib/publication-guard-reader-database.js';
+import { createDormantPublicationGuardFunction } from '../src/lib/publication-guard.js';
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 const SOURCE_ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,63}$/;
+const dormantPublicationGuard = createDormantPublicationGuardFunction();
 
 export const SOURCE_DATE_SCHEMA_PATTERN = '^\\d{4}-\\d{2}-\\d{2}$';
 export const SOURCE_ID_SCHEMA_PATTERN = '^[a-z0-9][a-z0-9-]{1,63}$';
@@ -224,6 +226,9 @@ function sendReaderReadiness(response, status, payload) {
 
 export default async function handler(request, response) {
   const url = new URL(request.url ?? '/', 'https://preview.invalid');
+  if (url.searchParams.get('publicationGuardRoute') === '1') {
+    return dormantPublicationGuard(request, response);
+  }
   if (request.method !== 'GET' || url.searchParams.get('publicationGuardReaderReadiness') !== '1') {
     return sendReaderReadiness(response, 404, {
       decision: 'HOLD_READER_ROUTE',

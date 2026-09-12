@@ -33,6 +33,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/publication-guard",
+      "destination": "/api/daily-news-validation?publicationGuardRoute=1"
+    },
+    {
       "source": "/guided-edition/book",
       "destination": "/api/guided-edition?__book=1"
     },

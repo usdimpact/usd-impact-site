@@ -1,6 +1,6 @@
 ---
 title: "BLS Employment Situation (August 2026) — scheduled release — What to Watch"
-metaTitle: "BLS Employment Situation (August 2026) — scheduled release — What to Watch | USD Impact"
+metaTitle: "BLS Employment Situation — August 2026 Jobs Report"
 metaDescription: "BLS releases the August 2026 Employment Situation on September 4 at 8:30 a.m. ET. Watch payrolls, unemployment, earnings, hours, and revisions."
 slug: "/news/catalysts/2026-09-04-bls-employment-situation-august-2026-scheduled-release-preview"
 eventKey: "2026-09-04-bls-employment-situation-august-2026-scheduled-release"

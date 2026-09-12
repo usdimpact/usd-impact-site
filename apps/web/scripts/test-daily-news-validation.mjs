@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {
+import dailyNewsValidationHandler, {
   SOURCE_DATE_RULES,
   SOURCE_DATE_SCHEMA_PATTERN,
   SOURCE_ID_RULES,
@@ -172,5 +172,56 @@ assert.equal(
   safeValidationDiagnostic('unexpected provider detail with a secret-looking value').code,
   'generation-validation-failed',
 );
+
+function createHttpResponse() {
+  const headers = new Map();
+  return {
+    statusCode: 200,
+    headersSent: false,
+    writableEnded: false,
+    destroyed: false,
+    body: '',
+    getHeaderNames() { return [...headers.keys()]; },
+    removeHeader(name) { headers.delete(String(name).toLowerCase()); },
+    setHeader(name, value) { headers.set(String(name).toLowerCase(), value); },
+    getHeader(name) { return headers.get(String(name).toLowerCase()); },
+    writeHead(status, values = {}) {
+      this.statusCode = status;
+      for (const [name, value] of Object.entries(values)) this.setHeader(name, value);
+      this.headersSent = true;
+    },
+    end(value = '') {
+      this.body += value;
+      this.writableEnded = true;
+    },
+  };
+}
+
+const priorMode = process.env.PUBLICATION_GUARD_ROUTE_CANDIDATE;
+const priorSecret = process.env.PUBLICATION_GUARD_ROUTE_SECRET;
+delete process.env.PUBLICATION_GUARD_ROUTE_CANDIDATE;
+delete process.env.PUBLICATION_GUARD_ROUTE_SECRET;
+try {
+  const guardResponse = createHttpResponse();
+  await dailyNewsValidationHandler({
+    method: 'GET',
+    url: '/api/publication-guard?publicationGuardRoute=1',
+    headers: {},
+    rawHeaders: [],
+  }, guardResponse);
+  assert.equal(guardResponse.statusCode, 404);
+  assert.equal(guardResponse.body, 'Not found.\n');
+  assert.equal(guardResponse.getHeader('cache-control'), 'private, no-store');
+
+  const ordinaryResponse = createHttpResponse();
+  await dailyNewsValidationHandler({ method: 'GET', url: '/api/daily-news-validation', headers: {} }, ordinaryResponse);
+  assert.equal(ordinaryResponse.statusCode, 404);
+  assert.equal(JSON.parse(ordinaryResponse.body).decision, 'HOLD_READER_ROUTE');
+} finally {
+  if (priorMode === undefined) delete process.env.PUBLICATION_GUARD_ROUTE_CANDIDATE;
+  else process.env.PUBLICATION_GUARD_ROUTE_CANDIDATE = priorMode;
+  if (priorSecret === undefined) delete process.env.PUBLICATION_GUARD_ROUTE_SECRET;
+  else process.env.PUBLICATION_GUARD_ROUTE_SECRET = priorSecret;
+}
 
 console.log('daily news validation helper tests pass');

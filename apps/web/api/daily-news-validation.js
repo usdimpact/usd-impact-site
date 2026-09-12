@@ -1,6 +1,13 @@
+import {
+  PublicationGuardReaderDatabaseError,
+  runPublicationGuardReaderReadiness,
+} from '../src/lib/publication-guard-reader-database.js';
+import { createDormantPublicationGuardFunction } from '../src/lib/publication-guard.js';
+
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 const SOURCE_ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,63}$/;
+const dormantPublicationGuard = createDormantPublicationGuardFunction();
 
 export const SOURCE_DATE_SCHEMA_PATTERN = '^\\d{4}-\\d{2}-\\d{2}$';
 export const SOURCE_ID_SCHEMA_PATTERN = '^[a-z0-9][a-z0-9-]{1,63}$';
@@ -207,4 +214,42 @@ export function safeValidationDiagnostic(message) {
     code: 'generation-validation-failed',
     reason: 'The generated bundle did not satisfy the USD Impact validation requirements.',
   };
+}
+
+function sendReaderReadiness(response, status, payload) {
+  response.statusCode = status;
+  response.setHeader('Content-Type', 'application/json; charset=utf-8');
+  response.setHeader('Cache-Control', 'no-store, max-age=0');
+  response.setHeader('Pragma', 'no-cache');
+  response.end(JSON.stringify(payload));
+}
+
+export default async function handler(request, response) {
+  const url = new URL(request.url ?? '/', 'https://preview.invalid');
+  if (url.searchParams.get('publicationGuardRoute') === '1') {
+    return dormantPublicationGuard(request, response);
+  }
+  if (request.method !== 'GET' || url.searchParams.get('publicationGuardReaderReadiness') !== '1') {
+    return sendReaderReadiness(response, 404, {
+      decision: 'HOLD_READER_ROUTE',
+      publicationAuthorized: false,
+      enforcementActive: false,
+    });
+  }
+
+  try {
+    const module = await import('pg');
+    const PoolClass = module.default?.Pool ?? module.Pool;
+    const result = await runPublicationGuardReaderReadiness({ environment: process.env, PoolClass });
+    return sendReaderReadiness(response, 200, result);
+  } catch (error) {
+    const decision = error instanceof PublicationGuardReaderDatabaseError
+      ? error.code
+      : 'HOLD_READER_UNAVAILABLE';
+    return sendReaderReadiness(response, 503, {
+      decision,
+      publicationAuthorized: false,
+      enforcementActive: false,
+    });
+  }
 }

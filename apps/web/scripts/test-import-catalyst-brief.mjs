@@ -50,10 +50,14 @@ try {
   await writeFile(bundlePath, JSON.stringify(bundle), 'utf8');
   const review = run();
   assert.equal(review.status, 0, review.stderr);
-  assert.match(await readFile(outputPath, 'utf8'), /^status:\s*"review"\s*$/m);
+  const reviewText = await readFile(outputPath, 'utf8');
+  assert.match(reviewText, /^status:\s*"review"\s*$/m);
   await rm(outputPath);
   const published = run('--publish');
-  assert.equal(published.status, 0, published.stderr);
+  assert.equal(published.status, 2, 'unsupported events cannot publish automatically');
+  assert.match(published.stderr, /HOLD_UNSUPPORTED_EVENT/);
+  // Simulate an unchanged legacy archive to preserve the original overwrite/no-op tests.
+  await writeFile(outputPath, reviewText.replace('status: "review"', 'status: "published"'));
   const content = await readFile(outputPath, 'utf8');
   assert.match(content, /^status:\s*"published"\s*$/m);
   const duplicate = run('--publish');

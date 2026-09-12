@@ -16,3 +16,5 @@ assert.doesNotMatch(workflow, /gh pr merge/, 'workflow must never merge unreview
 assert.match(workflow, /automation requires attention/, 'workflow failures must create or update a health issue');
 
 console.log('catalyst brief workflow tests pass');
+
+assert.doesNotMatch(workflow, /gh issue close/, 'research and no-op successes must not auto-close publication incidents');

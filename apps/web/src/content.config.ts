@@ -45,7 +45,15 @@ const newsHighlightSchema = z.object({
   sourceIds: z.array(z.string()).min(1),
 });
 
+// Optional for unchanged archives; automatic ingress requires a supported full record.
+const publicationCalendarSchema = z.object({
+  publisher: z.string(), series: z.string(), referencePeriod: z.string(),
+  releaseStage: z.string(), eventDate: z.string(), releaseTime: z.string(),
+  timeZone: z.string(), releaseAt: z.string(),
+}).strict().nullable().optional();
+
 const newsCatalystSchema = z.object({
+  calendar: publicationCalendarSchema,
   date: z.string(),
   event: z.string(),
   eventType: z.enum([
@@ -190,6 +198,7 @@ const catalystBriefs = defineCollection({
     metaDescription: z.string(),
     slug: z.string(),
     eventKey: z.string(),
+    calendar: publicationCalendarSchema,
     event: z.string(),
     eventDate: z.string(),
     sourceEditionDate: z.string(),

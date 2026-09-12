@@ -148,6 +148,7 @@ await import('./test-publication-admission-database.mjs');
 await import('./test-publication-postgres-adapter.mjs');
 await import('./test-publication-postgres-serving-integration.mjs');
 await import('./test-publication-guard-reader-database.mjs');
+await import('./test-publication-preview-rehearsal.mjs');
 
 await import('./test-publication-writer-permissions.mjs');
 

@@ -86,7 +86,7 @@ if (!mainNavigation) {
   failures.push(`Main navigation block not found in ${path.relative(process.cwd(), navigationPath)}`);
 }
 
-const requiredRoutes = [...mainNavigation.matchAll(/<a\s+href="(\/[^\"]*)"/g)]
+const requiredRoutes = [...mainNavigation.matchAll(/<a\s+href="(\/[^"]*)"/g)]
   .map((match) => normalizeSlug(match[1]))
   .filter((slug) => slug !== '/');
 
@@ -112,3 +112,53 @@ if (failures.length > 0) {
 }
 
 console.log(`publishing validation pass (${entries.length} dynamic entries; ${staticRoutes.size} static routes; ${new Set(requiredRoutes).size} required main-navigation routes)`);
+
+// Offline calendar regressions only; live publication enforcement remains tracked in #558.
+await import('./test-verified-local-file.mjs');
+await import('./test-publication-calendar-parser-integrity.mjs');
+await import('./test-publication-calendar.mjs');
+await import('./test-publication-event-registry.mjs');
+
+await import('./test-publication-calendar-diagnostics.mjs');
+
+await import('./test-publication-calendar-captured.mjs');
+
+await import('./test-publication-calendar-pipeline.mjs');
+await import('./test-publication-calendar-release.mjs');
+
+await import('./test-publication-calendar-multiseries.mjs');
+await import('./test-publication-calendar-coverage.mjs');
+await import('./test-treasury-buyback-operation.mjs');
+await import('./test-treasury-buyback-xml.mjs');
+await import('./test-treasury-buyback-verifier.mjs');
+await import('./test-treasury-buyback-preview-verifier.mjs');
+await import('./test-treasury-buyback-discovery.mjs');
+await import('./test-treasury-buyback-preview-orchestrator.mjs');
+await import('./test-treasury-buyback-outcome-discovery.mjs');
+await import('./test-treasury-buyback-outcome-orchestrator.mjs');
+
+await import('./test-publication-serving-policy.mjs');
+
+await import('./test-publication-serving-validity.mjs');
+
+await import('./test-publication-response-boundary.mjs');
+await import('./test-publication-route-candidate.mjs');
+
+await import('./test-publication-admission-database.mjs');
+await import('./test-publication-postgres-adapter.mjs');
+await import('./test-publication-postgres-serving-integration.mjs');
+await import('./test-publication-guard-reader-database.mjs');
+
+await import('./test-publication-writer-permissions.mjs');
+
+await import('./test-publication-receipt-verifier.mjs');
+await import('./test-publication-receipt-ledger.mjs');
+await import('./test-publication-witness-receipt-v2.mjs');
+await import('./test-publication-github-oidc-witness.mjs');
+await import('./test-publication-oidc-evidence-bridge.mjs');
+
+await import('./test-publication-first-response-witness.mjs');
+
+await import('./test-publication-witness-lifecycle.mjs');
+await import('./test-publication-release-lease.mjs');
+await import('./test-publication-admission-handoff.mjs');

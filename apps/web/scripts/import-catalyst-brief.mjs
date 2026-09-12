@@ -1,4 +1,5 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { verifyPipelineCalendar, assertPipelineCalendarLease, explicitCpiIdentity, archivedCpiIdentity } from '../src/lib/publication-calendar-pipeline.js';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const inputPath = process.argv[2];
@@ -84,6 +85,7 @@ const lines = [
   `eventKey: ${quoted(eventKey)}`,
   `event: ${quoted(requiredString(payload, 'event'))}`,
   `eventDate: ${quoted(eventDate)}`,
+  `calendar: ${JSON.stringify(payload.calendar ?? null)}`,
   `sourceEditionDate: ${quoted(sourceEditionDate)}`,
   `phase: ${quoted(phase)}`,
   `generatedAt: ${quoted(requiredString(payload, 'generatedAt'))}`,
@@ -139,5 +141,25 @@ if (existing && /^status:\s*"published"\s*$/m.test(existing)) {
 }
 if (existing) throw new Error(`${outputPath} already exists and requires editorial resolution`);
 
-await writeFile(outputPath, `${lines.join('\n')}\n`, 'utf8');
+if (publish) {
+  try {
+    const identity = explicitCpiIdentity(payload.event);
+    if (identity) {
+      const files = (await readdir(path.dirname(outputPath))).filter((file) => file.endsWith('.md'));
+      if (files.length > 500) throw Object.assign(new Error('Brief archive exceeds the reviewed identity bound.'), { code: 'HOLD_SOURCE_SCHEMA' });
+      for (const file of files) {
+        const prior = archivedCpiIdentity(await readFile(path.join(path.dirname(outputPath), file), 'utf8'));
+        if (prior === `${identity}:${phase}`) throw Object.assign(new Error('Canonical event and phase already exist under another URL; editorial resolution is required.'), { code: 'HOLD_DUPLICATE_EVENT' });
+      }
+    }
+    const lease = await verifyPipelineCalendar(payload, { kind: 'brief', boundary: 'before-brief-import' });
+    console.log(JSON.stringify(lease));
+    assertPipelineCalendarLease(lease, payload);
+  } catch (error) {
+    console.error(JSON.stringify(error.calendarAudit ?? { decision: error.code ?? 'HOLD_INTERNAL_ERROR', reason: error.message }));
+    process.exit(2);
+  }
+}
+
+await writeFile(outputPath, `${lines.join('\n')}\n`, { encoding: 'utf8', flag: 'wx' });
 console.log(`Imported Catalyst Brief to ${outputPath} with status ${publish ? 'published' : 'review'}.`);

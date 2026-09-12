@@ -1,3 +1,5 @@
+import { candidate as calendarFixture, scheduleHtml, monthlyHtml, releaseHtml } from './fixtures/publication-calendar.js';
+import { CALENDAR_FIELDS } from '../src/lib/publication-calendar-pipeline.js';
 import assert from 'node:assert/strict';
 import handler from '../api/catalyst-brief-source.js';
 
@@ -9,18 +11,19 @@ const originalEnv = {
 };
 
 const urls = {
-  bls: 'https://www.bls.gov/schedule/2026/08_sched.htm',
+  bls: 'https://www.bls.gov/schedule/2026/09_sched.htm',
   reuters: 'https://www.reuters.com/markets/us/jobs-preview-2026-08-06/',
   ap: 'https://apnews.com/article/jobs-economy-2026-preview',
 };
 const inventedBlsUrl = 'https://www.bls.gov/news.release/empsit.nr0.htm';
 
 const candidate = {
+  calendar: Object.fromEntries(CALENDAR_FIELDS.map((key) => [key, calendarFixture[key]])),
   phase: 'preview',
-  asOf: '2026-08-05',
-  sourceEditionDate: '2026-08-05',
-  eventDate: '2026-08-07',
-  event: 'BLS Employment Situation — July 2026',
+  asOf: '2026-09-09',
+  sourceEditionDate: '2026-09-09',
+  eventDate: '2026-09-11',
+  event: 'BLS Consumer Price Index (CPI) for August 2026',
   eventType: 'labor',
   assets: ['DXY', 'U.S. rates', 'S&P 500'],
   importance: 'high',
@@ -32,9 +35,9 @@ const draft = {
   publishable: true,
   holdReason: '',
   statusLabel: 'scheduled-confirmed',
-  summary: 'The official BLS calendar confirms the July Employment Situation release for August 7, with rates and dollar sensitivity concentrated around payrolls and unemployment.',
+  summary: 'The official BLS calendar confirms the August CPI release for September 11, with rates and dollar sensitivity concentrated around payrolls and unemployment.',
   verifiedFacts: [
-    { statement: 'BLS schedules the July Employment Situation release for August 7, 2026.', sourceIds: ['bls-schedule'] },
+    { statement: 'BLS schedules the August CPI release for September 11, 2026.', sourceIds: ['bls-schedule'] },
     { statement: 'Independent reporting describes the release as an important input for rates expectations.', sourceIds: ['reuters-preview', 'ap-preview'] },
   ],
   transmissionChannels: [
@@ -43,9 +46,9 @@ const draft = {
   ],
   whatToWatch: ['Payroll growth', 'Unemployment rate', 'Average hourly earnings'],
   sources: [
-    { id: 'bls-schedule', title: 'BLS release calendar', url: urls.bls, publishedAt: '2026-08-05' },
-    { id: 'reuters-preview', title: 'U.S. jobs preview', url: urls.reuters, publishedAt: '2026-08-05' },
-    { id: 'ap-preview', title: 'Employment report preview', url: urls.ap, publishedAt: '2026-08-05' },
+    { id: 'bls-schedule', title: 'BLS release calendar', url: urls.bls, publishedAt: '2026-09-09' },
+    { id: 'reuters-preview', title: 'U.S. jobs preview', url: urls.reuters, publishedAt: '2026-09-09' },
+    { id: 'ap-preview', title: 'Employment report preview', url: urls.ap, publishedAt: '2026-09-09' },
   ],
   body: '## Event map\n\nThe event matters because labor data can change the expected policy path.\n\n## Risk controls\n\nInterpret the release with revisions and participation data rather than one headline figure.',
 };
@@ -94,7 +97,16 @@ function responseRecorder() {
 
 async function invoke(req) {
   const response = responseRecorder();
-  await handler(req, response);
+  const providerFetch = globalThis.fetch;
+  const oldNow = Date.now;
+  Date.now = () => Date.parse('2026-09-09T18:00:00Z');
+  globalThis.fetch = (url, options) => {
+    const html = String(url).endsWith('/schedule/news_release/cpi.htm') ? scheduleHtml
+      : String(url).endsWith('/09_sched_list.htm') ? monthlyHtml
+      : String(url).endsWith('/news.release/cpi.nr0.htm') ? releaseHtml() : null;
+    return html === null ? providerFetch(url, options) : Promise.resolve(new Response(html, { headers: { 'Content-Type': 'text/html' } }));
+  };
+  try { await handler(req, response); } finally { globalThis.fetch = providerFetch; Date.now = oldNow; }
   return { status: response.statusCode, headers: response.headers, json: JSON.parse(response.body) };
 }
 
@@ -115,7 +127,7 @@ try {
   assert.equal(success.json.statusLabel, 'scheduled-confirmed');
   assert.equal(success.json.verifiedFacts[0].verification, 'verified-primary');
   assert.equal(success.json.verifiedFacts[1].verification, 'verified-multiple');
-  assert.match(success.json.slug, /^\/news\/catalysts\/2026-08-07-/);
+  assert.match(success.json.slug, /^\/news\/catalysts\/2026-09-11-/);
   assert.equal(success.headers['x-usd-impact-model'], 'gpt-5-test');
   const providerBody = JSON.parse(calls[0].options.body);
   assert.equal(providerBody.tool_choice, 'required');

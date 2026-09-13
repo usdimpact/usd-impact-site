@@ -3,8 +3,8 @@ export const libraryMeta = {
   eyebrow: "Institutional macro-finance education",
   description:
     "A structured visual library for understanding how dollar measurement, rates, liquidity, funding markets, policy facilities and cross-border balance sheets connect.",
-  totalDurationSeconds: 4897.148,
-  totalDurationLabel: "1 hr 21 min",
+  totalDurationSeconds: 4932.183,
+  totalDurationLabel: "1 hr 22 min",
   compliance: "Educational and informational purposes only. Not investment advice.",
 };
 
@@ -409,7 +409,7 @@ export const videos = [
   },
   {
     order: 7, slug: "part-7-dollar-liquidity-backstops-and-policy-facilities", title: "Dollar Liquidity Backstops and Policy Facilities", shortTitle: "Liquidity Backstops",
-    collectionId: "dollar-funding-stack", format: "masterclass", durationSeconds: 337.045, durationLabel: "05:37",
+    collectionId: "dollar-funding-stack", format: "masterclass", durationSeconds: 372.080, durationLabel: "06:12",
     description: "Distinguish standing liquidity backstops by counterparty, transaction structure, collateral, pricing and interpretation limits.",
     concepts: ["Swap lines", "FIMA Repo", "Standing facilities"], sources: ["Federal Reserve Board", "Federal Reserve Bank of New York", "Bank for International Settlements"],
 

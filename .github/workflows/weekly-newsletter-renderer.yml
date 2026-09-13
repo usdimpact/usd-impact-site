@@ -1,0 +1,62 @@
+name: Weekly newsletter renderer
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/weekly-newsletter-contract.js'
+      - 'apps/web/src/lib/weekly-newsletter-candidate.js'
+      - 'apps/web/src/lib/weekly-newsletter-email.js'
+      - 'apps/web/src/lib/marketing-email-preference-token.js'
+      - 'apps/web/scripts/test-weekly-newsletter-contract.mjs'
+      - 'apps/web/scripts/test-weekly-newsletter-candidate.mjs'
+      - 'apps/web/scripts/test-weekly-newsletter-email.mjs'
+      - '.github/workflows/weekly-newsletter-renderer.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/lib/weekly-newsletter-contract.js'
+      - 'apps/web/src/lib/weekly-newsletter-candidate.js'
+      - 'apps/web/src/lib/weekly-newsletter-email.js'
+      - 'apps/web/src/lib/marketing-email-preference-token.js'
+      - 'apps/web/scripts/test-weekly-newsletter-contract.mjs'
+      - 'apps/web/scripts/test-weekly-newsletter-candidate.mjs'
+      - 'apps/web/scripts/test-weekly-newsletter-email.mjs'
+      - '.github/workflows/weekly-newsletter-renderer.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  weekly-newsletter-renderer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+
+      - name: Syntax checks
+        run: |
+          node --check src/lib/weekly-newsletter-candidate.js
+          node --check src/lib/weekly-newsletter-email.js
+
+      - name: Existing Weekly payload contract
+        run: node scripts/test-weekly-newsletter-contract.mjs
+
+      - name: Weekly candidate contract
+        run: node scripts/test-weekly-newsletter-candidate.mjs
+
+      - name: Weekly email renderer contract
+        run: node scripts/test-weekly-newsletter-email.mjs

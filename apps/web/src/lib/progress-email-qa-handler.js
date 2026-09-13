@@ -1,11 +1,12 @@
 import { validCronAuthorization } from './account-deletion-finalizer.js';
-import { requestOrigin } from './supabase-auth.js';
 import { requestHeader } from './supabase-server.js';
-import { createVercelProtectedPreviewFetch } from './vercel-protected-preview-fetch.js';
 import {
-  WeeklyNewsletterQaBatchError,
-  runWeeklyNewsletterQaBatch,
-} from './weekly-newsletter-qa-batch.js';
+  ProgressEmailQaBatchError,
+  runProgressEmailQaBatch,
+} from './progress-email-qa-batch.js';
+import { resolveProgressEmailQaSources } from './progress-email-qa-source-resolver.js';
+
+const WEEK_PATTERN = /^20\d{2}-\d{2}-\d{2}$/;
 
 function sendJson(response, status, payload, extraHeaders = {}) {
   response.statusCode = status;
@@ -24,30 +25,42 @@ function parseJsonBody(request) {
   throw new TypeError('Request body is missing.');
 }
 
+function requireWeekEnding(value) {
+  const weekEnding = String(value ?? '').trim();
+  const parsed = Date.parse(`${weekEnding}T00:00:00.000Z`);
+  if (!WEEK_PATTERN.test(weekEnding) || !Number.isFinite(parsed)) {
+    throw new ProgressEmailQaBatchError(
+      'An explicit YYYY-MM-DD current Weekly Report period end is required.',
+      'INVALID_PROGRESS_EMAIL_QA_WEEK',
+      400,
+    );
+  }
+  return weekEnding;
+}
+
 function safeBatchError(error) {
   const status = Number.isInteger(error?.status) ? error.status : 503;
   const code = /^[A-Z][A-Z0-9_]{1,79}$/.test(String(error?.code ?? ''))
     ? error.code
-    : 'WEEKLY_NEWSLETTER_QA_BATCH_FAILED';
+    : 'PROGRESS_EMAIL_QA_BATCH_FAILED';
   return {
     status,
     payload: {
       error: status >= 500
-        ? 'Weekly Newsletter QA is temporarily unavailable.'
-        : 'Weekly Newsletter QA request was rejected.',
+        ? 'Learning Progress QA is temporarily unavailable.'
+        : 'Learning Progress QA request was rejected.',
       code,
     },
   };
 }
 
-export async function handleWeeklyNewsletterQaBatchRequest(
+export async function handleProgressEmailQaBatchRequest(
   request,
   response,
   {
     authorize = validCronAuthorization,
-    runBatch = runWeeklyNewsletterQaBatch,
-    resolveOrigin = requestOrigin,
-    createArtifactFetch = createVercelProtectedPreviewFetch,
+    runBatch = runProgressEmailQaBatch,
+    resolveSources = resolveProgressEmailQaSources,
     environment = process.env,
   } = {},
 ) {
@@ -83,32 +96,49 @@ export async function handleWeeklyNewsletterQaBatchRequest(
   }
 
   try {
-    const origin = resolveOrigin(request);
-    const artifactFetch = createArtifactFetch({ environment });
+    const weekEnding = requireWeekEnding(body.weekEnding);
+    if (typeof resolveSources !== 'function') {
+      throw new ProgressEmailQaBatchError(
+        'Learning Progress QA source resolver is not configured.',
+        'PROGRESS_EMAIL_QA_SOURCE_RESOLVER_MISSING',
+        503,
+      );
+    }
+    const sources = await resolveSources({ weekEnding, environment });
+    if (
+      !sources
+      || !Array.isArray(sources.weeklyReports)
+      || !sources.currentWeeklyReport
+      || String(sources.currentWeeklyReport.periodEnd ?? '') !== weekEnding
+    ) {
+      throw new ProgressEmailQaBatchError(
+        'Learning Progress QA source resolution did not match the requested Weekly period.',
+        'PROGRESS_EMAIL_QA_SOURCE_MISMATCH',
+        503,
+      );
+    }
     const result = await runBatch({
-      weekEnding: body.weekEnding,
-      artifactBaseUrl: environment.WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL || origin,
-      unsubscribeBaseUrl: environment.WEEKLY_NEWSLETTER_PUBLIC_BASE_URL || origin,
+      weeklyReports: sources.weeklyReports,
+      currentWeeklyReport: sources.currentWeeklyReport,
       environment,
-      artifactFetch,
     });
     return sendJson(response, result.failed > 0 ? 503 : 200, {
       ok: result.failed === 0,
-      weekEnding: result.weekEnding,
-      artifactChecksum: result.artifactChecksum,
+      weekEnding,
       selected: result.selected,
       accepted: result.accepted,
       skipped: result.skipped,
       failed: result.failed,
+      retryScheduled: result.retryScheduled,
       results: result.results,
     });
   } catch (error) {
-    if (error instanceof WeeklyNewsletterQaBatchError || Number.isInteger(error?.status)) {
+    if (error instanceof ProgressEmailQaBatchError || Number.isInteger(error?.status)) {
       const safe = safeBatchError(error);
       return sendJson(response, safe.status, safe.payload);
     }
-    console.error('Weekly Newsletter QA batch failed.', {
-      code: error?.code || 'WEEKLY_NEWSLETTER_QA_BATCH_FAILED',
+    console.error('Learning Progress QA batch failed.', {
+      code: error?.code || 'PROGRESS_EMAIL_QA_BATCH_FAILED',
     });
     const safe = safeBatchError(error);
     return sendJson(response, safe.status, safe.payload);

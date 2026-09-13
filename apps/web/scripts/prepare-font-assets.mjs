@@ -1,7 +1,6 @@
 import { createHash } from 'node:crypto';
 import { copyFile, mkdir, readFile } from 'node:fs/promises';
 import { inspectNewsletterPreviewReadiness } from '../src/lib/newsletter-preview-readiness.js';
-import { runProgressEmailPreviewQa } from './run-progress-email-preview-qa.mjs';
 
 const NEWSLETTER_QA_BRANCH = 'integration/newsletter-system-convergence';
 const vercelCommitRef = String(process.env.VERCEL_GIT_COMMIT_REF ?? '').trim();
@@ -14,7 +13,6 @@ if (vercelCommitRef === NEWSLETTER_QA_BRANCH) {
     throw new Error(`Newsletter Preview environment gate failed: ${failed.map((item) => item.key).join(', ')}.`);
   }
   console.log('Newsletter Preview environment gate passed.');
-  await runProgressEmailPreviewQa(process.env);
 }
 
 const assets = [

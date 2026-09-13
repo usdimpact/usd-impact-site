@@ -1,5 +1,19 @@
 import { createHash } from 'node:crypto';
 import { copyFile, mkdir, readFile } from 'node:fs/promises';
+import { inspectNewsletterPreviewReadiness } from '../src/lib/newsletter-preview-readiness.js';
+
+const NEWSLETTER_QA_BRANCH = 'integration/newsletter-system-convergence';
+const vercelCommitRef = String(process.env.VERCEL_GIT_COMMIT_REF ?? '').trim();
+
+if (vercelCommitRef === NEWSLETTER_QA_BRANCH) {
+  const report = inspectNewsletterPreviewReadiness(process.env);
+  const failed = report.checks.filter((item) => !item.ok);
+  console.log(`Newsletter Preview environment gate: ${report.passed}/${report.checked} checks passed; shared QA recipients: ${report.sharedQaRecipients}.`);
+  if (failed.length > 0) {
+    throw new Error(`Newsletter Preview environment gate failed: ${failed.map((item) => item.key).join(', ')}.`);
+  }
+  console.log('Newsletter Preview environment gate passed.');
+}
 
 const assets = [
   {

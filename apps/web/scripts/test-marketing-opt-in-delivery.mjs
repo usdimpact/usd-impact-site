@@ -53,7 +53,7 @@ function response(payload, status = 200) {
     ok: status >= 200 && status < 300,
     status,
     async text() {
-      return payload == null ? '' : JSON.stringify(payload);
+      return JSON.stringify(payload);
     },
   };
 }

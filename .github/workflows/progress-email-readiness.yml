@@ -1,0 +1,60 @@
+name: Progress email readiness
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/progress-email-contract.js'
+      - 'apps/web/src/lib/progress-email-email.js'
+      - 'apps/web/src/lib/progress-email-readiness.js'
+      - 'apps/web/src/lib/progress-email-outbox-intent.js'
+      - 'apps/web/scripts/test-progress-email-contract.mjs'
+      - 'apps/web/scripts/test-progress-email-email.mjs'
+      - 'apps/web/scripts/test-progress-email-readiness.mjs'
+      - 'apps/web/scripts/test-progress-email-outbox-intent.mjs'
+      - '.github/workflows/progress-email-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  progress-email-readiness:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax checks
+        run: |
+          node --check src/lib/progress-email-readiness.js
+          node --check src/lib/progress-email-outbox-intent.js
+          node --check scripts/test-progress-email-readiness.mjs
+          node --check scripts/test-progress-email-outbox-intent.mjs
+
+      - name: Existing Progress payload contract
+        run: node scripts/test-progress-email-contract.mjs
+
+      - name: Existing Progress renderer contract
+        run: node scripts/test-progress-email-email.mjs
+
+      - name: Live-state readiness contract
+        run: node scripts/test-progress-email-readiness.mjs
+
+      - name: Deterministic outbox intent contract
+        run: node scripts/test-progress-email-outbox-intent.mjs
+
+      - name: Production build
+        run: npm run build

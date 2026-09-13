@@ -1,10 +1,12 @@
 import { normalizeEmail } from './email-readiness-contracts.js';
+import { deliverMarketingOptInConfirmation } from './marketing-opt-in-delivery.js';
 import {
   MarketingOptInReadinessError,
   confirmMarketingOptIn,
   prepareMarketingOptInRequest,
 } from './marketing-opt-in-readiness.js';
 import { MARKETING_OPT_IN_PURPOSES } from './marketing-opt-in-token.js';
+import { requestOrigin } from './supabase-auth.js';
 import {
   getVerifiedSupabaseUser,
   readBearerToken,
@@ -100,7 +102,9 @@ export async function handleMarketingOptInRequest(
   response,
   {
     prepare = prepareMarketingOptInRequest,
+    deliver = deliverMarketingOptInConfirmation,
     getVerifiedUser = getVerifiedSupabaseUser,
+    resolveOrigin = requestOrigin,
     environment = process.env,
   } = {},
 ) {
@@ -122,7 +126,7 @@ export async function handleMarketingOptInRequest(
     return sendJson(response, 400, { error: 'Invalid request body.', code: 'INVALID_REQUEST_BODY' });
   }
 
-  // Honeypot requests receive a neutral response and do not reach Auth or the ledger.
+  // Honeypot requests receive a neutral response and do not reach Auth, the ledger, or the provider.
   if (String(payload.company ?? '').trim()) {
     return sendJson(response, 202, { ok: true, status: 'check_email' });
   }
@@ -169,7 +173,7 @@ export async function handleMarketingOptInRequest(
   }
 
   try {
-    await prepare({
+    const result = await prepare({
       email,
       requestId: payload.requestId,
       purpose,
@@ -177,6 +181,13 @@ export async function handleMarketingOptInRequest(
       locale: 'en',
       environment,
     });
+    if (result.outbox) {
+      await deliver({
+        outbox: result.outbox,
+        baseUrl: resolveOrigin(request),
+        environment,
+      });
+    }
     // Deliberately neutral: do not reveal whether an address was already subscribed.
     return sendJson(response, 202, { ok: true, status: 'check_email' });
   } catch (error) {

@@ -14,12 +14,6 @@ function readTopLevelQuoted(frontmatter, key) {
   return match[1];
 }
 
-function readTopLevelPlain(frontmatter, key) {
-  const match = frontmatter.match(new RegExp(`^${key}:\\s+([^\\n]+)\\s*$`, 'm'));
-  if (!match) throw new Error(`Missing top-level field ${key}.`);
-  return match[1].trim().replace(/^"|"$/g, '');
-}
-
 function readWeeklyReport(periodEnd) {
   const source = fs.readFileSync(
     path.join(process.cwd(), 'src', 'content', 'weekly-reports', `${periodEnd}.md`),

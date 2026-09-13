@@ -35,7 +35,7 @@ const pageTitle = 'Confirm email preference | USD Impact';
         <p id="missing-token" class="error" role="alert">
           This confirmation link is incomplete. Return to the email you received and use its full confirmation link.
         </p>
-        <form method="post" action="/api/email-confirm" accept-charset="UTF-8" id="confirm-form">
+        <form method="post" action="/api/newsletter-qa?action=confirm" accept-charset="UTF-8" id="confirm-form">
           <input type="hidden" name="token" id="confirmation-token" value="" />
           <input type="hidden" name="Email-Opt-In" value="Confirm" />
           <button type="submit" id="confirm-button" disabled>Confirm email preference</button>

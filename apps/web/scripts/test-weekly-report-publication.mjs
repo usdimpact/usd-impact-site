@@ -37,6 +37,8 @@ try {
   assert.match(workflow, /all\(\. == "fresh"\)/);
   assert.match(workflow, /gh pr create --draft/);
   assert.match(workflow, /gh workflow run quality\.yml --ref/);
+  assert.match(workflow, /git -C "\$GITHUB_WORKSPACE" add "\$expected"/);
+  assert.doesNotMatch(workflow, /^\s*git add "\$expected"$/m);
   assert.doesNotMatch(workflow, /gh pr merge|enable-auto-merge|--auto/);
 
   // Parse the literal/inline run steps in this workflow's fixed YAML layout.

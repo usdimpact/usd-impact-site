@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { copyFile, mkdir, readFile } from 'node:fs/promises';
 import { inspectNewsletterPreviewReadiness } from '../src/lib/newsletter-preview-readiness.js';
 import { runNewsletterPreviewOptIn } from './run-newsletter-preview-opt-in.mjs';
+import { runWeeklyNewsletterPreviewQa } from './run-weekly-newsletter-preview-qa.mjs';
 
 const NEWSLETTER_QA_BRANCH = 'integration/newsletter-system-convergence';
 const vercelCommitRef = String(process.env.VERCEL_GIT_COMMIT_REF ?? '').trim();
@@ -15,6 +16,7 @@ if (vercelCommitRef === NEWSLETTER_QA_BRANCH) {
   }
   console.log('Newsletter Preview environment gate passed.');
   await runNewsletterPreviewOptIn(process.env);
+  await runWeeklyNewsletterPreviewQa(process.env);
 }
 
 const assets = [

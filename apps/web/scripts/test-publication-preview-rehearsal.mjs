@@ -18,6 +18,7 @@ const pass = () => { groups += 1; };
 const now = Date.parse('2026-09-12T18:00:00.000Z');
 const ref = PUBLICATION_GUARD_READER_RUNTIME_SCOPE.projectRef;
 const databaseSecret = 'r'.repeat(64);
+const readerCa = `-----BEGIN CERTIFICATE-----\n${'A'.repeat(256)}\n-----END CERTIFICATE-----`;
 const routeSecret = 'fixture-route-secret-32-bytes-minimum-558';
 const commitSha = 'a'.repeat(40);
 const deploymentHost = 'usd-impact-site-preview-fixture-usd-impact.vercel.app';
@@ -28,6 +29,7 @@ const environment = Object.freeze({
   PUBLICATION_GUARD_ROUTE_SECRET: routeSecret,
   PUBLICATION_GUARD_PREVIEW_REHEARSAL: PUBLICATION_PREVIEW_REHEARSAL.approvedMode,
   PUBLICATION_GUARD_READER_DATABASE_URL: readerUrl,
+  PUBLICATION_GUARD_READER_DATABASE_CA_CERT: readerCa,
   VERCEL: '1',
   VERCEL_ENV: 'preview',
   VERCEL_TARGET_ENV: 'preview',
@@ -155,6 +157,9 @@ assert.equal(diagnostic.publicationAuthorized, false);
 assert.equal(diagnostic.enforcementActive, false);
 assert.equal(JSON.stringify(diagnostic).includes(databaseSecret), false);
 assert.equal(JSON.stringify(diagnostic).includes(readerUrl), false);
+assert.equal(JSON.stringify(diagnostic).includes(readerCa), false);
+assert.deepEqual(FakePool.instances.at(-1).config.ssl, { ca: readerCa, rejectUnauthorized: true });
+assert.equal(Object.hasOwn(FakePool.instances.at(-1).config, 'connectionString'), false);
 assert.equal(FakePool.instances.at(-1).ended, true);
 pass();
 

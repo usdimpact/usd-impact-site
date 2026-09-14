@@ -206,6 +206,7 @@ assert.deepEqual(identity, {
   projectRef: ref,
 });
 assert.equal(JSON.stringify(identity).includes(secret), false);
+assert.equal(pool.calls.at(0).text.includes('pg_stat_ssl'), false, 'Supavisor backend TLS state must not stand in for the client TLS hop');
 pass();
 
 const snapshot = await database.readBaselineSnapshot();
@@ -224,9 +225,12 @@ await hold(() => privilegeDrift.verifyIdentityAndPrivileges(), 'HOLD_READER_PRIV
 await privilegeDrift.close();
 
 FakePool.identity = { ...goodIdentity, ssl: false };
-const sslDrift = createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
-await hold(() => sslDrift.verifyIdentityAndPrivileges(), 'HOLD_READER_SSL');
-await sslDrift.close();
+const poolerBackendTlsFalse = createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
+const poolerIdentity = await poolerBackendTlsFalse.verifyIdentityAndPrivileges();
+assert.equal(poolerIdentity.ssl, true, 'client TLS is established by the CA-backed pg transport, not pg_stat_ssl behind Supavisor');
+assert.equal(FakePool.instances.at(-1).calls.at(0).text.includes('pg_stat_ssl'), false);
+pass();
+await poolerBackendTlsFalse.close();
 
 FakePool.identity = { ...goodIdentity, role: 'fx558_controller_login' };
 const roleDrift = createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });

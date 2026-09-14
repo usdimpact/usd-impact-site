@@ -11,6 +11,7 @@ export const PUBLICATION_PREVIEW_REHEARSAL = Object.freeze({
 
 const SHA = /^[a-f0-9]{40}$/;
 const SURFACES = new Set(['article', 'homepage', 'news-composite', 'feed', 'latest-json', 'sitemap']);
+const SAFE_HOLD_CODE = /^HOLD_[A-Z0-9_]{1,80}$/;
 
 export class PublicationPreviewRehearsalError extends Error {
   constructor(code) {
@@ -22,6 +23,21 @@ export class PublicationPreviewRehearsalError extends Error {
 
 const fail = (code) => { throw new PublicationPreviewRehearsalError(code); };
 const need = (condition, code) => { if (!condition) fail(code); };
+
+function safeHoldCode(error) {
+  const code = typeof error?.code === 'string' ? error.code.trim().toUpperCase() : '';
+  return SAFE_HOLD_CODE.test(code) ? code : 'HOLD_REHEARSAL_UNAVAILABLE';
+}
+
+function logRehearsalStage(stage, error) {
+  console.info(JSON.stringify({
+    boundary: 'publication-preview-rehearsal-detail',
+    stage,
+    code: safeHoldCode(error),
+    publicationAuthorized: false,
+    enforcementActive: false,
+  }));
+}
 
 function assertRehearsalContext({ environment, envelope, bundle }) {
   need(environment[PUBLICATION_PREVIEW_REHEARSAL.modeEnvironmentKey]
@@ -70,13 +86,47 @@ export async function runPublicationPreviewRehearsal({
   envelope,
   bundle,
 } = {}) {
-  const context = assertRehearsalContext({ environment, envelope, bundle });
-  const database = createPublicationGuardReaderDatabase({ environment, PoolClass });
+  let context;
   try {
-    const identity = await database.verifyIdentityAndPrivileges();
-    const snapshot = await database.readBaselineSnapshot();
-    need(identity.readSnapshot === true && identity.writePrivileges === false, 'HOLD_REHEARSAL_READER');
-    need(snapshot.revision === '0' && snapshot.recordCount === 0, 'HOLD_REHEARSAL_SNAPSHOT');
+    context = assertRehearsalContext({ environment, envelope, bundle });
+  } catch (error) {
+    logRehearsalStage('context', error);
+    throw error;
+  }
+
+  let database;
+  try {
+    database = createPublicationGuardReaderDatabase({ environment, PoolClass });
+  } catch (error) {
+    logRehearsalStage('reader-create', error);
+    throw error;
+  }
+
+  try {
+    let identity;
+    try {
+      identity = await database.verifyIdentityAndPrivileges();
+    } catch (error) {
+      logRehearsalStage('reader-identity', error);
+      throw error;
+    }
+
+    let snapshot;
+    try {
+      snapshot = await database.readBaselineSnapshot();
+    } catch (error) {
+      logRehearsalStage('reader-snapshot', error);
+      throw error;
+    }
+
+    try {
+      need(identity.readSnapshot === true && identity.writePrivileges === false, 'HOLD_REHEARSAL_READER');
+      need(snapshot.revision === '0' && snapshot.recordCount === 0, 'HOLD_REHEARSAL_SNAPSHOT');
+    } catch (error) {
+      logRehearsalStage('reader-contract', error);
+      throw error;
+    }
+
     return Object.freeze({
       schema: PUBLICATION_PREVIEW_REHEARSAL.schema,
       decision: 'HOLD_NOT_ADMITTED',

@@ -6,6 +6,11 @@
   "framework": "astro",
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/daily-news-validation.js": {
+      "includeFiles": "src/generated/publication-render-inputs.generated.js"
+    }
+  },
   "git": {
     "deploymentEnabled": {
       "agent/*": false,

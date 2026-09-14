@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { createDormantPublicationGuardFunction } from '../src/lib/publication-guard.js';
 import {
   PUBLICATION_PREVIEW_REHEARSAL,
@@ -281,6 +282,13 @@ const unknownModeResponse = createResponse();
 const unknownModeResult = await unknownModeHandler(signedRequest(), unknownModeResponse);
 assert.equal(unknownModeResult.decision, 'HOLD_ROUTE_UNAVAILABLE');
 assert.equal(unknownModeResponse.statusCode, 503);
+pass();
+
+const vercelConfig = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
+assert.equal(
+  vercelConfig.functions?.['api/daily-news-validation.js']?.includeFiles,
+  'src/generated/publication-render-inputs.generated.js',
+);
 pass();
 
 console.log(`publication Preview rehearsal tests pass (${groups} groups; offline fake pool only)`);

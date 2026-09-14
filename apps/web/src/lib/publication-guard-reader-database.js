@@ -5,6 +5,7 @@ import {
 } from './publication-postgres-adapter.js';
 
 const ENV_KEY = 'PUBLICATION_GUARD_READER_DATABASE_URL';
+const CA_ENV_KEY = 'PUBLICATION_GUARD_READER_DATABASE_CA_CERT';
 const APPROVED_BRANCH = 'publishing/558-calendar-validation';
 const APPROVED_OWNER = 'usdimpact';
 const APPROVED_REPOSITORY = 'usd-impact-site';
@@ -48,6 +49,52 @@ const fail = (code) => { throw new PublicationGuardReaderDatabaseError(code); };
 const need = (condition, code) => { if (!condition) fail(code); };
 const token = (value) => (typeof value === 'string' ? value.trim().toUpperCase() : '');
 
+function normalizeCaCertificate(value) {
+  need(typeof value === 'string', 'HOLD_READER_DATABASE_CA');
+  const normalized = value.replace(/\\n/g, '\n').replace(/\r\n/g, '\n').trim();
+  need(normalized.length >= 256 && normalized.length <= 65536, 'HOLD_READER_DATABASE_CA');
+  need(!/PRIVATE KEY/i.test(normalized), 'HOLD_READER_DATABASE_CA');
+  need(
+    normalized.startsWith('-----BEGIN CERTIFICATE-----')
+      && normalized.endsWith('-----END CERTIFICATE-----'),
+    'HOLD_READER_DATABASE_CA',
+  );
+  const material = normalized
+    .replace(/-----BEGIN CERTIFICATE-----/g, '')
+    .replace(/-----END CERTIFICATE-----/g, '')
+    .replace(/\s/g, '');
+  need(material.length >= 128 && /^[A-Za-z0-9+/=]+$/.test(material), 'HOLD_READER_DATABASE_CA');
+  return normalized;
+}
+
+function readerPoolConfig(rawUrl, ca) {
+  let url;
+  try { url = new URL(rawUrl); } catch { fail('HOLD_READER_DATABASE_URL'); }
+  let user;
+  let password;
+  try {
+    user = decodeURIComponent(url.username);
+    password = decodeURIComponent(url.password);
+  } catch {
+    fail('HOLD_READER_DATABASE_CREDENTIAL');
+  }
+  return {
+    host: url.hostname,
+    port: Number(url.port),
+    database: url.pathname.slice(1),
+    user,
+    password,
+    ssl: {
+      ca,
+      rejectUnauthorized: true,
+    },
+    max: 1,
+    connectionTimeoutMillis: 3000,
+    idleTimeoutMillis: 5000,
+    allowExitOnIdle: true,
+  };
+}
+
 export function classifyPublicationGuardReaderDatabaseFailure(error) {
   const code = token(error?.code);
   const errno = token(error?.errno);
@@ -64,6 +111,7 @@ export function classifyPublicationGuardReaderDatabaseFailure(error) {
     tags.has('ERR_TLS_CERT_ALTNAME_INVALID')
     || tags.has('DEPTH_ZERO_SELF_SIGNED_CERT')
     || tags.has('UNABLE_TO_VERIFY_LEAF_SIGNATURE')
+    || tags.has('SELF_SIGNED_CERT_IN_CHAIN')
     || tags.has('CERT_HAS_EXPIRED')
     || /tls handshake|self[- ]signed certificate|certificate.*(?:invalid|expired)|ssl.*(?:error|certificate)/.test(message)
   ) return QUERY_FAILURE.tls;
@@ -116,15 +164,13 @@ export function createPublicationGuardReaderDatabase({ environment = process.env
   const runtime = assertPublicationGuardReaderPreviewContext(environment);
   const rawUrl = environment[ENV_KEY];
   const target = validatePublicationGuardDatabaseUrl(rawUrl, { role: 'reader' });
+  const ca = normalizeCaCertificate(environment[CA_ENV_KEY]);
   need(typeof PoolClass === 'function', 'HOLD_READER_POOL');
 
-  const pool = new PoolClass({
-    connectionString: rawUrl,
-    max: 1,
-    connectionTimeoutMillis: 3000,
-    idleTimeoutMillis: 5000,
-    allowExitOnIdle: true,
-  });
+  // Build the pool from validated fields rather than passing the connection string through
+  // pg-connection-string. This prevents URL sslmode semantics from weakening or overriding
+  // the explicit CA-backed, hostname-verifying TLS configuration below.
+  const pool = new PoolClass(readerPoolConfig(rawUrl, ca));
 
   const safeQuery = async ({ text, values = [] }) => {
     need(typeof text === 'string' && Array.isArray(values), 'HOLD_READER_QUERY');
@@ -201,6 +247,7 @@ export async function runPublicationGuardReaderReadiness({ environment = process
 
 export const PUBLICATION_GUARD_READER_RUNTIME_SCOPE = Object.freeze({
   environmentKey: ENV_KEY,
+  caEnvironmentKey: CA_ENV_KEY,
   approvedBranch: APPROVED_BRANCH,
   approvedProjectId: APPROVED_PROJECT_ID,
   approvedRepository: `${APPROVED_OWNER}/${APPROVED_REPOSITORY}`,

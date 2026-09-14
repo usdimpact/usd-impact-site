@@ -8,6 +8,8 @@ import { buildRepairOutputSchema } from '../api/daily-news-background.js';
 
 const currentTreasuryUrl = 'https://home.treasury.gov/news/press-releases/sb0590';
 const staleTreasuryUrl = 'https://home.treasury.gov/news/press-releases/sb0489';
+const treasuryBuybackUrl = 'https://home.treasury.gov/news/press-releases/sb0607';
+const treasuryBuybackTitle = 'Treasury Announces Increased Sizes of Nominal Long-End Liquidity Support Buybacks Beginning September 9';
 
 function source(id, publishedAt, url = 'https://www.bls.gov/news.release/prod2.nr0.htm') {
   return { id, publishedAt, url, sourceType: 'primary' };
@@ -85,11 +87,90 @@ function yieldDiscussionBundle() {
   };
 }
 
+function treasuryBuybackBundle(overrides = {}) {
+  const buybackSource = {
+    ...source('treasury-buyback', '2026-08-19', treasuryBuybackUrl),
+    title: treasuryBuybackTitle,
+  };
+  return {
+    editionDate: '2026-08-20',
+    sources: [buybackSource],
+    highlights: [{
+      headline: 'Treasury increased long-end liquidity-support buyback sizes.',
+      development: 'Treasury announced larger operations for longer-dated nominal sectors.',
+      whyItMatters: 'The change is intended to support secondary-market liquidity and market functioning.',
+      sourceIds: ['treasury-buyback'],
+    }],
+    catalysts: [],
+    summary: 'Treasury increased long-end liquidity-support buyback sizes to support market functioning.',
+    body: 'Treasury buybacks may support liquidity in less-liquid off-the-run securities.',
+    ...overrides,
+  };
+}
+
 assert.doesNotThrow(() => validateEditorialBundle(bundle()));
 
 assert.doesNotThrow(
   () => validateEditorialBundle(yieldDiscussionBundle()),
   'ordinary Treasury maturity-yield discussion must not require a current auction or refunding source',
+);
+
+assert.throws(
+  () => validateEditorialBundle(treasuryBuybackBundle({
+    editionDate: '2026-09-10',
+    sources: [{
+      ...source('treasury-buyback', '2026-09-09', treasuryBuybackUrl),
+      title: treasuryBuybackTitle,
+    }],
+    highlights: [{
+      headline: 'Treasury buyback implementation is scheduled for the long end.',
+      development: 'The Treasury release describes larger liquidity-support operations.',
+      whyItMatters: 'The operations may support secondary-market liquidity.',
+      sourceIds: ['treasury-buyback'],
+    }],
+  })),
+  /publishedAt appears to copy an effective\/beginning operational date/i,
+  'publishedAt must not silently copy an effective or beginning date from a source title',
+);
+
+assert.throws(
+  () => validateEditorialBundle(treasuryBuybackBundle({
+    highlights: [{
+      headline: 'Treasury increased long-end liquidity-support buyback sizes.',
+      development: 'Larger Treasury buybacks reduce net long-end supply.',
+      whyItMatters: 'The change may affect Treasury-market liquidity.',
+      sourceIds: ['treasury-buyback'],
+    }],
+  })),
+  /mechanically reducing or offsetting Treasury supply/i,
+  'affirmative Treasury-buyback net-supply reduction claims must fail closed',
+);
+
+assert.doesNotThrow(
+  () => validateEditorialBundle(treasuryBuybackBundle({
+    highlights: [{
+      headline: 'Treasury increased long-end liquidity-support buyback sizes.',
+      development: 'Treasury buybacks should not be treated as reducing net Treasury supply because replacement issuance finances bought-back securities.',
+      whyItMatters: 'The direct mechanism is market functioning and secondary-market liquidity.',
+      sourceIds: ['treasury-buyback'],
+    }],
+  })),
+  'accurately negated Treasury-buyback supply language must remain publishable',
+);
+
+assert.throws(
+  () => validateEditorialBundle(treasuryBuybackBundle({
+    body: 'Treasury published the refunding statement on 2026-08-??. The date still needs verification.',
+  })),
+  /Body contains an unresolved date placeholder/i,
+);
+
+assert.throws(
+  () => validateEditorialBundle(treasuryBuybackBundle({
+    body: 'Executive view.\n\nSources (ledger)\n\n- {"id":"treasury-buyback"}',
+  })),
+  /Body duplicates the structured source ledger/i,
+  'the body must not duplicate the separately rendered source ledger',
 );
 
 const auctionWithoutTreasurySource = yieldDiscussionBundle();

@@ -1,6 +1,7 @@
 import { verifyPipelineCalendar, assertPipelineCalendarLease } from '../src/lib/publication-calendar-pipeline.js';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { validateEditorialBundle } from '../src/lib/daily-news-editorial-validation.js';
 
 const inputPath = process.argv[2];
 const replace = process.argv.includes('--replace');
@@ -23,7 +24,12 @@ const allowedCatalystEventType = new Set([
   'central-bank', 'inflation', 'labor', 'growth', 'liquidity', 'energy',
   'corporate', 'regulatory', 'geopolitical', 'other',
 ]);
-const isDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value));
+const isDate = (value) => {
+  const text = String(value ?? '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return false;
+  const parsed = new Date(`${text}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === text;
+};
 const isHttps = (value) => /^https:\/\/[^\s]+$/.test(String(value));
 const requiredString = (object, key) => {
   const value = String(object?.[key] ?? '').trim();
@@ -36,9 +42,85 @@ const addDays = (value, days) => {
   parsed.setUTCDate(parsed.getUTCDate() + days);
   return parsed.toISOString().slice(0, 10);
 };
+const canonicalUrl = (value) => {
+  const url = new URL(String(value));
+  url.hash = '';
+  for (const key of [...url.searchParams.keys()]) {
+    if (/^(utm_|gclid$|fbclid$|mc_)/i.test(key)) url.searchParams.delete(key);
+  }
+  if (url.pathname.length > 1) url.pathname = url.pathname.replace(/\/+$/, '');
+  return url.toString();
+};
+
+async function markdownFiles(directory) {
+  let entries;
+  try {
+    entries = await readdir(directory, { withFileTypes: true });
+  } catch (error) {
+    if (error?.code === 'ENOENT') return [];
+    throw error;
+  }
+  const files = [];
+  for (const entry of entries) {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...await markdownFiles(entryPath));
+    else if (entry.name.endsWith('.md')) files.push(entryPath);
+  }
+  return files;
+}
+
+function historicalSourceRecords(markdown) {
+  return [...String(markdown).matchAll(
+    /^\s+url:\s*["']([^"']+)["']\s*\r?\n\s+publishedAt:\s*["']([^"']+)["']\s*$/gm,
+  )].map((match) => ({ url: match[1], publishedAt: match[2] }));
+}
+
+async function validateHistoricalSourceDates(candidateSources, outputPath) {
+  const roots = [
+    path.resolve('src/content/news'),
+    path.resolve('src/content/catalyst-briefs'),
+  ];
+  const historicalDatesByUrl = new Map();
+  const absoluteOutputPath = path.resolve(outputPath);
+
+  for (const root of roots) {
+    for (const file of await markdownFiles(root)) {
+      if (path.resolve(file) === absoluteOutputPath) continue;
+      const markdown = await readFile(file, 'utf8');
+      for (const record of historicalSourceRecords(markdown)) {
+        if (!isDate(record.publishedAt)) continue;
+        let url;
+        try {
+          url = canonicalUrl(record.url);
+        } catch {
+          continue;
+        }
+        const dates = historicalDatesByUrl.get(url) ?? new Set();
+        dates.add(record.publishedAt);
+        historicalDatesByUrl.set(url, dates);
+      }
+    }
+  }
+
+  for (const source of candidateSources) {
+    const id = requiredString(source, 'id');
+    const publishedAt = requiredString(source, 'publishedAt');
+    if (!isDate(publishedAt)) throw new Error(`Source ${id} publishedAt must use a real YYYY-MM-DD date`);
+    const url = canonicalUrl(requiredString(source, 'url'));
+    const historicalDates = historicalDatesByUrl.get(url);
+    if (!historicalDates || historicalDates.size === 0) continue;
+    if (historicalDates.size > 1) {
+      throw new Error(`Source ${id} has conflicting historical publication dates for ${url}: ${[...historicalDates].sort().join(', ')}`);
+    }
+    const [historicalDate] = historicalDates;
+    if (historicalDate !== publishedAt) {
+      throw new Error(`Source ${id} publishedAt ${publishedAt} conflicts with previously verified ${historicalDate} for ${url}`);
+    }
+  }
+}
 
 const date = requiredString(payload, 'date');
-if (!isDate(date)) throw new Error('date must use YYYY-MM-DD');
+if (!isDate(date)) throw new Error('date must use a real YYYY-MM-DD date');
 if (!Array.isArray(payload.highlights)) throw new Error('highlights must be an array');
 if (payload.catalysts != null && !Array.isArray(payload.catalysts)) throw new Error('catalysts must be an array when provided');
 if (!Array.isArray(payload.sources)) throw new Error('sources must be an array');
@@ -46,6 +128,10 @@ if (!Array.isArray(payload.sources)) throw new Error('sources must be an array')
 const highlights = payload.highlights;
 const catalysts = payload.catalysts ?? [];
 const sources = payload.sources;
+const summary = requiredString(payload, 'summary');
+const body = String(payload.body ?? 'This edition was generated from a structured, source-backed input bundle.').trim();
+const outputDir = path.resolve('src/content/news');
+const outputPath = path.join(outputDir, `${date}.md`);
 if (highlights.length < 3 || highlights.length > 7) throw new Error('highlights must contain 3-7 items');
 if (sources.length < 2) throw new Error('sources must contain at least two items');
 
@@ -55,7 +141,10 @@ for (const source of sources) {
   const id = requiredString(source, 'id');
   if (sourceIds.has(id)) throw new Error(`Duplicate source id: ${id}`);
   sourceIds.add(id);
+  requiredString(source, 'title');
+  requiredString(source, 'publisher');
   if (!isHttps(requiredString(source, 'url'))) throw new Error(`Source ${id} must use HTTPS`);
+  if (!isDate(requiredString(source, 'publishedAt'))) throw new Error(`Source ${id} publishedAt must use a real YYYY-MM-DD date`);
   const sourceType = requiredString(source, 'sourceType');
   if (!allowedSourceType.has(sourceType)) throw new Error(`Invalid sourceType for ${id}`);
   sourceTypeById.set(id, sourceType);
@@ -79,7 +168,7 @@ for (const highlight of highlights) {
 
 for (const catalyst of catalysts) {
   const catalystDate = requiredString(catalyst, 'date');
-  if (!isDate(catalystDate)) throw new Error('Catalyst dates must use YYYY-MM-DD');
+  if (!isDate(catalystDate)) throw new Error('Catalyst dates must use a real YYYY-MM-DD date');
   if (catalystDate < date || catalystDate > addDays(date, 7)) throw new Error('Catalysts must be inside the next seven calendar days');
   requiredString(catalyst, 'event');
   if (!allowedCatalystEventType.has(requiredString(catalyst, 'eventType'))) throw new Error('Invalid catalyst eventType');
@@ -104,6 +193,16 @@ for (const catalyst of catalysts) {
     throw new Error('Each catalyst requires an authoritative primary schedule source');
   }
 }
+
+await validateHistoricalSourceDates(sources, outputPath);
+validateEditorialBundle({
+  editionDate: date,
+  sources,
+  highlights,
+  catalysts,
+  summary,
+  body,
+});
 
 const derivedAssets = [...new Set(highlights.flatMap((highlight) => highlight.assets))];
 let articleAssets;
@@ -144,7 +243,7 @@ const lines = [
   `status: ${quoted(publicationStatus)}`,
   'category: "Daily USD Impact"',
   `marketRegime: ${quoted(requiredString(payload, 'marketRegime'))}`,
-  `summary: ${quoted(requiredString(payload, 'summary'))}`,
+  `summary: ${quoted(summary)}`,
   `featured: ${payload.featured === false ? 'false' : 'true'}`,
 ];
 pushScalarArray(lines, 'assets', articleAssets);
@@ -189,10 +288,8 @@ for (const source of sources) {
 }
 
 lines.push(`complianceNote: ${quoted(payload.complianceNote ?? 'Educational and informational only. This content is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset.')}`);
-lines.push('---', '', String(payload.body ?? 'This edition was generated from a structured, source-backed input bundle.').trim(), '');
+lines.push('---', '', body, '');
 
-const outputDir = path.resolve('src/content/news');
-const outputPath = path.join(outputDir, `${date}.md`);
 await mkdir(outputDir, { recursive: true });
 
 let existingContent = null;

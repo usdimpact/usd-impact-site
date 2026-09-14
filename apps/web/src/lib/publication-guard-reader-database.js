@@ -28,7 +28,6 @@ const QUERY_FAILURE = Object.freeze({
 const IDENTITY_SQL = `select jsonb_build_object(
   'role', current_user,
   'database', current_database(),
-  'ssl', coalesce((select ssl from pg_stat_ssl where pid = pg_backend_pid()), false),
   'readSnapshot', has_function_privilege(current_user, 'publication_guard_api.read_snapshot(text,jsonb)', 'EXECUTE'),
   'authorizeRelease', has_function_privilege(current_user, 'publication_guard_api.authorize_release(uuid,text,text,text,text,timestamptz)', 'EXECUTE'),
   'prepareAdmission', has_function_privilege(current_user, 'publication_guard_api.prepare_admission(uuid,text,text,text,text,timestamptz,timestamptz,timestamptz,timestamptz)', 'EXECUTE'),
@@ -187,13 +186,19 @@ export function createPublicationGuardReaderDatabase({ environment = process.env
     const value = normalizeValue(await safeQuery({ text: IDENTITY_SQL, values: [] }), 'HOLD_READER_IDENTITY');
     need(value.role === READER_LOGIN, 'HOLD_READER_ROLE');
     need(value.database === 'postgres', 'HOLD_READER_DATABASE');
-    need(value.ssl === true, 'HOLD_READER_SSL');
     need(value.readSnapshot === true, 'HOLD_READER_PRIVILEGE');
     need(value.authorizeRelease === false, 'HOLD_READER_PRIVILEGE');
     need(value.prepareAdmission === false, 'HOLD_READER_PRIVILEGE');
     need(value.recordVerifiedReceipt === false, 'HOLD_READER_PRIVILEGE');
     need(value.revokeRelease === false, 'HOLD_READER_PRIVILEGE');
     need(value.revokeAdmission === false, 'HOLD_READER_PRIVILEGE');
+
+    // The client-to-pooler transport is proven by the successful query through a pg Pool
+    // configured with an explicit CA and rejectUnauthorized=true. node-postgres refuses a
+    // server that does not support SSL and fails certificate or hostname validation before
+    // a query can complete. Do not use pg_stat_ssl as the client-hop proof here: this target
+    // is the shared Supavisor transaction pooler, so that database view describes the
+    // pooler-to-Postgres backend connection rather than the Vercel-to-pooler TLS session.
     return Object.freeze({
       role: READER_LOGIN,
       database: 'postgres',

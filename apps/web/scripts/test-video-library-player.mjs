@@ -84,17 +84,15 @@ async function loadPlayer({ initialDuration = 120, initiallySeekable = false } =
 }
 
 const metadataAlreadyLoaded = await loadPlayer({ initiallySeekable: true });
-assert.equal(metadataAlreadyLoaded.player.currentTime, 0, 'resume must wait until playback starts');
+assert.equal(metadataAlreadyLoaded.player.currentTime, 45, 'resume should be pre-armed once metadata is available');
 assert.equal(metadataAlreadyLoaded.label.textContent, '38% complete');
 assert.equal(metadataAlreadyLoaded.bar.style.width, '38%');
+assert.equal(metadataAlreadyLoaded.posts.length, 0, 'pre-play resume must not write progress');
 
 metadataAlreadyLoaded.listeners.get('play')();
 await new Promise((resolve) => setImmediate(resolve));
 assert.equal(metadataAlreadyLoaded.player.currentTime, 45);
-assert.equal(metadataAlreadyLoaded.posts.length, 0, 'the first seek request must be verified before saving');
-metadataAlreadyLoaded.listeners.get('timeupdate')();
-await new Promise((resolve) => setImmediate(resolve));
-assert.equal(metadataAlreadyLoaded.posts[0].positionSeconds, 45);
+assert.equal(metadataAlreadyLoaded.posts[0].positionSeconds, 45, 'verified resume can be persisted after playback starts');
 
 metadataAlreadyLoaded.player.currentTime = 70;
 metadataAlreadyLoaded.listeners.get('loadedmetadata')();
@@ -103,18 +101,27 @@ metadataAlreadyLoaded.listeners.get('pause')();
 await new Promise((resolve) => setImmediate(resolve));
 assert.equal(metadataAlreadyLoaded.posts.at(-1).positionSeconds, 70, 'normal saves must continue after resume');
 
+const seekOnPlaying = await loadPlayer();
+assert.equal(seekOnPlaying.player.currentTime, 0, 'a rejected pre-play seek must not alter playback');
+seekOnPlaying.listeners.get('play')();
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(seekOnPlaying.player.currentTime, 0);
+assert.equal(seekOnPlaying.posts.length, 0, 'progress must remain untouched while the SDK rejects the seek');
+seekOnPlaying.setSeekable(true);
+seekOnPlaying.listeners.get('playing')();
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(seekOnPlaying.player.currentTime, 45, 'playing should retry the resume after Stream becomes seek-ready');
+assert.equal(seekOnPlaying.posts[0].positionSeconds, 45);
+
 const seekOnTimeupdate = await loadPlayer();
 seekOnTimeupdate.listeners.get('play')();
 await new Promise((resolve) => setImmediate(resolve));
 assert.equal(seekOnTimeupdate.player.currentTime, 0);
-assert.equal(seekOnTimeupdate.posts.length, 0, 'progress must remain untouched while the SDK rejects the seek');
+assert.equal(seekOnTimeupdate.posts.length, 0);
 seekOnTimeupdate.setSeekable(true);
 seekOnTimeupdate.listeners.get('timeupdate')();
 await new Promise((resolve) => setImmediate(resolve));
-assert.equal(seekOnTimeupdate.player.currentTime, 45);
-assert.equal(seekOnTimeupdate.posts.length, 0, 'a retry must also be verified before saving');
-seekOnTimeupdate.listeners.get('timeupdate')();
-await new Promise((resolve) => setImmediate(resolve));
+assert.equal(seekOnTimeupdate.player.currentTime, 45, 'timeupdate remains a fallback readiness retry');
 assert.equal(seekOnTimeupdate.posts[0].positionSeconds, 45);
 
 const metadataStillPending = await loadPlayer({ initialDuration: 0 });
@@ -122,11 +129,11 @@ assert.equal(metadataStillPending.player.currentTime, 0);
 metadataStillPending.setSeekable(true);
 metadataStillPending.player.duration = 120;
 metadataStillPending.listeners.get('durationchange')();
-assert.equal(metadataStillPending.player.currentTime, 0, 'metadata readiness alone must not trigger a pre-play seek');
+assert.equal(metadataStillPending.player.currentTime, 45, 'duration readiness should pre-arm the saved position');
+assert.equal(metadataStillPending.posts.length, 0);
 metadataStillPending.listeners.get('play')();
-metadataStillPending.listeners.get('timeupdate')();
 await new Promise((resolve) => setImmediate(resolve));
-assert.equal(metadataStillPending.player.currentTime, 45);
+assert.equal(metadataStillPending.posts[0].positionSeconds, 45);
 
 const pageExitBeforeResume = await loadPlayer();
 pageExitBeforeResume.windowListeners.get('pagehide')();

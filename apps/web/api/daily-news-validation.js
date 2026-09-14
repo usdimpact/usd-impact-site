@@ -3,11 +3,30 @@ import {
   runPublicationGuardReaderReadiness,
 } from '../src/lib/publication-guard-reader-database.js';
 import { createDormantPublicationGuardFunction } from '../src/lib/publication-guard.js';
+import { runPublicationPreviewRehearsal } from '../src/lib/publication-preview-rehearsal.js';
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 const SOURCE_ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,63}$/;
-const dormantPublicationGuard = createDormantPublicationGuardFunction();
+
+async function loadPublicationGuardPoolClass() {
+  const module = await import('pg');
+  const PoolClass = module.default?.Pool ?? module.Pool;
+  if (typeof PoolClass !== 'function') throw new Error('Publication guard pg Pool unavailable');
+  return PoolClass;
+}
+
+async function runApiPublicationPreviewRehearsal({ environment, envelope, bundle }) {
+  const PoolClass = await loadPublicationGuardPoolClass();
+  return runPublicationPreviewRehearsal({ environment, PoolClass, envelope, bundle });
+}
+
+const dormantPublicationGuard = createDormantPublicationGuardFunction({
+  // Keep the pg import at the API entrypoint. The same entrypoint already proves
+  // this dependency in reader-readiness, and injecting the runner avoids a
+  // nested dynamic-import packaging boundary inside the shared guard module.
+  runRehearsal: runApiPublicationPreviewRehearsal,
+});
 
 export const SOURCE_DATE_SCHEMA_PATTERN = '^\\d{4}-\\d{2}-\\d{2}$';
 export const SOURCE_ID_SCHEMA_PATTERN = '^[a-z0-9][a-z0-9-]{1,63}$';
@@ -238,8 +257,7 @@ export default async function handler(request, response) {
   }
 
   try {
-    const module = await import('pg');
-    const PoolClass = module.default?.Pool ?? module.Pool;
+    const PoolClass = await loadPublicationGuardPoolClass();
     const result = await runPublicationGuardReaderReadiness({ environment: process.env, PoolClass });
     return sendReaderReadiness(response, 200, result);
   } catch (error) {

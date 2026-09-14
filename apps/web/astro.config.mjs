@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import { SEARCH_UTILITY_PATHS } from './src/lib/search-utility-policy.js';
+import { canonicalUrlForRequest } from './src/lib/canonical-url.js';
 import accessMap from './src/data/quiz-access-map.json' with { type: 'json' };
 import { resolveScorePipelineOrigin } from './src/lib/score-pipeline-origin.js';
 
@@ -78,6 +79,10 @@ export default defineConfig({
         const pathname = normalizePath(new URL(page).pathname);
         return !privatePaths.has(pathname)
           && !previewOnlySitemapPrefixes.some((prefix) => isWithinPrefix(pathname, prefix));
+      },
+      serialize: (item) => {
+        item.url = canonicalUrlForRequest(new URL(item.url));
+        return item;
       },
     }),
   ],

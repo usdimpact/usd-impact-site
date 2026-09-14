@@ -40,15 +40,19 @@ if (!fs.existsSync(sitemapPath)) {
         failures.push(`Canonical policy: unexpected sitemap URL: ${loc}.`);
         continue;
       }
+      const expected = canonicalUrlForRequest(sourceUrl);
+      if (loc !== expected) {
+        failures.push(`Canonical policy: sitemap URL must equal canonical URL ${expected}, found ${loc}.`);
+        continue;
+      }
       const file = outputPath(sourceUrl.pathname);
       if (!fs.existsSync(file)) {
         failures.push(`Canonical policy: generated page is missing for ${sourceUrl.pathname}.`);
         continue;
       }
       const hrefs = canonicalHrefs(fs.readFileSync(file, 'utf8'));
-      const expected = canonicalUrlForRequest(sourceUrl);
-      if (hrefs.length !== 1 || hrefs[0] !== expected) {
-        failures.push(`Canonical policy: ${sourceUrl.pathname} expected one canonical ${expected}, found ${hrefs.length === 1 ? hrefs[0] : hrefs.length}.`);
+      if (hrefs.length !== 1 || hrefs[0] !== loc) {
+        failures.push(`Canonical policy: ${sourceUrl.pathname} expected one canonical matching sitemap URL ${loc}, found ${hrefs.length === 1 ? hrefs[0] : hrefs.length}.`);
         continue;
       }
       const canonical = new URL(hrefs[0]);
@@ -75,4 +79,4 @@ if (failures.length) {
   console.error(`Canonical build verification failed:\n${failures.join('\n')}`);
   process.exit(1);
 }
-console.log(`Canonical build verification pass: sitemap pages self-canonical; ${noindexControls.length} noindex controls omit canonicals`);
+console.log(`Canonical build verification pass: sitemap URLs match page canonicals; ${noindexControls.length} noindex controls omit canonicals`);

@@ -37,7 +37,7 @@ const brief = {
 const daily = {
   ...brief, date: '2026-09-09', title: 'Daily USD Impact', marketRegime: 'Test regime',
   catalysts: [{ date: brief.eventDate, event: brief.event, calendar: canonical, eventType: 'inflation',
-    importance: 'high', impactScore: 5, extraBrief: true, assets: brief.assets, whyItMatters: brief.whyItMatters, sourceIds: ['bls'] }],
+    importance: 'high', impactScore: 5, extraBrief: true, assets: brief.assets, whyItMatters: brief.whyItMatters, sourceIds: ['bls', 'bls-list'] }],
   highlights: [1, 2, 3].map((number) => ({ headline: `Verified development ${number}`, development: 'Source-backed development.',
     whyItMatters: 'Conditional interpretation.', importance: 'high', verification: 'verified-primary', assets: ['DXY'], sourceIds: ['bls'] })),
 };

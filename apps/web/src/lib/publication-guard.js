@@ -74,6 +74,13 @@ function logPreviewHold(stage) {
   }));
 }
 
+function sanitizedRehearsalHoldCode(error) {
+  const code = typeof error?.code === 'string' ? error.code.trim().toUpperCase() : '';
+  return /^(?:HOLD_REHEARSAL|HOLD_READER)_[A-Z0-9_]{1,80}$/.test(code)
+    ? code
+    : 'UNCLASSIFIED';
+}
+
 function generatedBundleCandidates() {
   const candidates = [
     fileURLToPath(new URL('../generated/publication-render-inputs.generated.js', import.meta.url)),
@@ -194,8 +201,8 @@ export function createDormantPublicationGuardFunction({
           return hold(response, 503, 'Publication unavailable.');
         }
         return rehearsalHold(response, request.method, diagnostic);
-      } catch {
-        logPreviewHold('rehearsal-runner');
+      } catch (error) {
+        logPreviewHold(`rehearsal-runner:${sanitizedRehearsalHoldCode(error)}`);
         return hold(response, 503, 'Publication unavailable.');
       }
     }

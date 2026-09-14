@@ -3,6 +3,7 @@ import {
   PUBLICATION_GUARD_READER_RUNTIME_SCOPE,
   PublicationGuardReaderDatabaseError,
   assertPublicationGuardReaderPreviewContext,
+  classifyPublicationGuardReaderDatabaseFailure,
   createPublicationGuardReaderDatabase,
 } from '../src/lib/publication-guard-reader-database.js';
 
@@ -36,7 +37,7 @@ const goodIdentity = Object.freeze({
 });
 
 class FakePool {
-  static mode = 'ok';
+  static failure = null;
   static identity = goodIdentity;
   static instances = [];
 
@@ -52,7 +53,7 @@ class FakePool {
     assert.equal(Object.hasOwn(config, 'name'), false, 'transaction-pool queries must remain unnamed');
     assert.equal(typeof config.text, 'string');
     assert.equal(Array.isArray(config.values), true);
-    if (FakePool.mode === 'fail') throw new Error('backend detail containing a secret must never escape');
+    if (FakePool.failure) throw FakePool.failure;
     if (config.text.includes("'readSnapshot', has_function_privilege")) {
       return { rows: [{ value: FakePool.identity }] };
     }
@@ -83,6 +84,13 @@ function contextHold(environment, code) {
     () => assertPublicationGuardReaderPreviewContext(environment),
     (error) => error instanceof PublicationGuardReaderDatabaseError && error.code === code,
   );
+  pass();
+}
+
+function classify(error, expected) {
+  const actual = classifyPublicationGuardReaderDatabaseFailure(error);
+  assert.equal(actual, expected);
+  assert.equal(actual.includes(secret), false);
   pass();
 }
 
@@ -126,7 +134,18 @@ syncHold(
   'HOLD_DATABASE_POOLER',
 );
 
-FakePool.mode = 'ok';
+classify({ code: 'ENOTFOUND', message: `getaddrinfo ENOTFOUND ${secret}` }, 'HOLD_READER_DATABASE_DNS');
+classify({ code: 'ETIMEDOUT', message: `connect timeout ${secret}` }, 'HOLD_READER_DATABASE_CONNECT_TIMEOUT');
+classify({ code: 'ECONNREFUSED', message: `connect refused ${secret}` }, 'HOLD_READER_DATABASE_CONNECT');
+classify({ code: 'ERR_TLS_CERT_ALTNAME_INVALID', message: `certificate mismatch ${secret}` }, 'HOLD_READER_DATABASE_TLS');
+classify({ code: 'XX000', message: `FATAL: (EAUTHQUERY) invalid secret ${secret}` }, 'HOLD_READER_DATABASE_POOLER_AUTH_QUERY');
+classify({ code: 'XX000', message: `tenant or user not found ${secret}` }, 'HOLD_READER_DATABASE_POOLER_TENANT');
+classify({ code: '28P01', message: `password authentication failed ${secret}` }, 'HOLD_READER_DATABASE_AUTH_28P01');
+classify({ code: '28000', message: `invalid authorization specification ${secret}` }, 'HOLD_READER_DATABASE_AUTH');
+classify({ code: '42501', message: `permission denied ${secret}` }, 'HOLD_READER_DATABASE_QUERY_PERMISSION');
+classify(new Error(`unclassified backend detail ${secret}`), 'HOLD_READER_DATABASE_QUERY_OTHER');
+
+FakePool.failure = null;
 FakePool.identity = goodIdentity;
 const database = createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
 const pool = FakePool.instances.at(-1);
@@ -178,11 +197,22 @@ await hold(() => roleDrift.verifyIdentityAndPrivileges(), 'HOLD_READER_ROLE');
 await roleDrift.close();
 
 FakePool.identity = goodIdentity;
-FakePool.mode = 'fail';
+FakePool.failure = Object.assign(new Error(`password authentication failed ${secret}`), { code: '28P01' });
+const authFailure = createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
+await hold(() => authFailure.verifyIdentityAndPrivileges(), 'HOLD_READER_DATABASE_AUTH_28P01');
+await authFailure.close();
+
+FakePool.failure = new Error(`backend detail containing ${secret} must never escape`);
 const backendFailure = createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
-await hold(() => backendFailure.verifyIdentityAndPrivileges(), 'HOLD_READER_DATABASE_QUERY');
+await assert.rejects(
+  () => backendFailure.verifyIdentityAndPrivileges(),
+  (error) => error?.code === 'HOLD_READER_DATABASE_QUERY_OTHER'
+    && error?.message === 'HOLD_READER_DATABASE_QUERY_OTHER'
+    && !error.message.includes(secret),
+);
+pass();
 await backendFailure.close();
-FakePool.mode = 'ok';
+FakePool.failure = null;
 
 syncHold(
   () => createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: {} }),

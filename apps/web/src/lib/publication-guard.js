@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createRecordedPublicationHandler } from './publication-response-boundary.js';
 import { createPublicationBuildRenderer } from './publication-build-renderer.js';
 import {
@@ -63,8 +64,40 @@ function freezeGeneratedBundle(input) {
   return input;
 }
 
+function logPreviewHold(stage) {
+  console.info(JSON.stringify({
+    boundary: 'publication-preview-rehearsal',
+    stage,
+    decision: 'HOLD_ROUTE_UNAVAILABLE',
+    publicationAuthorized: false,
+    enforcementActive: false,
+  }));
+}
+
+function generatedBundleCandidates() {
+  const candidates = [
+    fileURLToPath(new URL('../generated/publication-render-inputs.generated.js', import.meta.url)),
+    path.resolve(process.cwd(), GENERATED_BUNDLE_RELATIVE),
+    path.resolve(process.cwd(), 'apps', 'web', GENERATED_BUNDLE_RELATIVE),
+  ];
+  if (typeof process.env.LAMBDA_TASK_ROOT === 'string' && process.env.LAMBDA_TASK_ROOT.trim()) {
+    candidates.push(path.resolve(process.env.LAMBDA_TASK_ROOT, GENERATED_BUNDLE_RELATIVE));
+    candidates.push(path.resolve(process.env.LAMBDA_TASK_ROOT, 'apps', 'web', GENERATED_BUNDLE_RELATIVE));
+  }
+  return [...new Set(candidates)];
+}
+
 async function defaultBundleLoader() {
-  const source = await readFile(path.resolve(process.cwd(), GENERATED_BUNDLE_RELATIVE), 'utf8');
+  let source = null;
+  for (const candidate of generatedBundleCandidates()) {
+    try {
+      source = await readFile(candidate, 'utf8');
+      break;
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
+    }
+  }
+  if (source == null) throw new Error('generated bundle missing');
   if (Buffer.byteLength(source) > MAX_GENERATED_BUNDLE_BYTES) throw new Error('generated bundle too large');
   if (!source.startsWith(GENERATED_BUNDLE_PREFIX)) throw new Error('generated bundle prefix mismatch');
   const markerIndex = source.indexOf(GENERATED_BUNDLE_MARKER, GENERATED_BUNDLE_PREFIX.length);
@@ -110,8 +143,6 @@ export function createDormantPublicationGuardFunction({
         now,
       });
     } catch (error) {
-      // Missing mode/secret, direct calls, forged paths, wrong host and
-      // Production requests are indistinguishable to the caller.
       if (error instanceof PublicationRouteCandidateError) return hold(response, 404, 'Not found.');
       return hold(response, 404, 'Not found.');
     }
@@ -128,10 +159,12 @@ export function createDormantPublicationGuardFunction({
     try {
       bundle = await loadBundle();
       if (bundle?.buildCommitSha !== envelope.runtime.commitSha) {
+        logPreviewHold('bundle-commit');
         return hold(response, 503, 'Publication unavailable.');
       }
       if (!rehearsalRequested) renderer = createPublicationBuildRenderer(bundle);
     } catch {
+      logPreviewHold('bundle-loader');
       return hold(response, 503, 'Publication unavailable.');
     }
 
@@ -156,9 +189,13 @@ export function createDormantPublicationGuardFunction({
           && diagnostic.reader?.writePrivileges === false
           && diagnostic.snapshot?.revision === '0'
           && diagnostic.snapshot?.recordCount === 0;
-        if (!valid) return hold(response, 503, 'Publication unavailable.');
+        if (!valid) {
+          logPreviewHold('diagnostic-contract');
+          return hold(response, 503, 'Publication unavailable.');
+        }
         return rehearsalHold(response, request.method, diagnostic);
       } catch {
+        logPreviewHold('rehearsal-runner');
         return hold(response, 503, 'Publication unavailable.');
       }
     }

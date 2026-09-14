@@ -9,6 +9,7 @@ const importer = fileURLToPath(new URL('./import-daily-news.mjs', import.meta.ur
 const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), 'usd-impact-daily-import-'));
 const bundlePath = path.join(temporaryRoot, 'bundle.json');
 const editionPath = path.join(temporaryRoot, 'src', 'content', 'news', '2026-07-23.md');
+const historicalEditionPath = path.join(temporaryRoot, 'src', 'content', 'news', '2026-07-22.md');
 
 const bundle = {
   date: '2026-07-23',
@@ -158,7 +159,62 @@ try {
   assert.match(emptyNestedArraysContent, /^assets:\s*\n\s+- "DXY"/m);
   assert.match(emptyNestedArraysContent, /^\s{4}assets:\s*\[\]\s*$/m);
 
-  console.log('daily news importer review and direct-publish tests pass');
+  await rm(editionPath, { force: true });
+  await writeFile(historicalEditionPath, `---\ntitle: "Historical edition"\nslug: "/news/2026-07-22"\nstatus: "published"\nsources:\n  - id: "source-a"\n    title: "Primary source"\n    publisher: "Primary Publisher"\n    url: "https://example.org/primary"\n    publishedAt: "2026-07-22"\n    sourceType: "primary"\n---\n`, 'utf8');
+  await writeBundle(bundle);
+
+  const historicalDateConflict = runImporter('--replace');
+  assert.notEqual(historicalDateConflict.status, 0);
+  assert.match(
+    historicalDateConflict.stderr,
+    /publishedAt 2026-07-23 conflicts with previously verified 2026-07-22/i,
+  );
+
+  await rm(historicalEditionPath, { force: true });
+  await writeBundle({ ...bundle, body: 'Source review remains incomplete for 2026-07-??.' });
+
+  const placeholderDateFailure = runImporter('--replace');
+  assert.notEqual(placeholderDateFailure.status, 0);
+  assert.match(placeholderDateFailure.stderr, /Body contains an unresolved date placeholder/i);
+
+  await writeBundle({ ...bundle, body: 'Executive view.\n\nSources (ledger)\n\n- raw duplicate source entry' });
+
+  const duplicateLedgerFailure = runImporter('--replace');
+  assert.notEqual(duplicateLedgerFailure.status, 0);
+  assert.match(duplicateLedgerFailure.stderr, /Body duplicates the structured source ledger/i);
+
+  const treasuryBuybackBundle = {
+    ...bundle,
+    sources: [
+      {
+        id: 'treasury-buyback',
+        title: 'Treasury Long-End Liquidity Support Buybacks',
+        publisher: 'U.S. Department of the Treasury',
+        url: 'https://home.treasury.gov/news/press-releases/sb0607',
+        publishedAt: '2026-07-23',
+        sourceType: 'primary',
+      },
+      bundle.sources[1],
+    ],
+    highlights: [
+      {
+        ...bundle.highlights[0],
+        development: 'Treasury buybacks reduce net Treasury supply.',
+        sourceIds: ['treasury-buyback'],
+      },
+      { ...bundle.highlights[1], sourceIds: ['treasury-buyback'] },
+      { ...bundle.highlights[2], sourceIds: ['treasury-buyback', 'source-b'] },
+    ],
+    catalysts: [{ ...bundle.catalysts[0], sourceIds: ['treasury-buyback'] }],
+    body: 'Treasury liquidity-support buybacks remain a market-functioning tool.',
+  };
+  await writeBundle(treasuryBuybackBundle);
+
+  const buybackSupplyFailure = runImporter('--replace');
+  assert.notEqual(buybackSupplyFailure.status, 0);
+  assert.match(buybackSupplyFailure.stderr, /mechanically reducing or offsetting Treasury supply/i);
+
+  console.log('daily news importer review, direct-publish, and fail-closed source guard tests pass');
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });
 }

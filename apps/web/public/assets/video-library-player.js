@@ -35,18 +35,25 @@
       updateUi(savedPosition, duration, savedStatus);
       return true;
     }
-    if (!playbackStarted) {
-      updateUi(savedPosition, duration, savedStatus);
-      return false;
-    }
+
     const currentPosition = Math.max(0, Number(player.currentTime) || 0);
-    if (resumeRequested && Math.abs(currentPosition - savedPosition) <= 2) {
+    if (playbackStarted && resumeRequested && Math.abs(currentPosition - savedPosition) <= 2) {
       resumeApplied = true;
       updateUi(currentPosition, duration, savedStatus);
       return true;
     }
+
+    // Cloudflare Stream can reject an early seek until its iframe is seek-ready.
+    // Pre-arm the seek as soon as metadata exists, then retry across readiness and
+    // playback events until the SDK reports the saved position back to us.
     player.currentTime = savedPosition;
     resumeRequested = true;
+    const requestedPosition = Math.max(0, Number(player.currentTime) || 0);
+    if (playbackStarted && Math.abs(requestedPosition - savedPosition) <= 2) {
+      resumeApplied = true;
+      updateUi(requestedPosition, duration, savedStatus);
+      return true;
+    }
     updateUi(savedPosition, duration, savedStatus);
     return false;
   };
@@ -100,7 +107,13 @@
     player = window.Stream(iframe);
     player.addEventListener('loadedmetadata', applySavedPosition);
     player.addEventListener('durationchange', applySavedPosition);
+    player.addEventListener('canplay', applySavedPosition);
+    player.addEventListener('loadeddata', applySavedPosition);
     player.addEventListener('play', () => {
+      playbackStarted = true;
+      if (applySavedPosition()) save('started', true);
+    });
+    player.addEventListener('playing', () => {
       playbackStarted = true;
       if (applySavedPosition()) save('started', true);
     });

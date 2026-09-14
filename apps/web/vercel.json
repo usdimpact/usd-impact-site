@@ -77,8 +77,24 @@
       "destination": "/api/waitlist?action=daily-learning-unsubscribe"
     },
     {
+      "source": "/email/unsubscribe",
+      "destination": "/api/waitlist?action=marketing-email-unsubscribe"
+    },
+    {
       "source": "/api/daily-learning-dispatch",
       "destination": "/api/waitlist?action=daily-learning-dispatch"
+    },
+    {
+      "source": "/api/email-subscribe",
+      "destination": "/api/waitlist?action=marketing-opt-in"
+    },
+    {
+      "source": "/api/email-confirm",
+      "destination": "/api/waitlist?action=marketing-opt-in-confirm"
+    },
+    {
+      "source": "/api/email-preferences",
+      "destination": "/api/waitlist?action=marketing-email-preferences"
     },
     {
       "source": "/api/commerce-readiness",
@@ -225,6 +241,23 @@
     },
     {
       "source": "/learn/email/unsubscribe",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
+      "source": "/email/unsubscribe",
       "headers": [
         {
           "key": "Cache-Control",

@@ -130,7 +130,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$branch"
-          git add "$expected"
+          git -C "$GITHUB_WORKSPACE" add "$expected"
           git commit -m "Publish Weekly USD Impact Brief — $WEEK"
           git push --set-upstream origin "$branch"
           head_sha="$(git rev-parse HEAD)"

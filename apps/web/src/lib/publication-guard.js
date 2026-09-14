@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { createRecordedPublicationHandler } from './publication-response-boundary.js';
 import { createPublicationBuildRenderer } from './publication-build-renderer.js';
 import {
@@ -18,6 +20,10 @@ const SAFE = Object.freeze({
   'X-Content-Type-Options': 'nosniff',
   'X-Robots-Tag': 'noindex, nofollow',
 });
+const GENERATED_BUNDLE_RELATIVE = path.join('src', 'generated', 'publication-render-inputs.generated.js');
+const GENERATED_BUNDLE_PREFIX = '// Generated after Astro build. Do not edit or commit.\nconst value = ';
+const GENERATED_BUNDLE_MARKER = ';\nfunction freeze(input)';
+const MAX_GENERATED_BUNDLE_BYTES = 21_000_000;
 
 function hold(response, status, message) {
   if (response.headersSent || response.writableEnded || response.destroyed) {
@@ -49,9 +55,24 @@ function rehearsalHold(response, method, diagnostic) {
     rehearsal: true, publicationAuthorized: false, enforcementActive: false });
 }
 
+function freezeGeneratedBundle(input) {
+  if (input && typeof input === 'object') {
+    for (const value of Object.values(input)) freezeGeneratedBundle(value);
+    Object.freeze(input);
+  }
+  return input;
+}
+
 async function defaultBundleLoader() {
-  const generated = await import('../generated/publication-render-inputs.generated.js');
-  return generated.PUBLICATION_RENDER_INPUTS;
+  const source = await readFile(path.resolve(process.cwd(), GENERATED_BUNDLE_RELATIVE), 'utf8');
+  if (Buffer.byteLength(source) > MAX_GENERATED_BUNDLE_BYTES) throw new Error('generated bundle too large');
+  if (!source.startsWith(GENERATED_BUNDLE_PREFIX)) throw new Error('generated bundle prefix mismatch');
+  const markerIndex = source.indexOf(GENERATED_BUNDLE_MARKER, GENERATED_BUNDLE_PREFIX.length);
+  if (markerIndex < 0) throw new Error('generated bundle marker missing');
+  const payload = source.slice(GENERATED_BUNDLE_PREFIX.length, markerIndex);
+  const bundle = JSON.parse(payload);
+  if (!bundle || typeof bundle !== 'object' || Array.isArray(bundle)) throw new Error('generated bundle invalid');
+  return freezeGeneratedBundle(bundle);
 }
 
 async function defaultPreviewRehearsal({ environment, envelope, bundle }) {

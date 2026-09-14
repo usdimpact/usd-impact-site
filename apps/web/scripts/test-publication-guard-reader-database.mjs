@@ -12,6 +12,7 @@ const pass = () => { groups += 1; };
 const secret = 'r'.repeat(64);
 const ref = PUBLICATION_GUARD_READER_RUNTIME_SCOPE.projectRef;
 const readerUrl = `postgresql://fx558_reader_login.${ref}:${secret}@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require`;
+const readerCa = `-----BEGIN CERTIFICATE-----\n${'A'.repeat(256)}\n-----END CERTIFICATE-----`;
 const baseEnvironment = Object.freeze({
   VERCEL: '1',
   VERCEL_ENV: 'preview',
@@ -22,6 +23,7 @@ const baseEnvironment = Object.freeze({
   VERCEL_GIT_REPO_SLUG: 'usd-impact-site',
   VERCEL_GIT_COMMIT_REF: PUBLICATION_GUARD_READER_RUNTIME_SCOPE.approvedBranch,
   PUBLICATION_GUARD_READER_DATABASE_URL: readerUrl,
+  PUBLICATION_GUARD_READER_DATABASE_CA_CERT: readerCa,
 });
 
 const goodIdentity = Object.freeze({
@@ -94,6 +96,9 @@ function classify(error, expected) {
   pass();
 }
 
+assert.equal(PUBLICATION_GUARD_READER_RUNTIME_SCOPE.caEnvironmentKey, 'PUBLICATION_GUARD_READER_DATABASE_CA_CERT');
+pass();
+
 const runtime = assertPublicationGuardReaderPreviewContext(baseEnvironment);
 assert.deepEqual(runtime, {
   environment: 'preview',
@@ -112,6 +117,20 @@ contextHold({ ...baseEnvironment, VERCEL_GIT_PROVIDER: 'gitlab' }, 'HOLD_READER_
 syncHold(
   () => createPublicationGuardReaderDatabase({ environment: { ...baseEnvironment, PUBLICATION_GUARD_READER_DATABASE_URL: '' }, PoolClass: FakePool }),
   'HOLD_DATABASE_URL',
+);
+syncHold(
+  () => createPublicationGuardReaderDatabase({
+    environment: { ...baseEnvironment, PUBLICATION_GUARD_READER_DATABASE_CA_CERT: '' },
+    PoolClass: FakePool,
+  }),
+  'HOLD_READER_DATABASE_CA',
+);
+syncHold(
+  () => createPublicationGuardReaderDatabase({
+    environment: { ...baseEnvironment, PUBLICATION_GUARD_READER_DATABASE_CA_CERT: 'not-a-certificate' },
+    PoolClass: FakePool,
+  }),
+  'HOLD_READER_DATABASE_CA',
 );
 syncHold(
   () => createPublicationGuardReaderDatabase({
@@ -138,6 +157,7 @@ classify({ code: 'ENOTFOUND', message: `getaddrinfo ENOTFOUND ${secret}` }, 'HOL
 classify({ code: 'ETIMEDOUT', message: `connect timeout ${secret}` }, 'HOLD_READER_DATABASE_CONNECT_TIMEOUT');
 classify({ code: 'ECONNREFUSED', message: `connect refused ${secret}` }, 'HOLD_READER_DATABASE_CONNECT');
 classify({ code: 'ERR_TLS_CERT_ALTNAME_INVALID', message: `certificate mismatch ${secret}` }, 'HOLD_READER_DATABASE_TLS');
+classify({ code: 'SELF_SIGNED_CERT_IN_CHAIN', message: `self signed certificate in chain ${secret}` }, 'HOLD_READER_DATABASE_TLS');
 classify({ code: 'XX000', message: `FATAL: (EAUTHQUERY) invalid secret ${secret}` }, 'HOLD_READER_DATABASE_POOLER_AUTH_QUERY');
 classify({ code: 'XX000', message: `tenant or user not found ${secret}` }, 'HOLD_READER_DATABASE_POOLER_TENANT');
 classify({ code: '28P01', message: `password authentication failed ${secret}` }, 'HOLD_READER_DATABASE_AUTH_28P01');
@@ -149,7 +169,13 @@ FakePool.failure = null;
 FakePool.identity = goodIdentity;
 const database = createPublicationGuardReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
 const pool = FakePool.instances.at(-1);
-assert.equal(pool.config.connectionString, readerUrl);
+assert.equal(Object.hasOwn(pool.config, 'connectionString'), false, 'validated URL must not be reparsed by pg-connection-string');
+assert.equal(pool.config.host, 'aws-0-eu-central-1.pooler.supabase.com');
+assert.equal(pool.config.port, 6543);
+assert.equal(pool.config.database, 'postgres');
+assert.equal(pool.config.user, `fx558_reader_login.${ref}`);
+assert.equal(pool.config.password, secret);
+assert.deepEqual(pool.config.ssl, { ca: readerCa, rejectUnauthorized: true });
 assert.equal(pool.config.max, 1);
 assert.equal(pool.config.connectionTimeoutMillis, 3000);
 assert.equal(pool.config.idleTimeoutMillis, 5000);
@@ -157,6 +183,17 @@ assert.equal(pool.config.allowExitOnIdle, true);
 assert.equal(database.publicationAuthorized, false);
 assert.equal(database.enforcementActive, false);
 assert.equal(JSON.stringify(database).includes(secret), false);
+assert.equal(JSON.stringify(database).includes(readerCa), false);
+pass();
+
+const escapedCaEnvironment = {
+  ...baseEnvironment,
+  PUBLICATION_GUARD_READER_DATABASE_CA_CERT: readerCa.replace(/\n/g, '\\n'),
+};
+const escapedCaDatabase = createPublicationGuardReaderDatabase({ environment: escapedCaEnvironment, PoolClass: FakePool });
+const escapedCaPool = FakePool.instances.at(-1);
+assert.equal(escapedCaPool.config.ssl.ca, readerCa);
+await escapedCaDatabase.close();
 pass();
 
 const identity = await database.verifyIdentityAndPrivileges();

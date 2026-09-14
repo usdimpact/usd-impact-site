@@ -11,6 +11,19 @@ const APPROVED_REPOSITORY = 'usd-impact-site';
 const APPROVED_PROJECT_ID = 'prj_ZoLLM35ksI6wk17PcfS2xYknaVl7';
 const READER_LOGIN = 'fx558_reader_login';
 
+const QUERY_FAILURE = Object.freeze({
+  dns: 'HOLD_READER_DATABASE_DNS',
+  connectTimeout: 'HOLD_READER_DATABASE_CONNECT_TIMEOUT',
+  connect: 'HOLD_READER_DATABASE_CONNECT',
+  tls: 'HOLD_READER_DATABASE_TLS',
+  auth28P01: 'HOLD_READER_DATABASE_AUTH_28P01',
+  auth: 'HOLD_READER_DATABASE_AUTH',
+  poolerAuthQuery: 'HOLD_READER_DATABASE_POOLER_AUTH_QUERY',
+  poolerTenant: 'HOLD_READER_DATABASE_POOLER_TENANT',
+  queryPermission: 'HOLD_READER_DATABASE_QUERY_PERMISSION',
+  other: 'HOLD_READER_DATABASE_QUERY_OTHER',
+});
+
 const IDENTITY_SQL = `select jsonb_build_object(
   'role', current_user,
   'database', current_database(),
@@ -33,6 +46,44 @@ export class PublicationGuardReaderDatabaseError extends Error {
 
 const fail = (code) => { throw new PublicationGuardReaderDatabaseError(code); };
 const need = (condition, code) => { if (!condition) fail(code); };
+const token = (value) => (typeof value === 'string' ? value.trim().toUpperCase() : '');
+
+export function classifyPublicationGuardReaderDatabaseFailure(error) {
+  const code = token(error?.code);
+  const errno = token(error?.errno);
+  const message = typeof error?.message === 'string' ? error.message.toLowerCase() : '';
+  const tags = new Set([code, errno]);
+
+  if (tags.has('ENOTFOUND') || tags.has('EAI_AGAIN')) return QUERY_FAILURE.dns;
+  if (
+    tags.has('ETIMEDOUT')
+    || tags.has('ERR_SOCKET_CONNECTION_TIMEOUT')
+    || /(?:connection|connect).*timeout|timeout expired/.test(message)
+  ) return QUERY_FAILURE.connectTimeout;
+  if (
+    tags.has('ERR_TLS_CERT_ALTNAME_INVALID')
+    || tags.has('DEPTH_ZERO_SELF_SIGNED_CERT')
+    || tags.has('UNABLE_TO_VERIFY_LEAF_SIGNATURE')
+    || tags.has('CERT_HAS_EXPIRED')
+    || /tls handshake|self[- ]signed certificate|certificate.*(?:invalid|expired)|ssl.*(?:error|certificate)/.test(message)
+  ) return QUERY_FAILURE.tls;
+  if (/eauthquery/.test(message)) return QUERY_FAILURE.poolerAuthQuery;
+  if (/(?:tenant|user).*(?:not found|unsupported)|(?:not found).*(?:tenant|user)/.test(message)) {
+    return QUERY_FAILURE.poolerTenant;
+  }
+  if (code === '28P01') return QUERY_FAILURE.auth28P01;
+  if (code === '28000') return QUERY_FAILURE.auth;
+  if (code === '42501') return QUERY_FAILURE.queryPermission;
+  if (
+    tags.has('ECONNREFUSED')
+    || tags.has('ECONNRESET')
+    || tags.has('ECONNABORTED')
+    || tags.has('EHOSTUNREACH')
+    || tags.has('ENETUNREACH')
+    || tags.has('EPIPE')
+  ) return QUERY_FAILURE.connect;
+  return QUERY_FAILURE.other;
+}
 
 export function assertPublicationGuardReaderPreviewContext(environment = {}) {
   need(environment.VERCEL === '1', 'HOLD_READER_CONTEXT');
@@ -79,8 +130,8 @@ export function createPublicationGuardReaderDatabase({ environment = process.env
     need(typeof text === 'string' && Array.isArray(values), 'HOLD_READER_QUERY');
     try {
       return await pool.query({ text, values });
-    } catch {
-      fail('HOLD_READER_DATABASE_QUERY');
+    } catch (error) {
+      fail(classifyPublicationGuardReaderDatabaseFailure(error));
     }
   };
 

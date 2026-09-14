@@ -7,7 +7,7 @@ const TREASURY_REFUNDING_PATTERN = /\bquarterly refunding\b|\brefunding auctions
 const TREASURY_BUYBACK_PATTERN = /\b(?:liquidity[- ]support\s+)?buybacks?\b/i;
 const BUYBACK_SUPPLY_REDUCTION_PATTERN = /\b(?:reduce(?:s|d|ing)?|offset(?:s|ting)?|lower(?:s|ed|ing)?|shrink(?:s|ing)?|cut(?:s|ting)?)\b[^.!?\n]{0,120}\b(?:net\s+)?(?:long[- ]end\s+)?(?:Treasury\s+)?supply\b/i;
 const BUYBACK_NEGATION_PATTERN = /\b(?:not|does\s+not|do\s+not|did\s+not|should\s+not|cannot|can't|without)\b/i;
-const SOURCE_DATE_PLACEHOLDER_PATTERN = /\b(?:\d{4}-(?:\d{2}|\?\?)-(?:\d{2}|\?\?)|YYYY-MM-DD)\b/i;
+const SOURCE_DATE_PLACEHOLDER_PATTERN = /(?:^|[^0-9A-Za-z])(?:\d{4}-\?\?-(?:\d{2}|\?\?)|\d{4}-\d{2}-\?\?|YYYY-MM-DD)(?=$|[^0-9A-Za-z])/i;
 const DUPLICATE_SOURCE_LEDGER_PATTERN = /(?:^|\n)\s{0,3}(?:#{1,6}\s*)?Sources\s*\(ledger\)\s*:?[ \t]*(?:\n|$)/i;
 const OPERATIONAL_DATE_CUE_PATTERN = /\b(?:effective|beginning|starting)\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2})(?:,\s*(\d{4}))?/i;
 const UNICODE_DASH_PATTERN = /[\u2010-\u2015\u2212]/g;

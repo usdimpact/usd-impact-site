@@ -64,17 +64,19 @@ The rehearsal can run only when all existing signed Preview-route checks pass an
 
 `PUBLICATION_GUARD_PREVIEW_REHEARSAL=readonly-v1`
 
-It then uses the existing `PUBLICATION_GUARD_READER_DATABASE_URL` adapter and proves, in order:
+It then uses the existing `PUBLICATION_GUARD_READER_DATABASE_URL` adapter together with the Preview-only `PUBLICATION_GUARD_READER_DATABASE_CA_CERT` trust input and proves, in order:
 
 1. the signed governed path is bound to the exact protected Preview deployment host and commit;
 2. the generated publication bundle is bound to the same commit;
-3. the managed database connection authenticates as `fx558_reader_login` over SSL;
+3. the managed database connection authenticates as `fx558_reader_login` over CA-verified SSL;
 4. the reader can execute only `publication_guard_api.read_snapshot(...)` and has no authorize, prepare, receipt-recording, or revocation privilege;
 5. the managed history snapshot is exactly revision `0` with zero records.
 
-A successful R0 rehearsal still terminates with HTTP 503 and the fixed no-store diagnostic `HOLD_NOT_ADMITTED`. The diagnostic contains only bounded route/runtime/reader/snapshot evidence. It does not contain the database URL or secret, does not emit article/feed/homepage bytes, does not invoke `publication-serving-policy.js`, and cannot create an admission, receipt, witness, promotion, or serving authorization.
+The reader validates the shared-pooler host, port, database and role from the URL, but does not pass the URL through `pg-connection-string` at runtime. Instead it constructs the `pg.Pool` connection fields explicitly and supplies the configured Supabase CA with `rejectUnauthorized: true`. This preserves certificate-chain and hostname verification and prevents connection-string `sslmode` parsing from weakening or overriding the explicit TLS policy. A missing, malformed or private-key-bearing CA input fails closed before any database connection is attempted.
 
-This source increment does **not** set the rehearsal mode, reader URL, route secret, or any other provider environment value. Without a separately approved provider configuration, the new rehearsal remains dormant.
+A successful R0 rehearsal still terminates with HTTP 503 and the fixed no-store diagnostic `HOLD_NOT_ADMITTED`. The diagnostic contains only bounded route/runtime/reader/snapshot evidence. It does not contain the database URL, password, CA material or route secret, does not emit article/feed/homepage bytes, does not invoke `publication-serving-policy.js`, and cannot create an admission, receipt, witness, promotion, or serving authorization.
+
+This source increment does **not** set the rehearsal mode, reader URL, reader CA, route secret, or any other provider environment value. Without a separately approved provider configuration, the new rehearsal remains dormant.
 
 ## Host and alias contract
 
@@ -121,6 +123,7 @@ The route-candidate and R0 regressions cover:
 - absence of any governed public-path rewrite/activation in `vercel.json` or middleware;
 - R0 exact Preview/build/path binding;
 - R0 managed-reader identity plus read-only privilege proof;
+- R0 explicit CA-backed TLS configuration with connection-string SSL parsing excluded;
 - R0 revision-0 snapshot proof;
 - GET and HEAD R0 termination at `HOLD_NOT_ADMITTED` with no publication bytes;
 - invalid or unknown rehearsal modes and malformed rehearsal results failing closed.

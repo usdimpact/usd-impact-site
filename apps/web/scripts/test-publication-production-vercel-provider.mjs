@@ -13,7 +13,7 @@ const nowMs = Date.parse('2026-09-15T14:45:00.000Z');
 const deploymentId = 'dpl_ProductionProviderFixtureA';
 const deploymentHost = 'usd-impact-site-productionprovider.vercel.app';
 const commitSha = 'a'.repeat(40);
-const token = 'vcp_fixture_token_abcdefghijklmnopqrstuvwxyz0123456789';
+const token = 'vca_fixture_token_abcdefghijklmnopqrstuvwxyz0123456789';
 
 const environment = Object.freeze({
   VERCEL: '1',
@@ -27,7 +27,6 @@ const environment = Object.freeze({
   VERCEL_GIT_COMMIT_SHA: commitSha,
   VERCEL_DEPLOYMENT_ID: deploymentId,
   VERCEL_URL: deploymentHost,
-  PUBLICATION_GUARD_VERCEL_PROVIDER_TOKEN: token,
 });
 
 const sources = ['alpha source', 'beta source'];
@@ -37,20 +36,8 @@ const renderBundle = Object.freeze({
   siteOrigin: 'https://www.usd-impact.com',
   buildCommitSha: commitSha,
   publications: Object.freeze([
-    Object.freeze({
-      path: '/news/2026-09-15',
-      source: sources[0],
-      sourceSha256: hash(sources[0]),
-      html: html[0],
-      htmlSha256: hash(html[0]),
-    }),
-    Object.freeze({
-      path: '/news/catalysts/cpi-september',
-      source: sources[1],
-      sourceSha256: hash(sources[1]),
-      html: html[1],
-      htmlSha256: hash(html[1]),
-    }),
+    Object.freeze({ path: '/news/2026-09-15', source: sources[0], sourceSha256: hash(sources[0]), html: html[0], htmlSha256: hash(html[0]) }),
+    Object.freeze({ path: '/news/catalysts/cpi-september', source: sources[1], sourceSha256: hash(sources[1]), html: html[1], htmlSha256: hash(html[1]) }),
   ]),
   static: Object.freeze({
     homepageHtml: '<html>home</html>',
@@ -75,10 +62,8 @@ const deployment = Object.freeze({
   }),
 });
 const aliasPayload = Object.freeze({
-  aliases: PUBLICATION_PRODUCTION_VERCEL_PROVIDER_SCOPE.approvedPublicAliases
-    .map((alias) => Object.freeze({ alias })),
+  aliases: PUBLICATION_PRODUCTION_VERCEL_PROVIDER_SCOPE.approvedPublicAliases.map((alias) => Object.freeze({ alias })),
 });
-
 const response = (value, status = 200) => ({ status, async text() { return JSON.stringify(value); } });
 
 function makeFetch({ deploymentValue = deployment, aliasesValue = aliasPayload, deploymentStatus = 200, aliasStatus = 200 } = {}) {
@@ -93,36 +78,29 @@ function makeFetch({ deploymentValue = deployment, aliasesValue = aliasPayload, 
 }
 
 async function hold(work, code) {
-  await assert.rejects(
-    work,
-    (error) => error instanceof PublicationProductionVercelProviderError
-      && error.code === code && error.policyCode === code,
-  );
+  await assert.rejects(work, (error) => error instanceof PublicationProductionVercelProviderError
+    && error.code === code && error.policyCode === code);
   pass();
 }
 
 assert.equal(PUBLICATION_PRODUCTION_VERCEL_PROVIDER_SCOPE.schema, 'publication-production-provider-state/v1');
-assert.equal(PUBLICATION_PRODUCTION_VERCEL_PROVIDER_SCOPE.tokenEnvironmentKey, 'PUBLICATION_GUARD_VERCEL_PROVIDER_TOKEN');
+assert.equal(PUBLICATION_PRODUCTION_VERCEL_PROVIDER_SCOPE.credentialMode, 'trusted-bearer-supplier');
+assert.equal(Object.hasOwn(PUBLICATION_PRODUCTION_VERCEL_PROVIDER_SCOPE, 'tokenEnvironmentKey'), false);
 assert.equal(PUBLICATION_PRODUCTION_VERCEL_PROVIDER_SCOPE.publicationAuthorized, false);
 assert.equal(PUBLICATION_PRODUCTION_VERCEL_PROVIDER_SCOPE.enforcementActive, false);
 pass();
 
+let credentialCalls = 0;
+const loadBearerToken = async () => { credentialCalls += 1; return token; };
 const good = makeFetch();
-const adapter = createPublicationProductionVercelProviderStateLoader({
-  environment,
-  fetchImpl: good.fetchImpl,
-  renderBundle,
-  now: () => nowMs,
-});
+const adapter = createPublicationProductionVercelProviderStateLoader({ environment, fetchImpl: good.fetchImpl, renderBundle, loadBearerToken, now: () => nowMs });
 assert.equal(adapter.publicationAuthorized, false);
 assert.equal(adapter.enforcementActive, false);
 assert.equal(adapter.runtime.deploymentId, deploymentId);
 pass();
 
 const state = await adapter.loadProviderState({ headers: { host: 'attacker.example' } });
-const expectedEntries = renderBundle.publications
-  .map(({ path, sourceSha256 }) => ({ path, sourceSha256 }))
-  .sort((a, b) => a.path.localeCompare(b.path));
+const expectedEntries = renderBundle.publications.map(({ path, sourceSha256 }) => ({ path, sourceSha256 })).sort((a, b) => a.path.localeCompare(b.path));
 assert.deepEqual(state, {
   schema: 'publication-production-provider-state/v1',
   repository: 'usdimpact/usd-impact-site',
@@ -142,6 +120,7 @@ assert.deepEqual(state, {
   validUntil: '2026-09-15T14:45:05.000Z',
 });
 assert.equal(JSON.stringify(state).includes('attacker.example'), false);
+assert.equal(credentialCalls, 1);
 pass();
 
 assert.equal(good.calls.length, 2);
@@ -166,24 +145,34 @@ for (const patch of [
   { VERCEL_DEPLOYMENT_ID: 'bad' },
 ]) {
   await hold(async () => createPublicationProductionVercelProviderStateLoader({
-    environment: { ...environment, ...patch },
-    fetchImpl: good.fetchImpl,
-    renderBundle,
-    now: () => nowMs,
+    environment: { ...environment, ...patch }, fetchImpl: good.fetchImpl, renderBundle, loadBearerToken, now: () => nowMs,
   }), 'HOLD_PRODUCTION_PROVIDER_CONTEXT');
 }
 
 await hold(async () => createPublicationProductionVercelProviderStateLoader({
-  environment: { ...environment, PUBLICATION_GUARD_VERCEL_PROVIDER_TOKEN: '' },
-  fetchImpl: good.fetchImpl,
-  renderBundle,
-  now: () => nowMs,
-}), 'HOLD_PRODUCTION_PROVIDER_CREDENTIAL');
+  environment, fetchImpl: good.fetchImpl, renderBundle, now: () => nowMs,
+}), 'HOLD_PRODUCTION_PROVIDER_CONFIG');
+
+const staticTokenOnlyEnvironment = { ...environment, PUBLICATION_GUARD_VERCEL_PROVIDER_TOKEN: token };
+await hold(async () => createPublicationProductionVercelProviderStateLoader({
+  environment: staticTokenOnlyEnvironment, fetchImpl: good.fetchImpl, renderBundle, now: () => nowMs,
+}), 'HOLD_PRODUCTION_PROVIDER_CONFIG');
+
+for (const badSupplier of [
+  async () => '',
+  async () => 'short',
+  async () => 'bad token with spaces 1234567890',
+  async () => { throw new Error(`do not leak ${token}`); },
+]) {
+  const instance = createPublicationProductionVercelProviderStateLoader({ environment, fetchImpl: good.fetchImpl, renderBundle, loadBearerToken: badSupplier, now: () => nowMs });
+  await hold(() => instance.loadProviderState(), 'HOLD_PRODUCTION_PROVIDER_CREDENTIAL');
+}
 
 await hold(async () => createPublicationProductionVercelProviderStateLoader({
   environment,
   fetchImpl: good.fetchImpl,
   renderBundle: { ...renderBundle, buildCommitSha: 'b'.repeat(40) },
+  loadBearerToken,
   now: () => nowMs,
 }), 'HOLD_PRODUCTION_PROVIDER_ARTIFACT');
 
@@ -198,7 +187,7 @@ for (const patch of [
   { meta: { ...deployment.meta, githubCommitRepo: 'other' } },
 ]) {
   const candidate = makeFetch({ deploymentValue: { ...deployment, ...patch } });
-  const instance = createPublicationProductionVercelProviderStateLoader({ environment, fetchImpl: candidate.fetchImpl, renderBundle, now: () => nowMs });
+  const instance = createPublicationProductionVercelProviderStateLoader({ environment, fetchImpl: candidate.fetchImpl, renderBundle, loadBearerToken, now: () => nowMs });
   await hold(() => instance.loadProviderState(), 'HOLD_PRODUCTION_PROVIDER_BINDING');
 }
 
@@ -208,18 +197,19 @@ for (const aliases of [
   { aliases: [...aliasPayload.aliases, aliasPayload.aliases[0]] },
 ]) {
   const candidate = makeFetch({ aliasesValue: aliases });
-  const instance = createPublicationProductionVercelProviderStateLoader({ environment, fetchImpl: candidate.fetchImpl, renderBundle, now: () => nowMs });
+  const instance = createPublicationProductionVercelProviderStateLoader({ environment, fetchImpl: candidate.fetchImpl, renderBundle, loadBearerToken, now: () => nowMs });
   await hold(() => instance.loadProviderState(), 'HOLD_PRODUCTION_PROVIDER_ALIASES');
 }
 
 const deploymentFailure = makeFetch({ deploymentStatus: 503 });
-const deploymentFailureAdapter = createPublicationProductionVercelProviderStateLoader({ environment, fetchImpl: deploymentFailure.fetchImpl, renderBundle, now: () => nowMs });
+const deploymentFailureAdapter = createPublicationProductionVercelProviderStateLoader({ environment, fetchImpl: deploymentFailure.fetchImpl, renderBundle, loadBearerToken, now: () => nowMs });
 await hold(() => deploymentFailureAdapter.loadProviderState(), 'HOLD_PRODUCTION_PROVIDER_DEPLOYMENT');
 
 const secretFailureAdapter = createPublicationProductionVercelProviderStateLoader({
   environment,
   fetchImpl: async () => { throw new Error(`do not leak ${token}`); },
   renderBundle,
+  loadBearerToken,
   now: () => nowMs,
 });
 await hold(() => secretFailureAdapter.loadProviderState(), 'HOLD_PRODUCTION_PROVIDER_DEPLOYMENT');
@@ -229,6 +219,7 @@ const clockAdapter = createPublicationProductionVercelProviderStateLoader({
   environment,
   fetchImpl: makeFetch().fetchImpl,
   renderBundle,
+  loadBearerToken,
   now: () => { const value = clock; clock -= 1; return value; },
 });
 await clockAdapter.loadProviderState();

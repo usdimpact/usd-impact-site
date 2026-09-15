@@ -8,7 +8,6 @@ const APPROVED_TEAM_ID = 'team_1LuMlacGuM198mRjoID4O3Ct';
 const APPROVED_OWNER = 'usdimpact';
 const APPROVED_REPO = 'usd-impact-site';
 const APPROVED_BRANCH = 'main';
-const TOKEN_ENV_KEY = 'PUBLICATION_GUARD_VERCEL_PROVIDER_TOKEN';
 const API_ORIGIN = 'https://api.vercel.com';
 const MAX_PROVIDER_MS = 15_000;
 const PROVIDER_TTL_MS = 5_000;
@@ -69,9 +68,6 @@ function runtimeContext(environment) {
     && DEPLOYMENT.test(environment.VERCEL_DEPLOYMENT_ID ?? '')
     && DEPLOYMENT_HOST.test(environment.VERCEL_URL ?? ''),
   'HOLD_PRODUCTION_PROVIDER_CONTEXT');
-  const token = environment[TOKEN_ENV_KEY];
-  need(typeof token === 'string' && token.length >= 20 && token.length <= 512 && !/\s/.test(token),
-    'HOLD_PRODUCTION_PROVIDER_CREDENTIAL');
   return freeze({
     repository: APPROVED_REPOSITORY,
     projectId: APPROVED_PROJECT_ID,
@@ -79,7 +75,6 @@ function runtimeContext(environment) {
     deploymentId: environment.VERCEL_DEPLOYMENT_ID,
     deploymentHost: environment.VERCEL_URL,
     commitSha: environment.VERCEL_GIT_COMMIT_SHA,
-    token,
   });
 }
 
@@ -178,7 +173,15 @@ async function jsonResponse(response, code) {
   }
 }
 
-async function authenticatedGet(fetchImpl, runtime, path, code) {
+async function bearerCredential(loadBearerToken) {
+  let token;
+  try { token = await loadBearerToken(); } catch { fail('HOLD_PRODUCTION_PROVIDER_CREDENTIAL'); }
+  need(typeof token === 'string' && token.length >= 20 && token.length <= 4096 && !/\s/.test(token),
+    'HOLD_PRODUCTION_PROVIDER_CREDENTIAL');
+  return token;
+}
+
+async function authenticatedGet(fetchImpl, runtime, token, path, code) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   let response;
@@ -186,7 +189,7 @@ async function authenticatedGet(fetchImpl, runtime, path, code) {
     response = await fetchImpl(`${API_ORIGIN}${path}`, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${runtime.token}`,
+        Authorization: `Bearer ${token}`,
         Accept: 'application/json',
       },
       redirect: 'error',
@@ -205,10 +208,12 @@ export function createPublicationProductionVercelProviderStateLoader({
   environment = process.env,
   fetchImpl = globalThis.fetch,
   renderBundle,
+  loadBearerToken,
   now = Date.now,
 } = {}) {
   const runtime = runtimeContext(environment);
-  need(typeof fetchImpl === 'function' && typeof now === 'function', 'HOLD_PRODUCTION_PROVIDER_CONFIG');
+  need(typeof fetchImpl === 'function' && typeof loadBearerToken === 'function' && typeof now === 'function',
+    'HOLD_PRODUCTION_PROVIDER_CONFIG');
   const artifact = localArtifact(renderBundle, runtime.commitSha);
   let highestTime = -1;
   function clock() {
@@ -220,15 +225,18 @@ export function createPublicationProductionVercelProviderStateLoader({
   }
 
   async function loadProviderState() {
+    const token = await bearerCredential(loadBearerToken);
     const deployment = deploymentIdentity(await authenticatedGet(
       fetchImpl,
       runtime,
+      token,
       `/v13/deployments/${encodeURIComponent(runtime.deploymentId)}?withGitRepoInfo=true&teamId=${encodeURIComponent(runtime.teamId)}`,
       'HOLD_PRODUCTION_PROVIDER_DEPLOYMENT',
     ), runtime);
     const aliases = aliasInventory(await authenticatedGet(
       fetchImpl,
       runtime,
+      token,
       `/v2/deployments/${encodeURIComponent(runtime.deploymentId)}/aliases?teamId=${encodeURIComponent(runtime.teamId)}`,
       'HOLD_PRODUCTION_PROVIDER_ALIASES',
     ));
@@ -277,7 +285,7 @@ export const PUBLICATION_PRODUCTION_VERCEL_PROVIDER_SCOPE = Object.freeze({
   projectId: APPROVED_PROJECT_ID,
   teamId: APPROVED_TEAM_ID,
   branch: APPROVED_BRANCH,
-  tokenEnvironmentKey: TOKEN_ENV_KEY,
+  credentialMode: 'trusted-bearer-supplier',
   approvedPublicAliases: APPROVED_PUBLIC_ALIASES,
   maxProviderMs: MAX_PROVIDER_MS,
   providerTtlMs: PROVIDER_TTL_MS,

@@ -8,7 +8,7 @@ The Production guard database revision primitive is installed. The owner has man
 
 ## Purpose
 
-`publication-production-authority.js` already requires an authenticated `loadProviderState()` function and rejects request headers or caller input as authority evidence. This loader supplies that missing provider observation without granting publication authority.
+`publication-production-authority.js` already requires an authenticated `loadProviderState()` function and rejects request headers or caller input as authority evidence. This loader supplies the provider-observation boundary without granting publication authority.
 
 The loader is pinned to:
 
@@ -19,16 +19,28 @@ The loader is pinned to:
 - the exact runtime deployment ID, immutable deployment hostname and commit SHA exposed by Vercel system variables; and
 - the fixed reviewed public-alias inventory already required by the Production authority adapter.
 
+## Least-privilege provider credential model
+
+The first source candidate assumed a durable `PUBLICATION_GUARD_VERCEL_PROVIDER_TOKEN`. Before provisioning that credential, the provider model was checked against current Vercel documentation.
+
+Vercel documents project scoping for personal/authentication tokens (`vercel tokens add --project ...`), but that token-creation interface does not expose read-only permission flags. A project-scoped personal token therefore does not satisfy this guard's least-privilege requirement merely because the provider loader itself issues only GET requests.
+
+Vercel also documents Vercel App installation permissions that can be restricted to a project and to explicit read scopes such as `read:project` and `read:deployment`. Those app access tokens are short-lived and require a trusted token-acquisition/refresh boundary rather than a static long-lived personal token embedded in Production configuration.
+
+For that reason, the provider core now requires a trusted server-only `loadBearerToken()` supplier. The core does not read or accept a static Vercel token environment variable. The future credential adapter must be separately reviewed and must prove that its bearer credential is restricted to this project and only the read permissions required by the two provider observations.
+
+No Vercel App, OAuth client, refresh credential or provider bearer token is created or stored by this source increment.
+
 ## Authenticated provider observation
 
-The loader requires a future Production-only secret named `PUBLICATION_GUARD_VERCEL_PROVIDER_TOKEN`. It uses that token only as a Bearer credential for read-only Vercel REST requests:
+For each provider snapshot, the loader requests one bearer credential from the trusted supplier and uses that same credential only for these authenticated Vercel REST reads:
 
 - `GET /v13/deployments/{deploymentId}?withGitRepoInfo=true&teamId=...`
 - `GET /v2/deployments/{deploymentId}/aliases?teamId=...`
 
-Vercel documents both endpoints as authenticated ownership-scoped reads. The loader does not expose a provider mutation method, does not call promote/deploy/alias mutation APIs and does not accept request-provided deployment or alias values.
+Vercel documents both endpoints as authenticated reads. The provider core exposes no mutation method, does not call deploy/promote/alias/environment mutation APIs and does not accept request-provided deployment, token or alias values.
 
-The deployment observation must prove READY Production state, exact project, exact immutable host, exact `main` commit, and exact GitHub repository. The alias observation must equal the reviewed public-alias set with no additions, removals or duplicates. Any provider error, mismatch, malformed payload, timeout or stale clock fails closed.
+The deployment observation must prove READY Production state, exact project, exact immutable host, exact `main` commit, and exact GitHub repository. The alias observation must equal the reviewed public-alias set with no additions, removals or duplicates. Any credential-supplier error, provider error, mismatch, malformed payload, timeout or stale clock fails closed.
 
 ## Local artifact binding
 
@@ -42,15 +54,17 @@ This prevents provider metadata for one deployment from being paired with public
 
 ## Verification
 
-The offline regression suite uses a fake Vercel provider only. It verifies exact API paths and team scope, Bearer authentication, no-store/no-redirect reads, exact deployment/project/repository/commit binding, exact alias inventory, render-bundle and manifest hashing, ignored attacker request arguments, clock monotonicity, bounded provider failures, and non-disclosure of token-bearing provider errors.
+The offline regression suite uses a fake Vercel provider and fake bearer supplier only. It verifies exact API paths and team scope, one credential acquisition per provider snapshot, reuse of the same bearer credential across that snapshot's deployment and alias reads, no-store/no-redirect GET requests, exact deployment/project/repository/commit binding, exact alias inventory, render-bundle and manifest hashing, ignored attacker request arguments, clock monotonicity, bounded provider/credential failures, and non-disclosure of token-bearing errors.
 
-The test does not use a live Vercel token and does not prove Production runtime connectivity. A live read-only provider rehearsal remains a separate protected step after a scoped provider token is created and stored.
+It also asserts that a static environment token alone is insufficient to configure the core loader. The test does not use a live Vercel App token and does not prove Production runtime connectivity. A live read-only provider rehearsal remains a separate protected step after the fine-grained credential supplier is implemented and its project/read-only scopes are verified.
 
 ## Still protected / held
 
 The following are not activated by this source increment:
 
-- creation or storage of `PUBLICATION_GUARD_VERCEL_PROVIDER_TOKEN`;
+- Vercel App/OAuth registration or installation;
+- storage of an App client secret, refresh token, access token or personal token;
+- implementation or deployment of the live credential-refresh supplier;
 - importing the provider loader or Production reader into any live API/Middleware route;
 - Production redeploy or promotion;
 - route/public-alias/domain/protection changes;

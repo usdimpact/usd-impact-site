@@ -72,10 +72,26 @@ assert.equal(
   sourceDateBasisForUrl('https://www.bls.gov/schedule/2026/09_sched_list.htm'),
   SOURCE_DATE_BASIS.PUBLISHED,
 );
+assert.equal(
+  sourceDateBasisForUrl('https://www.eia.gov/petroleum/supply/weekly/index.php'),
+  SOURCE_DATE_BASIS.CURRENT_RELEASE,
+  'EIA Weekly Petroleum Status Report landing page rolls forward with each weekly release',
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.eia.gov/petroleum/supply/weekly/index.php?trk=organization_guest_main-feed-card_feed-article-content'),
+  SOURCE_DATE_BASIS.CURRENT_RELEASE,
+  'Tracking-query variants must not change EIA WPSR living-source semantics',
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.eia.gov/petroleum/supply/weekly/archive/2026/2026_09_10/'),
+  SOURCE_DATE_BASIS.PUBLISHED,
+  'Archived EIA weekly release paths must remain immutable publication-date sources',
+);
 assert.equal(sourceDateBasisForUrl('not-a-url'), SOURCE_DATE_BASIS.PUBLISHED);
 assert.equal(isLivingSourceUrl('https://www.federalreserve.gov/newsevents/2026-july.htm'), true);
 assert.equal(isLivingSourceUrl('https://www.bls.gov/cpi'), true);
 assert.equal(isLivingSourceUrl('https://www.bls.gov/news.release/cpi.nr0.htm'), false);
+assert.equal(isLivingSourceUrl('https://www.eia.gov/petroleum/supply/weekly/index.php?trk=example'), true);
 
 assert.equal(normalizePublishedAt('2026-07-23', 'dated-source'), '2026-07-23');
 assert.equal(normalizePublishedAt('2026-07-23T09:30:00Z', 'timestamp-source'), '2026-07-23');

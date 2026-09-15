@@ -31,9 +31,25 @@ const IDENTITY_SQL = `select jsonb_build_object(
   'database', current_database(),
   'schemaUsage', has_schema_privilege(current_user, '${STORE_SCHEMA_NAME}', 'USAGE'),
   'schemaCreate', has_schema_privilege(current_user, '${STORE_SCHEMA_NAME}', 'CREATE'),
-  'storeSelect', has_table_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'SELECT'),
-  'storeUpdate', has_table_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'UPDATE'),
-  'storeInsert', has_table_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'INSERT'),
+  'storeSelect',
+    not has_table_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'SELECT')
+    and has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'singleton', 'SELECT')
+    and has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'version', 'SELECT')
+    and has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'key_fingerprint', 'SELECT')
+    and has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'nonce', 'SELECT')
+    and has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'ciphertext', 'SELECT')
+    and has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'auth_tag', 'SELECT')
+    and has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'updated_at', 'SELECT'),
+  'storeUpdate',
+    not has_table_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'UPDATE')
+    and not has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'singleton', 'UPDATE')
+    and not has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'key_fingerprint', 'UPDATE')
+    and has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'version', 'UPDATE')
+    and has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'nonce', 'UPDATE')
+    and has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'ciphertext', 'UPDATE')
+    and has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'auth_tag', 'UPDATE')
+    and has_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'updated_at', 'UPDATE'),
+  'storeInsert', has_any_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'INSERT'),
   'storeDelete', has_table_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'DELETE'),
   'storeTruncate', has_table_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'TRUNCATE'),
   'vaultSecretsSelect', has_table_privilege(current_user, 'vault.secrets', 'SELECT'),

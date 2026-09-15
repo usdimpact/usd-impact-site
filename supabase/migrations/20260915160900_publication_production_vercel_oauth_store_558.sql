@@ -1,7 +1,7 @@
--- Issue #558 reviewed SQL contract.
--- This executable body is mirrored by the repository migration generated through the Supabase CLI.
--- Do not apply this documentation copy directly; live migration application remains separately protected.
--- Purpose: create a private ciphertext-only CAS store for the Vercel OAuth refresh credential.
+-- Issue #558 reviewed repository migration.
+-- Generated filename: Supabase CLI 2.117.0, workflow run 34993123353.
+-- Prepared only. Applying this migration to a live database is a separate protected action.
+-- Creates no credential row, no database password, no AES key, and no OAuth credential.
 -- Plaintext refresh credentials, OAuth client secrets, and the AES key must never be stored here.
 
 begin;

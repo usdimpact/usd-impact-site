@@ -2,13 +2,13 @@
 
 ## Status
 
-Dormant source-only candidate for draft PR #559. This module does not activate a route, deployment, publication authorization, admission, receipt, enforcement, promotion or merge. It is not imported by Middleware or an API entrypoint.
+Dormant source-only candidate for draft PR #615. This module does not activate a route, deployment, publication authorization, admission, receipt, enforcement, promotion or merge. It is not imported by Middleware or an API entrypoint.
 
-The Production guard database revision primitive is installed. The owner has manually provisioned the two Production-only reader inputs required by `publication-production-reader-database.js` (`PUBLICATION_GUARD_PRODUCTION_READER_DATABASE_URL` and `PUBLICATION_GUARD_PRODUCTION_READER_DATABASE_CA_CERT`) using the reviewed Shared Supavisor transaction endpoint and official Supabase production CA roots. No redeploy was performed as part of that provider configuration step. Secret values are not committed or documented here.
+The Production guard database revision primitive is installed. The owner previously provisioned the two Production-only reader inputs required by `publication-production-reader-database.js` (`PUBLICATION_GUARD_PRODUCTION_READER_DATABASE_URL` and `PUBLICATION_GUARD_PRODUCTION_READER_DATABASE_CA_CERT`) using the reviewed Shared Supavisor transaction endpoint and official Supabase production CA roots. Secret values are not committed or documented here.
 
 ## Purpose
 
-`publication-production-authority.js` already requires an authenticated `loadProviderState()` function and rejects request headers or caller input as authority evidence. This loader supplies the provider-observation boundary without granting publication authority.
+`publication-production-authority.js` requires an authenticated `loadProviderState()` function and rejects request headers or caller input as authority evidence. This loader supplies the provider-observation boundary without granting publication authority.
 
 The loader is pinned to:
 
@@ -21,15 +21,13 @@ The loader is pinned to:
 
 ## Least-privilege provider credential model
 
-The first source candidate assumed a durable `PUBLICATION_GUARD_VERCEL_PROVIDER_TOKEN`. Before provisioning that credential, the provider model was checked against current Vercel documentation.
+The provider core requires a trusted server-only `loadBearerToken()` supplier and does not read a static personal Vercel token from application configuration.
 
-Vercel documents project scoping for personal/authentication tokens (`vercel tokens add --project ...`), but that token-creation interface does not expose read-only permission flags. A project-scoped personal token therefore does not satisfy this guard's least-privilege requirement merely because the provider loader itself issues only GET requests.
+The preferred supplier is now Vercel Connect. The Production deployment proves its identity with Vercel OIDC, the Connect service verifies the project/environment link, and it returns a short-lived provider token. The request is constrained to the two reviewed provider scopes `read:project` and `read:deployment`.
 
-Vercel also documents Vercel App installation permissions that can be restricted to a project and to explicit read scopes such as `read:project` and `read:deployment`. Those app access tokens are short-lived and require a trusted token-acquisition/refresh boundary rather than a static long-lived personal token embedded in Production configuration.
+This replaces the earlier unactivated custom OAuth client-secret/refresh-token design before any credential was provisioned. The provider core itself is unchanged: it receives one bearer credential per snapshot and has no token persistence or mutation capability.
 
-For that reason, the provider core now requires a trusted server-only `loadBearerToken()` supplier. The core does not read or accept a static Vercel token environment variable. The future credential adapter must be separately reviewed and must prove that its bearer credential is restricted to this project and only the read permissions required by the two provider observations.
-
-No Vercel App, OAuth client, refresh credential or provider bearer token is created or stored by this source increment.
+No Vercel Connect connector is created or linked by this source increment, and no connector ID or provider bearer token is stored here.
 
 ## Authenticated provider observation
 
@@ -38,13 +36,13 @@ For each provider snapshot, the loader requests one bearer credential from the t
 - `GET /v13/deployments/{deploymentId}?withGitRepoInfo=true&teamId=...`
 - `GET /v2/deployments/{deploymentId}/aliases?teamId=...`
 
-Vercel documents both endpoints as authenticated reads. The provider core exposes no mutation method, does not call deploy/promote/alias/environment mutation APIs and does not accept request-provided deployment, token or alias values.
+The provider core exposes no mutation method, does not call deploy/promote/alias/environment mutation APIs and does not accept request-provided deployment, token or alias values.
 
 The deployment observation must prove READY Production state, exact project, exact immutable host, exact `main` commit, and exact GitHub repository. The alias observation must equal the reviewed public-alias set with no additions, removals or duplicates. Any credential-supplier error, provider error, mismatch, malformed payload, timeout or stale clock fails closed.
 
 ## Local artifact binding
 
-The loader also receives the generated `publication-render-inputs/v1` build bundle from trusted server code. It requires that bundle's `buildCommitSha` to equal the Vercel runtime commit, then derives:
+The loader receives the generated `publication-render-inputs/v1` build bundle from trusted server code. It requires that bundle's `buildCommitSha` equal the Vercel runtime commit, then derives:
 
 - `artifactSha256` = SHA-256 of the exact serialized generated render bundle;
 - `entries` = canonical sorted `{path, sourceSha256}` rows for all guarded published articles; and
@@ -54,21 +52,25 @@ This prevents provider metadata for one deployment from being paired with public
 
 ## Verification
 
-The offline regression suite uses a fake Vercel provider and fake bearer supplier only. It verifies exact API paths and team scope, one credential acquisition per provider snapshot, reuse of the same bearer credential across that snapshot's deployment and alias reads, no-store/no-redirect GET requests, exact deployment/project/repository/commit binding, exact alias inventory, render-bundle and manifest hashing, ignored attacker request arguments, clock monotonicity, bounded provider/credential failures, and non-disclosure of token-bearing errors.
+The provider regression suite continues to use a fake Vercel provider and fake bearer supplier only. It verifies exact API paths and team scope, one credential acquisition per provider snapshot, reuse of the same bearer credential across that snapshot's deployment and alias reads, no-store/no-redirect GET requests, exact deployment/project/repository/commit binding, exact alias inventory, render-bundle and manifest hashing, ignored attacker request arguments, clock monotonicity, bounded provider/credential failures, and non-disclosure of token-bearing errors.
 
-It also asserts that a static environment token alone is insufficient to configure the core loader. The test does not use a live Vercel App token and does not prove Production runtime connectivity. A live read-only provider rehearsal remains a separate protected step after the fine-grained credential supplier is implemented and its project/read-only scopes are verified.
+The adjacent Connect-bearer regression separately verifies the project OIDC credential-broker request and exact reviewed scopes. Neither regression performs a live provider call.
+
+A live read-only rehearsal remains required after a Vercel Connect connector is linked to exactly the USD Impact project and Production environment. The deployment-alias read must succeed with only the reviewed read scopes; a 403 is a HOLD, not permission-expansion authority.
 
 ## Still protected / held
 
 The following are not activated by this source increment:
 
-- Vercel App/OAuth registration or installation;
-- storage of an App client secret, refresh token, access token or personal token;
-- implementation or deployment of the live credential-refresh supplier;
-- importing the provider loader or Production reader into any live API/Middleware route;
+- creating or authorizing a Vercel Connect connector;
+- linking a connector to the USD Impact project or Production environment;
+- setting the non-secret connector ID in Production configuration;
+- importing the provider loader or Connect supplier into any live API/Middleware route;
 - Production redeploy or promotion;
 - route/public-alias/domain/protection changes;
-- release authorization, admission, receipt or witness creation;
-- merge of PR #559.
+- release authorization, admission, receipt or witness creation; and
+- merge of PR #615.
 
-Keep #558 open and #559 draft/unmerged. `publicationAuthorized=false` and `enforcementActive=false` remain invariant.
+The legacy OAuth refresh-store schema remains dormant and unused; provisioning its password, AES key or credential row is no longer part of the preferred path.
+
+Keep #558 open and #615 draft/unmerged. `publicationAuthorized=false` and `enforcementActive=false` remain invariant.

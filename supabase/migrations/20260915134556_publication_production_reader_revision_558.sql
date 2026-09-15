@@ -39,6 +39,13 @@ begin
   end if;
 end $$;
 
+-- Hosted Supabase db-push/apply runners can execute through postgres while the
+-- private API schema has CREATE revoked from ordinary roles. Follow the
+-- existing guard ownership-transfer contract: temporarily give the low-
+-- privilege owner CREATE and make it effective for postgres, then revoke both.
+grant create on schema publication_guard_api to fx558_reader_owner;
+grant fx558_reader_owner to postgres;
+
 create function publication_guard_api.read_current_revision()
 returns text
 language sql
@@ -54,15 +61,11 @@ $$;
 
 revoke all on function publication_guard_api.read_current_revision()
   from public, anon, authenticated, service_role, fx558_reader, fx558_reader_login;
-
--- Hosted Supabase may retain an inert admin-only membership row for postgres
--- with INHERIT=false and SET=false. Temporarily grant effective membership for
--- ownership transfer, then revoke it back to the hosted least-privilege state.
-grant fx558_reader_owner to postgres;
-alter function publication_guard_api.read_current_revision() owner to fx558_reader_owner;
-revoke fx558_reader_owner from postgres;
-
 grant execute on function publication_guard_api.read_current_revision() to fx558_reader;
+alter function publication_guard_api.read_current_revision() owner to fx558_reader_owner;
+
+revoke fx558_reader_owner from postgres;
+revoke create on schema publication_guard_api from fx558_reader_owner;
 
 do $$
 begin
@@ -90,6 +93,9 @@ begin
   end if;
   if has_table_privilege('fx558_reader_login','publication_guard.history_state','SELECT') then
     raise exception 'HOLD_PRODUCTION_REVISION_DIRECT_TABLE_ACCESS';
+  end if;
+  if has_schema_privilege('fx558_reader_owner','publication_guard_api','CREATE') then
+    raise exception 'HOLD_PRODUCTION_REVISION_OWNER_CREATE';
   end if;
   if exists (
     select 1 from pg_auth_members m

@@ -123,6 +123,11 @@ try {
     assert.equal(row.value, false);
   });
 
+  await test('temporary reader-owner schema CREATE privilege is removed', async () => {
+    const row = (await db.query(`select has_schema_privilege('fx558_reader_owner','publication_guard_api','CREATE') as value`)).rows[0];
+    assert.equal(row.value, false);
+  });
+
   await test('ownership transfer leaves no effective postgres membership', async () => {
     const row = (await db.query(`
       select count(*) filter (where m.inherit_option or m.set_option)::int as effective

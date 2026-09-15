@@ -8,7 +8,8 @@ export const SOURCE_DATE_RULES = [
   'Source publishedAt values must use exactly YYYY-MM-DD.',
   'If a provider returns a full ISO timestamp, convert it to the leading YYYY-MM-DD date.',
   'Never use month-only text, human-readable dates, relative dates, or access dates.',
-  'If an otherwise useful page has no verifiable publication date, omit that source and any unsupported claim instead of inventing a date.',
+  'For a living calendar or schedule page that explicitly displays a Last Update date, use that displayed Last Update date as publishedAt; do not substitute the access date.',
+  'If an otherwise useful page has no verifiable publication or displayed Last Update date, omit that source and any unsupported claim instead of inventing a date.',
 ].join(' ');
 export const SOURCE_ID_RULES = [
   'Every source id must be lowercase and hyphenated.',

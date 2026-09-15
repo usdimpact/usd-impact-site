@@ -31,6 +31,7 @@ const baseEnvironment = Object.freeze({
 const goodIdentity = Object.freeze({
   role: 'fx558_reader_login',
   database: 'postgres',
+  readCurrentRevision: true,
   readSnapshot: true,
   authorizeRelease: false,
   prepareAdmission: false,
@@ -41,6 +42,7 @@ const goodIdentity = Object.freeze({
 
 class FakePool {
   static identity = goodIdentity;
+  static revision = '0';
   static failure = null;
   static instances = [];
 
@@ -57,8 +59,11 @@ class FakePool {
     assert.equal(typeof config.text, 'string');
     assert.equal(Array.isArray(config.values), true);
     if (FakePool.failure) throw FakePool.failure;
-    if (config.text.includes("'readSnapshot', has_function_privilege")) {
+    if (config.text.includes("'readCurrentRevision', has_function_privilege")) {
       return { rows: [{ value: FakePool.identity }] };
+    }
+    if (config.text === 'select publication_guard_api.read_current_revision() as value') {
+      return { rows: [{ value: FakePool.revision }] };
     }
     if (config.text === 'select publication_guard_api.read_snapshot($1, $2::jsonb) as value') {
       return { rows: [{ value: { revision: config.values[0], records: [] } }] };
@@ -137,6 +142,7 @@ hold(() => createPublicationGuardProductionReaderDatabase({ environment: { ...ba
 hold(() => createPublicationGuardProductionReaderDatabase({ environment: baseEnvironment, PoolClass: {} }), 'HOLD_PRODUCTION_READER_POOL');
 
 FakePool.identity = goodIdentity;
+FakePool.revision = '0';
 FakePool.failure = null;
 const database = createPublicationGuardProductionReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
 const pool = FakePool.instances.at(-1);
@@ -159,10 +165,16 @@ assert.deepEqual(identity, {
   role: 'fx558_reader_login',
   database: 'postgres',
   ssl: true,
+  readCurrentRevision: true,
   readSnapshot: true,
   writePrivileges: false,
   projectRef: ref,
 });
+pass();
+
+const revision = await database.readCurrentRevision();
+assert.equal(revision, '0');
+assert.deepEqual(pool.calls.at(-1).values, []);
 pass();
 
 const snapshot = await database.readSnapshot({ revision: '0', entries: [] });
@@ -170,9 +182,18 @@ assert.deepEqual(snapshot, { revision: '0', records: [] });
 assert.deepEqual(pool.calls.at(-1).values, ['0', '[]']);
 pass();
 
+FakePool.revision = '-1';
+await asyncHold(() => database.readCurrentRevision(), 'HOLD_PRODUCTION_READER_REVISION');
+FakePool.revision = '0';
+
 await database.close();
 assert.equal(pool.ended, true);
 pass();
+
+FakePool.identity = { ...goodIdentity, readCurrentRevision: false };
+const revisionPrivilegeDrift = createPublicationGuardProductionReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });
+await asyncHold(() => revisionPrivilegeDrift.verifyIdentityAndPrivileges(), 'HOLD_PRODUCTION_READER_PRIVILEGE');
+await revisionPrivilegeDrift.close();
 
 FakePool.identity = { ...goodIdentity, authorizeRelease: true };
 const privilegeDrift = createPublicationGuardProductionReaderDatabase({ environment: baseEnvironment, PoolClass: FakePool });

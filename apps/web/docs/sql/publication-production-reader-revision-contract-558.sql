@@ -1,0 +1,100 @@
+-- Issue #558 source-only candidate: least-privilege current history revision.
+-- DO NOT apply to any live database without separate approval and a generated
+-- Supabase migration. This contract adds no writer capability and grants no
+-- direct table access to the runtime reader login.
+
+do $$
+begin
+  if to_regnamespace('publication_guard') is null
+     or to_regnamespace('publication_guard_api') is null then
+    raise exception 'HOLD_PRODUCTION_REVISION_SCHEMA';
+  end if;
+  if to_regclass('publication_guard.history_state') is null then
+    raise exception 'HOLD_PRODUCTION_REVISION_HISTORY';
+  end if;
+  if to_regprocedure('publication_guard_api.read_current_revision()') is not null then
+    raise exception 'HOLD_PRODUCTION_REVISION_ALREADY_PRESENT';
+  end if;
+  if not exists (select 1 from pg_roles where rolname='fx558_reader_owner')
+     or not exists (select 1 from pg_roles where rolname='fx558_reader')
+     or not exists (select 1 from pg_roles where rolname='fx558_reader_login') then
+    raise exception 'HOLD_PRODUCTION_REVISION_ROLE';
+  end if;
+  if not has_schema_privilege('fx558_reader_owner','publication_guard','USAGE')
+     or not has_schema_privilege('fx558_reader_owner','publication_guard_api','USAGE')
+     or not has_table_privilege('fx558_reader_owner','publication_guard.history_state','SELECT') then
+    raise exception 'HOLD_PRODUCTION_REVISION_OWNER_PRIVILEGE';
+  end if;
+  if has_table_privilege('fx558_reader_login','publication_guard.history_state','SELECT') then
+    raise exception 'HOLD_PRODUCTION_REVISION_DIRECT_TABLE_ACCESS';
+  end if;
+  if exists (
+    select 1 from pg_auth_members m
+    join pg_roles role on role.oid=m.roleid
+    join pg_roles member on member.oid=m.member
+    where role.rolname='fx558_reader_owner' and member.rolname='postgres'
+  ) then
+    raise exception 'HOLD_PRODUCTION_REVISION_OWNER_MEMBERSHIP';
+  end if;
+end $$;
+
+create function publication_guard_api.read_current_revision()
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+set row_security = on
+as $$
+  select revision::text
+  from publication_guard.history_state
+  where singleton
+$$;
+
+revoke all on function publication_guard_api.read_current_revision()
+  from public, anon, authenticated, service_role, fx558_reader, fx558_reader_login;
+
+-- Supabase's managed postgres role is not assumed to retain membership in the
+-- low-privilege function owner. Grant only for ownership transfer, then revoke.
+grant fx558_reader_owner to postgres;
+alter function publication_guard_api.read_current_revision() owner to fx558_reader_owner;
+revoke fx558_reader_owner from postgres;
+
+grant execute on function publication_guard_api.read_current_revision() to fx558_reader;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid=p.pronamespace
+    join pg_roles o on o.oid=p.proowner
+    where n.nspname='publication_guard_api'
+      and p.proname='read_current_revision'
+      and p.prosecdef
+      and p.provolatile='s'
+      and o.rolname='fx558_reader_owner'
+      and pg_get_function_identity_arguments(p.oid)=''
+  ) then
+    raise exception 'HOLD_PRODUCTION_REVISION_FUNCTION';
+  end if;
+  if not has_function_privilege('fx558_reader_login', 'publication_guard_api.read_current_revision()', 'EXECUTE') then
+    raise exception 'HOLD_PRODUCTION_REVISION_READER_EXECUTE';
+  end if;
+  if has_function_privilege('anon', 'publication_guard_api.read_current_revision()', 'EXECUTE')
+     or has_function_privilege('authenticated', 'publication_guard_api.read_current_revision()', 'EXECUTE')
+     or has_function_privilege('service_role', 'publication_guard_api.read_current_revision()', 'EXECUTE') then
+    raise exception 'HOLD_PRODUCTION_REVISION_PUBLIC_EXECUTE';
+  end if;
+  if has_table_privilege('fx558_reader_login','publication_guard.history_state','SELECT') then
+    raise exception 'HOLD_PRODUCTION_REVISION_DIRECT_TABLE_ACCESS';
+  end if;
+  if exists (
+    select 1 from pg_auth_members m
+    join pg_roles role on role.oid=m.roleid
+    join pg_roles member on member.oid=m.member
+    where role.rolname='fx558_reader_owner' and member.rolname='postgres'
+  ) then
+    raise exception 'HOLD_PRODUCTION_REVISION_OWNER_MEMBERSHIP';
+  end if;
+end $$;

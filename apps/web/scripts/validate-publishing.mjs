@@ -147,7 +147,9 @@ await import('./test-publication-public-route-wiring.mjs');
 
 await import('./test-publication-admission-database.mjs');
 await import('./test-publication-postgres-adapter.mjs');
+await import('./test-publication-production-reader-revision-contract.mjs');
 await import('./test-publication-production-reader-database.mjs');
+await import('./test-publication-production-authority.mjs');
 await import('./test-publication-postgres-serving-integration.mjs');
 await import('./test-publication-guard-reader-database.mjs');
 await import('./test-publication-preview-rehearsal.mjs');

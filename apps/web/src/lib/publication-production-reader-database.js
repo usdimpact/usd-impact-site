@@ -19,10 +19,12 @@ const APPROVED_BRANCH = 'main';
 const READER_LOGIN = 'fx558_reader_login';
 const POOLER = /^aws-[0-9]+-[a-z0-9-]+\.pooler\.supabase\.com$/;
 const SHA = /^[a-f0-9]{40}$/;
+const REVISION = /^(?:0|[1-9][0-9]{0,18})$/;
 
 const IDENTITY_SQL = `select jsonb_build_object(
   'role', current_user,
   'database', current_database(),
+  'readCurrentRevision', has_function_privilege(current_user, 'publication_guard_api.read_current_revision()', 'EXECUTE'),
   'readSnapshot', has_function_privilege(current_user, 'publication_guard_api.read_snapshot(text,jsonb)', 'EXECUTE'),
   'authorizeRelease', has_function_privilege(current_user, 'publication_guard_api.authorize_release(uuid,text,text,text,text,timestamptz)', 'EXECUTE'),
   'prepareAdmission', has_function_privilege(current_user, 'publication_guard_api.prepare_admission(uuid,text,text,text,text,timestamptz,timestamptz,timestamptz,timestamptz)', 'EXECUTE'),
@@ -145,6 +147,15 @@ function normalizeValue(result, code) {
   return raw;
 }
 
+function normalizeRevision(result) {
+  need(result && Array.isArray(result.rows) && result.rows.length === 1, 'HOLD_PRODUCTION_READER_REVISION');
+  need(Object.hasOwn(result.rows[0], 'value'), 'HOLD_PRODUCTION_READER_REVISION');
+  const raw = result.rows[0].value;
+  const value = typeof raw === 'bigint' ? raw.toString() : typeof raw === 'number' ? String(raw) : raw;
+  need(typeof value === 'string' && REVISION.test(value), 'HOLD_PRODUCTION_READER_REVISION');
+  return value;
+}
+
 export function createPublicationGuardProductionReaderDatabase({ environment = process.env, PoolClass } = {}) {
   const runtime = assertPublicationGuardProductionReaderContext(environment);
   const rawUrl = environment[ENV_KEY];
@@ -166,6 +177,7 @@ export function createPublicationGuardProductionReaderDatabase({ environment = p
   async function verifyIdentityAndPrivileges() {
     const value = normalizeValue(await safeQuery({ text: IDENTITY_SQL, values: [] }), 'HOLD_PRODUCTION_READER_IDENTITY');
     need(value.role === READER_LOGIN && value.database === 'postgres', 'HOLD_PRODUCTION_READER_IDENTITY');
+    need(value.readCurrentRevision === true, 'HOLD_PRODUCTION_READER_PRIVILEGE');
     need(value.readSnapshot === true, 'HOLD_PRODUCTION_READER_PRIVILEGE');
     need(value.authorizeRelease === false, 'HOLD_PRODUCTION_READER_PRIVILEGE');
     need(value.prepareAdmission === false, 'HOLD_PRODUCTION_READER_PRIVILEGE');
@@ -176,10 +188,18 @@ export function createPublicationGuardProductionReaderDatabase({ environment = p
       role: READER_LOGIN,
       database: 'postgres',
       ssl: true,
+      readCurrentRevision: true,
       readSnapshot: true,
       writePrivileges: false,
       projectRef: PRODUCTION_GUARD_PROJECT_REF,
     });
+  }
+
+  async function readCurrentRevision() {
+    return normalizeRevision(await safeQuery({
+      text: 'select publication_guard_api.read_current_revision() as value',
+      values: [],
+    }));
   }
 
   async function readSnapshot({ revision, entries } = {}) {
@@ -199,6 +219,7 @@ export function createPublicationGuardProductionReaderDatabase({ environment = p
     runtime,
     target,
     verifyIdentityAndPrivileges,
+    readCurrentRevision,
     readSnapshot,
     close,
   });

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-13T22:54:19.960Z",
+  "generated_at": "2026-09-15T12:05:23.076Z",
   "generated_by": "github-actions:sync",
   "freshness": "VERIFIED",
   "health": "GREEN",
@@ -15,7 +15,7 @@
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": "a69dcf40a86be04e4393bb50f0d4993f369501d6"
+      "head_sha": "aabdd9ea9a0f223ee49248ffeff107cbf2848127"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
@@ -33,33 +33,33 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34786610128",
-        "created_at": "2026-09-13T22:22:41Z",
-        "head_sha": "a69dcf40a86be04e4393bb50f0d4993f369501d6"
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34873956106",
+        "created_at": "2026-09-14T17:18:32Z",
+        "head_sha": "aabdd9ea9a0f223ee49248ffeff107cbf2848127"
       },
       "daily_news": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34605005763",
-        "created_at": "2026-09-11T13:33:41Z",
-        "head_sha": "134d4084662f28b27d8345969dca5de9d3cbc18a",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34865041920",
+        "created_at": "2026-09-14T15:52:46Z",
+        "head_sha": "aab9b6795de429d6f017b72a8838c9792cce1315",
         "operational_conclusion": "success",
         "recovery": null
       },
       "daily_news_health": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34648931696",
-        "created_at": "2026-09-11T21:21:03Z",
-        "head_sha": "c2fb22c84bccf335a0d5a4c5c2910ba3561d9e52",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34902351680",
+        "created_at": "2026-09-14T22:05:56Z",
+        "head_sha": "aabdd9ea9a0f223ee49248ffeff107cbf2848127",
         "operational_conclusion": "success"
       },
       "catalyst_brief": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34756723627",
-        "created_at": "2026-09-13T12:18:19Z",
-        "head_sha": "c2fb22c84bccf335a0d5a4c5c2910ba3561d9e52",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34915097268",
+        "created_at": "2026-09-15T00:54:29Z",
+        "head_sha": "aabdd9ea9a0f223ee49248ffeff107cbf2848127",
         "operational_conclusion": "success",
         "recovery": null
       }
@@ -108,7 +108,7 @@
       "number": 570,
       "title": "SEO Growth Architecture — keyword-to-page map, internal authority, and evidence-gated expansion",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/570",
-      "updated_at": "2026-09-12T10:06:27Z",
+      "updated_at": "2026-09-13T23:01:26Z",
       "priority": "P3",
       "score": 660,
       "blocked": false,
@@ -118,7 +118,7 @@
       "number": 558,
       "title": "Publishing prevention: authoritative calendar validation and stale-preview release guard",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/558",
-      "updated_at": "2026-09-12T23:50:13Z",
+      "updated_at": "2026-09-15T00:48:08Z",
       "priority": "P3",
       "score": 660,
       "blocked": false,
@@ -128,17 +128,7 @@
       "number": 569,
       "title": "SEO operations: Search Console post-release baseline and indexing verification",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/569",
-      "updated_at": "2026-09-13T22:50:17Z",
-      "priority": "P3",
-      "score": 620,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 549,
-      "title": "Integrate corrected Part 7 Authoritative AU master into protected Video Library",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/549",
-      "updated_at": "2026-09-09T13:49:38Z",
+      "updated_at": "2026-09-14T14:47:43Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,
@@ -215,20 +205,10 @@
       "daily_gate": null
     },
     {
-      "number": 242,
-      "title": "P3 — enable Production knowledge search after launch-critical gates",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/242",
-      "updated_at": "2026-08-22T14:26:52Z",
-      "priority": "P3",
-      "score": 430,
-      "blocked": true,
-      "daily_gate": null
-    },
-    {
       "number": 122,
       "title": "Phase 2 — recurring Research Membership launch readiness",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/122",
-      "updated_at": "2026-09-08T16:13:46Z",
+      "updated_at": "2026-09-13T23:11:53Z",
       "priority": "P3",
       "score": 390,
       "blocked": true,
@@ -240,7 +220,7 @@
       "number": 570,
       "title": "SEO Growth Architecture — keyword-to-page map, internal authority, and evidence-gated expansion",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/570",
-      "updated_at": "2026-09-12T10:06:27Z",
+      "updated_at": "2026-09-13T23:01:26Z",
       "priority": "P3",
       "score": 660,
       "blocked": false,
@@ -250,7 +230,7 @@
       "number": 558,
       "title": "Publishing prevention: authoritative calendar validation and stale-preview release guard",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/558",
-      "updated_at": "2026-09-12T23:50:13Z",
+      "updated_at": "2026-09-15T00:48:08Z",
       "priority": "P3",
       "score": 660,
       "blocked": false,
@@ -260,17 +240,7 @@
       "number": 569,
       "title": "SEO operations: Search Console post-release baseline and indexing verification",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/569",
-      "updated_at": "2026-09-13T22:50:17Z",
-      "priority": "P3",
-      "score": 620,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 549,
-      "title": "Integrate corrected Part 7 Authoritative AU master into protected Video Library",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/549",
-      "updated_at": "2026-09-09T13:49:38Z",
+      "updated_at": "2026-09-14T14:47:43Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,
@@ -333,6 +303,16 @@
       "updated_at": "2026-08-24T14:19:57Z",
       "priority": "P3",
       "score": 480,
+      "blocked": true,
+      "daily_gate": null
+    },
+    {
+      "number": 244,
+      "title": "P3 — activate Production Web Push after launch-critical gates",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/244",
+      "updated_at": "2026-08-22T14:26:57Z",
+      "priority": "P3",
+      "score": 470,
       "blocked": true,
       "daily_gate": null
     }

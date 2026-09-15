@@ -4,7 +4,16 @@ import { PGlite } from '@electric-sql/pglite';
 
 let groups = 0;
 const pass = () => { groups += 1; };
-const sql = await readFile(new URL('../docs/sql/publication-production-reader-revision-contract-558.sql', import.meta.url), 'utf8');
+const migrationUrl = new URL('../../../supabase/migrations/20260915134556_publication_production_reader_revision_558.sql', import.meta.url);
+const candidateUrl = new URL('../docs/sql/publication-production-reader-revision-contract-558.sql', import.meta.url);
+const [sql, candidateSql] = await Promise.all([
+  readFile(migrationUrl, 'utf8'),
+  readFile(candidateUrl, 'utf8'),
+]);
+const normalizeSql = (value) => value.split(/\r?\n/)
+  .filter((line) => !line.trimStart().startsWith('--'))
+  .join('\n')
+  .trim();
 const db = new PGlite();
 
 async function test(name, work) {
@@ -17,6 +26,10 @@ async function rejects(text, pattern) {
 }
 
 try {
+  await test('repository migration matches reviewed SQL candidate apart from comments', async () => {
+    assert.equal(normalizeSql(sql), normalizeSql(candidateSql));
+  });
+
   await db.exec(`
     create role anon nologin;
     create role authenticated nologin;
@@ -43,7 +56,7 @@ try {
     grant select on publication_guard.history_state to fx558_reader_owner;
   `);
 
-  await test('candidate applies to isolated PostgreSQL fixture', () => db.exec(sql));
+  await test('migration applies to isolated PostgreSQL fixture', () => db.exec(sql));
 
   await test('function is stable security-definer owned by reader owner', async () => {
     const row = (await db.query(`
@@ -105,9 +118,9 @@ try {
     assert.equal(row.n, 0);
   });
 
-  await test('candidate is fail-closed against accidental double install', () => rejects(sql, /HOLD_PRODUCTION_REVISION_ALREADY_PRESENT/));
+  await test('migration is fail-closed against accidental double install', () => rejects(sql, /HOLD_PRODUCTION_REVISION_ALREADY_PRESENT/));
 } finally {
   await db.close();
 }
 
-console.log(`publication production reader revision contract tests pass (${groups} groups; embedded PostgreSQL only)`);
+console.log(`publication production reader revision contract tests pass (${groups} groups; repository migration + embedded PostgreSQL only)`);

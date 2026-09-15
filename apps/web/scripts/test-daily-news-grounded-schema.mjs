@@ -93,6 +93,8 @@ assert.match(catalystDate.description, /inclusive/);
 
 assert.match(sourceProperties.id.pattern, /^\^/);
 assert.match(sourceProperties.publishedAt.pattern, /^\^/);
+assert.match(hardened.input, /effective date/i, 'initial grounded prompts must distinguish publication dates from effective dates');
+assert.match(hardened.input, /auction date/i, 'initial grounded prompts must distinguish publication dates from auction dates');
 assert.equal(hardened.tool_choice, 'required');
 assert.ok(hardened.include.includes('web_search_call.action.sources'));
 
@@ -118,11 +120,14 @@ const repairRequest = {
     },
   },
 };
-const repaired = withSourceMetadata(repairRequest).text.format.schema.properties;
+const repairedRequest = withSourceMetadata(repairRequest);
+const repaired = repairedRequest.text.format.schema.properties;
 assert.equal(repaired.highlights.minItems, 3, 'repair schemas must not prune below three highlights');
 assert.equal(repaired.highlights.maxItems, 7, 'repair schemas must not exceed seven highlights');
 assert.deepEqual(repaired.catalysts.items.properties.date.enum, catalystWindow);
 assert.equal('pattern' in repaired.catalysts.items.properties.date, false);
+assert.match(repairedRequest.input, /effective date/i, 'repair prompts must retain source publication-date semantics');
+assert.match(repairedRequest.input, /event date/i, 'repair prompts must not confuse event dates with publishedAt');
 
 const undated = withSourceMetadata({
   input: 'Generate a Daily bundle without a parseable edition date.',

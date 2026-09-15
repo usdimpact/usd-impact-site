@@ -8,13 +8,48 @@ import {
   normalizePublishedAt,
   safeValidationDiagnostic,
 } from '../api/daily-news-validation.js';
+import {
+  SOURCE_DATE_BASIS,
+  isLivingSourceUrl,
+  sourceDateBasisForUrl,
+} from '../src/lib/source-date-basis.js';
 
 assert.equal(SOURCE_DATE_SCHEMA_PATTERN, '^\\d{4}-\\d{2}-\\d{2}$');
 assert.equal(SOURCE_ID_SCHEMA_PATTERN, '^[a-z0-9][a-z0-9-]{1,63}$');
 assert.match(SOURCE_DATE_RULES, /YYYY-MM-DD/);
+assert.match(SOURCE_DATE_RULES, /Last Update/i);
+assert.match(SOURCE_DATE_RULES, /access date/i);
 assert.match(SOURCE_DATE_RULES, /omit that source/i);
 assert.match(SOURCE_ID_RULES, /never place a URL/i);
 assert.match(SOURCE_ID_RULES, /same normalized source id/i);
+
+assert.equal(
+  sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/2026-september.htm'),
+  SOURCE_DATE_BASIS.LAST_UPDATED,
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/calendar.htm'),
+  SOURCE_DATE_BASIS.LAST_UPDATED,
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm'),
+  SOURCE_DATE_BASIS.LAST_UPDATED,
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.federalreserve.gov/monetarypolicy.htm'),
+  SOURCE_DATE_BASIS.LAST_UPDATED,
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm'),
+  SOURCE_DATE_BASIS.PUBLISHED,
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.bls.gov/schedule/2026/09_sched_list.htm'),
+  SOURCE_DATE_BASIS.PUBLISHED,
+);
+assert.equal(sourceDateBasisForUrl('not-a-url'), SOURCE_DATE_BASIS.PUBLISHED);
+assert.equal(isLivingSourceUrl('https://www.federalreserve.gov/newsevents/2026-july.htm'), true);
+assert.equal(isLivingSourceUrl('https://www.bls.gov/news.release/cpi.nr0.htm'), false);
 
 assert.equal(normalizePublishedAt('2026-07-23', 'dated-source'), '2026-07-23');
 assert.equal(normalizePublishedAt('2026-07-23T09:30:00Z', 'timestamp-source'), '2026-07-23');

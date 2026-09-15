@@ -1,31 +1,31 @@
-const OAUTH_SCHEMA = 'publication-production-vercel-oauth-bearer/v1';
+const CONNECT_SCHEMA = 'publication-production-vercel-connect-bearer/v1';
 const APPROVED_PROJECT_ID = 'prj_ZoLLM35ksI6wk17PcfS2xYknaVl7';
 const APPROVED_TEAM_ID = 'team_1LuMlacGuM198mRjoID4O3Ct';
 const APPROVED_OWNER = 'usdimpact';
 const APPROVED_REPOSITORY = 'usd-impact-site';
 const APPROVED_BRANCH = 'main';
-const CLIENT_ID_ENV_KEY = 'PUBLICATION_GUARD_VERCEL_OAUTH_CLIENT_ID';
-const CLIENT_SECRET_ENV_KEY = 'PUBLICATION_GUARD_VERCEL_OAUTH_CLIENT_SECRET';
-const REQUIRED_INSTALLATION_PERMISSIONS = Object.freeze(['read:deployment', 'read:project']);
-const TOKEN_ENDPOINT = 'https://api.vercel.com/login/oauth/token';
-const INTROSPECTION_ENDPOINT = 'https://api.vercel.com/login/oauth/token/introspect';
+const CONNECTOR_ID_ENV_KEY = 'PUBLICATION_GUARD_VERCEL_CONNECTOR_ID';
+const OIDC_TOKEN_ENV_KEY = 'VERCEL_OIDC_TOKEN';
+const REQUIRED_PROVIDER_SCOPES = Object.freeze(['read:deployment', 'read:project']);
+const CONNECT_TOKEN_ORIGIN = 'https://api.vercel.com/v1/connect/token/';
 const FETCH_TIMEOUT_MS = 3_000;
 const MAX_RESPONSE_BYTES = 32_768;
 const MIN_ACCESS_TOKEN_MS = 60_000;
 const MAX_ACCESS_TOKEN_MS = 2 * 60 * 60 * 1_000;
 const REFRESH_SKEW_MS = 2 * 60 * 1_000;
 const SHA = /^[a-f0-9]{40}$/;
+const CONNECTOR_ID = /^scl_[A-Za-z0-9]{6,120}$/;
 
-export class PublicationProductionVercelOAuthBearerError extends Error {
+export class PublicationProductionVercelConnectBearerError extends Error {
   constructor(code) {
     super(code);
-    this.name = 'PublicationProductionVercelOAuthBearerError';
+    this.name = 'PublicationProductionVercelConnectBearerError';
     this.code = code;
     this.policyCode = code;
   }
 }
 
-const fail = (code) => { throw new PublicationProductionVercelOAuthBearerError(code); };
+const fail = (code) => { throw new PublicationProductionVercelConnectBearerError(code); };
 const need = (condition, code) => { if (!condition) fail(code); };
 
 function plain(value) {
@@ -37,12 +37,7 @@ function safeOpaque(value, min = 20, max = 8192) {
   return typeof value === 'string' && value.length >= min && value.length <= max && !/\s/.test(value);
 }
 
-function safeVersion(value) {
-  return (typeof value === 'string' && value.length >= 1 && value.length <= 256 && !/\s/.test(value))
-    || (Number.isSafeInteger(value) && value >= 0);
-}
-
-export function loadPublicationProductionVercelOAuthClientCredentials(environment = process.env) {
+function productionContext(environment) {
   need(environment && typeof environment === 'object'
     && environment.VERCEL === '1'
     && environment.VERCEL_ENV === 'production'
@@ -53,15 +48,16 @@ export function loadPublicationProductionVercelOAuthClientCredentials(environmen
     && environment.VERCEL_GIT_REPO_SLUG === APPROVED_REPOSITORY
     && environment.VERCEL_GIT_COMMIT_REF === APPROVED_BRANCH
     && SHA.test(environment.VERCEL_GIT_COMMIT_SHA ?? ''),
-  'HOLD_PRODUCTION_VERCEL_OAUTH_CLIENT_CONTEXT');
-  const clientId = environment[CLIENT_ID_ENV_KEY];
-  const clientSecret = environment[CLIENT_SECRET_ENV_KEY];
-  need(typeof clientId === 'string'
-    && clientId.startsWith('cl_')
-    && safeOpaque(clientId, 8, 256)
-    && safeOpaque(clientSecret),
-  'HOLD_PRODUCTION_VERCEL_OAUTH_CLIENT');
-  return Object.freeze({ clientId, clientSecret });
+  'HOLD_PRODUCTION_VERCEL_CONNECT_CONTEXT');
+}
+
+export function loadPublicationProductionVercelConnectCredential(environment = process.env) {
+  productionContext(environment);
+  const connectorId = environment[CONNECTOR_ID_ENV_KEY];
+  const oidcToken = environment[OIDC_TOKEN_ENV_KEY];
+  need(CONNECTOR_ID.test(connectorId ?? ''), 'HOLD_PRODUCTION_VERCEL_CONNECT_CONNECTOR');
+  need(safeOpaque(oidcToken, 40, 16_384), 'HOLD_PRODUCTION_VERCEL_CONNECT_OIDC');
+  return Object.freeze({ connectorId, oidcToken });
 }
 
 async function boundedJson(response, code) {
@@ -75,166 +71,102 @@ async function boundedJson(response, code) {
     need(plain(value), code);
     return value;
   } catch (error) {
-    if (error instanceof PublicationProductionVercelOAuthBearerError) throw error;
+    if (error instanceof PublicationProductionVercelConnectBearerError) throw error;
     fail(code);
   }
 }
 
-async function postForm(fetchImpl, url, form, code) {
+function normalizeExpiry(value, observed) {
+  let expiresAt = value;
+  if (typeof expiresAt === 'string' && /^\d{1,16}$/.test(expiresAt)) expiresAt = Number(expiresAt);
+  need(Number.isSafeInteger(expiresAt) && expiresAt > 0, 'HOLD_PRODUCTION_VERCEL_CONNECT_TOKEN');
+  if (expiresAt < 10_000_000_000) expiresAt *= 1_000;
+  need(Number.isSafeInteger(expiresAt)
+    && expiresAt >= observed + MIN_ACCESS_TOKEN_MS
+    && expiresAt <= observed + MAX_ACCESS_TOKEN_MS,
+  'HOLD_PRODUCTION_VERCEL_CONNECT_TOKEN');
+  return expiresAt;
+}
+
+function connectToken(value, observed) {
+  need(plain(value) && safeOpaque(value.token), 'HOLD_PRODUCTION_VERCEL_CONNECT_TOKEN');
+  const expiresAt = normalizeExpiry(value.expiresAt, observed);
+  return { accessToken: value.token, expiresAt };
+}
+
+async function connectCredential(loadConnectCredential) {
+  let value;
+  try { value = await loadConnectCredential(); } catch { fail('HOLD_PRODUCTION_VERCEL_CONNECT_CREDENTIAL'); }
+  need(plain(value)
+    && CONNECTOR_ID.test(value.connectorId ?? '')
+    && safeOpaque(value.oidcToken, 40, 16_384),
+  'HOLD_PRODUCTION_VERCEL_CONNECT_CREDENTIAL');
+  return { connectorId: value.connectorId, oidcToken: value.oidcToken };
+}
+
+async function requestConnectToken(fetchImpl, credential) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   let response;
   try {
-    response = await fetchImpl(url, {
+    response = await fetchImpl(`${CONNECT_TOKEN_ORIGIN}${encodeURIComponent(credential.connectorId)}`, {
       method: 'POST',
       headers: {
+        Authorization: `Bearer ${credential.oidcToken}`,
         Accept: 'application/json',
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: new URLSearchParams(form).toString(),
+      body: JSON.stringify({
+        subject: { type: 'app' },
+        scopes: [...REQUIRED_PROVIDER_SCOPES],
+      }),
       redirect: 'error',
       cache: 'no-store',
       signal: controller.signal,
     });
   } catch {
-    fail(code);
+    fail('HOLD_PRODUCTION_VERCEL_CONNECT_TOKEN');
   } finally {
     clearTimeout(timer);
   }
-  return boundedJson(response, code);
+  return boundedJson(response, 'HOLD_PRODUCTION_VERCEL_CONNECT_TOKEN');
 }
 
-async function clientCredentials(loadClientCredentials) {
-  let value;
-  try { value = await loadClientCredentials(); } catch { fail('HOLD_PRODUCTION_VERCEL_OAUTH_CLIENT'); }
-  need(plain(value)
-    && typeof value.clientId === 'string'
-    && value.clientId.startsWith('cl_')
-    && safeOpaque(value.clientId, 8, 256)
-    && safeOpaque(value.clientSecret),
-  'HOLD_PRODUCTION_VERCEL_OAUTH_CLIENT');
-  return { clientId: value.clientId, clientSecret: value.clientSecret };
-}
-
-async function refreshCredential(loadRefreshCredential) {
-  let value;
-  try { value = await loadRefreshCredential(); } catch { fail('HOLD_PRODUCTION_VERCEL_OAUTH_REFRESH_CREDENTIAL'); }
-  need(plain(value) && safeOpaque(value.token) && safeVersion(value.version),
-    'HOLD_PRODUCTION_VERCEL_OAUTH_REFRESH_CREDENTIAL');
-  return { token: value.token, version: value.version };
-}
-
-async function persistRotation(replaceRefreshCredential, previous, nextToken) {
-  if (nextToken === previous.token) return;
-  let result;
-  try {
-    result = await replaceRefreshCredential({ expectedVersion: previous.version, nextToken });
-  } catch {
-    fail('HOLD_PRODUCTION_VERCEL_OAUTH_ROTATION');
-  }
-  need(plain(result) && result.stored === true && safeVersion(result.version),
-    'HOLD_PRODUCTION_VERCEL_OAUTH_ROTATION');
-}
-
-function tokenExchange(value, observed) {
-  const ttlMs = Number.isSafeInteger(value?.expires_in) ? value.expires_in * 1_000 : NaN;
-  need(plain(value)
-    && safeOpaque(value.access_token)
-    && safeOpaque(value.refresh_token)
-    && typeof value.token_type === 'string'
-    && value.token_type.toLowerCase() === 'bearer'
-    && Number.isSafeInteger(ttlMs)
-    && ttlMs >= MIN_ACCESS_TOKEN_MS
-    && ttlMs <= MAX_ACCESS_TOKEN_MS,
-  'HOLD_PRODUCTION_VERCEL_OAUTH_TOKEN');
-  return {
-    accessToken: value.access_token,
-    refreshToken: value.refresh_token,
-    endpointExpiresAt: observed + ttlMs,
-  };
-}
-
-function introspection(value, clientId, observed) {
-  const expiresAt = Number.isSafeInteger(value?.exp) ? value.exp * 1_000 : NaN;
-  need(plain(value)
-    && value.active === true
-    && value.client_id === clientId
-    && typeof value.token_type === 'string'
-    && value.token_type.toLowerCase() === 'bearer'
-    && Number.isSafeInteger(expiresAt)
-    && expiresAt >= observed + MIN_ACCESS_TOKEN_MS
-    && expiresAt <= observed + MAX_ACCESS_TOKEN_MS,
-  'HOLD_PRODUCTION_VERCEL_OAUTH_INTROSPECTION');
-  if (value.iat !== undefined) {
-    const issuedAt = Number.isSafeInteger(value.iat) ? value.iat * 1_000 : NaN;
-    need(Number.isSafeInteger(issuedAt) && issuedAt <= observed + 30_000,
-      'HOLD_PRODUCTION_VERCEL_OAUTH_INTROSPECTION');
-  }
-  return expiresAt;
-}
-
-export function createPublicationProductionVercelOAuthBearerSupplier({
+export function createPublicationProductionVercelConnectBearerSupplier({
   fetchImpl = globalThis.fetch,
-  loadClientCredentials,
-  loadRefreshCredential,
-  replaceRefreshCredential,
+  loadConnectCredential = () => loadPublicationProductionVercelConnectCredential(process.env),
   now = Date.now,
 } = {}) {
   need(typeof fetchImpl === 'function'
-    && typeof loadClientCredentials === 'function'
-    && typeof loadRefreshCredential === 'function'
-    && typeof replaceRefreshCredential === 'function'
+    && typeof loadConnectCredential === 'function'
     && typeof now === 'function',
-  'HOLD_PRODUCTION_VERCEL_OAUTH_CONFIG');
+  'HOLD_PRODUCTION_VERCEL_CONNECT_CONFIG');
 
   let highestTime = -1;
   let cached = null;
   let inFlight = null;
-  let rotationBlocked = false;
 
   function clock() {
     const value = now();
     need(Number.isSafeInteger(value) && value >= 0 && value >= highestTime,
-      'HOLD_PRODUCTION_VERCEL_OAUTH_CLOCK');
+      'HOLD_PRODUCTION_VERCEL_CONNECT_CLOCK');
     highestTime = value;
     return value;
   }
 
-  async function refreshBearer() {
-    need(rotationBlocked === false, 'HOLD_PRODUCTION_VERCEL_OAUTH_ROTATION');
+  async function acquireBearer() {
     const observed = clock();
-    const client = await clientCredentials(loadClientCredentials);
-    const refresh = await refreshCredential(loadRefreshCredential);
-    const exchange = tokenExchange(await postForm(fetchImpl, TOKEN_ENDPOINT, {
-      grant_type: 'refresh_token',
-      client_id: client.clientId,
-      client_secret: client.clientSecret,
-      refresh_token: refresh.token,
-    }, 'HOLD_PRODUCTION_VERCEL_OAUTH_TOKEN'), observed);
-
-    try {
-      await persistRotation(replaceRefreshCredential, refresh, exchange.refreshToken);
-    } catch (error) {
-      rotationBlocked = exchange.refreshToken !== refresh.token;
-      throw error;
-    }
-
-    const introspectedExpiresAt = introspection(await postForm(fetchImpl, INTROSPECTION_ENDPOINT, {
-      token: exchange.accessToken,
-    }, 'HOLD_PRODUCTION_VERCEL_OAUTH_INTROSPECTION'), client.clientId, observed);
-    const expiresAt = Math.min(exchange.endpointExpiresAt, introspectedExpiresAt);
-    need(Number.isSafeInteger(expiresAt) && expiresAt >= observed + MIN_ACCESS_TOKEN_MS,
-      'HOLD_PRODUCTION_VERCEL_OAUTH_INTROSPECTION');
-    cached = { accessToken: exchange.accessToken, expiresAt };
-    return exchange.accessToken;
+    const credential = await connectCredential(loadConnectCredential);
+    const token = connectToken(await requestConnectToken(fetchImpl, credential), observed);
+    cached = token;
+    return token.accessToken;
   }
 
   async function loadBearerToken() {
     const observed = clock();
     if (cached && observed + REFRESH_SKEW_MS < cached.expiresAt) return cached.accessToken;
-    need(rotationBlocked === false, 'HOLD_PRODUCTION_VERCEL_OAUTH_ROTATION');
     if (!inFlight) {
-      inFlight = refreshBearer();
+      inFlight = acquireBearer();
       inFlight.finally(() => { inFlight = null; }).catch(() => {});
     }
     return inFlight;
@@ -245,26 +177,41 @@ export function createPublicationProductionVercelOAuthBearerSupplier({
     enforcementActive: false,
     projectId: APPROVED_PROJECT_ID,
     teamId: APPROVED_TEAM_ID,
-    requiredInstallationPermissions: REQUIRED_INSTALLATION_PERMISSIONS,
+    requiredInstallationPermissions: REQUIRED_PROVIDER_SCOPES,
+    requiredProviderScopes: REQUIRED_PROVIDER_SCOPES,
     loadBearerToken,
   });
 }
 
-export const PUBLICATION_PRODUCTION_VERCEL_OAUTH_SCOPE = Object.freeze({
-  schema: OAUTH_SCHEMA,
+export const PUBLICATION_PRODUCTION_VERCEL_CONNECT_SCOPE = Object.freeze({
+  schema: CONNECT_SCHEMA,
   projectId: APPROVED_PROJECT_ID,
   teamId: APPROVED_TEAM_ID,
-  requiredInstallationPermissions: REQUIRED_INSTALLATION_PERMISSIONS,
-  clientIdEnvKey: CLIENT_ID_ENV_KEY,
-  clientSecretEnvKey: CLIENT_SECRET_ENV_KEY,
-  tokenEndpoint: TOKEN_ENDPOINT,
-  introspectionEndpoint: INTROSPECTION_ENDPOINT,
+  requiredInstallationPermissions: REQUIRED_PROVIDER_SCOPES,
+  requiredProviderScopes: REQUIRED_PROVIDER_SCOPES,
+  connectorIdEnvKey: CONNECTOR_ID_ENV_KEY,
+  oidcTokenEnvKey: OIDC_TOKEN_ENV_KEY,
+  tokenEndpointOrigin: CONNECT_TOKEN_ORIGIN,
   fetchTimeoutMs: FETCH_TIMEOUT_MS,
   refreshSkewMs: REFRESH_SKEW_MS,
   minAccessTokenMs: MIN_ACCESS_TOKEN_MS,
   maxAccessTokenMs: MAX_ACCESS_TOKEN_MS,
-  credentialMode: 'project-scoped-readonly-oauth-refresh',
+  credentialMode: 'vercel-connect-project-oidc',
+  connectorProjectLink: APPROVED_PROJECT_ID,
+  connectorEnvironmentLink: 'production',
+  providerTokenDurableStorage: false,
+  legacyClientSecretRequired: false,
+  legacyRefreshStoreRequired: false,
   aliasReadPermissionProof: 'live-rehearsal-required',
   publicationAuthorized: false,
   enforcementActive: false,
 });
+
+// Compatibility aliases keep the already-reviewed file/import surface stable while
+// explicitly retiring the custom client-secret/refresh-token design before activation.
+export const PublicationProductionVercelOAuthBearerError = PublicationProductionVercelConnectBearerError;
+export const createPublicationProductionVercelOAuthBearerSupplier = createPublicationProductionVercelConnectBearerSupplier;
+export const PUBLICATION_PRODUCTION_VERCEL_OAUTH_SCOPE = PUBLICATION_PRODUCTION_VERCEL_CONNECT_SCOPE;
+export function loadPublicationProductionVercelOAuthClientCredentials() {
+  fail('HOLD_PRODUCTION_VERCEL_CONNECT_LEGACY_OAUTH_DISABLED');
+}

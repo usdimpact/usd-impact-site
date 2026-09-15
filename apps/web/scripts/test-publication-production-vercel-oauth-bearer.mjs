@@ -3,6 +3,7 @@ import {
   PUBLICATION_PRODUCTION_VERCEL_OAUTH_SCOPE,
   PublicationProductionVercelOAuthBearerError,
   createPublicationProductionVercelOAuthBearerSupplier,
+  loadPublicationProductionVercelOAuthClientCredentials,
 } from '../src/lib/publication-production-vercel-oauth-bearer.js';
 
 let groups = 0;
@@ -90,11 +91,66 @@ async function hold(work, code) {
 assert.equal(PUBLICATION_PRODUCTION_VERCEL_OAUTH_SCOPE.schema, 'publication-production-vercel-oauth-bearer/v1');
 assert.equal(PUBLICATION_PRODUCTION_VERCEL_OAUTH_SCOPE.projectId, 'prj_ZoLLM35ksI6wk17PcfS2xYknaVl7');
 assert.deepEqual(PUBLICATION_PRODUCTION_VERCEL_OAUTH_SCOPE.requiredInstallationPermissions, ['read:deployment', 'read:project']);
+assert.equal(PUBLICATION_PRODUCTION_VERCEL_OAUTH_SCOPE.clientIdEnvKey, 'PUBLICATION_GUARD_VERCEL_OAUTH_CLIENT_ID');
+assert.equal(PUBLICATION_PRODUCTION_VERCEL_OAUTH_SCOPE.clientSecretEnvKey, 'PUBLICATION_GUARD_VERCEL_OAUTH_CLIENT_SECRET');
 assert.equal(PUBLICATION_PRODUCTION_VERCEL_OAUTH_SCOPE.credentialMode, 'project-scoped-readonly-oauth-refresh');
 assert.equal(PUBLICATION_PRODUCTION_VERCEL_OAUTH_SCOPE.aliasReadPermissionProof, 'live-rehearsal-required');
 assert.equal(PUBLICATION_PRODUCTION_VERCEL_OAUTH_SCOPE.publicationAuthorized, false);
 assert.equal(PUBLICATION_PRODUCTION_VERCEL_OAUTH_SCOPE.enforcementActive, false);
 pass();
+
+const productionClientEnvironment = {
+  VERCEL: '1',
+  VERCEL_ENV: 'production',
+  VERCEL_TARGET_ENV: 'production',
+  VERCEL_PROJECT_ID: 'prj_ZoLLM35ksI6wk17PcfS2xYknaVl7',
+  VERCEL_GIT_PROVIDER: 'github',
+  VERCEL_GIT_REPO_OWNER: 'usdimpact',
+  VERCEL_GIT_REPO_SLUG: 'usd-impact-site',
+  VERCEL_GIT_COMMIT_REF: 'main',
+  VERCEL_GIT_COMMIT_SHA: 'a'.repeat(40),
+  PUBLICATION_GUARD_VERCEL_OAUTH_CLIENT_ID: clientId,
+  PUBLICATION_GUARD_VERCEL_OAUTH_CLIENT_SECRET: clientSecret,
+};
+const loadedClientCredentials = loadPublicationProductionVercelOAuthClientCredentials(productionClientEnvironment);
+assert.deepEqual(loadedClientCredentials, { clientId, clientSecret });
+assert.equal(Object.isFrozen(loadedClientCredentials), true);
+pass();
+
+for (const patch of [
+  { VERCEL: '0' },
+  { VERCEL_ENV: 'preview' },
+  { VERCEL_TARGET_ENV: 'preview' },
+  { VERCEL_PROJECT_ID: 'prj_other' },
+  { VERCEL_GIT_PROVIDER: 'gitlab' },
+  { VERCEL_GIT_REPO_OWNER: 'other' },
+  { VERCEL_GIT_REPO_SLUG: 'other' },
+  { VERCEL_GIT_COMMIT_REF: 'feature' },
+  { VERCEL_GIT_COMMIT_SHA: 'bad' },
+]) {
+  assert.throws(
+    () => loadPublicationProductionVercelOAuthClientCredentials({ ...productionClientEnvironment, ...patch }),
+    (error) => error instanceof PublicationProductionVercelOAuthBearerError
+      && error.code === 'HOLD_PRODUCTION_VERCEL_OAUTH_CLIENT_CONTEXT'
+      && error.message === 'HOLD_PRODUCTION_VERCEL_OAUTH_CLIENT_CONTEXT',
+  );
+  pass();
+}
+
+for (const patch of [
+  { PUBLICATION_GUARD_VERCEL_OAUTH_CLIENT_ID: 'bad' },
+  { PUBLICATION_GUARD_VERCEL_OAUTH_CLIENT_SECRET: 'short' },
+  { PUBLICATION_GUARD_VERCEL_OAUTH_CLIENT_ID: undefined },
+  { PUBLICATION_GUARD_VERCEL_OAUTH_CLIENT_SECRET: undefined },
+]) {
+  assert.throws(
+    () => loadPublicationProductionVercelOAuthClientCredentials({ ...productionClientEnvironment, ...patch }),
+    (error) => error instanceof PublicationProductionVercelOAuthBearerError
+      && error.code === 'HOLD_PRODUCTION_VERCEL_OAUTH_CLIENT'
+      && error.message === 'HOLD_PRODUCTION_VERCEL_OAUTH_CLIENT',
+  );
+  pass();
+}
 
 const good = fixture();
 assert.equal(await good.supplier.loadBearerToken(), accessOne);

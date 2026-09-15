@@ -4,7 +4,7 @@ import { PGlite } from '@electric-sql/pglite';
 
 let groups = 0;
 const pass = () => { groups += 1; };
-const migrationUrl = new URL('../../../supabase/migrations/20260915134556_publication_production_reader_revision_558.sql', import.meta.url);
+const migrationUrl = new URL('../../../supabase/migrations/20260915141933_publication_production_reader_revision_558.sql', import.meta.url);
 const candidateUrl = new URL('../docs/sql/publication-production-reader-revision-contract-558.sql', import.meta.url);
 const [sql, candidateSql] = await Promise.all([
   readFile(migrationUrl, 'utf8'),

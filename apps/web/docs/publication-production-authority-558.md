@@ -25,9 +25,11 @@ The migration adds one zero-argument `SECURITY DEFINER` function owned by `fx558
 
 `publication_guard_api.read_current_revision() -> text`
 
-The function reads only the singleton history revision. Execution is granted only through `fx558_reader`, which is inherited by `fx558_reader_login`. It does not grant the runtime login direct `SELECT` on `publication_guard.history_state`, and it grants no controller, recorder or revoker capability. PUBLIC, `anon`, `authenticated` and `service_role` execution remain revoked. Temporary ownership-transfer membership to the managed `postgres` role is removed in the same migration.
+The function reads only the singleton history revision. Execution is granted only through `fx558_reader`, which is inherited by `fx558_reader_login`. It does not grant the runtime login direct `SELECT` on `publication_guard.history_state`, and it grants no controller, recorder or revoker capability. PUBLIC, `anon`, `authenticated` and `service_role` execution remain revoked.
 
-The migration deliberately fails if the required private schemas/roles/owner privileges are missing, if the function already exists, if the runtime login has direct table access, or if temporary owner membership is already present. **Applying the migration to the live Production guard remains a separate protected action requiring fresh state verification and explicit approval.**
+Hosted Supabase retains inert managed membership rows from the low-privilege owner roles to `postgres` with `admin=true`, `inherit=false`, and `set=false`. That state does not give `postgres` effective runtime inheritance or `SET ROLE` capability and is already accepted by the Phase A guard migration. The revision migration therefore fails closed only if the `fx558_reader_owner` membership becomes effective (`inherit=true` or `set=true`). It temporarily grants the role for ownership transfer and revokes it afterward, requiring the final state to contain no effective membership; an inert hosted admin-only row may remain.
+
+The migration deliberately fails if the required private schemas/roles/owner privileges are missing, if the function already exists, if the runtime login has direct table access, or if effective owner membership is unexpectedly present. **Applying the migration to the live Production guard remains a separate protected action requiring fresh state verification and explicit approval.**
 
 ## Production reader contract
 
@@ -66,10 +68,11 @@ Offline regressions cover:
 
 - the committed repository migration matching the reviewed SQL design apart from comments;
 - isolated PostgreSQL creation/ownership/grants by executing that migration artifact;
+- hosted-style inert `postgres` membership being accepted while effective membership is rejected;
 - no direct table read by `fx558_reader_login`;
 - no execution by PUBLIC-facing Supabase roles;
 - revision changes reflected exactly;
-- temporary ownership-transfer membership removed;
+- no effective `postgres` membership after ownership transfer;
 - fail-closed duplicate migration application;
 - Production reader identity requiring both revision and snapshot read privileges while rejecting write privileges;
 - exact Production runtime/deployment/commit binding;

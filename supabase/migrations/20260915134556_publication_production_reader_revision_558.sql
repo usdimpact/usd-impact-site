@@ -33,8 +33,9 @@ begin
     join pg_roles role on role.oid=m.roleid
     join pg_roles member on member.oid=m.member
     where role.rolname='fx558_reader_owner' and member.rolname='postgres'
+      and (m.inherit_option or m.set_option)
   ) then
-    raise exception 'HOLD_PRODUCTION_REVISION_OWNER_MEMBERSHIP';
+    raise exception 'HOLD_PRODUCTION_REVISION_EFFECTIVE_OWNER_MEMBERSHIP';
   end if;
 end $$;
 
@@ -54,8 +55,9 @@ $$;
 revoke all on function publication_guard_api.read_current_revision()
   from public, anon, authenticated, service_role, fx558_reader, fx558_reader_login;
 
--- Supabase's managed postgres role is not assumed to retain membership in the
--- low-privilege function owner. Grant only for ownership transfer, then revoke.
+-- Hosted Supabase may retain an inert admin-only membership row for postgres
+-- with INHERIT=false and SET=false. Temporarily grant effective membership for
+-- ownership transfer, then revoke it back to the hosted least-privilege state.
 grant fx558_reader_owner to postgres;
 alter function publication_guard_api.read_current_revision() owner to fx558_reader_owner;
 revoke fx558_reader_owner from postgres;
@@ -94,7 +96,8 @@ begin
     join pg_roles role on role.oid=m.roleid
     join pg_roles member on member.oid=m.member
     where role.rolname='fx558_reader_owner' and member.rolname='postgres'
+      and (m.inherit_option or m.set_option)
   ) then
-    raise exception 'HOLD_PRODUCTION_REVISION_OWNER_MEMBERSHIP';
+    raise exception 'HOLD_PRODUCTION_REVISION_EFFECTIVE_OWNER_MEMBERSHIP';
   end if;
 end $$;

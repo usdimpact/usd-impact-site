@@ -21,16 +21,12 @@ async function test(name, work) {
   catch (error) { console.error(`Failed production reader revision contract: ${name}`); throw error; }
 }
 
-async function rejects(text, pattern) {
-  await assert.rejects(() => db.exec(text), (error) => pattern.test(error.message));
+async function rejects(target, text, pattern) {
+  await assert.rejects(() => target.exec(text), (error) => pattern.test(error.message));
 }
 
-try {
-  await test('repository migration matches reviewed SQL candidate apart from comments', async () => {
-    assert.equal(normalizeSql(sql), normalizeSql(candidateSql));
-  });
-
-  await db.exec(`
+async function installFixture(target, membershipOptions) {
+  await target.exec(`
     create role anon nologin;
     create role authenticated nologin;
     create role service_role nologin;
@@ -54,9 +50,29 @@ try {
     grant usage on schema publication_guard to fx558_reader_owner;
     grant usage on schema publication_guard_api to fx558_reader_owner, fx558_reader;
     grant select on publication_guard.history_state to fx558_reader_owner;
+    grant fx558_reader_owner to postgres with ${membershipOptions};
   `);
+}
 
-  await test('migration applies to isolated PostgreSQL fixture', () => db.exec(sql));
+try {
+  await test('repository migration matches reviewed SQL candidate apart from comments', async () => {
+    assert.equal(normalizeSql(sql), normalizeSql(candidateSql));
+  });
+
+  await installFixture(db, 'admin true, inherit false, set false');
+
+  await test('hosted-style inert postgres membership is present in fixture', async () => {
+    const row = (await db.query(`
+      select m.admin_option, m.inherit_option, m.set_option
+      from pg_auth_members m
+      join pg_roles role on role.oid=m.roleid
+      join pg_roles member on member.oid=m.member
+      where role.rolname='fx558_reader_owner' and member.rolname='postgres'
+    `)).rows[0];
+    assert.deepEqual(row, { admin_option: true, inherit_option: false, set_option: false });
+  });
+
+  await test('migration applies with hosted-style inert postgres membership', () => db.exec(sql));
 
   await test('function is stable security-definer owned by reader owner', async () => {
     const row = (await db.query(`
@@ -107,20 +123,30 @@ try {
     assert.equal(row.value, false);
   });
 
-  await test('temporary postgres membership in reader owner is removed', async () => {
+  await test('ownership transfer leaves no effective postgres membership', async () => {
     const row = (await db.query(`
-      select count(*)::int as n
+      select count(*) filter (where m.inherit_option or m.set_option)::int as effective
       from pg_auth_members m
       join pg_roles role on role.oid=m.roleid
       join pg_roles member on member.oid=m.member
       where role.rolname='fx558_reader_owner' and member.rolname='postgres'
     `)).rows[0];
-    assert.equal(row.n, 0);
+    assert.equal(row.effective, 0);
   });
 
-  await test('migration is fail-closed against accidental double install', () => rejects(sql, /HOLD_PRODUCTION_REVISION_ALREADY_PRESENT/));
+  await test('migration fails closed on effective postgres owner membership', async () => {
+    const driftDb = new PGlite();
+    try {
+      await installFixture(driftDb, 'admin true, inherit true, set false');
+      await rejects(driftDb, sql, /HOLD_PRODUCTION_REVISION_EFFECTIVE_OWNER_MEMBERSHIP/);
+    } finally {
+      await driftDb.close();
+    }
+  });
+
+  await test('migration is fail-closed against accidental double install', () => rejects(db, sql, /HOLD_PRODUCTION_REVISION_ALREADY_PRESENT/));
 } finally {
   await db.close();
 }
 
-console.log(`publication production reader revision contract tests pass (${groups} groups; repository migration + embedded PostgreSQL only)`);
+console.log(`publication production reader revision contract tests pass (${groups} groups; repository migration + hosted-membership fixture + embedded PostgreSQL only)`);

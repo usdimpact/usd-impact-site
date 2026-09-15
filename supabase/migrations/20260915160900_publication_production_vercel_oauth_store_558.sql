@@ -93,20 +93,28 @@ revoke all on schema vault from fx558_oauth_store, fx558_oauth_store_login;
 revoke all on table vault.secrets from fx558_oauth_store, fx558_oauth_store_login;
 revoke all on table vault.decrypted_secrets from fx558_oauth_store, fx558_oauth_store_login;
 
-revoke execute on function publication_guard_api.read_current_revision()
-  from fx558_oauth_store, fx558_oauth_store_login;
-revoke execute on function publication_guard_api.read_snapshot(text,jsonb)
-  from fx558_oauth_store, fx558_oauth_store_login;
-revoke execute on function publication_guard_api.authorize_release(uuid,text,text,text,text,timestamptz)
-  from fx558_oauth_store, fx558_oauth_store_login;
-revoke execute on function publication_guard_api.prepare_admission(uuid,text,text,text,text,timestamptz,timestamptz,timestamptz,timestamptz)
-  from fx558_oauth_store, fx558_oauth_store_login;
-revoke execute on function publication_guard_api.record_verified_receipt(uuid,text,text,text)
-  from fx558_oauth_store, fx558_oauth_store_login;
-revoke execute on function publication_guard_api.revoke_release(uuid)
-  from fx558_oauth_store, fx558_oauth_store_login;
-revoke execute on function publication_guard_api.revoke_admission(uuid,text,text)
-  from fx558_oauth_store, fx558_oauth_store_login;
+-- Publication functions are owned by isolated #558 capability-owner roles. The managed
+-- migration session must not borrow those owners merely to REVOKE privileges that the
+-- new roles do not hold. Assert the effective boundary instead and fail closed on drift.
+do $$
+begin
+  if has_function_privilege('fx558_oauth_store', 'publication_guard_api.read_current_revision()', 'execute')
+     or has_function_privilege('fx558_oauth_store_login', 'publication_guard_api.read_current_revision()', 'execute')
+     or has_function_privilege('fx558_oauth_store', 'publication_guard_api.read_snapshot(text,jsonb)', 'execute')
+     or has_function_privilege('fx558_oauth_store_login', 'publication_guard_api.read_snapshot(text,jsonb)', 'execute')
+     or has_function_privilege('fx558_oauth_store', 'publication_guard_api.authorize_release(uuid,text,text,text,text,timestamptz)', 'execute')
+     or has_function_privilege('fx558_oauth_store_login', 'publication_guard_api.authorize_release(uuid,text,text,text,text,timestamptz)', 'execute')
+     or has_function_privilege('fx558_oauth_store', 'publication_guard_api.prepare_admission(uuid,text,text,text,text,timestamptz,timestamptz,timestamptz,timestamptz)', 'execute')
+     or has_function_privilege('fx558_oauth_store_login', 'publication_guard_api.prepare_admission(uuid,text,text,text,text,timestamptz,timestamptz,timestamptz,timestamptz)', 'execute')
+     or has_function_privilege('fx558_oauth_store', 'publication_guard_api.record_verified_receipt(uuid,text,text,text)', 'execute')
+     or has_function_privilege('fx558_oauth_store_login', 'publication_guard_api.record_verified_receipt(uuid,text,text,text)', 'execute')
+     or has_function_privilege('fx558_oauth_store', 'publication_guard_api.revoke_release(uuid)', 'execute')
+     or has_function_privilege('fx558_oauth_store_login', 'publication_guard_api.revoke_release(uuid)', 'execute')
+     or has_function_privilege('fx558_oauth_store', 'publication_guard_api.revoke_admission(uuid,text,text)', 'execute')
+     or has_function_privilege('fx558_oauth_store_login', 'publication_guard_api.revoke_admission(uuid,text,text)', 'execute') then
+    raise exception 'HOLD_PRODUCTION_VERCEL_OAUTH_STORE_PUBLICATION_PRIVILEGE';
+  end if;
+end $$;
 
 -- The migration intentionally creates no row and no password.
 -- A later separately approved provisioning step must:

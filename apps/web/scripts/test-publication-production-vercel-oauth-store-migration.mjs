@@ -96,6 +96,11 @@ try {
     assert.equal(normalizeSql(sql), normalizeSql(candidateSql));
   });
 
+  await test('publication authority is asserted without ownership-requiring revokes', async () => {
+    assert.doesNotMatch(sql, /revoke\s+execute\s+on\s+function\s+publication_guard_api\./i);
+    assert.match(sql, /HOLD_PRODUCTION_VERCEL_OAUTH_STORE_PUBLICATION_PRIVILEGE/);
+  });
+
   await installFixture(db);
 
   await test('migration applies to hardened fixture', () => db.exec(sql));
@@ -253,6 +258,17 @@ try {
       revoke_release: false,
       revoke_admission: false,
     });
+  });
+
+  await test('migration fails closed if publication authority is inherited from PUBLIC', async () => {
+    const driftDb = new PGlite();
+    try {
+      await installFixture(driftDb);
+      await driftDb.exec('grant execute on function publication_guard_api.read_current_revision() to public;');
+      await rejects(driftDb, sql, /HOLD_PRODUCTION_VERCEL_OAUTH_STORE_PUBLICATION_PRIVILEGE/);
+    } finally {
+      await driftDb.close();
+    }
   });
 
   await test('runtime login can read the empty store and update only allowed columns', async () => {

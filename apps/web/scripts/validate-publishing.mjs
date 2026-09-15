@@ -150,6 +150,7 @@ await import('./test-publication-postgres-adapter.mjs');
 await import('./test-publication-production-reader-revision-contract.mjs');
 await import('./test-publication-production-reader-database.mjs');
 await import('./test-publication-production-authority.mjs');
+await import('./test-publication-production-vercel-oauth-bearer.mjs');
 await import('./test-publication-production-vercel-provider.mjs');
 await import('./test-publication-postgres-serving-integration.mjs');
 await import('./test-publication-guard-reader-database.mjs');

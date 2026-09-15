@@ -1,4 +1,4 @@
-# Production Vercel OAuth bearer supplier — issue 558
+# Production Vercel OAuth bearer supplier - issue 558
 
 ## Status
 
@@ -31,7 +31,7 @@ The supplier requires three trusted server-only callbacks:
 
 The `version` is an opaque compare-and-swap revision. If Vercel returns a different refresh token, the rotated token must be durably persisted with the expected prior version before the new access token is accepted. A persistence error or stale/invalid acknowledgement fails closed as `HOLD_PRODUCTION_VERCEL_OAUTH_ROTATION`. After a rotated-token persistence failure, the supplier blocks further refresh attempts in that process so it cannot knowingly reuse a potentially invalidated old refresh token.
 
-This source increment deliberately does **not** choose or create the durable refresh-token store. That storage adapter is a separate protected boundary because it will require secret-write capability. No Vercel environment variable or database secret row is created here.
+The adjacent source-only adapter `publication-production-vercel-oauth-store.js` now defines the reviewed callback implementation. It uses a dedicated, ciphertext-only PostgreSQL singleton with application-side AES-256-GCM and an atomic expected-version UPDATE. Its SQL contract remains unapplied and no live store credential exists yet. See `publication-production-vercel-oauth-store-558.md`.
 
 ## Access-token acquisition and validation
 
@@ -47,7 +47,7 @@ The supplier:
 
 Each HTTP request is POST-only, `no-store`, redirect-disabled, time-bounded, and response-size-bounded. Provider/network/client/store errors collapse to bounded policy codes; secret-bearing provider or callback errors are never surfaced.
 
-Concurrent callers share one in-process refresh promise, reducing duplicate refresh/rotation races. Cross-instance serialization must be provided by the future durable store's compare-and-swap semantics; a stale rotation acknowledgement fails closed.
+Concurrent callers share one in-process refresh promise, reducing duplicate refresh/rotation races. Cross-instance serialization is supplied by the store adapter's PostgreSQL expected-version CAS. A stale update returns zero rows and fails closed.
 
 ## Integration boundary
 
@@ -73,19 +73,20 @@ The provider core continues to acquire exactly one bearer credential per provide
 - clock rollback handling; and
 - non-disclosure of secret-bearing callback/network errors.
 
-The test uses no live Vercel credential and does not prove the alias endpoint's exact OAuth-App permission mapping.
+The separate store regression proves the callback shape and durable CAS design without live credentials. Neither test uses a live Vercel App token or proves the alias endpoint's exact OAuth-App permission mapping.
 
 ## Still protected / held
 
 The following remain separate protected actions:
 
+- applying the reviewed store SQL as a Production migration;
 - registering the Vercel App / OAuth client;
 - installing it on project `prj_ZoLLM35ksI6wk17PcfS2xYknaVl7`;
 - granting any permissions, even the intended `read:project` + `read:deployment` pair;
-- creating or storing a client secret, authorization code, refresh token or access token;
-- selecting/creating the durable compare-and-swap refresh-token store;
-- importing this supplier into a live route or Production authority composition;
-- Production redeploy/promotion;
+- creating or storing a client secret, refresh token, access token, store AES key or store database credential;
+- seeding the encrypted refresh-token row;
+- importing this supplier/store into a live route or Production authority composition;
+- Production redeploy or promotion;
 - live provider rehearsal;
 - alias/domain/protection changes;
 - publication authorization/admission/receipt/witness creation; and

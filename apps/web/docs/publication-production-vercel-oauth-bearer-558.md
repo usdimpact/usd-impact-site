@@ -1,95 +1,107 @@
-# Production Vercel OAuth bearer supplier - issue 558
+# Production Vercel Connect bearer supplier - issue 558
 
 ## Status
 
-Dormant source-only credential-lifecycle candidate for draft PR #559. This module does not register or install a Vercel App, create an OAuth client, store credentials, redeploy Production, import into a live route, authorize/admit/record a publication, change aliases/protection, promote, or merge.
+Dormant source-only credential candidate for draft PR #615, retaining the existing `publication-production-vercel-oauth-bearer.js` filename only to avoid expanding the governed path set during the refresh.
 
-It is designed only to satisfy the trusted `loadBearerToken()` seam required by `publication-production-vercel-provider.js` once a separately approved fine-grained Vercel App installation and durable credential store exist.
+The earlier custom Vercel App client-secret + refresh-token design is retired before activation. No Vercel OAuth App, client secret, refresh token, AES key, store password or encrypted credential row was ever provisioned for that path.
 
-## Least-privilege installation contract
+The preferred credential boundary is now Vercel Connect using the deployment's own project OIDC identity. This module is still not imported by Middleware, an API route, or the Production authority composition. `publicationAuthorized=false` and `enforcementActive=false` remain invariant.
 
-The intended Vercel App installation remains pinned to:
+## Why Vercel Connect
 
-- project `prj_ZoLLM35ksI6wk17PcfS2xYknaVl7` only;
-- permission `read:project`;
-- permission `read:deployment`;
-- no write/deploy/promote/alias/environment/protection permissions.
+Current Vercel Connect provides a project/environment-linked credential broker. A Vercel deployment proves its identity with `VERCEL_OIDC_TOKEN`, Connect checks whether that project/environment may use the connector, and returns a short-lived provider token. The token request may carry provider scopes and resource restrictions.
 
-Vercel documents `vercel oauth-apps install` with repeatable `--permission` flags and project restriction through `--projects`. Vercel also documents the provider observations used by the publication guard as authenticated reads.
+This removes the blocked bootstrap machinery from the preferred design:
 
-The deployment-alias endpoint (`GET /v2/deployments/{id}/aliases`) is documented as an authenticated deployment-owned read, but the public documentation inspected for this increment does not enumerate its OAuth-App permission mapping. No additional permission is added by assumption. The later live read-only rehearsal must prove that this endpoint succeeds under exactly `read:project` + `read:deployment`. A 403 or permission mismatch is a hold condition; do not broaden the installation automatically.
+- no application-managed OAuth client secret;
+- no application-managed refresh token;
+- no authorization-code callback utility;
+- no AES key for refresh-token encryption;
+- no runtime password for the dormant OAuth-store login;
+- no encrypted refresh-token row; and
+- no durable provider access token.
 
-## Refresh-token lifecycle
+The already-applied Supabase OAuth-store schema remains dormant, empty and privilege-isolated. It is not dropped or repurposed because doing so would be an unrelated Production database mutation.
 
-Vercel documents the OAuth token endpoint as accepting `grant_type=refresh_token` and returning a new access-token / refresh-token pair. The supplier therefore treats refresh-token rotation as durable security state rather than a disposable response field.
+## Exact runtime contract
 
-The supplier requires three trusted server-only callbacks:
+The supplier accepts only the existing exact Production context:
 
-- `loadClientCredentials()` -> `{ clientId, clientSecret }`;
-- `loadRefreshCredential()` -> `{ token, version }`;
-- `replaceRefreshCredential({ expectedVersion, nextToken })` -> `{ stored: true, version }`.
+- Vercel project `prj_ZoLLM35ksI6wk17PcfS2xYknaVl7`;
+- Vercel team `team_1LuMlacGuM198mRjoID4O3Ct`;
+- GitHub repository `usdimpact/usd-impact-site`;
+- branch `main`;
+- Vercel Production environment; and
+- a valid immutable Git commit SHA.
 
-The `version` is an opaque compare-and-swap revision. If Vercel returns a different refresh token, the rotated token must be durably persisted with the expected prior version before the new access token is accepted. A persistence error or stale/invalid acknowledgement fails closed as `HOLD_PRODUCTION_VERCEL_OAUTH_ROTATION`. After a rotated-token persistence failure, the supplier blocks further refresh attempts in that process so it cannot knowingly reuse a potentially invalidated old refresh token.
+The only new operator-controlled value is non-secret `PUBLICATION_GUARD_VERCEL_CONNECTOR_ID`, restricted to a Vercel Connect connector ID (`scl_...`). The supplier reads Vercel's system-provided `VERCEL_OIDC_TOKEN`; it does not accept a personal access token, OAuth client secret or refresh token.
 
-The adjacent source-only adapter `publication-production-vercel-oauth-store.js` now defines the reviewed callback implementation. It uses a dedicated, ciphertext-only PostgreSQL singleton with application-side AES-256-GCM and an atomic expected-version UPDATE. Its SQL contract remains unapplied and no live store credential exists yet. See `publication-production-vercel-oauth-store-558.md`.
+## Least privilege
 
-## Access-token acquisition and validation
+Every Connect token request is pinned to:
 
-The supplier:
+- subject `{ type: "app" }`;
+- provider scope `read:deployment`;
+- provider scope `read:project`;
+- the connector linked to project `prj_ZoLLM35ksI6wk17PcfS2xYknaVl7`; and
+- the Production environment only.
 
-1. loads trusted client and refresh credentials;
-2. POSTs form-encoded refresh material only to `https://api.vercel.com/login/oauth/token`;
-3. validates a bounded 200 JSON response, Bearer token type, opaque access/refresh credentials, and a 1-minute to 2-hour token lifetime;
-4. persists refresh-token rotation before accepting the access token;
-5. POSTs the access token to Vercel's documented token-introspection endpoint;
-6. requires `active=true`, the expected OAuth `client_id`, Bearer token type, and a bounded future expiry;
-7. caches the access token only until the earlier of exchange/introspection expiry, with a 2-minute refresh skew.
+The provider core still uses the returned bearer only for:
 
-Each HTTP request is POST-only, `no-store`, redirect-disabled, time-bounded, and response-size-bounded. Provider/network/client/store errors collapse to bounded policy codes; secret-bearing provider or callback errors are never surfaced.
+- `GET /v13/deployments/{deploymentId}?withGitRepoInfo=true&teamId=...`; and
+- `GET /v2/deployments/{deploymentId}/aliases?teamId=...`.
 
-Concurrent callers share one in-process refresh promise, reducing duplicate refresh/rotation races. Cross-instance serialization is supplied by the store adapter's PostgreSQL expected-version CAS. A stale update returns zero rows and fails closed.
+The deployment-alias endpoint's effective scope behavior must still be proven by one live read-only rehearsal. A 403 remains a HOLD; it is not authority to broaden scopes.
 
-## Integration boundary
+## Token handling
 
-`publication-production-vercel-oauth-bearer.js` exposes `loadBearerToken()` but is not imported by Middleware, an API route, or the Production authority composition. `publicationAuthorized=false` and `enforcementActive=false` remain invariant.
+The supplier POSTs only to Vercel Connect's token endpoint for the configured connector, with:
 
-The provider core continues to acquire exactly one bearer credential per provider snapshot and uses it only for its deployment and deployment-alias GET observations.
+- `Authorization: Bearer <VERCEL_OIDC_TOKEN>`;
+- JSON body requesting the two reviewed read scopes;
+- redirect disabled;
+- cache disabled;
+- a 3-second timeout; and
+- bounded response size.
+
+It accepts only a bounded opaque provider token with a future expiry between one minute and two hours. The token is cached in process only until a two-minute refresh skew. Concurrent callers share one in-process acquisition promise. No provider token is written to Postgres, Vercel environment variables, GitHub, logs or source.
+
+All provider/network/credential failures collapse to bounded HOLD codes; secret-bearing underlying errors are never surfaced.
+
+## Legacy path disabled
+
+Compatibility exports remain so the already-reviewed module path does not break downstream source checks, but the old client-credential loader fails closed as `HOLD_PRODUCTION_VERCEL_CONNECT_LEGACY_OAUTH_DISABLED`.
+
+The dormant Supabase store adapter and migration remain as historical, privilege-isolated scaffolding only. They are not required by the preferred Connect path and must not be provisioned unless a separate future design explicitly revives them.
 
 ## Offline verification
 
-`test-publication-production-vercel-oauth-bearer.mjs` uses only fake OAuth/provider/store callbacks. It verifies:
+`test-publication-production-vercel-oauth-bearer.mjs` now verifies:
 
-- exact project and intended read-only installation permissions;
-- exact token and introspection endpoints;
-- form-encoded POST, no-store, redirect-disabled requests;
-- refresh-token exchange and access-token introspection;
-- OAuth client binding and active/expiry checks;
-- compare-and-swap rotation persistence before bearer acceptance;
-- failure-closed behavior on rotation persistence errors;
-- in-process single-flight refresh;
-- access-token cache reuse;
-- malformed/expired/oversized-equivalent policy bounds;
-- client/refresh credential validation;
-- clock rollback handling; and
-- non-disclosure of secret-bearing callback/network errors.
+- exact project/repository/branch/Production context;
+- exact connector-ID and system OIDC requirements;
+- exact `read:deployment` + `read:project` token request;
+- POST-only, JSON, no-store, redirect-disabled and time-bounded broker calls;
+- one broker request across concurrent callers;
+- short-lived token expiry validation and process-only cache reuse;
+- context, connector, OIDC, broker and clock fail-closed behavior;
+- non-disclosure of OIDC/provider tokens in errors; and
+- explicit rejection of the legacy client-secret loader.
 
-The separate store regression proves the callback shape and durable CAS design without live credentials. Neither test uses a live Vercel App token or proves the alias endpoint's exact OAuth-App permission mapping.
+The test uses only a fake Connect broker. It creates no live connector and does not prove the alias endpoint's real permission mapping.
 
-## Still protected / held
+## Next protected boundary
 
-The following remain separate protected actions:
+After this source-only change passes the complete exact-head gate, the only credential/provider setup needed for this seam is:
 
-- applying the reviewed store SQL as a Production migration;
-- registering the Vercel App / OAuth client;
-- installing it on project `prj_ZoLLM35ksI6wk17PcfS2xYknaVl7`;
-- granting any permissions, even the intended `read:project` + `read:deployment` pair;
-- creating or storing a client secret, refresh token, access token, store AES key or store database credential;
-- seeding the encrypted refresh-token row;
-- importing this supplier/store into a live route or Production authority composition;
-- Production redeploy or promotion;
-- live provider rehearsal;
-- alias/domain/protection changes;
-- publication authorization/admission/receipt/witness creation; and
-- merge of PR #559.
+1. create or select the Vercel Connect **Vercel** connector in the Vercel dashboard;
+2. authorize it under the USD Impact Vercel team;
+3. link it only to project `prj_ZoLLM35ksI6wk17PcfS2xYknaVl7` and Production;
+4. constrain the provider grant/token request to `read:project` + `read:deployment`;
+5. record only the non-secret connector ID as `PUBLICATION_GUARD_VERCEL_CONNECTOR_ID`; and
+6. run one read-only provider rehearsal.
 
-Keep #558 open and #559 draft/unmerged.
+Importing this supplier into live Production authority composition, route activation, redeployment/promotion, publication authorization/admission/receipt/witness creation, and merge remain separate protected actions.
+
+Keep #558 open and #615 draft/unmerged.

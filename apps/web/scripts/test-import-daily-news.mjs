@@ -202,6 +202,35 @@ try {
   assert.match(livingHistoricalDates.stdout, /status review/);
 
   await rm(editionPath, { force: true });
+  const blsCpiHomeUrl = 'https://www.bls.gov/cpi';
+  await writeFile(historicalEditionPath, `---\ntitle: "Historical BLS CPI homepage"\nslug: "/news/2026-07-22"\nstatus: "published"\nsources:\n  - id: "bls-cpi"\n    title: "CPI Home"\n    publisher: "U.S. Bureau of Labor Statistics"\n    url: "${blsCpiHomeUrl}"\n    publishedAt: "2026-07-15"\n    sourceType: "primary"\n---\n`, 'utf8');
+  await writeFile(historicalCatalystPath, `---\ntitle: "Historical BLS CPI catalyst"\nstatus: "published"\nsources:\n  - id: "bls-cpi"\n    title: "CPI Home"\n    publisher: "U.S. Bureau of Labor Statistics"\n    url: "${blsCpiHomeUrl}"\n    publishedAt: "2026-07-14"\n    sourceType: "primary"\n---\n`, 'utf8');
+  const blsCpiLivingBundle = {
+    ...bundle,
+    sources: [
+      {
+        ...bundle.sources[0],
+        id: 'bls-cpi',
+        title: 'CPI Home — U.S. Bureau of Labor Statistics',
+        publisher: 'U.S. Bureau of Labor Statistics',
+        url: blsCpiHomeUrl,
+        publishedAt: '2026-07-15',
+      },
+      bundle.sources[1],
+    ],
+    highlights: bundle.highlights.map((highlight) => ({
+      ...highlight,
+      sourceIds: highlight.sourceIds.map((id) => id === 'source-a' ? 'bls-cpi' : id),
+    })),
+    catalysts: bundle.catalysts.map((catalyst) => ({ ...catalyst, sourceIds: ['bls-cpi'] })),
+  };
+  await writeBundle(blsCpiLivingBundle);
+
+  const blsCpiHistoricalDates = runImporter('--replace');
+  assert.equal(blsCpiHistoricalDates.status, 0, blsCpiHistoricalDates.stderr);
+  assert.match(blsCpiHistoricalDates.stdout, /status review/);
+
+  await rm(editionPath, { force: true });
   await rm(historicalEditionPath, { force: true });
   await rm(historicalCatalystPath, { force: true });
   await writeBundle({ ...bundle, body: 'Source review remains incomplete for 2026-07-??.' });

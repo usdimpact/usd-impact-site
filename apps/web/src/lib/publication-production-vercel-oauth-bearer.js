@@ -1,6 +1,11 @@
 const OAUTH_SCHEMA = 'publication-production-vercel-oauth-bearer/v1';
 const APPROVED_PROJECT_ID = 'prj_ZoLLM35ksI6wk17PcfS2xYknaVl7';
 const APPROVED_TEAM_ID = 'team_1LuMlacGuM198mRjoID4O3Ct';
+const APPROVED_OWNER = 'usdimpact';
+const APPROVED_REPOSITORY = 'usd-impact-site';
+const APPROVED_BRANCH = 'main';
+const CLIENT_ID_ENV_KEY = 'PUBLICATION_GUARD_VERCEL_OAUTH_CLIENT_ID';
+const CLIENT_SECRET_ENV_KEY = 'PUBLICATION_GUARD_VERCEL_OAUTH_CLIENT_SECRET';
 const REQUIRED_INSTALLATION_PERMISSIONS = Object.freeze(['read:deployment', 'read:project']);
 const TOKEN_ENDPOINT = 'https://api.vercel.com/login/oauth/token';
 const INTROSPECTION_ENDPOINT = 'https://api.vercel.com/login/oauth/token/introspect';
@@ -9,6 +14,7 @@ const MAX_RESPONSE_BYTES = 32_768;
 const MIN_ACCESS_TOKEN_MS = 60_000;
 const MAX_ACCESS_TOKEN_MS = 2 * 60 * 60 * 1_000;
 const REFRESH_SKEW_MS = 2 * 60 * 1_000;
+const SHA = /^[a-f0-9]{40}$/;
 
 export class PublicationProductionVercelOAuthBearerError extends Error {
   constructor(code) {
@@ -34,6 +40,28 @@ function safeOpaque(value, min = 20, max = 8192) {
 function safeVersion(value) {
   return (typeof value === 'string' && value.length >= 1 && value.length <= 256 && !/\s/.test(value))
     || (Number.isSafeInteger(value) && value >= 0);
+}
+
+export function loadPublicationProductionVercelOAuthClientCredentials(environment = process.env) {
+  need(environment && typeof environment === 'object'
+    && environment.VERCEL === '1'
+    && environment.VERCEL_ENV === 'production'
+    && environment.VERCEL_TARGET_ENV === 'production'
+    && environment.VERCEL_PROJECT_ID === APPROVED_PROJECT_ID
+    && environment.VERCEL_GIT_PROVIDER === 'github'
+    && environment.VERCEL_GIT_REPO_OWNER === APPROVED_OWNER
+    && environment.VERCEL_GIT_REPO_SLUG === APPROVED_REPOSITORY
+    && environment.VERCEL_GIT_COMMIT_REF === APPROVED_BRANCH
+    && SHA.test(environment.VERCEL_GIT_COMMIT_SHA ?? ''),
+  'HOLD_PRODUCTION_VERCEL_OAUTH_CLIENT_CONTEXT');
+  const clientId = environment[CLIENT_ID_ENV_KEY];
+  const clientSecret = environment[CLIENT_SECRET_ENV_KEY];
+  need(typeof clientId === 'string'
+    && clientId.startsWith('cl_')
+    && safeOpaque(clientId, 8, 256)
+    && safeOpaque(clientSecret),
+  'HOLD_PRODUCTION_VERCEL_OAUTH_CLIENT');
+  return Object.freeze({ clientId, clientSecret });
 }
 
 async function boundedJson(response, code) {
@@ -227,6 +255,8 @@ export const PUBLICATION_PRODUCTION_VERCEL_OAUTH_SCOPE = Object.freeze({
   projectId: APPROVED_PROJECT_ID,
   teamId: APPROVED_TEAM_ID,
   requiredInstallationPermissions: REQUIRED_INSTALLATION_PERMISSIONS,
+  clientIdEnvKey: CLIENT_ID_ENV_KEY,
+  clientSecretEnvKey: CLIENT_SECRET_ENV_KEY,
   tokenEndpoint: TOKEN_ENDPOINT,
   introspectionEndpoint: INTROSPECTION_ENDPOINT,
   fetchTimeoutMs: FETCH_TIMEOUT_MS,

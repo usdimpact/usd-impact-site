@@ -18,6 +18,8 @@ assert.equal(SOURCE_DATE_SCHEMA_PATTERN, '^\\d{4}-\\d{2}-\\d{2}$');
 assert.equal(SOURCE_ID_SCHEMA_PATTERN, '^[a-z0-9][a-z0-9-]{1,63}$');
 assert.match(SOURCE_DATE_RULES, /YYYY-MM-DD/);
 assert.match(SOURCE_DATE_RULES, /Last Update/i);
+assert.match(SOURCE_DATE_RULES, /current release/i);
+assert.match(SOURCE_DATE_RULES, /data-update date/i);
 assert.match(SOURCE_DATE_RULES, /access date/i);
 assert.match(SOURCE_DATE_RULES, /effective date/i);
 assert.match(SOURCE_DATE_RULES, /event date/i);
@@ -52,11 +54,27 @@ assert.equal(
   'Treasury press releases must remain immutable publication-date sources',
 );
 assert.equal(
+  sourceDateBasisForUrl('https://www.bls.gov/cpi'),
+  SOURCE_DATE_BASIS.CURRENT_RELEASE,
+  'BLS CPI program homepage rolls forward with the current release',
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.bls.gov/cpi/'),
+  SOURCE_DATE_BASIS.CURRENT_RELEASE,
+  'BLS CPI program homepage trailing slash must preserve living-source semantics',
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.bls.gov/news.release/cpi.nr0.htm'),
+  SOURCE_DATE_BASIS.PUBLISHED,
+  'BLS current-release alias remains outside the narrow CPI-homepage exception',
+);
+assert.equal(
   sourceDateBasisForUrl('https://www.bls.gov/schedule/2026/09_sched_list.htm'),
   SOURCE_DATE_BASIS.PUBLISHED,
 );
 assert.equal(sourceDateBasisForUrl('not-a-url'), SOURCE_DATE_BASIS.PUBLISHED);
 assert.equal(isLivingSourceUrl('https://www.federalreserve.gov/newsevents/2026-july.htm'), true);
+assert.equal(isLivingSourceUrl('https://www.bls.gov/cpi'), true);
 assert.equal(isLivingSourceUrl('https://www.bls.gov/news.release/cpi.nr0.htm'), false);
 
 assert.equal(normalizePublishedAt('2026-07-23', 'dated-source'), '2026-07-23');

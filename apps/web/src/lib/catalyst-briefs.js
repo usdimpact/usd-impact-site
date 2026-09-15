@@ -1,5 +1,6 @@
 import { explicitCpiIdentity } from './publication-calendar-pipeline.js';
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function isDateOnly(value) {
   const text = String(value ?? '');
@@ -8,18 +9,56 @@ export function isDateOnly(value) {
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === text;
 }
 
-export function catalystEventKey(date, event) {
-  if (!isDateOnly(date)) throw new Error('Catalyst date must use YYYY-MM-DD');
-  const eventSlug = String(event ?? '')
+function eventSlug(value) {
+  return String(value ?? '')
     .normalize('NFKD')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .replace(/-+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+function catalystEventFamily(value) {
+  const slug = eventSlug(value);
+  if (/(^|-)fomc(-|$)/.test(slug) || slug.includes('federal-open-market-committee')) return 'fomc';
+  return null;
+}
+
+function parseExistingCatalystSlug(value) {
+  const match = String(value ?? '').match(/^(\d{4}-\d{2}-\d{2})-(.+)-(preview|outcome)$/);
+  if (!match || !isDateOnly(match[1])) return null;
+  return {
+    eventDate: match[1],
+    event: match[2],
+    phase: match[3],
+  };
+}
+
+function dateDistanceDays(left, right) {
+  const leftTime = new Date(`${left}T00:00:00.000Z`).getTime();
+  const rightTime = new Date(`${right}T00:00:00.000Z`).getTime();
+  return Math.abs(leftTime - rightTime) / DAY_MS;
+}
+
+function isEquivalentExistingCatalyst(candidate, existingSlug) {
+  const existing = parseExistingCatalystSlug(existingSlug);
+  if (!existing || existing.phase !== candidate.phase) return false;
+
+  const family = catalystEventFamily(candidate.event);
+  if (!family || catalystEventFamily(existing.event) !== family) return false;
+
+  // FOMC meetings span two days, while different Daily editions may key the same
+  // meeting to either its start date or its decision/press-conference date.
+  return dateDistanceDays(candidate.eventDate, existing.eventDate) <= 1;
+}
+
+export function catalystEventKey(date, event) {
+  if (!isDateOnly(date)) throw new Error('Catalyst date must use YYYY-MM-DD');
+  const normalizedEvent = eventSlug(event)
     .slice(0, 72)
     .replace(/-+$/g, '');
-  if (!eventSlug) throw new Error('Catalyst event requires a stable name');
-  return `${date}-${eventSlug}`;
+  if (!normalizedEvent) throw new Error('Catalyst event requires a stable name');
+  return `${date}-${normalizedEvent}`;
 }
 
 export function catalystBriefSlug(date, event, phase) {
@@ -45,7 +84,8 @@ export function selectImportantCatalyst(latestPayload, {
   const edition = latestPayload?.edition;
   if (!edition || !isDateOnly(edition.date) || !Array.isArray(edition.catalysts)) return null;
 
-  const existing = new Set(existingSlugs);
+  const priorSlugs = Array.isArray(existingSlugs) ? existingSlugs : [];
+  const existing = new Set(priorSlugs);
   const knownIdentities = new Set(existingIdentities);
   const lowerBound = phase === 'preview' ? asOf : addDays(asOf, -1);
   const upperBound = phase === 'preview' ? addDays(asOf, 2) : asOf;
@@ -78,8 +118,11 @@ export function selectImportantCatalyst(latestPayload, {
         slug,
       };
     })
-    .filter((candidate) => !existing.has(candidate.slug)
-      && !knownIdentities.has(`${explicitCpiIdentity(candidate.event)}:${phase}`))
+    .filter((candidate) => (
+      !existing.has(candidate.slug)
+      && !priorSlugs.some((slug) => isEquivalentExistingCatalyst(candidate, slug))
+      && !knownIdentities.has(`${explicitCpiIdentity(candidate.event)}:${phase}`)
+    ))
     .sort((a, b) => (
       b.impactScore - a.impactScore
       || a.eventDate.localeCompare(b.eventDate)

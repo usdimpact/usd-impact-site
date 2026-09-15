@@ -34,7 +34,10 @@ export const SOURCE_DATE_RULES = [
   'Source publishedAt values must use exactly YYYY-MM-DD.',
   'If a provider returns a full ISO timestamp, convert it to the leading YYYY-MM-DD date.',
   'Never use month-only text, human-readable dates, relative dates, or access dates.',
-  'If an otherwise useful page has no verifiable publication date, omit that source and any unsupported claim instead of inventing a date.',
+  'For an immutable release or article, publishedAt is the publication date displayed by the source; never substitute an effective date, event date, auction date, implementation date, operation date, or start date mentioned in the title or body.',
+  'For a living calendar or schedule page that explicitly displays a Last Update date, use that displayed Last Update date as publishedAt; do not substitute the access date.',
+  'For a living program or landing page that rolls forward to the current data release and explicitly displays that release date, use the displayed current release or data-update date as publishedAt; never substitute the access date.',
+  'If an otherwise useful page has no verifiable publication, displayed Last Update, current release, or data-update date, omit that source and any unsupported claim instead of inventing a date.',
 ].join(' ');
 export const SOURCE_ID_RULES = [
   'Every source id must be lowercase and hyphenated.',

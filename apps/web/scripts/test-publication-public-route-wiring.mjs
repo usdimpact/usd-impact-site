@@ -9,6 +9,7 @@ import {
 } from '../src/lib/publication-public-route-wiring.js';
 import {
   PUBLICATION_ROUTE_HEADERS,
+  classifyPublicationPath,
   verifyDormantPreviewRouteEnvelope,
 } from '../src/lib/publication-route-candidate.js';
 
@@ -159,7 +160,28 @@ await check('HEAD requests are signed and rewritten without method drift', () =>
   assert.equal(verified.surface, 'feed');
 });
 
-await check('active Preview raw static aliases fail closed before static render', () => {
+await check('Vercel clean URL policy prevents representative raw-alias bypass onto unguarded content', () => {
+  const vercel = JSON.parse(fs.readFileSync(path.resolve('vercel.json'), 'utf8'));
+  assert.equal(vercel.cleanUrls, true);
+  assert.equal(vercel.trailingSlash, false);
+
+  const representativeCanonicalization = new Map([
+    ['/index.html', '/'],
+    ['/news/', '/news'],
+  ]);
+  for (const [rawPath, canonicalPath] of representativeCanonicalization) {
+    assert.equal(classifyPublicationPath(rawPath).kind, 'deny-static-alias');
+    const canonicalPlan = planPublicationPublicRouteRequest({
+      request: requestFor(canonicalPath),
+      environment,
+      now: () => issuedAt,
+    });
+    assert.equal(canonicalPlan.action, 'rewrite');
+    assert.equal(canonicalPlan.routeKind, 'governed');
+  }
+});
+
+await check('middleware defensively denies raw static aliases that reach it unnormalized', () => {
   for (const requestPath of ['/index.html', '/news/', '/news/index.html', '/news/2026-09-15.html',
     '/news/2026-09-15/index.html', '/sitemap-0.xml/']) {
     const plan = planPublicationPublicRouteRequest({ request: requestFor(requestPath), environment, now: () => issuedAt });
@@ -221,6 +243,8 @@ await check('repository wiring stays source-only and reuses the existing interna
   assert.doesNotMatch(middleware, /publication-production-reader-database/);
 
   const vercel = JSON.parse(fs.readFileSync(path.resolve('vercel.json'), 'utf8'));
+  assert.equal(vercel.cleanUrls, true);
+  assert.equal(vercel.trailingSlash, false);
   assert.ok(vercel.rewrites.some((entry) => entry.source === '/api/publication-guard'
     && entry.destination === '/api/daily-news-validation?publicationGuardRoute=1'));
   assert.equal(vercel.rewrites.some((entry) => ['/', '/news', '/sitemap-0.xml'].includes(entry.source)

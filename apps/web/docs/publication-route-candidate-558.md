@@ -1,6 +1,6 @@
 # Publication serving route candidate — #558
 
-Status: **source-only / dormant Preview route wiring prepared**. This document does not authorize or activate Production serving. `publicationAuthorized=false` and `enforcementActive=false` remain governing state.
+Status: **source-only / dormant Preview route wiring prepared and bounded live Preview rehearsal completed; Production activation remains held**. This document does not authorize or activate Production serving. `publicationAuthorized=false` and `enforcementActive=false` remain governing state.
 
 ## Purpose
 
@@ -58,7 +58,7 @@ When the exact Preview-only mode is explicitly configured in a separately approv
 5. trusted Middleware overwrites the publication path/timestamp/MAC headers server-side so client-supplied envelope headers cannot select another route;
 6. Vercel's `rewrite()` helper forwards those overridden request headers to `/api/publication-guard`;
 7. client query/hash data is not forwarded into the internal guard route;
-8. raw static aliases such as `/news/index.html`, article `.html` paths, article `/index.html` paths and trailing static aliases receive a no-store 404 before static rendering;
+8. the current Vercel URL policy (`cleanUrls: true`, `trailingSlash: false`) canonicalizes representative raw aliases before Middleware, so those requests enter the same governed canonical path; if a classified raw alias ever reaches Middleware unnormalized, the existing defensive fallback returns a no-store 404 before static rendering;
 9. unknown wiring modes or invalid Preview context fail closed with a no-store response.
 
 The signer still requires `PUBLICATION_GUARD_ROUTE_CANDIDATE=preview-dormant` and a strong `PUBLICATION_GUARD_ROUTE_SECRET`. Those values are not created or changed by this source increment.
@@ -115,7 +115,21 @@ The current public Production alias inventory captured for the candidate is:
 
 A future Production activation must apply one admission decision consistently to all approved public aliases. A generated immutable deployment hostname is a separate class and is not silently treated as a public Production alias.
 
-Raw static aliases are now represented in the actual Middleware matcher. They are denied before render only when the separately configured Preview wiring mode is active; while the mode is absent they preserve the current static-routing behavior. No Production alias enforcement is activated by this increment.
+Raw static aliases now have a layered no-bypass contract. The current Vercel configuration pins `cleanUrls: true` and `trailingSlash: false`, so extension and trailing-slash canonicalization occurs upstream of Routing Middleware. The live Preview rehearsal confirmed `/news/` arrived at runtime as `/news` and `/index.html` arrived as `/`; both therefore entered the guarded canonical route and returned the same dormant hold. The Middleware raw-alias classification remains a defense-in-depth 404 fallback for any alias form that reaches Middleware without upstream normalization. CI pins the Vercel URL-policy settings so a future config drift fails validation instead of silently changing this assumption. No Production alias enforcement is activated by this increment.
+
+## Live Preview wiring rehearsal — 2026-09-15
+
+A bounded Preview-only rehearsal was executed on PR #559 exact head `874457cc2ee63a441276d26927784b7fb1a085f2` with temporary branch-scoped Preview configuration only. No Production alias, Production environment, Deployment Protection setting, serving authority, admission, database credential, merge, or source revision was changed during the rehearsal.
+
+Observed response evidence on Preview deployment `dpl_ECCHtFdQ1Q6HURsFnXVyCdyWcLrX`:
+
+- canonical `/news` reached Middleware/Function and returned HTTP 503 `Publication unavailable.` as the expected post-envelope dormant hold;
+- direct unsigned `/api/publication-guard` returned HTTP 404;
+- browser requests for `/news/` were recorded by Vercel runtime as `/news` and returned the canonical 503 hold;
+- browser requests for `/index.html` were recorded by Vercel runtime as `/` and returned the canonical 503 hold;
+- therefore the live Middleware 404 fallback for those two representative aliases was not directly exercised because Vercel canonicalized them first, but neither alias bypassed the guarded canonical route.
+
+After the rehearsal, the three temporary Preview branch variables were removed by the operator and the same exact source head was redeployed cleanly as `dpl_8xbngjmZrVyNvEUgUExfBdPvFWqG`, which reached READY with no Production promotion. The temporary route secret is treated as burned and is not reusable.
 
 ## Cache contract
 
@@ -150,7 +164,9 @@ The route-candidate, public-route wiring and R0 regressions cover:
 - server-side overwrite of forged publication-envelope headers;
 - the installed `@vercel/functions` rewrite helper carrying overridden signed request headers into the internal Function request;
 - GET and HEAD method binding;
-- active Preview raw-static-alias denial;
+- Vercel `cleanUrls: true` and `trailingSlash: false` configuration as a CI-pinned no-bypass prerequisite for the observed upstream canonicalization path;
+- representative `/index.html` and `/news/` canonical counterparts remaining governed;
+- defensive active-Preview raw-static-alias denial for any alias that reaches Middleware unnormalized;
 - invalid wiring-mode and Production-context rejection;
 - no Production reader import in Middleware and no governed public rewrite added to `vercel.json`;
 - R0 exact Preview/build/path binding;
@@ -162,10 +178,10 @@ The route-candidate, public-route wiring and R0 regressions cover:
 
 ## Still required before activation
 
-This increment does **not** prove or perform live serving enforcement. A separately approved Preview-only provider rehearsal is still required to set the dormant wiring inputs temporarily and prove on an actual Vercel deployment that Middleware matching, request-header forwarding, raw-static-alias denial and inactive rollback behave as the source contract specifies.
+The bounded Preview canonical wiring rehearsal is complete. It proved canonical Middleware matching, signed request-header forwarding, direct unsigned rejection, upstream canonicalization of the representative `/news/` and `/index.html` aliases, and clean redeployment after temporary configuration removal. It did not activate serving authority and did not prove Production behavior.
 
-Production still requires a real authenticated serving-authority adapter, approved Production reader/runtime credentials, staged Production provider controls, public-alias enforcement, raw-static-path non-bypass proof, and first-public-response witness/receipt, promotion, rollback, alias, cache, outage and recovery exercises end to end.
+Production still requires a real authenticated serving-authority adapter, approved Production reader/runtime credentials, staged Production provider controls, public-alias enforcement, Production confirmation that raw/static alternate paths cannot bypass the governed canonical route, and first-public-response witness/receipt, promotion, rollback, alternate-alias, cache, delayed-open-PR, clock-crossing, outage and recovery exercises end to end.
 
-The later independent-witness/receipt phase remains separate from R0. No receipt/witness migration is required or applied merely to prepare this dormant wiring.
+The later independent-witness/receipt phase remains separate from R0. No receipt/witness migration is required or applied merely to prepare or rehearse this dormant wiring.
 
-No merge, Production deployment/routing, Vercel project/environment mutation, Supabase mutation, credential creation, workflow-token permission change, witness activation, promotion, publication authorization, or enforcement activation is part of this increment.
+No merge, Production deployment/routing, Vercel Production environment mutation, Supabase mutation, credential creation, workflow-token permission change, witness activation, promotion, publication authorization, or enforcement activation is part of this increment.

@@ -93,6 +93,9 @@ revoke all on schema vault from fx558_oauth_store, fx558_oauth_store_login;
 revoke all on table vault.secrets from fx558_oauth_store, fx558_oauth_store_login;
 revoke all on table vault.decrypted_secrets from fx558_oauth_store, fx558_oauth_store_login;
 
+-- Historical regression context: the former ownership-requiring statement
+-- `revoke execute on function publication_guard_api.authorize_release(...)` is intentionally
+-- no longer executable. Effective privilege is asserted below without borrowing owner roles.
 -- Publication functions are owned by isolated #558 capability-owner roles. The managed
 -- migration session must not borrow those owners merely to REVOKE privileges that the
 -- new roles do not hold. Assert the effective boundary instead and fail closed on drift.

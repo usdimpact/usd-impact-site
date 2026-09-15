@@ -107,6 +107,11 @@ try {
 
   await rm(editionPath, { force: true });
 
+  const unsupportedCalendar = runImporter('--replace', '--publish');
+  assert.equal(unsupportedCalendar.status, 2, 'unsupported events must not publish automatically');
+  assert.match(unsupportedCalendar.stderr, /HOLD_UNSUPPORTED_EVENT/);
+
+  await writeBundle({ ...bundle, catalysts: [] });
   const directPublish = runImporter('--replace', '--publish');
   assert.equal(directPublish.status, 0, directPublish.stderr);
   assert.match(directPublish.stdout, /status published/);
@@ -214,7 +219,7 @@ try {
   assert.notEqual(buybackSupplyFailure.status, 0);
   assert.match(buybackSupplyFailure.stderr, /mechanically reducing or offsetting Treasury supply/i);
 
-  console.log('daily news importer review, direct-publish, and fail-closed source guard tests pass');
+  console.log('daily news importer review, direct-publish, calendar, and fail-closed source guard tests pass');
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });
 }

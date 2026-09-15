@@ -231,14 +231,8 @@ jobs:
           body="Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           if [ -n "$issue_number" ]; then gh issue comment "$issue_number" --body "$body"; else gh issue create --title "$title" --body "$body"; fi
 
-      - name: Close recovered automation issue
+      - name: Preserve incident until verified publication recovery
         if: success()
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          title="Important Catalyst Brief automation requires attention"
-          issue_number="$(gh issue list --state open --search "$title in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -n 1)"
-          if [ -n "$issue_number" ]; then
-            gh issue comment "$issue_number" --body "Recovered in workflow run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}."
-            gh issue close "$issue_number"
-          fi
+          echo "Research, HOLD and no-candidate results are not Production recovery evidence."
+          echo "Existing automation incidents remain open for verified release reconciliation."

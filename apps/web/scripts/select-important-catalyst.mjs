@@ -1,3 +1,4 @@
+import { archivedCpiIdentity } from '../src/lib/publication-calendar-pipeline.js';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { selectImportantCatalyst } from '../src/lib/catalyst-briefs.js';
@@ -24,5 +25,11 @@ try {
   if (error?.code !== 'ENOENT') throw error;
 }
 
-const candidate = selectImportantCatalyst(latestPayload, { phase, asOf, existingSlugs });
+const existingIdentities = [];
+for (const slug of existingSlugs) {
+  const raw = await readFile(path.join(briefDirectory, `${slug}.md`), 'utf8');
+  const identity = archivedCpiIdentity(raw);
+  if (identity) existingIdentities.push(identity);
+}
+const candidate = selectImportantCatalyst(latestPayload, { phase, asOf, existingSlugs, existingIdentities });
 process.stdout.write(`${JSON.stringify({ candidate }, null, 2)}\n`);

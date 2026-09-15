@@ -1,0 +1,37 @@
+name: Supabase OAuth Store Migration Filename Rehearsal
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    if: github.event.pull_request.number == 559 && github.head_ref == 'publishing/558-calendar-validation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Set up pinned Supabase CLI
+        uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1
+        with:
+          version: 2.117.0
+
+      - name: Verify CLI command contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase --version
+          supabase migration new --help | sed -n '1,80p'
+
+      - name: Generate migration filename only
+        shell: bash
+        run: |
+          set -euo pipefail
+          workdir="$(mktemp -d)"
+          cd "$workdir"
+          supabase migration new publication_production_vercel_oauth_store_558
+          file="$(find supabase/migrations -maxdepth 1 -type f -name '*_publication_production_vercel_oauth_store_558.sql' -printf '%f\n')"
+          test -n "$file"
+          printf 'MIGRATION_FILENAME=%s\n' "$file"

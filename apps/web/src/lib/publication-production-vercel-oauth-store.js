@@ -26,7 +26,28 @@ const KEY_BYTES = 32;
 const CIPHER = 'aes-256-gcm';
 const BASE_AAD = `publication-production-vercel-oauth-refresh/v1|project=${APPROVED_PROJECT_ID}|team=${APPROVED_TEAM_ID}|store=${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}`;
 
-const IDENTITY_SQL = `select jsonb_build_object(
+const IDENTITY_SQL = `with targets as (
+  select
+    (select c.oid from pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid=c.relnamespace
+      where n.nspname='vault' and c.relname='secrets') as vault_secrets,
+    (select c.oid from pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid=c.relnamespace
+      where n.nspname='vault' and c.relname='decrypted_secrets') as vault_decrypted,
+    (select p.oid from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='publication_guard_api' and p.proname='read_current_revision') as read_current_revision,
+    (select p.oid from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='publication_guard_api' and p.proname='read_snapshot') as read_snapshot,
+    (select p.oid from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='publication_guard_api' and p.proname='authorize_release') as authorize_release,
+    (select p.oid from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='publication_guard_api' and p.proname='prepare_admission') as prepare_admission,
+    (select p.oid from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='publication_guard_api' and p.proname='record_verified_receipt') as record_verified_receipt,
+    (select p.oid from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='publication_guard_api' and p.proname='revoke_release') as revoke_release,
+    (select p.oid from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='publication_guard_api' and p.proname='revoke_admission') as revoke_admission
+)
+select jsonb_build_object(
   'role', current_user,
   'database', current_database(),
   'schemaUsage', has_schema_privilege(current_user, '${STORE_SCHEMA_NAME}', 'USAGE'),
@@ -52,16 +73,17 @@ const IDENTITY_SQL = `select jsonb_build_object(
   'storeInsert', has_any_column_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'INSERT'),
   'storeDelete', has_table_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'DELETE'),
   'storeTruncate', has_table_privilege(current_user, '${STORE_SCHEMA_NAME}.${STORE_TABLE_NAME}', 'TRUNCATE'),
-  'vaultSecretsSelect', has_table_privilege(current_user, 'vault.secrets', 'SELECT'),
-  'vaultDecryptedSelect', has_table_privilege(current_user, 'vault.decrypted_secrets', 'SELECT'),
-  'readCurrentRevision', has_function_privilege(current_user, 'publication_guard_api.read_current_revision()', 'EXECUTE'),
-  'readSnapshot', has_function_privilege(current_user, 'publication_guard_api.read_snapshot(text,jsonb)', 'EXECUTE'),
-  'authorizeRelease', has_function_privilege(current_user, 'publication_guard_api.authorize_release(uuid,text,text,text,text,timestamptz)', 'EXECUTE'),
-  'prepareAdmission', has_function_privilege(current_user, 'publication_guard_api.prepare_admission(uuid,text,text,text,text,timestamptz,timestamptz,timestamptz,timestamptz)', 'EXECUTE'),
-  'recordVerifiedReceipt', has_function_privilege(current_user, 'publication_guard_api.record_verified_receipt(uuid,text,text,text)', 'EXECUTE'),
-  'revokeRelease', has_function_privilege(current_user, 'publication_guard_api.revoke_release(uuid)', 'EXECUTE'),
-  'revokeAdmission', has_function_privilege(current_user, 'publication_guard_api.revoke_admission(uuid,text,text)', 'EXECUTE')
-) as value`;
+  'vaultSecretsSelect', coalesce(has_table_privilege(current_user, targets.vault_secrets, 'SELECT'), false),
+  'vaultDecryptedSelect', coalesce(has_table_privilege(current_user, targets.vault_decrypted, 'SELECT'), false),
+  'readCurrentRevision', coalesce(has_function_privilege(current_user, targets.read_current_revision, 'EXECUTE'), false),
+  'readSnapshot', coalesce(has_function_privilege(current_user, targets.read_snapshot, 'EXECUTE'), false),
+  'authorizeRelease', coalesce(has_function_privilege(current_user, targets.authorize_release, 'EXECUTE'), false),
+  'prepareAdmission', coalesce(has_function_privilege(current_user, targets.prepare_admission, 'EXECUTE'), false),
+  'recordVerifiedReceipt', coalesce(has_function_privilege(current_user, targets.record_verified_receipt, 'EXECUTE'), false),
+  'revokeRelease', coalesce(has_function_privilege(current_user, targets.revoke_release, 'EXECUTE'), false),
+  'revokeAdmission', coalesce(has_function_privilege(current_user, targets.revoke_admission, 'EXECUTE'), false)
+) as value
+from targets`;
 
 const LOAD_SQL = `select version::text as version,
        key_fingerprint,

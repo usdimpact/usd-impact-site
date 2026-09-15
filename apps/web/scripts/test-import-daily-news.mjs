@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +10,7 @@ const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), 'usd-impact-daily-imp
 const bundlePath = path.join(temporaryRoot, 'bundle.json');
 const editionPath = path.join(temporaryRoot, 'src', 'content', 'news', '2026-07-23.md');
 const historicalEditionPath = path.join(temporaryRoot, 'src', 'content', 'news', '2026-07-22.md');
+const historicalCatalystPath = path.join(temporaryRoot, 'src', 'content', 'catalyst-briefs', 'living-calendar.md');
 
 const bundle = {
   date: '2026-07-23',
@@ -171,6 +172,38 @@ try {
   );
 
   await rm(historicalEditionPath, { force: true });
+  await mkdir(path.dirname(historicalCatalystPath), { recursive: true });
+  const livingUrl = 'https://www.federalreserve.gov/newsevents/2026-july.htm';
+  await writeFile(historicalEditionPath, `---\ntitle: "Historical living source"\nslug: "/news/2026-07-22"\nstatus: "published"\nsources:\n  - id: "fed-calendar"\n    title: "Federal Reserve July calendar"\n    publisher: "Federal Reserve"\n    url: "${livingUrl}"\n    publishedAt: "2026-06-22"\n    sourceType: "primary"\n---\n`, 'utf8');
+  await writeFile(historicalCatalystPath, `---\ntitle: "Historical catalyst"\nstatus: "published"\nsources:\n  - id: "fed-calendar"\n    title: "Federal Reserve July calendar"\n    publisher: "Federal Reserve"\n    url: "${livingUrl}"\n    publishedAt: "2026-07-20"\n    sourceType: "primary"\n---\n`, 'utf8');
+  const livingSourceBundle = {
+    ...bundle,
+    sources: [
+      {
+        ...bundle.sources[0],
+        id: 'fed-calendar',
+        title: 'Federal Reserve July 2026 calendar',
+        publisher: 'Federal Reserve',
+        url: livingUrl,
+        publishedAt: '2026-07-22',
+      },
+      bundle.sources[1],
+    ],
+    highlights: bundle.highlights.map((highlight) => ({
+      ...highlight,
+      sourceIds: highlight.sourceIds.map((id) => id === 'source-a' ? 'fed-calendar' : id),
+    })),
+    catalysts: bundle.catalysts.map((catalyst) => ({ ...catalyst, sourceIds: ['fed-calendar'] })),
+  };
+  await writeBundle(livingSourceBundle);
+
+  const livingHistoricalDates = runImporter('--replace');
+  assert.equal(livingHistoricalDates.status, 0, livingHistoricalDates.stderr);
+  assert.match(livingHistoricalDates.stdout, /status review/);
+
+  await rm(editionPath, { force: true });
+  await rm(historicalEditionPath, { force: true });
+  await rm(historicalCatalystPath, { force: true });
   await writeBundle({ ...bundle, body: 'Source review remains incomplete for 2026-07-??.' });
 
   const placeholderDateFailure = runImporter('--replace');

@@ -8,13 +8,90 @@ import dailyNewsValidationHandler, {
   normalizePublishedAt,
   safeValidationDiagnostic,
 } from '../api/daily-news-validation.js';
+import {
+  SOURCE_DATE_BASIS,
+  isLivingSourceUrl,
+  sourceDateBasisForUrl,
+} from '../src/lib/source-date-basis.js';
 
 assert.equal(SOURCE_DATE_SCHEMA_PATTERN, '^\\d{4}-\\d{2}-\\d{2}$');
 assert.equal(SOURCE_ID_SCHEMA_PATTERN, '^[a-z0-9][a-z0-9-]{1,63}$');
 assert.match(SOURCE_DATE_RULES, /YYYY-MM-DD/);
+assert.match(SOURCE_DATE_RULES, /Last Update/i);
+assert.match(SOURCE_DATE_RULES, /current release/i);
+assert.match(SOURCE_DATE_RULES, /data-update date/i);
+assert.match(SOURCE_DATE_RULES, /access date/i);
+assert.match(SOURCE_DATE_RULES, /effective date/i);
+assert.match(SOURCE_DATE_RULES, /event date/i);
+assert.match(SOURCE_DATE_RULES, /auction date/i);
 assert.match(SOURCE_DATE_RULES, /omit that source/i);
 assert.match(SOURCE_ID_RULES, /never place a URL/i);
 assert.match(SOURCE_ID_RULES, /same normalized source id/i);
+
+assert.equal(
+  sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/2026-september.htm'),
+  SOURCE_DATE_BASIS.LAST_UPDATED,
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/calendar.htm'),
+  SOURCE_DATE_BASIS.LAST_UPDATED,
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm'),
+  SOURCE_DATE_BASIS.LAST_UPDATED,
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.federalreserve.gov/monetarypolicy.htm'),
+  SOURCE_DATE_BASIS.LAST_UPDATED,
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm'),
+  SOURCE_DATE_BASIS.PUBLISHED,
+);
+assert.equal(
+  sourceDateBasisForUrl('https://home.treasury.gov/news/press-releases/sb0607'),
+  SOURCE_DATE_BASIS.PUBLISHED,
+  'Treasury press releases must remain immutable publication-date sources',
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.bls.gov/cpi'),
+  SOURCE_DATE_BASIS.CURRENT_RELEASE,
+  'BLS CPI program homepage rolls forward with the current release',
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.bls.gov/cpi/'),
+  SOURCE_DATE_BASIS.CURRENT_RELEASE,
+  'BLS CPI program homepage trailing slash must preserve living-source semantics',
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.bls.gov/news.release/cpi.nr0.htm'),
+  SOURCE_DATE_BASIS.PUBLISHED,
+  'BLS current-release alias remains outside the narrow CPI-homepage exception',
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.bls.gov/schedule/2026/09_sched_list.htm'),
+  SOURCE_DATE_BASIS.PUBLISHED,
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.eia.gov/petroleum/supply/weekly/index.php'),
+  SOURCE_DATE_BASIS.CURRENT_RELEASE,
+  'EIA Weekly Petroleum Status Report landing page rolls forward with each weekly release',
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.eia.gov/petroleum/supply/weekly/index.php?trk=organization_guest_main-feed-card_feed-article-content'),
+  SOURCE_DATE_BASIS.CURRENT_RELEASE,
+  'Tracking-query variants must not change EIA WPSR living-source semantics',
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.eia.gov/petroleum/supply/weekly/archive/2026/2026_09_10/'),
+  SOURCE_DATE_BASIS.PUBLISHED,
+  'Archived EIA weekly release paths must remain immutable publication-date sources',
+);
+assert.equal(sourceDateBasisForUrl('not-a-url'), SOURCE_DATE_BASIS.PUBLISHED);
+assert.equal(isLivingSourceUrl('https://www.federalreserve.gov/newsevents/2026-july.htm'), true);
+assert.equal(isLivingSourceUrl('https://www.bls.gov/cpi'), true);
+assert.equal(isLivingSourceUrl('https://www.bls.gov/news.release/cpi.nr0.htm'), false);
+assert.equal(isLivingSourceUrl('https://www.eia.gov/petroleum/supply/weekly/index.php?trk=example'), true);
 
 assert.equal(normalizePublishedAt('2026-07-23', 'dated-source'), '2026-07-23');
 assert.equal(normalizePublishedAt('2026-07-23T09:30:00Z', 'timestamp-source'), '2026-07-23');

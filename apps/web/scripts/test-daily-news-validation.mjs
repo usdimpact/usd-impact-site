@@ -19,6 +19,9 @@ assert.equal(SOURCE_ID_SCHEMA_PATTERN, '^[a-z0-9][a-z0-9-]{1,63}$');
 assert.match(SOURCE_DATE_RULES, /YYYY-MM-DD/);
 assert.match(SOURCE_DATE_RULES, /Last Update/i);
 assert.match(SOURCE_DATE_RULES, /access date/i);
+assert.match(SOURCE_DATE_RULES, /effective date/i);
+assert.match(SOURCE_DATE_RULES, /event date/i);
+assert.match(SOURCE_DATE_RULES, /auction date/i);
 assert.match(SOURCE_DATE_RULES, /omit that source/i);
 assert.match(SOURCE_ID_RULES, /never place a URL/i);
 assert.match(SOURCE_ID_RULES, /same normalized source id/i);
@@ -42,6 +45,11 @@ assert.equal(
 assert.equal(
   sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm'),
   SOURCE_DATE_BASIS.PUBLISHED,
+);
+assert.equal(
+  sourceDateBasisForUrl('https://home.treasury.gov/news/press-releases/sb0607'),
+  SOURCE_DATE_BASIS.PUBLISHED,
+  'Treasury press releases must remain immutable publication-date sources',
 );
 assert.equal(
   sourceDateBasisForUrl('https://www.bls.gov/schedule/2026/09_sched_list.htm'),

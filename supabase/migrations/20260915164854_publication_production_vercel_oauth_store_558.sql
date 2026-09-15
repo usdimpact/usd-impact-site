@@ -1,6 +1,7 @@
--- Issue #558 reviewed repository migration.
--- Generated filename: Supabase CLI 2.117.0, workflow run 34993123353.
--- Prepared only. Applying this migration to a live database is a separate protected action.
+-- Issue #558 canonical repository migration.
+-- Original CLI-generated filename: 20260915160900_publication_production_vercel_oauth_store_558.sql.
+-- Production application on 2026-09-15 was recorded by Supabase as remote migration version 20260915164854.
+-- Canonical filename reconciles repository history to that applied remote version; executable SQL is unchanged.
 -- Creates no credential row, no database password, no AES key, and no OAuth credential.
 -- Plaintext refresh credentials, OAuth client secrets, and the AES key must never be stored here.
 

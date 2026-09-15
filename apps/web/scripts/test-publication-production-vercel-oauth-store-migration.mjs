@@ -5,7 +5,7 @@ import { createPublicationProductionVercelOAuthStore } from '../src/lib/publicat
 
 let groups = 0;
 const pass = () => { groups += 1; };
-const migrationUrl = new URL('../../../supabase/migrations/20260915160900_publication_production_vercel_oauth_store_558.sql', import.meta.url);
+const migrationUrl = new URL('../../../supabase/migrations/20260915164854_publication_production_vercel_oauth_store_558.sql', import.meta.url);
 const candidateUrl = new URL('../docs/sql/publication-production-vercel-oauth-store-558.sql', import.meta.url);
 const [sql, candidateSql] = await Promise.all([
   readFile(migrationUrl, 'utf8'),

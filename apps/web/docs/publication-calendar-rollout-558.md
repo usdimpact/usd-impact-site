@@ -1,5 +1,7 @@
 # Calendar 558: multi-series coverage and final-release requirements
 
+> **2026-09-15 provider credential update:** The earlier custom Vercel OAuth client-secret / refresh-token provisioning path has been retired before activation. The preferred provider credential boundary is now Vercel Connect using the Production deployment's project OIDC identity, a connector linked only to project `prj_ZoLLM35ksI6wk17PcfS2xYknaVl7` / Production, and provider token requests limited to `read:project` + `read:deployment`. The already-applied Supabase OAuth-store schema remains empty, passwordless, forced-RLS and unused; do not provision it under the current design. This update changes no route, publication authority, admission, deployment, alias or Production configuration.
+
 Status: **draft, unmerged, not activated in Production**. This document supersedes
 CPI-only scope statements in the earlier foundation/integration checkpoints, but
 does not claim that every event or the final Production transition is protected.
@@ -150,5 +152,5 @@ change list; do not infer current settings from platform defaults or green CI.
   tampering, missing evidence, retries and conflicting concurrent releases fail
   closed.
 
-Keep issue #558 open and PR #559 draft. No release approval follows from this
+Keep issue #558 open and PR #615 draft. No release approval follows from this
 checkpoint, test count, source probe or successful Preview build.

@@ -1,3 +1,4 @@
+import { explicitCpiIdentity } from './publication-calendar-pipeline.js';
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -75,6 +76,7 @@ export function selectImportantCatalyst(latestPayload, {
   phase,
   asOf,
   existingSlugs = [],
+  existingIdentities = [],
 } = {}) {
   if (!['preview', 'outcome'].includes(phase)) throw new Error('phase must be preview or outcome');
   if (!isDateOnly(asOf)) throw new Error('asOf must use YYYY-MM-DD');
@@ -84,6 +86,7 @@ export function selectImportantCatalyst(latestPayload, {
 
   const priorSlugs = Array.isArray(existingSlugs) ? existingSlugs : [];
   const existing = new Set(priorSlugs);
+  const knownIdentities = new Set(existingIdentities);
   const lowerBound = phase === 'preview' ? asOf : addDays(asOf, -1);
   const upperBound = phase === 'preview' ? addDays(asOf, 2) : asOf;
 
@@ -105,6 +108,8 @@ export function selectImportantCatalyst(latestPayload, {
         eventDate: catalyst.date,
         event: catalyst.event,
         eventType: catalyst.eventType,
+        calendar: catalyst.calendar ?? null,
+        statusLabel: phase === 'preview' ? 'scheduled-confirmed' : 'released',
         assets: catalyst.assets ?? [],
         importance: catalyst.importance,
         impactScore: catalyst.impactScore,
@@ -116,6 +121,7 @@ export function selectImportantCatalyst(latestPayload, {
     .filter((candidate) => (
       !existing.has(candidate.slug)
       && !priorSlugs.some((slug) => isEquivalentExistingCatalyst(candidate, slug))
+      && !knownIdentities.has(`${explicitCpiIdentity(candidate.event)}:${phase}`)
     ))
     .sort((a, b) => (
       b.impactScore - a.impactScore

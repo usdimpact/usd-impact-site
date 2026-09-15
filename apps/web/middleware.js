@@ -1,9 +1,10 @@
-import { next } from '@vercel/functions';
+import { next, rewrite } from '@vercel/functions';
 import accessMap from './src/data/quiz-access-map.json' with { type: 'json' };
 import {
   canAccessQuizOrder,
   readQuizEntitlement,
 } from './src/lib/quiz-entitlement.js';
+import { planPublicationPublicRouteRequest } from './src/lib/publication-public-route-wiring.js';
 import { decideResearchPreviewRequest } from './src/lib/research-preview-route.js';
 
 const normalizePath = (value) => {
@@ -17,9 +18,34 @@ for (const quiz of accessMap.quizzes) {
   protectedRoutes.set(normalizePath(quiz.slug), quiz.order);
 }
 
+const PUBLICATION_DENY_HEADERS = Object.freeze({
+  'Cache-Control': 'private, no-store',
+  'CDN-Cache-Control': 'no-store',
+  'Vercel-CDN-Cache-Control': 'no-store',
+  'Content-Type': 'text/plain; charset=utf-8',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Robots-Tag': 'noindex, nofollow',
+});
+
+function publicationDenyResponse(request, plan) {
+  const message = plan.status === 404 ? 'Not found.\n'
+    : plan.status === 405 ? 'Method not allowed.\n'
+      : 'Publication unavailable.\n';
+  const headers = new Headers(PUBLICATION_DENY_HEADERS);
+  if (plan.status === 405) headers.set('Allow', 'GET, HEAD');
+  if (request.method !== 'HEAD') headers.set('Content-Length', String(Buffer.byteLength(message)));
+  return new Response(request.method === 'HEAD' ? null : message, { status: plan.status, headers });
+}
+
 export const config = {
   runtime: 'nodejs',
   matcher: [
+    '/',
+    '/index.html',
+    '/news',
+    '/news/:path*',
+    '/sitemap-0.xml',
+    '/sitemap-0.xml/:path*',
     '/research-membership/:path*',
     '/start-here/:path*',
     '/dollar/:path*',
@@ -37,6 +63,15 @@ export const config = {
 };
 
 export default async function learningAccessMiddleware(request) {
+  const publicationPlan = planPublicationPublicRouteRequest({ request });
+  if (publicationPlan.action === 'rewrite') {
+    return rewrite(new URL(publicationPlan.destination), {
+      request: { headers: publicationPlan.requestHeaders },
+    });
+  }
+  if (publicationPlan.action === 'deny') return publicationDenyResponse(request, publicationPlan);
+  if (publicationPlan.routeKind !== 'unrelated') return next();
+
   if (request.method !== 'GET' && request.method !== 'HEAD') return next();
 
   const url = new URL(request.url);

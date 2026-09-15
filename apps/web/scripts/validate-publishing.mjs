@@ -143,6 +143,7 @@ await import('./test-publication-serving-validity.mjs');
 
 await import('./test-publication-response-boundary.mjs');
 await import('./test-publication-route-candidate.mjs');
+await import('./test-publication-public-route-wiring.mjs');
 
 await import('./test-publication-admission-database.mjs');
 await import('./test-publication-postgres-adapter.mjs');

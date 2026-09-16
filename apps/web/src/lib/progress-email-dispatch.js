@@ -180,6 +180,7 @@ async function serviceRequest({ config, path, method = 'GET', body, prefer, fetc
       Accept: 'application/json',
       'Content-Type': 'application/json',
       apikey: config.secretKey,
+      Authorization: `Bearer ${config.secretKey}`,
       ...(prefer ? { Prefer: prefer } : {}),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),

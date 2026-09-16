@@ -125,6 +125,7 @@ async function serviceRequest({ config, path, fetchImpl = fetch }) {
       Accept: 'application/json',
       'Content-Type': 'application/json',
       apikey: config.supabase.secretKey,
+      Authorization: `Bearer ${config.supabase.secretKey}`,
     },
   });
   const payload = await readJsonSafely(response);

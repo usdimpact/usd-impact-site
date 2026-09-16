@@ -119,20 +119,37 @@ jobs:
         env:
           NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
         run: |
+          umask 077
+          response_file="$RUNNER_TEMP/catalyst-response.body"
+          receipt_file="$RUNNER_TEMP/catalyst-response.json"
+          rm -f "$RUNNER_TEMP/catalyst-brief.json" "$receipt_file"
           for attempt in 1 2; do
-            if curl --fail --silent --show-error --location \
-              --request POST --max-time 280 \
+            : > "$response_file"
+            # Retain the status/body for classification; never follow a POST redirect.
+            if http_status="$(curl -q --silent --globoff --proto '=https' \
+              --request POST --max-time 280 --max-filesize 1048576 \
               -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
               -H "Content-Type: application/json" \
               --data-binary "@$RUNNER_TEMP/catalyst-candidate.json" \
-              "$CATALYST_ENDPOINT" \
-              --output "$RUNNER_TEMP/catalyst-brief.json"; then
+              --url "$CATALYST_ENDPOINT" --write-out '%{http_code}' \
+              --output "$response_file" 2>/dev/null)"; then
+              curl_status=0
+            else
+              curl_status=$?
+            fi
+            if node scripts/catalyst-brief-response.mjs classify \
+              "$response_file" "$http_status" "$curl_status" > "$receipt_file"; then
+              mv "$response_file" "$RUNNER_TEMP/catalyst-brief.json"
               exit 0
+            else
+              classification_exit=$?
             fi
-            if [ "$attempt" = "1" ]; then
-              echo "Catalyst research failed once; retrying one time."
-              sleep 20
+            if [ "$classification_exit" != "75" ] || [ "$attempt" = "2" ]; then
+              echo "Catalyst response unavailable or rejected; no publication attempted."
+              exit 1
             fi
+            echo "Connection failed before an HTTP response; retrying once."
+            sleep 20
           done
           exit 1
 
@@ -140,14 +157,9 @@ jobs:
         if: steps.candidate.outputs.has_candidate == 'true'
         id: eligibility
         run: |
-          publishable="$(node -p "Boolean(JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/catalyst-brief.json', 'utf8')).publishable)")"
-          echo "publishable=$publishable" >> "$GITHUB_OUTPUT"
-          if [ "$publishable" != "true" ]; then
-            node -e '
-              const data = JSON.parse(require("fs").readFileSync(process.env.RUNNER_TEMP + "/catalyst-brief.json", "utf8"));
-              console.log(`Catalyst Brief held for verification: ${data.holdReason || "unspecified reason"}`);
-            '
-          fi
+          node scripts/catalyst-brief-response.mjs eligibility \
+            "$RUNNER_TEMP/catalyst-brief.json" "$RUNNER_TEMP/catalyst-response.json" \
+            >> "$GITHUB_OUTPUT"
 
       - name: Import as protected publication content
         if: steps.eligibility.outputs.publishable == 'true'

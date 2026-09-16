@@ -314,8 +314,11 @@ try {
   assert.equal(directDocument.status, 0, directDocument.stderr);
   const directContent = await readFile(treasuryEditionPath, 'utf8');
   assert.match(directContent, /publishedAt: "2026-09-09"/);
-  assert.ok(directContent.includes(treasuryDocument));
-  assert.ok(!directContent.includes(treasuryIndex));
+  // Compare the complete emitted source ledger, not URL substrings in Markdown.
+  const importedSourceUrls = directContent.split('\n')
+    .filter((line) => line.startsWith('    url: '))
+    .map((line) => JSON.parse(line.slice('    url: '.length)));
+  assert.deepEqual(importedSourceUrls, [treasuryDocument, bundle.sources[1].url]);
   assert.equal(await readFile(treasuryArchivePath, 'utf8'), archive);
   assert.equal(await readFile(treasuryCatalystArchivePath, 'utf8'), catalystArchive);
   const stillProtected = runImporter('--replace', '--publish');

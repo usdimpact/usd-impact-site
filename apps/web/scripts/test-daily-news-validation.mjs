@@ -12,7 +12,10 @@ import {
   SOURCE_DATE_BASIS,
   isLivingSourceUrl,
   sourceDateBasisForUrl,
+  sourceDateAttributionIssue,
 } from '../src/lib/source-date-basis.js';
+
+import { validateEditorialBundle } from '../src/lib/daily-news-editorial-validation.js';
 
 assert.equal(SOURCE_DATE_SCHEMA_PATTERN, '^\\d{4}-\\d{2}-\\d{2}$');
 assert.equal(SOURCE_ID_SCHEMA_PATTERN, '^[a-z0-9][a-z0-9-]{1,63}$');
@@ -249,6 +252,82 @@ assert.equal(
   safeValidationDiagnostic('unexpected provider detail with a secret-looking value').code,
   'generation-validation-failed',
 );
+
+// #634: synthetic source fixtures test attribution, not official market facts.
+const treasuryIndex = 'https://home.treasury.gov/policy-issues/financing-the-government/quarterly-refunding/most-recent-quarterly-refunding-documents';
+const treasuryIndexVariants = [
+  treasuryIndex,
+  `${treasuryIndex}/`,
+  `${treasuryIndex}//`,
+  `${treasuryIndex}?utm_source=fixture`,
+  `${treasuryIndex}/?e=48669#documents`,
+  treasuryIndex.replace('home.treasury.gov', 'HOME.TREASURY.GOV'),
+  treasuryIndex.replace('home.treasury.gov', 'home.treasury.gov.'),
+  treasuryIndex.replace('/most-recent-', '/%6dost-recent-'),
+];
+for (const url of treasuryIndexVariants) {
+  assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.DOCUMENT_INDEX, url);
+  assert.equal(isLivingSourceUrl(url), false, 'An index is not a date-check exemption');
+  assert.match(sourceDateAttributionIssue(url), /directly linked dated document/);
+}
+
+const treasuryDocument = 'https://home.treasury.gov/system/files/221/synthetic-refunding-document-20260909.pdf';
+for (const url of [
+  treasuryDocument,
+  'https://home.treasury.gov/news/press-releases/sb0607',
+  `${treasuryIndex}/archive/2026`,
+  treasuryIndex.replace('most-recent-quarterly-refunding-documents', 'quarterly-refunding-archives'),
+  treasuryIndex.replace('home.treasury.gov', 'home.treasury.gov.example.org'),
+  'https://example.org/?url=' + encodeURIComponent(treasuryIndex),
+  'not-a-url',
+]) {
+  assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.PUBLISHED, url);
+  assert.equal(isLivingSourceUrl(url), false, url);
+  assert.equal(sourceDateAttributionIssue(url), null, url);
+}
+assert.equal(sourceDateAttributionIssue(null), null);
+assert.match(SOURCE_DATE_RULES, /multi-document index for discovery only/i);
+assert.match(SOURCE_DATE_RULES, /directly linked dated document/i);
+assert.match(SOURCE_DATE_RULES, /never borrow a date from a sibling document/i);
+assert.match(SOURCE_DATE_RULES, /Do not replace a conflicting date with an older date/i);
+
+function treasuryAttributionBundle(url, publishedAt) {
+  return {
+    editionDate: '2026-09-16',
+    sources: [{ id: 'treasury-item', url, publishedAt, title: 'Synthetic Treasury document', sourceType: 'primary' }],
+    highlights: [{ headline: 'Treasury document update.', sourceIds: ['treasury-item'] }],
+    catalysts: [],
+    summary: 'Synthetic source-attribution fixture.',
+  };
+}
+// Prior history, a sibling update, an arbitrary date, and the access date all
+// remain unsuitable for assigning a single publication date to this index.
+for (const date of ['2026-08-03', '2026-08-05', '2026-09-09', '2026-09-16']) {
+  const candidate = treasuryAttributionBundle(treasuryIndex, date);
+  const original = structuredClone(candidate);
+  assert.throws(() => validateEditorialBundle(candidate), /directly linked dated document/);
+  assert.deepEqual(candidate, original, 'Validation must not silently rewrite dates');
+}
+const fabricated = treasuryAttributionBundle(treasuryIndex, '2026-09-09');
+Object.assign(fabricated.sources[0], {
+  verified: true, dateBasis: 'current-release', documentUrl: treasuryDocument,
+});
+assert.throws(() => validateEditorialBundle(fabricated), /directly linked dated document/);
+const catalystOnly = treasuryAttributionBundle(treasuryIndex, '2026-09-09');
+catalystOnly.highlights = [];
+catalystOnly.catalysts = [{ event: 'Treasury document review', sourceIds: ['treasury-item'] }];
+assert.throws(() => validateEditorialBundle(catalystOnly), /directly linked dated document/);
+const normalizedIndex = normalizeBundleDraft({ ...fabricated, date: '2026-09-16' });
+assert.throws(() => validateEditorialBundle(normalizedIndex), /directly linked dated document/);
+assert.equal(normalizedIndex.sources[0].publishedAt, '2026-09-09');
+
+assert.doesNotThrow(() => validateEditorialBundle(treasuryAttributionBundle(treasuryDocument, '2026-09-09')));
+assert.throws(() => validateEditorialBundle(treasuryAttributionBundle(treasuryDocument, '2026-09-17')), /dated after the edition/);
+assert.throws(() => validateEditorialBundle(treasuryAttributionBundle(treasuryDocument, '2026-08-03')), /only stale daily-development sources/);
+const diagnostic = safeValidationDiagnostic(`${sourceDateAttributionIssue(treasuryIndex)} secret-looking-fixture-value`);
+assert.equal(diagnostic.code, 'invalid-source-date', 'Keep the existing diagnostic/retry category');
+assert.match(diagnostic.reason, /directly linked Treasury document/);
+assert.doesNotMatch(diagnostic.reason, /secret-looking-fixture-value|https?:/);
 
 function createHttpResponse() {
   const headers = new Map();

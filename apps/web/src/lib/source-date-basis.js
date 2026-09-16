@@ -2,7 +2,11 @@ export const SOURCE_DATE_BASIS = Object.freeze({
   PUBLISHED: 'published',
   LAST_UPDATED: 'last-updated',
   CURRENT_RELEASE: 'current-release',
+  DOCUMENT_INDEX: 'document-index',
 });
+
+// This rolling index has separately dated documents, not one release date.
+const TREASURY_REFUNDING_INDEX_PATH = '/policy-issues/financing-the-government/quarterly-refunding/most-recent-quarterly-refunding-documents';
 
 const LIVING_FEDERAL_RESERVE_PATHS = [
   /^\/newsevents\/calendar\.htm$/i,
@@ -20,6 +24,17 @@ export function sourceDateBasisForUrl(value) {
   }
 
   const hostname = url.hostname.toLowerCase().replace(/^www\./, '');
+  if (hostname.replace(/\.$/, '') === 'home.treasury.gov') {
+    let pathname;
+    try {
+      pathname = decodeURIComponent(url.pathname).replace(/\/+$/, '').toLowerCase();
+    } catch {
+      return SOURCE_DATE_BASIS.PUBLISHED;
+    }
+    if (pathname === TREASURY_REFUNDING_INDEX_PATH) {
+      return SOURCE_DATE_BASIS.DOCUMENT_INDEX;
+    }
+  }
   if (hostname === 'federalreserve.gov') {
     return LIVING_FEDERAL_RESERVE_PATHS.some((pattern) => pattern.test(url.pathname))
       ? SOURCE_DATE_BASIS.LAST_UPDATED
@@ -35,5 +50,14 @@ export function sourceDateBasisForUrl(value) {
 }
 
 export function isLivingSourceUrl(value) {
-  return sourceDateBasisForUrl(value) !== SOURCE_DATE_BASIS.PUBLISHED;
+  const basis = sourceDateBasisForUrl(value);
+  // A document index must never become a blanket historical-date exemption.
+  return basis === SOURCE_DATE_BASIS.LAST_UPDATED || basis === SOURCE_DATE_BASIS.CURRENT_RELEASE;
+}
+
+export function sourceDateAttributionIssue(value) {
+  if (sourceDateBasisForUrl(value) !== SOURCE_DATE_BASIS.DOCUMENT_INDEX) return null;
+  // The current bundle cannot bind an index date to independently verified item
+  // evidence. Hold new candidates; leave published archives untouched.
+  return 'Treasury refunding index requires a directly linked dated document; cite that document with its own verified date, or omit the unsupported source and claim. Do not borrow a date from another index item.';
 }

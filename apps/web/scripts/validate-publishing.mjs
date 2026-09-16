@@ -151,6 +151,7 @@ await import('./test-publication-production-reader-revision-contract.mjs');
 await import('./test-publication-production-reader-database.mjs');
 await import('./test-publication-production-authority.mjs');
 await import('./test-publication-production-vercel-oauth-bearer.mjs');
+await import('./test-publication-production-vercel-integration-bearer.mjs');
 await import('./test-publication-production-vercel-oauth-store.mjs');
 await import('./test-publication-production-vercel-oauth-store-migration.mjs');
 await import('./test-publication-production-vercel-provider.mjs');

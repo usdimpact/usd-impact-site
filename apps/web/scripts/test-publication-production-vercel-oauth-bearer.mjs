@@ -135,7 +135,7 @@ for (const patch of [
 }
 
 assert.throws(
-  () => loadPublicationProductionVercelOAuthClientCredentials(productionEnvironment),
+  () => loadPublicationProductionVercelOAuthClientCredentials(),
   (error) => error.code === 'HOLD_PRODUCTION_VERCEL_CONNECT_LEGACY_OAUTH_DISABLED',
 );
 pass();

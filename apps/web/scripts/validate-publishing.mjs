@@ -173,3 +173,5 @@ await import('./test-publication-release-lease.mjs');
 await import('./test-publication-admission-handoff.mjs');
 
 await import('./test-fomc-decision-contract.mjs');
+
+await import('./test-fomc-policy-document-text.mjs');

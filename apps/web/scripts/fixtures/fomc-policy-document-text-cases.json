@@ -1,0 +1,343 @@
+{
+  "schema": "fomc-policy-document-text-fixtures/v1",
+  "provenanceNotice": "All articleText values are synthetic. Historical URLs are design references only. No raw HTTP responses, real member lists, source authenticity, completeness, freshness or September 2026 outcomes are asserted.",
+  "cases": [
+    {
+      "id": "majority-cut-not-dissent",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "02beebbdda4dee4d5931b75bdfd133b67b09ad5084733c3cd5b045a5f0e85696"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "statement",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "articleText": "Federal Reserve issues FOMC statement\n\nDecember 10, 2025\n\nFor release at 2:00 p.m. EST\n\nThe Committee seeks to achieve maximum employment and inflation at the rate of 2 percent over the longer run. In support of its goals and in light of the shift in the balance of risks, the Committee decided to lower the target range for the federal funds rate by 1/4 percentage point to 3-1/2 to 3-3/4 percent.\n\nThe Committee will continue to assess additional information.\n\nVoting for the monetary policy action were Member A and Member B. Voting against this action was Member C, who preferred to lower the target range for the federal funds rate by 1/2 percentage point.\n"
+      },
+      "expected": {
+        "lowerBasisPoints": 350,
+        "upperBasisPoints": 375,
+        "action": "lower",
+        "changeBasisPoints": -25,
+        "changeStatedNumerically": true,
+        "associatedStatementDate": null,
+        "directiveEffectiveDate": null,
+        "releaseAt": "2025-12-10T19:00:00.000Z"
+      }
+    },
+    {
+      "id": "majority-maintain-not-dissent",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20250730a.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "2bd42e0d5f0f24f6eec5b0f5c1bc0a481cd81c4da6955546cd78a79e5974e9a2"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "statement",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20250730a.htm",
+        "articleText": "Federal Reserve issues FOMC statement\n\nJuly 30, 2025\n\nFor release at 2:00 p.m. EDT\n\nThe Committee seeks to achieve maximum employment and inflation at the rate of 2 percent over the longer run. In support of its goals, the Committee decided to maintain the target range for the federal funds rate at 4-1/4 to 4-1/2 percent.\n\nThe Committee will continue to assess additional information.\n\nVoting for the monetary policy action were Member A and Member B. Voting against this action was Member C, who preferred to lower the target range for the federal funds rate by 1/2 percentage point.\n"
+      },
+      "expected": {
+        "lowerBasisPoints": 425,
+        "upperBasisPoints": 450,
+        "action": "maintain",
+        "changeBasisPoints": 0,
+        "changeStatedNumerically": false,
+        "associatedStatementDate": null,
+        "directiveEffectiveDate": null,
+        "releaseAt": "2025-07-30T18:00:00.000Z"
+      }
+    },
+    {
+      "id": "raise-amount-absent",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20230726a.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "83ff544fe4c60a7443fa52744465b9857974ef6becf43d2a1512b2066c37afb8"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "statement",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20230726a.htm",
+        "articleText": "Federal Reserve issues FOMC statement\n\nJuly 26, 2023\n\nFor release at 2:00 p.m. EDT\n\nThe Committee seeks to achieve maximum employment and inflation at the rate of 2 percent over the longer run. In support of its goals, the Committee decided to raise the target range for the federal funds rate to 5-1/4 to 5-1/2 percent.\n\nThe Committee will continue to assess additional information.\n\nVoting for the monetary policy action were Member A and Member B. Voting against this action was Member C, who preferred to lower the target range for the federal funds rate by 1/2 percentage point.\n"
+      },
+      "expected": {
+        "lowerBasisPoints": 525,
+        "upperBasisPoints": 550,
+        "action": "raise",
+        "changeBasisPoints": null,
+        "changeStatedNumerically": false,
+        "associatedStatementDate": null,
+        "directiveEffectiveDate": null,
+        "releaseAt": "2023-07-26T18:00:00.000Z"
+      }
+    },
+    {
+      "id": "note-other-rates-not-target",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a1.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "ca5594e30c4619fd3178d951f1a4d211097293d8b779003e753ab773890837d4"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "implementation-note",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a1.htm",
+        "articleText": "Implementation Note issued December 10, 2025\n\nDecember 10, 2025\n\nDecisions Regarding Monetary Policy Implementation\n\nThe Federal Reserve has made the following decisions to implement the monetary policy stance announced by the Federal Open Market Committee in its statement on December 10, 2025:\n\nThe Board of Governors voted to lower the interest rate paid on reserve balances to 3.65 percent, effective December 11, 2025.\n\nAs part of its policy decision, the Federal Open Market Committee voted to authorize and direct the Open Market Desk at the Federal Reserve Bank of New York, until instructed otherwise, to execute transactions in the System Open Market Account in accordance with the following domestic policy directive:\n\n\"Effective December 11, 2025, the Federal Open Market Committee directs the Desk to:\n\n- Undertake open market operations as necessary to maintain the federal funds rate in a target range of 3-1/2 to 3-3/4 percent.\n\n- Conduct standing overnight repurchase agreement operations at a rate of 3.75 percent.\n\n- Conduct standing overnight reverse repurchase agreement operations at an offering rate of 3.5 percent.\n\nIn a related action, the Board of Governors approved a decrease in the primary credit rate to 3.75 percent, effective December 11, 2025.\n\nThis information will be updated as appropriate.\n\nLast Update: December 10, 2025\n"
+      },
+      "expected": {
+        "lowerBasisPoints": 350,
+        "upperBasisPoints": 375,
+        "action": null,
+        "changeBasisPoints": null,
+        "changeStatedNumerically": false,
+        "associatedStatementDate": "2025-12-10",
+        "directiveEffectiveDate": "2025-12-11",
+        "releaseAt": null
+      }
+    },
+    {
+      "id": "note-clock-explicit",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a1.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "63804ae961dad8ad557e64d4578f8c85da25e563720228dd150f77d27f6bf220"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "implementation-note",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a1.htm",
+        "articleText": "Implementation Note issued December 10, 2025\n\nDecember 10, 2025\n\nFor release at 2:00 p.m. EST\n\nDecisions Regarding Monetary Policy Implementation\n\nThe Federal Reserve has made the following decisions to implement the monetary policy stance announced by the Federal Open Market Committee in its statement on December 10, 2025:\n\nThe Board of Governors voted to lower the interest rate paid on reserve balances to 3.65 percent, effective December 11, 2025.\n\nAs part of its policy decision, the Federal Open Market Committee voted to authorize and direct the Open Market Desk at the Federal Reserve Bank of New York, until instructed otherwise, to execute transactions in the System Open Market Account in accordance with the following domestic policy directive:\n\n\"Effective December 11, 2025, the Federal Open Market Committee directs the Desk to:\n\n- Undertake open market operations as necessary to maintain the federal funds rate in a target range of 3-1/2 to 3-3/4 percent.\n\n- Conduct standing overnight repurchase agreement operations at a rate of 3.75 percent.\n\n- Conduct standing overnight reverse repurchase agreement operations at an offering rate of 3.5 percent.\n\nIn a related action, the Board of Governors approved a decrease in the primary credit rate to 3.75 percent, effective December 11, 2025.\n\nThis information will be updated as appropriate.\n\nLast Update: December 10, 2025\n"
+      },
+      "expected": {
+        "lowerBasisPoints": 350,
+        "upperBasisPoints": 375,
+        "action": null,
+        "changeBasisPoints": null,
+        "changeStatedNumerically": false,
+        "associatedStatementDate": "2025-12-10",
+        "directiveEffectiveDate": "2025-12-11",
+        "releaseAt": "2025-12-10T19:00:00.000Z"
+      }
+    },
+    {
+      "id": "decimal-and-basis-point-change",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "79e028ef04eb9fe66abd890d538a237c04d1c20fe7758ab4548c759403715996"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "statement",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "articleText": "Federal Reserve issues FOMC statement\n\nDecember 10, 2025\n\nFor release at 2:00 p.m. EST\n\nThe Committee seeks to achieve maximum employment and inflation at the rate of 2 percent over the longer run. In support of its goals and in light of the shift in the balance of risks, the Committee decided to lower the target range for the federal funds rate by 25 basis points to 3.50 to 3.75 percent.\n\nThe Committee will continue to assess additional information.\n\nVoting for the monetary policy action were Member A and Member B. Voting against this action was Member C, who preferred to lower the target range for the federal funds rate by 1/2 percentage point.\n"
+      },
+      "expected": {
+        "lowerBasisPoints": 350,
+        "upperBasisPoints": 375,
+        "action": "lower",
+        "changeBasisPoints": -25,
+        "changeStatedNumerically": true,
+        "associatedStatementDate": null,
+        "directiveEffectiveDate": null,
+        "releaseAt": "2025-12-10T19:00:00.000Z"
+      }
+    },
+    {
+      "id": "unicode-numbers-and-spaces",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "11a4d687b410cefd5e1dde97bcadf158b8b41d8b012ebfbea0c75a0fdaa004b1"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "statement",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "articleText": "Federal\u00a0Reserve\u00a0issues\u00a0FOMC\u00a0statement\n\nDecember\u00a010,\u00a02025\n\nFor\u00a0release\u00a0at\u00a02:00\u00a0p.m.\u00a0EST\n\nThe\u00a0Committee\u00a0seeks\u00a0to\u00a0achieve\u00a0maximum\u00a0employment\u00a0and\u00a0inflation\u00a0at\u00a0the\u00a0rate\u00a0of\u00a02\u00a0percent\u00a0over\u00a0the\u00a0longer\u00a0run.\u00a0In\u00a0support\u00a0of\u00a0its\u00a0goals\u00a0and\u00a0in\u00a0light\u00a0of\u00a0the\u00a0shift\u00a0in\u00a0the\u00a0balance\u00a0of\u00a0risks,\u00a0the\u00a0Committee\u00a0decided\u00a0to\u00a0lower\u00a0the\u00a0target\u00a0range\u00a0for\u00a0the\u00a0federal\u00a0funds\u00a0rate\u00a0by\u00a0\u00bc\u00a0percentage\u00a0point\u00a0to\u00a03\u00bd\u00a0to\u00a03\u00be\u00a0percent.\n\nThe\u00a0Committee\u00a0will\u00a0continue\u00a0to\u00a0assess\u00a0additional\u00a0information.\n\nVoting\u00a0for\u00a0the\u00a0monetary\u00a0policy\u00a0action\u00a0were\u00a0Member\u00a0A\u00a0and\u00a0Member\u00a0B.\u00a0Voting\u00a0against\u00a0this\u00a0action\u00a0was\u00a0Member\u00a0C,\u00a0who\u00a0preferred\u00a0to\u00a0lower\u00a0the\u00a0target\u00a0range\u00a0for\u00a0the\u00a0federal\u00a0funds\u00a0rate\u00a0by\u00a01/2\u00a0percentage\u00a0point.\n"
+      },
+      "expected": {
+        "lowerBasisPoints": 350,
+        "upperBasisPoints": 375,
+        "action": "lower",
+        "changeBasisPoints": -25,
+        "changeStatedNumerically": true,
+        "associatedStatementDate": null,
+        "directiveEffectiveDate": null,
+        "releaseAt": "2025-12-10T19:00:00.000Z"
+      }
+    },
+    {
+      "id": "zero-bound-not-missing",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "5040893f6299541040eb6eda94cc47aa6a220c435c01f7ca14aea8ad229250f4"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "statement",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "articleText": "Federal Reserve issues FOMC statement\n\nDecember 10, 2025\n\nFor release at 2:00 p.m. EST\n\nThe Committee seeks to achieve maximum employment and inflation at the rate of 2 percent over the longer run. In support of its goals and in light of the shift in the balance of risks, the Committee decided to lower the target range for the federal funds rate by 1/4 percentage point to 0 to 1/4 percent.\n\nThe Committee will continue to assess additional information.\n\nVoting for the monetary policy action were Member A and Member B. Voting against this action was Member C, who preferred to lower the target range for the federal funds rate by 1/2 percentage point.\n"
+      },
+      "expected": {
+        "lowerBasisPoints": 0,
+        "upperBasisPoints": 25,
+        "action": "lower",
+        "changeBasisPoints": -25,
+        "changeStatedNumerically": true,
+        "associatedStatementDate": null,
+        "directiveEffectiveDate": null,
+        "releaseAt": "2025-12-10T19:00:00.000Z"
+      }
+    },
+    {
+      "id": "range-width-not-assumed",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "19ac5d2ba562cb4347aea72945eb8873096344bcea36537210d8a49a78876f7b"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "statement",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "articleText": "Federal Reserve issues FOMC statement\n\nDecember 10, 2025\n\nFor release at 2:00 p.m. EST\n\nThe Committee seeks to achieve maximum employment and inflation at the rate of 2 percent over the longer run. In support of its goals and in light of the shift in the balance of risks, the Committee decided to lower the target range for the federal funds rate by 1/4 percentage point to 3 to 4 percent.\n\nThe Committee will continue to assess additional information.\n\nVoting for the monetary policy action were Member A and Member B. Voting against this action was Member C, who preferred to lower the target range for the federal funds rate by 1/2 percentage point.\n"
+      },
+      "expected": {
+        "lowerBasisPoints": 300,
+        "upperBasisPoints": 400,
+        "action": "lower",
+        "changeBasisPoints": -25,
+        "changeStatedNumerically": true,
+        "associatedStatementDate": null,
+        "directiveEffectiveDate": null,
+        "releaseAt": "2025-12-10T19:00:00.000Z"
+      }
+    },
+    {
+      "id": "historical-nonregular-clock-excluded",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20200315a.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "83584e572457e2b74184775d26bca719859e028561eb9750c8db210fdcda129c"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "statement",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20200315a.htm",
+        "articleText": "Federal Reserve issues FOMC statement\n\nMarch 15, 2020\n\nFor release at 5:00 p.m. EDT\n\nThe Committee seeks to achieve maximum employment and inflation at the rate of 2 percent over the longer run. In support of its goals and in light of the shift in the balance of risks, the Committee decided to lower the target range for the federal funds rate by 1/4 percentage point to 0 to 1/4 percent.\n\nThe Committee will continue to assess additional information.\n\nVoting for the monetary policy action were Member A and Member B. Voting against this action was Member C, who preferred to lower the target range for the federal funds rate by 1/2 percentage point.\n"
+      },
+      "expectedError": "HOLD_FOMC_TEXT_CLOCK"
+    },
+    {
+      "id": "raw-html-is-not-article-text",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "fffeaa457a163523ff7e9615470226d9fffc9266aa7a0262fc45c896041c8e11"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "statement",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "articleText": "<article>Federal Reserve issues FOMC statement\n\nDecember 10, 2025\n\nFor release at 2:00 p.m. EST\n\nThe Committee seeks to achieve maximum employment and inflation at the rate of 2 percent over the longer run. In support of its goals and in light of the shift in the balance of risks, the Committee decided to lower the target range for the federal funds rate by 1/4 percentage point to 3-1/2 to 3-3/4 percent.\n\nThe Committee will continue to assess additional information.\n\nVoting for the monetary policy action were Member A and Member B. Voting against this action was Member C, who preferred to lower the target range for the federal funds rate by 1/2 percentage point.\n</article>"
+      },
+      "expectedError": "HOLD_FOMC_TEXT_INPUT"
+    },
+    {
+      "id": "ambiguous-double-decision",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "3e6f8978b03d2654d93afd2ae411a5a76581a746a31cad2d6eb16daa1f66dd63"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "statement",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a.htm",
+        "articleText": "Federal Reserve issues FOMC statement\n\nDecember 10, 2025\n\nFor release at 2:00 p.m. EST\n\nThe Committee seeks to achieve maximum employment and inflation at the rate of 2 percent over the longer run. In support of its goals and in light of the shift in the balance of risks, the Committee decided to lower the target range for the federal funds rate by 1/4 percentage point to 3-1/2 to 3-3/4 percent.\n\nThe Committee decided to raise the target range for the federal funds rate to 4 to 5 percent.\n\nVoting for the monetary policy action were Member A and Member B. Voting against this action was Member C, who preferred to lower the target range for the federal funds rate by 1/2 percentage point.\n"
+      },
+      "expectedError": "HOLD_FOMC_TEXT_AMBIGUOUS"
+    },
+    {
+      "id": "note-issue-and-effective-distinct",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a1.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "d93ee08886f1a0355009d169356be9d1bc827ed4425366ff12282fcdcdf3a402"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "implementation-note",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a1.htm",
+        "articleText": "Implementation Note issued December 10, 2025\n\nDecember 10, 2025\n\nDecisions Regarding Monetary Policy Implementation\n\nThe Federal Reserve has made the following decisions to implement the monetary policy stance announced by the Federal Open Market Committee in its statement on December 10, 2025:\n\nThe Board of Governors voted to lower the interest rate paid on reserve balances to 3.65 percent, effective December 12, 2025.\n\nAs part of its policy decision, the Federal Open Market Committee voted to authorize and direct the Open Market Desk at the Federal Reserve Bank of New York, until instructed otherwise, to execute transactions in the System Open Market Account in accordance with the following domestic policy directive:\n\n\"Effective December 12, 2025, the Federal Open Market Committee directs the Desk to:\n\n- Undertake open market operations as necessary to maintain the federal funds rate in a target range of 3-1/2 to 3-3/4 percent.\n\n- Conduct standing overnight repurchase agreement operations at a rate of 3.75 percent.\n\n- Conduct standing overnight reverse repurchase agreement operations at an offering rate of 3.5 percent.\n\nIn a related action, the Board of Governors approved a decrease in the primary credit rate to 3.75 percent, effective December 12, 2025.\n\nThis information will be updated as appropriate.\n\nLast Update: December 10, 2025\n"
+      },
+      "expected": {
+        "lowerBasisPoints": 350,
+        "upperBasisPoints": 375,
+        "action": null,
+        "changeBasisPoints": null,
+        "changeStatedNumerically": false,
+        "associatedStatementDate": "2025-12-10",
+        "directiveEffectiveDate": "2025-12-12",
+        "releaseAt": null
+      }
+    },
+    {
+      "id": "note-updated-date-retained",
+      "provenance": {
+        "kind": "synthetic-article-text",
+        "basis": "Synthetic document context and invented member names; grammar motivated by prior design review, not a transcript or original page.",
+        "referenceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a1.htm",
+        "rawResponseCaptured": false,
+        "textSha256": "e24017ab9c32cfab79af604c557445ca815067c8ac36202555aa0aab82ff0616"
+      },
+      "request": {
+        "schema": "fomc-policy-document-text/v1",
+        "documentRole": "implementation-note",
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a1.htm",
+        "articleText": "Implementation Note issued December 10, 2025\n\nDecember 10, 2025\n\nDecisions Regarding Monetary Policy Implementation\n\nThe Federal Reserve has made the following decisions to implement the monetary policy stance announced by the Federal Open Market Committee in its statement on December 10, 2025:\n\nThe Board of Governors voted to lower the interest rate paid on reserve balances to 3.65 percent, effective December 11, 2025.\n\nAs part of its policy decision, the Federal Open Market Committee voted to authorize and direct the Open Market Desk at the Federal Reserve Bank of New York, until instructed otherwise, to execute transactions in the System Open Market Account in accordance with the following domestic policy directive:\n\n\"Effective December 11, 2025, the Federal Open Market Committee directs the Desk to:\n\n- Undertake open market operations as necessary to maintain the federal funds rate in a target range of 3-1/2 to 3-3/4 percent.\n\n- Conduct standing overnight repurchase agreement operations at a rate of 3.75 percent.\n\n- Conduct standing overnight reverse repurchase agreement operations at an offering rate of 3.5 percent.\n\nIn a related action, the Board of Governors approved a decrease in the primary credit rate to 3.75 percent, effective December 11, 2025.\n\nThis information will be updated as appropriate.\n\nLast Update: December 12, 2025\n"
+      },
+      "expected": {
+        "lowerBasisPoints": 350,
+        "upperBasisPoints": 375,
+        "action": null,
+        "changeBasisPoints": null,
+        "changeStatedNumerically": false,
+        "associatedStatementDate": "2025-12-10",
+        "directiveEffectiveDate": "2025-12-11",
+        "releaseAt": null
+      }
+    }
+  ]
+}

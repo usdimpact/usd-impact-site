@@ -169,3 +169,4 @@ function queuedFetch(responses) {
 console.log('Resend webhook outbox-correlation retry tests passed.');
 
 await import('./test-resend-auth-notification-boundary.mjs');
+await import('./test-resend-auth-signup-confirmation-boundary.mjs');

@@ -24,7 +24,8 @@ export async function runProgressEmailPreviewQa(environment = process.env) {
     currentWeeklyReport: artifact.payload.currentWeeklyReport,
     environment,
   });
-  console.log(`Learning Progress Preview QA: selected ${result.selected}; accepted ${result.accepted}; skipped ${result.skipped}; failed ${result.failed}; retry scheduled ${result.retryScheduled}.`);
+  const reasonCodes = [...new Set(result.results.map((item) => item.reason).filter(Boolean))].sort();
+  console.log(`Learning Progress Preview QA: selected ${result.selected}; accepted ${result.accepted}; skipped ${result.skipped}; failed ${result.failed}; retry scheduled ${result.retryScheduled}; reasons ${reasonCodes.length ? reasonCodes.join(',') : 'none'}.`);
   if (result.failed > 0 || result.retryScheduled > 0) {
     throw new Error('Learning Progress Preview QA did not complete cleanly.');
   }

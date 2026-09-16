@@ -3,7 +3,7 @@ import {
   PUBLICATION_PRODUCTION_VERCEL_INTEGRATION_SCOPE,
   PublicationProductionVercelIntegrationBearerError,
   createPublicationProductionVercelIntegrationBearerSupplier,
-} from './publication-production-vercel-integration-bearer.js';
+} from '../src/lib/publication-production-vercel-integration-bearer.js';
 
 let groups = 0;
 const pass = () => { groups += 1; };

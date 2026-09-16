@@ -36,9 +36,16 @@ const sourceIds = progressEmailMeaningfulChangeRegistry.map((entry) => entry.sou
 const weeklyReports = sourceIds.map(readWeeklyReport);
 const changes = buildProgressEmailMeaningfulChanges({ weeklyReports });
 
-assert.equal(progressEmailMeaningfulChangeRegistryVersion(), 1);
-assert.equal(changes.length, 1);
+assert.equal(progressEmailMeaningfulChangeRegistryVersion(), 2);
+assert.equal(changes.length, 2);
 assert.deepEqual(changes[0], {
+  kind: 'weekly_report',
+  priority: 'P2',
+  title: 'Weekly USD Impact Brief — September 11, 2026',
+  occurredAt: '2026-09-13T13:57:08.245Z',
+  url: 'https://www.usd-impact.com/reports/weekly/2026-09-11',
+});
+assert.deepEqual(changes[1], {
   kind: 'weekly_report',
   priority: 'P2',
   title: 'Weekly USD Impact Brief — September 4, 2026',
@@ -47,6 +54,7 @@ assert.deepEqual(changes[0], {
 });
 assert(Object.isFrozen(changes));
 assert(Object.isFrozen(changes[0]));
+assert(Object.isFrozen(changes[1]));
 
 assert.throws(
   () => buildProgressEmailMeaningfulChanges({

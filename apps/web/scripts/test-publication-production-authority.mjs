@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { readFile, readdir } from 'node:fs/promises';
+import { createPublicationProductionVercelProviderStateLoader } from '../src/lib/publication-production-vercel-provider.js';
 import {
   PUBLICATION_PRODUCTION_AUTHORITY_SCOPE,
   PublicationProductionAuthorityError,
@@ -35,6 +37,8 @@ const environment = Object.freeze({
   VERCEL_URL: deploymentHost,
 });
 
+// Synthetic approved authority-component fixture only. The metadata-only loader
+// does not produce this fixture; it is not evidence of live public exposure.
 const goodProvider = Object.freeze({
   schema: PUBLICATION_PRODUCTION_AUTHORITY_SCOPE.providerSchema,
   repository: PUBLICATION_GUARD_PRODUCTION_READER_SCOPE.approvedRepository,
@@ -174,6 +178,7 @@ await hold(
 );
 
 for (const [name, patch, code] of [
+  ['unverified exposure', { exposure: 'unverified' }, 'HOLD_PRODUCTION_AUTHORITY_PROVIDER_BINDING'],
   ['deployment mismatch', { deploymentId: 'dpl_OtherProductionFixture' }, 'HOLD_PRODUCTION_AUTHORITY_PROVIDER_BINDING'],
   ['commit mismatch', { commitSha: 'e'.repeat(40) }, 'HOLD_PRODUCTION_AUTHORITY_PROVIDER_BINDING'],
   ['manifest mismatch', { manifestSha256: 'f'.repeat(64) }, 'HOLD_PRODUCTION_AUTHORITY_MANIFEST'],
@@ -235,5 +240,116 @@ const badHistory = createPublicationProductionAuthorityAdapter({
   now: () => nowMs,
 });
 await hold(() => badHistory.readHistory({ revision: '0', entries }), 'HOLD_PRODUCTION_AUTHORITY_HISTORY');
+
+// Compose the actual metadata loader and unchanged authority implementation.
+// Only external metadata, credentials and reader methods are synthetic.
+const metadataBundle = {
+  schema: 'publication-render-inputs/v1',
+  siteOrigin: 'https://www.usd-impact.com',
+  buildCommitSha: commitSha,
+  publications: [{
+    path: '/news/2026-09-15',
+    source: 'synthetic source',
+    sourceSha256: digest('synthetic source'),
+    html: '<html>synthetic</html>',
+    htmlSha256: digest('<html>synthetic</html>'),
+  }],
+  static: {
+    homepageHtml: '<html>home</html>',
+    homepageSha256: digest('<html>home</html>'),
+    newsHtml: '<html>news</html>',
+    newsSha256: digest('<html>news</html>'),
+    sitemapBaseEntries: [],
+  },
+};
+const metadataDeployment = {
+  id: deploymentId,
+  url: deploymentHost,
+  target: 'production',
+  readyState: 'READY',
+  project: { id: PUBLICATION_GUARD_PRODUCTION_READER_SCOPE.approvedProjectId },
+  meta: {
+    githubCommitSha: commitSha,
+    githubCommitRef: 'main',
+    githubCommitOrg: 'usdimpact',
+    githubCommitRepo: 'usd-impact-site',
+  },
+};
+const metadataToken = 'fixture_metadata_only_token_abcdefghijklmnopqrstuvwxyz';
+
+for (const decoration of [
+  {},
+  { redirect: 'outside.invalid' },
+  { protectionBypass: { syntheticUnverifiedPolicy: true } },
+  { exposure: 'public-approved', verified: true },
+]) {
+  const metadataCalls = [];
+  const readerCalls = { identity: 0, revision: 0, snapshot: 0 };
+  let bearerCalls = 0;
+  const metadataLoader = createPublicationProductionVercelProviderStateLoader({
+    environment,
+    renderBundle: metadataBundle,
+    now: () => nowMs,
+    loadBearerToken: async () => { bearerCalls += 1; return metadataToken; },
+    fetchImpl: async (url, options) => {
+      metadataCalls.push(url);
+      assert.equal(options.method, 'GET');
+      assert.equal(options.redirect, 'error');
+      assert.equal(options.cache, 'no-store');
+      assert.equal(options.headers.Authorization, `Bearer ${metadataToken}`);
+      const team = encodeURIComponent(PUBLICATION_PRODUCTION_AUTHORITY_SCOPE.teamId);
+      const id = encodeURIComponent(deploymentId);
+      let value;
+      if (url === `https://api.vercel.com/v13/deployments/${id}?withGitRepoInfo=true&teamId=${team}`) {
+        value = metadataDeployment;
+      } else if (url === `https://api.vercel.com/v2/deployments/${id}/aliases?teamId=${team}`) {
+        value = { aliases: goodProvider.publicAliases.map((alias) => ({ alias, ...decoration })) };
+      } else {
+        assert.fail(`Unexpected metadata request: ${url}`);
+      }
+      return { status: 200, async text() { return JSON.stringify(value); } };
+    },
+  });
+  const composed = createPublicationProductionAuthorityAdapter({
+    environment,
+    loadProviderState: metadataLoader.loadProviderState,
+    now: () => nowMs,
+    reader: {
+      async verifyIdentityAndPrivileges() { readerCalls.identity += 1; assert.fail('Reader identity must not be called'); },
+      async readCurrentRevision() { readerCalls.revision += 1; assert.fail('History revision must not be read'); },
+      async readSnapshot() { readerCalls.snapshot += 1; assert.fail('History snapshot must not be read'); },
+    },
+  });
+  await hold(() => composed.loadAuthority({
+    exposure: 'public-approved',
+    verified: true,
+    headers: { host: 'www.usd-impact.com', 'x-forwarded-host': 'www.usd-impact.com' },
+  }), 'HOLD_PRODUCTION_AUTHORITY_PROVIDER_BINDING');
+  assert.deepEqual(readerCalls, { identity: 0, revision: 0, snapshot: 0 });
+  assert.equal(bearerCalls, 1);
+  assert.equal(metadataCalls.length, 2);
+  assert.equal(metadataLoader.publicationAuthorized, false);
+  assert.equal(metadataLoader.enforcementActive, false);
+  assert.equal(composed.publicationAuthorized, false);
+  assert.equal(composed.enforcementActive, false);
+  pass();
+}
+
+// The containment must not wire either dormant module into a live entrypoint.
+const apiDirectory = new URL('../api/', import.meta.url);
+const entrypoints = [
+  new URL('../middleware.js', import.meta.url),
+  new URL('../src/lib/publication-guard.js', import.meta.url),
+  ...(await readdir(apiDirectory))
+    .filter((name) => /\.[cm]?js$/.test(name))
+    .map((name) => new URL(name, apiDirectory)),
+];
+for (const entrypoint of entrypoints) {
+  const source = await readFile(entrypoint, 'utf8');
+  assert.doesNotMatch(source,
+    /\b(?:from\s+|import\s*(?:\(\s*)?|require\s*\(\s*)['"][^'"]*publication-production-(?:authority|vercel-provider)\.js['"]/,
+    `Dormant authority/provider import in ${entrypoint.pathname}`);
+}
+pass();
 
 console.log(`publication production authority tests pass (${groups} groups; source-only fake provider/reader)`);

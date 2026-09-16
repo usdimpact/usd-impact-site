@@ -25,7 +25,7 @@ The provider core requires a trusted server-only `loadBearerToken()` supplier an
 
 **The earlier OAuth/Connect setup path is retired as a way to unblock this work.** The governing [September 16 decision](https://github.com/usdimpact/usd-impact-site/issues/558#issuecomment-5693790537) and current #615 release hold supersede this document's former preferred-Connect instructions. Do not create a connector, client secret, refresh token, personal token, connector ID or broader permission merely to bypass missing authenticated control-plane access.
 
-The retained supplier code/tests and OAuth-store schema are dormant implementation history, not an approved live credential path. No module or schema is deleted by this documentation correction. The provider core remains unchanged: it receives one bearer credential per snapshot and has no token persistence or mutation capability. Any replacement or reactivation requires a separately reviewed least-privilege design and explicit approval.
+The retained supplier code/tests and OAuth-store schema are dormant implementation history, not an approved live credential path. No module or schema is deleted by the source-only containment. The credential handling remains unchanged: it receives one bearer credential per snapshot and has no token persistence or mutation capability. Any replacement or reactivation requires a separately reviewed least-privilege design and explicit approval.
 
 An operator's connected provider metadata read is supplemental evidence; it is not an authenticated in-application `loadBearerToken()` rehearsal. Likewise, control-plane read access does not establish permission or ability to read/change/restore Deployment Protection or WAF settings.
 
@@ -42,9 +42,9 @@ The deployment observation must prove READY Production state, exact project, exa
 
 ## Alias binding is not effective public exposure
 
-After the two reads above, the current dormant code returns `exposure: public-approved`. It does not inspect Deployment Protection/WAF policy, resolve active versus draft firewall configuration, or verify a clean anonymous response. An assigned alias can remain in metadata while access is protected or denied. A successful metadata read therefore must not be promoted into live exposure approval.
+After the two reads above, the metadata-only loader now always returns `exposure: unverified`. It does not inspect Deployment Protection/WAF policy, resolve active versus draft firewall configuration, or verify a clean anonymous response. An assigned alias can remain in metadata while access is protected or denied. A successful metadata read therefore must not be promoted into live exposure approval.
 
-The [hostname-exposure rehearsal plan](publication-rehearsal-prerequisites-558.md) requires separate evidence for assigned aliases, intended public hosts, protected/denied technical hosts and actual responses. Missing or contradictory effective-access evidence is a rehearsal/activation HOLD. This is a review requirement, not a claim that the current runtime implements an additional guard. The pinned alias set, return schema, bindings and runtime logic are unchanged by this documentation increment.
+The [hostname-exposure rehearsal plan](publication-rehearsal-prerequisites-558.md) requires separate evidence for assigned aliases, intended public hosts, protected/denied technical hosts and actual responses. Missing or contradictory effective-access evidence is a rehearsal/activation HOLD. The approved containment changes only the loader's exposure classification and adds its regression coverage. The unchanged authority implementation rejects the unverified result before reader/history calls; there is no positive verification path, override flag, caller-supplied approval, new credential supplier or permission expansion. The pinned alias set, schema fields, binding checks, freshness limits and false activation/authorization invariants remain unchanged. This does not implement effective-policy verification or activate a route.
 
 ## Local artifact binding
 
@@ -59,6 +59,8 @@ This prevents provider metadata for one deployment from being paired with public
 ## Verification
 
 The provider regression suite continues to use a fake Vercel provider and fake bearer supplier only. It verifies exact API paths and team scope, one credential acquisition per provider snapshot, reuse of the same bearer credential across that snapshot's deployment and alias reads, no-store/no-redirect GET requests, exact deployment/project/repository/commit binding, exact alias inventory, render-bundle and manifest hashing, ignored attacker request arguments, clock monotonicity, bounded provider/credential failures, and non-disclosure of token-bearing errors.
+
+The containment regressions require unverified exposure even when synthetic redirect/protection metadata or claimed approval is present. The authority suite composes the actual loader and authority implementations and proves rejection before reader identity, revision and snapshot calls. These are offline fake-provider tests, not a live firewall, credential or database rehearsal.
 
 The retained credential-supplier regression is historical coverage of the dormant supplier contract. It does not make that retired setup path an approved next action. Neither regression performs a live provider call.
 

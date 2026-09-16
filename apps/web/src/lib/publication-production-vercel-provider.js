@@ -249,7 +249,9 @@ export function createPublicationProductionVercelProviderStateLoader({
       projectId: runtime.projectId,
       teamId: runtime.teamId,
       target: 'production',
-      exposure: 'public-approved',
+      // Deployment identity and assigned aliases do not verify effective access.
+      // The authority adapter must reject this metadata-only observation.
+      exposure: 'unverified',
       source: 'git',
       deploymentId: deployment.deploymentId,
       deploymentHost: deployment.deploymentHost,

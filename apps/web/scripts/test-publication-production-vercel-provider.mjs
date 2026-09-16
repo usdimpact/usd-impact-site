@@ -79,7 +79,8 @@ function makeFetch({ deploymentValue = deployment, aliasesValue = aliasPayload, 
 
 async function hold(work, code) {
   await assert.rejects(work, (error) => error instanceof PublicationProductionVercelProviderError
-    && error.code === code && error.policyCode === code);
+    && error.code === code && error.policyCode === code
+    && !String(error).includes(token) && !JSON.stringify(error).includes(token));
   pass();
 }
 
@@ -99,7 +100,11 @@ assert.equal(adapter.enforcementActive, false);
 assert.equal(adapter.runtime.deploymentId, deploymentId);
 pass();
 
-const state = await adapter.loadProviderState({ headers: { host: 'attacker.example' } });
+const state = await adapter.loadProviderState({
+  exposure: 'public-approved',
+  verified: true,
+  headers: { host: 'attacker.example', 'x-forwarded-host': 'www.usd-impact.com' },
+});
 const expectedEntries = renderBundle.publications.map(({ path, sourceSha256 }) => ({ path, sourceSha256 })).sort((a, b) => a.path.localeCompare(b.path));
 assert.deepEqual(state, {
   schema: 'publication-production-provider-state/v1',
@@ -107,7 +112,7 @@ assert.deepEqual(state, {
   projectId: PUBLICATION_PRODUCTION_VERCEL_PROVIDER_SCOPE.projectId,
   teamId: PUBLICATION_PRODUCTION_VERCEL_PROVIDER_SCOPE.teamId,
   target: 'production',
-  exposure: 'public-approved',
+  exposure: 'unverified',
   source: 'git',
   deploymentId,
   deploymentHost,
@@ -136,6 +141,34 @@ for (const call of good.calls) {
 assert.ok(good.calls[0].url.includes('/v13/deployments/'));
 assert.ok(good.calls[1].url.includes('/v2/deployments/'));
 pass();
+
+// These are opaque synthetic decorations, not validated Vercel policy schemas.
+// Alias metadata, provider claims and caller arguments must never confer approval.
+for (const decoration of [
+  { redirect: 'outside.invalid' },
+  { protectionBypass: { syntheticUnverifiedPolicy: true } },
+  { exposure: 'public-approved', verified: true },
+]) {
+  const candidate = makeFetch({
+    deploymentValue: { ...deployment, exposure: 'public-approved', verified: true },
+    aliasesValue: {
+      aliases: aliasPayload.aliases.map((row) => ({ ...row, ...decoration })),
+      exposure: 'public-approved',
+      verified: true,
+    },
+  });
+  const instance = createPublicationProductionVercelProviderStateLoader({
+    environment, fetchImpl: candidate.fetchImpl, renderBundle, loadBearerToken, now: () => nowMs,
+  });
+  const observed = await instance.loadProviderState({ exposure: 'public-approved', verified: true });
+  assert.deepEqual(observed, state);
+  assert.equal(observed.exposure, 'unverified');
+  assert.equal(Object.isFrozen(observed), true);
+  assert.equal(instance.publicationAuthorized, false);
+  assert.equal(instance.enforcementActive, false);
+  assert.equal(candidate.calls.length, 2);
+  pass();
+}
 
 for (const patch of [
   { VERCEL_ENV: 'preview' },
@@ -204,6 +237,14 @@ for (const aliases of [
 const deploymentFailure = makeFetch({ deploymentStatus: 503 });
 const deploymentFailureAdapter = createPublicationProductionVercelProviderStateLoader({ environment, fetchImpl: deploymentFailure.fetchImpl, renderBundle, loadBearerToken, now: () => nowMs });
 await hold(() => deploymentFailureAdapter.loadProviderState(), 'HOLD_PRODUCTION_PROVIDER_DEPLOYMENT');
+
+for (const aliasStatus of [403, 503]) {
+  const failedAliases = makeFetch({ aliasStatus });
+  const instance = createPublicationProductionVercelProviderStateLoader({
+    environment, fetchImpl: failedAliases.fetchImpl, renderBundle, loadBearerToken, now: () => nowMs,
+  });
+  await hold(() => instance.loadProviderState(), 'HOLD_PRODUCTION_PROVIDER_ALIASES');
+}
 
 const secretFailureAdapter = createPublicationProductionVercelProviderStateLoader({
   environment,

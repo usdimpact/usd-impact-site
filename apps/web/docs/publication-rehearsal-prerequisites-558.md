@@ -2,11 +2,11 @@
 
 ## Status and scope
 
-Documentation-only reconciliation, September 16, 2026. **HOLD LIVE REHEARSAL / HOLD MERGE / HOLD PRODUCTION ACTIVATION.** This is a test/design plan, not an executable authorization or a newly implemented runtime control. `publicationAuthorized=false` and `enforcementActive=false` remain governing state.
+Reconciled and updated for the approved source-only containment, September 16, 2026. **HOLD LIVE REHEARSAL / HOLD MERGE / HOLD PRODUCTION ACTIVATION.** The metadata-only positive exposure classification is contained; effective-policy verification and Production route activation remain unimplemented. This test/design plan is not authorization to execute a live rehearsal. `publicationAuthorized=false` and `enforcementActive=false` remain governing state.
 
-The documentation increment changes only this plan, `publication-production-authority-558.md` and `publication-production-vercel-provider-558.md`. Application code, tests, workflows, SQL, environment values, alias lists, firewall rules, content and methodology are unchanged. Normal branch CI/Preview may run after a documentation commit; neither is a manual rehearsal or Production release.
+The earlier documentation increment changed only this plan, `publication-production-authority-558.md` and `publication-production-vercel-provider-558.md`. That earlier increment changed no application code or tests. The subsequent approved six-file containment changes only the provider exposure classification, its provider and authority tests, and these three runbooks. The authority implementation, workflows, SQL, environment values, alias lists, firewall rules, content and methodology are unchanged. Normal branch CI/Preview may run after the source commit; neither is a manual rehearsal or Production release.
 
-Source reviewed before this increment:
+Historical source baseline before the earlier documentation increment:
 
 - repository: `usdimpact/usd-impact-site`;
 - current base/main: `df175c72baa2c4b80eaec8bb372e92e43c18c76e`;
@@ -37,9 +37,17 @@ Installed schema is not active application enforcement. `publication-public-rout
 2. **Effective access policy:** the applied protection/firewall configuration, relevant rule ordering/exceptions and actual host scope establish intended public, protected or denied entry points. A draft is not an applied version.
 3. **Publication authorization and delivery:** trusted content/admission/history checks and the independent witness/receipt chain establish whether exact publication bytes may be served. Neither a hostname binding nor an HTTP 200 login page proves this layer.
 
-The dormant `publication-production-vercel-provider.js` currently reads deployment metadata and deployment aliases, then returns `exposure: public-approved`. It does not inspect Deployment Protection/WAF or obtain anonymous response evidence. The authority module consumes that value. **This is an identified evidence gap in dormant code, not a newly patched check or an assertion of an active Production exploit.**
+The dormant `publication-production-vercel-provider.js` reads deployment metadata and assigned aliases, then now returns `exposure: unverified`. It does not inspect Deployment Protection/WAF or obtain anonymous response evidence. The authority implementation remains strict and rejects this result before reader/history access. **The unsupported positive classification is contained in source; effective-access verification is still missing, and no Production enforcement is active.**
 
 Before live integration, review a fail-closed source contract separating these layers while retaining exact deployment/commit/artifact/manifest/history binding. Do not weaken the pinned alias comparison, trust forwarded headers, or treat a manual observation as a substitute for a runtime authority adapter. Any new evidence fields, freshness/revocation mechanism or runtime implementation require a separately scoped source change and tests.
+
+## Source-only containment and test boundary
+
+The approved containment starts from #615 head `9b0680ea4e39a98f3b78866f8f5b317d089d9f8f` and base `df175c72baa2c4b80eaec8bb372e92e43c18c76e`. Stop on revision drift. Exactly six existing paths are in scope: the provider loader, its provider test, the authority test and these three runbooks. No authority implementation, schema field, route, permission or credential path is added or weakened.
+
+The regression contract requires metadata-only exposure to stay unverified, including synthetic unexpected redirects, opaque protection metadata and self-declared approval. The actual loader-to-authority composition must return `HOLD_PRODUCTION_AUTHORITY_PROVIDER_BINDING` before reader identity, revision or snapshot calls. Approved fixtures retained in isolated authority-component tests are explicitly synthetic and do not represent metadata-loader output or live access evidence.
+
+Missing/extra/duplicate aliases, wrong deployment/commit, credential failures, no-redirect/no-store metadata requests, freshness bounds and token-error sanitization remain covered. The successor commit requires its own normal checks and matching Preview; earlier green checks are not substituted. No hosted connection, live access-policy probe, witness or admission is performed by these tests. This containment is not completion of #558 and does not clear the platform or application gates below.
 
 ## Hostname disposition to settle before enforcement
 

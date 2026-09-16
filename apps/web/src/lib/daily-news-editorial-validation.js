@@ -1,3 +1,5 @@
+import { sourceDateAttributionIssue } from './source-date-basis.js';
+
 const DAY_MS = 24 * 60 * 60 * 1_000;
 const MAX_DAILY_HIGHLIGHT_SOURCE_AGE_DAYS = 14;
 
@@ -157,6 +159,8 @@ export function validateEditorialBundle({ editionDate, sources, highlights, cata
   );
 
   for (const source of sources) {
+    const attributionIssue = sourceDateAttributionIssue(source.url);
+    if (attributionIssue) issues.push(attributionIssue);
     const published = dateOnly(source.publishedAt, `Source ${source.id}`);
     if (published.time > edition.time) {
       issues.push(`Source ${source.id} is dated after the edition`);

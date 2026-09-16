@@ -36,14 +36,24 @@ const weeklyReport = {
   complianceNote: 'Educational and informational only. Not investment advice.',
 };
 
-const sourceReports = [{
-  title: weeklyReport.title,
-  slug: weeklyReport.slug,
-  periodEnd: weeklyReport.periodEnd,
-  generatedAt: weeklyReport.generatedAt,
-  status: weeklyReport.status,
-  category: weeklyReport.category,
-}];
+const sourceReports = [
+  {
+    title: weeklyReport.title,
+    slug: weeklyReport.slug,
+    periodEnd: weeklyReport.periodEnd,
+    generatedAt: weeklyReport.generatedAt,
+    status: weeklyReport.status,
+    category: weeklyReport.category,
+  },
+  {
+    title: 'Weekly USD Impact Brief — September 11, 2026',
+    slug: '/reports/weekly/2026-09-11',
+    periodEnd: '2026-09-11',
+    generatedAt: '2026-09-13T13:57:08.245Z',
+    status: 'published',
+    category: 'Weekly USD Impact Brief',
+  },
+];
 
 const artifact = buildProgressEmailQaSourceArtifact({
   currentWeeklyReport: weeklyReport,
@@ -51,14 +61,17 @@ const artifact = buildProgressEmailQaSourceArtifact({
 });
 assert.equal(artifact.schemaVersion, 1);
 assert.match(artifact.checksum, /^[0-9a-f]{64}$/);
-assert.equal(artifact.payload.registryVersion, 1);
+assert.equal(artifact.payload.registryVersion, 2);
 assert.equal(artifact.payload.weekEnding, '2026-09-04');
 assert.equal(artifact.payload.currentWeeklyReport.title, weeklyReport.title);
 assert.equal(artifact.payload.currentWeeklyReport.generatedAt, weeklyReport.generatedAt);
-assert.equal(artifact.payload.sourceReports.length, 1);
+assert.equal(artifact.payload.sourceReports.length, 2);
 assert.equal(artifact.payload.sourceReports[0].periodEnd, '2026-09-04');
+assert.equal(artifact.payload.sourceReports[1].periodEnd, '2026-09-11');
 assert.equal(Object.hasOwn(artifact.payload.sourceReports[0], 'priority'), false);
 assert.equal(Object.hasOwn(artifact.payload.sourceReports[0], 'occurredAt'), false);
+assert.equal(Object.hasOwn(artifact.payload.sourceReports[1], 'priority'), false);
+assert.equal(Object.hasOwn(artifact.payload.sourceReports[1], 'occurredAt'), false);
 
 const verified = verifyProgressEmailQaSourceArtifact(artifact);
 assert.equal(verified.checksum, artifact.checksum);

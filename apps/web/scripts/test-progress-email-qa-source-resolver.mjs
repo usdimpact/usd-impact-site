@@ -44,14 +44,24 @@ const weeklyReport = {
   ],
   complianceNote: 'Educational and informational only. Not investment advice.',
 };
-const sourceReports = [{
-  title: weeklyReport.title,
-  slug: weeklyReport.slug,
-  periodEnd: weeklyReport.periodEnd,
-  generatedAt: weeklyReport.generatedAt,
-  status: weeklyReport.status,
-  category: weeklyReport.category,
-}];
+const sourceReports = [
+  {
+    title: weeklyReport.title,
+    slug: weeklyReport.slug,
+    periodEnd: weeklyReport.periodEnd,
+    generatedAt: weeklyReport.generatedAt,
+    status: weeklyReport.status,
+    category: weeklyReport.category,
+  },
+  {
+    title: 'Weekly USD Impact Brief — September 11, 2026',
+    slug: '/reports/weekly/2026-09-11',
+    periodEnd: '2026-09-11',
+    generatedAt: '2026-09-13T13:57:08.245Z',
+    status: 'published',
+    category: 'Weekly USD Impact Brief',
+  },
+];
 const artifact = buildProgressEmailQaSourceArtifact({
   currentWeeklyReport: weeklyReport,
   sourceReports,
@@ -89,7 +99,8 @@ function response(payload, status = 200) {
   );
   assert.equal(result.artifactChecksum, artifact.checksum);
   assert.equal(result.currentWeeklyReport.periodEnd, '2026-09-04');
-  assert.equal(result.weeklyReports.length, 1);
+  assert.equal(result.weeklyReports.length, 2);
+  assert.deepEqual(result.weeklyReports.map((report) => report.periodEnd), ['2026-09-04', '2026-09-11']);
 }
 
 await assert.rejects(

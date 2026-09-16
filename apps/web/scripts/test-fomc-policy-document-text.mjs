@@ -44,7 +44,11 @@ function spans(result, text) {
   assert.equal(result.documentTextSha256, createHash('sha256').update(text, 'utf8').digest('hex'));
 }
 for (const item of fixtureData.cases) check(() => {
-  assert.equal(item.provenance.kind, 'synthetic-article-text');
+  assert.ok(['synthetic-article-text', 'synthetic-context-with-source-derived-wording'].includes(item.provenance.kind));
+  if (item.provenance.kind === 'synthetic-context-with-source-derived-wording') {
+    assert.ok(item.provenance.sourceWordings.length > 0);
+    for (const wording of item.provenance.sourceWordings) assert.ok(item.request.articleText.includes(wording));
+  }
   assert.equal(item.provenance.rawResponseCaptured, false);
   assert.equal(item.provenance.textSha256, createHash('sha256').update(item.request.articleText, 'utf8').digest('hex'));
   if (item.expectedError) { rejects(() => parse(item.request), item.expectedError); return; }
@@ -197,6 +201,94 @@ check(() => {
 check(() => {
   const directive = '- Undertake open market operations as necessary to maintain the federal funds rate in a target range of 3-1/2 to 3-3/4 percent.';
   rejects(() => parse({ ...note, articleText: note.articleText+'\n'+directive+'\n' }), 'HOLD_FOMC_TEXT_AMBIGUOUS');
+});
+// Source-derived wording remains synthetic context, not original-page or outcome evidence.
+const guidance = byId['source-guidance-same-paragraph'].provenance.sourceWordings[0];
+const advisory = byId['source-full-update-advisory'].provenance.sourceWordings[0];
+const guided = byId['source-guidance-same-paragraph'].request;
+const combinedNote = byId['source-note-combined-variants'].request;
+const beforeVoting = (input, sentence, separator = '\n\n') => textChange(input,
+  '\n\nVoting for the', `${separator}${sentence}\n\nVoting for the`);
+check(() => {
+  const result = pair(guided, combinedNote); nonAuthorizing(result);
+  nonAuthorizing(result.statement); nonAuthorizing(result.implementation);
+  assert.equal(result.statement.action, 'lower'); assert.equal(result.statement.changeBasisPoints, -25);
+  assert.equal(result.implementation.releaseClock, null);
+  assert.equal(result.implementation.directiveEffectiveDate, '2025-12-11');
+  assert.equal(result.statement.evidence.forwardGuidance.length, 1);
+  assert.equal(result.statement.evidence.forwardGuidance[0].text, guidance);
+  assert.equal(result.implementation.updateNotices[0].evidence.text, advisory);
+  spans(result.statement, guided.articleText); spans(result.implementation, combinedNote.articleText);
+});
+for (const base of [cut, hold, byId['raise-amount-absent'].request]) check(() => {
+  const value = beforeVoting(base, guidance), result = parse(value), control = parse(base);
+  assert.equal(result.action, control.action); assert.equal(result.changeBasisPoints, control.changeBasisPoints);
+  assert.deepEqual(result.targetRange, control.targetRange); nonAuthorizing(result); spans(result, value.articleText);
+});
+for (const sentence of [
+  'The Committee decided to maintain the target range for the federal funds rate at 1 to 2 percent.',
+  'The Committee decided to lower the target range for the federal funds rate to 3-1/2 to 3-3/4 percent.',
+  'The Committee decided to leave the target range for the federal funds rate unchanged.',
+  'The Committee chose to set the target range for the federal funds rate at 1 to 2 percent.',
+  'The target range is now 1 to 2 percent.',
+  'The target range for the federal funds rate remains 3-1/2 to 3-3/4 percent.',
+  'The Committee decided to change policy without specifying a numerical range.',
+]) for (const separator of [' ', '\n\n']) check(() => rejects(() => parse(beforeVoting(guided, sentence, separator))));
+for (const sentence of [
+  'The Committee decided to maintain the target range for the federal funds rate at 1 to 2 percent.',
+  'The Committee decided to leave the target range for the federal funds rate unchanged.',
+  'The target range is now 1 to 2 percent.',
+]) check(() => rejects(() => parse(textChange(guided, guidance, guidance+' '+sentence))));
+for (const altered of [
+  guidance.replace('additional adjustments', 'additional reductions'),
+  guidance.replace('will carefully assess', 'will set the range at 1 to 2 percent and assess'),
+  guidance.replace('balance of risks.', 'balance of risks at this meeting.'),
+  guidance.replace('the target range', 'the TARGET RANGE'),
+  `Analysts said ${guidance}`, `"${guidance}"`,
+  guidance.replace('risks.', 'risks; a new decision follows.'),
+]) check(() => rejects(() => parse(textChange(guided, guidance, altered)), 'HOLD_FOMC_TEXT_AMBIGUOUS'));
+check(() => rejects(() => parse(beforeVoting(guided, guidance)), 'HOLD_FOMC_TEXT_AMBIGUOUS'));
+check(() => rejects(() => parse(textChange(cut, 'The Committee seeks', guidance+' The Committee seeks')), 'HOLD_FOMC_TEXT_AMBIGUOUS'));
+check(() => rejects(() => parse({ ...cut, articleText: cut.articleText+'\n'+guidance+'\n' }), 'HOLD_FOMC_TEXT_AMBIGUOUS'));
+check(() => rejects(() => parse({ ...guided, articleText: guided.articleText+'\nThe target range is now 1 to 2 percent.\n' }), 'HOLD_FOMC_TEXT_AMBIGUOUS'));
+check(() => rejects(() => parse(textChange(guided, 'who preferred to lower', 'the Committee decided to lower')), 'HOLD_FOMC_TEXT_AMBIGUOUS'));
+for (const verb of ['directly', 'not direct', 'consider directing', 'authorize or direct', 'authorize and not direct', 'direct and authorize']) {
+  check(() => rejects(() => parse(textChange(combinedNote, 'voted to direct', `voted to ${verb}`)), 'HOLD_FOMC_TEXT_GRAMMAR'));
+}
+for (const changed of [
+  advisory.replace('will be updated', 'could be updated'),
+  advisory.replace('as appropriate to reflect', 'as appropriate, to reflect'),
+  advisory.replace('Federal Open Market Committee or', 'Federal Open Market Committee and'),
+  advisory+' Publication is approved.',
+  advisory.slice(0, -1), advisory.replace('policy.', 'policy; this is verified.'),
+]) check(() => rejects(() => parse(textChange(combinedNote, advisory, changed)), 'HOLD_FOMC_TEXT_VERSION'));
+check(() => rejects(() => parse({ ...combinedNote, articleText: combinedNote.articleText+'\n'+advisory+'\n' }), 'HOLD_FOMC_TEXT_VERSION'));
+for (const [input, from, to] of [
+  [guided, guidance, guidance.replaceAll(', ', ',\n')],
+  [combinedNote, advisory, advisory.replace('regarding details', 'regarding\ndetails')],
+  [combinedNote, advisory, advisory.replace("Reserve's", 'Reserve\u2019s')],
+  [guided, '3-1/2 to 3-3/4', '3\u20111/2 to 3\u20133/4'],
+]) check(() => {
+  const value = textChange(input, from, to), result = parse(value);
+  assert.deepEqual(result.targetRange, parse(input).targetRange); nonAuthorizing(result); spans(result, value.articleText);
+});
+check(() => {
+  const noAmount = textChange(guided, 'by 1/4 percentage point ', ''), result = parse(noAmount);
+  assert.equal(result.changeBasisPoints, null); assert.equal(result.evidence.change, null);
+  assert.equal(pair(noAmount, combinedNote).implementation.releaseClock, null); nonAuthorizing(result);
+});
+for (const change of ['3 to 3-3/4', '3-1/2 to 4']) check(() => rejects(() => pair(guided, textChange(combinedNote, '3-1/2 to 3-3/4', change)), 'HOLD_FOMC_TEXT_PAIR_CONFLICT'));
+check(() => {
+  const originalFetch = globalThis.fetch, originalNow = Date.now; let calls = 0;
+  const fail = () => { calls += 1; throw new Error('No side effects permitted'); };
+  try {
+    globalThis.fetch = fail; Date.now = fail;
+    nonAuthorizing(pair(guided, combinedNote)); assert.equal(calls, 0);
+  } finally { globalThis.fetch = originalFetch; Date.now = originalNow; }
+});
+check(() => {
+  assert.deepEqual(parse(cut).evidence.forwardGuidance, []);
+  assert.ok(parse(guided).evidence.targetClause.end <= parse(guided).evidence.forwardGuidance[0].start);
 });
 const moduleSource = await readFile(new URL('../src/lib/fomc-policy-document-text.js', import.meta.url), 'utf8');
 check(() => {

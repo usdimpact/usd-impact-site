@@ -9,6 +9,13 @@ const FIELDS = ['schema', 'documentRole', 'sourceUrl', 'articleText'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DATE = `(?:${MONTHS.join('|')}) [1-9][0-9]?, 20[0-9]{2}`;
 const NUMBER = '(?:[0-9]{1,3}(?:\\.[0-9]{1,4})?|(?:[0-9]{1,3}[- ])?[0-9]{1,2}/[0-9]{1,2}|[0-9]{0,3}[\u00bc\u00bd\u00be])';
+// Reviewed non-operative wording, not a general license to ignore repeated policy clauses.
+const FORWARD_GUIDANCE = 'In considering the extent and timing of additional adjustments to the target range for the federal funds rate, the Committee will carefully assess incoming data, the evolving outlook, and the balance of risks.';
+const UPDATE_ADVISORIES = Object.freeze([
+  'This information will be updated as appropriate.',
+  'This information may be updated as appropriate.',
+  "This information will be updated as appropriate to reflect decisions of the Federal Open Market Committee or the Board of Governors regarding details of the Federal Reserve's operational tools and approach used to implement monetary policy.",
+]);
 const NO_AUTHORITY = Object.freeze({
   sourceAuthenticityVerified: false, meetingAssociationVerified: false,
   rawPageCompatibilityCertified: false, documentCompletenessVerified: false,
@@ -92,6 +99,41 @@ function inventory(text) {
   return { lines, blocks };
 }
 function one(values, code = 'HOLD_FOMC_TEXT_AMBIGUOUS') { need(values.length === 1, code); return values[0]; }
+/** Account for every target reference outside voting; retain text and exact source spans. */
+function inspectStatementReferences(blocks, adopted, decisionMatch, vote, text) {
+  need(blocks.reduce((count, block) => count + [...block.value.matchAll(/\bthe Committee decided to\b/gi)].length, 0) === 1, 'HOLD_FOMC_TEXT_AMBIGUOUS');
+  const guidance = [];
+  let decisionReferences = 0;
+  for (const block of blocks) {
+    // Voting preferences stay context, never an adopted decision or numeric source.
+    if (block === vote) continue;
+    const accepted = [];
+    let cursor = 0;
+    while (cursor < block.value.length) {
+      const start = block.value.indexOf(FORWARD_GUIDANCE, cursor);
+      if (start < 0) break;
+      const end = start + FORWARD_GUIDANCE.length;
+      const sentenceStart = start === 0 || /[.!?] $/.test(block.value.slice(Math.max(0, start - 2), start));
+      const sentenceEnd = end === block.value.length || block.value[end] === ' ';
+      need(sentenceStart && sentenceEnd && block.start < vote.start
+        && block.starts[start] >= adopted.ends[decisionMatch.indices[0][1] - 1], 'HOLD_FOMC_TEXT_AMBIGUOUS');
+      accepted.push([start, end]);
+      guidance.push(span(text, block, [start, end]));
+      need(guidance.length <= 1, 'HOLD_FOMC_TEXT_AMBIGUOUS');
+      cursor = end;
+    }
+    for (const reference of block.value.matchAll(/\btarget range\b/gi)) {
+      const start = reference.index, end = start + reference[0].length;
+      if (block === adopted && start >= decisionMatch.indices[0][0] && end <= decisionMatch.indices[0][1]) {
+        decisionReferences += 1;
+      } else {
+        need(accepted.some(([left, right]) => start >= left && end <= right), 'HOLD_FOMC_TEXT_AMBIGUOUS');
+      }
+    }
+  }
+  need(decisionReferences === 1, 'HOLD_FOMC_TEXT_AMBIGUOUS');
+  return guidance;
+}
 function percentBasisPoints(token) {
   const fractions = { '\u00bc': '1/4', '\u00bd': '1/2', '\u00be': '3/4' };
   token = token.replace(/([0-9]*)([\u00bc\u00bd\u00be])$/, (_, whole, fraction) => `${whole ? `${whole} ` : ''}${fractions[fraction]}`);
@@ -163,14 +205,15 @@ export function parseFomcPolicyDocumentText(value) {
   const issueLine = lines.find((line) => line.value === MONTHS[Number(issueDate.slice(5, 7)) - 1] + ` ${Number(issueDate.slice(8))}, ${issueDate.slice(0, 4)}`);
   evidence.issueDate = span(text, issueLine ?? title);
   const updates = [];
-  for (const line of lines.filter((item) => /^(?:Last Update:|Updated\b|Revised\b|This information (?:will|may) be updated)/i.test(item.value))) {
+  for (const line of lines.filter((item) => /^(?:Last Update:|Updated\b|Revised\b|This information\b)/i.test(item.value))) {
     const update = line.value.match(new RegExp(`^Last Update: (${DATE})$`));
     if (update) {
       const date = dateOf(update[1]); need(date >= issueDate, 'HOLD_FOMC_TEXT_VERSION');
       updates.push({ kind: 'printed-update-date', date, evidence: span(text, line) });
     } else {
-      need(/^This information (?:will|may) be updated as appropriate\.$/.test(line.value), 'HOLD_FOMC_TEXT_VERSION');
-      updates.push({ kind: 'update-advisory', date: null, evidence: span(text, line) });
+      const advisory = one(blocks.filter((block) => block.start <= line.start && block.end >= line.end), 'HOLD_FOMC_TEXT_VERSION');
+      need(UPDATE_ADVISORIES.includes(advisory.value), 'HOLD_FOMC_TEXT_VERSION');
+      updates.push({ kind: 'update-advisory', date: null, evidence: span(text, advisory) });
     }
   }
   need(updates.length <= 2 && new Set(updates.map((item) => item.kind)).size === updates.length, 'HOLD_FOMC_TEXT_VERSION');
@@ -180,12 +223,11 @@ export function parseFomcPolicyDocumentText(value) {
     const vote = one(blocks.filter((block) => /^Voting for the (?:monetary )?policy action (?:was|were)\b/.test(block.value)));
     const adopted = one(blocks.filter((block) => /\bthe Committee decided to\b/i.test(block.value)));
     need(adopted.start < vote.start, 'HOLD_FOMC_TEXT_GRAMMAR');
-    const beforeVote = blocks.filter((block) => block.start < vote.start).map((block) => block.value).join(' ');
-    need([...beforeVote.matchAll(/\btarget range for the federal funds rate\b/g)].length === 1, 'HOLD_FOMC_TEXT_AMBIGUOUS');
     const prefix = '(?:^|[.!?] )(?:In support of its goals(?: and in light of the shift in the balance of risks)?, the|The) Committee decided to ';
     const pattern = `${prefix}(?<action>lower|raise|maintain) the target range for the federal funds rate (?:(?:by (?<change>${NUMBER}) (?<changeUnit>percentage points?|basis points) )?to|at) (?<lower>${NUMBER}) to (?<upper>${NUMBER}) percent\\.(?= |$)`;
     const matches = [...adopted.value.matchAll(new RegExp(pattern, 'gd'))];
     const match = one(matches, 'HOLD_FOMC_TEXT_GRAMMAR');
+    evidence.forwardGuidance = inspectStatementReferences(blocks, adopted, match, vote, text);
     const decisionText = match[0].replace(/^[.!?] /, '');
     action = match.groups.action;
     need(action === 'maintain' ? / rate at /.test(decisionText) && !match.groups.change : / rate (?:by|to) /.test(decisionText), 'HOLD_FOMC_TEXT_GRAMMAR');
@@ -210,7 +252,7 @@ export function parseFomcPolicyDocumentText(value) {
     need(associationMatch && lines.find((line) => line.value === 'Decisions Regarding Monetary Policy Implementation').start < association.start, 'HOLD_FOMC_TEXT_GRAMMAR'); associatedStatementDate = dateOf(associationMatch.groups.date);
     need(associatedStatementDate === issueDate, 'HOLD_FOMC_TEXT_DATE');
     const directive = one(blocks.filter((block) => /in accordance with the following domestic policy directive:$/.test(block.value)));
-    need(/^As part of its policy decision, the Federal Open Market Committee voted to authorize and direct the Open Market Desk at the Federal Reserve Bank of New York, until instructed otherwise, to execute transactions in the System Open Market Account in accordance with the following domestic policy directive:$/.test(directive.value), 'HOLD_FOMC_TEXT_GRAMMAR');
+    need(/^As part of its policy decision, the Federal Open Market Committee voted to (?:authorize and )?direct the Open Market Desk at the Federal Reserve Bank of New York, until instructed otherwise, to execute transactions in the System Open Market Account in accordance with the following domestic policy directive:$/.test(directive.value), 'HOLD_FOMC_TEXT_GRAMMAR');
     const effective = one(blocks.filter((block) => /^"?Effective /.test(block.value)));
     const effectiveMatch = effective.value.match(new RegExp(`^"?Effective (?<date>${DATE}), the Federal Open Market Committee directs the Desk to:$`, 'd'));
     need(effectiveMatch, 'HOLD_FOMC_TEXT_GRAMMAR'); directiveEffectiveDate = dateOf(effectiveMatch.groups.date);

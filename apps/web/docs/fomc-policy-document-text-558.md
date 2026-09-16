@@ -8,13 +8,14 @@ verifier, enabled adapter, publication lease or Production guard. Keep #615 draf
 and unmerged, #558 open, and all current live settings unchanged.
 
 Approved design: [#558 checkpoint 5705465363](https://github.com/usdimpact/usd-impact-site/issues/558#issuecomment-5705465363).
-The implementation starts from candidate `4a3ebcd41c2af102546b2059273f12fa45b0af9c`
+The initial implementation started from candidate `4a3ebcd41c2af102546b2059273f12fa45b0af9c`
 and main/base `df175c72baa2c4b80eaec8bb372e92e43c18c76e`. These are immutable source
 bindings, not perpetual current-state assertions. Read the successor receipt.
 
-Exactly five paths belong to the increment: the new text module, its synthetic
+The initial five-file increment comprised the new text module, its synthetic
 test, its JSON fixtures, this document, and one appended offline import in
-`validate-publishing.mjs`. No existing module or test is modified. In particular,
+`validate-publishing.mjs`. That increment modified no existing module or test.
+The subsequent four-file compatibility correction is documented below. In particular,
 the previous assertion component and its isolation allowlist remain unchanged.
 The new module does not import that component or the active BLS parser.
 
@@ -85,7 +86,7 @@ No inflation objective, consensus surprise, prior rate or market move is inferre
 The unique dated note heading, implementation heading and exact statement-
 association introduction establish only supplied-text context. The associated
 statement date must agree with the note issue date and asserted URL date.
-The reviewed Open Market Desk authorization paragraph must precede the dated
+The reviewed Open Market Desk direction paragraph must precede the dated
 `Effective ... directs the Desk to:` paragraph and the unique federal-funds
 open-market-operations target directive. That target list item must be its own
 paragraph; optional hyphen/bullet prefixes are accepted.
@@ -155,9 +156,11 @@ Rejections use fixed `HOLD_FOMC_TEXT_*` codes, never arbitrary exception text.
 
 ## Fixtures, historical references and test boundaries
 
-Every JSON case is labeled **synthetic-article-text**, with invented member names,
-constructed document context and a digest of that exact synthetic text. Historical
-URLs record the design basis only. No case is a complete transcription, raw
+Original JSON cases are labeled **synthetic-article-text**. Added compatibility
+cases distinguish **synthetic-context-with-source-derived-wording** and identify
+the reviewed phrases separately. Both retain invented member labels, constructed
+context and a digest of the exact supplied text. Historical URLs identify the
+design basis, not a captured response. No case is a complete transcription, raw
 response capture, real member list or September 2026 outcome certification.
 The preceding design review used these official historical references:
 
@@ -167,7 +170,8 @@ The preceding design review used these official historical references:
 - [December 2025 implementation note](https://www.federalreserve.gov/newsevents/pressreleases/monetary20251210a1.htm): different instruments, issue/effective dates and absent standalone clock.
 - [March 2020 statement](https://www.federalreserve.gov/newsevents/pressreleases/monetary20200315a.htm): nonregular-clock exclusion and zero-bound example.
 
-These are prior design observations, not newly fetched evidence in this increment.
+The initial parser used prior design observations. The compatibility correction
+reread the December pages through public parsed web views, not raw-response captures.
 Genuine complete original-body fixtures and safe article isolation remain absent.
 Never manufacture a raw fixture by wrapping synthetic text in invented HTML.
 
@@ -177,7 +181,7 @@ forged flags, bounds and no-I/O behavior. Its mandatory normal-CI scan checks
 literal new-component references under source/API/scripts/Middleware, allowing
 only its own module/test and the publishing driver. Temporary scanner fixtures
 include an accidental active import that must fail. This is not universal proof
-against computed imports; exact five-file review is also required.
+against computed imports; exact approved-file review is also required.
 
 A local extracted test run omits the full-checkout scan and driver assertion and
 must be reported separately from normal CI. Existing BLS, assertion, authentication,
@@ -197,3 +201,70 @@ rollback/outage/recovery proof remain separate. Preserve authentication and
 response fixes, unverified exposure, legacy archives, and the completed Log rule.
 No merge, mark-ready, Production change, credential, hosted SQL, generation,
 article edit, email or scheduled-task change follows from this component.
+
+
+## Source-wording compatibility correction
+
+Approved four-existing-file scope: [#558 checkpoint 5705988417](https://github.com/usdimpact/usd-impact-site/issues/558#issuecomment-5705988417),
+starting at `f047809cc29945b87c8e32921a8a887fab28ae7e` and main/base
+`df175c72baa2c4b80eaec8bb372e92e43c18c76e`. The parser, its tests, fixtures and
+this document change; the publishing driver, other modules, workflows,
+dependencies, live settings and authority flags do not.
+
+The December 10, 2025 statement and implementation note linked above were
+reread as web-extracted semantic references. They are not new original-response
+captures. Five added positive cases retain synthetic document context while
+identifying exactly which wording comes from those sources. A sixth added
+synthetic related-note-label case must remain a role rejection. The original
+14 case objects, their text and expectations remain unchanged.
+
+### Target references versus adopted decisions
+
+Require one operative `the Committee decided to` occurrence and one supported
+adopted target clause. The reviewed complete forward-guidance sentence beginning
+`In considering the extent and timing of additional adjustments` may occur once,
+after the adopted clause and before voting, in the same or a separate paragraph.
+Its exact supported normalized wording is in the module and source-derived
+fixtures; there is no wildcard allowance for arbitrary second policy statements.
+Every target-range reference outside the voting block must belong to the adopted
+clause or that exact guidance. Unknown, duplicate, historical/quoted, out-of-order
+or contradictory references hold, even when a second range agrees numerically.
+Voting preferences remain context and cannot supply the adopted action or range.
+An additional operative Committee decision in voting text also holds.
+
+`evidence.forwardGuidance` records exact UTF-16 spans for the optional recognized
+sentence and is empty when absent. Existing target, amount and source-text hash
+fields retain their meaning. No source wording is deleted or rewritten to obtain
+acceptance. This bounded rule is not a general natural-language fact checker.
+
+### Directive and advisory variants
+
+Both explicitly supported introductions, `voted to direct` and the pre-existing
+`voted to authorize and direct`, are accepted only in the otherwise exact domestic
+directive grammar. Negation, disjunction, truncation, changed actors or duplicate
+directives do not acquire an alternative fallback.
+
+The two existing short synthetic advisories remain supported. The complete
+reviewed `This information will be updated as appropriate to reflect decisions`
+advisory is additionally recognized only with its exact remainder. A wrapped
+paragraph is inspected as a whole and its complete source span is retained;
+unknown continuations and duplicate advisories hold. The full `may` variant is
+not invented from the short synthetic example. Update notices remain distinct
+from issue/effective dates and are not evidence of authenticity or freshness.
+
+### Boundaries and regression controls
+
+Successful documents and pairs remain NOT_VERIFIED with every authority flag
+false. Missing change amounts and note clocks remain null. Related-document
+labels flattened into article text still trigger role rejection: fixing safe
+HTML extraction requires a separately scoped implementation, not relaxed titles.
+Compatibility tests include same/separate-paragraph guidance, independent and
+combined note variants, source-span mapping through supported whitespace/Unicode
+changes, strict malformed variants, multiple operative decisions and conflicting
+pairs. The normal test import and full-checkout isolation guard stay mandatory.
+All current test counts must be read from the exact successor-head run, not
+inferred from the older 183-group receipt.
+
+Genuine original-page acquisition, safe article isolation, source freshness,
+meeting linkage, adapter enablement and Production enforcement are still absent.
+The completed compatibility increment supplies no release permission.

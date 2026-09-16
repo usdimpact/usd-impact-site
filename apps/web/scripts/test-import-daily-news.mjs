@@ -276,6 +276,76 @@ try {
   assert.notEqual(buybackSupplyFailure.status, 0);
   assert.match(buybackSupplyFailure.stderr, /mechanically reducing or offsetting Treasury supply/i);
 
+  // #634: use synthetic bundles only; never rewrite published archive fixtures.
+  const treasuryIndex = 'https://home.treasury.gov/policy-issues/financing-the-government/quarterly-refunding/most-recent-quarterly-refunding-documents';
+  const treasuryDocument = 'https://home.treasury.gov/system/files/221/synthetic-refunding-document-20260909.pdf';
+  const treasuryEditionPath = path.join(temporaryRoot, 'src/content/news/2026-09-16.md');
+  const treasuryArchivePath = path.join(temporaryRoot, 'src/content/news/2026-09-03.md');
+  const treasuryCatalystArchivePath = path.join(temporaryRoot, 'src/content/catalyst-briefs/treasury-fixture.md');
+  const archiveRecord = (url, date) => `---\nstatus: "published"\nsources:\n  - id: "treasury-item"\n    url: "${url}"\n    publishedAt: "${date}"\n---\n`;
+  const archive = archiveRecord(treasuryIndex, '2026-08-03');
+  const catalystArchive = archiveRecord(treasuryIndex, '2026-08-05');
+  await writeFile(treasuryArchivePath, archive, 'utf8');
+  await writeFile(treasuryCatalystArchivePath, catalystArchive, 'utf8');
+  const candidateForSource = (url, publishedAt) => ({
+    ...bundle,
+    date: '2026-09-16',
+    generatedAt: '2026-09-16T12:00:00Z',
+    catalysts: [],
+    sources: [
+      { ...bundle.sources[0], url, publishedAt, title: 'Synthetic Treasury document' },
+      { ...bundle.sources[1], publishedAt: '2026-09-16' },
+    ],
+  });
+  for (const url of [treasuryIndex, `${treasuryIndex}/`, `${treasuryIndex}?utm_source=fixture`, `${treasuryIndex}/?e=48669#documents`]) {
+    for (const date of ['2026-08-03', '2026-09-09', '2026-09-16']) {
+      await writeBundle(candidateForSource(url, date));
+      const held = runImporter('--replace', '--publish');
+      assert.notEqual(held.status, 0);
+      assert.match(held.stderr, /directly linked dated document/);
+      await assert.rejects(readFile(treasuryEditionPath), { code: 'ENOENT' });
+      assert.equal(await readFile(treasuryArchivePath, 'utf8'), archive);
+      assert.equal(await readFile(treasuryCatalystArchivePath, 'utf8'), catalystArchive);
+    }
+  }
+  // A valid direct-document fixture is independent of every date on the index.
+  await writeBundle(candidateForSource(treasuryDocument, '2026-09-09'));
+  const directDocument = runImporter('--replace', '--publish');
+  assert.equal(directDocument.status, 0, directDocument.stderr);
+  const directContent = await readFile(treasuryEditionPath, 'utf8');
+  assert.match(directContent, /publishedAt: "2026-09-09"/);
+  assert.ok(directContent.includes(treasuryDocument));
+  assert.ok(!directContent.includes(treasuryIndex));
+  assert.equal(await readFile(treasuryArchivePath, 'utf8'), archive);
+  assert.equal(await readFile(treasuryCatalystArchivePath, 'utf8'), catalystArchive);
+  const stillProtected = runImporter('--replace', '--publish');
+  assert.notEqual(stillProtected.status, 0);
+  assert.match(stillProtected.stderr, /already published and cannot be replaced/);
+  const stillNoop = runImporter('--replace', '--skip-published', '--publish');
+  assert.equal(stillNoop.status, 0, stillNoop.stderr);
+  assert.equal(await readFile(treasuryEditionPath, 'utf8'), directContent);
+  await rm(treasuryEditionPath);
+  await rm(treasuryArchivePath);
+  await rm(treasuryCatalystArchivePath);
+  // The index is held even without a previously stored date, not just on drift.
+  await writeBundle(candidateForSource(treasuryIndex, '2026-09-09'));
+  const noHistory = runImporter('--replace');
+  assert.notEqual(noHistory.status, 0);
+  assert.match(noHistory.stderr, /directly linked dated document/);
+  await assert.rejects(readFile(treasuryEditionPath), { code: 'ENOENT' });
+
+  for (const url of [treasuryDocument, 'https://home.treasury.gov/news/press-releases/sb0607']) {
+    const fixedDateArchive = archiveRecord(url, '2026-09-08');
+    await writeFile(treasuryArchivePath, fixedDateArchive, 'utf8');
+    await writeBundle(candidateForSource(url, '2026-09-09'));
+    const immutableConflict = runImporter('--replace');
+    assert.notEqual(immutableConflict.status, 0);
+    assert.match(immutableConflict.stderr, /publishedAt 2026-09-09 conflicts with previously verified 2026-09-08/);
+    assert.equal(await readFile(treasuryArchivePath, 'utf8'), fixedDateArchive);
+    await assert.rejects(readFile(treasuryEditionPath), { code: 'ENOENT' });
+    await rm(treasuryArchivePath);
+  }
+
   console.log('daily news importer review, direct-publish, and fail-closed source guard tests pass');
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });

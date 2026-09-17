@@ -1,7 +1,7 @@
 ---
-title: "FOMC scheduled communications: meeting entry 18:00 UTC; press conference 18:30 UTC — Verified Outcome"
-metaTitle: "FOMC scheduled communications: meeting entry 18:00 UTC; press conference 18:30 UTC — Verified Outcome | USD Impact"
-metaDescription: "Primary sources confirm the FOMC raised the target federal funds rate by 25 bps on 2026-09-16 and released projections; implementation details (IORB, standing repo/RRP rates, primary credit) were published. Markets reacted with weaker equities and moves in short‑dated rate futures and Treasury yield"
+title: "FOMC raises target range to 3.75%-4.00% - September 16 outcome"
+metaTitle: "FOMC September 16 outcome: 3.75%-4.00% | USD Impact"
+metaDescription: "The Fed raised its target range by 0.25 percentage point to 3.75%-4.00%. Read the official decision, implementation details and projection limits."
 slug: "/news/catalysts/2026-09-16-fomc-scheduled-communications-meeting-entry-18-00-utc-press-conference-1-outcome"
 eventKey: "2026-09-16-fomc-scheduled-communications-meeting-entry-18-00-utc-press-conference-1"
 event: "FOMC scheduled communications: meeting entry 18:00 UTC; press conference 18:30 UTC"
@@ -13,7 +13,7 @@ lastReviewed: "2026-09-17"
 status: "published"
 category: "USD Impact Catalyst Brief"
 statusLabel: "released"
-summary: "Primary sources confirm the FOMC raised the target federal funds rate by 25 bps on 2026-09-16 and released projections; implementation details (IORB, standing repo/RRP rates, primary credit) were published. Markets reacted with weaker equities and moves in short‑dated rate futures and Treasury yields."
+summary: "The Federal Reserve raised the federal funds target range by 0.25 percentage point to 3.75%-4.00%, with a 12-0 vote. Implementation changes take effect September 17. The median participant projection for the end-2026 funds rate is 4.1%; it is not a commitment to a future decision. Market reporting is presented separately from these official facts."
 assets:
   - "DXY"
   - "USD"
@@ -22,47 +22,33 @@ assets:
   - "S&P 500"
   - "Nasdaq"
 verifiedFacts:
-  - statement: "The Federal Open Market Committee raised the target range for the federal funds rate by 1/4 percentage point to 3.75–4.00 percent (decision approved 12–0)."
+  - statement: "In its September 16 statement, released at 2:00 p.m. EDT, the FOMC announced a 0.25-percentage-point increase in the federal funds target range to 3.75%-4.00%. The statement was approved by a 12-0 vote."
     verification: "verified-primary"
     sourceIds:
       - "federal-reserve-statement-2026-09-16"
-  - statement: "The Board issued an Implementation Note: interest on reserve balances (IORB) was set to 3.90% effective September 17, 2026; standing overnight repo operations set at 4.0%; overnight reverse repurchase offering rate set at 3.75% with a per‑counterparty limit of $160 billion per day; and the primary credit rate was raised 1/4 percentage point to 4.0% (effective September 17, 2026)."
+  - statement: "The September 16 Implementation Note sets the following parameters effective September 17, 2026: interest on reserve balances at 3.90%; standing overnight repo at 4.00%; overnight reverse repo at 3.75% with a $160 billion daily per-counterparty limit; and the primary credit rate at 4.00%. These are distinct instruments, not alternative values of the federal funds target range."
     verification: "verified-primary"
     sourceIds:
       - "federal-reserve-implementation-2026-09-16"
-  - statement: "FOMC participants submitted and the Committee released updated economic projections (dot plot) in conjunction with the September 15–16, 2026 meeting; the median of participants' end‑2026 projection for the midpoint of the federal funds rate is 4.1%."
+  - statement: "The September 16 Summary of Economic Projections reports a 4.1% median for participants' end-2026 federal funds rate projections. These are individual assessments of appropriate policy under participants' economic assumptions, not a Committee commitment or a market-implied probability."
     verification: "verified-primary"
     sourceIds:
       - "federal-reserve-projections-2026-09-16"
-      - "ap-fed-hike-2026-09-16"
-  - statement: "U.S. equity indices moved lower after the decision: AP reported the S&P 500 down about 0.4% and the Nasdaq roughly flat (intraday/close moves reported on 2026-09-16), while futures and short‑dated interest‑rate contracts moved to price in additional tightening."
-    verification: "verified-primary"
-    sourceIds:
-      - "ap-stocks-slip-2026-09-16"
-      - "cme-2y-futures-2026-09-16"
-  - statement: "Market‑implied Fed‑funds probabilities and short‑end futures showed a material re‑pricing into a higher terminal path around the meeting (CME FedWatch and CME market commentary documented increased hike probabilities and moves in 2‑year/short‑end contracts)."
-    verification: "verified-primary"
-    sourceIds:
-      - "cme-fedwatch-2026-09-16"
-      - "cme-2y-futures-2026-09-16"
 transmissionChannels:
-  - channel: "Short-term rates / Fed funds futures"
-    conditionalImpact: "A 25 bp hike and a median dot at 4.1% tends to lift short‑dated Treasury yields and push Fed‑funds futures probabilities toward further tightening; if incoming data remain strong, futures could price additional hikes and raise term premia; conversely, weaker data would cap further repricing."
-  - channel: "Dollar (DXY / FX)"
-    conditionalImpact: "Higher policy rates and upward revisions to the dots could strengthen the USD (DXY) as U.S. yields rise relative to other currencies; the extent depends on contemporaneous moves in other central banks and geopolitical risk (USD appreciation is likely if U.S. real yields rise faster than peers)."
-  - channel: "Nominal Treasury curve / 2s-10s"
-    conditionalImpact: "Policy tightening and market re‑anchoring of near‑term rate expectations tends to lift short yields more than long yields, potentially flattening the curve; however, if higher expected policy rates raise term premia, long yields could also increase, steepening instead—direction is conditional on growth and inflation outlook."
-  - channel: "Equities (S&P 500 / Nasdaq)"
-    conditionalImpact: "Higher short‑term rates and stronger near‑term Fed tightening expectations may weigh on equity risk premia—cyclical sectors and small caps tend to underperform; tech/long‑duration growth names are particularly sensitive to higher discount rates, so equity weakness is likely if rates persistently rise."
-  - channel: "Money markets / repo and bank funding"
-    conditionalImpact: "Operational changes (IORB, standing repo/RRP parameters) can tighten or ease money‑market conditions; a higher IORB and standing repo rate generally raise the policy floor and could compress odd‑lot funding spreads, conditioning bank funding costs and short‑term liquidity flows."
+  - channel: "Rates and expectations"
+    conditionalImpact: "Interpretation: compare the announced policy with expectations and separately timestamped Treasury and futures data. The announced increase alone does not establish the direction or size of a market yield change."
+  - channel: "Dollar and cross-asset pricing"
+    conditionalImpact: "Interpretation: a change in relative rate expectations may affect USD pricing, but the direction also depends on other economies and risk conditions. No measured DXY move or guaranteed dollar response is asserted here."
+  - channel: "Equities"
+    conditionalImpact: "Interpretation: changing discount rates and earnings expectations can affect valuations. The AP session report below is secondary reporting; it does not establish a uniform sector response or isolate the effect of the policy announcement."
+  - channel: "Money-market implementation"
+    conditionalImpact: "Interpretation: distinguish the federal funds target range from interest on reserves and repo facility settings. The official parameters establish implementation instructions, not observed funding spreads, facility usage or market stress."
 whatToWatch:
-  - "CME FedWatch probabilities and 30‑day Fed funds futures for the next FOMC dates (watch shifts in implied probability of further hikes vs. cuts). — source: cme-fedwatch-2026-09-16"
-  - "Two‑year Treasury yield and 2s‑10s slope intraday: large moves would signal a material change to market terminal rate expectations or term‑premia. — source: cme-2y-futures-2026-09-16"
-  - "DXY movements in the 24–48 hours after the press conference (press narrative and global central‑bank differentials will condition USD direction). — source: ap-stocks-slip-2026-09-16"
-  - "Equity index reactions (S&P 500 and Nasdaq) into the next U.S. session and options‑implied vol: persistent declines or rising vol would indicate broader risk repricing. — source: ap-stocks-slip-2026-09-16"
-  - "Details in the FOMC projections (dot‑plot and central tendency): whether the median path and distribution for end‑2026 remain at 4.1% or shift materially in coming releases. — source: federal-reserve-projections-2026-09-16"
-  - "Money‑market and New York Fed operational announcements (SOMA/Treasury bill purchase plans, standing repo usage, ON RRP changes) that affect reserve abundance. — source: newyorkfed-repo-faq-2026-09-16"
+  - "Read subsequent official Fed releases before describing another policy change; the September projection is not a promise of an additional hike."
+  - "Compare any later Treasury, futures or USD observations using named instruments, explicit timestamps and a consistent measurement window."
+  - "Treat market-implied probabilities as a separate data product. A before-and-after repricing claim needs matching dated observations, not just a link to a changing dashboard."
+  - "Keep future equity-session reports separate from intraday event-window measurements and from the official policy decision."
+  - "Check official operational notices and observed money-market data separately from the September 17 implementation settings."
 sources:
   - id: "federal-reserve-statement-2026-09-16"
     title: "Federal Reserve issues FOMC statement"
@@ -88,53 +74,47 @@ sources:
     url: "https://apnews.com/article/e2e82957e490b7be205db6013f621c3d"
     publishedAt: "2026-09-16"
     sourceType: "reporting"
-  - id: "ap-fed-hike-2026-09-16"
-    title: "Federal Reserve hikes key rate for 1st time in 3 years, defying Trump demands for a cut"
-    publisher: "Associated Press"
-    url: "https://apnews.com/article/bab1bcb07e973bfb2dd0c3e5fbbb73b1"
-    publishedAt: "2026-09-16"
-    sourceType: "reporting"
-  - id: "cme-fedwatch-2026-09-16"
-    title: "FedWatch - CME Group"
-    publisher: "CME Group"
-    url: "https://www.cmegroup.com/fedwatch"
-    publishedAt: "2026-09-16"
-    sourceType: "primary"
-  - id: "cme-2y-futures-2026-09-16"
-    title: "2-Year T-Note futures fall to contract low on Fed hike - CME Group video (9/16/2026)"
-    publisher: "CME Group"
-    url: "https://www.cmegroup.com/videos/2026/09/16/2-year-t-note-futures-fall-to-contract-low-on-fed-hike-9-16-26.html"
-    publishedAt: "2026-09-16"
-    sourceType: "primary"
-  - id: "newyorkfed-repo-faq-2026-09-16"
-    title: "FAQs: Standing Repurchase Agreement Operations - Federal Reserve Bank of New York"
-    publisher: "Federal Reserve Bank of New York"
-    url: "https://www.newyorkfed.org/markets/repo-agreement-ops-faq"
-    publishedAt: "2026-09-16"
-    sourceType: "primary"
 complianceNote: "Educational and informational only. This content is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset."
 ---
 
-Confirmed outcome (primary sources):
+## Executive view
 
-- The FOMC raised the target federal funds range by 25 bps to 3.75–4.00% (Fed press release). Source: federal-reserve-statement-2026-09-16.
-- The Board published an Implementation Note with operational parameters (IORB = 3.90% effective 2026-09-17; standing repo 4.0%; ON RRP offering 3.75% with $160bn daily counterparty limit; primary credit rate = 4.0%). Source: federal-reserve-implementation-2026-09-16.
-- The Committee released updated economic projections (dot plot); the median end‑2026 federal‑funds midpoint in the projections is 4.1%. Source: federal-reserve-projections-2026-09-16.
+The official September 16 decision is a 0.25-percentage-point increase to a 3.75%-4.00% federal funds target range. The implementation date is September 17. The policy decision, operational settings, participant projections and observed market performance answer different questions and should not be combined into one forecast.
 
-Conditional cross‑asset interpretation (grounded, not prescriptive):
+## Official decision and implementation
 
-- Short‑end rates and Fed‑funds futures are likely to reprice toward a higher terminal path if incoming data remain strong; conversely, weak data would cap further tightening. See: cme-fedwatch-2026-09-16 and cme-2y-futures-2026-09-16.
-- The USD tends to strengthen when U.S. policy rates and near‑term expectations rise relative to peers; magnitude depends on other central‑bank moves and risk sentiment. See: federal-reserve-statement-2026-09-16 and ap-stocks-slip-2026-09-16.
-- Equities may underperform near term if higher rates persist, with cyclicals and long‑duration growth names especially sensitive; monitor realized and implied equity volatility. See: ap-stocks-slip-2026-09-16 and cme-2y-futures-2026-09-16.
-- Money‑market functioning will be influenced by the Implementation Note parameters (IORB, standing repo/RRP); Watch New York Fed operational notices for SOMA/Treasury bill plans. See: federal-reserve-implementation-2026-09-16 and newyorkfed-repo-faq-2026-09-16.
+The statement records the adopted decision and the 12-0 vote. It was released at 2:00 p.m. EDT on September 16. This is written-decision evidence, not a quotation from the separately scheduled press conference. (source: federal-reserve-statement-2026-09-16)
 
-Quick guidance for monitoring (no trading advice):
+The implementation note supplies the reserve-interest, repo, reverse-repo and primary-credit settings listed above. Preserve their September 17 effective date; it is not the statement's release date. The note also retains instructions aimed at maintaining ample reserves. These instructions do not report actual facility usage or a measured change in funding spreads. (source: federal-reserve-implementation-2026-09-16)
 
-- Track CME FedWatch and short‑dated futures for shifts in hike/cut probabilities.
-- Watch 2‑year yields, 2s‑10s slope, and Treasury futures for changing term‑premium or growth expectations.
-- Monitor DXY and intraday FX flows immediately after Fed communications.
-- Observe equity index close and options‑implied vol for risk‑premium repricing.
-- Read the published FOMC projections (dot‑plot) for changes to the median path and dispersion among participants.
+## Projections are not a commitment
 
-All statements above are separated between confirmed facts (sourced to Federal Reserve primary releases) and conditional, cross‑asset interpretation (sourced to market commentary/data providers).
+Participants' median end-2026 rate projection is 4.1%. A participant's assessment of appropriate policy is not a promised Committee decision, and the distribution of projections is not a set of market-implied probabilities. Further decisions require later evidence; this publication does not convert the median into a guaranteed number of additional hikes. (source: federal-reserve-projections-2026-09-16)
 
+## Market reporting - separate from official facts
+
+AP's September 16 U.S. market-session report described the S&P 500 down about 0.4% and the Nasdaq Composite nearly flat. These figures are attributed secondary reporting. They are not Federal Reserve measurements or an isolated estimate of the announcement's effect. (source: ap-stocks-slip-2026-09-16)
+
+This brief does not establish a timestamped before-and-after FedWatch probability comparison, a terminal-rate estimate, or a measured DXY reaction. Do not infer those observations from the policy decision or a changing dashboard link.
+
+## Why it matters
+
+Interpretation: policy, expected future rates and financing conditions can influence currencies, discount rates and valuations. Those links are conditional. Separate the announced decision from what markets had already anticipated, and use comparable observation times before describing a surprise or attributing a price move.
+
+## Common mistake
+
+Do not treat a projection as enacted policy, a daily market-session change as a clean event-window measurement, or implementation settings as observed funding stress. A primary-source label applies to the specific supported fact, not every claim that shares a paragraph with it.
+
+## What to watch
+
+Use the checkpoints above to review future official communications, matching market timestamps and operational observations. These are evidence-review steps, not instructions to buy or sell an asset.
+
+## Sources and limits
+
+The source ledger contains three official Fed documents and one explicitly identified AP report. Dates identify the cited releases or report, not the time of every market observation. No press-conference quotation, measured real-yield move, quantitative liquidity assessment or verified futures-probability change is supplied.
+
+The original automated generation timestamp remains September 17, 2026, 00:56:07.327 UTC. This editorial revision is reviewed on September 17 and does not change the September 16 event or its historical pre-event Daily edition.
+
+## Key takeaway
+
+The rate decision is verified from official material. Projections, implementation instructions, attributed market reporting and conditional interpretation remain separate; none creates a certain forecast for an asset.

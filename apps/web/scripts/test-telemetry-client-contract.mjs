@@ -9,6 +9,8 @@ const client = await fs.readFile(path.join(webRoot, 'src/components/TelemetryCli
 const ga4 = await fs.readFile(path.join(webRoot, 'src/components/GoogleAnalyticsClient.astro'), 'utf8');
 const layout = await fs.readFile(path.join(webRoot, 'src/layouts/BaseLayout.astro'), 'utf8');
 const checkout = await fs.readFile(path.join(webRoot, 'src/pages/checkout/index.astro'), 'utf8');
+const waitlist = await fs.readFile(path.join(webRoot, 'src/components/WaitlistForm.astro'), 'utf8');
+const dailyLearning = await fs.readFile(path.join(webRoot, 'src/components/DailyLearningSignup.astro'), 'utf8');
 const privacy = await fs.readFile(path.join(webRoot, 'src/pages/privacy.md'), 'utf8');
 const eventModel = await fs.readFile(path.join(webRoot, '../../docs/analytics/ga4-event-model.md'), 'utf8');
 
@@ -20,6 +22,12 @@ for (const required of [
   "'quiz_start'",
   "'quiz_complete'",
   "'quiz_retry'",
+  "'waitlist_submission_success'",
+  "'daily_learning_subscribe_success'",
+  "'library_section_view'",
+  "'usd-impact:waitlist-submission-success'",
+  "'usd-impact:daily-learning-subscribe-success'",
+  "librarySectionTracked = track('library_section_view', { format })",
   "fetch(TELEMETRY_ENDPOINT",
   'keepalive: true',
   '.catch(() =>',
@@ -63,6 +71,9 @@ for (const eventName of [
   'quiz_start',
   'quiz_retry',
   'quiz_complete',
+  'waitlist_submission_success',
+  'daily_learning_subscribe_success',
+  'library_section_view',
 ]) {
   assert.ok(ga4.includes(`'${eventName}'`));
   assert.ok(eventModel.includes(`\`${eventName}\``));
@@ -77,6 +88,8 @@ for (const required of [
   'params.outcome = details.outcome',
   'params.score = score',
   'params.question_count = questionCount',
+  "LIBRARY_FORMATS = new Set(['guided', 'audiobook', 'video'])",
+  'params.format = details.format',
 ]) {
   assert.ok(ga4.includes(required));
 }
@@ -98,11 +111,17 @@ const telemetryRequest = client.indexOf('fetch(TELEMETRY_ENDPOINT');
 const analyticsDispatch = client.indexOf('new CustomEvent(ANALYTICS_EVENT');
 assert.ok(consentGuard >= 0 && campaignRead > consentGuard && telemetryRequest > campaignRead && analyticsDispatch > telemetryRequest);
 
+assert.match(waitlist, /window\.dispatchEvent\(new Event\('usd-impact:waitlist-submission-success'\)\)/);
+assert.match(dailyLearning, /payload\.alreadySubscribed !== true/);
+assert.match(dailyLearning, /window\.dispatchEvent\(new Event\('usd-impact:daily-learning-subscribe-success'\)\)/);
 assert.match(checkout, /window\.dispatchEvent\(new Event\('usd-impact:checkout-sign-in-redirect'\)\)/);
 assert.match(privacy, /checkout-page view, checkout-button click, or redirect to secure sign-in/i);
 assert.match(privacy, /not unique visitors and not evidence of a buyer or completed purchase/i);
 assert.match(privacy, /does not include[\s\S]*email addresses[\s\S]*account identifiers[\s\S]*payment details/i);
 assert.match(privacy, /optional analytics remains off unless you select \*\*Accept analytics\*\*/i);
+assert.match(privacy, /successful waitlist\/Daily Learning subscription/i);
+assert.match(privacy, /aggregate Library Pass section-view categories/i);
+assert.match(privacy, /does not receive[\s\S]*email addresses[\s\S]*account identifiers[\s\S]*content identifiers/i);
 assert.match(eventModel, /Purchase completion is intentionally excluded/i);
 assert.match(eventModel, /verified provider\/webhook-backed transaction/i);
 

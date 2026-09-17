@@ -12,14 +12,14 @@ const KEY = '2026-09-16-fomc-policy-decision';
 const CANONICAL = `https://www.usd-impact.com/news/catalysts/${KEY}-outcome`;
 function base() {
   return {
-    schemaVersion: 1, now: NOW,
+    schemaVersion: 2, now: NOW,
     expected: {
-      repository: 'usdimpact/usd-impact-site', workflowPath: WORKFLOW, branch: 'main', sourceSha: A,
+      repository: 'usdimpact/usd-impact-site', workflowPath: WORKFLOW, branch: 'main', generationSourceSha: A, observationHeadSha: A,
       eventKey: KEY, eventDate: '2026-09-16', phase: 'outcome', scheduledAt: SLOT,
       maxObservationAgeMs: 60000, executionGraceMs: null, publicationDueAt: null, hold: null,
     },
     observations: {
-      repositoryHeadSha: A,
+      repositoryHeadStartSha: A, repositoryHeadEndSha: A,
       runs: { observedAt: NOW, complete: true, nextPage: null, totalCount: 0, records: [], windowStart: '2026-09-16T00:00:00.000Z', windowEnd: NOW },
       publications: { observedAt: NOW, complete: true, nextPage: null, totalCount: 0, records: [] },
       deployment: null, livePage: null,
@@ -76,7 +76,7 @@ check('wrong workflow cannot count', s => withRuns(s,[run({workflowPath:'.github
 check('feature branch cannot count', s => withRuns(s,[run({branch:'test'})]), { scheduler:'EXPECTED_RUN_NOT_OBSERVED' });
 check('push cannot impersonate schedule', s => withRuns(s,[run({event:'push'})]), { scheduler:'EXPECTED_RUN_NOT_OBSERVED' });
 check('source revision drift holds', s => withRuns(s,[run({sourceSha:B})]), { scheduler:'RUN_SOURCE_DRIFT' });
-check('repository drift holds every stage', s => { s.observations.repositoryHeadSha=B; }, { evidenceState:'SCOPE_DRIFT', publication:'UNKNOWN' });
+check('repository drift holds every stage', s => { s.observations.repositoryHeadEndSha=B; }, { evidenceState:'SCOPE_DRIFT', publication:'UNKNOWN' });
 for (const state of ['queued','waiting','requested','pending']) check(`matching ${state} is not completion`, s => withRuns(s,[run({status:state,conclusion:null})]), { scheduler:'SCHEDULED_RUN_REPORTED', execution:'QUEUED_OR_WAITING' });
 check('matching running is not completion', s => withRuns(s,[run({status:'in_progress',conclusion:null})]), { execution:'IN_PROGRESS' });
 check('successful run alone is not publication', s => withRuns(s,[run()]), { execution:'SUCCESS_WITHOUT_PUBLICATION_EVIDENCE', publication:'NO_CANDIDATE_IN_OBSERVATION' });
@@ -163,4 +163,124 @@ test('normal publishing validator invokes the offline suite in a bounded child p
   assert.match(source, /timeout: 30_000/);
   assert.match(source, /lifecycleTest\.error \|\| lifecycleTest\.signal \|\| lifecycleTest\.status !== 0/);
   assert.doesNotMatch(source, /(?:from\s*|import\s*\()\s*['"][^'"\n]*test-catalyst-lifecycle-diagnostic/);
+});
+
+
+// All v2 cases remain supplied-record diagnostics, not authenticated live replays.
+function postMerge() {
+  const s = live();
+  s.expected.observationHeadSha = C;
+  s.observations.repositoryHeadStartSha = C;
+  s.observations.repositoryHeadEndSha = C;
+  return withRuns(s, [decision(run(), 'generated')]);
+}
+check('v2 separates generator A, reviewed head B and observed merge C', () => {}, {
+  schemaVersion: 2, evidenceState: 'SUPPLIED_RECORDS_ONLY',
+  scheduler: 'SCHEDULED_RUN_REPORTED', execution: 'GENERATION_REPORTED',
+  publication: 'LIVE_MATCH_REPORTED_NOT_VERIFIED',
+}, postMerge);
+check('v2 allows generation and observation at the same revision', s => {
+  s.expected.observationHeadSha = A;
+  s.observations.repositoryHeadStartSha = A;
+  s.observations.repositoryHeadEndSha = A;
+}, { scheduler: 'SCHEDULED_RUN_REPORTED', execution: 'GENERATION_REPORTED' }, postMerge);
+check('v2 historical scheduled source is not compared with the observation head', s => {
+  s.expected.observationHeadSha = 'e'.repeat(40);
+  s.observations.repositoryHeadStartSha = s.expected.observationHeadSha;
+  s.observations.repositoryHeadEndSha = s.expected.observationHeadSha;
+}, { scheduler: 'SCHEDULED_RUN_REPORTED', publication: 'LIVE_MATCH_REPORTED_NOT_VERIFIED' }, postMerge);
+check('v2 repinning generation to current main still reports run source drift', s => {
+  s.expected.generationSourceSha = C;
+}, { scheduler: 'RUN_SOURCE_DRIFT', execution: 'RUN_SOURCE_DRIFT', publication: 'LIVE_MATCH_REPORTED_NOT_VERIFIED' }, postMerge);
+check('v2 unreviewed run source does not erase independently supplied publication state', s => {
+  const r = decision(run({ sourceSha: B }), 'generated');
+  withRuns(s, [r]);
+}, { scheduler: 'RUN_SOURCE_DRIFT', publication: 'LIVE_MATCH_REPORTED_NOT_VERIFIED' }, postMerge);
+for (const [name, start, end] of [
+  ['changed after collection started', C, B],
+  ['start differs even though end matches', B, C],
+  ['both agree on wrong revision', B, B],
+  ['both falsified as historical generator', A, A],
+  ['both differ from scope and each other', A, B],
+]) check(`v2 observation scope rejects ${name}`, s => {
+  s.observations.repositoryHeadStartSha = start;
+  s.observations.repositoryHeadEndSha = end;
+}, { schemaVersion: 2, evidenceState: 'SCOPE_DRIFT', scheduler: 'UNKNOWN', execution: 'UNKNOWN', publication: 'UNKNOWN' }, postMerge);
+check('v2 observation race also holds an open candidate', s => {
+  s.observations.repositoryHeadEndSha = B;
+  withPubs(s, [pub()]); s.observations.deployment = s.observations.livePage = null;
+}, { evidenceState: 'SCOPE_DRIFT', publication: 'UNKNOWN' }, postMerge);
+check('v2 historical generated run can coexist with an open reviewed candidate', s => {
+  withPubs(s, [pub()]); s.observations.deployment = s.observations.livePage = null;
+}, { scheduler: 'SCHEDULED_RUN_REPORTED', execution: 'GENERATION_REPORTED', publication: 'CANDIDATE_AWAITING_REVIEW' }, postMerge);
+check('v2 later deployment is not implicitly approved by current-head equality', s => {
+  const later = 'e'.repeat(40);
+  s.expected.observationHeadSha = later;
+  s.observations.repositoryHeadStartSha = s.observations.repositoryHeadEndSha = later;
+  s.observations.deployment.gitSha = later;
+}, { scheduler: 'SCHEDULED_RUN_REPORTED', publication: 'MERGED_AWAITING_MATCHING_PRODUCTION' }, postMerge);
+check('v2 historical source does not weaken editorial exact-head quality', s => {
+  s.observations.publications.records[0].qualityHeadSha = A;
+}, { execution: 'GENERATION_REPORTED', publication: 'EXACT_HEAD_QUALITY_NOT_CONFIRMED' }, postMerge);
+check('v2 historical source does not weaken article digest binding', s => {
+  s.observations.livePage.articleDigest = 'e'.repeat(64);
+}, { scheduler: 'SCHEDULED_RUN_REPORTED', publication: 'LIVE_BINDING_MISMATCH' }, postMerge);
+check('v2 historical source does not accept partial page evidence', s => {
+  s.observations.livePage.complete = false;
+}, { scheduler: 'SCHEDULED_RUN_REPORTED', publication: 'LIVE_EVIDENCE_INCOMPLETE' }, postMerge);
+check('v2 historical source does not accept a truncated run list', s => {
+  s.observations.runs.nextPage = 2;
+}, { scheduler: 'EXECUTION_EVIDENCE_INCOMPLETE', publication: 'LIVE_MATCH_REPORTED_NOT_VERIFIED' }, postMerge);
+check('v2 manual recovery still cannot establish scheduled execution', s => {
+  s.observations.runs.records[0].event = 'workflow_dispatch';
+}, { scheduler: 'EXPECTED_RUN_NOT_OBSERVED', execution: 'GENERATION_REPORTED', publication: 'LIVE_MATCH_REPORTED_NOT_VERIFIED' }, postMerge);
+check('v2 prior preview at historical source cannot establish an outcome run', s => {
+  const r = s.observations.runs.records[0];
+  r.association.phase = 'preview'; r.association.scheduledAt = '2026-09-16T06:45:00.000Z';
+}, { scheduler: 'EXPECTED_RUN_NOT_OBSERVED', execution: 'NOT_STARTED' }, postMerge);
+check('v2 source decision must remain bound to the actual run source', s => {
+  s.observations.runs.records[0].decision.sourceSha = C;
+}, { evidenceState: 'INVALID_SNAPSHOT' }, postMerge);
+check('v2 attempt-bound decision remains strict after observation advances', s => {
+  const r = s.observations.runs.records[0]; r.attempt = 2;
+  r.association.evidenceRef = 'run:101:attempt:2';
+}, { evidenceState: 'INVALID_SNAPSHOT' }, postMerge);
+check('v2 explicit hold is not erased by a matching historical publication', s => {
+  s.expected.hold = { eventKey: KEY, eventDate: '2026-09-16', phase: 'outcome', reference: 'issue:558:comment:100', validUntil: '2026-09-17T01:00:00.000Z' };
+}, { evidenceState: 'HOLD_PUBLICATION_CONFLICT' }, postMerge);
+
+function legacyShape(s) {
+  s.schemaVersion = 1;
+  s.expected.sourceSha = s.expected.generationSourceSha;
+  delete s.expected.generationSourceSha; delete s.expected.observationHeadSha;
+  s.observations.repositoryHeadSha = s.observations.repositoryHeadStartSha;
+  delete s.observations.repositoryHeadStartSha; delete s.observations.repositoryHeadEndSha;
+}
+for (const version of [1, 0, 3, '2', null]) {
+  check(`v2 rejects unsupported schema version ${JSON.stringify(version)}`, s => { s.schemaVersion = version; }, { schemaVersion: 2, evidenceState: 'INVALID_SNAPSHOT' });
+}
+check('v2 does not coerce a complete legacy schema-v1 snapshot', legacyShape, { schemaVersion: 2, evidenceState: 'INVALID_SNAPSHOT' });
+check('v2 rejects legacy keys relabeled as schema v2', s => { legacyShape(s); s.schemaVersion = 2; }, { evidenceState: 'INVALID_SNAPSHOT' });
+check('v2 rejects mixed expected sourceSha alias', s => { s.expected.sourceSha = A; }, { evidenceState: 'INVALID_SNAPSHOT' });
+check('v2 rejects mixed repositoryHeadSha alias', s => { s.observations.repositoryHeadSha = C; }, { evidenceState: 'INVALID_SNAPSHOT' }, postMerge);
+for (const [section, key] of [
+  ['expected', 'generationSourceSha'], ['expected', 'observationHeadSha'],
+  ['observations', 'repositoryHeadStartSha'], ['observations', 'repositoryHeadEndSha'],
+]) {
+  check(`v2 requires ${section}.${key}`, s => { delete s[section][key]; }, { evidenceState: 'INVALID_SNAPSHOT' }, postMerge);
+  for (const [name, value] of [['null', null], ['uppercase', 'A'.repeat(40)], ['short', 'a'.repeat(39)], ['object', {}]]) {
+    check(`v2 rejects ${name} ${section}.${key}`, s => { s[section][key] = value; }, { evidenceState: 'INVALID_SNAPSHOT' }, postMerge);
+  }
+  test(`v2 does not evaluate ${section}.${key} accessor`, () => {
+    const s = postMerge(); let called = false;
+    Object.defineProperty(s[section], key, { enumerable: true, get() { called = true; return C; } });
+    assert.equal(diagnose(s).evidenceState, 'INVALID_SNAPSHOT'); assert.equal(called, false);
+  });
+}
+test('v2 post-merge classification is deterministic, non-mutating and deeply frozen', () => {
+  const s = postMerge(), before = JSON.stringify(s), a = diagnose(s), b = diagnose(s);
+  assert.deepEqual(a, b); assert.equal(JSON.stringify(s), before);
+  assert(Object.isFrozen(a)); assert(Object.isFrozen(a.safety));
+  assert(Object.isFrozen(a.matchingRuns)); assert(Object.isFrozen(a.matchingRuns[0]));
+  assert.equal(a.schemaVersion, 2); assert.equal(a.safety.diagnosticOnly, true);
 });

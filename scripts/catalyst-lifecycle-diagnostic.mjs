@@ -67,7 +67,7 @@ function freeze(value) {
   return value;
 }
 function output(fields) {
-  return freeze({ schemaVersion: 1, ...fields, safety: { ...SAFETY } });
+  return freeze({ schemaVersion: 2, ...fields, safety: { ...SAFETY } });
 }
 function unknown(reason) {
   return output({ evidenceState: reason, scheduler: 'UNKNOWN', schedulerTiming: 'UNKNOWN', execution: 'UNKNOWN', publication: 'UNKNOWN', disposition: 'UNKNOWN', matchingRuns: [], unresolvedRunIds: [], ignoredRunIds: [] });
@@ -128,11 +128,11 @@ function validatePublication(record) {
 }
 function validate(snapshot) {
   object(snapshot, ['schemaVersion', 'now', 'expected', 'observations']);
-  requireValue(snapshot.schemaVersion === 1); const now = timestamp(snapshot.now);
+  requireValue(snapshot.schemaVersion === 2); const now = timestamp(snapshot.now);
   const e = snapshot.expected;
-  object(e, ['repository', 'workflowPath', 'branch', 'sourceSha', 'eventKey', 'eventDate', 'phase', 'scheduledAt', 'maxObservationAgeMs', 'executionGraceMs', 'publicationDueAt', 'hold']);
+  object(e, ['repository', 'workflowPath', 'branch', 'generationSourceSha', 'observationHeadSha', 'eventKey', 'eventDate', 'phase', 'scheduledAt', 'maxObservationAgeMs', 'executionGraceMs', 'publicationDueAt', 'hold']);
   requireValue(e.repository === REPOSITORY && e.workflowPath === WORKFLOW && e.branch === 'main');
-  string(e.sourceSha, SHA); identity(e); timestamp(e.scheduledAt);
+  string(e.generationSourceSha, SHA); string(e.observationHeadSha, SHA); identity(e); timestamp(e.scheduledAt);
   integer(e.maxObservationAgeMs, 1, 86400000);
   if (e.executionGraceMs !== null) integer(e.executionGraceMs, 0, 86400000);
   if (e.publicationDueAt !== null) requireValue(timestamp(e.publicationDueAt) >= timestamp(e.scheduledAt));
@@ -141,7 +141,8 @@ function validate(snapshot) {
     requireValue(sameEvent(e.hold, e)); string(e.hold.reference, /^issue:[1-9][0-9]*:comment:[1-9][0-9]*$/); timestamp(e.hold.validUntil);
   }
   const o = snapshot.observations;
-  object(o, ['repositoryHeadSha', 'runs', 'publications', 'deployment', 'livePage']); string(o.repositoryHeadSha, SHA);
+  object(o, ['repositoryHeadStartSha', 'repositoryHeadEndSha', 'runs', 'publications', 'deployment', 'livePage']);
+  string(o.repositoryHeadStartSha, SHA); string(o.repositoryHeadEndSha, SHA);
   validateCollection(o.runs, true); validateCollection(o.publications);
   o.runs.records.forEach((run) => validateRun(run, o.runs));
   requireValue(new Set(o.runs.records.map((run) => run.id)).size === o.runs.records.length);
@@ -172,7 +173,10 @@ export function diagnoseCatalystLifecycle(snapshot) {
   let checked;
   try { checked = validate(snapshot); } catch { return unknown('INVALID_SNAPSHOT'); }
   const { now, e, o } = checked;
-  if (o.repositoryHeadSha !== e.sourceSha) return unknown('SCOPE_DRIFT');
+  // Freeze the current observation without rewriting a historical run's source.
+  // Both supplied head reads must agree with that scope; no ancestry is inferred.
+  if (o.repositoryHeadStartSha !== e.observationHeadSha
+    || o.repositoryHeadEndSha !== e.observationHeadSha) return unknown('SCOPE_DRIFT');
   const slot = timestamp(e.scheduledAt);
   const result = {
     evidenceState: 'SUPPLIED_RECORDS_ONLY', scheduler: 'UNKNOWN', schedulerTiming: 'UNKNOWN',
@@ -193,7 +197,7 @@ export function diagnoseCatalystLifecycle(snapshot) {
     result.scheduler = result.execution = 'EXECUTION_EVIDENCE_INCOMPLETE';
   } else if (result.unresolvedRunIds.length) {
     result.scheduler = result.execution = 'RUN_ASSOCIATION_UNKNOWN';
-  } else if (matched.some((r) => r.sourceSha !== e.sourceSha)) {
+  } else if (matched.some((r) => r.sourceSha !== e.generationSourceSha)) {
     result.scheduler = result.execution = 'RUN_SOURCE_DRIFT';
   } else if (matched.some((r) => r.event === 'schedule' && timestamp(r.createdAt) < slot)) {
     result.scheduler = result.execution = 'SLOT_CONFLICT';

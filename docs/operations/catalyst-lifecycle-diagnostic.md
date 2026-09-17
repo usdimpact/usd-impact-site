@@ -2,9 +2,10 @@
 
 ## Status and scope
 
-This is an isolated, network-free diagnostic. It is not connected to Control Center
-or Watchdog and does not implement the approved but unexecuted outcome-recovery
-workflow. Source review and CI success do not authorize a merge or activation.
+This is an isolated, network-free schema-v2 diagnostic. It is not connected to
+Control Center or Watchdog. Source review and CI success do not authorize a merge
+or activation. The September 16 FOMC outcome was separately released through #638;
+the earlier manual recovery is superseded and must not be executed.
 
 Repository scope:
 
@@ -31,8 +32,11 @@ current Daily edition do not establish that a particular event's outcome was pub
 The standalone diagnostic separates expected scheduled execution, reported execution
 result, publication progress, explicit editorial disposition, and supplied-evidence gaps.
 
-Reviewed baseline: `usdimpact/usd-impact-site` main
+Original schema-v1 baseline: `usdimpact/usd-impact-site` main
 `df175c72baa2c4b80eaec8bb372e92e43c18c76e`.
+Schema-v2 refresh baseline: `9b143b7bd5619145403270fec036fbe201aa70d5`
+(the separately released #638). #637 is refreshed by a history-preserving merge
+into its draft branch; the released article and existing test hook are unchanged.
 Preserved #615 head: `bc5c894ce540facc434660dd786dfdb907b9198d`.
 
 Source review record:
@@ -73,8 +77,9 @@ recovery instruction. A matching final state is named `LIVE_MATCH_REPORTED_NOT_V
 
 ## Explicit input policy
 
-The caller supplies the repository, exact source revision, workflow, branch, event
-identity/date, expected phase, full scheduled UTC instant and evidence-age budget.
+The caller supplies the repository, separate generation and observation revisions,
+workflow, branch, event identity/date, expected phase, full scheduled UTC instant
+and evidence-age budget.
 No deployment or event identity is inferred from a title, slug alone, a date alone, or a
 green workflow conclusion.
 
@@ -87,6 +92,50 @@ An optional editorial hold has exact event/phase binding, a record reference and
 explicit expiry. It is reported separately and never erases a missing-run observation.
 An expired hold is not extended. A hold and a reported live match are surfaced as a
 conflict rather than silently reconciled.
+
+## Schema v2: separate historical and current revision roles
+
+The validator accepts only numeric `schemaVersion: 2`; every report, including an
+invalid-input report, also identifies schema version 2. Version 1 is not silently
+converted. Legacy `expected.sourceSha` and `observations.repositoryHeadSha` keys,
+including mixtures of old and new keys, produce `INVALID_SNAPSHOT`.
+
+Four explicit lowercase 40-character Git SHA fields are mandatory:
+
+| Field | Meaning and comparison |
+| --- | --- |
+| `expected.generationSourceSha` | Historical source expected for the matched run; compared only with each matched run's `sourceSha`. |
+| `expected.observationHeadSha` | Repository head frozen for the present observation, independently supplied by the future collector. |
+| `observations.repositoryHeadStartSha` | Head reportedly read before collection; must equal the frozen observation head. |
+| `observations.repositoryHeadEndSha` | Head reportedly read after collection; must equal the same frozen observation head. |
+
+A syntactically valid start or end mismatch returns `SCOPE_DRIFT` with all stages
+UNKNOWN. Two equal head reads are insufficient when both differ from the frozen
+scope. Missing, malformed or accessor-based fields return `INVALID_SNAPSHOT`.
+The module does not perform these reads or attest that they really occurred; a
+future collector must bracket acquisition and independently bind this evidence.
+Start/end equality alone cannot detect a change away and back between the reads.
+
+A historical generation at A, editorial quality on B, merge/deployment at C and
+current observation at C can coexist without false revision drift. A run whose
+source differs from `generationSourceSha` still produces `RUN_SOURCE_DRIFT` on
+the execution/scheduler axes; that does not erase separate supplied publication
+evidence or turn it into verified evidence. Generation and observation SHAs may
+also coincide. Do not repin the historical source to today's main to hide drift.
+
+This change does not imply an ancestry relation between revisions. In particular,
+the existing exact `deployment.gitSha === publication.mergeSha` restriction is
+unchanged; a later deployment still requires separately designed ancestry and
+content-continuity proof. Current-main, editorial-head, merge and serving-deployment
+roles remain distinct. No release approval or publication gate is weakened.
+
+`catalyst-projection-v1` remains the same provisional synthetic digest label; the
+snapshot's v2 version does not implement or upgrade an article-content projection.
+All non-authorizing safety fields remain false. The module still imports nothing,
+acquires no clock, performs no IO and leaves its supplied input unchanged.
+
+Design checkpoint:
+https://github.com/usdimpact/usd-impact-site/issues/558#issuecomment-5713855842
 
 ## Independent output axes
 
@@ -135,8 +184,10 @@ node --check scripts/catalyst-lifecycle-diagnostic.mjs
 node --test scripts/test-catalyst-lifecycle-diagnostic.mjs
 ```
 
-Observed local runtime: Node v22.16.0. Final suite: 109 tests passed, 0 failures.
-Four deliberate broken variants must be detected: false publication authority, accepting
+Original schema-v1 baseline under Node v22.16.0: 109 tests passed, 0 failures.
+The v2 suite preserves these scenarios using the explicit v2 field names, and adds
+56 revision/schema regressions: 165 local tests passed, 0 failures or skips.
+Original regression protections remain required: false publication authority, accepting
 an earlier preview, ignoring run pagination, and a manual recovery erasing the schedule
 gap. Mutation copies run in temporary directories; the original module is not modified.
 
@@ -151,16 +202,24 @@ full application build, Node 24 CI result, live-source test or Production accept
 
 ## Current operational boundary
 
-The single September 17 outcome dispatch remains approved but not executed through the
-exposed tools. This monitor does not generate the missing September 16 article. The
-historical Fed raw-capture task remains deferred and is not an owner action. No merge,
-Production deployment, provider setup, credentials, firewall change, email, automatic
-retry, methodology change, archived-article rewrite or issue auto-close is included.
+The September 16 outcome was released through #638 on September 17: merge
+`9b143b7bd5619145403270fec036fbe201aa70d5`, reviewed editorial head
+`4d90c01808767fc8826a714519dd220e73836839`. Its scheduled generator used
+`df175c72baa2c4b80eaec8bb372e92e43c18c76e`. These distinct source roles motivated
+v2; the old manual recovery must not be run. See the release receipt:
+https://github.com/usdimpact/usd-impact-site/pull/638#issuecomment-5712883521
+
+#637 remains draft and unreleased. Its branch refresh is not a merge into main.
+The historical Fed raw-capture task remains deferred and is not an owner action.
+#631 and its read-only watch remain separate; this source change does not repair
+cron authorization. No Production deployment, provider setup, credentials, firewall
+change, email, automatic retry, methodology change, archived-article rewrite or
+issue auto-close is included.
 
 ## CI and verification scope
 
-The retained 108 behavior tests are supplemented by one test of the normal
-publishing-validator hook. All data are synthetic normalized observations. Local
+The retained 108 behavior tests and publishing-validator hook assertion remain,
+with 56 additional v2 cases. All data are synthetic normalized observations. Local
 execution under Node 22 is not a full application build or proof of live-source
 collection. Exact-head Node 24 CI, when run, supplies separate build evidence.
 No workflow definition, dependency, package script, runtime collector, dispatch,

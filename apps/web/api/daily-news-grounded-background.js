@@ -194,9 +194,92 @@ function groundedFetch(realFetch) {
   };
 }
 
+function traceDiagnosticRequested(request) {
+  if (process.env.VERCEL_ENV !== 'preview' || request.method !== 'GET') return false;
+  const direct = request.query?.__dep0169_trace;
+  if (String(Array.isArray(direct) ? direct[0] : direct ?? '') === '1') return true;
+  try {
+    return new URL(request.url ?? '/', 'https://usd-impact.com').searchParams.get('__dep0169_trace') === '1';
+  } catch {
+    return false;
+  }
+}
+
+function responseRecorder() {
+  return {
+    statusCode: 200,
+    headers: {},
+    body: '',
+    setHeader(name, value) {
+      this.headers[String(name).toLowerCase()] = String(value);
+    },
+    end(body = '') {
+      this.body = String(body);
+    },
+  };
+}
+
+function sendTraceResult(response, body, status = 200) {
+  response.statusCode = status;
+  response.setHeader('Content-Type', 'application/json; charset=utf-8');
+  response.setHeader('Cache-Control', 'no-store');
+  response.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  response.end(JSON.stringify(body));
+}
+
+async function runTraceDiagnostic(response) {
+  const token = String(process.env.NEWSFEED_BEARER_TOKEN ?? '');
+  if (!token) {
+    return sendTraceResult(response, { error: 'Preview NEWSFEED_BEARER_TOKEN is unavailable.' }, 503);
+  }
+
+  const warnings = [];
+  const onWarning = (warning) => {
+    if (warning?.code !== 'DEP0169') return;
+    warnings.push({
+      code: String(warning.code),
+      name: String(warning.name ?? ''),
+      message: String(warning.message ?? '').slice(0, 1_000),
+      stack: String(warning.stack ?? '').slice(0, 12_000),
+    });
+  };
+  const previousTrace = process.traceProcessWarnings;
+  process.traceProcessWarnings = true;
+  process.on('warning', onWarning);
+
+  try {
+    const date = '2026-09-17';
+    const innerResponse = responseRecorder();
+    const innerRequest = {
+      method: 'POST',
+      url: `/api/daily-news-grounded-background?date=${date}`,
+      query: { date },
+      headers: { authorization: `Bearer ${token}` },
+    };
+
+    await handler(innerRequest, innerResponse);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    return sendTraceResult(response, {
+      diagnostic: 'DEP0169_TRACE_PREVIEW_ONLY',
+      invokedRoute: '/api/daily-news-grounded-background',
+      invokedMethod: 'POST',
+      underlyingStatus: innerResponse.statusCode,
+      dep0169Count: warnings.length,
+      warnings,
+      secretsReturned: false,
+    });
+  } finally {
+    process.removeListener('warning', onWarning);
+    process.traceProcessWarnings = previousTrace;
+  }
+}
+
 export const config = { maxDuration: 300 };
 
 export default async function handler(request, response) {
+  if (traceDiagnosticRequested(request)) return runTraceDiagnostic(response);
+
   let release;
   const previous = runtimeOverrideQueue;
   runtimeOverrideQueue = new Promise((resolve) => {

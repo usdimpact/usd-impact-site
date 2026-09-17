@@ -21,11 +21,14 @@ Status: draft implementation companion to the consent-gated GA4 foundation.
 | `quiz_start` | Quiz start | `quiz_id` |
 | `quiz_retry` | Quiz retry | `quiz_id` |
 | `quiz_complete` | Quiz result becomes available | `quiz_id`, `outcome`, `score`, `question_count` |
+| `waitlist_submission_success` | Book waitlist request returns application success | none |
+| `daily_learning_subscribe_success` | New Daily Learning subscription succeeds; repeat already-subscribed responses are excluded | none |
+| `library_section_view` | Consented view of a paid Library Pass section | `format` = `guided`, `audiobook`, or `video` |
 
 ## Conversion/key-event policy
 
-Do not mark browser checkout events as purchase conversions. A future `purchase` event must be tied to a verified provider/webhook-backed transaction and deduplicated by a provider transaction identifier on the server side. That future event should include only the GA4 commerce fields required for aggregate reporting and must not expose payment credentials or direct account identifiers.
+`waitlist_submission_success` and `daily_learning_subscribe_success` are eligible lead/subscription key-event candidates after production validation. `library_section_view` is engagement telemetry, not a conversion. Do not mark browser checkout events as purchase conversions. A future `purchase` event must be tied to a verified provider/webhook-backed transaction and deduplicated by a provider transaction identifier on the server side. That future event should include only the GA4 commerce fields required for aggregate reporting and must not expose payment credentials or direct account identifiers.
 
 ## Next candidates
 
-Newsletter subscription, sign-in success, Guided Edition engagement, audiobook engagement, video engagement, and report/learn interactions require separate contracts because they touch authenticated state, delivery state, or additional user-behavior semantics. They are intentionally outside this first increment.
+Sign-in success, progress milestones, verified purchase completion, and report/learn interaction events remain outside this increment. Sign-in and purchase require server-authoritative contracts; progress milestones require bounded semantics that do not expose content-level behavioral history.

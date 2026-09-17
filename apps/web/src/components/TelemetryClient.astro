@@ -4,6 +4,7 @@
   const CHECKLIST_PATH = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
   const CHECKOUT_PATH = '/checkout/';
   const CHECKOUT_SIGN_IN_EVENT = 'usd-impact:checkout-sign-in-redirect';
+  const ANALYTICS_EVENT = 'usd-impact:analytics-event';
   const CONSENT_CHANGE_EVENT = 'usd-impact:consent-change';
   const CONSENT_READY_EVENT = 'usd-impact:consent-ready';
   const observedResults = new WeakSet();
@@ -47,6 +48,10 @@
     }).catch(() => {
       // Telemetry must never interrupt downloads, quiz scoring, or navigation.
     });
+
+    window.dispatchEvent(new CustomEvent(ANALYTICS_EVENT, {
+      detail: { eventName, details },
+    }));
     return true;
   };
 

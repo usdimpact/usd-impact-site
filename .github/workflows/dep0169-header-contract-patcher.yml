@@ -1,0 +1,243 @@
+name: DEP0169 header-contract patcher
+
+on:
+  push:
+    branches:
+      - fix/dep0169-request-query-20260917
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dep0169-header-contract-patcher
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    if: github.repository == 'usdimpact/usd-impact-site'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+
+      - name: Guard exact branch and base
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "fix/dep0169-request-query-20260917"
+          git fetch origin main --depth=1
+          test "$(git rev-parse origin/main)" = "ead2afb72fd98a00b3a57eb33cc451c226e85110"
+          test "$(git rev-parse HEAD^)" = "efcaaec5c9deac598ba74fcfe598f8a794f359b4"
+          test "$(git diff --name-only HEAD^..HEAD)" = ".github/workflows/dep0169-header-contract-patcher.yml"
+
+      - name: Apply exact header-contract patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          source_path = Path('apps/web/api/daily-news-background.js')
+          source = source_path.read_text()
+          old = """export function queryParam(request, name) {
+            const direct = request.query?.[name];
+            if (Array.isArray(direct)) return String(direct[0] ?? '').trim();
+            if (direct !== undefined && direct !== null) return String(direct).trim();
+            return '';
+          }
+          """
+          new = """const REQUEST_PARAM_HEADERS = Object.freeze({
+            date: 'x-usd-impact-edition-date',
+            response_id: 'x-usd-impact-response-id',
+          });
+
+          export function requestParam(request, name) {
+            const headerName = REQUEST_PARAM_HEADERS[name];
+            if (!headerName) return '';
+            return requestHeader(request, headerName).trim();
+          }
+          """
+          if source.count(old) != 1:
+              raise SystemExit(f'expected one queryParam block, found {source.count(old)}')
+          source = source.replace(old, new, 1)
+          source = source.replace("const date = queryParam(request, 'date') || utcDateString();", "const date = requestParam(request, 'date') || utcDateString();", 1)
+          source = source.replace("const responseId = queryParam(request, 'response_id');", "const responseId = requestParam(request, 'response_id');", 1)
+          if 'queryParam(' in source or 'request.query' in source:
+              raise SystemExit('legacy request.query access remains in daily-news-background.js')
+          source_path.write_text(source)
+
+          test_path = Path('apps/web/scripts/test-daily-news-editorial-validation.mjs')
+          test = test_path.read_text()
+          old_import = "import { buildRepairOutputSchema, queryParam } from '../api/daily-news-background.js';"
+          new_import = "import { buildRepairOutputSchema, requestParam } from '../api/daily-news-background.js';"
+          if test.count(old_import) != 1:
+              raise SystemExit(f'expected one queryParam import, found {test.count(old_import)}')
+          test = test.replace(old_import, new_import, 1)
+          old_test = """const queryOnlyRequest = {
+            query: {
+              date: ' 2026-09-17 ',
+              response_id: [' resp_12345678 ', 'ignored'],
+            },
+            get url() {
+              throw new Error('request.url must not be accessed by queryParam');
+            },
+          };
+          assert.equal(queryParam(queryOnlyRequest, 'date'), '2026-09-17');
+          assert.equal(queryParam(queryOnlyRequest, 'response_id'), 'resp_12345678');
+          assert.equal(
+            queryParam({ query: {}, get url() { throw new Error('request.url fallback is forbidden'); } }, 'date'),
+            '',
+          );
+          """
+          new_test = """const headerOnlyRequest = {
+            headers: {
+              'x-usd-impact-edition-date': ' 2026-09-17 ',
+              'x-usd-impact-response-id': [' resp_12345678 ', 'ignored'],
+            },
+            get query() {
+              throw new Error('request.query must not be accessed by requestParam');
+            },
+            get url() {
+              throw new Error('request.url must not be accessed by requestParam');
+            },
+          };
+          assert.equal(requestParam(headerOnlyRequest, 'date'), '2026-09-17');
+          assert.equal(requestParam(headerOnlyRequest, 'response_id'), 'resp_12345678');
+          assert.equal(
+            requestParam({
+              headers: {},
+              get query() { throw new Error('request.query fallback is forbidden'); },
+              get url() { throw new Error('request.url fallback is forbidden'); },
+            }, 'date'),
+            '',
+          );
+          """
+          if test.count(old_test) != 1:
+              raise SystemExit(f'expected one query-only regression block, found {test.count(old_test)}')
+          test_path.write_text(test.replace(old_test, new_test, 1))
+
+          workflow_path = Path('.github/workflows/daily-news.yml')
+          workflow = workflow_path.read_text()
+          marker = '          echo "BACKGROUND_ENDPOINT=$background_endpoint" >> "$GITHUB_ENV"\n\n          curl --fail --silent --show-error --location \\\n'
+          replacement = '          echo "BACKGROUND_ENDPOINT=$background_endpoint" >> "$GITHUB_ENV"\n          edition_date="$(date -u +%F)"\n          echo "EDITION_DATE=$edition_date" >> "$GITHUB_ENV"\n\n          curl --fail --silent --show-error --location \\\n'
+          if workflow.count(marker) != 1:
+              raise SystemExit(f'expected one start marker, found {workflow.count(marker)}')
+          workflow = workflow.replace(marker, replacement, 1)
+
+          start_headers = '            -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \\\n            "$background_endpoint" \\\n'
+          start_headers_new = '            -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \\\n            -H "X-USD-Impact-Edition-Date: $edition_date" \\\n            "$background_endpoint" \\\n'
+          if workflow.count(start_headers) != 1:
+              raise SystemExit(f'expected one start request header block, found {workflow.count(start_headers)}')
+          workflow = workflow.replace(start_headers, start_headers_new, 1)
+
+          poll_url = '              poll_url="${BACKGROUND_ENDPOINT}?response_id=${response_id}"\n'
+          if workflow.count(poll_url) != 1:
+              raise SystemExit(f'expected one poll_url assignment, found {workflow.count(poll_url)}')
+          workflow = workflow.replace(poll_url, '', 1)
+
+          poll_headers = '                -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \\\n                "$poll_url" \\\n'
+          poll_headers_new = '                -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \\\n                -H "X-USD-Impact-Edition-Date: $EDITION_DATE" \\\n                -H "X-USD-Impact-Response-Id: $response_id" \\\n                "$BACKGROUND_ENDPOINT" \\\n'
+          if workflow.count(poll_headers) != 1:
+              raise SystemExit(f'expected one poll request block, found {workflow.count(poll_headers)}')
+          workflow = workflow.replace(poll_headers, poll_headers_new, 1)
+
+          regen_headers = '                  -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \\\n                  "$BACKGROUND_ENDPOINT" \\\n'
+          regen_headers_new = '                  -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \\\n                  -H "X-USD-Impact-Edition-Date: $EDITION_DATE" \\\n                  "$BACKGROUND_ENDPOINT" \\\n'
+          if workflow.count(regen_headers) != 1:
+              raise SystemExit(f'expected one regeneration request block, found {workflow.count(regen_headers)}')
+          workflow = workflow.replace(regen_headers, regen_headers_new, 1)
+          workflow_path.write_text(workflow)
+
+          publication_test_path = Path('apps/web/scripts/test-daily-news-publication-workflow.mjs')
+          publication_test = publication_test_path.read_text()
+          anchor = "assert.ok(pollRequest, 'background polling request must be present');\n"
+          additions = """assert.match(
+            workflow,
+            /EDITION_DATE=\$edition_date[\s\S]*X-USD-Impact-Edition-Date: \$edition_date/,
+            'background start must bind the UTC edition date through a private request header',
+          );
+          assert.match(
+            pollRequest[0],
+            /X-USD-Impact-Edition-Date: \$EDITION_DATE/,
+            'background polling must preserve the original edition date through a private request header',
+          );
+          assert.match(
+            pollRequest[0],
+            /X-USD-Impact-Response-Id: \$response_id/,
+            'background polling must provide the response id through a private request header',
+          );
+          assert.doesNotMatch(
+            pollStep[1],
+            /\?response_id=\$\{response_id\}/,
+            'background polling must not rely on a query string that materializes Vercel request.query',
+          );
+          assert.ok(
+            (workflow.match(/X-USD-Impact-Edition-Date/g) || []).length >= 3,
+            'start, poll, and bounded regeneration requests must all carry the edition-date header',
+          );
+          """
+          if publication_test.count(anchor) != 1:
+              raise SystemExit(f'expected one poll assertion anchor, found {publication_test.count(anchor)}')
+          publication_test_path.write_text(publication_test.replace(anchor, anchor + additions, 1))
+          PY
+
+      - name: Run focused regression checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd apps/web
+          node --check api/daily-news-background.js
+          node scripts/test-daily-news-editorial-validation.mjs
+          node scripts/test-daily-news-publication-workflow.mjs
+
+      - name: Verify exact intended diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path('apps/web/api/daily-news-background.js').read_text()
+          assert 'request.query' not in source
+          assert "date: 'x-usd-impact-edition-date'" in source
+          assert "response_id: 'x-usd-impact-response-id'" in source
+          workflow = Path('.github/workflows/daily-news.yml').read_text()
+          assert '?response_id=${response_id}' not in workflow
+          assert 'X-USD-Impact-Response-Id: $response_id' in workflow
+          assert workflow.count('X-USD-Impact-Edition-Date') >= 3
+          PY
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/daily-news.yml' \
+            'apps/web/api/daily-news-background.js' \
+            'apps/web/scripts/test-daily-news-editorial-validation.mjs' \
+            'apps/web/scripts/test-daily-news-publication-workflow.mjs' | sort)"
+          test "$changed" = "$expected"
+
+      - name: Remove patcher and commit source-only result
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/dep0169-header-contract-patcher.yml
+          git config user.name "usdimpact"
+          git config user.email "MIRCEA.MANAGEMENT@GMAIL.COM"
+          git add .github/workflows/daily-news.yml \
+            apps/web/api/daily-news-background.js \
+            apps/web/scripts/test-daily-news-editorial-validation.mjs \
+            apps/web/scripts/test-daily-news-publication-workflow.mjs
+          git diff --cached --check
+          staged="$(git diff --cached --name-only | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/daily-news.yml' \
+            '.github/workflows/dep0169-header-contract-patcher.yml' \
+            'apps/web/api/daily-news-background.js' \
+            'apps/web/scripts/test-daily-news-editorial-validation.mjs' \
+            'apps/web/scripts/test-daily-news-publication-workflow.mjs' | sort)"
+          test "$staged" = "$expected"
+          git commit -m "fix(publishing): pass Daily background state in headers"
+          git push origin "HEAD:$GITHUB_REF_NAME"

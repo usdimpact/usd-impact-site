@@ -119,6 +119,9 @@ assert.match(privacy, /checkout-page view, checkout-button click, or redirect to
 assert.match(privacy, /not unique visitors and not evidence of a buyer or completed purchase/i);
 assert.match(privacy, /does not include[\s\S]*email addresses[\s\S]*account identifiers[\s\S]*payment details/i);
 assert.match(privacy, /optional analytics remains off unless you select \*\*Accept analytics\*\*/i);
+assert.match(privacy, /successful waitlist\/Daily Learning subscription/i);
+assert.match(privacy, /aggregate Library Pass section-view categories/i);
+assert.match(privacy, /does not receive[\s\S]*email addresses[\s\S]*account identifiers[\s\S]*content identifiers/i);
 assert.match(eventModel, /Purchase completion is intentionally excluded/i);
 assert.match(eventModel, /verified provider\/webhook-backed transaction/i);
 

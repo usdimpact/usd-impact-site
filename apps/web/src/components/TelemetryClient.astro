@@ -4,6 +4,7 @@
   const CHECKLIST_PATH = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
   const CHECKOUT_PATH = '/checkout/';
   const CHECKOUT_SIGN_IN_EVENT = 'usd-impact:checkout-sign-in-redirect';
+  const DAILY_LEARNING_SUBSCRIBE_EVENT = 'usd-impact:daily-learning-subscribe-success';
   const ANALYTICS_EVENT = 'usd-impact:analytics-event';
   const CONSENT_CHANGE_EVENT = 'usd-impact:consent-change';
   const CONSENT_READY_EVENT = 'usd-impact:consent-ready';
@@ -46,7 +47,7 @@
       body: JSON.stringify(payload),
       keepalive: true,
     }).catch(() => {
-      // Telemetry must never interrupt downloads, quiz scoring, or navigation.
+      // Telemetry must never interrupt downloads, quiz scoring, subscriptions, or navigation.
     });
 
     window.dispatchEvent(new CustomEvent(ANALYTICS_EVENT, {
@@ -69,6 +70,10 @@
 
   window.addEventListener(CHECKOUT_SIGN_IN_EVENT, () => {
     if (window.location.pathname === CHECKOUT_PATH) track('checkout_sign_in_redirect');
+  });
+
+  window.addEventListener(DAILY_LEARNING_SUBSCRIBE_EVENT, () => {
+    track('daily_learning_subscribe_success');
   });
 
   document.addEventListener('click', (event) => {

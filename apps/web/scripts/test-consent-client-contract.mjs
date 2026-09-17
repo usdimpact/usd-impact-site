@@ -37,7 +37,7 @@ for (const required of [
   'Google Analytics 4',
   'Advertising features and ad personalization are disabled',
 ]) {
-  assert.match(consent, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.ok(consent.includes(required));
 }
 
 assert.doesNotMatch(consent, /localStorage|sessionStorage|navigator\.userAgent|advertising identifier/i);
@@ -75,7 +75,7 @@ for (const requiredGa4 of [
   "name === '_ga' || name.startsWith('_ga_')",
   'Max-Age=0',
 ]) {
-  assert.match(ga4, new RegExp(requiredGa4.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.ok(ga4.includes(requiredGa4));
 }
 
 const gaGuard = ga4.indexOf('if (!analyticsAllowed()) return;');
@@ -88,9 +88,10 @@ for (const requiredCsp of [
   'https://www.google-analytics.com',
   'https://region1.google-analytics.com',
 ]) {
-  assert.match(astroConfig, new RegExp(requiredCsp.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.ok(astroConfig.includes(requiredCsp));
 }
 
+const privacyLower = privacy.toLowerCase();
 for (const requiredDisclosure of [
   '`usd_impact_consent`',
   '`usd_impact_access`',
@@ -110,7 +111,7 @@ for (const requiredDisclosure of [
   'Privacy settings',
   'does not use browser `localStorage` or `sessionStorage`',
 ]) {
-  assert.match(privacy, new RegExp(requiredDisclosure.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
+  assert.ok(privacyLower.includes(requiredDisclosure.toLowerCase()));
 }
 
 assert.match(layout, /<PwaClient\s*\/>/);

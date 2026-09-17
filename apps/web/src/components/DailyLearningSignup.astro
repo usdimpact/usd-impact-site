@@ -44,6 +44,7 @@ const formId = 'daily-learning-email-form';
 
 <script>
   const form = document.querySelector('[data-daily-learning-form]');
+  const NEW_SUBSCRIPTION_EVENT = 'usd-impact:daily-learning-subscribe-success';
 
   if (form instanceof HTMLFormElement) {
     const status = form.querySelector('[data-daily-learning-status]');
@@ -87,6 +88,9 @@ const formId = 'daily-learning-email-form';
             ? 'This address is already subscribed to Daily Learning.'
             : 'Subscribed. Your consent is recorded separately from the book waitlist.';
           status.dataset.state = 'success';
+        }
+        if (payload.alreadySubscribed !== true) {
+          window.dispatchEvent(new Event(NEW_SUBSCRIPTION_EVENT));
         }
       } catch (error) {
         if (status instanceof HTMLElement) {

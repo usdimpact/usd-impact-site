@@ -1,0 +1,50 @@
+name: Social candidate contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/social-candidate-generator.js'
+      - 'apps/web/src/lib/social-source-adapters.js'
+      - 'apps/web/scripts/generate-social-candidate.mjs'
+      - 'apps/web/scripts/test-social-candidate-generator.mjs'
+      - 'apps/web/scripts/test-social-source-adapters.mjs'
+      - 'docs/operations/social-candidate-generation-pipeline.md'
+      - '.github/workflows/social-candidate-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: social-candidate-contract-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate social candidate pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Syntax checks
+        run: |
+          node --check src/lib/social-candidate-generator.js
+          node --check src/lib/social-source-adapters.js
+          node --check scripts/generate-social-candidate.mjs
+          node --check scripts/test-social-candidate-generator.mjs
+          node --check scripts/test-social-source-adapters.mjs
+
+      - name: Contract tests
+        run: |
+          node scripts/test-social-candidate-generator.mjs
+          node scripts/test-social-source-adapters.mjs

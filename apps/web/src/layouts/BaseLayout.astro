@@ -3,6 +3,7 @@ import '../styles/global.css';
 import '../styles/account.css';
 import BookChapterBridgeCard from '../components/BookChapterBridgeCard.astro';
 import ConsentClient from '../components/ConsentClient.astro';
+import GoogleAnalyticsClient from '../components/GoogleAnalyticsClient.astro';
 import TelemetryClient from '../components/TelemetryClient.astro';
 import PwaClient from '../components/PwaClient.astro';
 import { isSearchUtilityPath } from '../lib/search-utility-policy.js';
@@ -228,6 +229,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
       }
     </script>
     <ConsentClient />
+    <GoogleAnalyticsClient />
     <TelemetryClient />
     <PwaClient />
   </body>

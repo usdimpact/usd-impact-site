@@ -7,13 +7,15 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(scriptDir, '..');
 const read = (relativePath) => fs.readFile(path.join(webRoot, relativePath), 'utf8');
 
-const [consent, layout, telemetry, privacy, notifications, pwaClient] = await Promise.all([
+const [consent, layout, telemetry, ga4, privacy, notifications, pwaClient, astroConfig] = await Promise.all([
   read('src/components/ConsentClient.astro'),
   read('src/layouts/BaseLayout.astro'),
   read('src/components/TelemetryClient.astro'),
+  read('src/components/GoogleAnalyticsClient.astro'),
   read('src/pages/privacy.md'),
   read('src/pages/account/notifications.astro'),
   read('src/components/PwaClient.astro'),
+  read('astro.config.mjs'),
 ]);
 
 for (const required of [
@@ -32,6 +34,8 @@ for (const required of [
   'Review settings',
   'Accept analytics',
   'Save choices',
+  'Google Analytics 4',
+  'Advertising features and ad personalization are disabled',
 ]) {
   assert.match(consent, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 }
@@ -44,26 +48,65 @@ assert.match(consent, /id="privacy-consent-reject" class="privacy-consent-button
 assert.match(consent, /id="privacy-consent-accept" class="privacy-consent-button privacy-consent-primary"/);
 
 assert.match(layout, /import ConsentClient/);
+assert.match(layout, /import GoogleAnalyticsClient/);
 assert.match(layout, /id="privacy-settings-button"/);
 const consentPosition = layout.indexOf('<ConsentClient />');
+const ga4Position = layout.indexOf('<GoogleAnalyticsClient />');
 const telemetryPosition = layout.indexOf('<TelemetryClient />');
-assert.ok(consentPosition >= 0 && telemetryPosition > consentPosition);
+assert.ok(consentPosition >= 0 && ga4Position > consentPosition && telemetryPosition > ga4Position);
 
 const telemetryGuard = telemetry.indexOf('if (!analyticsAllowed()) return false;');
 const telemetryRequest = telemetry.indexOf('fetch(TELEMETRY_ENDPOINT');
 assert.ok(telemetryGuard >= 0 && telemetryRequest > telemetryGuard);
+
+for (const requiredGa4 of [
+  'PUBLIC_GA4_MEASUREMENT_ID',
+  '/^G-[A-Z0-9]{4,32}$/',
+  "if (!analyticsAllowed()) return;",
+  'https://www.googletagmanager.com/gtag/js',
+  "analytics_storage: 'granted'",
+  "ad_storage: 'denied'",
+  "ad_user_data: 'denied'",
+  "ad_personalization: 'denied'",
+  'allow_google_signals: false',
+  'allow_ad_personalization_signals: false',
+  'cookie_expires: COOKIE_MAX_AGE_SECONDS',
+  'window[DISABLE_KEY] = true',
+  "name === '_ga' || name.startsWith('_ga_')",
+  'Max-Age=0',
+]) {
+  assert.match(ga4, new RegExp(requiredGa4.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+}
+
+const gaGuard = ga4.indexOf('if (!analyticsAllowed()) return;');
+const gaScriptCreation = ga4.indexOf("document.createElement('script')");
+assert.ok(gaGuard >= 0 && gaScriptCreation > gaGuard);
+assert.doesNotMatch(ga4, /localStorage|sessionStorage|email|accountId|user_id|ads_data_redaction/i);
+
+for (const requiredCsp of [
+  'https://www.googletagmanager.com',
+  'https://www.google-analytics.com',
+  'https://region1.google-analytics.com',
+]) {
+  assert.match(astroConfig, new RegExp(requiredCsp.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+}
 
 for (const requiredDisclosure of [
   '`usd_impact_consent`',
   '`usd_impact_access`',
   '`usd_impact_refresh`',
   '`usd_impact_pkce`',
+  '`_ga` and `_ga_*`',
   'up to 180 days',
   'up to one hour',
   'up to 30 days',
   'up to 10 minutes',
+  'up to one year',
   'Cloudflare Turnstile',
-  'aggregate analytics remains off',
+  'optional analytics remains off',
+  'Google Analytics 4',
+  'Google Signals',
+  'advertising personalization disabled',
   'Privacy settings',
   'does not use browser `localStorage` or `sessionStorage`',
 ]) {
@@ -79,4 +122,4 @@ const registrationCall = notifications.indexOf('const registrationState = await 
 assert.ok(enableHandler >= 0 && permissionPrompt > enableHandler && registrationCall > permissionPrompt);
 assert.match(notifications, /registration\.unregister\(\)/);
 
-console.log('Consent contract passed: default-denied analytics, reversible choice, essential-only browser state.');
+console.log('Consent contract passed: default-denied analytics, consent-gated GA4, reversible choice, and essential-only default browser state.');

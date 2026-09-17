@@ -4,12 +4,29 @@ import {
   buildMetaDescription,
   validateEditorialBundle,
 } from '../src/lib/daily-news-editorial-validation.js';
-import { buildRepairOutputSchema } from '../api/daily-news-background.js';
+import { buildRepairOutputSchema, queryParam } from '../api/daily-news-background.js';
 
 const currentTreasuryUrl = 'https://home.treasury.gov/news/press-releases/sb0590';
 const staleTreasuryUrl = 'https://home.treasury.gov/news/press-releases/sb0489';
 const treasuryBuybackUrl = 'https://home.treasury.gov/news/press-releases/sb0607';
 const treasuryBuybackTitle = 'Treasury Announces Increased Sizes of Nominal Long-End Liquidity Support Buybacks Beginning September 9';
+
+
+const queryOnlyRequest = {
+  query: {
+    date: ' 2026-09-17 ',
+    response_id: [' resp_12345678 ', 'ignored'],
+  },
+  get url() {
+    throw new Error('request.url must not be accessed by queryParam');
+  },
+};
+assert.equal(queryParam(queryOnlyRequest, 'date'), '2026-09-17');
+assert.equal(queryParam(queryOnlyRequest, 'response_id'), 'resp_12345678');
+assert.equal(
+  queryParam({ query: {}, get url() { throw new Error('request.url fallback is forbidden'); } }, 'date'),
+  '',
+);
 
 function source(id, publishedAt, url = 'https://www.bls.gov/news.release/prod2.nr0.htm') {
   return { id, publishedAt, url, sourceType: 'primary' };

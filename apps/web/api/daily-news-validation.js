@@ -11,6 +11,7 @@ export const SOURCE_DATE_RULES = [
   'For an immutable release or article, publishedAt is the publication date displayed by the source; never substitute an effective date, event date, auction date, implementation date, operation date, or start date mentioned in the title or body.',
   'For a living calendar or schedule page that explicitly displays a Last Update date, use that displayed Last Update date as publishedAt; do not substitute the access date.',
   'For a living program or landing page that rolls forward to the current data release and explicitly displays that release date, use the displayed current release or data-update date as publishedAt; never substitute the access date.',
+  'The Treasury Most Recent Quarterly Refunding Documents page is a multi-document index for discovery only, not a single-date publication source. Cite the directly linked dated document that supports the claim with its own verified publication or displayed update date; never borrow a date from a sibling document or treat a section date as the publication date of the whole index. If no such document is verifiable, omit that source and the unsupported claim. Do not replace a conflicting date with an older date merely to pass validation.',
   'If an otherwise useful page has no verifiable publication, displayed Last Update, current release, or data-update date, omit that source and any unsupported claim instead of inventing a date.',
 ].join(' ');
 export const SOURCE_ID_RULES = [
@@ -133,6 +134,12 @@ export function normalizeBundleDraft(draft) {
 export function safeValidationDiagnostic(message) {
   const text = String(message ?? '');
 
+  if (/Treasury refunding index requires a directly linked dated document/i.test(text)) {
+    return {
+      code: 'invalid-source-date',
+      reason: 'Use the directly linked Treasury document and its own verified date, not the multi-document refunding index or another item date; otherwise omit the unsupported source and claim.',
+    };
+  }
   if (/invalid publishedAt|publication date|source date/i.test(text)) {
     return {
       code: 'invalid-source-date',

@@ -1,7 +1,7 @@
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { validateEditorialBundle } from '../src/lib/daily-news-editorial-validation.js';
-import { isLivingSourceUrl } from '../src/lib/source-date-basis.js';
+import { isLivingSourceUrl, sourceDateAttributionIssue } from '../src/lib/source-date-basis.js';
 
 const inputPath = process.argv[2];
 const replace = process.argv.includes('--replace');
@@ -107,6 +107,8 @@ async function validateHistoricalSourceDates(candidateSources, outputPath) {
     const publishedAt = requiredString(source, 'publishedAt');
     if (!isDate(publishedAt)) throw new Error(`Source ${id} publishedAt must use a real YYYY-MM-DD date`);
     const url = canonicalUrl(requiredString(source, 'url'));
+    const attributionIssue = sourceDateAttributionIssue(url);
+    if (attributionIssue) throw new Error(attributionIssue);
     if (isLivingSourceUrl(url)) continue;
     const historicalDates = historicalDatesByUrl.get(url);
     if (!historicalDates || historicalDates.size === 0) continue;

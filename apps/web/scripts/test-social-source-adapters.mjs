@@ -75,8 +75,8 @@ assert.equal(generateSocialCandidate(catalyst, 'catalyst').state, 'draft');
 
 const report = adaptReportPublication(weeklyEntry);
 assert.equal(report.url, 'https://www.usd-impact.com/reports/weekly/2026-09-11');
-assert.ok(report.evidence.some((item) => item.url.includes('score.usd-impact.com')));
-assert.ok(report.evidence.some((item) => item.url.includes('/news/2026-09-11')));
+assert.ok(report.evidence.some((item) => item.url === 'https://score.usd-impact.com/archive/2026-09-11/weekly_input.json'));
+assert.ok(report.evidence.some((item) => item.url === 'https://www.usd-impact.com/news/2026-09-11'));
 assert.equal(generateSocialCandidate(report, 'report').state, 'draft');
 
 assert.deepEqual(adaptPublicationForSocial('daily', dailyEntry), daily);

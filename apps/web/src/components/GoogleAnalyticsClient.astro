@@ -1,0 +1,98 @@
+---
+const rawMeasurementId = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID?.trim() ?? '';
+const measurementIdPattern = /^G-[A-Z0-9]{4,32}$/;
+if (rawMeasurementId && !measurementIdPattern.test(rawMeasurementId)) {
+  throw new Error('PUBLIC_GA4_MEASUREMENT_ID must be a GA4 Measurement ID such as G-XXXXXXXXXX.');
+}
+const measurementId = measurementIdPattern.test(rawMeasurementId) ? rawMeasurementId : '';
+---
+
+{measurementId && (
+  <script define:vars={{ measurementId }}>
+    // @ts-nocheck
+    const CONSENT_CHANGE_EVENT = 'usd-impact:consent-change';
+    const CONSENT_READY_EVENT = 'usd-impact:consent-ready';
+    const SCRIPT_ID = 'usd-impact-ga4-script';
+    const DISABLE_KEY = `ga-disable-${measurementId}`;
+    const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
+    let configured = false;
+
+    const analyticsAllowed = () => window.USDImpactConsent?.analyticsAllowed?.() === true;
+
+    const expireCookie = (name) => {
+      const hostname = window.location.hostname;
+      const domains = ['', hostname, `.${hostname}`, '.usd-impact.com'];
+      for (const domain of domains) {
+        const domainPart = domain ? `; Domain=${domain}` : '';
+        document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax${domainPart}`;
+      }
+    };
+
+    const clearGaCookies = () => {
+      document.cookie
+        .split(';')
+        .map((part) => part.trim().split('=')[0])
+        .filter((name) => name === '_ga' || name.startsWith('_ga_'))
+        .forEach(expireCookie);
+    };
+
+    const ensureGtag = () => {
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = window.gtag || function gtag() { window.dataLayer.push(arguments); };
+      return window.gtag;
+    };
+
+    const loadGa4 = () => {
+      if (!analyticsAllowed()) return;
+      window[DISABLE_KEY] = false;
+      const gtag = ensureGtag();
+      gtag('consent', 'default', {
+        analytics_storage: 'granted',
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+      });
+
+      if (!document.getElementById(SCRIPT_ID)) {
+        const script = document.createElement('script');
+        script.id = SCRIPT_ID;
+        script.async = true;
+        script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
+        document.head.appendChild(script);
+      }
+
+      if (!configured) {
+        gtag('js', new Date());
+        gtag('config', measurementId, {
+          allow_google_signals: false,
+          allow_ad_personalization_signals: false,
+          anonymize_ip: true,
+          cookie_expires: COOKIE_MAX_AGE_SECONDS,
+          send_page_view: true,
+        });
+        configured = true;
+      } else {
+        gtag('consent', 'update', {
+          analytics_storage: 'granted',
+          ad_storage: 'denied',
+          ad_user_data: 'denied',
+          ad_personalization: 'denied',
+        });
+      }
+    };
+
+    const disableGa4 = () => {
+      window[DISABLE_KEY] = true;
+      clearGaCookies();
+    };
+
+    const applyConsent = () => {
+      if (analyticsAllowed()) loadGa4();
+      else disableGa4();
+    };
+
+    window.addEventListener(CONSENT_READY_EVENT, applyConsent);
+    window.addEventListener(CONSENT_CHANGE_EVENT, applyConsent);
+    applyConsent();
+  </script>
+)}

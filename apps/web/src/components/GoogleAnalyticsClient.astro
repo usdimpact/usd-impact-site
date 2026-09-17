@@ -12,9 +12,20 @@ const measurementId = measurementIdPattern.test(rawMeasurementId) ? rawMeasureme
     // @ts-nocheck
     const CONSENT_CHANGE_EVENT = 'usd-impact:consent-change';
     const CONSENT_READY_EVENT = 'usd-impact:consent-ready';
+    const ANALYTICS_EVENT = 'usd-impact:analytics-event';
     const SCRIPT_ID = 'usd-impact-ga4-script';
     const DISABLE_KEY = `ga-disable-${measurementId}`;
     const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
+    const ALLOWED_EVENTS = new Set([
+      'checklist_download',
+      'checkout_view',
+      'checkout_button_click',
+      'checkout_sign_in_redirect',
+      'quiz_start',
+      'quiz_retry',
+      'quiz_complete',
+    ]);
+    const QUIZ_ID_PATTERN = /^[a-zA-Z0-9._~-]{1,128}$/;
     let configured = false;
 
     const analyticsAllowed = () => window.USDImpactConsent?.analyticsAllowed?.() === true;
@@ -91,8 +102,43 @@ const measurementId = measurementIdPattern.test(rawMeasurementId) ? rawMeasureme
       else disableGa4();
     };
 
+    const cleanQuizId = (value) => (
+      typeof value === 'string' && QUIZ_ID_PATTERN.test(value) ? value : undefined
+    );
+
+    const cleanInteger = (value, min, max) => (
+      Number.isInteger(value) && value >= min && value <= max ? value : undefined
+    );
+
+    const sendAnalyticsEvent = (event) => {
+      if (!analyticsAllowed() || !(event instanceof CustomEvent)) return;
+      const eventName = event.detail?.eventName;
+      const details = event.detail?.details;
+      if (typeof eventName !== 'string' || !ALLOWED_EVENTS.has(eventName)) return;
+
+      loadGa4();
+      const params = {};
+      if (eventName.startsWith('quiz_')) {
+        const quizId = cleanQuizId(details?.quizId);
+        if (!quizId) return;
+        params.quiz_id = quizId;
+      }
+      if (eventName === 'quiz_complete') {
+        if (details?.outcome !== 'pass' && details?.outcome !== 'fail') return;
+        const score = cleanInteger(details?.score, 0, 1000);
+        const questionCount = cleanInteger(details?.questionCount, 1, 1000);
+        if (score === undefined || questionCount === undefined || score > questionCount) return;
+        params.outcome = details.outcome;
+        params.score = score;
+        params.question_count = questionCount;
+      }
+
+      ensureGtag()('event', eventName, params);
+    };
+
     window.addEventListener(CONSENT_READY_EVENT, applyConsent);
     window.addEventListener(CONSENT_CHANGE_EVENT, applyConsent);
+    window.addEventListener(ANALYTICS_EVENT, sendAnalyticsEvent);
     applyConsent();
   </script>
 )}

@@ -61,6 +61,6 @@ assert.match(checkout, /window\.dispatchEvent\(new Event\('usd-impact:checkout-s
 assert.match(privacy, /checkout-page view, checkout-button click, or redirect to secure sign-in/i);
 assert.match(privacy, /not unique visitors and not evidence of a buyer or completed purchase/i);
 assert.match(privacy, /does not include[\s\S]*email addresses[\s\S]*account identifiers[\s\S]*payment details/i);
-assert.match(privacy, /aggregate analytics remains off unless you select \*\*Accept analytics\*\*/i);
+assert.match(privacy, /optional analytics remains off unless you select \*\*Accept analytics\*\*/i);
 
 console.log('Telemetry client contract passed.');

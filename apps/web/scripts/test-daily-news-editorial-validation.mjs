@@ -4,7 +4,7 @@ import {
   buildMetaDescription,
   validateEditorialBundle,
 } from '../src/lib/daily-news-editorial-validation.js';
-import { buildRepairOutputSchema, queryParam } from '../api/daily-news-background.js';
+import { buildRepairOutputSchema, requestParam } from '../api/daily-news-background.js';
 
 const currentTreasuryUrl = 'https://home.treasury.gov/news/press-releases/sb0590';
 const staleTreasuryUrl = 'https://home.treasury.gov/news/press-releases/sb0489';
@@ -12,19 +12,26 @@ const treasuryBuybackUrl = 'https://home.treasury.gov/news/press-releases/sb0607
 const treasuryBuybackTitle = 'Treasury Announces Increased Sizes of Nominal Long-End Liquidity Support Buybacks Beginning September 9';
 
 
-const queryOnlyRequest = {
-  query: {
-    date: ' 2026-09-17 ',
-    response_id: [' resp_12345678 ', 'ignored'],
+const headerOnlyRequest = {
+  headers: {
+    'x-usd-impact-edition-date': ' 2026-09-17 ',
+    'x-usd-impact-response-id': [' resp_12345678 ', 'ignored'],
+  },
+  get query() {
+    throw new Error('request.query must not be accessed by requestParam');
   },
   get url() {
-    throw new Error('request.url must not be accessed by queryParam');
+    throw new Error('request.url must not be accessed by requestParam');
   },
 };
-assert.equal(queryParam(queryOnlyRequest, 'date'), '2026-09-17');
-assert.equal(queryParam(queryOnlyRequest, 'response_id'), 'resp_12345678');
+assert.equal(requestParam(headerOnlyRequest, 'date'), '2026-09-17');
+assert.equal(requestParam(headerOnlyRequest, 'response_id'), 'resp_12345678');
 assert.equal(
-  queryParam({ query: {}, get url() { throw new Error('request.url fallback is forbidden'); } }, 'date'),
+  requestParam({
+    headers: {},
+    get query() { throw new Error('request.query fallback is forbidden'); },
+    get url() { throw new Error('request.url fallback is forbidden'); },
+  }, 'date'),
   '',
 );
 

@@ -4,6 +4,8 @@
   const CHECKLIST_PATH = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
   const CHECKOUT_PATH = '/checkout/';
   const CHECKOUT_SIGN_IN_EVENT = 'usd-impact:checkout-sign-in-redirect';
+  const WAITLIST_SUCCESS_EVENT = 'usd-impact:waitlist-submission-success';
+  const DAILY_LEARNING_SUCCESS_EVENT = 'usd-impact:daily-learning-subscribe-success';
   const ANALYTICS_EVENT = 'usd-impact:analytics-event';
   const CONSENT_CHANGE_EVENT = 'usd-impact:consent-change';
   const CONSENT_READY_EVENT = 'usd-impact:consent-ready';
@@ -56,16 +58,42 @@
   };
 
   let checkoutViewTracked = false;
+  let librarySectionTracked = false;
+
+  const libraryFormatForPath = () => {
+    const path = window.location.pathname;
+    if (path === '/guided-edition/' || path.startsWith('/guided-edition/chapter/')) return 'guided';
+    if (path === '/guided-edition/audiobook/' || path.startsWith('/guided-edition/audiobook/')) return 'audiobook';
+    if (path === '/guided-edition/video-library/' || path.startsWith('/guided-edition/video-library/')) return 'video';
+    return '';
+  };
+
+  const trackLibrarySectionView = () => {
+    if (librarySectionTracked) return;
+    const format = libraryFormatForPath();
+    if (!format) return;
+    librarySectionTracked = track('library_section_view', { format });
+  };
   const trackCheckoutView = () => {
     if (window.location.pathname !== CHECKOUT_PATH || checkoutViewTracked) return;
     checkoutViewTracked = track('checkout_view');
   };
 
-  window.addEventListener(CONSENT_READY_EVENT, trackCheckoutView);
+  window.addEventListener(CONSENT_READY_EVENT, () => {
+    trackCheckoutView();
+    trackLibrarySectionView();
+  });
   window.addEventListener(CONSENT_CHANGE_EVENT, (event) => {
-    if (event instanceof CustomEvent && event.detail?.analytics === true) trackCheckoutView();
+    if (event instanceof CustomEvent && event.detail?.analytics === true) {
+      trackCheckoutView();
+      trackLibrarySectionView();
+    }
   });
   trackCheckoutView();
+  trackLibrarySectionView();
+
+  window.addEventListener(WAITLIST_SUCCESS_EVENT, () => track('waitlist_submission_success'));
+  window.addEventListener(DAILY_LEARNING_SUCCESS_EVENT, () => track('daily_learning_subscribe_success'));
 
   window.addEventListener(CHECKOUT_SIGN_IN_EVENT, () => {
     if (window.location.pathname === CHECKOUT_PATH) track('checkout_sign_in_redirect');

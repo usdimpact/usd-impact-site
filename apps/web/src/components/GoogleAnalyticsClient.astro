@@ -24,8 +24,12 @@ const measurementId = measurementIdPattern.test(rawMeasurementId) ? rawMeasureme
       'quiz_start',
       'quiz_retry',
       'quiz_complete',
+      'waitlist_submission_success',
+      'daily_learning_subscribe_success',
+      'library_section_view',
     ]);
     const QUIZ_ID_PATTERN = /^[a-zA-Z0-9._~-]{1,128}$/;
+    const LIBRARY_FORMATS = new Set(['guided', 'audiobook', 'video']);
     let configured = false;
 
     const analyticsAllowed = () => window.USDImpactConsent?.analyticsAllowed?.() === true;
@@ -122,6 +126,10 @@ const measurementId = measurementIdPattern.test(rawMeasurementId) ? rawMeasureme
         const quizId = cleanQuizId(details?.quizId);
         if (!quizId) return;
         params.quiz_id = quizId;
+      }
+      if (eventName === 'library_section_view') {
+        if (!LIBRARY_FORMATS.has(details?.format)) return;
+        params.format = details.format;
       }
       if (eventName === 'quiz_complete') {
         if (details?.outcome !== 'pass' && details?.outcome !== 'fail') return;

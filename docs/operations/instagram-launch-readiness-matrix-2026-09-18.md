@@ -125,3 +125,14 @@ Before connecting Meta/Instagram, define and review:
 ## Boundary
 
 This matrix consolidates readiness only. It does not authorize merge, Production deployment, Meta/Instagram login, OAuth/token creation, account changes, scheduling or public posting.
+
+
+## Future publishing integration design
+
+Architecture-only specification now exists at:
+
+`docs/operations/instagram-publishing-integration-design-v1.md`
+
+It defines the future least-privilege auth model, publish packet, media-container flow, idempotency, duplicate prevention, scheduling semantics, token/secret controls, audit evidence, failure classes, and staged authorization increments.
+
+This does not change the current `NOT AUTHORIZED` state for Meta/Instagram connection, scheduling or public posting.

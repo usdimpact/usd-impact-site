@@ -2,7 +2,7 @@ name: Publication calendar PR freshness
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '2/5 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      # Schedule and manual dispatch execute the workflow definition from the protected
+      # Staggered schedule and manual dispatch execute the workflow definition from the protected
       # default branch. PR-head content is fetched later as inert data and never executed.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

@@ -180,3 +180,64 @@ That future increment must specify:
 Not executed.
 
 PR #630 remains the governed non-publishing base.
+
+
+## Probe execution record — 2026-09-18
+
+Increment A was attempted read-only.
+
+### Direct Instagram browser path
+
+Result: **AUTH_REQUIRED**
+
+Evidence:
+
+- Instagram opened to the login page.
+- No valid authenticated Instagram session existed in the browser profile.
+- No credentials were configured in the browser profile.
+- No login attempt, signup, recovery, profile change, OAuth flow, container creation, schedule or publication was attempted.
+- Account handle, Professional status, ownership/recovery context and linked Meta business state remain unverified through the direct browser path.
+
+Zero writes confirmed.
+
+### Existing connected-tool path
+
+The installed Windsor.ai plugin exposes an `instagram` connector.
+
+Current state:
+
+- connector exists;
+- no Instagram account is currently connected;
+- auth type is OAuth;
+- connector setup URL is available through Windsor;
+- supported write actions include image post, video post/Reel, carousel post, Story and comment operations;
+- no write action was executed during this probe.
+
+This creates two future provider options:
+
+1. **Windsor delegated provider path** — preferred for the first controlled readiness/publish tests because provider credentials remain delegated outside the USD Impact repository/runtime.
+2. **Direct Meta API path** — retained as the long-term self-hosted integration option when automation, scheduling, audit control or independence from the ChatGPT/Windsor execution surface justifies it.
+
+The Windsor path does not change the current authorization boundary. Connecting the Instagram connector still requires an explicit user OAuth action.
+
+### Current Increment A state
+
+**PARTIAL / AUTH_REQUIRED**
+
+Verified:
+
+- provider connector availability;
+- OAuth connection mechanism;
+- supported Instagram post action surface;
+- zero-write behavior.
+
+Still required:
+
+- user authorizes the intended USD Impact Instagram account through the connector;
+- re-run connector discovery;
+- verify exact connected account ID/name;
+- verify it is the intended Business/Creator account;
+- confirm ownership/recovery context;
+- confirm read fields/capabilities and any provider quota/status fields exposed.
+
+Do not proceed to any write action until the connected account identity has been reviewed.

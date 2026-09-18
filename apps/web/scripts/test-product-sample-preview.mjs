@@ -59,7 +59,8 @@ for (const required of [
 ]) {
   if (!publicVideoCatalog.includes(required)) failures.push(`Public video catalog missing protection signal: ${required}`);
 }
-if (/href=["'`]\/guided-edition\/video-library(?:\/[^"'`]+)?\/["'`]/.test(publicVideoCatalog)) failures.push('Public video catalog must not emit trailing-slash protected links.');\nif (/cloudflarestream\\.com|signedToken|<iframe/i.test(publicVideoCatalog)) {
+if (/href=["'`]\/guided-edition\/video-library(?:\/[^"'`]+)?\/["'`]/.test(publicVideoCatalog)) failures.push('Public video catalog must not emit trailing-slash protected links.');
+if (/cloudflarestream\\.com|signedToken|<iframe/i.test(publicVideoCatalog)) {
   failures.push('Public video catalog must remain metadata-only and must not embed protected playback.');
 }
 

@@ -67,6 +67,7 @@ test('renderer patch leaves the original template reversible byte-for-byte', () 
   let restored = candidate.replace("import { getLearnSourceLinks } from '../../lib/learn-source-links.mjs';\n", '');
   restored = restored.replace('const sourceLinks = getLearnSourceLinks(card);\n', '');
   restored = restored.replace(/      \{sourceLinks\.length > 0 && \([\s\S]*?      \)\}\n/, '');
+  restored = restored.replace('href={`/guided-edition/video-library/${card.videoSlug}`}', 'href={`/guided-edition/video-library/${card.videoSlug}/`}');
   // Reviewed Learn-template snapshot at main@dd9f908; not a rendered-page test.
   const bytes = Buffer.from(restored);
   const blob = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');

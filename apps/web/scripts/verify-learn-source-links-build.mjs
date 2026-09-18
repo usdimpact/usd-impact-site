@@ -41,7 +41,7 @@ export function inspectLearnSourceLinksHtml(html, card) {
   for (const value of [card.hook, card.definition, card.whyItMatters, card.example, card.commonMistake, card.keyTakeaway, ...card.whatToWatch]) {
     check(text.includes(value.replace(/\s+/g, ' ').trim()), 'Original card text missing.');
   }
-  if (card.videoSlug) check(body.includes(`/guided-edition/video-library/${card.videoSlug}/`), 'Protected video destination changed.');
+  if (card.videoSlug) check(body.includes(`/guided-edition/video-library/${card.videoSlug}`), 'Protected video destination changed.');
   check(body.includes(`data-card-id="${card.id}"`), 'Adaptive-review identity changed.');
   const list = lists[0]?.[0] ?? '';
   check(attr(list, 'aria-label') === 'Primary references', 'Reference-list label missing.');

@@ -112,6 +112,6 @@ assert.ok(replicationPage.includes('/research/evidence-map/'));
 assert.ok(replicationPage.includes('/score/methodology/'));
 assert.ok(replicationPage.includes('/about/'));
 assert.doesNotMatch(replicationPage, /independently validated|independent validation complete|externally audited|verified predictive power/i);
-assert.ok(layout.includes('/research/independent-replication/'), 'Global footer must expose independent replication status.');
+assert.ok(layout.includes('href="/research/independent-replication"'), 'Global footer must expose the canonical independent replication status link.');
 
 console.log('Academic evidence and independent replication transparency contracts passed.');

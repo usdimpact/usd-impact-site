@@ -64,7 +64,10 @@ assert.match(layout, /aria-label="Footer navigation"/);
 for (const group of ['Product', 'Learn', 'Research', 'Legal &amp; trust']) {
   assert.match(layout, new RegExp(`<p class="footer-heading">${group}<\\/p>`));
 }
-for (const path of ['/about/', '/contact/', '/privacy/', '/terms/', '/refund-policy/', '/accessibility/']) {
+for (const path of ['/about', '/contact', '/accessibility']) {
+  assert.match(layout, new RegExp(`href="${path}"`));
+}
+for (const path of ['/privacy/', '/terms/', '/refund-policy/']) {
   assert.match(layout, new RegExp(`href="${path}"`));
 }
 

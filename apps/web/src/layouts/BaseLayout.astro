@@ -17,7 +17,7 @@ const canonicalUrl = noindex ? null : canonicalUrlForRequest(Astro.url);
 const surfaceBridge = getSurfaceBridgeForPath(Astro.url.pathname);
 const surfaceChapter = surfaceBridge ? getChapterById(surfaceBridge.chapterId) : null;
 const currentPath = Astro.url.pathname;
-const pageIsActive = (href) => (href === "/" ? currentPath === "/" : currentPath.startsWith(href));
+const pageIsActive = (href) => navigationLinkIsActive(currentPath, href);
 const learnIsActive = [
   "/start-here/",
   "/framework/dollar-transmission-chain/",

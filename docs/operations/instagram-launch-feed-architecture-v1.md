@@ -71,7 +71,7 @@ The initial grid should establish identity before cadence:
 | 4 | IG-006 — DXY in 30 Seconds | Evergreen |
 | 5 | IG-011 — Dollar vs Gold | Evergreen |
 | 6 | IG-021 — Repo in Plain English | Evergreen |
-| 7 | DYN-DAILY if fresh; otherwise IG-004 | Dynamic / fallback |
+| 7 | DYN-DAILY if fresh; otherwise IG-008 | Dynamic / fallback |
 | 8 | IG-004 — What Changed First? | Evergreen |
 | 9 | DYN-SCORE if fresh; otherwise IG-007 | Dynamic / fallback |
 
@@ -89,7 +89,7 @@ This is an **order-of-use architecture**, not a calendar schedule. A dynamic slo
 | 4 | IG-006 | One Chart | — |
 | 5 | IG-011 | Cross-asset | — |
 | 6 | IG-021 | Funding | — |
-| 7 | DYN-DAILY | Current context | IG-004 if no clean fresh Daily lesson |
+| 7 | DYN-DAILY | Current context | IG-008 if no clean fresh Daily lesson |
 | 8 | IG-004 | Framework | — |
 | 9 | DYN-SCORE | Weekly | IG-007 if timing/source unsuitable |
 | 10 | CAR-001 | Framework carousel | — |

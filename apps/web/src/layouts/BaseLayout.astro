@@ -46,7 +46,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
     <link rel="icon" href="/assets/logo/USDImpact_Icon_Color_192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="/assets/logo/USDImpact_Icon_Color_192.png" sizes="192x192" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
-    {structuredDataJson && <script is:inline type="application/ld+json" set:html={structuredDataJson}></script>}
+    {structuredDataJson && <script type="application/ld+json" set:html={structuredDataJson}></script>}
     {stylesheets.map((href) => <link rel="stylesheet" href={href} />)}
     <script is:inline src="/assets/session-entry.js" defer></script>
   </head>

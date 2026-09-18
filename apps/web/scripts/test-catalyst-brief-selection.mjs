@@ -68,6 +68,24 @@ assert.equal(
 assert.equal(selectImportantCatalyst(latest, { phase: 'outcome', asOf: '2026-08-05' }), null);
 assert.equal(selectImportantCatalyst({ edition: null }, { phase: 'preview', asOf: '2026-08-05' }), null);
 
+assert.throws(
+  () => selectImportantCatalyst({
+    edition: {
+      date: '2026-08-05',
+      catalysts: [{
+        date: '2026-08-07',
+        event: 'BLS Employment Situation report — July 2026',
+        eventType: 'labor',
+        assets: ['DXY', 'U.S. rates'],
+        importance: 'high', impactScore: 5, extraBrief: true,
+        whyItMatters: 'Ambiguous label must not bypass the calendar boundary.',
+      }],
+    },
+  }, { phase: 'preview', asOf: '2026-08-05' }),
+  /explicit series and reference month\/year label/,
+  'Recognizable but ambiguous BLS labels must fail closed rather than lose calendar verification',
+);
+
 const publishedFomcPreviewSlug = '2026-09-15-fomc-meeting-and-press-conference-september-15-16-2026-preview';
 
 const duplicateFomcLabel = {

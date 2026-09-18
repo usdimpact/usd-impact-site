@@ -25,7 +25,7 @@ Body
 `;
 }
 
-async function scenario(index, { headRef, releaseAt, calendar = true }) {
+async function scenario(index, { headRef, releaseAt, calendar = true, driftBeforeClose = false }) {
   process.env.GITHUB_TOKEN = 'fixture-token';
   process.env.GITHUB_REPOSITORY = 'usdimpact/usd-impact-site';
   process.env.TARGET_PR = '123';
@@ -34,6 +34,7 @@ async function scenario(index, { headRef, releaseAt, calendar = true }) {
   process.env.AUTOMATION_BRANCH_PREFIX = 'automation/catalyst-brief-';
 
   const requests = [];
+  let pullReads = 0;
   globalThis.fetch = async (url, init = {}) => {
     const parsed = new URL(url);
     assert.equal(parsed.origin, 'https://api.github.com');
@@ -44,10 +45,16 @@ async function scenario(index, { headRef, releaseAt, calendar = true }) {
       headers: { 'Content-Type': 'application/json' },
     });
     if (parsed.pathname.endsWith('/pulls/123') && (init.method ?? 'GET') === 'GET') {
+      pullReads += 1;
       return json({
         number: 123,
+        state: 'open',
         html_url: 'https://github.com/usdimpact/usd-impact-site/pull/123',
-        head: { ref: headRef, sha: headSha, repo: { full_name: 'usdimpact/usd-impact-site' } },
+        head: {
+          ref: headRef,
+          sha: driftBeforeClose && pullReads > 1 ? 'b'.repeat(40) : headSha,
+          repo: { full_name: 'usdimpact/usd-impact-site' },
+        },
       });
     }
     if (parsed.pathname.endsWith('/pulls/123/files')) {
@@ -96,5 +103,13 @@ const missing = await scenario(4, {
 });
 assert.equal(missing.status.state, 'failure');
 assert.equal(Boolean(missing.close), true);
+
+const drifted = await scenario(5, {
+  headRef: 'automation/catalyst-brief-cpi-expired',
+  releaseAt: '2000-01-01T13:30:00.000Z',
+  driftBeforeClose: true,
+});
+assert.equal(drifted.status.state, 'failure');
+assert.equal(Boolean(drifted.close), false, 'newer PR head must never be closed using an older evaluation');
 
 console.log('publication calendar PR enforcer API tests pass');

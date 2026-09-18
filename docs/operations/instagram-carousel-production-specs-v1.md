@@ -453,3 +453,21 @@ Educational only.
 ## Boundary
 
 These are base-production specifications only. Rendering them does not authorize Instagram/Meta account connection, scheduling, posting, or Production activation.
+
+
+## Deterministic rendering checkpoint — 2026-09-18
+
+The complete 12-carousel base has now been rendered through a deterministic 4:5 vector-layout pipeline using the approved USD Impact visual system and the locked copy in this document.
+
+Verified production state:
+
+- **CAR-001 through CAR-012: 12 / 12 deterministic base decks rendered.**
+- Canvas: 4:5 portrait, equivalent to the governed 1080×1350 social target.
+- Brand system: Midnight #020A14, Navy #071A33, Gold #C9A35B, White #FFFFFF, Playfair Display / Inter.
+- Structural slide QA: all 12 decks passed overflow checks after rendering.
+- CAR-001, CAR-002 and CAR-010 were additionally montage-reviewed to validate framework-diagram, network-diagram and text-led layouts before batching the remainder.
+- Source copy remains the governed carousel specification above; no live market statistics were introduced.
+
+Two earlier generative image-model mockups for CAR-001 substituted unrelated third-party brands and altered the framework. Those mockups are **REJECTED / NON-CANONICAL** and must never be used, published, cataloged as USD Impact assets, or treated as design references. The deterministic vector layout is the canonical base.
+
+This checkpoint establishes a production base only. Every carousel still requires final human visual review, CTA/product-state verification and launch-state compliance review before any eventual posting.

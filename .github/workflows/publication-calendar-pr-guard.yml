@@ -1,8 +1,8 @@
 name: Publication calendar PR freshness
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'
+  # Scheduled enforcement is hosted by the already-established Integrity Watchdog workflow.
+  # This workflow remains a bounded manual fallback from the protected default branch.
   workflow_dispatch:
 
 permissions:
@@ -22,8 +22,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      # Schedule and manual dispatch execute the workflow definition from the protected
-      # default branch. PR-head content is fetched later as inert data and never executed.
+      # Manual dispatch executes this trusted workflow from the protected default branch.
+      # PR-head content is fetched later as inert data and never executed.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}

@@ -55,11 +55,11 @@ if (!product.includes('[free Read the Dollar First sample](/book/read-the-dollar
 for (const required of [
   'Open the protected library',
   'Playback is available only inside the secure Guided Interactive Edition',
-  '/guided-edition/video-library/',
+  '/guided-edition/video-library',
 ]) {
   if (!publicVideoCatalog.includes(required)) failures.push(`Public video catalog missing protection signal: ${required}`);
 }
-if (/cloudflarestream\.com|signedToken|<iframe/i.test(publicVideoCatalog)) {
+if (/href=["'`]\/guided-edition\/video-library(?:\/[^"'`]+)?\/["'`]/.test(publicVideoCatalog)) failures.push('Public video catalog must not emit trailing-slash protected links.');\nif (/cloudflarestream\\.com|signedToken|<iframe/i.test(publicVideoCatalog)) {
   failures.push('Public video catalog must remain metadata-only and must not embed protected playback.');
 }
 

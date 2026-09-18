@@ -77,6 +77,10 @@ HOW-008 must be rechecked against live email-delivery and consent configuration 
 4. Generic HeyGen session titles such as “USD Impact Onboarding” do not change HOW numbering.
 5. Historical DXY/masterclass videos outside this catalog are separate library/media work and are not automatically Instagram launch assets.
 
+## Caption-delivery rule
+
+For current HeyGen Reel outputs, the editor scene model may report `caption.enabled:false` while HeyGen separately produces a `captionedVideoUrl` and SRT subtitle file. The canonical social deliverable is the **captioned MP4** when that derived output exists; the raw uncaptioned render must not be selected for posting. The three gap-closing renders IG-005, IG-009 and IG-010 were verified to expose both captioned MP4 and SRT outputs, remain presenter-free, use 9:16 / 1080p, and preserve their locked narration at scene level.
+
 ## Pre-post QA still required
 
 A verified render is not the same as approved-for-posting. Before any eventual social launch:

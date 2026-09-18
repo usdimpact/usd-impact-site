@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-13T22:54:19.960Z",
+  "generated_at": "2026-09-18T11:47:11.800Z",
   "generated_by": "github-actions:sync",
   "freshness": "VERIFIED",
-  "health": "GREEN",
+  "health": "AMBER",
   "production": {
     "provider": "vercel",
     "domain": "https://www.usd-impact.com/",
@@ -15,7 +15,7 @@
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": "a69dcf40a86be04e4393bb50f0d4993f369501d6"
+      "head_sha": "a67320ac9d0a564d7b05fd8bf02c8cd486031a91"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
@@ -33,33 +33,33 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34786610128",
-        "created_at": "2026-09-13T22:22:41Z",
-        "head_sha": "a69dcf40a86be04e4393bb50f0d4993f369501d6"
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/35281505628",
+        "created_at": "2026-09-17T22:20:18Z",
+        "head_sha": "a67320ac9d0a564d7b05fd8bf02c8cd486031a91"
       },
       "daily_news": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34605005763",
-        "created_at": "2026-09-11T13:33:41Z",
-        "head_sha": "134d4084662f28b27d8345969dca5de9d3cbc18a",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/35232530662",
+        "created_at": "2026-09-17T14:17:02Z",
+        "head_sha": "9b143b7bd5619145403270fec036fbe201aa70d5",
         "operational_conclusion": "success",
         "recovery": null
       },
       "daily_news_health": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34648931696",
-        "created_at": "2026-09-11T21:21:03Z",
-        "head_sha": "c2fb22c84bccf335a0d5a4c5c2910ba3561d9e52",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/35278625838",
+        "created_at": "2026-09-17T21:47:37Z",
+        "head_sha": "763688a87ff24d4770b2ab7e42a261c38c4f1d40",
         "operational_conclusion": "success"
       },
       "catalyst_brief": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/34756723627",
-        "created_at": "2026-09-13T12:18:19Z",
-        "head_sha": "c2fb22c84bccf335a0d5a4c5c2910ba3561d9e52",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/35292594279",
+        "created_at": "2026-09-18T00:46:33Z",
+        "head_sha": "a67320ac9d0a564d7b05fd8bf02c8cd486031a91",
         "operational_conclusion": "success",
         "recovery": null
       }
@@ -105,10 +105,50 @@
   },
   "open_work": [
     {
+      "number": 631,
+      "title": "P1 — restore shared Production cron authorization",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/631",
+      "updated_at": "2026-09-17T20:02:07Z",
+      "priority": "P1",
+      "score": 970,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 624,
+      "title": "P2 — trace and remove Production DEP0169 url.parse warning",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/624",
+      "updated_at": "2026-09-17T19:06:15Z",
+      "priority": "P2",
+      "score": 860,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 620,
+      "title": "P2 — Production activation gate for Weekly Newsletter and Learning Progress emails",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/620",
+      "updated_at": "2026-09-16T08:07:00Z",
+      "priority": "P2",
+      "score": 820,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 619,
+      "title": "P2 — reconcile 51-film Video Library provider assets and editorial source authority",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/619",
+      "updated_at": "2026-09-16T03:25:47Z",
+      "priority": "P2",
+      "score": 820,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
       "number": 570,
       "title": "SEO Growth Architecture — keyword-to-page map, internal authority, and evidence-gated expansion",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/570",
-      "updated_at": "2026-09-12T10:06:27Z",
+      "updated_at": "2026-09-16T07:35:02Z",
       "priority": "P3",
       "score": 660,
       "blocked": false,
@@ -118,7 +158,7 @@
       "number": 558,
       "title": "Publishing prevention: authoritative calendar validation and stale-preview release guard",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/558",
-      "updated_at": "2026-09-12T23:50:13Z",
+      "updated_at": "2026-09-17T18:20:36Z",
       "priority": "P3",
       "score": 660,
       "blocked": false,
@@ -128,17 +168,7 @@
       "number": 569,
       "title": "SEO operations: Search Console post-release baseline and indexing verification",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/569",
-      "updated_at": "2026-09-13T22:50:17Z",
-      "priority": "P3",
-      "score": 620,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 549,
-      "title": "Integrate corrected Part 7 Authoritative AU master into protected Video Library",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/549",
-      "updated_at": "2026-09-09T13:49:38Z",
+      "updated_at": "2026-09-17T20:08:08Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,
@@ -175,30 +205,10 @@
       "daily_gate": null
     },
     {
-      "number": 586,
-      "title": "SEO: tighten catalyst SERP titles/descriptions for high-impression pages",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/586",
-      "updated_at": "2026-09-12T01:33:51Z",
-      "priority": "P3",
-      "score": 480,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
       "number": 260,
       "title": "Activate consent-safe Daily Learning email distribution",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/260",
       "updated_at": "2026-08-23T11:34:21Z",
-      "priority": "P3",
-      "score": 480,
-      "blocked": true,
-      "daily_gate": null
-    },
-    {
-      "number": 259,
-      "title": "Expand Daily Cards canonical inventory to 150 reviewed concepts",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/259",
-      "updated_at": "2026-08-24T14:19:57Z",
       "priority": "P3",
       "score": 480,
       "blocked": true,
@@ -215,20 +225,10 @@
       "daily_gate": null
     },
     {
-      "number": 242,
-      "title": "P3 — enable Production knowledge search after launch-critical gates",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/242",
-      "updated_at": "2026-08-22T14:26:52Z",
-      "priority": "P3",
-      "score": 430,
-      "blocked": true,
-      "daily_gate": null
-    },
-    {
       "number": 122,
       "title": "Phase 2 — recurring Research Membership launch readiness",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/122",
-      "updated_at": "2026-09-08T16:13:46Z",
+      "updated_at": "2026-09-13T23:11:53Z",
       "priority": "P3",
       "score": 390,
       "blocked": true,
@@ -237,10 +237,50 @@
   ],
   "priority_queue": [
     {
+      "number": 631,
+      "title": "P1 — restore shared Production cron authorization",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/631",
+      "updated_at": "2026-09-17T20:02:07Z",
+      "priority": "P1",
+      "score": 970,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 624,
+      "title": "P2 — trace and remove Production DEP0169 url.parse warning",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/624",
+      "updated_at": "2026-09-17T19:06:15Z",
+      "priority": "P2",
+      "score": 860,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 620,
+      "title": "P2 — Production activation gate for Weekly Newsletter and Learning Progress emails",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/620",
+      "updated_at": "2026-09-16T08:07:00Z",
+      "priority": "P2",
+      "score": 820,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 619,
+      "title": "P2 — reconcile 51-film Video Library provider assets and editorial source authority",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/619",
+      "updated_at": "2026-09-16T03:25:47Z",
+      "priority": "P2",
+      "score": 820,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
       "number": 570,
       "title": "SEO Growth Architecture — keyword-to-page map, internal authority, and evidence-gated expansion",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/570",
-      "updated_at": "2026-09-12T10:06:27Z",
+      "updated_at": "2026-09-16T07:35:02Z",
       "priority": "P3",
       "score": 660,
       "blocked": false,
@@ -250,7 +290,7 @@
       "number": 558,
       "title": "Publishing prevention: authoritative calendar validation and stale-preview release guard",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/558",
-      "updated_at": "2026-09-12T23:50:13Z",
+      "updated_at": "2026-09-17T18:20:36Z",
       "priority": "P3",
       "score": 660,
       "blocked": false,
@@ -260,17 +300,7 @@
       "number": 569,
       "title": "SEO operations: Search Console post-release baseline and indexing verification",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/569",
-      "updated_at": "2026-09-13T22:50:17Z",
-      "priority": "P3",
-      "score": 620,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 549,
-      "title": "Integrate corrected Part 7 Authoritative AU master into protected Video Library",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/549",
-      "updated_at": "2026-09-09T13:49:38Z",
+      "updated_at": "2026-09-17T20:08:08Z",
       "priority": "P3",
       "score": 620,
       "blocked": false,
@@ -305,40 +335,10 @@
       "score": 520,
       "blocked": true,
       "daily_gate": null
-    },
-    {
-      "number": 586,
-      "title": "SEO: tighten catalyst SERP titles/descriptions for high-impression pages",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/586",
-      "updated_at": "2026-09-12T01:33:51Z",
-      "priority": "P3",
-      "score": 480,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 260,
-      "title": "Activate consent-safe Daily Learning email distribution",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/260",
-      "updated_at": "2026-08-23T11:34:21Z",
-      "priority": "P3",
-      "score": 480,
-      "blocked": true,
-      "daily_gate": null
-    },
-    {
-      "number": 259,
-      "title": "Expand Daily Cards canonical inventory to 150 reviewed concepts",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/259",
-      "updated_at": "2026-08-24T14:19:57Z",
-      "priority": "P3",
-      "score": 480,
-      "blocked": true,
-      "daily_gate": null
     }
   ],
-  "main_blocker": "NONE",
-  "next_action": "#570 SEO Growth Architecture — keyword-to-page map, internal authority, and evidence-gated expansion",
+  "main_blocker": "#631 P1 — restore shared Production cron authorization",
+  "next_action": "#631 P1 — restore shared Production cron authorization",
   "notes": [
     "Generated state is a snapshot and never overrides canonical production or governance configuration.",
     "Vercel production readiness must be verified outside this GitHub-only state snapshot after release.",

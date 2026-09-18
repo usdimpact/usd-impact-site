@@ -33,7 +33,6 @@ const structuredData = [articleStructuredData({
   headline: entry.data.title,
   description: entry.data.metaDescription,
   pathname: entry.data.slug,
-  datePublished: entry.data.eventDate,
   dateModified: entry.data.lastReviewed,
 })];
 const formatDate = (value) => new Intl.DateTimeFormat('en', {

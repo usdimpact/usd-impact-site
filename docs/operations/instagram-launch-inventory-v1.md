@@ -8,7 +8,7 @@ Status: internal production backlog. Scripts, figures, charts, captions, sources
 |---|---|---|---|---|
 | IG-001 | Start Here | 45s Reel | Read the Dollar Before the Market Headline | Start Here |
 | IG-002 | Framework | 7-card carousel | The 3 Dials: Dollar, Real Rates, Liquidity | Start Here |
-| IG-003 | Brand | 45s Reel | What USD Impact Is — and Is Not | Explore free resources |
+| PIN-003 | Brand | 6-card carousel | What USD Impact Is | Start Here |
 
 ## Framework / evergreen
 
@@ -87,7 +87,7 @@ Do not dump the complete inventory at launch. Recommended first nine grid posts:
 
 1. IG-001
 2. IG-002
-3. IG-003
+3. PIN-003
 4. IG-006
 5. IG-011
 6. IG-021
@@ -95,7 +95,7 @@ Do not dump the complete inventory at launch. Recommended first nine grid posts:
 8. IG-004
 9. current DYN-SCORE or IG-007 if Weekly Score timing is unsuitable
 
-Pin IG-001, IG-002, and IG-003 after publication.
+Pin IG-001, IG-002, and PIN-003 after publication. IG-003 remains intentionally unassigned in the canonical Reel inventory.
 
 ## Production record required per asset
 

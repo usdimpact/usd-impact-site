@@ -8,16 +8,16 @@ import { spawnSync } from 'node:child_process';
 const importer = fileURLToPath(new URL('./import-catalyst-brief.mjs', import.meta.url));
 const root = await mkdtemp(path.join(os.tmpdir(), 'usd-impact-catalyst-import-'));
 const bundlePath = path.join(root, 'bundle.json');
-const slug = '2026-08-07-bls-employment-situation-july-2026-preview';
+const slug = '2026-08-07-us-employment-situation-july-2026-preview';
 const outputPath = path.join(root, 'src', 'content', 'catalyst-briefs', `${slug}.md`);
 const bundle = {
   publishable: true,
-  title: 'BLS Employment Situation — What to Watch',
-  metaTitle: 'BLS Employment Situation — What to Watch | USD Impact',
+  title: 'U.S. Employment Situation — What to Watch',
+  metaTitle: 'U.S. Employment Situation — What to Watch | USD Impact',
   metaDescription: 'A source-backed preview of the Employment Situation release.',
   slug: `/news/catalysts/${slug}`,
-  eventKey: '2026-08-07-bls-employment-situation-july-2026',
-  event: 'BLS Employment Situation — July 2026',
+  eventKey: '2026-08-07-us-employment-situation-july-2026',
+  event: 'U.S. Employment Situation — July 2026',
   eventDate: '2026-08-07',
   sourceEditionDate: '2026-08-05',
   phase: 'preview',

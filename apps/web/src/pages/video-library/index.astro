@@ -25,7 +25,7 @@ import {
           <span><strong>{libraryMeta.totalDurationLabel}</strong> total</span>
           <span><strong>EN</strong> captions</span>
         </div>
-        <p><a class="vl-button" href="/guided-edition/video-library/">Open the protected library</a></p>
+        <p><a class="vl-button" href="/guided-edition/video-library">Open the protected library</a></p>
       </div>
     </section>
 
@@ -60,7 +60,7 @@ import {
               const number = getVideoNumber(video);
               return (
                 <li class="vl-card vl-public-card" data-video-card>
-                  <a href={`/guided-edition/video-library/${video.slug}/`}>
+                  <a href={`/guided-edition/video-library/${video.slug}`}>
                     <div class={`vl-card-art vl-theme-${video.collectionId}`} aria-hidden="true">
                       <span>{String(number).padStart(2, '0')}</span><i></i><i></i><i></i>
                     </div>

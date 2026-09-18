@@ -1,3 +1,5 @@
+import { CalendarHold, verifyPublicationCalendar } from '../src/lib/publication-calendar.js';
+import { explicitBlsMonthlyLabel, mentionsSupportedBlsSeries } from '../src/lib/publication-calendar-series.js';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -84,6 +86,7 @@ const lines = [
   `eventKey: ${quoted(eventKey)}`,
   `event: ${quoted(requiredString(payload, 'event'))}`,
   `eventDate: ${quoted(eventDate)}`,
+  `calendar: ${JSON.stringify(payload.calendar ?? null)}`,
   `sourceEditionDate: ${quoted(sourceEditionDate)}`,
   `phase: ${quoted(phase)}`,
   `generatedAt: ${quoted(requiredString(payload, 'generatedAt'))}`,
@@ -138,6 +141,31 @@ if (existing && /^status:\s*"published"\s*$/m.test(existing)) {
   throw new Error(`${outputPath} is already published and cannot be replaced by automation`);
 }
 if (existing) throw new Error(`${outputPath} already exists and requires editorial resolution`);
+
+if (publish) {
+  try {
+    const supportedBls = explicitBlsMonthlyLabel(payload.event);
+    if (!supportedBls && /\bBLS\b/i.test(String(payload.event ?? '')) && mentionsSupportedBlsSeries(payload.event)) {
+      throw new CalendarHold('HOLD_IDENTITY_MISMATCH', 'A recognizable BLS series requires an explicit series and reference month/year label.');
+    }
+    if (supportedBls && !payload.calendar) {
+      throw new CalendarHold('HOLD_MISSING_CALENDAR_RECORD', 'A supported BLS Catalyst Brief requires a canonical calendar record.');
+    }
+    if (payload.calendar) {
+      const decision = await verifyPublicationCalendar({
+        ...payload.calendar,
+        event: payload.event,
+        phase,
+        statusLabel,
+      });
+      if (decision.decision !== 'PASS') throw new CalendarHold(decision.decision, decision.reason);
+      console.log(JSON.stringify({ boundary: 'before-brief-import', ...decision }));
+    }
+  } catch (error) {
+    console.error(JSON.stringify({ decision: error?.code ?? 'HOLD_INTERNAL_ERROR', reason: error?.message ?? 'Calendar verification failed.' }));
+    process.exit(2);
+  }
+}
 
 await writeFile(outputPath, `${lines.join('\n')}\n`, 'utf8');
 console.log(`Imported Catalyst Brief to ${outputPath} with status ${publish ? 'published' : 'review'}.`);

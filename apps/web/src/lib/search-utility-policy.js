@@ -8,6 +8,7 @@ export const SEARCH_UTILITY_PATHS = Object.freeze([
   '/auth/confirm',
   '/auth/session-ready',
   '/checkout',
+  '/email/confirm',
   '/research/access-required',
   '/research/account',
 ]);

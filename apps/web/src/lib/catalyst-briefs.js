@@ -1,3 +1,5 @@
+import { explicitBlsMonthlyLabel } from './publication-calendar-series.js';
+import { localReleaseInstant, referencePeriod } from './publication-calendar.js';
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -65,6 +67,22 @@ export function catalystBriefSlug(date, event, phase) {
   return `${catalystEventKey(date, event)}-${phase}`;
 }
 
+export function catalystCalendarAssertion(event, eventDate) {
+  const parsed = explicitBlsMonthlyLabel(event);
+  if (!parsed || !isDateOnly(eventDate)) return null;
+  const releaseTime = '08:30';
+  return Object.freeze({
+    publisher: 'BLS',
+    series: parsed.series,
+    referencePeriod: referencePeriod(parsed.referenceText),
+    releaseStage: 'initial',
+    eventDate,
+    releaseTime,
+    timeZone: 'America/New_York',
+    releaseAt: localReleaseInstant(eventDate, releaseTime, 'America/New_York'),
+  });
+}
+
 function addDays(date, days) {
   const parsed = new Date(`${date}T00:00:00.000Z`);
   parsed.setUTCDate(parsed.getUTCDate() + days);
@@ -105,6 +123,7 @@ export function selectImportantCatalyst(latestPayload, {
         eventDate: catalyst.date,
         event: catalyst.event,
         eventType: catalyst.eventType,
+        calendar: catalyst.calendar ?? catalystCalendarAssertion(catalyst.event, catalyst.date),
         assets: catalyst.assets ?? [],
         importance: catalyst.importance,
         impactScore: catalyst.impactScore,

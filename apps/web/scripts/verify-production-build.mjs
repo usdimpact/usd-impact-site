@@ -211,3 +211,15 @@ else {
 }
 if (failures.length > 0) { console.error(`Production build verification failed:\n${failures.join('\n')}`); process.exit(1); }
 console.log('production build verification pass');
+
+// Isolated offline tests and read-only inspection of actual generated Catalyst HTML.
+// Content comparison does not authenticate acquisition or authorize publication.
+for (const [script, args] of [
+  ['./test-catalyst-rendered-projection.mjs', ['--test']],
+  ['./verify-catalyst-rendered-projection.mjs', []],
+]) {
+  const { fileURLToPath } = await import('node:url');
+  execFileSync(process.execPath, [...args, fileURLToPath(new URL(script, import.meta.url))], {
+    stdio: 'inherit', shell: false, timeout: 30000,
+  });
+}

@@ -34,8 +34,8 @@ export function websiteStructuredData() {
 }
 
 function articleBase({ type, headline, description, pathname, datePublished, dateModified }) {
-  if (!headline || !description || !pathname || !datePublished) {
-    throw new Error('Structured article data requires headline, description, pathname, and datePublished.');
+  if (!headline || !description || !pathname) {
+    throw new Error('Structured article data requires headline, description, and pathname.');
   }
 
   const url = absoluteSiteUrl(pathname);
@@ -49,13 +49,16 @@ function articleBase({ type, headline, description, pathname, datePublished, dat
       '@type': 'WebPage',
       '@id': url,
     },
-    datePublished,
+    ...(datePublished ? { datePublished } : {}),
     ...(dateModified ? { dateModified } : {}),
     publisher: { '@id': ORGANIZATION_ID },
   };
 }
 
 export function newsArticleStructuredData(input) {
+  if (!input?.datePublished) {
+    throw new Error('NewsArticle structured data requires datePublished.');
+  }
   return articleBase({ ...input, type: 'NewsArticle' });
 }
 

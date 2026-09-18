@@ -19,7 +19,8 @@ for (const group of SITE_NAVIGATION) {
     assert.ok(menu.includes(`href="${link.href}">${link.label}</a>`));
   }
 }
-for (const path of memberPaths) assert.ok(!path.endsWith('/'), `Protected member navigation must match Vercel slashless routing: ${path}`);\nassert.equal(navigationLinkIsActive('/guided-edition/audiobook/', '/guided-edition'), false);
+for (const path of memberPaths) assert.ok(!path.endsWith('/'), `Protected member navigation must match Vercel slashless routing: ${path}`);
+assert.equal(navigationLinkIsActive('/guided-edition/audiobook/', '/guided-edition'), false);
 assert.equal(navigationLinkIsActive('/guided-edition/audiobook/track/one/', '/guided-edition/audiobook/'), true);
 assert.equal(navigationLinkIsActive('/newsroom/', '/news/'), false);
 assert.equal(navigationLinkIsActive('/news', '/news/'), true);

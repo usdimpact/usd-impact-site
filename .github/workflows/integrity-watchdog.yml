@@ -85,9 +85,7 @@ jobs:
           node -e "const i=JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/WORKFLOW_INVENTORY.json', 'utf8')); if(i.workflows.length !== 33) throw new Error('Expected 33 workflows'); const ids=new Set(i.workflows.map(w=>w.id)); if(ids.size !== i.workflows.length) throw new Error('Duplicate workflow ID'); for(const w of i.workflows){if(w.reference_workflow && !ids.has(w.reference_workflow)) throw new Error('Unknown reference workflow: '+w.reference_workflow)}"
 
   publication-calendar-freshness:
-    if: >-
-      github.event_name == 'schedule' &&
-      github.event.schedule == '4,9,14,19,24,29,34,39,44,49,54,59 * * * *'
+    if: github.event_name == 'schedule'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:

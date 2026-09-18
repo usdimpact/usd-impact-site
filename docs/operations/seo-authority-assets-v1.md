@@ -22,12 +22,20 @@ This packet defines how to turn existing governed USD Impact content into citati
 
 ## Asset A — DXY vs Broad USD reference
 
-### Canonical route
+### Route-selection status
 
+**HOLD — do not designate a sole authority route yet.**
+
+Candidate long-form route:
 `/dxy/dxy-vs-broad-usd`
 
-Existing source:
+Existing long-form source:
 `apps/web/src/content/pages/dxy-vs-broad-usd.md`
+
+Existing Learn surfaces also compete for this query family, including:
+- `/learn/dxy-vs-broad-usd-what-each-index-answers`
+- `/learn/why-dxy-and-broad-usd-divergence-matters`
+- `/learn/dollar-index-points-do-not-equal-uniform-currency-moves`
 
 ### Why this route is the authority candidate
 
@@ -40,7 +48,7 @@ The existing lesson already contains:
 - compliance-safe scope language;
 - direct links to the wider Dollar Transmission Chain.
 
-Creating another “DXY vs Broad USD” page would split authority and risk keyword cannibalization.
+Creating another “DXY vs Broad USD” page would split authority further. Current Search Console evidence already shows the query family distributed across multiple existing Learn surfaces while the long-form route has no settled impressions in the current baseline window. Route consolidation must therefore be resolved before adding a citation-grade enhancement.
 
 ### Existing governed sources
 
@@ -55,7 +63,7 @@ Additional reviewed Learn-source implementation already uses:
 
 ### Proposed authority enhancement
 
-Add a bounded “Reference methodology” section to the existing canonical route, not a new page.
+After #569 and #629 determine the preferred authority surface, add a bounded “Reference methodology” section to that selected existing route. Do not create a new page. If the long-form lesson becomes the preferred authority surface, use its existing benchmark table and decision tree. If a Learn surface remains the search-authority surface, keep the enhancement compact and source-driven to preserve the Learn format.
 
 Candidate fields:
 
@@ -84,11 +92,18 @@ Only if licensing review permits:
 
 Semrush evidence shows high-authority editorial and research pages link to specific charts, datasets, methodology notes and factual reference pages. A stable benchmark-comparison reference is more likely to be cited than a generic explanatory article.
 
-### Release gate
+### Search Console baseline and release gate
+
+Settled through 2026-09-15:
+- `/dxy/dxy-vs-broad-usd`: no page-level impressions in the current 28-day baseline;
+- `/learn/dxy-vs-broad-usd-what-each-index-answers`: receives the observed DXY/Broad query visibility, including a 2-impression long-tail query at average position 4;
+- `/learn/why-dxy-and-broad-usd-divergence-matters`: 1 impression for `broad dollar index` at average position 44;
+- `/learn/dollar-index-points-do-not-equal-uniform-currency-moves`: 3 impressions for `dollar weighted index` at average position 36.33.
 
 Hold implementation until:
 - #569 observation clears;
-- current DXY title/canonical consolidation is stable;
+- #629 determines the preferred authority-flow destination for this query family;
+- title/canonical/internal-link consolidation is stable;
 - source/licensing review passes;
 - no duplicate route is introduced.
 
@@ -151,11 +166,18 @@ Required caveat:
 
 Academic/editorial backlink evidence shows external pages cite precise data-series and methodology references. A concise, source-transparent Real Yield reference can become useful for educators, journalists and research notes without making investment claims.
 
-### Release gate
+### Search Console baseline and release gate
+
+Settled through 2026-09-15:
+- `/learn/real-yield`: 61 impressions, 0 clicks, average position 27.11;
+- exact query `real yield`: 20 impressions on the no-slash canonical at average position 30.4, plus 18 historical slash-variant impressions at average position 27.83;
+- exact query `real yields`: 14 impressions on the no-slash canonical at average position 27.07, plus 7 historical slash-variant impressions at average position 38.
+
+This is the strongest existing search-evidence candidate in the authority-asset set and should be first in implementation order once the observation gate clears.
 
 Hold implementation until:
 - #569 clears;
-- the existing Real Yield Search Console baseline is stable enough to avoid confounding;
+- slash/non-slash consolidation is sufficiently settled;
 - source wording remains consistent with the allowlisted references;
 - no new canonical page is created.
 
@@ -254,7 +276,7 @@ This packet does not authorize:
 
 ## Recommended implementation order after #569
 
-1. DXY reference methodology block on existing canonical lesson.
-2. Real Yield reference framework on existing Learn route.
+1. Real Yield reference framework on the existing `/learn/real-yield` route.
+2. Resolve DXY/Broad internal-authority destination under #629, then add the methodology block to the selected existing route.
 3. Dollar Transmission Chain version/evidence reference block.
 4. Only then evaluate whether an open technical companion has enough genuine utility to publish.

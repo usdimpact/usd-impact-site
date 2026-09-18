@@ -1,8 +1,6 @@
 name: Publication calendar PR freshness
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
@@ -24,8 +22,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      # pull_request_target is intentional: only trusted base-branch code is checked out.
-      # PR-head content is fetched later as inert data and is never executed.
+      # Schedule and manual dispatch execute the workflow definition from the protected
+      # default branch. PR-head content is fetched later as inert data and never executed.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
@@ -41,7 +39,6 @@ jobs:
         working-directory: apps/web
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          TARGET_PR: ${{ github.event.pull_request.number }}
           GUARD_WINDOW_MINUTES: '60'
           GUARD_STATUS_CONTEXT: publication-calendar-freshness
           AUTOMATION_BRANCH_PREFIX: automation/catalyst-brief-

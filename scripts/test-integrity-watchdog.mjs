@@ -38,9 +38,14 @@ assert.match(watchdogWorkflow, /github\.event\.comment\.body == '\/watchdog crit
 assert.match(watchdogWorkflow, /github\.event\.comment\.body == '\/watchdog full'/);
 assert.match(watchdogWorkflow, /github\.event\.comment\.body == '\/watchdog full ai'/);
 assert.match(watchdogWorkflow, /case "\$COMMENT_COMMAND" in/);
-assert.match(watchdogWorkflow, /permissions:\n  actions: read\n  contents: read\n  issues: read\n  pull-requests: read/);
-assert.doesNotMatch(watchdogWorkflow, /issues:\s*write/);
-assert.doesNotMatch(watchdogWorkflow, /pull-requests:\s*write/);
+const topLevelPermissions = watchdogWorkflow.match(/^permissions:\n([\s\S]*?)\n\nconcurrency:/m)?.[1] || '';
+assert.match(topLevelPermissions, /actions: read/);
+assert.match(topLevelPermissions, /contents: read/);
+assert.match(topLevelPermissions, /issues: read/);
+assert.match(topLevelPermissions, /pull-requests: read/);
+assert.doesNotMatch(topLevelPermissions, /issues:\s*write/);
+assert.doesNotMatch(topLevelPermissions, /pull-requests:\s*write/);
+assert.doesNotMatch(topLevelPermissions, /statuses:\s*write/);
 
 const passed = result({ id: 'PASS', workflowId: 'WF', title: 'Pass', domain: 'test', severity: SEVERITY.P0, outcome: OUTCOME.PASS, summary: 'passed', goldEligible: true });
 const warned = result({ id: 'WARN', workflowId: 'WF', title: 'Warn', domain: 'test', severity: SEVERITY.P1, outcome: OUTCOME.WARN, summary: 'warned' });

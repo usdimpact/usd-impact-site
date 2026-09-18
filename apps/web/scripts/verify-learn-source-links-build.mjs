@@ -4,6 +4,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { getLearnSourceLinks } from '../src/lib/learn-source-links.mjs';
+import { getLearnSeoTitle } from '../src/lib/learn-seo-metadata.mjs';
 
 const MARKER = 'data-learn-primary-references';
 const COMPLIANCE = 'Educational and informational purposes only. Not investment advice.';
@@ -29,12 +30,12 @@ export function inspectLearnSourceLinksHtml(html, card) {
   check(lists.length === 1, 'Expected one primary-reference list.');
   const section = body.match(/<section\b[^>]*class=["']dc-source-list["'][^>]*>([\s\S]*?)<\/section>/i)?.[1] ?? '';
   check(section.includes(MARKER), 'References must remain inside the Sources section.');
-  check(visible(section).includes(card.sourceNames.join(' \u00b7 ')), 'Source-name provenance changed.');
+  check(visible(section).includes(card.sourceNames.join(' · ')), 'Source-name provenance changed.');
   check(visible(section).includes(COMPLIANCE), 'Compliance text missing.');
   const h1s = [...body.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi)];
   check(h1s.length === 1 && visible(h1s[0][1]) === card.title, 'Card H1 changed.');
   const title = body.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? '';
-  check(decode(title) === `${card.title} | USD Impact Learn`, 'Page title changed.');
+  check(decode(title) === getLearnSeoTitle(card), 'Page title changed.');
   const description = [...body.matchAll(/<meta\b[^>]*>/gi)].map(([tag]) => tag).find((tag) => attr(tag, 'name') === 'description');
   check(Boolean(description) && attr(description, 'content') === card.hook, 'Page description changed.');
   const text = visible(body);

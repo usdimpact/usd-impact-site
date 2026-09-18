@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import AdaptiveDailyCardReview from '../../components/AdaptiveDailyCardReview.astro';
 import DailyCard from '../../components/DailyCard.astro';
 import { getLearnSourceLinks } from '../../lib/learn-source-links.mjs';
+import { getLearnSeoTitle } from '../../lib/learn-seo-metadata.mjs';
 import { dailyCards, getDailyCardById } from '../../data/daily-card-catalog.js';
 
 export function getStaticPaths() {
@@ -16,8 +17,9 @@ const sourceLinks = getLearnSourceLinks(card);
 const related = (card.relatedCardIds || [])
   .map((id) => getDailyCardById(id))
   .filter((item) => item && item.access === 'open' && item.status === 'ready-for-build');
+const pageTitle = getLearnSeoTitle(card);
 ---
-<BaseLayout title={`${card.title} | USD Impact Learn`} description={card.hook} stylesheets={['/assets/daily-cards.css']}>
+<BaseLayout title={pageTitle} description={card.hook} stylesheets={['/assets/daily-cards.css']}>
   <main class="dc-detail">
     <p class="dc-kicker">USD Impact Learn · {card.format}</p>
     <h1>{card.title}</h1>

@@ -90,11 +90,14 @@ async function setStatus(pr, result) {
   });
 }
 
-async function closePr(pr) {
+async function closePr(pr, evaluatedHeadSha) {
+  const latest = await github(`/repos/${repository}/pulls/${pr.number}`);
+  if (latest?.state !== 'open' || latest?.head?.sha !== evaluatedHeadSha) return false;
   await github(`/repos/${repository}/pulls/${pr.number}`, {
     method: 'PATCH',
     body: { state: 'closed' },
   });
+  return true;
 }
 
 const summaries = [];
@@ -130,8 +133,7 @@ for (const pr of await listOpenPrs()) {
   await setStatus(pr, result);
   let closed = false;
   if (shouldAutoClosePublicationPr(descriptor, result, { automationBranchPrefix: branchPrefix })) {
-    await closePr(pr);
-    closed = true;
+    closed = await closePr(pr, descriptor.headSha);
   }
   summaries.push({
     number: descriptor.number,

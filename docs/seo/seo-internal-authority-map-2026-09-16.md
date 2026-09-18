@@ -118,45 +118,47 @@ Preserve the historical preview role and official release terminology.
 
 ## Refresh checkpoint — 2026-09-18
 
-Search Console is settled through **2026-09-15**. Semrush Site Audit snapshot `6aad41bad29f71103c475252` still predates the #663 canonical shared-navigation release, so issue 213 remains a **pre-#663 candidate set**, not a post-release defect list.
+Search Console remains settled through **2026-09-15**. The first completed post-#663 Semrush crawl is now available:
 
-Current issue-213 count: **112 pages**. Legal, utility, feed and authentication surfaces remain excluded from artificial authority work.
+- snapshot: `6aad8ad9aa87d28497347354`
+- completed: **2026-09-18 19:11:33Z**
+- pages crawled: **463**
+- issue 213: **112 → 101 pages**
+- issue 214: **3,209 → 1,338 permanent-redirect link instances**
+- exact #663 shared-route target set: **2,159 → 283 (-86.9%)**
 
-### Current GSC intersection — 2026-08-19 through 2026-09-15
+Legal, utility, feed and authentication surfaces remain excluded from artificial authority work.
+
+### Current GSC × Semrush intersection — 2026-08-19 through 2026-09-15
+
+The fresh issue-213 set intersects **70** current GSC page rows, including **59 Learn pages**.
 
 | Learn target | Clicks | Impressions | Avg. position | Current interpretation |
 | --- | ---: | ---: | ---: | --- |
-| `/learn/real-yield` | 0 | 61 | 27.11 | strongest impression volume; canonical URL directly URL-Inspection PASS |
-| `/learn/dxy-vs-broad-usd-what-each-index-answers` | 1 | 25 | 11.92 | only click in the underlinked Learn candidate set; strong comparison intent |
-| `/learn/dollar-index-points-do-not-equal-uniform-currency-moves` | 0 | 55 | 33.27 | meaningful impressions, but keep separate from DXY/Broad comparison intent |
-| `/learn/smithsonian-agreement-interim-repair` | 0 | 16 | 18.63 | useful history chain, lower immediate priority |
+| `/learn/dxy-vs-broad-usd-what-each-index-answers` | 1 | 25 | 11.92 | strongest current underlinked comparison target; one click plus page-two visibility |
+| `/learn/dollar-index-points-do-not-equal-uniform-currency-moves` | 0 | 55 | 33.27 | largest impression count among the remaining underlinked dollar-index targets; keep separate from comparison intent |
+| `/learn/imf-role-in-bretton-woods` | 0 | 37 | 75.03 | higher volume but weak position; history-chain candidate, not first authority test |
+| `/learn/smithsonian-agreement-interim-repair` | 0 | 16 | 18.63 | useful history chain; lower immediate priority than DXY/Broad |
 | `/learn/treasury-coupon-rate-is-not-yield-to-maturity` | 0 | 11 | 24.91 | natural reciprocal Treasury-mechanics relationship |
-| `/learn/treasury-prices-and-yields-move-in-opposite-directions` | 0 | 16 | 48.69 | contextually strong but weaker current search position |
-| `/learn/wti-backwardation-vs-contango` | 0 | 13 | 36.31 | oil-structure candidate after higher-confidence dollar/rates tests |
-| `/learn/why-oil-inventories-matter` | 0 | 11 | 46.55 | oil-physical-balance candidate after higher-confidence dollar/rates tests |
-| `/learn/floating-rates-before-jamaica-formalization` | 0 | 7 | 12.43 | history-chain candidate; low volume |
-| `/learn/tips-adjust-principal-with-inflation-not-the-coupon-rate` | 0 | 7 | 35.29 | semantically strong source for Real Yield rather than a first target itself |
+| `/learn/wti-backwardation-vs-contango` | 0 | 13 | 36.31 | oil-structure candidate after the dollar tests |
+| `/learn/why-oil-inventories-matter` | 0 | 11 | 46.55 | oil-physical-balance candidate after the dollar tests |
+| `/learn/floating-rates-before-jamaica-formalization` | 0 | 7 | 12.43 | low-volume history-chain candidate |
 
-The Master Keyword-to-Page Map v1 therefore continues to support **Real Yield** and **DXY/Broad USD** as the first authority experiments once the observation hold clears. Dollar Index Points remains a distinct follow-on target; do not consolidate these page roles.
+### Real Yield classification changed
+
+`/learn/real-yield` still has **61 canonical no-slash impressions** in the same GSC window and remains directly URL-Inspection PASS, but it is **no longer present in Semrush issue 213** after the post-#663 crawl.
+
+Therefore:
+
+- do **not** add new Real Yield inbound links merely to clear issue 213;
+- keep PR #627's Real Yield search-title experiment separate from internal-authority work;
+- retain the Real Yield source-pair research above only as a semantic map / future editorial reference, not as the first authority implementation.
+
+The first internal-authority experiment should now be **DXY vs Broad USD**, not Real Yield. Dollar Index Points is the second candidate if the first experiment is released and measured cleanly.
 
 ### Prebuilt source → target pairs for the first bounded increment
 
-These pairs are already supported by explicit `relatedCardIds` relationships in the production card graph. They are candidates only; verify they are still missing or underrepresented in the first post-#663 Semrush crawl before adding anything.
-
-**Real Yield target — `/learn/real-yield`**
-
-1. `/learn/dollar-yields-liquidity-three-dials` → Real Yield  
-   - existing graph: `card-dollar-yields-liquidity` explicitly relates to `card-real-yield`
-   - contextual anchor family: `real yields`, `real-yield signal`
-
-2. `/learn/gold-dollar-vs-real-yields` → Real Yield  
-   - existing graph: `card-gold-real-yields` explicitly relates to `card-real-yield`
-   - contextual anchor family: `real yields`, `what real yield means`
-
-3. `/learn/tips-adjust-principal-with-inflation-not-the-coupon-rate` → Real Yield  
-   - existing graph: `card-tips-principal-inflation-adjustment` explicitly relates to `card-real-yield`
-   - contextual anchor family: `market real yield`, `TIPS real yield`
-   - preserve the distinction between TIPS cash-flow mechanics and market real yield
+These are planning candidates only. Confirm the selected source does not already expose an equivalent contextual link at implementation time.
 
 **DXY vs Broad USD target — `/learn/dxy-vs-broad-usd-what-each-index-answers`**
 
@@ -172,9 +174,29 @@ These pairs are already supported by explicit `relatedCardIds` relationships in 
    - existing graph: divergence card explicitly relates to `card-dxy-broad-purpose`
    - contextual anchor family: `DXY vs Broad USD`, `benchmark divergence`
 
-Do **not** automatically add all six links. The first post-#663 audit must be used to confirm which inbound links Semrush is actually discovering and which candidate relationships are genuinely absent.
+**Dollar Index Points follow-on — `/learn/dollar-index-points-do-not-equal-uniform-currency-moves`**
 
-Current target base after branch reconciliation: `a68fda7de98096edecbf9c7aa8eb04e03eb5d38c`. No public link changes should begin while #569 remains open.
+1. `/learn/dxy-vs-broad-usd-what-each-index-answers` → Dollar Index Points  
+   - target card explicitly relates to `card-dxy-broad-purpose`
+   - contextual anchor family: `index construction`, `what an index-point move means`
+
+2. `/learn/choose-the-dollar-benchmark-before-a-regime-call` → Dollar Index Points  
+   - reviewed resolution explicitly pairs `card-regime-benchmark-selection` with `card-dollar-index-points-scope`
+   - contextual anchor family: `benchmark construction and scope`, `interpret the index inside its basket`
+
+3. `/learn/six-errors-that-break-a-dollar-explanation` → Dollar Index Points  
+   - reviewed resolution explicitly groups the diagnostic-error concept with `card-dollar-index-points-scope`
+   - contextual anchor family: `index scope`, `do not generalize an index move to every bilateral rate`
+
+Do **not** add links to both targets in one release. The first experiment remains one target with **1–3** contextual inbound links.
+
+### Residual canonical-link work is separate
+
+Post-#663 issue 214 still includes a concentrated set of slash-form links to `/start-here/`, `/framework/dollar-transmission-chain/`, `/news/`, `/score/`, and `/reports/`. Most of those instances come from Daily/Report surfaces and a small number of reusable content/components.
+
+That cleanup should remain a **separate canonical-link PR**, not be mixed into the authority experiment, so redirect reduction and authority-flow measurement remain distinguishable.
+
+Current implementation hold: no public link changes while #569 remains open.
 
 ## 5. Implementation order after #569
 

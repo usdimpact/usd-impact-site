@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 const raw = await readFile(new URL('../../../.github/workflows/publication-calendar-pr-guard.yml', import.meta.url), 'utf8');
 for (const required of [
-  "cron: '*/5 * * * *'",
+  "cron: '2/5 * * * *'",
   'workflow_dispatch:',
   'pull-requests: write',
   'statuses: write',

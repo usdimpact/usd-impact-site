@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const raw = await readFile(new URL('../../.github/workflows/publication-calendar-pr-guard.yml', import.meta.url), 'utf8');
+const raw = await readFile(new URL('../../../.github/workflows/publication-calendar-pr-guard.yml', import.meta.url), 'utf8');
 for (const required of [
   'pull_request_target:',
   "cron: '*/5 * * * *'",

@@ -188,6 +188,45 @@ for (const file of oidcFiles) {
   fs.writeFileSync(path.join(workspace, file), source);
 }
 
+// Exercise the installed publication-calendar guard as data only.
+// The scheduled/manual workflow may write PR state and commit statuses, but may not
+// use pull_request_target or acquire any additional write scope.
+const guardFile = '.github/workflows/publication-calendar-pr-guard.yml';
+const guardExpected = ['pull-requests', 'statuses'];
+assert.deepEqual(installedBaseline.expected_write_permissions[guardFile], guardExpected);
+const guardSource = fs.readFileSync(path.join(repositoryRoot, guardFile), 'utf8');
+assert.doesNotMatch(guardSource, /pull_request_target/);
+fs.writeFileSync(path.join(workspace, guardFile), guardSource);
+
+const governedExpected = { ...oidcExpected, [guardFile]: guardExpected };
+writeBaseline(governedExpected);
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.PASS);
+assert.deepEqual(result.evidence[0].workflow_write_permissions[guardFile], guardExpected);
+
+fs.writeFileSync(path.join(workspace, guardFile), guardSource.replace(
+  'statuses: write', 'statuses: read',
+));
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].missing_expected_write_permissions, [`${guardFile} :: statuses`]);
+
+fs.writeFileSync(path.join(workspace, guardFile), guardSource.replace(
+  'statuses: write', 'statuses: write\n  issues: write',
+));
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].unexpected_write_permissions, [`${guardFile} :: issues`]);
+
+fs.writeFileSync(path.join(workspace, guardFile), guardSource.replace(
+  'on:\n  schedule:', 'on:\n  pull_request_target:\n  schedule:',
+));
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].pull_request_target_files, [guardFile]);
+fs.writeFileSync(path.join(workspace, guardFile), guardSource);
+writeBaseline(governedExpected);
+
 writeWorkflow('on: workflow_dispatch\npermissions:\n  id-token: write');
 result = repositoryContracts({ workspace })[0];
 assert.equal(result.outcome, OUTCOME.FAIL);

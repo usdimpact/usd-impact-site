@@ -188,6 +188,76 @@ for (const file of oidcFiles) {
   fs.writeFileSync(path.join(workspace, file), source);
 }
 
+// Exercise the installed publication-calendar guard and its proven scheduler host as data only.
+// The standalone guard is manual-only. The Integrity Watchdog schedule hosts the recurring
+// guard job with exactly pull-request/status writes and must still reject pull_request_target.
+const guardFile = '.github/workflows/publication-calendar-pr-guard.yml';
+const watchdogFile = '.github/workflows/integrity-watchdog.yml';
+const guardExpected = ['pull-requests', 'statuses'];
+const watchdogExpected = ['pull-requests', 'statuses'];
+assert.deepEqual(installedBaseline.expected_write_permissions[guardFile], guardExpected);
+assert.deepEqual(installedBaseline.expected_write_permissions[watchdogFile], watchdogExpected);
+
+const guardSource = fs.readFileSync(path.join(repositoryRoot, guardFile), 'utf8');
+const watchdogSource = fs.readFileSync(path.join(repositoryRoot, watchdogFile), 'utf8');
+assert.doesNotMatch(guardSource, /pull_request_target/);
+assert.doesNotMatch(watchdogSource, /pull_request_target/);
+assert.doesNotMatch(guardSource, /^\s*schedule\s*:/m);
+fs.writeFileSync(path.join(workspace, guardFile), guardSource);
+fs.writeFileSync(path.join(workspace, watchdogFile), watchdogSource);
+
+const governedExpected = {
+  ...oidcExpected,
+  [guardFile]: guardExpected,
+  [watchdogFile]: watchdogExpected,
+};
+writeBaseline(governedExpected);
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.PASS);
+assert.deepEqual(result.evidence[0].workflow_write_permissions[guardFile], guardExpected);
+assert.deepEqual(result.evidence[0].workflow_write_permissions[watchdogFile], watchdogExpected);
+
+fs.writeFileSync(path.join(workspace, guardFile), guardSource.replace(
+  'statuses: write', 'statuses: read',
+));
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].missing_expected_write_permissions, [`${guardFile} :: statuses`]);
+fs.writeFileSync(path.join(workspace, guardFile), guardSource);
+
+fs.writeFileSync(path.join(workspace, watchdogFile), watchdogSource.replace(
+  'statuses: write', 'statuses: read',
+));
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].missing_expected_write_permissions, [`${watchdogFile} :: statuses`]);
+fs.writeFileSync(path.join(workspace, watchdogFile), watchdogSource);
+
+fs.writeFileSync(path.join(workspace, guardFile), guardSource.replace(
+  'statuses: write', 'statuses: write\n  issues: write',
+));
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].unexpected_write_permissions, [`${guardFile} :: issues`]);
+fs.writeFileSync(path.join(workspace, guardFile), guardSource);
+
+fs.writeFileSync(path.join(workspace, watchdogFile), watchdogSource.replace(
+  'statuses: write', 'statuses: write\n      issues: write',
+));
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].unexpected_write_permissions, [`${watchdogFile} :: issues`]);
+fs.writeFileSync(path.join(workspace, watchdogFile), watchdogSource);
+
+fs.writeFileSync(path.join(workspace, guardFile), guardSource.replace(
+  'on:\n  # Scheduled enforcement', 'on:\n  pull_request_target:\n  # Scheduled enforcement',
+));
+result = repositoryContracts({ workspace })[0];
+assert.equal(result.outcome, OUTCOME.FAIL);
+assert.deepEqual(result.evidence[0].pull_request_target_files, [guardFile]);
+fs.writeFileSync(path.join(workspace, guardFile), guardSource);
+writeBaseline(governedExpected);
+
 writeWorkflow('on: workflow_dispatch\npermissions:\n  id-token: write');
 result = repositoryContracts({ workspace })[0];
 assert.equal(result.outcome, OUTCOME.FAIL);

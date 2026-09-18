@@ -20,7 +20,7 @@ const candidate = {
   asOf: '2026-08-05',
   sourceEditionDate: '2026-08-05',
   eventDate: '2026-08-07',
-  event: 'BLS Employment Situation — July 2026',
+  event: 'U.S. Employment Situation — July 2026',
   eventType: 'labor',
   assets: ['DXY', 'U.S. rates', 'S&P 500'],
   importance: 'high',

@@ -33,6 +33,32 @@ Do **not** request by default:
 
 If the account/provider configuration later requires the Facebook Login model, treat that as a separate reviewed auth variant because it introduces Page linkage and additional Page/Instagram permissions.
 
+## 2A. Delegated provider option — Windsor.ai
+
+The installed Windsor.ai plugin exposes an Instagram connector with OAuth and supported actions for image posts, video posts/Reels, carousels, Stories and comment operations.
+
+For the **first controlled provider tests**, prefer Windsor as the delegated execution surface when practical because:
+
+- OAuth credentials remain outside the USD Impact repository/runtime;
+- account connection is user-authorized through Windsor;
+- provider actions remain explicit and separately confirmed;
+- no Meta access token needs to be stored in Vercel/Supabase for the initial test;
+- the USD Impact candidate/QA packet can remain provider-agnostic.
+
+Limitations:
+
+- this does not automatically create a server-side scheduling system for usd-impact.com;
+- Windsor becomes an execution dependency;
+- connector action semantics/limits must be verified before each production workflow;
+- long-term autonomous scheduling may still justify the direct Meta API path.
+
+Therefore:
+
+- **Initial controlled publishing path:** Windsor delegated connector, after explicit OAuth connection and identity verification.
+- **Long-term self-hosted path:** direct Meta API implementation described in this document, only when separately authorized.
+
+No Windsor action is authorized by this architecture document.
+
 ## 3. Account eligibility gate
 
 Before any OAuth implementation:

@@ -1,5 +1,5 @@
 import { CalendarHold, verifyPublicationCalendar } from '../src/lib/publication-calendar.js';
-import { explicitBlsMonthlyLabel } from '../src/lib/publication-calendar-series.js';
+import { explicitBlsMonthlyLabel, mentionsSupportedBlsSeries } from '../src/lib/publication-calendar-series.js';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -145,6 +145,9 @@ if (existing) throw new Error(`${outputPath} already exists and requires editori
 if (publish) {
   try {
     const supportedBls = explicitBlsMonthlyLabel(payload.event);
+    if (!supportedBls && /\bBLS\b/i.test(String(payload.event ?? '')) && mentionsSupportedBlsSeries(payload.event)) {
+      throw new CalendarHold('HOLD_IDENTITY_MISMATCH', 'A recognizable BLS series requires an explicit series and reference month/year label.');
+    }
     if (supportedBls && !payload.calendar) {
       throw new CalendarHold('HOLD_MISSING_CALENDAR_RECORD', 'A supported BLS Catalyst Brief requires a canonical calendar record.');
     }

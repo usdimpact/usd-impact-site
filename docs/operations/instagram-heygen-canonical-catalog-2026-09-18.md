@@ -14,12 +14,12 @@ Repository governance is authoritative for content IDs. HeyGen dashboard/session
 | IG-002 | The 3 Dials | `8fb537b27be64db6a1e4a1b627ff865e` | VERIFIED_RENDER | Branded pilot. |
 | IG-003 | — | — | UNASSIGNED | No IG-003 exists in the governed evergreen queue. Do not invent one to fill numbering. |
 | IG-004 | What Changed First? | `cad3422d41a3457380fed9aec6b78ff9` | VERIFIED_RENDER | Evergreen. |
-| IG-005 | Dollar-led, Rate-led, Liquidity-led or Asset-specific? | — | MISSING_RENDER | Planned in governed queue; no matching final HeyGen render found during consolidation. |
+| IG-005 | Dollar-led, Rate-led, Liquidity-led or Asset-specific? | `c8eccab2045a4beb90ac7516d2b08d86` | VERIFIED_RENDER | Evergreen. |
 | IG-006 | DXY in 30 Seconds | `f951f11371264c0ca596ce64a35cfdde` | VERIFIED_RENDER | Evergreen. |
 | IG-007 | Real Yields in 30 Seconds | `0ffc8423aa2d4a73b1742f4c615522c3` | VERIFIED_RENDER | Canonical IG-007. |
 | IG-008 | What Is Liquidity Stress? | `88b6016ab6754510b933b3c782ca47f4` | VERIFIED_RENDER | Evergreen. |
-| IG-009 | Macro Myth: One Fed Headline Explains Every Asset | — | MISSING_RENDER | Planned in governed queue; no matching final HeyGen render found. |
-| IG-010 | Macro Myth: Strong Dollar Means Every Asset Must Fall | — | MISSING_RENDER | Planned in governed queue; no matching final HeyGen render found. |
+| IG-009 | Macro Myth: One Fed Headline Explains Every Asset | `650c7a0868be454e90c7613952d398e2` | VERIFIED_RENDER | Evergreen. |
+| IG-010 | Macro Myth: Strong Dollar Means Every Asset Must Fall | `00db66bebaa74edfb546735ee5966462` | VERIFIED_RENDER | Evergreen. |
 | IG-011 | Dollar vs Gold | `17c3f4ecb12c4061814023838a239a3e` | VERIFIED_RENDER_WITH_METADATA_NOTE | HeyGen session/title historically says IG-007. Governed catalog assigns this concept to IG-011. Do not treat it as a second IG-007. |
 | IG-012 | Real Yields vs Gold | `956054d33ef04cf3a42d7cd903ae0a59` | VERIFIED_RENDER | Evergreen. |
 | IG-013 | DXY vs EURUSD | `3c0a5544096247ccadbbce704d10d32b` | VERIFIED_RENDER | Evergreen. |
@@ -44,10 +44,10 @@ Repository governance is authoritative for content IDs. HeyGen dashboard/session
 ### Reel count
 
 - Governed evergreen queue in `instagram-evergreen-publishable-base-v1.md`: **24 planned Reels**.
-- Verified renders from that governed queue: **21**.
-- Missing governed renders: **IG-005, IG-009, IG-010**.
+- Verified renders from that governed queue: **24 / 24**.
+- Missing governed renders: **none**.
 - Additional verified interactive Reels: **IG-027–IG-030 (4)**.
-- Total canonical verified IG renders in this catalog: **25**.
+- Total canonical verified IG renders in this catalog: **28**.
 - IG-003 is intentionally unassigned and is not a production gap.
 
 Do not describe the IG-001–IG-030 range as “30 completed Reels.”
@@ -92,11 +92,10 @@ A verified render is not the same as approved-for-posting. Before any eventual s
 
 ## Next base-production work
 
-1. Produce the three missing governed evergreen Reels: **IG-005, IG-009, IG-010**.
-2. Perform visual QA on the 25 canonical IG renders and 10 HOW renders.
-3. Build the 12 carousel assets and remaining Story/quiz base from the governed plan.
-4. Build reusable Daily / Weekly / Catalyst / Report creative templates using fixtures only until launch-current evidence is available.
-5. Keep current-event/event templates refresh-at-launch; do not precommit stale September examples to the posting queue.
+1. Perform visual QA on the **28 canonical IG renders** and 10 HOW renders.
+2. Build the 12 carousel assets and remaining Story/quiz base from the governed plan.
+3. Build reusable Daily / Weekly / Catalyst / Report creative templates using fixtures only until launch-current evidence is available.
+4. Keep current-event/event templates refresh-at-launch; do not precommit stale September examples to the posting queue.
 
 ## Boundary
 

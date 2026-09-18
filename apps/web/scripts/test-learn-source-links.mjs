@@ -83,7 +83,7 @@ const cardFixture = (identity) => ({ ...identity, title: 'Fixture title', hook: 
 const esc = (value) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 function htmlFixture(card) {
   const links = getLearnSourceLinks(card).map((r) => `<li><a href="${esc(r.url)}" rel="noreferrer">${esc(r.label)}</a><p>${esc(r.scope)}</p></li>`).join('');
-  return `<html><head><title>${esc(card.title)} | USD Impact Learn</title><meta name="description" content="${esc(card.hook)}"></head><body><h1>${esc(card.title)}</h1>${[card.hook,card.definition,card.whyItMatters,card.example,card.commonMistake,card.keyTakeaway,...card.whatToWatch].map((v) => `<p>${esc(v)}</p>`).join('')}<div data-card-id="${card.id}"></div><a href="/guided-edition/video-library/${card.videoSlug}/">Video</a><section class="dc-source-list"><h2>Sources</h2><p>${esc(card.sourceNames.join(' \u00b7 '))}</p><ul aria-label="Primary references" data-learn-primary-references>${links}</ul><p>Educational and informational purposes only. Not investment advice.</p></section></body></html>`;
+  return `<html><head><title>${esc(card.title)} | USD Impact Learn</title><meta name="description" content="${esc(card.hook)}"></head><body><h1>${esc(card.title)}</h1>${[card.hook,card.definition,card.whyItMatters,card.example,card.commonMistake,card.keyTakeaway,...card.whatToWatch].map((v) => `<p>${esc(v)}</p>`).join('')}<div data-card-id="${card.id}"></div><a href="/guided-edition/video-library/${card.videoSlug}">Video</a><section class="dc-source-list"><h2>Sources</h2><p>${esc(card.sourceNames.join(' \u00b7 '))}</p><ul aria-label="Primary references" data-learn-primary-references>${links}</ul><p>Educational and informational purposes only. Not investment advice.</p></section></body></html>`;
 }
 test('both escaped generated-page fixtures pass', () => {
   for (const id of [real, dxy]) { const c = cardFixture(id); assert.deepEqual(inspectLearnSourceLinksHtml(htmlFixture(c), c), []); }
@@ -96,7 +96,7 @@ test('generated checker rejects missing, duplicate and unreviewed references', (
 });
 test('generated checker rejects lost copy, provenance, identity and scope', () => {
   const c = cardFixture(real), html = htmlFixture(c);
-  for (const value of [c.definition, c.title, c.hook, c.sourceNames[0], c.id, getLearnSourceLinks(c)[0].scope, 'Not investment advice.', '/guided-edition/video-library/fixture-video/', 'noreferrer', 'Primary references']) {
+  for (const value of [c.definition, c.title, c.hook, c.sourceNames[0], c.id, getLearnSourceLinks(c)[0].scope, 'Not investment advice.', '/guided-edition/video-library/fixture-video', 'noreferrer', 'Primary references']) {
     assert.ok(inspectLearnSourceLinksHtml(html.replaceAll(esc(value), 'REMOVED'), c).length, value);
   }
 });
@@ -123,7 +123,7 @@ test('removed blocks cannot manufacture preserved identity or protected destinat
   for (const block of ['<!-- seam -->', '<script>ignored</script>', '<style>ignored</style>']) {
     for (const invalid of [
       html.replace(`data-card-id="${card.id}"`, `data-card-id="card-real${block}-yield"`),
-      html.replace('/guided-edition/video-library/fixture-video/', `/guided-edition/video${block}-library/fixture-video/`),
+      html.replace('/guided-edition/video-library/fixture-video', `/guided-edition/video${block}-library/fixture-video/`),
     ]) assert.ok(inspectLearnSourceLinksHtml(invalid, card).length, block);
   }
 });

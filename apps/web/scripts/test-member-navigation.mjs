@@ -4,25 +4,27 @@ import vm from 'node:vm';
 import { SITE_NAVIGATION, navigationLinkIsActive, renderMemberMainMenu, memberMainMenuAssets } from '../src/lib/site-navigation.js';
 
 const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
-const memberPaths = ['/guided-edition/', '/guided-edition/book/', '/guided-edition/audiobook/', '/guided-edition/video-library/'];
+const memberPaths = ['/guided-edition', '/guided-edition/book', '/guided-edition/audiobook', '/guided-edition/video-library'];
 const menu = renderMemberMainMenu();
 assert.match(menu, /<summary>Main menu<\/summary>/);
 assert.match(menu, /aria-label="Main navigation"/);
-for (const path of ['/', '/news/', '/account/', '/book/read-the-dollar-first/', ...memberPaths]) {
+for (const path of ['/', '/news', '/account', '/book/read-the-dollar-first', ...memberPaths]) {
   assert.ok(menu.includes(`href="${path}"`), `Main menu must expose ${path}`);
 }
 assert.doesNotMatch(menu, /account\/sign-in|access_token|refresh_token/);
 for (const group of SITE_NAVIGATION) {
   assert.equal(Object.isFrozen(group.links), true);
   for (const link of group.links) {
-    assert.match(link.href, /^\/[a-z0-9/-]*\/$/);
+    assert.match(link.href, /^\/[a-z0-9/-]*$/);
+    if (link.href !== '/') assert.ok(!link.href.endsWith('/'), `Shared navigation href must use canonical no-slash form: ${link.href}`);
     assert.ok(menu.includes(`href="${link.href}">${link.label}</a>`));
   }
 }
-assert.equal(navigationLinkIsActive('/guided-edition/audiobook/', '/guided-edition/'), false);
+for (const path of memberPaths) assert.ok(!path.endsWith('/'), `Protected member navigation must match Vercel slashless routing: ${path}`);
+assert.equal(navigationLinkIsActive('/guided-edition/audiobook/', '/guided-edition'), false);
 assert.equal(navigationLinkIsActive('/guided-edition/audiobook/track/one/', '/guided-edition/audiobook/'), true);
 assert.equal(navigationLinkIsActive('/newsroom/', '/news/'), false);
-assert.equal(navigationLinkIsActive('/news', '/news/'), true);
+assert.equal(navigationLinkIsActive('/news', '/news'), true);
 assert.match(memberMainMenuAssets(), /href="\/assets\/member-main-menu.css"/);
 assert.match(memberMainMenuAssets(), /src="\/assets\/member-main-menu.js" defer/);
 
@@ -36,6 +38,30 @@ const layout = await read('../src/layouts/BaseLayout.astro');
 for (const group of ['learnNavigation', 'updatesNavigation', 'libraryNavigation']) assert.ok(layout.includes(`${group}.links.map`));
 assert.match(layout, /SITE_NAVIGATION, navigationLinkIsActive/);
 assert.match(layout, /src="\/assets\/session-entry.js" defer/);
+const canonicalFooterPaths = [
+  '/account',
+  '/guided-edition/audiobook',
+  '/guided-edition/video-library',
+  '/start-here',
+  '/framework/dollar-transmission-chain',
+  '/lead-magnets/weekly-dollar-regime-checklist',
+  '/news',
+  '/score',
+  '/reports',
+  '/research/evidence-map',
+  '/research/independent-replication',
+  '/about',
+  '/contact',
+  '/accessibility',
+  '/compliance',
+];
+for (const path of canonicalFooterPaths) {
+  assert.ok(layout.includes(`href="${path}"`), `Footer/header must expose canonical href ${path}`);
+  assert.ok(!layout.includes(`href="${path}/"`), `Footer/header must not emit redirecting trailing-slash href ${path}/`);
+}
+for (const path of ['/book/read-the-dollar-first/', '/privacy/', '/terms/', '/refund-policy/']) {
+  assert.ok(layout.includes(`href="${path}"`), `Governed disclosure footer route must remain ${path}`);
+}
 const publicAudio = await read('../src/pages/audiobook/read-the-dollar-first.astro');
 assert.match(publicAudio, /const memberAudiobookPath = '\/guided-edition\/audiobook\/'/);
 assert.equal((publicAudio.match(/href=\{memberAudiobookPath\}/g) || []).length, 2);

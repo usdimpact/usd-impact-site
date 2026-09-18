@@ -8,14 +8,15 @@ const memberPaths = ['/guided-edition', '/guided-edition/book', '/guided-edition
 const menu = renderMemberMainMenu();
 assert.match(menu, /<summary>Main menu<\/summary>/);
 assert.match(menu, /aria-label="Main navigation"/);
-for (const path of ['/', '/news/', '/account/', '/book/read-the-dollar-first/', ...memberPaths]) {
+for (const path of ['/', '/news', '/account', '/book/read-the-dollar-first', ...memberPaths]) {
   assert.ok(menu.includes(`href="${path}"`), `Main menu must expose ${path}`);
 }
 assert.doesNotMatch(menu, /account\/sign-in|access_token|refresh_token/);
 for (const group of SITE_NAVIGATION) {
   assert.equal(Object.isFrozen(group.links), true);
   for (const link of group.links) {
-    assert.match(link.href, /^\/[a-z0-9/-]*\/?$/);
+    assert.match(link.href, /^\/[a-z0-9/-]*$/);
+    if (link.href !== '/') assert.ok(!link.href.endsWith('/'), `Shared navigation href must use canonical no-slash form: ${link.href}`);
     assert.ok(menu.includes(`href="${link.href}">${link.label}</a>`));
   }
 }
@@ -23,7 +24,7 @@ for (const path of memberPaths) assert.ok(!path.endsWith('/'), `Protected member
 assert.equal(navigationLinkIsActive('/guided-edition/audiobook/', '/guided-edition'), false);
 assert.equal(navigationLinkIsActive('/guided-edition/audiobook/track/one/', '/guided-edition/audiobook/'), true);
 assert.equal(navigationLinkIsActive('/newsroom/', '/news/'), false);
-assert.equal(navigationLinkIsActive('/news', '/news/'), true);
+assert.equal(navigationLinkIsActive('/news', '/news'), true);
 assert.match(memberMainMenuAssets(), /href="\/assets\/member-main-menu.css"/);
 assert.match(memberMainMenuAssets(), /src="\/assets\/member-main-menu.js" defer/);
 

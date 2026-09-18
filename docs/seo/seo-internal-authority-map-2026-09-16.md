@@ -118,15 +118,73 @@ Preserve the historical preview role and official release terminology.
 
 ## Refresh checkpoint — 2026-09-18
 
-Search Console is settled through **2026-09-15**. The Master Keyword-to-Page Map v1 continues to support the same authority priorities: Real Yield, DXY/Broad USD, and bounded catalyst preview→outcome handoffs. Current implementation base is `a67320ac9d0a564d7b05fd8bf02c8cd486031a91`. No public link changes should begin while #569 remains open.
+Search Console is settled through **2026-09-15**. Semrush Site Audit snapshot `6aad41bad29f71103c475252` still predates the #663 canonical shared-navigation release, so issue 213 remains a **pre-#663 candidate set**, not a post-release defect list.
+
+Current issue-213 count: **112 pages**. Legal, utility, feed and authentication surfaces remain excluded from artificial authority work.
+
+### Current GSC intersection — 2026-08-19 through 2026-09-15
+
+| Learn target | Clicks | Impressions | Avg. position | Current interpretation |
+| --- | ---: | ---: | ---: | --- |
+| `/learn/real-yield` | 0 | 61 | 27.11 | strongest impression volume; canonical URL directly URL-Inspection PASS |
+| `/learn/dxy-vs-broad-usd-what-each-index-answers` | 1 | 25 | 11.92 | only click in the underlinked Learn candidate set; strong comparison intent |
+| `/learn/dollar-index-points-do-not-equal-uniform-currency-moves` | 0 | 55 | 33.27 | meaningful impressions, but keep separate from DXY/Broad comparison intent |
+| `/learn/smithsonian-agreement-interim-repair` | 0 | 16 | 18.63 | useful history chain, lower immediate priority |
+| `/learn/treasury-coupon-rate-is-not-yield-to-maturity` | 0 | 11 | 24.91 | natural reciprocal Treasury-mechanics relationship |
+| `/learn/treasury-prices-and-yields-move-in-opposite-directions` | 0 | 16 | 48.69 | contextually strong but weaker current search position |
+| `/learn/wti-backwardation-vs-contango` | 0 | 13 | 36.31 | oil-structure candidate after higher-confidence dollar/rates tests |
+| `/learn/why-oil-inventories-matter` | 0 | 11 | 46.55 | oil-physical-balance candidate after higher-confidence dollar/rates tests |
+| `/learn/floating-rates-before-jamaica-formalization` | 0 | 7 | 12.43 | history-chain candidate; low volume |
+| `/learn/tips-adjust-principal-with-inflation-not-the-coupon-rate` | 0 | 7 | 35.29 | semantically strong source for Real Yield rather than a first target itself |
+
+The Master Keyword-to-Page Map v1 therefore continues to support **Real Yield** and **DXY/Broad USD** as the first authority experiments once the observation hold clears. Dollar Index Points remains a distinct follow-on target; do not consolidate these page roles.
+
+### Prebuilt source → target pairs for the first bounded increment
+
+These pairs are already supported by explicit `relatedCardIds` relationships in the production card graph. They are candidates only; verify they are still missing or underrepresented in the first post-#663 Semrush crawl before adding anything.
+
+**Real Yield target — `/learn/real-yield`**
+
+1. `/learn/dollar-yields-liquidity-three-dials` → Real Yield  
+   - existing graph: `card-dollar-yields-liquidity` explicitly relates to `card-real-yield`
+   - contextual anchor family: `real yields`, `real-yield signal`
+
+2. `/learn/gold-dollar-vs-real-yields` → Real Yield  
+   - existing graph: `card-gold-real-yields` explicitly relates to `card-real-yield`
+   - contextual anchor family: `real yields`, `what real yield means`
+
+3. `/learn/tips-adjust-principal-with-inflation-not-the-coupon-rate` → Real Yield  
+   - existing graph: `card-tips-principal-inflation-adjustment` explicitly relates to `card-real-yield`
+   - contextual anchor family: `market real yield`, `TIPS real yield`
+   - preserve the distinction between TIPS cash-flow mechanics and market real yield
+
+**DXY vs Broad USD target — `/learn/dxy-vs-broad-usd-what-each-index-answers`**
+
+1. `/learn/why-the-euro-matters-in-dxy` → DXY vs Broad USD  
+   - existing graph: `card-dxy-euro-weight` explicitly relates to `card-dxy-broad-purpose`
+   - contextual anchor family: `compare DXY with Broad USD`, `broader dollar benchmark`
+
+2. `/learn/why-dxy-and-broad-usd-agreement-matters` → DXY vs Broad USD  
+   - existing graph: `card-dxy-broad-agreement` explicitly relates to `card-dxy-broad-purpose`
+   - contextual anchor family: `DXY and Broad USD`, `benchmark breadth`
+
+3. `/learn/why-dxy-and-broad-usd-divergence-matters` → DXY vs Broad USD  
+   - existing graph: divergence card explicitly relates to `card-dxy-broad-purpose`
+   - contextual anchor family: `DXY vs Broad USD`, `benchmark divergence`
+
+Do **not** automatically add all six links. The first post-#663 audit must be used to confirm which inbound links Semrush is actually discovering and which candidate relationships are genuinely absent.
+
+Current target base after branch reconciliation: `a68fda7de98096edecbf9c7aa8eb04e03eb5d38c`. No public link changes should begin while #569 remains open.
 
 ## 5. Implementation order after #569
 
-1. Merge/release #626 BLS archive handoff after exact-head revalidation.
-2. Merge/release #627 Real Yield search-title increment after exact-head revalidation.
-3. Add a small Real Yield inbound-link increment from 3-5 highest-context sources; measure before wider rollout.
-4. Re-query DXY/Broad USD GSC data and implement only the strongest 3-5 contextual inbound links.
-5. Keep catalyst evergreen-link additions separate from metadata tests so impact remains measurable.
+1. Obtain the first Semrush Site Audit snapshot completed after #663 Production deployment and re-check issue 213.
+2. Intersect the remaining issue-213 Learn URLs with settled GSC.
+3. Revalidate #626 BLS archive handoff separately; do not bundle it with evergreen authority changes.
+4. Revalidate #627 Real Yield search-title increment separately so title and internal-link effects remain measurable.
+5. For the first authority test, choose **one target** and add only **1–3** missing contextual inbound links from the prebuilt pairs above.
+6. Wait for settled Search Console data before expanding to the second target.
+7. Keep catalyst evergreen-link additions separate from metadata and evergreen-link experiments.
 
 ## Measurement
 

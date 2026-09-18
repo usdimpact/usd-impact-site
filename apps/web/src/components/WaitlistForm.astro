@@ -95,6 +95,9 @@ const { initiallyHidden = false } = Astro.props;
           throw new Error(payload.error || 'The waitlist is temporarily unavailable. Please try again later.');
         }
 
+        if (!company) {
+          window.dispatchEvent(new Event('usd-impact:waitlist-submission-success'));
+        }
         pendingSubmissionId = '';
         form.reset();
         if (status instanceof HTMLElement) {

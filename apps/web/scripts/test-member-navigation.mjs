@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import { SITE_NAVIGATION, navigationLinkIsActive, renderMemberMainMenu, memberMainMenuAssets } from '../src/lib/site-navigation.js';
 
 const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
-const memberPaths = ['/guided-edition/', '/guided-edition/book/', '/guided-edition/audiobook/', '/guided-edition/video-library/'];
+const memberPaths = ['/guided-edition', '/guided-edition/book', '/guided-edition/audiobook', '/guided-edition/video-library'];
 const menu = renderMemberMainMenu();
 assert.match(menu, /<summary>Main menu<\/summary>/);
 assert.match(menu, /aria-label="Main navigation"/);
@@ -15,11 +15,12 @@ assert.doesNotMatch(menu, /account\/sign-in|access_token|refresh_token/);
 for (const group of SITE_NAVIGATION) {
   assert.equal(Object.isFrozen(group.links), true);
   for (const link of group.links) {
-    assert.match(link.href, /^\/[a-z0-9/-]*\/$/);
+    assert.match(link.href, /^\/[a-z0-9/-]*\/?$/);
     assert.ok(menu.includes(`href="${link.href}">${link.label}</a>`));
   }
 }
-assert.equal(navigationLinkIsActive('/guided-edition/audiobook/', '/guided-edition/'), false);
+for (const path of memberPaths) assert.ok(!path.endsWith('/'), `Protected member navigation must match Vercel slashless routing: ${path}`);
+assert.equal(navigationLinkIsActive('/guided-edition/audiobook/', '/guided-edition'), false);
 assert.equal(navigationLinkIsActive('/guided-edition/audiobook/track/one/', '/guided-edition/audiobook/'), true);
 assert.equal(navigationLinkIsActive('/newsroom/', '/news/'), false);
 assert.equal(navigationLinkIsActive('/news', '/news/'), true);

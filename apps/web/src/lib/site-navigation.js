@@ -11,10 +11,10 @@ export const SITE_NAVIGATION = Object.freeze([
     { label: 'Reports', href: '/reports/' },
   ] },
   { label: 'Library', links: [
-    { label: 'Guided Edition', href: '/guided-edition/' },
-    { label: 'Book', href: '/guided-edition/book/' },
-    { label: 'Audiobook', href: '/guided-edition/audiobook/' },
-    { label: 'Video Library', href: '/guided-edition/video-library/' },
+    { label: 'Guided Edition', href: '/guided-edition' },
+    { label: 'Book', href: '/guided-edition/book' },
+    { label: 'Audiobook', href: '/guided-edition/audiobook' },
+    { label: 'Video Library', href: '/guided-edition/video-library' },
     { label: 'Library Pass details', href: '/book/read-the-dollar-first/' },
   ] },
 ].map((group) => Object.freeze({

@@ -80,6 +80,9 @@ const formId = 'daily-learning-email-form';
         if (!response.ok) {
           throw new Error(payload.error || 'Daily Learning email is temporarily unavailable. Please try again later.');
         }
+        if (!company && payload.alreadySubscribed !== true) {
+          window.dispatchEvent(new Event('usd-impact:daily-learning-subscribe-success'));
+        }
         pendingSubmissionId = '';
         form.reset();
         if (status instanceof HTMLElement) {

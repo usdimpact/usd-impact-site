@@ -38,6 +38,31 @@ const layout = await read('../src/layouts/BaseLayout.astro');
 for (const group of ['learnNavigation', 'updatesNavigation', 'libraryNavigation']) assert.ok(layout.includes(`${group}.links.map`));
 assert.match(layout, /SITE_NAVIGATION, navigationLinkIsActive/);
 assert.match(layout, /src="\/assets\/session-entry.js" defer/);
+const canonicalFooterPaths = [
+  '/account',
+  '/book/read-the-dollar-first',
+  '/guided-edition/audiobook',
+  '/guided-edition/video-library',
+  '/start-here',
+  '/framework/dollar-transmission-chain',
+  '/lead-magnets/weekly-dollar-regime-checklist',
+  '/news',
+  '/score',
+  '/reports',
+  '/research/evidence-map',
+  '/research/independent-replication',
+  '/about',
+  '/contact',
+  '/privacy',
+  '/terms',
+  '/refund-policy',
+  '/accessibility',
+  '/compliance',
+];
+for (const path of canonicalFooterPaths) {
+  assert.ok(layout.includes(`href="${path}"`), `Footer/header must expose canonical href ${path}`);
+  assert.ok(!layout.includes(`href="${path}/"`), `Footer/header must not emit redirecting trailing-slash href ${path}/`);
+}
 const publicAudio = await read('../src/pages/audiobook/read-the-dollar-first.astro');
 assert.match(publicAudio, /const memberAudiobookPath = '\/guided-edition\/audiobook\/'/);
 assert.equal((publicAudio.match(/href=\{memberAudiobookPath\}/g) || []).length, 2);

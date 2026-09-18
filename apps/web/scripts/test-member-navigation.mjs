@@ -40,7 +40,6 @@ assert.match(layout, /SITE_NAVIGATION, navigationLinkIsActive/);
 assert.match(layout, /src="\/assets\/session-entry.js" defer/);
 const canonicalFooterPaths = [
   '/account',
-  '/book/read-the-dollar-first',
   '/guided-edition/audiobook',
   '/guided-edition/video-library',
   '/start-here',
@@ -53,15 +52,15 @@ const canonicalFooterPaths = [
   '/research/independent-replication',
   '/about',
   '/contact',
-  '/privacy',
-  '/terms',
-  '/refund-policy',
   '/accessibility',
   '/compliance',
 ];
 for (const path of canonicalFooterPaths) {
   assert.ok(layout.includes(`href="${path}"`), `Footer/header must expose canonical href ${path}`);
   assert.ok(!layout.includes(`href="${path}/"`), `Footer/header must not emit redirecting trailing-slash href ${path}/`);
+}
+for (const path of ['/book/read-the-dollar-first/', '/privacy/', '/terms/', '/refund-policy/']) {
+  assert.ok(layout.includes(`href="${path}"`), `Governed disclosure footer route must remain ${path}`);
 }
 const publicAudio = await read('../src/pages/audiobook/read-the-dollar-first.astro');
 assert.match(publicAudio, /const memberAudiobookPath = '\/guided-edition\/audiobook\/'/);

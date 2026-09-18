@@ -1,4 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
+import { CalendarHold, verifyPublicationCalendar } from '../src/lib/publication-calendar.js';
 import {
   ALLOWED_ASSETS,
   COMPLIANCE_NOTE,
@@ -8,7 +9,7 @@ import {
   collectOpenAiText,
   sourceClassification,
 } from './daily-news-source.js';
-import { catalystBriefSlug, catalystEventKey, isDateOnly } from '../src/lib/catalyst-briefs.js';
+import { catalystBriefSlug, catalystCalendarAssertion, catalystEventKey, isDateOnly } from '../src/lib/catalyst-briefs.js';
 
 const OPENAI_RESPONSES_API = 'https://api.openai.com/v1/responses';
 const DEFAULT_MODEL = 'gpt-5';
@@ -250,10 +251,27 @@ function validateCandidate(payload) {
     eventType,
     impactScore,
     assets,
+    calendar: candidate.calendar ?? catalystCalendarAssertion(event, eventDate),
     whyItMatters: requiredString(candidate, 'whyItMatters', 500),
     eventKey: catalystEventKey(eventDate, event),
     briefSlug: catalystBriefSlug(eventDate, event, phase),
   };
+}
+
+async function verifyCandidateCalendar(candidate, boundary) {
+  if (!candidate.calendar) return null;
+  const decision = await verifyPublicationCalendar({
+    ...candidate.calendar,
+    event: candidate.event,
+    phase: candidate.phase,
+    statusLabel: candidate.phase === 'preview' ? 'scheduled-confirmed' : 'released',
+  });
+  if (decision.decision !== 'PASS') {
+    const error = new CalendarHold(decision.decision, decision.reason);
+    error.calendarAudit = { boundary, ...decision };
+    throw error;
+  }
+  return decision;
 }
 
 function sourceDate(value, id) {
@@ -349,6 +367,7 @@ function normalizeDraft(draft, groundedUrls, candidate, generatedAt) {
     eventKey: candidate.eventKey,
     event: candidate.event,
     eventDate: candidate.eventDate,
+    calendar: candidate.calendar,
     sourceEditionDate: candidate.sourceEditionDate,
     phase: candidate.phase,
     generatedAt,
@@ -625,6 +644,7 @@ export default async function handler(request, response) {
 
   try {
     const candidate = validateCandidate(parseBody(request));
+    await verifyCandidateCalendar(candidate, 'before-catalyst-research');
     const model = String(process.env.OPENAI_NEWS_MODEL || DEFAULT_MODEL).trim();
     const timeoutMs = Number.parseInt(process.env.OPENAI_NEWS_TIMEOUT_MS || '', 10) || DEFAULT_TIMEOUT_MS;
     const generatedAt = new Date().toISOString();
@@ -642,11 +662,16 @@ export default async function handler(request, response) {
       openAiApiKey,
       timeoutMs,
     );
+    if (bundle.publishable === true) await verifyCandidateCalendar(candidate, 'after-catalyst-generation');
     return sendJson(response, bundle, 200, {
       'X-USD-Impact-Model': model,
       'X-USD-Impact-Publishable': String(bundle.publishable),
     });
   } catch (error) {
+    if (error instanceof CalendarHold) {
+      console.error(JSON.stringify(error.calendarAudit ?? { decision: error.code, reason: error.message }));
+      return sendJson(response, { publishable: false, holdReason: error.message, calendarDecision: error.code, publicationAttempted: false }, 409);
+    }
     const message = error instanceof Error ? error.message : 'unknown error';
     console.error(`Catalyst Brief source failed: ${message}`);
     return sendJson(response, { error: 'Catalyst Brief source generation failed validation.' }, 502);

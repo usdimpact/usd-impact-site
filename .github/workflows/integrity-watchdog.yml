@@ -32,6 +32,7 @@ on:
   schedule:
     - cron: '17 * * * *'
     - cron: '23 5 * * 1'
+    - cron: '4,9,14,19,24,29,34,39,44,49,54,59 * * * *'
 
 permissions:
   actions: read
@@ -83,9 +84,40 @@ jobs:
           node -e "JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/GITHUB_PERMISSION_BASELINE.json', 'utf8'))"
           node -e "const i=JSON.parse(require('fs').readFileSync('docs/operations/integrity-watchdog/WORKFLOW_INVENTORY.json', 'utf8')); if(i.workflows.length !== 33) throw new Error('Expected 33 workflows'); const ids=new Set(i.workflows.map(w=>w.id)); if(ids.size !== i.workflows.length) throw new Error('Duplicate workflow ID'); for(const w of i.workflows){if(w.reference_workflow && !ids.has(w.reference_workflow)) throw new Error('Unknown reference workflow: '+w.reference_workflow)}"
 
+  publication-calendar-freshness:
+    if: >-
+      github.event_name == 'schedule' &&
+      github.event.schedule == '4,9,14,19,24,29,34,39,44,49,54,59 * * * *'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+      statuses: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+      - name: Enforce publication calendar freshness
+        working-directory: apps/web
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GUARD_WINDOW_MINUTES: '60'
+          GUARD_STATUS_CONTEXT: publication-calendar-freshness
+          AUTOMATION_BRANCH_PREFIX: automation/catalyst-brief-
+        run: node scripts/enforce-publication-calendar-prs.mjs
+
   audit:
     if: >-
       github.event_name != 'pull_request' &&
+      (github.event_name != 'schedule' ||
+       github.event.schedule != '4,9,14,19,24,29,34,39,44,49,54,59 * * * *') &&
       (github.event_name != 'issue_comment' ||
        ((github.event.comment.author_association == 'OWNER' ||
          github.event.comment.author_association == 'MEMBER' ||

@@ -46,6 +46,16 @@ const preview = selectImportantCatalyst(latest, { phase: 'preview', asOf: '2026-
 assert.equal(preview.event, 'BLS Employment Situation — July 2026');
 assert.equal(preview.phase, 'preview');
 assert.equal(preview.sourceEditionDate, '2026-08-05');
+assert.deepEqual(preview.calendar, {
+  publisher: 'BLS',
+  series: 'EMPSIT',
+  referencePeriod: '2026-07',
+  releaseStage: 'initial',
+  eventDate: '2026-08-07',
+  releaseTime: '08:30',
+  timeZone: 'America/New_York',
+  releaseAt: '2026-08-07T12:30:00.000Z',
+});
 
 assert.equal(
   selectImportantCatalyst(latest, {
@@ -123,6 +133,7 @@ const fomcOutcome = selectImportantCatalyst(shiftedFomcDate, {
 });
 assert.equal(fomcOutcome?.phase, 'outcome', 'An existing preview must never suppress the verified-outcome phase');
 assert.equal(fomcOutcome?.eventDate, '2026-09-16');
+assert.equal(fomcOutcome?.calendar, null, 'unsupported event families must not receive synthetic calendar certification');
 
 assert.equal(
   selectImportantCatalyst(shiftedFomcDate, {

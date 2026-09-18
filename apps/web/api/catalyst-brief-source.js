@@ -258,14 +258,14 @@ function validateCandidate(payload) {
   };
 }
 
-async function verifyCandidateCalendar(candidate, boundary) {
+export async function verifyCandidateCalendar(candidate, boundary, { now = Date.now, fetchImpl = globalThis.fetch } = {}) {
   if (!candidate.calendar) return null;
   const decision = await verifyPublicationCalendar({
     ...candidate.calendar,
     event: candidate.event,
     phase: candidate.phase,
     statusLabel: candidate.phase === 'preview' ? 'scheduled-confirmed' : 'released',
-  });
+  }, { now, fetchImpl });
   if (decision.decision !== 'PASS') {
     const error = new CalendarHold(decision.decision, decision.reason);
     error.calendarAudit = { boundary, ...decision };

@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 const manual = await readFile(new URL('../../../.github/workflows/publication-calendar-pr-guard.yml', import.meta.url), 'utf8');
 const watchdog = await readFile(new URL('../../../.github/workflows/integrity-watchdog.yml', import.meta.url), 'utf8');
+const freshnessJob = watchdog.match(/\n  publication-calendar-freshness:\n([\s\S]*?)\n  audit:/)?.[1] || '';
 const guardCron = '4,9,14,19,24,29,34,39,44,49,54,59 * * * *';
 
 for (const required of [
@@ -24,14 +25,16 @@ assert.doesNotMatch(manual, /github\.event\.pull_request/, 'guard must not depen
 assert.doesNotMatch(manual, /actions:\s*write/, 'manual guard does not need Actions write permission');
 assert.doesNotMatch(manual, /contents:\s*write/, 'manual guard must not mutate repository contents');
 
+assert.ok(watchdog.includes(`cron: '${guardCron}'`), 'watchdog must retain the dedicated freshness cadence');
+assert.ok(freshnessJob, 'watchdog must contain the freshness-only job');
+assert.match(freshnessJob, /if: github\.event_name == 'schedule'/, 'freshness job must run on every watchdog schedule as a fallback');
+assert.doesNotMatch(freshnessJob, /github\.event\.schedule ==/, 'freshness job must not depend on only the dedicated cadence');
+assert.ok(watchdog.includes(`github.event.schedule != '${guardCron}'`), 'heavy audit must remain excluded from the dedicated freshness cadence');
+
 for (const required of [
-  `cron: '${guardCron}'`,
-  'publication-calendar-freshness:',
-  `github.event.schedule == '${guardCron}'`,
-  `github.event.schedule != '${guardCron}'`,
   'pull-requests: write',
   'statuses: write',
   'node scripts/enforce-publication-calendar-prs.mjs',
-]) assert.ok(watchdog.includes(required), `missing watchdog-hosted guard contract: ${required}`);
+]) assert.ok(freshnessJob.includes(required), `missing watchdog-hosted guard contract: ${required}`);
 
-console.log('publication calendar PR workflow hosting contract pass');
+console.log('publication calendar PR workflow hosting fallback contract pass');

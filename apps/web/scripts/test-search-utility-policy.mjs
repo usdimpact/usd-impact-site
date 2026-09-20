@@ -6,7 +6,7 @@ import { PUBLIC_DISCOVERY_CONTROLS, robotsValues, sitemapPathSet, verifySearchUt
 export function runSearchUtilityPolicyTests() {
   let groups = 0;
   const check = (fn) => { fn(); groups += 1; };
-  const expected = ['/account', '/account/access-required', '/account/notifications', '/account/passkeys', '/account/sign-in', '/auth/confirm', '/auth/session-ready', '/checkout', '/email/confirm', '/research/access-required', '/research/account'];
+  const expected = ['/account', '/account/access-required', '/account/newsletter-canary', '/account/notifications', '/account/passkeys', '/account/sign-in', '/auth/confirm', '/auth/session-ready', '/checkout', '/email/confirm', '/research/access-required', '/research/account'];
   check(() => { assert.deepEqual([...SEARCH_UTILITY_PATHS], expected); assert.ok(Object.isFrozen(SEARCH_UTILITY_PATHS)); });
   check(() => {
     for (const route of expected) {
@@ -22,7 +22,7 @@ export function runSearchUtilityPolicyTests() {
     }
   });
   check(() => {
-    for (const route of [...PUBLIC_DISCOVERY_CONTROLS, '/accounting', '/accounts', '/research/accounting', '/account/sign-in/help', '/checkout-success', '/internal/ask-usd-impact']) {
+    for (const route of [...PUBLIC_DISCOVERY_CONTROLS, '/accounting', '/accounts', '/research/accounting', '/account/sign-in/help', '/account/newsletter-canary/help', '/account/newsletter-canary-public', '/checkout-success', '/internal/ask-usd-impact']) {
       assert.equal(isSearchUtilityPath(route), false, route);
     }
   });

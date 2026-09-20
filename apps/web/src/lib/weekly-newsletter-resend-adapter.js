@@ -145,18 +145,18 @@ function normalizeHeaders(headers) {
   return normalized;
 }
 
-function assertDevelopmentDelivery(environment) {
+function assertApprovedDelivery(environment) {
   const vercelEnvironment = String(environment.VERCEL_ENV ?? '').trim().toLowerCase();
-  if (vercelEnvironment === 'production') {
+  if (!['production', 'preview', 'development'].includes(vercelEnvironment)) {
     throw new WeeklyNewsletterResendConfigurationError(
-      'Weekly Newsletter delivery is hard-disabled in Production for this implementation slice.',
-      'PRODUCTION_WEEKLY_NEWSLETTER_DELIVERY_BLOCKED',
+      'Weekly Newsletter delivery requires an explicit Production, Development, or Preview environment.',
+      'UNAPPROVED_DELIVERY_ENVIRONMENT',
     );
   }
-  if (!['preview', 'development'].includes(vercelEnvironment)) {
+  if (vercelEnvironment === 'production' && environment.WEEKLY_NEWSLETTER_PRODUCTION_ENABLED !== 'true') {
     throw new WeeklyNewsletterResendConfigurationError(
-      'Weekly Newsletter delivery requires an explicit Development or Preview environment.',
-      'UNAPPROVED_DELIVERY_ENVIRONMENT',
+      'Weekly Newsletter Production capability is disabled.',
+      'PRODUCTION_WEEKLY_NEWSLETTER_NOT_ENABLED',
     );
   }
   if (environment.WEEKLY_NEWSLETTER_DELIVERY_ENABLED !== 'true') {
@@ -164,6 +164,15 @@ function assertDevelopmentDelivery(environment) {
       'Weekly Newsletter delivery is disabled.',
       'WEEKLY_NEWSLETTER_DELIVERY_DISABLED',
     );
+  }
+  if (vercelEnvironment === 'production') {
+    const mailbox = mailboxFromSender(environment.RESEND_FROM_EMAIL);
+    if (!mailbox || !mailbox.endsWith('@updates.usd-impact.com')) {
+      throw new WeeklyNewsletterResendConfigurationError(
+        'Production email delivery must use the verified updates.usd-impact.com sender domain.',
+        'PRODUCTION_RESEND_SENDER_INVALID',
+      );
+    }
   }
   return parseQaRecipients(environment.WEEKLY_NEWSLETTER_QA_RECIPIENTS);
 }
@@ -259,7 +268,7 @@ export function createWeeklyNewsletterResendAdapter({
     throw new WeeklyNewsletterResendConfigurationError('A clock implementation is required.');
   }
 
-  const qaRecipients = assertDevelopmentDelivery(environment);
+  const qaRecipients = assertApprovedDelivery(environment);
   const apiKey = requireApiKey(environment.RESEND_API_KEY);
   const from = requireSender(environment.RESEND_FROM_EMAIL, 'RESEND_FROM_EMAIL');
   const replyTo = optionalReplyTo(environment.RESEND_REPLY_TO);

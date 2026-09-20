@@ -91,12 +91,18 @@ function parseQaRecipients(value) {
   return normalized;
 }
 
-function assertDevelopmentDelivery(environment) {
+function assertApprovedDelivery(environment) {
   const vercelEnvironment = String(environment.VERCEL_ENV ?? '').trim().toLowerCase();
-  if (vercelEnvironment === 'production') {
+  if (!['production', 'preview', 'development'].includes(vercelEnvironment)) {
     throw new MarketingOptInResendConfigurationError(
-      'Marketing opt-in email delivery is hard-disabled in Production for this implementation slice.',
-      'PRODUCTION_OPT_IN_DELIVERY_BLOCKED',
+      'Marketing opt-in delivery requires an explicit Production, Preview, or Development environment.',
+      'UNAPPROVED_DELIVERY_ENVIRONMENT',
+    );
+  }
+  if (vercelEnvironment === 'production' && environment.EMAIL_OPT_IN_PRODUCTION_APPROVED !== 'true') {
+    throw new MarketingOptInResendConfigurationError(
+      'Production marketing opt-in delivery is not approved.',
+      'PRODUCTION_OPT_IN_NOT_APPROVED',
     );
   }
   if (environment.EMAIL_OPT_IN_DELIVERY_ENABLED !== 'true') {
@@ -105,13 +111,7 @@ function assertDevelopmentDelivery(environment) {
       'OPT_IN_DELIVERY_DISABLED',
     );
   }
-  if (!['preview', 'development'].includes(vercelEnvironment)) {
-    throw new MarketingOptInResendConfigurationError(
-      'Marketing opt-in delivery requires an explicit Development or Preview environment.',
-      'UNAPPROVED_DELIVERY_ENVIRONMENT',
-    );
-  }
-  return parseQaRecipients(environment.EMAIL_OPT_IN_QA_RECIPIENTS);
+  return { vercelEnvironment, qaRecipients: parseQaRecipients(environment.EMAIL_OPT_IN_QA_RECIPIENTS) };
 }
 
 function normalizeProviderCode(payload) {
@@ -200,13 +200,22 @@ export function createMarketingOptInResendAdapter({
     throw new MarketingOptInResendConfigurationError('A clock implementation is required.');
   }
 
-  const qaRecipients = assertDevelopmentDelivery(environment);
+  const { vercelEnvironment, qaRecipients } = assertApprovedDelivery(environment);
   const apiKey = requireApiKey(environment.RESEND_API_KEY);
   const from = requireSender(environment.RESEND_FROM_EMAIL, 'RESEND_FROM_EMAIL');
+  if (vercelEnvironment === 'production') {
+    const senderMailbox = mailboxFromSender(from);
+    if (!senderMailbox?.endsWith('@updates.usd-impact.com')) {
+      throw new MarketingOptInResendConfigurationError(
+        'Production marketing opt-in delivery must use the verified updates.usd-impact.com sender domain.',
+        'PRODUCTION_RESEND_SENDER_INVALID',
+      );
+    }
+  }
   const replyTo = optionalReplyTo(environment.RESEND_REPLY_TO);
 
   return Object.freeze({
-    id: 'resend-development-opt-in',
+    id: vercelEnvironment === 'production' ? 'resend-production-opt-in' : 'resend-development-opt-in',
     async send(message) {
       const normalized = validateMessage(message, qaRecipients);
       let response;

@@ -66,7 +66,7 @@ assert.throws(
     environment: { ...environment, VERCEL_ENV: 'production' },
   }),
   (error) => error instanceof WeeklyNewsletterResendConfigurationError
-    && error.code === 'PRODUCTION_WEEKLY_NEWSLETTER_DELIVERY_BLOCKED',
+    && error.code === 'PRODUCTION_WEEKLY_NEWSLETTER_NOT_ENABLED',
 );
 
 assert.throws(

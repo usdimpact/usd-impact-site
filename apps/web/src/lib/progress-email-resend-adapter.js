@@ -145,18 +145,18 @@ function normalizeHeaders(headers) {
   return normalized;
 }
 
-function assertDevelopmentDelivery(environment) {
+function assertApprovedDelivery(environment) {
   const vercelEnvironment = String(environment.VERCEL_ENV ?? '').trim().toLowerCase();
-  if (vercelEnvironment === 'production') {
+  if (!['production', 'preview', 'development'].includes(vercelEnvironment)) {
     throw new ProgressEmailResendConfigurationError(
-      'Learning Progress delivery is hard-disabled in Production for this implementation slice.',
-      'PRODUCTION_PROGRESS_EMAIL_DELIVERY_BLOCKED',
+      'Learning Progress delivery requires an explicit Production, Development, or Preview environment.',
+      'UNAPPROVED_DELIVERY_ENVIRONMENT',
     );
   }
-  if (!['preview', 'development'].includes(vercelEnvironment)) {
+  if (vercelEnvironment === 'production' && environment.PROGRESS_EMAIL_PRODUCTION_ENABLED !== 'true') {
     throw new ProgressEmailResendConfigurationError(
-      'Learning Progress delivery requires an explicit Development or Preview environment.',
-      'UNAPPROVED_DELIVERY_ENVIRONMENT',
+      'Learning Progress Production capability is disabled.',
+      'PRODUCTION_PROGRESS_EMAIL_NOT_ENABLED',
     );
   }
   if (environment.PROGRESS_EMAIL_DELIVERY_ENABLED !== 'true') {
@@ -164,6 +164,15 @@ function assertDevelopmentDelivery(environment) {
       'Learning Progress delivery is disabled.',
       'PROGRESS_EMAIL_DELIVERY_DISABLED',
     );
+  }
+  if (vercelEnvironment === 'production') {
+    const mailbox = mailboxFromSender(environment.RESEND_FROM_EMAIL);
+    if (!mailbox || !mailbox.endsWith('@updates.usd-impact.com')) {
+      throw new ProgressEmailResendConfigurationError(
+        'Production email delivery must use the verified updates.usd-impact.com sender domain.',
+        'PRODUCTION_RESEND_SENDER_INVALID',
+      );
+    }
   }
   return parseQaRecipients(environment.PROGRESS_EMAIL_QA_RECIPIENTS);
 }
@@ -259,7 +268,7 @@ export function createProgressEmailResendAdapter({
     throw new ProgressEmailResendConfigurationError('A clock implementation is required.');
   }
 
-  const qaRecipients = assertDevelopmentDelivery(environment);
+  const qaRecipients = assertApprovedDelivery(environment);
   const apiKey = requireApiKey(environment.RESEND_API_KEY);
   const from = requireSender(environment.RESEND_FROM_EMAIL, 'RESEND_FROM_EMAIL');
   const replyTo = optionalReplyTo(environment.RESEND_REPLY_TO);

@@ -315,7 +315,7 @@ await assert.rejects(
     now: NOW,
   }),
   (error) => error instanceof ProgressEmailDispatchError
-    && error.code === 'PRODUCTION_PROGRESS_EMAIL_DISPATCH_BLOCKED',
+    && error.code === 'PRODUCTION_PROGRESS_EMAIL_NOT_ENABLED',
 );
 
 console.log('Learning Progress guarded dispatch worker contract passed.');

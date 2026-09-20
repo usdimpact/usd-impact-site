@@ -63,7 +63,39 @@ assert.throws(
     environment: { ...environment, VERCEL_ENV: 'production' },
   }),
   (error) => error instanceof MarketingOptInResendConfigurationError
-    && error.code === 'PRODUCTION_OPT_IN_DELIVERY_BLOCKED',
+    && error.code === 'PRODUCTION_OPT_IN_NOT_APPROVED',
+);
+
+{
+  let captured = null;
+  const adapter = createMarketingOptInResendAdapter({
+    environment: {
+      ...environment,
+      VERCEL_ENV: 'production',
+      EMAIL_OPT_IN_PRODUCTION_APPROVED: 'true',
+    },
+    now: () => new Date('2026-09-20T18:00:00.000Z'),
+    fetchImpl: async (url, options) => {
+      captured = { url, options };
+      return response({ id: 'provider-production-opt-in-canary' }, 200);
+    },
+  });
+  const result = await adapter.send(message);
+  assert.equal(result.state, 'accepted');
+  assert.equal(captured.url, 'https://api.resend.com/emails');
+}
+
+assert.throws(
+  () => createMarketingOptInResendAdapter({
+    environment: {
+      ...environment,
+      VERCEL_ENV: 'production',
+      EMAIL_OPT_IN_PRODUCTION_APPROVED: 'true',
+      RESEND_FROM_EMAIL: 'USD Impact <updates@example.com>',
+    },
+  }),
+  (error) => error instanceof MarketingOptInResendConfigurationError
+    && error.code === 'PRODUCTION_RESEND_SENDER_INVALID',
 );
 
 assert.throws(

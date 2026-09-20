@@ -318,4 +318,22 @@ await assert.rejects(
     && error.code === 'PRODUCTION_PROGRESS_EMAIL_NOT_ENABLED',
 );
 
+await assert.rejects(
+  () => dispatchProgressEmailOutbox({
+    outboxId: OUTBOX_ID,
+    accountId: ACCOUNT_ID,
+    environment: {
+      ...environment,
+      VERCEL_ENV: 'production',
+      PROGRESS_EMAIL_PRODUCTION_ENABLED: 'true',
+      SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
+      PROGRESS_EMAIL_BASE_URL: 'https://www.usd-impact.com',
+    },
+    fetchImpl: async () => assert.fail('Project pin must be checked before any fetch.'),
+    now: NOW,
+  }),
+  (error) => error instanceof ProgressEmailDispatchError
+    && error.code === 'UNEXPECTED_SUPABASE_PROJECT',
+);
+
 console.log('Learning Progress guarded dispatch worker contract passed.');

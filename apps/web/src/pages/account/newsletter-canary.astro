@@ -1,0 +1,72 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Weekly email controlled test | USD Impact" description="Owner-controlled Weekly email readiness and single-recipient test." noindex={true}>
+  <main class="container" style="max-width:760px;padding:40px 20px;">
+    <h1>Weekly email controlled test</h1>
+    <p>This control is limited to the signed-in account that matches both single-address test allowlists. It does not activate a recurring campaign or Learning Progress email.</p>
+    <p><a href="/account/sign-in/?next=%2Faccount%2Fnewsletter-canary">Sign in with the test account</a> or <a href="/account/">return to your account</a>.</p>
+    <p id="canary-status" role="status" aria-live="polite">Select Check readiness. This check sends nothing.</p>
+    <button type="button" id="canary-check">Check readiness</button>
+    <pre id="canary-report" style="white-space:pre-wrap;overflow-wrap:anywhere;" aria-label="Readiness result"></pre>
+    <section aria-labelledby="canary-opt-in-heading">
+      <h2 id="canary-opt-in-heading">1. Confirm your subscription</h2>
+      <label><input type="checkbox" id="canary-consent" /> I agree to receive the Weekly USD Impact email at my signed-in address. I can unsubscribe at any time. <a href="/privacy/">Privacy policy</a>.</label>
+      <p><button type="button" id="canary-opt-in" disabled>Send one confirmation email</button></p>
+      <p>Open the confirmation email and explicitly confirm the request. Then return here and check readiness again. A confirmation email is separate from the Weekly test message.</p>
+    </section>
+    <section aria-labelledby="canary-send-heading">
+      <h2 id="canary-send-heading">2. Send the single Weekly test</h2>
+      <label><input type="checkbox" id="canary-send-confirm" /> I approve one Weekly test message for the edition shown above.</label>
+      <p><button type="button" id="canary-send" disabled>Send one Weekly test message</button></p>
+      <p>Provider acceptance is not proof of delivery. Delivery, signed callback correlation and unsubscribe must still be verified. Use the unsubscribe link in the test email for the explicit withdrawal test.</p>
+    </section>
+  </main>
+  <script>
+    const endpoint = '/api/waitlist?action=weekly-newsletter-canary';
+    const status = document.getElementById('canary-status');
+    const report = document.getElementById('canary-report');
+    const check = document.getElementById('canary-check') as HTMLButtonElement;
+    const optIn = document.getElementById('canary-opt-in') as HTMLButtonElement;
+    const send = document.getElementById('canary-send') as HTMLButtonElement;
+    const consent = document.getElementById('canary-consent') as HTMLInputElement;
+    const approval = document.getElementById('canary-send-confirm') as HTMLInputElement;
+    let state = { canRequestConfirmation: false, canSend: false };
+    let busy = false;
+    function controls() {
+      check.disabled = busy;
+      optIn.disabled = busy || !state.canRequestConfirmation || !consent.checked;
+      send.disabled = busy || !state.canSend || !approval.checked;
+    }
+    async function call(operation?: string) {
+      busy = true;
+      controls();
+      if (status) status.textContent = operation ? 'Submitting one explicit request...' : 'Checking without sending...';
+      try {
+        const response = await fetch(endpoint, {
+          method: operation ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
+          ...(operation ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ operation, confirm: true }) } : {}),
+        });
+        const body = await response.json();
+        if (report) report.textContent = JSON.stringify(body, null, 2);
+        state = operation ? { canRequestConfirmation: false, canSend: false } : {
+          canRequestConfirmation: response.ok && body.canRequestConfirmation === true,
+          canSend: response.ok && body.canSend === true,
+        };
+        if (status) status.textContent = response.status === 401
+          ? 'Sign in with the test account using the link above; then check readiness.'
+          : operation
+            ? 'Request finished. Check readiness to inspect recorded state. Do not repeatedly submit or retry an uncertain result.'
+            : 'Readiness check finished. Missing requirements or recorded attempts are shown below; no email was sent by this check.';
+      } catch {
+        state = { canRequestConfirmation: false, canSend: false };
+        if (status) status.textContent = 'The result is uncertain. Do not resend. Use Check readiness and reconcile the recorded state first.';
+      } finally { busy = false; controls(); }
+    }
+    check.addEventListener('click', () => call());
+    consent.addEventListener('change', controls);
+    approval.addEventListener('change', controls);
+    optIn.addEventListener('click', () => { if (!optIn.disabled && consent.checked) void call('request-confirmation'); });
+    send.addEventListener('click', () => { if (!send.disabled && approval.checked) void call('send-weekly'); });
+  </script>
+</BaseLayout>

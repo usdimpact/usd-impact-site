@@ -66,7 +66,7 @@ assert.throws(
     environment: { ...environment, VERCEL_ENV: 'production' },
   }),
   (error) => error instanceof ProgressEmailResendConfigurationError
-    && error.code === 'PRODUCTION_PROGRESS_EMAIL_DELIVERY_BLOCKED',
+    && error.code === 'PRODUCTION_PROGRESS_EMAIL_NOT_ENABLED',
 );
 
 assert.throws(

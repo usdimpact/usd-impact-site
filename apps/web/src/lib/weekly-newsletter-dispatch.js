@@ -10,6 +10,7 @@ import {
 import { readSupabaseServerConfig } from './supabase-server.js';
 
 const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
+const PRODUCTION_PROJECT_REF = 'gjzetjugmnwanvjkchux';
 const PROVIDER_IDEMPOTENCY_PATTERN = /^notification:v1:([0-9a-f]{64})$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const CHECKSUM_PATTERN = /^[0-9a-f]{64}$/;
@@ -43,19 +44,19 @@ function projectRefFromUrl(value) {
   }
 }
 
-function readDevelopmentConfig(environment) {
+function readDispatchConfig(environment) {
   const vercelEnvironment = String(environment.VERCEL_ENV ?? '').trim().toLowerCase();
-  if (vercelEnvironment === 'production') {
-    throw new WeeklyNewsletterDispatchError(
-      'Weekly Newsletter dispatch is hard-disabled in Production for this implementation slice.',
-      'PRODUCTION_WEEKLY_NEWSLETTER_DISPATCH_BLOCKED',
-      503,
-    );
-  }
-  if (!['preview', 'development'].includes(vercelEnvironment)) {
+  if (!['production', 'preview', 'development'].includes(vercelEnvironment)) {
     throw new WeeklyNewsletterDispatchError(
       'Weekly Newsletter dispatch requires Development or Preview.',
       'UNAPPROVED_WEEKLY_NEWSLETTER_ENVIRONMENT',
+      503,
+    );
+  }
+  if (vercelEnvironment === 'production' && environment.WEEKLY_NEWSLETTER_PRODUCTION_ENABLED !== 'true') {
+    throw new WeeklyNewsletterDispatchError(
+      'Weekly Newsletter Production capability is disabled.',
+      'PRODUCTION_WEEKLY_NEWSLETTER_NOT_ENABLED',
       503,
     );
   }
@@ -84,9 +85,14 @@ function readDevelopmentConfig(environment) {
       503,
     );
   }
-  if (projectRefFromUrl(config.url) !== DEVELOPMENT_PROJECT_REF) {
+  const expectedProjectRef = vercelEnvironment === 'production'
+    ? PRODUCTION_PROJECT_REF
+    : DEVELOPMENT_PROJECT_REF;
+  if (projectRefFromUrl(config.url) !== expectedProjectRef) {
     throw new WeeklyNewsletterDispatchError(
-      'Non-production Weekly Newsletter dispatch must target the canonical Development database.',
+      vercelEnvironment === 'production'
+        ? 'Production Weekly Newsletter dispatch must target the canonical Production database.'
+        : 'Non-production Weekly Newsletter dispatch must target the canonical Development database.',
       'UNEXPECTED_SUPABASE_PROJECT',
       503,
     );
@@ -446,7 +452,7 @@ export async function enqueueWeeklyNewsletterOutbox({
   environment = process.env,
   fetchImpl = fetch,
 } = {}) {
-  const config = readDevelopmentConfig(environment);
+  const config = readDispatchConfig(environment);
   const verified = verifyWeeklyNewsletterEditionArtifact(artifact);
   if (
     verified.payload.weekEnding !== candidate?.weekEnding
@@ -539,7 +545,7 @@ export async function deliverWeeklyNewsletterOutbox({
     );
   }
 
-  const config = readDevelopmentConfig(environment);
+  const config = readDispatchConfig(environment);
   const artifact = await artifactLoader({
     weekEnding: evidence.payload.weekEnding,
     expectedChecksum: evidence.payload.editionChecksum,

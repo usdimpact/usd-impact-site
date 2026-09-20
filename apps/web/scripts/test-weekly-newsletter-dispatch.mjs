@@ -225,4 +225,21 @@ await assert.rejects(
     && error.code === 'PRODUCTION_WEEKLY_NEWSLETTER_NOT_ENABLED',
 );
 
+await assert.rejects(
+  () => deliverWeeklyNewsletterOutbox({
+    outbox,
+    environment: {
+      ...environment,
+      VERCEL_ENV: 'production',
+      WEEKLY_NEWSLETTER_PRODUCTION_ENABLED: 'true',
+      SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
+    },
+    artifactLoader: async () => assert.fail('Project pin must be checked before artifact loading.'),
+    databaseFetch: async () => assert.fail('Project pin must be checked before database access.'),
+    now: () => new Date('2026-09-05T08:00:00.000Z'),
+  }),
+  (error) => error instanceof WeeklyNewsletterDispatchError
+    && error.code === 'UNEXPECTED_SUPABASE_PROJECT',
+);
+
 console.log('Weekly Newsletter Development dispatch worker contract passed.');

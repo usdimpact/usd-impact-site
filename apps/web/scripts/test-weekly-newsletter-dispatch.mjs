@@ -222,7 +222,7 @@ await assert.rejects(
     now: () => new Date('2026-09-05T08:00:00.000Z'),
   }),
   (error) => error instanceof WeeklyNewsletterDispatchError
-    && error.code === 'PRODUCTION_WEEKLY_NEWSLETTER_DISPATCH_BLOCKED',
+    && error.code === 'PRODUCTION_WEEKLY_NEWSLETTER_NOT_ENABLED',
 );
 
 console.log('Weekly Newsletter Development dispatch worker contract passed.');

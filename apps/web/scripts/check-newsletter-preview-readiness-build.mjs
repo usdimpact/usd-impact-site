@@ -3,11 +3,7 @@ import { inspectNewsletterPreviewReadiness } from '../src/lib/newsletter-preview
 const environment = String(process.env.VERCEL_ENV ?? '').trim().toLowerCase();
 if (environment !== 'preview') process.exit(0);
 
-const keys = new Set([
-  'EMAIL_READINESS_LEDGER_ENABLED',
-  'PROGRESS_EMAIL_READINESS_ENABLED',
-  'PROGRESS_EMAIL_DISPATCH_ENABLED',
-]);
+const keys = new Set(['EMAIL_READINESS_LEDGER_ENABLED']);
 const report = inspectNewsletterPreviewReadiness(process.env);
 if (report.checks.some((item) => keys.has(item.key) && !item.ok)) process.exit(1);
-console.log('Learning Progress Preview ledger/readiness/dispatch flag checks passed.');
+console.log('Newsletter Preview ledger flag check passed.');

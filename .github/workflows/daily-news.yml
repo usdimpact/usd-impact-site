@@ -250,12 +250,10 @@ jobs:
         if: steps.config.outputs.configured == 'true'
         run: node scripts/import-daily-news.mjs "$RUNNER_TEMP/daily-usd-impact.json" --replace --skip-published --publish
 
-      - name: Validate and build
+      - name: Validate publication content preflight
         id: validate_build
         if: steps.config.outputs.configured == 'true'
-        run: |
-          npm run validate
-          npm run build
+        run: node scripts/validate-publication-content.mjs --preflight
 
       - name: Open and validate publication pull request
         id: publish_pr
@@ -303,7 +301,11 @@ jobs:
               --body-file "$RUNNER_TEMP/daily-news-pr.md")"
           fi
 
-          gh workflow run quality.yml --ref "$branch"
+          publication_base_sha="$(gh pr view "$pr_url" --json baseRefOid --jq '.baseRefOid')"
+          quality_requested_at="$(date -u +%FT%TZ)"
+          gh workflow run quality.yml --ref "$branch" \
+            -f publication_base_sha="$publication_base_sha" \
+            -f publication_head_sha="$head_sha"
 
           run_id=""
           for attempt in $(seq 1 30); do
@@ -312,8 +314,8 @@ jobs:
               --branch "$branch" \
               --event workflow_dispatch \
               --limit 10 \
-              --json databaseId,headSha \
-              --jq ".[] | select(.headSha == \"$head_sha\") | .databaseId" | head -n 1)"
+              --json databaseId,headSha,createdAt \
+              --jq ".[] | select(.headSha == \"$head_sha\" and .createdAt >= \"$quality_requested_at\") | .databaseId" | head -n 1)"
             if [ -n "$run_id" ]; then
               break
             fi
@@ -331,6 +333,7 @@ jobs:
             echo "Web quality run $run_id concluded '${run_conclusion:-unknown}'; expected success."
             exit 1
           fi
+          echo 'Required PR-event checks, editorial facts/calendar review, Preview and exact-version release approval remain separate gates.'
           echo "Daily USD Impact ${edition_date} passed Web quality and is ready for protected editorial review and merge: $pr_url"
 
       - name: Report Daily failure gate
@@ -354,7 +357,8 @@ jobs:
             "$POLL_OUTCOME" \
             "$IMPORT_OUTCOME" \
             "$VALIDATE_OUTCOME" \
-            "$PUBLISH_OUTCOME")"
+            "$PUBLISH_OUTCOME" \
+            'publication-content-preflight')"
           stage="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.stage)' "$result")"
           gate="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.gate)' "$result")"
           detail="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.detail || "not exposed")' "$result")"

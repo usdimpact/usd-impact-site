@@ -70,12 +70,14 @@ export function classifyDailyWorkflowFailure({
   validateOutcome,
   publishOutcome,
   payload = null,
+  validationGate = 'site-validation-build',
 }) {
   if (failed(publishOutcome)) {
     return { stage: 'publication', gate: 'publication-pr-quality', detail: null };
   }
   if (failed(validateOutcome)) {
-    return { stage: 'validation', gate: 'site-validation-build', detail: null };
+    const gate = validationGate === 'publication-content-preflight' ? validationGate : 'site-validation-build';
+    return { stage: 'validation', gate, detail: null };
   }
   if (failed(importOutcome)) {
     return { stage: 'import', gate: 'content-import', detail: null };
@@ -106,6 +108,7 @@ async function main() {
     importOutcome = '',
     validateOutcome = '',
     publishOutcome = '',
+    validationGate = 'site-validation-build',
   ] = process.argv.slice(2);
 
   const payload = await readPayload(payloadPath);
@@ -115,6 +118,7 @@ async function main() {
     importOutcome,
     validateOutcome,
     publishOutcome,
+    validationGate,
     payload,
   });
   process.stdout.write(JSON.stringify(result));

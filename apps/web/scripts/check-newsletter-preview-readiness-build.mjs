@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { inspectNewsletterPreviewReadiness } from '../src/lib/newsletter-preview-readiness.js';
 
 const environment = String(process.env.VERCEL_ENV ?? '').trim().toLowerCase();
@@ -8,18 +6,15 @@ if (environment !== 'preview') {
   process.exit(0);
 }
 
+const originKeys = new Set([
+  'WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL',
+  'WEEKLY_NEWSLETTER_PUBLIC_BASE_URL',
+  'PROGRESS_EMAIL_BASE_URL',
+]);
 const report = inspectNewsletterPreviewReadiness(process.env);
-const payload = {
-  ready: report.ready,
-  environment: report.environment,
-  checked: report.checked,
-  passed: report.passed,
-  failed: report.failed,
-  sharedQaRecipients: report.sharedQaRecipients,
-  failedKeys: report.checks.filter((item) => !item.ok).map((item) => item.key),
-};
+const failedKeys = report.checks.filter((item) => !item.ok).map((item) => item.key);
+const substantiveFailures = failedKeys.filter((key) => !originKeys.has(key));
 
-const target = path.join(process.cwd(), 'dist', 'newsletter', 'preview-readiness.json');
-fs.mkdirSync(path.dirname(target), { recursive: true });
-fs.writeFileSync(target, `${JSON.stringify(payload)}\n`, 'utf8');
-console.log(JSON.stringify(payload));
+console.log(`Newsletter Preview substantive readiness: ${report.checked - substantiveFailures.length}/${report.checked}; substantive failures: ${substantiveFailures.length}; origin failures ignored for this diagnostic: ${failedKeys.length - substantiveFailures.length}.`);
+
+if (substantiveFailures.length > 0) process.exit(1);

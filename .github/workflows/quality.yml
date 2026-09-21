@@ -6,9 +6,19 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      publication_base_sha:
+        description: Optional exact publication base; not a fast-route override
+        required: false
+        type: string
+      publication_head_sha:
+        description: Optional exact publication head; must match the checked-out commit
+        required: false
+        type: string
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   validate-and-build:
@@ -18,11 +28,29 @@ jobs:
         working-directory: apps/web
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.x
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
+      - name: Select publication validation route
+        id: publication_route
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLICATION_BASE_SHA: ${{ inputs.publication_base_sha }}
+          PUBLICATION_HEAD_SHA: ${{ inputs.publication_head_sha }}
+        run: |
+          set -euo pipefail
+          policy="$RUNNER_TEMP/publication-ci-plan.mjs"
+          if git fetch --no-tags origin '+refs/heads/main:refs/remotes/origin/main' && \
+             git show refs/remotes/origin/main:apps/web/scripts/publication-ci-plan.mjs > "$policy"; then
+            PUBLICATION_POLICY_BASE_SHA="$(git rev-parse refs/remotes/origin/main)" node "$policy"
+          else
+            printf 'route=full\nreason=trusted-policy-unavailable\n' >> "$GITHUB_OUTPUT"
+            echo 'Trusted routing policy unavailable; full validation remains required.' >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Audit high and critical vulnerabilities
@@ -36,8 +64,16 @@ jobs:
           node ../../scripts/test-control-center-policy.mjs
           node -e "JSON.parse(require('fs').readFileSync('../../docs/operations/ai-control-center/INVENTORY.json', 'utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('../../docs/operations/ai-control-center/PROJECT_STATE.json', 'utf8'))"
+      - name: Validate publication CI routing contracts
+        run: |
+          node scripts/test-publication-ci-plan.mjs
+          node scripts/test-publication-ci-workflows.mjs
       - name: Validate content
         run: npm run validate:content
+      - name: Validate news and UX contracts
+        run: |
+          npm run validate:news
+          npm run validate:ux
       - name: Validate reports
         run: npm run validate:reports
       - name: Validate compliance
@@ -48,15 +84,23 @@ jobs:
         run: npm run validate:publishing
       - name: Validate automation health checks
         run: npm run validate:automation-health
+      - name: Validate publication source and importer contracts
+        if: steps.publication_route.outputs.route == 'content-only'
+        run: node scripts/validate-publication-content.mjs --contracts
       - name: Validate Vercel functions
+        if: steps.publication_route.outputs.route != 'content-only'
         run: npm run validate:functions
       - name: Validate paid access and protected audiobook
+        if: steps.publication_route.outputs.route != 'content-only'
         run: npm run validate:paid-access
       - name: Validate quiz entitlement and mastery contracts
+        if: steps.publication_route.outputs.route != 'content-only'
         run: npm run validate:quizzes
       - name: Validate protected video library
+        if: steps.publication_route.outputs.route != 'content-only'
         run: npm run validate:video-library
       - name: Validate Supabase contracts
+        if: steps.publication_route.outputs.route != 'content-only'
         run: npm run validate:supabase
       - name: Validate knowledge retrieval
         run: |

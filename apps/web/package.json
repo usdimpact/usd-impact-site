@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm run prepare:fonts && astro dev",
-    "build": "npm run prepare:fonts && npm run generate:quizzes && npm run validate:purchase-access-email && astro build && node scripts/test-rendered-structured-data-contract.mjs && npm run validate:a11y-build && npm run validate:checkout-presentation && npm run validate:csp-build && node scripts/verify-production-build.mjs",
+    "build": "npm run prepare:fonts && npm run generate:quizzes && npm run validate:purchase-access-email && astro build && node scripts/check-newsletter-preview-readiness-build.mjs && node scripts/test-rendered-structured-data-contract.mjs && npm run validate:a11y-build && npm run validate:checkout-presentation && npm run validate:csp-build && node scripts/verify-production-build.mjs",
     "preview": "astro preview",
     "prepare:fonts": "node scripts/prepare-font-assets.mjs",
     "verify:waitlist-development": "node scripts/verify-waitlist-development.mjs",

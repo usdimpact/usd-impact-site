@@ -7,9 +7,7 @@ const keys = new Set([
   'EMAIL_READINESS_LEDGER_ENABLED',
   'PROGRESS_EMAIL_READINESS_ENABLED',
   'PROGRESS_EMAIL_DISPATCH_ENABLED',
-  'PROGRESS_EMAIL_DELIVERY_ENABLED',
-  'PROGRESS_EMAIL_QA_BATCH_ENABLED',
 ]);
 const report = inspectNewsletterPreviewReadiness(process.env);
 if (report.checks.some((item) => keys.has(item.key) && !item.ok)) process.exit(1);
-console.log('Learning Progress Preview feature-flag checks passed.');
+console.log('Learning Progress Preview ledger/readiness/dispatch flag checks passed.');

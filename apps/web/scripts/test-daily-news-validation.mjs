@@ -329,4 +329,153 @@ assert.equal(diagnostic.code, 'invalid-source-date', 'Keep the existing diagnost
 assert.match(diagnostic.reason, /directly linked Treasury document/);
 assert.doesNotMatch(diagnostic.reason, /secret-looking-fixture-value|https?:/);
 
+// #676: synthetic attribution fixtures, not a live-source or market-fact audit.
+const fedIndex = 'https://www.federalreserve.gov/recentpostings.htm';
+const fedDocument = 'https://www.federalreserve.gov/newsevents/pressreleases/synthetic20260918a.htm';
+const fedIndexVariants = [
+  fedIndex,
+  `${fedIndex}/`,
+  `${fedIndex}//`,
+  `${fedIndex}?utm_source=fixture#postings`,
+  fedIndex.replace('www.', ''),
+  fedIndex.replace('www.federalreserve.gov', 'WWW.FEDERALRESERVE.GOV.'),
+  fedIndex.replace('recentpostings.htm', 'RECENTPOSTINGS.HTM'),
+  fedIndex.replace('recentpostings', '%72ecentpostings'),
+];
+for (const url of fedIndexVariants) {
+  assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.DOCUMENT_INDEX, url);
+  assert.equal(isLivingSourceUrl(url), false, 'The Fed index must not bypass date checks');
+  assert.match(sourceDateAttributionIssue(url), /^Federal Reserve Recent Postings index requires a directly linked dated document/);
+}
+for (const url of [
+  fedDocument,
+  fedIndex.replace('recentpostings.htm', 'recentpostings.htm/archive/2026'),
+  fedIndex.replace('recentpostings.htm', 'recentpostings-archive.htm'),
+  fedIndex.replace('recentpostings.htm', '%ZZrecentpostings.htm'),
+  fedIndex.replace('federalreserve.gov', 'federalreserve.gov.example.org'),
+  'https://example.org/?url=' + encodeURIComponent(fedIndex),
+]) {
+  assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.PUBLISHED, url);
+  assert.equal(sourceDateAttributionIssue(url), null, url);
+  assert.equal(isLivingSourceUrl(url), false, url);
+}
+assert.match(SOURCE_DATE_RULES, /Federal Reserve Recent Postings.*multi-document index for discovery only/i);
+assert.match(SOURCE_DATE_RULES, /index.*Last Update.*not.*document.*publication date/i);
+
+const fedAttributionBundle = (url, publishedAt) => ({
+  editionDate: '2026-09-21',
+  sources: [{ id: 'fed-item', url, publishedAt, title: 'Synthetic Fed document', sourceType: 'primary' }],
+  highlights: [{ headline: 'Synthetic document update.', sourceIds: ['fed-item'] }],
+  catalysts: [],
+  summary: 'Synthetic attribution fixture.',
+});
+for (const date of ['2026-07-21', '2026-09-03', '2026-09-18', '2026-09-21']) {
+  const candidate = fedAttributionBundle(fedIndex, date);
+  const original = structuredClone(candidate);
+  assert.throws(() => validateEditorialBundle(candidate), /Federal Reserve Recent Postings index requires/);
+  assert.deepEqual(candidate, original, 'Never silently rewrite a source date');
+}
+const fedFabricated = fedAttributionBundle(fedIndex, '2026-09-18');
+Object.assign(fedFabricated.sources[0], {
+  verified: true, dateBasis: 'last-updated', documentUrl: fedDocument,
+});
+assert.throws(() => validateEditorialBundle(fedFabricated), /directly linked dated document/);
+const fedNormalized = normalizeBundleDraft({ ...fedFabricated, date: '2026-09-21' });
+assert.equal(fedNormalized.sources[0].publishedAt, '2026-09-18');
+assert.throws(() => validateEditorialBundle({ ...fedNormalized, editionDate: fedNormalized.date }), /directly linked dated document/);
+const fedCatalystOnly = fedAttributionBundle(fedIndex, '2026-09-18');
+fedCatalystOnly.highlights = [];
+fedCatalystOnly.catalysts = [{ event: 'Synthetic document review', sourceIds: ['fed-item'] }];
+assert.throws(() => validateEditorialBundle(fedCatalystOnly), /directly linked dated document/);
+assert.doesNotThrow(() => validateEditorialBundle(fedAttributionBundle(fedDocument, '2026-09-18')));
+assert.throws(() => validateEditorialBundle(fedAttributionBundle(fedDocument, '2026-09-22')), /dated after the edition/);
+assert.throws(() => validateEditorialBundle(fedAttributionBundle(fedDocument, '2026-09-03')), /only stale daily-development sources/);
+const fedDiagnostic = safeValidationDiagnostic(`${sourceDateAttributionIssue(fedIndex)} https://example.org/private secret-looking-fixture-value`);
+assert.equal(fedDiagnostic.code, 'invalid-source-date', 'Preserve the existing bounded-repair category');
+assert.match(fedDiagnostic.reason, /directly linked Federal Reserve document/);
+assert.doesNotMatch(fedDiagnostic.reason, /secret-looking-fixture-value|https?:/);
+
+// Run the real importer only in a disposable local directory, without network.
+const { mkdir, mkdtemp, readFile, rm, writeFile } = await import('node:fs/promises');
+const { tmpdir } = await import('node:os');
+const { join } = await import('node:path');
+const { fileURLToPath } = await import('node:url');
+const { spawnSync } = await import('node:child_process');
+const fedRoot = await mkdtemp(join(tmpdir(), 'usd-impact-fed-index-'));
+const fedInput = join(fedRoot, 'bundle.json');
+const fedOutput = join(fedRoot, 'src/content/news/2026-09-21.md');
+const fedArchive = join(fedRoot, 'src/content/news/2026-09-03.md');
+const fedOldCatalyst = join(fedRoot, 'src/content/catalyst-briefs/fed-index.md');
+const fedArchiveRecord = (url, date) => `---\nstatus: "published"\nsources:\n  - id: "fed-item"\n    url: "${url}"\n    publishedAt: "${date}"\n---\n`;
+const fedImportBundle = (url, publishedAt) => ({
+  date: '2026-09-21', title: 'Synthetic Fed attribution test',
+  generatedAt: '2026-09-21T12:00:00Z', metaDescription: 'Synthetic importer fixture.',
+  marketRegime: 'fixture', summary: 'Synthetic source attribution.', catalysts: [],
+  highlights: [0, 1, 2].map((index) => ({
+    headline: `Synthetic document ${index + 1}`, development: 'Synthetic development.',
+    whyItMatters: 'Conditional fixture.', assets: ['DXY'], importance: 'low',
+    verification: 'verified-primary', sourceIds: index === 2 ? ['other-item'] : ['fed-item'],
+  })),
+  sources: [
+    { id: 'fed-item', title: 'Synthetic Fed document', publisher: 'Federal Reserve', url, publishedAt, sourceType: 'primary' },
+    { id: 'other-item', title: 'Synthetic other document', publisher: 'Fixture', url: 'https://example.org/fixture', publishedAt: '2026-09-18', sourceType: 'primary' },
+  ],
+});
+const fedRunImport = async (candidate, ...flags) => {
+  await writeFile(fedInput, JSON.stringify(candidate), 'utf8');
+  const result = spawnSync(process.execPath, [fileURLToPath(new URL('./import-daily-news.mjs', import.meta.url)), fedInput, ...flags], {
+    cwd: fedRoot, encoding: 'utf8', timeout: 10_000,
+  });
+  assert.equal(result.error, undefined, result.error?.message);
+  return result;
+};
+try {
+  await mkdir(join(fedRoot, 'src/content/news'), { recursive: true });
+  await mkdir(join(fedRoot, 'src/content/catalyst-briefs'), { recursive: true });
+  const savedArchive = fedArchiveRecord(fedIndex, '2026-07-21');
+  const savedCatalyst = fedArchiveRecord(fedIndex, '2026-09-03');
+  await writeFile(fedArchive, savedArchive);
+  await writeFile(fedOldCatalyst, savedCatalyst);
+  for (const url of fedIndexVariants) {
+    const rejected = await fedRunImport(fedImportBundle(url, '2026-09-18'), '--replace', '--publish');
+    assert.notEqual(rejected.status, 0);
+    assert.match(rejected.stderr, /Federal Reserve Recent Postings index requires a directly linked dated document/);
+    assert.equal(await readFile(fedArchive, 'utf8'), savedArchive);
+    assert.equal(await readFile(fedOldCatalyst, 'utf8'), savedCatalyst);
+    await assert.rejects(readFile(fedOutput), { code: 'ENOENT' });
+  }
+  const direct = await fedRunImport(fedImportBundle(fedDocument, '2026-09-18'), '--replace', '--publish');
+  assert.equal(direct.status, 0, direct.stderr);
+  const published = await readFile(fedOutput, 'utf8');
+  assert.match(published, /^status: "published"$/m);
+  assert.equal(await readFile(fedArchive, 'utf8'), savedArchive);
+  assert.equal(await readFile(fedOldCatalyst, 'utf8'), savedCatalyst);
+  const protectedResult = await fedRunImport(fedImportBundle(fedDocument, '2026-09-18'), '--replace', '--publish');
+  assert.notEqual(protectedResult.status, 0);
+  assert.match(protectedResult.stderr, /already published and cannot be replaced/);
+  const noop = await fedRunImport(fedImportBundle(fedDocument, '2026-09-18'), '--replace', '--skip-published', '--publish');
+  assert.equal(noop.status, 0, noop.stderr);
+  assert.equal(await readFile(fedOutput, 'utf8'), published);
+  await rm(fedOutput);
+  await rm(fedArchive);
+  await rm(fedOldCatalyst);
+  const noHistoryResult = await fedRunImport(fedImportBundle(fedIndex, '2026-09-18'), '--replace');
+  assert.notEqual(noHistoryResult.status, 0);
+  assert.match(noHistoryResult.stderr, /directly linked dated document/);
+  await assert.rejects(readFile(fedOutput), { code: 'ENOENT' });
+  const fixedArchive = fedArchiveRecord(fedDocument, '2026-09-17');
+  await writeFile(fedArchive, fixedArchive);
+  const fixedConflict = await fedRunImport(fedImportBundle(fedDocument, '2026-09-18'), '--replace');
+  assert.notEqual(fixedConflict.status, 0);
+  assert.match(fixedConflict.stderr, /publishedAt 2026-09-18 conflicts with previously verified 2026-09-17/);
+  await writeFile(fedOldCatalyst, fedArchiveRecord(fedDocument, '2026-09-16'));
+  const multipleFixedDates = await fedRunImport(fedImportBundle(fedDocument, '2026-09-18'), '--replace');
+  assert.notEqual(multipleFixedDates.status, 0);
+  assert.match(multipleFixedDates.stderr, /conflicting historical publication dates/);
+  assert.equal(await readFile(fedArchive, 'utf8'), fixedArchive);
+  await assert.rejects(readFile(fedOutput), { code: 'ENOENT' });
+} finally {
+  await rm(fedRoot, { recursive: true, force: true });
+}
+
 console.log('daily news validation helper tests pass');

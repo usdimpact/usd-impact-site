@@ -36,14 +36,24 @@ const weeklyReport = {
   complianceNote: 'Educational and informational only. Not investment advice.',
 };
 
-const sourceReports = [{
-  title: weeklyReport.title,
-  slug: weeklyReport.slug,
-  periodEnd: weeklyReport.periodEnd,
-  generatedAt: weeklyReport.generatedAt,
-  status: weeklyReport.status,
-  category: weeklyReport.category,
-}];
+const sourceReports = [
+  {
+    title: weeklyReport.title,
+    slug: weeklyReport.slug,
+    periodEnd: weeklyReport.periodEnd,
+    generatedAt: weeklyReport.generatedAt,
+    status: weeklyReport.status,
+    category: weeklyReport.category,
+  },
+  {
+    title: 'Weekly USD Impact Brief — September 18, 2026',
+    slug: '/reports/weekly/2026-09-18',
+    periodEnd: '2026-09-18',
+    generatedAt: '2026-09-20T13:04:59.223Z',
+    status: 'published',
+    category: 'Weekly USD Impact Brief',
+  },
+];
 
 const artifact = buildProgressEmailQaSourceArtifact({
   currentWeeklyReport: weeklyReport,
@@ -55,8 +65,9 @@ assert.equal(artifact.payload.registryVersion, 1);
 assert.equal(artifact.payload.weekEnding, '2026-09-04');
 assert.equal(artifact.payload.currentWeeklyReport.title, weeklyReport.title);
 assert.equal(artifact.payload.currentWeeklyReport.generatedAt, weeklyReport.generatedAt);
-assert.equal(artifact.payload.sourceReports.length, 1);
+assert.equal(artifact.payload.sourceReports.length, 2);
 assert.equal(artifact.payload.sourceReports[0].periodEnd, '2026-09-04');
+assert.equal(artifact.payload.sourceReports[1].periodEnd, '2026-09-18');
 assert.equal(Object.hasOwn(artifact.payload.sourceReports[0], 'priority'), false);
 assert.equal(Object.hasOwn(artifact.payload.sourceReports[0], 'occurredAt'), false);
 

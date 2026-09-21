@@ -478,4 +478,177 @@ try {
   await rm(fedRoot, { recursive: true, force: true });
 }
 
+// #676 EIA: synthetic release identities, never live-source certification.
+const eiaPointer = 'https://www.eia.gov/petroleum/supply/weekly/pdf/wpsrall.pdf';
+const eiaReleasePage = 'https://www.eia.gov/petroleum/supply/weekly/archive/2026/2026_09_16/wpsr_2026_09_16.php';
+const eiaReleasePdf = 'https://www.eia.gov/petroleum/supply/weekly/archive/2026/2026_09_16/pdf/wpsrall.pdf';
+const eiaPointerVariants = [
+  eiaPointer, `${eiaPointer}/`, `${eiaPointer}//`,
+  `${eiaPointer}?utm_source=fixture#page=1`, `${eiaPointer}?release=2026-09-16`,
+  eiaPointer.replace('www.', ''),
+  eiaPointer.replace('www.eia.gov', 'WWW.EIA.GOV.'),
+  eiaPointer.replace('wpsrall.pdf', '%77psrall.pdf'),
+  eiaPointer.replace('/petroleum/', '/%70etroleum/'),
+  eiaPointer.replace('/pdf/wpsrall.pdf', '/PDF/WPSRALL.PDF'),
+  eiaPointer.replace('https:', 'http:'),
+  eiaPointer.replace('www.eia.gov', 'www.eia.gov:443'),
+];
+let eiaCases = 0;
+function eiaCheck(label, fn) {
+  try { fn(); } catch (error) { error.message = `${label}: ${error.message}`; throw error; }
+  eiaCases += 1;
+}
+for (const url of eiaPointerVariants) {
+  eiaCheck('rolling pointer classification', () => {
+    assert.equal(sourceDateBasisForUrl(url), 'rolling-report');
+    assert.equal(SOURCE_DATE_BASIS.ROLLING_REPORT, 'rolling-report');
+    assert.equal(isLivingSourceUrl(url), false, 'Rolling pointer must not be a date-check exemption');
+    assert.match(sourceDateAttributionIssue(url), /^EIA weekly petroleum rolling report requires a verified dated archive document/);
+  });
+}
+for (const url of [
+  eiaReleasePage, eiaReleasePdf, `${eiaReleasePage}?utm_source=fixture`,
+  eiaPointer.replace('wpsrall.pdf', 'overview.pdf'),
+  eiaPointer.replace('wpsrall.pdf', 'wpsrall.pdf.backup'),
+  `${eiaPointer}/archive/2026`, eiaPointer.replace('wpsrall.pdf', '%ZZwpsrall.pdf'),
+  eiaPointer.replace('www.eia.gov', 'www.eia.gov.example.org'),
+  eiaPointer.replace('www.eia.gov', 'not-eia.gov'),
+  eiaPointer.replace('www.eia.gov', 'www.eia.gov@example.org'),
+  'https://example.org/?url=' + encodeURIComponent(eiaPointer),
+  'not-a-url', null,
+]) {
+  eiaCheck('non-target remains non-exempt', () => {
+    assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.PUBLISHED);
+    assert.equal(isLivingSourceUrl(url), false);
+    assert.equal(sourceDateAttributionIssue(url), null);
+  });
+}
+eiaCheck('existing landing page contract unchanged', () => {
+  assert.equal(sourceDateBasisForUrl('https://www.eia.gov/petroleum/supply/weekly/index.php'), SOURCE_DATE_BASIS.CURRENT_RELEASE);
+  assert.equal(sourceDateAttributionIssue('https://www.eia.gov/petroleum/supply/weekly/index.php'), null);
+});
+eiaCheck('generation rules distinguish release and data dates', () => {
+  assert.match(SOURCE_DATE_RULES, /EIA Weekly Petroleum Status Report.*wpsrall\.pdf/);
+  assert.match(SOURCE_DATE_RULES, /verified dated archive.*Release Date/);
+  assert.match(SOURCE_DATE_RULES, /not the data-week ending date.*next release date.*access date/);
+  assert.match(SOURCE_DATE_RULES, /Never construct an archive URL from an assumed date/);
+});
+const eiaEditorialBundle = (url, date) => {
+  const bundle = fedAttributionBundle(url, date);
+  bundle.sources[0].title = 'Synthetic EIA release';
+  return bundle;
+};
+for (const date of ['2026-08-12', '2026-08-19', '2026-09-11', '2026-09-16', '2026-09-21', '2026-09-23']) {
+  eiaCheck('no supplied date legitimizes a rolling pointer', () => {
+    const candidate = eiaEditorialBundle(eiaPointer, date);
+    const before = structuredClone(candidate);
+    assert.throws(() => validateEditorialBundle(candidate), /EIA weekly petroleum rolling report requires/);
+    assert.deepEqual(candidate, before, 'Never silently rewrite URL, date or content');
+  });
+}
+eiaCheck('fabricated attribution cannot bypass either early gate', () => {
+  const candidate = eiaEditorialBundle(eiaPointer, '2026-09-16');
+  Object.assign(candidate.sources[0], { verified: true, dateBasis: 'current-release', documentUrl: eiaReleasePage });
+  const normalized = normalizeBundleDraft({ ...candidate, date: '2026-09-21' });
+  assert.equal(normalized.sources[0].url, eiaPointer);
+  assert.equal(normalized.sources[0].publishedAt, '2026-09-16');
+  assert.throws(() => validateEditorialBundle(normalized), /verified dated archive document/);
+  candidate.highlights = [];
+  candidate.catalysts = [{ event: 'Synthetic energy release', sourceIds: ['fed-item'] }];
+  assert.throws(() => validateEditorialBundle(candidate), /verified dated archive document/);
+});
+for (const url of [eiaReleasePage, eiaReleasePdf]) {
+  eiaCheck('dated release preserves freshness checks', () => {
+    assert.doesNotThrow(() => validateEditorialBundle(eiaEditorialBundle(url, '2026-09-16')));
+    assert.throws(() => validateEditorialBundle(eiaEditorialBundle(url, '2026-09-23')), /dated after the edition/);
+    assert.throws(() => validateEditorialBundle(eiaEditorialBundle(url, '2026-08-19')), /only stale daily-development sources/);
+  });
+}
+eiaCheck('fixed safe repair diagnostic', () => {
+  const value = safeValidationDiagnostic(`${sourceDateAttributionIssue(eiaPointer)} https://example.org/private secret-looking-fixture-value`);
+  assert.equal(value.code, 'invalid-source-date');
+  assert.match(value.reason, /verified dated EIA archive document.*Release Date/);
+  assert.doesNotMatch(value.reason, /secret-looking-fixture-value|https?:/);
+});
+
+const eiaRoot = await mkdtemp(join(tmpdir(), 'usd-impact-eia-release-'));
+const eiaInput = join(eiaRoot, 'bundle.json');
+const eiaOutput = join(eiaRoot, 'src/content/news/2026-09-21.md');
+const eiaOldDaily = join(eiaRoot, 'src/content/news/2026-08-12.md');
+const eiaOldCatalyst = join(eiaRoot, 'src/content/catalyst-briefs/old-eia.md');
+const eiaImportBundle = (url = eiaReleasePage, date = '2026-09-16') => {
+  const bundle = fedImportBundle(url, date);
+  bundle.title = 'Synthetic combined EIA and Fed attribution test';
+  bundle.sources[0].id = 'eia-weekly-petroleum';
+  bundle.sources[0].title = 'Synthetic EIA release';
+  bundle.sources[0].publisher = 'EIA';
+  bundle.highlights[0].sourceIds = ['eia-weekly-petroleum'];
+  bundle.highlights[1].sourceIds = ['eia-weekly-petroleum'];
+  bundle.sources[1].url = fedDocument;
+  return bundle;
+};
+const eiaRunImport = async (candidate, flags = ['--replace', '--publish']) => {
+  const serialized = JSON.stringify(candidate);
+  await writeFile(eiaInput, serialized);
+  const result = spawnSync(process.execPath, [fileURLToPath(new URL('./import-daily-news.mjs', import.meta.url)), eiaInput, ...flags], {
+    cwd: eiaRoot, encoding: 'utf8', timeout: 10_000,
+  });
+  assert.equal(result.error, undefined, result.error?.message);
+  assert.equal(await readFile(eiaInput, 'utf8'), serialized, 'Importer must not edit input evidence');
+  eiaCases += 1;
+  return result;
+};
+try {
+  await mkdir(join(eiaRoot, 'src/content/news'), { recursive: true });
+  await mkdir(join(eiaRoot, 'src/content/catalyst-briefs'), { recursive: true });
+  const oldDaily = fedArchiveRecord(eiaPointer, '2026-08-12');
+  const oldCatalyst = fedArchiveRecord(eiaPointer, '2026-08-19');
+  await writeFile(eiaOldDaily, oldDaily);
+  await writeFile(eiaOldCatalyst, oldCatalyst);
+  for (const url of eiaPointerVariants.filter((value) => value.startsWith('https:'))) {
+    const rejected = await eiaRunImport(eiaImportBundle(url));
+    assert.notEqual(rejected.status, 0);
+    assert.match(rejected.stderr, /verified dated archive document/);
+    assert.equal(await readFile(eiaOldDaily, 'utf8'), oldDaily);
+    assert.equal(await readFile(eiaOldCatalyst, 'utf8'), oldCatalyst);
+    await assert.rejects(readFile(eiaOutput), { code: 'ENOENT' });
+  }
+  for (const url of [eiaReleasePage, eiaReleasePdf]) {
+    const direct = await eiaRunImport(eiaImportBundle(url));
+    assert.equal(direct.status, 0, direct.stderr);
+    const output = await readFile(eiaOutput, 'utf8');
+    assert.match(output, /^status: "published"$/m);
+    assert(output.includes(url) && output.includes(fedDocument));
+    assert.equal(await readFile(eiaOldDaily, 'utf8'), oldDaily);
+    assert.equal(await readFile(eiaOldCatalyst, 'utf8'), oldCatalyst);
+    const protectedOutput = await eiaRunImport(eiaImportBundle(url));
+    assert.notEqual(protectedOutput.status, 0);
+    assert.match(protectedOutput.stderr, /already published and cannot be replaced/);
+    const skipped = await eiaRunImport(eiaImportBundle(url), ['--replace', '--skip-published', '--publish']);
+    assert.equal(skipped.status, 0, skipped.stderr);
+    assert.equal(await readFile(eiaOutput, 'utf8'), output);
+    await rm(eiaOutput);
+  }
+  await rm(eiaOldDaily);
+  await rm(eiaOldCatalyst);
+  const noHistory = await eiaRunImport(eiaImportBundle(eiaPointer), ['--replace']);
+  assert.notEqual(noHistory.status, 0);
+  assert.match(noHistory.stderr, /verified dated archive document/);
+  await assert.rejects(readFile(eiaOutput), { code: 'ENOENT' });
+  const fixedHistory = fedArchiveRecord(eiaReleasePage, '2026-09-15');
+  await writeFile(eiaOldDaily, fixedHistory);
+  const dateConflict = await eiaRunImport(eiaImportBundle());
+  assert.notEqual(dateConflict.status, 0);
+  assert.match(dateConflict.stderr, /publishedAt 2026-09-16 conflicts with previously verified 2026-09-15/);
+  await writeFile(eiaOldCatalyst, fedArchiveRecord(eiaReleasePage, '2026-09-14'));
+  const conflictingHistory = await eiaRunImport(eiaImportBundle());
+  assert.notEqual(conflictingHistory.status, 0);
+  assert.match(conflictingHistory.stderr, /conflicting historical publication dates/);
+  assert.equal(await readFile(eiaOldDaily, 'utf8'), fixedHistory);
+  await assert.rejects(readFile(eiaOutput), { code: 'ENOENT' });
+} finally {
+  await rm(eiaRoot, { recursive: true, force: true });
+}
+console.log(`EIA rolling-report attribution: ${eiaCases} synthetic cases passed (no live sources or publication).`);
+
 console.log('daily news validation helper tests pass');

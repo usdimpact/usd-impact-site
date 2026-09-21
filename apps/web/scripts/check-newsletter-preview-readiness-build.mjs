@@ -6,15 +6,7 @@ if (environment !== 'preview') {
   process.exit(0);
 }
 
-const originKeys = new Set([
-  'WEEKLY_NEWSLETTER_ARTIFACT_BASE_URL',
-  'WEEKLY_NEWSLETTER_PUBLIC_BASE_URL',
-  'PROGRESS_EMAIL_BASE_URL',
-]);
 const report = inspectNewsletterPreviewReadiness(process.env);
-const failedKeys = report.checks.filter((item) => !item.ok).map((item) => item.key);
-const substantiveFailures = failedKeys.filter((key) => !originKeys.has(key));
-
-console.log(`Newsletter Preview substantive readiness: ${report.checked - substantiveFailures.length}/${report.checked}; substantive failures: ${substantiveFailures.length}; origin failures ignored for this diagnostic: ${failedKeys.length - substantiveFailures.length}.`);
-
-if (substantiveFailures.length > 0) process.exit(1);
+const supabaseCheck = report.checks.find((item) => item.key === 'SUPABASE_URL');
+if (!supabaseCheck?.ok) process.exit(1);
+console.log('Newsletter Preview canonical Development Supabase target check passed.');

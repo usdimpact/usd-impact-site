@@ -3,9 +3,13 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const component = readFileSync(new URL('../src/components/GoogleAnalyticsClient.astro', import.meta.url), 'utf8');
-assert.doesNotMatch(component, /<script\b[^>]*(?:define:vars|is:inline)/);
+const implicitInlineScript = /<script\b[^>]*(?:define:vars|is:inline)/i;
+assert.doesNotMatch(component, implicitInlineScript);
+for (const fixture of ['<script define:vars={id}>', '<SCRIPT DEFINE:VARS={id}>', '<ScRiPt Is:InLiNe>']) {
+  assert.match(fixture, implicitInlineScript, 'Inline-source checks must not depend on HTML case');
+}
 assert.match(component, /<span id="usd-impact-ga4-config" hidden data-measurement-id=\{measurementId\}>/);
-const match = component.match(/<script>([\s\S]*?)<\/script>/);
+const match = component.match(/<script>([\s\S]*?)<\/script>/i);
 assert.ok(match, 'GA4 must use an Astro-processed script');
 const script = new vm.Script(match[1], { filename: 'google-analytics-client-fixture.js' });
 const ID = 'G-CSPTEST01';

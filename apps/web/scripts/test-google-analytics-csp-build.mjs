@@ -15,6 +15,17 @@ const cli = path.join(astroRoot, typeof astroPackage.bin === 'string' ? astroPac
 const source = readFileSync(path.join(webRoot, 'src/components/GoogleAnalyticsClient.astro'), 'utf8');
 const parent = mkdtempSync(path.join(tmpdir(), 'usd-impact-ga4-csp-'));
 const attr = (node, name) => node.attrs?.find((item) => item.name === name)?.value;
+const fixtureOrigin = 'https://ga4-csp-fixture.invalid';
+const sameOriginScript = (src) => src === undefined || new URL(src, fixtureOrigin).origin === fixtureOrigin;
+assert(sameOriginScript(undefined));
+assert(sameOriginScript('/_astro/client.js'));
+for (const src of [
+  'https://www.googletagmanager.com/gtag/js',
+  '//www.googletagmanager.com/gtag/js',
+  'https://www.googletagmanager.com.other.invalid/script.js',
+  'https://other.invalid/path/www.googletagmanager.com/script.js',
+  'https://ga4-csp-fixture.invalid.other.invalid/script.js',
+]) assert.equal(sameOriginScript(src), false, 'Only an exact fixture origin is permitted');
 const allNodes = (document) => {
   const result = [];
   function walk(node) { result.push(node); for (const child of node.childNodes ?? []) walk(child); }
@@ -90,8 +101,8 @@ try {
       if (body.includes('usd-impact-ga4-config')) clients += 1;
     }
     assert.equal(clients, 1, 'The actual processed GA4 client must be emitted exactly once');
-    assert(!scripts.some((script) => attr(script, 'src')?.includes('googletagmanager.com')),
-      'Static HTML must not load Google before consent');
+    assert(scripts.every((script) => sameOriginScript(attr(script, 'src'))),
+      'Static HTML must not load any third-party script before consent');
     const mutation = html.replace('</body>', '<script>window.__unhashedFixture = true;</script></body>');
     assert(inspectInlineScriptCsp(mutation).failures.some((message) => message.includes('lacks an exact CSP hash')),
       'Adding one unhashed executable script must fail the rendered check');

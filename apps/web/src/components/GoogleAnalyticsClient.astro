@@ -8,8 +8,16 @@ const measurementId = measurementIdPattern.test(rawMeasurementId) ? rawMeasureme
 ---
 
 {measurementId && (
-  <script define:vars={{ measurementId }}>
-    // @ts-nocheck
+  <span id="usd-impact-ga4-config" hidden data-measurement-id={measurementId}></span>
+)}
+
+<script>
+  // @ts-nocheck
+  (() => {
+    // Keep configuration inert; let Astro process and authorize the client script.
+    const measurementId = document.getElementById('usd-impact-ga4-config')?.getAttribute('data-measurement-id') ?? '';
+    if (!/^G-[A-Z0-9]{4,32}$/.test(measurementId) || measurementId.trim() !== measurementId) return;
+
     const CONSENT_CHANGE_EVENT = 'usd-impact:consent-change';
     const CONSENT_READY_EVENT = 'usd-impact:consent-ready';
     const ANALYTICS_EVENT = 'usd-impact:analytics-event';
@@ -148,5 +156,5 @@ const measurementId = measurementIdPattern.test(rawMeasurementId) ? rawMeasureme
     window.addEventListener(CONSENT_CHANGE_EVENT, applyConsent);
     window.addEventListener(ANALYTICS_EVENT, sendAnalyticsEvent);
     applyConsent();
-  </script>
-)}
+  })();
+</script>

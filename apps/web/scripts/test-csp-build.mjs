@@ -3,6 +3,10 @@ import path from 'node:path';
 import { resolveScorePipelineOrigin } from '../src/lib/score-pipeline-origin.js';
 import './test-book-site-bridge.mjs';
 import './test-book-live-evidence.mjs';
+import { inspectInlineScriptCsp } from './csp-inline-script-contract.mjs';
+import './test-csp-inline-script-contract.mjs';
+import './test-google-analytics-runtime.mjs';
+import './test-google-analytics-csp-build.mjs';
 
 const root = process.cwd();
 const distRoot = path.join(root, 'dist');
@@ -69,6 +73,9 @@ for (const file of htmlFiles) {
   const html = fs.readFileSync(file, 'utf8');
   const csp = parseMetaCsp(html);
   const relative = path.relative(distRoot, file);
+  for (const finding of inspectInlineScriptCsp(html).failures) {
+    failures.push(`${relative}: ${finding}`);
+  }
   if (!csp) {
     failures.push(`Generated page is missing Astro CSP metadata: ${relative}.`);
     continue;
@@ -96,6 +103,9 @@ if (!sha384Seen) failures.push('No SHA-384 CSP hash was emitted in the generated
 const astroFiles = walk(sourceRoot, (file) => file.endsWith('.astro'));
 for (const file of astroFiles) {
   const source = fs.readFileSync(file, 'utf8');
+  if (/<script\b[^>]*\bdefine:vars\s*=/i.test(source)) {
+    failures.push(`${path.relative(root, file)} contains implicit-inline script define:vars.`);
+  }
   const inlineBodies = source.match(/<script\s+is:inline(?![^>]*\bsrc=)[^>]*>/gi) || [];
   if (inlineBodies.length > 0) {
     failures.push(`${path.relative(root, file)} contains an unhashed script is:inline body.`);

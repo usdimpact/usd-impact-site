@@ -2,12 +2,14 @@
 export const SEARCH_UTILITY_PATHS = Object.freeze([
   '/account',
   '/account/access-required',
+  '/account/newsletter-canary',
   '/account/notifications',
   '/account/passkeys',
   '/account/sign-in',
   '/auth/confirm',
   '/auth/session-ready',
   '/checkout',
+  '/email/confirm',
   '/research/access-required',
   '/research/account',
 ]);

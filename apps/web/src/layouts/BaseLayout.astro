@@ -3,20 +3,23 @@ import '../styles/global.css';
 import '../styles/account.css';
 import BookChapterBridgeCard from '../components/BookChapterBridgeCard.astro';
 import ConsentClient from '../components/ConsentClient.astro';
+import GoogleAnalyticsClient from '../components/GoogleAnalyticsClient.astro';
 import TelemetryClient from '../components/TelemetryClient.astro';
 import PwaClient from '../components/PwaClient.astro';
 import { isSearchUtilityPath } from '../lib/search-utility-policy.js';
 import { canonicalUrlForRequest } from '../lib/canonical-url.js';
 import { SITE_NAVIGATION, navigationLinkIsActive } from '../lib/site-navigation.js';
+import { serializeStructuredData, structuredDataGraph } from '../lib/structured-data.js';
 import { getChapterById, getSurfaceBridgeForPath } from '../data/book-site-bridge/index.mjs';
 const [learnNavigation, updatesNavigation, libraryNavigation] = SITE_NAVIGATION;
-const { title, description, noindex: pageNoindex = false, stylesheets = [] } = Astro.props;
+const { title, description, noindex: pageNoindex = false, stylesheets = [], structuredData = [] } = Astro.props;
 const noindex = pageNoindex || isSearchUtilityPath(Astro.url.pathname);
 const canonicalUrl = noindex ? null : canonicalUrlForRequest(Astro.url);
+const structuredDataJson = noindex ? null : serializeStructuredData(structuredDataGraph(structuredData));
 const surfaceBridge = getSurfaceBridgeForPath(Astro.url.pathname);
 const surfaceChapter = surfaceBridge ? getChapterById(surfaceBridge.chapterId) : null;
 const currentPath = Astro.url.pathname;
-const pageIsActive = (href) => (href === "/" ? currentPath === "/" : currentPath.startsWith(href));
+const pageIsActive = (href) => navigationLinkIsActive(currentPath, href);
 const learnIsActive = [
   "/start-here/",
   "/framework/dollar-transmission-chain/",
@@ -43,6 +46,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
     <link rel="icon" href="/assets/logo/USDImpact_Icon_Color_192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="/assets/logo/USDImpact_Icon_Color_192.png" sizes="192x192" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {structuredDataJson && <script type="application/ld+json" set:html={structuredDataJson}></script>}
     {stylesheets.map((href) => <link rel="stylesheet" href={href} />)}
     <script is:inline src="/assets/session-entry.js" defer></script>
   </head>
@@ -95,7 +99,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
               ))}
             </div>
           </details>
-          <a class="nav-direct" href="/account/" aria-current={pageIsActive("/account/") ? "page" : undefined}>Account</a>
+          <a class="nav-direct" href="/account" aria-current={pageIsActive("/account/") ? "page" : undefined}>Account</a>
         </nav>
       </div>
     </header>
@@ -131,34 +135,34 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
         <nav class="footer-nav" aria-label="Footer navigation">
           <div class="footer-group">
             <p class="footer-heading">Product</p>
-            <a href="/account/">Account</a>
+            <a href="/account">Account</a>
             <a href="/book/read-the-dollar-first/">Book &amp; pricing</a>
-            <a href="/guided-edition/audiobook/">Audiobook</a>
-            <a href="/guided-edition/video-library/">Video Library</a>
+            <a href="/guided-edition/audiobook">Audiobook</a>
+            <a href="/guided-edition/video-library">Video Library</a>
           </div>
           <div class="footer-group">
             <p class="footer-heading">Learn</p>
-            <a href="/start-here/">Start Here</a>
-            <a href="/framework/dollar-transmission-chain/">Framework</a>
-            <a href="/lead-magnets/weekly-dollar-regime-checklist/">Weekly Checklist</a>
+            <a href="/start-here">Start Here</a>
+            <a href="/framework/dollar-transmission-chain">Framework</a>
+            <a href="/lead-magnets/weekly-dollar-regime-checklist">Weekly Checklist</a>
           </div>
           <div class="footer-group">
             <p class="footer-heading">Research</p>
-            <a href="/news/">Daily USD Impact</a>
-            <a href="/score/">Weekly Score</a>
-            <a href="/reports/">Reports</a>
-            <a href="/research/evidence-map/">Evidence Map</a>
-            <a href="/research/independent-replication/">Replication</a>
+            <a href="/news">Daily USD Impact</a>
+            <a href="/score">Weekly Score</a>
+            <a href="/reports">Reports</a>
+            <a href="/research/evidence-map">Evidence Map</a>
+            <a href="/research/independent-replication">Replication</a>
           </div>
           <div class="footer-group">
             <p class="footer-heading">Legal &amp; trust</p>
-            <a href="/about/">About &amp; transparency</a>
-            <a href="/contact/">Contact</a>
+            <a href="/about">About &amp; transparency</a>
+            <a href="/contact">Contact</a>
             <a href="/privacy/">Privacy</a>
             <a href="/terms/">Terms</a>
             <a href="/refund-policy/">Refund Policy</a>
-            <a href="/accessibility/">Accessibility</a>
-            <a href="/compliance/">Compliance</a>
+            <a href="/accessibility">Accessibility</a>
+            <a href="/compliance">Compliance</a>
             <button id="privacy-settings-button" class="footer-privacy-settings" type="button">Privacy settings</button>
           </div>
         </nav>
@@ -228,6 +232,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
       }
     </script>
     <ConsentClient />
+    <GoogleAnalyticsClient />
     <TelemetryClient />
     <PwaClient />
   </body>

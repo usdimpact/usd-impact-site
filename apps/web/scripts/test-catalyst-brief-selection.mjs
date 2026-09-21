@@ -46,6 +46,16 @@ const preview = selectImportantCatalyst(latest, { phase: 'preview', asOf: '2026-
 assert.equal(preview.event, 'BLS Employment Situation — July 2026');
 assert.equal(preview.phase, 'preview');
 assert.equal(preview.sourceEditionDate, '2026-08-05');
+assert.deepEqual(preview.calendar, {
+  publisher: 'BLS',
+  series: 'EMPSIT',
+  referencePeriod: '2026-07',
+  releaseStage: 'initial',
+  eventDate: '2026-08-07',
+  releaseTime: '08:30',
+  timeZone: 'America/New_York',
+  releaseAt: '2026-08-07T12:30:00.000Z',
+});
 
 assert.equal(
   selectImportantCatalyst(latest, {
@@ -57,6 +67,24 @@ assert.equal(
 );
 assert.equal(selectImportantCatalyst(latest, { phase: 'outcome', asOf: '2026-08-05' }), null);
 assert.equal(selectImportantCatalyst({ edition: null }, { phase: 'preview', asOf: '2026-08-05' }), null);
+
+assert.throws(
+  () => selectImportantCatalyst({
+    edition: {
+      date: '2026-08-05',
+      catalysts: [{
+        date: '2026-08-07',
+        event: 'BLS Employment Situation report — July 2026',
+        eventType: 'labor',
+        assets: ['DXY', 'U.S. rates'],
+        importance: 'high', impactScore: 5, extraBrief: true,
+        whyItMatters: 'Ambiguous label must not bypass the calendar boundary.',
+      }],
+    },
+  }, { phase: 'preview', asOf: '2026-08-05' }),
+  /explicit series and reference month\/year label/,
+  'Recognizable but ambiguous BLS labels must fail closed rather than lose calendar verification',
+);
 
 const publishedFomcPreviewSlug = '2026-09-15-fomc-meeting-and-press-conference-september-15-16-2026-preview';
 
@@ -123,6 +151,7 @@ const fomcOutcome = selectImportantCatalyst(shiftedFomcDate, {
 });
 assert.equal(fomcOutcome?.phase, 'outcome', 'An existing preview must never suppress the verified-outcome phase');
 assert.equal(fomcOutcome?.eventDate, '2026-09-16');
+assert.equal(fomcOutcome?.calendar, null, 'unsupported event families must not receive synthetic calendar certification');
 
 assert.equal(
   selectImportantCatalyst(shiftedFomcDate, {

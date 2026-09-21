@@ -1,3 +1,4 @@
+import { handleWeeklyNewsletterCanary } from '../src/lib/weekly-newsletter-canary-handler.js';
 import { handleResendWebhook } from '../src/lib/resend-webhook-handler.js';
 import { handleDailyLearningEmailRequest } from '../src/lib/daily-card-email-handler.js';
 import { handleMarketingEmailPreferencesRequest } from '../src/lib/marketing-email-preferences-handler.js';
@@ -191,6 +192,9 @@ async function scheduleReadinessRetry(state, errorCode) {
 
 export default async function handler(request, response) {
   const action = requestAction(request);
+  if (action === 'weekly-newsletter-canary') {
+    return handleWeeklyNewsletterCanary(request, response);
+  }
   if (action === 'resend-webhook') {
     return handleResendWebhook(request, response);
   }

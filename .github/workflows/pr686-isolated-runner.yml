@@ -1,0 +1,50 @@
+name: PR686 isolated runner capability
+
+on:
+  push:
+    branches: [agent/pr686-isolated-runner-20260922]
+    paths: [.github/workflows/pr686-isolated-runner.yml]
+
+permissions: {}
+
+concurrency:
+  group: pr686-isolated-runner-capability
+  cancel-in-progress: false
+
+jobs:
+  capability:
+    if: github.repository == 'usdimpact/usd-impact-site' && github.ref == 'refs/heads/agent/pr686-isolated-runner-20260922' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Inspect disposable runner and local Docker
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = x86_64
+          test -S /var/run/docker.sock
+          uname -sm
+          python3 --version
+          docker --host unix:///var/run/docker.sock version
+          docker --host unix:///var/run/docker.sock buildx version
+          docker --host unix:///var/run/docker.sock buildx inspect default
+      - name: Verify no-network non-root disposable container
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="pr686-capability-${GITHUB_RUN_ID}"
+          cfg="$(mktemp -d)"
+          d() { env -i PATH=/usr/bin:/bin HOME="$cfg" DOCKER_CONFIG="$cfg" docker --host unix:///var/run/docker.sock "$@"; }
+          cleanup() { d rm -f "$name" >/dev/null 2>&1 || true; rm -rf -- "$cfg"; }
+          trap cleanup EXIT
+          d pull docker.io/library/debian:bookworm-slim
+          image="$(d image inspect docker.io/library/debian:bookworm-slim --format '{{.Id}}')"
+          [[ "$image" =~ ^sha256:[0-9a-f]{64}$ ]]
+          d image inspect "$image" --format '{{json .RepoDigests}}'
+          d create --name "$name" --label usd-impact-purpose=pr686-runner-capability --network none --read-only --cap-drop ALL --security-opt no-new-privileges=true --user 65534:65534 --pids-limit 64 --memory 128m --cpus 1 --restart no --no-healthcheck --tmpfs /work:rw,noexec,nosuid,nodev,size=8388608,mode=1777 --workdir /work --entrypoint /bin/sh "$image" -c 'set -eu; test "$(id -u)" = 65534; grep "^NoNewPrivs:.*1$" /proc/self/status; test "$(awk "NR>1 {n++} END {print n+0}" /proc/net/route)" = 0; printf "ISOLATED_CONTAINER_PROBE_PASS\n"'
+          d inspect "$name" --format 'network={{.HostConfig.NetworkMode}} readonly={{.HostConfig.ReadonlyRootfs}} user={{.Config.User}} security={{json .HostConfig.SecurityOpt}} caps={{json .HostConfig.CapDrop}}'
+          d start -a "$name"
+          test "$(d inspect "$name" --format '{{.State.ExitCode}}')" = 0
+          d rm "$name"
+          test -z "$(d ps -aq --filter "name=^/${name}$")"
+          printf 'RUNNER_CAPABILITY_PASS\nCLEANUP_VERIFIED=true\nSTORAGE_TESTS_EXECUTED=0\nRELEASE_AUTHORIZED=false\n'

@@ -79,7 +79,14 @@ def race(mode,baseline=False,kind='email.delivered',initial='accepted',winner='c
   replies=[e for e in result['transcript'] if e['phase']=='after' and e['path']=='/rest/v1/notification_outbox' and e['method']=='PATCH'];need(replies[0]['result']==[],'REAL_EMPTY_CAS_RESPONSE_REQUIRED')
  return result
 def error_case(duplicate):
- fixture(duplicate=duplicate,missing=not duplicate);r=invoke();need(r['callback']['status']==503,'CORRELATION_DID_NOT_FAIL_CLOSED');need(r['callback']['body']['code']==('AMBIGUOUS_OUTBOX_MATCH' if duplicate else 'OUTBOX_CORRELATION_PENDING'),'CORRELATION_CODE');return r
+ fixture(duplicate=duplicate,missing=not duplicate);r=invoke();report['pendingFailureEvidence']=r
+ code='AMBIGUOUS_OUTBOX_MATCH' if duplicate else 'OUTBOX_CORRELATION_PENDING'
+ need(r['callback']['status']==(500 if duplicate else 503),'CORRELATION_STATUS_MISMATCH')
+ need(r['callback']['body']['code']==code,'CORRELATION_CODE');need(r['patches']==0,'CORRELATION_MUTATED_OUTBOX')
+ need(all(row==['accepted',None,'7'] for row in r['final']),'CORRELATION_CHANGED_STATE')
+ receipt=db.query('SELECT status,last_error,processed_at FROM webhook_receipts')
+ need(receipt==[['failed',code,None]],'RETRYABLE_RECEIPT_NOT_RETAINED');r['receiptState']=receipt
+ del report['pendingFailureEvidence'];return r
 def permission():
  connection=http.client.HTTPConnection('127.0.0.1',3000,timeout=3);connection.request('GET','/notification_outbox?select=id',headers={'Authorization':'Bearer '+jwt('anon')});r=connection.getresponse();body=json.loads(r.read());connection.close();need(r.status in (401,403) and body.get('code')=='42501','ACTUAL_PERMISSION_DENIAL_REQUIRED');return {'httpStatus':r.status,'postgresCode':body['code']}
 started=time.monotonic()

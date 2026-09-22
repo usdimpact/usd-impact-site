@@ -49,12 +49,13 @@ jobs:
           for n,b in enumerate(blocks):P('evidence/execution-stage-'+str(n)+'.sh').write_text(b)
           P('evidence/execution-stage-manifest.json').write_text(json.dumps({'sourceCommit':'5cbf5c53cae88b6b091921ac03b112329e77c4fe','sourceGitBlob':blob,'stageSha256':[hashlib.sha256(b.encode()).hexdigest() for b in blocks],'onlyContainerStageChange':'expected completion marker','productionMutation':False},indent=2))
           subprocess.run(['/bin/bash','-euo','pipefail','evidence/execution-stage-0.sh'],check=True,timeout=180)
-          files={'upgrade_full_schema.py':('upgrade_full_schema.py','ca296ae5d7f615fe7e00fcef1088444e26ab594e7800f109090f0c01c69ac6d2'),'full-schema-input.json':('packet/full-schema-input.json','267f079643e4aa0f459f239dec3f09671ee36a1052819c0871a8198450181212')}
+          files={'upgrade_full_schema.py':('upgrade_full_schema.py','ca296ae5d7f615fe7e00fcef1088444e26ab594e7800f109090f0c01c69ac6d2'),'full-schema-input.json':('packet/full-schema-input.json','267f079643e4aa0f459f239dec3f09671ee36a1052819c0871a8198450181212'),'fix_schema_loader.py':('fix_schema_loader.py','c7170cd36e430df4137ee028998c35ee5ff82259c26ea1c175c9357433a936d9')}
           for name,(target,digest) in files.items():
               b=get(repo+os.environ['GITHUB_SHA']+'/scripts/pr686-runner/'+name)
               if hashlib.sha256(b).hexdigest()!=digest:raise RuntimeError('EXTENSION_SOURCE_MISMATCH:'+name)
               P(target).write_bytes(b)
           subprocess.run(['/usr/bin/python3','-I','-S','upgrade_full_schema.py'],check=True,timeout=10)
+          subprocess.run(['/usr/bin/python3','-I','-S','fix_schema_loader.py'],check=True,timeout=10)
           subprocess.run(['/usr/bin/python3','-I','-S','-m','py_compile','packet/pilot.py'],check=True,timeout=10)
           P('evidence/executed-test-pilot.py').write_bytes(P('packet/pilot.py').read_bytes())
           P('evidence/executed-test-worker.mjs').write_bytes(P('packet/worker.mjs').read_bytes())

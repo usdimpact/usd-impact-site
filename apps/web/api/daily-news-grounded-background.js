@@ -63,6 +63,19 @@ export function extractEditionDate(input) {
   return null;
 }
 
+// Use the documented Structured Outputs pattern subset, not maxLength.
+// These are the existing daily-news-source.js limits, not a token-fit promise.
+// Patterns count decoded characters; the unchanged trimmed UTF-16 server
+// checks remain authoritative (including whitespace and non-BMP differences).
+function boundSchemaText(schema, limit) {
+  if (!schema || schema.type !== 'string') return;
+  const pattern = `^[\\s\\S]{0,${limit}}$`;
+  if (schema.pattern !== undefined && schema.pattern !== pattern) {
+    throw new Error('Daily text schema already has a different pattern; review required.');
+  }
+  schema.pattern = pattern;
+}
+
 export function withSourceMetadata(body) {
   const usesWebSearch = includesWebSearch(body);
   const include = Array.isArray(body.include) ? body.include : [];
@@ -76,6 +89,14 @@ export function withSourceMetadata(body) {
       : {}),
   };
 
+  // Do not mutate module-level schemas shared by generation and repair calls.
+  if (body.text?.format?.schema) {
+    next.text = {
+      ...body.text,
+      format: { ...body.text.format, schema: structuredClone(body.text.format.schema) },
+    };
+  }
+
   if (typeof next.input === 'string') {
     const additions = [];
     if (!next.input.includes(SOURCE_DATE_RULES)) additions.push(SOURCE_DATE_RULES);
@@ -85,6 +106,19 @@ export function withSourceMetadata(body) {
   }
 
   const schemaProperties = next.text?.format?.schema?.properties;
+  boundSchemaText(schemaProperties?.marketRegime, 180);
+  boundSchemaText(schemaProperties?.summary, 700);
+  boundSchemaText(schemaProperties?.body, 9000);
+  const highlightProperties = schemaProperties?.highlights?.items?.properties;
+  boundSchemaText(highlightProperties?.headline, 140);
+  boundSchemaText(highlightProperties?.development, 700);
+  boundSchemaText(highlightProperties?.whyItMatters, 700);
+  const catalystProperties = schemaProperties?.catalysts?.items?.properties;
+  boundSchemaText(catalystProperties?.event, 240);
+  boundSchemaText(catalystProperties?.whyItMatters, 500);
+  boundSchemaText(schemaProperties?.sources?.items?.properties?.title, 300);
+  boundSchemaText(schemaProperties?.sources?.items?.properties?.url, 2000);
+
   const highlightSchema = schemaProperties?.highlights;
   if (highlightSchema && typeof highlightSchema === 'object') {
     highlightSchema.minItems = 3;

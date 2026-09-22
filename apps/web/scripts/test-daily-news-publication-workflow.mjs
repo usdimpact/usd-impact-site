@@ -19,18 +19,8 @@ assert.match(
 );
 assert.match(
   workflow,
-  /expected_file="apps\/web\/src\/content\/news\/\$today\.md"[\s\S]*contents\/\$expected_file\?ref=main/,
-  'the publication preflight must stop when the current UTC edition already exists on main',
-);
-assert.match(
-  workflow,
-  /existing_pr="\$\(gh pr list[\s\S]*--state all[\s\S]*expected_head_prefix/,
-  'the publication preflight must respect any exact current-day Daily PR state',
-);
-assert.match(
-  workflow,
-  /needed=false[\s\S]*reason=published[\s\S]*needed=false[\s\S]*reason=publication-pr-exists[\s\S]*needed=true[\s\S]*reason=missing/,
-  'the publication preflight must expose deterministic skip or generate decisions',
+  /node scripts\/daily-news-recovery\.mjs guard/,
+  'the publication entry point must use the same fail-closed guard as the backstop',
 );
 assert.match(
   workflow,
@@ -172,7 +162,7 @@ const handoffStep = workflow.match(
 assert.ok(handoffStep, 'publication handoff shell must be present');
 
 const failureStep = workflow.match(
-  /      - name: Report Daily failure gate\n[\s\S]*?        run: \|\n([\s\S]*)$/,
+  /      - name: Report Daily failure gate\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Preserve sanitized Daily generation evidence)/,
 );
 assert.ok(failureStep, 'stage-aware failure reporting shell must be present');
 assert.match(workflow, /id: start/);
@@ -202,39 +192,22 @@ assert.match(backstop, /contents: read/, 'the backstop must keep repository cont
 assert.match(backstop, /pull-requests: read/, 'the backstop must inspect review state without writing PRs');
 assert.match(
   backstop,
-  /expected_file="apps\/web\/src\/content\/news\/\$today\.md"/,
-  'the backstop must bind recovery to the current UTC Daily file',
+  /node apps\/web\/scripts\/daily-news-recovery\.mjs backstop/,
+  'recovery must use the tested missed-start-only guard, not GitHub conclusion as provider state',
 );
-assert.match(
-  backstop,
-  /contents\/\$expected_file\?ref=main/,
-  'the backstop must stop when the current edition is already on main',
-);
-assert.match(
-  backstop,
-  /gh pr list[\s\S]*--state all[\s\S]*expected_head_prefix/,
-  'the backstop must respect any exact current-day publication PR, including a human-closed PR',
-);
-assert.match(
-  backstop,
-  /actions\/workflows\/daily-news\.yml\/runs\?per_page=30/,
-  'the backstop must inspect current-day Daily runs before dispatching recovery',
-);
-assert.match(
-  backstop,
-  /active_count[\s\S]*success_count[\s\S]*failed_count[\s\S]*gh workflow run daily-news\.yml --repo "\$GITHUB_REPOSITORY" --ref main/,
-  'the backstop must record earlier outcomes and dispatch only when no current-day Daily run is active and no publication artifact exists',
-);
-assert.match(
-  backstop,
-  /recovery_dispatch_count=.*\.event == "workflow_dispatch"[\s\S]*if \[ "\$recovery_dispatch_count" -gt 0 \]; then[\s\S]*one-recovery budget is exhausted[\s\S]*exit 0[\s\S]*gh workflow run daily-news\.yml/,
-  'multiple backstop observations must still permit at most one Daily recovery dispatch per UTC edition',
-);
-assert.doesNotMatch(
-  backstop,
-  /if \[ "\$success_count" -gt 0 \]/,
-  'a false-green Daily run without a publication artifact must not suppress the bounded recovery dispatch',
-);
+assert.doesNotMatch(backstop, /gh workflow run/, 'the workflow must not bypass the guarded dispatch helper');
+assert.match(workflow, /cron: '17 9 \* \* 1-5'/, 'the primary schedule remains unchanged');
+assert.match(workflow, /group: daily-usd-impact\n  cancel-in-progress: false/, 'publication serialization must remain enabled');
+assert.match(backstop, /group: daily-usd-impact-schedule-backstop\n  cancel-in-progress: false/, 'backstop serialization must remain enabled');
+assert.match(workflow, /record begin 1[\s\S]*--request POST/, 'record uncertain create before the first provider request');
+assert.match(workflow, /record begin 2[\s\S]*--request POST/, 'record the existing bounded retry separately before POST');
+assert.match(workflow, /record start 1 "\$RUNNER_TEMP\/daily-usd-impact-start\.json"/);
+assert.match(workflow, /record start 2 "\$RUNNER_TEMP\/daily-usd-impact-retry-start\.json"/);
+assert.match(pollStep[1], /record poll "\$generation_attempt" "\$poll_payload" "\$http_code" "\$curl_exit"[\s\S]*if \[ "\$curl_exit" -ne 0 \]/, 'capture observations before local timeout/error payloads replace them');
+assert.match(workflow, /name: Preserve sanitized Daily generation evidence[\s\S]*if: always\(\) && steps\.config\.outputs\.configured == 'true'[\s\S]*run: node scripts\/daily-news-recovery\.mjs preserve/);
+assert.match(workflow, /name: Upload sanitized Daily generation evidence[\s\S]*steps\.generation_evidence\.outcome == 'success'[\s\S]*actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a[\s\S]*path: \$\{\{ runner\.temp \}\}\/daily-generation-evidence\.json[\s\S]*if-no-files-found: error[\s\S]*retention-days: 7/);
+assert.doesNotMatch(workflow.slice(workflow.indexOf('      - name: Upload sanitized')), /daily-usd-impact-(?:start|poll|retry-start)\.json|\*\*/,
+  'upload only the allowlisted evidence JSON, never provider payloads or a directory');
 assert.doesNotMatch(backstop, /contents: write/, 'the backstop must not be able to write publication content');
 assert.doesNotMatch(backstop, /gh pr merge/, 'the backstop must never merge editorial content');
 
@@ -267,5 +240,7 @@ for (const [label, block] of [
     `${label} shell must parse with bash -n:\n${syntaxCheck.stderr}`,
   );
 }
+
+await import('./test-daily-news-recovery.mjs');
 
 console.log('daily news publication workflow tests pass');

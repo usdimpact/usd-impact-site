@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { appendFile, readFile, rename, stat, writeFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { appendFile, open, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -250,9 +251,33 @@ export function recordEvidence(state, { kind, number, payload = null, httpStatus
   return result;
 }
 
-async function readLocalJson(path, limit = 512 * 1024) {
-  requireValue((await stat(path)).size <= limit);
-  return JSON.parse(await readFile(path, 'utf8'));
+// Open once: checking a pathname and then reopening it permits a file swap.
+// The runner's parent directory is trusted; reject final-component symlinks and
+// non-regular files. A bounded read also limits growth of the already-open file.
+export async function readLocalJson(path, limit = 512 * 1024) {
+  requireValue(Number.isSafeInteger(limit) && limit > 0 && limit <= 512 * 1024);
+  requireValue(Number.isInteger(constants.O_NOFOLLOW) && Number.isInteger(constants.O_NONBLOCK));
+  const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  try {
+    const before = await file.stat({ bigint: true });
+    requireValue(before.isFile() && before.size >= 0n && before.size <= BigInt(limit));
+    // One extra byte detects growth without an unbounded readFile allocation.
+    const buffer = Buffer.alloc(limit + 1);
+    let length = 0;
+    while (length < buffer.length) {
+      const { bytesRead } = await file.read(buffer, length, buffer.length - length, length);
+      if (bytesRead === 0) break;
+      length += bytesRead;
+    }
+    requireValue(length <= limit && BigInt(length) === before.size);
+    const after = await file.stat({ bigint: true });
+    requireValue(after.isFile() && after.size === before.size &&
+      after.mtimeNs === before.mtimeNs && after.ctimeNs === before.ctimeNs);
+    // Reject malformed encoding rather than silently substituting characters.
+    return JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(buffer.subarray(0, length)));
+  } finally {
+    await file.close();
+  }
 }
 
 async function saveJson(path, state) {

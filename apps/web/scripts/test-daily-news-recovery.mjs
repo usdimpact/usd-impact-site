@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, open, readFile, rename, rm, symlink, utimes, writeFile } from 'node:fs/promises';
+import { mock } from 'node:test';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { REPOSITORY, cleanEvidence, guardedBackstop, inspectRecovery, listAll, newEvidence, parseApiResponse, recordEvidence, runDecision } from './daily-news-recovery.mjs';
+import { REPOSITORY, cleanEvidence, guardedBackstop, inspectRecovery, listAll, newEvidence, parseApiResponse, readLocalJson, recordEvidence, runDecision } from './daily-news-recovery.mjs';
 
 let cases = 0;
 const test = async (name, fn) => {
@@ -233,4 +234,154 @@ try {
     assert.equal(JSON.parse(await readFile(join(dir, 'daily-generation-evidence.json'), 'utf8')).evidenceAvailable, false);
   });
 } finally { await rm(dir, { recursive: true, force: true }); }
-console.log(`daily news recovery tests pass: ${cases} mocked cases; no network/provider calls`);
+// Real local handles, deterministic hooks: no API or workflow is invoked here.
+const fileDir = await mkdtemp(join(tmpdir(), 'daily-recovery-file-race-'));
+try {
+  const path = join(fileDir, 'payload.json');
+  const original = '{"status":"queued"}';
+  await writeFile(path, original);
+  const probe = await open(path, 'r');
+  const prototype = Object.getPrototypeOf(probe);
+  await probe.close();
+  const withHandleHooks = async (hooks, fn) => {
+    const originalStat = prototype.stat;
+    const originalRead = prototype.read;
+    const seen = { handles: new Set(), fds: new Set(), statCalls: 0, readCalls: 0, bytes: 0, text: '' };
+    const statMock = mock.method(prototype, 'stat', async function (...args) {
+      seen.handles.add(this); seen.fds.add(this.fd); seen.statCalls += 1;
+      if (seen.statCalls === hooks.failStat) throw Object.assign(new Error('injected stat failure'), { code: 'EIO' });
+      const value = await originalStat.apply(this, args);
+      if (hooks.afterStat) await hooks.afterStat(value, seen.statCalls);
+      return value;
+    });
+    const readMock = mock.method(prototype, 'read', async function (buffer, offset, length, position) {
+      seen.handles.add(this); seen.fds.add(this.fd); seen.readCalls += 1;
+      if (hooks.failRead) throw Object.assign(new Error('injected read failure'), { code: 'EIO' });
+      const value = await originalRead.call(this, buffer, offset, hooks.shortRead ? Math.min(length, 3) : length, position);
+      seen.bytes += value.bytesRead;
+      seen.text += buffer.subarray(offset, offset + value.bytesRead).toString('utf8');
+      return value;
+    });
+    try { return await fn(seen); }
+    finally {
+      statMock.mock.restore(); readMock.mock.restore();
+      for (const handle of seen.handles) assert.equal(handle.fd, -1, 'every opened reader handle must close');
+    }
+  };
+  await test('bounded reader uses one descriptor and closes on success', () => withHandleHooks({}, async (seen) => {
+    assert.deepEqual(await readLocalJson(path), { status: 'queued' });
+    assert.equal(seen.fds.size, 1); assert.equal(seen.statCalls, 2);
+  }));
+  for (const limit of [16 * 1024, 512 * 1024]) {
+    await test(`valid JSON exactly at ${limit}-byte limit is accepted`, async () => {
+      await writeFile(path, '{}'.padEnd(limit, ' '));
+      assert.deepEqual(await readLocalJson(path, limit), {});
+    });
+  }
+  await test('oversized file is rejected before reading and descriptor closes', async () => {
+    await writeFile(path, '{}'.padEnd(33, ' '));
+    await withHandleHooks({}, async (seen) => {
+      await assert.rejects(readLocalJson(path, 32), /unavailable-or-invalid-evidence/);
+      assert.equal(seen.readCalls, 0);
+    });
+  });
+  await test('invalid or expanded size budgets are rejected', async () => {
+    for (const limit of [0, -1, 1.5, NaN, Infinity, '32', 512 * 1024 + 1]) {
+      await assert.rejects(readLocalJson(path, limit), /unavailable-or-invalid-evidence/);
+    }
+  });
+  await test('missing local file keeps ENOENT distinct from corrupt evidence', async () => {
+    await assert.rejects(readLocalJson(join(fileDir, 'missing.json')), { code: 'ENOENT' });
+  });
+  for (const [label, value] of [['empty', ''], ['malformed JSON', '{bad'], ['invalid UTF-8', Buffer.from([0x22, 0xff, 0x22])]]) {
+    await test(`${label} is rejected and closes descriptor`, async () => {
+      await writeFile(path, value);
+      await withHandleHooks({}, () => assert.rejects(readLocalJson(path)));
+    });
+  }
+  await test('valid multibyte UTF-8 is bounded by bytes not characters', async () => {
+    const text = '{"text":"\u00e9"}';
+    await writeFile(path, text);
+    assert.deepEqual(await readLocalJson(path, Buffer.byteLength(text)), { text: '\u00e9' });
+    await assert.rejects(readLocalJson(path, text.length));
+  });
+  await test('symlink is rejected at open rather than followed', async () => {
+    const link = join(fileDir, 'link.json');
+    await symlink(path, link);
+    await assert.rejects(readLocalJson(link), { code: 'ELOOP' });
+  });
+  await test('directory is rejected as a non-regular file and handle closes', () => withHandleHooks({}, async (seen) => {
+    await assert.rejects(readLocalJson(fileDir), /unavailable-or-invalid-evidence/);
+    assert.equal(seen.readCalls, 0);
+  }));
+  await test('FIFO without a writer cannot block the evidence reader', () => {
+    const fifo = join(fileDir, 'pipe.json');
+    assert.equal(spawnSync('mkfifo', [fifo], { encoding: 'utf8' }).status, 0);
+    const program = `import { readLocalJson } from ${JSON.stringify(new URL('./daily-news-recovery.mjs', import.meta.url).href)};
+      try { await readLocalJson(process.argv[1]); process.exitCode = 1; }
+      catch (error) { if (error.message !== 'unavailable-or-invalid-evidence') throw error; }`;
+    const result = spawnSync(process.execPath, ['--input-type=module', '-e', program, fifo], { encoding: 'utf8', timeout: 3000 });
+    assert.equal(result.error, undefined); assert.equal(result.status, 0, result.stderr);
+  });
+  await test('pathname replacement cannot redirect the already-open reader', async () => {
+    await writeFile(path, original);
+    const retained = join(fileDir, 'original.json');
+    await withHandleHooks({ afterStat: async (_, count) => {
+      if (count !== 1) return;
+      await rename(path, retained);
+      await writeFile(path, '{"replacement":"SENTINEL_SECRET"}');
+      await utimes(retained, new Date(0), new Date(0));
+    } }, async (seen) => {
+      await assert.rejects(readLocalJson(path), /unavailable-or-invalid-evidence/);
+      assert.equal(seen.text, original); assert.equal(seen.fds.size, 1);
+      assert.ok(!seen.text.includes('SENTINEL_SECRET'));
+    });
+  });
+  for (const [label, replacement] of [
+    ['growth beyond limit', original.padEnd(1000, ' ')],
+    ['growth within limit', original + ' '],
+    ['truncation', '{}'],
+    ['same-size rewrite', '{"status":"failed"}'],
+  ]) {
+    await test(`${label} after the descriptor check is rejected`, async () => {
+      await writeFile(path, original);
+      await withHandleHooks({ afterStat: async (_, count) => {
+        if (count !== 1) return;
+        await writeFile(path, replacement);
+        await utimes(path, new Date(0), new Date(0));
+      } }, async (seen) => {
+        await assert.rejects(readLocalJson(path, 64), /unavailable-or-invalid-evidence/);
+        assert.ok(seen.bytes <= 65, 'read allocation and consumed bytes must remain bounded');
+      });
+    });
+  }
+  await test('short descriptor reads are accumulated without reopening the path', async () => {
+    await writeFile(path, original);
+    await withHandleHooks({ shortRead: true }, async (seen) => {
+      assert.deepEqual(await readLocalJson(path), { status: 'queued' });
+      assert.ok(seen.readCalls > 2); assert.equal(seen.fds.size, 1);
+    });
+  });
+  for (const hooks of [{ failStat: 1 }, { failStat: 2 }, { failRead: true }]) {
+    await test(`descriptor closes on I/O error ${JSON.stringify(hooks)}`, async () => {
+      await writeFile(path, original);
+      await withHandleHooks(hooks, () => assert.rejects(readLocalJson(path), { code: 'EIO' }));
+    });
+  }
+  await test('CLI marks a symlinked evidence input unavailable without leaking it', async () => {
+    const state = join(fileDir, 'daily-generation-state.json');
+    await writeFile(path, JSON.stringify({ ...started(), prompt: 'SENTINEL_SECRET' }));
+    await symlink(path, state);
+    const executable = fileURLToPath(new URL('./daily-news-recovery.mjs', import.meta.url));
+    const summary = join(fileDir, 'summary.md');
+    const result = spawnSync(process.execPath, [executable, 'preserve'], {
+      env: { ...process.env, ...env, RUNNER_TEMP: fileDir, GITHUB_STEP_SUMMARY: summary, GITHUB_ACTIONS: 'false' }, encoding: 'utf8', timeout: 3000,
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const body = await readFile(join(fileDir, 'daily-generation-evidence.json'), 'utf8');
+    assert.equal(JSON.parse(body).evidenceAvailable, false);
+    assert.ok(!body.includes('SENTINEL_SECRET'));
+    assert.ok(!(await readFile(summary, 'utf8')).includes('SENTINEL_SECRET'));
+  });
+} finally { await rm(fileDir, { recursive: true, force: true }); }
+console.log(`daily news recovery tests pass: ${cases} cases; mocked APIs and local file fixtures only; no network/provider calls`);

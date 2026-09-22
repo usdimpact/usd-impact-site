@@ -274,6 +274,59 @@ assert.equal(new RegExp(nodeAt(bounded.text.format.schema, 'summary').pattern).t
 assert.equal(originalLengthRequest.input, lengthRequest.input, 'Never truncate output text or source URLs');
 console.log(`daily text schema boundary cases: ${boundaryCases} PASS; isolation and policy preservation PASS`);
 
+// #690: distinguish exact array membership from string substring matching.
+function assertRequiredSearchDomain(allowedDomains) {
+  assert.ok(Array.isArray(allowedDomains), 'Search allowed_domains must be an array');
+  for (const domain of allowedDomains) {
+    assert.equal(typeof domain, 'string', 'Every allowed_domains entry must be a string');
+  }
+  assert.ok(
+    allowedDomains.some((domain) => domain === 'federalreserve.gov'),
+    'Search allowed_domains must contain the exact Federal Reserve domain',
+  );
+}
+
+const validDomainLists = [
+  ['federalreserve.gov'],
+  ['eia.gov', 'federalreserve.gov', 'bls.gov'],
+  Object.freeze(['federalreserve.gov', 'eia.gov']),
+];
+for (const domains of validDomainLists) {
+  const before = [...domains];
+  assert.doesNotThrow(() => assertRequiredSearchDomain(domains));
+  assert.deepEqual(domains, before, 'Domain assertions must not mutate their input');
+}
+const invalidDomainLists = [
+  ['bare string instead of array', 'federalreserve.gov'],
+  ['URL string instead of array', 'https://federalreserve.gov.example.test/'],
+  ['missing value', undefined],
+  ['null value', null],
+  ['object imitating membership', { includes: () => true }],
+  ['empty array', []],
+  ['unrelated domain', ['eia.gov']],
+  ['host prefix', ['not-federalreserve.gov']],
+  ['host suffix', ['federalreserve.gov.example.test']],
+  ['host prefix without separator', ['notfederalreserve.gov']],
+  ['unrequested subdomain', ['www.federalreserve.gov']],
+  ['URL instead of domain', ['https://federalreserve.gov/']],
+  ['domain in path', ['https://example.test/federalreserve.gov']],
+  ['domain in query', ['https://example.test/?host=federalreserve.gov']],
+  ['domain in userinfo', ['https://federalreserve.gov@example.test/']],
+  ['leading whitespace', [' federalreserve.gov']],
+  ['trailing whitespace', ['federalreserve.gov ']],
+  ['trailing newline', ['federalreserve.gov\n']],
+  ['trailing dot', ['federalreserve.gov.']],
+  ['case mismatch', ['FederalReserve.gov']],
+  ['number mixed with exact domain', ['federalreserve.gov', 42]],
+  ['null mixed with exact domain', ['federalreserve.gov', null]],
+  ['nested array mixed with exact domain', ['federalreserve.gov', ['eia.gov']]],
+  ['sparse array mixed with exact domain', Object.assign(new Array(2), { 0: 'federalreserve.gov' })],
+];
+for (const [label, domains] of invalidDomainLists) {
+  assert.throws(() => assertRequiredSearchDomain(domains), { name: 'AssertionError' }, label);
+}
+console.log(`daily search domain assertion: ${validDomainLists.length + invalidDomainLists.length} fixtures PASS`);
+
 // INTEGRATION: real application modules; all provider calls below are mocked.
 const { readFile } = await import('node:fs/promises');
 const { default: groundedHandler } = await import('../api/daily-news-grounded-background.js');
@@ -329,7 +382,7 @@ try {
   assert.equal(sent.model, 'gpt-5-mini');
   assert.deepEqual(sent.reasoning, { effort: 'low' });
   assert.equal(sent.tools[0].search_context_size, 'medium');
-  assert.ok(sent.tools[0].filters.allowed_domains.includes('federalreserve.gov'));
+  assertRequiredSearchDomain(sent.tools[0].filters.allowed_domains);
   assert.equal(sent.tool_choice, 'required');
   assert.ok(sent.include.includes('web_search_call.action.sources'));
   assert.equal(sent.text.format.strict, true);

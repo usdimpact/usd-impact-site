@@ -117,7 +117,15 @@ check('schedules and generation retry budgets remain unchanged', () => {
 check('import and publication-eligibility protections remain', () => {
   assert.match(daily, /import-daily-news\.mjs.*--replace --skip-published --publish/);
   assert.match(catalyst, /import-catalyst-brief\.mjs.*--publish --skip-published/);
-  assert.match(daily, /existing_pr=.*[\s\S]*--state all/);
+  const dailySteps = steps(daily);
+  const eligibility = step(dailySteps, 'Check existing Daily publication state');
+  assert.match(eligibility, /id: preflight/);
+  assert.match(eligibility, /node scripts\/daily-news-recovery\.mjs guard/);
+  assert.ok(dailySteps.findIndex((s) => s.name === 'Check existing Daily publication state') < dailySteps.findIndex((s) => s.name === 'Start background news generation'));
+  assert.match(step(dailySteps, 'Check newsfeed configuration'), /PUBLICATION_NEEDED: \$\{\{ steps\.preflight\.outputs\.needed \}\}/);
+  const recovery = readFileSync(new URL('./daily-news-recovery.mjs', import.meta.url), 'utf8');
+  assert.ok(recovery.includes('`${ROOT}/pulls?state=all&base=main`'));
+  assert.match(recovery, /if \(matchingPr\) return deny\('publication-pr-exists'\);/);
   assert.match(catalyst, /if: steps\.eligibility\.outputs\.publishable == 'true'/);
 });
 check('new preflight failure label is accurate and backward compatible', () => {

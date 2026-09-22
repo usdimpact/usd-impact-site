@@ -1,0 +1,134 @@
+name: PR686 real storage pilot
+on:
+  push:
+    branches: [agent/pr686-isolated-runner-20260922]
+    paths: [.github/workflows/pr686-storage-pilot.yml]
+permissions: {}
+concurrency:
+  group: pr686-real-storage-pilot
+  cancel-in-progress: false
+jobs:
+  storage-pilot:
+    if: github.repository == 'usdimpact/usd-impact-site' && github.ref == 'refs/heads/agent/pr686-isolated-runner-20260922' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Fetch exact public source and pinned runtime inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p packet/canonical build/vendor evidence
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,re,urllib.request
+          root=pathlib.Path('.')
+          opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+          def download(url,path,expected=None):
+              with opener.open(url,timeout=30) as r:
+                  data=r.read(100*1024*1024+1)
+              if not data or len(data)>100*1024*1024:raise RuntimeError('DOWNLOAD_LIMIT')
+              actual=hashlib.sha256(data).hexdigest()
+              if expected and actual!=expected:raise RuntimeError('ARCHIVE_HASH_MISMATCH')
+              pathlib.Path(path).write_bytes(data)
+              return actual
+          repo='https://raw.githubusercontent.com/usdimpact/usd-impact-site/'
+          sha=os.environ['GITHUB_SHA']
+          for name in ['Dockerfile','probe_runtime.py']:
+              download(repo+sha+'/scripts/pr686-runner/'+name,'build/'+name)
+          for name in ['pilot.py','worker.mjs']:
+              download(repo+sha+'/scripts/pr686-runner/'+name,'packet/'+name)
+          head='78b3bc98f4abebc061a4e2a07c8f1881981ff858';base='02032a28dbd14bd8f8271ef2d26a6fca93e752c5'
+          with opener.open('https://api.github.com/repos/usdimpact/usd-impact-site/git/ref/heads/main',timeout=20) as r:main=json.load(r)['object']['sha']
+          with opener.open('https://api.github.com/repos/usdimpact/usd-impact-site/pulls/686',timeout=20) as r:pr=json.load(r)
+          if main!=base or pr['head']['sha']!=head or not pr['draft'] or pr['merged']:raise RuntimeError('SOURCE_DRIFT')
+          blobs={'resend-webhook-handler.js':'7815f85eeade2aac1829ae2d359a6d8a189d6897','resend-webhook.js':'9aef5eb86bf344a7b2f0082f449688b915bb0374','resend-auth-notification-boundary.js':'b90d16ada5350fee0976a125bf44c73bdd887ce7','supabase-server.js':'bc9d9fdebf4becf9af52ff63c5b1bb536f093b3c','paid-access.js':'11f6d856c3993de960907a689a70e401c94cb888'}
+          manifests=[]
+          for name,blob in list(blobs.items())+[('baseline-resend-webhook-handler.js','9c67093b0eae1e7855a2df294eae274e9339d36a')]:
+              source='resend-webhook-handler.js' if name.startswith('baseline-') else name
+              ref=base if name.startswith('baseline-') else head
+              path=pathlib.Path('packet/canonical')/name
+              digest=download(repo+ref+'/apps/web/src/lib/'+source,path)
+              data=path.read_bytes();actual=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+              if actual!=blob:raise RuntimeError('CANONICAL_BLOB_MISMATCH')
+              manifests.append({'name':name,'commit':ref,'gitBlob':actual,'sha256':digest})
+          pathlib.Path('packet/canonical/package.json').write_text('{"type":"module"}\n')
+          pathlib.Path('evidence/source-manifest.json').write_text(json.dumps(manifests,indent=2))
+          pg='e0630a3600aea27511715563259ec2111cd5f4353a4b040e0be827f94cd7a8b0'
+          rest='36b8ae140f188cfcd6003494805bf35a41e895f88c12be9183d60f91782145c6'
+          download('https://ftp.postgresql.org/pub/source/v17.6/postgresql-17.6.tar.bz2','build/vendor/postgresql-17.6.tar.bz2',pg)
+          download('https://github.com/PostgREST/postgrest/releases/download/v14.16/postgrest-v14.16-linux-static-x86-64.tar.xz','build/vendor/postgrest-v14.16-linux-static-x86-64.tar.xz',rest)
+          download('https://nodejs.org/dist/v24.20.0/SHASUMS256.txt','evidence/node-SHASUMS256.txt')
+          nodefile='node-v24.20.0-linux-x64.tar.xz';matches=[line.split()[0] for line in pathlib.Path('evidence/node-SHASUMS256.txt').read_text().splitlines() if len(line.split())==2 and line.split()[1]==nodefile]
+          if len(matches)!=1 or not re.fullmatch('[0-9a-f]{64}',matches[0]):raise RuntimeError('NODE_CHECKSUM_AMBIGUOUS')
+          download('https://nodejs.org/dist/v24.20.0/'+nodefile,'build/vendor/'+nodefile,matches[0])
+          pathlib.Path('build/SHA256SUMS').write_text(pg+'  vendor/postgresql-17.6.tar.bz2\n'+rest+'  vendor/postgrest-v14.16-linux-static-x86-64.tar.xz\n'+matches[0]+'  vendor/'+nodefile+'\n')
+          pathlib.Path('evidence/input-SHA256SUMS').write_bytes(pathlib.Path('build/SHA256SUMS').read_bytes())
+          PY
+          python3 -m py_compile packet/pilot.py build/probe_runtime.py
+      - name: Build measured runtime without application or provider credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          cfg="$(mktemp -d)"
+          trap 'rm -rf -- "$cfg"' EXIT
+          env -i PATH=/usr/bin:/bin HOME="$cfg" DOCKER_CONFIG="$cfg" docker --host unix:///var/run/docker.sock build --build-arg BASE_IMAGE=debian@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251 --iidfile "$PWD/evidence/runtime-image.id" "$PWD/build" 2>&1 | tee evidence/runtime-build.log
+      - name: Execute offline reduced-schema storage pilot and remove owned container
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="$(cat evidence/runtime-image.id)"
+          [[ "$image" =~ ^sha256:[0-9a-f]{64}$ ]]
+          name="pr686-pilot-${GITHUB_RUN_ID}"
+          cfg="$(mktemp -d)"
+          d() { env -i PATH=/usr/bin:/bin HOME="$cfg" DOCKER_CONFIG="$cfg" docker --host unix:///var/run/docker.sock "$@"; }
+          cleanup() { d rm -f "$name" >/dev/null 2>&1 || true; rm -rf -- "$cfg"; }
+          trap cleanup EXIT
+          d image inspect "$image" > evidence/image-inspection.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('evidence/image-inspection.json'))[0]
+          if d['Os']!='linux' or d['Architecture']!='amd64' or d['Config'].get('Volumes') or d['Config'].get('OnBuild'):raise RuntimeError('IMAGE_BOUNDARY')
+          PY
+          d create --name "$name" --label usd-impact-purpose=pr686-storage-pilot --pull never --network none --ipc private --read-only --cap-drop ALL --security-opt no-new-privileges=true --user 65534:65534 --workdir /work --restart no --pids-limit 64 --memory 768m --memory-swap 768m --cpus 1 --no-healthcheck --shm-size 16m --tmpfs /work:rw,noexec,nosuid,nodev,size=268435456,mode=0700,uid=65534,gid=65534 --mount "type=bind,src=$PWD/packet,dst=/packet,readonly" --entrypoint /usr/bin/env "$image" -i PATH=/usr/local/bin:/usr/local/pgsql/bin:/usr/bin:/bin HOME=/work LANG=C PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I -S /packet/pilot.py
+          d inspect "$name" > evidence/container-inspection.json
+          python3 - <<'PY'
+          import json,pathlib
+          d=json.load(open('evidence/container-inspection.json'))[0];h=d['HostConfig'];c=d['Config'];m=d['Mounts']
+          expected=['-i','PATH=/usr/local/bin:/usr/local/pgsql/bin:/usr/bin:/bin','HOME=/work','LANG=C','PYTHONDONTWRITEBYTECODE=1','/usr/bin/python3','-I','-S','/packet/pilot.py']
+          checks=[not d['State']['Running'],h['NetworkMode']=='none',h['ReadonlyRootfs'],not h['Privileged'],h['CapDrop']==['ALL'],h['SecurityOpt']==['no-new-privileges=true'],c['User']=='65534:65534',c['Entrypoint']==['/usr/bin/env'],c['Cmd']==expected,c['WorkingDir']=='/work',c['Healthcheck']['Test']==['NONE'],h['RestartPolicy']['Name']=='no',not h.get('Binds'),not h.get('Devices'),not h.get('DeviceRequests'),not h.get('CapAdd'),h['Memory']==805306368,h['MemorySwap']==805306368,h['PidsLimit']==64,h['NanoCpus']==1000000000,set(h['Tmpfs'])=={'/work'},len([x for x in m if x['Type']=='bind'])==1]
+          mount=[x for x in m if x['Type']=='bind'][0]
+          checks.extend([mount['Source']==str(pathlib.Path('packet').resolve()),mount['Destination']=='/packet',mount['RW'] is False])
+          if not all(checks):raise RuntimeError('CONTAINER_BOUNDARY')
+          PY
+          set +e
+          timeout 360 d start -a "$name" > evidence/pilot.log 2>&1
+          cli_rc=$?
+          set -e
+          # timeout cannot invoke a shell function; use the explicit CLI when the wrapper is unavailable.
+          if [ "$cli_rc" -eq 127 ]; then
+            set +e
+            timeout 360 env -i PATH=/usr/bin:/bin HOME="$cfg" DOCKER_CONFIG="$cfg" docker --host unix:///var/run/docker.sock start -a "$name" > evidence/pilot.log 2>&1
+            cli_rc=$?
+            set -e
+          fi
+          d inspect "$name" > evidence/container-final.json
+          exit_code="$(d inspect "$name" --format '{{.State.ExitCode}}')"
+          d rm -f "$name"
+          test -z "$(d ps -aq --filter "name=^/${name}$")"
+          printf '{"containerRemoved":true,"containerExit":%s,"cliExit":%s}\n' "$exit_code" "$cli_rc" > evidence/cleanup.json
+          python3 - <<'PY'
+          import json,pathlib
+          lines=pathlib.Path('evidence/pilot.log').read_text().splitlines();values=[x.split('=',1)[1] for x in lines if x.startswith('PILOT_RESULT_JSON=')]
+          if len(values)!=1:raise RuntimeError('PILOT_RESULT_MISSING')
+          d=json.loads(values[0]);pathlib.Path('evidence/pilot-result.json').write_text(json.dumps(d,indent=2))
+          print(json.dumps({k:d.get(k) for k in ['status','casesExecuted','httpRequests','cleanupVerified','error','original30GroupAcceptance','releaseAuthorized']},indent=2))
+          if d['status']!='REDUCED_SCHEMA_PILOT_PASS' or not d['cleanupVerified']:raise RuntimeError('PILOT_NOT_PASSED')
+          PY
+          test "$exit_code" = 0
+      - name: Preserve bounded evidence without credentials or database files
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pr686-storage-pilot-evidence
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 3

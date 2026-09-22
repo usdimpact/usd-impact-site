@@ -100,16 +100,9 @@ jobs:
           if not all(checks):raise RuntimeError('CONTAINER_BOUNDARY')
           PY
           set +e
-          timeout 360 d start -a "$name" > evidence/pilot.log 2>&1
+          timeout 360 env -i PATH=/usr/bin:/bin HOME="$cfg" DOCKER_CONFIG="$cfg" docker --host unix:///var/run/docker.sock start -a "$name" > evidence/pilot.log 2>&1
           cli_rc=$?
           set -e
-          # timeout cannot invoke a shell function; use the explicit CLI when the wrapper is unavailable.
-          if [ "$cli_rc" -eq 127 ]; then
-            set +e
-            timeout 360 env -i PATH=/usr/bin:/bin HOME="$cfg" DOCKER_CONFIG="$cfg" docker --host unix:///var/run/docker.sock start -a "$name" > evidence/pilot.log 2>&1
-            cli_rc=$?
-            set -e
-          fi
           d inspect "$name" > evidence/container-final.json
           exit_code="$(d inspect "$name" --format '{{.State.ExitCode}}')"
           d rm -f "$name"
@@ -124,6 +117,7 @@ jobs:
           if d['status']!='REDUCED_SCHEMA_PILOT_PASS' or not d['cleanupVerified']:raise RuntimeError('PILOT_NOT_PASSED')
           PY
           test "$exit_code" = 0
+          test "$cli_rc" = 0
       - name: Preserve bounded evidence without credentials or database files
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

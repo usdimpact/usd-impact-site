@@ -96,3 +96,6 @@ await assert.rejects(() => upsertOwnVideoProgress({
 }), /valid video content ID/);
 
 console.log('Supabase video progress storage tests passed.');
+
+// Preserve storage contract controls and run the video-specific failure suite.
+await import('./test-video-progress-provider.mjs');

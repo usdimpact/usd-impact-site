@@ -9,11 +9,14 @@ const STATUSES = new Set(['started', 'in_progress', 'completed']);
 const DECIMAL = /^\d+(?:\.\d+)?$/;
 
 export class VideoProgressProviderError extends Error {
-  constructor(message, { status, code }) {
+  constructor(message, { status, code, retryAfterSeconds } = {}) {
     super(message);
     this.name = 'VideoProgressProviderError';
     this.status = status;
     this.code = code;
+    if (Number.isInteger(retryAfterSeconds) && retryAfterSeconds >= 0 && retryAfterSeconds <= 60) {
+      this.retryAfterSeconds = retryAfterSeconds;
+    }
   }
 }
 
@@ -88,6 +91,80 @@ export function validateVideoProgressSave(rows, submitted) {
   } catch {
     throw uncertainWrite();
   }
+}
+
+// Project only the UI contract, after validating the provider-owned row. The
+// storage helpers retain their full rows for existing internal consumers. Unknown
+// data fields and provider-only metadata cannot enlarge or escape the API envelope.
+export function videoProgressResponse(rows, accountId, contentId = null) {
+  const validated = validateVideoProgressRows(rows, accountId, contentId);
+  const canonicalTime = value => {
+    if (value == null) return null;
+    if (!timestamp(value)) throw invalidResponse();
+    return new Date(value).toISOString();
+  };
+  const projected = validated.map(row => Object.freeze({
+    account_id: row.account_id,
+    content_id: row.content_id,
+    status: row.status,
+    progress_percent: row.progress_percent,
+    resume_position: position(row.resume_position),
+    completed_at: canonicalTime(row.completed_at),
+    // The library Continue link chooses the latest unfinished film by updated_at.
+    updated_at: canonicalTime(row.updated_at),
+    data: Object.freeze({
+      ...(row.data?.contentType === undefined ? {} : { contentType: row.data.contentType }),
+      ...(row.data?.durationSeconds === undefined ? {} : { durationSeconds: row.data.durationSeconds }),
+    }),
+  }));
+  const payload = Object.freeze({ progress: contentId ? (projected[0] || null) : Object.freeze(projected) });
+  const limit = contentId ? VIDEO_PROGRESS_ROW_BYTES : VIDEO_PROGRESS_LIST_BYTES;
+  if (Buffer.byteLength(JSON.stringify(payload), 'utf8') > limit) throw invalidResponse();
+  return payload;
+}
+
+// The unchanged r2 client schedules at most a 60-second provider cooldown. Longer,
+// malformed, combined or unsupported values must stop syncing, never be shortened.
+// These are per-request safeguards, not coordination of a shared provider quota.
+function retryPolicy(headers, nowMs) {
+  const raw = headers?.get('retry-after');
+  if (raw === null || raw === undefined) return null;
+  const stop = { blocked: true };
+  if (typeof raw !== 'string' || raw.length > 128 || /[\x00-\x08\x0a-\x1f\x7f]/.test(raw)) return stop;
+  const value = raw.replace(/^[ \t]+|[ \t]+$/g, '');
+  let seconds;
+  if (/^\d+$/.test(value)) {
+    seconds = Number(value);
+  } else {
+    const parseDate = text => {
+      if (typeof text !== 'string'
+        || !/^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT$/.test(text)) return null;
+      const instant = Date.parse(text);
+      return Number.isFinite(instant) && new Date(instant).toUTCString() === text ? instant : null;
+    };
+    const until = parseDate(value);
+    if (until === null || !Number.isFinite(nowMs)) return stop;
+    const providerDate = headers?.get('date');
+    const serverAt = providerDate == null ? null : parseDate(providerDate);
+    if (providerDate != null && serverAt === null) return stop;
+    // Use the more conservative delay when a provider Date is available. Round
+    // upward and do not subtract transit time; client clock skew cannot shorten it.
+    seconds = Math.ceil(Math.max(0, until - nowMs, serverAt === null ? 0 : until - serverAt) / 1000);
+  }
+  if (!Number.isSafeInteger(seconds) || seconds < 0 || seconds > 60) return stop;
+  return { seconds };
+}
+
+function refusalError(status, code, headers) {
+  const policy = status === 429 || status === 503 ? retryPolicy(headers, Date.now()) : null;
+  if (policy?.blocked) {
+    return new VideoProgressProviderError('Video progress syncing is paused. Reload before syncing again.', {
+      status: 409, code: 'VIDEO_PROGRESS_RETRY_DEFERRED',
+    });
+  }
+  return new VideoProgressProviderError('The video progress request was rejected.', {
+    status, code, ...(policy ? { retryAfterSeconds: policy.seconds } : {}),
+  });
 }
 
 // A returned representation can accompany an explicitly rolled-back transaction.
@@ -190,15 +267,13 @@ export async function runVideoProgressStorage({ config, accessToken, fetchImpl =
         const status = response?.status;
         // Retain definite HTTP denials, without exporting provider error text.
         if (Number.isInteger(status) && status >= 400 && status < 500 && !(isWrite && status === 408)) {
-          throw new VideoProgressProviderError('The video progress request was rejected.', {
-            status, code: 'VIDEO_PROGRESS_REQUEST_REJECTED',
-          });
+          throw refusalError(status, 'VIDEO_PROGRESS_REQUEST_REJECTED', response?.headers);
         }
         if (isWrite) throw uncertainWrite();
-        throw new VideoProgressProviderError('Saved video progress is temporarily unavailable.', {
-          status: Number.isInteger(status) && status >= 500 && status < 600 ? status : 502,
-          code: 'VIDEO_PROGRESS_PROVIDER_FAILED',
-        });
+        throw refusalError(
+          Number.isInteger(status) && status >= 500 && status < 600 ? status : 502,
+          'VIDEO_PROGRESS_PROVIDER_FAILED', response?.headers,
+        );
       }
       if (isWrite && reportsRollback(response.headers)) {
         cancelBody(response.body);
@@ -206,7 +281,7 @@ export async function runVideoProgressStorage({ config, accessToken, fetchImpl =
       }
       return await readBoundedJson(response, maxBytes, controller.signal, ensureActive);
     } catch (error) {
-      if (isWrite && !(error instanceof VideoProgressProviderError && error.code === 'VIDEO_PROGRESS_REQUEST_REJECTED')) {
+      if (isWrite && !(error instanceof VideoProgressProviderError && ['VIDEO_PROGRESS_REQUEST_REJECTED', 'VIDEO_PROGRESS_RETRY_DEFERRED'].includes(error.code))) {
         throw uncertainWrite();
       }
       if (error instanceof VideoProgressProviderError) throw error;

@@ -362,3 +362,126 @@ await check('Explicit rollback cancels the returned body without reading it', as
 });
 
 console.log(JSON.stringify({ suite: 'video-progress-provider', passed: checks.length, checks }));
+
+// G1/G2 cross-boundary regressions. Keep the original 92 assertions above intact.
+const { videoProgressResponse } = await import('../src/lib/video-progress-provider.js');
+const oldCount = checks.length;
+await check('G1 strips unrelated fields without altering the provider record', async () => {
+  const value = row({ data: { contentType: 'video', durationSeconds: 120, padding: '\u00e9'.repeat(4000) },
+    updated_at: '2026-09-23T22:00:00+02:00', private_note: 'must-not-escape', attempt_count: 4 });
+  const before = JSON.stringify(value);
+  const p = videoProgressResponse([value], common.accountId, common.contentId);
+  assert.equal(JSON.stringify(value), before);
+  assert.equal(p.progress.updated_at, '2026-09-23T20:00:00.000Z');
+  assert.equal(p.progress.resume_position, 24);
+  assert.deepEqual(p.progress.data, { contentType: 'video', durationSeconds: 120 });
+  assert.equal(Object.hasOwn(p.progress, 'attempt_count'), false);
+  assert.equal(Object.hasOwn(p.progress, 'private_note'), false);
+  assert.ok(Object.isFrozen(p.progress.data) && Object.isFrozen(p.progress) && Object.isFrozen(p));
+});
+for (const byteLimit of [16384, 16385]) {
+  await check(`G1 final single response envelope boundary ${byteLimit}`, async () => {
+    const template = row({content_id: 'video:x'});
+    const n = Buffer.byteLength(JSON.stringify(videoProgressResponse([template],common.accountId,'video:x')));
+    const id = 'video:' + 'x'.repeat(byteLimit - n + 1);
+    const value = {...template,content_id:id};
+    if (byteLimit === 16384) assert.equal(Buffer.byteLength(JSON.stringify(videoProgressResponse([value],common.accountId,id))), byteLimit);
+    else assert.throws(()=>videoProgressResponse([value],common.accountId,id), errorIs('VIDEO_PROGRESS_RESPONSE_INVALID',502));
+  });
+}
+for (const byteLimit of [524288, 524289]) {
+  await check(`G1 complete list envelope boundary ${byteLimit}`, async () => {
+    const value = row({content_id:'video:x'});
+    const n = Buffer.byteLength(JSON.stringify(videoProgressResponse([value],common.accountId)));
+    const padded = {...value,content_id:'video:'+'x'.repeat(byteLimit-n+1)};
+    if (byteLimit===524288) assert.equal(Buffer.byteLength(JSON.stringify(videoProgressResponse([padded],common.accountId))),byteLimit);
+    else assert.throws(()=>videoProgressResponse([padded],common.accountId),errorIs('VIDEO_PROGRESS_RESPONSE_INVALID',502));
+  });
+}
+await check('G1 empty singleton and list reads retain separate null and array shapes',async()=>{
+  assert.deepEqual(videoProgressResponse([],common.accountId,common.contentId),{progress:null});
+  assert.deepEqual(videoProgressResponse([],common.accountId),{progress:[]});
+});
+for (const [name, value] of [
+  ['wrong owner',row({account_id:'other'})], ['invalid updated time',row({updated_at:'not-a-date'})],
+  ['invalid completion time',row({completed_at:'not-a-date'})], ['wrong content',row({content_id:'video:other'})],
+  ['missing checkpoint',row({resume_position:undefined})], ['excessive duration',row({data:{durationSeconds:90000}})],
+]) await check(`G1 projection rejects ${name}`,async()=>assert.throws(()=>videoProgressResponse([value],common.accountId,common.contentId),errorIs('VIDEO_PROGRESS_RESPONSE_INVALID',502)));
+await check('G1 list retains completion, backward checkpoint and Continue recency order',async()=>{
+  const values=[row({content_id:'video:first',updated_at:'2026-09-23T00:00:01Z'}),row({content_id:'video:second',resume_position:10,updated_at:'2026-09-23T00:00:02Z'}),row({content_id:'video:done',status:'completed',progress_percent:100})];
+  const p=videoProgressResponse(values,common.accountId);
+  const next=p.progress.filter(x=>x.status!=='completed'&&Number(x.progress_percent)>0).sort((a,b)=>Date.parse(b.updated_at)-Date.parse(a.updated_at))[0];
+  assert.equal(next.content_id,'video:second'); assert.equal(next.resume_position,10);
+  assert.equal(p.progress.filter(x=>x.status==='completed').length,1);
+});
+
+// Freeze only the wall clock used for HTTP dates, not the storage timeout clock.
+const realDateNow = Date.now;
+Date.now = () => Date.parse('2026-09-23T00:00:00.500Z');
+try {
+  const policies = [
+    ['absent',null,null,429],['zero','0','0',429],['sixty','60','60',429],['leading zeros','00060','60',429],
+    ['outer OWS',' \t60\t ','60',429],['future date','Wed, 23 Sep 2026 00:00:30 GMT','30',429],
+    ['past date','Tue, 22 Sep 2026 23:59:59 GMT','0',429],['long delay','61',null,409],
+    ['huge integer','9'.repeat(100),null,409],['oversized','1'.repeat(129),null,409],
+    ['negative','-1',null,409],['fraction','0.5',null,409],['exponent','1e1',null,409],
+    ['combined','60, 60',null,409],['empty','',null,409],['whitespace','  ',null,409],
+    ['wrong weekday','Thu, 23 Sep 2026 00:00:30 GMT',null,409],
+    ['invalid date','Wed, 31 Feb 2026 00:00:30 GMT',null,409],
+    ['obsolete date','Wednesday, 23-Sep-26 00:00:30 GMT',null,409],
+    ['far future','Wed, 23 Sep 2026 00:02:00 GMT',null,409],
+  ];
+  for (const [name,raw,expected,status] of policies) {
+    for (const phase of ['read','write']) await check(`G2 ${phase} cooldown ${name}`,async()=>{
+      const headers=raw===null?{}:{'Retry-After':raw};
+      let calls=0;
+      const fetchImpl=async(url,options)=>{
+        calls++;
+        if(phase==='write'&&options.method==='GET')return json([]);
+        return json({diagnostic:'PRIVATE_DO_NOT_FORWARD'},429,headers);
+      };
+      try {
+        await (phase==='read'?readOwnVideoProgress:upsertOwnVideoProgress)({...common,fetchImpl});
+        assert.fail('Expected refusal');
+      } catch(e) {
+        assert.equal(e.status,status); assert.equal(e.code,status===409?'VIDEO_PROGRESS_RETRY_DEFERRED':'VIDEO_PROGRESS_REQUEST_REJECTED');
+        const safe=safeSupabaseError(e);
+        assert.equal(safe.headers?.['Retry-After']??null,expected);
+        assert.ok(!JSON.stringify(safe).includes('PRIVATE_DO_NOT_FORWARD'));
+      }
+      assert.equal(calls,phase==='read'?1:2);
+    });
+  }
+  for (const [date,expected,status] of [
+    ['Wed, 23 Sep 2026 00:00:00 GMT','30',429],
+    ['Tue, 22 Sep 2026 23:59:40 GMT','50',429],
+    ['Tue, 22 Sep 2026 23:58:00 GMT',null,409],['malformed',null,409],
+  ]) await check(`G2 conservative provider Date ${date}`,async()=>{
+    await assert.rejects(readOwnVideoProgress({...common,fetchImpl:async()=>json({},429,{'Retry-After':'Wed, 23 Sep 2026 00:00:30 GMT',Date:date})}),e=>{
+      assert.equal(e.status,status); assert.equal(safeSupabaseError(e).headers?.['Retry-After']??null,expected); return true;
+    });
+  });
+  await check('G2 pre-write 503 retains valid cooldown with zero provider writes',async()=>{
+    let writes=0;
+    await assert.rejects(upsertOwnVideoProgress({...common,fetchImpl:async(u,o)=>{if(o.method==='POST')writes++; return json({},503,{'Retry-After':'30'});}}),e=>{
+      assert.equal(e.status,503);assert.equal(safeSupabaseError(e).headers['Retry-After'],'30');return true;
+    }); assert.equal(writes,0);
+  });
+  await check('G2 POST 503 remains unconfirmed and nonretryable even with cooldown',async()=>{
+    const mock=writeMock(()=>json({},503,{'Retry-After':'60'}));
+    await assert.rejects(upsertOwnVideoProgress({...common,fetchImpl:mock.fetchImpl}),e=>{
+      assert.equal(e.code,'VIDEO_PROGRESS_SAVE_UNCONFIRMED');assert.equal(e.status,409);assert.equal(safeSupabaseError(e).headers,undefined);return true;
+    }); assert.equal(mock.requests.length,2);
+  });
+  await check('G2 raw CRLF cooldown is rejected without header injection',async()=>{
+    await assert.rejects(readOwnVideoProgress({...common,fetchImpl:async()=>({status:429,headers:{get:n=>n==='retry-after'?'60\r\nX-Bad: injected':null},body:null})}),e=>{
+      assert.equal(e.code,'VIDEO_PROGRESS_RETRY_DEFERRED'); assert.equal(safeSupabaseError(e).headers,undefined); return true;
+    });
+  });
+} finally { Date.now=realDateNow; }
+await check('G2 unrelated Supabase errors do not acquire video cooldown headers',async()=>{
+  const {SupabaseRequestError}=await import('../src/lib/supabase-server.js');
+  const e=new SupabaseRequestError('ordinary',{status:429});e.retryAfterSeconds=60;
+  assert.equal(safeSupabaseError(e).headers,undefined);
+});
+console.log(JSON.stringify({suite:'video-progress-provider-g1g2',original_checks:oldCount,added_checks:checks.length-oldCount,total_checks:checks.length}));

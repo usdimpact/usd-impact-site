@@ -410,6 +410,11 @@ export function safeSupabaseError(error) {
     return {
       status: error.status >= 400 && error.status < 600 ? error.status : 500,
       payload: { error: error.message, code: error.code },
+      // Export only a validated numeric cooldown from the video-specific error.
+      // Never forward arbitrary provider headers or diagnostics from other APIs.
+      ...(error instanceof VideoProgressProviderError && [429, 503].includes(error.status)
+        && Number.isInteger(error.retryAfterSeconds) && error.retryAfterSeconds >= 0 && error.retryAfterSeconds <= 60
+        ? { headers: { 'Retry-After': String(error.retryAfterSeconds) } } : {}),
     };
   }
   if (error instanceof SupabaseConfigurationError) {

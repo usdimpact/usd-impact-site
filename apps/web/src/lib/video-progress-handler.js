@@ -5,6 +5,7 @@ import {
   sendJson,
   upsertOwnVideoProgress,
 } from './supabase-server.js';
+import { videoProgressResponse, VideoProgressProviderError } from './video-progress-provider.js';
 import { resolveSessionWithRefresh } from './supabase-auth.js';
 import { getVideo, videoSlugs } from '../data/video-library.js';
 
@@ -85,7 +86,7 @@ export async function handleVideoProgressRequest(
     });
   } catch (error) {
     const safe = safeSupabaseError(error);
-    return sendJson(response, safe.status, safe.payload);
+    return sendJson(response, safe.status, safe.payload, safe.headers);
   }
   if (!resolved) return sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
   const { accessToken, value: state } = resolved;
@@ -103,10 +104,10 @@ export async function handleVideoProgressRequest(
         contentId: slug ? `video:${slug}` : null,
       });
       const filtered = rows.filter((row) => VIDEO_SLUG_SET.has(String(row.content_id || '').replace(/^video:/, '')));
-      return sendJson(response, 200, { progress: slug ? (filtered[0] || null) : filtered });
+      return sendJson(response, 200, videoProgressResponse(filtered, state.user.id, slug ? `video:${slug}` : null));
     } catch (error) {
       const safe = safeSupabaseError(error);
-      return sendJson(response, safe.status, safe.payload);
+      return sendJson(response, safe.status, safe.payload, safe.headers);
     }
   }
 
@@ -143,9 +144,19 @@ export async function handleVideoProgressRequest(
       resumePositionSeconds: positionSeconds,
       durationSeconds,
     });
-    return sendJson(response, 200, { progress: row });
+    let confirmed;
+    try {
+      confirmed = videoProgressResponse([row], state.user.id, `video:${slug}`);
+    } catch {
+      // The write may have completed even if its final API representation cannot
+      // be confirmed. Do not convert this into a retryable read/protocol error.
+      throw new VideoProgressProviderError('The video progress save could not be confirmed. Reload before syncing again.', {
+        status: 409, code: 'VIDEO_PROGRESS_SAVE_UNCONFIRMED',
+      });
+    }
+    return sendJson(response, 200, confirmed);
   } catch (error) {
     const safe = safeSupabaseError(error);
-    return sendJson(response, safe.status, safe.payload);
+    return sendJson(response, safe.status, safe.payload, safe.headers);
   }
 }

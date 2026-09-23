@@ -98,7 +98,6 @@ console.log('Video progress API tests passed.');
 
 // Combined provider -> real handler response contracts; all I/O is injected.
 const storage = await import('../src/lib/supabase-server.js');
-const providerTypes = await import('../src/lib/video-progress-provider.js');
 const { getVideo } = await import('../src/data/video-library.js');
 const testSlug = 'dollar-yields-liquidity';
 const testDuration = Number(getVideo(testSlug).durationSeconds);

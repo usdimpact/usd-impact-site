@@ -78,3 +78,6 @@ assert.equal(previewConfig.production, false);
 assert.equal(previewConfig.batchSize, 25);
 
 console.log('Account deletion Production batch-bound tests passed.');
+
+// Include the temporary cron diagnostic regressions in the existing CI entrypoint.
+await import("./test-cron-authorization-diagnostics.mjs");

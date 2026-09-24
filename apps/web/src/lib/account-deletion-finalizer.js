@@ -1,6 +1,7 @@
 import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { enqueueAccountDeletionCompletedEmail } from './account-deletion-completed-email.js';
 import { readSupabaseServerConfig } from './supabase-server.js';
+import { recordCronAuthorizationDiagnostic } from './cron-authorization-diagnostics.js';
 
 const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
 const PRODUCTION_PROJECT_REF = 'gjzetjugmnwanvjkchux';
@@ -528,8 +529,12 @@ export async function runDueAccountDeletionFinalizer({
 export function validCronAuthorization(request, environment = process.env) {
   const secret = String(environment.CRON_SECRET || '');
   const header = String(request?.headers?.authorization || request?.headers?.Authorization || '');
-  if (secret.length < 32 || !header.startsWith('Bearer ')) return false;
-  const supplied = Buffer.from(header.slice(7));
-  const expected = Buffer.from(secret);
-  return supplied.length === expected.length && timingSafeEqual(supplied, expected);
+  let authorized = false;
+  if (secret.length >= 32 && header.startsWith('Bearer ')) {
+    const supplied = Buffer.from(header.slice(7));
+    const expected = Buffer.from(secret);
+    authorized = supplied.length === expected.length && timingSafeEqual(supplied, expected);
+  }
+  recordCronAuthorizationDiagnostic({ request, environment, secret, header, authorized });
+  return authorized;
 }

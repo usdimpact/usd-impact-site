@@ -217,7 +217,7 @@ function makeRelease(index=1){
  return {content_id:contentId,version:1,chapter_number:index,slug:payload.slug,status:'published',source_sha256:payload.source.documentSha256,reader_sha256:payload.source.readerTextSha256,payload};
 }
 const releases=Array.from({length:13},(_,i)=>makeRelease(i+1));
-const host='fixture-only.invalid';
+const host='usd-impact-site-test-usd-impact.vercel.app';
 function req(overrides={}){return {method:'GET',url:'/api/guided-edition',headers:{host,'x-forwarded-host':host,'x-forwarded-proto':'https'},...overrides};}
 function responseRecorder(){const headers=new Map();return {statusCode:200,body:'',setHeader(k,v){headers.set(k.toLowerCase(),v);},getHeader(k){return headers.get(k.toLowerCase());},end(value=''){this.body=value;}};}
 async function libraryRun(overrides={},request=req()){
@@ -289,4 +289,29 @@ test('individual chapter path retains old read behavior and never invokes batch'
 test('progress API retains its existing individual read and no batch',async()=>{
  let batches=0;const {response,progressCalls}=await libraryRun({readProgressBatch:async()=>{batches++;assert.fail('batch');}},req({url:'/api/guided-edition?action=progress&contentId='+encodeURIComponent(ids[0])}));
  assert.equal(response.statusCode,200);assert.equal(progressCalls,1);assert.equal(batches,0);
+});
+
+test('untrusted page host is rejected before session, catalog or batch processing', async () => {
+  const calls = { session: 0, access: 0, catalog: 0, supplements: 0, batch: 0 };
+  const unexpected = (name) => async () => {
+    calls[name] += 1;
+    throw new Error('Unexpected processing for an untrusted request host.');
+  };
+  const untrustedHost = 'fixture-only.invalid';
+  const { response, progressCalls, batchCalls } = await libraryRun({
+    resolveSession: unexpected('session'),
+    readAccessState: unexpected('access'),
+    readCatalog: unexpected('catalog'),
+    readSupplementCatalog: unexpected('supplements'),
+    readProgressBatch: unexpected('batch'),
+  }, req({ headers: {
+    host: untrustedHost,
+    'x-forwarded-host': untrustedHost,
+    'x-forwarded-proto': 'https',
+  } }));
+  assert.equal(response.statusCode, 400);
+  assert.equal(response.body, 'Invalid protected route.');
+  assert.deepEqual(calls, { session: 0, access: 0, catalog: 0, supplements: 0, batch: 0 });
+  assert.equal(progressCalls, 0);
+  assert.equal(batchCalls, 0);
 });

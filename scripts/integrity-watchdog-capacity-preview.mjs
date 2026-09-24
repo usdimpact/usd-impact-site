@@ -169,7 +169,6 @@ export async function collectPreviewMetadata({ activationApproved = false, env =
     text += decoder.decode();
     ensureActive();
     const parsed = JSON.parse(text);
-    text = '';
     const normalized = normalizePreviewMetadata(parsed, now());
     ensureActive();
     return normalized;

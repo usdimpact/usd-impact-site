@@ -1,3 +1,4 @@
+import './test-guided-reader-client.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { handleGuidedEditionRequest } from '../api/guided-edition.js';

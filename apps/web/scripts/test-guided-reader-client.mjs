@@ -73,7 +73,7 @@ function setup(fetchImpl, { realTimers = false, formDataThrows = false } = {}) {
   });
   vm.runInContext(script, context, { timeout: 1000 });
   return {
-    elements, saves, submit, calls, timers,
+    elements, saves, submit, calls, timers, document,
     click: (index = 0) => saves[index].listeners.click(),
     mastery: () => elements['mastery-form'].listeners.submit({ preventDefault() {}, currentTarget: elements['mastery-form'] }),
     timeout() {
@@ -291,3 +291,79 @@ await test('A completed success allows a later deliberate action without auto re
   assert.equal(ui.calls.length, 2);
 });
 console.log('Guided reader recovery: offline VM/DOM fixtures; no live HTTP, database, browser or capacity test.');
+
+// Focus is restored only when native disabling lost it and no later navigation occurred.
+function focusFixture(ui, target) {
+  const documentEvents = new Map();
+  const windowEvents = new Map();
+  const install = (map) => ({
+    addEventListener(name, listener) { map.set(name, listener); },
+    removeEventListener(name, listener) { assert.equal(map.get(name), listener); map.delete(name); },
+  });
+  Object.assign(ui.document, install(documentEvents), {
+    body: {}, documentElement: {}, activeElement: target, hasFocus: () => true,
+    defaultView: install(windowEvents),
+  });
+  const focusCalls = [];
+  let disabled = target.disabled;
+  target.isConnected = true;
+  target.focus = (options) => { focusCalls.push(options); ui.document.activeElement = target; };
+  Object.defineProperty(target, 'disabled', {
+    get: () => disabled,
+    set(value) {
+      disabled = value;
+      if (value && ui.document.activeElement === target) ui.document.activeElement = ui.document.body;
+    },
+  });
+  return {
+    focusCalls,
+    move(name) { (name === 'blur' ? windowEvents : documentEvents).get(name)?.(); },
+    cleaned() { assert.equal(documentEvents.size, 0); assert.equal(windowEvents.size, 0); },
+  };
+}
+for (const mastery of [false, true]) {
+  for (const failure of [false, true]) {
+    await test(`focus: ${mastery ? 'mastery' : 'save'} ${failure ? 'uncertain' : 'success'} restores original control`, async () => {
+      const ui = setup(() => { if (failure) throw new TypeError('synthetic'); return response(success(mastery)); });
+      const target = mastery ? ui.submit : ui.saves[0];
+      const f = focusFixture(ui, target);
+      await (mastery ? ui.mastery() : ui.click());
+      assert.equal(ui.document.activeElement, target);
+      assert.equal(f.focusCalls.length, 1);
+      assert.equal(f.focusCalls[0].preventScroll, true);
+      f.cleaned(); restored(ui);
+    });
+  }
+}
+for (const event of ['focusin', 'pointerdown', 'keydown', 'blur']) {
+  await test(`focus: later ${event} prevents recovery from stealing focus`, async () => {
+    let release;
+    const ui = setup(() => new Promise((resolve) => { release = resolve; }));
+    const f = focusFixture(ui, ui.saves[0]);
+    const pending = ui.click(); await drain();
+    f.move(event); release(response(success())); await pending;
+    assert.equal(f.focusCalls.length, 0); f.cleaned(); restored(ui);
+  });
+}
+for (const reason of ['removed', 'different-control', 'background']) {
+  await test(`focus: ${reason} suppresses unsafe restoration`, async () => {
+    let release;
+    const ui = setup(() => new Promise((resolve) => { release = resolve; }));
+    const f = focusFixture(ui, ui.saves[0]);
+    const pending = ui.click(); await drain();
+    if (reason === 'removed') ui.saves[0].isConnected = false;
+    if (reason === 'different-control') ui.document.activeElement = {};
+    if (reason === 'background') ui.document.hasFocus = () => false;
+    release(response(success())); await pending;
+    assert.equal(f.focusCalls.length, 0); f.cleaned(); restored(ui);
+  });
+}
+await test('focus: timeout restores once and late completion never refocuses', async () => {
+  let release;
+  const ui = setup(() => new Promise((resolve) => { release = resolve; }));
+  const f = focusFixture(ui, ui.saves[0]);
+  const pending = ui.click(); await drain(); ui.timeout(); await pending;
+  assert.equal(f.focusCalls.length, 1); f.cleaned(); restored(ui); unchanged(ui);
+  release(response(success())); await drain();
+  assert.equal(f.focusCalls.length, 1); unchanged(ui);
+});

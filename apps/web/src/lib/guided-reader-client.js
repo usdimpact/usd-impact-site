@@ -137,12 +137,33 @@ const GUIDED_READER_CLIENT = String.raw`(function guidedReaderClient(chapter) {
     }
   }
 
+  function preserveControlFocus() {
+    const focused = document.activeElement;
+    if (!controls.includes(focused)) return () => {};
+    let moved = false;
+    const noteMove = () => { moved = true; };
+    const events = ['focusin', 'pointerdown', 'keydown'];
+    events.forEach((name) => document.addEventListener(name, noteMove, true));
+    const view = document.defaultView;
+    view?.addEventListener('blur', noteMove);
+    return () => {
+      events.forEach((name) => document.removeEventListener(name, noteMove, true));
+      view?.removeEventListener('blur', noteMove);
+      // Recover only focus lost to disabling; never undo later user navigation.
+      if (!moved && focused.isConnected && !focused.disabled && document.hasFocus()
+        && (document.activeElement === document.body || document.activeElement === document.documentElement)) {
+        focused.focus({ preventScroll: true });
+      }
+    };
+  }
+
   async function perform(mastery, payloadFactory) {
     const status = mastery ? masteryStatus : readerStatus;
     if (busy) return;
     if (confirmationRequired) { setStatus(status, unconfirmed(mastery), 'error'); return; }
     busy = true;
     const previousDisabled = controls.map((control) => control.disabled);
+    const restoreFocus = preserveControlFocus();
     controls.forEach((control) => { control.disabled = true; });
     setStatus(status, mastery ? 'Checking your answers\u2026' : 'Saving your place\u2026', 'pending');
     let dispatched = false;
@@ -176,6 +197,7 @@ const GUIDED_READER_CLIENT = String.raw`(function guidedReaderClient(chapter) {
     } finally {
       controls.forEach((control, index) => { control.disabled = previousDisabled[index]; });
       busy = false;
+      restoreFocus();
     }
   }
 

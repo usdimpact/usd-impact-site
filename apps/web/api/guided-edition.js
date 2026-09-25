@@ -1,3 +1,5 @@
+import { renderGuidedReaderScript } from '../src/lib/guided-reader-client.js';
+import { readGuidedLearningProgressBatch } from '../src/lib/guided-progress-batch.js';
 import { memberMainMenuAssets, renderMemberMainMenu } from '../src/lib/site-navigation.js';
 import {
   readAccountAccessState,
@@ -167,7 +169,14 @@ ${memberMainMenuAssets()}
 }
 
 function renderLibrary(chaptersWithProgress, supplements) {
+  const progressUnavailable = chaptersWithProgress.some(({ progress }) => progress === null);
+  const progressNotice = progressUnavailable
+    ? '<section class="card" role="status" aria-labelledby="library-progress-notice"><h2 id="library-progress-notice">Saved progress is temporarily unavailable</h2><p>Your saved positions and mastery results could not be checked. Open a chapter to keep reading, or reload the library to try again.</p></section>'
+    : '';
   const chapterCards = chaptersWithProgress.map(({ chapter, progress }) => {
+    if (progress === null) {
+      return `<article class="card canonical"><p class="eyebrow">Canonical chapter · Chapter ${chapter.number}</p><h2>${escapeHtml(chapter.title)}</h2><p>${escapeHtml(chapter.description)}</p><p class="muted">Progress unavailable.</p><div class="actions"><a class="button primary" href="/guided-edition/${escapeHtml(chapter.slug)}/">Open chapter</a></div></article>`;
+    }
     const href = guidedResumeHref(chapter, progress);
     const stateCopy = progress.completedAt
       ? 'Mastery complete.'
@@ -181,7 +190,7 @@ function renderLibrary(chaptersWithProgress, supplements) {
     title: 'Guided Interactive Edition',
     eyebrow: 'Protected learning library',
     lead: 'Read the 13 chapters, save your place, complete mastery checks, and open the protected reference library.',
-    content: `<div class="stack">${chapterCards}${referenceCards ? `<section class="card canonical"><p class="eyebrow">Reference library</p><h2>Book supplements</h2><p>Protected references supplement the numbered chapters without changing chapter mastery or progress.</p></section>${referenceCards}` : ''}</div>`,
+    content: `<div class="stack">${progressNotice}${chapterCards}${referenceCards ? `<section class="card canonical"><p class="eyebrow">Reference library</p><h2>Book supplements</h2><p>Protected references supplement the numbered chapters without changing chapter mastery or progress.</p></section>${referenceCards}` : ''}</div>`,
   });
 }
 
@@ -194,13 +203,12 @@ function renderChapter(chapter, progress) {
     return `<section id="${escapeHtml(section.id)}" class="reader-section" tabindex="-1"><h2>${escapeHtml(section.title)}</h2>${(section.paragraphs || []).map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}${groups}${compliance}<button class="button save-place" type="button" data-position="${escapeHtml(section.id)}" data-progress="${section.progressPercent}">Save my place here</button></section>`;
   }).join('');
   const questions = publicChapter.mastery.questions.map((question) => `<fieldset class="mastery-question"><legend>${escapeHtml(question.prompt)}</legend>${question.options.map((option) => `<label class="option"><input type="radio" name="${escapeHtml(question.questionId)}" value="${escapeHtml(option.id)}" required> ${escapeHtml(option.label)}</label>`).join('')}</fieldset>`).join('');
-  const scriptData = JSON.stringify({ contentId: publicChapter.contentId }).replaceAll('<', '\\u003c');
   return shell({
     title: publicChapter.title,
     eyebrow: `Guided Interactive Edition · Chapter ${publicChapter.number}`,
     lead: publicChapter.description,
-    content: `<div class="reader-grid"><aside class="card reader-nav" aria-label="Chapter navigation"><p class="eyebrow">Your progress</p><div class="progress-row"><progress id="chapter-progress" max="100" value="${progress.progressPercent}"></progress><strong id="chapter-percent">${progress.progressPercent}%</strong></div><p id="reader-status" class="status" role="status" aria-live="polite"></p><nav aria-label="On this page"><ul>${navigation}</ul></nav><a href="/guided-edition/">Back to library</a></aside><article class="reader-content"><section class="card canonical" aria-labelledby="chapter-purpose-heading"><p class="eyebrow">${escapeHtml(publicChapter.part)} · Chapter ${publicChapter.number}</p><h2 id="chapter-purpose-heading">What this chapter does</h2><p>${escapeHtml(publicChapter.purpose)}</p><p class="source-note">Source verified from ${escapeHtml(publicChapter.source.productionBuild)}, edition ${escapeHtml(publicChapter.source.edition)}, printed pages ${escapeHtml(publicChapter.source.printedPages)}.</p></section>${sections}<section id="mastery" class="mastery" aria-labelledby="mastery-heading"><h2 id="mastery-heading">Mastery check</h2><p>Answer all five questions. A score of 80% or higher completes the chapter.</p><form id="mastery-form">${questions}<button class="button primary" type="submit">Check my answers</button></form><p id="mastery-status" class="status" role="status" aria-live="polite"></p><ul id="mastery-feedback" class="feedback-list"></ul></section></article></div>`,
-    script: `<script>const guidedChapter=${scriptData};const progress=document.getElementById('chapter-progress');const percent=document.getElementById('chapter-percent');const readerStatus=document.getElementById('reader-status');const masteryStatus=document.getElementById('mastery-status');const feedbackList=document.getElementById('mastery-feedback');const updateProgress=(value)=>{if(progress)progress.value=value;if(percent)percent.textContent=value+'%'};document.querySelectorAll('.save-place').forEach((button)=>button.addEventListener('click',async()=>{button.disabled=true;readerStatus.textContent='Saving your place…';const response=await fetch('/api/guided-edition?action=progress',{method:'PATCH',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId:guidedChapter.contentId,resumePosition:button.dataset.position,progressPercent:Number(button.dataset.progress)})});const body=await response.json().catch(()=>({}));button.disabled=false;if(!response.ok){readerStatus.textContent=body.error||'Your place could not be saved.';readerStatus.dataset.state='error';return}updateProgress(body.progress.progressPercent);readerStatus.textContent='Your place was saved.';readerStatus.dataset.state='success'}));document.getElementById('mastery-form')?.addEventListener('submit',async(event)=>{event.preventDefault();const answers=Object.fromEntries(new FormData(event.currentTarget).entries());const submit=event.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;masteryStatus.textContent='Checking your answers…';feedbackList.replaceChildren();const response=await fetch('/api/guided-edition?action=mastery',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId:guidedChapter.contentId,answers})});const body=await response.json().catch(()=>({}));submit.disabled=false;if(!response.ok){masteryStatus.textContent=body.error||'The mastery check could not be recorded.';masteryStatus.dataset.state='error';return}updateProgress(body.progress.progressPercent);masteryStatus.textContent=body.feedback;masteryStatus.dataset.state=body.passed?'success':'error';for(const result of body.questionResults||[]){const item=document.createElement('li');item.textContent=result.feedback;if(!result.correct&&result.reviewSectionId){const link=document.createElement('a');link.href='#'+result.reviewSectionId;link.textContent=' Review this section.';item.append(link)}feedbackList.append(item)}});</script>`,
+    content: `<div class="reader-grid"><aside class="card reader-nav" aria-label="Chapter navigation"><p id="chapter-progress-label" class="eyebrow">Your progress</p><div class="progress-row"><progress id="chapter-progress" aria-labelledby="chapter-progress-label" max="100" value="${progress.progressPercent}"></progress><strong id="chapter-percent">${progress.progressPercent}%</strong></div><p id="reader-status" class="status" role="status" aria-live="polite"></p><nav aria-label="On this page"><ul>${navigation}</ul></nav><a href="/guided-edition/">Back to library</a></aside><article class="reader-content"><section class="card canonical" aria-labelledby="chapter-purpose-heading"><p class="eyebrow">${escapeHtml(publicChapter.part)} · Chapter ${publicChapter.number}</p><h2 id="chapter-purpose-heading">What this chapter does</h2><p>${escapeHtml(publicChapter.purpose)}</p><p class="source-note">Source verified from ${escapeHtml(publicChapter.source.productionBuild)}, edition ${escapeHtml(publicChapter.source.edition)}, printed pages ${escapeHtml(publicChapter.source.printedPages)}.</p></section>${sections}<section id="mastery" class="mastery" aria-labelledby="mastery-heading"><h2 id="mastery-heading">Mastery check</h2><p>Answer all five questions. A score of 80% or higher completes the chapter.</p><form id="mastery-form">${questions}<button class="button primary" type="submit">Check my answers</button></form><p id="mastery-status" class="status" role="status" aria-live="polite"></p><ul id="mastery-feedback" class="feedback-list"></ul></section></article></div>`,
+    script: renderGuidedReaderScript(publicChapter),
   });
 }
 
@@ -340,6 +348,7 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
     readSupplementCatalog: overrides.readSupplementCatalog || readGuidedSupplementCatalog,
     readSupplement: overrides.readSupplement || readGuidedSupplementRelease,
     readProgress: overrides.readProgress || readGuidedLearningProgress,
+    readProgressBatch: overrides.readProgressBatch || readGuidedLearningProgressBatch,
     recordProgress: overrides.recordProgress || recordGuidedLearningProgress,
   };
   response.setHeader('Cache-Control', 'private, no-store, max-age=0');
@@ -431,14 +440,25 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
       ]);
       const chapters = normalizeGuidedContentCatalog(chapterRows);
       const supplements = normalizeGuidedSupplementCatalog(supplementRows);
-      const chaptersWithProgress = await Promise.all(chapters.map(async (chapter) => {
-        let row = null;
-        try {
-          row = await dependencies.readProgress({ accessToken, accountId: state.user.id, contentId: chapter.contentId });
-        } catch (error) {
-          console.error('Guided Edition progress read failed.', error);
-        }
-        return { chapter, progress: normalizeGuidedProgressRecord(row, chapter) };
+      let progressBatch;
+      try {
+        progressBatch = await dependencies.readProgressBatch({
+          accessToken, accountId: state.user.id,
+          contentIds: chapters.map(chapter => chapter.contentId),
+          environment: dependencies.environment,
+        });
+      } catch {
+        // Never log raw provider exceptions, credentials or learner payloads.
+        progressBatch = null;
+      }
+      const complete = progressBatch?.status === 'complete'
+        && Array.isArray(progressBatch.rowsByChapter)
+        && progressBatch.rowsByChapter.length === chapters.length
+        && progressBatch.rowsByChapter.every((entry, index) => entry?.contentId === chapters[index].contentId);
+      if (!complete) console.error('Guided Edition library progress unavailable.');
+      const chaptersWithProgress = chapters.map((chapter, index) => ({
+        chapter,
+        progress: complete ? normalizeGuidedProgressRecord(progressBatch.rowsByChapter[index].row, chapter) : null,
       }));
       body = renderLibrary(chaptersWithProgress, supplements);
     } catch (error) {

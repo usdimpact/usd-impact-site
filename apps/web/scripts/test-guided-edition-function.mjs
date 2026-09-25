@@ -1,3 +1,4 @@
+import './test-guided-reader-client.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { handleGuidedEditionRequest } from '../api/guided-edition.js';
@@ -135,6 +136,9 @@ async function run(input, dependencies = {}) {
       return testRelease;
     },
     readProgress: async () => null,
+    readProgressBatch: async ({ contentIds }) => ({
+      status: 'complete', rowsByChapter: contentIds.map(contentId => ({ contentId, row: null })),
+    }),
     recordProgress: async () => ({
       status: 'in_progress', progress_percent: 50, resume_position: 'test-middle',
       mastery_score: null, attempt_count: 0, completed_at: null,
@@ -174,14 +178,14 @@ for (const reason of ['missing', 'suspended', 'suspended_dispute', 'refunded', '
 assert.equal(protectedContentReads, 0);
 
 const library = await run(request({ authenticated: true }), {
-  readProgress: async ({ accessToken: received, accountId: receivedAccount, contentId }) => {
+  readProgressBatch: async ({ accessToken: received, accountId: receivedAccount, contentIds }) => {
     assert.equal(received, accessToken);
     assert.equal(receivedAccount, accountId);
-    assert.equal(contentId, testContent.contentId);
-    return {
+    assert.deepEqual(contentIds, [testContent.contentId]);
+    return { status: 'complete', rowsByChapter: [{ contentId: testContent.contentId, row: {
       status: 'in_progress', progress_percent: 50, resume_position: 'test-middle',
       attempt_count: 1, data: { contentVersion: 2 },
-    };
+    } }] };
   },
 });
 assert.equal(library.statusCode, 200);
@@ -208,6 +212,8 @@ assert.equal(multiChapterLibrary.statusCode, 200);
 assert.ok(multiChapterLibrary.body.indexOf('Protected test chapter 1') < multiChapterLibrary.body.indexOf('Protected test chapter 2'));
 
 const chapter = await run(request({ authenticated: true, url: '/api/guided-edition?__paid_path=chapter-1' }));
+assert.match(chapter.body, /<p id="chapter-progress-label" class="eyebrow">Your progress<\/p>/);
+assert.match(chapter.body, /<progress id="chapter-progress" aria-labelledby="chapter-progress-label"/);
 assert.equal(chapter.statusCode, 200);
 assert.match(chapter.body, /Protected test chapter/);
 assert.match(chapter.body, /What this chapter does/);
@@ -353,3 +359,6 @@ assert.equal(postPage.statusCode, 405);
 assert.equal(postPage.getHeader('allow'), 'GET, HEAD');
 
 console.log('Serverless Guided Edition private-content routing tests passed.');
+
+// Batch transport and library-unavailable integration regressions.
+await import('./test-guided-progress-batch.mjs');

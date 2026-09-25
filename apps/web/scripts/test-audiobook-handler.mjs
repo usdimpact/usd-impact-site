@@ -1,3 +1,4 @@
+import './test-audiobook-player-client.mjs';
 import assert from 'node:assert/strict';
 import { handleAudiobookRequest, renderProtectedAudiobook } from '../src/lib/audiobook-handler.js';
 import { SESSION_COOKIE_NAMES } from '../src/lib/supabase-auth.js';
@@ -77,3 +78,7 @@ assert.equal(post.statusCode, 405);
 assert.equal(post.getHeader('allow'), 'GET, HEAD');
 
 console.log('Protected audiobook handler tests passed.');
+
+assert.match(publicHtml, /data-retry>Retry chapter/);
+assert.match(publicHtml, /data-restart>Start chapter over/);
+assert.match(publicHtml, /Listening progress will be saved on this device when available/);

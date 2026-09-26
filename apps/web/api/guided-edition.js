@@ -1,3 +1,4 @@
+import { readGuidedLearningProgressBatch } from '../src/lib/guided-progress-batch.js';
 import { memberMainMenuAssets, renderMemberMainMenu } from '../src/lib/site-navigation.js';
 import {
   readAccountAccessState,
@@ -167,7 +168,14 @@ ${memberMainMenuAssets()}
 }
 
 function renderLibrary(chaptersWithProgress, supplements) {
+  const progressUnavailable = chaptersWithProgress.some(({ progress }) => progress === null);
+  const progressNotice = progressUnavailable
+    ? '<section class="card" role="status" aria-labelledby="library-progress-notice"><h2 id="library-progress-notice">Saved progress is temporarily unavailable</h2><p>Your saved positions and mastery results could not be checked. Open a chapter to keep reading, or reload the library to try again.</p></section>'
+    : '';
   const chapterCards = chaptersWithProgress.map(({ chapter, progress }) => {
+    if (progress === null) {
+      return `<article class="card canonical"><p class="eyebrow">Canonical chapter · Chapter ${chapter.number}</p><h2>${escapeHtml(chapter.title)}</h2><p>${escapeHtml(chapter.description)}</p><p class="muted">Progress unavailable.</p><div class="actions"><a class="button primary" href="/guided-edition/${escapeHtml(chapter.slug)}/">Open chapter</a></div></article>`;
+    }
     const href = guidedResumeHref(chapter, progress);
     const stateCopy = progress.completedAt
       ? 'Mastery complete.'
@@ -181,7 +189,7 @@ function renderLibrary(chaptersWithProgress, supplements) {
     title: 'Guided Interactive Edition',
     eyebrow: 'Protected learning library',
     lead: 'Read the 13 chapters, save your place, complete mastery checks, and open the protected reference library.',
-    content: `<div class="stack">${chapterCards}${referenceCards ? `<section class="card canonical"><p class="eyebrow">Reference library</p><h2>Book supplements</h2><p>Protected references supplement the numbered chapters without changing chapter mastery or progress.</p></section>${referenceCards}` : ''}</div>`,
+    content: `<div class="stack">${progressNotice}${chapterCards}${referenceCards ? `<section class="card canonical"><p class="eyebrow">Reference library</p><h2>Book supplements</h2><p>Protected references supplement the numbered chapters without changing chapter mastery or progress.</p></section>${referenceCards}` : ''}</div>`,
   });
 }
 
@@ -340,6 +348,7 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
     readSupplementCatalog: overrides.readSupplementCatalog || readGuidedSupplementCatalog,
     readSupplement: overrides.readSupplement || readGuidedSupplementRelease,
     readProgress: overrides.readProgress || readGuidedLearningProgress,
+    readProgressBatch: overrides.readProgressBatch || readGuidedLearningProgressBatch,
     recordProgress: overrides.recordProgress || recordGuidedLearningProgress,
   };
   response.setHeader('Cache-Control', 'private, no-store, max-age=0');
@@ -431,14 +440,25 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
       ]);
       const chapters = normalizeGuidedContentCatalog(chapterRows);
       const supplements = normalizeGuidedSupplementCatalog(supplementRows);
-      const chaptersWithProgress = await Promise.all(chapters.map(async (chapter) => {
-        let row = null;
-        try {
-          row = await dependencies.readProgress({ accessToken, accountId: state.user.id, contentId: chapter.contentId });
-        } catch (error) {
-          console.error('Guided Edition progress read failed.', error);
-        }
-        return { chapter, progress: normalizeGuidedProgressRecord(row, chapter) };
+      let progressBatch;
+      try {
+        progressBatch = await dependencies.readProgressBatch({
+          accessToken, accountId: state.user.id,
+          contentIds: chapters.map(chapter => chapter.contentId),
+          environment: dependencies.environment,
+        });
+      } catch {
+        // Never log raw provider exceptions, credentials or learner payloads.
+        progressBatch = null;
+      }
+      const complete = progressBatch?.status === 'complete'
+        && Array.isArray(progressBatch.rowsByChapter)
+        && progressBatch.rowsByChapter.length === chapters.length
+        && progressBatch.rowsByChapter.every((entry, index) => entry?.contentId === chapters[index].contentId);
+      if (!complete) console.error('Guided Edition library progress unavailable.');
+      const chaptersWithProgress = chapters.map((chapter, index) => ({
+        chapter,
+        progress: complete ? normalizeGuidedProgressRecord(progressBatch.rowsByChapter[index].row, chapter) : null,
       }));
       body = renderLibrary(chaptersWithProgress, supplements);
     } catch (error) {

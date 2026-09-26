@@ -110,10 +110,13 @@ jobs:
             process.stdout.write(url.toString());
           ')"
           echo "BACKGROUND_ENDPOINT=$background_endpoint" >> "$GITHUB_ENV"
+          edition_date="$(date -u +%F)"
+          echo "EDITION_DATE=$edition_date" >> "$GITHUB_ENV"
 
           curl --fail --silent --show-error --location \
             --request POST --max-time 60 \
             -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
+            -H "X-USD-Impact-Edition-Date: $edition_date" \
             "$background_endpoint" \
             --output "$RUNNER_TEMP/daily-usd-impact-start.json"
 
@@ -148,13 +151,14 @@ jobs:
 
             while [ "$(date -u +%s)" -lt "$((active_started_at + max_active_seconds))" ]; do
               poll_attempt="$((poll_attempt + 1))"
-              poll_url="${BACKGROUND_ENDPOINT}?response_id=${response_id}"
               rm -f "$poll_payload"
               curl_exit=0
               http_code="$(curl --silent --show-error --location \
                 --max-time 240 \
                 -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
-                "$poll_url" \
+                -H "X-USD-Impact-Edition-Date: $EDITION_DATE" \
+                -H "X-USD-Impact-Response-Id: $response_id" \
+                "$BACKGROUND_ENDPOINT" \
                 --output "$poll_payload" \
                 --write-out '%{http_code}')" || curl_exit=$?
 
@@ -202,6 +206,7 @@ jobs:
                 curl --fail --silent --show-error --location \
                   --request POST --max-time 60 \
                   -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN" \
+                  -H "X-USD-Impact-Edition-Date: $EDITION_DATE" \
                   "$BACKGROUND_ENDPOINT" \
                   --output "$RUNNER_TEMP/daily-usd-impact-retry-start.json"
 

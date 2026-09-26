@@ -13,6 +13,14 @@ lastReviewed: "2026-09-03"
 status: "published"
 category: "USD Impact Catalyst Brief"
 statusLabel: "scheduled-confirmed"
+archiveNote:
+  addedAt: "2026-09-16"
+  introduction: "This briefing was prepared before the September 4 release."
+  links:
+    - context: "For the released August 2026 Employment Situation, read our"
+      label: "verified outcome brief"
+      href: "/news/catalysts/2026-09-04-bls-employment-situation-for-august-2026-released-outcome"
+  closing: "The preview below preserves the information available before release."
 summary: "The Bureau of Labor Statistics has scheduled the Employment Situation for August 2026 for Friday, September 4 at 8:30 a.m. Eastern Time. The report will provide the household- and establishment-survey measures used to assess employment, unemployment, participation, hours, earnings, and prior-month revisions."
 assets:
   - "DXY"

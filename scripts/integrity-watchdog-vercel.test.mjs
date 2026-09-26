@@ -89,3 +89,6 @@ assert.doesNotMatch(JSON.stringify(direct), new RegExp(runtimeSecretShape));
 assert.doesNotMatch(JSON.stringify(direct), /runtime-value-not-for-evidence/);
 
 console.log('USD Impact Vercel watchdog read-boundary tests passed.');
+
+// Offline capacity metadata adapter checks; no provider collection is activated.
+await import('./integrity-watchdog-capacity-preview.test.mjs');

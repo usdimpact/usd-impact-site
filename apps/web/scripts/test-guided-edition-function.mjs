@@ -1,3 +1,4 @@
+import './test-guided-reader-client.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { handleGuidedEditionRequest } from '../api/guided-edition.js';
@@ -208,6 +209,8 @@ assert.equal(multiChapterLibrary.statusCode, 200);
 assert.ok(multiChapterLibrary.body.indexOf('Protected test chapter 1') < multiChapterLibrary.body.indexOf('Protected test chapter 2'));
 
 const chapter = await run(request({ authenticated: true, url: '/api/guided-edition?__paid_path=chapter-1' }));
+assert.match(chapter.body, /<p id="chapter-progress-label" class="eyebrow">Your progress<\/p>/);
+assert.match(chapter.body, /<progress id="chapter-progress" aria-labelledby="chapter-progress-label"/);
 assert.equal(chapter.statusCode, 200);
 assert.match(chapter.body, /Protected test chapter/);
 assert.match(chapter.body, /What this chapter does/);

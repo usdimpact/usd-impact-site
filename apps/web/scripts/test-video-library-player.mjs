@@ -141,3 +141,6 @@ await new Promise((resolve) => setImmediate(resolve));
 assert.equal(pageExitBeforeResume.posts.length, 0, 'page exit must not overwrite an unapplied resume checkpoint');
 
 console.log('Video library player resume-race tests passed.');
+
+// Keep the legacy rollback asset covered and execute the versioned reliability suite.
+await import('./test-video-library-player-reliability.mjs');

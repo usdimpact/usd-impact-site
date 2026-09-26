@@ -173,7 +173,7 @@ export function renderProtectedVideoLesson({ video, signedToken, customerCode })
             <h2>Core concepts</h2><ul class="vl-pills">${concepts}</ul>
           </article>
           <aside class="vl-aside">
-            <div><span>Viewing progress</span><strong id="video-progress-label">Loading…</strong><div class="vl-watch-progress"><i id="video-progress-bar"></i></div></div>
+            <div><span>Viewing progress</span><strong id="video-progress-label">Loading…</strong><div class="vl-watch-progress"><i id="video-progress-bar"></i></div><p id="video-progress-sync" role="status" aria-live="polite" aria-atomic="true" data-state="loading">Loading saved progress...</p></div>
             <div><span>Collection</span><strong>${String(video.order).padStart(2, '0')} / ${String(collectionVideos.length).padStart(2, '0')}</strong><p>${escapeHtml(collection.title)}</p></div>
             <div><span>Accessibility</span><p>Verified English captions and keyboard-ready adaptive playback.</p></div>
             <div><span>Primary sources</span><ul>${sources}</ul></div>
@@ -184,7 +184,7 @@ export function renderProtectedVideoLesson({ video, signedToken, customerCode })
       </div>
     </main>`,
     scripts: `<script src="https://embed.cloudflarestream.com/embed/sdk.latest.js" defer></script>
-      <script src="/assets/video-library-player.js" data-video-slug="${escapeHtml(video.slug)}" data-video-duration="${Number(video.durationSeconds)}" defer></script>`,
+      <script src="/assets/video-library-player.v2.js" data-video-slug="${escapeHtml(video.slug)}" data-video-duration="${Number(video.durationSeconds)}" defer></script>`,
   });
 }
 

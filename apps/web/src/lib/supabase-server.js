@@ -1,4 +1,12 @@
 import { PAID_PRODUCT_ID, authorizePaidAccess } from './paid-access.js';
+import {
+  runVideoProgressStorage,
+  validateVideoProgressRows,
+  validateVideoProgressSave,
+  VideoProgressProviderError,
+  VIDEO_PROGRESS_LIST_BYTES,
+  VIDEO_PROGRESS_ROW_BYTES,
+} from './video-progress-provider.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ACCESS_TOKEN_PATTERN = /^[\x21-\x7E]{20,16384}$/;
@@ -270,13 +278,12 @@ export async function readOwnVideoProgress({
   const resolvedConfig = config || readSupabaseServerConfig(environment);
   const normalizedAccountId = requireAccountId(accountId);
   const normalizedContentId = contentId ? requireVideoContentId(contentId) : null;
-  const rows = await supabaseFetch({
-    config: resolvedConfig,
-    path: ownVideoProgressPath(normalizedAccountId, normalizedContentId),
-    accessToken,
-    fetchImpl,
+  return runVideoProgressStorage({ config: resolvedConfig, accessToken, fetchImpl }, async ({ request }) => {
+    const rows = await request(ownVideoProgressPath(normalizedAccountId, normalizedContentId), {
+      maxBytes: normalizedContentId ? VIDEO_PROGRESS_ROW_BYTES : VIDEO_PROGRESS_LIST_BYTES,
+    });
+    return validateVideoProgressRows(rows, normalizedAccountId, normalizedContentId);
   });
-  return Object.freeze(Array.isArray(rows) ? rows.map((row) => Object.freeze({ ...row })) : []);
 }
 
 function ownLearningProgressPath(accountId) {
@@ -325,41 +332,36 @@ export async function upsertOwnVideoProgress({
   if (!Number.isFinite(duration) || duration <= 0 || duration > 86_400) throw new TypeError('Video duration is invalid.');
   if (!Number.isInteger(percent) || percent < 0 || percent > 100) throw new TypeError('Video progress percentage is invalid.');
 
-  const existingRows = await readOwnVideoProgress({
-    accessToken,
-    accountId: normalizedAccountId,
-    contentId: normalizedContentId,
-    config: resolvedConfig,
-    fetchImpl,
+  return runVideoProgressStorage({ config: resolvedConfig, accessToken, fetchImpl }, async ({ request }) => {
+    const existingRows = validateVideoProgressRows(
+      await request(ownVideoProgressPath(normalizedAccountId, normalizedContentId)),
+      normalizedAccountId,
+      normalizedContentId,
+    );
+    const existing = existingRows[0] || null;
+    const remainsCompleted = existing?.status === 'completed';
+    const resolvedStatus = remainsCompleted ? 'completed' : status;
+    const resolvedPercent = resolvedStatus === 'completed' ? 100 : percent;
+    const body = {
+      account_id: normalizedAccountId,
+      content_id: normalizedContentId,
+      status: resolvedStatus,
+      progress_percent: resolvedPercent,
+      resume_position: position.toFixed(1),
+      data: {
+        contentType: 'video',
+        durationSeconds: Number(duration.toFixed(3)),
+      },
+      ...(resolvedStatus === 'completed'
+        ? { completed_at: existing?.completed_at || now.toISOString() }
+        : {}),
+    };
+    const rows = await request('/rest/v1/learning_progress?on_conflict=account_id,content_id', {
+      method: 'POST',
+      body,
+    });
+    return validateVideoProgressSave(rows, body);
   });
-  const existing = existingRows[0] || null;
-  const remainsCompleted = existing?.status === 'completed';
-  const resolvedStatus = remainsCompleted ? 'completed' : status;
-  const resolvedPercent = resolvedStatus === 'completed' ? 100 : percent;
-  const body = {
-    account_id: normalizedAccountId,
-    content_id: normalizedContentId,
-    status: resolvedStatus,
-    progress_percent: resolvedPercent,
-    resume_position: position.toFixed(1),
-    data: {
-      contentType: 'video',
-      durationSeconds: Number(duration.toFixed(3)),
-    },
-    ...(resolvedStatus === 'completed'
-      ? { completed_at: existing?.completed_at || now.toISOString() }
-      : {}),
-  };
-  const rows = await supabaseFetch({
-    config: resolvedConfig,
-    path: '/rest/v1/learning_progress?on_conflict=account_id,content_id',
-    method: 'POST',
-    accessToken,
-    body,
-    headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
-    fetchImpl,
-  });
-  return Object.freeze({ ...(firstRow(rows) || body) });
 }
 
 export async function exportOwnAccount({ accessToken, environment, config, fetchImpl }) {
@@ -404,10 +406,15 @@ export function sendJson(response, status, payload, extraHeaders = {}) {
 }
 
 export function safeSupabaseError(error) {
-  if (error instanceof SupabaseRequestError) {
+  if (error instanceof SupabaseRequestError || error instanceof VideoProgressProviderError) {
     return {
       status: error.status >= 400 && error.status < 600 ? error.status : 500,
       payload: { error: error.message, code: error.code },
+      // Export only a validated numeric cooldown from the video-specific error.
+      // Never forward arbitrary provider headers or diagnostics from other APIs.
+      ...(error instanceof VideoProgressProviderError && [429, 503].includes(error.status)
+        && Number.isInteger(error.retryAfterSeconds) && error.retryAfterSeconds >= 0 && error.retryAfterSeconds <= 60
+        ? { headers: { 'Retry-After': String(error.retryAfterSeconds) } } : {}),
     };
   }
   if (error instanceof SupabaseConfigurationError) {

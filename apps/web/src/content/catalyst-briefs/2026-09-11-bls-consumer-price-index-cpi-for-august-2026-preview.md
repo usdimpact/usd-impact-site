@@ -13,6 +13,14 @@ lastReviewed: "2026-09-09"
 status: "published"
 category: "USD Impact Catalyst Brief"
 statusLabel: "scheduled-confirmed"
+archiveNote:
+  addedAt: "2026-09-21"
+  introduction: "This briefing was prepared before the September 11 release of August 2026 CPI."
+  links:
+    - context: "For the released August CPI figures, read our"
+      label: "published outcome brief"
+      href: "/news/catalysts/2026-09-11-bls-consumer-price-index-cpi-for-august-2026-released-outcome"
+  closing: "The preview below preserves the information available before release."
 summary: "BLS schedules August CPI for September 11, 2026, at 8:30 a.m. Eastern Time, alongside Real Earnings. The figures are not yet released. Compare headline and core inflation with expectations, then observe Treasury yields and the dollar."
 assets:
   - "DXY"

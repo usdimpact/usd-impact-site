@@ -13,6 +13,14 @@ lastReviewed: "2026-09-14"
 status: "published"
 category: "USD Impact Catalyst Brief"
 statusLabel: "scheduled-confirmed"
+archiveNote:
+  addedAt: "2026-09-21"
+  introduction: "This briefing was prepared before the September 15–16, 2026 FOMC meeting."
+  links:
+    - context: "For the September 16 policy decision and meeting outcome, read our"
+      label: "published outcome brief"
+      href: "/news/catalysts/2026-09-16-fomc-scheduled-communications-meeting-entry-18-00-utc-press-conference-1-outcome"
+  closing: "The preview below preserves the information available before the meeting."
 summary: "The Federal Open Market Committee is scheduled to meet on Tuesday–Wednesday, September 15–16, 2026. The Federal Reserve calendar lists the policy statement for 2:00 p.m. ET on Wednesday, September 16, followed by the Chair’s press conference at 2:30 p.m. ET. The meeting is marked as one associated with the Summary of Economic Projections (SEP). The BLS release calendar scheduled the August 2026 CPI for Friday, September 11 at 8:30 a.m. ET; this brief does not assert the CPI result without a separately verified outcome source."
 assets:
   - "Fed"

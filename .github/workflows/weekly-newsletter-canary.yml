@@ -1,0 +1,51 @@
+name: Weekly newsletter canary contract
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/weekly-newsletter*.js'
+      - 'apps/web/src/lib/marketing*.js'
+      - 'apps/web/src/lib/supabase-*.js'
+      - 'apps/web/src/lib/resend-webhook*.js'
+      - 'apps/web/src/pages/account/newsletter-canary.astro'
+      - 'apps/web/api/waitlist.js'
+      - 'apps/web/scripts/test-weekly-newsletter-canary*.mjs'
+      - '.github/workflows/weekly-newsletter-canary.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/lib/weekly-newsletter*.js'
+      - 'apps/web/src/lib/marketing*.js'
+      - 'apps/web/src/lib/supabase-*.js'
+      - 'apps/web/src/lib/resend-webhook*.js'
+      - 'apps/web/src/pages/account/newsletter-canary.astro'
+      - 'apps/web/api/waitlist.js'
+      - 'apps/web/scripts/test-weekly-newsletter-canary*.mjs'
+      - '.github/workflows/weekly-newsletter-canary.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  weekly-newsletter-canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Syntax and offline contracts
+        run: |
+          node --check src/lib/weekly-newsletter-canary.js
+          node --check src/lib/weekly-newsletter-canary-handler.js
+          node scripts/test-weekly-newsletter-canary-handler.mjs

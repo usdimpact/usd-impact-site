@@ -329,4 +329,326 @@ assert.equal(diagnostic.code, 'invalid-source-date', 'Keep the existing diagnost
 assert.match(diagnostic.reason, /directly linked Treasury document/);
 assert.doesNotMatch(diagnostic.reason, /secret-looking-fixture-value|https?:/);
 
+// #676: synthetic attribution fixtures, not a live-source or market-fact audit.
+const fedIndex = 'https://www.federalreserve.gov/recentpostings.htm';
+const fedDocument = 'https://www.federalreserve.gov/newsevents/pressreleases/synthetic20260918a.htm';
+const fedIndexVariants = [
+  fedIndex,
+  `${fedIndex}/`,
+  `${fedIndex}//`,
+  `${fedIndex}?utm_source=fixture#postings`,
+  fedIndex.replace('www.', ''),
+  fedIndex.replace('www.federalreserve.gov', 'WWW.FEDERALRESERVE.GOV.'),
+  fedIndex.replace('recentpostings.htm', 'RECENTPOSTINGS.HTM'),
+  fedIndex.replace('recentpostings', '%72ecentpostings'),
+];
+for (const url of fedIndexVariants) {
+  assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.DOCUMENT_INDEX, url);
+  assert.equal(isLivingSourceUrl(url), false, 'The Fed index must not bypass date checks');
+  assert.match(sourceDateAttributionIssue(url), /^Federal Reserve Recent Postings index requires a directly linked dated document/);
+}
+for (const url of [
+  fedDocument,
+  fedIndex.replace('recentpostings.htm', 'recentpostings.htm/archive/2026'),
+  fedIndex.replace('recentpostings.htm', 'recentpostings-archive.htm'),
+  fedIndex.replace('recentpostings.htm', '%ZZrecentpostings.htm'),
+  fedIndex.replace('federalreserve.gov', 'federalreserve.gov.example.org'),
+  'https://example.org/?url=' + encodeURIComponent(fedIndex),
+]) {
+  assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.PUBLISHED, url);
+  assert.equal(sourceDateAttributionIssue(url), null, url);
+  assert.equal(isLivingSourceUrl(url), false, url);
+}
+assert.match(SOURCE_DATE_RULES, /Federal Reserve Recent Postings.*multi-document index for discovery only/i);
+assert.match(SOURCE_DATE_RULES, /index.*Last Update.*not.*document.*publication date/i);
+
+const fedAttributionBundle = (url, publishedAt) => ({
+  editionDate: '2026-09-21',
+  sources: [{ id: 'fed-item', url, publishedAt, title: 'Synthetic Fed document', sourceType: 'primary' }],
+  highlights: [{ headline: 'Synthetic document update.', sourceIds: ['fed-item'] }],
+  catalysts: [],
+  summary: 'Synthetic attribution fixture.',
+});
+for (const date of ['2026-07-21', '2026-09-03', '2026-09-18', '2026-09-21']) {
+  const candidate = fedAttributionBundle(fedIndex, date);
+  const original = structuredClone(candidate);
+  assert.throws(() => validateEditorialBundle(candidate), /Federal Reserve Recent Postings index requires/);
+  assert.deepEqual(candidate, original, 'Never silently rewrite a source date');
+}
+const fedFabricated = fedAttributionBundle(fedIndex, '2026-09-18');
+Object.assign(fedFabricated.sources[0], {
+  verified: true, dateBasis: 'last-updated', documentUrl: fedDocument,
+});
+assert.throws(() => validateEditorialBundle(fedFabricated), /directly linked dated document/);
+const fedNormalized = normalizeBundleDraft({ ...fedFabricated, date: '2026-09-21' });
+assert.equal(fedNormalized.sources[0].publishedAt, '2026-09-18');
+assert.throws(() => validateEditorialBundle({ ...fedNormalized, editionDate: fedNormalized.date }), /directly linked dated document/);
+const fedCatalystOnly = fedAttributionBundle(fedIndex, '2026-09-18');
+fedCatalystOnly.highlights = [];
+fedCatalystOnly.catalysts = [{ event: 'Synthetic document review', sourceIds: ['fed-item'] }];
+assert.throws(() => validateEditorialBundle(fedCatalystOnly), /directly linked dated document/);
+assert.doesNotThrow(() => validateEditorialBundle(fedAttributionBundle(fedDocument, '2026-09-18')));
+assert.throws(() => validateEditorialBundle(fedAttributionBundle(fedDocument, '2026-09-22')), /dated after the edition/);
+assert.throws(() => validateEditorialBundle(fedAttributionBundle(fedDocument, '2026-09-03')), /only stale daily-development sources/);
+const fedDiagnostic = safeValidationDiagnostic(`${sourceDateAttributionIssue(fedIndex)} https://example.org/private secret-looking-fixture-value`);
+assert.equal(fedDiagnostic.code, 'invalid-source-date', 'Preserve the existing bounded-repair category');
+assert.match(fedDiagnostic.reason, /directly linked Federal Reserve document/);
+assert.doesNotMatch(fedDiagnostic.reason, /secret-looking-fixture-value|https?:/);
+
+// Run the real importer only in a disposable local directory, without network.
+const { mkdir, mkdtemp, readFile, rm, writeFile } = await import('node:fs/promises');
+const { tmpdir } = await import('node:os');
+const { join } = await import('node:path');
+const { fileURLToPath } = await import('node:url');
+const { spawnSync } = await import('node:child_process');
+const fedRoot = await mkdtemp(join(tmpdir(), 'usd-impact-fed-index-'));
+const fedInput = join(fedRoot, 'bundle.json');
+const fedOutput = join(fedRoot, 'src/content/news/2026-09-21.md');
+const fedArchive = join(fedRoot, 'src/content/news/2026-09-03.md');
+const fedOldCatalyst = join(fedRoot, 'src/content/catalyst-briefs/fed-index.md');
+const fedArchiveRecord = (url, date) => `---\nstatus: "published"\nsources:\n  - id: "fed-item"\n    url: "${url}"\n    publishedAt: "${date}"\n---\n`;
+const fedImportBundle = (url, publishedAt) => ({
+  date: '2026-09-21', title: 'Synthetic Fed attribution test',
+  generatedAt: '2026-09-21T12:00:00Z', metaDescription: 'Synthetic importer fixture.',
+  marketRegime: 'fixture', summary: 'Synthetic source attribution.', catalysts: [],
+  highlights: [0, 1, 2].map((index) => ({
+    headline: `Synthetic document ${index + 1}`, development: 'Synthetic development.',
+    whyItMatters: 'Conditional fixture.', assets: ['DXY'], importance: 'low',
+    verification: 'verified-primary', sourceIds: index === 2 ? ['other-item'] : ['fed-item'],
+  })),
+  sources: [
+    { id: 'fed-item', title: 'Synthetic Fed document', publisher: 'Federal Reserve', url, publishedAt, sourceType: 'primary' },
+    { id: 'other-item', title: 'Synthetic other document', publisher: 'Fixture', url: 'https://example.org/fixture', publishedAt: '2026-09-18', sourceType: 'primary' },
+  ],
+});
+const fedRunImport = async (candidate, ...flags) => {
+  await writeFile(fedInput, JSON.stringify(candidate), 'utf8');
+  const result = spawnSync(process.execPath, [fileURLToPath(new URL('./import-daily-news.mjs', import.meta.url)), fedInput, ...flags], {
+    cwd: fedRoot, encoding: 'utf8', timeout: 10_000,
+  });
+  assert.equal(result.error, undefined, result.error?.message);
+  return result;
+};
+try {
+  await mkdir(join(fedRoot, 'src/content/news'), { recursive: true });
+  await mkdir(join(fedRoot, 'src/content/catalyst-briefs'), { recursive: true });
+  const savedArchive = fedArchiveRecord(fedIndex, '2026-07-21');
+  const savedCatalyst = fedArchiveRecord(fedIndex, '2026-09-03');
+  await writeFile(fedArchive, savedArchive);
+  await writeFile(fedOldCatalyst, savedCatalyst);
+  for (const url of fedIndexVariants) {
+    const rejected = await fedRunImport(fedImportBundle(url, '2026-09-18'), '--replace', '--publish');
+    assert.notEqual(rejected.status, 0);
+    assert.match(rejected.stderr, /Federal Reserve Recent Postings index requires a directly linked dated document/);
+    assert.equal(await readFile(fedArchive, 'utf8'), savedArchive);
+    assert.equal(await readFile(fedOldCatalyst, 'utf8'), savedCatalyst);
+    await assert.rejects(readFile(fedOutput), { code: 'ENOENT' });
+  }
+  const direct = await fedRunImport(fedImportBundle(fedDocument, '2026-09-18'), '--replace', '--publish');
+  assert.equal(direct.status, 0, direct.stderr);
+  const published = await readFile(fedOutput, 'utf8');
+  assert.match(published, /^status: "published"$/m);
+  assert.equal(await readFile(fedArchive, 'utf8'), savedArchive);
+  assert.equal(await readFile(fedOldCatalyst, 'utf8'), savedCatalyst);
+  const protectedResult = await fedRunImport(fedImportBundle(fedDocument, '2026-09-18'), '--replace', '--publish');
+  assert.notEqual(protectedResult.status, 0);
+  assert.match(protectedResult.stderr, /already published and cannot be replaced/);
+  const noop = await fedRunImport(fedImportBundle(fedDocument, '2026-09-18'), '--replace', '--skip-published', '--publish');
+  assert.equal(noop.status, 0, noop.stderr);
+  assert.equal(await readFile(fedOutput, 'utf8'), published);
+  await rm(fedOutput);
+  await rm(fedArchive);
+  await rm(fedOldCatalyst);
+  const noHistoryResult = await fedRunImport(fedImportBundle(fedIndex, '2026-09-18'), '--replace');
+  assert.notEqual(noHistoryResult.status, 0);
+  assert.match(noHistoryResult.stderr, /directly linked dated document/);
+  await assert.rejects(readFile(fedOutput), { code: 'ENOENT' });
+  const fixedArchive = fedArchiveRecord(fedDocument, '2026-09-17');
+  await writeFile(fedArchive, fixedArchive);
+  const fixedConflict = await fedRunImport(fedImportBundle(fedDocument, '2026-09-18'), '--replace');
+  assert.notEqual(fixedConflict.status, 0);
+  assert.match(fixedConflict.stderr, /publishedAt 2026-09-18 conflicts with previously verified 2026-09-17/);
+  await writeFile(fedOldCatalyst, fedArchiveRecord(fedDocument, '2026-09-16'));
+  const multipleFixedDates = await fedRunImport(fedImportBundle(fedDocument, '2026-09-18'), '--replace');
+  assert.notEqual(multipleFixedDates.status, 0);
+  assert.match(multipleFixedDates.stderr, /conflicting historical publication dates/);
+  assert.equal(await readFile(fedArchive, 'utf8'), fixedArchive);
+  await assert.rejects(readFile(fedOutput), { code: 'ENOENT' });
+} finally {
+  await rm(fedRoot, { recursive: true, force: true });
+}
+
+// #676 EIA: synthetic release identities, never live-source certification.
+const eiaPointer = 'https://www.eia.gov/petroleum/supply/weekly/pdf/wpsrall.pdf';
+const eiaReleasePage = 'https://www.eia.gov/petroleum/supply/weekly/archive/2026/2026_09_16/wpsr_2026_09_16.php';
+const eiaReleasePdf = 'https://www.eia.gov/petroleum/supply/weekly/archive/2026/2026_09_16/pdf/wpsrall.pdf';
+const eiaPointerVariants = [
+  eiaPointer, `${eiaPointer}/`, `${eiaPointer}//`,
+  `${eiaPointer}?utm_source=fixture#page=1`, `${eiaPointer}?release=2026-09-16`,
+  eiaPointer.replace('www.', ''),
+  eiaPointer.replace('www.eia.gov', 'WWW.EIA.GOV.'),
+  eiaPointer.replace('wpsrall.pdf', '%77psrall.pdf'),
+  eiaPointer.replace('/petroleum/', '/%70etroleum/'),
+  eiaPointer.replace('/pdf/wpsrall.pdf', '/PDF/WPSRALL.PDF'),
+  eiaPointer.replace('https:', 'http:'),
+  eiaPointer.replace('www.eia.gov', 'www.eia.gov:443'),
+];
+let eiaCases = 0;
+function eiaCheck(label, fn) {
+  try { fn(); } catch (error) { error.message = `${label}: ${error.message}`; throw error; }
+  eiaCases += 1;
+}
+for (const url of eiaPointerVariants) {
+  eiaCheck('rolling pointer classification', () => {
+    assert.equal(sourceDateBasisForUrl(url), 'rolling-report');
+    assert.equal(SOURCE_DATE_BASIS.ROLLING_REPORT, 'rolling-report');
+    assert.equal(isLivingSourceUrl(url), false, 'Rolling pointer must not be a date-check exemption');
+    assert.match(sourceDateAttributionIssue(url), /^EIA weekly petroleum rolling report requires a verified dated archive document/);
+  });
+}
+for (const url of [
+  eiaReleasePage, eiaReleasePdf, `${eiaReleasePage}?utm_source=fixture`,
+  eiaPointer.replace('wpsrall.pdf', 'overview.pdf'),
+  eiaPointer.replace('wpsrall.pdf', 'wpsrall.pdf.backup'),
+  `${eiaPointer}/archive/2026`, eiaPointer.replace('wpsrall.pdf', '%ZZwpsrall.pdf'),
+  eiaPointer.replace('www.eia.gov', 'www.eia.gov.example.org'),
+  eiaPointer.replace('www.eia.gov', 'not-eia.gov'),
+  eiaPointer.replace('www.eia.gov', 'www.eia.gov@example.org'),
+  'https://example.org/?url=' + encodeURIComponent(eiaPointer),
+  'not-a-url', null,
+]) {
+  eiaCheck('non-target remains non-exempt', () => {
+    assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.PUBLISHED);
+    assert.equal(isLivingSourceUrl(url), false);
+    assert.equal(sourceDateAttributionIssue(url), null);
+  });
+}
+eiaCheck('existing landing page contract unchanged', () => {
+  assert.equal(sourceDateBasisForUrl('https://www.eia.gov/petroleum/supply/weekly/index.php'), SOURCE_DATE_BASIS.CURRENT_RELEASE);
+  assert.equal(sourceDateAttributionIssue('https://www.eia.gov/petroleum/supply/weekly/index.php'), null);
+});
+eiaCheck('generation rules distinguish release and data dates', () => {
+  assert.match(SOURCE_DATE_RULES, /EIA Weekly Petroleum Status Report.*wpsrall\.pdf/);
+  assert.match(SOURCE_DATE_RULES, /verified dated archive.*Release Date/);
+  assert.match(SOURCE_DATE_RULES, /not the data-week ending date.*next release date.*access date/);
+  assert.match(SOURCE_DATE_RULES, /Never construct an archive URL from an assumed date/);
+});
+const eiaEditorialBundle = (url, date) => {
+  const bundle = fedAttributionBundle(url, date);
+  bundle.sources[0].title = 'Synthetic EIA release';
+  return bundle;
+};
+for (const date of ['2026-08-12', '2026-08-19', '2026-09-11', '2026-09-16', '2026-09-21', '2026-09-23']) {
+  eiaCheck('no supplied date legitimizes a rolling pointer', () => {
+    const candidate = eiaEditorialBundle(eiaPointer, date);
+    const before = structuredClone(candidate);
+    assert.throws(() => validateEditorialBundle(candidate), /EIA weekly petroleum rolling report requires/);
+    assert.deepEqual(candidate, before, 'Never silently rewrite URL, date or content');
+  });
+}
+eiaCheck('fabricated attribution cannot bypass either early gate', () => {
+  const candidate = eiaEditorialBundle(eiaPointer, '2026-09-16');
+  Object.assign(candidate.sources[0], { verified: true, dateBasis: 'current-release', documentUrl: eiaReleasePage });
+  const normalized = normalizeBundleDraft({ ...candidate, date: '2026-09-21' });
+  assert.equal(normalized.sources[0].url, eiaPointer);
+  assert.equal(normalized.sources[0].publishedAt, '2026-09-16');
+  assert.throws(() => validateEditorialBundle(normalized), /verified dated archive document/);
+  candidate.highlights = [];
+  candidate.catalysts = [{ event: 'Synthetic energy release', sourceIds: ['fed-item'] }];
+  assert.throws(() => validateEditorialBundle(candidate), /verified dated archive document/);
+});
+for (const url of [eiaReleasePage, eiaReleasePdf]) {
+  eiaCheck('dated release preserves freshness checks', () => {
+    assert.doesNotThrow(() => validateEditorialBundle(eiaEditorialBundle(url, '2026-09-16')));
+    assert.throws(() => validateEditorialBundle(eiaEditorialBundle(url, '2026-09-23')), /dated after the edition/);
+    assert.throws(() => validateEditorialBundle(eiaEditorialBundle(url, '2026-08-19')), /only stale daily-development sources/);
+  });
+}
+eiaCheck('fixed safe repair diagnostic', () => {
+  const value = safeValidationDiagnostic(`${sourceDateAttributionIssue(eiaPointer)} https://example.org/private secret-looking-fixture-value`);
+  assert.equal(value.code, 'invalid-source-date');
+  assert.match(value.reason, /verified dated EIA archive document.*Release Date/);
+  assert.doesNotMatch(value.reason, /secret-looking-fixture-value|https?:/);
+});
+
+const eiaRoot = await mkdtemp(join(tmpdir(), 'usd-impact-eia-release-'));
+const eiaInput = join(eiaRoot, 'bundle.json');
+const eiaOutput = join(eiaRoot, 'src/content/news/2026-09-21.md');
+const eiaOldDaily = join(eiaRoot, 'src/content/news/2026-08-12.md');
+const eiaOldCatalyst = join(eiaRoot, 'src/content/catalyst-briefs/old-eia.md');
+const eiaImportBundle = (url = eiaReleasePage, date = '2026-09-16') => {
+  const bundle = fedImportBundle(url, date);
+  bundle.title = 'Synthetic combined EIA and Fed attribution test';
+  bundle.sources[0].id = 'eia-weekly-petroleum';
+  bundle.sources[0].title = 'Synthetic EIA release';
+  bundle.sources[0].publisher = 'EIA';
+  bundle.highlights[0].sourceIds = ['eia-weekly-petroleum'];
+  bundle.highlights[1].sourceIds = ['eia-weekly-petroleum'];
+  bundle.sources[1].url = fedDocument;
+  return bundle;
+};
+const eiaRunImport = async (candidate, flags = ['--replace', '--publish']) => {
+  const serialized = JSON.stringify(candidate);
+  await writeFile(eiaInput, serialized);
+  const result = spawnSync(process.execPath, [fileURLToPath(new URL('./import-daily-news.mjs', import.meta.url)), eiaInput, ...flags], {
+    cwd: eiaRoot, encoding: 'utf8', timeout: 10_000,
+  });
+  assert.equal(result.error, undefined, result.error?.message);
+  assert.equal(await readFile(eiaInput, 'utf8'), serialized, 'Importer must not edit input evidence');
+  eiaCases += 1;
+  return result;
+};
+try {
+  await mkdir(join(eiaRoot, 'src/content/news'), { recursive: true });
+  await mkdir(join(eiaRoot, 'src/content/catalyst-briefs'), { recursive: true });
+  const oldDaily = fedArchiveRecord(eiaPointer, '2026-08-12');
+  const oldCatalyst = fedArchiveRecord(eiaPointer, '2026-08-19');
+  await writeFile(eiaOldDaily, oldDaily);
+  await writeFile(eiaOldCatalyst, oldCatalyst);
+  for (const url of eiaPointerVariants.filter((value) => value.startsWith('https:'))) {
+    const rejected = await eiaRunImport(eiaImportBundle(url));
+    assert.notEqual(rejected.status, 0);
+    assert.match(rejected.stderr, /verified dated archive document/);
+    assert.equal(await readFile(eiaOldDaily, 'utf8'), oldDaily);
+    assert.equal(await readFile(eiaOldCatalyst, 'utf8'), oldCatalyst);
+    await assert.rejects(readFile(eiaOutput), { code: 'ENOENT' });
+  }
+  for (const url of [eiaReleasePage, eiaReleasePdf]) {
+    const direct = await eiaRunImport(eiaImportBundle(url));
+    assert.equal(direct.status, 0, direct.stderr);
+    const output = await readFile(eiaOutput, 'utf8');
+    assert.match(output, /^status: "published"$/m);
+    assert(output.includes(url) && output.includes(fedDocument));
+    assert.equal(await readFile(eiaOldDaily, 'utf8'), oldDaily);
+    assert.equal(await readFile(eiaOldCatalyst, 'utf8'), oldCatalyst);
+    const protectedOutput = await eiaRunImport(eiaImportBundle(url));
+    assert.notEqual(protectedOutput.status, 0);
+    assert.match(protectedOutput.stderr, /already published and cannot be replaced/);
+    const skipped = await eiaRunImport(eiaImportBundle(url), ['--replace', '--skip-published', '--publish']);
+    assert.equal(skipped.status, 0, skipped.stderr);
+    assert.equal(await readFile(eiaOutput, 'utf8'), output);
+    await rm(eiaOutput);
+  }
+  await rm(eiaOldDaily);
+  await rm(eiaOldCatalyst);
+  const noHistory = await eiaRunImport(eiaImportBundle(eiaPointer), ['--replace']);
+  assert.notEqual(noHistory.status, 0);
+  assert.match(noHistory.stderr, /verified dated archive document/);
+  await assert.rejects(readFile(eiaOutput), { code: 'ENOENT' });
+  const fixedHistory = fedArchiveRecord(eiaReleasePage, '2026-09-15');
+  await writeFile(eiaOldDaily, fixedHistory);
+  const dateConflict = await eiaRunImport(eiaImportBundle());
+  assert.notEqual(dateConflict.status, 0);
+  assert.match(dateConflict.stderr, /publishedAt 2026-09-16 conflicts with previously verified 2026-09-15/);
+  await writeFile(eiaOldCatalyst, fedArchiveRecord(eiaReleasePage, '2026-09-14'));
+  const conflictingHistory = await eiaRunImport(eiaImportBundle());
+  assert.notEqual(conflictingHistory.status, 0);
+  assert.match(conflictingHistory.stderr, /conflicting historical publication dates/);
+  assert.equal(await readFile(eiaOldDaily, 'utf8'), fixedHistory);
+  await assert.rejects(readFile(eiaOutput), { code: 'ENOENT' });
+} finally {
+  await rm(eiaRoot, { recursive: true, force: true });
+}
+console.log(`EIA rolling-report attribution: ${eiaCases} synthetic cases passed (no live sources or publication).`);
+
 console.log('daily news validation helper tests pass');

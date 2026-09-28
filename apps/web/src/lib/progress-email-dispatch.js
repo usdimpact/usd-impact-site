@@ -11,6 +11,7 @@ import {
 import { readSupabaseServerConfig } from './supabase-server.js';
 
 const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
+const PRODUCTION_PROJECT_REF = 'gjzetjugmnwanvjkchux';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const NOTIFICATION_KEY_PATTERN = /^notification:v1:([0-9a-f]{64})$/;
 const CYCLE_KEY_PATTERN = /^[0-9a-f]{64}$/;
@@ -78,18 +79,18 @@ function enabled(value) {
   return String(value ?? '').trim().toLowerCase() === 'true';
 }
 
-function readDevelopmentConfig(environment) {
+function readDispatchConfig(environment) {
   const vercelEnvironment = String(environment.VERCEL_ENV ?? '').trim().toLowerCase();
-  if (vercelEnvironment === 'production') {
-    throw new ProgressEmailDispatchError(
-      'Learning Progress dispatch is hard-disabled in Production for this implementation slice.',
-      'PRODUCTION_PROGRESS_EMAIL_DISPATCH_BLOCKED',
-    );
-  }
-  if (!['preview', 'development'].includes(vercelEnvironment)) {
+  if (!['production', 'preview', 'development'].includes(vercelEnvironment)) {
     throw new ProgressEmailDispatchError(
       'Learning Progress dispatch requires Development or Preview.',
       'UNAPPROVED_PROGRESS_EMAIL_ENVIRONMENT',
+    );
+  }
+  if (vercelEnvironment === 'production' && !enabled(environment.PROGRESS_EMAIL_PRODUCTION_ENABLED)) {
+    throw new ProgressEmailDispatchError(
+      'Learning Progress Production capability is disabled.',
+      'PRODUCTION_PROGRESS_EMAIL_NOT_ENABLED',
     );
   }
   if (!enabled(environment.PROGRESS_EMAIL_DISPATCH_ENABLED)) {
@@ -119,9 +120,14 @@ function readDevelopmentConfig(environment) {
       'PROGRESS_EMAIL_DATABASE_CONFIGURATION_ERROR',
     );
   }
-  if (projectRefFromUrl(config.url) !== DEVELOPMENT_PROJECT_REF) {
+  const expectedProjectRef = vercelEnvironment === 'production'
+    ? PRODUCTION_PROJECT_REF
+    : DEVELOPMENT_PROJECT_REF;
+  if (projectRefFromUrl(config.url) !== expectedProjectRef) {
     throw new ProgressEmailDispatchError(
-      'Non-production Learning Progress dispatch must target canonical Development.',
+      vercelEnvironment === 'production'
+        ? 'Production Learning Progress dispatch must target canonical Production.'
+        : 'Non-production Learning Progress dispatch must target canonical Development.',
       'UNEXPECTED_SUPABASE_PROJECT',
     );
   }
@@ -148,6 +154,12 @@ function requireBaseUrl(environment, vercelEnvironment) {
   const preview = url.protocol === 'https:'
     && url.hostname.startsWith('usd-impact-site')
     && url.hostname.endsWith('.vercel.app');
+  if (vercelEnvironment === 'production' && url.origin !== 'https://www.usd-impact.com') {
+    throw new ProgressEmailDispatchError(
+      'Production Learning Progress base URL must use the canonical USD Impact origin.',
+      'INVALID_PROGRESS_EMAIL_BASE_URL',
+    );
+  }
   if (vercelEnvironment === 'preview' && !preview) {
     throw new ProgressEmailDispatchError(
       'Preview Learning Progress unsubscribe URLs must remain on the active Vercel Preview origin.',
@@ -329,7 +341,7 @@ export async function enqueueProgressEmailCandidate({
   fetchImpl = fetch,
   now = new Date(),
 } = {}) {
-  const { config } = readDevelopmentConfig(environment);
+  const { config } = readDispatchConfig(environment);
   if (!candidate?.eligible) {
     return Object.freeze({ enabled: true, enqueued: false, reason: candidate?.reason || 'not_eligible' });
   }
@@ -433,7 +445,7 @@ export async function dispatchProgressEmailOutbox({
   if (!Number.isFinite(nowDate.getTime())) {
     throw new ProgressEmailDispatchError('Learning Progress dispatch clock is invalid.', 'INVALID_PROGRESS_EMAIL_CLOCK');
   }
-  const { config, vercelEnvironment } = readDevelopmentConfig(environment);
+  const { config, vercelEnvironment } = readDispatchConfig(environment);
   const baseUrl = requireBaseUrl(environment, vercelEnvironment);
   let outbox = await loadOutbox({ config, id: outboxId, fetchImpl });
   const decision = resolveProgressEmailDispatchDecision(outbox, nowDate.getTime());

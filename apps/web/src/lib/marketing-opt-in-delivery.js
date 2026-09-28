@@ -1,6 +1,7 @@
 import { buildMarketingOptInConfirmationEmail } from './marketing-opt-in-email-template.js';
 import {
   MARKETING_OPT_IN_DEVELOPMENT_PROJECT_REF,
+  MARKETING_OPT_IN_PRODUCTION_PROJECT_REF,
   MARKETING_OPT_IN_MESSAGE_ID,
   MARKETING_OPT_IN_TEMPLATE_ID,
   MarketingOptInReadinessError,
@@ -52,22 +53,22 @@ function projectRefFromUrl(value) {
   }
 }
 
-function requireDevelopmentConfig(environment) {
+function requireDeliveryConfig(environment) {
   if (environment.EMAIL_READINESS_LEDGER_ENABLED !== 'true') {
     throw new MarketingOptInDeliveryError('Email ledger is not enabled.', 'EMAIL_LEDGER_DISABLED', 503);
   }
   const vercelEnvironment = String(environment.VERCEL_ENV ?? '').trim().toLowerCase();
-  if (vercelEnvironment === 'production') {
+  if (!['production', 'preview', 'development'].includes(vercelEnvironment)) {
     throw new MarketingOptInDeliveryError(
-      'Marketing opt-in delivery is hard-disabled in Production for this implementation slice.',
-      'PRODUCTION_OPT_IN_DELIVERY_BLOCKED',
+      'Marketing opt-in delivery requires Production, Preview, or Development.',
+      'UNAPPROVED_DELIVERY_ENVIRONMENT',
       503,
     );
   }
-  if (!['preview', 'development'].includes(vercelEnvironment)) {
+  if (vercelEnvironment === 'production' && environment.EMAIL_OPT_IN_PRODUCTION_APPROVED !== 'true') {
     throw new MarketingOptInDeliveryError(
-      'Marketing opt-in delivery requires Development or Preview.',
-      'UNAPPROVED_DELIVERY_ENVIRONMENT',
+      'Production marketing opt-in delivery is not approved.',
+      'PRODUCTION_OPT_IN_NOT_APPROVED',
       503,
     );
   }
@@ -82,14 +83,19 @@ function requireDevelopmentConfig(environment) {
       503,
     );
   }
-  if (projectRefFromUrl(config.url) !== MARKETING_OPT_IN_DEVELOPMENT_PROJECT_REF) {
+  const expectedProjectRef = vercelEnvironment === 'production'
+    ? MARKETING_OPT_IN_PRODUCTION_PROJECT_REF
+    : MARKETING_OPT_IN_DEVELOPMENT_PROJECT_REF;
+  if (projectRefFromUrl(config.url) !== expectedProjectRef) {
     throw new MarketingOptInDeliveryError(
-      'Non-production marketing opt-in delivery must target the canonical Development database.',
+      vercelEnvironment === 'production'
+        ? 'Production marketing opt-in delivery must target the canonical Production database.'
+        : 'Non-production marketing opt-in delivery must target the canonical Development database.',
       'UNEXPECTED_SUPABASE_PROJECT',
       503,
     );
   }
-  return config;
+  return { config, vercelEnvironment };
 }
 
 async function readJsonSafely(response) {
@@ -340,7 +346,22 @@ export async function deliverMarketingOptInConfirmation({
     );
   }
 
-  const config = requireDevelopmentConfig(environment);
+  const { config, vercelEnvironment } = requireDeliveryConfig(environment);
+  if (vercelEnvironment === 'production') {
+    let origin;
+    try {
+      origin = new URL(String(baseUrl ?? '').trim()).origin;
+    } catch {
+      origin = null;
+    }
+    if (origin !== 'https://www.usd-impact.com') {
+      throw new MarketingOptInDeliveryError(
+        'Production opt-in confirmation URLs must use the canonical USD Impact origin.',
+        'INVALID_OPT_IN_BASE_URL',
+        503,
+      );
+    }
+  }
   const token = createMarketingOptInTokenForOutbox({
     outbox: evidence,
     secret: environment.MARKETING_OPT_IN_SECRET,

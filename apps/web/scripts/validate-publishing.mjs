@@ -112,3 +112,33 @@ if (failures.length > 0) {
 }
 
 console.log(`publishing validation pass (${entries.length} dynamic entries; ${staticRoutes.size} static routes; ${new Set(requiredRoutes).size} required main-navigation routes)`);
+
+// Keep node:test lifecycle mocks isolated from this validator and later suites.
+{
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const lifecycleTestPath = fileURLToPath(new URL('../../../scripts/test-catalyst-lifecycle-diagnostic.mjs', import.meta.url));
+  const lifecycleTest = spawnSync(process.execPath, [lifecycleTestPath], {
+    stdio: 'inherit',
+    shell: false,
+    timeout: 30_000,
+  });
+  if (lifecycleTest.error || lifecycleTest.signal || lifecycleTest.status !== 0) {
+    throw new Error('Catalyst lifecycle offline tests failed.');
+  }
+}
+
+// Exercise the real RSS route with isolated, offline collection fixtures.
+{
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const rssTestPath = fileURLToPath(new URL('./test-news-rss.mjs', import.meta.url));
+  const rssTest = spawnSync(process.execPath, [rssTestPath], {
+    stdio: 'inherit',
+    shell: false,
+    timeout: 30_000,
+  });
+  if (rssTest.error || rssTest.signal || rssTest.status !== 0) {
+    throw new Error('RSS publication-time contract tests failed.');
+  }
+}

@@ -44,14 +44,24 @@ const weeklyReport = {
   ],
   complianceNote: 'Educational and informational only. Not investment advice.',
 };
-const sourceReports = [{
-  title: weeklyReport.title,
-  slug: weeklyReport.slug,
-  periodEnd: weeklyReport.periodEnd,
-  generatedAt: weeklyReport.generatedAt,
-  status: weeklyReport.status,
-  category: weeklyReport.category,
-}];
+const sourceReports = [
+  {
+    title: weeklyReport.title,
+    slug: weeklyReport.slug,
+    periodEnd: weeklyReport.periodEnd,
+    generatedAt: weeklyReport.generatedAt,
+    status: weeklyReport.status,
+    category: weeklyReport.category,
+  },
+  {
+    title: 'Weekly USD Impact Brief — September 18, 2026',
+    slug: '/reports/weekly/2026-09-18',
+    periodEnd: '2026-09-18',
+    generatedAt: '2026-09-20T13:04:59.223Z',
+    status: 'published',
+    category: 'Weekly USD Impact Brief',
+  },
+];
 const artifact = buildProgressEmailQaSourceArtifact({
   currentWeeklyReport: weeklyReport,
   sourceReports,
@@ -89,7 +99,7 @@ function response(payload, status = 200) {
   );
   assert.equal(result.artifactChecksum, artifact.checksum);
   assert.equal(result.currentWeeklyReport.periodEnd, '2026-09-04');
-  assert.equal(result.weeklyReports.length, 1);
+  assert.equal(result.weeklyReports.length, 2);
 }
 
 await assert.rejects(

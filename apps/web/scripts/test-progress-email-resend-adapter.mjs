@@ -66,7 +66,38 @@ assert.throws(
     environment: { ...environment, VERCEL_ENV: 'production' },
   }),
   (error) => error instanceof ProgressEmailResendConfigurationError
-    && error.code === 'PRODUCTION_PROGRESS_EMAIL_DELIVERY_BLOCKED',
+    && error.code === 'PRODUCTION_PROGRESS_EMAIL_NOT_ENABLED',
+);
+
+{
+  let captured = null;
+  const productionAdapter = createProgressEmailResendAdapter({
+    environment: {
+      ...environment,
+      VERCEL_ENV: 'production',
+      PROGRESS_EMAIL_PRODUCTION_ENABLED: 'true',
+    },
+    fetchImpl: async (url, options) => {
+      captured = { url, options };
+      return response({ id: 'progress-production-canary-test' });
+    },
+  });
+  const result = await productionAdapter.send(message);
+  assert.equal(result.state, 'accepted');
+  assert.equal(captured.url, 'https://api.resend.com/emails');
+}
+
+assert.throws(
+  () => createProgressEmailResendAdapter({
+    environment: {
+      ...environment,
+      VERCEL_ENV: 'production',
+      PROGRESS_EMAIL_PRODUCTION_ENABLED: 'true',
+      RESEND_FROM_EMAIL: 'USD Impact <updates@example.com>',
+    },
+  }),
+  (error) => error instanceof ProgressEmailResendConfigurationError
+    && error.code === 'PRODUCTION_RESEND_SENDER_INVALID',
 );
 
 assert.throws(

@@ -66,7 +66,38 @@ assert.throws(
     environment: { ...environment, VERCEL_ENV: 'production' },
   }),
   (error) => error instanceof WeeklyNewsletterResendConfigurationError
-    && error.code === 'PRODUCTION_WEEKLY_NEWSLETTER_DELIVERY_BLOCKED',
+    && error.code === 'PRODUCTION_WEEKLY_NEWSLETTER_NOT_ENABLED',
+);
+
+{
+  let captured = null;
+  const productionAdapter = createWeeklyNewsletterResendAdapter({
+    environment: {
+      ...environment,
+      VERCEL_ENV: 'production',
+      WEEKLY_NEWSLETTER_PRODUCTION_ENABLED: 'true',
+    },
+    fetchImpl: async (url, options) => {
+      captured = { url, options };
+      return response({ id: 'weekly-production-canary-test' });
+    },
+  });
+  const result = await productionAdapter.send(message);
+  assert.equal(result.state, 'accepted');
+  assert.equal(captured.url, 'https://api.resend.com/emails');
+}
+
+assert.throws(
+  () => createWeeklyNewsletterResendAdapter({
+    environment: {
+      ...environment,
+      VERCEL_ENV: 'production',
+      WEEKLY_NEWSLETTER_PRODUCTION_ENABLED: 'true',
+      RESEND_FROM_EMAIL: 'USD Impact <updates@example.com>',
+    },
+  }),
+  (error) => error instanceof WeeklyNewsletterResendConfigurationError
+    && error.code === 'PRODUCTION_RESEND_SENDER_INVALID',
 );
 
 assert.throws(

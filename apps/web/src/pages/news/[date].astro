@@ -7,6 +7,7 @@ import SourceLedger from '../../components/SourceLedger.astro';
 import FrameworkEvidenceChain from '../../components/FrameworkEvidenceChain.astro';
 import { catalystEventKey } from '../../lib/catalyst-briefs.js';
 import { hasCatalystBriefFiles } from '../../lib/catalyst-brief-content.js';
+import { newsArticleStructuredData } from '../../lib/structured-data.js';
 
 export async function getStaticPaths() {
   const editions = (await getCollection('news')).filter((entry) => entry.data.status === 'published');
@@ -33,8 +34,15 @@ const formattedDate = new Intl.DateTimeFormat('en', {
   timeZone: 'UTC',
 }).format(new Date(`${entry.data.date}T12:00:00Z`));
 const sourceMap = new Map(entry.data.sources.map((source) => [source.id, source]));
+const structuredData = [newsArticleStructuredData({
+  headline: entry.data.title,
+  description: entry.data.metaDescription,
+  pathname: `/news/${entry.data.date}`,
+  datePublished: entry.data.date,
+  dateModified: entry.data.lastReviewed,
+})];
 ---
-<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
+<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription} structuredData={structuredData}>
   <section class="hero news-hero">
     <div class="container">
       <div class="eyebrow">{entry.data.category}</div>

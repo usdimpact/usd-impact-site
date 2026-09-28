@@ -9,11 +9,13 @@ import PwaClient from '../components/PwaClient.astro';
 import { isSearchUtilityPath } from '../lib/search-utility-policy.js';
 import { canonicalUrlForRequest } from '../lib/canonical-url.js';
 import { SITE_NAVIGATION, navigationLinkIsActive } from '../lib/site-navigation.js';
+import { serializeStructuredData, structuredDataGraph } from '../lib/structured-data.js';
 import { getChapterById, getSurfaceBridgeForPath } from '../data/book-site-bridge/index.mjs';
 const [learnNavigation, updatesNavigation, libraryNavigation] = SITE_NAVIGATION;
-const { title, description, noindex: pageNoindex = false, stylesheets = [] } = Astro.props;
+const { title, description, noindex: pageNoindex = false, stylesheets = [], structuredData = [] } = Astro.props;
 const noindex = pageNoindex || isSearchUtilityPath(Astro.url.pathname);
 const canonicalUrl = noindex ? null : canonicalUrlForRequest(Astro.url);
+const structuredDataJson = noindex ? null : serializeStructuredData(structuredDataGraph(structuredData));
 const surfaceBridge = getSurfaceBridgeForPath(Astro.url.pathname);
 const surfaceChapter = surfaceBridge ? getChapterById(surfaceBridge.chapterId) : null;
 const currentPath = Astro.url.pathname;
@@ -44,6 +46,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
     <link rel="icon" href="/assets/logo/USDImpact_Icon_Color_192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="/assets/logo/USDImpact_Icon_Color_192.png" sizes="192x192" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {structuredDataJson && <script type="application/ld+json" set:html={structuredDataJson}></script>}
     {stylesheets.map((href) => <link rel="stylesheet" href={href} />)}
     <script is:inline src="/assets/session-entry.js" defer></script>
   </head>

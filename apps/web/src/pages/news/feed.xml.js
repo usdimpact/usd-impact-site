@@ -8,6 +8,11 @@ const escapeXml = (value) => String(value)
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&apos;');
 
+// RSS pubDate is optional (https://www.rssboard.org/rss-specification).
+// These collections have editorial dates and preparation times, not verified
+// first-publication instants. Omit pubDate and lastBuildDate rather than invent
+// them from noon, generatedAt, a Git commit, or the current build clock.
+// sortKey preserves legacy feed order only; it is never a publication timestamp.
 export async function GET({ site }) {
   const origin = site?.origin ?? 'https://usd-impact.com';
   const editions = (await getCollection('news'))
@@ -15,7 +20,7 @@ export async function GET({ site }) {
     .map((entry) => ({
       title: entry.data.title,
       slug: entry.data.slug,
-      publishedAt: `${entry.data.date}T12:00:00Z`,
+      sortKey: `${entry.data.date}T12:00:00Z`,
       summary: entry.data.summary,
     }));
   const catalystBriefs = hasCatalystBriefFiles
@@ -24,12 +29,12 @@ export async function GET({ site }) {
       .map((entry) => ({
       title: entry.data.title,
       slug: entry.data.slug,
-      publishedAt: entry.data.generatedAt,
+      sortKey: entry.data.generatedAt,
       summary: entry.data.summary,
       }))
     : [];
   const publications = [...editions, ...catalystBriefs]
-    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
+    .sort((a, b) => b.sortKey.localeCompare(a.sortKey))
     .slice(0, 30);
 
   const items = publications.map((entry) => `
@@ -37,7 +42,6 @@ export async function GET({ site }) {
       <title>${escapeXml(entry.title)}</title>
       <link>${origin}${entry.slug}/</link>
       <guid isPermaLink="true">${origin}${entry.slug}/</guid>
-      <pubDate>${new Date(entry.publishedAt).toUTCString()}</pubDate>
       <description>${escapeXml(entry.summary)}</description>
     </item>`).join('');
 

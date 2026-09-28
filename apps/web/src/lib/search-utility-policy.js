@@ -2,6 +2,7 @@
 export const SEARCH_UTILITY_PATHS = Object.freeze([
   '/account',
   '/account/access-required',
+  '/account/newsletter-canary',
   '/account/notifications',
   '/account/passkeys',
   '/account/sign-in',

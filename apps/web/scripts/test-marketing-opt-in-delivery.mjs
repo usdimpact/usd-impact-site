@@ -151,12 +151,52 @@ assert.deepEqual(resolveMarketingOptInDeliveryDecision(outbox, nowMs), {
       outbox,
       baseUrl: 'https://www.usd-impact.com',
       environment: { ...environment, VERCEL_ENV: 'production' },
-      databaseFetch: async () => assert.fail('Production guard must run before an outbox update.'),
-      adapterFactory: () => assert.fail('Production guard must run before Resend adapter creation.'),
+      databaseFetch: async () => assert.fail('Production approval guard must run before an outbox update.'),
+      adapterFactory: () => assert.fail('Production approval guard must run before Resend adapter creation.'),
       now: () => new Date(nowIso),
     }),
     (error) => error instanceof MarketingOptInDeliveryError
-      && error.code === 'PRODUCTION_OPT_IN_DELIVERY_BLOCKED',
+      && error.code === 'PRODUCTION_OPT_IN_NOT_APPROVED',
+  );
+}
+
+{
+  await assert.rejects(
+    () => deliverMarketingOptInConfirmation({
+      outbox,
+      baseUrl: 'https://www.usd-impact.com',
+      environment: {
+        ...environment,
+        VERCEL_ENV: 'production',
+        EMAIL_OPT_IN_PRODUCTION_APPROVED: 'true',
+        SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
+      },
+      databaseFetch: async () => assert.fail('Production database pin must run before an outbox update.'),
+      adapterFactory: () => assert.fail('Production database pin must run before Resend adapter creation.'),
+      now: () => new Date(nowIso),
+    }),
+    (error) => error instanceof MarketingOptInDeliveryError
+      && error.code === 'UNEXPECTED_SUPABASE_PROJECT',
+  );
+}
+
+{
+  await assert.rejects(
+    () => deliverMarketingOptInConfirmation({
+      outbox,
+      baseUrl: 'https://example.com',
+      environment: {
+        ...environment,
+        VERCEL_ENV: 'production',
+        EMAIL_OPT_IN_PRODUCTION_APPROVED: 'true',
+        SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
+      },
+      databaseFetch: async () => assert.fail('Canonical base URL guard must run before an outbox update.'),
+      adapterFactory: () => assert.fail('Canonical base URL guard must run before Resend adapter creation.'),
+      now: () => new Date(nowIso),
+    }),
+    (error) => error instanceof MarketingOptInDeliveryError
+      && error.code === 'INVALID_OPT_IN_BASE_URL',
   );
 }
 

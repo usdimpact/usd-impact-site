@@ -4,6 +4,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import ComplianceNote from '../../../components/ComplianceNote.astro';
 import SourceLedger from '../../../components/SourceLedger.astro';
 import { hasCatalystBriefFiles } from '../../../lib/catalyst-brief-content.js';
+import { articleStructuredData } from '../../../lib/structured-data.js';
 
 export async function getStaticPaths() {
   const briefs = hasCatalystBriefFiles
@@ -28,6 +29,12 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 const sourceMap = new Map(entry.data.sources.map((source) => [source.id, source]));
+const structuredData = [articleStructuredData({
+  headline: entry.data.title,
+  description: entry.data.metaDescription,
+  pathname: entry.data.slug,
+  dateModified: entry.data.lastReviewed,
+})];
 const formatDate = (value) => new Intl.DateTimeFormat('en', {
   day: 'numeric',
   month: 'long',
@@ -35,7 +42,7 @@ const formatDate = (value) => new Intl.DateTimeFormat('en', {
   timeZone: 'UTC',
 }).format(new Date(`${value}T12:00:00Z`));
 ---
-<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
+<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription} structuredData={structuredData}>
   <section class="hero news-hero">
     <div class="container">
       <div class="eyebrow">{entry.data.category} · {entry.data.phase === 'preview' ? 'Pre-event' : 'Outcome'}</div>

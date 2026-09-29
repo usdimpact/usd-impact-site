@@ -179,7 +179,6 @@ export async function readGuidedLearningProgressBatch({
         || ![200, 206].includes(response.status)) return unavailable('HTTP_NOT_COMPLETE');
       const contentType = response.headers.get('content-type');
       if (!/^application\/json(?:\s*;|$)/i.test(contentType || '')) return unavailable('NOT_JSON');
-      if (response.headers.get('range-unit')?.toLowerCase() !== 'items') return unavailable('RANGE_UNIT_UNCONFIRMED');
       const body = await readBoundedBody(response, controller.signal);
       return reconcileBatch(plan, {
         status: response.status, redirected: false, contentType,

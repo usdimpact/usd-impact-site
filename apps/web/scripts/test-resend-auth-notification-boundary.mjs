@@ -62,8 +62,12 @@ function database({ rows = [], prior = null, readStatus = 200, invalidJson = fal
       if (method === 'PATCH') {
         assert.equal(rows.length, 1);
         assert.equal(parsed.searchParams.get('id'), `eq.${rows[0].id}`);
+        assert.equal(parsed.searchParams.get('provider'), 'eq.resend');
+        assert.equal(parsed.searchParams.get('provider_message_ref'), `eq.${emailId}`);
+        assert.equal(options.headers.Prefer, 'return=representation');
+        if (parsed.searchParams.get('status') !== `eq.${rows[0].status}`) return json([]);
         Object.assign(rows[0], body);
-        return json(null, 204);
+        return json([rows[0]]);
       }
     }
     throw new Error(`Unexpected fixture operation: ${method} ${parsed.pathname}`);

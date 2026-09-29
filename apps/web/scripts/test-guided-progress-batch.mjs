@@ -157,10 +157,14 @@ test('real unchanged environment config reader is used when config is omitted',a
  const out=await runRead(probe.fetchImpl,{config:undefined,environment:{SUPABASE_URL:origin,SUPABASE_PUBLISHABLE_KEY:pub}});
  assert.equal(out.status,'complete');assert.equal(probe.calls.length,1);
 });
+test('transport accepts exact-count response when Supabase gateway omits range-unit',async()=>{
+ const probe=countedFetch(url=>mockResponse(url,[],{headers:{'range-unit':null}}));
+ const out=await runRead(probe.fetchImpl);assert.equal(out.status,'complete');assert.equal(out.visibleCount,0);assert.equal(probe.calls.length,1);
+});
 for(const [name,opts] of [
  ['redirect',{redirected:true}],['final URL mismatch',{url:'https://elsewhere.invalid'}],
  ['missing final URL',{url:''}],['HTML',{headers:{'content-type':'text/html'}}],
- ['missing range unit',{headers:{'range-unit':null}}],['incomplete range',{headers:{'content-range':'*/13'}}],
+ ['incomplete range',{headers:{'content-range':'*/13'}}],
  ['missing count acknowledgement',{headers:{'preference-applied':null}}],
  ['declared oversized body',{headers:{'content-length':String(LIMITS.bodyBytes+1)}}],
  ['invalid declared length',{headers:{'content-length':'NaN'}}],

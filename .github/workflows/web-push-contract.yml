@@ -62,10 +62,14 @@ jobs:
           node --check src/lib/supabase-secret-rest.js
           node --check src/lib/web-push-delivery.js
           node --check src/lib/web-push-transport.js
+          node --check src/lib/web-push-canary.js
+          node --check scripts/send-web-push-canary.mjs
       - name: Verify subscription storage and account routing
         run: node scripts/test-push-subscription.mjs
       - name: Verify bounded delivery orchestration
         run: node scripts/test-web-push-delivery.mjs
+      - name: Verify owner-only canary remains one-send and fail-closed
+        run: node scripts/test-web-push-canary.mjs
       - name: Verify PWA push and no-cache contract
         run: node scripts/test-pwa-contract.mjs
       - name: Preserve Vercel Hobby function budget

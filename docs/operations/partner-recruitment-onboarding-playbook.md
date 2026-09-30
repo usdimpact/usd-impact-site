@@ -446,7 +446,7 @@ Its strategic advantage is peer relevance: a satisfied Research member is more l
 
 > Invite someone who learns markets the way you do. A qualifying new Research client receives 50% off the first annual term, and your successful qualifying introductions move you toward 3, 6, or 12 months of Research access.
 
-At the currently approved ordinary annual reference of USD 290, the new client's first annual payment would be USD 145 before applicable tax. This arithmetic example must be revalidated against the active price immediately before any future release.
+Do not publish or precompute a Research Membership price example before activation. The new-client percentage benefit must be applied only to the then-current approved annual price and verified immediately before any future release.
 
 ### Future reward ladder
 
@@ -470,7 +470,6 @@ When the Member Referral Program becomes available, you will be able to invite a
 For a qualifying first annual Research Membership:
 
 - the new client receives 50% off the first annual term;
-- at the current ordinary annual reference of USD 290, that would be USD 145 before applicable tax, subject to final pre-release price verification;
 - your first qualifying paid referral brings your cumulative reward to 3 free Research months;
 - three qualifying paid referrals bring the total to 6 months;
 - five qualifying paid referrals bring the total to 12 months.

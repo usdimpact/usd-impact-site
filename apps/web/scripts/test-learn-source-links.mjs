@@ -3,12 +3,20 @@ import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
 import { getLearnSourceLinks, validateLearnSourceLinks } from '../src/lib/learn-source-links.mjs';
+import { getLearnSeoTitle } from '../src/lib/learn-seo-metadata.mjs';
 
 const real = { id: 'card-real-yield', slug: 'real-yield', access: 'open', status: 'ready-for-build' };
 const dxy = { id: 'card-dxy-broad-purpose', slug: 'dxy-vs-broad-usd-what-each-index-answers', access: 'open', status: 'ready-for-build' };
 const ref = () => ({ ...getLearnSourceLinks(real)[0] });
 
 test('two Real Yield references', () => assert.equal(getLearnSourceLinks(real).length, 2));
+test('Real Yield gets the reviewed definition-intent SEO title', () => assert.equal(getLearnSeoTitle(real), 'What Is Real Yield? TIPS, Inflation and Why It Matters'));
+test('other Learn cards preserve the existing title fallback', () => assert.equal(getLearnSeoTitle(dxy), 'undefined | USD Impact Learn'));
+test('mismatched or non-public Real Yield identity falls back', () => {
+  const titled = { ...real, title: 'Real Yield' };
+  assert.equal(getLearnSeoTitle({ ...titled, slug: 'wrong' }), 'Real Yield | USD Impact Learn');
+  assert.equal(getLearnSeoTitle({ ...titled, access: 'research' }), 'Real Yield | USD Impact Learn');
+});
 test('three DXY comparison references', () => assert.equal(getLearnSourceLinks(dxy).length, 3));
 test('reference arrays and entries are immutable', () => {
   const refs = getLearnSourceLinks(real);
@@ -65,7 +73,10 @@ test('markup, controls and missing descriptions rejected', () => {
 test('renderer patch leaves the original template reversible byte-for-byte', () => {
   const candidate = fs.readFileSync(new URL('../src/pages/learn/[slug].astro', import.meta.url), 'utf8');
   let restored = candidate.replace("import { getLearnSourceLinks } from '../../lib/learn-source-links.mjs';\n", '');
+  restored = restored.replace("import { getLearnSeoTitle } from '../../lib/learn-seo-metadata.mjs';\n", '');
   restored = restored.replace('const sourceLinks = getLearnSourceLinks(card);\n', '');
+  restored = restored.replace('const pageTitle = getLearnSeoTitle(card);\n', '');
+  restored = restored.replace('<BaseLayout title={pageTitle} description={card.hook}', '<BaseLayout title={`${card.title} | USD Impact Learn`} description={card.hook}');
   restored = restored.replace(/      \{sourceLinks\.length > 0 && \([\s\S]*?      \)\}\n/, '');
   restored = restored.replace('href={`/guided-edition/video-library/${card.videoSlug}`}', 'href={`/guided-edition/video-library/${card.videoSlug}/`}');
   // Reviewed Learn-template snapshot at main@dd9f908; not a rendered-page test.
@@ -84,7 +95,7 @@ const cardFixture = (identity) => ({ ...identity, title: 'Fixture title', hook: 
 const esc = (value) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 function htmlFixture(card) {
   const links = getLearnSourceLinks(card).map((r) => `<li><a href="${esc(r.url)}" rel="noreferrer">${esc(r.label)}</a><p>${esc(r.scope)}</p></li>`).join('');
-  return `<html><head><title>${esc(card.title)} | USD Impact Learn</title><meta name="description" content="${esc(card.hook)}"></head><body><h1>${esc(card.title)}</h1>${[card.hook,card.definition,card.whyItMatters,card.example,card.commonMistake,card.keyTakeaway,...card.whatToWatch].map((v) => `<p>${esc(v)}</p>`).join('')}<div data-card-id="${card.id}"></div><a href="/guided-edition/video-library/${card.videoSlug}">Video</a><section class="dc-source-list"><h2>Sources</h2><p>${esc(card.sourceNames.join(' \u00b7 '))}</p><ul aria-label="Primary references" data-learn-primary-references>${links}</ul><p>Educational and informational purposes only. Not investment advice.</p></section></body></html>`;
+  return `<html><head><title>${esc(getLearnSeoTitle(card))}</title><meta name="description" content="${esc(card.hook)}"></head><body><h1>${esc(card.title)}</h1>${[card.hook,card.definition,card.whyItMatters,card.example,card.commonMistake,card.keyTakeaway,...card.whatToWatch].map((v) => `<p>${esc(v)}</p>`).join('')}<div data-card-id="${card.id}"></div><a href="/guided-edition/video-library/${card.videoSlug}">Video</a><section class="dc-source-list"><h2>Sources</h2><p>${esc(card.sourceNames.join(' \u00b7 '))}</p><ul aria-label="Primary references" data-learn-primary-references>${links}</ul><p>Educational and informational purposes only. Not investment advice.</p></section></body></html>`;
 }
 test('both escaped generated-page fixtures pass', () => {
   for (const id of [real, dxy]) { const c = cardFixture(id); assert.deepEqual(inspectLearnSourceLinksHtml(htmlFixture(c), c), []); }

@@ -52,7 +52,7 @@ jobs:
         with:
           node-version: 24.x
       - name: Install locked dependencies without lifecycle scripts
-        run: npm ci --ignore-scripts
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Syntax check Web Push modules
         run: |
           node --check api/account.js

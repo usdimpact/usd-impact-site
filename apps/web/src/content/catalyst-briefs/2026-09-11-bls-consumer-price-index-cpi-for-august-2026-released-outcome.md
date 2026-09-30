@@ -1,6 +1,6 @@
 ---
 title: "BLS Consumer Price Index (CPI) for August 2026 — released — Verified Outcome"
-metaTitle: "August 2026 CPI — Verified Outcome | USD Impact"
+metaTitle: "Consumer Price Index — August 2026 Results | USD Impact"
 metaDescription: "August CPI rose 0.4% month over month and 3.4% year over year; core CPI rose 0.3% and 2.4%. The September 15–16 FOMC is the next policy catalyst."
 slug: "/news/catalysts/2026-09-11-bls-consumer-price-index-cpi-for-august-2026-released-outcome"
 eventKey: "2026-09-11-bls-consumer-price-index-cpi-for-august-2026-released"

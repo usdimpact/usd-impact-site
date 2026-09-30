@@ -5,6 +5,7 @@ import {
   readWebPushTransportConfig,
   WebPushDeliveryError,
 } from '../src/lib/web-push-delivery.js';
+import { sendWebPushNotification, WebPushTransportError } from '../src/lib/web-push-transport.js';
 
 const config = {
   url: 'https://example.supabase.co',
@@ -158,8 +159,6 @@ assert.deepEqual(JSON.parse(calls[3].options.body), {
 });
 
 console.log('Web Push delivery orchestration contract verified.');
-
-import { sendWebPushNotification, WebPushTransportError } from '../src/lib/web-push-transport.js';
 
 {
   const calls = [];

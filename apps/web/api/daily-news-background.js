@@ -107,16 +107,11 @@ function safeTokenEqual(actual, expected) {
   return timingSafeEqual(actualBuffer, expectedBuffer);
 }
 
-function queryParam(request, name) {
+export function queryParam(request, name) {
   const direct = request.query?.[name];
   if (Array.isArray(direct)) return String(direct[0] ?? '').trim();
   if (direct !== undefined && direct !== null) return String(direct).trim();
-  try {
-    const url = new URL(request.url ?? '/', 'https://usd-impact.com');
-    return url.searchParams.get(name)?.trim() ?? '';
-  } catch {
-    return '';
-  }
+  return '';
 }
 
 function utcDateString(date = new Date()) {

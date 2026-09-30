@@ -544,14 +544,6 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
 export const config = { maxDuration: 300 };
 
 export default async function handler(request, response) {
-  if (
-    process.env.VERCEL_ENV === 'preview'
-    && request.query?.__dep0169_probe === '1'
-  ) {
-    const date = queryParam(request, 'date');
-    return sendJson(response, { probe: 'dep0169', date: date || null }, 200);
-  }
-
   if (!['GET', 'POST'].includes(request.method)) {
     return sendJson(response, { error: 'Method not allowed.' }, 405, { Allow: 'GET, POST' });
   }

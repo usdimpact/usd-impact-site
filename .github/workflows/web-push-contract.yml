@@ -3,12 +3,18 @@ name: Web Push contract
 on:
   pull_request:
     paths:
+      - 'apps/web/package.json'
+      - 'apps/web/package-lock.json'
+      - 'apps/web/package.json'
+      - 'apps/web/package-lock.json'
       - 'apps/web/api/account.js'
       - 'apps/web/public/sw.js'
       - 'apps/web/src/lib/push-subscription.js'
       - 'apps/web/src/lib/push-subscription-handler.js'
       - 'apps/web/src/lib/supabase-secret-rest.js'
       - 'apps/web/src/lib/web-push-delivery.js'
+      - 'apps/web/src/lib/web-push-transport.js'
+      - 'apps/web/src/lib/web-push-transport.js'
       - 'apps/web/src/pages/account/notifications.astro'
       - 'apps/web/scripts/test-push-subscription.mjs'
       - 'apps/web/scripts/test-web-push-delivery.mjs'
@@ -45,6 +51,8 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.x
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Syntax check Web Push modules
         run: |
           node --check api/account.js
@@ -53,6 +61,7 @@ jobs:
           node --check src/lib/push-subscription-handler.js
           node --check src/lib/supabase-secret-rest.js
           node --check src/lib/web-push-delivery.js
+          node --check src/lib/web-push-transport.js
       - name: Verify subscription storage and account routing
         run: node scripts/test-push-subscription.mjs
       - name: Verify bounded delivery orchestration

@@ -1,6 +1,13 @@
 # USD Impact Partner Recruitment and Onboarding Playbook
 
-Status: internal English draft. Recruitment, partner approval, tracking, commissions, enrollment, and promotional use remain inactive.
+Status: internal English draft reconciled on 2026-09-30. Recruitment, partner approval, tracking, commissions, enrollment, and promotional use remain inactive.
+
+Policy authority:
+- `docs/operations/partner-referral-program-readiness.md`
+- `docs/operations/partner-program-terms-draft.md`
+- `docs/operations/partner-affiliate-tracking-privacy-gate.md`
+- `docs/operations/partner-affiliate-e2e-acceptance.md`
+- `docs/operations/partner-creative-pack.md`
 
 This playbook operationalizes the future invite-only Partner Program without opening public enrollment or changing commerce. It should be used only after Partner Terms, provider behavior, privacy controls, economics, and activation have been separately approved.
 

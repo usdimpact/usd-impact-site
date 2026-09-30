@@ -5,6 +5,25 @@ on:
     paths:
       - 'apps/web/package.json'
       - 'apps/web/package-lock.json'
+      - 'apps/web/api/account.js'
+      - 'apps/web/public/sw.js'
+      - 'apps/web/src/lib/push-subscription.js'
+      - 'apps/web/src/lib/push-subscription-handler.js'
+      - 'apps/web/src/lib/supabase-secret-rest.js'
+      - 'apps/web/src/lib/web-push-delivery.js'
+      - 'apps/web/src/lib/web-push-transport.js'
+      - 'apps/web/src/lib/web-push-canary.js'
+      - 'apps/web/src/pages/account/notifications.astro'
+      - 'apps/web/scripts/send-web-push-canary.mjs'
+      - 'apps/web/scripts/test-push-subscription.mjs'
+      - 'apps/web/scripts/test-web-push-delivery.mjs'
+      - 'apps/web/scripts/test-web-push-canary.mjs'
+      - 'apps/web/scripts/test-pwa-contract.mjs'
+      - 'supabase/migrations/*push_subscriptions*'
+      - '.github/workflows/web-push-contract.yml'
+  push:
+    branches: [main]
+    paths:
       - 'apps/web/package.json'
       - 'apps/web/package-lock.json'
       - 'apps/web/api/account.js'
@@ -14,25 +33,12 @@ on:
       - 'apps/web/src/lib/supabase-secret-rest.js'
       - 'apps/web/src/lib/web-push-delivery.js'
       - 'apps/web/src/lib/web-push-transport.js'
-      - 'apps/web/src/lib/web-push-transport.js'
+      - 'apps/web/src/lib/web-push-canary.js'
       - 'apps/web/src/pages/account/notifications.astro'
+      - 'apps/web/scripts/send-web-push-canary.mjs'
       - 'apps/web/scripts/test-push-subscription.mjs'
       - 'apps/web/scripts/test-web-push-delivery.mjs'
-      - 'apps/web/scripts/test-pwa-contract.mjs'
-      - 'supabase/migrations/*push_subscriptions*'
-      - '.github/workflows/web-push-contract.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'apps/web/api/account.js'
-      - 'apps/web/public/sw.js'
-      - 'apps/web/src/lib/push-subscription.js'
-      - 'apps/web/src/lib/push-subscription-handler.js'
-      - 'apps/web/src/lib/supabase-secret-rest.js'
-      - 'apps/web/src/lib/web-push-delivery.js'
-      - 'apps/web/src/pages/account/notifications.astro'
-      - 'apps/web/scripts/test-push-subscription.mjs'
-      - 'apps/web/scripts/test-web-push-delivery.mjs'
+      - 'apps/web/scripts/test-web-push-canary.mjs'
       - 'apps/web/scripts/test-pwa-contract.mjs'
       - 'supabase/migrations/*push_subscriptions*'
       - '.github/workflows/web-push-contract.yml'
@@ -51,7 +57,7 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.x
-      - name: Install locked dependencies without lifecycle scripts
+      - name: Install locked dependencies under reviewed policy
         run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Syntax check Web Push modules
         run: |
@@ -62,10 +68,14 @@ jobs:
           node --check src/lib/supabase-secret-rest.js
           node --check src/lib/web-push-delivery.js
           node --check src/lib/web-push-transport.js
+          node --check src/lib/web-push-canary.js
+          node --check scripts/send-web-push-canary.mjs
       - name: Verify subscription storage and account routing
         run: node scripts/test-push-subscription.mjs
       - name: Verify bounded delivery orchestration
         run: node scripts/test-web-push-delivery.mjs
+      - name: Verify owner-only canary remains one-send and fail-closed
+        run: node scripts/test-web-push-canary.mjs
       - name: Verify PWA push and no-cache contract
         run: node scripts/test-pwa-contract.mjs
       - name: Preserve Vercel Hobby function budget

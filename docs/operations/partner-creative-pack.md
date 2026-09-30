@@ -1,10 +1,14 @@
 # USD Impact Partner Creative Pack
 
-Status: internal English draft for legal, provider, privacy, and owner review. Not approved for public distribution or partner use.
+Status: internal English draft reconciled on 2026-09-30 for legal, provider, privacy, and owner review. Not approved for public distribution or partner use.
 
 Version: 0.1
 
-Policy authority: `docs/operations/partner-referral-program-readiness.md`
+Policy authority:
+- `docs/operations/partner-referral-program-readiness.md`
+- `docs/operations/partner-program-terms-draft.md`
+- `docs/operations/partner-affiliate-tracking-privacy-gate.md`
+- `docs/operations/partner-affiliate-e2e-acceptance.md`
 
 This pack prepares an approved partner to publish a factual, compliant first campaign with minimal support. It does not activate the Partner Program, tracking, discounts, commissions, enrollment, checkout, payments, or entitlements.
 
@@ -132,14 +136,14 @@ Use a relevant free resource before the product page whenever it better matches 
 
 | Audience/content topic | Preferred destination | URL |
 |---|---|---|
-| First-time visitor | Start Here | `https://www.usd-impact.com/start-here/` |
-| Core method | Dollar Transmission Chain | `https://www.usd-impact.com/framework/dollar-transmission-chain/` |
-| Weekly routine | Weekly Dollar Regime Checklist | `https://www.usd-impact.com/lead-magnets/weekly-dollar-regime-checklist/` |
-| Current verified context | Daily USD Impact | `https://www.usd-impact.com/news/` |
-| Systematic weekly view | Weekly Score | `https://www.usd-impact.com/score/` |
-| Longer public analysis | Reports | `https://www.usd-impact.com/reports/` |
-| Product evaluation | Free Library Pass sample | `https://www.usd-impact.com/book/read-the-dollar-first/preview/` |
-| Purchase decision | Library Pass details and availability | `https://www.usd-impact.com/book/read-the-dollar-first/` |
+| First-time visitor | Start Here | `https://www.usd-impact.com/start-here` |
+| Core method | Dollar Transmission Chain | `https://www.usd-impact.com/framework/dollar-transmission-chain` |
+| Weekly routine | Weekly Dollar Regime Checklist | `https://www.usd-impact.com/lead-magnets/weekly-dollar-regime-checklist` |
+| Current verified context | Daily USD Impact | `https://www.usd-impact.com/news` |
+| Systematic weekly view | Weekly Score | `https://www.usd-impact.com/score` |
+| Longer public analysis | Reports | `https://www.usd-impact.com/reports` |
+| Product evaluation | Free Library Pass sample | `https://www.usd-impact.com/book/read-the-dollar-firstpreview` |
+| Purchase decision | Library Pass details and availability | `https://www.usd-impact.com/book/read-the-dollar-first` |
 
 Before release, validate every URL, redirect, page title, and public-access state. A partner URL may add only the provider-approved non-personal affiliate identifier and approved campaign labels.
 

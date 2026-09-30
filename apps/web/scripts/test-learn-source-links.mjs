@@ -5,13 +5,13 @@ import test from 'node:test';
 import { getLearnSourceLinks, validateLearnSourceLinks } from '../src/lib/learn-source-links.mjs';
 import { getLearnSeoTitle } from '../src/lib/learn-seo-metadata.mjs';
 
-const real = { id: 'card-real-yield', slug: 'real-yield', access: 'open', status: 'ready-for-build' };
-const dxy = { id: 'card-dxy-broad-purpose', slug: 'dxy-vs-broad-usd-what-each-index-answers', access: 'open', status: 'ready-for-build' };
+const real = { id: 'card-real-yield', slug: 'real-yield', title: 'Real Yield', access: 'open', status: 'ready-for-build' };
+const dxy = { id: 'card-dxy-broad-purpose', slug: 'dxy-vs-broad-usd-what-each-index-answers', title: 'DXY vs Broad USD', access: 'open', status: 'ready-for-build' };
 const ref = () => ({ ...getLearnSourceLinks(real)[0] });
 
 test('two Real Yield references', () => assert.equal(getLearnSourceLinks(real).length, 2));
 test('Real Yield gets the reviewed definition-intent SEO title', () => assert.equal(getLearnSeoTitle(real), 'What Is Real Yield? TIPS, Inflation and Why It Matters'));
-test('other Learn cards preserve the existing title fallback', () => assert.equal(getLearnSeoTitle(dxy), 'undefined | USD Impact Learn'));
+test('other Learn cards preserve the existing title fallback', () => assert.equal(getLearnSeoTitle(dxy), 'DXY vs Broad USD | USD Impact Learn'));
 test('mismatched or non-public Real Yield identity falls back', () => {
   const titled = { ...real, title: 'Real Yield' };
   assert.equal(getLearnSeoTitle({ ...titled, slug: 'wrong' }), 'Real Yield | USD Impact Learn');

@@ -158,3 +158,61 @@ assert.deepEqual(JSON.parse(calls[3].options.body), {
 });
 
 console.log('Web Push delivery orchestration contract verified.');
+
+import { sendWebPushNotification, WebPushTransportError } from '../src/lib/web-push-transport.js';
+
+{
+  const calls = [];
+  const delivered = await sendWebPushNotification(
+    {
+      subscription: {
+        endpoint: 'https://push.example.test/subscription',
+        expirationTime: null,
+        keys: { p256dh: 'p256dh', auth: 'auth' },
+      },
+      payload: JSON.stringify({ title: 'USD Impact', body: 'Update', url: '/news', tag: null }),
+      vapid: { publicKey: 'public', privateKey: 'private', subject: 'mailto:ops@example.com' },
+    },
+    {
+      sendImpl: async (...args) => {
+        calls.push(args);
+        return true;
+      },
+    },
+  );
+  assert.equal(delivered, true);
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0][1], { title: 'USD Impact', body: 'Update', url: '/news' });
+}
+
+{
+  await assert.rejects(
+    () => sendWebPushNotification(
+      {
+        subscription: {
+          endpoint: 'https://push.example.test/stale',
+          expirationTime: null,
+          keys: { p256dh: 'p256dh', auth: 'auth' },
+        },
+        payload: JSON.stringify({ title: 'USD Impact', body: 'Update', url: '/' }),
+        vapid: { publicKey: 'public', privateKey: 'private', subject: 'mailto:ops@example.com' },
+      },
+      { sendImpl: async () => false },
+    ),
+    (error) => error instanceof WebPushTransportError && error.statusCode === 410,
+  );
+}
+
+{
+  await assert.rejects(
+    () => sendWebPushNotification(
+      {
+        subscription: {},
+        payload: 'not-json',
+        vapid: {},
+      },
+      { sendImpl: async () => true },
+    ),
+    /valid JSON/,
+  );
+}

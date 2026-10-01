@@ -128,6 +128,18 @@ try {
   assert.equal(providerBody.text.format.schema.properties.whatToWatch.minItems, 3);
   assert.equal(providerBody.text.format.schema.properties.whatToWatch.maxItems, 6);
   assert.match(providerBody.input, /Every verified fact must cite either an authoritative primary source or at least two independent reporting domains/);
+  assert.match(providerBody.input, /Never include assistant-facing offers/);
+
+  const longSummaryDraft = {
+    ...draft,
+    summary: `${'Alpha '.repeat(60)}omega`,
+  };
+  globalThis.fetch = async () => new Response(JSON.stringify(openAiResponse(longSummaryDraft)), { status: 200 });
+  const boundedMeta = await invoke(request());
+  assert.equal(boundedMeta.status, 200);
+  assert.ok(boundedMeta.json.metaDescription.length <= 300);
+  assert.equal(boundedMeta.json.metaDescription.endsWith('Alph'), false);
+  assert.equal(/\s$/.test(boundedMeta.json.metaDescription), false);
 
   assert.equal((await invoke(request({ token: '' }))).status, 401);
   assert.equal((await invoke(request({ method: 'GET' }))).status, 405);
@@ -203,6 +215,23 @@ try {
   assert.equal(watchRepairBody.tools, undefined);
   assert.equal(watchRepairBody.text.format.name, 'usd_impact_catalyst_content_repair');
   assert.match(watchRepairBody.input, /source ledger below is immutable/i);
+
+  const conversationalDraft = {
+    ...draft,
+    body: `${draft.body}\n\nIf you want, I will prepare a follow-up after release.`,
+  };
+  let conversationalRepairCalls = 0;
+  globalThis.fetch = async () => {
+    conversationalRepairCalls += 1;
+    const payload = conversationalRepairCalls === 1
+      ? openAiResponse(conversationalDraft)
+      : openAiResponse(contentRepairDraft(draft), []);
+    return new Response(JSON.stringify(payload), { status: 200 });
+  };
+  const conversationalRepaired = await invoke(request());
+  assert.equal(conversationalRepaired.status, 200);
+  assert.equal(conversationalRepaired.json.body, draft.body);
+  assert.equal(conversationalRepairCalls, 2);
 
   const weakFactDraft = {
     ...draft,

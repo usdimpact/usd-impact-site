@@ -107,6 +107,36 @@ export async function handleVideoLibraryRequest(
     return response.end('Invalid protected route.');
   }
 
+  const playerProbeRequested = requestUrl(request).searchParams.get('__stream_player_probe') === '1';
+  if (playerProbeRequested) {
+    if (environment.VERCEL_ENV !== 'preview' || request.method !== 'GET') {
+      response.statusCode = 404;
+      response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      return response.end('Not found.');
+    }
+    const probeSlug = routeSlug(protectedUrl);
+    const probeUid = probeSlug ? getStreamUid(probeSlug) : null;
+    if (!probeSlug || !probeUid) {
+      response.statusCode = 404;
+      response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      return response.end('Not found.');
+    }
+    try {
+      const signedToken = await createToken({ videoUid: probeUid, environment });
+      const src = `https://customer-${customerCode}.cloudflarestream.com/${encodeURIComponent(signedToken)}/iframe`;
+      const body = `<!doctype html><html><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>Stream Preview Probe</title></head><body style="margin:0;background:#000"><iframe id="stream-probe" src="${src}" title="Stream Preview Probe" style="border:0;width:100vw;height:100vh" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture" allowfullscreen></iframe></body></html>`;
+      response.statusCode = 200;
+      response.setHeader('Content-Type', 'text/html; charset=utf-8');
+      response.setHeader('Content-Length', Buffer.byteLength(body));
+      return response.end(body);
+    } catch (error) {
+      safeCloudflareStreamError(error);
+      response.statusCode = 503;
+      response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      return response.end('Probe unavailable.');
+    }
+  }
+
   let resolved;
   try {
     resolved = await resolveSession({

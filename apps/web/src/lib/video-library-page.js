@@ -150,7 +150,7 @@ export function renderProtectedVideoLesson({ video, signedToken, customerCode, p
   const playerUrl = `${streamBase}/iframe?${query}`;
   const manifestUrl = `${streamBase}/manifest/video.m3u8`;
   const playerMarkup = previewHls
-    ? `<video id="stream-player" controls playsinline preload="metadata" data-stream-manifest="${escapeHtml(manifestUrl)}" aria-label="${escapeHtml(video.title)}"></video>`
+    ? `<video id="stream-player" controls playsinline preload="metadata" data-stream-manifest="${escapeHtml(manifestUrl)}" data-stream-options="defaultTextTrack=en" aria-label="${escapeHtml(video.title)}"></video>`
     : `<iframe id="stream-player" src="${escapeHtml(playerUrl)}" title="${escapeHtml(video.title)}" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" referrerpolicy="no-referrer" allowfullscreen></iframe>`;
   const concepts = video.concepts.map((concept) => `<li>${escapeHtml(concept)}</li>`).join('');
   const sources = video.sources.map((source) => `<li>${escapeHtml(source)}</li>`).join('');

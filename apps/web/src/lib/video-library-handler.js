@@ -125,7 +125,19 @@ export async function handleVideoLibraryRequest(
     }
     try {
       const metadata = await readVideoMetadata({ videoUid: diagnosticUid, environment });
-      const body = JSON.stringify({ ok: true, metadata });
+      const signedToken = await createToken({ videoUid: diagnosticUid, environment });
+      const manifestResponse = await fetch(
+        `https://customer-${customerCode}.cloudflarestream.com/${encodeURIComponent(signedToken)}/manifest/video.m3u8`,
+        { method: 'GET', headers: { Accept: 'application/vnd.apple.mpegurl' }, cache: 'no-store' },
+      );
+      const manifestText = await manifestResponse.text();
+      const manifestProbe = {
+        status: manifestResponse.status,
+        contentType: String(manifestResponse.headers.get('content-type') || ''),
+        isHls: manifestText.trimStart().startsWith('#EXTM3U'),
+        bodyBytes: Buffer.byteLength(manifestText),
+      };
+      const body = JSON.stringify({ ok: true, metadata, manifestProbe });
       response.statusCode = 200;
       response.setHeader('Content-Type', 'application/json; charset=utf-8');
       response.setHeader('Content-Length', Buffer.byteLength(body));

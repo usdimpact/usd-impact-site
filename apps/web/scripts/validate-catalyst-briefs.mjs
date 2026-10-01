@@ -46,6 +46,9 @@ for (const file of files) {
   if (/\b(guaranteed return|risk-free profit|must buy|must sell|will definitely rise|will definitely fall)\b/i.test(raw)) {
     throw new Error(`${file}: prohibited deterministic market language`);
   }
+  if (/\b(?:if you want|if you'd like|if you would like|i can|i will prepare|let me know|would you like)\b/i.test(raw)) {
+    throw new Error(`${file}: assistant-style conversational residue`);
+  }
 }
 
 console.log(`Validated ${files.length} Catalyst Brief${files.length === 1 ? '' : 's'}.`);

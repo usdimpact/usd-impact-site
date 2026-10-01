@@ -140,13 +140,7 @@ export function renderProtectedVideoLesson({ video, signedToken, customerCode })
   const collectionVideos = getCollectionVideos(video.collectionId);
   const adjacent = getAdjacentVideos(video);
   const number = getVideoNumber(video);
-  const query = new URLSearchParams({
-    primaryColor: '#C9A35B',
-    letterboxColor: '#020A14',
-    preload: 'metadata',
-    defaultTextTrack: 'en',
-  });
-  const playerUrl = `https://customer-${customerCode}.cloudflarestream.com/${encodeURIComponent(signedToken)}/iframe?${query}`;
+  const playerUrl = `https://customer-${customerCode}.cloudflarestream.com/${encodeURIComponent(signedToken)}/iframe`;
   const concepts = video.concepts.map((concept) => `<li>${escapeHtml(concept)}</li>`).join('');
   const sources = video.sources.map((source) => `<li>${escapeHtml(source)}</li>`).join('');
   const previous = adjacent.previous

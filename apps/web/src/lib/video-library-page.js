@@ -135,7 +135,7 @@ export function renderProtectedVideoCatalog() {
   });
 }
 
-export function renderProtectedVideoLesson({ video, signedToken, customerCode }) {
+export function renderProtectedVideoLesson({ video, signedToken, customerCode, previewHls = false }) {
   const collection = getCollection(video.collectionId);
   const collectionVideos = getCollectionVideos(video.collectionId);
   const adjacent = getAdjacentVideos(video);
@@ -146,7 +146,12 @@ export function renderProtectedVideoLesson({ video, signedToken, customerCode })
     preload: 'metadata',
     defaultTextTrack: 'en',
   });
-  const playerUrl = `https://customer-${customerCode}.cloudflarestream.com/${encodeURIComponent(signedToken)}/iframe?${query}`;
+  const streamBase = `https://customer-${customerCode}.cloudflarestream.com/${encodeURIComponent(signedToken)}`;
+  const playerUrl = `${streamBase}/iframe?${query}`;
+  const manifestUrl = `${streamBase}/manifest/video.m3u8`;
+  const playerMarkup = previewHls
+    ? `<video id="stream-player" controls playsinline preload="metadata" data-stream-manifest="${escapeHtml(manifestUrl)}" aria-label="${escapeHtml(video.title)}"></video>`
+    : `<iframe id="stream-player" src="${escapeHtml(playerUrl)}" title="${escapeHtml(video.title)}" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" referrerpolicy="no-referrer" allowfullscreen></iframe>`;
   const concepts = video.concepts.map((concept) => `<li>${escapeHtml(concept)}</li>`).join('');
   const sources = video.sources.map((source) => `<li>${escapeHtml(source)}</li>`).join('');
   const previous = adjacent.previous
@@ -163,7 +168,7 @@ export function renderProtectedVideoLesson({ video, signedToken, customerCode })
       <div class="vl-shell vl-main">
         <nav class="vl-breadcrumb" aria-label="Breadcrumb"><a href="/guided-edition/video-library/">Video Library</a><span>/</span><a href="/guided-edition/video-library/#${escapeHtml(collection.id)}">${escapeHtml(collection.title)}</a><span>/</span><span>Film ${String(number).padStart(2, '0')}</span></nav>
         <div class="vl-player-shell">
-          <iframe id="stream-player" src="${escapeHtml(playerUrl)}" title="${escapeHtml(video.title)}" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" referrerpolicy="no-referrer" allowfullscreen></iframe>
+          ${playerMarkup}
         </div>
         <div class="vl-watch-grid">
           <article>
@@ -183,7 +188,10 @@ export function renderProtectedVideoLesson({ video, signedToken, customerCode })
         <nav class="vl-lesson-nav" aria-label="Lesson navigation">${previous}${next}</nav>
       </div>
     </main>`,
-    scripts: `<script src="https://embed.cloudflarestream.com/embed/sdk.latest.js" defer></script>
+    scripts: previewHls
+      ? `<script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js" defer></script>
+      <script src="/assets/video-library-hls-preview.js" defer></script>`
+      : `<script src="https://embed.cloudflarestream.com/embed/sdk.latest.js" defer></script>
       <script src="/assets/video-library-player.js" data-video-slug="${escapeHtml(video.slug)}" data-video-duration="${Number(video.durationSeconds)}" defer></script>`,
   });
 }
@@ -197,7 +205,7 @@ export function renderVideoUnavailable({ video = null } = {}) {
   });
 }
 
-export function videoLibraryContentSecurityPolicy(customerCode) {
+export function videoLibraryContentSecurityPolicy(customerCode, { previewHls = false } = {}) {
   const streamOrigin = `https://customer-${customerCode}.cloudflarestream.com`;
   return [
     "default-src 'self'",
@@ -207,7 +215,11 @@ export function videoLibraryContentSecurityPolicy(customerCode) {
     `frame-src ${streamOrigin}`,
     "img-src 'self' data:",
     "style-src 'self'",
-    "script-src 'self' https://embed.cloudflarestream.com",
-    "connect-src 'self'",
+    previewHls
+      ? "script-src 'self' https://cdn.jsdelivr.net"
+      : "script-src 'self' https://embed.cloudflarestream.com",
+    previewHls
+      ? `connect-src 'self' ${streamOrigin}`
+      : "connect-src 'self'",
   ].join('; ');
 }

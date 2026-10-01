@@ -94,7 +94,8 @@ export async function handleVideoLibraryRequest(
   response.setHeader('X-Content-Type-Options', 'nosniff');
   response.setHeader('X-Robots-Tag', 'noindex, nofollow');
   response.setHeader('Referrer-Policy', 'no-referrer');
-  response.setHeader('Content-Security-Policy', videoLibraryContentSecurityPolicy(customerCode));
+  const previewHls = environment.VERCEL_ENV === 'preview';
+  response.setHeader('Content-Security-Policy', videoLibraryContentSecurityPolicy(customerCode, { previewHls }));
 
   if (request.method !== 'GET' && request.method !== 'HEAD') return methodNotAllowed(response);
 
@@ -158,6 +159,7 @@ export async function handleVideoLibraryRequest(
       video,
       signedToken,
       customerCode,
+      previewHls,
     }));
   } catch (error) {
     safeCloudflareStreamError(error);

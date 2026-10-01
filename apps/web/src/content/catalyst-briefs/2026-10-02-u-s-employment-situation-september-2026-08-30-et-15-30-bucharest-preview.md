@@ -1,7 +1,7 @@
 ---
 title: "U.S. Employment Situation — September 2026, 08:30 ET / 15:30 Bucharest — What to Watch"
 metaTitle: "U.S. Employment Situation — September 2026, 08:30 ET / 15:30 Bucharest — What to Watch | USD Impact"
-metaDescription: "The U.S. Bureau of Labor Statistics (BLS) has scheduled the Employment Situation for September 2026 to be published Friday, 2026-10-02 at 08:30 AM Eastern Time (08:30 ET = 15:30 Bucharest). The release provides headline nonfarm payrolls, the unemployment rate, average hourly earnings, and other labo"
+metaDescription: "BLS schedules the September 2026 Employment Situation for October 2 at 8:30 a.m. ET. Watch payrolls, unemployment, wages, revisions, and market response."
 slug: "/news/catalysts/2026-10-02-u-s-employment-situation-september-2026-08-30-et-15-30-bucharest-preview"
 eventKey: "2026-10-02-u-s-employment-situation-september-2026-08-30-et-15-30-bucharest"
 event: "U.S. Employment Situation — September 2026, 08:30 ET / 15:30 Bucharest"
@@ -89,7 +89,7 @@ sources:
 complianceNote: "Educational and informational only. This content is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset."
 ---
 
-Pre-event note (concise)
+## Pre-event note
 
 - Confirmed timing: The BLS schedule lists the Employment Situation for September 2026 to be published on Friday, 2026-10-02 at 08:30 AM Eastern Time. BLS release-calendar pages explicitly show times in Eastern Time; 08:30 ET equals 15:30 in Bucharest on 2026-10-02. See the BLS schedule and the Employment Situation pages in the source ledger.
 
@@ -97,7 +97,5 @@ Pre-event note (concise)
 
 - Why markets watch it: Payrolls, unemployment and wages feed into market expectations for the Fed’s policy path. The Federal Reserve cites employment and earnings indicators as core inputs when assessing maximum employment and price stability.
 
-- How to position monitoring on release day: watch the headline payrolls number, unemployment rate, and average hourly earnings first; then check revisions to prior months and household-survey details (participation, employment change). Market reactions typically appear within minutes in Treasury yields, fed funds futures, USD crosses, and risk assets.
-
-If you want, I will prepare an immediate post-release readout (timestamped) that summarizes the actual prints, quick market reactions across Treasuries/FX/equities, and a short conditional interpretation versus Fed policy pricing.
+- What to monitor on release day: read the headline payrolls number, unemployment rate, and average hourly earnings first; then check revisions to prior months and household-survey details such as participation and household employment. After publication, observe Treasury yields, market-implied policy pricing, USD crosses, and risk assets rather than inferring a market response from the data alone.
 

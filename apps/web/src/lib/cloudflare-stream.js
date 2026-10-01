@@ -89,47 +89,6 @@ export async function createCloudflareStreamToken({
   return token;
 }
 
-export async function readCloudflareStreamVideoMetadata({
-  videoUid,
-  environment = process.env,
-  fetchImpl = fetch,
-}) {
-  const accountId = requireAccountId(environment.CLOUDFLARE_ACCOUNT_ID);
-  const apiToken = requireApiToken(environment.CLOUDFLARE_STREAM_API_TOKEN);
-  const uid = requireVideoUid(videoUid);
-  const endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${uid}`;
-  let response;
-  try {
-    response = await fetchImpl(endpoint, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${apiToken}`,
-      },
-      cache: 'no-store',
-    });
-  } catch {
-    throw new CloudflareStreamRequestError('Secure video metadata is temporarily unavailable.');
-  }
-  const payload = await readJson(response);
-  if (!response.ok || payload?.success !== true || !payload?.result) {
-    throw new CloudflareStreamRequestError('Secure video metadata is temporarily unavailable.', {
-      status: response.status >= 400 && response.status < 600 ? response.status : 502,
-      code: 'CLOUDFLARE_STREAM_METADATA_FAILED',
-    });
-  }
-  const result = payload.result;
-  return {
-    uid: String(result.uid || ''),
-    readyToStream: result.readyToStream === true,
-    requireSignedURLs: result.requireSignedURLs === true,
-    allowedOrigins: Array.isArray(result.allowedOrigins) ? result.allowedOrigins.map(String) : [],
-    status: String(result.status?.state || ''),
-    inputWidth: Number.isFinite(result.input?.width) ? result.input.width : null,
-    inputHeight: Number.isFinite(result.input?.height) ? result.input.height : null,
-  };
-}
-
 export function safeCloudflareStreamError(error) {
   if (error instanceof CloudflareStreamConfigurationError) {
     console.error(error.message);

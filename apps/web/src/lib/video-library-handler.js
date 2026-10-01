@@ -15,7 +15,6 @@ import {
 import { getVideo } from '../data/video-library.js';
 import {
   createCloudflareStreamToken,
-  readCloudflareStreamVideoMetadata,
   safeCloudflareStreamError,
 } from './cloudflare-stream.js';
 import {
@@ -86,7 +85,6 @@ export async function handleVideoLibraryRequest(
     readAccessState = readAccountAccessState,
     resolveSession = resolveSessionWithRefresh,
     createToken = createCloudflareStreamToken,
-    readVideoMetadata = readCloudflareStreamVideoMetadata,
     environment = process.env,
   } = {},
 ) {
@@ -107,49 +105,6 @@ export async function handleVideoLibraryRequest(
     response.statusCode = 400;
     response.setHeader('Content-Type', 'text/plain; charset=utf-8');
     return response.end('Invalid protected route.');
-  }
-
-  const diagnosticRequested = requestUrl(request).searchParams.get('__stream_diagnostic') === '1';
-  if (diagnosticRequested) {
-    if (environment.VERCEL_ENV !== 'preview' || request.method !== 'GET') {
-      response.statusCode = 404;
-      response.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      return response.end('Not found.');
-    }
-    const diagnosticSlug = routeSlug(protectedUrl);
-    const diagnosticUid = diagnosticSlug ? getStreamUid(diagnosticSlug) : null;
-    if (!diagnosticSlug || !diagnosticUid) {
-      response.statusCode = 404;
-      response.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      return response.end('Not found.');
-    }
-    try {
-      const metadata = await readVideoMetadata({ videoUid: diagnosticUid, environment });
-      const signedToken = await createToken({ videoUid: diagnosticUid, environment });
-      const manifestResponse = await fetch(
-        `https://customer-${customerCode}.cloudflarestream.com/${encodeURIComponent(signedToken)}/manifest/video.m3u8`,
-        { method: 'GET', headers: { Accept: 'application/vnd.apple.mpegurl' }, cache: 'no-store' },
-      );
-      const manifestText = await manifestResponse.text();
-      const manifestProbe = {
-        status: manifestResponse.status,
-        contentType: String(manifestResponse.headers.get('content-type') || ''),
-        isHls: manifestText.trimStart().startsWith('#EXTM3U'),
-        bodyBytes: Buffer.byteLength(manifestText),
-      };
-      const body = JSON.stringify({ ok: true, metadata, manifestProbe });
-      response.statusCode = 200;
-      response.setHeader('Content-Type', 'application/json; charset=utf-8');
-      response.setHeader('Content-Length', Buffer.byteLength(body));
-      return response.end(body);
-    } catch (error) {
-      const safe = safeCloudflareStreamError(error);
-      const body = JSON.stringify({ ok: false, code: safe.code });
-      response.statusCode = safe.status;
-      response.setHeader('Content-Type', 'application/json; charset=utf-8');
-      response.setHeader('Content-Length', Buffer.byteLength(body));
-      return response.end(body);
-    }
   }
 
   let resolved;

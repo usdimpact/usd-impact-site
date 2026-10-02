@@ -528,7 +528,7 @@ async function capacityFetch(target, accessToken, level, round, index) {
       method: 'GET',
       headers: {
         Accept: 'text/html',
-        Authorization: `Bearer ${accessToken}`,
+        Cookie: `usd_impact_access=${encodeURIComponent(accessToken)}; usd_impact_persistence=0`,
         'Cache-Control': 'no-cache',
       },
       redirect: 'manual',

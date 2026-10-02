@@ -530,6 +530,7 @@ async function capacityFetch(target, accessToken, level, round, index) {
         Accept: 'text/html',
         Cookie: `usd_impact_access=${encodeURIComponent(accessToken)}; usd_impact_persistence=0`,
         'Cache-Control': 'no-cache',
+        'x-vercel-protection-bypass': String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET || ''),
       },
       redirect: 'manual',
     });
@@ -565,9 +566,6 @@ async function handleCapacityBenchmark(request, response) {
   }
 
   const target = new URL('/guided-edition/chapter-1/', requestOrigin(request));
-  const share = url.searchParams.get('_vercel_share');
-  if (share) target.searchParams.set('_vercel_share', share);
-
   const warmup = await capacityFetch(target, accessToken, 0, 0, 0);
   if (warmup.status !== 200) return sendJson(response, 502, { ok: false, stage: 'warmup', warmup });
 

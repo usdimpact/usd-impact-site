@@ -39,6 +39,8 @@ import {
 import { handleVideoLibraryRequest } from '../src/lib/video-library-handler.js';
 import { handleAudiobookRequest } from '../src/lib/audiobook-handler.js';
 import { handleBookDeliveryRequest } from '../src/lib/book-delivery-handler.js';
+import { createCloudflareStreamToken } from '../src/lib/cloudflare-stream.js';
+import { getStreamCustomerCode, getStreamUid } from '../src/lib/video-stream-map.js';
 
 const ROUTE_PARAM = '__paid_path';
 const ROOT_PATH = '/guided-edition/';
@@ -475,8 +477,115 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
   return response.end(request.method === 'HEAD' ? '' : body);
 }
 
+
+const DXY_PLAYBACK_VERIFY_NONCE = 'dxy-playback-r3-7f12c6c6a0ac40bbbc3c4ddc2a724624';
+const DXY_PLAYBACK_VERIFY_EXPIRES_MS = Date.parse('2026-10-02T20:30:00Z');
+
+async function handleDxyPlaybackVerify(request, response) {
+  const url = requestUrl(request);
+  if (
+    process.env.VERCEL_ENV !== 'preview'
+    || Date.now() > DXY_PLAYBACK_VERIFY_EXPIRES_MS
+    || url.searchParams.get('k') !== DXY_PLAYBACK_VERIFY_NONCE
+  ) {
+    response.statusCode = 404;
+    return response.end('Not found.');
+  }
+  if (request.method !== 'GET') return methodNotAllowed(response, 'GET', false);
+
+  const slug = 'dxy-the-signal-vs-the-system';
+  const videoUid = getStreamUid(slug);
+  const customerCode = getStreamCustomerCode(process.env);
+  if (!videoUid || !customerCode) {
+    response.statusCode = 503;
+    return response.end('Playback verifier unavailable.');
+  }
+
+  let signedToken;
+  try {
+    signedToken = await createCloudflareStreamToken({ videoUid, environment: process.env });
+  } catch {
+    response.statusCode = 503;
+    return response.end('Playback verifier unavailable.');
+  }
+
+  const streamOrigin = `https://customer-${customerCode}.cloudflarestream.com`;
+  const manifest = `${streamOrigin}/${encodeURIComponent(signedToken)}/manifest/video.m3u8`;
+  response.statusCode = 200;
+  response.setHeader('Cache-Control', 'no-store');
+  response.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  response.setHeader('Referrer-Policy', 'no-referrer');
+  response.setHeader('Content-Security-Policy', [
+    "default-src 'none'",
+    "style-src 'unsafe-inline'",
+    "script-src 'unsafe-inline' https://cdn.jsdelivr.net",
+    `connect-src ${streamOrigin}`,
+    `media-src blob: ${streamOrigin}`,
+  ].join('; '));
+  response.setHeader('Content-Type', 'text/html; charset=utf-8');
+  return response.end(`<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DXY playback verification</title>
+<style>body{font-family:system-ui;margin:32px;background:#071a33;color:#fff}video{width:min(900px,100%);background:#000}#status{font-size:20px;font-weight:700;margin-top:18px}</style>
+</head><body>
+<h1>DXY playback verification</h1>
+<video id="v" controls muted playsinline preload="auto"></video>
+<p id="status">PENDING</p>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
+<script>
+(() => {
+  const video = document.getElementById('v');
+  const status = document.getElementById('status');
+  const manifest = ${JSON.stringify(manifest)};
+  let finished = false;
+  const done = (message) => {
+    if (finished) return;
+    finished = true;
+    status.textContent = message;
+    document.body.dataset.playbackResult = message.startsWith('PASS') ? 'pass' : 'fail';
+  };
+  const verify = async () => {
+    try {
+      video.muted = true;
+      const before = Number(video.currentTime || 0);
+      await video.play();
+      await new Promise(r => setTimeout(r, 5000));
+      const after = Number(video.currentTime || 0);
+      video.pause();
+      if (after > before + 1) done('PASS currentTime=' + after.toFixed(2) + ' readyState=' + video.readyState);
+      else done('FAIL playback did not advance currentTime=' + after.toFixed(2) + ' readyState=' + video.readyState);
+    } catch (e) {
+      done('FAIL play rejected ' + String(e && e.name || 'unknown'));
+    }
+  };
+  video.addEventListener('canplay', verify, { once: true });
+  video.addEventListener('error', () => done('FAIL native media error code=' + String(video.error && video.error.code || 'unknown')), { once: true });
+  if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = manifest;
+    return;
+  }
+  if (!window.Hls || !window.Hls.isSupported()) {
+    done('FAIL HLS unsupported');
+    return;
+  }
+  const hls = new window.Hls({ enableWorker: true, lowLatencyMode: false });
+  hls.loadSource(manifest);
+  hls.attachMedia(video);
+  hls.on(window.Hls.Events.ERROR, (_event, data) => {
+    if (data && data.fatal) done('FAIL fatal ' + String(data.type || 'unknown') + ' ' + String(data.details || 'unknown'));
+  });
+  setTimeout(() => {
+    if (!finished) done('FAIL timeout readyState=' + video.readyState + ' currentTime=' + Number(video.currentTime || 0).toFixed(2));
+  }, 20000);
+})();
+</script></body></html>`);
+}
+
 export default async function handler(request, response) {
   const internalUrl = requestUrl(request);
+  if (internalUrl.searchParams.get('__dxy_playback_verify') === '1') {
+    return handleDxyPlaybackVerify(request, response);
+  }
   if (
     internalUrl.searchParams.get('__video_library') === '1'
     || internalUrl.searchParams.has('__video_path')

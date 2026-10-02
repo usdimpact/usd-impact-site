@@ -565,7 +565,7 @@ async function handleCapacityBenchmark(request, response) {
     return sendJson(response, 502, { ok: false, stage: 'session', code: String(error?.message || error) });
   }
 
-  const target = new URL('/guided-edition/chapter-1/', requestOrigin(request));
+  const target = new URL('/guided-edition/chapter-1', requestOrigin(request));
   const warmup = await capacityFetch(target, accessToken, 0, 0, 0);
   if (warmup.status !== 200) return sendJson(response, 502, { ok: false, stage: 'warmup', warmup });
 

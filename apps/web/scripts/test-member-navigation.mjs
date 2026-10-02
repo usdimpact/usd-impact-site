@@ -63,7 +63,7 @@ for (const path of ['/book/read-the-dollar-first/', '/privacy/', '/terms/', '/re
   assert.ok(layout.includes(`href="${path}"`), `Governed disclosure footer route must remain ${path}`);
 }
 const publicAudio = await read('../src/pages/audiobook/read-the-dollar-first.astro');
-assert.match(publicAudio, /const memberAudiobookPath = '\/guided-edition\/audiobook\/'/);
+assert.match(publicAudio, /const memberAudiobookPath = '\/guided-edition\/audiobook'/);
 assert.equal((publicAudio.match(/href=\{memberAudiobookPath\}/g) || []).length, 2);
 assert.doesNotMatch(publicAudio, /\/account\/sign-in\//);
 

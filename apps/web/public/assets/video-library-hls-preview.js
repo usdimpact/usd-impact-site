@@ -47,6 +47,10 @@
   hls.loadSource(manifest);
   hls.attachMedia(video);
   hls.on(window.Hls.Events.ERROR, (_event, data) => {
-    if (data?.fatal) fail('fatal ' + String(data.type || 'unknown'));
+    if (data?.fatal) {
+      fail('fatal ' + String(data.type || 'unknown')
+        + ' detail=' + String(data.details || 'unknown')
+        + ' reason=' + String(data.reason || data.error?.message || 'none'));
+    }
   });
 })();

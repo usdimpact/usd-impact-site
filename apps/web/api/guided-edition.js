@@ -538,6 +538,7 @@ async function capacityFetch(target, accessToken, level, round, index) {
     return {
       status: result.status,
       redirected: result.status >= 300 && result.status < 400,
+      locationPath: result.headers.get('location') ? new URL(result.headers.get('location'), target).pathname : null,
       ms: Number((performance.now() - started).toFixed(1)),
     };
   } catch {

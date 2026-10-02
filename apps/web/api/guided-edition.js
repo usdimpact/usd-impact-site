@@ -38,6 +38,8 @@ import {
 } from '../src/lib/guided-edition.js';
 import { handleVideoLibraryRequest } from '../src/lib/video-library-handler.js';
 import { handleAudiobookRequest } from '../src/lib/audiobook-handler.js';
+import { createCloudflareStreamToken } from '../src/lib/cloudflare-stream.js';
+import { getStreamCustomerCode, getStreamUid } from '../src/lib/video-stream-map.js';
 import { handleBookDeliveryRequest } from '../src/lib/book-delivery-handler.js';
 
 const ROUTE_PARAM = '__paid_path';
@@ -475,8 +477,37 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
   return response.end(request.method === 'HEAD' ? '' : body);
 }
 
+
+const DXY_FFMPEG_PROBE_NONCE = 'dxy-ffmpeg-9e8a4c1d77a849f49dd2106fd3086a32';
+const DXY_FFMPEG_PROBE_EXPIRES_MS = Date.parse('2026-10-02T21:15:00Z');
+
+async function handleDxyFfmpegProbe(request, response) {
+  const url = requestUrl(request);
+  if (
+    process.env.VERCEL_ENV !== 'preview'
+    || Date.now() > DXY_FFMPEG_PROBE_EXPIRES_MS
+    || request.method !== 'GET'
+    || url.searchParams.get('k') !== DXY_FFMPEG_PROBE_NONCE
+  ) {
+    response.statusCode = 404;
+    return response.end('Not found.');
+  }
+  try {
+    const videoUid = getStreamUid('dxy-the-signal-vs-the-system');
+    const customerCode = getStreamCustomerCode(process.env);
+    const token = await createCloudflareStreamToken({ videoUid, environment: process.env });
+    const manifest = `https://customer-${customerCode}.cloudflarestream.com/${encodeURIComponent(token)}/manifest/video.m3u8`;
+    return sendJson(response, 200, { manifest });
+  } catch {
+    return sendJson(response, 503, { error: 'unavailable' });
+  }
+}
+
 export default async function handler(request, response) {
   const internalUrl = requestUrl(request);
+  if (internalUrl.searchParams.get('__dxy_ffmpeg_probe') === '1') {
+    return handleDxyFfmpegProbe(request, response);
+  }
   if (
     internalUrl.searchParams.get('__video_library') === '1'
     || internalUrl.searchParams.has('__video_path')

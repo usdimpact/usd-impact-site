@@ -1,0 +1,30 @@
+name: Daily DEP0169 Preview probe
+
+on:
+  push:
+    branches:
+      - diag/daily-dep0169-probe-20261002-r2
+    paths:
+      - .github/workflows/daily-dep0169-preview-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Exercise header-only Daily background request
+        env:
+          NEWSFEED_BEARER_TOKEN: ${{ secrets.NEWSFEED_BEARER_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$NEWSFEED_BEARER_TOKEN"
+          code="$(curl --silent --show-error --location             -c /tmp/vercel-cookies -b /tmp/vercel-cookies             --max-time 60             -H "Authorization: Bearer $NEWSFEED_BEARER_TOKEN"             -H "X-USD-Impact-Edition-Date: 2026-10-05"             -H "X-USD-Impact-Response-Id: resp_12345678"             'https://usd-impact-site-g81o5exul-usd-impact.vercel.app/api/daily-news-grounded-background?_vercel_share=VSXTxs1qvN7IDisCv16b4K3rS1i7henL'             --output /tmp/probe.json             --write-out '%{http_code}')"
+          echo "HTTP_STATUS=$code"
+          case "$code" in
+            400|401|404|502) ;;
+            *) echo "Unexpected status $code"; cat /tmp/probe.json; exit 1 ;;
+          esac

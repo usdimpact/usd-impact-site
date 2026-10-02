@@ -39,7 +39,6 @@ import {
 import { handleVideoLibraryRequest } from '../src/lib/video-library-handler.js';
 import { handleAudiobookRequest } from '../src/lib/audiobook-handler.js';
 import { handleBookDeliveryRequest } from '../src/lib/book-delivery-handler.js';
-import { createSignedBookUrl } from '../src/lib/private-book.js';
 
 const ROUTE_PARAM = '__paid_path';
 const ROOT_PATH = '/guided-edition/';
@@ -476,140 +475,8 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
   return response.end(request.method === 'HEAD' ? '' : body);
 }
 
-
-const BOOK_MEDIA_BENCHMARK_NONCE = 'book-media-r3-4bfa2d178ce643b49eaf3092c5df0187';
-const BOOK_MEDIA_BENCHMARK_EXPIRES_MS = Date.parse('2026-10-02T20:45:00Z');
-const BOOK_MEDIA_READ_LIMIT = 65536;
-
-function bookMediaPercentile(values, p) {
-  if (!values.length) return null;
-  const sorted = [...values].sort((a, b) => a - b);
-  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * p) - 1));
-  return Number(sorted[index].toFixed(1));
-}
-
-async function bookReadAtMost(response, limit) {
-  if (!response.body) return 0;
-  const reader = response.body.getReader();
-  let total = 0;
-  try {
-    while (total < limit) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      total += value?.byteLength || 0;
-      if (total >= limit) break;
-    }
-  } finally {
-    try { await reader.cancel(); } catch {}
-  }
-  return Math.min(total, limit);
-}
-
-async function bookMediaFetch(signedUrl, level, round, index) {
-  const url = new URL(signedUrl);
-  url.searchParams.set('capacity_probe', `${level}-${round}-${index}-${crypto.randomUUID()}`);
-  const started = performance.now();
-  try {
-    const result = await fetch(url, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/pdf,application/octet-stream;q=0.8',
-        Range: `bytes=0-${BOOK_MEDIA_READ_LIMIT - 1}`,
-        'Cache-Control': 'no-cache',
-      },
-      redirect: 'manual',
-      cache: 'no-store',
-    });
-    const bytes = await bookReadAtMost(result, BOOK_MEDIA_READ_LIMIT);
-    return {
-      status: result.status,
-      redirected: result.status >= 300 && result.status < 400,
-      rangeHonored: result.status === 206 || Boolean(result.headers.get('content-range')),
-      contentType: String(result.headers.get('content-type') || ''),
-      bytes,
-      ms: Number((performance.now() - started).toFixed(1)),
-    };
-  } catch {
-    return { status: 0, redirected: false, rangeHonored: false, contentType: '', bytes: 0, ms: Number((performance.now() - started).toFixed(1)) };
-  }
-}
-
-async function handleBookMediaBenchmark(request, response) {
-  const url = requestUrl(request);
-  if (
-    process.env.VERCEL_ENV !== 'preview'
-    || Date.now() > BOOK_MEDIA_BENCHMARK_EXPIRES_MS
-    || url.searchParams.get('k') !== BOOK_MEDIA_BENCHMARK_NONCE
-  ) {
-    response.statusCode = 404;
-    return response.end('Not found.');
-  }
-  if (request.method !== 'GET') return methodNotAllowed(response, 'GET', true);
-
-  let signedUrl;
-  try {
-    signedUrl = await createSignedBookUrl({ environment: process.env, expiresIn: 300 });
-  } catch (error) {
-    return sendJson(response, 502, { ok: false, stage: 'signing', code: String(error?.code || error?.message || error) });
-  }
-
-  const warmup = await bookMediaFetch(signedUrl, 0, 0, 0);
-  if (!([200, 206].includes(warmup.status)) || warmup.bytes <= 0) {
-    return sendJson(response, 502, { ok: false, stage: 'warmup', warmup });
-  }
-
-  const results = [];
-  let baselineP95 = null;
-  for (const concurrency of [1, 2, 4, 8, 16, 32]) {
-    const requests = [];
-    const batches = [];
-    for (let round = 1; round <= 3; round += 1) {
-      const batchStarted = performance.now();
-      const batch = await Promise.all(
-        Array.from({ length: concurrency }, (_, index) => bookMediaFetch(signedUrl, concurrency, round, index)),
-      );
-      const wallMs = Number((performance.now() - batchStarted).toFixed(1));
-      requests.push(...batch);
-      batches.push({ round, wallMs });
-      if (batch.some((entry) => ![200, 206].includes(entry.status) || entry.redirected || entry.bytes <= 0)) break;
-    }
-    const latencies = requests.map((entry) => entry.ms);
-    const item = {
-      concurrency,
-      requestCount: requests.length,
-      success: requests.filter((entry) => [200, 206].includes(entry.status) && entry.bytes > 0).length,
-      failures: requests.filter((entry) => ![200, 206].includes(entry.status) || entry.bytes <= 0).length,
-      redirected: requests.filter((entry) => entry.redirected).length,
-      statuses: [...new Set(requests.map((entry) => entry.status))].sort((a, b) => a - b),
-      rangeHonored: requests.filter((entry) => entry.rangeHonored).length,
-      bytesRead: requests.reduce((sum, entry) => sum + entry.bytes, 0),
-      p50Ms: bookMediaPercentile(latencies, 0.5),
-      p95Ms: bookMediaPercentile(latencies, 0.95),
-      maxMs: latencies.length ? Number(Math.max(...latencies).toFixed(1)) : null,
-      batches,
-    };
-    results.push(item);
-    if (concurrency === 1) baselineP95 = item.p95Ms;
-    const degraded = item.failures > 0
-      || item.redirected > 0
-      || (baselineP95 !== null && item.p95Ms !== null && item.p95Ms > Math.max(2500, baselineP95 * 4));
-    if (degraded) break;
-  }
-
-  return sendJson(response, 200, {
-    ok: true,
-    route: 'book-media-range',
-    perRequestReadCap: BOOK_MEDIA_READ_LIMIT,
-    warmup,
-    results,
-  });
-}
-
 export default async function handler(request, response) {
   const internalUrl = requestUrl(request);
-  if (internalUrl.searchParams.get('__book_media_benchmark') === '1') {
-    return handleBookMediaBenchmark(request, response);
-  }
   if (
     internalUrl.searchParams.get('__video_library') === '1'
     || internalUrl.searchParams.has('__video_path')

@@ -7,11 +7,29 @@ import { getLearnSeoTitle } from '../src/lib/learn-seo-metadata.mjs';
 
 const real = { id: 'card-real-yield', slug: 'real-yield', title: 'Real Yield', access: 'open', status: 'ready-for-build' };
 const dxy = { id: 'card-dxy-broad-purpose', slug: 'dxy-vs-broad-usd-what-each-index-answers', title: 'DXY vs Broad USD', access: 'open', status: 'ready-for-build' };
+const stagedZeroVisibilityTitles = Object.freeze([
+  Object.freeze({ id: 'card-bretton-woods-architecture', slug: 'bretton-woods-dollar-centered-architecture', title: 'Bretton Woods Used a Dollar-Centered Fixed-but-Adjustable System', seoTitle: 'Bretton Woods: Dollar-Centered System' }),
+  Object.freeze({ id: 'card-dollar-liquidity-gold-tension', slug: 'global-dollar-liquidity-strained-gold-convertibility', title: 'Global Dollar Liquidity Strained the Gold-Convertibility Promise', seoTitle: 'Dollar Liquidity vs Gold Convertibility' }),
+  Object.freeze({ id: 'card-gold-specific-demand-channels', slug: 'gold-specific-demand-channels-beyond-macro', title: 'Gold Has Demand Channels Beyond the Dollar and Real Yields', seoTitle: 'Gold Demand Beyond Dollar and Real Yields' }),
+  Object.freeze({ id: 'card-dollar-international-role-multiple-measures', slug: 'international-dollar-role-needs-multiple-measures', title: 'The Dollar’s International Role Needs More Than One Measure', seoTitle: 'Measuring the Dollar’s Global Role' }),
+  Object.freeze({ id: 'card-data-scope-matches-conclusion', slug: 'match-data-scope-to-macro-conclusion', title: 'Match the Breadth of the Conclusion to the Breadth of the Data', seoTitle: 'Match Data Scope to Macro Conclusion' }),
+  Object.freeze({ id: 'card-nominal-real-dollar-index', slug: 'nominal-vs-real-dollar-indexes', title: 'Nominal and Real Dollar Indexes Answer Different Questions', seoTitle: 'Nominal vs Real Dollar Indexes' }),
+  Object.freeze({ id: 'card-oil-logistics-local-global-signals', slug: 'oil-logistics-can-separate-local-and-global-signals', title: 'Oil Logistics Can Separate Local and Global Price Signals', seoTitle: 'Oil Logistics: Local vs Global Signals' }),
+  Object.freeze({ id: 'card-fiat-market-discipline', slug: 'post-bretton-woods-discipline-became-market-mediated', title: 'Post-Bretton Woods Discipline Became More Market-Mediated', seoTitle: 'Post-Bretton Woods Market Discipline' }),
+]);
 const ref = () => ({ ...getLearnSourceLinks(real)[0] });
 
 test('two Real Yield references', () => assert.equal(getLearnSourceLinks(real).length, 2));
 test('Real Yield gets the reviewed definition-intent SEO title', () => assert.equal(getLearnSeoTitle(real), 'What Is Real Yield? TIPS, Inflation and Why It Matters'));
 test('other Learn cards preserve the existing title fallback', () => assert.equal(getLearnSeoTitle(dxy), 'DXY vs Broad USD | USD Impact Learn'));
+test('zero-visibility long-title stage uses reviewed SEO titles without changing visible card titles', () => {
+  for (const card of stagedZeroVisibilityTitles) {
+    const input = { ...card, access: 'open', status: 'ready-for-build' };
+    assert.equal(getLearnSeoTitle(input), card.seoTitle);
+    assert.equal(input.title, card.title);
+    assert.equal(getLearnSeoTitle({ ...input, slug: 'wrong' }), `${card.title} | USD Impact Learn`);
+  }
+});
 test('mismatched or non-public Real Yield identity falls back', () => {
   const titled = { ...real, title: 'Real Yield' };
   assert.equal(getLearnSeoTitle({ ...titled, slug: 'wrong' }), 'Real Yield | USD Impact Learn');

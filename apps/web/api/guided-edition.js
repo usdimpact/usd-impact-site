@@ -3,6 +3,7 @@ import { readGuidedLearningProgressBatch } from '../src/lib/guided-progress-batc
 import { memberMainMenuAssets, renderMemberMainMenu } from '../src/lib/site-navigation.js';
 import {
   readAccountAccessState,
+  readSupabaseServerConfig,
   safeSupabaseError,
   sendJson,
 } from '../src/lib/supabase-server.js';
@@ -475,8 +476,147 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
   return response.end(request.method === 'HEAD' ? '' : body);
 }
 
+
+const CAPACITY_BENCHMARK_NONCE = 'video-page-r3-5136af9c2d824057b7e40a169c8df31e';
+const CAPACITY_BENCHMARK_EXPIRES_MS = Date.parse('2026-10-02T20:00:00Z');
+const CAPACITY_QA_EMAIL = 'mircea.management+usd-impact-eligible@gmail.com';
+
+function capacityPercentile(values, p) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * p) - 1));
+  return Number(sorted[index].toFixed(1));
+}
+
+async function capacitySession(environment) {
+  const config = readSupabaseServerConfig(environment, { requireSecret: true });
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    apikey: config.secretKey,
+    Authorization: `Bearer ${config.secretKey}`,
+  };
+  const linkResponse = await fetch(`${config.url}/auth/v1/admin/generate_link`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ type: 'magiclink', email: CAPACITY_QA_EMAIL }),
+  });
+  const link = await linkResponse.json().catch(() => ({}));
+  if (!linkResponse.ok) throw new Error(`CAPACITY_GENERATE_LINK_${linkResponse.status}`);
+  const tokenHash = link?.properties?.hashed_token || link?.properties?.hashedToken || link?.hashed_token || link?.hashedToken;
+  const verificationType = link?.properties?.verification_type || link?.properties?.verificationType || 'magiclink';
+  if (!tokenHash) throw new Error('CAPACITY_TOKEN_HASH_UNAVAILABLE');
+
+  const verifyResponse = await fetch(`${config.url}/auth/v1/verify`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ type: verificationType, token_hash: tokenHash }),
+  });
+  const verified = await verifyResponse.json().catch(() => ({}));
+  if (!verifyResponse.ok) throw new Error(`CAPACITY_VERIFY_${verifyResponse.status}`);
+  const accessToken = verified?.access_token || verified?.session?.access_token || verified?.data?.session?.access_token;
+  if (!accessToken) throw new Error('CAPACITY_ACCESS_TOKEN_UNAVAILABLE');
+  return accessToken;
+}
+
+async function capacityFetch(target, accessToken, level, round, index) {
+  const url = new URL(target);
+  url.searchParams.set('capacity_probe', `${level}-${round}-${index}-${crypto.randomUUID()}`);
+  const started = performance.now();
+  try {
+    const result = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'text/html',
+        Cookie: `usd_impact_access=${encodeURIComponent(accessToken)}; usd_impact_persistence=0`,
+        'Cache-Control': 'no-cache',
+        'x-vercel-protection-bypass': String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET || ''),
+      },
+      redirect: 'manual',
+    });
+    await result.arrayBuffer();
+    return {
+      status: result.status,
+      redirected: result.status >= 300 && result.status < 400,
+      ms: Number((performance.now() - started).toFixed(1)),
+    };
+  } catch {
+    return { status: 0, redirected: false, ms: Number((performance.now() - started).toFixed(1)) };
+  }
+}
+
+async function handleCapacityBenchmark(request, response) {
+  const url = requestUrl(request);
+  if (
+    process.env.VERCEL_ENV !== 'preview'
+    || Date.now() > CAPACITY_BENCHMARK_EXPIRES_MS
+    || url.searchParams.get('k') !== CAPACITY_BENCHMARK_NONCE
+  ) {
+    response.statusCode = 404;
+    response.end('Not found.');
+    return;
+  }
+  if (request.method !== 'GET') return methodNotAllowed(response, 'GET', true);
+
+  let accessToken;
+  try {
+    accessToken = await capacitySession(process.env);
+  } catch (error) {
+    return sendJson(response, 502, { ok: false, stage: 'session', code: String(error?.message || error) });
+  }
+
+  const target = new URL('/guided-edition/video-library/dxy-the-signal-vs-the-system', requestOrigin(request));
+  const warmup = await capacityFetch(target, accessToken, 0, 0, 0);
+  if (warmup.status !== 200) return sendJson(response, 502, { ok: false, stage: 'warmup', warmup });
+
+  const results = [];
+  let baselineP95 = null;
+  for (const concurrency of [1, 2, 4, 8, 16, 32]) {
+    const requests = [];
+    const batches = [];
+    for (let round = 1; round <= 3; round += 1) {
+      const batchStarted = performance.now();
+      const batch = await Promise.all(
+        Array.from({ length: concurrency }, (_, index) => capacityFetch(target, accessToken, concurrency, round, index)),
+      );
+      const wallMs = Number((performance.now() - batchStarted).toFixed(1));
+      requests.push(...batch);
+      batches.push({ round, wallMs });
+      if (batch.some((entry) => entry.status !== 200 || entry.redirected)) break;
+    }
+    const latencies = requests.map((entry) => entry.ms);
+    const item = {
+      concurrency,
+      requestCount: requests.length,
+      success200: requests.filter((entry) => entry.status === 200).length,
+      non200: requests.filter((entry) => entry.status !== 200).length,
+      redirected: requests.filter((entry) => entry.redirected).length,
+      statuses: [...new Set(requests.map((entry) => entry.status))].sort((a, b) => a - b),
+      p50Ms: capacityPercentile(latencies, 0.5),
+      p95Ms: capacityPercentile(latencies, 0.95),
+      maxMs: latencies.length ? Number(Math.max(...latencies).toFixed(1)) : null,
+      batches,
+    };
+    results.push(item);
+    if (concurrency === 1) baselineP95 = item.p95Ms;
+    const degraded = item.non200 > 0
+      || item.redirected > 0
+      || (baselineP95 !== null && item.p95Ms !== null && item.p95Ms > Math.max(2000, baselineP95 * 4));
+    if (degraded) break;
+  }
+  return sendJson(response, 200, {
+    ok: true,
+    experimentBase: '1de9b835c7c795d91505f9e606f8e06ff776b9b0', route: 'dxy-video-page-token',
+    warmup,
+    results,
+  });
+}
+
 export default async function handler(request, response) {
   const internalUrl = requestUrl(request);
+  if (internalUrl.searchParams.get('__capacity_benchmark') === '1') {
+    return handleCapacityBenchmark(request, response);
+  }
   if (
     internalUrl.searchParams.get('__video_library') === '1'
     || internalUrl.searchParams.has('__video_path')

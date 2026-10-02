@@ -1,0 +1,48 @@
+name: DXY ffmpeg codec probe
+
+on:
+  push:
+    branches:
+      - audit/dxy-ffmpeg-probe-20261002
+    paths:
+      - .github/workflows/dxy-ffmpeg-codec-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  decode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+      - name: Fetch short-lived signed manifest
+        id: manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          JSON="$(curl -fsSL 'https://usd-impact-site-rlc37bxjt-usd-impact.vercel.app/api/guided-edition?__dxy_ffmpeg_probe=1&k=dxy-ffmpeg-9e8a4c1d77a849f49dd2106fd3086a32&_vercel_share=eUbVx2cBSM26rxRMGyia2jrAAdfuEBC5')"
+          MANIFEST="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["manifest"])' <<<"$JSON")"
+          test -n "$MANIFEST"
+          echo "::add-mask::$MANIFEST"
+          {
+            echo 'manifest<<EOF'
+            echo "$MANIFEST"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+      - name: Probe codecs
+        env:
+          MANIFEST: ${{ steps.manifest.outputs.manifest }}
+        run: |
+          set -euo pipefail
+          ffprobe -v error -show_entries stream=index,codec_name,codec_type,profile -of compact=p=0:nk=0 "$MANIFEST"
+      - name: Decode eight seconds
+        env:
+          MANIFEST: ${{ steps.manifest.outputs.manifest }}
+        run: |
+          set -euo pipefail
+          ffmpeg -hide_banner -loglevel error -t 8 -i "$MANIFEST" -map 0:v:0 -map 0:a:0? -f null -
+          echo "DXY_FFMPEG_DECODE_PASS"

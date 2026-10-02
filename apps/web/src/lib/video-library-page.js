@@ -221,5 +221,8 @@ export function videoLibraryContentSecurityPolicy(customerCode, { previewHls = f
     previewHls
       ? `connect-src 'self' ${streamOrigin}`
       : "connect-src 'self'",
+    previewHls
+      ? `media-src 'self' blob: ${streamOrigin}`
+      : `media-src 'self' ${streamOrigin}`,
   ].join('; ');
 }

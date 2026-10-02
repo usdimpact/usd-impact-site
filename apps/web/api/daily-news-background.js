@@ -107,16 +107,15 @@ function safeTokenEqual(actual, expected) {
   return timingSafeEqual(actualBuffer, expectedBuffer);
 }
 
-function queryParam(request, name) {
-  const direct = request.query?.[name];
-  if (Array.isArray(direct)) return String(direct[0] ?? '').trim();
-  if (direct !== undefined && direct !== null) return String(direct).trim();
-  try {
-    const url = new URL(request.url ?? '/', 'https://usd-impact.com');
-    return url.searchParams.get(name)?.trim() ?? '';
-  } catch {
-    return '';
-  }
+const REQUEST_PARAM_HEADERS = Object.freeze({
+  date: 'x-usd-impact-edition-date',
+  response_id: 'x-usd-impact-response-id',
+});
+
+export function requestParam(request, name) {
+  const headerName = REQUEST_PARAM_HEADERS[name];
+  if (!headerName) return '';
+  return requestHeader(request, headerName).trim();
 }
 
 function utcDateString(date = new Date()) {
@@ -563,7 +562,7 @@ export default async function handler(request, response) {
     return sendJson(response, { error: 'Unauthorized.' }, 401, { 'WWW-Authenticate': 'Bearer' });
   }
 
-  const date = queryParam(request, 'date') || utcDateString();
+  const date = requestParam(request, 'date') || utcDateString();
   if (!isRealDate(date)) return sendJson(response, { error: 'date must use YYYY-MM-DD.' }, 400);
 
   if (request.method === 'POST') {
@@ -576,7 +575,7 @@ export default async function handler(request, response) {
     }
   }
 
-  const responseId = queryParam(request, 'response_id');
+  const responseId = requestParam(request, 'response_id');
   if (!RESPONSE_ID_PATTERN.test(responseId)) {
     return sendJson(response, { error: 'A valid response_id is required.' }, 400);
   }

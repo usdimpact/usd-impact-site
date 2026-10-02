@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          JSON="$(curl -fsSL 'https://usd-impact-site-rlc37bxjt-usd-impact.vercel.app/api/guided-edition?__dxy_ffmpeg_probe=1&k=dxy-ffmpeg-9e8a4c1d77a849f49dd2106fd3086a32&_vercel_share=eUbVx2cBSM26rxRMGyia2jrAAdfuEBC5')"
+          JSON="$(curl -fsSL -c /tmp/vercel-cookies -b /tmp/vercel-cookies 'https://usd-impact-site-rlc37bxjt-usd-impact.vercel.app/api/guided-edition?__dxy_ffmpeg_probe=1&k=dxy-ffmpeg-9e8a4c1d77a849f49dd2106fd3086a32&_vercel_share=eUbVx2cBSM26rxRMGyia2jrAAdfuEBC5')"
           MANIFEST="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["manifest"])' <<<"$JSON")"
           test -n "$MANIFEST"
           echo "::add-mask::$MANIFEST"

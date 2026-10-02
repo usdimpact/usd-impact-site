@@ -102,6 +102,30 @@ const pollRequest = pollStep[1].match(
 );
 assert.ok(pollRequest, 'background polling request must be present');
 assert.match(
+  workflow,
+  /EDITION_DATE=\$edition_date[\s\S]*X-USD-Impact-Edition-Date: \$edition_date/,
+  'background start must bind the UTC edition date through a private request header',
+);
+assert.match(
+  pollRequest[0],
+  /X-USD-Impact-Edition-Date: \$EDITION_DATE/,
+  'background polling must preserve the original edition date through a private request header',
+);
+assert.match(
+  pollRequest[0],
+  /X-USD-Impact-Response-Id: \$response_id/,
+  'background polling must provide the response id through a private request header',
+);
+assert.doesNotMatch(
+  pollStep[1],
+  /\?response_id=\$\{response_id\}/,
+  'background polling must not rely on a query string that materializes Vercel request.query',
+);
+assert.ok(
+  (workflow.match(/X-USD-Impact-Edition-Date/g) || []).length >= 3,
+  'start, poll, and bounded regeneration requests must all carry the edition-date header',
+);
+assert.match(
   pollRequest[0],
   /--max-time 240/,
   'a completed response must have enough time for the bounded multi-pass repair budget',

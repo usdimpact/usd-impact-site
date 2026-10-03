@@ -523,7 +523,7 @@ module.exports = class CachePolicy {
         }
         // 9.1.  Connection
         if (inHeaders.connection) {
-            const tokens = inHeaders.connection.trim().split(/\s*,\s*/);
+            const tokens = inHeaders.connection.split(',').map(name => name.trim());
             for (const name of tokens) {
                 delete headers[name];
             }

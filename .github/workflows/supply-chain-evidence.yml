@@ -55,7 +55,7 @@ jobs:
           node scripts/prepare-registry-signature-audit.mjs "$registry_audit_root"
           (
             cd "$registry_audit_root"
-            npm ci --ignore-scripts --no-audit --no-fund
+            npm ci --no-audit --no-fund --strict-allow-scripts
             npm audit signatures
           )
       - name: Generate CycloneDX SBOM

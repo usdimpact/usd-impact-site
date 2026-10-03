@@ -55,6 +55,8 @@ jobs:
         run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Audit high and critical vulnerabilities
         run: npm audit --audit-level=high
+      - name: Validate vendored supply-chain security patch
+        run: npm run validate:supply-chain-security
       - name: Validate GitHub Action runtimes
         run: node scripts/test-github-action-runtimes.mjs
       - name: Validate AI control center

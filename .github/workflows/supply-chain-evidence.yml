@@ -6,6 +6,9 @@ on:
     paths:
       - 'apps/web/package.json'
       - 'apps/web/package-lock.json'
+      - 'apps/web/vendor/http-cache-semantics/**'
+      - 'apps/web/scripts/test-http-cache-semantics-security.mjs'
+      - 'apps/web/scripts/prepare-registry-signature-audit.mjs'
       - '.github/dependabot.yml'
       - '.github/workflows/supply-chain-evidence.yml'
   push:
@@ -13,6 +16,9 @@ on:
     paths:
       - 'apps/web/package.json'
       - 'apps/web/package-lock.json'
+      - 'apps/web/vendor/http-cache-semantics/**'
+      - 'apps/web/scripts/test-http-cache-semantics-security.mjs'
+      - 'apps/web/scripts/prepare-registry-signature-audit.mjs'
       - '.github/dependabot.yml'
       - '.github/workflows/supply-chain-evidence.yml'
   schedule:
@@ -40,8 +46,20 @@ jobs:
         run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Audit high and critical vulnerabilities
         run: npm audit --audit-level=high
+      - name: Validate vendored supply-chain security patch
+        run: npm run validate:supply-chain-security
       - name: Verify registry signatures and provenance attestations
-        run: npm audit signatures
+        run: |
+          set -euo pipefail
+          registry_audit_root=".registry-signature-audit"
+          rm -rf "$registry_audit_root"
+          node scripts/prepare-registry-signature-audit.mjs
+          (
+            cd "$registry_audit_root"
+            npm ci --no-audit --no-fund --strict-allow-scripts
+            npm audit signatures
+          )
+          rm -rf "$registry_audit_root"
       - name: Generate CycloneDX SBOM
         run: |
           npm sbom --sbom-format cyclonedx --sbom-type application > "$RUNNER_TEMP/usd-impact-web-sbom.cdx.json"

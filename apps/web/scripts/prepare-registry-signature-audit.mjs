@@ -1,8 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const outputRoot = process.argv[2];
-if (!outputRoot) throw new Error('Output directory argument is required');
+const outputRoot = path.resolve('.registry-signature-audit');
 
 const packagePath = path.resolve('package.json');
 const lockPath = path.resolve('package-lock.json');

@@ -51,13 +51,15 @@ jobs:
       - name: Verify registry signatures and provenance attestations
         run: |
           set -euo pipefail
-          registry_audit_root="$RUNNER_TEMP/registry-signature-audit"
-          node scripts/prepare-registry-signature-audit.mjs "$registry_audit_root"
+          registry_audit_root=".registry-signature-audit"
+          rm -rf "$registry_audit_root"
+          node scripts/prepare-registry-signature-audit.mjs
           (
             cd "$registry_audit_root"
             npm ci --no-audit --no-fund --strict-allow-scripts
             npm audit signatures
           )
+          rm -rf "$registry_audit_root"
       - name: Generate CycloneDX SBOM
         run: |
           npm sbom --sbom-format cyclonedx --sbom-type application > "$RUNNER_TEMP/usd-impact-web-sbom.cdx.json"

@@ -88,4 +88,18 @@ const attackerRequest = request('max-stale=86400');
   );
 }
 
+{
+  const value = policy({
+    'cache-control': 'public, max-age=60',
+    connection: 'x-secret,   x-debug',
+    'x-secret': 'remove-me',
+    'x-debug': 'remove-me-too',
+    'x-keep': 'keep-me',
+  });
+  const headers = value.responseHeaders();
+  assert.equal(headers['x-secret'], undefined, 'Connection token header must be stripped');
+  assert.equal(headers['x-debug'], undefined, 'whitespace-padded Connection token header must be stripped');
+  assert.equal(headers['x-keep'], 'keep-me', 'unrelated response header must remain');
+}
+
 console.log('http-cache-semantics security regression pass');

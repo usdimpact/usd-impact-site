@@ -1,0 +1,15 @@
+{
+  "name": "http-cache-semantics",
+  "version": "4.2.1",
+  "description": "USD Impact temporary security-patched fork of http-cache-semantics 4.2.0",
+  "repository": "https://github.com/kornelski/http-cache-semantics.git",
+  "main": "index.js",
+  "types": "index.js",
+  "private": true,
+  "license": "BSD-2-Clause",
+  "usdImpactPatch": {
+    "advisory": "GHSA-ch52-4w7c-c8xp",
+    "upstreamCommit": "f01112e954b83cfa8765b633ba880e5e980aa54c",
+    "purpose": "Prevent max-stale from reviving shared-cache responses whose freshness is security-zeroed."
+  }
+}

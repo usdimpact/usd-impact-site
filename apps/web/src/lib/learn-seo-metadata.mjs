@@ -3,6 +3,10 @@ const SEO_TITLES = Object.freeze(new Map([
     slug: 'real-yield',
     title: 'What Is Real Yield? TIPS, Inflation and Why It Matters',
   })],
+  ['card-treasury-coupon-vs-yield', Object.freeze({
+    slug: 'treasury-coupon-rate-is-not-yield-to-maturity',
+    title: 'Treasury Coupon Rate vs Yield to Maturity',
+  })],
   ['card-bretton-woods-architecture', Object.freeze({
     slug: 'bretton-woods-dollar-centered-architecture',
     title: 'Bretton Woods: Dollar-Centered System',

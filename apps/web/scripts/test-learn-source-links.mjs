@@ -7,6 +7,7 @@ import { getLearnSeoTitle } from '../src/lib/learn-seo-metadata.mjs';
 
 const real = { id: 'card-real-yield', slug: 'real-yield', title: 'Real Yield', access: 'open', status: 'ready-for-build' };
 const dxy = { id: 'card-dxy-broad-purpose', slug: 'dxy-vs-broad-usd-what-each-index-answers', title: 'DXY vs Broad USD', access: 'open', status: 'ready-for-build' };
+const treasuryCoupon = { id: 'card-treasury-coupon-vs-yield', slug: 'treasury-coupon-rate-is-not-yield-to-maturity', title: 'A Treasury Coupon Rate Is Not the Same as Yield to Maturity', access: 'open', status: 'ready-for-build' };
 const stagedZeroVisibilityTitles = Object.freeze([
   Object.freeze({ id: 'card-bretton-woods-architecture', slug: 'bretton-woods-dollar-centered-architecture', title: 'Bretton Woods Used a Dollar-Centered Fixed-but-Adjustable System', seoTitle: 'Bretton Woods: Dollar-Centered System' }),
   Object.freeze({ id: 'card-dollar-liquidity-gold-tension', slug: 'global-dollar-liquidity-strained-gold-convertibility', title: 'Global Dollar Liquidity Strained the Gold-Convertibility Promise', seoTitle: 'Dollar Liquidity vs Gold Convertibility' }),
@@ -22,6 +23,12 @@ const ref = () => ({ ...getLearnSourceLinks(real)[0] });
 test('two Real Yield references', () => assert.equal(getLearnSourceLinks(real).length, 2));
 test('Real Yield gets the reviewed definition-intent SEO title', () => assert.equal(getLearnSeoTitle(real), 'What Is Real Yield? TIPS, Inflation and Why It Matters'));
 test('other Learn cards preserve the existing title fallback', () => assert.equal(getLearnSeoTitle(dxy), 'DXY vs Broad USD | USD Impact Learn'));
+test('Treasury coupon-vs-yield experiment changes only the SEO title contract', () => {
+  assert.equal(getLearnSeoTitle(treasuryCoupon), 'Treasury Coupon Rate vs Yield to Maturity');
+  assert.equal(treasuryCoupon.title, 'A Treasury Coupon Rate Is Not the Same as Yield to Maturity');
+  assert.equal(getLearnSeoTitle({ ...treasuryCoupon, slug: 'wrong' }), 'A Treasury Coupon Rate Is Not the Same as Yield to Maturity | USD Impact Learn');
+  assert.equal(getLearnSeoTitle({ ...treasuryCoupon, access: 'research' }), 'A Treasury Coupon Rate Is Not the Same as Yield to Maturity | USD Impact Learn');
+});
 test('zero-visibility long-title stage uses reviewed SEO titles without changing visible card titles', () => {
   for (const card of stagedZeroVisibilityTitles) {
     const input = { ...card, access: 'open', status: 'ready-for-build' };

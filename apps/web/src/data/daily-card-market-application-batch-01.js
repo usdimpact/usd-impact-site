@@ -49,7 +49,7 @@ export const dailyCardMarketApplicationBatch01 = Object.freeze([
     keyTakeaway: 'Name the benchmark first, then make only the regime claim that the chosen measure can actually support.',
     assets: ['DXY', 'USD', 'FX'],
     concepts: ['benchmark selection', 'bilateral FX', 'trade-weighted dollar', 'funding indicators'],
-    relatedCardIds: ['card-dxy-broad-purpose', 'card-nominal-real-dollar-index', 'card-cross-currency-basis-funding-price'],
+    relatedCardIds: ['card-dxy-broad-purpose', 'card-dollar-index-points-scope', 'card-nominal-real-dollar-index', 'card-cross-currency-basis-funding-price'],
     sourceNames: ['USD Impact Book lesson', 'Federal Reserve Board', 'Bank for International Settlements'],
     sourceUrls: [
       'https://www.federalreserve.gov/releases/h10/current/',

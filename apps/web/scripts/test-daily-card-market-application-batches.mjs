@@ -51,6 +51,7 @@ for (const card of dailyCardMarketApplicationBatch01) {
 
 assert.equal(dailyCardMarketApplicationBatch01[0].sourceHeading, 'Signal matrix learning block');
 assert.equal(dailyCardMarketApplicationBatch01[1].sourceHeading, 'Layer 1: define the benchmark');
+assert.equal(dailyCardMarketApplicationBatch01[1].relatedCardIds.includes('card-dollar-index-points-scope'), true, 'Benchmark-selection card must keep the reviewed contextual link to Dollar Index Points.');
 
 const canonicalMarketApplication = dailyCards.filter((card) => card.collectionId === 'market-application' && card.status === 'ready-for-build');
 assert.equal(canonicalMarketApplication.length, 15, `Expected Market Application to remain complete at 15/15, found ${canonicalMarketApplication.length}.`);

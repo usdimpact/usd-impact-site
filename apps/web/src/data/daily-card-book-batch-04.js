@@ -17,7 +17,7 @@ export const dailyCardBookBatch04 = Object.freeze([
     keyTakeaway: 'Before accepting a dollar story, test what was measured, why it moved, what confirms it and whether the claimed asset channel actually fits the evidence.',
     assets: ['USD', 'DXY', 'cross-asset'],
     concepts: ['diagnostic errors', 'causality', 'confirmation', 'conditional transmission'],
-    relatedCardIds: ['card-dollar-move-not-proof', 'card-dxy-signal-system', 'card-regime-evidence-ladder'],
+    relatedCardIds: ['card-dollar-move-not-proof', 'card-dxy-signal-system', 'card-dollar-index-points-scope', 'card-regime-evidence-ladder'],
     sourceNames: ['USD Impact Book lesson', 'Federal Reserve Board', 'Bank for International Settlements', 'Intercontinental Exchange'],
     sourcePath: 'src/content/pages/what-is-the-us-dollar.md',
     sourcePageSlug: '/dollar/what-is-the-us-dollar',

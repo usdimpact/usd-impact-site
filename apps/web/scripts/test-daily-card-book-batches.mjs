@@ -132,4 +132,5 @@ for (const sourcePath of new Set(dailyCardBookBatch03.map((card) => card.sourceP
   assert.equal(dailyCardBookBatch03.filter((card) => card.sourcePath === sourcePath).length, 2, `Book Batch 03 must select exactly two sections from ${sourcePath}.`);
 }
 assert.equal(new Set(dailyCardBookBatch04.map((card) => card.sourcePath)).size, 2, 'Book Batch 04 must preserve two-source Core diversity.');
+assert.equal(dailyCardBookBatch04.find((card) => card.id === 'card-dollar-story-diagnostic-errors').relatedCardIds.includes('card-dollar-index-points-scope'), true, 'Diagnostic-errors card must keep the reviewed contextual link to Dollar Index Points.');
 console.log('Daily Card Book provenance: PASS (34 promoted cards across Batches 01-05).');

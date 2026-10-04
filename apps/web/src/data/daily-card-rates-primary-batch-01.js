@@ -130,7 +130,7 @@ export const dailyCardRatesPrimaryBatch01 = Object.freeze([
     keyTakeaway: 'For existing fixed-rate Treasuries, price and yield move in opposite directions.',
     assets: ['UST'],
     concepts: ['bond price', 'yield', 'interest-rate risk', 'fixed cash flows'],
-    relatedCardIds: ['card-treasury-yields-term-premium', 'card-yield-curve-restriction-growth', 'card-real-yield'],
+    relatedCardIds: ['card-treasury-maturity-rate-sensitivity', 'card-treasury-yields-term-premium', 'card-yield-curve-restriction-growth', 'card-real-yield'],
     sourceNames: ['U.S. Treasury', 'U.S. Securities and Exchange Commission'],
     sourceUrls: [
       'https://www.treasurydirect.gov/marketable-securities/understanding-pricing/',

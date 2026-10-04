@@ -62,5 +62,6 @@ for (const card of dailyCardRatesPrimaryBatch01) {
 const canonicalRates = dailyCards.filter((card) => card.collectionId === 'rates-liquidity-policy' && card.status === 'ready-for-build');
 assert.equal(canonicalRates.length, 26, `Expected 26 canonical Rates/Liquidity cards after Batch 01, found ${canonicalRates.length}.`);
 assert.equal(canonicalRates.filter((card) => card.access === 'open').length >= 9, true, 'Rates/Liquidity should retain its existing Open foundation plus four new Open primary cards.');
+assert.equal(dailyCardRatesPrimaryBatch01.find((card) => card.id === 'card-treasury-price-yield-inverse').relatedCardIds.includes('card-treasury-maturity-rate-sensitivity'), true, 'Price-vs-yield card must keep the reviewed reciprocal link to maturity rate sensitivity.');
 
 console.log('Daily Card Rates primary-source Batch 01: PASS (8 promoted, 26/35 canonical Rates/Liquidity; 4 Open + 4 Research).');

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-05T15:14:51.147Z",
+  "generated_at": "2026-10-05T16:14:00.000Z",
   "generated_by": "github-actions:sync",
   "freshness": "VERIFIED",
   "health": "AMBER",
@@ -15,7 +15,7 @@
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": "bf5530423ec64d39c935c3cbb9250b63693fa69d"
+      "head_sha": "42ebf6c699a5d6ac8832fc7f072f75be5161490b"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
@@ -33,9 +33,9 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/37230559934",
-        "created_at": "2026-10-04T20:02:23Z",
-        "head_sha": "bf5530423ec64d39c935c3cbb9250b63693fa69d"
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/37336334374",
+        "created_at": "2026-10-05T15:52:30Z",
+        "head_sha": "42ebf6c699a5d6ac8832fc7f072f75be5161490b"
       },
       "daily_news": {
         "status": "completed",

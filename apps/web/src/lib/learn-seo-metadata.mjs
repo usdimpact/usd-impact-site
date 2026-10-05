@@ -41,6 +41,13 @@ const SEO_TITLES = Object.freeze(new Map([
   })],
 ]));
 
+const SEO_DESCRIPTIONS = Object.freeze(new Map([
+  ['card-real-yield', Object.freeze({
+    slug: 'real-yield',
+    description: 'Real yield is a return adjusted for inflation. Learn how TIPS, nominal yields and inflation expectations relate to real yields—and why the measure matters.',
+  })],
+]));
+
 export function getLearnSeoTitle(card) {
   if (!card || typeof card !== 'object') return '';
   const fallback = `${card.title} | USD Impact Learn`;
@@ -48,4 +55,13 @@ export function getLearnSeoTitle(card) {
   if (!entry) return fallback;
   if (entry.slug !== card.slug || card.access !== 'open' || card.status !== 'ready-for-build') return fallback;
   return entry.title;
+}
+
+export function getLearnSeoDescription(card) {
+  if (!card || typeof card !== 'object') return '';
+  const fallback = typeof card.hook === 'string' ? card.hook : '';
+  const entry = SEO_DESCRIPTIONS.get(card.id);
+  if (!entry) return fallback;
+  if (entry.slug !== card.slug || card.access !== 'open' || card.status !== 'ready-for-build') return fallback;
+  return entry.description;
 }

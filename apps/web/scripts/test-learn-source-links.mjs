@@ -21,7 +21,16 @@ const stagedZeroVisibilityTitles = Object.freeze([
 const ref = () => ({ ...getLearnSourceLinks(real)[0] });
 
 test('two Real Yield references', () => assert.equal(getLearnSourceLinks(real).length, 2));
-test('Real Yield gets the reviewed definition-intent SEO title', () => assert.equal(getLearnSeoTitle(real), 'What Is Real Yield? TIPS, Inflation and Why It Matters'));\ntest('Real Yield gets the reviewed definition-intent SEO description without changing its visible hook', () => {\n  const card = { ...real, hook: 'Gold-specific original hook' };\n  assert.equal(getLearnSeoDescription(card), 'Real yield is a return adjusted for inflation. Learn how TIPS, nominal yields and inflation expectations relate to real yields—and why the measure matters.');\n  assert.equal(card.hook, 'Gold-specific original hook');\n});\ntest('other Learn cards preserve the existing hook as the SEO-description fallback', () => {\n  const card = { ...dxy, hook: 'DXY hook' };\n  assert.equal(getLearnSeoDescription(card), 'DXY hook');\n});
+test('Real Yield gets the reviewed definition-intent SEO title', () => assert.equal(getLearnSeoTitle(real), 'What Is Real Yield? TIPS, Inflation and Why It Matters'));
+test('Real Yield gets the reviewed definition-intent SEO description without changing its visible hook', () => {
+  const card = { ...real, hook: 'Gold-specific original hook' };
+  assert.equal(getLearnSeoDescription(card), 'Real yield is a return adjusted for inflation. Learn how TIPS, nominal yields and inflation expectations relate to real yields—and why the measure matters.');
+  assert.equal(card.hook, 'Gold-specific original hook');
+});
+test('other Learn cards preserve the existing hook as the SEO-description fallback', () => {
+  const card = { ...dxy, hook: 'DXY hook' };
+  assert.equal(getLearnSeoDescription(card), 'DXY hook');
+});
 test('other Learn cards preserve the existing title fallback', () => assert.equal(getLearnSeoTitle(dxy), 'DXY vs Broad USD | USD Impact Learn'));
 test('Treasury coupon-vs-yield experiment changes only the SEO title contract', () => {
   assert.equal(getLearnSeoTitle(treasuryCoupon), 'Treasury Coupon Rate vs Yield to Maturity');
@@ -41,6 +50,9 @@ test('mismatched or non-public Real Yield identity falls back', () => {
   const titled = { ...real, title: 'Real Yield' };
   assert.equal(getLearnSeoTitle({ ...titled, slug: 'wrong' }), 'Real Yield | USD Impact Learn');
   assert.equal(getLearnSeoTitle({ ...titled, access: 'research' }), 'Real Yield | USD Impact Learn');
+  const described = { ...titled, hook: 'Original hook' };
+  assert.equal(getLearnSeoDescription({ ...described, slug: 'wrong' }), 'Original hook');
+  assert.equal(getLearnSeoDescription({ ...described, access: 'research' }), 'Original hook');
 });
 test('three DXY comparison references', () => assert.equal(getLearnSourceLinks(dxy).length, 3));
 test('reference arrays and entries are immutable', () => {
@@ -98,10 +110,11 @@ test('markup, controls and missing descriptions rejected', () => {
 test('renderer patch leaves the original template reversible byte-for-byte', () => {
   const candidate = fs.readFileSync(new URL('../src/pages/learn/[slug].astro', import.meta.url), 'utf8');
   let restored = candidate.replace("import { getLearnSourceLinks } from '../../lib/learn-source-links.mjs';\n", '');
-  restored = restored.replace("import { getLearnSeoTitle } from '../../lib/learn-seo-metadata.mjs';\n", '');
+  restored = restored.replace("import { getLearnSeoDescription, getLearnSeoTitle } from '../../lib/learn-seo-metadata.mjs';\n", '');
   restored = restored.replace('const sourceLinks = getLearnSourceLinks(card);\n', '');
   restored = restored.replace('const pageTitle = getLearnSeoTitle(card);\n', '');
-  restored = restored.replace('<BaseLayout title={pageTitle} description={card.hook}', '<BaseLayout title={`${card.title} | USD Impact Learn`} description={card.hook}');
+  restored = restored.replace('const pageDescription = getLearnSeoDescription(card);\n', '');
+  restored = restored.replace('<BaseLayout title={pageTitle} description={pageDescription}', '<BaseLayout title={`${card.title} | USD Impact Learn`} description={card.hook}');
   restored = restored.replace(/      \{sourceLinks\.length > 0 && \([\s\S]*?      \)\}\n/, '');
   restored = restored.replace('href={`/guided-edition/video-library/${card.videoSlug}`}', 'href={`/guided-edition/video-library/${card.videoSlug}/`}');
   // Reviewed Learn-template snapshot at main@dd9f908; not a rendered-page test.
@@ -131,7 +144,11 @@ test('generated checker rejects missing, duplicate and unreviewed references', (
     assert.ok(inspectLearnSourceLinksHtml(bad, c).length);
   }
 });
-test('generated checker rejects stale Real Yield SEO description', () => {\n  const c = cardFixture(real), html = htmlFixture(c);\n  assert.ok(inspectLearnSourceLinksHtml(html.replace(esc(getLearnSeoDescription(c)), esc(c.hook)), c).length);\n});\ntest('generated checker rejects lost copy, provenance, identity and scope', () => {
+test('generated checker rejects stale Real Yield SEO description', () => {
+  const c = cardFixture(real), html = htmlFixture(c);
+  assert.ok(inspectLearnSourceLinksHtml(html.replace(esc(getLearnSeoDescription(c)), esc(c.hook)), c).length);
+});
+test('generated checker rejects lost copy, provenance, identity and scope', () => {
   const c = cardFixture(real), html = htmlFixture(c);
   for (const value of [c.definition, c.title, c.hook, c.sourceNames[0], c.id, getLearnSourceLinks(c)[0].scope, 'Not investment advice.', '/guided-edition/video-library/fixture-video', 'noreferrer', 'Primary references']) {
     assert.ok(inspectLearnSourceLinksHtml(html.replaceAll(esc(value), 'REMOVED'), c).length, value);

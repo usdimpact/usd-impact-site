@@ -74,7 +74,7 @@ The opening and weekly-discipline sections are largely reusable.
 The companion/dashboard section requires a governed rebuild because historical Spanish still contains:
 
 - old Chapter 10 page references;
-- fixed Friday-at-22:00 wording not present in current Candidate 2;
+- Friday 22:00 UTC cadence is retained in Candidate 2; the historical rolling-archive and real-time interpretation around that cadence is what requires replacement;
 - public distribution/composition wording;
 - prescriptive Friday-evening/Saturday-morning usage instructions absent from Candidate 2;
 - the explicitly retired claim that historical cases were read `en tiempo real — no reconstruidos con visión retrospectiva`.

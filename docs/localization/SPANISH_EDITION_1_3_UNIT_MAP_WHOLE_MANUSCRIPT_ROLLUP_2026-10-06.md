@@ -87,7 +87,7 @@ Retirement classes include:
 - moving-standard-deviation and approximate-clipping methodology;
 - historical real-time/not-hindsight claims;
 - historical-only figures;
-- obsolete public-distribution/timing wording;
+- obsolete public-distribution, prescriptive-use and legacy archive wording; fixed Friday 22:00 UTC cadence remains source-authoritative;
 - old index page ranges;
 - glossary expansions absent from Candidate 2 authority.
 

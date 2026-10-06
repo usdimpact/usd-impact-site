@@ -54,7 +54,7 @@ Google Drive extraction places these table cells near the end of the DOCX rather
 | ES13-C13-U031 | heading `How to keep using the book — and the companion that comes with it` | matching heading | REUSE_VERIFIED | faithful heading |
 | ES13-C13-U032 | book as reference spine | historical paragraph with stale Chapter 10 page reference | REVISE | preserve current Candidate 2 structure and remove historical page citation |
 | ES13-C13-U033 | durable transmission logic as cycle changes | matching paragraph | REUSE_VERIFIED | meaning preserved |
-| ES13-C13-U034 | current companion cadence and governed evidence-system paragraph | historical fixed Friday 22:00 + rolling archive paragraph | REVISE | Candidate 2 uses governed dated-publication/current-research language; rebuild from current authority |
+| ES13-C13-U034 | current companion cadence and governed evidence-system paragraph | historical fixed Friday 22:00 + rolling archive paragraph | REVISE | Candidate 2 **retains the Friday 22:00 UTC cadence** but replaces the legacy rolling-archive interpretation with governed dated-publication/current-research language; rebuild the full unit from current authority |
 | ES13-C13-U035 | companion is not a signal service | no exact historical unit | NEW_TRANSLATION | current Candidate 2 control boundary |
 | ES13-C13-U036 | fixed cadence prevents intraday reaction engine | historical long timing-prescription paragraph | REVISE | current Candidate 2 is shorter and less prescriptive |
 | ES13-C13-U037 | compare current dashboard read with own evidence and learn from disagreement | historical longer calibration paragraph | REVISE | retain learning idea without historical overclaim |
@@ -75,7 +75,7 @@ Google Drive extraction places these table cells near the end of the DOCX rather
 
 | ID | Historical unit | State | Reason |
 | --- | --- | --- | --- |
-| ES13-C13-U050 | fixed statement that Score is recalculated every Friday at 22:00 UTC and archive is a rolling history of scores/comments | RETIRE | Candidate 2 uses governed current-publication/current-research wording instead |
+| ES13-C13-U050 | historical combined statement: Friday 22:00 UTC recalculation + rolling history of scores/comments | RETIRE | the **22:00 UTC cadence itself is retained by Candidate 2**; retire only the legacy combined unit because its rolling-history/archive interpretation is superseded by governed current-publication/current-research wording |
 | ES13-C13-U051 | public-distribution / print-composition statement | RETIRE | not part of Candidate 2 Chapter 13 authority |
 | ES13-C13-U052 | detailed instruction to use dashboard Friday evening/Saturday morning, not during market hours | RETIRE | absent from current Candidate 2 authority |
 | ES13-C13-U053 | claim that archive shows how score read past cases `en tiempo real — no reconstruidos con visión retrospectiva` | RETIRE | explicitly conflicts with current as-published-vs-recalculated evidence discipline |

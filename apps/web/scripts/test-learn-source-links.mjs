@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
 import { getLearnSourceLinks, validateLearnSourceLinks } from '../src/lib/learn-source-links.mjs';
-import { getLearnSeoTitle } from '../src/lib/learn-seo-metadata.mjs';
+import { getLearnSeoDescription, getLearnSeoTitle } from '../src/lib/learn-seo-metadata.mjs';
 
 const real = { id: 'card-real-yield', slug: 'real-yield', title: 'Real Yield', access: 'open', status: 'ready-for-build' };
 const dxy = { id: 'card-dxy-broad-purpose', slug: 'dxy-vs-broad-usd-what-each-index-answers', title: 'DXY vs Broad USD', access: 'open', status: 'ready-for-build' };
@@ -17,11 +17,21 @@ const stagedZeroVisibilityTitles = Object.freeze([
   Object.freeze({ id: 'card-nominal-real-dollar-index', slug: 'nominal-vs-real-dollar-indexes', title: 'Nominal and Real Dollar Indexes Answer Different Questions', seoTitle: 'Nominal vs Real Dollar Indexes' }),
   Object.freeze({ id: 'card-oil-logistics-local-global-signals', slug: 'oil-logistics-can-separate-local-and-global-signals', title: 'Oil Logistics Can Separate Local and Global Price Signals', seoTitle: 'Oil Logistics: Local vs Global Signals' }),
   Object.freeze({ id: 'card-fiat-market-discipline', slug: 'post-bretton-woods-discipline-became-market-mediated', title: 'Post-Bretton Woods Discipline Became More Market-Mediated', seoTitle: 'Post-Bretton Woods Market Discipline' }),
+  Object.freeze({ id: 'card-float-jamaica-formalization', slug: 'floating-rates-before-jamaica-formalization', title: 'Floating Rates Emerged Before the Jamaica Rules Formalized Them', seoTitle: 'Floating Rates Before Jamaica' }),
 ]);
 const ref = () => ({ ...getLearnSourceLinks(real)[0] });
 
 test('two Real Yield references', () => assert.equal(getLearnSourceLinks(real).length, 2));
 test('Real Yield gets the reviewed definition-intent SEO title', () => assert.equal(getLearnSeoTitle(real), 'What Is Real Yield? TIPS, Inflation and Why It Matters'));
+test('Real Yield gets the reviewed definition-intent SEO description without changing its visible hook', () => {
+  const card = { ...real, hook: 'Gold-specific original hook' };
+  assert.equal(getLearnSeoDescription(card), 'Real yield is a return adjusted for inflation. Learn how TIPS, nominal yields and inflation expectations relate to real yields—and why the measure matters.');
+  assert.equal(card.hook, 'Gold-specific original hook');
+});
+test('other Learn cards preserve the existing hook as the SEO-description fallback', () => {
+  const card = { ...dxy, hook: 'DXY hook' };
+  assert.equal(getLearnSeoDescription(card), 'DXY hook');
+});
 test('other Learn cards preserve the existing title fallback', () => assert.equal(getLearnSeoTitle(dxy), 'DXY vs Broad USD | USD Impact Learn'));
 test('Treasury coupon-vs-yield experiment changes only the SEO title contract', () => {
   assert.equal(getLearnSeoTitle(treasuryCoupon), 'Treasury Coupon Rate vs Yield to Maturity');
@@ -41,6 +51,9 @@ test('mismatched or non-public Real Yield identity falls back', () => {
   const titled = { ...real, title: 'Real Yield' };
   assert.equal(getLearnSeoTitle({ ...titled, slug: 'wrong' }), 'Real Yield | USD Impact Learn');
   assert.equal(getLearnSeoTitle({ ...titled, access: 'research' }), 'Real Yield | USD Impact Learn');
+  const described = { ...titled, hook: 'Original hook' };
+  assert.equal(getLearnSeoDescription({ ...described, slug: 'wrong' }), 'Original hook');
+  assert.equal(getLearnSeoDescription({ ...described, access: 'research' }), 'Original hook');
 });
 test('three DXY comparison references', () => assert.equal(getLearnSourceLinks(dxy).length, 3));
 test('reference arrays and entries are immutable', () => {
@@ -98,10 +111,11 @@ test('markup, controls and missing descriptions rejected', () => {
 test('renderer patch leaves the original template reversible byte-for-byte', () => {
   const candidate = fs.readFileSync(new URL('../src/pages/learn/[slug].astro', import.meta.url), 'utf8');
   let restored = candidate.replace("import { getLearnSourceLinks } from '../../lib/learn-source-links.mjs';\n", '');
-  restored = restored.replace("import { getLearnSeoTitle } from '../../lib/learn-seo-metadata.mjs';\n", '');
+  restored = restored.replace("import { getLearnSeoDescription, getLearnSeoTitle } from '../../lib/learn-seo-metadata.mjs';\n", '');
   restored = restored.replace('const sourceLinks = getLearnSourceLinks(card);\n', '');
   restored = restored.replace('const pageTitle = getLearnSeoTitle(card);\n', '');
-  restored = restored.replace('<BaseLayout title={pageTitle} description={card.hook}', '<BaseLayout title={`${card.title} | USD Impact Learn`} description={card.hook}');
+  restored = restored.replace('const pageDescription = getLearnSeoDescription(card);\n', '');
+  restored = restored.replace('<BaseLayout title={pageTitle} description={pageDescription}', '<BaseLayout title={`${card.title} | USD Impact Learn`} description={card.hook}');
   restored = restored.replace(/      \{sourceLinks\.length > 0 && \([\s\S]*?      \)\}\n/, '');
   restored = restored.replace('href={`/guided-edition/video-library/${card.videoSlug}`}', 'href={`/guided-edition/video-library/${card.videoSlug}/`}');
   // Reviewed Learn-template snapshot at main@dd9f908; not a rendered-page test.
@@ -120,7 +134,7 @@ const cardFixture = (identity) => ({ ...identity, title: 'Fixture title', hook: 
 const esc = (value) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 function htmlFixture(card) {
   const links = getLearnSourceLinks(card).map((r) => `<li><a href="${esc(r.url)}" rel="noreferrer">${esc(r.label)}</a><p>${esc(r.scope)}</p></li>`).join('');
-  return `<html><head><title>${esc(getLearnSeoTitle(card))}</title><meta name="description" content="${esc(card.hook)}"></head><body><h1>${esc(card.title)}</h1>${[card.hook,card.definition,card.whyItMatters,card.example,card.commonMistake,card.keyTakeaway,...card.whatToWatch].map((v) => `<p>${esc(v)}</p>`).join('')}<div data-card-id="${card.id}"></div><a href="/guided-edition/video-library/${card.videoSlug}">Video</a><section class="dc-source-list"><h2>Sources</h2><p>${esc(card.sourceNames.join(' \u00b7 '))}</p><ul aria-label="Primary references" data-learn-primary-references>${links}</ul><p>Educational and informational purposes only. Not investment advice.</p></section></body></html>`;
+  return `<html><head><title>${esc(getLearnSeoTitle(card))}</title><meta name="description" content="${esc(getLearnSeoDescription(card))}"></head><body><h1>${esc(card.title)}</h1>${[card.hook,card.definition,card.whyItMatters,card.example,card.commonMistake,card.keyTakeaway,...card.whatToWatch].map((v) => `<p>${esc(v)}</p>`).join('')}<div data-card-id="${card.id}"></div><a href="/guided-edition/video-library/${card.videoSlug}">Video</a><section class="dc-source-list"><h2>Sources</h2><p>${esc(card.sourceNames.join(' \u00b7 '))}</p><ul aria-label="Primary references" data-learn-primary-references>${links}</ul><p>Educational and informational purposes only. Not investment advice.</p></section></body></html>`;
 }
 test('both escaped generated-page fixtures pass', () => {
   for (const id of [real, dxy]) { const c = cardFixture(id); assert.deepEqual(inspectLearnSourceLinksHtml(htmlFixture(c), c), []); }
@@ -130,6 +144,10 @@ test('generated checker rejects missing, duplicate and unreviewed references', (
   for (const bad of [html.replace(/<ul[^>]*>[\s\S]*?<\/ul>/, ''), html.replace('</ul>', '<a href="https://example.invalid/">Extra</a></ul>'), html.replace(getLearnSourceLinks(c)[0].url, 'https://example.invalid/')]) {
     assert.ok(inspectLearnSourceLinksHtml(bad, c).length);
   }
+});
+test('generated checker rejects stale Real Yield SEO description', () => {
+  const c = cardFixture(real), html = htmlFixture(c);
+  assert.ok(inspectLearnSourceLinksHtml(html.replace(esc(getLearnSeoDescription(c)), esc(c.hook)), c).length);
 });
 test('generated checker rejects lost copy, provenance, identity and scope', () => {
   const c = cardFixture(real), html = htmlFixture(c);

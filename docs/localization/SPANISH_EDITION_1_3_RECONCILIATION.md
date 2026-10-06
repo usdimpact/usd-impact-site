@@ -180,3 +180,28 @@ Spanish book/audiobook release remains blocked until all of the following pass:
 11. explicit owner release approval.
 
 No current English artifact, URL, entitlement, audiobook, email, or Production configuration is changed by this document.
+
+## Fresh parity-audit checkpoint — 2026-10-06
+
+A fresh source-grounded comparison has now been performed against:
+
+- English Candidate 2, Drive file ID `1MRLH7fhk5lfuFxu_EJBlvfvWQDhcUjME`;
+- historical Spanish Edition 1.2, Drive file ID `1CMZbSegsxIncuyldqiLyXJFW05gT4WOc`;
+- the current Phase 2C manuscript patch register.
+
+The detailed checkpoint is recorded in:
+
+`docs/localization/SPANISH_EDITION_1_3_PARITY_AUDIT_2026-10-06.md`
+
+The checkpoint confirms:
+
+- MP-01 through MP-10 require revision/retirement/insertion work in Spanish;
+- MP-12 through MP-17 require new translation because Appendix B is absent from Spanish 1.2;
+- MP-18, MP-19 and MP-20 require new governed print-bridge insertions;
+- MP-11 remains excluded;
+- retired 84.5/100/79.7/73.2 performance claims and moving-standard-deviation wording remain present in the historical Spanish reference;
+- the historical Spanish Chapter 13 still conflates real-time/as-published history with recalculated history;
+- no existing Spanish paragraph is promoted to `REUSE_VERIFIED` merely by presence in Edition 1.2.
+
+Status remains **HOLD**. This checkpoint is evidence only and does not authorize translation publication, narration, member delivery, or Production localization activation.
+

@@ -64,4 +64,24 @@ Uno.
   /exceeds media duration/i,
 );
 
+const shortForm = `WEBVTT
+
+00:00.000 --> 00:02.860
+Short-form timestamps.
+
+05:38.670 --> 05:40.040
+Final cue.
+`;
+
+assert.deepEqual(
+  validateLocalizationVtt(shortForm, { maxDurationSeconds: 340.288 }),
+  {
+    cueCount: 2,
+    firstStartSeconds: 0,
+    lastEndSeconds: 340.04,
+    maxVisualLines: 2,
+    maxDurationSeconds: 340.288,
+  },
+);
+
 console.log('localization WebVTT validator: PASS');

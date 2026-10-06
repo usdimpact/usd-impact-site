@@ -40,7 +40,7 @@ Historical Spanish reference:
 | Introduction | REVISE | structural/content drift and missing Candidate 2 reader-checkpoint block |
 | Chapter 1 | REVISE | missing Candidate 2 chapter-purpose control text and closing delta; page-reference drift |
 | Chapter 2 | REVISE | missing Candidate 2 chapter-purpose control text; page-reference drift |
-| Chapter 3 | REVISE | missing Candidate 2 chapter-purpose control text, DXY cross-check table, and governed practice bridge |
+| Chapter 3 | REVISE | governed `/go/c03` bridge absent; Spanish-only legacy Figure 3.1 and extra ICE-verification sentence require retirement/revision; compliance tail is not current |
 | Chapter 3 `/go/c03` bridge | NEW INSERTION | required by MP-19 and absent from Spanish 1.2 |
 
 ## Front matter findings
@@ -98,24 +98,32 @@ Confirmed deltas:
 
 Disposition: **REVISE**.
 
-## Chapter 3 findings
+## Chapter 3 findings — corrected by paragraph/unit audit
 
-Historical Spanish Chapter 3 preserves much of the DXY-versus-broad-dollar explanation but is incomplete relative to Candidate 2.
+Historical Spanish Chapter 3 preserves most of the DXY-versus-broad-dollar explanation and includes the Candidate 2 four-row DXY cross-check table.
 
-Confirmed missing Candidate 2 units:
+A later paragraph/unit audit identified a DOCX extraction-order artifact: Google Drive's extracted text places the table cells after the main-flow/index text rather than at the inline Chapter 3 location. The earlier first-pass inference that the table itself was missing was therefore a false negative.
 
-1. dedicated `What this chapter does` chapter-purpose block;
-2. the structured **DXY cross-check — when the narrow index can mislead you** table;
-3. the governed practice bridge:
+Fresh unit-level findings:
+
+1. Candidate 2's chapter-purpose meaning ("keep DXY, box it correctly, cross-check broader dollar measures") is already present in the historical Spanish prose.
+2. The four-row **DXY cross-check — when the narrow index can mislead you** table is present in Spanish translation memory and can be `REUSE_VERIFIED` subject to correct inline placement/layout QA.
+3. The historical Spanish ICE-weights paragraph contains one extra technical-verification sentence not present in Candidate 2 and must be revised.
+4. Historical Spanish contains a `Figura 3.1 — Composición de la cesta DXY por divisa` unit that is not present in Candidate 2 and should be retired unless a later authoritative layout source proves otherwise.
+5. The governed practice bridge remains absent:
    - `Practice DXY vs. Broad USD`
    - `usd-impact.com/go/c03`
-
-The historical Spanish prose contains the surrounding conceptual material, but absence of the table means the current chapter's operational comparison dimension is not fully represented.
+6. The historical Spanish compliance tail does not carry the complete Candidate 2 trading-signal/current-data-verification boundary.
 
 Disposition:
 - Chapter 3: **REVISE**
-- DXY cross-check table: **NEW_TRANSLATION / STRUCTURED INSERTION**
+- DXY cross-check table: **REUSE_VERIFIED** for semantic content; restore correct inline placement and run table/layout QA
+- Spanish-only Figure 3.1: **RETIRE**
+- extra ICE-verification sentence: **REVISE**
 - MP-19 practice bridge: **NEW INSERTION**
+- compliance tail: **REVISE**
+
+Detailed controlling unit map: `SPANISH_EDITION_1_3_UNIT_MAP_CH03_2026-10-06.md`.
 
 ## Page-number and navigation rule
 

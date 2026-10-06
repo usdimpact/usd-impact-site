@@ -39,7 +39,6 @@ import {
 import { handleVideoLibraryRequest } from '../src/lib/video-library-handler.js';
 import { handleAudiobookRequest } from '../src/lib/audiobook-handler.js';
 import { handleBookDeliveryRequest } from '../src/lib/book-delivery-handler.js';
-import { handleLocalizationVisualQaStream } from '../src/lib/localization-visual-qa-stream.js';
 import { handleLocalizationVisualQaFrame } from '../src/lib/localization-visual-qa-token.js';
 
 const ROUTE_PARAM = '__paid_path';
@@ -359,7 +358,6 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
   response.setHeader('X-Robots-Tag', 'noindex, nofollow');
 
   const requestedAction = action(request);
-  if (requestedAction === 'localization-visual-qa-stream') return handleLocalizationVisualQaStream(request, response);
   if (requestedAction === 'localization-visual-qa-frame') return handleLocalizationVisualQaFrame(request, response);
   if (requestedAction === 'progress') return handleProgressApi(request, response, dependencies);
   if (requestedAction === 'mastery') return handleMasteryApi(request, response, dependencies);

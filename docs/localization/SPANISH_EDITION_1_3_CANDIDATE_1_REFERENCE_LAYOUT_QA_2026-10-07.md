@@ -10,7 +10,7 @@ Canonical private Google Doc:
 
 - Drive ID: `1hjOXZdqT1DajsiGvNm8motQIJ4yuxi6zNwDiU1bpYnU`
 - title: `USD Impact — Read the Dollar First — Spanish Edition 1.3 Candidate 1 — WORKING HOLD`
-- revision after current source-QA mutation: `AHj4eMQlOzsM6DipCKzPOr35WebPCjRztukdbj0LSkAN-EcDCOXgFAM6AM6J6jDwN_6F_VzDUZraIRclb9O6t9gUqKISY21uvQL93isH01A`
+- revision after current source-QA mutations: `AHj4eMQMvtjIrlB1vJnEK7fs0ebfKnVT9a5elyHi0X5RJUNDkvVeElSnrQHm2_XYl1XltdClV7vooIPdaVT9DDX1mk_Fa9mAIhebyZ_cjHk`
 - sharing: private at the construction checkpoint
 
 Historical Spanish Edition 1.2 remains unchanged.
@@ -87,9 +87,9 @@ The current QA pass externally verified active/current institutional destination
 - current SEC spot Bitcoin ETP statement is present.
 - current WGC fiscal-concerns/real-rates/central-bank source is present.
 
-## Candidate 1 source-QA mutation
+## Candidate 1 source-QA mutations
 
-One concrete mismatch was found and corrected in the private working document.
+Two bounded link mismatches/ambiguities were corrected in the private working document.
 
 Historical Candidate 1 reference text:
 
@@ -110,6 +110,26 @@ The working Google Doc was updated with revision control and read back successfu
 - current `511776` path present: **1**
 
 No other manuscript text was changed by that mutation.
+
+### IMF dominant-currencies generic topic URL
+
+The generic destination:
+
+`https://www.imf.org/en/Topics/dominant-currencies`
+
+returned crawler-level internal errors and was not needed because Candidate 1 already cites the current title-specific IMF publication that directly supports the dominant-currency point.
+
+It was replaced with:
+
+`https://www.imf.org/en/publications/staff-discussion-notes/issues/2020/07/16/dominant-currencies-and-external-adjustment-48618`
+
+Readback result:
+
+- occurrences changed: **1**
+- old generic topic URL remaining: **0**
+- canonical title-specific publication URL present in the affected reference: **1**
+
+No prose or analytical claim changed.
 
 ## Crawler-ambiguous URLs
 

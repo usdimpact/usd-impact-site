@@ -109,19 +109,11 @@ Do not translate from:
 - the historical Batch 01 Spanish pilot;
 - a script that has not been proven identical to the live Stream caption track.
 
-## Temporary source-recovery route
+## Historical source-recovery route
 
-The branch contains a temporary Preview-only English caption readback action.
+A temporary Preview-only English caption readback action was used to recover and verify the 51 live source tracks.
 
-It is:
-- GET-only;
-- English-only;
-- limited to known Video Library slugs;
-- enabled only when `VERCEL_ENV=preview` and the exact localization branch is active;
-- private/no-store/noindex;
-- unable to execute in Production or on `main`.
-
-**It must be removed before PR #760 can be considered for merge.**
+After 51/51 source recovery and Spanish HOLD completion, that diagnostic runtime was removed from the branch. The generic WebVTT validator and source-governance documentation remain; the Cloudflare readback handler, route wiring, and dedicated diagnostic test do not.
 
 ## Spanish HOLD completion
 

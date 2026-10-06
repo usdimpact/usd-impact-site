@@ -1,12 +1,12 @@
 {
   "version": 1,
   "status": "published",
-  "week_ending": "2026-09-25",
-  "retrieved_at": "2026-09-29T02:17:46.209Z",
+  "week_ending": "2026-10-02",
+  "retrieved_at": "2026-10-06T02:30:07.907Z",
   "observation_policy": {
     "description": "Compare the latest usable observation on or before the completed Friday with the latest usable observation on or before the prior Friday. Every fact retains its actual observation date.",
-    "current_cutoff": "2026-09-25",
-    "previous_cutoff": "2026-09-18",
+    "current_cutoff": "2026-10-02",
+    "previous_cutoff": "2026-09-25",
     "thresholds": {
       "dollarFlatPct": 0.1,
       "yieldFlatBps": 5,
@@ -38,21 +38,21 @@
           "source_note": "Accessible/reproducible Yahoo Finance proxy for DX-Y.NYB; not represented as exchange-official or a licensed institutional feed.",
           "units": "Index",
           "latest": {
+            "date": "2026-10-02",
+            "value": 101.93000030517578,
+            "display": "101.93",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
             "date": "2026-09-25",
             "value": 100.97000122070312,
             "display": "100.97",
             "age_days_from_cutoff": 0
           },
-          "previous": {
-            "date": "2026-09-18",
-            "value": 100.22000122070312,
-            "display": "100.22",
-            "age_days_from_cutoff": 0
-          },
           "change": {
-            "value": 0.7483536129164081,
+            "value": 0.9507765404243917,
             "unit": "percent",
-            "display": "+0.75%"
+            "display": "+0.95%"
           }
         },
         {
@@ -64,21 +64,21 @@
           "source_note": "Federal Reserve H.10 broad-dollar confirmation inside Dial 1; it is not a separate fourth dial.",
           "units": "Index Jan 2006=100",
           "latest": {
+            "date": "2026-10-02",
+            "value": 121.3848,
+            "display": "121.3848",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
             "date": "2026-09-25",
             "value": 120.33,
             "display": "120.3300",
             "age_days_from_cutoff": 0
           },
-          "previous": {
-            "date": "2026-09-18",
-            "value": 119.5133,
-            "display": "119.5133",
-            "age_days_from_cutoff": 0
-          },
           "change": {
-            "value": 0.6833549069434008,
+            "value": 0.8765893792071822,
             "unit": "percent",
-            "display": "+0.68%"
+            "display": "+0.88%"
           }
         }
       ]
@@ -100,21 +100,21 @@
           "source_note": "10-year inflation-indexed Treasury yield; the primary real-rate observation for Dial 2.",
           "units": "Percent",
           "latest": {
+            "date": "2026-10-02",
+            "value": 2.92,
+            "display": "2.92%",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
             "date": "2026-09-25",
             "value": 2.83,
             "display": "2.83%",
             "age_days_from_cutoff": 0
           },
-          "previous": {
-            "date": "2026-09-18",
-            "value": 2.68,
-            "display": "2.68%",
-            "age_days_from_cutoff": 0
-          },
           "change": {
-            "value": 14.999999999999991,
+            "value": 8.999999999999986,
             "unit": "basis_points",
-            "display": "+15 bp"
+            "display": "+9 bp"
           }
         },
         {
@@ -126,33 +126,33 @@
           "source_note": "Nominal 10-year Treasury yield shown only as rate context for Dial 2.",
           "units": "Percent",
           "latest": {
+            "date": "2026-10-02",
+            "value": 5.28,
+            "display": "5.28%",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
             "date": "2026-09-25",
             "value": 5.17,
             "display": "5.17%",
             "age_days_from_cutoff": 0
           },
-          "previous": {
-            "date": "2026-09-18",
-            "value": 5.01,
-            "display": "5.01%",
-            "age_days_from_cutoff": 0
-          },
           "change": {
-            "value": 16.000000000000014,
+            "value": 11.000000000000032,
             "unit": "basis_points",
-            "display": "+16 bp"
+            "display": "+11 bp"
           }
         }
       ]
     },
     "liquidity_stress": {
-      "direction": "tightening",
-      "confirmation": "narrow",
-      "confidence": "medium",
+      "direction": "mixed",
+      "confirmation": "unclear",
+      "confidence": "low",
       "component_directions": {
         "high_yield_oas": "tightening",
         "vix": "contained",
-        "sofr_iorb_spread": "tightening"
+        "sofr_iorb_spread": "contained"
       },
       "title": "Dial 3 — Liquidity stress",
       "facts": [
@@ -165,21 +165,21 @@
           "source_note": "ICE BofA series displayed through FRED. Only the two observations used by this snapshot are republished.",
           "units": "Percent",
           "latest": {
+            "date": "2026-10-02",
+            "value": 3.1,
+            "display": "3.10%",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
             "date": "2026-09-25",
             "value": 2.93,
             "display": "2.93%",
             "age_days_from_cutoff": 0
           },
-          "previous": {
-            "date": "2026-09-18",
-            "value": 2.68,
-            "display": "2.68%",
-            "age_days_from_cutoff": 0
-          },
           "change": {
-            "value": 25,
+            "value": 16.999999999999993,
             "unit": "basis_points",
-            "display": "+25 bp"
+            "display": "+17 bp"
           }
         },
         {
@@ -191,21 +191,21 @@
           "source_note": "CBOE VIX displayed through FRED. Only the two observations used by this snapshot are republished.",
           "units": "Index",
           "latest": {
-            "date": "2026-09-22",
-            "value": 14.21,
-            "display": "14.21",
-            "age_days_from_cutoff": 3
+            "date": "2026-10-02",
+            "value": 15.31,
+            "display": "15.31",
+            "age_days_from_cutoff": 0
           },
           "previous": {
-            "date": "2026-09-18",
-            "value": 14.81,
-            "display": "14.81",
+            "date": "2026-09-25",
+            "value": 14.87,
+            "display": "14.87",
             "age_days_from_cutoff": 0
           },
           "change": {
-            "value": -0.5999999999999996,
+            "value": 0.4400000000000013,
             "unit": "index_points",
-            "display": "-0.60 pts"
+            "display": "+0.44 pts"
           }
         },
         {
@@ -217,36 +217,36 @@
           "source_note": "Derived as SOFR minus IORB (FRED series IORB) in basis points. It is funding context, not a standalone liquidity measure.",
           "units": "Basis points",
           "latest": {
+            "date": "2026-10-02",
+            "value": -2.0000000000000018,
+            "display": "-2 bp",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
             "date": "2026-09-25",
             "value": 0,
             "display": "0 bp",
             "age_days_from_cutoff": 0
           },
-          "previous": {
-            "date": "2026-09-18",
-            "value": -4.999999999999982,
-            "display": "-5 bp",
-            "age_days_from_cutoff": 0
-          },
           "change": {
-            "value": 4.999999999999982,
+            "value": -2.0000000000000018,
             "unit": "basis_points",
-            "display": "+5 bp"
+            "display": "-2 bp"
           }
         }
       ]
     }
   },
   "interpretation": {
-    "label": "Stress-led firm-dollar environment",
-    "sentence": "The completed week showed a firmer DXY reading with confirmed broad-dollar confirmation, 10-year real yields rising, and liquidity stress increased.",
+    "label": "Rate-led firm-dollar environment",
+    "sentence": "The completed week showed a firmer DXY reading with confirmed broad-dollar confirmation, 10-year real yields rising, and liquidity-stress evidence was mixed.",
     "scope": "Descriptive interpretation of completed observations; not a forecast or trading signal."
   },
   "model_output": {
     "name": "USD Impact Score v2",
-    "week_ending": "2026-09-25",
-    "score": -0.5644141175572839,
-    "score_display": "-0.56",
+    "week_ending": "2026-10-02",
+    "score": -0.5029776266134216,
+    "score_display": "-0.50",
     "regime": "Soft dollar regime",
     "source_url": "https://score.usd-impact.com/data/weekly_input_latest.json",
     "methodology_url": "https://www.usd-impact.com/score/methodology/",

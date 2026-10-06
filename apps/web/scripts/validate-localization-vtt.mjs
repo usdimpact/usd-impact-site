@@ -2,10 +2,20 @@
 import { readFile } from 'node:fs/promises';
 
 function parseTimestamp(value) {
-  const match = String(value).match(/^(\d{2}):(\d{2}):(\d{2})\.(\d{3})$/);
-  if (!match) throw new Error(`Invalid WebVTT timestamp: ${value}`);
-  const [, hh, mm, ss, ms] = match;
-  return Number(hh) * 3600 + Number(mm) * 60 + Number(ss) + Number(ms) / 1000;
+  const raw = String(value);
+  const long = raw.match(/^(\d{2}):(\d{2}):(\d{2})\.(\d{3})$/);
+  if (long) {
+    const [, hh, mm, ss, ms] = long;
+    return Number(hh) * 3600 + Number(mm) * 60 + Number(ss) + Number(ms) / 1000;
+  }
+
+  const short = raw.match(/^(\d{2}):(\d{2})\.(\d{3})$/);
+  if (short) {
+    const [, mm, ss, ms] = short;
+    return Number(mm) * 60 + Number(ss) + Number(ms) / 1000;
+  }
+
+  throw new Error(`Invalid WebVTT timestamp: ${value}`);
 }
 
 export function validateLocalizationVtt(source, options = {}) {
@@ -33,7 +43,7 @@ export function validateLocalizationVtt(source, options = {}) {
     if (timingIndex < 0) continue;
 
     const timing = lines[timingIndex].match(
-      /^(\d{2}:\d{2}:\d{2}\.\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2}\.\d{3})(?:\s+.*)?$/,
+      /^((?:\d{2}:)?\d{2}:\d{2}\.\d{3})\s+-->\s+((?:\d{2}:)?\d{2}:\d{2}\.\d{3})(?:\s+.*)?$/,
     );
     if (!timing) throw new Error(`Invalid cue timing line: ${lines[timingIndex]}`);
 

@@ -19,7 +19,9 @@ Do not translate from a title match, duration match, older source render, or rec
 
 ## Read-only Cloudflare path
 
-Use the official read endpoint:
+The branch-scoped Preview recovery path has successfully verified all 51 live tracks using the existing server-side Cloudflare credentials without exposing them.
+
+The underlying official read endpoint is:
 
 `GET /accounts/{account_id}/stream/{identifier}/captions/{language}/vtt`
 
@@ -42,31 +44,24 @@ The Stream UID map is already server-side in:
 - no Production deployment;
 - no member-facing Spanish caption availability.
 
-## Batch 01 status
+## Live source recovery status
 
-Validated Spanish HOLD captions exist privately for:
+Source recovery is complete for the current 51-film Video Library.
 
-- DXY: The Signal vs the System
-- Part 3: Repo, Collateral and Haircuts
-- Part 4: Dealers and Balance-Sheet Intermediation
-- Part 5: Funding Stress and Market Transmission
-- Part 6: Global Dollar Funding and FX Swaps
-- Part 7: Dollar Liquidity Backstops and Policy Facilities
+- 51/51 exact production Stream UIDs returned a live English WebVTT.
+- Part 1 and Part 2 are no longer source-blocked.
+- All short explainers have exact live English caption authority.
+- No title/duration approximation is required for localization.
 
-These assets are not stored in the public repository.
+See `docs/localization/SPANISH_VIDEO_LIVE_SOURCE_INVENTORY.md` for the verified cue inventory.
 
-## Still blocked
+## Superseded pilot status
 
-### Masterclass
+The earlier private Spanish HOLD pilots for DXY and masterclass Parts 3–7 were generated before live Stream English-caption readback was available.
 
-- Part 1: Foundations — exact live caption/source recovery required.
-- Part 2: The FX Swap Engine — exact live caption/source recovery required.
+A control comparison proved that the live DXY English VTT differs materially from the earlier production-master transcript/timing. Therefore the earlier pilot batch is historical workflow evidence only and is not a release candidate.
 
-Historical HeyGen renders are close but not exact enough to treat as live authority.
-
-### Short explainers
-
-The remaining short explainers stay `SOURCE_HOLD` until their exact live English caption tracks are retrieved or an exact production-master match is proven.
+All Spanish caption work from this point forward must be rebuilt or reconciled against the live Stream English VTT.
 
 ## Local validation
 

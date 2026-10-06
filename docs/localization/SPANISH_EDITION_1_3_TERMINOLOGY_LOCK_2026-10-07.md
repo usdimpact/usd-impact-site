@@ -19,14 +19,14 @@ Spanish baseline: Edition 1.2 translation memory only
 | safe-haven demand | demanda de refugio | retain |
 | spare capacity | capacidad ociosa | retain |
 | benchmark | referencia / precio de referencia | choose by syntactic context; never create malformed hybrids such as `precio de referenciaing` |
-| trading signal | señal de trading | use consistently in compliance boundaries |
+| trading signal | señal operativa | use consistently in compliance boundaries; `señal de trading` is not the release default |
 | trading advice | asesoramiento de trading | use only where Candidate 2 explicitly includes trading advice |
 | recalculated history | historial recalculado | distinguish from dated as-published records |
 | as-published archive | archivo tal como fue publicado | use when referring to dated contemporaneous publication records |
 | regime | régimen | retain |
 | firm dollar regime | régimen de dólar firme | Appendix B band terminology |
-| soft dollar regime | régimen de dólar débil/moderadamente débil | final band-label review required before layout |
-| weak dollar regime | régimen de dólar débil | use for weakest fixed band; avoid collision with the soft-dollar label in tables |
+| soft dollar regime | régimen de dólar moderadamente débil | fixed release label for the `-1.0 to < -0.3` band |
+| weak dollar regime | régimen de dólar débil | fixed release label for the `< -1.0` band |
 
 ## Controlled distinction: hurdle rate
 
@@ -49,7 +49,7 @@ Where Candidate 2 requires the complete chapter compliance boundary, the Spanish
 
 - material educativo e informativo;
 - no constituye asesoramiento personalizado de inversión, legal, fiscal ni de trading;
-- no es una señal de trading;
+- no constituye una señal operativa;
 - no es una recomendación para comprar o vender valores, materias primas, divisas o activos digitales;
 - las relaciones de mercado son condicionales;
 - verifique los datos actuales antes de utilizarlos.

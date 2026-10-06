@@ -66,8 +66,8 @@ This is an upstream English-source-currentness issue. Spanish localization must 
 
 Registered units: **41**
 
-- `REUSE_VERIFIED`: 34
-- `REVISE`: 7
+- `REUSE_VERIFIED`: 35
+- `REVISE`: 6
 - `NEW_TRANSLATION`: 0
 - `RETIRE`: 0
 

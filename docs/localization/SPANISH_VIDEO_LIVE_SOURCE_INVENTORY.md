@@ -123,6 +123,20 @@ It is:
 
 **It must be removed before PR #760 can be considered for merge.**
 
+## Spanish HOLD completion
+
+Live-source Spanish subtitle translation plus text/timing QA is now **51 / 51 films complete**:
+
+- Core Dollar Framework: **3 / 3**
+- Asset Transmission: **6 / 6**
+- Rates, Liquidity & Policy: **13 / 13**
+- Global Dollar & FX Mechanics: **22 / 22**
+- Dollar Funding Stack: **7 / 7**
+
+This means the private Spanish HOLD subtitle assets have all been rebuilt from the live Stream English source and pass the current structural/readability gate: valid WebVTT, no cue overlap, at most two subtitle lines, at most 42 characters per line, and at most 20 characters per second.
+
+This is **not** a release gate. Frame-level visual QA, final terminology/compliance review, and explicit owner approval are still required before any Cloudflare Spanish caption upload.
+
 ## Release state
 
 Spanish video publication remains **HOLD**.

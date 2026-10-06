@@ -39,7 +39,7 @@ import {
 import { handleVideoLibraryRequest } from '../src/lib/video-library-handler.js';
 import { handleAudiobookRequest } from '../src/lib/audiobook-handler.js';
 import { handleBookDeliveryRequest } from '../src/lib/book-delivery-handler.js';
-import { handleLocalizationVisualQaToken } from '../src/lib/localization-visual-qa-token.js';
+import { handleLocalizationVisualQaFrame } from '../src/lib/localization-visual-qa-frame.js';
 
 const ROUTE_PARAM = '__paid_path';
 const ROOT_PATH = '/guided-edition/';

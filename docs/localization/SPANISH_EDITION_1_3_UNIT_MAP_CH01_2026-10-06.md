@@ -67,8 +67,8 @@ A `REUSE_VERIFIED` classification is semantic/text authority only. Final punctua
 
 ## Chapter 1 counts
 
-- `REUSE_VERIFIED`: 34 units
-- `REVISE`: 5 units
+- `REUSE_VERIFIED`: 35 units
+- `REVISE`: 4 units
 - `NEW_TRANSLATION`: 2 units
 - `RETIRE`: 0 Candidate-mapped units
 

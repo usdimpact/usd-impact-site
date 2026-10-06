@@ -47,7 +47,7 @@ export const dailyCards = [
     keyTakeaway: "Use DXY as one signal inside a broader dollar framework.",
     assets: ["DXY", "EURUSD"],
     concepts: ["DXY basket", "broad dollar", "dollar system"],
-    relatedCardIds: ["card-dollar-yields-liquidity", "card-eurusd-relative-rates"],
+    relatedCardIds: ["card-dollar-yields-liquidity", "card-eurusd-relative-rates", "card-dxy-broad-purpose"],
     sourceNames: ["ICE", "Federal Reserve Board"],
     videoSlug: "dxy-the-signal-vs-the-system",
     status: "ready-for-build",

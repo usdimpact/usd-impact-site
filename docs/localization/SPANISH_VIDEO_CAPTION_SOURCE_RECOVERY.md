@@ -79,6 +79,10 @@ The validator fails closed on:
 
 The validator intentionally does not ingest or commit private caption assets.
 
+## Diagnostic cleanup
+
+The temporary Preview-only Cloudflare caption-readback handler used during source recovery has been removed after all 51 live English tracks were verified. No readback route is intended to ship or remain available for Production.
+
 ## Release rule
 
 A Spanish caption may advance from `HOLD` only after:

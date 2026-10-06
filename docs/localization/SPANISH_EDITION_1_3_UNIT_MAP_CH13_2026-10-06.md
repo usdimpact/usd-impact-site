@@ -84,10 +84,10 @@ Google Drive extraction places these table cells near the end of the DOCX rather
 
 Registered units: **53**
 
-- `REUSE_VERIFIED`: 34
+- `REUSE_VERIFIED`: 33
 - `REVISE`: 11
 - `NEW_TRANSLATION`: 4
-- `RETIRE`: 4
+- `RETIRE`: 5
 
 ## Release-critical work
 

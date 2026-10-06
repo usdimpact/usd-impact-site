@@ -65,7 +65,7 @@ export const dailyCardVideoBatch01 = Object.freeze([
     keyTakeaway: 'Separate the currency of pricing from the regional physical market.',
     assets: ['DXY', 'Henry Hub', 'TTF', 'LNG'],
     concepts: ['dollar pricing', 'regional benchmarks', 'physical constraints'],
-    relatedCardIds: ['card-oil-dollar-physical', 'card-one-dollar-shock'],
+    relatedCardIds: ['card-oil-dollar-physical', 'card-one-dollar-shock', 'card-gas-pipeline-regional-divergence'],
     sourceNames: ['EIA', 'CME Group', 'ICE', 'S&P Global'],
     videoSlug: 'lng-dollar-pricing-vs-regional-gas-markets',
     status: 'ready-for-build',

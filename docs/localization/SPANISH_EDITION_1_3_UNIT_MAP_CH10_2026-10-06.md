@@ -81,8 +81,8 @@ Chapter 10 is a governed methodology/evidence chapter. Historical Spanish transl
 Registered Candidate/historical-control units: **56**
 
 - `REUSE_VERIFIED`: 7
-- `REVISE`: 16
-- `NEW_TRANSLATION`: 26
+- `REVISE`: 18
+- `NEW_TRANSLATION`: 24
 - `RETIRE`: 7
 
 ## Hard release exclusions

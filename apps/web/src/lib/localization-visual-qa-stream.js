@@ -16,6 +16,7 @@ function notFound(response) {
 export async function handleLocalizationVisualQaStream(request, response, overrides = {}) {
   const environment = overrides.environment || process.env;
   const createToken = overrides.createToken || createCloudflareStreamToken;
+  const fetchImpl = overrides.fetchImpl || fetch;
   const resolveUid = overrides.resolveUid || getStreamUid;
   const customerCode = overrides.customerCode || getStreamCustomerCode(environment);
 
@@ -49,7 +50,7 @@ export async function handleLocalizationVisualQaStream(request, response, overri
       thumbnail.searchParams.set('height', '720');
       thumbnail.searchParams.set('fit', 'crop');
 
-      const imageResponse = await fetch(thumbnail, { method: 'GET', cache: 'no-store' });
+      const imageResponse = await fetchImpl(thumbnail, { method: 'GET', cache: 'no-store' });
       if (!imageResponse.ok) throw new Error('Thumbnail fetch failed.');
       const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
       if (!contentType.startsWith('image/')) throw new Error('Invalid thumbnail type.');

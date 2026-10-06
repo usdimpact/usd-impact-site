@@ -66,4 +66,29 @@ const createToken = async ({videoUid}) => {
   assert.equal(response.body.includes('CLOUDFLARE'),false);
 }
 
+{
+  const response=res();
+  await handleLocalizationVisualQaStream(
+    req('/api/guided-edition?action=localization-visual-qa-stream&slug=known&mode=thumbnail&time=12.5'),
+    response,
+    {
+      environment:PREVIEW,
+      resolveUid,
+      createToken,
+      customerCode:'customer',
+      fetchImpl:async (url) => {
+        assert.match(String(url), /\/thumbnails\/thumbnail\.jpg\?time=12\.5s/);
+        return new Response(Buffer.from([0xff,0xd8,0xff,0xd9]), {
+          status:200,
+          headers:{'content-type':'image/jpeg'}
+        });
+      }
+    }
+  );
+  assert.equal(response.statusCode,200);
+  const body=JSON.parse(response.body);
+  assert.equal(body.time,12.5);
+  assert.match(body.dataUrl,/^data:image\/jpeg;base64,/);
+}
+
 console.log('preview-only localization visual QA player: PASS');

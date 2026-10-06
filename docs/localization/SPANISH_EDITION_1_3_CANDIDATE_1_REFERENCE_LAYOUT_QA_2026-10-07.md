@@ -10,7 +10,7 @@ Canonical private Google Doc:
 
 - Drive ID: `1hjOXZdqT1DajsiGvNm8motQIJ4yuxi6zNwDiU1bpYnU`
 - title: `USD Impact — Read the Dollar First — Spanish Edition 1.3 Candidate 1 — WORKING HOLD`
-- revision after visible-text and hyperlink-metadata source-QA mutations: `AHj4eMQSiDrZBQglWCsU_Oh9OhKwzbKG3OsMP4SKFGWP-ppCnegTr28JoneDta8tfyY8IJQb2xiX2mA4U7QTBf_FVfCwpsnbHF6SIDXVYd4`
+- revision after source-QA, hyperlink-metadata and legacy-visual cleanup: `ANLCKQlaF9o0RNeTOfJwd9sZrZAti7lAnWcmcjgXiG-0kY9qxh3dmuFg2np6JPc_QkUsd-fh8V0kaCyoiv86Afg3MAPIhm3Qf3thrsxj56s`
 - sharing: private at the construction checkpoint
 
 Historical Spanish Edition 1.2 remains unchanged.
@@ -192,7 +192,7 @@ This verifies the clickable PDF links, not only the visible manuscript text.
 
 Fresh Candidate 1 PDF export:
 
-- pages: **131**
+- pages: **129**
 - page size: **612 × 792 pt** on all pages
 - encrypted: **no**
 - openable: **yes**
@@ -205,3 +205,61 @@ Fresh Candidate 1 PDF export:
 
 The visual screenshot route could not fetch the private signed PDF URL. Therefore page-by-page visual certification remains explicitly **NOT COMPLETE** and must not be inferred from structural preflight.
 
+## Legacy visual cleanup
+
+Supplemental rendered-page comparison against the actual English Candidate 2 PDF found three visual artifacts in Candidate 1 that text extraction alone had not exposed:
+
+1. Chapter 3 DXY composition donut;
+2. Chapter 4 five-channel transmission diagram;
+3. Chapter 13 seven-step weekly-flow graphic.
+
+English Candidate 2 does **not** contain these visuals in the corresponding release locations.
+
+Native Google Docs object inventory before cleanup showed exactly four inline images:
+
+- `i.0` — cover branding;
+- `i.1` — Chapter 3 legacy DXY visual;
+- `i.2` — Chapter 4 legacy transmission visual;
+- `i.4` — Chapter 13 legacy weekly-flow visual.
+
+The three non-cover objects were deleted by exact document ranges in descending index order with revision control.
+
+Post-cleanup native readback:
+
+- inline image objects remaining: **1**
+- remaining object: `i.0` cover branding only
+
+Fresh PDF export confirms:
+
+- pages: **129** (down from 131 after legacy-visual removal/reflow)
+- image-bearing pages: **page 1 only**
+- outline items: **300**
+- external URI annotations: **70**
+- invalid internal page targets: **0**
+- old IMF `524104` link target: **0**
+- old IMF generic dominant-currencies topic target: **0**
+- current `511776` link target: **1**
+- current Dominant Currencies publication target: present
+
+### Supplemental rendered-page QA
+
+Local render spot-checks were performed on:
+
+- cover/front matter;
+- Chapter 3 DXY table and reflow;
+- Chapter 4 transmission section;
+- Chapter 13 checklist/table area;
+- Appendix B methodology/regime table;
+- author/index placeholder.
+
+Observed result:
+
+- no clipping or overlap in the sampled pages;
+- the Chapter 3 table now reflows without the unauthorized donut visual;
+- Chapter 4 and Chapter 13 prose/tables reflow cleanly after visual removal;
+- Appendix B sampled layout is readable;
+- one trailing blank page remains after the pre-layout index placeholder.
+
+The trailing blank page is a **layout-finalization item**, not a content error. Remove it when final index/pagination/bookmarks are generated.
+
+This local render inspection is supplemental only. The required web screenshot path still could not fetch the private signed PDF, so final screenshot-based page-by-page visual certification remains **NOT COMPLETE**.

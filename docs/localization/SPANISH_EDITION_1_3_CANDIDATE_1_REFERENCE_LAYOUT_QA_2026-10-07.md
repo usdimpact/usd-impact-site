@@ -10,7 +10,7 @@ Canonical private Google Doc:
 
 - Drive ID: `1hjOXZdqT1DajsiGvNm8motQIJ4yuxi6zNwDiU1bpYnU`
 - title: `USD Impact — Read the Dollar First — Spanish Edition 1.3 Candidate 1 — WORKING HOLD`
-- revision after current source-QA mutations: `AHj4eMQMvtjIrlB1vJnEK7fs0ebfKnVT9a5elyHi0X5RJUNDkvVeElSnrQHm2_XYl1XltdClV7vooIPdaVT9DDX1mk_Fa9mAIhebyZ_cjHk`
+- revision after visible-text and hyperlink-metadata source-QA mutations: `AHj4eMQSiDrZBQglWCsU_Oh9OhKwzbKG3OsMP4SKFGWP-ppCnegTr28JoneDta8tfyY8IJQb2xiX2mA4U7QTBf_FVfCwpsnbHF6SIDXVYd4`
 - sharing: private at the construction checkpoint
 
 Historical Spanish Edition 1.2 remains unchanged.
@@ -160,3 +160,48 @@ Still required:
 Publication remains **HOLD**.
 
 No public Spanish route, sitemap/hreflang, member delivery, audiobook release, caption-default change, marketing email, entitlement change, commerce change, auth/passkey change or Production localization activation is authorized by this checkpoint.
+
+## Hyperlink metadata verification
+
+A PDF export exposed an important Google Docs behavior: `replaceAllText` updated visible URL text but initially preserved the prior hyperlink target in the text style.
+
+The two corrected IMF references were therefore repaired a second time at the **link metadata** layer using exact text ranges and revision control.
+
+### Corrected targets
+
+1. Crypto/equity spillovers:
+   - old target removed: `...Cryptic-Connections...524104`
+   - current target: `https://www.imf.org/en/publications/global-financial-stability-notes/issues/2022/01/10/cryptic-connections-511776`
+
+2. Dominant-currencies generic topic link:
+   - old target removed: `https://www.imf.org/en/Topics/dominant-currencies`
+   - current target: `https://www.imf.org/en/publications/staff-discussion-notes/issues/2020/07/16/dominant-currencies-and-external-adjustment-48618`
+
+### Re-export proof
+
+A fresh private PDF export after the metadata repair shows:
+
+- old `524104` target: **0**
+- old `Topics/dominant-currencies` target: **0**
+- current `511776` target: **1**
+- title-specific Dominant Currencies target: present in the affected Chapter 6 reference
+
+This verifies the clickable PDF links, not only the visible manuscript text.
+
+## PDF structural preflight
+
+Fresh Candidate 1 PDF export:
+
+- pages: **131**
+- page size: **612 × 792 pt** on all pages
+- encrypted: **no**
+- openable: **yes**
+- scanned/image-only: **no**
+- outline items: **300**
+- annotations: **70**
+- external URI link annotations: **70**
+- invalid internal page-link targets detected: **0**
+- fonts: embedded/subset in the inspected font inventory
+
+The visual screenshot route could not fetch the private signed PDF URL. Therefore page-by-page visual certification remains explicitly **NOT COMPLETE** and must not be inferred from structural preflight.
+

@@ -4,6 +4,7 @@ import { SEARCH_UTILITY_PATHS } from './src/lib/search-utility-policy.js';
 import { canonicalUrlForRequest } from './src/lib/canonical-url.js';
 import accessMap from './src/data/quiz-access-map.json' with { type: 'json' };
 import { resolveScorePipelineOrigin } from './src/lib/score-pipeline-origin.js';
+import { isUnpublishedLocalePath } from './src/lib/localization-policy.js';
 
 const normalizePath = (value) => {
   const normalized = value.replace(/\/+$/, '');
@@ -79,6 +80,7 @@ export default defineConfig({
       filter: (page) => {
         const pathname = normalizePath(new URL(page).pathname);
         return !privatePaths.has(pathname)
+          && !isUnpublishedLocalePath(pathname)
           && !previewOnlySitemapPrefixes.some((prefix) => isWithinPrefix(pathname, prefix));
       },
       serialize: (item) => {

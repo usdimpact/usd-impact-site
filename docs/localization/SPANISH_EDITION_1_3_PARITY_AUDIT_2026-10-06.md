@@ -168,3 +168,23 @@ Until the sequence above is complete:
 - no entitlement, commerce, auth, passkey, email, or English-content behavior change.
 
 This checkpoint is evidence only. It does not create a release candidate and does not change Production.
+
+## First-pass batch index
+
+The first-pass structural/governed-patch audit is now recorded in four bounded evidence batches:
+
+1. `SPANISH_EDITION_1_3_PARITY_AUDIT_BATCH_01_FRONTMATTER_CH1_CH3_2026-10-06.md`
+2. `SPANISH_EDITION_1_3_PARITY_AUDIT_BATCH_02_CH4_CH9_2026-10-06.md`
+3. `SPANISH_EDITION_1_3_PARITY_AUDIT_BATCH_03_CH10_CH13_2026-10-06.md`
+4. `SPANISH_EDITION_1_3_PARITY_AUDIT_BATCH_04_BACKMATTER_2026-10-06.md`
+
+This completes the **first-pass structural and governed-patch audit**, not the full paragraph-level parity audit.
+
+The next controlled phase is paragraph/unit reconciliation against Candidate 2, assigning every unit one of:
+
+- `REUSE_VERIFIED`
+- `REVISE`
+- `NEW_TRANSLATION`
+- `RETIRE`
+
+Publication remains **HOLD** until the full paragraph/unit audit, translation, terminology, compliance, layout, navigation and release QA sequence is complete.

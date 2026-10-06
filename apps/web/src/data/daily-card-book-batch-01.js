@@ -94,7 +94,7 @@ export const dailyCardBookBatch01 = Object.freeze([
     whatToWatch: ['EIA crude inventories', 'Cushing inventories', 'product stocks', 'refinery utilization', 'exports', 'futures curve'],
     keyTakeaway: 'Read inventories as part of the physical balance and confirm across locations, products, and market structure.',
     assets: ['WTI'], concepts: ['inventories', 'physical balance', 'Cushing'],
-    relatedCardIds: ['card-wti', 'card-eia', 'card-oil-dollar-physical'],
+    relatedCardIds: ['card-wti', 'card-eia', 'card-oil-dollar-physical', 'card-wti-futures-curve'],
     sourceNames: ['USD Impact Book lesson', 'U.S. Energy Information Administration', 'CME Group'],
     sourcePath: 'src/content/pages/usd-wti.md', sourcePageSlug: '/energy/usd-wti', sourceHeading: 'Why inventories matter',
     status: 'ready-for-build', lastReviewed: '2026-08-23',

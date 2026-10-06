@@ -1,7 +1,7 @@
 # Read the Dollar First — manuscript patch register
 
 Date: 2026-08-29
-Status: Phase 2C preparation only; no master-book edit authorized or performed.
+Status: Phase 2C preparation register; 2026-10-06 post-candidate MP-21 addendum added. No master-book edit is authorized by this register.
 
 ## Purpose
 
@@ -12,7 +12,8 @@ The correction target is deliberately narrow:
 - Chapter 10 — `Reading Regimes: The Eleven-Year Record`;
 - Chapter 13 — the live-dashboard / archive wording only;
 - Appendix B — `USD Impact Score Methodology`;
-- four required print-link insertions plus one optional companion insertion.
+- four required print-link insertions plus one optional companion insertion;
+- one post-candidate Introduction consistency correction (MP-21).
 
 All other chapters remain editorially frozen unless the final layout pass reveals a direct cross-reference that must move because of pagination.
 
@@ -479,6 +480,41 @@ This alias currently resolves to the Weekly Regime Lab with book edition/chapter
 
 ---
 
+## MP-21 — Introduction Part IV Score-evidence framing
+
+**Priority:** P0  
+**Candidate 2 location:** Introduction / `How the book is organized` / Part IV paragraph  
+**Discovery:** 2026-10-06 Spanish Edition 1.3 source-parity audit (#772 / #774)
+
+### Current Candidate 2 residue
+
+The active Edition 1.3 / v5.95 Candidate 2 Introduction still says that Part IV:
+
+- `examines the hit rate honestly including its limitations`; and
+- is where the framework `becomes an empirical claim`.
+
+Those two phrases are inconsistent with the same Candidate 2's governed Chapter 10 and Appendix B, which now describe Score v2 history as descriptive/robustness evidence, distinguish current recalculation from as-published vintages, and explicitly avoid treating the historical record as proven predictive performance.
+
+### Required correction
+
+Replace the Part IV description with wording that says, in substance:
+
+> Part IV tests the framework against descriptive evidence. It uses the recalculated Score v2 history and selected historical regimes to show how the framework organizes past conditions, where the cross-asset pattern was coherent, and where it was mixed or asset-specific. The recalculated history is a current research view of the past, not a point-in-time predictive backtest; dated as-published evidence must be treated separately.
+
+The exact editorial wording may be tightened during the governed manuscript rebuild, but it must preserve all of these boundaries:
+
+- no fixed hit-rate or accuracy claim;
+- no implication that recalculated history proves contemporaneous predictive performance;
+- explicit descriptive-evidence framing;
+- compatibility with MP-04, MP-05, MP-07, MP-10 and MP-15/16;
+- no new forecast, signal or recommendation claim.
+
+### Artifact rule
+
+Do not overwrite the frozen Candidate 2 PDF. Apply MP-21 only in a newly versioned successor artifact with a fresh identity/hash and refreshed release evidence.
+
+---
+
 ## Patch scope summary
 
 ### Required factual/manuscript corrections
@@ -486,6 +522,7 @@ This alias currently resolves to the Weekly Regime Lab with book edition/chapter
 - MP-01 through MP-08
 - MP-10
 - MP-12 through MP-17
+- MP-21
 
 ### Required print bridge insertions
 
@@ -519,4 +556,5 @@ A later manuscript-edit phase should not be considered complete until:
 4. no `84.5%`, `100%`, `79.7%`, or `73.2%` performance claim remains as current Score v2 evidence;
 5. no paragraph describes recalculated pre-archive history as an as-published real-time record;
 6. TOC, printed page references, index ranges, bookmarks and internal hyperlinks are revalidated after layout;
-7. the corrected manuscript receives a fresh edition/build identifier before ISBN/barcode work begins.
+7. no Introduction copy describes current Score v2 history as a hit-rate proof or as predictive-performance evidence;
+8. the corrected manuscript receives a fresh edition/build identifier before ISBN/barcode work begins.

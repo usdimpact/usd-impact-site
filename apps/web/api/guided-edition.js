@@ -39,6 +39,7 @@ import {
 import { handleVideoLibraryRequest } from '../src/lib/video-library-handler.js';
 import { handleAudiobookRequest } from '../src/lib/audiobook-handler.js';
 import { handleBookDeliveryRequest } from '../src/lib/book-delivery-handler.js';
+import { handleLocalizationVisualQaToken } from '../src/lib/localization-visual-qa-token.js';
 
 const ROUTE_PARAM = '__paid_path';
 const ROOT_PATH = '/guided-edition/';
@@ -357,6 +358,7 @@ export async function handleGuidedEditionRequest(request, response, overrides = 
   response.setHeader('X-Robots-Tag', 'noindex, nofollow');
 
   const requestedAction = action(request);
+  if (requestedAction === 'localization-visual-qa-token') return handleLocalizationVisualQaToken(request, response);
   if (requestedAction === 'progress') return handleProgressApi(request, response, dependencies);
   if (requestedAction === 'mastery') return handleMasteryApi(request, response, dependencies);
   if (requestedAction) return sendJson(response, 404, { error: 'Guided Edition action not found.', code: 'GUIDED_ACTION_NOT_FOUND' });

@@ -39,6 +39,10 @@ const SEO_TITLES = Object.freeze(new Map([
     slug: 'post-bretton-woods-discipline-became-market-mediated',
     title: 'Post-Bretton Woods Market Discipline',
   })],
+  ['card-float-jamaica-formalization', Object.freeze({
+    slug: 'floating-rates-before-jamaica-formalization',
+    title: 'Floating Rates Before Jamaica',
+  })],
 ]));
 
 const SEO_DESCRIPTIONS = Object.freeze(new Map([

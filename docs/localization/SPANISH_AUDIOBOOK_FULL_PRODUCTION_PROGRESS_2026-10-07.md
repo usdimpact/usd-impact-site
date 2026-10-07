@@ -108,3 +108,38 @@ Still prohibited at this checkpoint:
 ## Next production step
 
 Continue with **Chapter 4 — Cómo el dólar mueve petróleo, oro, Bitcoin, gas y divisas**, using the approved Mateo voice and governed spoken-adaptation rules. Chapter 4 synthesis has started privately; segments 1–5 are complete.
+
+
+## Provider-credit hold — 2026-10-07
+
+Production continued into Chapter 4 after Chapters 00–05 were locked.
+
+Current Chapter 4 synthesis state:
+
+- segments 1–10: **complete**
+- segment 11: **next**
+- segments 11–23: **not synthesized**
+- no completed segment should be regenerated
+
+HeyGen account verification:
+
+- plan: Creator
+- premium credits remaining: 2
+- add-on credits: none available
+- premium-credit reset: `2026-10-13T19:31:48Z`
+- current speech endpoint result after segment 10: HTTP 402 `insufficient_credit`
+- endpoint requires plan/generative credit; no billing purchase or plan change has been authorized
+
+Operational response:
+
+- synthesis paused exactly at Chapter 4 segment 11;
+- tracks 06–19 were fully inventoried and preflighted;
+- a human-readable and machine-readable production queue was added to this branch;
+- no voice substitution, lower-quality fallback, public publish, member upload or Production change was made.
+
+Queue files:
+
+- `docs/localization/SPANISH_AUDIOBOOK_MATEO_PRODUCTION_QUEUE_2026-10-07.md`
+- `docs/localization/spanish-audiobook-mateo-production-queue-2026-10-07.json`
+
+The safe resume command is: **Track 06 / Chapter 4 / segment 11 with Narrator Mateo, es-419, 0.92x.**

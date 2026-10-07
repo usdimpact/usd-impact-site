@@ -5,7 +5,7 @@ Status: **CONTENT INTEGRITY PASS / AUDITORY OWNER REVIEW REQUIRED / NO RELEASE**
 ## Pilot identity
 
 - source: Spanish Edition 1.3 Candidate 1
-- source Drive ID: `1hjOXZdqT1iIQWUenWuZwRYXHqJnT1u1f8v3_uaQ7ME`
+- source Drive ID: `1hjOXZdqT1DajsiGvNm8motQIJ4yuxi6zNwDiU1bpYnU`
 - chapter: **Capítulo 3 — USD no es DXY**
 - pilot voice: **Juliana - Voice 1**
 - engine: HeyGen Starfish-compatible speech synthesis

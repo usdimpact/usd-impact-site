@@ -13,7 +13,7 @@ const latestNews = (await getCollection('news'))
   .sort((a, b) => b.data.date.localeCompare(a.data.date))[0];
 const scorePipelineOrigin = resolveScorePipelineOrigin(import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
 ---
-<BaseLayout title="USD Impact | Read the Dollar First" description="Learn a repeatable dollar-first process for separating dollar, real-rate, liquidity and asset-specific drivers before interpreting cross-asset market moves." stylesheets={['/assets/daily-cards.css']}>
+<BaseLayout title="USD Impact | Read the Dollar First" description="Learn a repeatable dollar-first process for separating dollar, real-rate, liquidity and asset-specific drivers before interpreting cross-asset market moves." stylesheets={['/assets/daily-cards.css']} alternateLocaleHref="/es/">
   <main id="main-content" class="main-with-hero">
     <section class="hero">
       <div class="container">

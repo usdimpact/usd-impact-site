@@ -1,10 +1,12 @@
 ---
 import '../styles/global.css';
+import { canonicalUrlForRequest } from '../lib/canonical-url.js';
 
 const {
   title,
   description,
   currentPath = '/es',
+  englishPath = '/',
 } = Astro.props;
 
 const links = [
@@ -18,6 +20,8 @@ const links = [
 const normalize = (value) => String(value || '/').replace(/\/+$/, '') || '/';
 const activePath = normalize(currentPath);
 const isActive = (href) => activePath === normalize(href);
+const canonicalUrl = canonicalUrlForRequest(Astro.url);
+const englishUrl = canonicalUrlForRequest(new URL(englishPath, Astro.url));
 ---
 <!doctype html>
 <html lang="es">
@@ -28,27 +32,21 @@ const isActive = (href) => activePath === normalize(href);
     <meta name="application-name" content="USD Impact" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang="es" href={canonicalUrl} />
+    <link rel="alternate" hreflang="en" href={englishUrl} />
+    <link rel="alternate" hreflang="x-default" href={englishUrl} />
+    <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
     <link rel="icon" href="/assets/logo/USDImpact_Icon_Color_192.png" type="image/png" sizes="192x192" />
     <style is:global>
-      .page-content table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .page-content th,
-      .page-content td {
+      .page-content table { width: 100%; border-collapse: collapse; }
+      .page-content th, .page-content td {
         padding: 0.75rem;
         border-bottom: 1px solid #dbe1e8;
         text-align: left;
         vertical-align: top;
       }
-
-      .page-content th {
-        color: var(--navy);
-        font-weight: 800;
-      }
-
+      .page-content th { color: var(--navy); font-weight: 800; }
       @media (max-width: 760px) {
         .page-content table {
           display: block;
@@ -56,55 +54,27 @@ const isActive = (href) => activePath === normalize(href);
           overflow-x: auto;
           -webkit-overflow-scrolling: touch;
         }
-
-        .page-content th,
-        .page-content td {
-          min-width: 9rem;
-        }
+        .page-content th, .page-content td { min-width: 9rem; }
       }
     </style>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
-    <div class="container" role="status" aria-label="Estado de la vista previa" style="padding-top: 0.75rem;">
-      <div class="card" style="padding: 0.75rem 1rem;">
-        <strong>Vista previa en español — no publicada ni indexada.</strong>
-        <span> Esta versión existe solo para revisión en el entorno de vista previa. El sitio público y la experiencia predeterminada siguen en inglés.</span>
-      </div>
-    </div>
     <header class="site-header">
       <div class="container header-inner">
         <a class="logo" href="/es/" aria-label="Inicio de USD Impact en español">
-          <img
-            src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
+          <img src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
             srcset="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png 256w, /assets/logo/USDImpact_Horizontal_Color_NoTagline_512.png 512w"
-            sizes="148px"
-            alt="USD Impact"
-            width="256"
-            height="77"
-            decoding="async"
-          />
+            sizes="148px" alt="USD Impact" width="256" height="77" decoding="async" />
         </a>
-        <button
-          class="nav-toggle"
-          type="button"
-          aria-expanded="false"
-          aria-controls="site-navigation"
-        >
-          <span class="nav-toggle-icon" aria-hidden="true"></span>
-          <span>Menú</span>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-navigation">
+          <span class="nav-toggle-icon" aria-hidden="true"></span><span>Menú</span>
         </button>
-        <nav id="site-navigation" class="nav" aria-label="Navegación de la vista previa en español" data-open="false">
+        <nav id="site-navigation" class="nav" aria-label="Navegación principal en español" data-open="false">
           {links.map((link) => (
-            <a
-              class="nav-direct"
-              href={link.href}
-              aria-current={isActive(link.href) ? 'page' : undefined}
-            >
-              {link.label}
-            </a>
+            <a class="nav-direct" href={link.href} aria-current={isActive(link.href) ? 'page' : undefined}>{link.label}</a>
           ))}
-          <a class="nav-direct" href="/">Sitio en inglés</a>
+          <a class="nav-direct" href={englishPath} hreflang="en" lang="en">English</a>
         </nav>
       </div>
     </header>
@@ -112,21 +82,14 @@ const isActive = (href) => activePath === normalize(href);
     <footer class="footer">
       <div class="container footer-grid">
         <div class="footer-brand">
-          <img
-            src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
+          <img src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
             srcset="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png 256w, /assets/logo/USDImpact_Horizontal_Color_NoTagline_512.png 512w"
-            sizes="164px"
-            alt="USD Impact"
-            width="256"
-            height="77"
-            loading="lazy"
-            decoding="async"
-          />
+            sizes="164px" alt="USD Impact" width="256" height="77" loading="lazy" decoding="async" />
           <p>Educación práctica para leer primero el dólar.</p>
         </div>
         <nav class="footer-nav" aria-label="Navegación al pie">
           <div class="footer-group">
-            <p class="footer-heading">Vista previa</p>
+            <p class="footer-heading">Español</p>
             {links.map((link) => <a href={link.href}>{link.label}</a>)}
           </div>
           <div class="footer-group">
@@ -138,7 +101,7 @@ const isActive = (href) => activePath === normalize(href);
           </div>
         </nav>
         <div class="footer-meta">
-          <span>Vista previa en español. No constituye una publicación pública.</span>
+          <span>Edición web educativa en español de USD Impact.</span>
           <span>Contenido educativo e informativo únicamente; no constituye asesoramiento de inversión, legal, fiscal ni de operativa, señal de trading ni recomendación.</span>
         </div>
       </div>
@@ -146,18 +109,15 @@ const isActive = (href) => activePath === normalize(href);
     <script>
       const navigation = document.querySelector("#site-navigation");
       const navigationToggle = document.querySelector(".nav-toggle");
-
       const setNavigationOpen = (open) => {
         if (!(navigation instanceof HTMLElement) || !(navigationToggle instanceof HTMLButtonElement)) return;
         navigation.dataset.open = String(open);
         navigationToggle.setAttribute("aria-expanded", String(open));
       };
-
       navigationToggle?.addEventListener("click", () => {
         const open = navigation instanceof HTMLElement && navigation.dataset.open === "true";
         setNavigationOpen(!open);
       });
-
       document.addEventListener("keydown", (event) => {
         if (event.key !== "Escape" || !window.matchMedia("(max-width: 760px)").matches) return;
         const open = navigation instanceof HTMLElement && navigation.dataset.open === "true";
@@ -165,7 +125,6 @@ const isActive = (href) => activePath === normalize(href);
         setNavigationOpen(false);
         if (navigationToggle instanceof HTMLButtonElement) navigationToggle.focus();
       });
-
       navigation?.querySelectorAll("a").forEach((link) => {
         link.addEventListener("click", () => setNavigationOpen(false));
       });

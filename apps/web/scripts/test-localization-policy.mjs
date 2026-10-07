@@ -19,18 +19,18 @@ assert.equal(resolveSupportedLocale('fr'), null);
 assert.equal(normalizeLocale(undefined), 'en');
 
 assert.equal(isLocalePublicationEnabled('en'), true);
-assert.equal(isLocalePublicationEnabled('es'), false);
+assert.equal(isLocalePublicationEnabled('es'), true);
 assert.equal(isLocalePublicationEnabled('fr'), false);
 
-assert.equal(isPreviewLocaleImplementationEnabled('es', 'preview'), true);
+assert.equal(isPreviewLocaleImplementationEnabled('es', 'preview'), false);
 assert.equal(isPreviewLocaleImplementationEnabled('es', 'production'), false);
 assert.equal(isPreviewLocaleImplementationEnabled('es', ''), false);
 assert.equal(isPreviewLocaleImplementationEnabled('en', 'preview'), false);
 assert.equal(isPreviewLocaleImplementationEnabled('fr', 'preview'), false);
 
-assert.equal(isUnpublishedLocalePath('/es'), true);
-assert.equal(isUnpublishedLocalePath('/es/'), true);
-assert.equal(isUnpublishedLocalePath('/es/start-here/'), true);
+assert.equal(isUnpublishedLocalePath('/es'), false);
+assert.equal(isUnpublishedLocalePath('/es/'), false);
+assert.equal(isUnpublishedLocalePath('/es/start-here/'), false);
 assert.equal(isUnpublishedLocalePath('/estimated/'), false);
 assert.equal(isUnpublishedLocalePath('/'), false);
 
@@ -63,6 +63,8 @@ const [
   spanishThreeDialDashboard,
   spanishTransmissionVisual,
   spanishThreeDialVisual,
+  englishContentRoute,
+  englishHome,
 ] = await Promise.all([
   readFile(new URL('../src/layouts/BaseLayout.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/lib/audiobook-handler.js', import.meta.url), 'utf8'),
@@ -81,9 +83,24 @@ const [
   readFile(new URL('../src/content/frameworks/es/framework-three-dial-dashboard.md', import.meta.url), 'utf8'),
   readFile(new URL('../src/components/SpanishPreviewDollarTransmissionVisual.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/components/SpanishPreviewThreeDialVisual.astro', import.meta.url), 'utf8'),
+  readFile(new URL('../src/pages/[...slug].astro', import.meta.url), 'utf8'),
+  readFile(new URL('../src/pages/index.astro', import.meta.url), 'utf8'),
 ]);
 
 assert.match(baseLayout, /<html lang="en">/);
+assert.match(baseLayout, /alternateLocaleHref/);
+assert.match(baseLayout, /hreflang="en"/);
+assert.match(baseLayout, /hreflang="es"/);
+assert.match(baseLayout, /hreflang="x-default"/);
+assert.match(baseLayout, />Español<\/a>/);
+assert.match(englishContentRoute, /SPANISH_ALTERNATE_BY_ENGLISH_SLUG/);
+assert.match(englishContentRoute, /!entry\.data\.slug\.startsWith\('\/es'\)/);
+assert.match(englishContentRoute, /'\/start-here': '\/es\/start-here\/'/);
+assert.match(englishContentRoute, /'\/dollar-framework': '\/es\/dollar-framework\/'/);
+assert.match(englishContentRoute, /'\/framework\/dollar-transmission-chain': '\/es\/framework\/dollar-transmission-chain\/'/);
+assert.match(englishContentRoute, /'\/framework\/three-dial-dashboard': '\/es\/framework\/three-dial-dashboard\/'/);
+assert.match(englishContentRoute, /alternateLocaleHref=\{spanishAlternateHref\}/);
+assert.match(englishHome, /alternateLocaleHref="\/es\/"/);
 assert.match(
   audiobookHandler,
   /data-key="usd-impact-library-pass-audiobook-progress"/,
@@ -100,16 +117,17 @@ assert.match(weeklyNewsletterEmail, /payload\.locale !== 'en'/);
 assert.match(progressEmail, /payload\.locale !== 'en'/);
 assert.match(astroConfig, /isUnpublishedLocalePath/);
 assert.match(astroConfig, /!isUnpublishedLocalePath\(pathname\)/);
+assert.match(spanishPreviewRoute, /SPANISH_TO_ENGLISH_PATH/);
 
 assert.match(spanishPreviewLayout, /<html lang="es">/);
-assert.match(spanishPreviewLayout, /noindex, nofollow, noarchive/);
+assert.doesNotMatch(spanishPreviewLayout, /noindex, nofollow, noarchive/);
 assert.match(
   spanishPreviewLayout,
   /class="nav-toggle"[\s\S]*aria-expanded="false"[\s\S]*aria-controls="site-navigation"[\s\S]*<span>Menú<\/span>/,
 );
 assert.match(
   spanishPreviewLayout,
-  /<nav id="site-navigation" class="nav" aria-label="Navegación de la vista previa en español" data-open="false">/,
+  /<nav id="site-navigation" class="nav" aria-label="Navegación principal en español" data-open="false">/,
 );
 assert.match(spanishPreviewLayout, /navigationToggle\?\.addEventListener\("click"/);
 assert.match(spanishPreviewLayout, /event\.key !== "Escape"/);
@@ -121,33 +139,36 @@ assert.match(spanishPreviewLayout, /@media \(max-width: 760px\)[\s\S]*overflow-x
 assert.match(spanishPreviewLayout, /-webkit-overflow-scrolling: touch;/);
 assert.match(spanishPreviewLayout, /min-width: 9rem;/);
 assert.doesNotMatch(spanishPreviewLayout, /revisión en Preview/);
-assert.doesNotMatch(spanishPreviewLayout, /rel="canonical"/);
-assert.doesNotMatch(spanishPreviewLayout, /hreflang/);
-assert.match(spanishPreviewRoute, /isPreviewLocaleImplementationEnabled\('es', process\.env\.VERCEL_ENV\)/);
-assert.match(spanishPreviewRoute, /entry\.data\.status === 'review'/);
-assert.match(spanishPreviewRoute, /AUTHORIZED_SPANISH_PREVIEW_SLUGS/);
+assert.match(spanishPreviewLayout, /rel="canonical"/);
+assert.match(spanishPreviewLayout, /hreflang="es"/);
+assert.match(spanishPreviewLayout, /hreflang="en"/);
+assert.match(spanishPreviewLayout, /hreflang="x-default"/);
+assert.match(spanishPreviewLayout, />English<\/a>/);
+assert.match(spanishPreviewRoute, /isLocalePublicationEnabled\('es'\)/);
+assert.match(spanishPreviewRoute, /entry\.data\.status === 'published'/);
+assert.match(spanishPreviewRoute, /AUTHORIZED_SPANISH_PUBLIC_SLUGS/);
 const allowlistMatch = spanishPreviewRoute.match(
-  /const AUTHORIZED_SPANISH_PREVIEW_SLUGS = Object\.freeze\(\[([\s\S]*?)\]\);/,
+  /const AUTHORIZED_SPANISH_PUBLIC_SLUGS = Object\.freeze\(\[([\s\S]*?)\]\);/,
 );
-assert.ok(allowlistMatch, 'Spanish Preview allowlist must be declared inside getStaticPaths');
-const actualSpanishPreviewSlugs = [...allowlistMatch[1].matchAll(/'([^']+)'/g)]
+assert.ok(allowlistMatch, 'Spanish public allowlist must be declared inside getStaticPaths');
+const actualSpanishPublicSlugs = [...allowlistMatch[1].matchAll(/'([^']+)'/g)]
   .map((match) => match[1]);
-assert.deepEqual(actualSpanishPreviewSlugs, [
+assert.deepEqual(actualSpanishPublicSlugs, [
   '/es',
   '/es/start-here',
   '/es/dollar-framework',
   '/es/framework/dollar-transmission-chain',
   '/es/framework/three-dial-dashboard',
 ]);
-assert.match(spanishPreviewRoute, /AUTHORIZED_SPANISH_PREVIEW_SLUGS\.includes\(entry\.data\.slug\)/);
+assert.match(spanishPreviewRoute, /AUTHORIZED_SPANISH_PUBLIC_SLUGS\.includes\(entry\.data\.slug\)/);
 assert.doesNotMatch(spanishPreviewRoute, /entry\.data\.slug\.startsWith\('\/es\/'\)/);
 assert.match(spanishPreviewRoute, /aria-label="Nota de cumplimiento"/);
 assert.ok(spanishPreviewRoute.includes('<strong>Nota de cumplimiento:</strong>'));
 assert.doesNotMatch(spanishPreviewRoute, /ComplianceNote/);
 assert.match(spanishPreviewRoute, /SpanishPreviewDollarTransmissionVisual/);
 assert.match(spanishPreviewRoute, /SpanishPreviewThreeDialVisual/);
-assert.match(spanishPreviewRoute, /previewVisual === 'transmission'/);
-assert.match(spanishPreviewRoute, /previewVisual === 'three-dial'/);
+assert.match(spanishPreviewRoute, /frameworkVisual === 'transmission'/);
+assert.match(spanishPreviewRoute, /frameworkVisual === 'three-dial'/);
 
 assert.match(spanishTransmissionVisual, /Cadena de Transmisión del Dólar/);
 assert.match(spanishTransmissionVisual, /class="spanish-preview-transmission-figure"/);
@@ -229,9 +250,10 @@ for (const content of [
   spanishTransmissionChain,
   spanishThreeDialDashboard,
 ]) {
-  assert.match(content, /status: "review"/);
+  assert.match(content, /status: "published"/);
   assert.match(content, /slug: "\/es(?:\/|")/);
-  assert.doesNotMatch(content, /status: "published"/);
+  assert.doesNotMatch(content, /status: "review"/);
+  assert.doesNotMatch(content, /vista previa/i);
   assert.doesNotMatch(content, /\bPreview\b|\bcheckout\b|\baudiobook\b|\bemail\b|\brepricing\b/);
   assert.doesNotMatch(content, /^visual:/m);
 }

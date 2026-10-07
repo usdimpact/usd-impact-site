@@ -11,12 +11,18 @@ import WaitlistForm from '../components/WaitlistForm.astro';
 const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
 const bookSlug = '/book/read-the-dollar-first';
 const threeDialsSlug = '/framework/three-dial-dashboard';
+const SPANISH_ALTERNATE_BY_ENGLISH_SLUG = Object.freeze({
+  '/start-here': '/es/start-here/',
+  '/dollar-framework': '/es/dollar-framework/',
+  '/framework/dollar-transmission-chain': '/es/framework/dollar-transmission-chain/',
+  '/framework/three-dial-dashboard': '/es/framework/three-dial-dashboard/',
+});
 
 export async function getStaticPaths() {
   const collections = ['pages', 'products', 'frameworks', 'leadMagnets', 'benchmarkModules'];
   const all = (await Promise.all(collections.map(async (collection) => {
     return getCollection(collection);
-  }))).flat().filter((entry) => entry.data.status === 'published');
+  }))).flat().filter((entry) => entry.data.status === 'published' && !entry.data.slug.startsWith('/es'));
 
   return all.map((entry) => ({
     params: { slug: entry.data.slug.replace(/^\//, '').replace(/\/$/, '') },
@@ -32,6 +38,7 @@ const downloadPath = 'downloadPath' in entry.data && typeof entry.data.downloadP
   : checklistDownload;
 const isBookPage = normalizedSlug === bookSlug;
 const isThreeDialsPage = normalizedSlug === threeDialsSlug;
+const spanishAlternateHref = SPANISH_ALTERNATE_BY_ENGLISH_SLUG[normalizedSlug] ?? null;
 const requestedPrimary = entry.data.ctaPrimary;
 const requestedPrimaryHref = entry.data.ctaPrimaryHref;
 const requestedSecondaryHref = entry.data.ctaSecondaryHref;
@@ -47,7 +54,7 @@ const primaryHref = isLibraryPassAcquisition
 const secondaryHref = requestedSecondaryHref ?? downloadPath;
 const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref === undefined;
 ---
-<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription}>
+<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription} alternateLocaleHref={spanishAlternateHref}>
   <main id="main-content" class="main-with-hero">
     <section class:list={["hero", { "book-hero": isBookPage }]}>
       <div class="container">

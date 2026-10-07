@@ -4,7 +4,7 @@ metaTitle: "Empieza aquí | Cómo leer el dólar y los mercados"
 metaDescription: "Ruta inicial de USD Impact en español: separa USD de DXY, lee tres diales macro y sigue la transmisión hacia oro, petróleo, Bitcoin, divisas y renta variable."
 slug: "/es/start-here"
 category: "Aprender"
-status: "review"
+status: "published"
 readingLevel: "Principiante"
 lastReviewed: "2026-10-07"
 complianceNote: "Material educativo e informativo únicamente; no constituye asesoramiento de inversión personalizado, legal, fiscal ni de operativa, no es una señal de trading y no es una recomendación. Las relaciones de mercado son condicionales; verifica los datos actuales antes de utilizarlos."
@@ -107,7 +107,7 @@ Un entorno puede persistir, debilitarse, revertirse o quedar dominado por un sho
 
 ## Paso 5 — Usa una secuencia repetible
 
-Para esta vista previa:
+Para esta ruta en español:
 
 1. Empieza aquí.
 2. Abre el **[Marco del dólar](/es/dollar-framework/)**.

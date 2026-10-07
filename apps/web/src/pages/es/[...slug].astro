@@ -3,12 +3,20 @@ import { getCollection, render } from 'astro:content';
 import SpanishPreviewLayout from '../../layouts/SpanishPreviewLayout.astro';
 import SpanishPreviewDollarTransmissionVisual from '../../components/SpanishPreviewDollarTransmissionVisual.astro';
 import SpanishPreviewThreeDialVisual from '../../components/SpanishPreviewThreeDialVisual.astro';
-import { isPreviewLocaleImplementationEnabled } from '../../lib/localization-policy.js';
+import { isLocalePublicationEnabled } from '../../lib/localization-policy.js';
 
 export async function getStaticPaths() {
-  if (!isPreviewLocaleImplementationEnabled('es', process.env.VERCEL_ENV)) return [];
+  if (!isLocalePublicationEnabled('es')) return [];
 
-  const AUTHORIZED_SPANISH_PREVIEW_SLUGS = Object.freeze([
+  const SPANISH_TO_ENGLISH_PATH = Object.freeze({
+    '/es': '/',
+    '/es/start-here': '/start-here/',
+    '/es/dollar-framework': '/dollar-framework/',
+    '/es/framework/dollar-transmission-chain': '/framework/dollar-transmission-chain/',
+    '/es/framework/three-dial-dashboard': '/framework/three-dial-dashboard/',
+  });
+
+  const AUTHORIZED_SPANISH_PUBLIC_SLUGS = Object.freeze([
     '/es',
     '/es/start-here',
     '/es/dollar-framework',
@@ -20,8 +28,8 @@ export async function getStaticPaths() {
   const entries = (await Promise.all(collections.map((collection) => getCollection(collection))))
     .flat()
     .filter((entry) => (
-      entry.data.status === 'review'
-      && AUTHORIZED_SPANISH_PREVIEW_SLUGS.includes(entry.data.slug)
+      entry.data.status === 'published'
+      && AUTHORIZED_SPANISH_PUBLIC_SLUGS.includes(entry.data.slug)
     ));
 
   return entries.map((entry) => {
@@ -31,15 +39,15 @@ export async function getStaticPaths() {
 
     return {
       params: { slug: rest || undefined },
-      props: { entry },
+      props: { entry, englishPath: SPANISH_TO_ENGLISH_PATH[entry.data.slug] },
     };
   });
 }
 
-const { entry } = Astro.props;
+const { entry, englishPath } = Astro.props;
 const { Content } = await render(entry);
 const currentPath = entry.data.slug.replace(/\/$/, '') || '/es';
-const previewVisual = currentPath === '/es/framework/three-dial-dashboard'
+const frameworkVisual = currentPath === '/es/framework/three-dial-dashboard'
   ? 'three-dial'
   : (
       currentPath === '/es/dollar-framework'
@@ -52,6 +60,7 @@ const previewVisual = currentPath === '/es/framework/three-dial-dashboard'
   title={entry.data.metaTitle}
   description={entry.data.metaDescription}
   currentPath={currentPath}
+  englishPath={englishPath}
 >
   <main id="main-content" class="main-with-hero">
     <section class="hero">
@@ -62,8 +71,8 @@ const previewVisual = currentPath === '/es/framework/three-dial-dashboard'
       </div>
     </section>
     <div class="container page-content">
-      {previewVisual === 'transmission' && <SpanishPreviewDollarTransmissionVisual />}
-      {previewVisual === 'three-dial' && <SpanishPreviewThreeDialVisual />}
+      {frameworkVisual === 'transmission' && <SpanishPreviewDollarTransmissionVisual />}
+      {frameworkVisual === 'three-dial' && <SpanishPreviewThreeDialVisual />}
       <Content />
       <section class="compliance" aria-label="Nota de cumplimiento">
         <strong>Nota de cumplimiento:</strong> {entry.data.complianceNote}

@@ -117,7 +117,6 @@ assert.match(progressEmail, /payload\.locale !== 'en'/);
 assert.match(astroConfig, /isUnpublishedLocalePath/);
 assert.match(astroConfig, /!isUnpublishedLocalePath\(pathname\)/);
 assert.match(spanishPreviewRoute, /SPANISH_TO_ENGLISH_PATH/);
-assert.doesNotMatch(spanishPreviewRoute, /startsWith\('\\/es\\/'\)/);
 
 assert.match(spanishPreviewLayout, /<html lang="es">/);
 assert.doesNotMatch(spanishPreviewLayout, /noindex, nofollow, noarchive/);

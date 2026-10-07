@@ -13,23 +13,57 @@ permissions:
 jobs:
   synthesize:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
       MANIFEST: docs/localization/spanish-audiobook-track-06-chapter-4-manifest-2026-10-07.json
       TRIGGER: docs/localization/heygen-api-trigger.json
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate secret
+      - name: Validate request and secret
         shell: bash
         run: |
           set -euo pipefail
+
           if [ -z "${HEYGEN_API_KEY:-}" ]; then
             echo "HEYGEN_API_KEY repository secret is missing." >&2
             exit 2
           fi
+
+          TRACK="$(jq -r '.track' "$TRIGGER")"
+          if [ "$TRACK" != "06" ]; then
+            echo "This guarded workflow currently permits Track 06 only." >&2
+            exit 3
+          fi
+
+          jq -c '
+            if (.segments? | type) == "array" then .segments
+            elif .segment? then [.segment]
+            else error("trigger must contain segment or segments")
+            end
+          ' "$TRIGGER" > requested-segments.json
+
+          COUNT="$(jq 'length' requested-segments.json)"
+          if [ "$COUNT" -lt 1 ] || [ "$COUNT" -gt 20 ]; then
+            echo "Requested segment count must be between 1 and 20." >&2
+            exit 4
+          fi
+
+          jq -r '.[]' requested-segments.json | while IFS= read -r SEGMENT_ID; do
+            STATUS="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .status' "$MANIFEST")"
+            TEXT="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text' "$MANIFEST")"
+            if [ -z "$TEXT" ] || [ "$TEXT" = "null" ]; then
+              echo "Unknown segment: $SEGMENT_ID" >&2
+              exit 5
+            fi
+            if [ "$STATUS" != "pending" ]; then
+              echo "Refusing to regenerate segment $SEGMENT_ID because status is $STATUS." >&2
+              exit 6
+            fi
+          done
 
       - name: Install HeyGen CLI
         shell: bash
@@ -38,30 +72,6 @@ jobs:
           curl -fsSL https://static.heygen.ai/cli/install.sh | bash
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Resolve requested segment
-        id: segment
-        shell: bash
-        run: |
-          set -euo pipefail
-          SEGMENT_ID="$(jq -r '.segment' "$TRIGGER")"
-          TRACK="$(jq -r '.track' "$TRIGGER")"
-          if [ "$TRACK" != "06" ]; then
-            echo "This guarded workflow currently permits Track 06 only." >&2
-            exit 3
-          fi
-          STATUS="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .status' "$MANIFEST")"
-          TEXT="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text' "$MANIFEST")"
-          if [ -z "$TEXT" ] || [ "$TEXT" = "null" ]; then
-            echo "Unknown segment: $SEGMENT_ID" >&2
-            exit 4
-          fi
-          if [ "$STATUS" != "pending" ]; then
-            echo "Refusing to regenerate segment $SEGMENT_ID because status is $STATUS." >&2
-            exit 5
-          fi
-          printf '%s' "$TEXT" > segment.txt
-          echo "segment_id=$SEGMENT_ID" >> "$GITHUB_OUTPUT"
-
       - name: Verify API-key authentication
         shell: bash
         run: |
@@ -69,42 +79,48 @@ jobs:
           heygen auth status > auth-status.json
           jq 'if type=="object" then del(.api_key,.token,.credential,.credentials) else . end' auth-status.json || true
 
-      - name: Synthesize with Mateo
+      - name: Synthesize requested Mateo segments
         shell: bash
         run: |
           set -euo pipefail
-          TEXT="$(cat segment.txt)"
-          heygen voice speech create             --text "$TEXT"             --voice-id "626ca51acb2e496f8dcee8d7591fda3c"             --input-type text             --speed 0.92             --locale es-419             > speech-response.json
-          cat speech-response.json
+          mkdir -p output
 
-      - name: Download generated audio
-        shell: bash
-        run: |
-          set -euo pipefail
-          URL="$(jq -r '
-            .data.audio_url //
-            .data.audioUrl //
-            .audio_url //
-            .audioUrl //
-            .data.url //
-            .url //
-            empty
-          ' speech-response.json)"
-          if [ -z "$URL" ]; then
-            echo "Could not find audio URL in HeyGen response." >&2
-            exit 6
-          fi
-          curl -fL "$URL" -o "track06-segment-${{ steps.segment.outputs.segment_id }}.wav"
-          jq -n             --arg track "06"             --arg segment "${{ steps.segment.outputs.segment_id }}"             --arg voice "Narrator Mateo"             --arg voice_id "626ca51acb2e496f8dcee8d7591fda3c"             --arg locale "es-419"             --arg speed "0.92"             --arg audio_url "$URL"             '{track:$track,segment:$segment,voice:$voice,voice_id:$voice_id,locale:$locale,speed:($speed|tonumber),audio_url:$audio_url}'             > result-manifest.json
+          jq -r '.[]' requested-segments.json | while IFS= read -r SEGMENT_ID; do
+            echo "=== START segment $SEGMENT_ID ==="
+            TEXT="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text' "$MANIFEST")"
+            printf '%s' "$TEXT" > "output/segment-$SEGMENT_ID.txt"
 
-      - name: Upload private QA artifact
+            heygen voice speech create               --text "$TEXT"               --voice-id "626ca51acb2e496f8dcee8d7591fda3c"               --input-type text               --speed 0.92               --locale es-419               > "output/speech-response-$SEGMENT_ID.json"
+
+            jq -c --arg segment "$SEGMENT_ID"               '{segment:$segment,response:.}'               "output/speech-response-$SEGMENT_ID.json"
+
+            URL="$(jq -r '
+              .data.audio_url //
+              .data.audioUrl //
+              .audio_url //
+              .audioUrl //
+              .data.url //
+              .url //
+              empty
+            ' "output/speech-response-$SEGMENT_ID.json")"
+
+            if [ -z "$URL" ]; then
+              echo "Could not find audio URL for segment $SEGMENT_ID." >&2
+              exit 7
+            fi
+
+            curl -fL "$URL" -o "output/track06-segment-$SEGMENT_ID.wav"
+
+            jq -n               --arg track "06"               --arg segment "$SEGMENT_ID"               --arg voice "Narrator Mateo"               --arg voice_id "626ca51acb2e496f8dcee8d7591fda3c"               --arg locale "es-419"               --arg speed "0.92"               --arg audio_url "$URL"               '{track:$track,segment:$segment,voice:$voice,voice_id:$voice_id,locale:$locale,speed:($speed|tonumber),audio_url:$audio_url}'               > "output/result-manifest-$SEGMENT_ID.json"
+
+            echo "=== COMPLETE segment $SEGMENT_ID ==="
+          done
+
+      - name: Upload private QA artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: spanish-audiobook-track06-segment-${{ steps.segment.outputs.segment_id }}
-          path: |
-            track06-segment-${{ steps.segment.outputs.segment_id }}.wav
-            speech-response.json
-            result-manifest.json
-            segment.txt
-          if-no-files-found: error
+          name: spanish-audiobook-track06-batch-${{ github.run_id }}
+          path: output/
+          if-no-files-found: warn
           retention-days: 7

@@ -5,16 +5,16 @@ import SpanishPreviewDollarTransmissionVisual from '../../components/SpanishPrev
 import SpanishPreviewThreeDialVisual from '../../components/SpanishPreviewThreeDialVisual.astro';
 import { isLocalePublicationEnabled } from '../../lib/localization-policy.js';
 
-const SPANISH_TO_ENGLISH_PATH = Object.freeze({
-  '/es': '/',
-  '/es/start-here': '/start-here/',
-  '/es/dollar-framework': '/dollar-framework/',
-  '/es/framework/dollar-transmission-chain': '/framework/dollar-transmission-chain/',
-  '/es/framework/three-dial-dashboard': '/framework/three-dial-dashboard/',
-});
-
 export async function getStaticPaths() {
   if (!isLocalePublicationEnabled('es')) return [];
+
+  const SPANISH_TO_ENGLISH_PATH = Object.freeze({
+    '/es': '/',
+    '/es/start-here': '/start-here/',
+    '/es/dollar-framework': '/dollar-framework/',
+    '/es/framework/dollar-transmission-chain': '/framework/dollar-transmission-chain/',
+    '/es/framework/three-dial-dashboard': '/framework/three-dial-dashboard/',
+  });
 
   const AUTHORIZED_SPANISH_PUBLIC_SLUGS = Object.freeze([
     '/es',

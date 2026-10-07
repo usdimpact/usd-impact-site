@@ -33,11 +33,12 @@ export function websiteStructuredData() {
   };
 }
 
-function articleBase({ type, headline, description, pathname, datePublished, dateModified }) {
+function articleBase({ type, headline, description, pathname, datePublished, dateModified, image }) {
   if (!headline || !description || !pathname) {
     throw new Error('Structured article data requires headline, description, and pathname.');
   }
   const url = absoluteSiteUrl(pathname);
+  const articleImage = image || absoluteSiteUrl('/assets/logo/USDImpact_Horizontal_Color_NoTagline_2048.png');
   return {
     '@type': type,
     '@id': `${url}#article`,
@@ -45,6 +46,7 @@ function articleBase({ type, headline, description, pathname, datePublished, dat
     description,
     url,
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    image: articleImage,
     ...(datePublished ? { datePublished } : {}),
     ...(dateModified ? { dateModified } : {}),
     publisher: { '@id': ORGANIZATION_ID },

@@ -25,8 +25,8 @@
       "6c"
     ]
   },
-  "completed_through": "11",
-  "next_segment": "12",
+  "completed_through": "12",
+  "next_segment": "13",
   "do_not_regenerate": [
     "1",
     "2",
@@ -40,7 +40,8 @@
     "8",
     "9",
     "10",
-    "11"
+    "11",
+    "12"
   ],
   "segments": [
     {
@@ -129,9 +130,15 @@
     },
     {
       "id": "12",
-      "status": "pending",
+      "status": "complete",
       "text": "Por eso el dólar suele alcanzar a Bitcoin por el canal de flujo en lugar de por la lógica directa de facturación. Un dólar más fuerte suele coincidir con condiciones financieras más estrictas, tasas reales más altas, menor tolerancia al riesgo y menor disposición a poseer activos de larga duración o alta volatilidad. En ese entorno, Bitcoin puede tener dificultades aunque su narrativa monetaria de largo plazo permanezca intacta. Un dólar más débil, por el contrario, suele llegar junto con condiciones financieras más laxas y una búsqueda más amplia de subidas asimétricas. Eso puede crear un trasfondo más favorable para Bitcoin. Pero la relación de Bitcoin con el dólar no es mecánica.",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=cd7a3b4a-9951-4ada-8c16-f2fcf5df19ca.wav",
+      "duration_seconds": 51.01714285714286,
+      "qa": {
+        "descript_composition_id": "e6384dcd-d4e8-46b6-b06a-6d0f6c035cb3",
+        "source_alignment_percent": 100,
+        "status": "PASS"
+      }
     },
     {
       "id": "13",

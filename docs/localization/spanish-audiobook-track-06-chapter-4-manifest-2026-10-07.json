@@ -25,8 +25,8 @@
       "6c"
     ]
   },
-  "completed_through": "13",
-  "next_segment": "14",
+  "completed_through": "23",
+  "next_segment": null,
   "do_not_regenerate": [
     "1",
     "2",
@@ -42,7 +42,17 @@
     "10",
     "11",
     "12",
-    "13"
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23"
   ],
   "segments": [
     {
@@ -156,63 +166,126 @@
     },
     {
       "id": "14",
-      "status": "pending",
+      "status": "complete",
       "text": "La mejor interpretación es que un dólar más blando puede mejorar el contexto para Bitcoin cuando llega con liquidez más fácil, mejora del apetito por riesgo y mejor acceso al mercado de capitales. Sin esas condiciones de apoyo, la señal es más débil. Gas natural: aún cotizado en dólares, pero más regional\nEl gas natural cotiza en dólares en los principales precios de referencia de Estados Unidos como Henry Hub — el principal precio de referencia del gas natural en Estados Unidos — pero su comportamiento es más regional y está más restringido por la infraestructura que el petróleo crudo. Los gasoductos, el almacenamiento, el clima, la capacidad de exportación y los cuellos de botella locales importan enormemente. Eso significa que el canal del dólar es real, pero a menudo menos visualmente dominante que en el crudo.",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=d1993cee-7c83-493e-a039-92156a300039.wav",
+      "duration_seconds": 67.05632653061224,
+      "qa": {
+        "source": "heygen_word_timestamps",
+        "source_alignment_percent": 100,
+        "status": "PASS"
+      }
     },
     {
       "id": "15",
-      "status": "pending",
+      "status": "complete",
       "text": "Para el gas natural en Estados Unidos, la pregunta clave a menudo no es si el dólar está fuerte sino si la oferta doméstica, el almacenamiento y el clima están creando tensión o holgura. Para los mercados ligados al GNL — gas natural licuado transportado por buque —, sin embargo, el dólar puede importar más porque los costes del gas importado, el transporte marítimo y las estructuras contractuales pueden transmitir la fortaleza del dólar a las facturas locales de energía. De nuevo, el canal de fijación de precios global importa más fuera de Estados Unidos. La lectura práctica es que el gas se sitúa entre el petróleo y la electricidad en el marco. Es relevante internacionalmente, pero no uniformemente global. Se negocia financieramente, pero sigue estando muy condicionado por cuellos de botella físicos.",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=ece4da82-262d-406a-b961-568120b2e237.wav",
+      "duration_seconds": 64.26122448979592,
+      "qa": {
+        "source": "heygen_word_timestamps",
+        "source_alignment_percent": 100,
+        "status": "PASS"
+      }
     },
     {
       "id": "16",
-      "status": "pending",
+      "status": "complete",
       "text": "Un dólar más fuerte puede empeorar la carga para los importadores no estadounidenses, pero un invierno frío, inventarios débiles o cuellos de botella en la exportación pueden dominar al efecto cambiario. Divisas: donde el sistema habla más\nLas divisas son el lenguaje directo del sistema dólar, pero incluso aquí la interpretación depende del régimen. Un dólar más fuerte frente a las principales divisas desarrolladas puede reflejar una política estadounidense relativamente más estricta, un crecimiento estadounidense más fuerte, activos estadounidenses más seguros o un crecimiento más débil en el extranjero. Un dólar más fuerte frente a las divisas de mercados emergentes también puede reflejar estrés de financiación, vulnerabilidad externa y presión de balance en lugares que se endeudan o facturan fuertemente en dólares.",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=dfb0d321-d035-46f4-acb6-de1f8d18a105.wav",
+      "duration_seconds": 59.50693877551021,
+      "qa": {
+        "source": "heygen_word_timestamps",
+        "source_alignment_percent": 100,
+        "status": "PASS"
+      }
     },
     {
       "id": "17",
-      "status": "pending",
+      "status": "complete",
       "text": "Por eso ese movimiento del dólar puede sentirse de forma muy distinta según el país. En una expansión cíclica limpia, un dólar moderadamente más blando puede ayudar al comercio global y sostener los activos de riesgo. En un evento de estrés, un rally agudo del dólar puede endurecer las condiciones financieras mucho más allá de Estados Unidos porque los pasivos, las facturas comerciales y las coberturas se revaloran a la vez. El tipo de cambio no es solo un precio relativo. A menudo es un manómetro de presión para el balance global. Aquí también es donde más importa la distinción del Capítulo tres. DXY puede contarte parte de la historia, especialmente frente a las divisas de mercados desarrollados.",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=b86d8a6f-0122-4e9e-8ea2-c329faa87baa.wav",
+      "duration_seconds": 52.114285714285714,
+      "qa": {
+        "source": "heygen_word_timestamps",
+        "source_alignment_percent": 100,
+        "status": "PASS"
+      }
     },
     {
       "id": "18",
-      "status": "pending",
+      "status": "complete",
       "text": "Pero el sistema dólar amplio suele aparecer en los índices ponderados por comercio, los diferenciales de financiación, el crédito transfronterizo y el estrés de mercados emergentes mucho antes de que un único índice apto para televisión pueda explicar el movimiento completo. Cómo leer el régimen en la práctica\nUn flujo de trabajo práctico ayuda a mantener el marco disciplinado. Empieza por el dólar. ¿Está subiendo porque los tipos en Estados Unidos son más altos, porque el riesgo global se está deteriorando o porque el crecimiento extranjero se está debilitando? Después comprueba las tasas reales. Eso importa especialmente para el oro y para el coste de oportunidad embebido en los activos de larga duración. Después comprueba la historia física.",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=94e5f744-6a72-4f9f-bd7a-879ca16a1c5b.wav",
+      "duration_seconds": 57.46938775510204,
+      "qa": {
+        "source": "heygen_word_timestamps",
+        "source_alignment_percent": 100,
+        "status": "PASS"
+      }
     },
     {
       "id": "19",
-      "status": "pending",
+      "status": "complete",
       "text": "Para el petróleo y el gas, los inventarios, el clima, el transporte marítimo y el riesgo de oferta pueden anular al movimiento cambiario. Después comprueba la historia del flujo. Para Bitcoin y los activos de riesgo, una liquidez más fácil o más estricta a menudo importa más que la lógica de denominación. La mayoría de las malas llamadas macro vienen de ignorar uno de esos pasos. Los analistas se centran en el gráfico que les gusta y se saltan la transmisión. Los alcistas del petróleo ignoran el dólar y el contexto de demanda. Los bajistas del oro ignoran la oferta de cobertura. Los alcistas de Bitcoin ignoran el endurecimiento de la liquidez. Los comentaristas de divisas ignoran las consecuencias de balance de la financiación en dólares. El marco de régimen no pretende hacer simples los mercados. Pretende impedir que tú seas simplista.",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=04122f34-4e16-4401-b3ef-6f5ec4fcbe10.wav",
+      "duration_seconds": 65.41061224489796,
+      "qa": {
+        "source": "heygen_word_timestamps",
+        "source_alignment_percent": 100,
+        "status": "PASS"
+      }
     },
     {
       "id": "20",
-      "status": "pending",
+      "status": "complete",
       "text": "Idea clave\nEl dólar mueve casi todas las grandes clases de activos, pero no a través de una sola regla universal. El petróleo responde por la fijación de precios y la oferta. El oro responde por el dólar, las tasas reales y la demanda de cobertura. Bitcoin a menudo responde por la liquidez y el apetito por riesgo. El gas está cotizado en dólares pero más restringido regionalmente. Las divisas son la expresión directa del sistema, pero incluso ahí las consecuencias dependen de la estructura comercial y la exposición a la financiación. Si lees el canal antes que el gráfico, entenderás el movimiento más a menudo y entrarás en pánico menos cuando las correlaciones se rompan temporalmente.",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=c4014bc0-7500-4b93-8086-e5e79c1e9cf2.wav",
+      "duration_seconds": 51.670204081632654,
+      "qa": {
+        "source": "heygen_word_timestamps",
+        "source_alignment_percent": 100,
+        "status": "PASS"
+      }
     },
     {
       "id": "21",
-      "status": "pending",
+      "status": "complete",
       "text": "Repaso del capítulo — qué recordar\nEl mismo movimiento del dólar alcanza al petróleo, al oro, a Bitcoin, al gas y a las divisas a través de canales distintos. La transmisión específica del activo importa más que los atajos macro de una sola regla. Identifica primero el régimen, después el canal y solo entonces la respuesta probable del activo. Sigue leyendo\nContinúa con el Capítulo cinco — El petróleo no es solo una operación de dólar. Compañero más directo: el Capítulo 11 — El marco operativo semanal. Referencias seleccionadas\nBIS, Commodity prices and the US Dollar (2023) — la mayoría de los precios de las materias primas se denominan en dólares estadounidenses y el nexo materias primas-dólar importa para las economías no estadounidenses. EIA, Spot Prices for Crude Oil and Petroleum Products — WTI y Brent cotizan en dólares por barril.",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=94ca857d-8e0b-4db6-8369-3333f1cafe8c.wav",
+      "duration_seconds": 71.07918367346939,
+      "qa": {
+        "source": "heygen_word_timestamps",
+        "source_alignment_percent": 100,
+        "status": "PASS"
+      }
     },
     {
       "id": "22",
-      "status": "pending",
+      "status": "complete",
       "text": "EIA, Henry Hub Natural Gas Spot Price / Natural Gas Futures Prices — los precios de Henry Hub cotizan en dólares por millón de Btu y la entrega NYMEX se basa en Henry Hub en Luisiana. World Gold Council, Gold tracks the dollar as rates take a back seat — correlación negativa entre oro y el dólar estadounidense; World Gold Council, Are fiscal concerns driving gold? — el oro estuvo correlacionado inversamente con las tasas reales durante alrededor de una década antes de que otros motores se volvieran más importantes. FMI, Dominant Currencies and External Adjustment — el dólar estadounidense desempeña un papel dominante en la facturación del comercio y la financiación, condicionando cómo los movimientos cambiarios pasan al comercio y a los balances.",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=02ee8a13-1c1b-4437-990c-62de93b8bcab.wav",
+      "duration_seconds": 60.91755102040816,
+      "qa": {
+        "source": "heygen_word_timestamps",
+        "source_alignment_percent": 100,
+        "status": "PASS"
+      }
     },
     {
       "id": "23",
-      "status": "pending",
+      "status": "complete",
       "text": "Federal Reserve H punto diez / FRED índices de dólar amplio — las medidas más amplias de dólar ayudan a distinguir la fortaleza del dólar a nivel sistémico de un movimiento de un solo índice. Bitcoin.org, Bitcoin: A Peer-to-Peer Electronic Cash System — el diseño original de Bitcoin como efectivo electrónico entre pares proporciona la línea de base monetaria aunque la fijación de precios de mercado a menudo refleje condiciones de liquidez más amplias. Nota de cumplimiento. Esta sección es educativa e informativa. No constituye asesoramiento de inversión personalizado, legal, fiscal ni de operativa, no es una señal de trading y no es una recomendación para comprar o vender ningún valor, materia prima, divisa o activo digital. Las relaciones de mercado son condicionales; verifica los datos actuales antes de utilizarlos. PARTE TRES",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=73d697e5-7168-4d06-be55-4db60a5abd9d.wav",
+      "duration_seconds": 67.99673469387756,
+      "qa": {
+        "source": "heygen_word_timestamps",
+        "source_alignment_percent": 100,
+        "status": "PASS"
+      }
     }
-  ]
+  ],
+  "track_status": "AUDIO_SYNTHESIS_COMPLETE",
+  "chapter4_batch_run_id": 37690197017,
+  "chapter4_batch_artifact_id": 11512861472
 }

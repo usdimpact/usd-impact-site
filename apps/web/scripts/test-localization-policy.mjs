@@ -94,6 +94,7 @@ assert.match(baseLayout, /hreflang="es"/);
 assert.match(baseLayout, /hreflang="x-default"/);
 assert.match(baseLayout, />Español<\/a>/);
 assert.match(englishContentRoute, /SPANISH_ALTERNATE_BY_ENGLISH_SLUG/);
+assert.match(englishContentRoute, /!entry\.data\.slug\.startsWith\('\/es'\)/);
 assert.match(englishContentRoute, /'\/start-here': '\/es\/start-here\/'/);
 assert.match(englishContentRoute, /'\/dollar-framework': '\/es\/dollar-framework\/'/);
 assert.match(englishContentRoute, /'\/framework\/dollar-transmission-chain': '\/es\/framework\/dollar-transmission-chain\/'/);

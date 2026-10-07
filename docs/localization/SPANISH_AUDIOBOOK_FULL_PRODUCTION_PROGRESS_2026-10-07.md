@@ -176,3 +176,16 @@ The safe resume command is: **Track 06 / Chapter 4 / segment 11 with Narrator Ma
 - changed compliance meaning: **none found**
 - disposition: **PASS**
 
+
+
+### Chapter 7
+
+- title: **Bitcoin y el dólar**
+- private Descript composition: `f053f190-9233-4869-ba7b-62c5183888da`
+- final duration: **1,070.864 s (~17:51)**
+- source alignment: **99.34%**
+- stricter omission scan: **0 multi-word source omissions**
+- remaining differences are benign spoken/ASR normalization of numerals, percentages, hyphenation and joined-token rendering
+- missing material claim: **none found**
+- changed compliance meaning: **none found**
+- disposition: **PASS**

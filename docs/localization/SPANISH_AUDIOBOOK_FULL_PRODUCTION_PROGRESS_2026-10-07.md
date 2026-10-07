@@ -143,3 +143,19 @@ Queue files:
 - `docs/localization/spanish-audiobook-mateo-production-queue-2026-10-07.json`
 
 The safe resume command is: **Track 06 / Chapter 4 / segment 11 with Narrator Mateo, es-419, 0.92x.**
+
+
+### Chapter 5
+
+- title: **El petróleo no es solo una operación de dólar**
+- funded HeyGen Developer API run: `37692807367`
+- generated pieces: **22/22**
+- total generated duration: **1,227.833 s (~20:28)**
+- private Descript composition: `1e8ae260-ddfc-481b-8089-358561b2a4e9`
+- all 22 media imports: **PASS**
+- source alignment: **99.07%**
+- remaining differences are benign spoken/ASR normalization of numerals, percentages, `EUR/USD`, `U.S.`, chapter number `200`, and `OPEP/OPEC`
+- missing material claim: **none found**
+- changed compliance meaning: **none found**
+- disposition: **PASS**
+

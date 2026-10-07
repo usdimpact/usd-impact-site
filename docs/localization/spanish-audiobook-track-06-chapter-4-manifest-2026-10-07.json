@@ -25,8 +25,8 @@
       "6c"
     ]
   },
-  "completed_through": "12",
-  "next_segment": "13",
+  "completed_through": "13",
+  "next_segment": "14",
   "do_not_regenerate": [
     "1",
     "2",
@@ -41,7 +41,8 @@
     "9",
     "10",
     "11",
-    "12"
+    "12",
+    "13"
   ],
   "segments": [
     {
@@ -142,9 +143,16 @@
     },
     {
       "id": "13",
-      "status": "pending",
+      "status": "complete",
       "text": "Los choques regulatorios, los flujos de ETF, las narrativas del halving, las decisiones de tesorería corporativa y el apalancamiento específico de cripto pueden dominar la trayectoria de corto plazo. La forma correcta de integrar Bitcoin en el marco no es fingir que se comporta como el oro o el petróleo. Es reconocer que Bitcoin suele absorber primero la liquidez macro y solo después la lógica macro de inflación. Con frecuencia cotiza primero como un activo monetario de alta beta y solo después como una tesis sobre la credibilidad fiat de largo plazo. Esta diferencia importa porque previene un error analítico frecuente. Un lector puede creer que si el dólar se debilita, Bitcoin debe subir inmediatamente por la misma razón por la que podría hacerlo el oro. A veces ocurre. A veces no.",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=035b6320-0489-46d9-a9f0-9187ad7ff560.wav",
+      "duration_seconds": 57.80897959183673,
+      "qa": {
+        "source": "heygen_word_timestamps",
+        "source_alignment_percent": 100,
+        "status": "PASS",
+        "descript_import": "blocked_by_platform_safety_check"
+      }
     },
     {
       "id": "14",

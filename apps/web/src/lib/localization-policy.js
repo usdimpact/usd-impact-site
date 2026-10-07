@@ -14,7 +14,7 @@ export const LOCALE_POLICY = Object.freeze({
     locale: 'es',
     sourceLocale: 'en',
     pathPrefix: '/es',
-    publicationEnabled: false,
+    publicationEnabled: true,
     audience: 'neutral international Spanish / Retail LATAM',
   }),
 });

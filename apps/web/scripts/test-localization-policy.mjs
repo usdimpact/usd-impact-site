@@ -5,6 +5,7 @@ import {
   SUPPORTED_LOCALES,
   audiobookProgressStorageKey,
   isLocalePublicationEnabled,
+  isPreviewLocaleImplementationEnabled,
   isUnpublishedLocalePath,
   normalizeLocale,
   resolveSupportedLocale,
@@ -20,6 +21,12 @@ assert.equal(normalizeLocale(undefined), 'en');
 assert.equal(isLocalePublicationEnabled('en'), true);
 assert.equal(isLocalePublicationEnabled('es'), false);
 assert.equal(isLocalePublicationEnabled('fr'), false);
+
+assert.equal(isPreviewLocaleImplementationEnabled('es', 'preview'), true);
+assert.equal(isPreviewLocaleImplementationEnabled('es', 'production'), false);
+assert.equal(isPreviewLocaleImplementationEnabled('es', ''), false);
+assert.equal(isPreviewLocaleImplementationEnabled('en', 'preview'), false);
+assert.equal(isPreviewLocaleImplementationEnabled('fr', 'preview'), false);
 
 assert.equal(isUnpublishedLocalePath('/es'), true);
 assert.equal(isUnpublishedLocalePath('/es/'), true);
@@ -47,6 +54,15 @@ const [
   weeklyNewsletterEmail,
   progressEmail,
   astroConfig,
+  spanishPreviewLayout,
+  spanishPreviewRoute,
+  spanishHome,
+  spanishStartHere,
+  spanishDollarFramework,
+  spanishTransmissionChain,
+  spanishThreeDialDashboard,
+  spanishTransmissionVisual,
+  spanishThreeDialVisual,
 ] = await Promise.all([
   readFile(new URL('../src/layouts/BaseLayout.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/lib/audiobook-handler.js', import.meta.url), 'utf8'),
@@ -56,6 +72,15 @@ const [
   readFile(new URL('../src/lib/weekly-newsletter-email.js', import.meta.url), 'utf8'),
   readFile(new URL('../src/lib/progress-email-email.js', import.meta.url), 'utf8'),
   readFile(new URL('../astro.config.mjs', import.meta.url), 'utf8'),
+  readFile(new URL('../src/layouts/SpanishPreviewLayout.astro', import.meta.url), 'utf8'),
+  readFile(new URL('../src/pages/es/[...slug].astro', import.meta.url), 'utf8'),
+  readFile(new URL('../src/content/pages/es/home.md', import.meta.url), 'utf8'),
+  readFile(new URL('../src/content/pages/es/start-here.md', import.meta.url), 'utf8'),
+  readFile(new URL('../src/content/frameworks/es/dollar-framework.md', import.meta.url), 'utf8'),
+  readFile(new URL('../src/content/frameworks/es/framework-dollar-transmission-chain.md', import.meta.url), 'utf8'),
+  readFile(new URL('../src/content/frameworks/es/framework-three-dial-dashboard.md', import.meta.url), 'utf8'),
+  readFile(new URL('../src/components/SpanishPreviewDollarTransmissionVisual.astro', import.meta.url), 'utf8'),
+  readFile(new URL('../src/components/SpanishPreviewThreeDialVisual.astro', import.meta.url), 'utf8'),
 ]);
 
 assert.match(baseLayout, /<html lang="en">/);
@@ -75,5 +100,140 @@ assert.match(weeklyNewsletterEmail, /payload\.locale !== 'en'/);
 assert.match(progressEmail, /payload\.locale !== 'en'/);
 assert.match(astroConfig, /isUnpublishedLocalePath/);
 assert.match(astroConfig, /!isUnpublishedLocalePath\(pathname\)/);
+
+assert.match(spanishPreviewLayout, /<html lang="es">/);
+assert.match(spanishPreviewLayout, /noindex, nofollow, noarchive/);
+assert.match(
+  spanishPreviewLayout,
+  /class="nav-toggle"[\s\S]*aria-expanded="false"[\s\S]*aria-controls="site-navigation"[\s\S]*<span>Menú<\/span>/,
+);
+assert.match(
+  spanishPreviewLayout,
+  /<nav id="site-navigation" class="nav" aria-label="Navegación de la vista previa en español" data-open="false">/,
+);
+assert.match(spanishPreviewLayout, /navigationToggle\?\.addEventListener\("click"/);
+assert.match(spanishPreviewLayout, /event\.key !== "Escape"/);
+assert.match(spanishPreviewLayout, /navigation\?\.querySelectorAll\("a"\)/);
+assert.doesNotMatch(spanishPreviewLayout, /data-open="true"/);
+assert.match(spanishPreviewLayout, /<style is:global>/);
+assert.match(spanishPreviewLayout, /\.page-content table \{[\s\S]*width: 100%;[\s\S]*border-collapse: collapse;/);
+assert.match(spanishPreviewLayout, /@media \(max-width: 760px\)[\s\S]*overflow-x: auto;/);
+assert.match(spanishPreviewLayout, /-webkit-overflow-scrolling: touch;/);
+assert.match(spanishPreviewLayout, /min-width: 9rem;/);
+assert.doesNotMatch(spanishPreviewLayout, /revisión en Preview/);
+assert.doesNotMatch(spanishPreviewLayout, /rel="canonical"/);
+assert.doesNotMatch(spanishPreviewLayout, /hreflang/);
+assert.match(spanishPreviewRoute, /isPreviewLocaleImplementationEnabled\('es', process\.env\.VERCEL_ENV\)/);
+assert.match(spanishPreviewRoute, /entry\.data\.status === 'review'/);
+assert.match(spanishPreviewRoute, /AUTHORIZED_SPANISH_PREVIEW_SLUGS/);
+const allowlistMatch = spanishPreviewRoute.match(
+  /const AUTHORIZED_SPANISH_PREVIEW_SLUGS = Object\.freeze\(\[([\s\S]*?)\]\);/,
+);
+assert.ok(allowlistMatch, 'Spanish Preview allowlist must be declared inside getStaticPaths');
+const actualSpanishPreviewSlugs = [...allowlistMatch[1].matchAll(/'([^']+)'/g)]
+  .map((match) => match[1]);
+assert.deepEqual(actualSpanishPreviewSlugs, [
+  '/es',
+  '/es/start-here',
+  '/es/dollar-framework',
+  '/es/framework/dollar-transmission-chain',
+  '/es/framework/three-dial-dashboard',
+]);
+assert.match(spanishPreviewRoute, /AUTHORIZED_SPANISH_PREVIEW_SLUGS\.includes\(entry\.data\.slug\)/);
+assert.doesNotMatch(spanishPreviewRoute, /entry\.data\.slug\.startsWith\('\/es\/'\)/);
+assert.match(spanishPreviewRoute, /aria-label="Nota de cumplimiento"/);
+assert.ok(spanishPreviewRoute.includes('<strong>Nota de cumplimiento:</strong>'));
+assert.doesNotMatch(spanishPreviewRoute, /ComplianceNote/);
+assert.match(spanishPreviewRoute, /SpanishPreviewDollarTransmissionVisual/);
+assert.match(spanishPreviewRoute, /SpanishPreviewThreeDialVisual/);
+assert.match(spanishPreviewRoute, /previewVisual === 'transmission'/);
+assert.match(spanishPreviewRoute, /previewVisual === 'three-dial'/);
+
+assert.match(spanishTransmissionVisual, /Cadena de Transmisión del Dólar/);
+assert.match(spanishTransmissionVisual, /class="spanish-preview-transmission-figure"/);
+assert.match(spanishTransmissionVisual, /class="visual spanish-preview-transmission-visual"/);
+assert.match(spanishTransmissionVisual, /\.spanish-preview-transmission-figure \{[\s\S]*margin: 2rem 0;[\s\S]*overflow: hidden;/);
+assert.match(spanishTransmissionVisual, /\.spanish-preview-transmission-visual \{[\s\S]*display: block;[\s\S]*width: 100%;[\s\S]*height: auto;/);
+assert.match(spanishTransmissionVisual, /POLÍTICA/);
+assert.match(spanishTransmissionVisual, /TASAS/);
+assert.match(spanishTransmissionVisual, /LIQUIDEZ/);
+assert.match(spanishTransmissionVisual, /APETITO/);
+assert.match(spanishTransmissionVisual, /ACTIVOS/);
+assert.doesNotMatch(spanishTransmissionVisual, /Dollar Transmission Chain|U\.S\. RATES|LIQUIDITY|RISK APPETITE|ASSETS/);
+
+assert.match(spanishThreeDialVisual, /Panel Macro de 3 Diales/);
+assert.match(spanishThreeDialVisual, /DIRECCIÓN DEL USD/);
+assert.match(spanishThreeDialVisual, /TASAS REALES/);
+assert.match(spanishThreeDialVisual, /ESTRÉS DE LIQUIDEZ/);
+assert.doesNotMatch(spanishThreeDialVisual, /Three-Dial Macro Dashboard|USD DIRECTION|REAL RATES|LIQUIDITY STRESS/);
+
+assert.match(spanishStartHere, /## Ejemplo práctico — el mismo dólar más fuerte puede significar cosas distintas/);
+assert.doesNotMatch(spanishStartHere, /Broad Dollar Index/);
+assert.doesNotMatch(spanishDollarFramework, /Broad Dollar Index/);
+assert.match(spanishStartHere, /índice de dólar amplio/);
+assert.match(spanishDollarFramework, /índice de dólar amplio/);
+assert.doesNotMatch(spanishDollarFramework, /tasa de descuento/);
+assert.match(spanishDollarFramework, /rentabilidad mínima exigida/);
+assert.match(spanishStartHere, /## Confusiones frecuentes/);
+assert.match(spanishDollarFramework, /## Ejemplo práctico — misma dirección del dólar, distinta causa/);
+assert.match(spanishDollarFramework, /## Señales de seguimiento semanal/);
+assert.match(spanishTransmissionChain, /### Por qué importa la distinción/);
+assert.match(spanishTransmissionChain, /## Qué no demuestra la cadena/);
+assert.match(spanishTransmissionChain, /El marco no demuestra causalidad/);
+assert.match(spanishThreeDialDashboard, /## Ejemplo práctico/);
+assert.match(spanishThreeDialDashboard, /## Qué representa y qué no representa el panel/);
+assert.match(spanishThreeDialDashboard, /no asumas que ambas miden exactamente lo mismo/);
+
+const extractMarkdownReferenceUrls = (content) => {
+  const urls = [];
+  for (const line of content.split('\n')) {
+    if (!line.startsWith('- [')) continue;
+    const openParen = line.lastIndexOf('(');
+    const closeParen = line.lastIndexOf(')');
+    assert.ok(openParen > 0 && closeParen > openParen);
+    urls.push(new URL(line.slice(openParen + 1, closeParen)).href);
+  }
+  return new Set(urls);
+};
+
+const federalReserveH10Url = new URL('https://www.federalreserve.gov/releases/h10/current/').href;
+const fredRealRateUrl = new URL('https://fred.stlouisfed.org/series/DFII10').href;
+const treasuryYieldCurveUrl = new URL('https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve').href;
+const bisGlobalLiquidityUrl = new URL('https://data.bis.org/topics/GLI/tables-and-dashboards').href;
+const cboeVixUrl = new URL('https://www.cboe.com/tradable-products/vix').href;
+
+for (const content of [
+  spanishHome,
+  spanishStartHere,
+  spanishDollarFramework,
+  spanishTransmissionChain,
+  spanishThreeDialDashboard,
+]) {
+  assert.ok(content.includes('## Fuentes verificadas / referencias'));
+  const references = extractMarkdownReferenceUrls(content);
+  assert.ok(references.has(federalReserveH10Url));
+  assert.ok(references.has(fredRealRateUrl));
+  assert.ok(references.has(treasuryYieldCurveUrl));
+}
+assert.ok(extractMarkdownReferenceUrls(spanishHome).has(bisGlobalLiquidityUrl));
+assert.ok(extractMarkdownReferenceUrls(spanishStartHere).has(bisGlobalLiquidityUrl));
+assert.ok(extractMarkdownReferenceUrls(spanishDollarFramework).has(bisGlobalLiquidityUrl));
+assert.ok(extractMarkdownReferenceUrls(spanishTransmissionChain).has(bisGlobalLiquidityUrl));
+assert.ok(extractMarkdownReferenceUrls(spanishDollarFramework).has(cboeVixUrl));
+assert.ok(extractMarkdownReferenceUrls(spanishThreeDialDashboard).has(cboeVixUrl));
+
+for (const content of [
+  spanishHome,
+  spanishStartHere,
+  spanishDollarFramework,
+  spanishTransmissionChain,
+  spanishThreeDialDashboard,
+]) {
+  assert.match(content, /status: "review"/);
+  assert.match(content, /slug: "\/es(?:\/|")/);
+  assert.doesNotMatch(content, /status: "published"/);
+  assert.doesNotMatch(content, /\bPreview\b|\bcheckout\b|\baudiobook\b|\bemail\b|\brepricing\b/);
+  assert.doesNotMatch(content, /^visual:/m);
+}
 
 console.log('localization policy and English regression boundaries: PASS');

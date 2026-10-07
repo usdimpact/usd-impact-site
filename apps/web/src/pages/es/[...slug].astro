@@ -1,0 +1,73 @@
+---
+import { getCollection, render } from 'astro:content';
+import SpanishPreviewLayout from '../../layouts/SpanishPreviewLayout.astro';
+import SpanishPreviewDollarTransmissionVisual from '../../components/SpanishPreviewDollarTransmissionVisual.astro';
+import SpanishPreviewThreeDialVisual from '../../components/SpanishPreviewThreeDialVisual.astro';
+import { isPreviewLocaleImplementationEnabled } from '../../lib/localization-policy.js';
+
+export async function getStaticPaths() {
+  if (!isPreviewLocaleImplementationEnabled('es', process.env.VERCEL_ENV)) return [];
+
+  const AUTHORIZED_SPANISH_PREVIEW_SLUGS = Object.freeze([
+    '/es',
+    '/es/start-here',
+    '/es/dollar-framework',
+    '/es/framework/dollar-transmission-chain',
+    '/es/framework/three-dial-dashboard',
+  ]);
+
+  const collections = ['pages', 'frameworks'];
+  const entries = (await Promise.all(collections.map((collection) => getCollection(collection))))
+    .flat()
+    .filter((entry) => (
+      entry.data.status === 'review'
+      && AUTHORIZED_SPANISH_PREVIEW_SLUGS.includes(entry.data.slug)
+    ));
+
+  return entries.map((entry) => {
+    const rest = entry.data.slug
+      .replace(/^\/es\/?/, '')
+      .replace(/\/$/, '');
+
+    return {
+      params: { slug: rest || undefined },
+      props: { entry },
+    };
+  });
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const currentPath = entry.data.slug.replace(/\/$/, '') || '/es';
+const previewVisual = currentPath === '/es/framework/three-dial-dashboard'
+  ? 'three-dial'
+  : (
+      currentPath === '/es/dollar-framework'
+      || currentPath === '/es/framework/dollar-transmission-chain'
+    )
+    ? 'transmission'
+    : null;
+---
+<SpanishPreviewLayout
+  title={entry.data.metaTitle}
+  description={entry.data.metaDescription}
+  currentPath={currentPath}
+>
+  <main id="main-content" class="main-with-hero">
+    <section class="hero">
+      <div class="container">
+        <div class="eyebrow">{entry.data.category}</div>
+        <h1>{entry.data.title}</h1>
+        {entry.data.hero && <p class="lead">{entry.data.hero}</p>}
+      </div>
+    </section>
+    <div class="container page-content">
+      {previewVisual === 'transmission' && <SpanishPreviewDollarTransmissionVisual />}
+      {previewVisual === 'three-dial' && <SpanishPreviewThreeDialVisual />}
+      <Content />
+      <section class="compliance" aria-label="Nota de cumplimiento">
+        <strong>Nota de cumplimiento:</strong> {entry.data.complianceNote}
+      </section>
+    </div>
+  </main>
+</SpanishPreviewLayout>

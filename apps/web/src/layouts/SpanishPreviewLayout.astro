@@ -1,0 +1,174 @@
+---
+import '../styles/global.css';
+
+const {
+  title,
+  description,
+  currentPath = '/es',
+} = Astro.props;
+
+const links = [
+  { label: 'Inicio', href: '/es/' },
+  { label: 'Empieza aquí', href: '/es/start-here/' },
+  { label: 'Marco del dólar', href: '/es/dollar-framework/' },
+  { label: 'Cadena de transmisión', href: '/es/framework/dollar-transmission-chain/' },
+  { label: 'Panel de tres diales', href: '/es/framework/three-dial-dashboard/' },
+];
+
+const normalize = (value) => String(value || '/').replace(/\/+$/, '') || '/';
+const activePath = normalize(currentPath);
+const isActive = (href) => activePath === normalize(href);
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b1f33" />
+    <meta name="application-name" content="USD Impact" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <link rel="icon" href="/assets/logo/USDImpact_Icon_Color_192.png" type="image/png" sizes="192x192" />
+    <style is:global>
+      .page-content table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .page-content th,
+      .page-content td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #dbe1e8;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .page-content th {
+        color: var(--navy);
+        font-weight: 800;
+      }
+
+      @media (max-width: 760px) {
+        .page-content table {
+          display: block;
+          max-width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .page-content th,
+        .page-content td {
+          min-width: 9rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
+    <div class="container" role="status" aria-label="Estado de la vista previa" style="padding-top: 0.75rem;">
+      <div class="card" style="padding: 0.75rem 1rem;">
+        <strong>Vista previa en español — no publicada ni indexada.</strong>
+        <span> Esta versión existe solo para revisión en el entorno de vista previa. El sitio público y la experiencia predeterminada siguen en inglés.</span>
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="logo" href="/es/" aria-label="Inicio de USD Impact en español">
+          <img
+            src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
+            srcset="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png 256w, /assets/logo/USDImpact_Horizontal_Color_NoTagline_512.png 512w"
+            sizes="148px"
+            alt="USD Impact"
+            width="256"
+            height="77"
+            decoding="async"
+          />
+        </a>
+        <button
+          class="nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="site-navigation"
+        >
+          <span class="nav-toggle-icon" aria-hidden="true"></span>
+          <span>Menú</span>
+        </button>
+        <nav id="site-navigation" class="nav" aria-label="Navegación de la vista previa en español" data-open="false">
+          {links.map((link) => (
+            <a
+              class="nav-direct"
+              href={link.href}
+              aria-current={isActive(link.href) ? 'page' : undefined}
+            >
+              {link.label}
+            </a>
+          ))}
+          <a class="nav-direct" href="/">Sitio en inglés</a>
+        </nav>
+      </div>
+    </header>
+    <slot />
+    <footer class="footer">
+      <div class="container footer-grid">
+        <div class="footer-brand">
+          <img
+            src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
+            srcset="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png 256w, /assets/logo/USDImpact_Horizontal_Color_NoTagline_512.png 512w"
+            sizes="164px"
+            alt="USD Impact"
+            width="256"
+            height="77"
+            loading="lazy"
+            decoding="async"
+          />
+          <p>Educación práctica para leer primero el dólar.</p>
+        </div>
+        <nav class="footer-nav" aria-label="Navegación al pie">
+          <div class="footer-group">
+            <p class="footer-heading">Vista previa</p>
+            {links.map((link) => <a href={link.href}>{link.label}</a>)}
+          </div>
+          <div class="footer-group">
+            <p class="footer-heading">Legal y transparencia</p>
+            <a href="/compliance">Cumplimiento (EN)</a>
+            <a href="/privacy/">Privacidad (EN)</a>
+            <a href="/terms/">Términos (EN)</a>
+            <a href="/about">Transparencia (EN)</a>
+          </div>
+        </nav>
+        <div class="footer-meta">
+          <span>Vista previa en español. No constituye una publicación pública.</span>
+          <span>Contenido educativo e informativo únicamente; no constituye asesoramiento de inversión, legal, fiscal ni de operativa, señal de trading ni recomendación.</span>
+        </div>
+      </div>
+    </footer>
+    <script>
+      const navigation = document.querySelector("#site-navigation");
+      const navigationToggle = document.querySelector(".nav-toggle");
+
+      const setNavigationOpen = (open) => {
+        if (!(navigation instanceof HTMLElement) || !(navigationToggle instanceof HTMLButtonElement)) return;
+        navigation.dataset.open = String(open);
+        navigationToggle.setAttribute("aria-expanded", String(open));
+      };
+
+      navigationToggle?.addEventListener("click", () => {
+        const open = navigation instanceof HTMLElement && navigation.dataset.open === "true";
+        setNavigationOpen(!open);
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || !window.matchMedia("(max-width: 760px)").matches) return;
+        const open = navigation instanceof HTMLElement && navigation.dataset.open === "true";
+        if (!open) return;
+        setNavigationOpen(false);
+        if (navigationToggle instanceof HTMLButtonElement) navigationToggle.focus();
+      });
+
+      navigation?.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", () => setNavigationOpen(false));
+      });
+    </script>
+  </body>
+</html>

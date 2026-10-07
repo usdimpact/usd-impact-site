@@ -4,7 +4,10 @@ on:
   push:
     branches: [main]
     paths:
-      - 'apps/web/src/content/**'
+      - 'apps/web/src/content/news/**'
+      - 'apps/web/src/content/catalyst-briefs/**'
+      - 'apps/web/src/content/weekly-reports/**'
+      - 'apps/web/src/content/monthly-reports/**'
 
 permissions:
   contents: read
@@ -68,7 +71,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git diff --name-only "${GITHUB_SHA}^" "${GITHUB_SHA}" -- 'apps/web/src/content/**' > /tmp/indexnow-files.txt
+          git diff --name-only "${GITHUB_SHA}^" "${GITHUB_SHA}" -- \
+            'apps/web/src/content/news/**' \
+            'apps/web/src/content/catalyst-briefs/**' \
+            'apps/web/src/content/weekly-reports/**' \
+            'apps/web/src/content/monthly-reports/**' > /tmp/indexnow-files.txt
           {
             echo 'files<<EOF'
             cat /tmp/indexnow-files.txt

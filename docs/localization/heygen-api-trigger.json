@@ -1,29 +1,14 @@
 {
   "track": "10",
   "segments": [
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "10",
-    "11",
-    "12",
-    "13",
-    "14",
-    "15",
     "16",
     "17"
   ],
   "requested_at": "2026-10-08",
-  "mode": "funded-api-balance-batch",
+  "mode": "funded-api-balance-recovery-batch",
   "voice": "Narrator Mateo",
   "voice_id": "626ca51acb2e496f8dcee8d7591fda3c",
   "locale": "es-419",
   "speed": 0.92,
-  "purpose": "Synthesize Spanish audiobook Chapter 8 privately"
+  "purpose": "Complete untouched Spanish audiobook Chapter 8 segments while segment 15 remains on timeout hold"
 }

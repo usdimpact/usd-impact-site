@@ -1,6 +1,13 @@
 name: Spanish Audiobook HeyGen API
 
 on:
+  workflow_dispatch:
+    inputs:
+      segment:
+        description: "Track 06 segment to synthesize"
+        required: true
+        default: "11"
+        type: string
   push:
     branches:
       - feat/spanish-audiobook-pilot-foundation

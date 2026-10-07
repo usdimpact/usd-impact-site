@@ -25,8 +25,8 @@
       "6c"
     ]
   },
-  "completed_through": "10",
-  "next_segment": "11",
+  "completed_through": "11",
+  "next_segment": "12",
   "do_not_regenerate": [
     "1",
     "2",
@@ -39,7 +39,8 @@
     "7",
     "8",
     "9",
-    "10"
+    "10",
+    "11"
   ],
   "segments": [
     {
@@ -116,9 +117,15 @@
     },
     {
       "id": "11",
-      "status": "pending",
+      "status": "complete",
       "text": "Para un nuevo inversor, la disciplina es simple: no leas el oro a través de DXY solo. Lee el oro por el dólar, las tasas reales y el miedo. Cuando los tres apuntan en la misma dirección, la señal es fuerte. Cuando entran en conflicto, el movimiento del oro es más matizado. Bitcoin: un activo monetario negociado por la liquidez\nBitcoin no debe forzarse en la vieja plantilla de las materias primas. No es un barril, ni una molécula, ni un metal. Se introdujo como un sistema de efectivo electrónico entre pares, pero en la práctica de mercado a menudo ha cotizado como un activo digital escaso cuyo precio es altamente sensible a las condiciones de liquidez, la tolerancia de balance y el apetito del mercado por la duración y la volatilidad.",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=f9779729-ba84-4fa2-9c7c-172a53f58aa8.wav",
+      "duration_seconds": 59.97714285714286,
+      "qa": {
+        "descript_composition_id": "d9c036e5-12ba-43b7-b677-db92fd4a32fa",
+        "source_alignment_percent": 100,
+        "status": "PASS"
+      }
     },
     {
       "id": "12",

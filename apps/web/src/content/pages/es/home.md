@@ -1,10 +1,10 @@
 ---
-title: "USD Impact en español — Vista previa"
-metaTitle: "USD Impact en español | Vista previa no publicada"
-metaDescription: "Vista previa no indexada del recorrido educativo de USD Impact en español: dólar, tasas reales, liquidez y transmisión multiactivo."
+title: "USD Impact en español"
+metaTitle: "USD Impact en español | Lee primero el dólar"
+metaDescription: "Recorrido educativo de USD Impact en español sobre dólar, tasas reales, liquidez y transmisión multiactivo."
 slug: "/es"
-category: "Vista previa"
-status: "review"
+category: "USD Impact"
+status: "published"
 readingLevel: "Principiante"
 lastReviewed: "2026-10-07"
 complianceNote: "Material educativo e informativo únicamente; no constituye asesoramiento de inversión personalizado, legal, fiscal ni de operativa, no es una señal de trading y no es una recomendación. Las relaciones de mercado son condicionales; verifica los datos actuales antes de utilizarlos."
@@ -30,16 +30,16 @@ El dólar suele situarse aguas arriba de la fijación de precios global, la fina
 
 La disciplina es separar esas explicaciones en vez de convertir una sola variable en una respuesta universal.
 
-## Recorrido de esta vista previa
+## Recorrido en español
 
 1. **[Empieza aquí](/es/start-here/)** — define qué significa “el dólar” y aprende el orden de lectura.
 2. **[Marco del dólar](/es/dollar-framework/)** — usa tres diales: dirección del dólar, presión de tasas reales y estrés de liquidez.
 3. **[Cadena de transmisión](/es/framework/dollar-transmission-chain/)** — sigue el mecanismo desde información macro y política hasta los activos.
 4. **[Panel de tres diales](/es/framework/three-dial-dashboard/)** — convierte el marco en una rutina semanal repetible.
 
-## Qué no incluye esta fase
+## Alcance de esta edición web
 
-Esta vista previa no activa noticias, Score, informes, Biblioteca, cuenta, pago, audiolibro, correo electrónico ni otras superficies de miembro en español.
+Esta edición web en español cubre estas cinco páginas educativas. Las noticias, Score, informes, Biblioteca, cuenta, pago, audiolibro, correo electrónico y otras superficies de miembro permanecen en inglés por ahora.
 
 Tampoco modifica la experiencia en inglés.
 

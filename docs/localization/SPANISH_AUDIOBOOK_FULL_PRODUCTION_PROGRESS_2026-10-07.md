@@ -159,3 +159,20 @@ The safe resume command is: **Track 06 / Chapter 4 / segment 11 with Narrator Ma
 - changed compliance meaning: **none found**
 - disposition: **PASS**
 
+
+
+### Chapter 6
+
+- title: **El oro y el dólar**
+- funded HeyGen Developer API run: `37695486557`
+- generated pieces: **17/17**
+- total generated duration: **1,002.553 s (~16:43)**
+- private Descript composition: `2b9e5a60-028f-4ff4-8581-25db456bdda5`
+- all 17 media imports: **PASS**
+- source alignment: **98.87%**
+- stricter omission scan: **0 multi-word source omissions**
+- remaining differences are benign spoken/ASR normalization of numerals, `DFII10`, `Goldhub`, hyphenation and singular/plural ASR rendering
+- missing material claim: **none found**
+- changed compliance meaning: **none found**
+- disposition: **PASS**
+

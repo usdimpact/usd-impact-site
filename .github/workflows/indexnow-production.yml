@@ -42,7 +42,7 @@ jobs:
               -H "Authorization: Bearer ${VERCEL_TOKEN}" \
               "https://api.vercel.com/v13/deployments?projectId=${VERCEL_PROJECT_ID}&target=production&limit=5&teamId=${VERCEL_TEAM_ID}")"
 
-            state="$(printf '%s' "$payload" | node --input-type=module -e '
+            state="$(printf '%s' "$payload" | EXPECTED="$expected" node --input-type=module -e '
               let data="";
               for await (const chunk of process.stdin) data += chunk;
               const json=JSON.parse(data);
@@ -50,7 +50,7 @@ jobs:
                 (item?.meta?.githubCommitSha || item?.gitSource?.sha) === process.env.EXPECTED
               );
               process.stdout.write(deployment?.state || deployment?.readyState || "");
-            ' EXPECTED="$expected")"
+            ')"
 
             if [ "$state" = "READY" ] || [ "$state" = "ready" ]; then
               echo "Exact commit is READY in Production."

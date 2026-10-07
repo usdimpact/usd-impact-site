@@ -99,7 +99,7 @@ assert.match(englishContentRoute, /'\/dollar-framework': '\/es\/dollar-framework
 assert.match(englishContentRoute, /'\/framework\/dollar-transmission-chain': '\/es\/framework\/dollar-transmission-chain\/'/);
 assert.match(englishContentRoute, /'\/framework\/three-dial-dashboard': '\/es\/framework\/three-dial-dashboard\/'/);
 assert.match(englishContentRoute, /alternateLocaleHref=\{spanishAlternateHref\}/);
-assert.match(englishHome, /alternateLocaleHref="\/es\/" /);
+assert.match(englishHome, /alternateLocaleHref="\/es\/"/);
 assert.match(
   audiobookHandler,
   /data-key="usd-impact-library-pass-audiobook-progress"/,

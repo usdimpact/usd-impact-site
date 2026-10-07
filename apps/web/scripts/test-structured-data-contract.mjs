@@ -23,16 +23,19 @@ assert.equal(news.url, 'https://www.usd-impact.com/news/2026-09-18');
 assert.equal(news.mainEntityOfPage['@id'], news.url);
 assert.equal(news.publisher['@id'], ORGANIZATION_ID);
 assert.equal(news.datePublished, '2026-09-18');
+assert.equal(news.image, 'https://www.usd-impact.com/assets/logo/USDImpact_Horizontal_Color_NoTagline_2048.png');
 
 const catalyst = articleStructuredData({
   headline: 'FOMC catalyst brief',
   description: 'Evidence-bound catalyst analysis.',
   pathname: '/news/catalysts/example',
+  datePublished: '2026-09-18T12:00:00Z',
   dateModified: '2026-09-18',
 });
 
 assert.equal(catalyst['@type'], 'Article');
-assert.equal(catalyst.datePublished, undefined);
+assert.equal(catalyst.datePublished, '2026-09-18T12:00:00Z');
+assert.equal(catalyst.image, 'https://www.usd-impact.com/assets/logo/USDImpact_Horizontal_Color_NoTagline_2048.png');
 assert.equal(catalyst.publisher['@id'], ORGANIZATION_ID);
 
 const graph = structuredDataGraph([news, catalyst]);
@@ -71,6 +74,7 @@ assert.match(dailyPage, /structuredData=\{structuredData\}/);
 
 const catalystPage = fs.readFileSync(new URL('../src/pages/news/catalysts/[slug].astro', import.meta.url), 'utf8');
 assert.match(catalystPage, /articleStructuredData/);
+assert.match(catalystPage, /datePublished: entry\.data\.generatedAt/);
 assert.doesNotMatch(catalystPage, /datePublished: entry\.data\.eventDate/);
 assert.match(catalystPage, /structuredData=\{structuredData\}/);
 

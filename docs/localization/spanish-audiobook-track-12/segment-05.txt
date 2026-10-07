@@ -1,0 +1,2 @@
+Como la media de la muestra completa y la desviación estándar muestral se recalculan a medida que crece la muestra de producción, la historia recalculada actual puede revisar valores históricos anteriores. El gráfico histórico de largo plazo es útil para investigación descriptiva, pero no es un registro estable, punto a punto y fuera de muestra. Etiquetas de régimen
+Lee la puntuación por zonas, no como un pronóstico preciso.

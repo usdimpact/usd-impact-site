@@ -7,6 +7,7 @@ const read = (name) => readFileSync(new URL(`../../../.github/workflows/${name}`
 const quality = read('quality.yml');
 const daily = read('daily-news.yml');
 const catalyst = read('catalyst-brief.yml');
+const indexnow = read('indexnow-production.yml');
 let count = 0;
 function check(label, fn) { fn(); count += 1; console.log(`PASS ${label}`); }
 function steps(workflow) {
@@ -25,6 +26,17 @@ check('required job and PR/main/dispatch triggers remain', () => {
   assert.doesNotMatch(quality, /pull_request_target|paths-ignore|\n\s*paths:|continue-on-error|\[skip ci\]/);
   assert.match(quality, /permissions:\n  contents: read\n  actions: read\n/);
   assert.doesNotMatch(quality, /:\s*write\b/);
+});
+check('IndexNow is gated by Vercel Production success without provider credentials', () => {
+  assert.match(indexnow, /repository_dispatch:[\s\S]*vercel\.deployment\.success/);
+  assert.match(indexnow, /github\.event\.client_payload\.environment == 'production'/);
+  assert.match(indexnow, /github\.event\.client_payload\.git\.ref == 'main'/);
+  assert.match(indexnow, /github\.event\.client_payload\.project\.id == 'prj_ZoLLM35ksI6wk17PcfS2xYknaVl7'/);
+  assert.match(indexnow, /DEPLOY_SHA: \$\{\{ github\.event\.client_payload\.git\.sha \}\}/);
+  assert.match(indexnow, /ref: \$\{\{ github\.event\.client_payload\.git\.sha \}\}/);
+  assert.match(indexnow, /git diff --name-only "\$DEPLOY_SHA\^" "\$DEPLOY_SHA"/);
+  assert.doesNotMatch(indexnow, /USDIMPACT_WATCHDOG_VERCEL|VERCEL_TOKEN|api\.vercel\.com/);
+  assert.doesNotMatch(indexnow, /src\/content\/es|\/es\//);
 });
 check('routing runs trusted main policy before installing project code', () => {
   const selection = step(qSteps, 'Select publication validation route');
@@ -128,7 +140,7 @@ check('new preflight failure label is accurate and backward compatible', () => {
   assert.equal(classifyDailyWorkflowFailure({ validateOutcome: 'success', publishOutcome: 'action_required' }).gate, 'publication-pr-quality');
 });
 check('all workflow run blocks parse as shell without executing them', () => {
-  for (const source of [quality, daily, catalyst]) for (const entry of steps(source)) {
+  for (const source of [quality, daily, catalyst, indexnow]) for (const entry of steps(source)) {
     const match = entry.body.match(/^        run: (.*)\n?([\s\S]*)$/m);
     if (!match) continue;
     const shell = match[1] === '|' ? match[2].split('\n').map((line) => line.startsWith('          ') ? line.slice(10) : line).join('\n') : match[1];

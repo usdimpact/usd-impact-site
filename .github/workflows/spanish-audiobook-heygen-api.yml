@@ -1,0 +1,110 @@
+name: Spanish Audiobook HeyGen API
+
+on:
+  push:
+    branches:
+      - feat/spanish-audiobook-pilot-foundation
+    paths:
+      - docs/localization/heygen-api-trigger.json
+
+permissions:
+  contents: read
+
+jobs:
+  synthesize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+      MANIFEST: docs/localization/spanish-audiobook-track-06-chapter-4-manifest-2026-10-07.json
+      TRIGGER: docs/localization/heygen-api-trigger.json
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${HEYGEN_API_KEY:-}" ]; then
+            echo "HEYGEN_API_KEY repository secret is missing." >&2
+            exit 2
+          fi
+
+      - name: Install HeyGen CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://static.heygen.ai/cli/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Resolve requested segment
+        id: segment
+        shell: bash
+        run: |
+          set -euo pipefail
+          SEGMENT_ID="$(jq -r '.segment' "$TRIGGER")"
+          TRACK="$(jq -r '.track' "$TRIGGER")"
+          if [ "$TRACK" != "06" ]; then
+            echo "This guarded workflow currently permits Track 06 only." >&2
+            exit 3
+          fi
+          STATUS="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .status' "$MANIFEST")"
+          TEXT="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text' "$MANIFEST")"
+          if [ -z "$TEXT" ] || [ "$TEXT" = "null" ]; then
+            echo "Unknown segment: $SEGMENT_ID" >&2
+            exit 4
+          fi
+          if [ "$STATUS" != "pending" ]; then
+            echo "Refusing to regenerate segment $SEGMENT_ID because status is $STATUS." >&2
+            exit 5
+          fi
+          printf '%s' "$TEXT" > segment.txt
+          echo "segment_id=$SEGMENT_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Verify API-key authentication
+        shell: bash
+        run: |
+          set -euo pipefail
+          heygen auth status > auth-status.json
+          jq 'if type=="object" then del(.api_key,.token,.credential,.credentials) else . end' auth-status.json || true
+
+      - name: Synthesize with Mateo
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEXT="$(cat segment.txt)"
+          heygen voice speech create             --text "$TEXT"             --voice-id "626ca51acb2e496f8dcee8d7591fda3c"             --input-type text             --speed 0.92             --locale es-419             > speech-response.json
+          cat speech-response.json
+
+      - name: Download generated audio
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(jq -r '
+            .data.audio_url //
+            .data.audioUrl //
+            .audio_url //
+            .audioUrl //
+            .data.url //
+            .url //
+            empty
+          ' speech-response.json)"
+          if [ -z "$URL" ]; then
+            echo "Could not find audio URL in HeyGen response." >&2
+            exit 6
+          fi
+          curl -fL "$URL" -o "track06-segment-${{ steps.segment.outputs.segment_id }}.wav"
+          jq -n             --arg track "06"             --arg segment "${{ steps.segment.outputs.segment_id }}"             --arg voice "Narrator Mateo"             --arg voice_id "626ca51acb2e496f8dcee8d7591fda3c"             --arg locale "es-419"             --arg speed "0.92"             --arg audio_url "$URL"             '{track:$track,segment:$segment,voice:$voice,voice_id:$voice_id,locale:$locale,speed:($speed|tonumber),audio_url:$audio_url}'             > result-manifest.json
+
+      - name: Upload private QA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spanish-audiobook-track06-segment-${{ steps.segment.outputs.segment_id }}
+          path: |
+            track06-segment-${{ steps.segment.outputs.segment_id }}.wav
+            speech-response.json
+            result-manifest.json
+            segment.txt
+          if-no-files-found: error
+          retention-days: 7

@@ -13,10 +13,9 @@ permissions:
 jobs:
   synthesize:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     env:
       HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
-      MANIFEST: docs/localization/spanish-audiobook-track-06-chapter-4-manifest-2026-10-07.json
       TRIGGER: docs/localization/heygen-api-trigger.json
 
     steps:
@@ -34,10 +33,24 @@ jobs:
           fi
 
           TRACK="$(jq -r '.track' "$TRIGGER")"
-          if [ "$TRACK" != "06" ]; then
-            echo "This guarded workflow currently permits Track 06 only." >&2
-            exit 3
-          fi
+          case "$TRACK" in
+            06)
+              INDEX="docs/localization/spanish-audiobook-track-06-chapter-4-manifest-2026-10-07.json"
+              MODE="inline"
+              ;;
+            07)
+              INDEX="docs/localization/spanish-audiobook-track-07-index-2026-10-07.json"
+              MODE="files"
+              ;;
+            *)
+              echo "This guarded workflow currently permits Tracks 06 and 07 only." >&2
+              exit 3
+              ;;
+          esac
+
+          echo "TRACK=$TRACK" >> "$GITHUB_ENV"
+          echo "INDEX=$INDEX" >> "$GITHUB_ENV"
+          echo "MODE=$MODE" >> "$GITHUB_ENV"
 
           jq -c '
             if (.segments? | type) == "array" then .segments
@@ -47,21 +60,34 @@ jobs:
           ' "$TRIGGER" > requested-segments.json
 
           COUNT="$(jq 'length' requested-segments.json)"
-          if [ "$COUNT" -lt 1 ] || [ "$COUNT" -gt 20 ]; then
-            echo "Requested segment count must be between 1 and 20." >&2
+          if [ "$COUNT" -lt 1 ] || [ "$COUNT" -gt 30 ]; then
+            echo "Requested segment count must be between 1 and 30." >&2
             exit 4
           fi
 
           jq -r '.[]' requested-segments.json | while IFS= read -r SEGMENT_ID; do
-            STATUS="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .status' "$MANIFEST")"
-            TEXT="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text' "$MANIFEST")"
-            if [ -z "$TEXT" ] || [ "$TEXT" = "null" ]; then
+            STATUS="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .status' "$INDEX")"
+            if [ -z "$STATUS" ] || [ "$STATUS" = "null" ]; then
               echo "Unknown segment: $SEGMENT_ID" >&2
               exit 5
             fi
             if [ "$STATUS" != "pending" ]; then
               echo "Refusing to regenerate segment $SEGMENT_ID because status is $STATUS." >&2
               exit 6
+            fi
+
+            if [ "$MODE" = "files" ]; then
+              TEXT_FILE="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text_file' "$INDEX")"
+              if [ -z "$TEXT_FILE" ] || [ "$TEXT_FILE" = "null" ] || [ ! -f "$TEXT_FILE" ]; then
+                echo "Missing text file for segment $SEGMENT_ID: $TEXT_FILE" >&2
+                exit 7
+              fi
+            else
+              TEXT="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text' "$INDEX")"
+              if [ -z "$TEXT" ] || [ "$TEXT" = "null" ]; then
+                echo "Missing inline text for segment $SEGMENT_ID" >&2
+                exit 8
+              fi
             fi
           done
 
@@ -86,13 +112,28 @@ jobs:
           mkdir -p output
 
           jq -r '.[]' requested-segments.json | while IFS= read -r SEGMENT_ID; do
-            echo "=== START segment $SEGMENT_ID ==="
-            TEXT="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text' "$MANIFEST")"
+            echo "=== START track $TRACK segment $SEGMENT_ID ==="
+
+            if [ "$MODE" = "files" ]; then
+              TEXT_FILE="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text_file' "$INDEX")"
+              TEXT="$(cat "$TEXT_FILE")"
+            else
+              TEXT="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text' "$INDEX")"
+            fi
+
             printf '%s' "$TEXT" > "output/segment-$SEGMENT_ID.txt"
 
-            heygen voice speech create               --text "$TEXT"               --voice-id "626ca51acb2e496f8dcee8d7591fda3c"               --input-type text               --speed 0.92               --locale es-419               > "output/speech-response-$SEGMENT_ID.json"
+            heygen voice speech create \
+              --text "$TEXT" \
+              --voice-id "626ca51acb2e496f8dcee8d7591fda3c" \
+              --input-type text \
+              --speed 0.92 \
+              --locale es-419 \
+              > "output/speech-response-$SEGMENT_ID.json"
 
-            jq -c --arg segment "$SEGMENT_ID"               '{segment:$segment,response:.}'               "output/speech-response-$SEGMENT_ID.json"
+            jq -c --arg track "$TRACK" --arg segment "$SEGMENT_ID" \
+              '{track:$track,segment:$segment,response:.}' \
+              "output/speech-response-$SEGMENT_ID.json"
 
             URL="$(jq -r '
               .data.audio_url //
@@ -106,21 +147,30 @@ jobs:
 
             if [ -z "$URL" ]; then
               echo "Could not find audio URL for segment $SEGMENT_ID." >&2
-              exit 7
+              exit 9
             fi
 
-            curl -fL "$URL" -o "output/track06-segment-$SEGMENT_ID.wav"
+            curl -fL "$URL" -o "output/track$TRACK-segment-$SEGMENT_ID.wav"
 
-            jq -n               --arg track "06"               --arg segment "$SEGMENT_ID"               --arg voice "Narrator Mateo"               --arg voice_id "626ca51acb2e496f8dcee8d7591fda3c"               --arg locale "es-419"               --arg speed "0.92"               --arg audio_url "$URL"               '{track:$track,segment:$segment,voice:$voice,voice_id:$voice_id,locale:$locale,speed:($speed|tonumber),audio_url:$audio_url}'               > "output/result-manifest-$SEGMENT_ID.json"
+            jq -n \
+              --arg track "$TRACK" \
+              --arg segment "$SEGMENT_ID" \
+              --arg voice "Narrator Mateo" \
+              --arg voice_id "626ca51acb2e496f8dcee8d7591fda3c" \
+              --arg locale "es-419" \
+              --arg speed "0.92" \
+              --arg audio_url "$URL" \
+              '{track:$track,segment:$segment,voice:$voice,voice_id:$voice_id,locale:$locale,speed:($speed|tonumber),audio_url:$audio_url}' \
+              > "output/result-manifest-$SEGMENT_ID.json"
 
-            echo "=== COMPLETE segment $SEGMENT_ID ==="
+            echo "=== COMPLETE track $TRACK segment $SEGMENT_ID ==="
           done
 
       - name: Upload private QA artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: spanish-audiobook-track06-batch-${{ github.run_id }}
+          name: spanish-audiobook-track${{ env.TRACK }}-batch-${{ github.run_id }}
           path: output/
           if-no-files-found: warn
           retention-days: 7

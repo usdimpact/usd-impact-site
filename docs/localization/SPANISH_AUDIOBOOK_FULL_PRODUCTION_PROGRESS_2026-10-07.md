@@ -94,6 +94,17 @@ Still prohibited at this checkpoint:
 - no Production deployment;
 - no public publish from Descript.
 
+### Chapter 3
+
+- title: **USD no es DXY**
+- table content adapted row-by-row for intelligible audio while preserving every cell meaning
+- failed Descript transcription for segment 05-10 repaired by re-importing the same generated audio as `05-10-retry.wav`
+- duplicate original 05-10 timeline clip removed; final order restored
+- source alignment: **99.06%**
+- remaining differences are spoken-number / ASR formatting, including percentage rendering, configuration numerals, `U.S.` and `H.10`
+- no material claim, date, source identity, asset identity or compliance language changed
+- disposition: **PASS**
+
 ## Next production step
 
-Continue with **Chapter 3 — USD no es DXY**, using the approved Mateo voice and the same governed spoken-adaptation rules.
+Continue with **Chapter 4 — Cómo el dólar mueve petróleo, oro, Bitcoin, gas y divisas**, using the approved Mateo voice and governed spoken-adaptation rules. Chapter 4 synthesis has started privately; segments 1–5 are complete.

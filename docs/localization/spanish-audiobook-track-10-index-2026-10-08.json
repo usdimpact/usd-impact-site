@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "track": "10",
+  "chapter": 8,
+  "title": "Gas y GNL frente al dólar",
+  "source": {
+    "drive_id": "1hjOXZdqT1DajsiGvNm8motQIJ4yuxi6zNwDiU1bpYnU",
+    "line_slice": [
+      524,
+      582
+    ],
+    "edition": "Spanish Edition 1.3 Candidate 1"
+  },
+  "voice": {
+    "name": "Narrator Mateo",
+    "id": "626ca51acb2e496f8dcee8d7591fda3c",
+    "locale": "es-419",
+    "speed": 0.92
+  },
+  "track_status": "PREPARED_NOT_TRIGGERED",
+  "next_segment": "1",
+  "do_not_regenerate": [],
+  "segments": [
+    {
+      "id": "1",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-01.txt",
+      "media_url": null
+    },
+    {
+      "id": "2",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-02.txt",
+      "media_url": null
+    },
+    {
+      "id": "3",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-03.txt",
+      "media_url": null
+    },
+    {
+      "id": "4",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-04.txt",
+      "media_url": null
+    },
+    {
+      "id": "5",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-05.txt",
+      "media_url": null
+    },
+    {
+      "id": "6",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-06.txt",
+      "media_url": null
+    },
+    {
+      "id": "7",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-07.txt",
+      "media_url": null
+    },
+    {
+      "id": "8",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-08.txt",
+      "media_url": null
+    },
+    {
+      "id": "9",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-09.txt",
+      "media_url": null
+    },
+    {
+      "id": "10",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-10.txt",
+      "media_url": null
+    },
+    {
+      "id": "11",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-11.txt",
+      "media_url": null
+    },
+    {
+      "id": "12",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-12.txt",
+      "media_url": null
+    },
+    {
+      "id": "13",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-13.txt",
+      "media_url": null
+    },
+    {
+      "id": "14",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-14.txt",
+      "media_url": null
+    },
+    {
+      "id": "15",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-15.txt",
+      "media_url": null
+    },
+    {
+      "id": "16",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-16.txt",
+      "media_url": null
+    },
+    {
+      "id": "17",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-17.txt",
+      "media_url": null
+    }
+  ]
+}

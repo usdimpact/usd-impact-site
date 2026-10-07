@@ -17,93 +17,122 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "PREPARED_NOT_TRIGGERED",
-  "next_segment": "1",
-  "do_not_regenerate": [],
+  "track_status": "PARTIAL_SYNTHESIS",
+  "next_segment": "15",
+  "do_not_regenerate": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14"
+  ],
   "segments": [
     {
       "id": "1",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-01.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=40ac0546-7b2c-4948-8baf-3fc7cf567359.wav",
+      "duration_seconds": 59.14122448979592
     },
     {
       "id": "2",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-02.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=62b90eeb-6319-4b3f-8473-6cadcc3d81d0.wav",
+      "duration_seconds": 56.34612244897959
     },
     {
       "id": "3",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-03.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=cf5b8a96-7378-49ba-b1a3-638b9930de3b.wav",
+      "duration_seconds": 60.10775510204082
     },
     {
       "id": "4",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-04.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=cd3b8b8f-9b0f-4c58-b289-b26c4e673610.wav",
+      "duration_seconds": 45.50530612244898
     },
     {
       "id": "5",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-05.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=96f57871-ae9b-448d-a169-63c6843181d5.wav",
+      "duration_seconds": 54.25632653061224
     },
     {
       "id": "6",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-06.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=b1e8341f-6bb2-4e4e-b8b0-863011acd3d0.wav",
+      "duration_seconds": 65.09714285714286
     },
     {
       "id": "7",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-07.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=56f11627-880c-45a2-840b-bf66c7244da6.wav",
+      "duration_seconds": 62.354285714285716
     },
     {
       "id": "8",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-08.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=96be4169-6e66-4efc-a52f-5eb10e34a9a1.wav",
+      "duration_seconds": 58.69714285714286
     },
     {
       "id": "9",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-09.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=bad9a7e7-f059-471a-9dca-037393a533f9.wav",
+      "duration_seconds": 49.68489795918367
     },
     {
       "id": "10",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-10.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=639da427-30ea-472c-a75e-bd2a27e6886f.wav",
+      "duration_seconds": 57.391020408163264
     },
     {
       "id": "11",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-11.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=fd770a12-0dbe-4edb-85c5-09efd138d4be.wav",
+      "duration_seconds": 55.3795918367347
     },
     {
       "id": "12",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-12.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=03da7d3b-97b4-433a-ac2e-cf8c44ff40a5.wav",
+      "duration_seconds": 60.734693877551024
     },
     {
       "id": "13",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-13.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=ee98f241-4689-442b-bc3d-33f12966bce9.wav",
+      "duration_seconds": 67.21306122448979
     },
     {
       "id": "14",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-14.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=7fe52c16-b811-4604-8397-d67514cee3b6.wav",
+      "duration_seconds": 55.51020408163265
     },
     {
       "id": "15",
@@ -123,5 +152,10 @@
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-17.txt",
       "media_url": null
     }
-  ]
+  ],
+  "hold": {
+    "segment": "15",
+    "reason": "HeyGen API request timed out after 120s; operation may have been submitted. Do not retry until duplicate risk is resolved.",
+    "run_id": 37701309467
+  }
 }

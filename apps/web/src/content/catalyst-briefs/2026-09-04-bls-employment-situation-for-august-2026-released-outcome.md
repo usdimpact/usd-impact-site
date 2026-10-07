@@ -1,7 +1,7 @@
 ---
 title: "BLS Employment Situation for August 2026 — released — Verified Outcome"
-metaTitle: "BLS Employment Situation for August 2026 — released — Verified Outcome | USD Impact"
-metaDescription: "BLS Employment Situation (Aug 2026) — primary release confirms payrolls +162,000; unemployment unchanged at 4.1%; labor‑force participation rose to 61.6%; average hourly earnings +3.1% y/y. Data surprised to the upside vs. recent trend and revisions to prior months raised three‑month net payrolls; t"
+metaTitle: "BLS August 2026 Jobs Report: +162K Payrolls | USD Impact"
+metaDescription: "BLS reports August 2026 payrolls rose 162,000, unemployment held at 4.1%, participation increased to 61.6%, and hourly earnings rose 3.1% y/y."
 slug: "/news/catalysts/2026-09-04-bls-employment-situation-for-august-2026-released-outcome"
 eventKey: "2026-09-04-bls-employment-situation-for-august-2026-released"
 event: "BLS Employment Situation for August 2026 — released"

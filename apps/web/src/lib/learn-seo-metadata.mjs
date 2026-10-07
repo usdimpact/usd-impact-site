@@ -23,6 +23,10 @@ const SEO_TITLES = Object.freeze(new Map([
     slug: 'international-dollar-role-needs-multiple-measures',
     title: 'Measuring the Dollar’s Global Role',
   })],
+  ['card-dollar-vehicle-currency-fx', Object.freeze({
+    slug: 'dollar-as-vehicle-currency-in-global-fx',
+    title: 'Why Is USD a Vehicle Currency? | USD Impact',
+  })],
   ['card-data-scope-matches-conclusion', Object.freeze({
     slug: 'match-data-scope-to-macro-conclusion',
     title: 'Match Data Scope to Macro Conclusion',

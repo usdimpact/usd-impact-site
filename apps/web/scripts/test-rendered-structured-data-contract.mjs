@@ -47,7 +47,9 @@ const catalystNodes = assertIdentity(catalystGraphs[0]);
 const catalystArticle = catalystNodes.find((node) => node['@type'] === 'Article');
 assert.ok(catalystArticle, 'Catalyst page must emit Article.');
 assert.equal(catalystArticle.url, `https://www.usd-impact.com${catalystRoute}`);
-assert.equal(catalystArticle.datePublished, undefined, 'Catalyst event date must not be emitted as publication date.');
+assert.equal(catalystArticle.datePublished, '2026-09-13T12:18:33.163Z', 'Catalyst publication date must come from generatedAt.');
+assert.notEqual(catalystArticle.datePublished, '2026-09-15', 'Catalyst event date must not be emitted as publication date.');
+assert.equal(catalystArticle.image, 'https://www.usd-impact.com/assets/logo/USDImpact_Horizontal_Color_NoTagline_2048.png');
 
 const noindexHtml = readRoute('/book/read-the-dollar-first/companion');
 assert.equal(

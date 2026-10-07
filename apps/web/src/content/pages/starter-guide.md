@@ -1,7 +1,7 @@
 ---
 title: "Free Starter Guide"
 metaTitle: "Free Starter Guide — USD Impact"
-metaDescription: "Download the free USD Impact Weekly Dollar Regime Checklist. A structured educational framework for monitoring macro signals that historically influence dollar-sensitive assets."
+metaDescription: "Download the free USD Impact Weekly Dollar Regime Checklist for monitoring DXY, real rates, liquidity and cross-asset macro signals."
 slug: "/starter-guide"
 category: "Resource"
 status: "published"

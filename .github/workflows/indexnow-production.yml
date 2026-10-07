@@ -1,77 +1,51 @@
 name: IndexNow after Production
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'apps/web/src/content/news/**'
-      - 'apps/web/src/content/catalyst-briefs/**'
-      - 'apps/web/src/content/weekly-reports/**'
-      - 'apps/web/src/content/monthly-reports/**'
+  repository_dispatch:
+    types:
+      - vercel.deployment.success
 
 permissions:
   contents: read
 
 concurrency:
-  group: indexnow-production-${{ github.ref }}
+  group: indexnow-production-${{ github.event.client_payload.git.sha }}
   cancel-in-progress: false
 
 jobs:
   notify:
+    if: >-
+      github.event.client_payload.environment == 'production' &&
+      github.event.client_payload.git.ref == 'main' &&
+      github.event.client_payload.project.id == 'prj_ZoLLM35ksI6wk17PcfS2xYknaVl7' &&
+      github.event.client_payload.git.sha != ''
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 5
     env:
-      VERCEL_TOKEN: ${{ secrets.USDIMPACT_WATCHDOG_VERCEL_TOKEN }}
-      VERCEL_PROJECT_ID: ${{ vars.USDIMPACT_WATCHDOG_VERCEL_PROJECT_ID }}
-      VERCEL_TEAM_ID: ${{ vars.USDIMPACT_WATCHDOG_VERCEL_TEAM_ID }}
+      DEPLOY_SHA: ${{ github.event.client_payload.git.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ github.event.client_payload.git.sha }}
           fetch-depth: 2
           persist-credentials: false
 
-      - name: Wait for exact commit to be live in Vercel Production
+      - name: Verify exact deployed commit
         shell: bash
         run: |
           set -euo pipefail
-          if [ -z "${VERCEL_TOKEN:-}" ] || [ -z "${VERCEL_PROJECT_ID:-}" ] || [ -z "${VERCEL_TEAM_ID:-}" ]; then
-            echo "Required read-only Vercel watchdog configuration is unavailable."
-            exit 1
-          fi
-
-          expected="${GITHUB_SHA}"
-          for attempt in $(seq 1 30); do
-            payload="$(curl --fail-with-body --silent --show-error \
-              -H "Authorization: Bearer ${VERCEL_TOKEN}" \
-              "https://api.vercel.com/v13/deployments?projectId=${VERCEL_PROJECT_ID}&target=production&limit=5&teamId=${VERCEL_TEAM_ID}")"
-
-            state="$(printf '%s' "$payload" | EXPECTED="$expected" node --input-type=module -e '
-              let data="";
-              for await (const chunk of process.stdin) data += chunk;
-              const json=JSON.parse(data);
-              const deployment=(json.deployments || []).find((item) =>
-                (item?.meta?.githubCommitSha || item?.gitSource?.sha) === process.env.EXPECTED
-              );
-              process.stdout.write(deployment?.state || deployment?.readyState || "");
-            ')"
-
-            if [ "$state" = "READY" ] || [ "$state" = "ready" ]; then
-              echo "Exact commit is READY in Production."
-              exit 0
-            fi
-
-            sleep 10
-          done
-
-          echo "Exact commit did not become READY in Production within the bounded verification window."
-          exit 1
+          case "$DEPLOY_SHA" in
+            [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
+            *) echo "Invalid deployment SHA."; exit 1 ;;
+          esac
+          test "$(git rev-parse HEAD)" = "$DEPLOY_SHA"
 
       - name: Resolve changed content files
         id: changed
         shell: bash
         run: |
           set -euo pipefail
-          git diff --name-only "${GITHUB_SHA}^" "${GITHUB_SHA}" -- \
+          git diff --name-only "$DEPLOY_SHA^" "$DEPLOY_SHA" -- \
             'apps/web/src/content/news/**' \
             'apps/web/src/content/catalyst-briefs/**' \
             'apps/web/src/content/weekly-reports/**' \

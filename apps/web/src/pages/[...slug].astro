@@ -22,7 +22,7 @@ export async function getStaticPaths() {
   const collections = ['pages', 'products', 'frameworks', 'leadMagnets', 'benchmarkModules'];
   const all = (await Promise.all(collections.map(async (collection) => {
     return getCollection(collection);
-  }))).flat().filter((entry) => entry.data.status === 'published');
+  }))).flat().filter((entry) => entry.data.status === 'published' && !entry.data.slug.startsWith('/es'));
 
   return all.map((entry) => ({
     params: { slug: entry.data.slug.replace(/^\//, '').replace(/\/$/, '') },

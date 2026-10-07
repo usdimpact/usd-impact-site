@@ -1,83 +1,47 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-
 const SITE_ORIGIN = 'https://www.usd-impact.com';
 const INDEXNOW_ENDPOINT = 'https://api.indexnow.org/indexnow';
 const INDEXNOW_KEY = 'usdimpact-indexnow-20261007-9f3c7e2a6b14d580';
-const CONTENT_ROOT = 'apps/web/src/content';
 
-function toUrl(file) {
-  const rel = file.replace(/^apps\/web\/src\/content\//, '');
-  const ext = path.extname(rel);
-  const stem = rel.slice(0, -ext.length);
+const ROUTES = Object.freeze([
+  {
+    pattern: /^apps\/web\/src\/content\/news\/(\d{4}-\d{2}-\d{2})\.md$/,
+    pathname: (match) => `/news/${match[1]}`,
+  },
+  {
+    pattern: /^apps\/web\/src\/content\/catalyst-briefs\/([a-z0-9-]+)\.md$/,
+    pathname: (match) => `/news/catalysts/${match[1]}`,
+  },
+  {
+    pattern: /^apps\/web\/src\/content\/weekly-reports\/(\d{4}-\d{2}-\d{2})\.md$/,
+    pathname: (match) => `/reports/weekly/${match[1]}`,
+  },
+  {
+    pattern: /^apps\/web\/src\/content\/monthly-reports\/(\d{4}-\d{2}-\d{2})\.md$/,
+    pathname: (match) => `/reports/monthly/${match[1]}`,
+  },
+]);
 
-  if (stem.startsWith('news/')) {
-    return `${SITE_ORIGIN}/news/${stem.slice('news/'.length)}`;
-  }
-  if (stem.startsWith('catalyst-briefs/')) {
-    return `${SITE_ORIGIN}/news/catalysts/${stem.slice('catalyst-briefs/'.length)}`;
-  }
-  if (stem.startsWith('weekly-reports/')) {
-    return `${SITE_ORIGIN}/reports/weekly/${stem.slice('weekly-reports/'.length)}`;
-  }
-  if (stem.startsWith('monthly-reports/')) {
-    return `${SITE_ORIGIN}/reports/monthly/${stem.slice('monthly-reports/'.length)}`;
+function toIndexNowUrl(file) {
+  for (const route of ROUTES) {
+    const match = route.pattern.exec(file);
+    if (!match) continue;
+    const url = new URL(route.pathname(match), SITE_ORIGIN);
+    if (url.origin !== SITE_ORIGIN) throw new Error('Refusing off-origin IndexNow URL');
+    return url.href.replace(/\/$/, '');
   }
   return null;
-}
-
-async function publishedPageUrl(file) {
-  const text = await fs.readFile(file, 'utf8');
-  const slugMatch = text.match(/^slug:\s*['"]?([^'"\n]+)['"]?\s*$/m);
-  const statusMatch = text.match(/^status:\s*['"]?([^'"\n]+)['"]?\s*$/m);
-  if (statusMatch?.[1]?.trim() !== 'published' || !slugMatch?.[1]) return null;
-  const slug = slugMatch[1].trim().replace(/^\//, '').replace(/\/$/, '');
-  return `${SITE_ORIGIN}/${slug}`;
 }
 
 async function main() {
   const changed = process.argv.slice(2);
   if (!changed.length) {
-    console.log('No changed files; skipping IndexNow.');
+    console.log('No changed publication files; skipping IndexNow.');
     return;
   }
 
-  const urls = new Set();
-  for (const file of changed) {
-    if (!file.startsWith(CONTENT_ROOT + '/')) continue;
-
-    if (file.startsWith(CONTENT_ROOT + '/pages/') ||
-        file.startsWith(CONTENT_ROOT + '/products/') ||
-        file.startsWith(CONTENT_ROOT + '/frameworks/') ||
-        file.startsWith(CONTENT_ROOT + '/lead-magnets/') ||
-        file.startsWith(CONTENT_ROOT + '/benchmark-modules/')) {
-      try {
-        const url = await publishedPageUrl(file);
-        if (url) urls.add(url);
-      } catch (error) {
-        if (error?.code !== 'ENOENT') throw error;
-      }
-      continue;
-    }
-
-    const url = toUrl(file);
-    if (url) urls.add(url);
-  }
-
-  if (!urls.size) {
-    console.log('No public SEO URLs changed; skipping IndexNow.');
-    return;
-  }
-
-  const ready = [];
-  for (const url of urls) {
-    const response = await fetch(url, { method: 'HEAD', redirect: 'follow' });
-    if (response.ok) ready.push(url);
-    else console.log(`Skipping non-live URL ${url}: HTTP ${response.status}`);
-  }
-
-  if (!ready.length) {
-    console.log('No changed URLs are live yet; skipping IndexNow.');
+  const urls = [...new Set(changed.map(toIndexNowUrl).filter(Boolean))].slice(0, 100);
+  if (!urls.length) {
+    console.log('No supported public publication routes changed; skipping IndexNow.');
     return;
   }
 
@@ -88,7 +52,7 @@ async function main() {
       host: 'www.usd-impact.com',
       key: INDEXNOW_KEY,
       keyLocation: `${SITE_ORIGIN}/${INDEXNOW_KEY}.txt`,
-      urlList: ready.slice(0, 100),
+      urlList: urls,
     }),
   });
 
@@ -97,7 +61,7 @@ async function main() {
     throw new Error(`IndexNow rejected submission: HTTP ${response.status} ${body.slice(0, 500)}`);
   }
 
-  console.log(`IndexNow accepted ${ready.length} URL(s) with HTTP ${response.status}.`);
+  console.log(`IndexNow accepted ${urls.length} deterministic publication URL(s) with HTTP ${response.status}.`);
 }
 
 await main();

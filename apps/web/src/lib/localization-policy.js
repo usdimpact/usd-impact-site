@@ -43,6 +43,11 @@ export function isLocalePublicationEnabled(value) {
   return getLocalePolicy(value)?.publicationEnabled === true;
 }
 
+export function isPreviewLocaleImplementationEnabled(value, vercelEnv = process.env.VERCEL_ENV) {
+  const policy = getLocalePolicy(value);
+  return Boolean(policy) && policy.publicationEnabled !== true && String(vercelEnv ?? '').trim().toLowerCase() === 'preview';
+}
+
 function normalizePathname(value) {
   const raw = String(value ?? '/').trim() || '/';
   const withLeadingSlash = raw.startsWith('/') ? raw : `/${raw}`;

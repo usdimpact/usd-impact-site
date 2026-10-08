@@ -1,6 +1,6 @@
 # Spanish Privacy + Consent Review Packet — 2026-10-08
 
-Status: **PREVIEW ONLY / PRIVATE HOLD / DO NOT MERGE OR PUBLISH**
+Status: **OWNER-APPROVED COPY / PREVIEW ONLY / PRIVATE HOLD / DO NOT PUBLISH YET**
 
 ## Purpose
 
@@ -37,7 +37,7 @@ Pre-localization Consent UI snapshot:
 Spanish Privacy Notice review page:
 
 - path: `apps/web/src/pages/internal/localization/spanish-privacy-review.md`
-- Git blob SHA at registration: `cc24f3273a8bff5a5c48f5994275e27259615d00`
+- current Git blob SHA after owner-approved wording refinements: `5c0d8fbbb090c16190276e4c927df7f2bdfe1879`
 - review route: `/internal/localization/spanish-privacy-review/`
 - indexing: `noindex, nofollow`
 - sitemap: excluded
@@ -49,9 +49,12 @@ Locale-aware consent copy:
 
 Localization manifest state:
 
-- translationStatus: `in_progress`
-- privacyLegalReviewStatus: `required_before_release`
-- languageReviewStatus: `required_before_release`
+- translationStatus: `verified_current`
+- languageReviewStatus: `pass`
+- ownerPrivacyReviewStatus: `pass`
+- externalLegalReviewStatus: `not_performed`
+- approvalBasis: `owner_personal_review`
+- approvalDate: `2026-10-09`
 - releaseStatus: `private_hold`
 - Spanish analytics: `false`
 - public Spanish privacy route: `null`
@@ -72,9 +75,9 @@ The Preview implementation proves only readiness for human review:
 - review route is noindex and excluded from the sitemap;
 - source-change validation fails closed if the English privacy source changes.
 
-## Required language review
+## Language review — PASS
 
-Confirm the Spanish copy preserves the English meaning for:
+An internal Spanish fidelity review was completed against the pinned English source. The review confirmed the Spanish copy preserves the English meaning for:
 
 1. what is collected;
 2. separation of waitlist and Daily Learning consent;
@@ -99,33 +102,42 @@ Confirm the Spanish copy preserves the English meaning for:
 
 Terminology that intentionally remains a product/protocol name (for example Library Pass, Daily Learning, Google Analytics 4, Cloudflare Turnstile, Supabase, Resend, Vercel and Lemon Squeezy) should not be translated into a meaning-changing substitute.
 
-## Required privacy/legal review
+## Owner privacy review — PASS
 
-A qualified reviewer should confirm, at minimum:
+On 2026-10-09, the owner personally reviewed and approved the Spanish Privacy Notice.
 
-- the Spanish translation does not broaden or narrow the English legal meaning;
-- consent wording is sufficiently clear for the target Spanish-speaking audience;
-- Accept and Reject remain equally accessible;
-- withdrawal wording is accurate;
-- cookie/storage descriptions and retention periods remain current;
-- provider disclosures remain current;
-- legal-basis wording remains appropriate;
-- rights wording and authority-complaint language remain appropriate;
-- Romanian operator details remain current;
-- no jurisdiction-specific statement has been introduced without evidence.
+This is recorded accurately as **owner approval**, not as review by external privacy counsel or a law firm.
 
-If any current English privacy fact is wrong or stale, correct the English source first, then regenerate/review the Spanish draft from the new source version.
+External legal review status: **not performed**.
 
-## Release gate after review
+The owner approval covers the current Spanish draft and consent wording against the pinned English source. It does not change the underlying English privacy facts, consent version, cookie retention, legal bases, provider roles, or analytics configuration.
 
-Only after both language and privacy/legal review are recorded PASS should a separate release proposal:
+Two wording refinements identified during the fidelity pass were applied before recording approval:
+
+- `funciona solo sobre red` → `opera exclusivamente a través de la red`;
+- `cookie de autorización` → `cookie de validación de seguridad`.
+
+If any current English privacy fact later changes or is found stale, correct the English source first and move the Spanish privacy record back to review-required before release.
+
+## Release gate after owner approval
+
+Language review and owner privacy review are now recorded PASS. External legal review was not performed.
+
+A separate release proposal may now:
 
 1. create the intended public Spanish privacy route, expected `/es/privacy/`;
 2. update Spanish footer/privacy links;
-3. change manifest review statuses to PASS;
+3. carry forward the recorded language PASS and owner privacy PASS without describing them as external legal review;
 4. change Spanish analytics enablement only in a separate, explicit activation step;
 5. validate consent/GA4/telemetry behavior in Preview;
 6. verify sitemap/canonical/hreflang behavior;
 7. obtain explicit Production authorization.
 
 No analytics activation should be bundled implicitly with translation approval.
+
+
+## Approval record
+
+Owner approval instruction received in the project conversation on 2026-10-09: **“I approve the Spanish privacy notice.”**
+
+This approval authorizes preparation of the separate Spanish privacy publication step. It does **not** by itself authorize merging this readiness PR, publishing the route, or enabling Spanish analytics; those remain separate release actions.

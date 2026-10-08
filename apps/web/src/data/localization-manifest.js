@@ -1013,7 +1013,7 @@ export const localizationManifest = deepFreeze({
       },
       "public": {
         "privacyPath": "apps/web/src/pages/es/privacy.md",
-        "privacyBlobSha": "d71c4ff9e86f93e19591390ab05e2a8c55309a89",
+        "privacyBlobSha": "0740c9a078d48725e6ed89545c7f84d6d67efeed",
         "route": "/es/privacy/"
       },
       "translationStatus": "verified_current",

@@ -1,18 +1,17 @@
 {
   "track": "15",
   "segments": [
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "10",
-    "11",
-    "12"
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23"
   ],
   "requested_at": "2026-10-08",
   "mode": "funded-api-balance-batch",
@@ -20,5 +19,5 @@
   "voice_id": "626ca51acb2e496f8dcee8d7591fda3c",
   "locale": "es-419",
   "speed": 0.92,
-  "purpose": "Synthesize private Chapter 13 Mateo segments 1 through 12 only; batch A of 23; do not publish"
+  "purpose": "Generate Chapter 13 Mateo segments 13-23 only, preserving 1-12, private QA"
 }

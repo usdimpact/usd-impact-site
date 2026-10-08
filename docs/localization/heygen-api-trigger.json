@@ -1,19 +1,13 @@
 {
   "track": "18",
   "segments": [
-    "9",
-    "10",
-    "11",
-    "12",
-    "13",
-    "14",
-    "15"
+    "12"
   ],
-  "requested_at": "2026-10-08",
+  "requested_at": "2026-10-09",
   "mode": "funded-api-balance-batch",
   "voice": "Narrator Mateo",
   "voice_id": "626ca51acb2e496f8dcee8d7591fda3c",
   "locale": "es-419",
   "speed": 0.92,
-  "purpose": "Appendix B private Mateo batch B: generate only segments 9-15; preserve 1-8 and do not publish"
+  "purpose": "Funded API wallet verified via run 37848860009. Synthesize ONLY Appendix B segment 12 as controlled private restart after prior insufficient_credit. Do not repeat 1-11; no publish."
 }

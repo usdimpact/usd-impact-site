@@ -6,7 +6,9 @@ description: "Cómo USD Impact trata información de cuenta, compras, soporte, l
 
 # Aviso de privacidad
 
-_Última actualización: 18 de septiembre de 2026_\n\n_Versión en español aprobada por el propietario: 9 de octubre de 2026_
+_Última actualización: 18 de septiembre de 2026_
+
+_Versión en español aprobada por el propietario: 9 de octubre de 2026_
 
 ## Qué recopilamos
 

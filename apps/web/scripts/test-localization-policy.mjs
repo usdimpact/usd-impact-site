@@ -87,12 +87,18 @@ const [
   readFile(new URL('../src/pages/index.astro', import.meta.url), 'utf8'),
 ]);
 
-assert.match(baseLayout, /<html lang="en">/);
+assert.match(baseLayout, /<html lang=\{locale\}>/);
+assert.match(baseLayout, /requestedLocale = 'en'/);
+assert.match(baseLayout, /siteShellCopyForLocale\(locale\)/);
+assert.match(baseLayout, /SPANISH_PUBLIC_NAVIGATION/);
 assert.match(baseLayout, /alternateLocaleHref/);
+assert.match(baseLayout, /englishLocaleUrl/);
+assert.match(baseLayout, /spanishLocaleUrl/);
 assert.match(baseLayout, /hreflang="en"/);
 assert.match(baseLayout, /hreflang="es"/);
 assert.match(baseLayout, /hreflang="x-default"/);
-assert.match(baseLayout, />Español<\/a>/);
+assert.match(baseLayout, /analyticsEnabled/);
+assert.match(baseLayout, /localizationManifest\.locales\[locale\]\?\.analyticsEnabled === true/);
 assert.match(englishContentRoute, /SPANISH_ALTERNATE_BY_ENGLISH_SLUG/);
 assert.match(englishContentRoute, /!entry\.data\.slug\.startsWith\('\/es'\)/);
 assert.match(englishContentRoute, /'\/start-here': '\/es\/start-here\/'/);
@@ -119,31 +125,26 @@ assert.match(astroConfig, /isUnpublishedLocalePath/);
 assert.match(astroConfig, /!isUnpublishedLocalePath\(pathname\)/);
 assert.match(spanishPreviewRoute, /SPANISH_TO_ENGLISH_PATH/);
 
-assert.match(spanishPreviewLayout, /<html lang="es">/);
+assert.match(spanishPreviewLayout, /import BaseLayout from '\.\/BaseLayout\.astro'/);
+assert.match(spanishPreviewLayout, /locale="es"/);
+assert.match(spanishPreviewLayout, /alternateLocaleHref=\{englishPath\}/);
+assert.match(spanishPreviewLayout, /currentPath=\{currentPath\}/);
+assert.match(spanishPreviewLayout, /responsiveTables/);
+assert.doesNotMatch(spanishPreviewLayout, /<!doctype html>/);
+assert.doesNotMatch(spanishPreviewLayout, /<header class="site-header">/);
+assert.doesNotMatch(spanishPreviewLayout, /<footer class="footer">/);
 assert.doesNotMatch(spanishPreviewLayout, /noindex, nofollow, noarchive/);
-assert.match(
-  spanishPreviewLayout,
-  /class="nav-toggle"[\s\S]*aria-expanded="false"[\s\S]*aria-controls="site-navigation"[\s\S]*<span>Menú<\/span>/,
-);
-assert.match(
-  spanishPreviewLayout,
-  /<nav id="site-navigation" class="nav" aria-label="Navegación principal en español" data-open="false">/,
-);
-assert.match(spanishPreviewLayout, /navigationToggle\?\.addEventListener\("click"/);
-assert.match(spanishPreviewLayout, /event\.key !== "Escape"/);
-assert.match(spanishPreviewLayout, /navigation\?\.querySelectorAll\("a"\)/);
-assert.doesNotMatch(spanishPreviewLayout, /data-open="true"/);
-assert.match(spanishPreviewLayout, /<style is:global>/);
-assert.match(spanishPreviewLayout, /\.page-content table \{[\s\S]*width: 100%;[\s\S]*border-collapse: collapse;/);
-assert.match(spanishPreviewLayout, /@media \(max-width: 760px\)[\s\S]*overflow-x: auto;/);
-assert.match(spanishPreviewLayout, /-webkit-overflow-scrolling: touch;/);
-assert.match(spanishPreviewLayout, /min-width: 9rem;/);
-assert.doesNotMatch(spanishPreviewLayout, /revisión en Preview/);
-assert.match(spanishPreviewLayout, /rel="canonical"/);
-assert.match(spanishPreviewLayout, /hreflang="es"/);
-assert.match(spanishPreviewLayout, /hreflang="en"/);
-assert.match(spanishPreviewLayout, /hreflang="x-default"/);
-assert.match(spanishPreviewLayout, />English<\/a>/);
+assert.match(baseLayout, /class="nav-toggle"[\s\S]*aria-expanded="false"[\s\S]*aria-controls="site-navigation"/);
+assert.match(baseLayout, /navigationToggle\?\.addEventListener\("click"/);
+assert.match(baseLayout, /event\.key !== "Escape"/);
+assert.match(baseLayout, /navigation\?\.querySelectorAll\("a"\)/);
+assert.match(baseLayout, /responsiveTables[\s\S]*<style is:global>/);
+assert.match(baseLayout, /\.page-content table \{[\s\S]*width: 100%;[\s\S]*border-collapse: collapse;/);
+assert.match(baseLayout, /@media \(max-width: 760px\)[\s\S]*overflow-x: auto;/);
+assert.match(baseLayout, /-webkit-overflow-scrolling: touch;/);
+assert.match(baseLayout, /min-width: 9rem;/);
+assert.match(baseLayout, /aria-label=\{shellCopy\.navigationLabel\}/);
+assert.match(baseLayout, /hreflang=\{shellCopy\.localeSwitchLanguage\}/);
 assert.match(spanishPreviewRoute, /isLocalePublicationEnabled\('es'\)/);
 assert.match(spanishPreviewRoute, /entry\.data\.status === 'published'/);
 assert.match(spanishPreviewRoute, /AUTHORIZED_SPANISH_PUBLIC_SLUGS/);

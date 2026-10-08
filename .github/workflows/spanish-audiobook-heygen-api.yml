@@ -229,7 +229,25 @@ jobs:
               exit 9
             fi
 
-            curl -fsSL "$URL" -o "output/track$TRACK-segment-$SEGMENT_ID.wav"
+            # The provider sometimes serves MP3 bytes with a .wav URL suffix.
+            # Name the downloaded file by its actual bytes, not its URL extension.
+            AUDIO_TMP="output/track$TRACK-segment-$SEGMENT_ID.download"
+            curl -fsSL "$URL" -o "$AUDIO_TMP"
+            if [ ! -s "$AUDIO_TMP" ]; then
+              echo "Downloaded audio is empty for segment $SEGMENT_ID." >&2
+              exit 14
+            fi
+            AUDIO_MAGIC="$(head -c 4 "$AUDIO_TMP" | od -An -tx1 | tr -d ' \\n')"
+            case "$AUDIO_MAGIC" in
+              52494646*) AUDIO_EXT="wav" ;;
+              494433*|fffb*|fff3*|fff2*) AUDIO_EXT="mp3" ;;
+              *)
+                echo "Unrecognized audio format for segment $SEGMENT_ID." >&2
+                exit 15
+                ;;
+            esac
+            mv "$AUDIO_TMP" "output/track$TRACK-segment-$SEGMENT_ID.$AUDIO_EXT"
+            echo "Audio format verified for segment $SEGMENT_ID: $AUDIO_EXT"
 
             jq -n \
               --arg track "$TRACK" \
@@ -238,8 +256,9 @@ jobs:
               --arg voice_id "626ca51acb2e496f8dcee8d7591fda3c" \
               --arg locale "es-419" \
               --arg speed "0.92" \
+              --arg audio_format "$AUDIO_EXT" \
               --arg audio_url "$URL" \
-              '{track:$track,segment:$segment,voice:$voice,voice_id:$voice_id,locale:$locale,speed:($speed|tonumber),audio_url:$audio_url}' \
+              '{track:$track,segment:$segment,voice:$voice,voice_id:$voice_id,locale:$locale,speed:($speed|tonumber),audio_format:$audio_format,audio_url:$audio_url}' \
               > "output/result-manifest-$SEGMENT_ID.json"
 
             echo "=== COMPLETE track $TRACK segment $SEGMENT_ID ==="

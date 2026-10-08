@@ -1,0 +1,25 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import ConsentClient from '../components/ConsentClient.astro';
+
+const { frontmatter } = Astro.props;
+---
+
+<BaseLayout
+  title={frontmatter.title}
+  description={frontmatter.description}
+  locale="es"
+  noindex
+  currentPath="/internal/localization/spanish-privacy-review"
+  alternateLocaleHref="/privacy/"
+>
+  <main id="main-content" class="container legal-page">
+    <section class="compliance" aria-label="Estado de revisión">
+      <strong>REVISIÓN INTERNA — NO PUBLICAR:</strong>
+      esta traducción está vinculada al aviso inglés vigente y requiere revisión profesional de privacidad/legal antes de cualquier publicación o activación de analítica en la edición española.
+      La analítica de <code>/es</code> continúa deshabilitada.
+    </section>
+    <slot />
+  </main>
+  <ConsentClient locale="es" privacyHref="/internal/localization/spanish-privacy-review/" />
+</BaseLayout>

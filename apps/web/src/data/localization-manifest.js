@@ -994,6 +994,33 @@ export const localizationManifest = deepFreeze({
       "languageReviewStatus": "in_progress",
       "releaseStatus": "private_hold"
     },
+    "privacyConsent": {
+      "contentId": "privacy:website-notice-and-consent",
+      "sourceLocale": "en",
+      "targetLocale": "es",
+      "source": {
+        "privacyPath": "apps/web/src/pages/privacy.md",
+        "privacyBlobSha": "175b230a83aaf5fd3dbbf7c087bdc8b8a965617a",
+        "consentUiSnapshotBlobSha": "d54e001173d4d5905afc041c0e050f3c80ee899e",
+        "sourceCommit": "3314b13d04dadf97e2654ec879fb56925725cbae"
+      },
+      "draft": {
+        "privacyReviewPath": "apps/web/src/pages/internal/localization/spanish-privacy-review.md",
+        "privacyReviewBlobSha": "75b3dcd828373330ff288ed93f0c058853829181",
+        "consentCopyPath": "apps/web/src/lib/consent-copy.js",
+        "consentCopyBlobSha": "c1ae55a3032f294c8608255ebff4d86bfbc379a2",
+        "reviewRoute": "/internal/localization/spanish-privacy-review/"
+      },
+      "translationStatus": "verified_current",
+      "languageReviewStatus": "pass",
+      "ownerPrivacyReviewStatus": "pass",
+      "externalLegalReviewStatus": "not_performed",
+      "approvalBasis": "owner_personal_review",
+      "approvalDate": "2026-10-09",
+      "releaseStatus": "private_hold",
+      "spanishAnalyticsEnabled": false,
+      "publicSpanishPrivacyRoute": null
+    },
     "email": {
       "sourceOfTruth": "usd_impact_internal_consent_and_notification_contracts",
       "providerRole": "delivery_projection",
@@ -1032,5 +1059,6 @@ export function localizationRecordByContentId(contentId) {
   if (video) return video;
   if (localizationManifest.surfaces.book.contentId === contentId) return localizationManifest.surfaces.book;
   if (localizationManifest.surfaces.audiobook.contentId === contentId) return localizationManifest.surfaces.audiobook;
+  if (localizationManifest.surfaces.privacyConsent.contentId === contentId) return localizationManifest.surfaces.privacyConsent;
   return null;
 }

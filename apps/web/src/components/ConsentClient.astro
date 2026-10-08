@@ -1,3 +1,13 @@
+---
+import { consentCopyForLocale } from '../lib/consent-copy.js';
+
+const {
+  locale = 'en',
+  privacyHref = locale === 'es' ? '/internal/localization/spanish-privacy-review/' : '/privacy/',
+} = Astro.props;
+const copy = consentCopyForLocale(locale);
+---
+
 <div
   id="privacy-consent-banner"
   class="privacy-consent-banner"
@@ -6,23 +16,22 @@
   hidden
 >
   <div>
-    <strong id="privacy-consent-title">Privacy choices</strong>
+    <strong id="privacy-consent-title">{copy.bannerTitle}</strong>
     <p>
-      Essential security and account features always remain available. With your permission, USD Impact records
-      limited first-party learning and checkout events and may use Google Analytics 4 to understand aggregate website
-      usage. Google Analytics may set first-party analytics cookies. Advertising features and ad personalization are disabled.
-      <a href="/privacy/">Read the privacy notice</a>.
+      {copy.bannerBeforeLink}
+      {' '}
+      <a href={privacyHref}>{copy.privacyLinkLabel}</a>.
     </p>
   </div>
   <div class="privacy-consent-actions">
     <button id="privacy-consent-reject" class="privacy-consent-button privacy-consent-primary" type="button">
-      Reject analytics
+      {copy.reject}
     </button>
     <button id="privacy-consent-review" class="privacy-consent-button privacy-consent-secondary" type="button">
-      Review settings
+      {copy.review}
     </button>
     <button id="privacy-consent-accept" class="privacy-consent-button privacy-consent-primary" type="button">
-      Accept analytics
+      {copy.accept}
     </button>
   </div>
 </div>
@@ -30,38 +39,35 @@
 <dialog id="privacy-consent-dialog" class="privacy-consent-dialog" aria-labelledby="privacy-settings-title">
   <div class="privacy-consent-dialog-copy">
     <div>
-      <p class="privacy-consent-eyebrow">USD Impact privacy</p>
-      <h2 id="privacy-settings-title">Privacy settings</h2>
-      <p>Choose whether optional analytics may run in this browser.</p>
+      <p class="privacy-consent-eyebrow">{copy.eyebrow}</p>
+      <h2 id="privacy-settings-title">{copy.settingsTitle}</h2>
+      <p>{copy.settingsIntro}</p>
     </div>
-    <button id="privacy-consent-close" class="privacy-consent-close" type="button" aria-label="Close privacy settings">
+    <button id="privacy-consent-close" class="privacy-consent-close" type="button" aria-label={copy.closeAria}>
       ×
     </button>
   </div>
 
   <section class="privacy-consent-category" aria-labelledby="essential-consent-title">
     <div>
-      <h3 id="essential-consent-title">Essential security and account features</h3>
-      <p>Authentication, abuse prevention, requested checkout, and saved privacy choices.</p>
+      <h3 id="essential-consent-title">{copy.essentialTitle}</h3>
+      <p>{copy.essentialDescription}</p>
     </div>
-    <strong>Always active</strong>
+    <strong>{copy.alwaysActive}</strong>
   </section>
 
   <label class="privacy-consent-category" for="privacy-consent-analytics">
     <div>
-      <h3>Optional analytics</h3>
-      <p>
-        First-party checklist, quiz, checkout and page-route events may run, and Google Analytics 4 may measure
-        aggregate website usage using first-party analytics cookies. Advertising features and ad personalization are disabled.
-      </p>
+      <h3>{copy.analyticsTitle}</h3>
+      <p>{copy.analyticsDescription}</p>
     </div>
     <input id="privacy-consent-analytics" type="checkbox" />
   </label>
 
   <div class="privacy-consent-dialog-actions">
-    <a href="/privacy/">Full privacy notice</a>
+    <a href={privacyHref}>{copy.fullNotice}</a>
     <button id="privacy-consent-save" class="privacy-consent-button privacy-consent-primary" type="button">
-      Save choices
+      {copy.save}
     </button>
   </div>
 </dialog>

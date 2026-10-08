@@ -7,12 +7,27 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(scriptDir, '..');
 const read = (relativePath) => fs.readFile(path.join(webRoot, relativePath), 'utf8');
 
-const [consent, layout, telemetry, ga4, privacy, notifications, pwaClient, astroConfig] = await Promise.all([
+const [
+  consent,
+  consentCopy,
+  layout,
+  telemetry,
+  ga4,
+  privacy,
+  spanishPrivacy,
+  spanishReviewLayout,
+  notifications,
+  pwaClient,
+  astroConfig,
+] = await Promise.all([
   read('src/components/ConsentClient.astro'),
+  read('src/lib/consent-copy.js'),
   read('src/layouts/BaseLayout.astro'),
   read('src/components/TelemetryClient.astro'),
   read('src/components/GoogleAnalyticsClient.astro'),
   read('src/pages/privacy.md'),
+  read('src/pages/internal/localization/spanish-privacy-review.md'),
+  read('src/layouts/SpanishPrivacyReviewLayout.astro'),
   read('src/pages/account/notifications.astro'),
   read('src/components/PwaClient.astro'),
   read('astro.config.mjs'),
@@ -30,16 +45,38 @@ for (const required of [
   'usd-impact:consent-ready',
   'USDImpactConsent',
   'analyticsAllowed',
-  'Reject analytics',
-  'Review settings',
-  'Accept analytics',
-  'Save choices',
-  'Google Analytics 4',
-  'Advertising features and ad personalization are disabled',
 ]) {
   assert.ok(consent.includes(required));
 }
 
+for (const requiredEnglishCopy of [
+  "bannerTitle: 'Privacy choices'",
+  "reject: 'Reject analytics'",
+  "review: 'Review settings'",
+  "accept: 'Accept analytics'",
+  "save: 'Save choices'",
+  'Google Analytics 4',
+  'Advertising features and ad personalization are disabled',
+]) {
+  assert.ok(consentCopy.includes(requiredEnglishCopy));
+}
+
+for (const requiredSpanishCopy of [
+  "bannerTitle: 'Opciones de privacidad'",
+  "privacyLinkLabel: 'Leer el aviso de privacidad'",
+  "reject: 'Rechazar analítica'",
+  "review: 'Revisar opciones'",
+  "accept: 'Aceptar analítica'",
+  "settingsTitle: 'Opciones de privacidad'",
+  "alwaysActive: 'Siempre activas'",
+  "analyticsTitle: 'Analítica opcional'",
+  "save: 'Guardar opciones'",
+]) {
+  assert.ok(consentCopy.includes(requiredSpanishCopy));
+}
+
+assert.match(consent, /consentCopyForLocale/);
+assert.match(consent, /privacyHref = locale === 'es'/);
 assert.doesNotMatch(consent, /localStorage|sessionStorage|navigator\.userAgent|advertising identifier/i);
 assert.match(consent, /let preference = readCookieValue\(\)/);
 assert.match(consent, /const analyticsAllowed = \(\) => preference === 'granted'/);
@@ -50,7 +87,9 @@ assert.match(consent, /id="privacy-consent-accept" class="privacy-consent-button
 assert.match(layout, /import ConsentClient/);
 assert.match(layout, /import GoogleAnalyticsClient/);
 assert.match(layout, /id="privacy-settings-button"/);
-const consentPosition = layout.indexOf('<ConsentClient />');
+assert.match(layout, /locale=\{locale\}/);
+assert.match(layout, /privacyHref=\{locale === 'es' \? '\/es\/privacy\/' : '\/privacy\/'\}/);
+const consentPosition = layout.indexOf('<ConsentClient');
 const ga4Position = layout.indexOf('<GoogleAnalyticsClient />');
 const telemetryPosition = layout.indexOf('<TelemetryClient />');
 assert.ok(consentPosition >= 0 && ga4Position > consentPosition && telemetryPosition > ga4Position);
@@ -114,6 +153,39 @@ for (const requiredDisclosure of [
   assert.ok(privacyLower.includes(requiredDisclosure.toLowerCase()));
 }
 
+for (const requiredSpanishDisclosure of [
+  'REVISIÓN INTERNA',
+  'No es todavía el aviso público de privacidad en español.',
+  '`usd_impact_consent`',
+  '`usd_impact_access`',
+  '`usd_impact_refresh`',
+  '`usd_impact_pkce`',
+  '`_ga` y `_ga_*`',
+  'máximo de 180 días',
+  'hasta una hora',
+  'hasta 30 días',
+  'hasta 10 minutos',
+  'hasta un año',
+  'Cloudflare Turnstile',
+  'analítica opcional permanece desactivada',
+  'Google Analytics 4',
+  'Google Signals',
+  'personalización publicitaria',
+  'Opciones de privacidad',
+  '`localStorage` ni `sessionStorage`',
+  'support@usd-impact.com',
+  'KELA LEADS S.R.L.',
+]) {
+  assert.ok(spanishPrivacy.toLowerCase().includes(requiredSpanishDisclosure.toLowerCase()));
+}
+
+assert.match(spanishPrivacy, /blob `175b230a83aaf5fd3dbbf7c087bdc8b8a965617a`/);
+assert.match(spanishReviewLayout, /locale="es"/);
+assert.match(spanishReviewLayout, /noindex/);
+assert.match(spanishReviewLayout, /<ConsentClient locale="es"/);
+assert.match(spanishReviewLayout, /La analítica de <code>\/es<\/code> continúa deshabilitada/);
+assert.ok(astroConfig.includes("'/internal/localization/spanish-privacy-review'"));
+
 assert.match(layout, /<PwaClient\s*\/>/);
 assert.doesNotMatch(pwaClient, /navigator\.serviceWorker\.register/);
 assert.match(pwaClient, /if \(!subscription\) await registration\.unregister\(\)/);
@@ -123,4 +195,4 @@ const registrationCall = notifications.indexOf('const registrationState = await 
 assert.ok(enableHandler >= 0 && permissionPrompt > enableHandler && registrationCall > permissionPrompt);
 assert.match(notifications, /registration\.unregister\(\)/);
 
-console.log('Consent contract passed: default-denied analytics, consent-gated GA4, reversible choice, and essential-only default browser state.');
+console.log('Consent contract passed: English behavior preserved; Spanish privacy/consent copy is version-bound, noindex, and release-blocked.');

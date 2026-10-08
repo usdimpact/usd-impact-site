@@ -345,7 +345,12 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
         if (firstMain.id === "main-content") firstMain.tabIndex = -1;
       }
     </script>
-    {analyticsEnabled && <ConsentClient />}
+    {analyticsEnabled && (
+      <ConsentClient
+        locale={locale}
+        privacyHref={locale === 'es' ? '/es/privacy/' : '/privacy/'}
+      />
+    )}
     {analyticsEnabled && <GoogleAnalyticsClient />}
     {analyticsEnabled && <TelemetryClient />}
     {locale === 'en' && <PwaClient />}

@@ -99,7 +99,7 @@ assert.match(baseLayout, /hreflang="es"/);
 assert.match(baseLayout, /hreflang="x-default"/);
 assert.match(baseLayout, /analyticsEnabled/);
 assert.match(baseLayout, /localizationManifest\.locales\[locale\]\?\.analyticsEnabled === true/);
-assert.match(baseLayout, /\{analyticsEnabled && <ConsentClient \/>\}/);
+assert.match(baseLayout, /\{analyticsEnabled && \([\s\S]*<ConsentClient[\s\S]*locale=\{locale\}[\s\S]*privacyHref=\{locale === 'es'/);
 assert.match(baseLayout, /\{analyticsEnabled && <GoogleAnalyticsClient \/>\}/);
 assert.match(baseLayout, /\{analyticsEnabled && <TelemetryClient \/>\}/);
 assert.match(baseLayout, /\{locale === 'en' && <PwaClient \/>\}/);

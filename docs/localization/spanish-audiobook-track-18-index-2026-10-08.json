@@ -17,57 +17,66 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "PREPARED_NOT_TRIGGERED",
-  "next_segment": "1",
-  "do_not_regenerate": [],
+  "track_status": "BATCH_A_GENERATED_IMPORT_IN_PROGRESS",
+  "next_segment": "9",
+  "do_not_regenerate": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
+  ],
   "special_narration": "docs/localization/SPANISH_AUDIOBOOK_SPECIAL_NARRATION_FORMS_2026-10-07.md",
   "structured_narration": "docs/localization/SPANISH_AUDIOBOOK_STRUCTURED_TABLE_NARRATION_2026-10-07.md",
   "segments": [
     {
       "id": "1",
-      "status": "pending",
+      "status": "generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-01.txt",
       "media_url": null
     },
     {
       "id": "2",
-      "status": "pending",
+      "status": "generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-02.txt",
       "media_url": null
     },
     {
       "id": "3",
-      "status": "pending",
+      "status": "generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-03.txt",
       "media_url": null
     },
     {
       "id": "4",
-      "status": "pending",
+      "status": "generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-04.txt",
       "media_url": null
     },
     {
       "id": "5",
-      "status": "pending",
+      "status": "generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-05.txt",
       "media_url": null
     },
     {
       "id": "6",
-      "status": "pending",
+      "status": "generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-06.txt",
       "media_url": null
     },
     {
       "id": "7",
-      "status": "pending",
+      "status": "generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-07.txt",
       "media_url": null
     },
     {
       "id": "8",
-      "status": "pending",
+      "status": "generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-08.txt",
       "media_url": null
     },
@@ -113,5 +122,11 @@
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-15.txt",
       "media_url": null
     }
-  ]
+  ],
+  "batch_a": {
+    "run_id": 37842325398,
+    "artifact_id": 11577893181,
+    "generated_segments": 8,
+    "descript_import_job": "project-media-import-87f9ad2c-40ac-41f3-92ea-0d03fdc80696"
+  }
 }

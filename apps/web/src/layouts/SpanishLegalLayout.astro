@@ -1,0 +1,17 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+const { frontmatter } = Astro.props;
+---
+
+<BaseLayout
+  title={frontmatter.title}
+  description={frontmatter.description}
+  locale="es"
+  currentPath="/es/privacy/"
+  alternateLocaleHref="/privacy/"
+>
+  <main id="main-content" class="container legal-page">
+    <slot />
+  </main>
+</BaseLayout>

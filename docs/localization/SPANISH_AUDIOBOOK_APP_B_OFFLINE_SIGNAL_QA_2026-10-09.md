@@ -33,3 +33,30 @@ This document records a read-only, independent reconstruction from preserved **p
 - Run full listening/editorial QA across the entire Spanish audiobook. Keep original and repair candidate separate, PR #797 **DRAFT/UNMERGED**, all public/member release operations OFF.
 
 **Current decision: technical timeline consistency PASS; actual Descript acoustic QA UNVERIFIED; mastering HOLD; release HOLD.**
+
+## Independent 8 ms full-length fade audition — October 9
+
+**QA-ONLY, non-public, NOT a Descript export or final mastering approval.** Agent Underlord confirmed its available editing interface has **no supported sub-second linear audio-fade control**, and therefore **made no changes** to the original Appendix B or repaired Descript candidate.
+
+A sample-accurate alternative was built *offline* from the five existing private GitHub audio artifacts listed above, without a new HeyGen synthesis call. All 15 original MP3 files plus the already-validated `99-02` reference sentence were decoded to **mono 44,100 Hz float32 PCM**. The source segment 18-03 was kept until its independently inferred **40.891995 s** boundary, after which the reference sentence was inserted. The full reconstructed audio measures **883.0275057 s**, within **2.7 microseconds** of the Descript private candidate duration **883.027503 s**.
+
+A **353-sample linear fade-out (8.0045 ms)** was applied to only the final retained samples of source segment 18-03, immediately before the reference recording. On this uncompressed reconstruction, the instantaneous splice jump changed from **0.0229512** to **0.0000000** full-scale units at **172.836485 s**; the next splice is around **205.123832 s**. The fade does not alter text, clip sequence or any unrelated audio. **It does not establish click-free MP3 playback or the actual Descript candidate's acoustic result.**
+
+The new private full-length audition was encoded MP3, 44.1 kHz mono, 192 kb/s, with a separate FFmpeg loudnorm mastering **test**; independent decoding of the encoded file measured:
+
+| Check | Measured result |
+|---|---:|
+| Encoded duration | **883.069388 s (14:43.07)** |
+| Integrated loudness | **−16.31 LUFS** |
+| True peak | **−2.21 dBTP** |
+| Decoder errors | **0** |
+| Silence events over 5 s at −45 dBFS | **0** |
+| 58-s A/B original and smoothed excerpts | **Both encoded, matching duration 58.044082 s** |
+
+**Private Library deliverables (not public):**
+- `/spanish-audiobook-appendix-b-8ms-private-listening-kit-2026-10-09.zip` — SHA-256 `50d84947b691851e98b244977f96c39215c681f44ba0d26f2e1d611c6fc0d9cf`, ZIP test PASS (6 entries): an offline browser player, 58-second A/B audio clips, full smoothed private trial, diagnostic JSON and readme.
+- `/spanish-audiobook-appendix-b-8ms-private-mastering-trial-2026-10-09.mp3` — SHA-256 `2b78ad49fc0024dd7a01abe2e1da49dcec599338d3d9b878ecf504f51756ab69`.
+
+**Listening gate (remains PENDING):** In the A/B kit listen at **00:14.84** (source-to-insert splice) and **00:47.12** (insert-to-following speech), and check ICE / CME / NYMEX / S&P Dow Jones Indices / Cboe / Treasury / FRED pronunciation and breath continuity. Compare the direct Descript private repaired candidate at **02:52.84** and **03:25.12**. Do not equate the offline faded test with a changed Descript timeline, approved final master, human listening PASS or publication approval.
+
+**Control:** PR #797 remains DRAFT/UNMERGED, Descript has zero published compositions, and member storage, Production and entitlement are unchanged.

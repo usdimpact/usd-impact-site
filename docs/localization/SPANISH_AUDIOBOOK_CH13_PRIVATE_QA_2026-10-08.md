@@ -39,3 +39,12 @@
 5. Obtain independent owner approval before any public publish, member Storage upload, entitlement change, or Production deployment.
 
 Private synthesis may continue to Track 16 (Further Reading) after this checkpoint. This does **not** authorize member release or any payment/billing change.
+
+## 2026-10-09 segment 23 transcript recheck
+
+- Prepared source: `docs/localization/spanish-audiobook-track-15/segment-23.txt`.
+- Independent Descript transcript: final passage of composition `0c5ac266-93a5-4ed1-83a6-0238bb38120a` aligned using the last `Commodity Futures Trading Commission` reference anchor.
+- **67 / 67 normalized tokens matched in order (100.00% exact-token match; edit distance 0)**. This includes the complete educational compliance note and its last sentence, `Verifica los datos actuales antes de utilizarlos`.
+- The underlying `15-23.mp3` is present in private Descript media with **36.858775 s** duration. The historical `speaker_label_detection_timeout` is a Descript metadata/import service exception, not a missing text/audio conclusion.
+- Independent *acoustic playback* and final speaker-label acceptance remain **PENDING**, and no audio regeneration or duplicate import is authorized.
+- For staging only, the Part V heading for Chapter 13 was moved to the opening of a new private candidate composition `34e4b853-0b77-4a21-9830-f231a9045383`; original Chapter 13 remains unchanged. See `docs/localization/SPANISH_AUDIOBOOK_PRIVATE_PART_BOUNDARY_CORRECTION_2026-10-09.md`.

@@ -17,8 +17,8 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "11_OF_15_ASSEMBLED_SEG03_SUSPECTED_SPOKEN_OMISSION_CREDIT_HOLD",
-  "next_segment": "12",
+  "track_status": "12_OF_15_GENERATED_PRIVATE_QA_HOLD",
+  "next_segment": "13",
   "do_not_regenerate": [
     "1",
     "2",
@@ -30,7 +30,8 @@
     "8",
     "9",
     "10",
-    "11"
+    "11",
+    "12"
   ],
   "special_narration": "docs/localization/SPANISH_AUDIOBOOK_SPECIAL_NARRATION_FORMS_2026-10-07.md",
   "structured_narration": "docs/localization/SPANISH_AUDIOBOOK_STRUCTURED_TABLE_NARRATION_2026-10-07.md",
@@ -103,7 +104,7 @@
     },
     {
       "id": "12",
-      "status": "pending",
+      "status": "generated_import_pending",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-12.txt",
       "media_url": null
     },
@@ -191,5 +192,13 @@
     "segment03_remediation_plan": "docs/localization/SPANISH_AUDIOBOOK_APP_B_SEGMENT03_REPAIR_PLAN_2026-10-09.md",
     "qa_disposition": "HOLD, NOT PASS: suspected material spoken omission and pending independent listening/mastering",
     "publisher_hold": true
+  },
+  "segment12_recovery": {
+    "run_id": 37848963290,
+    "artifact_id": 11581316339,
+    "format": "mp3",
+    "duration_seconds": 69.041633,
+    "import_status": "pending",
+    "public_allowed": false
   }
 }

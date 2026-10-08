@@ -17,27 +17,49 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "PREPARED_NOT_TRIGGERED",
-  "next_segment": "1",
-  "do_not_regenerate": [],
+  "track_status": "PRIVATE_CONTENT_AND_ASSEMBLY_QA_PASS_MASTERING_HOLD",
+  "next_segment": null,
+  "do_not_regenerate": [
+    "1",
+    "2",
+    "3"
+  ],
   "segments": [
     {
       "id": "1",
-      "status": "pending",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-16/segment-01.txt",
       "media_url": null
     },
     {
       "id": "2",
-      "status": "pending",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-16/segment-02.txt",
       "media_url": null
     },
     {
       "id": "3",
-      "status": "pending",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-16/segment-03.txt",
       "media_url": null
     }
-  ]
+  ],
+  "full_qa": {
+    "run_id": 37840613554,
+    "artifact_id": 11577745898,
+    "artifact_sha256": "848325a7c3f65904f5d9a8d2d05557b4d4a725940c037e977614654d60481d7e",
+    "descript_import_job_id": "project-media-import-4272f25b-ddb7-4463-a0c7-38961c749cc2",
+    "descript_import_status": "success",
+    "descript_composition_id": "827db26b-1a82-4f29-a588-48eadadca1a7",
+    "duration_seconds": 148.37551,
+    "script_words": 282,
+    "transcript_words": 282,
+    "exact_aligned_tokens": 280,
+    "token_alignment_pct": 99.29,
+    "source_only_tokens": 0,
+    "material_multiword_omissions": 0,
+    "codec": "MP3 44100Hz",
+    "publication": "HOLD",
+    "final_listening_mastering": "HOLD"
+  }
 }

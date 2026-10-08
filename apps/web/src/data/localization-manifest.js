@@ -976,7 +976,7 @@ export const localizationManifest = deepFreeze({
       "translationStatus": "verified_current",
       "financialReviewStatus": "pass",
       "languageReviewStatus": "pass",
-      "releaseStatus": "published"
+      "releaseStatus": "private_hold"
     },
     "audiobook": {
       "contentId": "audiobook:read-the-dollar-first",
@@ -1022,7 +1022,7 @@ export const localizationManifest = deepFreeze({
       "externalLegalReviewStatus": "not_performed",
       "approvalBasis": "owner_personal_review",
       "approvalDate": "2026-10-09",
-      "releaseStatus": "private_hold",
+      "releaseStatus": "published",
       "spanishAnalyticsEnabled": false,
       "publicSpanishPrivacyRoute": "/es/privacy/"
     },

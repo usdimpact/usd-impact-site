@@ -40,9 +40,27 @@ The source repeats `PARTE V` before each of Chapters 11, 12 and 13. Preserve all
 - Track 14 begins `Parte cinco` followed by `Capítulo doce`; ends without trailing `Parte cinco`.
 - Track 15 begins `Parte cinco` followed by `Capítulo trece`; ends with the full educational disclaimer.
 
+## Independent transcript QA — completed 2026-10-09
+
+Comparison uses Descript `export_transcript` separately for each old/corrected composition; strips only initial/final `parte tres`, `parte cuatro` or `parte cinco` before token normalization. The normalized core tokens are compared **in sequence** (not merely token membership). No new speech was synthesized.
+
+| Track | Correct part-heading opening in candidate | Original core words | Candidate core words | Exact sequential core match | Closing part heading |
+|---|---|---:|---:|---|---|
+| 10 / Chapter 8 | None (correct) | 2,086 | 2,086 | **PASS** | None |
+| 11 / Chapter 9 | Parte tres | 1,894 | 1,894 | **PASS** | None |
+| 12 / Chapter 10 | Parte cuatro | 2,199 | 2,199 | **PASS** | None |
+| 13 / Chapter 11 | Parte cinco | 1,892 | 1,892 | **PASS** | None |
+| 14 / Chapter 12 | Parte cinco | 2,406 | 2,406 | **PASS** | None |
+| 15 / Chapter 13 | Parte cinco | 2,752 | 2,752 | **PASS** | None |
+| **Total** | | **13,229** | **13,229** | **PASS** | |
+
+All six corrected end-of-chapter compliance/disclaimer conclusions remain in the transcripts. The final Chapter 13 source vs independent transcript had already also passed its segment-23 **67/67** normalized-token check. Descript project metadata confirms **0 publishes**.
+
+**This is a PRIVATE EDITORIAL TEXT + TIMING PASS, not an acoustic or release PASS.** Listener checks at each of the five joins and whole-book audio/mastering QA remain PENDING; the private review sequence may point to these candidates solely for continued QA.
+
 ### Independent QA gate
 
-1. Export each **candidate** transcript, compare beginning/end markers and all normalized core narration tokens against its corresponding original, after removing only correctly relocated part-heading words. **QA readback was temporarily rate-limited during this checkpoint; not every candidate was independently reviewed yet.**
+1. **PASS — independently exported all six original and all six final-candidate Descript transcripts.** The corrected versions' normalized core narration matched their originals **word-for-word after removing ONLY the relocated start/end part heading**. All six openings match the source chapter boundaries, and all six endings are free of misplaced part headings. The earlier temporary Descript rate limit was resolved and the final comparison completed.
 2. Listen around **all five source tail/destination opening joins** for clipping, repeated syllables, pauses, timbre differences, and correct part/chapter titles. Confirm no compliance ending was cut.
 3. Chapter 13 final segment `15-23.mp3`: despite past Descript `speaker_label_detection_timeout`, existing audio remains 36.858775 seconds. Its final prepared script and Descript transcript match **67/67 normalized tokens exactly**. Speaker labels and audible ending must still be accepted separately; do NOT regenerate that clip.
 4. Keep all selections labeled **PRIVATE BOUNDARY CANDIDATES, NOT APPROVED FINAL MASTERS** until listening/mastering and owner authorization.

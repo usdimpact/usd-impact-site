@@ -77,8 +77,28 @@ jobs:
               INDEX="docs/localization/spanish-audiobook-track-14-index-2026-10-08.json"
               MODE="files"
               ;;
+            15)
+              INDEX="docs/localization/spanish-audiobook-track-15-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            16)
+              INDEX="docs/localization/spanish-audiobook-track-16-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            17)
+              INDEX="docs/localization/spanish-audiobook-track-17-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            18)
+              INDEX="docs/localization/spanish-audiobook-track-18-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            19)
+              INDEX="docs/localization/spanish-audiobook-track-19-index-2026-10-08.json"
+              MODE="files"
+              ;;
             *)
-              echo "This guarded workflow currently permits Tracks 06 through 14 only." >&2
+              echo "This guarded workflow currently permits Tracks 06 through 19 only." >&2
               exit 3
               ;;
           esac

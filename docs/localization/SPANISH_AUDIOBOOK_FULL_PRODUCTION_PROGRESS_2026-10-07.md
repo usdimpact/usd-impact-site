@@ -238,3 +238,19 @@ The safe resume command is: **Track 06 / Chapter 4 / segment 11 with Narrator Ma
 - missing material claim: **none found**
 - changed compliance meaning: **none found**
 - disposition: **PASS**
+
+
+### Chapter 11
+
+- title: **El marco operativo semanal**
+- funded HeyGen Developer API run: `37827578417`
+- generated pieces: **15/15**
+- total generated duration: **930.769 s (~15:31)**
+- private Descript composition: `2b44f958-cc0f-4b6f-96a5-14d76f13e2c9`
+- all 15 media imports: **PASS**
+- source coverage: **99.00%**; transcript match: **99.10%**
+- apparent `4:15 p.m.` mismatch is equivalent spoken rendering `cuatro y cuarto de la tarde`
+- material multi-word omissions: **0**
+- missing material claim: **none found**
+- changed compliance meaning: **none found**
+- disposition: **PASS**

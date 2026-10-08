@@ -1,0 +1,4 @@
+Este libro utiliza las tasas del Treasury a corto plazo como rentabilidad mínima exigida frente a la cual compara Bitcoin y oro en los capítulos seis y siete. CFTC
+Commodity Futures Trading Commission. Regulador federal estadounidense de los mercados de futuros y opciones. Publica el reporte semanal Commitments of Traders. CME
+Chicago Mercantile Exchange (CME Group). Mayor bolsa de futuros de Estados Unidos Posee NYMEX (energía y metales), CBOT (tipos y granos) y COMEX (metales preciosos). FRED
+Federal Reserve Economic Data. Base de datos pública del Fed de San Luis con series macroeconómicas, incluidos los índices de dólar (D T W E X B G S, R T W E X B G S), las tasas reales (D F I I diez) y los precios spot del gas (D H H N G S P).

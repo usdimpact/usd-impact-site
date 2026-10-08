@@ -37,7 +37,7 @@ Pre-localization Consent UI snapshot:
 Spanish Privacy Notice review page:
 
 - path: `apps/web/src/pages/internal/localization/spanish-privacy-review.md`
-- current Git blob SHA after owner-approved wording refinements: `5c0d8fbbb090c16190276e4c927df7f2bdfe1879`
+- current Git blob SHA after owner-approved wording refinements: `75b3dcd828373330ff288ed93f0c058853829181`
 - review route: `/internal/localization/spanish-privacy-review/`
 - indexing: `noindex, nofollow`
 - sitemap: excluded

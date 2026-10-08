@@ -28,3 +28,14 @@ Checkpoint date: **2026-10-09**. Branch: `feat/spanish-audiobook-pilot-foundatio
 - Until verified credits exist, **do not update the auto-trigger file** `docs/localization/heygen-api-trigger.json`, since changes automatically fire a costly GitHub Actions run. The current trigger still describes a stale range containing already-generated 09–11 and MUST be replaced with **12–15 only** after credit verification, immediately before a future authorized run.
 - Closing Track 19 remains prepared/not triggered; use the same Mateo profile when credits are available.
 - No purchases, plan changes, public publish, member access, entitlement, Production deployment, or merge were authorized by this checkpoint.
+
+## Transcript repair attempt (private only)
+
+- Agent Underlord transcription-only job: `project-agent-edit-2f542797-4a70-4d44-a164-76dee15859ca-60e240c5-16e1-45b1-adaf-9dec3ed2f0b2`.
+- Target: restore independently derived Spanish transcripts for EXISTING audio clips 18-03 through 18-08 without editing audio, duration, clip count, or publishing.
+- Last observed status: `running`, `Waiting for transcriptions…`. This is **not** a QA pass or a completed repair.
+- Once terminal, verify project composition remains exactly 11 audio clips / 607.269 seconds; re-export transcript and repeat source comparison before changing QA status. Preserve generated MP3 files if transcription fails.
+
+## PR scope check
+
+- PR #797 currently changes **237 files**: **235** under `docs/localization/` and **2** GitHub workflows. No application runtime, Production route, commerce/auth, or entitlement files are in this PR diff. **Keep PR open/draft**.

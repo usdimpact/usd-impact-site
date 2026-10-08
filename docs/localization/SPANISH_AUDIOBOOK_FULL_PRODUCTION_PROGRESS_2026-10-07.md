@@ -206,3 +206,19 @@ The safe resume command is: **Track 06 / Chapter 4 / segment 11 with Narrator Ma
 - missing material claim: **none found**
 - changed compliance meaning: **none found**
 - disposition: **PASS**
+
+
+### Chapter 9
+
+- title: **Divisas, carry y riesgo de conversión**
+- funded HeyGen Developer API run: `37707711260`
+- generated pieces: **16/16**
+- total generated duration: **916.376 s (~15:16)**
+- private Descript composition: `090cb5b9-2dd4-4197-a4f6-7053321eddb8`
+- all 16 media imports: **PASS**
+- source alignment: **99.47%**
+- stricter omission scan: **0 multi-word source omissions**
+- remaining differences are benign spoken/ASR normalization of numerals, percentages and negative-value wording
+- missing material claim: **none found**
+- changed compliance meaning: **none found**
+- disposition: **PASS**

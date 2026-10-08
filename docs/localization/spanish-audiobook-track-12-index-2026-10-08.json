@@ -17,124 +17,144 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "PREPARED_NOT_TRIGGERED",
-  "next_segment": "1",
+  "track_status": "QA_PASS",
+  "next_segment": null,
   "do_not_regenerate": [],
   "special_narration": "docs/localization/SPANISH_AUDIOBOOK_SPECIAL_NARRATION_FORMS_2026-10-07.md",
   "segments": [
     {
       "id": "1",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-01.txt",
       "media_url": null
     },
     {
       "id": "2",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-02.txt",
       "media_url": null
     },
     {
       "id": "3",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-03.txt",
       "media_url": null
     },
     {
       "id": "4",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-04.txt",
       "media_url": null
     },
     {
       "id": "5",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-05.txt",
       "media_url": null
     },
     {
       "id": "6",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-06.txt",
       "media_url": null
     },
     {
       "id": "7",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-07.txt",
       "media_url": null
     },
     {
       "id": "8",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-08.txt",
       "media_url": null
     },
     {
       "id": "9",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-09.txt",
       "media_url": null
     },
     {
       "id": "10",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-10.txt",
       "media_url": null
     },
     {
       "id": "11",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-11.txt",
       "media_url": null
     },
     {
       "id": "12",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-12.txt",
       "media_url": null
     },
     {
       "id": "13",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-13.txt",
       "media_url": null
     },
     {
       "id": "14",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-14.txt",
       "media_url": null
     },
     {
       "id": "15",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-15.txt",
       "media_url": null
     },
     {
       "id": "16",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-16.txt",
       "media_url": null
     },
     {
       "id": "17",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-17.txt",
       "media_url": null
     },
     {
       "id": "18",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-18.txt",
       "media_url": null
     },
     {
       "id": "19",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-12/segment-19.txt",
       "media_url": null
     }
-  ]
+  ],
+  "private_descript_composition_id": "5856dedb-b4e4-4fec-aa74-94882956fa74",
+  "private_descript_duration_seconds": 1089.593469387755,
+  "qa": {
+    "source_alignment_percent": 98.6,
+    "transcript_match_percent": 99,
+    "multi_word_source_omissions_from_asr": 5,
+    "authoritative_formula_timestamp_verification": "PASS",
+    "verified_phrases": [
+      "menos tres coma cinco",
+      "más tres coma cinco",
+      "cero coma ciento veinticinco",
+      "más V I X",
+      "menos B T C",
+      "menos oro"
+    ],
+    "note": "Descript normalized mathematical speech into digits and misrecognized VIX; HeyGen word timestamps confirm the intended formula narration is present.",
+    "missing_material_claims": 0,
+    "changed_compliance_meaning": 0,
+    "disposition": "PASS"
+  }
 }

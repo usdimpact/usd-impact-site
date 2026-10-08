@@ -36,7 +36,9 @@ for (const path of ['../api/guided-edition.js', '../src/lib/audiobook-handler.js
 }
 const layout = await read('../src/layouts/BaseLayout.astro');
 for (const group of ['learnNavigation', 'updatesNavigation', 'libraryNavigation']) assert.ok(layout.includes(`${group}.links.map`));
-assert.match(layout, /SITE_NAVIGATION, navigationLinkIsActive/);
+assert.match(layout, /SITE_NAVIGATION,/);
+assert.match(layout, /navigationLinkIsActive,/);
+assert.match(layout, /SPANISH_PUBLIC_NAVIGATION,/);
 assert.match(layout, /src="\/assets\/session-entry.js" defer/);
 const canonicalFooterPaths = [
   '/account',

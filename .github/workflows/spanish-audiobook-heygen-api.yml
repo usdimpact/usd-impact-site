@@ -237,7 +237,7 @@ jobs:
               echo "Downloaded audio is empty for segment $SEGMENT_ID." >&2
               exit 14
             fi
-            AUDIO_MAGIC="$(head -c 4 "$AUDIO_TMP" | od -An -tx1 | tr -d ' \\n')"
+            AUDIO_MAGIC="$(head -c 4 "$AUDIO_TMP" | od -An -tx1 | tr -d '[:space:]')"
             case "$AUDIO_MAGIC" in
               52494646*) AUDIO_EXT="wav" ;;
               494433*|fffb*|fff3*|fff2*) AUDIO_EXT="mp3" ;;

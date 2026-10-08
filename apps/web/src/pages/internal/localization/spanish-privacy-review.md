@@ -1,14 +1,14 @@
 ---
 layout: ../../../layouts/SpanishPrivacyReviewLayout.astro
-title: "Borrador del aviso de privacidad en español | Revisión interna"
-description: "Traducción de revisión del aviso de privacidad vigente de USD Impact. No publicada y no autorizada para activar analítica en la edición española."
+title: "Archivo de revisión del aviso de privacidad en español | USD Impact"
+description: "Archivo interno de la traducción del aviso de privacidad en español aprobada por el propietario. La analítica de la edición española permanece deshabilitada."
 ---
 
-# Aviso de privacidad — borrador en español
+# Aviso de privacidad — archivo de revisión
 
 _Última actualización del aviso fuente: 18 de septiembre de 2026_
 
-> **Estado:** traducción para revisión interna. Fuente inglesa vinculada al commit `3314b13d04dadf97e2654ec879fb56925725cbae`, blob `175b230a83aaf5fd3dbbf7c087bdc8b8a965617a`. No es todavía el aviso público de privacidad en español.
+> **Estado:** revisión de idioma PASS y aprobación de privacidad del propietario PASS el 9 de octubre de 2026. No se realizó revisión jurídica externa. La versión pública correspondiente utiliza `/es/privacy/`; la analítica en español permanece deshabilitada.
 
 ## Qué recopilamos
 

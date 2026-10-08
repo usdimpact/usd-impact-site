@@ -1,0 +1,6 @@
+Contango
+Forma de la curva de futuros en la que los contratos lejanos cotizan por encima de los cercanos. Suele aparecer cuando la oferta es cómoda o el almacenamiento tiene valor. Mes próximo
+Contrato de futuros activo más cercano. Reacciona más rápido a la nueva información, pero no representa la curva entera. Henry Hub
+Principal precio de referencia de gas natural de Estados Unidos, con sede en Luisiana. Central para la fijación de precios doméstica, pero no cuenta toda la historia del GNL ni del gas europeo. GNL
+Gas natural licuado. El gas se enfría a líquido para transporte por buque. Conecta los mercados regionales de gas, pero la infraestructura y el transporte marítimo siguen siendo decisivos. OPEP+
+Alianza de los miembros de la OPEP más productores adicionales como Rusia.

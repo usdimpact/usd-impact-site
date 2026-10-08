@@ -17,7 +17,7 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "11_OF_15_PRIVATE_AUDIO_ASSEMBLED_PROVIDER_CREDIT_HOLD",
+  "track_status": "11_OF_15_ASSEMBLED_SEG03_SUSPECTED_SPOKEN_OMISSION_CREDIT_HOLD",
   "next_segment": "12",
   "do_not_regenerate": [
     "1",
@@ -49,7 +49,7 @@
     },
     {
       "id": "3",
-      "status": "private_audio_assembled_provider_timestamp_QA_pass",
+      "status": "private_audio_assembled_SUSPECTED_MATERIAL_SPEECH_OMISSION_REPAIR_REQUIRED",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-03.txt",
       "media_url": null
     },
@@ -167,7 +167,7 @@
     "mp3_decode": "PASS",
     "silence_gaps_longer_than_4s": 0,
     "provider_word_timestamp_match": "1252/1252 normalized source narration script tokens (100%); not an independent listening verification",
-    "descript_transcript": "PARTIAL: exported transcript omits a substantial middle section despite presence of audio; not yet final QA",
+    "descript_transcript": "REPAIRED STT text for clips 03-08, but material segment 03 discrepancy persists: ~28 source tokens missing from independent transcript; 16 consecutive zero-duration word timestamps at 39.457s support suspected compressed/omitted speech",
     "public_release": "HOLD",
     "provider_credits_remaining": 0,
     "provider_credit_reset_utc": "2026-10-13T19:31:48Z",
@@ -177,6 +177,19 @@
       "14",
       "15"
     ],
-    "resume_rule": "Do not trigger generation while credits are zero; do not retry 1-11. Generate 12-15 only after verified credits, then complete independent transcription, listening and mastering QA."
+    "resume_rule": "Do not trigger generation while credits are zero; do not retry 1-11. Generate 12-15 only after verified credits, then complete independent transcription, listening and mastering QA.",
+    "source_tokens_01_to_11": 1252,
+    "descript_transcript_tokens_01_to_11": 1200,
+    "descript_exact_matched_tokens": 1159,
+    "descript_exact_match_pct": 92.57,
+    "descript_source_omitted_tokens": 53,
+    "descript_institutional_reference_omission_approx_tokens": 28,
+    "descript_repair_job_id": "project-agent-edit-2f542797-4a70-4d44-a164-76dee15859ca-60e240c5-16e1-45b1-adaf-9dec3ed2f0b2",
+    "descript_repair_job_result": "success; script readback still needs segment03 acoustic remediation; no audio edits",
+    "segment03_heygentimestamps_zero_duration_consecutive": 16,
+    "segment03_inspect_timeline_seconds": "171-181",
+    "segment03_remediation_plan": "docs/localization/SPANISH_AUDIOBOOK_APP_B_SEGMENT03_REPAIR_PLAN_2026-10-09.md",
+    "qa_disposition": "HOLD, NOT PASS: suspected material spoken omission and pending independent listening/mastering",
+    "publisher_hold": true
   }
 }

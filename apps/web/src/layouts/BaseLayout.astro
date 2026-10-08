@@ -101,9 +101,9 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
         }
       </style>
     )}
-    <script is:inline src="/assets/session-entry.js" defer></script>
+    {locale === 'en' && <script is:inline src="/assets/session-entry.js" defer></script>}
   </head>
-  <body>
+  <body data-content-language={locale}>
     <a class="skip-link" href="#main-content">{shellCopy.skipLink}</a>
     <header class="site-header">
       <div class="container header-inner">

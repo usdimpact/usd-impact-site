@@ -1,0 +1,29 @@
+name: HeyGen API Wallet Check
+
+on:
+  push:
+    branches:
+      - feat/spanish-audiobook-pilot-foundation
+    paths:
+      - .github/workflows/heygen-api-wallet-check.yml
+
+permissions:
+  contents: read
+
+jobs:
+  wallet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+    steps:
+      - name: Validate secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${HEYGEN_API_KEY:-}"
+      - name: Read API wallet
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS "https://api.heygen.com/v3/users/me"             -H "X-Api-Key: $HEYGEN_API_KEY"             | jq '{billing_type:.data.billing_type,currency:.data.wallet.currency,remaining_balance:.data.wallet.remaining_balance}'

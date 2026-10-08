@@ -202,6 +202,51 @@ assert.match(audiobook.workingBranch, /^feat\/spanish-audiobook-/);
 assert.match(audiobook.checkpointCommit, /^[a-f0-9]{40}$/);
 assert.equal(localizationRecordByContentId(audiobook.contentId), audiobook);
 
+const privacyConsent = localizationManifest.surfaces.privacyConsent;
+allContentIds.push(privacyConsent.contentId);
+assert.equal(privacyConsent.sourceLocale, 'en');
+assert.equal(privacyConsent.targetLocale, 'es');
+assert.equal(privacyConsent.translationStatus, 'in_progress');
+assert.equal(privacyConsent.privacyLegalReviewStatus, 'required_before_release');
+assert.equal(privacyConsent.languageReviewStatus, 'required_before_release');
+assert.equal(privacyConsent.releaseStatus, 'private_hold');
+assert.equal(privacyConsent.spanishAnalyticsEnabled, false);
+assert.equal(privacyConsent.publicSpanishPrivacyRoute, null);
+assert.equal(localizationManifest.locales.es.analyticsEnabled, false);
+assert.equal(localizationRecordByContentId(privacyConsent.contentId), privacyConsent);
+
+const [privacySource, privacyDraft, consentCopy, reviewLayout, astroConfig] = await Promise.all([
+  readRepoText(privacyConsent.source.privacyPath),
+  readRepoText(privacyConsent.draft.privacyReviewPath),
+  readRepoText(privacyConsent.draft.consentCopyPath),
+  readRepoText('apps/web/src/layouts/SpanishPrivacyReviewLayout.astro'),
+  readRepoText('apps/web/astro.config.mjs'),
+]);
+assert.equal(
+  gitBlobSha(privacySource),
+  privacyConsent.source.privacyBlobSha,
+  '[review_required] English privacy notice changed; Spanish privacy/consent review must be refreshed before release.',
+);
+assert.equal(
+  gitBlobSha(privacyDraft),
+  privacyConsent.draft.privacyReviewBlobSha,
+  'Spanish privacy review draft changed; update its review/version state deliberately.',
+);
+assert.equal(
+  gitBlobSha(consentCopy),
+  privacyConsent.draft.consentCopyBlobSha,
+  'Locale consent copy changed; update the Spanish privacy/consent review state deliberately.',
+);
+assert.match(reviewLayout, /noindex/);
+assert.match(reviewLayout, /<ConsentClient locale="es"/);
+assert.match(reviewLayout, /La analítica de <code>\/es<\/code> continúa deshabilitada/);
+assert.ok(astroConfig.includes("'/internal/localization/spanish-privacy-review'"));
+assert.ok(privacyDraft.includes('REVISIÓN INTERNA') || privacyDraft.includes('revisión interna'));
+assert.ok(privacyDraft.includes('No es todavía el aviso público de privacidad en español.'));
+assert.ok(consentCopy.includes("bannerTitle: 'Opciones de privacidad'"));
+assert.ok(consentCopy.includes("reject: 'Rechazar analítica'"));
+assert.ok(consentCopy.includes("accept: 'Aceptar analítica'"));
+
 const email = localizationManifest.surfaces.email;
 assert.deepEqual(email.enabledLocales, ['en']);
 assert.deepEqual(email.blockedLocales, ['es']);

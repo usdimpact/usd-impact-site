@@ -1,9 +1,7 @@
 {
-  "track": "18",
+  "track": "19",
   "segments": [
-    "13",
-    "14",
-    "15"
+    "1"
   ],
   "requested_at": "2026-10-09",
   "mode": "funded-api-balance-batch",
@@ -11,5 +9,5 @@
   "voice_id": "626ca51acb2e496f8dcee8d7591fda3c",
   "locale": "es-419",
   "speed": 0.92,
-  "purpose": "Funded Developer API wallet verified $29.97. Generate private Appendix B missing segments 13-15 ONLY. Protect 1-12, no release."
+  "purpose": "Privately generate final Sobre el autor Spanish closing audio with approved Mateo, existing Developer API wallet; no public release or entitlement change"
 }

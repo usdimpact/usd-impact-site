@@ -17,7 +17,7 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "ALL_15_PRIVATE_AUDIO_ASSEMBLED_SEG03_CONTENT_QA_HOLD",
+  "track_status": "ALL_15_PRIVATE_ASSEMBLED_REPAIR_CANDIDATE_READY_LISTEN_MASTERING_HOLD",
   "next_segment": null,
   "do_not_regenerate": [
     "1",
@@ -223,5 +223,19 @@
     "transcript_qa": "HOLD — segment 03 suspected omission",
     "listening_qa": "PENDING",
     "public_release": false
+  },
+  "private_repair_candidate": {
+    "comp_id": "6a251168-1d0d-4a9d-b9ea-daed1d1db016",
+    "original_id": "aef945b9-0b31-48ad-9ec6-270c80f639c7",
+    "candidate_duration_seconds": 883.027503,
+    "original_duration_seconds": 859.06285,
+    "independent_transcript_source_token_coverage_percent": 95.75,
+    "detected_source_omissions_4plus": 0,
+    "notes": "Standalone repaired source-reference sentence replaces faulty tail in private duplicate at actual 40.89s spoken boundary. Original canonical remains unchanged. One 3-word numerical mismatch is word-form ASR. Candidate NOT approved for public release without listening and mastering.",
+    "synthesis_run_id": 37850234396,
+    "repair_manifest": "docs/localization/spanish-audiobook-repair-18-03-index-2026-10-09.json",
+    "human_listening_qa": "PENDING",
+    "mastering_qa": "PENDING",
+    "public_allowed": false
   }
 }

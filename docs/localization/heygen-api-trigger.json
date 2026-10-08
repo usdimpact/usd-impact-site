@@ -1,7 +1,9 @@
 {
   "track": "18",
   "segments": [
-    "12"
+    "13",
+    "14",
+    "15"
   ],
   "requested_at": "2026-10-09",
   "mode": "funded-api-balance-batch",
@@ -9,5 +11,5 @@
   "voice_id": "626ca51acb2e496f8dcee8d7591fda3c",
   "locale": "es-419",
   "speed": 0.92,
-  "purpose": "Funded API wallet verified via run 37848860009. Synthesize ONLY Appendix B segment 12 as controlled private restart after prior insufficient_credit. Do not repeat 1-11; no publish."
+  "purpose": "Funded Developer API wallet verified $29.97. Generate private Appendix B missing segments 13-15 ONLY. Protect 1-12, no release."
 }

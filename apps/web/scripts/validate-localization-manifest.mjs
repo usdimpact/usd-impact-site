@@ -258,14 +258,14 @@ assert.equal(
   'Locale consent copy changed; update the Spanish privacy/consent review state deliberately.',
 );
 assert.equal(privacyConsent.public.route, '/es/privacy/');
-assert.match(privacySource, /alternateLocaleHref: "\/es\/privacy\/" /u);
+assert.match(privacySource, /alternateLocaleHref: "\/es\/privacy\/"\s*$/mu);
 assert.match(reviewLayout, /noindex/);
 assert.match(reviewLayout, /APROBADO POR EL PROPIETARIO/);
 assert.match(reviewLayout, /No se realizó revisión jurídica externa/);
 assert.match(reviewLayout, /La analítica de <code>\/es<\/code> continúa deshabilitada/);
 assert.match(publicLayout, /locale="es"/);
-assert.match(publicLayout, /currentPath="\/es\/privacy\/" /u);
-assert.match(publicLayout, /alternateLocaleHref="\/privacy\/" /u);
+assert.match(publicLayout, /currentPath="\/es\/privacy\/"/u);
+assert.match(publicLayout, /alternateLocaleHref="\/privacy\/"/u);
 assert.ok(astroConfig.includes("'/internal/localization/spanish-privacy-review'"));
 assert.ok(!astroConfig.includes("'/es/privacy'"));
 assert.ok(privacyDraft.includes('aprobación de privacidad del propietario PASS'));

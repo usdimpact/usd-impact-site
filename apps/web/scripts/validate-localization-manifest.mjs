@@ -212,17 +212,29 @@ assert.equal(privacyConsent.ownerPrivacyReviewStatus, 'pass');
 assert.equal(privacyConsent.externalLegalReviewStatus, 'not_performed');
 assert.equal(privacyConsent.approvalBasis, 'owner_personal_review');
 assert.equal(privacyConsent.approvalDate, '2026-10-09');
-assert.equal(privacyConsent.releaseStatus, 'private_hold');
+assert.equal(privacyConsent.releaseStatus, 'published');
 assert.equal(privacyConsent.spanishAnalyticsEnabled, false);
-assert.equal(privacyConsent.publicSpanishPrivacyRoute, null);
+assert.equal(privacyConsent.publicSpanishPrivacyRoute, '/es/privacy/');
 assert.equal(localizationManifest.locales.es.analyticsEnabled, false);
 assert.equal(localizationRecordByContentId(privacyConsent.contentId), privacyConsent);
 
-const [privacySource, privacyDraft, consentCopy, reviewLayout, astroConfig] = await Promise.all([
+const [
+  privacySource,
+  privacyDraft,
+  privacyPublic,
+  consentCopy,
+  reviewLayout,
+  publicLayout,
+  baseLayout,
+  astroConfig,
+] = await Promise.all([
   readRepoText(privacyConsent.source.privacyPath),
   readRepoText(privacyConsent.draft.privacyReviewPath),
+  readRepoText(privacyConsent.public.privacyPath),
   readRepoText(privacyConsent.draft.consentCopyPath),
   readRepoText('apps/web/src/layouts/SpanishPrivacyReviewLayout.astro'),
+  readRepoText('apps/web/src/layouts/SpanishLegalLayout.astro'),
+  readRepoText('apps/web/src/layouts/BaseLayout.astro'),
   readRepoText('apps/web/astro.config.mjs'),
 ]);
 assert.equal(
@@ -233,26 +245,54 @@ assert.equal(
 assert.equal(
   gitBlobSha(privacyDraft),
   privacyConsent.draft.privacyReviewBlobSha,
-  'Spanish privacy review draft changed; update its review/version state deliberately.',
+  'Spanish privacy review archive changed; update its review/version state deliberately.',
+);
+assert.equal(
+  gitBlobSha(privacyPublic),
+  privacyConsent.public.privacyBlobSha,
+  'Public Spanish privacy notice changed; update its review/version state deliberately.',
 );
 assert.equal(
   gitBlobSha(consentCopy),
   privacyConsent.draft.consentCopyBlobSha,
   'Locale consent copy changed; update the Spanish privacy/consent review state deliberately.',
 );
+assert.equal(privacyConsent.public.route, '/es/privacy/');
+assert.match(privacySource, /alternateLocaleHref: "\/es\/privacy\/" /u);
 assert.match(reviewLayout, /noindex/);
-assert.match(reviewLayout, /<ConsentClient locale="es"/);
+assert.match(reviewLayout, /APROBADO POR EL PROPIETARIO/);
+assert.match(reviewLayout, /No se realizó revisión jurídica externa/);
 assert.match(reviewLayout, /La analítica de <code>\/es<\/code> continúa deshabilitada/);
+assert.match(publicLayout, /locale="es"/);
+assert.match(publicLayout, /currentPath="\/es\/privacy\/" /u);
+assert.match(publicLayout, /alternateLocaleHref="\/privacy\/" /u);
 assert.ok(astroConfig.includes("'/internal/localization/spanish-privacy-review'"));
-assert.ok(privacyDraft.includes('REVISIÓN INTERNA') || privacyDraft.includes('revisión interna'));
-assert.ok(privacyDraft.includes('No es todavía el aviso público de privacidad en español.'));
+assert.ok(!astroConfig.includes("'/es/privacy'"));
+assert.ok(privacyDraft.includes('aprobación de privacidad del propietario PASS'));
+assert.ok(privacyDraft.includes('No se realizó revisión jurídica externa.'));
 assert.ok(privacyDraft.includes('opera exclusivamente a través de la red'));
 assert.ok(privacyDraft.includes('cookie de validación de seguridad'));
 assert.ok(!privacyDraft.includes('funciona solo sobre red'));
 assert.ok(!privacyDraft.includes('cookie de autorización'));
+assert.match(privacyPublic, /# Aviso de privacidad\n/);
+assert.match(privacyPublic, /Versión en español aprobada por el propietario: 9 de octubre de 2026/);
+assert.doesNotMatch(privacyPublic, /REVISIÓN INTERNA|archivo de revisión|No es todavía el aviso público|NO PUBLICAR/i);
+assert.ok(privacyPublic.includes('opera exclusivamente a través de la red'));
+assert.ok(privacyPublic.includes('cookie de validación de seguridad'));
+assert.ok(privacyPublic.includes('support@usd-impact.com'));
+assert.ok(privacyPublic.includes('KELA LEADS S.R.L.'));
+const substantiveMarker = '## Qué recopilamos';
+assert.ok(privacyDraft.includes(substantiveMarker));
+assert.ok(privacyPublic.includes(substantiveMarker));
+assert.equal(
+  privacyPublic.slice(privacyPublic.indexOf(substantiveMarker)),
+  privacyDraft.slice(privacyDraft.indexOf(substantiveMarker)),
+  'Public Spanish privacy substance must remain byte-identical to the owner-approved review text.',
+);
 assert.ok(consentCopy.includes("bannerTitle: 'Opciones de privacidad'"));
 assert.ok(consentCopy.includes("reject: 'Rechazar analítica'"));
 assert.ok(consentCopy.includes("accept: 'Aceptar analítica'"));
+assert.match(baseLayout, /<a href="\/es\/privacy\/">Privacidad<\/a>/);
 
 const email = localizationManifest.surfaces.email;
 assert.deepEqual(email.enabledLocales, ['en']);

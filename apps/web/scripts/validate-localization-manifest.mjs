@@ -47,6 +47,12 @@ assert.equal(localizationManifest.principles.fallbackLocale, 'en');
 assert.equal(localizationManifest.principles.localizationDoesNotCreateEntitlementVariants, true);
 assert.equal(localizationManifest.principles.explicitPreferenceOverridesBrowserLanguage, true);
 assert.equal(localizationManifest.principles.browserLanguageIsPreferenceHintOnly, true);
+assert.equal(localizationManifest.locales.en.analyticsEnabled, true);
+assert.equal(
+  localizationManifest.locales.es.analyticsEnabled,
+  false,
+  'Spanish analytics must remain disabled until localized consent/privacy copy is approved.',
+);
 
 for (const locale of SUPPORTED_LOCALES) {
   assert.equal(localizationManifest.locales[locale].locale, locale);

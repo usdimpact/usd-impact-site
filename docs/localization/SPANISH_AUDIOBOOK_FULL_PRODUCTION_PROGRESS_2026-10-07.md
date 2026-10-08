@@ -222,3 +222,19 @@ The safe resume command is: **Track 06 / Chapter 4 / segment 11 with Narrator Ma
 - missing material claim: **none found**
 - changed compliance meaning: **none found**
 - disposition: **PASS**
+
+
+### Chapter 10
+
+- title: **Leer regímenes: el registro de once años**
+- funded HeyGen Developer API run: `37825986485`
+- generated pieces: **19/19**
+- total generated duration: **1,089.593 s (~18:10)**
+- private Descript composition: `5856dedb-b4e4-4fec-aa74-94882956fa74`
+- all 19 media imports: **PASS**
+- approximate Descript source alignment: **98.60%**; transcript match: **99.00%**
+- formula discrepancies in Descript were verified as ASR noise using authoritative HeyGen word timestamps
+- verified spoken formula content includes `menos tres coma cinco`, `más tres coma cinco`, `cero coma ciento veinticinco`, `más V I X`, `menos B T C`, and `menos oro`
+- missing material claim: **none found**
+- changed compliance meaning: **none found**
+- disposition: **PASS**

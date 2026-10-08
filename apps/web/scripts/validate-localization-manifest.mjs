@@ -32,16 +32,6 @@ async function readRepoText(repoPath) {
   return readFile(new URL(repoPath.slice('apps/web/'.length), webRoot), 'utf8');
 }
 
-async function assertEvidenceBlob(evidence, label) {
-  const content = await readRepoText(`apps/web/../../${evidence.evidencePath}`);
-  const actual = gitBlobSha(content);
-  assert.equal(
-    actual,
-    evidence.evidenceBlobSha,
-    `${label} evidence drifted. Re-review the evidence and update the localization manifest deliberately.`,
-  );
-}
-
 assert.equal(LOCALIZATION_MANIFEST_SCHEMA_VERSION, expectedSchemaVersion);
 assert.equal(localizationManifest.schemaVersion, expectedSchemaVersion);
 assert.equal(DEFAULT_LOCALE, 'en');

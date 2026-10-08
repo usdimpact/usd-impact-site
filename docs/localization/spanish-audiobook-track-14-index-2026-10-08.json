@@ -17,8 +17,8 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "PARTIAL_TRANSCRIPT_QA_PASS_RECOVER_REMAINDER",
-  "next_segment": "16",
+  "track_status": "FULL_AUDIO_GENERATED_PRIVATE_IMPORT_IN_PROGRESS",
+  "next_segment": null,
   "do_not_regenerate": [
     "1",
     "2",
@@ -34,7 +34,12 @@
     "12",
     "13",
     "14",
-    "15"
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20"
   ],
   "segments": [
     {
@@ -129,31 +134,31 @@
     },
     {
       "id": "16",
-      "status": "pending",
+      "status": "audio_generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-16.txt",
       "media_url": null
     },
     {
       "id": "17",
-      "status": "pending",
+      "status": "audio_generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-17.txt",
       "media_url": null
     },
     {
       "id": "18",
-      "status": "pending",
+      "status": "audio_generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-18.txt",
       "media_url": null
     },
     {
       "id": "19",
-      "status": "pending",
+      "status": "audio_generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-19.txt",
       "media_url": null
     },
     {
       "id": "20",
-      "status": "pending",
+      "status": "audio_generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-20.txt",
       "media_url": null
     }
@@ -180,5 +185,14 @@
       "multiword_omission_count": 0,
       "qa_scope": "Descript transcript versus prepared narration scripts 1-15; not a substitute for end-to-end listening QA"
     }
+  },
+  "remainder_recovery": {
+    "source_run_id": 37835913193,
+    "artifact_id": 11574778953,
+    "artifact_sha256": "sha256:acca48f958f0b367a81a3028e22564e9b859a9b2753d7e500ec1eab0bd2e6c2d",
+    "generated_audio_segments": 5,
+    "audio_duration_seconds": 270.106,
+    "codec_note": "Provider URLs end in .wav but downloaded bytes are MP3; corrected file extensions required for final delivery.",
+    "descript_import_job_id": "project-media-import-ebaf35ea-ea11-4b40-ac91-674581b43bc5"
   }
 }

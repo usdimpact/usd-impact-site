@@ -112,8 +112,13 @@ jobs:
               INDEX="docs/localization/spanish-audiobook-track-19-index-2026-10-08.json"
               MODE="files"
               ;;
+            99)
+              # Isolated private QA audio repair; NEVER a member-facing track.
+              INDEX="docs/localization/spanish-audiobook-repair-18-03-index-2026-10-09.json"
+              MODE="files"
+              ;;
             *)
-              echo "This guarded workflow currently permits Tracks 06 through 19 only." >&2
+              echo "This guarded workflow permits production Tracks 06-19 and private repair 99 only." >&2
               exit 3
               ;;
           esac

@@ -34,3 +34,7 @@ When permitted by credits and after acoustic confirmation, prefer a **targeted s
 ## Credit constraints
 
 As last verified, HeyGen Creator premium credits are **0**, with next reset `2026-10-13T19:31:48Z`. Do not modify the auto-trigger while credits are zero; do not pay to bypass the hold.
+
+## Cross-artifact anomaly scan (additional evidence)
+
+A read-only scan of the **9 available private GitHub artifact ZIPs**, covering **73 segments with HeyGen word-timestamp metadata**, found **only one segment** containing a run of 3 or more consecutive zero-duration word timestamps: **Appendix B / Track 18 / segment 03**, at **39.46 s**, with **16 consecutive zero-duration words**. The other 72 examined segments did not show this specific anomaly. This does **not** constitute full audiobook acoustic or linguistic QA; it narrows the immediate timestamp-corruption investigation.

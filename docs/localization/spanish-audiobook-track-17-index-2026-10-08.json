@@ -17,7 +17,7 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "BATCH_A_GENERATED_IMPORT_IN_PROGRESS",
+  "track_status": "BATCH_A_PRIVATE_QA_PASS_BATCH_B_SYNTHESIS_IN_PROGRESS",
   "next_segment": "9",
   "do_not_regenerate": [
     "1",
@@ -32,49 +32,49 @@
   "segments": [
     {
       "id": "1",
-      "status": "generated_import_in_progress",
+      "status": "private_transcript_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-01.txt",
       "media_url": null
     },
     {
       "id": "2",
-      "status": "generated_import_in_progress",
+      "status": "private_transcript_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-02.txt",
       "media_url": null
     },
     {
       "id": "3",
-      "status": "generated_import_in_progress",
+      "status": "private_transcript_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-03.txt",
       "media_url": null
     },
     {
       "id": "4",
-      "status": "generated_import_in_progress",
+      "status": "private_transcript_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-04.txt",
       "media_url": null
     },
     {
       "id": "5",
-      "status": "generated_import_in_progress",
+      "status": "private_transcript_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-05.txt",
       "media_url": null
     },
     {
       "id": "6",
-      "status": "generated_import_in_progress",
+      "status": "private_transcript_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-06.txt",
       "media_url": null
     },
     {
       "id": "7",
-      "status": "generated_import_in_progress",
+      "status": "private_transcript_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-07.txt",
       "media_url": null
     },
     {
       "id": "8",
-      "status": "generated_import_in_progress",
+      "status": "private_transcript_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-08.txt",
       "media_url": null
     },
@@ -134,6 +134,29 @@
     "segment_count": 8,
     "decoded_audio_QA": "PASS",
     "duration_seconds": 505.6,
-    "descript_job_id": "project-media-import-0c21d481-8705-4d1f-b582-d11e81189ac8"
+    "descript_job_id": "project-media-import-0c21d481-8705-4d1f-b582-d11e81189ac8",
+    "descript_import_status": "success",
+    "descript_composition_id": "625d0a1a-1bf2-42ac-b363-cb8b525e660b",
+    "script_words": 988,
+    "transcript_words": 987,
+    "exact_aligned_words": 980,
+    "exact_token_match_pct": 99.19,
+    "source_only_tokens": 3,
+    "material_multiword_omission_verified": 0,
+    "ASR_notes": "Opening Apéndice A and DFII10 acronym differences are ASR artifacts; HeyGen word timestamps confirm the authoritative spoken source."
+  },
+  "batch_b": {
+    "run_id": 37841664444,
+    "segment_ids": [
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16"
+    ],
+    "status": "synthesis_in_progress"
   }
 }

@@ -23,6 +23,7 @@ const privatePaths = new Set([
   ...SEARCH_UTILITY_PATHS,
   '/internal/checklist-analytics',
   '/internal/ask-usd-impact',
+  '/internal/localization/spanish-privacy-review',
 ]);
 
 const previewOnlySitemapPrefixes = [

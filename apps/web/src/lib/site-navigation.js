@@ -61,7 +61,7 @@ export function siteShellCopyForLocale(locale = 'en') {
 export function navigationLinkIsActive(currentPath, href) {
   const path = String(currentPath || '').replace(/\/+$/, '') || '/';
   const target = href.replace(/\/+$/, '') || '/';
-  if (target === '/' || target === '/guided-edition') return path === target;
+  if (target === '/' || target === '/es' || target === '/guided-edition') return path === target;
   return path === target || path.startsWith(`${target}/`);
 }
 

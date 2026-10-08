@@ -17,7 +17,7 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "ALL_15_GENERATED_SEG03_QA_HOLD",
+  "track_status": "ALL_15_PRIVATE_AUDIO_ASSEMBLED_SEG03_CONTENT_QA_HOLD",
   "next_segment": null,
   "do_not_regenerate": [
     "1",
@@ -107,25 +107,25 @@
     },
     {
       "id": "12",
-      "status": "generated_import_pending",
+      "status": "private_audio_assembled_content_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-12.txt",
       "media_url": null
     },
     {
       "id": "13",
-      "status": "generated_import_pending",
+      "status": "private_audio_assembled_content_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-13.txt",
       "media_url": null
     },
     {
       "id": "14",
-      "status": "generated_import_pending",
+      "status": "private_audio_assembled_content_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-14.txt",
       "media_url": null
     },
     {
       "id": "15",
-      "status": "generated_import_pending",
+      "status": "private_audio_assembled_content_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-15.txt",
       "media_url": null
     }
@@ -201,7 +201,7 @@
     "artifact_id": 11581316339,
     "format": "mp3",
     "duration_seconds": 69.041633,
-    "import_status": "pending",
+    "import_status": "success",
     "public_allowed": false
   },
   "batch_c": {
@@ -212,7 +212,16 @@
       "14",
       "15"
     ],
-    "status": "synthesis_success_import_pending",
+    "status": "synthesis_and_import_success",
     "duration_seconds": 182.752653
+  },
+  "full_assembly": {
+    "composition_id": "aef945b9-0b31-48ad-9ec6-270c80f639c7",
+    "duration_seconds": 859.06285,
+    "segments": 15,
+    "import_pass": true,
+    "transcript_qa": "HOLD — segment 03 suspected omission",
+    "listening_qa": "PENDING",
+    "public_release": false
   }
 }

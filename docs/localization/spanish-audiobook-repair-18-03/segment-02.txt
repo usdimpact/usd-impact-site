@@ -1,0 +1,1 @@
+Las afirmaciones importantes deben poder contrastarse con ICE para DXY, CME/NYMEX para WTI, S&P Dow Jones Indices para S y P quinientos, Cboe para VIX, Treasury/FRED para rendimientos y referencias institucionales o de benchmark claramente identificadas para oro y Bitcoin.

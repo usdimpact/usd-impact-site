@@ -17,8 +17,8 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "PARTIAL_SYNTHESIS_SEGMENT_15_HOLD",
-  "next_segment": "15",
+  "track_status": "RECOVERY_SPLIT_READY",
+  "next_segment": "15a",
   "do_not_regenerate": [
     "1",
     "2",
@@ -35,7 +35,8 @@
     "13",
     "14",
     "16",
-    "17"
+    "17",
+    "15"
   ],
   "segments": [
     {
@@ -138,8 +139,22 @@
     },
     {
       "id": "15",
-      "status": "pending",
+      "status": "superseded_timeout_unknown",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-15.txt",
+      "media_url": null,
+      "timeout_run_id": 37701309467,
+      "note": "Full-segment request timed out after 120s; outcome unrecoverable from synchronous TTS API. Do not use or regenerate this segment."
+    },
+    {
+      "id": "15a",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-15a.txt",
+      "media_url": null
+    },
+    {
+      "id": "15b",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-10/segment-15b.txt",
       "media_url": null
     },
     {

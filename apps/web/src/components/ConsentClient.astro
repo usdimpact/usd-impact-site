@@ -3,7 +3,7 @@ import { consentCopyForLocale } from '../lib/consent-copy.js';
 
 const {
   locale = 'en',
-  privacyHref = locale === 'es' ? '/internal/localization/spanish-privacy-review/' : '/privacy/',
+  privacyHref = locale === 'es' ? '/es/privacy/' : '/privacy/',
 } = Astro.props;
 const copy = consentCopyForLocale(locale);
 ---

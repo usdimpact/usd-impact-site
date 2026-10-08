@@ -237,5 +237,19 @@
     "human_acceptance": "PENDING",
     "guide": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_LISTENING_REEL_ACCEPTANCE_2026-10-09.md",
     "public_allowed": false
+  },
+  "appendix_b_offline_splice_fade_test": {
+    "status": "PRIVATE_SIGNAL_QA_PASS_HUMAN_LISTENING_PENDING",
+    "technique": "353-sample 8.0045ms source-tail fade-out in independent offline reconstruction only",
+    "splice_start_seconds": 172.836485,
+    "candidate_descript_composition_unchanged": "6a251168-1d0d-4a9d-b9ea-daed1d1db016",
+    "private_kit_library_path": "/spanish-audiobook-appendix-b-8ms-private-listening-kit-2026-10-09.zip",
+    "private_full_audio_library_path": "/spanish-audiobook-appendix-b-8ms-private-mastering-trial-2026-10-09.mp3",
+    "full_audio_lufs": -16.31,
+    "full_audio_true_peak_dbtp": -2.21,
+    "human_listening": "PENDING",
+    "delivery_master_approval": "PENDING",
+    "public_allowed": false,
+    "documentation": "docs/localization/SPANISH_AUDIOBOOK_APP_B_OFFLINE_SIGNAL_QA_2026-10-09.md"
   }
 }

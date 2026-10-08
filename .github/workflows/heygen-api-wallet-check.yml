@@ -26,4 +26,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsS "https://api.heygen.com/v3/users/me"             -H "X-Api-Key: $HEYGEN_API_KEY"             | jq '{billing_type:.data.billing_type,currency:.data.wallet.currency,remaining_balance:.data.wallet.remaining_balance}'
+          # API-key scoped request: verifies the same repository secret used for synthesis.
+          curl -fsS --retry 1 --max-time 20 "https://api.heygen.com/v3/users/me" \
+            -H "X-Api-Key: $HEYGEN_API_KEY" > provider-wallet-response.json
+          jq -e '
+            if (.error? != null and .error != false) then
+              error("Provider reports a wallet-check error")
+            else
+              {
+                billing_type: (.data.billing_type // .billing_type // "unknown"),
+                wallet_present: ((.data.wallet // .wallet) != null),
+                currency: (.data.wallet.currency // .wallet.currency // "unknown"),
+                remaining_balance: (.data.wallet.remaining_balance // .wallet.remaining_balance // null)
+              }
+            end
+          ' provider-wallet-response.json
+          if ! jq -e '((.data.wallet.remaining_balance // .wallet.remaining_balance) | tonumber?) != null' provider-wallet-response.json >/dev/null; then
+            echo "API-key wallet balance is not returned as a number; fail closed and do not synthesize." >&2
+            exit 4
+          fi

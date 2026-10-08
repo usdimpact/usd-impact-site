@@ -17,7 +17,7 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "SYNTHESIS_COMPLETE_QA_PENDING",
+  "track_status": "QA_PASS",
   "next_segment": null,
   "do_not_regenerate": [
     "1",
@@ -204,5 +204,17 @@
   "superseded_segments": [
     "15"
   ],
-  "recovery_run_id": 37706581240
+  "recovery_run_id": 37706581240,
+  "private_descript_composition_id": "66c4f264-0abd-4f33-97f4-45532cf8b702",
+  "private_descript_duration_seconds": 1011.931421,
+  "qa": {
+    "source_alignment_percent": 98.95,
+    "multi_word_source_omissions": 0,
+    "descript_note": "Repeated EIA reference block confused sequence alignment; Descript rendered 'vary at' as 'variad'.",
+    "authoritative_timestamp_check": "HeyGen segment 17 word timestamps contain the full source phrase 'Market dynamics vary at key natural gas pricing hubs'.",
+    "missing_material_claims": 0,
+    "changed_compliance_meaning": 0,
+    "disposition": "PASS"
+  },
+  "partial_composition_superseded": "28c8e0a6-28cc-4736-aa9d-d61e873be7a8"
 }

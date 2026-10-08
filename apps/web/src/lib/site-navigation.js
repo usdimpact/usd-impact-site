@@ -22,6 +22,42 @@ export const SITE_NAVIGATION = Object.freeze([
   links: Object.freeze(group.links.map((link) => Object.freeze(link))),
 })));
 
+
+export const SPANISH_PUBLIC_NAVIGATION = Object.freeze([
+  Object.freeze({ label: 'Inicio', href: '/es/' }),
+  Object.freeze({ label: 'Empieza aquí', href: '/es/start-here/' }),
+  Object.freeze({ label: 'Marco del dólar', href: '/es/dollar-framework/' }),
+  Object.freeze({ label: 'Cadena de transmisión', href: '/es/framework/dollar-transmission-chain/' }),
+  Object.freeze({ label: 'Panel de tres diales', href: '/es/framework/three-dial-dashboard/' }),
+]);
+
+export const SITE_SHELL_COPY = Object.freeze({
+  en: Object.freeze({
+    skipLink: 'Skip to main content',
+    menuLabel: 'Menu',
+    navigationLabel: 'Main navigation',
+    homeHref: '/',
+    homeAriaLabel: 'USD Impact home',
+    localeSwitchLabel: 'Español',
+    localeSwitchLanguage: 'es',
+    footerBrand: 'Practical education for reading the dollar first.',
+  }),
+  es: Object.freeze({
+    skipLink: 'Saltar al contenido principal',
+    menuLabel: 'Menú',
+    navigationLabel: 'Navegación principal en español',
+    homeHref: '/es/',
+    homeAriaLabel: 'Inicio de USD Impact en español',
+    localeSwitchLabel: 'English',
+    localeSwitchLanguage: 'en',
+    footerBrand: 'Educación práctica para leer primero el dólar.',
+  }),
+});
+
+export function siteShellCopyForLocale(locale = 'en') {
+  return SITE_SHELL_COPY[locale] ?? SITE_SHELL_COPY.en;
+}
+
 export function navigationLinkIsActive(currentPath, href) {
   const path = String(currentPath || '').replace(/\/+$/, '') || '/';
   const target = href.replace(/\/+$/, '') || '/';

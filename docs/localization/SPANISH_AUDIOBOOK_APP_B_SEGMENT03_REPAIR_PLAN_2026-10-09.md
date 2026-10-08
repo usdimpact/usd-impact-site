@@ -1,6 +1,17 @@
 # Appendix B / Segment 18-03 — private audio repair plan (2026-10-09)
 
-**Status: QA HOLD — suspected material spoken omission; DO NOT PUBLISH.** This document is preparation only. It does not authorize a synthesis request, manual trigger, plan purchase, Production change, or Descript publish.
+**Status: QA HOLD — suspected original omission, private repair candidate now assembled; DO NOT PUBLISH.**
+
+## Latest disposition — isolated repair candidate
+
+- Funded Developer API wallet verified by repository secret. No manual top-up initiated.
+- Track99 source-faithful two-piece repair was prepared. Piece 1 timed out with uncertain submission status (run 37849777222); **do not re-run the same text**.
+- Piece 2 (the missing institutional source-reference sentence) succeeded in private run 37850234396: 32.287s of Mateo speech, 0 zero-duration spoken word timestamps. Its independent Descript STT scored 42/43 exact normalized tokens.
+- A new **private-only** Appendix B repair candidate exists at Descript composition `6a251168-1d0d-4a9d-b9ea-daed1d1db016`. The agent removed the suspect original clip tail at the measured **40.89s** sentence boundary and inserted the newly synthesized reference clip, leaving the original `aef945b9-0b31-48ad-9ec6-270c80f639c7` untouched.
+- Candidate: 883.028s (14:43), compared to original 859.063s. Independent transcript: 1,599/1,670 normalized source-token exact match (95.75%), **no omission blocks longer than 3 source tokens**.
+- Not yet APPROVED: human listening at seam, acronym clarity, double speech/overlap, final audio leveling and mastering, and entire audiobook editorial QA remain pending. Publication and merge remain HOLD.
+
+ This document is preparation only. It does not authorize a synthesis request, manual trigger, plan purchase, Production change, or Descript publish.
 
 ## Exact source and boundaries
 

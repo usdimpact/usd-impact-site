@@ -13,10 +13,11 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "PART_A_PROVIDER_TIMEOUT_OUTCOME_UNKNOWN_PART_B_PENDING",
-  "next_segment": "2",
+  "track_status": "PART_B_REFERENCE_SENTENCE_GENERATED_PART_A_UNCERTAIN",
+  "next_segment": null,
   "do_not_regenerate": [
-    "1"
+    "1",
+    "2"
   ],
   "isolated_private_repair": true,
   "replaces_original_only_after_qa": "18-03",
@@ -31,7 +32,7 @@
     },
     {
       "id": "2",
-      "status": "pending",
+      "status": "generated_private_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-repair-18-03/segment-02.txt",
       "media_url": null
     }
@@ -43,5 +44,13 @@
     "completed_speech_result": false,
     "provider_hint": "operation may have been submitted; do not retry without deduplication proof",
     "wallet_after_timeout_usd": 29.47
+  },
+  "second_attempt": {
+    "run_id": 37850234396,
+    "artifact_id": 11581931482,
+    "status": "success",
+    "duration_seconds": 32.287347,
+    "zero_duration_word_timestamps": 0,
+    "private_import": "pending"
   }
 }

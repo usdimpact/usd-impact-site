@@ -17,7 +17,7 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "FULL_AUDIO_GENERATED_PRIVATE_IMPORT_IN_PROGRESS",
+  "track_status": "PRIVATE_CONTENT_AND_ASSEMBLY_QA_PASS_MASTERING_HOLD",
   "next_segment": null,
   "do_not_regenerate": [
     "1",
@@ -44,121 +44,121 @@
   "segments": [
     {
       "id": "1",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-01.txt",
       "media_url": null
     },
     {
       "id": "2",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-02.txt",
       "media_url": null
     },
     {
       "id": "3",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-03.txt",
       "media_url": null
     },
     {
       "id": "4",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-04.txt",
       "media_url": null
     },
     {
       "id": "5",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-05.txt",
       "media_url": null
     },
     {
       "id": "6",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-06.txt",
       "media_url": null
     },
     {
       "id": "7",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-07.txt",
       "media_url": null
     },
     {
       "id": "8",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-08.txt",
       "media_url": null
     },
     {
       "id": "9",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-09.txt",
       "media_url": null
     },
     {
       "id": "10",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-10.txt",
       "media_url": null
     },
     {
       "id": "11",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-11.txt",
       "media_url": null
     },
     {
       "id": "12",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-12.txt",
       "media_url": null
     },
     {
       "id": "13",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-13.txt",
       "media_url": null
     },
     {
       "id": "14",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-14.txt",
       "media_url": null
     },
     {
       "id": "15",
-      "status": "transcript_QA_pass_recovered",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-15.txt",
       "media_url": null
     },
     {
       "id": "16",
-      "status": "audio_generated_import_in_progress",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-16.txt",
       "media_url": null
     },
     {
       "id": "17",
-      "status": "audio_generated_import_in_progress",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-17.txt",
       "media_url": null
     },
     {
       "id": "18",
-      "status": "audio_generated_import_in_progress",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-18.txt",
       "media_url": null
     },
     {
       "id": "19",
-      "status": "audio_generated_import_in_progress",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-19.txt",
       "media_url": null
     },
     {
       "id": "20",
-      "status": "audio_generated_import_in_progress",
+      "status": "private_content_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-20.txt",
       "media_url": null
     }
@@ -194,5 +194,23 @@
     "audio_duration_seconds": 270.106,
     "codec_note": "Provider URLs end in .wav but downloaded bytes are MP3; corrected file extensions required for final delivery.",
     "descript_import_job_id": "project-media-import-ebaf35ea-ea11-4b40-ac91-674581b43bc5"
+  },
+  "full_chapter_qa": {
+    "source": "Spanish Edition 1.3 Candidate 1 lines 764-826 (literal URLs excluded from spoken comparison)",
+    "private_descript_project_id": "2f542797-4a70-4d44-a164-76dee15859ca",
+    "private_composition_id": "6d0cfdc6-410d-489c-b754-9430421be2ad",
+    "imported_segments": 20,
+    "composition_duration_seconds": 1168.013053,
+    "source_tokens": 2405,
+    "transcript_tokens": 2408,
+    "exact_source_tokens_in_transcript": 2385,
+    "exact_source_token_alignment_percent": 99.17,
+    "source_edit_rate_percent": 1.12,
+    "omitted_material_multiword_sequences": 0,
+    "disposition": "PASS for private content, narration and assembly; final listening/mastering and editorial chapter-boundary clean-up remain required",
+    "provider_format": "mp3 audio bytes; some historical filenames/URLs use .wav suffix",
+    "editing_note": "Chapter-end PARTE CINCO originates from next repeated part header; trim or reposition during final audio master without blindly regenerating completed audio",
+    "mastering_note": "decoded MP3 true peak overages observed; level/limit in final master before public distribution",
+    "production_release": "HOLD"
   }
 }

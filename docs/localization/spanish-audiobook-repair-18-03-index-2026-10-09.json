@@ -13,9 +13,11 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "PREPARED_NOT_TRIGGERED",
-  "next_segment": "1",
-  "do_not_regenerate": [],
+  "track_status": "PART_A_PROVIDER_TIMEOUT_OUTCOME_UNKNOWN_PART_B_PENDING",
+  "next_segment": "2",
+  "do_not_regenerate": [
+    "1"
+  ],
   "isolated_private_repair": true,
   "replaces_original_only_after_qa": "18-03",
   "master_composition_id": "aef945b9-0b31-48ad-9ec6-270c80f639c7",
@@ -23,7 +25,7 @@
   "segments": [
     {
       "id": "1",
-      "status": "pending",
+      "status": "provider_timeout_OUTCOME_UNKNOWN_DO_NOT_RETRY",
       "text_file": "docs/localization/spanish-audiobook-repair-18-03/segment-01.txt",
       "media_url": null
     },
@@ -33,5 +35,13 @@
       "text_file": "docs/localization/spanish-audiobook-repair-18-03/segment-02.txt",
       "media_url": null
     }
-  ]
+  ],
+  "first_attempt": {
+    "run_id": 37849777222,
+    "artifact_id": 11581941139,
+    "result": "timeout_at_120_seconds",
+    "completed_speech_result": false,
+    "provider_hint": "operation may have been submitted; do not retry without deduplication proof",
+    "wallet_after_timeout_usd": 29.47
+  }
 }

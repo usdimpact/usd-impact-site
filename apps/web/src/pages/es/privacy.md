@@ -1,14 +1,14 @@
 ---
-layout: ../../../layouts/SpanishPrivacyReviewLayout.astro
-title: "Archivo de revisión del aviso de privacidad en español | USD Impact"
-description: "Archivo interno de la traducción del aviso de privacidad en español aprobada por el propietario. La analítica de la edición española permanece deshabilitada."
+layout: ../../layouts/SpanishLegalLayout.astro
+title: "Aviso de privacidad en español | USD Impact"
+description: "Cómo USD Impact trata información de cuenta, compras, soporte, lista de espera, correo Daily Learning, telemetría de aprendizaje y analítica opcional."
 ---
 
-# Aviso de privacidad — archivo de revisión
+# Aviso de privacidad
 
-_Última actualización del aviso fuente: 18 de septiembre de 2026_
+_Última actualización: 18 de septiembre de 2026_
 
-> **Estado:** revisión de idioma PASS y aprobación de privacidad del propietario PASS el 9 de octubre de 2026. No se realizó revisión jurídica externa. La versión pública correspondiente utiliza `/es/privacy/`; la analítica en español permanece deshabilitada.
+_Versión en español aprobada por el propietario: 9 de octubre de 2026_
 
 ## Qué recopilamos
 

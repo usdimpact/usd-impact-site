@@ -2,6 +2,7 @@
 layout: ../layouts/LegalLayout.astro
 title: "Privacy Notice | USD Impact"
 description: "How USD Impact handles account, purchase, support, waitlist, Daily Learning email, learning telemetry, and optional analytics information."
+alternateLocaleHref: "/es/privacy/"
 ---
 
 # Privacy notice

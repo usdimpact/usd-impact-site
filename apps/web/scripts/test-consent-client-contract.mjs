@@ -15,7 +15,9 @@ const [
   ga4,
   privacy,
   spanishPrivacy,
+  spanishPublicPrivacy,
   spanishReviewLayout,
+  spanishLegalLayout,
   notifications,
   pwaClient,
   astroConfig,
@@ -27,7 +29,9 @@ const [
   read('src/components/GoogleAnalyticsClient.astro'),
   read('src/pages/privacy.md'),
   read('src/pages/internal/localization/spanish-privacy-review.md'),
+  read('src/pages/es/privacy.md'),
   read('src/layouts/SpanishPrivacyReviewLayout.astro'),
+  read('src/layouts/SpanishLegalLayout.astro'),
   read('src/pages/account/notifications.astro'),
   read('src/components/PwaClient.astro'),
   read('astro.config.mjs'),
@@ -76,7 +80,7 @@ for (const requiredSpanishCopy of [
 }
 
 assert.match(consent, /consentCopyForLocale/);
-assert.match(consent, /privacyHref = locale === 'es'/);
+assert.match(consent, /privacyHref = locale === 'es' \? '\/es\/privacy\/' : '\/privacy\/'/);
 assert.doesNotMatch(consent, /localStorage|sessionStorage|navigator\.userAgent|advertising identifier/i);
 assert.match(consent, /let preference = readCookieValue\(\)/);
 assert.match(consent, /const analyticsAllowed = \(\) => preference === 'granted'/);
@@ -130,6 +134,7 @@ for (const requiredCsp of [
   assert.ok(astroConfig.includes(requiredCsp));
 }
 
+assert.match(privacy, /alternateLocaleHref: "\/es\/privacy\/"/);
 const privacyLower = privacy.toLowerCase();
 for (const requiredDisclosure of [
   '`usd_impact_consent`',
@@ -154,8 +159,6 @@ for (const requiredDisclosure of [
 }
 
 for (const requiredSpanishDisclosure of [
-  'REVISIÓN INTERNA',
-  'No es todavía el aviso público de privacidad en español.',
   '`usd_impact_consent`',
   '`usd_impact_access`',
   '`usd_impact_refresh`',
@@ -176,15 +179,25 @@ for (const requiredSpanishDisclosure of [
   'support@usd-impact.com',
   'KELA LEADS S.R.L.',
 ]) {
-  assert.ok(spanishPrivacy.toLowerCase().includes(requiredSpanishDisclosure.toLowerCase()));
+  assert.ok(spanishPublicPrivacy.toLowerCase().includes(requiredSpanishDisclosure.toLowerCase()));
 }
 
-assert.match(spanishPrivacy, /blob `175b230a83aaf5fd3dbbf7c087bdc8b8a965617a`/);
+assert.match(spanishPublicPrivacy, /# Aviso de privacidad/);
+assert.match(spanishPublicPrivacy, /Versión en español aprobada por el propietario: 9 de octubre de 2026/);
+assert.doesNotMatch(spanishPublicPrivacy, /REVISIÓN INTERNA|archivo de revisión|No es todavía el aviso público|NO PUBLICAR/i);
+assert.match(spanishPrivacy, /aprobación de privacidad del propietario PASS/);
+assert.match(spanishPrivacy, /No se realizó revisión jurídica externa/);
 assert.match(spanishReviewLayout, /locale="es"/);
 assert.match(spanishReviewLayout, /noindex/);
 assert.match(spanishReviewLayout, /<ConsentClient locale="es"/);
+assert.match(spanishReviewLayout, /APROBADO POR EL PROPIETARIO/);
 assert.match(spanishReviewLayout, /La analítica de <code>\/es<\/code> continúa deshabilitada/);
+assert.match(spanishLegalLayout, /locale="es"/);
+assert.match(spanishLegalLayout, /currentPath="\/es\/privacy\/"/);
+assert.match(spanishLegalLayout, /alternateLocaleHref="\/privacy\/"/);
+assert.match(layout, /<a href="\/es\/privacy\/">Privacidad<\/a>/);
 assert.ok(astroConfig.includes("'/internal/localization/spanish-privacy-review'"));
+assert.ok(!astroConfig.includes("'/es/privacy'"));
 
 assert.match(layout, /<PwaClient\s*\/>/);
 assert.doesNotMatch(pwaClient, /navigator\.serviceWorker\.register/);
@@ -195,4 +208,4 @@ const registrationCall = notifications.indexOf('const registrationState = await 
 assert.ok(enableHandler >= 0 && permissionPrompt > enableHandler && registrationCall > permissionPrompt);
 assert.match(notifications, /registration\.unregister\(\)/);
 
-console.log('Consent contract passed: English behavior preserved; Spanish privacy/consent copy is version-bound, noindex, and release-blocked.');
+console.log('Consent contract passed: English behavior preserved; owner-approved Spanish privacy notice is public-ready while Spanish analytics remains disabled.');

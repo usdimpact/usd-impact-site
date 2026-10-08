@@ -1006,14 +1006,17 @@ export const localizationManifest = deepFreeze({
       },
       "draft": {
         "privacyReviewPath": "apps/web/src/pages/internal/localization/spanish-privacy-review.md",
-        "privacyReviewBlobSha": "cc24f3273a8bff5a5c48f5994275e27259615d00",
+        "privacyReviewBlobSha": "5c0d8fbbb090c16190276e4c927df7f2bdfe1879",
         "consentCopyPath": "apps/web/src/lib/consent-copy.js",
         "consentCopyBlobSha": "c1ae55a3032f294c8608255ebff4d86bfbc379a2",
         "reviewRoute": "/internal/localization/spanish-privacy-review/"
       },
-      "translationStatus": "in_progress",
-      "privacyLegalReviewStatus": "required_before_release",
-      "languageReviewStatus": "required_before_release",
+      "translationStatus": "verified_current",
+      "languageReviewStatus": "pass",
+      "ownerPrivacyReviewStatus": "pass",
+      "externalLegalReviewStatus": "not_performed",
+      "approvalBasis": "owner_personal_review",
+      "approvalDate": "2026-10-09",
       "releaseStatus": "private_hold",
       "spanishAnalyticsEnabled": false,
       "publicSpanishPrivacyRoute": null

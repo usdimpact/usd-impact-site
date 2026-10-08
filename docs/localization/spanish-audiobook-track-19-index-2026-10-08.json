@@ -17,7 +17,7 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "GENERATED_PRIVATE_IMPORT_PENDING",
+  "track_status": "PRIVATE_CONTENT_QA_PASS_FINAL_LISTEN_MASTERING_HOLD",
   "next_segment": null,
   "do_not_regenerate": [
     "1"
@@ -25,7 +25,7 @@
   "segments": [
     {
       "id": "1",
-      "status": "generated_import_pending",
+      "status": "private_transcript_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-19/segment-01.txt",
       "media_url": null
     }
@@ -34,6 +34,14 @@
     "run_id": 37849448901,
     "artifact_id": 11581232174,
     "duration_seconds": 43.598367,
-    "format": "mp3"
+    "format": "mp3",
+    "descript_import_job": "project-media-import-1d0a828a-c33e-4d78-812b-0893473db78a",
+    "descript_composition_id": "1d15c8e2-dc3f-4c2d-9b95-b84a435dcb0b",
+    "import_status": "success",
+    "source_tokens": 89,
+    "transcript_tokens": 89,
+    "exact_match_pct": 100,
+    "listening_qa": "PENDING",
+    "public_release": false
   }
 }

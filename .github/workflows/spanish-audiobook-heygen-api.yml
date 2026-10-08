@@ -17,6 +17,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: spanish-audiobook-heygen-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   synthesize:
     runs-on: ubuntu-latest
@@ -37,6 +41,17 @@ jobs:
           if [ -z "${HEYGEN_API_KEY:-}" ]; then
             echo "HEYGEN_API_KEY repository secret is missing." >&2
             exit 2
+          fi
+
+          if ! jq -e --arg voice "626ca51acb2e496f8dcee8d7591fda3c" '
+            .voice_id == $voice and
+            .voice == "Narrator Mateo" and
+            .locale == "es-419" and
+            .speed == 0.92 and
+            .mode == "funded-api-balance-batch"
+          ' "$TRIGGER" >/dev/null; then
+            echo "Trigger voice, locale, speed, or mode is not approved." >&2
+            exit 11
           fi
 
           TRACK="$(jq -r '.track' "$TRIGGER")"
@@ -114,6 +129,11 @@ jobs:
             end
           ' "$TRIGGER" > requested-segments.json
 
+          if ! jq -e 'all(.[]; type == "string") and (length == (unique | length))' requested-segments.json >/dev/null; then
+            echo "Requested segment IDs must be unique strings." >&2
+            exit 12
+          fi
+
           COUNT="$(jq 'length' requested-segments.json)"
           if [ "$COUNT" -lt 1 ] || [ "$COUNT" -gt 30 ]; then
             echo "Requested segment count must be between 1 and 30." >&2
@@ -157,8 +177,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          heygen auth status > auth-status.json
-          jq 'if type=="object" then del(.api_key,.token,.credential,.credentials) else . end' auth-status.json || true
+          heygen auth status > /dev/null
+          echo "HeyGen API authentication verified."
 
       - name: Synthesize requested Mateo segments
         shell: bash
@@ -178,17 +198,21 @@ jobs:
 
             printf '%s' "$TEXT" > "output/segment-$SEGMENT_ID.txt"
 
-            heygen voice speech create \
+            if ! heygen voice speech create \
               --text "$TEXT" \
               --voice-id "626ca51acb2e496f8dcee8d7591fda3c" \
               --input-type text \
               --speed 0.92 \
               --locale es-419 \
-              > "output/speech-response-$SEGMENT_ID.json"
+              > "output/speech-response-$SEGMENT_ID.json"; then
+              echo "Provider did not complete track $TRACK segment $SEGMENT_ID. Stop without retrying." >&2
+              exit 13
+            fi
 
-            jq -c --arg track "$TRACK" --arg segment "$SEGMENT_ID" \
-              '{track:$track,segment:$segment,response:.}' \
-              "output/speech-response-$SEGMENT_ID.json"
+            # GitHub logs may be public. Keep media URLs and word timestamps only in the
+            # short-lived Actions artifact, never print the raw provider response.
+            DURATION="$(jq -r '.data.duration // .duration // "unknown"' "output/speech-response-$SEGMENT_ID.json")"
+            echo "Speech created for track $TRACK segment $SEGMENT_ID (duration=$DURATION s)."
 
             URL="$(jq -r '
               .data.audio_url //
@@ -205,7 +229,7 @@ jobs:
               exit 9
             fi
 
-            curl -fL "$URL" -o "output/track$TRACK-segment-$SEGMENT_ID.wav"
+            curl -fsSL "$URL" -o "output/track$TRACK-segment-$SEGMENT_ID.wav"
 
             jq -n \
               --arg track "$TRACK" \

@@ -13,7 +13,7 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "PART_B_REFERENCE_SENTENCE_GENERATED_PART_A_UNCERTAIN",
+  "track_status": "REPAIR_CANDIDATE_TRANSCRIPT_QA_PASS_FINAL_LISTEN_HOLD",
   "next_segment": null,
   "do_not_regenerate": [
     "1",
@@ -32,7 +32,7 @@
     },
     {
       "id": "2",
-      "status": "generated_private_QA_pending",
+      "status": "private_transcript_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-repair-18-03/segment-02.txt",
       "media_url": null
     }
@@ -51,6 +51,25 @@
     "status": "success",
     "duration_seconds": 32.287347,
     "zero_duration_word_timestamps": 0,
-    "private_import": "pending"
+    "private_import": "success",
+    "descript_import_job": "project-media-import-f355616a-f542-4330-8de2-8d61d7873660",
+    "descript_media_asset": "99-02-reference-repair.mp3",
+    "standalone_composition_id": "cd5a3d50-0a65-4ee2-b40a-c0eaee491338",
+    "independent_asr_source_tokens": 43,
+    "independent_asr_matches": 42
+  },
+  "private_candidate": {
+    "composition_id": "6a251168-1d0d-4a9d-b9ea-daed1d1db016",
+    "original_composition_id": "aef945b9-0b31-48ad-9ec6-270c80f639c7",
+    "original_unchanged": true,
+    "repaired_duration_seconds": 883.027503,
+    "original_duration_seconds": 859.06285,
+    "source_tokens": 1670,
+    "independent_transcript_tokens": 1645,
+    "exact_match_percent": 95.75,
+    "material_source_gaps_longer_than_3_tokens": 0,
+    "final_listening_qa": "PENDING",
+    "mastering_qa": "PENDING",
+    "publication_allowed": false
   }
 }

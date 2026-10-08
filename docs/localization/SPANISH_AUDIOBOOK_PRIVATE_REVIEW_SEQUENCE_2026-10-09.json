@@ -11,8 +11,8 @@
   "publication_approval": "NOT_GRANTED",
   "human_listening_approval": "PENDING",
   "mastering_approval": "PENDING",
-  "chapter_boundary_approval": "PENDING",
-  "note": "Composition IDs are private-review selections, not approved final delivery IDs. Corrected/partial alternatives exist and must not be chosen casually.",
+  "chapter_boundary_approval": "PRIVATE_TEXT_TIMING_PASS_AUDIO_LISTENING_PENDING",
+  "note": "This lists private review candidates only, NOT approved final masters. Tracks 10–15 use non-destructive boundary-corrected duplicates: 13,229/13,229 core words preserved and aggregate duration unchanged, but five acoustic joins require listening. Track 18 uses a separate repaired candidate with splice listening hold. All release flags are OFF.",
   "tracks": [
     {
       "track": "00",
@@ -107,57 +107,87 @@
     {
       "track": "10",
       "description": "Chapter 8",
-      "private_review_composition_id": "66c4f264-0abd-4f33-97f4-45532cf8b702",
-      "duration_seconds": 1011.931,
+      "private_review_composition_id": "2f2d2ff3-e05a-43a5-99af-4d789082a305",
+      "duration_seconds": 1010.937,
       "mastering_status": "PENDING",
       "final_listening_status": "PENDING",
-      "public_allowed": false
+      "public_allowed": false,
+      "original_review_composition_id": "66c4f264-0abd-4f33-97f4-45532cf8b702",
+      "boundary_candidate": true,
+      "boundary_text_qa": "PRIVATE_PASS_ALL_CORE_WORDS_PRESERVED",
+      "boundary_audio_listening_qa": "PENDING",
+      "boundary_source": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_PART_BOUNDARY_CORRECTION_2026-10-09.md"
     },
     {
       "track": "11",
       "description": "Chapter 9",
-      "private_review_composition_id": "090cb5b9-2dd4-4197-a4f6-7053321eddb8",
-      "duration_seconds": 916.376,
+      "private_review_composition_id": "d154039c-2b7d-4002-9bd3-032e3531eef1",
+      "duration_seconds": 916.027,
       "mastering_status": "PENDING",
       "final_listening_status": "PENDING",
-      "public_allowed": false
+      "public_allowed": false,
+      "original_review_composition_id": "090cb5b9-2dd4-4197-a4f6-7053321eddb8",
+      "boundary_candidate": true,
+      "boundary_text_qa": "PRIVATE_PASS_ALL_CORE_WORDS_PRESERVED",
+      "boundary_audio_listening_qa": "PENDING",
+      "boundary_source": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_PART_BOUNDARY_CORRECTION_2026-10-09.md"
     },
     {
       "track": "12",
       "description": "Chapter 10",
-      "private_review_composition_id": "5856dedb-b4e4-4fec-aa74-94882956fa74",
-      "duration_seconds": 1089.593,
+      "private_review_composition_id": "ade2a5e4-2b8d-4342-8fc4-1869f61cd42d",
+      "duration_seconds": 1089.773,
       "mastering_status": "PENDING",
       "final_listening_status": "PENDING",
-      "public_allowed": false
+      "public_allowed": false,
+      "original_review_composition_id": "5856dedb-b4e4-4fec-aa74-94882956fa74",
+      "boundary_candidate": true,
+      "boundary_text_qa": "PRIVATE_PASS_ALL_CORE_WORDS_PRESERVED",
+      "boundary_audio_listening_qa": "PENDING",
+      "boundary_source": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_PART_BOUNDARY_CORRECTION_2026-10-09.md"
     },
     {
       "track": "13",
       "description": "Chapter 11",
-      "private_review_composition_id": "2b44f958-cc0f-4b6f-96a5-14d76f13e2c9",
-      "duration_seconds": 930.769,
+      "private_review_composition_id": "8644e0dc-4fc1-475a-ab30-85a53521445b",
+      "duration_seconds": 930.629,
       "mastering_status": "PENDING",
       "final_listening_status": "PENDING",
-      "public_allowed": false
+      "public_allowed": false,
+      "original_review_composition_id": "2b44f958-cc0f-4b6f-96a5-14d76f13e2c9",
+      "boundary_candidate": true,
+      "boundary_text_qa": "PRIVATE_PASS_ALL_CORE_WORDS_PRESERVED",
+      "boundary_audio_listening_qa": "PENDING",
+      "boundary_source": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_PART_BOUNDARY_CORRECTION_2026-10-09.md"
     },
     {
       "track": "14",
       "description": "Chapter 12",
-      "private_review_composition_id": "6d0cfdc6-410d-489c-b754-9430421be2ad",
-      "duration_seconds": 1168.013,
+      "private_review_composition_id": "fc7b5ff2-9f63-4e36-ba53-00240cb05058",
+      "duration_seconds": 1167.664,
       "mastering_status": "PENDING",
       "final_listening_status": "PENDING",
-      "public_allowed": false
+      "public_allowed": false,
+      "original_review_composition_id": "6d0cfdc6-410d-489c-b754-9430421be2ad",
+      "boundary_candidate": true,
+      "boundary_text_qa": "PRIVATE_PASS_ALL_CORE_WORDS_PRESERVED",
+      "boundary_audio_listening_qa": "PENDING",
+      "boundary_source": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_PART_BOUNDARY_CORRECTION_2026-10-09.md"
     },
     {
       "track": "15",
       "description": "Chapter 13",
-      "private_review_composition_id": "0c5ac266-93a5-4ed1-83a6-0238bb38120a",
-      "duration_seconds": 1346.011,
+      "private_review_composition_id": "34e4b853-0b77-4a21-9830-f231a9045383",
+      "duration_seconds": 1347.663,
       "mastering_status": "PENDING",
       "final_listening_status": "PENDING",
       "public_allowed": false,
-      "special_hold": "final 15-23 speaker_label_detection_timeout; media confirmed present; independent review required"
+      "special_hold": "final 15-23 speaker_label_detection_timeout; media confirmed present; independent review required",
+      "original_review_composition_id": "0c5ac266-93a5-4ed1-83a6-0238bb38120a",
+      "boundary_candidate": true,
+      "boundary_text_qa": "PRIVATE_PASS_ALL_CORE_WORDS_PRESERVED",
+      "boundary_audio_listening_qa": "PENDING",
+      "boundary_source": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_PART_BOUNDARY_CORRECTION_2026-10-09.md"
     },
     {
       "track": "16",

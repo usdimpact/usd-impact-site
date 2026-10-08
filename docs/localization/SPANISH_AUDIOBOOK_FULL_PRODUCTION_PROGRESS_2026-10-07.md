@@ -189,3 +189,20 @@ The safe resume command is: **Track 06 / Chapter 4 / segment 11 with Narrator Ma
 - missing material claim: **none found**
 - changed compliance meaning: **none found**
 - disposition: **PASS**
+
+
+### Chapter 8
+
+- title: **Gas y GNL frente al dólar**
+- initial funded batch run: `37701309467`; segments 1–14 completed before segment 15 timed out
+- recovery run for untouched segments 16–17: `37704797804`
+- ambiguous segment 15 was retired and replaced deterministically by `15a` + `15b`; recovery run `37706581240`
+- canonical pieces: **18/18**
+- final private Descript composition: `66c4f264-0abd-4f33-97f4-45532cf8b702`
+- final duration: **1,011.931 s (~16:52)**
+- source alignment: **98.95%**
+- stricter omission review: **0 material multi-word omissions**
+- repeated EIA references confused the sequence aligner; HeyGen word timestamps confirm the full title `Market dynamics vary at key natural gas pricing hubs` was spoken correctly
+- missing material claim: **none found**
+- changed compliance meaning: **none found**
+- disposition: **PASS**

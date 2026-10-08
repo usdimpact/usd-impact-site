@@ -8,7 +8,13 @@ import TelemetryClient from '../components/TelemetryClient.astro';
 import PwaClient from '../components/PwaClient.astro';
 import { isSearchUtilityPath } from '../lib/search-utility-policy.js';
 import { canonicalUrlForRequest } from '../lib/canonical-url.js';
-import { SITE_NAVIGATION, navigationLinkIsActive } from '../lib/site-navigation.js';
+import {
+  SITE_NAVIGATION,
+  SPANISH_PUBLIC_NAVIGATION,
+  navigationLinkIsActive,
+  siteShellCopyForLocale,
+} from '../lib/site-navigation.js';
+import { localizationManifest } from '../data/localization-manifest.js';
 import { serializeStructuredData, structuredDataGraph } from '../lib/structured-data.js';
 import { getChapterById, getSurfaceBridgeForPath } from '../data/book-site-bridge/index.mjs';
 const [learnNavigation, updatesNavigation, libraryNavigation] = SITE_NAVIGATION;
@@ -19,16 +25,29 @@ const {
   stylesheets = [],
   structuredData = [],
   alternateLocaleHref = null,
+  locale: requestedLocale = 'en',
+  currentPath: requestedCurrentPath = null,
+  responsiveTables = false,
 } = Astro.props;
+const locale = requestedLocale === 'es' ? 'es' : 'en';
+const shellCopy = siteShellCopyForLocale(locale);
+const analyticsEnabled = localizationManifest.locales[locale]?.analyticsEnabled === true;
 const noindex = pageNoindex || isSearchUtilityPath(Astro.url.pathname);
 const canonicalUrl = noindex ? null : canonicalUrlForRequest(Astro.url);
 const alternateLocaleUrl = !noindex && typeof alternateLocaleHref === 'string' && alternateLocaleHref.startsWith('/')
   ? canonicalUrlForRequest(new URL(alternateLocaleHref, Astro.url))
   : null;
-const structuredDataJson = noindex ? null : serializeStructuredData(structuredDataGraph(structuredData));
-const surfaceBridge = getSurfaceBridgeForPath(Astro.url.pathname);
+const englishLocaleUrl = locale === 'en' ? canonicalUrl : alternateLocaleUrl;
+const spanishLocaleUrl = locale === 'es' ? canonicalUrl : alternateLocaleUrl;
+const structuredDataJson = noindex ? null : serializeStructuredData(structuredDataGraph(structuredData, {
+  locale,
+  url: canonicalUrl,
+  title,
+  description,
+}));
+const surfaceBridge = locale === 'en' ? getSurfaceBridgeForPath(Astro.url.pathname) : null;
 const surfaceChapter = surfaceBridge ? getChapterById(surfaceBridge.chapterId) : null;
-const currentPath = Astro.url.pathname;
+const currentPath = requestedCurrentPath ?? Astro.url.pathname;
 const pageIsActive = (href) => navigationLinkIsActive(currentPath, href);
 const learnIsActive = [
   "/start-here/",
@@ -39,7 +58,7 @@ const updatesAreActive = ["/news/", "/score/", "/reports/"].some(pageIsActive);
 const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-edition/"].some(pageIsActive);
 ---
 <!doctype html>
-<html lang="en">
+<html lang={locale}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -52,22 +71,43 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
     <title>{title}</title>
     <meta name="description" content={description} />
     {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
-    {canonicalUrl && alternateLocaleUrl && <link rel="alternate" hreflang="en" href={canonicalUrl} />}
-    {alternateLocaleUrl && <link rel="alternate" hreflang="es" href={alternateLocaleUrl} />}
-    {canonicalUrl && alternateLocaleUrl && <link rel="alternate" hreflang="x-default" href={canonicalUrl} />}
+    {englishLocaleUrl && spanishLocaleUrl && <link rel="alternate" hreflang="en" href={englishLocaleUrl} />}
+    {englishLocaleUrl && spanishLocaleUrl && <link rel="alternate" hreflang="es" href={spanishLocaleUrl} />}
+    {englishLocaleUrl && spanishLocaleUrl && <link rel="alternate" hreflang="x-default" href={englishLocaleUrl} />}
     <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
     <link rel="icon" href="/assets/logo/USDImpact_Icon_Color_192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="/assets/logo/USDImpact_Icon_Color_192.png" sizes="192x192" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     {structuredDataJson && <script type="application/ld+json" set:html={structuredDataJson}></script>}
     {stylesheets.map((href) => <link rel="stylesheet" href={href} />)}
+    {responsiveTables && (
+      <style is:global>
+        .page-content table { width: 100%; border-collapse: collapse; }
+        .page-content th, .page-content td {
+          padding: 0.75rem;
+          border-bottom: 1px solid #dbe1e8;
+          text-align: left;
+          vertical-align: top;
+        }
+        .page-content th { color: var(--navy); font-weight: 800; }
+        @media (max-width: 760px) {
+          .page-content table {
+            display: block;
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+          }
+          .page-content th, .page-content td { min-width: 9rem; }
+        }
+      </style>
+    )}
     <script is:inline src="/assets/session-entry.js" defer></script>
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <a class="skip-link" href="#main-content">{shellCopy.skipLink}</a>
     <header class="site-header">
       <div class="container header-inner">
-        <a class="logo" href="/" aria-label="USD Impact home">
+        <a class="logo" href={shellCopy.homeHref} aria-label={shellCopy.homeAriaLabel}>
           <img
             src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
             srcset="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png 256w, /assets/logo/USDImpact_Horizontal_Color_NoTagline_512.png 512w"
@@ -85,35 +125,60 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
           aria-controls="site-navigation"
         >
           <span class="nav-toggle-icon" aria-hidden="true"></span>
-          <span>Menu</span>
+          <span>{shellCopy.menuLabel}</span>
         </button>
-        <nav id="site-navigation" class="nav" aria-label="Main navigation" data-open="false">
-          <details class="nav-group" data-nav-group>
-            <summary class:list={["nav-summary", { "is-active": learnIsActive }]}>Learn</summary>
-            <div class="nav-submenu">
-              {learnNavigation.links.map((link) => (
-                <a href={link.href} aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}>{link.label}</a>
+        <nav id="site-navigation" class="nav" aria-label={shellCopy.navigationLabel} data-open="false">
+          {locale === 'en' ? (
+            <>
+              <details class="nav-group" data-nav-group>
+                <summary class:list={["nav-summary", { "is-active": learnIsActive }]}>Learn</summary>
+                <div class="nav-submenu">
+                  {learnNavigation.links.map((link) => (
+                    <a href={link.href} aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}>{link.label}</a>
+                  ))}
+                </div>
+              </details>
+              <details class="nav-group" data-nav-group>
+                <summary class:list={["nav-summary", { "is-active": updatesAreActive }]}>Updates</summary>
+                <div class="nav-submenu">
+                  {updatesNavigation.links.map((link) => (
+                    <a href={link.href} aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}>{link.label}</a>
+                  ))}
+                </div>
+              </details>
+              <details class="nav-group" data-nav-group>
+                <summary class:list={["nav-summary", { "is-active": libraryIsActive }]}>Library</summary>
+                <div class="nav-submenu">
+                  {libraryNavigation.links.map((link) => (
+                    <a href={link.href} aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}>{link.label}</a>
+                  ))}
+                </div>
+              </details>
+              <a class="nav-direct" href="/account" aria-current={pageIsActive("/account/") ? "page" : undefined}>Account</a>
+            </>
+          ) : (
+            <>
+              {SPANISH_PUBLIC_NAVIGATION.map((link) => (
+                <a
+                  class="nav-direct"
+                  href={link.href}
+                  aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}
+                >
+                  {link.label}
+                </a>
               ))}
-            </div>
-          </details>
-          <details class="nav-group" data-nav-group>
-            <summary class:list={["nav-summary", { "is-active": updatesAreActive }]}>Updates</summary>
-            <div class="nav-submenu">
-              {updatesNavigation.links.map((link) => (
-                <a href={link.href} aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}>{link.label}</a>
-              ))}
-            </div>
-          </details>
-          <details class="nav-group" data-nav-group>
-            <summary class:list={["nav-summary", { "is-active": libraryIsActive }]}>Library</summary>
-            <div class="nav-submenu">
-              {libraryNavigation.links.map((link) => (
-                <a href={link.href} aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}>{link.label}</a>
-              ))}
-            </div>
-          </details>
-          <a class="nav-direct" href="/account" aria-current={pageIsActive("/account/") ? "page" : undefined}>Account</a>
-          {alternateLocaleHref && <a class="nav-direct" href={alternateLocaleHref} hreflang="es" lang="es">Español</a>}
+            </>
+          )}
+          {alternateLocaleHref && (
+            <a
+              class="nav-direct"
+              href={alternateLocaleHref}
+              hreflang={shellCopy.localeSwitchLanguage}
+              lang={shellCopy.localeSwitchLanguage}
+            >
+              {shellCopy.localeSwitchLabel}
+            </a>
+          )}
         </nav>
       </div>
     </header>
@@ -132,60 +197,95 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
       </aside>
     )}
     <footer class="footer">
-      <div class="container footer-grid">
-        <div class="footer-brand">
-          <img
-            src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
-            srcset="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png 256w, /assets/logo/USDImpact_Horizontal_Color_NoTagline_512.png 512w"
-            sizes="164px"
-            alt="USD Impact"
-            width="256"
-            height="77"
-            loading="lazy"
-            decoding="async"
-          />
-          <p>Practical education for reading the dollar first.</p>
+      {locale === 'en' ? (
+        <div class="container footer-grid">
+          <div class="footer-brand">
+            <img
+              src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
+              srcset="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png 256w, /assets/logo/USDImpact_Horizontal_Color_NoTagline_512.png 512w"
+              sizes="164px"
+              alt="USD Impact"
+              width="256"
+              height="77"
+              loading="lazy"
+              decoding="async"
+            />
+            <p>{shellCopy.footerBrand}</p>
+          </div>
+          <nav class="footer-nav" aria-label="Footer navigation">
+            <div class="footer-group">
+              <p class="footer-heading">Product</p>
+              <a href="/account">Account</a>
+              <a href="/book/read-the-dollar-first/">Book &amp; pricing</a>
+              <a href="/guided-edition/audiobook">Audiobook</a>
+              <a href="/guided-edition/video-library">Video Library</a>
+            </div>
+            <div class="footer-group">
+              <p class="footer-heading">Learn</p>
+              <a href="/start-here">Start Here</a>
+              <a href="/framework/dollar-transmission-chain">Framework</a>
+              <a href="/lead-magnets/weekly-dollar-regime-checklist">Weekly Checklist</a>
+            </div>
+            <div class="footer-group">
+              <p class="footer-heading">Research</p>
+              <a href="/news">Daily USD Impact</a>
+              <a href="/score">Weekly Score</a>
+              <a href="/reports">Reports</a>
+              <a href="/research/evidence-map">Evidence Map</a>
+              <a href="/research/independent-replication">Replication</a>
+            </div>
+            <div class="footer-group">
+              <p class="footer-heading">Legal &amp; trust</p>
+              <a href="/about">About &amp; transparency</a>
+              <a href="/contact">Contact</a>
+              <a href="/privacy/">Privacy</a>
+              <a href="/terms/">Terms</a>
+              <a href="/refund-policy/">Refund Policy</a>
+              <a href="/accessibility">Accessibility</a>
+              <a href="/compliance">Compliance</a>
+              <button id="privacy-settings-button" class="footer-privacy-settings" type="button">Privacy settings</button>
+            </div>
+          </nav>
+          <div class="footer-meta">
+            <span>Operated by KELA LEADS S.R.L.</span>
+            <span>CUI 40790448 · Trade Register J38/820/2020 · EUID ROONRC.J38/820/2020</span>
+            <span>Educational content only — not investment, legal, tax, trading, or financial advice.</span>
+          </div>
         </div>
-        <nav class="footer-nav" aria-label="Footer navigation">
-          <div class="footer-group">
-            <p class="footer-heading">Product</p>
-            <a href="/account">Account</a>
-            <a href="/book/read-the-dollar-first/">Book &amp; pricing</a>
-            <a href="/guided-edition/audiobook">Audiobook</a>
-            <a href="/guided-edition/video-library">Video Library</a>
+      ) : (
+        <div class="container footer-grid">
+          <div class="footer-brand">
+            <img
+              src="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png"
+              srcset="/assets/logo/USDImpact_Horizontal_Color_NoTagline_256.png 256w, /assets/logo/USDImpact_Horizontal_Color_NoTagline_512.png 512w"
+              sizes="164px"
+              alt="USD Impact"
+              width="256"
+              height="77"
+              loading="lazy"
+              decoding="async"
+            />
+            <p>{shellCopy.footerBrand}</p>
           </div>
-          <div class="footer-group">
-            <p class="footer-heading">Learn</p>
-            <a href="/start-here">Start Here</a>
-            <a href="/framework/dollar-transmission-chain">Framework</a>
-            <a href="/lead-magnets/weekly-dollar-regime-checklist">Weekly Checklist</a>
+          <nav class="footer-nav" aria-label="Navegación al pie">
+            <div class="footer-group">
+              <p class="footer-heading">Español</p>
+              {SPANISH_PUBLIC_NAVIGATION.map((link) => <a href={link.href}>{link.label}</a>)}
+            </div>
+            <div class="footer-group">
+              <p class="footer-heading">Legal y transparencia</p>
+              <a href="/compliance">Cumplimiento (EN)</a>
+              <a href="/privacy/">Privacidad (EN)</a>
+              <a href="/terms/">Términos (EN)</a>
+              <a href="/about">Transparencia (EN)</a>
+            </div>
+          </nav>
+          <div class="footer-meta">
+            <span>Edición web educativa en español de USD Impact.</span>
+            <span>Contenido educativo e informativo únicamente; no constituye asesoramiento de inversión, legal, fiscal ni de operativa, señal de trading ni recomendación.</span>
           </div>
-          <div class="footer-group">
-            <p class="footer-heading">Research</p>
-            <a href="/news">Daily USD Impact</a>
-            <a href="/score">Weekly Score</a>
-            <a href="/reports">Reports</a>
-            <a href="/research/evidence-map">Evidence Map</a>
-            <a href="/research/independent-replication">Replication</a>
-          </div>
-          <div class="footer-group">
-            <p class="footer-heading">Legal &amp; trust</p>
-            <a href="/about">About &amp; transparency</a>
-            <a href="/contact">Contact</a>
-            <a href="/privacy/">Privacy</a>
-            <a href="/terms/">Terms</a>
-            <a href="/refund-policy/">Refund Policy</a>
-            <a href="/accessibility">Accessibility</a>
-            <a href="/compliance">Compliance</a>
-            <button id="privacy-settings-button" class="footer-privacy-settings" type="button">Privacy settings</button>
-          </div>
-        </nav>
-        <div class="footer-meta">
-          <span>Operated by KELA LEADS S.R.L.</span>
-          <span>CUI 40790448 · Trade Register J38/820/2020 · EUID ROONRC.J38/820/2020</span>
-          <span>Educational content only — not investment, legal, tax, trading, or financial advice.</span>
         </div>
-      </div>
+      )}
     </footer>
     <script>
       const navigation = document.querySelector("#site-navigation");
@@ -245,9 +345,9 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
         if (firstMain.id === "main-content") firstMain.tabIndex = -1;
       }
     </script>
-    <ConsentClient />
-    <GoogleAnalyticsClient />
-    <TelemetryClient />
-    <PwaClient />
+    {analyticsEnabled && <ConsentClient />}
+    {analyticsEnabled && <GoogleAnalyticsClient />}
+    {analyticsEnabled && <TelemetryClient />}
+    {locale === 'en' && <PwaClient />}
   </body>
 </html>

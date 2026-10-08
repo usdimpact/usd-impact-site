@@ -17,7 +17,7 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "PROVIDER_CREDIT_HOLD_SEGMENTS_12_TO_15",
+  "track_status": "11_OF_15_PRIVATE_AUDIO_ASSEMBLED_PROVIDER_CREDIT_HOLD",
   "next_segment": "12",
   "do_not_regenerate": [
     "1",
@@ -37,67 +37,67 @@
   "segments": [
     {
       "id": "1",
-      "status": "generated_import_in_progress",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-01.txt",
       "media_url": null
     },
     {
       "id": "2",
-      "status": "generated_import_in_progress",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-02.txt",
       "media_url": null
     },
     {
       "id": "3",
-      "status": "generated_import_in_progress",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-03.txt",
       "media_url": null
     },
     {
       "id": "4",
-      "status": "generated_import_in_progress",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-04.txt",
       "media_url": null
     },
     {
       "id": "5",
-      "status": "generated_import_in_progress",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-05.txt",
       "media_url": null
     },
     {
       "id": "6",
-      "status": "generated_import_in_progress",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-06.txt",
       "media_url": null
     },
     {
       "id": "7",
-      "status": "generated_import_in_progress",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-07.txt",
       "media_url": null
     },
     {
       "id": "8",
-      "status": "generated_import_in_progress",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-08.txt",
       "media_url": null
     },
     {
       "id": "9",
-      "status": "generated_import_pending",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-09.txt",
       "media_url": null
     },
     {
       "id": "10",
-      "status": "generated_import_pending",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-10.txt",
       "media_url": null
     },
     {
       "id": "11",
-      "status": "generated_import_pending",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-11.txt",
       "media_url": null
     },
@@ -130,7 +130,10 @@
     "run_id": 37842325398,
     "artifact_id": 11577893181,
     "generated_segments": 8,
-    "descript_import_job": "project-media-import-87f9ad2c-40ac-41f3-92ea-0d03fdc80696"
+    "descript_import_job": "project-media-import-87f9ad2c-40ac-41f3-92ea-0d03fdc80696",
+    "import_result": "cancelled_stalled_job_after_media_import_recovered",
+    "descript_composition_id": "aef945b9-0b31-48ad-9ec6-270c80f639c7",
+    "verified_media_segments": 8
   },
   "batch_b": {
     "run_id": 37844306100,
@@ -148,6 +151,32 @@
       "15"
     ],
     "retry_policy": "Do not retry or regenerate already completed 1-11; resume 12-15 only after provider credit available and approved.",
-    "publish_allowed": false
+    "publish_allowed": false,
+    "import_job_id": "project-media-import-aec47d57-90bb-4535-aeb0-71595fc73fdf",
+    "import_result": "success",
+    "imported_segments": [
+      "9",
+      "10",
+      "11"
+    ]
+  },
+  "qa_checkpoint_2026_10_09": {
+    "verified_segments": 11,
+    "assembled_duration_seconds": 607.268566,
+    "independent_audio_files": 11,
+    "mp3_decode": "PASS",
+    "silence_gaps_longer_than_4s": 0,
+    "provider_word_timestamp_match": "1252/1252 normalized source narration script tokens (100%); not an independent listening verification",
+    "descript_transcript": "PARTIAL: exported transcript omits a substantial middle section despite presence of audio; not yet final QA",
+    "public_release": "HOLD",
+    "provider_credits_remaining": 0,
+    "provider_credit_reset_utc": "2026-10-13T19:31:48Z",
+    "pending_segments": [
+      "12",
+      "13",
+      "14",
+      "15"
+    ],
+    "resume_rule": "Do not trigger generation while credits are zero; do not retry 1-11. Generate 12-15 only after verified credits, then complete independent transcription, listening and mastering QA."
   }
 }

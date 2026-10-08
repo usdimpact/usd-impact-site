@@ -23,6 +23,9 @@ for (const group of SITE_NAVIGATION) {
 for (const path of memberPaths) assert.ok(!path.endsWith('/'), `Protected member navigation must match Vercel slashless routing: ${path}`);
 assert.equal(navigationLinkIsActive('/guided-edition/audiobook/', '/guided-edition'), false);
 assert.equal(navigationLinkIsActive('/guided-edition/audiobook/track/one/', '/guided-edition/audiobook/'), true);
+assert.equal(navigationLinkIsActive('/es/', '/es/'), true);
+assert.equal(navigationLinkIsActive('/es/start-here/', '/es/'), false);
+assert.equal(navigationLinkIsActive('/es/start-here/', '/es/start-here/'), true);
 assert.equal(navigationLinkIsActive('/newsroom/', '/news/'), false);
 assert.equal(navigationLinkIsActive('/news', '/news'), true);
 assert.match(memberMainMenuAssets(), /href="\/assets\/member-main-menu.css"/);
@@ -36,7 +39,9 @@ for (const path of ['../api/guided-edition.js', '../src/lib/audiobook-handler.js
 }
 const layout = await read('../src/layouts/BaseLayout.astro');
 for (const group of ['learnNavigation', 'updatesNavigation', 'libraryNavigation']) assert.ok(layout.includes(`${group}.links.map`));
-assert.match(layout, /SITE_NAVIGATION, navigationLinkIsActive/);
+assert.match(layout, /SITE_NAVIGATION,/);
+assert.match(layout, /navigationLinkIsActive,/);
+assert.match(layout, /SPANISH_PUBLIC_NAVIGATION,/);
 assert.match(layout, /src="\/assets\/session-entry.js" defer/);
 const canonicalFooterPaths = [
   '/account',

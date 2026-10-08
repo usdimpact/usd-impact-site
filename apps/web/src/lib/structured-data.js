@@ -30,6 +30,23 @@ export function websiteStructuredData() {
     name: 'USD Impact',
     url: SITE_ORIGIN,
     publisher: { '@id': ORGANIZATION_ID },
+    inLanguage: ['en', 'es'],
+  };
+}
+
+export function webPageStructuredData({ url, title, description, inLanguage = 'en' } = {}) {
+  if (!url || !title || !description) {
+    throw new Error('WebPage structured data requires url, title, and description.');
+  }
+  return {
+    '@type': 'WebPage',
+    '@id': url,
+    url,
+    name: title,
+    description,
+    inLanguage,
+    isPartOf: { '@id': WEBSITE_ID },
+    publisher: { '@id': ORGANIZATION_ID },
   };
 }
 
@@ -62,10 +79,33 @@ export function articleStructuredData(input) {
   return articleBase({ ...input, type: 'Article' });
 }
 
-export function structuredDataGraph(nodes = []) {
+export function structuredDataGraph(nodes = [], options = {}) {
+  const locale = options.locale === 'es' ? 'es' : 'en';
+  const localizedNodes = nodes.map((node) => (
+    node
+    && typeof node === 'object'
+    && ['Article', 'NewsArticle'].includes(node['@type'])
+    && !node.inLanguage
+      ? { ...node, inLanguage: locale }
+      : node
+  ));
+  const pageNode = options.url
+    ? [webPageStructuredData({
+        url: options.url,
+        title: options.title,
+        description: options.description,
+        inLanguage: locale,
+      })]
+    : [];
+
   return {
     '@context': 'https://schema.org',
-    '@graph': [organizationStructuredData(), websiteStructuredData(), ...nodes],
+    '@graph': [
+      organizationStructuredData(),
+      websiteStructuredData(),
+      ...pageNode,
+      ...localizedNodes,
+    ],
   };
 }
 

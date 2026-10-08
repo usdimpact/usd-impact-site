@@ -42,6 +42,7 @@ export const localizationManifest = deepFreeze({
       "audiobookMemberDelivery": true,
       "bookMemberDelivery": true,
       "marketingEmail": true,
+      "analyticsEnabled": true,
       "knowledgeQuery": true
     },
     "es": {
@@ -53,6 +54,7 @@ export const localizationManifest = deepFreeze({
       "audiobookMemberDelivery": false,
       "bookMemberDelivery": false,
       "marketingEmail": false,
+      "analyticsEnabled": false,
       "knowledgeQuery": true
     }
   },

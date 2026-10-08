@@ -51,7 +51,9 @@ const [
 
 assert.match(layout, /class="skip-link" href="#main-content"/);
 assert.match(layout, /class="nav-toggle"[\s\S]*aria-expanded="false"[\s\S]*aria-controls="site-navigation"/);
-assert.match(layout, /<nav id="site-navigation" class="nav" aria-label="Main navigation" data-open="false">/);
+assert.match(layout, /<nav id="site-navigation" class="nav" aria-label=\{shellCopy\.navigationLabel\} data-open="false">/);
+assert.match(layout, /siteShellCopyForLocale\(locale\)/);
+assert.match(layout, /SPANISH_PUBLIC_NAVIGATION/);
 for (const group of ['Learn', 'Updates', 'Library']) {
   assert.match(layout, new RegExp(`<summary[^>]*>${group}<\\/summary>`));
 }

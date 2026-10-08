@@ -17,7 +17,7 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "PARTIAL_AUDIO_RECOVERED_QA_PENDING",
+  "track_status": "PARTIAL_TRANSCRIPT_QA_PASS_RECOVER_REMAINDER",
   "next_segment": "16",
   "do_not_regenerate": [
     "1",
@@ -39,91 +39,91 @@
   "segments": [
     {
       "id": "1",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-01.txt",
       "media_url": null
     },
     {
       "id": "2",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-02.txt",
       "media_url": null
     },
     {
       "id": "3",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-03.txt",
       "media_url": null
     },
     {
       "id": "4",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-04.txt",
       "media_url": null
     },
     {
       "id": "5",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-05.txt",
       "media_url": null
     },
     {
       "id": "6",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-06.txt",
       "media_url": null
     },
     {
       "id": "7",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-07.txt",
       "media_url": null
     },
     {
       "id": "8",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-08.txt",
       "media_url": null
     },
     {
       "id": "9",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-09.txt",
       "media_url": null
     },
     {
       "id": "10",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-10.txt",
       "media_url": null
     },
     {
       "id": "11",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-11.txt",
       "media_url": null
     },
     {
       "id": "12",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-12.txt",
       "media_url": null
     },
     {
       "id": "13",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-13.txt",
       "media_url": null
     },
     {
       "id": "14",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-14.txt",
       "media_url": null
     },
     {
       "id": "15",
-      "status": "audio_recovered_QA_pending",
+      "status": "transcript_QA_pass_recovered",
       "text_file": "docs/localization/spanish-audiobook-track-14/segment-15.txt",
       "media_url": null
     },
@@ -164,8 +164,21 @@
     "private_artifact_sha256": "60cef779a28a96665adeddd7d7c95e85d6a4adba5b82b78c8f58888a44b23199",
     "audio_segments_recovered": 15,
     "audio_segments_checked_readable": 15,
-    "transcription_qa": "PENDING",
+    "transcription_qa": "PASS",
     "failed_segment": "16",
-    "failure_reason": "HeyGen internal_error; no audio returned; do not blindly rerun full batch"
+    "failure_reason": "HeyGen internal_error; no audio returned; do not blindly rerun full batch",
+    "verified_descript_composition": "6d0cfdc6-410d-489c-b754-9430421be2ad",
+    "verified_audio_duration_seconds": 897.906933,
+    "transcript_alignment": {
+      "source_tokens": 1897,
+      "transcript_tokens": 1897,
+      "matching_tokens": 1888,
+      "exact_token_match_percent": 99.53,
+      "source_only_tokens": 1,
+      "transcript_only_tokens": 1,
+      "substitutions": 8,
+      "multiword_omission_count": 0,
+      "qa_scope": "Descript transcript versus prepared narration scripts 1-15; not a substitute for end-to-end listening QA"
+    }
   }
 }

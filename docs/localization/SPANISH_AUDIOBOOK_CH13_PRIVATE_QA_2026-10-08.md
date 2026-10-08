@@ -32,7 +32,7 @@
 
 ## Outstanding non-release gates
 
-1. Confirm the Descript batch B import agent's final terminal job status. The media files and 22:26 timeline are already visible, and transcript export covers the end disclaimer; the last inspected job status was still **running**, so do not misreport completion.
+1. **Descript import terminal result: PARTIAL.** Batch B audio files 13–23 are all visible in the private composition, and the 22:26 timeline plus end-of-chapter transcript are complete. Clips 13–22 have `media_status=success`; clip `15-23.mp3` has `media_status=failed` because `speaker_label_detection_timeout` despite existing 36.858775 seconds of audio in the composition. This is a transcription speaker-label service exception, **not** evidence of a missing or silent segment. Retain the canonical audio; do not regenerate HeyGen speech or append a duplicate clip. Verify the final clip's playback and speaker-label requirements during finishing QA.
 2. Complete a full listening, pronunciation, and transitions pass, including the Part V repeated heading issues in prior chapters.
 3. Apply final mastering, peak-level control, and accurate MP3 naming. Verify chapter order and metadata in final masters.
 4. Perform whole-audiobook acceptance QA including front matter, Chapters 1–13, further reading, appendices, and closing track.

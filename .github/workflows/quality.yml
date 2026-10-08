@@ -82,6 +82,8 @@ jobs:
         run: npm run validate:compliance
       - name: Validate internal links
         run: npm run validate:links
+      - name: Validate localization contracts
+        run: npm run validate:localization
       - name: Validate publishing
         run: npm run validate:publishing
       - name: Validate automation health checks

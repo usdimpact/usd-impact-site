@@ -2,7 +2,7 @@
 
 Checkpoint date: **2026-10-09**. Branch: `feat/spanish-audiobook-pilot-foundation`.
 
-**Release gate: HOLD.** Private production and QA only. Do not publish to Descript, Production, member storage, or commerce/auth. Voice remains **Narrator Mateo** (`626ca51acb2e496f8dcee8d7591fda3c`), `es-419`, `0.92x`; source remains Spanish Edition 1.3 Candidate 1.
+**Release gate: HOLD — Segment 18-03 suspected material spoken omission.** The provider's complete word-timestamp *text* was not proof that each word was audible. Review `docs/localization/SPANISH_AUDIOBOOK_APP_B_SEGMENT03_REPAIR_PLAN_2026-10-09.md` before any release. In addition, segments 12–15 remain ungenerated due zero HeyGen credits. Private production and QA only. Do not publish to Descript, Production, member storage, or commerce/auth. Voice remains **Narrator Mateo** (`626ca51acb2e496f8dcee8d7591fda3c`), `es-419`, `0.92x`; source remains Spanish Edition 1.3 Candidate 1.
 
 ## Evidence and recovery
 
@@ -18,8 +18,8 @@ Checkpoint date: **2026-10-09**. Branch: `feat/spanish-audiobook-pilot-foundatio
 
 - All **11/11** preserved MP3 files decode without errors, are uniquely hashed, and have no detected continuous silence lasting more than four seconds at the tested threshold.
 - Prepared scripts 01–11 versus HeyGen `word_timestamps`: **1,252/1,252 exact normalized matching tokens** (100%). This verifies provider timestamps agree with submitted narration script, **not** independent acoustic correctness or end-to-end listening quality.
-- Descript's exported transcript for the 11-clip composition is **incomplete**: approximately 581 normalized transcript tokens compared with 1,252 source-script tokens, including one large missing *transcription* block. **Do not conflate missing Descript transcript with missing audio.** Preserve audio; investigate targeted transcription repair independently.
-- Final audio true-peak/limiter and listening checks are **not passed**. Disposition: **AUDIO ASSEMBLY + PROVIDER SCRIPT/TIMESTAMP QA PASS; INDEPENDENT TRANSCRIPT + MASTERING HOLD**.
+- Descript's **initial** exported transcript for the 11-clip composition was incomplete: approximately 581 tokens compared with 1,252 source-script tokens. Subsequent transcription-only repair restored clips 03–08, but a *material suspected spoken omission* remains within clip 03: an approximately 28-token institutional source-reference passage is still absent from independent STT, coinciding with 16 zero-duration provider timestamps. **Do not presume content is audible merely because provider timestamps list its words.**
+- Final audio true-peak/limiter and listening checks are **not passed**. Disposition: **AUDIO ASSEMBLY PASS; MATERIAL CONTENT QA HOLD FOR CLIP 18-03, CREDIT HOLD FOR 12–15, FULL LISTENING AND MASTERING HOLD**.
 
 ## Credit and guarded restart
 
@@ -33,8 +33,8 @@ Checkpoint date: **2026-10-09**. Branch: `feat/spanish-audiobook-pilot-foundatio
 
 - Agent Underlord transcription-only job: `project-agent-edit-2f542797-4a70-4d44-a164-76dee15859ca-60e240c5-16e1-45b1-adaf-9dec3ed2f0b2`.
 - Target: restore independently derived Spanish transcripts for EXISTING audio clips 18-03 through 18-08 without editing audio, duration, clip count, or publishing.
-- Last observed status: `running`, `Waiting for transcriptions…`. This is **not** a QA pass or a completed repair.
-- Once terminal, verify project composition remains exactly 11 audio clips / 607.269 seconds; re-export transcript and repeat source comparison before changing QA status. Preserve generated MP3 files if transcription fails.
+- Final observed agent job status: **stopped/success**, completed from existing audio without replacement synthesis. Independent Descript transcript recovered 1,200 normalized tokens versus 1,252 prepared script tokens (1,159 exact; **92.57%** token agreement); the institutional-reference gap in clip 03 remains unresolved.
+- Verified readback after repair: **11 audio clips**, unchanged **607.269 s** composition, and **0 publishes**. QA HOLD remains in effect until the clip 03 content discrepancy is resolved, plus final listening/mastering.
 
 ## PR scope check
 

@@ -17,7 +17,7 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "ALL_23_CONTENT_QA_PASS_IMPORT_JOB_PENDING_MASTERING_HOLD",
+  "track_status": "ALL_23_PRIVATE_CONTENT_QA_PASS_DESCRIPT_SPEAKER_LABEL_TIMEOUT_MASTERING_HOLD",
   "next_segment": null,
   "do_not_regenerate": [
     "1",
@@ -120,67 +120,67 @@
     },
     {
       "id": "13",
-      "status": "private_content_QA_pass_import_job_pending",
+      "status": "private_content_QA_pass_import_succeeded",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-13.txt",
       "media_url": null
     },
     {
       "id": "14",
-      "status": "private_content_QA_pass_import_job_pending",
+      "status": "private_content_QA_pass_import_succeeded",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-14.txt",
       "media_url": null
     },
     {
       "id": "15",
-      "status": "private_content_QA_pass_import_job_pending",
+      "status": "private_content_QA_pass_import_succeeded",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-15.txt",
       "media_url": null
     },
     {
       "id": "16",
-      "status": "private_content_QA_pass_import_job_pending",
+      "status": "private_content_QA_pass_import_succeeded",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-16.txt",
       "media_url": null
     },
     {
       "id": "17",
-      "status": "private_content_QA_pass_import_job_pending",
+      "status": "private_content_QA_pass_import_succeeded",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-17.txt",
       "media_url": null
     },
     {
       "id": "18",
-      "status": "private_content_QA_pass_import_job_pending",
+      "status": "private_content_QA_pass_import_succeeded",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-18.txt",
       "media_url": null
     },
     {
       "id": "19",
-      "status": "private_content_QA_pass_import_job_pending",
+      "status": "private_content_QA_pass_import_succeeded",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-19.txt",
       "media_url": null
     },
     {
       "id": "20",
-      "status": "private_content_QA_pass_import_job_pending",
+      "status": "private_content_QA_pass_import_succeeded",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-20.txt",
       "media_url": null
     },
     {
       "id": "21",
-      "status": "private_content_QA_pass_import_job_pending",
+      "status": "private_content_QA_pass_import_succeeded",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-21.txt",
       "media_url": null
     },
     {
       "id": "22",
-      "status": "private_content_QA_pass_import_job_pending",
+      "status": "private_content_QA_pass_import_succeeded",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-22.txt",
       "media_url": null
     },
     {
       "id": "23",
-      "status": "private_content_QA_pass_import_job_pending",
+      "status": "private_content_QA_pass_speaker_label_detection_timeout",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-23.txt",
       "media_url": null
     }
@@ -215,7 +215,12 @@
     "artifact_sha256": "8f1659c91afbab1518ea92f681b071bb2ffa455488d0a4b978efef5d3a46aa30",
     "generated_count": 11,
     "generated_duration_seconds": 624.614,
-    "descript_import_job_id": "project-media-import-2c0c2734-8f92-46c5-b8af-a6a7d9731abb"
+    "descript_import_job_id": "project-media-import-2c0c2734-8f92-46c5-b8af-a6a7d9731abb",
+    "import_job_status": "partial",
+    "imported_audio_segments": 11,
+    "successful_label_detection": 10,
+    "speaker_label_detection_timeout_segment": "23",
+    "note": "Segment 23 remains in the full composition at 36.858775 seconds; chapter transcript export includes end disclaimer. Do not duplicate audio or resynthesize."
   },
   "chapter_qa": {
     "source": "Spanish Edition 1.3 Candidate 1, document lines 827-950",
@@ -229,9 +234,10 @@
     "meaning_preserving_table_narration": "Verified rows contain headings, questions, rationales and sources",
     "material_multiword_prose_omissions": 0,
     "import_job_id": "project-media-import-2c0c2734-8f92-46c5-b8af-a6a7d9731abb",
-    "import_job_status": "running at last verification",
-    "final_listening_mastering": "HOLD",
+    "import_job_status": "partial; 15-23.mp3 speaker_label_detection_timeout",
+    "final_listening_mastering": "HOLD (also verify segment 23 spoken boundaries)",
     "production_release": "HOLD",
-    "qa_report": "docs/localization/SPANISH_AUDIOBOOK_CH13_PRIVATE_QA_2026-10-08.md"
+    "qa_report": "docs/localization/SPANISH_AUDIOBOOK_CH13_PRIVATE_QA_2026-10-08.md",
+    "import_exception": "15-23.mp3: speaker_label_detection_timeout; media exists, duration 36.858775, transcript end present"
   }
 }

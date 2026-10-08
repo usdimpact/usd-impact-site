@@ -7,6 +7,7 @@ import {
   newsArticleStructuredData,
   serializeStructuredData,
   structuredDataGraph,
+  webPageStructuredData,
 } from '../src/lib/structured-data.js';
 import { isSearchUtilityPath } from '../src/lib/search-utility-policy.js';
 
@@ -45,6 +46,29 @@ assert.equal(graph['@graph'][0].name, 'KELA LEADS S.R.L.');
 assert.equal(graph['@graph'][0].alternateName, 'USD Impact');
 assert.equal(graph['@graph'][1]['@id'], WEBSITE_ID);
 assert.equal(graph['@graph'][1].publisher['@id'], ORGANIZATION_ID);
+assert.deepEqual(graph['@graph'][1].inLanguage, ['en', 'es']);
+
+const spanishPage = webPageStructuredData({
+  url: 'https://www.usd-impact.com/es/start-here',
+  title: 'Empieza aquí',
+  description: 'Introducción educativa de USD Impact en español.',
+  inLanguage: 'es',
+});
+assert.equal(spanishPage['@type'], 'WebPage');
+assert.equal(spanishPage['@id'], spanishPage.url);
+assert.equal(spanishPage.inLanguage, 'es');
+assert.equal(spanishPage.isPartOf['@id'], WEBSITE_ID);
+
+const spanishGraph = structuredDataGraph([news], {
+  locale: 'es',
+  url: spanishPage.url,
+  title: spanishPage.name,
+  description: spanishPage.description,
+});
+assert.equal(spanishGraph['@graph'][2]['@type'], 'WebPage');
+assert.equal(spanishGraph['@graph'][2].inLanguage, 'es');
+assert.equal(spanishGraph['@graph'][3]['@type'], 'NewsArticle');
+assert.equal(spanishGraph['@graph'][3].inLanguage, 'es');
 
 const unsafe = structuredDataGraph([
   articleStructuredData({
@@ -64,6 +88,10 @@ for (const utilityPath of ['/account/sign-in', '/checkout', '/email/confirm']) {
 
 const layout = fs.readFileSync(new URL('../src/layouts/BaseLayout.astro', import.meta.url), 'utf8');
 assert.match(layout, /structuredDataJson = noindex \? null/);
+assert.match(layout, /structuredDataGraph\(structuredData, \{/);
+assert.match(layout, /locale,/);
+assert.match(layout, /url: canonicalUrl/);
+assert.match(layout, /data-content-language=\{locale\}/);
 assert.match(layout, /type="application\/ld\+json"/);
 assert.match(layout, /set:html=\{structuredDataJson\}/);
 

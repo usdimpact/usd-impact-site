@@ -6,7 +6,7 @@ slug: "/es"
 category: "USD Impact"
 status: "published"
 readingLevel: "Principiante"
-lastReviewed: "2026-10-07"
+lastReviewed: "2026-10-08"
 complianceNote: "Material educativo e informativo únicamente; no constituye asesoramiento de inversión personalizado, legal, fiscal ni de operativa, no es una señal de trading y no es una recomendación. Las relaciones de mercado son condicionales; verifica los datos actuales antes de utilizarlos."
 sources:
   - "Federal Reserve"
@@ -42,6 +42,12 @@ La disciplina es separar esas explicaciones en vez de convertir una sola variabl
 Esta edición web en español cubre estas cinco páginas educativas. Las noticias, Score, informes, Biblioteca, cuenta, pago, audiolibro, correo electrónico y otras superficies de miembro permanecen en inglés por ahora.
 
 Tampoco modifica la experiencia en inglés.
+
+## Actualidad en español
+
+Para seguir qué está cambiando ahora en macro, energía, materias primas, cripto, acciones y geopolítica, visita **[Siguiendo el Dólar](https://siguiendoeldollar.com/)**, una publicación de USD Impact.
+
+USD Impact mantiene aquí el marco educativo y las herramientas para entender los mecanismos. Siguiendo el Dólar aplica ese marco a la actualidad: qué se movió, por qué importa y dónde encaja el dólar, sin convertir una sola variable en una explicación universal.
 
 ## Fuentes verificadas / referencias
 

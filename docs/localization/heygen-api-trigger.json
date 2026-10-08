@@ -1,7 +1,6 @@
 {
   "track": "99",
   "segments": [
-    "1",
     "2"
   ],
   "requested_at": "2026-10-09",
@@ -10,5 +9,5 @@
   "voice_id": "626ca51acb2e496f8dcee8d7591fda3c",
   "locale": "es-419",
   "speed": 0.92,
-  "purpose": "PRIVATE-only QA replacement candidates for suspected omitted Appendix B segment 18-03. Original source split into two shorter Mateo speeches. Do not edit canonical composition; no publish."
+  "purpose": "Isolated private missing institutional-reference sentence only. Distinct text from uncertain timed-out part 1. Never retry part 1; no Descript master changes, no publish."
 }

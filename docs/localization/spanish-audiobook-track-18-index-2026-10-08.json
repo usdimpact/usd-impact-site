@@ -17,8 +17,8 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "BATCH_A_GENERATED_IMPORT_IN_PROGRESS",
-  "next_segment": "9",
+  "track_status": "PROVIDER_CREDIT_HOLD_SEGMENTS_12_TO_15",
+  "next_segment": "12",
   "do_not_regenerate": [
     "1",
     "2",
@@ -27,7 +27,10 @@
     "5",
     "6",
     "7",
-    "8"
+    "8",
+    "9",
+    "10",
+    "11"
   ],
   "special_narration": "docs/localization/SPANISH_AUDIOBOOK_SPECIAL_NARRATION_FORMS_2026-10-07.md",
   "structured_narration": "docs/localization/SPANISH_AUDIOBOOK_STRUCTURED_TABLE_NARRATION_2026-10-07.md",
@@ -82,19 +85,19 @@
     },
     {
       "id": "9",
-      "status": "pending",
+      "status": "generated_import_pending",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-09.txt",
       "media_url": null
     },
     {
       "id": "10",
-      "status": "pending",
+      "status": "generated_import_pending",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-10.txt",
       "media_url": null
     },
     {
       "id": "11",
-      "status": "pending",
+      "status": "generated_import_pending",
       "text_file": "docs/localization/spanish-audiobook-track-18/segment-11.txt",
       "media_url": null
     },
@@ -128,5 +131,23 @@
     "artifact_id": 11577893181,
     "generated_segments": 8,
     "descript_import_job": "project-media-import-87f9ad2c-40ac-41f3-92ea-0d03fdc80696"
+  },
+  "batch_b": {
+    "run_id": 37844306100,
+    "artifact_id": 11579291355,
+    "completed_segments": [
+      "9",
+      "10",
+      "11"
+    ],
+    "failed_at_segment": "12",
+    "reason": "HeyGen insufficient_credit",
+    "unattempted_segments": [
+      "13",
+      "14",
+      "15"
+    ],
+    "retry_policy": "Do not retry or regenerate already completed 1-11; resume 12-15 only after provider credit available and approved.",
+    "publish_allowed": false
   }
 }

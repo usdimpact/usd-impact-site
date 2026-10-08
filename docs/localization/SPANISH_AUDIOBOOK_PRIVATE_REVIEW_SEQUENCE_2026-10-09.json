@@ -228,5 +228,14 @@
       "final_listening_status": "PENDING",
       "public_allowed": false
     }
-  ]
+  ],
+  "private_listening_reel": {
+    "composition_id": "6b7b9e26-bde5-4b1b-a9f1-3346966a26c6",
+    "description": "QA - Spanish Audiobook Boundary and Repair Listening Reel - DO NOT PUBLISH",
+    "duration_seconds": 186.888,
+    "status": "PRIVATE_QA_REVIEW_PENDING",
+    "human_acceptance": "PENDING",
+    "guide": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_LISTENING_REEL_ACCEPTANCE_2026-10-09.md",
+    "public_allowed": false
+  }
 }

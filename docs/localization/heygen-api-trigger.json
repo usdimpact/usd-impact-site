@@ -1,7 +1,8 @@
 {
-  "track": "19",
+  "track": "99",
   "segments": [
-    "1"
+    "1",
+    "2"
   ],
   "requested_at": "2026-10-09",
   "mode": "funded-api-balance-batch",
@@ -9,5 +10,5 @@
   "voice_id": "626ca51acb2e496f8dcee8d7591fda3c",
   "locale": "es-419",
   "speed": 0.92,
-  "purpose": "Privately generate final Sobre el autor Spanish closing audio with approved Mateo, existing Developer API wallet; no public release or entitlement change"
+  "purpose": "PRIVATE-only QA replacement candidates for suspected omitted Appendix B segment 18-03. Original source split into two shorter Mateo speeches. Do not edit canonical composition; no publish."
 }

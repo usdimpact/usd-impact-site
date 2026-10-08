@@ -1,4 +1,23 @@
-# Spanish audiobook — Appendix B private QA and credit-hold recovery
+# Spanish audiobook — Appendix B private QA and funded recovery
+
+## Authoritative latest checkpoint — funded recovery + private repair candidate (2026-10-09)
+
+**Current release gate: PRIVATE QA HOLD.** The earlier zero-credit blocker has been resolved for the repository's actual Developer API wallet, but a private replacement clip still needs *acoustic listening, splice verification, and mastering*. Production, entitlements, member storage, commerce, public Descript publishing, and merge remain prohibited without a separate release approval.
+
+- Repository-key Developer wallet checked by GitHub run **37848860009**: `billing_type=wallet`, USD **$30.12** before synthesis. Subsequent readback **$29.40**, without a manual top-up during this workflow. The prior zero Creator subscription credits were a different balance, not this API wallet.
+- Appendix B is now **15/15 generated and assembled** privately. Funded recovery runs: **37848963290** (segment 12), **37849165505** (segments 13–15); original private composition **aef945b9-0b31-48ad-9ec6-270c80f639c7**, **859.063 seconds / 14:19.1**. All original audio pieces remain.
+- Closing Track 19 (*Sobre el autor*) is **1/1 generated and imported** privately, run **37849448901**, composition **1d15c8e2-dc3f-4c2d-9b95-b84a435dcb0b**, **43.598 seconds**, independent transcript **89/89 normalized tokens**.
+- Appendix B original source-vs-independent-transcript readback: **1,572/1,670 exact normalized tokens (94.13%)**, with the formerly identified **28-word** institutional-source reference omission in clip 18-03. Audio-only listening remains needed before considering the original clip correct.
+- Private repair workflow 99: initial piece A timed out in run **37849777222**, with provider warning that the operation **might** have been submitted. That exact request is quarantined **do not retry**; no usable audio was returned. The *distinct* reference-sentence piece B succeeded, run **37850234396**, **32.287 seconds**, no zero-duration spoken words in provider timestamps.
+- Piece B is stored in a separate private QA composition **cd5a3d50-0a65-4ee2-b40a-c0eaee491338**, independent STT **42/43 exact normalized tokens (97.67%)**, with only numeral `quinientos` vs `500`.
+- Descript created a **separate repaired Appendix B QA duplicate** **6a251168-1d0d-4a9d-b9ea-daed1d1db016** (**883.028 seconds / 14:43.0**). It retained original media until the sentence boundary at approximately **40.89 seconds** within clip 18-03 and inserted the validated reference sentence before clip 18-04. Original master remains untouched at 859.063 seconds.
+- Direct complete repaired-candidate source-vs-transcript comparison: **1,599/1,670 exact normalized tokens (95.75%)**; **no omissions longer than three normalized source tokens**. The remaining three-token mismatch is numeric form `doce coma cinco` / `12.5`.
+- **Final acceptance still pending:** a human must listen to the clip 18-03 cut, pronunciation of ICE/CME/NYMEX/S&P Dow Jones Indices/Cboe/Treasury/FRED, and the inserted recording's transitions; mastering must check loudness, peaks, and adjacent chapter/part transitions. The repair candidate is *not* automatically accepted as the delivery master.
+- PR **#797 stays OPEN/DRAFT**, unmerged; changed-file scope: **241** files — **239** under `docs/localization/`, **2** CI workflows. There are no changes outside those two scopes. Descript publish count is **0**.
+
+**Historical context:** the original recovery details below describe the *earlier* partial-credit state. They are retained for traceability and are **superseded** where they conflict with the authoritative checkpoint above.
+
+---
 
 Checkpoint date: **2026-10-09**. Branch: `feat/spanish-audiobook-pilot-foundation`.
 

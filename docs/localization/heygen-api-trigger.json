@@ -1,9 +1,14 @@
 {
-  "track": "16",
+  "track": "17",
   "segments": [
     "1",
     "2",
-    "3"
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
   ],
   "requested_at": "2026-10-08",
   "mode": "funded-api-balance-batch",
@@ -11,5 +16,5 @@
   "voice_id": "626ca51acb2e496f8dcee8d7591fda3c",
   "locale": "es-419",
   "speed": 0.92,
-  "purpose": "Privately synthesize Spanish audiobook further reading Track 16, Mateo voice, three segments, QA only, no publication"
+  "purpose": "Private Mateo Spanish audiobook Appendix A glossary batch A segments 1-8; QA only; do not publish"
 }

@@ -17,7 +17,7 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "PARTIAL_SYNTHESIS",
+  "track_status": "PARTIAL_SYNTHESIS_SEGMENT_15_HOLD",
   "next_segment": "15",
   "do_not_regenerate": [
     "1",
@@ -33,7 +33,9 @@
     "11",
     "12",
     "13",
-    "14"
+    "14",
+    "16",
+    "17"
   ],
   "segments": [
     {
@@ -142,15 +144,17 @@
     },
     {
       "id": "16",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-16.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=33b29a8d-f02c-4a1e-ba27-3884e3830e82.wav",
+      "duration_seconds": 65.93306122448979
     },
     {
       "id": "17",
-      "status": "pending",
+      "status": "complete",
       "text_file": "docs/localization/spanish-audiobook-track-10/segment-17.txt",
-      "media_url": null
+      "media_url": "https://resource2.heygen.ai/text_to_speech/0022bb719d3b419eba0eed46ff78df88/626ca51acb2e496f8dcee8d7591fda3c/id=02bccada-af2a-4b81-8437-9e2252bb4f7a.wav",
+      "duration_seconds": 70.89632653061224
     }
   ],
   "hold": {

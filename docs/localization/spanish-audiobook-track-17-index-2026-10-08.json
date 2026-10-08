@@ -17,8 +17,8 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "BATCH_A_PRIVATE_QA_PASS_BATCH_B_SYNTHESIS_IN_PROGRESS",
-  "next_segment": "9",
+  "track_status": "ALL_16_GENERATED_BATCH_B_IMPORT_IN_PROGRESS",
+  "next_segment": null,
   "do_not_regenerate": [
     "1",
     "2",
@@ -27,7 +27,15 @@
     "5",
     "6",
     "7",
-    "8"
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16"
   ],
   "segments": [
     {
@@ -80,49 +88,49 @@
     },
     {
       "id": "9",
-      "status": "pending",
+      "status": "audio_generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-09.txt",
       "media_url": null
     },
     {
       "id": "10",
-      "status": "pending",
+      "status": "audio_generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-10.txt",
       "media_url": null
     },
     {
       "id": "11",
-      "status": "pending",
+      "status": "audio_generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-11.txt",
       "media_url": null
     },
     {
       "id": "12",
-      "status": "pending",
+      "status": "audio_generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-12.txt",
       "media_url": null
     },
     {
       "id": "13",
-      "status": "pending",
+      "status": "audio_generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-13.txt",
       "media_url": null
     },
     {
       "id": "14",
-      "status": "pending",
+      "status": "audio_generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-14.txt",
       "media_url": null
     },
     {
       "id": "15",
-      "status": "pending",
+      "status": "audio_generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-15.txt",
       "media_url": null
     },
     {
       "id": "16",
-      "status": "pending",
+      "status": "audio_generated_import_in_progress",
       "text_file": "docs/localization/spanish-audiobook-track-17/segment-16.txt",
       "media_url": null
     }
@@ -147,16 +155,12 @@
   },
   "batch_b": {
     "run_id": 37841664444,
-    "segment_ids": [
-      "9",
-      "10",
-      "11",
-      "12",
-      "13",
-      "14",
-      "15",
-      "16"
-    ],
-    "status": "synthesis_in_progress"
+    "artifact_id": 11577608501,
+    "artifact_sha256": "cd9afd16b0c29f25f06e7d9ef903da4af1807767e500043d211706e1e9b8e9d3",
+    "duration_seconds": 537.731,
+    "segments": 8,
+    "audio_decode_QA": "PASS",
+    "descript_job_id": "project-media-import-89a78f8e-2995-47ea-8eb1-3ee3f86ff73b",
+    "descript_status": "running"
   }
 }

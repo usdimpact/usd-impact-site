@@ -17,7 +17,7 @@
     "locale": "es-419",
     "speed": 0.92
   },
-  "track_status": "BATCH_A_GENERATED_PRIVATE_QA_PENDING",
+  "track_status": "BATCH_A_IMPORTED_BATCH_B_RUNNING",
   "next_segment": "13",
   "do_not_regenerate": [
     "1",
@@ -37,73 +37,73 @@
   "segments": [
     {
       "id": "1",
-      "status": "generated_QA_pending",
+      "status": "private_imported_transcript_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-01.txt",
       "media_url": null
     },
     {
       "id": "2",
-      "status": "generated_QA_pending",
+      "status": "private_imported_transcript_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-02.txt",
       "media_url": null
     },
     {
       "id": "3",
-      "status": "generated_QA_pending",
+      "status": "private_imported_transcript_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-03.txt",
       "media_url": null
     },
     {
       "id": "4",
-      "status": "generated_QA_pending",
+      "status": "private_imported_transcript_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-04.txt",
       "media_url": null
     },
     {
       "id": "5",
-      "status": "generated_QA_pending",
+      "status": "private_imported_transcript_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-05.txt",
       "media_url": null
     },
     {
       "id": "6",
-      "status": "generated_QA_pending",
+      "status": "private_imported_transcript_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-06.txt",
       "media_url": null
     },
     {
       "id": "7",
-      "status": "generated_QA_pending",
+      "status": "private_imported_transcript_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-07.txt",
       "media_url": null
     },
     {
       "id": "8",
-      "status": "generated_QA_pending",
+      "status": "private_imported_transcript_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-08.txt",
       "media_url": null
     },
     {
       "id": "9",
-      "status": "generated_QA_pending",
+      "status": "private_imported_transcript_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-09.txt",
       "media_url": null
     },
     {
       "id": "10",
-      "status": "generated_QA_pending",
+      "status": "private_imported_transcript_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-10.txt",
       "media_url": null
     },
     {
       "id": "11",
-      "status": "generated_QA_pending",
+      "status": "private_imported_transcript_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-11.txt",
       "media_url": null
     },
     {
       "id": "12",
-      "status": "generated_QA_pending",
+      "status": "private_imported_transcript_QA_pending",
       "text_file": "docs/localization/spanish-audiobook-track-15/segment-12.txt",
       "media_url": null
     },
@@ -179,6 +179,26 @@
     "artifact_id": 11576786039,
     "segment_count": 12,
     "format": "mp3",
-    "status": "synthesis_success_QA_pending"
+    "status": "synthesis_success_QA_pending",
+    "descript_composition_id": "0c5ac266-93a5-4ed1-83a6-0238bb38120a",
+    "import_status": "success",
+    "duration_seconds": 721.397546
+  },
+  "batch_b": {
+    "run_id": 37838725606,
+    "segments": [
+      "13",
+      "14",
+      "15",
+      "16",
+      "17",
+      "18",
+      "19",
+      "20",
+      "21",
+      "22",
+      "23"
+    ],
+    "status": "synthesis_in_progress"
   }
 }

@@ -1006,7 +1006,7 @@ export const localizationManifest = deepFreeze({
       },
       "draft": {
         "privacyReviewPath": "apps/web/src/pages/internal/localization/spanish-privacy-review.md",
-        "privacyReviewBlobSha": "5c0d8fbbb090c16190276e4c927df7f2bdfe1879",
+        "privacyReviewBlobSha": "75b3dcd828373330ff288ed93f0c058853829181",
         "consentCopyPath": "apps/web/src/lib/consent-copy.js",
         "consentCopyBlobSha": "c1ae55a3032f294c8608255ebff4d86bfbc379a2",
         "reviewRoute": "/internal/localization/spanish-privacy-review/"

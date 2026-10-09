@@ -25,6 +25,12 @@ Use PASS / FAIL / UNCLEAR, add evidence or a timecode. Do not mark PASS from tra
 
 **Appendix title review evidence:** `docs/localization/SPANISH_AUDIOBOOK_APPENDIX_TITLE_PRONUNCIATION_QA_2026-10-09.md` documents source wording versus ambiguous speech-to-text only. The two title checks must remain PENDING until actual listening. Do not regenerate from ASR alone.
 
+## Additional front-matter listening gate — October 9
+
+- **Introduction → Chapter 1 boundary:** PENDING — new Intro candidate `aecc180b-4513-455b-a3e4-fce58da36fac` and new Chapter 1 candidate `686a4f65-8ff9-4141-aedb-bab9b4296602`. Listen to the restored mid-Introduction `la parte uno` near 07:59, the final 10s of the Intro, and first 8s of Chapter 1. Check for altered pauses, duplicate headings, silence, and clip artifacts.
+- Evidence: `docs/localization/SPANISH_AUDIOBOOK_PART_I_FRONTMATTER_BOUNDARY_QA_2026-10-09.md`.
+- **Status: PENDING — not approved by transcript equality alone.**
+
 ## Reviewer declaration
 
 - Reviewer name / role: **NOT PROVIDED**

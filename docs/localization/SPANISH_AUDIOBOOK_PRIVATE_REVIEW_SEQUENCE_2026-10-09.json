@@ -20,9 +20,19 @@
       "private_review_composition_id": "91240c6b-78df-4910-a994-43c616f9b53f",
       "duration_seconds": 113.345,
       "mastering_status": "PENDING",
-      "final_listening_status": "FAIL_PENDING_REPAIR",
+      "final_listening_status": "REPLACEMENT_ACCEPTED_FOR_PRIVATE_QA_REMAINDER_UNREVIEWED",
       "public_allowed": false,
-      "acoustic_qa": "FAIL_LISTENER_REPORTED_CLICK_AT_00_47_07"
+      "acoustic_qa": "FAIL_LISTENER_REPORTED_CLICK_AT_00_47_07",
+      "offline_replacement": {
+        "name": "spanish-audiobook-track00-mateo-no-version-private-2026-10-09.wav",
+        "library_path": "/spanish-audiobook-track00-mateo-no-version-private-2026-10-09.wav",
+        "duration_seconds": 105.31,
+        "source": "private funded Mateo Track00 segments 01 and 02; version announcement removed offline",
+        "owner_decision": "APPROVED_TO_CONTINUE_PRIVATE_QA_2026_10_09",
+        "imported_into_descript": false,
+        "mastering_approved": false,
+        "public_allowed": false
+      }
     },
     {
       "track": "01",
@@ -290,6 +300,15 @@
     "repair": "NOT_STARTED",
     "copyright_grammar_revision": "PROPOSED_NOT_APPLIED_LEGAL_REVIEW_PENDING",
     "qa_document": "docs/localization/SPANISH_AUDIOBOOK_OPENING_TRACK_CLICK_GRAMMAR_QA_2026-10-09.md",
+    "release_allowed": false
+  },
+  "track00_replacement_review": {
+    "status": "OWNER_APPROVED_PRIVATE_CONTINUATION",
+    "date": "2026-10-09",
+    "asset": "spanish-audiobook-track00-mateo-no-version-private-2026-10-09.wav",
+    "descript_import": "NOT_DONE",
+    "original_composition_preserved": true,
+    "remaining_full_book_listening": "PENDING",
     "release_allowed": false
   }
 }

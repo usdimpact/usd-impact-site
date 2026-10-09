@@ -186,3 +186,11 @@ Use `docs/localization/SPANISH_AUDIOBOOK_CH02_TO_CH08_HEADING_REVIEW_2026-10-09.
 Descript Underlord attempted a private duplicated Chapter2->3 heading-transfer pilot but **ABORTED WITHOUT CHANGING ANY MEDIA** because text/media word boundaries could not be located reliably; do not force cuts or infer audible heading misplacement solely from SRT. No acoustic PASS or mastering selection is granted for these new seven checks.
 
 All source originals remain intact; PR #797 draft/unmerged; member/Production/publishing OFF. Final mastering and whole-book listening PENDING.
+
+## Owner confirmed audible Part II heading at Chapter 2 tail — 2026-10-09
+
+The owner responded **HEARD** to the request to listen to Chapter 2 / Track 04 at **18:27–18:29**. Mark **only** Chapter2→3 as **CONFIRMED AUDIBLE HEADING IN WRONG TRACK TAIL**, rather than ASR-only. `Parte dos` must move to the opening of Chapter 3 in a private corrected audio candidate after safe audio-boundary isolation. Track 04 source UUID `b6df4dcc-811f-4ec5-a577-f33c5e81b415`; Track 05 source UUID `478f0683-3203-43f1-b78b-4f1dbc4ec144`.
+
+Agent Underlord previously ABORTED the attempted time/word edit without changes because source-media boundaries could not be isolated reliably. No approved repaired composition or finalized WAV exists for this transition. Do not blindly cut the 0.78-second SRT range. Request **private audio-only WAV exports of tracks 04 and 05** to enable offline waveform and spoken-pause QA while preserving originals.
+
+Remaining six timecoded heading checks (03→04 and 05→06 through 09→10) are NOT covered by this one-word owner response. No new PASS is inferred. Full-book listening, mastering and all release gates remain PENDING/HOLD.

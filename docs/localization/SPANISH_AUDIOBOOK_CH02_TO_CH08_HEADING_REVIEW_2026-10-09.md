@@ -97,3 +97,16 @@ The exact cut is after Chapter 3's final educational disclaimer, at **1140.40000
 **Human QA required:** Audition corrected Chapter 3 last 10s for full disclaimer without trailing `Parte dos`, and corrected Chapter 4 first 14s for intact `Parte dos. Capítulo cuatro` with a natural pause and no clicks/clipping. Reviewer response PASS/FAIL with specific sample and timecode if failing. Do not switch selected Descript composition IDs or import these candidate WAVs before scoped approval. Original compositions untouched. Prior Chapter 3's *opening* `Parte dos` remains intact after this change. Chapter 4's separate trailing `Parte tres` remains for the subsequent Chapter4→5 review.
 
 **Release holds unchanged:** 20-track private selection not changed; other heading checks, full-book hearing, final mastered audio, PR #797 merge, public Descript publishing, member delivery and Production remain PENDING/OFF.
+
+## Owner PASS for private Chapter 3 to 4 A/B recording
+
+Owner replied **PASS** after being asked to listen to four original/corrected WAV excerpts in the private Chapter 3→4 kit. This is **scoped human listening acceptance of the supplied local WAV excerpts**, not a full-Chapter 3/4 or final mastered audio sign-off. The approved candidate has Chapter 3 finishing after the intact disclaimer without the trailing `Parte dos`; Chapter 4 opens with the transferred existing `Parte dos` followed by `Capítulo cuatro`. The earlier `Parte dos` at the **opening** of Chapter 3 remains intact.
+
+Private corrected WAV recordings:
+- Chapter 3 (1140.400000s), Library/local working copy and [owner-only Drive](https://drive.google.com/file/d/1MAJFYTOxtFGor93LglEq7BpFCGV2VCRn/view).
+- Chapter 4 (1376.004490s), Library file `libfile_daf04360ca508191b858f6d6103a8249`; lossless PCM-equivalent [owner-only Drive FLAC](https://drive.google.com/file/d/1yaEpeTF28sX4KuHAG_Y-uzEHV511Hi3i/view).
+- Before/after A/B kit: [private Drive](https://drive.google.com/file/d/1IQIQbltN_msxY73_4U706xWwxke_JUQH/view); archived technical frame/hash measurements linked above.
+
+**Transfer disposition:** Samples PASS. A separate private Descript import is authorized for these two approved audio WAVs, once no other job is editing the project. Do not alter original compositions. The imported compositions, once created, need readback checks of duration, first/last SRT and release protections before *private pre-master* selection. No assumption of whole-track acoustic PASS.
+
+**Release boundary:** Remain on draft PR #797, no public Descript publish, Production OFF, member delivery OFF, mastering PENDING. Other headings still require independent review.

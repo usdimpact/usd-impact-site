@@ -59,7 +59,7 @@ Following the owner's `HEARD` confirmation, the owner uploaded native lossless W
 
 - [Corrected Chapter 2 WAV](https://drive.google.com/file/d/1q5ljVsqJRHNJ9FYxThfa1sjsbskVmyKH/view) — 97,670,960 bytes.
 - [Corrected Chapter 3 WAV](https://drive.google.com/file/d/1NcGQb_Y_ZOt5FiEeZQZzrGeZisAEWMwG/view) — 100,747,304 bytes.
-- [Listening-kit ZIP (four before/after WAV excerpts)](https://drive.google.com/file/d/1vFkdpDJmDMsjcLZG_pvrNrhZhvAKjtlz/view).
+- [Browser-ready listening kit (four before/after WAV excerpts and local `index.html`)](https://drive.google.com/file/d/1sb55w7Dsb09ZO14jnptIAVB54mZJQvAY/view).
 - [Private full QA report](https://drive.google.com/file/d/1tagWn7hsrOf0A42PiezUdp06u2m_wy53/view) and [machine-readable hashes/metrics](https://drive.google.com/file/d/1Mw85FlDnbp8gXbJ37E8MCVO1YNpLhHI-/view).
 
 **Human acoustic verdict:** PENDING. Listen to Chapter2's last 10 seconds for a complete disclaimer without `Parte dos`, and Chapter3's first 10 seconds for `Parte dos` followed by `Capítulo tres`, with no clicks/clips. This was an **offline** audio repair; the approved private Descript review manifest still points at original Chapter2 and Chapter3 compositions until the corrected WAVs are auditioned, imported as new private duplicates, and approved.

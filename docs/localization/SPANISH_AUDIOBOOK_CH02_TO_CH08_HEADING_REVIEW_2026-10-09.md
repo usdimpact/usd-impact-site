@@ -114,3 +114,17 @@ Private corrected WAV recordings:
 ### Private Descript import wait — existing project job
 
 A private two-composition import of the owner-approved corrected Chapter3/4 WAVs was attempted. Descript rejected the request with `A job is already running for this project`; **no import job was created**, no compositions were added and no existing audio was changed. The unrelated active Descript project job `project-agent-edit-2f542797-4a70-4d44-a164-76dee15859ca-712fd1fb-eba7-4d77-89c4-c92f3f1ccbe6` remained RUNNING at last check, with progress `Querying scenes`. Do not cancel or overlap that job without confirming its owner/scope. After it finishes, import the approved Chapter3 WAV (1140.400000s) and Chapter4 WAV (1376.004490s) into **new private audio-only compositions** and verify transcript boundaries/durations before selecting them. Originals, currently selected compositions, mastering approval and public release flags remain untouched.
+
+## Descript imported corrections — Chapter 3→4 private selection confirmed
+
+The owner replied **PASS** to the four before/after offline Chapter 3→4 A/B samples. This verdict covers the tested excerpts, not the complete chapters. A separate, previously running read-only Descript agent job `project-agent-edit-2f542797-4a70-4d44-a164-76dee15859ca-712fd1fb-eba7-4d77-89c4-c92f3f1ccbe6` finished successfully **without making changes**, clearing the project import lock.
+
+The private Descript media-import job `project-media-import-9ac911c1-7522-42c5-828b-ab88f5a0dc53` completed **SUCCESS for both source WAVs**, creating two separate audio-only unpublished compositions:
+- **Track 05 / Chapter 3**: `afef9b85-5d80-443b-b39d-6ac07a4e298b`, `05 - Chapter 3 - Part II Tail Transferred - PRIVATE QA - DO NOT PUBLISH`, **1140.400000 s**. Imported SRT begins with the *prior* `Parte dos. Capítulo tres` and ends `Verifica los datos actuales antes de utilizarlos`; the misplaced extra `Parte dos` is gone from its tail.
+- **Track 06 / Chapter 4**: `dcc43206-170d-4202-b868-d2e6d8f804a0`, `06F - Chapter 4 - Part II Heading Prefixed - PRIVATE QA - DO NOT PUBLISH`, **1376.004490 s**. Imported SRT begins `Parte dos. Capítulo cuatro` and still ends with the independent **`Parte tres`** cue for the subsequent Chapter4→5 transition review.
+
+Both composition durations exactly match their corrected source WAVs, and the originals remain present and unchanged. Source PCM was already verified to preserve all combined samples in the original order. The imported SRTs confirm text sequence and boundary placement, but do **not** replace a full-length human review of each newly imported track.
+
+The private 20-track planning manifest now selects these two imported candidates for **pre-master QA only**, retains each prior selection and original for rollback, and reconciles all **20/20** selected composition IDs. Total nominal duration **17,747.673149 seconds (4h 55m 47.673s)**.
+
+**Outstanding:** Confirm the `Parte tres` Chapter4→5 boundary by listening and obtain Chapter5 full audio for a lossless transfer if appropriate; other unverified headings, full-book listening, final encoded mastering, PR merge, Descript publish, member delivery and Production remain HOLD/OFF.

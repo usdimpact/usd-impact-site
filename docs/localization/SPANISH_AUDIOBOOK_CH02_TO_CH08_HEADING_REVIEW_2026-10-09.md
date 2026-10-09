@@ -110,3 +110,7 @@ Private corrected WAV recordings:
 **Transfer disposition:** Samples PASS. A separate private Descript import is authorized for these two approved audio WAVs, once no other job is editing the project. Do not alter original compositions. The imported compositions, once created, need readback checks of duration, first/last SRT and release protections before *private pre-master* selection. No assumption of whole-track acoustic PASS.
 
 **Release boundary:** Remain on draft PR #797, no public Descript publish, Production OFF, member delivery OFF, mastering PENDING. Other headings still require independent review.
+
+### Private Descript import wait — existing project job
+
+A private two-composition import of the owner-approved corrected Chapter3/4 WAVs was attempted. Descript rejected the request with `A job is already running for this project`; **no import job was created**, no compositions were added and no existing audio was changed. The unrelated active Descript project job `project-agent-edit-2f542797-4a70-4d44-a164-76dee15859ca-712fd1fb-eba7-4d77-89c4-c92f3f1ccbe6` remained RUNNING at last check, with progress `Querying scenes`. Do not cancel or overlap that job without confirming its owner/scope. After it finishes, import the approved Chapter3 WAV (1140.400000s) and Chapter4 WAV (1376.004490s) into **new private audio-only compositions** and verify transcript boundaries/durations before selecting them. Originals, currently selected compositions, mastering approval and public release flags remain untouched.

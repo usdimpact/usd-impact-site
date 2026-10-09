@@ -279,7 +279,28 @@
     "tracker": "docs/localization/SPANISH_AUDIOBOOK_LISTENER_SIGNOFF_TRACKER_2026-10-09.md",
     "reviewer": null,
     "acoustic_acceptance": "FAIL_TRACK00_REMAINDER_UNREVIEWED",
-    "release_allowed": false
+    "release_allowed": false,
+    "scoped_local_a_b_owner_pass": {
+      "status": "PASS_OWNER_REPORTED_FOUR_PRIVATE_CHECKS_ONLY",
+      "date": "2026-10-09",
+      "source": "Owner replied PASS directly after the assistant requested PASS/FAIL/UNCLEAR for the four checks in the private local listening package",
+      "kit_library_path": "/spanish-audiobook-private-listening-review-2026-10-09.zip",
+      "decisions": {
+        "track00_original_vs_offline_declick": "PASS",
+        "appendix_b_first_offline_splice": "PASS",
+        "appendix_b_second_offline_splice": "PASS",
+        "appendix_b_institution_names_in_sample": "PASS"
+      },
+      "reviewer_role": "owner",
+      "individual_comments_or_timecodes": "NOT_PROVIDED",
+      "preferred_appendix_b_final_variant": "NOT_SELECTED",
+      "original_track00_descript_composition_changed": false,
+      "offline_track00_repair_imported_into_descript": false,
+      "descript_part_one_and_chapter_reels": "PENDING",
+      "complete_20_track_listening": "PENDING",
+      "mastering_approval": "NOT_GRANTED",
+      "release_allowed": false
+    }
   },
   "frontmatter_boundary_review": {
     "source": "Spanish Edition 1.3 Candidate 1",
@@ -303,7 +324,18 @@
     "repair": "NOT_STARTED",
     "copyright_grammar_revision": "PROPOSED_NOT_APPLIED_LEGAL_REVIEW_PENDING",
     "qa_document": "docs/localization/SPANISH_AUDIOBOOK_OPENING_TRACK_CLICK_GRAMMAR_QA_2026-10-09.md",
-    "release_allowed": false
+    "release_allowed": false,
+    "offline_declick_checkpoint": {
+      "status": "TECHNICAL_PASS_AND_OWNER_SAMPLE_LISTENING_PASS",
+      "candidate_library_path": "/track00-private-declick-candidate-2026-10-09.wav",
+      "original_descript_composition_unchanged": true,
+      "source_transients_seconds": [
+        46.779274,
+        46.873764
+      ],
+      "final_descript_playback_qa": "PENDING",
+      "publication_allowed": false
+    }
   },
   "track00_replacement_review": {
     "status": "ALTERNATE_NOT_SELECTED_OWNER_PREFERS_ORIGINAL",

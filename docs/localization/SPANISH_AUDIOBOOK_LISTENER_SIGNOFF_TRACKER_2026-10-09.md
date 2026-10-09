@@ -194,3 +194,13 @@ The owner responded **HEARD** to the request to listen to Chapter 2 / Track 04 a
 Agent Underlord previously ABORTED the attempted time/word edit without changes because source-media boundaries could not be isolated reliably. No approved repaired composition or finalized WAV exists for this transition. Do not blindly cut the 0.78-second SRT range. Request **private audio-only WAV exports of tracks 04 and 05** to enable offline waveform and spoken-pause QA while preserving originals.
 
 Remaining six timecoded heading checks (03→04 and 05→06 through 09→10) are NOT covered by this one-word owner response. No new PASS is inferred. Full-book listening, mastering and all release gates remain PENDING/HOLD.
+
+## Chapter 2 to Chapter 3 private import acceptance
+
+**Owner-reported PASS:** The four before/after offline audio samples of corrected Chapter 2 ending and Chapter 3 opening are accepted. This does not imply full Chapter 2/3 listening approval.
+
+**Descript job:** `project-media-import-af0e2f05-d944-4299-9906-958efe2eab4e` completed success and created `ebbadbd2-df11-4cba-95d6-a546dd7b3b51` (Chapter 2, 1107.380s) and `44599961-6954-4dd1-9970-9c2019b4c010` (Chapter 3, 1142.259184s) in the existing private project. Their SRT confirms Chapter 2 ends after the disclaimer and Chapter 3 starts with `Parte dos` before `Capítulo tres`. The second original `Parte dos` at Chapter 3's end remains present. Source file decoded audio samples were preserved exactly when moving the boundary.
+
+**Selection:** Both corrected imported compositions are now the private *pre-master review* selections for tracks 04 and 05, with originals preserved as rollback references. No final encoded-file QA or complete 20-track human hearing verdict was granted.
+
+**Still pending:** actual final-master audio renders and LUFS/peak checks, full listening, the repeated `Parte uno` before Chapter 2 and the five subsequent Part II/III transitions. PR #797 DRAFT/unmerged, public Descript publishes 0, Production/member release OFF.

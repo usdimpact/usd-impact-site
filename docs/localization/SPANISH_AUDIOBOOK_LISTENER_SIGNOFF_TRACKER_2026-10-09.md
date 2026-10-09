@@ -1,6 +1,6 @@
 # Spanish audiobook — human listening sign-off tracker
 
-**Status: FAIL reported at Track 00 opening (00:47.07); all further listening PENDING. No full-book acoustic approval.**
+**Latest status: owner-reported PASS for the four checks in the offline A/B listening package only (2026-10-09). Original Track 00 click remains a historical FAIL; the current Descript-selected original is unchanged. The separate Descript listening reels, 20-track book listen, mastering and release remain PENDING/HOLD. No full-book acoustic approval.**
 **Private project:** https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca
 **Private reel:** `6b7b9e26-bde5-4b1b-a9f1-3346966a26c6` (3:06.888; 13 markers; excerpts play without inserted silence).
 **Private appendix B A/B audition kit:** `/spanish-audiobook-appendix-b-8ms-private-listening-kit-2026-10-09.zip` in Library.
@@ -11,7 +11,7 @@
 - **Track 00 opening click:** **FAIL (listener-reported)** near `00:47.07`, at `Este libro tiene un propósito exclusivamente educativo e informativo.` The listener stopped there. Cause not yet independently verified.
 - **Copyright paragraph grammar:** parallel-list issue identified in opening copyright notice. Editorial candidate proposed only, no canonical or audio revision, legal sign-off required.
 - **Remediation evidence:** `docs/localization/SPANISH_AUDIOBOOK_OPENING_TRACK_CLICK_GRAMMAR_QA_2026-10-09.md`.
-- **All subsequent listening checkpoints: PENDING**; no implied approval.
+- **At the time of the first click report, all subsequent checkpoints were PENDING.** The later owner-reported PASS applies only to the four offline A/B listening-package checks documented below; all Descript reel and full-book checks remain PENDING.
 
 ## Reviewer decisions (unfilled until actual listening)
 
@@ -40,10 +40,10 @@ Use PASS / FAIL / UNCLEAR, add evidence or a timecode. Do not mark PASS from tra
 
 ## Reviewer declaration
 
-- Reviewer name / role: **NOT PROVIDED**
-- Listening date: **NOT PROVIDED**
-- Overall acoustic decision: **FAIL — Track 00 click reported; remaining content unreviewed**
-- Defect tickets and exact timecodes: **NONE FILED — NOT EQUIVALENT TO PASS**
+- Reviewer name / role: **owner (reply provided in current review; individual reviewer name not separately recorded)**
+- Listening date: **2026-10-09 for scoped offline A/B verdict; separate Descript and full-book listening date not provided**
+- Overall acoustic decision: **PENDING (whole book). Scoped four-check offline A/B review: owner-reported PASS. Original Track 00 source click: historical FAIL, still unchanged in Descript.**
+- Defect tickets and exact timecodes: **No additional defect notes or individual timecodes supplied with the one-word PASS; do not infer unreviewed content has passed**
 - Preferred Appendix B seam: **UNDECIDED** (Descript candidate / offline 8ms-smoothed alternative / neither)
 - Permission to start production mastering: **NOT GRANTED BY THIS TRACKER**
 - Permission to publish, merge PR, upload to member storage, or deploy Production: **NOT GRANTED**
@@ -86,3 +86,20 @@ Continue independently with the existing **51.101 s Part I reel** `db76c850-5004
 - **Required next gate:** actual listener compares original and offline corrected excerpt; separate original/corrected Descript playback verification will be needed if the candidate is selected. The Part I 51.101s reel and the 186.888s chapter/Appendix reel still require human decisions. **Do not mark any listening row PASS from technical measurements.**
 
 **Disposition unchanged:** Track00 original listener-reported FAIL remains open, acoustic sign-off PENDING, final mastering HOLD, PR #797 DRAFT/unmerged, public Descript publishes 0, Production/member access OFF.
+
+## Owner-reported scoped local A/B listening PASS — 2026-10-09
+
+The owner replied **PASS** immediately after being asked to evaluate the four audio checks in the private, offline listening package `/spanish-audiobook-private-listening-review-2026-10-09.zip`. Record this as **owner-reported acceptance of the specific local A/B checks**, not independent listener certification of the full album or the actual Descript mix. No separate exported sign-off form, playback device, comments, individual timecodes or preferred Appendix B master variant were provided.
+
+| Private package check | Owner-reported listening decision | Boundary |
+| --- | --- | --- |
+| Track 00: original vs offline declicked 43–55s excerpt | **PASS** | Only this corrected local clip; original Descript recording is unchanged and retains the historical reported click |
+| Appendix B: first splice (58s raw vs smoothed, 00:14.84) | **PASS** | Offline comparison only, not a Descript export |
+| Appendix B: second splice (58s raw vs smoothed, 00:47.12) | **PASS** | Offline comparison only, final chosen splice/master still undecided |
+| Appendix B: institutional names in 58s excerpts | **PASS** | Only names covered by the private samples, not every title or technical term in the book |
+
+**Disposition:** private A/B excerpt acceptance **PASS (owner-reported)**. No new synthesis, editing or media import is authorized or necessary from this verdict alone. The repair is still a candidate, **not selected into Descript**; preserve the current Track 00 composition `91240c6b-78df-4910-a994-43c616f9b53f`. An actual candidate mastered from the agreed source needs its own playback review.
+
+**Still PENDING:** Part I 51.101s reel; five chapter joins in the 186.888s reel; Chapter 13 full disclaimer; Appendix A/B actual spoken titles; any remaining full-track pronunciation, pauses and loudness; the complete 20-track listen and consistent final mastering. Appendix B selection between the actual Descript repaired candidate and the smoothed offline alternative remains undecided. Original Track 00 source defect is **not retroactively marked PASS**. The copyright grammar/legal text is unchanged and still requires legal/editorial sign-off before any proposed change.
+
+**Release controls unchanged:** PR #797 DRAFT/unmerged, public Descript publishing 0, member storage OFF, Production unchanged, full-book acoustic and mastering approval **NOT GRANTED**.

@@ -65,3 +65,16 @@ Following the owner's `HEARD` confirmation, the owner uploaded native lossless W
 **Human acoustic verdict:** PENDING. Listen to Chapter2's last 10 seconds for a complete disclaimer without `Parte dos`, and Chapter3's first 10 seconds for `Parte dos` followed by `Capítulo tres`, with no clicks/clips. This was an **offline** audio repair; the approved private Descript review manifest still points at original Chapter2 and Chapter3 compositions until the corrected WAVs are auditioned, imported as new private duplicates, and approved.
 
 **Remaining 6 heading checks** and whole-book listen/mastering are still pending. PR #797 DRAFT/unmerged; public/member/Production unchanged; original files preserved.
+
+## Owner PASS and verified private Descript imports — October 9
+
+The owner replied **PASS** after reviewing the four before/after WAV samples for Chapter 2's ending and Chapter 3's opening. This is acceptance of the scoped **offline source recordings**, not a full-length Chapter 2/3 listening pass.
+
+Using the two existing corrected WAV files, a single private Descript import job `project-media-import-af0e2f05-d944-4299-9906-958efe2eab4e` completed with **status success for both files** and created **two separate audio-only private compositions**:
+
+- **Track 04 / Chapter 2:** `ebbadbd2-df11-4cba-95d6-a546dd7b3b51`, `04 - Chapter 2 - Heading Transferred - PRIVATE QA - DO NOT PUBLISH`, duration **1107.380000 s**. Descript SRT begins `Capítulo dos` and ends with `Verifica los datos actuales antes de utilizarlos`; the trailing `Parte dos` is absent.
+- **Track 05 / Chapter 3:** `44599961-6954-4dd1-9970-9c2019b4c010`, `05 - Chapter 3 - Heading Prefixed - PRIVATE QA - DO NOT PUBLISH`, duration **1142.259184 s**. Descript SRT starts `Parte dos. Capítulo tres: USD no es DXY` and retains the second `Parte dos` at the end.
+
+Both compositions' durations match the owner-approved WAV sources; both original Descript compositions remain available and unchanged. Independent decoded-PCM verification of the four local original/corrected WAV files showed **the same SHA-256** `a7435b492c6a1c884d320c0296a583e50e34b2f8b4753aa419bbbdb910586432` when hashing original Chapter2+Chapter3 sample streams and corrected Chapter2+Chapter3 sample streams, proving the same combined audio samples were preserved in the source files. Descript import confirmed correct timing and expected opening/closing transcript; **actual imported rendered audio has not undergone a second separate full-chapter human listen**. Descript's ASR has some numeric transcription variation within Chapter 3, so SRT is not considered a lossless word-level proof.
+
+The private 20-track pre-master **planning manifest now selects these two verified imported compositions**. The original composition IDs are preserved under `original_review_composition_id`. No canonical source media or public content is overwritten. Remaining heading questions: 03→04 and 05→06 through 09→10, plus full-book mastering/listening. No public publish, merge, member-access or Production permission was granted.

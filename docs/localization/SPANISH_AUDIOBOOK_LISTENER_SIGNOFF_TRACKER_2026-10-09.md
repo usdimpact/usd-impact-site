@@ -67,3 +67,9 @@ Current controls: PR #797 **draft/unmerged**, Descript public compositions **0**
 - **Original Track 00:** listener reported clicks/poor narration — FAIL and archived, Descript original composition `91240c6b-78df-4910-a994-43c616f9b53f` remains untouched.
 - **Shortened replacement:** approved for continuing **private QA only**; it has not been imported into Descript or independently approved for mastering/publication. The remaining frontmatter and chapter-join checks remain pending.
 - Compliance/copyright text must not be silently altered or released without legal/editorial acceptance. NO PR merge, public publishing, member access, or Production change.
+
+## Track 00 owner-directed deferral — DEFERRED_TO_FINAL_QA
+
+Owner hears the same copyright-section error across versions and suspects playback-side causes. **Do not diagnose it as playback-side or mark PASS.** Keep original Track 00 `91240c6b-78df-4910-a994-43c616f9b53f` selected for private review, retain the original listener-reported defect at ~00:47.07, and defer further investigation to the final isolated playback/device QA pass. No more Track 00 repair or synthesis until owner asks.
+
+Continue independently with the existing **51.101 s Part I reel** `db76c850-5004-4be7-bf56-70b93b04d779` and **186.888 s heading / Appendix B listening reel** `6b7b9e26-bde5-4b1b-a9f1-3346966a26c6`. Their acoustic decisions remain PENDING. All publication and Production gates stay HOLD.

@@ -53,3 +53,11 @@ Before any PR merge, public Descript publish, member-storage upload, payment/ent
 - Final blocker remains the absent actual selected 20-track Descript rendered audio for offline measurement and full-length human listening. Do not substitute old MP3s or the Track00 v1 WAV.
 
 **Latest state: private source backups PASS; targeted listening PASS; 20/20 metadata present; additional chapter-heading audible verification PENDING; actual mastering and release HOLD. PR #797 remains DRAFT, zero Descript public publishes, Production/member delivery OFF.**
+
+## Chapter 2 and Chapter 3 private import accepted
+
+The owner reported PASS for the offline before/after Chapter 2→3 boundary samples. The same two corrected WAVs were imported into separate private Descript compositions, IDs `ebbadbd2-df11-4cba-95d6-a546dd7b3b51` (Track 04, 1107.380s) and `44599961-6954-4dd1-9970-9c2019b4c010` (Track 05, 1142.259184s). Both imports returned SUCCESS and SRT confirmed the repaired placement of `Parte dos`. The separate `Parte dos` at the end of Track 05 remains pending the next chapter boundary review. Both original compositions are preserved.
+
+The private pre-master manifest now selects the corrected imported compositions for Tracks 04/05. A fresh Descript inventory found 20/20 selected compositions, no duration mismatch, and nominal total **17,747.673136s** (4h 55m 47.673s). **No full-length mastered WAV export or listening sign-off** has been completed. Other six heading checks, true-peak/LUFS tests on actual final renders, full-book acoustic and editorial checks remain PENDING.
+
+**Release boundary unchanged:** PR #797 DRAFT/unmerged; 0 Descript public publishes, Production/member delivery OFF, final mastering approval PENDING.

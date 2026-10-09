@@ -204,3 +204,9 @@ Remaining six timecoded heading checks (03→04 and 05→06 through 09→10) are
 **Selection:** Both corrected imported compositions are now the private *pre-master review* selections for tracks 04 and 05, with originals preserved as rollback references. No final encoded-file QA or complete 20-track human hearing verdict was granted.
 
 **Still pending:** actual final-master audio renders and LUFS/peak checks, full listening, the repeated `Parte uno` before Chapter 2 and the five subsequent Part II/III transitions. PR #797 DRAFT/unmerged, public Descript publishes 0, Production/member release OFF.
+
+## Chapter 3 to 4 offline heading candidate — listening PENDING
+
+Complete Chapter4 WAV received from owner. The selected corrected Chapter3 WAV's trailing recorded `Parte dos` was moved in a private OFFLINE candidate to the start of Chapter4. The original combined audio has **110,973,438 frames**, identical SHA-256 before/after `4de48aa80a35bb8837084e2841f86b8cccbfa4091938266aacea1c4e77057c13`. Corrected Chapter3 = **1140.400s**; Chapter4 = **1376.004490s**. A browser-ready four-sample before/after kit and the full corrected WAVs are saved privately; details/links in `SPANISH_AUDIOBOOK_CH02_TO_CH08_HEADING_REVIEW_2026-10-09.md`.
+
+**Human listening: PENDING for this new repair.** Previous owner PASS on Chapter2→3 does not automatically extend here. Do not import or select the new Chapter3/4 candidates until the owner reviews their corrected closing/opening. The canonical private Descript selected IDs remain unchanged. Full-book mastering/listening and all release gates stay OFF/HOLD.

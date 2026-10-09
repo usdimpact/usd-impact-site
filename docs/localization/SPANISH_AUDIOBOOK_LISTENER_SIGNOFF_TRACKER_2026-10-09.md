@@ -73,3 +73,16 @@ Current controls: PR #797 **draft/unmerged**, Descript public compositions **0**
 Owner hears the same copyright-section error across versions and suspects playback-side causes. **Do not diagnose it as playback-side or mark PASS.** Keep original Track 00 `91240c6b-78df-4910-a994-43c616f9b53f` selected for private review, retain the original listener-reported defect at ~00:47.07, and defer further investigation to the final isolated playback/device QA pass. No more Track 00 repair or synthesis until owner asks.
 
 Continue independently with the existing **51.101 s Part I reel** `db76c850-5004-4be7-bf56-70b93b04d779` and **186.888 s heading / Appendix B listening reel** `6b7b9e26-bde5-4b1b-a9f1-3346966a26c6`. Their acoustic decisions remain PENDING. All publication and Production gates stay HOLD.
+
+## Independent Track 00 verification and private listener kit — 2026-10-09 (latest checkpoint)
+
+- **Original source media:** Library `/00 - Lee primero el dólar.wav.mp3` (MP3 44.1 kHz mono, 113.345306s); SHA-256 `7f047959a07c527056ebb2446bf01a8008a806634751c67aa0338b64ace456dd`.
+- **Non-destructive offline repaired candidate:** Library `/track00-private-declick-candidate-2026-10-09.wav` (24-bit PCM WAV, 44.1 kHz mono, same 4,998,528 decoded samples); SHA-256 `72ef9b827a87f2d340e200c2aa6d6315c7629ea94318a9b537d96773ecb53c0b`.
+- Two source-waveform transients independently reproduced at **46.779274s** and **46.873764s**. The only intended repair windows are **46.772–46.850s** and **46.866–46.946s**. Original max sample jump in the first window was approximately **1.112328**; corrected max jump in the same window approximately **0.002504**.
+- An independent decoded-PCM comparison found both files contain exactly **4,998,528 samples**, and **zero samples differ by more than 0.000001 outside the two repair windows** (maximum absolute quantization difference 0.000000119). The existing Track00 and Appendix B A/B archives each passed ZIP CRC verification.
+- **New unified reviewer kit:** Library `/spanish-audiobook-private-listening-review-2026-10-09.zip`; SHA-256 `487c423d0ea7550353ca01d29369e6c0bc60d65b3927a588859821f93bf0fe2e`, contains audio-only paired excerpts, offline browser `index.html`, technical comparison JSON and local exportable review checklist.
+- **Appendix B comparison** remains independent offline reconstructions, not actual Descript exports. Human listening still required at excerpt positions **00:14.84** and **00:47.12**.
+- **No new synthesis or editing:** original Track00 Descript composition `91240c6b-78df-4910-a994-43c616f9b53f` remains selected, unchanged; no new import or Studio Sound applied. User's Track00 rerender deferral remains in effect. A measured transient does not prove every reported playback defect is resolved.
+- **Required next gate:** actual listener compares original and offline corrected excerpt; separate original/corrected Descript playback verification will be needed if the candidate is selected. The Part I 51.101s reel and the 186.888s chapter/Appendix reel still require human decisions. **Do not mark any listening row PASS from technical measurements.**
+
+**Disposition unchanged:** Track00 original listener-reported FAIL remains open, acoustic sign-off PENDING, final mastering HOLD, PR #797 DRAFT/unmerged, public Descript publishes 0, Production/member access OFF.

@@ -34,3 +34,15 @@ An isolated read-only timeline export was produced for Track04 (EDL, no media bu
 ## Final release boundary
 
 20/20 private selected compositions remain present. Mastering, complete 20-track listening, PR #797 merge, public Descript publishing, member delivery and Production are NOT approved here. Preserve all canonical originals.
+
+## Owner confirmed audible Part II heading at Chapter 2 tail — 2026-10-09
+
+**Listening evidence:** Asked to play private Chapter 2 composition `b6df4dcc-811f-4ec5-a577-f33c5e81b415` at **18:27–18:29** and say HEARD / NOT HEARD / UNCLEAR. The owner replied **HEARD**, confirming **audible `Parte dos` after Chapter 2's disclaimer** (SRT locates it approximately **18:27.832–18:28.612**). This is no longer merely an ASR/transcript flag for transition **04→05**.
+
+**Required editorial placement:** Authoritative Spanish Edition 1.3 Candidate 1 places the repeated `PARTE II` at the start of Chapter 3 (`05`), before `Capítulo tres`. Track 04 should end after `Verifica los datos actuales antes de utilizarlos`. Preserve the **different** `Parte dos` spoken at the end of Track 05 for the separate Track05→06 boundary investigation.
+
+**Attempted automatic edit remains ABORTED:** Agent Underlord could not find a reliable source-media/word edit boundary, so no audio clip was moved, no duplicates created, and the originals were not modified. Audible presence confirms the defect, **not** a safe waveform cut location. EDL metadata alone has no bundled audio.
+
+**Repair method:** First obtain private actual **audio-only exports** of Chapter 2 and Chapter 3 (WAV preferred, no mastering or public publish); then use a precise editor to isolate the known tail phrase by listening and waveform, move recorded speech to a **separate private corrected candidate**, verify intact disclaimers and track-duration conservation, and solicit new acoustic PASS. Do not cut at SRT timestamps without waveform verification. Do not regenerate with HeyGen/ElevenLabs.
+
+**Other six checklist transitions (03→04 and 05→06 through 09→10) remain unconfirmed by this single `HEARD` response.** PR #797 draft/unmerged; public Descript sharing, member audio, Production and mastering remain held.

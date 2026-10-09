@@ -53,7 +53,7 @@ Following the owner's `HEARD` confirmation, the owner uploaded native lossless W
 
 **Exact offline repair:** Split source Chapter2 at **1107.380000s** (silence/low-energy interval between the disclaimer ending ~1107.22s and `Parte dos` starting ~1107.48s), then move its whole remaining **1.544081633s** of existing PCM audio, including the heading and pause, to the beginning of an unchanged copy of Chapter3. The output Chapter2 ends after the compliance sentence at **1107.380000s** and Chapter3 begins with the recorded heading at **1142.259183673s** total length. Leave the separate original `Parte dos` at Chapter3's end intact. No resynthesis, editing within voiced speech, filtering or level changes.
 
-**Strong sample-preservation verification:** SHA-256 of combined input Chapter2 PCM followed by input Chapter3 PCM is **`c5d0e8d1a9d231a5d52e2c94987444f0e31b5f557ec9b2c15f1d4c3d12041c17`** [checksum in private machine-readable QA report governs; verify exact before using literal]. Repaired Chapter2 PCM followed by repaired Chapter3 PCM is **byte-for-byte identical** across the same 99,209,088 total frames; duration and content are conserved. Split quiet gap RMS **0.00020779** full scale; zero sample jump at split.
+**Strong sample-preservation verification:** SHA-256 of combined input Chapter2 PCM followed by input Chapter3 PCM is **`a7435b492c6a1c884d320c0296a583e50e34b2f8b4753aa419bbbdb910586432`**. Repaired Chapter2 PCM followed by repaired Chapter3 PCM is **byte-for-byte identical** across the same 99,209,088 total frames; duration and content are conserved. Split quiet gap RMS **0.00020779** full scale; zero sample jump at split.
 
 **Saved private, owner-only Drive recordings:**
 

@@ -56,6 +56,11 @@ jobs:
 
           TRACK="$(jq -r '.track' "$TRIGGER")"
           case "$TRACK" in
+            00)
+              # Private replacement opening only; no public delivery.
+              INDEX="docs/localization/spanish-audiobook-track-00-index-2026-10-09.json"
+              MODE="files"
+              ;;
             06)
               INDEX="docs/localization/spanish-audiobook-track-06-chapter-4-manifest-2026-10-07.json"
               MODE="inline"
@@ -118,7 +123,7 @@ jobs:
               MODE="files"
               ;;
             *)
-              echo "This guarded workflow permits production Tracks 06-19 and private repair 99 only." >&2
+              echo "This guarded workflow permits private opening Track 00, production Tracks 06-19 and private repair 99 only." >&2
               exit 3
               ;;
           esac

@@ -251,5 +251,12 @@
     "delivery_master_approval": "PENDING",
     "public_allowed": false,
     "documentation": "docs/localization/SPANISH_AUDIOBOOK_APP_B_OFFLINE_SIGNAL_QA_2026-10-09.md"
+  },
+  "listener_signoff": {
+    "status": "PENDING",
+    "tracker": "docs/localization/SPANISH_AUDIOBOOK_LISTENER_SIGNOFF_TRACKER_2026-10-09.md",
+    "reviewer": null,
+    "acoustic_acceptance": "PENDING",
+    "release_allowed": false
   }
 }

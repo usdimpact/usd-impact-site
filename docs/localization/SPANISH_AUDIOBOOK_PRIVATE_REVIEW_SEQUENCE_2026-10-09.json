@@ -9,7 +9,7 @@
   "descript_publication_count": 0,
   "merge_allowed": false,
   "publication_approval": "NOT_GRANTED",
-  "human_listening_approval": "PENDING",
+  "human_listening_approval": "FAIL_TRACK00_AND_REMAINING_PENDING",
   "mastering_approval": "PENDING",
   "chapter_boundary_approval": "PRIVATE_TEXT_TIMING_PASS_AUDIO_LISTENING_PENDING",
   "note": "This lists private review candidates only, NOT approved final masters. Tracks 10–15 use non-destructive boundary-corrected duplicates: 13,229/13,229 core words preserved and aggregate duration unchanged, but five acoustic joins require listening. Track 18 uses a separate repaired candidate with splice listening hold. All release flags are OFF.",
@@ -20,8 +20,9 @@
       "private_review_composition_id": "91240c6b-78df-4910-a994-43c616f9b53f",
       "duration_seconds": 113.345,
       "mastering_status": "PENDING",
-      "final_listening_status": "PENDING",
-      "public_allowed": false
+      "final_listening_status": "FAIL_PENDING_REPAIR",
+      "public_allowed": false,
+      "acoustic_qa": "FAIL_LISTENER_REPORTED_CLICK_AT_00_47_07"
     },
     {
       "track": "01",
@@ -261,10 +262,10 @@
     "documentation": "docs/localization/SPANISH_AUDIOBOOK_APP_B_OFFLINE_SIGNAL_QA_2026-10-09.md"
   },
   "listener_signoff": {
-    "status": "PENDING",
+    "status": "FAIL_TRACK00",
     "tracker": "docs/localization/SPANISH_AUDIOBOOK_LISTENER_SIGNOFF_TRACKER_2026-10-09.md",
     "reviewer": null,
-    "acoustic_acceptance": "PENDING",
+    "acoustic_acceptance": "FAIL_TRACK00_REMAINDER_UNREVIEWED",
     "release_allowed": false
   },
   "frontmatter_boundary_review": {
@@ -279,5 +280,16 @@
     "scene_boundary_side_effects": true,
     "acoustic_review": "PENDING",
     "public_allowed": false
+  },
+  "opening_track_defect": {
+    "track": "00",
+    "time_seconds": 47.07,
+    "phrase": "Este libro tiene un propósito exclusivamente educativo e informativo",
+    "listener_report": "audible click and stopped listening",
+    "cause": "UNDETERMINED",
+    "repair": "NOT_STARTED",
+    "copyright_grammar_revision": "PROPOSED_NOT_APPLIED_LEGAL_REVIEW_PENDING",
+    "qa_document": "docs/localization/SPANISH_AUDIOBOOK_OPENING_TRACK_CLICK_GRAMMAR_QA_2026-10-09.md",
+    "release_allowed": false
   }
 }

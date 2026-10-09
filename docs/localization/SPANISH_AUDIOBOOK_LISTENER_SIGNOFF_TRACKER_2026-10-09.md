@@ -176,3 +176,13 @@ The repaired Track 00 v2 is selected in the private planning manifest for pre-ma
 Outstanding: full 20-track acoustic review, complete standalone Introduction near 07:59, final master and Appendix B output checks, and separate publication authorization.
 
 PR #797 stays DRAFT/unmerged. Production, member delivery and public Descript publishing stay OFF. Mastering approval is still pending.
+
+## Later Chapters 2-8 heading flags - listening not yet approved
+
+The owner PASS on three earlier targeted reels does not cover the independently flagged Chapter2-8 headings. Authoritative Spanish Edition 1.3 source and all 20 selected Descript SRTs were compared; six `Parte dos` / `Parte tres` cues appear as trailing transcript content on preceding chapters, while `Parte uno` is absent before Chapter2. These are transcript flags until direct listening confirms actual recorded audio.
+
+Use `docs/localization/SPANISH_AUDIOBOOK_CH02_TO_CH08_HEADING_REVIEW_2026-10-09.md` for seven exact timecoded checks and `docs/localization/SPANISH_AUDIOBOOK_FULL_MANUSCRIPT_TRANSCRIPT_AUDIT_2026-10-09.md` for the source-alignment overview.
+
+Descript Underlord attempted a private duplicated Chapter2->3 heading-transfer pilot but **ABORTED WITHOUT CHANGING ANY MEDIA** because text/media word boundaries could not be located reliably; do not force cuts or infer audible heading misplacement solely from SRT. No acoustic PASS or mastering selection is granted for these new seven checks.
+
+All source originals remain intact; PR #797 draft/unmerged; member/Production/publishing OFF. Final mastering and whole-book listening PENDING.

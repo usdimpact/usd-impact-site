@@ -44,3 +44,7 @@ Copyright terms are legally meaningful. Editorial/legal review should approve re
 ### Exact next step
 
 Obtain a private byte-exact copy of the raw `00 - Lee primero el dólar.wav` (or controlled non-public export) for FFmpeg signal/declick analysis around 00:45–00:50. Use a **separate** offline processed test and compare it with the untouched original. Do not apply project-level Studio Sound, change legal/copyright narration, regenerate speech, accept a repaired master or publish without a verified acoustic repair and fresh listener check.
+
+## Targeted duplicate repair attempt — October 9
+
+The user authorized a private targeted fix. Descript Agent Underlord created untreated private duplicate `ba0d0778-7f3b-44db-9354-60b66dcdae31` named `00 - CLICK AT 47S - TARGETED REPAIR CANDIDATE - DO NOT PUBLISH`. The agent confirmed **NO AUDIO REPAIR OCCURRED**: editor exposes no sample-accurate waveform analysis and cannot determine whether the click lies inside the 46.09–47.07 second pause or on the beginning of `Este`. It did not make an uncertain cut, apply Studio Sound, regenerate words or change legal content. Original `91240c6b-78df-4910-a994-43c616f9b53f` remains untouched. Do **not** promote this untreated duplicate as a repaired master. Next actual repair requires raw audio waveform analysis from an externally accessible original source or an explicitly approved narrow rerecord, followed by before/after acoustic checking. Listener defect remains FAIL, all subsequent sign-off PENDING. PR #797 DRAFT and public release HOLD.

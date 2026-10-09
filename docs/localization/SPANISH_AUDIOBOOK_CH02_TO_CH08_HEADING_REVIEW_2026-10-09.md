@@ -46,3 +46,22 @@ An isolated read-only timeline export was produced for Track04 (EDL, no media bu
 **Repair method:** First obtain private actual **audio-only exports** of Chapter 2 and Chapter 3 (WAV preferred, no mastering or public publish); then use a precise editor to isolate the known tail phrase by listening and waveform, move recorded speech to a **separate private corrected candidate**, verify intact disclaimers and track-duration conservation, and solicit new acoustic PASS. Do not cut at SRT timestamps without waveform verification. Do not regenerate with HeyGen/ElevenLabs.
 
 **Other six checklist transitions (03→04 and 05→06 through 09→10) remain unconfirmed by this single `HEARD` response.** PR #797 draft/unmerged; public Descript sharing, member audio, Production and mastering remain held.
+
+## Offline recorded-heading transfer — private WAV candidates (2026-10-09)
+
+Following the owner's `HEARD` confirmation, the owner uploaded native lossless WAV exports of source Descript Chapter2 (`b6df4dcc-811f-4ec5-a577-f33c5e81b415`) and Chapter3 (`478f0683-3203-43f1-b78b-4f1dbc4ec144`). Both uploads were validated as signed 16-bit PCM, 44.1kHz, mono and fully decoded. Their native durations were **1108.924081633s** and **1140.715102041s** respectively.
+
+**Exact offline repair:** Split source Chapter2 at **1107.380000s** (silence/low-energy interval between the disclaimer ending ~1107.22s and `Parte dos` starting ~1107.48s), then move its whole remaining **1.544081633s** of existing PCM audio, including the heading and pause, to the beginning of an unchanged copy of Chapter3. The output Chapter2 ends after the compliance sentence at **1107.380000s** and Chapter3 begins with the recorded heading at **1142.259183673s** total length. Leave the separate original `Parte dos` at Chapter3's end intact. No resynthesis, editing within voiced speech, filtering or level changes.
+
+**Strong sample-preservation verification:** SHA-256 of combined input Chapter2 PCM followed by input Chapter3 PCM is **`c5d0e8d1a9d231a5d52e2c94987444f0e31b5f557ec9b2c15f1d4c3d12041c17`** [checksum in private machine-readable QA report governs; verify exact before using literal]. Repaired Chapter2 PCM followed by repaired Chapter3 PCM is **byte-for-byte identical** across the same 99,209,088 total frames; duration and content are conserved. Split quiet gap RMS **0.00020779** full scale; zero sample jump at split.
+
+**Saved private, owner-only Drive recordings:**
+
+- [Corrected Chapter 2 WAV](https://drive.google.com/file/d/1q5ljVsqJRHNJ9FYxThfa1sjsbskVmyKH/view) — 97,670,960 bytes.
+- [Corrected Chapter 3 WAV](https://drive.google.com/file/d/1NcGQb_Y_ZOt5FiEeZQZzrGeZisAEWMwG/view) — 100,747,304 bytes.
+- [Listening-kit ZIP (four before/after WAV excerpts)](https://drive.google.com/file/d/1vFkdpDJmDMsjcLZG_pvrNrhZhvAKjtlz/view).
+- [Private full QA report](https://drive.google.com/file/d/1tagWn7hsrOf0A42PiezUdp06u2m_wy53/view) and [machine-readable hashes/metrics](https://drive.google.com/file/d/1Mw85FlDnbp8gXbJ37E8MCVO1YNpLhHI-/view).
+
+**Human acoustic verdict:** PENDING. Listen to Chapter2's last 10 seconds for a complete disclaimer without `Parte dos`, and Chapter3's first 10 seconds for `Parte dos` followed by `Capítulo tres`, with no clicks/clips. This was an **offline** audio repair; the approved private Descript review manifest still points at original Chapter2 and Chapter3 compositions until the corrected WAVs are auditioned, imported as new private duplicates, and approved.
+
+**Remaining 6 heading checks** and whole-book listen/mastering are still pending. PR #797 DRAFT/unmerged; public/member/Production unchanged; original files preserved.

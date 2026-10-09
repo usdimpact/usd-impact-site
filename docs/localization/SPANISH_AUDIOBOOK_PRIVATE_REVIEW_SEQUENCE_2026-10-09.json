@@ -9,7 +9,7 @@
   "descript_publication_count": 0,
   "merge_allowed": false,
   "publication_approval": "NOT_GRANTED",
-  "human_listening_approval": "SCOPED_REELS_AND_CH2_CH3_SOURCE_SAMPLES_PASS_FULL_20_TRACK_LISTENING_PENDING",
+  "human_listening_approval": "SCOPED_REELS_AND_CH2_CH3_AND_CH3_CH4_AUDIO_SAMPLES_PASS_FULL_20_TRACK_LISTENING_PENDING",
   "mastering_approval": "PENDING",
   "chapter_boundary_approval": "OWNER_PASS_PRIVATE_REEL_SAMPLES_FULL_TRACK_QA_PENDING",
   "note": "This lists private review candidates only, NOT approved final masters. Tracks 10–15 use non-destructive boundary-corrected duplicates: 13,229/13,229 core words preserved and aggregate duration unchanged, but five acoustic joins require listening. Track 18 uses a separate repaired candidate with splice listening hold. All release flags are OFF.",
@@ -168,10 +168,10 @@
     {
       "track": "05",
       "description": "Chapter 3",
-      "private_review_composition_id": "44599961-6954-4dd1-9970-9c2019b4c010",
-      "duration_seconds": 1142.259184,
+      "private_review_composition_id": "afef9b85-5d80-443b-b39d-6ac07a4e298b",
+      "duration_seconds": 1140.4,
       "mastering_status": "PENDING",
-      "final_listening_status": "OWNER_PASS_SCOPED_OFFLINE_AUDIO; FULL_TRACK_AND_MASTER_PENDING",
+      "final_listening_status": "OWNER_PASS_TARGETED_OFFLINE_BOUNDARY_AUDIO; COMPLETE_TRACK_AND_MASTERING_PENDING",
       "public_allowed": false,
       "original_review_composition_id": "478f0683-3203-43f1-b78b-4f1dbc4ec144",
       "private_heading_transfer_qa": {
@@ -188,16 +188,53 @@
         "imported_full_track_listening": "PENDING",
         "original_unchanged": true,
         "public_allowed": false
+      },
+      "previous_private_review_composition_id": "44599961-6954-4dd1-9970-9c2019b4c010",
+      "chapter03_to_chapter04_private_heading_transfer_qa": {
+        "status": "PASS_TECHNICAL_AND_OWNER_SCOPED_AUDIO",
+        "description": "Chapter 3: Part II tail removed but opening kept",
+        "source_composition_id": "44599961-6954-4dd1-9970-9c2019b4c010",
+        "selected_corrected_composition_id": "afef9b85-5d80-443b-b39d-6ac07a4e298b",
+        "corrected_source_private_file_ref": "1MAJFYTOxtFGor93LglEq7BpFCGV2VCRn",
+        "import_job_id": "project-media-import-9ac911c1-7522-42c5-828b-ab88f5a0dc53",
+        "import_status": "SUCCESS",
+        "imported_duration_seconds": 1140.4,
+        "transcript_opening_and_closing": "PASS_BOUNDARY",
+        "source_pcm_sample_order": "BYTE_IDENTICAL_ACROSS_CORRECTED_TWO_TRACK_PAIR",
+        "owner_offline_A_B_listening": "PASS",
+        "complete_track_listening": "PENDING",
+        "original_audio_preserved": true,
+        "public_allowed": false,
+        "production_enabled": false
       }
     },
     {
       "track": "06",
       "description": "Chapter 4, final private variant",
-      "private_review_composition_id": "3166b677-11d0-4671-ab93-04152efd13cc",
-      "duration_seconds": 1374.145,
+      "private_review_composition_id": "dcc43206-170d-4202-b868-d2e6d8f804a0",
+      "duration_seconds": 1376.00449,
       "mastering_status": "PENDING",
-      "final_listening_status": "PENDING",
-      "public_allowed": false
+      "final_listening_status": "OWNER_PASS_TARGETED_OFFLINE_BOUNDARY_AUDIO; COMPLETE_TRACK_AND_MASTERING_PENDING",
+      "public_allowed": false,
+      "previous_private_review_composition_id": "3166b677-11d0-4671-ab93-04152efd13cc",
+      "original_review_composition_id": "3166b677-11d0-4671-ab93-04152efd13cc",
+      "chapter03_to_chapter04_private_heading_transfer_qa": {
+        "status": "PASS_TECHNICAL_AND_OWNER_SCOPED_AUDIO",
+        "description": "Chapter 4: recorded Part II prefixed",
+        "source_composition_id": "3166b677-11d0-4671-ab93-04152efd13cc",
+        "selected_corrected_composition_id": "dcc43206-170d-4202-b868-d2e6d8f804a0",
+        "corrected_source_private_file_ref": "libfile_daf04360ca508191b858f6d6103a8249",
+        "import_job_id": "project-media-import-9ac911c1-7522-42c5-828b-ab88f5a0dc53",
+        "import_status": "SUCCESS",
+        "imported_duration_seconds": 1376.00449,
+        "transcript_opening_and_closing": "PASS_BOUNDARY",
+        "source_pcm_sample_order": "BYTE_IDENTICAL_ACROSS_CORRECTED_TWO_TRACK_PAIR",
+        "owner_offline_A_B_listening": "PASS",
+        "complete_track_listening": "PENDING",
+        "original_audio_preserved": true,
+        "public_allowed": false,
+        "production_enabled": false
+      }
     },
     {
       "track": "07",
@@ -457,6 +494,23 @@
       "transcript_check": "BOUNDARY_CONTENT_PRESENT_AND_CORRECT",
       "sample_hash_conserved": "a7435b492c6a1c884d320c0296a583e50e34b2f8b4753aa419bbbdb910586432",
       "remaining": "OTHER_HEADING_BOUNDARIES_AND_FULL_BOOK_MASTERING_PENDING",
+      "release_allowed": false
+    },
+    "chapter03_to_chapter04_private_transfer": {
+      "date": "2026-10-09",
+      "reviewer": "owner",
+      "owner_response": "PASS",
+      "scope": "FOUR_BEFORE_AFTER_OFFLINE_AUDIO_SAMPLES",
+      "private_accepted_compositions": [
+        "afef9b85-5d80-443b-b39d-6ac07a4e298b",
+        "dcc43206-170d-4202-b868-d2e6d8f804a0"
+      ],
+      "import_job_id": "project-media-import-9ac911c1-7522-42c5-828b-ab88f5a0dc53",
+      "imported_status": "SUCCESS",
+      "imported_transcript_boundaries": "PASS",
+      "source_pcm_sha256": "4de48aa80a35bb8837084e2841f86b8cccbfa4091938266aacea1c4e77057c13",
+      "full_track_acoustic_review": "PENDING",
+      "remaining": "OTHER_PART_BOUNDARY_CHECKS_COMPLETE_BOOK_MASTERING_AND_RELEASE_ON_HOLD",
       "release_allowed": false
     }
   },

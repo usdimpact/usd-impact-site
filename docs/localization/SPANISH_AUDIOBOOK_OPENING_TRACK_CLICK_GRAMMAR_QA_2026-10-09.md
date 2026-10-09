@@ -33,3 +33,14 @@ Copyright terms are legally meaningful. Editorial/legal review should approve re
 5. Re-listen to corrected 00:43–00:55, then restart the private acceptance reel from the beginning. **All later listener checks remain PENDING**, because user stopped.
 
 **Controls:** PR #797 remains draft/unmerged; public publication/member storage/entitlements/Production HOLD. This evidence is an explicit blocker and must not be marked passed automatically.
+
+## Focused Track 00 investigation — 2026-10-09
+
+- Agent Underlord **read-only timeline inspection** found only one source WAV `00 - Lee primero el dólar.wav` of 113.345306s, a single scene/track, Studio Sound initially OFF, gain 1, and no timeline edit/gain change in 00:46–00:53. The measured subtitle pause is roughly 00:46.090–00:47.070. These observations **do not rule out a baked-in recording transient or playback click**.
+- Private source-copy raw QA composition `8ae2f4c2-b4c8-4817-b486-eb7d4f0f9e25`, duration 12.260s, copied from approximately 43.0–55.0 seconds of the source. The same untreated backup copy is `871fa006-dd7d-44b5-89ac-4546345e99c1`. Source remains `91240c6b-78df-4910-a994-43c616f9b53f`, 113.345306s. This excerpt crosses the user-reported click. Exact sample offset requires independent waveform verification: tool narrative gave inconsistent sample-relative position (4.42s vs 47.07−43=4.07s).
+- **FAILED isolation test:** Agent attempted 30% Studio Sound on the QA duplicate and observed the setting also applied to canonical composition, implying effect settings are shared. It turned Studio Sound OFF immediately, queried three compositions, and reported all OFF, gain 1. Project readback confirms canonical and sample durations unchanged and publication count 0. **Do not retry Studio Sound in this shared project**; processed comparison requires external offline source copy isolated from the project.
+- No Descript audio was exported and no direct waveform sample-level analysis of original WAV was completed. Neither copied QA sample is repaired. **Click remains FAIL, cause unresolved**, human listening PENDING. All release gates stay closed.
+
+### Exact next step
+
+Obtain a private byte-exact copy of the raw `00 - Lee primero el dólar.wav` (or controlled non-public export) for FFmpeg signal/declick analysis around 00:45–00:50. Use a **separate** offline processed test and compare it with the untouched original. Do not apply project-level Studio Sound, change legal/copyright narration, regenerate speech, accept a repaired master or publish without a verified acoustic repair and fresh listener check.

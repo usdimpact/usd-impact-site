@@ -58,9 +58,9 @@
           5.25
         ],
         "original_clicks_repaired": true,
-        "technical_QA": "PASS_STRUCTURE_AND_DECODE",
+        "technical_QA": "PASS_OFFLINE_SIGNAL_AND_IMPORTED_DURATION",
         "human_acoustic_QA": "PENDING",
-        "import_into_descript": "NOT_IMPORTED_AUTHENTICATED_DRIVE_URL_BLOCKED_AND_DIRECT_UPLOAD_DNS_FAILED",
+        "import_into_descript": "PRIVATE_BROWSER_UPLOAD_SUCCEEDED_COMPOSITION_PRESENT_TRANSCRIPTION_PENDING",
         "mastering_approved": false,
         "selected_review_composition": false,
         "public_allowed": false,
@@ -76,7 +76,13 @@
             "result": "STOPPED_ERROR_DNS_UNREACHABLE_ZERO_BYTES"
           }
         ],
-        "available_for_manual_private_browser_upload": true
+        "available_for_manual_private_browser_upload": true,
+        "imported_composition_id": "8efce146-f4c8-4a8f-89c0-b0bd5402abac",
+        "imported_composition_name": "00 - Copyright Fixed - PRIVATE QA",
+        "descript_reported_duration_seconds": 110.595306,
+        "descript_transcription_status": "IN_PROGRESS_AT_SCREENSHOT_EMPTY_AT_CONNECTOR_READBACK",
+        "import_method": "OWNER_MANUAL_PRIVATE_BROWSER_UPLOAD_2026_10_09",
+        "manual_private_browser_upload_completed": true
       }
     },
     {

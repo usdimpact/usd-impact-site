@@ -60,3 +60,10 @@ Use PASS / FAIL / UNCLEAR, add evidence or a timecode. Do not mark PASS from tra
 Only after a real listener marks each checkpoint and supplies specific comments can accepted edits be selected for final mastering. Any FAIL/UNCLEAR must remain open until corrected and re-reviewed. After listening, conduct consistent mastering and a whole-book listen; require **separate explicit release authorization** for Production, member access, public Descript publishing or PR merge.
 
 Current controls: PR #797 **draft/unmerged**, Descript public compositions **0**, Production/member distribution **OFF**.
+
+## Owner approval — shortened Track 00 (2026-10-09)
+
+- Owner approved continuing with the new shorter Mateo reproduction, excluding the spoken version/production-build announcement. Candidate private offline file: `/spanish-audiobook-track00-mateo-no-version-private-2026-10-09.wav`, approximately 1:45.31, preserved in Library.
+- **Original Track 00:** listener reported clicks/poor narration — FAIL and archived, Descript original composition `91240c6b-78df-4910-a994-43c616f9b53f` remains untouched.
+- **Shortened replacement:** approved for continuing **private QA only**; it has not been imported into Descript or independently approved for mastering/publication. The remaining frontmatter and chapter-join checks remain pending.
+- Compliance/copyright text must not be silently altered or released without legal/editorial acceptance. NO PR merge, public publishing, member access, or Production change.

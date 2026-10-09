@@ -1,7 +1,7 @@
 # USD Impact — Spanish audiobook: single-session private listening gate
 
 **Date:** 2026-10-09  
-**Status:** PREPARED FOR HUMAN REVIEW — NOT ACOUSTICALLY APPROVED  
+**Status:** OWNER PASS FOR THREE REVIEW SECTIONS — WHOLE-BOOK AND MASTERING HOLD  
 **Private Descript project:** https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca  
 **Draft PR:** https://github.com/usdimpact/usd-impact-site/pull/797  
 **Release controls:** PR DRAFT/unmerged; public Descript publishes 0; member storage, Production and mastering OFF/HOLD. Do not export/publish or switch the canonical Track00 based on this note.
@@ -14,9 +14,9 @@ A new ~4m30s compound reel was evaluated, but Descript Agent Underlord **did not
 
 | Order | Existing private composition in Descript | Length | Play and verify | Human result |
 | --- | --- | ---: | --- | --- |
-| 1 | `00 - Copyright Tail QA v2 - DO NOT PUBLISH` (`ebe7f026-e369-4dd4-a184-9476a6482f5b`) | 1:49.835 | Listen **00:00–00:09**: only `USD Impact. 2026. Todos los derechos reservados.`; year begins cleanly, no residual `Right`, no click. Listen **00:42–00:51**: intact `Este libro tiene un propósito exclusivamente educativo e informativo`, no click/clipping. | PENDING |
-| 2 | `QA - Part I Introduction to Chapter 1 - DO NOT PUBLISH` (`db76c850-5004-4be7-bf56-70b93b04d779`) | 0:51.101 | Listen **00:00–00:51**: the body reference `La parte uno` around 0:09 is intentionally distinct from the separate heading `Parte uno` at 0:35.5, followed by `Capítulo uno` at 0:37.3. No clipped phrases or unnatural joins within the actual Intro→Ch1 handoff. | PENDING |
-| 3 | `QA - Spanish Audiobook Boundary and Repair Listening Reel - DO NOT PUBLISH` (`6b7b9e26-bde5-4b1b-a9f1-3346966a26c6`) | 3:06.888 | Listen **00:00–03:07** for five part/chapter handoffs, Appendix B repaired reference seam, Chapter13 final disclaimer, and Appendix A/B spoken Spanish titles (details below). | PENDING |
+| 1 | `00 - Copyright Tail QA v2 - DO NOT PUBLISH` (`ebe7f026-e369-4dd4-a184-9476a6482f5b`) | 1:49.835 | Listen **00:00–00:09**: only `USD Impact. 2026. Todos los derechos reservados.`; year begins cleanly, no residual `Right`, no click. Listen **00:42–00:51**: intact `Este libro tiene un propósito exclusivamente educativo e informativo`, no click/clipping. | PASS (owner; group response) |
+| 2 | `QA - Part I Introduction to Chapter 1 - DO NOT PUBLISH` (`db76c850-5004-4be7-bf56-70b93b04d779`) | 0:51.101 | Listen **00:00–00:51**: the body reference `La parte uno` around 0:09 is intentionally distinct from the separate heading `Parte uno` at 0:35.5, followed by `Capítulo uno` at 0:37.3. No clipped phrases or unnatural joins within the actual Intro→Ch1 handoff. | PASS (owner; group response) |
+| 3 | `QA - Spanish Audiobook Boundary and Repair Listening Reel - DO NOT PUBLISH` (`6b7b9e26-bde5-4b1b-a9f1-3346966a26c6`) | 3:06.888 | Listen **00:00–03:07** for five part/chapter handoffs, Appendix B repaired reference seam, Chapter13 final disclaimer, and Appendix A/B spoken Spanish titles (details below). | PASS (owner; group response) |
 
 **Separate Intro-body check:** In corrected Introduction composition `aecc180b-4513-455b-a3e4-fce58da36fac`, listen at approximately **07:59** for the restored earlier body phrase `la parte uno`; ensure no clipped syllables or new silence. The Part I 51s reel samples this region but cannot certify every source-scene boundary.
 
@@ -58,3 +58,11 @@ On FAIL/UNCLEAR, give approximate timecode. **Do not transpose the earlier owner
 ### Next after listening
 
 Only scoped audible PASS permits selecting the relevant repaired private candidate for **subsequent** consistent mastering and a whole-book listening pass. Even an all-PASS result on these samples is **not** a full-book sign-off, PR merge, member-access grant, public Descript publishing approval, Production authorization or change to financial/legal source copy.
+
+## Listening outcome — owner PASS (2026-10-09)
+
+The owner replied **PASS** after the request to review the three compositions above. All three receive a scoped PASS on the stated listening windows. The decision covers the specific private samples, not complete audiobook tracks, loudness mastering, publishing or delivery. No individual issue timestamps were supplied.
+
+Track 00 v2 is now selected for **private pre-master review** in the draft manifest. The original and prior candidates remain preserved. The separate standalone corrected Introduction playback near **07:59**, full 20-track review, final encoded-output checks, legal/editorial review and release controls remain PENDING.
+
+**Production OFF. Public Descript publishing OFF. PR #797 DRAFT/unmerged.**

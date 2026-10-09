@@ -23,6 +23,8 @@ Use PASS / FAIL / UNCLEAR, add evidence or a timecode. Do not mark PASS from tra
 | 9. Appendix B Spanish opening title | 2:57–3:07 | PENDING | |
 | 10. Overall click, breath continuity, volume, pronunciation | Across reel and A/B comparison | PENDING | |
 
+**Appendix title review evidence:** `docs/localization/SPANISH_AUDIOBOOK_APPENDIX_TITLE_PRONUNCIATION_QA_2026-10-09.md` documents source wording versus ambiguous speech-to-text only. The two title checks must remain PENDING until actual listening. Do not regenerate from ASR alone.
+
 ## Reviewer declaration
 
 - Reviewer name / role: **NOT PROVIDED**

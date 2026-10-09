@@ -48,3 +48,14 @@ Obtain a private byte-exact copy of the raw `00 - Lee primero el dólar.wav` (or
 ## Targeted duplicate repair attempt — October 9
 
 The user authorized a private targeted fix. Descript Agent Underlord created untreated private duplicate `ba0d0778-7f3b-44db-9354-60b66dcdae31` named `00 - CLICK AT 47S - TARGETED REPAIR CANDIDATE - DO NOT PUBLISH`. The agent confirmed **NO AUDIO REPAIR OCCURRED**: editor exposes no sample-accurate waveform analysis and cannot determine whether the click lies inside the 46.09–47.07 second pause or on the beginning of `Este`. It did not make an uncertain cut, apply Studio Sound, regenerate words or change legal content. Original `91240c6b-78df-4910-a994-43c616f9b53f` remains untouched. Do **not** promote this untreated duplicate as a repaired master. Next actual repair requires raw audio waveform analysis from an externally accessible original source or an explicitly approved narrow rerecord, followed by before/after acoustic checking. Listener defect remains FAIL, all subsequent sign-off PENDING. PR #797 DRAFT and public release HOLD.
+
+## Verified offline MP3 click repair — 2026-10-09
+
+**Source:** User-supplied `00 - Lee primero el dólar.wav.mp3`; actual codec MP3, 44.1 kHz mono, 113.345306s. Independent decoded-waveform scan identified two large transients at **46.779274s** and **46.873764s**, ahead of `Este libro...`. Source peak in pause 1.002947 normalized amplitude, max sample jump 1.112328.
+
+A separate private WAV 24-bit PCM repair replaced two silent-pause windows **46.772–46.850s** and **46.866–46.946s** using interpolation between boundary samples. All decoded PCM samples outside these windows, including speech, unchanged. Peak in affected pause after repair 0.004394, max sample jump 0.002504. The full length remains 113.345306s; repaired WAV decoder PASS. No synthesis, legal words or Descript media modifications.
+
+- Private Library full WAV: `/track00-private-declick-candidate-2026-10-09.wav` (SHA-256 `72ef9b827a87f2d340e200c2aa6d6315c7629ea94318a9b537d96773ecb53c0b`)
+- Private Library original/processed 00:43–00:55 comparison ZIP: `/track00-click-ab-private-review-2026-10-09.zip` (SHA-256 `7dacce7ae8742b1356f09be227f48946714f9979f44031389de1276419ecced8`)
+
+**Technical QA: PASS for localized transient removal and decode. Human listening: PENDING (prior original FAIL remains; user must audition correction). No new Descript composition import; manifest remains pointing to original. PR #797 DRAFT and publication/Production HOLD.**

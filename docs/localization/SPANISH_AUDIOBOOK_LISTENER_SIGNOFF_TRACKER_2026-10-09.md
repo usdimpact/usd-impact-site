@@ -158,3 +158,21 @@ The owner replied **PASS** immediately after being asked to evaluate the four au
 - Chapter/Appendix reel SRT (52 cues): five part headings accounted for. Two ASR-only pronunciation uncertainties, `Aprendáis a glosario` and `Appendix B`, remain subject to **direct human listening**, not blind synthesis or source-text rewrites.
 - A single merged audio QA reel **was not built** because the Descript agent could not safely guarantee extraction of non-contiguous script-media ranges without possible new cut artifacts. All existing compositions remain intact. Use the three original private review compositions; no publication.
 - **Human listening: PENDING for v2 and both reels.** Full 20-track mastering/listening, PR #797 merge, public publishing, Production/member access remain **HOLD/OFF**.
+
+## Owner three-reel PASS — 2026-10-09
+
+Owner replied PASS after being requested to listen to all three existing private QA sections.
+
+| Private composition | Scope | Owner response |
+| --- | --- | --- |
+| `ebe7f026-e369-4dd4-a184-9476a6482f5b` (Track 00 v2) | Opening 00:00-00:09 and disclaimer 00:42-00:51 | PASS |
+| `db76c850-5004-4be7-bf56-70b93b04d779` (Part I reel) | Full 51.101-second reel | PASS |
+| `6b7b9e26-bde5-4b1b-a9f1-3346966a26c6` (chapters and Appendix reel) | Full 186.888-second reel | PASS |
+
+These are three grouped owner-reported listening decisions; detailed per-item timecodes/comments were not provided. The earlier pending rows in this record are superseded for the reviewed reels, not for full standalone tracks.
+
+The repaired Track 00 v2 is selected in the private planning manifest for pre-master QA. The earlier original Track 00 is preserved.
+
+Outstanding: full 20-track acoustic review, complete standalone Introduction near 07:59, final master and Appendix B output checks, and separate publication authorization.
+
+PR #797 stays DRAFT/unmerged. Production, member delivery and public Descript publishing stay OFF. Mastering approval is still pending.

@@ -35,7 +35,37 @@
         "composition_id": "8741a769-eab3-4b50-b9fd-06c67fccf43a"
       },
       "original_review_composition_id": "91240c6b-78df-4910-a994-43c616f9b53f",
-      "alternate_private_composition_id": "8741a769-eab3-4b50-b9fd-06c67fccf43a"
+      "alternate_private_composition_id": "8741a769-eab3-4b50-b9fd-06c67fccf43a",
+      "owner_confirmed_spoken_word_removal": {
+        "word": "Copyright",
+        "position": "Track 00 opening, before spoken 2026",
+        "owner_confirmed_date": "2026-10-09",
+        "private_edit_only": true,
+        "canonical_copyright_text_modified": false
+      },
+      "private_combined_offline_candidate": {
+        "name": "spanish-track00-copyright-removed-declicked-private-QA-2026-10-09.wav",
+        "library_path": "/spanish-track00-copyright-removed-declicked-private-QA-2026-10-09.wav",
+        "drive_file_id": "1Je9aiLtl8QkhYLxPhOEGMX0-ePz11DAK",
+        "drive_shared": false,
+        "sha256": "98b5c92d291ed09881a7d1bef284a937fad04f2a61f4de4160767bb616efb0d5",
+        "duration_seconds": 110.595306,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_subtype": "PCM_24",
+        "source_deleted_interval_seconds": [
+          2.5,
+          5.25
+        ],
+        "original_clicks_repaired": true,
+        "technical_QA": "PASS_STRUCTURE_AND_DECODE",
+        "human_acoustic_QA": "PENDING",
+        "import_into_descript": "NOT_IMPORTED_PRIVATE_DRIVE_URL_AUTH_REQUIRED",
+        "mastering_approved": false,
+        "selected_review_composition": false,
+        "public_allowed": false,
+        "qa_package": "/spanish-track00-copyright-private-QA-listening-kit-2026-10-09.zip"
+      }
     },
     {
       "track": "01",
@@ -300,7 +330,8 @@
       "complete_20_track_listening": "PENDING",
       "mastering_approval": "NOT_GRANTED",
       "release_allowed": false
-    }
+    },
+    "current_track00_confirmation": "COPYRIGHT_WORD_AT_OPENING_CONFIRMED_PRIVATE_AUDIO_EDIT_HUMAN_REVIEW_PENDING"
   },
   "frontmatter_boundary_review": {
     "source": "Spanish Edition 1.3 Candidate 1",

@@ -74,3 +74,15 @@ Additional pronunciation/review checks:
 5. Obtain **separate explicit authorization** before any PR merge, Descript public publish, Production deployment or member-storage/entitlement changes.
 
 **Current confirmed control:** Descript publishes = 0; PR #797 draft and unmerged; no Production/audio commerce/access change authorized.
+
+## October 9 scoped PASS and pre-master inventory
+
+Owner-reported PASS covers: Track 00 v2 opening/disclaimer; 51.101-second Part I reel; 186.888-second chapter/Appendix reel. This is not a full-audiobook PASS.
+
+Read-only Descript reconciliation found 20/20 selected private compositions with duration mismatch below 0.005 seconds. With Track 00 v2 selected, total nominal duration is 17,747.673118 seconds (4h 55m 47.7s).
+
+Track 00 private selection: `ebe7f026-e369-4dd4-a184-9476a6482f5b` (109.835306s); original `91240c6b-78df-4910-a994-43c616f9b53f` preserved.
+
+Next checks: private rendered-file loudness/true-peak and silence QA; intact full 20-track listening; restored Introduction near 07:59; legal/editorial note review; final encoded-output verification and mastering acceptance. The earlier -16 LUFS and -2.21 dBTP Appendix B trial is only a test, not a finalized mastering standard.
+
+Mastering approval PENDING. PR #797 draft/unmerged. Descript public publishing 0. Member delivery and Production OFF.

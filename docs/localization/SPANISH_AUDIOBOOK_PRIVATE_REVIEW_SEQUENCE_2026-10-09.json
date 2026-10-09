@@ -60,11 +60,23 @@
         "original_clicks_repaired": true,
         "technical_QA": "PASS_STRUCTURE_AND_DECODE",
         "human_acoustic_QA": "PENDING",
-        "import_into_descript": "NOT_IMPORTED_PRIVATE_DRIVE_URL_AUTH_REQUIRED",
+        "import_into_descript": "NOT_IMPORTED_AUTHENTICATED_DRIVE_URL_BLOCKED_AND_DIRECT_UPLOAD_DNS_FAILED",
         "mastering_approved": false,
         "selected_review_composition": false,
         "public_allowed": false,
-        "qa_package": "/spanish-track00-copyright-private-QA-listening-kit-2026-10-09.zip"
+        "qa_package": "/spanish-track00-copyright-private-QA-listening-kit-2026-10-09.zip",
+        "import_attempts": [
+          {
+            "method": "private_google_drive_view_url",
+            "result": "VALIDATION_FAILED_HTML_PAGE_AUTH_REQUIRED"
+          },
+          {
+            "method": "descript_signed_direct_upload",
+            "job_id": "project-media-import-44825e49-ab4d-472f-9d24-9452b18ac631",
+            "result": "STOPPED_ERROR_DNS_UNREACHABLE_ZERO_BYTES"
+          }
+        ],
+        "available_for_manual_private_browser_upload": true
       }
     },
     {

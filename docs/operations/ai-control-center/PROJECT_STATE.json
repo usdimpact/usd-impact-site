@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-05T16:14:00.000Z",
+  "generated_at": "2026-10-09T13:43:31.962Z",
   "generated_by": "github-actions:sync",
   "freshness": "VERIFIED",
   "health": "AMBER",
@@ -15,12 +15,12 @@
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": "42ebf6c699a5d6ac8832fc7f072f75be5161490b"
+      "head_sha": "7c486359879c6dae544e86079d91e09a904f6a95"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
       "default_branch": "main",
-      "head_sha": "7baadfd7701ad1d99718a68999fc641cd5e25eee"
+      "head_sha": "aed97276b0fd1f36135c5ab3f78718458d67c934"
     },
     "weekly_commentary": {
       "name": "usdimpact/usd-impact",
@@ -33,9 +33,9 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/37336334374",
-        "created_at": "2026-10-05T15:52:30Z",
-        "head_sha": "42ebf6c699a5d6ac8832fc7f072f75be5161490b"
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/37931003593",
+        "created_at": "2026-10-09T12:35:08Z",
+        "head_sha": "7c486359879c6dae544e86079d91e09a904f6a95"
       },
       "daily_news": {
         "status": "completed",
@@ -43,23 +43,29 @@
         "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/35757322976",
         "created_at": "2026-09-22T16:55:37Z",
         "head_sha": "02032a28dbd14bd8f8271ef2d26a6fca93e752c5",
-        "operational_conclusion": "failure",
-        "recovery": null
+        "operational_conclusion": "recovered_after_review",
+        "recovery": {
+          "number": 805,
+          "title": "Publish Daily USD Impact — 2026-10-09",
+          "url": "https://github.com/usdimpact/usd-impact-site/pull/805",
+          "merged_at": "2026-10-09T12:35:05Z",
+          "merge_commit_sha": "7c486359879c6dae544e86079d91e09a904f6a95"
+        }
       },
       "daily_news_health": {
         "status": "completed",
         "conclusion": "failure",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/37073288973",
-        "created_at": "2026-10-02T22:35:19Z",
-        "head_sha": "477c757621f5c5acddf6ff52e6732b07070aa791",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/37860157082",
+        "created_at": "2026-10-08T23:34:09Z",
+        "head_sha": "375a52fee9a7eed4bcfdff0cc20f1d9b6140f907",
         "operational_conclusion": "stale_failure"
       },
       "catalyst_brief": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/37250782932",
-        "created_at": "2026-10-05T01:16:23Z",
-        "head_sha": "bf5530423ec64d39c935c3cbb9250b63693fa69d",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/37875140136",
+        "created_at": "2026-10-09T02:33:30Z",
+        "head_sha": "375a52fee9a7eed4bcfdff0cc20f1d9b6140f907",
         "operational_conclusion": "success",
         "recovery": null
       }
@@ -68,9 +74,9 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/37126785602",
-        "created_at": "2026-10-03T13:37:07Z",
-        "head_sha": "7baadfd7701ad1d99718a68999fc641cd5e25eee",
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/37360257750",
+        "created_at": "2026-10-05T19:00:36Z",
+        "head_sha": "aed97276b0fd1f36135c5ab3f78718458d67c934",
         "operational_conclusion": "success"
       },
       "weekly": {
@@ -94,35 +100,35 @@
     "daily_allowed": false,
     "daily_mode": "blocked",
     "daily_recovery_eligible": false,
-    "daily_blocker": "Open Daily publication blocker: #750 P1 — Daily USD Impact automation requires attention (gate: generation-or-repair)",
-    "daily_reason": "Open Daily publication blocker: #750 P1 — Daily USD Impact automation requires attention (gate: generation-or-repair)",
+    "daily_blocker": "Open Daily publication blocker: #786 P1 — Daily USD Impact automation requires attention (gate: generation-or-repair)",
+    "daily_reason": "Open Daily publication blocker: #786 P1 — Daily USD Impact automation requires attention (gate: generation-or-repair)",
     "daily_failure_gate": "generation-or-repair",
-    "daily_degradation": "gate generation-or-repair — #750 P1 — Daily USD Impact automation requires attention",
-    "daily_workflow_operational_conclusion": "failure",
+    "daily_degradation": "gate generation-or-repair — #786 P1 — Daily USD Impact automation requires attention",
+    "daily_workflow_operational_conclusion": "recovered_after_review",
     "exact_current_head_quality_green": true,
     "stale_daily_failure": true,
     "stale_daily_health_failure": true
   },
   "open_work": [
     {
-      "number": 750,
+      "number": 786,
       "title": "P1 — Daily USD Impact automation requires attention",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/750",
-      "updated_at": "2026-10-02T22:35:28Z",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/786",
+      "updated_at": "2026-10-08T23:34:17Z",
       "priority": "P1",
       "score": 870,
       "blocked": false,
       "daily_gate": "generation-or-repair"
     },
     {
-      "number": 687,
-      "title": "P1 — Daily USD Impact automation requires attention",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/687",
-      "updated_at": "2026-10-04T16:42:04Z",
+      "number": 762,
+      "title": "P1 — Three Dials snapshot automation requires attention",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/762",
+      "updated_at": "2026-10-06T02:31:00Z",
       "priority": "P1",
       "score": 870,
       "blocked": false,
-      "daily_gate": "generation-or-repair"
+      "daily_gate": null
     },
     {
       "number": 620,
@@ -130,17 +136,7 @@
       "url": "https://github.com/usdimpact/usd-impact-site/issues/620",
       "updated_at": "2026-09-30T20:04:37Z",
       "priority": "P2",
-      "score": 820,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 619,
-      "title": "P2 — reconcile 51-film Video Library provider assets and editorial source authority",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/619",
-      "updated_at": "2026-09-30T22:03:05Z",
-      "priority": "P2",
-      "score": 820,
+      "score": 800,
       "blocked": false,
       "daily_gate": null
     },
@@ -148,7 +144,7 @@
       "number": 570,
       "title": "SEO Growth Architecture — keyword-to-page map, internal authority, and evidence-gated expansion",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/570",
-      "updated_at": "2026-10-04T20:04:21Z",
+      "updated_at": "2026-10-06T14:30:15Z",
       "priority": "P3",
       "score": 660,
       "blocked": false,
@@ -158,9 +154,29 @@
       "number": 569,
       "title": "SEO operations: Search Console post-release baseline and indexing verification",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/569",
-      "updated_at": "2026-09-30T20:01:56Z",
+      "updated_at": "2026-10-05T20:51:12Z",
       "priority": "P3",
       "score": 620,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 761,
+      "title": "Security: remediate source-map-js GHSA-68fv-2mgg-jv7q",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/761",
+      "updated_at": "2026-10-06T01:23:17Z",
+      "priority": "P3",
+      "score": 600,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 798,
+      "title": "P3: Launch multilingual 'Following the Dollar' companion publications",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/798",
+      "updated_at": "2026-10-07T20:41:15Z",
+      "priority": "P3",
+      "score": 570,
       "blocked": false,
       "daily_gate": null
     },
@@ -185,12 +201,22 @@
       "daily_gate": null
     },
     {
+      "number": 772,
+      "title": "Phase 2A: Spanish Edition 1.3 paragraph-level parity audit",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/772",
+      "updated_at": "2026-10-06T19:36:35Z",
+      "priority": "P3",
+      "score": 540,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
       "number": 263,
       "title": "Add WhatsApp Business Daily Card distribution after provider setup",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/263",
       "updated_at": "2026-09-29T19:58:28Z",
       "priority": "P3",
-      "score": 540,
+      "score": 520,
       "blocked": true,
       "daily_gate": null
     },
@@ -200,7 +226,7 @@
       "url": "https://github.com/usdimpact/usd-impact-site/issues/248",
       "updated_at": "2026-09-29T19:58:25Z",
       "priority": "P3",
-      "score": 540,
+      "score": 520,
       "blocked": true,
       "daily_gate": null
     },
@@ -210,7 +236,7 @@
       "url": "https://github.com/usdimpact/usd-impact-site/issues/234",
       "updated_at": "2026-09-30T20:47:59Z",
       "priority": "P3",
-      "score": 540,
+      "score": 520,
       "blocked": true,
       "daily_gate": null
     },
@@ -220,7 +246,7 @@
       "url": "https://github.com/usdimpact/usd-impact-site/issues/260",
       "updated_at": "2026-09-30T22:07:47Z",
       "priority": "P3",
-      "score": 500,
+      "score": 480,
       "blocked": true,
       "daily_gate": null
     },
@@ -230,15 +256,25 @@
       "url": "https://github.com/usdimpact/usd-impact-site/issues/244",
       "updated_at": "2026-09-30T21:39:06Z",
       "priority": "P3",
-      "score": 490,
+      "score": 470,
       "blocked": true,
+      "daily_gate": null
+    },
+    {
+      "number": 774,
+      "title": "Book Candidate 2: govern stale Introduction hit-rate framing",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/774",
+      "updated_at": "2026-10-06T19:36:32Z",
+      "priority": "P3",
+      "score": 450,
+      "blocked": false,
       "daily_gate": null
     },
     {
       "number": 122,
       "title": "Phase 2 — recurring Research Membership launch readiness",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/122",
-      "updated_at": "2026-09-30T22:40:12Z",
+      "updated_at": "2026-10-06T14:34:27Z",
       "priority": "P3",
       "score": 390,
       "blocked": true,
@@ -247,24 +283,24 @@
   ],
   "priority_queue": [
     {
-      "number": 750,
+      "number": 786,
       "title": "P1 — Daily USD Impact automation requires attention",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/750",
-      "updated_at": "2026-10-02T22:35:28Z",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/786",
+      "updated_at": "2026-10-08T23:34:17Z",
       "priority": "P1",
       "score": 870,
       "blocked": false,
       "daily_gate": "generation-or-repair"
     },
     {
-      "number": 687,
-      "title": "P1 — Daily USD Impact automation requires attention",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/687",
-      "updated_at": "2026-10-04T16:42:04Z",
+      "number": 762,
+      "title": "P1 — Three Dials snapshot automation requires attention",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/762",
+      "updated_at": "2026-10-06T02:31:00Z",
       "priority": "P1",
       "score": 870,
       "blocked": false,
-      "daily_gate": "generation-or-repair"
+      "daily_gate": null
     },
     {
       "number": 620,
@@ -272,17 +308,7 @@
       "url": "https://github.com/usdimpact/usd-impact-site/issues/620",
       "updated_at": "2026-09-30T20:04:37Z",
       "priority": "P2",
-      "score": 820,
-      "blocked": false,
-      "daily_gate": null
-    },
-    {
-      "number": 619,
-      "title": "P2 — reconcile 51-film Video Library provider assets and editorial source authority",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/619",
-      "updated_at": "2026-09-30T22:03:05Z",
-      "priority": "P2",
-      "score": 820,
+      "score": 800,
       "blocked": false,
       "daily_gate": null
     },
@@ -290,7 +316,7 @@
       "number": 570,
       "title": "SEO Growth Architecture — keyword-to-page map, internal authority, and evidence-gated expansion",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/570",
-      "updated_at": "2026-10-04T20:04:21Z",
+      "updated_at": "2026-10-06T14:30:15Z",
       "priority": "P3",
       "score": 660,
       "blocked": false,
@@ -300,9 +326,29 @@
       "number": 569,
       "title": "SEO operations: Search Console post-release baseline and indexing verification",
       "url": "https://github.com/usdimpact/usd-impact-site/issues/569",
-      "updated_at": "2026-09-30T20:01:56Z",
+      "updated_at": "2026-10-05T20:51:12Z",
       "priority": "P3",
       "score": 620,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 761,
+      "title": "Security: remediate source-map-js GHSA-68fv-2mgg-jv7q",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/761",
+      "updated_at": "2026-10-06T01:23:17Z",
+      "priority": "P3",
+      "score": 600,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 798,
+      "title": "P3: Launch multilingual 'Following the Dollar' companion publications",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/798",
+      "updated_at": "2026-10-07T20:41:15Z",
+      "priority": "P3",
+      "score": 570,
       "blocked": false,
       "daily_gate": null
     },
@@ -327,28 +373,18 @@
       "daily_gate": null
     },
     {
-      "number": 263,
-      "title": "Add WhatsApp Business Daily Card distribution after provider setup",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/263",
-      "updated_at": "2026-09-29T19:58:28Z",
+      "number": 772,
+      "title": "Phase 2A: Spanish Edition 1.3 paragraph-level parity audit",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/772",
+      "updated_at": "2026-10-06T19:36:35Z",
       "priority": "P3",
       "score": 540,
-      "blocked": true,
-      "daily_gate": null
-    },
-    {
-      "number": 248,
-      "title": "Activate Daily Card Telegram publishing",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/248",
-      "updated_at": "2026-09-29T19:58:25Z",
-      "priority": "P3",
-      "score": 540,
-      "blocked": true,
+      "blocked": false,
       "daily_gate": null
     }
   ],
-  "main_blocker": "#750 P1 — Daily USD Impact automation requires attention",
-  "next_action": "#750 P1 — Daily USD Impact automation requires attention",
+  "main_blocker": "#786 P1 — Daily USD Impact automation requires attention",
+  "next_action": "#786 P1 — Daily USD Impact automation requires attention",
   "notes": [
     "Generated state is a snapshot and never overrides canonical production or governance configuration.",
     "Vercel production readiness must be verified outside this GitHub-only state snapshot after release.",

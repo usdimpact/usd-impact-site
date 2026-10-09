@@ -1,10 +1,17 @@
 # Spanish audiobook — human listening sign-off tracker
 
-**Status: PENDING. No reviewer has certified the audio.**
+**Status: FAIL reported at Track 00 opening (00:47.07); all further listening PENDING. No full-book acoustic approval.**
 **Private project:** https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca
 **Private reel:** `6b7b9e26-bde5-4b1b-a9f1-3346966a26c6` (3:06.888; 13 markers; excerpts play without inserted silence).
 **Private appendix B A/B audition kit:** `/spanish-audiobook-appendix-b-8ms-private-listening-kit-2026-10-09.zip` in Library.
 **Private full smoothed trial:** `/spanish-audiobook-appendix-b-8ms-private-mastering-trial-2026-10-09.mp3` in Library.
+
+## User-reported listening defect — October 9
+
+- **Track 00 opening click:** **FAIL (listener-reported)** near `00:47.07`, at `Este libro tiene un propósito exclusivamente educativo e informativo.` The listener stopped there. Cause not yet independently verified.
+- **Copyright paragraph grammar:** parallel-list issue identified in opening copyright notice. Editorial candidate proposed only, no canonical or audio revision, legal sign-off required.
+- **Remediation evidence:** `docs/localization/SPANISH_AUDIOBOOK_OPENING_TRACK_CLICK_GRAMMAR_QA_2026-10-09.md`.
+- **All subsequent listening checkpoints: PENDING**; no implied approval.
 
 ## Reviewer decisions (unfilled until actual listening)
 
@@ -35,7 +42,7 @@ Use PASS / FAIL / UNCLEAR, add evidence or a timecode. Do not mark PASS from tra
 
 - Reviewer name / role: **NOT PROVIDED**
 - Listening date: **NOT PROVIDED**
-- Overall acoustic decision: **PENDING**
+- Overall acoustic decision: **FAIL — Track 00 click reported; remaining content unreviewed**
 - Defect tickets and exact timecodes: **NONE FILED — NOT EQUIVALENT TO PASS**
 - Preferred Appendix B seam: **UNDECIDED** (Descript candidate / offline 8ms-smoothed alternative / neither)
 - Permission to start production mastering: **NOT GRANTED BY THIS TRACKER**

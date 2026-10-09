@@ -148,3 +148,13 @@ The owner replied **PASS** immediately after being asked to evaluate the four au
 **Next listening requirement:** Audition **private v2 composition**, 00:00–00:09, for complete clean `2026` without a preceding `Right`/click, and 00:42–00:51 for clean educational disclaimer. Mark PASS / FAIL / UNCLEAR for v2 specifically. Prior PASS for v1 remains recorded without being transferred to v2. Then independently listen to the Part I 51.101s reel and 186.888s chapter/Appendix reel; 20-track mastering and release remain separately blocked.
 
 **Release controls:** Keep original Track 00 composition `91240c6b-78df-4910-a994-43c616f9b53f` unchanged; v2 private audition only. PR #797 DRAFT/unmerged, zero public Descript publishes, no member/storage or Production changes, full-book acoustic/mastering approval NOT granted.
+
+## Consolidated private three-composition listening gate — 2026-10-09
+
+- The owner replied **"approved, continue"** after being asked to listen to Track00 private v2. This **authorizes continued private QA only**, **not** an explicit listening PASS for the new v2. Earlier PASS on imported v1 remains scoped to that earlier audio composition.
+- A one-session guide now consolidates **v2 Track00 + the existing 51.101s Part I reel + the existing 186.888s chapter/Appendix reel**: `docs/localization/SPANISH_AUDIOBOOK_PRIVATE_SINGLE_PASS_LISTENING_GATE_2026-10-09.md`.
+- Independent SRT token audit: imported v1 25 cues/189 normalized tokens, v2 25 cues/188 tokens, with **exactly one token `Right` removed and all other SRT tokens unchanged**; corrected v2 duration **109.835306s**. This verifies **transcription consistency, not acoustic quality or final master**.
+- Part I reel SRT (14 cues): spoken body `La parte uno` at ~00:09 and corrected heading `Parte uno` at ~00:35.5 ahead of `Capítulo uno` at ~00:37.3. Both uses are intentional, acoustic join still pending.
+- Chapter/Appendix reel SRT (52 cues): five part headings accounted for. Two ASR-only pronunciation uncertainties, `Aprendáis a glosario` and `Appendix B`, remain subject to **direct human listening**, not blind synthesis or source-text rewrites.
+- A single merged audio QA reel **was not built** because the Descript agent could not safely guarantee extraction of non-contiguous script-media ranges without possible new cut artifacts. All existing compositions remain intact. Use the three original private review compositions; no publication.
+- **Human listening: PENDING for v2 and both reels.** Full 20-track mastering/listening, PR #797 merge, public publishing, Production/member access remain **HOLD/OFF**.

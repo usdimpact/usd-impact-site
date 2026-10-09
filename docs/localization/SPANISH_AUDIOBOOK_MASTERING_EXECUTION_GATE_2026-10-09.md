@@ -61,3 +61,15 @@ The owner reported PASS for the offline before/after Chapter 2→3 boundary samp
 The private pre-master manifest now selects the corrected imported compositions for Tracks 04/05. A fresh Descript inventory found 20/20 selected compositions, no duration mismatch, and nominal total **17,747.673136s** (4h 55m 47.673s). **No full-length mastered WAV export or listening sign-off** has been completed. Other six heading checks, true-peak/LUFS tests on actual final renders, full-book acoustic and editorial checks remain PENDING.
 
 **Release boundary unchanged:** PR #797 DRAFT/unmerged; 0 Descript public publishes, Production/member delivery OFF, final mastering approval PENDING.
+
+## Chapter 3 to 4 imported private boundary candidates - October 9
+
+The owner listened to the four private A/B Chapter3→4 samples and replied **PASS**, authorizing private candidate preparation only. The Descript import `project-media-import-9ac911c1-7522-42c5-828b-ab88f5a0dc53` has now successfully created and transcript-verified:
+- Track05 selected: `afef9b85-5d80-443b-b39d-6ac07a4e298b` (1140.400000 s), with opening `Parte dos. Capítulo tres` and no extra trailing `Parte dos`.
+- Track06 selected: `dcc43206-170d-4202-b868-d2e6d8f804a0` (1376.004490 s), with opening `Parte dos. Capítulo cuatro`, trailing `Parte tres` retained for later transfer.
+
+The original Chapter 3/4 Descript compositions and earlier Chapter 3 candidate remain intact. Current 20/20 private composition metadata reconciles to nominal **17,747.673149s (4h 55m 47.673s)**. No full-length imported-track acoustic PASS or encoded mastering measurement has been performed.
+
+A separate read-only agent inspection of the private corrected Introduction completed and flagged its ~07:59 phrase as present and a possible stray `Parte uno` transcript at the end. This is an **acoustic check pending**, not an authorized edit.
+
+**HOLD unchanged:** PR #797 DRAFT/unmerged, Descript public publishes 0, public/member delivery and Production OFF, mastering approval PENDING, remaining Chapter4→5 and other Part-heading reviews plus full-book listening outstanding.

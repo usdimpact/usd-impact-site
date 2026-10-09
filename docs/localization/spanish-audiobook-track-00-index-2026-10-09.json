@@ -1,0 +1,21 @@
+{
+  "track": "00",
+  "purpose": "private complete rerecord; no release",
+  "voice": "Narrator Mateo",
+  "voice_id": "626ca51acb2e496f8dcee8d7591fda3c",
+  "locale": "es-419",
+  "speed": 0.92,
+  "segments": [
+    {
+      "id": "01",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-00-segment-01.txt"
+    },
+    {
+      "id": "02",
+      "status": "pending",
+      "text_file": "docs/localization/spanish-audiobook-track-00-segment-02.txt"
+    }
+  ],
+  "release_allowed": false
+}

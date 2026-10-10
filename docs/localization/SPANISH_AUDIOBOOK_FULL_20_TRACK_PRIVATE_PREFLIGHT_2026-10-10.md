@@ -155,3 +155,15 @@ The source-media coverage **823.547–883.028s** and SRT end **869.884s** remain
 The owner replied **PASS BOTH** after hearing **0–10 seconds** of [selected Appendix A](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/625d0) and [selected Appendix B](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/6a251). These scoped acoustic PASS decisions address the earlier opening ASR renderings that did not match the Spanish headings. No audio repairs are indicated by the owner's report.
 
 Combined with the earlier owner PASS for selected Appendix B **14:25–14:43**, the specified **three appendix excerpts** are now accepted. **Not accepted:** complete appendices, literal accuracy of the final identifier transcript, 20 exported audio masters or end-to-end full-book listening. The selected compositions remain unchanged. Release is HOLD.
+
+
+## Editorial identifier parity check — 2026-10-10 (read-only)
+
+Compared the closing Appendix B paragraph in the authoritative Spanish Edition 1.3 Candidate 1 Google Doc (`1hjOXZdqT1DajsiGvNm8motQIJ4yuxi6zNwDiU1bpYnU`, paragraph near document index 1134) to a new private Descript TXT transcript export from selected Appendix B `6a251168-1d0d-4a9d-b9ea-daed1d1db016`.
+
+| Authority token | Manuscript | Descript ASR/TXT | Text comparison |
+| --- | --- | --- | --- |
+| Website | `a86e57dafe91da67553e73e01bb0c703a868c949` | `A86E57DAFE91DA67553E73E01BB0C703A868C949` | MATCH case-insensitively |
+| Score pipeline | `f51f7abf2d4ec99890eb5537424f6faab885ef32` | `F51F7ABF2D4EXE99890EB55374246FAB885F32` | MISMATCH at manuscript `c` versus ASR `X`, and manuscript `4f` versus ASR `46` near the ending |
+
+**Interpretation:** ASR text parity **FAIL/UNCERTAIN** for the Score-pipeline token, not a demonstrated acoustic defect. The owner-reported PASS of Appendix B at 14:25–14:43 is a scoped audible acceptance, not an exact character-by-character hash transcription signoff. Do not replace source authority tokens, alter narration, or generate a repair solely from ASR. Keep literal pipeline authority verification as an editorial release gate. Other wording/compliance approvals remain pending; no public publishing, merge, member delivery or Production change.

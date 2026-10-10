@@ -136,6 +136,9 @@ try {
     week: '2026-08-28', score, newsRoot: noForwardNewsRoot, generatedAt: '2026-08-29T12:00:00Z',
   });
   assert.match(noForwardReport, /catalysts: \[\]/);
+  const emptyCatalystSourceBlock = noForwardReport.match(/^sourceEditions:\s*$([\s\S]*?)^catalysts:(?:\s*\[\])?\s*$/m)?.[1] ?? '';
+  assert.equal((emptyCatalystSourceBlock.match(/^  - date: /gm) ?? []).length, 5);
+  assert.equal((emptyCatalystSourceBlock.match(/^    url: "\/news\//gm) ?? []).length, 5);
   assert.match(noForwardReport, /No forward catalyst after the completed Friday/);
   assertEditorialContract(noForwardReport);
 

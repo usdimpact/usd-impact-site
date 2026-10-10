@@ -57,7 +57,7 @@ for (const file of fs.readdirSync(reportRoot).filter((name) => name.endsWith('.m
     const expectedScoreSuffix = `/archive/${periodEnd}/weekly_input.json`;
     if (!scoreSource?.endsWith(expectedScoreSuffix)) throw new Error(`score sourceUrl must end with ${expectedScoreSuffix}`);
 
-    const sourceBlock = frontmatter.match(/^sourceEditions:\s*$([\s\S]*?)^catalysts:\s*$/m)?.[1] ?? '';
+    const sourceBlock = frontmatter.match(/^sourceEditions:\s*$([\s\S]*?)^catalysts:(?:\s*\[\])?\s*$/m)?.[1] ?? '';
     const editionDates = [...sourceBlock.matchAll(/^\s+- date:\s*["']?(\d{4}-\d{2}-\d{2})["']?\s*$/gm)].map((match) => match[1]);
     const editionUrls = [...sourceBlock.matchAll(/^\s+url:\s*["']?(\/news\/(\d{4}-\d{2}-\d{2}))["']?\s*$/gm)];
     if (editionDates.length === 0 || editionDates.length !== editionUrls.length) throw new Error('source editions must contain matching dates and internal news URLs');

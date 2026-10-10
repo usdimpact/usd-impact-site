@@ -12,7 +12,7 @@ const environment = {
   VERCEL_ENV: 'production',
   RESEND_WEBHOOK_ENABLED: 'true',
   RESEND_WEBHOOK_SECRET: `whsec_${key.toString('base64')}`,
-  SUPABASE_URL: 'https://example.supabase.co',
+  SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
   SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_offline_fixture_not_a_real_key',
   SUPABASE_SECRET_KEY: 'sb_secret_offline_fixture_not_a_real_key',
 };
@@ -53,7 +53,7 @@ function database({ rows = [], prior = null, readStatus = 200, invalidJson = fal
   let receipt = prior ? structuredClone(prior) : null;
   const fetchImpl = async (url, options = {}) => {
     const parsed = new URL(url);
-    assert.equal(parsed.origin, 'https://example.supabase.co', 'fixture must never reach another host');
+    assert.equal(parsed.origin, 'https://gjzetjugmnwanvjkchux.supabase.co', 'fixture must never reach another host');
     const method = options.method || 'GET';
     const body = options.body ? JSON.parse(options.body) : null;
     calls.push({ path: parsed.pathname, query: parsed.search, method, body });

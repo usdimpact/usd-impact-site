@@ -310,3 +310,11 @@ Owner supplied an explicit **PASS** for the Chapter7 ending → Chapter8 opening
 - Draft private pre-master manifest switches the selected IDs for Tracks 09/10 only, retaining earlier candidates and originals for rollback. Full **20/20** selected metadata reconcile; Descript **public publishes 0**.
 
 **Scope limit:** This is NOT a complete Chapter7/8 listening PASS, not a complete 20-track listening PASS and not final master approval. The earlier Chapter8 candidate's separate audio listening QA flag remains its own pending checkpoint where applicable. Remaining repeated `Parte uno` before Chapter2, rendered-audio compliance checks, legal/editorial sign-off, PR merge, member access and Production are all **PENDING/OFF**.
+
+## October 10 — Chapter1→Chapter2 repeated Parte uno candidate: listener PENDING
+
+- **Source requirement:** Spanish Edition 1.3 Candidate 1 repeats `PARTE I` before Chapter2. Selected Chapter1 already correctly starts with audible-text `Parte uno`; existing selected corrected Chapter2 starts without it.
+- **One new private duplicate made:** Chapter2 candidate `592e27f8-5337-4058-8f6d-e0f2cb749251` (1108.760224s). It reportedly copies an existing actual spoken `Parte uno` from selected Chapter1 beginning, rather than generating a new voice or changing Chapter1. Original selected Chapter2 `ebbadbd2-df11-4cba-95d6-a546dd7b3b51` (1107.380s) and all other selections are unchanged.
+- **Transcript verification: PASS:** New first cue `Parte uno`; next `Capítulo dos`; all **2301** baseline Chapter2 core normalized tokens retained in same order and disclaimer final. Agent-reported copied source window 0–1.600s vs net composition duration +1.380224s; **audio continuity remains to be heard**, do not claim PCM proof.
+- **Owner listening: PENDING.** Play new Chapter2 candidate 0–8s and report actual audio PASS/FAIL/UNCLEAR. Separately replay Introduction `aecc180b` at 07:59 and final 10s, and Chapter1 `686a4f65` at 0–8s; previous Part I intro→Chapter1 acoustic concerns remain unclosed.
+- **No permission to advance:** Do not switch selected Track04 or master/publish. PR #797 DRAFT/unmerged, public Descript publishes 0, Production/member delivery OFF, mastering approval PENDING.

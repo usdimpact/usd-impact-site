@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const COMPLIANCE = 'Educational and informational only. This report summarizes published USD Impact editions and the systematic weekly score. It is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset.';
 const SCORE_BREADTH_WATCH = "Watch the breadth of the score's eight component contributions alongside these events to see whether the completed-week configuration persists, narrows, or moves toward the nearest regime boundary.";
+const SCORE_BREADTH_WATCH_NO_EVENTS = "Watch the breadth of the score's eight component contributions alongside newly published evidence to see whether the completed-week configuration persists, narrows, or moves toward the nearest regime boundary.";
 
 function isoDate(date) {
   return date.toISOString().slice(0, 10);
@@ -167,7 +168,7 @@ export function generateWeeklyReport({ week, score, newsRoot, generatedAt = new 
     '',
     catalysts.length > 0
       ? `The confirmed forward calendar carried by the published Daily editions includes ${catalysts.map((item) => `${item.event} on ${item.date}`).join('; ')}. These are scheduled observation points, not forecasts or trading signals. ${SCORE_BREADTH_WATCH}`
-      : `No forward catalyst after the completed Friday was carried consistently in the five published Daily editions. The next report should remain anchored to newly published, source-led evidence. ${SCORE_BREADTH_WATCH}`,
+      : `No forward catalyst after the completed Friday was carried consistently in the five published Daily editions. The next report should remain anchored to newly published, source-led evidence. ${SCORE_BREADTH_WATCH_NO_EVENTS}`,
     '',
     '## Methodology note',
     '',

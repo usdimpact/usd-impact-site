@@ -332,3 +332,11 @@ Owner supplied an explicit **PASS** for the Chapter7 ending → Chapter8 opening
 **Selection after listening:** new Chapter2 selected **for private pre-master QA only**; old corrected `ebbadbd2-df11-4cba-95d6-a546dd7b3b51` remains as rollback, canonical Chapter2 original intact. New composition **1108.760224s** vs **1107.380000s** prior; 2301/2301 normalized Chapter2 original core tokens remain in order; new Part I heading present. New total selected nominal duration **17,749.053398s (4h55m49.053s)** across 20/20 available compositions.
 
 **Not approved by this PASS:** full Introduction, Chapter1 or Chapter2 playback beyond the checked regions; all 20 tracks end to end; rendering/mastering settings or decoded PCM of new candidate; other Appendix/Track00 editorial gates; legal/compliance signoff; merge, publish, member access or Production. No individual error/timecode notes provided. Descript publishes 0, PR #797 DRAFT/unmerged, Production OFF and mastering PENDING.
+
+## October 10 — Selected 20-track whole-book listening remains pending despite targeted PASS
+
+The owner authorized continuing without a final Track00 version preference. Retain the already selected, earlier **targeted-listening-PASS copyright-tail QA v2** `ebe7f026-e369-4dd4-a184-9476a6482f5b` for private pre-master planning. Historical first original with reported click remains safely archived and unselected. This does **not** upgrade Track00 to full-length acoustic or master PASS.
+
+The [20-track private browser export and QA runbook](./SPANISH_AUDIOBOOK_PRIVATE_20_TRACK_EXPORT_AND_QA_RUNBOOK_2026-10-10.md) groups the complete **4h55m49.053s** selected set into four owner listening blocks. **Full-length PASS remains PENDING for all four blocks**, notwithstanding earlier targeted excerpts and Chapter 1→2 `PASS ALL`. Direct private audio playbacks for Appendix B 14:25–14:43, Appendix A/B first 10 seconds, and the full Track00 v2 must be individually logged with any timecoded defects.
+
+**Still no mastering/release approval:** selected actual WAV exports/encoded delivery files need complete duration/decode/LUFS/dBTP/silence/source parity QA; editorial and legal wording review separately pending. Existing PR #797 draft/unmerged, publishes 0, Production/member delivery OFF, mastering PENDING.

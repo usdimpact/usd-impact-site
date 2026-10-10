@@ -148,3 +148,11 @@ The accepted corrected Chapter7 WAV (1072.545102s) and the *already selected pri
 **Owner listening status: PENDING** for the [Chapter7→8 four-clip listening kit](https://drive.google.com/file/d/1hVRVPCWdcDzwfLSBxn1TM4bsXa3rP7-R/view). No changed private Descript selection or new imported media; current 20-track nominal total remains ~17,747.673172s. After owner sample PASS, import both as private audio-only compositions via supported conversation attachment route; independently verify import lengths/editor script/openings/endings; only then switch the draft manifest. If FAIL/UNCLEAR, repair the offline audio before import.
 
 **Other outstanding requirements:** Repeated `Parte uno` near Chapter1→2; Chapter8's prior private candidate acoustic review, whole 20-track acoustic listening, actual mastered render LUFS/true-peak, legal/editorial sign-off and release approval. PR #797 DRAFT/unmerged, Descript public publishes 0, Production/member delivery OFF, mastering PENDING.
+
+## October 10 — Chapter7→8 samples PASS; private import and master still HOLD
+
+The owner accepted the private Chapter7→Chapter8 four-excerpt audio correction with **PASS**. The repaired samples move a single recorded `Parte tres` from Chapter7's end to the head of the already corrected Chapter8 candidate. Source PCM sample-order and SHA-256 conservation already PASS. The corrected full WAV/FLAC sources are owner-only.
+
+**Import not yet done.** Accepted corrected Chapter7 and Chapter8 audio must be uploaded via private supported path and verified as distinct full-length Descript audio-only compositions (1070.800000s and 1012.682200s). Until then, the current 20-track draft manifest continues to point to the previous selected compositions; do not claim mastering readiness. Chapter1→2 repeated Part I, full-book listening, final rendered LUFS/true-peak tests, legal/editorial QA and final release remain outstanding.
+
+**HOLD unchanged:** PR #797 draft/unmerged, Descript public publishes 0, Production/member delivery OFF, final mastering approval PENDING.

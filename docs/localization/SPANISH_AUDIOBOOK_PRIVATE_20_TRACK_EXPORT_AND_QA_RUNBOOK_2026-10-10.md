@@ -100,6 +100,12 @@ Use \`--metadata-only\` for the initial fast completeness/duration pass. Require
 
 The core checker was tested locally on generated synthetic WAVs for a normal tone, a missing export, an invalid track name and a long silence. CI run verification on this GitHub branch is separate and has not been claimed.
 
+### Actual corrected-source smoke test (not exported Descript master)
+
+The QA checker was additionally run against one actual private **corrected source WAV** (not a final selected Descript audio export) for selected Track08 / Chapter6, using a synthetic one-track manifest to avoid falsely claiming the other 19 are available. Results: **1002.300s** duration matching its source baseline, **−24.03 LUFS**, **−7.74 dBTP**, LRA **2.1 LU**, no ≥5s intervals under the amplitude-based −45dB threshold, and no review flags. The decoded metrics agree with the earlier source-audio audit.
+
+**This is a functional smoke test of the QA pipeline, not a PASS for 20 Descript exports or an approval of final mastering.** The exact private source remains unmodified; JSON test evidence was retained only in the temporary QA workspace, not published or attached to PR #797.
+
 ## Objective QA to run on actual uploaded private WAVs
 
 For each **actual final selected export**, capture a machine-readable result with: basename; matching composition UUID; file byte size; SHA-256; sampling frequency/channels/bit depth; frame count and exact decoded length; decode failures; peak sample amplitude; true peak dBTP; integrated LUFS and short-term range (LRA); longest low-RMS silence interval plus its start/end; potential sudden discontinuities; source/content parity and identity of exported track.

@@ -1,4 +1,5 @@
 import { isProviderManagedAuthSuccess } from './resend-auth-notification-boundary.js';
+import { isExternallyManagedSpanishNewsletterEvent } from './resend-shared-account-boundary.js';
 import {
   RESEND_WEBHOOK_MAX_BYTES,
   ResendWebhookVerificationError,
@@ -198,6 +199,9 @@ async function applyDeliveryEvent({ config, verified, fetchImpl }) {
     if (isProviderManagedAuthSuccess(verified.event)) {
       return Object.freeze({ outcome: 'ignored', reason: 'provider-managed-auth-success' });
     }
+    if (isExternallyManagedSpanishNewsletterEvent(verified.event)) {
+      return Object.freeze({ outcome: 'ignored', reason: 'externally-managed-spanish-newsletter' });
+    }
     throw new WebhookProcessingError(
       'Resend outbox correlation is not ready.',
       'OUTBOX_CORRELATION_PENDING',
@@ -297,6 +301,10 @@ export async function handleResendWebhook(request, response, options = {}) {
     if (result.reason === 'provider-managed-auth-success') {
       console.info('Resend provider-managed authentication notification acknowledged.', {
         code: 'PROVIDER_MANAGED_AUTH_SUCCESS', eventType: verified.event.type,
+      });
+    } else if (result.reason === 'externally-managed-spanish-newsletter') {
+      console.info('Resend externally managed Spanish newsletter notification acknowledged.', {
+        code: 'EXTERNALLY_MANAGED_SPANISH_NEWSLETTER', eventType: verified.event.type,
       });
     }
     return sendJson(response, 200, { ok: true, duplicate: receiptState.duplicate });

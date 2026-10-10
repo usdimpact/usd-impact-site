@@ -129,3 +129,14 @@ After import, Descript readback confirmed exact durations and expected opening/c
 - Existing 20-track manifest remains on the previously verified, actually available compositions. Await owner-attached lossless Chapter6/Chapter7 files in ChatGPT to finish the two private Descript imports through the supported host attachment workflow; then recheck durations, SRT boundaries and originals before updating the draft manifest.
 
 **Release HOLD:** PR #797 DRAFT/unmerged, Descript public publishes 0, Production and member audio OFF, final mastering, true-peak/LUFS verification and complete-book review PENDING.
+
+## October 10 — Chapter 6→7 private import complete; full mastering still HOLD
+
+**Private accepted source:** owner PASS on four A/B listening samples. Source combined PCM checksum `cc8b7f8ef4e1a5ff2ecb4caaa6d70dbee8428e7b465925aa2b2989127801538f` and expected durations 1002.300000s (Chapter6) plus 1072.545102s (Chapter7). The files were imported successfully as fresh PRIVATE compositions via the supported attached-file route after earlier Drive/direct PUT failures.
+
+- Chapter6 selected `88370601-0fec-4194-90ae-cfbb3a58c89f`: correct opening/closing confirmed in timed editor script; 1002.300000s.
+- Chapter7 selected `8ffb044f-fc73-4bf3-8630-9078793a70ae`: correct `Parte tres. Capítulo siete` beginning, independent end heading retained; 1072.545102s.
+- Read-only editor inspection confirms full media clip and timed text but `export_transcript` is BLANK; recheck before attempting final archive export. No independent mastered/rendered audio measurement has been done.
+- All **20/20** selected private composition IDs and durations reconcile at **17,747.673172s**, about **4h55m47.7s**. Failed 6s placeholders are excluded from selection.
+
+**Still blocked:** Chapter7→8's independent `Parte tres`, Chapter1→2's repeated `Parte uno`, complete 20-track owner listening, mastered encoded audio LUFS/true-peak/silence checks, final compliance/editorial approval and publication decision. **PR #797 remains DRAFT/unmerged, Descript public publishes zero, member and Production release OFF, mastering approval PENDING.**

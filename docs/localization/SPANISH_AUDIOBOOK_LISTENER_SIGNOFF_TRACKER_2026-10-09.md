@@ -235,3 +235,13 @@ The owner replied **PASS** to the four private A/B WAV listening excerpts of Cha
 After PASS, Descript import job `project-media-import-21812ed2-3237-4bd6-ac30-3e10825c7db2` completed **SUCCESS**. Private compositions: `c99a187a-501f-4a7c-b481-db2f0a179183` (Chapter4, 1374.200000s) and `35527a16-bc5e-455a-8989-053d03b0cc41` (Chapter5, 1229.637959s). Imported SRT: Chapter4 opens `Parte dos` and ends after the disclaimer without `Parte tres`; Chapter5 opens `Parte tres. Capítulo cinco` and retains a second `Parte tres` at its own end for the future 07→08 check. Their durations match the approved source WAVs.
 
 Both are now selected in the **private pre-master planning manifest**, with prior and original compositions preserved. Project public publishes remain 0. Whole-book listening, actual mastered export testing, and the four remaining unverified earlier chapter transitions **03→04, 07→08, 08→09, 09→10** remain PENDING. PR #797 stays DRAFT/unmerged. Member delivery and Production OFF.
+
+## October 10 — Chapter 5→6 recorded Part III candidate: technical PASS, listening PENDING
+
+Owner supplied the full Chapter6 WAV. Using the currently selected corrected Chapter5 PCM WAV and the new complete Chapter6 WAV, a **non-destructive** private offline recorded-heading transfer moved existing spoken `Parte tres` from Chapter5's tail to Chapter6's head. The same combined 98,439,642 PCM frames and checksum `10aca8645f96ed9252ee1d080031d34adce2755c90eb8f854d8d02aaac4c4bee` were independently verified. Corrected lengths: Chapter5 **1228.210000s**, Chapter6 **1003.981429s**, with existing narrations unchanged. The separate closing `Parte tres` at Chapter6's end is still present for later review.
+
+**Human acoustic verdict: PENDING.** The [four-clip browser audition kit](https://drive.google.com/file/d/17rjvWeW02CyPf4UyOdWoJiIS1DjJ8pwf/view) contains before/after Chapter5 ending and Chapter6 opening. Owner is asked to respond PASS/FAIL/UNCLEAR on these excerpts; no outcome is inferred from earlier PASS responses to different chapters. Full Chapter5/6 and whole-book listening remain pending.
+
+**Private files:** two corrected WAVs saved in private Library; equivalent lossless FLAC backups and report stored in owner-only Google Drive (verified `shared=false`). Details, times and hashes in `docs/localization/SPANISH_AUDIOBOOK_CH02_TO_CH08_HEADING_REVIEW_2026-10-09.md`.
+
+**Release boundary:** No Descript media import yet for this candidate, no review-manifest selection change. PR #797 DRAFT/unmerged, Production/member/audio public sharing OFF, mastering PENDING.

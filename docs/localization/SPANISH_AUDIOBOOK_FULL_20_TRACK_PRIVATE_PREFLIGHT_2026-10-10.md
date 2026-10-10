@@ -182,3 +182,10 @@ Read-only comparison against the authoritative Spanish Edition 1.3 Candidate 1 G
 | 18 Appendix B | Score is orientation only, not personalized investment/legal/tax advice, trading signal or recommendation; no standalone sizing, entry/exit or suitability use | Core clauses appear in sequence; punctuation differs | PRESENT in ASR; authority identifier mismatch recorded separately |
 
 **Do not overstate this evidence.** A TXT transcript presence check cannot confirm audible phonemes, exactly timed clip endings, legal adequacy, or complete paragraph-by-paragraph parity for all 20 tracks. No canonical manuscript, Descript composition or selected manifest text was changed. Remaining work: systematically inspect the other selected chapter-ending warnings and front-matter rights exception, preserve chapter-specific variants, and obtain editorial/legal verdict before mastering or release. Owner has deferred WAV export and full listening to the final stage. PR stays draft; public, merge and Production gates remain OFF.
+
+
+## Additional transcript checks — 2026-10-10
+
+Selected Chapters 2–9 and 12 (tracks 04–11 and 14), plus the Introduction (02), were inspected through private Descript TXT exports. Each of these ten tracks contains a chapter-end educational and non-advice disclaimer with verification-of-current-data language. The selected Chapter 13 (track 15) was subsequently checked and its closing disclaimer also appears in the transcript. The selected Track 00 copyright exception (brief critical-review quotations and legally permitted noncommercial uses), educational-purpose statement, non-advice warning, and consult-qualified-professionals direction also appear in its TXT export. Its selected private narration starts with USD Impact and the year rather than a spoken English Copyright label, consistent with the private v2 choice.
+
+These findings cover textual presence only. Speech accuracy, full manuscript parity, legal approval, actual WAV analysis, and final listening remain pending. No audio or release-state changes are authorized by this check.

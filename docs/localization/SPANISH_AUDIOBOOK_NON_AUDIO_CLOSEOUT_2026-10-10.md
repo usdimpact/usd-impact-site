@@ -83,6 +83,25 @@ The selected Appendix B segment 15 source file (`docs/localization/spanish-audio
 
 The private HeyGen synthesis workflow now validates the canonical manifest **before** installing the provider CLI or invoking speech generation. It now requires a distinct `private_synthesis_approval == "APPROVED"` alongside `production_enabled == false`, `public_allowed == false`, `merge_allowed == false`, and `publication_approval == "NOT_GRANTED"`. The approval field is intentionally absent from the current canonical manifest, so the check fails closed even if the workflow is manually dispatched or its trigger JSON changes. This draft-branch guard was finalized in commit `d9138a8f05e877459aa7dec33fa9e4eb7d2bd6f7` (replacing the initial boolean approach in `df52d2550f3d4541e860f08a10306a749aff06ef`); it has been inspected statically, not exercised through a synthesis job. Do not add an approval field except for a separately authorized, scoped private repair. A private repair authorization must never toggle Production, public delivery, merge, or release approvals.
 
+## Current selected chapter-heading positions — October 10 read-only reconciliation
+
+The October 9 [boundary audit comment](https://github.com/usdimpact/usd-impact-site/pull/797#issuecomment-6087762072) reported six missing/misplaced part headings at chapter openings. That report is **historical**, and fresh Descript TXT exports from the *currently selected manifest IDs* on October 10 show a corrected textual state:
+
+| Selected track | Manuscript opening | First words in freshly exported selected TXT | Status, TXT only |
+| --- | --- | --- | --- |
+| 03 / Chapter 1 | PARTE I | `Parte uno. Capítulo uno` | MATCH |
+| 04 / Chapter 2 | PARTE I | `Parte uno. Capítulo dos` | **RESOLVED** |
+| 05 / Chapter 3 | PARTE II | `Parte dos. Capítulo tres` | MATCH |
+| 06 / Chapter 4 | PARTE II | `Parte dos. Capítulo cuatro` | **RESOLVED** |
+| 07 / Chapter 5 | PARTE III | `Parte tres. Capítulo cinco` | **RESOLVED** |
+| 08 / Chapter 6 | PARTE III | `Parte tres. Capítulo seis` | **RESOLVED** |
+| 09 / Chapter 7 | PARTE III | `Parte tres. Capítulo siete` | **RESOLVED** |
+| 10 / Chapter 8 | PARTE III | `Parte tres. Capítulo ocho` | **RESOLVED** |
+
+The same eight selected TXT exports show only the single beginning `Parte uno/dos/tres` mention for these tracks and no misplaced *trailing* part heading. This directly addresses all **six** formerly flagged openings and their adjacent endings at transcript level, without changing any selected IDs or editing Descript. The selected compositions appear to have evolved after the October 9 audit; historical claims must not override October 10 readback.
+
+**Important limit:** Transcript position and word presence do not prove acoustically clean joins, no duplicated recorded speech below ASR detection, verified SRT timing or successful final mastered exports. Track-boundary acoustic acceptance is still deferred until the final approved audio stage. Do **not** initiate the earlier six-heading clip-movement plan or generate new audio based solely on the now-stale comment. Maintain HOLD.
+
 ## Bounded closeout and remaining gates
 
 | Gate | Decision |

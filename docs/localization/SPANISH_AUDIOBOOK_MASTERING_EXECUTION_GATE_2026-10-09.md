@@ -226,3 +226,11 @@ The connected Descript tools cannot privately export the final WAV media themsel
 Implemented [private export QA tool](../../scripts/audio/spanish_audiobook_private_qc.py) plus [synthetic tests](../../scripts/audio/tests/test_spanish_audiobook_private_qc.py) and documented [secure cloud invocation](./SPANISH_AUDIOBOOK_PRIVATE_20_TRACK_EXPORT_AND_QA_RUNBOOK_2026-10-10.md). Tool matches exact 20 manifest track names to private WAV exports, hashes each file, checks metadata and expected durations, measures unmodified INPUT LUFS, dBTP and LRA, and flags long silence/loudness outliers. Does not edit/export/publish media. Three equivalent local synthetic tests passed. A separate **Chapter6 corrected SOURCE WAV smoke test**, not a Descript export, measured 1002.300s, −24.03 LUFS, −7.74 dBTP, LRA 2.1 LU, no long silence flags. **No end-to-end 20-track Descript audio export measurements have been performed.**
 
 **Next dependency unchanged:** source-authenticated PRIVATE Descript WAV exports, direct playback of selected Appendix B 14:25–14:43 and A/B openings, then four full listening blocks and editorial/legal release reviews. Track00 v2 choice settled for private QA; no outstanding chooser question. PR #797 draft/unmerged, public publishes zero, mastering PENDING and Production/member OFF.
+
+## October 10 — Appendix A/B first 10 seconds PASS BOTH
+
+The owner accepted both opening pronunciation checks for selected Appendix A and Appendix B: `PASS BOTH`, each covering **00:00–00:10**. The selected Appendix B final **14:25–14:43** audio was separately accepted earlier. No title audio regeneration, transcript edit, composition switch, or publication was necessary.
+
+**Scope:** These are three targeted audible checkpoints. Appendix B's final identifier remains a distinct exact-character manuscript/ASR verification issue. Full appendix tracks and the selected 20-track book must still be heard in entirety; private exported WAV/encoded loudness and true-peak, clipping, silence and legal/editorial checks remain PENDING.
+
+PR #797 remains DRAFT/unmerged, public Descript publishes 0, Production/member delivery OFF, mastering approval PENDING.

@@ -73,3 +73,11 @@ The original Chapter 3/4 Descript compositions and earlier Chapter 3 candidate r
 A separate read-only agent inspection of the private corrected Introduction completed and flagged its ~07:59 phrase as present and a possible stray `Parte uno` transcript at the end. This is an **acoustic check pending**, not an authorized edit.
 
 **HOLD unchanged:** PR #797 DRAFT/unmerged, Descript public publishes 0, public/member delivery and Production OFF, mastering approval PENDING, remaining Chapter4→5 and other Part-heading reviews plus full-book listening outstanding.
+
+## Chapter 4 to 5 Part III offline candidate — October 10
+
+A complete Chapter5 WAV (1227.833469s) was received and combined with the selected corrected Chapter4 WAV (1376.004490s) for a **source-preserving private offline transfer** of the original `Parte tres` heading. Chapter4→5 cut at **1374.200s** moved **1.804490s** of existing PCM to Chapter5's beginning. Result: corrected Chapter4 **1374.200s**, corrected Chapter5 **1229.637959s**, zero total-duration change, combined decoded PCM SHA-256 unchanged (`8faf46c7ff3c9194fc2ebd2ad36043c5b5e4c4380052b644d617f15c0a549ee1`). No synthesis or mastering effects.
+
+**Human listening PENDING** on four-sample private ZIP [in owner-only Drive](https://drive.google.com/file/d/14pgConEzOOVyZervakTql1EsvrfYlY4c/view). The corrected *full-length* WAV and FLAC source candidates were generated but persistent upload was blocked by expired container session; preserve working files/secure copies before importing. Do **not** switch manifest selections until the reviewer provides scoped PASS and safe private import is verified.
+
+Chapter5's second closing `Parte tres` is intact; subsequent Chapter5→6 alignment is separately pending. Whole-book hearing, encoded mastering measurements, PR merge, public/member/Production release all remain on hold.

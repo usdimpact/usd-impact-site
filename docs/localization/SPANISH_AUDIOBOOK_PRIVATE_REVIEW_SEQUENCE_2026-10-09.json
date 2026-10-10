@@ -863,7 +863,11 @@
       ],
       "final_descript_playback_qa": "PENDING",
       "publication_allowed": false
-    }
+    },
+    "applies_to_composition_id": "91240c6b-78df-4910-a994-43c616f9b53f",
+    "scope": "HISTORICAL_ORIGINAL_NOT_CURRENTLY_SELECTED",
+    "current_selected_private_candidate_id": "ebe7f026-e369-4dd4-a184-9476a6482f5b",
+    "current_selected_private_candidate_qc": "TARGETED_OWNER_PASS_00_00_TO_00_09_AND_00_42_TO_00_51; FINAL_EXPORT_UNTESTED"
   },
   "track00_replacement_review": {
     "status": "ALTERNATE_NOT_SELECTED_OWNER_PREFERS_ORIGINAL",
@@ -875,13 +879,43 @@
     "release_allowed": false
   },
   "track00_current_selection": {
-    "selection": "FIRST_ORIGINAL_RECORDING",
-    "composition_id": "91240c6b-78df-4910-a994-43c616f9b53f",
-    "owner_requested_on": "2026-10-09",
-    "known_click_at_seconds": 47.07,
-    "click_status": "REPORTED_UNRESOLVED",
-    "alternate_retained": "8741a769-eab3-4b50-b9fd-06c67fccf43a",
+    "selection": "COPYRIGHT_TAIL_QA_V2_PRIVATE_PREMASTER",
+    "composition_id": "ebe7f026-e369-4dd4-a184-9476a6482f5b",
+    "selected_on": "2026-10-10",
+    "selection_authorization": "OWNER_NO_PREFERENCE_CONTINUE",
+    "rationale": "Matches existing 20-track selected manifest; prior owner PASS on private v2 intro (0–9s) and disclaimer (42–51s); v2 derived from offline declicked private source; avoids promoting original with documented click.",
+    "backup_original_composition_id": "91240c6b-78df-4910-a994-43c616f9b53f",
+    "prior_original_click_status": "ORIGINAL_REPORTED_UNRESOLVED; HISTORICAL_ISSUE_NOT_TRANSFERRED_TO_V2",
+    "candidate_opening_text_qa": "PASS_NO_SPOKEN_COPYRIGHT_NO_STRAY_RIGHT_AND_DISCLAIMER_PRESENT",
+    "owner_acoustic_qa": "PASS_SCOPED_V2_OPENING_AND_DISCLAIMER_ONLY",
+    "full_track_listening": "PENDING",
+    "post_export_pcm_click_and_loudness_qa": "PENDING",
     "mastering_approved": false,
     "release_allowed": false
+  },
+  "track00_selection_history": [
+    {
+      "selection": "FIRST_ORIGINAL_RECORDING",
+      "composition_id": "91240c6b-78df-4910-a994-43c616f9b53f",
+      "owner_requested_on": "2026-10-09",
+      "known_click_at_seconds": 47.07,
+      "click_status": "REPORTED_UNRESOLVED",
+      "alternate_retained": "8741a769-eab3-4b50-b9fd-06c67fccf43a",
+      "mastering_approved": false,
+      "release_allowed": false,
+      "archived_on": "2026-10-10",
+      "reason": "Owner delegated choice on 2026-10-10; preserve historical preference and click report, but prefer already selected targeted-listening-PASS copyright-tail v2 for PRIVATE pre-master."
+    }
+  ],
+  "track00_selection_resolution": {
+    "date": "2026-10-10",
+    "status": "PRIVATE_CHOICE_RESOLVED_FINAL_MASTER_UNAPPROVED",
+    "owner_instruction": "it doesn't matter, continue",
+    "selected_composition_id": "ebe7f026-e369-4dd4-a184-9476a6482f5b",
+    "previous_conflicting_selector_id": "91240c6b-78df-4910-a994-43c616f9b53f",
+    "choice": "Continue with existing private v2 selection, not the historic original click candidate",
+    "audio_source_untouched": true,
+    "original_preserved": true,
+    "mastering_and_release_hold": true
   }
 }

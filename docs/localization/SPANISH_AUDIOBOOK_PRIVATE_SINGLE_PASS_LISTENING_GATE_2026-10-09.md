@@ -66,3 +66,11 @@ The owner replied **PASS** after the request to review the three compositions ab
 Track 00 v2 is now selected for **private pre-master review** in the draft manifest. The original and prior candidates remain preserved. The separate standalone corrected Introduction playback near **07:59**, full 20-track review, final encoded-output checks, legal/editorial review and release controls remain PENDING.
 
 **Production OFF. Public Descript publishing OFF. PR #797 DRAFT/unmerged.**
+
+## October 10 follow-up — Part I standalone acoustic PASS ALL
+
+The owner completed the follow-up checks not covered by the earlier three-reel group response. Exact response: **PASS ALL** for corrected Introduction ~07:59 and final 10s, corrected Chapter1 first 8s, and new repeated `Parte uno` before Chapter2 first 8s. No adverse hearing notes/timecodes supplied. This **closes the specific pending standalone Introduction 07:59 target** in this document; the earlier 51s Part I reel PASS remains independently recorded.
+
+New Chapter2 `592e27f8-5337-4058-8f6d-e0f2cb749251` is now selected solely for private pre-master QA, retaining the last selected `ebbadbd2-df11-4cba-95d6-a546dd7b3b51` and canonical original as rollback references. All 20 selected private compositions reconcile at **17,749.053398s**.
+
+**Remaining gate:** complete final 20-track playback/inspection of the actually selected composition set, loudness/peak/silence measurements of *rendered* files, Appendix/Track00 editorial and acoustic issues, source/compliance review and explicit release signoff. PR #797 still draft/unmerged; public Descript publishing, member storage and Production OFF.

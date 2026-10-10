@@ -76,6 +76,30 @@ The required playback is **the entire currently selected composition set**, not 
 
 For each selected track, record: start time, full duration heard, voice/timbre/pacing; part heading and title; pronunciation and abbreviations (DXY, WTI, GNL, BIS, FRED, ICE, CME, CFTC etc.); whether the complete chapter body appears; all compliance endings and natural transitions; silence/dropouts/clicks; playback device; owner verdict PASS/FAIL/UNCLEAR. Preserve exact timecoded defect notes. **Do not mark tracks passed based on SRT or duration alone.**
 
+## Automated private WAV checks (read-only)
+
+A Python/FFmpeg checker is now available on this **draft branch only**:
+- [Source](../../scripts/audio/spanish_audiobook_private_qc.py)
+- [Synthetic tests](../../scripts/audio/tests/test_spanish_audiobook_private_qc.py)
+
+It reads exactly the 20 private export files listed above, matches expected manifest filenames/durations, calculates SHA-256, probes sample rate/channel layout, decodes via FFmpeg, measures **input** integrated LUFS, true peak and LRA, identifies amplitude-based intervals below **−45dB for at least 5 seconds**, and flags files with loudness spread more than **2.5 LU from the median**. All thresholds are **provisional review triggers, not an approved mastering profile**. It never edits, uploads, normalizes or publishes the source audio.
+
+**Once the 20 WAVs have been privately exported to a secure working directory**, run this from the repository's cloud development environment, not on your desktop:
+
+~~~bash
+python3 -m unittest discover -s scripts/audio/tests -p 'test_spanish_audiobook_private_qc.py'
+python3 scripts/audio/spanish_audiobook_private_qc.py \
+  --manifest docs/localization/SPANISH_AUDIOBOOK_PRIVATE_REVIEW_SEQUENCE_2026-10-09.json \
+  --audio-dir /secure/private/spanish-audio-wavs \
+  --output /secure/private/audio-qa/private_audio_qc.json
+~~~
+
+Use \`--metadata-only\` for the initial fast completeness/duration pass. Requires Python 3 and FFmpeg/FFprobe on the **cloud runner**; the user need not install anything locally. Exit codes: **0** = measured without automatic review flags, **2** = files missing or review flags, **3** = setup/manifest failure. Neither exit code 0 nor a clean JSON report implies acoustic, legal or mastering approval.
+
+**Security/identity caveat:** WAV filenames and expected composition UUIDs in the JSON report do not cryptographically prove which Descript composition generated each file. The reviewer must confirm exact UUID and selected private composition before and during export. Keep exported WAVs and generated QA JSON in **private storage**, not in GitHub commits, public Actions artifacts or published Descript links. Runbook and code contain **no customer audio or credentials**.
+
+The core checker was tested locally on generated synthetic WAVs for a normal tone, a missing export, an invalid track name and a long silence. CI run verification on this GitHub branch is separate and has not been claimed.
+
 ## Objective QA to run on actual uploaded private WAVs
 
 For each **actual final selected export**, capture a machine-readable result with: basename; matching composition UUID; file byte size; SHA-256; sampling frequency/channels/bit depth; frame count and exact decoded length; decode failures; peak sample amplitude; true peak dBTP; integrated LUFS and short-term range (LRA); longest low-RMS silence interval plus its start/end; potential sudden discontinuities; source/content parity and identity of exported track.

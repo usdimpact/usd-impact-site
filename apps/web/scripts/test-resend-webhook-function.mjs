@@ -10,9 +10,10 @@ const webhookSecret = `whsec_${secretBytes.toString('base64')}`;
 const emailId = '56761188-7520-42d8-8898-ff6fc54ce618';
 const svixId = 'msg_test_handler_001';
 const environment = {
+  VERCEL_ENV: 'preview',
   RESEND_WEBHOOK_ENABLED: 'true',
   RESEND_WEBHOOK_SECRET: webhookSecret,
-  SUPABASE_URL: 'https://example.supabase.co',
+  SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
   SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_12345678901234567890',
   SUPABASE_SECRET_KEY: 'sb_secret_12345678901234567890',
 };
@@ -174,6 +175,44 @@ function queuedFetch(responses) {
   );
 
   assert.equal(response.statusCode, 404);
+  assert.equal(calls.length, 0);
+}
+
+{
+  const payload = JSON.stringify(event('email.delivered'));
+  const { calls, fetchImpl } = queuedFetch([]);
+  const response = responseMock();
+  await handleResendWebhook(
+    requestFor(payload),
+    response,
+    {
+      environment: {
+        ...environment,
+        SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
+      },
+      fetchImpl,
+      nowMs,
+    },
+  );
+
+  assert.equal(response.statusCode, 503);
+  assert.equal(JSON.parse(response.body).code, 'WEBHOOK_UNAVAILABLE');
+  assert.equal(calls.length, 0);
+}
+
+{
+  const payload = JSON.stringify(event('email.delivered'));
+  const { calls, fetchImpl } = queuedFetch([]);
+  const response = responseMock();
+  const { VERCEL_ENV: _ignored, ...withoutVercelEnvironment } = environment;
+  await handleResendWebhook(
+    requestFor(payload),
+    response,
+    { environment: withoutVercelEnvironment, fetchImpl, nowMs },
+  );
+
+  assert.equal(response.statusCode, 503);
+  assert.equal(JSON.parse(response.body).code, 'WEBHOOK_UNAVAILABLE');
   assert.equal(calls.length, 0);
 }
 

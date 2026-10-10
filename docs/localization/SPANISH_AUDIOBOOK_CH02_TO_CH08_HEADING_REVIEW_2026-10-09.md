@@ -273,3 +273,20 @@ The previously verified PCM-preserving repair moves the final 1.745102 seconds o
 **Import pending:** The corrected audio is in Library/Google Drive, not as user-attached audio in this ChatGPT turn. Descript's `import_media.files` accepts host-provided conversation attachments but cannot accept model-created Library/container handles. Owner-only Google Drive view links are not direct audio URLs. Do not generate another empty 6-second upload placeholder, relax Drive permissions, or mark this import successful until full-length audio exists in two separate PRIVATE compositions. An interactive Descript file-upload control or attached files is the safe next path. Verify durations, openings/closings and zero public publishes before switching the 20-track pre-master planning manifest.
 
 **Current selected compositions intentionally unchanged:** Chapter7 `8ffb044f-fc73-4bf3-8630-9078793a70ae`; Chapter8 `2f2d2ff3-e05a-43a5-99af-4d789082a305`. PR #797 DRAFT/unmerged, Production and member delivery OFF, mastering PENDING.
+
+## October 10 — Chapter 7→8 attachment imports verified and selected
+
+After the owner-reported scoped **PASS** on four offline before-and-after listening samples, the owner attached both full corrected FLAC recordings directly to ChatGPT. Local validation independently decoded 44.1kHz mono audio, checked Chapter7 **1070.800000s** and Chapter8 **1012.682200s**, and reproduced the same combined **91,881,565 PCM frames** and SHA-256 `018fd18b447707a314ec50309e8f9abd50eb75cb14b3f1ccbd3e789dcc27fc50` as the earlier verified offline correction.
+
+Descript private attachment import job `project-media-import-85ef7163-ede7-487b-87cb-c94a2f2cfd86` completed **SUCCESS** for both media items. Fresh PRIVATE, audio-only, non-published compositions were created:
+
+| Pre-master track | New Descript composition | Verified length | Imported SRT boundary check |
+| --- | --- | ---: | --- |
+| 09 / Chapter7 | `fc98ab59-811a-4e42-81f6-a08471dc7b0a` — `09 - Chapter 7 - Part III Tail Transferred - PRIVATE QA - DO NOT PUBLISH - FIXED AUDIO` | **1070.800000s** | Starts with existing `Parte tres. Capítulo siete`, ends `Verifica los datos actuales antes de utilizarlos`, **no final Parte tres** |
+| 10 / Chapter8 | `217a0453-50cb-4b62-9117-e8009c2b1244` — `10 - Chapter 8 - Part III Heading Prefixed - PRIVATE QA - DO NOT PUBLISH - FIXED AUDIO` | **1012.682199s** | Starts `Parte tres. Capítulo ocho: Gas y GNL frente al dólar`, preserves previously corrected core narration and complete closing disclaimer |
+
+**Evidence level:** Descript `export_transcript` successfully returned populated SRT files for **both** new compositions (233 Chapter7 cues, 219 Chapter8 cues). The exported boundaries match the approved placement. Import durations match their FLAC sources. These checks do not establish bit-identical Descript *rendered/exported* audio or full-track human listening; those remain pending. The earlier blank SRT export observed on Chapters6/7 is a separate issue and is **not** the status of these new tracks.
+
+The draft 20-track private **pre-master planning manifest now selects these two corrected imported compositions**, preserving the previous selections and original source IDs for rollback. All **20/20** selected Descript compositions and durations reconcile; total **17,747.673174s (4h55m47.673s)**. The originally approved Chapter8 text correction remains intact. Existing 6-second failed-upload placeholders for older attempts remain excluded and must never be selected.
+
+**No release approval:** Owner PASS applied to the offline four-excerpt listening kit only. Complete 20-track hearing, the repeated `Parte uno` before Chapter2, final rendered-audio LUFS/true-peak QA, editorial/compliance sign-off, mastering and public launch are PENDING. PR #797 DRAFT/unmerged; Descript public publishes 0; Production/member delivery OFF.

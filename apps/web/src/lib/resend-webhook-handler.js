@@ -12,6 +12,11 @@ import {
   readSupabaseServerConfig,
   requestHeader,
 } from './supabase-server.js';
+import {
+  LAUNCH_EMAIL_DEVELOPMENT_PROJECT_REF,
+  LAUNCH_EMAIL_PRODUCTION_PROJECT_REF,
+  projectRefFromUrl,
+} from './launch-email-dispatch-common.js';
 
 const JSON_HEADERS = Object.freeze({
   Accept: 'application/json',
@@ -24,6 +29,30 @@ class WebhookProcessingError extends Error {
     this.name = 'WebhookProcessingError';
     this.code = code;
   }
+}
+
+function assertExpectedWebhookProject(config, environment) {
+  const vercelEnvironment = String(environment.VERCEL_ENV || '').trim().toLowerCase();
+  const expectedRef = vercelEnvironment === 'production'
+    ? LAUNCH_EMAIL_PRODUCTION_PROJECT_REF
+    : vercelEnvironment === 'preview' || vercelEnvironment === 'development'
+      ? LAUNCH_EMAIL_DEVELOPMENT_PROJECT_REF
+      : null;
+
+  if (!expectedRef) {
+    throw new WebhookProcessingError(
+      'Resend webhook requires an explicit Production, Preview, or Development environment.',
+      'UNAPPROVED_WEBHOOK_ENVIRONMENT',
+    );
+  }
+
+  if (projectRefFromUrl(config.url) !== expectedRef) {
+    throw new WebhookProcessingError(
+      'Resend webhook Supabase target does not match the canonical environment project.',
+      'UNEXPECTED_SUPABASE_PROJECT',
+    );
+  }
+  return expectedRef;
 }
 
 function sendJson(response, status, body, extraHeaders = {}) {
@@ -255,6 +284,7 @@ export async function handleResendWebhook(request, response, options = {}) {
   const secret = environment.RESEND_WEBHOOK_SECRET;
   try {
     config = readSupabaseServerConfig(environment, { requireSecret: true });
+    assertExpectedWebhookProject(config, environment);
     if (typeof secret !== 'string' || !secret.startsWith('whsec_')) {
       throw new SupabaseConfigurationError('RESEND_WEBHOOK_SECRET is missing or invalid.');
     }

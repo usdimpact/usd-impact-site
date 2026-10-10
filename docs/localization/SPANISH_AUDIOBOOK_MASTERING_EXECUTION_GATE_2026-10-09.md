@@ -156,3 +156,16 @@ The owner accepted the private Chapter7→Chapter8 four-excerpt audio correction
 **Import not yet done.** Accepted corrected Chapter7 and Chapter8 audio must be uploaded via private supported path and verified as distinct full-length Descript audio-only compositions (1070.800000s and 1012.682200s). Until then, the current 20-track draft manifest continues to point to the previous selected compositions; do not claim mastering readiness. Chapter1→2 repeated Part I, full-book listening, final rendered LUFS/true-peak tests, legal/editorial QA and final release remain outstanding.
 
 **HOLD unchanged:** PR #797 draft/unmerged, Descript public publishes 0, Production/member delivery OFF, final mastering approval PENDING.
+
+## October 10 — Chapter7→8 private selection verified; mastering still HOLD
+
+After the owner-approved four-clip private Chapter7→Chapter8 `Parte tres` transfer, both corrected lossless FLAC audio attachments were successfully imported via Descript job `project-media-import-85ef7163-ede7-487b-87cb-c94a2f2cfd86`. New private selected compositions:
+
+- **Track09 / Chapter7**: `fc98ab59-811a-4e42-81f6-a08471dc7b0a`, **1070.800000s**: existing opening `Parte tres` preserved, closing moved out.
+- **Track10 / Chapter8**: `217a0453-50cb-4b62-9117-e8009c2b1244`, **1012.682199s**: recorded `Parte tres` placed before `Capítulo ocho`; earlier text corrections retained.
+
+Both imported SRT transcripts are nonblank and verify correct first and last words. Source decoded PCM SHA-256 and duration checks pass. New imported Descript audio has not yet been independently rendered and bitwise/audio-mastered; the owner heard only the local excerpt kit, not these full imported compositions. All **20/20** selected private composition IDs and nominal durations reconcile to **17,747.673174s**. Originals and earlier private corrected versions remain available for rollback.
+
+**Still blocking release:** Review the omitted repeated `Parte uno` before Chapter2; complete human listening across the full audiobook; verify actual rendered final audio (integrated loudness, true peak, silences, clipping, missing passages and final selection); obtain final editorial/legal/compliance and owner release approval. The earlier Chapter8 candidate's separate audio QA status is not silently promoted.
+
+**Release HOLD unchanged:** PR #797 DRAFT/unmerged, Descript public publishes 0, public/member delivery and Production OFF, mastering approval PENDING.

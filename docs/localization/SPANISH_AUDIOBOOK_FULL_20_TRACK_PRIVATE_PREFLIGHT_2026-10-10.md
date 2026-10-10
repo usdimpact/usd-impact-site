@@ -167,3 +167,18 @@ Compared the closing Appendix B paragraph in the authoritative Spanish Edition 1
 | Score pipeline | `f51f7abf2d4ec99890eb5537424f6faab885ef32` | `F51F7ABF2D4EXE99890EB55374246FAB885F32` | MISMATCH at manuscript `c` versus ASR `X`, and manuscript `4f` versus ASR `46` near the ending |
 
 **Interpretation:** ASR text parity **FAIL/UNCERTAIN** for the Score-pipeline token, not a demonstrated acoustic defect. The owner-reported PASS of Appendix B at 14:25–14:43 is a scoped audible acceptance, not an exact character-by-character hash transcription signoff. Do not replace source authority tokens, alter narration, or generate a repair solely from ASR. Keep literal pipeline authority verification as an editorial release gate. Other wording/compliance approvals remain pending; no public publishing, merge, member delivery or Production change.
+
+
+## Compliance-sensitive manuscript-to-ASR spot check — 2026-10-10
+
+Read-only comparison against the authoritative Spanish Edition 1.3 Candidate 1 Google Doc (`1hjOXZdqT1DajsiGvNm8motQIJ4yuxi6zNwDiU1bpYnU`) and **selected** private Descript TXT exports; inspected Track 00 (`ebe7f026-e369-4dd4-a184-9476a6482f5b`), Track 03/Chapter 1 (`686a4f65-8ff9-4141-aedb-bab9b4296602`), Track 12/Chapter 10 (`ade2a5e4-2b8d-4342-8fc4-1869f61cd42d`), Track 13/Chapter 11 (`8644e0dc-4fc1-475a-ab30-85a53521445b`) and Track 18/Appendix B (`6a251168-1d0d-4a9d-b9ea-daed1d1db016`).
+
+| Selected track | Manuscript passage | Descript ASR readback | Scope-limited finding |
+| --- | --- | --- | --- |
+| 00 opening | Educational/informational purpose; not personalized investment, legal or tax advice; verify market references and consult professionals | The corresponding complete disclaimer sentences appear in private TXT | PRESENT in ASR; speech/legal accuracy not certified |
+| 03 Chapter 1 | Standard chapter conditional-market relationship disclaimer; non-advice, non-signal, non-recommendation | Core clauses and verify-current-data ending appear | PRESENT in ASR; punctuation differs |
+| 12 Chapter 10 | Short special warning: educational only, no investment advice, forecast, trading signal or recommendation; historical results not future results | All listed core clauses appear | PRESENT in ASR; preserve distinct short form |
+| 13 Chapter 11 | Short special warning: education only, no investment/legal/tax/trading advice, not signal/recommendation; verify current data | All core categories appear; ASR punctuation separates/combines categories differently | PRESENT in ASR; editorial listen/parity gate remains |
+| 18 Appendix B | Score is orientation only, not personalized investment/legal/tax advice, trading signal or recommendation; no standalone sizing, entry/exit or suitability use | Core clauses appear in sequence; punctuation differs | PRESENT in ASR; authority identifier mismatch recorded separately |
+
+**Do not overstate this evidence.** A TXT transcript presence check cannot confirm audible phonemes, exactly timed clip endings, legal adequacy, or complete paragraph-by-paragraph parity for all 20 tracks. No canonical manuscript, Descript composition or selected manifest text was changed. Remaining work: systematically inspect the other selected chapter-ending warnings and front-matter rights exception, preserve chapter-specific variants, and obtain editorial/legal verdict before mastering or release. Owner has deferred WAV export and full listening to the final stage. PR stays draft; public, merge and Production gates remain OFF.

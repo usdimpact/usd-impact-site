@@ -140,3 +140,11 @@ After import, Descript readback confirmed exact durations and expected opening/c
 - All **20/20** selected private composition IDs and durations reconcile at **17,747.673172s**, about **4h55m47.7s**. Failed 6s placeholders are excluded from selection.
 
 **Still blocked:** Chapter7→8's independent `Parte tres`, Chapter1→2's repeated `Parte uno`, complete 20-track owner listening, mastered encoded audio LUFS/true-peak/silence checks, final compliance/editorial approval and publication decision. **PR #797 remains DRAFT/unmerged, Descript public publishes zero, member and Production release OFF, mastering approval PENDING.**
+
+## October 10 — Chapter7→8 private correction unselected; mastering still HOLD
+
+The accepted corrected Chapter7 WAV (1072.545102s) and the *already selected private corrected Chapter8 candidate* (1010.937098s) were used for a non-destructive offline transfer of Chapter7's final `Parte tres`. New **unselected** candidate durations: Chapter7 **1070.800000s**, Chapter8 **1012.682200s**. Combined PCM samples 91,881,565 preserved exactly, SHA-256 `018fd18b447707a314ec50309e8f9abd50eb75cb14b3f1ccbd3e789dcc27fc50`; full corrected WAVs and verified FLAC backups stored privately.
+
+**Owner listening status: PENDING** for the [Chapter7→8 four-clip listening kit](https://drive.google.com/file/d/1hVRVPCWdcDzwfLSBxn1TM4bsXa3rP7-R/view). No changed private Descript selection or new imported media; current 20-track nominal total remains ~17,747.673172s. After owner sample PASS, import both as private audio-only compositions via supported conversation attachment route; independently verify import lengths/editor script/openings/endings; only then switch the draft manifest. If FAIL/UNCLEAR, repair the offline audio before import.
+
+**Other outstanding requirements:** Repeated `Parte uno` near Chapter1→2; Chapter8's prior private candidate acoustic review, whole 20-track acoustic listening, actual mastered render LUFS/true-peak, legal/editorial sign-off and release approval. PR #797 DRAFT/unmerged, Descript public publishes 0, Production/member delivery OFF, mastering PENDING.

@@ -17,26 +17,26 @@
 
 | Track | Selected content | Duration (m:ss) | SRT cues | Opening / special note |
 | --- | --- | ---: | ---: | --- |
-| 00 | Opening | 1:49.84 | 25 | USD Impact; copyright-tail v2 |
-| 01 | Acknowledgments and reader guide | 3:48.57 | 49 | Reconocimientos |
-| 02 | Introduction, corrected variant | 13:57.44 | 191 | Introducción |
-| 03 | Chapter 1, corrected variant | 17:45.77 | 250 | Parte uno · Capítulo uno |
-| 04 | Chapter 2 | 18:28.76 | 251 | Parte uno · Capítulo dos |
-| 05 | Chapter 3 | 19:00.40 | 258 | Parte dos · Capítulo tres |
-| 06 | Chapter 4, final private variant | 22:54.20 | 321 | Parte dos · Capítulo cuatro |
-| 07 | Chapter 5 | 20:28.21 | 291 | Parte tres · Capítulo cinco |
-| 08 | Chapter 6 | 16:42.30 | 220 | Parte tres · Capítulo seis |
-| 09 | Chapter 7 | 17:50.80 | 233 | Parte tres · Capítulo siete |
-| 10 | Chapter 8 | 16:52.68 | 219 | Parte tres · Capítulo ocho |
-| 11 | Chapter 9 | 15:16.03 | 218 | Parte tres · Capítulo nueve |
-| 12 | Chapter 10 | 18:09.77 | 230 | Parte cuatro · Capítulo diez |
-| 13 | Chapter 11 | 15:30.63 | 225 | Parte cinco · Capítulo once |
-| 14 | Chapter 12 | 19:27.66 | 278 | Parte cinco · Capítulo doce |
-| 15 | Chapter 13 | 22:27.66 | 331 | Parte cinco · Capítulo trece |
-| 16 | Further reading | 2:28.38 | 36 | Lecturas adicionales |
-| 17 | Appendix A, glossary | 17:23.33 | 237 | «Aprendáis a glosario» in ASR — inspect pronunciation |
-| 18 | Appendix B, repaired private candidate | 14:43.03 | 175 | «Appendix B» in ASR — inspect pronunciation/tail |
-| 19 | About the author | 0:43.60 | 9 | Sobre el autor |
+| 00 | [Opening](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/ebe7f) | 1:49.84 | 25 | USD Impact; copyright-tail v2 |
+| 01 | [Acknowledgments and reader guide](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/a65d7) | 3:48.57 | 49 | Reconocimientos |
+| 02 | [Introduction, corrected variant](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/aecc1) | 13:57.44 | 191 | Introducción |
+| 03 | [Chapter 1, corrected variant](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/686a4) | 17:45.77 | 250 | Parte uno · Capítulo uno |
+| 04 | [Chapter 2](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/592e2) | 18:28.76 | 251 | Parte uno · Capítulo dos |
+| 05 | [Chapter 3](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/afef9) | 19:00.40 | 258 | Parte dos · Capítulo tres |
+| 06 | [Chapter 4, final private variant](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/c99a1) | 22:54.20 | 321 | Parte dos · Capítulo cuatro |
+| 07 | [Chapter 5](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/66cda) | 20:28.21 | 291 | Parte tres · Capítulo cinco |
+| 08 | [Chapter 6](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/88370) | 16:42.30 | 220 | Parte tres · Capítulo seis |
+| 09 | [Chapter 7](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/fc98a) | 17:50.80 | 233 | Parte tres · Capítulo siete |
+| 10 | [Chapter 8](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/217a0) | 16:52.68 | 219 | Parte tres · Capítulo ocho |
+| 11 | [Chapter 9](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/d1540) | 15:16.03 | 218 | Parte tres · Capítulo nueve |
+| 12 | [Chapter 10](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/ade2a) | 18:09.77 | 230 | Parte cuatro · Capítulo diez |
+| 13 | [Chapter 11](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/8644e) | 15:30.63 | 225 | Parte cinco · Capítulo once |
+| 14 | [Chapter 12](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/fc7b5) | 19:27.66 | 278 | Parte cinco · Capítulo doce |
+| 15 | [Chapter 13](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/34e4b) | 22:27.66 | 331 | Parte cinco · Capítulo trece |
+| 16 | [Further reading](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/827db) | 2:28.38 | 36 | Lecturas adicionales |
+| 17 | [Appendix A, glossary](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/625d0) | 17:23.33 | 237 | «Aprendáis a glosario» in ASR — inspect pronunciation |
+| 18 | [Appendix B, repaired private candidate](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/6a251) | 14:43.03 | 175 | «Appendix B» in ASR — inspect pronunciation/tail |
+| 19 | [About the author](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/1d15c) | 0:43.60 | 9 | Sobre el autor |
 
 ### Four practical human listening blocks
 
@@ -49,7 +49,7 @@ These are proposed review blocks for the **actual selected audio files**; prior 
 | C · Chapters 8–13 | 10–15 | 107:44.44 | PENDING full-length sequential listening |
 | D · References / appendices / author | 16–19 | 35:18.33 | PENDING full-length sequential listening |
 
-For every selected track, review the **whole file**, chapter/part heading, early and final sentences, internal pauses, pronunciation, loudness continuity and intact legal/educational closing. Record PASS/FAIL/UNCLEAR and exact timecode in the existing signoff tracker. If a block FAILS, fix only a private duplicate and repeat the affected hearing/measurements before moving on. Do not mark any block PASS based only on SRT text.
+Open each selected private track directly from its linked name in the 20-row inventory. For every selected track, review the **whole file**, chapter/part heading, early and final sentences, internal pauses, pronunciation, loudness continuity and intact legal/educational closing. Record PASS/FAIL/UNCLEAR and exact timecode in the existing signoff tracker. If a block FAILS, fix only a private duplicate and repeat the affected hearing/measurements before moving on. Do not mark any block PASS based only on SRT text.
 
 ## 2. Offline measurements — NOT official selected Descript master exports
 

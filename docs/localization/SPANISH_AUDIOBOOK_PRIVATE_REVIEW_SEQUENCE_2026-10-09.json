@@ -9,7 +9,7 @@
   "descript_publication_count": 0,
   "merge_allowed": false,
   "publication_approval": "NOT_GRANTED",
-  "human_listening_approval": "SCOPED_BOUNDARY_AUDIO_SAMPLES_PASS_FULL_20_TRACK_LISTENING_PENDING",
+  "human_listening_approval": "SCOPED_PRIVATE_REELS_BOUNDARIES_AND_PART_I_TARGETED_CHECKS_PASS_FULL_20_TRACK_LISTENING_PENDING",
   "mastering_approval": "PENDING",
   "chapter_boundary_approval": "OWNER_PASS_PRIVATE_REEL_SAMPLES_FULL_TRACK_QA_PENDING",
   "note": "This lists private review candidates only, NOT approved final masters. Tracks 10–15 use non-destructive boundary-corrected duplicates: 13,229/13,229 core words preserved and aggregate duration unchanged, but five acoustic joins require listening. Track 18 uses a separate repaired candidate with splice listening hold. All release flags are OFF.",
@@ -120,12 +120,12 @@
       "private_review_composition_id": "aecc180b-4513-455b-a3e4-fce58da36fac",
       "duration_seconds": 837.44,
       "mastering_status": "PENDING",
-      "final_listening_status": "PENDING",
+      "final_listening_status": "OWNER_PASS_SCOPED_PART_I_BOUNDARY_CHECKS_FULL_TRACK_AND_MASTERING_PENDING",
       "public_allowed": false,
       "original_review_composition_id": "96800ec3-716c-4d8f-99c2-a2a7c3553ced",
       "boundary_candidate": true,
       "boundary_text_qa": "PRIVATE_EXACT_CORE_PASS",
-      "boundary_audio_listening_qa": "PENDING_EXTRA_SCENE_BOUNDARIES"
+      "boundary_audio_listening_qa": "OWNER_PASS_INTRO_07_59_AND_FINAL_10_SECONDS_ONLY_FULL_TRACK_PENDING"
     },
     {
       "track": "03",
@@ -133,20 +133,20 @@
       "private_review_composition_id": "686a4f65-8ff9-4141-aedb-bab9b4296602",
       "duration_seconds": 1065.766,
       "mastering_status": "PENDING",
-      "final_listening_status": "PENDING",
+      "final_listening_status": "OWNER_PASS_SCOPED_PART_I_BOUNDARY_CHECKS_FULL_TRACK_AND_MASTERING_PENDING",
       "public_allowed": false,
       "original_review_composition_id": "70c6d706-b240-4901-848b-1c2fb0d303e4",
       "boundary_candidate": true,
       "boundary_text_qa": "PRIVATE_EXACT_CORE_PASS",
-      "boundary_audio_listening_qa": "PENDING_EXTRA_SCENE_BOUNDARIES"
+      "boundary_audio_listening_qa": "OWNER_PASS_CHAPTER1_FIRST_8_SECONDS_ONLY_FULL_TRACK_PENDING"
     },
     {
       "track": "04",
       "description": "Chapter 2",
-      "private_review_composition_id": "ebbadbd2-df11-4cba-95d6-a546dd7b3b51",
-      "duration_seconds": 1107.38,
+      "private_review_composition_id": "592e27f8-5337-4058-8f6d-e0f2cb749251",
+      "duration_seconds": 1108.760224,
       "mastering_status": "PENDING",
-      "final_listening_status": "OWNER_PASS_SCOPED_OFFLINE_AUDIO; FULL_TRACK_AND_MASTER_PENDING",
+      "final_listening_status": "OWNER_PASS_SCOPED_PART_I_OPENING_AND_PREVIOUS_CH2_CH3_A_B_SAMPLES; FULL_TRACK_AND_MASTERING_PENDING",
       "public_allowed": false,
       "original_review_composition_id": "b6df4dcc-811f-4ec5-a577-f33c5e81b415",
       "private_heading_transfer_qa": {
@@ -162,6 +162,29 @@
         "owner_listener_source_audio": "PASS",
         "imported_full_track_listening": "PENDING",
         "original_unchanged": true,
+        "public_allowed": false
+      },
+      "previous_private_review_composition_id": "ebbadbd2-df11-4cba-95d6-a546dd7b3b51",
+      "boundary_candidate": true,
+      "boundary_text_qa": "PRIVATE_EXACT_CORE_2301_WORDS_PLUS_PART_I_HEADING_PASS",
+      "boundary_audio_listening_qa": "OWNER_PASS_OPENING_0_TO_8_SECONDS_FULL_TRACK_PENDING",
+      "repeated_part_I_private_qa": {
+        "status": "OWNER_TARGETED_LISTENING_PASS_PRIVATE_CANDIDATE_SELECTED",
+        "approved_scope": "Chapter 2 first eight seconds, audible Parte uno then Capitulo dos, no awkward pause/click/clipped syllables",
+        "date": "2026-10-10",
+        "composition_id": "592e27f8-5337-4058-8f6d-e0f2cb749251",
+        "previous_selection_id": "ebbadbd2-df11-4cba-95d6-a546dd7b3b51",
+        "source_heading_composition_id": "686a4f65-8ff9-4141-aedb-bab9b4296602",
+        "authoritative_source": "Spanish Edition 1.3 Candidate 1, repeated PARTE I before Chapter 2",
+        "original_chapter2_core_normalized_tokens": 2301,
+        "verified_candidate_extra_tokens": 2,
+        "normalized_core_order_exact_match": true,
+        "previous_duration_seconds": 1107.38,
+        "corrected_duration_seconds": 1108.760224,
+        "added_duration_seconds": 1.380224,
+        "source_audio_pcm_hash_not_independently_verified": true,
+        "whole_track_listening": "PENDING",
+        "mastering_approved": false,
         "public_allowed": false
       }
     },
@@ -561,10 +584,10 @@
     "documentation": "docs/localization/SPANISH_AUDIOBOOK_APP_B_OFFLINE_SIGNAL_QA_2026-10-09.md"
   },
   "listener_signoff": {
-    "status": "SCOPED_REEL_PASS_FULL_BOOK_HOLD",
+    "status": "SCOPED_PRIVATE_LISTENING_PASS_FULL_BOOK_HOLD",
     "tracker": "docs/localization/SPANISH_AUDIOBOOK_LISTENER_SIGNOFF_TRACKER_2026-10-09.md",
     "reviewer": "owner",
-    "acoustic_acceptance": "OWNER_PASS_THREE_PRIVATE_REELS_ONLY_FULL_BOOK_PENDING",
+    "acoustic_acceptance": "SCOPED_PRIVATE_REELS_BOUNDARIES_AND_PART_I_THREE_CHECKS_PASS_FULL_BOOK_PENDING",
     "release_allowed": false,
     "scoped_local_a_b_owner_pass": {
       "status": "PASS_OWNER_REPORTED_FOUR_PRIVATE_CHECKS_ONLY",
@@ -626,7 +649,7 @@
       ],
       "scope_limit": "SCOPED_REELS_ONLY_NOT_COMPLETE_20_TRACK_ACOUSTIC_APPROVAL",
       "explicit_per_checkpoint_timecode_notes": "NOT_PROVIDED",
-      "standalone_introduction_07_59_check": "PENDING_IN_FULL_TRACK_REVIEW",
+      "standalone_introduction_07_59_check": "PASS_OWNER_REPORTED_IN_SUBSEQUENT_PART_I_PASS_ALL_2026_10_10",
       "full_20_track_listening": "PENDING",
       "mastering_approval": "NOT_GRANTED",
       "publication_approval": "NOT_GRANTED",
@@ -761,6 +784,48 @@
       ],
       "import_duration_verification": "PASS",
       "imported_srt_boundary_check": "PASS"
+    },
+    "partI_three_track_targeted_owner_pass": {
+      "date": "2026-10-10",
+      "reviewer": "owner",
+      "response": "PASS ALL",
+      "scope": "THREE_EXPLICIT_TARGETED_PRIVATE_PLAYBACK_CHECKS_NOT_FULL_BOOK",
+      "checks": [
+        {
+          "track": "02",
+          "composition_id": "aecc180b-4513-455b-a3e4-fce58da36fac",
+          "regions": [
+            "~07:59",
+            "last ~10 seconds"
+          ],
+          "result": "PASS",
+          "meaning": "restored mid-introduction spoken phrase and outro sound natural, without clipping/gap"
+        },
+        {
+          "track": "03",
+          "composition_id": "686a4f65-8ff9-4141-aedb-bab9b4296602",
+          "regions": [
+            "first ~8 seconds"
+          ],
+          "result": "PASS",
+          "meaning": "Parte uno occurs once before Capitulo uno"
+        },
+        {
+          "track": "04",
+          "composition_id": "592e27f8-5337-4058-8f6d-e0f2cb749251",
+          "regions": [
+            "first ~8 seconds"
+          ],
+          "result": "PASS",
+          "meaning": "actual Parte uno spoken before Capitulo dos, natural pause and no clicks/clipped syllables"
+        }
+      ],
+      "chapter2_candidate_selected_for": "PRIVATE_PRE_MASTER_QA_ONLY",
+      "full_20_track_listening": "PENDING",
+      "independent_pcm_render_hash": "NOT_MEASURED",
+      "mastered_output_approval": "NOT_GRANTED",
+      "publication_approval": "NOT_GRANTED",
+      "release_allowed": false
     }
   },
   "frontmatter_boundary_review": {
@@ -773,8 +838,10 @@
     "exact_normalized_core_text": "PASS_BOTH",
     "combined_duration_change_seconds": 0.002268,
     "scene_boundary_side_effects": true,
-    "acoustic_review": "OWNER_PASS_51S_REEL_STANDALONE_INTRO_07_59_CHECK_PENDING",
-    "public_allowed": false
+    "acoustic_review": "OWNER_PASS_INTRO_07_59_AND_FINAL_10S_CH1_FIRST_8S_FULL_BOOK_PENDING",
+    "public_allowed": false,
+    "owner_acoustic_date": "2026-10-10",
+    "owner_review_scope": "THREE_TARGETED_CHECKS_WITH_CH2_NEW_PRIVATE_CANDIDATE"
   },
   "opening_track_defect": {
     "track": "00",

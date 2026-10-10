@@ -619,6 +619,32 @@
       "human_full_track_listening": "PENDING",
       "mastering_approval": "NOT_GRANTED",
       "release_allowed": false
+    },
+    "chapter06_to_chapter07_offline_transfer": {
+      "date": "2026-10-10",
+      "reviewer": "owner",
+      "owner_response": "PASS",
+      "scope": "FOUR_PRIVATE_BEFORE_AFTER_AUDIO_SAMPLES_ONLY",
+      "corrected_chapter6_duration_seconds": 1002.3,
+      "corrected_chapter7_duration_seconds": 1072.545102,
+      "input_and_output_pair_pcm_sha256": "cc8b7f8ef4e1a5ff2ecb4caaa6d70dbee8428e7b465925aa2b2989127801538f",
+      "recorded_heading": "Parte tres",
+      "check": "CHAPTER6_ENDING_CLEAN_CHAPTER7_STARTS_PARTE_TRES",
+      "corrected_wav_library_ids": [
+        "libfile_73bdd80ac55c819182422f5573a9a89f",
+        "libfile_14f37b59502c8191ad08903ced194860"
+      ],
+      "owner_only_flac_drive_ids": [
+        "1LMw8u8TDqa6QXlkfNtscX8eTxXFUr4ZJ",
+        "18sKFpp6BOFwndxIpY9T8Cf5L8oOrOQ1k"
+      ],
+      "audio_acceptance": "OWNER_PASS_OFFLINE_SAMPLES",
+      "descript_import_status": "BLOCKED_TRANSPORT_NO_VERIFIED_AUDIO_IMPORT",
+      "private_selection_changed": false,
+      "incomplete_6_second_import_placeholders": "DO_NOT_USE",
+      "full_track_acoustic_review": "PENDING",
+      "mastered_output_approval": "PENDING",
+      "release_allowed": false
     }
   },
   "frontmatter_boundary_review": {

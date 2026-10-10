@@ -53,6 +53,28 @@ The printed manuscript begins its rights notice with `Copyright © 2026`. The se
 
 Decision still required from a responsible editor/legal reviewer: accept this intentional spoken adaptation as equivalent for the final audiobook **or** require a separately approved alternative. No change to the printed manuscript, Descript audio or canonical selected IDs follows from this register.
 
+## Track 00 rights and disclaimer comparison — 2026-10-10
+
+Re-read the *authoritative* Spanish Edition 1.3 Candidate 1 Google Doc, paragraphs beginning `Ninguna parte de esta publicación` and `Este libro tiene un propósito`, and the selected private Track 00 v2 Descript TXT (`ebe7f026-e369-4dd4-a184-9476a6482f5b`). A case-/accent-/punctuation-insensitive **ordered token comparison** found:
+
+| Passage | Manuscript tokens | Selected TXT tokens | Exact normalized ordered match |
+| --- | ---: | ---: | --- |
+| Reproduction restriction and exception, from `Ninguna parte` through `propiedad intelectual` | 61 | 61 | **61/61** |
+| Educational and non-investment-advice disclaimer, from `Este libro` through `decisiones de inversión` | 68 | 68 | **68/68** |
+
+These checks establish literal **transcript** parity for the two scoped paragraphs, not acoustic pronunciation, waveform identity or legal adequacy. Their punctuation differs but normalized token sequence does not. The earlier rights-notice grammar issue (`ya sea electrónico, mecánico, fotocopia, grabación u otro`) is **present identically in both sources**, not a newly introduced narration error; any grammar/rights-scope edit still requires editorial/legal authorization. Do not silently adopt the unapproved revision in `SPANISH_AUDIOBOOK_OPENING_TRACK_CLICK_GRAMMAR_QA_2026-10-09.md`.
+
+### Decision-ready exceptions (not approvals)
+
+| Decision | Current evidence | Non-audio recommendation | Authority still required |
+| --- | --- | --- | --- |
+| **E1 — opening label** | Printed manuscript: `Copyright © 2026`; selected private TXT: `USD Impact. 2026`. The full following 61-token rights paragraph and 68-token educational disclaimer match. | **Prefer retaining selected private v2** and avoid resynthesis solely for the English-word omission, **conditionally** on publisher/editorial/legal acceptance of the adapted spoken label. | Explicit editorial/legal approval of spoken wording before final release; current selection is private-QA preference only |
+| **E2 — rights grammar** | The mixed adjective/noun list is identical across manuscript and selected TXT. An alternate revision exists but was not approved. | Preserve the frozen wording rather than risk silently changing legally meaningful exceptions. Record any correction as a separate controlled source revision. | Editorial/legal judgment on whether a rewrite is necessary |
+| **E3 — dated candidate metadata** | Both manuscript and selected private TXT still identify Edition 1.3 as an **August 2026 publication candidate**, refer to production build `v5.95-candidate.2`, and describe an April 2026 data cutoff. Audit date is **October 10, 2026**. | Before member release, decide whether this is intentionally historical edition provenance or candidate-only/internal metadata that should not be presented as current publication metadata. Do not revise narration or freeze a release date based on this check. | Publisher/editorial approval of edition/metadata presentation; any spoken revision waits for scoped private synthesis approval |
+| **E4 — Appendix B commit identifier** | Manuscript, prepared Segment 15, and the actual pipeline repository commit agree; Descript ASR differs by characters. | No synthetic repair based on ASR; preserve selected composition and correct script. | Exact spoken-character verification at the deliberately deferred audio stage |
+
+**Disposition:** Source parity for the two named Track 00 legal/compliance paragraphs = verified **in TXT only**; full editorial/legal signoff = **NOT GRANTED**. Do not mark E1–E4 approved simply because the owner authorized continued non-audio QA.
+
 ## Follow-up proof: Appendix B synthesis input
 
 The selected Appendix B segment 15 source file (`docs/localization/spanish-audiobook-track-18/segment-15.txt`) was read directly at commit `cdee4bfd6a6b1bd1699d16de814dfbdd72deff14`. It contains the **exact** website and Score-pipeline commit identifiers printed in the authoritative manuscript. Therefore manuscript-to-prepared-narration-script identifier parity is verified. The selected Descript TXT remains different at character level; no inference about spoken audio is permitted without the deferred final listening/audio verification.

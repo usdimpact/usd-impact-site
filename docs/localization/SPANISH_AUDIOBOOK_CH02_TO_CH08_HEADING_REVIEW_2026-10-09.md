@@ -230,3 +230,18 @@ Owner replied **PASS** immediately following the four-clip A/B listening kit for
 **Safe resume:** Ask owner to attach the two private corrected FLAC or WAV files directly to this ChatGPT conversation (using the Drive links above). Then Descript's `import_media` host-attachment path can create **two fresh, verified private audio-only compositions**, explicitly named `DO NOT PUBLISH`. Confirm import success, length, spoken first/last cues and zero public publishes before switching the draft manifest. Do not loosen Drive permissions, invent a public media link, or claim import success before readback.
 
 **Unchanged release holds:** PR #797 DRAFT/unmerged. Current selected Chapter6 `d618b058-76c6-4362-94a6-08d681b86224` and Chapter7 `f053f190-9233-4869-ba7b-62c5183888da`. Mastering approval PENDING, member delivery and Production OFF. Separate Chapter7→8 heading and whole-book listening still PENDING.
+
+## October 10 — Chapter 6→7 owner PASS and successful private Descript import
+
+**Resolution after earlier transport failure:** The approved FLAC recordings became available as conversation file attachments. Descript import job `project-media-import-a3ba1bba-7e45-4956-81af-52ee9d34176f` finished with **SUCCESS** for both media items, using the attachment import route. The earlier failed jobs and four 6-second placeholder compositions remain historical only and **MUST NOT BE SELECTED OR PUBLISHED**.
+
+| Track | New audio-only private composition | Length | Editor script verification |
+| --- | --- | ---: | --- |
+| 08 / Chapter 6 | `88370601-0fec-4194-90ae-cfbb3a58c89f` — `08 - Chapter 6 - Part III Tail Transferred - PRIVATE QA - DO NOT PUBLISH - FIXED AUDIO` | **1002.300000 s** | Opens `Parte tres. Capítulo seis`, closes with full disclaimer and no additional `Parte tres` |
+| 09 / Chapter 7 | `8ffb044f-fc73-4bf3-8630-9078793a70ae` — `09 - Chapter 7 - Part III Heading Prefixed - PRIVATE QA - DO NOT PUBLISH - FIXED AUDIO` | **1072.545102 s** | Opens `Parte tres. Capítulo siete`, preserves **separate** last `Parte tres` |
+
+**Evidence:** Both media items reported import success and durations matching the owner-PASS source FLACs. Read-only Descript Agent Underlord inspection verified full-duration timed scripts and one full-duration media clip for each composition, including precise first and last text. The Descript `export_transcript` route currently returns blank SRT and TXT for the new compositions **despite populated editor scripts**. This remains a tooling limitation to recheck, not a missing audio claim. The agent job reported `project_changed:true` even while its textual report said no edits; post-inspection readback showed all original compositions present and zero publishes. No independent rendered-file audio listening or bitwise export comparison is claimed.
+
+**Selection:** The private 20-track pre-master manifest now selects these two new compositions. Previous selections and originals remain preserved. All 20/20 selected Descript durations reconcile to **17,747.673172 seconds** (~4h55m47.7s). The separate trailing `Parte tres` at Chapter7's end awaits Chapter7→8 QA, as does Chapter1→2's repeated `Parte uno`.
+
+**Scope limit:** Owner PASS was only for the source four-sample A/B listening kit. No full-track or complete-book approval, final mastering, PR merge or publishing permission. PR #797 draft/unmerged, Descript public publishes 0, Production/member audio OFF, mastering approval PENDING.

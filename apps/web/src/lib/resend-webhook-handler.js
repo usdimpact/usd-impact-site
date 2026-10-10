@@ -1,4 +1,5 @@
 import { isProviderManagedAuthSuccess } from './resend-auth-notification-boundary.js';
+import { isExternallyManagedSpanishNewsletterEvent } from './resend-shared-account-boundary.js';
 import {
   RESEND_WEBHOOK_MAX_BYTES,
   ResendWebhookVerificationError,
@@ -192,11 +193,15 @@ async function applyDeliveryEvent({ config, verified, fetchImpl }) {
 
   const matches = await readOutboxMatch(config, verified.event.emailId, fetchImpl);
   if (matches.length === 0) {
-    // Do not create an auth outbox row or weaken the application correlation
-    // race contract. Only signed positive events in the reserved auth namespace
-    // can finish without one; every unknown/negative event still retries.
+    // Do not create foreign/provider-managed outbox rows or weaken the
+    // application correlation race contract. Only explicit provider-signed
+    // namespaces may finish without a match; every unknown event still retries.
+    // A matched USD Impact application row always wins before these boundaries.
     if (isProviderManagedAuthSuccess(verified.event)) {
       return Object.freeze({ outcome: 'ignored', reason: 'provider-managed-auth-success' });
+    }
+    if (isExternallyManagedSpanishNewsletterEvent(verified.event)) {
+      return Object.freeze({ outcome: 'ignored', reason: 'externally-managed-spanish-newsletter' });
     }
     throw new WebhookProcessingError(
       'Resend outbox correlation is not ready.',
@@ -297,6 +302,10 @@ export async function handleResendWebhook(request, response, options = {}) {
     if (result.reason === 'provider-managed-auth-success') {
       console.info('Resend provider-managed authentication notification acknowledged.', {
         code: 'PROVIDER_MANAGED_AUTH_SUCCESS', eventType: verified.event.type,
+      });
+    } else if (result.reason === 'externally-managed-spanish-newsletter') {
+      console.info('Resend externally managed Spanish newsletter notification acknowledged.', {
+        code: 'EXTERNALLY_MANAGED_SPANISH_NEWSLETTER', eventType: verified.event.type,
       });
     }
     return sendJson(response, 200, { ok: true, duplicate: receiptState.duplicate });

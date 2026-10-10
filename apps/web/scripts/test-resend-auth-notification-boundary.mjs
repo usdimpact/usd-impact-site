@@ -21,6 +21,12 @@ function fixture(type = 'email.delivered') {
     to: ['reader@example.com'], subject: 'Your secure USD Impact sign-in link',
   } };
 }
+function spanishFixture(type = 'email.delivered') {
+  const event = fixture(type);
+  event.data.from = 'Siguiendo el Dólar <boletin@updates.usd-impact.com>';
+  event.data.subject = 'Confirma tu suscripción a Siguiendo el Dólar';
+  return event;
+}
 function responseMock() {
   return { statusCode: 200, headers: {}, body: '',
     setHeader(name, value) { this.headers[name.toLowerCase()] = String(value); },
@@ -117,6 +123,51 @@ for (const type of ['email.sent', 'email.delivered']) {
     assert.doesNotMatch(JSON.stringify(logs), /reader@example|email_id|payload_sha256|message_id|whsec_/);
   });
 }
+for (const type of ['email.sent', 'email.delivered', 'email.delivery_delayed', 'email.bounced', 'email.complained', 'email.failed', 'email.suppressed']) {
+  test(`signed externally managed Spanish newsletter ${type} finishes ignored`, async () => {
+    const { db, response, logs } = await invoke(spanishFixture(type), { svixId: `msg_offline_spanish_${type.replaceAll('.', '_')}` });
+    assert.equal(response.statusCode, 200);
+    assert.equal(db.receipt().status, 'ignored');
+    assert.equal(db.receipt().processed_at, new Date(nowMs).toISOString());
+    assert.equal(db.receipt().last_error, null);
+    noOutboxWrites(db);
+    assert.deepEqual(logs, [['info', 'Resend externally managed Spanish newsletter notification acknowledged.', {
+      code: 'EXTERNALLY_MANAGED_SPANISH_NEWSLETTER', eventType: type,
+    }]]);
+    assert.doesNotMatch(JSON.stringify(logs), /reader@example|email_id|payload_sha256|message_id|whsec_/);
+  });
+}
+
+for (const [name, mutate] of [
+  ['sender display drift', (e) => { e.data.from = 'Siguiendo el Dolar <boletin@updates.usd-impact.com>'; }],
+  ['sender address drift', (e) => { e.data.from = 'Siguiendo el Dólar <boletin@other.example>'; }],
+  ['multiple recipients', (e) => { e.data.to.push('second@example.com'); }],
+  ['broadcast metadata', (e) => { e.data.broadcast_id = 'broadcast-fixture'; }],
+  ['template metadata', (e) => { e.data.template_id = 'template-fixture'; }],
+  ['missing subject', (e) => { delete e.data.subject; }],
+]) {
+  test(`Spanish namespace drift stays retryable: ${name}`, async () => {
+    const event = spanishFixture(); mutate(event);
+    const { response, parsed, db } = await invoke(event, { svixId: `msg_offline_spanish_drift_${name.replaceAll(' ', '_')}` });
+    assert.equal(response.statusCode, 503);
+    assert.equal(parsed.code, 'OUTBOX_CORRELATION_PENDING');
+    assert.equal(db.receipt().status, 'failed');
+    noOutboxWrites(db);
+  });
+}
+
+test('matched application row wins over Spanish shared-account namespace', async () => {
+  const rows = [{ id: 'outbox-fixture', status: 'accepted', provider_message_ref: emailId }];
+  const { response, db, logs } = await invoke(spanishFixture('email.bounced'), {
+    rows, svixId: 'msg_offline_spanish_matched',
+  });
+  assert.equal(response.statusCode, 200);
+  assert.equal(db.rows[0].status, 'hard_bounced');
+  assert.equal(db.receipt().status, 'processed');
+  assert.equal(db.calls.filter((c) => c.path === '/rest/v1/notification_outbox' && c.method === 'PATCH').length, 1);
+  assert.ok(logs.every((l) => l[0] !== 'info'));
+});
+
 const unknownCases = [
   ['sender domain', (e) => { e.data.from = '"USD Impact" <no-reply@other.example>'; }],
   ['unquoted sender drift', (e) => { e.data.from = 'USD Impact <no-reply@updates.usd-impact.com>'; }],

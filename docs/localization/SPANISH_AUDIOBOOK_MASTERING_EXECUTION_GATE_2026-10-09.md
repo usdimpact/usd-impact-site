@@ -81,3 +81,13 @@ A complete Chapter5 WAV (1227.833469s) was received and combined with the select
 **Human listening PENDING** on four-sample private ZIP [in owner-only Drive](https://drive.google.com/file/d/14pgConEzOOVyZervakTql1EsvrfYlY4c/view). The corrected *full-length* WAV and FLAC source candidates were generated but persistent upload was blocked by expired container session; preserve working files/secure copies before importing. Do **not** switch manifest selections until the reviewer provides scoped PASS and safe private import is verified.
 
 Chapter5's second closing `Parte tres` is intact; subsequent Chapter5→6 alignment is separately pending. Whole-book hearing, encoded mastering measurements, PR merge, public/member/Production release all remain on hold.
+
+## October 10 — Chapter 4→5 private correction selected
+
+- **Owner hearing:** PASS on four private before/after excerpts for moving the existing recorded `Parte tres` from Chapter4 tail to Chapter5 opening. Not a complete chapter or mastering acceptance.
+- **Technical import:** Job `project-media-import-21812ed2-3237-4bd6-ac30-3e10825c7db2` completed success, creating private Chapter4 `c99a187a-501f-4a7c-b481-db2f0a179183` (1374.200000s), private Chapter5 `35527a16-bc5e-455a-8989-053d03b0cc41` (1229.637959s). Corrected source recordings preserved 114,829,254 combined PCM frames in unchanged order. Imported SRT confirms heading placement; independent full rendered-sample mastering measurement has not been done.
+- **Private plan:** Both new compositions selected in draft manifest; 20/20 selected composition IDs present with nominal sum **17,747.673158 s (4h 55m 47.673s)**. Source originals and prior private correction revisions retained for rollback.
+- **Pending heading checks:** Chapter1→2 `03→04`, Chapter5→6 `07→08`, Chapter6→7 `08→09`, Chapter7→8 `09→10`. A second `Parte tres` is intentionally retained at the end of selected Chapter5, pending Chapter5→6 verification.
+- **Persistence note:** Full corrected WAV/FLAC standalone storage previously failed due expired container session; Descript imported compositions themselves are now available privately. Owner-only four-sample A/B package remains in Drive.
+
+**HOLD:** final 20-track audio export/encoded LUFS and dBTP tests, end-to-end whole-book listening, legal/editorial verification, mastering approval and publication. PR #797 DRAFT/unmerged; 0 public Descript publishes, member access/Production OFF.

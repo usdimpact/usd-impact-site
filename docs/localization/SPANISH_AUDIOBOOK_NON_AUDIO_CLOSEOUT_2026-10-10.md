@@ -100,6 +100,20 @@ The October 9 [boundary audit comment](https://github.com/usdimpact/usd-impact-s
 
 The same eight selected TXT exports show only the single beginning `Parte uno/dos/tres` mention for these tracks and no misplaced *trailing* part heading. This directly addresses all **six** formerly flagged openings and their adjacent endings at transcript level, without changing any selected IDs or editing Descript. The selected compositions appear to have evolved after the October 9 audit; historical claims must not override October 10 readback.
 
+### Completion: Chapters 9–13
+
+A second read-only pass retrieved the five remaining selected chapter transcripts and matched their openings against the manuscript:
+
+| Selected track | Manuscript opening | First words in selected private TXT | TXT-only result |
+| --- | --- | --- | --- |
+| 11 / Chapter 9 | PARTE III | `Parte tres. Capítulo nueve` | MATCH |
+| 12 / Chapter 10 | PARTE IV | `Parte cuatro. Capítulo diez` | MATCH |
+| 13 / Chapter 11 | PARTE V | `Parte cinco. Capítulo once` | MATCH |
+| 14 / Chapter 12 | PARTE V | `Parte cinco. Capítulo doce` | MATCH |
+| 15 / Chapter 13 | PARTE V | `Parte cinco. Capítulo trece` | MATCH |
+
+A later `parte tres` string in Track 12 is the legitimate **in-body** cross-reference `la lógica específica de activos de la parte tres`, not a second heading, and is not located at the track ending. Combining these five with tracks 03–10 above gives **13/13 expected part-heading placements in the currently selected chapter-opening TXT exports**. This closes the targeted non-audio *opening-text structural* audit; it does not close acoustic/whole-program acceptance.
+
 **Important limit:** Transcript position and word presence do not prove acoustically clean joins, no duplicated recorded speech below ASR detection, verified SRT timing or successful final mastered exports. Track-boundary acoustic acceptance is still deferred until the final approved audio stage. Do **not** initiate the earlier six-heading clip-movement plan or generate new audio based solely on the now-stale comment. Maintain HOLD.
 
 ## Bounded closeout and remaining gates

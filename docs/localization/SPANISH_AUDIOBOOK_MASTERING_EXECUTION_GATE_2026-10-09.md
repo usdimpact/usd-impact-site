@@ -121,3 +121,11 @@ After import, Descript readback confirmed exact durations and expected opening/c
 - **Await new owner PASS on this specific A/B kit before private Descript import/manifest switch.** Existing manifest continues selecting `d618b058-76c6-4362-94a6-08d681b86224` and `f053f190-9233-4869-ba7b-62c5183888da`. Remaining: later Chapter7→8 heading transfer, repeated Part I before Chapter2, whole 20-track listen, actual encoded master LUFS/true-peak tests and legal/editorial signoff.
 
 **Release HOLD:** PR #797 DRAFT/unmerged, Descript publishes 0, member access/Production OFF, mastering approval PENDING.
+
+## October 10 — Chapter 6→7 owner listening PASS; import remains blocked
+
+- Owner replied PASS on four private before/after Chapter6→Chapter7 splice samples; technical pair SHA-256 conserved all 91,500,669 PCM frames and corrected durations are Chapter6 1002.300000s, Chapter7 1072.545102s. This is not the full 20-track listening approval.
+- New private Descript import is **not complete**. Import via owner-only Drive links failed because Descript receives an authenticated HTML page; direct-upload PUT was blocked by runtime DNS. Four 6-second empty placeholder compositions from the two stopped/failed upload attempts are not audio candidates and must never be selected.
+- Existing 20-track manifest remains on the previously verified, actually available compositions. Await owner-attached lossless Chapter6/Chapter7 files in ChatGPT to finish the two private Descript imports through the supported host attachment workflow; then recheck durations, SRT boundaries and originals before updating the draft manifest.
+
+**Release HOLD:** PR #797 DRAFT/unmerged, Descript public publishes 0, Production and member audio OFF, final mastering, true-peak/LUFS verification and complete-book review PENDING.

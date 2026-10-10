@@ -257,12 +257,12 @@
     {
       "track": "07",
       "description": "Chapter 5",
-      "private_review_composition_id": "35527a16-bc5e-455a-8989-053d03b0cc41",
-      "duration_seconds": 1229.637959,
+      "private_review_composition_id": "66cdab8b-cb68-4839-82b0-af50fce19c7b",
+      "duration_seconds": 1228.21,
       "mastering_status": "PENDING",
-      "final_listening_status": "OWNER_PASS_TARGETED_OFFLINE_BOUNDARY_AUDIO; COMPLETE_TRACK_AND_MASTERING_PENDING",
+      "final_listening_status": "OWNER_PASS_SCOPED_OFFLINE_BOUNDARY_SAMPLES; FULL_TRACK_AND_MASTERING_PENDING",
       "public_allowed": false,
-      "previous_private_review_composition_id": "1e8ae260-ddfc-481b-8089-358561b2a4e9",
+      "previous_private_review_composition_id": "35527a16-bc5e-455a-8989-053d03b0cc41",
       "original_review_composition_id": "1e8ae260-ddfc-481b-8089-358561b2a4e9",
       "chapter04_to_chapter05_private_heading_transfer_qa": {
         "status": "PASS_TECHNICAL_AND_OWNER_SCOPED_LISTENING",
@@ -281,16 +281,52 @@
         "original_audio_preserved": true,
         "public_allowed": false,
         "production_enabled": false
+      },
+      "chapter05_to_chapter06_private_heading_transfer_qa": {
+        "status": "OWNER_SCOPED_LISTENING_PASS_AND_PRIVATE_IMPORT_TECHNICAL_PASS",
+        "description": "Chapter 5 retains its opening Parte tres and loses only the misplaced closing Parte tres",
+        "previous_private_composition_id": "35527a16-bc5e-455a-8989-053d03b0cc41",
+        "selected_private_composition_id": "66cdab8b-cb68-4839-82b0-af50fce19c7b",
+        "import_job_id": "project-media-import-a878dc28-6c0e-4bef-a896-32dfa23547b9",
+        "import_format": "LOSSLESS_FLAC_DECODED_PCM_MATCHES_APPROVED_WAV",
+        "import_status": "SUCCESS",
+        "duration_seconds": 1228.21,
+        "srt_heading_and_disclaimer_check": "PASS",
+        "source_pcm_integrity": "SOURCE_PAIR_AND_CORRECTED_PAIR_IDENTICAL_SHA256_10aca8645f96ed9252ee1d080031d34adce2755c90eb8f854d8d02aaac4c4bee",
+        "human_offline_a_b_review": "PASS",
+        "full_composition_audio_listening": "PENDING",
+        "mastering_approved": false,
+        "public_allowed": false,
+        "production_enabled": false
       }
     },
     {
       "track": "08",
       "description": "Chapter 6",
-      "private_review_composition_id": "2b9e5a60-028f-4ff4-8581-25db456bdda5",
-      "duration_seconds": 1002.553,
+      "private_review_composition_id": "d618b058-76c6-4362-94a6-08d681b86224",
+      "duration_seconds": 1003.9814279999999,
       "mastering_status": "PENDING",
-      "final_listening_status": "PENDING",
-      "public_allowed": false
+      "final_listening_status": "OWNER_PASS_SCOPED_OFFLINE_BOUNDARY_SAMPLES; FULL_TRACK_AND_MASTERING_PENDING",
+      "public_allowed": false,
+      "previous_private_review_composition_id": "2b9e5a60-028f-4ff4-8581-25db456bdda5",
+      "original_review_composition_id": "2b9e5a60-028f-4ff4-8581-25db456bdda5",
+      "chapter05_to_chapter06_private_heading_transfer_qa": {
+        "status": "OWNER_SCOPED_LISTENING_PASS_AND_PRIVATE_IMPORT_TECHNICAL_PASS",
+        "description": "Chapter 6 begins with transferred Parte tres while preserving independent closing Parte tres",
+        "previous_private_composition_id": "2b9e5a60-028f-4ff4-8581-25db456bdda5",
+        "selected_private_composition_id": "d618b058-76c6-4362-94a6-08d681b86224",
+        "import_job_id": "project-media-import-a878dc28-6c0e-4bef-a896-32dfa23547b9",
+        "import_format": "LOSSLESS_FLAC_DECODED_PCM_MATCHES_APPROVED_WAV",
+        "import_status": "SUCCESS",
+        "duration_seconds": 1003.9814279999999,
+        "srt_heading_and_disclaimer_check": "PASS",
+        "source_pcm_integrity": "SOURCE_PAIR_AND_CORRECTED_PAIR_IDENTICAL_SHA256_10aca8645f96ed9252ee1d080031d34adce2755c90eb8f854d8d02aaac4c4bee",
+        "human_offline_a_b_review": "PASS",
+        "full_composition_audio_listening": "PENDING",
+        "mastering_approved": false,
+        "public_allowed": false,
+        "production_enabled": false
+      }
     },
     {
       "track": "09",
@@ -565,6 +601,23 @@
       "imported_srt_boundary_check": "PASS",
       "offline_pcm_sha256": "8faf46c7ff3c9194fc2ebd2ad36043c5b5e4c4380052b644d617f15c0a549ee1",
       "full_length_human_listening": "PENDING",
+      "release_allowed": false
+    },
+    "chapter05_to_chapter06_private_transfer": {
+      "date": "2026-10-10",
+      "reviewer": "owner",
+      "owner_response": "PASS",
+      "scope": "FOUR_BEFORE_AFTER_OFFLINE_LISTENING_EXCERPTS_ONLY",
+      "compositions": [
+        "66cdab8b-cb68-4839-82b0-af50fce19c7b",
+        "d618b058-76c6-4362-94a6-08d681b86224"
+      ],
+      "import_job_id": "project-media-import-a878dc28-6c0e-4bef-a896-32dfa23547b9",
+      "import_status": "SUCCESS",
+      "imported_srt_boundary_qa": "PASS",
+      "source_pcm_sha256": "10aca8645f96ed9252ee1d080031d34adce2755c90eb8f854d8d02aaac4c4bee",
+      "human_full_track_listening": "PENDING",
+      "mastering_approval": "NOT_GRANTED",
       "release_allowed": false
     }
   },

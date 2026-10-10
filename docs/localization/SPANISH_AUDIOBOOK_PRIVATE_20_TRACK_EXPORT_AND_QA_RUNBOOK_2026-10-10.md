@@ -139,3 +139,23 @@ Remaining open: Appendix B identifier character-level manuscript/ASR reconciliat
 - At PR #797 head commit `9d21e35154b21cc1fc9781177470c51902356196`, GitHub Actions runs **Web quality** `38070802323`, **CodeQL security analysis** `38070802381` and **Dependency review** `38070802331` all concluded **success**; commit's Vercel status reported **success**. These are source/workflow CI signals, **not** exported-audio measurements or final mastering approval.
 - Automated WAV QA checker and synthetic tests are documented above, but the **20 actual selected private Descript WAV exports have not been provided for measurement**. Never replace this evidence with offline source WAV metrics, transcript timestamps, or expected durations. Do not assert private-master QC PASS without decoded exports.
 - **Disposition:** 20/20 selected composition metadata remain planned for private export; four full listening blocks, 20 selected WAV objective checks, editorial/legal signoff, and mastering all **HOLD/PENDING**. PR #797 must stay **draft/unmerged**; no HeyGen synthesis, Descript public publish, Production deployment or member delivery is authorized by this follow-up.
+
+
+## Non-audio release-control audit — 2026-10-10
+
+Verified the canonical 20-track private manifest against the current draft branch without altering the manifest:
+
+| Control | Manifest evidence | Status |
+| --- | --- | --- |
+| Production generation gate | `production_enabled: false` | CLOSED |
+| Public delivery gate | `public_allowed: false`; each selected track `public_allowed: false` | CLOSED |
+| PR merge gate | `merge_allowed: false` | CLOSED |
+| Publication authorization | `publication_approval: NOT_GRANTED` | NOT GRANTED |
+| Mastering authorization | `mastering_approval: PENDING` | PENDING |
+| Whole-book listening | `human_listening_approval` explicitly limits PASS to scoped samples | PENDING |
+| Manifest structure | 20 selected tracks; 0 selected tracks with `public_allowed: true` or `mastering_status: APPROVED` | CONSISTENT |
+| Source/security CI | Web quality, Dependency review and CodeQL all successful at `095cbcbbd5b41dd6d90cbd89cd171100fb63b58c` | PASS (code only) |
+
+**Editorial/compliance checklist for the eventual approval decision** (no approval inferred here): confirm the exact opening rights/copyright paragraph and any exception language against the approved manuscript; confirm the educational/non-personalized-investment-advice disclaimers at the opening and chapter-specific endings, including shortened exceptions; confirm source credits and benchmark names; resolve Appendix B pipeline token spelling against the authoritative source rather than ASR alone; record an explicit editorial/legal verdict, approved final mastering profile, and separate distribution authorization. Do not substitute a technical CI PASS or scoped listening PASS for these decisions.
+
+**Execution order:** complete non-audio textual parity and controls first. As instructed by the owner, leave the selected private WAV export, actual decoded-acoustic QC, full Track00 and four whole-book listening blocks **until last**. No release-state field should be switched by preparatory documentation.

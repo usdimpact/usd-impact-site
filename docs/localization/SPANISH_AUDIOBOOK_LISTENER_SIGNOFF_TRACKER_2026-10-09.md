@@ -346,3 +346,16 @@ The [20-track private browser export and QA runbook](./SPANISH_AUDIOBOOK_PRIVATE
 The owner replied **PASS BOTH** to the request to listen to the **first 10 seconds** of the currently selected Appendix A and Appendix B compositions. Selected Appendix A: `625d0a1a-1bf2-42ac-b363-cb8b525e660b`; selected Appendix B: `6a251168-1d0d-4a9d-b9ea-daed1d1db016`. Both openings passed targeted human pronunciation listening. Earlier ASR ambiguity in "Apéndice A"/"Apéndice B" is not an owner-reported audible defect. No sound was edited.
 
 The separate owner PASS for Appendix B **14:25–14:43** remains accepted. This does **not** certify exact letters of the production identifier, complete appendix playback, or final mastered audio. Whole-book listening, selected 20 private exports and objective master checks remain PENDING; release stays HOLD.
+
+
+## Current-state index — 2026-10-10 (non-audio audit; supersedes older selection notes)
+
+This tracker preserves historical experiments and contemporaneous decisions. **Do not treat its older "original Track 00 selected" lines, its opening date headline, or earlier reel PENDING placeholders as the latest canonical state.** Use the private review manifest's `track00_current_selection` and `tracks[]` for selected IDs, and the newer preflight/runbook for scoped owner PASS records.
+
+- **Canonical private Track 00** is copyright-tail v2 `ebe7f026-e369-4dd4-a184-9476a6482f5b`, selected after owner delegated the choice. The original `91240c6b-78df-4910-a994-43c616f9b53f` is historical rollback, not the current export candidate.
+- **Scoped owner PASS**: selected Track 00 opening 0–9s and disclaimer 42–51s; selected Introduction near 07:59/end, Chapter 1 and Chapter 2 openings; selected Appendix A and Appendix B openings 0–10s ("PASS BOTH"); selected Appendix B ending 14:25–14:43. Historical offline A/B PASS decisions apply only to their specific offline clips. None is full-length approval.
+- **Metadata verification**: all 20 selected composition IDs exist in private Descript, and all 20 durations agree exactly with the manifest (verified 2026-10-10). Live Descript project has **0 publishes**. This is structural validation, not decoded-audio QA.
+- **Outstanding last-stage audio checks**: Track 00 full 1:49.835 playback, four whole-book listening blocks, actual selected private WAV exports and objective audio measurements. Keep these **PENDING**; owner has instructed to leave them until last.
+- **Other release gates**: exact spoken/source parity for the Appendix B pipeline authority hash remains unverified; editorial/legal wording, final mastering profile, separate release approval and member-delivery authorization all remain **PENDING/NOT GRANTED**.
+- **Source-code CI** at PR #797 commit `5664b0ac30614a3f578199bc9c492a50ee46f087`: Web quality, Dependency review and CodeQL completed **success**. GitHub CI success is not an audiobook mastering certificate.
+- **Safeguards**: PR remains DRAFT/unmerged; no public Descript publishing, new voice synthesis, member storage upload or Production deployment. No legacy listener PASS is to be extrapolated to an entire track.

@@ -124,6 +124,12 @@ The authoritative Spanish Edition 1.3 Candidate 1 manuscript contains a printed 
 
 **Basis:** Manuscript `Contenido` at paragraph 28 and `Índice analítico` at paragraph 1138; selected canonical track list `00`–`19`; fresh private TXT export of selected Track 01 `a65d72b2-4c79-454c-9215-0c292d856b69` and selected Track 19 `1d15c8e2-dc3f-4c2d-9b95-b84a435dcb0b`. This is an editorial scope reconciliation, not a legal opinion or authorization to alter narration.
 
+## Cross-track narrative-text coverage (read-only)
+
+[Selected 19-track paragraph-anchor coverage audit](./SPANISH_AUDIOBOOK_SELECTED_TXT_COVERAGE_AUDIT_2026-10-10.md) compares 454 substantial manuscript paragraphs from selected tracks 01–19 against private Descript TXT: 382 matched all three sampled eight-word anchors; 69 matched one or two; three zero-anchor cases were separately examined and their subject matter located in source segments and current selected transcript. Selected Track 00 was separately verified for the two scoped legal/compliance passages (61/61 and 68/68 normalized ordered tokens).
+
+This is **sparse textual coverage**, not full sentence-by-sentence or audible signoff. Final listening should include focused reviews of the spoken `DFII10` gold example, the glossary's `MXN` heading, Appendix B's verbalized normalization formula and exact pipeline SHA. No regeneration is authorized by these review flags. Explicit editorial decisions remain open.
+
 ## Bounded closeout and remaining gates
 
 | Gate | Decision |

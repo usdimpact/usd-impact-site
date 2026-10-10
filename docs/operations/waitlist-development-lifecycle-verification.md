@@ -145,7 +145,27 @@ Required behavior:
    - mark the receipt processed.
 5. A duplicate of a completed receipt returns success without another transition.
 
-A tracked callback with missing correlation must never be marked permanently ignored.
+### Shared Resend account data-scope routing
+
+The Resend account is shared by Production and controlled Preview/Development sends, while those environments use
+different Supabase outboxes. Governed direct sends therefore include provider tags naming the USD Impact application,
+the owning data scope (`production` or `development`), and the reviewed email flow. Resend includes those tags in
+signed `email.*` webhook payloads.
+
+A receiver may acknowledge a callback as foreign-scope only when all of the following are true:
+
+- the webhook signature and normal event contract are valid;
+- the local outbox lookup is successful and strictly empty;
+- the routing-tag set is exact and names the other approved data scope;
+- the sender remains on `updates.usd-impact.com`;
+- the message is a direct single-recipient send, not a broadcast or template event.
+
+A matching local outbox row always wins over routing metadata. An untagged event, malformed tag set, unknown flow,
+or callback tagged for the receiver's own data scope remains subject to normal correlation and must stay retryable
+when local provider correlation is missing. This routing exception does not permit creating or synthesizing outbox
+records in another environment.
+
+A tracked callback with missing correlation in its owning data scope must never be marked permanently ignored.
 
 ## Extended terminal-state matrix
 

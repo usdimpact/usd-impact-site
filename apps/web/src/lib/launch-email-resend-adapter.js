@@ -1,3 +1,5 @@
+import { buildUsdImpactResendTags } from './resend-routing-tags.js';
+
 const RESEND_EMAIL_API = 'https://api.resend.com/emails';
 const API_KEY_PATTERN = /^re_[A-Za-z0-9._-]{16,}$/;
 const EMAIL_PATTERN = /^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/;
@@ -222,6 +224,15 @@ export function createResendLaunchEmailAdapter({
   const apiKey = requireApiKey(environment.RESEND_API_KEY);
   const from = requireSender(environment.LAUNCH_EMAIL_FROM_EMAIL, 'LAUNCH_EMAIL_FROM_EMAIL');
   const replyTo = optionalReplyTo(environment.LAUNCH_EMAIL_REPLY_TO);
+  let routingTags;
+  try {
+    routingTags = buildUsdImpactResendTags(environment, 'launch_email');
+  } catch {
+    throw new ResendLaunchEmailConfigurationError(
+      'Lifecycle delivery requires an explicit Production, Preview, or Development environment.',
+      'RESEND_ROUTING_SCOPE_INVALID',
+    );
+  }
 
   return Object.freeze({
     id: 'resend',
@@ -233,6 +244,7 @@ export function createResendLaunchEmailAdapter({
         subject: normalized.subject,
         text: normalized.text,
         html: normalized.html,
+        tags: routingTags,
         ...(replyTo ? { reply_to: replyTo } : {}),
         ...(normalized.headers ? { headers: normalized.headers } : {}),
       };

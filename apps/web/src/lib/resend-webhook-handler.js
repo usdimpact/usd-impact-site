@@ -1,5 +1,6 @@
 import { isProviderManagedAuthSuccess } from './resend-auth-notification-boundary.js';
 import { isExternallyManagedSpanishNewsletterEvent } from './resend-shared-account-boundary.js';
+import { isForeignUsdImpactResendEvent } from './resend-routing-tags.js';
 import {
   RESEND_WEBHOOK_MAX_BYTES,
   ResendWebhookVerificationError,
@@ -186,7 +187,7 @@ async function readOutboxMatch(config, emailId, fetchImpl) {
   return rows;
 }
 
-async function applyDeliveryEvent({ config, verified, fetchImpl }) {
+async function applyDeliveryEvent({ config, verified, fetchImpl, environment }) {
   if (!verified.event.trackedDeliveryEvent || !verified.event.emailId) {
     return Object.freeze({ outcome: 'ignored', reason: 'untracked-event' });
   }
@@ -202,6 +203,9 @@ async function applyDeliveryEvent({ config, verified, fetchImpl }) {
     }
     if (isExternallyManagedSpanishNewsletterEvent(verified.event)) {
       return Object.freeze({ outcome: 'ignored', reason: 'externally-managed-spanish-newsletter' });
+    }
+    if (isForeignUsdImpactResendEvent(verified.event, environment)) {
+      return Object.freeze({ outcome: 'ignored', reason: 'foreign-usd-impact-data-scope' });
     }
     throw new WebhookProcessingError(
       'Resend outbox correlation is not ready.',
@@ -291,7 +295,7 @@ export async function handleResendWebhook(request, response, options = {}) {
       return sendJson(response, 200, { ok: true, duplicate: true });
     }
 
-    const result = await applyDeliveryEvent({ config, verified, fetchImpl });
+    const result = await applyDeliveryEvent({ config, verified, fetchImpl, environment });
     await finishReceipt({
       config,
       receiptId: receiptState.receipt.id,
@@ -306,6 +310,10 @@ export async function handleResendWebhook(request, response, options = {}) {
     } else if (result.reason === 'externally-managed-spanish-newsletter') {
       console.info('Resend externally managed Spanish newsletter notification acknowledged.', {
         code: 'EXTERNALLY_MANAGED_SPANISH_NEWSLETTER', eventType: verified.event.type,
+      });
+    } else if (result.reason === 'foreign-usd-impact-data-scope') {
+      console.info('Resend lifecycle event for another USD Impact data scope acknowledged.', {
+        code: 'FOREIGN_USD_IMPACT_DATA_SCOPE', eventType: verified.event.type,
       });
     }
     return sendJson(response, 200, { ok: true, duplicate: receiptState.duplicate });

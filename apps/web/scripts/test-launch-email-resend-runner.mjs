@@ -120,6 +120,11 @@ const standaloneAdapter = createResendLaunchEmailAdapter({
     assert.notEqual(body.from, waitlistSender);
     assert.equal(body.reply_to, 'support@usd-impact.com');
     assert.deepEqual(body.to, [recipientEmail]);
+    assert.deepEqual(body.tags, [
+    { name: 'usd_impact_app', value: 'usd_impact' },
+    { name: 'usd_impact_scope', value: 'development' },
+    { name: 'usd_impact_flow', value: 'launch_email' },
+  ]);
     return response(200, { id: 'email_adapter_accepted_1' });
   },
   now: () => new Date(occurredAt),
@@ -187,6 +192,11 @@ assert.equal(acceptedProvider.calls.length, 1);
 const acceptedBody = JSON.parse(acceptedProvider.calls[0].options.body);
 assert.equal(acceptedBody.from, dedicatedSender);
 assert.notEqual(acceptedBody.from, developmentEnvironment.RESEND_FROM_EMAIL);
+assert.deepEqual(acceptedBody.tags, [
+    { name: 'usd_impact_app', value: 'usd_impact' },
+    { name: 'usd_impact_scope', value: 'development' },
+    { name: 'usd_impact_flow', value: 'launch_email' },
+  ]);
 assert.equal(acceptedLedger.current().status, 'accepted');
 assert.equal(acceptedLedger.current().attempt_count, 1);
 assert.equal(acceptedLedger.current().provider_message_ref, 'email_privacy_accepted_1');

@@ -1,3 +1,5 @@
+import { buildUsdImpactResendTags } from './resend-routing-tags.js';
+
 const RESEND_EMAIL_API = 'https://api.resend.com/emails';
 const API_KEY_PATTERN = /^re_[A-Za-z0-9._-]{16,}$/;
 const EMAIL_PATTERN = /^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/;
@@ -269,6 +271,7 @@ export function createProgressEmailResendAdapter({
   }
 
   const qaRecipients = assertApprovedDelivery(environment);
+  const routingTags = buildUsdImpactResendTags(environment, 'learning_progress');
   const apiKey = requireApiKey(environment.RESEND_API_KEY);
   const from = requireSender(environment.RESEND_FROM_EMAIL, 'RESEND_FROM_EMAIL');
   const replyTo = optionalReplyTo(environment.RESEND_REPLY_TO);
@@ -293,6 +296,7 @@ export function createProgressEmailResendAdapter({
             text: normalized.text,
             html: normalized.html,
             headers: normalized.headers,
+            tags: routingTags,
             ...(replyTo ? { reply_to: replyTo } : {}),
           }),
         });

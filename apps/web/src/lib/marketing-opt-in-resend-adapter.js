@@ -1,3 +1,5 @@
+import { buildUsdImpactResendTags } from './resend-routing-tags.js';
+
 const RESEND_EMAIL_API = 'https://api.resend.com/emails';
 const API_KEY_PATTERN = /^re_[A-Za-z0-9._-]{16,}$/;
 const EMAIL_PATTERN = /^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/;
@@ -201,6 +203,7 @@ export function createMarketingOptInResendAdapter({
   }
 
   const { vercelEnvironment, qaRecipients } = assertApprovedDelivery(environment);
+  const routingTags = buildUsdImpactResendTags(environment, 'marketing_opt_in');
   const apiKey = requireApiKey(environment.RESEND_API_KEY);
   const from = requireSender(environment.RESEND_FROM_EMAIL, 'RESEND_FROM_EMAIL');
   if (vercelEnvironment === 'production') {
@@ -233,6 +236,7 @@ export function createMarketingOptInResendAdapter({
             subject: normalized.subject,
             text: normalized.text,
             html: normalized.html,
+            tags: routingTags,
             ...(replyTo ? { reply_to: replyTo } : {}),
           }),
         });

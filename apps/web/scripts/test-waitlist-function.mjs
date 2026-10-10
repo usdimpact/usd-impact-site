@@ -9,6 +9,7 @@ const originalEnv = {
   RESEND_REPLY_TO: process.env.RESEND_REPLY_TO,
   EMAIL_READINESS_LEDGER_ENABLED: process.env.EMAIL_READINESS_LEDGER_ENABLED,
   WAITLIST_UNSUBSCRIBE_ENABLED: process.env.WAITLIST_UNSUBSCRIBE_ENABLED,
+  VERCEL_ENV: process.env.VERCEL_ENV,
 };
 
 function request(body, headers = {}, method = 'POST') {
@@ -61,6 +62,7 @@ try {
   process.env.RESEND_REPLY_TO = 'support@example.com';
   process.env.EMAIL_READINESS_LEDGER_ENABLED = 'false';
   process.env.WAITLIST_UNSUBSCRIBE_ENABLED = 'false';
+  process.env.VERCEL_ENV = 'preview';
 
   const calls = [];
   globalThis.fetch = async (url, options = {}) => {
@@ -88,6 +90,11 @@ try {
   assert.equal(emailBody.from, 'USD Impact <book@updates.example.com>');
   assert.deepEqual(emailBody.to, ['reader@example.com']);
   assert.equal(emailBody.reply_to, 'support@example.com');
+  assert.deepEqual(emailBody.tags, [
+    { name: 'usd_impact_app', value: 'usd_impact' },
+    { name: 'usd_impact_scope', value: 'development' },
+    { name: 'usd_impact_flow', value: 'waitlist' },
+  ]);
   assert.equal(emailBody.headers, undefined);
   assert.match(emailBody.subject, /waitlist/i);
   assert.match(emailBody.text, /reply to this email with the word 'unsubscribe'/i);

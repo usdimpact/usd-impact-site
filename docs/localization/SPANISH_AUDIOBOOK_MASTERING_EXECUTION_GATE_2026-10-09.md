@@ -91,3 +91,12 @@ Chapter5's second closing `Parte tres` is intact; subsequent Chapter5→6 alignm
 - **Persistence note:** Full corrected WAV/FLAC standalone storage previously failed due expired container session; Descript imported compositions themselves are now available privately. Owner-only four-sample A/B package remains in Drive.
 
 **HOLD:** final 20-track audio export/encoded LUFS and dBTP tests, end-to-end whole-book listening, legal/editorial verification, mastering approval and publication. PR #797 DRAFT/unmerged; 0 public Descript publishes, member access/Production OFF.
+
+## October 10 — Chapter 5→6 offline correction candidate (not yet selected)
+
+- Owner supplied Chapter6 full 1002.553469-second WAV. The currently selected corrected Chapter5 tail has spoken `Parte tres`; the recorded heading should occur before Chapter6. An offline candidate moved the existing 1.427959-second tail to Chapter6's opening by changing only the split between tracks. The original combined 98,439,642 PCM samples are preserved exactly, SHA-256 `10aca8645f96ed9252ee1d080031d34adce2755c90eb8f854d8d02aaac4c4bee`.
+- New unselected full-length private WAV candidate durations: Chapter5 1228.210000s; Chapter6 1003.981429s. Both corrected WAVs are persistent in Library, with lossless FLAC Drive backups. Owner-only [A/B listening kit](https://drive.google.com/file/d/17rjvWeW02CyPf4UyOdWoJiIS1DjJ8pwf/view) is ready.
+- **Await owner acoustic PASS on this exact four-sample kit before any private Descript import or review selection.** Selected 20-track manifest still points to prior approved Chapter5 and original Chapter6 compositions; therefore existing duration sum 17,747.673158s is unchanged. On PASS, import two new private compositions, verify SRT/duration, retain rollback IDs and recalculate nominal sum.
+- Chapter6 ends with an independent second `Parte tres`, requiring separate Chapter6→7 review. Repeated `Parte uno` at Chapter1→2 and other early headings remain outstanding.
+
+**Release HOLD:** No full-book human pass or final rendered-audio LUFS/true-peak QA. PR #797 draft/unmerged, public Descript publishing zero, Production/member access OFF, mastering approval pending.

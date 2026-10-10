@@ -692,6 +692,31 @@
       "imported_editor_script_boundary_review": "PASS_READ_ONLY_EDITOR_SCRIPT",
       "export_transcript_status": "BLANK_OUTPUT_EDITOR_SCRIPT_POPULATED",
       "acoustic_review_of_new_descript_render": "PENDING"
+    },
+    "chapter07_to_chapter08_private_transfer": {
+      "date": "2026-10-10",
+      "owner_response": "PASS",
+      "scope": "FOUR_BEFORE_AFTER_PRIVATE_AUDIO_SAMPLES_ONLY",
+      "accepted_recorded_heading": "Parte tres",
+      "corrected_chapter7_duration_seconds": 1070.8,
+      "corrected_chapter8_duration_seconds": 1012.6822,
+      "combined_pcm_sha256": "018fd18b447707a314ec50309e8f9abd50eb75cb14b3f1ccbd3e789dcc27fc50",
+      "corrected_full_wav_library_ids": [
+        "libfile_18a9069041cc819194f653f45fd79d9d",
+        "libfile_dfbc02a998bc8191b97c515612d861b7"
+      ],
+      "owner_only_drive_flac_ids": [
+        "18Mm-CNKirkfSscCnnd9UCeF-G82D4MBv",
+        "1IoahG4jISZAJrbpo1a-DGDpK6_8rFdDe"
+      ],
+      "listening_kit_drive_id": "1hVRVPCWdcDzwfLSBxn1TM4bsXa3rP7-R",
+      "technical_sample_order_check": "PASS_BYTE_IDENTICAL",
+      "offline_sample_listening": "PASS",
+      "descript_import_status": "PENDING_USER_ASSISTED_PRIVATE_UPLOAD",
+      "private_selection_changed": false,
+      "full_imported_track_listening": "PENDING",
+      "final_mastering": "PENDING",
+      "release_allowed": false
     }
   },
   "frontmatter_boundary_review": {

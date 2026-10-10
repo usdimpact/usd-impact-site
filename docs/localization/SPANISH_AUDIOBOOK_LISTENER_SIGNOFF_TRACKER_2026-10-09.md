@@ -340,3 +340,9 @@ The owner authorized continuing without a final Track00 version preference. Reta
 The [20-track private browser export and QA runbook](./SPANISH_AUDIOBOOK_PRIVATE_20_TRACK_EXPORT_AND_QA_RUNBOOK_2026-10-10.md) groups the complete **4h55m49.053s** selected set into four owner listening blocks. **Full-length PASS remains PENDING for all four blocks**, notwithstanding earlier targeted excerpts and Chapter 1→2 `PASS ALL`. Direct private audio playbacks for Appendix B 14:25–14:43, Appendix A/B first 10 seconds, and the full Track00 v2 must be individually logged with any timecoded defects.
 
 **Still no mastering/release approval:** selected actual WAV exports/encoded delivery files need complete duration/decode/LUFS/dBTP/silence/source parity QA; editorial and legal wording review separately pending. Existing PR #797 draft/unmerged, publishes 0, Production/member delivery OFF, mastering PENDING.
+
+## October 10 — Appendix A/B opening pronunciation PASS BOTH
+
+The owner replied **PASS BOTH** to the request to listen to the **first 10 seconds** of the currently selected Appendix A and Appendix B compositions. Selected Appendix A: `625d0a1a-1bf2-42ac-b363-cb8b525e660b`; selected Appendix B: `6a251168-1d0d-4a9d-b9ea-daed1d1db016`. Both openings passed targeted human pronunciation listening. Earlier ASR ambiguity in "Apéndice A"/"Apéndice B" is not an owner-reported audible defect. No sound was edited.
+
+The separate owner PASS for Appendix B **14:25–14:43** remains accepted. This does **not** certify exact letters of the production identifier, complete appendix playback, or final mastered audio. Whole-book listening, selected 20 private exports and objective master checks remain PENDING; release stays HOLD.

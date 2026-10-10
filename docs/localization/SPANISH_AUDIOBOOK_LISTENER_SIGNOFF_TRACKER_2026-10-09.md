@@ -272,3 +272,14 @@ Corrected full WAV files (Library): Chapter6 `libfile_73bdd80ac55c819182422f5573
 **Import status: BLOCKED.** Descript rejected owner-only Drive HTML URLs; direct-upload storage could not be reached by this execution runtime. Failed attempts made only four 6-second placeholder compositions; these must never be selected. Owner must attach both corrected FLAC/WAV files directly in ChatGPT for a host-mediated Descript import. No valid imported candidate has been created for this specific boundary. Current private selected Chapter6 and Chapter7 remain unchanged.
 
 All release gates HOLD: PR #797 draft/unmerged, Descript publishes 0, Production/member delivery OFF, full 20-track listening and mastering PENDING. The independent trailing `Parte tres` at Chapter7 end remains awaiting the Chapter7→8 review.
+
+## October 10 — Chapter 6→7 verified import (owner sample PASS only)
+
+The owner previously replied **PASS** for the four before/after Chapter6 ending and Chapter7 opening samples, including the recorded transfer of `Parte tres`. The successful private Descript attachment import is job `project-media-import-a3ba1bba-7e45-4956-81af-52ee9d34176f`.
+
+- Imported private Chapter6 `88370601-0fec-4194-90ae-cfbb3a58c89f`, **1002.300000 s**: timed editor script confirms opening `Parte tres. Capítulo seis` and complete closing disclaimer, no trailing `Parte tres`.
+- Imported private Chapter7 `8ffb044f-fc73-4bf3-8630-9078793a70ae`, **1072.545102 s**: timed editor script confirms opening `Parte tres. Capítulo siete` and the distinct final `Parte tres` is preserved.
+- **Transcript export currently blank (TXT and SRT)** despite present timed editor scripts. Documented export issue; no auto-regeneration.
+- The failed import placeholders (four 6-second compositions) are **NOT valid audio candidates**. Original compositions and earlier selections remain in the private Descript project.
+
+**Human acoustic approval:** `PASS` on the *offline samples only*. Direct full-chapter imported playback and whole-book listening **PENDING**. Technical final master LUFS/peak and legal/editorial review **PENDING**. These two corrected imported compositions are selected solely for private pre-master QA. PR #797 DRAFT/unmerged; Production/member delivery OFF; Descript public publishes 0.

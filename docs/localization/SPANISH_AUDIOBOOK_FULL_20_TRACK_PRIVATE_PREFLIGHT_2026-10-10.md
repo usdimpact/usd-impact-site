@@ -141,3 +141,11 @@ Descript **TXT** transcript of selected Appendix B finishes with site authority 
 Selected Appendix A `625d0a1a-1bf2-42ac-b363-cb8b525e660b` starts `Aprendáis a glosario. Rápido.` in Descript TXT, and selected Appendix B starts `Appendix B`; the source titles are **Apéndice A — Glosario rápido** and **Apéndice B — Metodología de la USD Impact Score**. These are **ASR-vs-source observations, not acoustically verified pronunciation defects**. Review first 10s of both selected compositions before any edits.
 
 **No private source `18-15.mp3` was found as a standalone Library or Google Drive download.** The source is present inside the private Descript project. No master audio import/export or public sharing was done, and prior offline Appendix B MP3 trials are not certified as the current selected composition.
+
+## 7. October 10 — Owner PASSED selected Appendix B ending excerpt
+
+After the pending request to listen to **14:25–14:43** of [selected repaired Appendix B](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/6a251), the owner replied **PASS**. Treat this as a scoped listening signoff for the **last 18 seconds** with no reported audible defect, not as independently measured selected output, complete Appendix B playback or approval of the book.
+
+The source-media coverage **823.547–883.028s** and SRT end **869.884s** remain factual metadata. The owner PASS does not reconcile their timestamps or independently attest that the pipeline hash was spoken character-for-character. The mismatch between the Spanish manuscript's closing identifier and the Descript TXT remains a **source/ASR editorial verification gate**, not a confirmed audio defect. No sound, transcript or source media was edited on this verdict.
+
+**Status:** Appendix B targeted tail listening: **PASS**. Appendix A/B opening pronunciation, Appendix B complete-track listening, 20 private mastered renders/whole-book audio and legal/editorial checks: **PENDING/HOLD**. Release conditions unchanged.

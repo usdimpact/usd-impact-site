@@ -53,6 +53,14 @@ The printed manuscript begins its rights notice with `Copyright © 2026`. The se
 
 Decision still required from a responsible editor/legal reviewer: accept this intentional spoken adaptation as equivalent for the final audiobook **or** require a separately approved alternative. No change to the printed manuscript, Descript audio or canonical selected IDs follows from this register.
 
+## Follow-up proof: Appendix B synthesis input
+
+The selected Appendix B segment 15 source file (`docs/localization/spanish-audiobook-track-18/segment-15.txt`) was read directly at commit `cdee4bfd6a6b1bd1699d16de814dfbdd72deff14`. It contains the **exact** website and Score-pipeline commit identifiers printed in the authoritative manuscript. Therefore manuscript-to-prepared-narration-script identifier parity is verified. The selected Descript TXT remains different at character level; no inference about spoken audio is permitted without the deferred final listening/audio verification.
+
+## Workflow HOLD enforcement — added on draft branch
+
+The private HeyGen synthesis workflow now validates the canonical manifest **before** installing the provider CLI or invoking speech generation. It requires `production_enabled == true` while `public_allowed == false`, `merge_allowed == false`, and `publication_approval == "NOT_GRANTED"`. With the current `production_enabled: false`, the check denies generation even if the workflow is manually dispatched or its trigger JSON changes. This is a guard in draft PR code (commit `df52d2550f3d4541e860f08a10306a749aff06ef`), not a reported end-to-end failed-workflow test; no synthesis run was triggered to test it. Only an explicitly approved future private synthesis plan may change the authorization flag. No release permission follows from authorization to generate privately.
+
 ## Bounded closeout and remaining gates
 
 | Gate | Decision |

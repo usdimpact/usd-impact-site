@@ -53,6 +53,16 @@ assert.equal(isRetryableGroundingFailure({
 assert.equal(isRetryableGroundingFailure({
   error: 'Daily news source generation exhausted its bounded repair budget.',
 }), true);
+assert.equal(isRetryableGroundingFailure({
+  error: 'Daily news background generation did not complete.',
+  status: 'incomplete',
+  reason: 'max_output_tokens',
+}), true);
+assert.equal(isRetryableGroundingFailure({
+  error: 'Daily news background generation did not complete.',
+  status: 'incomplete',
+  reason: 'content_filter',
+}), false);
 
 assert.equal(isRetryableGroundingFailure({
   error: 'Daily news source generation failed validation after two bounded repair attempts.',

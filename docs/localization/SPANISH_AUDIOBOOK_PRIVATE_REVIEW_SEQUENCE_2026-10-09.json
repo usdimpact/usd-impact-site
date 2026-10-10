@@ -535,8 +535,9 @@
       "private_review_composition_id": "625d0a1a-1bf2-42ac-b363-cb8b525e660b",
       "duration_seconds": 1043.331,
       "mastering_status": "PENDING",
-      "final_listening_status": "PENDING",
-      "public_allowed": false
+      "final_listening_status": "OWNER_PASS_APPENDIX_OPENING_FIRST_10_SECONDS; FULL_TRACK_AND_MASTERING_PENDING",
+      "public_allowed": false,
+      "appendix_opening_listening_qa": "OWNER_PASS_FIRST_10_SECONDS"
     },
     {
       "track": "18",
@@ -544,12 +545,13 @@
       "private_review_composition_id": "6a251168-1d0d-4a9d-b9ea-daed1d1db016",
       "duration_seconds": 883.028,
       "mastering_status": "PENDING",
-      "final_listening_status": "OWNER_PASS_FINAL_18_SECOND_EXCERPT_FULL_TRACK_PENDING",
+      "final_listening_status": "OWNER_PASS_APPENDIX_OPENING_FIRST_10_SECONDS; FULL_TRACK_AND_MASTERING_PENDING",
       "public_allowed": false,
       "is_repair_candidate": true,
       "original_untouched_composition_id": "aef945b9-0b31-48ad-9ec6-270c80f639c7",
       "source_reference_repair": "transcript PASS; human seam listening PENDING",
-      "appendix_b_ending_qa": "OWNER_PASS_14_25_TO_14_43_ONLY"
+      "appendix_b_ending_qa": "OWNER_PASS_14_25_TO_14_43_ONLY",
+      "appendix_opening_listening_qa": "OWNER_PASS_FIRST_10_SECONDS"
     },
     {
       "track": "19",
@@ -838,6 +840,38 @@
       "editorial_review": "PENDING",
       "mastering": "PENDING",
       "publication_allowed": false
+    },
+    "appendix_a_b_openings_owner_pass": {
+      "date": "2026-10-10",
+      "owner_response": "PASS BOTH",
+      "scope": "FIRST_10_SECONDS_EACH_SELECTED_APPENDIX_A_AND_APPENDIX_B_ONLY",
+      "results": [
+        {
+          "track": "17",
+          "composition_id": "625d0a1a-1bf2-42ac-b363-cb8b525e660b",
+          "interval_seconds": [
+            0,
+            10
+          ],
+          "owner_audio_verdict": "PASS",
+          "spoken_heading_reviewer_prompt": "Apéndice A — Glosario rápido"
+        },
+        {
+          "track": "18",
+          "composition_id": "6a251168-1d0d-4a9d-b9ea-daed1d1db016",
+          "interval_seconds": [
+            0,
+            10
+          ],
+          "owner_audio_verdict": "PASS",
+          "spoken_heading_reviewer_prompt": "Apéndice B — Metodología de la USD Impact Score"
+        }
+      ],
+      "notes": "Accepted actual audio pronunciation despite ambiguous automated speech transcription. No specific defect noted.",
+      "full_tracks_listening": "PENDING",
+      "exact_manuscript_character_source_parity": "UNVERIFIED",
+      "mastering_approval": false,
+      "release_allowed": false
     }
   },
   "frontmatter_boundary_review": {

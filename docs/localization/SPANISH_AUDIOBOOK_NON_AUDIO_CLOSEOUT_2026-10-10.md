@@ -116,6 +116,14 @@ A later `parte tres` string in Track 12 is the legitimate **in-body** cross-refe
 
 **Important limit:** Transcript position and word presence do not prove acoustically clean joins, no duplicated recorded speech below ASR detection, verified SRT timing or successful final mastered exports. Track-boundary acoustic acceptance is still deferred until the final approved audio stage. Do **not** initiate the earlier six-heading clip-movement plan or generate new audio based solely on the now-stale comment. Maintain HOLD.
 
+## Format adaptation — paginated navigation aids (October 10)
+
+The authoritative Spanish Edition 1.3 Candidate 1 manuscript contains a printed `Contenido` with page references (after the reader guide) and an `Índice analítico` containing alphabetic entries and printed page/chapter references **after** `Sobre el autor`. The canonical private manifest has precisely 20 selected tracks (00–19), ending with `19 — Sobre el autor`; it has no separately selected Table of Contents or Analytical Index narration track. Read-only selected TXT checks confirm Track 01 finishes the reader guide without a narrated page-numbered contents list and Track 19 ends with author/contact text rather than continuing into the analytical index. The book title also appears in the printed cover/front matter, while the selected Track 00 spoken opening begins with `USD Impact. 2026`; verify that equivalent book-title metadata is visible to listeners in the eventual player.
+
+**E5 — Editorial scope decision, pending.** A page-numbered table of contents and page-numbered analytical index are usually **print/ebook navigation aids**, not useful literal audiobook speech. Recommendation for owner/publisher review: explicitly record their omission as a **format adaptation**, preserve the navigational information in the corresponding accessible written/digital edition or companion, and use descriptive, correctly ordered chapter track titles and player metadata instead. Do **not** label the entire printed manuscript `100% narrated` until this adaptation is approved. Do not create index/contents speech or modify the selected 20 tracks based solely on this finding. If the publisher requires narration of these aids, that is a separate scope/authorization decision before any private synthesis.
+
+**Basis:** Manuscript `Contenido` at paragraph 28 and `Índice analítico` at paragraph 1138; selected canonical track list `00`–`19`; fresh private TXT export of selected Track 01 `a65d72b2-4c79-454c-9215-0c292d856b69` and selected Track 19 `1d15c8e2-dc3f-4c2d-9b95-b84a435dcb0b`. This is an editorial scope reconciliation, not a legal opinion or authorization to alter narration.
+
 ## Bounded closeout and remaining gates
 
 | Gate | Decision |

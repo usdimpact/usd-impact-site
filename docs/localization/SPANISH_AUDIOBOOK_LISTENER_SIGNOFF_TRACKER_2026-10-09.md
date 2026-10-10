@@ -255,3 +255,10 @@ Owner supplied the full Chapter6 WAV. Using the currently selected corrected Cha
 - **Still pending:** complete 20-track listening, full technical mastering, Chapter6→7 recorded heading correction, repeated Part I before Chapter 2, later early-chapter headings, legal/editorial signoff, PR merge, member delivery and Production release.
 
 **All release controls remain OFF/HOLD:** PR #797 open DRAFT/unmerged, Descript public publishes 0, no final mastered export, mastering approval PENDING. User has not authorized any public publish.
+
+## October 10 — Chapter 6 to 7 private sample correction pending hearing
+
+- Owner provided the full Chapter7 PCM WAV; paired with last selected, previously repaired Chapter6 WAV. Audio repair moved existing recorded `Parte tres` from Chapter6's end to Chapter7's opening at quiet frame 44,201,430 (1002.300000s), without new voice generation. Corrected lengths are Chapter6 **1002.300000s**, Chapter7 **1072.545102s**. The distinct `Parte tres` at the *end* of Chapter7 remains.
+- Combined input versus corrected audio PCM SHA-256 matches: `cc8b7f8ef4e1a5ff2ecb4caaa6d70dbee8428e7b465925aa2b2989127801538f` (91,500,669 samples in unchanged order). Both full WAVs saved in Library and FLAC backups saved in owner-only Drive.
+- **Listener verdict: PENDING.** [Private four-sample A/B ZIP](https://drive.google.com/file/d/1tVyI5cOrhFWx_mNpVlTMp11OmXEQfkBY/view); listen to both before/after Chapter6 ending and Chapter7 opening. The owner has not yet replied PASS to this pair. No import or selection change, no full-track listening approval.
+- See `docs/localization/SPANISH_AUDIOBOOK_CH02_TO_CH08_HEADING_REVIEW_2026-10-09.md` for technical and storage detail. PR #797 remains DRAFT/unmerged; Descript public publishing 0, member delivery/Production OFF, mastering approval pending.

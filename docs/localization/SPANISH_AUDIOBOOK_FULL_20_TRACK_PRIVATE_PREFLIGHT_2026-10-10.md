@@ -125,3 +125,19 @@ The original user-provided MP3 has strong waveform transients at approximately *
 - Only the **offline/private source and test** files in the measurement table were independently decoded and measured. The selected Descript compositions were not exported as 20 verified audio masters.
 - This audit makes **no changes** to Descript compositions, source audio, public URLs, Production, member entitlement, main branch or public publishing.
 - **DISPOSITION: HOLD** until the named blockers and final encoded-audio/owner checks pass.
+
+## 6. October 10 — Appendix B source identifier and selected source-clip reconciliation
+
+Read-only `Descript.search_drive` resolved the **actual** final `18-15.mp3` source media in the selected Appendix B project to asset `a84ec5a3-4e7b-4bb8-a6e8-5f2a2a50640b` (59.480816s): [open source asset in private Descript project](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca?file=a84ec5a3-4e7b-4bb8-a6e8-5f2a2a50640b). The current selected composition `6a251168-1d0d-4a9d-b9ea-daed1d1db016` places this clip at **823.547–883.028s** and does not mute it, according to read-only Agent Underlord inspection. This does **not** prove sound quality or that the last 13.144s are intelligible speech.
+
+**Exact source-text comparison:** Spanish Edition 1.3 Candidate1 — WORKING HOLD, Google Doc `1hjOXZdqT1DajsiGvNm8motQIJ4yuxi6zNwDiU1bpYnU`, finishes Appendix B with:
+- site authority `a86e57dafe91da67553e73e01bb0c703a868c949`;
+- pipeline authority `f51f7abf2d4ec99890eb5537424f6faab885ef32`.
+
+Descript **TXT** transcript of selected Appendix B finishes with site authority `A86E57DAFE91DA67553E73E01BB0C703A868C949` and pipeline transcription `F51F7ABF2D4EXE99890EB55374246FAB885F32`. **The latter text is not identical to the source identifier** (including a non-hex `X`), but it may be an ASR error rather than an audio error. Do not infer a wrong spoken identifier; the text may also be an untimed script artifact. Its SRT stops at 869.884s despite the 883.028s audio clip duration.
+
+**Mandatory reviewer checkpoint:** Listen in the exact selected private Appendix B composition [from 14:25 through 14:43](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/6a251). Decide whether production authority hashes are intended to be *spoken* at all in the audiobook; if yes, verify intelligible, source-aligned narration; if no, request editorial/legal confirmation of an audiobook adaptation rather than simply deleting. Record verdict/timecode, then preserve or repair in a **new private duplicate only**.
+
+Selected Appendix A `625d0a1a-1bf2-42ac-b363-cb8b525e660b` starts `Aprendáis a glosario. Rápido.` in Descript TXT, and selected Appendix B starts `Appendix B`; the source titles are **Apéndice A — Glosario rápido** and **Apéndice B — Metodología de la USD Impact Score**. These are **ASR-vs-source observations, not acoustically verified pronunciation defects**. Review first 10s of both selected compositions before any edits.
+
+**No private source `18-15.mp3` was found as a standalone Library or Google Drive download.** The source is present inside the private Descript project. No master audio import/export or public sharing was done, and prior offline Appendix B MP3 trials are not certified as the current selected composition.

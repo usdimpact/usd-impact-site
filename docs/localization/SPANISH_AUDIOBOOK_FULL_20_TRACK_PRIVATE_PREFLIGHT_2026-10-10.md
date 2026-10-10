@@ -149,3 +149,9 @@ After the pending request to listen to **14:25–14:43** of [selected repaired A
 The source-media coverage **823.547–883.028s** and SRT end **869.884s** remain factual metadata. The owner PASS does not reconcile their timestamps or independently attest that the pipeline hash was spoken character-for-character. The mismatch between the Spanish manuscript's closing identifier and the Descript TXT remains a **source/ASR editorial verification gate**, not a confirmed audio defect. No sound, transcript or source media was edited on this verdict.
 
 **Status:** Appendix B targeted tail listening: **PASS**. Appendix A/B opening pronunciation, Appendix B complete-track listening, 20 private mastered renders/whole-book audio and legal/editorial checks: **PENDING/HOLD**. Release conditions unchanged.
+
+## 8. October 10 — Both selected appendix opening pronunciations PASSED
+
+The owner replied **PASS BOTH** after hearing **0–10 seconds** of [selected Appendix A](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/625d0) and [selected Appendix B](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca/6a251). These scoped acoustic PASS decisions address the earlier opening ASR renderings that did not match the Spanish headings. No audio repairs are indicated by the owner's report.
+
+Combined with the earlier owner PASS for selected Appendix B **14:25–14:43**, the specified **three appendix excerpts** are now accepted. **Not accepted:** complete appendices, literal accuracy of the final identifier transcript, 20 exported audio masters or end-to-end full-book listening. The selected compositions remain unchanged. Release is HOLD.

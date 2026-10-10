@@ -142,3 +142,24 @@ The private 20-track planning manifest now selects these two imported candidates
 **Full corrected audio handoff:** Full Chapter4 and Chapter5 corrected 16-bit WAVs and equivalent lossless FLAC files were generated in the working sandbox, plus a private two-FLAC bundle. WAV↔FLAC decoded samples compared bit-for-bit equal. Uploading the full outputs into the persistent Library/Drive was attempted but blocked by `container_session_expired`; **do not claim those full-length masters are durably stored**. The *small listening kit* was saved successfully via its exported file reference. Preserve these local working candidates or repeat a verified export before any subsequent import. Do not switch the current selected Descript composition IDs until human PASS and successful new private import.
 
 **Review gate:** Listen to Chapter4 corrected final 12s for complete disclaimer with no trailing `Parte tres`; Chapter5 corrected first ~11.8s for complete `Parte tres. Capítulo cinco`, natural pause and no click. Chapter5's later `Parte tres` is left untouched. Reply **PASS/FAIL/UNCLEAR**; only the reviewed samples are within the verdict. All other heading checks, the full 20-track listening pass and actual output mastering remain PENDING. PR #797 DRAFT/unmerged; 0 public Descript publishes; Production/member release OFF.
+
+## October 10 — Owner PASS and verified private Chapter 4→5 imports
+
+**Human listening:** After listening to the four before/after excerpts in the private Chapter4→5 browser review kit, the owner replied **PASS**. This means **scoped acceptance of the audible Chapter 4 ending and Chapter 5 opening**, not full chapter or final-master approval.
+
+**Private Descript import:** Job `project-media-import-21812ed2-3237-4bd6-ac30-3e10825c7db2` completed with **SUCCESS** for the two accepted corrected WAV files and created separate unpublished audio-only compositions:
+
+| Track | Private corrected composition | Verified length | Transcript check |
+| --- | --- | ---: | --- |
+| 06 — Chapter 4 | `c99a187a-501f-4a7c-b481-db2f0a179183` | **1374.200000 s** | Opens `Parte dos. Capítulo cuatro`; ends `Verifica los datos actuales antes de utilizarlos`, without `Parte tres` |
+| 07 — Chapter 5 | `35527a16-bc5e-455a-8989-053d03b0cc41` | **1229.637959 s** | Opens `Parte tres. Capítulo cinco`; later **separate** trailing `Parte tres` remains |
+
+Durations exactly match the approved private WAV candidate lengths. All original and previously selected Descript compositions remain present. The previous offline signal audit demonstrated combined PCM sample identity before/after the recorded-heading transfer (SHA-256 `8faf46c7ff3c9194fc2ebd2ad36043c5b5e4c4380052b644d617f15c0a549ee1`). Imported SRT establishes correct transcript placement, not a full-length acoustic inspection or an independent bitwise comparison of Descript's encoded renders.
+
+**Selection:** The draft 20-track planning manifest now selects the two new private compositions solely for **pre-master QA**; previous and original composition IDs remain available for rollback. Reconciliation after selection: 20/20 compositions, **17,747.673158 s** nominal total (~4 h 55 m 47.7 s). No manual audio regeneration and no public Descript publish.
+
+**Still pending:** Chapter5→6 (`07→08`) has its separate `Parte tres` cue at Chapter5's end. Three other early transitions remain unreviewed: `03→04` (repeated `Parte uno`), `08→09`, and `09→10`. The complete 20-track human listen, final render measurements, mastering, PR merge, and member/Production delivery remain **PENDING/HOLD**.
+
+**Private media persistence:** Descript now holds both imported compositions. Earlier Library/Drive attempts to save full repaired WAV/FLAC outputs were blocked by an expired container storage session, so those separate persistent file copies are **not** claimed to exist. The original owner's sample kit is retained privately in Drive [here](https://drive.google.com/file/d/14pgConEzOOVyZervakTql1EsvrfYlY4c/view).
+
+**Release safety:** PR #797 stays DRAFT/unmerged; Descript public publishes 0; Production, member delivery OFF; mastering approval PENDING.

@@ -163,3 +163,22 @@ Durations exactly match the approved private WAV candidate lengths. All original
 **Private media persistence:** Descript now holds both imported compositions. Earlier Library/Drive attempts to save full repaired WAV/FLAC outputs were blocked by an expired container storage session, so those separate persistent file copies are **not** claimed to exist. The original owner's sample kit is retained privately in Drive [here](https://drive.google.com/file/d/14pgConEzOOVyZervakTql1EsvrfYlY4c/view).
 
 **Release safety:** PR #797 stays DRAFT/unmerged; Descript public publishes 0; Production, member delivery OFF; mastering approval PENDING.
+
+## October 10 — Chapter 5 to 6 offline heading candidate (pending owner listening)
+
+**Source evidence:** The owner supplied full Chapter 6 WAV `08 - Capítulo 6 - El oro y el dólar.wav` (44.1kHz mono PCM16, **1002.553469s**, 44,212,608 frames). Source for Chapter 5 is the last selected private corrected Chapter 5 WAV from the approved Chapter4→5 edit (**1229.637959s**, 54,227,034 frames). The exact selected Descript compositions remain `35527a16-bc5e-455a-8989-053d03b0cc41` (Track07) and `2b9e5a60-028f-4ff4-8581-25db456bdda5` (Track08). Live Descript SRT confirms Chapter 5's ending contains `Verifica los datos actuales antes de utilizarlos. Parte tres` (~20:28.678–20:29.378) while Chapter6 begins directly `Capítulo seis: el oro y el dólar`. A *different* `Parte tres` at Chapter 6 ending (~16:41.086–16:42.166) stays intact for Chapter6→7 review. The existing opening `Parte tres` at Chapter5 also remains.
+
+**Private, lossless audio repair (NOT IMPORTED):** Split Chapter5 at exact frame **54,164,061 = 1228.210000s**, in the quiet interval between the finished disclaimer and heading, and moved the entire last **62,973 samples = 1.427959s** to the start of an untouched Chapter6 copy. Corrected Chapter5 length **1228.210000s**; corrected Chapter6 length **1003.981429s**. Output PCM16, mono 44.1kHz. No AI generation, levels processing, filters, silence insertion, resampling, word rewrites or existing Descript edits.
+
+**Technical verification:** Original pair and corrected pair contain **98,439,642 frames / 196,879,284 decoded PCM bytes** in the same exact order. SHA-256 for both concatenated PCM streams: **`10aca8645f96ed9252ee1d080031d34adce2755c90eb8f854d8d02aaac4c4bee`**. Split-side signed PCM samples -6/-7 (one integer unit jump); tail-to-Chapter6 join 0/0 (zero jump). Quiet 160ms interval RMS ~**0.00020338** full scale. Both corrected WAVs and lossless FLAC counterparts decode to exactly the same PCM bytes; listening ZIP passed CRC. These are signal/structure measurements, NOT a human acoustic PASS.
+
+**Private assets, owner-only storage verified:**
+
+- Corrected Chapter5 full WAV: Library `/07 - Capitulo 5 - Parte III tail transferred - PRIVATE QA.wav` (`libfile_292ade27a3ec8191b3277c3a61569037`).
+- Corrected Chapter6 full WAV: Library `/08 - Capitulo 6 - Parte III heading prefixed - PRIVATE QA.wav` (`libfile_6ec3f2d14d488191b36a383cb342f94a`).
+- [Chapter5 FLAC backup](https://drive.google.com/file/d/1GW-VUPBhX3iX25wYP10Xb3NxS6OXx506/view) and [Chapter6 FLAC backup](https://drive.google.com/file/d/1t3dpzsMPjXKl7d6XMw3Si0jcLCazoB0b/view), in `USD Impact/04_Language_Packs`.
+- [Four-sample browser listening kit ZIP](https://drive.google.com/file/d/17rjvWeW02CyPf4UyOdWoJiIS1DjJ8pwf/view), [signal QA report](https://drive.google.com/file/d/1o7Qs3eYWZeDbg6uGlOS3myC15TY-37dh/view) and [machine-readable measurements](https://drive.google.com/file/d/1viOeVAS0u2M55rvwVSuUuSrHlOfaX6o9/view) in `USD Impact/09_QA_Reports`. Drive readback confirms `shared=false`, owner-only for all five files.
+
+**Human listening gate — PENDING:** Download/extract the four-sample kit and open `index.html`. Confirm corrected Chapter5 closes with the full disclaimer and **no trailing `Parte tres`**, and corrected Chapter6 starts with a complete natural `Parte tres. Capítulo seis` without missing syllables/clicks. Keep Chapter5's earlier opening and Chapter6's later closing heading for their own boundaries. Reply PASS/FAIL/UNCLEAR. Do **not** import the corrected WAVs or change selected composition IDs before scoped owner acceptance. Full-length imported-track review and final mastering remain separate.
+
+**Release holds unchanged:** PR #797 DRAFT/unmerged, public Descript publishing zero, member and Production OFF, final mastering approval PENDING.

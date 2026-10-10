@@ -101,7 +101,7 @@ function queuedFetch(responses) {
       attempt_count: 1,
     }], 201),
     jsonResponse([{ id: 'outbox-1', status: 'accepted', provider_message_ref: emailId }]),
-    jsonResponse(null, 204),
+    jsonResponse([{ id: 'outbox-1', status: 'delivered', provider_message_ref: emailId }]),
     jsonResponse(null, 204),
   ]);
   const response = responseMock();
@@ -117,6 +117,8 @@ function queuedFetch(responses) {
   assert.equal(calls[1].method, 'GET');
   assert.match(calls[1].url, /notification_outbox/);
   assert.equal(calls[2].method, 'PATCH');
+  assert.equal(new URL(calls[2].url).searchParams.get('status'), 'eq.accepted');
+  assert.equal(calls[2].headers.Prefer, 'return=representation');
   assert.deepEqual(calls[2].body, {
     status: 'delivered',
     delivered_at: '2026-08-20T11:59:30.000Z',

@@ -544,11 +544,12 @@
       "private_review_composition_id": "6a251168-1d0d-4a9d-b9ea-daed1d1db016",
       "duration_seconds": 883.028,
       "mastering_status": "PENDING",
-      "final_listening_status": "PENDING",
+      "final_listening_status": "OWNER_PASS_FINAL_18_SECOND_EXCERPT_FULL_TRACK_PENDING",
       "public_allowed": false,
       "is_repair_candidate": true,
       "original_untouched_composition_id": "aef945b9-0b31-48ad-9ec6-270c80f639c7",
-      "source_reference_repair": "transcript PASS; human seam listening PENDING"
+      "source_reference_repair": "transcript PASS; human seam listening PENDING",
+      "appendix_b_ending_qa": "OWNER_PASS_14_25_TO_14_43_ONLY"
     },
     {
       "track": "19",
@@ -826,6 +827,17 @@
       "mastered_output_approval": "NOT_GRANTED",
       "publication_approval": "NOT_GRANTED",
       "release_allowed": false
+    },
+    "appendix_b_ending_owner_pass": {
+      "date": "2026-10-10",
+      "response": "PASS",
+      "scope": "Selected Appendix B at 14:25 to 14:43 only",
+      "composition_id": "6a251168-1d0d-4a9d-b9ea-daed1d1db016",
+      "full_track_listening": "PENDING",
+      "source_identifier_character_accuracy": "UNVERIFIED",
+      "editorial_review": "PENDING",
+      "mastering": "PENDING",
+      "publication_allowed": false
     }
   },
   "frontmatter_boundary_review": {

@@ -283,3 +283,13 @@ The owner previously replied **PASS** for the four before/after Chapter6 ending 
 - The failed import placeholders (four 6-second compositions) are **NOT valid audio candidates**. Original compositions and earlier selections remain in the private Descript project.
 
 **Human acoustic approval:** `PASS` on the *offline samples only*. Direct full-chapter imported playback and whole-book listening **PENDING**. Technical final master LUFS/peak and legal/editorial review **PENDING**. These two corrected imported compositions are selected solely for private pre-master QA. PR #797 DRAFT/unmerged; Production/member delivery OFF; Descript public publishes 0.
+
+## October 10 — Chapter7→8 A/B sample listening PENDING
+
+The owner provided the full corrected Chapter8 candidate WAV. A PRIVATE offline technical correction moved the existing recorded Chapter7 final `Parte tres` to the beginning of Chapter8 at quiet 1070.800s, retaining all 91,881,565 PCM samples in order (input/output SHA-256 `018fd18b447707a314ec50309e8f9abd50eb75cb14b3f1ccbd3e789dcc27fc50`). New unselected durations: Chapter7 **1070.800000s**, Chapter8 **1012.682200s**. Chapter7 opening `Parte tres` and all previous corrected Chapter8 material remain intact.
+
+**Owner verdict for this exact correction: PENDING.** Four before/after samples packaged in [owner-only listening kit](https://drive.google.com/file/d/1hVRVPCWdcDzwfLSBxn1TM4bsXa3rP7-R/view). Ask for explicit PASS / FAIL / UNCLEAR; prior PASS on Chapter6→7 does NOT extend to Chapter7→8. Existing current selected compositions unchanged, no new Descript imports.
+
+Both full corrected WAVs are saved to Library, lossless FLAC backups and QA metrics to owner-only Google Drive. Details/metadata in `SPANISH_AUDIOBOOK_CH02_TO_CH08_HEADING_REVIEW_2026-10-09.md`.
+
+**Release boundary:** PR #797 draft/unmerged, public publishing 0, Production/member delivery OFF, full 20-track listening and mastering PENDING.

@@ -56,6 +56,11 @@ function response(payload, status = 200) {
   assert.deepEqual(body.to, [recipient]);
   assert.equal(body.from, environment.RESEND_FROM_EMAIL);
   assert.equal(body.reply_to, environment.RESEND_REPLY_TO);
+  assert.deepEqual(body.tags, [
+    { name: 'usd_impact_app', value: 'usd_impact' },
+    { name: 'usd_impact_scope', value: 'development' },
+    { name: 'usd_impact_flow', value: 'weekly_newsletter' },
+  ]);
   assert.equal(body.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
   assert.equal(Object.hasOwn(body, 'cc'), false);
   assert.equal(Object.hasOwn(body, 'bcc'), false);
@@ -85,6 +90,12 @@ assert.throws(
   const result = await productionAdapter.send(message);
   assert.equal(result.state, 'accepted');
   assert.equal(captured.url, 'https://api.resend.com/emails');
+  const body = JSON.parse(captured.options.body);
+  assert.deepEqual(body.tags, [
+    { name: 'usd_impact_app', value: 'usd_impact' },
+    { name: 'usd_impact_scope', value: 'production' },
+    { name: 'usd_impact_flow', value: 'weekly_newsletter' },
+  ]);
 }
 
 assert.throws(

@@ -1,0 +1,2 @@
+Divulgación del proveedor de producción
+La producción v2 utiliza series de datos de mercado identificadas y divulgadas para la automatización y aplica filtros separados de frescura antes de publicar. Las series actuales de producción son referencias de Yahoo Finance para DXY, WTI, S y P quinientos, VIX, Bitcoin y oro, y series de FRED para los rendimientos del Treasury estadounidense a 2 y 10 años. Esa elección de automatización no elimina la disciplina de fuentes del libro.

@@ -1,0 +1,241 @@
+{
+  "version": 1,
+  "track": "18",
+  "chapter": null,
+  "title": "Apéndice B — Metodología de la USD Impact Score",
+  "source": {
+    "drive_id": "1hjOXZdqT1DajsiGvNm8motQIJ4yuxi6zNwDiU1bpYnU",
+    "line_slice": [
+      1080,
+      1155
+    ],
+    "edition": "Spanish Edition 1.3 Candidate 1"
+  },
+  "voice": {
+    "name": "Narrator Mateo",
+    "id": "626ca51acb2e496f8dcee8d7591fda3c",
+    "locale": "es-419",
+    "speed": 0.92
+  },
+  "track_status": "ALL_15_PRIVATE_ASSEMBLED_REPAIR_CANDIDATE_READY_LISTEN_MASTERING_HOLD",
+  "next_segment": null,
+  "do_not_regenerate": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15"
+  ],
+  "special_narration": "docs/localization/SPANISH_AUDIOBOOK_SPECIAL_NARRATION_FORMS_2026-10-07.md",
+  "structured_narration": "docs/localization/SPANISH_AUDIOBOOK_STRUCTURED_TABLE_NARRATION_2026-10-07.md",
+  "segments": [
+    {
+      "id": "1",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-01.txt",
+      "media_url": null
+    },
+    {
+      "id": "2",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-02.txt",
+      "media_url": null
+    },
+    {
+      "id": "3",
+      "status": "private_audio_assembled_SUSPECTED_MATERIAL_SPEECH_OMISSION_REPAIR_REQUIRED",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-03.txt",
+      "media_url": null
+    },
+    {
+      "id": "4",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-04.txt",
+      "media_url": null
+    },
+    {
+      "id": "5",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-05.txt",
+      "media_url": null
+    },
+    {
+      "id": "6",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-06.txt",
+      "media_url": null
+    },
+    {
+      "id": "7",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-07.txt",
+      "media_url": null
+    },
+    {
+      "id": "8",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-08.txt",
+      "media_url": null
+    },
+    {
+      "id": "9",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-09.txt",
+      "media_url": null
+    },
+    {
+      "id": "10",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-10.txt",
+      "media_url": null
+    },
+    {
+      "id": "11",
+      "status": "private_audio_assembled_provider_timestamp_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-11.txt",
+      "media_url": null
+    },
+    {
+      "id": "12",
+      "status": "private_audio_assembled_content_QA_pending",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-12.txt",
+      "media_url": null
+    },
+    {
+      "id": "13",
+      "status": "private_audio_assembled_content_QA_pending",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-13.txt",
+      "media_url": null
+    },
+    {
+      "id": "14",
+      "status": "private_audio_assembled_content_QA_pending",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-14.txt",
+      "media_url": null
+    },
+    {
+      "id": "15",
+      "status": "private_audio_assembled_content_QA_pending",
+      "text_file": "docs/localization/spanish-audiobook-track-18/segment-15.txt",
+      "media_url": null
+    }
+  ],
+  "batch_a": {
+    "run_id": 37842325398,
+    "artifact_id": 11577893181,
+    "generated_segments": 8,
+    "descript_import_job": "project-media-import-87f9ad2c-40ac-41f3-92ea-0d03fdc80696",
+    "import_result": "cancelled_stalled_job_after_media_import_recovered",
+    "descript_composition_id": "aef945b9-0b31-48ad-9ec6-270c80f639c7",
+    "verified_media_segments": 8
+  },
+  "batch_b": {
+    "run_id": 37844306100,
+    "artifact_id": 11579291355,
+    "completed_segments": [
+      "9",
+      "10",
+      "11"
+    ],
+    "failed_at_segment": "12",
+    "reason": "HeyGen insufficient_credit",
+    "unattempted_segments": [
+      "13",
+      "14",
+      "15"
+    ],
+    "retry_policy": "Do not retry or regenerate already completed 1-11; resume 12-15 only after provider credit available and approved.",
+    "publish_allowed": false,
+    "import_job_id": "project-media-import-aec47d57-90bb-4535-aeb0-71595fc73fdf",
+    "import_result": "success",
+    "imported_segments": [
+      "9",
+      "10",
+      "11"
+    ]
+  },
+  "qa_checkpoint_2026_10_09": {
+    "verified_segments": 11,
+    "assembled_duration_seconds": 607.268566,
+    "independent_audio_files": 11,
+    "mp3_decode": "PASS",
+    "silence_gaps_longer_than_4s": 0,
+    "provider_word_timestamp_match": "1252/1252 normalized source narration script tokens (100%); not an independent listening verification",
+    "descript_transcript": "REPAIRED STT text for clips 03-08, but material segment 03 discrepancy persists: ~28 source tokens missing from independent transcript; 16 consecutive zero-duration word timestamps at 39.457s support suspected compressed/omitted speech",
+    "public_release": "HOLD",
+    "provider_credits_remaining": 0,
+    "provider_credit_reset_utc": "2026-10-13T19:31:48Z",
+    "pending_segments": [
+      "12",
+      "13",
+      "14",
+      "15"
+    ],
+    "resume_rule": "Do not trigger generation while credits are zero; do not retry 1-11. Generate 12-15 only after verified credits, then complete independent transcription, listening and mastering QA.",
+    "source_tokens_01_to_11": 1252,
+    "descript_transcript_tokens_01_to_11": 1200,
+    "descript_exact_matched_tokens": 1159,
+    "descript_exact_match_pct": 92.57,
+    "descript_source_omitted_tokens": 53,
+    "descript_institutional_reference_omission_approx_tokens": 28,
+    "descript_repair_job_id": "project-agent-edit-2f542797-4a70-4d44-a164-76dee15859ca-60e240c5-16e1-45b1-adaf-9dec3ed2f0b2",
+    "descript_repair_job_result": "success; script readback still needs segment03 acoustic remediation; no audio edits",
+    "segment03_heygentimestamps_zero_duration_consecutive": 16,
+    "segment03_inspect_timeline_seconds": "171-181",
+    "segment03_remediation_plan": "docs/localization/SPANISH_AUDIOBOOK_APP_B_SEGMENT03_REPAIR_PLAN_2026-10-09.md",
+    "qa_disposition": "HOLD, NOT PASS: suspected material spoken omission and pending independent listening/mastering",
+    "publisher_hold": true
+  },
+  "segment12_recovery": {
+    "run_id": 37848963290,
+    "artifact_id": 11581316339,
+    "format": "mp3",
+    "duration_seconds": 69.041633,
+    "import_status": "success",
+    "public_allowed": false
+  },
+  "batch_c": {
+    "run_id": 37849165505,
+    "artifact_id": 11580478314,
+    "segments": [
+      "13",
+      "14",
+      "15"
+    ],
+    "status": "synthesis_and_import_success",
+    "duration_seconds": 182.752653
+  },
+  "full_assembly": {
+    "composition_id": "aef945b9-0b31-48ad-9ec6-270c80f639c7",
+    "duration_seconds": 859.06285,
+    "segments": 15,
+    "import_pass": true,
+    "transcript_qa": "HOLD — segment 03 suspected omission",
+    "listening_qa": "PENDING",
+    "public_release": false
+  },
+  "private_repair_candidate": {
+    "comp_id": "6a251168-1d0d-4a9d-b9ea-daed1d1db016",
+    "original_id": "aef945b9-0b31-48ad-9ec6-270c80f639c7",
+    "candidate_duration_seconds": 883.027503,
+    "original_duration_seconds": 859.06285,
+    "independent_transcript_source_token_coverage_percent": 95.75,
+    "detected_source_omissions_4plus": 0,
+    "notes": "Standalone repaired source-reference sentence replaces faulty tail in private duplicate at actual 40.89s spoken boundary. Original canonical remains unchanged. One 3-word numerical mismatch is word-form ASR. Candidate NOT approved for public release without listening and mastering.",
+    "synthesis_run_id": 37850234396,
+    "repair_manifest": "docs/localization/spanish-audiobook-repair-18-03-index-2026-10-09.json",
+    "human_listening_qa": "PENDING",
+    "mastering_qa": "PENDING",
+    "public_allowed": false
+  }
+}

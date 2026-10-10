@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "track": "14",
+  "chapter": 12,
+  "title": "Errores frecuentes en el análisis del dólar y multiactivo",
+  "source": {
+    "drive_id": "1hjOXZdqT1DajsiGvNm8motQIJ4yuxi6zNwDiU1bpYnU",
+    "line_slice": [
+      764,
+      826
+    ],
+    "edition": "Spanish Edition 1.3 Candidate 1"
+  },
+  "voice": {
+    "name": "Narrator Mateo",
+    "id": "626ca51acb2e496f8dcee8d7591fda3c",
+    "locale": "es-419",
+    "speed": 0.92
+  },
+  "track_status": "PRIVATE_CONTENT_AND_ASSEMBLY_QA_PASS_MASTERING_HOLD",
+  "next_segment": null,
+  "do_not_regenerate": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20"
+  ],
+  "segments": [
+    {
+      "id": "1",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-01.txt",
+      "media_url": null
+    },
+    {
+      "id": "2",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-02.txt",
+      "media_url": null
+    },
+    {
+      "id": "3",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-03.txt",
+      "media_url": null
+    },
+    {
+      "id": "4",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-04.txt",
+      "media_url": null
+    },
+    {
+      "id": "5",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-05.txt",
+      "media_url": null
+    },
+    {
+      "id": "6",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-06.txt",
+      "media_url": null
+    },
+    {
+      "id": "7",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-07.txt",
+      "media_url": null
+    },
+    {
+      "id": "8",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-08.txt",
+      "media_url": null
+    },
+    {
+      "id": "9",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-09.txt",
+      "media_url": null
+    },
+    {
+      "id": "10",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-10.txt",
+      "media_url": null
+    },
+    {
+      "id": "11",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-11.txt",
+      "media_url": null
+    },
+    {
+      "id": "12",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-12.txt",
+      "media_url": null
+    },
+    {
+      "id": "13",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-13.txt",
+      "media_url": null
+    },
+    {
+      "id": "14",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-14.txt",
+      "media_url": null
+    },
+    {
+      "id": "15",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-15.txt",
+      "media_url": null
+    },
+    {
+      "id": "16",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-16.txt",
+      "media_url": null
+    },
+    {
+      "id": "17",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-17.txt",
+      "media_url": null
+    },
+    {
+      "id": "18",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-18.txt",
+      "media_url": null
+    },
+    {
+      "id": "19",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-19.txt",
+      "media_url": null
+    },
+    {
+      "id": "20",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-14/segment-20.txt",
+      "media_url": null
+    }
+  ],
+  "partial_recovery": {
+    "source_run_id": 37832890846,
+    "private_artifact_id": 11574746300,
+    "private_artifact_sha256": "60cef779a28a96665adeddd7d7c95e85d6a4adba5b82b78c8f58888a44b23199",
+    "audio_segments_recovered": 15,
+    "audio_segments_checked_readable": 15,
+    "transcription_qa": "PASS",
+    "failed_segment": "16",
+    "failure_reason": "HeyGen internal_error; no audio returned; do not blindly rerun full batch",
+    "verified_descript_composition": "6d0cfdc6-410d-489c-b754-9430421be2ad",
+    "verified_audio_duration_seconds": 897.906933,
+    "transcript_alignment": {
+      "source_tokens": 1897,
+      "transcript_tokens": 1897,
+      "matching_tokens": 1888,
+      "exact_token_match_percent": 99.53,
+      "source_only_tokens": 1,
+      "transcript_only_tokens": 1,
+      "substitutions": 8,
+      "multiword_omission_count": 0,
+      "qa_scope": "Descript transcript versus prepared narration scripts 1-15; not a substitute for end-to-end listening QA"
+    }
+  },
+  "remainder_recovery": {
+    "source_run_id": 37835913193,
+    "artifact_id": 11574778953,
+    "artifact_sha256": "sha256:acca48f958f0b367a81a3028e22564e9b859a9b2753d7e500ec1eab0bd2e6c2d",
+    "generated_audio_segments": 5,
+    "audio_duration_seconds": 270.106,
+    "codec_note": "Provider URLs end in .wav but downloaded bytes are MP3; corrected file extensions required for final delivery.",
+    "descript_import_job_id": "project-media-import-ebaf35ea-ea11-4b40-ac91-674581b43bc5"
+  },
+  "full_chapter_qa": {
+    "source": "Spanish Edition 1.3 Candidate 1 lines 764-826 (literal URLs excluded from spoken comparison)",
+    "private_descript_project_id": "2f542797-4a70-4d44-a164-76dee15859ca",
+    "private_composition_id": "6d0cfdc6-410d-489c-b754-9430421be2ad",
+    "imported_segments": 20,
+    "composition_duration_seconds": 1168.013053,
+    "source_tokens": 2405,
+    "transcript_tokens": 2408,
+    "exact_source_tokens_in_transcript": 2385,
+    "exact_source_token_alignment_percent": 99.17,
+    "source_edit_rate_percent": 1.12,
+    "omitted_material_multiword_sequences": 0,
+    "disposition": "PASS for private content, narration and assembly; final listening/mastering and editorial chapter-boundary clean-up remain required",
+    "provider_format": "mp3 audio bytes; some historical filenames/URLs use .wav suffix",
+    "editing_note": "Chapter-end PARTE CINCO originates from next repeated part header; trim or reposition during final audio master without blindly regenerating completed audio",
+    "mastering_note": "decoded MP3 true peak overages observed; level/limit in final master before public distribution",
+    "production_release": "HOLD"
+  }
+}

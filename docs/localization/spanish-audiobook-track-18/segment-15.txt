@@ -1,0 +1,2 @@
+Si alguna respuesta no está clara, trata la Score como un punto de partida para un análisis adicional, no como una conclusión de régimen terminada. Metodología en vivo de Score v2 y artefactos de auditoría
+Corte metodológico para este candidato de publicación: autoridad del sitio web a86e57dafe91da67553e73e01bb0c703a868c949; autoridad del pipeline de Score f51f7abf2d4ec99890eb5537424f6faab885ef32.

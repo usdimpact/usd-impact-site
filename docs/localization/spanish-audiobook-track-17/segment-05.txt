@@ -1,0 +1,3 @@
+Institución financiera internacional con sede en Basilea; foro de cooperación entre bancos centrales y editor del Triennial Central Bank Survey de los mercados FX. COFER
+Currency Composition of Official Foreign Exchange Reserves del FMI. Conjunto de datos trimestral con la composición por divisa de las reservas oficiales asignadas. La cuota del dólar en COFER es la medida estándar al hablar del estatus de divisa de reserva. TIPS
+Treasury Inflation-Protected Securities. Bonos del Tesoro de Estados Unidos cuyo principal se ajusta por inflación. El rendimiento de los TIPS a 10 años (D F I I diez) es la medida estándar de la tasa de interés real, que afecta al coste de oportunidad de mantener oro.

@@ -1,0 +1,303 @@
+name: Spanish Audiobook HeyGen API
+
+on:
+  workflow_dispatch:
+    inputs:
+      segment:
+        description: "Track 06 segment to synthesize"
+        required: true
+        default: "11"
+        type: string
+  push:
+    branches:
+      - feat/spanish-audiobook-pilot-foundation
+    paths:
+      - docs/localization/heygen-api-trigger.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: spanish-audiobook-heygen-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  synthesize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+      TRIGGER: docs/localization/heygen-api-trigger.json
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      # Fail closed while the canonical private manifest keeps synthesis disabled.
+      # A separate, explicit private_synthesis_approval is required for any repair.
+      # Documentation edits and manual dispatch must not generate new audio by default.
+      - name: Enforce private synthesis authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          APPROVAL_MANIFEST="docs/localization/SPANISH_AUDIOBOOK_PRIVATE_REVIEW_SEQUENCE_2026-10-09.json"
+          if ! jq -e '
+            .private_synthesis_approval == "APPROVED" and
+            .production_enabled == false and
+            .public_allowed == false and
+            .merge_allowed == false and
+            .publication_approval == "NOT_GRANTED"
+          ' "$APPROVAL_MANIFEST" >/dev/null; then
+            echo "Private synthesis HOLD: manifest does not explicitly allow generation." >&2
+            exit 16
+          fi
+
+      - name: Validate request and secret
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${HEYGEN_API_KEY:-}" ]; then
+            echo "HEYGEN_API_KEY repository secret is missing." >&2
+            exit 2
+          fi
+
+          if ! jq -e --arg voice "626ca51acb2e496f8dcee8d7591fda3c" '
+            .voice_id == $voice and
+            .voice == "Narrator Mateo" and
+            .locale == "es-419" and
+            .speed == 0.92 and
+            .mode == "funded-api-balance-batch"
+          ' "$TRIGGER" >/dev/null; then
+            echo "Trigger voice, locale, speed, or mode is not approved." >&2
+            exit 11
+          fi
+
+          TRACK="$(jq -r '.track' "$TRIGGER")"
+          case "$TRACK" in
+            00)
+              # Private replacement opening only; no public delivery.
+              INDEX="docs/localization/spanish-audiobook-track-00-index-2026-10-09.json"
+              MODE="files"
+              ;;
+            06)
+              INDEX="docs/localization/spanish-audiobook-track-06-chapter-4-manifest-2026-10-07.json"
+              MODE="inline"
+              ;;
+            07)
+              INDEX="docs/localization/spanish-audiobook-track-07-index-2026-10-07.json"
+              MODE="files"
+              ;;
+            08)
+              INDEX="docs/localization/spanish-audiobook-track-08-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            09)
+              INDEX="docs/localization/spanish-audiobook-track-09-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            10)
+              INDEX="docs/localization/spanish-audiobook-track-10-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            11)
+              INDEX="docs/localization/spanish-audiobook-track-11-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            12)
+              INDEX="docs/localization/spanish-audiobook-track-12-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            13)
+              INDEX="docs/localization/spanish-audiobook-track-13-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            14)
+              INDEX="docs/localization/spanish-audiobook-track-14-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            15)
+              INDEX="docs/localization/spanish-audiobook-track-15-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            16)
+              INDEX="docs/localization/spanish-audiobook-track-16-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            17)
+              INDEX="docs/localization/spanish-audiobook-track-17-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            18)
+              INDEX="docs/localization/spanish-audiobook-track-18-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            19)
+              INDEX="docs/localization/spanish-audiobook-track-19-index-2026-10-08.json"
+              MODE="files"
+              ;;
+            99)
+              # Isolated private QA audio repair; NEVER a member-facing track.
+              INDEX="docs/localization/spanish-audiobook-repair-18-03-index-2026-10-09.json"
+              MODE="files"
+              ;;
+            *)
+              echo "This guarded workflow permits private opening Track 00, production Tracks 06-19 and private repair 99 only." >&2
+              exit 3
+              ;;
+          esac
+
+          echo "TRACK=$TRACK" >> "$GITHUB_ENV"
+          echo "INDEX=$INDEX" >> "$GITHUB_ENV"
+          echo "MODE=$MODE" >> "$GITHUB_ENV"
+
+          jq -c '
+            if (.segments? | type) == "array" then .segments
+            elif .segment? then [.segment]
+            else error("trigger must contain segment or segments")
+            end
+          ' "$TRIGGER" > requested-segments.json
+
+          if ! jq -e 'all(.[]; type == "string") and (length == (unique | length))' requested-segments.json >/dev/null; then
+            echo "Requested segment IDs must be unique strings." >&2
+            exit 12
+          fi
+
+          COUNT="$(jq 'length' requested-segments.json)"
+          if [ "$COUNT" -lt 1 ] || [ "$COUNT" -gt 30 ]; then
+            echo "Requested segment count must be between 1 and 30." >&2
+            exit 4
+          fi
+
+          jq -r '.[]' requested-segments.json | while IFS= read -r SEGMENT_ID; do
+            STATUS="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .status' "$INDEX")"
+            if [ -z "$STATUS" ] || [ "$STATUS" = "null" ]; then
+              echo "Unknown segment: $SEGMENT_ID" >&2
+              exit 5
+            fi
+            if [ "$STATUS" != "pending" ]; then
+              echo "Refusing to regenerate segment $SEGMENT_ID because status is $STATUS." >&2
+              exit 6
+            fi
+
+            if [ "$MODE" = "files" ]; then
+              TEXT_FILE="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text_file' "$INDEX")"
+              if [ -z "$TEXT_FILE" ] || [ "$TEXT_FILE" = "null" ] || [ ! -f "$TEXT_FILE" ]; then
+                echo "Missing text file for segment $SEGMENT_ID: $TEXT_FILE" >&2
+                exit 7
+              fi
+            else
+              TEXT="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text' "$INDEX")"
+              if [ -z "$TEXT" ] || [ "$TEXT" = "null" ]; then
+                echo "Missing inline text for segment $SEGMENT_ID" >&2
+                exit 8
+              fi
+            fi
+          done
+
+      - name: Install HeyGen CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://static.heygen.ai/cli/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify API-key authentication
+        shell: bash
+        run: |
+          set -euo pipefail
+          heygen auth status > /dev/null
+          echo "HeyGen API authentication verified."
+
+      - name: Synthesize requested Mateo segments
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p output
+
+          jq -r '.[]' requested-segments.json | while IFS= read -r SEGMENT_ID; do
+            echo "=== START track $TRACK segment $SEGMENT_ID ==="
+
+            if [ "$MODE" = "files" ]; then
+              TEXT_FILE="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text_file' "$INDEX")"
+              TEXT="$(cat "$TEXT_FILE")"
+            else
+              TEXT="$(jq -r --arg id "$SEGMENT_ID" '.segments[] | select(.id == $id) | .text' "$INDEX")"
+            fi
+
+            printf '%s' "$TEXT" > "output/segment-$SEGMENT_ID.txt"
+
+            if ! heygen voice speech create \
+              --text "$TEXT" \
+              --voice-id "626ca51acb2e496f8dcee8d7591fda3c" \
+              --input-type text \
+              --speed 0.92 \
+              --locale es-419 \
+              > "output/speech-response-$SEGMENT_ID.json"; then
+              echo "Provider did not complete track $TRACK segment $SEGMENT_ID. Stop without retrying." >&2
+              exit 13
+            fi
+
+            # GitHub logs may be public. Keep media URLs and word timestamps only in the
+            # short-lived Actions artifact, never print the raw provider response.
+            DURATION="$(jq -r '.data.duration // .duration // "unknown"' "output/speech-response-$SEGMENT_ID.json")"
+            echo "Speech created for track $TRACK segment $SEGMENT_ID (duration=$DURATION s)."
+
+            URL="$(jq -r '
+              .data.audio_url //
+              .data.audioUrl //
+              .audio_url //
+              .audioUrl //
+              .data.url //
+              .url //
+              empty
+            ' "output/speech-response-$SEGMENT_ID.json")"
+
+            if [ -z "$URL" ]; then
+              echo "Could not find audio URL for segment $SEGMENT_ID." >&2
+              exit 9
+            fi
+
+            # The provider sometimes serves MP3 bytes with a .wav URL suffix.
+            # Name the downloaded file by its actual bytes, not its URL extension.
+            AUDIO_TMP="output/track$TRACK-segment-$SEGMENT_ID.download"
+            curl -fsSL "$URL" -o "$AUDIO_TMP"
+            if [ ! -s "$AUDIO_TMP" ]; then
+              echo "Downloaded audio is empty for segment $SEGMENT_ID." >&2
+              exit 14
+            fi
+            AUDIO_MAGIC="$(head -c 4 "$AUDIO_TMP" | od -An -tx1 | tr -d '[:space:]')"
+            case "$AUDIO_MAGIC" in
+              52494646*) AUDIO_EXT="wav" ;;
+              494433*|fffb*|fff3*|fff2*) AUDIO_EXT="mp3" ;;
+              *)
+                echo "Unrecognized audio format for segment $SEGMENT_ID." >&2
+                exit 15
+                ;;
+            esac
+            mv "$AUDIO_TMP" "output/track$TRACK-segment-$SEGMENT_ID.$AUDIO_EXT"
+            echo "Audio format verified for segment $SEGMENT_ID: $AUDIO_EXT"
+
+            jq -n \
+              --arg track "$TRACK" \
+              --arg segment "$SEGMENT_ID" \
+              --arg voice "Narrator Mateo" \
+              --arg voice_id "626ca51acb2e496f8dcee8d7591fda3c" \
+              --arg locale "es-419" \
+              --arg speed "0.92" \
+              --arg audio_format "$AUDIO_EXT" \
+              --arg audio_url "$URL" \
+              '{track:$track,segment:$segment,voice:$voice,voice_id:$voice_id,locale:$locale,speed:($speed|tonumber),audio_format:$audio_format,audio_url:$audio_url}' \
+              > "output/result-manifest-$SEGMENT_ID.json"
+
+            echo "=== COMPLETE track $TRACK segment $SEGMENT_ID ==="
+          done
+
+      - name: Upload private QA artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: spanish-audiobook-track${{ env.TRACK }}-batch-${{ github.run_id }}
+          path: output/
+          if-no-files-found: warn
+          retention-days: 7

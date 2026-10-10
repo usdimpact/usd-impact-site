@@ -212,3 +212,11 @@ The owner explicitly replied **PASS ALL** after listening to three targeted Part
 Full [private 20-track evidence report](./SPANISH_AUDIOBOOK_FULL_20_TRACK_PRIVATE_PREFLIGHT_2026-10-10.md) retains four whole-book listening blocks and exact private links. The 20 selected compositions reconcile to 17,749.053398s, with 0 Descript publishes.
 
 **RELEASE HOLD unchanged:** Descript private selected candidates only, final media masters not exported/measured, complete listening PENDING, PR #797 draft/unmerged, Production/member delivery OFF, editorial/legal/mastering approval PENDING.
+
+## October 10 — Private browser export and QA runbook linked
+
+Created [browser-only private 20-track export and acceptance runbook](./SPANISH_AUDIOBOOK_PRIVATE_20_TRACK_EXPORT_AND_QA_RUNBOOK_2026-10-10.md) with 20 exact selected composition URLs/UUIDs, expected durations, private WAV filenames, four end-to-end listening blocks, mandatory Track00 and Appendix A/B targeted playback checks, and provisional exported-media signal tests. This reduces manual ambiguity and excludes failed 6-second placeholders.
+
+**Track00 choice is resolved for private pre-master** as copyright-tail QA v2 `ebe7f026-e369-4dd4-a184-9476a6482f5b`, with original rollback preserved. **No selection preference question remains.** The remaining audio gate is factual: actual private exported v2 full playback, LUFS/true peak and click verification. The selected Appendix B last 13.144 seconds needs direct audio listening, not changes based solely on incomplete ASR.
+
+The connected Descript tools cannot privately export the final WAV media themselves (timeline is metadata only; publication is prohibited), so **full mastering must not be called complete** until the actual private audio exports are present, objectively measured and owner-approved. No Production or member delivery. PR #797 DRAFT and unmerged, Descript public publishes 0, mastering status PENDING.

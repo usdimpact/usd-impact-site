@@ -22,6 +22,20 @@ Scope: selected private Spanish Edition 1.3 Candidate 1 audiobook, draft [PR #79
 
 The manuscript distinguishes automated production feeds from independent primary/benchmark cross-check sources in Appendix B. Do **not** interpret this textual review as verification of live market data providers, URL availability, or correctness of a current Score publication.
 
+## Direct source-link check — 2026-10-10
+
+Five **printed manuscript** URLs in the Chapter 13 selected references were opened against their official sites. Each resolves to the expected source/topic:
+
+- Federal Reserve H.10: https://www.federalreserve.gov/releases/h10/
+- St. Louis Fed FRED: https://fred.stlouisfed.org/
+- EIA Weekly Petroleum Status Report: https://www.eia.gov/petroleum/supply/weekly/
+- CME WTI crude futures: https://www.cmegroup.com/markets/energy/crude-oil/light-sweet-crude.html
+- CFTC Commitments of Traders: https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm
+
+**Editorial link improvement identified:** the Chapter 13 manuscript citation names both CME **and ICE** but supplies only the CME WTI link. A separate official ICE US Dollar Index futures product reference is available at https://www.ice.com/products/194/US-Dollar-Index-USDX-Futures. Consider adding it in a future editorial version if both references are intended to be clickable. This is a documented completeness suggestion, **not** a claim that the existing CME URL is broken, nor authorization to change the frozen manuscript.
+
+These checks establish page/topic availability only, not data licensing, real-time feed integrity, current Score methodology validation or an independent audit of every hyperlink in the full book.
+
 ## Appendix B authority identifiers — source provenance resolved
 
 The manuscript's two identifiers are genuine, distinct repository commits:

@@ -202,3 +202,13 @@ The owner explicitly replied **PASS ALL** after listening to three targeted Part
 5. **Editorial and legal review** of source headings, copyright exception wording, checksums/production metadata and track-level compliance remains separate.
 
 **Mastering gate remains PENDING.** PR #797 is DRAFT/unmerged, Descript public publishes remain zero; member delivery, Prod and merge OFF. No release authorization is inferred from prior snippet/reel PASS responses or this preflight.
+
+## October 10 — Track00 choice delegated and selected v2 retained; Appendix B source narrowed
+
+**Track00 private selection conflict CLOSED:** Owner said `it doesn't matter, continue`. The 20-track selected private manifest remains on previously listened and currently selected `ebe7f026-e369-4dd4-a184-9476a6482f5b` (copyright-tail QA v2, 109.835306s). The conflicting `track00_current_selection` was updated to that ID and historic first-original `91240c6b-78df-4910-a994-43c616f9b53f` preserved under `track00_selection_history`, not deleted. Current choice is **only for PRIVATE pre-master**; prior owner v2 PASS applied to 0–9s and 42–51s, not the full rendered master. Actual WAV/encoded LUFS, true peak and click checks remain PENDING. Original's click is not assumed to be present in v2.
+
+**Appendix B ending issue refined:** Private source asset `18-15.mp3` is present and continuous through selected composition's 883.028s end. Its SRT ends at 869.884s. Source manuscript pipeline hash `f51f7abf2d4ec99890eb5537424f6faab885ef32` differs from Descript's TXT ASR `F51F7ABF2D4EXE99890EB55374246FAB885F32`. Cannot conclude audio is incorrect or silent; check 14:25–14:43 on actual selected track and verify intended audiobook treatment of hash. Selected Appendix A/B opening ASR needs targeted pronunciation review. No source changes, TTS or speculative edits.
+
+Full [private 20-track evidence report](./SPANISH_AUDIOBOOK_FULL_20_TRACK_PRIVATE_PREFLIGHT_2026-10-10.md) retains four whole-book listening blocks and exact private links. The 20 selected compositions reconcile to 17,749.053398s, with 0 Descript publishes.
+
+**RELEASE HOLD unchanged:** Descript private selected candidates only, final media masters not exported/measured, complete listening PENDING, PR #797 draft/unmerged, Production/member delivery OFF, editorial/legal/mastering approval PENDING.

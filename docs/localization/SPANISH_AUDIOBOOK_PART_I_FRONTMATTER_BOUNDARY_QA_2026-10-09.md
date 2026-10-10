@@ -1,6 +1,6 @@
 # Spanish audiobook — private Part I boundary QA
 
-**Release disposition: PRIVATE CANDIDATES ONLY — HUMAN ACOUSTIC HOLD.** No public Descript publish, PR merge, member storage or Production change.
+**Release disposition: PRIVATE CANDIDATES ONLY — OWNER TARGETED PART I ACOUSTIC PASS; WHOLE-BOOK MASTERING AND PUBLICATION HOLD.** No public Descript publish, PR merge, member storage or Production change.
 
 ## Source discrepancy
 Spanish Edition 1.3 Candidate 1 places `PARTE I` immediately before `CAPÍTULO 1`. The selected Introduction (Track 02) instead ended with recorded `Parte uno`; the selected Chapter 1 (Track 03) began directly with `Capítulo uno`.
@@ -28,3 +28,17 @@ The draft-only 20-track review manifest now points to the private corrected cand
 4. Retain all original compositions, and do not release or master the staging copies as finals until acoustic approval.
 
 **No new speech generation, public Descript publish, or Production/member-access action.**
+
+## October 10 — Owner PASS ALL across the three standalone Part I checkpoints
+
+After the explicit request to play **three distinct private composition check regions**, the owner replied **PASS ALL**. The following acoustic checks are now accepted **for those regions only**:
+
+1. **Introduction / Track02** `aecc180b-4513-455b-a3e4-fce58da36fac`: owner listened at ~**07:59** to the intentionally retained body phrase `la parte uno` and to the **final ~10 seconds**. PASS for no audible broken phrase/unnatural gap.
+2. **Chapter1 / Track03** `686a4f65-8ff9-4141-aedb-bab9b4296602`: owner listened at the **first ~8 seconds**. PASS for the already-recorded `Parte uno` appearing once and followed naturally by `Capítulo uno`.
+3. **Chapter2 / Track04** newly created **private duplicate** `592e27f8-5337-4058-8f6d-e0f2cb749251`: owner listened at the **first ~8 seconds**. PASS for the separate, correctly repeated `Parte uno` followed naturally by `Capítulo dos`, without reported clicks/clipped syllables/awkward pause.
+
+The Chapter2 candidate was created as a duplicate of previously selected corrected `ebbadbd2-df11-4cba-95d6-a546dd7b3b51`, using a **copy** of Chapter1's existing heading recording, not newly synthesized speech and not moving/deleting the Chapter1 heading. It lasts **1108.760224s**, exactly **1.380224s** longer than the previous **1107.380000s** Chapter2. Its independently exported SRT begins with `Parte uno. Capítulo dos` and has **2301/2301** sequential normalized core tokens identical to the prior selected Chapter2 after removing only the two heading tokens. End disclaimer remains and no stray final `Parte dos`.
+
+**Private selection:** Track04 of the 20-track draft planning manifest now selects `592e27f8-5337-4058-8f6d-e0f2cb749251`; its previous selected composition `ebbadbd2-df11-4cba-95d6-a546dd7b3b51`, canonical original and Chapter1 original remain available for rollback. Structural scene-boundary history (~479s Introduction, empty opening scene Chapter1) is not deleted from the record; the owner approved the specified *audible excerpts*, not every second of the complete files.
+
+**Scope limits and hold:** Owner supplied no separate timecoded comments beyond `PASS ALL`. Exact rendered PCM equivalence for the new Chapter2 candidate is not established by the SRT and duration checks. Complete audiobook listening and mastering/export measurements remain pending. No Descript public publish, PR merge, member delivery, Production or new legal/copyright approval.

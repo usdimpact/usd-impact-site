@@ -177,3 +177,13 @@ Authoritative Spanish Edition 1.3 Candidate 1 requires an extra recorded `PARTE 
 **Evidence limit:** Descript composition metadata and SRT text verified. Actual copied opening playable audio, absence of clicks/clips and continuity of full Chapter2 recording have **not** been independently listened to or rendered. Source-window report 0–1.600s and net composition increase +1.380224s are not proof of exact signal conservation. Human QA must play new candidate first 8 seconds and separately close the prior Introduction 07:59 / end and Chapter1 start seam checks. On acoustic PASS only, re-verify 20/20 lengths, update Track04 private pre-master selection and retain previous source as rollback.
 
 **HOLD:** The existing 20-track selected manifest is unchanged; current total remains ~17,747.673174s. Full 20-track listening, final rendered LUFS/true-peak and clipping check, legal/editorial signoff, PR merge, public publishing and Production/member delivery remain blocked.
+
+## October 10 — Part I PASS ALL and revised 20-track pre-master total
+
+The owner explicitly replied **PASS ALL** after listening to three targeted Part I checkpoints: selected Introduction around 07:59 and final ~10s, selected Chapter1 opening ~8s, and duplicated corrected Chapter2 opening ~8s with copied recorded `Parte uno` ahead of `Capítulo dos`.
+
+**Private Chapter2 selection advanced:** `592e27f8-5337-4058-8f6d-e0f2cb749251` (**1108.760224s**) replaces prior private pointer `ebbadbd2-df11-4cba-95d6-a546dd7b3b51` (**1107.380000s**) for Track04. New SRT verifies preserved 2301/2301 Chapter2 core normalized tokens and intact disclaimer. Original/previous audio retained. The extra **1.380224s** changes the 20-track nominal selection sum from **17,747.673174s** to **17,749.053398s (4h55m49.053s)**, with **20/20** selected composition IDs available and metadata durations reconciled. No final mastered render was created.
+
+**Acoustic scope:** Owner-targeted clips PASS; complete audio files, all 20 chapters, post-encode peaks, LUFS and silence QA remain untested as a single final delivery set. The original Intro scene-boundary history and other distinct Appendix B, Track00, and source/compliance gates are not erased by this PASS.
+
+**Release HOLD:** Final multitrack private render/encode, whole-book human listening, true-peak/LUFS/clipping/silence measurements, editorial/legal/compliance signoff, distinct owner release authorization, PR merge and Production/member delivery remain PENDING/OFF. Public Descript publishes 0; PR #797 DRAFT/unmerged.

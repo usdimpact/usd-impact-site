@@ -318,3 +318,17 @@ Owner supplied an explicit **PASS** for the Chapter7 ending → Chapter8 opening
 - **Transcript verification: PASS:** New first cue `Parte uno`; next `Capítulo dos`; all **2301** baseline Chapter2 core normalized tokens retained in same order and disclaimer final. Agent-reported copied source window 0–1.600s vs net composition duration +1.380224s; **audio continuity remains to be heard**, do not claim PCM proof.
 - **Owner listening: PENDING.** Play new Chapter2 candidate 0–8s and report actual audio PASS/FAIL/UNCLEAR. Separately replay Introduction `aecc180b` at 07:59 and final 10s, and Chapter1 `686a4f65` at 0–8s; previous Part I intro→Chapter1 acoustic concerns remain unclosed.
 - **No permission to advance:** Do not switch selected Track04 or master/publish. PR #797 DRAFT/unmerged, public Descript publishes 0, Production/member delivery OFF, mastering approval PENDING.
+
+## October 10 — Owner PASS ALL on three Part I standalone checks
+
+**Owner's exact response:** `PASS ALL` to the explicit three-item acoustic listening request. This **closes ONLY the targeted Part I intro/heading checkpoints**, with separate results:
+
+| Track / private composition | Audition requested | Owner verdict |
+| --- | --- | --- |
+| 02 / Introduction `aecc180b-4513-455b-a3e4-fce58da36fac` | 07:59 and final 10s; restored body `la parte uno`, no clipping/gaps | **PASS** |
+| 03 / Chapter1 `686a4f65-8ff9-4141-aedb-bab9b4296602` | first 8s; single `Parte uno` then `Capítulo uno` | **PASS** |
+| 04 / Chapter2 `592e27f8-5337-4058-8f6d-e0f2cb749251` | first 8s; newly copied `Parte uno` then `Capítulo dos`, natural pause, no click | **PASS** |
+
+**Selection after listening:** new Chapter2 selected **for private pre-master QA only**; old corrected `ebbadbd2-df11-4cba-95d6-a546dd7b3b51` remains as rollback, canonical Chapter2 original intact. New composition **1108.760224s** vs **1107.380000s** prior; 2301/2301 normalized Chapter2 original core tokens remain in order; new Part I heading present. New total selected nominal duration **17,749.053398s (4h55m49.053s)** across 20/20 available compositions.
+
+**Not approved by this PASS:** full Introduction, Chapter1 or Chapter2 playback beyond the checked regions; all 20 tracks end to end; rendering/mastering settings or decoded PCM of new candidate; other Appendix/Track00 editorial gates; legal/compliance signoff; merge, publish, member access or Production. No individual error/timecode notes provided. Descript publishes 0, PR #797 DRAFT/unmerged, Production OFF and mastering PENDING.

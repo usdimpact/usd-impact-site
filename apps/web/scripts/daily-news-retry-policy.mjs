@@ -34,6 +34,7 @@ const RETRYABLE_PATTERNS = [
   /malformed catalyst array/i,
   /bounded repair budget/i,
   /after two bounded repair attempts/i,
+  /max_output_tokens/i,
 ];
 
 export function isRetryableGroundingFailure(payload) {

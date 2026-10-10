@@ -3,6 +3,7 @@
 **Created:** 2026-10-10 · **Scope:** Private pre-master/owner QA only · **Do not publish, merge or deploy**
 
 - [Live evidence report](./SPANISH_AUDIOBOOK_FULL_20_TRACK_PRIVATE_PREFLIGHT_2026-10-10.md)
+- [Non-audio editorial closeout and remaining decisions](./SPANISH_AUDIOBOOK_NON_AUDIO_CLOSEOUT_2026-10-10.md)
 - [Current selected 20-track private manifest](./SPANISH_AUDIOBOOK_PRIVATE_REVIEW_SEQUENCE_2026-10-09.json)
 - [Listener signoff tracker](./SPANISH_AUDIOBOOK_LISTENER_SIGNOFF_TRACKER_2026-10-09.md)
 - [Descript private project](https://web.descript.com/2f542797-4a70-4d44-a164-76dee15859ca)

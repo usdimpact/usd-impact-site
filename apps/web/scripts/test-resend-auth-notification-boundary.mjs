@@ -9,6 +9,7 @@ const nowMs = Date.parse('2026-09-07T12:00:00Z');
 const key = randomBytes(32);
 const emailId = '00000000-0000-4000-8000-000000000001';
 const environment = {
+  VERCEL_ENV: 'production',
   RESEND_WEBHOOK_ENABLED: 'true',
   RESEND_WEBHOOK_SECRET: `whsec_${key.toString('base64')}`,
   SUPABASE_URL: 'https://example.supabase.co',
@@ -25,6 +26,17 @@ function spanishFixture(type = 'email.delivered') {
   const event = fixture(type);
   event.data.from = 'Siguiendo el Dólar <boletin@updates.usd-impact.com>';
   event.data.subject = 'Confirma tu suscripción a Siguiendo el Dólar';
+  return event;
+}
+function routedFixture(scope = 'development', type = 'email.delivered', flow = 'learning_progress') {
+  const event = fixture(type);
+  event.data.from = 'USD Impact <book@updates.usd-impact.com>';
+  event.data.subject = 'Pick up where you left off at USD Impact';
+  event.data.tags = {
+    usd_impact_app: 'usd_impact',
+    usd_impact_scope: scope,
+    usd_impact_flow: flow,
+  };
   return event;
 }
 function responseMock() {
@@ -160,6 +172,66 @@ test('matched application row wins over Spanish shared-account namespace', async
   const rows = [{ id: 'outbox-fixture', status: 'accepted', provider_message_ref: emailId }];
   const { response, db, logs } = await invoke(spanishFixture('email.bounced'), {
     rows, svixId: 'msg_offline_spanish_matched',
+  });
+  assert.equal(response.statusCode, 200);
+  assert.equal(db.rows[0].status, 'hard_bounced');
+  assert.equal(db.receipt().status, 'processed');
+  assert.equal(db.calls.filter((c) => c.path === '/rest/v1/notification_outbox' && c.method === 'PATCH').length, 1);
+  assert.ok(logs.every((l) => l[0] !== 'info'));
+});
+
+for (const type of ['email.sent', 'email.delivered', 'email.delivery_delayed', 'email.bounced', 'email.complained', 'email.failed', 'email.suppressed']) {
+  test(`signed foreign USD Impact data-scope ${type} finishes ignored`, async () => {
+    const { db, response, logs } = await invoke(routedFixture('development', type), {
+      svixId: `msg_offline_foreign_scope_${type.replaceAll('.', '_')}`,
+    });
+    assert.equal(response.statusCode, 200);
+    assert.equal(db.receipt().status, 'ignored');
+    assert.equal(db.receipt().processed_at, new Date(nowMs).toISOString());
+    assert.equal(db.receipt().last_error, null);
+    noOutboxWrites(db);
+    assert.deepEqual(logs, [['info', 'Resend lifecycle event for another USD Impact data scope acknowledged.', {
+      code: 'FOREIGN_USD_IMPACT_DATA_SCOPE', eventType: type,
+    }]]);
+    assert.doesNotMatch(JSON.stringify(logs), /reader@example|email_id|payload_sha256|message_id|whsec_/);
+  });
+}
+
+test('current Production routing scope remains retryable without a local outbox row', async () => {
+  const { response, parsed, db } = await invoke(routedFixture('production'), {
+    svixId: 'msg_offline_current_production_scope',
+  });
+  assert.equal(response.statusCode, 503);
+  assert.equal(parsed.code, 'OUTBOX_CORRELATION_PENDING');
+  assert.equal(db.receipt().status, 'failed');
+  noOutboxWrites(db);
+});
+
+for (const [name, mutate] of [
+  ['unknown flow', (e) => { e.data.tags.usd_impact_flow = 'unknown'; }],
+  ['extra tag', (e) => { e.data.tags.extra = 'not-reviewed'; }],
+  ['wrong app', (e) => { e.data.tags.usd_impact_app = 'other'; }],
+  ['sender domain', (e) => { e.data.from = 'USD Impact <book@example.com>'; }],
+  ['broadcast', (e) => { e.data.broadcast_id = 'broadcast-fixture'; }],
+  ['template', (e) => { e.data.template_id = 'template-fixture'; }],
+]) {
+  test(`foreign routing metadata fails closed: ${name}`, async () => {
+    const event = routedFixture(); mutate(event);
+    const { response, parsed, db } = await invoke(event, {
+      svixId: `msg_offline_foreign_scope_drift_${name.replaceAll(' ', '_')}`,
+    });
+    assert.equal(response.statusCode, 503);
+    assert.equal(parsed.code, 'OUTBOX_CORRELATION_PENDING');
+    assert.equal(db.receipt().status, 'failed');
+    noOutboxWrites(db);
+  });
+}
+
+test('matched local outbox row wins over foreign routing metadata', async () => {
+  const rows = [{ id: 'outbox-fixture', status: 'accepted', provider_message_ref: emailId }];
+  const { response, db, logs } = await invoke(routedFixture('development', 'email.bounced'), {
+    rows,
+    svixId: 'msg_offline_foreign_scope_matched',
   });
   assert.equal(response.statusCode, 200);
   assert.equal(db.rows[0].status, 'hard_bounced');

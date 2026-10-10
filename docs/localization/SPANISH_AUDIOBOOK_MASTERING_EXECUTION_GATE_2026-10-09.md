@@ -100,3 +100,16 @@ Chapter5's second closing `Parte tres` is intact; subsequent Chapter5→6 alignm
 - Chapter6 ends with an independent second `Parte tres`, requiring separate Chapter6→7 review. Repeated `Parte uno` at Chapter1→2 and other early headings remain outstanding.
 
 **Release HOLD:** No full-book human pass or final rendered-audio LUFS/true-peak QA. PR #797 draft/unmerged, public Descript publishing zero, Production/member access OFF, mastering approval pending.
+
+## October 10 — Chapter 5→6 private import selected after scoped listening PASS
+
+Owner replied **PASS** on the Chapter5→6 four-sample A/B review of the recorded `Parte tres` transfer. Following PASS, Descript media-import job `project-media-import-a878dc28-6c0e-4bef-a896-32dfa23547b9` completed **SUCCESS** for two lossless FLAC copies of accepted PCM WAVs, creating new private audio-only compositions:
+
+- Selected private **Track07 / Chapter5** `66cdab8b-cb68-4839-82b0-af50fce19c7b` (1228.210000s): final `Parte tres` removed, Chapter5 opening and disclaimer preserved.
+- Selected private **Track08 / Chapter6** `d618b058-76c6-4362-94a6-08d681b86224` (1003.981428s): transferred `Parte tres` before `Capítulo seis`, independent closing `Parte tres` preserved for next boundary.
+
+After import, Descript readback confirmed exact durations and expected opening/closing SRT. The private selection reconciles **20/20** compositions with nominal duration **17,747.673165s = 4 h 55 m 47.673s**. Previous and original compositions remain untouched for rollback. All two-track input/corrected PCM samples were preserved in the same order; independently verified pre-import source checksum `10aca8645f96ed9252ee1d080031d34adce2755c90eb8f854d8d02aaac4c4bee`. No speech generation or full render mastering.
+
+**Remaining: Chapter6→7; repeated Part I before Chapter2; Chapter7→8 heading; other editorial QA; completed 20-track human listening and final encoded LUFS/true-peak/silence/clipping measurements.** A scoped sample PASS must not become a full-audiobook mastering PASS.
+
+**Release HOLD unchanged:** PR #797 DRAFT/unmerged; Descript 0 public publishes; Production, membership delivery OFF; mastering PENDING.

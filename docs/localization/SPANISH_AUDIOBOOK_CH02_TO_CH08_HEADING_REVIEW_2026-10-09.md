@@ -182,3 +182,20 @@ Durations exactly match the approved private WAV candidate lengths. All original
 **Human listening gate — PENDING:** Download/extract the four-sample kit and open `index.html`. Confirm corrected Chapter5 closes with the full disclaimer and **no trailing `Parte tres`**, and corrected Chapter6 starts with a complete natural `Parte tres. Capítulo seis` without missing syllables/clicks. Keep Chapter5's earlier opening and Chapter6's later closing heading for their own boundaries. Reply PASS/FAIL/UNCLEAR. Do **not** import the corrected WAVs or change selected composition IDs before scoped owner acceptance. Full-length imported-track review and final mastering remain separate.
 
 **Release holds unchanged:** PR #797 DRAFT/unmerged, public Descript publishing zero, member and Production OFF, final mastering approval PENDING.
+
+## October 10 — Owner PASS and verified private Chapter 5→6 imports
+
+The owner replied **PASS** to the four before/after listening samples in the owner-only Chapter5→Chapter6 browser kit. This is **targeted human audio approval** of those excerpts, not a full-track acoustic sign-off or mastering/publication approval.
+
+Two lossless FLAC copies previously proven PCM-equivalent to the corrected WAV recordings were imported into the existing **private** Descript project through job `project-media-import-a878dc28-6c0e-4bef-a896-32dfa23547b9`. The import completed **SUCCESS** for both files and created unpublished audio-only compositions:
+
+| Track | New private composition ID | Descript duration | Verified opening/ending SRT |
+| --- | --- | ---: | --- |
+| Chapter5 / Track07 | `66cdab8b-cb68-4839-82b0-af50fce19c7b` | 1228.210000s | Begins with the previously approved `Parte tres. Capítulo cinco`; ends `Verifica los datos actuales antes de utilizarlos` **without** second trailing `Parte tres` |
+| Chapter6 / Track08 | `d618b058-76c6-4362-94a6-08d681b86224` | 1003.981428s | Begins with transferred `Parte tres. Capítulo seis`; preserves the **separate closing** `Parte tres` for Chapter6→7 QA |
+
+Source pair and corrected pair had matching combined decoded PCM SHA-256 `10aca8645f96ed9252ee1d080031d34adce2755c90eb8f854d8d02aaac4c4bee` before import; Drive FLAC backups decoded sample-for-sample identically to corrected WAV sources. Descript duration and SRT verified **after import**. These checks do not assert a new independent bitwise comparison of Descript's output encoder or full-track listening.
+
+**Private pre-master selection** was updated for both tracks in `SPANISH_AUDIOBOOK_PRIVATE_REVIEW_SEQUENCE_2026-10-09.json`, while previous selected and canonical original compositions remain available for rollback. New 20/20 selected-composition duration sum **17,747.673165s (4h55m47.673s)**. Project public publishes remain zero.
+
+**Next separate boundary:** Chapter6→7 (`08→09`) needs its own actual corrected chapter export and listening review; Chapter1→2's repeated `Parte uno` and Chapter7→8 (`09→10`) also await independent QA. Full 20-track listening, encoded mastered-output measurement, mastering signoff, PR merge, member audio delivery and Production remain **HOLD/OFF**.

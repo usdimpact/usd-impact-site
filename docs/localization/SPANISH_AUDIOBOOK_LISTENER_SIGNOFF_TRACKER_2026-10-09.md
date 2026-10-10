@@ -293,3 +293,9 @@ The owner provided the full corrected Chapter8 candidate WAV. A PRIVATE offline 
 Both full corrected WAVs are saved to Library, lossless FLAC backups and QA metrics to owner-only Google Drive. Details/metadata in `SPANISH_AUDIOBOOK_CH02_TO_CH08_HEADING_REVIEW_2026-10-09.md`.
 
 **Release boundary:** PR #797 draft/unmerged, public publishing 0, Production/member delivery OFF, full 20-track listening and mastering PENDING.
+
+## October 10 — Owner PASS for Chapter 7→8 corrected sample kit
+
+The owner replied **PASS** to the four before-and-after Chapter7 end / Chapter8 start samples, authorizing two new private Descript candidate imports only. The accepted corrected WAV lengths are **1070.800000s** (Chapter7) and **1012.682200s** (Chapter8); both preserved the same combined 91,881,565 PCM samples (SHA-256 `018fd18b447707a314ec50309e8f9abd50eb75cb14b3f1ccbd3e789dcc27fc50`). Chapter7 no longer closes with misplaced `Parte tres`; Chapter8 begins with the original recorded `Parte tres. Capítulo ocho`.
+
+**Descript import: PENDING**; existing private selections unchanged until new full-length compositions are independently verified. Do not select incomplete 6-second placeholders. Source files backed up in private Library and owner-only Drive. Scope remains four audio samples only; full-length imported hearing, whole audiobook listening, final mastered LUFS/true-peak checks and release all PENDING. PR #797 DRAFT, public publishes 0, Production/member OFF.

@@ -3,8 +3,14 @@ import {
   extractEditionDate,
   withSourceMetadata,
 } from '../api/daily-news-grounded-background.js';
+import { MAX_BACKGROUND_OUTPUT_TOKENS } from '../api/daily-news-background.js';
 
 const editionDate = '2026-08-20';
+assert.equal(
+  MAX_BACKGROUND_OUTPUT_TOKENS,
+  20_000,
+  'background generation must retain bounded headroom above the observed 16k truncation ceiling',
+);
 const catalystWindow = [
   '2026-08-20',
   '2026-08-21',

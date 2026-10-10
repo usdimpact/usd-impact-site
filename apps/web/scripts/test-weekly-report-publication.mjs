@@ -140,6 +140,8 @@ try {
   assert.equal((emptyCatalystSourceBlock.match(/^  - date: /gm) ?? []).length, 5);
   assert.equal((emptyCatalystSourceBlock.match(/^    url: "\/news\//gm) ?? []).length, 5);
   assert.match(noForwardReport, /No forward catalyst after the completed Friday/);
+  assert.match(noForwardReport, /alongside newly published evidence/);
+  assert.doesNotMatch(noForwardReport, /alongside these events/);
   assertEditorialContract(noForwardReport);
 
   assert.throws(() => generateWeeklyReport({ week: '2026-08-28', score: { ...score, week_ending: '2026-08-21' }, newsRoot }), /does not match/);

@@ -299,3 +299,14 @@ Both full corrected WAVs are saved to Library, lossless FLAC backups and QA metr
 The owner replied **PASS** to the four before-and-after Chapter7 end / Chapter8 start samples, authorizing two new private Descript candidate imports only. The accepted corrected WAV lengths are **1070.800000s** (Chapter7) and **1012.682200s** (Chapter8); both preserved the same combined 91,881,565 PCM samples (SHA-256 `018fd18b447707a314ec50309e8f9abd50eb75cb14b3f1ccbd3e789dcc27fc50`). Chapter7 no longer closes with misplaced `Parte tres`; Chapter8 begins with the original recorded `Parte tres. Capítulo ocho`.
 
 **Descript import: PENDING**; existing private selections unchanged until new full-length compositions are independently verified. Do not select incomplete 6-second placeholders. Source files backed up in private Library and owner-only Drive. Scope remains four audio samples only; full-length imported hearing, whole audiobook listening, final mastered LUFS/true-peak checks and release all PENDING. PR #797 DRAFT, public publishes 0, Production/member OFF.
+
+## October 10 — Chapter7→8 private imports verified, scoped owner PASS only
+
+Owner supplied an explicit **PASS** for the Chapter7 ending → Chapter8 opening four-sample before/after listening kit. Corrected full FLAC attachments were subsequently accepted by Descript job `project-media-import-85ef7163-ede7-487b-87cb-c94a2f2cfd86`, status **SUCCESS** for both files.
+
+- Chapter7: selected **`fc98ab59-811a-4e42-81f6-a08471dc7b0a`**, **1070.800000s**. Imported SRT opens `Parte tres. Capítulo siete`, ends with complete disclaimer, no trailing `Parte tres`.
+- Chapter8: selected **`217a0453-50cb-4b62-9117-e8009c2b1244`**, **1012.682199s**. Imported SRT opens `Parte tres. Capítulo ocho`, retains corrected chapter narration, closes with full disclaimer.
+- Full decoded original/corrected WAV sample order SHA-256 remained `018fd18b447707a314ec50309e8f9abd50eb75cb14b3f1ccbd3e789dcc27fc50`. Imported SRT exports are **POPULATED** for both compositions.
+- Draft private pre-master manifest switches the selected IDs for Tracks 09/10 only, retaining earlier candidates and originals for rollback. Full **20/20** selected metadata reconcile; Descript **public publishes 0**.
+
+**Scope limit:** This is NOT a complete Chapter7/8 listening PASS, not a complete 20-track listening PASS and not final master approval. The earlier Chapter8 candidate's separate audio listening QA flag remains its own pending checkpoint where applicable. Remaining repeated `Parte uno` before Chapter2, rendered-audio compliance checks, legal/editorial sign-off, PR merge, member access and Production are all **PENDING/OFF**.

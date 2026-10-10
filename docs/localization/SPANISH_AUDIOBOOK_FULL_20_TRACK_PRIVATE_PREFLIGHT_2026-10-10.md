@@ -77,12 +77,13 @@ The original user-provided MP3 has strong waveform transients at approximately *
 
 ## 3. Release-blocking and unresolved QA findings
 
-### P1 — Track00 selection conflict (must resolve before rendering final 20)
+### Track00 selection conflict RESOLVED for private pre-master (final audio QA pending)
 
-- The private 20-track planning manifest selects `ebe7f026-e369-4dd4-a184-9476a6482f5b` (**109.835306s**, copyright-tail QA v2) and records an owner's scoped PASS on its opening/disclaimer listening reel.
-- The **same manifest's** `track00_current_selection` field states `FIRST_ORIGINAL_RECORDING`, composition `91240c6b-78df-4910-a994-43c616f9b53f` (**113.345306s**), and flags a click. These are contradictory selection instructions, not two approved final deliverables.
-- **Do not choose between them automatically.** Resolve the owner's explicit final preference, confirm the reported click and copyright word/tail choice on the *actual chosen recording*, then update the one authoritative selection and rerun reconciliation. Old recordings and repaired alternates must remain intact.
-- The working Candidate1 manuscript **does** contain `v5.95-candidate.2` as its production compilation notation. Therefore hearing/transcribing `candidate 2` in Track00 is source-aligned metadata, **not evidence of edition drift**. Whether production metadata should be spoken in member audio remains an editorial approval matter.
+- **Owner delegated the choice on 2026-10-10:** “it doesn't matter, continue”. Kept the already selected/listener-tested copyright-tail v2 private composition `ebe7f026-e369-4dd4-a184-9476a6482f5b` (**109.835306s**) and updated `track00_current_selection` to match. Manifest commit `6bbdb4a522771c31eaeb1846905fb57141dc89f0` archives the earlier conflicting field in `track00_selection_history`.
+- **Reason for choice:** v2 previously passed the owner's targeted opening **0–9s** and disclaimer **42–51s** reviews, has correct “USD Impact. 2026” opening without the spoken English word “Copyright” or residual “Right”, and derives from a separately declicked private source. Its opening and disclaimer SRT were re-read successfully. This is not proof of final exported audio waveform equality.
+- Original first recording `91240c6b-78df-4910-a994-43c616f9b53f` (**113.345306s**) is **preserved, not selected**. Original click at ~47.07s is a historical source defect, **not automatically a defect in v2**.
+- **Remain on mastering HOLD:** selected v2 still needs full-track listening, private rendered WAV/MP3 decode, peak/LUFS/click test and editor/legal approval of copyright wording. The working Candidate1 manuscript includes `v5.95-candidate.2`; that spoken metadata is source-aligned but optional member-facing wording requires editorial review.
+- No changes were made to any audio, the original or other 19 selected compositions. PR draft/unmerged, publishes 0 and Production OFF.
 
 ### P1 — Actual final 20 private audio renders unavailable for objective QA
 
@@ -111,7 +112,7 @@ The original user-provided MP3 has strong waveform transients at approximately *
 
 ## 4. Exact remaining gates
 
-1. **Resolve Track00 selection discrepancy** before final audio assembly. Preserve both v2 and original, plus offline declick candidate; confirm final owner choice and targeted playback.
+1. **Track00 selection RESOLVED for private pre-master:** v2 retained after owner's no-preference instruction, original and offline declick source preserved. Still verify full v2 playback and actual private exported master before approval.
 2. **Check Appendix B ending 14:25–14:43** and Appendix A/B full-composition openings with ears. Distinguish ASR defects from actual spoken defects; do not resynthesize automatically.
 3. **Complete four whole-book listening blocks** in the table above, recording reviewer/timecode/verdict per selected composition. No prior four-clip, boundary or three-reel PASS automatically extends to full tracks.
 4. **Privately export the selected 20 audio outputs**; verify IDs, filenames, durations, channel/sample rate, decode, long silences, clipping, interchapter pauses, loudness, loudness range, true peak and final MP3/AAC encodes. Compare channel format and exact final audio against the locked selection, not with source QA WAVs.

@@ -130,6 +130,25 @@ The authoritative Spanish Edition 1.3 Candidate 1 manuscript contains a printed 
 
 This is **sparse textual coverage**, not full sentence-by-sentence or audible signoff. Final listening should include focused reviews of the spoken `DFII10` gold example, the glossary's `MXN` heading, Appendix B's verbalized normalization formula and exact pipeline SHA. No regeneration is authorized by these review flags. Explicit editorial decisions remain open.
 
+## Decision handoff — explicit signoffs only (2026-10-11)
+
+The latest verified documentation head `0624e4995d4f8949f0b53067d11e6c9567f3cea1` passed GitHub Web quality, Dependency review and CodeQL, plus Vercel and publication-calendar freshness. The PR remains a draft with **zero submitted reviews**. Automated green checks do not grant editorial, acoustic or distribution approvals.
+
+The accountable editor/publisher should separately record an explicit disposition for each of the four **non-audio** decisions:
+
+| ID | Review question | Evidence available | Required decision |
+| --- | --- | --- | --- |
+| E1 | Is `USD Impact. 2026` acceptable in the **spoken** rights opening in place of printed `Copyright © 2026`? | Selected Track 00 v2; subsequent 61/61 normalized rights words and 68/68 educational disclaimer words match print | `ACCEPT` or `REVISE`, with reviewer/date and specific replacement wording if revised |
+| E2 | Should the mixed legal-rights-list grammar remain unchanged? | Approved manuscript and selected TXT use identical wording; unapproved alternate wording exists | `PRESERVE` or `REVISE`, explicitly preserving the intended legal scope of permitted exceptions |
+| E3 | How will the audiobook label the **August 2026 Candidate 1** manuscript and **April 2026 data cutoff** in post-candidate distribution? | Cover/Track 00 metadata; source snapshot build `v5.95-candidate.2` | `HISTORICAL EDITION LABEL` or `REVISED RELEASE LABEL`; do not imply that old market data is current |
+| E5 | Are the printed page-numbered `Contenido` and `Índice analítico` intentionally excluded from spoken tracks? | Manuscript navigation sections; 20 selected tracks; source TXT Track 01 and 19 | `APPROVE ACCESSIBLE FORMAT ADAPTATION` or `REQUIRE NARRATION`, with companion/player metadata requirements |
+
+**Review record to fill, not an authorization:** reviewer identity/role, review date, exact approved option or replacement language, corresponding manuscript/selected track version, whether any change requires separate private synthesis authorization, and a link to the approval artifact. Status for **E1/E2/E3/E5: PENDING** until individually signed.
+
+**Separate final-audio verification queue — do not close here:** audible Track 00 click and boundary integrity, numerals and DFII10, MXN heading, Appendix B normalization notation and pipeline SHA, all 20 selected full WAV analyses, whole-program listening, cross-track mastering, and a separate explicit release approval.
+
+The next preparatory step after these non-audio decisions is *planning* the controlled private WAV QA sequence; **execution remains deferred until last**. No part of this handoff changes any manifest control flag, source manuscript, composition selection, Descript audio or Production.
+
 ## Bounded closeout and remaining gates
 
 | Gate | Decision |

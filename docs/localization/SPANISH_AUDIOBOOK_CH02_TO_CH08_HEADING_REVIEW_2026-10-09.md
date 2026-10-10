@@ -199,3 +199,22 @@ Source pair and corrected pair had matching combined decoded PCM SHA-256 `10aca8
 **Private pre-master selection** was updated for both tracks in `SPANISH_AUDIOBOOK_PRIVATE_REVIEW_SEQUENCE_2026-10-09.json`, while previous selected and canonical original compositions remain available for rollback. New 20/20 selected-composition duration sum **17,747.673165s (4h55m47.673s)**. Project public publishes remain zero.
 
 **Next separate boundary:** Chapter6→7 (`08→09`) needs its own actual corrected chapter export and listening review; Chapter1→2's repeated `Parte uno` and Chapter7→8 (`09→10`) also await independent QA. Full 20-track listening, encoded mastered-output measurement, mastering signoff, PR merge, member audio delivery and Production remain **HOLD/OFF**.
+
+## October 10 — Chapter 6 to 7 private recorded-heading transfer (listening pending)
+
+**Owner-supplied WAV:** full `09 - Capítulo 7 - Bitcoin y el dólar.wav`, mono PCM16/44.1kHz, **1070.863673s**. Source selected corrected Chapter6 WAV: `08 - Capitulo 6 - Parte III heading prefixed - PRIVATE QA.wav` (**1003.981429s**). Project source selection IDs remain `d618b058-76c6-4362-94a6-08d681b86224` (Track08/Chapter6) and `f053f190-9233-4869-ba7b-62c5183888da` (Track09/Chapter7). Descript SRT independently locates the existing `Parte tres` at Chapter6's tail ~16:42.514–16:43.594; Chapter7 begins directly `Capítulo siete`. Separate closing `Parte tres` at Chapter7's tail must remain for Chapter7→8.
+
+**Private sample-exact repair only (NOT IMPORTED):** Split source Chapter6 at **frame 44,201,430 = 1002.300000s**, a quiet gap after `Verifica los datos actuales antes de utilizarlos` and before its trailing `Parte tres`; transfer its last **74,151 recorded PCM samples = 1.681429s** to the *start* of an unchanged Chapter7. Corrected Chapter6 duration **1002.300000s**, corrected Chapter7 **1072.545102s**. Both mono PCM16/44.1kHz. Preserve Chapter6's existing opening `Parte tres`, and the different original `Parte tres` at Chapter7's end.
+
+**Objective evidence:** Source pair and corrected pair have identical **91,500,669 combined PCM frames** (183,001,338 decoded PCM bytes), in unchanged order, SHA-256 **`cc8b7f8ef4e1a5ff2ecb4caaa6d70dbee8428e7b465925aa2b2989127801538f`**. At cut, samples -6/-6 (no jump); at tail-to-original Chapter7 beginning, samples 0/0 (no jump). The local ~160ms quiet interval RMS and lossless FLAC decoded equivalence were independently checked; ZIP CRC PASS. No speech synthesis, gain processing, resampling, trimming within speech or deletion.
+
+**Private assets retained:**
+
+- Corrected Chapter6 WAV: Library `/08 - Capitulo 6 - Parte III tail transferred - PRIVATE QA.wav`, Library ID `libfile_73bdd80ac55c819182422f5573a9a89f`.
+- Corrected Chapter7 WAV: Library `/09 - Capitulo 7 - Parte III heading prefixed - PRIVATE QA.wav`, Library ID `libfile_14f37b59502c8191ad08903ced194860`.
+- [Owner-only Chapter6 FLAC](https://drive.google.com/file/d/1LMw8u8TDqa6QXlkfNtscX8eTxXFUr4ZJ/view) and [Chapter7 FLAC](https://drive.google.com/file/d/18sKFpp6BOFwndxIpY9T8Cf5L8oOrOQ1k/view), both losslessly decoded to the corrected WAV samples.
+- [Four-sample browser listening ZIP](https://drive.google.com/file/d/1tVyI5cOrhFWx_mNpVlTMp11OmXEQfkBY/view), [technical QA report](https://drive.google.com/file/d/1IgrmeHlBon2I3t_FjJLcU_EIqAcc2Yc3/view), [machine-readable QA metrics](https://drive.google.com/file/d/13WVOA2yyJSGKnsQP0ebV0Rxbk5Dz3drL/view). All five Drive files were verified `shared=false` and owner-only.
+
+**Human listening: PENDING FOR THIS PAIR.** In the kit, hear Chapter6's complete disclaimer with no closing `Parte tres`, and Chapter7's clean opening `Parte tres. Capítulo siete`, with a natural pause and no click or lost syllable. This is a *new* review gate; prior owner PASS on earlier pairs does not carry over. On scoped PASS, authorize new separate private Descript imports and verify durations and SRT before changing the draft planning manifest.
+
+**Release guardrails:** No new Descript composition was created in this correction step; selected IDs unchanged. PR #797 DRAFT/unmerged, Descript publishes 0, member delivery and Production OFF, full 20-track listening/mastering still PENDING.

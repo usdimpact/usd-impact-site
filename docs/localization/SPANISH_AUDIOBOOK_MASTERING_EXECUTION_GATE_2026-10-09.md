@@ -169,3 +169,11 @@ Both imported SRT transcripts are nonblank and verify correct first and last wor
 **Still blocking release:** Review the omitted repeated `Parte uno` before Chapter2; complete human listening across the full audiobook; verify actual rendered final audio (integrated loudness, true peak, silences, clipping, missing passages and final selection); obtain final editorial/legal/compliance and owner release approval. The earlier Chapter8 candidate's separate audio QA status is not silently promoted.
 
 **Release HOLD unchanged:** PR #797 DRAFT/unmerged, Descript public publishes 0, public/member delivery and Production OFF, mastering approval PENDING.
+
+## October 10 — Chapter2 repeated Part I unselected private QA candidate
+
+Authoritative Spanish Edition 1.3 Candidate 1 requires an extra recorded `PARTE I` before Chapter2. Agent Underlord duplicated the *currently selected corrected Chapter2* (1107.380s) into a new PRIVATE, UNSELECTED candidate `592e27f8-5337-4058-8f6d-e0f2cb749251` (1108.760224s), then reportedly copied the already-recorded `Parte uno` sound from selected Chapter1's first ~1.06s with natural pause, without any TTS/synthesis or changing Chapter1. New Descript SRT starts with `Parte uno. Capítulo dos`; after dropping those two opening heading tokens, all 2301 baseline normalized Chapter2 core words match exactly, including end disclaimer and no misplaced trailing `Parte dos`.
+
+**Evidence limit:** Descript composition metadata and SRT text verified. Actual copied opening playable audio, absence of clicks/clips and continuity of full Chapter2 recording have **not** been independently listened to or rendered. Source-window report 0–1.600s and net composition increase +1.380224s are not proof of exact signal conservation. Human QA must play new candidate first 8 seconds and separately close the prior Introduction 07:59 / end and Chapter1 start seam checks. On acoustic PASS only, re-verify 20/20 lengths, update Track04 private pre-master selection and retain previous source as rollback.
+
+**HOLD:** The existing 20-track selected manifest is unchanged; current total remains ~17,747.673174s. Full 20-track listening, final rendered LUFS/true-peak and clipping check, legal/editorial signoff, PR merge, public publishing and Production/member delivery remain blocked.

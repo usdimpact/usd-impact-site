@@ -1,4 +1,5 @@
 import { handleWeeklyNewsletterCanary } from '../src/lib/weekly-newsletter-canary-handler.js';
+import { buildUsdImpactResendTags } from '../src/lib/resend-routing-tags.js';
 import { handleResendWebhook } from '../src/lib/resend-webhook-handler.js';
 import { handleDailyLearningEmailRequest } from '../src/lib/daily-card-email-handler.js';
 import { handleMarketingEmailPreferencesRequest } from '../src/lib/marketing-email-preferences-handler.js';
@@ -262,6 +263,14 @@ export default async function handler(request, response) {
     return sendJson(response, { error: 'The waitlist is temporarily unavailable. Please try again later.' }, 503);
   }
 
+  let routingTags;
+  try {
+    routingTags = buildUsdImpactResendTags(process.env, 'waitlist');
+  } catch {
+    console.error('Waitlist Resend routing scope is invalid.');
+    return sendJson(response, { error: 'The waitlist is temporarily unavailable. Please try again later.' }, 503);
+  }
+
   let readinessState;
   try {
     readinessState = await prepareWaitlistReadiness({ email, submissionId });
@@ -362,6 +371,7 @@ export default async function handler(request, response) {
         subject: confirmationEmail.subject,
         text: confirmationEmail.text,
         html: confirmationEmail.html,
+        tags: routingTags,
         ...(confirmationEmail.headers ? { headers: confirmationEmail.headers } : {}),
       }),
     });

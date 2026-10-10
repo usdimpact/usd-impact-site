@@ -113,3 +113,11 @@ After import, Descript readback confirmed exact durations and expected opening/c
 **Remaining: Chapter6→7; repeated Part I before Chapter2; Chapter7→8 heading; other editorial QA; completed 20-track human listening and final encoded LUFS/true-peak/silence/clipping measurements.** A scoped sample PASS must not become a full-audiobook mastering PASS.
 
 **Release HOLD unchanged:** PR #797 DRAFT/unmerged; Descript 0 public publishes; Production, membership delivery OFF; mastering PENDING.
+
+## October 10 — Chapter 6→7 offline private boundary candidate (owner listening pending)
+
+- New owner-supplied full Chapter7 WAV paired with corrected selected Chapter6. The separate end-of-Chapter6 `Parte tres` was sample-preservingly transferred into a new **offline-only** Chapter7 opening at a measured quiet cut; total 91,500,669 PCM samples and SHA-256 `cc8b7f8ef4e1a5ff2ecb4caaa6d70dbee8428e7b465925aa2b2989127801538f` are identical in original and corrected combined sequences.
+- Corrected unselected candidate durations: Chapter6 1002.300000s, Chapter7 1072.545102s; both corrected full WAVs durable in Library; lossless FLAC backups and [private audition ZIP](https://drive.google.com/file/d/1tVyI5cOrhFWx_mNpVlTMp11OmXEQfkBY/view) stored owner-only in Drive, checksum report linked in chapter-boundary QA.
+- **Await new owner PASS on this specific A/B kit before private Descript import/manifest switch.** Existing manifest continues selecting `d618b058-76c6-4362-94a6-08d681b86224` and `f053f190-9233-4869-ba7b-62c5183888da`. Remaining: later Chapter7→8 heading transfer, repeated Part I before Chapter2, whole 20-track listen, actual encoded master LUFS/true-peak tests and legal/editorial signoff.
+
+**Release HOLD:** PR #797 DRAFT/unmerged, Descript publishes 0, member access/Production OFF, mastering approval PENDING.

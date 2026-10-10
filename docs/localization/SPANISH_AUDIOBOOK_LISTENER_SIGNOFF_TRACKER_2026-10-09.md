@@ -219,3 +219,11 @@ Complete Chapter4 WAV received from owner. The selected corrected Chapter3 WAV's
 - **Private pre-master selection:** now points to these two candidate compositions, with originals and earlier corrections preserved. The project has **zero public publishes**; PR #797 remains draft and unmerged, member/Production release OFF, mastering PENDING.
 - **Separate read-only Intro finding:** An overlapping Descript agent job that has now finished without edits identified the corrected Introduction's `la parte uno` near 07:59 and a **transcript-only** stray `Parte uno` at its final seconds. Whether that last fragment is audible and correctly transferred to Chapter 1 remains **human QA pending**; do not infer a playback defect or edit the Introduction from transcript alone.
 - **Still PENDING:** full Chapter3/4 listening on newly imported compositions, Chapter4→5's independent `Parte tres`, five other unconfirmed early heading checks, complete 20-track acoustic/listening and final mastered audio QA. No release authorization.
+
+## Chapter 4 to 5 recorded Part III correction — private listening PENDING
+
+The full 1227.833469s Chapter5 audio was received. Offline, a **1.804489796s** existing spoken `Parte tres` tail was transferred from selected Chapter4 to Chapter5's front at a quiet **1374.200s** cut. The corrected PCM streams match the original pair byte-for-byte when concatenated (SHA-256 `8faf46c7ff3c9194fc2ebd2ad36043c5b5e4c4380052b644d617f15c0a549ee1`), and both new join sample discontinuities measure zero. No new speech was generated.
+
+**Status: TECHNICAL PASS / HUMAN LISTENING PENDING.** Private owner-only listening kit is saved at [Google Drive](https://drive.google.com/file/d/14pgConEzOOVyZervakTql1EsvrfYlY4c/view). It contains four original/corrected WAV excerpts. The separate `Parte tres` at the end of Chapter5 remains intact and is not approved for Chapter5→6 transfer.
+
+Full corrected files exist in the temporary sandbox; a persist-to-Library attempt failed with `container_session_expired`. They are not yet durably archived or imported into Descript. No acoustic sign-off for this repair has been received. The currently selected private compositions and production/merge/mastering/publication controls remain unchanged.

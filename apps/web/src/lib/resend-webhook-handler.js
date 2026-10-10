@@ -193,9 +193,10 @@ async function applyDeliveryEvent({ config, verified, fetchImpl }) {
 
   const matches = await readOutboxMatch(config, verified.event.emailId, fetchImpl);
   if (matches.length === 0) {
-    // Do not create an auth outbox row or weaken the application correlation
-    // race contract. Only signed positive events in the reserved auth namespace
-    // can finish without one; every unknown/negative event still retries.
+    // Do not create foreign/provider-managed outbox rows or weaken the
+    // application correlation race contract. Only explicit provider-signed
+    // namespaces may finish without a match; every unknown event still retries.
+    // A matched USD Impact application row always wins before these boundaries.
     if (isProviderManagedAuthSuccess(verified.event)) {
       return Object.freeze({ outcome: 'ignored', reason: 'provider-managed-auth-success' });
     }

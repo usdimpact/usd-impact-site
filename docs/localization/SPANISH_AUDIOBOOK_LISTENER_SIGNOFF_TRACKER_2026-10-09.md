@@ -245,3 +245,13 @@ Owner supplied the full Chapter6 WAV. Using the currently selected corrected Cha
 **Private files:** two corrected WAVs saved in private Library; equivalent lossless FLAC backups and report stored in owner-only Google Drive (verified `shared=false`). Details, times and hashes in `docs/localization/SPANISH_AUDIOBOOK_CH02_TO_CH08_HEADING_REVIEW_2026-10-09.md`.
 
 **Release boundary:** No Descript media import yet for this candidate, no review-manifest selection change. PR #797 DRAFT/unmerged, Production/member/audio public sharing OFF, mastering PENDING.
+
+## October 10 — Owner PASS and private Descript import: Chapter 5→6
+
+- **Owner response:** `PASS` to the four private before/after Chapter 5 ending and Chapter 6 opening samples. Scope is the targeted excerpts, not each chapter's complete narration.
+- **Source:** Sample-exact 1.427959-second transfer of the existing `Parte tres` from Track07 tail into Track08 opening. Source and corrected two-track PCM samples match combined SHA-256 `10aca8645f96ed9252ee1d080031d34adce2755c90eb8f854d8d02aaac4c4bee`; corrected lossless FLAC backup decoded identically to accepted WAV. No new TTS.
+- **Private Descript import:** job `project-media-import-a878dc28-6c0e-4bef-a896-32dfa23547b9` returned success for both files, creating unpublished audio-only composition `66cdab8b-cb68-4839-82b0-af50fce19c7b` (Chapter 5 1228.210000s) and `d618b058-76c6-4362-94a6-08d681b86224` (Chapter 6 1003.981428s). SRT confirms removal of only Track07's trailing heading, prefix at Track08, and preservation of Track08's **separate** final heading.
+- **Pre-master plan:** two new imported compositions now selected privately, original versions retained, all 20 tracks still present. New combined duration 17,747.673165s.
+- **Still pending:** complete 20-track listening, full technical mastering, Chapter6→7 recorded heading correction, repeated Part I before Chapter 2, later early-chapter headings, legal/editorial signoff, PR merge, member delivery and Production release.
+
+**All release controls remain OFF/HOLD:** PR #797 open DRAFT/unmerged, Descript public publishes 0, no final mastered export, mastering approval PENDING. User has not authorized any public publish.

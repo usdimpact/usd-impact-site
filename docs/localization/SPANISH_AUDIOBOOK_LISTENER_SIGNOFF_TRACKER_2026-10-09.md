@@ -262,3 +262,13 @@ Owner supplied the full Chapter6 WAV. Using the currently selected corrected Cha
 - Combined input versus corrected audio PCM SHA-256 matches: `cc8b7f8ef4e1a5ff2ecb4caaa6d70dbee8428e7b465925aa2b2989127801538f` (91,500,669 samples in unchanged order). Both full WAVs saved in Library and FLAC backups saved in owner-only Drive.
 - **Listener verdict: PENDING.** [Private four-sample A/B ZIP](https://drive.google.com/file/d/1tVyI5cOrhFWx_mNpVlTMp11OmXEQfkBY/view); listen to both before/after Chapter6 ending and Chapter7 opening. The owner has not yet replied PASS to this pair. No import or selection change, no full-track listening approval.
 - See `docs/localization/SPANISH_AUDIOBOOK_CH02_TO_CH08_HEADING_REVIEW_2026-10-09.md` for technical and storage detail. PR #797 remains DRAFT/unmerged; Descript public publishing 0, member delivery/Production OFF, mastering approval pending.
+
+## October 10 — Chapter 6→7 owner PASS; Descript attachment import pending
+
+Owner replied **PASS** on the four private A/B Chapter6 ending → Chapter7 opening recordings (Chapter6 removes trailing `Parte tres`; Chapter7 begins with recorded `Parte tres. Capítulo siete`). This is a **scoped human acoustic PASS on offline WAV samples** only. It is not a full chapter or audiobook approval.
+
+Corrected full WAV files (Library): Chapter6 `libfile_73bdd80ac55c819182422f5573a9a89f` (1002.300000s), Chapter7 `libfile_14f37b59502c8191ad08903ced194860` (1072.545102s). Private lossless Drive FLAC backups are available under IDs `1LMw8u8TDqa6QXlkfNtscX8eTxXFUr4ZJ` and `18sKFpp6BOFwndxIpY9T8Cf5L8oOrOQ1k`.
+
+**Import status: BLOCKED.** Descript rejected owner-only Drive HTML URLs; direct-upload storage could not be reached by this execution runtime. Failed attempts made only four 6-second placeholder compositions; these must never be selected. Owner must attach both corrected FLAC/WAV files directly in ChatGPT for a host-mediated Descript import. No valid imported candidate has been created for this specific boundary. Current private selected Chapter6 and Chapter7 remain unchanged.
+
+All release gates HOLD: PR #797 draft/unmerged, Descript publishes 0, Production/member delivery OFF, full 20-track listening and mastering PENDING. The independent trailing `Parte tres` at Chapter7 end remains awaiting the Chapter7→8 review.

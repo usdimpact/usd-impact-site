@@ -124,3 +124,9 @@ The QA agent may generate review results/reports and a **new isolated candidate 
 **HOLD** until all of: exact private exported audio availability, 20/20 objective file and mastered-encode checks, targeted Appendix A/B issues resolved by listening, 20/20 complete playback PASS, source/copyright/compliance review, separate owner mastering and release authorization.
 
 **Current invariants:** [PR #797](https://github.com/usdimpact/usd-impact-site/pull/797) DRAFT/unmerged; Descript publishes 0; current selected IDs preserved; Production/member delivery OFF; mastering approval PENDING; publicAllowed false; mergeAllowed false.
+
+## October 10 — Appendix opening checkpoints closed for selected recordings
+
+Owner reply **PASS BOTH** closes the first 10 seconds of selected Appendix A and selected Appendix B as targeted pronunciation checks. Earlier owner PASS separately closes selected Appendix B's ending **14:25–14:43** as an audible excerpt. **Do not re-request these same checks unless the selected recordings change.**
+
+Remaining open: Appendix B identifier character-level manuscript/ASR reconciliation; complete playback of 20 selected compositions including full Appendix A/B; full selected Track00 v2 playback; actual private audio WAV exports, objective master checks and legal/editorial approval. No publication or merging is authorized.

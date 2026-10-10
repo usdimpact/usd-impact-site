@@ -34,6 +34,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       # Fail closed while the canonical private manifest keeps synthesis disabled.
+      # A separate, explicit private_synthesis_approval is required for any repair.
       # Documentation edits and manual dispatch must not generate new audio by default.
       - name: Enforce private synthesis authorization
         shell: bash
@@ -41,7 +42,8 @@ jobs:
           set -euo pipefail
           APPROVAL_MANIFEST="docs/localization/SPANISH_AUDIOBOOK_PRIVATE_REVIEW_SEQUENCE_2026-10-09.json"
           if ! jq -e '
-            .production_enabled == true and
+            .private_synthesis_approval == "APPROVED" and
+            .production_enabled == false and
             .public_allowed == false and
             .merge_allowed == false and
             .publication_approval == "NOT_GRANTED"

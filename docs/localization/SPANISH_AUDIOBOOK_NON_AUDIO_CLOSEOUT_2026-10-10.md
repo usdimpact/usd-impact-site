@@ -149,6 +149,23 @@ The accountable editor/publisher should separately record an explicit dispositio
 
 The next preparatory step after these non-audio decisions is *planning* the controlled private WAV QA sequence; **execution remains deferred until last**. No part of this handoff changes any manifest control flag, source manuscript, composition selection, Descript audio or Production.
 
+## Owner-directed editorial dispositions — 2026-10-11
+
+Owner instruction in the current project conversation: **"Resolve, continue"** after review of the explicit E1/E2/E3/E5 decision handoff. This authorizes the following **conservative editorial direction** for continued *private QA*, not a legal opinion, a compliance signoff, authorization to synthesize, a mastered-audio acceptance, or public release. No manuscript, text source, selected composition, trigger, or gate flags were changed.
+
+| ID | Editorial disposition | Scope boundary |
+| --- | --- | --- |
+| **E1** | **RETAIN SELECTED PRIVATE OPENING**: Continue with Track 00 v2 `ebe7f026-e369-4dd4-a184-9476a6482f5b` and the spoken opening `USD Impact. 2026`; preserve the following copyright exceptions and educational disclaimer | This is approval of the private editorial selection, **not independent legal clearance** of replacing spoken `Copyright ©`. Legal adequacy remains a release-blocking review |
+| **E2** | **PRESERVE CURRENT APPROVED SOURCE WORDING**: Do not rewrite the awkward mixed grammatical list or broaden/alter copyright exceptions | The existing manuscript and selected TXT are aligned. Any future legal-text correction requires independently reviewed replacement language and version control |
+| **E3** | **HISTORICAL CANDIDATE METADATA**: Treat `agosto de 2026`, `v5.95-candidate.2`, and `abril de 2026` cutoff as dated edition provenance; explicitly describe the work as an Edition 1.3 **candidate** in private/player preparation, never a current-data claim | No silent relabeling as a final released 2026 edition. Final consumer-facing title, publication status and date require publisher check before release |
+| **E5** | **PRINT/DIGITAL-ONLY NAVIGATION ADAPTATION**: Page-numbered `Contenido` and `Índice analítico` need not be narrated in the 20-track private audiobook; retain them in an accessible written/digital companion and provide accessible chapter titles/ordering in eventual player | Do not claim literal whole-manuscript narration or create new voice tracks for page-numbered index entries. Accessibility/player delivery remains a release check |
+
+**Disposition:** E1/E2/E3/E5 **resolved as project editorial direction for private QA** by the owner instruction, with the restrictions above. Outstanding **legal clearance, final edition/publisher labeling, accessible companion/player verification, audio listening, mastering, and separate distribution authorization remain PENDING**. No assigned lawyer, independent legal review, or acoustic listener approval is represented by this record.
+
+**E4, deferred acoustic item:** The authoritative Score-pipeline commit identifier matches the manuscript and prepared narration script, but selected Descript ASR differs; confirm literal spoken identifier in the final acoustic stage rather than regenerating from ASR.
+
+**HOLD unchanged:** `production_enabled=false`, `public_allowed=false`, `merge_allowed=false`, `publication_approval=NOT_GRANTED`, private synthesis authorization absent, mastering pending. PR #797 stays draft/unmerged.
+
 ## Bounded closeout and remaining gates
 
 | Gate | Decision |

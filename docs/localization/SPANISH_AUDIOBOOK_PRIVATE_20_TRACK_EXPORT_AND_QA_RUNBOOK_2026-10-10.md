@@ -120,6 +120,25 @@ Suggested provisional **flag thresholds**, not finalized production policy:
 
 The QA agent may generate review results/reports and a **new isolated candidate master** after an explicit, scoped private mastering workflow. It must not overwrite sources, normalize selected Descript compositions in place, re-synthesize voices, publish, modify Production or change entitlements. Any final encoded files must be measured **after** encoding, not solely as lossless WAVs.
 
+## Execution-ready private final-stage checklist — 2026-10-11 (NOT STARTED)
+
+This section is a **planning handoff**, not consent to start final audio export, mastering, distribution or a new voice synthesis run. Use the **exact selected composition IDs** in the inventory above, not an earlier exported WAV, an old master, or a historical Descript candidate. The selected 20-track set totals approximately **4h 55m 49s**. Do not mark tasks PASS from structural metadata or TXT transcription.
+
+**Before starting actual final audio work:** obtain individually recorded E1/E2/E3/E5 editorial dispositions in the [non-audio closeout register](./SPANISH_AUDIOBOOK_NON_AUDIO_CLOSEOUT_2026-10-10.md), and use the existing listener signoff tracker to retain reviewer/date/timestamp/selected ID. Preserve `publication_approval=NOT_GRANTED` and no merge.
+
+**Stage A — targeted playback and stop gates (deferred):**
+- Selected **Track 00 v2** full 0–109.835s: listen for original click recurrence near the corrected transition; opening attribution, disclaimer completeness, and stray syllables. Verify the *selected* v2, not old Track00.
+- **Appendix A Track 17**, 0–10s and glossary MXN entry: correct spoken `Apéndice A` and `MXN`, not just ASR rendering.
+- **Chapter 6 Track 08**, worked gold example: check spoken `DFII10`, 2021–2022 amounts and sign/direction against manuscript; distinguish spoken-number adaptation from numeric corruption.
+- **Appendix B Track 18**, 0–10s, normalization formula, and **14:25–14:43**: check Spanish title, mathematical sign/weights, and exact spoken source identifiers. Website `a86e57dafe91da67553e73e01bb0c703a868c949` belongs to `usd-impact-site`; pipeline `f51f7abf2d4ec99890eb5537424f6faab885ef32` belongs to `usd-impact-pipeline`. Verify audibly rather than accepting the mismatching Descript ASR.
+- **Chapters 1–13:** confirm part heading → chapter title transitions and adjacent track-end silence/splice integrity, especially the six headings formerly flagged but now present in all selected TXT openings.
+
+**Stage B — private export and file identity (deferred):** for each of 20 selected IDs capture track number, exact Descript composition ID, export filename, actual container/codec, sample rate, channels, sample count, decoded duration, peak, true peak, integrated loudness, silence/dropouts, click candidates, content SHA-256, reviewer, and result. Check actual exported media bytes; a .wav suffix does not prove PCM/WAV. Do not publish, upload to member storage, or change master approval based on a successful export.
+
+**Stage C — listening and mastering (deferred):** complete full 20-track listening in the four established blocks; record precise failures and source/clip timestamps. Any FAIL or UNCLEAR prevents mastering acceptance of the affected track. Approve the single cross-track mastering specification only after objective measurement and audible listening both pass. If repair is needed, preserve original and request separately scoped private-synthesis authorization; the HeyGen workflow currently fails closed.
+
+**Stage D — distribution (separate authorization, NOT INCLUDED):** no public media, entitlements, member delivery, merge, Production deployment or release toggles without an explicit new release decision. This checklist can be considered ready for a future controlled QA session without implying that the session has begun.
+
 ## Release gate
 
 **HOLD** until all of: exact private exported audio availability, 20/20 objective file and mastered-encode checks, targeted Appendix A/B issues resolved by listening, 20/20 complete playback PASS, source/copyright/compliance review, separate owner mastering and release authorization.

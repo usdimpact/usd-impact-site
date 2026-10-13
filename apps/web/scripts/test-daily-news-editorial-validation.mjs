@@ -453,8 +453,8 @@ const repairFixture = {
 const evidence = collectRepairEvidence(repairFixture, '2026-10-12');
 assert.equal(evidence.permittedSourceUrls.length, 4);
 assert.deepEqual(evidence.permittedSourceUrls, repairGroundedUrls);
-assert.equal(evidence.permittedSourceUrls.includes(additionalMetadataUrl), false, 'metadata URL absent from original ledger is not newly introduced');
-assert.equal(evidence.permittedSourceUrls.includes(ungroundedUrl), false);
+assert.equal(new Set(evidence.permittedSourceUrls).has(additionalMetadataUrl), false, 'metadata URL absent from original ledger is not newly introduced');
+assert.equal(new Set(evidence.permittedSourceUrls).has(ungroundedUrl), false);
 assert.match(evidence.issues.join('; '), /Ungrounded source ids.*invented-bloomberg/);
 assert.match(evidence.issues.join('; '), /Highlight 2 references only stale daily-development sources/);
 const constrainedSchema = buildRepairOutputSchema('2026-10-12', evidence.permittedSourceUrls);

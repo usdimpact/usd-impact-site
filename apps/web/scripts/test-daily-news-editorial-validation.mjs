@@ -4,7 +4,7 @@ import {
   buildMetaDescription,
   validateEditorialBundle,
 } from '../src/lib/daily-news-editorial-validation.js';
-import { buildRepairOutputSchema, requestParam } from '../api/daily-news-background.js';
+import { buildRepairOutputSchema, collectRepairEvidence, requestParam } from '../api/daily-news-background.js';
 
 const currentTreasuryUrl = 'https://home.treasury.gov/news/press-releases/sb0590';
 const staleTreasuryUrl = 'https://home.treasury.gov/news/press-releases/sb0489';
@@ -400,7 +400,7 @@ assert.match(repairHandler, /If no supported matching catalyst can be retained, 
 assert.match(repairHandler, /exact inclusive window/i);
 assert.match(repairHandler, /repair schema rejects every other date/i);
 assert.match(repairHandler, /Never move, shorten, or invent an event date/i);
-assert.match(repairHandler, /buildRepairOutputSchema\(date\)/);
+assert.match(repairHandler, /buildRepairOutputSchema\(date, repairEvidence\.permittedSourceUrls\)/);
 assert.match(repairHandler, /Re-scan the complete bundle/i);
 assert.match(repairHandler, /remove unused ledger padding/i);
 assert.match(repairHandler, /Remove every unsupported absence claim from highlights, summary, and body/i);
@@ -415,5 +415,59 @@ const groundedHandler = await readFile(new URL('../api/daily-news-grounded-backg
 assert.match(groundedHandler, /at least three distinct source URLs/i);
 assert.match(groundedHandler, /fewer than three grounded URLs/i);
 assert.doesNotMatch(groundedHandler, /at least two distinct source URLs/i);
+
+
+const repairGroundedUrls = [
+  'https://www.federalreserve.gov/releases/h8/current/default.htm',
+  'https://www.bls.gov/news.release/empsit.nr0.htm',
+  'https://www.census.gov/wholesale/current/index.html',
+  'https://www.federalreserve.gov/releases/h15',
+];
+const additionalMetadataUrl = 'https://www.eia.gov/petroleum/supply/weekly/';
+const ungroundedUrl = 'https://www.bloomberg.com/fake-fed-source-url';
+const repairDraft = {
+  marketRegime: 'undetermined',
+  summary: 'Dated credit, labor and market information.',
+  highlights: [
+    { headline: 'Bank credit context', development: 'Historical bank credit release.', whyItMatters: 'Relevant for funding.', sourceIds: ['fed-credit'] },
+    { headline: 'Stale labor news wrongly described as daily', development: 'The old release is described as current.', whyItMatters: 'Incorrect vintage.', sourceIds: ['stale-labor'] },
+    { headline: 'Wholesale update', development: 'Dated sales report.', whyItMatters: 'Demand context.', sourceIds: ['census-data'] },
+  ],
+  catalysts: [],
+  sources: [
+    { id: 'fed-credit', title: 'Fed H8 October 9', url: repairGroundedUrls[0], publishedAt: '2026-10-09', sourceType: 'primary' },
+    { id: 'stale-labor', title: 'Earlier labor data', url: repairGroundedUrls[1], publishedAt: '2026-08-01', sourceType: 'primary' },
+    { id: 'census-data', title: 'Census October 9', url: repairGroundedUrls[2], publishedAt: '2026-10-09', sourceType: 'primary' },
+    { id: 'fed-rates', title: 'Fed H15 October 9', url: repairGroundedUrls[3], publishedAt: '2026-10-09', sourceType: 'primary' },
+    { id: 'invented-bloomberg', title: 'Unverified claim', url: ungroundedUrl, publishedAt: '2026-10-12', sourceType: 'reporting' },
+  ],
+  body: 'Dated official-source context only.',
+};
+const repairFixture = {
+  status: 'completed',
+  output: [
+    { type: 'web_search_call', action: { type: 'search', sources: [...repairGroundedUrls, additionalMetadataUrl].map((url) => ({ url })) } },
+    { type: 'message', content: [{ type: 'output_text', text: JSON.stringify(repairDraft), annotations: [] }] },
+  ],
+};
+const evidence = collectRepairEvidence(repairFixture, '2026-10-12');
+assert.equal(evidence.permittedSourceUrls.length, 4);
+assert.deepEqual(evidence.permittedSourceUrls, repairGroundedUrls);
+assert.equal(new Set(evidence.permittedSourceUrls).has(additionalMetadataUrl), false, 'metadata URL absent from original ledger is not newly introduced');
+assert.equal(new Set(evidence.permittedSourceUrls).has(ungroundedUrl), false);
+assert.match(evidence.issues.join('; '), /Ungrounded source ids.*invented-bloomberg/);
+assert.match(evidence.issues.join('; '), /Highlight 2 references only stale daily-development sources/);
+const constrainedSchema = buildRepairOutputSchema('2026-10-12', evidence.permittedSourceUrls);
+assert.deepEqual(constrainedSchema.properties.sources.items.properties.url.enum, repairGroundedUrls);
+assert.deepEqual(buildRepairOutputSchema('2026-10-12').properties.sources.items.properties.url, { type: 'string' });
+const insufficientEvidence = collectRepairEvidence({
+  ...repairFixture,
+  output: [
+    { type: 'web_search_call', action: { type: 'search', sources: repairGroundedUrls.slice(0, 2).map((url) => ({ url })) } },
+    repairFixture.output[1],
+  ],
+}, '2026-10-12');
+assert.equal(insufficientEvidence.permittedSourceUrls.length, 2, 'fail-closed source minimum is enforced before repair model calls');
+assert.match(sourceHandler, /audit every non-schedule highlight/i);
 
 console.log('daily news editorial validation tests pass');

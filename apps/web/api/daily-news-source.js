@@ -474,6 +474,7 @@ Rules:
 - Never present an older announcement as if it occurred in the prior 36 hours. The cited publication date must support every recency claim, and a daily-development highlight must include a source published within the prior 14 days.
 - Do not create a highlight whose main claim is that no new release, decision, or source was found. Omit unsupported absence claims and continue researching material verified developments.
 - Use only source URLs from the web search results. Never invent or reconstruct a URL.
+- Before producing final JSON, audit every source ledger URL against the exact web-search source URLs (not just an approved domain), then audit every non-schedule highlight for a publication date within the prior 14 days. Continue web research if necessary rather than retaining a hallucinated URL or stale daily-development highlight.
 - Do not state an exact market price unless a trusted source provides the price and a clear timestamp or session date.
 - Separate verified fact from conditional cross-asset interpretation.
 - Use educational language: may, could, tends to, or is consistent with. Do not give investment advice, trading instructions, guaranteed outcomes, or personalized recommendations.

@@ -162,6 +162,39 @@ jobs:
             exit 1
           fi
 
+          # A successful no-op after an earlier human publication is not a
+          # successful scheduled generator run. Check the actual job steps
+          # before using a deployment's presence as recovery evidence.
+          if [ "$event" != "schedule" ]; then
+            echo "- Operational conclusion: non_scheduled_handoff" >> daily-health-report.md
+            echo "- Result: the latest workflow was not triggered by the native Daily schedule; unattended scheduled recovery is not proven." >> daily-health-report.md
+            echo "state=pending" >> "$GITHUB_OUTPUT"
+            cat daily-health-report.md
+            exit 0
+          fi
+
+          if [ "$operational_conclusion" = "success" ]; then
+            jobs_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs?per_page=100")"
+            required_steps=(
+              "Start background news generation"
+              "Poll background news generation"
+              "Import as published content"
+              "Validate publication content preflight"
+              "Open and validate publication pull request"
+            )
+            for step_name in "${required_steps[@]}"; do
+              step_conclusion="$(jq -r --arg name "$step_name" '[.jobs[].steps[]? | select(.name == $name) | .conclusion][0] // "missing"' <<< "$jobs_json")"
+              if [ "$step_conclusion" != "success" ]; then
+                echo "- Operational conclusion: scheduled_generation_not_proven" >> daily-health-report.md
+                echo "- Required generator step not successful: \`$step_name\` (observed: \`$step_conclusion\`)." >> daily-health-report.md
+                echo "- Result: a pre-existing article, open PR or skipped generator is not unattended recovery." >> daily-health-report.md
+                echo "state=pending" >> "$GITHUB_OUTPUT"
+                cat daily-health-report.md
+                exit 0
+              fi
+            done
+          fi
+
           expected_title="Publish Daily USD Impact — $expected_date"
           expected_file="apps/web/src/content/news/$expected_date.md"
           expected_head_prefix="automation/daily-usd-impact-$expected_date-"

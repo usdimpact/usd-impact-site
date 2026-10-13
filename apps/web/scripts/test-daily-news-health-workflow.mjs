@@ -161,6 +161,26 @@ assert.match(
   'a later operational issue must keep its current failure marker in the body',
 );
 
+assert.match(
+  workflow,
+  /if \[ "\$event" != "schedule" \]; then[\s\S]*non_scheduled_handoff[\s\S]*state=pending[\s\S]*exit 0/,
+  'a manually dispatched Daily run must not close the scheduled recovery incident',
+);
+assert.match(
+  workflow,
+  /if \[ "\$operational_conclusion" = "success" \]; then[\s\S]*required_steps=\([\s\S]*Start background news generation[\s\S]*Poll background news generation[\s\S]*Import as published content[\s\S]*Validate publication content preflight[\s\S]*Open and validate publication pull request/,
+  'every successful scheduled Daily claim must require all real generation/validation/handoff stages',
+);
+assert.match(
+  workflow,
+  /for step_name in "\$\{required_steps\[@\]\}"; do[\s\S]*select\(\.name == \$name\)[\s\S]*if \[ "\$step_conclusion" != "success" \]; then[\s\S]*scheduled_generation_not_proven[\s\S]*state=pending/,
+  'missing or skipped generator job steps must fail closed as PENDING, not healthy',
+);
+assert.ok(
+  (workflow.match(/echo "state=healthy" >> "\$GITHUB_OUTPUT"/g) || []).length === 1,
+  'Health must have only one healthy emission downstream from provenance checks',
+);
+
 const healthStep = workflow.match(
   /      - name: Inspect latest daily workflow run\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Open or update daily health issue)/,
 );

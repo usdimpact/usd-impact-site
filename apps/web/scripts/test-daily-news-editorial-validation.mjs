@@ -400,7 +400,7 @@ assert.match(repairHandler, /If no supported matching catalyst can be retained, 
 assert.match(repairHandler, /exact inclusive window/i);
 assert.match(repairHandler, /repair schema rejects every other date/i);
 assert.match(repairHandler, /Never move, shorten, or invent an event date/i);
-assert.match(repairHandler, /buildRepairOutputSchema\(date\)/);
+assert.match(repairHandler, /buildRepairOutputSchema\(date, repairEvidence\.permittedSourceUrls\)/);
 assert.match(repairHandler, /Re-scan the complete bundle/i);
 assert.match(repairHandler, /remove unused ledger padding/i);
 assert.match(repairHandler, /Remove every unsupported absence claim from highlights, summary, and body/i);

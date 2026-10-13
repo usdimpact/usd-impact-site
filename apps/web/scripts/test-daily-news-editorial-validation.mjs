@@ -421,7 +421,7 @@ const repairGroundedUrls = [
   'https://www.federalreserve.gov/releases/h8/current/default.htm',
   'https://www.bls.gov/news.release/empsit.nr0.htm',
   'https://www.census.gov/wholesale/current/index.html',
-  'https://www.federalreserve.gov/releases/h15/',
+  'https://www.federalreserve.gov/releases/h15',
 ];
 const additionalMetadataUrl = 'https://www.eia.gov/petroleum/supply/weekly/';
 const ungroundedUrl = 'https://www.bloomberg.com/fake-fed-source-url';

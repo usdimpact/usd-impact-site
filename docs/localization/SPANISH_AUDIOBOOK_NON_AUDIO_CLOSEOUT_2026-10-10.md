@@ -166,6 +166,19 @@ Owner instruction in the current project conversation: **"Resolve, continue"** a
 
 **HOLD unchanged:** `production_enabled=false`, `public_allowed=false`, `merge_allowed=false`, `publication_approval=NOT_GRANTED`, private synthesis authorization absent, mastering pending. PR #797 stays draft/unmerged.
 
+## October 14 private read-only refresh — exact-risk transcript spot checks
+
+On October 14, re-exported private selected Descript TXT compositions for tracks **00, 08, 17, 18**, using the canonical manifest-selected IDs and no Descript edits.
+
+| Track | Current private TXT finding | Disposition |
+| --- | --- | --- |
+| 00 | Rights opening still begins `USD Impact. 2026`; educational/non-advice text remains present | Editorial private selection preserved; **legal release clearance is separate** |
+| 08 | Gold example contains ASR `DFI uno cero` and `doscientos cincuenta puntos básicos` | Number-context present; verify actual pronunciation of DFII10 and values during final listening |
+| 17 | Glossary ASR still emits `Mil pesos mexicano`, followed by the correct described `dólar frente al peso mexicano` | A likely speech-recognition rendering of the MXN heading; **actual acoustic pronunciation unverified** |
+| 18 | Methodology includes `desviación estándar muestral`; ending ASR continues to render pipeline authority `F51F7ABF2D4EXE99890EB55374246FAB885F32` | **Still not the canonical pipeline SHA**; script and repository provenance were previously verified. Literal spoken characters are **not certified**. No regeneration based solely on ASR |
+
+This read-only repeat establishes no new confirmed source-word omission. It also does not prove audible passage accuracy or verify media waveforms. Do not convert text-presence results to mastering signoffs. The high-value remaining work is **final targeted hearing of these four passages** and exact track-boundary QA, when the deferred audio stage is authorized. All release and private-synthesis HOLD gates remain in place.
+
 ## Bounded closeout and remaining gates
 
 | Gate | Decision |

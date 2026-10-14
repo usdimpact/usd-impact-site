@@ -330,8 +330,12 @@ try {
       assert.equal(await readFile(tentativeDateArchives[i].path, 'utf8'), immutableTentativeRecords[i]);
     }
   }
-  await rm(treasuryArchivePath);
-  await rm(treasuryCatalystArchivePath);
+  // Restore the pre-existing index fixtures byte-for-byte for the remaining
+  // direct-document and immutable-source regressions; never delete archives.
+  await writeFile(treasuryArchivePath, archive, 'utf8');
+  await writeFile(treasuryCatalystArchivePath, catalystArchive, 'utf8');
+  assert.equal(await readFile(treasuryArchivePath, 'utf8'), archive);
+  assert.equal(await readFile(treasuryCatalystArchivePath, 'utf8'), catalystArchive);
 
   // A valid direct-document fixture is independent of every date on the index.
   await writeBundle(candidateForSource(treasuryDocument, '2026-09-09'));

@@ -33,7 +33,7 @@ const signed = (value, digits = 2) => `${value >= 0 ? '+' : ''}${value.toFixed(d
   </section>
 
   <main class="container">
-    <section class="report-score-panel report-score-detail" aria-label="Weekly score summary">
+    <section class="report-score-panel report-score-detail" aria-label="Weekly score summary" aria-describedby="score-change-basis">
       <div>
         <span>USD Impact Score</span>
         <strong>{signed(entry.data.score.value)}</strong>
@@ -51,6 +51,11 @@ const signed = (value, digits = 2) => `${value >= 0 ? '+' : ''}${value.toFixed(d
         <strong>{signed(entry.data.score.fourWeekChange)}</strong>
       </div>
     </section>
+    <p class="edition-meta" id="score-change-basis">
+      Weekly and four-week changes compare values from the history recalculated when this report's score snapshot was produced.
+      They can differ from changes between originally published weekly scores.
+      <a href="/score/methodology/">Read the calculation and revision methodology.</a>
+    </p>
 
     <FrameworkEvidenceChain current="weekly" weeklyHref={entry.data.slug} />
 

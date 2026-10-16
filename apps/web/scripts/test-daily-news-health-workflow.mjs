@@ -200,3 +200,6 @@ assert.equal(
 );
 
 console.log('daily news health workflow tests pass');
+
+// Offline scheduler tests join the existing CI validation route; no new workflow.
+await import('./test-daily-news-schedule-wake.mjs');

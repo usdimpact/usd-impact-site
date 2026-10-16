@@ -14,12 +14,15 @@ provide an independent clock.
 Proposed route: Vercel Cron -> authenticated wake adapter -> EXISTING GitHub
 schedule-backstop workflow -> EXISTING Daily workflow -> protected editorial PR.
 The adapter cannot choose another repository, branch, date, or source endpoint.
-It does not hold an OpenAI credential or call an OpenAI endpoint.
+The wake adapter never reads a model credential or calls an OpenAI endpoint.
 
 ## What the code does
 
 - Default off; requires Production and DAILY_NEWS_SCHEDULE_WAKE_ENABLED=true.
-- Requires exact Bearer CRON_SECRET (at least 32 characters); rejects URL parameters.
+- Reuses the existing daily-news-grounded-background function to preserve the 12-function source limit.
+  Vercel's documented vercel-cron/1.0 user-agent selects an isolated early-return route;
+  the user-agent is NOT authentication. Exact Bearer CRON_SECRET (at least 32 characters)
+  remains mandatory, and URL parameters are rejected.
 - Restricts execution to UTC weekdays, 09:32 inclusive through 16:30 exclusive.
 - Establishes repository access before interpreting a contents 404 as absence.
 - Respects existing articles and matching PRs in ALL states, including drafts/closed
@@ -44,7 +47,8 @@ it must not be cleared by rerunning blindly.
 The backstop also now rejects authentication/transport failures instead of treating
 all article-lookup failures as missing content. Contents and PR permissions remain
 read-only. The primary generator, Treasury source guard and Health closure rules
-are unchanged.
+are unchanged. Only the existing grounded function's reserved cron routing is added;
+its previous generation implementation is checked byte-for-byte in the tests.
 
 ## Offline verification
 
@@ -76,7 +80,7 @@ After explicit approval and exact-head CI/CodeQL/Preview review:
 3. In a separately reviewed activation change, add exactly one entry to the EXISTING
    apps/web/vercel.json crons array, preserving all other entries:
 
-       { "path": "/api/daily-news-schedule-wake", "schedule": "32 9 * * 1-5" }
+       { "path": "/api/daily-news-grounded-background", "schedule": "32 9 * * 1-5" }
 
    Set DAILY_NEWS_SCHEDULE_WAKE_ENABLED=true in Production only. There is a
    15-minute grace after the native primary. 09:32 UTC is 12:32 Bucharest on
@@ -115,5 +119,6 @@ References:
 - https://docs.github.com/en/actions/how-tos/troubleshoot-workflows
 - https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency
 - https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event
+- https://vercel.com/docs/cron-jobs
 - https://vercel.com/docs/cron-jobs/manage-cron-jobs
 - https://vercel.com/docs/cron-jobs/usage-and-pricing

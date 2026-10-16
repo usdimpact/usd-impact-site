@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile, mkdtemp, writeFile, chmod, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -270,4 +271,46 @@ else echo 2026-10-19; fi
     });
   }
 } finally { await rm(temp, { recursive: true, force: true }); }
+// Verify the existing function routes cron requests before the generator wrapper.
+const routedSource = await readFile(new URL('../api/daily-news-grounded-background.js', import.meta.url), 'utf8');
+const routeImport = "import { createScheduleWakeHandler } from '../src/lib/daily-news-schedule-wake.js';\n";
+const routeSetup = '\nconst scheduleWakeHandler = createScheduleWakeHandler();';
+const routeGuard = "  // User-agent selects the route only; CRON_SECRET still authorizes every wake.\n" +
+  "  // Return before the provider wrapper. No thirteenth Vercel function is added.\n" +
+  "  if (request.headers?.['user-agent'] === 'vercel-cron/1.0') {\n" +
+  "    return scheduleWakeHandler(request, response);\n  }\n";
+await check('normal grounded generation implementation is byte-for-byte preserved', () => {
+  assert.ok(routedSource.startsWith(routeImport));
+  assert.ok(routedSource.includes(routeGuard));
+  const original = Buffer.from(routedSource.replace(routeImport, '').replace(routeSetup, '').replace(routeGuard, ''));
+  const blob = createHash('sha1').update(`blob ${original.length}\0`).update(original).digest('hex');
+  assert.equal(blob, '8cd61bae4b9cc20f55764d1311bcc576d00d708d');
+});
+const routedBody = routedSource.match(/export default async function handler\(request, response\) \{([\s\S]*)\}\s*$/)?.[1];
+assert.ok(routedBody);
+const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+const routed = new AsyncFunction('request', 'response', 'scheduleWakeHandler', 'backgroundHandler', 'groundedFetch',
+  'let runtimeOverrideQueue = Promise.resolve();\n' + routedBody);
+for (const [label, patch, status] of [
+  ['unauthorized cron', { headers: { 'user-agent': 'vercel-cron/1.0' } }, 401],
+  ['wrong method cron', { method: 'POST' }, 405],
+  ['query parameter cron', { url: '/api/daily-news-grounded-background?date=2026-10-14' }, 400],
+  ['valid cron wake', {}, 202],
+]) {
+  await check(`existing function isolates ${label}`, async () => {
+    const f = fixture(); const res = responseSink(); let generatorCalls = 0;
+    const req = { method: 'GET', url: '/api/daily-news-grounded-background',
+      headers: { 'user-agent': 'vercel-cron/1.0', authorization: `Bearer ${secret}` }, ...patch };
+    await routed(req, res, createScheduleWakeHandler({ env, clock, fetchImpl: f.fetchImpl, log: () => {} }),
+      async () => { generatorCalls++; throw new Error('generator must not run'); }, () => { throw new Error('provider wrapper must not run'); });
+    assert.equal(res.code, status); assert.equal(generatorCalls, 0);
+    assert.equal(f.countPosts(), status === 202 ? 1 : 0);
+  });
+}
+await check('ordinary non-cron generation route is unchanged', async () => {
+  let wakes = 0; let generators = 0;
+  const value = await routed({ headers: { 'user-agent': 'curl/fixture' } }, {},
+    () => { wakes++; }, async () => { generators++; return 'unchanged-generation-route'; }, (f) => f);
+  assert.equal(value, 'unchanged-generation-route'); assert.equal(wakes, 0); assert.equal(generators, 1);
+});
 console.log(`daily schedule wake tests pass (${cases} cases; all GitHub calls mocked)`);

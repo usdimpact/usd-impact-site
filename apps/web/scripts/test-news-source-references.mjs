@@ -1,0 +1,76 @@
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const validator = fileURLToPath(new URL('./validate-news.mjs', import.meta.url));
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'news-source-references-'));
+const newsRoot = path.join(root, 'src/content/news');
+fs.mkdirSync(newsRoot, { recursive: true });
+const editionFile = path.join(newsRoot, '2026-10-13.md');
+
+function edition(style, { highlightId = 'fed-scf-2025', catalystId = 'calendar' } = {}) {
+  const references = (id) => style === 'inline'
+    ? `    sourceIds: ["${id}"]`
+    : `    sourceIds:\n      - '${id}'`;
+  return `---
+date: "2026-10-13"
+slug: "/news/2026-10-13"
+lastReviewed: "2026-10-13"
+status: "published"
+complianceNote: "Educational only; not investment advice."
+highlights:
+  - headline: "The Fed's household survey"
+    verification: "verified-primary"
+${references(highlightId)}
+  - headline: "Banking context"
+    verification: "verified-primary"
+${references('fed-h8')}
+  - headline: "Scheduled inflation release"
+    verification: "verified-primary"
+${references('calendar')}
+catalysts:
+  - date: "2026-10-14"
+    event: "Scheduled inflation release"
+${references(catalystId)}
+sources:
+  - id: "fed-scf-2025"
+    url: "https://www.federalreserve.gov/newsevents/pressreleases/other20261009a.htm"
+    sourceType: "primary"
+  - id: "fed-h8"
+    url: "https://www.federalreserve.gov/releases/h8/20261009/"
+    sourceType: "primary"
+  - id: "calendar"
+    url: "https://www.bls.gov/schedule/2026/10_sched_list.htm"
+    sourceType: "primary"
+---
+Source-reference fixture.
+`;
+}
+
+function validate(source) {
+  fs.writeFileSync(editionFile, source, 'utf8');
+  const result = spawnSync(process.execPath, [validator], {
+    cwd: root, encoding: 'utf8', timeout: 5000,
+  });
+  assert.ifError(result.error);
+  assert.equal(result.signal, null, 'validator must complete within its bound');
+  return result;
+}
+
+try {
+  for (const style of ['inline', 'block']) {
+    const valid = validate(edition(style));
+    assert.equal(valid.status, 0, `${style} references should validate: ${valid.stderr}`);
+    for (const entry of ['highlightId', 'catalystId']) {
+      const invalid = validate(edition(style, { [entry]: 'fed-scf' }));
+      assert.notEqual(invalid.status, 0, `${style} unknown ${entry} must fail`);
+      assert.match(invalid.stderr, /2026-10-13\.md: unknown source ID "fed-scf"/);
+    }
+  }
+  console.log('Daily source-reference regression passed: inline and block lists, known and unknown highlight/catalyst sources.');
+} finally {
+  fs.rmSync(root, { recursive: true, force: true });
+}

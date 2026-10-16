@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { load, FAILSAFE_SCHEMA } from 'js-yaml';
 
 const COMPLIANCE = 'Educational and informational only. This report summarizes published USD Impact editions and the systematic weekly score. It is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset.';
 const SCORE_BREADTH_WATCH = "Watch the breadth of the score's eight component contributions alongside these events to see whether the completed-week configuration persists, narrows, or moves toward the nearest regime boundary.";
@@ -29,13 +30,13 @@ function weekdays(start) {
 function frontmatter(source) {
   const match = source.match(/^---\s*\n([\s\S]*?)\n---\s*(?:\n|$)/);
   if (!match) throw new Error('missing YAML frontmatter');
-  return match[1];
+  const data = load(match[1], { schema: FAILSAFE_SCHEMA });
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('YAML frontmatter must be a mapping');
+  return data;
 }
 
-function scalar(block, key) {
-  const match = block.match(new RegExp(`^${key}:\\s*["']([^"']*)["']\\s*$`, 'm'))
-    ?? block.match(new RegExp(`^${key}:\\s*([^\\r\\n]+)\\s*$`, 'm'));
-  return match?.[1]?.trim();
+function scalar(data, key) {
+  return typeof data[key] === 'string' ? data[key].trim() : undefined;
 }
 
 function yamlQuote(value) {
@@ -75,7 +76,9 @@ function loadEditions(newsRoot, dates) {
     const summary = scalar(data, 'summary');
     const title = scalar(data, 'title');
     if (!summary || !title) throw new Error(`Daily edition ${date} is missing title or summary`);
-    return { date, summary, title };
+    const catalysts = data.catalysts ?? [];
+    if (!Array.isArray(catalysts)) throw new Error(`Daily edition ${date} catalysts must be an array`);
+    return { date, summary, title, catalysts };
   });
 }
 
@@ -89,12 +92,12 @@ export function generateWeeklyReport({ week, score, newsRoot, generatedAt = new 
   const firmer = drivers.filter((driver) => driver.contribution > 0).map((driver) => driver.name);
   const latestCatalysts = [];
   for (const edition of editions) {
-    const source = fs.readFileSync(path.join(newsRoot, `${edition.date}.md`), 'utf8');
-    const block = frontmatter(source).match(/^catalysts:\s*$([\s\S]*?)^sources:\s*$/m)?.[1] ?? '';
-    const records = [...block.matchAll(/^\s+- date:\s*["']?(\d{4}-\d{2}-\d{2})["']?\s*$[\s\S]*?^\s+event:\s*["']?([^\r\n"']+)["']?\s*$/gm)];
-    for (const match of records) {
-      if (match[1] > week && !latestCatalysts.some((item) => item.date === match[1] && item.event === match[2])) {
-        latestCatalysts.push({ date: match[1], event: match[2].trim(), sourceEditionDate: edition.date });
+    for (const catalyst of edition.catalysts) {
+      const date = catalyst && scalar(catalyst, 'date');
+      const event = catalyst && scalar(catalyst, 'event');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !event) throw new Error(`Daily edition ${edition.date} has an invalid catalyst`);
+      if (date > week && !latestCatalysts.some((item) => item.date === date && item.event === event)) {
+        latestCatalysts.push({ date, event, sourceEditionDate: edition.date });
       }
     }
   }

@@ -1,5 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { load, FAILSAFE_SCHEMA } from 'js-yaml';
 
 const newsDir = path.resolve('src/content/news');
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -7,13 +8,8 @@ const HTTPS_URL = /^https:\/\/[^\s"']+$/;
 const allowedStatus = new Set(['draft', 'review', 'ready-for-build', 'published']);
 const publishedVerification = new Set(['verified-primary', 'verified-multiple']);
 
-function topLevel(frontmatter, key) {
-  const match = frontmatter.match(new RegExp(`^${key}:\\s*(?:"([^"]*)"|'([^']*)'|([^\\n#]+))`, 'm'));
-  return match ? (match[1] ?? match[2] ?? match[3] ?? '').trim() : '';
-}
-
-function fieldValues(frontmatter, key) {
-  return [...frontmatter.matchAll(new RegExp(`^[ \\t]+(?:-\\s*)?${key}:\\s*"([^"]+)"[ \\t]*$`, 'gm'))].map((match) => match[1]);
+function topLevel(data, key) {
+  return typeof data[key] === 'string' ? data[key].trim() : '';
 }
 
 function fail(file, message) {
@@ -37,11 +33,18 @@ for (const file of files) {
   if (parts.length < 3) fail(file, 'missing YAML frontmatter delimiters');
 
   const frontmatter = parts[1];
-  const date = topLevel(frontmatter, 'date');
-  const status = topLevel(frontmatter, 'status');
-  const lastReviewed = topLevel(frontmatter, 'lastReviewed');
-  const complianceNote = topLevel(frontmatter, 'complianceNote');
-  const slug = topLevel(frontmatter, 'slug');
+  let data;
+  try {
+    data = load(frontmatter, { schema: FAILSAFE_SCHEMA });
+  } catch (error) {
+    fail(file, `invalid YAML frontmatter: ${error.message}`);
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) fail(file, 'YAML frontmatter must be a mapping');
+  const date = topLevel(data, 'date');
+  const status = topLevel(data, 'status');
+  const lastReviewed = topLevel(data, 'lastReviewed');
+  const complianceNote = topLevel(data, 'complianceNote');
+  const slug = topLevel(data, 'slug');
 
   if (!ISO_DATE.test(date)) fail(file, 'date must use YYYY-MM-DD');
   if (path.basename(file, '.md') !== date) fail(file, 'filename must match the edition date');
@@ -51,12 +54,17 @@ for (const file of files) {
   if (!/not investment/i.test(complianceNote)) fail(file, 'compliance note must explicitly reject investment advice');
   if (/(example\.com|localhost|127\.0\.0\.1)/i.test(frontmatter)) fail(file, 'placeholder or local source URL detected');
 
-  const sourceIds = fieldValues(frontmatter, 'id');
-  const sourceUrls = fieldValues(frontmatter, 'url');
-  const sourceTypes = fieldValues(frontmatter, 'sourceType');
-  const verification = fieldValues(frontmatter, 'verification');
-  const headlines = fieldValues(frontmatter, 'headline');
+  const { sources, highlights, catalysts = [] } = data;
+  if (!Array.isArray(sources) || !Array.isArray(highlights) || !Array.isArray(catalysts)) {
+    fail(file, 'sources, highlights and catalysts must be arrays');
+  }
+  const sourceIds = sources.map((source) => source?.id);
+  const sourceUrls = sources.map((source) => source?.url);
+  const sourceTypes = sources.map((source) => source?.sourceType);
+  const verification = highlights.map((highlight) => highlight?.verification).filter((value) => typeof value === 'string');
+  const headlines = highlights.map((highlight) => highlight?.headline).filter((value) => typeof value === 'string');
 
+  if (sourceIds.some((id) => typeof id !== 'string' || !id.trim())) fail(file, 'source IDs must be nonempty strings');
   if (new Set(sourceIds).size !== sourceIds.length) fail(file, 'source IDs must be unique');
   for (const url of sourceUrls) {
     if (!HTTPS_URL.test(url)) fail(file, `source URL must be HTTPS: ${url}`);
@@ -65,10 +73,15 @@ for (const file of files) {
     if (!['primary', 'reporting'].includes(type)) fail(file, `invalid source type "${type}"`);
   }
 
-  const sourceIdBlocks = [...frontmatter.matchAll(/^[ \t]+sourceIds:[ \t]*\n((?:^[ \t]+-[ \t]*"[^"]+"[ \t]*\n?)+)/gm)];
-  const serializedReferences = sourceIdBlocks.flatMap((match) => [...match[1].matchAll(/^\s*-\s*"([^"]+)"\s*$/gm)].map((item) => item[1]));
-  for (const id of serializedReferences) {
-    if (!sourceIds.includes(id)) fail(file, `unknown source ID "${id}"`);
+  for (const [kind, entries] of [['highlight', highlights], ['catalyst', catalysts]]) {
+    for (const [index, entry] of entries.entries()) {
+      if (!Array.isArray(entry?.sourceIds) || entry.sourceIds.length === 0) {
+        fail(file, `${kind} ${index + 1} requires source IDs`);
+      }
+      for (const id of entry.sourceIds) {
+        if (typeof id !== 'string' || !sourceIds.includes(id)) fail(file, `unknown source ID "${id}"`);
+      }
+    }
   }
 
   if (headlines.length < 3 || headlines.length > 7) fail(file, 'editions require 3-7 highlights');

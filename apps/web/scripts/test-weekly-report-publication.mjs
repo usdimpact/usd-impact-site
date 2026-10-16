@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { load, FAILSAFE_SCHEMA } from 'js-yaml';
 import { generateWeeklyReport } from './generate-weekly-report.mjs';
 
 const scriptRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -150,6 +151,30 @@ try {
   assert.throws(() => generateWeeklyReport({ week: '2026-08-28', score: stale, newsRoot }), /must be present and fresh/);
   const mondayFile = path.join(newsRoot, dates[0] + '.md');
   const originalMonday = fs.readFileSync(mondayFile, 'utf8');
+  const quotedTitle = `Daily USD Impact — the Fed's "dated" evidence`;
+  const quotedEvent = `The Fed's "confirmed" release`;
+  const summaryCases = [
+    ['"The Fed\'s October release provides dated evidence."', "The Fed's October release provides dated evidence."],
+    [JSON.stringify('A "verified" observation remains separate from today\'s prices.'), 'A "verified" observation remains separate from today\'s prices.'],
+    ["'The Fed''s release provides dated evidence.'", "The Fed's release provides dated evidence."],
+    [">-\n  The Fed's release provides dated evidence.\n  Current market directions remain unassigned.", "The Fed's release provides dated evidence. Current market directions remain unassigned."],
+  ];
+  for (const [yamlSummary, expectedSummary] of summaryCases) {
+    const source = originalMonday
+      .replace(/^title:.*$/m, `title: ${JSON.stringify(quotedTitle)}`)
+      .replace(/^summary:.*$/m, `summary: ${yamlSummary}`)
+      .replace('event: "Confirmed event"', `event: ${JSON.stringify(quotedEvent)}`);
+    fs.writeFileSync(mondayFile, source, 'utf8');
+    const generated = generateWeeklyReport({ week: '2026-08-28', score, newsRoot, generatedAt: '2026-08-29T12:00:00Z' });
+    const [metadata, body] = generated.slice(4).split('\n---\n');
+    const data = load(metadata, { schema: FAILSAFE_SCHEMA });
+    assert.equal(data.sourceEditions[0].title, quotedTitle, 'decode title quoting without dropping apostrophes or literal quotes');
+    assert.equal(data.catalysts[0].event, quotedEvent, 'retain quoted forward-calendar evidence');
+    assert.equal(data.themes[0].summary, `${expectedSummary} Verified summary for ${dates[1]}.`);
+    assert.ok(data.summary.startsWith(`${expectedSummary} `), 'summary must contain decoded text without YAML wrapper quotes');
+    const executive = body.split('## Executive read-through\n\n')[1].split('\n\n## How the news')[0];
+    assert.equal(executive, [expectedSummary, ...dates.slice(1).map((date) => `Verified summary for ${date}.`)].join(' '));
+  }
   for (const [source, error] of [
     [originalMonday.replace('status: "published"', 'status: "draft"') + 'status: "published"\n', /not published/],
     [originalMonday.replace('date: "2026-08-24"', 'date: "2026-08-25"'), /mismatched date/],

@@ -152,11 +152,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <p>Leave-one-driver-out regime-label agreement was about 83.4%–90.5% across the available sample. The latest reading stayed Soft dollar under seven single-driver omissions and became Weak dollar when the U.S. 10Y input was omitted. Narrower and wider regime thresholds retained about 85.4% and 90.3% historical label agreement with production thresholds.</p>
         </article>
         <article class="card status-known">
-          <h3>True predictive out-of-sample test: preregistered, not started</h3>
+          <h3>True predictive out-of-sample test: collecting prospective records</h3>
           <p>A <a href="https://github.com/usdimpact/usd-impact-pipeline/blob/main/research/score_v2_predictive_preregistration.json" target="_blank" rel="noreferrer">separate protocol</a> was registered before its first eligible origin on August 28, 2026. It freezes the sign of the as-published Score v2 against the next completed-Friday DXY direction, requires 52 consecutive resolved predictions, prohibits backfill and interim performance reporting, and has no result yet.</p>
         </article>
         <article class="card status-known">
-          <h3>Score v3 descriptive research: preregistered, not started</h3>
+          <h3>Score v3 descriptive research: collecting prospective records</h3>
           <p>A separate prospective study freezes four candidate descriptive specifications before its first eligible week on August 28, 2026. It compares revision immunity, contribution concentration, leave-one-driver-out stability and regime turnover over 52 future weeks. It does not test predictive power, does not change production Score v2 and cannot automatically promote a candidate.</p>
         </article>
         <article class="card status-known">
@@ -168,7 +168,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <p>v2 begins in 2015 and includes Bitcoin. A 2008 result would require a separately labelled proxy study or a new methodology version; it cannot honestly be reported as a v2 observation.</p>
         </article>
       </div>
-      <p class="methodology-note">The robustness and point-in-time files are current-vintage recalculations from the latest available provider histories. The separate vintage-comparison files use first-party as-published archives to audit revisions. Those completed studies are descriptive evidence, not independently audited performance or evidence of future predictive power. The prospective Score v2 predictive study and the separate Score v3 descriptive comparison are registered and automated but have not begun; neither supplies present performance evidence.</p>
+      <p class="methodology-note">The robustness and point-in-time files are current-vintage recalculations from the latest available provider histories. The separate vintage-comparison files use first-party as-published archives to audit revisions. Those completed studies are descriptive evidence, not independently audited performance or evidence of future predictive power. The prospective Score v2 predictive study and the separate Score v3 descriptive comparison are collecting prospective records under their locked protocols; neither supplies present performance evidence.</p>
     </section>
 
     <section class="methodology-section">
@@ -278,9 +278,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <div><dt>How often are weights rebalanced?</dt><dd>They are not. Weights are static; normalization moments update every run.</dd></div>
         <div><dt>How are missing observations treated?</dt><dd>Limited daily forward fill for calendar alignment, strict freshness checks, then complete-case weekly filtering.</dd></div>
         <div><dt>How are outliers treated?</dt><dd>Component z-scores are clipped at ±3.5; raw values are not winsorized.</dd></div>
-        <div><dt>Predictive or descriptive?</dt><dd>The production Score v2 is descriptive. A separate preregistered research protocol will test one narrow predictive question; it currently has zero resolved predictions and authorizes no predictive claim.</dd></div>
+        <div><dt>Predictive or descriptive?</dt><dd>The production Score v2 is descriptive. A separate preregistered research protocol is collecting prospective one-week DXY predictions and requires 52 resolved predictions before evaluation; it has no result yet and authorizes no predictive claim.</dd></div>
         <div><dt>Optimized in-sample?</dt><dd>No predictive optimizer fits the production weights or thresholds, but the specification choices remain discretionary.</dd></div>
-        <div><dt>Backtested out-of-sample?</dt><dd>No completed predictive out-of-sample result exists. A future-only one-week DXY study is preregistered to begin August 28, 2026 and requires 52 resolved predictions; the earlier point-in-time normalization study remains a descriptive robustness test.</dd></div>
+        <div><dt>Backtested out-of-sample?</dt><dd>No completed predictive out-of-sample result exists. The preregistered one-week DXY study began collecting prospective records from August 28, 2026 and requires 52 resolved predictions; the earlier point-in-time normalization study remains a descriptive robustness test.</dd></div>
         <div><dt>Stable across regimes?</dt><dd>Not invariant. The published robustness battery finds 40.1% regime-label agreement between point-in-time and full-sample normalization across 556 evaluated weeks, while leave-one-driver-out agreement is materially higher at about 83.4%–90.5%.</dd></div>
         <div><dt>2008, 2020, 2022?</dt><dd>2008 is outside canonical v2. The published research includes 2020 and 2022 anchor-window comparisons under both point-in-time and full-sample normalization, but these are descriptive robustness checks rather than predictive tests.</dd></div>
       </dl>

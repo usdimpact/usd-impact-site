@@ -250,6 +250,43 @@ else echo 2026-10-19; fi
   for (const [name, content] of [['gh', gh], ['date', date], ['sleep', '#!/bin/bash\nexit 0\n']]) {
     await writeFile(join(temp, name), content); await chmod(join(temp, name), 0o700);
   }
+  // GitHub runs the backstop with native jq. Vercel's build image lacks it,
+  // so use a bounded, offline query interpreter there; do not skip shell cases.
+  const nativeJq = spawnSync('/bin/bash', ['-c', 'command -v jq'], {
+    encoding: 'utf8', env: { PATH: '/usr/bin:/bin' },
+  });
+  if (nativeJq.status !== 0 || process.env.TEST_DAILY_WAKE_PORTABLE_JQ === '1') {
+    const portableJq = `#!${process.execPath}
+const { readFileSync } = require('node:fs');
+const args = process.argv.slice(2), vars = {};
+let query = '';
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--arg') { vars[args[++i]] = args[++i]; }
+  else if (!args[i].startsWith('-')) query = args[i];
+}
+const data = JSON.parse(readFileSync(0, 'utf8'));
+const runs = data.workflow_runs;
+if (!Array.isArray(runs)) process.exit(2);
+if (query.includes('.total_count ==')) {
+  const ok = Number.isInteger(data.total_count) && data.total_count === runs.length && data.total_count <= 100;
+  console.log(ok); process.exit(ok ? 0 : 1);
+}
+let selected = runs;
+if (query.includes('startswith($day)')) selected = selected.filter(r => r.created_at.startsWith(vars.day));
+if (query.includes('(.id | tostring) != $current')) selected = selected.filter(r => String(r.id) !== vars.current);
+if (query.includes('.status != "completed"')) selected = selected.filter(r => r.status !== 'completed');
+if (query.includes('.status == "completed"')) selected = selected.filter(r => r.status === 'completed');
+if (query.includes('.conclusion != "success"')) selected = selected.filter(r => r.conclusion !== 'success');
+if (query.includes('.conclusion == "success"')) selected = selected.filter(r => r.conclusion === 'success');
+if (query.includes('.event == "workflow_dispatch"')) selected = selected.filter(r => r.event === 'workflow_dispatch');
+if (query.includes('.head_branch == "main"')) selected = selected.filter(r => r.head_branch === 'main');
+if (query.endsWith('| length')) console.log(selected.length);
+else if (query.endsWith('| .html_url')) selected.forEach(r => console.log(r.html_url));
+else process.exit(2);
+`;
+    await writeFile(join(temp, 'jq'), portableJq);
+    await chmod(join(temp, 'jq'), 0o700);
+  }
   for (const [scenario, exit, dispatches, message] of [
     ['published', 0, 0, 'already exists'], ['forbidden', 1, 0, 'lookup did not return'],
     ['transport', 1, 0, 'lookup did not return'], ['weekend', 0, 0, 'outside UTC weekdays'],

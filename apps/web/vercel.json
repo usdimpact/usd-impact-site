@@ -29,6 +29,10 @@
     {
       "path": "/api/commerce-reconciliation",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/daily-news-grounded-background",
+      "schedule": "32 9 * * 1-5"
     }
   ],
   "rewrites": [

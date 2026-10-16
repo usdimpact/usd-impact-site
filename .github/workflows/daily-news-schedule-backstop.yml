@@ -37,9 +37,27 @@ jobs:
             echo "- Expected edition: \`$today\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-          if gh api "repos/$GITHUB_REPOSITORY/contents/$expected_file?ref=main" >/dev/null 2>&1; then
+          # A delayed Friday event must not generate a Saturday edition.
+          if [ "$(date -u +%u)" -gt 5 ]; then
+            echo "- Result: outside UTC weekdays; no recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Authentication/transport errors must not be mistaken for a missing article.
+          default_branch="$(gh api "repos/$GITHUB_REPOSITORY" --jq .default_branch)"
+          if [ "$default_branch" != "main" ]; then
+            echo "- HOLD: repository access or default branch is unverified." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          file_headers="$(gh api --include --silent "repos/$GITHUB_REPOSITORY/contents/$expected_file?ref=main" 2>/dev/null)" || true
+          file_status="$(awk '/^HTTP\// {code=$2} END {print code}' <<< "$file_headers")"
+          if [ "$file_status" = "200" ]; then
             echo "- Result: today's edition already exists on main; no recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
             exit 0
+          fi
+          if [ "$file_status" != "404" ]; then
+            echo "- HOLD: publication lookup did not return 200 or 404; no recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
 
           existing_pr="$(gh pr list \
@@ -75,8 +93,43 @@ jobs:
             exit 0
           fi
 
-          gh workflow run daily-news.yml --repo "$GITHUB_REPOSITORY" --ref main
+          # Retain the shared concurrency group while settling an accepted dispatch.
+          # An earlier failed/cancelled backstop may have dispatched without a visible
+          # receipt. Never retry that ambiguous operation automatically.
+          backstop_runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/daily-news-schedule-backstop.yml/runs?created=$today&per_page=100")"
+          jq -e '.total_count == (.workflow_runs | length) and .total_count <= 100' <<< "$backstop_runs" >/dev/null
+          ambiguous_count="$(jq --arg current "$GITHUB_RUN_ID" '[.workflow_runs[] | select((.id | tostring) != $current and .status == "completed" and .conclusion != "success")] | length' <<< "$backstop_runs")"
+          if [ "$ambiguous_count" -gt 0 ]; then
+            echo "- HOLD: an earlier backstop did not succeed; reconcile its dispatch receipt before another attempt." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
 
+          if ! gh workflow run daily-news.yml --repo "$GITHUB_REPOSITORY" --ref main; then
+            echo "- HOLD: recovery dispatch acknowledgement is unknown; do not retry automatically." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          receipt=''
+          for receipt_check in $(seq 1 12); do
+            receipt_runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/daily-news.yml/runs?created=$today&per_page=100")"
+            jq -e '.total_count == (.workflow_runs | length) and .total_count <= 100' <<< "$receipt_runs" >/dev/null
+            receipt_count="$(jq '[.workflow_runs[] | select(.event == "workflow_dispatch" and .head_branch == "main")] | length' <<< "$receipt_runs")"
+            if [ "$receipt_count" -gt 1 ]; then
+              echo "- HOLD: more than one recovery run is visible; inspect provenance and spend before further action." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+            if [ "$receipt_count" -eq 1 ]; then
+              receipt="$(jq -r '.workflow_runs[] | select(.event == "workflow_dispatch" and .head_branch == "main") | .html_url' <<< "$receipt_runs")"
+              break
+            fi
+            sleep 5
+          done
+          if [ -z "$receipt" ]; then
+            echo "- HOLD: accepted dispatch has no visible run receipt; do not retry automatically." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
           echo "- Result: dispatched exactly one bounded Daily recovery run." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Recovery run receipt: $receipt" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Provenance: automatic backstop recovery; NOT native scheduled acceptance." >> "$GITHUB_STEP_SUMMARY"
           echo "- Earlier successful Daily runs without a publication artifact today: $success_count" >> "$GITHUB_STEP_SUMMARY"
           echo "- Earlier failed Daily runs today: $failed_count" >> "$GITHUB_STEP_SUMMARY"

@@ -140,7 +140,7 @@ function queuedFetch(responses) {
       status: 'accepted',
       provider_message_ref: emailId,
     }]),
-    jsonResponse(null, 204),
+    jsonResponse([{ id: 'outbox-ready', status: 'delivered', provider_message_ref: emailId }]),
     jsonResponse(null, 204),
   ]);
   const response = responseMock();
@@ -170,3 +170,5 @@ function queuedFetch(responses) {
 console.log('Resend webhook outbox-correlation retry tests passed.');
 
 await import('./test-resend-auth-notification-boundary.mjs');
+
+await import('./test-resend-webhook-atomic-update.mjs');

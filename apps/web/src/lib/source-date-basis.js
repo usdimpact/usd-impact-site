@@ -8,6 +8,9 @@ export const SOURCE_DATE_BASIS = Object.freeze({
 
 // This rolling index has separately dated documents, not one release date.
 const TREASURY_REFUNDING_INDEX_PATH = '/policy-issues/financing-the-government/quarterly-refunding/most-recent-quarterly-refunding-documents';
+// Reused Treasury schedule PDF: archived Daily articles already cite multiple publication
+// dates for this same URL. Query strings do not identify immutable document versions.
+const TREASURY_TENTATIVE_AUCTION_SCHEDULE_PATH = '/system/files/221/tentative-auction-schedule.pdf';
 const FEDERAL_RESERVE_POSTINGS_INDEX_PATH = '/recentpostings.htm';
 // Reused full-report pointer; new citations must identify a dated release.
 const EIA_WEEKLY_REPORT_POINTER_PATH = '/petroleum/supply/weekly/pdf/wpsrall.pdf';
@@ -35,6 +38,9 @@ export function sourceDateBasisForUrl(value) {
       pathname = decodeURIComponent(url.pathname).replace(/\/+$/, '').toLowerCase();
     } catch {
       return SOURCE_DATE_BASIS.PUBLISHED;
+    }
+    if (indexHostname === 'home.treasury.gov' && pathname === TREASURY_TENTATIVE_AUCTION_SCHEDULE_PATH) {
+      return SOURCE_DATE_BASIS.ROLLING_REPORT;
     }
     if (indexHostname === 'eia.gov' && pathname === EIA_WEEKLY_REPORT_POINTER_PATH) {
       return SOURCE_DATE_BASIS.ROLLING_REPORT;
@@ -67,6 +73,15 @@ export function isLivingSourceUrl(value) {
 export function sourceDateAttributionIssue(value) {
   const basis = sourceDateBasisForUrl(value);
   if (basis === SOURCE_DATE_BASIS.ROLLING_REPORT) {
+    let hostname = '';
+    try {
+      hostname = new URL(String(value)).hostname.toLowerCase().replace(/^www\./, '').replace(/\.$/, '');
+    } catch {
+      // Invalid URLs will fail the ordinary HTTPS and URL checks.
+    }
+    if (hostname === 'home.treasury.gov') {
+      return 'Treasury tentative auction schedule PDF is a mutable document pointer with conflicting historical publication dates. Cite a verified dated auction announcement or version-specific official document instead; do not copy an earlier release date, use access dates, or modify query parameters to bypass source verification. If no such source exists, omit the unsupported source and claim.';
+    }
     return 'EIA weekly petroleum rolling report requires a verified dated archive document; cite that release-specific page or report with its own Release Date, not the data-week ending date, next release date or access date. Do not construct an archive URL or copy an older date merely to pass validation; omit the unsupported source and claim if the dated document cannot be verified.';
   }
   if (basis !== SOURCE_DATE_BASIS.DOCUMENT_INDEX) return null;

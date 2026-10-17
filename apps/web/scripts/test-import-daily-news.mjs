@@ -308,6 +308,35 @@ try {
       assert.equal(await readFile(treasuryCatalystArchivePath, 'utf8'), catalystArchive);
     }
   }
+  // Regression for the exact 2026-10-14 import gate: a reused Treasury PDF
+  // accumulated contradictory source publication dates in immutable archives.
+  // The importer must HOLD even if the candidate copies one historical date.
+  const tentativePdf = 'https://home.treasury.gov/system/files/221/Tentative-Auction-Schedule.pdf?mod=article_inline';
+  const tentativeDateArchives = [
+    { path: treasuryArchivePath, date: '2026-06-03' },
+    { path: treasuryCatalystArchivePath, date: '2026-08-03' },
+  ];
+  for (const item of tentativeDateArchives) {
+    await writeFile(item.path, archiveRecord(tentativePdf, item.date), 'utf8');
+  }
+  const immutableTentativeRecords = await Promise.all(tentativeDateArchives.map((item) => readFile(item.path, 'utf8')));
+  for (const date of ['2026-06-03', '2026-08-03', '2026-09-01', '2026-10-14']) {
+    await writeBundle(candidateForSource(tentativePdf, date));
+    const failure = runImporter('--replace', '--publish');
+    assert.notEqual(failure.status, 0);
+    assert.match(failure.stderr, /Treasury tentative auction schedule PDF is a mutable document pointer/);
+    await assert.rejects(readFile(treasuryEditionPath), { code: 'ENOENT' });
+    for (let i = 0; i < tentativeDateArchives.length; i += 1) {
+      assert.equal(await readFile(tentativeDateArchives[i].path, 'utf8'), immutableTentativeRecords[i]);
+    }
+  }
+  // Restore the pre-existing index fixtures byte-for-byte for the remaining
+  // direct-document and immutable-source regressions; never delete archives.
+  await writeFile(treasuryArchivePath, archive, 'utf8');
+  await writeFile(treasuryCatalystArchivePath, catalystArchive, 'utf8');
+  assert.equal(await readFile(treasuryArchivePath, 'utf8'), archive);
+  assert.equal(await readFile(treasuryCatalystArchivePath, 'utf8'), catalystArchive);
+
   // A valid direct-document fixture is independent of every date on the index.
   await writeBundle(candidateForSource(treasuryDocument, '2026-09-09'));
   const directDocument = runImporter('--replace', '--publish');

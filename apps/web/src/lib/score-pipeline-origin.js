@@ -30,3 +30,13 @@ export function scorePipelineUrl(pathname, originValue) {
   const path = pathname.startsWith('/') ? pathname : `/${pathname}`;
   return `${origin}${path}`;
 }
+
+export function scorePipelineArchiveUrl(weekEnding, originValue) {
+  const date = typeof weekEnding === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(weekEnding)
+    ? new Date(`${weekEnding}T00:00:00.000Z`)
+    : null;
+  if (!date || !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== weekEnding) {
+    throw new Error('Score archive week must be a valid ISO date (YYYY-MM-DD).');
+  }
+  return scorePipelineUrl(`/archive/${weekEnding}/weekly_input.json`, originValue);
+}

@@ -285,6 +285,35 @@ for (const url of [
   assert.equal(isLivingSourceUrl(url), false, url);
   assert.equal(sourceDateAttributionIssue(url), null, url);
 }
+// October 14 import failure: the Treasury tentative-auction PDF is a rolling
+// pointer, not an immutable June/August/September 2026 publication artifact.
+const tentativeTreasuryPdf = 'https://home.treasury.gov/system/files/221/Tentative-Auction-Schedule.pdf';
+for (const url of [
+  tentativeTreasuryPdf,
+  `${tentativeTreasuryPdf}?mod=article_inline`,
+  `${tentativeTreasuryPdf}?utm_source=daily#report`,
+  tentativeTreasuryPdf.replace('home.treasury.gov', 'HOME.TREASURY.GOV.'),
+  tentativeTreasuryPdf.replace('Tentative-', '%54entative-'),
+]) {
+  assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.ROLLING_REPORT, url);
+  assert.equal(isLivingSourceUrl(url), false, 'Rolling Treasury PDF must not bypass the publication-date guard');
+  assert.match(sourceDateAttributionIssue(url), /mutable document pointer with conflicting historical publication dates/i);
+  for (const publishedAt of ['2026-06-03', '2026-08-03', '2026-09-01', '2026-10-14']) {
+    const candidate = treasuryAttributionBundle(url, publishedAt);
+    const original = structuredClone(candidate);
+    assert.throws(() => validateEditorialBundle(candidate), /Treasury tentative auction schedule PDF is a mutable document pointer/);
+    assert.deepEqual(candidate, original, 'Never rewrite an unsupported historical publication date');
+  }
+}
+for (const url of [
+  'https://home.treasury.gov/system/files/221/synthetic-refunding-document-20260909.pdf',
+  'https://home.treasury.gov/news/press-releases/sb0607',
+  'https://home.treasury.gov/system/files/221/Tentative-Auction-Schedule-20260909-archived.pdf',
+  'https://home.treasury.gov.example.org/system/files/221/Tentative-Auction-Schedule.pdf',
+]) {
+  assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.PUBLISHED, url);
+  assert.equal(sourceDateAttributionIssue(url), null, url);
+}
 assert.equal(sourceDateAttributionIssue(null), null);
 assert.match(SOURCE_DATE_RULES, /multi-document index for discovery only/i);
 assert.match(SOURCE_DATE_RULES, /directly linked dated document/i);

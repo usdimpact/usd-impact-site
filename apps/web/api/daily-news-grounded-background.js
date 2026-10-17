@@ -1,3 +1,4 @@
+import { createScheduleWakeHandler } from '../src/lib/daily-news-schedule-wake.js';
 import backgroundHandler from './daily-news-background.js';
 import {
   SOURCE_DATE_RULES,
@@ -195,8 +196,14 @@ function groundedFetch(realFetch) {
 }
 
 export const config = { maxDuration: 300 };
+const scheduleWakeHandler = createScheduleWakeHandler();
 
 export default async function handler(request, response) {
+  // User-agent selects the route only; CRON_SECRET still authorizes every wake.
+  // Return before the provider wrapper. No thirteenth Vercel function is added.
+  if (request.headers?.['user-agent'] === 'vercel-cron/1.0') {
+    return scheduleWakeHandler(request, response);
+  }
   let release;
   const previous = runtimeOverrideQueue;
   runtimeOverrideQueue = new Promise((resolve) => {

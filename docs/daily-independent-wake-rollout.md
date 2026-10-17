@@ -1,7 +1,12 @@
 # Daily independent schedule wake - staged repair for incident #786
 
-Status: PREPARED, NOT ACTIVATED. This change does not register a cron, set a secret,
-merge itself, call a source endpoint, or establish unattended acceptance.
+Status (2026-10-17): CRON REGISTERED IN REPOSITORY; LIVE ACCEPTANCE UNVERIFIED.
+`apps/web/vercel.json` contains one weekday 09:32 UTC (`32 9 * * 1-5`) cron for
+`/api/daily-news-grounded-background`, registered in
+[activation commit e45ce1d](https://github.com/usdimpact/usd-impact-site/commit/e45ce1d32f8a791e1b933c93a358be72147d773c).
+Current Production runtime enablement and live native/external acceptance are not
+established by this repository evidence. The activation section below is retained
+as the original setup runbook; do not repeat registration or activation from it.
 
 ## Why this repair
 

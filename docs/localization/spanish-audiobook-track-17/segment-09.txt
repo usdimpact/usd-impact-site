@@ -1,0 +1,6 @@
+JKM
+Japan-Korea Marker. Precio spot de referencia para GNL entregado en el noreste de Asia, publicado por S&P Global Platts. Junto con TTF y Henry Hub define la estructura tripartita de precios del gas global. NYMEX
+New York Mercantile Exchange. División de futuros energéticos del CME Group; lista WTI, gas en Henry Hub, gasolina y combustible de calefacción. OVX
+Cboe Crude Oil ETF Volatility Index. Sigue la volatilidad implícita de las opciones sobre WTI (análogo al VIX para renta variable). Útil para distinguir la volatilidad específica del petróleo de las señales generales de aversión al riesgo. Lenguaje multiactivo y FX
+Carry
+Retorno que se gana o se paga al mantener una posición en el tiempo, ligado a los diferenciales de tipos. En FX puede ser un motor importante de flujos.

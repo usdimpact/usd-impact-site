@@ -1,0 +1,4 @@
+APÉNDICE B
+Metodología de la USD Impact Score
+Este apéndice documenta la puntuación presentada en el Capítulo 10. Se incluye para que pueda auditarse. La puntuación es una herramienta educativa de lectura de regímenes. No es una cartera modelo, un sistema de operativa, un pronóstico ni una recomendación para comprar o vender ningún valor, materia prima, divisa o activo digital. Qué está diseñada para medir la puntuación
+La USD Impact Score resume si el sistema multiactivo se comporta más como un régimen de dólar más fuerte, un régimen de dólar más débil o favorable a la liquidez, o una transición mixta. Comprime el marco del libro: primero lee el régimen del dólar, después identifica el canal de transmisión y finalmente interpreta cada activo con su propio conjunto de motores.

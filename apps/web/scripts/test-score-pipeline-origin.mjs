@@ -4,6 +4,7 @@ import {
   BRANDED_SCORE_PIPELINE_ORIGIN,
   LEGACY_SCORE_PIPELINE_ORIGIN,
   resolveScorePipelineOrigin,
+  scorePipelineArchiveUrl,
   scorePipelineUrl,
 } from '../src/lib/score-pipeline-origin.js';
 
@@ -17,10 +18,42 @@ assert.throws(
   /Unsupported Score pipeline origin/,
 );
 
-const [home, score, astroConfig] = await Promise.all([
+assert.equal(
+  scorePipelineArchiveUrl('2026-10-09', ` ${BRANDED_SCORE_PIPELINE_ORIGIN}/ `),
+  `${BRANDED_SCORE_PIPELINE_ORIGIN}/archive/2026-10-09/weekly_input.json`,
+  'Historical Score links must retain the displayed week, not the moving latest bridge.',
+);
+assert.equal(
+  scorePipelineArchiveUrl('2026-10-02'),
+  `${LEGACY_SCORE_PIPELINE_ORIGIN}/archive/2026-10-02/weekly_input.json`,
+);
+assert.equal(
+  scorePipelineArchiveUrl('2026-08-22', BRANDED_SCORE_PIPELINE_ORIGIN),
+  `${BRANDED_SCORE_PIPELINE_ORIGIN}/archive/2026-08-22/weekly_input.json`,
+  'Legacy Saturday archives remain valid.',
+);
+assert.equal(
+  scorePipelineArchiveUrl('2024-02-29', LEGACY_SCORE_PIPELINE_ORIGIN),
+  `${LEGACY_SCORE_PIPELINE_ORIGIN}/archive/2024-02-29/weekly_input.json`,
+);
+for (const invalidWeek of [
+  undefined, null, 20261009, '', '2026-2-09', '2026-02-29', '2026-04-31',
+  '2026-13-01', '2026-00-01', '2026-10-00', '2026-10-09T00:00:00Z',
+  '../latest', '2026-10-09/..', ' 2026-10-09',
+]) {
+  assert.throws(() => scorePipelineArchiveUrl(invalidWeek), /valid ISO date/);
+}
+assert.throws(
+  () => scorePipelineArchiveUrl('2026-10-09', 'https://example.com'),
+  /Unsupported Score pipeline origin/,
+);
+
+const [home, score, astroConfig, threeDials, weeklyRegime] = await Promise.all([
   readFile(new URL('../src/pages/index.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/score.astro', import.meta.url), 'utf8'),
   readFile(new URL('../astro.config.mjs', import.meta.url), 'utf8'),
+  readFile(new URL('../src/components/ThreeDialsSnapshot.astro', import.meta.url), 'utf8'),
+  readFile(new URL('../src/pages/practice/weekly-regime.astro', import.meta.url), 'utf8'),
 ]);
 
 for (const [name, text] of [['home', home], ['score', score]]) {
@@ -31,6 +64,18 @@ for (const [name, text] of [['home', home], ['score', score]]) {
   assert.match(text, /PUBLIC_SCORE_PIPELINE_ORIGIN/);
   assert.ok(text.includes('score-pipeline-origin.js'), `${name} must import the Score origin contract.`);
 }
+
+for (const [name, text] of [['Three Dials', threeDials], ['Weekly Regime Lab', weeklyRegime]]) {
+  assert.match(text, /import \{ scorePipelineArchiveUrl \} from ['"].*score-pipeline-origin\.js['"]/);
+  assert.match(text, /scorePipelineArchiveUrl\(snapshot\.model_output\.week_ending, import\.meta\.env\.PUBLIC_SCORE_PIPELINE_ORIGIN\)/);
+  assert.match(text, /href=\{scoreArchiveUrl\}/);
+  assert.doesNotMatch(text, /href=\{snapshot\.model_output\.source_url\}/);
+  assert.equal(text.includes(LEGACY_SCORE_PIPELINE_ORIGIN), false, `${name} must use the origin contract.`);
+  assert.equal(text.includes(BRANDED_SCORE_PIPELINE_ORIGIN), false, `${name} must use the origin contract.`);
+}
+assert.match(threeDials, /const scoreArchiveUrl = isPublished\s*\?/);
+assert.match(weeklyRegime, /const scoreArchiveUrl = snapshot\.status === 'published'\s*\?/);
+assert.match(weeklyRegime, /\{scoreArchiveUrl && \(\s*<section class="score-output"/);
 
 assert.match(astroConfig, /resolveScorePipelineOrigin/);
 assert.match(astroConfig, /PUBLIC_SCORE_PIPELINE_ORIGIN/);

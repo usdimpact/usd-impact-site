@@ -1,8 +1,12 @@
 ---
 import snapshot from '../data/three-dials-latest.json';
+import { scorePipelineArchiveUrl } from '../lib/score-pipeline-origin.js';
 
 const isPublished = snapshot.status === 'published';
 const dials = isPublished ? Object.values(snapshot.dials) : [];
+const scoreArchiveUrl = isPublished
+  ? scorePipelineArchiveUrl(snapshot.model_output.week_ending, import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN)
+  : null;
 
 const pretty = (value) => String(value ?? '').replaceAll('_', ' ');
 const directionLabel = (dial) => {
@@ -95,7 +99,7 @@ const directionLabel = (dial) => {
             <p class="scope-note">{snapshot.model_output.scope}</p>
           </div>
           <div class="model-links">
-            <a href={snapshot.model_output.source_url} target="_blank" rel="noreferrer">Open Score JSON</a>
+            <a href={scoreArchiveUrl} target="_blank" rel="noreferrer">Open Score JSON</a>
             <a href={snapshot.model_output.methodology_url}>Read Score methodology</a>
           </div>
         </div>

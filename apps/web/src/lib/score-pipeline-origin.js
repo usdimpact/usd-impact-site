@@ -51,5 +51,5 @@ export function scorePipelineArchiveUrl(weekEnding, originValue, previewOrigin =
     throw new Error('Score archive week must be a valid ISO date (YYYY-MM-DD).');
   }
   const origin = resolveScorePipelineOrigin(originValue, previewOrigin, environment);
-  return scorePipelineUrl(`/archive/${weekEnding}/weekly_input.json`, origin);
+  return `${origin}/archive/${weekEnding}/weekly_input.json`;
 }

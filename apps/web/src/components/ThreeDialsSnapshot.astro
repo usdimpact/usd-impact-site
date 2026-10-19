@@ -8,8 +8,8 @@ const scoreArchiveUrl = isPublished
   ? scorePipelineArchiveUrl(
       snapshot.model_output.week_ending,
       import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN,
-      import.meta.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
-      import.meta.env.VERCEL_ENV,
+      process.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
+      process.env.VERCEL_ENV,
     )
   : null;
 

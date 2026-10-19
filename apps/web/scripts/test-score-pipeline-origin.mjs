@@ -85,13 +85,23 @@ for (const [name, text] of [['home', home], ['score', score]]) {
 
 for (const [name, text] of [['Three Dials', threeDials], ['Weekly Regime Lab', weeklyRegime]]) {
   assert.match(text, /import \{ scorePipelineArchiveUrl \} from ['"].*score-pipeline-origin\.js['"]/);
-  assert.match(text, /scorePipelineArchiveUrl\(snapshot\.model_output\.week_ending, import\.meta\.env\.PUBLIC_SCORE_PIPELINE_ORIGIN\)/);
+  assert.match(text, /scorePipelineArchiveUrl\(\s*snapshot\.model_output\.week_ending,\s*import\.meta\.env\.PUBLIC_SCORE_PIPELINE_ORIGIN/);
   assert.match(text, /href=\{scoreArchiveUrl\}/);
   assert.doesNotMatch(text, /href=\{snapshot\.model_output\.source_url\}/);
   assert.equal(text.includes(LEGACY_SCORE_PIPELINE_ORIGIN), false, `${name} must use the origin contract.`);
   assert.equal(text.includes(BRANDED_SCORE_PIPELINE_ORIGIN), false, `${name} must use the origin contract.`);
 }
-assert.match(threeDials, /const scoreArchiveUrl = isPublished\s*\?/);
+assert.equal(
+  scorePipelineArchiveUrl('2026-10-09', pinnedPreview, pinnedPreview, 'preview'),
+  `${pinnedPreview}/archive/2026-10-09/weekly_input.json`,
+);
+assert.throws(
+  () => scorePipelineArchiveUrl('2026-10-09', pinnedPreview, pinnedPreview, 'production'),
+  /Unsupported Score pipeline origin/,
+);
+assert.match(threeDials, /SCORE_PREVIEW_PIPELINE_ORIGIN/);
+assert.match(weeklyRegime, /SCORE_PREVIEW_PIPELINE_ORIGIN/);
+assert.match(threeDials, /const scoreArchiveUrl = isPublished\\s*\\?/);
 assert.match(weeklyRegime, /const scoreArchiveUrl = snapshot\.status === 'published'\s*\?/);
 assert.match(weeklyRegime, /\{scoreArchiveUrl && \(\s*<section class="score-output"/);
 

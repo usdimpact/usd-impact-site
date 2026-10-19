@@ -37,7 +37,11 @@ const isWithinPrefix = (pathname, prefix) => (
   pathname === prefix || pathname.startsWith(`${prefix}/`)
 );
 
-const scorePipelineOrigin = resolveScorePipelineOrigin(process.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
+const scorePipelineOrigin = resolveScorePipelineOrigin(
+  process.env.PUBLIC_SCORE_PIPELINE_ORIGIN,
+  process.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
+  process.env.VERCEL_ENV,
+);
 
 export default defineConfig({
   site: 'https://www.usd-impact.com',

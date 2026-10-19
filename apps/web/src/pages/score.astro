@@ -12,9 +12,9 @@ const scorePipelineOrigin = resolveScorePipelineOrigin(
   import.meta.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
   import.meta.env.VERCEL_ENV,
 );
-const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_comparison_latest.html', scorePipelineOrigin);
-const dashboardUrl = scorePipelineUrl('/en/', scorePipelineOrigin);
-const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin);
+const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_comparison_latest.html', scorePipelineOrigin, import.meta.env.SCORE_PREVIEW_PIPELINE_ORIGIN, import.meta.env.VERCEL_ENV);
+const dashboardUrl = scorePipelineUrl('/en/', scorePipelineOrigin, import.meta.env.SCORE_PREVIEW_PIPELINE_ORIGIN, import.meta.env.VERCEL_ENV);
+const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin, import.meta.env.SCORE_PREVIEW_PIPELINE_ORIGIN, import.meta.env.VERCEL_ENV);
 ---
 <BaseLayout
   title="Weekly USD Impact Score | Dollar Regime Dashboard"

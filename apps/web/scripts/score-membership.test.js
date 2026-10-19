@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handleScoreMembershipCheck } from './score-membership.js';
+import { handleScoreMembershipCheck } from '../api/score-membership.js';
 
 function mockResponse() {
   return {

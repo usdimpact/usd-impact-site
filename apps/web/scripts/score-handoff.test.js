@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handleScoreHandoff } from './score-handoff.js';
+import { handleScoreHandoff } from '../api/score-handoff.js';
 
 const userId = '00000000-0000-4000-8000-000000000001';
 function response() {

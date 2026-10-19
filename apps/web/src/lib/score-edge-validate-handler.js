@@ -1,9 +1,9 @@
 // Private per-request Score session validation. Disabled by default.
 // The caller is Cloudflare edge, never a browser. No session token is logged.
 import { timingSafeEqual } from 'node:crypto';
-import { readSupabaseServerConfig, sendJson } from '../src/lib/supabase-server.js';
-import { createScoreMembershipProviders } from '../src/lib/score-membership-providers.js';
-import { authorizeScoreSession } from '../src/lib/score-redemption.js';
+import { readSupabaseServerConfig, sendJson } from './supabase-server.js';
+import { createScoreMembershipProviders } from './score-membership-providers.js';
+import { authorizeScoreSession } from './score-redemption.js';
 
 export async function handleScoreEdgeValidate(request, response, deps = {}) {
   response.setHeader('Cache-Control', 'no-store');
@@ -35,7 +35,4 @@ export async function handleScoreEdgeValidate(request, response, deps = {}) {
   } catch {
     return sendJson(response, 503, { allowed: false });
   }
-}
-export default function handler(request, response) {
-  return handleScoreEdgeValidate(request, response);
 }

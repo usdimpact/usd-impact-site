@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { handleScoreEdgeRedeem } from '../src/lib/score-edge-redeem-handler.js';
-import { handleScoreEdgeValidate } from '../api/score-edge-validate.js';
+import { handleScoreEdgeValidate } from '../src/lib/score-edge-validate-handler.js';
 
 const secret = 'x'.repeat(48);
 function response() {

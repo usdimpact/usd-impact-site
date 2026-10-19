@@ -171,6 +171,10 @@
     {
       "source": "/api/score-edge-redeem",
       "destination": "/api/account?action=score-edge-redeem"
+    },
+    {
+      "source": "/api/score-edge-validate",
+      "destination": "/api/account?action=score-edge-validate"
     }
   ],
   "headers": [

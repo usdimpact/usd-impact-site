@@ -64,7 +64,7 @@ const scorePipelineOrigin = resolveScorePipelineOrigin(
         </div>
         <div class="button-row">
           <a class="button primary" href="/score/">View weekly score</a>
-          <a class="button score-external" href={scorePipelineUrl('/en/', scorePipelineOrigin)} target="_blank" rel="noreferrer">Standalone dashboard</a>
+          <a class="button score-external" href={scorePipelineUrl('/en/', scorePipelineOrigin, import.meta.env.SCORE_PREVIEW_PIPELINE_ORIGIN, import.meta.env.VERCEL_ENV)} target="_blank" rel="noreferrer">Standalone dashboard</a>
         </div>
       </div>
     </section>

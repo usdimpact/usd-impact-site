@@ -6,16 +6,28 @@ const ALLOWED_SCORE_PIPELINE_ORIGINS = new Set([
   BRANDED_SCORE_PIPELINE_ORIGIN,
 ]);
 
+const PREVIEW_HOST_RE = /^[a-z0-9-]+\.usd-impact-pipeline\.pages\.dev$/;
+
 function normalizeOrigin(value) {
   return value.replace(/\/+$/, '');
 }
 
-export function resolveScorePipelineOrigin(value) {
+export function resolveScorePipelineOrigin(value, previewOrigin = '') {
   const candidate = typeof value === 'string' && value.trim()
     ? normalizeOrigin(value.trim())
     : LEGACY_SCORE_PIPELINE_ORIGIN;
 
-  if (!ALLOWED_SCORE_PIPELINE_ORIGINS.has(candidate)) {
+  // A Preview origin is allowed only when explicitly pinned by the build environment.
+  const pinned = typeof previewOrigin === 'string' ? normalizeOrigin(previewOrigin.trim()) : '';
+  let previewAllowed = false;
+  try {
+    const parsed = new URL(candidate);
+    previewAllowed = candidate === pinned && parsed.protocol === 'https:' &&
+      !parsed.username && !parsed.password && !parsed.port &&
+      parsed.pathname === '/' && !parsed.search && !parsed.hash &&
+      PREVIEW_HOST_RE.test(parsed.hostname);
+  } catch { /* Invalid origins are rejected below. */ }
+  if (!ALLOWED_SCORE_PIPELINE_ORIGINS.has(candidate) && !previewAllowed) {
     throw new Error(
       `Unsupported Score pipeline origin: ${candidate}. `
       + `Allowed origins are ${[...ALLOWED_SCORE_PIPELINE_ORIGINS].join(', ')}.`,

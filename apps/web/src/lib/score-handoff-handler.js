@@ -1,11 +1,11 @@
 // Disabled-by-default issuance endpoint for Score handoff (#147).
 // Must not be enabled until Score origin atomically redeems tickets and gates ALL
 // premium HTML on both custom and legacy hostnames.
-import { requestHeader, readSupabaseServerConfig, readAccountAccessState, safeSupabaseError, sendJson } from '../src/lib/supabase-server.js';
-import { requestOrigin, resolveSessionWithRefresh } from '../src/lib/supabase-auth.js';
-import { RESEARCH_MEMBERSHIP_PRODUCT_ID } from '../src/lib/research-membership-runtime.js';
-import { issueScoreTicket, scoreTicketPath } from '../src/lib/score-handoff-ticket.js';
-import { createSupabaseScoreTicketStore } from '../src/lib/score-supabase-ticket-store.js';
+import { requestHeader, readSupabaseServerConfig, readAccountAccessState, safeSupabaseError, sendJson } from './supabase-server.js';
+import { requestOrigin, resolveSessionWithRefresh } from './supabase-auth.js';
+import { RESEARCH_MEMBERSHIP_PRODUCT_ID } from './research-membership-runtime.js';
+import { issueScoreTicket, scoreTicketPath } from './score-handoff-ticket.js';
+import { createSupabaseScoreTicketStore } from './score-supabase-ticket-store.js';
 
 export async function handleScoreHandoff(request, response, dependencies = {}) {
   response.setHeader('Cache-Control', 'no-store');
@@ -58,8 +58,4 @@ export async function handleScoreHandoff(request, response, dependencies = {}) {
     const safe = safeSupabaseError(error);
     return sendJson(response, safe.status, { allowed: false, code: safe.payload.code || 'ACCESS_UNAVAILABLE' });
   }
-}
-
-export default function handler(request, response) {
-  return handleScoreHandoff(request, response);
 }

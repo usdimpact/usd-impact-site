@@ -104,7 +104,7 @@ assert.throws(
 );
 assert.match(threeDials, /SCORE_PREVIEW_PIPELINE_ORIGIN/);
 assert.match(weeklyRegime, /SCORE_PREVIEW_PIPELINE_ORIGIN/);
-assert.match(threeDials, /const scoreArchiveUrl = isPublished\\s*\\?/);
+assert.match(threeDials, /const scoreArchiveUrl = isPublished\s*\?/);
 assert.match(weeklyRegime, /const scoreArchiveUrl = snapshot\.status === 'published'\s*\?/);
 assert.match(weeklyRegime, /\{scoreArchiveUrl && \(\s*<section class="score-output"/);
 

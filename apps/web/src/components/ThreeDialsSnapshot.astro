@@ -5,7 +5,12 @@ import { scorePipelineArchiveUrl } from '../lib/score-pipeline-origin.js';
 const isPublished = snapshot.status === 'published';
 const dials = isPublished ? Object.values(snapshot.dials) : [];
 const scoreArchiveUrl = isPublished
-  ? scorePipelineArchiveUrl(snapshot.model_output.week_ending, import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN)
+  ? scorePipelineArchiveUrl(
+      snapshot.model_output.week_ending,
+      import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN,
+      import.meta.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
+      import.meta.env.VERCEL_ENV,
+    )
   : null;
 
 const pretty = (value) => String(value ?? '').replaceAll('_', ' ');

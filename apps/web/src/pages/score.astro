@@ -7,7 +7,11 @@ import { resolveScorePipelineOrigin, scorePipelineUrl } from '../lib/score-pipel
 const latestWeeklyReport = (await getCollection('weeklyReports'))
   .filter((entry) => entry.data.status === 'published')
   .sort((a, b) => b.data.periodEnd.localeCompare(a.data.periodEnd))[0];
-const scorePipelineOrigin = resolveScorePipelineOrigin(import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
+const scorePipelineOrigin = resolveScorePipelineOrigin(
+  import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN,
+  import.meta.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
+  import.meta.env.VERCEL_ENV,
+);
 const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_comparison_latest.html', scorePipelineOrigin);
 const dashboardUrl = scorePipelineUrl('/en/', scorePipelineOrigin);
 const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin);

@@ -167,6 +167,10 @@
     {
       "source": "/api/score-handoff",
       "destination": "/api/account?action=score-handoff"
+    },
+    {
+      "source": "/api/score-edge-redeem",
+      "destination": "/api/account?action=score-edge-redeem"
     }
   ],
   "headers": [

@@ -8,6 +8,21 @@ import {
   scorePipelineUrl,
 } from '../src/lib/score-pipeline-origin.js';
 
+const pinnedPreview = 'https://fix-score-membership-handoff-147.usd-impact-pipeline.pages.dev';
+assert.equal(resolveScorePipelineOrigin(pinnedPreview, pinnedPreview, 'preview'), pinnedPreview);
+for (const environment of ['', 'production', 'development']) {
+  assert.throws(() => resolveScorePipelineOrigin(pinnedPreview, pinnedPreview, environment), /Unsupported Score pipeline origin/);
+}
+for (const candidate of [
+  'https://other.usd-impact-pipeline.pages.dev',
+  'https://usd-impact-pipeline.pages.dev.evil.test',
+  'http://fix-score-membership-handoff-147.usd-impact-pipeline.pages.dev',
+  'https://fix-score-membership-handoff-147.usd-impact-pipeline.pages.dev:8443',
+]) {
+  assert.throws(() => resolveScorePipelineOrigin(candidate, candidate, 'preview'), /Unsupported Score pipeline origin/);
+}
+assert.throws(() => resolveScorePipelineOrigin(pinnedPreview, '', 'preview'), /Unsupported Score pipeline origin/);
+
 assert.equal(resolveScorePipelineOrigin(), LEGACY_SCORE_PIPELINE_ORIGIN);
 assert.equal(resolveScorePipelineOrigin(''), LEGACY_SCORE_PIPELINE_ORIGIN);
 assert.equal(resolveScorePipelineOrigin(`${BRANDED_SCORE_PIPELINE_ORIGIN}/`), BRANDED_SCORE_PIPELINE_ORIGIN);

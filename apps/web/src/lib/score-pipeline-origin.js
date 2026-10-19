@@ -12,7 +12,7 @@ function normalizeOrigin(value) {
   return value.replace(/\/+$/, '');
 }
 
-export function resolveScorePipelineOrigin(value, previewOrigin = '') {
+export function resolveScorePipelineOrigin(value, previewOrigin = '', environment = '') {
   const candidate = typeof value === 'string' && value.trim()
     ? normalizeOrigin(value.trim())
     : LEGACY_SCORE_PIPELINE_ORIGIN;
@@ -22,7 +22,7 @@ export function resolveScorePipelineOrigin(value, previewOrigin = '') {
   let previewAllowed = false;
   try {
     const parsed = new URL(candidate);
-    previewAllowed = candidate === pinned && parsed.protocol === 'https:' &&
+    previewAllowed = environment === 'preview' && candidate === pinned && parsed.protocol === 'https:' &&
       !parsed.username && !parsed.password && !parsed.port &&
       parsed.pathname === '/' && !parsed.search && !parsed.hash &&
       PREVIEW_HOST_RE.test(parsed.hostname);

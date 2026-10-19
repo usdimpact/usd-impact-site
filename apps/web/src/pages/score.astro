@@ -9,12 +9,12 @@ const latestWeeklyReport = (await getCollection('weeklyReports'))
   .sort((a, b) => b.data.periodEnd.localeCompare(a.data.periodEnd))[0];
 const scorePipelineOrigin = resolveScorePipelineOrigin(
   import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN,
-  import.meta.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
-  import.meta.env.VERCEL_ENV,
+  process.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
+  process.env.VERCEL_ENV,
 );
-const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_comparison_latest.html', scorePipelineOrigin, import.meta.env.SCORE_PREVIEW_PIPELINE_ORIGIN, import.meta.env.VERCEL_ENV);
-const dashboardUrl = scorePipelineUrl('/en/', scorePipelineOrigin, import.meta.env.SCORE_PREVIEW_PIPELINE_ORIGIN, import.meta.env.VERCEL_ENV);
-const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin, import.meta.env.SCORE_PREVIEW_PIPELINE_ORIGIN, import.meta.env.VERCEL_ENV);
+const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_comparison_latest.html', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
+const dashboardUrl = scorePipelineUrl('/en/', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
+const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
 ---
 <BaseLayout
   title="Weekly USD Impact Score | Dollar Regime Dashboard"

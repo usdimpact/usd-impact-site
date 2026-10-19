@@ -1,6 +1,6 @@
 // Server-side Research Membership check for the Score handoff (issue #147).
 // This endpoint does not issue tickets, cookies or unlock the Score origin.
-import { readAccountAccessState, safeSupabaseError, sendJson } from '../src/lib/supabase-server.js';
+import { readAccountAccessState, safeSupabaseError, sendJson } from './supabase-server.js';
 import { resolveSessionWithRefresh } from '../src/lib/supabase-auth.js';
 import { RESEARCH_MEMBERSHIP_PRODUCT_ID } from '../src/lib/research-membership-runtime.js';
 
@@ -28,8 +28,4 @@ export async function handleScoreMembershipCheck(request, response, dependencies
     const safe = safeSupabaseError(error);
     return sendJson(response, safe.status, { allowed: false, code: safe.payload.code || 'ACCESS_UNAVAILABLE' });
   }
-}
-
-export default function handler(request, response) {
-  return handleScoreMembershipCheck(request, response);
 }

@@ -13,8 +13,11 @@ assert.equal(resolveScorePipelineOrigin(pinnedPreview, pinnedPreview, 'preview')
 for (const environment of ['', 'production', 'development']) {
   assert.throws(() => resolveScorePipelineOrigin(pinnedPreview, pinnedPreview, environment), /Unsupported Score pipeline origin/);
 }
+assert.throws(
+  () => resolveScorePipelineOrigin('https://other.usd-impact-pipeline.pages.dev', pinnedPreview, 'preview'),
+  /Unsupported Score pipeline origin/,
+);
 for (const candidate of [
-  'https://other.usd-impact-pipeline.pages.dev',
   'https://usd-impact-pipeline.pages.dev.evil.test',
   'http://fix-score-membership-handoff-147.usd-impact-pipeline.pages.dev',
   'https://fix-score-membership-handoff-147.usd-impact-pipeline.pages.dev:8443',

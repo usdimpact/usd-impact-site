@@ -28,9 +28,51 @@ set search_path = ''
 as $$
 declare v_inserted integer;
 begin
-  if p_digest !~ '^[a-f0-9]{64}$' or p_audience <> 'score.usd-impact.com'
-     or p_path not in ('/en/', '/es/', '/archive/en/', '/archive/es/')
-     or p_expires_at <= now() or p_expires_at > now() + interval '60 seconds' then
+  if p_digest is null or p_digest !~ '^[a-f0-9]{64}
+    return false;
+  end if;
+  insert into public.score_handoff_tickets(digest, account_id, audience, path, expires_at)
+  values(p_digest, p_account_id, p_audience, p_path, p_expires_at)
+  on conflict (digest) do nothing;
+  get diagnostics v_inserted = row_count;
+  return v_inserted = 1;
+end;
+$$;
+
+-- DELETE RETURNING is atomic across concurrent consumers; only one wins.
+create or replace function public.score_ticket_consume_atomic(p_digest text)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare v_row public.score_handoff_tickets%rowtype;
+begin
+  if p_digest !~ '^[a-f0-9]{64}$' then return null; end if;
+  delete from public.score_handoff_tickets
+  where digest = p_digest and expires_at > now()
+  returning * into v_row;
+  if not found then return null; end if;
+  return jsonb_build_object(
+    'digest', v_row.digest, 'account_id', v_row.account_id,
+    'audience', v_row.audience, 'path', v_row.path,
+    'expires_at', v_row.expires_at
+  );
+end;
+$$;
+
+revoke all on function public.score_ticket_issue_atomic(text,uuid,text,text,timestamptz) from public, anon, authenticated;
+revoke all on function public.score_ticket_consume_atomic(text) from public, anon, authenticated;
+grant execute on function public.score_ticket_issue_atomic(text,uuid,text,text,timestamptz) to service_role;
+grant execute on function public.score_ticket_consume_atomic(text) to service_role;
+comment on table public.score_handoff_tickets is 'Server-only ephemeral SHA-256 ticket digests for Score handoff; never stores bearer ticket';
+commit;
+
+     or p_account_id is null
+     or p_audience is null or p_audience <> 'score.usd-impact.com'
+     or p_path is null or p_path not in ('/en/', '/es/', '/archive/en/', '/archive/es/')
+     or p_expires_at is null or p_expires_at <= now()
+     or p_expires_at > now() + interval '60 seconds' then
     return false;
   end if;
   insert into public.score_handoff_tickets(digest, account_id, audience, path, expires_at)

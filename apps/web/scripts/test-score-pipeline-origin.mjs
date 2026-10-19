@@ -10,6 +10,9 @@ import {
 
 const pinnedPreview = 'https://fix-score-membership-handoff-147.usd-impact-pipeline.pages.dev';
 assert.equal(resolveScorePipelineOrigin(pinnedPreview, pinnedPreview, 'preview'), pinnedPreview);
+assert.equal(scorePipelineUrl('/en/', pinnedPreview, pinnedPreview, 'preview'), `${pinnedPreview}/en/`);
+assert.throws(() => scorePipelineUrl('/en/', pinnedPreview, pinnedPreview, 'production'), /Unsupported Score pipeline origin/);
+
 for (const environment of ['', 'production', 'development']) {
   assert.throws(() => resolveScorePipelineOrigin(pinnedPreview, pinnedPreview, environment), /Unsupported Score pipeline origin/);
 }

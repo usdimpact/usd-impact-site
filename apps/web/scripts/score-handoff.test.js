@@ -56,3 +56,13 @@ test('wrong method and content type rejected', async () => {
   assert.equal((await run({ method: 'GET' })).status, 405);
   assert.equal((await run({ contentType: 'text/plain' })).status, 415);
 });
+
+test('draft ticket RPC explicitly rejects every nullable issuance argument', async () => {
+  const { readFileSync } = await import('node:fs');
+  const sql = readFileSync(new URL('../../../supabase/migrations/20261019010000_score_handoff_tickets.sql', import.meta.url), 'utf8');
+  const issue = sql.split('create or replace function public.score_ticket_issue_atomic(')[1]?.split('create or replace function public.score_ticket_consume_atomic(')[0];
+  assert.ok(issue, 'draft issuance RPC must exist');
+  for (const arg of ['p_digest', 'p_account_id', 'p_audience', 'p_path', 'p_expires_at']) {
+    assert.match(issue, new RegExp('\\b' + arg + '\\s+is null\\b'), arg + ' must be rejected explicitly');
+  }
+});

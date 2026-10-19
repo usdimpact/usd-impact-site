@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { issueScoreTicket, consumeScoreTicket, scoreTicketDigest, scoreTicketPath } from './score-handoff-ticket.js';
 
-const accountId = '4879d508-9e75-403d-9c1d-bbf7a1b02cfa';
+const accountId = '00000000-0000-4000-8000-000000000001';
 const nowMs = 1_800_000_000_000;
 function store() {
   const records = new Map();

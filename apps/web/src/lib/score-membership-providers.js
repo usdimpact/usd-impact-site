@@ -31,7 +31,7 @@ export function createScoreMembershipProviders({ config, fetchImpl = fetch }) {
       async create({ accountId, nowMs = Date.now() }) {
         if (!UUID.test(accountId || '')) throw new TypeError('Invalid account');
         const token = randomBytes(32).toString('base64url');
-        const expiresAtMs = nowMs + 15 * 60_000;
+        const expiresAtMs = nowMs + 14 * 60_000;
         if ((await rpc('score_session_create', {
           p_digest: digest(token), p_account_id: accountId,
           p_expires_at: new Date(expiresAtMs).toISOString(),

@@ -37,8 +37,8 @@ export function resolveScorePipelineOrigin(value, previewOrigin = '', environmen
   return candidate;
 }
 
-export function scorePipelineUrl(pathname, originValue) {
-  const origin = resolveScorePipelineOrigin(originValue);
+export function scorePipelineUrl(pathname, originValue, previewOrigin = '', environment = '') {
+  const origin = resolveScorePipelineOrigin(originValue, previewOrigin, environment);
   const path = pathname.startsWith('/') ? pathname : `/${pathname}`;
   return `${origin}${path}`;
 }

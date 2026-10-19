@@ -15,7 +15,12 @@ const tool = getToolById('weekly-regime-lab');
 const chapter = getChapterByNumber(11);
 const liveEvidence = assessBookLiveEvidence(snapshot);
 const scoreArchiveUrl = snapshot.status === 'published'
-  ? scorePipelineArchiveUrl(snapshot.model_output.week_ending, import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN)
+  ? scorePipelineArchiveUrl(
+      snapshot.model_output.week_ending,
+      import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN,
+      import.meta.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
+      import.meta.env.VERCEL_ENV,
+    )
   : null;
 let reference = null;
 try {

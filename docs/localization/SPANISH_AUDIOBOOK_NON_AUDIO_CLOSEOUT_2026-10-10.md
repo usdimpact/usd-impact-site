@@ -197,3 +197,17 @@ This read-only repeat establishes no new confirmed source-word omission. It also
 **Invariant:** Leave PR #797 DRAFT/unmerged; `public_allowed=false`, `merge_allowed=false`, `production_enabled=false`, `mastering_approval=PENDING`. No synthesis, publishing, public Descript share link, member access or Production change.
 
 This register captures evidence and the two outstanding editorial decisions without manufacturing an approval.
+
+
+## October 21 Drive WAV inventory — identity warning and QA handoff
+
+Source: [private Google Drive WAV folder](https://drive.google.com/drive/folders/1l5vmUukQpw4HoBhvs0N50fr2I4Wg3o8e), cross-checked against `SPANISH_AUDIOBOOK_PRIVATE_REVIEW_SEQUENCE_2026-10-09.json` on this **draft branch**. The folder listing reports **63 WAV objects**, including alternate exports, short QA snippets and heading/boundary repairs. **All 20 numbered tracks are represented**, but **20 selected-master WAV identities are not certified** from names/durations alone. Do not take the earlier *20 duration-matched candidates* inventory as release-QA acceptance.
+
+| Area | Drive evidence and correction | Required follow-up before master acceptance |
+| --- | --- | --- |
+| **Track 00** | Drive `00 - Copyright Fixed - PRIVATE QA.wav` (file ID `1n3W5nZNuT0jL3mRPvTvvRZCbINIR40S3`) is the **110.595306 s earlier private cleanup candidate**, as recorded in the manifest, **not** the selected `ebe7f026-e369-4dd4-a184-9476a6482f5b` v2 (**109.835306 s**). The **0.760 s** difference is explained by the documented reversible ignore of residual `Right` in v2. | Export or positively identify the *selected v2* lossless file and verify its opening and seam by ear; do not pass the older Drive file as v2 |
+| **Tracks 02–15** | Drive includes baseline tracks and many private `BOUNDARY`, `Heading Prefixed`, `Tail Transferred` or `FIXED AUDIO` versions. A nominal duration match is insufficient to prove the selected Descript composition ID and exact revision. | Build a per-track provenance table with selected composition ID, export timestamp/filename, format, checksum and verified seam. Avoid automated promotion of alternate files |
+| **Track 18** | Drive has both `18 - Apéndice B - PRIVATE QA.wav` (ID `1oUwsSyq0dLwprMKvphUjakZucZLAQqGR`) and `18 - Apéndice B - PRIVATE REPAIR CANDIDATE - DO NOT PUBLISH.wav` (ID `1AGRHbUe6GEXsi_I_HnuEn-69hSENIIIf`). These are **different candidates**; the latter must not be designated the selected `6a251168-1d0d-4a9d-b9ea-daed1d1db016` merely by filename. | Resolve selected-composition-to-export provenance, then hear the complete spoken pipeline SHA |
+| **Technical spot QA** | A preliminary local decode of three retrieved files reported 44.1 kHz mono 16-bit PCM and roughly −23.8 to −24.0 LUFS, with no decoder errors in those three. These measurements **belong only to the files actually analyzed** and must **not** be extrapolated to the 20 selected compositions. | Full selected-export waveform integrity, silence, integrated loudness/true peak and cross-track balance only after exact identities established |
+
+**Gate decision:** The Drive folder is a usable private transport/inventory source, not an authoritative selected-master register. All audio QA is **PENDING** until composition provenance, actual decoded-file results, whole-track listening and mastering requirements are satisfied. No synthesis or private export was initiated here; no manifest approval, source audio, Descript selection, Production settings or release gate was modified. PR remains draft and unmerged.

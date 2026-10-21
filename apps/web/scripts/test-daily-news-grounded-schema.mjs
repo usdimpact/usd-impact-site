@@ -3,7 +3,7 @@ import {
   extractEditionDate,
   withSourceMetadata,
 } from '../api/daily-news-grounded-background.js';
-import { MAX_BACKGROUND_OUTPUT_TOKENS } from '../api/daily-news-background.js';
+import backgroundHandler, { assessBoundedRepairFeasibility, MAX_BACKGROUND_OUTPUT_TOKENS } from '../api/daily-news-background.js';
 
 const editionDate = '2026-08-20';
 assert.equal(
@@ -101,6 +101,10 @@ assert.match(sourceProperties.id.pattern, /^\^/);
 assert.match(sourceProperties.publishedAt.pattern, /^\^/);
 assert.match(hardened.input, /effective date/i, 'initial grounded prompts must distinguish publication dates from effective dates');
 assert.match(hardened.input, /auction date/i, 'initial grounded prompts must distinguish publication dates from auction dates');
+assert.match(hardened.input, /three individually dated publisher documents/i);
+assert.match(hardened.input, /release-specific dated EIA document/i);
+assert.match(hardened.input, /unsupported absence claims/i);
+assert.match(hardened.input, /in-window primary-sourced catalyst/i);
 assert.equal(hardened.tool_choice, 'required');
 assert.ok(hardened.include.includes('web_search_call.action.sources'));
 
@@ -155,5 +159,99 @@ assert.equal(
   false,
   'an unknown date must not produce an invented catalyst window',
 );
+
+
+
+// Regression: an incomplete original ledger may contain many search-result URLs,
+// but the bounded repair model may not invent new dated sources. Fail before
+// spending a single repair request. The pre-existing GitHub one-regeneration
+// budget is the only allowed fresh-research recovery route.
+const testSourceUrls = [
+  'https://www.bls.gov/news.release/test-a.htm',
+  'https://www.federalreserve.gov/newsevents/pressreleases/test-b.htm',
+  'https://www.eia.gov/todayinenergy/detail.php?id=12345',
+];
+const makeFakeProvider = (urlsInLedger, metadata = testSourceUrls) => ({
+  id: 'resp_test1234567',
+  status: 'completed',
+  output: [
+    { type: 'web_search_call', action: { sources: metadata.map((url) => ({ url })) } },
+    { type: 'message', content: [{ type: 'output_text', text: JSON.stringify({
+      marketRegime: 'Synthetic test only',
+      summary: 'Synthetic test only.',
+      highlights: [],
+      catalysts: [],
+      sources: urlsInLedger.map((url, index) => ({
+        id: 'synthetic-' + (index + 1),
+        title: 'Synthetic source ' + (index + 1),
+        url,
+        publishedAt: '2026-10-22',
+      })),
+      body: 'Synthetic test copy.',
+    }) }] },
+  ],
+});
+const incomplete = makeFakeProvider(testSourceUrls.slice(0, 2));
+const normal = makeFakeProvider(testSourceUrls);
+const ungrounded = makeFakeProvider([...testSourceUrls.slice(0, 2), 'https://example.invalid/not-searched']);
+assert.deepEqual(assessBoundedRepairFeasibility(incomplete, '2026-10-22'), {
+  canRepair: false, groundedCount: 3, retainedCount: 2,
+});
+assert.deepEqual(assessBoundedRepairFeasibility(normal, '2026-10-22'), {
+  canRepair: true, groundedCount: 3, retainedCount: 3,
+});
+assert.deepEqual(assessBoundedRepairFeasibility(ungrounded, '2026-10-22'), {
+  canRepair: false, groundedCount: 3, retainedCount: 2,
+});
+assert.deepEqual(assessBoundedRepairFeasibility(makeFakeProvider(testSourceUrls, testSourceUrls.slice(0, 2)), '2026-10-22'), {
+  canRepair: false, groundedCount: 2, retainedCount: 2,
+});
+
+const oldFetch = globalThis.fetch;
+const oldToken = process.env.NEWSFEED_BEARER_TOKEN;
+const oldKey = process.env.OPENAI_API_KEY;
+const providerCalls = [];
+try {
+  process.env.NEWSFEED_BEARER_TOKEN = 'test-bearer-only';
+  process.env.OPENAI_API_KEY = 'test-dummy-key-only';
+  globalThis.fetch = async (url, options = {}) => {
+    providerCalls.push({ url: String(url), method: options.method ?? 'GET' });
+    assert.match(String(url), /\/v1\/responses\/resp_test1234567$/);
+    assert.equal(options.method, 'GET', 'no mini repair or new generation may be purchased');
+    return new Response(JSON.stringify(incomplete), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    });
+  };
+  const req = {
+    method: 'GET',
+    url: '/api/daily-news-background',
+    headers: {
+      authorization: 'Bearer test-bearer-only',
+      'x-usd-impact-edition-date': '2026-10-22',
+      'x-usd-impact-response-id': 'resp_test1234567',
+    },
+  };
+  const recorded = {
+    statusCode: 200,
+    headers: {},
+    body: '',
+    setHeader(key, value) { this.headers[String(key).toLowerCase()] = value; },
+    end(value) { this.body = value; },
+  };
+  await backgroundHandler(req, recorded);
+  assert.equal(recorded.statusCode, 502);
+  const body = JSON.parse(recorded.body);
+  assert.equal(body.code, 'insufficient-grounded-sources');
+  assert.equal(body.repairAttempts, 0);
+  assert.equal(body.groundedSourceCount, 3);
+  assert.equal(body.usableSourceCount, 2);
+  assert.equal(providerCalls.length, 1, 'GET-only: no paid bounded repair request');
+} finally {
+  globalThis.fetch = oldFetch;
+  if (oldToken == null) delete process.env.NEWSFEED_BEARER_TOKEN;
+  else process.env.NEWSFEED_BEARER_TOKEN = oldToken;
+  if (oldKey == null) delete process.env.OPENAI_API_KEY;
+  else process.env.OPENAI_API_KEY = oldKey;
+}
 
 console.log('daily grounded schema contract pass');

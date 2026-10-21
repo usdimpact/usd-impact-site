@@ -325,6 +325,21 @@ export function collectRepairEvidence(openAiResponse, editionDate) {
   return { permittedSourceUrls: [...permitted], issues };
 }
 
+// Pure, cost-free test of whether a source-preserving repair is mathematically possible.
+// A repair cannot acquire fresh source documents because its schema is bounded to
+// the URLs in the original draft ledger. A NEW grounded generation (within the
+// workflow's existing one-retry cap) is required for missing evidence.
+export function assessBoundedRepairFeasibility(openAiResponse, editionDate) {
+  const grounded = collectGroundedUrls(openAiResponse);
+  const evidence = collectRepairEvidence(openAiResponse, editionDate);
+  return {
+    canRepair: Boolean(collectOpenAiText(openAiResponse))
+      && grounded.size >= 3 && evidence.permittedSourceUrls.length >= 3,
+    groundedCount: grounded.size,
+    retainedCount: evidence.permittedSourceUrls.length,
+  };
+}
+
 function terminalFailureDetails(openAiResponse) {
   const reason = String(
     openAiResponse?.incomplete_details?.reason
@@ -567,6 +582,21 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
   }
 
   console.error(`Daily news bundle requires bounded repair: ${initial.reason}`);
+  const feasibility = assessBoundedRepairFeasibility(openAiResponse, date);
+  if (!feasibility.canRepair) {
+    // Do not pay for a source-constrained model rewrite when fewer than three
+    // grounded draft-ledger URLs exist. Fail closed and let the existing GitHub
+    // one-regeneration guard decide whether fresh source research is permitted.
+    console.error(`Daily news source-ledger preflight HOLD: grounded=${feasibility.groundedCount}, usable=${feasibility.retainedCount}; no repair model requested.`);
+    return sendJson(response, {
+      code: 'insufficient-grounded-sources',
+      error: 'The original research ledger cannot support a source-preserving repair.',
+      initialValidationReason: initial.reason,
+      groundedSourceCount: feasibility.groundedCount,
+      usableSourceCount: feasibility.retainedCount,
+      repairAttempts: 0,
+    }, 502);
+  }
   const repairStartedAt = Date.now();
   let candidate = openAiResponse;
   let currentReason = initial.reason;

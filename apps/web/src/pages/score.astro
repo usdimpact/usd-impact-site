@@ -15,6 +15,7 @@ const scorePipelineOrigin = resolveScorePipelineOrigin(
 const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_comparison_latest.html', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
 const dashboardUrl = scorePipelineUrl('/en/', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
 const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
+const scoreHandoffOrigin = scorePipelineOrigin;
 ---
 <BaseLayout
   title="Weekly USD Impact Score | Dollar Regime Dashboard"
@@ -29,7 +30,7 @@ const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin, process
         <a class="button primary" href="#score-dashboard">View the latest score</a>
         <a class="button secondary" href="/score/methodology/">Read the full methodology</a>
         <a class="button secondary" href={vintageAuditUrl} target="_blank" rel="noreferrer">Audit historical revisions</a>
-        <a class="button secondary" href={dashboardUrl} target="_blank" rel="noreferrer">Open standalone dashboard</a>
+        <button class="button secondary" type="button" data-score-handoff data-score-path="/en/" data-score-target="_self">Open standalone dashboard securely</button>
       </div>
     </div>
   </section>
@@ -73,17 +74,18 @@ const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin, process
           <div class="eyebrow">Live dashboard</div>
           <h2>Latest USD Impact Score</h2>
         </div>
-        <a href={dashboardUrl} target="_blank" rel="noreferrer">Open in a new tab</a>
+        <button type="button" data-score-handoff data-score-path="/en/" data-score-target="score-dashboard-frame">Verify membership and open dashboard</button>
       </div>
       <div class="score-embed-shell">
         <iframe
           class="score-embed"
-          src={dashboardUrl}
+          name="score-dashboard-frame"
+          src="about:blank"
           title="USD Impact Score weekly dashboard"
           loading="lazy"
           referrerpolicy="strict-origin-when-cross-origin"
         ></iframe>
-        <p class="score-embed-fallback">If the dashboard does not load inside this page, <a href={dashboardUrl} target="_blank" rel="noreferrer">open the standalone version</a>.</p>
+        <p class="score-embed-fallback">If your browser blocks embedded cookies, <button type="button" data-score-handoff data-score-path="/en/" data-score-target="_self">open the standalone version securely</button>.</p>
       </div>
     </section>
 
@@ -104,26 +106,78 @@ const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin, process
           <div class="eyebrow">Weekly archive</div>
           <h2 id="previous-weeks-heading">Previous weeks</h2>
         </div>
-        <a href={archiveUrl} target="_blank" rel="noreferrer">Open the full archive</a>
+        <button type="button" data-score-handoff data-score-path="/archive/en/" data-score-target="_self">Open the full archive securely</button>
       </div>
       <p class="score-archive-intro">Review the score, regime, and deterministic commentary exactly as they were published for each completed week.</p>
       <div class="score-archive-embed-shell">
         <iframe
           class="score-archive-embed"
-          src={archiveUrl}
+          name="score-archive-frame"
+          src="about:blank"
           title="Previous Weekly USD Impact Score editions"
           loading="lazy"
           referrerpolicy="strict-origin-when-cross-origin"
         ></iframe>
-        <p class="score-embed-fallback">If the archive does not load inside this page, <a href={archiveUrl} target="_blank" rel="noreferrer">open the full archive</a>.</p>
+        <p class="score-embed-fallback"><button type="button" data-score-handoff data-score-path="/archive/en/" data-score-target="score-archive-frame">Verify membership and load the archive here</button>.</p>
       </div>
     </section>
+
+    <p id="score-handoff-status" role="status" aria-live="polite">The protected dashboard requires an active Research Membership. Select a secure access button to verify membership.</p>
+    <a id="score-sign-in-help" href="/account/sign-in/?next=%2Fscore%2F" hidden>Sign in to access Score</a>
+    <form id="score-handoff-form" method="POST" action={`${scoreHandoffOrigin}/score-redeem`} target="_self" referrerpolicy="no-referrer" hidden>
+      <input type="hidden" name="ticket" value="" autocomplete="off" />
+    </form>
 
     <section class="compliance" aria-label="Compliance note">
       <strong>Compliance note:</strong> Educational and informational only. The USD Impact Score is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset.
     </section>
   </main>
 </BaseLayout>
+
+<script>
+  import { requestScoreHandoff } from '../lib/score-handoff-browser.js';
+  const controls = [...document.querySelectorAll('[data-score-handoff]')];
+  const form = document.getElementById('score-handoff-form');
+  const ticketField = form?.querySelector('input[name="ticket"]');
+  const status = document.getElementById('score-handoff-status');
+  const signIn = document.getElementById('score-sign-in-help');
+  let busy = false;
+  for (const control of controls) {
+    control.addEventListener('click', async () => {
+      if (busy || !(form instanceof HTMLFormElement) || !(ticketField instanceof HTMLInputElement)) return;
+      busy = true;
+      controls.forEach((button) => { button.disabled = true; });
+      ticketField.value = '';
+      if (signIn) signIn.hidden = true;
+      if (status) status.textContent = 'Checking your Research Membership…';
+      try {
+        const path = control.getAttribute('data-score-path');
+        const target = control.getAttribute('data-score-target');
+        const result = await requestScoreHandoff(path);
+        if (!result.ok) {
+          if (status) status.textContent = result.code === 'AUTHENTICATION_REQUIRED'
+            ? 'Please sign in to USD Impact, then return to this page.'
+            : result.code === 'RESEARCH_MEMBERSHIP_REQUIRED'
+              ? 'An active Research Membership is required for the protected dashboard.'
+              : 'Secure Score access is temporarily unavailable. No content was unlocked.';
+          if (signIn) signIn.hidden = result.code !== 'AUTHENTICATION_REQUIRED';
+          return;
+        }
+        if (!['score-dashboard-frame', 'score-archive-frame', '_self'].includes(target)) {
+          if (status) status.textContent = 'Invalid Score destination.';
+          return;
+        }
+        ticketField.value = result.ticket;
+        form.target = target;
+        if (status) status.textContent = 'Membership verified; opening protected Score content…';
+        form.submit();
+      } finally {
+        busy = false;
+        controls.forEach((button) => { button.disabled = false; });
+      }
+    });
+  }
+</script>
 
 <style>
   .score-methodology-callout {

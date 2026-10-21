@@ -38,7 +38,7 @@
     "validate:localization": "node --check src/lib/localization-policy.js && node --check src/data/localization-manifest.js && node scripts/test-localization-policy.mjs && node scripts/validate-localization-manifest.mjs",
     "validate:localization-vtt": "node --check scripts/validate-localization-vtt.mjs && node scripts/test-localization-vtt-validator.mjs",
     "validate:localization-visual-qa-token": "node --check src/lib/localization-visual-qa-token.js && node scripts/test-localization-visual-qa-token.mjs",
-    "validate:score-membership": "node --test scripts/score-membership.test.js scripts/score-handoff.test.js scripts/score-edge-private.test.js"
+    "validate:score-membership": "node --test scripts/score-membership.test.js scripts/score-handoff.test.js scripts/score-edge-private.test.js && node scripts/test-score-handoff-browser.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "3.7.4",

@@ -9,6 +9,25 @@ const DXY_SOURCE_URL = 'https://finance.yahoo.com/quote/DX-Y.NYB/';
 const TIMEOUT_MS = 20_000;
 const MAX_SOURCE_BYTES = 5_000_000;
 
+// Source terms verified 2026-10-21; see issue #845. A FRED link or citation
+// is not a grant of rights to redistribute copyrighted market observations.
+// No flag, environment variable, or owner-only editorial approval bypasses this.
+// A reviewed source-rights remediation must explicitly replace this hold.
+const UNVERIFIED_PUBLIC_REDISTRIBUTION_SOURCES = Object.freeze([
+  { id: 'DX-Y.NYB', provider: 'Yahoo Finance', terms: 'https://uk.help.yahoo.com/kb/finance/article-data-availability-yahoo-finance-sln2310.html' },
+  { id: 'BAMLH0A0HYM2', provider: 'ICE Data Indices', terms: 'https://fred.stlouisfed.org/series/BAMLH0A0HYM2' },
+  { id: 'VIXCLS', provider: 'Cboe', terms: 'https://fred.stlouisfed.org/series/VIXCLS' },
+]);
+
+function assertPublicThreeDialsRedistributionRights() {
+  const series = UNVERIFIED_PUBLIC_REDISTRIBUTION_SOURCES.map(({ id, provider }) => `${id} (${provider})`).join(', ');
+  throw new Error(
+    `HOLD_THREE_DIALS_REDISTRIBUTION_RIGHTS: no verified public redistribution authorization for ${series}. ` +
+    'No third-party source fetch or new snapshot write is permitted. ' +
+    'Review https://github.com/usdimpact/usd-impact-site/issues/845 before enabling publication.'
+  );
+}
+
 const ALLOWED_SCORE_REGIMES = new Set([
   'Strong dollar regime',
   'Firm dollar regime',
@@ -353,6 +372,9 @@ async function main() {
     console.log(`Three-Dials snapshot ${targetWeek} is already published; no rewrite performed.`);
     return;
   }
+
+  // Independent source-rights gate: stop before network requests or generated writes.
+  assertPublicThreeDialsRedistributionRights();
 
   const fredEntries = await Promise.all(Object.entries(FRED_SERIES).map(async ([key, config]) => {
     const points = await fetchFredSeries(config, startDate, currentCutoff);

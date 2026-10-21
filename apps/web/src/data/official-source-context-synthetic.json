@@ -1,0 +1,43 @@
+{
+  "schema": "usd-impact-official-source-context-synthetic-v1",
+  "mode": "synthetic",
+  "created_for": "review-only",
+  "source_fetch_count": 0,
+  "publication_allowed": false,
+  "score_model_allowed": false,
+  "previous_friday": "2031-01-03",
+  "week_ending": "2031-01-10",
+  "observations": [
+    {
+      "id": "BOARD_H10_BROAD_NOMINAL",
+      "unit": "index_points",
+      "origin": "hand-authored-toy-data",
+      "previous": {
+        "date": "2031-01-03",
+        "value": 100
+      },
+      "latest": {
+        "date": "2031-01-10",
+        "value": 101
+      }
+    },
+    {
+      "id": "BOARD_H15_TIPS10Y",
+      "unit": "percent_per_annum",
+      "origin": "hand-authored-toy-data",
+      "previous": {
+        "date": "2031-01-03",
+        "value": 2
+      },
+      "latest": {
+        "date": "2031-01-10",
+        "value": 1.9
+      }
+    }
+  ],
+  "stress": {
+    "status": "unavailable",
+    "reason": "No rights-cleared, methodologically suitable stress indicator has been selected.",
+    "observations": []
+  }
+}

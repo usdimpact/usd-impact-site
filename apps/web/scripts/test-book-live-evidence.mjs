@@ -16,15 +16,36 @@ const webRoot = resolve(scriptDir, '..');
 const snapshot = JSON.parse(readFileSync(resolve(webRoot, 'src/data/three-dials-latest.json'), 'utf8'));
 const tools = JSON.parse(readFileSync(resolve(webRoot, 'src/data/book-site-bridge/tools.json'), 'utf8'));
 
-assert.equal(validateBookLiveEvidenceSnapshot(snapshot).valid, true, 'The repository Three-Dials snapshot must satisfy the Phase 2B source-bound contract.');
-const facts = getBookLiveEvidenceFacts(snapshot);
-for (const id of ['DXY', 'DTWEXBGS', 'DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SPREAD']) {
-  assert(facts.has(id), `Phase 2B requires source-bound fact ${id}.`);
-}
+assert.equal(snapshot.status, 'pending');
+assert.equal(snapshot.source_rights_state, 'unverified');
+assert.equal(validateBookLiveEvidenceSnapshot(snapshot).valid, false);
+assert.deepEqual(
+  { state: assessBookLiveEvidence(snapshot).state, usable: assessBookLiveEvidence(snapshot).usable },
+  { state: 'rights-hold', usable: false },
+);
+assert.throws(() => getBookLiveEvidenceFacts(snapshot), /publication gate is not open/i);
 
-const synthetic = structuredClone(snapshot);
-synthetic.week_ending = '2026-08-21';
-synthetic.model_output.week_ending = '2026-08-21';
+// Preserve classifier tests using wholly synthetic source-bound observations.
+const mockIds = ['DXY', 'DTWEXBGS', 'DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SPREAD'];
+const mockFact = (id) => ({
+  id,
+  source_url: id === 'DXY' ? 'https://finance.yahoo.com/quote/DX-Y.NYB/' : `https://fred.stlouisfed.org/series/${id}`,
+  latest: { date: '2026-08-21', value: 2 },
+  previous: { date: '2026-08-14', value: 1 },
+  change: { value: 1 },
+});
+const synthetic = {
+  version: 1, status: 'published', week_ending: '2026-08-21',
+  model_output: { week_ending: '2026-08-21', source_url: 'https://score.usd-impact.com/archive/2026-08-21/weekly_input.json' },
+  dials: {
+    dollar: { direction: 'firmer', breadth_direction: 'firmer', confirmation: 'confirmed', facts: mockIds.slice(0, 2).map(mockFact) },
+    real_rates: { direction: 'falling', facts: mockIds.slice(2, 4).map(mockFact) },
+    liquidity_stress: { direction: 'mixed', facts: mockIds.slice(4).map(mockFact) },
+  },
+};
+assert.equal(validateBookLiveEvidenceSnapshot(synthetic).valid, true);
+const facts = getBookLiveEvidenceFacts(synthetic);
+for (const id of mockIds) assert(facts.has(id), `Synthetic fixture must contain ${id}`);
 assert.deepEqual(
   { state: assessBookLiveEvidence(synthetic, new Date('2026-08-28T23:30:00Z')).state, usable: assessBookLiveEvidence(synthetic, new Date('2026-08-28T23:30:00Z')).usable },
   { state: 'current', usable: true },
@@ -41,17 +62,17 @@ assert.deepEqual(
   'The comparison must fail closed once the publication window expires.',
 );
 
-const invalidScoreWeek = structuredClone(snapshot);
+const invalidScoreWeek = structuredClone(synthetic);
 invalidScoreWeek.model_output.week_ending = '2099-01-01';
 assert.equal(validateBookLiveEvidenceSnapshot(invalidScoreWeek).valid, false, 'A mismatched Score week must fail closed.');
 assert.equal(assessBookLiveEvidence(invalidScoreWeek, new Date()).usable, false);
 
-const dxyReference = getDxyEvidenceReference(snapshot);
+const dxyReference = getDxyEvidenceReference(synthetic);
 assert(['firmer', 'softer', 'mixed'].includes(dxyReference.dxy));
 assert(['firmer', 'softer', 'mixed'].includes(dxyReference.broad));
 assert(['confirmed', 'mixed', 'divergent'].includes(dxyReference.breadthConfirmation));
 
-const weeklyReference = getWeeklyDialReference(snapshot);
+const weeklyReference = getWeeklyDialReference(synthetic);
 assert(['firmer', 'softer', 'mixed'].includes(weeklyReference.dollar));
 assert(['rising', 'falling', 'mixed'].includes(weeklyReference.realRates));
 assert(['tightening', 'easing', 'mixed'].includes(weeklyReference.liquidity));

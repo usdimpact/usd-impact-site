@@ -95,6 +95,11 @@ export function assessBookLiveEvidence(snapshot, now = new Date()) {
     };
   }
 
+  // Withhold any dependent reference when provider redistribution rights are unverified.
+  if (snapshot?.status === 'pending' && snapshot?.source_rights_state === 'unverified') {
+    return { state: 'rights-hold', usable: false, message: snapshot.message, snapshotWeek: snapshot.week_ending ?? null, targetWeek: null };
+  }
+
   const validation = validateBookLiveEvidenceSnapshot(snapshot);
   if (!validation.valid) {
     return {

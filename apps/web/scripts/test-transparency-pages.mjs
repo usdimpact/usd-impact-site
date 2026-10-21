@@ -267,9 +267,13 @@ const threeDialsLatest = JSON.parse(threeDialsSourceLatest);
 assert.equal(threeDialsLatest.version, 1);
 assert.ok(['pending', 'published'].includes(threeDialsLatest.status));
 if (threeDialsLatest.status === 'pending') {
-  assert.match(threeDialsLatest.message, /No dated Three-Dials snapshot has been published yet/);
-  assert.match(threeDialsLatest.scope, /source-freshness checks/);
-  assert.match(threeDialsLatest.scope, /exact-week USD Impact Score bridge check/);
+  assert.equal(threeDialsLatest.source_rights_state, 'unverified');
+  assert.match(threeDialsLatest.message, /temporarily unavailable pending source-rights review/);
+  assert.match(threeDialsLatest.scope, /Numeric observations, historical comparisons/);
+  assert.match(threeDialsLatest.scope, /classifications and snapshot interpretations are withheld/);
+  assert.equal(threeDialsLatest.dials, undefined);
+  assert.equal(threeDialsLatest.interpretation, undefined);
+  assert.equal(threeDialsLatest.model_output, undefined);
 } else {
   assert.match(threeDialsLatest.week_ending, /^20\d{2}-\d{2}-\d{2}$/);
   assert.equal(threeDialsLatest.model_output.week_ending, threeDialsLatest.week_ending);

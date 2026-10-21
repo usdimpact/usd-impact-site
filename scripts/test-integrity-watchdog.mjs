@@ -43,7 +43,7 @@ assert.match(watchdogWorkflow, /case "\$COMMENT_COMMAND" in/);
 // collected/resolved prospective records. Keep the 52-outcome evaluation gate.
 const watchdogHttp = fs.readFileSync(new URL('./integrity-watchdog-http.mjs', import.meta.url), 'utf8');
 const liveMethodologySource = fs.readFileSync(new URL('../apps/web/src/pages/score/methodology.astro', import.meta.url), 'utf8');
-const scoreClaimProbe = watchdogHttp.split('\\n').find((line) => line.includes("id: 'SCORE-CLAIM-BOUNDARY'"));
+const scoreClaimProbe = watchdogHttp.split(/\r?\n/).find((line) => line.includes("id: 'SCORE-CLAIM-BOUNDARY'"));
 assert.ok(scoreClaimProbe, 'The P0 Score claim contract must not disappear');
 for (const marker of [
   'descriptive weekly regime indicator',

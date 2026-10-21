@@ -16,6 +16,10 @@ const GROUNDED_SOURCE_RULES = [
   'The source ledger must contain at least three distinct URLs returned by the web search tool metadata.',
   'Do not finish the response with fewer than three grounded URLs; continue researching across approved domains.',
   'Never invent, reconstruct, or substitute a URL that was not returned by web search.',
+  'Build the source inventory before drafting: verify three individually dated publisher documents, not multi-document indexes or rolling undated report pointers.',
+  'For EIA weekly petroleum use the actual release-specific dated EIA document and its own displayed Release Date; never the recurring wpsrall.pdf or inferred week-ending date.',
+  'Match each mentioned upcoming CPI/PCE/payrolls/FOMC event with an in-window primary-sourced catalyst, otherwise omit the mention including from the body.',
+  'Do not write unsupported absence claims about a missing release or decision.',
 ].join(' ');
 
 let runtimeOverrideQueue = Promise.resolve();

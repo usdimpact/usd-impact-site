@@ -64,3 +64,11 @@ Every exact alternate ID, full filename, size, approximate duration, and Drive t
 **This is a private provenance register, not a 20-track approved-master manifest.** Keep PR #797 draft and unmerged. No synthesis, public sharing, member storage/upload, entitlement change, Vercel, Supabase, Render, Resend, Lovable, or Production modification is authorized.
 
 See also: [private non-audio closeout register](./SPANISH_AUDIOBOOK_NON_AUDIO_CLOSEOUT_2026-10-10.md).
+
+## October 21 candidate-level byte fingerprints and signal probes (not selected masters)
+
+The [private WAV candidate signal report](./SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.md) and [exact machine-readable measurements](./SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json) now provide **SHA-256 for 21 exact Drive WAV objects** (19 duration-compatible candidates, earlier Track 00 cleanup, and original Track 18), plus separate fingerprints of three older Library WAV variants. Each hashed Drive object retains its exact Drive ID, original byte hash, decoded PCM hash, WAV format/duration, complete-decoder result, integrated loudness and true-peak measurement in the JSON registry.
+
+**Scope limitation:** These 21 hashes certify only the bytes read from those 21 Google Drive objects. They do **not** establish an export link to the selected Descript composition IDs. All 20 selected master-hash fields remain `null` and all 20 selected export attestations remain outstanding. Track 00 selected v2 is still absent. Full listening, master approval, public release and PR merge remain prohibited. In particular, the Drive/Library PCM samples for Tracks 00, 09 and 10 differ despite exact duration matches.
+
+The latest Web quality CI failure was caused by a high-severity dependency audit finding in Vite/launch-editor before content checks ran; it is separately owned and **not** a successful content CI test. No npm dependency, application code, Production route, Descript audio or access control was changed by this private QA update.

@@ -69,12 +69,13 @@ assert.throws(
   /Unsupported Score pipeline origin/,
 );
 
-const [home, score, astroConfig, threeDials, weeklyRegime] = await Promise.all([
+const [home, score, astroConfig, threeDials, weeklyRegime, cspBuildValidator] = await Promise.all([
   readFile(new URL('../src/pages/index.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/score.astro', import.meta.url), 'utf8'),
   readFile(new URL('../astro.config.mjs', import.meta.url), 'utf8'),
   readFile(new URL('../src/components/ThreeDialsSnapshot.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/practice/weekly-regime.astro', import.meta.url), 'utf8'),
+  readFile(new URL('./test-csp-build.mjs', import.meta.url), 'utf8'),
 ]);
 
 for (const [name, text] of [['home', home], ['score', score]]) {
@@ -107,6 +108,12 @@ assert.match(weeklyRegime, /SCORE_PREVIEW_PIPELINE_ORIGIN/);
 assert.match(threeDials, /const scoreArchiveUrl = isPublished\s*\?/);
 assert.match(weeklyRegime, /const scoreArchiveUrl = snapshot\.status === 'published'\s*\?/);
 assert.match(weeklyRegime, /\{scoreArchiveUrl && \(\s*<section class="score-output"/);
+
+// The build-time CSP validator must use the same strict Preview origin pin as
+// Astro's CSP and the Score route. Preview keys must never open Production.
+assert.match(cspBuildValidator, /process\\.env\\.SCORE_PREVIEW_PIPELINE_ORIGIN/);
+assert.match(cspBuildValidator, /process\\.env\\.VERCEL_ENV/);
+assert.match(cspBuildValidator, /\x60form-action 'self' \\$\\{scorePipelineOrigin\\}\x60/);
 
 assert.match(astroConfig, /resolveScorePipelineOrigin/);
 assert.match(astroConfig, /PUBLIC_SCORE_PIPELINE_ORIGIN/);

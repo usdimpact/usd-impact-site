@@ -1,0 +1,1182 @@
+{
+  "schema_version": 1,
+  "classification": "PRIVATE_INTERNAL_QA_NOT_RELEASE_OR_MASTER_ACCEPTANCE",
+  "summary": {
+    "date": "2026-10-21",
+    "qa_scope": "actual fetched private WAV candidates; NOT attested selected Descript masters",
+    "tracks_in_selected_sequence": 20,
+    "private_drive_objects_probed": 21,
+    "unique_drive_slots_with_size_matched_candidate_probed": 19,
+    "drive_wav_alternate_exceptions_probed": 2,
+    "library_objects_probed": 3,
+    "all_fetched_samples_decoded": true,
+    "all_pcm_sample_scans_complete": true,
+    "ffmpeg_decode_exit_zero_files": 24,
+    "no_ffmpeg_detected_two_second_silence_at_minus50dbfs_files": 24,
+    "zero_near_full_scale_sample_counts_files": 24,
+    "source_attested_selected_wav_exports": 0,
+    "whole_file_human_listening_signoffs": 0,
+    "release_allowed": false,
+    "pr_797_merge_allowed": false,
+    "canonical_19_proxy_candidates_lufs_min": -24,
+    "canonical_19_proxy_candidates_lufs_max": -23.8,
+    "canonical_19_proxy_candidates_truepeak_dbtp_min": -8.5,
+    "canonical_19_proxy_candidates_truepeak_dbtp_max": -7.5,
+    "other_candidate_track00_lufs_library": -16,
+    "other_candidate_track00_true_peak_dbtp_library": 0,
+    "web_quality": "failed on npm audit high severity Vite launch-editor Windows command handling advisory; separate dependency remediation, not WAV/QA test failure"
+  },
+  "method": {
+    "source_types": "Google Drive native stored WAVs (streamed authenticated raw bytes) and existing ChatGPT Library WAV snapshots",
+    "sample_selection": "19 uniquely size-compatible Drive candidates for selected tracks 01-19, plus two alternate Drive files (earlier Track 00 and Track 18 original), plus three older Library variants (Track 00, Tracks 09-10). These were NOT source-attested composition exports.",
+    "hashes": "SHA-256 of original complete WAV object bytes AND separate SHA-256 of decoded WAV PCM chunk payload, without resampling",
+    "decoder": "ffmpeg complete file decode to null output; errors captured from diagnostic stderr",
+    "integrated_loudness": "ffmpeg ebur128=peak=true integrated I, in LUFS, 0.1 LUFS precision reported",
+    "true_peak": "ffmpeg ebur128=peak=true reported true peak in dBTP rounded to 0.1 dB",
+    "silence": "ffmpeg silencedetect at -50 dBFS with minimum duration 2 seconds; silence detection is heuristic, not proof of clean joins",
+    "samples": "libsndfile full frame scan for sample peak/DC/near-full-scale; near clipping threshold was normalized magnitude >= 0.9999695",
+    "comparison": "sample-synchronous float sample correlation and exact equality; comparisons do NOT establish Descript source provenance or human listening acceptance"
+  },
+  "provenance_holds": {
+    "selected_track_00_composition_id": "ebe7f026-e369-4dd4-a184-9476a6482f5b",
+    "selected_track_00_duration_seconds": 109.835306,
+    "selected_track_00_direct_WAV_export_found": false,
+    "source_attestation_pending_for_all": true,
+    "publication_approval": "NOT_GRANTED",
+    "mastering_approval": "PENDING",
+    "public_allowed": false,
+    "merge_allowed": false,
+    "production_enabled": false
+  },
+  "measured_files": [
+    {
+      "track": "00",
+      "asset_role": "earlier_drive_cleanup",
+      "asset_reference": "1n3W5nZNuT0jL3mRPvTvvRZCbINIR40S3",
+      "filename": "00 - Copyright Fixed - PRIVATE QA.wav",
+      "source_size_bytes": 9754644,
+      "byte_sha256": "d226c7d842ab8c6efb219c972ca4fce86c942f0a06fc140f9a0c0504b8553e49",
+      "decoded_pcm_sha256": "849e58c6e7cedf711d11aa4937bf4a6de8d66d1a4b19c0762a113bd8fbcb5985",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 4877253,
+        "duration_seconds": 110.59530612244897,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.418212890625,
+        "sample_peak_dbfs": -7.572051700045277,
+        "mean_sample_dc_offset": -0.00025525843357674906,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 4877253,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -23.9,
+        "loudness_range_lu": 1.8,
+        "true_peak_dbtp": -7.6,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 0.577
+    },
+    {
+      "track": "00",
+      "asset_role": "older_library_candidate",
+      "asset_reference": "file_00000000c46081f4aa3a6a40dcb235f7",
+      "filename": "spanish-track00-copyright-removed-declicked-private-QA-2026-10-09.wav",
+      "source_size_bytes": 14631804,
+      "byte_sha256": "98b5c92d291ed09881a7d1bef284a937fad04f2a61f4de4160767bb616efb0d5",
+      "decoded_pcm_sha256": "0504faad9d8a4167bcc337cd74cdd9957c7ca486442da82d72625e05f7e87d08",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 4877253,
+        "duration_seconds": 110.59530612244897,
+        "container": "WAV",
+        "encoding": "PCM_24",
+        "width_bytes": 3
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.9998853206634521,
+        "sample_peak_dbfs": -0.0009961491809765337,
+        "mean_sample_dc_offset": -0.0006152479072562649,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 4877253,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -16,
+        "loudness_range_lu": 2.2,
+        "true_peak_dbtp": 0,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 0.501
+    },
+    {
+      "track": "01",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "1IQRFyBjJW2nb8VmLlsyQ0L_VBq38W7fa",
+      "filename": "01 - Reconocimientos y guía del lector.wav",
+      "source_size_bytes": 20160144,
+      "byte_sha256": "e585aed6ab183f07099fd8c99e9a7a9ee7df3ae858b34b35b04fb7e013fdb78e",
+      "decoded_pcm_sha256": "df6ee43f389b7428e090f736bbc8bbae52376ad0e9c26dd02821917b4ae3839f",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 10080000,
+        "duration_seconds": 228.57142857142858,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.4049072265625,
+        "sample_peak_dbfs": -7.8528894422454645,
+        "mean_sample_dc_offset": -0.00021997816297743056,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 10080000,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -23.8,
+        "loudness_range_lu": 1.9,
+        "true_peak_dbtp": -7.8,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 0.981
+    },
+    {
+      "track": "02",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "1XmwKEM505XGSiZIr24kPvoq9oJ7ZgGmy",
+      "filename": "02 - Introducción - PART I BOUNDARY QA - DO NOT PUBLISH.wav",
+      "source_size_bytes": 73862370,
+      "byte_sha256": "8088f7bc8ee558e2f9af46f5dc0a1a28e2615107c4d2aa4d6d819ca89732b203",
+      "decoded_pcm_sha256": "b3bbd37d95958240de4bdec58264eebdf431e4d799c6d42da11d04a85c41f3c2",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 36931104,
+        "duration_seconds": 837.44,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.39837646484375,
+        "sample_peak_dbfs": -7.994126531995201,
+        "mean_sample_dc_offset": -0.0001615361827312009,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 36931104,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 2.3,
+        "true_peak_dbtp": -8,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 3.066
+    },
+    {
+      "track": "03",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "1m5KDb1bznt9wizVXGIJrzSeogc238DFb",
+      "filename": "03 - Capítulo 1 - PART I BOUNDARY QA - DO NOT PUBLISH.wav",
+      "source_size_bytes": 94000680,
+      "byte_sha256": "2654a59424ce4fc9ec47c66cdb23824d3b55afddbc1a5431dd31e0efe8f63567",
+      "decoded_pcm_sha256": "3c23adb96aad0a33f374da6ab1e8de2d7a88392ce5cbeaaaaf56069cd98695ac",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 47000260,
+        "duration_seconds": 1065.7655328798187,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.39947509765625,
+        "sample_peak_dbfs": -7.970205768179243,
+        "mean_sample_dc_offset": -0.00017630785348024205,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 47000260,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 2.2,
+        "true_peak_dbtp": -7.9,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 3.76
+    },
+    {
+      "track": "04",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "1ClvMNuvpcwR48aan1OChJeURNV-PL_DJ",
+      "filename": "04 - Chapter 2 - Repeated Part I Heading Added - PRIVATE QA - DO NOT PUBLISH.wav",
+      "source_size_bytes": 97792834,
+      "byte_sha256": "4127b4d8435722c62d062dcbbf7dcb8a2e3a73a7e28df0d80efe1e2d937110ff",
+      "decoded_pcm_sha256": "333448b92183efd744c5856ad4690a1df34da968d87d927fd1851615895210c9",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 48896326,
+        "duration_seconds": 1108.7602267573695,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.401458740234375,
+        "sample_peak_dbfs": -7.927181650759923,
+        "mean_sample_dc_offset": -0.00019230354627561256,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 48896326,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 2.1,
+        "true_peak_dbtp": -7.9,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 4.009
+    },
+    {
+      "track": "05",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "1QgNqhFMXJHxejcRs-nWT5WEgwYzEKEyw",
+      "filename": "05 - Chapter 3 - Part II Tail Transferred - PRIVATE QA - DO NOT PUBLISH.wav",
+      "source_size_bytes": 100583458,
+      "byte_sha256": "e1dad098781cab165db476aecadf85e90a73b3b658a6904aef37c6cc23ed5370",
+      "decoded_pcm_sha256": "16e55a4e5a9eedb4b1f5f24083ef8faf3c7e0df1641ac2e871029dbc390139c0",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 50291641,
+        "duration_seconds": 1140.4000226757369,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.40777587890625,
+        "sample_peak_dbfs": -7.791569350840723,
+        "mean_sample_dc_offset": -0.00022142942104822773,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 50291641,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 2.1,
+        "true_peak_dbtp": -7.8,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 4.216
+    },
+    {
+      "track": "06",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "1ltvNu7eL5iovSXGxOglE7z7QHqamolF1",
+      "filename": "06F - Chapter 4 - Part III Tail Transferred - PRIVATE QA - DO NOT PUBLISH.wav",
+      "source_size_bytes": 121204618,
+      "byte_sha256": "c5948818a301d2b59923505955f6a4e7d047aedf07068a4365082692c92bd37e",
+      "decoded_pcm_sha256": "43d1dd456a9ccbff5fe5d312f22bddb6c9d37bad35b708a515da050d7a535b6b",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 60602220,
+        "duration_seconds": 1374.2,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.41650390625,
+        "sample_peak_dbfs": -7.607618422725403,
+        "mean_sample_dc_offset": -0.00021086357380467689,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 60602220,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -23.9,
+        "loudness_range_lu": 1.7,
+        "true_peak_dbtp": -7.6,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 4.861
+    },
+    {
+      "track": "07",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "1j6t_Un1QtECXKg6nEeA2LE9suA_Zw39F",
+      "filename": "07 - Chapter 5 - Part III Tail Transferred - PRIVATE QA - DO NOT PUBLISH.wav",
+      "source_size_bytes": 108328300,
+      "byte_sha256": "7cde81b90e55c13c56d0d3e68ef53a97cfce0ad75adfb083afe95f6db9593c19",
+      "decoded_pcm_sha256": "962fb6e43f10c538e4d3d31e38090516ff6a72ff1578b196727b42755c6a84c2",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 54164061,
+        "duration_seconds": 1228.21,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.405303955078125,
+        "sample_peak_dbfs": -7.844383165224151,
+        "mean_sample_dc_offset": -0.00020584540654620194,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 54164061,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -23.9,
+        "loudness_range_lu": 2.1,
+        "true_peak_dbtp": -7.8,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 4.467
+    },
+    {
+      "track": "08",
+      "asset_role": "drive_boundary_candidate",
+      "asset_reference": "1327OFhKeMsxy3_a0XaaTnmg_FBBzPdGx",
+      "filename": "08 - Chapter 6 - Part III Tail Transferred - PRIVATE QA - DO NOT PUBLISH - FIXED AUDIO.wav",
+      "source_size_bytes": 88403052,
+      "byte_sha256": "077b28dc597b3e63efdbd2f749a2d264e448d284b5085888455ae552f40ff4af",
+      "decoded_pcm_sha256": "38ca46564db48a9fd74977095ca75ed1c176312766315f20edaaf8abef7c3e04",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 44201430,
+        "duration_seconds": 1002.3,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.404083251953125,
+        "sample_peak_dbfs": -7.870582987933607,
+        "mean_sample_dc_offset": -0.00019890258773514228,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 44201430,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 2.1,
+        "true_peak_dbtp": -7.7,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 3.544
+    },
+    {
+      "track": "09",
+      "asset_role": "drive_boundary_candidate",
+      "asset_reference": "1NOUIDSZWdAtm_KW_689pohp3ChUy_ldG",
+      "filename": "09 - Chapter 7 - Part III Tail Transferred - PRIVATE QA - DO NOT PUBLISH - FIXED AUDIO.wav",
+      "source_size_bytes": 94444752,
+      "byte_sha256": "cc389e5fcaad5b00443726f56c26404a47dc6eefb25e371002729a483175a6d8",
+      "decoded_pcm_sha256": "889b7ab3cb004e1c4cf1f0a14a1254a1808ffd50b72640c4406b1f2e212f55e2",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 47222280,
+        "duration_seconds": 1070.8,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.411773681640625,
+        "sample_peak_dbfs": -7.706828291975629,
+        "mean_sample_dc_offset": -0.00023441679168255232,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 47222280,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -23.9,
+        "loudness_range_lu": 1.6,
+        "true_peak_dbtp": -7.7,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 3.904
+    },
+    {
+      "track": "09",
+      "asset_role": "library_boundary_candidate",
+      "asset_reference": "file_00000000d4a0820a98693034f4733248",
+      "filename": "09 - Capitulo 7 - Parte III tail transferred - PRIVATE QA.wav",
+      "source_size_bytes": 94444604,
+      "byte_sha256": "626b6694c17148aa5038903ffcf1ce60c1dc77a0b4fbb32aa116e57199b095bb",
+      "decoded_pcm_sha256": "be44390c1f5e496671718f1be0a965898996ed3ff5ff55d6f0dd6537f4cab0bd",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 47222280,
+        "duration_seconds": 1070.8,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.410400390625,
+        "sample_peak_dbfs": -7.735844690566067,
+        "mean_sample_dc_offset": -0.00023536407438726488,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 47222280,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -23.9,
+        "loudness_range_lu": 1.8,
+        "true_peak_dbtp": -7.7,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 3.79
+    },
+    {
+      "track": "10",
+      "asset_role": "drive_boundary_candidate",
+      "asset_reference": "1o43eWn-f-RbxBnbynEFsWeGWvf3qStcO",
+      "filename": "10 - Chapter 8 - Part III Heading Prefixed - PRIVATE QA - DO NOT PUBLISH - FIXED AUDIO.wav",
+      "source_size_bytes": 89318762,
+      "byte_sha256": "0fed2e34a71abf4b7f0179bf119545c59bbb86376cfe8414873f0ec539fd287d",
+      "decoded_pcm_sha256": "703c99931d67d195238f3afe92eba5c65b13ebedddee1f9cf3bc55ccbb42fccf",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 44659285,
+        "duration_seconds": 1012.6821995464852,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.4036865234375,
+        "sample_peak_dbfs": -7.879114974361054,
+        "mean_sample_dc_offset": -0.0002169105369359449,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 44659285,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 1.8,
+        "true_peak_dbtp": -7.9,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 3.928
+    },
+    {
+      "track": "10",
+      "asset_role": "library_boundary_candidate",
+      "asset_reference": "file_00000000e50c81f4a2272fa863a143ad",
+      "filename": "10 - Capitulo 8 - Parte III heading prefixed - PRIVATE QA.wav",
+      "source_size_bytes": 89318614,
+      "byte_sha256": "866dc00ade6cc33e9de2fdb7fa7e1734faee84699c8c8b307512a2edcf9ed150",
+      "decoded_pcm_sha256": "e962fc27deed5583be3620b585ab444b1f677294430a0fef782318569ce323cc",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 44659285,
+        "duration_seconds": 1012.6821995464852,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.408782958984375,
+        "sample_peak_dbfs": -7.7701443403098045,
+        "mean_sample_dc_offset": -0.00022110121211968436,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 44659285,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -23.9,
+        "loudness_range_lu": 1.8,
+        "true_peak_dbtp": -7.8,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 3.751
+    },
+    {
+      "track": "11",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "1YEk2CzoYccRAdbkionS2IJLirk2y41IN",
+      "filename": "11 - Capítulo 9 - BOUNDARY V2 QA - DO NOT PUBLISH.wav",
+      "source_size_bytes": 80793732,
+      "byte_sha256": "84bc50e4a10c8c698e67f9adad2401d7ba42c1aacbdb778c0e694eda28f422e0",
+      "decoded_pcm_sha256": "5421158273935003a646ddb1798bd343a9dcb4a0fb6e4356b1c5a6c2c60476de",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 40396788,
+        "duration_seconds": 916.0269387755102,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.40911865234375,
+        "sample_peak_dbfs": -7.76301439804021,
+        "mean_sample_dc_offset": -0.0002235705672044145,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 40396788,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 2.1,
+        "true_peak_dbtp": -7.7,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 3.245
+    },
+    {
+      "track": "12",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "12V-RaaXWNm7OpeRMc40bT4BaoFoKOFlH",
+      "filename": "12 - Capítulo 10 - BOUNDARY V2 QA - DO NOT PUBLISH.wav",
+      "source_size_bytes": 96118118,
+      "byte_sha256": "a331adad8192127af01f06c9eacd8c210d82768586b135dc7caf2e444c84e916",
+      "decoded_pcm_sha256": "56336421b8ebc40d347a873a06aa821507412e5d6fb8ac1a9c69675ace83d82c",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 48058981,
+        "duration_seconds": 1089.7728117913832,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.4075927734375,
+        "sample_peak_dbfs": -7.795470491547696,
+        "mean_sample_dc_offset": -0.00021018536121283676,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 48058981,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 2.1,
+        "true_peak_dbtp": -7.8,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 4.027
+    },
+    {
+      "track": "13",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "1oeYUKir1C5arv9Fg3rApCGqa8Dei1Tk3",
+      "filename": "13 - Capítulo 11 - BOUNDARY V2 QA - DO NOT PUBLISH.wav",
+      "source_size_bytes": 82081654,
+      "byte_sha256": "1cef29ffd26501f5458bcff7151bc7c78d949f8052a3797dbe92c13f4e48ed1e",
+      "decoded_pcm_sha256": "2b7ae4347d724d3b06f7e3e047cde6c58f938b14d3479b5080daedce9a47f395",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 41040749,
+        "duration_seconds": 930.6292290249434,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.400909423828125,
+        "sample_peak_dbfs": -7.939074700958599,
+        "mean_sample_dc_offset": -0.00021376553176891795,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 41040749,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -23.9,
+        "loudness_range_lu": 1.8,
+        "true_peak_dbtp": -7.9,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 3.217
+    },
+    {
+      "track": "14",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "1-8mHULlao-B4-wawGXOWVSt5OBWGljce",
+      "filename": "14 - Capítulo 12 - BOUNDARY V2 QA - DO NOT PUBLISH.wav",
+      "source_size_bytes": 102988150,
+      "byte_sha256": "1db4233918debfffedd5ea50235e2124607f6ad07a905d4da8ec3beb203894ff",
+      "decoded_pcm_sha256": "99821d2f8b6888c0e28dbf300f863a6682e86a16931e5463dff0da2347c5b4e3",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 51493997,
+        "duration_seconds": 1167.6643310657596,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.40496826171875,
+        "sample_peak_dbfs": -7.851580241905648,
+        "mean_sample_dc_offset": -0.00021044240138791688,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 51493997,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 2.2,
+        "true_peak_dbtp": -7.8,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 4.246
+    },
+    {
+      "track": "15",
+      "asset_role": "drive_boundary_candidate",
+      "asset_reference": "1phnj7yUgnpdAb39ftUH4rC7tMVVxcq3d",
+      "filename": "15 - Capítulo 13 - BOUNDARY V1 QA - DO NOT PUBLISH.wav",
+      "source_size_bytes": 118864074,
+      "byte_sha256": "4cfd3011f13055cbf7e0e9ff7e1dc553e1a032fe4441c10c1275f9a976ba9bc7",
+      "decoded_pcm_sha256": "b56f517c3d1b4211386c7ac2650b5d77f62b85c61b815213896963908f488166",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 59431959,
+        "duration_seconds": 1347.6634693877552,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.409698486328125,
+        "sample_peak_dbfs": -7.750712811762495,
+        "mean_sample_dc_offset": -0.00022890201677314568,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 59431959,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 2.3,
+        "true_peak_dbtp": -7.7,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 4.563
+    },
+    {
+      "track": "16",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "1FnGBFFS8yy9cs1vC4cuZtV8q33zWqF-G",
+      "filename": "16 - Lecturas adicionales - PRIVATE QA.wav",
+      "source_size_bytes": 13086864,
+      "byte_sha256": "c2e18aa19e64d35a8498b2154a6319bf12bf1fc4eb7f2266525b65ca8d4fc820",
+      "decoded_pcm_sha256": "7aa055e6cad51298c6da71d28929211b8bd058eaff9426c763051b694cc287f9",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 6543360,
+        "duration_seconds": 148.37551020408162,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.405487060546875,
+        "sample_peak_dbfs": -7.840459999105935,
+        "mean_sample_dc_offset": -0.00026097542989608454,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 6543360,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 2.3,
+        "true_peak_dbtp": -7.8,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 0.635
+    },
+    {
+      "track": "17",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "1V5AiOkUcL7LBxd_MM43_bAlp6114gl_5",
+      "filename": "17 - Apéndice A - Glosario rápido - PRIVATE QA.wav",
+      "source_size_bytes": 92021914,
+      "byte_sha256": "9d1d5f746a873f5ee2c6d1740ceae5b6c21babb6729c68410fd3f627a94cfab3",
+      "decoded_pcm_sha256": "734d152ffbc8d0bb10b97dea3c0748c367a97d97edeb50ef21bdae1c13e88005",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 46010880,
+        "duration_seconds": 1043.330612244898,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.405029296875,
+        "sample_peak_dbfs": -7.850271238868273,
+        "mean_sample_dc_offset": -0.0002324261099178047,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 46010880,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 2.4,
+        "true_peak_dbtp": -7.8,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 3.838
+    },
+    {
+      "track": "18",
+      "asset_role": "drive_original_candidate",
+      "asset_reference": "1oUwsSyq0dLwprMKvphUjakZucZLAQqGR",
+      "filename": "18 - Apéndice B - PRIVATE QA.wav",
+      "source_size_bytes": 75769478,
+      "byte_sha256": "a49a248afeb4b4b0879965ba06f8e6502ccf294d34c96c19baff56eaa627b327",
+      "decoded_pcm_sha256": "27ebf98e2c45a1fdad3a725eec364ae20b66427e5ccfd169baf678438e370836",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 37884672,
+        "duration_seconds": 859.0628571428572,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.5,
+        "sample_peak_dbfs": -6.020599913279624,
+        "mean_sample_dc_offset": -0.000201152237713753,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 37884672,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -23.9,
+        "loudness_range_lu": 1.8,
+        "true_peak_dbtp": -5.9,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 3.301
+    },
+    {
+      "track": "18",
+      "asset_role": "drive_repair_candidate",
+      "asset_reference": "1AGRHbUe6GEXsi_I_HnuEn-69hSENIIIf",
+      "filename": "18 - Apéndice B - PRIVATE REPAIR CANDIDATE - DO NOT PUBLISH.wav",
+      "source_size_bytes": 77883192,
+      "byte_sha256": "5232cfdc0ea2256223942484c4b01b748d6ae96040b39dc62f17a7ab58155abb",
+      "decoded_pcm_sha256": "c379a1e857f335f79e0b8a1dacebad3f13c969f04a051075248d4d04c10cc199",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 38941513,
+        "duration_seconds": 883.0275056689343,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.409271240234375,
+        "sample_peak_dbfs": -7.7597754489636115,
+        "mean_sample_dc_offset": -0.0001957611629101655,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 38941513,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 2.1,
+        "true_peak_dbtp": -7.5,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 3.245
+    },
+    {
+      "track": "19",
+      "asset_role": "drive_matched_size_candidate",
+      "asset_reference": "1xvGfJmCHtF49wFoBrx2_uRdiWmdg28XM",
+      "filename": "19 - Sobre el autor - PRIVATE QA.wav",
+      "source_size_bytes": 3845514,
+      "byte_sha256": "b6a6f8b112ad48150ead68d6d12edaf9b12c03e756617684ea8159798ec41faf",
+      "decoded_pcm_sha256": "f346c9fe489ae872010c44d9f11ec8b3be4f236a1d2fde8179bc419ac2c7d22e",
+      "wav_header": {
+        "sample_rate_hz": 44100,
+        "channels": 1,
+        "frames": 1922688,
+        "duration_seconds": 43.59836734693877,
+        "container": "WAV",
+        "encoding": "PCM_16",
+        "width_bytes": 2
+      },
+      "sample_checks": {
+        "max_absolute_sample_normalized": 0.373687744140625,
+        "sample_peak_dbfs": -8.549822909979701,
+        "mean_sample_dc_offset": -0.0003919222408696185,
+        "near_full_scale_sample_count": 0,
+        "samples_scanned": 1922688,
+        "sample_scan_complete": true
+      },
+      "ffmpeg_analysis": {
+        "decoder_exit_code": 0,
+        "integrated_lufs": -24,
+        "loudness_range_lu": 1.5,
+        "true_peak_dbtp": -8.5,
+        "silence_detection": {
+          "threshold_dbfs": -50,
+          "min_duration_seconds": 2,
+          "count": 0,
+          "max_duration_seconds": 0,
+          "long_events_over_5_seconds": []
+        },
+        "decoder_warnings_count": 0,
+        "code": 0
+      },
+      "provenance_status": "NOT_ATTESTED_TO_SELECTED_DESCRIPT_EXPORT",
+      "mastering_approval": "NOT_GRANTED",
+      "full_human_listening_approval": "NOT_GRANTED",
+      "analysis_elapsed_seconds": 0.232
+    }
+  ],
+  "matched_duration_different_PCM_pairs": [
+    {
+      "track": "00",
+      "drive_filename": "00 - Copyright Fixed - PRIVATE QA.wav",
+      "library_filename": "spanish-track00-copyright-removed-declicked-private-QA-2026-10-09.wav",
+      "sample_rate_hz": 44100,
+      "duration_seconds": 110.59530612244897,
+      "exact_equal_sample_fraction": 0.005191446906691123,
+      "waveform_normalized_correlation": 0.9989776755142052,
+      "optimal_linear_gain_library_over_drive": 2.467353344175297,
+      "raw_rmse_normalized": 0.09700297957054035,
+      "largest_abs_sample_difference": 0.6067360639572144,
+      "identity_verdict": "DIFFERENT_PCM_SAMPLES_NOT_IDENTICAL",
+      "selected_descript_export_status": "UNPROVEN"
+    },
+    {
+      "track": "09",
+      "drive_filename": "09 - Chapter 7 - Part III Tail Transferred - PRIVATE QA - DO NOT PUBLISH - FIXED AUDIO.wav",
+      "library_filename": "09 - Capitulo 7 - Parte III tail transferred - PRIVATE QA.wav",
+      "sample_rate_hz": 44100,
+      "duration_seconds": 1070.8,
+      "exact_equal_sample_fraction": 0.15710821247936355,
+      "waveform_normalized_correlation": 0.999755752129489,
+      "optimal_linear_gain_library_over_drive": 0.9993165308909154,
+      "raw_rmse_normalized": 0.00146962461949072,
+      "largest_abs_sample_difference": 0.059600830078125,
+      "identity_verdict": "DIFFERENT_PCM_SAMPLES_NOT_IDENTICAL",
+      "selected_descript_export_status": "UNPROVEN"
+    },
+    {
+      "track": "10",
+      "drive_filename": "10 - Chapter 8 - Part III Heading Prefixed - PRIVATE QA - DO NOT PUBLISH - FIXED AUDIO.wav",
+      "library_filename": "10 - Capitulo 8 - Parte III heading prefixed - PRIVATE QA.wav",
+      "sample_rate_hz": 44100,
+      "duration_seconds": 1012.6821995464852,
+      "exact_equal_sample_fraction": 0.17910947297969504,
+      "waveform_normalized_correlation": 0.9999623018940641,
+      "optimal_linear_gain_library_over_drive": 1.0140901914019818,
+      "raw_rmse_normalized": 0.001086543948924057,
+      "largest_abs_sample_difference": 0.089813232421875,
+      "identity_verdict": "DIFFERENT_PCM_SAMPLES_NOT_IDENTICAL",
+      "selected_descript_export_status": "UNPROVEN"
+    }
+  ],
+  "cautions": [
+    "WAV file is not selected master just because duration, name, format, waveform correlation, loudness or size matches selected composition.",
+    "Sample-level difference can be mastering, resampling or export-processing change; it is not automatically an acoustic defect.",
+    "No listener acceptance, exact composition export attestation, checksum from Descript or mastered product QA is implied."
+  ]
+}

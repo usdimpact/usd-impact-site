@@ -1,7 +1,8 @@
 // Disabled-by-default issuance endpoint for Score handoff (#147).
 // Must not be enabled until Score origin atomically redeems tickets and gates ALL
 // premium HTML on both custom and legacy hostnames.
-import { requestHeader, readSupabaseServerConfig, readAccountAccessState, safeSupabaseError, sendJson } from './supabase-server.js';
+import { requestHeader, readAccountAccessState, safeSupabaseError, sendJson } from './supabase-server.js';
+import { readScorePrivateSupabaseConfig } from './score-private-supabase-config.js';
 import { requestOrigin, resolveSessionWithRefresh } from './supabase-auth.js';
 import { RESEARCH_MEMBERSHIP_PRODUCT_ID } from './research-membership-runtime.js';
 import { issueScoreTicket, scoreTicketPath } from './score-handoff-ticket.js';
@@ -45,7 +46,7 @@ export async function handleScoreHandoff(request, response, dependencies = {}) {
       return sendJson(response, 403, { allowed: false, code: 'RESEARCH_MEMBERSHIP_REQUIRED' });
     }
     const store = dependencies.store || createSupabaseScoreTicketStore({
-      config: readSupabaseServerConfig(environment, { requireSecret: true }),
+      config: readScorePrivateSupabaseConfig(environment),
     });
     const issued = await issueScoreTicket({
       accountId: resolved.value.user.id, path, store,

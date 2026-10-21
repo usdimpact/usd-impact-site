@@ -2,7 +2,8 @@
 // The shared secret MUST be independent of the Supabase service key and never
 // exposed to browser code. Cloudflare calls this endpoint server-to-server.
 import { timingSafeEqual } from 'node:crypto';
-import { readSupabaseServerConfig, sendJson } from './supabase-server.js';
+import { sendJson } from './supabase-server.js';
+import { readScorePrivateSupabaseConfig } from './score-private-supabase-config.js';
 import { createSupabaseScoreTicketStore } from './score-supabase-ticket-store.js';
 import { createScoreMembershipProviders } from './score-membership-providers.js';
 import { redeemScoreHandoff } from './score-redemption.js';
@@ -33,7 +34,7 @@ export async function handleScoreEdgeRedeem(request, response, deps = {}) {
     return sendJson(response, 400, { allowed: false, code: 'INVALID_TICKET' });
   }
   try {
-    const config = deps.config || readSupabaseServerConfig(env, { requireSecret: true });
+    const config = deps.config || readScorePrivateSupabaseConfig(env);
     const providers = deps.providers || createScoreMembershipProviders({ config });
     const ticketStore = deps.ticketStore || createSupabaseScoreTicketStore({ config });
     const result = await redeemScoreHandoff({

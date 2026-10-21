@@ -20,7 +20,9 @@
     "track_slots_without_size_proxy_match": 1,
     "selected_wav_composition_to_export_attestations": 0,
     "approved_masters": 0,
-    "unassigned_support_audio_objects": 3
+    "unassigned_support_audio_objects": 3,
+    "drive_objects_sha256_fingerprinted": 21,
+    "duration_compatible_drive_objects_sha256_fingerprinted": 19
   },
   "proxy_method": "Approximate seconds = (Drive-reported size bytes minus 44) / 88200, assuming standard 44-byte WAV header and 44.1 kHz mono 16-bit PCM, tolerance 0.04 s vs live Descript metadata. This is strictly a file size proxy, NOT a WAV header parse, decoder verification, hash, export attestation, true-peak/loudness check or listening test.",
   "identity_exceptions": {
@@ -59,10 +61,24 @@
           "candidate_screen": "OTHER_VERSION_OR_QA_FRAGMENT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "d226c7d842ab8c6efb219c972ca4fce86c942f0a06fc140f9a0c0504b8553e49",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "849e58c6e7cedf711d11aa4937bf4a6de8d66d1a4b19c0762a113bd8fbcb5985",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 110.59530612244897,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -23.9,
+            "true_peak_dbtp": -7.6,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "1RfKk1mWeTJkr-cdCu-LizI8_GKDERV_Y",
@@ -203,10 +219,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "e585aed6ab183f07099fd8c99e9a7a9ee7df3ae858b34b35b04fb7e013fdb78e",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "df6ee43f389b7428e090f736bbc8bbae52376ad0e9c26dd02821917b4ae3839f",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 228.57142857142858,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -23.8,
+            "true_peak_dbtp": -7.8,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         }
       ],
       "size_proxy_compatible_drive_file_ids": [
@@ -259,10 +289,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "8088f7bc8ee558e2f9af46f5dc0a1a28e2615107c4d2aa4d6d819ca89732b203",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "b3bbd37d95958240de4bdec58264eebdf431e4d799c6d42da11d04a85c41f3c2",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 837.44,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -8,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "19D61q2NH-AslqfI5z3hYCUYpYQYWrbcJ",
@@ -333,10 +377,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "2654a59424ce4fc9ec47c66cdb23824d3b55afddbc1a5431dd31e0efe8f63567",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "3c23adb96aad0a33f374da6ab1e8de2d7a88392ce5cbeaaaaf56069cd98695ac",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 1065.7655328798187,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -7.9,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "1LwdUu8zFFe-EFlW_7feBrUiILSaVcc-L",
@@ -389,10 +447,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "4127b4d8435722c62d062dcbbf7dcb8a2e3a73a7e28df0d80efe1e2d937110ff",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "333448b92183efd744c5856ad4690a1df34da968d87d927fd1851615895210c9",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 1108.7602267573695,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -7.9,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "16fnbzC246nEYZvsAbKxkZFscx-ZbDvGM",
@@ -463,10 +535,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "e1dad098781cab165db476aecadf85e90a73b3b658a6904aef37c6cc23ed5370",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "16e55a4e5a9eedb4b1f5f24083ef8faf3c7e0df1641ac2e871029dbc390139c0",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 1140.4000226757369,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -7.8,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "15sdvujLfGmu2bjyRoze2Dw5KCDjxarRl",
@@ -537,10 +623,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "c5948818a301d2b59923505955f6a4e7d047aedf07068a4365082692c92bd37e",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "43d1dd456a9ccbff5fe5d312f22bddb6c9d37bad35b708a515da050d7a535b6b",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 1374.2,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -23.9,
+            "true_peak_dbtp": -7.6,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "1jL7rqwXbhnWmVoeltBU-IUvGTUkEfjbk",
@@ -665,10 +765,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "7cde81b90e55c13c56d0d3e68ef53a97cfce0ad75adfb083afe95f6db9593c19",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "962fb6e43f10c538e4d3d31e38090516ff6a72ff1578b196727b42755c6a84c2",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 1228.21,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -23.9,
+            "true_peak_dbtp": -7.8,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "1pMGQguKxL3NRpOkEJBmQkTZqfqtuycN8",
@@ -721,10 +835,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "077b28dc597b3e63efdbd2f749a2d264e448d284b5085888455ae552f40ff4af",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "38ca46564db48a9fd74977095ca75ed1c176312766315f20edaaf8abef7c3e04",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 1002.3,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -7.7,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "1My23ISgLYBcdrRD1WBk_tezK3Ikhd5fV",
@@ -831,10 +959,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "cc389e5fcaad5b00443726f56c26404a47dc6eefb25e371002729a483175a6d8",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "889b7ab3cb004e1c4cf1f0a14a1254a1808ffd50b72640c4406b1f2e212f55e2",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 1070.8,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -23.9,
+            "true_peak_dbtp": -7.7,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "1x1xqfIWM02yaimocfzGf3mXgYrfUCHX9",
@@ -923,10 +1065,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "0fed2e34a71abf4b7f0179bf119545c59bbb86376cfe8414873f0ec539fd287d",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "703c99931d67d195238f3afe92eba5c65b13ebedddee1f9cf3bc55ccbb42fccf",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 1012.6821995464852,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -7.9,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "1nGaKyvBvmQknQVL3t4Oi2pva3F3wdZNo",
@@ -1015,10 +1171,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "84bc50e4a10c8c698e67f9adad2401d7ba42c1aacbdb778c0e694eda28f422e0",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "5421158273935003a646ddb1798bd343a9dcb4a0fb6e4356b1c5a6c2c60476de",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 916.0269387755102,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -7.7,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "11ejXa3wMP7LL1hq1NpQHGi99nIprR9fX",
@@ -1107,10 +1277,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "a331adad8192127af01f06c9eacd8c210d82768586b135dc7caf2e444c84e916",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "56336421b8ebc40d347a873a06aa821507412e5d6fb8ac1a9c69675ace83d82c",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 1089.7728117913832,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -7.8,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "1vP5gQCvzGGLF_MhqHMgK7h2B4UDB4vSR",
@@ -1163,10 +1347,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "1cef29ffd26501f5458bcff7151bc7c78d949f8052a3797dbe92c13f4e48ed1e",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "2b7ae4347d724d3b06f7e3e047cde6c58f938b14d3479b5080daedce9a47f395",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 930.6292290249434,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -23.9,
+            "true_peak_dbtp": -7.9,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "11SiaftZezP-v7WIp7Ov503DSrpMuFAqt",
@@ -1273,10 +1471,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "1db4233918debfffedd5ea50235e2124607f6ad07a905d4da8ec3beb203894ff",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "99821d2f8b6888c0e28dbf300f863a6682e86a16931e5463dff0da2347c5b4e3",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 1167.6643310657596,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -7.8,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         }
       ],
       "size_proxy_compatible_drive_file_ids": [
@@ -1329,10 +1541,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "4cfd3011f13055cbf7e0e9ff7e1dc553e1a032fe4441c10c1275f9a976ba9bc7",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "b56f517c3d1b4211386c7ac2650b5d77f62b85c61b815213896963908f488166",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 1347.6634693877552,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -7.7,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         }
       ],
       "size_proxy_compatible_drive_file_ids": [
@@ -1367,10 +1593,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "c2e18aa19e64d35a8498b2154a6319bf12bf1fc4eb7f2266525b65ca8d4fc820",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "7aa055e6cad51298c6da71d28929211b8bd058eaff9426c763051b694cc287f9",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 148.37551020408162,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -7.8,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         }
       ],
       "size_proxy_compatible_drive_file_ids": [
@@ -1405,10 +1645,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "9d1d5f746a873f5ee2c6d1740ceae5b6c21babb6729c68410fd3f627a94cfab3",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "734d152ffbc8d0bb10b97dea3c0748c367a97d97edeb50ef21bdae1c13e88005",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 1043.330612244898,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -7.8,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         }
       ],
       "size_proxy_compatible_drive_file_ids": [
@@ -1443,10 +1697,24 @@
           "candidate_screen": "OTHER_VERSION_OR_QA_FRAGMENT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "a49a248afeb4b4b0879965ba06f8e6502ccf294d34c96c19baff56eaa627b327",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "27ebf98e2c45a1fdad3a725eec364ae20b66427e5ccfd169baf678438e370836",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 859.0628571428572,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -23.9,
+            "true_peak_dbtp": -5.9,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         },
         {
           "google_drive_file_id": "1AGRHbUe6GEXsi_I_HnuEn-69hSENIIIf",
@@ -1461,10 +1729,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "5232cfdc0ea2256223942484c4b01b748d6ae96040b39dc62f17a7ab58155abb",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "c379a1e857f335f79e0b8a1dacebad3f13c969f04a051075248d4d04c10cc199",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 883.0275056689343,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -7.5,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         }
       ],
       "size_proxy_compatible_drive_file_ids": [
@@ -1499,10 +1781,24 @@
           "candidate_screen": "SIZE_PROXY_COMPATIBLE_NOT_PROVEN_EXPORT",
           "source_export_composition_id": null,
           "export_timestamp_utc": null,
-          "sha256": null,
+          "sha256": "b6a6f8b112ad48150ead68d6d12edaf9b12c03e756617684ea8159798ec41faf",
           "actual_wav_header_decode": "NOT_RUN",
           "selected_composition_wav_identity": "NOT_PROVEN",
-          "mastered_or_release_approved": false
+          "mastered_or_release_approved": false,
+          "decoded_pcm_sha256": "f346c9fe489ae872010c44d9f11ec8b3be4f236a1d2fde8179bc419ac2c7d22e",
+          "candidate_file_hash_scope": "THESE_DRIVE_OBJECT_BYTES_ONLY_NOT_SELECTED_COMPOSITION_EXPORT",
+          "candidate_signal_qa_report": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+          "candidate_signal_qa": {
+            "full_decode_exit_code": 0,
+            "actual_duration_seconds": 43.59836734693877,
+            "sample_rate_hz": 44100,
+            "channels": 1,
+            "pcm_encoding": "PCM_16",
+            "integrated_lufs": -24,
+            "true_peak_dbtp": -8.5,
+            "silence_detector_events_min_two_seconds": 0,
+            "full_sample_scan_complete": true
+          }
         }
       ],
       "size_proxy_compatible_drive_file_ids": [
@@ -1544,5 +1840,15 @@
       "modified_time_utc": "2026-10-19T16:19:16.444Z",
       "classification": "UNASSIGNED_QA_SUPPORT_ASSET_NOT_A_SELECTED_TRACK"
     }
-  ]
+  ],
+  "candidate_technical_qa_reconciliation": {
+    "date": "2026-10-21",
+    "scope": "Authenticated source Drive WAV object SHA-256 and decoded PCM SHA-256; 21 of 63 Drive objects. Not selected master composition-to-export proof.",
+    "candidate_signal_qa_json": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.json",
+    "candidate_signal_qa_human_summary": "docs/localization/SPANISH_AUDIOBOOK_PRIVATE_CANDIDATE_SIGNAL_QA_2026-10-21.md",
+    "alternative_library_snapshot_comparison_count": 3,
+    "all_selected_master_signoffs_still_pending": true,
+    "track_00_v2_source_export_still_missing": true,
+    "direct_descript_wav_export_not_available_through_connected_agent": true
+  }
 }

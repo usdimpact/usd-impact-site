@@ -8,7 +8,11 @@ const root = process.cwd();
 const distRoot = path.join(root, 'dist');
 const sourceRoot = path.join(root, 'src');
 const failures = [];
-const scorePipelineOrigin = resolveScorePipelineOrigin(process.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
+const scorePipelineOrigin = resolveScorePipelineOrigin(
+  process.env.PUBLIC_SCORE_PIPELINE_ORIGIN,
+  process.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
+  process.env.VERCEL_ENV,
+);
 
 const walk = (dir, predicate) => {
   const out = [];
@@ -76,7 +80,7 @@ for (const file of htmlFiles) {
 
   for (const required of [
     "default-src 'self'",
-    "form-action 'self'",
+    `form-action 'self' ${scorePipelineOrigin}`,
     "script-src-attr 'none'",
     "style-src-attr 'unsafe-inline'",
     `frame-src 'self' https://challenges.cloudflare.com ${scorePipelineOrigin}`,

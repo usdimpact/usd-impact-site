@@ -1,0 +1,123 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ComplianceNote from '../../components/ComplianceNote.astro';
+import fixture from '../../data/official-source-context-synthetic.json';
+import {
+  assessOfficialSourceSyntheticPilot,
+  OFFICIAL_CONTEXT_ISSUE,
+} from '../../lib/official-source-context-synthetic.mjs';
+
+const review = assessOfficialSourceSyntheticPilot(fixture);
+const hasFictionalRows = review.status === 'synthetic-demo';
+---
+<BaseLayout
+  title="Official-Source Context | Synthetic Research Pilot"
+  description="A zero-cost, synthetic-only educational proof of concept for Federal Reserve Broad Dollar and 10-year TIPS context; not a market-data publication."
+  noindex={true}
+>
+  <section class="hero prototype-hero">
+    <div class="container">
+      <p class="eyebrow">Research prototype · preview-only · no live market data</p>
+      <h1>Official-Source Context</h1>
+      <p class="lead">Two deliberately fictional observations demonstrate how official-source definitions could be presented without copying DXY, VIX or ICE high-yield market data.</p>
+      <p class="prototype-emphasis"><strong>SYNTHETIC EXERCISE — NOT HISTORICAL DATA, A FORECAST OR A TRADING SIGNAL.</strong></p>
+    </div>
+  </section>
+
+  <main id="main-content" class="container official-context-main" data-pilot-mode="synthetic" data-publishable="false" data-score-enabled="false">
+    <section class="prototype-status card" aria-labelledby="prototype-status-heading" data-prototype-state={review.status}>
+      <p class="eyebrow">Non-production boundary</p>
+      <h2 id="prototype-status-heading">{hasFictionalRows ? 'Reviewable sample — publication blocked' : 'Validation hold — sample unavailable'}</h2>
+      <p>{review.reason}</p>
+      <p><strong>Real observations fetched:</strong> 0 · <strong>Publishing:</strong> prohibited · <strong>USD Impact Score v2:</strong> unchanged.</p>
+      <p>Each fictional observation is dated to 2031 and is hand-authored. The reference links describe possible future publishers only; no data were sourced from those links.</p>
+      <p>See <a href={OFFICIAL_CONTEXT_ISSUE} target="_blank" rel="noopener noreferrer">source-rights review #845</a> before proposing any real-data publication.</p>
+    </section>
+
+    <section class="prototype-section" aria-labelledby="prototype-observations-heading">
+      <p class="eyebrow">Demonstration only</p>
+      <h2 id="prototype-observations-heading">Two hypothetical observations</h2>
+      <p>The levels, dates and changes below are invented for interface and validation testing; they do not represent actual or predicted market conditions.</p>
+      {hasFictionalRows ? (
+        <div class="prototype-grid">
+          {review.rows.map((row) => (
+            <article class="card prototype-indicator" data-pilot-indicator={row.id} data-synthetic="true">
+              <span class="prototype-marker">SYNTHETIC</span>
+              <p class="prototype-id">{row.id}</p>
+              <h3>{row.label}</h3>
+              <p><strong>{row.publisher}</strong></p>
+              <dl>
+                <div><dt>Invented earlier Friday</dt><dd><time datetime={row.previousDate}>{row.previousDate}</time> · {row.previous}</dd></div>
+                <div><dt>Invented later Friday</dt><dd><time datetime={row.latestDate}>{row.latestDate}</time> · {row.latest}</dd></div>
+                <div><dt>Illustrative change</dt><dd>{row.change}</dd></div>
+              </dl>
+              <p class="prototype-boundary"><strong>Not equivalent:</strong> {row.notEquivalentTo}</p>
+              <p class="prototype-rights"><strong>Source rights:</strong> {row.rightsState}</p>
+              <a href={row.url} target="_blank" rel="noopener noreferrer">Read the official source definition (not the fictional values)</a>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p class="prototype-hold" role="status">The sample failed validation. No observations are displayed or publishable.</p>
+      )}
+    </section>
+
+    <section class="prototype-unavailable card" aria-labelledby="prototype-unavailable-heading" data-stress-state="unavailable">
+      <p class="eyebrow">Financial-stress indicator</p>
+      <h2 id="prototype-unavailable-heading">Unavailable — no third dial inferred</h2>
+      <p>{review.thirdDial.message}</p>
+      <p><strong>Not equivalent:</strong> {review.thirdDial.notEquivalentTo}</p>
+      <p>Without a separately cleared stress indicator, this pilot deliberately produces no composite regime, probability, model score or investment recommendation.</p>
+    </section>
+
+    <section class="prototype-section" aria-labelledby="prototype-gates-heading">
+      <p class="eyebrow">What must pass before any real-data proposal</p>
+      <h2 id="prototype-gates-heading">Evidence and rights requirements</h2>
+      <ol class="prototype-gates">
+        <li><strong>Publisher rights:</strong> review each original release, exceptions for third-party material, commercial redistribution, attribution and archive use.</li>
+        <li><strong>Precise identity:</strong> label H.10 as a trade-weighted broad dollar index — never as DXY. Validate H.15 real-yield definitions separately from other Treasury curves.</li>
+        <li><strong>Source ledger:</strong> record source, measured-as-of time, publication time, retrieval, revisions, Friday cutoff, freshness and licensing review.</li>
+        <li><strong>Fail closed:</strong> no source-complete stress context means no completed three-dial regime. Missing, delayed or mismatched data cannot become an inferred direction.</li>
+        <li><strong>Separate release:</strong> retain the legacy rights hold and do not modify USD Impact Score v2 without its own governance and authorization.</li>
+      </ol>
+      <div class="button-row">
+        <a class="button secondary" href="/framework/three-dial-dashboard/">Current Three Dials hold</a>
+        <a class="button secondary" href="/score/methodology/">Separate Score v2 methodology</a>
+      </div>
+    </section>
+
+    <ComplianceNote text="Fictional figures used for interface testing only. Not real, historical or forecast market data. Educational only; not investment, financial, trading, legal or tax advice. The prototype does not provide buy/sell recommendations or imply that a source provider has approved USD Impact." />
+  </main>
+</BaseLayout>
+
+<style>
+  .prototype-hero { padding-bottom: 58px; }
+  .prototype-emphasis { max-width: 920px; margin-top: 18px; padding: 12px 16px; border: 1px solid #ccaa55; border-radius: 10px; background: #fff7df; color: #574315; font-weight: 800; }
+  .official-context-main { max-width: 1160px; padding-bottom: 64px; }
+  .prototype-status { margin-top: -18px; border-left: 5px solid var(--gold); }
+  .prototype-status h2, .prototype-section h2, .prototype-unavailable h2 { margin: 7px 0 14px; }
+  .prototype-status p:last-child { margin-bottom: 0; }
+  .prototype-section { margin-top: 48px; }
+  .prototype-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 24px; }
+  .prototype-indicator { padding: 24px; min-width: 0; }
+  .prototype-marker { display: inline-block; padding: 6px 10px; border-radius: 999px; background: #fff1c8; color: #715313; font-size: .78rem; font-weight: 800; letter-spacing: .045em; }
+  .prototype-id { margin: 18px 0 4px; font: 700 .85rem/1.5 monospace; color: var(--slate); overflow-wrap: anywhere; }
+  .prototype-indicator h3 { margin: 0 0 12px; font-size: 1.3rem; }
+  .prototype-indicator dl { margin: 20px 0; display: grid; gap: 10px; }
+  .prototype-indicator dl div { display: flex; justify-content: space-between; align-items: baseline; gap: 18px; padding-bottom: 9px; border-bottom: 1px solid #e4e8ed; }
+  .prototype-indicator dt { color: var(--slate); }
+  .prototype-indicator dd { margin: 0; font-weight: 700; text-align: right; }
+  .prototype-boundary, .prototype-rights { font-size: .92rem; color: var(--slate); }
+  .prototype-indicator > a { display: block; margin-top: 12px; overflow-wrap: anywhere; }
+  .prototype-unavailable { margin-top: 42px; border-left: 5px solid #9b5960; }
+  .prototype-gates { padding-left: 22px; display: grid; gap: 13px; line-height: 1.6; }
+  .prototype-hold { padding: 20px; background: #f6e4e4; border-radius: 10px; color: #7b2d2d; }
+  .button-row { margin: 28px 0 32px; }
+  @media (max-width: 800px) {
+    .prototype-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 520px) {
+    .prototype-indicator dl div { align-items: start; flex-direction: column; gap: 3px; }
+    .prototype-indicator dd { text-align: left; }
+  }
+</style>

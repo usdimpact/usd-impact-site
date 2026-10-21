@@ -30,6 +30,7 @@ const previewOnlySitemapPrefixes = [
   '/book/read-the-dollar-first/companion',
   '/practice/dxy-vs-broad-usd',
   '/practice/weekly-regime',
+  '/lab/official-source-context',
   '/go',
 ];
 

@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.10",
-    "js-yaml": "5.5.0",
+    "js-yaml": "4.3.2",
     "parse5": "8.0.1"
   },
   "allowScripts": {

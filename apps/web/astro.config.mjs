@@ -61,7 +61,7 @@ export default defineConfig({
         "media-src 'self' blob: https:",
         "worker-src 'self' blob:",
         "manifest-src 'self'",
-        "form-action 'self'",
+        `form-action 'self' ${scorePipelineOrigin}`,
         'upgrade-insecure-requests',
       ],
       scriptDirective: {

@@ -1,7 +1,8 @@
 // Private per-request Score session validation. Disabled by default.
 // The caller is Cloudflare edge, never a browser. No session token is logged.
 import { timingSafeEqual } from 'node:crypto';
-import { readSupabaseServerConfig, sendJson } from './supabase-server.js';
+import { sendJson } from './supabase-server.js';
+import { readScorePrivateSupabaseConfig } from './score-private-supabase-config.js';
 import { createScoreMembershipProviders } from './score-membership-providers.js';
 import { authorizeScoreSession } from './score-redemption.js';
 
@@ -25,7 +26,7 @@ export async function handleScoreEdgeValidate(request, response, deps = {}) {
   }
   try {
     const providers = deps.providers || createScoreMembershipProviders({
-      config: readSupabaseServerConfig(env, { requireSecret: true }),
+      config: readScorePrivateSupabaseConfig(env),
     });
     const allowed = await authorizeScoreSession({
       token: request.body.token, sessions: providers.sessions,

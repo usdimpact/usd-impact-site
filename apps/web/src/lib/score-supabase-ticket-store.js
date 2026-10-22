@@ -16,12 +16,11 @@ export function createSupabaseScoreTicketStore({ config, fetchImpl = fetch }) {
   const { origin, secretKey } = requireConfig(config);
   async function rpc(name, body) {
     const response = await fetchImpl(`${origin}/rest/v1/rpc/${name}`, {
-      method: 'POST',
+      method: 'POST', redirect: 'error',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
         apikey: secretKey,
-        Authorization: `Bearer ${secretKey}`,
         'Cache-Control': 'no-store',
       },
       body: JSON.stringify(body),

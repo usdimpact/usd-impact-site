@@ -122,7 +122,7 @@ await check('duplicate collection IDs invalidate coverage', async () => {
   const r = await fixture({ prs: [pr(), pr()] }).go(); assert.equal(r.evidence.prs.coverage, 'incomplete');
 });
 await check('changed PR head invalidates coverage', async () => {
-  const r = await fixture({ prs: [pr()], details: { 1: pr(1, { head: { ref: 'other', sha: A } })] }).go();
+  const r = await fixture({ prs: [pr()], details: { 1: pr(1, { head: { ref: 'other', sha: A } }) } }).go();
   assert.equal(r.classification.state, 'UNKNOWN');
 });
 await check('read budget exhaustion is not zero results', async () => {

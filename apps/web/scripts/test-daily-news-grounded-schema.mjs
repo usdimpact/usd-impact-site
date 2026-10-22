@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import {
+import './test-daily-news-discovery-contract.mjs';
+import groundedHandler, {
   extractEditionDate,
   withSourceMetadata,
 } from '../api/daily-news-grounded-background.js';
@@ -65,7 +66,14 @@ const request = {
   },
 };
 
+const requestBefore = structuredClone(request);
 const hardened = withSourceMetadata(request);
+assert.deepEqual(request, requestBefore, 'shared schema must not be mutated');
+assert.deepEqual(Object.keys(hardened.text.format.schema.properties), ['sources', 'catalysts', 'highlights']);
+assert.deepEqual(withSourceMetadata(hardened), hardened, 'request preparation is idempotent');
+const nextDay = withSourceMetadata({ ...request, input: 'Prepare the research bundle for 2026-08-21 (UTC).' });
+assert.equal(nextDay.text.format.schema.properties.catalysts.items.properties.date.enum[0], '2026-08-21');
+assert.equal(hardened.text.format.schema.properties.catalysts.items.properties.date.enum[0], editionDate);
 const highlights = hardened.text.format.schema.properties.highlights;
 const catalysts = hardened.text.format.schema.properties.catalysts;
 const catalystDate = catalysts.items.properties.date;
@@ -138,6 +146,8 @@ assert.deepEqual(repaired.catalysts.items.properties.date.enum, catalystWindow);
 assert.equal('pattern' in repaired.catalysts.items.properties.date, false);
 assert.match(repairedRequest.input, /effective date/i, 'repair prompts must retain source publication-date semantics');
 assert.match(repairedRequest.input, /event date/i, 'repair prompts must not confuse event dates with publishedAt');
+assert.doesNotMatch(repairedRequest.input, /DAILY SOURCE-FIRST DISCOVERY CONTRACT/, 'repairs cannot start fresh source discovery');
+assert.equal('tools' in repairedRequest, false);
 
 const undated = withSourceMetadata({
   input: 'Generate a Daily bundle without a parseable edition date.',
@@ -246,6 +256,36 @@ try {
   assert.equal(body.groundedSourceCount, 3);
   assert.equal(body.usableSourceCount, 2);
   assert.equal(providerCalls.length, 1, 'GET-only: no paid bounded repair request');
+  // Test the real nested generation wrappers with one synthetic provider POST.
+  // All calls are intercepted; this is not a live generator acceptance test.
+  const generationBodies = [];
+  globalThis.fetch = async (url, options = {}) => {
+    assert.equal(String(url), 'https://api.openai.com/v1/responses');
+    assert.equal(options.method, 'POST');
+    generationBodies.push(JSON.parse(options.body));
+    return new Response(JSON.stringify({ id: 'resp_test1234567', status: 'queued' }), { status: 200 });
+  };
+  const started = { statusCode: 0, headers: {}, body: '',
+    setHeader(key, value) { this.headers[key] = value; }, end(value) { this.body = value; } };
+  await groundedHandler({ method: 'POST', headers: {
+    authorization: 'Bearer test-bearer-only', 'x-usd-impact-edition-date': '2026-10-23',
+  } }, started);
+  assert.equal(started.statusCode, 202);
+  assert.equal(generationBodies.length, 1, 'no additional discovery/model request');
+  const sent = generationBodies[0];
+  assert.deepEqual(Object.keys(sent.text.format.schema.properties), ['sources', 'catalysts', 'highlights', 'marketRegime', 'summary', 'body']);
+  assert.match(sent.input, /^DAILY SOURCE-FIRST DISCOVERY CONTRACT: 2026-10-23/);
+  assert.equal(sent.max_output_tokens, 20_000);
+  assert.equal(sent.reasoning.effort, 'low');
+  assert.equal(sent.background, true);
+  assert.equal(sent.store, true);
+  assert.equal(sent.tools[0].search_context_size, 'medium');
+  assert.equal(sent.tool_choice, 'required');
+  assert.equal(sent.text.format.schema.properties.sources.minItems, 3);
+  assert.equal(sent.text.format.schema.properties.sources.maxItems, 24);
+  assert.equal(sent.text.format.schema.properties.highlights.minItems, 3);
+  assert.equal(sent.text.format.schema.properties.highlights.maxItems, 7);
+
 } finally {
   globalThis.fetch = oldFetch;
   if (oldToken == null) delete process.env.NEWSFEED_BEARER_TOKEN;

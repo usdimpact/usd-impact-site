@@ -1,5 +1,6 @@
 import { createScheduleWakeHandler } from '../src/lib/daily-news-schedule-wake.js';
 import backgroundHandler from './daily-news-background.js';
+import { sourceFirstRequest, buildSourceDiscoveryPlan } from '../src/lib/daily-news-discovery-contract.js';
 import {
   SOURCE_DATE_RULES,
   SOURCE_DATE_SCHEMA_PATTERN,
@@ -69,6 +70,7 @@ export function extractEditionDate(input) {
 }
 
 export function withSourceMetadata(body) {
+  body = sourceFirstRequest(body);
   const usesWebSearch = includesWebSearch(body);
   const include = Array.isArray(body.include) ? body.include : [];
   const next = {
@@ -82,6 +84,8 @@ export function withSourceMetadata(body) {
   };
 
   if (typeof next.input === 'string') {
+    const discoveryPlan = usesWebSearch ? buildSourceDiscoveryPlan(extractEditionDate(next.input)) : null;
+    if (discoveryPlan && !next.input.includes(discoveryPlan)) next.input = `${discoveryPlan}\n\n${next.input}`;
     const additions = [];
     if (!next.input.includes(SOURCE_DATE_RULES)) additions.push(SOURCE_DATE_RULES);
     if (!next.input.includes(SOURCE_ID_RULES)) additions.push(SOURCE_ID_RULES);

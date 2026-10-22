@@ -8,7 +8,7 @@ test('creates hashed session and looks it up without sending raw token', async (
   const requests = [];
   const providers = createScoreMembershipProviders({ config, fetchImpl: async (url, options) => {
     const body = JSON.parse(options.body);
-    requests.push({ url, body });
+    requests.push({ url, body, headers: options.headers, redirect: options.redirect });
     if (url.endsWith('score_session_create')) return { ok: true, json: async () => true };
     if (url.endsWith('score_session_lookup')) return {
       ok: true, json: async () => ({ account_id: accountId, expires_at: new Date(1800000900000).toISOString() }),
@@ -18,6 +18,9 @@ test('creates hashed session and looks it up without sending raw token', async (
   const session = await providers.sessions.create({ accountId, nowMs: 1800000000000 });
   assert.match(session.token, /^[A-Za-z0-9_-]{43}$/);
   assert.equal(requests[0].body.p_digest.length, 64);
+  assert.equal(requests[0].headers.apikey, config.secretKey);
+  assert.equal(requests[0].headers.Authorization, undefined);
+  assert.equal(requests[0].redirect, 'error');
   assert.equal(JSON.stringify(requests[0]).includes(session.token), false);
   assert.equal((await providers.sessions.lookup(session.token)).accountId, accountId);
   assert.equal(requests[1].body.p_digest, requests[0].body.p_digest);

@@ -27,6 +27,7 @@ export function resolveScorePipelineOrigin(value, previewOrigin = '', environmen
     const parsed = new URL(candidate);
     previewAllowed = environment === 'preview' && candidate === pinned && parsed.protocol === 'https:' &&
       !parsed.username && !parsed.password && !parsed.port &&
+      candidate === parsed.origin &&
       parsed.pathname === '/' && !parsed.search && !parsed.hash &&
       (PREVIEW_HOST_RE.test(parsed.hostname) || parsed.hostname === SCORE_WORKER_PREVIEW_HOST);
   } catch { /* Invalid origins are rejected below. */ }

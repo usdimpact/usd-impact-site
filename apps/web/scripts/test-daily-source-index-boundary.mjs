@@ -125,7 +125,7 @@ if (!process.argv.includes('--pure')) {
     const evidence = collectRepairEvidence(response, edition);
     assert.deepEqual(evidence.permittedSourceUrls, goodUrls);
     assert.equal(assessBoundedRepairFeasibility(response, edition).canRepair, true);
-    assert.equal(evidence.permittedSourceUrls.includes(metadataOnly), false);
+    assert.equal(new Set(evidence.permittedSourceUrls).has(metadataOnly), false);
   });
   check('duplicate metadata does not pad eligible source count', () => {
     const candidate = draft([goodUrls[0], goodUrls[0], fedIndex]);

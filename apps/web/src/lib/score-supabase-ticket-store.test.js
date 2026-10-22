@@ -15,7 +15,9 @@ test('issues via server-only RPC and returns exact success', async () => {
   assert.equal(await store.insertIfAbsent(record), true);
   assert.match(calls[0].url, /score_ticket_issue_atomic$/);
   assert.equal(JSON.parse(calls[0].options.body).p_digest, record.digest);
-  assert.equal(calls[0].options.headers.Authorization, 'Bearer ' + config.secretKey);
+  assert.equal(calls[0].options.headers.apikey, config.secretKey);
+  assert.equal(calls[0].options.headers.Authorization, undefined);
+  assert.equal(calls[0].options.redirect, 'error');
 });
 test('atomic consumption maps database fields', async () => {
   const store = createSupabaseScoreTicketStore({ config, fetchImpl: async () => ({

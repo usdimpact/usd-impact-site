@@ -9,6 +9,31 @@ import {
 } from '../src/lib/score-pipeline-origin.js';
 
 const pinnedPreview = 'https://fix-score-membership-handoff-147.usd-impact-pipeline.pages.dev';
+const isolatedWorkerPreview = 'https://pr-148-usd-impact-score-isolated-dev.michael-w-d0b.workers.dev';
+assert.equal(resolveScorePipelineOrigin(isolatedWorkerPreview, isolatedWorkerPreview, 'preview'), isolatedWorkerPreview);
+assert.equal(scorePipelineUrl('/en/', isolatedWorkerPreview, isolatedWorkerPreview, 'preview'), isolatedWorkerPreview+'/en/');
+assert.equal(scorePipelineArchiveUrl('2026-10-09', isolatedWorkerPreview, isolatedWorkerPreview, 'preview'),
+  isolatedWorkerPreview+'/archive/2026-10-09/weekly_input.json');
+for (const env of ['', 'production', 'development']) {
+  assert.throws(() => resolveScorePipelineOrigin(isolatedWorkerPreview, isolatedWorkerPreview, env),
+    /Unsupported Score pipeline origin/);
+}
+assert.throws(() => resolveScorePipelineOrigin(isolatedWorkerPreview, '', 'preview'), /Unsupported Score pipeline origin/);
+assert.throws(() => resolveScorePipelineOrigin(isolatedWorkerPreview, pinnedPreview, 'preview'), /Unsupported Score pipeline origin/);
+for (const host of [
+  'https://pr-149-usd-impact-score-isolated-dev.michael-w-d0b.workers.dev',
+  'https://pr-148-usd-impact-score-isolated-dev.attacker.workers.dev',
+  'https://evil.workers.dev',
+  isolatedWorkerPreview+'.evil.example',
+  isolatedWorkerPreview.replace('https:', 'http:'),
+  isolatedWorkerPreview+':443',
+  isolatedWorkerPreview+'/en/',
+  isolatedWorkerPreview+'?ticket=notallowed',
+]) {
+  assert.throws(() => resolveScorePipelineOrigin(host, host, 'preview'),
+    /Unsupported Score pipeline origin/, 'Unapproved origin: '+host);
+}
+
 assert.equal(resolveScorePipelineOrigin(pinnedPreview, pinnedPreview, 'preview'), pinnedPreview);
 assert.equal(scorePipelineUrl('/en/', pinnedPreview, pinnedPreview, 'preview'), `${pinnedPreview}/en/`);
 assert.throws(() => scorePipelineUrl('/en/', pinnedPreview, pinnedPreview, 'production'), /Unsupported Score pipeline origin/);

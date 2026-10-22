@@ -12,6 +12,9 @@ const TREASURY_REFUNDING_INDEX_PATH = '/policy-issues/financing-the-government/q
 // dates for this same URL. Query strings do not identify immutable document versions.
 const TREASURY_TENTATIVE_AUCTION_SCHEDULE_PATH = '/system/files/221/tentative-auction-schedule.pdf';
 const FEDERAL_RESERVE_POSTINGS_INDEX_PATH = '/recentpostings.htm';
+const FEDERAL_RESERVE_NEWS_INDEX_PATH = '/newsevents.htm';
+// The annual BLS page aggregates monthly sections with separate Last Modified dates.
+const BLS_ANNUAL_CALENDAR_PATH = /^\/schedule\/\d{4}\/home\.htm$/;
 // Reused full-report pointer; new citations must identify a dated release.
 const EIA_WEEKLY_REPORT_POINTER_PATH = '/petroleum/supply/weekly/pdf/wpsrall.pdf';
 
@@ -32,7 +35,7 @@ export function sourceDateBasisForUrl(value) {
 
   const hostname = url.hostname.toLowerCase().replace(/^www\./, '');
   const indexHostname = hostname.replace(/\.$/, '');
-  if (indexHostname === 'home.treasury.gov' || indexHostname === 'federalreserve.gov' || indexHostname === 'eia.gov') {
+  if (indexHostname === 'home.treasury.gov' || indexHostname === 'federalreserve.gov' || indexHostname === 'eia.gov' || indexHostname === 'bls.gov') {
     let pathname;
     try {
       pathname = decodeURIComponent(url.pathname).replace(/\/+$/, '').toLowerCase();
@@ -46,7 +49,8 @@ export function sourceDateBasisForUrl(value) {
       return SOURCE_DATE_BASIS.ROLLING_REPORT;
     }
     if ((indexHostname === 'home.treasury.gov' && pathname === TREASURY_REFUNDING_INDEX_PATH)
-      || (indexHostname === 'federalreserve.gov' && pathname === FEDERAL_RESERVE_POSTINGS_INDEX_PATH)) {
+      || (indexHostname === 'federalreserve.gov' && [FEDERAL_RESERVE_POSTINGS_INDEX_PATH, FEDERAL_RESERVE_NEWS_INDEX_PATH].includes(pathname))
+      || (indexHostname === 'bls.gov' && BLS_ANNUAL_CALENDAR_PATH.test(pathname))) {
       return SOURCE_DATE_BASIS.DOCUMENT_INDEX;
     }
   }
@@ -87,7 +91,14 @@ export function sourceDateAttributionIssue(value) {
   if (basis !== SOURCE_DATE_BASIS.DOCUMENT_INDEX) return null;
   // The current bundle cannot bind an index date to independently verified item
   // evidence. Hold new candidates; leave published archives untouched.
-  const hostname = new URL(String(value)).hostname.toLowerCase().replace(/^www\./, '').replace(/\.$/, '');
-  const label = hostname === 'federalreserve.gov' ? 'Federal Reserve Recent Postings' : 'Treasury refunding';
+  const url = new URL(String(value));
+  const hostname = url.hostname.toLowerCase().replace(/^www\./, '').replace(/\.$/, '');
+  if (hostname === 'bls.gov') {
+    return 'BLS annual release calendar aggregates separately updated monthly sections. Cite the relevant month-specific schedule with its own verified Last Modified date, or a directly linked dated release. Verify the event date separately; never use an access date, edition date, event date or another month section date as the annual page publication date. If no such source is verifiable, omit the unsupported source and claim.';
+  }
+  const pathname = decodeURIComponent(url.pathname).replace(/\/+$/, '').toLowerCase();
+  const label = hostname === 'federalreserve.gov'
+    ? (pathname === FEDERAL_RESERVE_NEWS_INDEX_PATH ? 'Federal Reserve News and Events' : 'Federal Reserve Recent Postings')
+    : 'Treasury refunding';
   return `${label} index requires a directly linked dated document; cite that document with its own verified date, or omit the unsupported source and claim. Do not borrow a date from another index item.`;
 }

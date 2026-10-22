@@ -1,78 +1,141 @@
-# USD Impact publishing delivery policy
+# USD Impact publishing delivery policy and operator handoff
 
-Owner approved the delivery-first direction on October 22, 2026 and authorized applying the prepared packet in the existing publishing conversation. This repository review candidate records that direction; it is **not an installed scheduler, a named human review, or a guarantee of future execution**. Companion October 22 editorial candidate: [PR #853](https://github.com/usdimpact/usd-impact-site/pull/853).
+Owner-approved direction: October 22, 2026. Maintained in the existing [PR #854](https://github.com/usdimpact/usd-impact-site/pull/854) workstream. This is a documentation-only operating procedure: merging it adopts the procedure, but does not install a scheduler, deadline executor, reviewer assignment, alert channel or automatic publisher.
 
-## Objective and two independent outcomes
+## 1. Delivery and automation are separate outcomes
 
-Deliver useful, verified publication on a dependable cadence while measuring automation honestly. For each edition record (1) publication delivery and (2) native automation acceptance separately. A reviewed editorial fallback or backstop candidate can satisfy delivery but cannot establish native scheduled recovery. A green no-op, test fixture, manually patched publication PR, or green Health run without the actual closure contract is not unattended acceptance.
+Deliver verified publications on a dependable cadence while measuring automation honestly. Record publication delivery, unattended candidate preparation, native schedule provenance and external-wake provenance separately. A reviewed editorial fallback or backstop candidate can satisfy delivery without establishing native scheduled recovery. Green no-ops, skipped substantive steps, synthetic tests, manually repaired copy and green Health workflows alone are not unattended acceptance.
 
-## Approved cadence
+The owner retains publication decisions. The owner's exact-copy approval for the October 22 edition is recorded in [PR #853](https://github.com/usdimpact/usd-impact-site/pull/853); it is not approval of unseen future editions. No standing backup reviewer is established here. A missing human editorial decision means `AWAITING_EDITORIAL_REVIEW`, not permission to self-approve or auto-merge.
 
-Delivery clock: **Europe/Tirane**, using the IANA timezone rather than a permanent UTC offset. Existing machine schedules remain UTC and are not changed by this document. Bucharest is a different timezone; do not label its time as Albania time.
+## 2. Cadence and clocks
 
-| Product | Delivery direction | Existing source schedule / dependencies |
+Editorial delivery clock: **Europe/Tirane**, calculated with the IANA timezone on the actual date. Machine schedules remain UTC. Bucharest is a different timezone; never describe Bucharest time as Albania time. All slots below are nominal triggers or editorial targets, not proof of actual execution.
+
+| Product | Editorial delivery commitment | Existing execution/dependencies |
 |---|---|---|
-| Daily | Monday-Friday; assess candidate at 14:00, target live at 16:00, escalate incomplete delivery at 18:00 Tirane | Native 09:17 UTC weekdays; independent wake 09:32 UTC; existing backstops 12:17 and 15:47 UTC. Bounded repair/regeneration and one-dispatch controls remain intact. |
-| Weekly Score | Completed-Friday edition, reviewed for Saturday morning release | Friday 22:00 UTC existing Score workflow; eight valid inputs, exact candidate quality and reproduction evidence, protected review. Never hand-edit the score or manufacture inputs. |
-| Weekly Report | Sunday, before the next trading week | Sunday 08:17 UTC existing workflow; five published weekday Dailies plus the immutable completed-Friday Score archive. Missing inputs mean HOLD, not invented or backdated content. |
-| Monthly | After four eligible published Weekly Reports and a meaningful synthesis review | Preserve period eligibility: four published weeklies after the latest published monthly period end. Review reporting-period completeness explicitly. |
+| Daily | Monday-Friday: assess at 14:00, target live at 16:00, escalate at 18:00 Tirane | Native 09:17 UTC weekdays; independent wake 09:32 UTC; existing backstops 12:17 and 15:47 UTC; natural Health 18:45 UTC. Existing repair, regeneration and dispatch budgets stay intact. |
+| Weekly Score | Completed-Friday edition, protected review for Saturday morning delivery | Existing Friday 22:00 UTC workflow; eight valid inputs, exact-head quality and reproduction evidence, immutable archive and actual human review. Never hand-edit the score or invent inputs. |
+| Weekly Report | Sunday, before the next trading week | Existing Sunday 08:17 UTC workflow; five published weekday Dailies and the exact completed-Friday immutable Score archive. |
+| Monthly | When four eligible published Weekly Reports support a substantive synthesis | Preserve the current eligibility function: the first four published weekly periods after the latest published Monthly period end. Check continuity and editorial value; do not silently redefine this as a calendar-month report. |
 
-Nominal trigger time is not proof of actual execution. Deadlines are editorial escalation targets, not instructions to remove safeguards. If authoritative data or review is unavailable, record a late/held publication openly rather than fabricate content.
+A missed slot is not authority for a new dispatch, unlimited paid regeneration, bypassed source validation or backdated publication. If evidence or human review is unavailable, record a specific late/HOLD outcome and preserve the date of the last genuinely published edition.
 
-## One record and one owner per edition
+## 3. One canonical record per edition
 
-Use the existing repository/workstream as the durable record. Key each record by product and exact date/period. Record responsible workstream, actual run/event/head, source review, candidate PR/head, required checks, named human editorial/compliance review, publication approval, merge SHA, actual alias deployment and live checks. Do not create a parallel investigation, repeated monitoring task, or competing PR.
+Use the existing dated publication PR as the release record. Before a PR exists, use the existing incident/operations workstream, not a parallel issue or watcher. Other chats must read that same record before acting. The public site workstream owns Daily/Weekly/Monthly publication; the existing `usdimpact/usd-impact-pipeline` workstream owns Score production and its protected review.
 
-The account owner retains delivery decisions. Named editorial reviewer and backup reviewer are **not established by this document** and must be assigned in the actual publishing process. No assistant may represent its own source checks or a general owner approval as an independent human signoff on unseen copy.
+Before creating or changing a candidate, inspect actual time, current main, the exact dated file, all matching PRs including draft/closed/merged, and queued/in-progress/recent runs. Missing access or ambiguous dispatch receipts means `UNKNOWN/HOLD`, not absence. Never remove an existing file or PR to force a new opportunity. Do not reopen or replace a rejected candidate without an explicit editorial decision.
 
-## Daily 14:00 handoff and fallback
+Daily duplicate-recognition contract: title `Publish Daily USD Impact — YYYY-MM-DD`; head prefix `automation/daily-usd-impact-YYYY-MM-DD-`; one content file `apps/web/src/content/news/YYYY-MM-DD.md`. An editorial fallback may use an explicit `editorial-` suffix and must declare `manual-editorial-fallback` prominently. Matching identifiers prevent duplicate preparation; they do not prove automated provenance.
 
-1. Read actual time, current main, exact-date article, all exact-date PR states, and active/recent runs before deciding anything. Preserve closed/draft/merged editorial dispositions.
-2. Prefer an already valid native or backstop candidate. Verify sources, 3-7 highlights, source/date fidelity, structured in-window catalysts and normal exact-head checks. Do not rerun solely to change provenance.
-3. If the attempt definitively failed, or no candidate exists at the handoff, prepare one source-verified editorial fallback under the approved delivery policy. This is editorial work, not another paid generator request. Paid regeneration/dispatch budgets are not reset.
-4. An active or ambiguously completed paid run is a HOLD for competing publication work. Reconcile receipts rather than cancel, dispatch, rerun, delete an article, or remove a PR to force an opportunity.
-5. Preserve actual edition, capture and publication times. Older releases may provide explicitly dated context; they must not be represented as newly released today. A selective context edition needs editorial approval of reader value and limitations. No unsupported claim that nothing was published is permitted.
-6. Retain the same content/security/build/Preview gates and human review as the normal route. Set publication status only through the authorized candidate release. No automatic merge is added.
+These preflight lookups are snapshots, not an atomic lease. Refresh immediately before creating a candidate and before merging. If another candidate or an active/ambiguous paid operation appears, stop and reconcile; do not cancel it or race it. A stronger shared claim mechanism is not installed by this document.
 
-### Existing guard limitation
+## 4. Deadline decision procedure
 
-The Daily preflight matches the exact title `Publish Daily USD Impact — YYYY-MM-DD` and branch prefix `automation/daily-usd-impact-YYYY-MM-DD-`. An editorial PR with unrelated identifiers is not proven to reserve that date against a delayed native run. A recognized prefix with an explicit `editorial-` suffix may be used only with unambiguous manual provenance in its body and record; it never constitutes automated-generation evidence.
+The existing bounded acceptance watch remains read-only. The following procedure is for an authorized active publishing session; it is not a promise that an unattended agent will run at these times.
 
-The lookup is a snapshot, not an atomic editorial claim. Refresh active runs immediately before opening a candidate and again before merging. If another candidate/run appears, hold and reconcile without replacing it. A stronger shared claim/lease mechanism would require a separately tested source change; it is not installed by this document.
+| Observation | Required handoff | Actions not authorized by the observation |
+|---|---|---|
+| Edition already published | Verify its actual release/deployment and dated live surfaces; record delivery; preserve its provenance | No replay, duplicate article or date rewrite |
+| Matching PR exists in any state | Inspect and continue that exact editorial disposition; verify current head and checks | No competing fallback or generation to evade the PR |
+| Generation queued, running or receipt ambiguous | Record `ACTIVE` or `UNKNOWN`; preserve its concurrency and budget; reconcile read-only evidence | No cancel, rerun, extra paid call or competing article |
+| Attempt definitively failed and no competing candidate/active run exists | Record exact failed stage, then use the approved source-verified editorial route for one candidate | No source waiver, fabricated date, retry-budget reset or claim of native recovery |
+| No run/candidate seen at nominal slot | Treat the schedule as possibly delayed; complete the same duplicate/active-run inspection | No assertion that nominal-slot absence proves scheduler failure |
+| Candidate ready, no human decision yet | Present the actual text, coverage limitations, exact head, checks and Preview; record `AWAITING_EDITORIAL_REVIEW` | General project approval is not approval of unseen copy |
+| Required check, source or Preview fails | Record precise `TECHNICAL_HOLD` or `SOURCE_HOLD` in the canonical candidate | No check bypass, guessed source, forced merge or substitute green run |
 
-## Source and claim standards
+**14:00 Tirane:** apply this table and identify the one next responsible action. Prefer a valid native/backstop candidate. If the original attempt is definitively finished, or still no candidate exists after the full state check, the approved editorial fallback may be prepared; it does not purchase another generator request. A later native run can still appear, so preserve the snapshot/race limitation and recheck before writing.
 
-Require at least three distinct eligible publisher-document URLs with their own verified release or displayed update dates and substantive use in highlights/catalysts. Discovery indexes, reused report pointers and edition/access dates cannot substitute for dated documents. Keep release dates, observation periods, event dates and retrieval times separate. For EIA petroleum use the verified exact dated release archive, never `wpsrall.pdf` as an immutable identity. Preserve Treasury dated-document restrictions.
+**16:00 target:** deliver only a source-validated, technically green, human-approved candidate. If not ready, record the actual state and blocker; do not manufacture success to meet the target.
 
-Every retained source must support a retained claim. Keep 3-7 complete highlights. Forward CPI, PCE, payroll or FOMC references must match a primary-source-backed catalyst inside the edition through +7-day window. No invented market prices/reactions, unsupported absence claims, incomplete source padding or forecast framed as fact.
+**18:00 escalation:** record `DELIVERED`, `LATE_REVIEW`, `LATE_TECHNICAL`, `LATE_SOURCE` or `UNKNOWN`, with the exact unmet gate and responsible human/workstream. The owner is the escalation decision-maker; the backup remains unassigned until the owner names one. Do not send email/customer messages or create additional automations under this procedure.
 
-## Release acceptance
+## 5. Source, review and release gates
 
-Check the unchanged candidate head: Web quality including npm audit, normal required PR checks, CodeQL and matching READY Preview. Independent human editorial review remains mandatory. After an authorized merge verify main/merge ancestry, exact READY alias deployment, dated article, latest JSON, news index and RSS. Record actual verification timestamps. A draft or review-status file is not delivered publication.
+Require at least three distinct eligible publisher-document URLs, each with its own verified release or permitted displayed update date, and actual use in retained highlights/catalysts. Search-result counts, discovery indexes, tracking variants and reused report pointers are not substitutes for supporting documents. Keep publication dates, observation periods, future event dates and capture times separate. Preserve Treasury dated-document restrictions. For EIA petroleum cite the verified release-specific archive, not `wpsrall.pdf` as an immutable identity.
 
-Native acceptance additionally requires a real `event=schedule` Daily run with substantive Start/Poll/Import/Preflight/Open-Validate-PR evidence and source-defined latest-run/age requirements. Preserve the legitimate recovered-after-review path only when its exact run-to-PR lineage qualifies; manual fallback does not transform failed generation into success. Read the naturally scheduled Health report, typed healthy state and executed close gate. Incidents #840 and #786 are not closed by this document or by manual delivery.
+Keep 3-7 complete highlights. Every retained source must support a retained claim. Forward CPI/PCE/payroll/FOMC references need matching primary-source-backed catalysts inside edition date through +7 days. No invented live prices/reactions, unsupported absence claims, stale releases presented as today's data, unused source padding or forecasts framed as facts. A quiet-day context edition must disclose its limits and receive human approval of its reader value.
 
-## Weekly and Monthly handoff
+Keep review copy separate from published status. Before release verify the current exact head's normal PR-event Web quality including npm audit, required checks, CodeQL, matching READY Preview and genuine human editorial/compliance disposition. A subsequent content change requires fresh editorial review. A status-only change after exact-copy approval still requires fresh exact-head technical checks. Preserve repository protections and use the expected-head guard for an authorized merge; no automatic merge is added here.
 
-Resolve all five weekday delivery records before the Sunday report. Release the genuine completed-Friday Score through its existing reproducible process. Generate the report only from those published inputs. Preserve immutable Score archives. A missing/invalid Score blocks the dependent report rather than permitting an estimate. Monthly synthesis follows its existing four-week eligibility and protected editorial process; do not silently change the definition into calendar-month reporting.
+After merge, verify the actual commit/ancestry and READY canonical-alias deployment, dated article, news index, latest JSON and RSS. For Score, verify its own live dashboard and immutable archive rather than substitute Vercel site readiness. Store actual observation times. A draft, review-status file, merged PR alone or deployment without live verification is not complete delivery.
 
-## Acceptance watch versus execution
+Native acceptance additionally requires the actual latest Daily run on main, `event=schedule`, substantive Start/Poll/Import/Preflight/Open-Validate-PR evidence, current source-defined age limits (12 hours since inspected completed run update at this baseline), and real run-to-PR lineage. Preserve the legitimate recovered-after-review path only for a qualifying publication-step failure with the preceding substantive steps successful and exact matching PR merged afterward. A manual fallback cannot repair failed generation retroactively.
 
-Reuse the existing bounded Daily Acceptance watch as read-only observation only. It is not a fallback publisher and must not be treated as an operational executor after its final scheduled check. No watch, cron, notification setting, provider configuration, credential or deployment is created or changed by this document.
+Read the naturally scheduled Health run itself (`event=schedule`), report, successful Inspect step with typed `healthy`, successful Close recovered daily health issue step, and actual recovery record. A label, closed issue or intermediate classification alone is insufficient. This policy does not close #840 or #786.
 
-## Current implementation boundaries
+## 6. Copyable evidence handoff
 
-- Delivery policy: owner-approved direction submitted as this documentation-only review candidate. Repository adoption requires its own protected merge.
-- October 22 delivery: [PR #853](https://github.com/usdimpact/usd-impact-site/pull/853) is the canonical candidate record. Read its actual current head, review disposition and checks; do not duplicate it or assume it is published.
-- Named editorial/backup roles and a durable deadline executor remain unresolved. A Markdown policy does not implement either.
-- Existing schedules, retry budgets, source validators, protected publication, private Render runtime, customer/email/commerce and security settings remain unchanged.
+Fill this in the existing candidate/incident record using fresh evidence. `null/UNKNOWN` is preferable to an invented receipt. The template is not an executable scheduler or permission to write from a read-only watch.
+
+```yaml
+product: Daily | WeeklyScore | WeeklyReport | MonthlyReport
+edition_or_period: YYYY-MM-DD
+captured_at_utc: actual timestamp
+captured_at_tirane: actual timezone-aware timestamp
+responsible_workstream: existing canonical workstream
+record_url: existing PR or incident URL
+repository_main_sha: exact refreshed SHA
+publication_delivery: NOT_DUE | PREPARING | AWAITING_EDITORIAL_REVIEW | HOLD | DELIVERED
+candidate_provenance: native_schedule | backstop_dispatch | manual_editorial | UNKNOWN
+run: {url: null, event: null, head_sha: null, attempt: null}
+steps: {start: null, poll: null, import: null, content_preflight: null, open_validate_pr: null}
+candidate: {url: null, head_sha: null, expected_file: null}
+source_review: {receipt: null, eligible_used_documents: null, catalyst_review: null}
+checks: {normal_pr_quality: null, audit: null, dependency_review: null, codeql: null, preview: null}
+human_review: {reviewer: null, decision_receipt: null, approved_head: null, backup: unassigned}
+release: {merge_sha: null, deployment_id: null, deployed_sha: null, ready: null}
+live: {dated_article: null, news_index: null, latest_json: null, rss: null}
+acceptance: {unattended_candidate: UNKNOWN, native_schedule: UNKNOWN, external_wake: UNKNOWN, health_close_gate: UNKNOWN}
+blocker: actual unmet gate or null
+next_action: one concrete existing-workstream action
+```
+
+The human review receipt must be an actual decision on the actual candidate. Do not fill a person's name or approval status from a guess. Do not include credentials, private request payloads or customer data.
+
+## 7. Friday and weekend handoff: October 23-25, 2026
+
+This is a dated preparation snapshot, not future acceptance. Site source baseline: `362024049efe37383d1e2eac69ea4a4a4d2c9377`; Score source baseline: `1bdd9a47796876e794bb6a24248ced8823f8b719`. Refresh both before execution. Review began October 22 at 16:29:42 UTC / 18:29:42 Tirane.
+
+- October 19, 20, 21 and 22 Daily files were independently reread on site main and each has `status: published`. This is repository input readiness, not a new four-edition live-site audit. October 22 is the owner-approved manual editorial fallback in PR #853; its blob remains `1258f2d415d2beb5d7e7cb865644afc6618c84dc`.
+- October 23 Daily file returned 404 at this baseline; an all-state exact-date publication-title search returned zero. It is not yet due at this snapshot. Do not pre-create placeholder content or republish October 22.
+- PR #855's source-first improvement is released. Its code tests and deployment are not fresh native acceptance. Keep #840 and #786 open until their actual recovery contracts are satisfied.
+- Weekly Report generation already enforces five published Dailies plus `https://score.usd-impact.com/archive/2026-10-23/weekly_input.json`, with eight drivers, eight fresh source-provenance records and no added external-event claims. The future archive is a target to verify after the real Score release, not evidence that it exists now. Do not substitute October 16's archive.
+- The latest Monthly file is the published four-week report ending October 16. Its inputs are September 25, October 2, October 9 and October 16. Those periods must not be counted again toward a new Monthly. Re-evaluate the next four eligible published weekly inputs when available; no new Monthly is prepared by this handoff.
+
+| Scheduled event | UTC | Europe/Tirane | Europe/Bucharest |
+|---|---|---|---|
+| Friday Daily | Oct 23 09:17 | Oct 23 11:17 | Oct 23 12:17 |
+| Independent wake | Oct 23 09:32 | Oct 23 11:32 | Oct 23 12:32 |
+| First backstop | Oct 23 12:17 | Oct 23 14:17 | Oct 23 15:17 |
+| Second backstop | Oct 23 15:47 | Oct 23 17:47 | Oct 23 18:47 |
+| Natural Daily Health | Oct 23 18:45 | Oct 23 20:45 | Oct 23 21:45 |
+| Completed-Friday Score | Oct 23 22:00 | Oct 24 00:00 | Oct 24 01:00 |
+| Sunday Weekly Report | Oct 25 08:17 | Oct 25 09:17 | Oct 25 10:17 |
+
+Local conversions use IANA rules, including the October 25 clock change; do not carry Friday's UTC offsets into Sunday. None of these schedule entries guarantees a run receipt or protected publication.
+
+Score review/reproduction remains owned by the existing pipeline workstream and existing Weekly acceptance watch, including its PR #133/issue #132 boundary. This site policy does not merge that checker or duplicate its pending-week experiment. The Weekly Report follows only after the genuine Friday Score and five Daily inputs are published. Missing/invalid inputs mean HOLD, never estimates or date substitutions.
+
+## 8. Adoption and remaining operational gates
+
+This one-file policy is the scope of PR #854. Its main refresh preserves the original draft history and incorporates already released PR #853/#855 changes without editing their content. Repository adoption requires normal current-head checks and a protected merge. The Git integration may automatically build a documentation-only commit; no manual deployment, provider call or configuration change is introduced.
+
+The manual operator procedure and evidence template are ready for use by an authorized active session. Two continuous-operation gaps remain explicit:
+
+1. **Human coverage:** the owner has demonstrated exact-copy review for October 22; ongoing reviewer availability and a named backup have not been established. Obtain real coverage, not fabricated signoffs.
+2. **Deadline executor:** no mechanism is installed by this document to execute the 14:00/16:00/18:00 handoff unattended. Before claiming coverage, review the existing control surface, prove single-edition ownership/concurrency, read-only decision behavior, human-review hold and failure escalation with offline tests, then obtain applicable installation authority. Do not repurpose the read-only acceptance watch or add a duplicate watcher as a shortcut.
+
+Preserve existing schedules and budgets, all source/security/publication protections, published archives, and other chats' ownership. No private Render runtime, database, customer, commerce, email, credential, provider or security change is authorized by this document. The bounded Daily acceptance watch remains read-only and ends under its existing schedule; it is not a permanent publisher.
 
 ## Reviewed source contracts
 
-Baseline: `fc86e692e8cfac182c265313e9f1ecb02fd9db12`. Refresh current code before any operation.
-
-- [Daily workflow](https://github.com/usdimpact/usd-impact-site/blob/fc86e692e8cfac182c265313e9f1ecb02fd9db12/.github/workflows/daily-news.yml)
-- [Backstop workflow](https://github.com/usdimpact/usd-impact-site/blob/fc86e692e8cfac182c265313e9f1ecb02fd9db12/.github/workflows/daily-news-schedule-backstop.yml)
-- [Weekly Report workflow](https://github.com/usdimpact/usd-impact-site/blob/fc86e692e8cfac182c265313e9f1ecb02fd9db12/.github/workflows/weekly-report.yml)
-- [Monthly eligibility](https://github.com/usdimpact/usd-impact-site/blob/fc86e692e8cfac182c265313e9f1ecb02fd9db12/apps/web/src/lib/report-periods.js)
-- [Weekly Score workflow](https://github.com/usdimpact/usd-impact-pipeline/blob/main/.github/workflows/weekly.yml) (read-only reference; refresh that repository before any Score operation).
+- [Daily workflow](https://github.com/usdimpact/usd-impact-site/blob/362024049efe37383d1e2eac69ea4a4a4d2c9377/.github/workflows/daily-news.yml)
+- [Independent wake guard](https://github.com/usdimpact/usd-impact-site/blob/362024049efe37383d1e2eac69ea4a4a4d2c9377/apps/web/src/lib/daily-news-schedule-wake.js)
+- [Backstop workflow](https://github.com/usdimpact/usd-impact-site/blob/362024049efe37383d1e2eac69ea4a4a4d2c9377/.github/workflows/daily-news-schedule-backstop.yml)
+- [Daily Health](https://github.com/usdimpact/usd-impact-site/blob/362024049efe37383d1e2eac69ea4a4a4d2c9377/.github/workflows/daily-news-health.yml)
+- [Weekly Report workflow](https://github.com/usdimpact/usd-impact-site/blob/362024049efe37383d1e2eac69ea4a4a4d2c9377/.github/workflows/weekly-report.yml)
+- [Monthly eligibility](https://github.com/usdimpact/usd-impact-site/blob/362024049efe37383d1e2eac69ea4a4a4d2c9377/apps/web/src/lib/report-periods.js)
+- [Published Monthly period](https://github.com/usdimpact/usd-impact-site/blob/362024049efe37383d1e2eac69ea4a4a4d2c9377/apps/web/src/content/monthly-reports/2026-10-16.md)
+- [Weekly Score workflow](https://github.com/usdimpact/usd-impact-pipeline/blob/1bdd9a47796876e794bb6a24248ced8823f8b719/.github/workflows/weekly.yml)

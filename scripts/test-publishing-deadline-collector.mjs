@@ -5,7 +5,6 @@ import { collectDailyDelivery, readArticle, SCOPE } from './publishing-deadline-
 import { main } from './publishing-deadline-read.mjs';
 
 const day = '2026-10-23', now = `${day}T12:00:00Z`, A = 'a'.repeat(40), B = 'b'.repeat(40);
-const gh = `https://api.github.com/repos/${SCOPE.repo}`;
 const file = `apps/web/src/content/news/${day}.md`;
 let count = 0; const cases = [];
 async function check(name, fn) { await fn(); count++; cases.push(name); }
@@ -123,7 +122,7 @@ await check('duplicate collection IDs invalidate coverage', async () => {
   const r = await fixture({ prs: [pr(), pr()] }).go(); assert.equal(r.evidence.prs.coverage, 'incomplete');
 });
 await check('changed PR head invalidates coverage', async () => {
-  const r = await fixture({ prs: [pr()], details: { 1: pr(1, { head: { ref: 'other', sha: A } }) } }).go();
+  const r = await fixture({ prs: [pr()], details: { 1: pr(1, { head: { ref: 'other', sha: A } })] }).go();
   assert.equal(r.classification.state, 'UNKNOWN');
 });
 await check('read budget exhaustion is not zero results', async () => {
@@ -157,7 +156,7 @@ await check('apex and www disagreement is visible', async () => {
 });
 await check('no Vercel credential means no Vercel request or inferred readiness', async () => {
   const f = fixture(); const r = await f.go({ vercelToken: '' }); assert.equal(r.observations.production, null);
-  assert.equal(f.calls.some(c => c.address.startsWith('https://api.vercel.com')), false);
+  assert.equal(f.calls.some(c => new URL(c.address).origin === 'https://api.vercel.com'), false);
 });
 await check('unknown run type or lineage is not silently dropped', async () => {
   const r = await fixture({ runs: [run({ event: 'push' })] }).go(); assert.equal(r.evidence.runs.coverage, 'incomplete');

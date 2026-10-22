@@ -12,8 +12,7 @@ export function createScoreMembershipProviders({ config, fetchImpl = fetch }) {
   }
   async function rpc(name, payload) {
     const response = await fetchImpl(`${config.url.replace(/\/$/, '')}/rest/v1/rpc/${name}`, {
-      method: 'POST', headers: { apikey: config.secretKey,
-        Authorization: `Bearer ${config.secretKey}`,
+      method: 'POST', redirect: 'error', headers: { apikey: config.secretKey,
         'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
       body: JSON.stringify(payload),
     });

@@ -43,15 +43,51 @@ import {
 import { createOwnSupportRequest } from '../src/lib/support-request.js';
 import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js';
 
+const MAX_ACCOUNT_JSON_BYTES = 32 * 1024;
+
 function header(request, name) {
   const value = request.headers?.[name] ?? request.headers?.[name.toLowerCase()];
   return Array.isArray(value) ? value[0] ?? '' : String(value ?? '');
 }
 
+function bodyTooLargeError() {
+  const error = new Error('Request body is too large.');
+  error.code = 'REQUEST_BODY_TOO_LARGE';
+  return error;
+}
+
 function parseBody(request) {
-  if (request.body && typeof request.body === 'object' && !Buffer.isBuffer(request.body)) return request.body;
-  if (typeof request.body === 'string' || Buffer.isBuffer(request.body)) return JSON.parse(request.body.toString());
+  const declaredLength = Number.parseInt(header(request, 'content-length') || '', 10);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_ACCOUNT_JSON_BYTES) {
+    throw bodyTooLargeError();
+  }
+
+  if (request.body && typeof request.body === 'object' && !Buffer.isBuffer(request.body)) {
+    const encoded = JSON.stringify(request.body);
+    if (Buffer.byteLength(encoded, 'utf8') > MAX_ACCOUNT_JSON_BYTES) throw bodyTooLargeError();
+    return request.body;
+  }
+
+  if (typeof request.body === 'string' || Buffer.isBuffer(request.body)) {
+    const raw = Buffer.isBuffer(request.body) ? request.body : Buffer.from(request.body, 'utf8');
+    if (raw.length > MAX_ACCOUNT_JSON_BYTES) throw bodyTooLargeError();
+    return JSON.parse(raw.toString('utf8'));
+  }
+
   return {};
+}
+
+function invalidJsonBodyResponse(response, error) {
+  if (error?.code === 'REQUEST_BODY_TOO_LARGE') {
+    return sendJson(response, 413, {
+      error: 'Request body is too large.',
+      code: 'REQUEST_BODY_TOO_LARGE',
+    });
+  }
+  return sendJson(response, 400, {
+    error: 'Invalid request body.',
+    code: 'INVALID_REQUEST_BODY',
+  });
 }
 
 function requestUrl(request) {
@@ -149,8 +185,8 @@ async function handleLogin(request, response) {
   let payload;
   try {
     payload = parseBody(request);
-  } catch {
-    return sendJson(response, 400, { error: 'Invalid request body.', code: 'INVALID_REQUEST_BODY' });
+  } catch (error) {
+    return invalidJsonBodyResponse(response, error);
   }
 
   try {
@@ -327,8 +363,8 @@ async function handleSupport(request, response) {
   let payload;
   try {
     payload = parseBody(request);
-  } catch {
-    return sendJson(response, 400, { error: 'Invalid request body.', code: 'INVALID_REQUEST_BODY' });
+  } catch (error) {
+    return invalidJsonBodyResponse(response, error);
   }
 
   try {

@@ -61,7 +61,7 @@ test('anonymous, Library-only, disabled and network failure all fail closed', as
   } })), { ok: false, code: 'INVALID_HANDOFF_RESPONSE' });
 });
 
-test('page uses POST form redemption on the Score origin, never query tokens or client-only unlocks', async () => {
+test('page uses standalone POST redemption on the Score origin, never iframe cookies, query tokens, or client-only unlocks', async () => {
   const html = await readFile(new URL('../src/pages/score.astro', import.meta.url), 'utf8');
   const csp = await readFile(new URL('../astro.config.mjs', import.meta.url), 'utf8');
   assert.match(html, /requestScoreHandoff/);
@@ -69,10 +69,12 @@ test('page uses POST form redemption on the Score origin, never query tokens or 
   assert.match(html, /scoreHandoffOrigin.*score-redeem/);
   assert.match(html, /name="ticket"/);
   assert.match(html, /data-score-handoff/);
-  assert.match(html, /score-dashboard-frame/);
-  assert.match(html, /score-archive-frame/);
+  assert.doesNotMatch(html, /<iframe\b/i);
+  assert.doesNotMatch(html, /data-score-target="(?:score-dashboard-frame|score-archive-frame)"/);
+  assert.match(html, /data-score-target="_self"/);
+  assert.match(html, /target !== '_self'/);
   assert.match(html, /type="hidden"/);
-  assert.match(html, /src="about:blank"/);
+  assert.match(html, /standalone page after verifying/);
   assert.doesNotMatch(html, /location\.(?:href|assign|replace)\s*\(?.*ticket/);
   assert.doesNotMatch(html, /(?:localStorage|sessionStorage|postMessage)\s*\(/);
   assert.match(csp, /form-action 'self' \$\{scorePipelineOrigin\}/);

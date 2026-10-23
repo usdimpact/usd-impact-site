@@ -74,19 +74,9 @@ const scoreHandoffOrigin = scorePipelineOrigin;
           <div class="eyebrow">Live dashboard</div>
           <h2>Latest USD Impact Score</h2>
         </div>
-        <button type="button" data-score-handoff data-score-path="/en/" data-score-target="score-dashboard-frame">Verify membership and open dashboard</button>
+        <button type="button" data-score-handoff data-score-path="/en/" data-score-target="_self">Verify membership and open standalone dashboard</button>
       </div>
-      <div class="score-embed-shell">
-        <iframe
-          class="score-embed"
-          name="score-dashboard-frame"
-          src="about:blank"
-          title="USD Impact Score weekly dashboard"
-          loading="lazy"
-          referrerpolicy="strict-origin-when-cross-origin"
-        ></iframe>
-        <p class="score-embed-fallback">If your browser blocks embedded cookies, <button type="button" data-score-handoff data-score-path="/en/" data-score-target="_self">open the standalone version securely</button>.</p>
-      </div>
+      <p class="score-embed-fallback">Protected Score content opens in a standalone page after verifying your Research Membership. Embedded third-party cookies are not used.</p>
     </section>
 
     {latestWeeklyReport && (
@@ -109,17 +99,7 @@ const scoreHandoffOrigin = scorePipelineOrigin;
         <button type="button" data-score-handoff data-score-path="/archive/en/" data-score-target="_self">Open the full archive securely</button>
       </div>
       <p class="score-archive-intro">Review the score, regime, and deterministic commentary exactly as they were published for each completed week.</p>
-      <div class="score-archive-embed-shell">
-        <iframe
-          class="score-archive-embed"
-          name="score-archive-frame"
-          src="about:blank"
-          title="Previous Weekly USD Impact Score editions"
-          loading="lazy"
-          referrerpolicy="strict-origin-when-cross-origin"
-        ></iframe>
-        <p class="score-embed-fallback"><button type="button" data-score-handoff data-score-path="/archive/en/" data-score-target="score-archive-frame">Verify membership and load the archive here</button>.</p>
-      </div>
+      <p class="score-embed-fallback">Use the button above to open the member archive securely in this tab.</p>
     </section>
 
     <p id="score-handoff-status" role="status" aria-live="polite">The protected dashboard requires an active Research Membership. Select a secure access button to verify membership.</p>
@@ -163,7 +143,7 @@ const scoreHandoffOrigin = scorePipelineOrigin;
           if (signIn) signIn.hidden = result.code !== 'AUTHENTICATION_REQUIRED';
           return;
         }
-        if (!['score-dashboard-frame', 'score-archive-frame', '_self'].includes(target)) {
+        if (target !== '_self') {
           if (status) status.textContent = 'Invalid Score destination.';
           return;
         }

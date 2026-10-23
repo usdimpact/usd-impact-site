@@ -1,0 +1,3 @@
+Límite de versión y evidencia
+La evidencia de robustez, la investigación predictiva y la puntuación de producción están relacionadas pero son distintas. Los modelos candidatos solo de investigación no modifican la producción v2 salvo que se apruebe y divulgue por separado un cambio de versión gobernado. Un artefacto de evidencia fechado debe identificar la fórmula, las entradas de proveedores, las fechas de observación y la versión de código que lo produjo. Higiene de datos y control de versiones
+El panel en vivo debe publicar la versión de la puntuación, el conjunto de entradas, la procedencia de las fuentes, las fechas de observación y la versión de metodología necesarias para reproducir la publicación.

@@ -1,0 +1,5 @@
+Términos de referencia adicionales
+Punto básico
+Una centésima de un punto porcentual. 100 puntos básicos equivalen al 1 %. Una subida de 25 puntos básicos significa que la tasa de política subió un 0,25 %. Beta
+Sensibilidad del retorno de un activo al retorno de una referencia. Beta de 1,0 = se mueve uno a uno; superior a 1,0 = más que el precio de referencia; inferior = menos. Algunas clases tienen alta beta al dólar (petróleo, FX emergentes); otras la tienen baja o condicional (oro, Bitcoin). EIA (Energy Information Administration)
+Agencia estadística y analítica del Departamento de Energía de Estados Unidos que publica datos semanales de inventarios de petróleo, informes mensuales de gas natural y perspectivas anuales del sistema energético global.

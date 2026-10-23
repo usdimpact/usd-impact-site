@@ -1,0 +1,6 @@
+Duración
+Sensibilidad del precio de un instrumento de renta fija a cambios en los tipos, expresada como cambio porcentual de precio por un cambio de un punto porcentual en el rendimiento. Los activos de mayor duración (bonos largos) son más sensibles que los de menor duración (letras cortas). USDX
+Sinónimo de DXY en mercados de futuros. El contrato USDX cotiza en ICE; el índice subyacente es idéntico a DXY. Lenguaje de energía y materias primas
+Backwardation
+Forma de la curva de futuros en la que los contratos cercanos cotizan por encima de los lejanos. En petróleo, suele señalar mercado prompt tenso y prima por barriles inmediatos. Precio de referencia
+Precio de referencia usado para comparar y negociar un mercado. WTI, Brent, Henry Hub y DXY son precios de referencia en sus dominios.

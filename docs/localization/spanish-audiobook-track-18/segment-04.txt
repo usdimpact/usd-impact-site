@@ -1,0 +1,3 @@
+La página de metodología en vivo es la autoridad para el mapeo exacto de producción en el momento de uso. Normalización y cálculo semanal
+Cada entrada de producción se alinea con una serie semanal terminada en viernes usando la última observación disponible de esa semana. La puntuación de producción estandariza el nivel semanal, no un retorno semanal, frente a la muestra completa de producción disponible en el momento de la ejecución. Para la entrada i, la semana t y la ejecución de producción T:
+Z de i, t, T es igual a clip de x de i, t, menos la media de i, T, dividido por la desviación estándar de i, T; recortado entre menos tres coma cinco y más tres coma cinco.

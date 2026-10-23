@@ -1,0 +1,47 @@
+name: HeyGen API Wallet Check
+
+on:
+  push:
+    branches:
+      - feat/spanish-audiobook-pilot-foundation
+    paths:
+      - .github/workflows/heygen-api-wallet-check.yml
+
+permissions:
+  contents: read
+
+jobs:
+  wallet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+    steps:
+      - name: Validate secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${HEYGEN_API_KEY:-}"
+      - name: Read API wallet
+        shell: bash
+        run: |
+          set -euo pipefail
+          # API-key scoped request: verifies the same repository secret used for synthesis.
+          curl -fsS --retry 1 --max-time 20 "https://api.heygen.com/v3/users/me" \
+            -H "X-Api-Key: $HEYGEN_API_KEY" > provider-wallet-response.json
+          jq -e '
+            if (.error? != null and .error != false) then
+              error("Provider reports a wallet-check error")
+            else
+              {
+                billing_type: (.data.billing_type // .billing_type // "unknown"),
+                wallet_present: ((.data.wallet // .wallet) != null),
+                currency: (.data.wallet.currency // .wallet.currency // "unknown"),
+                remaining_balance: (.data.wallet.remaining_balance // .wallet.remaining_balance // null)
+              }
+            end
+          ' provider-wallet-response.json
+          if ! jq -e '((.data.wallet.remaining_balance // .wallet.remaining_balance) | tonumber?) != null' provider-wallet-response.json >/dev/null; then
+            echo "API-key wallet balance is not returned as a number; fail closed and do not synthesize." >&2
+            exit 4
+          fi

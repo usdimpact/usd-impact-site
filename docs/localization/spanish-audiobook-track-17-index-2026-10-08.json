@@ -1,0 +1,182 @@
+{
+  "version": 1,
+  "track": "17",
+  "chapter": null,
+  "title": "Apéndice A — Glosario rápido",
+  "source": {
+    "drive_id": "1hjOXZdqT1DajsiGvNm8motQIJ4yuxi6zNwDiU1bpYnU",
+    "line_slice": [
+      967,
+      1080
+    ],
+    "edition": "Spanish Edition 1.3 Candidate 1"
+  },
+  "voice": {
+    "name": "Narrator Mateo",
+    "id": "626ca51acb2e496f8dcee8d7591fda3c",
+    "locale": "es-419",
+    "speed": 0.92
+  },
+  "track_status": "ALL_16_PRIVATE_CONTENT_QA_PASS_FINAL_LISTENING_MASTERING_HOLD",
+  "next_segment": null,
+  "do_not_regenerate": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16"
+  ],
+  "segments": [
+    {
+      "id": "1",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-01.txt",
+      "media_url": null
+    },
+    {
+      "id": "2",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-02.txt",
+      "media_url": null
+    },
+    {
+      "id": "3",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-03.txt",
+      "media_url": null
+    },
+    {
+      "id": "4",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-04.txt",
+      "media_url": null
+    },
+    {
+      "id": "5",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-05.txt",
+      "media_url": null
+    },
+    {
+      "id": "6",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-06.txt",
+      "media_url": null
+    },
+    {
+      "id": "7",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-07.txt",
+      "media_url": null
+    },
+    {
+      "id": "8",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-08.txt",
+      "media_url": null
+    },
+    {
+      "id": "9",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-09.txt",
+      "media_url": null
+    },
+    {
+      "id": "10",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-10.txt",
+      "media_url": null
+    },
+    {
+      "id": "11",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-11.txt",
+      "media_url": null
+    },
+    {
+      "id": "12",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-12.txt",
+      "media_url": null
+    },
+    {
+      "id": "13",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-13.txt",
+      "media_url": null
+    },
+    {
+      "id": "14",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-14.txt",
+      "media_url": null
+    },
+    {
+      "id": "15",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-15.txt",
+      "media_url": null
+    },
+    {
+      "id": "16",
+      "status": "private_content_QA_pass",
+      "text_file": "docs/localization/spanish-audiobook-track-17/segment-16.txt",
+      "media_url": null
+    }
+  ],
+  "batch_a": {
+    "run_id": 37841109581,
+    "artifact_id": 11577741932,
+    "artifact_sha256": "a5341932492c36fb1cda3c67be647bc2cf1527b3e8d1e342d51ad35ca8fdbaab",
+    "segment_count": 8,
+    "decoded_audio_QA": "PASS",
+    "duration_seconds": 505.6,
+    "descript_job_id": "project-media-import-0c21d481-8705-4d1f-b582-d11e81189ac8",
+    "descript_import_status": "success",
+    "descript_composition_id": "625d0a1a-1bf2-42ac-b363-cb8b525e660b",
+    "script_words": 988,
+    "transcript_words": 987,
+    "exact_aligned_words": 980,
+    "exact_token_match_pct": 99.19,
+    "source_only_tokens": 3,
+    "material_multiword_omission_verified": 0,
+    "ASR_notes": "Opening Apéndice A and DFII10 acronym differences are ASR artifacts; HeyGen word timestamps confirm the authoritative spoken source."
+  },
+  "batch_b": {
+    "run_id": 37841664444,
+    "artifact_id": 11577608501,
+    "artifact_sha256": "cd9afd16b0c29f25f06e7d9ef903da4af1807767e500043d211706e1e9b8e9d3",
+    "duration_seconds": 537.731,
+    "segments": 8,
+    "audio_decode_QA": "PASS",
+    "descript_job_id": "project-media-import-89a78f8e-2995-47ea-8eb1-3ee3f86ff73b",
+    "descript_status": "success",
+    "descript_composition_id": "625d0a1a-1bf2-42ac-b363-cb8b525e660b"
+  },
+  "full_qa": {
+    "source": "Spanish Edition 1.3 Candidate 1 lines 968-1080",
+    "composition_id": "625d0a1a-1bf2-42ac-b363-cb8b525e660b",
+    "duration_seconds": 1043.330605,
+    "segments": 16,
+    "source_tokens": 1996,
+    "transcript_tokens": 2009,
+    "exact_matches": 1949,
+    "exact_source_token_pct": 97.65,
+    "source_token_omissions": 0,
+    "script_transcript_exact_pct": 97.53,
+    "ASR_pronunciation_check": "Opening and DFII10 require direct listening, ASR variants vs HeyGen word timestamps",
+    "qa_record": "docs/localization/SPANISH_AUDIOBOOK_APP_A_PRIVATE_QA_2026-10-08.md",
+    "release": "HOLD"
+  }
+}

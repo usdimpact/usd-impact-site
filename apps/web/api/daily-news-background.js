@@ -213,6 +213,12 @@ function canonicalUrl(value) {
   return url.toString();
 }
 
+function groundingUrlKey(value) {
+  const url = new URL(canonicalUrl(value));
+  url.hostname = url.hostname.toLowerCase().replace(/^www\./, '');
+  return url.toString();
+}
+
 function collectOpenAiText(openAiResponse) {
   const parts = [];
   for (const item of openAiResponse.output ?? []) {
@@ -229,7 +235,7 @@ function collectGroundedUrls(openAiResponse) {
   const add = (value) => {
     if (typeof value !== 'string') return;
     try {
-      urls.add(canonicalUrl(value));
+      urls.add(groundingUrlKey(value));
     } catch {
       // Ignore malformed provider metadata.
     }
@@ -298,7 +304,7 @@ export function collectRepairEvidence(openAiResponse, editionDate) {
       : '(invalid-id)';
     try {
       const url = canonicalUrl(source?.url);
-      if (!groundedUrls.has(url)) missingIds.push(safeId);
+      if (!groundedUrls.has(groundingUrlKey(url))) missingIds.push(safeId);
       else if (sourceDateAttributionIssue(url)) blockedIds.push(safeId);
       else permitted.add(url);
     } catch {

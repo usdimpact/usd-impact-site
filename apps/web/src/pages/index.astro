@@ -11,7 +11,11 @@ import { resolveScorePipelineOrigin, scorePipelineUrl } from '../lib/score-pipel
 const latestNews = (await getCollection('news'))
   .filter((entry) => entry.data.status === 'published')
   .sort((a, b) => b.data.date.localeCompare(a.data.date))[0];
-const scorePipelineOrigin = resolveScorePipelineOrigin(import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
+const scorePipelineOrigin = resolveScorePipelineOrigin(
+  import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN,
+  process.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
+  process.env.VERCEL_ENV,
+);
 ---
 <BaseLayout title="USD Impact | Read the Dollar First" description="Learn a repeatable dollar-first process for separating dollar, real-rate, liquidity and asset-specific drivers before interpreting cross-asset market moves." stylesheets={['/assets/daily-cards.css']} alternateLocaleHref="/es/">
   <main id="main-content" class="main-with-hero">
@@ -60,7 +64,7 @@ const scorePipelineOrigin = resolveScorePipelineOrigin(import.meta.env.PUBLIC_SC
         </div>
         <div class="button-row">
           <a class="button primary" href="/score/">View weekly score</a>
-          <a class="button score-external" href={scorePipelineUrl('/en/', scorePipelineOrigin)} target="_blank" rel="noreferrer">Standalone dashboard</a>
+          <a class="button score-external" href={scorePipelineUrl('/en/', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV)} target="_blank" rel="noreferrer">Standalone dashboard</a>
         </div>
       </div>
     </section>

@@ -37,7 +37,11 @@ const isWithinPrefix = (pathname, prefix) => (
   pathname === prefix || pathname.startsWith(`${prefix}/`)
 );
 
-const scorePipelineOrigin = resolveScorePipelineOrigin(process.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
+const scorePipelineOrigin = resolveScorePipelineOrigin(
+  process.env.PUBLIC_SCORE_PIPELINE_ORIGIN,
+  process.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
+  process.env.VERCEL_ENV,
+);
 
 export default defineConfig({
   site: 'https://www.usd-impact.com',
@@ -57,7 +61,7 @@ export default defineConfig({
         "media-src 'self' blob: https:",
         "worker-src 'self' blob:",
         "manifest-src 'self'",
-        "form-action 'self'",
+        `form-action 'self' ${scorePipelineOrigin}`,
         'upgrade-insecure-requests',
       ],
       scriptDirective: {

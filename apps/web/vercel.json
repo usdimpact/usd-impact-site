@@ -159,6 +159,14 @@
     {
       "source": "/api/checklist-analytics",
       "destination": "/api/telemetry?action=checklist-report"
+    },
+    {
+      "source": "/api/score-membership",
+      "destination": "/api/account?action=score-membership"
+    },
+    {
+      "source": "/api/score-handoff",
+      "destination": "/api/account?action=score-handoff"
     }
   ],
   "headers": [

@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "status": "preview_inventory_only",
+  "observed_on": "2026-10-24",
+  "enforcement_enabled": false,
+  "report_only_header_enabled": false,
+  "production_header_change_authorized": false,
+  "interpretation": "Resource-origin inventory only. Content hyperlinks and editorial source URLs are not CSP resource dependencies.",
+  "browser_surfaces": {
+    "static_site": {
+      "script_element_origins": [
+        "https://challenges.cloudflare.com",
+        "https://www.googletagmanager.com"
+      ],
+      "connect_origins": [
+        "https://challenges.cloudflare.com",
+        "https://www.google-analytics.com",
+        "https://region1.google-analytics.com"
+      ],
+      "frame_origins": [
+        "https://challenges.cloudflare.com"
+      ],
+      "score_pipeline_origin_allowlist": [
+        "https://usd-impact-pipeline.pages.dev",
+        "https://score.usd-impact.com"
+      ],
+      "broad_existing_directives": {
+        "img_src_https_wildcard": true,
+        "media_src_https_wildcard": true
+      }
+    },
+    "protected_video_library": {
+      "isolated_response_policy": true,
+      "script_origins": [
+        "https://embed.cloudflarestream.com"
+      ],
+      "frame_origin_template": "https://customer-${customerCode}.cloudflarestream.com",
+      "global_csp_expansion_required": false
+    }
+  },
+  "server_to_server_origins": [
+    {
+      "origin": "https://api.cloudflare.com",
+      "purpose": "Cloudflare Stream signed-token issuance",
+      "browser_csp_dependency": false
+    }
+  ],
+  "preview_only_server_fetches": [
+    {
+      "origin_template": "https://customer-${customerCode}.cloudflarestream.com",
+      "purpose": "Localization visual-QA thumbnail retrieval",
+      "browser_csp_dependency": false
+    }
+  ],
+  "narrowing_holds": [
+    "Do not narrow img-src https: until generated/runtime image origins are independently observed.",
+    "Do not narrow media-src https: until audiobook and protected-media delivery origins are independently observed.",
+    "Do not add Cloudflare Stream origins to the global static-site CSP solely because protected video pages use them; those pages already send an isolated response CSP.",
+    "Do not enable Content-Security-Policy-Report-Only until a reporting endpoint, privacy boundary, retention policy, and Preview validation plan are separately approved."
+  ]
+}

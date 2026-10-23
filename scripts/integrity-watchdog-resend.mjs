@@ -64,9 +64,10 @@ export async function resendContracts({ fetchImpl = globalThis.fetch, env = proc
   }
 
   const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
-  const [domainsData, webhooksData] = await Promise.all([
+  const [domainsData, webhooksData, apiKeysData] = await Promise.all([
     jsonRequest({ fetchImpl, url: 'https://api.resend.com/domains', headers }),
     jsonRequest({ fetchImpl, url: 'https://api.resend.com/webhooks', headers }),
+    jsonRequest({ fetchImpl, url: 'https://api.resend.com/api-keys?limit=100', headers }),
   ]);
   const domains = Array.isArray(domainsData.json?.data) ? domainsData.json.data : [];
   const domain = domains.find((entry) => entry.name === expectedDomain) || null;
@@ -77,7 +78,9 @@ export async function resendContracts({ fetchImpl = globalThis.fetch, env = proc
     : enabledWebhooks;
   const subscribed = new Set(matchingEnabledWebhooks.flatMap((entry) => entry.events || []));
   const missing = REQUIRED_EVENTS.filter((name) => !subscribed.has(name));
+  const credentialRecords = Array.isArray(apiKeysData.json?.data) ? apiKeysData.json.data : [];
   const metadataConclusive = domainsData.observation.status === 200 && webhooksData.observation.status === 200;
+  const apiKeyInventoryConclusive = apiKeysData.observation.status === 200;
   const domainVerified = Boolean(domain && String(domain.status).toLowerCase() === 'verified');
 
   let outcome = OUTCOME.UNKNOWN;
@@ -91,9 +94,12 @@ export async function resendContracts({ fetchImpl = globalThis.fetch, env = proc
   } else if (metadataConclusive && missing.length) {
     outcome = OUTCOME.WARN;
     summary = `Lifecycle webhook events are missing: ${missing.join(', ')}.`;
+  } else if (metadataConclusive && !apiKeyInventoryConclusive) {
+    outcome = OUTCOME.WARN;
+    summary = 'Resend domain and webhook coverage are healthy, but API-key inventory metadata could not be collected.';
   } else if (metadataConclusive) {
     outcome = OUTCOME.PASS;
-    summary = 'Resend domain is verified and enabled lifecycle webhook coverage is present.';
+    summary = 'Resend domain is verified, enabled lifecycle webhook coverage is present, and API-key identity inventory is readable.';
   }
 
   return [result({
@@ -117,6 +123,11 @@ export async function resendContracts({ fetchImpl = globalThis.fetch, env = proc
       expected_webhook_endpoint_configured: Boolean(expectedWebhookEndpoint),
       covered_lifecycle_events: REQUIRED_EVENTS.filter((name) => subscribed.has(name)),
       missing_lifecycle_events: missing,
+      credential_inventory_conclusive: apiKeyInventoryConclusive,
+      credential_count: credentialRecords.length,
+      credential_names_collected: false,
+      credential_ids_collected: false,
+      credential_values_collected: false,
       provider_read_only_api_key_available: false,
       full_access_credential_use_approved: true,
       dedicated_api_key_required: true,
@@ -128,7 +139,10 @@ export async function resendContracts({ fetchImpl = globalThis.fetch, env = proc
     }],
     remediation: {
       proposed_changes: outcome === OUTCOME.WARN
-        ? ['Verify the enabled canonical Resend webhook and its required lifecycle subscriptions without changing delivery state.']
+        ? [
+            'Verify the enabled canonical Resend webhook and its required lifecycle subscriptions without changing delivery state.',
+            'Map every API-key identity to one owner, runtime/use case, environment, permission scope, last-use evidence, and retirement path before any key is removed.',
+          ]
         : [],
       prohibited_actions: ['Do not send a test email automatically.', 'Do not mutate domains, webhooks, contacts, templates, broadcasts, or API keys.'],
     },

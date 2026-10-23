@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "status": "preview_observation_only",
+  "enforcement_enabled": false,
+  "production_waf_change_authorized": false,
+  "privacy": {
+    "raw_ip_persistence": false,
+    "raw_authorization_header_persistence": false,
+    "request_body_persistence": false,
+    "email_or_account_identifier_persistence": false,
+    "preferred_client_bucket": "ephemeral salted hash outside durable application logs"
+  },
+  "required_metrics": [
+    "request_count",
+    "http_status_class",
+    "latency_bucket",
+    "bounded_body_rejection_count",
+    "authentication_failure_count",
+    "authorization_denial_count"
+  ],
+  "routes": [
+    {
+      "file": "account.js",
+      "risk": "critical",
+      "surface": "auth_account",
+      "mode": "observe_only"
+    },
+    {
+      "file": "commerce.js",
+      "risk": "critical",
+      "surface": "commerce",
+      "mode": "observe_only"
+    },
+    {
+      "file": "daily-news-background.js",
+      "risk": "critical",
+      "surface": "internal_publication",
+      "mode": "observe_only"
+    },
+    {
+      "file": "daily-news-grounded-background.js",
+      "risk": "critical",
+      "surface": "internal_publication",
+      "mode": "observe_only"
+    },
+    {
+      "file": "daily-news-source.js",
+      "risk": "critical",
+      "surface": "internal_publication",
+      "mode": "observe_only"
+    },
+    {
+      "file": "daily-news-validation.js",
+      "risk": "critical",
+      "surface": "internal_publication",
+      "mode": "observe_only"
+    },
+    {
+      "file": "catalyst-brief-source.js",
+      "risk": "critical",
+      "surface": "internal_publication",
+      "mode": "observe_only"
+    },
+    {
+      "file": "guided-edition.js",
+      "risk": "high",
+      "surface": "entitled_content",
+      "mode": "observe_only"
+    },
+    {
+      "file": "waitlist.js",
+      "risk": "high",
+      "surface": "public_signup",
+      "mode": "observe_only"
+    },
+    {
+      "file": "quiz-submit.js",
+      "risk": "medium",
+      "surface": "public_interaction",
+      "mode": "observe_only"
+    },
+    {
+      "file": "telemetry.js",
+      "risk": "medium",
+      "surface": "client_telemetry",
+      "mode": "observe_only"
+    }
+  ],
+  "excluded_generated_files": [
+    "_quiz-runtime.generated.js"
+  ],
+  "promotion_requirements": [
+    "collect preview traffic baseline",
+    "identify trusted automation and webhook callers",
+    "define route-specific thresholds from observed distributions",
+    "prove no lockout of legitimate auth, publication, commerce, or accessibility flows",
+    "stage enforcement in preview before any production proposal",
+    "document rollback and emergency bypass ownership"
+  ]
+}

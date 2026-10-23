@@ -158,6 +158,48 @@ function responseRecorder() {
 
 {
   const response = responseRecorder();
+  let withdrawCount = 0;
+  await handleMarketingEmailPreferencesRequest(
+    {
+      method: 'POST',
+      url: `/email/unsubscribe?token=${encodeURIComponent(token)}`,
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: `List-Unsubscribe=One-Click&padding=${'x'.repeat(9 * 1024)}`,
+    },
+    response,
+    'marketing-email-unsubscribe',
+    {
+      environment: { MARKETING_OPT_IN_SECRET: secret },
+      withdraw: async () => { withdrawCount += 1; },
+    },
+  );
+  assert.equal(response.statusCode, 413);
+  assert.equal(JSON.parse(response.body).code, 'REQUEST_BODY_TOO_LARGE');
+  assert.equal(withdrawCount, 0);
+}
+
+{
+  const response = responseRecorder();
+  await handleMarketingEmailPreferencesRequest(
+    {
+      method: 'POST',
+      url: `/email/unsubscribe?token=${encodeURIComponent(token)}`,
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        'content-length': String(16 * 1024),
+      },
+      body: 'List-Unsubscribe=One-Click',
+    },
+    response,
+    'marketing-email-unsubscribe',
+    { environment: { MARKETING_OPT_IN_SECRET: secret } },
+  );
+  assert.equal(response.statusCode, 413);
+  assert.equal(JSON.parse(response.body).code, 'REQUEST_BODY_TOO_LARGE');
+}
+
+{
+  const response = responseRecorder();
   await handleMarketingEmailPreferencesRequest(
     { method: 'GET', url: '/email/unsubscribe?token=invalid', headers: { accept: 'text/html' } },
     response,

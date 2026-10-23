@@ -27,7 +27,7 @@ function rulesetFetch({ complete = true } = {}) {
     }
     if (value.endsWith('/rulesets/123')) {
       const requiredStatusChecks = complete
-        ? [{ context: 'validate-and-build', integration_id: 15368 }, { context: 'Dependency review', integration_id: 15368 }]
+        ? [{ context: 'validate-and-build', integration_id: 15368 }, { context: 'Dependency review', integration_id: 15368 }, { context: 'CodeQL', integration_id: 15368 }]
         : [{ context: 'validate-and-build', integration_id: 15368 }];
       return reply(JSON.stringify({
         id: 123,
@@ -38,7 +38,13 @@ function rulesetFetch({ complete = true } = {}) {
         rules: [
           { type: 'deletion' },
           { type: 'non_fast_forward' },
-          { type: 'pull_request', parameters: { required_review_thread_resolution: complete } },
+          { type: 'pull_request', parameters: {
+            required_review_thread_resolution: complete,
+            required_approving_review_count: complete ? 1 : 0,
+            require_code_owner_review: complete,
+            require_last_push_approval: complete,
+            dismiss_stale_reviews_on_push: complete,
+          } },
           { type: 'required_status_checks', parameters: { strict_required_status_checks_policy: true, required_status_checks: requiredStatusChecks } },
         ],
         bypass_actors: [],
@@ -67,6 +73,11 @@ assert.equal(complete[1].evidence[0].branch_protection_response_status, 403);
 assert.equal(complete[1].evidence[0].applicable_ruleset_count, 1);
 assert.equal(complete[1].evidence[0].expected_contexts_present, true);
 assert.equal(complete[1].evidence[0].pull_request_required, true);
+assert.equal(complete[1].evidence[0].required_approving_review_count, 1);
+assert.equal(complete[1].evidence[0].independent_approval_required, true);
+assert.equal(complete[1].evidence[0].code_owner_review_required, true);
+assert.equal(complete[1].evidence[0].last_push_approval_required, true);
+assert.equal(complete[1].evidence[0].dismiss_stale_reviews_on_push, true);
 assert.equal(complete[1].evidence[0].review_thread_resolution_required, true);
 assert.equal(complete[1].evidence[0].strict_required_status_checks, true);
 assert.equal(complete[1].evidence[0].force_push_protected, true);
@@ -75,6 +86,7 @@ assert.equal(complete[1].evidence[0].bypass_actor_count, 0);
 assert.deepEqual(complete[1].evidence[0].current_user_can_bypass, ['never']);
 assert.ok(complete[1].evidence[0].required_contexts.includes('validate-and-build'));
 assert.ok(complete[1].evidence[0].required_contexts.includes('Dependency review'));
+assert.ok(complete[1].evidence[0].required_contexts.includes('CodeQL'));
 
 const incomplete = await githubContracts({
   env: { GITHUB_TOKEN: 'github-read-token-for-test' },
@@ -84,6 +96,11 @@ const incomplete = await githubContracts({
 });
 assert.equal(incomplete[1].outcome, OUTCOME.WARN);
 assert.equal(incomplete[1].evidence[0].expected_contexts_present, false);
+assert.equal(incomplete[1].evidence[0].required_approving_review_count, 0);
+assert.equal(incomplete[1].evidence[0].independent_approval_required, false);
+assert.equal(incomplete[1].evidence[0].code_owner_review_required, false);
+assert.equal(incomplete[1].evidence[0].last_push_approval_required, false);
+assert.equal(incomplete[1].evidence[0].dismiss_stale_reviews_on_push, false);
 assert.equal(incomplete[1].evidence[0].review_thread_resolution_required, false);
 
 console.log('USD Impact GitHub ruleset watchdog fallback tests passed.');

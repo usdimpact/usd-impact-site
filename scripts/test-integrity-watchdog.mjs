@@ -224,11 +224,12 @@ const resendAllowed = await resendContracts({
   fetchImpl: async (url, options = {}) => {
     resendMethods.push(options.method || 'GET');
     if (String(url).endsWith('/domains')) return reply(JSON.stringify({ data: [{ name: 'usd-impact.com', status: 'verified', region: 'us-east-1' }] }), 200, {}, String(url));
+    if (String(url).includes('/api-keys')) return reply(JSON.stringify({ data: [{ name: 'watchdog-test-key' }] }), 200, {}, String(url));
     return reply(JSON.stringify({ data: [{ events: ['email.delivered', 'email.bounced', 'email.complained', 'email.suppressed'] }] }), 200, {}, String(url));
   },
 });
 assert.equal(resendAllowed[0].outcome, OUTCOME.PASS);
-assert.deepEqual(resendMethods, ['GET', 'GET']);
+assert.deepEqual(resendMethods, ['GET', 'GET', 'GET']);
 assert.equal(resendAllowed[0].evidence[0].email_sent, false);
 
 const supabaseReviewed = await supabaseContracts({

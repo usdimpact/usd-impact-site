@@ -1,0 +1,271 @@
+{
+  "version": 1,
+  "status": "attested_read_only_baseline",
+  "observed_at": "2026-10-23",
+  "production_project": "usd-impact-production",
+  "control_objective": "No anon/authenticated browser-role access to backend-only advisor tables.",
+  "classification": "intentional-deny",
+  "tables": [
+    {
+      "schema": "public",
+      "table": "admin_audit_entries",
+      "purpose": "backend_audit",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": true,
+        "authenticated": true
+      }
+    },
+    {
+      "schema": "public",
+      "table": "commerce_reconciliations",
+      "purpose": "backend_commerce",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": true,
+        "authenticated": true
+      }
+    },
+    {
+      "schema": "public",
+      "table": "daily_card_dispatches",
+      "purpose": "backend_dispatch",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": true,
+        "authenticated": true
+      }
+    },
+    {
+      "schema": "public",
+      "table": "knowledge_chunks",
+      "purpose": "backend_authorized_content",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": true,
+        "authenticated": true
+      }
+    },
+    {
+      "schema": "public",
+      "table": "marketing_consent_events",
+      "purpose": "backend_consent_ledger",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": true,
+        "authenticated": true
+      }
+    },
+    {
+      "schema": "public",
+      "table": "notification_outbox",
+      "purpose": "backend_outbox",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": true,
+        "authenticated": true
+      }
+    },
+    {
+      "schema": "public",
+      "table": "paddle_adjustments",
+      "purpose": "backend_commerce",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": true,
+        "authenticated": true
+      }
+    },
+    {
+      "schema": "public",
+      "table": "paddle_duplicate_purchases",
+      "purpose": "backend_commerce",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": true,
+        "authenticated": true
+      }
+    },
+    {
+      "schema": "public",
+      "table": "paddle_transaction_events",
+      "purpose": "backend_commerce",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": true,
+        "authenticated": true
+      }
+    },
+    {
+      "schema": "public",
+      "table": "product_offers",
+      "purpose": "backend_commerce_configuration",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": true,
+        "authenticated": true
+      }
+    },
+    {
+      "schema": "public",
+      "table": "push_subscriptions",
+      "purpose": "backend_push",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": true,
+        "authenticated": true
+      }
+    },
+    {
+      "schema": "public",
+      "table": "subscription_offers",
+      "purpose": "backend_commerce_configuration",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": true,
+        "authenticated": true
+      }
+    },
+    {
+      "schema": "public",
+      "table": "webhook_receipts",
+      "purpose": "backend_webhook_evidence",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": true,
+        "authenticated": true
+      }
+    },
+    {
+      "schema": "sed_newsletter",
+      "table": "newsletter_consent_events",
+      "purpose": "private_newsletter",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": false,
+        "authenticated": false
+      }
+    },
+    {
+      "schema": "sed_newsletter",
+      "table": "newsletter_erasure_log",
+      "purpose": "private_newsletter",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": false,
+        "authenticated": false
+      }
+    },
+    {
+      "schema": "sed_newsletter",
+      "table": "newsletter_issue_deliveries",
+      "purpose": "private_newsletter",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": false,
+        "authenticated": false
+      }
+    },
+    {
+      "schema": "sed_newsletter",
+      "table": "newsletter_subscribers",
+      "purpose": "private_newsletter",
+      "rls_enabled": true,
+      "policy_count": 0,
+      "anon_table_privileges": [],
+      "authenticated_table_privileges": [],
+      "browser_access_expected": false,
+      "advisor_classification": "intentional-deny",
+      "schema_usage_expected": {
+        "anon": false,
+        "authenticated": false
+      }
+    }
+  ],
+  "invariants": {
+    "add_permissive_policy_to_clear_advisor": false,
+    "add_browser_grant_to_clear_advisor": false,
+    "production_mutation_authorized": false,
+    "service_role_behavior_changed": false
+  }
+}

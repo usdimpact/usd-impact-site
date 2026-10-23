@@ -63,6 +63,47 @@ await handleDailyLearningEmailRequest(
 assert.equal(missingConsent.statusCode, 400);
 assert.equal(JSON.parse(missingConsent.rawBody).code, 'CONSENT_REQUIRED');
 
+const oversizedSubscribe = mockResponse();
+await handleDailyLearningEmailRequest(
+  {
+    method: 'POST',
+    url: '/api/waitlist?action=daily-learning',
+    headers: { 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' },
+    body: {
+      email: 'learner@example.com',
+      consent: true,
+      submissionId: '11111111-1111-4111-8111-111111111111',
+      padding: 'x'.repeat(9 * 1024),
+    },
+  },
+  oversizedSubscribe,
+  'daily-learning',
+);
+assert.equal(oversizedSubscribe.statusCode, 413);
+assert.equal(JSON.parse(oversizedSubscribe.rawBody).code, 'REQUEST_BODY_TOO_LARGE');
+
+const oversizedDeclaredSubscribe = mockResponse();
+await handleDailyLearningEmailRequest(
+  {
+    method: 'POST',
+    url: '/api/waitlist?action=daily-learning',
+    headers: {
+      'content-type': 'application/json',
+      'sec-fetch-site': 'same-origin',
+      'content-length': String(16 * 1024),
+    },
+    body: {
+      email: 'learner@example.com',
+      consent: true,
+      submissionId: '11111111-1111-4111-8111-111111111111',
+    },
+  },
+  oversizedDeclaredSubscribe,
+  'daily-learning',
+);
+assert.equal(oversizedDeclaredSubscribe.statusCode, 413);
+assert.equal(JSON.parse(oversizedDeclaredSubscribe.rawBody).code, 'REQUEST_BODY_TOO_LARGE');
+
 const invalidUnsubscribe = mockResponse();
 await handleDailyLearningEmailRequest(
   {
@@ -75,6 +116,20 @@ await handleDailyLearningEmailRequest(
 );
 assert.equal(invalidUnsubscribe.statusCode, 400);
 assert.match(invalidUnsubscribe.rawBody, /Unsubscribe link unavailable/);
+
+const oversizedUnsubscribe = mockResponse();
+await handleDailyLearningEmailRequest(
+  {
+    method: 'POST',
+    url: '/api/waitlist?action=daily-learning-unsubscribe&token=invalid',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: `List-Unsubscribe=One-Click&padding=${'x'.repeat(9 * 1024)}`,
+  },
+  oversizedUnsubscribe,
+  'daily-learning-unsubscribe',
+);
+assert.equal(oversizedUnsubscribe.statusCode, 413);
+assert.equal(JSON.parse(oversizedUnsubscribe.rawBody).code, 'REQUEST_BODY_TOO_LARGE');
 
 const oldCronSecret = process.env.CRON_SECRET;
 const oldDistribution = process.env.DAILY_CARD_EMAIL_DISTRIBUTION_ENABLED;

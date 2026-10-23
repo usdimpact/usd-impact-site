@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "status": "read_only_attested",
+  "observed_at": "2026-10-23",
+  "function": "public.request_account_deletion()",
+  "intended_role": "authenticated",
+  "projects": {
+    "production": {
+      "project": "usd-impact-production",
+      "security_definer": true,
+      "search_path": "",
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_role_execute": false,
+      "references_auth_uid": true
+    },
+    "development": {
+      "project": "usd-impact-development",
+      "security_definer": true,
+      "search_path": "",
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_role_execute": false,
+      "references_auth_uid": true
+    }
+  },
+  "invariants": {
+    "public_or_anon_execute_allowed": false,
+    "service_role_execute_allowed": false,
+    "caller_identity_from_auth_uid": true,
+    "empty_search_path_required": true,
+    "production_mutation_authorized": false,
+    "function_rewrite_authorized": false
+  }
+}

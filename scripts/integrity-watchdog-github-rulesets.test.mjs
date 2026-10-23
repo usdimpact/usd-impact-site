@@ -27,7 +27,7 @@ function rulesetFetch({ complete = true } = {}) {
     }
     if (value.endsWith('/rulesets/123')) {
       const requiredStatusChecks = complete
-        ? [{ context: 'validate-and-build', integration_id: 15368 }, { context: 'Dependency review', integration_id: 15368 }]
+        ? [{ context: 'validate-and-build', integration_id: 15368 }, { context: 'Dependency review', integration_id: 15368 }, { context: 'CodeQL', integration_id: 15368 }]
         : [{ context: 'validate-and-build', integration_id: 15368 }];
       return reply(JSON.stringify({
         id: 123,
@@ -86,6 +86,7 @@ assert.equal(complete[1].evidence[0].bypass_actor_count, 0);
 assert.deepEqual(complete[1].evidence[0].current_user_can_bypass, ['never']);
 assert.ok(complete[1].evidence[0].required_contexts.includes('validate-and-build'));
 assert.ok(complete[1].evidence[0].required_contexts.includes('Dependency review'));
+assert.ok(complete[1].evidence[0].required_contexts.includes('CodeQL'));
 
 const incomplete = await githubContracts({
   env: { GITHUB_TOKEN: 'github-read-token-for-test' },

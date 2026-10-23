@@ -10,6 +10,7 @@ import { requestHeader } from './supabase-server.js';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EMAIL_MAX_LENGTH = 254;
+const MAX_DAILY_LEARNING_BODY_BYTES = 8 * 1024;
 
 function sendJson(response, status, body, extraHeaders = {}) {
   response.statusCode = status;
@@ -22,6 +23,21 @@ function sendJson(response, status, body, extraHeaders = {}) {
 
 function requestUrl(request) {
   return new URL(request.url || '/api/waitlist', 'https://usd-impact.invalid');
+}
+
+function requestBodyTooLarge(request) {
+  const declaredLength = Number.parseInt(requestHeader(request, 'content-length') || '', 10);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_DAILY_LEARNING_BODY_BYTES) return true;
+
+  const body = request.body;
+  if (body && typeof body === 'object' && !Buffer.isBuffer(body)) {
+    return Buffer.byteLength(JSON.stringify(body), 'utf8') > MAX_DAILY_LEARNING_BODY_BYTES;
+  }
+  if (typeof body === 'string' || Buffer.isBuffer(body)) {
+    const raw = Buffer.isBuffer(body) ? body : Buffer.from(body, 'utf8');
+    return raw.length > MAX_DAILY_LEARNING_BODY_BYTES;
+  }
+  return false;
 }
 
 function parseJsonBody(request) {
@@ -88,6 +104,9 @@ async function handleSubscribe(request, response) {
   if (requestHeader(request, 'sec-fetch-site') === 'cross-site') {
     return sendJson(response, 403, { error: 'Cross-site requests are not allowed.', code: 'CROSS_SITE_REQUEST' });
   }
+  if (requestBodyTooLarge(request)) {
+    return sendJson(response, 413, { error: 'Request body is too large.', code: 'REQUEST_BODY_TOO_LARGE' });
+  }
   if (!requestHeader(request, 'content-type').includes('application/json')) {
     return sendJson(response, 415, { error: 'Content type must be application/json.', code: 'INVALID_CONTENT_TYPE' });
   }
@@ -127,6 +146,9 @@ async function handleSubscribe(request, response) {
 async function handleUnsubscribe(request, response) {
   if (!['GET', 'POST'].includes(request.method)) {
     return sendJson(response, 405, { error: 'Method not allowed.', code: 'METHOD_NOT_ALLOWED' }, { Allow: 'GET, POST' });
+  }
+  if (request.method === 'POST' && requestBodyTooLarge(request)) {
+    return sendJson(response, 413, { error: 'Request body is too large.', code: 'REQUEST_BODY_TOO_LARGE' });
   }
   const token = tokenFromRequest(request);
 

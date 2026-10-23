@@ -210,8 +210,8 @@ export async function githubContracts({ fetchImpl = globalThis.fetch, env = proc
   const qualityOutcome = exact?.conclusion === 'success' ? OUTCOME.PASS : (exact?.status && exact.status !== 'completed' ? OUTCOME.WARN : (exact?.conclusion ? OUTCOME.FAIL : OUTCOME.UNKNOWN));
   const qualitySummary = exact?.conclusion === 'success' ? 'Exact-current-head quality run succeeded.' : (exact ? `Exact-current-head quality run is ${exact.status || exact.conclusion}.` : 'No exact-current-head quality run was found.');
 
-  let protectionOutcome = OUTCOME.UNKNOWN;
-  let protectionSummary = 'Branch-protection evidence is unavailable to this connection.';
+  let protectionOutcome;
+  let protectionSummary;
   let protectionEvidence;
   if (protectionData.observation.status === 200) {
     const contexts = protectionData.json?.required_status_checks?.contexts || [];

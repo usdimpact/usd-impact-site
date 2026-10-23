@@ -235,7 +235,7 @@ function collectGroundedUrls(openAiResponse) {
   const add = (value) => {
     if (typeof value !== 'string') return;
     try {
-      urls.add(groundingUrlKey(value));
+      urls.add(canonicalUrl(value));
     } catch {
       // Ignore malformed provider metadata.
     }
@@ -295,6 +295,7 @@ export function collectRepairEvidence(openAiResponse, editionDate) {
   }
 
   const groundedUrls = collectGroundedUrls(openAiResponse);
+  const groundedUrlKeys = new Set([...groundedUrls].map(groundingUrlKey));
   const permitted = new Set();
   const missingIds = [];
   const blockedIds = [];
@@ -304,7 +305,7 @@ export function collectRepairEvidence(openAiResponse, editionDate) {
       : '(invalid-id)';
     try {
       const url = canonicalUrl(source?.url);
-      if (!groundedUrls.has(groundingUrlKey(url))) missingIds.push(safeId);
+      if (!groundedUrlKeys.has(groundingUrlKey(url))) missingIds.push(safeId);
       else if (sourceDateAttributionIssue(url)) blockedIds.push(safeId);
       else permitted.add(url);
     } catch {

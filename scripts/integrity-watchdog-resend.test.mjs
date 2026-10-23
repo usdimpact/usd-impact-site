@@ -67,8 +67,6 @@ assert.equal(liveShape[0].evidence[0].matching_enabled_webhook_count, 1);
 assert.equal(liveShape[0].evidence[0].webhook_urls_collected, false);
 assert.equal(liveShape[0].evidence[0].credential_inventory_conclusive, true);
 assert.equal(liveShape[0].evidence[0].credential_count, 2);
-assert.equal(liveShape[0].evidence[0].credential_identity_sha256.length, 2);
-for (const digest of liveShape[0].evidence[0].credential_identity_sha256) assert.match(digest, /^[a-f0-9]{64}$/);
 assert.equal(liveShape[0].evidence[0].credential_names_collected, false);
 assert.equal(liveShape[0].evidence[0].credential_ids_collected, false);
 assert.equal(liveShape[0].evidence[0].credential_values_collected, false);

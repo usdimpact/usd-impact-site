@@ -172,17 +172,17 @@ assert.equal(
 
 
 
-// Regression: an incomplete original ledger may contain many search-result URLs,
-// but the bounded repair model may not invent new dated sources. Fail before
-// spending a single repair request. The pre-existing GitHub one-regeneration
-// budget is the only allowed fresh-research recovery route.
+// Regression: an incomplete draft ledger may still have enough exact URLs in the
+// stored provider web-search context to support one bounded source-ledger repair.
+// The repair must continue that stored response, use no fresh web-search tool and
+// remain constrained to exact URLs that the original response already returned.
 const testSourceUrls = [
   'https://www.bls.gov/news.release/test-a.htm',
   'https://www.federalreserve.gov/newsevents/pressreleases/test-b.htm',
   'https://www.eia.gov/todayinenergy/detail.php?id=12345',
 ];
-const makeFakeProvider = (urlsInLedger, metadata = testSourceUrls) => ({
-  id: 'resp_test1234567',
+const makeFakeProvider = (urlsInLedger, metadata = testSourceUrls, id = 'resp_test1234567') => ({
+  id,
   status: 'completed',
   output: [
     { type: 'web_search_call', action: { sources: metadata.map((url) => ({ url })) } },
@@ -205,31 +205,44 @@ const incomplete = makeFakeProvider(testSourceUrls.slice(0, 2));
 const normal = makeFakeProvider(testSourceUrls);
 const ungrounded = makeFakeProvider([...testSourceUrls.slice(0, 2), 'https://example.invalid/not-searched']);
 assert.deepEqual(assessBoundedRepairFeasibility(incomplete, '2026-10-22'), {
-  canRepair: false, groundedCount: 3, retainedCount: 2,
+  canRepair: true, groundedCount: 3, retainedCount: 2,
 });
 assert.deepEqual(assessBoundedRepairFeasibility(normal, '2026-10-22'), {
   canRepair: true, groundedCount: 3, retainedCount: 3,
 });
 assert.deepEqual(assessBoundedRepairFeasibility(ungrounded, '2026-10-22'), {
-  canRepair: false, groundedCount: 3, retainedCount: 2,
+  canRepair: true, groundedCount: 3, retainedCount: 2,
 });
 assert.deepEqual(assessBoundedRepairFeasibility(makeFakeProvider(testSourceUrls, testSourceUrls.slice(0, 2)), '2026-10-22'), {
   canRepair: false, groundedCount: 2, retainedCount: 2,
+});
+assert.deepEqual(assessBoundedRepairFeasibility(makeFakeProvider(testSourceUrls.slice(0, 2), testSourceUrls, 'not-stored'), '2026-10-22'), {
+  canRepair: false, groundedCount: 3, retainedCount: 2,
 });
 
 const oldFetch = globalThis.fetch;
 const oldToken = process.env.NEWSFEED_BEARER_TOKEN;
 const oldKey = process.env.OPENAI_API_KEY;
 const providerCalls = [];
+const repairBodies = [];
 try {
   process.env.NEWSFEED_BEARER_TOKEN = 'test-bearer-only';
   process.env.OPENAI_API_KEY = 'test-dummy-key-only';
   globalThis.fetch = async (url, options = {}) => {
-    providerCalls.push({ url: String(url), method: options.method ?? 'GET' });
-    assert.match(String(url), /\/v1\/responses\/resp_test1234567$/);
-    assert.equal(options.method, 'GET', 'no mini repair or new generation may be purchased');
-    return new Response(JSON.stringify(incomplete), {
-      status: 200, headers: { 'Content-Type': 'application/json' },
+    const target = String(url);
+    const method = options.method ?? 'GET';
+    providerCalls.push({ url: target, method });
+    if (method === 'GET') {
+      assert.match(target, /\/v1\/responses\/resp_test1234567$/);
+      return new Response(JSON.stringify(incomplete), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    assert.equal(target, 'https://api.openai.com/v1/responses');
+    assert.equal(method, 'POST');
+    repairBodies.push(JSON.parse(String(options.body ?? '{}')));
+    return new Response(JSON.stringify({ error: { message: 'synthetic repair stop after request inspection' } }), {
+      status: 503, headers: { 'Content-Type': 'application/json' },
     });
   };
   const req = {
@@ -251,11 +264,21 @@ try {
   await backgroundHandler(req, recorded);
   assert.equal(recorded.statusCode, 502);
   const body = JSON.parse(recorded.body);
-  assert.equal(body.code, 'insufficient-grounded-sources');
-  assert.equal(body.repairAttempts, 0);
-  assert.equal(body.groundedSourceCount, 3);
-  assert.equal(body.usableSourceCount, 2);
-  assert.equal(providerCalls.length, 1, 'GET-only: no paid bounded repair request');
+  assert.equal(body.repairAttempts, 1);
+  assert.match(body.repairError, /synthetic repair stop/);
+  assert.equal(providerCalls.length, 2, 'one retrieval plus one bounded context-linked repair');
+  assert.equal(repairBodies.length, 1);
+  const repairBody = repairBodies[0];
+  assert.equal(repairBody.previous_response_id, 'resp_test1234567');
+  assert.equal('tools' in repairBody, false, 'bounded repair must not open a fresh web search');
+  assert.deepEqual(
+    repairBody.text.format.schema.properties.sources.items.properties.url.enum,
+    testSourceUrls,
+    'repair source enum must be exact URLs from the stored grounded response',
+  );
+  assert.match(repairBody.input, /PERMITTED GROUNDED CONTEXT URLS/);
+  assert.match(repairBody.input, /Do not perform a fresh web search/);
+  assert.doesNotMatch(repairBody.input, /example\.invalid/);
   // Test the real nested generation wrappers with one synthetic provider POST.
   // All calls are intercepted; this is not a live generator acceptance test.
   const generationBodies = [];

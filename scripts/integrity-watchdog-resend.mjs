@@ -1,4 +1,4 @@
-import { OUTCOME, SEVERITY, result } from './integrity-watchdog-policy.mjs';
+import { OUTCOME, SEVERITY, result, sha256 } from './integrity-watchdog-policy.mjs';
 import { jsonRequest } from './integrity-watchdog-provider-common.mjs';
 
 const DEFAULT_DOMAIN = 'updates.usd-impact.com';
@@ -80,6 +80,7 @@ export async function resendContracts({ fetchImpl = globalThis.fetch, env = proc
   const missing = REQUIRED_EVENTS.filter((name) => !subscribed.has(name));
   const apiKeys = Array.isArray(apiKeysData.json?.data) ? apiKeysData.json.data : [];
   const apiKeyNames = apiKeys.map((entry) => String(entry?.name || '')).filter(Boolean).sort();
+  const apiKeyIdentityHashes = apiKeyNames.map((name) => sha256(name)).sort();
   const metadataConclusive = domainsData.observation.status === 200 && webhooksData.observation.status === 200;
   const apiKeyInventoryConclusive = apiKeysData.observation.status === 200;
   const domainVerified = Boolean(domain && String(domain.status).toLowerCase() === 'verified');
@@ -126,7 +127,8 @@ export async function resendContracts({ fetchImpl = globalThis.fetch, env = proc
       missing_lifecycle_events: missing,
       api_key_inventory_conclusive: apiKeyInventoryConclusive,
       api_key_count: apiKeyNames.length,
-      api_key_names: apiKeyNames,
+      api_key_identity_sha256: apiKeyIdentityHashes,
+      api_key_names_collected: false,
       api_key_ids_collected: false,
       api_key_values_collected: false,
       provider_read_only_api_key_available: false,

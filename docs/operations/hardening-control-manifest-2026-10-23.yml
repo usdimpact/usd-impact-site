@@ -1,0 +1,58 @@
+version: 1
+status: preview-only
+branch: hardening/integrity-layer-2026-10-23
+baseline_commit: b980b8fbcc5a297731a74228409d5282e5422768
+mode: report-only
+
+production_freeze:
+  github_main_mutation: forbidden
+  production_deployment_promotion: forbidden
+  production_database_write: forbidden
+  production_secret_rotation: forbidden
+  production_email_send: forbidden
+  production_dns_change: forbidden
+
+methodology_lock:
+  score_version: v2
+  status: descriptive_non_predictive
+  start_date: "2015-01-01"
+  normalization: full_sample
+  sample_std_ddof: 1
+  clipping: 3.5
+  absolute_weight_each: 0.125
+  thresholds:
+    strong_dollar_min: 1.0
+    firm_dollar_min: 0.3
+    soft_dollar_max: -0.3
+    weak_dollar_max: -1.0
+  signed_components:
+    DXY: 1
+    WTI: -1
+    SPX: -1
+    VIX: 1
+    BTC: -1
+    GOLD: -1
+    UST2Y: 1
+    UST10Y: 1
+
+expected_controls:
+  github:
+    pull_request_required: true
+    force_push_to_main: false
+    delete_main: false
+  vercel:
+    branch_preview_only: true
+    promotion_allowed: false
+  supabase:
+    production_writes_allowed: false
+  resend:
+    live_send_allowed: false
+
+stop_conditions:
+  - methodology_constant_changed
+  - published_score_fixture_changed
+  - descriptive_claim_boundary_changed
+  - entitlement_behavior_changed
+  - commerce_truth_changed
+  - production_environment_changed
+  - unexplained_public_behavior_diff

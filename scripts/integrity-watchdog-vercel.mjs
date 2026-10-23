@@ -121,10 +121,11 @@ export async function vercelContracts({ fetchImpl = globalThis.fetch, env = proc
 
   const headers = { Authorization: `Bearer ${token}` };
   const suffix = `teamId=${encodeURIComponent(teamId)}`;
-  const [projectData, deploymentsData, envData] = await Promise.all([
+  const [projectData, deploymentsData, envData, firewallData] = await Promise.all([
     jsonRequest({ fetchImpl, url: `https://api.vercel.com/v9/projects/${encodeURIComponent(projectId)}?${suffix}`, headers }),
     jsonRequest({ fetchImpl, url: `https://api.vercel.com/v13/deployments?projectId=${encodeURIComponent(projectId)}&target=production&limit=5&${suffix}`, headers }),
     jsonRequest({ fetchImpl, url: `https://api.vercel.com/v10/projects/${encodeURIComponent(projectId)}/env?decrypt=false&${suffix}`, headers }),
+    jsonRequest({ fetchImpl, url: `https://api.vercel.com/v1/security/firewall/config/active?projectId=${encodeURIComponent(projectId)}&${suffix}`, headers }),
   ]);
 
   const latest = deploymentsData.json?.deployments?.[0] || projectData.json?.latestDeployment || null;
@@ -160,6 +161,18 @@ export async function vercelContracts({ fetchImpl = globalThis.fetch, env = proc
       git_branch: entry?.gitBranch ? String(entry.gitBranch) : null,
     }));
   }).filter((entry) => entry.key && entry.issue);
+  const firewallResponseStatus = firewallData.observation.status || null;
+  const firewallConfigPresent = firewallResponseStatus === 200;
+  const firewallEnabled = firewallConfigPresent && typeof firewallData.json?.firewallEnabled === 'boolean'
+    ? firewallData.json.firewallEnabled
+    : null;
+  const firewallCustomRuleCount = firewallConfigPresent && Array.isArray(firewallData.json?.rules)
+    ? firewallData.json.rules.length
+    : null;
+  const firewallRulesetCount = firewallConfigPresent && Array.isArray(firewallData.json?.rulesets)
+    ? firewallData.json.rulesets.length
+    : null;
+
   const envOutcome = envData.observation.status !== 200
     ? OUTCOME.UNKNOWN
     : ((missing.length || environmentSecurityIssues.length) ? OUTCOME.WARN : OUTCOME.PASS);
@@ -194,7 +207,7 @@ export async function vercelContracts({ fetchImpl = globalThis.fetch, env = proc
       severity: SEVERITY.P1,
       outcome: envOutcome,
       summary: envOutcome === OUTCOME.PASS
-        ? 'Governed Production variable names are present, no Vercel environment security issues were reported, decryption was disabled and values were ignored.'
+        ? `Governed Production variable names are present, no Vercel environment security issues were reported, decryption was disabled and values were ignored. Firewall configuration presence is observational only: ${firewallConfigPresent ? 'present' : (firewallResponseStatus === 404 ? 'not present' : 'unknown')}.`
         : (envOutcome === OUTCOME.WARN
           ? [
               missing.length ? `Governed Production names are missing: ${missing.join(', ')}.` : null,
@@ -212,6 +225,12 @@ export async function vercelContracts({ fetchImpl = globalThis.fetch, env = proc
         missing_variable_names: missing,
         environment_security_issue_count: environmentSecurityIssues.length,
         environment_security_issues: environmentSecurityIssues,
+        firewall_response_status: firewallResponseStatus,
+        firewall_config_present: firewallConfigPresent,
+        firewall_enabled: firewallEnabled,
+        firewall_custom_rule_count: firewallCustomRuleCount,
+        firewall_ruleset_count: firewallRulesetCount,
+        firewall_observation_material: false,
         provider_returned_value_fields: providerReturnedValueFields,
         value_fields_used_for_contract: false,
         values_persisted: false,
@@ -228,6 +247,7 @@ export async function vercelContracts({ fetchImpl = globalThis.fetch, env = proc
           'Do not reuse the general Production Vercel credential solely to remove UNKNOWN.',
           'Do not request decrypted environment-variable values for presence or metadata-security checks.',
           'Do not rotate, rename, or delete a credential solely because metadata reports an issue; first map its active consumers and prepare a reversible cutover.',
+          'Do not enable or change a project firewall merely to make the watchdog look healthier; firewall rollout requires a separate route-scoped log-mode plan.',
         ],
       },
     }),

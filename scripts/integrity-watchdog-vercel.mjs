@@ -150,8 +150,19 @@ export async function vercelContracts({ fetchImpl = globalThis.fetch, env = proc
   const productionEntries = entries.filter(targetsProduction);
   const productionNames = new Set(productionEntries.map((entry) => String(entry?.key || '')).filter(Boolean));
   const missing = GOVERNED_PRODUCTION_VARIABLE_NAMES.filter((name) => !productionNames.has(name));
-  const providerReturnedValueFields = productionEntries.some((entry) => Object.prototype.hasOwnProperty.call(entry || {}, 'value'));
-  const envOutcome = envData.observation.status !== 200 ? OUTCOME.UNKNOWN : (missing.length ? OUTCOME.WARN : OUTCOME.PASS);
+  const providerReturnedValueFields = entries.some((entry) => Object.prototype.hasOwnProperty.call(entry || {}, 'value'));
+  const environmentSecurityIssues = entries.flatMap((entry) => {
+    const issues = Array.isArray(entry?.securityIssues) ? entry.securityIssues : [];
+    return issues.map((issue) => ({
+      key: String(entry?.key || ''),
+      issue: String(issue || ''),
+      targets: Array.isArray(entry?.target) ? entry.target.map(String) : (entry?.target ? [String(entry.target)] : []),
+      git_branch: entry?.gitBranch ? String(entry.gitBranch) : null,
+    }));
+  }).filter((entry) => entry.key && entry.issue);
+  const envOutcome = envData.observation.status !== 200
+    ? OUTCOME.UNKNOWN
+    : ((missing.length || environmentSecurityIssues.length) ? OUTCOME.WARN : OUTCOME.PASS);
 
   return [
     result({
@@ -178,14 +189,17 @@ export async function vercelContracts({ fetchImpl = globalThis.fetch, env = proc
     result({
       id: 'VERCEL-CONFIG-PRESENCE',
       workflowId: 'VERCEL-DRIFT-02',
-      title: 'Vercel Production required-variable presence',
+      title: 'Vercel environment metadata and Production required-variable presence',
       domain: 'vercel',
       severity: SEVERITY.P1,
       outcome: envOutcome,
       summary: envOutcome === OUTCOME.PASS
-        ? 'Governed Production variable names are present; decryption was disabled and values were ignored.'
+        ? 'Governed Production variable names are present, no Vercel environment security issues were reported, decryption was disabled and values were ignored.'
         : (envOutcome === OUTCOME.WARN
-          ? `Governed Production names are missing: ${missing.join(', ')}.`
+          ? [
+              missing.length ? `Governed Production names are missing: ${missing.join(', ')}.` : null,
+              environmentSecurityIssues.length ? `Vercel reports ${environmentSecurityIssues.length} environment metadata security issue(s).` : null,
+            ].filter(Boolean).join(' ')
           : 'Vercel environment metadata could not be inspected.'),
       evidence: [{
         id: 'VERCEL-ENV-METADATA',
@@ -196,6 +210,8 @@ export async function vercelContracts({ fetchImpl = globalThis.fetch, env = proc
         production_variable_count: productionNames.size,
         required_variable_names: GOVERNED_PRODUCTION_VARIABLE_NAMES,
         missing_variable_names: missing,
+        environment_security_issue_count: environmentSecurityIssues.length,
+        environment_security_issues: environmentSecurityIssues,
         provider_returned_value_fields: providerReturnedValueFields,
         value_fields_used_for_contract: false,
         values_persisted: false,
@@ -203,11 +219,15 @@ export async function vercelContracts({ fetchImpl = globalThis.fetch, env = proc
       }],
       remediation: envOutcome === OUTCOME.PASS ? null : {
         proposed_changes: envOutcome === OUTCOME.WARN
-          ? ['Verify the governed Production variable-name contract and add any genuinely missing names only through a separately approved Vercel configuration change.']
+          ? [
+              ...(missing.length ? ['Verify the governed Production variable-name contract and add any genuinely missing names only through a separately approved Vercel configuration change.'] : []),
+              ...(environmentSecurityIssues.length ? ['Reclassify affected credential-like environment variables through an isolated, separately approved migration without decrypting or exposing their values.'] : []),
+            ]
           : ['Provision a dedicated Vercel credential with the minimum read access available for the target project and rerun read-only evidence collection.'],
         prohibited_actions: [
           'Do not reuse the general Production Vercel credential solely to remove UNKNOWN.',
-          'Do not request decrypted environment-variable values for presence checks.',
+          'Do not request decrypted environment-variable values for presence or metadata-security checks.',
+          'Do not rotate, rename, or delete a credential solely because metadata reports an issue; first map its active consumers and prepare a reversible cutover.',
         ],
       },
     }),

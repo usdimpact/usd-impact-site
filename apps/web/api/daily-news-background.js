@@ -213,6 +213,12 @@ function canonicalUrl(value) {
   return url.toString();
 }
 
+function groundingUrlKey(value) {
+  const url = new URL(canonicalUrl(value));
+  url.hostname = url.hostname.toLowerCase().replace(/^www\./, '');
+  return url.toString();
+}
+
 function collectOpenAiText(openAiResponse) {
   const parts = [];
   for (const item of openAiResponse.output ?? []) {
@@ -289,6 +295,7 @@ export function collectRepairEvidence(openAiResponse, editionDate) {
   }
 
   const groundedUrls = collectGroundedUrls(openAiResponse);
+  const groundedUrlKeys = new Set([...groundedUrls].map(groundingUrlKey));
   const permitted = new Set();
   const missingIds = [];
   const blockedIds = [];
@@ -298,7 +305,7 @@ export function collectRepairEvidence(openAiResponse, editionDate) {
       : '(invalid-id)';
     try {
       const url = canonicalUrl(source?.url);
-      if (!groundedUrls.has(url)) missingIds.push(safeId);
+      if (!groundedUrlKeys.has(groundingUrlKey(url))) missingIds.push(safeId);
       else if (sourceDateAttributionIssue(url)) blockedIds.push(safeId);
       else permitted.add(url);
     } catch {

@@ -202,6 +202,13 @@ try {
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, 'https://api.openai.com/v1/responses');
 
+  globalThis.fetch = async () => providerResponse(openAiResponse(
+    draft(),
+    Object.values(sourceUrls).map((url) => url.replace('https://www.', 'https://')),
+  ));
+  const wwwEquivalentGrounding = await invoke(request());
+  assert.equal(wwwEquivalentGrounding.status, 200, 'www and apex source URLs must compare as the same grounded document');
+
   const requestBody = JSON.parse(calls[0].options.body);
   assert.equal(requestBody.model, 'gpt-5-test');
   assert.equal(requestBody.store, false);
@@ -210,7 +217,7 @@ try {
   assert.equal(requestBody.text.format.strict, true);
   assert.equal(requestBody.text.format.schema.properties.sources.minItems, 3);
   assert.equal(requestBody.text.format.schema.properties.sources.maxItems, 24);
-  assert.match(requestBody.input, /at least three distinct grounded sources/i);
+  assert.match(requestBody.input, /3-12 distinct grounded sources/i);
   assert.ok(requestBody.tools[0].filters.allowed_domains.includes('federalreserve.gov'));
   assert.ok(requestBody.tools[0].filters.allowed_domains.includes('reuters.com'));
 

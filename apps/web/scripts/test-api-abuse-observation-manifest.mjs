@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const root = new URL('../', import.meta.url);
 const manifest = JSON.parse(
   fs.readFileSync(new URL('../../../docs/operations/hardening-api-abuse-observation-manifest-2026-10-23.json', import.meta.url), 'utf8'),
 );
@@ -14,7 +13,7 @@ assert.equal(manifest.privacy.raw_authorization_header_persistence, false);
 assert.equal(manifest.privacy.request_body_persistence, false);
 assert.equal(manifest.privacy.email_or_account_identifier_persistence, false);
 
-const apiFiles = fs.readdirSync(new URL('../api/', root))
+const apiFiles = fs.readdirSync(new URL('../api/', import.meta.url))
   .filter((name) => name.endsWith('.js'))
   .sort();
 const excluded = new Set(manifest.excluded_generated_files || []);

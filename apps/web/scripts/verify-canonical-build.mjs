@@ -64,7 +64,7 @@ if (!fs.existsSync(sitemapPath)) {
   }
 }
 
-const noindexControls = ['/internal/ask-usd-impact', ...SEARCH_UTILITY_PATHS];
+const noindexControls = ['/internal/ask-usd-impact', '/lab/official-source-context', ...SEARCH_UTILITY_PATHS];
 for (const route of noindexControls) {
   const file = outputPath(route);
   if (!fs.existsSync(file)) {

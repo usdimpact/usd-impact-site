@@ -14,6 +14,8 @@ import {
   requestHeader,
 } from './supabase-server.js';
 
+const MAX_MARKETING_PREFERENCES_BODY_BYTES = 8 * 1024;
+
 const PURPOSE_LABELS = Object.freeze({
   weekly_newsletter: 'Weekly USD Impact email',
   learning_progress_updates: 'USD Impact learning progress updates',
@@ -55,6 +57,21 @@ function sendHtml(response, status, { heading, body, form = '' }) {
 
 function requestUrl(request) {
   return new URL(request.url || '/email/unsubscribe', 'https://usd-impact.invalid');
+}
+
+function requestBodyTooLarge(request) {
+  const declaredLength = Number.parseInt(requestHeader(request, 'content-length') || '', 10);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_MARKETING_PREFERENCES_BODY_BYTES) return true;
+
+  const body = request.body;
+  if (body && typeof body === 'object' && !Buffer.isBuffer(body)) {
+    return Buffer.byteLength(JSON.stringify(body), 'utf8') > MAX_MARKETING_PREFERENCES_BODY_BYTES;
+  }
+  if (typeof body === 'string' || Buffer.isBuffer(body)) {
+    const raw = Buffer.isBuffer(body) ? body : Buffer.from(body, 'utf8');
+    return raw.length > MAX_MARKETING_PREFERENCES_BODY_BYTES;
+  }
+  return false;
 }
 
 function parseFormBody(request) {
@@ -143,6 +160,9 @@ async function handleUnsubscribe(
 ) {
   if (!['GET', 'POST'].includes(request.method)) {
     return sendJson(response, 405, { error: 'Method not allowed.', code: 'METHOD_NOT_ALLOWED' }, { Allow: 'GET, POST' });
+  }
+  if (request.method === 'POST' && requestBodyTooLarge(request)) {
+    return sendJson(response, 413, { error: 'Request body is too large.', code: 'REQUEST_BODY_TOO_LARGE' });
   }
 
   const token = tokenFromRequest(request);

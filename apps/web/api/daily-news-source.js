@@ -250,7 +250,7 @@ function collectGroundedUrls(openAiResponse) {
   const add = (value) => {
     if (typeof value !== 'string') return;
     try {
-      urls.add(groundingUrlKey(value));
+      urls.add(canonicalUrl(value));
     } catch {
       // Ignore malformed provider metadata; model output still fails if it references it.
     }
@@ -323,13 +323,14 @@ function validateAndNormalizeDraft(draft, groundedUrls, editionDate, generatedAt
 
   const sourceIds = new Set();
   const sourceUrls = new Set();
+  const groundedUrlKeys = new Set([...groundedUrls].map(groundingUrlKey));
   const sources = rawSources.map((source) => {
     const id = requiredString(source, 'id', 64);
     if (!SOURCE_ID_PATTERN.test(id)) throw new Error(`Invalid source id: ${id}`);
     if (sourceIds.has(id)) throw new Error(`Duplicate source id: ${id}`);
     sourceIds.add(id);
     const url = canonicalUrl(requiredString(source, 'url', 2000));
-    if (!groundedUrls.has(groundingUrlKey(url))) throw new Error(`Source ${id} was not returned by OpenAI web search`);
+    if (!groundedUrlKeys.has(groundingUrlKey(url))) throw new Error(`Source ${id} was not returned by OpenAI web search`);
     if (sourceUrls.has(url)) throw new Error(`Duplicate source URL: ${url}`);
     sourceUrls.add(url);
     const classification = sourceClassification(url);

@@ -31,6 +31,10 @@ function analyzeRulesets(details, branch) {
   let nonFastForwardProtected = false;
   let strictRequiredStatusChecks = false;
   let bypassActorCount = 0;
+  let requiredApprovingReviewCount = 0;
+  let requireCodeOwnerReview = false;
+  let requireLastPushApproval = false;
+  let dismissStaleReviewsOnPush = false;
   const currentUserCanBypass = new Set();
 
   for (const ruleset of applicable) {
@@ -42,7 +46,17 @@ function analyzeRulesets(details, branch) {
       if (rule?.type === 'non_fast_forward') nonFastForwardProtected = true;
       if (rule?.type === 'pull_request') {
         pullRequestRequired = true;
-        if (rule?.parameters?.required_review_thread_resolution === true) reviewThreadResolutionRequired = true;
+        const parameters = rule?.parameters || {};
+        if (parameters.required_review_thread_resolution === true) reviewThreadResolutionRequired = true;
+        requiredApprovingReviewCount = Math.max(
+          requiredApprovingReviewCount,
+          Number.isFinite(Number(parameters.required_approving_review_count))
+            ? Number(parameters.required_approving_review_count)
+            : 0,
+        );
+        if (parameters.require_code_owner_review === true) requireCodeOwnerReview = true;
+        if (parameters.require_last_push_approval === true) requireLastPushApproval = true;
+        if (parameters.dismiss_stale_reviews_on_push === true) dismissStaleReviewsOnPush = true;
       }
       if (rule?.type === 'required_status_checks') {
         if (rule?.parameters?.strict_required_status_checks_policy === true) strictRequiredStatusChecks = true;
@@ -60,6 +74,7 @@ function analyzeRulesets(details, branch) {
     && expectedContextsPresent
     && strictRequiredStatusChecks
     && pullRequestRequired
+    && requiredApprovingReviewCount >= 1
     && reviewThreadResolutionRequired
     && deletionProtected
     && nonFastForwardProtected
@@ -71,6 +86,11 @@ function analyzeRulesets(details, branch) {
     requiredContexts: [...requiredContexts].sort(),
     expectedContextsPresent,
     pullRequestRequired,
+    requiredApprovingReviewCount,
+    independentApprovalRequired: requiredApprovingReviewCount >= 1,
+    requireCodeOwnerReview,
+    requireLastPushApproval,
+    dismissStaleReviewsOnPush,
     reviewThreadResolutionRequired,
     deletionProtected,
     nonFastForwardProtected,
@@ -139,8 +159,8 @@ async function rulesetProtection({ fetchImpl, headers, repository, branch, legac
   const analysis = analyzeRulesets(details, branch);
   const outcome = analysis.protectedEnough ? OUTCOME.PASS : OUTCOME.WARN;
   const summary = analysis.protectedEnough
-    ? 'Active default-branch ruleset evidence confirms required checks, PR enforcement, resolved review threads, and destructive-ref protections.'
-    : 'Default-branch rulesets were read, but one or more expected protection controls are not affirmative.';
+    ? 'Active default-branch ruleset evidence confirms required checks, PR enforcement, at least one independent approval, resolved review threads, and destructive-ref protections.'
+    : 'Default-branch rulesets were read, but one or more expected protection controls are not affirmative, including the independent-approval gate when absent.';
 
   return {
     outcome,
@@ -159,6 +179,11 @@ async function rulesetProtection({ fetchImpl, headers, repository, branch, legac
       expected_required_contexts: [...EXPECTED_REQUIRED_CONTEXTS],
       expected_contexts_present: analysis.expectedContextsPresent,
       pull_request_required: analysis.pullRequestRequired,
+      required_approving_review_count: analysis.requiredApprovingReviewCount,
+      independent_approval_required: analysis.independentApprovalRequired,
+      code_owner_review_required: analysis.requireCodeOwnerReview,
+      last_push_approval_required: analysis.requireLastPushApproval,
+      dismiss_stale_reviews_on_push: analysis.dismissStaleReviewsOnPush,
       review_thread_resolution_required: analysis.reviewThreadResolutionRequired,
       strict_required_status_checks: analysis.strictRequiredStatusChecks,
       force_push_protected: analysis.nonFastForwardProtected,

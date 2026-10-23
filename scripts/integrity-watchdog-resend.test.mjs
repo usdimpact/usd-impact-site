@@ -39,6 +39,12 @@ const liveShape = await resendContracts({
     if (String(url).endsWith('/domains')) {
       return reply(JSON.stringify({ data: [{ name: 'updates.usd-impact.com', status: 'verified', region: 'us-east-1' }] }), 200, String(url));
     }
+    if (String(url).includes('/api-keys')) {
+      return reply(JSON.stringify({ data: [
+        { id: 'key-a', name: 'USD Impact Watchdog Read Evidence' },
+        { id: 'key-b', name: 'RESEND_API_KEY' },
+      ] }), 200, String(url));
+    }
     return reply(JSON.stringify({ data: [
       {
         status: 'enabled',
@@ -59,7 +65,12 @@ assert.equal(liveShape[0].evidence[0].enabled_webhook_count, 1);
 assert.equal(liveShape[0].evidence[0].disabled_webhook_count, 1);
 assert.equal(liveShape[0].evidence[0].matching_enabled_webhook_count, 1);
 assert.equal(liveShape[0].evidence[0].webhook_urls_collected, false);
-assert.deepEqual(methods, ['GET', 'GET']);
+assert.equal(liveShape[0].evidence[0].api_key_inventory_conclusive, true);
+assert.equal(liveShape[0].evidence[0].api_key_count, 2);
+assert.deepEqual(liveShape[0].evidence[0].api_key_names, ['RESEND_API_KEY', 'USD Impact Watchdog Read Evidence']);
+assert.equal(liveShape[0].evidence[0].api_key_ids_collected, false);
+assert.equal(liveShape[0].evidence[0].api_key_values_collected, false);
+assert.deepEqual(methods, ['GET', 'GET', 'GET']);
 assert.doesNotMatch(JSON.stringify(liveShape), /credential-like-value/);
 
 const disabledOnly = await resendContracts({
@@ -72,6 +83,9 @@ const disabledOnly = await resendContracts({
   fetchImpl: async (url) => {
     if (String(url).endsWith('/domains')) {
       return reply(JSON.stringify({ data: [{ name: 'updates.usd-impact.com', status: 'verified' }] }), 200, String(url));
+    }
+    if (String(url).includes('/api-keys')) {
+      return reply(JSON.stringify({ data: [{ id: 'key-a', name: 'RESEND_API_KEY' }] }), 200, String(url));
     }
     return reply(JSON.stringify({ data: [{
       status: 'disabled',

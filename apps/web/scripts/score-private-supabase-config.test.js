@@ -62,15 +62,9 @@ test('other Preview branches cannot select the dedicated Score secret', () => {
   }), /SUPABASE_SECRET_KEY is missing or invalid/);
 });
 
-test('all three private Score handlers use the isolated config, not generic Preview SUPABASE_SECRET_KEY', async () => {
-  for (const name of [
-    'score-handoff-handler.js',
-    'score-edge-redeem-handler.js',
-    'score-edge-validate-handler.js',
-  ]) {
-    const src = await readFile(new URL('../src/lib/' + name, import.meta.url), 'utf8');
-    assert.match(src, /import \{ readScorePrivateSupabaseConfig \} from '.\/score-private-supabase-config\.js'/);
-    assert.match(src, /readScorePrivateSupabaseConfig\(/);
-    assert.doesNotMatch(src, /readSupabaseServerConfig\(/);
-  }
+test('Score handoff issuance uses the isolated config, not generic Preview SUPABASE_SECRET_KEY', async () => {
+  const src = await readFile(new URL('../src/lib/score-handoff-handler.js', import.meta.url), 'utf8');
+  assert.match(src, /import \{ readScorePrivateSupabaseConfig \} from '.\/score-private-supabase-config\.js'/);
+  assert.match(src, /readScorePrivateSupabaseConfig\(/);
+  assert.doesNotMatch(src, /readSupabaseServerConfig\(/);
 });

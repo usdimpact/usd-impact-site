@@ -1,4 +1,4 @@
-import { OUTCOME, SEVERITY, result, sha256 } from './integrity-watchdog-policy.mjs';
+import { OUTCOME, SEVERITY, result } from './integrity-watchdog-policy.mjs';
 import { jsonRequest } from './integrity-watchdog-provider-common.mjs';
 
 const DEFAULT_DOMAIN = 'updates.usd-impact.com';
@@ -78,9 +78,7 @@ export async function resendContracts({ fetchImpl = globalThis.fetch, env = proc
     : enabledWebhooks;
   const subscribed = new Set(matchingEnabledWebhooks.flatMap((entry) => entry.events || []));
   const missing = REQUIRED_EVENTS.filter((name) => !subscribed.has(name));
-  const apiKeys = Array.isArray(apiKeysData.json?.data) ? apiKeysData.json.data : [];
-  const apiKeyNames = apiKeys.map((entry) => String(entry?.name || '')).filter(Boolean).sort();
-  const apiKeyIdentityHashes = apiKeyNames.map((name) => sha256(name)).sort();
+  const credentialRecords = Array.isArray(apiKeysData.json?.data) ? apiKeysData.json.data : [];
   const metadataConclusive = domainsData.observation.status === 200 && webhooksData.observation.status === 200;
   const apiKeyInventoryConclusive = apiKeysData.observation.status === 200;
   const domainVerified = Boolean(domain && String(domain.status).toLowerCase() === 'verified');
@@ -126,8 +124,7 @@ export async function resendContracts({ fetchImpl = globalThis.fetch, env = proc
       covered_lifecycle_events: REQUIRED_EVENTS.filter((name) => subscribed.has(name)),
       missing_lifecycle_events: missing,
       credential_inventory_conclusive: apiKeyInventoryConclusive,
-      credential_count: apiKeyNames.length,
-      credential_identity_sha256: apiKeyIdentityHashes,
+      credential_count: credentialRecords.length,
       credential_names_collected: false,
       credential_ids_collected: false,
       credential_values_collected: false,

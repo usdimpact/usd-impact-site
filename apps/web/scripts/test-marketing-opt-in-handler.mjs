@@ -73,6 +73,46 @@ function jsonRequest(body, overrides = {}) {
 }
 
 {
+  let called = false;
+  const response = mockResponse();
+  await handleMarketingOptInRequest(
+    jsonRequest({
+      email,
+      consent: true,
+      purpose: 'weekly_newsletter',
+      requestId,
+      padding: 'x'.repeat(9 * 1024),
+    }),
+    response,
+    {
+      environment: enabledEnvironment,
+      prepare: async () => { called = true; },
+    },
+  );
+  assert.equal(response.statusCode, 413);
+  assert.equal(JSON.parse(response.body).code, 'REQUEST_BODY_TOO_LARGE');
+  assert.equal(called, false);
+}
+
+{
+  const response = mockResponse();
+  await handleMarketingOptInRequest(
+    jsonRequest(
+      { email, consent: true, purpose: 'weekly_newsletter', requestId },
+      { headers: {
+        'content-type': 'application/json',
+        'sec-fetch-site': 'same-origin',
+        'content-length': String(16 * 1024),
+      } },
+    ),
+    response,
+    { environment: enabledEnvironment },
+  );
+  assert.equal(response.statusCode, 413);
+  assert.equal(JSON.parse(response.body).code, 'REQUEST_BODY_TOO_LARGE');
+}
+
+{
   let captured = null;
   const response = mockResponse();
   await handleMarketingOptInRequest(
@@ -207,6 +247,24 @@ function jsonRequest(body, overrides = {}) {
   );
   assert.equal(response.statusCode, 400);
   assert.match(response.body, /OPT_IN_CONFIRMATION_REQUIRED/);
+}
+
+{
+  const response = mockResponse();
+  await handleMarketingOptInConfirmation(
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        'sec-fetch-site': 'same-origin',
+      },
+      body: `token=m1.test&Email-Opt-In=Confirm&padding=${'x'.repeat(9 * 1024)}`,
+    },
+    response,
+    { confirm: async () => assert.fail('Oversized confirmation must not reach the consent writer.') },
+  );
+  assert.equal(response.statusCode, 413);
+  assert.equal(JSON.parse(response.body).code, 'REQUEST_BODY_TOO_LARGE');
 }
 
 {

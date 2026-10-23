@@ -1,7 +1,7 @@
 import { OUTCOME, SEVERITY, result } from './integrity-watchdog-policy.mjs';
 import { observe } from './integrity-watchdog-http.mjs';
 
-const EXPECTED_REQUIRED_CONTEXTS = Object.freeze(['validate-and-build', 'Dependency review']);
+const EXPECTED_REQUIRED_CONTEXTS = Object.freeze(['validate-and-build', 'Dependency review', 'CodeQL']);
 
 async function jsonRequest(args) {
   const observation = await observe(args);

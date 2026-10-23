@@ -23,6 +23,7 @@ import {
 
 const RESEND_API = 'https://api.resend.com';
 const EMAIL_MAX_LENGTH = 254;
+const MAX_WAITLIST_JSON_BYTES = 8 * 1024;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function requestHeader(request, name) {
@@ -87,15 +88,32 @@ function sendUnsubscribeGuardError(request, response, { status, code }) {
 </html>`);
 }
 
+function waitlistBodyTooLargeError() {
+  const error = new Error('Request body is too large.');
+  error.code = 'REQUEST_BODY_TOO_LARGE';
+  return error;
+}
+
 function requestBody(request) {
+  const declaredLength = Number.parseInt(requestHeader(request, 'content-length') || '', 10);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_WAITLIST_JSON_BYTES) {
+    throw waitlistBodyTooLargeError();
+  }
+
   const body = request.body;
 
   if (body && typeof body === 'object' && !Buffer.isBuffer(body)) {
+    const encoded = JSON.stringify(body);
+    if (Buffer.byteLength(encoded, 'utf8') > MAX_WAITLIST_JSON_BYTES) {
+      throw waitlistBodyTooLargeError();
+    }
     return body;
   }
 
   if (typeof body === 'string' || Buffer.isBuffer(body)) {
-    return JSON.parse(body.toString());
+    const raw = Buffer.isBuffer(body) ? body : Buffer.from(body, 'utf8');
+    if (raw.length > MAX_WAITLIST_JSON_BYTES) throw waitlistBodyTooLargeError();
+    return JSON.parse(raw.toString('utf8'));
   }
 
   throw new TypeError('Request body is missing or invalid.');
@@ -231,7 +249,13 @@ export default async function handler(request, response) {
   let payload;
   try {
     payload = requestBody(request);
-  } catch {
+  } catch (error) {
+    if (error?.code === 'REQUEST_BODY_TOO_LARGE') {
+      return sendJson(response, {
+        error: 'Request body is too large.',
+        code: 'REQUEST_BODY_TOO_LARGE',
+      }, 413);
+    }
     return sendJson(response, { error: 'Invalid request body.' }, 400);
   }
 

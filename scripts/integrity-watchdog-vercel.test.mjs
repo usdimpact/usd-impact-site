@@ -85,7 +85,58 @@ assert.equal(config.evidence[0].value_fields_used_for_contract, false);
 assert.equal(config.evidence[0].values_persisted, false);
 assert.equal(config.evidence[0].production_variable_count, 3);
 assert.deepEqual(config.evidence[0].missing_variable_names, []);
+assert.equal(config.evidence[0].environment_security_issue_count, 0);
+assert.deepEqual(config.evidence[0].environment_security_issues, []);
 assert.doesNotMatch(JSON.stringify(direct), new RegExp(runtimeSecretShape));
 assert.doesNotMatch(JSON.stringify(direct), /runtime-value-not-for-evidence/);
+
+const metadataIssue = await vercelContracts({
+  env: {
+    USDIMPACT_WATCHDOG_VERCEL_TOKEN: 'dedicated-read-token-for-test',
+    USDIMPACT_WATCHDOG_VERCEL_PROJECT_ID: projectId,
+    USDIMPACT_WATCHDOG_VERCEL_TEAM_ID: teamId,
+  },
+  expectedGitSha: exactHead,
+  fetchImpl: async (url) => {
+    const requestUrl = String(url);
+    if (requestUrl.includes(`/v9/projects/${projectId}?`)) {
+      return reply(JSON.stringify({ id: projectId, name: 'usd-impact-site' }), 200, {}, requestUrl);
+    }
+    if (requestUrl.includes('/v13/deployments?')) {
+      return reply(JSON.stringify({
+        deployments: [{ uid: 'dpl_watchdog_test', state: 'READY', meta: { githubCommitSha: exactHead } }],
+      }), 200, {}, requestUrl);
+    }
+    if (requestUrl.includes(`/v10/projects/${projectId}/env?`)) {
+      return reply(JSON.stringify({
+        envs: [
+          { key: 'OPENAI_API_KEY', target: ['production'], value: runtimeSecretShape, securityIssues: [] },
+          { key: 'NEWSFEED_BEARER_TOKEN', target: ['production'], value: 'runtime-value-not-for-evidence', securityIssues: [] },
+          { key: 'RESEND_API_KEY', target: ['production'], value: runtimeSecretShape, securityIssues: [] },
+          {
+            key: 'SCORE_EDGE_SHARED_SECRET',
+            target: ['preview'],
+            gitBranch: 'feat/score-membership-handoff-147',
+            value: runtimeSecretShape,
+            securityIssues: ['readable-secret'],
+          },
+        ],
+      }), 200, {}, requestUrl);
+    }
+    return reply('{}', 404, {}, requestUrl);
+  },
+});
+
+const issueConfig = metadataIssue.find((entry) => entry.id === 'VERCEL-CONFIG-PRESENCE');
+assert.equal(issueConfig.outcome, 'WARN');
+assert.equal(issueConfig.evidence[0].environment_security_issue_count, 1);
+assert.deepEqual(issueConfig.evidence[0].environment_security_issues, [{
+  key: 'SCORE_EDGE_SHARED_SECRET',
+  issue: 'readable-secret',
+  targets: ['preview'],
+  git_branch: 'feat/score-membership-handoff-147',
+}]);
+assert.doesNotMatch(JSON.stringify(metadataIssue), new RegExp(runtimeSecretShape));
+assert.doesNotMatch(JSON.stringify(metadataIssue), /runtime-value-not-for-evidence/);
 
 console.log('USD Impact Vercel watchdog read-boundary tests passed.');

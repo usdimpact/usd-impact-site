@@ -61,11 +61,14 @@ const direct = await vercelContracts({
         ],
       }), 200, {}, requestUrl);
     }
+    if (requestUrl.includes('/v1/security/firewall/config/active?')) {
+      return reply(JSON.stringify({ firewallEnabled: true, rules: [], rulesets: [] }), 200, {}, requestUrl);
+    }
     return reply('{}', 404, {}, requestUrl);
   },
 });
 
-assert.equal(requests.length, 3);
+assert.equal(requests.length, 4);
 assert.deepEqual(new Set(requests.map((entry) => entry.method)), new Set(['GET']));
 assert.ok(requests.some((entry) => entry.url.includes('/v13/deployments?')));
 const envRequest = requests.find((entry) => entry.url.includes('/v10/projects/'));
@@ -87,6 +90,12 @@ assert.equal(config.evidence[0].production_variable_count, 3);
 assert.deepEqual(config.evidence[0].missing_variable_names, []);
 assert.equal(config.evidence[0].environment_security_issue_count, 0);
 assert.deepEqual(config.evidence[0].environment_security_issues, []);
+assert.equal(config.evidence[0].firewall_response_status, 200);
+assert.equal(config.evidence[0].firewall_config_present, true);
+assert.equal(config.evidence[0].firewall_enabled, true);
+assert.equal(config.evidence[0].firewall_custom_rule_count, 0);
+assert.equal(config.evidence[0].firewall_ruleset_count, 0);
+assert.equal(config.evidence[0].firewall_observation_material, false);
 assert.doesNotMatch(JSON.stringify(direct), new RegExp(runtimeSecretShape));
 assert.doesNotMatch(JSON.stringify(direct), /runtime-value-not-for-evidence/);
 
@@ -130,6 +139,10 @@ const metadataIssue = await vercelContracts({
 const issueConfig = metadataIssue.find((entry) => entry.id === 'VERCEL-CONFIG-PRESENCE');
 assert.equal(issueConfig.outcome, 'WARN');
 assert.equal(issueConfig.evidence[0].environment_security_issue_count, 1);
+assert.equal(issueConfig.evidence[0].firewall_response_status, 404);
+assert.equal(issueConfig.evidence[0].firewall_config_present, false);
+assert.equal(issueConfig.evidence[0].firewall_enabled, null);
+assert.equal(issueConfig.evidence[0].firewall_observation_material, false);
 assert.deepEqual(issueConfig.evidence[0].environment_security_issues, [{
   key: 'SCORE_EDGE_SHARED_SECRET',
   issue: 'readable-secret',

@@ -49,12 +49,14 @@ function request({
   contentType = '',
   accept = 'text/html',
   body,
+  contentLength = '',
 } = {}) {
   return {
     method,
     url,
     headers: {
       ...(contentType ? { 'content-type': contentType } : {}),
+      ...(contentLength ? { 'content-length': contentLength } : {}),
       accept,
     },
     body,
@@ -236,6 +238,41 @@ try {
     }));
     assert.equal(response.statusCode, 400);
     assert.equal(JSON.parse(response.body).code, 'CONFIRMATION_REQUIRED');
+    assert.equal(fetchCount, 0);
+  }
+
+  {
+    let fetchCount = 0;
+    globalThis.fetch = async () => {
+      fetchCount += 1;
+      throw new Error('Oversized POST must not query providers.');
+    };
+    const response = await invoke(request({
+      method: 'POST',
+      contentType: 'application/x-www-form-urlencoded',
+      accept: 'application/json',
+      body: `List-Unsubscribe=One-Click&padding=${'x'.repeat(9 * 1024)}`,
+    }));
+    assert.equal(response.statusCode, 413);
+    assert.equal(JSON.parse(response.body).code, 'REQUEST_BODY_TOO_LARGE');
+    assert.equal(fetchCount, 0);
+  }
+
+  {
+    let fetchCount = 0;
+    globalThis.fetch = async () => {
+      fetchCount += 1;
+      throw new Error('Declared oversized POST must not query providers.');
+    };
+    const response = await invoke(request({
+      method: 'POST',
+      contentType: 'application/x-www-form-urlencoded',
+      accept: 'application/json',
+      contentLength: String(16 * 1024),
+      body: 'List-Unsubscribe=One-Click',
+    }));
+    assert.equal(response.statusCode, 413);
+    assert.equal(JSON.parse(response.body).code, 'REQUEST_BODY_TOO_LARGE');
     assert.equal(fetchCount, 0);
   }
 

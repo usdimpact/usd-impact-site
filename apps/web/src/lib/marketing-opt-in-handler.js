@@ -14,6 +14,7 @@ import {
 } from './supabase-server.js';
 
 const EMAIL_MAX_LENGTH = 254;
+const MAX_MARKETING_EMAIL_BODY_BYTES = 8 * 1024;
 const PURPOSE_SET = new Set(MARKETING_OPT_IN_PURPOSES);
 
 function sendJson(response, status, body, extraHeaders = {}) {
@@ -47,6 +48,28 @@ function sendHtml(response, status, { heading, body }) {
     "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'",
   );
   response.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${escapeHtml(heading)} | USD Impact</title></head><body style="margin:0;background:#f5f6f8;color:#161a1f;font-family:Arial,Helvetica,sans-serif;"><main style="min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box;"><section style="width:min(620px,100%);background:#fff;border:1px solid #e6e9ed;padding:36px;box-sizing:border-box;"><p style="margin:0 0 12px;color:#8a6b32;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">USD Impact</p><h1 style="margin:0 0 18px;color:#071a33;font-size:32px;line-height:1.2;">${escapeHtml(heading)}</h1><p style="margin:0;color:#5a6472;font-size:17px;line-height:1.65;">${escapeHtml(body)}</p></section></main></body></html>`);
+}
+
+function requestBodyTooLarge(request) {
+  const declaredLength = Number.parseInt(requestHeader(request, 'content-length') || '', 10);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_MARKETING_EMAIL_BODY_BYTES) return true;
+
+  const body = request.body;
+  if (body && typeof body === 'object' && !Buffer.isBuffer(body)) {
+    return Buffer.byteLength(JSON.stringify(body), 'utf8') > MAX_MARKETING_EMAIL_BODY_BYTES;
+  }
+  if (typeof body === 'string' || Buffer.isBuffer(body)) {
+    const raw = Buffer.isBuffer(body) ? body : Buffer.from(body, 'utf8');
+    return raw.length > MAX_MARKETING_EMAIL_BODY_BYTES;
+  }
+  return false;
+}
+
+function bodyTooLargeResponse(response) {
+  return sendJson(response, 413, {
+    error: 'Request body is too large.',
+    code: 'REQUEST_BODY_TOO_LARGE',
+  });
 }
 
 function parseJsonBody(request) {
@@ -115,6 +138,7 @@ export async function handleMarketingOptInRequest(
     return sendJson(response, 404, { error: 'Email subscription requests are not enabled.', code: 'OPT_IN_REQUEST_DISABLED' });
   }
   if (!ensureSameSite(request, response)) return undefined;
+  if (requestBodyTooLarge(request)) return bodyTooLargeResponse(response);
   if (!requestHeader(request, 'content-type').includes('application/json')) {
     return sendJson(response, 415, { error: 'Content type must be application/json.', code: 'INVALID_CONTENT_TYPE' });
   }
@@ -217,6 +241,7 @@ export async function handleMarketingOptInConfirmation(
     return sendJson(response, 405, { error: 'Method not allowed.', code: 'METHOD_NOT_ALLOWED' }, { Allow: 'POST' });
   }
   if (!ensureSameSite(request, response)) return undefined;
+  if (requestBodyTooLarge(request)) return bodyTooLargeResponse(response);
 
   const contentType = requestHeader(request, 'content-type').toLowerCase();
   let body;

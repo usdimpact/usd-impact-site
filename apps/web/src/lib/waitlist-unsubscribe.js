@@ -16,6 +16,7 @@ const TOKEN_HASH_PATTERN = /^[0-9a-f]{64}$/;
 const TOKEN_SIGNATURE_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 const SECRET_PATTERN = /^wus_[A-Za-z0-9_-]{43,}$/;
 const TOKEN_MAX_LENGTH = 160;
+const MAX_WAITLIST_UNSUBSCRIBE_BODY_BYTES = 8 * 1024;
 const RESEND_API = 'https://api.resend.com';
 
 export class WaitlistUnsubscribeError extends Error {
@@ -179,6 +180,21 @@ function assertWriteTarget(config, environment) {
 
 function requestUrl(request) {
   return new URL(request.url || '/unsubscribe', 'https://usd-impact.invalid');
+}
+
+function requestBodyTooLarge(request) {
+  const declaredLength = Number.parseInt(requestHeader(request, 'content-length') || '', 10);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_WAITLIST_UNSUBSCRIBE_BODY_BYTES) return true;
+
+  const body = request.body;
+  if (body && typeof body === 'object' && !Buffer.isBuffer(body)) {
+    return Buffer.byteLength(JSON.stringify(body), 'utf8') > MAX_WAITLIST_UNSUBSCRIBE_BODY_BYTES;
+  }
+  if (typeof body === 'string' || Buffer.isBuffer(body)) {
+    const raw = Buffer.isBuffer(body) ? body : Buffer.from(body, 'utf8');
+    return raw.length > MAX_WAITLIST_UNSUBSCRIBE_BODY_BYTES;
+  }
+  return false;
 }
 
 function tokenFromRequest(request) {
@@ -521,6 +537,14 @@ export async function handleWaitlistUnsubscribe(request, response, options = {})
       request,
       response,
       new WaitlistUnsubscribeError('Method not allowed.', 'METHOD_NOT_ALLOWED', 405),
+    );
+  }
+
+  if (requestBodyTooLarge(request)) {
+    return sendError(
+      request,
+      response,
+      new WaitlistUnsubscribeError('Request body is too large.', 'REQUEST_BODY_TOO_LARGE', 413),
     );
   }
 

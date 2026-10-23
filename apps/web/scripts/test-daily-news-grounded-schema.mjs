@@ -203,11 +203,18 @@ const makeFakeProvider = (urlsInLedger, metadata = testSourceUrls) => ({
 });
 const incomplete = makeFakeProvider(testSourceUrls.slice(0, 2));
 const normal = makeFakeProvider(testSourceUrls);
+const wwwEquivalent = makeFakeProvider(
+  testSourceUrls,
+  testSourceUrls.map((url) => url.replace('https://www.', 'https://')),
+);
 const ungrounded = makeFakeProvider([...testSourceUrls.slice(0, 2), 'https://example.invalid/not-searched']);
 assert.deepEqual(assessBoundedRepairFeasibility(incomplete, '2026-10-22'), {
   canRepair: false, groundedCount: 3, retainedCount: 2,
 });
 assert.deepEqual(assessBoundedRepairFeasibility(normal, '2026-10-22'), {
+  canRepair: true, groundedCount: 3, retainedCount: 3,
+});
+assert.deepEqual(assessBoundedRepairFeasibility(wwwEquivalent, '2026-10-22'), {
   canRepair: true, groundedCount: 3, retainedCount: 3,
 });
 assert.deepEqual(assessBoundedRepairFeasibility(ungrounded, '2026-10-22'), {

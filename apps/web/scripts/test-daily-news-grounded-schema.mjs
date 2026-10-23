@@ -301,4 +301,81 @@ try {
   else process.env.OPENAI_API_KEY = oldKey;
 }
 
+
+
+// Regression: if the first bounded repair itself prunes the source ledger below
+// the three-source floor, stop immediately instead of purchasing a second repair.
+const degradedRepairCalls = [];
+try {
+  process.env.NEWSFEED_BEARER_TOKEN = 'test-bearer-only';
+  process.env.OPENAI_API_KEY = 'test-dummy-key-only';
+
+  const original = makeFakeProvider(testSourceUrls);
+  const degradedDraft = {
+    marketRegime: 'Synthetic test only',
+    summary: 'Upcoming CPI remains on the watchlist.',
+    highlights: [],
+    catalysts: [],
+    sources: testSourceUrls.slice(0, 2).map((url, index) => ({
+      id: 'synthetic-' + (index + 1),
+      title: 'Synthetic source ' + (index + 1),
+      url,
+      publishedAt: '2026-10-22',
+    })),
+    body: 'Synthetic test copy.',
+  };
+  const degradedRepair = {
+    id: 'resp_repair1234567',
+    status: 'completed',
+    output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify(degradedDraft) }] }],
+  };
+
+  globalThis.fetch = async (url, options = {}) => {
+    degradedRepairCalls.push({ url: String(url), method: options.method ?? 'GET' });
+    if ((options.method ?? 'GET') === 'GET') {
+      return new Response(JSON.stringify(original), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(JSON.stringify(degradedRepair), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    });
+  };
+
+  const req = {
+    method: 'GET',
+    url: '/api/daily-news-background',
+    headers: {
+      authorization: 'Bearer test-bearer-only',
+      'x-usd-impact-edition-date': '2026-10-22',
+      'x-usd-impact-response-id': 'resp_test1234567',
+    },
+  };
+  const recorded = {
+    statusCode: 200,
+    headers: {},
+    body: '',
+    setHeader(key, value) { this.headers[String(key).toLowerCase()] = value; },
+    end(value) { this.body = value; },
+  };
+
+  await backgroundHandler(req, recorded);
+  assert.equal(recorded.statusCode, 502);
+  const payload = JSON.parse(recorded.body);
+  assert.equal(payload.code, 'insufficient-grounded-sources');
+  assert.equal(payload.repairAttempts, 1);
+  assert.equal(payload.usableSourceCount, 2);
+  assert.equal(
+    degradedRepairCalls.filter((call) => call.method === 'POST').length,
+    1,
+    'a degraded first repair must not trigger a second paid repair request',
+  );
+} finally {
+  globalThis.fetch = oldFetch;
+  if (oldToken == null) delete process.env.NEWSFEED_BEARER_TOKEN;
+  else process.env.NEWSFEED_BEARER_TOKEN = oldToken;
+  if (oldKey == null) delete process.env.OPENAI_API_KEY;
+  else process.env.OPENAI_API_KEY = oldKey;
+}
+
 console.log('daily grounded schema contract pass');

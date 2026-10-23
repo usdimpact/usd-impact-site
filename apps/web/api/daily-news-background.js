@@ -642,6 +642,21 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
       }
       currentReason = repaired.reason;
       console.error(`Daily news bundle repair attempt ${attempt} still failed validation: ${currentReason}`);
+      if (attempt < MAX_REPAIR_ATTEMPTS) {
+        const nextFeasibility = assessBoundedRepairFeasibility(candidate, date);
+        if (!nextFeasibility.canRepair) {
+          console.error(`Daily news repaired source-ledger HOLD: grounded=${nextFeasibility.groundedCount}, usable=${nextFeasibility.retainedCount}; skipping futile follow-up repair.`);
+          return sendJson(response, {
+            code: 'insufficient-grounded-sources',
+            error: 'The repaired source ledger cannot support another source-preserving repair.',
+            initialValidationReason: initial.reason,
+            repairValidationReason: currentReason,
+            groundedSourceCount: nextFeasibility.groundedCount,
+            usableSourceCount: nextFeasibility.retainedCount,
+            repairAttempts: attempt,
+          }, 502);
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'unknown error';
       console.error(`Daily news bundle repair attempt ${attempt} failed: ${message}`);

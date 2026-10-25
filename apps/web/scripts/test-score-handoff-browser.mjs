@@ -77,5 +77,7 @@ test('page uses standalone POST redemption on the Score origin, never iframe coo
   assert.match(html, /standalone page after verifying/);
   assert.doesNotMatch(html, /location\.(?:href|assign|replace)\s*\(?.*ticket/);
   assert.doesNotMatch(html, /(?:localStorage|sessionStorage|postMessage)\s*\(/);
-  assert.match(csp, /form-action 'self' \$\{scorePipelineOrigin\}/);
+  assert.match(csp, /resolveScoreStageEOrigin/);
+  assert.match(csp, /const scoreFormActions = \["'self'", scorePipelineOrigin, stageEHandoffOrigin\]/);
+  assert.match(csp, /form-action \$\{scoreFormActions\}/);
 });

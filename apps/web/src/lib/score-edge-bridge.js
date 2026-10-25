@@ -7,7 +7,8 @@ import { redeemScoreHandoff, authorizeScoreSession } from './score-redemption.js
 const SHARED_SECRET_RE = /^[A-Za-z0-9_-]{43,128}$/;
 const OPAQUE_RE = /^[A-Za-z0-9_-]{43}$/;
 const MAX_BODY_BYTES = 512;
-const EXACT_PATH = '/api/score-edge';
+const EXACT_PATH = '/api/account';
+const EXACT_ACTION = 'score-edge';
 
 function readPrivateConfig(environment) {
   let url;
@@ -88,7 +89,8 @@ export async function handleScoreEdgeBridge(request, response, dependencies = {}
   } catch {
     return deny(response, 400, 'INVALID_REQUEST');
   }
-  if (url.pathname !== EXACT_PATH || url.search || url.hash) {
+  if (url.pathname !== EXACT_PATH || url.hash ||
+      url.searchParams.size !== 1 || url.searchParams.get('action') !== EXACT_ACTION) {
     return deny(response, 404, 'SCORE_EDGE_ROUTE_NOT_FOUND');
   }
 

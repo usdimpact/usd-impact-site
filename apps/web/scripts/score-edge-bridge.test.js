@@ -19,7 +19,7 @@ function response() {
 
 function request({
   method = 'POST',
-  url = '/api/score-edge',
+  url = '/api/account?action=score-edge',
   secret = sharedSecret,
   contentType = 'application/json',
   body = { action: 'redeem', ticket },
@@ -94,10 +94,11 @@ test('Preview environment cannot activate Production bridge', async () => {
   assert.equal(result.payload.code, 'SCORE_EDGE_DISABLED');
 });
 
-test('only POST on exact path without query is accepted', async () => {
+test('only POST on exact account action route is accepted', async () => {
   assert.equal((await run({ method: 'GET' })).status, 405);
-  assert.equal((await run({ url: '/api/score-edge?debug=1' })).status, 404);
-  assert.equal((await run({ url: '/api/account' })).status, 404);
+  assert.equal((await run({ url: '/api/account?action=score-edge&debug=1' })).status, 404);
+  assert.equal((await run({ url: '/api/account?action=other' })).status, 404);
+  assert.equal((await run({ url: '/api/score-edge?action=score-edge' })).status, 404);
 });
 
 test('wrong shared secret fails before redemption', async () => {

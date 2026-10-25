@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FrameworkEvidenceChain from '../components/FrameworkEvidenceChain.astro';
-import { resolveScorePipelineOrigin, scorePipelineUrl } from '../lib/score-pipeline-origin.js';
+import { resolveScorePipelineOrigin, resolveScoreStageEOrigin, scorePipelineUrl } from '../lib/score-pipeline-origin.js';
 
 const latestWeeklyReport = (await getCollection('weeklyReports'))
   .filter((entry) => entry.data.status === 'published')
@@ -15,7 +15,12 @@ const scorePipelineOrigin = resolveScorePipelineOrigin(
 const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_comparison_latest.html', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
 const dashboardUrl = scorePipelineUrl('/en/', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
 const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
-const scoreHandoffOrigin = scorePipelineOrigin;
+const stageEHandoffOrigin = resolveScoreStageEOrigin(
+  process.env.SCORE_PRODUCTION_QA_PIPELINE_ORIGIN,
+  process.env.SCORE_PRODUCTION_QA_PIPELINE_ENABLED,
+  process.env.VERCEL_ENV,
+);
+const scoreHandoffOrigin = stageEHandoffOrigin || scorePipelineOrigin;
 ---
 <BaseLayout
   title="Weekly USD Impact Score | Dollar Regime Dashboard"

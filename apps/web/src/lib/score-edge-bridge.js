@@ -7,6 +7,7 @@ import { redeemScoreHandoff, authorizeScoreSession } from './score-redemption.js
 const SHARED_SECRET_RE = /^[A-Za-z0-9_-]{43,128}$/;
 const OPAQUE_RE = /^[A-Za-z0-9_-]{43}$/;
 const MAX_BODY_BYTES = 512;
+export const SCORE_PRODUCTION_SUPABASE_ORIGIN = 'https://gjzetjugmnwanvjkchux.supabase.co';
 const EXACT_PATH = '/api/account';
 const EXACT_ACTION = 'score-edge';
 
@@ -18,7 +19,8 @@ function readPrivateConfig(environment) {
     throw new Error('Score edge configuration unavailable');
   }
   const secretKey = String(environment?.SUPABASE_SECRET_KEY || '');
-  if (url.protocol !== 'https:' || !/^sb_secret_[A-Za-z0-9_-]{16,}$/.test(secretKey)) {
+  if (url.origin !== SCORE_PRODUCTION_SUPABASE_ORIGIN ||
+      !/^sb_secret_[A-Za-z0-9_-]{16,}$/.test(secretKey)) {
     throw new Error('Score edge configuration unavailable');
   }
   return Object.freeze({ url: url.origin, secretKey });

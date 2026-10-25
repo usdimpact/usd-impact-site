@@ -47,7 +47,7 @@ const stageEHandoffOrigin = resolveScoreStageEOrigin(
   process.env.SCORE_PRODUCTION_QA_PIPELINE_ENABLED,
   process.env.VERCEL_ENV,
 );
-const scoreFormActions = ['self', scorePipelineOrigin, stageEHandoffOrigin].filter(Boolean).join(' ');
+const scoreFormActions = ["'self'", scorePipelineOrigin, stageEHandoffOrigin].filter(Boolean).join(' ');
 
 export default defineConfig({
   site: 'https://www.usd-impact.com',

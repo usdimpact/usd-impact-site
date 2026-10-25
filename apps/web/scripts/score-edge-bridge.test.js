@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handleScoreEdgeBridge } from '../src/lib/score-edge-bridge.js';
+import {
+  SCORE_PRODUCTION_SUPABASE_ORIGIN,
+  handleScoreEdgeBridge,
+} from '../src/lib/score-edge-bridge.js';
 
 const sharedSecret = 's'.repeat(64);
 const token = 't'.repeat(43);
@@ -99,6 +102,25 @@ test('only POST on exact account action route is accepted', async () => {
   assert.equal((await run({ url: '/api/account?action=score-edge&debug=1' })).status, 404);
   assert.equal((await run({ url: '/api/account?action=other' })).status, 404);
   assert.equal((await run({ url: '/api/score-edge?action=score-edge' })).status, 404);
+});
+
+test('wrong Production Supabase project fails closed before provider access', async () => {
+  let calls = 0;
+  const result = await run({}, {
+    config: undefined,
+    environment: {
+      VERCEL_ENV: 'production',
+      SCORE_EDGE_BRIDGE_ENABLED: 'true',
+      SCORE_EDGE_SHARED_SECRET: sharedSecret,
+      SUPABASE_URL: 'https://wrong-project.supabase.co',
+      SUPABASE_SECRET_KEY: 'sb_secret_' + 'x'.repeat(32),
+    },
+    fetchImpl: async () => { calls++; throw new Error('must not fetch'); },
+  });
+  assert.equal(result.status, 503);
+  assert.equal(result.payload.code, 'SCORE_EDGE_UNAVAILABLE');
+  assert.equal(calls, 0);
+  assert.equal(SCORE_PRODUCTION_SUPABASE_ORIGIN, 'https://gjzetjugmnwanvjkchux.supabase.co');
 });
 
 test('wrong shared secret fails before redemption', async () => {

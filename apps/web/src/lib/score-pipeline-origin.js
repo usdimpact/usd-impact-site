@@ -15,6 +15,21 @@ function normalizeOrigin(value) {
   return value.replace(/\/+$/, '');
 }
 
+export function resolveScoreStageEOrigin(value, enabled = '', environment = '') {
+  if (enabled !== 'true' || environment !== 'production') return '';
+  const candidate = typeof value === 'string' ? normalizeOrigin(value.trim()) : '';
+  try {
+    const parsed = new URL(candidate);
+    const allowed = parsed.protocol === 'https:' &&
+      !parsed.username && !parsed.password && !parsed.port &&
+      candidate === parsed.origin &&
+      parsed.pathname === '/' && !parsed.search && !parsed.hash &&
+      PREVIEW_HOST_RE.test(parsed.hostname);
+    if (allowed) return candidate;
+  } catch { /* Invalid origins are rejected below. */ }
+  throw new Error('Unsupported Stage E Score origin.');
+}
+
 export function resolveScorePipelineOrigin(value, previewOrigin = '', environment = '') {
   const candidate = typeof value === 'string' && value.trim()
     ? normalizeOrigin(value.trim())

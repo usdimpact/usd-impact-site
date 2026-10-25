@@ -4,9 +4,33 @@ import {
   BRANDED_SCORE_PIPELINE_ORIGIN,
   LEGACY_SCORE_PIPELINE_ORIGIN,
   resolveScorePipelineOrigin,
+  resolveScoreStageEOrigin,
   scorePipelineArchiveUrl,
   scorePipelineUrl,
 } from '../src/lib/score-pipeline-origin.js';
+
+
+const stageEOrigin = 'https://fix-score-membership-handoff.usd-impact-pipeline.pages.dev';
+assert.equal(resolveScoreStageEOrigin(stageEOrigin, 'true', 'production'), stageEOrigin);
+for (const args of [
+  [stageEOrigin, 'false', 'production'],
+  [stageEOrigin, 'true', 'preview'],
+  [stageEOrigin, 'true', 'development'],
+]) {
+  assert.equal(resolveScoreStageEOrigin(...args), '');
+}
+for (const candidate of [
+  'https://score.usd-impact.com',
+  'https://evil.pages.dev',
+  'http://fix-score-membership-handoff.usd-impact-pipeline.pages.dev',
+  'https://fix-score-membership-handoff.usd-impact-pipeline.pages.dev:8443',
+  'https://fix-score-membership-handoff.usd-impact-pipeline.pages.dev/path',
+]) {
+  assert.throws(
+    () => resolveScoreStageEOrigin(candidate, 'true', 'production'),
+    /Unsupported Stage E Score origin/,
+  );
+}
 
 const pinnedPreview = 'https://fix-score-membership-handoff-147.usd-impact-pipeline.pages.dev';
 const isolatedWorkerPreview = 'https://pr-148-usd-impact-score-isolated-dev.michael-w-d0b.workers.dev';

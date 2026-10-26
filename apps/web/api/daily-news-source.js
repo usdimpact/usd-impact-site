@@ -227,6 +227,12 @@ function canonicalUrl(value) {
   return url.toString();
 }
 
+function groundingUrlKey(value) {
+  const url = new URL(canonicalUrl(value));
+  url.hostname = url.hostname.toLowerCase().replace(/^www\./, '');
+  return url.toString();
+}
+
 function collectOpenAiText(openAiResponse) {
   const parts = [];
   for (const item of openAiResponse.output ?? []) {
@@ -317,13 +323,14 @@ function validateAndNormalizeDraft(draft, groundedUrls, editionDate, generatedAt
 
   const sourceIds = new Set();
   const sourceUrls = new Set();
+  const groundedUrlKeys = new Set([...groundedUrls].map(groundingUrlKey));
   const sources = rawSources.map((source) => {
     const id = requiredString(source, 'id', 64);
     if (!SOURCE_ID_PATTERN.test(id)) throw new Error(`Invalid source id: ${id}`);
     if (sourceIds.has(id)) throw new Error(`Duplicate source id: ${id}`);
     sourceIds.add(id);
     const url = canonicalUrl(requiredString(source, 'url', 2000));
-    if (!groundedUrls.has(url)) throw new Error(`Source ${id} was not returned by OpenAI web search`);
+    if (!groundedUrlKeys.has(groundingUrlKey(url))) throw new Error(`Source ${id} was not returned by OpenAI web search`);
     if (sourceUrls.has(url)) throw new Error(`Duplicate source URL: ${url}`);
     sourceUrls.add(url);
     const classification = sourceClassification(url);
@@ -469,7 +476,7 @@ Research the most material developments published or occurring in the prior 36 h
 Rules:
 - First build a dated source inventory, before writing headlines or prose: collect at least three DISTINCT verified publisher-document URLs that are actually returned by web-search metadata, with each document's own visible release/publication/last-update date and at least one primary publisher. Plan three source-backed developments with unique cited IDs; the final ledger cannot be padded with unused URLs. If fewer than three verified documents survive, continue web research before writing final JSON. Never manufacture citations, timestamps, future results, or substitutes.
 - Use web search extensively and open the underlying pages.
-- Return at least three distinct grounded sources, including at least one authoritative primary source.
+- Return 3-12 distinct grounded sources, including at least one authoritative primary source. Never return more than 12 source-ledger entries even if web search discovers more URLs.
 - Before relying on calendar or older reference material, check the official current-date release pages for BLS, BEA, EIA, Treasury, and the Federal Reserve as applicable. Prefer a released current outcome over a schedule page when the outcome is already available.
 - Prefer authoritative primary sources. A highlight without a primary source must use at least two independent high-quality reporting organizations.
 - When considering EIA weekly petroleum coverage, DO NOT cite the mutable /petroleum/supply/weekly/pdf/wpsrall.pdf as an immutable release. Locate the actual dated release-specific EIA document and verify its own displayed Release Date and claim; never substitute its data-week date, next release date, access date, or a guessed archive URL. If no verifiable dated document exists, use a different verified development instead.
@@ -557,6 +564,7 @@ export {
   applySystemicCatalystPolicy,
   TRUSTED_DOMAINS,
   canonicalUrl,
+  groundingUrlKey,
   collectGroundedUrls,
   collectOpenAiText,
   sourceClassification,

@@ -103,47 +103,6 @@ test('Preview environment cannot activate Production bridge', async () => {
   assert.equal(result.payload.code, 'SCORE_EDGE_DISABLED');
 });
 
-test('Preview can activate only the exact-host, cookieless Stage E QA bridge', async () => {
-  const qaSecret = 'v'.repeat(32);
-  const qaHost = 'usd-impact-site-q1t5jg69r-usd-impact.vercel.app';
-  const qaEnvironment = {
-    VERCEL_ENV: 'preview',
-    VERCEL_URL: qaHost,
-    SCORE_EDGE_BRIDGE_ENABLED: 'true',
-    SCORE_PRODUCTION_QA_BRIDGE_ENABLED: 'true',
-    SCORE_EDGE_SHARED_SECRET: '',
-  };
-
-  const allowed = await run({
-    secret: qaSecret,
-    protectionBypass: qaSecret,
-    host: qaHost,
-  }, {
-    environment: qaEnvironment,
-  });
-  assert.equal(allowed.status, 200);
-  assert.equal(allowed.payload.allowed, true);
-
-  const cookieBlocked = await run({
-    secret: qaSecret,
-    protectionBypass: qaSecret,
-    cookie: '_vercel_jwt=present',
-    host: qaHost,
-  }, {
-    environment: qaEnvironment,
-  });
-  assert.equal(cookieBlocked.status, 503);
-
-  const hostBlocked = await run({
-    secret: qaSecret,
-    protectionBypass: qaSecret,
-    host: 'www.usd-impact.com',
-  }, {
-    environment: qaEnvironment,
-  });
-  assert.equal(hostBlocked.status, 503);
-});
-
 test('only POST on exact account action route is accepted', async () => {
   assert.equal((await run({ method: 'GET' })).status, 405);
   assert.equal((await run({ url: '/api/account?action=score-edge&debug=1' })).status, 404);

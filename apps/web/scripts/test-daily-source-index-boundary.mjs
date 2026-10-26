@@ -105,7 +105,7 @@ if (!process.argv.includes('--pure')) {
     };
   }
   function provider(candidate, metadata = [...candidate.sources.map(s => s.url), metadataOnly]) {
-    return { status: 'completed', output: [
+    return { id: 'resp_synthetic_boundary', status: 'completed', output: [
       { type: 'web_search_call', action: { sources: metadata.map(url => ({ url })) } },
       { type: 'message', content: [{ type: 'output_text', text: JSON.stringify(candidate), annotations: [] }] },
     ] };
@@ -117,7 +117,11 @@ if (!process.argv.includes('--pure')) {
     const evidence = collectRepairEvidence(provider(candidate), edition);
     assert.deepEqual(evidence.permittedSourceUrls, goodUrls.slice(0, 2));
     assert.match(evidence.issues.join('; '), /Ineligible index or rolling-pointer source ids/);
-    assert.equal(assessBoundedRepairFeasibility(provider(candidate), edition).canRepair, false);
+    assert.equal(
+      assessBoundedRepairFeasibility(provider(candidate), edition).canRepair,
+      true,
+      'a blocked pointer is excluded, while the stored response may still contain three eligible repair URLs',
+    );
     assert.deepEqual(candidate, before);
   });
   check('three eligible original URLs are sufficient, extra metadata is not introduced', () => {

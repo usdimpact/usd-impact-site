@@ -32,7 +32,12 @@ function fixture(options = {}) {
       assert.equal(init.headers.Authorization, 'Bearer synthetic-github');
       if (url.pathname.endsWith('/git/ref/heads/main')) return json({ ref: 'refs/heads/main', object: { sha: ++mains > 1 && options.drift ? B : A } });
       if (url.pathname.includes('/contents/')) return options.article ? json(options.article) : json({}, options.articleStatus ?? 404);
-      if (url.pathname.endsWith('/pulls')) return json(options.prPages?.[Number(url.searchParams.get('page')) - 1] ?? options.prs ?? []);
+      if (url.pathname.endsWith('/pulls')) {
+        const page = Number(url.searchParams.get('page')) - 1;
+        const values = options.prPages?.[page] ?? options.prs ?? [];
+        const state = url.searchParams.get('state');
+        return json(values.filter(p => !state || state === 'all' || p.state === state));
+      }
       if (/\/pulls\/\d+\/files$/.test(url.pathname)) {
         const n = Number(url.pathname.split('/').at(-2));
         return json(options.files?.[n] ?? [{ filename: file }]);
@@ -68,7 +73,7 @@ function fixture(options = {}) {
 await check('empty complete snapshot is advisory only', async () => {
   const f = fixture(); const r = await f.go(); assert.equal(r.classification.state, 'FALLBACK_ASSESSMENT');
   assert.equal(r.executionAllowed, false); assert.equal(r.scheduledActivation, false); assert.equal(r.classification.nativeAcceptance, 'NOT_EVALUATED');
-  assert.equal(r.evidence.prs.coverage, 'all-states-complete'); assert.equal(r.observations.production.matchesMain, true);
+  assert.equal(r.evidence.prs.coverage, 'open-all-closed-14d-complete'); assert.equal(r.observations.production.matchesMain, true);
   assert.equal(r.sourceReviewAttested, false); assert.equal(r.humanApprovalAttested, false);
 });
 await check('published file and live HTTP do not fabricate approved delivery', async () => {
@@ -84,12 +89,25 @@ await check('off-title and off-branch file candidate is still found', async () =
   const r = await fixture({ prs: [pr(1, { title: 'Editorial copy', head: { ref: 'misc', sha: B } })] }).go();
   assert.equal(r.classification.state, 'CONFLICT_HOLD');
 });
+await check('recent closed off-title and off-branch file candidate is still found', async () => {
+  const r = await fixture({ prs: [pr(1, { state: 'closed', title: 'Editorial copy', head: { ref: 'misc', sha: B } })] }).go();
+  assert.equal(r.classification.state, 'CONFLICT_HOLD');
+});
+await check('old open off-title candidate is still inspected', async () => {
+  const r = await fixture({ prs: [pr(1, { updated_at: '2026-09-01T12:00:00Z', title: 'Editorial copy', head: { ref: 'misc', sha: B } })] }).go();
+  assert.equal(r.classification.state, 'CONFLICT_HOLD');
+});
+await check('old closed off-contract branch is outside current edition window', async () => {
+  const r = await fixture({ prs: [pr(1, { state: 'closed', updated_at: '2026-09-01T12:00:00Z', title: 'Editorial copy', head: { ref: 'misc', sha: B } })] }).go();
+  assert.equal(r.evidence.prs.items.length, 0);
+  assert.equal(r.evidence.prs.coverage, 'open-all-closed-14d-complete');
+});
 await check('two date-related candidates block competing work', async () => {
   const r = await fixture({ prs: [pr(1), pr(2)] }).go(); assert.equal(r.classification.state, 'CONFLICT_HOLD');
 });
 await check('unrelated PR is fully checked then excluded', async () => {
   const r = await fixture({ prs: [pr(1, { title: 'Other', head: { ref: 'other', sha: B } })], files: { 1: [{ filename: 'README.md' }] } }).go();
-  assert.equal(r.evidence.prs.items.length, 0); assert.equal(r.evidence.prs.coverage, 'all-states-complete');
+  assert.equal(r.evidence.prs.items.length, 0); assert.equal(r.evidence.prs.coverage, 'open-all-closed-14d-complete');
 });
 await check('old active run still blocks current edition', async () => {
   const r = await fixture({ runs: [run({ status: 'in_progress', conclusion: null, created_at: '2026-10-22T23:59:00Z' })] }).go();

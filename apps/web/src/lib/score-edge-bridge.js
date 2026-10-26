@@ -92,7 +92,11 @@ export async function handleScoreEdgeBridge(request, response, dependencies = {}
   }
 
   const environment = dependencies.environment || process.env;
-  if (environment.VERCEL_ENV !== 'production' ||
+  const qaProtectedBridge = qaProtectedBridgeAllowed(request, environment);
+  const bridgeEnvironmentAllowed =
+    environment.VERCEL_ENV === 'production' ||
+    (environment.VERCEL_ENV === 'preview' && qaProtectedBridge);
+  if (!bridgeEnvironmentAllowed ||
       environment.SCORE_EDGE_BRIDGE_ENABLED !== 'true') {
     return deny(response, 503, 'SCORE_EDGE_DISABLED');
   }
@@ -108,7 +112,6 @@ export async function handleScoreEdgeBridge(request, response, dependencies = {}
     return deny(response, 404, 'SCORE_EDGE_ROUTE_NOT_FOUND');
   }
 
-  const qaProtectedBridge = qaProtectedBridgeAllowed(request, environment);
   const expectedSecret = qaProtectedBridge
     ? requestHeader(request, 'x-vercel-protection-bypass')
     : String(environment.SCORE_EDGE_SHARED_SECRET || '');

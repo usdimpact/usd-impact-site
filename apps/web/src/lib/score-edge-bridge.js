@@ -39,7 +39,10 @@ function qaProtectedBridgeAllowed(request, environment) {
   if (environment.SCORE_PRODUCTION_QA_BRIDGE_ENABLED !== 'true') return false;
   const deploymentHost = String(environment.VERCEL_URL || '').trim().toLowerCase();
   const requestHost = requestHeader(request, 'host').trim().toLowerCase();
-  return QA_VERCEL_HOST_RE.test(deploymentHost) && requestHost === deploymentHost;
+  const cookies = requestHeader(request, 'cookie').trim();
+  return QA_VERCEL_HOST_RE.test(deploymentHost) &&
+    requestHost === deploymentHost &&
+    cookies === '';
 }
 
 function requestUrl(request) {
@@ -107,7 +110,7 @@ export async function handleScoreEdgeBridge(request, response, dependencies = {}
 
   const qaProtectedBridge = qaProtectedBridgeAllowed(request, environment);
   const expectedSecret = qaProtectedBridge
-    ? String(environment.VERCEL_AUTOMATION_BYPASS_SECRET || '')
+    ? requestHeader(request, 'x-vercel-protection-bypass')
     : String(environment.SCORE_EDGE_SHARED_SECRET || '');
   const suppliedSecret = requestHeader(request, 'x-score-edge-secret');
   const secretPattern = qaProtectedBridge ? QA_BYPASS_RE : SHARED_SECRET_RE;

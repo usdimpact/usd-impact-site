@@ -4,7 +4,11 @@ import groundedHandler, {
   extractEditionDate,
   withSourceMetadata,
 } from '../api/daily-news-grounded-background.js';
-import backgroundHandler, { assessBoundedRepairFeasibility, MAX_BACKGROUND_OUTPUT_TOKENS } from '../api/daily-news-background.js';
+import backgroundHandler, {
+  assessBoundedRepairFeasibility,
+  buildRepairOutputSchema,
+  MAX_BACKGROUND_OUTPUT_TOKENS,
+} from '../api/daily-news-background.js';
 
 const editionDate = '2026-08-20';
 assert.equal(
@@ -219,6 +223,18 @@ assert.deepEqual(assessBoundedRepairFeasibility(makeFakeProvider(testSourceUrls,
 assert.deepEqual(assessBoundedRepairFeasibility(makeFakeProvider(testSourceUrls.slice(0, 2), testSourceUrls, 'not-stored'), '2026-10-22'), {
   canRepair: false, groundedCount: 3, retainedCount: 2,
 });
+
+const overflowContextUrls = Array.from(
+  { length: 26 },
+  (_, index) => `https://www.bls.gov/news.release/archives/synthetic_${String(index + 1).padStart(2, '0')}222026.htm`,
+);
+const overflow = makeFakeProvider([], overflowContextUrls, 'resp_oct26overflow');
+assert.deepEqual(assessBoundedRepairFeasibility(overflow, '2026-10-22'), {
+  canRepair: true, groundedCount: 26, retainedCount: 0,
+});
+const overflowRepairSchema = buildRepairOutputSchema('2026-10-22', overflowContextUrls);
+assert.equal(overflowRepairSchema.properties.sources.maxItems, 24);
+assert.equal(overflowRepairSchema.properties.sources.items.properties.url.enum.length, 26);
 
 const oldFetch = globalThis.fetch;
 const oldToken = process.env.NEWSFEED_BEARER_TOKEN;

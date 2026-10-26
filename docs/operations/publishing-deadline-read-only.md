@@ -3,7 +3,7 @@
 Status: DRAFT INTEGRATION CANDIDATE. NOT MERGED, SCHEDULED OR ACTIVATED.
 
 This continues the delivery-policy work adopted in PR #854. Baseline inspected through
-connected GitHub: `3c57f9737564ffec8deb057be1d0e23e1ce27725`. Existing snapshot PR #837,
+connected GitHub on 2026-10-26: `75d06c57889b91c397925edd1c5da97b901537f4`. Existing snapshot PR #837,
 Daily/Weekly acceptance watches, generator, source validators, private runtime and Score
 workstream are outside this change.
 
@@ -13,7 +13,7 @@ New files:
 - `scripts/publishing-deadline-status.mjs`: the prior pure classifier, with its 117 tests.
 - `scripts/test-publishing-deadline-status.mjs`.
 - `scripts/publishing-deadline-collector.mjs`: bounded, fixed-destination GET acquisition.
-- `scripts/test-publishing-deadline-collector.mjs`: 43 offline collector/CLI tests.
+- `scripts/test-publishing-deadline-collector.mjs`: 46 offline collector/CLI tests.
 - `scripts/publishing-deadline-read.mjs`: explicit one-shot JSON command, no work on import.
 - This document.
 
@@ -47,13 +47,20 @@ forms are recognized; alternate/ambiguous syntax becomes UNKNOWN. This is not a 
 YAML validator. Source/claim validity still belongs to the existing editorial validators.
 SHA-1 is used solely to compare Git object identity, not as a credential or signature.
 
-All-state PR metadata is paginated. Date-bearing titles/branches are prioritized; changed
-files are also inspected to catch off-contract date candidates. If historical file coverage
-cannot be completed within the read budget, `prs.coverage` stays incomplete. Remaining
-budget is reserved for current-candidate and deployment observations. Large repositories
-may therefore legitimately return UNKNOWN; do not remove this hold or silently narrow
-coverage to manufacture an empty candidate result. A reviewed incremental index or other
-complete bounded coverage strategy is a remaining performance/integration decision.
+Candidate discovery is deliberately bounded without treating missing reads as absence.
+Every open PR targeting `main` is inspected regardless of age. Closed/merged PRs are
+inspected when their `updated_at` falls within the 14 days preceding the edition. Changed
+files are read for those PRs, so a recent or still-open candidate cannot hide the exact
+dated Daily path behind a misleading title or branch name. The closed-window listing must
+cross the lower time boundary within the configured pagination cap; otherwise coverage
+remains incomplete and classification is UNKNOWN.
+
+This matches the Daily publication contract: publication PRs are same-day artifacts, while
+an old closed off-contract branch is not active editorial state for a later edition. The
+collector reports `open-all-closed-14d-complete` only after all open PRs and the full
+closed-window boundary have been observed. It still reserves request budget for candidate
+checks, canonical deployment observations, public pages and the final main-stability read.
+Do not enlarge the request ceiling or weaken the coverage gate to manufacture a result.
 
 Daily/backstop run metadata includes all five active statuses across dates as well as the
 edition-date receipts. Created-at dates are observation labels, not authenticated dispatch
@@ -105,19 +112,20 @@ GitHub Actions, a ChatGPT task or any provider schedule.
 
 ## Validation receipt and current blocker
 
-Local Node v22.16.0: 117 classifier groups + 43 collector/CLI groups PASS; no real HTTP
+Local Node v22.16.0: 117 classifier groups + 46 collector/CLI groups expected; no real HTTP
 request occurred in these suites. They cover all-state/closed/off-contract candidates,
 active older runs, misleading green runs, unknown backstop lineage, HTTP/auth/rate-limit
 failures, redirects, byte caps, pagination/read budget, main/PR drift, blob mismatch,
 frontmatter ambiguity, credential origin isolation and no top-level command execution.
 
-Hosted Node24/full repository Web quality, Dependency Review, CodeQL and exact-head Preview
-must be verified on this draft's exact head; local tests do not establish those gates. A prior
+After the 2026-10-26 current-main refresh and bounded-discovery change, hosted Node24/full
+repository Web quality, Dependency Review, CodeQL and exact-head Preview must be re-verified
+on the new exact head; earlier green checks do not establish the refreshed head. A prior
 GitHub blob submission was blocked before any branch, commit or PR existed. A subsequent
 normal direct-connector attempt succeeded after package review and test verification. No
 alternate transport, credential extraction or protection change was used. Keep this candidate
 in draft pending actual hosted acceptance; submission is not deployed implementation.
 
-Before scheduled integration, resolve bounded completeness, independently trustworthy
-approval/source/merge/live attestation, live-read testing, human reviewer coverage and
-existing-system scheduling authority. Preserve all protections and avoid duplicate tasks.
+Before scheduled integration, verify the refreshed bounded-discovery implementation,
+independently trustworthy approval/source/merge/live attestation, live-read testing, human
+reviewer coverage and existing-system scheduling authority. Preserve all protections and avoid duplicate tasks.

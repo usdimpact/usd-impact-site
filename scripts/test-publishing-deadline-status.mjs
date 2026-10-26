@@ -12,7 +12,7 @@ function evidence(at = now, edition = day) {
   return {
     version: 1, edition, observedAt: at, mainSha: A,
     article: { observedAt: at, edition, mainSha: A, state: 'absent' },
-    prs: { observedAt: at, coverage: 'all-states-complete', items: [] },
+    prs: { observedAt: at, coverage: 'open-all-closed-14d-complete', items: [] },
     runs: { observedAt: at, coverage: 'all-active-and-edition-complete', items: [] },
     dispatchReceipt: 'none',
   };

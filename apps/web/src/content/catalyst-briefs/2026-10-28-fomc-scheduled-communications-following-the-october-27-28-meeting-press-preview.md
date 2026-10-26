@@ -1,94 +1,144 @@
 ---
-title: "FOMC scheduled communications following the October 27-28 meeting; press conference at 2:30 p.m. U.S. Eastern — What to Watch"
-metaTitle: "FOMC scheduled communications following the October 27-28 meeting; press conference at 2:30 p.m. U.S. Eastern — What to Watch | USD Impact"
-metaDescription: "The Federal Reserve’s calendar lists a two‑day FOMC meeting on October 27–28, 2026 with the Committee’s statement released at 2:00 p.m. Eastern and an FOMC press conference scheduled for 2:30 p.m. Eastern on October 28, 2026. Market participants will use the statement and press‑conference tone to"
+title: "FOMC meeting and press conference (October 27–28, 2026) — What to Watch"
+metaTitle: "FOMC meeting and press conference (October 27–28, 2026) — What to Watch | USD Impact"
+metaDescription: "Federal Reserve primary-source preview of the October 27–28, 2026 FOMC meeting: October 28 communication at 2:00 p.m. ET, press conference at 2:30 p.m. ET, prior policy baseline, and conditional cross-asset transmission."
 slug: "/news/catalysts/2026-10-28-fomc-scheduled-communications-following-the-october-27-28-meeting-press-preview"
 eventKey: "2026-10-28-fomc-scheduled-communications-following-the-october-27-28-meeting-press"
 event: "FOMC scheduled communications following the October 27-28 meeting; press conference at 2:30 p.m. U.S. Eastern"
 eventDate: "2026-10-28"
-calendar: null
-sourceEditionDate: "2026-10-23"
+sourceEditionDate: "2026-10-26"
 phase: "preview"
 generatedAt: "2026-10-26T13:35:55.041Z"
 lastReviewed: "2026-10-26"
 status: "published"
 category: "USD Impact Catalyst Brief"
 statusLabel: "scheduled-confirmed"
-summary: "The Federal Reserve’s calendar lists a two‑day FOMC meeting on October 27–28, 2026 with the Committee’s statement released at 2:00 p.m. Eastern and an FOMC press conference scheduled for 2:30 p.m. Eastern on October 28, 2026. Market participants will use the statement and press‑conference tone to reprice the expected path for policy, the dollar and liquidity‑sensitive assets."
+summary: "The Federal Reserve is scheduled to hold a two-day FOMC meeting on October 27–28, 2026. Its October calendar lists the meeting communication for 2:00 p.m. ET on October 28 and the press conference for 2:30 p.m. ET. The October meeting is not marked as a Summary of Economic Projections meeting. This preview uses Federal Reserve primary sources only and does not predict the decision or market reaction."
 assets:
-  - "USD"
-  - "DXY"
+  - "Fed"
   - "U.S. rates"
+  - "DXY"
+  - "EURUSD"
   - "XAUUSD"
   - "S&P 500"
   - "Nasdaq"
+  - "BTCUSD"
+  - "WTI"
 verifiedFacts:
-  - statement: "The Federal Reserve’s official calendar lists a two‑day FOMC meeting on October 27–28, 2026 and shows an FOMC press conference scheduled for 2:30 p.m. Eastern on October 28, 2026."
+  - statement: "The Federal Reserve’s October 2026 calendar lists a two-day FOMC meeting for October 27–28, with the October 28 meeting communication at 2:00 p.m. Eastern and the FOMC press conference at 2:30 p.m. Eastern."
     verification: "verified-primary"
     sourceIds:
-      - "federalreserve-oct-2026-calendar"
-  - statement: "The Fed’s timing convention for policy meetings (statement at 2:00 p.m. ET, press conference at 2:30 p.m. ET) is the practice reflected on the Fed calendar and described in New York Fed/Liberty Street commentary as in place since 2013."
+      - "federalreserve-october-calendar"
+  - statement: "The Federal Reserve’s FOMC meeting calendar marks September and December 2026 with an asterisk for meetings associated with the Summary of Economic Projections, while the October 27–28 meeting is not marked as an SEP meeting."
     verification: "verified-primary"
     sourceIds:
-      - "federalreserve-oct-2026-calendar"
-      - "libertystreeteconomics-pre-fomc-drift"
-  - statement: "Market reporting ahead of the meeting shows investors are watching incoming inflation data and Fed remarks and — per contemporaneous coverage — were leaning toward expecting the Committee to hold policy at the late‑October meeting (reporting examples: Bloomberg, AP)."
-    verification: "verified-multiple"
+      - "fomc-calendars"
+  - statement: "At its September 16, 2026 meeting, the FOMC raised the target range for the federal funds rate by 25 basis points to 3-3/4 to 4 percent and continued its policy of maintaining ample reserves; the vote was unanimous."
+    verification: "verified-primary"
     sourceIds:
-      - "bloomberg-oct11-2026-bond-traders"
-      - "ap-sep16-2026-fed-hike"
+      - "fomc-statement-20260916"
+      - "fomc-minutes-20260916"
+  - statement: "The October 14, 2026 Beige Book reported mixed district growth: two Districts reported moderate growth, three modest growth, four slight growth, and three no significant change; most Districts reported little or no change in overall consumer spending."
+    verification: "verified-primary"
+    sourceIds:
+      - "beige-book-20261014"
+  - statement: "A separate Board notice schedules a closed meeting for October 27 at 9:30 a.m. Eastern to discuss monetary policy issues."
+    verification: "verified-primary"
+    sourceIds:
+      - "board-closed-meeting-20261027"
 transmissionChannels:
-  - channel: "Official FOMC statement release (Fed website) — ~2:00 p.m. ET"
-    conditionalImpact: "Could move front‑end U.S. rates and USD quickly if language on the policy path or incoming data materially differs from market pricing."
-  - channel: "Chair’s press conference (2:30 p.m. ET) — live Q&A"
-    conditionalImpact: "Could cause larger moves in USD, rate futures and risk assets if the Chair’s tone shifts on inflation persistence, the need for further hikes, or the timing of cuts."
-  - channel: "Real‑time newswire headlines and market commentary"
-    conditionalImpact: "May amplify initial market reaction and increase intraday volatility in Treasury yields, DXY and S&P‑level indices."
-  - channel: "Overnight and intraday swaps and futures markets (priced continuously)"
-    conditionalImpact: "Will reflect updates to expected terminal rates and the timing of future moves; conditional edits to pricing may cascade into FX and equities."
+  - channel: "Policy decision and meeting communication"
+    conditionalImpact: "Any change in the target range, implementation details, or policy language relative to September can alter the expected policy path. Front-end Treasury yields and the U.S. dollar are the first transmission points to verify after the release."
+  - channel: "Real-rate channel"
+    conditionalImpact: "A change in the market’s interpretation of inflation persistence or future policy restraint can move nominal yields and inflation compensation differently, changing real-rate conditions relevant to gold, equities, and other duration-sensitive assets."
+  - channel: "Liquidity and financial-conditions channel"
+    conditionalImpact: "The September policy baseline explicitly referenced maintaining ample reserves. Any October implementation-note or balance-sheet language should be checked before drawing conclusions about liquidity, funding conditions, or risk appetite."
+  - channel: "Chair’s press conference at 2:30 p.m. ET"
+    conditionalImpact: "The press conference can clarify the Committee’s reaction function, balance of risks, and data dependence. Markets may revise the initial interpretation of the 2:00 p.m. communication during the Q&A."
+  - channel: "Cross-asset transmission"
+    conditionalImpact: "After the release, compare DXY and EURUSD with Treasury and real-yield moves first; then assess XAUUSD, equities, BTCUSD, and WTI conditionally. A move in one asset alone is not evidence of a durable dollar-led regime."
 whatToWatch:
-  - "Exact timing: statement release time stamped at 2:00 p.m. ET and Chair press conference at 2:30 p.m. ET (confirm timestamps on Fed site at publication)."
-  - "Statement language: any change to the Committee’s assessment of inflation momentum, labor market slack, or forward guidance language that tightens/loosens the implied path for policy."
-  - "Press‑conference tone and Q&A: Chair’s responses on the need for further hikes, the likely timing of the next move, and reference to incoming data (CPI, payrolls) — tone shifts could spur dollar and front‑end yield moves."
-  - "Market‑pricing reaction: moves in fed‑funds futures, 2‑ and 10‑year Treasury yields and the DXY in the first 30–90 minutes after the statement/press conference."
-  - "Volatility in liquidity‑sensitive assets: Treasury liquidity, gold (XAUUSD), and technology‑led indices (Nasdaq) may be sensitive to changes in risk‑sentiment or USD repricing."
+  - "Timing: verify the Federal Reserve’s 2:00 p.m. ET October 28 meeting communication and 2:30 p.m. ET press conference timestamps on release."
+  - "Policy baseline: compare the October decision and implementation note with September’s 3-3/4 to 4 percent target range and ample-reserves language; do not assume a change before publication."
+  - "No SEP: the October meeting is not marked as an SEP meeting, so do not expect a new dot plot or projection tables unless the Federal Reserve publishes something outside the scheduled calendar."
+  - "Statement language: compare descriptions of activity, inflation, labor conditions, and the balance of risks with the September statement and October 14 Beige Book."
+  - "Press-conference interpretation: separate the confirmed decision from conditional guidance, data-dependent answers, and questions about future meetings."
+  - "Three-dial reaction check: verify USD direction, real-rate direction, and liquidity/stress evidence before attributing moves in gold, equities, BTCUSD, or energy to the Fed."
 sources:
-  - id: "federalreserve-oct-2026-calendar"
+  - id: "federalreserve-october-calendar"
     title: "Federal Reserve Board - Calendar: October 2026"
     publisher: "Federal Reserve"
     url: "https://www.federalreserve.gov/newsevents/2026-october.htm"
     publishedAt: "2025-06-24"
     sourceType: "primary"
-  - id: "libertystreeteconomics-pre-fomc-drift"
-    title: "The Pre‑FOMC Announcement Drift: More Recent Evidence — Liberty Street Economics (New York Fed)"
-    publisher: "Federal Reserve Bank of New York"
-    url: "https://libertystreeteconomics.newyorkfed.org/2018/11/the-pre-fomc-announcement-drift-more-recent-evidence"
-    publishedAt: "2018-11-07"
+  - id: "fomc-calendars"
+    title: "The Fed - Meeting calendars and information"
+    publisher: "Federal Reserve"
+    url: "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+    publishedAt: "2026-04-08"
     sourceType: "primary"
-  - id: "bloomberg-oct11-2026-bond-traders"
-    title: "US bond traders await CPI, Warsh for insight on Fed’s rate path — Bloomberg"
-    publisher: "Bloomberg"
-    url: "https://bloomberg.com/news/articles/2026-10-11/us-bond-traders-await-cpi-warsh-for-insight-on-fed-s-rate-path"
-    publishedAt: "2026-10-11"
-    sourceType: "reporting"
-  - id: "ap-sep16-2026-fed-hike"
-    title: "Federal Reserve hikes key rate for 1st time in 3 years, defying Trump demands for a cut — AP News"
-    publisher: "Associated Press"
-    url: "https://apnews.com/article/bab1bcb07e973bfb2dd0c3e5fbbb73b1"
+  - id: "fomc-statement-20260916"
+    title: "Federal Reserve issues FOMC statement"
+    publisher: "Federal Reserve"
+    url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm"
     publishedAt: "2026-09-16"
-    sourceType: "reporting"
+    sourceType: "primary"
+  - id: "fomc-minutes-20260916"
+    title: "Minutes of the Federal Open Market Committee, September 15–16, 2026"
+    publisher: "Federal Reserve"
+    url: "https://www.federalreserve.gov/monetarypolicy/fomcminutes20260916.htm"
+    publishedAt: "2026-10-07"
+    sourceType: "primary"
+  - id: "beige-book-20261014"
+    title: "Beige Book - October 2026: National Summary"
+    publisher: "Federal Reserve"
+    url: "https://www.federalreserve.gov/monetarypolicy/beigebook202610-summary.htm"
+    publishedAt: "2026-10-14"
+    sourceType: "primary"
+  - id: "board-closed-meeting-20261027"
+    title: "October 27, 2026 - Closed Board Meeting"
+    publisher: "Federal Reserve"
+    url: "https://www.federalreserve.gov/aboutthefed/boardmeetings/20261027closed.htm"
+    publishedAt: "2026-10-21"
+    sourceType: "primary"
 complianceNote: "Educational and informational only. This content is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset."
 ---
 
-## USD Impact Catalyst Brief — FOMC (preview)
+## Executive pre-event brief
 
-Event: FOMC two‑day meeting, Oct 27–28, 2026 — official statement release and Chair’s press conference on Oct 28, 2026.
+### What it is
 
-Confirmed timing: the Federal Reserve’s official calendar lists the meeting and shows an FOMC press conference at 2:30 p.m. Eastern on Oct 28 (Fed calendar). By convention the Committee’s statement is released at 2:00 p.m. ET with the Chair’s press conference starting at 2:30 p.m. ET (Fed calendar; New York Fed commentary).
+The Federal Reserve is scheduled to hold a two-day FOMC meeting on October 27–28, 2026. The Fed’s October calendar lists the meeting communication for 2:00 p.m. ET on October 28 and the FOMC press conference for 2:30 p.m. ET.
 
-Why it matters: the statement and the Chair’s live Q&A are high‑information events that can change market expectations for the policy path and therefore affect USD, U.S. rates and liquidity‑sensitive assets (gold, equities, rates). Market reporting ahead of the meeting shows investors watching incoming inflation prints and Fed remarks and were leaning toward expecting a hold at the late‑October meeting (Bloomberg; AP).
+This is not a scheduled Summary of Economic Projections meeting. The Fed’s annual meeting calendar marks September and December with an asterisk for SEP meetings, but not October.
 
-What to watch (concise): exact timestamps on the Fed site at release (2:00 p.m. ET statement; 2:30 p.m. ET press conference); any tightening/loosening language on inflation and future action; Chair’s tone in Q&A on the need/timing for further hikes; immediate moves in fed‑funds futures, 2‑ and 10‑year yields, DXY, and volatility in liquidity‑sensitive assets.
+### Why it matters
 
-Notes on verification: official timing is confirmed on the Federal Reserve’s calendar (source ledger). Market‑expectation context is based on contemporaneous reporting from Bloomberg and AP (source ledger).
+The policy decision and communication can change expectations for the future policy path. The cleanest USD Impact sequence is to verify the rates reaction first, then real rates and the dollar, then liquidity/stress, before interpreting gold, equities, Bitcoin, FX, or energy.
 
+The latest completed FOMC baseline is September 16: the Committee raised the target range by 25 basis points to 3-3/4 to 4 percent, continued its ample-reserves policy, and voted unanimously. This preview does not assume whether the October meeting will change that stance.
+
+### What moves it
+
+The highest-information items are the confirmed decision and implementation details at 2:00 p.m. ET, changes in statement language relative to September, and the Chair’s press-conference explanation at 2:30 p.m. ET.
+
+The October 14 Beige Book is relevant context, not a forecast. It reported mixed district growth and little or no change in overall consumer spending in most Districts. The Committee may weigh that evidence alongside other information available at the meeting, but this brief does not infer the decision from it.
+
+### Common mistake
+
+Do not treat a single asset’s first move as proof of the Fed signal. DXY can move for positioning or relative-FX reasons; gold and equities can react to real yields and risk appetite; BTCUSD can respond to both liquidity expectations and asset-specific flows; WTI can remain dominated by energy-specific supply and geopolitical factors.
+
+Also do not expect a new dot plot from the scheduled October meeting: the Federal Reserve calendar does not mark it as an SEP meeting.
+
+### What to watch
+
+1. Confirm the 2:00 p.m. ET meeting communication and 2:30 p.m. ET press conference.
+2. Compare the target range and implementation note with September’s 3-3/4 to 4 percent baseline and ample-reserves language.
+3. Compare statement wording on activity, inflation, labor conditions, and risks with September’s statement.
+4. During the press conference, separate confirmed policy from conditional guidance and future-data dependence.
+5. Read the cross-asset response through the three dials: USD direction, real rates, and liquidity/stress.
+6. Only then assess whether moves in XAUUSD, equities, BTCUSD, EURUSD, or WTI are consistent with a broader dollar-led transmission.
+
+## Key takeaway
+
+The October 27–28 FOMC meeting is confirmed, with the key October 28 communications scheduled for 2:00 p.m. and 2:30 p.m. ET. It is not a scheduled SEP meeting. The correct pre-event posture is therefore to anchor on the September policy baseline, wait for the verified October decision and language, and then test the reaction across rates, real rates, the dollar, and liquidity before drawing cross-asset conclusions.

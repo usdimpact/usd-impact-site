@@ -155,7 +155,7 @@ export function classifyDailyDelivery(input = {}) {
       article.edition !== edition || article.mainSha !== e.mainSha ||
       !['absent', 'review', 'published'].includes(article.state) ||
       (article.state !== 'absent' && !sha(article.contentSha)) ||
-      prs.coverage !== 'all-states-complete' || runs.coverage !== 'all-active-and-edition-complete' ||
+      prs.coverage !== 'open-all-closed-14d-complete' || runs.coverage !== 'all-active-and-edition-complete' ||
       !Array.isArray(prs.items) || !Array.isArray(runs.items) || prs.items.length > 100 || runs.items.length > 100 ||
       !prs.items.every(pr => validCandidate(pr, edition)) || !runs.items.every(run => validRun(run, ms)) ||
       new Set(prs.items.map(pr => pr.number)).size !== prs.items.length ||

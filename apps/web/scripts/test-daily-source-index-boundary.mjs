@@ -169,13 +169,22 @@ if (!process.argv.includes('--pure')) {
     process.env.OPENAI_NEWS_MODEL = 'synthetic-no-network';
     console.error = () => {};
     for (const url of blocked) {
-      const result = await invoke(draft([goodUrls[0], goodUrls[1], url]));
-      check(`unusable third source causes zero repair POSTs ${url}`, () => {
-        assert.equal(result.statusCode, 502);
-        assert.equal(result.json.code, 'insufficient-grounded-sources');
-        assert.equal(result.json.usableSourceCount, 2);
-        assert.equal(result.json.repairAttempts, 0);
-        assert.equal(result.calls.filter(call => call.method === 'POST').length, 0);
+      const corrected = draft([goodUrls[0], goodUrls[1], metadataOnly]);
+      const result = await invoke(draft([goodUrls[0], goodUrls[1], url]), corrected);
+      check(`stored context repairs blocked third source without fresh search ${url}`, () => {
+        assert.equal(result.statusCode, 200);
+        const posts = result.calls.filter(call => call.method === 'POST');
+        assert.equal(posts.length, 1);
+        const request = posts[0].body;
+        assert.equal(request.previous_response_id, 'resp_synthetic_boundary');
+        assert.equal('tools' in request, false);
+        assert.deepEqual(
+          request.text.format.schema.properties.sources.items.properties.url.enum,
+          [goodUrls[0], goodUrls[1], metadataOnly],
+        );
+        assert.equal(request.text.format.schema.properties.sources.items.properties.url.enum.includes(url), false);
+        assert.equal(result.headers['X-USD-Impact-Repair-Count'], '1');
+        assert.equal(result.json.sources.some(source => source.url === url), false);
       });
     }
     const good = await invoke(draft());
@@ -188,14 +197,19 @@ if (!process.argv.includes('--pure')) {
     });
     normalized = good.json;
     const repaired = await invoke(draft([...goodUrls, fedIndex]), draft());
-    check('eligible bounded repair prompt and schema use the same original URLs', () => {
+    check('eligible bounded repair prompt and schema use exact stored grounded-context URLs', () => {
       assert.equal(repaired.statusCode, 200);
       const posts = repaired.calls.filter(call => call.method === 'POST');
       assert.equal(posts.length, 1);
       const request = posts[0].body;
-      const permitText = request.input.split('PERMITTED SOURCE URLS:\n')[1].split('\n\nORIGINAL BUNDLE:')[0];
-      assert.deepEqual(JSON.parse(permitText), goodUrls);
-      assert.deepEqual(request.text.format.schema.properties.sources.items.properties.url.enum, goodUrls);
+      const permitText = request.input.split('PERMITTED GROUNDED CONTEXT URLS:\n')[1].split('\n\nORIGINAL BUNDLE:')[0];
+      assert.deepEqual(JSON.parse(permitText), [...goodUrls, metadataOnly]);
+      assert.deepEqual(
+        request.text.format.schema.properties.sources.items.properties.url.enum,
+        [...goodUrls, metadataOnly],
+      );
+      assert.equal(request.previous_response_id, 'resp_synthetic_boundary');
+      assert.equal('tools' in request, false);
       assert.equal(repaired.headers['X-USD-Impact-Repair-Count'], '1');
     });
     const bad = draft([...goodUrls, fedIndex]);

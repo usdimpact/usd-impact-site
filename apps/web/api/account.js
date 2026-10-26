@@ -435,23 +435,6 @@ export async function handleAccountDeletionFinalizer(request, response) {
   }
 }
 
-async function handleStageETransportProbe(request, response) {
-  if (process.env.VERCEL_ENV !== 'preview') {
-    return sendJson(response, 404, { error: 'Not found.', code: 'NOT_FOUND' });
-  }
-  if (request.method !== 'GET') return methodNotAllowed(response, 'GET');
-  const bypass = header(request, 'x-vercel-protection-bypass');
-  const edge = header(request, 'x-score-edge-secret');
-  const cookieAbsent = header(request, 'cookie').trim() === '';
-  const bypassPresent = bypass.length >= 16 && !/[\r\n]/.test(bypass);
-  const edgeMatches = bypassPresent && edge === bypass;
-  return sendJson(response, bypassPresent && edgeMatches && cookieAbsent ? 200 : 403, {
-    bypassPresent,
-    edgeMatches,
-    cookieAbsent,
-  });
-}
-
 const handlers = Object.freeze({
   login: handleLogin,
   confirm: handleConfirm,
@@ -472,7 +455,6 @@ const handlers = Object.freeze({
   'score-membership': handleScoreMembershipCheck,
   'score-handoff': handleScoreHandoff,
   'score-edge': handleScoreEdgeBridge,
-  'stage-e-transport-probe': handleStageETransportProbe,
 });
 
 export default async function handler(request, response) {

@@ -5,6 +5,8 @@ import { createScoreMembershipProviders } from './score-membership-providers.js'
 import { redeemScoreHandoff, authorizeScoreSession } from './score-redemption.js';
 
 const SHARED_SECRET_RE = /^[A-Za-z0-9_-]{43,128}$/;
+const QA_BYPASS_RE = /^[A-Za-z0-9_-]{16,256}$/;
+const QA_VERCEL_HOST_RE = /^usd-impact-site-[a-z0-9]+-usd-impact\.vercel\.app$/;
 const OPAQUE_RE = /^[A-Za-z0-9_-]{43}$/;
 const MAX_BODY_BYTES = 512;
 export const SCORE_PRODUCTION_SUPABASE_ORIGIN = 'https://gjzetjugmnwanvjkchux.supabase.co';
@@ -26,11 +28,18 @@ function readPrivateConfig(environment) {
   return Object.freeze({ url: url.origin, secretKey });
 }
 
-function secretEqual(supplied, expected) {
-  if (!SHARED_SECRET_RE.test(supplied || '') || !SHARED_SECRET_RE.test(expected || '')) return false;
+function secretEqual(supplied, expected, pattern = SHARED_SECRET_RE) {
+  if (!pattern.test(supplied || '') || !pattern.test(expected || '')) return false;
   const left = Buffer.from(supplied, 'utf8');
   const right = Buffer.from(expected, 'utf8');
   return left.length === right.length && timingSafeEqual(left, right);
+}
+
+function qaProtectedBridgeAllowed(request, environment) {
+  if (environment.SCORE_PRODUCTION_QA_BRIDGE_ENABLED !== 'true') return false;
+  const deploymentHost = String(environment.VERCEL_URL || '').trim().toLowerCase();
+  const requestHost = requestHeader(request, 'host').trim().toLowerCase();
+  return QA_VERCEL_HOST_RE.test(deploymentHost) && requestHost === deploymentHost;
 }
 
 function requestUrl(request) {
@@ -96,9 +105,13 @@ export async function handleScoreEdgeBridge(request, response, dependencies = {}
     return deny(response, 404, 'SCORE_EDGE_ROUTE_NOT_FOUND');
   }
 
-  const expectedSecret = String(environment.SCORE_EDGE_SHARED_SECRET || '');
+  const qaProtectedBridge = qaProtectedBridgeAllowed(request, environment);
+  const expectedSecret = qaProtectedBridge
+    ? String(environment.VERCEL_AUTOMATION_BYPASS_SECRET || '')
+    : String(environment.SCORE_EDGE_SHARED_SECRET || '');
   const suppliedSecret = requestHeader(request, 'x-score-edge-secret');
-  if (!secretEqual(suppliedSecret, expectedSecret)) {
+  const secretPattern = qaProtectedBridge ? QA_BYPASS_RE : SHARED_SECRET_RE;
+  if (!secretEqual(suppliedSecret, expectedSecret, secretPattern)) {
     return deny(response, 403, 'SCORE_EDGE_DENIED');
   }
 

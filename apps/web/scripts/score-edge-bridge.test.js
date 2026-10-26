@@ -27,8 +27,10 @@ function request({
   contentType = 'application/json',
   body = { action: 'redeem', ticket },
   contentLength = null,
+  host = 'www.usd-impact.com',
 } = {}) {
   const headers = {
+    host,
     'content-type': contentType,
     'x-score-edge-secret': secret,
   };
@@ -131,6 +133,35 @@ test('wrong shared secret fails before redemption', async () => {
   assert.equal(result.status, 403);
   assert.equal(result.payload.code, 'SCORE_EDGE_DENIED');
   assert.equal(called, false);
+});
+
+test('Stage E bridge reuses the Vercel automation bypass only on the exact protected deployment host', async () => {
+  const qaSecret = 'v'.repeat(32);
+  const qaHost = 'usd-impact-site-q1t5jg69r-usd-impact.vercel.app';
+  const qaEnvironment = {
+    VERCEL_ENV: 'production',
+    VERCEL_URL: qaHost,
+    VERCEL_AUTOMATION_BYPASS_SECRET: qaSecret,
+    SCORE_EDGE_BRIDGE_ENABLED: 'true',
+    SCORE_PRODUCTION_QA_BRIDGE_ENABLED: 'true',
+    SCORE_EDGE_SHARED_SECRET: '',
+  };
+
+  const allowed = await run({ secret: qaSecret, host: qaHost }, {
+    environment: qaEnvironment,
+  });
+  assert.equal(allowed.status, 200);
+  assert.equal(allowed.payload.allowed, true);
+
+  const publicHost = await run({ secret: qaSecret, host: 'www.usd-impact.com' }, {
+    environment: qaEnvironment,
+  });
+  assert.equal(publicHost.status, 403);
+
+  const wrongSecret = await run({ secret: 'x'.repeat(32), host: qaHost }, {
+    environment: qaEnvironment,
+  });
+  assert.equal(wrongSecret.status, 403);
 });
 
 test('invalid media type and oversized body fail closed', async () => {

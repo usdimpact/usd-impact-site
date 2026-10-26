@@ -24,6 +24,8 @@ function request({
   method = 'POST',
   url = '/api/account?action=score-edge',
   secret = sharedSecret,
+  protectionBypass = null,
+  cookie = null,
   contentType = 'application/json',
   body = { action: 'redeem', ticket },
   contentLength = null,
@@ -34,6 +36,8 @@ function request({
     'content-type': contentType,
     'x-score-edge-secret': secret,
   };
+  if (protectionBypass !== null) headers['x-vercel-protection-bypass'] = protectionBypass;
+  if (cookie !== null) headers.cookie = cookie;
   if (contentLength !== null) headers['content-length'] = String(contentLength);
   return { method, url, headers, body };
 }
@@ -135,33 +139,62 @@ test('wrong shared secret fails before redemption', async () => {
   assert.equal(called, false);
 });
 
-test('Stage E bridge reuses the Vercel automation bypass only on the exact protected deployment host', async () => {
+test('Stage E bridge accepts only exact-host, cookieless requests bound to the forwarded Vercel bypass header', async () => {
   const qaSecret = 'v'.repeat(32);
   const qaHost = 'usd-impact-site-q1t5jg69r-usd-impact.vercel.app';
   const qaEnvironment = {
     VERCEL_ENV: 'production',
     VERCEL_URL: qaHost,
-    VERCEL_AUTOMATION_BYPASS_SECRET: qaSecret,
     SCORE_EDGE_BRIDGE_ENABLED: 'true',
     SCORE_PRODUCTION_QA_BRIDGE_ENABLED: 'true',
     SCORE_EDGE_SHARED_SECRET: '',
   };
 
-  const allowed = await run({ secret: qaSecret, host: qaHost }, {
+  const allowed = await run({
+    secret: qaSecret,
+    protectionBypass: qaSecret,
+    host: qaHost,
+  }, {
     environment: qaEnvironment,
   });
   assert.equal(allowed.status, 200);
   assert.equal(allowed.payload.allowed, true);
 
-  const publicHost = await run({ secret: qaSecret, host: 'www.usd-impact.com' }, {
+  const publicHost = await run({
+    secret: qaSecret,
+    protectionBypass: qaSecret,
+    host: 'www.usd-impact.com',
+  }, {
     environment: qaEnvironment,
   });
   assert.equal(publicHost.status, 403);
 
-  const wrongSecret = await run({ secret: 'x'.repeat(32), host: qaHost }, {
+  const missingBypass = await run({
+    secret: qaSecret,
+    host: qaHost,
+  }, {
     environment: qaEnvironment,
   });
-  assert.equal(wrongSecret.status, 403);
+  assert.equal(missingBypass.status, 403);
+
+  const mismatch = await run({
+    secret: qaSecret,
+    protectionBypass: 'x'.repeat(32),
+    host: qaHost,
+  }, {
+    environment: qaEnvironment,
+  });
+  assert.equal(mismatch.status, 403);
+
+  const browserSession = await run({
+    secret: qaSecret,
+    protectionBypass: qaSecret,
+    cookie: '_vercel_jwt=present',
+    host: qaHost,
+  }, {
+    environment: qaEnvironment,
+  });
+  assert.equal(browserSession.status, 403);
 });
 
 test('invalid media type and oversized body fail closed', async () => {

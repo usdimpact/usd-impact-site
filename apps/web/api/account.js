@@ -435,6 +435,16 @@ export async function handleAccountDeletionFinalizer(request, response) {
   }
 }
 
+async function handleStageEHeaderProbe(request, response) {
+  if (process.env.VERCEL_ENV !== 'preview') {
+    return sendJson(response, 404, { error: 'Not found.', code: 'NOT_FOUND' });
+  }
+  if (request.method !== 'GET') return methodNotAllowed(response, 'GET');
+  return sendJson(response, 200, {
+    protectionBypassHeaderForwarded: Boolean(header(request, 'x-vercel-protection-bypass')),
+  });
+}
+
 const handlers = Object.freeze({
   login: handleLogin,
   confirm: handleConfirm,
@@ -455,6 +465,7 @@ const handlers = Object.freeze({
   'score-membership': handleScoreMembershipCheck,
   'score-handoff': handleScoreHandoff,
   'score-edge': handleScoreEdgeBridge,
+  'stage-e-header-probe': handleStageEHeaderProbe,
 });
 
 export default async function handler(request, response) {

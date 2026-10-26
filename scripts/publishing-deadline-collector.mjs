@@ -11,6 +11,7 @@ const WEB = `https://github.com/${SCOPE.repo}`;
 const SHA = /^[a-f0-9]{40}$/;
 const ACTIVE = ['queued', 'in_progress', 'waiting', 'pending', 'requested'];
 const WORKFLOWS = { daily: 'daily-news.yml', backstop: 'daily-news-schedule-backstop.yml' };
+const CLOSED_PR_LOOKBACK_DAYS = 14;
 const record = x => x !== null && typeof x === 'object' && !Array.isArray(x);
 const failure = code => Object.assign(new Error(code), { safeCode: code });
 const validDay = day => typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day) &&
@@ -193,19 +194,51 @@ export async function collectDailyDelivery({ edition, fetchImpl = globalThis.fet
     if (report.dispatchReceipt === 'unknown') gaps.push({ group: 'dispatch', code: 'external-wake-receipt-not-attested' });
   });
   await group('prs', async () => {
-    const all = await pages('pulls', null, { state: 'all', base: 'main', sort: 'created', direction: 'desc' });
-    // All-state metadata is read completely. Prioritize visible date matches but still scan
-    // every changed-file list: a misleading title must never hide a competing candidate.
-    all.sort((a, b) => Number(String(b.title).includes(edition) || String(b.head?.ref).includes(edition)) - Number(String(a.title).includes(edition) || String(a.head?.ref).includes(edition)));
-    for (const raw of all) {
-      // Reserve observations for candidate checks, canonical deployment, public pages
-      // and the final main read. Incomplete historical-file coverage remains UNKNOWN.
+    const exactPath = `apps/web/src/content/news/${edition}.md`;
+    const floor = Date.parse(`${edition}T00:00:00Z`) - CLOSED_PR_LOOKBACK_DAYS * 24 * 60 * 60 * 1000;
+    const inspect = new Map();
+
+    // Open PRs are always inspected, regardless of age, because any still-open branch can
+    // suppress a competing Daily candidate. Closed/merged PRs are inspected only inside a
+    // conservative edition-relative window; Daily publication PRs are same-day artifacts,
+    // so an older closed off-contract branch is not active editorial state for this edition.
+    for (const raw of await pages('pulls', null, { state: 'open', base: 'main', sort: 'updated', direction: 'desc' })) {
+      inspect.set(raw.number, raw);
+    }
+
+    let closedWindowComplete = false;
+    for (let page = 1; page <= cap.pages; page++) {
+      const url = new URL(`${ROOT}/pulls`);
+      for (const [k, v] of Object.entries({ state: 'closed', base: 'main', sort: 'updated', direction: 'desc', per_page: 100, page })) {
+        url.searchParams.set(k, String(v));
+      }
+      const { data } = await read(url.href);
+      if (!Array.isArray(data) || data.length > 100) throw failure('invalid-collection');
+      let crossedFloor = false;
+      for (const raw of data) {
+        if (!record(raw) || !number(raw.number) || typeof raw.updated_at !== 'string' || !deadlineClock(raw.updated_at)) throw failure('invalid-pr');
+        const updated = Date.parse(raw.updated_at);
+        if (!Number.isFinite(updated)) throw failure('invalid-pr');
+        if (updated < floor) { crossedFloor = true; continue; }
+        inspect.set(raw.number, raw);
+      }
+      if (data.length < 100 || crossedFloor) { closedWindowComplete = true; break; }
+    }
+    if (!closedWindowComplete) throw failure('closed-pr-window-pagination-limit');
+
+    const ordered = [...inspect.values()].sort((a, b) =>
+      Number(String(b.title).includes(edition) || String(b.head?.ref).includes(edition)) -
+      Number(String(a.title).includes(edition) || String(a.head?.ref).includes(edition)));
+
+    for (const raw of ordered) {
       if (requests >= cap.requests - Math.min(24, Math.floor(cap.requests / 3))) throw failure('pr-file-history-budget');
-      if (!number(raw.number) || typeof raw.title !== 'string' || typeof raw.head?.ref !== 'string' || !SHA.test(raw.head?.sha)) throw failure('invalid-pr');
+      if (!number(raw.number) || typeof raw.title !== 'string' || typeof raw.head?.ref !== 'string' ||
+          !SHA.test(raw.head?.sha) || !['open', 'closed'].includes(raw.state) ||
+          typeof raw.updated_at !== 'string' || !deadlineClock(raw.updated_at)) throw failure('invalid-pr');
       const files = await pages(`pulls/${raw.number}/files`);
       if (files.length >= 3000 || files.some(f => typeof f.filename !== 'string')) throw failure('incomplete-pr-files');
       const paths = files.map(f => f.filename);
-      if (!raw.title.includes(edition) && !raw.head.ref.includes(edition) && !paths.includes(`apps/web/src/content/news/${edition}.md`)) continue;
+      if (!raw.title.includes(edition) && !raw.head.ref.includes(edition) && !paths.includes(exactPath)) continue;
       const { data: pr } = await read(`${ROOT}/pulls/${raw.number}`);
       if (pr.number !== raw.number || pr.head?.sha !== raw.head.sha || pr.state !== raw.state || pr.updated_at !== raw.updated_at) throw failure('pr-changed-during-read');
       report.prs.items.push({ number: pr.number, edition, state: pr.merged_at ? 'merged' : pr.state,
@@ -213,7 +246,7 @@ export async function collectDailyDelivery({ edition, fetchImpl = globalThis.fet
         files: paths, mergeSha: pr.merge_commit_sha, receipt: `${WEB}/pull/${pr.number}` });
       if (report.prs.items.length > 100) throw failure('too-many-candidates');
     }
-    report.prs.coverage = 'all-states-complete';
+    report.prs.coverage = 'open-all-closed-14d-complete';
   });
   // Facts only: do not parse prose comments into source-review/human approval certificates.
   for (const pr of report.prs.items.slice(0, 5)) await group('candidate-checks', async () => {

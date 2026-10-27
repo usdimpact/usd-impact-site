@@ -8,6 +8,8 @@ const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.ur
 assert.doesNotMatch(account, /handleScoreEdge/);
 assert.doesNotMatch(account, /['"]score-edge['"]/);
 assert.match(account, /'score-handoff': handleScoreHandoff/);
+assert.match(account, /'score-member-redeem': handleScoreMemberRedeem/);
+assert.match(account, /'score-member-content': handleScoreMemberContent/);
 
 const rewriteSources = new Set((vercel.rewrites || []).map((entry) => entry.source));
 assert.equal(rewriteSources.has('/api/score-edge-redeem'), false);
@@ -20,6 +22,7 @@ for (const path of [
   '../src/lib/score-edge-redeem-handler.js',
   '../src/lib/score-edge-validate-handler.js',
   '../src/lib/score-edge-bridge.js',
+  '../api/score-member.js',
   './score-edge-private.test.js',
   './score-edge-bridge.test.js',
 ]) {

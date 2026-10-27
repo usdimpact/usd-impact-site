@@ -199,9 +199,51 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GENERATED_BRANCH: ${{ steps.branch.outputs.branch }}
           GENERATED_HEAD_SHA: ${{ steps.branch.outputs.head_sha }}
+          GENERATED_WEEK: ${{ steps.branch.outputs.week }}
           PR_NUMBER: ${{ steps.publication_pr.outputs.pr_number }}
         run: |
           set -euo pipefail
+
+          close_if_same_week_already_published() {
+            current_main="$1"
+            current_archive="$RUNNER_TEMP/current-main-three-dials.json"
+            generated_archive="$RUNNER_TEMP/generated-three-dials.json"
+
+            if ! gh api \
+              -H 'Accept: application/vnd.github+json' \
+              "repos/$GITHUB_REPOSITORY/contents/apps/web/public/data/three-dials/archive/${GENERATED_WEEK}.json?ref=${current_main}" \
+              --jq '.content' \
+              | tr -d '\n' \
+              | base64 --decode \
+              > "$current_archive"
+            then
+              return 1
+            fi
+
+            if ! git show "${GENERATED_HEAD_SHA}:apps/web/public/data/three-dials/archive/${GENERATED_WEEK}.json" > "$generated_archive"; then
+              return 1
+            fi
+
+            if node - "$current_archive" "$generated_archive" <<'NODE'
+          const fs = require('fs');
+          const [currentPath, generatedPath] = process.argv.slice(2);
+          const normalize = (path) => {
+            const value = JSON.parse(fs.readFileSync(path, 'utf8'));
+            delete value.retrieved_at;
+            return JSON.stringify(value);
+          };
+          process.exit(normalize(currentPath) === normalize(generatedPath) ? 0 : 1);
+          NODE
+            then
+              gh pr close "$PR_NUMBER" \
+                --repo "$GITHUB_REPOSITORY" \
+                --comment "Superseded safely: protected main advanced during validation and now already contains the same immutable Three Dials week (${GENERATED_WEEK}) with identical normalized snapshot content. This automation PR is stale and is closed without merge."
+              echo "::notice::Three-Dials publication for ${GENERATED_WEEK} is already present on current main ${current_main}; stale PR #${PR_NUMBER} closed without merge."
+              return 0
+            fi
+
+            return 1
+          }
 
           if [ -z "$PR_NUMBER" ]; then
             echo "::error::Publication PR number was not resolved."
@@ -210,7 +252,10 @@ jobs:
 
           current_main="$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.commit.sha')"
           if [ "$current_main" != "$GITHUB_SHA" ]; then
-            echo "::error::main moved from $GITHUB_SHA to $current_main before protected PR checks were registered."
+            if close_if_same_week_already_published "$current_main"; then
+              exit 0
+            fi
+            echo "::error::main moved from $GITHUB_SHA to $current_main before protected PR checks were registered, and the generated week is not already published identically."
             exit 1
           fi
 
@@ -277,7 +322,10 @@ jobs:
           pr_base="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.base.sha')"
           pr_head="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.head.sha')"
           if [ "$current_main" != "$GITHUB_SHA" ] || [ "$pr_base" != "$GITHUB_SHA" ] || [ "$pr_head" != "$GENERATED_HEAD_SHA" ]; then
-            echo "::error::main or publication PR drifted while native protected checks were being registered."
+            if [ "$current_main" != "$GITHUB_SHA" ] && close_if_same_week_already_published "$current_main"; then
+              exit 0
+            fi
+            echo "::error::main or publication PR drifted while native protected checks were being registered, and no identical published-week supersession was found."
             exit 1
           fi
 

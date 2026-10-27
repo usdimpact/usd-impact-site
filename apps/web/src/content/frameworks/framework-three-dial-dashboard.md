@@ -192,7 +192,7 @@ Cross-asset behavior can confirm or challenge the interpretation. Cross-asset co
 
 ## How this connects to the Weekly Score
 
-The **USD Impact Score v2** remains a separate systematic cross-asset indicator with its own published methodology and input governance.
+The **weekly USD Impact Score v2** remains a **separate systematic cross-asset indicator** with its own published methodology and input governance.
 
 Three Dials v2 does not become the Score formula.
 

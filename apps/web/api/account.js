@@ -44,6 +44,7 @@ import { createOwnSupportRequest } from '../src/lib/support-request.js';
 import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js';
 import { handleScoreMembershipCheck } from '../src/lib/score-membership-handler.js';
 import { handleScoreHandoff } from '../src/lib/score-handoff-handler.js';
+import { handleScoreMemberRedeem, handleScoreMemberContent } from '../src/lib/score-member-handler.js';
 
 function header(request, name) {
   const value = request.headers?.[name] ?? request.headers?.[name.toLowerCase()];
@@ -453,6 +454,8 @@ const handlers = Object.freeze({
   'lifecycle-qa': handleLifecycleQaRequest,
   'score-membership': handleScoreMembershipCheck,
   'score-handoff': handleScoreHandoff,
+  'score-member-redeem': handleScoreMemberRedeem,
+  'score-member-content': handleScoreMemberContent,
 });
 
 export default async function handler(request, response) {

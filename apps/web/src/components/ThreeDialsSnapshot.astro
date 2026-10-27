@@ -1,18 +1,12 @@
 ---
 import snapshot from '../data/three-dials-latest.json';
-import { scorePipelineArchiveUrl } from '../lib/score-pipeline-origin.js';
-
 const isPublished = snapshot.status === 'published';
 const dials = isPublished ? Object.values(snapshot.dials) : [];
-const scoreArchiveUrl = isPublished
-  ? scorePipelineArchiveUrl(snapshot.model_output.week_ending, import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN)
-  : null;
-
 const pretty = (value) => String(value ?? '').replaceAll('_', ' ');
 const directionLabel = (dial) => {
-  if (dial.title.includes('Liquidity')) {
-    if (dial.direction === 'tightening') return 'Tightening / more stress';
-    if (dial.direction === 'easing') return 'Easing / less stress';
+  if (dial.title.includes('Funding')) {
+    if (dial.direction === 'tightening') return 'Tightening / more funding pressure';
+    if (dial.direction === 'easing') return 'Easing / less funding pressure';
     if (dial.direction === 'contained') return 'Contained';
   }
   return pretty(dial.direction);
@@ -59,7 +53,7 @@ const directionLabel = (dial) => {
             </div>
             <dl class="dial-meta">
               <div>
-                <dt>Confirmation</dt>
+                <dt>Evidence basis</dt>
                 <dd>{pretty(dial.confirmation ?? dial.dollar_confirmation)}</dd>
               </div>
             </dl>
@@ -90,19 +84,11 @@ const directionLabel = (dial) => {
         <p class="scope-note">{snapshot.interpretation.scope}</p>
       </div>
 
-      <div class="snapshot-model card">
-        <span class="evidence-label model">Model output</span>
-        <div class="model-grid">
-          <div>
-            <h3>{snapshot.model_output.name}</h3>
-            <p><strong>{snapshot.model_output.score_display}</strong> · {snapshot.model_output.regime} · week ending {snapshot.model_output.week_ending}</p>
-            <p class="scope-note">{snapshot.model_output.scope}</p>
-          </div>
-          <div class="model-links">
-            <a href={scoreArchiveUrl} target="_blank" rel="noreferrer">Open Score JSON</a>
-            <a href={snapshot.model_output.methodology_url}>Read Score methodology</a>
-          </div>
-        </div>
+      <div class="snapshot-score-separation card">
+        <span class="evidence-label separation">Separate product</span>
+        <h3>USD Impact Score v2</h3>
+        <p>The Score remains a separate systematic cross-asset product with its own source governance. It is intentionally not embedded in the Three Dials v2 snapshot.</p>
+        <p><a href="/score/">Open the Score</a> · <a href="/score/methodology/">Read Score methodology</a></p>
       </div>
 
       <details class="snapshot-methodology">
@@ -132,7 +118,7 @@ const directionLabel = (dial) => {
   .evidence-label { display: inline-block; width: fit-content; border-radius: 999px; padding: 4px 9px; font-size: .76rem; line-height: 1.2; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
   .evidence-label.fact { background: #e8eef5; color: #24476a; }
   .evidence-label.interpretation { background: #fff1c8; color: #715313; }
-  .evidence-label.model { background: #e5f4eb; color: #225e38; }
+  .evidence-label.separation { background: #e8eef5; color: #24476a; }
   .dial-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
   .dial-card { display: flex; flex-direction: column; gap: 16px; padding: 20px; }
   .dial-card-topline { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
@@ -153,11 +139,9 @@ const directionLabel = (dial) => {
   .fact-change { text-align: right; }
   .fact-row > a { font-size: .82rem; font-weight: 700; }
   .fact-row > p { grid-column: 1 / -1; margin: 0; color: var(--slate); font-size: .8rem; line-height: 1.5; }
-  .snapshot-interpretation, .snapshot-model { margin-top: 18px; border-left: 5px solid var(--gold); }
-  .snapshot-interpretation h3, .snapshot-model h3 { margin: 10px 0 8px; }
+  .snapshot-interpretation, .snapshot-score-separation { margin-top: 18px; border-left: 5px solid var(--gold); }
+  .snapshot-interpretation h3, .snapshot-score-separation h3 { margin: 10px 0 8px; }
   .scope-note { color: var(--slate); font-size: .9rem; }
-  .model-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24px; }
-  .model-links { display: flex; flex-direction: column; gap: 8px; min-width: 190px; }
   .snapshot-methodology { margin-top: 18px; padding: 16px 18px; border: 1px solid #dce2e9; border-radius: 12px; background: #fff; }
   .snapshot-methodology summary { cursor: pointer; color: var(--navy); font-weight: 800; }
   .snapshot-methodology p, .snapshot-methodology li { color: var(--slate); }
@@ -169,7 +153,5 @@ const directionLabel = (dial) => {
     .snapshot-date { text-align: left; }
     .fact-row { grid-template-columns: 1fr auto; }
     .fact-row > a { grid-column: 1 / -1; }
-    .model-grid { grid-template-columns: 1fr; }
-    .model-links { min-width: 0; }
   }
 </style>

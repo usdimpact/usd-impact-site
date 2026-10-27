@@ -1,50 +1,86 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
 
-// Tests the actual scheduled generator without contacting providers or editing
-// any published JSON. A future Friday prevents the immutable-archive no-op.
 const generator = new URL('./generate-three-dials-snapshot.mjs', import.meta.url);
-const workingDirectory = fileURLToPath(new URL('../', import.meta.url));
-const futureArchive = new URL('../public/data/three-dials/archive/2031-01-03.json', import.meta.url);
 const sourceLatest = new URL('../src/data/three-dials-latest.json', import.meta.url);
 const publicLatest = new URL('../public/data/three-dials/latest.json', import.meta.url);
 
-assert.equal(existsSync(futureArchive), false, 'Future test week must not be present');
-const [beforeSource, beforePublic, generatorText] = await Promise.all([
-  readFile(sourceLatest, 'utf8'),
-  readFile(publicLatest, 'utf8'),
+const [generatorText, sourceText, publicText] = await Promise.all([
   readFile(generator, 'utf8'),
-]);
-assert.equal(beforeSource, beforePublic, 'Existing latest copies must be synchronized');
-assert.ok(
-  generatorText.indexOf('assertPublicThreeDialsRedistributionRights();') <
-    generatorText.indexOf('const fredEntries = await Promise.all('),
-  'Public rights gate must run before any provider requests',
-);
-
-const trial = spawnSync(process.execPath, [fileURLToPath(generator)], {
-  cwd: workingDirectory,
-  env: { ...process.env, THREE_DIALS_NOW: '2031-01-06T12:00:00.000Z' },
-  encoding: 'utf8',
-  timeout: 10_000,
-  maxBuffer: 100_000,
-});
-assert.equal(trial.status, 1, 'New snapshot generation must fail closed');
-assert.match(trial.stderr, /HOLD_THREE_DIALS_REDISTRIBUTION_RIGHTS/);
-assert.match(trial.stderr, /DX-Y\.NYB/);
-assert.match(trial.stderr, /BAMLH0A0HYM2/);
-assert.match(trial.stderr, /VIXCLS/);
-assert.match(trial.stderr, /issues\/845/);
-assert.doesNotMatch(trial.stderr, /Source request failed|fetch failed|network/i);
-
-const [afterSource, afterPublic] = await Promise.all([
   readFile(sourceLatest, 'utf8'),
   readFile(publicLatest, 'utf8'),
 ]);
-assert.equal(afterSource, beforeSource, 'Source latest must remain untouched');
-assert.equal(afterPublic, beforePublic, 'Public latest must remain untouched');
-assert.equal(existsSync(futureArchive), false, 'No archive can be created on hold');
-console.log('Three-Dials redistribution rights publication guard PASS (no network, no writes).');
+
+assert.equal(sourceText, publicText, 'Three Dials source/public latest copies must remain byte-identical.');
+
+const forbidden = ['DX-Y.NYB', 'BAMLH0A0HYM2', 'VIXCLS', 'query1.finance.yahoo.com', 'finance.yahoo.com/quote/'];
+for (const marker of forbidden) {
+  assert.equal(generatorText.includes(marker), false, `Three Dials v2 generator must not contain restricted legacy source ${marker}.`);
+}
+for (const required of [
+  'FED_BROAD_USD',
+  'FED_10Y_REAL_YIELD',
+  'SOFR_IORB_SPREAD',
+  'DTWEXBGS',
+  'DFII10',
+  'IORB',
+  'https://markets.newyorkfed.org',
+  '/api/rates/secured/sofr/search.json',
+  'NYFED_SOFR_NOTICE',
+  'federal_reserve_board_public_domain',
+  'derived_from_permitted_primary_sources',
+]) {
+  assert.ok(generatorText.includes(required), `Three Dials v2 generator must bind rights-safe contract ${required}.`);
+}
+
+assert.match(generatorText, /FRED is used only as the transport/);
+assert.match(generatorText, /must not be labeled DXY/);
+assert.match(generatorText, /not a credit spread or a complete measure of market liquidity\/stress/);
+assert.match(generatorText, /break_from_v1: true/);
+assert.match(generatorText, /Do not splice v1 and v2 observations into one continuous series/);
+assert.match(generatorText, /USD Impact is not affiliated with the New York Fed/);
+assert.match(generatorText, /does not sanction or endorse any particular republication/);
+assert.doesNotMatch(generatorText, /score\.usd-impact\.com|SCORE_ORIGIN|fetchScoreModelOutput|model_output/i);
+
+const latest = JSON.parse(sourceText);
+assert.ok(['pending', 'published'].includes(latest.status), 'Three Dials latest status must be pending or published.');
+
+if (latest.status === 'pending') {
+  assert.equal(latest.version, 1);
+  assert.equal(latest.source_rights_state, 'unverified');
+  assert.match(latest.message, /temporarily unavailable pending source-rights review/);
+  assert.equal(latest.dials, undefined);
+  assert.equal(latest.interpretation, undefined);
+  assert.equal(latest.model_output, undefined);
+} else {
+  assert.equal(latest.version, 2);
+  assert.equal(latest.methodology?.id, 'three-dials-rights-safe-v2');
+  assert.equal(latest.methodology?.break_from_v1, true);
+  assert.match(latest.methodology?.history_policy ?? '', /Do not splice v1 and v2/);
+  assert.equal(Object.hasOwn(latest, 'source_rights_state'), false);
+  assert.equal(Object.hasOwn(latest, 'model_output'), false);
+  assert.deepEqual(Object.keys(latest.dials ?? {}).sort(), ['dollar', 'funding_pressure', 'real_rates']);
+
+  const facts = Object.values(latest.dials ?? {}).flatMap((dial) => dial?.facts ?? []);
+  assert.deepEqual(
+    new Set(facts.map((fact) => fact.id)),
+    new Set(['FED_BROAD_USD', 'FED_10Y_REAL_YIELD', 'SOFR_IORB_SPREAD']),
+  );
+  for (const fact of facts) {
+    assert.match(fact.source_url, /^https:\/\/(www\.federalreserve\.gov|www\.newyorkfed\.org)\//);
+  }
+
+  assert.equal(latest.source_rights?.federal_reserve_board?.class, 'public_domain_unless_otherwise_indicated');
+  assert.equal(latest.source_rights?.new_york_fed_sofr?.class, 'permitted_with_reference_rate_notice');
+  assert.match(latest.source_rights?.new_york_fed_sofr?.notice ?? '', /does not sanction or endorse any particular republication/);
+  assert.match(latest.source_rights?.new_york_fed_sofr?.affiliation_notice ?? '', /not affiliated with the New York Fed/);
+
+  for (const marker of forbidden) {
+    assert.equal(sourceText.includes(marker), false, `Published v2 snapshot contains restricted legacy marker ${marker}.`);
+  }
+
+  const archive = await readFile(new URL(`../public/data/three-dials/archive/${latest.week_ending}.json`, import.meta.url), 'utf8');
+  assert.equal(sourceText, archive, 'Published latest must be byte-identical to its immutable dated archive.');
+}
+
+console.log(`Three-Dials v2 source-rights contract PASS: rights-safe generator with latest status ${latest.status}.`);

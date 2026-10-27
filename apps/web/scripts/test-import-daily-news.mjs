@@ -231,6 +231,35 @@ try {
   assert.match(blsCpiHistoricalDates.stdout, /status review/);
 
   await rm(editionPath, { force: true });
+  const beaPceCurrentReleaseUrl = 'https://www.bea.gov/data/personal-consumption-expenditures-price-index';
+  await writeFile(historicalEditionPath, `---\ntitle: "Historical BEA PCE current-release page"\nslug: "/news/2026-07-22"\nstatus: "published"\nsources:\n  - id: "bea-pce-current-release"\n    title: "Personal Consumption Expenditures Price Index"\n    publisher: "U.S. Bureau of Economic Analysis"\n    url: "${beaPceCurrentReleaseUrl}"\n    publishedAt: "2026-06-23"\n    sourceType: "primary"\n---\n`, 'utf8');
+  await writeFile(historicalCatalystPath, `---\ntitle: "Historical BEA PCE catalyst"\nstatus: "published"\nsources:\n  - id: "bea-pce-current-release"\n    title: "Personal Consumption Expenditures Price Index"\n    publisher: "U.S. Bureau of Economic Analysis"\n    url: "${beaPceCurrentReleaseUrl}"\n    publishedAt: "2026-06-22"\n    sourceType: "primary"\n---\n`, 'utf8');
+  const beaPceLivingBundle = {
+    ...bundle,
+    sources: [
+      {
+        ...bundle.sources[0],
+        id: 'bea-pce-current-release',
+        title: 'Personal Consumption Expenditures Price Index',
+        publisher: 'U.S. Bureau of Economic Analysis',
+        url: beaPceCurrentReleaseUrl,
+        publishedAt: '2026-07-23',
+      },
+      bundle.sources[1],
+    ],
+    highlights: bundle.highlights.map((highlight) => ({
+      ...highlight,
+      sourceIds: highlight.sourceIds.map((id) => id === 'source-a' ? 'bea-pce-current-release' : id),
+    })),
+    catalysts: bundle.catalysts.map((catalyst) => ({ ...catalyst, sourceIds: ['bea-pce-current-release'] })),
+  };
+  await writeBundle(beaPceLivingBundle);
+
+  const beaPceHistoricalDates = runImporter('--replace');
+  assert.equal(beaPceHistoricalDates.status, 0, beaPceHistoricalDates.stderr);
+  assert.match(beaPceHistoricalDates.stdout, /status review/);
+
+  await rm(editionPath, { force: true });
   await rm(historicalEditionPath, { force: true });
   await rm(historicalCatalystPath, { force: true });
   await writeBundle({ ...bundle, body: 'Source review remains incomplete for 2026-07-??.' });

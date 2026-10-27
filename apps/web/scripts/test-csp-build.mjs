@@ -249,12 +249,12 @@ const snapshotRightsHold = (() => {
 const phase2bRoutes = [
   {
     route: '/practice/dxy-vs-broad-usd/',
-    requiredFacts: ['DXY', 'DTWEXBGS', 'DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SPREAD'],
-    requiredMarkers: ['data-reference-classification', 'data-live-evidence-state=', 'data-live-evidence-usable='],
+    requiredFacts: ['FED_BROAD_USD', 'FED_10Y_REAL_YIELD', 'SOFR_IORB_SPREAD'],
+    requiredMarkers: ['data-dxy-live-v2="disabled"', 'data-live-evidence-state=', 'data-live-evidence-usable='],
   },
   {
     route: '/practice/weekly-regime/',
-    requiredFacts: ['DXY', 'DTWEXBGS', 'DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SPREAD'],
+    requiredFacts: ['FED_BROAD_USD', 'FED_10Y_REAL_YIELD', 'SOFR_IORB_SPREAD'],
     requiredMarkers: ['data-dial-reference', 'data-score-model-output', 'data-live-evidence-state=', 'data-live-evidence-usable='],
   },
 ];

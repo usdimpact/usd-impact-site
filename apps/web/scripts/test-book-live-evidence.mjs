@@ -16,14 +16,24 @@ const webRoot = resolve(scriptDir, '..');
 const snapshot = JSON.parse(readFileSync(resolve(webRoot, 'src/data/three-dials-latest.json'), 'utf8'));
 const tools = JSON.parse(readFileSync(resolve(webRoot, 'src/data/book-site-bridge/tools.json'), 'utf8'));
 
-assert.equal(snapshot.status, 'pending');
-assert.equal(snapshot.source_rights_state, 'unverified');
-assert.equal(validateBookLiveEvidenceSnapshot(snapshot).valid, false);
-assert.deepEqual(
-  { state: assessBookLiveEvidence(snapshot).state, usable: assessBookLiveEvidence(snapshot).usable },
-  { state: 'rights-hold', usable: false },
-);
-assert.throws(() => getBookLiveEvidenceFacts(snapshot), /publication gate is not open/i);
+if (snapshot.status === 'pending') {
+  assert.equal(snapshot.source_rights_state, 'unverified');
+  assert.equal(validateBookLiveEvidenceSnapshot(snapshot).valid, false);
+  assert.deepEqual(
+    { state: assessBookLiveEvidence(snapshot).state, usable: assessBookLiveEvidence(snapshot).usable },
+    { state: 'rights-hold', usable: false },
+  );
+  assert.throws(() => getBookLiveEvidenceFacts(snapshot), /publication gate is not open/i);
+} else {
+  assert.equal(snapshot.status, 'published');
+  assert.equal(snapshot.version, 2);
+  assert.equal(validateBookLiveEvidenceSnapshot(snapshot).valid, true);
+  const currentFacts = getBookLiveEvidenceFacts(snapshot);
+  for (const id of ['FED_BROAD_USD', 'FED_10Y_REAL_YIELD', 'SOFR_IORB_SPREAD']) {
+    assert(currentFacts.has(id), `Published repository snapshot must contain ${id}`);
+  }
+  assert.equal(Object.hasOwn(snapshot, 'model_output'), false);
+}
 
 const mockFacts = [
   {

@@ -239,6 +239,17 @@ Eso no predice el siguiente movimiento del dólar, el oro, las acciones ni ning�
 
 ---
 
+---
+
+## Fuentes verificadas / referencias
+
+- [Federal Reserve Board H.10 — Foreign Exchange Rates](https://www.federalreserve.gov/releases/h10/current/)
+- [FRED — 10-Year Treasury Inflation-Indexed Security, Constant Maturity (DFII10)](https://fred.stlouisfed.org/series/DFII10)
+- [U.S. Treasury — Daily Treasury Par Yield Curve Rates](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve)
+- [Federal Reserve Board H.15 — Selected Interest Rates](https://www.federalreserve.gov/releases/h15/)
+- [Federal Reserve Bank of New York — SOFR](https://www.newyorkfed.org/markets/reference-rates/sofr)
+- [Federal Reserve Bank of New York — Terms of Use](https://www.newyorkfed.org/privacy/termsofuse)
+
 ## Conclusión clave
 
 Tres Diales v2 mantiene una secuencia pública sencilla:

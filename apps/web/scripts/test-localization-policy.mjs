@@ -189,9 +189,9 @@ assert.match(spanishTransmissionVisual, /ACTIVOS/);
 assert.doesNotMatch(spanishTransmissionVisual, /Dollar Transmission Chain|U\.S\. RATES|LIQUIDITY|RISK APPETITE|ASSETS/);
 
 assert.match(spanishThreeDialVisual, /Panel Macro de 3 Diales/);
-assert.match(spanishThreeDialVisual, /DIRECCIÓN DEL USD/);
+assert.match(spanishThreeDialVisual, /DÓLAR AMPLIO/);
 assert.match(spanishThreeDialVisual, /TASAS REALES/);
-assert.match(spanishThreeDialVisual, /ESTRÉS DE LIQUIDEZ/);
+assert.match(spanishThreeDialVisual, /PRESIÓN DE FINANCIACIÓN/);
 assert.doesNotMatch(spanishThreeDialVisual, /Three-Dial Macro Dashboard|USD DIRECTION|REAL RATES|LIQUIDITY STRESS/);
 
 assert.match(spanishStartHere, /## Ejemplo práctico — el mismo dólar más fuerte puede significar cosas distintas/);

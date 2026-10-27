@@ -178,17 +178,17 @@ assert.doesNotMatch(reports, /\{monthlyProgress\} of 4 briefs available/);
 
 // Three-Dial framework boundaries: exactly three dials; broad USD is confirmation,
 // real rates require TIPS, liquidity uses multiple evidence channels, and the Score is separate.
-assert.match(threeDialsFramework, /Dial 1 — Dollar direction/);
-assert.match(threeDialsFramework, /Do not create a separate “fourth dial” for broad USD/);
+assert.match(threeDialsFramework, /Dial 1 — Broad USD direction/);
+assert.match(threeDialsFramework, /Do not label the Federal Reserve broad dollar index as DXY/);
 assert.match(threeDialsFramework, /Dial 2 — Real-rate pressure/);
-assert.match(threeDialsFramework, /10-year TIPS yield direction/);
-assert.match(threeDialsFramework, /Do not infer real-rate pressure from the nominal 10-year yield alone/);
-assert.match(threeDialsFramework, /Dial 3 — Liquidity stress/);
-assert.match(threeDialsFramework, /credit spreads widening or tightening/);
-assert.match(threeDialsFramework, /funding-market or banking stress/);
-assert.match(threeDialsFramework, /confidence label is a note about evidence quality, not a probability of future returns/);
+assert.match(threeDialsFramework, /10-year inflation-indexed Treasury constant-maturity yield/);
+assert.match(threeDialsFramework, /Do not substitute a nominal Treasury yield for the real-yield dial/);
+assert.match(threeDialsFramework, /Dial 3 — Funding pressure/);
+assert.match(threeDialsFramework, /SOFR − IORB/);
+assert.match(threeDialsFramework, /not a credit spread/);
+assert.match(threeDialsFramework, /medium evidence-confidence label/);
 assert.match(threeDialsFramework, /weekly USD Impact Score[\s\S]*separate systematic cross-asset indicator/);
-assert.match(threeDialsFramework, /qualitative framework should not be presented as the Score formula/);
+assert.match(threeDialsFramework, /does not become the Score formula/);
 
 // Only the canonical Three-Dial framework route receives the current snapshot component.
 assert.match(frameworkPage, /import ThreeDialsSnapshot from '\.\.\/components\/ThreeDialsSnapshot\.astro'/);
@@ -199,7 +199,7 @@ assert.match(frameworkPage, /\{isThreeDialsPage && <ThreeDialsSnapshot \/>\}/);
 assert.match(threeDialsComponent, /Dated snapshot · not real-time/);
 assert.match(threeDialsComponent, />Fact</);
 assert.match(threeDialsComponent, />Interpretation</);
-assert.match(threeDialsComponent, />Model output</);
+assert.match(threeDialsComponent, />Separate product</);
 assert.match(threeDialsComponent, /Completed observations with actual source dates and source links/);
 assert.match(threeDialsComponent, /Open machine-readable snapshot JSON/);
 assert.match(threeDialsComponent, /Read Score methodology/);
@@ -208,10 +208,8 @@ assert.match(threeDialsComponent, /Publication gate pending/);
 // Display thresholds are fixed, transparent heuristics—not probabilities or Score inputs.
 assert.match(threeDialsLib, /dollarFlatPct: 0\.10/);
 assert.match(threeDialsLib, /yieldFlatBps: 5/);
-assert.match(threeDialsLib, /hyOasFlatBps: 10/);
-assert.match(threeDialsLib, /vixFlatPoints: 1\.0/);
 assert.match(threeDialsLib, /fundingFlatBps: 3/);
-assert.match(threeDialsLib, /Stress-led firm-dollar environment/);
+assert.match(threeDialsLib, /Funding-led firm-dollar environment/);
 assert.match(threeDialsLib, /Rate-led firm-dollar environment/);
 assert.match(threeDialsLib, /Easier soft-dollar environment/);
 assert.match(threeDialsLib, /Mixed \/ transitional environment/);
@@ -219,22 +217,23 @@ assert.match(threeDialsLib, /Descriptive interpretation of completed observation
 assert.doesNotMatch(threeDialsLib, /probability|expected return|buy|sell/i);
 
 // Generator source and immutability contract.
-for (const requiredSeries of ['DTWEXBGS', 'DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR', 'IORB', 'DX-Y.NYB']) {
-  assert.ok(threeDialsGenerator.includes(requiredSeries), `Three-Dials generator must bind ${requiredSeries}.`);
+for (const requiredSeries of ['FED_BROAD_USD', 'FED_10Y_REAL_YIELD', 'SOFR_IORB_SPREAD', 'DTWEXBGS', 'DFII10', 'IORB']) {
+  assert.ok(threeDialsGenerator.includes(requiredSeries), `Three-Dials v2 generator must bind ${requiredSeries}.`);
+}
+for (const forbiddenSeries of ['DX-Y.NYB', 'BAMLH0A0HYM2', 'VIXCLS', 'query1.finance.yahoo.com']) {
+  assert.equal(threeDialsGenerator.includes(forbiddenSeries), false, `Three-Dials v2 generator must exclude ${forbiddenSeries}.`);
 }
 assert.match(threeDialsGenerator, /const FRED_ORIGIN = 'https:\/\/fred\.stlouisfed\.org'/);
-assert.match(threeDialsGenerator, /const YAHOO_ORIGIN = 'https:\/\/query1\.finance\.yahoo\.com'/);
-assert.match(threeDialsGenerator, /const SCORE_ORIGIN = 'https:\/\/score\.usd-impact\.com'/);
-assert.match(threeDialsGenerator, /sourceClass: 'accessible_proxy'/);
-assert.match(threeDialsGenerator, /not represented as exchange-official or a licensed institutional feed/);
-assert.match(threeDialsGenerator, /third_party_via_fred/);
+assert.match(threeDialsGenerator, /const NYFED_ORIGIN = 'https:\/\/markets\.newyorkfed\.org'/);
+assert.doesNotMatch(threeDialsGenerator, /score\.usd-impact\.com|SCORE_ORIGIN|model_output|fetchScoreModelOutput/i, 'Three-Dials v2 generator must not depend on Score output.');
+assert.match(threeDialsGenerator, /federal_reserve_board_public_domain/);
+assert.match(threeDialsGenerator, /FRED is used only as the transport/);
+assert.match(threeDialsGenerator, /derived_from_permitted_primary_sources/);
 assert.match(threeDialsGenerator, /SOFR minus IORB funding spread/);
-assert.match(threeDialsGenerator, /funding context, not a standalone liquidity measure/);
+assert.match(threeDialsGenerator, /funding-pressure indicator, not a credit spread or a complete liquidity\/stress measure/);
 assert.match(threeDialsGenerator, /Immutable Three-Dials archive/);
 assert.match(threeDialsGenerator, /archive\/\$\{targetWeek\}\.json/);
-assert.match(threeDialsGenerator, /Weekly Score bridge is .* expected/);
-assert.match(threeDialsGenerator, /Separate descriptive model output/);
-assert.match(threeDialsGenerator, /Dated snapshot, not real-time market data/);
+assert.match(threeDialsGenerator, /Three Dials v2 is a methodology break/);
 assert.doesNotMatch(threeDialsGenerator, new RegExp(legacyScoreOrigin.replaceAll('.', '\\.')));
 
 // Scheduled publication must remain bounded, validated, PR-based, protected and fail-closed.
@@ -264,9 +263,9 @@ assert.doesNotMatch(threeDialsWorkflow, /git push origin main|git push .*HEAD:ma
 // The source-render copy and public machine-readable copy are always synchronized.
 assert.equal(threeDialsSourceLatest, threeDialsPublicLatest, 'Three-Dials source/public latest JSON must be byte-identical.');
 const threeDialsLatest = JSON.parse(threeDialsSourceLatest);
-assert.equal(threeDialsLatest.version, 1);
 assert.ok(['pending', 'published'].includes(threeDialsLatest.status));
 if (threeDialsLatest.status === 'pending') {
+  assert.equal(threeDialsLatest.version, 1);
   assert.equal(threeDialsLatest.source_rights_state, 'unverified');
   assert.match(threeDialsLatest.message, /temporarily unavailable pending source-rights review/);
   assert.match(threeDialsLatest.scope, /Numeric observations, historical comparisons/);
@@ -275,11 +274,12 @@ if (threeDialsLatest.status === 'pending') {
   assert.equal(threeDialsLatest.interpretation, undefined);
   assert.equal(threeDialsLatest.model_output, undefined);
 } else {
+  assert.equal(threeDialsLatest.version, 2);
   assert.match(threeDialsLatest.week_ending, /^20\d{2}-\d{2}-\d{2}$/);
-  assert.equal(threeDialsLatest.model_output.week_ending, threeDialsLatest.week_ending);
   assert.ok(threeDialsLatest.dials?.dollar);
   assert.ok(threeDialsLatest.dials?.real_rates);
-  assert.ok(threeDialsLatest.dials?.liquidity_stress);
+  assert.ok(threeDialsLatest.dials?.funding_pressure);
+  assert.equal(threeDialsLatest.model_output, undefined);
   assert.ok(Array.isArray(threeDialsLatest.disclosures) && threeDialsLatest.disclosures.length >= 5);
 }
 

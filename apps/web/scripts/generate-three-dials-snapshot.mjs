@@ -2,106 +2,52 @@ import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { assessThreeDials, THREE_DIALS_THRESHOLDS, THREE_DIALS_VERSION } from '../src/lib/three-dials.js';
 
 const FRED_ORIGIN = 'https://fred.stlouisfed.org';
-const YAHOO_ORIGIN = 'https://query1.finance.yahoo.com';
-const SCORE_ORIGIN = 'https://score.usd-impact.com';
-const SCORE_URL = `${SCORE_ORIGIN}/data/weekly_input_latest.json`;
-const DXY_SOURCE_URL = 'https://finance.yahoo.com/quote/DX-Y.NYB/';
+const NYFED_ORIGIN = 'https://markets.newyorkfed.org';
 const TIMEOUT_MS = 20_000;
 const MAX_SOURCE_BYTES = 5_000_000;
 
-// Source terms verified 2026-10-21; see issue #845. A FRED link or citation
-// is not a grant of rights to redistribute copyrighted market observations.
-// No flag, environment variable, or owner-only editorial approval bypasses this.
-// A reviewed source-rights remediation must explicitly replace this hold.
-const UNVERIFIED_PUBLIC_REDISTRIBUTION_SOURCES = Object.freeze([
-  { id: 'DX-Y.NYB', provider: 'Yahoo Finance', terms: 'https://uk.help.yahoo.com/kb/finance/article-data-availability-yahoo-finance-sln2310.html' },
-  { id: 'BAMLH0A0HYM2', provider: 'ICE Data Indices', terms: 'https://fred.stlouisfed.org/series/BAMLH0A0HYM2' },
-  { id: 'VIXCLS', provider: 'Cboe', terms: 'https://fred.stlouisfed.org/series/VIXCLS' },
-]);
+const BOARD_DISCLAIMER_URL = 'https://www.federalreserve.gov/disclaimer.htm';
+const NYFED_TERMS_URL = 'https://www.newyorkfed.org/privacy/termsofuse';
+const NYFED_SOFR_URL = 'https://www.newyorkfed.org/markets/reference-rates/sofr';
+const NYFED_SOFR_NOTICE = 'The SOFR reference rate data is subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the SOFR data by USD Impact, does not sanction or endorse any particular republication, and has no liability for your use.';
+const NYFED_AFFILIATION_NOTICE = 'USD Impact is not affiliated with the New York Fed. The New York Fed does not sanction, endorse, or recommend any products or services offered by USD Impact.';
 
-function assertPublicThreeDialsRedistributionRights() {
-  const series = UNVERIFIED_PUBLIC_REDISTRIBUTION_SOURCES.map(({ id, provider }) => `${id} (${provider})`).join(', ');
-  throw new Error(
-    `HOLD_THREE_DIALS_REDISTRIBUTION_RIGHTS: no verified public redistribution authorization for ${series}. ` +
-    'No third-party source fetch or new snapshot write is permitted. ' +
-    'Review https://github.com/usdimpact/usd-impact-site/issues/845 before enabling publication.'
-  );
-}
 
-const ALLOWED_SCORE_REGIMES = new Set([
-  'Strong dollar regime',
-  'Firm dollar regime',
-  'Neutral / transitional',
-  'Soft dollar regime',
-  'Weak dollar regime',
-]);
-
-const FRED_SERIES = Object.freeze({
+const BOARD_SERIES = Object.freeze({
   broadUsd: {
-    id: 'DTWEXBGS',
-    label: 'Nominal Broad U.S. Dollar Index',
-    provider: 'Federal Reserve Board via FRED',
-    sourceClass: 'primary_public',
-    units: 'Index Jan 2006=100',
+    transportId: 'DTWEXBGS',
+    outputId: 'FED_BROAD_USD',
+    sourceSeriesId: 'H10/H10/JRXWTFB_N.B',
+    label: 'Federal Reserve nominal broad dollar index',
+    provider: 'Board of Governors of the Federal Reserve System',
+    sourceClass: 'federal_reserve_board_public_domain',
+    sourceUrl: 'https://www.federalreserve.gov/releases/h10/current/',
+    units: 'Index',
     maxAgeDays: 7,
     levelDigits: 4,
     changeMode: 'pct',
   },
   realYield10y: {
-    id: 'DFII10',
-    label: '10-year TIPS real yield',
-    provider: 'Federal Reserve Board via FRED',
-    sourceClass: 'primary_public',
-    units: 'Percent',
-    maxAgeDays: 4,
-    levelDigits: 2,
-    changeMode: 'bps',
-  },
-  nominalYield10y: {
-    id: 'DGS10',
-    label: '10-year nominal Treasury yield',
-    provider: 'Federal Reserve Board via FRED',
-    sourceClass: 'primary_public',
-    units: 'Percent',
-    maxAgeDays: 4,
-    levelDigits: 2,
-    changeMode: 'bps',
-  },
-  hyOas: {
-    id: 'BAMLH0A0HYM2',
-    label: 'ICE BofA U.S. High Yield option-adjusted spread',
-    provider: 'ICE Data Indices via FRED',
-    sourceClass: 'third_party_via_fred',
-    units: 'Percent',
-    maxAgeDays: 4,
-    levelDigits: 2,
-    changeMode: 'bps',
-  },
-  vix: {
-    id: 'VIXCLS',
-    label: 'CBOE Volatility Index: VIX',
-    provider: 'CBOE via FRED',
-    sourceClass: 'third_party_via_fred',
-    units: 'Index',
-    maxAgeDays: 4,
-    levelDigits: 2,
-    changeMode: 'points',
-  },
-  sofr: {
-    id: 'SOFR',
-    label: 'Secured Overnight Financing Rate',
-    provider: 'Federal Reserve Bank of New York via FRED',
-    sourceClass: 'primary_public',
+    transportId: 'DFII10',
+    outputId: 'FED_10Y_REAL_YIELD',
+    sourceSeriesId: 'H15/H15/RIFLGFCY10_XII_N.B',
+    label: '10-year inflation-indexed Treasury constant-maturity yield',
+    provider: 'Board of Governors of the Federal Reserve System',
+    sourceClass: 'federal_reserve_board_public_domain',
+    sourceUrl: 'https://www.federalreserve.gov/releases/h15/',
     units: 'Percent',
     maxAgeDays: 4,
     levelDigits: 2,
     changeMode: 'bps',
   },
   iorb: {
-    id: 'IORB',
-    label: 'Interest Rate on Reserve Balances',
-    provider: 'Federal Reserve Board via FRED',
-    sourceClass: 'primary_public',
+    transportId: 'IORB',
+    outputId: 'FED_IORB',
+    sourceSeriesId: 'PRATES/PRATES_POLICY_RATES/RESBM_N.D',
+    label: 'Interest rate on reserve balances',
+    provider: 'Board of Governors of the Federal Reserve System',
+    sourceClass: 'federal_reserve_board_public_domain',
+    sourceUrl: 'https://www.federalreserve.gov/datadownload/Choose.aspx?rel=PRATES',
     units: 'Percent',
     maxAgeDays: 4,
     levelDigits: 2,
@@ -149,7 +95,6 @@ function formatLevel(value, units, digits) {
 function formatChange(value, unit) {
   if (unit === 'percent') return formatSigned(value, 2, '%');
   if (unit === 'basis_points') return formatSigned(value, 0, ' bp');
-  if (unit === 'index_points') return formatSigned(value, 2, ' pts');
   throw new Error(`Unsupported change unit: ${unit}`);
 }
 
@@ -157,7 +102,7 @@ async function fetchBounded(url, expectedOrigin) {
   const response = await fetch(url, {
     headers: {
       accept: 'application/json,text/csv,text/plain;q=0.9,*/*;q=0.5',
-      'user-agent': 'USD-Impact-Three-Dials/1.0 (+https://www.usd-impact.com/)',
+      'user-agent': 'USD-Impact-Three-Dials/2.0 (+https://www.usd-impact.com/)',
     },
     redirect: 'follow',
     signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -176,12 +121,12 @@ async function fetchBounded(url, expectedOrigin) {
   return text;
 }
 
-function parseFredCsv(text, seriesId) {
+function parseFredCsv(text, transportId) {
   const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) throw new Error(`FRED ${seriesId} returned no observations.`);
+  if (lines.length < 2) throw new Error(`FRED ${transportId} returned no observations.`);
   const header = lines[0].replace(/^\uFEFF/, '').split(',').map((value) => value.replaceAll('"', '').trim());
-  const valueIndex = header.indexOf(seriesId);
-  if (valueIndex < 1) throw new Error(`FRED ${seriesId} response header is unexpected.`);
+  const valueIndex = header.indexOf(transportId);
+  if (valueIndex < 1) throw new Error(`FRED ${transportId} response header is unexpected.`);
 
   const points = [];
   for (const line of lines.slice(1)) {
@@ -192,37 +137,30 @@ function parseFredCsv(text, seriesId) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || raw === '.' || !Number.isFinite(value)) continue;
     points.push({ date, value });
   }
-  if (points.length < 2) throw new Error(`FRED ${seriesId} did not provide two usable observations.`);
+  if (points.length < 2) throw new Error(`FRED ${transportId} did not provide two usable observations.`);
   return points;
 }
 
-async function fetchFredSeries(config, startDate, endDate) {
+async function fetchBoardSeries(config, startDate, endDate) {
   const url = new URL('/graph/fredgraph.csv', FRED_ORIGIN);
-  url.searchParams.set('id', config.id);
+  url.searchParams.set('id', config.transportId);
   url.searchParams.set('cosd', isoDate(startDate));
   url.searchParams.set('coed', isoDate(endDate));
-  return parseFredCsv(await fetchBounded(url.toString(), FRED_ORIGIN), config.id);
+  return parseFredCsv(await fetchBounded(url.toString(), FRED_ORIGIN), config.transportId);
 }
 
-async function fetchDxySeries(startDate, endDate) {
-  const url = new URL('/v8/finance/chart/DX-Y.NYB', YAHOO_ORIGIN);
-  url.searchParams.set('period1', String(Math.floor(startDate.getTime() / 1000)));
-  url.searchParams.set('period2', String(Math.floor(addDays(endDate, 2).getTime() / 1000)));
-  url.searchParams.set('interval', '1d');
-  url.searchParams.set('includePrePost', 'false');
-  url.searchParams.set('events', 'div,splits');
-
-  const payload = JSON.parse(await fetchBounded(url.toString(), YAHOO_ORIGIN));
-  const result = payload?.chart?.result?.[0];
-  if (!result || payload?.chart?.error) throw new Error('Yahoo Finance did not return DXY history.');
-  const timestamps = Array.isArray(result.timestamp) ? result.timestamp : [];
-  const closes = Array.isArray(result.indicators?.quote?.[0]?.close) ? result.indicators.quote[0].close : [];
-  const points = timestamps.map((timestamp, index) => ({
-    date: new Date(Number(timestamp) * 1000).toISOString().slice(0, 10),
-    value: Number(closes[index]),
+async function fetchSofrSeries(startDate, endDate) {
+  const url = new URL('/api/rates/secured/sofr/search.json', NYFED_ORIGIN);
+  url.searchParams.set('startDate', isoDate(startDate));
+  url.searchParams.set('endDate', isoDate(endDate));
+  const payload = JSON.parse(await fetchBounded(url.toString(), NYFED_ORIGIN));
+  const records = Array.isArray(payload?.refRates) ? payload.refRates : [];
+  const points = records.map((record) => ({
+    date: String(record?.effectiveDate ?? ''),
+    value: Number(record?.percentRate),
   })).filter((point) => /^\d{4}-\d{2}-\d{2}$/.test(point.date) && Number.isFinite(point.value));
-  if (points.length < 2) throw new Error('Yahoo Finance DXY history did not contain two usable observations.');
-  return points;
+  if (points.length < 2) throw new Error('New York Fed SOFR API did not provide two usable observations.');
+  return points.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 function selectAtOrBefore(points, cutoffDate) {
@@ -235,7 +173,6 @@ function selectAtOrBefore(points, cutoffDate) {
 function calculateChange(latestValue, previousValue, mode) {
   if (mode === 'pct') return { value: ((latestValue / previousValue) - 1) * 100, unit: 'percent' };
   if (mode === 'bps') return { value: (latestValue - previousValue) * 100, unit: 'basis_points' };
-  if (mode === 'points') return { value: latestValue - previousValue, unit: 'index_points' };
   if (mode === 'bp_points') return { value: latestValue - previousValue, unit: 'basis_points' };
   throw new Error(`Unsupported change mode: ${mode}`);
 }
@@ -246,6 +183,8 @@ function buildObservation({
   provider,
   sourceClass,
   sourceUrl,
+  sourceSeriesId,
+  transport,
   sourceNote,
   units,
   maxAgeDays,
@@ -254,6 +193,7 @@ function buildObservation({
   points,
   currentCutoff,
   previousCutoff,
+  sourceUrls,
 }) {
   const latest = selectAtOrBefore(points, currentCutoff);
   const previous = selectAtOrBefore(points, previousCutoff);
@@ -274,6 +214,9 @@ function buildObservation({
     provider,
     source_class: sourceClass,
     source_url: sourceUrl,
+    source_urls: sourceUrls ?? [sourceUrl],
+    source_series_id: sourceSeriesId,
+    transport,
     source_note: sourceNote,
     units,
     latest: {
@@ -296,18 +239,52 @@ function buildObservation({
   };
 }
 
+function buildBoardObservation(key, points, currentCutoff, previousCutoff, sourceNote) {
+  const config = BOARD_SERIES[key];
+  return buildObservation({
+    id: config.outputId,
+    label: config.label,
+    provider: config.provider,
+    sourceClass: config.sourceClass,
+    sourceUrl: config.sourceUrl,
+    sourceSeriesId: config.sourceSeriesId,
+    transport: {
+      provider: 'Federal Reserve Bank of St. Louis FRED',
+      series_id: config.transportId,
+      url: `https://fred.stlouisfed.org/series/${config.transportId}`,
+      role: 'Transport only. Source identity and reuse basis remain the Federal Reserve Board series above.',
+    },
+    sourceNote,
+    units: config.units,
+    maxAgeDays: config.maxAgeDays,
+    levelDigits: config.levelDigits,
+    changeMode: config.changeMode,
+    points,
+    currentCutoff,
+    previousCutoff,
+  });
+}
+
 function buildFundingSpread(sofrPoints, iorbPoints, currentCutoff, previousCutoff) {
   const iorbByDate = new Map(iorbPoints.map((point) => [point.date, point.value]));
   const common = sofrPoints
     .filter((point) => iorbByDate.has(point.date))
     .map((point) => ({ date: point.date, value: (point.value - iorbByDate.get(point.date)) * 100 }));
+
   return buildObservation({
     id: 'SOFR_IORB_SPREAD',
     label: 'SOFR minus IORB funding spread',
-    provider: 'New York Fed and Federal Reserve Board via FRED',
-    sourceClass: 'derived_from_primary_public',
-    sourceUrl: 'https://fred.stlouisfed.org/series/SOFR',
-    sourceNote: 'Derived as SOFR minus IORB (FRED series IORB) in basis points. It is funding context, not a standalone liquidity measure.',
+    provider: 'Federal Reserve Bank of New York + Federal Reserve Board; calculation by USD Impact',
+    sourceClass: 'derived_from_permitted_primary_sources',
+    sourceUrl: NYFED_SOFR_URL,
+    sourceUrls: [NYFED_SOFR_URL, BOARD_SERIES.iorb.sourceUrl],
+    sourceSeriesId: 'NYFED_SOFR minus PRATES/PRATES_POLICY_RATES/RESBM_N.D',
+    transport: {
+      sofr: `${NYFED_ORIGIN}/api/rates/secured/sofr/search.json`,
+      iorb: `https://fred.stlouisfed.org/series/${BOARD_SERIES.iorb.transportId}`,
+      role: 'SOFR fetched directly from the New York Fed API; IORB transported through FRED from the Federal Reserve Board source series.',
+    },
+    sourceNote: 'USD Impact derived calculation: SOFR minus IORB in basis points. It is a funding-pressure indicator, not a credit spread or a complete liquidity/stress measure.',
     units: 'Basis points',
     maxAgeDays: 4,
     levelDigits: 0,
@@ -316,27 +293,6 @@ function buildFundingSpread(sofrPoints, iorbPoints, currentCutoff, previousCutof
     currentCutoff,
     previousCutoff,
   });
-}
-
-async function fetchScoreModelOutput(targetWeek) {
-  const payload = JSON.parse(await fetchBounded(SCORE_URL, SCORE_ORIGIN));
-  if (payload?.week_ending !== targetWeek) {
-    throw new Error(`Weekly Score bridge is ${payload?.week_ending ?? 'missing'}; expected ${targetWeek}.`);
-  }
-  const score = Number(payload.score);
-  if (!Number.isFinite(score) || !ALLOWED_SCORE_REGIMES.has(payload.regime)) {
-    throw new Error('Weekly Score bridge contains an invalid score or regime.');
-  }
-  return {
-    name: 'USD Impact Score v2',
-    week_ending: targetWeek,
-    score,
-    score_display: formatSigned(score, 2),
-    regime: payload.regime,
-    source_url: SCORE_URL,
-    methodology_url: 'https://www.usd-impact.com/score/methodology/',
-    scope: 'Separate descriptive model output. It is not an input to the Three-Dial interpretation and is not a forecast.',
-  };
 }
 
 async function fileExists(url) {
@@ -373,71 +329,42 @@ async function main() {
     return;
   }
 
-  // Independent source-rights gate: stop before network requests or generated writes.
-  assertPublicThreeDialsRedistributionRights();
+  const [broadUsdPoints, realYieldPoints, iorbPoints, sofrPoints] = await Promise.all([
+    fetchBoardSeries(BOARD_SERIES.broadUsd, startDate, currentCutoff),
+    fetchBoardSeries(BOARD_SERIES.realYield10y, startDate, currentCutoff),
+    fetchBoardSeries(BOARD_SERIES.iorb, startDate, currentCutoff),
+    fetchSofrSeries(startDate, currentCutoff),
+  ]);
 
-  const fredEntries = await Promise.all(Object.entries(FRED_SERIES).map(async ([key, config]) => {
-    const points = await fetchFredSeries(config, startDate, currentCutoff);
-    return [key, points];
-  }));
-  const fred = Object.fromEntries(fredEntries);
-  const dxyPoints = await fetchDxySeries(startDate, currentCutoff);
-
-  const dxy = buildObservation({
-    id: 'DXY',
-    label: 'U.S. Dollar Index (DXY proxy)',
-    provider: 'Yahoo Finance',
-    sourceClass: 'accessible_proxy',
-    sourceUrl: DXY_SOURCE_URL,
-    sourceNote: 'Accessible/reproducible Yahoo Finance proxy for DX-Y.NYB; not represented as exchange-official or a licensed institutional feed.',
-    units: 'Index',
-    maxAgeDays: 3,
-    levelDigits: 2,
-    changeMode: 'pct',
-    points: dxyPoints,
+  const broadUsd = buildBoardObservation(
+    'broadUsd',
+    broadUsdPoints,
     currentCutoff,
     previousCutoff,
-  });
-
-  const fredObservation = (key, sourceNote) => {
-    const config = FRED_SERIES[key];
-    return buildObservation({
-      id: config.id,
-      label: config.label,
-      provider: config.provider,
-      sourceClass: config.sourceClass,
-      sourceUrl: `https://fred.stlouisfed.org/series/${config.id}`,
-      sourceNote,
-      units: config.units,
-      maxAgeDays: config.maxAgeDays,
-      levelDigits: config.levelDigits,
-      changeMode: config.changeMode,
-      points: fred[key],
-      currentCutoff,
-      previousCutoff,
-    });
-  };
-
-  const broadUsd = fredObservation('broadUsd', 'Federal Reserve H.10 broad-dollar confirmation inside Dial 1; it is not a separate fourth dial.');
-  const realYield10y = fredObservation('realYield10y', '10-year inflation-indexed Treasury yield; the primary real-rate observation for Dial 2.');
-  const nominalYield10y = fredObservation('nominalYield10y', 'Nominal 10-year Treasury yield shown only as rate context for Dial 2.');
-  const hyOas = fredObservation('hyOas', 'ICE BofA series displayed through FRED. Only the two observations used by this snapshot are republished.');
-  const vix = fredObservation('vix', 'CBOE VIX displayed through FRED. Only the two observations used by this snapshot are republished.');
-  const fundingSpread = buildFundingSpread(fred.sofr, fred.iorb, currentCutoff, previousCutoff);
+    'Federal Reserve Board H.10 nominal broad dollar index. FRED is used only as the transport selected by the Board as a DDP successor path.',
+  );
+  const realYield10y = buildBoardObservation(
+    'realYield10y',
+    realYieldPoints,
+    currentCutoff,
+    previousCutoff,
+    'Federal Reserve Board H.15 10-year inflation-indexed Treasury constant-maturity yield.',
+  );
+  const fundingSpread = buildFundingSpread(sofrPoints, iorbPoints, currentCutoff, previousCutoff);
 
   const assessment = assessThreeDials({
-    dxyChangePct: dxy.change.value,
     broadUsdChangePct: broadUsd.change.value,
     realYieldChangeBps: realYield10y.change.value,
-    nominalYieldChangeBps: nominalYield10y.change.value,
-    hyOasChangeBps: hyOas.change.value,
-    vixChangePoints: vix.change.value,
     fundingSpreadChangeBps: fundingSpread.change.value,
   });
-  const modelOutput = await fetchScoreModelOutput(targetWeek);
-
   const snapshot = {
     version: THREE_DIALS_VERSION,
+    methodology: {
+      id: 'three-dials-rights-safe-v2',
+      effective_from: targetWeek,
+      break_from_v1: true,
+      history_policy: 'Do not splice v1 and v2 observations into one continuous series. Version 2 uses different public measures.',
+    },
     status: 'published',
     week_ending: targetWeek,
     retrieved_at: now.toISOString(),
@@ -449,40 +376,53 @@ async function main() {
       threshold_scope: 'Display/interpretation heuristics only. They are not estimated probabilities, optimized trading rules, or inputs to USD Impact Score v2.',
     },
     labels: {
-      fact: 'Externally sourced or transparently derived completed observations.',
-      interpretation: 'Deterministic qualitative reading of the three dials using the published display thresholds.',
-      model_output: 'Separate USD Impact Score v2 output; not evidence that the qualitative interpretation is predictive.',
+      fact: 'Primary-source observations or a transparently derived funding spread.',
+      interpretation: 'Deterministic qualitative reading of the three v2 dials using published display thresholds.',
     },
     dials: {
       dollar: {
         ...assessment.dials.dollar,
-        title: 'Dial 1 — Dollar direction',
-        facts: [dxy, broadUsd],
+        title: 'Dial 1 — Broad USD direction',
+        facts: [broadUsd],
       },
       real_rates: {
         ...assessment.dials.real_rates,
         title: 'Dial 2 — Real-rate pressure',
-        facts: [realYield10y, nominalYield10y],
+        facts: [realYield10y],
       },
-      liquidity_stress: {
-        ...assessment.dials.liquidity_stress,
-        title: 'Dial 3 — Liquidity stress',
-        facts: [hyOas, vix, fundingSpread],
+      funding_pressure: {
+        ...assessment.dials.funding_pressure,
+        title: 'Dial 3 — Funding pressure',
+        facts: [fundingSpread],
       },
     },
     interpretation: assessment.interpretation,
-    model_output: modelOutput,
+    source_rights: {
+      federal_reserve_board: {
+        class: 'public_domain_unless_otherwise_indicated',
+        attribution: 'Board of Governors of the Federal Reserve System',
+        terms_url: BOARD_DISCLAIMER_URL,
+      },
+      new_york_fed_sofr: {
+        class: 'permitted_with_reference_rate_notice',
+        terms_url: NYFED_TERMS_URL,
+        notice: NYFED_SOFR_NOTICE,
+        affiliation_notice: NYFED_AFFILIATION_NOTICE,
+      },
+    },
     disclosures: [
-      'Dated snapshot, not real-time market data. Observation dates are shown for every fact.',
-      'Broad USD is a confirmation layer inside Dial 1, not a fourth dial.',
-      'The SOFR-minus-IORB spread is one funding-context indicator and is not treated as a complete measure of liquidity.',
-      'VIX and ICE BofA High Yield OAS are third-party series accessed through FRED; this snapshot republishes only the two observations needed for the completed-week comparison, not their full histories.',
+      'Three Dials v2 is a methodology break from the prior DXY/credit/volatility implementation. Historical v1 and v2 observations are not a continuous series.',
+      'Dial 1 uses the Federal Reserve Board nominal broad dollar index. It must not be labeled DXY.',
+      'Dial 2 uses the Federal Reserve Board 10-year inflation-indexed Treasury constant-maturity yield.',
+      'Dial 3 uses the USD Impact-derived SOFR-minus-IORB spread as a funding-pressure indicator. It is not a credit spread or a complete measure of market liquidity/stress.',
+      NYFED_SOFR_NOTICE,
+      NYFED_AFFILIATION_NOTICE,
+      'Federal Reserve Board information is attributed to the Board; FRED is used only as transport for Board-origin series in this implementation.',
+      'The USD Impact Score remains a separate product with separate source governance and is intentionally not embedded in the Three Dials v2 snapshot.',
       'The Three-Dial interpretation is descriptive and deterministic. It is not investment advice, a trading signal, a probability, or a return forecast.',
     ],
   };
 
-  // All external fields above are reduced to finite numbers, ISO dates, exact-week values,
-  // or fixed allow-listed labels before reaching these fixed repository destinations.
   const text = `${JSON.stringify(snapshot, null, 2)}\n`;
   await Promise.all([
     mkdir(new URL('../public/data/three-dials/archive/', import.meta.url), { recursive: true }),
@@ -492,7 +432,7 @@ async function main() {
   await writeFile(archiveUrl, text, 'utf8');
   await writeFile(sourceLatestUrl, text, 'utf8');
   await writeFile(publicLatestUrl, text, 'utf8');
-  console.log(`Generated immutable Three-Dials snapshot for ${targetWeek}.`);
+  console.log(`Generated immutable Three-Dials v2 snapshot for ${targetWeek}.`);
 }
 
 main().catch((error) => {

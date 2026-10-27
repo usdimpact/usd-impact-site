@@ -1,18 +1,18 @@
 ---
 title: "Three-Dial Macro Dashboard"
 metaTitle: "Three-Dial Macro Dashboard | USD Impact"
-metaDescription: "A weekly dashboard for reading dollar direction, real-rate pressure and liquidity stress before interpreting asset moves."
+metaDescription: "A weekly dashboard for reading broad USD direction, real-rate pressure and funding pressure before interpreting asset moves."
 slug: "/framework/three-dial-dashboard"
 category: "Framework"
 status: "published"
 readingLevel: "Beginner to intermediate"
-lastReviewed: "2026-08-25"
+lastReviewed: "2026-10-27"
 complianceNote: "Educational only. Not investment, legal, tax, trading, or financial advice. Not a recommendation, forecast, or trading signal. The dashboard organizes observable conditions; it does not predict returns."
 sources:
-  - "Federal Reserve — broad dollar, monetary policy and balance-sheet information"
-  - "Federal Reserve Bank of St. Louis FRED — real yields, Treasury yields, credit and volatility series"
-  - "U.S. Department of the Treasury — Treasury market and yield information"
-  - "CBOE — VIX"
+  - "Federal Reserve Board H.10 — Nominal Broad Dollar Index"
+  - "Federal Reserve Board H.15 — 10-year inflation-indexed Treasury constant-maturity yield"
+  - "Federal Reserve Bank of New York — Secured Overnight Financing Rate (SOFR)"
+  - "Federal Reserve Board — Interest rate on reserve balances (IORB)"
 internalLinks:
   - "/start-here"
   - "/dollar-framework"
@@ -24,205 +24,214 @@ internalLinks:
   - "/lead-magnets/weekly-dollar-regime-checklist"
 ctaPrimary: "Explore the book"
 ctaSecondary: "Download the weekly checklist"
-hero: "A repeatable weekly operating sequence: read dollar direction, real-rate pressure and liquidity stress before interpreting cross-asset price action."
+hero: "Three Dials v2: broad USD direction, real-rate pressure and funding pressure before cross-asset interpretation."
 subhero: ""
 visual: "/assets/visuals/USDImpact_02_Three_Dial_Macro_Dashboard.svg"
 ---
 
-## The purpose of the dashboard
+## Why Three Dials v2 exists
 
-The three-dial dashboard turns the USD Impact framework into a repeatable weekly process.
+The dashboard keeps the original USD Impact reading order while using a public data contract that can be sourced and redistributed without paid proprietary market-data licenses.
 
-It is designed to answer one question before you interpret gold, oil, Bitcoin, equities or FX:
+Version 2 is an explicit methodology break. It does **not** relabel DXY as Broad USD and it does **not** claim that one funding spread replaces every measure of credit, volatility or market stress.
 
-> **What kind of dollar environment are these assets trading inside?**
+The live public dials are now:
 
-The dashboard does not produce a buy/sell instruction. It records a configuration of observable conditions so that the interpretation can be compared with later evidence.
+**Broad USD direction → Real-rate pressure → Funding pressure**
+
+In the broader educational framework, Dial 1 remains the **dollar direction** question; version 2 defines its public numeric measure as the Federal Reserve broad dollar index.
+
+Historical version-1 observations and version-2 observations must not be spliced into one apparently continuous series.
 
 ---
 
-## Dial 1 — Dollar direction
+## Dial 1 — Broad USD direction
 
-### What to record
+### Public measure
 
-- DXY direction over the completed observation window;
-- whether the move is persistent or mostly intraday noise;
-- whether a broader Federal Reserve dollar measure confirms the move;
-- whether major FX pairs suggest a broad USD move or a currency-specific story.
+The public numeric dial uses the Federal Reserve Board **Nominal Broad Dollar Index** from H.10.
 
-### Questions to ask
+The weekly classifier asks whether the completed-week change is:
 
-- Is the dollar firmer, softer or broadly rangebound?
-- Is breadth confirming DXY?
-- Does the move look rate-led, stress-led or driven by foreign-currency developments?
+- firmer;
+- softer; or
+- rangebound.
+
+### Why Broad USD
+
+A broad trade-weighted measure reduces the risk of treating moves in a small legacy currency basket as the entire dollar regime.
+
+DXY remains an important educational concept. USD Impact still teaches what DXY measures, why its basket composition matters and how it can diverge from a broader dollar measure. Three Dials v2 simply does not republish a live DXY observation.
 
 ### Do not do this
 
-Do not create a separate “fourth dial” for broad USD. Breadth is a **confirmation check inside Dial 1**.
+Do not label the Federal Reserve broad dollar index as DXY.
+
+Do not infer that every asset must respond in the same direction merely because the broad dollar moved.
 
 ---
 
 ## Dial 2 — Real-rate pressure
 
-### What to record
+### Public measure
 
-- 10-year TIPS yield direction;
-- relevant nominal Treasury yield direction;
-- whether real and nominal yields are telling the same story;
-- whether the rate move is large enough to matter relative to recent ranges.
+The public numeric dial uses the Federal Reserve Board H.15 **10-year inflation-indexed Treasury constant-maturity yield**.
 
-### Questions to ask
+The completed-week change is classified as:
 
-- Are real yields applying more or less valuation pressure?
-- Does the rate move support the dollar move?
-- Is inflation compensation, rather than real rates, driving the nominal-yield change?
+- rising;
+- falling; or
+- flat.
+
+### Why it matters
+
+Real yields are an important opportunity-cost and discount-rate channel for gold, equities and other duration-sensitive assets. They also help separate a nominal-yield move driven by inflation compensation from one driven by real-rate repricing.
 
 ### Do not do this
 
-Do not infer real-rate pressure from the nominal 10-year yield alone.
+Do not substitute a nominal Treasury yield for the real-yield dial.
+
+Nominal yields may still be useful context elsewhere in USD Impact, but they are not an additional live Three Dials v2 input.
 
 ---
 
-## Dial 3 — Liquidity stress
+## Dial 3 — Funding pressure
 
-### What to record
+### Public measure
 
-- credit spreads widening or tightening;
-- VIX / volatility direction;
-- notable funding-market or banking stress;
-- central-bank liquidity operations where relevant;
-- whether risk assets show broad stress or isolated weakness.
+The public numeric dial uses:
 
-### Questions to ask
+**SOFR − IORB**
 
-- Are markets becoming easier or harder to fund?
-- Is dollar strength occurring alongside stress?
-- Are credit and volatility confirming a risk-off interpretation?
+expressed in basis points.
 
-### Do not do this
+SOFR is sourced from the Federal Reserve Bank of New York. IORB is a Federal Reserve Board policy rate. USD Impact calculates the difference transparently.
 
-Do not reduce “liquidity” to one balance-sheet number. Funding, credit and market stress can change even when a central-bank balance sheet is stable.
+The completed-week change is classified as:
+
+- tightening;
+- easing; or
+- contained.
+
+### What it tells you
+
+The spread is a compact indicator of overnight secured funding pressure relative to the rate paid on reserve balances. It is **not a credit spread** and it is not a complete liquidity/stress measure.
+
+It can help identify whether funding conditions are becoming more or less pressured at the margin.
+
+### What it does not tell you
+
+SOFR minus IORB is **not**:
+
+- a credit spread;
+- VIX;
+- a banking-stress index;
+- a complete measure of market liquidity;
+- a substitute for every risk-appetite indicator.
+
+Credit, volatility and broader liquidity evidence can still be used elsewhere as contextual or educational confirmation when rights and sourcing permit. They are no longer live numeric inputs to the public Three Dials v2 dashboard.
 
 ---
 
 ## The weekly worksheet
 
-Use a simple table so the evidence is visible before the narrative is written.
+| Dial | Public v2 measure | Direction | Evidence basis |
+|---|---|---|---|
+| Broad USD direction | Federal Reserve H.10 broad dollar index | Firmer / softer / rangebound | Single primary-source measure |
+| Real-rate pressure | Federal Reserve H.15 10Y inflation-indexed yield | Rising / falling / flat | Single primary-source measure |
+| Funding pressure | SOFR − IORB | Tightening / easing / contained | Transparent derived measure from permitted primary sources |
 
-| Dial | Observation | Direction | Confirmation | Confidence |
-|---|---|---|---|---|
-| Dollar | DXY + broader USD evidence | Firmer / softer / rangebound | Confirmed / mixed / divergent | Low / medium / high |
-| Real rates | 10Y TIPS + nominal context | Rising / falling / flat | Reinforces / contradicts dollar | Low / medium / high |
-| Liquidity stress | Credit + volatility + funding context | Tightening / easing / mixed | Broad / narrow / unclear | Low / medium / high |
-
-The confidence label is a note about evidence quality, not a probability of future returns.
+The dashboard intentionally does not manufacture “high confidence” from a single observation. Version 2 uses a medium evidence-confidence label because each dial has one defined public measure.
 
 ---
 
 ## Convert the observations into a regime description
 
-After recording the dials, summarize the week in one sentence without forecasting.
+The labels remain descriptive, not predictive.
 
 Examples:
 
-- **Rate-led firm-dollar environment:** dollar firmer, real yields rising, stress contained.
-- **Stress-led firm-dollar environment:** dollar firmer, real rates mixed, liquidity stress rising.
-- **Easier soft-dollar environment:** dollar softer, real rates falling, stress easing.
-- **Mixed / transitional environment:** the three dials disagree or breadth is weak.
+- **Rate-led firm-dollar environment:** Broad USD firmer, real yields rising, funding pressure not tightening.
+- **Funding-led firm-dollar environment:** Broad USD firmer while SOFR-minus-IORB funding pressure tightens.
+- **Easier soft-dollar environment:** Broad USD softer, real yields falling, funding pressure easing.
+- **Mixed / transitional environment:** the three measures do not form a clean configuration.
 
-Avoid labels that imply certainty about the next asset move.
+A regime description is a disciplined summary of completed observations. It is not a probability of the next market move.
+
+---
+
+## DXY and broader stress evidence still matter conceptually
+
+The version-2 public data contract is narrower than the full educational framework.
+
+DXY can still help explain basket composition and relative-FX behavior.
+
+Credit spreads, volatility indexes, banking indicators and balance-sheet measures can still help diagnose wider financial stress.
+
+Those concepts remain part of USD Impact education. They are simply separated from the first-party public numeric dashboard unless an appropriate source-rights basis exists.
+
+This separation is deliberate: educational completeness should not be confused with redistribution permission.
 
 ---
 
 ## Add cross-asset confirmation after the dials
 
-Only after the three-dial reading is written should you check how major assets behaved.
+After the three public dials are recorded, check how major assets behaved.
 
 Ask:
 
-- Did gold behave consistently with the real-rate and risk environment?
-- Did oil respond mainly to the dollar or to its own supply/demand news?
-- Did equities confirm easier/tighter financial conditions?
-- Did Bitcoin move with broad liquidity/risk appetite or on crypto-specific drivers?
-- Did FX breadth support the DXY interpretation?
+- Did gold behave consistently with the real-rate environment?
+- Did oil respond mainly to the dollar or to supply/demand news?
+- Did equities confirm easier or tighter financial conditions?
+- Did Bitcoin move with funding/risk conditions or on crypto-specific flows?
+- Did major FX pairs support or challenge the broad-dollar reading?
 
-Cross-asset behavior can **confirm or challenge** the macro story. It is not an extra dial.
-
----
-
-## Worked example
-
-Assume the completed week shows:
-
-- DXY firmer and the broader dollar also firmer;
-- 10-year TIPS yield higher;
-- credit spreads broadly stable and VIX contained;
-- gold softer while equities are mixed.
-
-A disciplined summary could be:
-
-> **The completed week showed a broadly firmer dollar with higher real-rate pressure but no clear liquidity-stress confirmation, making the configuration more consistent with a rate-led firm-dollar environment than a funding squeeze. Gold weakness was directionally consistent with the rate channel, while mixed equities limited the strength of the cross-asset confirmation.**
-
-Notice what this does **not** say. It does not predict where DXY, gold or equities must move next.
+Cross-asset behavior can confirm or challenge the interpretation. Cross-asset confirmation is **not an extra dial**.
 
 ---
 
-## What happens when the dials disagree?
+## How this connects to the Weekly Score
 
-Disagreement is a valid result.
+The **weekly USD Impact Score v2** remains a **separate systematic cross-asset indicator** with its own published methodology and input governance.
 
-For example:
+Three Dials v2 does not become the Score formula.
 
-- DXY firmer;
-- real yields falling;
-- volatility rising;
-- broad USD confirmation mixed.
+The Score does not replace the Three Dials reading order.
 
-Do not average this into a false “neutral” conclusion immediately. Instead identify the contradiction and investigate the likely source:
-
-- foreign-currency weakness affecting DXY;
-- stress-driven dollar demand;
-- asset-specific repricing;
-- timing differences between markets.
-
-A mixed configuration can contain more information than a clean label.
-
----
-
-## How this connects to the rest of USD Impact
-
-**Learn cards** explain individual concepts such as DXY, real rates and liquidity stress.
-
-**Daily USD Impact** identifies verified events and the transmission channels they may affect.
-
-**The three-dial dashboard** organizes the current macro configuration.
-
-**The weekly USD Impact Score** is a separate systematic cross-asset indicator with a published methodology. It should not be substituted for the three-dial qualitative framework, and the qualitative framework should not be presented as the Score formula.
-
-**Weekly Briefs** combine the completed week's sourced developments with the archived Score snapshot and broader interpretation.
-
-This separation keeps educational explanation, external facts and systematic measurement distinct.
+Agreement between them can increase narrative coherence, but it does not prove predictive power.
 
 ---
 
 ## A five-minute weekly routine
 
-1. Record DXY direction and broad-dollar confirmation.
-2. Record 10-year TIPS direction and nominal-rate context.
-3. Record credit/volatility/funding stress direction.
+1. Record the Federal Reserve Broad USD direction.
+2. Record the 10-year real-yield direction.
+3. Record the SOFR-minus-IORB funding-pressure direction.
 4. Write one non-predictive regime sentence.
-5. Check gold, oil, equities, Bitcoin and FX for confirmation or contradiction.
-6. Record unresolved contradictions instead of deleting them from the narrative.
-7. Compare the reading with the published weekly Score without assuming they measure the same thing.
+5. Check relevant cross-asset and broader stress evidence for confirmation or contradiction.
+6. Record unresolved contradictions rather than deleting them from the narrative.
+7. Compare with the published Weekly Score without assuming the two frameworks measure the same thing.
+
+---
+
+## Source and rights boundary
+
+Federal Reserve Board website information is treated according to the Board's published website disclaimer and attribution requirements.
+
+SOFR is subject to the Federal Reserve Bank of New York Terms of Use, including the specific reference-rate notice/disclaimer and no-endorsement conditions.
+
+USD Impact's SOFR-minus-IORB value is labeled as a derived calculation.
+
+The live implementation must fail closed if the approved source contract, source identifiers or required notices are missing.
 
 ---
 
 ## Key takeaway
 
-The dashboard has **three dials**:
+Three Dials v2 keeps a simple public operating sequence:
 
-**Dollar direction → Real-rate pressure → Liquidity stress**
+**Broad USD direction → Real-rate pressure → Funding pressure**
 
-Broad-dollar breadth and cross-asset behavior are confirmation layers. Their purpose is to test the interpretation, not expand the framework into additional dials.
+DXY, credit, volatility and wider liquidity evidence remain important educational context, but they are not silently republished or disguised as version-2 dial inputs.
 
 Start with the dials. Then trace the mechanism with the **[Dollar Transmission Chain](/framework/dollar-transmission-chain/)**.

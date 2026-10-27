@@ -22,9 +22,9 @@ try {
 } catch {
   // The fail-closed availability message explains an invalid snapshot.
 }
-const canCompare = liveEvidence.usable && Boolean(reference);
-const dollarFacts = ['DXY', 'DTWEXBGS'].map((id) => evidenceFacts.get(id)).filter(Boolean);
-const supportFacts = ['DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SPREAD']
+const canCompare = false;
+const dollarFacts = ['FED_BROAD_USD'].map((id) => evidenceFacts.get(id)).filter(Boolean);
+const supportFacts = ['FED_10Y_REAL_YIELD', 'SOFR_IORB_SPREAD']
   .map((id) => evidenceFacts.get(id))
   .filter(Boolean);
 ---
@@ -37,8 +37,8 @@ const supportFacts = ['DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SP
     <div class="container">
       <div class="eyebrow">Chapter 3 Practice Preview</div>
       <h1>DXY vs. Broad USD Comparator</h1>
-      <p class="lead">Classify whether the published completed-week DXY move is broadly confirmed, basket-led or unresolved before revealing the framework classification.</p>
-      <p class="practice-fixture-note">Dated completed-week evidence · not real-time. No market data is fetched in your browser.</p>
+      <p class="lead">Use this Chapter 3 comparator as a conceptual exercise. Three Dials v2 no longer republishes a live DXY observation; its public dollar dial uses the Federal Reserve broad dollar index.</p>
+      <p class="practice-fixture-note" data-dxy-live-v2="disabled">Dated completed-week evidence · DXY live comparison intentionally disabled in Three Dials v2 · Broad USD evidence may still appear when a v2 snapshot is published.</p>
     </div>
   </section>
 
@@ -60,9 +60,9 @@ const supportFacts = ['DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SP
       <div class="section-heading">
         <div>
           <div class="eyebrow">Observe first</div>
-          <h2 id="dxy-dollar-evidence-heading">Dollar evidence</h2>
+          <h2 id="dxy-dollar-evidence-heading">Broad-dollar evidence</h2>
         </div>
-        <p>Read the levels, dates and changes before selecting a direction. The framework classification stays hidden until submission.</p>
+        <p>Read the levels, dates and changes before selecting a direction. The v2 dashboard shows only the rights-safe broad-dollar evidence; no DXY value is supplied by this tool.</p>
       </div>
       <div class="evidence-grid evidence-grid--two">
         {dollarFacts.map((fact) => (
@@ -89,9 +89,9 @@ const supportFacts = ['DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SP
       <div class="section-heading">
         <div>
           <div class="eyebrow">Confirmation layer</div>
-          <h2 id="dxy-support-evidence-heading">Rates and stress evidence</h2>
+          <h2 id="dxy-support-evidence-heading">Real-rate and funding evidence</h2>
         </div>
-        <p>These facts help you decide whether the dollar reading fits tighter, easier or mixed conditions. They are evidence, not a fourth dollar index.</p>
+        <p>These facts provide v2 context for the broad-dollar reading. Funding pressure is not a substitute for credit or volatility stress.</p>
       </div>
       <div class="evidence-grid">
         {supportFacts.map((fact) => (
@@ -119,7 +119,7 @@ const supportFacts = ['DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SP
         <div class="eyebrow">Independent reading</div>
         <h2 id="practice-form-heading">Record the evidence in order</h2>
         <p>Choose one state for each input. The result describes the evidence configuration; it does not forecast an asset.</p>
-        {!canCompare && <p class="comparison-disabled"><strong>Comparison disabled.</strong> Wait for a valid snapshot inside the publication cadence.</p>}
+        {!canCompare && <p class="comparison-disabled"><strong>Live DXY comparison retired in v2.</strong> Use the broad-dollar evidence and Chapter 3 conceptually; this tool does not republish DXY.</p>}
       </div>
 
       <form

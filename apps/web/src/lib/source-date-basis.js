@@ -65,6 +65,9 @@ export function sourceDateBasisForUrl(value) {
   if (hostname === 'eia.gov' && /^\/petroleum\/supply\/weekly\/index\.php$/i.test(url.pathname)) {
     return SOURCE_DATE_BASIS.CURRENT_RELEASE;
   }
+  if (hostname === 'bea.gov' && /^\/data\/personal-consumption-expenditures-price-index\/?$/i.test(url.pathname)) {
+    return SOURCE_DATE_BASIS.CURRENT_RELEASE;
+  }
   return SOURCE_DATE_BASIS.PUBLISHED;
 }
 

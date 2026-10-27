@@ -69,15 +69,44 @@ jobs:
         run: |
           set -euo pipefail
           url="https://score.usd-impact.com/archive/$WEEK/weekly_input.json"
-          curl --fail --silent --show-error --location --retry 2 --retry-all-errors \
-            --connect-timeout 10 --max-time 30 "$url" > "$RUNNER_TEMP/weekly_input.json"
+          score_file="$RUNNER_TEMP/weekly_input.json"
+          attempt_file="$RUNNER_TEMP/weekly_input.attempt.json"
+          valid_json=false
+
+          # curl retries transport/HTTP failures but cannot detect a transient
+          # HTTP-200 HTML/error body. Retry only that semantic parse failure.
+          # Once a valid JSON object is received, the immutable Score contract
+          # below remains a single fail-closed decision.
+          for attempt in 1 2 3; do
+            rm -f "$attempt_file"
+            curl --fail --silent --show-error --location --retry 2 --retry-all-errors \
+              --connect-timeout 10 --max-time 30 "$url" > "$attempt_file"
+
+            if jq -e 'type == "object"' "$attempt_file" >/dev/null 2>&1; then
+              mv "$attempt_file" "$score_file"
+              valid_json=true
+              break
+            fi
+
+            rm -f "$attempt_file"
+            if [ "$attempt" -lt 3 ]; then
+              echo "::warning::Score archive returned a non-JSON response; retrying bounded read ($attempt/3)."
+              sleep $((attempt * 2))
+            fi
+          done
+
+          if [ "$valid_json" != true ]; then
+            echo "::error::Score archive did not return valid JSON after three bounded reads."
+            exit 1
+          fi
+
           jq -e --arg week "$WEEK" '
             .week_ending == $week and
             (.drivers | length) == 8 and
             (.source_provenance | length) == 8 and
             ([.source_provenance[].status] | all(. == "fresh")) and
             .generation.external_event_claims_added == false
-          ' "$RUNNER_TEMP/weekly_input.json" >/dev/null
+          ' "$score_file" >/dev/null
 
       - name: Require five published Daily editions
         if: steps.preflight.outputs.needed == 'true'

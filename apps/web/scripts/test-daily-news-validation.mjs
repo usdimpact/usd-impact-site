@@ -90,6 +90,22 @@ assert.equal(
   SOURCE_DATE_BASIS.PUBLISHED,
   'Archived EIA weekly release paths must remain immutable publication-date sources',
 );
+assert.equal(
+  sourceDateBasisForUrl('https://www.bea.gov/data/personal-consumption-expenditures-price-index'),
+  SOURCE_DATE_BASIS.CURRENT_RELEASE,
+  'BEA PCE data page rolls forward with each Personal Income and Outlays release',
+);
+assert.equal(
+  sourceDateBasisForUrl('https://bea.gov/data/personal-consumption-expenditures-price-index/?utm_source=fixture'),
+  SOURCE_DATE_BASIS.CURRENT_RELEASE,
+  'Tracking-query and trailing-slash variants must preserve BEA PCE living-source semantics',
+);
+assert.equal(
+  sourceDateBasisForUrl('https://www.bea.gov/news/2026/personal-income-and-outlays-august-2026'),
+  SOURCE_DATE_BASIS.PUBLISHED,
+  'BEA dated news releases remain immutable publication-date sources',
+);
+assert.equal(isLivingSourceUrl('https://www.bea.gov/data/personal-consumption-expenditures-price-index'), true);
 assert.equal(sourceDateBasisForUrl('not-a-url'), SOURCE_DATE_BASIS.PUBLISHED);
 assert.equal(isLivingSourceUrl('https://www.federalreserve.gov/newsevents/2026-july.htm'), true);
 assert.equal(isLivingSourceUrl('https://www.bls.gov/cpi'), true);

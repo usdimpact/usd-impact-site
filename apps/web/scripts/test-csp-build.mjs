@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { resolveScorePipelineOrigin } from '../src/lib/score-pipeline-origin.js';
 import './test-book-site-bridge.mjs';
 import './test-book-live-evidence.mjs';
 
@@ -8,8 +7,6 @@ const root = process.cwd();
 const distRoot = path.join(root, 'dist');
 const sourceRoot = path.join(root, 'src');
 const failures = [];
-const scorePipelineOrigin = resolveScorePipelineOrigin(process.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
-
 const walk = (dir, predicate) => {
   const out = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -79,7 +76,7 @@ for (const file of htmlFiles) {
     "form-action 'self'",
     "script-src-attr 'none'",
     "style-src-attr 'unsafe-inline'",
-    `frame-src 'self' https://challenges.cloudflare.com ${scorePipelineOrigin}`,
+    "frame-src 'self' https://challenges.cloudflare.com",
     "img-src 'self' data: blob: https:",
   ]) {
     if (!csp.includes(required)) failures.push(`${relative} CSP is missing: ${required}.`);
@@ -313,7 +310,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`CSP build verification passed across ${htmlFiles.length} generated HTML pages using Score origin ${scorePipelineOrigin}.`);
+console.log(`CSP build verification passed across ${htmlFiles.length} generated HTML pages with same-origin form actions.`);
 console.log(`Book-site bridge sitemap exclusion verification passed for ${previewOnlyRoutes.length} generated noindex routes.`);
 console.log(`Book-site contextual surface verification passed for ${surfaceBridges.length} governed mappings across ${contextualPagesVerified} generated pages.`);
 console.log(`Book-site Phase 2B generated live-evidence verification passed for ${phase2bPagesVerified} practice pages.`);

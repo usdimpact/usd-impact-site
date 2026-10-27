@@ -104,9 +104,14 @@ if (!process.argv.includes('--pure')) {
       body: 'Synthetic regression fixture. No market claim is made.',
     };
   }
-  function provider(candidate, metadata = [...candidate.sources.map(s => s.url), metadataOnly]) {
-    return { id: 'resp_synthetic_boundary', status: 'completed', output: [
+  function provider(candidate, metadata = [...candidate.sources.map(s => s.url), metadataOnly], id = 'resp_synthetic_boundary') {
+    return { id, status: 'completed', output: [
       { type: 'web_search_call', action: { sources: metadata.map(url => ({ url })) } },
+      { type: 'message', content: [{ type: 'output_text', text: JSON.stringify(candidate), annotations: [] }] },
+    ] };
+  }
+  function repairProvider(candidate, id) {
+    return { id, status: 'completed', output: [
       { type: 'message', content: [{ type: 'output_text', text: JSON.stringify(candidate), annotations: [] }] },
     ] };
   }
@@ -142,6 +147,7 @@ if (!process.argv.includes('--pure')) {
   const previous = new Map(keys.map(key => [key, process.env[key]]));
   async function invoke(candidate, repaired = null) {
     const calls = [];
+    let repairAttempt = 0;
     globalThis.fetch = async (input, options = {}) => {
       const url = String(input);
       const method = String(options.method || 'GET');
@@ -150,7 +156,8 @@ if (!process.argv.includes('--pure')) {
         return new Response(JSON.stringify(provider(candidate)), { status: 200 });
       }
       if (method === 'POST' && url === 'https://api.openai.com/v1/responses' && repaired) {
-        return new Response(JSON.stringify(provider(repaired)), { status: 200 });
+        repairAttempt += 1;
+        return new Response(JSON.stringify(repairProvider(repaired, `resp_synthetic_repair_${repairAttempt}`)), { status: 200 });
       }
       throw new Error('Unexpected fetch blocked by synthetic regression test');
     };
@@ -214,10 +221,17 @@ if (!process.argv.includes('--pure')) {
     });
     const bad = draft([...goodUrls, fedIndex]);
     const exhausted = await invoke(bad, bad);
-    check('repeated invalid repair remains bounded to two attempts', () => {
+    check('repeated invalid repair remains bounded to two attempts on the original stored context', () => {
       assert.equal(exhausted.statusCode, 502);
       assert.equal(exhausted.json.repairAttempts, 2);
-      assert.equal(exhausted.calls.filter(call => call.method === 'POST').length, 2);
+      const posts = exhausted.calls.filter(call => call.method === 'POST');
+      assert.equal(posts.length, 2);
+      assert.deepEqual(
+        posts.map(call => call.body.previous_response_id),
+        ['resp_synthetic_boundary', 'resp_synthetic_boundary'],
+        'repair #2 must not chain to repair #1 because repair outputs are store:false',
+      );
+      assert.ok(posts.every(call => call.body.store === false), 'bounded repair outputs must remain non-persistent');
     });
   } finally {
     globalThis.fetch = originalFetch;

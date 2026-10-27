@@ -516,12 +516,12 @@ async function validateCompletedResponse(request, date, openAiResponse) {
   };
 }
 
-async function repairCompletedResponse(apiKey, date, openAiResponse, initialReason, timeoutMs = REPAIR_TIMEOUT_MS) {
+async function repairCompletedResponse(apiKey, date, openAiResponse, storedContextResponseId, initialReason, timeoutMs = REPAIR_TIMEOUT_MS) {
   const originalDraft = collectOpenAiText(openAiResponse);
   const groundedUrls = [...collectGroundedUrls(openAiResponse)];
   const contextSourceUrls = collectContextRepairSourceUrls(openAiResponse);
   const repairEvidence = collectRepairEvidence(openAiResponse, date);
-  const previousResponseId = String(openAiResponse?.id ?? '').trim();
+  const previousResponseId = String(storedContextResponseId ?? '').trim();
   const catalystWindowEnd = addUtcDays(date, 7);
   if (!originalDraft) throw new Error('The completed response contained no draft text to repair.');
   if (!RESPONSE_ID_PATTERN.test(previousResponseId)) {
@@ -548,6 +548,8 @@ async function repairCompletedResponse(apiKey, date, openAiResponse, initialReas
       body: JSON.stringify({
         model: repairModel,
         previous_response_id: previousResponseId,
+        // Repair outputs remain non-persistent. Every bounded retry forks from the
+        // original stored research response; the latest candidate is supplied in input.
         store: false,
         reasoning: { effort: 'low' },
         instructions: 'You repair a source-backed USD Impact research bundle. Preserve verified facts, remove unsupported claims and conversational assistant residue, and return only the requested complete JSON object. Perform a complete validation sweep after addressing the named error; do not stop after the first defect. Remove every source whose URL is absent from the permitted grounded-context URL list, then remove every dependent highlight, catalyst, summary sentence, and body sentence. After pruning any source or source id, re-evaluate every retained highlight: it must still cite a primary source or two independent reporting domains. Remove a highlight and every related summary or body sentence if it no longer meets that support rule; never leave it supported by only one reporting domain. Remove every Treasury refunding or 3-year, 10-year, or 30-year auction claim that lacks a current Treasury source published within the prior 14 days, together with related summary and body sentences. Never retain an unsupported claim or unused source merely to satisfy a minimum; fail closed rather than inventing a replacement.',
@@ -623,6 +625,10 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
       repairAttempts: 0,
     }, 502);
   }
+  // The initial background response is stored explicitly and is the durable provider
+  // context anchor. Repair responses use store:false, so a later bounded repair must
+  // not chain to the immediately previous repair response id.
+  const storedContextResponseId = String(openAiResponse?.id ?? '').trim();
   const repairStartedAt = Date.now();
   let candidate = openAiResponse;
   let currentReason = initial.reason;
@@ -643,6 +649,7 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
         apiKey,
         date,
         candidate,
+        storedContextResponseId,
         currentReason,
         Math.min(REPAIR_TIMEOUT_MS, remainingBudget),
       );

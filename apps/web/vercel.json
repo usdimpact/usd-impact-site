@@ -167,6 +167,14 @@
     {
       "source": "/api/score-handoff",
       "destination": "/api/account?action=score-handoff"
+    },
+    {
+      "source": "/api/score-redeem",
+      "destination": "/api/score-member?action=redeem"
+    },
+    {
+      "source": "/score/member/:path*",
+      "destination": "/api/score-member?action=content&path=:path*"
     }
   ],
   "headers": [
@@ -296,6 +304,23 @@
     },
     {
       "source": "/api/commerce-reconciliation",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
+      "source": "/score/member/(.*)",
       "headers": [
         {
           "key": "Cache-Control",

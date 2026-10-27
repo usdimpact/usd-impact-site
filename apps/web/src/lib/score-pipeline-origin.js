@@ -7,27 +7,8 @@ const ALLOWED_SCORE_PIPELINE_ORIGINS = new Set([
 ]);
 
 const PREVIEW_HOST_RE = /^[a-z0-9-]+\.usd-impact-pipeline\.pages\.dev$/;
-// Dedicated Score Workers Preview is eligible only when explicitly pinned in a Vercel Preview build.
-// Never permit arbitrary *.workers.dev subdomains or relax Production origin policy.
-const SCORE_WORKER_PREVIEW_HOST = 'pr-148-usd-impact-score-isolated-dev.michael-w-d0b.workers.dev';
-
 function normalizeOrigin(value) {
   return value.replace(/\/+$/, '');
-}
-
-export function resolveScoreStageEOrigin(value, enabled = '', environment = '') {
-  if (enabled !== 'true' || environment !== 'production') return '';
-  const candidate = typeof value === 'string' ? normalizeOrigin(value.trim()) : '';
-  try {
-    const parsed = new URL(candidate);
-    const allowed = parsed.protocol === 'https:' &&
-      !parsed.username && !parsed.password && !parsed.port &&
-      candidate === parsed.origin &&
-      parsed.pathname === '/' && !parsed.search && !parsed.hash &&
-      PREVIEW_HOST_RE.test(parsed.hostname);
-    if (allowed) return candidate;
-  } catch { /* Invalid origins are rejected below. */ }
-  throw new Error('Unsupported Stage E Score origin.');
 }
 
 export function resolveScorePipelineOrigin(value, previewOrigin = '', environment = '') {
@@ -44,7 +25,7 @@ export function resolveScorePipelineOrigin(value, previewOrigin = '', environmen
       !parsed.username && !parsed.password && !parsed.port &&
       candidate === parsed.origin &&
       parsed.pathname === '/' && !parsed.search && !parsed.hash &&
-      (PREVIEW_HOST_RE.test(parsed.hostname) || parsed.hostname === SCORE_WORKER_PREVIEW_HOST);
+      PREVIEW_HOST_RE.test(parsed.hostname);
   } catch { /* Invalid origins are rejected below. */ }
   if (!ALLOWED_SCORE_PIPELINE_ORIGINS.has(candidate) && !previewAllowed) {
     throw new Error(

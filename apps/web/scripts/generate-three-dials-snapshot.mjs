@@ -3,8 +3,6 @@ import { assessThreeDials, THREE_DIALS_THRESHOLDS, THREE_DIALS_VERSION } from '.
 
 const FRED_ORIGIN = 'https://fred.stlouisfed.org';
 const NYFED_ORIGIN = 'https://markets.newyorkfed.org';
-const SCORE_ORIGIN = 'https://score.usd-impact.com';
-const SCORE_URL = `${SCORE_ORIGIN}/data/weekly_input_latest.json`;
 const TIMEOUT_MS = 20_000;
 const MAX_SOURCE_BYTES = 5_000_000;
 
@@ -14,13 +12,6 @@ const NYFED_SOFR_URL = 'https://www.newyorkfed.org/markets/reference-rates/sofr'
 const NYFED_SOFR_NOTICE = 'The SOFR reference rate data is subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the SOFR data by USD Impact, does not sanction or endorse any particular republication, and has no liability for your use.';
 const NYFED_AFFILIATION_NOTICE = 'USD Impact is not affiliated with the New York Fed. The New York Fed does not sanction, endorse, or recommend any products or services offered by USD Impact.';
 
-const ALLOWED_SCORE_REGIMES = new Set([
-  'Strong dollar regime',
-  'Firm dollar regime',
-  'Neutral / transitional',
-  'Soft dollar regime',
-  'Weak dollar regime',
-]);
 
 const BOARD_SERIES = Object.freeze({
   broadUsd: {
@@ -304,27 +295,6 @@ function buildFundingSpread(sofrPoints, iorbPoints, currentCutoff, previousCutof
   });
 }
 
-async function fetchScoreModelOutput(targetWeek) {
-  const payload = JSON.parse(await fetchBounded(SCORE_URL, SCORE_ORIGIN));
-  if (payload?.week_ending !== targetWeek) {
-    throw new Error(`Weekly Score bridge is ${payload?.week_ending ?? 'missing'}; expected ${targetWeek}.`);
-  }
-  const score = Number(payload.score);
-  if (!Number.isFinite(score) || !ALLOWED_SCORE_REGIMES.has(payload.regime)) {
-    throw new Error('Weekly Score bridge contains an invalid score or regime.');
-  }
-  return {
-    name: 'USD Impact Score v2',
-    week_ending: targetWeek,
-    score,
-    score_display: formatSigned(score, 2),
-    regime: payload.regime,
-    source_url: SCORE_URL,
-    methodology_url: 'https://www.usd-impact.com/score/methodology/',
-    scope: 'Separate descriptive model output. It is not an input to the Three-Dial interpretation and is not a forecast.',
-  };
-}
-
 async function fileExists(url) {
   try {
     await access(url);
@@ -387,8 +357,6 @@ async function main() {
     realYieldChangeBps: realYield10y.change.value,
     fundingSpreadChangeBps: fundingSpread.change.value,
   });
-  const modelOutput = await fetchScoreModelOutput(targetWeek);
-
   const snapshot = {
     version: THREE_DIALS_VERSION,
     methodology: {
@@ -410,7 +378,6 @@ async function main() {
     labels: {
       fact: 'Primary-source observations or a transparently derived funding spread.',
       interpretation: 'Deterministic qualitative reading of the three v2 dials using published display thresholds.',
-      model_output: 'Separate USD Impact Score v2 output; not evidence that the qualitative interpretation is predictive.',
     },
     dials: {
       dollar: {
@@ -430,7 +397,6 @@ async function main() {
       },
     },
     interpretation: assessment.interpretation,
-    model_output: modelOutput,
     source_rights: {
       federal_reserve_board: {
         class: 'public_domain_unless_otherwise_indicated',
@@ -452,6 +418,7 @@ async function main() {
       NYFED_SOFR_NOTICE,
       NYFED_AFFILIATION_NOTICE,
       'Federal Reserve Board information is attributed to the Board; FRED is used only as transport for Board-origin series in this implementation.',
+      'The USD Impact Score remains a separate product with separate source governance and is intentionally not embedded in the Three Dials v2 snapshot.',
       'The Three-Dial interpretation is descriptive and deterministic. It is not investment advice, a trading signal, a probability, or a return forecast.',
     ],
   };

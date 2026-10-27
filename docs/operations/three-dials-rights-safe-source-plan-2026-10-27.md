@@ -175,3 +175,12 @@ rights review before numeric republication.
 
 No provider license, fee, contract, Production configuration, runtime source, public JSON, or current snapshot is
 changed by this document.
+
+## 10. Vercel project ownership checkpoint — 2026-10-27
+
+Preview/release evidence for this repository must use the established Vercel project
+`usd-impact/usd-impact-site` (`prj_ZoLLM35ksI6wk17PcfS2xYknaVl7`).
+
+A duplicate project, `usd-impact-team/web` (`prj_ZFYanJAO5S1pY9uwkhTTXFOk1skA`), was verified to have no custom
+domains, no environment variables, no Production deployment, and a misconfigured repository root. It was deleted on
+2026-10-27. Historical GitHub status entries produced by that deleted project are not release evidence for new commits.

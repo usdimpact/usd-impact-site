@@ -52,7 +52,6 @@ const synthetic = {
   version: 2,
   status: 'published',
   week_ending: '2026-08-21',
-  model_output: { week_ending: '2026-08-21', source_url: 'https://score.usd-impact.com/archive/2026-08-21/weekly_input.json' },
   dials: {
     dollar: { direction: 'firmer', facts: [mockFacts[0]] },
     real_rates: { direction: 'rising', facts: [mockFacts[1]] },
@@ -75,11 +74,6 @@ assert.deepEqual(
   { state: assessBookLiveEvidence(synthetic, new Date('2026-09-02T00:01:00Z')).state, usable: assessBookLiveEvidence(synthetic, new Date('2026-09-02T00:01:00Z')).usable },
   { state: 'stale', usable: false },
 );
-
-const invalidScoreWeek = structuredClone(synthetic);
-invalidScoreWeek.model_output.week_ending = '2099-01-01';
-assert.equal(validateBookLiveEvidenceSnapshot(invalidScoreWeek).valid, false);
-assert.equal(assessBookLiveEvidence(invalidScoreWeek, new Date()).usable, false);
 
 assert.throws(() => getDxyEvidenceReference(synthetic), /intentionally unavailable under Three Dials v2/i);
 
@@ -107,7 +101,8 @@ for (const [name, content] of [['DXY practice', dxyPage], ['Weekly Regime Lab', 
 }
 assert(dxyPage.includes('data-dxy-live-v2="disabled"'), 'DXY practice must explicitly expose the v2 live-comparison disablement.');
 assert(weeklyPage.includes('Funding pressure'), 'Weekly Lab must use the v2 funding-pressure label.');
-assert(weeklyPage.includes('data-score-model-output'), 'Weekly Lab must keep Score output separate.');
+assert(!weeklyPage.includes('data-score-model-output'), 'Weekly Lab must not embed Score output in the Three Dials snapshot contract.');
+assert(weeklyPage.includes('data-score-separate-product'), 'Weekly Lab must expose Score only as a separate product link.');
 
 const dxyTool = tools.find((candidate) => candidate.id === 'dxy-vs-broad-usd');
 const weeklyTool = tools.find((candidate) => candidate.id === 'weekly-regime-lab');

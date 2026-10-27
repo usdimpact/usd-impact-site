@@ -1,21 +1,15 @@
 const ISO_DATE = /^20\d{2}-\d{2}-\d{2}$/;
 
 const REQUIRED_FACT_IDS = Object.freeze([
-  'DXY',
-  'DTWEXBGS',
-  'DFII10',
-  'DGS10',
-  'BAMLH0A0HYM2',
-  'VIXCLS',
+  'FED_BROAD_USD',
+  'FED_10Y_REAL_YIELD',
   'SOFR_IORB_SPREAD',
 ]);
 
 const ALLOWED_FACT_SOURCE_ORIGINS = new Set([
-  'https://finance.yahoo.com',
-  'https://fred.stlouisfed.org',
+  'https://www.federalreserve.gov',
+  'https://www.newyorkfed.org',
 ]);
-
-const SCORE_ORIGIN = 'https://score.usd-impact.com';
 
 function dateFromIso(value) {
   if (!ISO_DATE.test(String(value ?? ''))) return null;
@@ -56,14 +50,8 @@ function validateSourceUrl(value, allowedOrigins) {
 export function validateBookLiveEvidenceSnapshot(snapshot) {
   if (!snapshot || typeof snapshot !== 'object') return { valid: false, reason: 'Snapshot payload is missing.' };
   if (snapshot.status !== 'published') return { valid: false, reason: 'Snapshot publication gate is not open.' };
+  if (snapshot.version !== 2) return { valid: false, reason: 'Snapshot methodology version is not Three Dials v2.' };
   if (!dateFromIso(snapshot.week_ending)) return { valid: false, reason: 'Snapshot week is invalid.' };
-  if (snapshot.model_output?.week_ending !== snapshot.week_ending) {
-    return { valid: false, reason: 'Score bridge does not match the snapshot week.' };
-  }
-  if (!validateSourceUrl(snapshot.model_output?.source_url, new Set([SCORE_ORIGIN]))) {
-    return { valid: false, reason: 'Score bridge source is outside the approved origin.' };
-  }
-
   const facts = collectFacts(snapshot);
   const factById = new Map(facts.map((fact) => [fact?.id, fact]));
   for (const id of REQUIRED_FACT_IDS) {
@@ -95,7 +83,6 @@ export function assessBookLiveEvidence(snapshot, now = new Date()) {
     };
   }
 
-  // Withhold any dependent reference when provider redistribution rights are unverified.
   if (snapshot?.status === 'pending' && snapshot?.source_rights_state === 'unverified') {
     return { state: 'rights-hold', usable: false, message: snapshot.message, snapshotWeek: snapshot.week_ending ?? null, targetWeek: null };
   }
@@ -158,20 +145,16 @@ function mapRealRateDirection(value) {
   throw new Error(`Unsupported real-rate direction: ${value}`);
 }
 
-function mapLiquidityDirection(value) {
+function mapFundingDirection(value) {
   if (value === 'tightening' || value === 'easing') return value;
-  if (value === 'mixed' || value === 'contained') return 'mixed';
-  throw new Error(`Unsupported liquidity direction: ${value}`);
+  if (value === 'contained') return 'mixed';
+  throw new Error(`Unsupported funding direction: ${value}`);
 }
 
 export function getDxyEvidenceReference(snapshot) {
   const validation = validateBookLiveEvidenceSnapshot(snapshot);
   if (!validation.valid) throw new Error(validation.reason);
-  return {
-    dxy: mapDollarDirection(snapshot.dials.dollar.direction),
-    broad: mapDollarDirection(snapshot.dials.dollar.breadth_direction),
-    breadthConfirmation: snapshot.dials.dollar.confirmation,
-  };
+  throw new Error('DXY live comparison is intentionally unavailable under Three Dials v2.');
 }
 
 export function getWeeklyDialReference(snapshot) {
@@ -180,7 +163,7 @@ export function getWeeklyDialReference(snapshot) {
   return {
     dollar: mapDollarDirection(snapshot.dials.dollar.direction),
     realRates: mapRealRateDirection(snapshot.dials.real_rates.direction),
-    liquidity: mapLiquidityDirection(snapshot.dials.liquidity_stress.direction),
+    liquidity: mapFundingDirection(snapshot.dials.funding_pressure.direction),
   };
 }
 

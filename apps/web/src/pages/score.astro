@@ -7,10 +7,12 @@ import { resolveScorePipelineOrigin, scorePipelineUrl } from '../lib/score-pipel
 const latestWeeklyReport = (await getCollection('weeklyReports'))
   .filter((entry) => entry.data.status === 'published')
   .sort((a, b) => b.data.periodEnd.localeCompare(a.data.periodEnd))[0];
-const scorePipelineOrigin = resolveScorePipelineOrigin(import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
-const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_comparison_latest.html', scorePipelineOrigin);
-const dashboardUrl = scorePipelineUrl('/en/', scorePipelineOrigin);
-const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin);
+const scorePipelineOrigin = resolveScorePipelineOrigin(
+  import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN,
+  process.env.SCORE_PREVIEW_PIPELINE_ORIGIN,
+  process.env.VERCEL_ENV,
+);
+const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_comparison_latest.html', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
 ---
 <BaseLayout
   title="Weekly USD Impact Score | Dollar Regime Dashboard"
@@ -25,7 +27,7 @@ const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin);
         <a class="button primary" href="#score-dashboard">View the latest score</a>
         <a class="button secondary" href="/score/methodology/">Read the full methodology</a>
         <a class="button secondary" href={vintageAuditUrl} target="_blank" rel="noreferrer">Audit historical revisions</a>
-        <a class="button secondary" href={dashboardUrl} target="_blank" rel="noreferrer">Open standalone dashboard</a>
+        <a class="button secondary" href="/score/member/en/">Open member dashboard securely</a>
       </div>
     </div>
   </section>
@@ -69,18 +71,9 @@ const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin);
           <div class="eyebrow">Live dashboard</div>
           <h2>Latest USD Impact Score</h2>
         </div>
-        <a href={dashboardUrl} target="_blank" rel="noreferrer">Open in a new tab</a>
+        <a class="button" href="/score/member/en/">Open verified member dashboard</a>
       </div>
-      <div class="score-embed-shell">
-        <iframe
-          class="score-embed"
-          src={dashboardUrl}
-          title="USD Impact Score weekly dashboard"
-          loading="lazy"
-          referrerpolicy="strict-origin-when-cross-origin"
-        ></iframe>
-        <p class="score-embed-fallback">If the dashboard does not load inside this page, <a href={dashboardUrl} target="_blank" rel="noreferrer">open the standalone version</a>.</p>
-      </div>
+      <p class="score-embed-fallback">Protected Score content is served on USD Impact after the current account session and Research Membership are verified. Cloudflare is not used to authorize access.</p>
     </section>
 
     {latestWeeklyReport && (
@@ -100,26 +93,20 @@ const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin);
           <div class="eyebrow">Weekly archive</div>
           <h2 id="previous-weeks-heading">Previous weeks</h2>
         </div>
-        <a href={archiveUrl} target="_blank" rel="noreferrer">Open the full archive</a>
+        <a class="button" href="/score/member/archive/en/">Open the member archive securely</a>
       </div>
       <p class="score-archive-intro">Review the score, regime, and deterministic commentary exactly as they were published for each completed week.</p>
-      <div class="score-archive-embed-shell">
-        <iframe
-          class="score-archive-embed"
-          src={archiveUrl}
-          title="Previous Weekly USD Impact Score editions"
-          loading="lazy"
-          referrerpolicy="strict-origin-when-cross-origin"
-        ></iframe>
-        <p class="score-embed-fallback">If the archive does not load inside this page, <a href={archiveUrl} target="_blank" rel="noreferrer">open the full archive</a>.</p>
-      </div>
+      <p class="score-embed-fallback">Use the button above to open the member archive through the same USD Impact membership gate.</p>
     </section>
+    <p id="score-member-status" role="status">Protected Score access uses your current USD Impact account session and active Research Membership.</p>
+    <a id="score-sign-in-help" href="/account/sign-in/?next=%2Fscore%2F">Sign in to access Score</a>
 
     <section class="compliance" aria-label="Compliance note">
       <strong>Compliance note:</strong> Educational and informational only. The USD Impact Score is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset.
     </section>
   </main>
 </BaseLayout>
+
 
 <style>
   .score-methodology-callout {

@@ -14,6 +14,7 @@ export const SOURCE_DATE_RULES = [
   'The Treasury Most Recent Quarterly Refunding Documents page is a multi-document index for discovery only, not a single-date publication source. Cite the directly linked dated document that supports the claim with its own verified publication or displayed update date; never borrow a date from a sibling document or treat a section date as the publication date of the whole index. If no such document is verifiable, omit that source and the unsupported claim. Do not replace a conflicting date with an older date merely to pass validation.',
   'The Federal Reserve Recent Postings page (recentpostings.htm) is a multi-document index for discovery only. Cite the directly linked dated Federal Reserve document and its own verified publication or displayed update date. The index Last Update date is not the linked document publication date; never use an access date or a sibling posting date instead. If the underlying document cannot be verified, omit that source and the unsupported claim rather than relabel the index or change its date to satisfy validation.',
   'The Federal Reserve News and Events page (newsevents.htm) is also a multi-document index for discovery only, not a dated release. Follow and verify the relevant original document, use its own publication date and search-returned URL, or omit the unsupported source and claim. Never borrow the index update date or a different posting date.',
+  'Federal Reserve annual FOMC press-release pages (/newsevents/pressreleases/YYYY-press-fomc.htm) are multi-release indexes for discovery only. Cite the directly linked dated monetary policy press release (for example monetaryYYYYMMDD*.htm) with its own displayed publication date. Never assign the meeting date, edition date, access date or newest index item date to the annual index; omit the unsupported claim if the dated release cannot be verified.',
   'The BLS annual release calendar (/schedule/YYYY/home.htm) aggregates monthly sections with separate Last Modified dates and is for discovery only. Use the relevant month-specific schedule URL and its own verified displayed Last Modified date, or a directly linked dated release. Verify each economic event date separately. Never assign an access date, edition date, event date or a different month section date to the annual page; never rewrite archived citations. Research sufficient eligible source documents before composing the bundle.',
   'The EIA Weekly Petroleum Status Report full-report pointer (/petroleum/supply/weekly/pdf/wpsrall.pdf) is reused across releases and cannot identify an immutable source by itself. Cite a verified dated archive page or report found through EIA and supporting the claim. Use its displayed Release Date as publishedAt, not the data-week ending date, next release date or access date. Never construct an archive URL from an assumed date, relabel the rolling pointer as verified, or copy an older date to satisfy historical validation. If the dated document cannot be verified, omit that source and the unsupported claim.',
   'If an otherwise useful page has no verifiable publication, displayed Last Update, current release, or data-update date, omit that source and any unsupported claim instead of inventing a date.',
@@ -148,6 +149,12 @@ export function safeValidationDiagnostic(message) {
     return {
       code: 'invalid-source-date',
       reason: 'Use the directly linked Federal Reserve document and its own verified date, not the News and Events index or another posting date; otherwise omit the unsupported source and claim.',
+    };
+  }
+  if (/Federal Reserve annual FOMC press-release index requires a directly linked dated document/i.test(text)) {
+    return {
+      code: 'invalid-source-date',
+      reason: 'Use the directly linked dated Federal Reserve FOMC press release and its own verified publication date, not the annual FOMC press-release index, meeting date, access date or another release date; otherwise omit the unsupported source and claim.',
     };
   }
   if (/BLS annual release calendar aggregates separately updated monthly sections/i.test(text)) {

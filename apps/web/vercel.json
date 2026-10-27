@@ -159,6 +159,14 @@
     {
       "source": "/api/checklist-analytics",
       "destination": "/api/telemetry?action=checklist-report"
+    },
+    {
+      "source": "/api/score-membership",
+      "destination": "/api/account?action=score-membership"
+    },
+    {
+      "source": "/score/member/:path*",
+      "destination": "/api/account?action=score-member-content&path=:path*"
     }
   ],
   "headers": [
@@ -288,6 +296,23 @@
     },
     {
       "source": "/api/commerce-reconciliation",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
+      "source": "/score/member/(.*)",
       "headers": [
         {
           "key": "Cache-Control",

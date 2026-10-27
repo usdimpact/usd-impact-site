@@ -3,7 +3,6 @@ import sitemap from '@astrojs/sitemap';
 import { SEARCH_UTILITY_PATHS } from './src/lib/search-utility-policy.js';
 import { canonicalUrlForRequest } from './src/lib/canonical-url.js';
 import accessMap from './src/data/quiz-access-map.json' with { type: 'json' };
-import { resolveScorePipelineOrigin } from './src/lib/score-pipeline-origin.js';
 import { isUnpublishedLocalePath } from './src/lib/localization-policy.js';
 
 const normalizePath = (value) => {
@@ -37,8 +36,6 @@ const isWithinPrefix = (pathname, prefix) => (
   pathname === prefix || pathname.startsWith(`${prefix}/`)
 );
 
-const scorePipelineOrigin = resolveScorePipelineOrigin(process.env.PUBLIC_SCORE_PIPELINE_ORIGIN);
-
 export default defineConfig({
   site: 'https://www.usd-impact.com',
   output: 'static',
@@ -53,7 +50,7 @@ export default defineConfig({
         "img-src 'self' data: blob: https:",
         "font-src 'self' data:",
         "connect-src 'self' https://challenges.cloudflare.com https://www.google-analytics.com https://region1.google-analytics.com",
-        `frame-src 'self' https://challenges.cloudflare.com ${scorePipelineOrigin}`,
+        "frame-src 'self' https://challenges.cloudflare.com",
         "media-src 'self' blob: https:",
         "worker-src 'self' blob:",
         "manifest-src 'self'",

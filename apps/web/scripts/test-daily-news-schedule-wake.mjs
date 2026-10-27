@@ -321,9 +321,9 @@ await check('normal grounded generation implementation is byte-for-byte preserve
   assert.ok(routedSource.includes(routeGuard));
   const original = Buffer.from(routedSource.replace(routeImport, '').replace(routeSetup, '').replace(routeGuard, ''));
   const blob = createHash('sha1').update(`blob ${original.length}\0`).update(original).digest('hex');
-  // Reviewed source-first request update: only schema isolation/order and discovery
-  // guidance changed; the exact cron route and all wake behavior remain unchanged.
-  assert.equal(blob, '808108943f613a54fd4cba361e888c6d73ab8606');
+  // Reviewed Daily source-date update: FOMC annual-index rejection/guidance changed,
+  // while the exact cron route and all wake behavior remain unchanged.
+  assert.equal(blob, 'ea45105e53a3bd34ff013b8dac6ded6e3ad9dc3a');
 });
 const routedBody = routedSource.match(/export default async function handler\(request, response\) \{([\s\S]*)\}\s*$/)?.[1];
 assert.ok(routedBody);

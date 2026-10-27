@@ -5,7 +5,6 @@ import BookToolGuide from '../../components/BookToolGuide.astro';
 import BookChapterBridgeCard from '../../components/BookChapterBridgeCard.astro';
 import snapshot from '../../data/three-dials-latest.json';
 import { getChapterByNumber, getToolById } from '../../data/book-site-bridge/index.mjs';
-import { scorePipelineArchiveUrl } from '../../lib/score-pipeline-origin.js';
 import {
   assessBookLiveEvidence,
   getWeeklyDialReference,
@@ -14,9 +13,6 @@ import {
 const tool = getToolById('weekly-regime-lab');
 const chapter = getChapterByNumber(11);
 const liveEvidence = assessBookLiveEvidence(snapshot);
-const scoreArchiveUrl = snapshot.status === 'published'
-  ? scorePipelineArchiveUrl(snapshot.model_output.week_ending, import.meta.env.PUBLIC_SCORE_PIPELINE_ORIGIN)
-  : null;
 let reference = null;
 try {
   reference = getWeeklyDialReference(snapshot);
@@ -25,9 +21,9 @@ try {
 }
 const canCompare = liveEvidence.usable && Boolean(reference);
 const evidenceGroups = [
-  { key: 'dollar', title: 'Dial 1 — Dollar direction evidence', facts: snapshot.dials?.dollar?.facts ?? [] },
+  { key: 'dollar', title: 'Dial 1 — Broad USD direction evidence', facts: snapshot.dials?.dollar?.facts ?? [] },
   { key: 'real-rates', title: 'Dial 2 — Real-rate evidence', facts: snapshot.dials?.real_rates?.facts ?? [] },
-  { key: 'liquidity', title: 'Dial 3 — Liquidity-stress evidence', facts: snapshot.dials?.liquidity_stress?.facts ?? [] },
+  { key: 'liquidity', title: 'Dial 3 — Funding-pressure evidence', facts: snapshot.dials?.funding_pressure?.facts ?? [] },
 ];
 const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : String(value).replaceAll('-', ' ');
 ---
@@ -61,9 +57,9 @@ const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : Strin
 
     <section class="lab-intro grid" aria-label="Weekly Regime Lab sequence">
       <article class="card"><span>1</span><h2>Observe</h2><p>Read the dated source-bound facts without seeing the deterministic dial classifications.</p></article>
-      <article class="card"><span>2</span><h2>Classify</h2><p>Set dollar direction, real-rate pressure, liquidity stress and your dominant-driver hypothesis.</p></article>
+      <article class="card"><span>2</span><h2>Classify</h2><p>Set broad-dollar direction, real-rate pressure, funding pressure and your dominant-driver hypothesis.</p></article>
       <article class="card"><span>3</span><h2>Explain</h2><p>Write what supports the reading and what would challenge it.</p></article>
-      <article class="card"><span>4</span><h2>Compare</h2><p>Reveal the three deterministic dial classifications and the separate exact-week Score output.</p></article>
+      <article class="card"><span>4</span><h2>Compare</h2><p>Reveal the three deterministic dial classifications. Compare with the separate Score product only after completing the Three Dials exercise.</p></article>
       <article class="card"><span>5</span><h2>Return</h2><p>Use disagreement to select the next chapter, source or Weekly report to review.</p></article>
     </section>
 
@@ -73,7 +69,7 @@ const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : Strin
           <div class="eyebrow">Observe first</div>
           <h2 id="weekly-evidence-heading">Completed-week source evidence</h2>
         </div>
-        <p>The facts and changes are visible before submission. Deterministic direction labels, confidence labels, the model output and the published interpretation remain out of view until you record your own reading.</p>
+        <p>The facts and changes are visible before submission. Deterministic direction labels, confidence labels and the published interpretation remain out of view until you record your own reading.</p>
       </div>
       <div class="dial-evidence-grid">
         {evidenceGroups.map((group) => (
@@ -121,7 +117,7 @@ const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : Strin
       >
         <div class="dial-grid">
           <label>
-            <span>Dollar direction</span>
+            <span>Broad USD direction</span>
             <select name="dollar" required disabled={!canCompare}>
               <option value="">Select</option>
               <option value="firmer">Firmer</option>
@@ -139,7 +135,7 @@ const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : Strin
             </select>
           </label>
           <label>
-            <span>Liquidity stress</span>
+            <span>Funding pressure</span>
             <select name="liquidity" required disabled={!canCompare}>
               <option value="">Select</option>
               <option value="tightening">Tightening</option>
@@ -202,9 +198,9 @@ const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : Strin
           <dl>
             <div><dt>Dollar</dt><dd>{prettyReference(reference.dollar)}</dd></div>
             <div><dt>Real rates</dt><dd>{prettyReference(reference.realRates)}</dd></div>
-            <div><dt>Liquidity stress</dt><dd>{prettyReference(reference.liquidity)}</dd></div>
+            <div><dt>Funding pressure</dt><dd>{prettyReference(reference.liquidity)}</dd></div>
           </dl>
-          <p>The reference maps the existing deterministic Three-Dials logic into the reader-facing choices. Rangebound, flat and contained states map to the neutral/mixed choice rather than being forced directional.</p>
+          <p>The reference maps the existing deterministic Three-Dials logic into the reader-facing choices. Rangebound, flat and contained states map to the neutral/mixed choice rather than being forced directional. The legacy form field name remains internal only; the public v2 dial is Funding pressure.</p>
         </div>
       )}
 
@@ -220,16 +216,13 @@ const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : Strin
         <p>Confidence: <strong data-recorded-confidence></strong> · not scored</p>
       </section>
 
-      {scoreArchiveUrl && (
-        <section class="score-output" aria-labelledby="score-output-heading" data-score-model-output>
-          <div class="eyebrow">Separate model output · revealed after submission</div>
-          <h3 id="score-output-heading">{snapshot.model_output.name}</h3>
-          <p><strong>{snapshot.model_output.score_display}</strong> · {snapshot.model_output.regime} · week ending {snapshot.model_output.week_ending}</p>
-          <p>{snapshot.model_output.scope}</p>
-          <p><a href={scoreArchiveUrl} target="_blank" rel="noreferrer">Open exact-week Score JSON</a> · <a href={snapshot.model_output.methodology_url}>Read Score methodology</a></p>
-          <p><strong>Not an answer key:</strong> the Score remains a separate descriptive model output and does not determine whether your three-dial reading or driver hypothesis is correct.</p>
-        </section>
-      )}
+      <section class="score-separation" aria-labelledby="score-separation-heading" data-score-separate-product>
+        <div class="eyebrow">Separate product</div>
+        <h3 id="score-separation-heading">Compare with USD Impact Score v2 separately</h3>
+        <p>The Score is not part of the Three Dials v2 snapshot and has separate source governance. Use it as an independent cross-asset comparison, not as an answer key.</p>
+        <p><a href="/score/">Open the Score</a> · <a href="/score/methodology/">Read Score methodology</a></p>
+      </section>
+
     </section>
 
     <BookChapterBridgeCard
@@ -240,7 +233,7 @@ const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : Strin
 
     <BookToolGuide tool={tool} />
 
-    <ComplianceNote text="Educational and informational only. The Weekly Regime Lab compares browser-local classifications with dated deterministic dial states. The dominant-driver hypothesis, confidence and written response are unscored and untransmitted. The separate Score v2 output is not an answer key, forecast, recommendation, suitability assessment or trading signal." />
+    <ComplianceNote text="Educational and informational only. The Weekly Regime Lab compares browser-local classifications with dated deterministic dial states. The dominant-driver hypothesis, confidence and written response are unscored and untransmitted. USD Impact Score v2 remains a separate product and is not an answer key, forecast, recommendation, suitability assessment or trading signal." />
   </main>
 </BaseLayout>
 

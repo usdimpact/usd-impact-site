@@ -19,7 +19,6 @@ internalLinks:
   - "/es/framework/dollar-transmission-chain"
 hero: "Tres Diales v2: dirección del dólar amplio, presión de tasas reales y presión de financiación antes de la interpretación entre activos."
 subhero: ""
-visual: "/assets/visuals/USDImpact_02_Three_Dial_Macro_Dashboard.svg"
 ---
 
 ## Por qué existe Tres Diales v2
@@ -249,6 +248,7 @@ Eso no predice el siguiente movimiento del dólar, el oro, las acciones ni ning�
 - [Federal Reserve Board H.15 — Selected Interest Rates](https://www.federalreserve.gov/releases/h15/)
 - [Federal Reserve Bank of New York — SOFR](https://www.newyorkfed.org/markets/reference-rates/sofr)
 - [Federal Reserve Bank of New York — Terms of Use](https://www.newyorkfed.org/privacy/termsofuse)
+- [Cboe — VIX](https://www.cboe.com/tradable-products/vix)
 
 ## Conclusión clave
 

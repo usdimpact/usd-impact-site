@@ -10,9 +10,9 @@ const scoreArchiveUrl = isPublished
 
 const pretty = (value) => String(value ?? '').replaceAll('_', ' ');
 const directionLabel = (dial) => {
-  if (dial.title.includes('Liquidity')) {
-    if (dial.direction === 'tightening') return 'Tightening / more stress';
-    if (dial.direction === 'easing') return 'Easing / less stress';
+  if (dial.title.includes('Funding')) {
+    if (dial.direction === 'tightening') return 'Tightening / more funding pressure';
+    if (dial.direction === 'easing') return 'Easing / less funding pressure';
     if (dial.direction === 'contained') return 'Contained';
   }
   return pretty(dial.direction);
@@ -59,7 +59,7 @@ const directionLabel = (dial) => {
             </div>
             <dl class="dial-meta">
               <div>
-                <dt>Confirmation</dt>
+                <dt>Evidence basis</dt>
                 <dd>{pretty(dial.confirmation ?? dial.dollar_confirmation)}</dd>
               </div>
             </dl>

@@ -11,8 +11,6 @@ const ALLOWED_FACT_SOURCE_ORIGINS = new Set([
   'https://www.newyorkfed.org',
 ]);
 
-const SCORE_ORIGIN = 'https://score.usd-impact.com';
-
 function dateFromIso(value) {
   if (!ISO_DATE.test(String(value ?? ''))) return null;
   const date = new Date(`${value}T00:00:00Z`);
@@ -54,13 +52,6 @@ export function validateBookLiveEvidenceSnapshot(snapshot) {
   if (snapshot.status !== 'published') return { valid: false, reason: 'Snapshot publication gate is not open.' };
   if (snapshot.version !== 2) return { valid: false, reason: 'Snapshot methodology version is not Three Dials v2.' };
   if (!dateFromIso(snapshot.week_ending)) return { valid: false, reason: 'Snapshot week is invalid.' };
-  if (snapshot.model_output?.week_ending !== snapshot.week_ending) {
-    return { valid: false, reason: 'Score bridge does not match the snapshot week.' };
-  }
-  if (!validateSourceUrl(snapshot.model_output?.source_url, new Set([SCORE_ORIGIN]))) {
-    return { valid: false, reason: 'Score bridge source is outside the approved origin.' };
-  }
-
   const facts = collectFacts(snapshot);
   const factById = new Map(facts.map((fact) => [fact?.id, fact]));
   for (const id of REQUIRED_FACT_IDS) {

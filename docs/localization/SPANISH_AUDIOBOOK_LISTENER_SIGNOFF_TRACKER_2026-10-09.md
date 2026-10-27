@@ -387,3 +387,28 @@ This closes the outstanding short-form acoustic gate for the five Chapter 8–13
 - Production authorization.
 
 Next safe gate: verify the exact 20 selected private composition identities, obtain or positively identify private selected exports, run objective decode/duration/loudness/true-peak/silence/provenance QA, and then perform the remaining whole-program listening/mastering review. Keep PR #797 DRAFT/unmerged and all public/member/Production flags OFF.
+
+
+## Owner targeted outlier verification — 2026-10-28
+
+Owner listened to the two private 10-second QA extracts generated from the canonical selected Drive exports and returned **PASS BOTH**:
+
+1. **Track 13 — PASS**
+   - QA window: 335.8–345.8 s
+   - Objective outlier centered near 340.796 s.
+   - Owner reported no audible click, pop, abrupt cut, duplicated syllable or unnatural discontinuity.
+
+2. **Track 14 — PASS**
+   - QA window: 123.9–133.9 s
+   - Objective outlier centered near 128.889 s.
+   - Owner reported no audible click, pop, abrupt cut, duplicated syllable or unnatural discontinuity.
+
+This closes the two remaining targeted acoustic outlier checks from the 19-track objective QA pass.
+
+It does **not** constitute:
+- full-track listening approval for Tracks 13 or 14;
+- whole-program 20-track listening approval;
+- mastering approval;
+- Track 00 exact-export acceptance;
+- legal clearance;
+- publication/member-storage/Production authorization.

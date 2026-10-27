@@ -13,6 +13,7 @@ const TREASURY_REFUNDING_INDEX_PATH = '/policy-issues/financing-the-government/q
 const TREASURY_TENTATIVE_AUCTION_SCHEDULE_PATH = '/system/files/221/tentative-auction-schedule.pdf';
 const FEDERAL_RESERVE_POSTINGS_INDEX_PATH = '/recentpostings.htm';
 const FEDERAL_RESERVE_NEWS_INDEX_PATH = '/newsevents.htm';
+const FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH = /^\/newsevents\/pressreleases\/\d{4}-press-fomc\.htm$/;
 // The annual BLS page aggregates monthly sections with separate Last Modified dates.
 const BLS_ANNUAL_CALENDAR_PATH = /^\/schedule\/\d{4}\/home\.htm$/;
 // Reused full-report pointer; new citations must identify a dated release.
@@ -49,7 +50,7 @@ export function sourceDateBasisForUrl(value) {
       return SOURCE_DATE_BASIS.ROLLING_REPORT;
     }
     if ((indexHostname === 'home.treasury.gov' && pathname === TREASURY_REFUNDING_INDEX_PATH)
-      || (indexHostname === 'federalreserve.gov' && [FEDERAL_RESERVE_POSTINGS_INDEX_PATH, FEDERAL_RESERVE_NEWS_INDEX_PATH].includes(pathname))
+      || (indexHostname === 'federalreserve.gov' && ([FEDERAL_RESERVE_POSTINGS_INDEX_PATH, FEDERAL_RESERVE_NEWS_INDEX_PATH].includes(pathname) || FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH.test(pathname)))
       || (indexHostname === 'bls.gov' && BLS_ANNUAL_CALENDAR_PATH.test(pathname))) {
       return SOURCE_DATE_BASIS.DOCUMENT_INDEX;
     }
@@ -98,7 +99,11 @@ export function sourceDateAttributionIssue(value) {
   }
   const pathname = decodeURIComponent(url.pathname).replace(/\/+$/, '').toLowerCase();
   const label = hostname === 'federalreserve.gov'
-    ? (pathname === FEDERAL_RESERVE_NEWS_INDEX_PATH ? 'Federal Reserve News and Events' : 'Federal Reserve Recent Postings')
+    ? (pathname === FEDERAL_RESERVE_NEWS_INDEX_PATH
+        ? 'Federal Reserve News and Events'
+        : FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH.test(pathname)
+          ? 'Federal Reserve annual FOMC press-release'
+          : 'Federal Reserve Recent Postings')
     : 'Treasury refunding';
   return `${label} index requires a directly linked dated document; cite that document with its own verified date, or omit the unsupported source and claim. Do not borrow a date from another index item.`;
 }

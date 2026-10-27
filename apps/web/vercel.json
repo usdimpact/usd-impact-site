@@ -170,11 +170,11 @@
     },
     {
       "source": "/api/score-redeem",
-      "destination": "/api/score-member?action=redeem"
+      "destination": "/api/account?action=score-member-redeem"
     },
     {
       "source": "/score/member/:path*",
-      "destination": "/api/score-member?action=content&path=:path*"
+      "destination": "/api/account?action=score-member-content&path=:path*"
     }
   ],
   "headers": [

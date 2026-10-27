@@ -1,50 +1,47 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
 
-// Tests the actual scheduled generator without contacting providers or editing
-// any published JSON. A future Friday prevents the immutable-archive no-op.
 const generator = new URL('./generate-three-dials-snapshot.mjs', import.meta.url);
-const workingDirectory = fileURLToPath(new URL('../', import.meta.url));
-const futureArchive = new URL('../public/data/three-dials/archive/2031-01-03.json', import.meta.url);
 const sourceLatest = new URL('../src/data/three-dials-latest.json', import.meta.url);
 const publicLatest = new URL('../public/data/three-dials/latest.json', import.meta.url);
 
-assert.equal(existsSync(futureArchive), false, 'Future test week must not be present');
-const [beforeSource, beforePublic, generatorText] = await Promise.all([
-  readFile(sourceLatest, 'utf8'),
-  readFile(publicLatest, 'utf8'),
+const [generatorText, beforeSource, beforePublic] = await Promise.all([
   readFile(generator, 'utf8'),
-]);
-assert.equal(beforeSource, beforePublic, 'Existing latest copies must be synchronized');
-assert.ok(
-  generatorText.indexOf('assertPublicThreeDialsRedistributionRights();') <
-    generatorText.indexOf('const fredEntries = await Promise.all('),
-  'Public rights gate must run before any provider requests',
-);
-
-const trial = spawnSync(process.execPath, [fileURLToPath(generator)], {
-  cwd: workingDirectory,
-  env: { ...process.env, THREE_DIALS_NOW: '2031-01-06T12:00:00.000Z' },
-  encoding: 'utf8',
-  timeout: 10_000,
-  maxBuffer: 100_000,
-});
-assert.equal(trial.status, 1, 'New snapshot generation must fail closed');
-assert.match(trial.stderr, /HOLD_THREE_DIALS_REDISTRIBUTION_RIGHTS/);
-assert.match(trial.stderr, /DX-Y\.NYB/);
-assert.match(trial.stderr, /BAMLH0A0HYM2/);
-assert.match(trial.stderr, /VIXCLS/);
-assert.match(trial.stderr, /issues\/845/);
-assert.doesNotMatch(trial.stderr, /Source request failed|fetch failed|network/i);
-
-const [afterSource, afterPublic] = await Promise.all([
   readFile(sourceLatest, 'utf8'),
   readFile(publicLatest, 'utf8'),
 ]);
-assert.equal(afterSource, beforeSource, 'Source latest must remain untouched');
-assert.equal(afterPublic, beforePublic, 'Public latest must remain untouched');
-assert.equal(existsSync(futureArchive), false, 'No archive can be created on hold');
-console.log('Three-Dials redistribution rights publication guard PASS (no network, no writes).');
+
+assert.equal(beforeSource, beforePublic, 'Existing latest copies must remain synchronized while v2 is under review.');
+
+for (const forbidden of ['DX-Y.NYB', 'BAMLH0A0HYM2', 'VIXCLS', 'query1.finance.yahoo.com', 'finance.yahoo.com/quote/']) {
+  assert.equal(generatorText.includes(forbidden), false, `Three Dials v2 generator must not contain restricted legacy source ${forbidden}.`);
+}
+for (const required of [
+  'FED_BROAD_USD',
+  'FED_10Y_REAL_YIELD',
+  'SOFR_IORB_SPREAD',
+  'DTWEXBGS',
+  'DFII10',
+  'IORB',
+  'https://markets.newyorkfed.org',
+  '/api/rates/secured/sofr/search.json',
+  'NYFED_SOFR_NOTICE',
+  'federal_reserve_board_public_domain',
+  'derived_from_permitted_primary_sources',
+]) {
+  assert.ok(generatorText.includes(required), `Three Dials v2 generator must bind rights-safe contract ${required}.`);
+}
+
+assert.match(generatorText, /FRED is used only as the transport/);
+assert.match(generatorText, /must not be labeled DXY/);
+assert.match(generatorText, /not a credit spread or a complete measure of market liquidity\/stress/);
+assert.match(generatorText, /break_from_v1: true/);
+assert.match(generatorText, /Do not splice v1 and v2 observations into one continuous series/);
+assert.match(generatorText, /USD Impact is not affiliated with the New York Fed/);
+assert.match(generatorText, /does not sanction or endorse any particular republication/);
+
+const latest = JSON.parse(beforeSource);
+assert.equal(latest.status, 'pending', 'The implementation PR must not activate public numeric publication.');
+assert.equal(latest.source_rights_state, 'unverified', 'The existing Production hold remains in checked-in latest data until release approval.');
+
+console.log('Three-Dials v2 source-rights contract PASS: no restricted legacy fetches and current checked-in hold remains unchanged.');

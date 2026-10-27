@@ -3,20 +3,20 @@
     "id": "dxy-vs-broad-usd",
     "title": "DXY vs. Broad USD Comparator",
     "path": "/practice/dxy-vs-broad-usd/",
-    "status": "preview-live-evidence",
-    "question": "Is the visible DXY move broadly confirmed, or is it mainly a narrow basket move?",
-    "whyItMatters": "DXY is useful but heavily concentrated in a small developed-market currency basket. A broader dollar measure can confirm or challenge the regime interpretation.",
+    "status": "preview-conceptual",
+    "question": "How does DXY differ conceptually from a broad dollar measure when live DXY values are not republished?",
+    "whyItMatters": "DXY remains useful for basket-composition education, but Three Dials v2 uses the Federal Reserve broad dollar index as its public numeric dollar measure.",
     "inputs": [
-      "DXY direction over the published completed-week observation window",
-      "Broad trade-weighted USD direction over the same window",
-      "Dated rates, credit and volatility confirmation from the same repository snapshot"
+      "Federal Reserve broad-dollar evidence when a v2 snapshot is published",
+      "Chapter 3 DXY basket/composition concepts",
+      "Real-rate and funding-pressure context from the same v2 snapshot"
     ],
-    "dataCadence": "Latest repository-published completed-week Three-Dials snapshot. Every source fact keeps its individual observation date; no market data is retrieved in the browser.",
+    "dataCadence": "Three Dials v2 may supply dated Broad USD, real-yield and funding-pressure evidence. No live DXY observation is republished by this tool.",
     "timestampRule": "Show the snapshot week and each source observation date. Label the normal Monday/Tuesday publication window explicitly, and disable comparison if the latest published snapshot falls outside the approved cadence.",
     "steps": [
-      "Read the dated DXY and broad-dollar observations without seeing the deterministic classification.",
-      "Classify DXY, broad USD and the rates/stress confirmation from the visible source evidence.",
-      "Submit the independent reading, reveal the deterministic dollar classification, and investigate any divergence before discussing assets."
+      "Read the available broad-dollar evidence.",
+      "Review how DXY basket composition can differ from a broad trade-weighted dollar measure.",
+      "Use the exercise conceptually; the live DXY comparison remains disabled unless a separate redistribution basis is approved."
     ],
     "agreement": [
       "DXY and broad USD moving in the same direction increase confidence that the move is wider than one currency pair.",
@@ -28,9 +28,8 @@
       "Mixed rates or stress should reduce confidence rather than be averaged away."
     ],
     "limitations": [
-      "The comparator is descriptive and does not forecast any asset.",
-      "The evidence is a dated completed-week repository snapshot, not real-time market data.",
-      "DXY uses the existing accessible Yahoo Finance proxy while the broad-dollar and supporting macro series retain their published source disclosures.",
+      "Three Dials v2 deliberately does not republish a live DXY value.",
+      "The comparator is conceptual and does not forecast any asset.",
       "The page does not transmit or persist the reader's classifications."
     ],
     "chapterIds": [
@@ -50,8 +49,8 @@
       }
     ],
     "access": "public",
-    "version": "0.2.0-preview",
-    "lastReviewed": "2026-08-29"
+    "version": "0.3.0-v2",
+    "lastReviewed": "2026-10-27"
   },
   {
     "id": "dollar-transmission-chain",
@@ -113,18 +112,18 @@
     "path": "/framework/three-dial-dashboard/",
     "status": "existing",
     "question": "What kind of dollar environment are the assets trading inside?",
-    "whyItMatters": "Dollar direction, real-rate pressure and liquidity stress create the minimum weekly regime screen before asset-specific interpretation.",
+    "whyItMatters": "Broad USD direction, real-rate pressure and funding pressure create the public weekly regime screen before asset-specific interpretation.",
     "inputs": [
-      "DXY with broad-dollar confirmation",
-      "10-year real-yield direction with nominal-rate context",
-      "Credit, volatility and funding-stress evidence"
+      "Federal Reserve H.10 broad-dollar direction",
+      "Federal Reserve H.15 10-year real-yield direction",
+      "SOFR-minus-IORB funding-pressure direction"
     ],
     "dataCadence": "Qualitative weekly review, refreshed from the latest available dollar, real-yield and stress evidence.",
     "timestampRule": "Record the newest source timestamp for each dial and flag asynchronous inputs rather than presenting one false common timestamp.",
     "steps": [
-      "Record the dollar dial and its breadth confirmation.",
-      "Record real-rate pressure without substituting a nominal yield alone.",
-      "Record liquidity stress, then write one non-predictive regime sentence."
+      "Record the broad-dollar dial.",
+      "Record 10-year real-rate pressure.",
+      "Record SOFR-minus-IORB funding pressure, then write one non-predictive regime sentence."
     ],
     "agreement": [
       "Aligned dials support a clearer rate-led, stress-led or easier-dollar description.",
@@ -132,12 +131,13 @@
     ],
     "divergence": [
       "Mixed dials indicate a transitional or asset-specific environment.",
-      "Broad-dollar breadth and cross-asset behavior are confirmation layers, not extra dials."
+      "DXY, credit, volatility and broader liquidity evidence remain contextual confirmation rather than public v2 dial inputs."
     ],
     "limitations": [
+      "Version 2 is a methodology break from the prior DXY/credit/volatility implementation.",
       "The dashboard organizes observable conditions; it does not predict returns.",
-      "It is qualitative and must not be presented as the Weekly Score formula.",
-      "A mixed result is valid and should not be forced into a directional label."
+      "SOFR minus IORB is a funding-pressure indicator, not a complete liquidity/stress measure.",
+      "It is qualitative and must not be presented as the Weekly Score formula."
     ],
     "chapterIds": [
       "chapter-01",
@@ -159,8 +159,8 @@
       }
     ],
     "access": "public",
-    "version": "existing-site",
-    "lastReviewed": "2026-08-28"
+    "version": "2.0.0-rights-safe",
+    "lastReviewed": "2026-10-27"
   },
   {
     "id": "weekly-score",
@@ -222,9 +222,9 @@
     "question": "Can the reader form a disciplined weekly regime read from dated evidence before seeing the deterministic classifications and separate Score output?",
     "whyItMatters": "Recording the three dials, dominant-driver hypothesis and conditional explanation before comparison reduces anchoring and turns Chapter 11 into a repeatable practice routine.",
     "inputs": [
-      "Dated DXY and broad-dollar observations",
-      "Dated real-yield and nominal-rate context",
-      "Dated credit, volatility and funding-stress evidence, plus a browser-local driver hypothesis and conditional written reading"
+      "Dated Federal Reserve broad-dollar observation",
+      "Dated 10-year real-yield observation",
+      "Dated SOFR-minus-IORB funding-pressure observation, plus a browser-local driver hypothesis and conditional written reading"
     ],
     "dataCadence": "Latest repository-published completed-week Three-Dials snapshot with an exact-week Score bridge. No market data is retrieved in the browser.",
     "timestampRule": "Show the snapshot week and every source observation date. Keep the normal Monday/Tuesday publication window explicit, and disable deterministic comparison if the snapshot is outside the approved cadence.",
@@ -238,8 +238,8 @@
       "Agreement shows process coherence, not predictive accuracy; the dominant-driver hypothesis remains unscored."
     ],
     "divergence": [
-      "A dollar disagreement points back to Chapter 3.",
-      "A real-rate or liquidity disagreement points back to Chapter 11 and the relevant primary evidence.",
+      "A broad-dollar disagreement points back to the dollar-measure discussion in Chapter 3.",
+      "A real-rate or funding-pressure disagreement points back to Chapter 11 and the relevant primary evidence.",
       "A driver disagreement is not machine-scored; compare the hypothesis qualitatively with the Weekly report and transmission framework."
     ],
     "limitations": [
@@ -274,8 +274,8 @@
       }
     ],
     "access": "public",
-    "version": "0.2.0-preview",
-    "lastReviewed": "2026-08-29"
+    "version": "0.3.0-v2",
+    "lastReviewed": "2026-10-27"
   },
   {
     "id": "weekly-checklist",
@@ -285,8 +285,8 @@
     "question": "What is the minimum ordered evidence set needed for a repeatable weekly review?",
     "whyItMatters": "A compact checklist protects the reading order from headline noise and makes unresolved contradictions visible.",
     "inputs": [
-      "Broad USD and DXY",
-      "Real yields and liquidity stress",
+      "Broad USD direction",
+      "Real yields and funding pressure",
       "Asset-specific physical, flow, volatility and positioning evidence"
     ],
     "dataCadence": "Weekly operating routine using the latest completed releases for each input.",
@@ -327,6 +327,6 @@
     ],
     "access": "public",
     "version": "existing-site",
-    "lastReviewed": "2026-08-28"
+    "lastReviewed": "2026-10-27"
   }
 ]

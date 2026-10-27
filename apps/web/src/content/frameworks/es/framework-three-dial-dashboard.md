@@ -223,7 +223,7 @@ La implementación en vivo debe fallar de forma cerrada si faltan el contrato de
 
 El panel representa una lectura semanal ordenada de tres medidas públicas definidas. No representa una cartera, un pronóstico, una probabilidad de rentabilidad ni una recomendación de inversión.
 
-Cuando se compare con una medición sistemática separada, ambas deben mantenerse conceptualmente distintas: el panel describe una lectura cualitativa del régimen; una metodología sistemática mide según sus propias reglas publicadas. **No asumas que ambas miden exactamente lo mismo.**
+Cuando se compare con una medición sistemática separada, ambas deben mantenerse conceptualmente distintas: el panel describe una lectura cualitativa del régimen; una metodología sistemática mide según sus propias reglas publicadas; **no asumas que ambas miden exactamente lo mismo.**
 
 ---
 

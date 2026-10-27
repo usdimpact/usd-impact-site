@@ -44,7 +44,6 @@ import { createOwnSupportRequest } from '../src/lib/support-request.js';
 import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js';
 import { handleScoreMembershipCheck } from '../src/lib/score-membership-handler.js';
 import { handleScoreHandoff } from '../src/lib/score-handoff-handler.js';
-import { handleScoreEdgeBridge } from '../src/lib/score-edge-bridge.js';
 
 function header(request, name) {
   const value = request.headers?.[name] ?? request.headers?.[name.toLowerCase()];
@@ -454,7 +453,6 @@ const handlers = Object.freeze({
   'lifecycle-qa': handleLifecycleQaRequest,
   'score-membership': handleScoreMembershipCheck,
   'score-handoff': handleScoreHandoff,
-  'score-edge': handleScoreEdgeBridge,
 });
 
 export default async function handler(request, response) {

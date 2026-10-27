@@ -6,6 +6,7 @@ const migrations = [
   '20261019010000_score_handoff_tickets.sql',
   '20261019020000_score_member_sessions.sql',
   '20261019030000_score_handoff_account_indexes.sql',
+  '20261027005205_score_member_assets_private_html.sql',
 ];
 const migrationDirectory = new URL('../../../supabase/migrations/', import.meta.url);
 const database = new PGlite();
@@ -69,12 +70,14 @@ try {
     from pg_class
     where oid in (
       'public.score_handoff_tickets'::regclass,
-      'public.score_member_sessions'::regclass
+      'public.score_member_sessions'::regclass,
+      'public.score_member_assets'::regclass
     )
     order by relname;
   `);
   assert.deepEqual(relations.rows, [
     { relname: 'score_handoff_tickets', relrowsecurity: true },
+    { relname: 'score_member_assets', relrowsecurity: true },
     { relname: 'score_member_sessions', relrowsecurity: true },
   ]);
 
@@ -86,6 +89,10 @@ try {
       );
       await expectSqlError(
         () => database.query('select * from public.score_member_sessions;'),
+        /permission denied/i,
+      );
+      await expectSqlError(
+        () => database.query('select * from public.score_member_assets;'),
         /permission denied/i,
       );
       await expectSqlError(
@@ -140,6 +147,27 @@ try {
     'score_member_sessions_account_id_idx',
     'score_member_sessions_expiry_idx',
   ]);
+
+  await asRole('service_role', async () => {
+    await database.query(`
+      insert into public.score_member_assets(path, content_type, body, source_commit, source_sha)
+      values (
+        '/en/', 'text/html; charset=utf-8', '<!doctype html><title>Score</title>',
+        $1, $2
+      );
+    `, ['d'.repeat(40), 'e'.repeat(40)]);
+    const asset = await database.query(`
+      select path, content_type, source_commit, source_sha
+      from public.score_member_assets
+      where path = '/en/';
+    `);
+    assert.deepEqual(asset.rows, [{
+      path: '/en/',
+      content_type: 'text/html; charset=utf-8',
+      source_commit: 'd'.repeat(40),
+      source_sha: 'e'.repeat(40),
+    }]);
+  });
 
   await database.query('insert into auth.users(id) values ($1);', [accountId]);
   await database.query(

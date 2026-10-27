@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-17T11:35:05.459Z",
+  "generated_at": "2026-10-27T12:38:57.865Z",
   "generated_by": "github-actions:sync",
   "freshness": "VERIFIED",
   "health": "AMBER",
@@ -15,12 +15,12 @@
     "website": {
       "name": "usdimpact/usd-impact-site",
       "default_branch": "main",
-      "head_sha": "8fdb0493a4c9cdd89df6ff2652a9c9c2b7686c7e"
+      "head_sha": "75d06c57889b91c397925edd1c5da97b901537f4"
     },
     "pipeline": {
       "name": "usdimpact/usd-impact-pipeline",
       "default_branch": "main",
-      "head_sha": "1bdd9a47796876e794bb6a24248ced8823f8b719"
+      "head_sha": "a0e2ff28db687f9b259997e1aaab0529dd202899"
     },
     "weekly_commentary": {
       "name": "usdimpact/usd-impact",
@@ -33,33 +33,33 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/39026938980",
-        "created_at": "2026-10-17T10:58:53Z",
-        "head_sha": "8fdb0493a4c9cdd89df6ff2652a9c9c2b7686c7e"
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/40367453866",
+        "created_at": "2026-10-26T17:18:58Z",
+        "head_sha": "75d06c57889b91c397925edd1c5da97b901537f4"
       },
       "daily_news": {
         "status": "completed",
-        "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/38912187326",
-        "created_at": "2026-10-16T13:59:45Z",
-        "head_sha": "f9ddee7a7cd3b20e2a8fa11d0d7052b1971c709f",
-        "operational_conclusion": "success",
+        "conclusion": "failure",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/40481541984",
+        "created_at": "2026-10-27T09:32:21Z",
+        "head_sha": "75d06c57889b91c397925edd1c5da97b901537f4",
+        "operational_conclusion": "failure",
         "recovery": null
       },
       "daily_news_health": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/38971428887",
-        "created_at": "2026-10-16T21:44:51Z",
-        "head_sha": "63199ffa2269813784680245ab27dc462b9136d6",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/40415837342",
+        "created_at": "2026-10-26T22:53:23Z",
+        "head_sha": "75d06c57889b91c397925edd1c5da97b901537f4",
         "operational_conclusion": "success"
       },
       "catalyst_brief": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/39027745443",
-        "created_at": "2026-10-17T11:11:30Z",
-        "head_sha": "8fdb0493a4c9cdd89df6ff2652a9c9c2b7686c7e",
+        "url": "https://github.com/usdimpact/usd-impact-site/actions/runs/40433611784",
+        "created_at": "2026-10-27T01:36:53Z",
+        "head_sha": "75d06c57889b91c397925edd1c5da97b901537f4",
         "operational_conclusion": "success",
         "recovery": null
       }
@@ -68,25 +68,25 @@
       "quality": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/39026782028",
-        "created_at": "2026-10-17T10:56:11Z",
-        "head_sha": "1bdd9a47796876e794bb6a24248ced8823f8b719",
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/40372600267",
+        "created_at": "2026-10-26T17:51:56Z",
+        "head_sha": "a0e2ff28db687f9b259997e1aaab0529dd202899",
         "operational_conclusion": "success"
       },
       "weekly": {
         "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/38984976938",
-        "created_at": "2026-10-17T00:08:36Z",
-        "head_sha": "0be6a771e984a09b4ca1793c762f296a7d4dc2ca"
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/40044029286",
+        "created_at": "2026-10-24T00:15:05Z",
+        "head_sha": "1bdd9a47796876e794bb6a24248ced8823f8b719"
       },
       "weekly_health": {
         "status": "completed",
-        "conclusion": "failure",
-        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/39009705330",
-        "created_at": "2026-10-17T06:23:05Z",
-        "head_sha": "0be6a771e984a09b4ca1793c762f296a7d4dc2ca",
-        "operational_conclusion": "stale_failure"
+        "conclusion": "success",
+        "url": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/40071128754",
+        "created_at": "2026-10-24T06:40:27Z",
+        "head_sha": "1bdd9a47796876e794bb6a24248ced8823f8b719",
+        "operational_conclusion": "success"
       }
     }
   },
@@ -94,25 +94,35 @@
     "daily_allowed": false,
     "daily_mode": "blocked",
     "daily_recovery_eligible": false,
-    "daily_blocker": "Open Daily publication blocker: #786 P1 — Daily USD Impact automation requires attention (gate: import)",
-    "daily_reason": "Open Daily publication blocker: #786 P1 — Daily USD Impact automation requires attention (gate: import)",
+    "daily_blocker": "Open Daily publication blocker: #840 P1 — Daily USD Impact automation requires attention (gate: import)",
+    "daily_reason": "Open Daily publication blocker: #840 P1 — Daily USD Impact automation requires attention (gate: import)",
     "daily_failure_gate": "import",
-    "daily_degradation": "gate import — #786 P1 — Daily USD Impact automation requires attention",
-    "daily_workflow_operational_conclusion": "success",
+    "daily_degradation": "gate import — #840 P1 — Daily USD Impact automation requires attention",
+    "daily_workflow_operational_conclusion": "failure",
     "exact_current_head_quality_green": true,
     "stale_daily_failure": false,
     "stale_daily_health_failure": false
   },
   "open_work": [
     {
-      "number": 786,
+      "number": 840,
       "title": "P1 — Daily USD Impact automation requires attention",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/786",
-      "updated_at": "2026-10-16T17:14:58Z",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/840",
+      "updated_at": "2026-10-27T09:33:25Z",
+      "priority": "P1",
+      "score": 930,
+      "blocked": false,
+      "daily_gate": "import"
+    },
+    {
+      "number": 872,
+      "title": "P1 — Three Dials snapshot automation requires attention",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/872",
+      "updated_at": "2026-10-27T01:36:52Z",
       "priority": "P1",
       "score": 870,
       "blocked": false,
-      "daily_gate": "import"
+      "daily_gate": null
     },
     {
       "number": 620,
@@ -121,6 +131,16 @@
       "updated_at": "2026-09-30T20:04:37Z",
       "priority": "P2",
       "score": 800,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 845,
+      "title": "Review Three Dials third-party market-data redistribution rights",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/845",
+      "updated_at": "2026-10-21T20:27:25Z",
+      "priority": "P3",
+      "score": 660,
       "blocked": false,
       "daily_gate": null
     },
@@ -250,21 +270,31 @@
       "url": "https://github.com/usdimpact/usd-impact-site/issues/122",
       "updated_at": "2026-10-10T14:02:24Z",
       "priority": "P3",
-      "score": 390,
+      "score": 370,
       "blocked": true,
       "daily_gate": null
     }
   ],
   "priority_queue": [
     {
-      "number": 786,
+      "number": 840,
       "title": "P1 — Daily USD Impact automation requires attention",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/786",
-      "updated_at": "2026-10-16T17:14:58Z",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/840",
+      "updated_at": "2026-10-27T09:33:25Z",
+      "priority": "P1",
+      "score": 930,
+      "blocked": false,
+      "daily_gate": "import"
+    },
+    {
+      "number": 872,
+      "title": "P1 — Three Dials snapshot automation requires attention",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/872",
+      "updated_at": "2026-10-27T01:36:52Z",
       "priority": "P1",
       "score": 870,
       "blocked": false,
-      "daily_gate": "import"
+      "daily_gate": null
     },
     {
       "number": 620,
@@ -273,6 +303,16 @@
       "updated_at": "2026-09-30T20:04:37Z",
       "priority": "P2",
       "score": 800,
+      "blocked": false,
+      "daily_gate": null
+    },
+    {
+      "number": 845,
+      "title": "Review Three Dials third-party market-data redistribution rights",
+      "url": "https://github.com/usdimpact/usd-impact-site/issues/845",
+      "updated_at": "2026-10-21T20:27:25Z",
+      "priority": "P3",
+      "score": 660,
       "blocked": false,
       "daily_gate": null
     },
@@ -335,30 +375,10 @@
       "score": 520,
       "blocked": false,
       "daily_gate": null
-    },
-    {
-      "number": 263,
-      "title": "Add WhatsApp Business Daily Card distribution after provider setup",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/263",
-      "updated_at": "2026-09-29T19:58:28Z",
-      "priority": "P3",
-      "score": 520,
-      "blocked": true,
-      "daily_gate": null
-    },
-    {
-      "number": 248,
-      "title": "Activate Daily Card Telegram publishing",
-      "url": "https://github.com/usdimpact/usd-impact-site/issues/248",
-      "updated_at": "2026-09-29T19:58:25Z",
-      "priority": "P3",
-      "score": 520,
-      "blocked": true,
-      "daily_gate": null
     }
   ],
-  "main_blocker": "#786 P1 — Daily USD Impact automation requires attention",
-  "next_action": "#786 P1 — Daily USD Impact automation requires attention",
+  "main_blocker": "#840 P1 — Daily USD Impact automation requires attention",
+  "next_action": "#840 P1 — Daily USD Impact automation requires attention",
   "notes": [
     "Generated state is a snapshot and never overrides canonical production or governance configuration.",
     "Vercel production readiness must be verified outside this GitHub-only state snapshot after release.",

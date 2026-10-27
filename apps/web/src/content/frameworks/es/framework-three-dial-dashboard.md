@@ -77,7 +77,7 @@ El cambio de la semana completada se clasifica como:
 
 ### Por qué importa
 
-Las tasas reales son un canal importante de coste de oportunidad y tasa de descuento para el oro, las acciones y otros activos sensibles a duración. También ayudan a separar un movimiento del rendimiento nominal impulsado por compensación por inflación de otro impulsado por una repricing de tasas reales.
+Las tasas reales son un canal importante de coste de oportunidad y tasa de descuento para el oro, las acciones y otros activos sensibles a duración. También ayudan a separar un movimiento del rendimiento nominal impulsado por compensación por inflación de otro impulsado por una reevaluación de las tasas reales.
 
 ### No hagas esto
 

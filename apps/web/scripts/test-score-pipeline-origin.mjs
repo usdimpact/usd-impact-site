@@ -64,7 +64,9 @@ for (const [name, text] of [['home', home], ['score', score]]) {
   assert.equal(text.includes(BRANDED_SCORE_PIPELINE_ORIGIN), false, `${name} must not hard-code the branded Score origin.`);
   assert.match(text, /PUBLIC_SCORE_PIPELINE_ORIGIN/);
 }
-assert.match(score, /action="\/api\/score-redeem"/);
+assert.match(score, /href="\/score\/member\/en\/"/);
+assert.match(score, /href="\/score\/member\/archive\/en\/"/);
+assert.doesNotMatch(score, /score-handoff|\/api\/score-redeem|name="ticket"/);
 assert.doesNotMatch(score, /resolveScoreStageEOrigin|SCORE_PRODUCTION_QA_PIPELINE|workers\.dev/);
 
 for (const [name, text] of [['Three Dials', threeDials], ['Weekly Regime Lab', weeklyRegime]]) {

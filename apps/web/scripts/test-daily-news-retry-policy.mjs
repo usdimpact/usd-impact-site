@@ -2,6 +2,14 @@ import assert from 'node:assert/strict';
 import { isRetryableGroundingFailure } from './daily-news-retry-policy.mjs';
 
 assert.equal(isRetryableGroundingFailure({ code: 'insufficient-grounded-sources' }), true);
+assert.equal(isRetryableGroundingFailure({
+  error: 'The original research ledger cannot support a source-preserving repair.',
+  code: 'insufficient-grounded-sources', repairAttempts: 0,
+}), true);
+assert.equal(isRetryableGroundingFailure({
+  repairError: 'The original source ledger retained fewer than three grounded URLs; a non-invented three-source repair is impossible.',
+}), true);
+assert.equal(isRetryableGroundingFailure({ initialValidationReason: 'The bundle must contain 3-24 sources' }), true);
 assert.equal(isRetryableGroundingFailure({ code: 'ungrounded-source' }), true);
 assert.equal(isRetryableGroundingFailure({ code: 'invalid-highlight-count' }), true);
 assert.equal(isRetryableGroundingFailure({ code: 'invalid-catalyst-window' }), true);

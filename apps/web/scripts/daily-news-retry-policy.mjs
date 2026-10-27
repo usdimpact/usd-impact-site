@@ -12,6 +12,9 @@ const RETRYABLE_CODES = new Set([
 const RETRYABLE_RESULT = 'retryable-grounding-failure';
 const RETRYABLE_PATTERNS = [
   /fewer than two grounded source urls/i,
+  /fewer than three grounded (?:source )?urls/i,
+  /original source ledger retained fewer than three grounded urls/i,
+  /bundle must contain 3-24 sources/i,
   /fewer than two grounded urls/i,
   /at least two distinct grounded source urls/i,
   /insufficient grounded sources/i,

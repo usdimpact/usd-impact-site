@@ -238,16 +238,21 @@ for (const route of [
   }
 }
 
+const snapshotRightsHold = (() => {
+  const snapshot = JSON.parse(fs.readFileSync(path.join(root, 'src/data/three-dials-latest.json'), 'utf8'));
+  return snapshot.status === 'pending' && snapshot.source_rights_state === 'unverified';
+})();
+
 const phase2bRoutes = [
   {
     route: '/practice/dxy-vs-broad-usd/',
-    requiredFacts: ['DXY', 'DTWEXBGS', 'DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SPREAD'],
-    requiredMarkers: ['data-reference-classification', 'data-live-evidence-state=', 'data-live-evidence-usable='],
+    requiredFacts: ['FED_BROAD_USD', 'FED_10Y_REAL_YIELD', 'SOFR_IORB_SPREAD'],
+    requiredMarkers: ['data-dxy-live-v2="disabled"', 'data-live-evidence-state=', 'data-live-evidence-usable='],
   },
   {
     route: '/practice/weekly-regime/',
-    requiredFacts: ['DXY', 'DTWEXBGS', 'DFII10', 'DGS10', 'BAMLH0A0HYM2', 'VIXCLS', 'SOFR_IORB_SPREAD'],
-    requiredMarkers: ['data-dial-reference', 'data-score-model-output', 'data-live-evidence-state=', 'data-live-evidence-usable='],
+    requiredFacts: ['FED_BROAD_USD', 'FED_10Y_REAL_YIELD', 'SOFR_IORB_SPREAD'],
+    requiredMarkers: ['data-dial-reference', 'data-score-separate-product', 'data-live-evidence-state=', 'data-live-evidence-usable='],
   },
 ];
 let phase2bPagesVerified = 0;
@@ -258,13 +263,21 @@ for (const target of phase2bRoutes) {
     continue;
   }
   const html = fs.readFileSync(file, 'utf8');
-  for (const id of target.requiredFacts) {
-    if (countOccurrences(html, `data-evidence-id="${id}"`) !== 1) {
-      failures.push(`${target.route} must render exactly one source-bound evidence marker for ${id}.`);
+  if (snapshotRightsHold) {
+    for (const id of target.requiredFacts) {
+      if (countOccurrences(html, `data-evidence-id="${id}"`) !== 0) failures.push(`${target.route} exposes withheld fact marker ${id}.`);
     }
-  }
-  for (const marker of target.requiredMarkers) {
-    if (!html.includes(marker)) failures.push(`${target.route} is missing Phase 2B marker ${marker}.`);
+    for (const marker of ['data-live-evidence-state="rights-hold"', 'data-live-evidence-usable="false"']) {
+      if (!html.includes(marker)) failures.push(`${target.route} lacks withheld-data state ${marker}.`);
+    }
+    if (!html.includes('temporarily unavailable pending source-rights review')) failures.push(`${target.route} omits rights-hold notice.`);
+  } else {
+    for (const id of target.requiredFacts) {
+      if (countOccurrences(html, `data-evidence-id="${id}"`) !== 1) failures.push(`${target.route} must render one source-bound marker ${id}.`);
+    }
+    for (const marker of target.requiredMarkers) {
+      if (!html.includes(marker)) failures.push(`${target.route} is missing Phase 2B marker ${marker}.`);
+    }
   }
   if (!html.includes('Dated completed-week evidence')) {
     failures.push(`${target.route} must identify its evidence as dated completed-week evidence.`);
@@ -277,12 +290,15 @@ if (fs.existsSync(weeklyLabFile)) {
   const html = fs.readFileSync(weeklyLabFile, 'utf8');
   const resultStart = html.indexOf('id="weekly-regime-result"');
   const resultTagEnd = resultStart >= 0 ? html.indexOf('>', resultStart) : -1;
-  const scoreStart = html.indexOf('data-score-model-output');
+  const scoreStart = html.indexOf('data-score-separate-product');
   if (resultStart < 0 || resultTagEnd < 0 || !html.slice(resultStart, resultTagEnd + 1).includes('hidden')) {
     failures.push('Weekly Regime Lab post-submit result must be rendered hidden by default.');
   }
-  if (scoreStart < resultStart) {
-    failures.push('Weekly Score v2 output must remain inside the hidden post-submit result and never appear as pre-submit evidence.');
+  if (html.includes('data-score-model-output')) {
+    failures.push('Weekly Regime Lab must not embed Score model output inside the Three Dials snapshot contract.');
+  }
+  if (scoreStart !== -1 && scoreStart < resultStart) {
+    failures.push('The separate Score product link must remain inside the hidden post-submit result and never appear as pre-submit evidence.');
   }
   if (!html.includes('not scored') || !html.includes('not transmitted')) {
     failures.push('Weekly Regime Lab must preserve the unscored/untransmitted response boundary in generated HTML.');

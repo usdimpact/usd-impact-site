@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import sourceHandler from './daily-news-source.js';
 import { validateEditorialBundle } from '../src/lib/daily-news-editorial-validation.js';
+import { sourceDateAttributionIssue } from '../src/lib/source-date-basis.js';
 
 const OPENAI_RESPONSES_API = 'https://api.openai.com/v1/responses';
 const RESPONSE_ID_PATTERN = /^resp_[A-Za-z0-9_-]{8,200}$/;
@@ -290,20 +291,25 @@ export function collectRepairEvidence(openAiResponse, editionDate) {
   const groundedUrls = collectGroundedUrls(openAiResponse);
   const permitted = new Set();
   const missingIds = [];
+  const blockedIds = [];
   for (const source of Array.isArray(draft.sources) ? draft.sources : []) {
     const safeId = /^[a-z0-9][a-z0-9-]{1,63}$/.test(String(source?.id ?? ''))
       ? source.id
       : '(invalid-id)';
     try {
       const url = canonicalUrl(source?.url);
-      if (groundedUrls.has(url)) permitted.add(url);
-      else missingIds.push(safeId);
+      if (!groundedUrls.has(url)) missingIds.push(safeId);
+      else if (sourceDateAttributionIssue(url)) blockedIds.push(safeId);
+      else permitted.add(url);
     } catch {
       missingIds.push(safeId);
     }
   }
 
   const issues = [];
+  if (blockedIds.length > 0) {
+    issues.push(`Ineligible index or rolling-pointer source ids: ${blockedIds.join(', ')}. Their dates cannot be relabeled and their URLs cannot count toward a three-source repair.`);
+  }
   if (missingIds.length > 0) {
     issues.push(`Ungrounded source ids in the full ledger: ${missingIds.join(', ')}`);
   }
@@ -323,6 +329,36 @@ export function collectRepairEvidence(openAiResponse, editionDate) {
   }
 
   return { permittedSourceUrls: [...permitted], issues };
+}
+
+function collectContextRepairSourceUrls(openAiResponse) {
+  const urls = [];
+  for (const url of collectGroundedUrls(openAiResponse)) {
+    try {
+      if (!sourceDateAttributionIssue(url)) urls.push(url);
+    } catch {
+      // Ignore malformed provider metadata; collectGroundedUrls already canonicalized it.
+    }
+  }
+  return [...new Set(urls)];
+}
+
+// Pure, cost-free test of whether a bounded repair can reuse the stored grounded
+// response context without opening a new web search. The response id is required
+// so the repair can continue the exact provider context that produced these URLs.
+export function assessBoundedRepairFeasibility(openAiResponse, editionDate) {
+  const grounded = collectGroundedUrls(openAiResponse);
+  const evidence = collectRepairEvidence(openAiResponse, editionDate);
+  const contextSourceUrls = collectContextRepairSourceUrls(openAiResponse);
+  const responseId = String(openAiResponse?.id ?? '').trim();
+  return {
+    canRepair: Boolean(collectOpenAiText(openAiResponse))
+      && RESPONSE_ID_PATTERN.test(responseId)
+      && grounded.size >= 3
+      && contextSourceUrls.length >= 3,
+    groundedCount: grounded.size,
+    retainedCount: evidence.permittedSourceUrls.length,
+  };
 }
 
 function terminalFailureDetails(openAiResponse) {
@@ -483,12 +519,16 @@ async function validateCompletedResponse(request, date, openAiResponse) {
 async function repairCompletedResponse(apiKey, date, openAiResponse, initialReason, timeoutMs = REPAIR_TIMEOUT_MS) {
   const originalDraft = collectOpenAiText(openAiResponse);
   const groundedUrls = [...collectGroundedUrls(openAiResponse)];
+  const contextSourceUrls = collectContextRepairSourceUrls(openAiResponse);
   const repairEvidence = collectRepairEvidence(openAiResponse, date);
+  const previousResponseId = String(openAiResponse?.id ?? '').trim();
   const catalystWindowEnd = addUtcDays(date, 7);
   if (!originalDraft) throw new Error('The completed response contained no draft text to repair.');
-  if (groundedUrls.length < 3) throw new Error('The completed response contained fewer than three grounded URLs.');
-  if (repairEvidence.permittedSourceUrls.length < 3) {
-    throw new Error('The original source ledger retained fewer than three grounded URLs; a non-invented three-source repair is impossible.');
+  if (!RESPONSE_ID_PATTERN.test(previousResponseId)) {
+    throw new Error('The completed response cannot be used as stored repair context.');
+  }
+  if (groundedUrls.length < 3 || contextSourceUrls.length < 3) {
+    throw new Error('The completed response contained fewer than three reusable grounded URLs.');
   }
   const audit = repairEvidence.issues.length > 0
     ? repairEvidence.issues.map((issue) => `- ${issue}`).join('\n').slice(0, 2_500)
@@ -507,16 +547,17 @@ async function repairCompletedResponse(apiKey, date, openAiResponse, initialReas
       },
       body: JSON.stringify({
         model: repairModel,
+        previous_response_id: previousResponseId,
         store: false,
         reasoning: { effort: 'low' },
-        instructions: 'You repair a source-backed USD Impact research bundle. Preserve verified facts, remove unsupported claims and conversational assistant residue, and return only the requested complete JSON object. Perform a complete validation sweep after addressing the named error; do not stop after the first defect. Remove every source whose URL is absent from the permitted grounded-source list, then remove every dependent highlight, catalyst, summary sentence, and body sentence. After pruning any source or source id, re-evaluate every retained highlight: it must still cite a primary source or two independent reporting domains. Remove a highlight and every related summary or body sentence if it no longer meets that support rule; never leave it supported by only one reporting domain. Remove every Treasury refunding or 3-year, 10-year, or 30-year auction claim that lacks a current Treasury source published within the prior 14 days, together with related summary and body sentences. Never retain an unsupported claim or unused source merely to satisfy a minimum; fail closed rather than inventing a replacement.',
-        input: `The bundle for ${date} failed validation with this exact error:\n${initialReason}\n\nINDEPENDENT FULL-BUNDLE PREFLIGHT ISSUES (advisory; all server checks remain mandatory):\n${audit}\n\nRepair the bundle using these rules:\n- Fix the named error, then perform a complete validation sweep over every source, highlight, catalyst, summary sentence, and body sentence. The named error may be only the first defect.\n- Use only the exact source URLs listed under PERMITTED SOURCE URLS.\n- Compare every source ledger URL against PERMITTED SOURCE URLS. Remove every non-matching source, every highlight or catalyst that depends on it, and every related sentence from the summary and body. Never reconstruct, replace, or preserve an ungrounded URL.\n- Keep at least three distinct permitted sources, including at least one authoritative primary source. Every retained source must be referenced by at least one retained highlight or catalyst; remove unused ledger padding.\n- Do not add facts, events, prices, dates, or sources that are not already present in the original bundle.\n- Every source id must be lowercase and hyphenated, unique, and referenced consistently.\n- Every highlight must cite either at least one authoritative primary source or two independent reporting domains. A non-schedule daily-development highlight must include a source published within the prior 14 days; remove a highlight supported only by a stale daily-development source, but retain 3-7 highlights.\n- Remove every unsupported absence claim from highlights, summary, and body, including claims that no new release, decision, or source was found or identified.\n- Quarterly refunding and 3-year, 10-year, or 30-year refunding-auction claims require a current Treasury refunding or auction source published within the prior 14 days. Remove a stale claim from highlights, catalysts, summary, and body rather than presenting an earlier quarter as current. Re-scan the complete bundle for this language after all edits.\n- Use only supported asset names from the schema.\n- Catalyst dates must use YYYY-MM-DD and fall inside the exact inclusive window ${date} through ${catalystWindowEnd}. The repair schema rejects every other date. Never move, shorten, or invent an event date to force it into this window. Remove every out-of-window catalyst and its forward-looking mentions from the summary, highlights, and body. Every retained catalyst must cite an authoritative primary schedule source.\n- Treat FOMC, Federal Reserve policy decision, or central-bank decision language as central-bank catalyst mentions; CPI, Consumer Price Index, PCE, or personal consumption expenditures language as inflation catalyst mentions; and Employment Situation, nonfarm payrolls, or payrolls language as labor catalyst mentions.\n- If the summary or any schedule-focused highlight uses one of those phrases while discussing a calendar, schedule, upcoming event, watchlist, or next catalyst, decision, event, major release, or test, retain the matching catalyst only when its unchanged confirmed date falls inside ${date} through ${catalystWindowEnd} and it is backed by an authoritative primary schedule source already present in the original bundle. If no supported matching catalyst can be retained, remove the forward-looking mention from the summary, highlight, and body instead of inventing a catalyst; an out-of-window event is not retainable.\n- Preserve each catalyst's eventType, importance, 1-5 impactScore, and whyItMatters explanation. Reserve high 4-5 scores for genuinely important events across at least two covered assets; the server derives extra-publication eligibility.\n- Return finished publication copy. Remove first-person offers, follow-up questions, "If you want" sections, and offers to rerun, expand, add, check, or provide more material.\n- Do not say an organization, calendar, release, or source was checked, used, or included unless its exact permitted URL remains in the source ledger and is referenced by a highlight or catalyst.\n- Keep the summary under 700 characters, each headline under 140 characters, each development and whyItMatters under 700 characters, and the body under 9,000 characters.\n- Return the complete corrected bundle, not a patch or explanation.\n\nPERMITTED SOURCE URLS:\n${JSON.stringify(groundedUrls, null, 2)}\n\nORIGINAL BUNDLE:\n${originalDraft}`,
+        instructions: 'You repair a source-backed USD Impact research bundle. Preserve verified facts, remove unsupported claims and conversational assistant residue, and return only the requested complete JSON object. Perform a complete validation sweep after addressing the named error; do not stop after the first defect. Remove every source whose URL is absent from the permitted grounded-context URL list, then remove every dependent highlight, catalyst, summary sentence, and body sentence. After pruning any source or source id, re-evaluate every retained highlight: it must still cite a primary source or two independent reporting domains. Remove a highlight and every related summary or body sentence if it no longer meets that support rule; never leave it supported by only one reporting domain. Remove every Treasury refunding or 3-year, 10-year, or 30-year auction claim that lacks a current Treasury source published within the prior 14 days, together with related summary and body sentences. Never retain an unsupported claim or unused source merely to satisfy a minimum; fail closed rather than inventing a replacement.',
+        input: `The bundle for ${date} failed validation with this exact error:\n${initialReason}\n\nINDEPENDENT FULL-BUNDLE PREFLIGHT ISSUES (advisory; all server checks remain mandatory):\n${audit}\n\nRepair the bundle using these rules:\n- Fix the named error, then perform a complete validation sweep over every source, highlight, catalyst, summary sentence, and body sentence. The named error may be only the first defect.\n- Use only the exact source URLs listed under PERMITTED GROUNDED CONTEXT URLS.\n- Do not perform a fresh web search or introduce a new research topic. Continue only from the stored previous response context.\n- Compare every source ledger URL against PERMITTED GROUNDED CONTEXT URLS. Remove every non-matching source, every highlight or catalyst that depends on it, and every related sentence from the summary and body. A URL may be corrected only by selecting an exact listed URL that the stored prior web-search context directly supports for the same retained claim; never reconstruct or guess a URL.\n- Keep at least three distinct permitted sources, including at least one authoritative primary source. Every retained source must be referenced by at least one retained highlight or catalyst; remove unused ledger padding.\n- Do not add facts, events, prices, or dates that are not already present in the original bundle. Do not add a source merely to reach the minimum; an exact grounded-context URL may enter the ledger only as a correction for an existing retained claim supported by the stored prior web-search context.\n- Every source id must be lowercase and hyphenated, unique, and referenced consistently.\n- Every highlight must cite either at least one authoritative primary source or two independent reporting domains. A non-schedule daily-development highlight must include a source published within the prior 14 days; remove a highlight supported only by a stale daily-development source, but retain 3-7 highlights.\n- Remove every unsupported absence claim from highlights, summary, and body, including claims that no new release, decision, or source was found or identified.\n- Quarterly refunding and 3-year, 10-year, or 30-year refunding-auction claims require a current Treasury refunding or auction source published within the prior 14 days. Remove a stale claim from highlights, catalysts, summary, and body rather than presenting an earlier quarter as current. Re-scan the complete bundle for this language after all edits.\n- Use only supported asset names from the schema.\n- Catalyst dates must use YYYY-MM-DD and fall inside the exact inclusive window ${date} through ${catalystWindowEnd}. The repair schema rejects every other date. Never move, shorten, or invent an event date to force it into this window. Remove every out-of-window catalyst and its forward-looking mentions from the summary, highlights, and body. Every retained catalyst must cite an authoritative primary schedule source.\n- Treat FOMC, Federal Reserve policy decision, or central-bank decision language as central-bank catalyst mentions; CPI, Consumer Price Index, PCE, or personal consumption expenditures language as inflation catalyst mentions; and Employment Situation, nonfarm payrolls, or payrolls language as labor catalyst mentions.\n- If the summary or any schedule-focused highlight uses one of those phrases while discussing a calendar, schedule, upcoming event, watchlist, or next catalyst, decision, event, major release, or test, retain the matching catalyst only when its unchanged confirmed date falls inside ${date} through ${catalystWindowEnd} and it is backed by an authoritative primary schedule source already present in the original bundle. If no supported matching catalyst can be retained, remove the forward-looking mention from the summary, highlight, and body instead of inventing a catalyst; an out-of-window event is not retainable.\n- Preserve each catalyst's eventType, importance, 1-5 impactScore, and whyItMatters explanation. Reserve high 4-5 scores for genuinely important events across at least two covered assets; the server derives extra-publication eligibility.\n- Return finished publication copy. Remove first-person offers, follow-up questions, "If you want" sections, and offers to rerun, expand, add, check, or provide more material.\n- Do not say an organization, calendar, release, or source was checked, used, or included unless its exact permitted URL remains in the source ledger and is referenced by a highlight or catalyst.\n- Keep the summary under 700 characters, each headline under 140 characters, each development and whyItMatters under 700 characters, and the body under 9,000 characters.\n- Return the complete corrected bundle, not a patch or explanation.\n\nPERMITTED GROUNDED CONTEXT URLS:\n${JSON.stringify(contextSourceUrls, null, 2)}\n\nORIGINAL BUNDLE:\n${originalDraft}`,
         text: {
           format: {
             type: 'json_schema',
             name: 'daily_usd_impact_bundle_repair',
             strict: true,
-            schema: buildRepairOutputSchema(date, repairEvidence.permittedSourceUrls),
+            schema: buildRepairOutputSchema(date, contextSourceUrls),
           },
         },
         max_output_tokens: MAX_REPAIR_OUTPUT_TOKENS,
@@ -567,6 +608,21 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
   }
 
   console.error(`Daily news bundle requires bounded repair: ${initial.reason}`);
+  const feasibility = assessBoundedRepairFeasibility(openAiResponse, date);
+  if (!feasibility.canRepair) {
+    // Do not pay for a repair unless the stored completed response carries at
+    // least three exact reusable grounded URLs. Fail closed and let the existing
+    // GitHub one-regeneration guard decide whether fresh source research is permitted.
+    console.error(`Daily news grounded-context preflight HOLD: grounded=${feasibility.groundedCount}, retained-ledger=${feasibility.retainedCount}; no repair model requested.`);
+    return sendJson(response, {
+      code: 'insufficient-grounded-sources',
+      error: 'The stored grounded research context cannot support a bounded repair.',
+      initialValidationReason: initial.reason,
+      groundedSourceCount: feasibility.groundedCount,
+      usableSourceCount: feasibility.retainedCount,
+      repairAttempts: 0,
+    }, 502);
+  }
   const repairStartedAt = Date.now();
   let candidate = openAiResponse;
   let currentReason = initial.reason;
@@ -600,7 +656,7 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
       currentReason = repaired.reason;
       console.error(`Daily news bundle repair attempt ${attempt} still failed validation: ${currentReason}`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'unknown repair error';
+      const message = error instanceof Error ? error.message : 'unknown error';
       console.error(`Daily news bundle repair attempt ${attempt} failed: ${message}`);
       return sendJson(response, {
         error: 'Daily news source generation failed validation and could not be repaired.',

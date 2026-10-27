@@ -38,6 +38,26 @@ assert.match(watchdogWorkflow, /github\.event\.comment\.body == '\/watchdog crit
 assert.match(watchdogWorkflow, /github\.event\.comment\.body == '\/watchdog full'/);
 assert.match(watchdogWorkflow, /github\.event\.comment\.body == '\/watchdog full ai'/);
 assert.match(watchdogWorkflow, /case "\$COMMENT_COMMAND" in/);
+// The 2026-10-21 RED artifact showed an obsolete \"zero resolved predictions\" marker.
+// This is a claim-boundary test, not a statement about the current number of
+// collected/resolved prospective records. Keep the 52-outcome evaluation gate.
+const watchdogHttp = fs.readFileSync(new URL('./integrity-watchdog-http.mjs', import.meta.url), 'utf8');
+const liveMethodologySource = fs.readFileSync(new URL('../apps/web/src/pages/score/methodology.astro', import.meta.url), 'utf8');
+const scoreClaimProbe = watchdogHttp.split(/\r?\n/).find((line) => line.includes("id: 'SCORE-CLAIM-BOUNDARY'"));
+assert.ok(scoreClaimProbe, 'The P0 Score claim contract must not disappear');
+for (const marker of [
+  'descriptive weekly regime indicator',
+  'not a return forecast, trading signal, probability model or optimized portfolio rule',
+  'This is a robustness finding, not a predictive backtest.',
+  'requires 52 consecutive resolved predictions',
+  'has no result yet',
+  'does not promise predictive accuracy',
+]) {
+  assert.ok(scoreClaimProbe.includes(marker), 'P0 Score claim marker missing: ' + marker);
+  assert.ok(liveMethodologySource.includes(marker), 'Methodology source differs from P0 guard: ' + marker);
+}
+assert.doesNotMatch(scoreClaimProbe, /zero resolved predictions/i, 'Do not assert an unverified numerical count of resolutions');
+
 const topLevelPermissions = watchdogWorkflow.match(/^permissions:\n([\s\S]*?)\n\nconcurrency:/m)?.[1] || '';
 assert.match(topLevelPermissions, /actions: read/);
 assert.match(topLevelPermissions, /contents: read/);

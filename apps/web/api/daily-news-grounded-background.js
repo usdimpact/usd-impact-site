@@ -1,5 +1,6 @@
 import { createScheduleWakeHandler } from '../src/lib/daily-news-schedule-wake.js';
 import backgroundHandler from './daily-news-background.js';
+import { sourceFirstRequest, buildSourceDiscoveryPlan } from '../src/lib/daily-news-discovery-contract.js';
 import {
   SOURCE_DATE_RULES,
   SOURCE_DATE_SCHEMA_PATTERN,
@@ -16,6 +17,10 @@ const GROUNDED_SOURCE_RULES = [
   'The source ledger must contain at least three distinct URLs returned by the web search tool metadata.',
   'Do not finish the response with fewer than three grounded URLs; continue researching across approved domains.',
   'Never invent, reconstruct, or substitute a URL that was not returned by web search.',
+  'Build the source inventory before drafting: verify three individually dated publisher documents, not multi-document indexes or rolling undated report pointers.',
+  'For EIA weekly petroleum use the actual release-specific dated EIA document and its own displayed Release Date; never the recurring wpsrall.pdf or inferred week-ending date.',
+  'Match each mentioned upcoming CPI/PCE/payrolls/FOMC event with an in-window primary-sourced catalyst, otherwise omit the mention including from the body.',
+  'Do not write unsupported absence claims about a missing release or decision.',
 ].join(' ');
 
 let runtimeOverrideQueue = Promise.resolve();
@@ -65,6 +70,7 @@ export function extractEditionDate(input) {
 }
 
 export function withSourceMetadata(body) {
+  body = sourceFirstRequest(body);
   const usesWebSearch = includesWebSearch(body);
   const include = Array.isArray(body.include) ? body.include : [];
   const next = {
@@ -78,6 +84,8 @@ export function withSourceMetadata(body) {
   };
 
   if (typeof next.input === 'string') {
+    const discoveryPlan = usesWebSearch ? buildSourceDiscoveryPlan(extractEditionDate(next.input)) : null;
+    if (discoveryPlan && !next.input.includes(discoveryPlan)) next.input = `${discoveryPlan}\n\n${next.input}`;
     const additions = [];
     if (!next.input.includes(SOURCE_DATE_RULES)) additions.push(SOURCE_DATE_RULES);
     if (!next.input.includes(SOURCE_ID_RULES)) additions.push(SOURCE_ID_RULES);

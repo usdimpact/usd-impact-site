@@ -1,188 +1,261 @@
 ---
 title: "Panel Macro de Tres Diales"
 metaTitle: "Panel Macro de Tres Diales | USD Impact"
-metaDescription: "Rutina semanal para leer dirección del dólar, presión de tasas reales y estrés de liquidez antes de interpretar movimientos de activos."
+metaDescription: "Un panel semanal para leer la dirección del dólar amplio, la presión de tasas reales y la presión de financiación antes de interpretar los movimientos de los activos."
 slug: "/es/framework/three-dial-dashboard"
-category: "Marco"
+category: "Framework"
 status: "published"
 readingLevel: "Principiante a intermedio"
-lastReviewed: "2026-10-07"
-complianceNote: "Material educativo e informativo únicamente; no constituye asesoramiento de inversión personalizado, legal, fiscal ni de operativa, no es una señal de trading ni una recomendación. El panel organiza condiciones observables; no pronostica retornos."
+lastReviewed: "2026-10-27"
+complianceNote: "Solo con fines educativos. No es asesoramiento de inversión, jurídico, fiscal, de trading ni financiero. No es una recomendación, pronóstico ni señal de trading. El panel organiza condiciones observables; no predice rendimientos."
 sources:
-  - "Federal Reserve — dólar amplio, política monetaria y balance"
-  - "FRED — tasas reales, Treasuries, crédito y volatilidad"
-  - "U.S. Treasury — mercado y rendimientos de Treasuries"
-  - "Cboe — VIX"
+  - "Federal Reserve Board H.10 — Nominal Broad Dollar Index"
+  - "Federal Reserve Board H.15 — rentabilidad constante del Treasury indexado a inflación a 10 años"
+  - "Federal Reserve Bank of New York — Secured Overnight Financing Rate (SOFR)"
+  - "Federal Reserve Board — Interest rate on reserve balances (IORB)"
 internalLinks:
   - "/es/start-here"
   - "/es/dollar-framework"
   - "/es/framework/dollar-transmission-chain"
-hero: "Una secuencia semanal repetible: lee dirección del dólar, presión de tasas reales y estrés de liquidez antes de interpretar el movimiento multiactivo."
+hero: "Tres Diales v2: dirección del dólar amplio, presión de tasas reales y presión de financiación antes de la interpretación entre activos."
 subhero: ""
 ---
 
-## Para qué sirve el panel
+## Por qué existe Tres Diales v2
 
-El panel de tres diales convierte el marco de USD Impact en un proceso semanal repetible.
+El panel mantiene el orden de lectura original de USD Impact y, al mismo tiempo, utiliza un contrato de datos públicos que puede obtenerse y redistribuirse sin depender de licencias pagadas de datos de mercado propietarios.
 
-Antes de interpretar oro, petróleo, Bitcoin, renta variable o FX, responde:
+La versión 2 es un cambio metodológico explícito. **No** rebautiza DXY como dólar amplio y **no** afirma que un solo diferencial de financiación sustituya todas las medidas de crédito, volatilidad o estrés de mercado.
 
-> **¿Dentro de qué entorno del dólar están operando estos activos?**
+Los diales públicos son ahora:
 
-El panel no produce instrucciones de compra o venta. Registra condiciones observables para que la interpretación pueda compararse con evidencia posterior.
+**Dirección del dólar amplio → Presión de tasas reales → Presión de financiación**
 
-## Dial 1 — Dirección del dólar
+En el marco educativo más amplio, el Dial 1 sigue respondiendo a la pregunta sobre la **dirección del dólar**; la versión 2 define su medida numérica pública como el índice amplio del dólar de la Reserva Federal.
 
-### Qué registrar
+Las observaciones históricas de la versión 1 y las de la versión 2 no deben unirse como si fueran una única serie continua.
 
-- dirección de DXY en la ventana de observación completada;
-- si el movimiento es persistente o principalmente ruido intradía;
-- si una medida amplia de la Reserva Federal confirma;
-- si los principales pares FX sugieren un movimiento amplio o una historia específica de una divisa.
+---
 
-### Preguntas
+## Dial 1 — Dirección del dólar amplio
 
-- ¿El dólar está más firme, más débil o lateral?
-- ¿La amplitud confirma DXY?
-- ¿El movimiento parece impulsado por tasas, estrés o acontecimientos en otras divisas?
+### Medida pública
 
-### Evita esto
+El dial numérico público utiliza el **Nominal Broad Dollar Index** del Federal Reserve Board, publicado en H.10.
 
-No crees un “cuarto dial” para el dólar amplio. La amplitud es una **comprobación dentro del Dial 1**.
+El cambio de la semana completada se clasifica como:
+
+- más firme;
+- más débil; o
+- en rango.
+
+### Por qué usar dólar amplio
+
+Una medida amplia ponderada por comercio reduce el riesgo de tratar los movimientos de una cesta pequeña de divisas tradicionales como si representaran todo el régimen del dólar.
+
+DXY sigue siendo un concepto educativo importante. USD Impact continúa explicando qué mide DXY, por qué importa la composición de su cesta y cómo puede divergir de una medida más amplia. Tres Diales v2 simplemente no republica una observación DXY en vivo.
+
+### No hagas esto
+
+No etiquetes el índice de dólar amplio de la Reserva Federal como DXY.
+
+No asumas que todos los activos deben responder en la misma dirección solo porque se movió el dólar amplio.
+
+---
 
 ## Dial 2 — Presión de tasas reales
 
-### Qué registrar
+### Medida pública
 
-- dirección del TIPS a 10 años;
-- contexto de rendimientos nominales;
-- si tasas reales y nominales cuentan la misma historia;
-- si el movimiento es material frente a rangos recientes.
+El dial numérico público utiliza la **rentabilidad constante del Treasury indexado a inflación a 10 años** de H.15 del Federal Reserve Board.
 
-### Preguntas
+El cambio de la semana completada se clasifica como:
 
-- ¿Las tasas reales aplican más o menos presión de valoración?
-- ¿El movimiento de tasas apoya al dólar?
-- ¿La variación nominal proviene de inflación esperada o de tasas reales?
+- al alza;
+- a la baja; o
+- estable.
 
-### Evita esto
+### Por qué importa
 
-No deduzcas la presión de tasas reales solo a partir del Treasury nominal a 10 años.
+Las tasas reales son un canal importante de coste de oportunidad y tasa de descuento para el oro, las acciones y otros activos sensibles a duración. También ayudan a separar un movimiento del rendimiento nominal impulsado por compensación por inflación de otro impulsado por una reevaluación de las tasas reales.
 
-## Dial 3 — Estrés de liquidez
+### No hagas esto
 
-### Qué registrar
+No sustituyas el dial de tasas reales por un rendimiento nominal del Treasury.
 
-- diferenciales de crédito ampliándose o estrechándose;
-- dirección de VIX y otras medidas de volatilidad;
-- tensión notable en financiación o banca;
-- operaciones de liquidez de bancos centrales cuando sean relevantes;
-- si los activos de riesgo muestran estrés amplio o debilidad aislada.
+Los rendimientos nominales pueden seguir siendo contexto útil en otras partes de USD Impact, pero no son un input adicional de Tres Diales v2.
 
-### Preguntas
+---
 
-- ¿Es más fácil o más difícil financiar posiciones?
-- ¿La fortaleza del dólar ocurre junto con estrés?
-- ¿Crédito y volatilidad confirman una interpretación de aversión al riesgo?
+## Dial 3 — Presión de financiación
 
-### Evita esto
+### Medida pública
 
-No reduzcas “liquidez” a un único número de balance de banco central.
+El dial numérico público utiliza:
 
-## Hoja semanal
+**SOFR − IORB**
 
-| Dial | Observación | Dirección | Confirmación | Confianza |
-|---|---|---|---|---|
-| Dólar | DXY + evidencia de dólar amplio | Más firme / más débil / lateral | Confirmado / mixto / divergente | Baja / media / alta |
-| Tasas reales | TIPS 10Y + contexto nominal | Al alza / a la baja / plano | Refuerza / contradice al dólar | Baja / media / alta |
-| Estrés de liquidez | Crédito + volatilidad + financiación | Endurece / relaja / mixto | Amplio / estrecho / poco claro | Baja / media / alta |
+expresado en puntos básicos.
 
-La confianza describe la calidad de la evidencia, no una probabilidad de retorno futuro.
+SOFR procede del Federal Reserve Bank of New York. IORB es una tasa de política del Federal Reserve Board. USD Impact calcula la diferencia de forma transparente.
 
-## Convierte las observaciones en una descripción de régimen
+El cambio de la semana completada se clasifica como:
 
-Después de registrar los diales, resume la semana sin pronosticar.
+- mayor presión;
+- menor presión; o
+- contenida.
+
+### Qué indica
+
+El diferencial es un indicador compacto de presión en la financiación garantizada a un día frente a la tasa pagada sobre los saldos de reserva. **No es un diferencial de crédito** y no es una medida completa de liquidez o estrés de mercado.
+
+Puede ayudar a detectar si las condiciones de financiación se están volviendo marginalmente más o menos exigentes.
+
+### Qué no indica
+
+SOFR menos IORB **no es**:
+
+- un diferencial de crédito;
+- VIX;
+- un índice de estrés bancario;
+- una medida completa de liquidez de mercado;
+- un sustituto de todos los indicadores de apetito por riesgo.
+
+Los diferenciales de crédito, los índices de volatilidad, los indicadores bancarios y otras medidas de liquidez pueden seguir usándose como contexto educativo o de confirmación cuando los derechos y las fuentes lo permitan. Ya no son inputs numéricos en vivo del panel público Tres Diales v2.
+
+---
+
+## La hoja de trabajo semanal
+
+| Dial | Medida pública v2 | Dirección | Base de evidencia |
+|---|---|---|---|
+| Dirección del dólar amplio | Índice de dólar amplio H.10 de la Reserva Federal | Más firme / más débil / en rango | Una medida de fuente primaria |
+| Presión de tasas reales | Rentabilidad real a 10 años H.15 | Al alza / a la baja / estable | Una medida de fuente primaria |
+| Presión de financiación | SOFR − IORB | Mayor / menor / contenida | Medida derivada transparente de fuentes primarias permitidas |
+
+El panel no fabrica una etiqueta de “alta confianza” a partir de una sola observación. La versión 2 usa una confianza de evidencia media porque cada dial tiene una medida pública definida.
+
+---
+
+## Convertir las observaciones en una descripción del régimen
+
+Las etiquetas siguen siendo descriptivas, no predictivas.
 
 Ejemplos:
 
-- **Entorno de dólar firme impulsado por tasas:** dólar más firme, tasas reales al alza, estrés contenido.
-- **Entorno de dólar firme impulsado por estrés:** dólar más firme, tasas reales mixtas, estrés de liquidez al alza.
-- **Entorno más fácil con dólar débil:** dólar más débil, tasas reales a la baja, estrés relajándose.
-- **Entorno mixto o transitorio:** los diales discrepan o la amplitud es débil.
+- **Entorno de dólar firme liderado por tasas:** dólar amplio más firme, tasas reales al alza y financiación sin mayor presión.
+- **Entorno de dólar firme liderado por financiación:** dólar amplio más firme mientras aumenta la presión SOFR−IORB.
+- **Entorno de dólar más débil y más relajado:** dólar amplio más débil, tasas reales a la baja y menor presión de financiación.
+- **Entorno mixto o de transición:** las tres medidas no forman una configuración limpia.
 
-## Añade confirmación multiactivo después
+Una descripción del régimen es un resumen disciplinado de observaciones completadas. No es una probabilidad sobre el próximo movimiento del mercado.
 
-Solo después de escribir la lectura de los tres diales, revisa los activos.
+---
+
+## DXY y la evidencia más amplia de estrés siguen importando conceptualmente
+
+El contrato público de datos de la versión 2 es más estrecho que el marco educativo completo.
+
+DXY puede seguir ayudando a explicar composición de cesta y comportamiento relativo en FX.
+
+Los diferenciales de crédito, los índices de volatilidad, los indicadores bancarios y las medidas de balance pueden seguir ayudando a diagnosticar estrés financiero más amplio.
+
+Esos conceptos siguen formando parte de la educación de USD Impact. Simplemente se separan del panel numérico público propio salvo que exista una base adecuada de derechos de fuente.
+
+Esta separación es deliberada: la amplitud educativa no debe confundirse con permiso de redistribución.
+
+---
+
+## Añade confirmación entre activos después de los diales
+
+Después de registrar los tres diales públicos, revisa cómo se comportaron los principales activos.
 
 Pregunta:
 
-- ¿El oro encaja con tasas reales y riesgo?
-- ¿El petróleo responde al dólar o a oferta/demanda propia?
-- ¿La renta variable confirma condiciones financieras más fáciles o más estrictas?
-- ¿Bitcoin se mueve con liquidez amplia o con factores cripto específicos?
-- ¿La amplitud FX respalda la lectura de DXY?
+- ¿El oro se comportó de forma coherente con el entorno de tasas reales?
+- ¿El petróleo respondió principalmente al dólar o a noticias propias de oferta y demanda?
+- ¿Las acciones confirmaron condiciones financieras más fáciles o más exigentes?
+- ¿Bitcoin se movió con las condiciones de financiación/riesgo o con flujos específicos de cripto?
+- ¿Los principales pares FX apoyaron o cuestionaron la lectura del dólar amplio?
 
-El comportamiento multiactivo puede **confirmar o desafiar** la historia macro. No es un dial adicional.
+El comportamiento entre activos puede confirmar o cuestionar la interpretación. La confirmación entre activos **no es un dial adicional**.
 
-## Ejemplo práctico
+---
 
-Supón que la semana completada muestra:
+## Cómo se conecta con el Score semanal
 
-- DXY más firme y el dólar amplio también más firme;
-- TIPS 10Y al alza;
-- diferenciales de crédito relativamente estables y VIX contenido;
-- oro más débil mientras la renta variable está mixta.
+El **USD Impact Score v2 semanal** sigue siendo un **indicador sistemático entre activos separado**, con su propia metodología publicada y su propia gobernanza de inputs.
 
-Un resumen disciplinado podría ser:
+Tres Diales v2 no se convierte en la fórmula del Score.
 
-> **La semana mostró un dólar ampliamente más firme y mayor presión de tasas reales, pero sin confirmación clara de estrés de liquidez. La configuración es más compatible con fortaleza del dólar impulsada por tasas que con un shock de financiación. La debilidad del oro fue coherente en dirección con el canal de tasas, mientras la renta variable mixta limitó la fuerza de la confirmación multiactivo.**
+El Score no sustituye el orden de lectura de los Tres Diales.
 
-Observa lo que esto **no** afirma: no pronostica dónde deben moverse después DXY, el oro o la renta variable.
+La coincidencia entre ambos puede aumentar la coherencia narrativa, pero no demuestra poder predictivo.
 
-## Cuando los diales discrepan
-
-La discrepancia es un resultado válido.
-
-Ejemplo:
-
-- DXY más firme;
-- tasas reales a la baja;
-- volatilidad al alza;
-- confirmación del dólar amplio mixta.
-
-No lo conviertas de inmediato en una falsa conclusión “neutral”. Investiga la contradicción: debilidad de una divisa extranjera, demanda de dólares por estrés, reajuste de precios específico del activo o diferencias de tiempo entre mercados.
-
-## Qué representa y qué no representa el panel
-
-El panel de tres diales es un marco cualitativo para organizar la configuración macro actual. No debe presentarse como una fórmula de pronóstico ni como equivalente a un indicador sistemático.
-
-Cuando se compare con una medición sistemática separada, ambas deben mantenerse conceptualmente distintas: el panel describe la lectura cualitativa del régimen; una metodología sistemática mide según sus propias reglas publicadas.
-
-Esta separación evita confundir explicación educativa, hechos externos verificados y medición cuantitativa.
+---
 
 ## Rutina semanal de cinco minutos
 
-1. Registra DXY y confirmación del dólar amplio.
-2. Registra TIPS 10Y y contexto nominal.
-3. Registra crédito, volatilidad y financiación.
+1. Registra la dirección del dólar amplio de la Reserva Federal.
+2. Registra la dirección de la tasa real a 10 años.
+3. Registra la dirección de presión de financiación SOFR−IORB.
 4. Escribe una frase de régimen no predictiva.
-5. Comprueba oro, petróleo, renta variable, Bitcoin y FX.
-6. Conserva las contradicciones sin borrarlas de la narrativa.
-7. Si comparas esta lectura con una medición sistemática, no asumas que ambas miden exactamente lo mismo.
+5. Comprueba evidencia relevante entre activos y de estrés más amplio para buscar confirmación o contradicción.
+6. Registra las contradicciones sin borrarlas de la narrativa.
+7. Compara con el Score semanal publicado sin asumir que ambos marcos miden exactamente lo mismo.
+
+---
+
+## Límite de fuentes y derechos
+
+La información del Federal Reserve Board se trata conforme al aviso publicado por el Board y sus requisitos de atribución.
+
+SOFR está sujeto a los Términos de Uso del Federal Reserve Bank of New York, incluido el aviso específico para tasas de referencia y las condiciones de no respaldo.
+
+El valor SOFR−IORB de USD Impact se identifica como un cálculo derivado.
+
+La implementación en vivo debe fallar de forma cerrada si faltan el contrato de fuentes aprobado, los identificadores de fuente o los avisos obligatorios.
+
+---
+
+## Qué representa y qué no representa el panel
+
+El panel representa una lectura semanal ordenada de tres medidas públicas definidas. No representa una cartera, un pronóstico, una probabilidad de rentabilidad ni una recomendación de inversión.
+
+Cuando se compare con una medición sistemática separada, ambas deben mantenerse conceptualmente distintas: el panel describe una lectura cualitativa del régimen; una metodología sistemática mide según sus propias reglas publicadas; **no asumas que ambas miden exactamente lo mismo.**
+
+---
+
+## Ejemplo práctico
+
+Supón una semana completada con dólar amplio más firme, tasa real a 10 años al alza y presión SOFR−IORB contenida.
+
+Una síntesis disciplinada sería:
+
+> **La semana mostró un dólar amplio más firme y mayor presión de tasas reales, pero sin un aumento claro de la presión de financiación. La configuración encaja mejor con un entorno de dólar firme liderado por tasas que con una tensión de financiación.**
+
+Eso no predice el siguiente movimiento del dólar, el oro, las acciones ni ningún otro activo.
+
+---
+
+---
 
 ## Fuentes verificadas / referencias
 
-Las fuentes primarias enlazadas están en inglés.
+- [Federal Reserve Board H.10 — Foreign Exchange Rates](https://www.federalreserve.gov/releases/h10/current/)
+- [FRED — 10-Year Treasury Inflation-Indexed Security, Constant Maturity (DFII10)](https://fred.stlouisfed.org/series/DFII10)
+- [U.S. Treasury — Daily Treasury Par Yield Curve Rates](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve)
+- [Federal Reserve Board H.15 — Selected Interest Rates](https://www.federalreserve.gov/releases/h15/)
+- [Federal Reserve Bank of New York — SOFR](https://www.newyorkfed.org/markets/reference-rates/sofr)
+- [Federal Reserve Bank of New York — Terms of Use](https://www.newyorkfed.org/privacy/termsofuse)
+- [Cboe — VIX](https://www.cboe.com/tradable-products/vix)
 
-- [Federal Reserve H.10 — índice de dólar amplio](https://www.federalreserve.gov/releases/h10/current/)
-- [FRED DFII10 — TIPS 10Y / tasa real](https://fred.stlouisfed.org/series/DFII10)
-- [U.S. Treasury — curva diaria de rendimientos](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve)
-- [Cboe — índice VIX](https://www.cboe.com/tradable-products/vix)
+## Conclusión clave
 
-## Idea clave
+Tres Diales v2 mantiene una secuencia pública sencilla:
 
-El panel tiene **tres diales**:
+**Dirección del dólar amplio → Presión de tasas reales → Presión de financiación**
 
-**Dirección del dólar → Presión de tasas reales → Estrés de liquidez**
+DXY, crédito, volatilidad y evidencia de liquidez más amplia siguen siendo contexto educativo importante, pero no se republican silenciosamente ni se disfrazan como inputs de los diales de la versión 2.
 
-La amplitud del dólar y los activos son capas de confirmación. Primero lee los diales; después sigue el mecanismo con la **[Cadena de transmisión](/es/framework/dollar-transmission-chain/)**.
+Empieza por los diales. Después sigue el mecanismo con la **[Cadena de Transmisión del Dólar](/es/framework/dollar-transmission-chain/)**.

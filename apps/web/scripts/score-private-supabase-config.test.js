@@ -62,8 +62,8 @@ test('other Preview branches cannot select the dedicated Score secret', () => {
   }), /SUPABASE_SECRET_KEY is missing or invalid/);
 });
 
-test('Score handoff issuance uses the isolated config, not generic Preview SUPABASE_SECRET_KEY', async () => {
-  const src = await readFile(new URL('../src/lib/score-handoff-handler.js', import.meta.url), 'utf8');
+test('Vercel member content uses the isolated private asset config, not generic Preview SUPABASE_SECRET_KEY', async () => {
+  const src = await readFile(new URL('../src/lib/score-member-handler.js', import.meta.url), 'utf8');
   assert.match(src, /import \{ readScorePrivateSupabaseConfig \} from '.\/score-private-supabase-config\.js'/);
   assert.match(src, /readScorePrivateSupabaseConfig\(/);
   assert.doesNotMatch(src, /readSupabaseServerConfig\(/);

@@ -18,6 +18,8 @@ import {
   projectRefFromUrl,
 } from './launch-email-dispatch-common.js';
 
+const MAX_OUTBOX_UPDATE_ATTEMPTS = 3;
+
 const JSON_HEADERS = Object.freeze({
   Accept: 'application/json',
   'Content-Type': 'application/json',
@@ -245,21 +247,70 @@ async function applyDeliveryEvent({ config, verified, fetchImpl, environment }) 
     throw new WebhookProcessingError('Resend email identifier matches multiple outbox rows.', 'AMBIGUOUS_OUTBOX_MATCH');
   }
 
-  const row = matches[0];
-  const transition = planResendOutboxTransition(row.status, verified.event);
-  if (!transition.apply) {
-    return Object.freeze({ outcome: 'processed', reason: transition.reason || 'no-state-change' });
-  }
+  let row = matches[0];
+  const matchedId = row.id;
+  for (let attempt = 0; ; attempt += 1) {
+    const transition = planResendOutboxTransition(row.status, verified.event);
+    if (!transition.apply) {
+      return Object.freeze({ outcome: 'processed', reason: transition.reason || 'no-state-change' });
+    }
+    if (attempt >= MAX_OUTBOX_UPDATE_ATTEMPTS) {
+      throw new WebhookProcessingError(
+        'Resend outbox state changed during callback processing.',
+        'OUTBOX_UPDATE_CONTENDED',
+      );
+    }
 
-  await serviceRequest({
-    config,
-    path: `/rest/v1/notification_outbox?id=eq.${encodeURIComponent(row.id)}`,
-    method: 'PATCH',
-    body: transition.patch,
-    prefer: 'return=minimal',
-    fetchImpl,
-  });
-  return Object.freeze({ outcome: 'processed', reason: 'state-updated' });
+    // Compare-and-set on the exact state used by the transition planner.
+    // PostgreSQL rechecks this predicate after a concurrent row update, so a
+    // stale callback can never overwrite a newer terminal state.
+    const updated = await serviceRequest({
+      config,
+      path: `/rest/v1/notification_outbox?id=eq.${encodeURIComponent(matchedId)}&provider=eq.resend&provider_message_ref=eq.${encodeURIComponent(verified.event.emailId)}&status=eq.${encodeURIComponent(row.status)}&select=id,status,provider_message_ref`,
+      method: 'PATCH',
+      body: transition.patch,
+      prefer: 'return=representation',
+      fetchImpl,
+    });
+    const expectedStatus = transition.patch.status || row.status;
+    if (!Array.isArray(updated) || updated.length > 1
+        || updated.some((item) => !item || typeof item !== 'object' || Array.isArray(item)
+          || item.id !== matchedId || item.provider_message_ref !== verified.event.emailId
+          || item.status !== expectedStatus)) {
+      throw new WebhookProcessingError(
+        'Resend outbox update returned invalid evidence.',
+        'INVALID_OUTBOX_UPDATE_RESPONSE',
+      );
+    }
+    if (updated.length === 1) {
+      return Object.freeze({ outcome: 'processed', reason: 'state-updated' });
+    }
+
+    // A zero-row compare means another writer won. Re-read and re-plan from
+    // authoritative state instead of replaying the stale transition.
+    const current = await readOutboxMatch(config, verified.event.emailId, fetchImpl);
+    if (current.length === 0) {
+      // A message that already matched the application outbox cannot later
+      // fall through to any provider-managed namespace exception.
+      throw new WebhookProcessingError(
+        'Resend outbox correlation is not ready.',
+        'OUTBOX_CORRELATION_PENDING',
+      );
+    }
+    if (current.length > 1) {
+      throw new WebhookProcessingError(
+        'Resend email identifier matches multiple outbox rows.',
+        'AMBIGUOUS_OUTBOX_MATCH',
+      );
+    }
+    if (current[0].id !== matchedId) {
+      throw new WebhookProcessingError(
+        'Resend outbox identity changed during callback processing.',
+        'OUTBOX_IDENTITY_CHANGED',
+      );
+    }
+    row = current[0];
+  }
 }
 
 export async function handleResendWebhook(request, response, options = {}) {
@@ -367,7 +418,7 @@ export async function handleResendWebhook(request, response, options = {}) {
     }
     const status = error?.code === 'WEBHOOK_RECEIPT_CONFLICT'
       ? 409
-      : error?.code === 'OUTBOX_CORRELATION_PENDING'
+      : ['OUTBOX_CORRELATION_PENDING', 'OUTBOX_UPDATE_CONTENDED'].includes(error?.code)
         ? 503
         : 500;
     return sendJson(

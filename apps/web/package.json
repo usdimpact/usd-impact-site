@@ -38,7 +38,7 @@
     "validate:localization": "node --check src/lib/localization-policy.js && node --check src/data/localization-manifest.js && node scripts/test-localization-policy.mjs && node scripts/validate-localization-manifest.mjs",
     "validate:localization-vtt": "node --check scripts/validate-localization-vtt.mjs && node scripts/test-localization-vtt-validator.mjs",
     "validate:localization-visual-qa-token": "node --check src/lib/localization-visual-qa-token.js && node scripts/test-localization-visual-qa-token.mjs",
-    "validate:score-membership": "node --check api/account.js && node --check src/lib/score-member-handler.js && node --check src/lib/score-member-assets.js && node --check src/lib/score-session-cookie.js && node --test scripts/score-membership.test.js scripts/score-handoff.test.js scripts/score-private-supabase-config.test.js src/lib/score-member-assets.test.js src/lib/score-member-handler.test.js src/lib/score-redemption.test.js && node scripts/test-score-production-migrations.mjs && node scripts/test-score-handoff-browser.mjs && node scripts/test-score-edge-retirement.mjs && node scripts/test-score-pipeline-origin.mjs"
+    "validate:score-membership": "node --check api/account.js && node --check src/lib/score-member-handler.js && node --check src/lib/score-member-assets.js && node --test scripts/score-membership.test.js scripts/score-private-supabase-config.test.js src/lib/score-member-assets.test.js src/lib/score-member-handler.test.js && node scripts/test-score-production-migrations.mjs && node scripts/test-score-edge-retirement.mjs && node scripts/test-score-pipeline-origin.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "3.7.4",

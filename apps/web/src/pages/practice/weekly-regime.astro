@@ -27,7 +27,7 @@ const canCompare = liveEvidence.usable && Boolean(reference);
 const evidenceGroups = [
   { key: 'dollar', title: 'Dial 1 — Dollar direction evidence', facts: snapshot.dials?.dollar?.facts ?? [] },
   { key: 'real-rates', title: 'Dial 2 — Real-rate evidence', facts: snapshot.dials?.real_rates?.facts ?? [] },
-  { key: 'liquidity', title: 'Dial 3 — Liquidity-stress evidence', facts: snapshot.dials?.liquidity_stress?.facts ?? [] },
+  { key: 'liquidity', title: 'Dial 3 — Funding-pressure evidence', facts: snapshot.dials?.funding_pressure?.facts ?? [] },
 ];
 const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : String(value).replaceAll('-', ' ');
 ---
@@ -61,7 +61,7 @@ const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : Strin
 
     <section class="lab-intro grid" aria-label="Weekly Regime Lab sequence">
       <article class="card"><span>1</span><h2>Observe</h2><p>Read the dated source-bound facts without seeing the deterministic dial classifications.</p></article>
-      <article class="card"><span>2</span><h2>Classify</h2><p>Set dollar direction, real-rate pressure, liquidity stress and your dominant-driver hypothesis.</p></article>
+      <article class="card"><span>2</span><h2>Classify</h2><p>Set broad-dollar direction, real-rate pressure, funding pressure and your dominant-driver hypothesis.</p></article>
       <article class="card"><span>3</span><h2>Explain</h2><p>Write what supports the reading and what would challenge it.</p></article>
       <article class="card"><span>4</span><h2>Compare</h2><p>Reveal the three deterministic dial classifications and the separate exact-week Score output.</p></article>
       <article class="card"><span>5</span><h2>Return</h2><p>Use disagreement to select the next chapter, source or Weekly report to review.</p></article>
@@ -121,7 +121,7 @@ const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : Strin
       >
         <div class="dial-grid">
           <label>
-            <span>Dollar direction</span>
+            <span>Broad USD direction</span>
             <select name="dollar" required disabled={!canCompare}>
               <option value="">Select</option>
               <option value="firmer">Firmer</option>
@@ -139,7 +139,7 @@ const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : Strin
             </select>
           </label>
           <label>
-            <span>Liquidity stress</span>
+            <span>Funding pressure</span>
             <select name="liquidity" required disabled={!canCompare}>
               <option value="">Select</option>
               <option value="tightening">Tightening</option>
@@ -202,9 +202,9 @@ const prettyReference = (value) => value === 'mixed' ? 'Mixed / neutral' : Strin
           <dl>
             <div><dt>Dollar</dt><dd>{prettyReference(reference.dollar)}</dd></div>
             <div><dt>Real rates</dt><dd>{prettyReference(reference.realRates)}</dd></div>
-            <div><dt>Liquidity stress</dt><dd>{prettyReference(reference.liquidity)}</dd></div>
+            <div><dt>Funding pressure</dt><dd>{prettyReference(reference.liquidity)}</dd></div>
           </dl>
-          <p>The reference maps the existing deterministic Three-Dials logic into the reader-facing choices. Rangebound, flat and contained states map to the neutral/mixed choice rather than being forced directional.</p>
+          <p>The reference maps the existing deterministic Three-Dials logic into the reader-facing choices. Rangebound, flat and contained states map to the neutral/mixed choice rather than being forced directional. The legacy form field name remains internal only; the public v2 dial is Funding pressure.</p>
         </div>
       )}
 

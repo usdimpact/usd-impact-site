@@ -41,19 +41,26 @@ This is a **methodology change**, not a substitute under the old metric IDs.
 - The Federal Reserve Board disclaimer states that, unless otherwise indicated, information on the Board website
   is in the public domain and may be copied/distributed with the Board cited as source.
 
-Suggested source identifier: Board H.10 daily nominal broad dollar index (`JRXWTFB_N.B`).
-Existing FRED alias `DTWEXBGS` may be used for cross-checking only; the public snapshot should cite/fetch the
-Board source directly so FRED is not the rights basis.
+Verified Board series identifier: H.10 `JRXWTFB_N.B` — Nominal Broad Dollar Index.
+Current official release surface: `https://www.federalreserve.gov/releases/h10/current/`.
+
+Existing FRED alias `DTWEXBGS` may be used for cross-checking only. The Board series remains the source-of-truth
+and rights basis. Do not hard-code the current DDP "Build Your Package" flow as the permanent transport: the Board
+announced removal of that feature for the week of 2026-11-09 in preparation for DDP retirement. Before implementation,
+select a stable official transport (Board release/XML or another Board-designated successor path) and test it separately.
 
 ### Dial 2 — Real-rate pressure
 
 **Candidate source:** Federal Reserve Board H.15, 10-year inflation-indexed Treasury constant maturity rate.
 
 - Direct Board source.
+- Verified Board series identifier: H.15 `RIFLGFCY10_XII_N.B` — 10-year inflation-indexed Treasury constant-maturity yield.
+- Current official release surface: `https://www.federalreserve.gov/releases/h15/`.
 - Public label remains **10-year real yield / real-rate pressure**.
 - Optional nominal 10-year Treasury context may also come from H.15.
 - Use the same Board public-domain/citation posture described above.
 - Do not replace a real yield with a nominal Treasury yield.
+- H.15 carries the same DDP retirement warning; implementation must revalidate the chosen machine-readable transport.
 
 ### Dial 3 — Funding pressure
 
@@ -71,6 +78,8 @@ the specific New York Fed notice/disclaimer. Any implementation must reproduce t
 verbatim from the terms at build/release review time and include the required source attribution.
 
 IORB should be sourced from the Federal Reserve Board directly.
+Verified Board policy-rate series identifier: `PRATES/PRATES_POLICY_RATES/RESBM_N.D` — Interest rate on reserve
+balances (IORB rate).
 
 ## 3. What this candidate deliberately gives up
 
@@ -123,6 +132,8 @@ Do not use a generic `primary_public` label as a substitute for an actual rights
 5. Replace the old classifier with a separately versioned classifier based only on the three approved measures.
 6. Rename reader-facing dial labels to match the measures.
 7. Add New York Fed reference-rate attribution/disclaimer exactly as required by the then-current Terms of Use.
+   The implementation must also preserve source identifiers/copyright notices, clearly label any derived
+   SOFR-minus-IORB transformation, and avoid implying New York Fed endorsement.
 8. Preserve the existing rights hold until exact-head Preview acceptance proves the new implementation contains
    none of the restricted observations.
 
@@ -164,13 +175,35 @@ rights review before numeric republication.
 
 ## 9. Source references checked 2026-10-27
 
-- Federal Reserve Board H.10 — Nominal Broad Dollar Index.
-- Federal Reserve Board H.15 — Selected Interest Rates, including 10-year inflation-indexed Treasury yield.
-- Federal Reserve Board website disclaimer — Board information public domain unless otherwise indicated;
-  cite the Board as source.
-- Federal Reserve Bank of New York — SOFR data and Markets Data APIs.
-- Federal Reserve Bank of New York Terms of Use — business copying/distribution/derivative use permitted subject
-  to conditions; reference-rate data requires the specified notice/disclaimer.
+### Federal Reserve Board
+
+- H.10 current release: `https://www.federalreserve.gov/releases/h10/current/`
+- H.10 verified series: `JRXWTFB_N.B` — Nominal Broad Dollar Index.
+- H.15 current release: `https://www.federalreserve.gov/releases/h15/`
+- H.15 verified series: `RIFLGFCY10_XII_N.B` — 10-year inflation-indexed Treasury constant-maturity yield.
+- Policy Rates verified IORB series: `PRATES/PRATES_POLICY_RATES/RESBM_N.D`.
+- Board disclaimer: `https://www.federalreserve.gov/disclaimer.htm`
+  - unless otherwise indicated, Board website information is public domain;
+  - copied/distributed Board information should cite the Board as source;
+  - non-Board material identified on Board pages requires separate permission.
+- Transport caveat: the Board announced that DDP "Build Your Package" will be removed the week of 2026-11-09 in
+  preparation for DDP retirement. Series identity and rights basis are therefore separate from the implementation
+  transport. Revalidate the machine-readable endpoint at implementation time.
+
+### Federal Reserve Bank of New York
+
+- SOFR data: `https://www.newyorkfed.org/markets/reference-rates/sofr`
+- Markets Data API documentation: `https://markets.newyorkfed.org/static/docs/markets-api.html`
+- Terms of Use: `https://www.newyorkfed.org/privacy/termsofuse`
+- The Terms grant a non-exclusive license to use, copy, distribute, modify and create derivative works from
+  Content for personal or business purposes, subject to conditions.
+- Reference-rate data carries additional Use Restrictions. Any published SOFR value or related information must
+  include the then-current specific notice/disclaimer prescribed by the Terms.
+- Any derived SOFR-minus-IORB value must be clearly identified as a USD Impact calculation rather than New York Fed
+  content, while preserving required source attribution and avoiding any endorsement implication.
+
+### Internal authority
+
 - Issue #845 — existing provider-rights evidence and current Production hold.
 
 No provider license, fee, contract, Production configuration, runtime source, public JSON, or current snapshot is

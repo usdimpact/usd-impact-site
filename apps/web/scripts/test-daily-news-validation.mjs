@@ -361,6 +361,14 @@ assert.doesNotMatch(diagnostic.reason, /secret-looking-fixture-value|https?:/);
 // #676: synthetic attribution fixtures, not a live-source or market-fact audit.
 const fedIndex = 'https://www.federalreserve.gov/recentpostings.htm';
 const fedDocument = 'https://www.federalreserve.gov/newsevents/pressreleases/synthetic20260918a.htm';
+const fedFomcIndex = 'https://www.federalreserve.gov/newsevents/pressreleases/2026-press-fomc.htm';
+const fedFomcDocument = 'https://www.federalreserve.gov/newsevents/pressreleases/monetary20260918a.htm';
+const fedFomcIndexVariants = [
+  fedFomcIndex,
+  `${fedFomcIndex}?utm_source=fixture#latest`,
+  fedFomcIndex.replace('www.', ''),
+  fedFomcIndex.replace('2026-press-fomc.htm', '2026-PRESS-FOMC.HTM'),
+];
 const fedIndexVariants = [
   fedIndex,
   `${fedIndex}/`,
@@ -376,8 +384,14 @@ for (const url of fedIndexVariants) {
   assert.equal(isLivingSourceUrl(url), false, 'The Fed index must not bypass date checks');
   assert.match(sourceDateAttributionIssue(url), /^Federal Reserve Recent Postings index requires a directly linked dated document/);
 }
+for (const url of fedFomcIndexVariants) {
+  assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.DOCUMENT_INDEX, url);
+  assert.equal(isLivingSourceUrl(url), false, 'The annual FOMC press index must not bypass date checks');
+  assert.match(sourceDateAttributionIssue(url), /^Federal Reserve annual FOMC press-release index requires a directly linked dated document/);
+}
 for (const url of [
   fedDocument,
+  fedFomcDocument,
   fedIndex.replace('recentpostings.htm', 'recentpostings.htm/archive/2026'),
   fedIndex.replace('recentpostings.htm', 'recentpostings-archive.htm'),
   fedIndex.replace('recentpostings.htm', '%ZZrecentpostings.htm'),
@@ -389,6 +403,7 @@ for (const url of [
   assert.equal(isLivingSourceUrl(url), false, url);
 }
 assert.match(SOURCE_DATE_RULES, /Federal Reserve Recent Postings.*multi-document index for discovery only/i);
+assert.match(SOURCE_DATE_RULES, /annual FOMC press-release pages.*multi-release indexes for discovery only/i);
 assert.match(SOURCE_DATE_RULES, /index.*Last Update.*not.*document.*publication date/i);
 
 const fedAttributionBundle = (url, publishedAt) => ({
@@ -423,6 +438,15 @@ const fedDiagnostic = safeValidationDiagnostic(`${sourceDateAttributionIssue(fed
 assert.equal(fedDiagnostic.code, 'invalid-source-date', 'Preserve the existing bounded-repair category');
 assert.match(fedDiagnostic.reason, /directly linked Federal Reserve document/);
 assert.doesNotMatch(fedDiagnostic.reason, /secret-looking-fixture-value|https?:/);
+const fedFomcDiagnostic = safeValidationDiagnostic(`${sourceDateAttributionIssue(fedFomcIndex)} secret-looking-fixture-value`);
+assert.equal(fedFomcDiagnostic.code, 'invalid-source-date');
+assert.match(fedFomcDiagnostic.reason, /directly linked dated Federal Reserve FOMC press release/);
+assert.doesNotMatch(fedFomcDiagnostic.reason, /secret-looking-fixture-value|https?:/);
+assert.throws(
+  () => validateEditorialBundle(fedAttributionBundle(fedFomcIndex, '2026-09-18')),
+  /Federal Reserve annual FOMC press-release index requires a directly linked dated document/,
+);
+assert.doesNotThrow(() => validateEditorialBundle(fedAttributionBundle(fedFomcDocument, '2026-09-18')));
 
 // Run the real importer only in a disposable local directory, without network.
 const { mkdir, mkdtemp, readFile, rm, writeFile } = await import('node:fs/promises');
@@ -469,6 +493,14 @@ try {
     const rejected = await fedRunImport(fedImportBundle(url, '2026-09-18'), '--replace', '--publish');
     assert.notEqual(rejected.status, 0);
     assert.match(rejected.stderr, /Federal Reserve Recent Postings index requires a directly linked dated document/);
+    assert.equal(await readFile(fedArchive, 'utf8'), savedArchive);
+    assert.equal(await readFile(fedOldCatalyst, 'utf8'), savedCatalyst);
+    await assert.rejects(readFile(fedOutput), { code: 'ENOENT' });
+  }
+  for (const url of fedFomcIndexVariants) {
+    const rejected = await fedRunImport(fedImportBundle(url, '2026-09-18'), '--replace', '--publish');
+    assert.notEqual(rejected.status, 0);
+    assert.match(rejected.stderr, /Federal Reserve annual FOMC press-release index requires a directly linked dated document/);
     assert.equal(await readFile(fedArchive, 'utf8'), savedArchive);
     assert.equal(await readFile(fedOldCatalyst, 'utf8'), savedCatalyst);
     await assert.rejects(readFile(fedOutput), { code: 'ENOENT' });

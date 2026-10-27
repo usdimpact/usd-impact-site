@@ -1,5 +1,29 @@
 # Daily deadline evidence collector - review candidate
 
+## 2026-10-28 current-main refresh
+
+This review candidate has been reconstructed directly on current protected `main`
+`431c1efc61023590eb11564145efd981f49543c8` without changing its seven-file scope.
+
+Read-only current-state evidence:
+
+- the October 27 Daily source file exists on current main;
+- current Production deployment is `dpl_7yaPHoP4BH45wPG3m1vmkSncBVke`;
+- that deployment is READY / target `production` / ref `main` / SHA
+  `431c1efc61023590eb11564145efd981f49543c8`;
+- the current connected Vercel integration can read exact-main deployment identity without
+  decrypting environment values;
+- the current GitHub integration can read commit-scoped workflow/check metadata and individual
+  workflow-run/job evidence used elsewhere in the Daily acceptance work.
+
+The connector still does not expose the collector's exact generic paginated workflow-list request
+as a drop-in executable environment for this Node CLI. Therefore this refresh does **not** claim
+that `publishing-deadline-read.mjs --collect` has been executed end-to-end with live GitHub +
+Vercel bearer credentials.
+
+That remains a separate integration proof before any scheduler/Control Center attachment. The
+review candidate remains explicitly one-shot, read-only, unscheduled and non-authoritative.
+
 Status: DRAFT INTEGRATION CANDIDATE. NOT MERGED, SCHEDULED OR ACTIVATED.
 
 This continues the delivery-policy work adopted in PR #854. Baseline inspected through

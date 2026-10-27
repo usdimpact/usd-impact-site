@@ -49,8 +49,8 @@ test('same-origin ticket redemption creates secure Score session and redirects l
     url: '/api/score-member?action=redeem',
     body: { ticket: 'a'.repeat(43) },
     headers: {
-      host: 'preview.example.test',
-      origin: 'https://preview.example.test',
+      host: 'usd-impact-site-score-member-test-usd-impact.vercel.app',
+      origin: 'https://usd-impact-site-score-member-test-usd-impact.vercel.app',
       'x-forwarded-proto': 'https',
       'content-type': 'application/x-www-form-urlencoded',
       'sec-fetch-site': 'same-origin',
@@ -79,7 +79,7 @@ test('cross-site redemption is denied before ticket use', async () => {
     method: 'POST', url: '/api/score-member?action=redeem',
     body: { ticket: 'a'.repeat(43) },
     headers: {
-      host: 'preview.example.test',
+      host: 'usd-impact-site-score-member-test-usd-impact.vercel.app',
       origin: 'https://attacker.test',
       'x-forwarded-proto': 'https',
       'content-type': 'application/x-www-form-urlencoded',

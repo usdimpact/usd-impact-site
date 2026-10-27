@@ -42,6 +42,8 @@ import {
 } from '../src/lib/support-case-email.js';
 import { createOwnSupportRequest } from '../src/lib/support-request.js';
 import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js';
+import { handleScoreMembershipCheck } from '../src/lib/score-membership-handler.js';
+import { handleScoreMemberContent } from '../src/lib/score-member-handler.js';
 
 function header(request, name) {
   const value = request.headers?.[name] ?? request.headers?.[name.toLowerCase()];
@@ -449,6 +451,8 @@ const handlers = Object.freeze({
   'daily-card-review': handleDailyCardReviewRequest,
   'knowledge-search': handleKnowledgeSearchRequest,
   'lifecycle-qa': handleLifecycleQaRequest,
+  'score-membership': handleScoreMembershipCheck,
+  'score-member-content': handleScoreMemberContent,
 });
 
 export default async function handler(request, response) {

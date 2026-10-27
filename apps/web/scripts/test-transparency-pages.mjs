@@ -146,7 +146,7 @@ assert.doesNotMatch(
   /The research files are current-vintage recalculations[\s\S]*not as-published historical vintages/,
 );
 
-assert.match(score, /const vintageAuditUrl = scorePipelineUrl\('\/data\/research\/score_v2_vintage_comparison_latest\.html', scorePipelineOrigin\)/);
+assert.match(score, /const vintageAuditUrl = scorePipelineUrl\('\/data\/research\/score_v2_vintage_comparison_latest\.html', scorePipelineOrigin, process\.env\.SCORE_PREVIEW_PIPELINE_ORIGIN, process\.env\.VERCEL_ENV\)/);
 assert.match(score, /Audit historical revisions/);
 assert.match(score, /valid as-published readings compare with the same weeks in the current recalculated history/);
 assert.match(score, /Compare published vintages/);

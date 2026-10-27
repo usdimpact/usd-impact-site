@@ -5,7 +5,8 @@ const SHA_RE = /^[0-9a-f]{40}$/;
 export function scoreMemberAssetPath(value) {
   const raw = typeof value === 'string' ? value.trim() : '';
   if (!raw || raw.length > 128 || raw.includes('\\') || raw.includes('..')) return null;
-  const path = raw.startsWith('/') ? raw : `/${raw}`;
+  let path = raw.startsWith('/') ? raw : `/${raw}`;
+  if (path === '/en' || path === '/es' || path === '/archive/en' || path === '/archive/es') path += '/';
   if (ROOT_PATHS.has(path) || ARCHIVE_PATH_RE.test(path)) return path;
   return null;
 }

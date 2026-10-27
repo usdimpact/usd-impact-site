@@ -199,7 +199,7 @@ assert.match(frameworkPage, /\{isThreeDialsPage && <ThreeDialsSnapshot \/>\}/);
 assert.match(threeDialsComponent, /Dated snapshot · not real-time/);
 assert.match(threeDialsComponent, />Fact</);
 assert.match(threeDialsComponent, />Interpretation</);
-assert.match(threeDialsComponent, />Model output</);
+assert.match(threeDialsComponent, />Separate product</);
 assert.match(threeDialsComponent, /Completed observations with actual source dates and source links/);
 assert.match(threeDialsComponent, /Open machine-readable snapshot JSON/);
 assert.match(threeDialsComponent, /Read Score methodology/);
@@ -225,7 +225,7 @@ for (const forbiddenSeries of ['DX-Y.NYB', 'BAMLH0A0HYM2', 'VIXCLS', 'query1.fin
 }
 assert.match(threeDialsGenerator, /const FRED_ORIGIN = 'https:\/\/fred\.stlouisfed\.org'/);
 assert.match(threeDialsGenerator, /const NYFED_ORIGIN = 'https:\/\/markets\.newyorkfed\.org'/);
-assert.match(threeDialsGenerator, /const SCORE_ORIGIN = 'https:\/\/score\.usd-impact\.com'/);
+assert.doesNotMatch(threeDialsGenerator, /score\.usd-impact\.com|SCORE_ORIGIN|model_output|fetchScoreModelOutput/i, 'Three-Dials v2 generator must not depend on Score output.');
 assert.match(threeDialsGenerator, /federal_reserve_board_public_domain/);
 assert.match(threeDialsGenerator, /FRED is used only as the transport/);
 assert.match(threeDialsGenerator, /derived_from_permitted_primary_sources/);
@@ -233,8 +233,6 @@ assert.match(threeDialsGenerator, /SOFR minus IORB funding spread/);
 assert.match(threeDialsGenerator, /funding-pressure indicator, not a credit spread or a complete liquidity\/stress measure/);
 assert.match(threeDialsGenerator, /Immutable Three-Dials archive/);
 assert.match(threeDialsGenerator, /archive\/\$\{targetWeek\}\.json/);
-assert.match(threeDialsGenerator, /Weekly Score bridge is .* expected/);
-assert.match(threeDialsGenerator, /Separate descriptive model output/);
 assert.match(threeDialsGenerator, /Three Dials v2 is a methodology break/);
 assert.doesNotMatch(threeDialsGenerator, new RegExp(legacyScoreOrigin.replaceAll('.', '\\.')));
 
@@ -278,10 +276,10 @@ if (threeDialsLatest.status === 'pending') {
 } else {
   assert.equal(threeDialsLatest.version, 2);
   assert.match(threeDialsLatest.week_ending, /^20\d{2}-\d{2}-\d{2}$/);
-  assert.equal(threeDialsLatest.model_output.week_ending, threeDialsLatest.week_ending);
   assert.ok(threeDialsLatest.dials?.dollar);
   assert.ok(threeDialsLatest.dials?.real_rates);
   assert.ok(threeDialsLatest.dials?.funding_pressure);
+  assert.equal(threeDialsLatest.model_output, undefined);
   assert.ok(Array.isArray(threeDialsLatest.disclosures) && threeDialsLatest.disclosures.length >= 5);
 }
 

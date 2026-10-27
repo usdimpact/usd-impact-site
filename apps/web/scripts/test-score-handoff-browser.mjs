@@ -61,12 +61,12 @@ test('anonymous, Library-only, disabled and network failure all fail closed', as
   } })), { ok: false, code: 'INVALID_HANDOFF_RESPONSE' });
 });
 
-test('page uses standalone POST redemption on the Score origin, never iframe cookies, query tokens, or client-only unlocks', async () => {
+test('page redeems tickets only through the same-origin Vercel member gate', async () => {
   const html = await readFile(new URL('../src/pages/score.astro', import.meta.url), 'utf8');
   const csp = await readFile(new URL('../astro.config.mjs', import.meta.url), 'utf8');
   assert.match(html, /requestScoreHandoff/);
   assert.match(html, /method="POST"/);
-  assert.match(html, /scoreHandoffOrigin.*score-redeem/);
+  assert.match(html, /action="\/api\/score-redeem"/);
   assert.match(html, /name="ticket"/);
   assert.match(html, /data-score-handoff/);
   assert.doesNotMatch(html, /<iframe\b/i);
@@ -77,7 +77,7 @@ test('page uses standalone POST redemption on the Score origin, never iframe coo
   assert.match(html, /standalone page after verifying/);
   assert.doesNotMatch(html, /location\.(?:href|assign|replace)\s*\(?.*ticket/);
   assert.doesNotMatch(html, /(?:localStorage|sessionStorage|postMessage)\s*\(/);
-  assert.match(csp, /resolveScoreStageEOrigin/);
-  assert.match(csp, /const scoreFormActions = \["'self'", scorePipelineOrigin, stageEHandoffOrigin\]/);
-  assert.match(csp, /form-action \$\{scoreFormActions\}/);
+  assert.doesNotMatch(html, /scoreHandoffOrigin|workers\.dev|SCORE_PRODUCTION_QA_PIPELINE/);
+  assert.doesNotMatch(csp, /resolveScoreStageEOrigin|scoreFormActions|workers\.dev/);
+  assert.match(csp, /"form-action 'self'"/);
 });

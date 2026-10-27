@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FrameworkEvidenceChain from '../components/FrameworkEvidenceChain.astro';
-import { resolveScorePipelineOrigin, resolveScoreStageEOrigin, scorePipelineUrl } from '../lib/score-pipeline-origin.js';
+import { resolveScorePipelineOrigin, scorePipelineUrl } from '../lib/score-pipeline-origin.js';
 
 const latestWeeklyReport = (await getCollection('weeklyReports'))
   .filter((entry) => entry.data.status === 'published')
@@ -13,14 +13,6 @@ const scorePipelineOrigin = resolveScorePipelineOrigin(
   process.env.VERCEL_ENV,
 );
 const vintageAuditUrl = scorePipelineUrl('/data/research/score_v2_vintage_comparison_latest.html', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
-const dashboardUrl = scorePipelineUrl('/en/', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
-const archiveUrl = scorePipelineUrl('/archive/en/', scorePipelineOrigin, process.env.SCORE_PREVIEW_PIPELINE_ORIGIN, process.env.VERCEL_ENV);
-const stageEHandoffOrigin = resolveScoreStageEOrigin(
-  process.env.SCORE_PRODUCTION_QA_PIPELINE_ORIGIN,
-  process.env.SCORE_PRODUCTION_QA_PIPELINE_ENABLED,
-  process.env.VERCEL_ENV,
-);
-const scoreHandoffOrigin = stageEHandoffOrigin || scorePipelineOrigin;
 ---
 <BaseLayout
   title="Weekly USD Impact Score | Dollar Regime Dashboard"
@@ -109,7 +101,7 @@ const scoreHandoffOrigin = stageEHandoffOrigin || scorePipelineOrigin;
 
     <p id="score-handoff-status" role="status" aria-live="polite">The protected dashboard requires an active Research Membership. Select a secure access button to verify membership.</p>
     <a id="score-sign-in-help" href="/account/sign-in/?next=%2Fscore%2F" hidden>Sign in to access Score</a>
-    <form id="score-handoff-form" method="POST" action={`${scoreHandoffOrigin}/score-redeem`} target="_self" referrerpolicy="no-referrer" hidden>
+    <form id="score-handoff-form" method="POST" action="/api/score-redeem" target="_self" referrerpolicy="no-referrer" hidden>
       <input type="hidden" name="ticket" value="" autocomplete="off" />
     </form>
 

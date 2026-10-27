@@ -1,13 +1,19 @@
 # Three Dials — owner decision record — 2026-10-27
 
-Status: **DECISION SUPPORT ONLY. NO METHODOLOGY OR PRODUCTION CHANGE IS AUTHORIZED.**
+Status: **OWNER DECISION RECORDED — OPTION B SELECTED FOR ISOLATED IMPLEMENTATION. PRODUCTION REMAINS HOLD.**
 
 The current Production rights hold remains the safe default. This record converts the remaining Three Dials question
 into an explicit owner decision so engineering does not infer a product-methodology choice from implementation convenience.
 
-## Decision required
+## Owner decision — 2026-10-27
 
-Choose one of the following paths.
+**Selected: Option B — rights-safe methodology transition.**
+
+Rationale: this keeps Three Dials as a useful first-party public framework, removes the dependency on paid/proprietary redistribution rights, preserves the real-rate core, and gives the funding dial a primary-source observable rather than leaving the feature permanently blank. The trade-off is an explicit methodology-version break, which is preferable to silently relabeling restricted DXY/credit/volatility data.
+
+This selection authorizes isolated implementation and Preview validation only. It does **not** authorize merge to `main`, Production publication, historical backfill, or removal of the existing Production hold.
+
+The alternatives remain documented below for audit history.
 
 ### Option A — preserve the original methodology and keep the hold
 
@@ -114,8 +120,8 @@ A release candidate must fail closed unless all of the following are true:
 - Score v2 behavior remains unchanged unless separately approved;
 - Production remains fail-closed until exact-head acceptance and release authorization.
 
-## Non-decision
+## Release boundary
 
-Silence, CI success, Preview readiness, this document, or the existence of PR #870 does **not** select an option.
+Option B is selected for implementation. CI success, Preview readiness, or this document still do **not** authorize Production release.
 
-Until the owner explicitly selects A, B or C, the current rights hold remains the authoritative Production behavior.
+The current rights hold remains the authoritative Production behavior until a separately reviewed Option B implementation passes exact-head acceptance and receives explicit Production release authorization.

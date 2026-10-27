@@ -165,14 +165,6 @@
       "destination": "/api/account?action=score-membership"
     },
     {
-      "source": "/api/score-handoff",
-      "destination": "/api/account?action=score-handoff"
-    },
-    {
-      "source": "/api/score-redeem",
-      "destination": "/api/account?action=score-member-redeem"
-    },
-    {
       "source": "/score/member/:path*",
       "destination": "/api/account?action=score-member-content&path=:path*"
     }

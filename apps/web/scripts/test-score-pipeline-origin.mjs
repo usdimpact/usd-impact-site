@@ -66,16 +66,13 @@ for (const [name, text] of [['home', home], ['score', score]]) {
 }
 
 for (const [name, text] of [['Three Dials', threeDials], ['Weekly Regime Lab', weeklyRegime]]) {
-  assert.match(text, /import \{ scorePipelineArchiveUrl \} from ['"].*score-pipeline-origin\.js['"]/);
-  assert.match(text, /scorePipelineArchiveUrl\(snapshot\.model_output\.week_ending, import\.meta\.env\.PUBLIC_SCORE_PIPELINE_ORIGIN\)/);
-  assert.match(text, /href=\{scoreArchiveUrl\}/);
-  assert.doesNotMatch(text, /href=\{snapshot\.model_output\.source_url\}/);
-  assert.equal(text.includes(LEGACY_SCORE_PIPELINE_ORIGIN), false, `${name} must use the origin contract.`);
-  assert.equal(text.includes(BRANDED_SCORE_PIPELINE_ORIGIN), false, `${name} must use the origin contract.`);
+  assert.doesNotMatch(text, /scorePipelineArchiveUrl|snapshot\.model_output|data-score-model-output/);
+  assert.equal(text.includes(LEGACY_SCORE_PIPELINE_ORIGIN), false, `${name} must not hard-code the legacy Score origin.`);
+  assert.equal(text.includes(BRANDED_SCORE_PIPELINE_ORIGIN), false, `${name} must not hard-code the branded Score origin.`);
+  assert.match(text, /href="\/score\/"|href=\{"\/score\/"\}/, `${name} may link to the separate Score product without embedding its data contract.`);
 }
-assert.match(threeDials, /const scoreArchiveUrl = isPublished\s*\?/);
-assert.match(weeklyRegime, /const scoreArchiveUrl = snapshot\.status === 'published'\s*\?/);
-assert.match(weeklyRegime, /\{scoreArchiveUrl && \(\s*<section class="score-output"/);
+assert.match(threeDials, /intentionally not embedded in the Three Dials v2 snapshot/);
+assert.match(weeklyRegime, /data-score-separate-product/);
 
 assert.match(astroConfig, /resolveScorePipelineOrigin/);
 assert.match(astroConfig, /PUBLIC_SCORE_PIPELINE_ORIGIN/);

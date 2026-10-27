@@ -115,7 +115,7 @@ The completed-week change is classified as:
 
 ### What it tells you
 
-The spread is a compact indicator of overnight secured funding pressure relative to the rate paid on reserve balances.
+The spread is a compact indicator of overnight secured funding pressure relative to the rate paid on reserve balances. It is **not a credit spread** and it is not a complete liquidity/stress measure.
 
 It can help identify whether funding conditions are becoming more or less pressured at the margin.
 

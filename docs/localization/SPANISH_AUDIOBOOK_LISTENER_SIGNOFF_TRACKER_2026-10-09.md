@@ -359,3 +359,31 @@ This tracker preserves historical experiments and contemporaneous decisions. **D
 - **Other release gates**: exact spoken/source parity for the Appendix B pipeline authority hash remains unverified; editorial/legal wording, final mastering profile, separate release approval and member-delivery authorization all remain **PENDING/NOT GRANTED**.
 - **Source-code CI** at PR #797 commit `5664b0ac30614a3f578199bc9c492a50ee46f087`: Web quality, Dependency review and CodeQL completed **success**. GitHub CI success is not an audiobook mastering certificate.
 - **Safeguards**: PR remains DRAFT/unmerged; no public Descript publishing, new voice synthesis, member storage upload or Production deployment. No legacy listener PASS is to be extrapolated to an entire track.
+
+
+## Owner acoustic verification — 2026-10-28
+
+Owner listened to the existing private Descript composition `6b7b9e26-bde5-4b1b-a9f1-3346966a26c6` (`QA - Spanish Audiobook Boundary and Repair Listening Reel - DO NOT PUBLISH`) and returned **PASS BOTH** for the two specifically requested ranges:
+
+1. **0:00–1:20 — PASS**
+   - Chapter 8 → 9 transition
+   - Chapter 9 → 10 transition
+   - Chapter 10 → 11 transition
+   - Chapter 11 → 12 transition
+   - Chapter 12 → 13 transition
+   - Scope: correct part-heading placement, intact compliance endings, and no owner-reported clipped/doubled syllables or unnatural transition defects in these excerpts.
+
+2. **2:06–2:46 — PASS**
+   - Chapter 13 ending / source references / educational non-advice disclaimer through the final `Verifica los datos actuales antes de utilizarlos`.
+   - Scope: owner reported the excerpt acceptable and intelligible.
+
+This closes the outstanding short-form acoustic gate for the five Chapter 8–13 joins and the Chapter 13 ending. It does **not** constitute:
+- a full-length PASS for Chapters 8–13;
+- a full 20-track whole-book listening PASS;
+- final mastered-file acceptance;
+- legal clearance;
+- publication approval;
+- member-storage approval;
+- Production authorization.
+
+Next safe gate: verify the exact 20 selected private composition identities, obtain or positively identify private selected exports, run objective decode/duration/loudness/true-peak/silence/provenance QA, and then perform the remaining whole-program listening/mastering review. Keep PR #797 DRAFT/unmerged and all public/member/Production flags OFF.

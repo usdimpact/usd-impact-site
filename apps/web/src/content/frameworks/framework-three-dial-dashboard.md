@@ -39,6 +39,8 @@ The live public dials are now:
 
 **Broad USD direction → Real-rate pressure → Funding pressure**
 
+In the broader educational framework, Dial 1 remains the **dollar direction** question; version 2 defines its public numeric measure as the Federal Reserve broad dollar index.
+
 Historical version-1 observations and version-2 observations must not be spliced into one apparently continuous series.
 
 ---
@@ -184,7 +186,7 @@ Ask:
 - Did Bitcoin move with funding/risk conditions or on crypto-specific flows?
 - Did major FX pairs support or challenge the broad-dollar reading?
 
-Cross-asset behavior can confirm or challenge the interpretation. It is not another dial.
+Cross-asset behavior can confirm or challenge the interpretation. Cross-asset confirmation is **not an extra dial**.
 
 ---
 

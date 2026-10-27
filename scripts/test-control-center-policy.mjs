@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import './test-publishing-deadline-status.mjs';
+import './test-publishing-deadline-collector.mjs';
 import {
   classifyHeadScopedWorkflow,
   classifyWorkflowRecovery,

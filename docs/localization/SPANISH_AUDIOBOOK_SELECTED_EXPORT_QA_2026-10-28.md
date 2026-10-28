@@ -52,3 +52,38 @@ On 2026-10-28 the owner returned **PASS BOTH** for the private Descript listenin
 5. Legal/editorial release clearance, PR merge, Descript public publishing, member storage, entitlement changes and Production remain separately prohibited until explicit authorization.
 
 **Invariant:** PR #797 remains DRAFT/unmerged; public/member/Production release flags remain OFF.
+
+
+## Targeted outlier listening — 2026-10-28
+
+Owner listened to the two 10-second extracts centered on the largest adjacent-sample jumps and returned **PASS BOTH**:
+
+- Track 13: 335.8–345.8 s, objective outlier near 340.796 s — PASS.
+- Track 14: 123.9–133.9 s, objective outlier near 128.889 s — PASS.
+
+No audible click, pop, abrupt cut, duplicated syllable or unnatural discontinuity was reported in either excerpt.
+
+These two machine-flagged continuity items are therefore closed as targeted acoustic checks.
+
+## Track 00 exact private render status — 2026-10-28
+
+Read-only Agent Underlord inspection confirmed selected composition `ebe7f026-e369-4dd4-a184-9476a6482f5b` differs from its immediate base only by a pure ripple removal of source interval 2.62–3.38 s (0.76 s) for the ignored word `Right`, resulting in exact duration 109.835306 s. No other edit was found; project state was unchanged.
+
+An audio publish was created with Descript access level **private** solely to obtain the exact selected render path. Descript project readback confirms:
+- composition: `ebe7f026-e369-4dd4-a184-9476a6482f5b`
+- media type: audio
+- access level: **private**
+- share name remains `00 - Copyright Tail QA v2 - DO NOT PUBLISH`
+
+No public/unlisted/drive-wide publish was created.
+
+The connected runtime cannot currently ingest Descript's signed binary download directly, so byte-level objective QC of that exact M4A remains open. The deterministic offline reconstruction from the private base render matches the exact selected duration and is acoustically consistent, but it is **not** being claimed as byte-identical to Descript's rendered export.
+
+## Updated remaining gates
+
+1. Full-track / whole-program human listening for the selected 20-track sequence.
+2. Final mastering/output-format decision after whole-program listening; the 19 exact Drive exports already show a tight -24.0 to -23.8 LUFS cluster with no clipping/long-silence defects.
+3. If exact Track 00 binary QC becomes available, record its codec/loudness/peak/hash; do not block targeted acoustic acceptance already obtained.
+4. Legal/editorial release clearance.
+5. Reconstruct only the minimal approved release/runtime diff onto then-current protected main; do not wholesale-merge the historical production branch.
+6. Descript public publication, member storage, entitlement changes and Production remain separately gated.

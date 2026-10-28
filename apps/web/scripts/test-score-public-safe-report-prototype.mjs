@@ -272,6 +272,39 @@ test('Monthly input rejects gaps and component-derived weekly fields', async () 
   }
 });
 
+test('review schemas encode the same fail-closed rights contract', async () => {
+  const weeklySchema = JSON.parse(await readFile(
+    new URL('./schemas/weekly-report-public-safe-v1.schema.json', import.meta.url),
+    'utf8',
+  ));
+  const monthlySchema = JSON.parse(await readFile(
+    new URL('./schemas/monthly-report-public-safe-input-v1.schema.json', import.meta.url),
+    'utf8',
+  ));
+
+  assert.equal(weeklySchema.properties.schemaVersion.const, SAFE_WEEKLY_SCHEMA_VERSION);
+  assert.equal(monthlySchema.properties.schemaVersion.const, SAFE_MONTHLY_INPUT_SCHEMA_VERSION);
+
+  for (const schema of [weeklySchema, monthlySchema]) {
+    const serialized = JSON.stringify(schema);
+    assert.equal(serialized.includes('nearestRegimeBoundary'), false);
+    assert.equal(serialized.includes('sourceUrl'), false);
+    assert.equal(serialized.includes('contribution'), false);
+    assert.equal(serialized.includes('source_provenance'), false);
+  }
+
+  for (const key of [
+    'componentValuesPublished',
+    'componentZScoresPublished',
+    'componentContributionsPublished',
+    'providerProvenancePublished',
+    'componentSourceUrlPublished',
+  ]) {
+    assert.equal(weeklySchema.properties.rightsSafety.properties[key].const, false);
+    assert.equal(monthlySchema.properties.rightsSafety.properties[key].const, false);
+  }
+});
+
 test('prototype is isolated from the live component-based Weekly generator', async () => {
   const liveGenerator = await readFile(
     new URL('./generate-weekly-report.mjs', import.meta.url),

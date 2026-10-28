@@ -195,7 +195,9 @@ allContentIds.push(audiobook.contentId);
 assert.equal(audiobook.sourceContentId, book.contentId);
 assert.equal(audiobook.sourceLocale, 'es');
 assert.equal(audiobook.targetLocale, 'es');
-assert.equal(audiobook.translationStatus, 'in_progress');
+assert.equal(audiobook.translationStatus, 'verified_current');
+assert.equal(audiobook.financialReviewStatus, 'pass');
+assert.equal(audiobook.languageReviewStatus, 'pass');
 assert.equal(audiobook.releaseStatus, 'private_hold');
 assert.equal(localizationManifest.locales.es.audiobookMemberDelivery, false);
 assert.match(audiobook.workingBranch, /^feat\/spanish-audiobook-/);
@@ -312,5 +314,5 @@ assert.equal(
 );
 
 console.log(
-  `Localization manifest PASS: ${web.length} web pairs, ${captions.records.length} video caption pairs, book + private audiobook state locked.`,
+  `Localization manifest PASS: ${web.length} web pairs, ${captions.records.length} video caption pairs, book + verified-current private audiobook state locked.`,
 );

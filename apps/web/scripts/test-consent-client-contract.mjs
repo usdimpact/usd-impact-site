@@ -68,13 +68,13 @@ for (const requiredEnglishCopy of [
 for (const requiredSpanishCopy of [
   "bannerTitle: 'Opciones de privacidad'",
   "privacyLinkLabel: 'Leer el aviso de privacidad'",
-  "reject: 'Rechazar analítica'",
+  "reject: 'Continuar sin analítica'",
   "review: 'Revisar opciones'",
-  "accept: 'Aceptar analítica'",
+  "unavailable: 'Desactivadas'",
   "settingsTitle: 'Opciones de privacidad'",
   "alwaysActive: 'Siempre activas'",
   "analyticsTitle: 'Analítica opcional'",
-  "save: 'Guardar opciones'",
+  "save: 'Guardar sin analítica'",
 ]) {
   assert.ok(consentCopy.includes(requiredSpanishCopy));
 }
@@ -83,7 +83,14 @@ assert.match(consent, /consentCopyForLocale/);
 assert.match(consent, /privacyHref = locale === 'es' \? '\/es\/privacy\/' : '\/privacy\/'/);
 assert.doesNotMatch(consent, /localStorage|sessionStorage|navigator\.userAgent|advertising identifier/i);
 assert.match(consent, /let preference = readCookieValue\(\)/);
-assert.match(consent, /const analyticsAllowed = \(\) => preference === 'granted'/);
+assert.match(consent, /const analyticsAllowed = \(\) => analyticsAvailable && preference === 'granted'/);
+assert.match(consent, /const analyticsAvailable = banner\?\.dataset\.analyticsEnabled === 'true'/);
+assert.match(consent, /const enabledAndGranted = analyticsAvailable && nextPreference === 'granted'/);
+assert.match(consent, /data-analytics-enabled=\{analyticsAvailable \? 'true' : 'false'\}/);
+assert.match(consent, /\{analyticsAvailable && \(\s*<button id="privacy-consent-accept"/);
+assert.match(consent, /\{analyticsAvailable \? \(\s*<label class="privacy-consent-category" for="privacy-consent-analytics"/);
+assert.match(consent, /<section class="privacy-consent-category" aria-labelledby="privacy-consent-analytics-unavailable-title"/);
+assert.doesNotMatch(consentCopy, /accept: 'Aceptar analítica'/);
 assert.match(consent, /banner\.hidden = preference !== 'unset'/);
 assert.match(consent, /id="privacy-consent-reject" class="privacy-consent-button privacy-consent-primary"/);
 assert.match(consent, /id="privacy-consent-accept" class="privacy-consent-button privacy-consent-primary"/);
@@ -92,6 +99,7 @@ assert.match(layout, /import ConsentClient/);
 assert.match(layout, /import GoogleAnalyticsClient/);
 assert.match(layout, /id="privacy-settings-button"/);
 assert.match(layout, /locale=\{locale\}/);
+assert.match(layout, /analyticsEnabled=\{analyticsEnabled\}/);
 assert.match(layout, /privacyHref=\{locale === 'es' \? '\/es\/privacy\/' : '\/privacy\/'\}/);
 const consentPosition = layout.indexOf('<ConsentClient');
 const ga4Position = layout.indexOf('<GoogleAnalyticsClient />');

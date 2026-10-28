@@ -100,6 +100,7 @@ assert.match(baseLayout, /hreflang="x-default"/);
 assert.match(baseLayout, /analyticsEnabled/);
 assert.match(baseLayout, /localizationManifest\.locales\[locale\]\?\.analyticsEnabled === true/);
 assert.match(baseLayout, /<ConsentClient\s+locale=\{locale\}[\s\S]*privacyHref=\{locale === 'es'/);
+assert.match(baseLayout, /analyticsEnabled=\{analyticsEnabled\}/);
 assert.doesNotMatch(baseLayout, /\{analyticsEnabled && \(\s*<ConsentClient/);
 assert.match(baseLayout, /<button id="privacy-settings-button" class="footer-privacy-settings" type="button">Opciones de privacidad<\/button>/);
 assert.match(baseLayout, /\{analyticsEnabled && <GoogleAnalyticsClient \/>\}/);

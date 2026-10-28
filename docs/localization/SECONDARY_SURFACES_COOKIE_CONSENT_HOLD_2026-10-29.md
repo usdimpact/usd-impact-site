@@ -23,3 +23,12 @@ Existing site account/payment cookies are for essential functionality and are ou
 - PR remains **DRAFT/UNMERGED** with Vercel Preview only. Do not edit DXY release allowlist, Score, Research, checkout, entitlement, email, Spanish legal status or Production.
 
 **Mandatory manual:** after CI on this PR is green, sign into its protected Preview and visit a Spanish route with a fresh-browser session; confirm first-visit privacy banner, reject/accept/review controls, footer reopening and no analytics request in the Spanish route. Also revalidate the currently held DXY Preview when this isolated consent fix is incorporated into its Development branch. Professional privacy/legal signoff for broader publication is not implied by the technical test.
+
+
+## Follow-up draft: accurate Spanish UI when analytics is disabled
+
+The isolated Draft PR now passes `analyticsEnabled` from the locale manifest to the existing consent client. The Spanish UI presents only an essential/privacy-choice acknowledgement and review panel, with no analytics accept button or enabled analytics toggle. Any save on a disabled-analytics route is forced to `v1.analytics-denied`. English retains its existing optional analytics consent controls and GA4/telemetry gates.
+
+The preference cookie remains host-scoped rather than locale-scoped. An existing English-host grant can remain in the cookie when a user visits the Spanish route, but the Spanish client reports effective analytics permission as false and no Spanish analytics module is mounted. A new Spanish acknowledgement saves denial for that host, affecting its English routes as well; the English controls allow the visitor to update that choice later.
+
+This is a Development-only **candidate UI copy**; it does not replace the owner-approved public Spanish privacy notice or its historical consent approval records. The new UI strings require owner review before release. Recheck keyboard/mobile layout and host-specific cookies in an authenticated SSO Preview. Do not claim legal signoff or deploy to Production.

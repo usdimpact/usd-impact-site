@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "state": "hold",
+  "effective_date": "2026-10-28",
+  "pipeline_issue": "https://github.com/usdimpact/usd-impact-pipeline/issues/155",
+  "production_change_authorized": false,
+  "classes": {
+    "B": {
+      "label": "methodology_or_source_contract"
+    },
+    "C": {
+      "label": "direct_component_derived_release_evidence"
+    },
+    "D": {
+      "label": "aggregate_research_with_provider_provenance"
+    },
+    "E": {
+      "label": "component_derived_diagnostic_research"
+    },
+    "F": {
+      "label": "component_revision_research"
+    },
+    "P": {
+      "label": "protected_score_navigation"
+    }
+  },
+  "path_classes": {
+    "/data/score_v2_data_semantics.json": "B",
+    "/data/score_v2_methodology.json": "B",
+    "/data/score_v2_methodology.schema.json": "B",
+    "/data/research/independent_replication_protocol.json": "B",
+    "/data/weekly_input_latest.json": "C",
+    "/data/usd_impact_score_v2.json": "C",
+    "/data/usd_impact_score_v2.csv": "C",
+    "/data/research/score_v2_point_in_time_latest.json": "D",
+    "/data/research/score_v2_robustness_latest.json": "E",
+    "/data/research/score_v2_vintage_comparison_latest.json": "F",
+    "/data/research/score_v2_vintage_comparison_latest.csv": "F",
+    "/data/research/score_v2_vintage_comparison_latest.html": "F",
+    "/archive/en/": "P"
+  },
+  "files": {
+    "src/pages/about.astro": {
+      "direct_score_paths": [
+        "/data/research/score_v2_vintage_comparison_latest.json",
+        "/data/research/score_v2_vintage_comparison_latest.csv",
+        "/data/score_v2_data_semantics.json"
+      ],
+      "dynamic_score_paths": []
+    },
+    "src/pages/score/methodology.astro": {
+      "direct_score_paths": [
+        "/data/research/score_v2_vintage_comparison_latest.json",
+        "/data/score_v2_methodology.json",
+        "/data/score_v2_methodology.schema.json",
+        "/data/score_v2_data_semantics.json",
+        "/data/weekly_input_latest.json",
+        "/data/usd_impact_score_v2.json",
+        "/data/usd_impact_score_v2.csv",
+        "/data/research/score_v2_robustness_latest.json",
+        "/data/research/score_v2_point_in_time_latest.json",
+        "/data/research/score_v2_vintage_comparison_latest.csv",
+        "/archive/en/"
+      ],
+      "dynamic_score_paths": []
+    },
+    "src/pages/research/independent-replication.astro": {
+      "direct_score_paths": [
+        "/data/research/independent_replication_protocol.json"
+      ],
+      "dynamic_score_paths": []
+    },
+    "src/pages/score.astro": {
+      "direct_score_paths": [],
+      "dynamic_score_paths": [
+        "/data/research/score_v2_vintage_comparison_latest.html"
+      ]
+    }
+  }
+}

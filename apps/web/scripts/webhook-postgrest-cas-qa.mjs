@@ -49,6 +49,11 @@ export function assertSafeEnvironment(env, mode = 'live') {
   assert.ok(direct || pooler, 'DEV_DATABASE_HOST_OR_ROLE_MISMATCH');
   assert.ok(typeof env.DEV_PGPASSWORD === 'string' && env.DEV_PGPASSWORD.length >= 16,
     'MISSING_DEVELOPMENT_DB_CREDENTIAL');
+  assert.ok(typeof env.DEV_PGROOTCERT_PEM === 'string'
+    && env.DEV_PGROOTCERT_PEM.startsWith('-----BEGIN CERTIFICATE-----')
+    && env.DEV_PGROOTCERT_PEM.trimEnd().endsWith('-----END CERTIFICATE-----')
+    && env.DEV_PGROOTCERT_PEM.length <= 16000,
+    'MISSING_VERIFIED_DEVELOPMENT_CA_CERTIFICATE');
   if (mode === 'live') {
     assert.ok(typeof env.DEV_POSTGREST_SECRET_KEY === 'string'
       && (env.DEV_POSTGREST_SECRET_KEY.startsWith('sb_secret_')
@@ -75,14 +80,25 @@ function sqlClient(env, statement, fixture) {
     '-v', 'fixture_id=' + fixture.id, '-v', 'provider_ref=' + fixture.providerRef,
     '-v', 'fixture_email=' + fixture.email, '-v', 'message_id=' + fixture.messageId,
     '-v', 'idempotency_key=' + fixture.idempotencyKey];
-  const pgEnv = {
-    ...process.env, PGHOST: env.DEV_PGHOST, PGUSER: env.DEV_PGUSER,
-    PGDATABASE: env.DEV_PGDATABASE, PGPORT: env.DEV_PGPORT,
-    PGPASSWORD: env.DEV_PGPASSWORD, PGSSLMODE: 'verify-full', PGCONNECT_TIMEOUT: '6',
-  };
-  // Passwords only in process environment, never CLI args, SQL, logs or files.
-  const result = spawnSync('psql', args, { input: statement, encoding: 'utf8',
-    env: pgEnv, timeout: 15000, maxBuffer: 8192, stdio: ['pipe', 'pipe', 'pipe'] });
+  // Supabase verifies the server hostname using the Development CA downloaded
+  // from its Database SSL settings. The public certificate is ephemeral here;
+  // the database password stays exclusively in process environment.
+  const certPath = join(env.RUNNER_TEMP || tmpdir(),
+    'usd-impact-webhook-cas-ca-' + env.GITHUB_RUN_ID + '.crt');
+  writeFileSync(certPath, env.DEV_PGROOTCERT_PEM, { mode: 0o600, flag: 'w' });
+  let result;
+  try {
+    const pgEnv = {
+      ...process.env, PGHOST: env.DEV_PGHOST, PGUSER: env.DEV_PGUSER,
+      PGDATABASE: env.DEV_PGDATABASE, PGPORT: env.DEV_PGPORT,
+      PGPASSWORD: env.DEV_PGPASSWORD, PGSSLMODE: 'verify-full',
+      PGSSLROOTCERT: certPath, PGCONNECT_TIMEOUT: '6',
+    };
+    result = spawnSync('psql', args, { input: statement, encoding: 'utf8',
+      env: pgEnv, timeout: 15000, maxBuffer: 8192, stdio: ['pipe', 'pipe', 'pipe'] });
+  } finally {
+    if (existsSync(certPath)) unlinkSync(certPath);
+  }
   if (result.error || result.status !== 0) throw new Error('DEVELOPMENT_SQL_OPERATION_FAILED');
   return (result.stdout || '').trim().split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
 }

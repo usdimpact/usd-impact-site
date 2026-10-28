@@ -120,6 +120,13 @@ test('a stale delivery which overwrites complaint causes acceptance failure', as
   );
 });
 
+test('orphan fixture check cannot silently proceed or delete historical QA rows', () => {
+  const runner = readFileSync(new URL('./webhook-postgrest-cas-qa.mjs', import.meta.url), 'utf8');
+  assert.match(runner, /PREEXISTING_QA_FIXTURE_REQUIRES_RECONCILIATION/);
+  assert.match(runner, /WHERE business_object_type = 'webhook_http_cas_qa'/);
+  assert.match(runner, /recipient_email_normalized LIKE 'cas\+%@example.invalid'/);
+});
+
 test('workflow is manual for live secrets and never runs live tests on pull requests', () => {
   const workflow = readFileSync(
     new URL('../../../.github/workflows/dev-webhook-postgrest-cas-qa.yml', import.meta.url), 'utf8');

@@ -25,13 +25,14 @@ The preflight found the existing insert-consent validator and update timestamp t
 
 ## Acceptance contract
 
-1. Insert the synthetic fixture through a separate authenticated Development Postgres connection, validate the exact UUID and accepted state.
-2. Launch two HTTP PATCH calls concurrently against the same observed accepted state. One requests delivered; the other complained. Both requests include the exact fixture UUID, provider=resend, synthetic provider reference, expected status and the response header Prefer: return=representation.
-3. Require exactly one successful updated-row response and one empty-array response, then independently GET the authoritative winning state.
-4. If delivered won, apply a later conditional complaint transition. A complaint must become terminal.
-5. Replay the stale original-status delivery PATCH, require zero rows updated and verify terminal complained remains unchanged.
-6. Delete only the exact fixture UUID together with its QA business type, provider reference and non-deliverable address. Verify zero rows with that UUID remain.
-7. Always attempt cleanup from a finally block. The manual GitHub Actions job independently repeats cleanup in an always-running step. A failed cleanup marks the whole acceptance FAIL and preserves the restricted, nonsecret fixture manifest for remediation.
+1. Check that **zero previous synthetic QA rows** remain in this Development table. If any exist, fail closed and reconcile them manually; never silently delete older fixtures.
+2. Insert the synthetic fixture through a separate authenticated Development Postgres connection, validate the exact UUID and accepted state.
+3. Launch two HTTP PATCH calls concurrently against the same observed accepted state. One requests delivered; the other complained. Both requests include the exact fixture UUID, provider=resend, synthetic provider reference, expected status and the response header Prefer: return=representation.
+4. Require exactly one successful updated-row response and one empty-array response, then independently GET the authoritative winning state.
+5. If delivered won, apply a later conditional complaint transition. A complaint must become terminal.
+6. Replay the stale original-status delivery PATCH, require zero rows updated and verify terminal complained remains unchanged.
+7. Delete only the exact fixture UUID together with its QA business type, provider reference and non-deliverable address. Verify zero rows with that UUID remain.
+8. Always attempt cleanup from a finally block. The manual GitHub Actions job independently repeats cleanup in an always-running step. A failed cleanup marks the whole acceptance FAIL and preserves the restricted, nonsecret fixture manifest for remediation.
 
 The script emits only allowlisted evidence: PASS/FAIL, winning transition, terminal status, cleanup result and Development project ID. It never prints tokens, database passwords, recipient addresses, raw HTTP bodies or SQL errors.
 

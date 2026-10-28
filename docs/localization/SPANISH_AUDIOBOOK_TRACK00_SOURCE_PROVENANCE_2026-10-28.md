@@ -34,6 +34,26 @@ This project also contains a separate historical fallback asset:
 
 That shorter fallback must not be silently substituted for the selected 113.345306 s Track 00 composition.
 
+## Read-only Descript composition inspection
+
+Agent Underlord was instructed to perform read-only inspection only and reported `project_changed=false`.
+
+For composition `91240c6b-78df-4910-a994-43c616f9b53f`:
+- audio-only composition;
+- script track spans 0 → **113.345306 s**;
+- one scene;
+- Descript's “media used in this composition” query returns exactly one media item:
+  - `00 - Lee primero el dólar.wav`;
+  - media reference `12e94d44-66e7-4baf-9731-9a8470697b63`;
+  - duration **113.345306 s**.
+
+Therefore, within the available Descript inspection surface, the selected composition resolves to the same-named 113.345306 s WAV rather than the shorter 105.308073 s fallback asset.
+
+Proof limitation:
+- the available Descript query does not expose clip-level source offsets or raw byte content;
+- therefore this still does not prove a byte hash or whole-file-from-zero playback mapping;
+- byte-level release proof remains a separate materialization step.
+
 ## What is now resolved
 
 Resolved:

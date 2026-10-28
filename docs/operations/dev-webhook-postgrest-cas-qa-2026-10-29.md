@@ -34,7 +34,7 @@ The preflight found the existing insert-consent validator and update timestamp t
 7. Delete only the exact fixture UUID together with its QA business type, provider reference and non-deliverable address. Verify zero rows with that UUID remain.
 8. Always attempt cleanup from a finally block. The manual GitHub Actions job independently repeats cleanup in an always-running step. A failed cleanup marks the whole acceptance FAIL and preserves the restricted, nonsecret fixture manifest for remediation.
 
-The script emits only allowlisted evidence: PASS/FAIL, winning transition, terminal status, cleanup result and Development project ID. It never prints tokens, database passwords, recipient addresses, raw HTTP bodies or SQL errors.
+The REST client sends an opaque Development `sb_secret_` key **only in the `apikey` header**, since it is not a JWT; a legacy Development `service_role` JWT can also be sent as `Authorization: Bearer`. The two key forms are tested independently offline. The script emits only allowlisted evidence: PASS/FAIL, winning transition, terminal status, cleanup result and Development project ID. It never prints tokens, database passwords, recipient addresses, raw HTTP bodies or SQL errors.
 
 **Scope limit:** These checks prove the Development outbox status compare-and-set HTTP interface, not the end-to-end signed webhook handler, receipt races, legal consent, real-device passkeys or Production sends.
 

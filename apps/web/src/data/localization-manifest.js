@@ -987,11 +987,11 @@ export const localizationManifest = deepFreeze({
       "voiceLocale": "es-419",
       "sourceDriveFileId": "1hjOXZdqT1DajsiGvNm8motQIJ4yuxi6zNwDiU1bpYnU",
       "workingBranch": "feat/spanish-audiobook-pilot-foundation",
-      "checkpointCommit": "e440b5e19ff7524d80b993da4eba3753aa371a6e",
-      "checkpointNote": "Private production branch; Chapter 13 synthesis work has begun. This record does not assert final audiobook completeness.",
-      "translationStatus": "in_progress",
-      "financialReviewStatus": "in_progress",
-      "languageReviewStatus": "in_progress",
+      "checkpointCommit": "647d20a46526befabfaca10080be53fe39ac4427",
+      "checkpointNote": "Private QA advanced: owner-reported full-track listening PASS for 20/20 selected compositions; 19 exact selected Drive WAVs passed objective decode/duration/loudness/peak/silence/clipping QA; Track 00 selected v2 provenance is bounded and privately reviewed. Final mastering/output format, legal/publisher clearance, member delivery and Production release remain held.",
+      "translationStatus": "verified_current",
+      "financialReviewStatus": "pass",
+      "languageReviewStatus": "pass",
       "releaseStatus": "private_hold"
     },
     "privacyConsent": {

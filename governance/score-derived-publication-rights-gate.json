@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "state": "hold",
+  "effective_date": "2026-10-28",
+  "issue": "https://github.com/usdimpact/usd-impact-pipeline/issues/155",
+  "reason": "Weekly USD Impact reports consume Class-C archived weekly_input evidence and publish named component contributions while Score redistribution rights are under review.",
+  "scope": [
+    "scheduled_weekly_report_generation",
+    "manual_weekly_report_generation"
+  ],
+  "resume_requires": [
+    "provider_or_counsel_disposition",
+    "approved_weekly_report_public_schema",
+    "approved_weekly_report_input_evidence_boundary",
+    "separate_production_authorization"
+  ],
+  "decision_receipt": null,
+  "approved_by": null
+}

@@ -12,6 +12,7 @@ const [
   threeDialsComponent,
   threeDialsLib,
   threeDialsGenerator,
+  threeDialsBoardReleaseXml,
   threeDialsWorkflow,
   threeDialsFramework,
   threeDialsSourceLatest,
@@ -27,6 +28,7 @@ const [
   readFile(new URL('../src/components/ThreeDialsSnapshot.astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/lib/three-dials.js', import.meta.url), 'utf8'),
   readFile(new URL('./generate-three-dials-snapshot.mjs', import.meta.url), 'utf8'),
+  readFile(new URL('../src/lib/three-dials-board-release-xml.js', import.meta.url), 'utf8'),
   readFile(new URL('../../../.github/workflows/three-dials-snapshot.yml', import.meta.url), 'utf8'),
   readFile(new URL('../src/content/frameworks/framework-three-dial-dashboard.md', import.meta.url), 'utf8'),
   readFile(new URL('../src/data/three-dials-latest.json', import.meta.url), 'utf8'),
@@ -217,17 +219,24 @@ assert.match(threeDialsLib, /Descriptive interpretation of completed observation
 assert.doesNotMatch(threeDialsLib, /probability|expected return|buy|sell/i);
 
 // Generator source and immutability contract.
-for (const requiredSeries of ['FED_BROAD_USD', 'FED_10Y_REAL_YIELD', 'SOFR_IORB_SPREAD', 'DTWEXBGS', 'DFII10', 'IORB']) {
-  assert.ok(threeDialsGenerator.includes(requiredSeries), `Three-Dials v2 generator must bind ${requiredSeries}.`);
+const threeDialsSourceAdapter = `${threeDialsGenerator}\n${threeDialsBoardReleaseXml}`;
+for (const requiredSeries of ['FED_BROAD_USD', 'FED_10Y_REAL_YIELD', 'SOFR_IORB_SPREAD', 'JRXWTFB_N.B', 'RIFLGFCY10_XII_N.B', 'RESBM_N.D']) {
+  assert.ok(threeDialsSourceAdapter.includes(requiredSeries), `Three-Dials v2 generator must bind ${requiredSeries}.`);
 }
-for (const forbiddenSeries of ['DX-Y.NYB', 'BAMLH0A0HYM2', 'VIXCLS', 'query1.finance.yahoo.com']) {
-  assert.equal(threeDialsGenerator.includes(forbiddenSeries), false, `Three-Dials v2 generator must exclude ${forbiddenSeries}.`);
+for (const forbiddenSeries of ['DX-Y.NYB', 'BAMLH0A0HYM2', 'VIXCLS', 'query1.finance.yahoo.com', 'fred.stlouisfed.org', '/graph/fredgraph.csv', '/datadownload/Output.aspx']) {
+  assert.equal(threeDialsSourceAdapter.includes(forbiddenSeries), false, `Three-Dials v2 generator must exclude ${forbiddenSeries}.`);
 }
-assert.match(threeDialsGenerator, /const FRED_ORIGIN = 'https:\/\/fred\.stlouisfed\.org'/);
+assert.match(threeDialsBoardReleaseXml, /BOARD_RELEASE_ORIGIN = 'https:\/\/www\.federalreserve\.gov'/);
+assert.match(threeDialsGenerator, /FRB_h10_xml\.zip/);
+assert.match(threeDialsGenerator, /FRB_h15_xml\.zip/);
+assert.match(threeDialsGenerator, /FRB_PRATES_xml\.zip/);
+assert.match(threeDialsBoardReleaseXml, /SERIES_NAME/);
+assert.match(threeDialsBoardReleaseXml, /TIME_PERIOD/);
+assert.match(threeDialsBoardReleaseXml, /OBS_VALUE/);
 assert.match(threeDialsGenerator, /const NYFED_ORIGIN = 'https:\/\/markets\.newyorkfed\.org'/);
-assert.doesNotMatch(threeDialsGenerator, /score\.usd-impact\.com|SCORE_ORIGIN|model_output|fetchScoreModelOutput/i, 'Three-Dials v2 generator must not depend on Score output.');
+assert.doesNotMatch(threeDialsSourceAdapter, /score\.usd-impact\.com|SCORE_ORIGIN|model_output|fetchScoreModelOutput/i, 'Three-Dials v2 generator must not depend on Score output.');
 assert.match(threeDialsGenerator, /federal_reserve_board_public_domain/);
-assert.match(threeDialsGenerator, /FRED is used only as the transport/);
+assert.match(threeDialsGenerator, /full-release XML linked from the Federal Reserve release page/);
 assert.match(threeDialsGenerator, /derived_from_permitted_primary_sources/);
 assert.match(threeDialsGenerator, /SOFR minus IORB funding spread/);
 assert.match(threeDialsGenerator, /funding-pressure indicator, not a credit spread or a complete liquidity\/stress measure/);

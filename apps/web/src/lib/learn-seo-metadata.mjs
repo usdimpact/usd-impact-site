@@ -47,6 +47,10 @@ const SEO_TITLES = Object.freeze(new Map([
     slug: 'floating-rates-before-jamaica-formalization',
     title: 'Floating Rates Before Jamaica',
   })],
+  ['card-structural-dollar-use-vs-exchange-rate', Object.freeze({
+    slug: 'structural-dollar-use-is-not-dollar-exchange-rate-direction',
+    title: 'Structural Dollar Use vs FX Direction',
+  })],
 ]));
 
 const SEO_DESCRIPTIONS = Object.freeze(new Map([

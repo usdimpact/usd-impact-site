@@ -281,14 +281,14 @@ const heldEmailWorkflows = [
   'email-opt-in-delivery.yml', 'newsletter-preview-readiness.yml',
 ];
 function assertNoScheduledEmailWorkflow(yamlText) {
-  assert.match(yamlText, /^on:\\s*$/m, 'Workflow trigger block must be explicit.');
-  assert.doesNotMatch(yamlText, /^\\s{2}schedule\\s*:|^on:\\s*\\[[^\\n]*\\bschedule\\b/m,
+  assert.match(yamlText, /^on:\s*$/m, 'Workflow trigger block must be explicit.');
+  assert.doesNotMatch(yamlText, /^\s{2}schedule\s*:|^on:\s*\[[^\n]*\bschedule\b/m,
     'Issue #620 HOLD: lifecycle email workflows cannot add scheduled fan-out.');
 }
 for (const filename of heldEmailWorkflows) {
   const source = readFileSync(new URL(`../../../.github/workflows/${filename}`, import.meta.url), 'utf8');
   assertNoScheduledEmailWorkflow(source);
-  assert.throws(() => assertNoScheduledEmailWorkflow(source.replace(/^on:\\s*$/m, 'on:\\n  schedule:\\n    - cron: "0 7 * * 1"')),
+  assert.throws(() => assertNoScheduledEmailWorkflow(source.replace(/^on:\s*$/m, 'on:\n  schedule:\n    - cron: "0 7 * * 1"')),
     /Issue #620 HOLD/);
 }
 cases += heldEmailWorkflows.length * 2;

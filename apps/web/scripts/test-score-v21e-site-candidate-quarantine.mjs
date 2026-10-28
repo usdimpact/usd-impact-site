@@ -52,7 +52,7 @@ function syntheticScore(pipeline, schemaVersion = SAFE_SCORE_SCHEMA_VERSION) {
   };
 }
 
-test('candidate is explicitly versioned and all upstream research/release gates remain closed', () => {
+test('candidate is versioned and all WEBSITE release/activation gates remain closed', () => {
   assert.equal(fixture.schemaVersion, 'score-v21e-site-quarantine-v1');
   assert.equal(fixture.candidateVersion, '2.1E-design-candidate');
   assert.equal(fixture.candidateState, 'design_only');
@@ -70,10 +70,49 @@ test('candidate is explicitly versioned and all upstream research/release gates 
   assert.equal(fixture.slots.filter(entry => entry.source === 'Federal Reserve Board').length, 7);
   assert.deepEqual(new Set(fixture.slots.map(entry => entry.role)).size, 8);
   for (const field of [
-    'sourceRightsCleared', 'realDataResearchAuthorized', 'liveSourceSwitchoverAuthorized',
+    'sourceRightsCleared', 'siteResearchExecutionAuthorized', 'liveSourceSwitchoverAuthorized',
     'researchLedgerMutationAuthorized', 'publicArtifactReplacementAuthorized',
     'productionActivationAuthorized', 'sitePublishCandidate', 'releaseAuthorized',
   ]) assert.equal(fixture[field], false, field + ' requires separate approval');
+});
+
+test('owner-approved one-off private research is distinct from site, rights and Production approval', () => {
+  const receipt = fixture.oneOffPrivateResearchAuthorization;
+  assert.equal(fixture.candidateStateScope,
+    'website_promotion_only_separate_from_authorized_upstream_private_research');
+  assert.equal(receipt.activationMergeSha, 'bb9e4c4d2ef7d28938d670746b4a57f3fb1af587');
+  assert.equal(receipt.receiptPath,
+    'governance/score-v2-1e-real-data-research-authorization.json');
+  assert.equal(receipt.receiptGitBlobSha, '40283d6c846c994b71e3d1a8007f1844215a655e');
+  assert.equal(receipt.ownerApprovalIssue,
+    'https://github.com/usdimpact/usd-impact-pipeline/issues/209');
+  assert.equal(receipt.ownerApprovalCommentId, 6477834394);
+  assert.equal(receipt.approvedAtUtc, '2026-10-28T18:55:48Z');
+  assert.equal(receipt.decisionStatus, 'approved');
+  assert.equal(receipt.executionScope, 'one_off_private_research_only');
+  assert.equal(receipt.methodologyVersion, fixture.candidateVersion);
+  assert.equal(receipt.designMergeSha, fixture.frozenDesignMergeSha);
+  assert.equal(receipt.preregistrationMergeSha, fixture.frozenPreregistrationMergeSha);
+  assert.deepEqual([receipt.sourceHistoryStart, receipt.sourceHistoryEnd],
+    ['2013-01-01', '2026-10-23']);
+  assert.deepEqual(receipt.exactSeries, expectedSeries);
+  assert.deepEqual(receipt.officialSourceAllowlist,
+    ['www.federalreserve.gov', 'www.bls.gov', 'data.bls.gov']);
+  for (const key of [
+    'realDataFetchApproved', 'realDataResearchApproved', 'ephemeralSourceValuesOnly',
+    'ephemeralRawResponsesOnly', 'privateIsolatedWorkspaceOnly', 'rightsHoldRemains',
+  ]) assert.equal(receipt[key], true, key);
+  for (const key of [
+    'durableRawStorageApproved', 'additionalPaidSourcesApproved',
+    'sourceContractAcceptanceApproved', 'researchLedgerMutationApproved',
+    'publicArtifactReplacementApproved', 'commercialMemberDistributionApproved',
+    'productionApproved', 'websiteSourceSwitchApproved',
+    'websiteRealDataResearchExecutionApproved',
+  ]) assert.equal(receipt[key], false, key);
+  assert.equal(fixture.siteResearchExecutionAuthorized, false);
+  assert.equal(fixture.publicArtifactReplacementAuthorized, false);
+  assert.equal(fixture.sitePublishCandidate, false);
+  assert.equal(fixture.releaseAuthorized, false);
 });
 
 test('upstream provenance review preserves five no-exception paths and three prior H.15 caveats', () => {
@@ -88,6 +127,7 @@ test('upstream provenance review preserves five no-exception paths and three pri
     'governance/score-v2-1e-upstream-provenance-review.json');
   assert.equal(review.reviewedSourceBlobSha, '2e95a744ac9bc43a260fb7ab09a82ee580dce361');
   assert.equal(review.state, 'evidence_only_no_source_approval');
+  assert.equal(review.historicalEvidenceSnapshotAtMerge, true);
   assert.equal(review.noSpecificExceptionIdentified, 5);
   assert.equal(review.residualUpstreamProvenance, 3);
   assert.equal(review.noSpecificExceptionIdentified + review.residualUpstreamProvenance, 8);
@@ -129,7 +169,8 @@ test('published government H.15 output scope does not authorize raw OTC quote us
   assert.equal(scope.publishedGovernmentOutputsOnly, true);
   assert.equal(scope.noSpecificThirdPartyNoticeIdentifiedOnReviewedPublishedOutputPath, true);
   assert.equal(scope.rightsHoldRemains, true);
-  assert.equal(scope.activeResearchAuthorizationReceiptPresent, false);
+  assert.equal(scope.historicalEvidenceSnapshotAtMerge, true);
+  assert.equal(scope.activeResearchAuthorizationReceiptPresentAtReview, false);
   for (const field of [
     'rawUpstreamOTCQuotesInScope', 'reconstructionOfRawUpstreamQuotesInScope',
     'paidOrCredentialedSourceInScope', 'legalConclusion', 'sourceApproval',
@@ -137,7 +178,7 @@ test('published government H.15 output scope does not authorize raw OTC quote us
     'publicArtifactReplacementAuthorized', 'researchLedgerMutationAuthorized',
     'productionAuthorized',
   ]) assert.equal(scope[field], false, field + ' is not authorized');
-  assert.equal(scope.remainingDecision,
+  assert.equal(scope.remainingDecisionAtReview,
     'owner_decision_required_before_any_one_off_private_real_data_research');
 });
 

@@ -1,7 +1,7 @@
 # USD Impact Score v2.1E — website methodology separation and rights handoff
 
 **Date:** October 28, 2026  
-**Status:** Draft, non-activating source/version gate; rights/research/Production HOLD.
+**Status:** Draft, non-activating site source/version gate; one-off upstream private research APPROVED under Issue #209, while public/paid rights and Production remain HOLD.
 **Website baseline:** `dbbe7e6dcf1632275b0e05c1db311e543d524d6c`.
 **Pipeline reviewed baseline:** `d99530589eade93de5827de9ba29bb341884d3e8` (H.15 published-output clarification #208; prior provenance review #206 and real-data authorization boundary #204 remain HOLD).
 
@@ -44,13 +44,29 @@ This **does not erase or reclassify** the earlier #206 provenance caveat. It add
 | Raw upstream OTC quote streams, reconstruction or paid endpoints in candidate scope | **No** |
 | Identified specific third-party notice on the reviewed published output path | No — a limited evidence finding, **not** rights approval |
 | Source approval and legal conclusion | **Not granted** |
-| Real observations fetch, private research and publication | **Not authorized** |
+| One-off private official Board/BLS data research | **Owner authorized** under Issue #209, exactly 2013-01-01–2026-10-23, ephemeral only |
+| Site-side fetch, public/paid publication, methodology replacement | **Not authorized** |
 | Source/public component redistribution, rights hold and Production | **HOLD** |
-| Active one-off private research approval receipt | **Absent** |
+| Active one-off private research receipt | **Present**, approved in pipeline PR #210; no commercial/public/Production approval |
 
-The website's machine-checked fixture now pins both layers: the earlier provenance review #206 **and** the narrower official published-output scope #208. Its negative flags ensure neither a government publication path nor the absence of a specific notice silently becomes authorization for real-data retrieval, public reports or paid Research redistribution.
+The website's machine-checked fixture pins both historical evidence layers (#206 and #208). Their original negative flags describe **the authorization state of those evidence-only reviews at the time they merged**; they are not the current research authorization state. A separate active owner receipt under #210 now allows a limited private research run, but neither government publication status nor this permission authorizes site-side fetching, public reports, paid Research distribution, or Production.
 
 The next substantive decision belongs to the source owner/provider/counsel and the existing one-off private research authorization process; no one may infer a signed receipt from this CI fixture.
+
+## Active one-off private research receipt — upstream PR #210
+
+**The authorization state changed after the source-scope review.** The owner explicitly approved a single private study under [Issue #209](https://github.com/usdimpact/usd-impact-pipeline/issues/209), comment `6477834394`. The [active receipt](https://github.com/usdimpact/usd-impact-pipeline/blob/bb9e4c4d2ef7d28938d670746b4a57f3fb1af587/governance/score-v2-1e-real-data-research-authorization.json) merged in pipeline PR #210 at `bb9e4c4d2ef7d28938d670746b4a57f3fb1af587` (Git blob `40283d6c846c994b71e3d1a8007f1844215a655e`).
+
+| Allowed by that specific receipt | Still forbidden |
+| --- | --- |
+| One-off private research/fetch of the **eight fixed** Board/BLS series | Any alternate or ninth series; Yahoo, CME, Cboe, paid source, API key or contract acceptance |
+| 2013-01-01 to 2026-10-23 only | Extending the window or changing the preregistered method |
+| Isolated temporary workspace; source values and raw HTTP payloads ephemeral only | Durable raw/component storage, publication of source/component values |
+| Aggregate diagnostics, feasibility gate outcomes and provenance identifiers (no values) | Research-ledger mutation, public Score replacement, member-only report launch, Production |
+
+The separate pipeline workflow is performing a historical-vintage feasibility preflight; that workflow—not this website Draft—owns retrieval, vintage reconstruction, stopping conditions and execution results. **Do not start a duplicate run or lift a preflight HOLD based on the existence of the receipt alone.**
+
+This Draft's `oneOffPrivateResearchAuthorization` inventory is a pinned **metadata-only copy** of the approval and its restrictions. The website has no authority to fetch data, activate v2.1E, publish a new Score, or grant paid Research access. Rights issue #155 remains open.
 
 ## Why site-side separation is necessary
 
@@ -60,7 +76,7 @@ A future federal-statistics candidate must not silently publish through that sam
 
 The existing Score consumer tests now import a separate CI regression suite that:
 1. freezes the eight proposed candidate identifiers and upstream design/preregistration commits;
-2. requires all owner/research/publication rights flags to remain false;
+2. separately verifies the narrowly approved owner private-research receipt and keeps all website, public/paid distribution and Production release gates false;
 3. checks the website methodology and score display remain v2;
 4. verifies the protected Score member rewrite and separate historic sample;
 5. verifies public Score v2 Class-C redistribution exposures are still documented HOLD, not mislabelled rights-clean; and
@@ -68,8 +84,8 @@ The existing Score consumer tests now import a separate CI regression suite that
 
 ## Decision gates, in order
 
-1. **Research-source and re-use scope (HOLD):** use PR #208's published-government-output-only boundary for H.15 (excluding underlying quotations), then document scope/rights decisions for all eight series; only then consider a separate active owner-approved one-off research receipt for one-off *private* federal/BLS real-data research, only if legally/technically adequate. The packet currently has no active receipt; no real-data retrieval is allowed by this Draft.
-2. **Versioned research evaluation (HOLD):** reconstruct release-time eligibility (BLS monthly revision window, H.8 benchmarks, H.10 lag, H.4.1/H.15 release cutoffs) and apply the frozen 104-prior-week normalization and acceptance gates. No retroactive tuning or live publication.
+1. **Private research approved upstream, site HOLD:** PR #208 limits H.15 to published government-derived outputs. PR #210 approved one-off private official-source research for the fixed window. That authorization is executable only by the pipeline's frozen workflow; this website Draft still forbids fetching, activation and publication. Rights issue #155 remains open.
+2. **Versioned research evaluation (upstream authorized, feasibility still unproven):** reconstruct release-time eligibility (BLS monthly revision window, H.8 benchmarks, H.10 lag, H.4.1/H.15 release cutoffs) and apply the frozen 104-prior-week normalization and acceptance gates. No retroactive tuning or live publication.
 3. **Distribution rights (HOLD):** distinguish permissions to inspect federal releases, publish aggregate Score values, redistribute transformed component data, and distribute paid Research reports. The Series receipts are candidates, not rights approvals.
 4. **Site copy and schema migration (NOT STARTED):** if v2.1E eventually passes independently, introduce a distinct versioned public contract, explicit methodology copy, new data-source labels and preserved archive identity. Do not reuse `score-public-v2-safe-1` with changed semantics.
 5. **Protected delivery (NOT STARTED):** handle the member dashboard and Research archives through separately reviewed server authorization, private storage/origin, and exact-head negative tests. Library Pass and TradingView remain independent.
@@ -77,6 +93,6 @@ The existing Score consumer tests now import a separate CI regression suite that
 
 ## Intentional exclusions
 
-No additional market/federal observations, no real-data analysis, no source switching, no public report content changes, no customer entitlement, no checkout/webhook replay, no provider contract, no Supabase resource, no site route, no Production deployment, and no rights-gate state change.
+This website Draft performs no market/federal observation retrieval or real-data analysis, no source switching, no public report content changes, no customer entitlement, no checkout/webhook replay, no provider contract, no Supabase resource, no site route, no Production deployment, and no rights-gate state change.
 
 The upstream snapshot is pinned to a reviewed commit for traceability; the website test is **not** a live cross-repo freshness monitor. The test protects a selected high-risk set of website source paths, not every hypothetical new runtime path. A genuine future methodology promotion requires dedicated new negative tests and an explicit review of all consumers, including archived public pages.

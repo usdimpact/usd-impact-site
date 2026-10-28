@@ -78,7 +78,6 @@
     }
   ],
   "sourceRightsCleared": false,
-  "realDataResearchAuthorized": false,
   "liveSourceSwitchoverAuthorized": false,
   "researchLedgerMutationAuthorized": false,
   "publicArtifactReplacementAuthorized": false,
@@ -89,7 +88,8 @@
     "Upstream file snapshot is recorded for review, not independently refreshed by the website CI.",
     "All sources and methodology remain unapproved for public or paid-member distribution.",
     "No source observations or Score candidate values are included.",
-    "A future methodology requires a new public schema/version and an explicitly approved UI/Research migration."
+    "A future methodology requires a new public schema/version and an explicitly approved UI/Research migration.",
+    "Upstream PR #210 approved one-off ephemeral private source research only; website/public/paid delivery and Production remain unauthorized."
   ],
   "provenanceReview": {
     "reviewedMergeSha": "d4d1e441f6dd91e1d249d9f3ad515c76e2d3f61b",
@@ -108,7 +108,8 @@
     "realDataFetchAuthorized": false,
     "realDataResearchAuthorized": false,
     "productionAuthorized": false,
-    "siteReleaseAuthorized": false
+    "siteReleaseAuthorized": false,
+    "historicalEvidenceSnapshotAtMerge": true
   },
   "h15PublishedOutputScope": {
     "reviewMergeSha": "d99530589eade93de5827de9ba29bb341884d3e8",
@@ -136,7 +137,55 @@
     "researchLedgerMutationAuthorized": false,
     "productionAuthorized": false,
     "rightsHoldRemains": true,
-    "activeResearchAuthorizationReceiptPresent": false,
-    "remainingDecision": "owner_decision_required_before_any_one_off_private_real_data_research"
+    "historicalEvidenceSnapshotAtMerge": true,
+    "activeResearchAuthorizationReceiptPresentAtReview": false,
+    "remainingDecisionAtReview": "owner_decision_required_before_any_one_off_private_real_data_research"
+  },
+  "siteResearchExecutionAuthorized": false,
+  "candidateStateScope": "website_promotion_only_separate_from_authorized_upstream_private_research",
+  "oneOffPrivateResearchAuthorization": {
+    "activationMergeSha": "bb9e4c4d2ef7d28938d670746b4a57f3fb1af587",
+    "receiptPath": "governance/score-v2-1e-real-data-research-authorization.json",
+    "receiptGitBlobSha": "40283d6c846c994b71e3d1a8007f1844215a655e",
+    "ownerApprovalIssue": "https://github.com/usdimpact/usd-impact-pipeline/issues/209",
+    "ownerApprovalCommentId": 6477834394,
+    "approvedAtUtc": "2026-10-28T18:55:48Z",
+    "decisionStatus": "approved",
+    "executionScope": "one_off_private_research_only",
+    "methodologyVersion": "2.1E-design-candidate",
+    "designMergeSha": "65e71695a3d99ed6a5584548652a61dc0e66006f",
+    "preregistrationMergeSha": "b93ab1b4514e828561e74963b1a830421a104e29",
+    "sourceHistoryStart": "2013-01-01",
+    "sourceHistoryEnd": "2026-10-23",
+    "exactSeries": [
+      "H10/H10/JRXWTFB_N.B",
+      "WPU0561",
+      "H8/H8/B1001NCBA",
+      "H41/H41/RESPPALDP_N.WW",
+      "H41/H41/RESPPA_N.WW",
+      "H15/H15/RIFLGFCY10_XII_N.B",
+      "H15/H15/RIFLGFCY02_N.B",
+      "H15/H15/RIFLGFCY10_N.B"
+    ],
+    "officialSourceAllowlist": [
+      "www.federalreserve.gov",
+      "www.bls.gov",
+      "data.bls.gov"
+    ],
+    "realDataFetchApproved": true,
+    "realDataResearchApproved": true,
+    "ephemeralSourceValuesOnly": true,
+    "ephemeralRawResponsesOnly": true,
+    "privateIsolatedWorkspaceOnly": true,
+    "durableRawStorageApproved": false,
+    "additionalPaidSourcesApproved": false,
+    "sourceContractAcceptanceApproved": false,
+    "researchLedgerMutationApproved": false,
+    "publicArtifactReplacementApproved": false,
+    "commercialMemberDistributionApproved": false,
+    "productionApproved": false,
+    "websiteSourceSwitchApproved": false,
+    "websiteRealDataResearchExecutionApproved": false,
+    "rightsHoldRemains": true
   }
 }

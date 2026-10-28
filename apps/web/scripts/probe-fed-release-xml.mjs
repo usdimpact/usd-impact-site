@@ -143,8 +143,10 @@ async function inspectRelease(spec, tempRoot) {
 
   const matches = [];
   const roots = new Set();
+  const xmlFileBytes = {};
   for (const entry of xmlEntries) {
     const xml = readZipEntry(zipPath, entry);
+    xmlFileBytes[entry] = Buffer.byteLength(xml, 'utf8');
     roots.add(rootTag(xml));
     for (const candidate of seriesCandidates(xml, spec).slice(0, 3)) {
       matches.push({
@@ -166,6 +168,7 @@ async function inspectRelease(spec, tempRoot) {
     zipBytes: bytes.length,
     zipSha256: createHash('sha256').update(bytes).digest('hex'),
     xmlFiles: xmlEntries,
+    xmlFileBytes,
     rootTags: [...roots].filter(Boolean).sort(),
     matches,
   };

@@ -64,12 +64,11 @@ export function boardSeriesUrl(config) {
   const url = new URL('/datadownload/Output.aspx', BOARD_ORIGIN);
   url.searchParams.set('rel', config.releaseId);
   url.searchParams.set('series', config.packageId);
-  url.searchParams.set('lastObs', '50');
+  url.searchParams.set('lastobs', '50');
   url.searchParams.set('from', '');
   url.searchParams.set('to', '');
   url.searchParams.set('filetype', 'csv');
   url.searchParams.set('label', 'include');
   url.searchParams.set('layout', 'seriescolumn');
-  url.searchParams.set('type', 'package');
   return url;
 }

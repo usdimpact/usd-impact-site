@@ -86,11 +86,11 @@ assert.equal(url.origin, BOARD_ORIGIN);
 assert.equal(url.pathname, '/datadownload/Output.aspx');
 assert.equal(url.searchParams.get('rel'), 'H10');
 assert.equal(url.searchParams.get('series'), 'synthetic-package-id');
-assert.equal(url.searchParams.get('lastObs'), '50');
+assert.equal(url.searchParams.get('lastobs'), '50');
 assert.equal(url.searchParams.get('filetype'), 'csv');
 assert.equal(url.searchParams.get('label'), 'include');
 assert.equal(url.searchParams.get('layout'), 'seriescolumn');
-assert.equal(url.searchParams.get('type'), 'package');
+assert.equal(url.searchParams.has('type'), false, 'Board Output.aspx download URL must not carry the incompatible type=package query parameter.');
 assert.doesNotMatch(url.toString(), /fred\.stlouisfed\.org|fredgraph/i);
 
 console.log('Three Dials Board-direct synthetic parser/identity tests passed.');

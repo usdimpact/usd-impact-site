@@ -27,7 +27,7 @@ SOFR remains fetched directly from the Federal Reserve Bank of New York API. The
 The candidate:
 
 - accepts Board responses only from `https://www.federalreserve.gov`;
-- requests CSV through the Board DDP `/datadownload/Output.aspx` endpoint;
+- requests CSV through the Board DDP `/datadownload/Output.aspx` endpoint using the Board's current download query shape (no `type=package` parameter);
 - locates the explicit `Time Period` data header rather than assuming a fixed metadata-row count;
 - locates the target series column by its Board series code;
 - requires the corresponding `Unique Identifier` metadata cell to equal the exact expected Board source-series identifier;
@@ -36,7 +36,8 @@ The candidate:
 - keeps the existing bounded response size, redirect-origin and request-timeout controls;
 - keeps the existing NY Fed SOFR origin restriction;
 - adds tests that reject `fred.stlouisfed.org` and `/graph/fredgraph.csv` across the generator/source adapter;
-- adds synthetic no-network parser tests for quoted CSV fields, exact package identity, required `Time Period`/series headers, usable-observation bounds and DDP URL construction.
+- adds synthetic no-network parser tests for quoted CSV fields, exact package identity, required `Time Period`/series headers, usable-observation bounds and DDP URL construction;
+- records a 2026-10-28 live-browser verification that the Board H.10 download flow resolves to `Output.aspx?...&filetype=csv&label=include&layout=seriescolumn` without `type=package`; the exact `type=package` variant failed and is regression-blocked.
 
 ## Important lifecycle limitation
 

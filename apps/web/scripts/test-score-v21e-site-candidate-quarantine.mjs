@@ -76,12 +76,14 @@ test('candidate is explicitly versioned and all upstream research/release gates 
   ]) assert.equal(fixture[field], false, field + ' requires separate approval');
 });
 
-test('upstream provenance review preserves five non-exception findings versus three unresolved H.15 scopes', () => {
+test('upstream provenance review preserves five no-exception paths and three prior H.15 caveats', () => {
   const review = fixture.provenanceReview;
   const noException = 'no_specific_exception_identified_in_reviewed_official_publication_path';
   const residual = 'residual_upstream_provenance_requires_explicit_scope_confirmation';
-  assert.equal(fixture.reviewedPipelineMainSha, 'd4d1e441f6dd91e1d249d9f3ad515c76e2d3f61b');
-  assert.equal(review.reviewedMergeSha, fixture.reviewedPipelineMainSha);
+  assert.equal(review.reviewedMergeSha, 'd4d1e441f6dd91e1d249d9f3ad515c76e2d3f61b');
+  assert.equal(fixture.reviewedPipelineMainSha, 'd99530589eade93de5827de9ba29bb341884d3e8');
+  assert.equal(fixture.h15PublishedOutputScope.precedingProvenanceReviewMergeSha,
+    review.reviewedMergeSha);
   assert.equal(review.reviewedSourcePath,
     'governance/score-v2-1e-upstream-provenance-review.json');
   assert.equal(review.reviewedSourceBlobSha, '2e95a744ac9bc43a260fb7ab09a82ee580dce361');
@@ -101,6 +103,42 @@ test('upstream provenance review preserves five non-exception findings versus th
     'sourceApproval', 'realDataFetchAuthorized', 'realDataResearchAuthorized',
     'productionAuthorized', 'siteReleaseAuthorized',
   ]) assert.equal(review[field], false, field + ' requires a separate approval');
+});
+
+test('published government H.15 output scope does not authorize raw OTC quote use or source approval', () => {
+  const scope = fixture.h15PublishedOutputScope;
+  const publishedClass =
+    'government_derived_published_output_no_specific_third_party_notice_identified_on_reviewed_output_path';
+  assert.equal(scope.reviewMergeSha, 'd99530589eade93de5827de9ba29bb341884d3e8');
+  assert.equal(fixture.reviewedPipelineMainSha, scope.reviewMergeSha);
+  assert.equal(scope.reviewedSourcePath,
+    'governance/score-v2-1e-h15-output-scope-review.json');
+  assert.equal(scope.reviewedSourceBlobSha, 'e6e0cb540b9765a02f5f8f8e842ede7ba6e52371');
+  assert.equal(scope.originatingIssue,
+    'https://github.com/usdimpact/usd-impact-pipeline/issues/207');
+  assert.equal(scope.state, 'evidence_only_no_source_approval');
+  assert.equal(scope.classification, publishedClass);
+  assert.deepEqual(scope.h15Roles, ['REAL_YIELD', 'UST_2Y', 'UST_10Y']);
+  const h15Rows = fixture.slots.filter(x => scope.h15Roles.includes(x.role));
+  assert.equal(h15Rows.length, 3);
+  assert.deepEqual(h15Rows.map(x => x.role), scope.h15Roles);
+  assert.ok(h15Rows.every(x =>
+    x.reviewedH15OutputClassification === publishedClass &&
+    x.rawUpstreamQuoteUse === false &&
+    x.sourceScopeApproved === false));
+  assert.equal(scope.publishedGovernmentOutputsOnly, true);
+  assert.equal(scope.noSpecificThirdPartyNoticeIdentifiedOnReviewedPublishedOutputPath, true);
+  assert.equal(scope.rightsHoldRemains, true);
+  assert.equal(scope.activeResearchAuthorizationReceiptPresent, false);
+  for (const field of [
+    'rawUpstreamOTCQuotesInScope', 'reconstructionOfRawUpstreamQuotesInScope',
+    'paidOrCredentialedSourceInScope', 'legalConclusion', 'sourceApproval',
+    'realDataFetchAuthorized', 'realDataResearchAuthorized',
+    'publicArtifactReplacementAuthorized', 'researchLedgerMutationAuthorized',
+    'productionAuthorized',
+  ]) assert.equal(scope[field], false, field + ' is not authorized');
+  assert.equal(scope.remainingDecision,
+    'owner_decision_required_before_any_one_off_private_real_data_research');
 });
 
 test('website Score v2 source and public-safe prototype cannot silently accept v2.1E', async () => {

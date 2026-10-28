@@ -3,7 +3,7 @@
 **Date:** October 28, 2026  
 **Status:** Draft, non-activating source/version gate; rights/research/Production HOLD.
 **Website baseline:** `dbbe7e6dcf1632275b0e05c1db311e543d524d6c`.
-**Pipeline reviewed baseline:** `d4d1e441f6dd91e1d249d9f3ad515c76e2d3f61b` (upstream provenance review #206; prior real-data-authorization boundary #204 remains HOLD).
+**Pipeline reviewed baseline:** `d99530589eade93de5827de9ba29bb341884d3e8` (H.15 published-output clarification #208; prior provenance review #206 and real-data authorization boundary #204 remain HOLD).
 
 ## Exact current difference
 
@@ -32,6 +32,26 @@ The upstream candidate is specified in:
 - [Issue #155 rights HOLD](https://github.com/usdimpact/usd-impact-pipeline/issues/155)
 - [Issue #179 source replacement](https://github.com/usdimpact/usd-impact-pipeline/issues/179)
 
+## Narrow H.15 published-output scope clarification — pipeline PR #208
+
+[Upstream PR #208](https://github.com/usdimpact/usd-impact-pipeline/pull/208) merged at `d99530589eade93de5827de9ba29bb341884d3e8` with an **evidence-only** supplement: [`score-v2-1e-h15-output-scope-review.json`](https://github.com/usdimpact/usd-impact-pipeline/blob/d99530589eade93de5827de9ba29bb341884d3e8/governance/score-v2-1e-h15-output-scope-review.json), Git blob `e6e0cb540b9765a02f5f8f8e842ede7ba6e52371`.
+
+This **does not erase or reclassify** the earlier #206 provenance caveat. It adds a narrower potential-use boundary: v2.1E's `REAL_YIELD`, `UST_2Y` and `UST_10Y` slots would consume **only published government-derived Treasury/Federal Reserve constant-maturity outputs**, not underlying OTC quotations or reconstructed market quote streams. The reviewed *published output* path identified no specific third-party notice; that finding does not establish legal clearance.
+
+| Item | Status |
+| --- | --- |
+| H.15 published official outputs identified | Yes — exactly 3 named series |
+| Raw upstream OTC quote streams, reconstruction or paid endpoints in candidate scope | **No** |
+| Identified specific third-party notice on the reviewed published output path | No — a limited evidence finding, **not** rights approval |
+| Source approval and legal conclusion | **Not granted** |
+| Real observations fetch, private research and publication | **Not authorized** |
+| Source/public component redistribution, rights hold and Production | **HOLD** |
+| Active one-off private research approval receipt | **Absent** |
+
+The website's machine-checked fixture now pins both layers: the earlier provenance review #206 **and** the narrower official published-output scope #208. Its negative flags ensure neither a government publication path nor the absence of a specific notice silently becomes authorization for real-data retrieval, public reports or paid Research redistribution.
+
+The next substantive decision belongs to the source owner/provider/counsel and the existing one-off private research authorization process; no one may infer a signed receipt from this CI fixture.
+
 ## Why site-side separation is necessary
 
 The existing website methodology page promises current **Score v2**, complete with its DXY/WTI/SPX/VIX/BTC/Gold inputs and full-sample treatment. It links publicly to v2 component-derived archives pending redistribution rights review. The existing `score-public-v2-safe-1` schema is only a **candidate** aggregate-safe contract for Score v2.
@@ -48,7 +68,7 @@ The existing Score consumer tests now import a separate CI regression suite that
 
 ## Decision gates, in order
 
-1. **Research-source and re-use scope (HOLD):** explicitly resolve the three H.15 upstream-market-quotation scope questions and document the source-specific reuse scope for *all eight* slots; only then consider an explicit reviewed owner authorization receipt for one-off *private* federal/BLS real-data research, only if legally/technically adequate. The packet currently has no active receipt; no real-data retrieval is allowed by this Draft.
+1. **Research-source and re-use scope (HOLD):** use PR #208's published-government-output-only boundary for H.15 (excluding underlying quotations), then document scope/rights decisions for all eight series; only then consider a separate active owner-approved one-off research receipt for one-off *private* federal/BLS real-data research, only if legally/technically adequate. The packet currently has no active receipt; no real-data retrieval is allowed by this Draft.
 2. **Versioned research evaluation (HOLD):** reconstruct release-time eligibility (BLS monthly revision window, H.8 benchmarks, H.10 lag, H.4.1/H.15 release cutoffs) and apply the frozen 104-prior-week normalization and acceptance gates. No retroactive tuning or live publication.
 3. **Distribution rights (HOLD):** distinguish permissions to inspect federal releases, publish aggregate Score values, redistribute transformed component data, and distribute paid Research reports. The Series receipts are candidates, not rights approvals.
 4. **Site copy and schema migration (NOT STARTED):** if v2.1E eventually passes independently, introduce a distinct versioned public contract, explicit methodology copy, new data-source labels and preserved archive identity. Do not reuse `score-public-v2-safe-1` with changed semantics.

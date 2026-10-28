@@ -1,7 +1,7 @@
 {
   "schemaVersion": "score-v21e-site-quarantine-v1",
   "observationDateUtc": "2026-10-28",
-  "reviewedPipelineMainSha": "d4d1e441f6dd91e1d249d9f3ad515c76e2d3f61b",
+  "reviewedPipelineMainSha": "d99530589eade93de5827de9ba29bb341884d3e8",
   "candidateVersion": "2.1E-design-candidate",
   "candidateState": "design_only",
   "methodologyIdentity": "distinct_not_an_equivalent_v2_source_swap",
@@ -54,21 +54,27 @@
       "series": "H15/H15/RIFLGFCY10_XII_N.B",
       "source": "Federal Reserve Board",
       "provenanceClassification": "residual_upstream_provenance_requires_explicit_scope_confirmation",
-      "sourceScopeApproved": false
+      "sourceScopeApproved": false,
+      "reviewedH15OutputClassification": "government_derived_published_output_no_specific_third_party_notice_identified_on_reviewed_output_path",
+      "rawUpstreamQuoteUse": false
     },
     {
       "role": "UST_2Y",
       "series": "H15/H15/RIFLGFCY02_N.B",
       "source": "Federal Reserve Board",
       "provenanceClassification": "residual_upstream_provenance_requires_explicit_scope_confirmation",
-      "sourceScopeApproved": false
+      "sourceScopeApproved": false,
+      "reviewedH15OutputClassification": "government_derived_published_output_no_specific_third_party_notice_identified_on_reviewed_output_path",
+      "rawUpstreamQuoteUse": false
     },
     {
       "role": "UST_10Y",
       "series": "H15/H15/RIFLGFCY10_N.B",
       "source": "Federal Reserve Board",
       "provenanceClassification": "residual_upstream_provenance_requires_explicit_scope_confirmation",
-      "sourceScopeApproved": false
+      "sourceScopeApproved": false,
+      "reviewedH15OutputClassification": "government_derived_published_output_no_specific_third_party_notice_identified_on_reviewed_output_path",
+      "rawUpstreamQuoteUse": false
     }
   ],
   "sourceRightsCleared": false,
@@ -103,5 +109,34 @@
     "realDataResearchAuthorized": false,
     "productionAuthorized": false,
     "siteReleaseAuthorized": false
+  },
+  "h15PublishedOutputScope": {
+    "reviewMergeSha": "d99530589eade93de5827de9ba29bb341884d3e8",
+    "reviewedSourcePath": "governance/score-v2-1e-h15-output-scope-review.json",
+    "reviewedSourceBlobSha": "e6e0cb540b9765a02f5f8f8e842ede7ba6e52371",
+    "originatingIssue": "https://github.com/usdimpact/usd-impact-pipeline/issues/207",
+    "precedingProvenanceReviewMergeSha": "d4d1e441f6dd91e1d249d9f3ad515c76e2d3f61b",
+    "state": "evidence_only_no_source_approval",
+    "classification": "government_derived_published_output_no_specific_third_party_notice_identified_on_reviewed_output_path",
+    "h15Roles": [
+      "REAL_YIELD",
+      "UST_2Y",
+      "UST_10Y"
+    ],
+    "publishedGovernmentOutputsOnly": true,
+    "rawUpstreamOTCQuotesInScope": false,
+    "reconstructionOfRawUpstreamQuotesInScope": false,
+    "paidOrCredentialedSourceInScope": false,
+    "noSpecificThirdPartyNoticeIdentifiedOnReviewedPublishedOutputPath": true,
+    "legalConclusion": false,
+    "sourceApproval": false,
+    "realDataFetchAuthorized": false,
+    "realDataResearchAuthorized": false,
+    "publicArtifactReplacementAuthorized": false,
+    "researchLedgerMutationAuthorized": false,
+    "productionAuthorized": false,
+    "rightsHoldRemains": true,
+    "activeResearchAuthorizationReceiptPresent": false,
+    "remainingDecision": "owner_decision_required_before_any_one_off_private_real_data_research"
   }
 }

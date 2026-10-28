@@ -1,0 +1,175 @@
+{
+  "schemaVersion": "multilingual-companion-domain-registry/v1",
+  "observedAt": "2026-10-28",
+  "status": "registration_gate_passed_portuguese_pilot_active_launch_hold",
+  "registrar": "Virtono",
+  "hostingObservation": {
+    "provider": "Virtono shared hosting/cPanel",
+    "supportTicket": "481093",
+    "directoryListingContainment": "Options -Indexes applied to shared public_html; parked domains without an index are intended to fail closed rather than list directories.",
+    "cloudflareConnectedAccountZones": "none_of_the_10_domains_present",
+    "note": "Cloudflare-zone absence is not a registration failure. Registrar confirmations are the domain-registration authority for this gate."
+  },
+  "domains": [
+    {
+      "locale": "es",
+      "language": "Spanish",
+      "domain": "siguiendoeldollar.com",
+      "brand": "Siguiendo el Dólar",
+      "registrationDate": "2026-10-06",
+      "nextDueDate": "2027-10-06",
+      "registrarConfirmed": true,
+      "currentPublicState": "live_reference_publication",
+      "buildEligible": true,
+      "launchStatus": "already_live_reference"
+    },
+    {
+      "locale": "pt",
+      "language": "Portuguese",
+      "domain": "seguindoodolar.com",
+      "brand": "Seguindo o Dólar",
+      "registrationDate": "2026-10-07",
+      "nextDueDate": "2027-10-07",
+      "registrarConfirmed": true,
+      "currentPublicState": "parked_or_fail_closed",
+      "buildEligible": true,
+      "launchStatus": "hold",
+      "companionRepositoryState": {
+        "profileStatus": "hold",
+        "previewEnabled": true,
+        "publicationEnabled": false,
+        "indexingEnabled": false,
+        "deploymentEnabled": false,
+        "brandClearanceRequired": true,
+        "reviewedCoreRoutes": 4,
+        "intermediateRouteHost": "siguiendoeldollar.com",
+        "intermediateRobots": "noindex,nofollow",
+        "independentDomainPublic": false
+      }
+    },
+    {
+      "locale": "it",
+      "language": "Italian",
+      "domain": "seguendoildollaro.com",
+      "brand": "Seguendo il Dollaro",
+      "registrationDate": "2026-10-07",
+      "nextDueDate": "2027-10-07",
+      "registrarConfirmed": true,
+      "currentPublicState": "parked_or_fail_closed",
+      "buildEligible": true,
+      "launchStatus": "hold"
+    },
+    {
+      "locale": "fr",
+      "language": "French",
+      "domain": "suivreledollar.com",
+      "brand": "Suivre le Dollar",
+      "registrationDate": "2026-10-07",
+      "nextDueDate": "2027-10-07",
+      "registrarConfirmed": true,
+      "currentPublicState": "parked_or_fail_closed",
+      "buildEligible": true,
+      "launchStatus": "hold"
+    },
+    {
+      "locale": "de",
+      "language": "German",
+      "domain": "dollarspur.com",
+      "brand": "Dem Dollar auf der Spur",
+      "registrationDate": "2026-10-07",
+      "nextDueDate": "2027-10-07",
+      "registrarConfirmed": true,
+      "currentPublicState": "parked_or_fail_closed",
+      "buildEligible": true,
+      "launchStatus": "hold"
+    },
+    {
+      "locale": "nl",
+      "language": "Dutch",
+      "domain": "dollarspoor.com",
+      "brand": "In het Spoor van de Dollar",
+      "registrationDate": "2026-10-07",
+      "nextDueDate": "2027-10-07",
+      "registrarConfirmed": true,
+      "currentPublicState": "parked_or_fail_closed",
+      "buildEligible": true,
+      "launchStatus": "hold"
+    },
+    {
+      "locale": "pl",
+      "language": "Polish",
+      "domain": "sladamidolara.com",
+      "brand": "Śladami Dolara",
+      "registrationDate": "2026-10-07",
+      "nextDueDate": "2027-10-07",
+      "registrarConfirmed": true,
+      "currentPublicState": "parked_or_fail_closed",
+      "buildEligible": true,
+      "launchStatus": "hold"
+    },
+    {
+      "locale": "ro",
+      "language": "Romanian",
+      "domain": "peurmeledolarului.com",
+      "brand": "Pe Urmele Dolarului",
+      "registrationDate": "2026-10-07",
+      "nextDueDate": "2027-10-07",
+      "registrarConfirmed": true,
+      "currentPublicState": "parked_or_fail_closed",
+      "buildEligible": true,
+      "launchStatus": "hold"
+    },
+    {
+      "locale": "el",
+      "language": "Greek",
+      "domain": "ixnitoudolariou.com",
+      "brand": "Στα Ίχνη του Δολαρίου",
+      "registrationDate": "2026-10-07",
+      "nextDueDate": "2027-10-07",
+      "registrarConfirmed": true,
+      "currentPublicState": "parked_or_fail_closed",
+      "buildEligible": true,
+      "launchStatus": "hold"
+    },
+    {
+      "locale": "sq",
+      "language": "Albanian",
+      "domain": "gjurmetedollarit.com",
+      "brand": "Në Gjurmët e Dollarit",
+      "registrationDate": "2026-10-07",
+      "nextDueDate": "2027-10-07",
+      "registrarConfirmed": true,
+      "currentPublicState": "parked_or_fail_closed",
+      "buildEligible": true,
+      "launchStatus": "hold"
+    }
+  ],
+  "adjacentDomains": [
+    {
+      "domain": "dollarkompass.com",
+      "role": "separate_broader_german_macro_finance_project",
+      "includedInTenLanguageNetwork": false
+    },
+    {
+      "domain": "kinderdollar.com",
+      "role": "parked_future_financial_literacy_concept",
+      "includedInTenLanguageNetwork": false
+    }
+  ],
+  "releaseGates": [
+    "brand_trademark_collision_check_per_public_name",
+    "dedicated_hosting_or_deployment_boundary_per_domain",
+    "standalone_editorial_value_threshold",
+    "native_language_editorial_review",
+    "canonical_robots_sitemap_verification",
+    "privacy_legal_compliance_pages",
+    "explicit_public_release_authorization"
+  ],
+  "implementation": {
+    "repository": "usdimpact/siguiendo-el-dolar",
+    "observedMainSha": "827a197d999c35f894551edcc0cd16a0dd616927",
+    "liveReference": "es-latam",
+    "pilot": "pt",
+    "note": "Multilingual fail-closed registry and Portuguese pilot are already implemented in the companion repository. USD Impact retains cross-project governance only."
+  }
+}

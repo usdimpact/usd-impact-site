@@ -18,6 +18,7 @@ const stagedZeroVisibilityTitles = Object.freeze([
   Object.freeze({ id: 'card-oil-logistics-local-global-signals', slug: 'oil-logistics-can-separate-local-and-global-signals', title: 'Oil Logistics Can Separate Local and Global Price Signals', seoTitle: 'Oil Logistics: Local vs Global Signals' }),
   Object.freeze({ id: 'card-fiat-market-discipline', slug: 'post-bretton-woods-discipline-became-market-mediated', title: 'Post-Bretton Woods Discipline Became More Market-Mediated', seoTitle: 'Post-Bretton Woods Market Discipline' }),
   Object.freeze({ id: 'card-float-jamaica-formalization', slug: 'floating-rates-before-jamaica-formalization', title: 'Floating Rates Emerged Before the Jamaica Rules Formalized Them', seoTitle: 'Floating Rates Before Jamaica' }),
+  Object.freeze({ id: 'card-structural-dollar-use-vs-exchange-rate', slug: 'structural-dollar-use-is-not-dollar-exchange-rate-direction', title: 'Structural Dollar Use Is Not the Same as Dollar Exchange-Rate Direction', seoTitle: 'Structural Dollar Use vs FX Direction' }),
 ]);
 const ref = () => ({ ...getLearnSourceLinks(real)[0] });
 

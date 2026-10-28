@@ -13,9 +13,10 @@ const [generatorText, sourceText, publicText] = await Promise.all([
 
 assert.equal(sourceText, publicText, 'Three Dials source/public latest copies must remain byte-identical.');
 
-const forbidden = ['DX-Y.NYB', 'BAMLH0A0HYM2', 'VIXCLS', 'query1.finance.yahoo.com', 'finance.yahoo.com/quote/', 'fred.stlouisfed.org', '/graph/fredgraph.csv'];
-for (const marker of forbidden) {
-  assert.equal(generatorText.includes(marker), false, `Three Dials v2 generator must not contain restricted legacy source ${marker}.`);
+const forbiddenLegacy = ['DX-Y.NYB', 'BAMLH0A0HYM2', 'VIXCLS', 'query1.finance.yahoo.com', 'finance.yahoo.com/quote/'];
+const generatorOnlyForbidden = ['fred.stlouisfed.org', '/graph/fredgraph.csv'];
+for (const marker of [...forbiddenLegacy, ...generatorOnlyForbidden]) {
+  assert.equal(generatorText.includes(marker), false, `Three Dials v2 generator must not contain disallowed source/transport marker ${marker}.`);
 }
 for (const required of [
   'FED_BROAD_USD',
@@ -84,9 +85,11 @@ if (latest.status === 'pending') {
   assert.match(latest.source_rights?.new_york_fed_sofr?.notice ?? '', /does not sanction or endorse any particular republication/);
   assert.match(latest.source_rights?.new_york_fed_sofr?.affiliation_notice ?? '', /not affiliated with the New York Fed/);
 
-  for (const marker of forbidden) {
+  for (const marker of forbiddenLegacy) {
     assert.equal(sourceText.includes(marker), false, `Published v2 snapshot contains restricted legacy marker ${marker}.`);
   }
+  // Historical immutable v2 snapshots may retain their original FRED transport provenance.
+  // This candidate changes only future generator transport and deliberately does not rewrite published history.
 
   const archive = await readFile(new URL(`../public/data/three-dials/archive/${latest.week_ending}.json`, import.meta.url), 'utf8');
   assert.equal(sourceText, archive, 'Published latest must be byte-identical to its immutable dated archive.');

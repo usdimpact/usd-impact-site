@@ -11,7 +11,7 @@ const fixture = makeFixture(id);
 const sha = 'a'.repeat(40);
 const fakeEnv = Object.freeze({
   GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: 'workflow_dispatch',
-  GITHUB_REPOSITORY: 'usdimpact/usd-impact-site', GITHUB_SHA: sha,
+  GITHUB_REPOSITORY: 'usdimpact/usd-impact-site', GITHUB_REF: 'refs/heads/main', GITHUB_SHA: sha,
   CAS_REVIEWED_SHA: sha, GITHUB_RUN_ID: '1234567',
   CAS_APPROVED_RUN: 'DEV_ONLY_NO_SEND',
   CAS_PROJECT_ID: DEV_PROJECT, CAS_RUN_ENVIRONMENT: 'development-webhook-cas',
@@ -35,7 +35,7 @@ test('every run is manual, exact-head, Development-only and credential-gated', (
   assert.doesNotThrow(() => assertSafeEnvironment(fakeEnv));
   for (const [key, value] of [
     ['GITHUB_ACTIONS', 'false'], ['GITHUB_EVENT_NAME', 'pull_request'],
-    ['GITHUB_REPOSITORY', 'attacker/foreign-repo'],
+    ['GITHUB_REPOSITORY', 'attacker/foreign-repo'], ['GITHUB_REF', 'refs/heads/qa/unreviewed'],
     ['CAS_APPROVED_RUN', 'NO'], ['CAS_PROJECT_ID', 'gjzetjugmnwanvjkchux'],
     ['CAS_RUN_ENVIRONMENT', 'production'], ['CAS_REVIEWED_SHA', 'b'.repeat(40)],
     ['GITHUB_RUN_ID', '../bad'], ['DEV_PGPORT', '6543'],

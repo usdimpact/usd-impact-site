@@ -16,6 +16,7 @@ export const SOURCE_DATE_RULES = [
   'The Federal Reserve News and Events page (newsevents.htm) is also a multi-document index for discovery only, not a dated release. Follow and verify the relevant original document, use its own publication date and search-returned URL, or omit the unsupported source and claim. Never borrow the index update date or a different posting date.',
   'Federal Reserve annual FOMC press-release pages (/newsevents/pressreleases/YYYY-press-fomc.htm) are multi-release indexes for discovery only. Cite the directly linked dated monetary policy press release (for example monetaryYYYYMMDD*.htm) with its own displayed publication date. Never assign the meeting date, edition date, access date or newest index item date to the annual index; omit the unsupported claim if the dated release cannot be verified.',
   'The BLS annual release calendar (/schedule/YYYY/home.htm) aggregates monthly sections with separate Last Modified dates and is for discovery only. Use the relevant month-specific schedule URL and its own verified displayed Last Modified date, or a directly linked dated release. Verify each economic event date separately. Never assign an access date, edition date, event date or a different month section date to the annual page; never rewrite archived citations. Research sufficient eligible source documents before composing the bundle.',
+  'The EIA Weekly Petroleum Status Report schedule page (/petroleum/supply/weekly/schedule.php) is a reusable schedule with event rows but no page-level publication or Last Updated date. Do not put that page in the source ledger because publishedAt cannot be verified. For a next-release claim, use the current WPSR landing page when it directly supports the claim and use its displayed current Release Date as publishedAt, or cite a dated release-specific EIA document. Never assign a schedule-table event date, access date, edition date or older historical date to the reusable schedule page; otherwise omit the unsupported source and claim.',
   'The EIA Weekly Petroleum Status Report full-report pointer (/petroleum/supply/weekly/pdf/wpsrall.pdf) is reused across releases and cannot identify an immutable source by itself. Cite a verified dated archive page or report found through EIA and supporting the claim. Use its displayed Release Date as publishedAt, not the data-week ending date, next release date or access date. Never construct an archive URL from an assumed date, relabel the rolling pointer as verified, or copy an older date to satisfy historical validation. If the dated document cannot be verified, omit that source and the unsupported claim.',
   'If an otherwise useful page has no verifiable publication, displayed Last Update, current release, or data-update date, omit that source and any unsupported claim instead of inventing a date.',
 ].join(' ');
@@ -139,6 +140,12 @@ export function normalizeBundleDraft(draft) {
 export function safeValidationDiagnostic(message) {
   const text = String(message ?? '');
 
+  if (/EIA Weekly Petroleum Status Report schedule is a reusable schedule page/i.test(text)) {
+    return {
+      code: 'invalid-source-date',
+      reason: 'Do not cite the reusable EIA WPSR schedule page in the source ledger because it has no verifiable page-level publication or Last Updated date. Use the current WPSR landing page when it directly supports the next-release claim and its displayed current Release Date, or a dated release-specific EIA document; otherwise omit the unsupported source and claim.',
+    };
+  }
   if (/EIA weekly petroleum rolling report requires a verified dated archive document/i.test(text)) {
     return {
       code: 'invalid-source-date',

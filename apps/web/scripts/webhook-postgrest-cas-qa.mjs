@@ -119,6 +119,11 @@ INSERT INTO public.notification_outbox (
 RETURNING id,status;
 COMMIT;`;
 
+const ORPHAN_CHECK_SQL = String.raw `SELECT 'preexisting:' || count(*)
+FROM public.notification_outbox
+WHERE business_object_type = 'webhook_http_cas_qa'
+  AND recipient_email_normalized LIKE 'cas+%@example.invalid';`;
+
 const CLEANUP_SQL = String.raw `BEGIN;
 SET LOCAL statement_timeout = '8s';
 SET LOCAL lock_timeout = '3s';
@@ -235,6 +240,10 @@ async function live() {
   const fixture = makeFixture();
   const path = manifestPath(env);
   assert.equal(existsSync(path), false, 'STALE_FIXTURE_REQUIRES_CLEANUP');
+  // Never silently overwrite or delete leftovers from an interrupted run.
+  // Only a read-only count is needed; manual recovery remains separately gated.
+  assert.ok(sqlClient(env, ORPHAN_CHECK_SQL, fixture).includes('preexisting:0'),
+    'PREEXISTING_QA_FIXTURE_REQUIRES_RECONCILIATION');
   writeFileSync(path, JSON.stringify({ id: fixture.id, providerRef: fixture.providerRef,
     email: fixture.email }), { mode: 0o600, flag: 'wx' });
   let outcome;

@@ -191,14 +191,24 @@ export async function exerciseCas({ fixture, patch, read }) {
   return Object.freeze({ result: 'PASS', raceWinner: winner, finalStatus: current.status });
 }
 
+// Opaque sb_secret_ keys are not JWTs. Supplying one as Authorization: Bearer
+// causes PostgREST to reject it, even if apikey matches. A legacy service_role
+// JWT may be used as both headers. This is a server-only test runner.
+export function makeRestHeaders(key) {
+  assert.ok(typeof key === 'string' && key.length > 26
+    && (key.startsWith('sb_secret_') || key.startsWith('eyJ')), 'INVALID_DEV_REST_KEY');
+  return Object.freeze({
+    apikey: key,
+    ...(key.startsWith('eyJ') ? { Authorization: 'Bearer ' + key } : {}),
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Prefer: 'return=representation',
+  });
+}
+
 function createRestClient(env, fixture) {
   const endpoint = DEV_ORIGIN + '/rest/v1/notification_outbox';
-  const headers = {
-    apikey: env.DEV_POSTGREST_SECRET_KEY,
-    Authorization: 'Bearer ' + env.DEV_POSTGREST_SECRET_KEY,
-    Accept: 'application/json', 'Content-Type': 'application/json',
-    Prefer: 'return=representation',
-  };
+  const headers = makeRestHeaders(env.DEV_POSTGREST_SECRET_KEY);
   let inFlight = 0;
   let overlapped = false;
   async function send(method, params, body) {

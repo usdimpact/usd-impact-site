@@ -1,7 +1,7 @@
 {
   "schemaVersion": "score-v21e-site-quarantine-v1",
   "observationDateUtc": "2026-10-28",
-  "reviewedPipelineMainSha": "4810d6546d511debf49b6e0afba57c265837f71d",
+  "reviewedPipelineMainSha": "d4d1e441f6dd91e1d249d9f3ad515c76e2d3f61b",
   "candidateVersion": "2.1E-design-candidate",
   "candidateState": "design_only",
   "methodologyIdentity": "distinct_not_an_equivalent_v2_source_swap",
@@ -17,42 +17,58 @@
     {
       "role": "USD",
       "series": "H10/H10/JRXWTFB_N.B",
-      "source": "Federal Reserve Board"
+      "source": "Federal Reserve Board",
+      "provenanceClassification": "no_specific_exception_identified_in_reviewed_official_publication_path",
+      "sourceScopeApproved": false
     },
     {
       "role": "ENERGY",
       "series": "WPU0561",
-      "source": "BLS"
+      "source": "BLS",
+      "provenanceClassification": "no_specific_exception_identified_in_reviewed_official_publication_path",
+      "sourceScopeApproved": false
     },
     {
       "role": "FIN_CONDITIONS",
       "series": "H8/H8/B1001NCBA",
-      "source": "Federal Reserve Board"
+      "source": "Federal Reserve Board",
+      "provenanceClassification": "no_specific_exception_identified_in_reviewed_official_publication_path",
+      "sourceScopeApproved": false
     },
     {
       "role": "FIN_STRESS",
       "series": "H41/H41/RESPPALDP_N.WW",
-      "source": "Federal Reserve Board"
+      "source": "Federal Reserve Board",
+      "provenanceClassification": "no_specific_exception_identified_in_reviewed_official_publication_path",
+      "sourceScopeApproved": false
     },
     {
       "role": "LIQUIDITY",
       "series": "H41/H41/RESPPA_N.WW",
-      "source": "Federal Reserve Board"
+      "source": "Federal Reserve Board",
+      "provenanceClassification": "no_specific_exception_identified_in_reviewed_official_publication_path",
+      "sourceScopeApproved": false
     },
     {
       "role": "REAL_YIELD",
       "series": "H15/H15/RIFLGFCY10_XII_N.B",
-      "source": "Federal Reserve Board"
+      "source": "Federal Reserve Board",
+      "provenanceClassification": "residual_upstream_provenance_requires_explicit_scope_confirmation",
+      "sourceScopeApproved": false
     },
     {
       "role": "UST_2Y",
       "series": "H15/H15/RIFLGFCY02_N.B",
-      "source": "Federal Reserve Board"
+      "source": "Federal Reserve Board",
+      "provenanceClassification": "residual_upstream_provenance_requires_explicit_scope_confirmation",
+      "sourceScopeApproved": false
     },
     {
       "role": "UST_10Y",
       "series": "H15/H15/RIFLGFCY10_N.B",
-      "source": "Federal Reserve Board"
+      "source": "Federal Reserve Board",
+      "provenanceClassification": "residual_upstream_provenance_requires_explicit_scope_confirmation",
+      "sourceScopeApproved": false
     }
   ],
   "sourceRightsCleared": false,
@@ -68,5 +84,24 @@
     "All sources and methodology remain unapproved for public or paid-member distribution.",
     "No source observations or Score candidate values are included.",
     "A future methodology requires a new public schema/version and an explicitly approved UI/Research migration."
-  ]
+  ],
+  "provenanceReview": {
+    "reviewedMergeSha": "d4d1e441f6dd91e1d249d9f3ad515c76e2d3f61b",
+    "reviewedSourcePath": "governance/score-v2-1e-upstream-provenance-review.json",
+    "reviewedSourceBlobSha": "2e95a744ac9bc43a260fb7ab09a82ee580dce361",
+    "state": "evidence_only_no_source_approval",
+    "noSpecificExceptionIdentified": 5,
+    "residualUpstreamProvenance": 3,
+    "residualRoles": [
+      "REAL_YIELD",
+      "UST_2Y",
+      "UST_10Y"
+    ],
+    "residualCaveat": "Published H.15 constant-maturity Treasury and real-yield curves depend on upstream market quotations obtained by the FRBNY; scope confirmation is required, and no legal conclusion is established.",
+    "sourceApproval": false,
+    "realDataFetchAuthorized": false,
+    "realDataResearchAuthorized": false,
+    "productionAuthorized": false,
+    "siteReleaseAuthorized": false
+  }
 }

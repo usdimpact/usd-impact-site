@@ -76,6 +76,33 @@ test('candidate is explicitly versioned and all upstream research/release gates 
   ]) assert.equal(fixture[field], false, field + ' requires separate approval');
 });
 
+test('upstream provenance review preserves five non-exception findings versus three unresolved H.15 scopes', () => {
+  const review = fixture.provenanceReview;
+  const noException = 'no_specific_exception_identified_in_reviewed_official_publication_path';
+  const residual = 'residual_upstream_provenance_requires_explicit_scope_confirmation';
+  assert.equal(fixture.reviewedPipelineMainSha, 'd4d1e441f6dd91e1d249d9f3ad515c76e2d3f61b');
+  assert.equal(review.reviewedMergeSha, fixture.reviewedPipelineMainSha);
+  assert.equal(review.reviewedSourcePath,
+    'governance/score-v2-1e-upstream-provenance-review.json');
+  assert.equal(review.reviewedSourceBlobSha, '2e95a744ac9bc43a260fb7ab09a82ee580dce361');
+  assert.equal(review.state, 'evidence_only_no_source_approval');
+  assert.equal(review.noSpecificExceptionIdentified, 5);
+  assert.equal(review.residualUpstreamProvenance, 3);
+  assert.equal(review.noSpecificExceptionIdentified + review.residualUpstreamProvenance, 8);
+  assert.deepEqual(review.residualRoles, ['REAL_YIELD', 'UST_2Y', 'UST_10Y']);
+  assert.deepEqual(fixture.slots.filter(x => x.provenanceClassification === residual)
+    .map(x => x.role), review.residualRoles);
+  assert.deepEqual(fixture.slots.filter(x => x.provenanceClassification === noException)
+    .map(x => x.role), ['USD', 'ENERGY', 'FIN_CONDITIONS', 'FIN_STRESS', 'LIQUIDITY']);
+  assert.match(review.residualCaveat, /upstream market quotations/);
+  assert.ok(fixture.slots.every(x => x.sourceScopeApproved === false),
+    'A non-exception finding must never be interpreted as data reuse approval');
+  for (const field of [
+    'sourceApproval', 'realDataFetchAuthorized', 'realDataResearchAuthorized',
+    'productionAuthorized', 'siteReleaseAuthorized',
+  ]) assert.equal(review[field], false, field + ' requires a separate approval');
+});
+
 test('website Score v2 source and public-safe prototype cannot silently accept v2.1E', async () => {
   assert.equal(fixture.legacySiteProductionMethodology, 'v2');
   assert.equal(fixture.legacyAggregateSchema, SAFE_SCORE_SCHEMA_VERSION);

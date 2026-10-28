@@ -160,7 +160,9 @@ export async function auditResearchPrivatePublicBuild(
 ) {
   const violations = new Set();
   try {
-    if (!fs.statSync(root).isDirectory()) throw new Error('not-directory');
+    if (!fs.lstatSync(root).isDirectory() || fs.lstatSync(root).isSymbolicLink()) {
+      throw new Error('invalid-build-root');
+    }
   } catch {
     return Object.freeze({
       status: 'HOLD',

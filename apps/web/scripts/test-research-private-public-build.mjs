@@ -102,6 +102,32 @@ test('gzip and brotli static assets are inspected after decompression', async ()
   'private-report-body-marker-in-public-asset');
 });
 
+test('encoded private output filenames and symlinked build root fail closed', async () => {
+  await verifyMutation(root => write(root,
+    'research%2Fmember%2Freports%2Fweekly%2F2026-11-06.html', 'renamed'),
+  'private-report-output-path');
+  const root = fixture();
+  const alias = root + '-symlink';
+  try {
+    fs.symlinkSync(root, alias, 'dir');
+    const audit = await auditResearchPrivatePublicBuild(alias);
+    assert.equal(audit.status, 'HOLD');
+    assert.deepEqual(audit.findings, ['public-build-missing']);
+  } finally {
+    fs.rmSync(alias, { force: true });
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('compressed public feeds reject private URL references, not just body markers', async () => {
+  await verifyMutation(root => write(root, 'news/feed.xml.gz',
+    gzipSync(Buffer.from('<item><link>' + PRIVATE_PATH + '</link></item>'))),
+  'private-report-url-in-public-discovery');
+  await verifyMutation(root => write(root, 'news/feed.json.br',
+    brotliCompressSync(Buffer.from(JSON.stringify({ url: PRIVATE_PATH })))),
+  'private-report-url-in-public-discovery');
+});
+
 test('sitemaps, RSS and JSON feed surfaces cannot advertise private report URLs', async () => {
   await verifyMutation(root => write(root, 'sitemap-0.xml',
     '<loc>https://usd-impact.com' + PRIVATE_PATH + '</loc>'), 'private-report-url-in-public-discovery');

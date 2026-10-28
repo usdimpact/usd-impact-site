@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   CANARY_CHECKSUM, CANARY_WEEK, CANARY_ORIGIN, CANARY_DATABASE, CANARY_TRUE_FLAGS,
   canaryRequestId, executeWeeklyCanary,
@@ -167,4 +168,89 @@ for (const operation of ['request-confirmation', 'send-weekly']) {
   assert.equal(attempts, 1);
   cases += 1;
 }
+
+// Issue #620 release hold: Vercel's committed cron topology must not silently
+// activate Weekly Newsletter or Learning Progress fan-out. Check the effective
+// same-origin rewrite target, not merely the cron's original path.
+const vercelConfiguration = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+function resolvedCronUrl(path, rewrites) {
+  let current = new URL(path, CANARY_ORIGIN);
+  const visited = new Set();
+  for (let hop = 0; hop < 8; hop += 1) {
+    if (current.origin !== CANARY_ORIGIN || visited.has(current.pathname)) {
+      throw new Error('Cron URL has an external or cyclic rewrite.');
+    }
+    visited.add(current.pathname);
+    const rewrite = rewrites.find((item) => item.source === current.pathname);
+    if (!rewrite) return current;
+    const target = new URL(rewrite.destination, CANARY_ORIGIN);
+    for (const [key, value] of current.searchParams) target.searchParams.set(key, value);
+    current = target;
+  }
+  throw new Error('Cron rewrite chain exceeds the bounded review limit.');
+}
+function assertNoLifecycleEmailCron(configuration) {
+  assert.ok(Array.isArray(configuration.crons), 'Vercel cron inventory must be explicit.');
+  assert.ok(Array.isArray(configuration.rewrites), 'Vercel rewrites must be inspectable.');
+  const forbidden = configuration.crons.filter(({ path }) => {
+    const target = resolvedCronUrl(path, configuration.rewrites);
+    // The existing Daily Learning scheduler is distinct from the consented
+    // Learning Progress inactivity email and must not be misclassified.
+    if (target.pathname === '/api/waitlist') {
+      return target.searchParams.get('action') !== 'daily-learning-dispatch';
+    }
+    return /newsletter|progress[-_]email|learning[-_]progress|email[-_](subscribe|confirm|dispatch)|marketing[-_]opt[-_]in/i
+      .test(target.pathname + target.search);
+  });
+  assert.deepEqual(forbidden, [], 'Issue #620 HOLD: no Weekly Newsletter or Learning Progress delivery cron is approved.');
+}
+assertNoLifecycleEmailCron(vercelConfiguration);
+cases += 1;
+
+for (const forbiddenPath of [
+  '/api/weekly-newsletter-dispatch',
+  '/api/waitlist?action=progress-email-dispatch',
+]) {
+  assert.throws(
+    () => assertNoLifecycleEmailCron({
+      ...vercelConfiguration,
+      crons: [...vercelConfiguration.crons, { path: forbiddenPath, schedule: '0 7 * * 1' }],
+    }),
+    /Issue #620 HOLD/,
+  );
+  cases += 1;
+}
+assert.throws(
+  () => assertNoLifecycleEmailCron({
+    ...vercelConfiguration,
+    crons: [...vercelConfiguration.crons, { path: '/api/lifecycle-alias', schedule: '0 7 * * 1' }],
+    rewrites: [
+      ...vercelConfiguration.rewrites,
+      { source: '/api/lifecycle-alias', destination: '/api/waitlist?action=weekly-newsletter-dispatch' },
+    ],
+  }),
+  /Issue #620 HOLD/,
+);
+cases += 1;
+
+// Guard the explicit purpose-specific unsubscribe route and its privacy headers.
+// This is source-contract QA, not a live unsubscribe or opt-in request.
+const rewrite = (source) => vercelConfiguration.rewrites.find((item) => item.source === source)?.destination;
+assert.equal(rewrite('/email/unsubscribe'), '/api/waitlist?action=marketing-email-unsubscribe');
+assert.equal(rewrite('/api/resend-webhook'), '/api/waitlist?action=resend-webhook');
+const unsubscribeHeaders = vercelConfiguration.headers.find((item) => item.source === '/email/unsubscribe')?.headers ?? [];
+for (const [key, value] of [
+  ['Cache-Control', 'private, no-store'],
+  ['X-Robots-Tag', 'noindex, nofollow'],
+  ['Referrer-Policy', 'no-referrer'],
+]) {
+  assert.equal(unsubscribeHeaders.find((header) => header.key === key)?.value, value);
+}
+cases += 1;
+
+for (const flag of ['WEEKLY_NEWSLETTER_PRODUCTION_ENABLED', 'PROGRESS_EMAIL_PRODUCTION_ENABLED']) {
+  assert.notEqual(vercelConfiguration.env?.[flag], 'true', 'Issue #620 HOLD: do not hard-code email activation in vercel.json.');
+}
+cases += 1;
+
 console.log(`Weekly canary core: ${cases} scenarios passed; only mocks used, no network or live writes.`);

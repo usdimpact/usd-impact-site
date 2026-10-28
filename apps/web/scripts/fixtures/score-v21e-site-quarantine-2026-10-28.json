@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "score-v21e-site-quarantine-v1",
+  "observationDateUtc": "2026-10-28",
+  "reviewedPipelineMainSha": "4810d6546d511debf49b6e0afba57c265837f71d",
+  "candidateVersion": "2.1E-design-candidate",
+  "candidateState": "design_only",
+  "methodologyIdentity": "distinct_not_an_equivalent_v2_source_swap",
+  "controllingRightsIssue": "https://github.com/usdimpact/usd-impact-pipeline/issues/155",
+  "replacementPlanningIssue": "https://github.com/usdimpact/usd-impact-pipeline/issues/179",
+  "frozenDesignMergeSha": "65e71695a3d99ed6a5584548652a61dc0e66006f",
+  "frozenPreregistrationMergeSha": "b93ab1b4514e828561e74963b1a830421a104e29",
+  "authorizationPacketMergeSha": "4810d6546d511debf49b6e0afba57c265837f71d",
+  "legacySiteProductionMethodology": "v2",
+  "legacyAggregateSchema": "score-public-v2-safe-1",
+  "legacyAggregatePipeline": "usd_impact_score_v2",
+  "slots": [
+    {
+      "role": "USD",
+      "series": "H10/H10/JRXWTFB_N.B",
+      "source": "Federal Reserve Board"
+    },
+    {
+      "role": "ENERGY",
+      "series": "WPU0561",
+      "source": "BLS"
+    },
+    {
+      "role": "FIN_CONDITIONS",
+      "series": "H8/H8/B1001NCBA",
+      "source": "Federal Reserve Board"
+    },
+    {
+      "role": "FIN_STRESS",
+      "series": "H41/H41/RESPPALDP_N.WW",
+      "source": "Federal Reserve Board"
+    },
+    {
+      "role": "LIQUIDITY",
+      "series": "H41/H41/RESPPA_N.WW",
+      "source": "Federal Reserve Board"
+    },
+    {
+      "role": "REAL_YIELD",
+      "series": "H15/H15/RIFLGFCY10_XII_N.B",
+      "source": "Federal Reserve Board"
+    },
+    {
+      "role": "UST_2Y",
+      "series": "H15/H15/RIFLGFCY02_N.B",
+      "source": "Federal Reserve Board"
+    },
+    {
+      "role": "UST_10Y",
+      "series": "H15/H15/RIFLGFCY10_N.B",
+      "source": "Federal Reserve Board"
+    }
+  ],
+  "sourceRightsCleared": false,
+  "realDataResearchAuthorized": false,
+  "liveSourceSwitchoverAuthorized": false,
+  "researchLedgerMutationAuthorized": false,
+  "publicArtifactReplacementAuthorized": false,
+  "productionActivationAuthorized": false,
+  "sitePublishCandidate": false,
+  "releaseAuthorized": false,
+  "evidenceLimitations": [
+    "Upstream file snapshot is recorded for review, not independently refreshed by the website CI.",
+    "All sources and methodology remain unapproved for public or paid-member distribution.",
+    "No source observations or Score candidate values are included.",
+    "A future methodology requires a new public schema/version and an explicitly approved UI/Research migration."
+  ]
+}

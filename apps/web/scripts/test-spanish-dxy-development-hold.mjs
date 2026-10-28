@@ -59,3 +59,17 @@ test('no Production-release flag, provider call, or entitlement manipulation is 
  assert.ok(!previewRoute.includes('fetch('));
  assert.ok(!previewRoute.includes('externalProvider'));
 });
+
+test('DXY private preview mounts first-party consent while Spanish analytics stays disabled',()=>{
+ const layout=file('../src/layouts/BaseLayout.astro');
+ const consent=file('../src/components/ConsentClient.astro');
+ assert.match(layout, /<ConsentClient\s+locale=\{locale\}/);
+ assert.match(layout, /Opciones de privacidad/);
+ assert.doesNotMatch(layout, /\{analyticsEnabled && \(\s*<ConsentClient/);
+ assert.match(layout, /\{analyticsEnabled && <GoogleAnalyticsClient \/>}/);
+ assert.match(layout, /\{analyticsEnabled && <TelemetryClient \/>}/);
+ assert.match(consent, /SameSite=Lax/);
+ assert.match(consent, /id="privacy-consent-accept"/);
+ assert.match(consent, /id="privacy-consent-reject"/);
+ assert.doesNotMatch(consent, /localStorage|sessionStorage/);
+});

@@ -32,3 +32,13 @@ Mandatory manual actions now: review the proposed metadata and sign in to inspec
 ## Exact-head Preview build correction (2026-10-28)
 
 The first Vercel Preview build failed safely at the canonical/sitemap verifier: the newly generated internal noindexed route was present in the Astro sitemap, but correctly had no canonical. This PR now adds **only** `/internal/localization/dxy-broad-usd` to `privatePaths` in `apps/web/astro.config.mjs` (the same exclusion mechanism used for existing internal noindex routes). The Development QA asserts that exact exclusion. This does not remove any checks for existing public canonicals, does not publish the ES page, and does not alter the five Spanish public routes. Re-run all exact-head checks and Vercel Preview after this commit.
+
+## Separate first-party consent fix incorporated in Development QA (2026-10-29)
+
+The owner noticed that this ES DXY Preview did not show the cookie choices present on the main English site. The independently validated [website consent PR #933](https://github.com/usdimpact/usd-impact-site/pull/933) removes the accidental `analyticsEnabled` rendering gate from `ConsentClient` and adds the `Opciones de privacidad` footer control for Spanish. This Development-only DXY branch carries exactly those consent files as a two-parent **Development merge commit** from the consent branch; it does **not** merge either PR to Production.
+
+- A first-time visitor on this protected Vercel Preview hostname sees the same consent interface, with equal analytics Accept/Reject controls and a settings dialog. Consent preference cookies are host-only and do not transfer from `www.usd-impact.com`.
+- Google Analytics and telemetry remain **OFF for Spanish pages** because their rendering continues to depend on `analyticsEnabled:false`; no tracking or entitlement changes are allowed by this merge.
+- Existing published five-route Spanish allowlist, DXY `status:"review"`, `noindex` and Preview-only route stay unchanged.
+- DXY-specific test gains a dedicated guard that consent is visible and GA/telemetry remain gated.
+- This is a private Preview only. Owner must visually confirm the new banner in a fresh browser/hostname session. No Production merge or DXY publication has been authorized.

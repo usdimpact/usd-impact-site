@@ -21,6 +21,7 @@ const blocked = [
   'https://home.treasury.gov/policy-issues/financing-the-government/quarterly-refunding/most-recent-quarterly-refunding-documents',
   'https://home.treasury.gov/system/files/221/Tentative-Auction-Schedule.pdf',
   'https://www.eia.gov/petroleum/supply/weekly/pdf/wpsrall.pdf',
+  'https://www.eia.gov/petroleum/supply/weekly/schedule.php',
 ];
 for (const base of [fedIndex, blsIndex]) {
   for (const url of [
@@ -63,6 +64,8 @@ check('discovery instructions distinguish document dates', () => {
   assert.match(SOURCE_DATE_RULES, /BLS annual release calendar/);
   assert.match(SOURCE_DATE_RULES, /month-specific schedule URL/);
   assert.match(SOURCE_DATE_RULES, /Verify each economic event date separately/);
+  assert.match(SOURCE_DATE_RULES, /EIA Weekly Petroleum Status Report schedule page/);
+  assert.match(SOURCE_DATE_RULES, /no page-level publication or Last Updated date/i);
 });
 check('normalization cannot cure an index by rewriting its date', () => {
   for (const publishedAt of ['2026-07-16', '2026-09-04', '2026-10-22']) {
@@ -73,7 +76,7 @@ check('normalization cannot cure an index by rewriting its date', () => {
   }
 });
 check('diagnostics never echo arbitrary failure suffixes', () => {
-  for (const url of [fedIndex, blsIndex]) {
+  for (const url of [fedIndex, blsIndex, 'https://www.eia.gov/petroleum/supply/weekly/schedule.php']) {
     const result = safeValidationDiagnostic(`${sourceDateAttributionIssue(url)} synthetic-private-detail`);
     assert.doesNotMatch(JSON.stringify(result), /synthetic-private-detail/);
   }

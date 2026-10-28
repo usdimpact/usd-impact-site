@@ -48,6 +48,16 @@ function requireString(value, field) {
   return normalized;
 }
 
+function assertExactKeys(value, keys, field) {
+  const object = requireObject(value, field);
+  const actual = Object.keys(object).sort();
+  const expected = [...keys].sort();
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(`${field} fields do not match the reviewed public-safe contract`);
+  }
+  return object;
+}
+
 function requireFinite(value, field) {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     throw new Error(`${field} must be finite`);
@@ -121,17 +131,46 @@ function walkForbiddenKeys(value, location = '$') {
 }
 
 export function validatePublicSafeScore(input) {
-  const score = requireObject(input, 'score');
+  const score = assertExactKeys(
+    input,
+    ['schema_version', 'metadata', 'latest', 'history', 'release_evidence'],
+    'score',
+  );
   walkForbiddenKeys(score);
 
   if (score.schema_version !== SAFE_SCORE_SCHEMA_VERSION) {
     throw new Error(`score.schema_version must be ${SAFE_SCORE_SCHEMA_VERSION}`);
   }
 
-  const latest = requireObject(score.latest, 'score.latest');
+  const metadata = assertExactKeys(
+    score.metadata,
+    ['pipeline', 'generated_at_utc', 'n_weeks', 'weights'],
+    'score.metadata',
+  );
+  requireString(metadata.pipeline, 'score.metadata.pipeline');
+  if (!Number.isInteger(metadata.n_weeks) || metadata.n_weeks < 1) {
+    throw new Error('score.metadata.n_weeks must be a positive integer');
+  }
+  const weights = requireObject(metadata.weights, 'score.metadata.weights');
+  if (Object.keys(weights).length === 0) throw new Error('score.metadata.weights must not be empty');
+  for (const [name, value] of Object.entries(weights)) {
+    requireString(name, 'score.metadata.weights key');
+    requireFinite(value, `score.metadata.weights.${name}`);
+  }
+
+  const latest = assertExactKeys(
+    score.latest,
+    ['week_ending', 'score', 'regime', 'week_over_week_change', 'four_week_change'],
+    'score.latest',
+  );
   const weekEnding = friday(latest.week_ending, 'score.latest.week_ending');
+  const releaseEvidence = assertExactKeys(
+    score.release_evidence,
+    ['aggregate_history_sha256'],
+    'score.release_evidence',
+  );
   const aggregateHistorySha256 = requireString(
-    requireObject(score.release_evidence, 'score.release_evidence').aggregate_history_sha256,
+    releaseEvidence.aggregate_history_sha256,
     'score.release_evidence.aggregate_history_sha256',
   );
   if (!/^[0-9a-f]{64}$/.test(aggregateHistorySha256)) {
@@ -141,7 +180,13 @@ export function validatePublicSafeScore(input) {
   if (!Array.isArray(score.history) || score.history.length === 0) {
     throw new Error('score.history must be a non-empty array');
   }
-  const finalHistory = requireObject(score.history.at(-1), 'score.history[last]');
+  for (const [index, row] of score.history.entries()) {
+    const historyRow = assertExactKeys(row, ['date', 'score', 'regime'], `score.history[${index}]`);
+    requireDate(historyRow.date, `score.history[${index}].date`);
+    requireFinite(historyRow.score, `score.history[${index}].score`);
+    requireString(historyRow.regime, `score.history[${index}].regime`);
+  }
+  const finalHistory = score.history.at(-1);
   if (
     finalHistory.date !== weekEnding
     || finalHistory.score !== latest.score
@@ -407,6 +452,17 @@ export function assertPublicSafeMonthlyInput(monthly) {
   }
   if (!Array.isArray(monthly.sourceWeeklyReports) || monthly.sourceWeeklyReports.length !== 4) {
     throw new Error('monthly sourceWeeklyReports must have four items');
+  }
+
+  const rights = requireObject(monthly.rightsSafety, 'monthly input rightsSafety');
+  for (const key of [
+    'componentValuesPublished',
+    'componentZScoresPublished',
+    'componentContributionsPublished',
+    'providerProvenancePublished',
+    'componentSourceUrlPublished',
+  ]) {
+    if (rights[key] !== false) throw new Error(`monthly input ${key} must remain false`);
   }
 
   const serialized = JSON.stringify(monthly);

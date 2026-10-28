@@ -11,7 +11,7 @@ const DEFAULT_BASELINE = fileURLToPath(
   new URL('./fixtures/research-report-public-baseline-2026-10-28.json', import.meta.url)
 );
 const DEFAULT_RIGHTS = fileURLToPath(
-  new URL('../../governance/score-derived-publication-rights-gate.json', import.meta.url)
+  new URL('../../../governance/score-derived-publication-rights-gate.json', import.meta.url)
 );
 const AUTH_FIELDS = [
   'approvedPublicAndMemberUseSeparation',

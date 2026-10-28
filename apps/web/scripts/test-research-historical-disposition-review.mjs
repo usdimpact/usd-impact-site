@@ -9,7 +9,7 @@ import {
 const readJson = async file => JSON.parse(await readFile(new URL(file, import.meta.url), 'utf8'));
 const packet = await readJson('./fixtures/research-historical-disposition-review-2026-10-28.json');
 const baseline = await readJson('./fixtures/research-report-public-baseline-2026-10-28.json');
-const rights = await readJson('../../governance/score-derived-publication-rights-gate.json');
+const rights = await readJson('../../../governance/score-derived-publication-rights-gate.json');
 const copy = item => JSON.parse(JSON.stringify(item));
 const assess = candidate => reviewHistoricalDispositionPacket(candidate, baseline, rights);
 

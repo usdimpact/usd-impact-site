@@ -48,7 +48,7 @@ jobs:
 
   generate-and-open-review:
     needs: rights-gate
-    if: needs.rights-gate.outputs.hold != 'true'
+    if: needs.rights-gate.result == 'success' && needs.rights-gate.outputs.hold == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:

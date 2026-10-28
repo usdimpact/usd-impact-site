@@ -143,6 +143,11 @@ Current protected publication records:
   - published through PR #927
   - merge commit: `3efd3163423707481fa2cca5f119512425498363`
 
+- Warsh opening-statement update:
+  - Daily + Catalyst Brief updated through PR #928
+  - merge commit: `5c19782179ad8cf92f80238acdd6dc4cad48e086`
+  - scope: official preliminary opening statement only; full Q&A remains separate
+
 The pre-event Catalyst Brief remains historical and should not be rewritten as if the outcome were known in advance.
 
 ## 9. Source hierarchy
@@ -172,6 +177,7 @@ Do not use social posts, screenshots, snippets, leaks or unattributed summaries 
 - [x] Catalyst Brief exact-head CI/CodeQL/Preview passed
 - [x] Catalyst Brief protected merge completed
 - [x] official preliminary Chair Warsh opening statement reviewed
+- [x] Daily + Catalyst Brief opening-statement update merged through PR #928
 - [ ] full official press-conference Q&A reviewed, if a later editorial update requires it
 - [ ] eligible post-event Three Dials v2 observations reviewed when their normal source cadence permits
 

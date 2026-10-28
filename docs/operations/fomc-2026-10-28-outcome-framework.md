@@ -18,6 +18,7 @@ Purpose: retain the primary-source evidence and publication boundaries used for 
 Primary outcome sources:
 - statement: `https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm`
 - implementation note: `https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a1.htm`
+- Chair Warsh preliminary opening statement: `https://www.federalreserve.gov/mediacenter/files/FOMCpresconf20261028.pdf`
 
 September comparison sources:
 - statement: `https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm`
@@ -73,16 +74,25 @@ The Desk directive continues to include:
 
 These implementation settings are operational instructions. They do not establish observed facility usage, reserve scarcity, funding stress or a liquidity regime.
 
-## 5. Chair Warsh press-conference boundary
+## 5. Chair Warsh opening statement and Q&A boundary
 
-At the outcome-publication checkpoint, the written FOMC statement and implementation note were verified. An official Chair Warsh press-conference transcript/video source had not yet been verified for use in the published outcome record.
+The Federal Reserve's official preliminary transcript of Chair Kevin Warsh's **opening statement** is now verified.
 
-Therefore:
+Prepared-remarks evidence includes:
 
-- no Chair quote or paraphrase was required for the initial outcome publication;
-- reporter questions or live secondary summaries are not Federal Reserve policy facts;
-- any later Chair remarks should be added only from an official Federal Reserve source;
-- statement facts and press-conference interpretation remain separate evidence layers.
+- economic growth described as strengthened;
+- employment conditions described as positive;
+- inflation described as too high;
+- overall financial conditions described as tighter, but not tight;
+- a future meeting-schedule change: beginning in 2027, one of eight annual FOMC meetings is expected to focus exclusively on broad monetary-policy strategy with no federal-funds-rate vote or policy statement anticipated; for 2028, two strategy-focused meetings and six policy-setting meetings are expected.
+
+Boundary:
+
+- these facts come from the prepared opening statement only;
+- the full press-conference Q&A remains a separate evidence layer;
+- reporter questions and secondary summaries are not Federal Reserve policy facts;
+- any Q&A interpretation should be added only from an official Federal Reserve transcript/video record;
+- statement facts, prepared remarks and Q&A remain separately attributed.
 
 ## 6. Three Dials v2 boundary
 
@@ -141,9 +151,10 @@ For this event:
 
 1. Federal Reserve October 28 FOMC statement;
 2. Federal Reserve October 28 implementation note;
-3. official Chair Warsh press-conference transcript/video when available;
-4. official Federal Reserve calendar/event pages;
-5. rights-screened market evidence only for separately labeled market reaction.
+3. official Chair Warsh preliminary opening-statement transcript;
+4. full official press-conference Q&A transcript/video when available;
+5. official Federal Reserve calendar/event pages;
+6. rights-screened market evidence only for separately labeled market reaction.
 
 Do not use social posts, screenshots, snippets, leaks or unattributed summaries as policy-decision evidence.
 
@@ -160,13 +171,14 @@ Do not use social posts, screenshots, snippets, leaks or unattributed summaries 
 - [x] Daily protected merge and Production verification completed
 - [x] Catalyst Brief exact-head CI/CodeQL/Preview passed
 - [x] Catalyst Brief protected merge completed
-- [ ] official press-conference transcript/video reviewed, if a later editorial update requires it
+- [x] official preliminary Chair Warsh opening statement reviewed
+- [ ] full official press-conference Q&A reviewed, if a later editorial update requires it
 - [ ] eligible post-event Three Dials v2 observations reviewed when their normal source cadence permits
 
 ## Current disposition
 
 **The written FOMC outcome is verified and published.**
 
-No further policy-decision publication is required unless an official press-conference source or later eligible data materially adds to the record.
+No further policy-decision publication is required. The official preliminary opening statement has now been verified; only the full Q&A or later eligible data would justify another editorial update.
 
 Market-reaction fields remain intentionally unfilled. Three Dials v2 remains on its normal approved-source cadence.

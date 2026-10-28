@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import {
   DEV_ORIGIN, DEV_PROJECT, FIXTURE_TYPE, makeFixture, assertSafeEnvironment,
-  assertRows, exerciseCas,
+  assertRows, exerciseCas, makeRestHeaders,
 } from './webhook-postgrest-cas-qa.mjs';
 
 const id = '70707070-7070-4707-8707-707070707070';
@@ -20,6 +20,20 @@ const fakeEnv = Object.freeze({
   DEV_PGDATABASE: 'postgres', DEV_PGPASSWORD: 'offline-only-not-a-password',
   DEV_PGROOTCERT_PEM: '-----BEGIN CERTIFICATE-----\nOFFLINE-TEST-ONLY\n-----END CERTIFICATE-----',
   DEV_POSTGREST_SECRET_KEY: 'sb_secret_offline_fixture_not_a_real_key',
+});
+
+test('opaque REST secrets use only apikey, while legacy JWT uses Bearer', () => {
+  const opaque = 'sb_secret_' + 'z'.repeat(40);
+  const opaqueHeaders = makeRestHeaders(opaque);
+  assert.equal(opaqueHeaders.apikey, opaque);
+  assert.equal(Object.hasOwn(opaqueHeaders, 'Authorization'), false);
+  assert.equal(opaqueHeaders.Prefer, 'return=representation');
+  const jwt = 'eyJ' + 'a'.repeat(48);
+  const legacyHeaders = makeRestHeaders(jwt);
+  assert.equal(legacyHeaders.apikey, jwt);
+  assert.equal(legacyHeaders.Authorization, 'Bearer ' + jwt);
+  assert.throws(() => makeRestHeaders('sb_publishable_' + 'z'.repeat(48)));
+  assert.throws(() => makeRestHeaders(''));
 });
 
 test('fixtures are deterministic, non-deliverable and scoped to the QA object type', () => {

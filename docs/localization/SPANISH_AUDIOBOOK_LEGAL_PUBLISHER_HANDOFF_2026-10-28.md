@@ -4,6 +4,8 @@ Status: **FOR COUNSEL / PUBLISHER DECISION — NO LEGAL CONCLUSION / NO RELEASE 
 
 This handoff isolates the remaining legal/publisher questions for the Spanish audiobook of *Read the Dollar First*. Engineering, transcript, acoustic and private-delivery-format work is substantially complete. This document does not authorize public distribution, member delivery, storage upload, entitlement changes or Production release.
 
+Current primary-source re-verification and conservative product wording are recorded separately in `SPANISH_AUDIOBOOK_LEGAL_SOURCE_VERIFICATION_2026-10-28.md`. That packet updates factual source support but does not replace the decision matrix below or provide legal clearance.
+
 ## 1. Current factual product state
 
 Operator/publisher context:

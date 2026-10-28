@@ -3,6 +3,7 @@ import path from 'node:path';
 import { load, FAILSAFE_SCHEMA } from 'js-yaml';
 
 export const SAFE_SCORE_SCHEMA_VERSION = 'score-public-v2-safe-1';
+export const SAFE_SCORE_SOURCE_PIPELINE = 'usd_impact_score_v2';
 export const SAFE_WEEKLY_SCHEMA_VERSION = 'weekly-report-public-safe-v1';
 export const SAFE_MONTHLY_INPUT_SCHEMA_VERSION = 'monthly-report-public-safe-input-v1';
 
@@ -148,7 +149,10 @@ export function validatePublicSafeScore(input) {
     ['pipeline', 'generated_at_utc', 'n_weeks', 'weights'],
     'score.metadata',
   );
-  requireString(metadata.pipeline, 'score.metadata.pipeline');
+  const sourcePipeline = requireString(metadata.pipeline, 'score.metadata.pipeline');
+  if (sourcePipeline !== SAFE_SCORE_SOURCE_PIPELINE) {
+    throw new Error('score.metadata.pipeline must match the frozen Score v2 source identity');
+  }
   if (!Number.isInteger(metadata.n_weeks) || metadata.n_weeks < 1) {
     throw new Error('score.metadata.n_weeks must be a positive integer');
   }

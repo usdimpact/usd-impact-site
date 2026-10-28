@@ -331,11 +331,65 @@ test('new v2.1F five-slot successor remains design-only and cannot inherit v2.1E
   for (const name of [
     'inheritedOneOffAuthorization', 'vintageFallbackAllowed',
     'currentBlsRevisionSubstituteAllowed', 'candidateScoreComputed',
-    'liveVintagePreflightApproved', 'fullCandidateResearchApproved',
+    'liveVintagePreflightAuthorizedNow', 'fullCandidateResearchApproved',
     'realDataFetchApproved', 'sourceRightsApproved',
     'publicArtifactReplacementApproved', 'commercialMemberDistributionApproved',
     'researchLedgerMutationApproved', 'productionApproved', 'releaseAuthorized',
   ]) assert.equal(x[name], false, name);
+});
+
+test('v2.1F Stage 1 BLS archive 403 consumed its one-off owner approval without candidate scoring', () => {
+  const successor = fixture.separatelyPreregisteredSuccessor;
+  const p = successor.stageOneVintagePreflight;
+  assert.equal(successor.candidateVersion, '2.1F-design-candidate');
+  assert.equal(successor.state, 'preregistered_design_only');
+  assert.equal(p.state, 'consumed_fail_closed');
+  assert.equal(p.reviewedPipelineMainSha, '56aa8b97922266be88c2f74ebf2659a48a8abede');
+  assert.equal(p.sourceRecordPath,
+    'governance/score-v2-1f-live-vintage-preflight-consumption-2026-10-28.json');
+  assert.equal(p.sourceRecordGitBlobSha, '0ec3f9fd1a1a3daa8340b774fc2277b15bb5b243');
+  assert.equal(p.executionContractPath,
+    'governance/score-v2-1f-live-vintage-preflight-execution-contract.json');
+  assert.equal(p.executionContractGitBlobSha, 'f46032bef6363cc831881105bf73b555893473ec');
+  assert.equal(p.ownerDecisionIssue, 'https://github.com/usdimpact/usd-impact-pipeline/issues/224');
+  assert.equal(p.ownerApprovalCommentId, 6479715940);
+  assert.equal(p.ownerApprovalTimestampUtc, '2026-10-28T20:20:28Z');
+  assert.equal(p.activationMergeSha, '48f6815199db7c030939629f49a75001d20ae566');
+  assert.equal(p.dispatchMergeSha, '6ea7eb7390ad9949799867c6db38f20664cba6a3');
+  assert.equal(p.scope, 'live_historical_vintage_feasibility_preflight_only');
+  assert.deepEqual([p.authorizedWindowStart, p.authorizedWindowEnd],
+    ['2013-01-01', '2026-10-23']);
+  assert.equal(p.preflightRunUrl,
+    'https://github.com/usdimpact/usd-impact-pipeline/actions/runs/40763350781');
+  assert.equal(p.preflightConclusion, 'failure');
+  assert.equal(p.blockerIssue, 'https://github.com/usdimpact/usd-impact-pipeline/issues/228');
+  assert.equal(p.failureStage, 'BLS PPI archive index retrieval');
+  assert.equal(p.failedOfficialHost, 'www.bls.gov');
+  assert.equal(p.failedOfficialPath, '/bls/news-release/ppi.htm');
+  assert.equal(p.failedHttpStatus, 403);
+  assert.equal(p.consumedAtUtc, '2026-10-28T20:27:02Z');
+  for (const field of [
+    'federalReserveFixedSamplePhaseCompleted',
+    'originalReceiptRemoved', 'dispatchMarkerRemoved',
+    'ownerApprovalPreservedForAuditOnly',
+    'freshOwnerAuthorizationNeededForNextLiveRequest',
+    'blockedDueToArchiveAccessNotSeriesDisqualification',
+  ]) assert.equal(p[field], true, field);
+  for (const field of [
+    'fullResearchApprovedAtActivation',
+    'activeReceiptPresent', 'currentRealDataFetchAuthorized',
+    'currentPreflightAuthorized', 'currentFullResearchAuthorized',
+    'currentCandidateScoringAuthorized', 'currentPublicArtifactReplacementAuthorized',
+    'currentResearchLedgerMutationAuthorized', 'currentProductionAuthorized',
+    'candidateScoreComputed', 'componentZscoresComputed',
+    'componentContributionsComputed', 'sourceOrComponentValuesPersisted',
+    'publicArtifactsModified', 'researchLedgersModified', 'productionModified',
+    'alternativeSourceOrCurrentRevisedHistoryAllowed',
+  ]) assert.equal(p[field], false, field + ' must remain denied after consumption');
+  assert.equal(successor.liveVintagePreflightAuthorizedNow, false);
+  assert.equal(successor.fullCandidateResearchApproved, false);
+  assert.equal(successor.productionApproved, false);
+  assert.equal(fixture.releaseAuthorized, false);
 });
 
 test('Score rights HOLD and Class-C component-derived public paths remain accurately classified', async () => {

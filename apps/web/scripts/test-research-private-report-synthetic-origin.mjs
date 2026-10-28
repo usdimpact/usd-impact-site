@@ -299,3 +299,47 @@ test('authorization and synthetic account failures do not trigger any asset look
     assert.equal(s.fake.calls.length, 0);
   }
 });
+
+test('expired or not-yet-active Research access never invokes even a synthetic origin', async () => {
+  for (const changes of [
+    { startsAt: '2026-10-29T00:00:00Z' },
+    { endsAt: '2026-10-28T12:00:00Z' },
+    { state: 'cancelled' },
+    { productId: 'library-pass' },
+    { accountId: 'synthetic-other-account' },
+  ]) {
+    const s = setup({ value: {
+      user: { id: RID },
+      profile: { status: 'active' },
+      allowed: true,
+      entitlement: {
+        accountId: RID,
+        productId: 'research-membership',
+        state: 'active',
+        startsAt: '2026-10-01T00:00:00Z',
+        endsAt: '2026-11-01T00:00:00Z',
+        ...changes,
+      },
+    } });
+    const out = await simulate(s.args);
+    assert.equal(out.statusCode, 403);
+    assert.equal(out.body, '');
+    assert.equal(s.fake.calls.length, 0);
+  }
+});
+
+test('origin rejects wrong-period, wrong-product and duplicate artifact responses', async () => {
+  for (const variant of [
+    { ...asset(), periodEnd: '2026-10-16' },
+    { ...asset(), productId: 'library-pass' },
+    { ...asset(), reportType: 'monthly' },
+  ]) {
+    const s = setup({ records: [variant] });
+    const result = await simulate(s.args);
+    assert.equal(result.statusCode, 503);
+    assert.equal(result.body, '');
+    assert.equal(s.fake.calls.length, 1);
+  }
+  const s = setup({ records: [asset(), asset()] });
+  assert.equal((await simulate(s.args)).statusCode, 503);
+});

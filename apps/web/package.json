@@ -11,7 +11,7 @@
     "verify:waitlist-development": "node scripts/verify-waitlist-development.mjs",
     "generate:waitlist-unsubscribe-link": "node scripts/generate-waitlist-unsubscribe-link.mjs",
     "validate:content": "node scripts/validate-content.mjs",
-    "validate:reports": "node scripts/validate-weekly-reports.mjs && node scripts/validate-monthly-reports.mjs && node scripts/test-monthly-reports.mjs && node scripts/test-report-periods.mjs && node scripts/test-research-report-publication-boundary.mjs && node scripts/test-research-report-inventory.mjs && node scripts/audit-research-report-inventory.mjs --check && node scripts/test-research-private-report-synthetic-rehearsal.mjs && node scripts/test-research-private-public-build.mjs",
+    "validate:reports": "node scripts/validate-weekly-reports.mjs && node scripts/validate-monthly-reports.mjs && node scripts/test-monthly-reports.mjs && node scripts/test-report-periods.mjs && node scripts/test-research-report-publication-boundary.mjs && node scripts/test-research-report-inventory.mjs && node scripts/audit-research-report-inventory.mjs --check && node scripts/test-research-private-report-synthetic-rehearsal.mjs && node scripts/test-research-private-public-build.mjs && node scripts/test-research-private-report-synthetic-origin.mjs",
     "validate:news": "node scripts/test-news-source-references.mjs && node scripts/validate-news.mjs && node scripts/validate-catalyst-briefs.mjs",
     "validate:links": "node scripts/validate-links.mjs",
     "validate:ux": "node scripts/test-ux-accessibility-contract.mjs && node scripts/test-governance-evidence-contracts.mjs && node scripts/test-structured-data-contract.mjs",

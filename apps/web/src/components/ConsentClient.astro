@@ -6,8 +6,19 @@ const {
   analyticsEnabled = false,
   privacyHref = locale === 'es' ? '/es/privacy/' : '/privacy/',
 } = Astro.props;
-const copy = consentCopyForLocale(locale);
 const analyticsAvailable = analyticsEnabled === true;
+const baseCopy = consentCopyForLocale(locale);
+// UI-only wording for locales that cannot activate optional analytics.
+// Keep the owner-approved locale consent-copy module and public legal notice unchanged.
+const copy = analyticsAvailable ? baseCopy : {
+  ...baseCopy,
+  bannerBeforeLink: 'Esta edición en español utiliza funciones esenciales de seguridad y cuenta. La analítica opcional y la publicidad permanecen desactivadas. Puedes guardar tu elección de privacidad para este dominio.',
+  reject: 'Continuar sin analítica',
+  settingsIntro: 'En esta edición, la analítica opcional permanece desactivada. Puedes guardar tu elección de privacidad.',
+  analyticsDescription: 'La analítica opcional y la publicidad no están habilitadas en esta edición en español. Este panel no puede activarlas.',
+  unavailable: 'Desactivadas',
+  save: 'Guardar sin analítica',
+};
 ---
 
 <div

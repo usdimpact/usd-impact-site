@@ -68,13 +68,13 @@ for (const requiredEnglishCopy of [
 for (const requiredSpanishCopy of [
   "bannerTitle: 'Opciones de privacidad'",
   "privacyLinkLabel: 'Leer el aviso de privacidad'",
-  "reject: 'Continuar sin analítica'",
+  "reject: 'Rechazar analítica'",
   "review: 'Revisar opciones'",
-  "unavailable: 'Desactivadas'",
+  "accept: 'Aceptar analítica'",
   "settingsTitle: 'Opciones de privacidad'",
   "alwaysActive: 'Siempre activas'",
   "analyticsTitle: 'Analítica opcional'",
-  "save: 'Guardar sin analítica'",
+  "save: 'Guardar opciones'",
 ]) {
   assert.ok(consentCopy.includes(requiredSpanishCopy));
 }
@@ -90,7 +90,10 @@ assert.match(consent, /data-analytics-enabled=\{analyticsAvailable \? 'true' : '
 assert.match(consent, /\{analyticsAvailable && \(\s*<button id="privacy-consent-accept"/);
 assert.match(consent, /\{analyticsAvailable \? \(\s*<label class="privacy-consent-category" for="privacy-consent-analytics"/);
 assert.match(consent, /<section class="privacy-consent-category" aria-labelledby="privacy-consent-analytics-unavailable-title"/);
-assert.doesNotMatch(consentCopy, /accept: 'Aceptar analítica'/);
+assert.match(consent, /reject: 'Continuar sin analítica'/);
+assert.match(consent, /unavailable: 'Desactivadas'/);
+assert.match(consent, /save: 'Guardar sin analítica'/);
+assert.match(consent, /analyticsAvailable \? baseCopy/);
 assert.match(consent, /banner\.hidden = preference !== 'unset'/);
 assert.match(consent, /id="privacy-consent-reject" class="privacy-consent-button privacy-consent-primary"/);
 assert.match(consent, /id="privacy-consent-accept" class="privacy-consent-button privacy-consent-primary"/);

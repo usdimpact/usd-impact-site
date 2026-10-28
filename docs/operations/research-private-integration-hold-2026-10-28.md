@@ -53,6 +53,10 @@ The same read-only permission query confirmed that `score_member_assets`, `score
 
 Full non-identifying evidence, reproducible read-only SQL, risk classification and stop conditions: [research-entitlement-provenance-readonly-audit-2026-10-28.md](research-entitlement-provenance-readonly-audit-2026-10-28.md). No repair/backfill, entitlement revoke, access change, webhook replay, provider purchase or direct Production mutation is authorized by this audit.
 
+## Report-by-report access and rights decision packet
+
+All **13 Weekly and 3 Monthly** historical reports now have an independent metadata-only, **undecided/HOLD** disposition row tied to the frozen source inventory and Git blob. Review decision packet: `docs/operations/research-historical-report-disposition-review-2026-10-28.md`; machine-readable packet: `apps/web/scripts/fixtures/research-historical-disposition-review-2026-10-28.json`. Synthetic tests deny unilateral "member-only" reclassification, historical URL removal, forged rights clearance and new Production flags. This is not a public or paid rights grant and changes no historical URL or content.
+
 ## Review gates and handoff
 
 1. **Rights decision — HOLD:** written provider/counsel disposition for Score-derived material, historical public reports, the public sample, and the permitted scope of paid member distribution.

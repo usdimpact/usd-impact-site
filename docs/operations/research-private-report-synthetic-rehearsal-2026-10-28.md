@@ -13,7 +13,7 @@ The new script-only module is located at:
 
 The synthetic module has **no runtime caller** in middleware, Astro, `api/account.js`, any commerce route or publication workflow. It only runs under the existing `validate:reports` test script when this stacked Draft PR is checked. It has no Supabase client, real access tokens, private asset origin, migration, provider ID, user identity, billing action or secrets.
 
-This is deliberately narrower than a Production-ready private report handler. The fixture includes a fixed `SYNTHETIC_RESEARCH_REPORT_TEST_ONLY` marker; actual Research reports cannot be served by this rehearsal without first changing code and passing separate approvals. The most permissive response still has `releaseAuthorized=false`.
+This is deliberately narrower than a Production-ready private report handler. The fixture body must also match its synthetic SHA-256 integrity fingerprint; tampering the marked body without updating the digest fails closed. This is a byte-integrity check, not a rights license or provider attestation. The fixture includes a fixed `SYNTHETIC_RESEARCH_REPORT_TEST_ONLY` marker; actual Research reports cannot be served by this rehearsal without first changing code and passing separate approvals. The most permissive response still has `releaseAuthorized=false`.
 
 ## Synthetic acceptance matrix
 

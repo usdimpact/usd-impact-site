@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 // DEVELOPMENT SYNTHETIC REHEARSAL ONLY.
 // Not imported by site routes, Vercel functions, middleware or real commerce.
 // No real customer account, provider record, Supabase connection or provider data.
@@ -87,8 +89,9 @@ export function isSyntheticApprovedReportAsset(asset, reportType, periodEnd) {
       !SHA40.test(asset.sourceCommit || '') ||
       typeof asset.body !== 'string' ||
       !asset.body.startsWith(SYNTHETIC_REPORT_BODY_PREFIX) ||
-      Buffer.byteLength(asset.body, 'utf8') > 10_000) return false;
-  return true;
+      Buffer.byteLength(asset.body, 'utf8') > 10_000 ||
+      !/^[a-f0-9]{64}$/.test(asset.bodySha256 || '')) return false;
+  return createHash('sha256').update(asset.body, 'utf8').digest('hex') === asset.bodySha256;
 }
 
 export async function simulateResearchPrivateReportDelivery({

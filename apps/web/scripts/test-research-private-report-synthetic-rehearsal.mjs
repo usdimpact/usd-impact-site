@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createHash } from 'node:crypto';
 import {
   parseSyntheticPrivateReportPath,
   simulateResearchPrivateReportDelivery as simulate,
@@ -33,6 +34,7 @@ const asset = () => ({
   sourceCommit: 'a'.repeat(40),
   contentType: 'text/html; charset=utf-8',
   body: CONTENT,
+  bodySha256: createHash('sha256').update(CONTENT, 'utf8').digest('hex'),
 });
 function setup({
   request = REQUEST, value = allowedValue(), fixture = asset(),
@@ -207,6 +209,8 @@ test('missing, unapproved and malformed synthetic artifacts never expose data', 
     { ...asset(), privateObjectUrl: 'https://example.invalid/object' },
     { ...asset(), providerSourceUrl: 'https://example.invalid/provider' },
     { ...asset(), sourceCommit: 'invalid' },
+    { ...asset(), bodySha256: '0'.repeat(64) },
+    { ...asset(), body: SYNTHETIC_REPORT_BODY_PREFIX + 'tampered-but-marked' },
     { ...asset(), contentType: 'application/json' },
     { ...asset(), reportType: 'monthly' },
     { ...asset(), productId: 'library-pass' },

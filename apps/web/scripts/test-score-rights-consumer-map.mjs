@@ -141,3 +141,38 @@ test('site consumer map remains fail-closed while pipeline issue 155 is HOLD', (
   assert.ok(sensitive.includes('/data/research/score_v2_robustness_latest.json'));
   assert.ok(sensitive.includes('/data/research/score_v2_vintage_comparison_latest.html'));
 });
+
+test('weekly-report automation and published reports are classified as Class C consumers', async () => {
+  assert.equal(manifest.weekly_report_publication_hold_required, true);
+
+  const workflowPath = path.resolve(webRoot, '..', '..', '.github', 'workflows', 'weekly-report.yml');
+  const workflow = await readFile(workflowPath, 'utf8');
+  const generator = await readFile(path.join(webRoot, 'scripts', 'generate-weekly-report.mjs'), 'utf8');
+
+  assert.ok(workflow.includes('https://score.usd-impact.com/archive/$WEEK/weekly_input.json'));
+  assert.ok(generator.includes('https://score.usd-impact.com/archive/${week}/weekly_input.json'));
+  assert.ok(generator.includes('driver.contribution'));
+  assert.ok(generator.includes('drivers.slice(0, 3)'));
+  assert.ok(generator.includes('source_provenance'));
+
+  assert.equal(manifest.runtime_consumers['.github/workflows/weekly-report.yml'].class, 'C');
+  assert.equal(manifest.runtime_consumers['apps/web/scripts/generate-weekly-report.mjs'].class, 'C');
+  assert.equal(manifest.runtime_consumers['apps/web/src/content/weekly-reports/*.md'].class, 'C');
+
+  const reportRoot = path.join(webRoot, 'src', 'content', 'weekly-reports');
+  const reports = (await readdir(reportRoot)).filter((name) => name.endsWith('.md'));
+  assert.ok(reports.length > 0, 'expected published weekly reports');
+
+  for (const name of reports) {
+    const source = await readFile(path.join(reportRoot, name), 'utf8');
+    assert.match(
+      source,
+      /https:\/\/score\.usd-impact\.com\/archive\/\d{4}-\d{2}-\d{2}\/weekly_input\.json/,
+      'weekly report missing classified Score archive source: ' + name,
+    );
+  }
+
+  const current = await readFile(path.join(reportRoot, '2026-10-23.md'), 'utf8');
+  assert.match(current, /largest absolute component contributions/i);
+  assert.match(current, /SPX [−+]/);
+});

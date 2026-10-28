@@ -38,11 +38,13 @@ jobs:
 
       - name: Record Score-rights weekly-report HOLD
         if: steps.rights.outputs.hold == 'true'
+        env:
+          RIGHTS_REASON: ${{ steps.rights.outputs.reason }}
         run: |
           echo '## Weekly USD Impact report publication — RIGHTS HOLD' >> "$GITHUB_STEP_SUMMARY"
           echo '' >> "$GITHUB_STEP_SUMMARY"
           echo 'Generation and publication are intentionally skipped while pipeline issue #155 remains unresolved.' >> "$GITHUB_STEP_SUMMARY"
-          echo "Reason: ${{ steps.rights.outputs.reason }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Reason: $RIGHTS_REASON" >> "$GITHUB_STEP_SUMMARY"
 
   generate-and-open-review:
     needs: rights-gate

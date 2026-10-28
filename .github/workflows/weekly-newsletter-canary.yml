@@ -9,6 +9,7 @@ on:
       - 'apps/web/src/lib/resend-webhook*.js'
       - 'apps/web/src/pages/account/newsletter-canary.astro'
       - 'apps/web/api/waitlist.js'
+      - 'apps/web/vercel.json'
       - 'apps/web/scripts/test-weekly-newsletter-canary*.mjs'
       - '.github/workflows/weekly-newsletter-canary.yml'
   push:
@@ -20,6 +21,7 @@ on:
       - 'apps/web/src/lib/resend-webhook*.js'
       - 'apps/web/src/pages/account/newsletter-canary.astro'
       - 'apps/web/api/waitlist.js'
+      - 'apps/web/vercel.json'
       - 'apps/web/scripts/test-weekly-newsletter-canary*.mjs'
       - '.github/workflows/weekly-newsletter-canary.yml'
 

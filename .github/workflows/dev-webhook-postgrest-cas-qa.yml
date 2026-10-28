@@ -82,6 +82,7 @@ jobs:
           DEV_PGHOST: ${{ secrets.DEV_WEBHOOK_CAS_PGHOST }}
           DEV_PGUSER: ${{ secrets.DEV_WEBHOOK_CAS_PGUSER }}
           DEV_PGPASSWORD: ${{ secrets.DEV_WEBHOOK_CAS_PGPASSWORD }}
+          DEV_PGROOTCERT_PEM: ${{ secrets.DEV_WEBHOOK_CAS_PGROOTCERT_PEM }}
           DEV_PGDATABASE: postgres
           DEV_PGPORT: '5432'
           DEV_POSTGREST_SECRET_KEY: ${{ secrets.DEV_WEBHOOK_CAS_REST_SECRET }}
@@ -97,6 +98,7 @@ jobs:
           DEV_PGHOST: ${{ secrets.DEV_WEBHOOK_CAS_PGHOST }}
           DEV_PGUSER: ${{ secrets.DEV_WEBHOOK_CAS_PGUSER }}
           DEV_PGPASSWORD: ${{ secrets.DEV_WEBHOOK_CAS_PGPASSWORD }}
+          DEV_PGROOTCERT_PEM: ${{ secrets.DEV_WEBHOOK_CAS_PGROOTCERT_PEM }}
           DEV_PGDATABASE: postgres
           DEV_PGPORT: '5432'
         run: node scripts/webhook-postgrest-cas-qa.mjs --cleanup

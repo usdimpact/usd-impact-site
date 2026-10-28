@@ -83,5 +83,27 @@
         "/en/"
       ]
     }
-  }
+  },
+  "runtime_consumers": {
+    ".github/workflows/weekly-report.yml": {
+      "class": "C",
+      "role": "scheduled_fetch",
+      "contract": "https://score.usd-impact.com/archive/$WEEK/weekly_input.json",
+      "publishes_new_output": true
+    },
+    "apps/web/scripts/generate-weekly-report.mjs": {
+      "class": "C",
+      "role": "report_generator",
+      "contract": "https://score.usd-impact.com/archive/${week}/weekly_input.json",
+      "publishes_named_component_contributions": true,
+      "publishes_source_provenance_reference": true
+    },
+    "apps/web/src/content/weekly-reports/*.md": {
+      "class": "C",
+      "role": "published_historical_content",
+      "contract": "https://score.usd-impact.com/archive/<periodEnd>/weekly_input.json",
+      "contains_named_component_contributions": true
+    }
+  },
+  "weekly_report_publication_hold_required": true
 }

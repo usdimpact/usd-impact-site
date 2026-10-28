@@ -42,9 +42,17 @@ try {
   assert.doesNotMatch(workflow, /^\s*git add "\$expected"$/m);
   assert.doesNotMatch(workflow, /gh pr merge|enable-auto-merge|--auto/);
 
-  // Parse the literal/inline run steps in this workflow's fixed YAML layout.
+  // Parse only the publication job this regression was designed to exercise.
+  // A separate test owns the independent rights-gate job. Keeping the scopes
+  // separate prevents a new top-level job boundary from being misread as part
+  // of the final literal run block below.
+  const generateMarker = '\n  generate-and-open-review:\n';
+  const generateIndex = workflow.indexOf(generateMarker);
+  assert.notEqual(generateIndex, -1, 'weekly publication job must exist');
+  const generateJob = workflow.slice(generateIndex + generateMarker.length);
+
   // Bash syntax checks do not execute the publication, network or Git commands.
-  const shellSteps = workflow.split(/^      - /m).slice(1).flatMap((step) => {
+  const shellSteps = generateJob.split(/^      - /m).slice(1).flatMap((step) => {
     const run = step.match(/^        run: ([^\n]*)\n([\s\S]*)$/m);
     if (!run) return [];
     const name = step.split('\n')[0];

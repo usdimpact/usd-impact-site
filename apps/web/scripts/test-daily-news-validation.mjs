@@ -85,6 +85,26 @@ assert.equal(
   SOURCE_DATE_BASIS.CURRENT_RELEASE,
   'Tracking-query variants must not change EIA WPSR living-source semantics',
 );
+const eiaSchedule = 'https://www.eia.gov/petroleum/supply/weekly/schedule.php';
+assert.equal(
+  sourceDateBasisForUrl(eiaSchedule),
+  SOURCE_DATE_BASIS.DOCUMENT_INDEX,
+  'Reusable EIA WPSR schedule has no page-level date suitable for publishedAt',
+);
+assert.equal(isLivingSourceUrl(eiaSchedule), false, 'Undated EIA schedule must not bypass historical-date checks');
+assert.match(
+  sourceDateAttributionIssue(eiaSchedule),
+  /reusable schedule page without a page-level publication or Last Updated date/i,
+);
+assert.deepEqual(
+  safeValidationDiagnostic(sourceDateAttributionIssue(eiaSchedule)),
+  {
+    code: 'invalid-source-date',
+    reason: 'Do not cite the reusable EIA WPSR schedule page in the source ledger because it has no verifiable page-level publication or Last Updated date. Use the current WPSR landing page when it directly supports the next-release claim and its displayed current Release Date, or a dated release-specific EIA document; otherwise omit the unsupported source and claim.',
+  },
+);
+assert.match(SOURCE_DATE_RULES, /EIA Weekly Petroleum Status Report schedule page/);
+assert.match(SOURCE_DATE_RULES, /no page-level publication or Last Updated date/i);
 assert.equal(
   sourceDateBasisForUrl('https://www.eia.gov/petroleum/supply/weekly/archive/2026/2026_09_10/'),
   SOURCE_DATE_BASIS.PUBLISHED,

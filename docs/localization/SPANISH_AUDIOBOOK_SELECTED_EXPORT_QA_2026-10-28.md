@@ -81,9 +81,9 @@ The connected runtime cannot currently ingest Descript's signed binary download 
 
 ## Updated remaining gates
 
-1. Full-track / whole-program human listening for the selected 20-track sequence.
-2. Final mastering/output-format decision after whole-program listening; the 19 exact Drive exports already show a tight -24.0 to -23.8 LUFS cluster with no clipping/long-silence defects.
-3. If exact Track 00 binary QC becomes available, record its codec/loudness/peak/hash; do not block targeted acoustic acceptance already obtained.
+1. **Full-track / whole-program human listening: PASS** — owner-reported 20/20 selected compositions, reconciled from PR #797 evidence dated 2026-10-19 and the 2026-10-27 closeout.
+2. Final mastering/output-format decision; the 19 exact Drive exports already show a tight -24.0 to -23.8 LUFS cluster with no clipping/long-silence defects.
+3. If exact Track 00 binary QC becomes available, record its codec/loudness/peak/hash; do not block the already-completed human listening gate on connector download limitations.
 4. Legal/editorial release clearance.
 5. Reconstruct only the minimal approved release/runtime diff onto then-current protected main; do not wholesale-merge the historical production branch.
 6. Descript public publication, member storage, entitlement changes and Production remain separately gated.

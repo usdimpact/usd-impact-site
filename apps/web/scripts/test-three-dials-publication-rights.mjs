@@ -13,7 +13,7 @@ const [generatorText, sourceText, publicText] = await Promise.all([
 
 assert.equal(sourceText, publicText, 'Three Dials source/public latest copies must remain byte-identical.');
 
-const forbidden = ['DX-Y.NYB', 'BAMLH0A0HYM2', 'VIXCLS', 'query1.finance.yahoo.com', 'finance.yahoo.com/quote/'];
+const forbidden = ['DX-Y.NYB', 'BAMLH0A0HYM2', 'VIXCLS', 'query1.finance.yahoo.com', 'finance.yahoo.com/quote/', 'fred.stlouisfed.org', '/graph/fredgraph.csv'];
 for (const marker of forbidden) {
   assert.equal(generatorText.includes(marker), false, `Three Dials v2 generator must not contain restricted legacy source ${marker}.`);
 }
@@ -21,9 +21,14 @@ for (const required of [
   'FED_BROAD_USD',
   'FED_10Y_REAL_YIELD',
   'SOFR_IORB_SPREAD',
-  'DTWEXBGS',
-  'DFII10',
-  'IORB',
+  'H10/H10/JRXWTFB_N.B',
+  'H15/H15/RIFLGFCY10_XII_N.B',
+  'PRATES/PRATES_POLICY_RATES/RESBM_N.D',
+  'JRXWTFB_N.B',
+  'RIFLGFCY10_XII_N.B',
+  'RESBM_N.D',
+  'https://www.federalreserve.gov',
+  '/datadownload/Output.aspx',
   'https://markets.newyorkfed.org',
   '/api/rates/secured/sofr/search.json',
   'NYFED_SOFR_NOTICE',
@@ -33,7 +38,11 @@ for (const required of [
   assert.ok(generatorText.includes(required), `Three Dials v2 generator must bind rights-safe contract ${required}.`);
 }
 
-assert.match(generatorText, /FRED is used only as the transport/);
+assert.match(generatorText, /Direct Federal Reserve Board DDP transport/);
+assert.match(generatorText, /eventual DDP retirement/);
+assert.match(generatorText, /Unique Identifier/);
+assert.match(generatorText, /Time Period/);
+assert.doesNotMatch(generatorText, /fred\.stlouisfed\.org|\/graph\/fredgraph\.csv/);
 assert.match(generatorText, /must not be labeled DXY/);
 assert.match(generatorText, /not a credit spread or a complete measure of market liquidity\/stress/);
 assert.match(generatorText, /break_from_v1: true/);

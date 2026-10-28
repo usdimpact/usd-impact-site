@@ -8,12 +8,12 @@ event: "FOMC scheduled communications following the October 27-28 meeting; press
 eventDate: "2026-10-28"
 sourceEditionDate: "2026-10-28"
 phase: "outcome"
-generatedAt: "2026-10-28T19:34:00Z"
+generatedAt: "2026-10-28T19:37:19Z"
 lastReviewed: "2026-10-28"
 status: "published"
 category: "USD Impact Catalyst Brief"
 statusLabel: "released"
-summary: "The Federal Reserve held the federal funds target range at 3.75%–4.00% by a 10–2 vote. Lisa D. Cook and Beth M. Hammack preferred a 25 bp increase. IORB remains 3.90%, standing overnight repo 4.0%, ON RRP 3.75% with a $160 billion daily per-counterparty limit, and primary credit 4.0%. The press conference is treated separately from these written policy facts."
+summary: "The Federal Reserve held the federal funds target range at 3.75%–4.00% by a 10–2 vote. Lisa D. Cook and Beth M. Hammack preferred a 25 bp increase. Chair Kevin Warsh's official preliminary opening statement described growth as strengthened, inflation as too high, and overall financial conditions as tighter but not tight. Q&A remains separate pending the full official record."
 assets:
   - "Fed"
   - "U.S. rates"
@@ -48,6 +48,10 @@ verifiedFacts:
     verification: "verified-primary"
     sourceIds:
       - "fomc-statement-20261028"
+  - statement: "Chair Kevin Warsh's official preliminary opening statement described economic growth as strengthened, employment conditions as positive, inflation as too high, and overall financial conditions as tighter but not tight. He also announced that starting in 2027 one FOMC meeting is expected to focus exclusively on broad monetary-policy strategy without a federal-funds-rate vote or policy statement, with two such strategy meetings expected in 2028."
+    verification: "verified-primary"
+    sourceIds:
+      - "fomc-warsh-opening-20261028"
 transmissionChannels:
   - channel: "Policy-rate decision"
     conditionalImpact: "The target range was unchanged. Any market interpretation should therefore distinguish the adopted hold from expectations that were already priced before the statement; no surprise magnitude is asserted here."
@@ -60,7 +64,7 @@ transmissionChannels:
   - channel: "Cross-asset transmission"
     conditionalImpact: "After eligible observations exist, compare USD direction, real yields and liquidity/stress first. Only then assess whether XAUUSD, equities, BTCUSD, EURUSD or WTI moves are consistent with a broader dollar-led transmission."
 whatToWatch:
-  - "Press conference: verify Chair Kevin Warsh remarks from an official Federal Reserve video or transcript before adding them to the policy record."
+  - "Press conference: Chair Kevin Warsh's official preliminary opening statement is verified; verify the full Q&A from an official Federal Reserve transcript/video before adding Q&A interpretation."
   - "October 29 GDP: verify the BEA advance estimate before changing the growth interpretation."
   - "October 29 PCE: verify the BEA Personal Income and Outlays release before changing the inflation interpretation."
   - "October 30 ECI: verify the BLS Employment Cost Index before changing the labor-cost interpretation."
@@ -76,6 +80,12 @@ sources:
     title: "Implementation Note issued October 28, 2026"
     publisher: "Federal Reserve"
     url: "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a1.htm"
+    publishedAt: "2026-10-28"
+    sourceType: "primary"
+  - id: "fomc-warsh-opening-20261028"
+    title: "Transcript of Chairman Warsh's Press Conference Opening Statement - October 28, 2026"
+    publisher: "Federal Reserve"
+    url: "https://www.federalreserve.gov/mediacenter/files/FOMCpresconf20261028.pdf"
     publishedAt: "2026-10-28"
     sourceType: "primary"
   - id: "fomc-statement-20260916"
@@ -99,7 +109,7 @@ The Federal Open Market Committee held the federal funds target range at **3.75%
 
 The operating settings in the implementation note are unchanged from September: IORB **3.90%**, standing overnight repo **4.0%**, ON RRP **3.75%** with a **$160 billion daily per-counterparty limit**, and primary credit **4.0%**. The October settings take effect October 29.
 
-These are verified Federal Reserve facts. This brief does not add a market-reaction claim, label the decision hawkish or dovish, or recalculate Three Dials v2 intraday.
+These are verified Federal Reserve facts. Chair Warsh's official preliminary opening statement is also now available; it is treated separately from the written decision and from the still-unverified full Q&A. This brief does not add a market-reaction claim, label the decision hawkish or dovish, or recalculate Three Dials v2 intraday.
 
 ## Official decision and vote
 
@@ -129,11 +139,11 @@ Inflation remains described as **elevated**. The October statement adds that acc
 
 This comparison records wording changes in official statements. It does not convert those words into a guaranteed future rate path.
 
-## Press-conference boundary
+## Chair Warsh opening statement and Q&A boundary
 
-Chair Kevin Warsh's press conference is a separate source from the written policy decision. Any material remarks should be added only after they can be verified from an official Federal Reserve video or transcript.
+The Federal Reserve's official preliminary transcript of Chair Kevin Warsh's opening statement is now available. In the prepared remarks, Warsh described growth as strengthened, employment conditions as positive, inflation as too high, and overall financial conditions as tighter but not tight. He also announced a future meeting-schedule change: one strategy-focused meeting is expected in 2027 without a federal-funds-rate vote or policy statement, and two strategy-focused meetings are expected in 2028.
 
-Reporter questions, live commentary and secondary summaries are not substitutes for the statement or implementation note.
+These are prepared remarks, not the full Q&A. Reporter questions, live commentary and secondary summaries are not substitutes for an official Federal Reserve record of the Q&A.
 
 ## Why it matters
 
@@ -155,7 +165,7 @@ A policy decision, implementation directive, press conference and market reactio
 
 ## What to watch
 
-1. Official Chair Warsh press-conference source when available.
+1. Full official Chair Warsh press-conference Q&A record when available.
 2. BEA third-quarter GDP advance estimate on October 29.
 3. BEA September Personal Income and Outlays/PCE on October 29.
 4. BLS third-quarter Employment Cost Index on October 30.
@@ -165,7 +175,7 @@ A policy decision, implementation directive, press conference and market reactio
 
 This outcome brief uses Federal Reserve primary sources only. It contains no market-price source and no rights-screened intraday reaction dataset.
 
-The October 28 statement establishes the adopted decision and vote. The October 28 implementation note establishes the operating settings. September documents are used only for the explicit before/after comparison.
+The October 28 statement establishes the adopted decision and vote. The October 28 implementation note establishes the operating settings. The official preliminary Warsh transcript supports the prepared opening remarks only. September documents are used only for the explicit before/after comparison.
 
 ## Key takeaway
 

@@ -18,6 +18,7 @@ const fakeEnv = Object.freeze({
   DEV_PGHOST: 'db.' + DEV_PROJECT + '.supabase.co',
   DEV_PGPORT: '5432', DEV_PGUSER: 'postgres',
   DEV_PGDATABASE: 'postgres', DEV_PGPASSWORD: 'offline-only-not-a-password',
+  DEV_PGROOTCERT_PEM: '-----BEGIN CERTIFICATE-----\nOFFLINE-TEST-ONLY\n-----END CERTIFICATE-----',
   DEV_POSTGREST_SECRET_KEY: 'sb_secret_offline_fixture_not_a_real_key',
 });
 
@@ -40,7 +41,8 @@ test('every run is manual, exact-head, Development-only and credential-gated', (
     ['GITHUB_RUN_ID', '../bad'], ['DEV_PGPORT', '6543'],
     ['DEV_PGHOST', 'db.gjzetjugmnwanvjkchux.supabase.co'],
     ['DEV_PGUSER', 'postgres.gjzetjugmnwanvjkchux'],
-    ['DEV_PGPASSWORD', ''], ['DEV_POSTGREST_SECRET_KEY', ''],
+    ['DEV_PGPASSWORD', ''], ['DEV_PGROOTCERT_PEM', ''],
+    ['DEV_POSTGREST_SECRET_KEY', ''],
     ['VERCEL_ENV', 'production'],
   ]) {
     assert.throws(() => assertSafeEnvironment({ ...fakeEnv, [key]: value }),

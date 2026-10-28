@@ -1,0 +1,102 @@
+name: Development PostgREST webhook CAS QA
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/scripts/webhook-postgrest-cas-qa.mjs'
+      - 'apps/web/scripts/test-webhook-postgrest-cas-qa.mjs'
+      - '.github/workflows/dev-webhook-postgrest-cas-qa.yml'
+      - 'docs/operations/dev-webhook-postgrest-cas-qa-2026-10-29.md'
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Select DEV_ONLY_NO_SEND. Never use Production.'
+        type: choice
+        required: true
+        default: 'NO'
+        options:
+          - 'NO'
+          - 'DEV_ONLY_NO_SEND'
+      reviewed_sha:
+        description: 'The exact 40-character reviewed Git commit SHA'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: development-postgrest-webhook-cas-qa
+  cancel-in-progress: false
+
+jobs:
+  offline-guards:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code, no persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Offline validation only — no secrets or network
+        run: |
+          node --check apps/web/scripts/webhook-postgrest-cas-qa.mjs
+          node --check apps/web/scripts/test-webhook-postgrest-cas-qa.mjs
+          node --test apps/web/scripts/test-webhook-postgrest-cas-qa.mjs
+
+  manual-development-cas:
+    if: github.event_name == 'workflow_dispatch' && inputs.approval == 'DEV_ONLY_NO_SEND'
+    runs-on: ubuntu-latest
+    environment: development-webhook-cas
+    timeout-minutes: 5
+    steps:
+      - name: Checkout reviewed code without persisted Git credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Exact approved code identity and PostgreSQL client
+        env:
+          REVIEWED_SHA: ${{ inputs.reviewed_sha }}
+        run: |
+          test -n "$REVIEWED_SHA"
+          test "$GITHUB_SHA" = "$REVIEWED_SHA"
+          command -v psql >/dev/null
+          node --check apps/web/scripts/webhook-postgrest-cas-qa.mjs
+          node --test apps/web/scripts/test-webhook-postgrest-cas-qa.mjs
+      - name: One isolated Development HTTP acceptance
+        working-directory: apps/web
+        env:
+          CAS_APPROVED_RUN: ${{ inputs.approval }}
+          CAS_REVIEWED_SHA: ${{ inputs.reviewed_sha }}
+          CAS_PROJECT_ID: ycstrcvshdluovtuasjc
+          CAS_RUN_ENVIRONMENT: development-webhook-cas
+          DEV_PGHOST: ${{ secrets.DEV_WEBHOOK_CAS_PGHOST }}
+          DEV_PGUSER: ${{ secrets.DEV_WEBHOOK_CAS_PGUSER }}
+          DEV_PGPASSWORD: ${{ secrets.DEV_WEBHOOK_CAS_PGPASSWORD }}
+          DEV_PGDATABASE: postgres
+          DEV_PGPORT: '5432'
+          DEV_POSTGREST_SECRET_KEY: ${{ secrets.DEV_WEBHOOK_CAS_REST_SECRET }}
+        run: node scripts/webhook-postgrest-cas-qa.mjs --live
+      - name: Verify synthetic fixture cleanup even after a failed run
+        if: always()
+        working-directory: apps/web
+        env:
+          CAS_APPROVED_RUN: ${{ inputs.approval }}
+          CAS_REVIEWED_SHA: ${{ inputs.reviewed_sha }}
+          CAS_PROJECT_ID: ycstrcvshdluovtuasjc
+          CAS_RUN_ENVIRONMENT: development-webhook-cas
+          DEV_PGHOST: ${{ secrets.DEV_WEBHOOK_CAS_PGHOST }}
+          DEV_PGUSER: ${{ secrets.DEV_WEBHOOK_CAS_PGUSER }}
+          DEV_PGPASSWORD: ${{ secrets.DEV_WEBHOOK_CAS_PGPASSWORD }}
+          DEV_PGDATABASE: postgres
+          DEV_PGPORT: '5432'
+        run: node scripts/webhook-postgrest-cas-qa.mjs --cleanup

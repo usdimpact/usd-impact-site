@@ -79,7 +79,7 @@ The preflight performed under the valid owner receipt did **not** authorize bypa
 
 **The historical owner approval remains valid as an audit fact but the full v2.1E study is STOPPED.** Pipeline governance has already consumed the one-off receipt and removed its executable path. This website Draft records, but does not control, that outcome. No candidate Score was computed or released by the blocked preflight.
 
-The next permissible research design is a separately versioned and freshly preregistered candidate with demonstrably reconstructable historical vintages. Such a redesign and its source boundary require separate review and any needed new approval before fetching real observations. Issue #155 remains the controlling publication/redistribution HOLD.
+A separately versioned v2.1F successor is now preregistered (see below), but its live historical-vintage feasibility remains untested and unauthorised. Further real-data retrieval requires separate reviewed owner permission; the v2.1E approval cannot be reused. Issue #155 remains the controlling publication/redistribution HOLD.
 
 ## Verified upstream consumption — active execution disabled
 
@@ -88,6 +88,26 @@ Pipeline `main` at `f2ac360fa01b4fbe87a2a94b0da4519d63210515` contains the [cons
 The active receipt file is **absent**. All current real-data fetch/research and release authorizations are **false**. The original Issue #209 approval remains traceable through comment `6477834394`; it is no longer executable. The v2.1E validator checks the consumed record and requires the original executable path to be absent.
 
 This website Draft's new test pins that state independently from the earlier approval metadata. It remains **evidence-only**: no cross-repository network fetch, new market observations, Score computation, or automatic synchronization occurs in site CI.
+
+## Newly preregistered successor — Score v2.1F (design only)
+
+**Upstream pipeline `main` at `bcf473e2bbcb36fa1080a3a56f77a3796d74ccaa` now includes a new, distinct five-factor design and frozen research protocol.** This is not an amendment to the consumed eight-factor v2.1E authorization and is not equivalent to the website's live Score v2.
+
+Evidence: [design #222](https://github.com/usdimpact/usd-impact-pipeline/blob/bcf473e2bbcb36fa1080a3a56f77a3796d74ccaa/governance/score-v2-1f-five-slot-design.json) (Git blob `66f063bbb91324f8c623cab5a681d8407a0fdcda`) and [preregistration #223](https://github.com/usdimpact/usd-impact-pipeline/blob/bcf473e2bbcb36fa1080a3a56f77a3796d74ccaa/governance/score-v2-1f-preregistration.json) (Git blob `74ef6e0834513e2c17b196a59cf05a417678bd3d`). Controlling [Issue #221](https://github.com/usdimpact/usd-impact-pipeline/issues/221); redistribution [Issue #155](https://github.com/usdimpact/usd-impact-pipeline/issues/155) remains HOLD.
+
+| Frozen five-factor slot | Official proposed series | Weight |
+| --- | --- | ---: |
+| USD | H.10 broad index `H10/H10/JRXWTFB_N.B` | +0.20 |
+| Energy | BLS crude petroleum PPI `WPU0561` | −0.20 |
+| Financial conditions | H.8 bank credit `H8/H8/B1001NCBA` | +0.20 |
+| Financial stress | H.4.1 primary credit `H41/H41/RESPPALDP_N.WW` | +0.20 |
+| Liquidity | H.4.1 total assets `H41/H41/RESPPA_N.WW` | −0.20 |
+
+The three failed H.15 slots are removed **only in this separately preregistered successor**; they have not been silently changed in v2.1E. The new protocol freezes Friday 23:59:59 America/New_York, exact official release vintage, 104 preceding complete weeks and expanding point-in-time normalization. It permits neither revised-history substitution nor retroactive tuning.
+
+Two distinct future approvals are required: **(1)** a strictly limited official-source live vintage-feasibility preflight without Score computation, and **(2)** only after all five source-vintage paths pass, a second owner-approved full private candidate study. Neither approval exists. Zero data values have been retrieved by this website Draft, and no rights, public artifact, paid-member delivery or Production promotion is authorized.
+
+The revised site regression test pins the successor's separate identity, five weights/series, absence of H.15 and all denial flags. It also rejects v2.1F identity under the unused Score v2 public-safe prototype; the live Score v2 pages and Research member route remain unchanged.
 
 ## Why site-side separation is necessary
 
@@ -108,7 +128,7 @@ The existing Score consumer tests now import a separate CI regression suite that
 1. **Private research authorization consumed; site HOLD:** PR #208 restricts H.15 to published government-derived output; PR #210 approved one-off private research, but pipeline main has now removed its executable receipt after Issue #218. Any future study needs a new preregistration and explicit owner decision. This website Draft forbids fetching, activation and publication. Rights issue #155 remains open.
 2. **Versioned research evaluation (STOPPED — H.15 vintage FAIL CLOSED):** do not run the full Score; any future independently versioned/repreregistered candidate must reconstruct release-time eligibility (BLS monthly revision window, H.8 benchmarks, H.10 lag, H.4.1/H.15 release cutoffs) and apply the frozen 104-prior-week normalization and acceptance gates. No retroactive tuning or live publication.
 3. **Distribution rights (HOLD):** distinguish permissions to inspect federal releases, publish aggregate Score values, redistribute transformed component data, and distribute paid Research reports. The Series receipts are candidates, not rights approvals.
-4. **Site copy and schema migration (NOT STARTED):** if v2.1E eventually passes independently, introduce a distinct versioned public contract, explicit methodology copy, new data-source labels and preserved archive identity. Do not reuse `score-public-v2-safe-1` with changed semantics.
+4. **Site copy and schema migration (NOT STARTED):** if a newly versioned successor such as v2.1F eventually passes its independently authorized feasibility and research gates, introduce a distinct versioned public contract, explicit methodology copy, new data-source labels and preserved archive identity. Do not reuse `score-public-v2-safe-1` with changed semantics.
 5. **Protected delivery (NOT STARTED):** handle the member dashboard and Research archives through separately reviewed server authorization, private storage/origin, and exact-head negative tests. Library Pass and TradingView remain independent.
 6. **Production (NOT AUTHORIZED):** explicit release decision, QA, cache/SEO and historical treatment, correct provider rights, and READY Production deployment verification.
 
@@ -116,4 +136,4 @@ The existing Score consumer tests now import a separate CI regression suite that
 
 This website Draft performs no market/federal observation retrieval or real-data analysis, no source switching, no public report content changes, no customer entitlement, no checkout/webhook replay, no provider contract, no Supabase resource, no site route, no Production deployment, and no rights-gate state change.
 
-The upstream snapshot is pinned to a reviewed commit for traceability; the website test is **not** a live cross-repo freshness monitor. The test protects a selected high-risk set of website source paths, not every hypothetical new runtime path. A genuine future methodology promotion requires dedicated new negative tests and an explicit review of all consumers, including archived public pages.
+Both upstream snapshots (v2.1E consumption and v2.1F preregistration) are pinned to reviewed commits for traceability; the website test is **not** a live cross-repo freshness monitor. The test protects a selected high-risk set of website source paths, not every hypothetical new runtime path. A genuine future methodology promotion requires dedicated new negative tests and an explicit review of all consumers, including archived public pages.

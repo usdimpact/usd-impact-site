@@ -272,6 +272,9 @@ test('website Score v2 source and public-safe prototype cannot silently accept v
     'usd_impact_score_v2_1e',
     'score-v2.1E',
     '2.1E-design-candidate',
+    'usd_impact_score_v2_1f',
+    'score-v2.1F',
+    '2.1F-design-candidate',
     'unknown-provider',
     'usd_impact_score_v2 ' + 'replacement',
   ]) {
@@ -287,6 +290,52 @@ test('website Score v2 source and public-safe prototype cannot silently accept v
     )),
     /schema_version/,
   );
+});
+
+test('new v2.1F five-slot successor remains design-only and cannot inherit v2.1E research rights', () => {
+  const x = fixture.separatelyPreregisteredSuccessor;
+  assert.equal(x.candidateVersion, '2.1F-design-candidate');
+  assert.equal(x.state, 'preregistered_design_only');
+  assert.notEqual(x.candidateVersion, fixture.candidateVersion);
+  assert.equal(x.reviewedPipelineMainSha, 'bcf473e2bbcb36fa1080a3a56f77a3796d74ccaa');
+  assert.equal(x.designSourcePath, 'governance/score-v2-1f-five-slot-design.json');
+  assert.equal(x.designGitBlobSha, '66f063bbb91324f8c623cab5a681d8407a0fdcda');
+  assert.equal(x.designMergeSha, 'e14aec35142b9536b5b889d0fae4eab9a94faf88');
+  assert.equal(x.preregSourcePath, 'governance/score-v2-1f-preregistration.json');
+  assert.equal(x.preregGitBlobSha, '74ef6e0834513e2c17b196a59cf05a417678bd3d');
+  assert.equal(x.preregMergeSha, x.reviewedPipelineMainSha);
+  assert.equal(x.issue, 'https://github.com/usdimpact/usd-impact-pipeline/issues/221');
+  assert.equal(x.controllingRightsIssue, fixture.controllingRightsIssue);
+  assert.equal(x.predecessorVersion, fixture.candidateVersion);
+  assert.equal(x.predecessorVintageBlocker, fixture.preflightStop.blockingIssue);
+  assert.equal(x.fiveSlots.length, 5);
+  assert.deepEqual(x.fiveSlots.map(v => v.role),
+    ['USD', 'ENERGY', 'FIN_CONDITIONS', 'FIN_STRESS', 'LIQUIDITY']);
+  assert.deepEqual(x.fiveSlots.map(v => v.series), expectedSeries.slice(0, 5));
+  assert.deepEqual(x.fiveSlots.map(v => v.weight), [0.2, -0.2, 0.2, 0.2, -0.2]);
+  assert.equal(x.fiveSlots.reduce((sum, v) => sum + Math.abs(v.weight), 0), 1);
+  assert.deepEqual(x.removedPredecessorH15Roles,
+    ['REAL_YIELD', 'UST_2Y', 'UST_10Y']);
+  for (const entry of x.fiveSlots) assert.equal(entry.series.startsWith('H15/'), false);
+  assert.equal(x.fridayCutoffTimezone, 'America/New_York');
+  assert.equal(x.fridayCutoff, '23:59:59');
+  assert.equal(x.minimumPriorCompleteWeeks, 104);
+  assert.equal(x.normalization, 'expanding_point_in_time_zscore');
+  for (const name of [
+    'currentWeekExcludedFromOwnNormalization',
+    'missingSlotFailClosed',
+    'frozenPreregistration',
+    'initialLiveVintagePreflightRequiresSeparateOwnerApproval',
+    'fullCandidateStudyRequiresSecondSeparateOwnerApproval',
+  ]) assert.equal(x[name], true, name);
+  for (const name of [
+    'inheritedOneOffAuthorization', 'vintageFallbackAllowed',
+    'currentBlsRevisionSubstituteAllowed', 'candidateScoreComputed',
+    'liveVintagePreflightApproved', 'fullCandidateResearchApproved',
+    'realDataFetchApproved', 'sourceRightsApproved',
+    'publicArtifactReplacementApproved', 'commercialMemberDistributionApproved',
+    'researchLedgerMutationApproved', 'productionApproved', 'releaseAuthorized',
+  ]) assert.equal(x[name], false, name);
 });
 
 test('Score rights HOLD and Class-C component-derived public paths remain accurately classified', async () => {
@@ -331,7 +380,7 @@ test('live Score sources and report generator do not import the new candidate se
     'apps/web/scripts/generate-weekly-report.mjs',
     '.github/workflows/weekly-report.yml',
   ];
-  const forbidden = /2\.1e-design-candidate|score[-_ ]v2[.\-_]?1e|wpu0561|h10\/h10\/jrxwtfb_n\.b/i;
+  const forbidden = /2\.1[ef]-design-candidate|score[-_ ]v2[.\-_]?1[ef]|wpu0561|h10\/h10\/jrxwtfb_n\.b/i;
   const unexpected = [];
   for (const file of runtimePaths) {
     const text = await source(file);
@@ -341,4 +390,4 @@ test('live Score sources and report generator do not import the new candidate se
     'Candidate version/series entered Score runtime without a separate methodology release');
 });
 
-console.log('Score v2.1E candidate quarantined from current website Score v2; no rights or release approved.');
+console.log('Score v2.1E and v2.1F candidates isolated from live v2; no data rights or release approved.');

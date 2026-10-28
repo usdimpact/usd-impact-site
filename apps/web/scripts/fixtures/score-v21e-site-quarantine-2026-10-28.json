@@ -91,7 +91,8 @@
     "A future methodology requires a new public schema/version and an explicitly approved UI/Research migration.",
     "Upstream PR #210 approved one-off ephemeral private source research only; website/public/paid delivery and Production remain unauthorized.",
     "Issue #218 records H.15 historical-vintage feasibility FAIL CLOSED after the approved preflight; owner approval remains historic evidence, not permission to bypass a stop condition.",
-    "Pipeline consumed one-off research authorization following H.15 vintage stop. The approved receipt is historical audit evidence only; live execution is disabled on pipeline main."
+    "Pipeline consumed one-off research authorization following H.15 vintage stop. The approved receipt is historical audit evidence only; live execution is disabled on pipeline main.",
+    "Pipeline #222/#223 froze a distinct five-slot v2.1F design and preregistration, not a live Score; no stage-1 feasibility fetch or stage-2 research is approved."
   ],
   "provenanceReview": {
     "reviewedMergeSha": "d4d1e441f6dd91e1d249d9f3ad515c76e2d3f61b",
@@ -245,6 +246,76 @@
     "researchLedgerMutationAuthorized": false,
     "productionAuthorized": false,
     "commercializationAuthorized": false,
+    "releaseAuthorized": false
+  },
+  "separatelyPreregisteredSuccessor": {
+    "candidateVersion": "2.1F-design-candidate",
+    "state": "preregistered_design_only",
+    "reviewedPipelineMainSha": "bcf473e2bbcb36fa1080a3a56f77a3796d74ccaa",
+    "designSourcePath": "governance/score-v2-1f-five-slot-design.json",
+    "designGitBlobSha": "66f063bbb91324f8c623cab5a681d8407a0fdcda",
+    "designMergeSha": "e14aec35142b9536b5b889d0fae4eab9a94faf88",
+    "preregSourcePath": "governance/score-v2-1f-preregistration.json",
+    "preregGitBlobSha": "74ef6e0834513e2c17b196a59cf05a417678bd3d",
+    "preregMergeSha": "bcf473e2bbcb36fa1080a3a56f77a3796d74ccaa",
+    "issue": "https://github.com/usdimpact/usd-impact-pipeline/issues/221",
+    "controllingRightsIssue": "https://github.com/usdimpact/usd-impact-pipeline/issues/155",
+    "predecessorVersion": "2.1E-design-candidate",
+    "predecessorVintageBlocker": "https://github.com/usdimpact/usd-impact-pipeline/issues/218",
+    "inheritedOneOffAuthorization": false,
+    "fiveSlots": [
+      {
+        "role": "USD",
+        "series": "H10/H10/JRXWTFB_N.B",
+        "weight": 0.2
+      },
+      {
+        "role": "ENERGY",
+        "series": "WPU0561",
+        "weight": -0.2
+      },
+      {
+        "role": "FIN_CONDITIONS",
+        "series": "H8/H8/B1001NCBA",
+        "weight": 0.2
+      },
+      {
+        "role": "FIN_STRESS",
+        "series": "H41/H41/RESPPALDP_N.WW",
+        "weight": 0.2
+      },
+      {
+        "role": "LIQUIDITY",
+        "series": "H41/H41/RESPPA_N.WW",
+        "weight": -0.2
+      }
+    ],
+    "removedPredecessorH15Roles": [
+      "REAL_YIELD",
+      "UST_2Y",
+      "UST_10Y"
+    ],
+    "sourceType": "official_federal_reserve_board_and_bls_only",
+    "fridayCutoffTimezone": "America/New_York",
+    "fridayCutoff": "23:59:59",
+    "minimumPriorCompleteWeeks": 104,
+    "normalization": "expanding_point_in_time_zscore",
+    "currentWeekExcludedFromOwnNormalization": true,
+    "vintageFallbackAllowed": false,
+    "missingSlotFailClosed": true,
+    "currentBlsRevisionSubstituteAllowed": false,
+    "frozenPreregistration": true,
+    "initialLiveVintagePreflightRequiresSeparateOwnerApproval": true,
+    "fullCandidateStudyRequiresSecondSeparateOwnerApproval": true,
+    "candidateScoreComputed": false,
+    "liveVintagePreflightApproved": false,
+    "fullCandidateResearchApproved": false,
+    "realDataFetchApproved": false,
+    "sourceRightsApproved": false,
+    "publicArtifactReplacementApproved": false,
+    "commercialMemberDistributionApproved": false,
+    "researchLedgerMutationApproved": false,
+    "productionApproved": false,
     "releaseAuthorized": false
   }
 }

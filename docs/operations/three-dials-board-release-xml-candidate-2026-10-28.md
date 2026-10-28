@@ -1,6 +1,6 @@
-# Three Dials Federal Reserve release-XML candidate — 2026-10-28
+# Three Dials Federal Reserve release-XML implementation — 2026-10-28
 
-Status: **REVIEW-ONLY / NOT MERGED / NOT PUBLISHED**
+Status: **MERGED TO MAIN / ACTIVE FOR FUTURE GENERATION / PR #902 DID NOT PUBLISH A NEW SNAPSHOT**
 
 ## Why this supersedes the DDP stopgap
 
@@ -41,10 +41,10 @@ PR #900 exercised the exact three public Federal Reserve release ZIPs without em
 - H.15: ZIP 4,286,577 bytes; XML 70,860,311 bytes.
 - PRATES: ZIP 55,554 bytes; XML 860,523 bytes.
 
-The candidate ceiling is therefore 96 MiB: above the observed H.15 payload with bounded headroom, while still rejecting unexpectedly large decompressed XML. A disposable child proof is required to pass at this exact ceiling before merge consideration.
+The implementation ceiling is 96 MiB: above the observed H.15 payload with bounded headroom, while still rejecting unexpectedly large decompressed XML. Disposable PR #900 passed against the live Board release ZIPs at this ceiling without emitting observation values, and PR #902 subsequently merged the adapter.
 
 ## Release boundary
 
-This candidate does not run the snapshot generator against live sources and does not publish any number.
+PR #902 did not run the snapshot generator or publish a replacement snapshot. It changed the future generator transport only.
 
-Even if the technical adapter is accepted, a generated snapshot still follows the existing protected Three Dials publication workflow: generated branch, exact-head checks, pull request, human review and separate explicit owner approval before merge.
+Any generated snapshot still follows the existing protected Three Dials publication workflow: generated branch, exact-head checks, pull request, human review and separate explicit owner approval before merge. The previously published 2026-10-23 snapshot therefore retains its historical transport provenance until a separately approved snapshot replaces it through that workflow.

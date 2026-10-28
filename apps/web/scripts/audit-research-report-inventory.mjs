@@ -1,6 +1,7 @@
 // Read-only inventory of the existing public/static Weekly and Monthly report
 // source files. A matching baseline is inventory agreement, not rights approval.
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,6 +12,12 @@ const FILE_RE = /^\d{4}-\d{2}-\d{2}\.md$/;
 
 function scalar(frontmatter, key) {
   return frontmatter.match(new RegExp(`^\\s*${key}:\\s*["']?([^"'\\r\\n]+)["']?\\s*$`, 'm'))?.[1]?.trim() ?? null;
+}
+
+function gitBlobSha(markdown) {
+  const bytes = Buffer.from(String(markdown), 'utf8');
+  const header = Buffer.from('blob ' + bytes.length + '\0', 'utf8');
+  return createHash('sha1').update(header).update(bytes).digest('hex');
 }
 
 export function inspectResearchReportSource({ type, filename, markdown }) {
@@ -37,6 +44,7 @@ export function inspectResearchReportSource({ type, filename, markdown }) {
     hasNearestRegimeBoundary: /^\s+nearestRegimeBoundary:\s*\S+/m.test(frontmatter),
     approvedSampleRoute: type === 'weekly' && periodEnd === '2026-08-07' ? '/research/sample/' : null,
     rightsStatus: 'HOLD_UNREVIEWED',
+    sourceGitBlobSha: gitBlobSha(markdown),
   };
 }
 

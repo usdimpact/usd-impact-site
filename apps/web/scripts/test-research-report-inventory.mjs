@@ -18,6 +18,7 @@ assert.equal(check.weekly, 13);
 assert.equal(check.monthly, 3);
 assert.equal(check.contributionLanguage, 16);
 assert.equal(check.weeklyInputReferences, 13);
+assert.ok(observed.every(row => /^[0-9a-f]{40}$/.test(row.sourceGitBlobSha)));
 assert.equal(check.publicSamples, 1);
 assert.equal(observed.length, 16);
 assert.equal(baseline.entries.length, 16);
@@ -61,6 +62,11 @@ assert.equal(compareResearchReportInventory(changedClassification, baseline).sta
 const changedSourceSurface = observed.map((row, i) =>
   i === 0 ? { ...row, hasWeeklyInputReference: false } : row);
 assert.equal(compareResearchReportInventory(changedSourceSurface, baseline).status, 'HOLD');
+
+// A content-only edit must be caught even if all coarse rights markers remain.
+const silentBodyEdit = observed.map((row, i) =>
+  i === 0 ? { ...row, sourceGitBlobSha: '0'.repeat(40) } : row);
+assert.equal(compareResearchReportInventory(silentBodyEdit, baseline).reason, 'public-report-inventory-drift');
 
 const duplicate = [...observed, observed[0]];
 assert.equal(compareResearchReportInventory(duplicate, baseline).reason, 'duplicate-report-key');

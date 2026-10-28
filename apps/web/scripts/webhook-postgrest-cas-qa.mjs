@@ -32,6 +32,7 @@ export function assertSafeEnvironment(env, mode = 'live') {
   assert.equal(env.GITHUB_ACTIONS, 'true', 'RUNNER_MUST_BE_GITHUB_ACTIONS');
   assert.equal(env.GITHUB_EVENT_NAME, 'workflow_dispatch', 'MANUAL_DISPATCH_ONLY');
   assert.equal(env.GITHUB_REPOSITORY, REPOSITORY, 'UNEXPECTED_REPOSITORY');
+  assert.equal(env.GITHUB_REF, 'refs/heads/main', 'PROTECTED_DEFAULT_BRANCH_REQUIRED');
   assert.equal(env.CAS_APPROVED_RUN, APPROVAL, 'NO_EXPLICIT_DEV_APPROVAL');
   assert.equal(env.CAS_PROJECT_ID, DEV_PROJECT, 'WRONG_SUPABASE_PROJECT');
   assert.equal(env.CAS_RUN_ENVIRONMENT, 'development-webhook-cas', 'WRONG_RUNNER_ENVIRONMENT');

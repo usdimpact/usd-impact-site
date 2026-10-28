@@ -248,9 +248,49 @@ for (const [key, value] of [
 }
 cases += 1;
 
-for (const flag of ['WEEKLY_NEWSLETTER_PRODUCTION_ENABLED', 'PROGRESS_EMAIL_PRODUCTION_ENABLED']) {
-  assert.notEqual(vercelConfiguration.env?.[flag], 'true', 'Issue #620 HOLD: do not hard-code email activation in vercel.json.');
+// A hard-coded Production activation value is a release operation, not a
+// source-only review. Preserve the otherwise-live ledger/preferences controls.
+const lifecycleSendingFlags = [
+  'WEEKLY_NEWSLETTER_PRODUCTION_ENABLED', 'WEEKLY_NEWSLETTER_DISPATCH_ENABLED',
+  'WEEKLY_NEWSLETTER_DELIVERY_ENABLED', 'WEEKLY_NEWSLETTER_QA_BATCH_ENABLED',
+  'PROGRESS_EMAIL_PRODUCTION_ENABLED', 'PROGRESS_EMAIL_DISPATCH_ENABLED',
+  'PROGRESS_EMAIL_DELIVERY_ENABLED', 'PROGRESS_EMAIL_QA_BATCH_ENABLED',
+  'EMAIL_OPT_IN_PRODUCTION_APPROVED', 'EMAIL_OPT_IN_REQUEST_ENABLED',
+  'EMAIL_OPT_IN_DELIVERY_ENABLED',
+];
+function assertNoHardcodedEmailActivation(configuration) {
+  for (const flag of lifecycleSendingFlags) {
+    const value = String(configuration.env?.[flag] ?? '').trim().toLowerCase();
+    assert.notEqual(value, 'true', 'Issue #620 HOLD: do not hard-code email activation in vercel.json.');
+  }
 }
-cases += 1;
+assertNoHardcodedEmailActivation(vercelConfiguration);
+for (const flag of lifecycleSendingFlags) {
+  assert.throws(() => assertNoHardcodedEmailActivation({
+    ...vercelConfiguration, env: { ...vercelConfiguration.env, [flag]: ' TRUE ' },
+  }), /Issue #620 HOLD/);
+}
+cases += lifecycleSendingFlags.length + 1;
+
+// A GitHub Actions schedule is another possible delivery fan-out trigger.
+// Inspect only these purpose-specific workflow entrypoints; unrelated native
+// Daily Learning, Daily News, and maintenance schedules remain untouched.
+const heldEmailWorkflows = [
+  'weekly-newsletter-dispatch.yml', 'weekly-newsletter-qa-batch.yml',
+  'progress-email-dispatch.yml', 'progress-email-qa-batch.yml',
+  'email-opt-in-delivery.yml', 'newsletter-preview-readiness.yml',
+];
+function assertNoScheduledEmailWorkflow(yamlText) {
+  assert.match(yamlText, /^on:\\s*$/m, 'Workflow trigger block must be explicit.');
+  assert.doesNotMatch(yamlText, /^\\s{2}schedule\\s*:|^on:\\s*\\[[^\\n]*\\bschedule\\b/m,
+    'Issue #620 HOLD: lifecycle email workflows cannot add scheduled fan-out.');
+}
+for (const filename of heldEmailWorkflows) {
+  const source = readFileSync(new URL(`../../../.github/workflows/${filename}`, import.meta.url), 'utf8');
+  assertNoScheduledEmailWorkflow(source);
+  assert.throws(() => assertNoScheduledEmailWorkflow(source.replace(/^on:\\s*$/m, 'on:\\n  schedule:\\n    - cron: "0 7 * * 1"')),
+    /Issue #620 HOLD/);
+}
+cases += heldEmailWorkflows.length * 2;
 
 console.log(`Weekly canary core: ${cases} scenarios passed; only mocks used, no network or live writes.`);

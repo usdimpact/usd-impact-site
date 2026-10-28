@@ -236,7 +236,7 @@ assert.match(threeDialsBoardReleaseXml, /OBS_VALUE/);
 assert.match(threeDialsGenerator, /const NYFED_ORIGIN = 'https:\/\/markets\.newyorkfed\.org'/);
 assert.doesNotMatch(threeDialsSourceAdapter, /score\.usd-impact\.com|SCORE_ORIGIN|model_output|fetchScoreModelOutput/i, 'Three-Dials v2 generator must not depend on Score output.');
 assert.match(threeDialsGenerator, /federal_reserve_board_public_domain/);
-assert.match(threeDialsGenerator, /full-release XML linked on the Federal Reserve release page/);
+assert.match(threeDialsGenerator, /full-release XML linked from the Federal Reserve release page/);
 assert.match(threeDialsGenerator, /derived_from_permitted_primary_sources/);
 assert.match(threeDialsGenerator, /SOFR minus IORB funding spread/);
 assert.match(threeDialsGenerator, /funding-pressure indicator, not a credit spread or a complete liquidity\/stress measure/);

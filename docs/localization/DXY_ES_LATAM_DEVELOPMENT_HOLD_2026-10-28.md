@@ -27,3 +27,8 @@
 Vercel Preview may deploy automatically on the Development PR after CI. **READY** means the preview built, not that publication rights were approved. Merging this candidate into `main` would put a `status: review` content file into Production (without a public DXY route); this PR is intentionally **DRAFT and must remain unmerged** until a separately confirmed decision.
 
 Mandatory manual actions now: review the proposed metadata and sign in to inspect the SSO Preview once CI reports ready. No new paid providers, tokens, API keys or local installation are necessary.
+
+
+## Exact-head Preview build correction (2026-10-28)
+
+The first Vercel Preview build failed safely at the canonical/sitemap verifier: the newly generated internal noindexed route was present in the Astro sitemap, but correctly had no canonical. This PR now adds **only** `/internal/localization/dxy-broad-usd` to `privatePaths` in `apps/web/astro.config.mjs` (the same exclusion mechanism used for existing internal noindex routes). The Development QA asserts that exact exclusion. This does not remove any checks for existing public canonicals, does not publish the ES page, and does not alter the five Spanish public routes. Re-run all exact-head checks and Vercel Preview after this commit.

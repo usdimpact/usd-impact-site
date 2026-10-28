@@ -9,6 +9,7 @@ const route=file('../src/pages/es/[...slug].astro');
 const counterpart=file('../src/pages/[...slug].astro');
 const previewRoute=file('../src/pages/internal/localization/[...slug].astro');
 const manifest=file('../src/data/localization-manifest.js');
+const astroConfig=file('../astro.config.mjs');
 const sha=(text)=>createHash('sha1').update('blob '+Buffer.byteLength(text,'utf8')+'\0').update(text,'utf8').digest('hex');
 const expectedEnglish='3c4a3820b9cc0ddc094aa1862f738e231dc0f398';
 const expectedBody='4476112d6d09c4cbcbae761517af1cb5f1855842';
@@ -48,6 +49,7 @@ test('internal private preview is built only for Vercel Preview and is noindexed
  assert.match(previewRoute,/entry\.data\.status === 'review'/);
  assert.match(previewRoute,/entry\.data\.slug === '\/es\/dxy\/dxy-vs-broad-usd'/);
  assert.match(previewRoute,/noindex=\{true\}/);
+ assert.ok(astroConfig.includes("'/internal/localization/dxy-broad-usd'"),'Preview-only page must be excluded from the public sitemap');
  assert.match(previewRoute,/currentPath="\/internal\/localization\/dxy-broad-usd"/);
  assert.doesNotMatch(previewRoute,/status === 'published'/);
 });

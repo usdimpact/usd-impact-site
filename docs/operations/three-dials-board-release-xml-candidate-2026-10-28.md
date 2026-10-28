@@ -34,6 +34,15 @@ Additional identity checks:
 - Series identity and required metadata are exact-match, fail-closed.
 - XML schema/identity drift, duplicate series, missing observations, redirects or oversized payloads fail closed.
 
+## Live adapter proof
+
+PR #900 exercised the exact three public Federal Reserve release ZIPs without emitting observation values. The first run correctly failed closed because H.15's live uncompressed XML exceeded the original 64 MiB ceiling. Diagnostic proof measured:
+- H.10: ZIP 2,085,508 bytes; XML 27,393,867 bytes.
+- H.15: ZIP 4,286,577 bytes; XML 70,860,311 bytes.
+- PRATES: ZIP 55,554 bytes; XML 860,523 bytes.
+
+The candidate ceiling is therefore 96 MiB: above the observed H.15 payload with bounded headroom, while still rejecting unexpectedly large decompressed XML. A disposable child proof is required to pass at this exact ceiling before merge consideration.
+
 ## Release boundary
 
 This candidate does not run the snapshot generator against live sources and does not publish any number.

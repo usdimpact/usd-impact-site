@@ -1,0 +1,29 @@
+name: Federal Reserve release XML structure proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/fed-release-xml-proof.yml'
+      - 'apps/web/scripts/probe-fed-release-xml.mjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fed-release-xml-proof-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  inspect-public-release-xml:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Inspect official Federal Reserve release XML structure
+        run: node apps/web/scripts/probe-fed-release-xml.mjs

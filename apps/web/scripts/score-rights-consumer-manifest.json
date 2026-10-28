@@ -37,7 +37,8 @@
     "/data/research/score_v2_vintage_comparison_latest.json": "F",
     "/data/research/score_v2_vintage_comparison_latest.csv": "F",
     "/data/research/score_v2_vintage_comparison_latest.html": "F",
-    "/archive/en/": "P"
+    "/archive/en/": "P",
+    "/en/": "P"
   },
   "files": {
     "src/pages/about.astro": {
@@ -74,6 +75,12 @@
       "direct_score_paths": [],
       "dynamic_score_paths": [
         "/data/research/score_v2_vintage_comparison_latest.html"
+      ]
+    },
+    "src/pages/index.astro": {
+      "direct_score_paths": [],
+      "dynamic_score_paths": [
+        "/en/"
       ]
     }
   }

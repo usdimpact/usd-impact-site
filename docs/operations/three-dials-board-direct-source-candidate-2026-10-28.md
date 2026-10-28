@@ -28,16 +28,17 @@ The candidate:
 
 - accepts Board responses only from `https://www.federalreserve.gov`;
 - requests CSV through the Board DDP `/datadownload/Output.aspx` endpoint using the Board's current download query shape (no `type=package` parameter);
-- locates the explicit `Time Period` data header rather than assuming a fixed metadata-row count;
-- locates the target series column by its Board series code;
-- requires the corresponding `Unique Identifier` metadata cell to equal the exact expected Board source-series identifier;
-- rejects a changed package identity instead of silently substituting another series;
+- requires the live Board `seriescolumn` header shape: `Series`, `Series Description`, followed by date columns;
+- requires all observation columns to be valid ISO dates;
+- requires exactly one row with the expected Board series code and rejects missing or duplicate series rows;
+- binds the release and package IDs in the first-party Board request URL rather than inferring identity from unavailable metadata rows;
 - rejects a response with fewer than two usable observations in the requested window;
 - keeps the existing bounded response size, redirect-origin and request-timeout controls;
 - keeps the existing NY Fed SOFR origin restriction;
 - adds tests that reject `fred.stlouisfed.org` and `/graph/fredgraph.csv` across the generator/source adapter;
-- adds synthetic no-network parser tests for quoted CSV fields, exact package identity, required `Time Period`/series headers, usable-observation bounds and DDP URL construction;
-- records a 2026-10-28 live-browser verification that the Board H.10 download flow resolves to `Output.aspx?...&filetype=csv&label=include&layout=seriescolumn` without `type=package`; the exact `type=package` variant failed and is regression-blocked.
+- adds synthetic no-network parser tests for quoted CSV fields, exact series-row identity, required `Series`/`Series Description` plus date-column headers, usable-observation bounds and DDP URL construction;
+- records a 2026-10-28 live-browser verification that the Board H.10 download flow resolves to `Output.aspx?...&filetype=csv&label=include&layout=seriescolumn` without `type=package`; the exact `type=package` variant failed and is regression-blocked;
+- records a second 2026-10-28 live-browser check of the downloaded H.10 CSV: current `seriescolumn` output is row-oriented with `Series`, `Series Description`, then date columns, and does not contain a `Unique Identifier` metadata row.
 
 ## Important lifecycle limitation
 

@@ -31,29 +31,36 @@ export function parseCsvLine(line) {
 
 export function parseBoardCsv(text, config, startDate, endDate) {
   const rows = text.trim().split(/\r?\n/).filter(Boolean).map(parseCsvLine);
-  const headerIndex = rows.findIndex((row) => (row[0] ?? '').replace(/^\uFEFF/, '').trim() === 'Time Period');
-  if (headerIndex < 0) throw new Error(`Federal Reserve Board ${config.releaseId} response is missing the Time Period header.`);
+  if (!rows.length) throw new Error(`Federal Reserve Board ${config.releaseId} response is empty.`);
 
-  const header = rows[headerIndex];
-  const valueIndex = header.indexOf(config.seriesCode);
-  if (valueIndex < 1) throw new Error(`Federal Reserve Board ${config.releaseId} response is missing ${config.seriesCode}.`);
-
-  const identifierRow = rows.slice(0, headerIndex).find((row) => (row[0] ?? '').trim().startsWith('Unique Identifier'));
-  if (!identifierRow || identifierRow[valueIndex] !== config.sourceSeriesId) {
-    throw new Error(`Federal Reserve Board ${config.releaseId} package identity changed for ${config.seriesCode}.`);
+  const header = rows[0].map((value) => value.replace(/^\uFEFF/, '').trim());
+  if (header[0] !== 'Series' || header[1] !== 'Series Description') {
+    throw new Error(`Federal Reserve Board ${config.releaseId} response header is unexpected.`);
   }
 
+  const dateColumns = header.slice(2);
+  if (dateColumns.length < 2 || dateColumns.some((date) => !/^\d{4}-\d{2}-\d{2}$/.test(date))) {
+    throw new Error(`Federal Reserve Board ${config.releaseId} response is missing usable Time Period columns.`);
+  }
+
+  const matches = rows.slice(1).filter((row) => (row[0] ?? '').trim() === config.seriesCode);
+  if (matches.length !== 1) {
+    throw new Error(`Federal Reserve Board ${config.releaseId} response must contain exactly one ${config.seriesCode} row; found ${matches.length}.`);
+  }
+
+  const row = matches[0];
   const start = isoDate(startDate);
   const end = isoDate(endDate);
   const points = [];
-  for (const row of rows.slice(headerIndex + 1)) {
-    const date = (row[0] ?? '').trim();
-    const raw = (row[valueIndex] ?? '').trim();
+  for (let index = 0; index < dateColumns.length; index += 1) {
+    const date = dateColumns[index];
+    const raw = (row[index + 2] ?? '').trim();
     const numeric = Number(raw);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < start || date > end) continue;
+    if (date < start || date > end) continue;
     if (raw === 'ND' || raw === 'N/A' || raw === 'n.a.' || !Number.isFinite(numeric)) continue;
     points.push({ date, value: numeric });
   }
+
   if (points.length < 2) {
     throw new Error(`Federal Reserve Board ${config.releaseId} did not provide two usable ${config.seriesCode} observations in the requested window.`);
   }

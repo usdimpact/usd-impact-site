@@ -44,8 +44,8 @@ for (const required of [
 
 assert.match(generatorText, /Direct Federal Reserve Board DDP transport/);
 assert.match(generatorText, /eventual DDP retirement/);
-assert.match(boardSourceText, /Unique Identifier/);
-assert.match(boardSourceText, /Time Period/);
+assert.match(boardSourceText, /header\[0\] !== 'Series'/);
+assert.match(boardSourceText, /Time Period columns/);
 assert.doesNotMatch(sourceAdapterText, /fred\.stlouisfed\.org|\/graph\/fredgraph\.csv/);
 assert.match(generatorText, /must not be labeled DXY/);
 assert.match(generatorText, /not a credit spread or a complete measure of market liquidity\/stress/);

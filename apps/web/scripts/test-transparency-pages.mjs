@@ -234,8 +234,8 @@ assert.doesNotMatch(threeDialsGenerator, /score\.usd-impact\.com|SCORE_ORIGIN|mo
 assert.match(threeDialsGenerator, /federal_reserve_board_public_domain/);
 assert.match(threeDialsGenerator, /Direct Federal Reserve Board DDP transport/);
 assert.match(threeDialsGenerator, /eventual DDP retirement/);
-assert.match(threeDialsBoardSource, /Unique Identifier/);
-assert.match(threeDialsBoardSource, /Time Period/);
+assert.match(threeDialsBoardSource, /header\[0\] !== 'Series'/);
+assert.match(threeDialsBoardSource, /Time Period columns/);
 assert.match(threeDialsGenerator, /derived_from_permitted_primary_sources/);
 assert.match(threeDialsGenerator, /SOFR minus IORB funding spread/);
 assert.match(threeDialsGenerator, /funding-pressure indicator, not a credit spread or a complete liquidity\/stress measure/);

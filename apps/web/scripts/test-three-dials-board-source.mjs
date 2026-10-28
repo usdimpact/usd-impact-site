@@ -9,15 +9,9 @@ const config = Object.freeze({
 });
 
 const csv = [
-  'Series Description,"Nominal Broad U.S. Dollar Index, synthetic fixture"',
-  'Unit:,Index',
-  'Unique Identifier,H10/H10/JRXWTFB_N.B',
-  'Time Period,JRXWTFB_N.B',
-  '2026-10-02,119.50',
-  '2026-10-09,120.10',
-  '2026-10-16,ND',
-  '2026-10-23,121.20',
-  '2026-10-30,122.00',
+  'Series,Series Description,2026-10-02,2026-10-09,2026-10-16,2026-10-23,2026-10-30',
+  'JRXWTFB_N.B,"Nominal Broad U.S. Dollar Index, synthetic fixture",119.50,120.10,ND,121.20,122.00',
+  'JRXWTFN_N.B,Nominal Advanced Foreign Economies Dollar Index,100.00,100.10,100.20,100.30,100.40',
 ].join('\n');
 
 assert.deepEqual(
@@ -38,32 +32,42 @@ assert.deepEqual(points, [
 
 assert.throws(
   () => parseBoardCsv(
-    csv.replace('H10/H10/JRXWTFB_N.B', 'H10/H10/DIFFERENT_SERIES'),
+    csv.replace('JRXWTFB_N.B,"Nominal Broad', 'DIFFERENT_SERIES,"Nominal Broad'),
     config,
     new Date('2026-10-09T00:00:00Z'),
     new Date('2026-10-23T00:00:00Z'),
   ),
-  /package identity changed/,
+  /exactly one JRXWTFB_N\.B row; found 0/,
 );
 
 assert.throws(
   () => parseBoardCsv(
-    csv.replace('Time Period,JRXWTFB_N.B', 'Unexpected Header,JRXWTFB_N.B'),
+    csv.replace('Series,Series Description', 'Unexpected,Header'),
     config,
     new Date('2026-10-09T00:00:00Z'),
     new Date('2026-10-23T00:00:00Z'),
   ),
-  /missing the Time Period header/,
+  /response header is unexpected/,
 );
 
 assert.throws(
   () => parseBoardCsv(
-    csv.replace('Time Period,JRXWTFB_N.B', 'Time Period,OTHER_SERIES'),
+    csv.replace('2026-10-16,2026-10-23', 'NOT_A_DATE,2026-10-23'),
     config,
     new Date('2026-10-09T00:00:00Z'),
     new Date('2026-10-23T00:00:00Z'),
   ),
-  /response is missing JRXWTFB_N\.B/,
+  /missing usable Time Period columns/,
+);
+
+assert.throws(
+  () => parseBoardCsv(
+    `${csv}\nJRXWTFB_N.B,Duplicate series,1,2,3,4,5`,
+    config,
+    new Date('2026-10-09T00:00:00Z'),
+    new Date('2026-10-23T00:00:00Z'),
+  ),
+  /exactly one JRXWTFB_N\.B row; found 2/,
 );
 
 assert.throws(

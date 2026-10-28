@@ -18,7 +18,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <a class="button primary" href="/research/sample/">Read the complete public sample</a>
           <a class="button account-secondary" href="/research/account/">Research account</a>
         </div>
-        <p class="edition-meta">Research Membership checkout is not yet open. Launch remains subject to the final operational gates.</p>
+        <p class="edition-meta">Research Membership is now available on monthly or annual billing. Checkout opens securely with Lemon Squeezy after account verification.</p>
       </div>
     </section>
 
@@ -31,14 +31,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <p class="eyebrow">Best Value — save USD 58</p>
             <h3>USD 290/year</h3>
             <p>Annual billing receives the same Research Membership entitlement and protected features as monthly billing.</p>
+            <button class="button primary research-checkout-button" type="button" data-billing-interval="annual">Choose annual billing</button>
           </article>
           <article class="account-format-card">
             <p class="eyebrow">Monthly alternative</p>
             <h3>USD 29/month</h3>
             <p>Month-to-month billing with the same included research. No free trial and no introductory discount.</p>
+            <button class="button primary research-checkout-button" type="button" data-billing-interval="monthly">Choose monthly billing</button>
           </article>
         </div>
-        <p class="account-help">Applicable taxes may be added by the merchant of record.</p>
+        <p class="account-help">Applicable taxes may be added by the merchant of record. You must be signed in to the USD Impact account that should receive Research access.</p>
+        <p id="research-checkout-status" class="account-status" role="status" aria-live="polite">No payment is initiated until you continue to the secure Lemon Squeezy checkout.</p>
       </section>
 
       <section class="card account-panel" aria-labelledby="included-heading">
@@ -99,4 +102,93 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </section>
     </div>
   </main>
+
+  <script>
+    const checkoutButtons = Array.from(document.querySelectorAll('.research-checkout-button'));
+    const statusElement = document.getElementById('research-checkout-status');
+    let pendingKey = '';
+
+    const setStatus = (message, state = '') => {
+      if (!(statusElement instanceof HTMLElement)) return;
+      statusElement.textContent = message;
+      statusElement.dataset.state = state;
+    };
+
+    const setButtonsDisabled = (disabled) => {
+      for (const button of checkoutButtons) {
+        if (button instanceof HTMLButtonElement) button.disabled = disabled;
+      }
+    };
+
+    const checkoutKey = () => {
+      if (pendingKey) return pendingKey;
+      if (typeof crypto?.randomUUID !== 'function') return '';
+      pendingKey = `research-${crypto.randomUUID()}`;
+      return pendingKey;
+    };
+
+    const safeCheckoutUrl = (value) => {
+      if (typeof value !== 'string' || !value.trim()) return '';
+      try {
+        const url = new URL(value);
+        const hostname = url.hostname.toLowerCase();
+        if (url.protocol !== 'https:' || url.username || url.password) return '';
+        if (hostname !== 'lemonsqueezy.com' && !hostname.endsWith('.lemonsqueezy.com')) return '';
+        return url.toString();
+      } catch {
+        return '';
+      }
+    };
+
+    const signInHref = () => `/account/sign-in/?next=${encodeURIComponent('/research/')}`;
+
+    for (const button of checkoutButtons) {
+      button.addEventListener('click', async () => {
+        if (!(button instanceof HTMLButtonElement)) return;
+        const billingInterval = button.dataset.billingInterval;
+        if (billingInterval !== 'monthly' && billingInterval !== 'annual') return;
+
+        const idempotencyKey = checkoutKey();
+        if (!idempotencyKey) {
+          setStatus('A secure checkout request could not be created in this browser. No payment has occurred.', 'error');
+          return;
+        }
+
+        setButtonsDisabled(true);
+        setStatus('Verifying your account and preparing secure Lemon Squeezy checkout…', 'pending');
+
+        try {
+          const response = await fetch('/api/commerce?action=research-membership-checkout', {
+            method: 'POST',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              'Idempotency-Key': idempotencyKey,
+            },
+            body: JSON.stringify({ billingInterval, idempotencyKey }),
+          });
+          const body = await response.json().catch(() => ({}));
+          if (response.status === 401 || body?.code === 'AUTHENTICATION_REQUIRED') {
+            window.location.assign(signInHref());
+            return;
+          }
+          if (!response.ok) throw new Error(body?.error || 'Research checkout could not be prepared.');
+          const checkoutUrl = safeCheckoutUrl(body?.checkoutUrl);
+          if (!checkoutUrl) throw new Error('The secure Research checkout URL could not be verified.');
+          window.location.assign(checkoutUrl);
+        } catch (error) {
+          pendingKey = '';
+          setStatus(
+            error instanceof Error
+              ? `${error.message} No payment or access change has occurred.`
+              : 'Research checkout could not be prepared. No payment or access change has occurred.',
+            'error',
+          );
+          setButtonsDisabled(false);
+        }
+      });
+    }
+  </script>
 </BaseLayout>

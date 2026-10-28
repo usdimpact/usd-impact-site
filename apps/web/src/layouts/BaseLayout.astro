@@ -276,6 +276,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
               <p class="footer-heading">Legal y transparencia</p>
               <a href="/compliance">Cumplimiento (EN)</a>
               <a href="/es/privacy/">Privacidad</a>
+              <button id="privacy-settings-button" class="footer-privacy-settings" type="button">Opciones de privacidad</button>
               <a href="/terms/">Términos (EN)</a>
               <a href="/about">Transparencia (EN)</a>
             </div>
@@ -345,12 +346,11 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
         if (firstMain.id === "main-content") firstMain.tabIndex = -1;
       }
     </script>
-    {analyticsEnabled && (
-      <ConsentClient
-        locale={locale}
-        privacyHref={locale === 'es' ? '/es/privacy/' : '/privacy/'}
-      />
-    )}
+    <ConsentClient
+      locale={locale}
+      privacyHref={locale === 'es' ? '/es/privacy/' : '/privacy/'}
+      analyticsEnabled={analyticsEnabled}
+    />
     {analyticsEnabled && <GoogleAnalyticsClient />}
     {analyticsEnabled && <TelemetryClient />}
     {locale === 'en' && <PwaClient />}

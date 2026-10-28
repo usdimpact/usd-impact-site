@@ -348,6 +348,83 @@ assert.equal(anonymousPasskeyToken, null);
 assert.equal(passkeyAnonymousResponse.statusCode, 401);
 assert.equal(JSON.parse(passkeyAnonymousResponse.body).code, 'AUTHENTICATION_REQUIRED');
 
+// Negative passkey-management regressions: a stale access cookie with no
+// refresh credential must deny rather than contacting an auth provider.
+const passkeyNoRefreshResponse = responseRecorder();
+let passkeyNoRefreshNetwork = 0;
+const passkeyNoRefreshToken = await requirePasskeyManagementAccessToken(
+  request({
+    host: 'www.usd-impact.com',
+    'x-forwarded-proto': 'https',
+    cookie: `${SESSION_COOKIE_NAMES.ACCESS}=${encodeURIComponent(accessToken)}`,
+  }),
+  passkeyNoRefreshResponse, {
+    config,
+    verifyAccessToken: async () => { throw Object.assign(new Error('expired'), { status: 401 }); },
+    fetchImpl: async () => { passkeyNoRefreshNetwork += 1; throw new Error('refresh must not run'); },
+  },
+);
+assert.equal(passkeyNoRefreshToken, null);
+assert.equal(passkeyNoRefreshResponse.statusCode, 401);
+assert.equal(JSON.parse(passkeyNoRefreshResponse.body).code, 'AUTHENTICATION_REQUIRED');
+assert.equal(passkeyNoRefreshNetwork, 0);
+assert.equal(passkeyNoRefreshResponse.getHeader('set-cookie').length, 3);
+assert.ok(passkeyNoRefreshResponse.getHeader('set-cookie').every((cookie) => cookie.includes('Max-Age=0')));
+
+// A refresh endpoint can succeed while its returned access credential has
+// already been revoked. Never expose that token to passkey-management calls.
+const passkeyRevokedResponse = responseRecorder();
+const passkeyRevokedVerifications = [];
+let passkeyRevokedRefreshCalls = 0;
+const passkeyRevokedToken = await requirePasskeyManagementAccessToken(
+  passkeyCookieRequest,
+  passkeyRevokedResponse, {
+    config,
+    verifyAccessToken: async (token) => {
+      passkeyRevokedVerifications.push(token);
+      throw Object.assign(new Error('revoked'), { status: 401 });
+    },
+    fetchImpl: async () => {
+      passkeyRevokedRefreshCalls += 1;
+      return new Response(JSON.stringify({
+        access_token: rotatedAccessToken,
+        refresh_token: rotatedRefreshToken,
+        expires_in: 3600,
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    },
+  },
+);
+assert.equal(passkeyRevokedToken, null);
+assert.equal(passkeyRevokedResponse.statusCode, 401);
+assert.equal(JSON.parse(passkeyRevokedResponse.body).code, 'AUTHENTICATION_REQUIRED');
+assert.deepEqual(passkeyRevokedVerifications, [accessToken, rotatedAccessToken]);
+assert.equal(passkeyRevokedRefreshCalls, 1);
+const passkeyRevokedCookies = passkeyRevokedResponse.getHeader('set-cookie');
+assert.equal(passkeyRevokedCookies.length, 6, 'rotated cookies must be explicitly cleared if verification fails');
+assert.ok(passkeyRevokedCookies.slice(-3).every((cookie) => cookie.includes('Max-Age=0')));
+
+// A temporary provider outage must not silently grant access, clear otherwise
+// recoverable remembered credentials, or attempt repeated refreshes.
+const passkeyUnavailableResponse = responseRecorder();
+let passkeyUnavailableRefreshCalls = 0;
+const passkeyUnavailableToken = await requirePasskeyManagementAccessToken(
+  passkeyCookieRequest,
+  passkeyUnavailableResponse, {
+    config,
+    verifyAccessToken: async () => { throw Object.assign(new Error('expired'), { status: 401 }); },
+    fetchImpl: async () => {
+      passkeyUnavailableRefreshCalls += 1;
+      return new Response(JSON.stringify({ message: 'temporarily unavailable' }), {
+        status: 503, headers: { 'Content-Type': 'application/json' },
+      });
+    },
+  },
+);
+assert.equal(passkeyUnavailableToken, null);
+assert.equal(passkeyUnavailableResponse.statusCode, 503);
+assert.equal(passkeyUnavailableRefreshCalls, 1);
+assert.equal(passkeyUnavailableResponse.getHeader('set-cookie'), undefined);
+
 const passkeyHandlerSource = await readFile(new URL('../src/lib/passkey-handler.js', import.meta.url), 'utf8');
 assert.equal((passkeyHandlerSource.match(/await requirePasskeyManagementAccessToken\(request, response, dependencies\)/g) || []).length, 5);
 assert.match(passkeyHandlerSource, /verifyAccessToken = getVerifiedSupabaseUser/);

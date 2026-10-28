@@ -3,7 +3,7 @@
 Status: **REVIEW-ONLY / NOT MERGED / NOT PUBLISHED / NO SOURCE-RIGHTS CONCLUSION**
 
 Repository: `usdimpact/usd-impact-site`  
-Base: `875bb0f3bfba57d674b037d737feaf3b6b4edd67`  
+Base: `674d2661a0caa4845ad1a650e813368b54857837`  
 Branch: `review/three-dials-board-direct-20261028-v2`
 
 ## Purpose

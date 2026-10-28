@@ -1,0 +1,45 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+// Fail closed in Production and in ordinary local builds. Vercel Preview uses SSO.
+// Do not create a public /es route or add this article to the Spanish release allowlist.
+export async function getStaticPaths() {
+  if (process.env.VERCEL_ENV !== 'preview') return [];
+  const entries = await getCollection('pages');
+  const article = entries.find((entry) => (
+    entry.data.slug === '/es/dxy/dxy-vs-broad-usd'
+    && entry.data.status === 'review'
+  ));
+  if (!article) throw new Error('Private ES DXY preview source missing or no longer review-only');
+  return [{ params: { slug: 'dxy-broad-usd' }, props: { entry: article } }];
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+<BaseLayout
+  title={'Vista privada | ' + entry.data.metaTitle}
+  description={entry.data.metaDescription}
+  locale="es"
+  currentPath="/internal/localization/dxy-broad-usd"
+  noindex={true}
+  responsiveTables
+>
+  <main id="main-content" class="main-with-hero">
+    <section class="hero">
+      <div class="container">
+        <div class="eyebrow">Revisión privada de desarrollo • no publicada</div>
+        <h1>{entry.data.title}</h1>
+        <p class="lead">{entry.data.hero}</p>
+      </div>
+    </section>
+    <div class="container page-content">
+      <p><strong>Vista previa de desarrollo.</strong> El texto está aprobado editorialmente para revisión privada, pero su publicación, atribución final, metadatos y permisos aún no están autorizados.</p>
+      <Content />
+      <section class="compliance" aria-label="Nota de cumplimiento">
+        <strong>Nota de cumplimiento:</strong> {entry.data.complianceNote}
+      </section>
+    </div>
+  </main>
+</BaseLayout>

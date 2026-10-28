@@ -42,7 +42,7 @@ for (const required of [
   assert.ok(sourceAdapterText.includes(required), `Three Dials v2 generator must bind rights-safe contract ${required}.`);
 }
 
-assert.match(generatorText, /full-release XML linked on the Federal Reserve release page/);
+assert.match(generatorText, /full-release XML linked from the Federal Reserve release page/);
 assert.match(boardReleaseXmlText, /SERIES_NAME/);
 assert.match(boardReleaseXmlText, /TIME_PERIOD/);
 assert.match(boardReleaseXmlText, /OBS_VALUE/);

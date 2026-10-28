@@ -51,7 +51,7 @@ test('weekly-report workflow stops before component archive fetch while HOLD is 
   assert.match(workflow, /permissions:\n      contents: read/);
   assert.match(workflow, /Evaluate Score-derived publication rights gate/);
   assert.match(workflow, /node apps\/web\/scripts\/score-derived-publication-rights-gate\.mjs --github-output/);
-  assert.match(workflow, /^  generate-and-open-review:\n    needs: rights-gate\n    if: needs\.rights-gate\.outputs\.hold != 'true'/m);
+  assert.match(workflow, /^  generate-and-open-review:\n    needs: rights-gate\n    if: needs\.rights-gate\.result == 'success' && needs\.rights-gate\.outputs\.hold == 'false'/m);
   assert.match(workflow, /cron: '17 8 \* \* 0'/);
 
   const gateIndex = workflow.indexOf('Evaluate Score-derived publication rights gate');

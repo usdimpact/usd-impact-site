@@ -217,17 +217,22 @@ assert.match(threeDialsLib, /Descriptive interpretation of completed observation
 assert.doesNotMatch(threeDialsLib, /probability|expected return|buy|sell/i);
 
 // Generator source and immutability contract.
-for (const requiredSeries of ['FED_BROAD_USD', 'FED_10Y_REAL_YIELD', 'SOFR_IORB_SPREAD', 'DTWEXBGS', 'DFII10', 'IORB']) {
+for (const requiredSeries of ['FED_BROAD_USD', 'FED_10Y_REAL_YIELD', 'SOFR_IORB_SPREAD', 'JRXWTFB_N.B', 'RIFLGFCY10_XII_N.B', 'RESBM_N.D']) {
   assert.ok(threeDialsGenerator.includes(requiredSeries), `Three-Dials v2 generator must bind ${requiredSeries}.`);
 }
 for (const forbiddenSeries of ['DX-Y.NYB', 'BAMLH0A0HYM2', 'VIXCLS', 'query1.finance.yahoo.com']) {
   assert.equal(threeDialsGenerator.includes(forbiddenSeries), false, `Three-Dials v2 generator must exclude ${forbiddenSeries}.`);
 }
-assert.match(threeDialsGenerator, /const FRED_ORIGIN = 'https:\/\/fred\.stlouisfed\.org'/);
+assert.match(threeDialsGenerator, /const BOARD_ORIGIN = 'https:\/\/www\.federalreserve\.gov'/);
+assert.match(threeDialsGenerator, /\/datadownload\/Output\.aspx/);
+assert.doesNotMatch(threeDialsGenerator, /fred\.stlouisfed\.org|\/graph\/fredgraph\.csv/);
 assert.match(threeDialsGenerator, /const NYFED_ORIGIN = 'https:\/\/markets\.newyorkfed\.org'/);
 assert.doesNotMatch(threeDialsGenerator, /score\.usd-impact\.com|SCORE_ORIGIN|model_output|fetchScoreModelOutput/i, 'Three-Dials v2 generator must not depend on Score output.');
 assert.match(threeDialsGenerator, /federal_reserve_board_public_domain/);
-assert.match(threeDialsGenerator, /FRED is used only as the transport/);
+assert.match(threeDialsGenerator, /Direct Federal Reserve Board DDP transport/);
+assert.match(threeDialsGenerator, /eventual DDP retirement/);
+assert.match(threeDialsGenerator, /Unique Identifier/);
+assert.match(threeDialsGenerator, /Time Period/);
 assert.match(threeDialsGenerator, /derived_from_permitted_primary_sources/);
 assert.match(threeDialsGenerator, /SOFR minus IORB funding spread/);
 assert.match(threeDialsGenerator, /funding-pressure indicator, not a credit spread or a complete liquidity\/stress measure/);

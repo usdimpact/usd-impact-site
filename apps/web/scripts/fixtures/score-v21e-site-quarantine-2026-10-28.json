@@ -89,7 +89,8 @@
     "All sources and methodology remain unapproved for public or paid-member distribution.",
     "No source observations or Score candidate values are included.",
     "A future methodology requires a new public schema/version and an explicitly approved UI/Research migration.",
-    "Upstream PR #210 approved one-off ephemeral private source research only; website/public/paid delivery and Production remain unauthorized."
+    "Upstream PR #210 approved one-off ephemeral private source research only; website/public/paid delivery and Production remain unauthorized.",
+    "Issue #218 records H.15 historical-vintage feasibility FAIL CLOSED after the approved preflight; owner approval remains historic evidence, not permission to bypass a stop condition."
   ],
   "provenanceReview": {
     "reviewedMergeSha": "d4d1e441f6dd91e1d249d9f3ad515c76e2d3f61b",
@@ -187,5 +188,31 @@
     "websiteSourceSwitchApproved": false,
     "websiteRealDataResearchExecutionApproved": false,
     "rightsHoldRemains": true
+  },
+  "preflightStop": {
+    "blockingIssue": "https://github.com/usdimpact/usd-impact-pipeline/issues/218",
+    "controllingRunIssue": "https://github.com/usdimpact/usd-impact-pipeline/issues/211",
+    "lastObservedFailedWorkflow": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/40755916179",
+    "stage": "authorized_historical_vintage_feasibility_preflight",
+    "disposition": "BLOCKED_FAIL_CLOSED",
+    "verifiedFixedFederalFamilies": [
+      "H10",
+      "H8",
+      "H41"
+    ],
+    "blockingFamily": "H15",
+    "sampleReleaseDate": "2020-01-06",
+    "attemptedBoardArchivePath": "/releases/h15/20200106/default.htm",
+    "sourceHttpStatus": 404,
+    "candidateScoreComputed": false,
+    "allEightSeriesHistoricalVintageAvailable": false,
+    "currentRevisedDDPSubstituteAllowed": false,
+    "additionalThirdPartySourceAllowedUnderOriginalApproval": false,
+    "dropOrReweightH15UnderOriginalPreregistrationAllowed": false,
+    "fullCandidateResearchAllowedAfterStop": false,
+    "releaseAuthorized": false,
+    "sourceRightsCleared": false,
+    "upstreamReceiptDeactivationManagedByPipeline": true,
+    "laterRedesignRequiresDistinctVersionAndFreshPreregistration": true
   }
 }

@@ -64,9 +64,22 @@ The next substantive decision belongs to the source owner/provider/counsel and t
 | Isolated temporary workspace; source values and raw HTTP payloads ephemeral only | Durable raw/component storage, publication of source/component values |
 | Aggregate diagnostics, feasibility gate outcomes and provenance identifiers (no values) | Research-ledger mutation, public Score replacement, member-only report launch, Production |
 
-The separate pipeline workflow is performing a historical-vintage feasibility preflight; that workflow—not this website Draft—owns retrieval, vintage reconstruction, stopping conditions and execution results. **Do not start a duplicate run or lift a preflight HOLD based on the existence of the receipt alone.**
+The separate pipeline workflow performed the historical-vintage feasibility preflight and stopped on the missing H.15 archive; [Issue #218](https://github.com/usdimpact/usd-impact-pipeline/issues/218) governs that outcome. This website Draft owns no data retrieval or retry. **Do not start a duplicate run or lift a preflight HOLD based on the existence of the receipt alone.**
 
 This Draft's `oneOffPrivateResearchAuthorization` inventory is a pinned **metadata-only copy** of the approval and its restrictions. The website has no authority to fetch data, activate v2.1E, publish a new Score, or grant paid Research access. Rights issue #155 remains open.
+
+## Authorized study stopped at historical-vintage feasibility — Issue #218
+
+The preflight performed under the valid owner receipt did **not** authorize bypassing preregistered data-vintage rules. [Issue #218](https://github.com/usdimpact/usd-impact-pipeline/issues/218) records a **BLOCKED / FAIL CLOSED** disposition after [run 40755916179](https://github.com/usdimpact/usd-impact-pipeline/actions/runs/40755916179):
+
+- Fixed historical samples for H.10, H.8, and H.4.1 were reached.
+- An official H.15 release was scheduled for **January 6, 2020**, but its expected dated Board archive `/releases/h15/20200106/default.htm` returned HTTP **404**.
+- Current revised DDP/other recent Treasury histories cannot substitute for the historical *release-time* record; the Board's historical corrections make such a substitution methodologically unsafe.
+- The source allowlist, eight series, and preregistered point-in-time method remain fixed. No ALFRED/FRED/Treasury/Wayback source, ninth proxy, dropping/reweighting H.15, or alternate method is permitted under this receipt.
+
+**The historical owner approval remains valid as an audit fact but the full v2.1E study is STOPPED.** The pipeline owns consumption/deactivation of its one-off receipt. This site Draft does not alter or assume control of that governance state. No candidate Score was computed or released by the blocked preflight.
+
+The next permissible research design is a separately versioned and freshly preregistered candidate with demonstrably reconstructable historical vintages. Such a redesign and its source boundary require separate review and any needed new approval before fetching real observations. Issue #155 remains the controlling publication/redistribution HOLD.
 
 ## Why site-side separation is necessary
 
@@ -85,7 +98,7 @@ The existing Score consumer tests now import a separate CI regression suite that
 ## Decision gates, in order
 
 1. **Private research approved upstream, site HOLD:** PR #208 limits H.15 to published government-derived outputs. PR #210 approved one-off private official-source research for the fixed window. That authorization is executable only by the pipeline's frozen workflow; this website Draft still forbids fetching, activation and publication. Rights issue #155 remains open.
-2. **Versioned research evaluation (upstream authorized, feasibility still unproven):** reconstruct release-time eligibility (BLS monthly revision window, H.8 benchmarks, H.10 lag, H.4.1/H.15 release cutoffs) and apply the frozen 104-prior-week normalization and acceptance gates. No retroactive tuning or live publication.
+2. **Versioned research evaluation (STOPPED — H.15 vintage FAIL CLOSED):** do not run the full Score; any future independently versioned/repreregistered candidate must reconstruct release-time eligibility (BLS monthly revision window, H.8 benchmarks, H.10 lag, H.4.1/H.15 release cutoffs) and apply the frozen 104-prior-week normalization and acceptance gates. No retroactive tuning or live publication.
 3. **Distribution rights (HOLD):** distinguish permissions to inspect federal releases, publish aggregate Score values, redistribute transformed component data, and distribute paid Research reports. The Series receipts are candidates, not rights approvals.
 4. **Site copy and schema migration (NOT STARTED):** if v2.1E eventually passes independently, introduce a distinct versioned public contract, explicit methodology copy, new data-source labels and preserved archive identity. Do not reuse `score-public-v2-safe-1` with changed semantics.
 5. **Protected delivery (NOT STARTED):** handle the member dashboard and Research archives through separately reviewed server authorization, private storage/origin, and exact-head negative tests. Library Pass and TradingView remain independent.

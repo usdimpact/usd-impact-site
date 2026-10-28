@@ -115,6 +115,37 @@ test('owner-approved one-off private research is distinct from site, rights and 
   assert.equal(fixture.releaseAuthorized, false);
 });
 
+test('H.15 point-in-time vintage blocker overrides the historic one-off owner approval', () => {
+  const stop = fixture.preflightStop;
+  const receipt = fixture.oneOffPrivateResearchAuthorization;
+  assert.equal(receipt.decisionStatus, 'approved');
+  assert.equal(receipt.realDataResearchApproved, true);
+  assert.equal(stop.blockingIssue,
+    'https://github.com/usdimpact/usd-impact-pipeline/issues/218');
+  assert.equal(stop.controllingRunIssue,
+    'https://github.com/usdimpact/usd-impact-pipeline/issues/211');
+  assert.equal(stop.lastObservedFailedWorkflow,
+    'https://github.com/usdimpact/usd-impact-pipeline/actions/runs/40755916179');
+  assert.equal(stop.stage, 'authorized_historical_vintage_feasibility_preflight');
+  assert.equal(stop.disposition, 'BLOCKED_FAIL_CLOSED');
+  assert.deepEqual(stop.verifiedFixedFederalFamilies, ['H10', 'H8', 'H41']);
+  assert.equal(stop.blockingFamily, 'H15');
+  assert.equal(stop.sampleReleaseDate, '2020-01-06');
+  assert.equal(stop.attemptedBoardArchivePath, '/releases/h15/20200106/default.htm');
+  assert.equal(stop.sourceHttpStatus, 404);
+  assert.equal(stop.upstreamReceiptDeactivationManagedByPipeline, true);
+  assert.equal(stop.laterRedesignRequiresDistinctVersionAndFreshPreregistration, true);
+  for (const key of [
+    'candidateScoreComputed', 'allEightSeriesHistoricalVintageAvailable',
+    'currentRevisedDDPSubstituteAllowed', 'additionalThirdPartySourceAllowedUnderOriginalApproval',
+    'dropOrReweightH15UnderOriginalPreregistrationAllowed',
+    'fullCandidateResearchAllowedAfterStop', 'releaseAuthorized', 'sourceRightsCleared',
+  ]) assert.equal(stop[key], false, key + ' must fail closed');
+  assert.equal(fixture.siteResearchExecutionAuthorized, false);
+  assert.equal(fixture.productionActivationAuthorized, false);
+  assert.equal(fixture.publicArtifactReplacementAuthorized, false);
+});
+
 test('upstream provenance review preserves five no-exception paths and three prior H.15 caveats', () => {
   const review = fixture.provenanceReview;
   const noException = 'no_specific_exception_identified_in_reviewed_official_publication_path';

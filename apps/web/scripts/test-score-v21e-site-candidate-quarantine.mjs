@@ -81,14 +81,14 @@ test('owner-approved one-off private research is distinct from site, rights and 
   assert.equal(fixture.candidateStateScope,
     'website_promotion_only_separate_from_authorized_upstream_private_research');
   assert.equal(receipt.activationMergeSha, 'bb9e4c4d2ef7d28938d670746b4a57f3fb1af587');
-  assert.equal(receipt.receiptPath,
+  assert.equal(receipt.originalExecutableReceiptPath,
     'governance/score-v2-1e-real-data-research-authorization.json');
-  assert.equal(receipt.receiptGitBlobSha, '40283d6c846c994b71e3d1a8007f1844215a655e');
+  assert.equal(receipt.approvedReceiptOriginalBlobSha, '40283d6c846c994b71e3d1a8007f1844215a655e');
   assert.equal(receipt.ownerApprovalIssue,
     'https://github.com/usdimpact/usd-impact-pipeline/issues/209');
   assert.equal(receipt.ownerApprovalCommentId, 6477834394);
   assert.equal(receipt.approvedAtUtc, '2026-10-28T18:55:48Z');
-  assert.equal(receipt.decisionStatus, 'approved');
+  assert.equal(receipt.historicalDecisionStatus, 'approved');
   assert.equal(receipt.executionScope, 'one_off_private_research_only');
   assert.equal(receipt.methodologyVersion, fixture.candidateVersion);
   assert.equal(receipt.designMergeSha, fixture.frozenDesignMergeSha);
@@ -99,7 +99,7 @@ test('owner-approved one-off private research is distinct from site, rights and 
   assert.deepEqual(receipt.officialSourceAllowlist,
     ['www.federalreserve.gov', 'www.bls.gov', 'data.bls.gov']);
   for (const key of [
-    'realDataFetchApproved', 'realDataResearchApproved', 'ephemeralSourceValuesOnly',
+    'realDataFetchApprovedAtActivation', 'realDataResearchApprovedAtActivation', 'ephemeralSourceValuesOnly',
     'ephemeralRawResponsesOnly', 'privateIsolatedWorkspaceOnly', 'rightsHoldRemains',
   ]) assert.equal(receipt[key], true, key);
   for (const key of [
@@ -118,8 +118,8 @@ test('owner-approved one-off private research is distinct from site, rights and 
 test('H.15 point-in-time vintage blocker overrides the historic one-off owner approval', () => {
   const stop = fixture.preflightStop;
   const receipt = fixture.oneOffPrivateResearchAuthorization;
-  assert.equal(receipt.decisionStatus, 'approved');
-  assert.equal(receipt.realDataResearchApproved, true);
+  assert.equal(receipt.historicalDecisionStatus, 'approved');
+  assert.equal(receipt.realDataResearchApprovedAtActivation, true);
   assert.equal(stop.blockingIssue,
     'https://github.com/usdimpact/usd-impact-pipeline/issues/218');
   assert.equal(stop.controllingRunIssue,
@@ -146,12 +146,55 @@ test('H.15 point-in-time vintage blocker overrides the historic one-off owner ap
   assert.equal(fixture.publicArtifactReplacementAuthorized, false);
 });
 
+test('upstream consumption has removed the executable research receipt after H.15 STOP', () => {
+  const approved = fixture.oneOffPrivateResearchAuthorization;
+  const state = fixture.oneOffResearchConsumption;
+  assert.equal(approved.historicalDecisionStatus, 'approved');
+  assert.equal(approved.realDataFetchApprovedAtActivation, true);
+  assert.equal(approved.realDataResearchApprovedAtActivation, true);
+  assert.equal(approved.ownerApprovalPreservedAsAuditEvidence, true);
+  assert.equal(approved.currentlyExecutable, false);
+  assert.equal(approved.activeReceiptStillPresent, false);
+  assert.equal(state.observedPipelineMainSha,
+    'f2ac360fa01b4fbe87a2a94b0da4519d63210515');
+  assert.equal(fixture.reviewedPipelineMainSha, state.observedPipelineMainSha);
+  assert.equal(state.state, 'one_off_private_research_consumed_fail_closed');
+  assert.equal(state.consumptionRecordPath,
+    'governance/score-v2-1e-real-data-research-consumption-2026-10-28.json');
+  assert.equal(state.consumptionRecordGitBlobSha,
+    '05c2dcb2e88bddd7f2fc0e297da7afa6c1a5e6a5');
+  assert.equal(state.executionContractGitBlobSha,
+    'b728d9efb75c569c06afb5ba6a95a12dfe5a81a8');
+  assert.equal(state.consumptionDateUtc, '2026-10-28T19:39:10Z');
+  assert.equal(state.ownerApprovalCommentId, approved.ownerApprovalCommentId);
+  assert.equal(state.blockerIssue, fixture.preflightStop.blockingIssue);
+  assert.equal(state.failedPreflightRun, fixture.preflightStop.lastObservedFailedWorkflow);
+  assert.deepEqual([state.researchWindowStart,state.researchWindowEnd],
+    [approved.sourceHistoryStart,approved.sourceHistoryEnd]);
+  for (const field of [
+    'originalExecutableReceiptRemoved', 'historicOwnerApprovalPreserved',
+    'newExplicitOwnerAuthorizationRequiredForAnyFutureResearch',
+  ]) assert.equal(state[field], true, field);
+  for (const field of [
+    'realDataFetchAuthorizedNow', 'realDataResearchAuthorizedNow',
+    'fullScoreComputed', 'rawOrComponentValuesPersisted',
+    'publicArtifactReplacementAuthorized', 'researchLedgerMutationAuthorized',
+    'productionAuthorized', 'commercializationAuthorized', 'releaseAuthorized',
+  ]) assert.equal(state[field], false, field);
+  assert.equal(fixture.preflightStop.upstreamReceiptConsumptionCompleted, true);
+  assert.equal(fixture.preflightStop.oldApprovalReusable, false);
+  assert.equal(fixture.siteResearchExecutionAuthorized, false);
+  assert.equal(fixture.sitePublishCandidate, false);
+  assert.equal(fixture.releaseAuthorized, false);
+});
+
+
 test('upstream provenance review preserves five no-exception paths and three prior H.15 caveats', () => {
   const review = fixture.provenanceReview;
   const noException = 'no_specific_exception_identified_in_reviewed_official_publication_path';
   const residual = 'residual_upstream_provenance_requires_explicit_scope_confirmation';
   assert.equal(review.reviewedMergeSha, 'd4d1e441f6dd91e1d249d9f3ad515c76e2d3f61b');
-  assert.equal(fixture.reviewedPipelineMainSha, 'd99530589eade93de5827de9ba29bb341884d3e8');
+  assert.equal(fixture.reviewedPipelineMainSha, 'f2ac360fa01b4fbe87a2a94b0da4519d63210515');
   assert.equal(fixture.h15PublishedOutputScope.precedingProvenanceReviewMergeSha,
     review.reviewedMergeSha);
   assert.equal(review.reviewedSourcePath,
@@ -181,7 +224,7 @@ test('published government H.15 output scope does not authorize raw OTC quote us
   const publishedClass =
     'government_derived_published_output_no_specific_third_party_notice_identified_on_reviewed_output_path';
   assert.equal(scope.reviewMergeSha, 'd99530589eade93de5827de9ba29bb341884d3e8');
-  assert.equal(fixture.reviewedPipelineMainSha, scope.reviewMergeSha);
+  assert.equal(fixture.h15PublishedOutputScope.reviewMergeSha, 'd99530589eade93de5827de9ba29bb341884d3e8');
   assert.equal(scope.reviewedSourcePath,
     'governance/score-v2-1e-h15-output-scope-review.json');
   assert.equal(scope.reviewedSourceBlobSha, 'e6e0cb540b9765a02f5f8f8e842ede7ba6e52371');

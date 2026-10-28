@@ -1,9 +1,9 @@
 # USD Impact Score v2.1E — website methodology separation and rights handoff
 
 **Date:** October 28, 2026  
-**Status:** Draft, non-activating site source/version gate; one-off upstream private research APPROVED under Issue #209, while public/paid rights and Production remain HOLD.
+**Status:** Draft site methodology quarantine; historically owner-approved private research has now been CONSUMED / FAIL CLOSED after H.15 preflight (Issue #218). Site/public/paid rights and Production remain HOLD.
 **Website baseline:** `dbbe7e6dcf1632275b0e05c1db311e543d524d6c`.
-**Pipeline reviewed baseline:** `d99530589eade93de5827de9ba29bb341884d3e8` (H.15 published-output clarification #208; prior provenance review #206 and real-data authorization boundary #204 remain HOLD).
+**Pipeline reviewed baseline:** `f2ac360fa01b4fbe87a2a94b0da4519d63210515` (one-off research consumption closeout; earlier H.15 scope review #208 and approval #210 remain historical).
 
 ## Exact current difference
 
@@ -44,18 +44,18 @@ This **does not erase or reclassify** the earlier #206 provenance caveat. It add
 | Raw upstream OTC quote streams, reconstruction or paid endpoints in candidate scope | **No** |
 | Identified specific third-party notice on the reviewed published output path | No — a limited evidence finding, **not** rights approval |
 | Source approval and legal conclusion | **Not granted** |
-| One-off private official Board/BLS data research | **Owner authorized** under Issue #209, exactly 2013-01-01–2026-10-23, ephemeral only |
+| One-off private official Board/BLS research | **Historically authorized** under Issue #209 for 2013-01-01–2026-10-23; consumed after H.15 feasibility failure |
 | Site-side fetch, public/paid publication, methodology replacement | **Not authorized** |
 | Source/public component redistribution, rights hold and Production | **HOLD** |
-| Active one-off private research receipt | **Present**, approved in pipeline PR #210; no commercial/public/Production approval |
+| Active one-off private research receipt | **Absent on current pipeline main**; historical approval retained in [consumption record](https://github.com/usdimpact/usd-impact-pipeline/blob/f2ac360fa01b4fbe87a2a94b0da4519d63210515/governance/score-v2-1e-real-data-research-consumption-2026-10-28.json) |
 
-The website's machine-checked fixture pins both historical evidence layers (#206 and #208). Their original negative flags describe **the authorization state of those evidence-only reviews at the time they merged**; they are not the current research authorization state. A separate active owner receipt under #210 now allows a limited private research run, but neither government publication status nor this permission authorizes site-side fetching, public reports, paid Research distribution, or Production.
+The website's machine-checked fixture pins both historical evidence layers (#206 and #208). Their original negative flags describe **the authorization state of those evidence-only reviews at the time they merged**; they are not the current research authorization state. A separate owner receipt under #210 permitted the limited study at that time, but the receipt has since been consumed and removed from the active path. Neither government publication status nor the expired one-off permission authorizes site-side fetching, further private research, public reports, paid Research distribution, or Production.
 
 The next substantive decision belongs to the source owner/provider/counsel and the existing one-off private research authorization process; no one may infer a signed receipt from this CI fixture.
 
-## Active one-off private research receipt — upstream PR #210
+## Historical one-off private research approval — upstream PR #210
 
-**The authorization state changed after the source-scope review.** The owner explicitly approved a single private study under [Issue #209](https://github.com/usdimpact/usd-impact-pipeline/issues/209), comment `6477834394`. The [active receipt](https://github.com/usdimpact/usd-impact-pipeline/blob/bb9e4c4d2ef7d28938d670746b4a57f3fb1af587/governance/score-v2-1e-real-data-research-authorization.json) merged in pipeline PR #210 at `bb9e4c4d2ef7d28938d670746b4a57f3fb1af587` (Git blob `40283d6c846c994b71e3d1a8007f1844215a655e`).
+**The authorization state changed after the source-scope review.** The owner historically approved a single private study under [Issue #209](https://github.com/usdimpact/usd-impact-pipeline/issues/209), comment `6477834394`. The [original approved receipt at its historical commit](https://github.com/usdimpact/usd-impact-pipeline/blob/bb9e4c4d2ef7d28938d670746b4a57f3fb1af587/governance/score-v2-1e-real-data-research-authorization.json) merged in pipeline PR #210 at `bb9e4c4d2ef7d28938d670746b4a57f3fb1af587` (Git blob `40283d6c846c994b71e3d1a8007f1844215a655e`).
 
 | Allowed by that specific receipt | Still forbidden |
 | --- | --- |
@@ -66,7 +66,7 @@ The next substantive decision belongs to the source owner/provider/counsel and t
 
 The separate pipeline workflow performed the historical-vintage feasibility preflight and stopped on the missing H.15 archive; [Issue #218](https://github.com/usdimpact/usd-impact-pipeline/issues/218) governs that outcome. This website Draft owns no data retrieval or retry. **Do not start a duplicate run or lift a preflight HOLD based on the existence of the receipt alone.**
 
-This Draft's `oneOffPrivateResearchAuthorization` inventory is a pinned **metadata-only copy** of the approval and its restrictions. The website has no authority to fetch data, activate v2.1E, publish a new Score, or grant paid Research access. Rights issue #155 remains open.
+This Draft's `oneOffPrivateResearchAuthorization` inventory is a pinned **historical** metadata-only copy of the former approval. The separate `oneOffResearchConsumption` record reports the current, blocked execution status. The website has no authority to fetch data, activate v2.1E, publish a new Score, or grant paid Research access. Rights issue #155 remains open.
 
 ## Authorized study stopped at historical-vintage feasibility — Issue #218
 
@@ -77,9 +77,17 @@ The preflight performed under the valid owner receipt did **not** authorize bypa
 - Current revised DDP/other recent Treasury histories cannot substitute for the historical *release-time* record; the Board's historical corrections make such a substitution methodologically unsafe.
 - The source allowlist, eight series, and preregistered point-in-time method remain fixed. No ALFRED/FRED/Treasury/Wayback source, ninth proxy, dropping/reweighting H.15, or alternate method is permitted under this receipt.
 
-**The historical owner approval remains valid as an audit fact but the full v2.1E study is STOPPED.** The pipeline owns consumption/deactivation of its one-off receipt. This site Draft does not alter or assume control of that governance state. No candidate Score was computed or released by the blocked preflight.
+**The historical owner approval remains valid as an audit fact but the full v2.1E study is STOPPED.** Pipeline governance has already consumed the one-off receipt and removed its executable path. This website Draft records, but does not control, that outcome. No candidate Score was computed or released by the blocked preflight.
 
 The next permissible research design is a separately versioned and freshly preregistered candidate with demonstrably reconstructable historical vintages. Such a redesign and its source boundary require separate review and any needed new approval before fetching real observations. Issue #155 remains the controlling publication/redistribution HOLD.
+
+## Verified upstream consumption — active execution disabled
+
+Pipeline `main` at `f2ac360fa01b4fbe87a2a94b0da4519d63210515` contains the [consumption record](https://github.com/usdimpact/usd-impact-pipeline/blob/f2ac360fa01b4fbe87a2a94b0da4519d63210515/governance/score-v2-1e-real-data-research-consumption-2026-10-28.json) (Git blob `05c2dcb2e88bddd7f2fc0e297da7afa6c1a5e6a5`) and a [consumed execution contract](https://github.com/usdimpact/usd-impact-pipeline/blob/f2ac360fa01b4fbe87a2a94b0da4519d63210515/governance/score-v2-1e-real-data-execution-contract.json) (Git blob `b728d9efb75c569c06afb5ba6a95a12dfe5a81a8`).
+
+The active receipt file is **absent**. All current real-data fetch/research and release authorizations are **false**. The original Issue #209 approval remains traceable through comment `6477834394`; it is no longer executable. The v2.1E validator checks the consumed record and requires the original executable path to be absent.
+
+This website Draft's new test pins that state independently from the earlier approval metadata. It remains **evidence-only**: no cross-repository network fetch, new market observations, Score computation, or automatic synchronization occurs in site CI.
 
 ## Why site-side separation is necessary
 
@@ -89,7 +97,7 @@ A future federal-statistics candidate must not silently publish through that sam
 
 The existing Score consumer tests now import a separate CI regression suite that:
 1. freezes the eight proposed candidate identifiers and upstream design/preregistration commits;
-2. separately verifies the narrowly approved owner private-research receipt and keeps all website, public/paid distribution and Production release gates false;
+2. verifies both the historical one-off owner approval and its later consumption, requiring all current research, public/paid distribution and Production flags to be false;
 3. checks the website methodology and score display remain v2;
 4. verifies the protected Score member rewrite and separate historic sample;
 5. verifies public Score v2 Class-C redistribution exposures are still documented HOLD, not mislabelled rights-clean; and
@@ -97,7 +105,7 @@ The existing Score consumer tests now import a separate CI regression suite that
 
 ## Decision gates, in order
 
-1. **Private research approved upstream, site HOLD:** PR #208 limits H.15 to published government-derived outputs. PR #210 approved one-off private official-source research for the fixed window. That authorization is executable only by the pipeline's frozen workflow; this website Draft still forbids fetching, activation and publication. Rights issue #155 remains open.
+1. **Private research authorization consumed; site HOLD:** PR #208 restricts H.15 to published government-derived output; PR #210 approved one-off private research, but pipeline main has now removed its executable receipt after Issue #218. Any future study needs a new preregistration and explicit owner decision. This website Draft forbids fetching, activation and publication. Rights issue #155 remains open.
 2. **Versioned research evaluation (STOPPED — H.15 vintage FAIL CLOSED):** do not run the full Score; any future independently versioned/repreregistered candidate must reconstruct release-time eligibility (BLS monthly revision window, H.8 benchmarks, H.10 lag, H.4.1/H.15 release cutoffs) and apply the frozen 104-prior-week normalization and acceptance gates. No retroactive tuning or live publication.
 3. **Distribution rights (HOLD):** distinguish permissions to inspect federal releases, publish aggregate Score values, redistribute transformed component data, and distribute paid Research reports. The Series receipts are candidates, not rights approvals.
 4. **Site copy and schema migration (NOT STARTED):** if v2.1E eventually passes independently, introduce a distinct versioned public contract, explicit methodology copy, new data-source labels and preserved archive identity. Do not reuse `score-public-v2-safe-1` with changed semantics.

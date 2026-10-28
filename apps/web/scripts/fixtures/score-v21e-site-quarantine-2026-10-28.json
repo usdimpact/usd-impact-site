@@ -1,7 +1,7 @@
 {
   "schemaVersion": "score-v21e-site-quarantine-v1",
   "observationDateUtc": "2026-10-28",
-  "reviewedPipelineMainSha": "d99530589eade93de5827de9ba29bb341884d3e8",
+  "reviewedPipelineMainSha": "f2ac360fa01b4fbe87a2a94b0da4519d63210515",
   "candidateVersion": "2.1E-design-candidate",
   "candidateState": "design_only",
   "methodologyIdentity": "distinct_not_an_equivalent_v2_source_swap",
@@ -90,7 +90,8 @@
     "No source observations or Score candidate values are included.",
     "A future methodology requires a new public schema/version and an explicitly approved UI/Research migration.",
     "Upstream PR #210 approved one-off ephemeral private source research only; website/public/paid delivery and Production remain unauthorized.",
-    "Issue #218 records H.15 historical-vintage feasibility FAIL CLOSED after the approved preflight; owner approval remains historic evidence, not permission to bypass a stop condition."
+    "Issue #218 records H.15 historical-vintage feasibility FAIL CLOSED after the approved preflight; owner approval remains historic evidence, not permission to bypass a stop condition.",
+    "Pipeline consumed one-off research authorization following H.15 vintage stop. The approved receipt is historical audit evidence only; live execution is disabled on pipeline main."
   ],
   "provenanceReview": {
     "reviewedMergeSha": "d4d1e441f6dd91e1d249d9f3ad515c76e2d3f61b",
@@ -146,12 +147,9 @@
   "candidateStateScope": "website_promotion_only_separate_from_authorized_upstream_private_research",
   "oneOffPrivateResearchAuthorization": {
     "activationMergeSha": "bb9e4c4d2ef7d28938d670746b4a57f3fb1af587",
-    "receiptPath": "governance/score-v2-1e-real-data-research-authorization.json",
-    "receiptGitBlobSha": "40283d6c846c994b71e3d1a8007f1844215a655e",
     "ownerApprovalIssue": "https://github.com/usdimpact/usd-impact-pipeline/issues/209",
     "ownerApprovalCommentId": 6477834394,
     "approvedAtUtc": "2026-10-28T18:55:48Z",
-    "decisionStatus": "approved",
     "executionScope": "one_off_private_research_only",
     "methodologyVersion": "2.1E-design-candidate",
     "designMergeSha": "65e71695a3d99ed6a5584548652a61dc0e66006f",
@@ -173,8 +171,6 @@
       "www.bls.gov",
       "data.bls.gov"
     ],
-    "realDataFetchApproved": true,
-    "realDataResearchApproved": true,
     "ephemeralSourceValuesOnly": true,
     "ephemeralRawResponsesOnly": true,
     "privateIsolatedWorkspaceOnly": true,
@@ -187,7 +183,16 @@
     "productionApproved": false,
     "websiteSourceSwitchApproved": false,
     "websiteRealDataResearchExecutionApproved": false,
-    "rightsHoldRemains": true
+    "rightsHoldRemains": true,
+    "historicalDecisionStatus": "approved",
+    "originalExecutableReceiptPath": "governance/score-v2-1e-real-data-research-authorization.json",
+    "approvedReceiptOriginalBlobSha": "40283d6c846c994b71e3d1a8007f1844215a655e",
+    "realDataFetchApprovedAtActivation": true,
+    "realDataResearchApprovedAtActivation": true,
+    "ownerApprovalPreservedAsAuditEvidence": true,
+    "licenseOrSourceReuseApproved": false,
+    "currentlyExecutable": false,
+    "activeReceiptStillPresent": false
   },
   "preflightStop": {
     "blockingIssue": "https://github.com/usdimpact/usd-impact-pipeline/issues/218",
@@ -213,6 +218,33 @@
     "releaseAuthorized": false,
     "sourceRightsCleared": false,
     "upstreamReceiptDeactivationManagedByPipeline": true,
-    "laterRedesignRequiresDistinctVersionAndFreshPreregistration": true
+    "laterRedesignRequiresDistinctVersionAndFreshPreregistration": true,
+    "upstreamReceiptConsumptionCompleted": true,
+    "oldApprovalReusable": false
+  },
+  "oneOffResearchConsumption": {
+    "observedPipelineMainSha": "f2ac360fa01b4fbe87a2a94b0da4519d63210515",
+    "state": "one_off_private_research_consumed_fail_closed",
+    "consumptionRecordPath": "governance/score-v2-1e-real-data-research-consumption-2026-10-28.json",
+    "consumptionRecordGitBlobSha": "05c2dcb2e88bddd7f2fc0e297da7afa6c1a5e6a5",
+    "executionContractGitBlobSha": "b728d9efb75c569c06afb5ba6a95a12dfe5a81a8",
+    "ownerApprovalCommentId": 6477834394,
+    "consumptionDateUtc": "2026-10-28T19:39:10Z",
+    "blockerIssue": "https://github.com/usdimpact/usd-impact-pipeline/issues/218",
+    "failedPreflightRun": "https://github.com/usdimpact/usd-impact-pipeline/actions/runs/40755916179",
+    "originalExecutableReceiptRemoved": true,
+    "historicOwnerApprovalPreserved": true,
+    "newExplicitOwnerAuthorizationRequiredForAnyFutureResearch": true,
+    "researchWindowStart": "2013-01-01",
+    "researchWindowEnd": "2026-10-23",
+    "realDataFetchAuthorizedNow": false,
+    "realDataResearchAuthorizedNow": false,
+    "fullScoreComputed": false,
+    "rawOrComponentValuesPersisted": false,
+    "publicArtifactReplacementAuthorized": false,
+    "researchLedgerMutationAuthorized": false,
+    "productionAuthorized": false,
+    "commercializationAuthorized": false,
+    "releaseAuthorized": false
   }
 }

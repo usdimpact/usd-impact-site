@@ -121,7 +121,7 @@ if (!process.argv.includes('--pure')) {
   for (const url of blocked) check(`server rejects index/pointer ${url}`, () => {
     const candidate = draft([goodUrls[0], goodUrls[1], url]);
     const before = structuredClone(candidate);
-    assert.throws(() => validateEditorialBundle({ ...candidate, editionDate: edition }), /index|rolling report|mutable document pointer|annual release calendar/);
+    assert.throws(() => validateEditorialBundle({ ...candidate, editionDate: edition }), /index|rolling report|mutable document pointer|annual release calendar|reusable schedule page/);
     const evidence = collectRepairEvidence(provider(candidate), edition);
     assert.deepEqual(evidence.permittedSourceUrls, goodUrls.slice(0, 2));
     assert.match(evidence.issues.join('; '), /Ineligible index or rolling-pointer source ids/);

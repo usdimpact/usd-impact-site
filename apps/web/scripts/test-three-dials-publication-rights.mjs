@@ -2,38 +2,51 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const generator = new URL('./generate-three-dials-snapshot.mjs', import.meta.url);
+const boardReleaseXml = new URL('../src/lib/three-dials-board-release-xml.js', import.meta.url);
 const sourceLatest = new URL('../src/data/three-dials-latest.json', import.meta.url);
 const publicLatest = new URL('../public/data/three-dials/latest.json', import.meta.url);
 
-const [generatorText, sourceText, publicText] = await Promise.all([
+const [generatorText, boardReleaseXmlText, sourceText, publicText] = await Promise.all([
   readFile(generator, 'utf8'),
+  readFile(boardReleaseXml, 'utf8'),
   readFile(sourceLatest, 'utf8'),
   readFile(publicLatest, 'utf8'),
 ]);
+const sourceAdapterText = `${generatorText}\n${boardReleaseXmlText}`;
 
 assert.equal(sourceText, publicText, 'Three Dials source/public latest copies must remain byte-identical.');
 
-const forbidden = ['DX-Y.NYB', 'BAMLH0A0HYM2', 'VIXCLS', 'query1.finance.yahoo.com', 'finance.yahoo.com/quote/'];
-for (const marker of forbidden) {
-  assert.equal(generatorText.includes(marker), false, `Three Dials v2 generator must not contain restricted legacy source ${marker}.`);
+const forbiddenLegacy = ['DX-Y.NYB', 'BAMLH0A0HYM2', 'VIXCLS', 'query1.finance.yahoo.com', 'finance.yahoo.com/quote/'];
+for (const marker of [...forbiddenLegacy, 'fred.stlouisfed.org', '/graph/fredgraph.csv', '/datadownload/Output.aspx']) {
+  assert.equal(sourceAdapterText.includes(marker), false, `Three Dials v2 generator must not contain disallowed source/transport marker ${marker}.`);
 }
 for (const required of [
   'FED_BROAD_USD',
   'FED_10Y_REAL_YIELD',
   'SOFR_IORB_SPREAD',
-  'DTWEXBGS',
-  'DFII10',
-  'IORB',
+  'H10/H10/JRXWTFB_N.B',
+  'H15/H15/RIFLGFCY10_XII_N.B',
+  'PRATES/PRATES_POLICY_RATES/RESBM_N.D',
+  'JRXWTFB_N.B',
+  'RIFLGFCY10_XII_N.B',
+  'RESBM_N.D',
+  'FRB_h10_xml.zip',
+  'FRB_h15_xml.zip',
+  'FRB_PRATES_xml.zip',
   'https://markets.newyorkfed.org',
   '/api/rates/secured/sofr/search.json',
   'NYFED_SOFR_NOTICE',
   'federal_reserve_board_public_domain',
   'derived_from_permitted_primary_sources',
 ]) {
-  assert.ok(generatorText.includes(required), `Three Dials v2 generator must bind rights-safe contract ${required}.`);
+  assert.ok(sourceAdapterText.includes(required), `Three Dials v2 generator must bind rights-safe contract ${required}.`);
 }
 
-assert.match(generatorText, /FRED is used only as the transport/);
+assert.match(generatorText, /full-release XML linked from the Federal Reserve release page/);
+assert.match(boardReleaseXmlText, /SERIES_NAME/);
+assert.match(boardReleaseXmlText, /TIME_PERIOD/);
+assert.match(boardReleaseXmlText, /OBS_VALUE/);
+assert.match(boardReleaseXmlText, /extractZipEntry/);
 assert.match(generatorText, /must not be labeled DXY/);
 assert.match(generatorText, /not a credit spread or a complete measure of market liquidity\/stress/);
 assert.match(generatorText, /break_from_v1: true/);
@@ -75,7 +88,7 @@ if (latest.status === 'pending') {
   assert.match(latest.source_rights?.new_york_fed_sofr?.notice ?? '', /does not sanction or endorse any particular republication/);
   assert.match(latest.source_rights?.new_york_fed_sofr?.affiliation_notice ?? '', /not affiliated with the New York Fed/);
 
-  for (const marker of forbidden) {
+  for (const marker of forbiddenLegacy) {
     assert.equal(sourceText.includes(marker), false, `Published v2 snapshot contains restricted legacy marker ${marker}.`);
   }
 

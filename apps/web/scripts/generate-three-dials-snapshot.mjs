@@ -1,7 +1,6 @@
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { assessThreeDials, THREE_DIALS_THRESHOLDS, THREE_DIALS_VERSION } from '../src/lib/three-dials.js';
-
-const FRED_ORIGIN = 'https://fred.stlouisfed.org';
+import { BOARD_ORIGIN, boardSeriesUrl, parseBoardCsv } from '../src/lib/three-dials-board-source.js';
 const NYFED_ORIGIN = 'https://markets.newyorkfed.org';
 const TIMEOUT_MS = 20_000;
 const MAX_SOURCE_BYTES = 5_000_000;
@@ -15,7 +14,9 @@ const NYFED_AFFILIATION_NOTICE = 'USD Impact is not affiliated with the New York
 
 const BOARD_SERIES = Object.freeze({
   broadUsd: {
-    transportId: 'DTWEXBGS',
+    releaseId: 'H10',
+    packageId: '122e3bcb627e8e53f1bf72a1a09cfb81',
+    seriesCode: 'JRXWTFB_N.B',
     outputId: 'FED_BROAD_USD',
     sourceSeriesId: 'H10/H10/JRXWTFB_N.B',
     label: 'Federal Reserve nominal broad dollar index',
@@ -28,7 +29,9 @@ const BOARD_SERIES = Object.freeze({
     changeMode: 'pct',
   },
   realYield10y: {
-    transportId: 'DFII10',
+    releaseId: 'H15',
+    packageId: '0b98a66d3ff5e1ea0fbf88adc59b387f',
+    seriesCode: 'RIFLGFCY10_XII_N.B',
     outputId: 'FED_10Y_REAL_YIELD',
     sourceSeriesId: 'H15/H15/RIFLGFCY10_XII_N.B',
     label: '10-year inflation-indexed Treasury constant-maturity yield',
@@ -41,7 +44,9 @@ const BOARD_SERIES = Object.freeze({
     changeMode: 'bps',
   },
   iorb: {
-    transportId: 'IORB',
+    releaseId: 'PRATES',
+    packageId: 'c27939ee810cb2e929a920a6bd77d9f6',
+    seriesCode: 'RESBM_N.D',
     outputId: 'FED_IORB',
     sourceSeriesId: 'PRATES/PRATES_POLICY_RATES/RESBM_N.D',
     label: 'Interest rate on reserve balances',
@@ -121,32 +126,9 @@ async function fetchBounded(url, expectedOrigin) {
   return text;
 }
 
-function parseFredCsv(text, transportId) {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) throw new Error(`FRED ${transportId} returned no observations.`);
-  const header = lines[0].replace(/^\uFEFF/, '').split(',').map((value) => value.replaceAll('"', '').trim());
-  const valueIndex = header.indexOf(transportId);
-  if (valueIndex < 1) throw new Error(`FRED ${transportId} response header is unexpected.`);
-
-  const points = [];
-  for (const line of lines.slice(1)) {
-    const fields = line.split(',').map((value) => value.replaceAll('"', '').trim());
-    const date = fields[0];
-    const raw = fields[valueIndex];
-    const value = Number(raw);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || raw === '.' || !Number.isFinite(value)) continue;
-    points.push({ date, value });
-  }
-  if (points.length < 2) throw new Error(`FRED ${transportId} did not provide two usable observations.`);
-  return points;
-}
-
 async function fetchBoardSeries(config, startDate, endDate) {
-  const url = new URL('/graph/fredgraph.csv', FRED_ORIGIN);
-  url.searchParams.set('id', config.transportId);
-  url.searchParams.set('cosd', isoDate(startDate));
-  url.searchParams.set('coed', isoDate(endDate));
-  return parseFredCsv(await fetchBounded(url.toString(), FRED_ORIGIN), config.transportId);
+  const url = boardSeriesUrl(config);
+  return parseBoardCsv(await fetchBounded(url.toString(), BOARD_ORIGIN), config, startDate, endDate);
 }
 
 async function fetchSofrSeries(startDate, endDate) {
@@ -249,10 +231,12 @@ function buildBoardObservation(key, points, currentCutoff, previousCutoff, sourc
     sourceUrl: config.sourceUrl,
     sourceSeriesId: config.sourceSeriesId,
     transport: {
-      provider: 'Federal Reserve Bank of St. Louis FRED',
-      series_id: config.transportId,
-      url: `https://fred.stlouisfed.org/series/${config.transportId}`,
-      role: 'Transport only. Source identity and reuse basis remain the Federal Reserve Board series above.',
+      provider: 'Board of Governors of the Federal Reserve System',
+      endpoint: `${BOARD_ORIGIN}/datadownload/Output.aspx`,
+      release: config.releaseId,
+      package_id: config.packageId,
+      series_id: config.sourceSeriesId,
+      role: 'Direct Federal Reserve Board DDP transport; FRED transport is not used.',
     },
     sourceNote,
     units: config.units,
@@ -281,8 +265,13 @@ function buildFundingSpread(sofrPoints, iorbPoints, currentCutoff, previousCutof
     sourceSeriesId: 'NYFED_SOFR minus PRATES/PRATES_POLICY_RATES/RESBM_N.D',
     transport: {
       sofr: `${NYFED_ORIGIN}/api/rates/secured/sofr/search.json`,
-      iorb: `https://fred.stlouisfed.org/series/${BOARD_SERIES.iorb.transportId}`,
-      role: 'SOFR fetched directly from the New York Fed API; IORB transported through FRED from the Federal Reserve Board source series.',
+      iorb: {
+        endpoint: `${BOARD_ORIGIN}/datadownload/Output.aspx`,
+        release: BOARD_SERIES.iorb.releaseId,
+        package_id: BOARD_SERIES.iorb.packageId,
+        series_id: BOARD_SERIES.iorb.sourceSeriesId,
+      },
+      role: 'SOFR fetched directly from the New York Fed API; IORB fetched directly from the Federal Reserve Board DDP.',
     },
     sourceNote: 'USD Impact derived calculation: SOFR minus IORB in basis points. It is a funding-pressure indicator, not a credit spread or a complete liquidity/stress measure.',
     units: 'Basis points',
@@ -341,7 +330,7 @@ async function main() {
     broadUsdPoints,
     currentCutoff,
     previousCutoff,
-    'Federal Reserve Board H.10 nominal broad dollar index. FRED is used only as the transport selected by the Board as a DDP successor path.',
+    'Federal Reserve Board H.10 nominal broad dollar index, fetched directly from the Board DDP. The Board has announced eventual DDP retirement; this temporary adapter must fail closed if the package contract changes.',
   );
   const realYield10y = buildBoardObservation(
     'realYield10y',
@@ -417,7 +406,7 @@ async function main() {
       'Dial 3 uses the USD Impact-derived SOFR-minus-IORB spread as a funding-pressure indicator. It is not a credit spread or a complete measure of market liquidity/stress.',
       NYFED_SOFR_NOTICE,
       NYFED_AFFILIATION_NOTICE,
-      'Federal Reserve Board information is attributed to the Board; FRED is used only as transport for Board-origin series in this implementation.',
+      'Federal Reserve Board series are fetched directly from the Board DDP. The Board has announced eventual DDP retirement; if the direct package contract changes, publication must fail closed until the source adapter is revalidated.',
       'The USD Impact Score remains a separate product with separate source governance and is intentionally not embedded in the Three Dials v2 snapshot.',
       'The Three-Dial interpretation is descriptive and deterministic. It is not investment advice, a trading signal, a probability, or a return forecast.',
     ],

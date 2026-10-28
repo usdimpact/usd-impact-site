@@ -1,0 +1,185 @@
+{
+  "schemaVersion": "research-report-public-baseline-v1",
+  "observedDateUtc": "2026-10-28",
+  "sourceCommit": "dbbe7e6dcf1632275b0e05c1db311e543d524d6c",
+  "disposition": "HOLD — inventory evidence only, not a public redistribution rights approval",
+  "notes": "Every listed report was already present in published static source at this baseline. Flags are source-structure observations, not provider-rights determinations or authorization to publish. New reports and changes must receive review. Do not silently reclassify historical URLs.",
+  "entries": [
+    {
+      "type": "weekly",
+      "periodEnd": "2026-07-31",
+      "publicRoute": "/reports/weekly/2026-07-31",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": true,
+      "hasNearestRegimeBoundary": true,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "weekly",
+      "periodEnd": "2026-08-07",
+      "publicRoute": "/reports/weekly/2026-08-07",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": true,
+      "hasNearestRegimeBoundary": true,
+      "approvedSampleRoute": "/research/sample/",
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "weekly",
+      "periodEnd": "2026-08-14",
+      "publicRoute": "/reports/weekly/2026-08-14",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": true,
+      "hasNearestRegimeBoundary": true,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "weekly",
+      "periodEnd": "2026-08-21",
+      "publicRoute": "/reports/weekly/2026-08-21",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": true,
+      "hasNearestRegimeBoundary": true,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "weekly",
+      "periodEnd": "2026-08-28",
+      "publicRoute": "/reports/weekly/2026-08-28",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": true,
+      "hasNearestRegimeBoundary": true,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "weekly",
+      "periodEnd": "2026-09-04",
+      "publicRoute": "/reports/weekly/2026-09-04",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": true,
+      "hasNearestRegimeBoundary": true,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "weekly",
+      "periodEnd": "2026-09-11",
+      "publicRoute": "/reports/weekly/2026-09-11",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": true,
+      "hasNearestRegimeBoundary": true,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "weekly",
+      "periodEnd": "2026-09-18",
+      "publicRoute": "/reports/weekly/2026-09-18",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": true,
+      "hasNearestRegimeBoundary": true,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "weekly",
+      "periodEnd": "2026-09-25",
+      "publicRoute": "/reports/weekly/2026-09-25",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": true,
+      "hasNearestRegimeBoundary": true,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "weekly",
+      "periodEnd": "2026-10-02",
+      "publicRoute": "/reports/weekly/2026-10-02",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": true,
+      "hasNearestRegimeBoundary": true,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "weekly",
+      "periodEnd": "2026-10-09",
+      "publicRoute": "/reports/weekly/2026-10-09",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": true,
+      "hasNearestRegimeBoundary": true,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "weekly",
+      "periodEnd": "2026-10-16",
+      "publicRoute": "/reports/weekly/2026-10-16",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": true,
+      "hasNearestRegimeBoundary": true,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "weekly",
+      "periodEnd": "2026-10-23",
+      "publicRoute": "/reports/weekly/2026-10-23",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": true,
+      "hasNearestRegimeBoundary": true,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "monthly",
+      "periodEnd": "2026-08-21",
+      "publicRoute": "/reports/monthly/2026-08-21",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": false,
+      "hasNearestRegimeBoundary": false,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "monthly",
+      "periodEnd": "2026-09-18",
+      "publicRoute": "/reports/monthly/2026-09-18",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": false,
+      "hasNearestRegimeBoundary": false,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    },
+    {
+      "type": "monthly",
+      "periodEnd": "2026-10-16",
+      "publicRoute": "/reports/monthly/2026-10-16",
+      "published": true,
+      "hasComponentDiscussion": true,
+      "hasWeeklyInputReference": false,
+      "hasNearestRegimeBoundary": false,
+      "approvedSampleRoute": null,
+      "rightsStatus": "HOLD_UNREVIEWED"
+    }
+  ]
+}

@@ -40,25 +40,42 @@ Current public characteristics verified on 2026-10-28:
 
 This is the minimum conceptual standard. The other nine sites must have genuine local editorial value, not merely translated copies.
 
-## 3. Architecture decision
+## 3. Architecture decision and current implementation
 
-### Do not place ten public sites inside `apps/web`
+### Keep companion publishing outside `apps/web`
 
 The USD Impact repository currently has one runtime application: `apps/web`.
 
-Adding ten independent editorial brands/domains directly into that runtime would unnecessarily couple:
-- USD Impact deployment risk;
-- commerce/auth/member systems;
-- locale release controls;
-- sitemaps/canonicals;
-- incident/rollback scope;
-- editorial publishing cadence.
+That runtime should not absorb ten independent editorial brands/domains because doing so would unnecessarily couple USD Impact deployment, commerce/auth/member systems, canonical/indexing behavior and rollback scope.
 
-### Preferred architecture
+### Existing implementation home
 
-Use **one reusable companion-publication codebase** with **isolated site configurations/content roots and independent deployments**.
+The reusable companion-publication codebase already exists:
 
-Conceptual layout:
+`usdimpact/siguiendo-el-dolar`
+
+Current protected `main` checkpoint observed during this reconciliation:
+`827a197d999c35f894551edcc0cd16a0dd616927`
+
+That repository already contains:
+- the live Spanish/LATAM publication;
+- a fail-closed multilingual publication registry;
+- exact-domain resolution tests;
+- per-language publication/indexing/deployment gates;
+- Portuguese source-authority and review contracts;
+- Preview-only Portuguese routing controls;
+- reviewed Portuguese content candidates;
+- current host-exposure/containment documentation.
+
+Therefore **do not create a second companion-network repository or duplicate foundation inside USD Impact**.
+
+Use `usdimpact/siguiendo-el-dolar` as the implementation home and this USD Impact document only as cross-project governance.
+
+### Shared-code / isolated-release model
+
+The implementation should continue as one reusable companion-publication codebase with isolated site configurations/content roots and independent deployment/domain release gates.
+
+Conceptual target layout:
 
 ```text
 following-dollar-network/
@@ -275,7 +292,7 @@ No companion needs access to USD Impact Supabase, commerce, entitlements or memb
 
 Keep those systems separated.
 
-## 13. Proposed implementation phases
+## 13. Implementation phases — reconciled current state
 
 ### Phase 0 — complete
 
@@ -284,25 +301,49 @@ Keep those systems separated.
 - directory-listing exposure contained;
 - registration inventory recorded.
 
-### Phase 1 — shared foundation, no public launch
+### Phase 1 — shared fail-closed foundation: substantially complete
 
-Create an isolated companion-publication codebase with:
-- common static editorial shell;
-- site configuration schema;
-- article schema;
-- source/citation component;
-- topic landing component;
-- About/methodology/corrections templates;
-- canonical/robots/sitemap contracts;
-- compliance template;
-- per-site build command;
-- automated checks preventing cross-domain canonicals and missing required disclosure.
+Merged companion-repository work already provides:
+- PR #58 — fail-closed multilingual publication registry;
+- Portuguese Preview profile and exact-domain controls;
+- publication/indexing/deployment gates;
+- tests rejecting unknown/WWW/incorrect hosts;
+- source-drift and review-state contracts.
 
-Use placeholder/test content only.
+The companion repository, not `usd-impact-site`, is the implementation home.
 
-### Phase 2 — choose one non-Spanish pilot
+### Phase 2 — Portuguese pilot: active, independent-domain launch still HOLD
 
-Pilot-selection criteria:
+Portuguese has already been selected as the first non-Spanish pilot.
+
+Merged sequence #59–#71 added:
+- Portuguese Preview shell/taxonomy;
+- source-authority contract;
+- four core candidates;
+- editorial, parity, financial/compliance review passes;
+- Preview approval;
+- controlled route authorization.
+
+Current exact Portuguese network profile remains:
+- `status = hold`;
+- `previewEnabled = true`;
+- `publicationEnabled = false`;
+- `indexingEnabled = false`;
+- `deploymentEnabled = false`;
+- `brandClearanceRequired = true`.
+
+Four reviewed Portuguese core routes currently have `routeEnabled=true` and `publicReleaseAuthorized=true`, but PR #71 intentionally constrains them to the existing `siguiendoeldollar.com` production host with `noindex, nofollow`.
+
+They must fail closed on:
+- `seguindoodolar.com`;
+- Vercel Preview for the public-route path;
+- localhost;
+- WWW;
+- unknown hosts.
+
+This is an intermediate editorial-review/release state, **not launch of Seguindo o Dólar as an independent publication**.
+
+### Portuguese pilot selection rationale / continuing criteria:
 - native reviewer availability;
 - editorial backlog quality;
 - brand/collision clearance;
@@ -368,13 +409,20 @@ Without a later explicit release approval:
 
 ## 16. Immediate next engineering unit
 
-Build **Phase 1 only** in an isolated codebase/Preview:
+Do **not** rebuild Phase 1.
 
-- multi-site static shell;
-- config for all ten registered brands;
-- no production domain bindings;
-- no provider/database/auth dependency;
-- one synthetic fixture article per site used only to prove build isolation;
-- tests that each build emits its own canonical domain and never another companion domain.
+Continue the already-selected Portuguese pilot in `usdimpact/siguiendo-el-dolar` with a **dedicated Portuguese Preview publication boundary** while keeping the independent network HOLD flags unchanged.
 
-After that exact-head Preview passes, choose the first non-Spanish pilot based on editorial/reviewer readiness rather than convenience.
+Next safe unit:
+
+1. preserve the current four approved Portuguese core routes and their source hashes;
+2. create the independent Portuguese homepage/topic-shell on Preview only;
+3. establish Portuguese About/editorial-methodology/corrections/legal placeholders;
+4. add dedicated canonical/robots/sitemap tests for the future `seguindoodolar.com` host, but keep indexing disabled;
+5. expand toward the standalone editorial-value floor before any domain launch;
+6. verify build/route isolation from Spanish content;
+7. create no DNS/domain attachment yet;
+8. keep `publicationEnabled=false`, `indexingEnabled=false`, and `deploymentEnabled=false`;
+9. perform brand/trademark/collision review before any public-domain release request.
+
+Public `seguindoodolar.com` launch requires a later explicit owner decision after the standalone editorial and dedicated-deployment gates are satisfied.

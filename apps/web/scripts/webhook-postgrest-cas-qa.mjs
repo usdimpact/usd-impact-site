@@ -89,7 +89,9 @@ function sqlClient(env, statement, fixture) {
   let result;
   try {
     const pgEnv = {
-      ...process.env, PGHOST: env.DEV_PGHOST, PGUSER: env.DEV_PGUSER,
+      // Do not inherit unrelated GitHub/API secrets into the psql child.
+      PATH: process.env.PATH, HOME: process.env.HOME, LANG: process.env.LANG,
+      PGHOST: env.DEV_PGHOST, PGUSER: env.DEV_PGUSER,
       PGDATABASE: env.DEV_PGDATABASE, PGPORT: env.DEV_PGPORT,
       PGPASSWORD: env.DEV_PGPASSWORD, PGSSLMODE: 'verify-full',
       PGSSLROOTCERT: certPath, PGCONNECT_TIMEOUT: '6',

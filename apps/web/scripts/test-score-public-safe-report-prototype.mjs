@@ -170,6 +170,29 @@ test('accepts #162-shaped aggregate Score but never copies component methodology
   }
 });
 
+test('fails closed when the upstream aggregate-safe Score contract grows unexpectedly', () => {
+  const topLevel = safeScore(weeks[0], 0);
+  topLevel.new_public_field = true;
+  assert.throws(
+    () => validatePublicSafeScore(topLevel),
+    /fields do not match the reviewed public-safe contract/,
+  );
+
+  const latest = safeScore(weeks[0], 0);
+  latest.latest.experimental = 1;
+  assert.throws(
+    () => validatePublicSafeScore(latest),
+    /fields do not match the reviewed public-safe contract/,
+  );
+
+  const history = safeScore(weeks[0], 0);
+  history.history[0].component = 'DXY';
+  assert.throws(
+    () => validatePublicSafeScore(history),
+    /fields do not match the reviewed public-safe contract/,
+  );
+});
+
 test('rejects unsafe upstream Score fields before report construction', async () => {
   const unsafe = safeScore(weeks[0], 0);
   unsafe.source_provenance = { DXY: { provider: 'Yahoo Finance' } };

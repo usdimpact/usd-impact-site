@@ -412,3 +412,28 @@ It does **not** constitute:
 - Track 00 exact-export acceptance;
 - legal clearance;
 - publication/member-storage/Production authorization.
+
+
+## Full-program listening reconciliation — 2026-10-28
+
+The historical sections above contain stale statements that whole-program listening was still pending. PR #797's later owner evidence supersedes those statements.
+
+Authoritative later evidence:
+- 2026-10-19 PR comment `6267521199`: Block C (selected tracks 10–15) reported **all PASS** with no defect notes.
+- 2026-10-19 PR comment `6267563919`: Block D (selected tracks 16–19) reported **all PASS**; the same comment explicitly records that, with the previously reported A/B/C results, the owner reports **20/20 selected compositions pass full-track listening**.
+- 2026-10-27 closeout record `SPANISH_AUDIOBOOK_PRIVATE_QA_CLOSEOUT_2026-10-27.md` independently reconciles the owner-reported result as **20/20 selected compositions PASS**.
+
+Therefore:
+
+**Full-program human listening gate: PASS (owner-reported, 20/20 selected compositions).**
+
+Scope boundary:
+- this is acoustic/editorial listening signoff for the selected compositions;
+- it is not mastering certification;
+- it is not lossless-export provenance;
+- it is not legal/publisher clearance;
+- it is not public/member/Production authorization.
+
+The 2026-10-28 targeted PASSes for the Chapter 8→13 reel, Chapter 13 ending, and Track 13/14 signal outliers are supplementary confirmation, not a replacement for the already-completed 20/20 full-track listening gate.
+
+Any earlier line in this tracker stating that the four whole-book blocks or complete 20-track listen remain pending is superseded by this section.

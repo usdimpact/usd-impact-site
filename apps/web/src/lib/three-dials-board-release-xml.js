@@ -3,7 +3,7 @@ import { inflateRawSync } from 'node:zlib';
 export const BOARD_RELEASE_ORIGIN = 'https://www.federalreserve.gov';
 
 const MAX_RELEASE_ZIP_BYTES = 16 * 1024 * 1024;
-const MAX_RELEASE_XML_BYTES = 64 * 1024 * 1024;
+const MAX_RELEASE_XML_BYTES = 256 * 1024 * 1024;
 const ZIP_EOCD_SIGNATURE = 0x06054b50;
 const ZIP_CENTRAL_SIGNATURE = 0x02014b50;
 const ZIP_LOCAL_SIGNATURE = 0x04034b50;
@@ -71,6 +71,7 @@ export function extractZipEntry(zipBytes, entryName) {
   }
 
   if (!match) throw new Error(`Federal Reserve release ZIP is missing ${entryName}.`);
+  console.error(JSON.stringify({ proofDiagnostic: 'release-entry-size/v1', entryName, zipBytes: buffer.length, compressedBytes: match.compressedSize, uncompressedBytes: match.uncompressedSize }));
   if (match.flags & 0x1) throw new Error('Encrypted Federal Reserve release ZIP entries are not accepted.');
   if (![0, 8].includes(match.method)) throw new Error(`Unsupported Federal Reserve release ZIP compression method: ${match.method}.`);
   if (match.uncompressedSize <= 0 || match.uncompressedSize > MAX_RELEASE_XML_BYTES) {

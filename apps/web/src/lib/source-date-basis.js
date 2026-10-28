@@ -18,6 +18,9 @@ const FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH = /^\/newsevents\/pressreleases\/\d{
 const BLS_ANNUAL_CALENDAR_PATH = /^\/schedule\/\d{4}\/home\.htm$/;
 // Reused full-report pointer; new citations must identify a dated release.
 const EIA_WEEKLY_REPORT_POINTER_PATH = '/petroleum/supply/weekly/pdf/wpsrall.pdf';
+// Reusable WPSR schedule: event rows change over time, but the page exposes no
+// page-level publication or Last Updated date suitable for publishedAt.
+const EIA_WEEKLY_SCHEDULE_PATH = '/petroleum/supply/weekly/schedule.php';
 
 const LIVING_FEDERAL_RESERVE_PATHS = [
   /^\/newsevents\/calendar\.htm$/i,
@@ -51,7 +54,8 @@ export function sourceDateBasisForUrl(value) {
     }
     if ((indexHostname === 'home.treasury.gov' && pathname === TREASURY_REFUNDING_INDEX_PATH)
       || (indexHostname === 'federalreserve.gov' && ([FEDERAL_RESERVE_POSTINGS_INDEX_PATH, FEDERAL_RESERVE_NEWS_INDEX_PATH].includes(pathname) || FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH.test(pathname)))
-      || (indexHostname === 'bls.gov' && BLS_ANNUAL_CALENDAR_PATH.test(pathname))) {
+      || (indexHostname === 'bls.gov' && BLS_ANNUAL_CALENDAR_PATH.test(pathname))
+      || (indexHostname === 'eia.gov' && pathname === EIA_WEEKLY_SCHEDULE_PATH)) {
       return SOURCE_DATE_BASIS.DOCUMENT_INDEX;
     }
   }
@@ -97,10 +101,13 @@ export function sourceDateAttributionIssue(value) {
   // evidence. Hold new candidates; leave published archives untouched.
   const url = new URL(String(value));
   const hostname = url.hostname.toLowerCase().replace(/^www\./, '').replace(/\.$/, '');
+  const pathname = decodeURIComponent(url.pathname).replace(/\/+$/, '').toLowerCase();
+  if (hostname === 'eia.gov' && pathname === EIA_WEEKLY_SCHEDULE_PATH) {
+    return 'EIA Weekly Petroleum Status Report schedule is a reusable schedule page without a page-level publication or Last Updated date. Use the current WPSR landing page when it directly supports the next-release claim and its displayed current Release Date as publishedAt, or cite a dated release-specific EIA document. Never assign an event date from the schedule table, an access date, or a prior historical date to the reusable schedule page; if no dated source supports the claim, omit the unsupported source and claim.';
+  }
   if (hostname === 'bls.gov') {
     return 'BLS annual release calendar aggregates separately updated monthly sections. Cite the relevant month-specific schedule with its own verified Last Modified date, or a directly linked dated release. Verify the event date separately; never use an access date, edition date, event date or another month section date as the annual page publication date. If no such source is verifiable, omit the unsupported source and claim.';
   }
-  const pathname = decodeURIComponent(url.pathname).replace(/\/+$/, '').toLowerCase();
   const label = hostname === 'federalreserve.gov'
     ? (pathname === FEDERAL_RESERVE_NEWS_INDEX_PATH
         ? 'Federal Reserve News and Events'

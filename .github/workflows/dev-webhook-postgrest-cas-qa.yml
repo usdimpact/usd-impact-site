@@ -50,7 +50,7 @@ jobs:
           node --test apps/web/scripts/test-webhook-postgrest-cas-qa.mjs
 
   manual-development-cas:
-    if: github.event_name == 'workflow_dispatch' && inputs.approval == 'DEV_ONLY_NO_SEND'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.approval == 'DEV_ONLY_NO_SEND'
     runs-on: ubuntu-latest
     environment: development-webhook-cas
     timeout-minutes: 5

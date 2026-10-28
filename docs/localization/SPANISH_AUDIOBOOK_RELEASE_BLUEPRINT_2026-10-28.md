@@ -194,8 +194,9 @@ Until Gates A–E are cleared, do not:
 ## 8. Current remaining decisions
 
 Engineering/audio:
-- final encoded MP3 generation and encoded-output QA;
-- exact Track 00 final binary provenance record if available.
+- **192 kbps MP3 encoding profile QA: PASS** — 20/20 technical candidate encodes validated; authoritative record: `SPANISH_AUDIOBOOK_PRIVATE_MP3_ENCODING_QA_2026-10-28.md`;
+- final private-master materialization remains held until Track 00 release-source provenance is resolved;
+- exact Track 00 final binary provenance record if available, or explicit publisher/owner approval of the deterministic render-equivalent source.
 
 Publisher/legal:
 - rights wording;

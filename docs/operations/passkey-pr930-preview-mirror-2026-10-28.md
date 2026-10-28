@@ -20,3 +20,7 @@ This file is added solely to trigger a distinct non-Production Preview build and
 3. Under the stable RP ID, test account-backed passkey list, registration, rename and deletion after an expired access token and one refresh.
 4. Validate both remember-on and remember-off behavior, then confirm recovery and multi-device boundaries.
 5. Collect only non-sensitive outcomes in a PR #930 QA comment; keep it Draft pending those proofs.
+
+## Approved branch-scoped Preview rebuild
+
+The owner approved a QA-only WebAuthn cutover. `PASSKEY_AUTH_ENABLED=true` was configured for **this Preview branch only** (not Production or default Preview). This documentation-only revision triggers a new Vercel Preview so the deployment captures the new branch-scoped environment setting. The stable `passkeys-dev.usd-impact.com` alias must not move until the new exact deployment is READY and validated. Roll back to `dpl_4AFH5j8SV4uKeMugTknK7Q1qKJVn` if validation fails. No user secrets or credentials are recorded here.

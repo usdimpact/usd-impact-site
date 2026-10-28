@@ -15,7 +15,7 @@ This harness is a CLI test script, not a website route, webhook or scheduler. It
 - Supabase Development project: **ycstrcvshdluovtuasjc**.
 - HTTP target: **https://ycstrcvshdluovtuasjc.supabase.co**; no alternative host.
 - Postgres direct host: db.ycstrcvshdluovtuasjc.supabase.co, user postgres; or a Supabase session-pooler host with user postgres.ycstrcvshdluovtuasjc.
-- Postgres port 5432 only, database postgres, TLS verify-full. Other project IDs, hosts and pooling modes are rejected.
+- Postgres port 5432 only, database postgres, TLS verify-full using the **Development Supabase CA certificate** in a temporary owner-only file. Other project IDs, hosts and pooling modes are rejected.
 
 ## One synthetic, non-sendable fixture
 
@@ -41,13 +41,14 @@ The script emits only allowlisted evidence: PASS/FAIL, winning transition, termi
 
 1. A reviewer examines the [Draft PR and its exact commit](https://github.com/usdimpact/usd-impact-site/pulls), including the standalone runner, offline test suite, workflow and this document.
 2. Open [GitHub Environments](https://github.com/usdimpact/usd-impact-site/settings/environments). Create a dedicated environment named **development-webhook-cas**. Configure required reviewers and restrict branches to a separately approved execution path. Never reuse a Production environment. If the repository plan does not permit an effective approval gate, do not launch the live job.
-3. Set four **Development-only GitHub environment secrets**, directly in GitHub UI, not in a chat, issue, screenshot or log:
+3. Set five **Development-only GitHub environment secrets**, directly in GitHub UI, not in a chat, issue, screenshot or log:
    - DEV_WEBHOOK_CAS_REST_SECRET: Development sb_secret API key or Development service-role JWT.
    - DEV_WEBHOOK_CAS_PGHOST: Development direct or session-pooler hostname.
    - DEV_WEBHOOK_CAS_PGUSER: matching Development user.
    - DEV_WEBHOOK_CAS_PGPASSWORD: matching Development database password.
+   - DEV_WEBHOOK_CAS_PGROOTCERT_PEM: complete public PEM of the Development database's CA certificate, downloaded from Supabase Database Settings > SSL Configuration. It is written only to a temporary file for hostname-verified TLS and deleted after use.
 
-   Retrieve connection settings privately from the [Development Supabase dashboard](https://supabase.com/dashboard/project/ycstrcvshdluovtuasjc). No credentials are included in the repository or passed as command-line arguments. The script requires Node 24 and the PostgreSQL psql client, with no third-party Node dependencies.
+   Retrieve connection settings privately from the [Development Supabase dashboard](https://supabase.com/dashboard/project/ycstrcvshdluovtuasjc). Follow [Supabase's PSQL TLS instructions](https://supabase.com/docs/guides/database/psql) for the CA certificate. No credentials are included in the repository or passed as command-line arguments. The script requires Node 24 and the PostgreSQL psql client, with no third-party Node dependencies.
 4. The workflow runs offline unit tests on pull requests with **no secrets**. The live job exists only for manual workflow_dispatch with exact-head SHA input, the explicit DEV_ONLY_NO_SEND confirmation, and the protected Development environment.
 5. **Important registration limitation:** GitHub requires a newly introduced manual workflow to exist on the default branch before it is normally offered through the Actions UI. This Draft PR must therefore stay unmerged. Merging into main would normally trigger the Vercel Git integration and a Production deployment even if only QA files changed. A separate release and deployment approval is required before merging; do not bypass this by allowing a pull-request CI job to see secrets.
 6. Only after that separate decision, use [Development PostgREST webhook CAS QA — Actions](https://github.com/usdimpact/usd-impact-site/actions/workflows/dev-webhook-postgrest-cas-qa.yml). Set approval to DEV_ONLY_NO_SEND and reviewed_sha to the exact 40-character Git commit being executed. The script rejects any mismatched SHA/project/host, missing credential, wrong trigger or insufficient approval.

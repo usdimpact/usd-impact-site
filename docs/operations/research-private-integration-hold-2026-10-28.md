@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-28
 **Status:** Engineering test candidate only. No merge, Preview/Production activation, payment activity, rights approval, or customer data changes.
-**Protected baseline:** `usdimpact/usd-impact-site` main at `dbbe7e6dcf1632275b0e05c1db311e543d524d6c`.
+**Protected baseline:** `usdimpact/usd-impact-site` main refreshed to `995ad4f44ded6a52caaed5103f4e4d228f3b29e7` (the existing Draft retains current Daily News/Catalyst content).
 **Mandatory unresolved decision:** [Score data rights, pipeline #155](https://github.com/usdimpact/usd-impact-pipeline/issues/155).
 
 ## Why consolidate
@@ -44,6 +44,14 @@ The checks operate on repository source/configuration only, with no external req
 ## What is specifically not proven
 
 This is not a full security proof of hypothetical unmarked content, a legal data-redistribution determination, a live CDN cache audit, a real Supabase RLS/storage test, a signed-in Development browser run, or acceptance of the first genuine independent paid Research subscriber. Existing 13 weekly and 3 monthly reports remain historical public outputs pending the separate rights disposition.
+
+## Verified read-only Production entitlement and ACL audit
+
+A **separate read-only Supabase audit on 2026-10-28** found eight active Research Membership entitlements: seven have one event each with `actor_type=admin`, while one active entitlement created on **2026-10-19 UTC** has **no matching entitlement-event row**. None of the eight has a linked purchase or subscription; there are zero Research purchases, subscriptions, and subscription-event rows. This is an **audit/provenance exception**, not evidence that the remaining entitlement is unauthorized or that a paid lifecycle was accepted.
+
+The same read-only permission query confirmed that `score_member_assets`, `score_member_sessions`, and `score_handoff_tickets` have RLS enabled and direct `anon` / `authenticated` SELECT privilege **false**. `score_member_assets` has 58 records; no private body or customer identifiers were retrieved. RLS and grant inspection are **not** a substitute for live Development end-to-end authorization tests.
+
+Full non-identifying evidence, reproducible read-only SQL, risk classification and stop conditions: [research-entitlement-provenance-readonly-audit-2026-10-28.md](research-entitlement-provenance-readonly-audit-2026-10-28.md). No repair/backfill, entitlement revoke, access change, webhook replay, provider purchase or direct Production mutation is authorized by this audit.
 
 ## Review gates and handoff
 

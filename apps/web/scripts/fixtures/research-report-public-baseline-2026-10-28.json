@@ -14,7 +14,8 @@
       "hasWeeklyInputReference": true,
       "hasNearestRegimeBoundary": true,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "a0408dac3a6c207bd8a68271402a3c6b5bc0ce03"
     },
     {
       "type": "weekly",
@@ -25,7 +26,8 @@
       "hasWeeklyInputReference": true,
       "hasNearestRegimeBoundary": true,
       "approvedSampleRoute": "/research/sample/",
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "dba79c60373100983f00a8ddf165d6df8fe0881b"
     },
     {
       "type": "weekly",
@@ -36,7 +38,8 @@
       "hasWeeklyInputReference": true,
       "hasNearestRegimeBoundary": true,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "3edeae0459a473fcb4c47c69de73011f8f4a73ad"
     },
     {
       "type": "weekly",
@@ -47,7 +50,8 @@
       "hasWeeklyInputReference": true,
       "hasNearestRegimeBoundary": true,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "4ebd2fced4ed5bee1139b2d842712b68852d59b6"
     },
     {
       "type": "weekly",
@@ -58,7 +62,8 @@
       "hasWeeklyInputReference": true,
       "hasNearestRegimeBoundary": true,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "7a45c5c1ef1d5ade074fe0a1207e1411f80f5de7"
     },
     {
       "type": "weekly",
@@ -69,7 +74,8 @@
       "hasWeeklyInputReference": true,
       "hasNearestRegimeBoundary": true,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "8aa9f4cd35d7d4c21ed286b94e6a1b2c8bdeb9e5"
     },
     {
       "type": "weekly",
@@ -80,7 +86,8 @@
       "hasWeeklyInputReference": true,
       "hasNearestRegimeBoundary": true,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "7e726996607fc21930c905d2f299223f69b922a5"
     },
     {
       "type": "weekly",
@@ -91,7 +98,8 @@
       "hasWeeklyInputReference": true,
       "hasNearestRegimeBoundary": true,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "4be7f920022e12b0a0508c288d262318984bd6dc"
     },
     {
       "type": "weekly",
@@ -102,7 +110,8 @@
       "hasWeeklyInputReference": true,
       "hasNearestRegimeBoundary": true,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "05220e98e75b987ba41e7d1a0c1d754bcf893502"
     },
     {
       "type": "weekly",
@@ -113,7 +122,8 @@
       "hasWeeklyInputReference": true,
       "hasNearestRegimeBoundary": true,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "f2877e928aad25b462db51ef9881afc77db5dd8a"
     },
     {
       "type": "weekly",
@@ -124,7 +134,8 @@
       "hasWeeklyInputReference": true,
       "hasNearestRegimeBoundary": true,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "3633189c3ede9b2a2ef92006bcfda7127693f193"
     },
     {
       "type": "weekly",
@@ -135,7 +146,8 @@
       "hasWeeklyInputReference": true,
       "hasNearestRegimeBoundary": true,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "e0458f38d2b4394879acfcea731c20785256bfae"
     },
     {
       "type": "weekly",
@@ -146,7 +158,8 @@
       "hasWeeklyInputReference": true,
       "hasNearestRegimeBoundary": true,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "9bd65af82fb98e71fafd6bd98870c72be1fe2390"
     },
     {
       "type": "monthly",
@@ -157,7 +170,8 @@
       "hasWeeklyInputReference": false,
       "hasNearestRegimeBoundary": false,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "dca65e8b67f054a61e6aa50336fced5f9771a442"
     },
     {
       "type": "monthly",
@@ -168,7 +182,8 @@
       "hasWeeklyInputReference": false,
       "hasNearestRegimeBoundary": false,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "aa965257421244bc1e72cb89576615f365faa116"
     },
     {
       "type": "monthly",
@@ -179,7 +194,8 @@
       "hasWeeklyInputReference": false,
       "hasNearestRegimeBoundary": false,
       "approvedSampleRoute": null,
-      "rightsStatus": "HOLD_UNREVIEWED"
+      "rightsStatus": "HOLD_UNREVIEWED",
+      "sourceGitBlobSha": "6c49bfbecfc8c40cd4dd558023d8ac566e28cb3c"
     }
   ]
 }

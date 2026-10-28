@@ -18,7 +18,7 @@ Current QA facts:
 - 19 exact selected private Drive WAV exports passed decoder/duration/loudness/true-peak/silence/clipping QA.
 - Those 19 tracks are 44.1 kHz, mono, PCM16 with integrated loudness tightly clustered at approximately -24.0 to -23.8 LUFS.
 - The largest targeted signal outliers on Tracks 13 and 14 received owner **PASS BOTH**.
-- Track 00 selected v2 has bounded edit provenance and private human listening acceptance; its exact Descript binary export remains a provenance-detail item, not an unresolved acoustic defect.
+- Track 00 selected v2 has bounded edit provenance and private human listening acceptance. Its authoritative Descript source identity is now pinned to project `2f542797-4a70-4d44-a164-76dee15859ca`, composition `91240c6b-78df-4910-a994-43c616f9b53f`, and matching WAV asset `12e94d44-66e7-4baf-9731-9a8470697b63` at 113.345306 s; exact binary materialization/hash remains pending.
 - Current-main localization manifest now records the Spanish audiobook as `verified_current` / review PASS while preserving `releaseStatus=private_hold` and `audiobookMemberDelivery=false`.
 
 ## 2. Existing English member-delivery architecture
@@ -195,8 +195,8 @@ Until Gates A–E are cleared, do not:
 
 Engineering/audio:
 - **192 kbps MP3 encoding profile QA: PASS** — 20/20 technical candidate encodes validated; authoritative record: `SPANISH_AUDIOBOOK_PRIVATE_MP3_ENCODING_QA_2026-10-28.md`;
-- final private-master materialization remains held until Track 00 release-source provenance is resolved;
-- exact Track 00 final binary provenance record if available, or explicit publisher/owner approval of the deterministic render-equivalent source.
+- **Track 00 source identity: RESOLVED** — authoritative record: `SPANISH_AUDIOBOOK_TRACK00_SOURCE_PROVENANCE_2026-10-28.md`;
+- Track 00 exact binary materialization/hash: **PENDING** — retrieve/hash the pinned Descript asset before final MP3 materialization; if exact bytes cannot be obtained, explicit publisher/owner approval is still required before using any deterministic render-equivalent source.
 
 Publisher/legal:
 - rights wording;

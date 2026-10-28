@@ -53,11 +53,15 @@ try {
       return [{ name, script: run[1] }];
     }
     const lines = run[2].split('\n');
-    assert.ok(lines.every((line) => !line || line.startsWith('          ')),
-      `unsupported literal run indentation: ${name}`);
-    return [{ name, script: lines.map((line) => line.slice(10)).join('\n') }];
+    const scriptLines = [];
+    for (const line of lines) {
+      if (line && !line.startsWith('          ')) break;
+      scriptLines.push(line);
+    }
+    assert.ok(scriptLines.length > 0, `empty literal run block: ${name}`);
+    return [{ name, script: scriptLines.map((line) => line.slice(10)).join('\n') }];
   });
-  assert.equal(shellSteps.length, 8, 'check every existing weekly workflow run step');
+  assert.equal(shellSteps.length, 10, 'check every weekly workflow run step including rights gate');
   const shell = (script, syntaxOnly = false) => {
     const result = spawnSync('bash', ['--noprofile', '--norc', ...(syntaxOnly ? ['-n'] : []), '-s'], {
       input: script, cwd: root, encoding: 'utf8', timeout: 5000,

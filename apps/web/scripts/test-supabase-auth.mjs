@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { requirePasskeyManagementAccessToken } from '../src/lib/passkey-handler.js';
 import {
   PKCE_COOKIE_NAME,
   SESSION_COOKIE_NAMES,
@@ -252,6 +253,105 @@ const invalidRefresh = await resolveSessionWithRefresh({
 assert.equal(invalidRefresh, null);
 assert.equal(invalidRefreshResponse.getHeader('set-cookie').length, 3);
 assert.ok(invalidRefreshResponse.getHeader('set-cookie').every((cookie) => cookie.includes('Max-Age=0')));
+
+// Passkey management previously read a possibly expired access cookie without
+// the 30-day refresh path, resulting in an unnecessary sign-in redirect.
+const passkeyCookieRequest = request({
+  host: 'www.usd-impact.com',
+  'x-forwarded-proto': 'https',
+  cookie: `${SESSION_COOKIE_NAMES.ACCESS}=${encodeURIComponent(accessToken)}; ${SESSION_COOKIE_NAMES.REFRESH}=${encodeURIComponent(refreshToken)}; ${SESSION_COOKIE_NAMES.PERSISTENCE}=1`,
+});
+const passkeyResponse = responseRecorder();
+const passkeyVerifyTokens = [];
+let passkeyRefreshCalls = 0;
+const passkeyActiveToken = await requirePasskeyManagementAccessToken(
+  passkeyCookieRequest, passkeyResponse, {
+    config,
+    verifyAccessToken: async (token) => {
+      passkeyVerifyTokens.push(token);
+      if (token === accessToken) throw Object.assign(new Error('expired'), { status: 401 });
+      return { id: '123e4567-e89b-42d3-a456-426614174000', email: 'verified@example.com' };
+    },
+    fetchImpl: async (url, options) => {
+      passkeyRefreshCalls += 1;
+      assert.equal(url, `${config.url}/auth/v1/token?grant_type=refresh_token`);
+      assert.deepEqual(JSON.parse(options.body), { refresh_token: refreshToken });
+      return new Response(JSON.stringify({
+        access_token: rotatedAccessToken,
+        refresh_token: rotatedRefreshToken,
+        expires_in: 3600,
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    },
+  },
+);
+assert.equal(passkeyActiveToken, rotatedAccessToken);
+assert.deepEqual(passkeyVerifyTokens, [accessToken, rotatedAccessToken]);
+assert.equal(passkeyRefreshCalls, 1, 'passkey settings must rotate exactly once on 401');
+const passkeyRotatedCookies = passkeyResponse.getHeader('set-cookie');
+assert.equal(passkeyRotatedCookies.length, 3);
+assert.match(passkeyRotatedCookies[0], /HttpOnly; SameSite=Lax; Max-Age=3600; Secure/);
+assert.match(passkeyRotatedCookies[1], /HttpOnly; SameSite=Lax; Max-Age=2592000; Secure/);
+assert.match(passkeyRotatedCookies[2], /Max-Age=2592000; Secure/);
+
+const passkeyRememberOffResponse = responseRecorder();
+const passkeyRememberOff = await requirePasskeyManagementAccessToken(request({
+  host: 'www.usd-impact.com', 'x-forwarded-proto': 'https',
+  cookie: `${SESSION_COOKIE_NAMES.REFRESH}=${encodeURIComponent(refreshToken)}; ${SESSION_COOKIE_NAMES.PERSISTENCE}=0`,
+}), passkeyRememberOffResponse, {
+  config,
+  verifyAccessToken: async (token) => ({ token }),
+  fetchImpl: async () => new Response(JSON.stringify({
+    access_token: rotatedAccessToken,
+    refresh_token: rotatedRefreshToken,
+    expires_in: 3600,
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+});
+assert.equal(passkeyRememberOff, rotatedAccessToken);
+assert.ok(passkeyRememberOffResponse.getHeader('set-cookie').every((cookie) => !cookie.includes('Max-Age=')));
+
+let passkeyUnexpectedNetwork = false;
+const passkeyAlreadyFresh = await requirePasskeyManagementAccessToken(
+  passkeyCookieRequest, responseRecorder(), {
+    config,
+    verifyAccessToken: async () => ({ id: 'verified-user' }),
+    fetchImpl: async () => { passkeyUnexpectedNetwork = true; throw new Error('no refresh needed'); },
+  },
+);
+assert.equal(passkeyAlreadyFresh, accessToken);
+assert.equal(passkeyUnexpectedNetwork, false);
+
+const passkeyInvalidRefreshResponse = responseRecorder();
+const passkeyInvalidRefresh = await requirePasskeyManagementAccessToken(
+  request({ host: 'www.usd-impact.com', cookie: `${SESSION_COOKIE_NAMES.REFRESH}=${encodeURIComponent(refreshToken)}` }),
+  passkeyInvalidRefreshResponse, {
+    config,
+    verifyAccessToken: async () => { throw new Error('invalid refresh must never verify'); },
+    fetchImpl: async () => new Response(JSON.stringify({ message: 'invalid refresh' }), {
+      status: 401, headers: { 'Content-Type': 'application/json' },
+    }),
+  },
+);
+assert.equal(passkeyInvalidRefresh, null);
+assert.equal(passkeyInvalidRefreshResponse.statusCode, 401);
+assert.equal(JSON.parse(passkeyInvalidRefreshResponse.body).code, 'AUTHENTICATION_REQUIRED');
+assert.equal(passkeyInvalidRefreshResponse.getHeader('set-cookie').length, 3);
+assert.ok(passkeyInvalidRefreshResponse.getHeader('set-cookie').every(cookie => cookie.includes('Max-Age=0')));
+
+const passkeyAnonymousResponse = responseRecorder();
+const anonymousPasskeyToken = await requirePasskeyManagementAccessToken(
+  request({ host: 'www.usd-impact.com' }), passkeyAnonymousResponse, {
+    config, verifyAccessToken: async () => { throw new Error('must not verify anonymous request'); },
+    fetchImpl: async () => { throw new Error('must not refresh anonymous request'); },
+  },
+);
+assert.equal(anonymousPasskeyToken, null);
+assert.equal(passkeyAnonymousResponse.statusCode, 401);
+assert.equal(JSON.parse(passkeyAnonymousResponse.body).code, 'AUTHENTICATION_REQUIRED');
+
+const passkeyHandlerSource = await readFile(new URL('../src/lib/passkey-handler.js', import.meta.url), 'utf8');
+assert.equal((passkeyHandlerSource.match(/await requirePasskeyManagementAccessToken\(request, response, dependencies\)/g) || []).length, 5);
+assert.match(passkeyHandlerSource, /verifyAccessToken = getVerifiedSupabaseUser/);
+assert.doesNotMatch(passkeyHandlerSource, /readSessionAccessToken/);
 
 const signInPage = await readFile(new URL('../src/pages/account/sign-in/index.astro', import.meta.url), 'utf8');
 const supabaseAuthSourceForStorageCheck = await readFile(new URL('../src/lib/supabase-auth.js', import.meta.url), 'utf8');

@@ -89,6 +89,22 @@ Current terms also prohibit misleading distribution of AI output and require dis
 
 HeyGen's current public materials describe commercial use of HeyGen Voice outputs, but the historical Narrator Mateo ID is not returned by the current model-audio catalogs.
 
+### Production-window account evidence
+
+The private production branch contains contemporaneous HeyGen account-state records from **2026-10-07** showing:
+- `billing_type=subscription`;
+- plan: **Creator**;
+- premium credits remaining: **2** at the recorded checkpoint;
+- no add-on credits available.
+
+Separate repository-key Developer API wallet evidence was recorded during Appendix B production; that wallet is a different balance mechanism and should not be conflated with Creator subscription credits.
+
+Fresh 2026-10-28 checks add two clarifications:
+- the currently connected HeyGen account now reports plan **Free**; this is current state only and must **not** be used to rewrite the historical production-window plan record;
+- Gmail contains a HeyGen render-complete notification dated **2026-10-07 19:06 UTC** for `USD Impact — Spanish Audiobook Mateo — Intro Fallback Test`, which corroborates active HeyGen production during the relevant window.
+
+A targeted Gmail search found **no HeyGen invoice/receipt/subscription billing email** for the searched September–October 2026 window. Absence from the connected inbox is not proof that no invoice or billing record exists elsewhere.
+
 ### Important evidence limitation
 
 The production record establishes a HeyGen Creator account and the exact historical voice ID used, but this handoff does **not** prove:

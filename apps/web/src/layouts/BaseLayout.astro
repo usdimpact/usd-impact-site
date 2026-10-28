@@ -349,6 +349,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
     <ConsentClient
       locale={locale}
       privacyHref={locale === 'es' ? '/es/privacy/' : '/privacy/'}
+      analyticsEnabled={analyticsEnabled}
     />
     {analyticsEnabled && <GoogleAnalyticsClient />}
     {analyticsEnabled && <TelemetryClient />}

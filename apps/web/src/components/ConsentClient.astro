@@ -3,9 +3,22 @@ import { consentCopyForLocale } from '../lib/consent-copy.js';
 
 const {
   locale = 'en',
+  analyticsEnabled = false,
   privacyHref = locale === 'es' ? '/es/privacy/' : '/privacy/',
 } = Astro.props;
-const copy = consentCopyForLocale(locale);
+const analyticsAvailable = analyticsEnabled === true;
+const baseCopy = consentCopyForLocale(locale);
+// UI-only wording for locales that cannot activate optional analytics.
+// Keep the owner-approved locale consent-copy module and public legal notice unchanged.
+const copy = analyticsAvailable ? baseCopy : {
+  ...baseCopy,
+  bannerBeforeLink: 'Esta edición en español utiliza funciones esenciales de seguridad y cuenta. La analítica opcional y la publicidad permanecen desactivadas. Puedes guardar tu elección de privacidad para este dominio.',
+  reject: 'Continuar sin analítica',
+  settingsIntro: 'En esta edición, la analítica opcional permanece desactivada. Puedes guardar tu elección de privacidad.',
+  analyticsDescription: 'La analítica opcional y la publicidad no están habilitadas en esta edición en español. Este panel no puede activarlas.',
+  unavailable: 'Desactivadas',
+  save: 'Guardar sin analítica',
+};
 ---
 
 <div
@@ -13,6 +26,7 @@ const copy = consentCopyForLocale(locale);
   class="privacy-consent-banner"
   role="region"
   aria-labelledby="privacy-consent-title"
+  data-analytics-enabled={analyticsAvailable ? 'true' : 'false'}
   hidden
 >
   <div>
@@ -30,9 +44,11 @@ const copy = consentCopyForLocale(locale);
     <button id="privacy-consent-review" class="privacy-consent-button privacy-consent-secondary" type="button">
       {copy.review}
     </button>
-    <button id="privacy-consent-accept" class="privacy-consent-button privacy-consent-primary" type="button">
-      {copy.accept}
-    </button>
+    {analyticsAvailable && (
+      <button id="privacy-consent-accept" class="privacy-consent-button privacy-consent-primary" type="button">
+        {copy.accept}
+      </button>
+    )}
   </div>
 </div>
 
@@ -56,13 +72,23 @@ const copy = consentCopyForLocale(locale);
     <strong>{copy.alwaysActive}</strong>
   </section>
 
-  <label class="privacy-consent-category" for="privacy-consent-analytics">
-    <div>
-      <h3>{copy.analyticsTitle}</h3>
-      <p>{copy.analyticsDescription}</p>
-    </div>
-    <input id="privacy-consent-analytics" type="checkbox" />
-  </label>
+  {analyticsAvailable ? (
+    <label class="privacy-consent-category" for="privacy-consent-analytics">
+      <div>
+        <h3>{copy.analyticsTitle}</h3>
+        <p>{copy.analyticsDescription}</p>
+      </div>
+      <input id="privacy-consent-analytics" type="checkbox" />
+    </label>
+  ) : (
+    <section class="privacy-consent-category" aria-labelledby="privacy-consent-analytics-unavailable-title">
+      <div>
+        <h3 id="privacy-consent-analytics-unavailable-title">{copy.analyticsTitle}</h3>
+        <p>{copy.analyticsDescription}</p>
+      </div>
+      <strong>{copy.unavailable}</strong>
+    </section>
+  )}
 
   <div class="privacy-consent-dialog-actions">
     <a href={privacyHref}>{copy.fullNotice}</a>
@@ -83,6 +109,7 @@ const copy = consentCopyForLocale(locale);
   const DENIED_VALUE = `${CONSENT_VERSION}.analytics-denied`;
 
   const banner = document.getElementById('privacy-consent-banner');
+  const analyticsAvailable = banner?.dataset.analyticsEnabled === 'true';
   const dialog = document.getElementById('privacy-consent-dialog');
   const analyticsToggle = document.getElementById('privacy-consent-analytics');
   const acceptButton = document.getElementById('privacy-consent-accept');
@@ -112,7 +139,7 @@ const copy = consentCopyForLocale(locale);
 
   let preference = readCookieValue();
 
-  const analyticsAllowed = () => preference === 'granted';
+  const analyticsAllowed = () => analyticsAvailable && preference === 'granted';
 
   const render = () => {
     if (banner) banner.hidden = preference !== 'unset';
@@ -134,10 +161,11 @@ const copy = consentCopyForLocale(locale);
   };
 
   const savePreference = (nextPreference) => {
-    const value = nextPreference === 'granted' ? GRANTED_VALUE : DENIED_VALUE;
+    const enabledAndGranted = analyticsAvailable && nextPreference === 'granted';
+    const value = enabledAndGranted ? GRANTED_VALUE : DENIED_VALUE;
     const secure = window.location.protocol === 'https:' ? '; Secure' : '';
     document.cookie = `${CONSENT_COOKIE_NAME}=${encodeURIComponent(value)}; Path=/; Max-Age=${CONSENT_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
-    preference = nextPreference === 'granted' ? 'granted' : 'denied';
+    preference = enabledAndGranted ? 'granted' : 'denied';
     render();
     closeSettings();
     window.dispatchEvent(new CustomEvent(CONSENT_CHANGE_EVENT, {

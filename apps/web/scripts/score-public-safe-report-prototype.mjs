@@ -131,12 +131,13 @@ function walkForbiddenKeys(value, location = '$') {
 }
 
 export function validatePublicSafeScore(input) {
+  const rawScore = requireObject(input, 'score');
+  walkForbiddenKeys(rawScore);
   const score = assertExactKeys(
-    input,
+    rawScore,
     ['schema_version', 'metadata', 'latest', 'history', 'release_evidence'],
     'score',
   );
-  walkForbiddenKeys(score);
 
   if (score.schema_version !== SAFE_SCORE_SCHEMA_VERSION) {
     throw new Error(`score.schema_version must be ${SAFE_SCORE_SCHEMA_VERSION}`);

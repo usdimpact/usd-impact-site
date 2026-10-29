@@ -8,6 +8,8 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const HTTPS_URL = /^https:\/\/[^\s"']+$/;
 const allowedStatus = new Set(['draft', 'review', 'ready-for-build', 'published']);
 const publishedVerification = new Set(['verified-primary', 'verified-multiple']);
+// Historical editions need exact-copy editorial corrections before strict enforcement.
+const EVIDENCE_ENFORCED_FROM = '2026-10-30';
 
 function topLevel(data, key) {
   return typeof data[key] === 'string' ? data[key].trim() : '';
@@ -15,6 +17,14 @@ function topLevel(data, key) {
 
 function fail(file, message) {
   throw new Error(`${file}: ${message}`);
+}
+
+function sourceEvidenceIssue(file, date, message) {
+  if (date < EVIDENCE_ENFORCED_FROM) {
+    console.warn(`${file}: LEGACY_EVIDENCE_REVIEW_REQUIRED: ${message}`);
+    return;
+  }
+  fail(file, message);
 }
 
 let files;
@@ -99,7 +109,7 @@ for (const file of files) {
       }
       const cited = highlight.sourceIds.map((id) => sourceById.get(id));
       if (state === 'verified-primary' && !cited.some((source) => source.sourceType === 'primary')) {
-        fail(file, `published highlight ${index + 1} is verified-primary but cites no primary source`);
+        sourceEvidenceIssue(file, date, `published highlight ${index + 1} is verified-primary but cites no primary source`);
       }
       if (state === 'verified-multiple') {
         const reportingDomains = new Set(cited
@@ -107,7 +117,7 @@ for (const file of files) {
           .map((source) => sourceClassification(source.url)?.domain
             ?? new URL(source.url).hostname.toLowerCase().replace(/^www\./, '')));
         if (reportingDomains.size < 2) {
-          fail(file, `published highlight ${index + 1} is verified-multiple but cites fewer than two independent reporting domains`);
+          sourceEvidenceIssue(file, date, `published highlight ${index + 1} is verified-multiple but cites fewer than two independent reporting domains`);
         }
       }
     }

@@ -24,6 +24,8 @@ The source-only \`docs/operations/candidates/account-deletion-confirmed-tokenlos
 
 The no-secret PGlite test exercises: regular token path still works, confirmed token-loss manual path, wrong attempt/request/generation, duplicate recovery, actual service-role EXECUTE denial, refusal of \`auth_dispatched\` and \`auth_ambiguous\`, distinct provenance ticket validation, private RLS/ACL, and erasure rollback if the final operator-audit INSERT fails. All synthetic UUIDs and invalid domains are fixtures only.
 
+The separate `apps/web/scripts/test-account-deletion-pg17-tokenloss-race.mjs` and PR-only PostgreSQL 17 workflow additionally run the exact three review SQL files in a fresh, disposable PostgreSQL service. Two independent `psql` sessions race the same confirmed recovery and must produce exactly one successful finalized attempt and one rejected contender. The test checks the private audit, completion escrow, token-fenced normal path, service-role and authenticated-role denial, plus rejection of both `auth_dispatched` and `auth_ambiguous`. This is not a real Supabase PostgREST or GoTrue proof.
+
 **This is not evidence of actual reviewer signoff, live GoTrue deletion, or a safe Production invocation.** A PostgreSQL superuser has extensive inherent authority; this function creates a transparent, auditable and narrowly conditioned route rather than granting new client or service-role power. Independent legal/security/DBA review, a documented operator ticket verification procedure, immutable external audit retention, actual backup/restore acceptance, and real synthetic Development Auth proof remain blockers.
 
 ## Release HOLD

@@ -110,6 +110,31 @@ function rejectStoragePlanImports(dir){
 rejectStoragePlanImports('apps/web/src');
 rejectStoragePlanImports('apps/web/api');
 
+// GoTrue Admin wire review uses a deliberately unusable static test key,
+// exact synthetic account and an injected fake transport. Never import into
+// an application entrypoint, handler or production finalizer.
+const authAdminWirePath='apps/web/src/lib/account-deletion-gotrue-admin-wire.review.js';
+const authAdminWire=read(authAdminWirePath);
+assert.match(authAdminWire,/sb_secret_issue950_offline_wire_fixture_never_real/);
+assert.match(authAdminWire,/offline_fixture/);
+assert.match(authAdminWire,/should_soft_delete:true/);
+assert.doesNotMatch(authAdminWire,/\bfetch\s*\(|\bprocess\.env\b|\bAuthorization\s*:/);
+checks+=4;
+function rejectAuthAdminWireImports(dir){
+  for(const entry of readdirSync(join(root,dir),{withFileTypes:true})){
+    const path=join(dir,entry.name);
+    if(entry.isDirectory())rejectAuthAdminWireImports(path);
+    else if(entry.isFile() && /\.(?:js|mjs|cjs|ts|tsx|jsx|astro)$/.test(entry.name)
+      && path!==authAdminWirePath){
+      assert.equal(read(path).includes('account-deletion-gotrue-admin-wire.review'),false,
+        'Live runtime imported GoTrue Admin wire review adapter: '+path);
+      checks++;
+    }
+  }
+}
+rejectAuthAdminWireImports('apps/web/src');
+rejectAuthAdminWireImports('apps/web/api');
+
 for(const file of sqlCandidatePaths){
   const content=read(file);
   assert.match(content,/REVIEW ONLY|REVIEW-ONLY/);

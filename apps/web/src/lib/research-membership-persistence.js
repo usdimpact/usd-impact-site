@@ -93,7 +93,7 @@ export async function persistResearchMembershipTransition({
       Accept: 'application/json',
       'Content-Type': 'application/json',
       apikey: config.secretKey,
-      Authorization: `Bearer ${config.secretKey}`,
+      // Modern sb_secret_ is an opaque gateway key, not a Bearer JWT.
     },
     body: JSON.stringify(body),
   });

@@ -81,13 +81,22 @@ test('only one row with the exact fixture identity is accepted', () => {
 function memoryHttpRace(firstWinner) {
   let row = { id: fixture.id, provider_message_ref: fixture.providerRef, status: 'accepted' };
   let calls = 0;
+  // A 0ms versus 2ms timer is NOT a deterministic race ordering: hosted CI
+  // can dispatch both timers in one event-loop phase and reverse the winner.
+  // Gate the original losing request on an explicit first-commit signal.
+  // The underlying accepted→terminal CAS still has to reject the loser.
+  let winnerCommitted;
+  const firstCommit=new Promise(resolve=>{ winnerCommitted=resolve; });
   const patch = async (before, after) => {
     calls += 1;
-    // Simulate two independent HTTP requests arriving with opposite order.
-    await new Promise((resolve) =>
-      setTimeout(resolve, before === 'accepted' && after === firstWinner ? 0 : 2));
+    if (before === 'accepted' && after !== firstWinner) {
+      await firstCommit;
+    }
     if (row.status !== before) return [];
     row = { ...row, status: after };
+    if (before === 'accepted' && after === firstWinner) {
+      winnerCommitted();
+    }
     return [{ ...row }];
   };
   return {

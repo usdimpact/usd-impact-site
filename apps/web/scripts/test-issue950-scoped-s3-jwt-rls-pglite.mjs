@@ -27,13 +27,17 @@ for(const side of ['source','restore']){
   const template=proposals[side];
   assert.match(template,/REVIEW ONLY - NOT A MIGRATION/);
   assert.match(template,/__ISSUE950_EXPIRES_AT_UTC__/);
+  assert.match(template,/__ISSUE950_APPROVED_TEST_EMAIL__/);
+  assert.match(template,/raw_app_meta_data/);
+  assert.match(template,/p\.status::text='suspended'/);
+  assert.doesNotMatch(template,/raw_user_meta_data/);
   assert.match(template,new RegExp('__ISSUE950_'+side.toUpperCase()+'_SYNTHETIC_UUID__'));
   assert.doesNotMatch(template,/drop policy|delete from|truncate|service_role|sb_secret_/i);
   for(const name of paths)assert.ok(template.includes("'"+name+"'"),'missing immutable manifest '+side);
   const rollback=undo(side);
   assert.match(rollback,/drop policy if exists issue950_/);
   assert.doesNotMatch(rollback,/delete from|truncate|drop table|drop schema|purge/i);
-  checks+=7+paths.length;
+  checks+=11+paths.length;
 }
 assert.doesNotMatch(proposals.source,/for insert to authenticated|for update to authenticated|for delete to authenticated/i);
 assert.match(proposals.restore,/for insert to authenticated/);
@@ -43,16 +47,20 @@ checks+=4;
 function render(side,subject=uuids[side],until=expires()){
   return proposals[side]
     .replaceAll('__ISSUE950_'+side.toUpperCase()+'_SYNTHETIC_UUID__',subject)
-    .replaceAll('__ISSUE950_EXPIRES_AT_UTC__',until);
+    .replaceAll('__ISSUE950_EXPIRES_AT_UTC__',until)
+    .replaceAll('__ISSUE950_APPROVED_TEST_EMAIL__','issue950-s3-'+side+'@example.invalid');
 }
 const schema=[
   'create role authenticated nologin;',
   'create role anon nologin;',
   'create schema auth;',
   'create schema storage;',
-  'create table auth.users(id uuid primary key);',
+  "create table auth.users(id uuid primary key,email text,raw_app_meta_data jsonb not null default '{}'::jsonb);",
   "create function auth.uid() returns uuid language sql stable as $uid$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $uid$;",
-  'create table public.profiles(account_id uuid primary key,auth_user_id uuid);',
+  "create table public.profiles(account_id uuid primary key,auth_user_id uuid,email text,status text not null default 'active',deleted_at timestamptz,deletion_requested_at timestamptz,deletion_due_at timestamptz);",
+  "create table public.entitlements(account_id uuid not null);",
+  "create function public.handle_new_auth_user() returns trigger language plpgsql security definer set search_path to '' as $fn$ begin insert into public.profiles(account_id,auth_user_id,email) values(new.id,new.id,coalesce(new.email,'')); return new; end $fn$;",
+  "create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_auth_user();",
   'create table storage.buckets(id text primary key,public boolean not null);',
   "create table storage.objects(bucket_id text not null,name text not null,metadata text default '',primary key(bucket_id,name));",
   'alter table storage.buckets enable row level security;',
@@ -65,13 +73,25 @@ async function makeDb(side,settings={}){
   const db=new PGlite();
   await db.exec(schema);
   const subject=uuids[side];
-  if(!settings.noAuthUser)await db.query('insert into auth.users values ($1)',[subject]);
+  if(!settings.noAuthUser){
+    const appMetadata={issue950_scoped_s3:settings.wrongMarker?'unrelated':side};
+    await db.query("insert into auth.users(id,email,raw_app_meta_data) values($1,$2,$3::jsonb)",
+      [subject,'issue950-s3-'+side+'@example.invalid',JSON.stringify(appMetadata)]);
+    // Exact production trigger creates ACTIVE profile by default. Explicit
+    // approved operator change to SUSPENDED is required before any policy.
+    if(!settings.activeProfile)
+      await db.query("update public.profiles set status='suspended' where account_id=$1",[subject]);
+    if(settings.wrongEmail)
+      await db.query("update public.profiles set email='mismatched@example.invalid' where account_id=$1",[subject]);
+    if(settings.entitledUser)
+      await db.query("insert into public.entitlements(account_id) values($1)",[subject]);
+  }
   await db.query("insert into storage.buckets values ('library-pass-assets',false),('library-pass-books',$1),('unrelated-private',false)",[Boolean(settings.publicBucket)]);
   for(const key of audio)await db.query("insert into storage.objects(bucket_id,name) values('library-pass-assets',$1)",[key]);
   await db.query("insert into storage.objects(bucket_id,name) values('library-pass-books',$1)",[book]);
   await db.query("insert into storage.objects(bucket_id,name) values('unrelated-private','outside/private/file.bin')");
   if(settings.extra)await db.query("insert into storage.objects(bucket_id,name) values('library-pass-assets','audiobook/read-the-dollar-first/v1/unlisted.mp3')");
-  if(settings.hasProfile)await db.query('insert into public.profiles(account_id,auth_user_id) values($1,$1)',[subject]);
+
   if(settings.existingPolicy)await db.exec("create policy unexpected_existing_bucket_policy on storage.buckets for select to authenticated using(true)");
   return db;
 }
@@ -140,8 +160,11 @@ for(const side of ['source','restore']){
     ['unexpected-object',{extra:true},/exact 21-key/],
     ['public-bucket',{publicBucket:true},/exact two private buckets/],
     ['unexpected-policy',{existingPolicy:true},/unexpected pre-existing Storage policies/],
-    ['profile-bearing-identity',{hasProfile:true},/synthetic principal is an application profile/],
-    ['absent-auth-subject',{noAuthUser:true},/synthetic Auth user absent/],
+    ['active-triggered-profile',{activeProfile:true},/synthetic Auth\/profile isolation proof missing/],
+    ['wrong-admin-marker',{wrongMarker:true},/synthetic Auth\/profile isolation proof missing/],
+    ['mismatched-email',{wrongEmail:true},/synthetic Auth\/profile isolation proof missing/],
+    ['paid-entitlement',{entitledUser:true},/synthetic user has paid entitlements/],
+    ['absent-auth-subject',{noAuthUser:true},/synthetic Auth\/profile isolation proof missing/],
   ]){
     const db=await makeDb(side,settings);
     try{

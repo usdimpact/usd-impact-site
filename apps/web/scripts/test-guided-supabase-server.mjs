@@ -80,7 +80,8 @@ const byId = await readGuidedContentRelease({
     assert.equal(parsed.searchParams.get('status'), 'eq.published');
     assert.match(parsed.searchParams.get('select'), /chapter_number/);
     assert.equal(options.headers.apikey, config.secretKey);
-    assert.equal(options.headers.Authorization, `Bearer ${config.secretKey}`);
+    assert.equal(Object.hasOwn(options.headers, 'Authorization'), false,
+      'Guided content release must use an opaque server key only as apikey');
     return response(200, [releaseRow]);
   },
 });
@@ -89,7 +90,9 @@ assert.deepEqual(byId, releaseRow);
 const bySlug = await readGuidedContentRelease({
   slug: 'CHAPTER-1',
   config,
-  fetchImpl: async (url) => {
+  fetchImpl: async (url, options) => {
+    assert.equal(options.headers.apikey, config.secretKey);
+    assert.equal(Object.hasOwn(options.headers, 'Authorization'), false);
     const parsed = new URL(url);
     assert.equal(parsed.searchParams.get('slug'), 'eq.chapter-1');
     assert.equal(parsed.searchParams.has('content_id'), false);
@@ -105,6 +108,7 @@ const catalog = await readGuidedContentCatalog({
     assert.equal(parsed.pathname, '/rest/v1/guided_content_releases');
     assert.equal(parsed.searchParams.get('order'), 'chapter_number.asc');
     assert.equal(options.headers.apikey, config.secretKey);
+    assert.equal(Object.hasOwn(options.headers, 'Authorization'), false);
     return response(200, [releaseRow]);
   },
 });
@@ -130,6 +134,7 @@ const supplement = await readGuidedSupplementRelease({
     assert.equal(parsed.pathname, '/rest/v1/guided_supplement_releases');
     assert.equal(parsed.searchParams.get('slug'), 'eq.further-reading');
     assert.equal(options.headers.apikey, config.secretKey);
+    assert.equal(Object.hasOwn(options.headers, 'Authorization'), false);
     return response(200, [supplementRow]);
   },
 });
@@ -137,7 +142,9 @@ assert.deepEqual(supplement, supplementRow);
 
 const supplements = await readGuidedSupplementCatalog({
   config,
-  fetchImpl: async (url) => {
+  fetchImpl: async (url, options) => {
+    assert.equal(options.headers.apikey, config.secretKey);
+    assert.equal(Object.hasOwn(options.headers, 'Authorization'), false);
     const parsed = new URL(url);
     assert.equal(parsed.searchParams.get('order'), 'sort_order.asc');
     return response(200, [supplementRow]);
@@ -161,6 +168,7 @@ const recorded = await recordGuidedLearningProgress({
     assert.equal(parsed.pathname, '/rest/v1/rpc/record_guided_learning_progress');
     assert.equal(options.method, 'POST');
     assert.equal(options.headers.apikey, config.secretKey);
+    assert.equal(Object.hasOwn(options.headers, 'Authorization'), false);
     recordedBody = JSON.parse(options.body);
     return response(200, [{ ...progressRow, status: 'completed', progress_percent: 100 }]);
   },

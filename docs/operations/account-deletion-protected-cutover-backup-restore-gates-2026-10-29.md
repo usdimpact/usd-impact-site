@@ -74,3 +74,12 @@ The query performs no data changes and does not expose account identifiers, emai
 - This final integration Draft: all previous tests re-run on a single exact head, subject to GitHub workflow completion.
 
 **All green offline tests remain necessary but insufficient.** No real user, Auth Admin request, Development/Production SQL DDL or DML, provider email, changes to commerce/entitlements/Research/Score or finalizer flag/cron activation are authorized from this document.
+
+
+## F. Dated continuation — 2026-10-29 (after Draft #968)
+
+**Historical statement correction:** Section C's row saying that confirmed-state token-loss recovery is "STILL TO BE DESIGNED" recorded the earlier design state. The source-only candidate was subsequently staged in [Draft #967](https://github.com/usdimpact/usd-impact-site/pull/967) and included in [Draft #968](https://github.com/usdimpact/usd-impact-site/pull/968), with offline PostgreSQL and independent-connection tests passing. The restricted procedure remains unapproved for any real Supabase application; real operator signoff, backup and restore are still missing. This note does not backdate the original review.
+
+**New read-only findings:** The connected Supabase organization is Pro (normally seven days of daily backup retention), but no actual backup checkpoint or successful restore has been verified. An isolated new-project restore has an independently quoted $10/month base cost; a Development branch has a $0.01344/hour cost. No paid project or branch was created. Development contains 2 Storage buckets with 21 objects, none with a recorded owner, and 9 Auth users. Database backups do not include Storage file bytes. The migration ledgers currently have 55 Development and 57 Production entries; only 39 exact version+name pairs are common. These are additional independent pre-cutover gates, not permission to run SQL or Auth deletion.
+
+See [dated backup evidence intake](./account-deletion-issue950-backup-restore-evidence-gate-2026-10-29.md) and [migration-history reconciliation](./account-deletion-issue950-current-migration-ledger-delta-2026-10-29.md).

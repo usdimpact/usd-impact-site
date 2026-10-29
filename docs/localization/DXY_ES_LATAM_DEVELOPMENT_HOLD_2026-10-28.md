@@ -42,3 +42,12 @@ The owner noticed that this ES DXY Preview did not show the cookie choices prese
 - Existing published five-route Spanish allowlist, DXY `status:"review"`, `noindex` and Preview-only route stay unchanged.
 - DXY-specific test gains a dedicated guard that consent is visible and GA/telemetry remain gated.
 - This is a private Preview only. Owner must visually confirm the new banner in a fresh browser/hostname session. No Production merge or DXY publication has been authorized.
+
+## Latest reconciled Development QA — 2026-10-29
+
+- This Draft #932 was reconciled to website Production main `06e185d39b4768e1f2ab8aeabccd63b531bf1435` through a **non-forced, two-parent development-only merge**. The six consent/privacy files from Production #933 were blob-identical to the corresponding held PR files, and the resulting Draft diff contains exactly six DXY-specific files; no public consent edits were reintroduced.
+- The reconciled Development commit `7b89d66b9fcc2140909ee28111d4e385adbdd960` completed 13 green security/quality checks and two intentionally skipped Production actions; Vercel Preview was READY.
+- Browser QA on that exact Preview observed the private article and its `noindex` meta; the existing Spanish no-analytics consent text/controls; the original educational disclaimer; 375px mobile layout; and **404** for the public `/es/dxy/dxy-vs-broad-usd/` route. There was no publication.
+- The browser QA did not display the assistant-proposed `sources` frontmatter: previously, only the approved content body and disclaimer were rendered. The next Development-only change adds a separately labeled **unverified list of proposed source metadata** to the internal QA route. This does **not** edit the accepted Spanish article body or mark source rights/attribution as approved.
+- The observer also reported possible inherited English Open Graph metadata. Source inspection of the `BaseLayout.astro` head showed no OG tags in the inspected section, so **do not treat this as confirmed metadata drift** without a verified full-head capture; the Preview remains noindex and is not for distribution.
+- Owner/manual requirements remain: approve each proposed source and its citation/rights, frontmatter title/description/hero/CTA and English quiz-link destinations; separately review legal/compliance suitability. No publication status or slug allowlist change is authorized.

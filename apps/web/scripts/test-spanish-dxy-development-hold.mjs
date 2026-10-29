@@ -53,6 +53,14 @@ test('internal private preview is built only for Vercel Preview and is noindexed
  assert.match(previewRoute,/currentPath="\/internal\/localization\/dxy-broad-usd"/);
  assert.doesNotMatch(previewRoute,/status === 'published'/);
 });
+test('private preview exposes proposed source metadata for review without approving attribution',()=>{
+ assert.match(previewRoute,/Fuentes propuestas en los metadatos/);
+ assert.match(previewRoute,/pendientes de comprobación/);
+ assert.match(previewRoute,/entry\.data\.sources\.map/);
+ assert.match(previewRoute,/No acredita enlaces, atribución, permisos ni una validación jurídica/);
+ assert.doesNotMatch(previewRoute,/status: "published"/);
+});
+
 test('no Production-release flag, provider call, or entitlement manipulation is introduced',()=>{
  assert.ok(!candidate.includes('publicationAllowed: true'));
  assert.ok(!candidate.includes('entitlement'));

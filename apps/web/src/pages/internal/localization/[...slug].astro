@@ -37,6 +37,13 @@ const { Content } = await render(entry);
     <div class="container page-content">
       <p><strong>Vista previa de desarrollo.</strong> El texto está aprobado editorialmente para revisión privada, pero su publicación, atribución final, metadatos y permisos aún no están autorizados.</p>
       <Content />
+      <section class="compliance" aria-label="Fuentes propuestas para revisión">
+        <strong>Fuentes propuestas en los metadatos — pendientes de comprobación:</strong>
+        <p>Esta lista es una ayuda para la revisión editorial. No acredita enlaces, atribución, permisos ni una validación jurídica para publicación.</p>
+        <ul>
+          {entry.data.sources.map((source) => <li>{source}</li>)}
+        </ul>
+      </section>
       <section class="compliance" aria-label="Nota de cumplimiento">
         <strong>Nota de cumplimiento:</strong> {entry.data.complianceNote}
       </section>

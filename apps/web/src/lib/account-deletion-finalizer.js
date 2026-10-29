@@ -106,12 +106,13 @@ function jsonHeaders(secretKey) {
 }
 
 function authAdminHeaders(secretKey) {
-  // The Auth Admin endpoint has a distinct authentication protocol from
-  // PostgREST. Preserve its existing header contract until a separate
-  // protected Auth Admin acceptance test confirms any change is safe.
+  // sb_secret_ is an opaque API-gateway credential, never a JWT. The current
+  // Supabase key guidance requires it on apikey rather than Bearer. Preserve
+  // Bearer ONLY for the legacy JWT-form service_role key (if still configured).
+  // Real GoTrue Admin acceptance remains a separate #950 release prerequisite.
   return {
     ...jsonHeaders(secretKey),
-    Authorization: `Bearer ${secretKey}`,
+    ...(secretKey.startsWith('eyJ') ? { Authorization: `Bearer ${secretKey}` } : {}),
   };
 }
 
@@ -251,8 +252,16 @@ export async function softDeleteAuthUser({ config, accountId, fetchImpl = fetch 
       body: JSON.stringify({ should_soft_delete: true }),
     },
   );
-  if (response.status === 404) return Object.freeze({ alreadyAbsent: true });
-  await requireOk(response, 'ACCOUNT_DELETION_AUTH_SOFT_DELETE_FAILED');
+  // A 404 is NOT proof the right Auth user was previously deleted.
+  // Likewise, any unexpected 2xx/5xx/timeout must NOT be used to authorize
+  // irreversible finalization. The coordinated claim protocol will replace
+  // this still-disabled legacy path after separately approved acceptance.
+  if (![200, 204].includes(response?.status)) {
+    throw new AccountDeletionFinalizerError(
+      'Auth Admin deletion outcome is unverified; manual reconciliation required.',
+      'ACCOUNT_DELETION_AUTH_OUTCOME_UNVERIFIED',
+    );
+  }
   return Object.freeze({ alreadyAbsent: false });
 }
 

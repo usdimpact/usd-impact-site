@@ -102,20 +102,33 @@ for (const file of files) {
     if (sourceIds.length < 3) fail(file, 'published editions require at least three sources');
     if (!sourceTypes.includes('primary')) fail(file, 'published editions require at least one primary source');
     const sourceById = new Map(sources.map((source) => [source.id, source]));
+    // A ledger label alone cannot promote a reporting URL to primary evidence.
+    for (const source of sources) {
+      const classified = sourceClassification(source.url);
+      if (!classified || classified.sourceType !== source.sourceType) {
+        sourceEvidenceIssue(file, date, `source ${source.id} type does not match its recognized publisher URL`);
+      }
+    }
     for (const [index, highlight] of highlights.entries()) {
       const state = highlight?.verification;
       if (!publishedVerification.has(state)) {
         fail(file, `published highlight ${index + 1} has invalid verification "${state}"`);
       }
       const cited = highlight.sourceIds.map((id) => sourceById.get(id));
-      if (state === 'verified-primary' && !cited.some((source) => source.sourceType === 'primary')) {
-        sourceEvidenceIssue(file, date, `published highlight ${index + 1} is verified-primary but cites no primary source`);
+      const primaryEvidence = cited.some((source) => source.sourceType === 'primary'
+        && sourceClassification(source.url)?.sourceType === 'primary');
+      if (state === 'verified-primary' && !primaryEvidence) {
+        sourceEvidenceIssue(file, date, `published highlight ${index + 1} is verified-primary but cites no recognized primary source`);
       }
       if (state === 'verified-multiple') {
+        if (primaryEvidence) {
+          sourceEvidenceIssue(file, date, `published highlight ${index + 1} is verified-multiple but cites primary evidence; review classification`);
+        }
         const reportingDomains = new Set(cited
           .filter((source) => source.sourceType === 'reporting')
-          .map((source) => sourceClassification(source.url)?.domain
-            ?? new URL(source.url).hostname.toLowerCase().replace(/^www\./, '')));
+          .map((source) => sourceClassification(source.url))
+          .filter((source) => source?.sourceType === 'reporting')
+          .map((source) => source.domain));
         if (reportingDomains.size < 2) {
           sourceEvidenceIssue(file, date, `published highlight ${index + 1} is verified-multiple but cites fewer than two independent reporting domains`);
         }

@@ -1,6 +1,6 @@
 // Issue #950: SOURCE-ONLY offline, provider-free completion recovery candidate.
 // NEVER imported by scheduler/API. Uses exact existing email identity contract.
-// No global fetch, process.env, Resend provider or Auth Admin HTTP.
+// No global fetch, implicit credentials, Resend provider or Auth Admin HTTP.
 import { createHash } from 'node:crypto';
 import { createAccountDeletionCompletedEmailIntent } from './account-deletion-completed-email.js';
 import { verifyLaunchEmailOutboxIdentity } from './launch-email-dispatch.js';

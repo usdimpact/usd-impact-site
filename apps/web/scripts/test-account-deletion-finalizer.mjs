@@ -159,8 +159,14 @@ const fetchImpl = async (url, options = {}) => {
   if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
     return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt, deleted_at: null }]);
   }
+  if (href.endsWith('/rest/v1/rpc/prepare_account_deletion_auth_removal') && options.method === 'POST') {
+    assert.deepEqual(JSON.parse(options.body), { prepare_account_id: accountId });
+    return response(200, true);
+  }
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') {
-    assert.match(href, /should_soft_delete=true/);
+    assert.equal(new URL(href).search, '', 'soft-delete must not rely on ignored query options');
+    assert.deepEqual(JSON.parse(options.body), { should_soft_delete: true },
+      'GoTrue Admin reads the soft-delete option from the DELETE JSON body');
     return response(200, { id: accountId });
   }
 
@@ -201,6 +207,10 @@ const result = await runDueAccountDeletionFinalizer({
 });
 assert.deepEqual(result, emptyRunResult({ scanned: 1, finalized: 1 }));
 assert.equal(calls.filter((call) => call.href.includes('/auth/v1/admin/users/')).length, 1);
+assert.equal(calls.filter((call) => call.href.endsWith('/rpc/prepare_account_deletion_auth_removal')).length, 1);
+assert.ok(calls.findIndex((call) => call.href.endsWith('/rpc/prepare_account_deletion_auth_removal'))
+  < calls.findIndex((call) => call.href.includes('/auth/v1/admin/users/')),
+  'locked preparation must complete before attempting Auth soft DELETE');
 assert.equal(calls.filter((call) => /\/rest\/v1\/(?:profiles|support_requests|rpc\/finalize_account_deletion)/.test(call.href)).length >= 2, true,
   'must cover the finalizer own profile/RPC REST paths without conflating email-ledger transport');
 assert.equal(calls.filter((call) => call.href.endsWith('/rpc/finalize_account_deletion')).length, 1);
@@ -263,6 +273,10 @@ const authFailureFetch = async (url, options = {}) => {
       deletion_due_at: deletionDueAt,
     }]);
   }
+  if (href.endsWith('/rest/v1/rpc/prepare_account_deletion_auth_removal') && options.method === 'POST') {
+    assert.deepEqual(JSON.parse(options.body), { prepare_account_id: accountId });
+    return response(200, true);
+  }
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(500, { error: 'auth down' });
   if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
     return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt, deleted_at: null }]);
@@ -291,6 +305,10 @@ const ambiguousFinalizeFetch = async (url, options = {}) => {
   if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') return response(200, []);
   if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
     return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt }]);
+  }
+  if (href.endsWith('/rest/v1/rpc/prepare_account_deletion_auth_removal') && options.method === 'POST') {
+    assert.deepEqual(JSON.parse(options.body), { prepare_account_id: accountId });
+    return response(200, true);
   }
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(200, { id: accountId });
   if (href.endsWith('/rest/v1/rpc/finalize_account_deletion') && options.method === 'POST') return response(500, { error: 'ambiguous' });
@@ -334,6 +352,10 @@ const completionFailureFetch = async (url, options = {}) => {
   }
   if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
     return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt, deleted_at: null }]);
+  }
+  if (href.endsWith('/rest/v1/rpc/prepare_account_deletion_auth_removal') && options.method === 'POST') {
+    assert.deepEqual(JSON.parse(options.body), { prepare_account_id: accountId });
+    return response(200, true);
   }
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(200, { id: accountId });
   if (href.endsWith('/rest/v1/rpc/finalize_account_deletion') && options.method === 'POST') {
@@ -451,6 +473,10 @@ const escalationFailureFetch = async (url, options = {}) => {
   if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') return response(200, []);
   if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
     return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt }]);
+  }
+  if (href.endsWith('/rest/v1/rpc/prepare_account_deletion_auth_removal') && options.method === 'POST') {
+    assert.deepEqual(JSON.parse(options.body), { prepare_account_id: accountId });
+    return response(200, true);
   }
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(500, { error: 'auth down' });
   if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt, deleted_at: null }]);

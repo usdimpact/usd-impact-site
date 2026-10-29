@@ -71,11 +71,12 @@ const fixture=[
   'grant select on public.profiles to authenticated;',
   "create policy profiles_select_own on public.profiles for select to authenticated using(account_id=(select auth.uid()));",
   ...tables.filter(t=>t!=='privacy_requests').map(t=>
-    'create table public.'+t+' (account_id uuid primary key,label text);'),
+    'create table public.'+t+' (account_id uuid primary key,label text'+(t==='support_requests'?',email text,category text,subject text,message text':'')+');'),
   ...tables.map(t=>'alter table public.'+t+' enable row level security;'),
   ...tables.map(t=>'grant select on public.'+t+' to authenticated;'),
   'grant update,delete on public.bookmarks to authenticated;',
   'grant update on public.learning_progress to authenticated;',
+  'grant insert on public.bookmarks,public.learning_progress,public.support_requests to authenticated;',
   ...tables.map(t=>{
     const legacy=['entitlements','entitlement_events','purchase_intents','purchases'].includes(t)
       ? "account_id=(select auth.uid()) and exists(select 1 from public.profiles p where p.account_id=(select auth.uid()) and p.status <> 'deleted'::public.account_status)"
@@ -83,6 +84,9 @@ const fixture=[
     return 'create policy '+t+'_select_own on public.'+t+
       ' for select to authenticated using('+legacy+');';
   }),
+  "create policy bookmarks_insert_own on public.bookmarks for insert to authenticated with check(account_id=(select auth.uid()) and exists(select 1 from public.profiles p where p.account_id=(select auth.uid()) and p.status='active'::public.account_status));",
+  "create policy learning_progress_insert_own on public.learning_progress for insert to authenticated with check(account_id=(select auth.uid()) and exists(select 1 from public.profiles p where p.account_id=(select auth.uid()) and p.status='active'::public.account_status));",
+  "create policy support_requests_insert_own on public.support_requests for insert to authenticated with check(account_id=(select auth.uid()) and exists(select 1 from public.profiles p where p.account_id=(select auth.uid()) and p.status='active'::public.account_status and p.email=support_requests.email));",
   "create policy bookmarks_delete_own on public.bookmarks for delete to authenticated using(account_id=(select auth.uid()));",
   "create policy bookmarks_update_own on public.bookmarks for update to authenticated using(account_id=(select auth.uid())) with check(account_id=(select auth.uid()) and exists(select 1 from public.profiles p where p.account_id=(select auth.uid()) and p.status='active'::public.account_status));",
   "create policy learning_progress_update_own on public.learning_progress for update to authenticated using(account_id=(select auth.uid())) with check(account_id=(select auth.uid()) and exists(select 1 from public.profiles p where p.account_id=(select auth.uid()) and p.status='active'::public.account_status));",

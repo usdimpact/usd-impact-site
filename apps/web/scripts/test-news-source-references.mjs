@@ -97,7 +97,7 @@ try {
     }
     const fakeGov = edition(style).replace(
       'https://www.federalreserve.gov/newsevents/pressreleases/other20261009a.htm',
-      'https://dol.gov.example.com/claims',
+      'https://dol.gov.evil.org/claims',
     );
     const fakeGovResult = validate(fakeGov);
     assert.notEqual(fakeGovResult.status, 0, 'lookalike government domain must not be trusted');

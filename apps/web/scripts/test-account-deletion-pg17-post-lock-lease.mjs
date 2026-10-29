@@ -73,14 +73,14 @@ async function holdProfileUntilAfterExpiry(i,advisory){
   }
   assert.equal(locked,true,'must prove profile row lock before start');
   checks++;
-  return holding;
+  return {holding};
 }
 
 // Case A: "begin" starts during a valid pre-dispatch lease but waits until
 // after expiration. It may NEVER detach the FK or signal Auth dispatch.
 const originalA=parseClaim(await runSql(claimSql(0)));
 await grantShortLease(0);
-const holderA=await holdProfileUntilAfterExpiry(0,950301);
+const {holding:holderA}=await holdProfileUntilAfterExpiry(0,950301);
 // A function entry made now sees unexpired lease; source before fix would
 // compute v_now here and authorize after a five-second wait.
 const begunAt=Date.now();
@@ -102,7 +102,7 @@ checks+=3;
 // using the stale function-entry timestamp.
 const originalB=parseClaim(await runSql(claimSql(1)));
 await grantShortLease(1);
-const holderB=await holdProfileUntilAfterExpiry(1,950302);
+const {holding:holderB}=await holdProfileUntilAfterExpiry(1,950302);
 const renewedAt=Date.now();
 const renewal=parseClaim(await runSql(claimSql(1)));
 await holderB;

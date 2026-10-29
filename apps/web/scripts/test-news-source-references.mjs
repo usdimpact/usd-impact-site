@@ -9,16 +9,16 @@ const validator = fileURLToPath(new URL('./validate-news.mjs', import.meta.url))
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'news-source-references-'));
 const newsRoot = path.join(root, 'src/content/news');
 fs.mkdirSync(newsRoot, { recursive: true });
-const editionFile = path.join(newsRoot, '2026-10-13.md');
+const editionFile = path.join(newsRoot, '2026-10-30.md');
 
 function edition(style, { highlightId = 'fed-scf-2025', catalystId = 'calendar' } = {}) {
   const references = (id) => style === 'inline'
     ? `    sourceIds: ["${id}"]`
     : `    sourceIds:\n      - '${id}'`;
   return `---
-date: "2026-10-13"
-slug: "/news/2026-10-13"
-lastReviewed: "2026-10-13"
+date: "2026-10-30"
+slug: "/news/2026-10-30"
+lastReviewed: "2026-10-30"
 status: "published"
 complianceNote: "Educational only; not investment advice."
 highlights:
@@ -67,7 +67,7 @@ try {
     for (const entry of ['highlightId', 'catalystId']) {
       const invalid = validate(edition(style, { [entry]: 'fed-scf' }));
       assert.notEqual(invalid.status, 0, `${style} unknown ${entry} must fail`);
-      assert.match(invalid.stderr, /2026-10-13\.md: unknown source ID "fed-scf"/);
+      assert.match(invalid.stderr, /2026-10-30\.md: unknown source ID "fed-scf"/);
     }
   }
   for (const style of ['inline', 'block']) {

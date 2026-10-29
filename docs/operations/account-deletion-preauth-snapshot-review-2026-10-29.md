@@ -23,6 +23,18 @@ A lightweight `readDeletionProfile` REST read now selects the identity, email, s
 
 Synthetic offline tests cover positive and negative preflight paths, existing idempotent completion, Auth failure/recovery, and batch/route holds. They use injected HTTP mocks; no credential or real account is accessed.
 
+## Privileged Supabase destination hardening
+
+An additional source-level audit found that the earlier deletion configuration compared only the *first DNS label* of `SUPABASE_URL` against the project reference. This could accept a lookalike domain beginning with the expected project ID if that URL were mistakenly configured; no actual credential exposure is established.
+
+The Draft now restricts the privileged finalizer to an **exact, HTTPS canonical origin**:
+
+- `VERCEL_ENV=preview` or `development` may use only `https://ycstrcvshdluovtuasjc.supabase.co`.
+- `VERCEL_ENV=production` may use only `https://gjzetjugmnwanvjkchux.supabase.co`, **and still requires** both separate affirmative Production deletion and durable-email approval flags.
+- Missing/unsupported environment, lookalike domains, userinfo, alternate ports, path, search or fragment are rejected before any Supabase HTTP call. The existing disabled-by-default flag returns without even loading secrets.
+
+Synthetic config tests cover these invalid targets and both nominal canonical environments. This validates the application boundary but does not test network DNS integrity or secret provenance. No Vercel environment variable or key was changed.
+
 ## Explicit limitation — STILL NOT atomic
 
 This is **risk reduction**, not an atomic claim or proof of race freedom. An external Auth call cannot share an atomic PostgreSQL row lock with a later SQL finalization RPC. A cancel/reschedule could still occur between the new successful revalidation GET and the Auth DELETE; concurrent workers may both pass the recheck.

@@ -17,14 +17,6 @@ export class AccountDeletionFinalizerError extends Error {
   }
 }
 
-function projectRefFromUrl(url) {
-  try {
-    return new URL(url).hostname.split('.')[0] || '';
-  } catch {
-    return '';
-  }
-}
-
 function enabled(value) {
   return String(value || '').trim().toLowerCase() === 'true';
 }
@@ -63,24 +55,40 @@ export function readAccountDeletionFinalizerConfig(environment = process.env) {
     );
   }
   const supabase = readSupabaseServerConfig(environment, { requireSecret: true });
-  const projectRef = projectRefFromUrl(supabase.url);
   const vercelEnvironment = String(environment.VERCEL_ENV || '').trim().toLowerCase();
   const production = vercelEnvironment === 'production';
-  if (production) {
-    if (
-      projectRef !== PRODUCTION_PROJECT_REF
-      || !enabled(environment.ACCOUNT_DELETION_FINALIZER_PRODUCTION_APPROVED)
-      || !enabled(environment.EMAIL_READINESS_PRODUCTION_APPROVED)
-    ) {
-      throw new AccountDeletionFinalizerError(
-        'Production account deletion finalization is not approved for this project and durable email ledger.',
-        'ACCOUNT_DELETION_PRODUCTION_NOT_APPROVED',
-      );
-    }
-  } else if (projectRef !== DEVELOPMENT_PROJECT_REF) {
+  if (!production && !['preview', 'development'].includes(vercelEnvironment)) {
     throw new AccountDeletionFinalizerError(
-      'Non-Production account deletion finalization must target canonical Development.',
-      'ACCOUNT_DELETION_PROJECT_MISMATCH',
+      'Account deletion finalizer requires an explicit supported Vercel environment.',
+      'ACCOUNT_DELETION_ENVIRONMENT_INVALID',
+    );
+  }
+  const projectRef = production ? PRODUCTION_PROJECT_REF : DEVELOPMENT_PROJECT_REF;
+  const expectedOrigin = `https://${projectRef}.supabase.co`;
+  const configuredUrl = new URL(environment.SUPABASE_URL);
+  // A hostname prefix such as <project>.untrusted.example is NOT a project
+  // identity. Restrict the secret-bearing finalizer to its exact origin.
+  if (
+    configuredUrl.origin !== expectedOrigin
+    || supabase.url !== expectedOrigin
+    || configuredUrl.username || configuredUrl.password
+    || configuredUrl.search || configuredUrl.hash
+    || configuredUrl.pathname !== '/'
+  ) {
+    throw new AccountDeletionFinalizerError(
+      production
+        ? 'Production account deletion finalization is not approved for this project.'
+        : 'Non-Production account deletion finalization must target canonical Development.',
+      production ? 'ACCOUNT_DELETION_PRODUCTION_NOT_APPROVED' : 'ACCOUNT_DELETION_PROJECT_MISMATCH',
+    );
+  }
+  if (production && (
+    !enabled(environment.ACCOUNT_DELETION_FINALIZER_PRODUCTION_APPROVED)
+    || !enabled(environment.EMAIL_READINESS_PRODUCTION_APPROVED)
+  )) {
+    throw new AccountDeletionFinalizerError(
+      'Production account deletion finalization is not approved for this project and durable email ledger.',
+      'ACCOUNT_DELETION_PRODUCTION_NOT_APPROVED',
     );
   }
   const batchSize = configuredBatchSize(environment, production);

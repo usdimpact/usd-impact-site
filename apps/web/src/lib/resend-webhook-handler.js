@@ -117,8 +117,10 @@ async function serviceRequest({ config, path, method = 'GET', body, prefer, fetc
     method,
     headers: {
       ...JSON_HEADERS,
+      // The server config requires an opaque sb_secret_ API key, not a JWT.
+      // Supabase accepts this on apikey; Bearer sb_secret_ is not a JWT and
+      // can be rejected by PostgREST. Never emit it as Authorization.
       apikey: config.secretKey,
-      Authorization: `Bearer ${config.secretKey}`,
       ...(prefer ? { Prefer: prefer } : {}),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),

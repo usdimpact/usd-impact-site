@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "editionDate": "2026-10-29",
+  "events": [
+    {
+      "id": "BEA_GDP_Q3_ADVANCE",
+      "name": "BEA GDP advance estimate, third quarter 2026",
+      "releaseAtUtc": "2026-10-29T12:30:00Z",
+      "calendarUrl": "https://www.bea.gov/news/schedule/full",
+      "outcomeUrl": "https://www.bea.gov/index.php/news/2026/gdp-advance-estimate-3rd-quarter-2026"
+    },
+    {
+      "id": "BEA_PCE_SEPTEMBER",
+      "name": "BEA Personal Income and Outlays, September 2026 (PCE prices)",
+      "releaseAtUtc": "2026-10-29T12:30:00Z",
+      "calendarUrl": "https://www.bea.gov/news/schedule/full",
+      "outcomeUrl": "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026"
+    }
+  ]
+}

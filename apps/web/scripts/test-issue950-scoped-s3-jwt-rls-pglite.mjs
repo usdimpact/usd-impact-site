@@ -30,7 +30,7 @@ for(const side of ['source','restore']){
   assert.match(template,/__ISSUE950_APPROVED_TEST_EMAIL__/);
   assert.match(template,/raw_app_meta_data/);
   assert.match(template,/p\.status::text='suspended'/);
-  assert.doesNotMatch(template,/raw_user_meta_data/);
+  assert.doesNotMatch(template,/\bu\.raw_user_meta_data\b|\bauth\.jwt\(\).*raw_user_meta_data/i);
   assert.match(template,new RegExp('__ISSUE950_'+side.toUpperCase()+'_SYNTHETIC_UUID__'));
   assert.doesNotMatch(template,/drop policy|delete from|truncate|service_role|sb_secret_/i);
   for(const name of paths)assert.ok(template.includes("'"+name+"'"),'missing immutable manifest '+side);

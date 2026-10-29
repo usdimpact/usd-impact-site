@@ -41,7 +41,8 @@ const applied = await persistResearchMembershipTransition({
   plan,
   subscriptionId,
   environment: {
-    SUPABASE_URL: 'https://example.supabase.co',
+    VERCEL_ENV: 'preview',
+    SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
     SUPABASE_SECRET_KEY: `sb_secret_${'x'.repeat(32)}`,
   },
   fetchImpl: async (url, init) => {
@@ -57,7 +58,7 @@ const applied = await persistResearchMembershipTransition({
   },
 });
 assert.equal(applied.action, 'applied');
-assert.equal(request.url, 'https://example.supabase.co/rest/v1/rpc/apply_research_membership_transition');
+assert.equal(request.url, 'https://ycstrcvshdluovtuasjc.supabase.co/rest/v1/rpc/apply_research_membership_transition');
 assert.equal(request.init.method, 'POST');
 assert.equal(JSON.parse(request.init.body).p_entitlement_state, 'suspended');
 assert.equal(request.init.headers.apikey, `sb_secret_${'x'.repeat(32)}`);
@@ -83,12 +84,61 @@ await assert.rejects(
     plan,
     subscriptionId,
     environment: {
-      SUPABASE_URL: 'https://example.supabase.co',
+      VERCEL_ENV: 'preview',
+    SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
       SUPABASE_SECRET_KEY: `sb_secret_${'x'.repeat(32)}`,
     },
     fetchImpl: async () => new Response(JSON.stringify({ message: 'state drift' }), { status: 409 }),
   }),
   /state drift/,
 );
+
+// Non-canonical or cross-environment privileged URLs fail before any fetch.
+let unsafeFetchCalled = false;
+const expectBlocked = async (environment) => {
+  await assert.rejects(
+    () => persistResearchMembershipTransition({
+      plan, subscriptionId, environment,
+      fetchImpl: async () => { unsafeFetchCalled = true; throw new Error('UNSAFE_NETWORK'); },
+    }),
+    /canonical project|VERCEL_ENV is required|SUPABASE_SECRET_KEY is invalid/,
+  );
+  assert.equal(unsafeFetchCalled, false);
+};
+const canonical = Object.freeze({
+  VERCEL_ENV: 'preview',
+  SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
+  SUPABASE_SECRET_KEY: `sb_secret_${'x'.repeat(32)}`,
+});
+for (const override of [
+  { VERCEL_ENV: 'production' },
+  { VERCEL_ENV: 'development' },
+  { VERCEL_ENV: undefined },
+  { SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co' },
+  { SUPABASE_URL: 'https://example.supabase.co' },
+  { SUPABASE_URL: 'http://ycstrcvshdluovtuasjc.supabase.co' },
+  { SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co/other' },
+  { SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co?next=elsewhere' },
+  { SUPABASE_SECRET_KEY: 'sb_publishable_wrong_role' },
+]) await expectBlocked({ ...canonical, ...override });
+
+// Production branch mapping is checked only with an injected mock. No network,
+// payment, subscription, or entitlement is accessed.
+let productionMockCalls = 0;
+const productionMock = await persistResearchMembershipTransition({
+  plan, subscriptionId,
+  environment: {
+    ...canonical, VERCEL_ENV: 'production',
+    SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
+  },
+  fetchImpl: async (url, init) => {
+    productionMockCalls += 1;
+    assert.equal(new URL(url).origin, 'https://gjzetjugmnwanvjkchux.supabase.co');
+    assert.equal(Object.hasOwn(init.headers, 'Authorization'), false);
+    return new Response(JSON.stringify({ action: 'duplicate' }), { status: 200 });
+  },
+});
+assert.equal(productionMock.action, 'duplicate');
+assert.equal(productionMockCalls, 1);
 
 console.log('Research Membership persistence client matrix passed.');

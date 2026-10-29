@@ -99,6 +99,11 @@ const storagePlan=read(storagePlanPath);
 assert.match(storagePlan,/SOURCE_ONLY_DRY_PLAN/);
 assert.doesNotMatch(storagePlan,/\bfetch\s*\(|\bprocess\.env\b|node:child_process|\bspawn\s*\(|\bexecFile\s*\(/);
 checks+=2;
+const storageChecksumPath='apps/web/src/lib/account-deletion-private-storage-checksum-evidence.review.js';
+const storageChecksum=read(storageChecksumPath);
+assert.match(storageChecksum,/STRUCTURAL_EVIDENCE_CONSISTENCY_ONLY/);
+assert.doesNotMatch(storageChecksum,/\bfetch\s*\(|\bprocess\.env\b|node:fs|node:child_process/);
+checks+=2;
 function rejectStoragePlanImports(dir){
   for(const entry of readdirSync(join(root,dir),{withFileTypes:true})){
     const path=join(dir,entry.name);
@@ -108,6 +113,11 @@ function rejectStoragePlanImports(dir){
       assert.equal(read(path).includes('account-deletion-private-storage-restore-plan.review'),false,
         'Live source imported the private Storage restore plan: '+path);
       checks++;
+      if(path!==storageChecksumPath){
+        assert.equal(read(path).includes('account-deletion-private-storage-checksum-evidence.review'),false,
+          'Live source imported the private Storage checksum evidence reviewer: '+path);
+        checks++;
+      }
     }
   }
 }

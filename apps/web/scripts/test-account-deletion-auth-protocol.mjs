@@ -28,7 +28,7 @@ const scanned = Object.freeze({
   deletion_due_at: due,
 });
 const ok = (status, payload) => new Response(
-  payload === undefined ? '' : JSON.stringify(payload),
+  payload === undefined ? null : JSON.stringify(payload),
   { status, headers: { 'content-type': 'application/json' } },
 );
 let assertions = 0;

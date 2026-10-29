@@ -62,6 +62,8 @@ function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscri
     const u = new URL(url);
     assert.equal(u.origin, environment.SUPABASE_URL, 'only the scoped mock database is permitted');
     assert.equal(init.headers.apikey, environment.SUPABASE_SECRET_KEY);
+    assert.equal(Object.keys(init.headers).some((name) => name.toLowerCase() === 'authorization'), false,
+      'Research Membership subscription/event/RPC requests must use opaque apikey only');
     ctx.calls.push({ path: u.pathname, method: init.method || 'GET' });
     if (u.pathname === '/rest/v1/subscriptions') {
       assert.equal(init.method || 'GET', 'GET');

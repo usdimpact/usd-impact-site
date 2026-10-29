@@ -9,7 +9,14 @@ on:
       - 'apps/web/src/lib/resend-webhook*.js'
       - 'apps/web/src/pages/account/newsletter-canary.astro'
       - 'apps/web/api/waitlist.js'
+      - 'apps/web/vercel.json'
       - 'apps/web/scripts/test-weekly-newsletter-canary*.mjs'
+      - '.github/workflows/weekly-newsletter-dispatch.yml'
+      - '.github/workflows/weekly-newsletter-qa-batch.yml'
+      - '.github/workflows/progress-email-dispatch.yml'
+      - '.github/workflows/progress-email-qa-batch.yml'
+      - '.github/workflows/email-opt-in-delivery.yml'
+      - '.github/workflows/newsletter-preview-readiness.yml'
       - '.github/workflows/weekly-newsletter-canary.yml'
   push:
     branches: [main]
@@ -20,7 +27,14 @@ on:
       - 'apps/web/src/lib/resend-webhook*.js'
       - 'apps/web/src/pages/account/newsletter-canary.astro'
       - 'apps/web/api/waitlist.js'
+      - 'apps/web/vercel.json'
       - 'apps/web/scripts/test-weekly-newsletter-canary*.mjs'
+      - '.github/workflows/weekly-newsletter-dispatch.yml'
+      - '.github/workflows/weekly-newsletter-qa-batch.yml'
+      - '.github/workflows/progress-email-dispatch.yml'
+      - '.github/workflows/progress-email-qa-batch.yml'
+      - '.github/workflows/email-opt-in-delivery.yml'
+      - '.github/workflows/newsletter-preview-readiness.yml'
       - '.github/workflows/weekly-newsletter-canary.yml'
 
 permissions:

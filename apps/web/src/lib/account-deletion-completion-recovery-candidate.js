@@ -4,11 +4,13 @@
 import { createHash } from 'node:crypto';
 import { createAccountDeletionCompletedEmailIntent } from './account-deletion-completed-email.js';
 import { verifyLaunchEmailOutboxIdentity } from './launch-email-dispatch.js';
-import { FencedDeletionProtocolError } from './account-deletion-fenced-protocol-candidate.js';
 
 const ORIGIN='https://ycstrcvshdluovtuasjc.supabase.co';
 const UUID=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
-function stop(code){throw new FencedDeletionProtocolError(code);}
+export class CompletionRecoveryCandidateError extends Error {
+  constructor(code){super(code);this.name='CompletionRecoveryCandidateError';this.code=code;}
+}
+function stop(code){throw new CompletionRecoveryCandidateError(code);}
 function key(config,fetchImpl,enqueueCompletion){
   if(config?.mode!=='offline_fixture'
     || config?.production!==false
@@ -123,7 +125,7 @@ export async function runOfflineCompletionRecovery({
       }));
       continue;
     }catch(error){
-      code=error instanceof FencedDeletionProtocolError
+      code=error instanceof CompletionRecoveryCandidateError
         ? error.code:'COMPLETION_RECOVERY_UNEXPECTED_FAILURE';
     }
     manualReview++;

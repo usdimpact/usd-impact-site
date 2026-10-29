@@ -163,7 +163,7 @@ try{
       ['other@example.invalid','marketing','Synthetic issue','Synthetic support request details'],
       ['other@example.invalid','privacy','X','Synthetic support request details'],
       ['other@example.invalid','privacy','Synthetic issue','short'],
-      ['other@example.invalid','privacy','Synthetic\\nissue','Synthetic support request details'],
+      ['other@example.invalid','privacy','Synthetic\nissue','Synthetic support request details'],
     ]){
       await assert.rejects(()=>insertOne('support_requests',...args),/row-level security policy|permission denied/i,
         'preserve original support validation terms');

@@ -126,7 +126,10 @@ export async function runOfflineDueDeletionBatch({
     try {
       const workerNonce=workerNonceFactory();
       const result=await runOfflineFencedDeletion({
-        config,candidate:row,fetchImpl,authSoftDelete,recordCompletion,
+        config,candidate:row,fetchImpl,authSoftDelete,
+        // Bind the authoritative request UUID to the matching finalized
+        // account; never try to infer the request from a scrubbed profile.
+        recordCompletion:finalized=>recordCompletion(finalized,{candidate:row}),
         workerNonce,
       });
       if(result?.status!=='finalized') stop('CLAIM_BATCH_RESULT_INVALID');

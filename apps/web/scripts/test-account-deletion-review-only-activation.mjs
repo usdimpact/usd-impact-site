@@ -12,8 +12,17 @@ const candidateNames=[
   'account-deletion-fenced-protocol-candidate',
   'account-deletion-due-batch-candidate',
   'account-deletion-completion-recovery-candidate',
+  'account-deletion-coordinated-offline-candidate',
 ];
-const allowedImportingCandidate='apps/web/src/lib/account-deletion-due-batch-candidate.js';
+const allowedCandidateImports={
+  'apps/web/src/lib/account-deletion-due-batch-candidate.js':[
+    'account-deletion-fenced-protocol-candidate',
+  ],
+  'apps/web/src/lib/account-deletion-coordinated-offline-candidate.js':[
+    'account-deletion-due-batch-candidate',
+    'account-deletion-completion-recovery-candidate',
+  ],
+};
 const candidatePaths=candidateNames.map(name=>'apps/web/src/lib/'+name+'.js');
 const sqlCandidatePaths=[
   'docs/operations/candidates/account-deletion-atomic-claim.review.sql',
@@ -34,15 +43,15 @@ function walk(directory){
       // The dormant batch candidate alone may import the dormant one-account
       // candidate. No actual route, middleware, app/client source may import
       // either review-only module.
-      if(path!==allowedImportingCandidate){
-        for(const name of candidateNames){
+      const allowed=allowedCandidateImports[path]||[];
+      for(const name of candidateNames){
+        if(allowed.includes(name)){
+          assert.ok(content.includes(name),
+            'Missing explicit offline candidate dependency: '+path+' -> '+name);
+        }else {
           assert.equal(content.includes(name),false,
-            'Live source imported review-only account deletion module: '+path);
-          checks++;
+            'Runtime imported forbidden account deletion module: '+path+' -> '+name);
         }
-      }else {
-        assert.ok(content.includes(candidateNames[0]),
-          'Batch candidate must call fenced adapter rather than bypass the claim');
         checks++;
       }
     }

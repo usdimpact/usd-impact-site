@@ -76,7 +76,13 @@ try {
       .replace('sourceType: "primary"', 'sourceType: "reporting"');
     const primaryResult = validate(falsePrimary);
     assert.notEqual(primaryResult.status, 0, 'verified-primary must cite an actual primary-classified source');
-    assert.match(primaryResult.stderr, /highlight 1 is verified-primary but cites no primary source/);
+    assert.match(primaryResult.stderr, /highlight 1 is verified-primary but cites no recognized primary source/);
+
+    const spoofedPrimary = edition(style)
+      .replace('https://www.federalreserve.gov/newsevents/pressreleases/other20261009a.htm', 'https://apnews.com/article/not-a-primary');
+    const spoofedResult = validate(spoofedPrimary);
+    assert.notEqual(spoofedResult.status, 0, 'primary evidence requires a recognized primary publisher URL');
+    assert.match(spoofedResult.stderr, /source fed-scf-2025 type does not match its recognized publisher URL/);
 
     const originalIds = style === 'inline'
       ? '    sourceIds: ["fed-scf-2025"]'
@@ -104,6 +110,13 @@ Source-reference fixture.`);
     );
     const validMultiple = validate(differentPublisher);
     assert.equal(validMultiple.status, 0, `different reporting domains should validate: ${validMultiple.stderr}`);
+    const falseMultiple = differentPublisher.replace(
+      'https://www.reuters.com/world/reporting-two',
+      'https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm',
+    ).replace('sourceType: "reporting"\n---', 'sourceType: "primary"\n---');
+    const primaryInMultiple = validate(falseMultiple);
+    assert.notEqual(primaryInMultiple.status, 0, 'verified-multiple must not hide primary-source citations');
+    assert.match(primaryInMultiple.stderr, /is verified-multiple but cites primary evidence/);
   }
   console.log('Daily source-reference regression passed: inline/block IDs, primary labels, independent reporting domains.');
 } finally {

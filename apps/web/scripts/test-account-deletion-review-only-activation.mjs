@@ -87,6 +87,28 @@ for(const file of candidatePaths){
   assert.doesNotMatch(content,/\/auth\/v1\/admin\/users/,'no direct live Auth Admin HTTP');
   checks+=4;
 }
+// The private Storage transfer plan is deliberately data-only: no live
+// API, worker or middleware may import it, and it cannot execute rclone.
+const storagePlanPath='apps/web/src/lib/account-deletion-private-storage-restore-plan.review.js';
+const storagePlan=read(storagePlanPath);
+assert.match(storagePlan,/SOURCE_ONLY_DRY_PLAN/);
+assert.doesNotMatch(storagePlan,/\bfetch\s*\(|\bprocess\.env\b|node:child_process|\bspawn\s*\(|\bexecFile\s*\(/);
+checks+=2;
+function rejectStoragePlanImports(dir){
+  for(const entry of readdirSync(join(root,dir),{withFileTypes:true})){
+    const path=join(dir,entry.name);
+    if(entry.isDirectory())rejectStoragePlanImports(path);
+    else if(entry.isFile() && /\.(?:js|mjs|cjs|ts|tsx|jsx|astro)$/.test(entry.name)
+      && path!==storagePlanPath){
+      assert.equal(read(path).includes('account-deletion-private-storage-restore-plan.review'),false,
+        'Live source imported the private Storage restore plan: '+path);
+      checks++;
+    }
+  }
+}
+rejectStoragePlanImports('apps/web/src');
+rejectStoragePlanImports('apps/web/api');
+
 for(const file of sqlCandidatePaths){
   const content=read(file);
   assert.match(content,/REVIEW ONLY|REVIEW-ONLY/);

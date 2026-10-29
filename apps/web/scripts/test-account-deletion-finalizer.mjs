@@ -127,6 +127,19 @@ const calls = [];
 let outbox = null;
 const fetchImpl = async (url, options = {}) => {
   const href = String(url);
+  const origin = new URL(href).origin;
+  assert.equal(origin, environment.SUPABASE_URL, 'deletion must remain within canonical Development');
+  if (href.includes('/rest/v1/')) {
+    assert.equal(options.headers?.apikey, environment.SUPABASE_SECRET_KEY);
+    assert.equal(Object.keys(options.headers || {}).some((name) => name.toLowerCase() === 'authorization'), false,
+      'account deletion PostgREST must never use opaque secret as Bearer');
+  }
+  if (href.includes('/auth/v1/admin/')) {
+    assert.equal(options.headers?.apikey, environment.SUPABASE_SECRET_KEY);
+    assert.equal(options.headers?.Authorization, `Bearer ${environment.SUPABASE_SECRET_KEY}`,
+      'preserve existing Auth Admin protocol pending separate protected acceptance');
+    assert.equal(options.method, 'DELETE');
+  }
   calls.push({ href, options });
 
   if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') {
@@ -185,6 +198,8 @@ const result = await runDueAccountDeletionFinalizer({
 });
 assert.deepEqual(result, emptyRunResult({ scanned: 1, finalized: 1 }));
 assert.equal(calls.filter((call) => call.href.includes('/auth/v1/admin/users/')).length, 1);
+assert.equal(calls.filter((call) => call.href.includes('/rest/v1/')).length >= 3, true,
+  'must cover due scan, RPC and durable completion outbox REST paths');
 assert.equal(calls.filter((call) => call.href.endsWith('/rpc/finalize_account_deletion')).length, 1);
 assert.equal(calls.filter((call) => call.href.includes('/notification_outbox')).length >= 1, true);
 

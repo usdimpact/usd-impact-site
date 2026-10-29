@@ -185,7 +185,7 @@ with required_columns(table_name, column_name, udt_name) as (
 select pg_catalog.jsonb_build_object(
  'checkpoint','2026-10-29-dev-schema-issue950',
  'metadata_match',not exists(select 1 from issues),
- 'findings',(select pg_catalog.coalesce(
+ 'findings',(select coalesce(
    pg_catalog.jsonb_agg(reason order by reason),'[]'::jsonb
   ) from issues),
  'columns_expected',(select count(*) from required_columns),

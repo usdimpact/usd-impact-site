@@ -76,6 +76,38 @@ function prepare(row){
   return {accountId:row.account_id,requestId:row.deletion_request_id,intent};
 }
 
+// One identical durable-outbox + SQL-ack boundary for a freshly finalized
+// account AND an older escrow awaiting recovery. No email is dispatched here.
+// A lost acknowledgement is UNCONFIRMED, never evidence of delivery.
+export async function recordOfflineCompletionOutbox({
+  config, fetchImpl, enqueueCompletion, accountId, requestId, intent,
+}) {
+  key(config,fetchImpl,enqueueCompletion);
+  if (!UUID.test(accountId||'') || !UUID.test(requestId||'')
+    || intent?.messageId!=='account_deletion_completed'
+    || intent?.outboxRecord?.business_object_id!==accountId
+    || intent?.outboxRecord?.business_object_type!=='account_deletion_request') {
+    stop('COMPLETION_RECOVERY_ROW_INVALID');
+  }
+  let persisted;
+  try { persisted=await enqueueCompletion(intent); }
+  catch { stop('COMPLETION_RECOVERY_OUTBOX_NOT_DURABLE'); }
+  if (persisted?.enabled!==true || !UUID.test(persisted?.outbox?.id||'')) {
+    stop('COMPLETION_RECOVERY_OUTBOX_NOT_DURABLE');
+  }
+  try { verifyLaunchEmailOutboxIdentity(intent,persisted.outbox); }
+  catch { stop('COMPLETION_RECOVERY_OUTBOX_IDENTITY_MISMATCH'); }
+  const confirmed=await rpc(
+    config,fetchImpl,'confirm_account_deletion_completion_outbox',{
+      recorded_account_id:accountId,
+      recorded_request_id:requestId,
+      recorded_outbox_id:persisted.outbox.id,
+    },'COMPLETION_RECOVERY_ACK_UNCERTAIN',
+  );
+  if (confirmed!==true) stop('COMPLETION_RECOVERY_ACK_UNCERTAIN');
+  return Object.freeze({durable:true,reference:persisted.outbox.id});
+}
+
 export async function runOfflineCompletionRecovery({
   config,fetchImpl,enqueueCompletion,maxItems=1,
 }={}){
@@ -103,22 +135,10 @@ export async function runOfflineCompletionRecovery({
     try{
       // Injected in-memory test callback only. A future approved real adapter
       // must use the existing governed enqueueLaunchEmailIntent and flags.
-      const persisted=await enqueueCompletion(entry.intent);
-      if(persisted?.enabled!==true || !UUID.test(persisted?.outbox?.id||''))
-        stop('COMPLETION_RECOVERY_OUTBOX_NOT_DURABLE');
-      try{verifyLaunchEmailOutboxIdentity(entry.intent,persisted.outbox);}
-      catch{stop('COMPLETION_RECOVERY_OUTBOX_IDENTITY_MISMATCH');}
-
-      // The SQL RPC revalidates identity against the ACTUAL DB outbox record
-      // before scrubbing the temporary private recovery recipient.
-      const confirmed=await rpc(
-        config,fetchImpl,'confirm_account_deletion_completion_outbox',{
-          recorded_account_id:entry.accountId,
-          recorded_request_id:entry.requestId,
-          recorded_outbox_id:persisted.outbox.id,
-        },'COMPLETION_RECOVERY_ACK_UNCERTAIN',
-      );
-      if(confirmed!==true)stop('COMPLETION_RECOVERY_ACK_UNCERTAIN');
+      await recordOfflineCompletionOutbox({
+        config, fetchImpl, enqueueCompletion, accountId:entry.accountId,
+        requestId:entry.requestId, intent:entry.intent,
+      });
       recorded++;
       outcomes.push(Object.freeze({
         accountReference:opaque(entry.accountId),state:'outbox_recorded',

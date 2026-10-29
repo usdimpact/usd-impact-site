@@ -84,6 +84,25 @@ try {
     assert.notEqual(spoofedResult.status, 0, 'primary evidence requires a recognized primary publisher URL');
     assert.match(spoofedResult.stderr, /source fed-scf-2025 type does not match its recognized publisher URL/);
 
+    for (const officialUrl of [
+      'https://www.dol.gov/sites/dolgov/files/OPA/newsreleases/ui-claims/20261535.pdf',
+      'https://treasurydirect.gov/auctions/when-auctions-happen/',
+      'https://www.kansascityfed.org/research/jackson-hole-economic-symposium/jackson-hole-faqs/',
+    ]) {
+      const officialSource = edition(style).replace(
+        'https://www.federalreserve.gov/newsevents/pressreleases/other20261009a.htm', officialUrl,
+      );
+      const officialResult = validate(officialSource);
+      assert.equal(officialResult.status, 0, `approved issuer URL should remain valid: ${officialUrl} ${officialResult.stderr}`);
+    }
+    const fakeGov = edition(style).replace(
+      'https://www.federalreserve.gov/newsevents/pressreleases/other20261009a.htm',
+      'https://dol.gov.example.com/claims',
+    );
+    const fakeGovResult = validate(fakeGov);
+    assert.notEqual(fakeGovResult.status, 0, 'lookalike government domain must not be trusted');
+    assert.match(fakeGovResult.stderr, /source fed-scf-2025 type does not match its recognized publisher URL/);
+
     const originalIds = style === 'inline'
       ? '    sourceIds: ["fed-scf-2025"]'
       : "    sourceIds:\n      - 'fed-scf-2025'";

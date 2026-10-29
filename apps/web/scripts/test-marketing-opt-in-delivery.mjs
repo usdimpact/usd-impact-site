@@ -63,6 +63,9 @@ function databaseHarness(initial) {
   const patches = [];
   const fetchImpl = async (url, options = {}) => {
     assert.match(url, /^https:\/\/ycstrcvshdluovtuasjc\.supabase\.co\/rest\/v1\/notification_outbox\?id=eq\./);
+    assert.equal(options.headers?.apikey, environment.SUPABASE_SECRET_KEY);
+    assert.equal(Object.keys(options.headers || {}).some((key) => key.toLowerCase() === 'authorization'), false,
+      'opt-in delivery PostgREST must omit opaque-key Bearer authentication');
     assert.equal(options.method, 'PATCH');
     const patch = JSON.parse(options.body);
     patches.push(patch);

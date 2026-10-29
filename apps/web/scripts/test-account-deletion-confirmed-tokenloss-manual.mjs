@@ -213,7 +213,7 @@ try {
   assert.ok(!JSON.stringify(audit).includes('@'));
   checks+=9;
   await denied(()=>manual(third,requestC,attemptC,claimC.claim_generation),/confirmed-state erasure fence rejected/,'manual finalization must not replay');
-  await denied(()=>finalize(third,requestC,claimC),/token fence rejected/,'old token cannot finalize twice');
+  await denied(()=>finalize(third,requestC,claimC),/finalize fence rejected/,'old token cannot finalize twice');
   assert.equal((await row("select count(*)::integer as n from account_deletion_internal.confirmed_recovery_audit")).n,1);
   checks++;
 

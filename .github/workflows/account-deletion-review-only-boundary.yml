@@ -1,0 +1,35 @@
+name: Account deletion review-only activation boundary
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/account-deletion-fenced-protocol-candidate.js'
+      - 'apps/web/src/lib/account-deletion-due-batch-candidate.js'
+      - 'apps/web/scripts/test-account-deletion-review-only-activation.mjs'
+      - 'apps/web/api/**'
+      - 'apps/web/src/**'
+      - 'apps/web/vercel.json'
+      - 'supabase/migrations/**'
+      - '.github/workflows/account-deletion-review-only-boundary.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  fail-closed-dormant-candidate-boundary:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout without persistent credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Assert review modules cannot run in live routes or migrations
+        run: |
+          node --check apps/web/scripts/test-account-deletion-review-only-activation.mjs
+          node apps/web/scripts/test-account-deletion-review-only-activation.mjs

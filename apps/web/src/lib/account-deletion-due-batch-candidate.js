@@ -126,15 +126,28 @@ export async function runOfflineDueDeletionBatch({
     try {
       const workerNonce=workerNonceFactory();
       const result=await runOfflineFencedDeletion({
-        config,candidate:row,fetchImpl,authSoftDelete,recordCompletion,
+        config,candidate:row,fetchImpl,authSoftDelete,
+        // Bind the authoritative request UUID to the matching finalized
+        // account; never try to infer the request from a scrubbed profile.
+        recordCompletion:finalized=>recordCompletion(finalized,{candidate:row}),
         workerNonce,
       });
       if(result?.status!=='finalized') stop('CLAIM_BATCH_RESULT_INVALID');
       finalized++;
       outcomes.push(Object.freeze({accountReference:accountRef,state:'finalized'}));
     } catch(error){
+      const allowedCompletionCodes=new Set([
+        'COMPLETION_RECOVERY_ROW_INVALID',
+        'COMPLETION_RECOVERY_OUTBOX_NOT_DURABLE',
+        'COMPLETION_RECOVERY_OUTBOX_IDENTITY_MISMATCH',
+        'COMPLETION_RECOVERY_ACK_UNCERTAIN',
+        'COORDINATED_DELETION_COMPLETION_IDENTITY_MISMATCH',
+        'COORDINATED_DELETION_COMPLETION_INVALID',
+      ]);
       const code=error instanceof FencedDeletionProtocolError
-        ? error.code : 'CLAIM_BATCH_UNEXPECTED_FAILURE';
+        ? error.code
+        : allowedCompletionCodes.has(error?.code)
+          ? error.code : 'CLAIM_BATCH_UNEXPECTED_FAILURE';
       // Only a rejected claim is a conflict. Any unknown outcome after a
       // claim may involve a committed Auth handoff and must be reconciled.
       const conflict=code==='CLAIM_NOT_GRANTED';

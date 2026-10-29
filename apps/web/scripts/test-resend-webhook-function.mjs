@@ -113,6 +113,9 @@ function queuedFetch(responses) {
   assert.equal(calls.length, 4);
   assert.match(calls[0].url, /webhook_receipts\?on_conflict=/);
   assert.equal(calls[0].body.provider, 'resend');
+  assert.equal(calls[0].headers.apikey, environment.SUPABASE_SECRET_KEY);
+  assert.equal(Object.hasOwn(calls[0].headers, 'Authorization'), false,
+    'opaque sb_secret_ must never be sent as Bearer JWT');
   assert.equal(calls[0].body.provider_event_id, svixId);
   assert.equal(calls[0].body.payload_sha256, payloadSha256);
   assert.equal(calls[1].method, 'GET');

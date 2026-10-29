@@ -10,7 +10,7 @@ A read-only `pg_policies` inventory on canonical Development showed **19 policie
 - **3** additional authenticated INSERT policies — `bookmarks_insert_own`, `learning_progress_insert_own`, `support_requests_insert_own` — required `profiles.status = 'active'`, but not `profiles.auth_user_id = auth.uid()`.
 - The remaining **2** policies (`guided_content_releases_deny_client_access` and `guided_supplement_releases_deny_client_access`) explicitly return `false` to both `anon` and `authenticated`; they are intentionally unchanged.
 
-After the normal deletion-request transition to `deletion_pending`, the existing INSERT policies already reject new writes. However, a still-valid JWT combined with a malformed or out-of-order **active but Auth-detached** profile could otherwise insert data when the Auth user no longer owns the canonical account. This is a defense-in-depth gap, **not evidence of such a Production incident**.
+After the normal deletion-request transition to `deletion_pending`, the existing INSERT policies already reject new writes. After the previously proposed `profiles_select_own` policy is installed, its canonical-link check may also deny the profile subquery used by these INSERT policies. The original INSERT predicates themselves nevertheless lack an **explicit** Auth-link invariant. Requiring it directly avoids relying on indirect RLS behavior or future changes to related policies. This is defense-in-depth hardening, **not evidence of an exploitable Production incident**.
 
 ## Draft-only correction
 

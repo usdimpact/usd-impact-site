@@ -61,3 +61,10 @@ The Federal Reserve public pages provide authoritative statistical definitions. 
 Review this matrix against the actual English editorial creation records and any external assets, and either (a) record a **narrow owner attestation that USD Impact owns/has authority to translate its English *prose and teaching structure***, explicitly excluding ICE/Fed proprietary materials, or (b) mark this claim `UNKNOWN` and continue holding publication. Separately obtain a qualified decision on attribution, use of the ICE index name and references, risk/disclaimer phrasing, and LATAM target-market rules. **Do not solicit secrets, credentials, personal IDs or legal documents in GitHub comments.**
 
 **No direct article/body/SEO metadata edit is part of this evidence note. No public release, license assurance, Production merge, DNS/SSO or commerce changes have been requested or authorized.**
+## Post-review editorial clarity update — 2026-10-29
+
+The owner explicitly approved one precise Spanish wording correction in the hypothetical DXY 100→102 exercise:
+
+> En este ejemplo hipotético, el DXY sube dos puntos, pero eso no demuestra que el dólar se haya fortalecido en la misma magnitud frente a un conjunto más amplio de divisas ponderado por el comercio.
+
+This sentence replaces “La subida del DXY es real, pero no demuestra que el dólar se haya fortalecido en la misma magnitud frente a un conjunto más amplio de divisas ponderado por el comercio.”. This **supersedes** older statements in this document that the Spanish body was still byte-identical to its initial accepted translation; the edited body is now pinned to new Git blob hash `78cf51a6333b33c603359805be42fd8212188ad8`. All source-to-claim research and teaching-example origin evidence remain applicable: the numbers are illustrative, not actual ICE/Federal Reserve observations. No third-party rights determination or publication authorization is inferred. Article frontmatter remains unchanged, public Spanish DXY URL still held, and legal/compliance review still separate.

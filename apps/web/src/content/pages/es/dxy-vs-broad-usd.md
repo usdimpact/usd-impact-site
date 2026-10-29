@@ -96,7 +96,7 @@ El euro podría fortalecerse lo suficiente como para hacer caer el DXY, mientras
 
 Supongamos que el DXY sube de 100 a 102 mientras Broad USD se mantiene cerca de 100.
 
-La subida del DXY es real, pero no demuestra que el dólar se haya fortalecido en la misma magnitud frente a un conjunto más amplio de divisas ponderado por el comercio.
+En este ejemplo hipotético, el DXY sube dos puntos, pero eso no demuestra que el dólar se haya fortalecido en la misma magnitud frente a un conjunto más amplio de divisas ponderado por el comercio.
 
 Supongamos ahora que el DXY se mantiene cerca de 100 mientras Broad USD sube de 100 a 103.
 

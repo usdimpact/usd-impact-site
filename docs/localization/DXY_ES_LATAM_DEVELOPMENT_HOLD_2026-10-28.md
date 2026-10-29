@@ -66,3 +66,15 @@ The owner explicitly approved the existing Spanish DXY **title, SEO title, meta 
 ### Next separate gate: source attribution/reuse rights and compliance
 
 The owner must confirm that the three named institutional sources were actually checked, approve precise live source URLs and accurate attribution, and attest that the authored educational wording and any reused charts, data or brand elements have proper rights or need no third-party reproduction license. Reference links alone **do not** establish permission to reproduce proprietary index data/graphics or imply a trademark endorsement. A qualified legal/compliance reviewer must separately review the notice and jurisdictional suitability. No inference of approval from editorial wording is permitted.
+
+## Owner-authorized one-sentence hypothetical clarification — 2026-10-29
+
+The owner approved **exactly one wording correction** in the Spanish Draft article (no metadata/CTA/source or public release approval):
+
+- **Before:** “La subida del DXY es real, pero no demuestra que el dólar se haya fortalecido en la misma magnitud frente a un conjunto más amplio de divisas ponderado por el comercio.”
+- **After:** “En este ejemplo hipotético, el DXY sube dos puntos, pero eso no demuestra que el dólar se haya fortalecido en la misma magnitud frente a un conjunto más amplio de divisas ponderado por el comercio.”
+- The preceding paragraph already begins “Supongamos que el DXY sube de 100 a 102…”. The new sentence removes the potential implication that a hypothetical market movement occurred in historical trading. The subsequent Broad USD 100→103 hypothetical paragraph remains unchanged.
+- The previous exact-body SHA-1 (`git blob`) `4476112d6d09c4cbcbae761517af1cb5f1855842` has been superseded **only for this owner-approved revision** by `78cf51a6333b33c603359805be42fd8212188ad8`; the regression test now pins the new body exactly and separately verifies both hypothetical scenarios and absence of the old wording.
+- The entire frontmatter (title, SEO metadata, hero, original English quiz URLs, three institutional source names, `status: "review"`, disclaimer) is **byte-identical** to the prior Draft revision. No public route, sitemap, locale/hreflang, consent, analytics, membership or domain settings are changed.
+- Earlier dated statements that the full Spanish body remained byte-identical to the originally accepted October 28 translation describe the **pre-correction snapshot**. The one-sentence revision is separately owner-approved and documented here.
+- PR #932 must stay **Draft and unmerged**; legal/compliance and public-release permission remain separate holds.

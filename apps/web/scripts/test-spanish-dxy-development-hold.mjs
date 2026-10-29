@@ -12,20 +12,26 @@ const manifest=file('../src/data/localization-manifest.js');
 const astroConfig=file('../astro.config.mjs');
 const sha=(text)=>createHash('sha1').update('blob '+Buffer.byteLength(text,'utf8')+'\0').update(text,'utf8').digest('hex');
 const expectedEnglish='3c4a3820b9cc0ddc094aa1862f738e231dc0f398';
-const expectedBody='4476112d6d09c4cbcbae761517af1cb5f1855842';
+const expectedBody='78cf51a6333b33c603359805be42fd8212188ad8';
 const yaml=candidate.match(/^---\n([\s\S]*?)\n---\n\n([\s\S]*)$/);
 test('canonical English DXY article is unchanged and matches owner-accepted private source',()=>{
  assert.equal(sha(english),expectedEnglish);
 });
-test('Spanish Development candidate is valid frontmatter and immutable original approved body',()=>{
+test('Spanish Development candidate preserves the exact owner-approved scoped body correction',()=>{
  assert.ok(yaml,'Required YAML frontmatter/body missing');
- assert.equal(sha(yaml[2]),expectedBody,'Spanish body diverged from approved extracted body');
+ assert.equal(sha(yaml[2]),expectedBody,'Spanish body differs from exact owner-approved corrected body');
  assert.match(yaml[1],/^slug: "\/es\/dxy\/dxy-vs-broad-usd"$/m);
  assert.match(yaml[1],/^status: "review"$/m);
  assert.match(yaml[1],/^readingLevel: "/m);
  assert.match(yaml[1],/^complianceNote: "/m);
  assert.doesNotMatch(yaml[1],/^status: "published"$/m);
  assert.doesNotMatch(candidate,/NO PUBLICAR, NO INDEXAR|Estado de esta traducción:/);
+});
+test('hypothetical index-point example uses exactly the owner-approved wording',()=>{
+ assert.match(yaml[2],/Supongamos que el DXY sube de 100 a 102 mientras Broad USD se mantiene cerca de 100\./);
+ assert.ok(yaml[2].includes("En este ejemplo hipotético, el DXY sube dos puntos, pero eso no demuestra que el dólar se haya fortalecido en la misma magnitud frente a un conjunto más amplio de divisas ponderado por el comercio."));
+ assert.ok(!yaml[2].includes("La subida del DXY es real, pero no demuestra que el dólar se haya fortalecido en la misma magnitud frente a un conjunto más amplio de divisas ponderado por el comercio."));
+ assert.match(yaml[2],/Supongamos ahora que el DXY se mantiene cerca de 100 mientras Broad USD sube de 100 a 103\./);
 });
 test('all source references, original English quiz links and disclaimer are preserved',()=>{
  assert.match(candidate,/Federal Reserve — H\.10/);

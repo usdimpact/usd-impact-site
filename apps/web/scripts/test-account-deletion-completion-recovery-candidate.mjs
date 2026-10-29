@@ -129,17 +129,6 @@ for(const [options,expectedCode,queued,acks] of [
   assert.equal(f.queued,0);
   assert.equal(f.ackCalls,0);checks+=2;
 }
-for(const malformed of [
-  {...samples[0],recipient_email_normalized:'BAD@EXAMPLE.INVALID'},
-  {...samples[0],deleted_at:null},
-  {...samples[0],recipient_email_normalized:'badly formatted'},
-  {...samples[0],deletion_request_id:'not-a-uuid'},
-  {...samples[0],deleted_at:'2026-09-01T00:00:00.000Z'},
-]){
-  const f=fixture({rows:[samples[0],malformed]});
-  await denied(()=>execute(f),'COMPLETION_RECOVERY_DUPLICATE_ACCOUNT'
-    /* duplicate check only if entries valid */).catch(()=>{});
-}
 // Explicit bad snapshot goes through prepare() BEFORE callbacks.
 for(const invalid of [
   {...samples[0],recipient_email_normalized:'Bad@Example.invalid'},

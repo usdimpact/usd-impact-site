@@ -218,12 +218,37 @@ export async function revalidateDeletionBeforeAuth({
   return Object.freeze({ alreadyFinalized: false });
 }
 
+// Service-role-only database preparation owns the due-state row lock and
+// detaches the Auth FK before soft deletion. A soft-deleted Auth user remains in
+// auth.users, so ON DELETE SET NULL does not fire on that operation.
+export async function prepareDeletionAuthRemoval({ config, accountId, fetchImpl = fetch }) {
+  const response = await fetchImpl(
+    `${config.supabase.url}/rest/v1/rpc/prepare_account_deletion_auth_removal`,
+    {
+      method: 'POST',
+      headers: jsonHeaders(config.supabase.secretKey),
+      body: JSON.stringify({ prepare_account_id: accountId }),
+    },
+  );
+  const prepared = await requireOk(response, 'ACCOUNT_DELETION_AUTH_PREPARE_FAILED');
+  if (prepared !== true) {
+    throw new AccountDeletionFinalizerError(
+      'Account deletion Auth-link preparation did not confirm success.',
+      'ACCOUNT_DELETION_AUTH_PREPARE_NOT_CONFIRMED',
+    );
+  }
+  return true;
+}
+
 export async function softDeleteAuthUser({ config, accountId, fetchImpl = fetch }) {
   const response = await fetchImpl(
-    `${config.supabase.url}/auth/v1/admin/users/${encodeURIComponent(accountId)}?should_soft_delete=true`,
+    `${config.supabase.url}/auth/v1/admin/users/${encodeURIComponent(accountId)}`,
     {
       method: 'DELETE',
       headers: authAdminHeaders(config.supabase.secretKey),
+      // GoTrue Admin API reads this flag from JSON, not the URL query. Without
+      // an explicit body the server defaults to HARD deletion.
+      body: JSON.stringify({ should_soft_delete: true }),
     },
   );
   if (response.status === 404) return Object.freeze({ alreadyAbsent: true });
@@ -498,6 +523,11 @@ export async function finalizeOneDueAccount({
       outboxId: null,
     });
   }
+
+  // Fail closed before entering the external Auth flow if the privileged,
+  // due-state-locked preparation RPC is absent, rejects, or returns anything
+  // except JSON true. This is NOT an exclusive worker claim; see Issue #950.
+  await prepareDeletionAuthRemoval({ config, accountId, fetchImpl });
 
   let completion = null;
   try {

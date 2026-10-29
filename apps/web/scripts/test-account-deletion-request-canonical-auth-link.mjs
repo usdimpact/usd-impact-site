@@ -26,8 +26,13 @@ async function claimAs(id){
   await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id??'']);
   return row('select (public.request_account_deletion()).status::text as status');
 }
+async function claimAsAuthenticated(id){
+  await db.exec('set role authenticated');
+  try{return await claimAs(id);}
+  finally{await db.exec('reset role');}
+}
 async function rejectAs(id,message){
-  await assert.rejects(()=>claimAs(id),new RegExp(message));
+  await assert.rejects(()=>claimAsAuthenticated(id),new RegExp(message));
   checks++;
 }
 async function profile(accountId){
@@ -52,8 +57,7 @@ try{
   await db.query("insert into public.profiles(account_id,email,status,auth_user_id) values ($1,'mismatch@example.invalid','active',$2)",[mismatched,unrelated]);
   await db.query("insert into public.profiles(account_id,email,status,auth_user_id,deleted_at) values ($1,'previously-deleted@example.invalid','active',$1,now()-interval '1 day')",[previouslyDeleted]);
 
-  await db.exec('set role authenticated');
-  try{
+  {
     await rejectAs(null,'authentication is required');
     await rejectAs(detached,'account is not eligible');
     await rejectAs(mismatched,'account is not eligible');
@@ -68,7 +72,7 @@ try{
       assert.equal(await countRequests(id),0);
       checks+=5;
     }
-    const good=await claimAs(linked);
+    const good=await claimAsAuthenticated(linked);
     assert.equal(good.status,'deletion_pending');
     const p=await profile(linked);
     assert.equal(p.status,'deletion_pending');
@@ -82,8 +86,6 @@ try{
     await rejectAs(linked,'account is not eligible');
     assert.equal(await countRequests(linked),1,'duplicate calls must not create additional privacy requests');
     checks++;
-  }finally{
-    await db.exec('reset role');
   }
 
   // Genuine non-member browser role does not get to invoke a SECURITY DEFINER

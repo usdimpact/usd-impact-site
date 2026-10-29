@@ -97,6 +97,10 @@ function response(payload, status = 200) {
 function scriptedFetch(steps) {
   let index = 0;
   const fetchImpl = async (url, options = {}) => {
+    assert.equal(new URL(url).origin, environment.SUPABASE_URL);
+    assert.equal(options.headers?.apikey, environment.SUPABASE_SECRET_KEY);
+    assert.equal(Object.hasOwn(options.headers || {}, 'Authorization'), false,
+      'Opaque sb_secret_ must never be sent as Bearer on weekly PostgREST calls');
     const step = steps[index++];
     assert.ok(step, `Unexpected database call ${index}: ${url}`);
     if (step.path) assert.match(url, step.path);

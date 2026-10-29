@@ -1,6 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { load, FAILSAFE_SCHEMA } from 'js-yaml';
+import { sourceClassification } from '../api/daily-news-source.js';
 
 const newsDir = path.resolve('src/content/news');
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -90,8 +91,25 @@ for (const file of files) {
   if (status === 'published') {
     if (sourceIds.length < 3) fail(file, 'published editions require at least three sources');
     if (!sourceTypes.includes('primary')) fail(file, 'published editions require at least one primary source');
-    for (const state of verification) {
-      if (!publishedVerification.has(state)) fail(file, `published highlight has invalid verification "${state}"`);
+    const sourceById = new Map(sources.map((source) => [source.id, source]));
+    for (const [index, highlight] of highlights.entries()) {
+      const state = highlight?.verification;
+      if (!publishedVerification.has(state)) {
+        fail(file, `published highlight ${index + 1} has invalid verification "${state}"`);
+      }
+      const cited = highlight.sourceIds.map((id) => sourceById.get(id));
+      if (state === 'verified-primary' && !cited.some((source) => source.sourceType === 'primary')) {
+        fail(file, `published highlight ${index + 1} is verified-primary but cites no primary source`);
+      }
+      if (state === 'verified-multiple') {
+        const reportingDomains = new Set(cited
+          .filter((source) => source.sourceType === 'reporting')
+          .map((source) => sourceClassification(source.url)?.domain
+            ?? new URL(source.url).hostname.toLowerCase().replace(/^www\\./, '')));
+        if (reportingDomains.size < 2) {
+          fail(file, `published highlight ${index + 1} is verified-multiple but cites fewer than two independent reporting domains`);
+        }
+      }
     }
   }
 

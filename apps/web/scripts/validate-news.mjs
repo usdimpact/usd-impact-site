@@ -1,12 +1,31 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { load, FAILSAFE_SCHEMA } from 'js-yaml';
+import { sourceClassification } from '../api/daily-news-source.js';
 
 const newsDir = path.resolve('src/content/news');
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const HTTPS_URL = /^https:\/\/[^\s"']+$/;
 const allowedStatus = new Set(['draft', 'review', 'ready-for-build', 'published']);
 const publishedVerification = new Set(['verified-primary', 'verified-multiple']);
+// Historical editions need exact-copy editorial corrections before strict enforcement.
+const EVIDENCE_ENFORCED_FROM = '2026-10-30';
+// Additional verified official issuer domains already present in reviewed archives.
+// Keep this local to published-source metadata validation: no generator allowlist change.
+const ADDITIONAL_PRIMARY_HOSTS = ['dol.gov', 'treasurydirect.gov', 'kansascityfed.org'];
+function evidencePublisher(url) {
+  const known = sourceClassification(url);
+  if (known) return known;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    if (parsed.protocol !== 'https:') return null;
+    const domain = ADDITIONAL_PRIMARY_HOSTS.find((entry) => host === entry || host.endsWith(`.${entry}`));
+    return domain ? { sourceType: 'primary', domain } : null;
+  } catch {
+    return null;
+  }
+}
 
 function topLevel(data, key) {
   return typeof data[key] === 'string' ? data[key].trim() : '';
@@ -14,6 +33,14 @@ function topLevel(data, key) {
 
 function fail(file, message) {
   throw new Error(`${file}: ${message}`);
+}
+
+function sourceEvidenceIssue(file, date, message) {
+  if (date < EVIDENCE_ENFORCED_FROM) {
+    console.warn(`${file}: LEGACY_EVIDENCE_REVIEW_REQUIRED: ${message}`);
+    return;
+  }
+  fail(file, message);
 }
 
 let files;
@@ -90,8 +117,38 @@ for (const file of files) {
   if (status === 'published') {
     if (sourceIds.length < 3) fail(file, 'published editions require at least three sources');
     if (!sourceTypes.includes('primary')) fail(file, 'published editions require at least one primary source');
-    for (const state of verification) {
-      if (!publishedVerification.has(state)) fail(file, `published highlight has invalid verification "${state}"`);
+    const sourceById = new Map(sources.map((source) => [source.id, source]));
+    // A ledger label alone cannot promote a reporting URL to primary evidence.
+    for (const source of sources) {
+      const classified = evidencePublisher(source.url);
+      if (!classified || classified.sourceType !== source.sourceType) {
+        sourceEvidenceIssue(file, date, `source ${source.id} type does not match its recognized publisher URL`);
+      }
+    }
+    for (const [index, highlight] of highlights.entries()) {
+      const state = highlight?.verification;
+      if (!publishedVerification.has(state)) {
+        fail(file, `published highlight ${index + 1} has invalid verification "${state}"`);
+      }
+      const cited = highlight.sourceIds.map((id) => sourceById.get(id));
+      const primaryEvidence = cited.some((source) => source.sourceType === 'primary'
+        && evidencePublisher(source.url)?.sourceType === 'primary');
+      if (state === 'verified-primary' && !primaryEvidence) {
+        sourceEvidenceIssue(file, date, `published highlight ${index + 1} is verified-primary but cites no recognized primary source`);
+      }
+      if (state === 'verified-multiple') {
+        if (primaryEvidence) {
+          sourceEvidenceIssue(file, date, `published highlight ${index + 1} is verified-multiple but cites primary evidence; review classification`);
+        }
+        const reportingDomains = new Set(cited
+          .filter((source) => source.sourceType === 'reporting')
+          .map((source) => evidencePublisher(source.url))
+          .filter((source) => source?.sourceType === 'reporting')
+          .map((source) => source.domain));
+        if (reportingDomains.size < 2) {
+          sourceEvidenceIssue(file, date, `published highlight ${index + 1} is verified-multiple but cites fewer than two independent reporting domains`);
+        }
+      }
     }
   }
 

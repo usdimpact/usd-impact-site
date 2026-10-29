@@ -103,7 +103,7 @@ function queuedFetch(responses) {
     }], 201),
     jsonResponse([{ id: 'outbox-1', status: 'accepted', provider_message_ref: emailId }]),
     jsonResponse([{ id: 'outbox-1', status: 'delivered', provider_message_ref: emailId }]),
-    jsonResponse(null, 204),
+    jsonResponse([{ id: 'receipt-1', status: 'processed', attempt_count: 1 }]),
   ]);
   const response = responseMock();
   await handleResendWebhook(requestFor(payload), response, { environment, fetchImpl, nowMs });
@@ -235,7 +235,7 @@ function queuedFetch(responses) {
       status: 'received',
       attempt_count: 1,
     }], 201),
-    jsonResponse(null, 204),
+    jsonResponse([{ id: 'receipt-untracked', status: 'ignored', attempt_count: 1 }]),
   ]);
   const response = responseMock();
   await handleResendWebhook(requestFor(untrackedPayload), response, { environment, fetchImpl, nowMs });
@@ -259,7 +259,7 @@ function queuedFetch(responses) {
       attempt_count: 1,
     }], 201),
     jsonResponse({ message: 'temporary database failure' }, 503),
-    jsonResponse(null, 204),
+    jsonResponse([{ id: 'receipt-failure', status: 'failed', attempt_count: 1 }]),
   ]);
   const response = responseMock();
   await handleResendWebhook(requestFor(payload), response, { environment, fetchImpl, nowMs });

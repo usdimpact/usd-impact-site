@@ -1,0 +1,67 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+// Fail closed in Production and in ordinary local builds. Vercel Preview uses SSO.
+// Do not create a public /es route or add this article to the Spanish release allowlist.
+export async function getStaticPaths() {
+  if (process.env.VERCEL_ENV !== 'preview') return [];
+  const entries = await getCollection('pages');
+  const article = entries.find((entry) => (
+    entry.data.slug === '/es/dxy/dxy-vs-broad-usd'
+    && entry.data.status === 'review'
+  ));
+  if (!article) throw new Error('Private ES DXY preview source missing or no longer review-only');
+  return [{ params: { slug: 'dxy-broad-usd' }, props: { entry: article } }];
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+// Review-only, institution-owned reference destinations. Linking is NOT a reuse licence.
+const institutionalSourceUrl = Object.freeze({
+  'Federal Reserve — H.10 Foreign Exchange Rates and Dollar Indexes': 'https://www.federalreserve.gov/releases/h10/current/',
+  'Federal Reserve — Revisions to the Federal Reserve Dollar Indexes': 'https://www.federalreserve.gov/econres/notes/feds-notes/revisions-to-the-federal-reserve-dollar-indexes-20190115.html',
+  'ICE — U.S. Dollar Index methodology and composition': 'https://www.ice.com/forex/usdx',
+});
+const unmappedSources = entry.data.sources.filter((source) => !institutionalSourceUrl[source]);
+if (unmappedSources.length) throw new Error('Private DXY source URL mapping missing');
+---
+<BaseLayout
+  title={'Vista privada | ' + entry.data.metaTitle}
+  description={entry.data.metaDescription}
+  locale="es"
+  currentPath="/internal/localization/dxy-broad-usd"
+  noindex={true}
+  responsiveTables
+>
+  <main id="main-content" class="main-with-hero">
+    <section class="hero">
+      <div class="container">
+        <div class="eyebrow">Revisión privada de desarrollo • no publicada</div>
+        <h1>{entry.data.title}</h1>
+        <p class="lead">{entry.data.hero}</p>
+      </div>
+    </section>
+    <div class="container page-content">
+      <p><strong>Vista previa de desarrollo.</strong> El texto y los metadatos descriptivos cuentan con aprobación editorial del propietario para revisión privada. La verificación de fuentes, los permisos de reutilización, la revisión legal y la publicación siguen pendientes.</p>
+      <Content />
+      <section class="compliance" aria-label="Fuentes propuestas para revisión">
+        <strong>Fuentes propuestas en los metadatos — pendientes de comprobación:</strong>
+        <p>Esta lista es una ayuda para la revisión editorial. No acredita enlaces, atribución, permisos ni una validación jurídica para publicación.</p>
+        <p>Los enlaces apuntan a los sitios oficiales consultados el 29 de octubre de 2026. Comprobar la fecha y el contenido de cada documento antes de cualquier publicación; no reproducir materiales reservados de ICE.</p>
+        <ul>
+          {entry.data.sources.map((source) => <li><a href={institutionalSourceUrl[source]} target="_blank" rel="noopener noreferrer">{source}</a></li>)}
+        </ul>
+      </section>
+      <section class="compliance" aria-label="Recurso didáctico interno">
+        <strong>Recurso didáctico interno (en inglés; no es una fuente oficial):</strong>
+        <p><a href={entry.data.ctaPrimaryHref}>{entry.data.ctaPrimary} — enlace a la versión en inglés</a></p>
+        <p>El acceso al cuestionario depende del progreso en los capítulos anteriores. Si está bloqueado, el sitio redirige a la lección pendiente; este aviso no cambia el sistema de acceso.</p>
+      </section>
+      <section class="compliance" aria-label="Nota de cumplimiento">
+        <strong>Nota de cumplimiento:</strong> {entry.data.complianceNote}
+      </section>
+    </div>
+  </main>
+</BaseLayout>

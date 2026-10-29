@@ -60,7 +60,9 @@ assert.equal(applied.action, 'applied');
 assert.equal(request.url, 'https://example.supabase.co/rest/v1/rpc/apply_research_membership_transition');
 assert.equal(request.init.method, 'POST');
 assert.equal(JSON.parse(request.init.body).p_entitlement_state, 'suspended');
-assert.match(request.init.headers.Authorization, /^Bearer sb_secret_/);
+assert.equal(request.init.headers.apikey, `sb_secret_${'x'.repeat(32)}`);
+assert.equal(Object.keys(request.init.headers).some((name) => name.toLowerCase() === 'authorization'), false,
+  'Research Membership RPC must not send opaque sb_secret_ as a Bearer JWT');
 
 const duplicatePlan = Object.freeze({ ...plan, action: 'duplicate', subscriptionPatch: null, entitlementPatch: null, eventInsert: null });
 let duplicateFetchCalled = false;

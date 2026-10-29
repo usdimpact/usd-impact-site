@@ -67,9 +67,8 @@ let assertions = 0;
       assert.equal(options.method, 'DELETE');
       assert.deepEqual(JSON.parse(options.body), { should_soft_delete: true });
       assert.equal(options.headers.apikey, env.SUPABASE_SECRET_KEY);
-      // Auth Admin Bearer compatibility remains unchanged and UNVERIFIED
-      // until separately approved protected HTTP acceptance.
-      assert.equal(options.headers.Authorization, 'Bearer ' + env.SUPABASE_SECRET_KEY);
+      // Modern secret keys are opaque: apikey only, never JWT Bearer.
+      assert.equal(Object.hasOwn(options.headers,'Authorization'),false);
       return ok(200, { id });
     },
   });
@@ -78,13 +77,76 @@ let assertions = 0;
   assertions += 1;
 }
 
-// An already-missing identity is idempotent at this isolated RPC boundary.
+// Do not treat an absent Auth identity or a novel 2xx/5xx as confirmed
+// deletion. The legacy route is disabled; its future replacement also uses
+// an exclusive one-shot claim with explicit ambiguity reconciliation.
+for(const status of [404,409,429,503,201,401]){
+  let calls=0;
+  await assert.rejects(
+    ()=>softDeleteAuthUser({
+      config,accountId:id,
+      fetchImpl:async()=>{calls++;return ok(status,{error:'fixture-only'});},
+    }),
+    error=>error?.code==='ACCOUNT_DELETION_AUTH_OUTCOME_UNVERIFIED',
+    'Admin HTTP '+status+' must NOT authorize database finalization',
+  );
+  assert.equal(calls,1,'no silent Auth Admin retry');
+  assertions+=2;
+}
 {
-  const r = await softDeleteAuthUser({
-    config, accountId: id, fetchImpl: async () => ok(404, { error: 'not found' }),
+  let count=0;
+  const result=await softDeleteAuthUser({
+    config,accountId:id,
+    fetchImpl:async (url,options)=>{
+      count++;
+      assert.equal(Object.hasOwn(options.headers,'Authorization'),false);
+      assert.deepEqual(JSON.parse(options.body),{should_soft_delete:true});
+      return ok(204);
+    },
   });
-  assert.equal(r.alreadyAbsent, true);
-  assertions += 1;
+  assert.equal(result.alreadyAbsent,false);
+  assert.equal(count,1);
+  assertions+=2;
+}
+
+// Even in the legacy, currently disabled path, a real GoTrue 404 cannot
+// trigger the irreversible plain-ID SQL finalize or a completion email.
+{
+  let authCalls=0,finalizeCalls=0,escalationCalls=0;
+  const fetchImpl=async(url,options={})=>{
+    const u=new URL(url);
+    assert.equal(u.origin,env.SUPABASE_URL);
+    if(u.pathname==='/rest/v1/profiles' && options.method==='GET'){
+      return ok(200,[{...scanned,deleted_at:null}]);
+    }
+    if(u.pathname==='/rest/v1/rpc/prepare_account_deletion_auth_removal'){
+      assert.equal(options.method,'POST');
+      return ok(200,true);
+    }
+    if(u.pathname==='/auth/v1/admin/users/'+id){
+      authCalls++;
+      return ok(404,{error:'synthetic missing identity'});
+    }
+    if(u.pathname==='/rest/v1/support_requests' && options.method==='POST'){
+      escalationCalls++;
+      const payload=JSON.parse(options.body);
+      assert.equal(payload.category,'privacy');
+      return ok(201);
+    }
+    if(u.pathname.endsWith('/rpc/finalize_account_deletion')
+      || u.pathname.includes('notification_outbox')){
+      finalizeCalls++;
+      assert.fail('Auth 404 must never lead to DB erasure or outbox');
+    }
+    assert.fail('unexpected synthetic response: '+u.pathname);
+  };
+  await assert.rejects(()=>finalizeOneDueAccount({
+    config,profile:scanned,environment:env,now,fetchImpl,
+  }),e=>e?.code==='ACCOUNT_DELETION_AUTH_OUTCOME_UNVERIFIED');
+  assert.equal(authCalls,1);
+  assert.equal(finalizeCalls,0);
+  assert.equal(escalationCalls,1);
+  assertions+=4;
 }
 
 // A broken or ambiguous preparation must fail before any identity operation.

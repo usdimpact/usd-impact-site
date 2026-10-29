@@ -18,12 +18,31 @@ declare
 begin
   if approved_expires_at <= now() or approved_expires_at > now() + interval '8 hours'
   then raise exception 'issue950 scoped session: expiry must be future and <=8h'; end if;
+  -- Both real projects have on_auth_user_created -> handle_new_auth_user,
+  -- which ALWAYS creates a profile. The temporary Auth principal therefore
+  -- MUST have a canonical but explicitly SUSPENDED application profile,
+  -- not an absent one. Admin-only raw_app_meta_data distinguishes the
+  -- synthetic transfer subject; user-editable raw_user_meta_data is unsafe.
   if to_regclass('auth.users') is null or to_regclass('public.profiles') is null
-    or not exists (select 1 from auth.users where id=synthetic_subject)
-  then raise exception 'issue950 scoped session: preapproved synthetic Auth user absent'; end if;
-  if exists(select 1 from public.profiles p
-    where p.account_id=synthetic_subject or p.auth_user_id=synthetic_subject)
-  then raise exception 'issue950 scoped session: synthetic principal is an application profile'; end if;
+    or to_regclass('public.entitlements') is null
+  then raise exception 'issue950 scoped session: Auth/profile/entitlement schema missing'; end if;
+  if not exists (
+    select 1 from auth.users u
+    join public.profiles p on p.account_id=u.id
+    where u.id=synthetic_subject
+      and p.auth_user_id=u.id
+      and p.status::text='suspended'
+      and p.deleted_at is null
+      and p.deletion_requested_at is null
+      and p.deletion_due_at is null
+      and p.email = coalesce(u.email,'')
+      and u.email = '__ISSUE950_APPROVED_TEST_EMAIL__'
+      and u.raw_app_meta_data->>'issue950_scoped_s3' = 'restore'
+  )
+  then raise exception 'issue950 scoped session: synthetic Auth/profile isolation proof missing'; end if;
+  if exists(select 1 from public.entitlements e
+    where e.account_id=synthetic_subject)
+  then raise exception 'issue950 scoped session: synthetic user has paid entitlements'; end if;
   if (select relrowsecurity from pg_class where oid='storage.objects'::regclass) is distinct from true
     or (select relrowsecurity from pg_class where oid='storage.buckets'::regclass) is distinct from true
   then raise exception 'issue950 scoped session: Storage RLS is disabled'; end if;

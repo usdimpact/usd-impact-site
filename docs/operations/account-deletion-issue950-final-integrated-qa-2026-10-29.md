@@ -17,7 +17,7 @@
 4. PostgreSQL 17 independent-session contention: original claim and lock-wait races, plus two simultaneous DBA-only confirmed-state finalizations competing for one account.
 5. Core erasure and original-recipient recovery intent commit together or roll back together; outbox identity confirmation scrubs the private recipient. Offline completion adapter uses the existing governed email idempotency identity and does not send email.
 6. A worker that loses its token **after a confirmed Auth 200/204 is committed** has a narrowly guarded DBA-only, audited manual path that shares the same erasure core. It is deliberately not usable for `auth_dispatched` or `auth_ambiguous` and cannot replay external Auth deletion. Browser and application service roles have no privilege to call that path.
-7. No-review SQL files are executable migrations; all review SQL stays in `docs/operations/candidates`. Static CI ensures candidates are excluded from running routes/scheduler and legacy finalizer continues disabled.
+7. No review-only SQL files are executable migrations; all review SQL stays in `docs/operations/candidates`. Static CI ensures candidates are excluded from running routes/scheduler and legacy finalizer continues disabled.
 
 ## Critical non-claims and independent release gates
 

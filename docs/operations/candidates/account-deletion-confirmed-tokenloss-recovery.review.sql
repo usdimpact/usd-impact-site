@@ -195,7 +195,7 @@ begin
         pg_catalog.sha256(pg_catalog.convert_to(finalize_token::text,'UTF8'))
   then
     raise exception using errcode='55000',
-      message='account deletion finalization token fence rejected';
+      message='account deletion finalize fence rejected';
   end if;
 
   return query

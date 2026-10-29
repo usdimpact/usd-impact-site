@@ -268,7 +268,7 @@ begin
   end if;
 
   v_expected_version:=
-    pg_catalog.floor(pg_catalog.extract(epoch from x.deleted_at)/60)::integer;
+    pg_catalog.floor(pg_catalog.date_part('epoch', x.deleted_at)/60)::integer;
   if v_expected_version<1 then
     raise exception using errcode='22023', message='completion version is invalid';
   end if;

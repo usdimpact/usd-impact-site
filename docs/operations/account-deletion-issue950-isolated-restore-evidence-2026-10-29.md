@@ -1,6 +1,6 @@
 # Issue #950 — Paid isolated restore evidence and acceptance
 
-**Date:** 2026-10-29 UTC. **Current disposition:** restore project CREATED; database restore still RESTORING at this checkpoint. **Account-deletion release remains HOLD.**
+**Date:** 2026-10-29 UTC. **Current disposition:** independent database restore and selected integrity checks **PASS**; actual Storage bytes and full application recovery remain **HOLD**. **Account-deletion release remains HOLD.**
 
 ## User authorization and billing
 
@@ -14,7 +14,7 @@ The user explicitly approved the budget and the prior request to create a tempor
 | Destination | `usd-impact-restore-issue950-20261029`, `movnekagnxgcyenczfoc` |
 | Region | `eu-central-1` |
 | Project created | 2026-10-29 21:42:47 UTC |
-| Provider project status | Initially `COMING_UP`, subsequently `RESTORING`; no successful restore attested yet |
+| Provider project status | **`ACTIVE_HEALTHY`** after the restored database became available |
 | Source PostgreSQL | 17.6 |
 | Target initially provisioned PostgreSQL | 17.11.0.003 — different **minor version**, require post-restore schema verification |
 
@@ -59,16 +59,35 @@ A successful read-only aggregate-only query is retained in `docs/operations/quer
 
 These are source observations **after** backup creation, not a point-in-time attestation of 03:14 UTC. Any clone-vs-live difference must be investigated for legitimate intervening changes before declaring restore failure. PostgreSQL minor-version changes may also affect metadata representations.
 
-## Mandatory post-restore gates (NOT YET VERIFIED)
+## Post-restore acceptance and remaining gates
 
-1. Provider status `ACTIVE_HEALTHY` or equivalent, with the exact target project ID and completed restore job.
-2. Immediately disable **Data API** on **destination only**, and restrict new Auth signups/email providers where project UI permits. Verify outbound integrations cannot contact customers. Do not alter the source or Production.
-3. Run the same query **read-only** on destination. Compare schema/policy/function fingerprints, migrations, Auth/Profile/entitlement/outbox counts and Storage metadata; do not log PII.
-4. Prove source and target are distinct: new API keys and destination reference, no Vercel/other production deployment integration.
-5. A separate non-production/synthetic rollback or harmless transaction probe may be used, but **no Auth DELETE** on any copied real identity and no email send.
-6. **Storage file bytes are NOT included** in a physical database clone, even if 21 Storage metadata rows appear. Copy and verify files separately only through an approved secure data-transfer method and separately review Storage access controls; do not publish or log private file contents.
-7. Record a successful or failed restore attestation without sensitive row data, plus a cleanup owner and deletion plan. The temporary project incurs charges until decommissioned.
+1. **PASS —** Provider reports target `ACTIVE_HEALTHY`, correct ref/name and new PostgreSQL 17.11.0.003 instance. A restored database is queryable; no external customer workflow has been used.
+2. **PASS (observed dashboard settings) —** Data API `Enable Data API=OFF` with explicit `Data API disabled` confirmation; `Allow new users to sign up=OFF`, `Allow anonymous sign-ins=OFF`, and Email Auth provider `DISABLED`. Other Auth providers also show disabled. `Allow manual linking` remains ON, but cannot independently perform an Auth sign-in. No application, Vercel project or outbound provider was connected; source and Production untouched.
+3. **PASS —** The exact same read-only aggregate SQL ran against the restored project and matched the source on **every reported aggregate**, both hashes and installed extension names. Source and restore each have 9 Auth users, 85 sessions, 9 profiles, 10 entitlements, 0 privacy requests, 33 outbox rows, 55 migration entries, 726 schema columns, 19 public policies, 3 original deletion functions and 21 Storage metadata records. Separate `list_migrations` returned 55/55 exact version+name matches. Hashes match all three baselines above.
+4. **PASS (project identity) —** Source `ycstrcvshdluovtuasjc` and restored destination `movnekagnxgcyenczfoc` are distinct. Supabase creates new Auth settings/API keys rather than transferring originals, and no app integration was changed; actual key **values were deliberately never read**.
+5. **PASS (synthetic-only rollback) —** On destination only, one temporary `issue950_restore_synthetic_probe` table was created in a transaction, one synthetic integer inserted, and the entire transaction rolled back. A same-call `to_regclass('pg_temp.issue950_restore_synthetic_probe') IS NULL` check returned `true`. No permanent schema change, user write, Auth DELETE or email.
+6. **HOLD (real Storage bytes) —** Both source and destination have matching metadata for **20 private objects** in `library-pass-assets` (372,647,590 bytes recorded) and **1 private object** in `library-pass-books` (2,281,645 bytes recorded): total **374,929,235 bytes** (~375 MB). These are *metadata sizes, not verified restored bytes*. Supabase's physical clone **does not copy actual Storage file bytes**; neither fetch nor bulk secure transfer has been attempted. Separate access/transfer/hashing approval remains necessary.
+7. **PARTIAL —** Database restore PASS, nonsecret evidence recorded here and Issue #950; full service restore remains HOLD for Storage and external configuration. A named cleanup owner/date still needs assignment. Cost is $9.68/month extra plus ordinary usage until the temporary project is removed.
 
 **No approval to merge PRs, migrate source or Production SQL, switch active application credentials, run real-user deletion, send email, or activate Issue #950.** Green source-only CI remains separate.
 
 Official documentation: https://supabase.com/docs/guides/platform/clone-project ; https://supabase.com/docs/guides/platform/backups ; https://supabase.com/docs/guides/api/securing-your-api .
+
+
+## Post-restore security advisor and environment comparison
+
+- Connected Supabase project inventory shows **Development**, **Production** and the **restored destination** each `ACTIVE_HEALTHY` with distinct refs; only the new project runs PostgreSQL 17.11, source/Production run 17.6. Matching SQL hashes mitigate but do not erase the need to review this minor-version change before an actual production rollout.
+- Source and destination migration ledgers matched **all 55 version+name entries**.
+- Read-only security advisor on clone reported 17 informational `rls_enabled_no_policy` instances and one `auth_leaked_password_protection` warning. These should be reviewed as existing schema/platform controls; the restored **Data API remains disabled** and the providers are off. See [RLS no policy remediation](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) and [Auth leaked-password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+- The restored PostgreSQL image is **17.11** while source was **17.6**. Full application parity, load, and legacy Auth/session semantics have **not** been tested.
+- External backup/Storage/SMTP/Auth/Edge Function configuration is intentionally **not** copied or activated. No version of the claim/fencing/escrow SQL was installed, and no original source/Production data or deployed application was modified.
+
+## Release classification
+
+**DATABASE RESTORE GATE:** PASS for a provider-created independent restore, non-PII integrity fingerprint match and synthetic rollback test.
+
+**FULL SERVICE RESTORE GATE:** HOLD pending 21 actual private Storage file copies/hashes and separately approved external integrations (if required).
+
+**ACCOUNT DELETION GO-LIVE:** HARD HOLD pending independent privacy/security/DBA review, coordinated SQL+runtime finalizer cutover, protected synthetic real Supabase Auth/JWT/Storage tests, and separate Production approval. Green CI + a database restore do **not** permit Auth soft deletion of any actual copied or real customer account.
+
+**COST/CLEANUP:** The temporary project `movnekagnxgcyenczfoc` is billable at the quoted $9.68/month compute amount plus usage. Do not allow it to become a permanent unknown-cost project; plan decommissioning after necessary security/restore evidence is collected, with an explicit review before deletion.

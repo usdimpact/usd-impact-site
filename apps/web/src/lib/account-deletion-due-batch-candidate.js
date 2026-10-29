@@ -114,12 +114,14 @@ export async function runOfflineDueDeletionBatch({
   config,fetchImpl,authSoftDelete,recordCompletion,
   now=new Date(),limit=1,
   workerNonceFactory=randomUUID,
+  haltOnManualReview=false,
 }){
   requireSafeDependencies({config,fetchImpl,authSoftDelete,recordCompletion});
   if (typeof workerNonceFactory !== 'function') stop('CLAIM_BATCH_WORKER_FACTORY_INVALID');
+  if (typeof haltOnManualReview !== 'boolean') stop('CLAIM_BATCH_HALT_POLICY_INVALID');
   const rows=await scanOfflineDueDeletionCandidates({config,fetchImpl,now,limit});
   const outcomes=[];
-  let finalized=0,conflicts=0,manualReview=0;
+  let finalized=0,conflicts=0,manualReview=0,halted=false;
 
   for(const row of rows){
     const accountRef=shortReference(row.account_id);
@@ -158,12 +160,17 @@ export async function runOfflineDueDeletionBatch({
         state: conflict?'conflict':'manual_review',
         code,
       }));
+      // A new unresolved Auth or durable-completion outcome must stop later
+      // deletions in a coordinated safety-first batch. Existing callers keep
+      // the legacy offline fixture behavior unless they opt in explicitly.
+      if(haltOnManualReview && !conflict){halted=true;break;}
     }
   }
   return Object.freeze({
     mode:'offline_fixture',
     scanned:rows.length,
-    finalized,conflicts,manualReview,
+    processed:outcomes.length,deferred:rows.length-outcomes.length,
+    halted,finalized,conflicts,manualReview,
     outcomes:Object.freeze(outcomes),
   });
 }

@@ -1,0 +1,48 @@
+name: Issue950 scoped JWT S3 restore policies - isolated RLS
+
+on:
+  pull_request:
+    paths:
+      - 'docs/operations/candidates/issue950-s3-jwt-session-*.review.sql'
+      - 'apps/web/scripts/test-issue950-scoped-s3-jwt-rls-pglite.mjs'
+      - 'apps/web/scripts/test-account-deletion-review-only-activation.mjs'
+      - '.github/workflows/issue950-scoped-s3-session-rls-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-source-restore-privilege-separation:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout without saved GitHub credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24 locked
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Require no provider, Auth, email, Storage or S3 credentials
+        run: |
+          test -z "${SUPABASE_SECRET_KEY:-}"
+          test -z "${SUPABASE_SERVICE_ROLE_KEY:-}"
+          test -z "${AWS_ACCESS_KEY_ID:-}"
+          test -z "${AWS_SECRET_ACCESS_KEY:-}"
+          test -z "${AWS_SESSION_TOKEN:-}"
+          test -z "${RESEND_API_KEY:-}"
+          test -z "${CRON_SECRET:-}"
+      - name: Install exact locked dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: RLS and immutable manifest positive/negative tests
+        run: |
+          node --check scripts/test-issue950-scoped-s3-jwt-rls-pglite.mjs
+          node scripts/test-issue950-scoped-s3-jwt-rls-pglite.mjs
+          node scripts/test-account-deletion-review-only-activation.mjs

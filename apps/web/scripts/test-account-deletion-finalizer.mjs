@@ -156,6 +156,9 @@ const fetchImpl = async (url, options = {}) => {
     }]);
   }
 
+  if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
+    return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt, deleted_at: null }]);
+  }
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') {
     assert.match(href, /should_soft_delete=true/);
     return response(200, { id: accountId });
@@ -244,6 +247,8 @@ const concurrent = await runDueAccountDeletionFinalizer({
   now: new Date('2026-08-27T18:10:00.000Z'),
 });
 assert.deepEqual(concurrent, emptyRunResult({ scanned: 1, alreadyFinalized: 1 }));
+assert.equal(concurrentCalls.some((call) => call.href.includes('/auth/v1/admin/')), false,
+  'an already-finalized profile must never be sent to Auth Admin again');
 
 const manualEscalations = [];
 const authFailureFetch = async (url, options = {}) => {
@@ -260,7 +265,7 @@ const authFailureFetch = async (url, options = {}) => {
   }
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(500, { error: 'auth down' });
   if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
-    return response(200, [{ account_id: accountId, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deleted_at: null }]);
+    return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt, deleted_at: null }]);
   }
   if (href.endsWith('/rest/v1/support_requests') && options.method === 'POST') {
     const body = JSON.parse(options.body);
@@ -280,6 +285,7 @@ assert.equal(manualEscalations[0].account_id, null);
 assert.match(manualEscalations[0].subject, /manual review/i);
 
 const recoverableEscalations = [];
+let ambiguousProfileReads = 0;
 const ambiguousFinalizeFetch = async (url, options = {}) => {
   const href = String(url);
   if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') return response(200, []);
@@ -289,6 +295,8 @@ const ambiguousFinalizeFetch = async (url, options = {}) => {
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(200, { id: accountId });
   if (href.endsWith('/rest/v1/rpc/finalize_account_deletion') && options.method === 'POST') return response(500, { error: 'ambiguous' });
   if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
+    ambiguousProfileReads += 1;
+    if (ambiguousProfileReads === 1) return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt, deleted_at: null }]);
     return response(200, [{ account_id: accountId, status: 'deleted', deletion_requested_at: deletionRequestedAt, deleted_at: deletedAt }]);
   }
   if (href.endsWith('/rest/v1/support_requests') && options.method === 'POST') {
@@ -323,6 +331,9 @@ const completionFailureFetch = async (url, options = {}) => {
   if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') return response(200, []);
   if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
     return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt }]);
+  }
+  if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') {
+    return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt, deleted_at: null }]);
   }
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(200, { id: accountId });
   if (href.endsWith('/rest/v1/rpc/finalize_account_deletion') && options.method === 'POST') {
@@ -442,7 +453,7 @@ const escalationFailureFetch = async (url, options = {}) => {
     return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt }]);
   }
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(500, { error: 'auth down' });
-  if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') return response(200, [{ account_id: accountId, status: 'deletion_pending' }]);
+  if (href.includes(`/rest/v1/profiles?account_id=eq.${accountId}`) && options.method === 'GET') return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt, deleted_at: null }]);
   if (href.endsWith('/rest/v1/support_requests') && options.method === 'POST') return response(500, { error: 'support down' });
   throw new Error(`Unexpected escalation-failure request: ${options.method || 'GET'} ${href}`);
 };

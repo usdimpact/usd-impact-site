@@ -254,7 +254,7 @@ try {
   const requestE=await seed(fifth,'Fifth.Reader@Example.invalid');
   const claimE=await authorize(fifth,requestE);
   const attemptE=(await row("select attempt_id from account_deletion_internal.attempts where account_id=$1",[fifth])).attempt_id;
-  await db.exec("create function account_deletion_internal.reject_test_operator_audit() returns trigger language plpgsql as $ begin raise exception 'synthetic audit not durable'; end $;");
+  await db.exec("create function account_deletion_internal.reject_test_operator_audit() returns trigger language plpgsql as $audit$ begin raise exception 'synthetic audit not durable'; end $audit$;");
   await db.exec("create trigger reject_audit_before_insert before insert on account_deletion_internal.confirmed_recovery_audit for each row execute function account_deletion_internal.reject_test_operator_audit();");
   await denied(()=>manual(fifth,requestE,attemptE,claimE.claim_generation),/synthetic audit not durable/,'audit failure rolls back finalized profile');
   assert.equal((await row("select status from public.profiles where account_id=$1",[fifth])).status,'deletion_pending');

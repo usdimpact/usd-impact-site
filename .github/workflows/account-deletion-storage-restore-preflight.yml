@@ -5,6 +5,8 @@ on:
     paths:
       - 'apps/web/src/lib/account-deletion-private-storage-restore-plan.review.js'
       - 'apps/web/scripts/test-account-deletion-private-storage-restore-plan.mjs'
+      - 'apps/web/src/lib/account-deletion-private-storage-checksum-evidence.review.js'
+      - 'apps/web/scripts/test-account-deletion-private-storage-checksum-evidence.mjs'
       - 'apps/web/scripts/test-account-deletion-review-only-activation.mjs'
       - '.github/workflows/account-deletion-storage-restore-preflight.yml'
 
@@ -41,4 +43,7 @@ jobs:
           node --check src/lib/account-deletion-private-storage-restore-plan.review.js
           node --check scripts/test-account-deletion-private-storage-restore-plan.mjs
           node scripts/test-account-deletion-private-storage-restore-plan.mjs
+          node --check src/lib/account-deletion-private-storage-checksum-evidence.review.js
+          node --check scripts/test-account-deletion-private-storage-checksum-evidence.mjs
+          node scripts/test-account-deletion-private-storage-checksum-evidence.mjs
           node scripts/test-account-deletion-review-only-activation.mjs

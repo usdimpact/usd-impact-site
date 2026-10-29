@@ -29,6 +29,7 @@ const sqlCandidatePaths=[
   'docs/operations/candidates/account-deletion-jwt-rls-fence.review.sql',
   'docs/operations/candidates/account-deletion-transactional-completion-escrow.review.sql',
   'docs/operations/candidates/account-deletion-confirmed-tokenloss-recovery.review.sql',
+  'docs/operations/candidates/account-deletion-completion-escrow-health.review.sql',
 ];
 let checks=0,checkedFiles=0;
 
@@ -123,7 +124,7 @@ checks++;
 // be copied into a generically named migration while the backup/restore gate
 // remains unverified. Fail on SQL CONTENT, not just on filename patterns.
 // Removing this guard requires a separately reviewed coordinated cutover PR.
-const proposedDeletionSql = /\b(?:claim_due_account_deletion|begin_claimed_auth_removal|finalize_claimed_account_deletion|confirm_claimed_auth_soft_delete|mark_claimed_auth_ambiguous|recover_confirmed_without_token|list_account_deletion_completion_recoveries|confirm_account_deletion_completion_outbox|completion_intents|confirmed_recovery_audit)\b/i;
+const proposedDeletionSql = /\b(?:claim_due_account_deletion|begin_claimed_auth_removal|finalize_claimed_account_deletion|confirm_claimed_auth_soft_delete|mark_claimed_auth_ambiguous|recover_confirmed_without_token|list_account_deletion_completion_recoveries|confirm_account_deletion_completion_outbox|completion_intents|confirmed_recovery_audit|completion_escrow_health)\b/i;
 assert.equal(proposedDeletionSql.test('create function public.claim_due_account_deletion('),true);
 assert.equal(proposedDeletionSql.test('create table public.unrelated_fixture (id uuid)'),false);
 checks+=2;

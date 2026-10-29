@@ -1,4 +1,9 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { assessDailyMajorReleaseCoverage } from '../src/lib/daily-major-release-readiness.js';
 
 const GDP = 'https://www.bea.gov/index.php/news/2026/gdp-advance-estimate-3rd-quarter-2026';
@@ -59,4 +64,40 @@ assert.throws(() => audit({ calendar: { ...calendar, events: [{ ...event, calend
   /invalid schedule identity/);
 assert.throws(() => audit({ calendar: { ...calendar, editionDate: '2026-10-30' } }), /calendar version, date or event list/);
 assert.throws(() => audit({ at: '2026-10-29T14:00:00+02:00' }), /date or as-of timestamp/);
-console.log('Daily major-release readiness: read-only, fail-closed, UTC, primary source and no auto-approval tests pass.');
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'daily-release-readiness-'));
+try {
+  const newsDir = path.join(root, 'src/content/news');
+  fs.mkdirSync(newsDir, { recursive: true });
+  fs.writeFileSync(path.join(newsDir, '2026-10-29.md'), `---
+date: "2026-10-29"
+generatedAt: "2026-10-29T09:33:00Z"
+sources:
+  - id: "gdp-primary"
+    url: "${GDP}"
+    publishedAt: "2026-10-29"
+    sourceType: "primary"
+highlights:
+  - sourceIds:
+      - "gdp-primary"
+---
+Fixture body.
+`);
+  const manifestPath = path.join(root, 'review-calendar.json');
+  fs.writeFileSync(manifestPath, JSON.stringify(calendar));
+  const script = fileURLToPath(new URL('./check-daily-major-release-coverage.mjs', import.meta.url));
+  const checked = spawnSync(process.execPath,
+    [script, '--date', date, '--calendar', manifestPath, '--at', at],
+    { cwd: root, encoding: 'utf8', timeout: 5000 });
+  assert.ifError(checked.error);
+  assert.equal(checked.status, 1, `CLI should emit HOLD for stale generation: ${checked.stderr}`);
+  const receipt = JSON.parse(checked.stdout);
+  assert.equal(receipt.events[0].decision, 'HOLD_POST_RELEASE_EDITORIAL_RECEIPT_REQUIRED');
+  assert.equal(receipt.releaseAuthorized, false);
+  const invalid = spawnSync(process.execPath,
+    [script, '--date', date, '--calendar', path.join(root, 'missing.json')],
+    { cwd: root, encoding: 'utf8', timeout: 5000 });
+  assert.equal(invalid.status, 2, 'unavailable reviewed manifest must not be treated as PASS');
+} finally {
+  fs.rmSync(root, { recursive: true, force: true });
+}
+console.log('Daily major-release readiness: pure checks and one-shot CLI fail-closed regression passed.');

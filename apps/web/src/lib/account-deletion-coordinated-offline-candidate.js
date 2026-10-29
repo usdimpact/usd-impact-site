@@ -69,7 +69,8 @@ export async function runOfflineCoordinatedDeletion({
   };
   const due=await runOfflineDueDeletionBatch({
     config,fetchImpl,authSoftDelete,recordCompletion,now,
-    limit:remaining,...(workerNonceFactory?{workerNonceFactory}:{}),
+    limit:remaining,haltOnManualReview:true,
+    ...(workerNonceFactory?{workerNonceFactory}:{}),
   });
   return Object.freeze({
     mode:'offline_fixture',recovery,due,

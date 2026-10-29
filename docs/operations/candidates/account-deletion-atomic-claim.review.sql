@@ -91,7 +91,12 @@ begin
       deletion_requested_at = pg_catalog.now(),
       deletion_due_at = pg_catalog.now() + interval '7 days',
       updated_at = pg_catalog.now()
+  -- SECURITY DEFINER bypasses RLS. A still-valid JWT cannot authorize
+  -- an account whose canonical Auth link was detached, replaced or deleted.
+  -- This also closes any inconsistent active-but-already-erased profile.
   where account_id = caller_account_id and status = 'active'
+    and auth_user_id = caller_account_id
+    and deleted_at is null
   returning * into updated_profile;
 
   if updated_profile.account_id is null then

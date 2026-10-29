@@ -1,0 +1,42 @@
+name: Account deletion transactional completion escrow - offline
+
+on:
+  pull_request:
+    paths:
+      - 'docs/operations/candidates/account-deletion-transactional-completion-escrow.review.sql'
+      - 'docs/operations/candidates/account-deletion-atomic-claim.review.sql'
+      - 'apps/web/scripts/test-account-deletion-transactional-completion-escrow.mjs'
+      - '.github/workflows/account-deletion-completion-escrow-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-transactional-erasure-and-outbox-recovery:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout without persistent credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install pinned development dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Assert no production key injected and test private escrow rollback
+        run: |
+          test -z "${SUPABASE_SECRET_KEY:-}"
+          test -z "${SUPABASE_SERVICE_ROLE_KEY:-}"
+          test -z "${RESEND_API_KEY:-}"
+          test -z "${CRON_SECRET:-}"
+          node --check scripts/test-account-deletion-transactional-completion-escrow.mjs
+          node scripts/test-account-deletion-transactional-completion-escrow.mjs

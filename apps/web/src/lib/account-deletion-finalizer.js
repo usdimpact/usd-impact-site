@@ -147,13 +147,67 @@ export async function listDueAccountDeletions({
 }
 
 export async function readDeletionProfile({ config, accountId, fetchImpl = fetch }) {
-  const path = `/rest/v1/profiles?account_id=eq.${encodeURIComponent(accountId)}&select=account_id,status,deletion_requested_at,deletion_due_at,deleted_at&limit=1`;
+  const path = `/rest/v1/profiles?account_id=eq.${encodeURIComponent(accountId)}&select=account_id,email,status,deletion_requested_at,deletion_due_at,deleted_at&limit=1`;
   const response = await fetchImpl(`${config.supabase.url}${path}`, {
     method: 'GET',
     headers: jsonHeaders(config.supabase.secretKey),
   });
   const rows = await requireOk(response, 'ACCOUNT_DELETION_PROFILE_RELOAD_FAILED');
   return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+// A due-list is only a snapshot. Before calling the irreversible external Auth
+// Admin API, reload the candidate and fail closed on a changed, cancelled, or
+// rescheduled request. This narrows, but does NOT eliminate, the read-to-Auth
+// TOCTOU gap; atomic claim + Auth coordination needs separate approval.
+export async function revalidateDeletionBeforeAuth({
+  config,
+  profile,
+  fetchImpl = fetch,
+  now = new Date(),
+}) {
+  const accountId = String(profile?.account_id || '');
+  const currentTime = new Date(now).getTime();
+  if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(accountId)
+      || !Number.isFinite(currentTime)) {
+    throw new AccountDeletionFinalizerError(
+      'Account deletion candidate identity or review time is invalid.',
+      'ACCOUNT_DELETION_PREAUTH_STALE',
+    );
+  }
+  const latest = await readDeletionProfile({ config, accountId, fetchImpl });
+  if (latest?.account_id === accountId
+      && latest.status === 'deleted'
+      && Number.isFinite(Date.parse(String(latest.deleted_at || '')))) {
+    return Object.freeze({ alreadyFinalized: true });
+  }
+  const scannedRequested = Date.parse(String(profile?.deletion_requested_at || ''));
+  const scannedDue = Date.parse(String(profile?.deletion_due_at || ''));
+  const latestRequested = Date.parse(String(latest?.deletion_requested_at || ''));
+  const latestDue = Date.parse(String(latest?.deletion_due_at || ''));
+  const scannedEmail = String(profile?.email || '').trim().toLowerCase();
+  const latestEmail = String(latest?.email || '').trim().toLowerCase();
+  if (
+    profile?.status !== 'deletion_pending'
+    || latest?.account_id !== accountId
+    || latest?.status !== 'deletion_pending'
+    || latest.deleted_at != null
+    || !scannedEmail || scannedEmail !== latestEmail
+    || !Number.isFinite(scannedRequested)
+    || !Number.isFinite(scannedDue)
+    || !Number.isFinite(latestRequested)
+    || !Number.isFinite(latestDue)
+    || scannedRequested !== latestRequested
+    || scannedDue !== latestDue
+    || scannedDue < scannedRequested
+    || latestDue > currentTime
+  ) {
+    throw new AccountDeletionFinalizerError(
+      'Account deletion request changed or is not currently due; Auth deletion was not attempted.',
+      'ACCOUNT_DELETION_PREAUTH_STALE',
+    );
+  }
+  return Object.freeze({ alreadyFinalized: false });
 }
 
 export async function softDeleteAuthUser({ config, accountId, fetchImpl = fetch }) {
@@ -418,9 +472,25 @@ export async function finalizeOneDueAccount({
   config,
   environment = process.env,
   fetchImpl = fetch,
+  now = new Date(),
 }) {
   const accountId = String(profile?.account_id || '');
   const originalEmail = String(profile?.email || '');
+
+  // Do this BEFORE the catch block that creates an escalation. A cancelled or
+  // rescheduled request must not perform Auth DELETE, finalize SQL, or write a
+  // new support escalation containing the old recipient's personal data.
+  const preAuth = await revalidateDeletionBeforeAuth({
+    config, profile, fetchImpl, now,
+  });
+  if (preAuth.alreadyFinalized) {
+    return Object.freeze({
+      status: 'already_finalized',
+      accountReference: opaqueReference(accountId),
+      outboxId: null,
+    });
+  }
+
   let completion = null;
   try {
     await softDeleteAuthUser({ config, accountId, fetchImpl });
@@ -515,7 +585,7 @@ export async function runDueAccountDeletionFinalizer({
   let failed = 0;
   for (const profile of profiles) {
     try {
-      const result = await finalizeOneDueAccount({ profile, config, environment, fetchImpl });
+      const result = await finalizeOneDueAccount({ profile, config, environment, fetchImpl, now });
       if (result.status === 'already_finalized') alreadyFinalized += 1;
       else finalized += 1;
     } catch (error) {

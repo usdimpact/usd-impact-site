@@ -10,6 +10,22 @@ const allowedStatus = new Set(['draft', 'review', 'ready-for-build', 'published'
 const publishedVerification = new Set(['verified-primary', 'verified-multiple']);
 // Historical editions need exact-copy editorial corrections before strict enforcement.
 const EVIDENCE_ENFORCED_FROM = '2026-10-30';
+// Additional verified official issuer domains already present in reviewed archives.
+// Keep this local to published-source metadata validation: no generator allowlist change.
+const ADDITIONAL_PRIMARY_HOSTS = ['dol.gov', 'treasurydirect.gov', 'kansascityfed.org'];
+function evidencePublisher(url) {
+  const known = sourceClassification(url);
+  if (known) return known;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    if (parsed.protocol !== 'https:') return null;
+    const domain = ADDITIONAL_PRIMARY_HOSTS.find((entry) => host === entry || host.endsWith(`.${entry}`));
+    return domain ? { sourceType: 'primary', domain } : null;
+  } catch {
+    return null;
+  }
+}
 
 function topLevel(data, key) {
   return typeof data[key] === 'string' ? data[key].trim() : '';
@@ -104,7 +120,7 @@ for (const file of files) {
     const sourceById = new Map(sources.map((source) => [source.id, source]));
     // A ledger label alone cannot promote a reporting URL to primary evidence.
     for (const source of sources) {
-      const classified = sourceClassification(source.url);
+      const classified = evidencePublisher(source.url);
       if (!classified || classified.sourceType !== source.sourceType) {
         sourceEvidenceIssue(file, date, `source ${source.id} type does not match its recognized publisher URL`);
       }
@@ -116,7 +132,7 @@ for (const file of files) {
       }
       const cited = highlight.sourceIds.map((id) => sourceById.get(id));
       const primaryEvidence = cited.some((source) => source.sourceType === 'primary'
-        && sourceClassification(source.url)?.sourceType === 'primary');
+        && evidencePublisher(source.url)?.sourceType === 'primary');
       if (state === 'verified-primary' && !primaryEvidence) {
         sourceEvidenceIssue(file, date, `published highlight ${index + 1} is verified-primary but cites no recognized primary source`);
       }
@@ -126,7 +142,7 @@ for (const file of files) {
         }
         const reportingDomains = new Set(cited
           .filter((source) => source.sourceType === 'reporting')
-          .map((source) => sourceClassification(source.url))
+          .map((source) => evidencePublisher(source.url))
           .filter((source) => source?.sourceType === 'reporting')
           .map((source) => source.domain));
         if (reportingDomains.size < 2) {

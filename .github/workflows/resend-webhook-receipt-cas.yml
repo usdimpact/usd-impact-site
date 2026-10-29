@@ -1,0 +1,44 @@
+name: Resend webhook receipt CAS contracts
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/resend-webhook-handler.js'
+      - 'apps/web/scripts/test-resend-webhook-function.mjs'
+      - 'apps/web/scripts/test-resend-webhook-correlation-race.mjs'
+      - 'apps/web/scripts/test-resend-webhook-atomic-update.mjs'
+      - '.github/workflows/resend-webhook-receipt-cas.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  receipt-cas-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Source and synthetic test syntax
+        run: |
+          node --check src/lib/resend-webhook-handler.js
+          node --check scripts/test-resend-webhook-function.mjs
+          node --check scripts/test-resend-webhook-correlation-race.mjs
+          node --check scripts/test-resend-webhook-atomic-update.mjs
+      - name: Signed webhook offline receipt and outbox race regressions
+        run: |
+          node scripts/test-resend-webhook-function.mjs
+          node scripts/test-resend-webhook-correlation-race.mjs

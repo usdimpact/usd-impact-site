@@ -1,0 +1,190 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+// New, isolated concept route only. No observational inputs or runtime fetches.
+// Owner, counsel and publication approval are intentionally NOT asserted.
+const dials = [
+  {
+    id: 'usd', number: '01', title: 'Broad dollar direction',
+    source: 'Federal Reserve Board H.10 nominal Broad Dollar Index',
+    context: 'Broad trade-weighted nominal USD, not ICE DXY.',
+    fields: [{ label: 'Dollar direction', choices: 'UP / DOWN / UNCHANGED' }],
+    review: 'Exact index/source rights, 2019 methodology and rebasing changes, automated transport and original-vintage retention.',
+  },
+  {
+    id: 'crude', number: '02', title: 'Crude inventory change',
+    source: 'EIA weekly commercial U.S. crude stocks excluding the SPR',
+    context: 'Physical stock change, not WTI, futures or a price signal.',
+    fields: [{ label: 'Inventory change', choices: 'BUILD / DRAW / UNCHANGED' }],
+    review: 'WCESTUS1 survey definition, stock-category reconciliation, publication and correction timing, permitted reuse.',
+  },
+  {
+    id: 'curve', number: '03', title: 'Nominal Treasury curve',
+    source: 'U.S. Treasury 2Y and 10Y nominal par constant-maturity yields',
+    context: 'The 10Y minus 2Y spread and its change from a coherent publisher curve revision; not real yields.',
+    fields: [
+      { label: 'Curve orientation', choices: 'POSITIVE / FLAT / INVERTED' },
+      { label: 'Curve change', choices: 'STEEPENING / FLATTENING / UNCHANGED' },
+    ],
+    review: 'Exact 2Y/10Y field rights, upstream market quotes, paired release receipts and first-seen vintage retention.',
+  },
+];
+
+const policySources = [
+  {
+    name: 'Federal Reserve Board',
+    url: 'https://www.federalreserve.gov/disclaimer.htm',
+    label: 'Copyright and source-rights disclaimer',
+  },
+  {
+    name: 'U.S. Energy Information Administration',
+    url: 'https://www.eia.gov/about/copyrights_reuse.php',
+    label: 'Government-produced data and contributor exceptions',
+  },
+  {
+    name: 'U.S. Treasury / Data.gov',
+    url: 'https://catalog.data.gov/dataset/interest-rate-statistics-daily-treasury-yield-curve-rates',
+    label: 'Nominal Treasury yield-curve catalog metadata',
+  },
+];
+---
+<BaseLayout
+  title="Independent Macro Context — Unreleased Concept | USD Impact"
+  description="Design-only, unapproved educational Macro Context candidate, with no market observations or published classifications."
+  noindex={true}
+>
+  <section class="hero macro-hero" aria-labelledby="macro-title" data-route-contract="independent-macro-context-draft">
+    <div class="container">
+      <p class="eyebrow macro-kicker">Unreleased concept / internal review</p>
+      <h1 id="macro-title">Independent Macro Context</h1>
+      <p class="lead macro-lead">
+        A separate, no-paid-market-data-license educational candidate covering the nominal broad dollar,
+        U.S. crude inventories and the Treasury yield curve.
+      </p>
+      <p class="macro-hero-note">
+        This is not the existing USD Impact Score or the current Three Dials v2.
+        No new current-state signal, market reading, history, or trading interpretation is offered.
+      </p>
+    </div>
+  </section>
+
+  <main id="main-content" class="container macro-main">
+    <section class="card macro-status" aria-labelledby="macro-status-heading" data-publication-status="HOLD">
+      <div class="macro-status-top">
+        <div>
+          <p class="eyebrow">Publication boundary</p>
+          <h2 id="macro-status-heading">All readings withheld</h2>
+        </div>
+        <span class="macro-hold">HOLD — NOT PUBLISHED</span>
+      </div>
+      <p>
+        Labels shown below are only possible future vocabularies; none is a computed result.
+        The route reads no real observations, JSON snapshots or historical Score data, and calls no data provider or USD Impact API.
+      </p>
+    </section>
+
+    <section aria-labelledby="macro-dials-heading" class="macro-section">
+      <p class="eyebrow">Proposed structure</p>
+      <h2 id="macro-dials-heading">Three subjects, four qualitative fields</h2>
+      <p class="macro-intro">
+        A future reading would require two completed reference Fridays, actual publication and first-seen evidence,
+        coherent Treasury versions, confirmed source rights and independent methodology authorization.
+      </p>
+      <div class="macro-grid">
+        {dials.map((dial) => (
+          <article class="card macro-dial" data-draft-dial={dial.id} aria-labelledby={`macro-${dial.id}`}>
+            <span class="macro-number">SUBJECT {dial.number}</span>
+            <h3 id={`macro-${dial.id}`}>{dial.title}</h3>
+            <p class="macro-source">{dial.source}</p>
+            <p>{dial.context}</p>
+            <dl class="macro-fields">
+              {dial.fields.map((field) => (
+                <div class="macro-field">
+                  <dt>{field.label}</dt>
+                  <dd>
+                    <strong>Not evaluated</strong>
+                    <small>Candidate vocabulary: {field.choices}</small>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <p class="macro-review"><strong>Still to review:</strong> {dial.review}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="card macro-boundaries" aria-labelledby="macro-boundaries-heading">
+      <p class="eyebrow">Required safeguards</p>
+      <h2 id="macro-boundaries-heading">Keep the existing products unchanged</h2>
+      <ul>
+        <li><strong>No changes to the current working state:</strong> no Score formula, Three Dials v2, reports, member access, navigation, historical assets, commerce or live endpoints are modified by this concept.</li>
+        <li><strong>No source substitution:</strong> H.10 Broad USD is not ICE DXY; EIA crude stocks are not WTI prices; nominal Treasury par yields are not real TIPS yields.</li>
+        <li><strong>No guessed releases:</strong> observation date, publication timestamp and first-seen timestamp are distinct. A Friday observation may not yet be available that Friday.</li>
+        <li><strong>Fail closed:</strong> an absent, conflicting or unlicensed source suppresses all descriptive results rather than silently substituting another source.</li>
+        <li><strong>Approval first:</strong> free web availability or a government/CC0 catalog tag does not by itself approve commercial reuse, retention, derived publishing or production deployment.</li>
+      </ul>
+    </section>
+
+    <section class="macro-section" aria-labelledby="macro-policy-heading">
+      <p class="eyebrow">Read-only policy sources</p>
+      <h2 id="macro-policy-heading">Publisher documentation, not market-data feeds</h2>
+      <p class="macro-intro">These links support future permission review. They are not live source adapters or proof of cleared commercial rights.</p>
+      <div class="macro-sources">
+        {policySources.map((source) => (
+          <article class="card macro-policy">
+            <p class="macro-policy-name">{source.name}</p>
+            <h3><a href={source.url} target="_blank" rel="noopener noreferrer">{source.label}</a></h3>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="macro-footer" aria-labelledby="macro-next-heading">
+      <h2 id="macro-next-heading">Next gate: separate written decisions</h2>
+      <p>
+        Exact-series and upstream rights, storage/retention, owner-approved educational methodology and audience,
+        prospective publisher receipts, a reviewed independent output schema, protected QA and a distinct Production
+        authorization must be addressed before a public version is considered. This route grants none of those permissions.
+      </p>
+      <p class="macro-disclaimer">
+        Educational concept only; not investment, legal, tax, financial or trading advice.
+        No trade signal, recommendation, current market classification or backtest is provided.
+      </p>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .macro-hero { background: linear-gradient(125deg,#0b1f33 0%,#204965 100%); color: #f4f8fb; }
+  .macro-hero .container { max-width: 990px; padding-block: clamp(2.6rem,5vw,4.5rem); }
+  .macro-kicker { color: #b3e4ea; letter-spacing: .09em; text-transform: uppercase; }
+  .macro-hero h1 { color: #fff; max-width: 20ch; }
+  .macro-lead { color: #e9f1f6; max-width: 70ch; }
+  .macro-hero-note { padding: .9rem 1rem; margin-top: 1.5rem; border-left: 3px solid #9cd2e2; background: rgba(255,255,255,.08); max-width: 78ch; }
+  .macro-main { display: grid; gap: clamp(2rem,5vw,3.5rem); padding-block: clamp(2rem,5vw,3.5rem); }
+  .macro-status { background: #f3f8fb; border: 1px solid #cadde7; }
+  .macro-status-top { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+  .macro-hold { border: 1px solid #92aab9; color: #36536a; background: #fff; border-radius: 999px; font-size: .75rem; font-weight: 800; padding: .4rem .7rem; }
+  .macro-intro { max-width: 78ch; color: #4b5b6a; }
+  .macro-grid,.macro-sources { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; margin-top: 1.25rem; }
+  .macro-dial,.macro-policy { border: 1px solid #d8e4eb; min-width: 0; }
+  .macro-dial { display: flex; flex-direction: column; }
+  .macro-number,.macro-policy-name { color: #456c7d; font-size: .76rem; letter-spacing: .075em; font-weight: 800; }
+  .macro-dial h3 { margin: .65rem 0 .3rem; }
+  .macro-source { color: #31566d; font-weight: 700; font-size: .94rem; }
+  .macro-fields { display: grid; gap: .8rem; margin-top: 1rem; }
+  .macro-field { border-top: 1px solid #dbe5ed; padding-top: .8rem; }
+  .macro-field dt { font-weight: 750; }
+  .macro-field dd { margin: .35rem 0 0; display: grid; gap: .45rem; }
+  .macro-field dd strong { color: #506175; font-size: .9rem; }
+  .macro-field small { color: #536579; line-height: 1.45; }
+  .macro-review { margin-top: auto; padding-top: 1.25rem; color: #48596b; }
+  .macro-boundaries { border: 1px solid #d0dfe8; }
+  .macro-boundaries ul { padding-left: 1.4rem; display: grid; gap: .7rem; }
+  .macro-policy h3 { margin: .45rem 0; font-size: 1.05rem; }
+  .macro-policy a { overflow-wrap: anywhere; }
+  .macro-footer { border-top: 1px solid #cfdde7; padding-top: 1rem; max-width: 86ch; }
+  .macro-disclaimer { font-size: .91rem; color: #556478; margin-top: 1rem; }
+  @media (max-width: 900px) { .macro-grid,.macro-sources { grid-template-columns: 1fr; } }
+</style>

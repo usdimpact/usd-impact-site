@@ -109,6 +109,46 @@ for(const status of [404,409,429,503,201,401]){
   assertions+=2;
 }
 
+// Even in the legacy, currently disabled path, a real GoTrue 404 cannot
+// trigger the irreversible plain-ID SQL finalize or a completion email.
+{
+  let authCalls=0,finalizeCalls=0,escalationCalls=0;
+  const fetchImpl=async(url,options={})=>{
+    const u=new URL(url);
+    assert.equal(u.origin,env.SUPABASE_URL);
+    if(u.pathname==='/rest/v1/profiles' && options.method==='GET'){
+      return ok(200,[{...scanned,deleted_at:null}]);
+    }
+    if(u.pathname==='/rest/v1/rpc/prepare_account_deletion_auth_removal'){
+      assert.equal(options.method,'POST');
+      return ok(200,true);
+    }
+    if(u.pathname==='/auth/v1/admin/users/'+id){
+      authCalls++;
+      return ok(404,{error:'synthetic missing identity'});
+    }
+    if(u.pathname==='/rest/v1/support_requests' && options.method==='POST'){
+      escalationCalls++;
+      const payload=JSON.parse(options.body);
+      assert.equal(payload.category,'privacy');
+      return ok(201);
+    }
+    if(u.pathname.endsWith('/rpc/finalize_account_deletion')
+      || u.pathname.includes('notification_outbox')){
+      finalizeCalls++;
+      assert.fail('Auth 404 must never lead to DB erasure or outbox');
+    }
+    assert.fail('unexpected synthetic response: '+u.pathname);
+  };
+  await assert.rejects(()=>finalizeOneDueAccount({
+    config,profile:scanned,environment:env,now,fetchImpl,
+  }),e=>e?.code==='ACCOUNT_DELETION_AUTH_OUTCOME_UNVERIFIED');
+  assert.equal(authCalls,1);
+  assert.equal(finalizeCalls,0);
+  assert.equal(escalationCalls,1);
+  assertions+=4;
+}
+
 // A broken or ambiguous preparation must fail before any identity operation.
 for (const [label, status, responseBody, code] of [
   ['no confirmation', 200, false, 'ACCOUNT_DELETION_AUTH_PREPARE_NOT_CONFIRMED'],

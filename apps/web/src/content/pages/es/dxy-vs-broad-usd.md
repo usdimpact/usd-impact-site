@@ -12,7 +12,6 @@ sources:
   - "Federal Reserve — H.10 Foreign Exchange Rates and Dollar Indexes"
   - "Federal Reserve — Revisions to the Federal Reserve Dollar Indexes"
   - "ICE — U.S. Dollar Index methodology and composition"
-  - "USD Impact Quiz 5 — DXY vs Broad USD: approved learning contract"
 internalLinks:
   - "/dxy/what-is-dxy"
   - "/dxy/what-is-dxy/quiz"

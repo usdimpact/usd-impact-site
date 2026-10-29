@@ -35,6 +35,34 @@ test('all source references, original English quiz links and disclaimer are pres
  assert.match(candidate,/No constituye asesoramiento de inversión/);
  assert.match(candidate,/Las relaciones entre índices son condicionales/);
 });
+test('owner-approved Spanish title and descriptive metadata remain exact',()=>{
+ const metadata=(key)=>yaml[1].split('\n').find((line)=>line.startsWith(key+': '))?.slice(key.length+2);
+ assert.equal(metadata('title'),JSON.stringify('DXY frente al dólar amplio: ¿qué señal del dólar importa?'));
+ assert.equal(metadata('metaTitle'),JSON.stringify('DXY frente al dólar amplio | USD Impact'));
+ assert.equal(metadata('metaDescription'),JSON.stringify('Aprende a comparar DXY con el índice amplio del dólar de la Reserva Federal, identificar divergencias y evitar conclusiones demasiado generales.'));
+ assert.equal(metadata('hero'),JSON.stringify('El DXY es una referencia visible del dólar, mientras el índice amplio de la Reserva Federal cubre más divisas ponderadas por comercio. La coincidencia refuerza la señal; la divergencia muestra dónde se concentra.'));
+ assert.equal(metadata('ctaPrimaryHref'),JSON.stringify('/dxy/dxy-vs-broad-usd/quiz'));
+ assert.equal(metadata('ctaSecondaryHref'),JSON.stringify('/dxy/what-is-dxy'));
+ assert.match(yaml[1],/^status: "review"$/m);
+});
+
+test('Quiz 5 is an internal English learning link, not an official institutional source',()=>{
+ const sources=yaml[1].match(/^sources:\n((?:  - "[^\n]+"\n)+)/m);
+ assert.ok(sources,'Official source list absent');
+ const names=[...sources[1].matchAll(/^  - "([^"]+)"$/gm)].map((m)=>m[1]);
+ assert.deepEqual(names,[
+   'Federal Reserve — H.10 Foreign Exchange Rates and Dollar Indexes',
+   'Federal Reserve — Revisions to the Federal Reserve Dollar Indexes',
+   'ICE — U.S. Dollar Index methodology and composition',
+ ]);
+ assert.doesNotMatch(sources[1],/USD Impact Quiz|Quiz 5/);
+ assert.match(yaml[1],/^internalLinks:\n(?:  - "[^\n]+"\n)+/m);
+ assert.match(yaml[1],/^  - "\/dxy\/dxy-vs-broad-usd\/quiz"$/m);
+ assert.match(previewRoute,/Recurso didáctico interno/);
+ assert.match(previewRoute,/no es una fuente oficial/);
+ assert.match(previewRoute,/entry\.data\.ctaPrimaryHref/);
+});
+
 test('five existing public Spanish routes remain exact and new DXY URL remains unpublished',()=>{
  const m=route.match(/const AUTHORIZED_SPANISH_PUBLIC_SLUGS = Object\.freeze\(\[([\s\S]*?)\]\);/);
  assert.ok(m,'Spanish route allowlist missing');

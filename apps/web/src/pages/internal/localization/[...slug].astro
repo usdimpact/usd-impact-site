@@ -35,7 +35,7 @@ const { Content } = await render(entry);
       </div>
     </section>
     <div class="container page-content">
-      <p><strong>Vista previa de desarrollo.</strong> El texto está aprobado editorialmente para revisión privada, pero su publicación, atribución final, metadatos y permisos aún no están autorizados.</p>
+      <p><strong>Vista previa de desarrollo.</strong> El texto y los metadatos descriptivos cuentan con aprobación editorial del propietario para revisión privada. La verificación de fuentes, los permisos de reutilización, la revisión legal y la publicación siguen pendientes.</p>
       <Content />
       <section class="compliance" aria-label="Fuentes propuestas para revisión">
         <strong>Fuentes propuestas en los metadatos — pendientes de comprobación:</strong>
@@ -43,6 +43,10 @@ const { Content } = await render(entry);
         <ul>
           {entry.data.sources.map((source) => <li>{source}</li>)}
         </ul>
+      </section>
+      <section class="compliance" aria-label="Recurso didáctico interno">
+        <strong>Recurso didáctico interno (en inglés; no es una fuente oficial):</strong>
+        <p><a href={entry.data.ctaPrimaryHref}>{entry.data.ctaPrimary} — enlace a la versión en inglés</a></p>
       </section>
       <section class="compliance" aria-label="Nota de cumplimiento">
         <strong>Nota de cumplimiento:</strong> {entry.data.complianceNote}

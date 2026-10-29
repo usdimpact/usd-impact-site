@@ -51,3 +51,18 @@ The owner noticed that this ES DXY Preview did not show the cookie choices prese
 - The browser QA did not display the assistant-proposed `sources` frontmatter: previously, only the approved content body and disclaimer were rendered. The next Development-only change adds a separately labeled **unverified list of proposed source metadata** to the internal QA route. This does **not** edit the accepted Spanish article body or mark source rights/attribution as approved.
 - The observer also reported possible inherited English Open Graph metadata. Source inspection of the `BaseLayout.astro` head showed no OG tags in the inspected section, so **do not treat this as confirmed metadata drift** without a verified full-head capture; the Preview remains noindex and is not for distribution.
 - Owner/manual requirements remain: approve each proposed source and its citation/rights, frontmatter title/description/hero/CTA and English quiz-link destinations; separately review legal/compliance suitability. No publication status or slug allowlist change is authorized.
+
+## Owner editorial metadata approval and independent source classification — 2026-10-29
+
+The owner explicitly approved the existing Spanish DXY **title, SEO title, meta description, hero, and existing English quiz links** for editorial use and instructed that **USD Impact Quiz 5 must be separated from official external sources**. The owner explicitly **did not** approve public release, legal clearance, or a Production merge.
+
+- The five owner-approved frontmatter values and both CTA destinations remain **byte-for-byte unchanged** in the Draft candidate. The accepted Spanish article body remains byte-identical to the prior approved extraction, protected by the existing SHA-1 test.
+- `sources:` now includes three **proposed institutional references** only: Federal Reserve H.10, Federal Reserve dollar-index revision methodology, and ICE U.S. Dollar Index methodology. The items still need explicit URL, attribution, licensing and source-use review.
+- The internal USD Impact Quiz 5 was removed **only from `sources:`**, not removed from the lesson: it stays in `internalLinks`, the English quiz CTA destination and the unchanged article body. The private Preview renders it in a separate section identifying it as an **internal English-language educational resource, not an official source**.
+- The Preview status explanation now accurately reflects **editorial approval of wording** while reserving source verification, reuse permissions, legal review and publication for separate approval.
+- New regression tests pin the exact owner-approved metadata, the original English CTA URLs, the three proposed institutional source titles, the internal resource classification, and the existing `status: review` guard.
+- This action is **Development-only** under [PR #932](https://github.com/usdimpact/usd-impact-site/pull/932). No public route allowlist, reciprocal hreflang, sitemap, canonical, production status, analytics, commerce or entitlements are changed.
+
+### Next separate gate: source attribution/reuse rights and compliance
+
+The owner must confirm that the three named institutional sources were actually checked, approve precise live source URLs and accurate attribution, and attest that the authored educational wording and any reused charts, data or brand elements have proper rights or need no third-party reproduction license. Reference links alone **do not** establish permission to reproduce proprietary index data/graphics or imply a trademark endorsement. A qualified legal/compliance reviewer must separately review the notice and jurisdictional suitability. No inference of approval from editorial wording is permitted.

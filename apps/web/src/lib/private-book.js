@@ -1,4 +1,4 @@
-import { buildSupabaseRestHeaders, readSupabaseServerConfig } from './supabase-server.js';
+import { readSupabaseServerConfig } from './supabase-server.js';
 
 export const BOOK_MEMBER_PATH = '/guided-edition/book/';
 export const BOOK_DOWNLOAD_PATH = '/guided-edition/book/download/';
@@ -67,10 +67,16 @@ export async function createSignedBookUrl({
     response = await fetchImpl(endpoint, {
       method: 'POST',
       cache: 'no-store',
-      // Reuse the application's verified credential contract: opaque
-      // sb_secret_ keys go ONLY in apikey; legacy JWT keys retain Bearer.
-      // Storage signing still requires a separately verified real-provider test.
-      headers: buildSupabaseRestHeaders({ apiKey: resolvedConfig.secretKey }),
+      // Current protected main does not export a shared credential helper.
+      // Preserve the exact legacy-JWT compatibility contract locally:
+      // opaque sb_secret_ credentials belong on apikey, never as JWT Bearer.
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        apikey: resolvedConfig.secretKey,
+        ...(resolvedConfig.secretKey.startsWith('eyJ')
+          ? { Authorization: `Bearer ${resolvedConfig.secretKey}` } : {}),
+      },
       body: JSON.stringify({ expiresIn }),
     });
   } catch {

@@ -180,6 +180,13 @@ async function happy(side){
     await db.exec('rollback');
     assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),side==='source'?2:4);
     checks+=3;
+    // Unknown policy drift must not be removed by this cleanup.
+    await db.exec("create policy issue950_unrelated_guard on storage.objects for select to authenticated using(false)");
+    await assert.rejects(db.exec(renderUndo(side)),/unexpected policy identity or shape/);
+    await db.exec('rollback');
+    assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),side==='source'?3:5);
+    await db.exec("drop policy issue950_unrelated_guard on storage.objects");
+    checks+=2;
     await db.exec(renderUndo(side));
     // A subsequent cleanup is idempotent on the same verified host.
     await db.exec(renderUndo(side));

@@ -18,6 +18,7 @@ const candidatePaths=candidateNames.map(name=>'apps/web/src/lib/'+name+'.js');
 const sqlCandidatePaths=[
   'docs/operations/candidates/account-deletion-atomic-claim.review.sql',
   'docs/operations/candidates/account-deletion-jwt-rls-fence.review.sql',
+  'docs/operations/candidates/account-deletion-transactional-completion-escrow.review.sql',
 ];
 let checks=0,checkedFiles=0;
 

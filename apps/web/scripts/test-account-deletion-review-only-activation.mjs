@@ -19,6 +19,7 @@ const sqlCandidatePaths=[
   'docs/operations/candidates/account-deletion-atomic-claim.review.sql',
   'docs/operations/candidates/account-deletion-jwt-rls-fence.review.sql',
   'docs/operations/candidates/account-deletion-transactional-completion-escrow.review.sql',
+  'docs/operations/candidates/account-deletion-confirmed-tokenloss-recovery.review.sql',
 ];
 let checks=0,checkedFiles=0;
 

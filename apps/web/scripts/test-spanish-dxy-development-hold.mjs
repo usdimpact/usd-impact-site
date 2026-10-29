@@ -95,6 +95,27 @@ test('private preview exposes proposed source metadata for review without approv
  assert.doesNotMatch(previewRoute,/status: "published"/);
 });
 
+test('private QA links to three official source pages without asserting reuse permission',()=>{
+ const urls=[
+  'https://www.federalreserve.gov/releases/h10/current/',
+  'https://www.federalreserve.gov/econres/notes/feds-notes/revisions-to-the-federal-reserve-dollar-indexes-20190115.html',
+  'https://www.ice.com/forex/usdx',
+ ];
+ for(const url of urls) assert.ok(previewRoute.includes(url),'Missing official reference: '+url);
+ assert.match(previewRoute,/entry\.data\.sources\.map/);
+ assert.match(previewRoute,/href=\{institutionalSourceUrl\[source\]\}/);
+ assert.match(previewRoute,/target="_blank" rel="noopener noreferrer"/);
+ assert.match(previewRoute,/Private DXY source URL mapping missing/);
+ assert.match(previewRoute,/no reproducir materiales reservados de ICE/);
+});
+
+test('private QA explains English Quiz 5 entitlement redirect without changing access',()=>{
+ assert.match(previewRoute,/El acceso al cuestionario depende del progreso/);
+ assert.match(previewRoute,/Si está bloqueado, el sitio redirige a la lección pendiente/);
+ assert.match(previewRoute,/entry\.data\.ctaPrimaryHref/);
+ assert.doesNotMatch(previewRoute,/QUIZ_PROGRESS_SECRET|readQuizEntitlement|Response\.redirect/);
+});
+
 test('no Production-release flag, provider call, or entitlement manipulation is introduced',()=>{
  assert.ok(!candidate.includes('publicationAllowed: true'));
  assert.ok(!candidate.includes('entitlement'));

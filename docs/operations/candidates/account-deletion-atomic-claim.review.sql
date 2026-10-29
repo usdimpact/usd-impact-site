@@ -160,6 +160,9 @@ begin
   where x.account_id = claim_account_id
   for update;
 
+  -- A contender can wait on a locked profile/attempt for longer than a lease.
+  -- The expiry comparison and new lease timestamps MUST use post-lock time.
+  v_now := pg_catalog.clock_timestamp();
   if a.account_id is null then
     v_generation := 1;
     insert into account_deletion_internal.attempts (
@@ -227,6 +230,9 @@ begin
     where x.account_id = begin_account_id for update;
   select x.* into a from account_deletion_internal.attempts x
     where x.account_id = begin_account_id for update;
+  -- Re-sample after the row locks. Entry-time v_now may precede a long wait
+  -- and otherwise authorize an expired one-shot Auth dispatch.
+  v_now := pg_catalog.clock_timestamp();
   if p.account_id is null or a.account_id is null
     or a.state <> 'claimed'
     or a.generation <> begin_generation

@@ -49,8 +49,11 @@ export function buildIssue950PrivateStoragePlan({
   matchesInventory(sourceInventory);
   matchesInventory(restoreInventory);
 
-  // No secret key values or object paths enter this object. Remote aliases
-  // must be configured in a private S3 runner AFTER separate security review.
+  // S3 credentials issued by Supabase provide project-wide FULL S3 access
+  // across buckets and BYPASS RLS. A source remote used only for GET/list
+  // does NOT become server-enforced read-only. Never imply key-level scoping.
+  // No key values or object paths enter this non-executable plan.
+  // Remotes require a separately approved, private and isolated runner.
   const steps=[];
   for(const b of PRIVATE_BUCKETS) {
     steps.push(Object.freeze({
@@ -75,12 +78,15 @@ export function buildIssue950PrivateStoragePlan({
     expectedMetadataBytes:PRIVATE_BUCKETS.reduce((s,b)=>s+b.bytes,0),
     storageBytesRecovered:false,
     readyForExecution:false,
+    s3CredentialScope:'project_wide_full_s3_access_bypasses_rls',
+    sourceKeyReadOnlyEnforced:false,
     mandatoryApprovals:Object.freeze([
       'independent_private_storage_transfer_and_cost_approval',
       'single_object_pilot_with_s3_overwrite_semantics',
       'secure_short_lived_credentials_in_private_runner',
+      'security_owner_explicitly_accepts_full_s3_access_bypassing_rls',
       'zero_public_object_urls_and_no_logging_of_object_paths',
-      'source_read_only_and_destination_only_writes',
+      'source_commands_read_only_but_source_s3_key_is_not_read_only',
       'full_private_byte_comparison_and_key_revocation',
     ]),
     steps:Object.freeze(steps),

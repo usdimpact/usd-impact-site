@@ -70,7 +70,7 @@ for(const [change,code] of [
   [{sourceRecords:changed(valid.sourceRecords,0,{bytes:1.5})},'ISSUE950_OBJECT_BYTE_LENGTH_MISMATCH'],
   [{sourceRecords:changed(valid.sourceRecords,0,{objectPath:'unknown.mp3'})},'ISSUE950_OBJECT_NOT_IN_MANIFEST'],
   [{destinationRecords:changed(valid.destinationRecords,20,{bucket:PRIVATE_AUDIOBOOK_BUCKET})},'ISSUE950_OBJECT_NOT_IN_MANIFEST'],
-  [{sourceRecords:changed(valid.sourceRecords,0,{objectPath:valid.sourceRecords[1].objectPath})},'ISSUE950_DUPLICATE_OBJECT'],
+  [{sourceRecords:valid.sourceRecords.map((r,i)=>i===0?{...valid.sourceRecords[1]}:r)},'ISSUE950_DUPLICATE_OBJECT'],
   [{sourceRecords:changed(valid.sourceRecords,0,{bucket:null})},'ISSUE950_INVALID_OBSERVATION'],
   // Equal corrupted source/restore evidence must STILL fail the
   // independently committed SHA-256 for that file.

@@ -20,10 +20,16 @@ assert.equal(p.expectedMetadataBytes,374929235);
 assert.equal(p.readyForExecution,false);
 assert.equal(p.storageBytesRecovered,false);
 assert.equal(p.steps.length,2);
-assert.equal(p.mandatoryApprovals.length,6);
+assert.equal(p.mandatoryApprovals.length,7);
+assert.equal(p.s3CredentialScope,'project_wide_full_s3_access_bypasses_rls');
+assert.equal(p.sourceKeyReadOnlyEnforced,false,'Supabase S3 keys cannot be represented as provider-enforced read-only');
+assert.ok(p.mandatoryApprovals.includes(
+  'security_owner_explicitly_accepts_full_s3_access_bypassing_rls'));
+assert.ok(p.mandatoryApprovals.includes(
+  'source_commands_read_only_but_source_s3_key_is_not_read_only'));
 assert.deepEqual(p.steps.map(x=>x.bucket).sort(),
   ['library-pass-assets','library-pass-books'].sort());
-checks+=8;
+checks+=12;
 const serialized=JSON.stringify(p).toLowerCase();
 for(const banned of [
   'gjzetjugmnwanvjkchux','service_role','sb_secret_',

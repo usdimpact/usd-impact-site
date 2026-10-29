@@ -129,7 +129,7 @@ const fetchImpl = async (url, options = {}) => {
   const href = String(url);
   const origin = new URL(href).origin;
   assert.equal(origin, environment.SUPABASE_URL, 'deletion must remain within canonical Development');
-  if (href.includes('/rest/v1/')) {
+  if (/\/rest\/v1\/(?:profiles|support_requests|rpc\/finalize_account_deletion)(?:\?|$)/.test(href)) {
     assert.equal(options.headers?.apikey, environment.SUPABASE_SECRET_KEY);
     assert.equal(Object.keys(options.headers || {}).some((name) => name.toLowerCase() === 'authorization'), false,
       'account deletion PostgREST must never use opaque secret as Bearer');
@@ -198,8 +198,8 @@ const result = await runDueAccountDeletionFinalizer({
 });
 assert.deepEqual(result, emptyRunResult({ scanned: 1, finalized: 1 }));
 assert.equal(calls.filter((call) => call.href.includes('/auth/v1/admin/users/')).length, 1);
-assert.equal(calls.filter((call) => call.href.includes('/rest/v1/')).length >= 3, true,
-  'must cover due scan, RPC and durable completion outbox REST paths');
+assert.equal(calls.filter((call) => /\/rest\/v1\/(?:profiles|support_requests|rpc\/finalize_account_deletion)/.test(call.href)).length >= 2, true,
+  'must cover the finalizer own profile/RPC REST paths without conflating email-ledger transport');
 assert.equal(calls.filter((call) => call.href.endsWith('/rpc/finalize_account_deletion')).length, 1);
 assert.equal(calls.filter((call) => call.href.includes('/notification_outbox')).length >= 1, true);
 

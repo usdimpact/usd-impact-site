@@ -31,6 +31,12 @@ for(const side of ['source','restore']){
   assert.match(template,new RegExp('__ISSUE950_'+side.toUpperCase()+'_SERVER_HOST_MD5__'));
   assert.match(template,/md5\(inet_server_addr\(\)::text\)/);
   assert.match(template,/inet_server_addr\(\) is null/);
+  assert.ok(template.includes("approved_host_md5 !~ '^[0-9a-f]{32}$'"),
+    'expected exact anchored hex hash format in source SQL');
+  assert.equal(template.split('do $issue950_preflight$').length-1,1,
+    'review SQL must have exactly one preflight');
+  assert.equal(template.split('create policy ').length-1,side==='source'?2:4,
+    'review SQL must contain only exact expected policy definitions');
   assert.match(template,/__ISSUE950_APPROVED_TEST_EMAIL__/);
   assert.match(template,/raw_app_meta_data/);
   assert.match(template,/p\.status::text='suspended'/);

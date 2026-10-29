@@ -11,6 +11,7 @@ const read=path=>readFileSync(join(root,path),'utf8');
 const candidateNames=[
   'account-deletion-fenced-protocol-candidate',
   'account-deletion-due-batch-candidate',
+  'account-deletion-completion-recovery-candidate',
 ];
 const allowedImportingCandidate='apps/web/src/lib/account-deletion-due-batch-candidate.js';
 const candidatePaths=candidateNames.map(name=>'apps/web/src/lib/'+name+'.js');

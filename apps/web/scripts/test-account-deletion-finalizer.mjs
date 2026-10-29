@@ -136,8 +136,8 @@ const fetchImpl = async (url, options = {}) => {
   }
   if (href.includes('/auth/v1/admin/')) {
     assert.equal(options.headers?.apikey, environment.SUPABASE_SECRET_KEY);
-    assert.equal(options.headers?.Authorization, `Bearer ${environment.SUPABASE_SECRET_KEY}`,
-      'preserve existing Auth Admin protocol pending separate protected acceptance');
+    assert.equal(Object.keys(options.headers||{}).some(k=>k.toLowerCase()==='authorization'),false,
+      'opaque Auth Admin key must not be sent as a JWT Bearer');
     assert.equal(options.method, 'DELETE');
   }
   calls.push({ href, options });

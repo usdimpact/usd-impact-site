@@ -58,11 +58,24 @@ function readPersistenceConfig(environment = process.env) {
   } catch {
     throw new TypeError('SUPABASE_URL is invalid.');
   }
-  if (url.protocol !== 'https:' && url.hostname !== 'localhost') {
-    throw new TypeError('SUPABASE_URL must use HTTPS outside localhost.');
+  // Persistence uses a privileged key. Reject even an HTTPS endpoint that
+  // is not the canonical database for the current Vercel environment, so a
+  // misconfigured worker cannot forward this key to a third-party host or
+  // cross the Development/Production project boundary.
+  const environmentName = requireText(environment.VERCEL_ENV, 'VERCEL_ENV').toLowerCase();
+  const expectedProject = environmentName === 'preview'
+    ? 'ycstrcvshdluovtuasjc'
+    : environmentName === 'production'
+      ? 'gjzetjugmnwanvjkchux'
+      : null;
+  const expectedOrigin = expectedProject ? `https://${expectedProject}.supabase.co` : null;
+  if (!expectedOrigin || url.origin !== expectedOrigin
+      || url.username || url.password || url.search || url.hash
+      || (url.pathname !== '/' && url.pathname !== '')) {
+    throw new TypeError('Research Membership persistence requires the canonical project for its Vercel environment.');
   }
   if (!secretKey.startsWith('sb_secret_')) throw new TypeError('SUPABASE_SECRET_KEY is invalid.');
-  return Object.freeze({ url: url.origin, secretKey });
+  return Object.freeze({ url: expectedOrigin, secretKey });
 }
 
 async function readJson(response) {

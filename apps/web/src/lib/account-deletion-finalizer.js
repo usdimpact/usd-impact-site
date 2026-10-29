@@ -88,10 +88,21 @@ export function readAccountDeletionFinalizerConfig(environment = process.env) {
 }
 
 function jsonHeaders(secretKey) {
+  // PostgREST accepts modern sb_secret_ via the API gateway's apikey header.
+  // Do not send it as a non-JWT Authorization bearer on REST requests.
   return {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     apikey: secretKey,
+  };
+}
+
+function authAdminHeaders(secretKey) {
+  // The Auth Admin endpoint has a distinct authentication protocol from
+  // PostgREST. Preserve its existing header contract until a separate
+  // protected Auth Admin acceptance test confirms any change is safe.
+  return {
+    ...jsonHeaders(secretKey),
     Authorization: `Bearer ${secretKey}`,
   };
 }
@@ -150,7 +161,7 @@ export async function softDeleteAuthUser({ config, accountId, fetchImpl = fetch 
     `${config.supabase.url}/auth/v1/admin/users/${encodeURIComponent(accountId)}?should_soft_delete=true`,
     {
       method: 'DELETE',
-      headers: jsonHeaders(config.supabase.secretKey),
+      headers: authAdminHeaders(config.supabase.secretKey),
     },
   );
   if (response.status === 404) return Object.freeze({ alreadyAbsent: true });

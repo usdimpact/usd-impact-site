@@ -153,4 +153,48 @@ for (const candidate of [
   cases += 1;
 }
 
+// An exact Supabase origin, not a matching hostname prefix, must be present
+// before any secret-bearing finalizer can be enabled.
+for (const override of [
+  { SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.malicious.example' },
+  { SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co.attacker.invalid' },
+  { SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co@attacker.invalid' },
+  { SUPABASE_URL: 'https://guest:fake@ycstrcvshdluovtuasjc.supabase.co' },
+  { SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co:8443' },
+  { SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co/other' },
+  { SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co?redirect=elsewhere' },
+  { SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co#fragment' },
+  { SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co' },
+  { VERCEL_ENV: 'staging' },
+  { VERCEL_ENV: '' },
+]) {
+  assert.throws(
+    () => readAccountDeletionFinalizerConfig({ ...environment, ...override }),
+    (error) => ['ACCOUNT_DELETION_PROJECT_MISMATCH',
+      'ACCOUNT_DELETION_ENVIRONMENT_INVALID'].includes(error?.code),
+    JSON.stringify(override),
+  );
+  cases += 1;
+}
+// Release-gated Production still requires both affirmative flags, and is
+// mapped solely to the exact Production project. This has no network access.
+assert.throws(
+  () => readAccountDeletionFinalizerConfig({
+    ...environment, VERCEL_ENV: 'production',
+    SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
+  }),
+  (error) => error?.code === 'ACCOUNT_DELETION_PRODUCTION_NOT_APPROVED',
+);
+cases += 1;
+const approvedConfig = readAccountDeletionFinalizerConfig({
+  ...environment,
+  VERCEL_ENV: 'production',
+  SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
+  ACCOUNT_DELETION_FINALIZER_PRODUCTION_APPROVED: 'true',
+  EMAIL_READINESS_PRODUCTION_APPROVED: 'true',
+});
+assert.equal(approvedConfig.projectRef, 'gjzetjugmnwanvjkchux');
+assert.equal(approvedConfig.production, true);
+cases += 1;
+
 console.log('Account deletion pre-Auth snapshot fail-close tests passed: ' + cases + ' cases.');

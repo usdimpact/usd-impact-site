@@ -2,6 +2,7 @@
 // source read-only, restore scoped upsert and exact-policy rollback.
 // No real Supabase, Auth, S3, user token, keys, network or private file bytes.
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {PGlite} from '@electric-sql/pglite';
 import {privateAudiobookTracks} from '../src/lib/private-audiobook.js';
@@ -27,6 +28,15 @@ for(const side of ['source','restore']){
   const template=proposals[side];
   assert.match(template,/REVIEW ONLY - NOT A MIGRATION/);
   assert.match(template,/__ISSUE950_EXPIRES_AT_UTC__/);
+  assert.match(template,new RegExp('__ISSUE950_'+side.toUpperCase()+'_SERVER_HOST_MD5__'));
+  assert.match(template,/md5\(inet_server_addr\(\)::text\)/);
+  assert.match(template,/inet_server_addr\(\) is null/);
+  assert.ok(template.includes("approved_host_md5 !~ '^[0-9a-f]{32}$'"),
+    'expected exact anchored hex hash format in source SQL');
+  assert.equal(template.split('do $issue950_preflight$').length-1,1,
+    'review SQL must have exactly one preflight');
+  assert.equal(template.split('create policy ').length-1,side==='source'?2:4,
+    'review SQL must contain only exact expected policy definitions');
   assert.match(template,/__ISSUE950_APPROVED_TEST_EMAIL__/);
   assert.match(template,/raw_app_meta_data/);
   assert.match(template,/p\.status::text='suspended'/);
@@ -44,11 +54,17 @@ assert.match(proposals.restore,/for insert to authenticated/);
 assert.match(proposals.restore,/for update to authenticated/);
 assert.doesNotMatch(proposals.restore,/for delete to authenticated/i);
 checks+=4;
-function render(side,subject=uuids[side],until=expires()){
+function render(side,subject=uuids[side],until=expires(),overrideHostMd5=null){
+  // This substitution is ONLY for a disposable PGlite connection with no
+  // real remote server address. Never copy the synthetic host into real SQL.
+  const fakeHost=side==='source'?'192.0.2.11':'198.51.100.11';
+  const expectedHostMd5=overrideHostMd5??createHash('md5').update(fakeHost).digest('hex');
   return proposals[side]
     .replaceAll('__ISSUE950_'+side.toUpperCase()+'_SYNTHETIC_UUID__',subject)
     .replaceAll('__ISSUE950_EXPIRES_AT_UTC__',until)
-    .replaceAll('__ISSUE950_APPROVED_TEST_EMAIL__','issue950-s3-'+side+'@example.invalid');
+    .replaceAll('__ISSUE950_APPROVED_TEST_EMAIL__','issue950-s3-'+side+'@example.invalid')
+    .replaceAll('__ISSUE950_'+side.toUpperCase()+'_SERVER_HOST_MD5__',expectedHostMd5)
+    .replaceAll('inet_server_addr()',"'"+fakeHost+"'");
 }
 const schema=[
   'create role authenticated nologin;',
@@ -174,12 +190,26 @@ for(const side of ['source','restore']){
       checks+=2;
     }finally{await db.close();}
   }
-  const db=await makeDb(side);
-  try{
-    await assert.rejects(db.exec(render(side,uuids[side],expires(9))),/expiry must be future and <=8h/);
-    await db.exec('rollback');
-    checks++;
-  }finally{await db.close();}
+  {
+    const db=await makeDb(side);
+    try{
+      // Correct Auth/manifest/candidate but wrong host binding must abort
+      // *before* the first CREATE POLICY and leave no partial privilege.
+      await assert.rejects(db.exec(render(side,uuids[side],expires(),'0'.repeat(32))),
+        /project host binding not verified/);
+      await db.exec('rollback');
+      assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),0);
+      checks+=2;
+    }finally{await db.close();}
+  }
+  {
+    const db=await makeDb(side);
+    try{
+      await assert.rejects(db.exec(render(side,uuids[side],expires(9))),/expiry must be future and <=8h/);
+      await db.exec('rollback');
+      checks++;
+    }finally{await db.close();}
+  }
 }
 console.log('Issue #950 S3 JWT scoped recovery review: '+checks+
   ' synthetic SQL assertions PASS; no real S3, JWT, Auth, user, provider, private file or deployed SQL.');

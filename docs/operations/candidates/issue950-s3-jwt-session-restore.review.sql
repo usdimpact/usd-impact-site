@@ -1,7 +1,9 @@
 -- ISSUE950 REVIEW ONLY - NOT A MIGRATION, NOT APPROVED, NOT EXECUTABLE AS WRITTEN.
 -- Target ONLY the existing ISOLATED RESTORED Development project: movnekagnxgcyenczfoc
 -- Never Production gjzetjugmnwanvjkchux. No real customer identities.
--- This template deliberately contains invalid UUID and UTC-expiry placeholders.
+-- This template deliberately contains invalid UUID, UTC-expiry, email and
+-- project-host placeholders. Cluster system_identifier is shared across
+-- Development, Restore and Production and CANNOT identify a target.
 -- Substituting real synthetic Auth IDs requires independent DBA/security/privacy
 -- approval, bounded issuance, tested S3 JWT sessions and a rollback window.
 -- Source SELECT only; restored-target SELECT/INSERT/UPDATE only; NO DELETE.
@@ -14,8 +16,16 @@ do $issue950_preflight$
 declare
   synthetic_subject uuid := '__ISSUE950_RESTORE_SYNTHETIC_UUID__'::uuid;
   approved_expires_at timestamptz := '__ISSUE950_EXPIRES_AT_UTC__'::timestamptz;
+  -- Private operator must attest exact management project before approval.
+  -- Ephemeral, failover-sensitive DB host binding is defense in depth,
+  -- NOT the sole cryptographic proof of project identity.
+  approved_host_md5 text := '__ISSUE950_RESTORE_SERVER_HOST_MD5__';
   expected_count integer;
 begin
+  if inet_server_addr() is null
+     or approved_host_md5 !~ '^[0-9a-f]{32}$'
+     or md5(inet_server_addr()::text) <> approved_host_md5
+  then raise exception 'issue950 scoped session: project host binding not verified'; end if;
   if approved_expires_at <= now() or approved_expires_at > now() + interval '8 hours'
   then raise exception 'issue950 scoped session: expiry must be future and <=8h'; end if;
   -- Both real projects have on_auth_user_created -> handle_new_auth_user,

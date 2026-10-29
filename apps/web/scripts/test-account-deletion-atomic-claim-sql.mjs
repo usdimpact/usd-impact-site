@@ -90,7 +90,7 @@ try {
 
   const requestC=await insertPending(c);
   const claimC=await row("select * from public.claim_due_account_deletion($1,$2,$3)",[c,requestC,workerA]);
-  await db.query("update account_deletion_internal.attempts set pre_dispatch_expires_at=clock_timestamp()-interval '1 second' where account_id=$1",[c]);
+  await db.query("update account_deletion_internal.attempts set claimed_at=clock_timestamp()-interval '10 minutes',pre_dispatch_expires_at=clock_timestamp()-interval '1 second' where account_id=$1",[c]);
   const claimC2=await row("select * from public.claim_due_account_deletion($1,$2,$3)",[c,requestC,workerB]);
   assert.equal(Number(claimC2.claim_generation),Number(claimC.claim_generation)+1);assert.notEqual(claimC2.claim_token,claimC.claim_token);checks++;
   await reject(()=>row("select public.begin_claimed_auth_removal($1,$2,$3,$4)",[c,requestC,claimC.claim_token,claimC.claim_generation]),/fence rejected/,'expired generation loses');

@@ -70,7 +70,42 @@ try {
       assert.match(invalid.stderr, /2026-10-13\.md: unknown source ID "fed-scf"/);
     }
   }
-  console.log('Daily source-reference regression passed: inline and block lists, known and unknown highlight/catalyst sources.');
+  for (const style of ['inline', 'block']) {
+    const falsePrimary = edition(style)
+      .replace('https://www.federalreserve.gov/newsevents/pressreleases/other20261009a.htm', 'https://apnews.com/article/reporting-only')
+      .replace('sourceType: "primary"', 'sourceType: "reporting"');
+    const primaryResult = validate(falsePrimary);
+    assert.notEqual(primaryResult.status, 0, 'verified-primary must cite an actual primary-classified source');
+    assert.match(primaryResult.stderr, /highlight 1 is verified-primary but cites no primary source/);
+
+    const originalIds = style === 'inline'
+      ? '    sourceIds: ["fed-scf-2025"]'
+      : "    sourceIds:\n      - 'fed-scf-2025'";
+    const dualIds = style === 'inline'
+      ? '    sourceIds: ["fed-scf-2025", "reporter-two"]'
+      : "    sourceIds:\n      - 'fed-scf-2025'\n      - 'reporter-two'";
+    const reportingCandidate = edition(style)
+      .replace('verification: "verified-primary"', 'verification: "verified-multiple"')
+      .replace(originalIds, dualIds)
+      .replace('https://www.federalreserve.gov/newsevents/pressreleases/other20261009a.htm', 'https://apnews.com/article/reporting-one')
+      .replace('sourceType: "primary"', 'sourceType: "reporting"')
+      .replace('---\nSource-reference fixture.', `  - id: "reporter-two"
+    url: "https://m.apnews.com/article/reporting-two"
+    sourceType: "reporting"
+---
+Source-reference fixture.`);
+
+    const samePublisher = validate(reportingCandidate);
+    assert.notEqual(samePublisher.status, 0, 'two hostnames from the same publisher are not independent reporting evidence');
+    assert.match(samePublisher.stderr, /highlight 1 is verified-multiple but cites fewer than two independent reporting domains/);
+
+    const differentPublisher = reportingCandidate.replace(
+      'https://m.apnews.com/article/reporting-two', 'https://www.reuters.com/world/reporting-two',
+    );
+    const validMultiple = validate(differentPublisher);
+    assert.equal(validMultiple.status, 0, `different reporting domains should validate: ${validMultiple.stderr}`);
+  }
+  console.log('Daily source-reference regression passed: inline/block IDs, primary labels, independent reporting domains.');
 } finally {
   fs.rmSync(root, { recursive: true, force: true });
 }

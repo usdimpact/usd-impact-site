@@ -11,12 +11,14 @@ const read=path=>readFileSync(join(root,path),'utf8');
 const candidateNames=[
   'account-deletion-fenced-protocol-candidate',
   'account-deletion-due-batch-candidate',
+  'account-deletion-completion-recovery-candidate',
 ];
 const allowedImportingCandidate='apps/web/src/lib/account-deletion-due-batch-candidate.js';
 const candidatePaths=candidateNames.map(name=>'apps/web/src/lib/'+name+'.js');
 const sqlCandidatePaths=[
   'docs/operations/candidates/account-deletion-atomic-claim.review.sql',
   'docs/operations/candidates/account-deletion-jwt-rls-fence.review.sql',
+  'docs/operations/candidates/account-deletion-transactional-completion-escrow.review.sql',
 ];
 let checks=0,checkedFiles=0;
 

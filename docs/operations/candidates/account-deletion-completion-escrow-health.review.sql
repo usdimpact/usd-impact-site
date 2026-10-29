@@ -29,7 +29,7 @@ returns table(
   manual_review_required boolean
 )
 language sql
-stable
+volatile
 security invoker
 set search_path = ''
 as $monitor$

@@ -87,6 +87,20 @@ const migrationFiles=readdirSync(join(root,'supabase/migrations'));
 assert.ok(!migrationFiles.some(name=>/account.deletion.(atomic.claim|jwt.rls.fence)/i.test(name)),
   'Review-only SQL must not be placed in live migration directory');
 checks++;
+
+// A named-file check alone is insufficient: the same irreversible RPCs could
+// be copied into a generically named migration while the backup/restore gate
+// remains unverified. Fail on SQL CONTENT, not just on filename patterns.
+// Removing this guard requires a separately reviewed coordinated cutover PR.
+const proposedDeletionSql = /\b(?:claim_due_account_deletion|begin_claimed_auth_removal|finalize_claimed_account_deletion|confirm_claimed_auth_soft_delete|mark_claimed_auth_ambiguous|recover_confirmed_without_token|list_account_deletion_completion_recoveries|confirm_account_deletion_completion_outbox|completion_intents|confirmed_recovery_audit)\b/i;
+assert.equal(proposedDeletionSql.test('create function public.claim_due_account_deletion('),true);
+assert.equal(proposedDeletionSql.test('create table public.unrelated_fixture (id uuid)'),false);
+checks+=2;
+for (const name of migrationFiles.filter(name=>name.endsWith('.sql'))) {
+  assert.doesNotMatch(read('supabase/migrations/'+name),proposedDeletionSql,
+    'Issue #950 REVIEW-ONLY account deletion SQL found in executable migration: '+name);
+  checks++;
+}
 const workflow=read('.github/workflows/account-deletion-pg17-multiconnection.yml');
 assert.match(workflow,/PGHOST: 127\.0\.0\.1/);
 assert.match(workflow,/image: postgres:17/);

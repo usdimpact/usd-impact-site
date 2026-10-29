@@ -105,7 +105,7 @@ for (const file of files) {
         const reportingDomains = new Set(cited
           .filter((source) => source.sourceType === 'reporting')
           .map((source) => sourceClassification(source.url)?.domain
-            ?? new URL(source.url).hostname.toLowerCase().replace(/^www\\./, '')));
+            ?? new URL(source.url).hostname.toLowerCase().replace(/^www\./, '')));
         if (reportingDomains.size < 2) {
           fail(file, `published highlight ${index + 1} is verified-multiple but cites fewer than two independent reporting domains`);
         }

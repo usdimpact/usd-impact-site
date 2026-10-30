@@ -2,9 +2,24 @@
 
 > **DRAFT / HOLD / NOT A LEGAL OPINION OR RELEASE AUTHORIZATION.** This packet consolidates the proposed internal editorial decisions and makes manual sign-off straightforward. It must not be used to merge PRs, publish, buy data, retrieve external provider observations, alter original Score rights gates, or change Production. No provider/agency correspondence is sent.
 
-## Working recommendation — NOT FINAL OWNER APPROVAL
+## Recorded owner decision — APPROVED FOR DRAFT EDITORIAL DIRECTION ONLY
 
-**Proposed name and audience**: "USD Impact Macro Weekly Review" and "USD Impact Four-Week Macro Review," English-language educational prose, with a public educational audience **only as a proposal**. The independent series is not the eight-driver USD Impact Score or a continuation of legacy Score regimes. Free/public versus member access, translations, product name, retention and branding remain undecided.
+The owner explicitly approved the following on **October 30, 2026**. The instruction is recorded in [`owner-editorial-direction.draft.json`](owner-editorial-direction.draft.json) and this Draft PR; it is **not** an independent agency-rights receipt, signed legal assessment, published-content sign-off, a final public product launch, or consent to change existing releases.
+
+> Approved: proposed English names, free/public educational direction, verified Daily sources, and four-Weekly Monthly. Draft-only. Keep all rights and Production gates on HOLD.
+
+| Owner-directed choice | Approved only within this draft |
+| --- | --- |
+| English Weekly working name | **USD Impact Macro Weekly Review** |
+| English Monthly working name | **USD Impact Four-Week Macro Review** |
+| Editorial language | **English** |
+| Intended eventual reader access | **Free/public educational** (does not create or open a route, entitlement, subscription, RSS, indexing or checkout) |
+| Editorial input boundary | **Already published and verified USD Impact Daily editions**, with exact source links and separate source-specific rights review; no new vendor observation retrieval |
+| Monthly source rule | **The first four genuinely published, rights-cleared, consecutive-Friday independent Weeklies** after the latest published independent Monthly; never legacy Score-based Weeklies |
+
+**Not approved:** independent source rights, exact claim publication times, public brand/legal copy, a specific production schema, the five-Dailies rule for holiday weeks, automated ingestion, public route, preview, merge, deployment, release timing, redistribution, historical Score data reuse or any original Score rights-gate change. These remain separate HOLDs. The Oct 30 sample remains an **unpublished** draft and the next independent Monthly has **0 of 4** eligible source Weeklies.
+
+## Recommended draft technical foundation — NOT A RELEASE CONTRACT
 
 **Preferred Draft technical contract**: the source-pinned `independent-editorial-draft-v1` (`series: independent_macro_education`) in [Draft PR #1019](https://github.com/usdimpact/usd-impact-site/pull/1019), not the alternate synthetic `independent-editorial` series used in [Draft PR #1020](https://github.com/usdimpact/usd-impact-site/pull/1020). This choice is **a development recommendation**, not a Production/public schema approval. It retains exactly five date-stamped Daily source Git blob hashes, source ID/source URL verification against existing published Dailies, six reviewed editorial claims, and post-release correction evidence.
 
@@ -49,19 +64,17 @@ These notices support a narrow future path of independent paraphrase/citation ra
 - **Four-week Monthly**: exactly the **first four genuinely published, consecutive-Friday independent Weeklies** after the latest independent Monthly. Source reports need their own immutable public receipts, a verified complete source ledger, and prior Monthly source-consumption history. Legacy Oct 23 Score-derived Weekly is ineligible. **0 of 4 independent Weeklies** currently published; no independent Monthly date is promised.
 - **Status**: every validator and editorial template must return `publishReady:false` or `releaseAuthorized:false` in these Draft contracts, even when all synthetic structure tests pass.
 
-## Exactly what the owner needs to decide (no site changes)
+## Remaining decisions — separate from this approved draft direction
 
-This is a *proposed response template*, not a recorded owner decision. Reply in [Draft PR #1019's Conversation tab](https://github.com/usdimpact/usd-impact-site/pull/1019) or in ChatGPT with answers to these questions:
+The working titles, English editorial language, intended free/public audience, published Daily source boundary and four-independent-Weekly Monthly are **already approved as draft direction**. Do **not** ask the owner to repeat those approvals. The following items remain unapproved and must not be assumed from the owner's message:
 
-1. **Name:** approve the working English names "USD Impact Macro Weekly Review" / "USD Impact Four-Week Macro Review", or give replacements.
-2. **Editorial access:** prefer **free/public**, **member-only**, or **undecided** for a *future* separate educational series; this does **not** activate or price any product.
-3. **Source limitation:** confirm educational paraphrase of pinned published Dailies + exact official-source links only; no reproduction of proprietary market feeds, charts, logos or historical original Score values. Exact-item reuse and international rights remain legal/compliance HOLD.
-4. **Cadence:** approve the draft rule of one completed Friday Weekly with five actual weekdays' Dailies (HOLD if one is missing), and a four-consecutive-published-independent-Weeklies Monthly; or record a separate holiday-week exception proposal.
-5. **Final decision boundaries:** explicitly state "DRAFT ONLY; NO MERGE / NO DEPLOY / NO PUBLICATION / NO NEW DATA GET / NO RIGHTS GATE CHANGE" until separately approved.
+1. **Exact-source reuse and international/legal treatment:** rights review for each Fed, BEA and BLS item, exceptions, third-party material, commercial presentation, local jurisdiction, archival and translation use. Original Score and FRED delivery/retention reviews remain independent.
+2. **Release-time evidence:** three of four dated outcome claims in the Oct 30 source-pinned pilot have `sourceReleaseAt: null`. Require actual source release timing plus later editorial receipt, without fabricating dates or timestamps.
+3. **Weekly completeness policy:** the present *pilot validator* demands five published Monday–Friday Dailies; the owner did not approve that requirement permanently for weeks with holidays, skipped editions or source failures. Do not infer backfill permission.
+4. **One final delivery contract:** decide how the source-pinned #1019 draft and rights-matrix/synthetic-contract #1020 fit together. Their schemas differ; they must not be silently merged or treated as interchangeable.
+5. **Separate release governance:** approve independent routes, final compliance language, noindex/protected Preview, distribution, externally authenticated publisher receipts, exact-head QA, and **explicit Production launch** in distinct subsequent owner instructions. Current approval does not grant any of them.
 
-Suggested literal comment (copy/edit only if accurate):
-
-> OWNER DRAFT DIRECTION (no release): Preferred internal contract #1019 / independent-editorial-draft-v1; proposed English series names as above; editorial distribution TBD; verified published Daily paraphrase and linked official statements only; five real Daily weekdays per Weekly unless a separate exception is approved; independent Monthly uses first four consecutive published independent Weeklies; rights, international-use, attribution, exact release timing, and Production approvals remain HOLD. Do not merge/deploy/publish or change original Score.
+No mandatory hosting, DNS, account, paid-license or manual GitHub action is necessary to record the decisions in this packet. The remaining meaningful manual activity is the scoped rights review below. Keep both PRs **Draft/unmerged**.
 
 ## Manual rights check (owner or qualified reviewer)
 
@@ -78,4 +91,4 @@ Suggested literal comment (copy/edit only if accurate):
 - [PR #1020: source-rights/governance reference](https://github.com/usdimpact/usd-impact-site/pull/1020) must not be silently merged with #1019. Its denial flags remain authoritative *draft indicators*, not a present permission grant.
 - [Daily publishing issue #840](https://github.com/usdimpact/usd-impact-site/issues/840) remains a separate incident; do not schedule a duplicate Daily.
 
-**Current approval state: DRAFT-ONLY. No recorded rights, final brand, final readership or Production sign-off.**
+**Current approval state: owner-approved editorial DRAFT direction only (English working names, proposed free/public access, verified published Daily input, first-four independent Monthly). No final rights, public release schema, commercial reuse, Preview, merge or Production approval.**

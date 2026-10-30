@@ -106,6 +106,7 @@ assert.throws(
 const fixtureEnvironment = Object.freeze({
   VERCEL_ENV: 'preview',
   EMAIL_READINESS_LEDGER_ENABLED: 'true',
+  PURCHASE_ACCESS_READY_ATOMIC_LEDGER_ENABLED: 'true',
   LAUNCH_EMAIL_DISPATCH_ENABLED: 'false',
   SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
   SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_abcdefghijklmnopqrstuvwxyz',
@@ -119,32 +120,34 @@ const fixtureRow = {
   created_at: '2026-09-02T14:41:47.000Z',
   updated_at: '2026-09-02T14:41:47.000Z',
 };
+const mockFreeze = prepareAccessReadyLocaleSnapshot({
+  accessResult, snapshotAt: '2026-10-30T20:50:00.000Z',
+});
+const mockSnapshot = {
+  outbox_id: fixtureRow.id,
+  purchase_id: purchaseId,
+  account_id: accountId,
+  render_locale: 'en',
+  locale_source: 'english_fallback',
+  preference_revision: null,
+  template_version: prepared.intent.outboxRecord.template_version,
+  recipient_sha256: mockFreeze.recipientSha256,
+  snapshot_identity: mockFreeze.snapshotIdentity,
+};
 let fixturePosts = 0;
 let fixtureReads = 0;
 let providerCalls = 0;
 const mockLedger = async (url, options = {}) => {
-  assert.ok(String(url).startsWith('https://ycstrcvshdluovtuasjc.supabase.co/rest/v1/notification_outbox?'));
-  if (options.method === 'POST') {
-    fixturePosts += 1;
-    const body = JSON.parse(options.body);
-    assert.deepEqual(body.payload, {});
-    assert.equal(body.status, undefined);
-    assert.equal(body.attempt_count, undefined);
-    assert.equal(body.message_id, 'purchase_access_ready');
-    // First insert succeeds; duplicate on_conflict returns no row.
-    return new Response(JSON.stringify(fixturePosts === 1 ? [fixtureRow] : []), {
-      status: fixturePosts === 1 ? 201 : 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-  if (options.method === 'GET') {
-    fixtureReads += 1;
-    return new Response(JSON.stringify([fixtureRow]), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-  throw new Error('Unexpected synthetic ledger operation');
+  assert.equal(
+    String(url),
+    'https://ycstrcvshdluovtuasjc.supabase.co/rest/v1/rpc/ui02_enqueue_access_ready_atomic',
+  );
+  assert.equal(options.method, 'POST');
+  fixturePosts += 1;
+  assert.deepEqual(JSON.parse(options.body), { p_purchase_id: purchaseId });
+  return new Response(JSON.stringify({
+    state: 'atomic_pair_verified', outbox: fixtureRow, snapshot: mockSnapshot,
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
 const blockProvider = async () => {
   providerCalls += 1;
@@ -162,8 +165,8 @@ for (let attempt = 0; attempt < 2; attempt += 1) {
   assert.equal(queued.state.outbox.id, fixtureRow.id);
   assert.equal(queued.delivery, null);
 }
-assert.equal(fixturePosts, 2, 'same completed purchase may safely reattempt its idempotent insert');
-assert.equal(fixtureReads, 1, 'the duplicate reuses its existing ledger identity');
+assert.equal(fixturePosts, 2, 'same purchase may retry the atomic RPC safely');
+assert.equal(fixtureReads, 0, 'no generic outbox-only lookup may be used');
 assert.equal(providerCalls, 0, 'a disabled sender must not contact Resend');
 
 let unapprovedProductionCalls = 0;
@@ -213,6 +216,49 @@ const disabledProduction = await deliverPurchaseAccessReadyEmail({
 assert.equal(disabledProduction.enabled, false);
 assert.equal(disabledProduction.state.enabled, false);
 assert.equal(disabledProductionNetworkCalls, 0);
+
+
+// Atomic purchase-ledger is independently disabled, even if the generic
+// email ledger is enabled. It never falls back to unpaired writes.
+let unsafeLegacyRequests = 0;
+const disabledAtomic = await deliverPurchaseAccessReadyEmail({
+  accessResult,
+  environment: {
+    ...fixtureEnvironment, PURCHASE_ACCESS_READY_ATOMIC_LEDGER_ENABLED: 'false',
+  },
+  ledgerFetchImpl: async () => {
+    unsafeLegacyRequests += 1;
+    throw new Error('Legacy writer unexpectedly used');
+  },
+  providerFetchImpl: blockProvider,
+});
+assert.equal(disabledAtomic.enabled, false);
+assert.equal(disabledAtomic.state.enabled, false);
+assert.equal(unsafeLegacyRequests, 0);
+for (const fakeResponse of [
+  new Response('not json', { status: 200 }),
+  new Response(JSON.stringify({ state: 'atomic_pair_verified', outbox: fixtureRow }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }),
+  new Response(JSON.stringify({
+    state: 'atomic_pair_verified',
+    outbox: fixtureRow,
+    snapshot: { ...mockSnapshot, snapshot_identity: '0'.repeat(64) },
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+  new Response('{}', { status: 404 }),
+]) {
+  await assert.rejects(
+    () => deliverPurchaseAccessReadyEmail({
+      accessResult, environment: fixtureEnvironment,
+      ledgerFetchImpl: async () => fakeResponse, providerFetchImpl: blockProvider,
+    }),
+    error => [
+      'PURCHASE_ACCESS_READY_ATOMIC_RESPONSE_HOLD',
+      'PURCHASE_ACCESS_READY_ATOMIC_PAIR_HOLD',
+      'PURCHASE_ACCESS_READY_ATOMIC_RPC_HOLD',
+    ].includes(error.code),
+  );
+}
+assert.equal(providerCalls, 0);
 
 // An independent Production send-approval gate is mandatory even after a
 // durable outbox state exists. This is an offline state fixture, not a real

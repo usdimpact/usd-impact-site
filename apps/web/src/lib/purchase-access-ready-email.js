@@ -4,9 +4,9 @@ import {
   createLaunchEmailDispatchIntent,
   createResendLaunchEmailAdapter,
   dispatchEnqueuedLaunchEmail,
-  enqueueLaunchEmailIntent,
   lifecycleEmailDispatchEnabled,
 } from './launch-email-dispatch.js';
+import { enqueuePurchaseAccessReadyAtomic } from './purchase-access-ready-atomic-ledger.js';
 
 export const PURCHASE_ACCESS_READY_EMAIL_MESSAGE_ID = 'purchase_access_ready';
 export const PURCHASE_ACCESS_READY_EMAIL_BUSINESS_OBJECT_TYPE = 'purchase';
@@ -117,8 +117,11 @@ export async function deliverPurchaseAccessReadyEmail({
   nowMs = Date.now(),
 }) {
   const prepared = createPurchaseAccessReadyEmailIntent({ accessResult });
-  const state = await enqueueLaunchEmailIntent({
-    intent: prepared.intent,
+  // An outbox-only insert is forbidden for purchase-access-ready mail.
+  // The atomic RPC also freezes its locale, recipient and template.
+  const state = await enqueuePurchaseAccessReadyAtomic({
+    accessResult,
+    prepared,
     environment,
     fetchImpl: ledgerFetchImpl,
   });

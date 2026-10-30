@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "independent-macro-weekly-public-release-candidate-v0-draft",
+  "preparedDate": "2026-10-30",
+  "status": "DRAFT_CANDIDATE_NOT_PUBLISHED",
+  "releaseSeries": "independent_macro_education",
+  "episode": "2026-10-26_to_2026-10-30",
+  "coverageStart": "2026-10-26",
+  "coverageEnd": "2026-10-30",
+  "targetPublicPathCandidate": "/macro-reviews/weekly/2026-10-30/",
+  "routeFile": "apps/web/src/pages/macro-reviews/weekly/[date].astro",
+  "contentFile": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+  "contentGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+  "routePrerenderIsHardDisabled": true,
+  "compiledPagesExpected": 0,
+  "requiresLaterOwnerAuthorizationToEnableRoute": true,
+  "publicIndexing": false,
+  "robotsNoindex": true,
+  "publicArticleExists": false,
+  "actualFirstPublicationAtUtc": null,
+  "reportedCoveragePeriodIsNotPublicationDate": true,
+  "title": "USD Impact Macro Weekly Review — October 26–30, 2026",
+  "language": "en",
+  "expectedFinalPublisher": "KELA LEADS S.R.L. operating USD Impact",
+  "editorialProvenance": {
+    "stageAExactReviewedHtmlGitBlobSha": "4fc7844ebb8701dd3682326dfe4e119c8783467f",
+    "stageAOwnerLayoutAndEditorialPassed": true,
+    "stageAApprovedGitCommitSha": "77551873f9d7a68cfeec11804dc0237cdc0154ac",
+    "publicCandidateContainsNewDraftPresentationEdits": true,
+    "publicCandidateExactVersionEditorialApproved": false,
+    "olderStageAPassNotTransferable": true,
+    "sourceWeeklyContractVersion": "independent-editorial-draft-v1",
+    "sourceWeeklyGitBlobSha": "11056d67139f48ed86cebf6522149ac6e79d987e",
+    "sourceDailies": [
+      {
+        "date": "2026-10-26",
+        "exactPublishedDailyGitBlobSha": "a05089cbcb372862455157e0382a9a4e81cbd532"
+      },
+      {
+        "date": "2026-10-27",
+        "exactPublishedDailyGitBlobSha": "29ee81eb8ac3e49ebf4676c34fb025a052daf398"
+      },
+      {
+        "date": "2026-10-28",
+        "exactPublishedDailyGitBlobSha": "c7e6ae165a445658aaefe5958f753c4474e89212"
+      },
+      {
+        "date": "2026-10-29",
+        "exactPublishedDailyGitBlobSha": "068950a9aec9c4b5bee6ca8ce16ebdadd430451e"
+      },
+      {
+        "date": "2026-10-30",
+        "exactPublishedDailyGitBlobSha": "f8881e383adba66eb801a3fbbcb4d1507de32917"
+      }
+    ],
+    "sourceClaimIds": [
+      "fomc-preview-oct26",
+      "fomc-reminder-oct27",
+      "fomc-outcome-oct28",
+      "gdp-oct29",
+      "pce-oct29",
+      "eci-oct30"
+    ],
+    "laterExactClaimReviewReceiptsVerifiedForAllClaims": false,
+    "issuerDeclaredReleaseTimePlusLaterEditorialReview": "APPROVED_FOR_DRAFT_METHOD_PROPOSAL_ONLY",
+    "actualIssuerFirstWebPostingClaimed": false,
+    "historicalEarlyDailyGenerationTimesUntouched": true
+  },
+  "sourceUse": {
+    "stageBNarrowScopeJson": "docs/operations/independent-editorial/stage-b-narrow-source-use-review.draft.json",
+    "stageBNarrowScopeGitBlobSha": "bddc4733bb13475f4009eb827b6fc60fdc8ac144",
+    "sourceItems": [
+      {
+        "sourceId": "fed-october-calendar",
+        "url": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+        "issuer": "Board of Governors of the Federal Reserve System",
+        "rightsApproval": false
+      },
+      {
+        "sourceId": "fed-fomc-statement-20261028",
+        "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+        "issuer": "Board of Governors of the Federal Reserve System",
+        "rightsApproval": false
+      },
+      {
+        "sourceId": "bea-gdp-q3-20261029",
+        "url": "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+        "issuer": "U.S. Bureau of Economic Analysis",
+        "rightsApproval": false
+      },
+      {
+        "sourceId": "bea-pce-sep-20261029",
+        "url": "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026",
+        "issuer": "U.S. Bureau of Economic Analysis",
+        "rightsApproval": false
+      },
+      {
+        "sourceId": "bls-eci-q3-20261030",
+        "url": "https://www.bls.gov/news.release/archives/eci_10302026.htm",
+        "issuer": "U.S. Bureau of Labor Statistics",
+        "rightsApproval": false
+      }
+    ],
+    "exactSourceRightsGrants": 0,
+    "originalProseAndOfficialFactsOnly": true,
+    "directIssuerLinksAndAttributionOnly": true,
+    "copiedAgencySourceTextImagesOrTablesAllowed": false,
+    "vendorMarketDataOrOriginalScoreAllowed": false,
+    "mediaOutsideOnePublicEnglishWebpageAllowed": false,
+    "RomaniaEuInternationalDistributionReviewed": false,
+    "foreignLawQuestionStillPending": true,
+    "qualifiedPerItemRightsReviewComplete": false,
+    "ownerFinalRightsAcceptance": false
+  },
+  "publisherGovernance": {
+    "sourcePolicyApproval": false,
+    "finalIndependentExactContentPass": false,
+    "independentLegalAndCompliancePass": false,
+    "finalContractApproved": false,
+    "authenticatedProductionReadySourceLedger": false,
+    "mergeApproved": false,
+    "publicProductionApproved": false,
+    "indexationApproved": false,
+    "newsletterOrRssApproved": false,
+    "originalScoreRightsModificationApproved": false,
+    "previewDeploymentApproved": false
+  },
+  "technicalSafety": {
+    "branchContainsNoLivePublicEdition": true,
+    "noStaticPathsEmitted": true,
+    "noAutomaticPublicPublishing": true,
+    "noScheduledPublication": true,
+    "noDataFetchOrProviderEndpoint": true,
+    "noAdditionalMarketDataLicense": true,
+    "noLegacyReportRoutesTouched": true,
+    "noScoreEnginesTouched": true,
+    "noMembershipOrCheckoutTouched": true,
+    "noProductionRelease": true,
+    "builtArtifactsMustOmitCandidateUrl": true,
+    "candidateRemainsNoindex": true
+  },
+  "existingIndependentPublishedWeeklyCount": 0,
+  "requiredWeekliesBeforeFirstIndependentMonthly": 4,
+  "externalGoLiveRequirements": [
+    "Qualified review of five exact Fed/BEA/BLS source uses and Romania/EU/international factual link scope, including exclusions",
+    "Exact-version independent candidate article editorial and compliance PASS (Stage A PASS cannot be transferred automatically)",
+    "Verify later claim-specific editorial receipts against actual GitHub record content for Fed/GDP/PCE/ECI; do not backdate the initial Daily editions",
+    "Confirm one final independent contract and actual publication-date policy, link QA and public-readability/noindex lifting decision",
+    "Explicit exact-commit authorization to merge a future release PR and deploy to the intended public site",
+    "Record actual first publication time only after verified publication, preserve original Score HOLD, require 4 actually published Fridays for Monthly"
+  ],
+  "publishReady": false,
+  "releaseAuthorized": false
+}

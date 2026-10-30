@@ -79,8 +79,12 @@ begin
   perform pg_catalog.pg_advisory_xact_lock(
     pg_catalog.hashtextextended('ui02_account_locale:'||v_purchase.account_id::text,0)
   );
+  -- Read-only profile lookup. PostgreSQL requires UPDATE privilege for
+  -- SELECT ... FOR SHARE in this environment, and service_role intentionally
+  -- cannot UPDATE public.profiles. The advisory lock serializes locale edits;
+  -- a separate DB dispatch gate rechecks the account email and status.
   select * into v_profile from public.profiles
-  where account_id=v_purchase.account_id for share;
+  where account_id=v_purchase.account_id;
   if not found or v_profile.status <> 'active'
     or v_profile.auth_user_id is distinct from v_profile.account_id
   then raise exception 'UI02_PROFILE_IDENTITY_HOLD'; end if;

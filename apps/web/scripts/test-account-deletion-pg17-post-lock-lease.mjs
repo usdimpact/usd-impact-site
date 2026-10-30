@@ -18,7 +18,6 @@ const accounts=[
   '11111111-2222-4333-8444-555555555555',
   '22222222-3333-4444-8555-666666666666',
 ];
-const start=Date.now();
 function runSql(sql,timeout=25_000){
   connections++;
   return exec('psql',['-X','-A','-t','-q','-v','ON_ERROR_STOP=1','-c',sql],{

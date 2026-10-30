@@ -41,7 +41,7 @@ eq(gitBlob(auditText),m.sources.finalDailyAuditGitBlobSha,'frozen source audit')
 eq(owner.approvals.exactCandidateEditorialContentAndPresentationPass,true,'exact candidate owner PASS');
 eq(owner.approvals.publisherAcceptsNarrowOriginalProseOfficialFactsDirectLinksScope,true,'narrow publisher scope accepted');
 eq(owner.approvals.qualifiedCrossBorderLegalOpinionCompleted,false,'no qualified international legal opinion invented');
-eq(m.ownerDecision.qualifedCrossBorderLegalClearance,false,'qualified rights clearance missing');
+eq(m.ownerDecision.qualifiedCrossBorderLegalClearance,false,'qualified rights clearance missing');
 eq(m.ownerDecision.publicProductionApproval,false,'owner has not approved public Production');
 eq(m.intendedEdition.actualFirstUsdImpactPublicationTimestampUtc,null,'no backdated first publication');
 eq(m.intendedEdition.generatedPublicPageCount,0,'no publicly emitted edition');
@@ -99,7 +99,7 @@ ok(consent.includes('privacy-consent-reject') && consent.includes('privacy-conse
     'existing consent has choices; no new consent behavior added');
 eq(m.existingSiteReuse.releasePageUsesBaseLayoutNow,false,'standalone source has not been integrated with site shell');
 ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
-   !m.existingSiteReuse.privacyAndCookieComplianceNotCertified,
+   m.existingSiteReuse.privacyAndCookieComplianceNotCertified,
     'future site-shell use requires review; legal certification not invented');
 
 const builtOutput = process.argv.includes('--built-output');

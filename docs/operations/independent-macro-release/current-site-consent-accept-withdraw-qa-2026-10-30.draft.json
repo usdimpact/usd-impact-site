@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "usd-impact-existing-consent-accept-withdraw-browser-qa-v1-draft",
+  "observedDate": "2026-10-30",
+  "testedUrl": "https://www.usd-impact.com/privacy/",
+  "browserRunId": "363e2d45-857f-4de1-84c2-6432d8b5069b",
+  "browserRunUrl": "https://agent.tinyfish.ai/runs/363e2d45-857f-4de1-84c2-6432d8b5069b",
+  "environment": "anonymous disposable browser on EXISTING public privacy page",
+  "observed": {
+    "firstVisitBannerOffersRejectReviewAccept": true,
+    "clickedAcceptAnalytics": true,
+    "checkboxCheckedAfterAccept": true,
+    "footerPrivacySettingsModalOpened": true,
+    "checkboxCheckedAfterReopen": true,
+    "uncheckedAnalyticsToWithdraw": true,
+    "savedChoice": true,
+    "checkboxStillUncheckedAfterSecondReopen": true,
+    "finalAnalyticsPreferenceRejected": true,
+    "networkBeaconsInspected": false,
+    "googleTagScriptPresenceInspected": false,
+    "rawCookieJarInspected": false,
+    "postWithdrawalAnalyticsCookieErasureConfirmed": false,
+    "futureMacroWeeklySharedLayoutRendered": false,
+    "qualifiedPrivacyComplianceSignoff": false
+  },
+  "limitations": [
+    "Visible consent preference toggle was observed; network requests, GA4 script execution, cookie content/deletion were not inspected.",
+    "The proposed shared-layout Macro Weekly was not deployed or rendered; its actual consent presentation still requires separate protected review.",
+    "No user credentials, server settings or public page were changed."
+  ],
+  "ownerNewSharedLayoutEditorialPass": false,
+  "sourceUseAndInternationalLegalGatesOnHold": true,
+  "publicProductionAndIndexingOnHold": true,
+  "releaseAuthorized": false
+}

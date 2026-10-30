@@ -271,7 +271,9 @@ begin
   then raise exception 'UI02_DISPATCH_SOURCE_HOLD'; end if;
 
   select * into v_purchase from public.purchases where id=v_snapshot.purchase_id for share;
-  select * into v_profile from public.profiles where account_id=v_snapshot.account_id for share;
+  -- Service role has SELECT but intentionally no UPDATE on profiles.
+  -- Read-only revalidation immediately before any future provider handoff.
+  select * into v_profile from public.profiles where account_id=v_snapshot.account_id;
   select * into v_ent from public.entitlements where purchase_id=v_snapshot.purchase_id for share;
   if not found or v_ent.version <> v_outbox.state_version
     or v_ent.account_id <> v_snapshot.account_id

@@ -2,6 +2,12 @@
 
 Owner direction: October 30, 2026. This is a zero-additional-market-data-license-budget, completely separate editorial family. This directory contains internal working files in an isolated, nondeploying agent/* pull request. It is NOT an Astro content collection, an existing Weekly/Monthly report, a Score-derived product, a public route, a launch request, or a licensed dataset.
 
+## Approved draft editorial direction — October 30, 2026
+
+The owner approved **English** working titles **USD Impact Macro Weekly Review** and **USD Impact Four-Week Macro Review**, with a **future free/public educational** readership direction, content grounded in **already published and verified USD Impact Dailies**, and a Monthly from the **first four genuinely published consecutive-Friday independent Weeklies**. This is approval for **draft preparation only**, not activation of any free/public web route or redistribution rights.
+
+Machine-readable scope and explicit denied release actions: [owner-editorial-direction.draft.json](owner-editorial-direction.draft.json). Supporting source and legal decision checklist: [canonical-contract-owner-decision-2026-10-30.md](canonical-contract-owner-decision-2026-10-30.md). All exact-source rights, international reuse, archives/retention, final publishing schema, public-brand legal copy, five-Dailies holiday policy, Preview, merge and Production authorization remain separate HOLDs. Do not infer that a source citation or previously published Daily permits a new publication.
+
 ## Source and release boundary
 
 - Only the already published October 26–30 Daily markdown files are read by the offline validator. Their exact Git blob hashes are pinned in weekly-2026-10-30.draft.json. No new official-provider GET/HEAD, live prices, paid model call, API, data persistence or scheduled workflow is used.
@@ -38,7 +44,7 @@ A future independent Monthly would use exactly the first four **separately publi
 ## Required decisions before a separate release-stage PR
 
 - Legal/provider/source reviewer: clarify reuse terms for each *exact* Federal Reserve, BEA, BLS or other official release, allowed fact quotation/derivatives, commercial display, attribution, machine-readable format, snapshots and archives. Official government hosting or a Daily citation does not automatically settle every series or downstream use; no unapproved source fetch.
-- Owner: approve independent editorial brand, scope, source boundaries, audience, non-Score methodology, output schema and free-vs-member distribution without implying that the legacy Score was replaced.
+- Owner: draft English working names, English editorial language, free/public educational direction, verified Daily sources and four-independent-Weekly Monthly **recorded as approved for draft-only preparation**. **Still pending separately:** final public-brand/legal wording, holiday/missing-Daily policy, unified public schema, permitted distribution implementation and publication/release authorization; never imply the legacy Score was replaced.
 - Engineering: implement a new separately approved publication contract, source-rights receipts, independent content schema/route and validator, preview authorization, isolation and rollback plan. Never change original Score/Weekly/Monthly schema or reopen their rights gate as part of this path.
 - Editorial/compliance: review final exact-version text, each dated assertion, release-versus-observation units, post-release receipts, attribution and no-investment-advice disclosure.
 - Release: new owner Production authorization, exact-head CI, an explicitly approved non-Production Preview and separate go-live review. **This Draft PR must stay unmerged.**

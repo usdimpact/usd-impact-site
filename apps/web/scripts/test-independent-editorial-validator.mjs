@@ -150,6 +150,10 @@ test("static exact-source rights ledger is entirely denied and release HOLD",()=
  assert.equal(ledger.authorizedAdditionalMarketDataLicenseBudgetUsd,0);
  assert.equal(ledger.originalScoreRightsGateMustRemainHold,true);
  assert.equal(ledger.sources.length,7);
+ const calendar=ledger.sources.find((source) => source.id === "fed_fomc_calendar");
+ assert.equal(calendar.sourceUrl, "https://www.federalreserve.gov/newsevents/2026-october.htm");
+ assert.equal(calendar.alternateOfficialCalendarUrl, "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm");
+ assert.equal(calendar.sourceUrlAlignment, "PILOT_DAILY_CITATION_EXACT_MATCH_NOT_RIGHTS_APPROVAL");
  for (const source of ledger.sources) {
   assert.equal(source.privateLegalOrOwnerReceipt, null);
   assert.deepEqual(Object.keys(source.permissions), ledger.permissionDimensions);

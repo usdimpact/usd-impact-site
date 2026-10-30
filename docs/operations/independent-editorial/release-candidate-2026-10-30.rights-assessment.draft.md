@@ -1,6 +1,6 @@
 # Rights assessment — independent Macro Weekly, Romania-operated first use
 
-**Status: ISSUE-SPOTTING / NOT A LEGAL CLEARANCE / ALL PUBLIC-RELEASE GATES HOLD**  
+**Status: OWNER'S NARROW FACTS/LINKS SCOPE ACCEPTED / INDEPENDENT LEGAL CLEARANCE AND PUBLIC RELEASE STILL HOLD**  
 **Prepared:** 30 October 2026  
 **Proposed publisher:** KELA LEADS S.R.L. (Romania), operating USD Impact  
 **Intended scope:** one English-language, free, public educational webpage using original commentary, official macroeconomic facts, five exact direct issuer hyperlinks, and named issuer attribution.
@@ -25,7 +25,7 @@ The federal notices generally support using government-produced public-domain ma
 - [USAGov's 2026 government materials guidance](https://www.usa.gov/government-copyright) expressly warns that U.S. government works may receive copyright protection outside the United States; protected third-party works, agency logos, trademark/endorsement and privacy/publicity rights need distinct analysis. Therefore *U.S. federal public domain* is not a blanket global grant to republish whole materials.
 - A plain hyperlink and an independently expressed historical fact are materially different from copying the agency's expressive release. The draft contains issuer credit and avoids suggesting endorsement or agency partnership.
 
-**Assessment for the *narrow draft*:** the facts/original-prose/link-only design substantially avoids the largest permissions problem and does not inherently require the original Score's S&P DJI or any separate financial-vendor data license. It supports proceeding with a *review candidate*, but cannot independently certify all trademark, cross-border, database, archival, defamation, privacy or advertising-law issues for a deployed public commercial website. A competent human rights or legal decision-maker should record whether this narrow use is acceptable for the actual publisher and intended jurisdictions before Production.
+**Assessment for the *narrow draft*:** the facts/original-prose/link-only design substantially avoids the largest permissions problem and does not inherently require the original Score's S&P DJI or any separate financial-vendor data license. It supports proceeding with a *review candidate*, but cannot independently certify all trademark, cross-border, database, archival, defamation, privacy or advertising-law issues for a deployed public commercial website. The owner has now accepted the narrowly defined facts/original-prose/issuer-links scope for this publisher after considering the recorded Romania/EU/international caveats, in the [exact-version scope receipt](release-candidate-2026-10-30.owner-editorial-and-narrow-use-pass.draft.json). This records a publisher use decision, **not** an independently qualified opinion on every foreign legal jurisdiction or third-party exception before Production.
 
 ## Remaining localized publication concerns
 
@@ -36,15 +36,15 @@ The federal notices generally support using government-produced public-domain ma
 5. **Publication time.** The published article may truthfully cite each issuer-stated release/embargo time without asserting independently observed HTTP posting instants. The actual date of *USD Impact's* publication must be recorded only when publication occurs, never backdated to 30 October or the weekly coverage dates.
 6. **Future editing.** Adding market-price claims, vendor-derived numbers, original Score calculations, agency images or additional outlets invalidates this narrow review and requires new sourcing and legal scope.
 
-## Decision record — unapproved
+## Decision record — narrow owner acceptance recorded; qualified clearance and public release unapproved
 
 | Question | Current value | What would close it |
 | --- | --- | --- |
 | Five exact issuer item authorship/third-party check | **PENDING** | A dated reviewer finding against all five exact links, documenting any excluded components |
-| Original prose/facts/links with issuer credit for a Romanian operator | **PENDING** | Publisher-authorized specific permitted-use conclusion, including international scope |
+| Original prose/facts/links with issuer credit for a Romanian operator | **OWNER NARROW USE ACCEPTED** (exact HTML, explicit international caveats) | Preserve narrow scope; qualified foreign-law and third-party exception review still pending before Production |
 | Final legal/compliance and site privacy/cookie use | **PENDING** | Actual site integration QA and owner/qualified decision |
 | Draft official issue-time + independently verified later editorial review | **Approved as *proposed* method only** | Authenticate claims, specific later receipts and final owner acceptance for actual publication |
-| Independent exact final-candidate editorial PASS | **PENDING** | Review this newly changed HTML version, not the already-PASSED Stage A HTML |
+| Independent exact final-candidate editorial PASS | **PASS — exact candidate HTML blob `4ce3ea62d8db328fa03739ae15e2571f5f6e99bd`** | Repeat only after actual HTML changes; do not transfer this PASS to a later edited release |
 | Merge and Production authorization | **DENIED** | A separate, explicit instruction for a specific final release commit/environment |
 
 Do not flip any pre-existing source-rights matrix or production gate based on this memo. [First-use Stage B review](stage-b-narrow-source-use-review.draft.json) and [candidate manifest](release-candidate-2026-10-30.manifest.draft.json) keep `releaseAuthorized:false` and `publishReady:false`.

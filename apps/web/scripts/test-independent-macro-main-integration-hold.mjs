@@ -275,6 +275,39 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
     'UI-only consent observation does not confer full tracking, legal or publication PASS');
 }
 
+// Latest owner attestation is distinct from independently preserved GA4/cookie trace.
+{
+  const receiptText=from('../../../docs/operations/independent-macro-release/production-privacy-owner-devtools-pass-2026-10-31.draft.json');
+  const receipt=JSON.parse(receiptText);
+  eq(receipt.schemaVersion,'usd-impact-production-privacy-owner-devtools-pass-v1-draft',
+     'owner-reported DevTools follow-up scope');
+  eq(gitBlob(receiptText),m.existingSiteReuse.currentPublicNetworkCookieOwnerAttestationReceiptGitBlobSha,
+     'exact owner DevTools attestation Git blob');
+  eq(m.existingSiteReuse.currentPublicNetworkCookieOwnerAttestationReceiptPath,
+     'docs/operations/independent-macro-release/production-privacy-owner-devtools-pass-2026-10-31.draft.json','attestation file location pinned');
+  eq(receipt.lastReviewedPrHeadBeforeReceipt,'45b5a41aa632ed298e448d497820016ddc4f85e9',
+     'attestation tied to exact reviewed PR baseline');
+  eq(receipt.responseVerbatim,'all PASS please continue','owner reported latest manual results');
+  ok(receipt.ownerAttestation.requestedRemainingNetworkAndCookieChecksReportedPass &&
+     m.existingSiteReuse.currentPublicNetworkCookieOwnerAttestationReceived,
+     'owner attested completion without demanding a redundant review');
+  ok(receipt.priorScreenshotLimitations.lastReceivedNetworkFilterWasDocNotAll &&
+     receipt.priorScreenshotLimitations.lastReceivedApplicationCookiesParentWasCollapsed &&
+     receipt.priorScreenshotLimitations.noNewIndependentScreenshotOrHarAttachedToThisReceipt &&
+     receipt.ownerAttestation.exactRequestRowsAndCookieNamesNotSuppliedInLatestReply,
+     'do not manufacture direct network/cookie evidence from screenshots');
+  ok(!receipt.independentVerification.ga4RawNetworkTrafficCapturedAndIndependentlyInspected &&
+     !receipt.independentVerification.exactBeforeAndAfterCookieNamesIndependentlyInspected &&
+     !receipt.independentVerification.qualifiedGdprEprivacySignoff &&
+     !receipt.independentVerification.qualifiedRomaniaEuInternationalCopyrightSignoff &&
+     !m.existingSiteReuse.gaNetworkAndCookieInspectionCompleted &&
+     !m.existingSiteReuse.independentlyCapturedFullProductionNetworkCookieTraceAvailable &&
+     !m.firstWeeklyRightsAndPrivacyEvidenceDraft.productionCookieAndNetworkTraceCompleted &&
+     Object.values(receipt.decisions).filter(v=>v===true).length===1 &&
+     receipt.decisions.presentationAndOwnerFunctionalQaRecorded,
+     'UI/owner attestation never silently becomes legal, release or network proof');
+}
+
 // Exact-source legal/privacy review packet is only evidence: it grants NO rights.
 {
   const packet=m.firstWeeklyRightsAndPrivacyEvidenceDraft;

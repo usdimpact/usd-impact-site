@@ -107,6 +107,10 @@
     "currentPublicConsentRejectPersistenceObserved": true,
     "currentPublicConsentAcceptWithdrawUiObserved": true,
     "currentPublicConsentAcceptWithdrawUiEvidenceGitBlobSha": "01468973c2cd3698dee6ddc2b15ca977311edb8d",
+    "currentPublicNetworkCookieOwnerAttestationReceived": true,
+    "currentPublicNetworkCookieOwnerAttestationReceiptPath": "docs/operations/independent-macro-release/production-privacy-owner-devtools-pass-2026-10-31.draft.json",
+    "currentPublicNetworkCookieOwnerAttestationReceiptGitBlobSha": "acb9c5e2a21e6d2ade06bfcae8619572022ca1ec",
+    "independentlyCapturedFullProductionNetworkCookieTraceAvailable": false,
     "gaNetworkAndCookieInspectionCompleted": false,
     "optionalAnalyticsAcceptanceAndWithdrawalBrowserTestCompleted": false,
     "futureMacroSharedLayoutBrowserTestCompleted": false

@@ -10,6 +10,10 @@ Owner approved preparing a distinct educational Weekly and Monthly with existing
 
 Authoritative issues: [Score redistribution #155](https://github.com/usdimpact/usd-impact-pipeline/issues/155), [FRED retention #282](https://github.com/usdimpact/usd-impact-pipeline/issues/282), [independent Macro Context Panel #313](https://github.com/usdimpact/usd-impact-pipeline/issues/313), and [Daily scheduler incident #840](https://github.com/usdimpact/usd-impact-site/issues/840). Existing original-Score Monthly source packet: [Draft #1014](https://github.com/usdimpact/usd-impact-site/pull/1014). None is closed or superseded by this proposal.
 
+## Relationship to the parallel source-pinned editorial specimen
+
+The same owner-approved independent editorial goal also has an older independent [Draft PR #1019](https://github.com/usdimpact/usd-impact-site/pull/1019) containing the exact October 26–30 Daily hashes, a six-claim unpublished Weekly and an empty Monthly template. That PR uses a **different draft contract and series identifier** and adds its own separate report-quality test command. This #1020 branch provides an **independent all-deny rights review and synthetic-only structural rules**. The two are complementary review artifacts, **not interchangeable content contracts**. A reviewed convergence analysis is in [the Draft convergence packet](independent-editorial-draft-convergence-2026-10-30.md). No combined release architecture, merge order, public URLs or shared runtime is approved.
+
 ## Publication identity and separation
 
 Working titles: **Independent Weekly Macro Review** and **Independent Four-Week Macro Review**. Editorial prose only, no numerical Score or synthetic replacement metric; the name, legal/compliance copy, subscriptions, routes and audience promises require separate approval.
@@ -47,7 +51,7 @@ Implemented for structural rehearsal in [the pure validator](../../apps/web/scri
 
 The validator rejects unknown schema fields and legacy keys such as `score`, `scorePath`, `regime`, `zScore`, `contributions`, original Weekly URLs and public Score data pointers. All outputs **always** contain `releaseAuthorized:false`, even when `structurallyValid:true`. Syntactically plausible approval-reference strings are *not* legal or owner signatures.
 
-**Offline testing:** `node --test apps/web/scripts/test-independent-editorial-validator.mjs` from repository root or `npm run validate:reports` inside `apps/web`. The latter runs only the new invented-data tests in addition to existing report QA. The 45 cases already passed against the staged module in an isolated JavaScript harness. GitHub exact-head CI provides independent Node evidence when complete.
+**Offline testing:** `node --test apps/web/scripts/test-independent-editorial-validator.mjs` from repository root or `npm run validate:reports` inside `apps/web`. The latter runs only the new invented-data tests in addition to existing report QA. The 50 cases already passed against the staged module in an isolated JavaScript harness. GitHub exact-head CI provides independent Node evidence when complete.
 
 ## Proposed independent Monthly schema and eligibility
 
@@ -60,6 +64,7 @@ Fail-closed validator requirements:
 - No original Score `scorePath`, regime, Score history, component values, or legacy `weekly_input` reference anywhere in the derived Monthly.
 - No duplicate reuse of a Weekly across published independent Monthly editions.
 - Require explicit **complete prior independent Monthly history** to check that source Weeklies were not used by another published Monthly. Missing history, overlapping Weeklies or duplicate Monthly period must fail closed.
+- The Monthly structural validator also requires a **caller-attested complete independent Weekly inventory** and verifies its chosen four sources are exactly the **first four published Weeklies after the preceding independent Monthly**, not merely any four consecutive Friday dates. A boolean completeness assertion is not proof of an external source ledger, so final publishing needs independent receipts and authorization; this remains a Draft-only structural check.
 - Explicit separate rights/compliance, editorial and Production approvals; absence or ambiguity fails closed. The offline validator cannot authenticate a claimed receipt and **never authorizes publication**.
 
 Current state: **zero independent Weeklies exist**. The October 23 legacy Weekly is not eligible. Consequently there is **no independent Monthly release date** and no authority to backdate an independent Weekly for October 30.
@@ -97,7 +102,7 @@ The Oct 30 Daily's original `generatedAt` precedes ECI release; the separately r
 - [x] Record relevant agency **general reuse policies** and seven exact issuer candidate references in the [source-rights review matrix](independent-editorial-source-rights-review-2026-10-30.md) and [all-deny JSON ledger](../../governance/independent-editorial-source-rights-review-2026-10-30.json). **This is not exact-item rights clearance:** 49/49 permissions and all 10 publication gates remain false.
 - [ ] Complete issuer exact-source third-party/copyright, link/excerpt, commercial use, translation, automated retrieval and retention reviews; record an actual scoped authority decision/receipt. Do not fetch market observations.
 - [ ] Approve independent methodology, final publication naming, reader-facing disclaimers and precise claim-level editorial signoff.
-- [x] Stage pure standalone validator and synthetic-only test suite after owner continuation approval; 45/45 V8 in-memory regressions passed. Append only the new offline test command to the existing report-quality task on this Draft branch. **No runtime integration, publishing workflow edit, scheduled provider job or Production use.** Legacy validators remain unchanged.
+- [x] Stage pure standalone validator and synthetic-only test suite after owner continuation approval; 50/50 V8 in-memory regressions passed on the expanded source-inventory rules (reverify in Node CI on the new exact head). Append only the new offline test command to the existing report-quality task on this Draft branch. **No runtime integration, publishing workflow edit, scheduled provider job or Production use.** Legacy validators remain unchanged.
 - [ ] Verify the amended `validate:reports` task runs the new Node tests on the exact PR head, without substituting earlier-head CI. No provider retrieval is needed.
 - [ ] Produce four approved and *actually published* independent consecutive Weeklies, then separately review a Monthly from those exact editions.
 - [ ] Exact-head CI + protected Preview + accessibility/sitemap/noindex + public rights + owner Production approval **all separately required** before release. No current approval covers these steps.

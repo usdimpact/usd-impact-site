@@ -1,7 +1,7 @@
 {
   "schemaVersion": "independent-weekly-release-timing-evidence-v0-draft",
   "preparedDate": "2026-10-30",
-  "status": "EVIDENCE_ONLY_ISSUE_TIMES_AND_EDITORIAL_CHRONOLOGY_RECORDED_ACTUAL_ISSUER_POSTING_UNVERIFIED",
+  "status": "ISSUER_DECLARED_RELEASE_TIMES_CONFIRMED_POSTING_UNKNOWN_RIGHTS_HOLD",
   "sourceRetrievalPerformed": false,
   "rightsGranted": false,
   "publicationAuthorized": false,
@@ -31,7 +31,19 @@
         "observedOriginalDailyGeneratedAtUtc": "2026-10-28T19:37:19Z",
         "claimSpecificOwnerPassForIndependentReport": false,
         "exactIssuerPostingTimeAuthenticated": false
-      }
+      },
+      "issuerDeclaredReleaseAtUtc": "2026-10-28T18:00:00Z",
+      "issuerDeclarationType": "ISSUER_STATED_FOR_RELEASE_AT",
+      "issuerDeclaredTimePhrase": "For release at 2:00 p.m. EDT",
+      "issuerDeclarationSourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+      "issuerStatementAndReportedFiguresChecked": true,
+      "issuerStatementCheckDescription": "Official FOMC statement confirms 3.75%-4.00% hold, 10-2 statement vote, 25-basis-point increase preferred by two members",
+      "issuerDeclaredReleaseTimeIsNotWebPostingTime": true,
+      "issuerIssueTimeSupportedByExactPrimaryRelease": true,
+      "issuerActualWebsiteFirstPostingAtUtc": null,
+      "publisherFinalAcceptanceOfIssueTimeAsEvidence": false,
+      "independentWeeklyClaimApproval": false,
+      "exactItemReuseAuthorized": false
     },
     {
       "claimId": "gdp-oct29",
@@ -60,7 +72,22 @@
         "exactIssuerPostingTimeAuthenticated": false,
         "independentWeeklyEditorialApproval": false,
         "exactItemSourceRightsApproval": false
-      }
+      },
+      "issuerDeclaredReleaseAtUtc": "2026-10-29T12:30:00Z",
+      "issuerDeclarationType": "ISSUER_EMBARGOED_UNTIL_RELEASE_AT",
+      "issuerDeclaredTimePhrase": "EMBARGOED UNTIL RELEASE AT 8:30 a.m. EDT, Thursday, October 29, 2026",
+      "issuerDeclarationSourceUrl": "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+      "issuerStatementAndReportedFiguresChecked": true,
+      "issuerStatementCheckDescription": "Official GDP Q3 advance release confirms 3.4% SAAR Q3 real GDP versus 2.2% Q2",
+      "issuerDeclaredReleaseTimeIsNotWebPostingTime": true,
+      "issuerIssueTimeSupportedByExactPrimaryRelease": true,
+      "issuerActualWebsiteFirstPostingAtUtc": null,
+      "publisherFinalAcceptanceOfIssueTimeAsEvidence": false,
+      "independentWeeklyClaimApproval": false,
+      "exactItemReuseAuthorized": false,
+      "alternateUrlAlsoShowsSameDatedPrimaryRelease": true,
+      "alternateUrlVerifiedReadOnly": "https://www.bea.gov/index.php/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+      "alternateUrlIsRedirectAssertion": false
     },
     {
       "claimId": "pce-oct29",
@@ -89,7 +116,19 @@
         "exactIssuerPostingTimeAuthenticated": false,
         "independentWeeklyEditorialApproval": false,
         "exactItemSourceRightsApproval": false
-      }
+      },
+      "issuerDeclaredReleaseAtUtc": "2026-10-29T12:30:00Z",
+      "issuerDeclarationType": "ISSUER_EMBARGOED_UNTIL_RELEASE_AT",
+      "issuerDeclaredTimePhrase": "EMBARGOED UNTIL RELEASE AT 8:30 a.m. EDT, Thursday, October 29, 2026",
+      "issuerDeclarationSourceUrl": "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026",
+      "issuerStatementAndReportedFiguresChecked": true,
+      "issuerStatementCheckDescription": "Official September PCE release confirms 3.6% headline y/y and 3.1% core y/y, excluding food and energy",
+      "issuerDeclaredReleaseTimeIsNotWebPostingTime": true,
+      "issuerIssueTimeSupportedByExactPrimaryRelease": true,
+      "issuerActualWebsiteFirstPostingAtUtc": null,
+      "publisherFinalAcceptanceOfIssueTimeAsEvidence": false,
+      "independentWeeklyClaimApproval": false,
+      "exactItemReuseAuthorized": false
     },
     {
       "claimId": "eci-oct30",
@@ -106,20 +145,39 @@
       "status": "EXISTING_OFFICIAL_RELEASE_TIME_AND_EDITORIAL_PASS_RECORDED_ACTUAL_WEB_POST_TIME_UNKNOWN_RIGHTS_HOLD",
       "notes": "The existing independently approved October 30 Daily records 12:30 UTC as the official BLS release time and a later owner content PASS. This does NOT establish an independently observed exact live website posting instant; accordingly exactIssuerActualPublicationAtUtc is null. The approved Weekly sourceReleaseAt value remains unchanged, and source rights are still pending.",
       "recordedEditorialSourceReleaseAtUtc": "2026-10-30T12:30:00Z",
-      "releaseTimeType": "OFFICIAL_ISSUE_TIME_ALREADY_PINNED_IN_DAILY_NOT_INDEPENDENT_HTTP_POST_RECEIPT"
+      "releaseTimeType": "OFFICIAL_ISSUE_TIME_ALREADY_PINNED_IN_DAILY_NOT_INDEPENDENT_HTTP_POST_RECEIPT",
+      "issuerDeclaredReleaseAtUtc": "2026-10-30T12:30:00Z",
+      "issuerDeclarationType": "ISSUER_EMBARGOED_UNTIL_RELEASE_AT",
+      "issuerDeclaredTimePhrase": "Transmission of material in this release is embargoed until 8:30 a.m. (ET) Friday, October 30, 2026",
+      "issuerDeclarationSourceUrl": "https://www.bls.gov/news.release/archives/eci_10302026.htm",
+      "issuerStatementAndReportedFiguresChecked": true,
+      "issuerStatementCheckDescription": "BLS ECI September 2026 issuer release confirms 0.8% q/q seasonally adjusted and 3.4% over 12 months not seasonally adjusted",
+      "issuerDeclaredReleaseTimeIsNotWebPostingTime": true,
+      "issuerIssueTimeSupportedByExactPrimaryRelease": true,
+      "issuerActualWebsiteFirstPostingAtUtc": null,
+      "publisherFinalAcceptanceOfIssueTimeAsEvidence": false,
+      "independentWeeklyClaimApproval": false,
+      "exactItemReuseAuthorized": false
     }
   ],
   "remainingDecisions": [
-    "For the Fed and both BEA claims, obtain authoritative issue-time provenance and source-specific later editorial receipts before changing sourceReleaseAt in the pinned Weekly JSON. A documented scheduled time alone is not a verified actual issuer posting time.",
-    "For GDP, human reviewer must reconcile canonical exact pinned /news/ URL versus the existing curated /index.php/news/ outcome URL without asserting equality from appearance alone.",
-    "Every exact-item reuse, international/commercial/attribution/retention decision remains DENIED pending qualified reviewer; no current publication/Preview/merge approval.",
-    "No historical generation timestamp may be rewritten and no future Monthly may count this unpublished Weekly.",
-    "For the BLS ECI claim, distinguish the already reviewed 12:30 UTC official release/issue time from the not-independently-observed exact web posting instant; do not relabel the official time as a server posting timestamp."
+    "Issuer-stated official release/embargo times and the corresponding public facts have now been checked against each of the four exact primary issuer release pages, with the original Weekly sourceReleaseAt fields unchanged. Decide whether issuer-stated official issue time plus verified later exact-version editorial receipt is acceptable for a future independent published report.",
+    "Actual first HTTP/web posting time for all four issuer pages remains unverified and null; it must never be inferred from an issuer-stated release time or embargo.",
+    "For Fed and BEA claims, review existing PR 926 and PR 938 source correction evidence and record explicit claim-specific later editorial approval if the future method requires it. Do not invent approval or retroactively backdate a review.",
+    "The exact five-item Fed/BEA/BLS reuse and Romania/EU/LATAM distribution/retention review is pending independently of factual and timing accuracy; all publication gates remain denied.",
+    "GDP /news/ and /index.php/news/ URLs were both observed showing the same official dated release but redirect/canonical-equivalence behavior was not established, and exact Daily citation identity remains pinned.",
+    "No original Score/Monthly inputs or synthetic publication receipt can substitute for a genuinely published independent Weekly."
   ],
   "evidenceSemantics": {
     "scheduledReleaseAtUtc": "Curated schedule or agency-announced standard issued time; does not certify live website posting or the time an editor inspected the source",
     "recordedEditorialSourceReleaseAtUtc": "A time pinned in a pre-existing approved Daily/Weekly editorial receipt; the value's existence does not independently authenticate web-server posting",
     "exactIssuerActualPublicationAtUtc": "Only populate with directly authenticated item-specific issuer publication metadata/receipt. A schedule, Daily generatedAt, Git commit or post-release owner comment is not enough",
     "verifiedPostReleaseClaimReceipt": "A dated source-specific editorial provenance receipt, not a data redistribution or commercial rights approval"
-  }
+  },
+  "reviewedOfficialWebReleasePagesOn": "2026-10-30",
+  "sourceRetrievalMeaning": "No automated provider/API or market-data feed retrieval was performed by this Draft implementation. The issuer's publicly accessible news-release HTML was examined read-only for issue-time and factual checks.",
+  "officialIssuerWebPagesReadOnlyChecked": true,
+  "originalWeeklyNullClaimIssueTimesIntentionallyUnchanged": true,
+  "issuerDeclaredReleaseTimeDoesNotProveActualWebPosting": true,
+  "issuerIssueTimeAcceptanceForFuturePublication": "OWNER_DECISION_REQUIRED"
 }

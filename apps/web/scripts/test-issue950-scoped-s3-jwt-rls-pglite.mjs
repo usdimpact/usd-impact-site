@@ -318,6 +318,47 @@ try{
   assert.equal(await count(pdfDb,"select count(*) as n from storage.objects where bucket_id in ('library-pass-assets','library-pass-books')"),21);
   checks+=2;
 } finally {await pdfDb.close();}
+// PDF-only restore pilot preflight/drift negative fixtures, disposable only.
+// Installation must refuse copied customer accounts, unrelated data or widened
+// permissions; cleanup must refuse same-name changes without DBA inspection.
+for(const [reason,settings,pattern] of [
+  ['active-profile',{activeProfile:true},/synthetic Auth\/profile isolation proof missing/],
+  ['wrong-admin-tag',{wrongMarker:true},/synthetic Auth\/profile isolation proof missing/],
+  ['wrong-email',{wrongEmail:true},/synthetic Auth\/profile isolation proof missing/],
+  ['paid-entitlement',{entitledUser:true},/synthetic user has paid entitlements/],
+  ['missing-synthetic-auth',{noAuthUser:true},/synthetic Auth\/profile isolation proof missing/],
+  ['extra-object',{extra:true},/exact 21-key immutable manifest mismatch/],
+  ['public-book-bucket',{publicBucket:true},/exact two private buckets required/],
+  ['existing-storage-policy',{existingPolicy:true},/unexpected pre-existing Storage policies/],
+]){
+  const db=await makeDb('restore',settings);
+  try{
+    await assert.rejects(db.exec(pdfRender(pdfOnly)),pattern,'PDF-only '+reason);
+    await db.exec('rollback');
+    assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),
+      settings.existingPolicy?1:0);
+    checks+=2;
+  }finally{await db.close();}
+}
+for(const scenario of ['widened-select','widened-update-check','partial-install']){
+  const db=await makeDb('restore');
+  try{
+    await db.exec(pdfRender(pdfOnly));
+    if(scenario==='widened-select'){
+      await db.exec("alter policy issue950_pdf_pilot_session_objects_select on storage.objects using ((select auth.uid()) = '22222222-3333-4444-8555-666666666666'::uuid and now() < now() + interval '2 hours')");
+    }else if(scenario==='widened-update-check'){
+      await db.exec("alter policy issue950_pdf_pilot_session_objects_update on storage.objects with check (true)");
+    }else{
+      await db.exec("drop policy issue950_pdf_pilot_session_objects_insert on storage.objects");
+    }
+    await assert.rejects(db.exec(pdfRender(pdfUndo)),/unexpected policy identity or shape/,'PDF-only '+scenario);
+    await db.exec('rollback');
+    assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),
+      scenario==='partial-install'?3:4);
+    checks+=2;
+  }finally{await db.close();}
+}
+
 console.log('Issue #950 pdf-only restore RLS: disposable PostgreSQL PASS; no provider call.');
 
 console.log('Issue #950 S3 JWT scoped recovery review: '+checks+

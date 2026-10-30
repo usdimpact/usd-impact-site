@@ -37,7 +37,7 @@ These references are relevant to link-out and accurate issuer attribution. They 
 
 ## Rights-decision ledger (all pending)
 
-The companion JSON keeps **7 reviewed source items x 7 operational rights dimensions = 49 false fields**, plus **10 false publication gates**. These are conservative *project authorization flags*, not the agencies' own legal conclusions. Even if an agency's general notice allows textual reuse, an unresolved project decision stays **false** until a dated, scoped authority/owner receipt is entered on a separately reviewed change.
+The companion JSON keeps **7 inventoried source candidates x 7 operational rights dimensions = 49 false fields**, plus **10 false publication gates**. These are conservative *project authorization flags*, not the agencies' own legal conclusions. Even if an agency's general notice allows textual reuse, an unresolved project decision stays **false** until a dated, scoped authority/owner receipt is entered on a separately reviewed change.
 
 Before publishing an **independent Weekly**, require: exact-source and third-party review, acceptable citation and translated editorial treatment, claim-level reviewer receipt, separately approved editorial identity/methodology and an independently reviewed release contract. Do not change rights flags solely because an offline validator passes.
 

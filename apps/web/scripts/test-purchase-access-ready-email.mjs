@@ -7,6 +7,7 @@ import {
   resolveVerifiedAccessReadyLocale,
 } from '../src/lib/purchase-access-ready-locale-preview.js';
 import { readFile } from 'node:fs/promises';
+import { verifyPurchaseAccessReadyAtomicPair } from '../src/lib/purchase-access-ready-atomic-pair-review.js';
 import {
   prepareAccessReadyLocaleSnapshot,
   assertUnchangedAccessReadyLocaleSnapshot,
@@ -598,6 +599,65 @@ assert.throws(
     ...snapshotFixture, snapshotAt: '2026-09-01T20:50:00.000Z',
   }),
   error => error.code === 'SNAPSHOT_BEFORE_PURCHASE',
+);
+
+
+// Only synthetic immutable pair verification; no outbound requests.
+const persistedPair = {
+  outbox_id: fixtureRow.id,
+  purchase_id: purchaseId,
+  account_id: accountId,
+  render_locale: 'en',
+  locale_source: 'english_fallback',
+  preference_revision: null,
+  template_version: prepared.intent.outboxRecord.template_version,
+  recipient_sha256: fallbackSnapshot.recipientSha256,
+  snapshot_identity: fallbackSnapshot.snapshotIdentity,
+};
+const pair = verifyPurchaseAccessReadyAtomicPair({
+  accessResult, outbox: fixtureRow, snapshot: persistedPair,
+});
+assert.equal(pair.state, 'MATCHED_REVIEW_ONLY');
+assert.equal(pair.canDispatch, false);
+assert.equal(pair.canWrite, false);
+assert.doesNotMatch(JSON.stringify(pair), /buyer@example.com/);
+for (const [broken, code] of [
+  [null, 'MISSING_ATOMIC_PAIR'],
+  [{ ...persistedPair, outbox_id: '923e4567-e89b-42d3-a456-426614174000' }, 'ATOMIC_LINK_MISMATCH'],
+  [{ ...persistedPair, account_id: '923e4567-e89b-42d3-a456-426614174000' }, 'ATOMIC_LINK_MISMATCH'],
+  [{ ...persistedPair, render_locale: 'pt' }, 'ATOMIC_LOCALE_UNAPPROVED'],
+  [{ ...persistedPair, locale_source: 'resend_segment' }, 'ATOMIC_PROVENANCE_MISMATCH'],
+  [{ ...persistedPair, template_version: 'altered-v1' }, 'ATOMIC_TEMPLATE_MISMATCH'],
+  [{ ...persistedPair, recipient_sha256: '0'.repeat(64) }, 'ATOMIC_RECIPIENT_MISMATCH'],
+  [{ ...persistedPair, snapshot_identity: '0'.repeat(64) }, 'ATOMIC_SNAPSHOT_MISMATCH'],
+  [{ ...persistedPair, preference_revision: 1 }, 'ATOMIC_PROVENANCE_MISMATCH'],
+]) {
+  assert.throws(
+    () => verifyPurchaseAccessReadyAtomicPair({
+      accessResult, outbox: fixtureRow, snapshot: broken,
+    }),
+    error => error.code === code,
+  );
+}
+assert.throws(
+  () => verifyPurchaseAccessReadyAtomicPair({
+    accessResult,
+    outbox: { ...fixtureRow, recipient_email_normalized: 'wrong@example.com' },
+    snapshot: persistedPair,
+  }),
+  error => error.code === 'ATOMIC_OUTBOX_MISMATCH',
+);
+assert.throws(
+  () => verifyPurchaseAccessReadyAtomicPair({
+    accessResult, outbox: fixtureRow,
+    snapshot: {
+      ...persistedPair, render_locale: 'es',
+      locale_source: 'verified_account', preference_revision: 2,
+      template_version: spanishSnapshot.templateVersion,
+      snapshot_identity: spanishSnapshot.snapshotIdentity,
+    },
+  }),
+  error => error.code === 'ATOMIC_TEMPLATE_MISMATCH',
 );
 
 console.log('Purchase access-ready email tests passed.');

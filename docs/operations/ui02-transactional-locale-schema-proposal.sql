@@ -78,6 +78,8 @@ create table public.purchase_access_ready_locale_snapshots (
   render_locale text not null check (render_locale in ('en', 'es')),
   locale_source text not null check (locale_source in ('verified_account','english_fallback')),
   preference_revision integer,
+  recipient_sha256 text not null check (recipient_sha256 ~ '^[0-9a-f]{64}$'),
+  snapshot_identity text not null unique check (snapshot_identity ~ '^[0-9a-f]{64}$'),
   template_version text not null check (char_length(template_version) between 1 and 80),
   created_at timestamptz not null default now(),
   constraint ui02_locale_source_version_consistent check (
@@ -106,6 +108,8 @@ begin
       and o.template_version=new.template_version
       and o.provider='resend' and o.status='queued'
       and o.recipient_email_normalized=lower(btrim(pr.email))
+      and new.recipient_sha256=encode(extensions.digest(o.recipient_email_normalized,'sha256'),'hex')
+      and pu.product_id='read-the-dollar-first-guided-interactive-edition'
       and pu.account_id=new.account_id
       and pu.provider='lemon-squeezy'
       and pu.status='completed'
@@ -114,7 +118,8 @@ begin
       and exists (select 1 from public.entitlements e
         where e.purchase_id=new.purchase_id
           and e.account_id=new.account_id
-          and e.product_id=pu.product_id and e.state='active')
+          and e.product_id=pu.product_id and e.state='active'
+          and e.version=o.state_version)
   ) then raise exception 'UI02_LOCALE_SNAPSHOT_AUTHORITY_MISMATCH'; end if;
   if new.locale_source='verified_account' then
     if not exists (select 1 from public.account_transactional_locale_preferences ap

@@ -93,6 +93,14 @@ function validateIndependentMonthly(monthly,sourceWeeklies,opts={}){
  if(!Number.isFinite(cutoff)||cutoff<dayMs(monthly.periodEnd)||Number.isFinite(asOf)&&cutoff>asOf)errors.push("monthly:as_of_invalid_or_future");
  if(!Array.isArray(monthly.sourceWeeklyReports)||monthly.sourceWeeklyReports.length!==4)errors.push("monthly:exactly_four_weeklies_required");
  const refs=Array.isArray(monthly.sourceWeeklyReports)?monthly.sourceWeeklyReports:[];
+ // A caller must supply the full prior published independent Monthly history.
+ // This parser cannot fetch it or authorize publication, even for valid inputs.
+ if(!Array.isArray(opts.publishedMonthlyHistory))errors.push("monthly:missing_explicit_published_history");
+ else for(const prior of opts.publishedMonthlyHistory){
+  if(!record(prior)||prior.series!==SERIES||prior.contractVersion!==MONTHLY_VERSION||prior.status!=="published")continue;
+  if(prior.id===monthly.id||prior.periodEnd===monthly.periodEnd)errors.push("monthly:period_already_published");
+  if(Array.isArray(prior.sourceWeeklyReports)&&prior.sourceWeeklyReports.some(old=>refs.some(ref=>ref?.id===old?.id||ref?.periodEnd===old?.periodEnd)))errors.push("monthly:source_weekly_already_consumed");
+ }
  const sourceIds=new Set(),sourceDates=new Set();
  const sourceById=new Map((Array.isArray(sourceWeeklies)?sourceWeeklies:[]).filter(record).map(w=>[w.id,w]));
  if(!Array.isArray(sourceWeeklies))errors.push("monthly:missing_weekly_collection");

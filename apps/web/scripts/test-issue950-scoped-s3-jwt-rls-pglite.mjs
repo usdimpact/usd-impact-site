@@ -187,6 +187,32 @@ async function happy(side){
     assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),side==='source'?3:5);
     await db.exec("drop policy issue950_unrelated_guard on storage.objects");
     checks+=2;
+    // Same policy name, subject and time can still hide a widened allowlist.
+    // Rollback must not mistake coarse identity for unchanged Storage scope.
+    const objectSelect='issue950_'+side+'_session_objects_select';
+    const originalSelect=(await rows(db,
+      "select qual from pg_policies where schemaname='storage' and tablename='objects' and policyname=$1",
+      [objectSelect]))[0].qual;
+    await db.exec("alter policy "+objectSelect+" on storage.objects using ("+
+      "(select auth.uid()) = '"+subject+"'::uuid and now() < '"+expires()+"'::timestamptz)");
+    await assert.rejects(db.exec(renderUndo(side)),/unexpected policy identity or shape/);
+    await db.exec('rollback');
+    assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),side==='source'?2:4);
+    await db.exec("alter policy "+objectSelect+" on storage.objects using ("+originalSelect+")");
+    checks+=2;
+    if(side==='restore'){
+      // An UPDATE's USING may remain restricted even if WITH CHECK widens.
+      const updateName='issue950_restore_session_objects_update';
+      const originalCheck=(await rows(db,
+        "select with_check from pg_policies where schemaname='storage' and tablename='objects' and policyname=$1",
+        [updateName]))[0].with_check;
+      await db.exec("alter policy "+updateName+" on storage.objects with check (true)");
+      await assert.rejects(db.exec(renderUndo(side)),/unexpected policy identity or shape/);
+      await db.exec('rollback');
+      assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),4);
+      await db.exec("alter policy "+updateName+" on storage.objects with check ("+originalCheck+")");
+      checks+=2;
+    }
     await db.exec(renderUndo(side));
     // A subsequent cleanup is idempotent on the same verified host.
     await db.exec(renderUndo(side));

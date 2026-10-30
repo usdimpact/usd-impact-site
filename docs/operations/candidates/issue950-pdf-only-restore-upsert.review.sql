@@ -2,7 +2,9 @@
 -- Destination RESTORE project movnekagnxgcyenczfoc ONLY; Production excluded.
 -- Offline scoped candidate for one independently byte-verified private PDF.
 -- No source/Development permissions; no public grants; no DELETE.
--- Requires INDEPENDENT DBA, security, privacy and protected operator approval.
+-- Solo owner accepted a scoped TEST-ONLY review exception in Issue #950.
+-- NO GO until objectively checked operator/JWT, source-hash and rollback controls pass.
+-- External legal or contractual independent-review requirements are not waived.
 -- Invalid private subject/email/host/expiry placeholders intentionally fail.
 -- Do not use unrestricted service keys or generated project-wide S3 credentials.
 -- Exact management project ref must be independently attested; host is supplemental.

@@ -38,13 +38,13 @@ function monthly(weeks){
 const weeks=dates.map(weekly);
 function changed(base,transform){const x=structuredClone(base);transform(x);return x}
 function failsWeekly(w,reason){const r=validateIndependentWeekly(w,{asOfUtc:AS_OF});assert.equal(r.structurallyValid,false);assert.equal(r.releaseAuthorized,false);if(reason)assert.ok(r.errors.some(e=>e.includes(reason)),JSON.stringify(r.errors))}
-function failsMonthly(m,source=weeks,reason){const r=validateIndependentMonthly(m,source,{asOfUtc:AS_OF,publishedMonthlyHistory:[]});assert.equal(r.structurallyValid,false);assert.equal(r.releaseAuthorized,false);if(reason)assert.ok(r.errors.some(e=>e.includes(reason)),JSON.stringify(r.errors))}
+function failsMonthly(m,source=weeks,reason){const r=validateIndependentMonthly(m,source,{asOfUtc:AS_OF,publishedMonthlyHistory:[],completeIndependentWeeklyInventory:true});assert.equal(r.structurallyValid,false);assert.equal(r.releaseAuthorized,false);if(reason)assert.ok(r.errors.some(e=>e.includes(reason)),JSON.stringify(r.errors))}
 
 test("four invented Weeklies structurally validate but never authorize production",()=>{
  for(const w of weeks){const r=validateIndependentWeekly(w,{asOfUtc:AS_OF});assert.deepEqual(r.errors,[]);assert.equal(r.structurallyValid,true);assert.equal(r.releaseAuthorized,false)}
 });
 test("invented four-week Monthly validates but never authorizes production",()=>{
- const r=validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:AS_OF,publishedMonthlyHistory:[]});assert.deepEqual(r.errors,[]);assert.equal(r.structurallyValid,true);assert.equal(r.releaseAuthorized,false);
+ const r=validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:AS_OF,publishedMonthlyHistory:[],completeIndependentWeeklyInventory:true});assert.deepEqual(r.errors,[]);assert.equal(r.structurallyValid,true);assert.equal(r.releaseAuthorized,false);
 });
 test("four consecutive independent Weeklies satisfy structural eligibility only",()=>{
  const r=independentMonthlyEligibility(weeks,[],{asOfUtc:AS_OF});assert.equal(r.progress,4);assert.equal(r.ready,true);assert.equal(r.releaseAuthorized,false);
@@ -97,20 +97,51 @@ test("reject invalid source Weekly within Monthly",()=>failsMonthly(monthly(week
 test("reject monthly report bounds inconsistent with sources",()=>failsMonthly(changed(monthly(weeks),m=>m.periodStart="2099-01-12"),weeks,"period_does_not_match_sources"));
 test("reject monthly theme referencing an unreviewed source period",()=>failsMonthly(changed(monthly(weeks),m=>m.themes[0].weeklyDates=["2099-02-06"]),weeks,"unresolved_weekly_reference"));
 test("reject missing standalone Monthly production receipt",()=>failsMonthly(changed(monthly(weeks),m=>m.approvals.productionApprovalReceipt=null),weeks,"missing_productionApprovalReceipt"));
-test("reject malformed as-of for Monthly",()=>assert.equal(validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:"2099-02-30T12:00:00Z",publishedMonthlyHistory:[]}).structurallyValid,false));
+test("reject malformed as-of for Monthly",()=>assert.equal(validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:"2099-02-30T12:00:00Z",publishedMonthlyHistory:[],completeIndependentWeeklyInventory:true}).structurallyValid,false));
 test("monthly refuses to validate without explicit previously published history",()=>{
  const r=validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:AS_OF});
  assert.equal(r.structurallyValid,false);assert.ok(r.errors.includes("monthly:missing_explicit_published_history"));
 });
 test("monthly rejects reuse of an already published period",()=>{
  const prior=monthly(weeks),current=monthly(weeks);
- const r=validateIndependentMonthly(current,weeks,{asOfUtc:AS_OF,publishedMonthlyHistory:[prior]});
+ const r=validateIndependentMonthly(current,weeks,{asOfUtc:AS_OF,publishedMonthlyHistory:[prior],completeIndependentWeeklyInventory:true});
  assert.equal(r.structurallyValid,false);assert.ok(r.errors.includes("monthly:period_already_published"));
 });
 test("monthly rejects source weekly reuse even when prior monthly identifier differs",()=>{
  const prior=monthly(weeks);prior.id="independent-monthly-2099-02-06";prior.periodEnd="2099-02-06";
- const r=validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:AS_OF,publishedMonthlyHistory:[prior]});
+ const r=validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:AS_OF,publishedMonthlyHistory:[prior],completeIndependentWeeklyInventory:true});
  assert.equal(r.structurallyValid,false);assert.ok(r.errors.includes("monthly:source_weekly_already_consumed"));
+});
+test("monthly fails closed if complete Weekly inventory flag absent",()=>{
+ const r=validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:AS_OF,publishedMonthlyHistory:[]});
+ assert.equal(r.structurallyValid,false);
+ assert.ok(r.errors.includes("monthly:complete_weekly_inventory_receipt_missing"));
+ assert.equal(r.releaseAuthorized,false);
+});
+test("monthly rejects a later consecutive block that skips an earlier published independent Weekly",()=>{
+ const fifth=weekly("2099-02-06"),selected=[...weeks.slice(1),fifth];
+ const r=validateIndependentMonthly(monthly(selected),[...weeks,fifth],{asOfUtc:AS_OF,publishedMonthlyHistory:[],completeIndependentWeeklyInventory:true});
+ assert.equal(r.structurallyValid,false);
+ assert.ok(r.errors.includes("monthly:not_first_four_published_independent_weeklies"));
+});
+test("monthly rejects duplicated IDs in supplied full Weekly inventory",()=>{
+ const r=validateIndependentMonthly(monthly(weeks),[...weeks,weeks[0]],{asOfUtc:AS_OF,publishedMonthlyHistory:[],completeIndependentWeeklyInventory:true});
+ assert.equal(r.structurallyValid,false);
+ assert.ok(r.errors.includes("monthly:duplicated_inventory_weekly_id"));
+});
+test("monthly may validate the next true four-Weeklies block after an independent prior Monthly",()=>{
+ const futureDates=["2099-02-06","2099-02-13","2099-02-20","2099-02-27"];
+ const later=futureDates.map(weekly);
+ const laterAsOf="2099-03-02T12:00:00Z";
+ const r=validateIndependentMonthly(monthly(later),[...weeks,...later],{asOfUtc:laterAsOf,publishedMonthlyHistory:[monthly(weeks)],completeIndependentWeeklyInventory:true});
+ assert.equal(r.structurallyValid,true,JSON.stringify(r.errors));
+ assert.equal(r.releaseAuthorized,false);
+});
+test("monthly cannot skip first Friday following previous published Monthly",()=>{
+ const later=["2099-02-13","2099-02-20","2099-02-27","2099-03-06"].map(weekly);
+ const r=validateIndependentMonthly(monthly(later),[...weeks,...later],{asOfUtc:"2099-03-10T12:00:00Z",publishedMonthlyHistory:[monthly(weeks)],completeIndependentWeeklyInventory:true});
+ assert.equal(r.structurallyValid,false);
+ assert.ok(r.errors.includes("monthly:first_four_independent_sources_not_ready"));
 });
 test("static exact-source rights ledger is entirely denied and release HOLD",()=>{
  const path=new URL("../../../governance/independent-editorial-source-rights-review-2026-10-30.json",import.meta.url);
@@ -119,6 +150,10 @@ test("static exact-source rights ledger is entirely denied and release HOLD",()=
  assert.equal(ledger.authorizedAdditionalMarketDataLicenseBudgetUsd,0);
  assert.equal(ledger.originalScoreRightsGateMustRemainHold,true);
  assert.equal(ledger.sources.length,7);
- for(const s of ledger.sources){assert.equal(s.privateLegalOrOwnerReceipt,null);assert.deepEqual(Object.keys(s.permissions),ledger.permissionDimensions);assert.ok(Object.values(s.permissions).every(v=>v===false))}
+ for (const source of ledger.sources) {
+  assert.equal(source.privateLegalOrOwnerReceipt, null);
+  assert.deepEqual(Object.keys(source.permissions), ledger.permissionDimensions);
+  assert.ok(Object.values(source.permissions).every((value) => value === false));
+ }
  assert.ok(Object.values(ledger.publicationGates).every(v=>v===false));
 });

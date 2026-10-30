@@ -85,6 +85,65 @@ assert.match(watch.body, new RegExp(signedToken.replaceAll('.', '\\.')));
 assert.doesNotMatch(watch.body, new RegExp(receivedUid));
 assert.match(watch.body, /defaultTextTrack=en/);
 
+
+const mediaActorId = '123e4567-e89b-42d3-a456-426614174000';
+const qaMediaEnvironment = {
+  VERCEL_ENV: 'preview',
+  VERCEL_GIT_COMMIT_REF: 'draft/media-language-es-captions-preview-20261031',
+  ACCOUNT_MEDIA_LOCALE_UI_ENABLED: 'true',
+};
+let mediaReadCount = 0;
+const esVideo = responseRecorder();
+await handleVideoLibraryRequest(
+  request({ authenticated: true, url: '/api/video-library?__video_path=dollar-yields-liquidity' }),
+  esVideo,
+  {
+    environment: qaMediaEnvironment,
+    readAccessState: async () => ({
+      allowed: true, reason: 'active', user: { id: mediaActorId },
+      profile: { account_id: mediaActorId, status: 'active' },
+    }),
+    readMediaCaptionLocale: async ({ accountId, accessToken: token }) => {
+      assert.equal(accountId, mediaActorId);
+      assert.equal(token, accessToken);
+      mediaReadCount++;
+      return 'es';
+    },
+    createToken: async () => signedToken,
+  },
+);
+assert.equal(esVideo.statusCode, 200);
+assert.match(esVideo.body, /defaultTextTrack=es/);
+assert.match(esVideo.body, /preload=metadata/);
+assert.match(esVideo.body, /Original spoken narration remains in English/);
+assert.equal(mediaReadCount, 1);
+
+const notEnabledVideo = responseRecorder();
+await handleVideoLibraryRequest(
+  request({ authenticated: true, url: '/api/video-library?__video_path=dollar-yields-liquidity' }),
+  notEnabledVideo,
+  {
+    environment: { ...qaMediaEnvironment, ACCOUNT_MEDIA_LOCALE_UI_ENABLED: 'false' },
+    readAccessState: async () => ({ allowed: true, user: {id: mediaActorId}, profile: {account_id:mediaActorId}}),
+    readMediaCaptionLocale: async () => { throw Error('Must not query media preference when disabled'); },
+    createToken: async () => signedToken,
+  },
+);
+assert.match(notEnabledVideo.body, /defaultTextTrack=en/);
+const mediaReadErrorVideo = responseRecorder();
+await handleVideoLibraryRequest(
+  request({ authenticated: true, url: '/api/video-library?__video_path=dollar-yields-liquidity' }),
+  mediaReadErrorVideo,
+  {
+    environment: qaMediaEnvironment,
+    readAccessState: async () => ({ allowed: true, user: {id: mediaActorId},profile: {account_id:mediaActorId}}),
+    readMediaCaptionLocale: async () => { throw Error('Synthetic read failure'); },
+    createToken: async () => signedToken,
+  },
+);
+assert.equal(mediaReadErrorVideo.statusCode, 200);
+assert.match(mediaReadErrorVideo.body, /defaultTextTrack=en/);
+
 let headTokenCalls = 0;
 const head = responseRecorder();
 await handleVideoLibraryRequest(

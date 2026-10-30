@@ -26,7 +26,7 @@
     "stageAOwnerLayoutAndEditorialPassed": true,
     "stageAApprovedGitCommitSha": "77551873f9d7a68cfeec11804dc0237cdc0154ac",
     "publicCandidateContainsNewDraftPresentationEdits": true,
-    "publicCandidateExactVersionEditorialApproved": false,
+    "publicCandidateExactVersionEditorialApproved": true,
     "olderStageAPassNotTransferable": true,
     "sourceWeeklyContractVersion": "independent-editorial-draft-v1",
     "sourceWeeklyGitBlobSha": "11056d67139f48ed86cebf6522149ac6e79d987e",
@@ -69,8 +69,13 @@
     "issuerDeclaresReleaseTimesForFourOfficialOutcomes": true,
     "claimEvidenceRecordsFourLaterDailyCorrections": true,
     "independentWeeklyClaimOwnerPassCount": 0,
-    "finalCandidateEditorialPassStillRequired": true,
-    "candidateHasDatedOfficialReleaseEvidenceNotWebPosting": true
+    "finalCandidateEditorialPassStillRequired": false,
+    "candidateHasDatedOfficialReleaseEvidenceNotWebPosting": true,
+    "ownerReviewReceiptFile": "docs/operations/independent-editorial/release-candidate-2026-10-30.owner-editorial-and-narrow-use-pass.draft.json",
+    "ownerReviewReceiptGitBlobSha": "0d3cdf3f5e1251c17dfa0fed1190aec86dbc5dee",
+    "ownerReviewedExactContentGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "ownerReviewTargetPrHead": "d4d55c7ae721c21ab464f5429b679b9020ea9e16",
+    "candidateEditorialPassCoversWholeArticleNotIndividualPriorDailyReceipts": true
   },
   "sourceUse": {
     "stageBNarrowScopeJson": "docs/operations/independent-editorial/stage-b-narrow-source-use-review.draft.json",
@@ -116,11 +121,14 @@
     "RomaniaEuInternationalDistributionReviewed": false,
     "foreignLawQuestionStillPending": true,
     "qualifiedPerItemRightsReviewComplete": false,
-    "ownerFinalRightsAcceptance": false
+    "ownerFinalRightsAcceptance": false,
+    "publisherAcceptedNarrowFactsAndOfficialLinksOnly": true,
+    "publisherAcknowledgedInternationalCopyrightExceptions": true,
+    "publisherAcceptedUseIsNotExternalAgencyLicense": true
   },
   "publisherGovernance": {
     "sourcePolicyApproval": false,
-    "finalIndependentExactContentPass": false,
+    "finalIndependentExactContentPass": true,
     "independentLegalAndCompliancePass": false,
     "finalContractApproved": false,
     "authenticatedProductionReadySourceLedger": false,
@@ -130,7 +138,8 @@
     "newsletterOrRssApproved": false,
     "originalScoreRightsModificationApproved": false,
     "previewDeploymentApproved": false,
-    "claimLevelExplicitIndependentEditorialApproval": false
+    "claimLevelExplicitIndependentEditorialApproval": false,
+    "publisherNarrowFactsAndLinksUseScopeAccepted": true
   },
   "technicalSafety": {
     "branchContainsNoLivePublicEdition": true,
@@ -150,7 +159,7 @@
   "requiredWeekliesBeforeFirstIndependentMonthly": 4,
   "externalGoLiveRequirements": [
     "Qualified review of five exact Fed/BEA/BLS source uses and Romania/EU/international factual link scope, including exclusions",
-    "Exact-version independent candidate article editorial and compliance PASS (Stage A PASS cannot be transferred automatically)",
+    "Exact candidate owner editorial PASS recorded; separate qualified cross-border/compliance signoff and later claim-specific provenance review remain required before public release",
     "Verify later claim-specific editorial receipts against actual GitHub record content for Fed/GDP/PCE/ECI; do not backdate the initial Daily editions",
     "Confirm one final independent contract and actual publication-date policy, link QA and public-readability/noindex lifting decision",
     "Explicit exact-commit authorization to merge a future release PR and deploy to the intended public site",

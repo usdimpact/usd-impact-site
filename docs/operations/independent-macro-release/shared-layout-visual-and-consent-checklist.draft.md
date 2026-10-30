@@ -27,6 +27,12 @@
 | Original Score and parallel rights | All site/pipeline Score rights HOLD; 49/49 parallel source permissions and 10/10 release gates remain FALSE |
 | Published independent Weeklies | **0**; eligible Monthlies **0/4** |
 
+## Existing public-site consent browser QA — PARTIAL PASS (2026-10-30)
+
+A **fresh anonymous browser session** tested the public [Privacy Notice](https://www.usd-impact.com/privacy/) and recorded its precise observed steps in the [consent-browser QA evidence](current-site-consent-browser-qa-2026-10-30.draft.json). It verified that the first-visit banner has **Reject analytics**, **Review settings**, and **Accept analytics**; rejecting optional analytics dismisses the banner; opening, saving and reopening **Privacy settings** showed optional analytics **unchecked**, with essential features always active. Existing Terms/Compliance/footer links were present.
+
+**Not yet verified:** `gtag.js` network loading/absence, real cookie values or deletion, GA4 beacons, full **Accept then Withdraw** behavior, small-screen consent display, screen reader accessibility, or the **future shared-layout Weekly page** (still not publicly or privately rendered). This partial browser observation is **not** a qualified privacy/ePrivacy/GDPR compliance certificate. No Production settings or stored user data were changed, and the browser ended with analytics rejected.
+
 ## Protected browser QA after separately authorized review environment
 
 No browser QA is claimed as completed by this document. When an authenticated, private-only review environment is explicitly approved, test **without disabling access controls**:

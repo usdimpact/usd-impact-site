@@ -240,4 +240,15 @@ const sourceFile = await readFile(new URL('../api/account.js', import.meta.url),
 assert.match(sourceFile, /'transactional-locale': handleTransactionalLocaleRequest/);
 assert.doesNotMatch(sourceFile, /ACCOUNT_TRANSACTIONAL_LOCALE_UI_ENABLED\s*=\s*'true'/);
 
+
+const accountPage = await readFile(new URL('../src/pages/account/index.astro', import.meta.url), 'utf8');
+assert.match(accountPage, /id="transactional-language-panel"[^>]*hidden/);
+assert.match(accountPage, /id="transactional-language-choice"/);
+assert.match(accountPage, /id="transactional-language-save"[^>]*disabled/);
+assert.match(accountPage, /loadTransactionalLanguageSettings\(\)/);
+assert.match(accountPage, /\/api\/account\?action=transactional-locale/);
+assert.match(accountPage, /does not subscribe you to a newsletter/);
+assert.match(accountPage, /Portuguese email remains unavailable/);
+assert.doesNotMatch(accountPage, /data-marketing-segment|registerMarketingConsent/);
+
 console.log('Transactional account-language gate and RLS REST contracts passed.');

@@ -96,14 +96,18 @@ function validateIndependentMonthly(monthly,sourceWeeklies,opts={}){
  // A caller must supply the full prior published independent Monthly history.
  // This parser cannot fetch it or authorize publication, even for valid inputs.
  if(!Array.isArray(opts.publishedMonthlyHistory))errors.push("monthly:missing_explicit_published_history");
- else for(const prior of opts.publishedMonthlyHistory){
+ if(opts.completeIndependentWeeklyInventory!==true)errors.push("monthly:complete_weekly_inventory_receipt_missing");
+ else if(!Array.isArray(sourceWeeklies))errors.push("monthly:complete_weekly_inventory_missing");
+ if(Array.isArray(opts.publishedMonthlyHistory))for(const prior of opts.publishedMonthlyHistory){
   if(!record(prior)||prior.series!==SERIES||prior.contractVersion!==MONTHLY_VERSION||prior.status!=="published")continue;
   if(prior.id===monthly.id||prior.periodEnd===monthly.periodEnd)errors.push("monthly:period_already_published");
   if(Array.isArray(prior.sourceWeeklyReports)&&prior.sourceWeeklyReports.some(old=>refs.some(ref=>ref?.id===old?.id||ref?.periodEnd===old?.periodEnd)))errors.push("monthly:source_weekly_already_consumed");
  }
  const sourceIds=new Set(),sourceDates=new Set();
- const sourceById=new Map((Array.isArray(sourceWeeklies)?sourceWeeklies:[]).filter(record).map(w=>[w.id,w]));
+ const suppliedWeeks=(Array.isArray(sourceWeeklies)?sourceWeeklies:[]).filter(record);
+ const sourceById=new Map(suppliedWeeks.map(w=>[w.id,w]));
  if(!Array.isArray(sourceWeeklies))errors.push("monthly:missing_weekly_collection");
+ if(sourceById.size!==suppliedWeeks.length)errors.push("monthly:duplicated_inventory_weekly_id");
  for(let i=0;i<refs.length;i++){
   const s=refs[i];
   if(!exactKeys(s,["id","periodEnd","slug"],errors,"monthly_source["+i+"]"))continue;
@@ -122,6 +126,14 @@ function validateIndependentMonthly(monthly,sourceWeeklies,opts={}){
  if(refs.length===4){
   const first=sourceById.get(refs[0]?.id);
   if(!first||monthly.periodStart!==first.periodStart||monthly.periodEnd!==refs[3]?.periodEnd)errors.push("monthly:period_does_not_match_sources");
+ }
+ // A consecutive-looking subset can skip earlier published independent weeks.
+ // Verify the exact first four against the caller-attested *complete* source inventory.
+ // This is structural only: no in-memory flag or URL can prove a real publication.
+ if(Array.isArray(opts.publishedMonthlyHistory)&&opts.completeIndependentWeeklyInventory===true&&Array.isArray(sourceWeeklies)){
+  const selected=independentMonthlyEligibility(sourceWeeklies,opts.publishedMonthlyHistory,{asOfUtc:opts.asOfUtc});
+  if(!selected.ready)errors.push("monthly:first_four_independent_sources_not_ready");
+  else if(refs.length!==4||refs.some((r,i)=>r?.id!==selected.inputs[i]))errors.push("monthly:not_first_four_published_independent_weeklies");
  }
  if(!Array.isArray(monthly.themes)||monthly.themes.length<3||monthly.themes.length>6)errors.push("monthly:themes_count");
  for(const [i,t] of (Array.isArray(monthly.themes)?monthly.themes:[]).entries()){

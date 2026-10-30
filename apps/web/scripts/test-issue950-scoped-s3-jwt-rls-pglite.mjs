@@ -268,7 +268,9 @@ const pdfUndo=src('issue950-pdf-only-restore-rollback.review.sql');
 const pdfScope=pdfOnly.slice(pdfOnly.indexOf('create policy issue950_pdf_pilot_'));
 const pdfHost='198.51.100.11';
 const pdfHash=createHash('md5').update(pdfHost).digest('hex');
-function pdfRender(template,host=pdfHash,until=expires(1)){
+// Install and rollback MUST use the same exact UTC expiry, not a recomputed one.
+const pdfExpires=expires(1);
+function pdfRender(template,host=pdfHash,until=pdfExpires){
   return template.replaceAll('__ISSUE950_RESTORE_SYNTHETIC_UUID__',uuids.restore)
     .replaceAll('__ISSUE950_RESTORE_SERVER_HOST_MD5__',host)
     .replaceAll('__ISSUE950_EXPIRES_AT_UTC__',until)
@@ -305,7 +307,10 @@ try{
   await assert.rejects(pdfDb.exec(pdfRender(pdfUndo,'0'.repeat(32))),/host binding not verified/);
   await pdfDb.exec('rollback');
   assert.equal(await count(pdfDb,"select count(*) as n from pg_policies where schemaname='storage'"),4);
-  checks+=2;
+  await assert.rejects(pdfDb.exec(pdfRender(pdfUndo,pdfHash,expires(3))),/unexpected policy identity or shape/);
+  await pdfDb.exec('rollback');
+  assert.equal(await count(pdfDb,"select count(*) as n from pg_policies where schemaname='storage'"),4);
+  checks+=4;
   await pdfDb.exec("create policy issue950_extra_offline on storage.objects for select to authenticated using(false)");
   await assert.rejects(pdfDb.exec(pdfRender(pdfUndo)),/unexpected policy identity or shape/);
   await pdfDb.exec('rollback');
@@ -340,7 +345,7 @@ for(const [reason,settings,pattern] of [
     checks+=2;
   }finally{await db.close();}
 }
-for(const scenario of ['widened-select','widened-update-check','partial-install']){
+for(const scenario of ['widened-select','widened-update-check','retained-clauses-or','retained-clauses-extra-and','widened-expiry','partial-install']){
   const db=await makeDb('restore');
   try{
     await db.exec(pdfRender(pdfOnly));
@@ -348,6 +353,24 @@ for(const scenario of ['widened-select','widened-update-check','partial-install'
       await db.exec("alter policy issue950_pdf_pilot_session_objects_select on storage.objects using ((select auth.uid()) = '22222222-3333-4444-8555-666666666666'::uuid and now() < now() + interval '2 hours')");
     }else if(scenario==='widened-update-check'){
       await db.exec("alter policy issue950_pdf_pilot_session_objects_update on storage.objects with check (true)");
+    }else if(scenario==='retained-clauses-or' || scenario==='retained-clauses-extra-and'){
+      // The approved subject, expiry, bucket and filename are STILL present.
+      // The original rollback's substring checks would miss this drift.
+      const selected=await rows(db,"select qual from pg_policies where schemaname='storage' and policyname='issue950_pdf_pilot_session_objects_select'");
+      assert.equal(selected.length,1);
+      const extra=scenario==='retained-clauses-or'
+        ? "OR (bucket_id='library-pass-assets')"
+        : "AND (current_setting('issue950.fixture',true) IS NULL)";
+      await db.exec(`alter policy issue950_pdf_pilot_session_objects_select on storage.objects using ((${selected[0].qual}) ${extra})`);
+    }else if(scenario==='widened-expiry'){
+      // Same identity and exact file, but the policy expiry now follows the
+      // current clock instead of the immutable approved UTC time.
+      await db.exec(`alter policy issue950_pdf_pilot_session_objects_select on storage.objects using (
+        (select auth.uid()) = '${uuids.restore}'::uuid
+        and now() < now() + interval '48 hours'
+        and bucket_id = 'library-pass-books'
+        and name = '${book}'
+      )`);
     }else{
       await db.exec("drop policy issue950_pdf_pilot_session_objects_insert on storage.objects");
     }

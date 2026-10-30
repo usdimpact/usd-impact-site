@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "independent-editorial-canonical-release-design-proposal-v0-draft",
+  "preparedDate": "2026-10-30",
+  "status": "PROPOSAL_DRAFT_HOLD_NOT_IMPLEMENTED",
+  "scope": "SINGLE_PREFERRED_CONTRACT_ARCHITECTURE_ONLY",
+  "userApprovedDraftDirections": {
+    "weeklyTitle": "USD Impact Macro Weekly Review",
+    "fourWeeklyTitle": "USD Impact Four-Week Macro Review",
+    "language": "en",
+    "intendedFutureAccess": "free_public_educational",
+    "editorialInputs": "existing_published_verified_usd_impact_dailies_only",
+    "fourWeeklyRule": "first_four_genuinely_published_consecutive_friday_independent_weeklies"
+  },
+  "technicalPreference": {
+    "draftFoundationPr": 1019,
+    "pilotContractVersion": "independent-editorial-draft-v1",
+    "pilotSeries": "independent_macro_education",
+    "futureProposedContractVersion": "independent-macro-education-v1-proposal",
+    "singleFinalContractApproved": false,
+    "competingPr1020SchemaUsedAsRuntime": false,
+    "rightsReferencePr1020": 1020,
+    "rhsAllDenyUnchanged": true,
+    "historicalLegacyScoreReportCompatibility": false,
+    "proposedPublicPaths": null,
+    "siteCollectionOrRoutingCreated": false,
+    "runtimeCodeImportCreated": false,
+    "schemaMigrationAuthorized": false
+  },
+  "sourceProvenance": {
+    "dailyVersion": "existing_published_markdown_and_exact_git_blob_sha",
+    "claimIdSourceIdExactUrl": "must_match_verified_daily_source_highlight",
+    "primaryReleaseIssueTime": {
+      "field": "officialIssuerIssuedAtUtc",
+      "evidence": "dated_issuer_publication_statement_or_approved_issuer_release_calendar_with_source_type",
+      "postingTimeCannotBeAssumed": true,
+      "futureEvidenceStandardApproved": false
+    },
+    "scheduledEventTime": {
+      "field": "scheduledAtUtc",
+      "cannotAssertOutcome": true,
+      "cannotSubstituteForIssuerIssuedTimeWithoutApprovedRule": true
+    },
+    "firstLiveWebsitePosting": {
+      "field": "independentlyObservedIssuerFirstWebPostedAtUtc",
+      "optionalNullable": true,
+      "cannotBeSynthesizedFromScheduledTimeOrGitCommit": true
+    },
+    "dailyGeneratedAt": {
+      "immutable": true,
+      "mayPrecedeOfficialRelease": true,
+      "futureCorrectionsMustCarrySeparateExactContentVersion": true
+    },
+    "postReleaseEditorialReceipt": {
+      "immutableExactDraftOrReleasedGitShaRequired": true,
+      "metadata": "source_id_claim_id_event_date_review_timestamp_reviewer_ref",
+      "urlPatternOnlyNeverSufficient": true,
+      "futureOnlineAuthenticityCheckRequired": true,
+      "sameDateNotSufficient": true
+    },
+    "actualMarketPriceClaimsPermitted": false,
+    "scoreInputsOrRegimesPermitted": false
+  },
+  "rightsReview": {
+    "generalFederalPolicyContextOnly": true,
+    "exactSourceItems": 5,
+    "initialPublisherRightsChecksApproved": 0,
+    "allowedMediaProposed": [
+      "single_original_english_educational_webpage",
+      "exact_official_hyperlink_with_issuer_credit"
+    ],
+    "embargoedMedia": [
+      "rss",
+      "bulk_email",
+      "pdf_export",
+      "translations",
+      "rehosted_graphics",
+      "agency_logos",
+      "source_html_archives",
+      "vendor_market_data"
+    ],
+    "thirdPartyExceptionsReviewNeeded": true,
+    "romaEuLatamCommercialUseReviewNeeded": true,
+    "historicalCopiesAndRetentionReviewNeeded": true,
+    "proposedScopeApprovedByQualifiedReviewer": false,
+    "perSourceReviewerEvidenceRequired": true,
+    "independentOriginalScoreRightsGateMustRemainHold": true
+  },
+  "weeklyPublicationPlan": {
+    "requiredWeekEnd": "Friday",
+    "dateWindow": "Monday_to_Friday",
+    "currentPilotRequiresExactlyFiveActualPublishedDailies": true,
+    "noInventedOrBackfilledDailies": true,
+    "permanentHolidayOrMissingDailyPolicy": "UNDECIDED",
+    "proposedPartialWeekRule": {
+      "status": "PROPOSAL_ONLY_NOT_APPROVED",
+      "eligibleSourceDays": "one_to_five_real_published_daily_editions",
+      "missingDaysExplainedAndReviewed": true,
+      "sourceRightsAndEditorialReviewRequired": true,
+      "ownerApprovalBeforeUse": true
+    },
+    "anyZeroDailyOrNonFridayWeek": "HOLD",
+    "independentWeeklyPublicationsAsOf20261030": 0
+  },
+  "fourWeeklyMonthlyPlan": {
+    "notCalendarMonth": true,
+    "firstFourPublishedIndependentWeekliesOnly": true,
+    "fourConsecutiveFridaysRequired": true,
+    "legacyScorePublishedWeeksAreNeverEligible": true,
+    "trustedCompletePublicationInventoryRequired": true,
+    "urlShapedOrSelfAttestedReceiptsCannotProvePublication": true,
+    "sourceWeeklyExactContentHashAndPublicationReceiptRequired": true,
+    "priorMonthlySourceConsumptionMustBeVerified": true,
+    "noImplicitSkipOrResetAfterMissingFriday": true,
+    "missingFridayResolution": "HOLD_AND_SEPARATE_OWNER_EDITORIAL_EXCEPTION_DECISION",
+    "sourceIndependentlyPublishedWeekliesAsOf20261030": 0,
+    "eligibleMonthlyAsOf20261030": false
+  },
+  "releaseEvidenceGates": {
+    "qualifiedPerSourceLegalReuseReview": false,
+    "crossBorderAndRetentionScopeReview": false,
+    "acceptedIssuerIssueTimeEvidencePolicy": false,
+    "threeMissingIssueTimeSourceClaimReceiptsResolved": false,
+    "finalIndependentVersionedSchemaApproved": false,
+    "finalIndependentExactVersionEditorialPass": false,
+    "authenticatedHistoricalPublicationLedger": false,
+    "fullExactHeadCiOnReleaseCandidate": false,
+    "protectedNoindexPreviewSeparateAuthorization": false,
+    "verifiedPreviewAndPublicAccessDenial": false,
+    "ownerExplicitMergeAuthorization": false,
+    "ownerExplicitProductionAuthorization": false,
+    "actualPublicPublication": false
+  },
+  "holdInvariants": {
+    "noProviderDataRetrieval": true,
+    "additionalPaidMarketDataLicenseBudgetUsd": 0,
+    "noScoreOrExistingReportMutation": true,
+    "noPreviewOrProductionDeployment": true,
+    "noPublicRoutingOrIndexing": true,
+    "noMerge": true,
+    "noRelease": true,
+    "gatesAboveAllFalse": true,
+    "publishReady": false,
+    "releaseAuthorized": false
+  },
+  "nonAuthorizingDependencies": [
+    "Draft #1019 contains the five exact Daily blob hashes and six unpublished claims",
+    "Draft #1020 contains general rights matrix of seven source entries, 49 denied dimensions and 10 denied release gates",
+    "Public agency notices permit much government-authored public-domain reuse with exceptions, but never substitute for legal/local distribution review",
+    "No owner-approved exception for incomplete source weeks or production publishing exists"
+  ]
+}

@@ -92,6 +92,14 @@ The plan distinguishes scheduled release time, agency-issued release time, indep
 
 Holiday/missing Daily treatment is also unresolved. The current five-Daily rule describes the already complete October 26–30 sample. A **future** explicitly approved partial-week policy could allow one to five genuinely published Dailies, documented missing days and a reviewed Friday publication; it would **not** invent new Dailies or permit the Monthly to silently skip a Friday. If a Friday is missing or all Dailies are absent, the future Monthly must fail closed until separately documented owner review. This is only a proposed design, not a changed publication eligibility rule.
 
+## Stage B — actionable source-use and chronology decisions, no publication
+
+The owner has already **PASSED Stage A editorial/layout** on the frozen private HTML blob. To prevent unnecessary re-review of unrelated copyrights or an expensive data license, the [five-item narrow-use review](stage-b-narrow-source-use-review.draft.json) and [two-decision Stage B signoff packet](stage-b-source-rights-and-release-decision.draft.md) now cover **only original English explanatory text, government-reported facts, exact issuer links and attribution on one eventual freely accessible webpage**. Original Score, vendor data, government expressive passages/tables/marks, automated feeds, translations, source rehosting, downloadable PDF and newsletter/RSS delivery stay out of scope.
+
+Agency notices generally permit links and agency-authored content reuse with third-party and trademark exclusions. **No blanket foreign-law or source-specific public-production clearance is inferred.** Only four worksheet questions are material to this first intended medium: authorship/exceptions, commercial educational use, attribution/direct links and relevant Romania/EU/international publication. The five unused distribution/media rights dimensions are **OUT OF SCOPE, not approved**; all 45 historical flags remain false. The next owner/reviewer scope decision and official issuer-time + later exact-version editorial evidence policy are **unapproved**.
+
+After those two scoped decisions are recorded, a separate new public-release candidate and its own exact-commit user authorization would still be necessary. **Do not merge, deploy, remove Vercel Authentication, index or change Production or original Score during the current Stage B research.** Independent Monthly eligibility remains 0/4.
+
 ## Required decisions before a separate release-stage PR
 
 - Legal/provider/source reviewer: clarify reuse terms for each *exact* Federal Reserve, BEA, BLS or other official release, allowed fact quotation/derivatives, commercial display, attribution, machine-readable format, snapshots and archives. Official government hosting or a Daily citation does not automatically settle every series or downstream use; no unapproved source fetch.

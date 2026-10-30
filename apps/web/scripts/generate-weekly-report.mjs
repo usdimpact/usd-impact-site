@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { load, FAILSAFE_SCHEMA } from 'js-yaml';
+import { readGate } from './score-derived-publication-rights-gate.mjs';
 
 const COMPLIANCE = 'Educational and informational only. This report summarizes published USD Impact editions and the systematic weekly score. It is not investment, financial, trading, legal, or tax advice and is not a recommendation to buy or sell any asset.';
 const SCORE_BREADTH_WATCH = "Watch the breadth of the score's eight component contributions alongside these events to see whether the completed-week configuration persists, narrows, or moves toward the nearest regime boundary.";
@@ -188,6 +189,12 @@ function parseArgs(argv) {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  // The exported pure generator stays available to synthetic offline tests.
+  // Real Score-derived CLI output must respect the canonical site HOLD first.
+  const rights = readGate();
+  if (rights.hold !== false) {
+    throw new Error('Weekly Score-derived report CLI is on rights HOLD (pipeline Issue #155); no score input or output was touched.');
+  }
   const args = parseArgs(process.argv.slice(2));
   if (!args.week || !args.score || !args.output) throw new Error('usage: --week YYYY-MM-DD --score FILE --output FILE [--news-root DIR]');
   const newsRoot = path.resolve(args['news-root'] ?? 'src/content/news');

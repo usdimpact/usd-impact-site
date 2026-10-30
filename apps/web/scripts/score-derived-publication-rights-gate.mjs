@@ -10,6 +10,10 @@ export function evaluateGate(payload) {
     return { hold: true, state: 'hold', reason: 'missing_or_malformed_gate' };
   }
 
+  if (payload.version !== 1) {
+    return { hold: true, state: 'hold', reason: 'unsupported_rights_gate_version' };
+  }
+
   const state = payload.state;
   if (state === 'hold') {
     return {
@@ -19,21 +23,14 @@ export function evaluateGate(payload) {
     };
   }
 
-  if (state !== 'allow') {
-    return { hold: true, state: 'hold', reason: 'unknown_gate_state' };
+  if (state === 'allow') {
+    // Version 1 has no source-specific, derivative-distribution, retention,
+    // or owner Production authorization contract. A GitHub issue receipt is
+    // review evidence, never a market-data license or publication release.
+    return { hold: true, state: 'hold', reason: 'v1_allow_not_an_authorized_release_contract' };
   }
 
-  const approver = payload.approved_by;
-  const receipt = payload.decision_receipt;
-  const receiptOk = typeof receipt === 'string'
-    && /^https:\/\/github\.com\/usdimpact\/[A-Za-z0-9_.-]+\/(?:issues|pull)\/\d+$/.test(receipt);
-  const approverOk = typeof approver === 'string' && approver.trim().length > 0;
-
-  if (!receiptOk || !approverOk) {
-    return { hold: true, state: 'hold', reason: 'allow_missing_approval_receipt' };
-  }
-
-  return { hold: false, state: 'allow', reason: 'approved' };
+  return { hold: true, state: 'hold', reason: 'unknown_gate_state' };
 }
 
 export function readGate(gatePath = defaultGatePath) {

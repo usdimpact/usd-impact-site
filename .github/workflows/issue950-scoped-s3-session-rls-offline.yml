@@ -6,6 +6,7 @@ on:
       - 'docs/operations/candidates/issue950-s3-jwt-session-*.review.sql'
       - 'docs/operations/candidates/issue950-pdf-only-*.review.sql'
       - 'docs/operations/issue950-pdf-only-restore-upsert-pilot-review-2026-10-30.md'
+      - 'docs/operations/issue950-owner-operated-single-pdf-go-no-go-2026-10-30.md'
       - 'apps/web/scripts/test-issue950-scoped-s3-jwt-rls-pglite.mjs'
       - 'apps/web/scripts/test-account-deletion-review-only-activation.mjs'
       - '.github/workflows/issue950-scoped-s3-session-rls-offline.yml'

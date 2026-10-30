@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "usd-impact-independent-macro-weekly-main-integration-hold-v1",
+  "preparedCalendarDate": "2026-10-30",
+  "state": "MAIN_BASED_DRAFT_SOURCE_ONLY_UNPUBLISHED",
+  "sourceAndRepository": {
+    "repository": "usdimpact/usd-impact-site",
+    "baseProtectedMainCommit": "eb832fac7203a6a0f2ff29c0320616114e39224f",
+    "sourceCandidatePr": 1024,
+    "sourceCandidateBranch": "agent/independent-macro-weekly-public-candidate-2026-10-30",
+    "sourceCandidateReviewedGitCommit": "d4d55c7ae721c21ab464f5429b679b9020ea9e16",
+    "parentDraftPr": 1019,
+    "parallelIncompatibleRightsPr": 1020,
+    "copiedOnlyExplicitSmallSubset": true,
+    "sourcePrsNotMerged": true
+  },
+  "intendedEdition": {
+    "series": "independent_macro_education",
+    "language": "en",
+    "coverageStart": "2026-10-26",
+    "coverageEnd": "2026-10-30",
+    "workingTitle": "USD Impact Macro Weekly Review — October 26–30, 2026",
+    "proposedPath": "/macro-reviews/weekly/2026-10-30/",
+    "candidateHtmlSource": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+    "candidateHtmlGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "routeSource": "apps/web/src/pages/macro-reviews/weekly/[date].astro",
+    "routeStaticPathsReturnEmpty": true,
+    "generatedPublicPageCount": 0,
+    "published": false,
+    "publicIndexing": false,
+    "actualFirstUsdImpactPublicationTimestampUtc": null,
+    "olderWeekliesAreOriginalScoreAndNeverMonthlyInputs": true
+  },
+  "ownerDecision": {
+    "ownerReceiptSnapshot": "docs/operations/independent-macro-release/owner-scope-pass.snapshot.draft.json",
+    "ownerReceiptGitBlobSha": "0d3cdf3f5e1251c17dfa0fed1190aec86dbc5dee",
+    "exactCandidateEditorialPass": true,
+    "narrowPublisherFactsAndLinksScopeAccepted": true,
+    "draftedIssuerTimesPlusLaterEditorialMethodAccepted": true,
+    "copiedSourceTextImagesTablesLogosAllowed": false,
+    "additionalVendorsOrOriginalScoreRightsAllowed": false,
+    "qualifiedCrossBorderLegalClearance": false,
+    "itemSpecificThirdPartyExceptionReviewComplete": false,
+    "originalScoreRightsUnblocked": false,
+    "newMainReleaseCandidateEditorialPassRequiredIfHTMLChanged": true,
+    "publicProductionApproval": false
+  },
+  "sources": {
+    "officialSourceUrls": [
+      "https://www.federalreserve.gov/newsevents/2026-october.htm",
+      "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+      "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+      "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026",
+      "https://www.bls.gov/news.release/archives/eci_10302026.htm"
+    ],
+    "originalPublishedDailyFiles": [
+      {
+        "date": "2026-10-26",
+        "blobSha": "a05089cbcb372862455157e0382a9a4e81cbd532"
+      },
+      {
+        "date": "2026-10-27",
+        "blobSha": "29ee81eb8ac3e49ebf4676c34fb025a052daf398"
+      },
+      {
+        "date": "2026-10-28",
+        "blobSha": "c7e6ae165a445658aaefe5958f753c4474e89212"
+      },
+      {
+        "date": "2026-10-29",
+        "blobSha": "068950a9aec9c4b5bee6ca8ce16ebdadd430451e"
+      },
+      {
+        "date": "2026-10-30",
+        "blobSha": "f8881e383adba66eb801a3fbbcb4d1507de32917"
+      }
+    ],
+    "finalDailyAuditSnapshot": "docs/operations/independent-macro-release/final-daily-source-audit.snapshot.draft.json",
+    "finalDailyAuditGitBlobSha": "c1fc62c970339b7fec5e89241640d7253f4c2644",
+    "validatedDailyCount": 5,
+    "officialSourceCount": 5,
+    "claimCount": 6,
+    "authorizingThirdPartyIssuerLicenseReceipts": 0,
+    "sourceMediaOutsideExactEnglishPage": false,
+    "noAutomatedExternalMarketDataFeeds": true
+  },
+  "existingSiteReuse": {
+    "baseLayout": "apps/web/src/layouts/BaseLayout.astro",
+    "baseLayoutGitBlobSha": "513d7e0472d7983c543af928bb54612b87bd786d",
+    "privacyNotice": "apps/web/src/pages/privacy.md",
+    "privacyNoticeGitBlobSha": "2c41e5a77b0df62802371468de43c0c964c00928",
+    "consentComponent": "apps/web/src/components/ConsentClient.astro",
+    "consentComponentGitBlobSha": "3d97c458e97e51860d9002346fcb030746151292",
+    "publicVercelConfig": "apps/web/vercel.json",
+    "publicVercelConfigGitBlobSha": "fe618b4f85e68c491f30406562e964ad43cae9b3",
+    "agentBranchAutoDeploymentDisabled": true,
+    "existingSitePrivacyCookiesTermsCompliancePresent": true,
+    "releasePageUsesBaseLayoutNow": false,
+    "standaloneArticleContainsNoScriptsOrTrackers": true,
+    "futureSwitchToExistingBaseLayoutWouldModifyReviewedPresentation": true,
+    "futureLayoutSwitchRequiresFreshOwnerPresentationReview": true,
+    "privacyAndCookieComplianceNotCertified": true
+  },
+  "holds": {
+    "sourceItemGlobalReuseRightsApproved": false,
+    "qualifiedRomaniaEuInternationalDistributionApproved": false,
+    "fullIndependentClaimLevelSourceReviewApproved": false,
+    "finalLegalAndCompliancePass": false,
+    "originalScorePublicationRightsGranted": false,
+    "mainIntegrationMergeAuthorized": false,
+    "protectedPreviewDeploymentAuthorized": false,
+    "publicProductionDeploymentAuthorized": false,
+    "searchIndexingAuthorized": false,
+    "siteNavigationLinkAuthorized": false,
+    "newsletterRssPdfOrTranslationsAuthorized": false,
+    "actualPublicationRecorded": false
+  },
+  "technicalConstraints": {
+    "routeGetStaticPathsMustAlwaysBeEmpty": true,
+    "generatedHtmlForCandidateForbidden": true,
+    "candidateSitemapEntryForbidden": true,
+    "candidateTextLeakInBuiltAssetsForbidden": true,
+    "noCurrentPublicRoutesChanged": true,
+    "legacyWeeklyAndMonthlyUnchanged": true,
+    "noExternalSourceApiCalls": true,
+    "noCommerceOrMembershipChanges": true,
+    "noNewTrackingOrConsentChanges": true,
+    "noLiveDeploymentWorkflow": true,
+    "noOriginalScoreRightsGateModification": true,
+    "noGitMergeAndNoMainWrites": true
+  },
+  "actualPublishedIndependentWeeklyCount": 0,
+  "requiredGenuineConsecutiveFridayWeekliesForMonthly": 4,
+  "releaseAuthorized": false,
+  "publishReady": false,
+  "operatorFollowup": [
+    "Review and clear only the unresolved international-law/third-party source exceptions and site privacy/cookie implications with appropriate authority",
+    "Retain exact source and owner review evidence; choose final site layout and obtain new review if the HTML presentation changes",
+    "Produce a separately authorized minimal public route activation change against a reviewed exact commit and active protected main",
+    "Verify quality/build/CodeQL and Vercel target protections before any authorized Preview or Production",
+    "After a separately approved live release record actual first publication timestamp and verify original Score remains held"
+  ]
+}

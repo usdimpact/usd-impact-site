@@ -183,6 +183,18 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
     scopedStyle.includes('@media(max-width:580px)') &&
     scopedStyle.includes('prefers-reduced-motion:reduce'),
     'desktop/tablet/mobile and reduced-motion Draft presentation rules exist');
+  // The disabled getStaticPaths([]) means Astro never renders this component
+  // in a normal build. Still parse/transform both component and route using
+  // Astro's own compiler, in the CI runner only, without emitting a website.
+  const compiler=await import('@astrojs/compiler');
+  const [componentAstro,routeAstro]=await Promise.all([
+    compiler.transform(sourceComponent,{filename:'src/components/IndependentMacroWeeklyDraftShell.astro'}),
+    compiler.transform(route,{filename:'src/pages/macro-reviews/weekly/[date].astro'})
+  ]);
+  ok(typeof componentAstro.code==='string' && componentAstro.code.length>100,
+    'Astro compiler parses new shared-site Draft component');
+  ok(typeof routeAstro.code==='string' && routeAstro.code.length>60,
+    'Astro compiler parses disabled route importing Draft component');
 }
 
 // A browser session checked only the EXISTING public privacy page; it did

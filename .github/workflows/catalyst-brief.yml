@@ -158,6 +158,7 @@ jobs:
         run: node scripts/validate-publication-content.mjs --preflight
 
       - name: Open publication pull request
+        id: publish_pr
         if: steps.eligibility.outputs.publishable == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -227,6 +228,7 @@ jobs:
             exit 1
           fi
           echo 'Required PR-event checks, editorial facts/calendar review, Preview and exact-version release approval remain separate gates.'
+          echo "validated_pr_url=$pr_url" >> "$GITHUB_OUTPUT"
           echo "Catalyst Brief passed Web quality and is ready for protected review and merge: $pr_url"
 
       - name: Record automation failure
@@ -240,13 +242,15 @@ jobs:
           if [ -n "$issue_number" ]; then gh issue comment "$issue_number" --body "$body"; else gh issue create --title "$title" --body "$body"; fi
 
       - name: Close recovered automation issue
-        if: success()
+        # A no-candidate, held, unconfigured or manually dispatched run is not a verified scheduled recovery.
+        if: success() && github.event_name == 'schedule' && steps.config.outputs.configured == 'true' && steps.candidate.outputs.has_candidate == 'true' && steps.eligibility.outputs.publishable == 'true' && steps.publish_pr.outputs.validated_pr_url != ''
         env:
           GH_TOKEN: ${{ github.token }}
+          VALIDATED_PUBLICATION_PR: ${{ steps.publish_pr.outputs.validated_pr_url }}
         run: |
           title="Important Catalyst Brief automation requires attention"
           issue_number="$(gh issue list --state open --search "$title in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -n 1)"
           if [ -n "$issue_number" ]; then
-            gh issue comment "$issue_number" --body "Recovered in workflow run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}."
+            gh issue comment "$issue_number" --body "Scheduled Catalyst automation recovered to validated PR handoff ${VALIDATED_PUBLICATION_PR} in workflow run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Editorial review and merge remain separate; no Production publication is claimed."
             gh issue close "$issue_number"
           fi

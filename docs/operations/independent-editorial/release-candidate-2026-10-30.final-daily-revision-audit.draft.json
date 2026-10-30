@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "independent-macro-weekly-source-daily-exact-version-reconciliation-v1-draft",
+  "preparedDate": "2026-10-30",
+  "repo": "usdimpact/usd-impact-site",
+  "verifiedProtectedMainCommit": "eb832fac7203a6a0f2ff29c0320616114e39224f",
+  "candidatePr": 1024,
+  "sourcePinnedWeeklyGitBlobSha": "11056d67139f48ed86cebf6522149ac6e79d987e",
+  "method": "read-only GitHub fetch_file at exact Daily correction commits and protected main; compare Git blob hashes; inspect merged PR correction chronology",
+  "result": "FIVE_OF_FIVE_PUBLISHED_DAILY_BLOBS_EXACT_MATCH",
+  "allFiveDailiesPublished": true,
+  "pinnedFinalDailyBlobsVerified": 5,
+  "fourPostReleaseOfficialOutcomesRepresented": true,
+  "allThreeAffectedOutcomeDailyCorrectionsHappenedAfterIssuerDeclaredTime": true,
+  "fedIntermediateCorrectionShaDoesNotEqualFinalPublishedDaily": true,
+  "fedLaterMergedPr928ResolvesToFinalPinnedDailyBlob": true,
+  "officialIssuerFirstHttpPostingTimesEstablished": false,
+  "historicalDailyGeneratedAtRewritten": false,
+  "publisherIndependentWeeklyExactArticleOwnerPassRecordedInSeparateReceipt": true,
+  "preExistingDailyPassDoesNotAutomaticallyBecomeIndependentWeeklyPass": true,
+  "fullQualifiedLegalOrReuseReviewComplete": false,
+  "allIndependentOriginalSourceUsePermissionsStillHold": true,
+  "originalScoreGateStillHold": true,
+  "monthlyIndependentPublishedWeeklyCount": 0,
+  "publicReleaseAuthorized": false,
+  "items": [
+    {
+      "date": "2026-10-26",
+      "exactPublishedDailyBlobSha": "a05089cbcb372862455157e0382a9a4e81cbd532",
+      "publicationStatus": "published",
+      "category": "fomc_preview",
+      "officialOutcomeTime": null,
+      "reviewedFinalRevisionCommit": null,
+      "reviewedFinalRevisionCommitAt": null,
+      "claimIds": [
+        "fomc-preview-oct26"
+      ]
+    },
+    {
+      "date": "2026-10-27",
+      "exactPublishedDailyBlobSha": "29ee81eb8ac3e49ebf4676c34fb025a052daf398",
+      "publicationStatus": "published",
+      "category": "fomc_preview",
+      "officialOutcomeTime": null,
+      "reviewedFinalRevisionCommit": null,
+      "reviewedFinalRevisionCommitAt": null,
+      "claimIds": [
+        "fomc-reminder-oct27"
+      ]
+    },
+    {
+      "date": "2026-10-28",
+      "exactPublishedDailyBlobSha": "c7e6ae165a445658aaefe5958f753c4474e89212",
+      "publicationStatus": "published",
+      "category": "official_fomc_outcome",
+      "officialOutcomeTime": "2026-10-28T18:00:00Z",
+      "reviewedFinalRevisionCommit": "8eb805ad9ae43148d188f61a960aed69a70b528a",
+      "reviewedFinalRevisionCommitAt": "2026-10-28T19:38:20Z",
+      "claimIds": [
+        "fomc-outcome-oct28"
+      ],
+      "chronology": [
+        {
+          "pr": 926,
+          "commit": "b0790a73324741bf3c1f1e5b9603670b68c2e48b",
+          "recordedAt": "2026-10-28T19:30:52Z",
+          "dailyBlobAtCommit": "e0dfe2159adfe1d4da79299773e7fb4125c31fee",
+          "matchesFinalPinnedDailyBlob": false,
+          "role": "intermediate post-release FOMC corrected Daily"
+        },
+        {
+          "pr": 928,
+          "commit": "8eb805ad9ae43148d188f61a960aed69a70b528a",
+          "recordedAt": "2026-10-28T19:38:20Z",
+          "dailyBlobAtCommit": "c7e6ae165a445658aaefe5958f753c4474e89212",
+          "matchesFinalPinnedDailyBlob": true,
+          "role": "later same-day Daily revision with additional official chair statement context"
+        },
+        {
+          "pr": 928,
+          "mergeAtUtc": "2026-10-28T19:41:07Z",
+          "role": "final Daily revision merged"
+        }
+      ],
+      "priorExactDailyOwnerPass": false
+    },
+    {
+      "date": "2026-10-29",
+      "exactPublishedDailyBlobSha": "068950a9aec9c4b5bee6ca8ce16ebdadd430451e",
+      "publicationStatus": "published",
+      "category": "official_gdp_and_pce_outcome",
+      "officialOutcomeTime": "2026-10-29T12:30:00Z",
+      "reviewedFinalRevisionCommit": "14bbc23422518eb8850e4591f0127ba50cf68d7d",
+      "reviewedFinalRevisionCommitAt": "2026-10-29T23:11:15Z",
+      "claimIds": [
+        "gdp-oct29",
+        "pce-oct29"
+      ],
+      "chronology": [
+        {
+          "pr": 938,
+          "commit": "14bbc23422518eb8850e4591f0127ba50cf68d7d",
+          "recordedAt": "2026-10-29T23:11:15Z",
+          "dailyBlobAtCommit": "068950a9aec9c4b5bee6ca8ce16ebdadd430451e",
+          "matchesFinalPinnedDailyBlob": true,
+          "role": "post-12:30Z BEA primary-source Daily correction"
+        },
+        {
+          "pr": 938,
+          "ownerCommentAtUtc": "2026-10-29T23:11:35Z",
+          "url": "https://github.com/usdimpact/usd-impact-site/pull/938#issuecomment-6510694719",
+          "role": "owner requested correction; not independent Weekly PASS"
+        },
+        {
+          "pr": 938,
+          "mergeAtUtc": "2026-10-29T23:12:58Z",
+          "role": "final Daily revision merged"
+        }
+      ],
+      "priorExactDailyOwnerPass": false
+    },
+    {
+      "date": "2026-10-30",
+      "exactPublishedDailyBlobSha": "f8881e383adba66eb801a3fbbcb4d1507de32917",
+      "publicationStatus": "published",
+      "category": "official_eci_outcome",
+      "officialOutcomeTime": "2026-10-30T12:30:00Z",
+      "reviewedFinalRevisionCommit": "8aa2178d0b024cd6740b527f3ee32a8c2962f4d4",
+      "reviewedFinalRevisionCommitAt": "2026-10-30T14:24:06Z",
+      "claimIds": [
+        "eci-oct30"
+      ],
+      "chronology": [
+        {
+          "pr": 1009,
+          "commit": "8aa2178d0b024cd6740b527f3ee32a8c2962f4d4",
+          "recordedAt": "2026-10-30T14:24:06Z",
+          "dailyBlobAtCommit": "f8881e383adba66eb801a3fbbcb4d1507de32917",
+          "matchesFinalPinnedDailyBlob": true,
+          "role": "post-12:30Z BLS Daily correction"
+        },
+        {
+          "pr": 1009,
+          "ownerPassAtUtc": "2026-10-30T14:42:47Z",
+          "url": "https://github.com/usdimpact/usd-impact-site/pull/1009#issuecomment-6525502611",
+          "role": "exact-version Daily editorial PASS only"
+        },
+        {
+          "pr": 1009,
+          "mergeAtUtc": "2026-10-30T14:42:56Z",
+          "role": "final Daily revision merged"
+        }
+      ],
+      "priorExactDailyOwnerPass": true
+    }
+  ]
+}

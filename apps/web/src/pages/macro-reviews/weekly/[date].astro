@@ -1,0 +1,13 @@
+---
+import unpublishedCandidateHtml from '../../../data/independent-macro-review/weekly-2026-10-30.release-candidate.html?raw';
+
+// DRAFT-ONLY / UNROUTED. A source file is not a publication approval.
+// The owner's Stage B authorization does not permit public pages or indexing.
+// Until a separate exact-commit rights + editorial + Production release decision,
+// static generation MUST yield no paths, regardless of environment variables.
+export const prerender = true;
+export function getStaticPaths() {
+  return [];
+}
+---
+<Fragment set:html={unpublishedCandidateHtml} />

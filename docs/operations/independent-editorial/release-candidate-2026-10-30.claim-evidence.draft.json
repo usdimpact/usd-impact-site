@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "independent-macro-weekly-exact-claim-review-evidence-v0-draft",
+  "preparedDate": "2026-10-30",
+  "status": "OFFICIAL_FACTS_CONFIRMED_WEEKLY_EDITORIAL_AND_RIGHTS_HOLD",
+  "candidatePr": 1024,
+  "parentPr": 1019,
+  "candidateHtmlGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+  "sourceWeeklyGitBlobSha": "11056d67139f48ed86cebf6522149ac6e79d987e",
+  "dailyBlobs": {
+    "2026-10-26": "a05089cbcb372862455157e0382a9a4e81cbd532",
+    "2026-10-27": "29ee81eb8ac3e49ebf4676c34fb025a052daf398",
+    "2026-10-28": "c7e6ae165a445658aaefe5958f753c4474e89212",
+    "2026-10-29": "068950a9aec9c4b5bee6ca8ce16ebdadd430451e",
+    "2026-10-30": "f8881e383adba66eb801a3fbbcb4d1507de32917"
+  },
+  "claims": [
+    {
+      "claimId": "fomc-preview-oct26",
+      "kind": "calendar_preview",
+      "sourceId": "fed-october-calendar",
+      "sourceDailyDate": "2026-10-26",
+      "exactSourceDailyGitBlobSha": "a05089cbcb372862455157e0382a9a4e81cbd532",
+      "exactOfficialSourceUrl": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+      "originalFactualSummary": "Meeting scheduled for October 27–28. The early preview is not a policy outcome.",
+      "issuerStatedIssueAtUtc": null,
+      "actualFirstHttpPostingAtUtc": null,
+      "dailyPostReleaseEvidence": null,
+      "independentCandidateExactClaimApproved": false,
+      "sourceReuseRightsApproved": false
+    },
+    {
+      "claimId": "fomc-reminder-oct27",
+      "kind": "calendar_preview",
+      "sourceId": "fed-october-calendar",
+      "sourceDailyDate": "2026-10-27",
+      "exactSourceDailyGitBlobSha": "29ee81eb8ac3e49ebf4676c34fb025a052daf398",
+      "exactOfficialSourceUrl": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+      "originalFactualSummary": "Meeting reminder on October 27. The early preview is not a policy outcome.",
+      "issuerStatedIssueAtUtc": null,
+      "actualFirstHttpPostingAtUtc": null,
+      "dailyPostReleaseEvidence": null,
+      "independentCandidateExactClaimApproved": false,
+      "sourceReuseRightsApproved": false
+    },
+    {
+      "claimId": "fomc-outcome-oct28",
+      "kind": "official_outcome",
+      "sourceId": "fed-fomc-statement-20261028",
+      "sourceDailyDate": "2026-10-28",
+      "exactSourceDailyGitBlobSha": "c7e6ae165a445658aaefe5958f753c4474e89212",
+      "exactOfficialSourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+      "originalFactualSummary": "Federal funds target range maintained at 3.75%–4.00%; 10–2 vote, two preferred a 25-basis-point increase.",
+      "issuerStatedIssueAtUtc": "2026-10-28T18:00:00Z",
+      "actualFirstHttpPostingAtUtc": null,
+      "dailyPostReleaseEvidence": {
+        "prNumber": 926,
+        "correctedHeadSha": "b0790a73324741bf3c1f1e5b9603670b68c2e48b",
+        "correctedCommitAtUtc": "2026-10-28T19:30:52Z",
+        "postReleaseObserved": true,
+        "editorialEvidenceType": "DAILY_POST_RELEASE_CORRECTION_MERGED_NOT_NEW_WEEKLY_PASS",
+        "datedReviewCommentUrl": null,
+        "dailyExactVersionOwnerPass": false
+      },
+      "independentCandidateExactClaimApproved": false,
+      "sourceReuseRightsApproved": false
+    },
+    {
+      "claimId": "gdp-oct29",
+      "kind": "official_outcome",
+      "sourceId": "bea-gdp-q3-20261029",
+      "sourceDailyDate": "2026-10-29",
+      "exactSourceDailyGitBlobSha": "068950a9aec9c4b5bee6ca8ce16ebdadd430451e",
+      "exactOfficialSourceUrl": "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+      "originalFactualSummary": "BEA Q3 2026 real GDP advance +3.4% SAAR, compared with +2.2% Q2.",
+      "issuerStatedIssueAtUtc": "2026-10-29T12:30:00Z",
+      "actualFirstHttpPostingAtUtc": null,
+      "dailyPostReleaseEvidence": {
+        "prNumber": 938,
+        "correctedHeadSha": "14bbc23422518eb8850e4591f0127ba50cf68d7d",
+        "correctedCommitAtUtc": "2026-10-29T23:11:15Z",
+        "postReleaseObserved": true,
+        "editorialEvidenceType": "DAILY_POST_RELEASE_OWNER_REQUESTED_CORRECTION_NOT_NEW_WEEKLY_PASS",
+        "datedReviewCommentUrl": "https://github.com/usdimpact/usd-impact-site/pull/938#issuecomment-6510694719",
+        "dailyExactVersionOwnerPass": false
+      },
+      "independentCandidateExactClaimApproved": false,
+      "sourceReuseRightsApproved": false
+    },
+    {
+      "claimId": "pce-oct29",
+      "kind": "official_outcome",
+      "sourceId": "bea-pce-sep-20261029",
+      "sourceDailyDate": "2026-10-29",
+      "exactSourceDailyGitBlobSha": "068950a9aec9c4b5bee6ca8ce16ebdadd430451e",
+      "exactOfficialSourceUrl": "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026",
+      "originalFactualSummary": "BEA September 2026 headline PCE +3.6% year over year and core PCE +3.1% year over year.",
+      "issuerStatedIssueAtUtc": "2026-10-29T12:30:00Z",
+      "actualFirstHttpPostingAtUtc": null,
+      "dailyPostReleaseEvidence": {
+        "prNumber": 938,
+        "correctedHeadSha": "14bbc23422518eb8850e4591f0127ba50cf68d7d",
+        "correctedCommitAtUtc": "2026-10-29T23:11:15Z",
+        "postReleaseObserved": true,
+        "editorialEvidenceType": "DAILY_POST_RELEASE_OWNER_REQUESTED_CORRECTION_NOT_NEW_WEEKLY_PASS",
+        "datedReviewCommentUrl": "https://github.com/usdimpact/usd-impact-site/pull/938#issuecomment-6510694719",
+        "dailyExactVersionOwnerPass": false
+      },
+      "independentCandidateExactClaimApproved": false,
+      "sourceReuseRightsApproved": false
+    },
+    {
+      "claimId": "eci-oct30",
+      "kind": "official_outcome",
+      "sourceId": "bls-eci-q3-20261030",
+      "sourceDailyDate": "2026-10-30",
+      "exactSourceDailyGitBlobSha": "f8881e383adba66eb801a3fbbcb4d1507de32917",
+      "exactOfficialSourceUrl": "https://www.bls.gov/news.release/archives/eci_10302026.htm",
+      "originalFactualSummary": "BLS Q3 2026 civilian compensation +0.8% SA QoQ, after 0.9% Q2; +3.4% NSA year over year.",
+      "issuerStatedIssueAtUtc": "2026-10-30T12:30:00Z",
+      "actualFirstHttpPostingAtUtc": null,
+      "dailyPostReleaseEvidence": {
+        "prNumber": 1009,
+        "correctedHeadSha": "8aa2178d0b024cd6740b527f3ee32a8c2962f4d4",
+        "correctedCommitAtUtc": "2026-10-30T14:24:06Z",
+        "postReleaseObserved": true,
+        "editorialEvidenceType": "DAILY_POST_RELEASE_EXACT_VERSION_OWNER_PASS_NOT_NEW_WEEKLY_PASS",
+        "datedReviewCommentUrl": "https://github.com/usdimpact/usd-impact-site/pull/1009#issuecomment-6525502611",
+        "dailyExactVersionOwnerPass": true
+      },
+      "independentCandidateExactClaimApproved": false,
+      "sourceReuseRightsApproved": false
+    }
+  ],
+  "verifiedOfficialOutcomeCount": 4,
+  "independentCandidateExactClaimPassCount": 0,
+  "issuerStatedIssueTimeAcceptedForDraftMethodOnly": true,
+  "issuerActualHttpPostingProven": false,
+  "noInventedPublicationDate": true,
+  "reviewCaveats": [
+    "PR #926 proves a later merged correction, not an independent Weekly owner PASS.",
+    "PR #938 contains the owner's request to correct a later Daily, not an independent Weekly owner PASS.",
+    "PR #1009 has a Daily exact-version editorial PASS, not an independent Weekly owner PASS.",
+    "The original publication timestamp of each agency website is unknown; the issuer's stated release time is not an HTTP receipt.",
+    "The five source-use and Romania/EU/international publishing rights decisions remain unapproved."
+  ],
+  "qualifiedRightsReviewApproved": false,
+  "finalWeeklyExactVersionEditorialApproved": false,
+  "publicReleaseAuthorized": false,
+  "firstMonthlyEligibleIndependentPublishedWeeks": 0
+}

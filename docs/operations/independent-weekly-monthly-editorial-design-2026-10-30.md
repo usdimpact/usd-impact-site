@@ -6,7 +6,7 @@
 
 ## Authority and scope
 
-Owner approved preparing a distinct educational Weekly and Monthly with existing verified published Daily text and independently rights-cleared official sources, on a Draft branch only. Existing Production, public routes, search indexing, membership, commerce, Score publication rights gates, Score formula and historical products remain untouched. The original owner approval covered design preparation, and the subsequent continuation approval extends Draft-only preparation to an **exact-source rights ledger and a standalone, pure synthetic-only validator with tests**. This PR therefore contains isolated documentation, the all-deny review ledger and independent offline test files only. No application import, package-script integration, scheduled workflow, source adapter, content entry, deployed route or production release. No completed review, legal permission, publisher receipt or release authorization is implied by approval to draft.
+Owner approved preparing a distinct educational Weekly and Monthly with existing verified published Daily text and independently rights-cleared official sources, on a Draft branch only. Existing Production, public routes, search indexing, membership, commerce, Score publication rights gates, Score formula and historical products remain untouched. The original owner approval covered design preparation, and the subsequent continuation approval extends Draft-only preparation to an **exact-source rights ledger and a standalone, pure synthetic-only validator with tests**. This PR therefore contains isolated documentation, the all-deny review ledger and independent offline test files only. No application runtime import, scheduled workflow edit, source adapter, content entry, deployed route or production release. A test-only addition to `apps/web/package.json` invokes invented-data checks from the pre-existing `validate:reports` quality gate; no legacy report validator is changed. No completed review, legal permission, publisher receipt or release authorization is implied by approval to draft.
 
 Authoritative issues: [Score redistribution #155](https://github.com/usdimpact/usd-impact-pipeline/issues/155), [FRED retention #282](https://github.com/usdimpact/usd-impact-pipeline/issues/282), [independent Macro Context Panel #313](https://github.com/usdimpact/usd-impact-pipeline/issues/313), and [Daily scheduler incident #840](https://github.com/usdimpact/usd-impact-site/issues/840). Existing original-Score Monthly source packet: [Draft #1014](https://github.com/usdimpact/usd-impact-site/pull/1014). None is closed or superseded by this proposal.
 
@@ -33,21 +33,21 @@ Implemented for structural rehearsal in [the pure validator](../../apps/web/scri
 
 | Field | Required meaning |
 | --- | --- |
-| \`contractVersion\` | Exactly \`independent-weekly-editorial-v0-draft\` |
-| \`series\` | Exactly \`independent-editorial\`; no original Score Weeklies |
-| \`status\` | \`draft\` or structurally hypothetical \`published\` (never a real publication action) |
-| \`id\` and \`slug\` | \`independent-weekly-YYYY-MM-DD\` and test namespace \`/independent/weekly/YYYY-MM-DD\`; **no route exists or is authorized** |
-| \`periodStart\` / \`periodEnd\` | Same Monday–Friday week; valid dates, Friday completed before editorial cutoff |
-| \`editorialAsOfUtc\` | Explicit UTC timestamp; validator requires an independent \`asOfUtc\` argument |
-| \`sourceDailyEditions\` | 1–5 distinct dated published Dailies, with original generation and editorial-review timestamps |
-| \`claimLineage\` | Unique claim ID, source ID, issuer, direct HTTPS URL, issuer publication time, corresponding Daily date and claim review time; **separate post-release revision receipt** if Daily generated before source appeared |
-| \`themes\` | Titles referencing approved claim IDs only |
-| \`approvals\` | \`sourceRightsDecisionReceipt\`, \`editorialApprovalReceipt\`, \`productionApprovalReceipt\`; required for hypothetical published shape, but not independently authenticated by this test |
-| \`complianceNote\` | Educational, expressly not investment/trading advice |
+| `contractVersion` | Exactly `independent-weekly-editorial-v0-draft` |
+| `series` | Exactly `independent-editorial`; no original Score Weeklies |
+| `status` | `draft` or structurally hypothetical `published` (never a real publication action) |
+| `id` and `slug` | `independent-weekly-YYYY-MM-DD` and test namespace `/independent/weekly/YYYY-MM-DD`; **no route exists or is authorized** |
+| `periodStart` / `periodEnd` | Same Monday–Friday week; valid dates, Friday completed before editorial cutoff |
+| `editorialAsOfUtc` | Explicit UTC timestamp; validator requires an independent `asOfUtc` argument |
+| `sourceDailyEditions` | 1–5 distinct dated published Dailies, with original generation and editorial-review timestamps |
+| `claimLineage` | Unique claim ID, source ID, issuer, direct HTTPS URL, issuer publication time, corresponding Daily date and claim review time; **separate post-release revision receipt** if Daily generated before source appeared |
+| `themes` | Titles referencing approved claim IDs only |
+| `approvals` | `sourceRightsDecisionReceipt`, `editorialApprovalReceipt`, `productionApprovalReceipt`; required for hypothetical published shape, but not independently authenticated by this test |
+| `complianceNote` | Educational, expressly not investment/trading advice |
 
-The validator rejects unknown schema fields and legacy keys such as \`score\`, \`scorePath\`, \`regime\`, \`zScore\`, \`contributions\`, original Weekly URLs and public Score data pointers. All outputs **always** contain \`releaseAuthorized:false\`, even when \`structurallyValid:true\`. Syntactically plausible approval-reference strings are *not* legal or owner signatures.
+The validator rejects unknown schema fields and legacy keys such as `score`, `scorePath`, `regime`, `zScore`, `contributions`, original Weekly URLs and public Score data pointers. All outputs **always** contain `releaseAuthorized:false`, even when `structurallyValid:true`. Syntactically plausible approval-reference strings are *not* legal or owner signatures.
 
-**Run in offline development only:** \`node --test apps/web/scripts/test-independent-editorial-validator.mjs\` from the repository root. No workflow or npm script has been changed to invoke it automatically. The 45 cases were executed against the exact staged module in an isolated JavaScript harness; direct Node command execution remains a separate QA step.
+**Offline testing:** `node --test apps/web/scripts/test-independent-editorial-validator.mjs` from repository root or `npm run validate:reports` inside `apps/web`. The latter runs only the new invented-data tests in addition to existing report QA. The 45 cases already passed against the staged module in an isolated JavaScript harness. GitHub exact-head CI provides independent Node evidence when complete.
 
 ## Proposed independent Monthly schema and eligibility
 
@@ -97,8 +97,8 @@ The Oct 30 Daily's original `generatedAt` precedes ECI release; the separately r
 - [x] Record relevant agency **general reuse policies** and seven exact issuer candidate references in the [source-rights review matrix](independent-editorial-source-rights-review-2026-10-30.md) and [all-deny JSON ledger](../../governance/independent-editorial-source-rights-review-2026-10-30.json). **This is not exact-item rights clearance:** 49/49 permissions and all 10 publication gates remain false.
 - [ ] Complete issuer exact-source third-party/copyright, link/excerpt, commercial use, translation, automated retrieval and retention reviews; record an actual scoped authority decision/receipt. Do not fetch market observations.
 - [ ] Approve independent methodology, final publication naming, reader-facing disclaimers and precise claim-level editorial signoff.
-- [x] Stage pure standalone validator and synthetic-only test suite after owner continuation approval; 45/45 V8 in-memory regression bodies passed. **No application integration, scheduled run or Production use.** Existing original Score validators and publishing workflows remain unchanged.
-- [ ] Execute the standalone `node --test` command in a verified Node checkout; keep this additional runner result distinct from the isolated in-memory regressions. No provider retrieval is needed.
+- [x] Stage pure standalone validator and synthetic-only test suite after owner continuation approval; 45/45 V8 in-memory regressions passed. Append only the new offline test command to the existing report-quality task on this Draft branch. **No runtime integration, publishing workflow edit, scheduled provider job or Production use.** Legacy validators remain unchanged.
+- [ ] Verify the amended `validate:reports` task runs the new Node tests on the exact PR head, without substituting earlier-head CI. No provider retrieval is needed.
 - [ ] Produce four approved and *actually published* independent consecutive Weeklies, then separately review a Monthly from those exact editions.
 - [ ] Exact-head CI + protected Preview + accessibility/sitemap/noindex + public rights + owner Production approval **all separately required** before release. No current approval covers these steps.
 

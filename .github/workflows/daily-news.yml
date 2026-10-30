@@ -49,7 +49,7 @@ jobs:
           # Treat only a confirmed HTTP 404 as absence. GitHub auth, transport,
           # throttling and server errors must never authorize another paid draft.
           file_headers="$(gh api --include --silent "repos/$GITHUB_REPOSITORY/contents/$expected_file?ref=main" 2>/dev/null)" || true
-          file_status="$(awk '/^HTTP\// {code=$2} END {print code}' <<< "$file_headers")"
+          file_status="$(awk '/^HTTP\// {code=$2} END {gsub(/\r/, "", code); print code}' <<< "$file_headers")"
           if [ "$file_status" = "200" ]; then
             echo "needed=false" >> "$GITHUB_OUTPUT"
             echo "reason=published" >> "$GITHUB_OUTPUT"

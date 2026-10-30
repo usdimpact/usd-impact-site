@@ -144,6 +144,26 @@ await handleVideoLibraryRequest(
 assert.equal(mediaReadErrorVideo.statusCode, 200);
 assert.match(mediaReadErrorVideo.body, /defaultTextTrack=en/);
 
+
+// The user's caption choice must never weaken entitlement or leak a
+// signed video token on the unauthenticated/unpaid path.
+const unpaidMediaPreview = responseRecorder();
+await handleVideoLibraryRequest(
+  request({ authenticated: true, url: '/api/video-library?__video_path=dollar-yields-liquidity' }),
+  unpaidMediaPreview,
+  {
+    environment: qaMediaEnvironment,
+    readAccessState: async () => ({
+      allowed: false, reason: 'missing', user: { id: mediaActorId },
+      profile: { account_id: mediaActorId, status: 'active' },
+    }),
+    readMediaCaptionLocale: async () => { throw Error('Never read preferences before entitlement PASS'); },
+    createToken: async () => { throw Error('Never sign media token for unpaid user'); },
+  },
+);
+assert.equal(unpaidMediaPreview.statusCode, 302);
+assert.equal(new URL(unpaidMediaPreview.getHeader('location'), `https://${host}`).pathname, '/account/access-required/');
+
 let headTokenCalls = 0;
 const head = responseRecorder();
 await handleVideoLibraryRequest(

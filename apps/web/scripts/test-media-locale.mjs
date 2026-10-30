@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { handleMediaLocaleRequest } from '../src/lib/media-locale-handler.js';
+import { handleMediaLocaleRequest, readMediaCaptionLocaleForPreview } from '../src/lib/media-locale-handler.js';
 
 // Offline, fake identity and fake network only. Never uses a real access
 // token, changes Development profiles, contacts PostgREST or sends email.
@@ -311,5 +311,42 @@ assert.match(privacyMigrationSql, /after update of status on public\.profiles/);
 assert.match(privacyMigrationSql, /security invoker/i);
 assert.doesNotMatch(privacyMigrationSql, /^\s*security definer/mi);
 assert.doesNotMatch(privacyMigrationSql, /update public\.ui02_access_ready_activation\s+set\s+enabled\s*=\s*true/i);
+
+
+// The protected player can read this preference only through a verified
+// user's JWT; it cannot infer it from transactional email settings.
+const mediaForPlayer = await readMediaCaptionLocaleForPreview({
+  environment: development,
+  config: fakeConfig,
+  accountId,
+  accessToken: fakeAccessToken,
+  fetchImpl: async (url, init) => {
+    assert.match(url, /\/rest\/v1\/account_media_locale_preferences\?/);
+    assert.match(url, new RegExp('account_id=eq\\.' + accountId));
+    assert.equal(init.method, 'GET');
+    assert.equal(init.headers.Authorization, 'Bearer ' + fakeAccessToken);
+    assert.equal(init.headers.apikey, fakeConfig.publishableKey);
+    return new Response(JSON.stringify([verifiedPreference('es', 3)]), { status: 200 });
+  },
+});
+assert.equal(mediaForPlayer, 'es');
+let disabledReaderNetwork = 0;
+const mediaProd = await readMediaCaptionLocaleForPreview({
+  environment: { ...development, VERCEL_ENV: 'production' },
+  accountId,
+  accessToken: fakeAccessToken,
+  config: fakeConfig,
+  fetchImpl: async () => { disabledReaderNetwork++; throw Error('production media lookup'); },
+});
+assert.equal(mediaProd, 'en');
+const wrongBranch = await readMediaCaptionLocaleForPreview({
+  environment: { ...development, VERCEL_GIT_COMMIT_REF: 'main' },
+  accountId,
+  accessToken: fakeAccessToken,
+  config: fakeConfig,
+  fetchImpl: async () => { disabledReaderNetwork++; throw Error('unapproved branch lookup'); },
+});
+assert.equal(wrongBranch, 'en');
+assert.equal(disabledReaderNetwork, 0);
 
 console.log('Account media language isolated Preview/RLS contracts passed.');

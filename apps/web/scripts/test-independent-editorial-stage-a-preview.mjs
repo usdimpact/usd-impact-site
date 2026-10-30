@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 const root = new URL('../../../docs/operations/independent-editorial/', import.meta.url);
@@ -77,4 +78,72 @@ check(vercel.rewrites.some((r)=>r.source==='/' && r.destination==='/macro-review
 check(vercel.rewrites.some((r)=>r.source==='/macro-reviews/weekly/2026-10-30/' && r.destination==='/macro-reviews/weekly/2026-10-30/index.html'), 'nested preview route');
 check(/^User-agent: \*/m.test(robots), 'robots user agent');
 check(/^Disallow: \/$/m.test(robots), 'robots all routes disallowed');
+
+// The owner's post-Stage-A PASS is narrowly scoped to the unchanged HTML and
+// layout; it is NOT a source-rights, merge, deploy, or publication receipt.
+// Preserve the Git content blobs of the exact artifacts that the owner reviewed.
+{
+  const review = JSON.parse(readFileSync(new URL('stage-a-editorial-layout-owner-pass.draft.json', root), 'utf8'));
+  const src = review.exactReviewedSource;
+  const dep = review.exactReviewedIsolatedDeployment;
+  const approval = review.passedScope;
+  const gitBlobSha = (source) => {
+    const bytes = Buffer.from(source, 'utf8');
+    return createHash('sha1')
+      .update(Buffer.from('blob ' + bytes.length + '\0', 'utf8'))
+      .update(bytes).digest('hex');
+  };
+  equal(review.schemaVersion, 'stage-a-independent-macro-weekly-editorial-layout-review-v1',
+    'review receipt contract');
+  equal(review.stage, 'A', 'review Stage A');
+  equal(review.recordedDate, '2026-10-30', 'owner dated PASS');
+  check(review.reviewSource === 'owner_explicit_pass_in_current_conversation', 'owner PASS source');
+  equal(review.reviewTimestampUtc, null, 'do not invent precise owner review time');
+  equal(src.repo, 'usdimpact/usd-impact-site', 'expected repo');
+  equal(src.reviewedPr, 1019, 'reviewed draft PR');
+  equal(src.reviewedGitCommitSha, '77551873f9d7a68cfeec11804dc0237cdc0154ac',
+    'exact reviewed Git commit');
+  equal(src.htmlGitBlobSha, gitBlobSha(article), 'reviewed article content must not change');
+  equal(src.vercelConfigGitBlobSha,
+    gitBlobSha(readFileSync(new URL('vercel.json', previewRoot), 'utf8')),
+    'reviewed noindex/security config must not change');
+  equal(src.robotsGitBlobSha, gitBlobSha(robots), 'reviewed robots must not change');
+  equal(dep.projectId, 'prj_rJ1pQKXoNAbrjMivScWeRYNfsAJa', 'isolated review project');
+  equal(dep.deploymentId, 'dpl_5qTFTzp6FaEMrqWvwLqFpmc3ESxT',
+    'isolated deployment reviewed');
+  equal(dep.platformDeploymentTarget, 'production',
+    'preserve isolated project target classification without concealing it');
+  check(dep.productionTargetIsIsolatedProjectOnly === true, 'not public site Production');
+  check(dep.approvedPreviewTargetAchieved === false, 'not an actual Preview-target deployment');
+  check(dep.deploymentTargetMismatchIsKnown === true, 'target mismatch must stay visible');
+  check(dep.gitConnectionPresent === false, 'no Git-integrated deployment');
+  equal(dep.authenticationSetting, 'all', 'all deployments require Vercel authentication');
+  equal(dep.anonymousDirectReviewUrl, 'login_required', 'anonymous review URL denied');
+  equal(dep.anonymousAliasRootUrl, 'login_required', 'anonymous alias denied');
+  check(dep.authenticatedBrowserRenderingVerifiedByConnector === false,
+    'owner PASS does not pretend to be connector-render QA');
+  check(dep.ownerAttestsEditorialAndLayoutReviewPass === true, 'owner PASS received');
+  check(approval.editorialCopyAndLayout === true, 'editorial/layout only approval');
+  for (const [name, allowed] of Object.entries(approval)) {
+    if (name === 'editorialCopyAndLayout') continue;
+    equal(allowed, false, 'owner did not approve release-related scope: ' + name);
+  }
+  check(review.releaseAuthorized === false, 'the new review record cannot release');
+  check(review.unchangedHolds.independentEditorialSourceRights === 'HOLD',
+    'independent source rights remain held');
+  check(review.unchangedHolds.publicUsdImpactProduction === 'HOLD',
+    'public Production remains held');
+  check(review.unchangedHolds.siteScoreGate === 'hold' &&
+    review.unchangedHolds.pipelineScoreGate === 'hold', 'original Score rights remain held');
+  equal(review.unchangedHolds.independentWeekliesActuallyPublished, 0,
+    'private review is not a published independent Weekly');
+  equal(review.unchangedHolds.independentMonthlyCountFromEligibleWeeklies, 0,
+    'private review cannot count towards Monthly');
+  check(review.frozenQaBaseline.exactReviewHtmlMustNotChangeWithoutNewEditorialReview,
+    'any future visual change requires another editorial PASS');
+  check(owner.authorizations.mergeToProtectedMain === false &&
+    owner.authorizations.publicPublication === false &&
+    owner.authorizations.productionDeployment === false, 'main release gates untouched');
+}
+
 console.log('Stage A independent Macro Weekly static preview: '+tests+' checks passed. Publication and source rights remain HOLD.');

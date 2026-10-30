@@ -41,7 +41,7 @@ eq(owner.exactReviewedSource.htmlGitBlobSha,
 eq(manifest.editorialProvenance.stageAApprovedGitCommitSha,
   owner.exactReviewedSource.reviewedGitCommitSha, 'approved Stage A Git revision');
 eq(manifest.editorialProvenance.publicCandidateExactVersionEditorialApproved,
-  false, 'new candidate presentation is not yet editorial-approved');
+  true, 'owner exact-version approval for new candidate must be recorded');
 ok(manifest.editorialProvenance.olderStageAPassNotTransferable,
   'cannot transfer owner PASS to modified HTML');
 eq(manifest.contentGitBlobSha, gitBlobSha(candidate), 'content changes require new manifest and review');
@@ -92,8 +92,10 @@ for (const source of manifest.sourceUse.sourceItems) {
 eq(manifest.sourceUse.sourceItems.length, scoped.size, 'no missing/extra sources');
 eq(manifest.existingIndependentPublishedWeeklyCount, 0, 'private candidate is not a Weekly');
 eq(manifest.requiredWeekliesBeforeFirstIndependentMonthly, 4, 'first Monthly requires four real Weeks');
-ok(Object.values(manifest.publisherGovernance).every((v) => v === false),
-  'every final legal, editorial, merge, indexing and Production flag false');
+for (const [gate, value] of Object.entries(manifest.publisherGovernance)) {
+  eq(value, ['finalIndependentExactContentPass', 'publisherNarrowFactsAndLinksUseScopeAccepted'].includes(gate),
+    'only exact editorial PASS and narrow-use publisher acceptance may be true: ' + gate);
+}
 ok(Object.values(manifest.technicalSafety).every((v) => v === true),
   'all specified technical safety invariants true');
 ok(manifest.externalGoLiveRequirements.length >= 6, 'release requirements are explicit');
@@ -165,8 +167,8 @@ ok(!/import\.meta\.env|process\.env|PUBLIC_/.test(route),
     'candidate approval count must remain zero');
   ok(!manifest.publisherGovernance.claimLevelExplicitIndependentEditorialApproval,
     'claim editor has not separately approved this Weekly');
-  ok(manifest.editorialProvenance.finalCandidateEditorialPassStillRequired === true,
-    'independent candidate still requires editorial PASS');
+  ok(manifest.editorialProvenance.finalCandidateEditorialPassStillRequired === false,
+    'exact candidate editorial PASS now recorded; legal/provenance hold separate');
   ok(evidence.issuerStatedIssueTimeAcceptedForDraftMethodOnly,
     'issuer times are supported in the draft method only');
   ok(!evidence.issuerActualHttpPostingProven,
@@ -219,6 +221,104 @@ ok(!/import\.meta\.env|process\.env|PUBLIC_/.test(route),
       eq(c.dailyPostReleaseEvidence, null, 'no fabricated correction receipt');
     }
   }
+}
+
+
+// The owner explicitly accepted THIS precise HTML and narrow original-facts
+// publisher use. This is not a general agency license, a qualified cross-border
+// legal signoff, or an invitation to enable public output.
+{
+  const ownerRecordText = readFileSync(
+    new URL('release-candidate-2026-10-30.owner-editorial-and-narrow-use-pass.draft.json', root), 'utf8');
+  const approval = JSON.parse(ownerRecordText);
+  eq(approval.schemaVersion, 'independent-macro-weekly-owner-editorial-and-narrow-use-pass-v1',
+    'owner review record schema');
+  eq(approval.decisionSource,
+    'user_explicit_approval_following_specific_dual_review_question',
+    'owner PASS comes from explicit two-part request');
+  eq(approval.exactReviewTimestampUtc, null, 'do not fabricate a review timestamp');
+  eq(approval.reviewedArtifact.draftPrNumber, 1024, 'correct stacked candidate PR');
+  eq(approval.reviewedArtifact.reviewedPrHeadAtDecision,
+    'd4d55c7ae721c21ab464f5429b679b9020ea9e16',
+    'exact source head approved before governance-only edits');
+  eq(approval.reviewedArtifact.htmlGitBlobSha, gitBlobSha(candidate),
+    'approved HTML exact blob still matches the current candidate');
+  eq(approval.reviewedArtifact.htmlGitBlobSha,
+    manifest.editorialProvenance.ownerReviewedExactContentGitBlobSha,
+    'owner PASS is bound to candidate manifest');
+  eq(manifest.editorialProvenance.ownerReviewReceiptGitBlobSha,
+    gitBlobSha(ownerRecordText), 'immutable owner review receipt is pinned');
+  eq(manifest.editorialProvenance.ownerReviewReceiptFile,
+    'docs/operations/independent-editorial/release-candidate-2026-10-30.owner-editorial-and-narrow-use-pass.draft.json',
+    'owner receipt provenance path pinned');
+  eq(approval.reviewedArtifact.exactClaimIds, weekly.claims.map(c => c.id),
+    'the approved article contains the six claim IDs from the same weekly');
+  eq(approval.reviewedArtifact.sourceItemIds, manifest.sourceUse.sourceItems.map(x => x.sourceId),
+    'five issuer sources match the exact candidate');
+  eq(approval.approvals.exactCandidateEditorialContentAndPresentationPass, true,
+    'owner exact candidate editorial content PASS');
+  eq(approval.approvals.publisherAcceptsNarrowOriginalProseOfficialFactsDirectLinksScope, true,
+    'owner accepts limited facts and direct links use');
+  eq(approval.approvals.publisherAcknowledgesDocumentedRomaniaEuInternationalRightsExceptions, true,
+    'owner reviewed international scope caveats');
+  eq(approval.approvals.issuerDeclaredIssueTimePlusAuthenticatedLaterReviewDraftMethodology, true,
+    'issuer time methodology accepted only for Draft');
+  eq(manifest.publisherGovernance.finalIndependentExactContentPass, true,
+    'owner candidate editorial approval reflected in manifest');
+  eq(manifest.publisherGovernance.publisherNarrowFactsAndLinksUseScopeAccepted, true,
+    'narrow owner publisher acceptance reflected in manifest');
+  eq(manifest.sourceUse.publisherAcceptedNarrowFactsAndOfficialLinksOnly, true,
+    'candidate source use is constrained to facts and hyperlinks');
+  eq(manifest.sourceUse.publisherAcknowledgedInternationalCopyrightExceptions, true,
+    'foreign-law caveats acknowledged');
+  eq(manifest.sourceUse.publisherAcceptedUseIsNotExternalAgencyLicense, true,
+    'owner does not claim agency rights license');
+  eq(manifest.sourceUse.ownerFinalRightsAcceptance, false,
+    'qualified final rights and production use still pending');
+  eq(manifest.sourceUse.qualifiedPerItemRightsReviewComplete, false,
+    'no qualified agency/third-party exception check invented');
+  eq(manifest.sourceUse.RomaniaEuInternationalDistributionReviewed, false,
+    'no qualified international legal opinion inferred from owner risk acceptance');
+  eq(manifest.editorialProvenance.independentWeeklyClaimOwnerPassCount, 0,
+    'whole-article approval must not masquerade as historical source claim receipts');
+  eq(manifest.editorialProvenance.laterExactClaimReviewReceiptsVerifiedForAllClaims, false,
+    'separate dated claim-specific evidence still requires completion');
+  eq(manifest.editorialProvenance.olderStageAPassNotTransferable, true,
+    'owner provided a new exact candidate approval, not transfer from old Stage A');
+  eq(manifest.editorialProvenance.candidateEditorialPassCoversWholeArticleNotIndividualPriorDailyReceipts, true,
+    'approval applies to candidate content, not fake earlier Daily approvals');
+  const specificAllowedApprovals = new Set([
+    'exactCandidateEditorialContentAndPresentationPass',
+    'publisherAcceptsNarrowOriginalProseOfficialFactsDirectLinksScope',
+    'publisherAcknowledgesDocumentedRomaniaEuInternationalRightsExceptions',
+    'issuerDeclaredIssueTimePlusAuthenticatedLaterReviewDraftMethodology'
+  ]);
+  for (const [name, value] of Object.entries(approval.approvals)) {
+    eq(value, specificAllowedApprovals.has(name),
+      'no broader source license, Production, indexing or merge permission: ' + name);
+  }
+  const validUse = new Set([
+    'originalWrittenExplanations', 'directLinksAndPlainTextIssuerCredit', 'noAgencyEndorsement'
+  ]);
+  for (const [name, value] of Object.entries(approval.actualUseScope)) {
+    if (typeof value === 'boolean') {
+      eq(value, validUse.has(name), 'no expanded image, email, translation or data rights: ' + name);
+    }
+  }
+  for (const [name, value] of Object.entries(approval.unresolvedRightsRemainHold)) {
+    eq(value, name === 'allOriginalProjectAllDenySourceMatricesRemainUnmodified' ||
+      name === 'oneEnglishWebpageScopeDoesNotApproveOtherMedia' ||
+      name === 'noClaimThatUSFederalPublicDomainAppliesGlobally',
+    'uncleared source and international rights must stay visible: ' + name);
+  }
+  ok(approval.postReviewPolicy.htmlGitBlobImmutableUntilNewEditorialPass &&
+     approval.postReviewPolicy.noEnablingOfAstroStaticPaths &&
+     approval.postReviewPolicy.publicSiteProductionStillHold,
+     'no deployment from publisher scope acceptance');
+  eq(approval.postReviewPolicy.firstIndependentMonthlyEligiblePublishedWeeks, 0,
+     'no Monthly publication history is invented');
+  eq(approval.releaseAuthorized, false, 'explicit no-publication owner instruction');
+  eq(approval.publishReady, false, 'scope pass is not overall release readiness');
 }
 
 console.log('Independent Macro Weekly draft public-release candidate: ' +

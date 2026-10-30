@@ -328,7 +328,11 @@ function syntheticPriorMonthly(weekOffset = 0) {
   const evidence = JSON.parse(fs.readFileSync(path.join(DRAFT_DIR,
     'pilot-release-timing-evidence.draft.json'), 'utf8'));
   assert.equal(evidence.schemaVersion, 'independent-weekly-release-timing-evidence-v0-draft');
-  assert.equal(evidence.status, 'EVIDENCE_ONLY_ISSUE_TIMES_AND_EDITORIAL_CHRONOLOGY_RECORDED_ACTUAL_ISSUER_POSTING_UNVERIFIED');
+  assert.equal(evidence.status, 'ISSUER_DECLARED_RELEASE_TIMES_CONFIRMED_POSTING_UNKNOWN_RIGHTS_HOLD');
+  assert.equal(evidence.officialIssuerWebPagesReadOnlyChecked, true);
+  assert.equal(evidence.issuerDeclaredReleaseTimeDoesNotProveActualWebPosting, true);
+  assert.equal(evidence.issuerIssueTimeAcceptanceForFuturePublication, 'OWNER_DECISION_REQUIRED');
+  assert.equal(evidence.originalWeeklyNullClaimIssueTimesIntentionallyUnchanged, true);
   assert.match(evidence.evidenceSemantics.exactIssuerActualPublicationAtUtc, /Only populate with directly authenticated/);
   assert.equal(evidence.sourceRetrievalPerformed, false);
   assert.equal(evidence.rightsGranted, false);
@@ -353,6 +357,17 @@ function syntheticPriorMonthly(weekOffset = 0) {
     assert.equal(event.sourceId, claim.sourceId);
     assert.equal(event.exactSourceUrl, claim.sourceUrl);
     assert.equal(event.sourceDailyGitBlobSha, daily.get(claim.sourceEditionDate));
+    assert.equal(event.issuerDeclaredReleaseAtUtc, event.scheduledReleaseAtUtc);
+    assert.equal(event.issuerDeclarationSourceUrl, event.exactSourceUrl);
+    assert.equal(event.issuerStatementAndReportedFiguresChecked, true);
+    assert.equal(event.issuerDeclaredReleaseTimeIsNotWebPostingTime, true);
+    assert.equal(event.issuerIssueTimeSupportedByExactPrimaryRelease, true);
+    assert.equal(event.issuerActualWebsiteFirstPostingAtUtc, null);
+    assert.equal(event.publisherFinalAcceptanceOfIssueTimeAsEvidence, false);
+    assert.equal(event.independentWeeklyClaimApproval, false);
+    assert.equal(event.exactItemReuseAuthorized, false);
+    assert.match(event.issuerDeclaredTimePhrase, /(For release at|EMBARGOED UNTIL RELEASE AT|embargoed until)/i);
+    assert.ok(['ISSUER_STATED_FOR_RELEASE_AT', 'ISSUER_EMBARGOED_UNTIL_RELEASE_AT'].includes(event.issuerDeclarationType));
     assert.match(event.scheduledReleaseAtUtc, /^2026-10-(28|29|30)T\d\d:\d\d:\d\dZ$/);
     assert.ok(Number.isFinite(Date.parse(event.scheduledReleaseAtUtc)));
     assert.notEqual(event.status, 'PUBLICATION_APPROVED');
@@ -388,6 +403,12 @@ function syntheticPriorMonthly(weekOffset = 0) {
           'distinct BEA GDP official URL spellings require human reconciliation');
       } else assert.equal(event.exactSourceUrl, event.calendarOutcomeUrl);
     }
+    if (event.claimId === 'gdp-oct29') {
+      assert.equal(event.alternateUrlAlsoShowsSameDatedPrimaryRelease, true);
+      assert.equal(event.alternateUrlIsRedirectAssertion, false);
+      assert.equal(event.alternateUrlVerifiedReadOnly,
+        'https://www.bea.gov/index.php/news/2026/gdp-advance-estimate-3rd-quarter-2026');
+    }
     if (claim.sourceReleaseAt === null) {
       assert.equal(event.exactIssuerActualPublicationAtUtc, null,
         'scheduled issuer time must not be invented as actual publication time');
@@ -407,7 +428,7 @@ function syntheticPriorMonthly(weekOffset = 0) {
   assert.deepEqual(evidence.events.filter((event) =>
     event.exactIssuerActualPublicationAtUtc === null).map((event) => event.claimId),
     ['fomc-outcome-oct28', 'gdp-oct29', 'pce-oct29', 'eci-oct30']);
-  tests += 34;
+  tests += 51;
 }
 // Agency notices are public-domain policy *context* only. The exact-source
 // rights worksheet stays all-deny, and no publishing permission is inferred.

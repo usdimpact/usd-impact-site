@@ -7,6 +7,10 @@ import {
   resolveVerifiedAccessReadyLocale,
 } from '../src/lib/purchase-access-ready-locale-preview.js';
 import { readFile } from 'node:fs/promises';
+import {
+  prepareAccessReadyLocaleSnapshot,
+  assertUnchangedAccessReadyLocaleSnapshot,
+} from '../src/lib/purchase-access-ready-locale-contract.js';
 import { previewPurchaseAccessReadyRecovery } from '../src/lib/purchase-access-ready-recovery-preview.js';
 import {
   PURCHASE_ACCESS_READY_EMAIL_BUSINESS_OBJECT_TYPE,
@@ -501,5 +505,99 @@ const overflow = previewPurchaseAccessReadyRecovery({
 assert.equal(overflow.state, 'hold');
 assert.equal(overflow.reason, 'CANDIDATE_LIMIT_EXCEEDED');
 assert.deepEqual(overflow.candidates, []);
+
+
+
+// UI-02 authenticated account-language and immutable rendering contract.
+// All values are synthetic. Nothing is sent or persisted.
+const snapshotFixture = {
+  accessResult,
+  snapshotAt: '2026-10-30T20:50:00.000Z',
+};
+const fallbackSnapshot = prepareAccessReadyLocaleSnapshot(snapshotFixture);
+assert.equal(fallbackSnapshot.locale, 'en');
+assert.equal(fallbackSnapshot.localeSource, 'english_fallback');
+assert.equal(fallbackSnapshot.preferenceRevision, null);
+assert.equal(fallbackSnapshot.compatibleWithCurrentOutbox, true);
+assert.equal(fallbackSnapshot.canDispatch, false);
+assert.equal(fallbackSnapshot.canWrite, false);
+assert.ok(Object.isFrozen(fallbackSnapshot));
+assert.equal(fallbackSnapshot.recipientSha256.length, 64);
+assert.doesNotMatch(JSON.stringify(fallbackSnapshot), /Buyer@Example.com|buyer@example.com/);
+assert.deepEqual(fallbackSnapshot, prepareAccessReadyLocaleSnapshot(snapshotFixture));
+const verifiedSpanishPreference = {
+  account_id: accountId, preferred_locale: 'es',
+  selection_provenance: 'authenticated_account',
+  revision: 2,
+  updated_at: '2026-10-30T20:35:00.000Z',
+};
+const spanishSnapshot = prepareAccessReadyLocaleSnapshot({
+  ...snapshotFixture,
+  accountPreference: verifiedSpanishPreference,
+});
+assert.equal(spanishSnapshot.locale, 'es');
+assert.equal(spanishSnapshot.localeSource, 'verified_account');
+assert.equal(spanishSnapshot.preferenceRevision, 2);
+assert.equal(spanishSnapshot.compatibleWithCurrentOutbox, false);
+assert.equal(spanishSnapshot.disposition, 'HOLD_OUTBOX_TEMPLATE_VERSION_MISMATCH');
+assert.equal(spanishSnapshot.canDispatch, false);
+assert.notEqual(spanishSnapshot.snapshotIdentity, fallbackSnapshot.snapshotIdentity);
+assert.deepEqual(assertUnchangedAccessReadyLocaleSnapshot(spanishSnapshot, { ...spanishSnapshot }), {
+  verified: true, canDispatch: false,
+});
+const changedPreference = prepareAccessReadyLocaleSnapshot({
+  ...snapshotFixture,
+  accountPreference: {
+    ...verifiedSpanishPreference,
+    preferred_locale: 'en',
+    revision: 3,
+  },
+});
+assert.equal(changedPreference.locale, 'en');
+assert.throws(
+  () => assertUnchangedAccessReadyLocaleSnapshot(spanishSnapshot, changedPreference),
+  error => error.code === 'LOCALE_SNAPSHOT_IDENTITY_MISMATCH',
+);
+for (const preference of [
+  { ...verifiedSpanishPreference, account_id: '423e4567-e89b-42d3-a456-426614174000' },
+  { ...verifiedSpanishPreference, selection_provenance: 'resend_segment' },
+  { ...verifiedSpanishPreference, selection_provenance: 'browser_locale' },
+]) {
+  assert.throws(
+    () => prepareAccessReadyLocaleSnapshot({ ...snapshotFixture, accountPreference: preference }),
+    error => error.code === 'UNVERIFIED_ACCOUNT_PREFERENCE',
+  );
+}
+for (const unsupported of ['pt', 'pt-BR', 'de', 'es-MX', '']) {
+  assert.throws(
+    () => prepareAccessReadyLocaleSnapshot({
+      ...snapshotFixture,
+      accountPreference: { ...verifiedSpanishPreference, preferred_locale: unsupported },
+    }),
+    error => error.code === 'UNSUPPORTED_ACCOUNT_PREFERENCE_LOCALE',
+  );
+}
+for (const badRevision of [0, -1, 1.5, Number.MAX_SAFE_INTEGER, '3']) {
+  assert.throws(
+    () => prepareAccessReadyLocaleSnapshot({
+      ...snapshotFixture,
+      accountPreference: { ...verifiedSpanishPreference, revision: badRevision },
+    }),
+    error => error.code === 'PREFERENCE_REVISION_INVALID',
+  );
+}
+assert.throws(
+  () => prepareAccessReadyLocaleSnapshot({
+    ...snapshotFixture,
+    accountPreference: { ...verifiedSpanishPreference, updated_at: '2026-10-31T20:35:00.000Z' },
+  }),
+  error => error.code === 'PREFERENCE_FROM_FUTURE',
+);
+assert.throws(
+  () => prepareAccessReadyLocaleSnapshot({
+    ...snapshotFixture, snapshotAt: '2026-09-01T20:50:00.000Z',
+  }),
+  error => error.code === 'SNAPSHOT_BEFORE_PURCHASE',
+);
 
 console.log('Purchase access-ready email tests passed.');

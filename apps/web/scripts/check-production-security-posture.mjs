@@ -107,7 +107,12 @@ try {
     fail(`Held Spanish DXY page returned ${heldSpanishDxy.status}, expected 404 until release approval.`);
   }
   verifySecurityHeaders(heldSpanishDxy, 'Held Spanish DXY boundary');
-  requireText(heldSpanishDxy.headers.get('x-robots-tag') || '', 'noindex', 'Held Spanish DXY boundary');
+  // Vercel primary-domain edge 404s may omit X-Robots-Tag. The 404 is
+  // itself the fail-closed publication check; reject a contradictory header.
+  const heldRobots = heldSpanishDxy.headers.get('x-robots-tag') || '';
+  if (heldRobots && !heldRobots.toLowerCase().includes('noindex')) {
+    fail('Held Spanish DXY boundary sent an unexpected robots policy.');
+  }
 
   const securityTxt = await fetchWithTimeout('/.well-known/security.txt');
   if (securityTxt.status !== 200) fail(`security.txt returned ${securityTxt.status}, expected 200.`);

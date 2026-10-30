@@ -133,7 +133,7 @@ check('import and publication-eligibility protections remain', () => {
   assert.match(catalyst, /if: steps\.eligibility\.outputs\.publishable == 'true'/);
 });
 check('new preflight failure label is accurate and backward compatible', () => {
-  assert.match(daily, /"\$PUBLISH_OUTCOME" \\\n            'publication-content-preflight'/);
+  assert.match(daily, /"\$PUBLISH_OUTCOME" \\\n\s+'publication-content-preflight'/);
   assert.equal(classifyDailyWorkflowFailure({ validateOutcome: 'failure', validationGate: 'publication-content-preflight' }).gate, 'publication-content-preflight');
   assert.equal(classifyDailyWorkflowFailure({ validateOutcome: 'failure' }).gate, 'site-validation-build');
   assert.equal(classifyDailyWorkflowFailure({ validateOutcome: 'failure', validationGate: 'untrusted-value' }).gate, 'site-validation-build');

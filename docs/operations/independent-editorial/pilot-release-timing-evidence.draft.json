@@ -1,7 +1,7 @@
 {
   "schemaVersion": "independent-weekly-release-timing-evidence-v0-draft",
   "preparedDate": "2026-10-30",
-  "status": "EVIDENCE_ONLY_EXACT_ISSUER_TIMES_PENDING",
+  "status": "EVIDENCE_ONLY_ISSUE_TIMES_AND_EDITORIAL_CHRONOLOGY_RECORDED_ACTUAL_ISSUER_POSTING_UNVERIFIED",
   "sourceRetrievalPerformed": false,
   "rightsGranted": false,
   "publicationAuthorized": false,
@@ -23,7 +23,15 @@
       "exactIssuerActualPublicationAtUtc": null,
       "verifiedPostReleaseClaimReceipt": null,
       "status": "HOLD_EXACT_ISSUER_TIMESTAMP_AND_CLAIM_REVIEW_PENDING",
-      "notes": "A statement release schedule and Daily generated later establish timing context, not an authenticated issuer posting timestamp or an independent publication-rights grant."
+      "notes": "A statement release schedule and Daily generated later establish timing context, not an authenticated issuer posting timestamp or an independent publication-rights grant.",
+      "postReleaseEditorialCandidate": {
+        "evidenceType": "MERGED_SOURCE_FACT_UPDATE_NOT_OWNER_PASS_FOR_INDEPENDENT_REPORT",
+        "sourcePr": "https://github.com/usdimpact/usd-impact-site/pull/926",
+        "sourcePrExactHead": "b0790a73324741bf3c1f1e5b9603670b68c2e48b",
+        "observedOriginalDailyGeneratedAtUtc": "2026-10-28T19:37:19Z",
+        "claimSpecificOwnerPassForIndependentReport": false,
+        "exactIssuerPostingTimeAuthenticated": false
+      }
     },
     {
       "claimId": "gdp-oct29",
@@ -41,7 +49,18 @@
       "exactIssuerActualPublicationAtUtc": null,
       "verifiedPostReleaseClaimReceipt": null,
       "status": "HOLD_EXACT_ISSUER_TIMESTAMP_AND_CLAIM_REVIEW_PENDING",
-      "notes": "Published Oct 29 Daily was substantively corrected after the 12:30 UTC scheduled release; the existing PR comment supports editorial chronology, not an exact BEA server posting timestamp or exact-URL equivalence."
+      "notes": "Published Oct 29 Daily was substantively corrected after the 12:30 UTC scheduled release; the existing PR comment supports editorial chronology, not an exact BEA server posting timestamp or exact-URL equivalence.",
+      "postReleaseEditorialCandidate": {
+        "evidenceType": "OWNER_REQUESTED_CORRECTION_TO_ORIGINAL_OCTOBER_29_DAILY_NOT_INDEPENDENT_REPORT_PASS",
+        "sourcePr": "https://github.com/usdimpact/usd-impact-site/pull/938",
+        "sourcePrExactHead": "14bbc23422518eb8850e4591f0127ba50cf68d7d",
+        "commentUrl": "https://github.com/usdimpact/usd-impact-site/pull/938#issuecomment-6510694719",
+        "commentCreatedAtUtc": "2026-10-29T23:11:35Z",
+        "commentDocumentsPostScheduleCorrection": true,
+        "exactIssuerPostingTimeAuthenticated": false,
+        "independentWeeklyEditorialApproval": false,
+        "exactItemSourceRightsApproval": false
+      }
     },
     {
       "claimId": "pce-oct29",
@@ -59,7 +78,18 @@
       "exactIssuerActualPublicationAtUtc": null,
       "verifiedPostReleaseClaimReceipt": null,
       "status": "HOLD_EXACT_ISSUER_TIMESTAMP_AND_CLAIM_REVIEW_PENDING",
-      "notes": "Post-release claim correction and exact official source link are evidenced, but not an exact issuer publishing timestamp or commercial reuse approval."
+      "notes": "Post-release claim correction and exact official source link are evidenced, but not an exact issuer publishing timestamp or commercial reuse approval.",
+      "postReleaseEditorialCandidate": {
+        "evidenceType": "OWNER_REQUESTED_CORRECTION_TO_ORIGINAL_OCTOBER_29_DAILY_NOT_INDEPENDENT_REPORT_PASS",
+        "sourcePr": "https://github.com/usdimpact/usd-impact-site/pull/938",
+        "sourcePrExactHead": "14bbc23422518eb8850e4591f0127ba50cf68d7d",
+        "commentUrl": "https://github.com/usdimpact/usd-impact-site/pull/938#issuecomment-6510694719",
+        "commentCreatedAtUtc": "2026-10-29T23:11:35Z",
+        "commentDocumentsPostScheduleCorrection": true,
+        "exactIssuerPostingTimeAuthenticated": false,
+        "independentWeeklyEditorialApproval": false,
+        "exactItemSourceRightsApproval": false
+      }
     },
     {
       "claimId": "eci-oct30",
@@ -71,16 +101,25 @@
       "scheduleEvidenceDescription": "Existing corrected Daily states official BLS 08:30 US Eastern release and separately records an early 09:34 UTC generation followed by the post-release correction.",
       "firstGeneratedAtUtc": "2026-10-30T09:34:00.275Z",
       "sourceDailyGitBlobSha": "f8881e383adba66eb801a3fbbcb4d1507de32917",
-      "exactIssuerActualPublicationAtUtc": "2026-10-30T12:30:00Z",
+      "exactIssuerActualPublicationAtUtc": null,
       "verifiedPostReleaseClaimReceipt": "https://github.com/usdimpact/usd-impact-site/pull/1009#issuecomment-6525502611",
-      "status": "EXISTING_CLAIM_TIMESTAMP_AND_EDITORIAL_RECEIPT_RECORDED_RIGHTS_HOLD",
-      "notes": "Time and post-release editorial receipt already existed in the source-pinned Weekly draft. This duplicate evidence does not approve source reuse or publication."
+      "status": "EXISTING_OFFICIAL_RELEASE_TIME_AND_EDITORIAL_PASS_RECORDED_ACTUAL_WEB_POST_TIME_UNKNOWN_RIGHTS_HOLD",
+      "notes": "The existing independently approved October 30 Daily records 12:30 UTC as the official BLS release time and a later owner content PASS. This does NOT establish an independently observed exact live website posting instant; accordingly exactIssuerActualPublicationAtUtc is null. The approved Weekly sourceReleaseAt value remains unchanged, and source rights are still pending.",
+      "recordedEditorialSourceReleaseAtUtc": "2026-10-30T12:30:00Z",
+      "releaseTimeType": "OFFICIAL_ISSUE_TIME_ALREADY_PINNED_IN_DAILY_NOT_INDEPENDENT_HTTP_POST_RECEIPT"
     }
   ],
   "remainingDecisions": [
-    "For Fed and both BEA claims, independently confirm exact issuer publication timestamp and dated claim-level editorial receipt before modifying sourceReleaseAt in the pinned Weekly JSON.",
+    "For the Fed and both BEA claims, obtain authoritative issue-time provenance and source-specific later editorial receipts before changing sourceReleaseAt in the pinned Weekly JSON. A documented scheduled time alone is not a verified actual issuer posting time.",
     "For GDP, human reviewer must reconcile canonical exact pinned /news/ URL versus the existing curated /index.php/news/ outcome URL without asserting equality from appearance alone.",
     "Every exact-item reuse, international/commercial/attribution/retention decision remains DENIED pending qualified reviewer; no current publication/Preview/merge approval.",
-    "No historical generation timestamp may be rewritten and no future Monthly may count this unpublished Weekly."
-  ]
+    "No historical generation timestamp may be rewritten and no future Monthly may count this unpublished Weekly.",
+    "For the BLS ECI claim, distinguish the already reviewed 12:30 UTC official release/issue time from the not-independently-observed exact web posting instant; do not relabel the official time as a server posting timestamp."
+  ],
+  "evidenceSemantics": {
+    "scheduledReleaseAtUtc": "Curated schedule or agency-announced standard issued time; does not certify live website posting or the time an editor inspected the source",
+    "recordedEditorialSourceReleaseAtUtc": "A time pinned in a pre-existing approved Daily/Weekly editorial receipt; the value's existence does not independently authenticate web-server posting",
+    "exactIssuerActualPublicationAtUtc": "Only populate with directly authenticated item-specific issuer publication metadata/receipt. A schedule, Daily generatedAt, Git commit or post-release owner comment is not enough",
+    "verifiedPostReleaseClaimReceipt": "A dated source-specific editorial provenance receipt, not a data redistribution or commercial rights approval"
+  }
 }

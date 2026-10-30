@@ -140,5 +140,86 @@ ok(!/\bimport .*Score|import .*weeklyReports|import .*purchase/i.test(route),
   'no original Score, report or checkout loader');
 ok(!/import\.meta\.env|process\.env|PUBLIC_/.test(route),
   'environment variables cannot activate an unapproved page');
+
+// Four official outcomes have a later Daily correction, but no previous Daily
+// approval is allowed to masquerade as a new independent Weekly editorial PASS.
+{
+  const rawEvidence = readFileSync(new URL('release-candidate-2026-10-30.claim-evidence.draft.json', root), 'utf8');
+  const evidence = JSON.parse(rawEvidence);
+  eq(evidence.schemaVersion, 'independent-macro-weekly-exact-claim-review-evidence-v0-draft',
+    'source-evidence ledger version');
+  eq(manifest.editorialProvenance.claimEvidenceGitBlobSha, gitBlobSha(rawEvidence),
+    'exact immutable claim-evidence ledger');
+  eq(evidence.candidateHtmlGitBlobSha, manifest.contentGitBlobSha,
+    'claim-evidence tied to exact release-candidate HTML');
+  eq(evidence.sourceWeeklyGitBlobSha, manifest.editorialProvenance.sourceWeeklyGitBlobSha,
+    'claim-evidence tied to exact pinned source Weekly');
+  eq(evidence.claims.length, 6, 'two calendar reminders plus four official outcomes');
+  eq(evidence.claims.map(c => c.claimId), weekly.claims.map(c => c.id),
+    'same six Daily claim IDs and order');
+  eq(evidence.verifiedOfficialOutcomeCount, 4,
+    'four official outcome claim entries, no invented fifth outcome');
+  eq(evidence.independentCandidateExactClaimPassCount, 0,
+    'no claim-level Weekly PASS was granted');
+  eq(manifest.editorialProvenance.independentWeeklyClaimOwnerPassCount, 0,
+    'candidate approval count must remain zero');
+  ok(!manifest.publisherGovernance.claimLevelExplicitIndependentEditorialApproval,
+    'claim editor has not separately approved this Weekly');
+  ok(manifest.editorialProvenance.finalCandidateEditorialPassStillRequired === true,
+    'independent candidate still requires editorial PASS');
+  ok(evidence.issuerStatedIssueTimeAcceptedForDraftMethodOnly,
+    'issuer times are supported in the draft method only');
+  ok(!evidence.issuerActualHttpPostingProven,
+    'no first website posting timestamp verified');
+  ok(!evidence.finalWeeklyExactVersionEditorialApproved &&
+    !evidence.qualifiedRightsReviewApproved && !evidence.publicReleaseAuthorized,
+    'rights, editorial and public release all HOLD');
+  eq(Object.keys(evidence.dailyBlobs).length, weekly.sourceEditions.length,
+    'five original published Dailies in evidence inventory');
+  for (const day of weekly.sourceEditions) {
+    eq(evidence.dailyBlobs[day.date], day.gitBlobSha,
+      'no old Daily source rewrite for ' + day.date);
+  }
+  const approvedSource = new Map(manifest.sourceUse.sourceItems.map(item => [item.sourceId, item]));
+  const officialOutcomeIds = new Set(['fomc-outcome-oct28', 'gdp-oct29', 'pce-oct29', 'eci-oct30']);
+  for (const c of evidence.claims) {
+    const pinned = weekly.claims.find(x => x.id === c.claimId);
+    ok(pinned !== undefined, 'claim exists in original source Weekly: '+c.claimId);
+    eq(c.sourceId, pinned.sourceId, 'same source ID for '+c.claimId);
+    eq(c.exactOfficialSourceUrl, pinned.sourceUrl,
+      'same issuer URL for '+c.claimId);
+    eq(c.exactSourceDailyGitBlobSha, evidence.dailyBlobs[c.sourceDailyDate],
+      'same immutable published Daily for '+c.claimId);
+    ok(candidate.includes('href="' + c.exactOfficialSourceUrl + '"'),
+      'candidate retains exact linked issuer for '+c.claimId);
+    ok(approvedSource.has(c.sourceId),
+      'candidate manifest source ID exists for '+c.claimId);
+    eq(c.candidateClaimEditorialApproved, false,
+      'original Daily approval is NOT independent Weekly PASS for '+c.claimId);
+    eq(c.sourceReuseRightsApproved, false,
+      'facts and links are not a signed public source grant for '+c.claimId);
+    eq(c.actualFirstHttpPostingAtUtc, null,
+      'issuer-stated issue time must not become a first HTTP posting time');
+    if (officialOutcomeIds.has(c.claimId)) {
+      eq(c.kind, 'official_outcome', 'official result claim '+c.claimId);
+      ok(Number.isFinite(Date.parse(c.issuerStatedIssueAtUtc)),
+        'dated issuer-stated official release for '+c.claimId);
+      ok(c.dailyPostReleaseEvidence?.postReleaseObserved === true,
+        'real later Daily correction exists for '+c.claimId);
+      ok(Date.parse(c.dailyPostReleaseEvidence.correctedCommitAtUtc) >
+        Date.parse(c.issuerStatedIssueAtUtc),
+        'Daily correction must follow agency issue for '+c.claimId);
+      ok(/^[0-9a-f]{40}$/.test(c.dailyPostReleaseEvidence.correctedHeadSha),
+        'exact corrected Daily commit for '+c.claimId);
+      eq(c.dailyPostReleaseEvidence.dailyExactVersionOwnerPass, c.claimId === 'eci-oct30',
+        'only BLS Daily has prior exact owner PASS');
+    } else {
+      eq(c.kind, 'calendar_preview', 'scheduled meeting only');
+      eq(c.issuerStatedIssueAtUtc, null, 'calendar is not an outcome');
+      eq(c.dailyPostReleaseEvidence, null, 'no fabricated correction receipt');
+    }
+  }
+}
+
 console.log('Independent Macro Weekly draft public-release candidate: ' +
   checks + ' assertions passed. Zero public paths; all rights and Production HOLD.');

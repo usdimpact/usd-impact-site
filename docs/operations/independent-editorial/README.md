@@ -69,6 +69,21 @@ These observations reduce what a reviewer must rediscover but **do not** turn a 
 
 The [exact five-source cross-PR rights map](cross-pr-exact-source-rights-map.draft.json) pins the overlapping source IDs and URLs to the frozen **Draft #1020** all-deny governance-ledger snapshot without importing #1020's incompatible schema. The separate BLS schedule is background context; future EIA sources are out of scope. Five source URLs are exact matches and **all their rights approvals remain denied**. This crosswalk is neither a source-rights signoff nor an authority to merge #1019 and #1020, create a public route, or activate any production/report feature. A later combined contract requires a new explicit decision and exact-head review.
 
+## Exact issuer release-time fact check — new read-only review, still Draft
+
+On October 30, 2026, the official publicly accessible announcement pages were checked read-only against the existing six-claim pilot. The [timing evidence ledger](pilot-release-timing-evidence.draft.json) now records **four agency-stated official release/embargo times**, which are distinct from exact first live website-posting instants:
+
+| Outcome claim | Exact official issuer source | Official stated time | UTC | Still NOT verified |
+| --- | --- | --- | --- | --- |
+| Oct 28 FOMC outcome | [Federal Reserve statement](https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm) | 2:00 p.m. EDT | **2026-10-28T18:00:00Z** | Exact first web posting, fresh independent-Weekly editorial PASS, publisher rights |
+| Oct 29 GDP advance | [BEA GDP Q3 advance](https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026) | Embargoed until 8:30 a.m. EDT | **2026-10-29T12:30:00Z** | Exact first web posting, fresh independent-Weekly editorial PASS, publisher rights |
+| Oct 29 September PCE | [BEA September PCE](https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026) | Embargoed until 8:30 a.m. EDT | **2026-10-29T12:30:00Z** | Exact first web posting, fresh independent-Weekly editorial PASS, publisher rights |
+| Oct 30 ECI | [BLS September ECI release](https://www.bls.gov/news.release/archives/eci_10302026.htm) | Embargoed until 8:30 a.m. Eastern | **2026-10-30T12:30:00Z** | Exact first web posting, new independent-Weekly publication rights |
+
+Issuer-reported facts were also checked against the same source items: Fed 3.75%–4.00% and 10–2 decision; BEA real GDP 3.4% SAAR Q3 versus 2.2% Q2; PCE headline/core 3.6% / 3.1% y/y for September; BLS compensation 0.8% q/q SA and 3.4% 12-month NSA. The distinct BEA GDP `/news/` and `/index.php/news/` URLs both displayed the same dated official release when inspected; **this does not assert redirect or canonical HTTP equivalence**.
+
+**The original Weekly JSON's three null `sourceReleaseAt` fields remain unchanged**, because the project has not yet adopted a future independent publishing standard that accepts issuer-declared issue time plus a later claim-specific editorial receipt. The actual website posting fields remain null for all four events; a press release header cannot establish a precise first HTTP posting instant. Review-only access to official public-release pages did occur for this fact check, but **no programmatic market-data feed import, API ingestion, licensed vendor observation or asset-price retrieval was added to the Draft code**. All independent reuse and publication gates remain disabled.
+
 ## Proposed single future contract — not activated
 
 The [single-contract draft architecture](canonical-release-architecture-and-approval-gates.draft.md) and [fail-closed candidate design JSON](canonical-future-contract-proposal.draft.json) now consolidate a future plan around the existing **source-pinned #1019 `independent_macro_education` family**, with #1020 used for supplementary all-deny source-rights evidence only. The candidate is **not a selected Production schema**, does not import or merge PR #1020 code, and leaves public paths **null**, with thirteen future rights/chronology/Preview/merge/release evidence gates explicitly **false**. It neither authorizes a website route nor makes any preview or market-data access request.

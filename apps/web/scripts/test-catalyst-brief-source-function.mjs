@@ -1,5 +1,22 @@
 import assert from 'node:assert/strict';
-import handler from '../api/catalyst-brief-source.js';
+import handler, { phaseBoundSchema } from '../api/catalyst-brief-source.js';
+
+// Both primary and bounded content-repair responses must reject phase-invalid labels
+// in their strict provider schemas; the original schema must remain unchanged.
+const originalPhaseSchema = {
+  type: 'object',
+  properties: {
+    statusLabel: { type: 'string', enum: ['scheduled-confirmed', 'rescheduled', 'cancelled', 'released'] },
+    summary: { type: 'string' },
+  },
+};
+assert.deepEqual(phaseBoundSchema(originalPhaseSchema, 'preview').properties.statusLabel.enum,
+  ['scheduled-confirmed', 'rescheduled', 'cancelled']);
+assert.deepEqual(phaseBoundSchema(originalPhaseSchema, 'outcome').properties.statusLabel.enum,
+  ['released', 'rescheduled', 'cancelled']);
+assert.deepEqual(originalPhaseSchema.properties.statusLabel.enum,
+  ['scheduled-confirmed', 'rescheduled', 'cancelled', 'released']);
+assert.throws(() => phaseBoundSchema(originalPhaseSchema, 'other'), /Unsupported Catalyst Brief phase/);
 
 const originalFetch = globalThis.fetch;
 const originalEnv = {
@@ -122,6 +139,9 @@ try {
   assert.ok(providerBody.include.includes('web_search_call.action.sources'));
   assert.ok(providerBody.tools[0].filters.allowed_domains.includes('bls.gov'));
   assert.match(providerBody.input, /Copy every sources\[\]\.url exactly/);
+  assert.deepEqual(providerBody.text.format.schema.properties.statusLabel.enum,
+    ['scheduled-confirmed', 'rescheduled', 'cancelled']);
+  assert.match(providerBody.input, /For preview, statusLabel must be scheduled-confirmed/);
   assert.equal(providerBody.text.format.schema.properties.verifiedFacts.minItems, 2);
   assert.equal(providerBody.text.format.schema.properties.verifiedFacts.maxItems, 6);
   assert.equal(providerBody.text.format.schema.properties.transmissionChannels.minItems, 2);
@@ -146,6 +166,12 @@ try {
   assert.equal((await invoke(request({ body: { candidate: { ...candidate, impactScore: 3 } } }))).status, 502);
 
   globalThis.fetch = async () => new Response(JSON.stringify(openAiResponse(draft, [urls.reuters, urls.ap])), { status: 200 });
+  assert.equal((await invoke(request())).status, 502);
+
+  // A provider that ignores the schema must still be rejected by the existing validator.
+  globalThis.fetch = async () => new Response(
+    JSON.stringify(openAiResponse({ ...draft, statusLabel: 'released' })), { status: 200 },
+  );
   assert.equal((await invoke(request())).status, 502);
 
   const ungroundedDraft = {
@@ -214,6 +240,8 @@ try {
   assert.equal(watchRepairBody.model, 'gpt-5-mini');
   assert.equal(watchRepairBody.tools, undefined);
   assert.equal(watchRepairBody.text.format.name, 'usd_impact_catalyst_content_repair');
+  assert.deepEqual(watchRepairBody.text.format.schema.properties.statusLabel.enum,
+    ['scheduled-confirmed', 'rescheduled', 'cancelled']);
   assert.match(watchRepairBody.input, /source ledger below is immutable/i);
 
   const conversationalDraft = {

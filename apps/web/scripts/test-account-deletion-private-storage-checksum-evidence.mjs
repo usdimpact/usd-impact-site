@@ -51,7 +51,7 @@ tests+=4;
 function rejected(override,code){
   assert.throws(()=>reviewIssue950PrivateStorageChecksumEvidence({
     ...valid,...override,
-  }),e=>e instanceof Issue950StorageChecksumHold&&e.code===code,code);
+  }),e=>e instanceof Issue950StorageChecksumHold && e.code === code,code);
   tests++;
 }
 const changed=(records,index,change)=>records.map((r,i)=>i===index?{...r,...change}:r);

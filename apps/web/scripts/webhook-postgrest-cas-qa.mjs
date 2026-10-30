@@ -76,6 +76,21 @@ function assertManifest(value) {
   return fixture;
 }
 
+// O_EXCL-backed 'wx' atomically refuses existing manifests, including a
+// pre-existing symlink. Never unlink or overwrite an interrupted run's file.
+// The caller must separately reconcile any existing QA database fixture.
+export function reserveFreshManifest(path, fixture) {
+  const manifest = JSON.stringify({
+    id: fixture.id, providerRef: fixture.providerRef, email: fixture.email,
+  });
+  try {
+    writeFileSync(path, manifest, { mode: 0o600, flag: 'wx' });
+  } catch (error) {
+    if (error?.code === 'EEXIST') throw new Error('STALE_FIXTURE_REQUIRES_CLEANUP');
+    throw error;
+  }
+}
+
 function sqlClient(env, statement, fixture) {
   const args = ['-X', '-q', '-t', '-A', '-F', '|', '-v', 'ON_ERROR_STOP=1',
     '-v', 'fixture_id=' + fixture.id, '-v', 'provider_ref=' + fixture.providerRef,
@@ -252,13 +267,12 @@ async function live() {
   assertSafeEnvironment(env, 'live');
   const fixture = makeFixture();
   const path = manifestPath(env);
-  assert.equal(existsSync(path), false, 'STALE_FIXTURE_REQUIRES_CLEANUP');
+  // Reserve the manifest with exclusive creation below, not check-then-write.
   // Never silently overwrite or delete leftovers from an interrupted run.
   // Only a read-only count is needed; manual recovery remains separately gated.
   assert.ok(sqlClient(env, ORPHAN_CHECK_SQL, fixture).includes('preexisting:0'),
     'PREEXISTING_QA_FIXTURE_REQUIRES_RECONCILIATION');
-  writeFileSync(path, JSON.stringify({ id: fixture.id, providerRef: fixture.providerRef,
-    email: fixture.email }), { mode: 0o600, flag: 'wx' });
+  reserveFreshManifest(path, fixture);
   let outcome;
   let cleanupFailed = false;
   try {

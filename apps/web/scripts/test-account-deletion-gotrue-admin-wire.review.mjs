@@ -193,7 +193,7 @@ for(const [changes,code] of [
   const transport=async()=>{calls++;throw new Error('must not call')};
   assert.throws(()=>createOfflineAuthAdminSoftDelete({
     config,wireFetch:transport,...changes,
-  }),e=>e instanceof AuthAdminWireReviewError&&e.code===code,code);
+  }),e=>e instanceof AuthAdminWireReviewError && e.code === code,code);
   assert.equal(calls,0);
   assertions+=2;
 }

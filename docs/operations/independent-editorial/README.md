@@ -63,6 +63,12 @@ The separate [pilot release-timing evidence worksheet](pilot-release-timing-evid
 
 These observations reduce what a reviewer must rediscover but **do not** turn a scheduled event time into the exact time a federal website actually posted its document, authorize commercial source reuse, or invent a missing receipt. Three `sourceReleaseAt` fields remain **null** in the original independent Weekly draft; the release-time worksheet explicitly preserves that status, and the offline test checks it. Only independently verified dated evidence may change those fields in a later, separately reviewed Draft. The independent Monthly is still **0/4 published**.
 
+## General agency policy evidence and separate PR crosswalk (draft only)
+
+[Agency policy-only review](official-source-reuse-policy-evidence.draft.json) documents official Federal Reserve Board, BEA and BLS reuse/citation notices together with the [USAGov international-rights caution](https://www.usa.gov/government-copyright). Agency-authored public-domain information can generally be cited, linked and reused under the notices, subject to issuer-specific limitations, third-party exceptions and non-endorsement rules; neither the notices nor this memo approve these five **specific** sources or their Romania/EU/LATAM website, translation, archive, RSS or commercial use. No agency marks, photos, protected attachments, rehosted charts, provider feeds or original Score market inputs are permitted by the Draft.
+
+The [exact five-source cross-PR rights map](cross-pr-exact-source-rights-map.draft.json) pins the overlapping source IDs and URLs to the frozen **Draft #1020** all-deny governance-ledger snapshot without importing #1020's incompatible schema. The separate BLS schedule is background context; future EIA sources are out of scope. Five source URLs are exact matches and **all their rights approvals remain denied**. This crosswalk is neither a source-rights signoff nor an authority to merge #1019 and #1020, create a public route, or activate any production/report feature. A later combined contract requires a new explicit decision and exact-head review.
+
 ## Required decisions before a separate release-stage PR
 
 - Legal/provider/source reviewer: clarify reuse terms for each *exact* Federal Reserve, BEA, BLS or other official release, allowed fact quotation/derivatives, commercial display, attribution, machine-readable format, snapshots and archives. Official government hosting or a Daily citation does not automatically settle every series or downstream use; no unapproved source fetch.

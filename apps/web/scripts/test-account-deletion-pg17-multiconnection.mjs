@@ -120,7 +120,7 @@ expectedFailure(await attempt(claimSql(accounts[0],ids[0])),
 // Pre-dispatch expiry permits exactly ONE new generation, never old token.
 const before= parseClaim(await attempt(claimSql(accounts[1],ids[1])));
 await psql("update account_deletion_internal.attempts set "+
-  "claimed_at=clock_timestamp()-interval '10 minutes',"+
+  "claimed_at=clock_timestamp()-interval '10 minutes', "+
   "pre_dispatch_expires_at=clock_timestamp()-interval '1 second' "+
   "where account_id='"+accounts[1]+"'::uuid");
 const wave2=await Promise.all(Array.from({length:16},()=>attempt(

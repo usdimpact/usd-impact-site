@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { extractIndependentMacroWeeklyDraftFragment, DRAFT_ARTICLE_SECTION_IDS } from '../src/lib/independent-macro-weekly-draft-shell.mjs';
 
 const from = (relative) => readFileSync(new URL(relative, import.meta.url), 'utf8');
 const gitBlob = (value) => {
@@ -102,6 +103,88 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
    m.existingSiteReuse.privacyAndCookieComplianceNotCertified,
     'future site-shell use requires review; legal certification not invented');
 
+// Shared BaseLayout integration stays non-public. The approved standalone
+// article remains unchanged, but the new presentation needs its own owner PASS.
+{
+  const a=m.siteShellAdaptationDraft;
+  ok(a && typeof a === 'object', 'shared-layout Draft adaptation manifest exists');
+  const sourceComponent=from('../src/components/IndependentMacroWeeklyDraftShell.astro');
+  const sourceAdapter=from('../src/lib/independent-macro-weekly-draft-shell.mjs');
+  const scopedStyle=from('../src/styles/independent-macro-weekly-draft.css');
+  eq(gitBlob(sourceComponent),a.componentGitBlobSha,'shared-layout component Git blob pinned');
+  eq(gitBlob(sourceAdapter),a.adapterGitBlobSha,'pure Draft section adapter pinned');
+  eq(gitBlob(scopedStyle),a.stylesheetGitBlobSha,'scoped site-shell CSS pinned');
+  eq(gitBlob(route),a.routeGitBlobSha,'disabled draft route source pinned');
+  ok(sourceComponent.includes("import BaseLayout from '../layouts/BaseLayout.astro'"),
+    'use existing site layout without duplicating global header/footer');
+  ok(sourceComponent.includes('noindex={true}'),'site-shell canonical / indexing denied');
+  ok(sourceComponent.includes('data-release-authorized="false"') &&
+    sourceComponent.includes('data-shared-layout-editorial-pass="false"'),
+    'shared-layout presentation requires its own owner review');
+  ok(sourceComponent.includes('<Fragment set:html={adapted.fragment} />'),
+    'trusted static article fragment rendered inside the base layout only');
+  ok(sourceComponent.includes("'../styles/independent-macro-weekly-draft.css'"),
+    'reuse review-only scoped CSS');
+  ok(route.includes('IndependentMacroWeeklyDraftShell') &&
+    !route.includes('<Fragment set:html={unpublishedCandidateHtml} />'),
+    'disabled route now points to shared-site Draft only');
+  ok(a.importsExistingBaseLayout && a.usesExistingSitePrivacyAndConsentElements &&
+    a.replacesOriginalStandaloneHeaderFooter && a.patchesMainIdToSiteSkipLink,
+    'adapts to the existing legal, consent and skip-link shell');
+  ok(a.preservesAllSevenEditorialSectionsUnchanged &&
+    a.updatesObsoleteDraftSideNoticeOnly &&
+    a.hasNewPresentation && !a.newPresentationOwnerPass,
+    'factual sections stay identical; new layout PASS is pending');
+  ok(!a.actualBrowserCookieControlsValidatedForFuturePage &&
+    !a.actualBrowserVisualQaCompleted &&
+    !a.qualifiedForeignLegalClearance && !a.releaseAuthorized,
+    'do not claim browser/cross-border legality before actual QA');
+  ok(m.existingSiteReuse.sharedLayoutDraftComponentExists &&
+    m.existingSiteReuse.sharedLayoutDraftUsesBaseLayout &&
+    m.existingSiteReuse.sharedLayoutDraftOwnerPresentationPassPending &&
+    !m.existingSiteReuse.releasePageUsesBaseLayoutNow,
+    'component exists as Draft, not a live site integration');
+
+  const result=extractIndependentMacroWeeklyDraftFragment(html);
+  ok(result.presentationChanged && !result.readyForPublicRelease,
+    'site layout changes visual presentation but not release rights');
+  eq(result.factualSectionIds,[...DRAFT_ARTICLE_SECTION_IDS],
+    'same expected original editorial section IDs');
+  eq(DRAFT_ARTICLE_SECTION_IDS.length,7,'all seven owner-reviewed editorial sections');
+  for (const id of DRAFT_ARTICLE_SECTION_IDS){
+    const regexp=new RegExp('<section aria-labelledby="'+id+'">[\\s\\S]*?<\\/section>');
+    const original=html.match(regexp)?.[0];
+    const adapted=result.fragment.match(regexp)?.[0];
+    ok(Boolean(original),'source section exists: '+id);
+    eq(adapted,original,'source editorial section retained exactly: '+id);
+  }
+  ok(!result.fragment.includes('<header') && !result.fragment.includes('<footer') &&
+    !result.fragment.includes('<html') && !result.fragment.includes('<body'),
+    'standalone shell is omitted to avoid duplicate navigation and footer');
+  ok(result.fragment.includes('<main id="main-content"') &&
+    !result.fragment.includes('<main id="main"'),
+    'base layout skip link lands on the actual report main landmark');
+  ok(result.fragment.includes('This shared-layout adaptation is not published.') &&
+    !result.fragment.includes('exact article PASS, merge'),
+    'new Draft notice does not misstate already granted original article PASS');
+  for (const link of m.sources.officialSourceUrls) {
+    ok(result.fragment.includes('href="'+link+'"'),'exact source links preserved in new presentation');
+  }
+  for (const d of m.sources.originalPublishedDailyFiles){
+    ok(result.fragment.includes('href="https://www.usd-impact.com/news/'+d.date+'/"'),
+      'published Daily link preserved in new presentation '+d.date);
+  }
+  const cssSelectors=scopedStyle.split(/\n/).map(x=>x.trim()).filter(x=>x.includes('{') &&
+    !x.startsWith('@') && !x.startsWith('/*') && !x.startsWith('*'));
+  ok(cssSelectors.length>40,'responsive typography and components remain styled');
+  ok(cssSelectors.every(x=>x.startsWith('.mw-root') || x.startsWith('}')),
+    'all Draft CSS selectors remain rooted in .mw-root (no global site override)');
+  ok(scopedStyle.includes('@media(max-width:880px)') &&
+    scopedStyle.includes('@media(max-width:580px)') &&
+    scopedStyle.includes('prefers-reduced-motion:reduce'),
+    'desktop/tablet/mobile and reduced-motion Draft presentation rules exist');
+}
+
 const builtOutput = process.argv.includes('--built-output');
 if (builtOutput) {
   const dist = new URL('../dist/', import.meta.url);
@@ -112,7 +195,9 @@ if (builtOutput) {
     'data-release-candidate="draft"',
     'UNPUBLISHED RELEASE CANDIDATE',
     'Release Candidate • Draft only',
-    'USD Impact Macro Weekly Review | October 26–30, 2026 — Draft Release Candidate (Unpublished)'
+    'USD Impact Macro Weekly Review | October 26–30, 2026 — Draft Release Candidate (Unpublished)',
+    'data-shared-layout-status="draft-not-published"',
+    'Shared-layout Draft — not published — presentation review'
   ];
   let inspected=0;
   function walk(folder){

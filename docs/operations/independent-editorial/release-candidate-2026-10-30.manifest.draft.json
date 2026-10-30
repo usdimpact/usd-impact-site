@@ -63,7 +63,14 @@
     "laterExactClaimReviewReceiptsVerifiedForAllClaims": false,
     "issuerDeclaredReleaseTimePlusLaterEditorialReview": "APPROVED_FOR_DRAFT_METHOD_PROPOSAL_ONLY",
     "actualIssuerFirstWebPostingClaimed": false,
-    "historicalEarlyDailyGenerationTimesUntouched": true
+    "historicalEarlyDailyGenerationTimesUntouched": true,
+    "claimEvidenceFile": "docs/operations/independent-editorial/release-candidate-2026-10-30.claim-evidence.draft.json",
+    "claimEvidenceGitBlobSha": "d6ecddfeac0992fcc19e92005c2db12c3a13d858",
+    "issuerDeclaresReleaseTimesForFourOfficialOutcomes": true,
+    "claimEvidenceRecordsFourLaterDailyCorrections": true,
+    "independentWeeklyClaimOwnerPassCount": 0,
+    "finalCandidateEditorialPassStillRequired": true,
+    "candidateHasDatedOfficialReleaseEvidenceNotWebPosting": true
   },
   "sourceUse": {
     "stageBNarrowScopeJson": "docs/operations/independent-editorial/stage-b-narrow-source-use-review.draft.json",
@@ -122,7 +129,8 @@
     "indexationApproved": false,
     "newsletterOrRssApproved": false,
     "originalScoreRightsModificationApproved": false,
-    "previewDeploymentApproved": false
+    "previewDeploymentApproved": false,
+    "claimLevelExplicitIndependentEditorialApproval": false
   },
   "technicalSafety": {
     "branchContainsNoLivePublicEdition": true,

@@ -8,6 +8,8 @@ begin;
 do $issue950_pdf_pilot_rollback$
 declare
   synthetic_subject uuid := '__ISSUE950_RESTORE_SYNTHETIC_UUID__'::uuid;
+  -- Must be the SAME privately attested timestamp used at policy installation.
+  approved_expires_at timestamptz := '__ISSUE950_EXPIRES_AT_UTC__'::timestamptz;
   approved_host_md5 text := '__ISSUE950_RESTORE_SERVER_HOST_MD5__';
   observed_count integer;
 begin
@@ -55,6 +57,25 @@ begin
         or (p.tablename='buckets' and
           (position('library-pass-books' in coalesce(p.qual,''))=0 or
            position('public' in coalesce(p.qual,''))=0))
+        -- Presence-only string tests can miss a same-name policy broadened
+        -- with OR or extra AND clauses. All four approved policy predicates
+        -- contain precisely four conjuncts (three AND operators), zero ORs,
+        -- and the identical expiry used at installation. This is a
+        -- conservative fail-closed structure check, not a live permission test.
+        or (p.cmd in ('SELECT','UPDATE') and (
+          regexp_count(coalesce(p.qual,''), '\\mAND\\M', 1, 'i') <> 3
+          or regexp_count(coalesce(p.qual,''), '\\mOR\\M', 1, 'i') <> 0
+          or position(to_char(approved_expires_at,'YYYY-MM-DD HH24:MI:SS')
+                      in coalesce(p.qual,''))=0
+        ))
+        or (p.cmd in ('INSERT','UPDATE') and (
+          regexp_count(coalesce(p.with_check,''), '\\mAND\\M', 1, 'i') <> 3
+          or regexp_count(coalesce(p.with_check,''), '\\mOR\\M', 1, 'i') <> 0
+          or position(to_char(approved_expires_at,'YYYY-MM-DD HH24:MI:SS')
+                      in coalesce(p.with_check,''))=0
+        ))
+        or (p.cmd='INSERT' and p.qual is not null)
+        or (p.cmd='SELECT' and p.with_check is not null)
       )
   ) then
     raise exception 'issue950 PDF pilot rollback: unexpected policy identity or shape';

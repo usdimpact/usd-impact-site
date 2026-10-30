@@ -29,6 +29,12 @@ if (!fs.existsSync(sitemapPath)) {
 } else {
   const xml = fs.readFileSync(sitemapPath, 'utf8');
   const locations = [...xml.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/g)].map(([, loc]) => loc.replaceAll('&amp;', '&'));
+  // A noindex tag is not sufficient when the sitemap still advertises a draft.
+  const candidateRoute = '/internal/independent-macro-context';
+  if (locations.some((loc) => {
+    try { return (new URL(loc).pathname.replace(/\\/+$/, '') || '/') === candidateRoute; }
+    catch { return false; }
+  })) failures.push('Unreleased Macro Context concept appears in sitemap.');
   if (!locations.length || locations.length !== [...xml.matchAll(/<url>/g)].length) {
     failures.push('Canonical policy: sitemap locations are missing or ambiguous.');
   } else {
@@ -64,15 +70,20 @@ if (!fs.existsSync(sitemapPath)) {
   }
 }
 
-const noindexControls = ['/internal/ask-usd-impact', ...SEARCH_UTILITY_PATHS];
+const noindexControls = ['/internal/ask-usd-impact', '/internal/independent-macro-context', ...SEARCH_UTILITY_PATHS];
 for (const route of noindexControls) {
   const file = outputPath(route);
   if (!fs.existsSync(file)) {
     failures.push(`Canonical policy: noindex control HTML missing: ${route}.`);
     continue;
   }
-  const hrefs = canonicalHrefs(fs.readFileSync(file, 'utf8'));
+  const html = fs.readFileSync(file, 'utf8');
+  const hrefs = canonicalHrefs(html);
   if (hrefs.length !== 0) failures.push(`Canonical policy: noindex control must not emit canonical: ${route}.`);
+  if (route === '/internal/independent-macro-context' &&
+      !html.includes('content="noindex, nofollow"')) {
+    failures.push('Unreleased Macro Context concept must emit noindex, nofollow metadata.');
+  }
 }
 
 if (failures.length) {

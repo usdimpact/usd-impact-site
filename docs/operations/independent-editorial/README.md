@@ -53,6 +53,16 @@ This dated snapshot is a **blocker inventory, not a real-time source or legal ap
 
 The first manual review, when an authorized reviewer is available, should consider **only** the exact official release item and the proposed original educational paraphrase/direct-link use. Do **not** classify a whole agency/domain as unrestricted, import live time-series observations or mark any reuse/retention/foreign-jurisdiction flag approved without the corresponding dated scoped evidence. For source time uncertainties, keep `sourceReleaseAt` null in the historical draft until a verified exact release and subsequent editorial receipt can be documented. The original Score and FRED rights gates remain independent and unchanged.
 
+## Release-time evidence reconciled from existing project records — no issuer fetch
+
+The separate [pilot release-timing evidence worksheet](pilot-release-timing-evidence.draft.json) now cross-references **pre-existing, reviewed internal evidence** for all four official outcome claims, without changing the pinned unpublished Weekly:
+
+- The [October 28 FOMC evidence record](../fomc-2026-10-28-outcome-framework.md) states a scheduled **2:00 p.m. U.S. Eastern / 18:00 UTC** statement. The Oct 28 published Daily is generated after this schedule. Exact issuer posting time and a separately authenticated claim-level editorial receipt remain **unverified** for the new independent series.
+- The [October 29 BEA calendar](../daily-major-release-calendars/2026-10-29.json) records **12:30 UTC** scheduled GDP/PCE releases. The original Oct 29 Daily candidate was generated **09:33 UTC**, so it could not be treated as post-release. The [later owner-requested correction in PR #938](https://github.com/usdimpact/usd-impact-site/pull/938#issuecomment-6510694719) was recorded **23:11 UTC**, and added actual BEA outcomes. The GDP calendar's `/index.php/news/` URL differs from the new pilot's exact `/news/` link; URL identity still requires human review.
+- The October 30 BLS ECI claim already has a **12:30 UTC** release-time reference and [later correction receipt](https://github.com/usdimpact/usd-impact-site/pull/1009#issuecomment-6525502611), and remains **rights-HOLD**.
+
+These observations reduce what a reviewer must rediscover but **do not** turn a scheduled event time into the exact time a federal website actually posted its document, authorize commercial source reuse, or invent a missing receipt. Three `sourceReleaseAt` fields remain **null** in the original independent Weekly draft; the release-time worksheet explicitly preserves that status, and the offline test checks it. Only independently verified dated evidence may change those fields in a later, separately reviewed Draft. The independent Monthly is still **0/4 published**.
+
 ## Required decisions before a separate release-stage PR
 
 - Legal/provider/source reviewer: clarify reuse terms for each *exact* Federal Reserve, BEA, BLS or other official release, allowed fact quotation/derivatives, commercial display, attribution, machine-readable format, snapshots and archives. Official government hosting or a Daily citation does not automatically settle every series or downstream use; no unapproved source fetch.

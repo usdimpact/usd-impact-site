@@ -114,6 +114,34 @@ try {
     fail('Held Spanish DXY boundary sent an unexpected robots policy.');
   }
 
+  // The five already-approved public Spanish educational pages must stay
+  // localized and indexable; the next proposed Spanish DXY page stays held.
+  const approvedSpanishPages = [
+    { spanish: '/es', english: '/' },
+    { spanish: '/es/start-here', english: '/start-here' },
+    { spanish: '/es/dollar-framework', english: '/dollar-framework' },
+    { spanish: '/es/framework/dollar-transmission-chain', english: '/framework/dollar-transmission-chain' },
+    { spanish: '/es/framework/three-dial-dashboard', english: '/framework/three-dial-dashboard' },
+  ];
+  for (const { spanish, english } of approvedSpanishPages) {
+    const response = await fetchWithTimeout(spanish, { redirect: 'manual' });
+    if (response.status !== 200) {
+      fail(`Approved Spanish page ${spanish} returned ${response.status}, expected 200.`);
+    }
+    verifySecurityHeaders(response, `Approved Spanish page ${spanish}`);
+    const html = await response.text();
+    const source = `https://www.usd-impact.com${english}`;
+    const localized = `https://www.usd-impact.com${spanish}`;
+    requireText(html, '<html lang="es">', `Spanish HTML ${spanish}`);
+    requireText(html, `<link rel="canonical" href="${localized}">`, `Spanish canonical ${spanish}`);
+    requireText(html, `<link rel="alternate" hreflang="en" href="${source}">`, `English alternate ${spanish}`);
+    requireText(html, `<link rel="alternate" hreflang="es" href="${localized}">`, `Spanish alternate ${spanish}`);
+    requireText(html, `<link rel="alternate" hreflang="x-default" href="${source}">`, `Default alternate ${spanish}`);
+    if (/<meta[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(html)) {
+      fail(`Approved public Spanish page ${spanish} unexpectedly contains noindex.`);
+    }
+  }
+
   const securityTxt = await fetchWithTimeout('/.well-known/security.txt');
   if (securityTxt.status !== 200) fail(`security.txt returned ${securityTxt.status}, expected 200.`);
   verifySecurityHeaders(securityTxt, 'security.txt');

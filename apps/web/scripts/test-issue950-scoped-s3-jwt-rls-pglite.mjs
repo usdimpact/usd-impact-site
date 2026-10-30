@@ -262,5 +262,63 @@ for(const side of ['source','restore']){
     }finally{await db.close();}
   }
 }
+// Issue #950 PDF-only restore RLS: no real Supabase or media access.
+const pdfOnly=src('issue950-pdf-only-restore-upsert.review.sql');
+const pdfUndo=src('issue950-pdf-only-restore-rollback.review.sql');
+const pdfScope=pdfOnly.slice(pdfOnly.indexOf('create policy issue950_pdf_pilot_'));
+const pdfHost='198.51.100.11';
+const pdfHash=createHash('md5').update(pdfHost).digest('hex');
+function pdfRender(template,host=pdfHash,until=expires(1)){
+  return template.replaceAll('__ISSUE950_RESTORE_SYNTHETIC_UUID__',uuids.restore)
+    .replaceAll('__ISSUE950_RESTORE_SERVER_HOST_MD5__',host)
+    .replaceAll('__ISSUE950_EXPIRES_AT_UTC__',until)
+    .replaceAll('__ISSUE950_APPROVED_TEST_EMAIL__','issue950-s3-restore@example.invalid')
+    .replaceAll('inet_server_addr()',"'"+pdfHost+"'");
+}
+assert.equal(pdfScope.split('create policy ').length-1,4);
+assert.ok(pdfScope.includes("'"+book+"'"));
+assert.doesNotMatch(pdfScope,/library-pass-assets|for delete to authenticated/);
+assert.match(pdfOnly,/interval '2 hours'/);
+checks+=4;
+const pdfDb=await makeDb('restore');
+try{
+  await assert.rejects(pdfDb.exec(pdfOnly),/invalid input syntax|invalid input/i);
+  await pdfDb.exec('rollback');
+  await assert.rejects(pdfDb.exec(pdfRender(pdfOnly,'0'.repeat(32))),/host binding not verified/);
+  await pdfDb.exec('rollback');
+  await assert.rejects(pdfDb.exec(pdfRender(pdfOnly,pdfHash,expires(3))),/expiry must be future and <=2h/);
+  await pdfDb.exec('rollback');
+  checks+=3;
+  await pdfDb.exec(pdfRender(pdfOnly));
+  assert.equal(await count(pdfDb,"select count(*) as n from pg_policies where schemaname='storage'"),4);
+  const own=(q,p=[])=>as(pdfDb,'authenticated',uuids.restore,()=>rows(pdfDb,q,p));
+  assert.deepEqual((await own("select name from storage.objects")).map(x=>x.name),[book]);
+  assert.deepEqual((await own("select id from storage.buckets")).map(x=>x.id),['library-pass-books']);
+  assert.equal((await as(pdfDb,'authenticated',uuids.stranger,()=>rows(pdfDb,"select name from storage.objects"))).length,0);
+  assert.equal((await as(pdfDb,'anon',uuids.restore,()=>rows(pdfDb,"select name from storage.objects"))).length,0);
+  assert.equal((await own("update storage.objects set metadata='offline-test' where bucket_id='library-pass-books' returning name")).length,1);
+  assert.equal((await own("update storage.objects set metadata='denied' where bucket_id='library-pass-assets' returning name")).length,0);
+  assert.equal((await own("delete from storage.objects where bucket_id='library-pass-books' returning name")).length,0);
+  await assert.rejects(own("insert into storage.objects(bucket_id,name) values('library-pass-assets','outside.mp3')"),/row-level security|permission denied/i);
+  await assert.rejects(own("update storage.objects set name='other.pdf' where bucket_id='library-pass-books'"),/row-level security|permission denied/i);
+  checks+=10;
+  await assert.rejects(pdfDb.exec(pdfRender(pdfUndo,'0'.repeat(32))),/host binding not verified/);
+  await pdfDb.exec('rollback');
+  assert.equal(await count(pdfDb,"select count(*) as n from pg_policies where schemaname='storage'"),4);
+  checks+=2;
+  await pdfDb.exec("create policy issue950_extra_offline on storage.objects for select to authenticated using(false)");
+  await assert.rejects(pdfDb.exec(pdfRender(pdfUndo)),/unexpected policy identity or shape/);
+  await pdfDb.exec('rollback');
+  assert.equal(await count(pdfDb,"select count(*) as n from pg_policies where schemaname='storage'"),5);
+  await pdfDb.exec("drop policy issue950_extra_offline on storage.objects");
+  checks+=2;
+  await pdfDb.exec(pdfRender(pdfUndo));
+  await pdfDb.exec(pdfRender(pdfUndo));
+  assert.equal(await count(pdfDb,"select count(*) as n from pg_policies where schemaname='storage'"),0);
+  assert.equal(await count(pdfDb,"select count(*) as n from storage.objects where bucket_id in ('library-pass-assets','library-pass-books')"),21);
+  checks+=2;
+} finally {await pdfDb.close();}
+console.log('Issue #950 pdf-only restore RLS: disposable PostgreSQL PASS; no provider call.');
+
 console.log('Issue #950 S3 JWT scoped recovery review: '+checks+
   ' synthetic SQL assertions PASS; no real S3, JWT, Auth, user, provider, private file or deployed SQL.');

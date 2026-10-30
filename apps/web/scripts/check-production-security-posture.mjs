@@ -98,10 +98,11 @@ try {
     }
   }
 
+  // Vercel cleanUrls uses a no-trailing-slash canonical route (the slash URL 308s).
   // PR #932's sixth Spanish DXY page is private/review-only, even though the
   // separately approved five-page public Spanish site is already live.
   // Revisit this assertion only through its independently authorized release.
-  const heldSpanishDxy = await fetchWithTimeout('/es/dxy/dxy-vs-broad-usd/', { redirect: 'manual' });
+  const heldSpanishDxy = await fetchWithTimeout('/es/dxy/dxy-vs-broad-usd', { redirect: 'manual' });
   if (heldSpanishDxy.status !== 404) {
     fail(`Held Spanish DXY page returned ${heldSpanishDxy.status}, expected 404 until release approval.`);
   }

@@ -162,6 +162,8 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
                 <a
                   class="nav-direct"
                   href={link.href}
+                  hreflang={link.destinationLocale}
+                  aria-label={link.accessibilityLabel}
                   aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}
                 >
                   {link.label}
@@ -270,7 +272,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
           <nav class="footer-nav" aria-label="Navegación al pie">
             <div class="footer-group">
               <p class="footer-heading">Español</p>
-              {SPANISH_PUBLIC_NAVIGATION.map((link) => <a href={link.href}>{link.label}</a>)}
+              {SPANISH_PUBLIC_NAVIGATION.map((link) => <a href={link.href} hreflang={link.destinationLocale} aria-label={link.accessibilityLabel}>{link.label}</a>)}
             </div>
             <div class="footer-group">
               <p class="footer-heading">Legal y transparencia</p>

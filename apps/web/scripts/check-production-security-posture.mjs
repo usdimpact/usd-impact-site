@@ -73,13 +73,40 @@ try {
   if (commerce?.disclosuresComplete !== true) fail('Buyer-facing seller disclosures must remain complete for Live checkout.');
   if (commerce?.checkoutEnabled !== true) fail('checkoutEnabled must remain true for the approved Live release.');
 
-  const protectedAudiobook = await fetchWithTimeout('/guided-edition/audiobook/');
-  if (protectedAudiobook.status !== 200) fail(`Protected audiobook boundary returned ${protectedAudiobook.status}, expected secure sign-in page 200.`);
-  verifySecurityHeaders(protectedAudiobook, 'Protected audiobook boundary');
-  const protectedHtml = await protectedAudiobook.text();
-  requireText(protectedHtml, '<title>Sign in | USD Impact</title>', 'Protected audiobook boundary');
-  requireText(protectedHtml, 'Sign in without a password.', 'Protected audiobook boundary');
-  if (/\.mp3(?:[?"'])/i.test(protectedHtml)) fail('Protected audiobook boundary exposed an MP3 URL before authentication.');
+  // A real checkout or valid entitlement must never be inferred from a GET.
+  // These requests are deliberately anonymous: no cookies or Authorization header.
+  const protectedRoutes = [
+    { path: '/guided-edition/book/', label: 'Protected book boundary' },
+    { path: '/guided-edition/audiobook/', label: 'Protected audiobook boundary' },
+    { path: '/guided-edition/video-library/', label: 'Protected Video Library boundary' },
+  ];
+  for (const { path, label } of protectedRoutes) {
+    const protectedResponse = await fetchWithTimeout(path);
+    if (protectedResponse.status !== 200) {
+      fail(`${label} returned ${protectedResponse.status}, expected secure sign-in page 200.`);
+    }
+    verifySecurityHeaders(protectedResponse, label);
+    const protectedHtml = await protectedResponse.text();
+    requireText(protectedHtml, '<title>Sign in | USD Impact</title>', label);
+    requireText(protectedHtml, '<meta name="robots" content="noindex, nofollow">', label);
+    requireText(protectedHtml, 'Sign in without a password.', label);
+    if (/storage\.supabase\.co\/storage\/v1\/object\/(?:sign|public)\//i.test(protectedHtml)) {
+      fail(`${label} exposed a Storage object URL before authentication.`);
+    }
+    if (/\.mp3(?:[?"'])/i.test(protectedHtml)) {
+      fail(`${label} exposed an MP3 URL before authentication.`);
+    }
+  }
+
+  // PR #932's sixth Spanish DXY page is private/review-only, even though the
+  // separately approved five-page public Spanish site is already live.
+  // Revisit this assertion only through its independently authorized release.
+  const heldSpanishDxy = await fetchWithTimeout('/es/dxy/dxy-vs-broad-usd/', { redirect: 'manual' });
+  if (heldSpanishDxy.status !== 404) {
+    fail(`Held Spanish DXY page returned ${heldSpanishDxy.status}, expected 404 until release approval.`);
+  }
+  verifySecurityHeaders(heldSpanishDxy, 'Held Spanish DXY boundary');
+  requireText(heldSpanishDxy.headers.get('x-robots-tag') || '', 'noindex', 'Held Spanish DXY boundary');
 
   const securityTxt = await fetchWithTimeout('/.well-known/security.txt');
   if (securityTxt.status !== 200) fail(`security.txt returned ${securityTxt.status}, expected 200.`);

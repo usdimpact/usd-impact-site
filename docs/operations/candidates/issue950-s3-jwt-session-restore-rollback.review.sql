@@ -37,10 +37,31 @@ begin
             or (p.tablename='objects' and p.policyname='issue950_restore_session_objects_insert' and p.cmd='INSERT')
             or (p.tablename='objects' and p.policyname='issue950_restore_session_objects_update' and p.cmd='UPDATE')
             or (p.tablename='buckets' and p.policyname='issue950_restore_session_buckets_select' and p.cmd='SELECT'))
-        or position(synthetic_subject::text in
-          coalesce(p.qual,'') || ' ' || coalesce(p.with_check,''))=0
-        or position('now()' in
-          coalesce(p.qual,'') || ' ' || coalesce(p.with_check,''))=0)
+        -- UPDATE must retain BOTH its USING and WITH CHECK fencing.
+        -- Checking their concatenation would miss a widened second clause.
+        or (p.cmd in ('SELECT','UPDATE') and (
+           p.qual is null
+           or position(synthetic_subject::text in p.qual)=0
+           or position('now()' in p.qual)=0))
+        or (p.cmd in ('INSERT','UPDATE') and (
+           p.with_check is null
+           or position(synthetic_subject::text in p.with_check)=0
+           or position('now()' in p.with_check)=0))
+        or (p.tablename='objects' and (
+           (p.cmd in ('SELECT','UPDATE') and (
+             position('bucket_id' in coalesce(p.qual,''))=0
+             or position('name' in coalesce(p.qual,''))=0
+             or position('library-pass-assets' in coalesce(p.qual,''))=0
+             or position('library-pass-books' in coalesce(p.qual,''))=0))
+           or (p.cmd in ('INSERT','UPDATE') and (
+             position('bucket_id' in coalesce(p.with_check,''))=0
+             or position('name' in coalesce(p.with_check,''))=0
+             or position('library-pass-assets' in coalesce(p.with_check,''))=0
+             or position('library-pass-books' in coalesce(p.with_check,''))=0))))
+        or (p.tablename='buckets' and (
+           position('public' in coalesce(p.qual,''))=0
+           or position('library-pass-assets' in coalesce(p.qual,''))=0
+           or position('library-pass-books' in coalesce(p.qual,''))=0)))
   )
   then raise exception 'issue950 rollback: unexpected policy identity or shape'; end if;
 end

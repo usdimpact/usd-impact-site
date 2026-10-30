@@ -368,10 +368,12 @@ try{
   await pdfInsertDb.exec(pdfRender(pdfOnly));
   const withPdfSession=(query,parameters=[])=>as(pdfInsertDb,'authenticated',uuids.restore,
     ()=>rows(pdfInsertDb,query,parameters));
+  const countLibraryObjects=()=>count(pdfInsertDb,
+    "select count(*) as n from storage.objects where bucket_id in ('library-pass-assets','library-pass-books')");
   await assert.rejects(withPdfSession(
     "insert into storage.objects(bucket_id,name) values('library-pass-books','book/unlisted.pdf')"),
     /row-level security|permission denied/i);
-  assert.equal(await count(pdfInsertDb,"select count(*) as n from storage.objects"),21);
+  assert.equal(await countLibraryObjects(),21);
   await assert.rejects(withPdfSession(
     "insert into storage.objects(bucket_id,name) values('library-pass-books',$1)",[book]),
     /duplicate key|unique constraint/i);
@@ -379,13 +381,13 @@ try{
   // INSERT policy. DO NOT use this method on either real Supabase project.
   await pdfInsertDb.query(
     "delete from storage.objects where bucket_id='library-pass-books' and name=$1",[book]);
-  assert.equal(await count(pdfInsertDb,"select count(*) as n from storage.objects"),20);
+  assert.equal(await countLibraryObjects(),20);
   const inserted=await withPdfSession(
     "insert into storage.objects(bucket_id,name) values('library-pass-books',$1) returning name",[book]);
   assert.deepEqual(inserted.map(x=>x.name),[book]);
   await pdfInsertDb.exec(pdfRender(pdfUndo));
   assert.equal(await count(pdfInsertDb,"select count(*) as n from pg_policies where schemaname='storage'"),0);
-  assert.equal(await count(pdfInsertDb,"select count(*) as n from storage.objects"),21);
+  assert.equal(await countLibraryObjects(),21);
   checks+=7;
 }finally{await pdfInsertDb.close();}
 

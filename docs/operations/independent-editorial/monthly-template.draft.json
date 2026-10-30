@@ -1,0 +1,39 @@
+{
+  "contractVersion": "independent-editorial-draft-v1",
+  "series": "independent_macro_education",
+  "kind": "independent_monthly",
+  "status": "draft",
+  "releaseAuthorized": false,
+  "rightsStatus": "pending_independent_source_review",
+  "marketDataLicenseBudgetUSD": 0,
+  "sourceRule": "four_consecutive_published_independent_weeklies",
+  "sourceWeeklyReports": [],
+  "editorial": {
+    "title": "Independent Macro Monthly Review — future four-week cycle (DRAFT ONLY)",
+    "summary": "Editorial-only four-week synthesis will be considered after four consecutive independently approved and actually published Weeklies exist; none is currently eligible.",
+    "sections": [
+      {
+        "heading": "Policy and official releases",
+        "text": "Synthesize distinct dated decisions and confirmed government releases only from the eventual four independent source Weeklies."
+      },
+      {
+        "heading": "Growth, inflation and labor cost",
+        "text": "Explain units, relevant observation periods, and differences between release dates without re-counting recurring information."
+      },
+      {
+        "heading": "Dollar transmission and energy context",
+        "text": "Separate conditional educational mechanisms from any asserted realized DXY, oil, gas, gold, bitcoin or index moves."
+      },
+      {
+        "heading": "Evidence gaps and changes to watch",
+        "text": "Document missing evidence, exact source rights and time-vintage uncertainty; no original Score points or historical bridge."
+      }
+    ],
+    "whatToWatch": [
+      "Four consecutive separately published independent Weekly reports with exact source receipts.",
+      "Written source-by-source processing, derivative-publication, attribution and retention decisions.",
+      "Owner editorial and compliance approval, separate publishing validator and authorized preview."
+    ],
+    "complianceNote": "Educational and informational only; not investment, financial, legal or trading advice, and not a recommendation to buy or sell any asset."
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "usd-impact-first-weekly-proposed-status-copy-v1-draft",
+  "preparedDate": "2026-10-31",
+  "state": "TEXT_PROPOSAL_ONLY_NOT_RENDERED_NOT_APPROVED",
+  "repository": "usdimpact/usd-impact-site",
+  "pr": 1025,
+  "proposalBasedOnCommit": "4071091bac3ffd288ea579cdf6f632671829c92b",
+  "unchangedEvidence": {
+    "articleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "componentGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
+    "adapterGitBlobSha": "77cbc75bd1fe7e5a843592904442d74cf4e07ab0",
+    "sevenEditorialSectionsUnchanged": true,
+    "officialSourcesPreserved": 5,
+    "originalDailyLinksPreserved": 5
+  },
+  "proposedStatusOnlySubstitutions": [
+    {
+      "id": "hero-badge",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "old": "Draft candidate — HOLD",
+      "proposed": "Coverage: October 26–30, 2026",
+      "category": "source hero status",
+      "editorialApprovalNeeded": true
+    },
+    {
+      "id": "hero-review-status",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "old": "Draft only, never published",
+      "proposed": "Official release facts checked; education only",
+      "category": "source hero status",
+      "editorialApprovalNeeded": true
+    },
+    {
+      "id": "section-seven-status",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "old": "This page is an unpublished Draft candidate. Exact-item rights, international distribution, and public release remain on HOLD; no agency endorses the page.",
+      "proposed": "This page provides original educational commentary on cited official releases; it does not report independently observed asset-price reactions or the original Score. No agency endorses this page.",
+      "category": "editorial compliance section",
+      "editorialApprovalNeeded": true
+    },
+    {
+      "id": "side-release-control",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "old": "This page is NOT routed or published. Rights clearance, exact article PASS, merge and public Production release are still denied.",
+      "proposed": "This review uses original explanation, official release facts and direct citations. It does not provide a live market-data feed, investment recommendation or original Score.",
+      "category": "status notice",
+      "editorialApprovalNeeded": true
+    },
+    {
+      "id": "layout-ribbon",
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "old": "Shared-layout Draft — not published — presentation review, international rights and Production HOLD",
+      "proposed": "Independent Macro Weekly — October 26–30, 2026",
+      "category": "shared layout",
+      "editorialApprovalNeeded": true
+    },
+    {
+      "id": "layout-title",
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "old": "USD Impact Macro Weekly Review | October 26–30, 2026 — Unpublished shared-layout Draft",
+      "proposed": "USD Impact Macro Weekly Review | October 26–30, 2026",
+      "category": "page metadata",
+      "editorialApprovalNeeded": true
+    },
+    {
+      "id": "layout-description",
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "old": "Private, unpublished integration Draft. Independent educational macro report; source use and public release still on HOLD.",
+      "proposed": "An educational review of official FOMC, GDP, PCE and Employment Cost Index releases for October 26–30, 2026. Not a market-price signal or investment recommendation.",
+      "category": "page metadata",
+      "editorialApprovalNeeded": true
+    },
+    {
+      "id": "adapter-stale-presentation-notice",
+      "path": "apps/web/src/lib/independent-macro-weekly-draft-shell.mjs",
+      "old": "This shared-layout adaptation is not published. The standalone article has an editorial PASS; this new layout, qualified international rights review, merge and public Production release remain on HOLD.",
+      "proposed": "This independent educational Weekly summarizes cited official releases, without measured market-price returns or original USD Impact Score outputs.",
+      "category": "presentation notice",
+      "editorialApprovalNeeded": true
+    }
+  ],
+  "otherChangesThatMustBeDecidedSeparately": {
+    "standaloneOriginalSourceMustRemainImmutable": true,
+    "createSeparateReleaseComponentAndAdapterRatherThanOverwriteReviewArtifact": true,
+    "exactDateRouteWhitelistMustRemainDisabled": true,
+    "noindexFirstDefault": true,
+    "publicReleaseMetadataDateMustBeSetOnlyOnVerifiedActualPublication": true,
+    "productionDeployAndMergeRequireNewOwnerAuthorization": true,
+    "indexingRequiresSeparateAuthorization": true,
+    "extraWeekliesNeverAutoGenerated": true
+  },
+  "ownerStatusCopyEditorialPass": false,
+  "releaseCandidateCompiled": false,
+  "renderedReleaseCandidateReviewed": false,
+  "releaseAuthorized": false,
+  "routeActivated": false,
+  "noindexRemovalAuthorized": false,
+  "firstPublicPublicationUtc": null,
+  "legalRightsReviewPassed": false,
+  "privacyCertificationPassed": false
+}

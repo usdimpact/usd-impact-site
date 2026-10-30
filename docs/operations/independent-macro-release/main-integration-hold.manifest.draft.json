@@ -184,6 +184,17 @@
     "qualifiedLegalAndPrivacyClearanceObtained": false,
     "releaseAuthorized": false
   },
+  "futureReleaseCopyAndOwnerDecisionDraft": {
+    "statusCopyPath": "docs/operations/independent-macro-release/first-weekly-conditional-publication-copy-2026-10-31.draft.json",
+    "statusCopyGitBlobSha": "4d88076dedc4c038368c9324edc3374e036e702d",
+    "ownerDecisionPath": "docs/operations/independent-macro-release/first-weekly-owner-review-decision-record-2026-10-31.draft.md",
+    "ownerDecisionGitBlobSha": "c9fb4dc9a1433c5b38286b54cc74457a6a64d9ae",
+    "proposedSubstitutionCount": 8,
+    "newStatusCopyEditorialPass": false,
+    "ownerPathSelected": false,
+    "internalGovernanceAmendmentActivated": false,
+    "releaseAuthorized": false
+  },
   "siteShellAdaptationDraft": {
     "componentPath": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
     "componentGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",

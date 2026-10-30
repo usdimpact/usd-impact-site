@@ -208,7 +208,63 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
       'governance proposal is inert and requires a new explicit decision');
  }
  
- // Shared BaseLayout integration stays non-public. The approved standalone
+ // The final-status copy is a proposed redline only; no executable release route.
+{
+  const statusCopyText=from('../../../docs/operations/independent-macro-release/first-weekly-conditional-publication-copy-2026-10-31.draft.json');
+  const statusCopy=JSON.parse(statusCopyText);
+  const decision=from('../../../docs/operations/independent-macro-release/first-weekly-owner-review-decision-record-2026-10-31.draft.md');
+  const pinned=m.futureReleaseCopyAndOwnerDecisionDraft;
+  eq(gitBlob(statusCopyText),pinned.statusCopyGitBlobSha,
+     'exact proposal: future publication-status copy Git blob');
+  eq(gitBlob(decision),pinned.ownerDecisionGitBlobSha,
+     'exact owner-decision worksheet Git blob');
+  eq(statusCopy.schemaVersion,'usd-impact-first-weekly-proposed-status-copy-v1-draft',
+     'future publication-status redline remains non-executable');
+  eq(statusCopy.unmodified===undefined,true,
+     'no implicit execution code accepted in status data');
+  eq(statusCopy.unchangedEvidence.articleGitBlobSha,gitBlob(html),
+     'original article frozen for any future release');
+  eq(statusCopy.unchangedEvidence.componentGitBlobSha,
+     m.siteShellAdaptationDraft.componentGitBlobSha,
+     'owner-reviewed shared-layout component preserved');
+  eq(statusCopy.unchangedEvidence.adapterGitBlobSha,
+     m.siteShellAdaptationDraft.adapterGitBlobSha,
+     'Draft adapter not modified');
+  eq(statusCopy.proposedStatusOnlySubstitutions.length,pinned.proposedSubstitutionCount,
+     'all proposed visible Draft markers tracked');
+  const originalSourceByPath={
+    'apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html':html,
+    'apps/web/src/components/IndependentMacroWeeklyDraftShell.astro':from('../src/components/IndependentMacroWeeklyDraftShell.astro'),
+    'apps/web/src/lib/independent-macro-weekly-draft-shell.mjs':from('../src/lib/independent-macro-weekly-draft-shell.mjs')
+  };
+  ok(statusCopy.proposedStatusOnlySubstitutions.every(x=>{
+    const input=originalSourceByPath[x.path];
+    return typeof input==='string' && x.editorialApprovalNeeded === true &&
+      x.old && x.proposed && x.old!==x.proposed &&
+      input.indexOf(x.old)>=0 &&
+      input.indexOf(x.old,input.indexOf(x.old)+x.old.length)<0;
+  }), 'every proposed replacement tied to exactly one frozen source string');
+  ok(statusCopy.otherChangesThatMustBeDecidedSeparately.standaloneOriginalSourceMustRemainImmutable &&
+     statusCopy.otherChangesThatMustBeDecidedSeparately.noindexFirstDefault &&
+     statusCopy.otherChangesThatMustBeDecidedSeparately.exactDateRouteWhitelistMustRemainDisabled &&
+     statusCopy.firstPublicPublicationUtc===null &&
+     !statusCopy.ownerStatusCopyEditorialPass &&
+     !statusCopy.releaseCandidateCompiled && !statusCopy.renderedReleaseCandidateReviewed &&
+     !statusCopy.releaseAuthorized && !statusCopy.routeActivated &&
+     !statusCopy.noindexRemovalAuthorized && !statusCopy.legalRightsReviewPassed &&
+     !statusCopy.privacyCertificationPassed,
+     'future status-only copy does not authorize publishing or legal approval');
+  ok(decision.includes('**NOT SELECTED**') &&
+     decision.includes('**ALL DENIED**') &&
+     decision.includes('**FALSE**') &&
+     decision.includes('**No executable action follows this worksheet.**') &&
+     !pinned.newStatusCopyEditorialPass && !pinned.ownerPathSelected &&
+     !pinned.internalGovernanceAmendmentActivated && !pinned.releaseAuthorized &&
+     !m.optionalOwnerOperatedGovernanceAmendmentProposal.policyAmendedOrEffective,
+     'owner decision worksheet remains unapproved and all-deny');
+}
+
+// Shared BaseLayout integration stays non-public. The approved standalone
 // article remains unchanged, but the new presentation needs its own owner PASS.
 {
   const a=m.siteShellAdaptationDraft;

@@ -37,6 +37,27 @@ Owner decision: [Issue #950, comment 6527985148](https://github.com/usdimpact/us
 * **Actual restore download SHA-256:** **NOT EXECUTED** (0/21 verified restored bytes)
 * **Cleanup and no-access proof:** **NOT EXECUTED**
 
+## Verified Auth exposure inventory — 2026-10-30
+
+The owner approved **read-only double-checking**, and two aggregate-only SELECT statements from the companion `Issue950_Auth_ReadOnly_Risk_Preflight_2026-10-30.sql` were executed against **isolated restore `movnekagnxgcyenczfoc` only**. Results:
+
+| Confirmed aggregate measure | Verified value |
+| --- | ---: |
+| `auth.users` | **9** |
+| Confirmed email users | **9** |
+| Users with non-empty stored password hashes | **9** |
+| `auth.identities` with `provider='email'` | **9** |
+| `auth.sessions` records | **85**, **not proof that 85 sessions are active** |
+| Issue-scoped synthetic recovery users | **0** |
+| Private Library buckets | **2** |
+| Library Storage metadata records | **21** |
+| Temporary Storage policies | **0** |
+| Pending account deletions | **0** |
+
+**NO-GO on enabling Email as a shortcut.** All nine restored users have confirmed email identities and stored password hashes, so enabling the Email provider could allow existing accounts to authenticate. Public signups being disabled does **not** isolate the new synthetic user from these existing restored accounts. The 85 historical session records must not be misrepresented as currently active; password/sign-in exposure is still a material project-wide risk. Password protection settings shown by the owner (minimum six characters, leaked-password protection OFF, other change safeguards OFF) are additionally weak.
+
+The sole-owner one-PDF exception remains valid, but **does not approve** this broader Auth provider change. Leave Email and all other providers disabled, leave the nine accounts untouched, and await Supabase Support's answer about a supported synthetic authenticated user session while all providers remain disabled. The focused Storage REST `x-upsert:true` method itself remains separately provider-confirmed. No user, JWT, SQL policy, file upload/download, merge/deploy, account deletion, or Production change was performed in this double-check.
+
 ## New owner-supplied Auth provider finding (NO-GO, 2026-10-30)
 
 Owner screenshots of the **isolated restore** `https://supabase.com/dashboard/project/movnekagnxgcyenczfoc/auth/providers` show **Allow new users to sign up: OFF**, **Email provider: DISABLED**, **Phone provider: DISABLED**, **all displayed third-party/social providers: DISABLED**, **Allow anonymous sign-ins: OFF**, and **Confirm email: ON**. Screenshots were read-only; no setting was changed. Exact RESTORE project ref was visible in the URL. The existing nine restored users and current Storage metadata were reverified via SELECT-only SQL.

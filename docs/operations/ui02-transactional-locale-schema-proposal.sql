@@ -24,6 +24,11 @@ create function public.ui02_version_transactional_locale()
 returns trigger language plpgsql security invoker set search_path = pg_catalog
 as $fn$
 begin
+  -- Serialize authenticated language changes against purchase email freeze.
+  -- Does not require or grant UPDATE on public.profiles.
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended('ui02_account_locale:'||new.account_id::text,0)
+  );
   if tg_op = 'INSERT' then
     new.revision := 1;
   else

@@ -72,8 +72,15 @@ begin
     or v_purchase.completed_at > now() + interval '5 minutes'
   then raise exception 'UI02_PURCHASE_AUTHORITY_HOLD'; end if;
 
+  -- A shared profile lock protects the current email/status without needing
+  -- UPDATE permission on public.profiles (which is intentionally absent).
+  -- Shared account advisory lock is also held by preference INSERT/UPDATE
+  -- trigger; this prevents a language change during locale freeze.
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended('ui02_account_locale:'||v_purchase.account_id::text,0)
+  );
   select * into v_profile from public.profiles
-  where account_id=v_purchase.account_id for update;
+  where account_id=v_purchase.account_id for share;
   if not found or v_profile.status <> 'active'
     or v_profile.auth_user_id is distinct from v_profile.account_id
   then raise exception 'UI02_PROFILE_IDENTITY_HOLD'; end if;

@@ -46,16 +46,18 @@ if ((Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInv
 # These are immutable examples of future REST request destinations, not calls.
 # A future protected client must refuse redirects and never accept alternate
 # project, bucket, object key, protocol, port, query or fragment from the user.
-$paths = @(
-  '/storage/v1/object/' + $bucket + '/' + $objectKey,
-  '/storage/v1/object/authenticated/' + $bucket + '/' + $objectKey
-)
+# Construct each fixed path independently so no PowerShell array-operator
+# precedence can change the expected single-file endpoints.
+$upsertPath = '/storage/v1/object/' + $bucket + '/' + $objectKey
+$downloadPath = '/storage/v1/object/authenticated/' + $bucket + '/' + $objectKey
+$paths = @($upsertPath, $downloadPath)
 foreach ($path in $paths) {
   $uri = [System.Uri]::new($origin + $path)
-  if ($uri.Scheme -cne 'https' -or $uri.Host -cne ($expectedProject + '.supabase.co') -or
-      -not $uri.IsDefaultPort -or $uri.AbsolutePath -cne $path -or
-      $uri.Query.Length -ne 0 -or $uri.Fragment.Length -ne 0) {
-    throw 'STOP: REST endpoint envelope mismatch'
+  if ($uri.Scheme -cne 'https' -or $uri.Host -cne ($expectedProject + '.supabase.co') -or -not $uri.IsDefaultPort) {
+    throw 'STOP: REST endpoint origin mismatch'
+  }
+  if ($uri.AbsolutePath -cne $path -or $uri.Query.Length -ne 0 -or $uri.Fragment.Length -ne 0) {
+    throw 'STOP: REST endpoint path mismatch'
   }
 }
 # HttpClientHandler is part of Windows PowerShell's existing .NET installation.

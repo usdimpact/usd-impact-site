@@ -1,7 +1,7 @@
 # Read the Dollar First — manuscript patch register
 
 Date: 2026-08-29
-Status: Phase 2C preparation only; no master-book edit authorized or performed.
+Status: Phase 2C preparation register with 2026-10-30 MP-21 review-only addendum. No frozen master-book or private delivery edit is authorized.
 
 ## Purpose
 
@@ -12,7 +12,8 @@ The correction target is deliberately narrow:
 - Chapter 10 — `Reading Regimes: The Eleven-Year Record`;
 - Chapter 13 — the live-dashboard / archive wording only;
 - Appendix B — `USD Impact Score Methodology`;
-- four required print-link insertions plus one optional companion insertion.
+- four required print-link insertions plus one optional companion insertion;
+- the later Edition 1.3 Candidate 2 Introduction evidence-framing correction (MP-21).
 
 All other chapters remain editorially frozen unless the final layout pass reveals a direct cross-reference that must move because of pagination.
 
@@ -479,6 +480,35 @@ This alias currently resolves to the Weekly Regime Lab with book edition/chapter
 
 ---
 
+## MP-21 — Introduction Part IV evidence framing (Edition 1.3 Candidate 2 successor)
+
+**Priority:** P0 — editorial consistency, not a Score release authorization  
+**Source authority checked:** English Edition 1.3 / v5.95 Candidate 2, frozen Drive file `1MRLH7fhk5lfuFxu_EJBlvfvWQDhcUjME` (unchanged since 2026-08-30); Source issue: [#774](https://github.com/usdimpact/usd-impact-site/issues/774).  
+**Location:** Introduction / `How the book is organized` / Part IV description  
+**Reconciliation:** 2026-10-30; historical proposal [#775](https://github.com/usdimpact/usd-impact-site/pull/775) closed unmerged because its base was stale. Spanish Phase 2A [#772](https://github.com/usdimpact/usd-impact-site/issues/772) is completed, but the private Spanish Candidate 1 and member release remain under separate HOLD.
+
+### Inconsistent frozen Introduction language
+
+The frozen Candidate 2 Introduction still describes Part IV as examining the `hit rate` and as the point where the framework becomes an `empirical claim`. These expressions can imply predictive success, conflicting with the same Candidate 2's Chapter 10 and Appendix B descriptions of recalculated history, regimes, and vintage limitations. This is a correction candidate; the frozen published artifact must remain untouched.
+
+### Governed replacement for the next newly versioned English successor
+
+> Part IV examines the framework through descriptive historical evidence. It uses recalculated USD Impact Score v2 history and selected market regimes to illustrate where the cross-asset pattern was coherent, mixed, or specific to an individual market. The recalculated history is a present-day reconstruction of past conditions, not a point-in-time predictive backtest; dated as-published evidence must be evaluated separately. These illustrations do not establish a future hit rate or trading performance.
+
+Editorial acceptance for the successor must ensure:
+
+- no new performance percentage, hit-rate promise, predictive accuracy, or investment recommendation;
+- clear distinction between current recalculations and contemporaneous, as-published records;
+- consistency with Chapter 10, Appendix B, and MP-04/05/07/10/15/16;
+- a new artifact identity, byte hash, private QA record, and updated Spanish upstream source mapping;
+- Score-derived publication remains **HOLD** until the separate rights/licensing gate authorizes it.
+
+### Release boundary
+
+This addendum updates the **patch plan only**. It does not authorize editing the frozen Candidate 2 PDF, modifying existing private Storage bytes, replacing the member-delivered file, changing the Spanish Candidate 1, enabling any Spanish member route, publishing a Score, changing purchase/entitlement logic, or altering Production. A governed source-edit and new English successor artifact are still required for Issue #774 to close.
+
+---
+
 ## Patch scope summary
 
 ### Required factual/manuscript corrections
@@ -486,6 +516,7 @@ This alias currently resolves to the Weekly Regime Lab with book edition/chapter
 - MP-01 through MP-08
 - MP-10
 - MP-12 through MP-17
+- MP-21 (newly versioned English successor only)
 
 ### Required print bridge insertions
 
@@ -519,4 +550,5 @@ A later manuscript-edit phase should not be considered complete until:
 4. no `84.5%`, `100%`, `79.7%`, or `73.2%` performance claim remains as current Score v2 evidence;
 5. no paragraph describes recalculated pre-archive history as an as-published real-time record;
 6. TOC, printed page references, index ranges, bookmarks and internal hyperlinks are revalidated after layout;
-7. the corrected manuscript receives a fresh edition/build identifier before ISBN/barcode work begins.
+7. no successor Introduction turns recalculated Score history into a predictive hit-rate or accuracy claim;
+8. the corrected manuscript receives a fresh edition/build identifier and SHA-256 before ISBN/barcode work begins.

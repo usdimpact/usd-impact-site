@@ -85,4 +85,91 @@ assert.throws(
   /email/i,
 );
 
+// P1 first-buyer closeout: prove the future buyer's access-ready outbox
+// can be enqueued idempotently without enabling any provider call. This entire
+// fixture is offline, never reads real customers or contacts Resend/Supabase.
+const fixtureEnvironment = Object.freeze({
+  VERCEL_ENV: 'preview',
+  EMAIL_READINESS_LEDGER_ENABLED: 'true',
+  LAUNCH_EMAIL_DISPATCH_ENABLED: 'false',
+  SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_abcdefghijklmnopqrstuvwxyz',
+  SUPABASE_SECRET_KEY: 'sb_secret_abcdefghijklmnopqrstuvwxyz',
+});
+const fixtureRow = {
+  id: '9ca40ee4-6477-4fcb-88cc-bf4488dd9adc',
+  ...prepared.intent.outboxRecord,
+  status: 'queued',
+  attempt_count: 0,
+  created_at: '2026-09-02T14:41:47.000Z',
+  updated_at: '2026-09-02T14:41:47.000Z',
+};
+let fixturePosts = 0;
+let fixtureReads = 0;
+let providerCalls = 0;
+const mockLedger = async (url, options = {}) => {
+  assert.ok(String(url).startsWith('https://ycstrcvshdluovtuasjc.supabase.co/rest/v1/notification_outbox?'));
+  if (options.method === 'POST') {
+    fixturePosts += 1;
+    const body = JSON.parse(options.body);
+    assert.deepEqual(body.payload, {});
+    assert.equal(body.status, undefined);
+    assert.equal(body.attempt_count, undefined);
+    assert.equal(body.message_id, 'purchase_access_ready');
+    // First insert succeeds; duplicate on_conflict returns no row.
+    return new Response(JSON.stringify(fixturePosts === 1 ? [fixtureRow] : []), {
+      status: fixturePosts === 1 ? 201 : 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  if (options.method === 'GET') {
+    fixtureReads += 1;
+    return new Response(JSON.stringify([fixtureRow]), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  throw new Error('Unexpected synthetic ledger operation');
+};
+const blockProvider = async () => {
+  providerCalls += 1;
+  throw new Error('Disabled dispatch must never contact a provider');
+};
+for (let attempt = 0; attempt < 2; attempt += 1) {
+  const queued = await deliverPurchaseAccessReadyEmail({
+    accessResult,
+    environment: fixtureEnvironment,
+    ledgerFetchImpl: mockLedger,
+    providerFetchImpl: blockProvider,
+  });
+  assert.equal(queued.enabled, false);
+  assert.equal(queued.state.enabled, true);
+  assert.equal(queued.state.outbox.id, fixtureRow.id);
+  assert.equal(queued.delivery, null);
+}
+assert.equal(fixturePosts, 2, 'same completed purchase may safely reattempt its idempotent insert');
+assert.equal(fixtureReads, 1, 'the duplicate reuses its existing ledger identity');
+assert.equal(providerCalls, 0, 'a disabled sender must not contact Resend');
+
+let unapprovedProductionCalls = 0;
+await assert.rejects(
+  () => deliverPurchaseAccessReadyEmail({
+    accessResult,
+    environment: {
+      ...fixtureEnvironment,
+      VERCEL_ENV: 'production',
+      SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
+      // Deliberately omit EMAIL_READINESS_PRODUCTION_APPROVED.
+    },
+    ledgerFetchImpl: async () => {
+      unapprovedProductionCalls += 1;
+      throw new Error('Unapproved Production ledger must not contact Supabase');
+    },
+    providerFetchImpl: blockProvider,
+  }),
+  (error) => error?.code === 'PRODUCTION_LEDGER_NOT_APPROVED',
+);
+assert.equal(unapprovedProductionCalls, 0, 'production guard stops before network');
+assert.equal(providerCalls, 0);
+
 console.log('Purchase access-ready email tests passed.');

@@ -14,7 +14,7 @@ class Element {
   removeAttribute(k) { this.attrs.delete(k); }
   click() { if (!this.disabled) this.emit('click'); }
 }
-function setup({ saved = null, readDenied = false, writeDenied = false, missing = null, loadThrows = false, seekThrows = false } = {}) {
+function setup({ saved = null, readDenied = false, writeDenied = false, missing = null, loadThrows = false, seekThrows = false, network = null } = {}) {
   const e = Object.fromEntries(['audio', 'title', 'prev', 'next', 'retry', 'restart', 'speed', 'status'].map(k => [k, new Element()]));
   const tracks = Array.from({ length: 3 }, (_, i) => new Element({ url: `/guided-edition/audiobook/track/synthetic-${i}/`, title: `Synthetic ${i}` }));
   const storage = new Map();
@@ -31,7 +31,7 @@ function setup({ saved = null, readDenied = false, writeDenied = false, missing 
   };
   audio.play = function () { this.plays++; return Promise.resolve(); };
   const root = { dataset: { key: KEY }, querySelector(selector) { const k = selector.slice(6, -1); return k === missing ? null : e[k]; }, querySelectorAll() { return tracks; } };
-  const sandbox = { document: { querySelector() { return root; } }, localStorage: {
+  const sandbox = { navigator: network === null ? {} : { connection: network }, document: { querySelector() { return root; } }, localStorage: {
     getItem(k) { if (access.readDenied) throw Error('read denied'); return storage.get(k) ?? null; },
     setItem(k, v) { writes++; if (access.writeDenied) throw Error('write denied'); storage.set(k, v); },
   }, console, Promise, fetch() { throw Error('Network forbidden'); } };
@@ -51,6 +51,35 @@ test('serializer emits executable inline script without a closing script tag', (
 });
 test('missing player is a no-op', () => assert.doesNotThrow(() => vm.runInNewContext(script, { document: { querySelector: () => null } })));
 for (const missing of ['audio','title','prev','next','retry','restart','speed','status']) test(`missing ${missing} is a no-op`, () => { assert.doesNotThrow(() => setup({ missing })); });
+test('unknown network uses metadata, not full-chapter auto preload', () => {
+  const f = setup();
+  assert.equal(f.audio.preload, 'metadata');
+  assert.equal(f.audio.loads, 1);
+});
+test('known Wi-Fi without Save-Data only preloads the selected chapter', () => {
+  const f = setup({ network: { type: 'wifi', saveData: false } });
+  assert.equal(f.audio.preload, 'auto');
+  assert.equal(f.audio.loads, 1);
+  f.tracks[1].click();
+  assert.equal(f.audio.preload, 'auto');
+  assert.equal(f.audio.loads, 2);
+});
+test('ethernet may preload only the selected chapter', () => {
+  const f = setup({ network: { type: 'ethernet', saveData: false } });
+  assert.equal(f.audio.preload, 'auto');
+  assert.equal(f.audio.loads, 1);
+});
+for (const network of [
+  { type: 'wifi', saveData: true },
+  { type: 'wifi' },
+  { type: 'cellular', effectiveType: '4g', saveData: false },
+  { effectiveType: '4g', saveData: false },
+  { type: 'ethernet', saveData: true },
+]) test(`limited or unknown network stays at metadata: ${JSON.stringify(network)}`, () => {
+  const f = setup({ network });
+  assert.equal(f.audio.preload, 'metadata');
+  assert.equal(f.audio.loads, 1);
+});
 test('initial empty bookmark is not reported saved or overwritten by metadata', () => { const f = ready(); assert.equal(f.writes(), 0); assert.equal(f.value(), null); assert.doesNotMatch(f.e.status.textContent, /position is saved/); });
 test('restores existing bookmark after seek completion', () => { const f = ready({ saved: { index: 1, time: 60 } }); assert.equal(f.audio.currentTime, 60); assert.deepEqual(f.value(), { index: 1, time: 60 }); assert.equal(f.e.title.textContent, 'Synthetic 1'); });
 test('ignores reset events before metadata and before seek completes', () => {

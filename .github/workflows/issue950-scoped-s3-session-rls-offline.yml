@@ -4,6 +4,11 @@ on:
   pull_request:
     paths:
       - 'docs/operations/candidates/issue950-s3-jwt-session-*.review.sql'
+      - 'docs/operations/candidates/issue950-pdf-only-*.review.sql'
+      - 'docs/operations/candidates/issue950-pdf-only-offline-source-preflight.review.ps1'
+      - 'docs/operations/candidates/issue950-pdf-only-rest-envelope-preflight.review.ps1'
+      - 'docs/operations/issue950-pdf-only-restore-upsert-pilot-review-2026-10-30.md'
+      - 'docs/operations/issue950-owner-operated-single-pdf-go-no-go-2026-10-30.md'
       - 'apps/web/scripts/test-issue950-scoped-s3-jwt-rls-pglite.mjs'
       - 'apps/web/scripts/test-account-deletion-review-only-activation.mjs'
       - '.github/workflows/issue950-scoped-s3-session-rls-offline.yml'
@@ -46,3 +51,80 @@ jobs:
           node --check scripts/test-issue950-scoped-s3-jwt-rls-pglite.mjs
           node scripts/test-issue950-scoped-s3-jwt-rls-pglite.mjs
           node scripts/test-account-deletion-review-only-activation.mjs
+      - name: Offline owner PDF preflight must fail closed without original file
+        shell: pwsh
+        run: |
+          $probe = Join-Path $env:RUNNER_TEMP 'issue950-fixture-not-real.pdf'
+          $script = Join-Path $env:GITHUB_WORKSPACE 'docs/operations/candidates/issue950-pdf-only-offline-source-preflight.review.ps1'
+          Set-Content -LiteralPath $probe -Value '%PDF-1.4 disposable fake content' -Encoding ascii
+          function MustStop([string] $source, [string] $project, [string] $expect) {
+            $actual = $null
+            try {
+              & $script -SourcePdf $source -DestinationProjectRef $project | Out-Null
+            } catch {
+              $actual = $_.Exception.Message
+            }
+            if ($actual -cne $expect) {
+              throw 'Offline preflight did not stop at the expected validation gate'
+            }
+          }
+          MustStop $probe 'gjzetjugmnwanvjkchux' 'STOP: destination project ref is not the isolated restore'
+          MustStop ($probe + '.missing') 'movnekagnxgcyenczfoc' 'STOP: local PDF source file is missing'
+          MustStop $probe 'movnekagnxgcyenczfoc' 'STOP: PDF size mismatch'
+          Remove-Item -LiteralPath $probe
+          Write-Output 'Issue950 PowerShell wrong-project/missing-source/wrong-byte negative fixtures PASS; zero network calls.'
+      - name: REST client request-envelope cannot run on wrong target or broad credentials
+        shell: pwsh
+        run: |
+          $script = Join-Path $env:GITHUB_WORKSPACE 'docs/operations/candidates/issue950-pdf-only-rest-envelope-preflight.review.ps1'
+          $source = Get-Content -LiteralPath $script -Raw
+          if ($source -match 'Invoke-WebRequest|Invoke-RestMethod|SendAsync|GetAsync|PostAsync|Start-Process|WebClient|WebRequest.Create') {
+            throw 'Review-only REST envelope must contain no network transport execution'
+          }
+          if ($source -notmatch 'HttpClientHandler' -or $source -notmatch 'AllowAutoRedirect') {
+            throw 'REST envelope must explicitly require redirect refusal'
+          }
+          $probe = Join-Path $env:RUNNER_TEMP 'issue950-offline-envelope-not-real.pdf'
+          Set-Content -LiteralPath $probe -Value '%PDF-1.4 fake offline fixture' -Encoding ascii
+          function MustStop([string] $sourceFile, [string] $project, [string] $expected) {
+            $actual = $null
+            try {
+              & $script -SourcePdf $sourceFile -DestinationProjectRef $project | Out-Null
+            } catch {
+              $actual = $_.Exception.Message
+            }
+            if ($actual -cne $expected) {
+              throw 'REST envelope unexpectedly accepted a prohibited fixture'
+            }
+          }
+          MustStop $probe 'gjzetjugmnwanvjkchux' 'STOP: non-restore project'
+          MustStop ($probe + '.missing') 'movnekagnxgcyenczfoc' 'STOP: original PDF unavailable'
+          MustStop $probe 'movnekagnxgcyenczfoc' 'STOP: original PDF byte length mismatch'
+          $env:SUPABASE_SERVICE_ROLE_KEY = 'offline-fixture-placeholder-not-a-key'
+          try {
+            MustStop $probe 'movnekagnxgcyenczfoc' 'STOP: broad credential environment variable is present'
+          } finally {
+            Remove-Item Env:SUPABASE_SERVICE_ROLE_KEY
+          }
+          # Positive path in CI uses ONLY a dummy PDF. Replace size/hash in a
+          # TEMPORARY copy of the candidate script; never weaken the repo copy.
+          $fixtureLength = (Get-Item -LiteralPath $probe).Length
+          $fixtureHash = (Get-FileHash -LiteralPath $probe -Algorithm SHA256).Hash.ToLowerInvariant()
+          $originalLength = '$expectedLength = [long]2281645'
+          $originalHash = "$" + "expectedSha256 = 'b96bf8cdc90a69112f367ef66dafe30b1e0fc2402edc43f249d8525db9fe3666'"
+          if (-not $source.Contains($originalLength) -or -not $source.Contains($originalHash)) {
+            throw 'Source exact size/hash constants changed unexpectedly'
+          }
+          $synthetic = $source.Replace($originalLength,('$expectedLength = [long]' + $fixtureLength))
+          $synthetic = $synthetic.Replace($originalHash,('$expectedSha256 = ' + "'" + $fixtureHash + "'"))
+          $fixtureScript = Join-Path $env:RUNNER_TEMP 'issue950-rest-envelope-fixture-only.ps1'
+          Set-Content -LiteralPath $fixtureScript -Value $synthetic -Encoding utf8
+          $markers = @(& $fixtureScript -SourcePdf $probe -DestinationProjectRef 'movnekagnxgcyenczfoc')
+          foreach ($marker in @('ISSUE950_LOCAL_REST_REQUEST_ENVELOPE_PASS','ISSUE950_NO_BROAD_SECRET_VARIABLES_PRESENT','ISSUE950_REDIRECT_BLOCKING_AVAILABLE','ISSUE950_NO_NETWORK_JWT_OR_STORAGE_WRITE_PERFORMED','ISSUE950_LIVE_RESTORE_STILL_NO_GO')) {
+            if ($markers -cnotcontains $marker) {
+              throw 'Synthetic REST envelope positive fixture did not reach expected no-network guard'
+            }
+          }
+          Remove-Item -LiteralPath $fixtureScript
+          Remove-Item -LiteralPath $probe
+          Write-Output 'Issue950 REST client envelope positive/negative dummy fixtures PASS; no network, JWT, PDF upload, or secrets.'

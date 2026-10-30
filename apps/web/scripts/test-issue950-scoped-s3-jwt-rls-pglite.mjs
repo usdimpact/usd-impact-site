@@ -262,5 +262,159 @@ for(const side of ['source','restore']){
     }finally{await db.close();}
   }
 }
+// Issue #950 PDF-only restore RLS: no real Supabase or media access.
+const pdfOnly=src('issue950-pdf-only-restore-upsert.review.sql');
+const pdfUndo=src('issue950-pdf-only-restore-rollback.review.sql');
+const pdfScope=pdfOnly.slice(pdfOnly.indexOf('create policy issue950_pdf_pilot_'));
+const pdfHost='198.51.100.11';
+const pdfHash=createHash('md5').update(pdfHost).digest('hex');
+// Install and rollback MUST use the same exact UTC expiry, not a recomputed one.
+const pdfExpires=expires(1);
+function pdfRender(template,host=pdfHash,until=pdfExpires){
+  return template.replaceAll('__ISSUE950_RESTORE_SYNTHETIC_UUID__',uuids.restore)
+    .replaceAll('__ISSUE950_RESTORE_SERVER_HOST_MD5__',host)
+    .replaceAll('__ISSUE950_EXPIRES_AT_UTC__',until)
+    .replaceAll('__ISSUE950_APPROVED_TEST_EMAIL__','issue950-s3-restore@example.invalid')
+    .replaceAll('inet_server_addr()',"'"+pdfHost+"'");
+}
+assert.equal(pdfScope.split('create policy ').length-1,4);
+assert.ok(pdfScope.includes("'"+book+"'"));
+assert.doesNotMatch(pdfScope,/library-pass-assets|for delete to authenticated/);
+assert.match(pdfOnly,/interval '2 hours'/);
+checks+=4;
+const pdfDb=await makeDb('restore');
+try{
+  await assert.rejects(pdfDb.exec(pdfOnly),/invalid input syntax|invalid input/i);
+  await pdfDb.exec('rollback');
+  await assert.rejects(pdfDb.exec(pdfRender(pdfOnly,'0'.repeat(32))),/host binding not verified/);
+  await pdfDb.exec('rollback');
+  await assert.rejects(pdfDb.exec(pdfRender(pdfOnly,pdfHash,expires(3))),/expiry must be future and <=2h/);
+  await pdfDb.exec('rollback');
+  checks+=3;
+  await pdfDb.exec(pdfRender(pdfOnly));
+  assert.equal(await count(pdfDb,"select count(*) as n from pg_policies where schemaname='storage'"),4);
+  const own=(q,p=[])=>as(pdfDb,'authenticated',uuids.restore,()=>rows(pdfDb,q,p));
+  assert.deepEqual((await own("select name from storage.objects")).map(x=>x.name),[book]);
+  assert.deepEqual((await own("select id from storage.buckets")).map(x=>x.id),['library-pass-books']);
+  assert.equal((await as(pdfDb,'authenticated',uuids.stranger,()=>rows(pdfDb,"select name from storage.objects"))).length,0);
+  assert.equal((await as(pdfDb,'anon',uuids.restore,()=>rows(pdfDb,"select name from storage.objects"))).length,0);
+  assert.equal((await own("update storage.objects set metadata='offline-test' where bucket_id='library-pass-books' returning name")).length,1);
+  assert.equal((await own("update storage.objects set metadata='denied' where bucket_id='library-pass-assets' returning name")).length,0);
+  assert.equal((await own("delete from storage.objects where bucket_id='library-pass-books' returning name")).length,0);
+  await assert.rejects(own("insert into storage.objects(bucket_id,name) values('library-pass-assets','outside.mp3')"),/row-level security|permission denied/i);
+  await assert.rejects(own("update storage.objects set name='other.pdf' where bucket_id='library-pass-books'"),/row-level security|permission denied/i);
+  checks+=10;
+  await assert.rejects(pdfDb.exec(pdfRender(pdfUndo,'0'.repeat(32))),/host binding not verified/);
+  await pdfDb.exec('rollback');
+  assert.equal(await count(pdfDb,"select count(*) as n from pg_policies where schemaname='storage'"),4);
+  await assert.rejects(pdfDb.exec(pdfRender(pdfUndo,pdfHash,expires(3))),/unexpected policy identity or shape/);
+  await pdfDb.exec('rollback');
+  assert.equal(await count(pdfDb,"select count(*) as n from pg_policies where schemaname='storage'"),4);
+  checks+=4;
+  await pdfDb.exec("create policy issue950_extra_offline on storage.objects for select to authenticated using(false)");
+  await assert.rejects(pdfDb.exec(pdfRender(pdfUndo)),/unexpected policy identity or shape/);
+  await pdfDb.exec('rollback');
+  assert.equal(await count(pdfDb,"select count(*) as n from pg_policies where schemaname='storage'"),5);
+  await pdfDb.exec("drop policy issue950_extra_offline on storage.objects");
+  checks+=2;
+  await pdfDb.exec(pdfRender(pdfUndo));
+  await pdfDb.exec(pdfRender(pdfUndo));
+  assert.equal(await count(pdfDb,"select count(*) as n from pg_policies where schemaname='storage'"),0);
+  assert.equal(await count(pdfDb,"select count(*) as n from storage.objects where bucket_id in ('library-pass-assets','library-pass-books')"),21);
+  checks+=2;
+} finally {await pdfDb.close();}
+// PDF-only restore pilot preflight/drift negative fixtures, disposable only.
+// Installation must refuse copied customer accounts, unrelated data or widened
+// permissions; cleanup must refuse same-name changes without DBA inspection.
+for(const [reason,settings,pattern] of [
+  ['active-profile',{activeProfile:true},/synthetic Auth\/profile isolation proof missing/],
+  ['wrong-admin-tag',{wrongMarker:true},/synthetic Auth\/profile isolation proof missing/],
+  ['wrong-email',{wrongEmail:true},/synthetic Auth\/profile isolation proof missing/],
+  ['paid-entitlement',{entitledUser:true},/synthetic user has paid entitlements/],
+  ['missing-synthetic-auth',{noAuthUser:true},/synthetic Auth\/profile isolation proof missing/],
+  ['extra-object',{extra:true},/exact 21-key immutable manifest mismatch/],
+  ['public-book-bucket',{publicBucket:true},/exact two private buckets required/],
+  ['existing-storage-policy',{existingPolicy:true},/unexpected pre-existing Storage policies/],
+]){
+  const db=await makeDb('restore',settings);
+  try{
+    await assert.rejects(db.exec(pdfRender(pdfOnly)),pattern,'PDF-only '+reason);
+    await db.exec('rollback');
+    assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),
+      settings.existingPolicy?1:0);
+    checks+=2;
+  }finally{await db.close();}
+}
+for(const scenario of ['widened-select','widened-update-check','retained-clauses-or','retained-clauses-extra-and','widened-expiry','partial-install']){
+  const db=await makeDb('restore');
+  try{
+    await db.exec(pdfRender(pdfOnly));
+    if(scenario==='widened-select'){
+      await db.exec("alter policy issue950_pdf_pilot_session_objects_select on storage.objects using ((select auth.uid()) = '22222222-3333-4444-8555-666666666666'::uuid and now() < now() + interval '2 hours')");
+    }else if(scenario==='widened-update-check'){
+      await db.exec("alter policy issue950_pdf_pilot_session_objects_update on storage.objects with check (true)");
+    }else if(scenario==='retained-clauses-or' || scenario==='retained-clauses-extra-and'){
+      // The approved subject, expiry, bucket and filename are STILL present.
+      // The original rollback's substring checks would miss this drift.
+      const selected=await rows(db,"select qual from pg_policies where schemaname='storage' and policyname='issue950_pdf_pilot_session_objects_select'");
+      assert.equal(selected.length,1);
+      const extra=scenario==='retained-clauses-or'
+        ? "OR (bucket_id='library-pass-assets')"
+        : "AND (current_setting('issue950.fixture',true) IS NULL)";
+      await db.exec(`alter policy issue950_pdf_pilot_session_objects_select on storage.objects using ((${selected[0].qual}) ${extra})`);
+    }else if(scenario==='widened-expiry'){
+      // Same identity and exact file, but the policy expiry now follows the
+      // current clock instead of the immutable approved UTC time.
+      await db.exec(`alter policy issue950_pdf_pilot_session_objects_select on storage.objects using (
+        (select auth.uid()) = '${uuids.restore}'::uuid
+        and now() < now() + interval '48 hours'
+        and bucket_id = 'library-pass-books'
+        and name = '${book}'
+      )`);
+    }else{
+      await db.exec("drop policy issue950_pdf_pilot_session_objects_insert on storage.objects");
+    }
+    await assert.rejects(db.exec(pdfRender(pdfUndo)),/unexpected policy identity or shape/,'PDF-only '+scenario);
+    await db.exec('rollback');
+    assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),
+      scenario==='partial-install'?3:4);
+    checks+=2;
+  }finally{await db.close();}
+}
+
+// PDF-only exact-path INSERT fixture: disposable DB, never provider Storage.
+// Same-bucket wrong-name writes must fail even if the bucket itself is allowed.
+// Plain INSERT to the existing metadata row collides; only API upsert (provider
+// response pending) is relevant to the real metadata-already-exists scenario.
+const pdfInsertDb=await makeDb('restore');
+try{
+  await pdfInsertDb.exec(pdfRender(pdfOnly));
+  const withPdfSession=(query,parameters=[])=>as(pdfInsertDb,'authenticated',uuids.restore,
+    ()=>rows(pdfInsertDb,query,parameters));
+  const countLibraryObjects=()=>count(pdfInsertDb,
+    "select count(*) as n from storage.objects where bucket_id in ('library-pass-assets','library-pass-books')");
+  await assert.rejects(withPdfSession(
+    "insert into storage.objects(bucket_id,name) values('library-pass-books','book/unlisted.pdf')"),
+    /row-level security|permission denied/i);
+  assert.equal(await countLibraryObjects(),21);
+  await assert.rejects(withPdfSession(
+    "insert into storage.objects(bucket_id,name) values('library-pass-books',$1)",[book]),
+    /duplicate key|unique constraint/i);
+  // Fixture-only DBA removes ONE fake PDF row to exercise the exact-path
+  // INSERT policy. DO NOT use this method on either real Supabase project.
+  await pdfInsertDb.query(
+    "delete from storage.objects where bucket_id='library-pass-books' and name=$1",[book]);
+  assert.equal(await countLibraryObjects(),20);
+  const inserted=await withPdfSession(
+    "insert into storage.objects(bucket_id,name) values('library-pass-books',$1) returning name",[book]);
+  assert.deepEqual(inserted.map(x=>x.name),[book]);
+  await pdfInsertDb.exec(pdfRender(pdfUndo));
+  assert.equal(await count(pdfInsertDb,"select count(*) as n from pg_policies where schemaname='storage'"),0);
+  assert.equal(await countLibraryObjects(),21);
+  checks+=7;
+}finally{await pdfInsertDb.close();}
+
+console.log('Issue #950 pdf-only restore RLS: disposable PostgreSQL PASS; no provider call.');
+
 console.log('Issue #950 S3 JWT scoped recovery review: '+checks+
   ' synthetic SQL assertions PASS; no real S3, JWT, Auth, user, provider, private file or deployed SQL.');

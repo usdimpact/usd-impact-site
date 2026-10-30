@@ -321,5 +321,76 @@ ok(!/import\.meta\.env|process\.env|PUBLIC_/.test(route),
   eq(approval.publishReady, false, 'scope pass is not overall release readiness');
 }
 
+
+// The exact published October 28 Daily was further corrected after the first
+// Fed post-release PR (#926). The later merged PR #928 matches the pinned blob.
+// Never silently equate the earlier intermediate blob with the final edition.
+{
+  const auditText = readFileSync(
+    new URL('release-candidate-2026-10-30.final-daily-revision-audit.draft.json', root), 'utf8');
+  const audit = JSON.parse(auditText);
+  eq(audit.schemaVersion, 'independent-macro-weekly-source-daily-exact-version-reconciliation-v1-draft',
+    'final Daily version audit schema');
+  eq(manifest.editorialProvenance.finalDailySourceReconciliationGitBlobSha,
+    gitBlobSha(auditText), 'final Daily audit Git blob pinned');
+  eq(audit.sourcePinnedWeeklyGitBlobSha,
+    manifest.editorialProvenance.sourceWeeklyGitBlobSha,
+    'same independent Weekly source snapshot');
+  eq(audit.verifiedProtectedMainCommit,
+    'eb832fac7203a6a0f2ff29c0320616114e39224f',
+    'read-only protected main provenance checkpoint');
+  eq(audit.result, 'FIVE_OF_FIVE_PUBLISHED_DAILY_BLOBS_EXACT_MATCH',
+    'all five published Daily versions verified');
+  eq(audit.pinnedFinalDailyBlobsVerified, 5, 'five actual published Dailies');
+  eq(audit.items.length, 5, 'one exact content reconciliation per source date');
+  ok(audit.allFiveDailiesPublished && audit.fourPostReleaseOfficialOutcomesRepresented &&
+    audit.allThreeAffectedOutcomeDailyCorrectionsHappenedAfterIssuerDeclaredTime,
+    'final posted and post-release correction chain checked');
+  ok(manifest.editorialProvenance.allFiveFinalPublishedDailyBlobsVerified,
+    'five published final source editions matched');
+  ok(manifest.editorialProvenance.fedPriorPr926IntermediateDailyWasSupersededByMergedPr928,
+    'Fed intermediate revision must not be treated as final');
+  ok(manifest.editorialProvenance.allFourOfficialOutcomeCorrectionsDocumentedAfterIssuerIssueTime,
+    'four official outcome claims have dated later Daily revisions');
+  ok(!audit.officialIssuerFirstHttpPostingTimesEstablished &&
+     !audit.publicReleaseAuthorized &&
+     audit.allIndependentOriginalSourceUsePermissionsStillHold,
+    'source version reconciliation creates no external publication permission');
+  for(const [index,day] of weekly.sourceEditions.entries()){
+    const d = audit.items[index];
+    eq(d.date, day.date, 'same original published Daily date');
+    eq(d.exactPublishedDailyBlobSha, day.gitBlobSha,
+      'exact pinned published Daily content hash must match');
+    eq(d.publicationStatus, 'published', 'original Daily is published, not this Weekly');
+    if(d.officialOutcomeTime){
+      ok(Number.isFinite(Date.parse(d.officialOutcomeTime)),
+        'official issuer stated time is typed UTC');
+      ok(Number.isFinite(Date.parse(d.reviewedFinalRevisionCommitAt)) &&
+        Date.parse(d.reviewedFinalRevisionCommitAt) > Date.parse(d.officialOutcomeTime),
+        'final Daily revision follows issuer-stated official outcome');
+      ok(/^[a-f0-9]{40}$/.test(d.reviewedFinalRevisionCommit),
+        'final Daily revision anchored to exact Git commit');
+    } else {
+      eq(d.reviewedFinalRevisionCommit, null,
+        'calendar preview cannot invent a later official-outcome correction');
+    }
+  }
+  const fed = audit.items.find(x => x.date === '2026-10-28');
+  const intermediate = fed.chronology.find(x => x.pr === 926);
+  const final = fed.chronology.find(x => x.pr === 928 && x.matchesFinalPinnedDailyBlob);
+  ok(intermediate && final, 'both real Fed correction revisions must be represented');
+  eq(intermediate.dailyBlobAtCommit, 'e0dfe2159adfe1d4da79299773e7fb4125c31fee',
+    'PR926 intermediate Fed Daily blob provenance');
+  eq(intermediate.matchesFinalPinnedDailyBlob, false,
+    'earlier PR926 was superseded and must never be equated to final source');
+  eq(final.dailyBlobAtCommit, fed.exactPublishedDailyBlobSha,
+    'later PR928 Daily has exact source-pinned final blob');
+  eq(final.commit, '8eb805ad9ae43148d188f61a960aed69a70b528a',
+    'actual later revision commit from merged PR928');
+  ok(audit.publisherIndependentWeeklyExactArticleOwnerPassRecordedInSeparateReceipt &&
+    audit.preExistingDailyPassDoesNotAutomaticallyBecomeIndependentWeeklyPass,
+    'new owner editorial PASS is kept distinct from historical Daily evidence');
+}
+
 console.log('Independent Macro Weekly draft public-release candidate: ' +
   checks + ' assertions passed. Zero public paths; all rights and Production HOLD.');

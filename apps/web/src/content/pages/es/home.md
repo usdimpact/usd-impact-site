@@ -41,8 +41,6 @@ La disciplina es separar esas explicaciones en vez de convertir una sola variabl
 
 Esta edición web en español cubre estas cinco páginas educativas. Las noticias, Score, informes, Biblioteca, cuenta, pago, audiolibro, correo electrónico y otras superficies de miembro permanecen en inglés por ahora.
 
-**Biblioteca (EN):** puedes [abrir la Biblioteca en inglés](/guided-edition/). Los recursos exclusivos para miembros siguen requiriendo una cuenta con acceso activo. Este enlace no habilita el libro, el audiolibro ni la videoteca en español.
-
 Tampoco modifica la experiencia en inglés.
 
 ## Actualidad en español

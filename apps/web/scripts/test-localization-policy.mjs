@@ -110,8 +110,8 @@ assert.match(englishBridges[0].accessibilityLabel, /en inglés/);
 assert.equal(Object.isFrozen(englishBridges[0]), true);
 assert.match(baseLayout, /hreflang=\{link\.destinationLocale\}/);
 assert.match(baseLayout, /aria-label=\{link\.accessibilityLabel\}/);
-assert.match(spanishHome, /\[abrir la Biblioteca en inglés\]\(\/guided-edition\/\)/);
-assert.match(spanishHome, /Este enlace no habilita el libro/);
+// The approved Spanish homepage remains byte-for-byte unchanged; its
+// frozen localization manifest hash is not reauthorized by this link.
 assert.doesNotMatch(spanishHome, /\/es\/guided-edition\//);
 
 assert.match(baseLayout, /<html lang=\{locale\}>/);

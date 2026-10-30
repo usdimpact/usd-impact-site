@@ -21,6 +21,10 @@ This Draft is a **minimal current-main integration review**, **not** a merge of 
 
 **Not included:** original Score functions/inputs, the old `/reports/weekly/` and `/reports/monthly/`, daily publisher, market vendor observations, scheduled tasks, menu or sitemap links, new analytics, payments, DNS, auth/consent changes, and any actual deployment. The older Draft PRs #1019 and #1020 remain distinct and unmerged.
 
+## Shared-layout Draft status since this memo's first revision
+
+The owner approved continued **Draft-only site-shell integration** without approving a Preview or Production deployment. The new in-repository Astro component uses current site layout and existing privacy/consent UI. The original literal `getStaticPaths() { return []; }` route denial is still mandatory. **No live page exists and no new presentation PASS has been granted.** The standalone article's prior owner editorial PASS must not be presented as a reviewed acceptance of this new HTML layout.
+
 ## 2. Site privacy/cookie assessment — actual `main` code, not generic advice
 
 **Already present on protected main:**
@@ -32,7 +36,7 @@ This Draft is a **minimal current-main integration review**, **not** a merge of 
 
 **Official requirements informing the final runtime QA:** [Romanian Law 506/2004 Article 4(5)](https://legislatie.just.ro/Public/DetaliiDocumentAfis/172094), the [Romanian data-protection authority's 2026 explanation](https://ans-extmail.dataprotection.ro/index.jsp?lang=en&page=Comunicat_Presa_26.06.2026), [EU ePrivacy Directive Article 5(3)](https://eur-lex.europa.eu/eli/dir/2002/58/art_5/par_3/oj/eng), and the [European Commission's business guidance](https://europa.eu/youreurope/business/growing/digitalising/online-privacy/index_en.htm) distinguish consent-required storage/tracking from strictly necessary functions and call for adequate disclosures and consent/withdrawal controls. The code inventory appears directionally consistent, but a qualified reviewer and actual browser tests remain necessary; this is not a GDPR/ePrivacy certification.
 
-**Recommended future site integration, not yet approved or built:** adapt the approved article into the existing `BaseLayout` and existing legal footer, with its required cookie/analytics controls, rather than publishing a separate standalone HTML that omits them. **Such a conversion changes presentation and possibly markup, so it requires a fresh exact-version owner editorial/layout PASS.** Keep the current approved HTML byte-for-byte unchanged until that distinct decision. No content should be duplicated or route activated just for design convenience.
+**Draft shared-site presentation now implemented but still NOT owner-approved:** the [new component](../../../../apps/web/src/components/IndependentMacroWeeklyDraftShell.astro) imports the unchanged approved source article, extracts its seven factual sections and hero through a strict local-only adapter, omits the standalone header/footer, and wraps it in the existing `BaseLayout` with `noindex={true}`. The page remains **unemitted** because the route returns no paths. The component's new scoped CSS and one updated Draft status line change how the material would look, and **therefore require a separate exact-version visual/editorial PASS before public release**. The original approved HTML Git blob remains byte-for-byte unchanged. Source-based tests establish wiring; they do not substitute for an actual private desktop/mobile consent, accessibility or network QA. [Full protected QA checklist](shared-layout-visual-and-consent-checklist.draft.md).
 
 ## 3. Narrow issuer-facts rights and international boundaries
 
@@ -59,7 +63,7 @@ The Draft's modified package scripts only **append** tests to existing `validate
 ## 5. Next release-stage approval plan (not authorized in this Draft)
 
 1. **Qualified remaining exceptions/compliance:** record the specific legal and foreign-jurisdiction issues for one original English webpage, agency marks/third-party content exclusions and live privacy/cookie behavior. Do not recast the already recorded narrow owner PASS as missing.
-2. **Layout option:** choose the existing `BaseLayout` or another expressly reviewed accessible layout with privacy, compliance, operator contact and consent. Any changed HTML requires a new exact-version visual/editorial PASS, while original written factual claims and source links remain pinned.
+2. **Layout review:** the existing `BaseLayout` Draft adaptation has been implemented with seven source sections unchanged, legal footer and consent wiring from site main. Run protected browser QA and obtain an **explicit new exact-version visual/editorial PASS** for this changed presentation before release. The original written factual claims and source links remain pinned.
 3. **Final integration PR:** create a **separately approved release-activation change** from up-to-date protected main. The proposed route must be generated only after an express publisher decision; map its exact issue coverage and **actual first public publication timestamp**, verified after publishing. Perform link, mobile, legal-footer, consent accept/reject/withdraw and anonymous route QA.
 4. **Security and Release:** recheck branch protection, full CI (including CodeQL), original Score gates, provider access, Vercel Preview/Production destination, no DNS or checkout changes, rollback method. Never switch `agent/*` Vercel deployments on just for convenience.
 5. **Explicit final owner action:** require a new scope-specific authorization naming the **exact final commit, intended public Vercel project, merge, indexability and Production permissions** before any release.

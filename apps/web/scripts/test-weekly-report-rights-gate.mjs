@@ -33,20 +33,31 @@ test('gate evaluator fails closed on missing, malformed or unknown policy', () =
   }
 });
 
-test('ALLOW requires named approver and GitHub decision receipt', () => {
-  assert.equal(evaluateGate({ state: 'allow' }).hold, true);
-  assert.equal(
-    evaluateGate({ state: 'allow', approved_by: 'owner', decision_receipt: 'not-a-url' }).hold,
-    true,
-  );
+test('v1 ALLOW never reopens Score publication solely from an approval-looking receipt', () => {
+  const candidates = [
+    { version: 1, state: 'allow' },
+    { version: 1, state: 'allow', approved_by: 'owner', decision_receipt: 'not-a-url' },
+    { version: 1, state: 'allow', approved_by: 'owner', decision_receipt: 'https://github.com/usdimpact/usd-impact-pipeline/issues/155' },
+  ];
+  for (const candidate of candidates) {
+    const result = evaluateGate(candidate);
+    assert.equal(result.hold, true);
+    assert.equal(result.state, 'hold');
+    assert.equal(result.reason, 'v1_allow_not_an_authorized_release_contract');
+  }
+});
 
-  const allowed = evaluateGate({
-    state: 'allow',
-    approved_by: 'owner',
-    decision_receipt: 'https://github.com/usdimpact/usd-impact-pipeline/issues/155',
-  });
-  assert.equal(allowed.hold, false);
-  assert.equal(allowed.state, 'allow');
+test('unknown gate versions fail closed even if they claim HOLD or an approval', () => {
+  for (const candidate of [
+    { version: 2, state: 'hold' },
+    { version: 2, state: 'allow', approved_by: 'owner', decision_receipt: 'https://github.com/usdimpact/usd-impact-pipeline/issues/155' },
+    { state: 'hold' },
+  ]) {
+    const result = evaluateGate(candidate);
+    assert.equal(result.hold, true);
+    assert.equal(result.state, 'hold');
+    assert.equal(result.reason, 'unsupported_rights_gate_version');
+  }
 });
 
 test('weekly-report workflow stops before component archive fetch while HOLD is active', () => {

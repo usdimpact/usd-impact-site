@@ -30,9 +30,9 @@
       "id": "fed_fomc_calendar",
       "issuer": "Federal Reserve Board",
       "role": "Scheduled Oct 27–28 FOMC background in Oct 26–27 Daily",
-      "sourceUrl": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "sourceUrl": "https://www.federalreserve.gov/newsevents/2026-october.htm",
       "policyUrl": "https://www.federalreserve.gov/disclaimer.htm",
-      "context": "Board-authored material generally public domain with Board credit; excludes non-Board content and insignia.",
+      "context": "The exact published Daily pilot URL is the October 2026 Fed Board event calendar; separate FOMC meeting index also confirms dates. Both official public web pages were inspected; agency authorship, exact-item rights, translation, archive and use approvals still require independent scoped review.",
       "dailyDates": [
         "2026-10-26",
         "2026-10-27"
@@ -48,7 +48,9 @@
         "automated_retrieval_approved": false,
         "retention_and_revision_vintages_approved": false,
         "external_publication_approved": false
-      }
+      },
+      "alternateOfficialCalendarUrl": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "sourceUrlAlignment": "PILOT_DAILY_CITATION_EXACT_MATCH_NOT_RIGHTS_APPROVAL"
     },
     {
       "id": "fed_fomc_statement",

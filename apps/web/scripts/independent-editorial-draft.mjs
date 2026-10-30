@@ -240,12 +240,68 @@ export function validateMonthlyDraft(record, options = {}) {
   return { ...inspectIndependentMonthlyWindow(record.sourceWeeklyReports),
     firstFourStructurallyConfirmed: false, releaseAuthorized: false };
 }
+// Read-only explanatory readiness report for the OWNER-APPROVED DRAFT only.
+// Never converts an approval-looking string into a publication authorization.
+// This module is not wired to any public route, production loader or provider.
+export function inspectIndependentEditorialDraftHolds(weekly, monthly, owner) {
+  assertDraftOnly(weekly, 'independent_weekly', WEEKLY_FIELDS);
+  assertDraftOnly(monthly, 'independent_monthly', MONTHLY_FIELDS);
+  assert.ok(owner && typeof owner === 'object', 'owner decision record required');
+  assert.equal(owner.scope, 'DRAFT_EDITORIAL_DIRECTION_ONLY');
+  assert.equal(owner.ownerDraftDirectionApproved, true);
+  assert.equal(owner.executableActivation, false);
+  assert.equal(owner.productionRuntimeUsesThisFile, false);
+  const allowedDraft = new Set([
+    'draftNaming', 'draftLanguage', 'draftFreePublicDirection',
+    'draftPublishedDailySourceDirection', 'draftFourWeeklyMonthlyRule'
+  ]);
+  assert.equal(Object.keys(owner.authorizations || {}).length, 16,
+    'all draft and external authorization flags must be present');
+  for (const [key, approved] of Object.entries(owner.authorizations)) {
+    assert.equal(approved, allowedDraft.has(key), 'unauthorized decision flag: ' + key);
+  }
+  assert.equal(owner.reportingAsOf.independentPublishedWeeklyCount, 0,
+    'this dated draft snapshot cannot attest to later independent publications');
+  assert.equal(owner.reportingAsOf.independentMonthlyEligible, false);
+  assert.ok(Object.values(owner.existingHolds).every((value) => value === 'HOLD'),
+    'no hold may be cleared by the draft reader');
+  assert.ok(Array.isArray(weekly.claims) && Array.isArray(monthly.sourceWeeklyReports),
+    'source claims and monthly references required');
+  const outcomeClaims = weekly.claims.filter((claim) => claim.claimCategory === 'official_outcome');
+  const missingReleaseAt = outcomeClaims.filter((claim) => claim.sourceReleaseAt === null)
+    .map((claim) => claim.id);
+  const unresolvedRights = weekly.claims.filter((claim) => claim.rightsStatus !== 'cleared')
+    .map((claim) => claim.id);
+  assert.equal(unresolvedRights.length, weekly.claims.length,
+    'the draft cannot silently clear any issuer reuse claims');
+  assert.equal(monthly.sourceWeeklyReports.length, 0,
+    'the dated draft cannot count imaginary or original Score Weeklies');
+  return {
+    disposition: 'HOLD_DRAFT_ONLY',
+    approvedDraftDirection: true,
+    officialOutcomeClaims: outcomeClaims.length,
+    missingOfficialOutcomeReleaseAtIds: missingReleaseAt,
+    unresolvedSourceRightsClaimIds: unresolvedRights,
+    independentPublishedWeeklies: 0,
+    independentWeekliesRequiredForMonthly: 4,
+    openExternalReleaseApprovals: Object.keys(owner.authorizations)
+      .filter((key) => !allowedDraft.has(key)),
+    publicationReady: false,
+    releaseAuthorized: false
+  };
+}
 export function runOfflineDraftValidation() {
   const weekly = JSON.parse(fs.readFileSync(path.join(DRAFT_DIR, 'weekly-2026-10-30.draft.json'), 'utf8'));
   const monthly = JSON.parse(fs.readFileSync(path.join(DRAFT_DIR, 'monthly-template.draft.json'), 'utf8'));
-  const result = { weekly: validateWeeklyDraft(weekly), monthly: validateMonthlyDraft(monthly) };
+  const owner = JSON.parse(fs.readFileSync(path.join(DRAFT_DIR, 'owner-editorial-direction.draft.json'), 'utf8'));
+  const result = {
+    weekly: validateWeeklyDraft(weekly),
+    monthly: validateMonthlyDraft(monthly),
+    readiness: inspectIndependentEditorialDraftHolds(weekly, monthly, owner)
+  };
   assert.equal(result.weekly.publishReady, false);
   assert.equal(result.monthly.publishReady, false);
+  assert.equal(result.readiness.releaseAuthorized, false);
   return result;
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -322,4 +322,78 @@ function syntheticPriorMonthly(weekOffset = 0) {
   }
   tests += 16;
 }
+// Offline release schedule evidence: a scheduled event is NOT a verified exact
+// issuer publication timestamp. No network access or source permission is inferred.
+{
+  const evidence = JSON.parse(fs.readFileSync(path.join(DRAFT_DIR,
+    'pilot-release-timing-evidence.draft.json'), 'utf8'));
+  assert.equal(evidence.schemaVersion, 'independent-weekly-release-timing-evidence-v0-draft');
+  assert.equal(evidence.status, 'EVIDENCE_ONLY_EXACT_ISSUER_TIMES_PENDING');
+  assert.equal(evidence.sourceRetrievalPerformed, false);
+  assert.equal(evidence.rightsGranted, false);
+  assert.equal(evidence.publicationAuthorized, false);
+  assert.equal(evidence.legacyScoreSourceUsed, false);
+  const officialClaims = weekly.claims.filter((claim) => claim.claimCategory === 'official_outcome');
+  assert.equal(officialClaims.length, 4);
+  assert.equal(evidence.events.length, officialClaims.length);
+  const byId = new Map(officialClaims.map((claim) => [claim.id, claim]));
+  assert.equal(new Set(evidence.events.map((event) => event.claimId)).size, evidence.events.length);
+  const beaSchedule = JSON.parse(fs.readFileSync(path.resolve(
+    DRAFT_DIR, '../daily-major-release-calendars/2026-10-29.json'), 'utf8'));
+  const scheduled = new Map(beaSchedule.events.map((event) => [event.id, event]));
+  const beaIds = {
+    'gdp-oct29': 'BEA_GDP_Q3_ADVANCE',
+    'pce-oct29': 'BEA_PCE_SEPTEMBER'
+  };
+  const daily = new Map(weekly.sourceEditions.map((edition) => [edition.date, edition.gitBlobSha]));
+  for (const event of evidence.events) {
+    const claim = byId.get(event.claimId);
+    assert.ok(claim, 'unknown official outcome claim');
+    assert.equal(event.sourceId, claim.sourceId);
+    assert.equal(event.exactSourceUrl, claim.sourceUrl);
+    assert.equal(event.sourceDailyGitBlobSha, daily.get(claim.sourceEditionDate));
+    assert.match(event.scheduledReleaseAtUtc, /^2026-10-(28|29|30)T\d\d:\d\d:\d\dZ$/);
+    assert.ok(Number.isFinite(Date.parse(event.scheduledReleaseAtUtc)));
+    assert.notEqual(event.status, 'PUBLICATION_APPROVED');
+    if (event.claimId === 'fomc-outcome-oct28') {
+      assert.equal(event.scheduledReleaseAtUtc, '2026-10-28T18:00:00Z');
+      const fed = fs.readFileSync(path.resolve(DRAFT_DIR,
+        '../fomc-2026-10-28-outcome-framework.md'), 'utf8');
+      assert.match(fed, /Statement release: 2:00 p\.m\. U\.S\. Eastern/);
+      assert.ok(Date.parse(event.existingDailyGeneratedAtUtc) >
+        Date.parse(event.scheduledReleaseAtUtc));
+    }
+    if (Object.hasOwn(beaIds, event.claimId)) {
+      assert.equal(event.scheduledReleaseAtUtc,
+        scheduled.get(beaIds[event.claimId]).releaseAtUtc);
+      assert.ok(Date.parse(event.originalDailyCandidateGeneratedAtUtc) <
+        Date.parse(event.scheduledReleaseAtUtc),
+      'original automated BEA Daily was generated before releases');
+      assert.ok(Date.parse(event.postReleaseEditorialCommentAtUtc) >
+        Date.parse(event.scheduledReleaseAtUtc),
+      'human post-release editorial review must be later than scheduled release');
+      assert.equal(event.postReleaseEditorialReference,
+        'https://github.com/usdimpact/usd-impact-site/pull/938#issuecomment-6510694719');
+      if (event.claimId === 'gdp-oct29') {
+        assert.notEqual(event.exactSourceUrl, event.calendarOutcomeUrl,
+          'distinct BEA GDP official URL spellings require human reconciliation');
+      } else assert.equal(event.exactSourceUrl, event.calendarOutcomeUrl);
+    }
+    if (claim.sourceReleaseAt === null) {
+      assert.equal(event.exactIssuerActualPublicationAtUtc, null,
+        'scheduled issuer time must not be invented as actual publication time');
+      assert.equal(event.verifiedPostReleaseClaimReceipt, null,
+        'editing a receipt link must not bypass claim-level review');
+    } else {
+      assert.equal(event.exactIssuerActualPublicationAtUtc, claim.sourceReleaseAt);
+      assert.equal(event.verifiedPostReleaseClaimReceipt, claim.postReleaseEditorialReceipt);
+      assert.ok(Date.parse(event.firstGeneratedAtUtc) <
+        Date.parse(event.exactIssuerActualPublicationAtUtc));
+    }
+  }
+  assert.deepEqual(evidence.events.filter((event) =>
+    event.exactIssuerActualPublicationAtUtc === null).map((event) => event.claimId),
+    ['fomc-outcome-oct28', 'gdp-oct29', 'pce-oct29']);
+  tests += 21;
+}
 console.log('Independent editorial offline draft contract: ' + tests + ' assertions passed (never release-ready).');

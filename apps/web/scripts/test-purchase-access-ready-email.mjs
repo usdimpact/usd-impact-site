@@ -6,6 +6,7 @@ import {
   deliverPurchaseAccessReadyEmail,
 } from '../src/lib/purchase-access-ready-email.js';
 import { PURCHASE_ACCESS_READY_EMAIL_TEMPLATE_VERSION } from '../src/lib/launch-email-templates.js';
+import { dispatchEnqueuedLaunchEmail } from '../src/lib/launch-email-dispatch.js';
 
 const accountId = '123e4567-e89b-42d3-a456-426614174000';
 const purchaseId = '223e4567-e89b-42d3-a456-426614174000';
@@ -170,6 +171,70 @@ await assert.rejects(
   (error) => error?.code === 'PRODUCTION_LEDGER_NOT_APPROVED',
 );
 assert.equal(unapprovedProductionCalls, 0, 'production guard stops before network');
+assert.equal(providerCalls, 0);
+
+// Disabled Production ledger is the outer fail-closed boundary, even if a
+// delivery flag is accidentally enabled. No persistence or provider call.
+let disabledProductionNetworkCalls = 0;
+const disabledProduction = await deliverPurchaseAccessReadyEmail({
+  accessResult,
+  environment: {
+    ...fixtureEnvironment,
+    VERCEL_ENV: 'production',
+    SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
+    EMAIL_READINESS_LEDGER_ENABLED: 'false',
+    EMAIL_READINESS_PRODUCTION_APPROVED: 'true',
+    LAUNCH_EMAIL_DISPATCH_ENABLED: 'true',
+    LAUNCH_EMAIL_PRODUCTION_APPROVED: 'true',
+  },
+  ledgerFetchImpl: async () => {
+    disabledProductionNetworkCalls += 1;
+    throw new Error('Disabled Production ledger must never write');
+  },
+  providerFetchImpl: async () => {
+    disabledProductionNetworkCalls += 1;
+    throw new Error('Disabled Production ledger must never send');
+  },
+});
+assert.equal(disabledProduction.enabled, false);
+assert.equal(disabledProduction.state.enabled, false);
+assert.equal(disabledProductionNetworkCalls, 0);
+
+// An independent Production send-approval gate is mandatory even after a
+// durable outbox state exists. This is an offline state fixture, not a real
+// Production ledger, account, key, mail provider or message.
+let unapprovedDispatchNetworkCalls = 0;
+await assert.rejects(
+  () => dispatchEnqueuedLaunchEmail({
+    state: {
+      enabled: true,
+      intent: prepared.intent,
+      outbox: fixtureRow,
+      config: {
+        url: 'https://gjzetjugmnwanvjkchux.supabase.co',
+        secretKey: 'synthetic-not-a-real-key',
+      },
+    },
+    environment: {
+      VERCEL_ENV: 'production',
+      LAUNCH_EMAIL_DISPATCH_ENABLED: 'true',
+      LAUNCH_EMAIL_PRODUCTION_APPROVED: 'false',
+    },
+    fetchImpl: async () => {
+      unapprovedDispatchNetworkCalls += 1;
+      throw new Error('Unapproved Production dispatcher must not read/write');
+    },
+    providerAdapter: {
+      id: 'resend',
+      async send() {
+        unapprovedDispatchNetworkCalls += 1;
+        throw new Error('Unapproved Production dispatcher must not send');
+      },
+    },
+  }),
+  (error) => error?.code === 'PRODUCTION_DISPATCH_NOT_APPROVED',
+);
+assert.equal(unapprovedDispatchNetworkCalls, 0);
 assert.equal(providerCalls, 0);
 
 console.log('Purchase access-ready email tests passed.');

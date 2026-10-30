@@ -65,8 +65,8 @@ assert.match(
 );
 assert.match(
   workflow,
-  /'Validate and build'\) failure_stage='validation'/,
-  'site validation and build failures must be classified separately',
+  /'Validate publication content preflight'\) failure_stage='validation'/,
+  'publication preflight failures must be classified separately',
 );
 assert.match(
   workflow,

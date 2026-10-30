@@ -216,6 +216,8 @@ if [[ "$args" == *"--jq .default_branch"* ]]; then
 elif [[ "$args" == *"--include --silent"* ]]; then
   case "$SCENARIO" in
     published) echo 'HTTP/2 200 OK' ;;
+    published-crlf) printf 'HTTP/2 200\\r\\n' ;;
+    missing-crlf) printf 'HTTP/2 404\\r\\n'; exit 1 ;;
     forbidden) echo 'HTTP/2 403 Forbidden'; exit 1 ;;
     transport) exit 1 ;;
     *) echo 'HTTP/2 404 Not Found'; exit 1 ;;
@@ -288,7 +290,9 @@ else process.exit(2);
     await chmod(join(temp, 'jq'), 0o700);
   }
   for (const [scenario, exit, dispatches, message] of [
-    ['published', 0, 0, 'already exists'], ['forbidden', 1, 0, 'lookup did not return'],
+    ['published', 0, 0, 'already exists'], ['published-crlf', 0, 0, 'already exists'],
+    ['missing-crlf', 0, 1, 'Recovery run receipt'],
+    ['forbidden', 1, 0, 'lookup did not return'],
     ['transport', 1, 0, 'lookup did not return'], ['weekend', 0, 0, 'outside UTC weekdays'],
     ['closed-pr', 0, 0, 'publication PR already exists'], ['active', 0, 0, 'already active'],
     ['used', 0, 0, 'one-recovery budget is exhausted'], ['prior-failed', 1, 0, 'earlier backstop did not succeed'],

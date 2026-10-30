@@ -37,11 +37,28 @@ jobs:
           expected_head_prefix="automation/daily-usd-impact-$today-"
           expected_file="apps/web/src/content/news/$today.md"
 
-          if gh api "repos/$GITHUB_REPOSITORY/contents/$expected_file?ref=main" >/dev/null 2>&1; then
+          # A delayed native Friday schedule must not silently generate a Saturday edition.
+          # Explicit manual dispatch retains its separately authorized weekday override.
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ] && [ "$(date -u +%u)" -gt 5 ]; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "reason=outside-scheduled-weekday" >> "$GITHUB_OUTPUT"
+            echo "::notice::A delayed Daily schedule arrived outside UTC weekdays; skipping paid generation."
+            exit 0
+          fi
+
+          # Treat only a confirmed HTTP 404 as absence. GitHub auth, transport,
+          # throttling and server errors must never authorize another paid draft.
+          file_headers="$(gh api --include --silent "repos/$GITHUB_REPOSITORY/contents/$expected_file?ref=main" 2>/dev/null)" || true
+          file_status="$(awk '/^HTTP\// {code=$2} END {gsub(/\r/, "", code); print code}' <<< "$file_headers")"
+          if [ "$file_status" = "200" ]; then
             echo "needed=false" >> "$GITHUB_OUTPUT"
             echo "reason=published" >> "$GITHUB_OUTPUT"
             echo "::notice::Daily USD Impact $today is already on main; skipping duplicate generation."
             exit 0
+          fi
+          if [ "$file_status" != "404" ]; then
+            echo "::error::Daily publication lookup did not return confirmed 200/404; holding without paid generation."
+            exit 1
           fi
 
           existing_pr="$(gh pr list \
@@ -342,9 +359,10 @@ jobs:
           echo "Daily USD Impact ${edition_date} passed Web quality and is ready for protected editorial review and merge: $pr_url"
 
       - name: Report Daily failure gate
-        if: failure() && steps.config.outputs.configured == 'true'
+        if: failure() && (steps.preflight.outcome == 'failure' || steps.config.outputs.configured == 'true')
         env:
           GH_TOKEN: ${{ github.token }}
+          PREFLIGHT_OUTCOME: ${{ steps.preflight.outcome }}
           START_OUTCOME: ${{ steps.start.outcome }}
           POLL_OUTCOME: ${{ steps.poll.outcome }}
           IMPORT_OUTCOME: ${{ steps.import_content.outcome }}
@@ -356,17 +374,23 @@ jobs:
             payload_path="$RUNNER_TEMP/daily-usd-impact-poll.json"
           fi
 
-          result="$(node scripts/daily-news-failure-stage.mjs \
-            "$payload_path" \
-            "$START_OUTCOME" \
-            "$POLL_OUTCOME" \
-            "$IMPORT_OUTCOME" \
-            "$VALIDATE_OUTCOME" \
-            "$PUBLISH_OUTCOME" \
-            'publication-content-preflight')"
-          stage="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.stage)' "$result")"
-          gate="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.gate)' "$result")"
-          detail="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.detail || "not exposed")' "$result")"
+          if [ "$PREFLIGHT_OUTCOME" = "failure" ]; then
+            stage='preflight'
+            gate='publication-existence-lookup'
+            detail='GitHub contents lookup did not confirm a safe publication decision; no generation was started.'
+          else
+            result="$(node scripts/daily-news-failure-stage.mjs \
+              "$payload_path" \
+              "$START_OUTCOME" \
+              "$POLL_OUTCOME" \
+              "$IMPORT_OUTCOME" \
+              "$VALIDATE_OUTCOME" \
+              "$PUBLISH_OUTCOME" \
+              'publication-content-preflight')"
+            stage="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.stage)' "$result")"
+            gate="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.gate)' "$result")"
+            detail="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.detail || "not exposed")' "$result")"
+          fi
 
           printf '%s\n\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s\n' \
             '## Daily USD Impact automation failure' \
@@ -376,7 +400,7 @@ jobs:
             "- Run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
             "- Commit: \`${GITHUB_SHA}\`" \
             "- Trigger: \`${GITHUB_EVENT_NAME}\`" \
-            "- Step outcomes: start=${START_OUTCOME}, poll=${POLL_OUTCOME}, import=${IMPORT_OUTCOME}, validate=${VALIDATE_OUTCOME}, publish=${PUBLISH_OUTCOME}" \
+            "- Step outcomes: preflight=${PREFLIGHT_OUTCOME}, start=${START_OUTCOME}, poll=${POLL_OUTCOME}, import=${IMPORT_OUTCOME}, validate=${VALIDATE_OUTCOME}, publish=${PUBLISH_OUTCOME}" \
             "- Bounded detail: ${detail}" \
             'The workflow remained fail-closed. No content was merged or deployed by this failed run.' \
             > "$RUNNER_TEMP/daily-failure-report.md"

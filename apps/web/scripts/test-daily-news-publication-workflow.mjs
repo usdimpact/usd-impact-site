@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const workflow = await readFile(
   new URL('../../../.github/workflows/daily-news.yml', import.meta.url),
@@ -87,6 +89,76 @@ const preflightStep = workflow.match(
   /      - name: Check existing Daily publication state\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Check newsfeed configuration)/,
 );
 assert.ok(preflightStep, 'cross-run Daily publication preflight shell must be present');
+
+// The primary generator must not interpret a GitHub API error as permission
+// to spend on a second Daily. Execute the exact preflight shell, entirely offline.
+assert.match(workflow, /if \[ "\$file_status" != "404" \]; then[\s\S]*holding without paid generation[\s\S]*exit 1/);
+assert.match(workflow, /if \[ "\$GITHUB_EVENT_NAME" = "schedule" \] && \[ "\$\(date -u \+%u\)" -gt 5 \]; then[\s\S]*outside-scheduled-weekday/);
+assert.match(workflow, /- name: Report Daily failure gate[\s\S]*if: failure\(\) && \(steps\.preflight\.outcome == 'failure' \|\| steps\.config\.outputs\.configured == 'true'\)/);
+assert.match(workflow, /PREFLIGHT_OUTCOME: \$\{\{ steps\.preflight\.outcome \}\}/);
+assert.match(workflow, /stage='preflight'[\s\S]*gate='publication-existence-lookup'/);
+
+const preflightShell = preflightStep[1].split('\n')
+  .map((line) => (line.startsWith('          ') ? line.slice(10) : line))
+  .join('\n');
+const preflightMock = [
+  'date() {',
+  '  case "$*" in',
+  '    "-u +%F") echo "2026-10-30" ;;',
+  '    "-u +%u") echo "$MOCK_WEEKDAY" ;;',
+  '    *) return 92 ;;',
+  '  esac',
+  '}',
+  'gh() {',
+  '  case "$1" in',
+  '    api)',
+  '      if [ "$MOCK_STATUS" = "transport" ]; then return 7; fi',
+  "      printf 'HTTP/2 %s\\r\\n' \"$MOCK_STATUS\"",
+  '      [ "$MOCK_STATUS" = "200" ] ;;',
+  '    pr)',
+  '      [ "$MOCK_STATUS" = "404" ] || return 93',
+  '      if [ "$MOCK_PR" = "existing" ]; then',
+  "        printf '1100\\tOPEN\\thttps://github.com/usdimpact/usd-impact-site/pull/1100\\n'",
+  '      fi ;;',
+  '    *) return 94 ;;',
+  '  esac',
+  '}',
+].join('\n');
+const preflightCases = [
+  { status: '200', expected: 'reason=published', exit: 0 },
+  { status: '404', expected: 'reason=missing', exit: 0 },
+  { status: '404', pr: 'existing', expected: 'reason=publication-pr-exists', exit: 0 },
+  { status: '401', exit: 1 }, { status: '403', exit: 1 },
+  { status: '429', exit: 1 }, { status: '500', exit: 1 },
+  { status: 'transport', exit: 1 },
+  { status: '404', weekday: '6', expected: 'reason=outside-scheduled-weekday', exit: 0 },
+  { status: '404', weekday: '6', event: 'workflow_dispatch', expected: 'reason=missing', exit: 0 },
+];
+const preflightTemp = await mkdtemp(join(tmpdir(), 'usd-daily-preflight-offline-'));
+try {
+  for (const scenario of preflightCases) {
+    const outPath = join(preflightTemp, 'outputs');
+    await writeFile(outPath, '');
+    const result = spawnSync('bash', ['-c', preflightMock + '\n' + preflightShell], {
+      encoding: 'utf8', timeout: 5000,
+      env: {
+        PATH: '/usr/bin:/bin', GITHUB_REPOSITORY: 'usdimpact/usd-impact-site',
+        GITHUB_OUTPUT: outPath, GITHUB_EVENT_NAME: scenario.event ?? 'schedule',
+        MOCK_STATUS: scenario.status, MOCK_WEEKDAY: scenario.weekday ?? '5',
+        MOCK_PR: scenario.pr ?? '', GH_TOKEN: 'offline-fixture-not-a-real-token',
+      },
+    });
+    assert.equal(result.status, scenario.exit,
+      scenario.status + ': unexpected preflight exit ' + result.stderr);
+    const evidence = await readFile(outPath, 'utf8');
+    if (scenario.expected) assert.ok(evidence.includes(scenario.expected),
+      scenario.status + ': ' + scenario.expected + ' not found in ' + evidence);
+    if (scenario.exit !== 0) assert.ok(!evidence.includes('needed=true'),
+      scenario.status + ': uncertain GitHub state authorized generation');
+  }
+} finally {
+  await rm(preflightTemp, { recursive: true, force: true });
+}
 
 const pollStep = workflow.match(
   /      - name: Poll background news generation\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Import as published content)/,

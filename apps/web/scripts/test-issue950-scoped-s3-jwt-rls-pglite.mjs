@@ -359,6 +359,36 @@ for(const scenario of ['widened-select','widened-update-check','partial-install'
   }finally{await db.close();}
 }
 
+// PDF-only exact-path INSERT fixture: disposable DB, never provider Storage.
+// Same-bucket wrong-name writes must fail even if the bucket itself is allowed.
+// Plain INSERT to the existing metadata row collides; only API upsert (provider
+// response pending) is relevant to the real metadata-already-exists scenario.
+const pdfInsertDb=await makeDb('restore');
+try{
+  await pdfInsertDb.exec(pdfRender(pdfOnly));
+  const withPdfSession=(query,parameters=[])=>as(pdfInsertDb,'authenticated',uuids.restore,
+    ()=>rows(pdfInsertDb,query,parameters));
+  await assert.rejects(withPdfSession(
+    "insert into storage.objects(bucket_id,name) values('library-pass-books','book/unlisted.pdf')"),
+    /row-level security|permission denied/i);
+  assert.equal(await count(pdfInsertDb,"select count(*) as n from storage.objects"),21);
+  await assert.rejects(withPdfSession(
+    "insert into storage.objects(bucket_id,name) values('library-pass-books',$1)",[book]),
+    /duplicate key|unique constraint/i);
+  // Fixture-only DBA removes ONE fake PDF row to exercise the exact-path
+  // INSERT policy. DO NOT use this method on either real Supabase project.
+  await pdfInsertDb.query(
+    "delete from storage.objects where bucket_id='library-pass-books' and name=$1",[book]);
+  assert.equal(await count(pdfInsertDb,"select count(*) as n from storage.objects"),20);
+  const inserted=await withPdfSession(
+    "insert into storage.objects(bucket_id,name) values('library-pass-books',$1) returning name",[book]);
+  assert.deepEqual(inserted.map(x=>x.name),[book]);
+  await pdfInsertDb.exec(pdfRender(pdfUndo));
+  assert.equal(await count(pdfInsertDb,"select count(*) as n from pg_policies where schemaname='storage'"),0);
+  assert.equal(await count(pdfInsertDb,"select count(*) as n from storage.objects"),21);
+  checks+=7;
+}finally{await pdfInsertDb.close();}
+
 console.log('Issue #950 pdf-only restore RLS: disposable PostgreSQL PASS; no provider call.');
 
 console.log('Issue #950 S3 JWT scoped recovery review: '+checks+

@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   DRAFT_DIR, SERIES, validateWeeklyDraft, validateMonthlyDraft,
-  inspectIndependentMonthlyWindow, inspectFirstFourIndependentPublishedWeeklies, runOfflineDraftValidation
+  inspectIndependentMonthlyWindow, inspectFirstFourIndependentPublishedWeeklies,
+  inspectIndependentEditorialDraftHolds, runOfflineDraftValidation
 } from './independent-editorial-draft.mjs';
 
 const weekly = JSON.parse(fs.readFileSync(path.join(DRAFT_DIR, 'weekly-2026-10-30.draft.json'), 'utf8'));
@@ -247,6 +248,38 @@ function syntheticPriorMonthly(weekOffset = 0) {
   }
   assert.ok(Object.values(decision.existingHolds).every((value) => value === 'HOLD'));
   tests += 14 + Object.keys(decision.authorizations).length;
+}
+
+// Record exactly why the current, user-approved editorial draft is still not
+// allowed to publish. All observations are from existing local draft inputs.
+{
+  const decision = JSON.parse(fs.readFileSync(path.join(DRAFT_DIR, 'owner-editorial-direction.draft.json'), 'utf8'));
+  const readiness = inspectIndependentEditorialDraftHolds(weekly, monthly, decision);
+  assert.equal(readiness.disposition, 'HOLD_DRAFT_ONLY');
+  assert.equal(readiness.approvedDraftDirection, true);
+  assert.equal(readiness.officialOutcomeClaims, 4);
+  assert.deepEqual(readiness.missingOfficialOutcomeReleaseAtIds,
+    ['fomc-outcome-oct28', 'gdp-oct29', 'pce-oct29']);
+  assert.deepEqual(readiness.unresolvedSourceRightsClaimIds, weekly.claims.map((claim) => claim.id));
+  assert.equal(readiness.independentPublishedWeeklies, 0);
+  assert.equal(readiness.independentWeekliesRequiredForMonthly, 4);
+  assert.equal(readiness.openExternalReleaseApprovals.length, 11);
+  assert.equal(readiness.publicationReady, false);
+  assert.equal(readiness.releaseAuthorized, false);
+  const validated = runOfflineDraftValidation();
+  assert.deepEqual(validated.readiness, readiness);
+  tests += 11;
+  rejects(() => inspectIndependentEditorialDraftHolds(weekly, monthly,
+    { ...decision, authorizations: { ...decision.authorizations, publicPublication: true } }),
+    /unauthorized decision flag/);
+  const tampered = clone(weekly);
+  tampered.claims[0].rightsStatus = 'cleared';
+  rejects(() => inspectIndependentEditorialDraftHolds(tampered, monthly, decision),
+    /cannot silently clear/);
+  const imaginaryMonth = clone(monthly);
+  imaginaryMonth.sourceWeeklyReports.push({});
+  rejects(() => inspectIndependentEditorialDraftHolds(weekly, imaginaryMonth, decision),
+    /cannot count imaginary/);
 }
 
 console.log('Independent editorial offline draft contract: ' + tests + ' assertions passed (never release-ready).');

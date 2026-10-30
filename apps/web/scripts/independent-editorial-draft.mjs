@@ -168,11 +168,77 @@ export function inspectIndependentMonthlyWindow(sources) {
   const consecutive = dates.length === 4 && dates.every((date, i) => i === 0 || date === plusDays(dates[i - 1], 7));
   return { sourceCount: dates.length, fourConsecutive: consecutive, draftOnly: true, publishReady: false };
 }
-export function validateMonthlyDraft(record) {
+// Draft-only structural check. The caller must provide a complete, immutable inventory
+// from a trusted future publisher. A boolean attestation or a GitHub-looking receipt
+// cannot independently prove completeness or authenticity; NEVER authorizes release.
+export function inspectFirstFourIndependentPublishedWeeklies(selectedSources, options = {}) {
+  const structural = inspectIndependentMonthlyWindow(selectedSources);
+  assert.equal(structural.fourConsecutive, true, 'exactly four consecutive published independent Weeklies required');
+  assert.equal(options.completeInventoryAttested, true, 'complete independent Weekly inventory must be explicitly attested');
+  assert.ok(Array.isArray(options.fullPublishedIndependentWeeklies), 'complete published independent Weekly inventory required');
+  assert.ok(Array.isArray(options.publishedIndependentMonthlyHistory), 'published independent Monthly history required');
+
+  const available = [...options.fullPublishedIndependentWeeklies];
+  const seen = new Set();
+  for (const week of available) {
+    inspectIndependentMonthlyWindow([week]); // strict fields, independent family, published status, Friday and receipt
+    assert.ok(!seen.has(week.periodEnd), 'duplicate independent Weekly in supplied full inventory');
+    seen.add(week.periodEnd);
+  }
+  available.sort((a, b) => a.periodEnd.localeCompare(b.periodEnd));
+
+  const priorEnds = new Set();
+  const consumed = new Set();
+  for (const prior of options.publishedIndependentMonthlyHistory) {
+    exactFields(prior,
+      ['series', 'kind', 'periodEnd', 'publicationStatus', 'publicationReceipt', 'sourceWeeklyPeriodEnds'],
+      'previous independent Monthly history');
+    assert.equal(prior.series, SERIES, 'prior Monthlys must belong to the same independent series');
+    assert.equal(prior.kind, 'independent_monthly', 'legacy Score Monthlys are not independent history');
+    assert.equal(prior.publicationStatus, 'published', 'only published previous independent Monthlys count');
+    assert.match(prior.publicationReceipt, COMMENT_RECEIPT, 'prior Monthly requires a traceable receipt string');
+    assert.equal(day(prior.periodEnd).getUTCDay(), 5, 'prior independent Monthly must end on Friday');
+    assert.ok(!priorEnds.has(prior.periodEnd), 'duplicate historical independent Monthly period');
+    priorEnds.add(prior.periodEnd);
+    assert.ok(Array.isArray(prior.sourceWeeklyPeriodEnds) && prior.sourceWeeklyPeriodEnds.length === 4,
+      'prior independent Monthly must identify its four sources');
+    const historic = prior.sourceWeeklyPeriodEnds;
+    assert.ok(historic.every((date, i) => {
+      day(date);
+      return i === 0 || date === plusDays(historic[i - 1], 7);
+    }), 'prior independent Monthly sources must be consecutive');
+    assert.equal(historic[3], prior.periodEnd, 'prior Monthly must end with fourth source');
+    for (const date of historic) {
+      assert.ok(!consumed.has(date), 'previous independent Monthly sources must never be reused');
+      consumed.add(date);
+    }
+  }
+
+  const latestPrior = [...priorEnds].sort().at(-1) ?? null;
+  const eligible = available.filter((week) => !latestPrior || week.periodEnd > latestPrior);
+  assert.ok(eligible.length >= 4, 'fewer than four published independent Weeklies in supplied complete inventory');
+  const firstFour = eligible.slice(0, 4);
+  if (latestPrior) {
+    assert.equal(firstFour[0].periodEnd, plusDays(latestPrior, 7),
+      'first independent Weekly after prior Monthly is missing');
+  }
+  assert.ok(firstFour.every((week, i) => i === 0 || week.periodEnd === plusDays(firstFour[i - 1].periodEnd, 7)),
+    'a Friday is missing in the first four independent Weeklies');
+  assert.deepEqual(selectedSources.map((week) => week.periodEnd), firstFour.map((week) => week.periodEnd),
+    'selected source Weeklies are not the first four eligible independent Weeklies');
+  assert.ok(firstFour.every((week) => !consumed.has(week.periodEnd)),
+    'published independent Weekly already consumed by another Monthly');
+  return { ...structural, firstFourStructurallyConfirmed: true, publishReady: false, releaseAuthorized: false };
+}
+export function validateMonthlyDraft(record, options = {}) {
   assertDraftOnly(record, 'independent_monthly', MONTHLY_FIELDS);
   assert.equal(record.sourceRule, 'four_consecutive_published_independent_weeklies');
   validateEditorial(record.editorial);
-  return inspectIndependentMonthlyWindow(record.sourceWeeklyReports);
+  if (record.sourceWeeklyReports.length === 4) {
+    return inspectFirstFourIndependentPublishedWeeklies(record.sourceWeeklyReports, options);
+  }
+  return { ...inspectIndependentMonthlyWindow(record.sourceWeeklyReports),
+    firstFourStructurallyConfirmed: false, releaseAuthorized: false };
 }
 export function runOfflineDraftValidation() {
   const weekly = JSON.parse(fs.readFileSync(path.join(DRAFT_DIR, 'weekly-2026-10-30.draft.json'), 'utf8'));

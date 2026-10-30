@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import {
   attemptNonBlockingPurchaseAccessReadyEmail,
 } from '../src/lib/purchase-access-ready-email.js';
@@ -794,4 +795,19 @@ assert.throws(
   error => error.code === 'ATOMIC_TEMPLATE_MISMATCH',
 );
 
+// An exact-hash check ties GitHub's migration source to the already applied
+// Development migration, without connecting CI to a live Supabase project.
+const installedDevelopmentMigration = await readFile(
+  new URL('../../../supabase/migrations/20261030214706_ui02_atomic_purchase_access_locale_dev.sql', import.meta.url),
+  'utf8',
+);
+assert.equal(
+  createHash('sha256').update(installedDevelopmentMigration).digest('hex'),
+  '3c1a88aa3f1a17c4a67fd0163026b0f2d8fda3da10b70fcbec66fb0ad719eb85',
+  'UI-02 Development migration source MUST match the applied Supabase ledger',
+);
+assert.match(installedDevelopmentMigration, /values\(true,false,null\)/);
+assert.match(installedDevelopmentMigration, /security invoker/);
+assert.match(installedDevelopmentMigration, /revoke all on function public\.ui02_enqueue_access_ready_atomic/);
+assert.match(installedDevelopmentMigration, /revoke all on function public\.ui02_check_access_ready_dispatch/);
 console.log('Purchase access-ready email tests passed.');

@@ -37,6 +37,21 @@ Owner decision: [Issue #950, comment 6527985148](https://github.com/usdimpact/us
 * **Actual restore download SHA-256:** **NOT EXECUTED** (0/21 verified restored bytes)
 * **Cleanup and no-access proof:** **NOT EXECUTED**
 
+## Canonical 21-object metadata reconciliation — 2026-10-30 (read-only PASS)
+
+A new paired, **SELECT-only** reconciliation compared all canonical paths, byte lengths, and MIME types from protected-main `apps/web/src/lib/private-audiobook.js` (blob `98f5209e825a63baeb6fc386a958fb5eee9a22bc`) and `apps/web/src/lib/private-book.js` (blob `df050fe7c3820785c4e3dedc532c352662b764d2`) against the exact two private Library buckets in **Development** (`ycstrcvshdluovtuasjc`) and **isolated restore** (`movnekagnxgcyenczfoc`).
+
+| Check | Development | Isolated restore |
+| --- | ---: | ---: |
+| Canonical 20 MP3 + 1 PDF records | 21 | 21 |
+| Missing entries | 0 | 0 |
+| Unexpected entries | 0 | 0 |
+| Byte-length mismatches | 0 | 0 |
+| MIME mismatches | 0 | 0 |
+| Sum of metadata-declared bytes | 374,929,235 | 374,929,235 |
+
+This confirms a full canonical **metadata manifest match** on both projects without changing files, policies, users or permissions. It **does not demonstrate that the isolated restore has the physical bytes**. Verified restored-byte count remains **0/21**. The already byte-verified off-platform PDF and first English MP3 copies remain **2/21 offline recovery candidates**, not restored content.
+
 ## Verified Auth exposure inventory — 2026-10-30
 
 The owner approved **read-only double-checking**, and two aggregate-only SELECT statements from the companion `Issue950_Auth_ReadOnly_Risk_Preflight_2026-10-30.sql` were executed against **isolated restore `movnekagnxgcyenczfoc` only**. Results:
@@ -78,7 +93,7 @@ Two conditional alternatives, neither approved for execution:
 1. Supabase Support confirms a documented short-lived synthetic authenticated-user session flow **without enabling sign-in providers**. Verify its session scope, private Auth Admin requirements, revocation/expiry, noncustomer identity and suspended profile *before* use; no existing user is eligible.
 2. Owner separately accepts a narrowly time-boxed **Email-provider enablement** on this restore only, with signup still disabled and explicit acknowledgement that restored users may be able to authenticate during the window. Verify pre-existing accounts' exposure, exact rollback and session revocation. Provider disablement must **not** be presumed to invalidate issued JWTs.
 
-The follow-up technical question is prepared as an **unsent Gmail draft** in the existing SU-531190 thread, with no credentials or file paths. The owner may review and send it if appropriate. Until an answer and independent exact-target checks exist, **live one-PDF upload remains NO-GO**.
+The Auth-method clarification **was sent** in ticket **SU-531190 on October 30 at 18:03 UTC**. The connected Gmail thread currently contains no later support reply. **Do not resend a duplicate request.** Until Supabase confirms a viable restricted-session method and the operator passes objective exact-target and rollback checks, **live one-PDF upload remains NO-GO**.
 
 ## Safe preparation (no live Storage write)
 

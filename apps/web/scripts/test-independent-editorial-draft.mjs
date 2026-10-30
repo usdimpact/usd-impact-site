@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   DRAFT_DIR, SERIES, validateWeeklyDraft, validateMonthlyDraft,
-  inspectIndependentMonthlyWindow, runOfflineDraftValidation
+  inspectIndependentMonthlyWindow, inspectFirstFourIndependentPublishedWeeklies, runOfflineDraftValidation
 } from './independent-editorial-draft.mjs';
 
 const weekly = JSON.parse(fs.readFileSync(path.join(DRAFT_DIR, 'weekly-2026-10-30.draft.json'), 'utf8'));
@@ -123,8 +123,102 @@ tests += 2;
 {
   const candidate = clone(monthly);
   candidate.sourceWeeklyReports = sources;
-  assert.equal(validateMonthlyDraft(candidate).fourConsecutive, true);
-  assert.equal(validateMonthlyDraft(candidate).publishReady, false);
+  assert.equal(validateMonthlyDraft(candidate, {
+    completeInventoryAttested: true,
+    fullPublishedIndependentWeeklies: sources,
+    publishedIndependentMonthlyHistory: []
+  }).firstFourStructurallyConfirmed, true);
+  assert.equal(validateMonthlyDraft(candidate, {
+    completeInventoryAttested: true,
+    fullPublishedIndependentWeeklies: sources,
+    publishedIndependentMonthlyHistory: []
+  }).publishReady, false);
   tests += 2;
 }
+
+function syntheticSource(offsetWeeks) {
+  return {
+    series: SERIES, kind: 'independent_weekly', periodEnd: friday(offsetWeeks),
+    publicationStatus: 'published',
+    publicationReceipt: 'https://github.com/usdimpact/usd-impact-site/pull/99999#issuecomment-99999'
+  };
+}
+function syntheticPriorMonthly(weekOffset = 0) {
+  return {
+    series: SERIES, kind: 'independent_monthly', periodEnd: friday(weekOffset + 3),
+    publicationStatus: 'published',
+    publicationReceipt: 'https://github.com/usdimpact/usd-impact-site/pull/99999#issuecomment-99999',
+    sourceWeeklyPeriodEnds: [0, 1, 2, 3].map((i) => friday(weekOffset + i))
+  };
+}
+{
+  const candidate = clone(monthly);
+  candidate.sourceWeeklyReports = sources;
+  rejects(() => validateMonthlyDraft(candidate), /complete independent Weekly inventory must be explicitly attested/);
+}
+{
+  const candidate = clone(monthly);
+  candidate.sourceWeeklyReports = sources;
+  rejects(() => validateMonthlyDraft(candidate, { completeInventoryAttested: true, publishedIndependentMonthlyHistory: [] }),
+    /complete published independent Weekly inventory required/);
+}
+{
+  const candidate = clone(monthly);
+  candidate.sourceWeeklyReports = sources;
+  rejects(() => validateMonthlyDraft(candidate, { completeInventoryAttested: true, fullPublishedIndependentWeeklies: sources }),
+    /published independent Monthly history required/);
+}
+{
+  const later = [1, 2, 3, 4].map(syntheticSource);
+  rejects(() => inspectFirstFourIndependentPublishedWeeklies(later, {
+    completeInventoryAttested: true,
+    fullPublishedIndependentWeeklies: [0, 1, 2, 3, 4].map(syntheticSource),
+    publishedIndependentMonthlyHistory: []
+  }), /not the first four eligible/);
+}
+{
+  rejects(() => inspectFirstFourIndependentPublishedWeeklies(sources, {
+    completeInventoryAttested: true,
+    fullPublishedIndependentWeeklies: [...sources, sources[0]],
+    publishedIndependentMonthlyHistory: []
+  }), /duplicate independent Weekly in supplied full inventory/);
+}
+{
+  const later = [5, 6, 7, 8].map(syntheticSource);
+  rejects(() => inspectFirstFourIndependentPublishedWeeklies(later, {
+    completeInventoryAttested: true,
+    fullPublishedIndependentWeeklies: [...sources, ...later],
+    publishedIndependentMonthlyHistory: [syntheticPriorMonthly()]
+  }), /first independent Weekly after prior Monthly is missing/);
+}
+{
+  const later = [4, 5, 6, 7].map(syntheticSource);
+  const result = inspectFirstFourIndependentPublishedWeeklies(later, {
+    completeInventoryAttested: true,
+    fullPublishedIndependentWeeklies: [...sources, ...later],
+    publishedIndependentMonthlyHistory: [syntheticPriorMonthly()]
+  });
+  assert.equal(result.firstFourStructurallyConfirmed, true);
+  assert.equal(result.publishReady, false);
+  assert.equal(result.releaseAuthorized, false);
+  tests += 3;
+}
+{
+  const later = [4, 5, 6, 7].map(syntheticSource);
+  rejects(() => inspectFirstFourIndependentPublishedWeeklies(later, {
+    completeInventoryAttested: true,
+    fullPublishedIndependentWeeklies: [...sources, ...later],
+    publishedIndependentMonthlyHistory: [syntheticPriorMonthly(), syntheticPriorMonthly()]
+  }), /duplicate historical independent Monthly period/);
+}
+{
+  const candidate = clone(monthly);
+  candidate.sourceWeeklyReports = sources;
+  rejects(() => validateMonthlyDraft(candidate, {
+    completeInventoryAttested: true,
+    fullPublishedIndependentWeeklies: sources,
+    publishedIndependentMonthlyHistory: [syntheticPriorMonthly()]
+  }), /fewer than four published independent Weeklies/);
+}
+
 console.log('Independent editorial offline draft contract: ' + tests + ' assertions passed (never release-ready).');

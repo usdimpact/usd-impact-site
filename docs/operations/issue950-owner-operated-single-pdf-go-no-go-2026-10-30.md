@@ -47,6 +47,18 @@ Owner screenshots of the **isolated restore** `https://supabase.com/dashboard/pr
 
 **Current GO verdict: NO-GO** on Auth/session readiness and upload. A new positive decision must identify the provider path, risks to the existing users, how to obtain the `app_metadata` marker and suspended profile through supported admin operations, authenticated session lifetime, rollback to initial provider state, and a protected local client. Any external security/privacy requirements remain in force. Until then **leave Email and every other provider disabled; do not click Save changes, Add/Create user, or upload an object.**
 
+## Authentication provider blocker — 2026-10-30
+
+**Observed in the owner-provided isolated-restore Dashboard** and recorded in [Issue #950](https://github.com/usdimpact/usd-impact-site/issues/950#issuecomment-6529121806): Email and other visible sign-in providers are disabled, anonymous sign-in is disabled, public self-signup is off, and there are nine existing Auth users. The Admin "Create new user" form is insufficient as session evidence. The `on_auth_user_created` trigger creates an active application profile, so an unreviewed create-user action also fails the required suspended-profile check.
+
+**Do not enable Email, create an Auth user, retrieve signing secrets, use service_role in a Storage client, call Admin generateLink, or install RLS solely to bypass this blocker.** Project-owner Dashboard access does not imply access to a user-scoped JWT. Admin `generateLink` with disabled Email provider is **not yet provider-verified**.
+
+Two conditional alternatives, neither approved for execution:
+1. Supabase Support confirms a documented short-lived synthetic authenticated-user session flow **without enabling sign-in providers**. Verify its session scope, private Auth Admin requirements, revocation/expiry, noncustomer identity and suspended profile *before* use; no existing user is eligible.
+2. Owner separately accepts a narrowly time-boxed **Email-provider enablement** on this restore only, with signup still disabled and explicit acknowledgement that restored users may be able to authenticate during the window. Verify pre-existing accounts' exposure, exact rollback and session revocation. Provider disablement must **not** be presumed to invalidate issued JWTs.
+
+The follow-up technical question is prepared as an **unsent Gmail draft** in the existing SU-531190 thread, with no credentials or file paths. The owner may review and send it if appropriate. Until an answer and independent exact-target checks exist, **live one-PDF upload remains NO-GO**.
+
 ## Safe preparation (no live Storage write)
 
 1. Use the [isolated restore Dashboard](https://supabase.com/dashboard/project/movnekagnxgcyenczfoc) to recheck the project identifier. Cross-check through a separately obtained authorized project reference. Never trust the dashboard's generic branch/status label alone.

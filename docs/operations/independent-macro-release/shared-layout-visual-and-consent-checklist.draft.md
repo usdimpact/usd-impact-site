@@ -1,7 +1,7 @@
 # Shared-layout integration — visual and privacy QA checklist (Draft / not published)
 
 **Prepared:** 2026-10-30. **Working PR:** [#1025](https://github.com/usdimpact/usd-impact-site/pull/1025).  
-**Source article approval:** Original standalone candidate's exact Git blob `4ce3ea62d8db328fa03739ae15e2571f5f6e99bd` has an editorial PASS and narrow original-facts/links owner acceptance. **This new shared-site visual presentation has NOT received an exact-version PASS**.  
+**Source article approval:** Original standalone candidate's exact Git blob `4ce3ea62d8db328fa03739ae15e2571f5f6e99bd` has an editorial PASS and narrow original-facts/links owner acceptance. **This new shared-site presentation received an owner-reported exact-version presentation PASS after the protected review.** The immutable [owner PASS receipt](shared-layout-owner-presentation-pass-2026-10-30.draft.json) pins commit `889c9da8a692e5c7f5a2935fc4096eced67f8204`. This is not release or qualified legal/privacy clearance.  
 **Public status:** Route `/macro-reviews/weekly/2026-10-30/` deliberately generates **zero pages**; source rights, qualified international/compliance review, merge, public Production and indexing stay HOLD.
 
 ## Implementation — what exists in Draft code only
@@ -11,7 +11,7 @@
 - `apps/web/src/styles/independent-macro-weekly-draft.css` scopes all report styles to `.mw-root`, including focus-visible, tablet/mobile adaptations and reduced-motion. Sitewide header, footer, consent banner, main privacy notice, analytics settings and existing styles are **not** changed.
 - The dormant `apps/web/src/pages/macro-reviews/weekly/[date].astro` continues to return `[]` from `getStaticPaths()` without relying on a toggle or environment variable. An unreviewed public URL cannot appear from a normal build.
 
-**Important:** Astro compiling a Draft component and passing source tests is **not** a rendered browser screenshot, screen-reader audit or regulatory certification. A protected review of the *new integrated presentation* will be required under separate authorization before any public release.
+**Important:** Astro compiling a Draft component and passing source tests is **not** a rendered browser screenshot, screen-reader audit or regulatory certification. A protected preview and owner review have now occurred, with a PASS on exact appearance, but a full independently captured network/cookie trace, screen-reader audit and qualified legal compliance still remain outstanding.
 
 ## Safety and content contract for the Draft build
 
@@ -41,7 +41,7 @@ This validates the **visible browser-local consent choice flow only**. It does *
 
 ## Protected browser QA after separately authorized review environment
 
-No browser QA is claimed as completed by this document. When an authenticated, private-only review environment is explicitly approved, test **without disabling access controls**:
+The checklist below is retained as the originally approved private-browser test procedure. An isolated authenticated review has since occurred, with an **owner-attested presentation PASS**. Not all items have independently captured screenshots, HAR or storage records. For any future rebuild, retest **without disabling access controls**:
 
 - **Desktop (1440 px), tablet (820 px), mobile (390 px and 320 px):** navigation and logo should come from the existing USD Impact header; no second header/footer; hero and 7 article sections visible; sidebar stacks without horizontal overflow; source links have suitable tap targets.
 - **Accessibility:** one `<main id="main-content">`, `#main-content` skip link works, one H1, logical H2/H3 sequence, visible keyboard focus, sufficient contrast, no stuck keyboard trap, reduced-motion layout safe.
@@ -58,7 +58,7 @@ The publisher accepted independently authored English explanations, five federal
 
 ## Next owner decision after a successful protected presentation review
 
-Obtain a distinct **PASS/REVISE** for the **new shared-layout presentation**, naming the actual reviewed Git commit or rendered artifact. This would still **not** authorize merging, publishing, unblocking rights gates or enabling indexing. A subsequent final production approval must expressly name the final release commit and target project.
+A distinct **owner presentation PASS** is now documented for reviewed commit `889c9da8a692e5c7f5a2935fc4096eced67f8204` and isolated deployment `dpl_7RvFRJFNXKCotxv7J7tv9tRP1Nfu`. It **does not** authorize merging, publishing, unblocking rights gates or enabling indexing. The next decisions are item-specific legal/source reuse and qualified international privacy/compliance, with a subsequent distinct release approval. A subsequent final production approval must expressly name the final release commit and target project.
 
 **No public publication or deployment is authorized at this stage.**
 
@@ -70,3 +70,10 @@ The Vercel deployment inventory reported **zero deployments** for branch `agent/
 
 **Boundary:** No protected review deployment was created. No new shared-layout screenshot, network trace, cookie inspection, screen-reader audit, qualified legal signoff, new presentation owner PASS, release approval or public route is implied. CI is only a technical, fail-closed signal.
 
+
+## Owner PASS postscript — exact reviewed protected preview (2026-10-30)
+
+- Owner response: **"all PASS, please continue"** after the requested follow-up browser instructions. Record **PRESENTATION PASS** only. Exact pin: `889c9da8a692e5c7f5a2935fc4096eced67f8204`; immutable source HTML, adapter, component and CSS blobs are pinned in [receipt](shared-layout-owner-presentation-pass-2026-10-30.draft.json).
+- The owner's provided desktop/400px screenshots and subsequent PASS are human review evidence; the original failed/aborted network row is not independently diagnosed, and no full HAR, raw cookie/storage trace, accessibility tree or independent certification is attached to this repository.
+- The frozen reviewed component still contains `data-shared-layout-editorial-pass="false"`, a **historical pre-approval marker**. It is not permission to publish. Update this marker only within a separate controlled, subsequently reviewed release patch. Do **not** alter the approved preview's content merely to reflect the owner decision.
+- Gate inventory remains all-deny. Exact official source permissions, international legal/privacy review, and a distinct future release authorization are still required. Public Weekly count **0**; Monthly **0/4**.

@@ -120,7 +120,7 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
   ok(sourceComponent.includes('noindex={true}'),'site-shell canonical / indexing denied');
   ok(sourceComponent.includes('data-release-authorized="false"') &&
     sourceComponent.includes('data-shared-layout-editorial-pass="false"'),
-    'shared-layout presentation requires its own owner review');
+    'reviewed artifact retains its unchanged pre-PASS machine marker and release denial');
   ok(sourceComponent.includes('<Fragment set:html={adapted.fragment} />'),
     'trusted static article fragment rendered inside the base layout only');
   ok(sourceComponent.includes("'../styles/independent-macro-weekly-draft.css'"),
@@ -133,15 +133,39 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
     'adapts to the existing legal, consent and skip-link shell');
   ok(a.preservesAllSevenEditorialSectionsUnchanged &&
     a.updatesObsoleteDraftSideNoticeOnly &&
-    a.hasNewPresentation && !a.newPresentationOwnerPass,
-    'factual sections stay identical; new layout PASS is pending');
+    a.hasNewPresentation && a.newPresentationOwnerPass,
+    'all seven factual sections unchanged; owner exact-presentation PASS recorded');
+  const ownerVisualReceiptText=from('../../../docs/operations/independent-macro-release/shared-layout-owner-presentation-pass-2026-10-30.draft.json');
+  const ownerVisualReceipt=JSON.parse(ownerVisualReceiptText);
+  eq(gitBlob(ownerVisualReceiptText),a.ownerPresentationPassReceiptGitBlobSha,
+    'pin exact post-build owner presentation PASS receipt');
+  eq(a.ownerPresentationPassExactReviewedCommit,ownerVisualReceipt.reviewedArtifact.reviewedPrCommit,
+    'owner PASS only on exact source commit');
+  eq(a.ownerPresentationPassExactReviewedCommit,'889c9da8a692e5c7f5a2935fc4096eced67f8204',
+    'approved reviewed component version stays pinned');
+  eq(ownerVisualReceipt.reviewedArtifact.originalArticleGitBlobSha,gitBlob(html),
+    'frozen original article exact-match owner PASS');
+  eq(ownerVisualReceipt.reviewedArtifact.sharedLayoutComponentGitBlobSha,gitBlob(sourceComponent),
+    'frozen shared-layout component exact-match owner PASS');
+  eq(ownerVisualReceipt.reviewedArtifact.sharedLayoutAdapterGitBlobSha,gitBlob(sourceAdapter),
+    'frozen shared-layout adapter exact-match owner PASS');
+  eq(ownerVisualReceipt.reviewedArtifact.sharedLayoutCssGitBlobSha,gitBlob(scopedStyle),
+    'frozen shared-layout CSS exact-match owner PASS');
+  ok(ownerVisualReceipt.ownerDecision==='PASS_PRESENTATION_ONLY_FOR_EXACT_REVIEWED_ARTIFACT' &&
+    ownerVisualReceipt.evidenceAndLimits.ownerReportsAllFollowupManualChecksPass &&
+    !ownerVisualReceipt.evidenceAndLimits.rawProductionCookieJarAndGa4BeaconsAudited &&
+    !ownerVisualReceipt.evidenceAndLimits.sitePrivacyOrGdprComplianceCertified &&
+    !ownerVisualReceipt.releaseAuthorized && !ownerVisualReceipt.publishReady &&
+    a.reviewedArtifactStillHasHistoricalEditorialPassFalseAttribute &&
+    a.fullIndependentNetworkAndCookieAuditStillPending,
+    'owner presentation PASS is never a rights, runtime privacy or publication PASS');
   ok(!a.actualBrowserCookieControlsValidatedForFuturePage &&
     !a.actualBrowserVisualQaCompleted &&
     !a.qualifiedForeignLegalClearance && !a.releaseAuthorized,
     'do not claim browser/cross-border legality before actual QA');
   ok(m.existingSiteReuse.sharedLayoutDraftComponentExists &&
     m.existingSiteReuse.sharedLayoutDraftUsesBaseLayout &&
-    m.existingSiteReuse.sharedLayoutDraftOwnerPresentationPassPending &&
+    !m.existingSiteReuse.sharedLayoutDraftOwnerPresentationPassPending &&
     !m.existingSiteReuse.releasePageUsesBaseLayoutNow,
     'component exists as Draft, not a live site integration');
 

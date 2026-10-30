@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { handleTransactionalLocaleRequest } from '../src/lib/transactional-locale-handler.js';
 
@@ -250,5 +251,21 @@ assert.match(accountPage, /\/api\/account\?action=transactional-locale/);
 assert.match(accountPage, /does not subscribe you to a newsletter/);
 assert.match(accountPage, /Portuguese email remains unavailable/);
 assert.doesNotMatch(accountPage, /data-marketing-segment|registerMarketingConsent/);
+
+
+const privacyMigrationSql = await readFile(
+  new URL('../../../supabase/migrations/20261030221037_ui02_language_privacy_lifecycle_dev.sql', import.meta.url),
+  'utf8',
+);
+assert.equal(
+  createHash('sha256').update(privacyMigrationSql).digest('hex'),
+  'b741bd787610b412cc2b1439e1f74dc0bfb5b64e35e071f9400177a451217eb3',
+);
+assert.match(privacyMigrationSql, /'transactionalLanguagePreference'/);
+assert.match(privacyMigrationSql, /create trigger ui02_purge_language_when_account_deleted/);
+assert.match(privacyMigrationSql, /after update of status on public\.profiles/);
+assert.match(privacyMigrationSql, /security invoker/i);
+assert.doesNotMatch(privacyMigrationSql, /^\s*security definer/mi);
+assert.doesNotMatch(privacyMigrationSql, /update public\.ui02_access_ready_activation\s+set\s+enabled\s*=\s*true/i);
 
 console.log('Transactional account-language gate and RLS REST contracts passed.');

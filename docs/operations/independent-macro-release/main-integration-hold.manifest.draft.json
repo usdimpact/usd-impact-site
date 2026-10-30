@@ -105,6 +105,8 @@
     "currentPublicPrivacyBrowserQaPath": "docs/operations/independent-macro-release/current-site-consent-browser-qa-2026-10-30.draft.json",
     "currentPublicPrivacyBrowserQaGitBlobSha": "34a0c3497ef089f86db06135bc470478a8cd20a8",
     "currentPublicConsentRejectPersistenceObserved": true,
+    "currentPublicConsentAcceptWithdrawUiObserved": true,
+    "currentPublicConsentAcceptWithdrawUiEvidenceGitBlobSha": "01468973c2cd3698dee6ddc2b15ca977311edb8d",
     "gaNetworkAndCookieInspectionCompleted": false,
     "optionalAnalyticsAcceptanceAndWithdrawalBrowserTestCompleted": false,
     "futureMacroSharedLayoutBrowserTestCompleted": false

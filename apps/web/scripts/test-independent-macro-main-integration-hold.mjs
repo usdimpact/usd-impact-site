@@ -219,6 +219,38 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
     'browser-only review cannot enable publication');
 }
 
+// A separate, later anonymous session verified the VISIBLE Accept -> Withdraw
+// preferences on the existing Privacy page. No tracking/network/cookie claims.
+{
+  const receiptText=from('../../../docs/operations/independent-macro-release/current-site-consent-accept-withdraw-qa-2026-10-30.draft.json');
+  const receipt=JSON.parse(receiptText);
+  eq(receipt.schemaVersion,'usd-impact-existing-consent-accept-withdraw-browser-qa-v1-draft',
+    'accept-then-withdraw UI-only receipt schema');
+  eq(gitBlob(receiptText),m.existingSiteReuse.currentPublicConsentAcceptWithdrawUiEvidenceGitBlobSha,
+    'exact accepted UI-only browser QA receipt pinned');
+  eq(receipt.testedUrl,'https://www.usd-impact.com/privacy/','test on current Privacy page only');
+  ok(m.existingSiteReuse.currentPublicConsentAcceptWithdrawUiObserved &&
+    receipt.observed.firstVisitBannerOffersRejectReviewAccept &&
+    receipt.observed.clickedAcceptAnalytics &&
+    receipt.observed.checkboxCheckedAfterAccept &&
+    receipt.observed.uncheckedAnalyticsToWithdraw &&
+    receipt.observed.savedChoice &&
+    receipt.observed.checkboxStillUncheckedAfterSecondReopen &&
+    receipt.observed.finalAnalyticsPreferenceRejected,
+    'the visible consent preference was accepted, withdrawn and persisted after reopening');
+  ok(!receipt.observed.networkBeaconsInspected &&
+    !receipt.observed.googleTagScriptPresenceInspected &&
+    !receipt.observed.rawCookieJarInspected &&
+    !receipt.observed.postWithdrawalAnalyticsCookieErasureConfirmed &&
+    !receipt.observed.futureMacroWeeklySharedLayoutRendered &&
+    !receipt.observed.qualifiedPrivacyComplianceSignoff &&
+    !m.existingSiteReuse.gaNetworkAndCookieInspectionCompleted &&
+    !m.existingSiteReuse.optionalAnalyticsAcceptanceAndWithdrawalBrowserTestCompleted &&
+    !m.existingSiteReuse.futureMacroSharedLayoutBrowserTestCompleted &&
+    !receipt.releaseAuthorized,
+    'UI-only consent observation does not confer full tracking, legal or publication PASS');
+}
+
 const builtOutput = process.argv.includes('--built-output');
 if (builtOutput) {
   const dist = new URL('../dist/', import.meta.url);

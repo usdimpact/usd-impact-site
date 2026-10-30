@@ -31,13 +31,13 @@
 
 A **fresh anonymous browser session** tested the public [Privacy Notice](https://www.usd-impact.com/privacy/) and recorded its precise observed steps in the [consent-browser QA evidence](current-site-consent-browser-qa-2026-10-30.draft.json). It verified that the first-visit banner has **Reject analytics**, **Review settings**, and **Accept analytics**; rejecting optional analytics dismisses the banner; opening, saving and reopening **Privacy settings** showed optional analytics **unchecked**, with essential features always active. Existing Terms/Compliance/footer links were present.
 
-**Not yet verified:** `gtag.js` network loading/absence, real cookie values or deletion, GA4 beacons, full **Accept then Withdraw** behavior, small-screen consent display, screen reader accessibility, or the **future shared-layout Weekly page** (still not publicly or privately rendered). This partial browser observation is **not** a qualified privacy/ePrivacy/GDPR compliance certificate. No Production settings or stored user data were changed, and the browser ended with analytics rejected.
+**At the time of that first session, not yet verified:** `gtag.js` network loading/absence, real cookie values or deletion, GA4 beacons, visible **Accept then Withdraw** behavior (subsequently checked at UI level below), small-screen consent display, screen reader accessibility, or the **future shared-layout Weekly page** (still not publicly or privately rendered). This partial browser observation is **not** a qualified privacy/ePrivacy/GDPR compliance certificate. No Production settings or stored user data were changed, and the browser ended with analytics rejected.
 
 ## Additional consent browser observation — accept then withdraw PASS (2026-10-30)
 
 An additional **fresh anonymous browser session** on the **existing** public [Privacy Notice](https://www.usd-impact.com/privacy/) clicked **Accept analytics**, confirmed the optional analytics checkbox was checked after reopening Privacy settings, then unchecked it, saved the preference, and confirmed the checkbox remained unchecked when reopening. Final UI preference was **Rejected**. [Evidence](current-site-consent-accept-withdraw-qa-2026-10-30.draft.json).
 
-This validates the **visible browser-local consent choice flow only**. It does **not** independently verify that GA4 requests were blocked before acceptance, that cookies were cleared after withdrawal, or that the new unpublished Macro Weekly has been visually rendered. Privacy/ePrivacy certification remains pending.
+This validates the **visible browser-local consent choice flow only**. It does **not** independently verify that GA4 requests were blocked before acceptance, that cookies were cleared after withdrawal, or that the new unpublished Macro Weekly has been visually rendered. Privacy/ePrivacy certification remains pending. The Draft manifest and regression tests now pin this UI-only receipt separately while retaining `optionalAnalyticsAcceptanceAndWithdrawalBrowserTestCompleted: false` for the **full, network-and-cookie-verified** scenario.
 
 ## Protected browser QA after separately authorized review environment
 
@@ -61,3 +61,12 @@ The publisher accepted independently authored English explanations, five federal
 Obtain a distinct **PASS/REVISE** for the **new shared-layout presentation**, naming the actual reviewed Git commit or rendered artifact. This would still **not** authorize merging, publishing, unblocking rights gates or enabling indexing. A subsequent final production approval must expressly name the final release commit and target project.
 
 **No public publication or deployment is authorized at this stage.**
+
+## Read-only CI and Vercel checkpoint — 2026-10-30 (Draft head `31ac4014`)
+
+The six GitHub Actions workflows for exact commit `31ac4014d47b39a8d967f1f9f7baf76553fb2cae` were observed **SUCCESS**: Web quality, CodeQL security analysis, Supply chain evidence, Dependency review, Daily Card Telegram contract and Web Push contract. The web quality job's validation and build steps also completed successfully. This is a snapshot of that commit, not an automatic PASS for any subsequent documentation-only update.
+
+The Vercel deployment inventory reported **zero deployments** for branch `agent/independent-macro-weekly-main-integration-hold-2026-10-30`. The current public `usd-impact-site` Production deployment observed at that check was **READY**, based on existing `main` commit `eb832fac7203a6a0f2ff29c0320616114e39224f`, not the Macro Weekly Draft. [Existing Production deployment](https://vercel.com/usd-impact/usd-impact-site/8CfC6X2K2kM1P9H3dPPatJFKKffh).
+
+**Boundary:** No protected review deployment was created. No new shared-layout screenshot, network trace, cookie inspection, screen-reader audit, qualified legal signoff, new presentation owner PASS, release approval or public route is implied. CI is only a technical, fail-closed signal.
+

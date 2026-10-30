@@ -33,6 +33,12 @@ A **fresh anonymous browser session** tested the public [Privacy Notice](https:/
 
 **Not yet verified:** `gtag.js` network loading/absence, real cookie values or deletion, GA4 beacons, full **Accept then Withdraw** behavior, small-screen consent display, screen reader accessibility, or the **future shared-layout Weekly page** (still not publicly or privately rendered). This partial browser observation is **not** a qualified privacy/ePrivacy/GDPR compliance certificate. No Production settings or stored user data were changed, and the browser ended with analytics rejected.
 
+## Additional consent browser observation — accept then withdraw PASS (2026-10-30)
+
+An additional **fresh anonymous browser session** on the **existing** public [Privacy Notice](https://www.usd-impact.com/privacy/) clicked **Accept analytics**, confirmed the optional analytics checkbox was checked after reopening Privacy settings, then unchecked it, saved the preference, and confirmed the checkbox remained unchecked when reopening. Final UI preference was **Rejected**. [Evidence](current-site-consent-accept-withdraw-qa-2026-10-30.draft.json).
+
+This validates the **visible browser-local consent choice flow only**. It does **not** independently verify that GA4 requests were blocked before acceptance, that cookies were cleared after withdrawal, or that the new unpublished Macro Weekly has been visually rendered. Privacy/ePrivacy certification remains pending.
+
 ## Protected browser QA after separately authorized review environment
 
 No browser QA is claimed as completed by this document. When an authenticated, private-only review environment is explicitly approved, test **without disabling access controls**:

@@ -80,9 +80,9 @@ try {
   await db.exec(claims);
   await db.exec(escrow);
   await db.exec(confirmedRecovery);
-  for (const [name,args] of [
-    ['list_account_deletion_completion_recoveries(integer)',[]],
-    ['confirm_account_deletion_completion_outbox(uuid,uuid,uuid)',[]],
+  for (const name of [
+    'list_account_deletion_completion_recoveries(integer)',
+    'confirm_account_deletion_completion_outbox(uuid,uuid,uuid)',
   ]){
     const permissions=await row("select has_function_privilege('anon',$1,'EXECUTE') as anon,has_function_privilege('authenticated',$1,'EXECUTE') as signed_in,has_function_privilege('service_role',$1,'EXECUTE') as service",['public.'+name]);
     assert.deepEqual(permissions,{anon:false,signed_in:false,service:true});
@@ -165,15 +165,15 @@ try {
   // be authoritative. No Auth request, provider, or even a service-role RPC.
   const privateProc='account_deletion_internal.recover_confirmed_without_token(uuid,uuid,uuid,bigint,text,text)';
   const roles=await row(
-    "select has_function_privilege('anon',$1,'EXECUTE') as anon,"+
-    "has_function_privilege('authenticated',$1,'EXECUTE') as signed_in,"+
-    "has_function_privilege('service_role',$1,'EXECUTE') as service,"+
+    "select has_function_privilege('anon',$1,'EXECUTE') as anon, "+
+    "has_function_privilege('authenticated',$1,'EXECUTE') as signed_in, "+
+    "has_function_privilege('service_role',$1,'EXECUTE') as service, "+
     "has_function_privilege('postgres',$1,'EXECUTE') as dba",
     [privateProc],
   );
   assert.deepEqual(roles,{anon:false,signed_in:false,service:false,dba:true});checks++;
   const permissions=await row(
-    "select has_schema_privilege('service_role','account_deletion_internal','USAGE') as service,"+
+    "select has_schema_privilege('service_role','account_deletion_internal','USAGE') as service, "+
     "has_table_privilege('service_role','account_deletion_internal.confirmed_recovery_audit','SELECT') as audit_read",
   );
   assert.deepEqual(permissions,{service:false,audit_read:false});checks++;

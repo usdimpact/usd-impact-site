@@ -1,4 +1,5 @@
 import { memberMainMenuAssets, renderMemberMainMenu } from './site-navigation.js';
+import { localizationManifest } from '../data/localization-manifest.js';
 import {
   collections,
   getAdjacentVideos,
@@ -135,17 +136,27 @@ export function renderProtectedVideoCatalog() {
   });
 }
 
-export function renderProtectedVideoLesson({ video, signedToken, customerCode }) {
+export function renderProtectedVideoLesson({ video, signedToken, customerCode, preferredCaptionLocale = 'en' }) {
   const collection = getCollection(video.collectionId);
   const collectionVideos = getCollectionVideos(video.collectionId);
   const adjacent = getAdjacentVideos(video);
   const number = getVideoNumber(video);
+  // A verified non-default es provider track is offered as an opt-in
+  // account setting ONLY on this Preview. Global English default stays en.
+  const verifiedSpanishCaption = localizationManifest.surfaces.videoCaptions.records.some(
+    (entry) => entry.providerAssetKey === video.slug
+      && entry.targetLocale === 'es'
+      && entry.translationStatus === 'verified_current'
+      && entry.releaseStatus === 'provider_non_default',
+  );
+  const useSpanishCaption = preferredCaptionLocale === 'es' && verifiedSpanishCaption;
   const query = new URLSearchParams({
     primaryColor: '#C9A35B',
     letterboxColor: '#020A14',
     preload: 'metadata',
     defaultTextTrack: 'en',
   });
+  if (useSpanishCaption) query.set('defaultTextTrack', 'es');
   const playerUrl = `https://customer-${customerCode}.cloudflarestream.com/${encodeURIComponent(signedToken)}/iframe?${query}`;
   const concepts = video.concepts.map((concept) => `<li>${escapeHtml(concept)}</li>`).join('');
   const sources = video.sources.map((source) => `<li>${escapeHtml(source)}</li>`).join('');
@@ -175,7 +186,7 @@ export function renderProtectedVideoLesson({ video, signedToken, customerCode })
           <aside class="vl-aside">
             <div><span>Viewing progress</span><strong id="video-progress-label">Loading…</strong><div class="vl-watch-progress"><i id="video-progress-bar"></i></div></div>
             <div><span>Collection</span><strong>${String(video.order).padStart(2, '0')} / ${String(collectionVideos.length).padStart(2, '0')}</strong><p>${escapeHtml(collection.title)}</p></div>
-            <div><span>Accessibility</span><p>Verified English captions and keyboard-ready adaptive playback.</p></div>
+            <div><span>Accessibility</span><p>${useSpanishCaption ? 'Spanish subtitles selected from your account media preference. Original spoken narration remains in English.' : 'Verified English captions and keyboard-ready adaptive playback.'}</p></div>
             <div><span>Primary sources</span><ul>${sources}</ul></div>
             <div class="vl-compliance"><span>Use</span><p>${escapeHtml(libraryMeta.compliance)}</p></div>
           </aside>

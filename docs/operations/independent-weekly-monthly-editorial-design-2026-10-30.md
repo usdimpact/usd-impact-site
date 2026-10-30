@@ -6,7 +6,7 @@
 
 ## Authority and scope
 
-Owner approved preparing a distinct educational Weekly and Monthly with existing verified published Daily text and independently rights-cleared official sources, on a Draft branch only. Existing Production, public routes, search indexing, membership, commerce, Score publication rights gates, Score formula and historical products remain untouched. Scope of this PR is this documentation file only. No new executable, content entry, schedule or route. No review completion, release contract or provider license is inferred from approval to draft.
+Owner approved preparing a distinct educational Weekly and Monthly with existing verified published Daily text and independently rights-cleared official sources, on a Draft branch only. Existing Production, public routes, search indexing, membership, commerce, Score publication rights gates, Score formula and historical products remain untouched. The original owner approval covered design preparation, and the subsequent continuation approval extends Draft-only preparation to an **exact-source rights ledger and a standalone, pure synthetic-only validator with tests**. This PR therefore contains isolated documentation, the all-deny review ledger and independent offline test files only. No application import, package-script integration, scheduled workflow, source adapter, content entry, deployed route or production release. No completed review, legal permission, publisher receipt or release authorization is implied by approval to draft.
 
 Authoritative issues: [Score redistribution #155](https://github.com/usdimpact/usd-impact-pipeline/issues/155), [FRED retention #282](https://github.com/usdimpact/usd-impact-pipeline/issues/282), [independent Macro Context Panel #313](https://github.com/usdimpact/usd-impact-pipeline/issues/313), and [Daily scheduler incident #840](https://github.com/usdimpact/usd-impact-site/issues/840). Existing original-Score Monthly source packet: [Draft #1014](https://github.com/usdimpact/usd-impact-site/pull/1014). None is closed or superseded by this proposal.
 
@@ -27,30 +27,27 @@ Working titles: **Independent Weekly Macro Review** and **Independent Four-Week 
 4. Link-out citations and independent paraphrase of already-reviewed claims are editorial candidates, not legal permissions. Distinguish issuer release time, economic observation period, Daily generation time, later editorial revision and public publication date.
 5. Every claim carries a primary source URL, issuer, as-of date, exact Daily edition, claim-level verification status and review receipt (nullable). No unsupported intraday USD, DXY, S&P 500, VIX, WTI, gold or BTC reactions.
 
-## Proposed independent Weekly schema (planning only)
+## Exact offline Weekly contract (draft only, not an Astro content collection)
 
-```json
-{
-  "contractVersion": "independent-weekly-v0-draft",
-  "status": "draft",
-  "periodStart": "YYYY-MM-DD",
-  "periodEnd": "YYYY-MM-DD",
-  "editorialAsOfUtc": null,
-  "sourceDailyEditions": [],
-  "primarySourceReceipts": [],
-  "themes": [],
-  "whatChanged": [],
-  "transmissionHypothesesNotObservedReturns": [],
-  "whatToWatch": [],
-  "limitations": [],
-  "complianceNote": "Educational and informational only; no investment or trading recommendation.",
-  "sourceRightsApproval": null,
-  "editorialApproval": null,
-  "releaseApproval": null
-}
-```
+Implemented for structural rehearsal in [the pure validator](../../apps/web/scripts/independent-editorial-validator.mjs). The test suite [uses invented 2099 fixtures](../../apps/web/scripts/test-independent-editorial-validator.mjs); it does not read actual Dailies, data provider values or historical Score inputs.
 
-Proposed headings: Executive summary; What happened (dated official observations); Why it matters for USD transmission (clearly conditional, no measured return); What changed versus prior week (only comparable verified releases); Common interpretation mistakes; What to watch; Sources and data limitations; Compliance note. No `score`, `regime`, `zScore`, `contribution`, asset return or licensed feed field.
+| Field | Required meaning |
+| --- | --- |
+| \`contractVersion\` | Exactly \`independent-weekly-editorial-v0-draft\` |
+| \`series\` | Exactly \`independent-editorial\`; no original Score Weeklies |
+| \`status\` | \`draft\` or structurally hypothetical \`published\` (never a real publication action) |
+| \`id\` and \`slug\` | \`independent-weekly-YYYY-MM-DD\` and test namespace \`/independent/weekly/YYYY-MM-DD\`; **no route exists or is authorized** |
+| \`periodStart\` / \`periodEnd\` | Same Monday–Friday week; valid dates, Friday completed before editorial cutoff |
+| \`editorialAsOfUtc\` | Explicit UTC timestamp; validator requires an independent \`asOfUtc\` argument |
+| \`sourceDailyEditions\` | 1–5 distinct dated published Dailies, with original generation and editorial-review timestamps |
+| \`claimLineage\` | Unique claim ID, source ID, issuer, direct HTTPS URL, issuer publication time, corresponding Daily date and claim review time; **separate post-release revision receipt** if Daily generated before source appeared |
+| \`themes\` | Titles referencing approved claim IDs only |
+| \`approvals\` | \`sourceRightsDecisionReceipt\`, \`editorialApprovalReceipt\`, \`productionApprovalReceipt\`; required for hypothetical published shape, but not independently authenticated by this test |
+| \`complianceNote\` | Educational, expressly not investment/trading advice |
+
+The validator rejects unknown schema fields and legacy keys such as \`score\`, \`scorePath\`, \`regime\`, \`zScore\`, \`contributions\`, original Weekly URLs and public Score data pointers. All outputs **always** contain \`releaseAuthorized:false\`, even when \`structurallyValid:true\`. Syntactically plausible approval-reference strings are *not* legal or owner signatures.
+
+**Run in offline development only:** \`node --test apps/web/scripts/test-independent-editorial-validator.mjs\` from the repository root. No workflow or npm script has been changed to invoke it automatically. The 45 cases were executed against the exact staged module in an isolated JavaScript harness; direct Node command execution remains a separate QA step.
 
 ## Proposed independent Monthly schema and eligibility
 
@@ -62,7 +59,8 @@ Fail-closed validator requirements:
 - Source publisher receipts, primary links and reviewed factual claim lineage all present; issuer sources and their observation dates independently checked. No source from the future.
 - No original Score `scorePath`, regime, Score history, component values, or legacy `weekly_input` reference anywhere in the derived Monthly.
 - No duplicate reuse of a Weekly across published independent Monthly editions.
-- Explicit separate rights/compliance, editorial and Production approvals; absence or ambiguity fails closed. Do not create published assets while any field is pending.
+- Require explicit **complete prior independent Monthly history** to check that source Weeklies were not used by another published Monthly. Missing history, overlapping Weeklies or duplicate Monthly period must fail closed.
+- Explicit separate rights/compliance, editorial and Production approvals; absence or ambiguity fails closed. The offline validator cannot authenticate a claimed receipt and **never authorizes publication**.
 
 Current state: **zero independent Weeklies exist**. The October 23 legacy Weekly is not eligible. Consequently there is **no independent Monthly release date** and no authority to backdate an independent Weekly for October 30.
 
@@ -96,9 +94,11 @@ The Oct 30 Daily's original `generatedAt` precedes ECI release; the separately r
 
 - [x] Owner authorizes **Draft-only** independent editorial design with $0 additional market-data licensing.
 - [x] Define separate output identity, source lineage, editorial specimen, and standalone Monthly rules in a nondeploying documentation-only branch.
-- [ ] Review issuer exact-source rights and third-party terms for claims, extracts, links, possible direct automation and permitted historical retention. Record written decision/receipt, not assumed permission. No new GET to market-data endpoints.
+- [x] Record relevant agency **general reuse policies** and seven exact issuer candidate references in the [source-rights review matrix](independent-editorial-source-rights-review-2026-10-30.md) and [all-deny JSON ledger](../../governance/independent-editorial-source-rights-review-2026-10-30.json). **This is not exact-item rights clearance:** 49/49 permissions and all 10 publication gates remain false.
+- [ ] Complete issuer exact-source third-party/copyright, link/excerpt, commercial use, translation, automated retrieval and retention reviews; record an actual scoped authority decision/receipt. Do not fetch market observations.
 - [ ] Approve independent methodology, final publication naming, reader-facing disclaimers and precise claim-level editorial signoff.
-- [ ] Build separate no-live-data offline validator with invented/synthetic fixtures, after explicit engineering scope approval. Preserve current original Score validators.
+- [x] Stage pure standalone validator and synthetic-only test suite after owner continuation approval; 45/45 V8 in-memory regression bodies passed. **No application integration, scheduled run or Production use.** Existing original Score validators and publishing workflows remain unchanged.
+- [ ] Execute the standalone `node --test` command in a verified Node checkout; keep this additional runner result distinct from the isolated in-memory regressions. No provider retrieval is needed.
 - [ ] Produce four approved and *actually published* independent consecutive Weeklies, then separately review a Monthly from those exact editions.
 - [ ] Exact-head CI + protected Preview + accessibility/sitemap/noindex + public rights + owner Production approval **all separately required** before release. No current approval covers these steps.
 

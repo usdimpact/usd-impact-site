@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import accessMap from '../src/data/quiz-access-map.json' with { type: 'json' };
-import middleware from '../middleware.js';
+import middleware, { config as middlewareConfig } from '../middleware.js';
 import {
   advanceQuizEntitlement,
   canAccessQuizOrder,
@@ -59,5 +59,40 @@ assert.equal(openDollarLesson.headers.get('x-middleware-next'), '1');
 const stillBlocked = await middleware(new Request('https://www.usd-impact.com/fx/fx-depreciation-vs-inflation', { headers: { cookie } }));
 assert.equal(stillBlocked.status, 302);
 assert.equal(new URL(stillBlocked.headers.get('location')).pathname, '/dollar/what-is-the-us-dollar/');
+
+// Independent Macro Context remains HOLD under pipeline Issue #313.
+ // Even a valid paid/learning cookie, forged review query, or method variation
+ // must not expose the unapproved static concept route.
+assert.equal(
+  middlewareConfig.matcher.filter((path) => path === '/internal/independent-macro-context/:path*').length,
+  1,
+  'Macro Context route must be included in the Vercel middleware matcher',
+);
+for (const pathname of [
+  '/internal/independent-macro-context',
+  '/internal/independent-macro-context/',
+  '/internal/independent-macro-context/index.html',
+  '/internal/independent-macro-context/anything',
+]) {
+  for (const method of ['GET', 'HEAD', 'POST']) {
+    const denied = await middleware(new Request(
+      `https://www.usd-impact.com${pathname}?owner_review=1`,
+      {
+        method,
+        headers: {
+          cookie: `usd-impact-learning-progress=${signed}`,
+          'x-verified-user': 'synthetic-owner',
+        },
+      },
+    ));
+    assert.equal(denied.status, 404, `Macro Context concept must fail closed: ${method} ${pathname}`);
+    assert.equal(denied.headers.get('x-middleware-next'), null);
+    assert.equal(denied.headers.get('cache-control'), 'private, no-store');
+    assert.equal(denied.headers.get('x-robots-tag'), 'noindex, nofollow');
+    assert.equal(await denied.text(), '', 'denial must not serve static concept HTML');
+  }
+}
+const otherInternalQa = await middleware(new Request('https://www.usd-impact.com/internal/ask-usd-impact'));
+assert.equal(otherInternalQa.headers.get('x-middleware-next'), '1', 'unrelated internal QA remains unchanged');
 
 console.log('Quiz entitlement and middleware tests passed.');

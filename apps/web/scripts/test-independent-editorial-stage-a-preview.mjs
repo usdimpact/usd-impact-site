@@ -146,4 +146,84 @@ check(/^Disallow: \/$/m.test(robots), 'robots all routes disallowed');
     owner.authorizations.productionDeployment === false, 'main release gates untouched');
 }
 
+
+// Stage B: narrow facts-and-links decision packet, no approval. Five of nine
+// original worksheet dimensions are out of scope for this ONE web-page medium;
+// leaving them false is not a refusal by the agency or a license request.
+{
+  const scope = JSON.parse(readFileSync(new URL('stage-b-narrow-source-use-review.draft.json', root), 'utf8'));
+  equal(scope.schemaVersion, 'independent-macro-weekly-narrow-first-use-review-v1-draft',
+    'Stage B scope manifest');
+  equal(scope.documentStatus, 'EVIDENCE_ASSESSED_APPROVAL_PENDING',
+    'evidence is not source-use approval');
+  equal(scope.reviewedStageAArticleGitBlobSha, '4fc7844ebb8701dd3682326dfe4e119c8783467f',
+    'Stage B is linked to previously approved exact Stage A article');
+  equal(scope.sourceReviewCount, 5, 'five exact sources reviewed');
+  equal(scope.claimCount, weekly.claims.length, 'six pinned Daily claims');
+  equal(scope.existingRightsWorksheetBlobSha,
+    '615476aeca74e0e373b02d868c4c86575eb40bd6',
+    'rights worksheet stays immutable');
+  check(scope.useBoundaries.onlyOriginalProseFactualObservationsAndExactOfficialLinks,
+    'no issuer expressive copy is requested');
+  check(scope.useBoundaries.noSourceExpressionOrThirdPartyImagesCopied,
+    'no images/charts/tables or expressive passages');
+  check(scope.useBoundaries.noIndexPricesVendorDataOrScoreValues,
+    'no vendor quotes or legacy Score included');
+  check(scope.useBoundaries.noAutomaticProviderDataRequests,
+    'no numerical feed retrieval');
+  check(scope.useBoundaries.USPublicDomainProtectionMayDifferOutsideUS,
+    'foreign copyright review cannot be skipped');
+  check(scope.useBoundaries.generalPoliciesCannotApproveSourceSpecificForeignUse,
+    'source-by-source decision still necessary');
+  check(scope.useBoundaries.notALegalOpinion, 'document is not legal signoff');
+  check(scope.outOfScopeReviewFlagsAtCurrentMediaScope.length === 5,
+    'record media restrictions that must remain out of scope');
+  equal([...scope.scopedQuestionsStillRequiringDecision].sort(),
+    ['agencyAuthorshipAndThirdPartyExceptions', 'commercialSiteEditorialUse',
+      'directAttributionAndCitation', 'internationalRomaniaEuLatamPublication'].sort(),
+    'only the four relevant rights dimensions need a narrow legal scope decision');
+  const prior = new Map(rights.sourceItems.map((item) => [item.sourceId, item]));
+  equal(scope.sourceItems.length, prior.size, 'same item count as all-deny source worksheet');
+  const used = new Set();
+  for (const source of scope.sourceItems) {
+    const item = prior.get(source.sourceId);
+    check(item !== undefined && !used.has(source.sourceId),
+      'no unknown/duplicate official item ID: ' + source.sourceId);
+    used.add(source.sourceId);
+    equal(source.exactOfficialSourceUrl, item.exactSourceUrl,
+      'exact source URL remains pinned for ' + source.sourceId);
+    equal([...source.claimIds].sort(), [...item.sourceClaims].sort(),
+      'same six claim IDs in source ledger');
+    check(article.includes('href="' + source.exactOfficialSourceUrl + '"'),
+      'no unlinked or invented official source');
+    check(source.requestedActualUse.originalUsdImpactEnglishProse &&
+      source.requestedActualUse.issuerCreditAndExactLink &&
+      source.requestedActualUse.factualReleasedObservations,
+      'narrow educational use only');
+    for (const [name, allow] of Object.entries(source.requestedActualUse)) {
+      if (['originalUsdImpactEnglishProse', 'issuerCreditAndExactLink',
+        'factualReleasedObservations'].includes(name)) continue;
+      equal(allow, false, 'no expanded third-party use: ' + name);
+    }
+    check(source.sourceUseApprovedForPublicRelease === false,
+      'no rights approval implied by general agency notice');
+    equal(source.localRightsAndAttributionReviewer, 'PENDING',
+      'foreign context still needs review');
+    equal(source.rightsReceipt, null, 'no invented legal/owner receipt');
+    check(Object.values(item.rightsChecks).every((v) => v === false),
+      'original all-deny ledger unchanged');
+  }
+  equal(used.size, 5, 'one record per exact official item');
+  check(Object.values(scope.approvals).every((v) => v === false),
+    'all scoped and Production release approvals remain disabled');
+  check(scope.sourceReviewReceiptsPresent === 0 &&
+    scope.releaseAuthorized === false && scope.publishReady === false,
+    'no reviewer can bypass a denied release');
+  check(scope.methodologyProposal.methodologyOwnerApproved === false &&
+    scope.methodologyProposal.noHistoricalTimestampFabrication,
+    'official issue-time standard is still proposal only');
+  check(scope.rightsWorksheetChanged === false,
+    'do not update original source rights flags while preparing a reviewer packet');
+}
+
 console.log('Stage A independent Macro Weekly static preview: '+tests+' checks passed. Publication and source rights remain HOLD.');

@@ -22,6 +22,7 @@ import {
   loadLaunchEmailOutbox,
   patchLaunchEmailOutbox,
 } from './launch-email-dispatch-ledger.js';
+import { assertPurchaseAccessReadySendGate } from './purchase-access-ready-send-gate.js';
 
 function requireProviderAdapter(adapter, provider) {
   if (!adapter || adapter.id !== provider || typeof adapter.send !== 'function') {
@@ -218,6 +219,15 @@ export async function dispatchEnqueuedLaunchEmail({
     return deepFreeze({ enabled: true, ...decision, outbox: currentOutbox });
   }
 
+  // The existing generic dispatcher must NOT send purchase-ready mail unless
+  // the DB authoritatively verifies the immutable locale/outbox pair now.
+  // A missing schema, failed RPC, or disabled owner gate halts before any
+  // outbox status transition or provider call.
+  await assertPurchaseAccessReadySendGate({
+    state: currentState,
+    environment,
+    fetchImpl,
+  });
   const message = renderLaunchEmailDispatch({ intent: currentState.intent, unsubscribeUrl });
   const adapter = requireProviderAdapter(providerAdapter, message.provider);
   const attemptedAt = new Date(nowMs).toISOString();

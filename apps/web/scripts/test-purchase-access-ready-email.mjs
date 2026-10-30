@@ -7,6 +7,7 @@ import {
   resolveVerifiedAccessReadyLocale,
 } from '../src/lib/purchase-access-ready-locale-preview.js';
 import { readFile } from 'node:fs/promises';
+import { assertPurchaseAccessReadySendGate } from '../src/lib/purchase-access-ready-send-gate.js';
 import { verifyPurchaseAccessReadyAtomicPair } from '../src/lib/purchase-access-ready-atomic-pair-review.js';
 import {
   prepareAccessReadyLocaleSnapshot,
@@ -343,6 +344,93 @@ const acceptedButNotDelivered = await attemptNonBlockingPurchaseAccessReadyEmail
   reportImpl: () => { throw new Error('accepted result must not warn'); },
 });
 assert.deepEqual(acceptedButNotDelivered, { status: 'delivery_attempted' });
+
+
+// The final provider handoff has a *separate*, default-disabled gate.
+const gatedState = {
+  enabled: true,
+  intent: prepared.intent,
+  projectRef: 'ycstrcvshdluovtuasjc',
+  config: {
+    url: 'https://ycstrcvshdluovtuasjc.supabase.co',
+    secretKey: 'sb_secret_abcdefghijklmnopqrstuvwxyz',
+  },
+  outbox: fixtureRow,
+};
+let proofCalls = 0;
+await assert.rejects(
+  () => assertPurchaseAccessReadySendGate({
+    state: gatedState, environment: { VERCEL_ENV: 'preview' },
+    fetchImpl: async () => { proofCalls++; throw new Error('disabled must not fetch'); },
+  }),
+  error => error.code === 'PURCHASE_ACCESS_READY_DISPATCH_HOLD',
+);
+assert.equal(proofCalls, 0);
+const approvedSyntheticProofEnv = {
+  VERCEL_ENV: 'preview', PURCHASE_ACCESS_READY_ATOMIC_DISPATCH_ENABLED: 'true',
+};
+const checkedProof = await assertPurchaseAccessReadySendGate({
+  state: gatedState,
+  environment: approvedSyntheticProofEnv,
+  fetchImpl: async (url, request) => {
+    proofCalls++;
+    assert.equal(String(url),
+      'https://ycstrcvshdluovtuasjc.supabase.co/rest/v1/rpc/ui02_check_access_ready_dispatch');
+    assert.deepEqual(JSON.parse(request.body), {
+      p_outbox_id: fixtureRow.id,
+      p_idempotency_key: prepared.intent.outboxRecord.idempotency_key,
+    });
+    return new Response(JSON.stringify({
+      verified: true, locale: 'en',
+      outboxId: fixtureRow.id,
+      idempotencyKey: prepared.intent.outboxRecord.idempotency_key,
+      templateVersion: fixtureRow.template_version,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  },
+});
+assert.deepEqual(checkedProof, { checked: true, verified: true, locale: 'en' });
+assert.equal(proofCalls, 1);
+for (const fakeResult of [
+  new Response('{}', { status: 404 }),
+  new Response('bad JSON', { status: 200 }),
+  new Response(JSON.stringify({ verified: false }), { status: 200 }),
+  new Response(JSON.stringify({
+    verified: true, locale: 'es', outboxId: fixtureRow.id,
+    idempotencyKey: fixtureRow.idempotency_key,
+    templateVersion: fixtureRow.template_version,
+  }), { status: 200 }),
+  new Response(JSON.stringify({
+    verified: true, locale: 'en', outboxId: fixtureRow.id,
+    idempotencyKey: 'notification:v1:' + '0'.repeat(64),
+    templateVersion: fixtureRow.template_version,
+  }), { status: 200 }),
+]) {
+  await assert.rejects(
+    () => assertPurchaseAccessReadySendGate({
+      state: gatedState, environment: approvedSyntheticProofEnv,
+      fetchImpl: async () => fakeResult,
+    }),
+    error => error.code === 'PURCHASE_ACCESS_READY_DISPATCH_PROOF_HOLD',
+  );
+}
+let productionProofCalls = 0;
+await assert.rejects(
+  () => assertPurchaseAccessReadySendGate({
+    state: {
+      ...gatedState, projectRef: 'gjzetjugmnwanvjkchux',
+      config: { ...gatedState.config, url: 'https://gjzetjugmnwanvjkchux.supabase.co' },
+    },
+    environment: {
+      VERCEL_ENV: 'production',
+      PURCHASE_ACCESS_READY_ATOMIC_DISPATCH_ENABLED: 'true',
+      PURCHASE_ACCESS_READY_PRODUCTION_APPROVED: 'false',
+    },
+    fetchImpl: async () => { productionProofCalls++; throw new Error('unapproved fetch'); },
+  }),
+  error => error.code === 'PURCHASE_ACCESS_READY_PRODUCTION_HOLD',
+);
+assert.equal(productionProofCalls, 0);
+assert.equal(providerCalls, 0);
 
 // Read/identity verification remains OUTSIDE the secondary email failure
 // boundary: it is required before invoking the non-blocking notification.

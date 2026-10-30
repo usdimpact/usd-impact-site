@@ -194,7 +194,7 @@ ok(!/import\.meta\.env|process\.env|PUBLIC_/.test(route),
       'candidate retains exact linked issuer for '+c.claimId);
     ok(approvedSource.has(c.sourceId),
       'candidate manifest source ID exists for '+c.claimId);
-    eq(c.candidateClaimEditorialApproved, false,
+    eq(c.independentCandidateExactClaimApproved, false,
       'original Daily approval is NOT independent Weekly PASS for '+c.claimId);
     eq(c.sourceReuseRightsApproved, false,
       'facts and links are not a signed public source grant for '+c.claimId);

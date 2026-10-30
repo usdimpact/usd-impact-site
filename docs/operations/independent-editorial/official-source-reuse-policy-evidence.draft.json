@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "independent-weekly-policy-evidence-v0-draft",
+  "preparedOn": "2026-10-30",
+  "reviewedPoliciesOnly": true,
+  "marketDataObservationEndpointsQueried": false,
+  "exactItemRightsOrPermissionsReviewed": false,
+  "rightsAuthorized": false,
+  "publishingAuthorized": false,
+  "usesOnlyAlreadyPinnedDraftClaims": true,
+  "reviewScope": "Official agency general reuse notices only. This matrix does NOT inspect the contents or rights notices of the five exact issuer release items, their embedded third-party works or their international/archival distribution.",
+  "internationalCaution": {
+    "noticeUrl": "https://www.usa.gov/government-copyright",
+    "summary": "U.S. federal public-domain treatment may not govern reuse abroad, and materials appearing on government sites may belong to third parties; privacy, publicity, trademark and endorsement limits may apply.",
+    "romanianEuLatamUseDecision": "PENDING"
+  },
+  "sourceItems": [
+    {
+      "sourceId": "fed-october-calendar",
+      "exactPinnedItemUrl": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+      "claimIds": [
+        "fomc-preview-oct26",
+        "fomc-reminder-oct27"
+      ],
+      "issuer": "Board of Governors of the Federal Reserve System",
+      "policyEvidence": {
+        "publicNoticeUrl": "https://www.federalreserve.gov/disclaimer.htm",
+        "interpretation": "Board-authored information is generally public domain unless otherwise indicated, with Board citation requested; direct hyperlinks permitted. Third-party items, seals, insignia, and framing are excluded or restricted."
+      },
+      "plannedEditorialTreatment": "Original USD Impact explanation and exact direct hyperlink with full issuer credit, no download, chart, logo or source excerpt rehosting under this Draft",
+      "policyIndicatesGeneralAgencyTextMayBeReusable": true,
+      "exactItemCheckedForExceptions": false,
+      "publicSiteCommercialContextReviewed": false,
+      "crossBorderUseReviewed": false,
+      "translationOrStorageReviewed": false,
+      "legalOrOwnerReceipt": null,
+      "scopeSpecificApproval": false,
+      "permissionToPublish": false
+    },
+    {
+      "sourceId": "fed-fomc-statement-20261028",
+      "exactPinnedItemUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+      "claimIds": [
+        "fomc-outcome-oct28"
+      ],
+      "issuer": "Board of Governors of the Federal Reserve System",
+      "policyEvidence": {
+        "publicNoticeUrl": "https://www.federalreserve.gov/disclaimer.htm",
+        "interpretation": "Board-authored information is generally public domain unless otherwise indicated, with Board citation requested; direct hyperlinks permitted. Third-party items, seals, insignia, and framing are excluded or restricted."
+      },
+      "plannedEditorialTreatment": "Original USD Impact explanation and exact direct hyperlink with full issuer credit, no download, chart, logo or source excerpt rehosting under this Draft",
+      "policyIndicatesGeneralAgencyTextMayBeReusable": true,
+      "exactItemCheckedForExceptions": false,
+      "publicSiteCommercialContextReviewed": false,
+      "crossBorderUseReviewed": false,
+      "translationOrStorageReviewed": false,
+      "legalOrOwnerReceipt": null,
+      "scopeSpecificApproval": false,
+      "permissionToPublish": false
+    },
+    {
+      "sourceId": "bea-gdp-q3-20261029",
+      "exactPinnedItemUrl": "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+      "claimIds": [
+        "gdp-oct29"
+      ],
+      "issuer": "U.S. Bureau of Economic Analysis",
+      "policyEvidence": {
+        "publicNoticeUrl": "https://www.bea.gov/help/faq/147",
+        "additionalLinkingNoticeUrl": "https://www.bea.gov/about/policies-and-information/linking",
+        "interpretation": "Unless stated otherwise, BEA web information may be used or reproduced without specific permission, with BEA attribution appreciated. The linking policy forbids implied endorsement and restricts logo use."
+      },
+      "plannedEditorialTreatment": "Original USD Impact explanation and exact direct hyperlink with full issuer credit, no download, chart, logo or source excerpt rehosting under this Draft",
+      "policyIndicatesGeneralAgencyTextMayBeReusable": true,
+      "exactItemCheckedForExceptions": false,
+      "publicSiteCommercialContextReviewed": false,
+      "crossBorderUseReviewed": false,
+      "translationOrStorageReviewed": false,
+      "legalOrOwnerReceipt": null,
+      "scopeSpecificApproval": false,
+      "permissionToPublish": false
+    },
+    {
+      "sourceId": "bea-pce-sep-20261029",
+      "exactPinnedItemUrl": "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026",
+      "claimIds": [
+        "pce-oct29"
+      ],
+      "issuer": "U.S. Bureau of Economic Analysis",
+      "policyEvidence": {
+        "publicNoticeUrl": "https://www.bea.gov/help/faq/147",
+        "additionalLinkingNoticeUrl": "https://www.bea.gov/about/policies-and-information/linking",
+        "interpretation": "Unless stated otherwise, BEA web information may be used or reproduced without specific permission, with BEA attribution appreciated. The linking policy forbids implied endorsement and restricts logo use."
+      },
+      "plannedEditorialTreatment": "Original USD Impact explanation and exact direct hyperlink with full issuer credit, no download, chart, logo or source excerpt rehosting under this Draft",
+      "policyIndicatesGeneralAgencyTextMayBeReusable": true,
+      "exactItemCheckedForExceptions": false,
+      "publicSiteCommercialContextReviewed": false,
+      "crossBorderUseReviewed": false,
+      "translationOrStorageReviewed": false,
+      "legalOrOwnerReceipt": null,
+      "scopeSpecificApproval": false,
+      "permissionToPublish": false
+    },
+    {
+      "sourceId": "bls-eci-q3-20261030",
+      "exactPinnedItemUrl": "https://www.bls.gov/news.release/archives/eci_10302026.htm",
+      "claimIds": [
+        "eci-oct30"
+      ],
+      "issuer": "U.S. Bureau of Labor Statistics",
+      "policyEvidence": {
+        "publicNoticeUrl": "https://www.bls.gov/bls/linksite.htm",
+        "interpretation": "BLS publications are generally public domain and free to link or reuse with BLS credit requested, excluding previously copyrighted photos/illustrations; the BLS emblem is protected."
+      },
+      "plannedEditorialTreatment": "Original USD Impact explanation and exact direct hyperlink with full issuer credit, no download, chart, logo or source excerpt rehosting under this Draft",
+      "policyIndicatesGeneralAgencyTextMayBeReusable": true,
+      "exactItemCheckedForExceptions": false,
+      "publicSiteCommercialContextReviewed": false,
+      "crossBorderUseReviewed": false,
+      "translationOrStorageReviewed": false,
+      "legalOrOwnerReceipt": null,
+      "scopeSpecificApproval": false,
+      "permissionToPublish": false
+    }
+  ],
+  "publicationStatus": "HOLD_DRAFT_ONLY",
+  "reviewerDecisionInstructions": [
+    "Inspect each exact pinned release separately, including notice of externally authored graphics, images, attachments or other restricted third-party content.",
+    "Choose scope narrowly: original editorial prose and direct hyperlink, with dated release title/issuer attribution, not numerical feed extraction or rehosting.",
+    "Assess U.S. federal works and foreign publication/retention rights distinctly; do not infer international protection from U.S. public-domain policy.",
+    "Record reviewer, reviewed date, allowed media (website, newsletter, PDF, translation, archive), exclusions, decision basis and scoped receipt. A separate owner action is required to approve any usage.",
+    "Until an explicit reviewed decision and separately authorized release exist, preserve every source and publication gate as false."
+  ]
+}

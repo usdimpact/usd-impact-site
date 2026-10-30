@@ -46,6 +46,10 @@ for(const side of ['source','restore']){
   for(const name of paths)assert.ok(template.includes("'"+name+"'"),'missing immutable manifest '+side);
   const rollback=undo(side);
   assert.match(rollback,/drop policy if exists issue950_/);
+  assert.match(rollback,/do \$issue950_rollback_preflight\$/);
+  assert.match(rollback,new RegExp('__ISSUE950_'+side.toUpperCase()+'_SERVER_HOST_MD5__'));
+  assert.match(rollback,new RegExp('__ISSUE950_'+side.toUpperCase()+'_SYNTHETIC_UUID__'));
+  assert.match(rollback,/unexpected policy identity or shape/);
   assert.doesNotMatch(rollback,/delete from|truncate|drop table|drop schema|purge/i);
   checks+=11+paths.length;
 }
@@ -64,6 +68,14 @@ function render(side,subject=uuids[side],until=expires(),overrideHostMd5=null){
     .replaceAll('__ISSUE950_EXPIRES_AT_UTC__',until)
     .replaceAll('__ISSUE950_APPROVED_TEST_EMAIL__','issue950-s3-'+side+'@example.invalid')
     .replaceAll('__ISSUE950_'+side.toUpperCase()+'_SERVER_HOST_MD5__',expectedHostMd5)
+    .replaceAll('inet_server_addr()',"'"+fakeHost+"'");
+}
+function renderUndo(side,overrideHostMd5=null){
+  const fakeHost=side==='source'?'192.0.2.11':'198.51.100.11';
+  const expectedHostMd5=overrideHostMd5??createHash('md5').update(fakeHost).digest('hex');
+  return undo(side)
+    .replaceAll('__ISSUE950_'+side.toUpperCase()+'_SERVER_HOST_MD5__',expectedHostMd5)
+    .replaceAll('__ISSUE950_'+side.toUpperCase()+'_SYNTHETIC_UUID__',uuids[side])
     .replaceAll('inet_server_addr()',"'"+fakeHost+"'");
 }
 const schema=[
@@ -162,7 +174,49 @@ async function happy(side){
       assert.equal((await permitted("insert into storage.objects(bucket_id,name) values('library-pass-assets',$1) returning name",[audio[0]])).length,1);
       checks++;
     }
-    await db.exec(undo(side));
+    await assert.rejects(db.exec(undo(side)),/invalid input syntax|invalid input/i);
+    await db.exec('rollback');
+    await assert.rejects(db.exec(renderUndo(side,'0'.repeat(32))),/project host binding not verified/);
+    await db.exec('rollback');
+    assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),side==='source'?2:4);
+    checks+=3;
+    // Unknown policy drift must not be removed by this cleanup.
+    await db.exec("create policy issue950_unrelated_guard on storage.objects for select to authenticated using(false)");
+    await assert.rejects(db.exec(renderUndo(side)),/unexpected policy identity or shape/);
+    await db.exec('rollback');
+    assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),side==='source'?3:5);
+    await db.exec("drop policy issue950_unrelated_guard on storage.objects");
+    checks+=2;
+    // Same policy name, subject and time can still hide a widened allowlist.
+    // Rollback must not mistake coarse identity for unchanged Storage scope.
+    const objectSelect='issue950_'+side+'_session_objects_select';
+    const originalSelect=(await rows(db,
+      "select qual from pg_policies where schemaname='storage' and tablename='objects' and policyname=$1",
+      [objectSelect]))[0].qual;
+    await db.exec("alter policy "+objectSelect+" on storage.objects using ("+
+      "(select auth.uid()) = '"+subject+"'::uuid and now() < '"+expires()+"'::timestamptz)");
+    await assert.rejects(db.exec(renderUndo(side)),/unexpected policy identity or shape/);
+    await db.exec('rollback');
+    assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),side==='source'?2:4);
+    await db.exec("alter policy "+objectSelect+" on storage.objects using ("+originalSelect+")");
+    checks+=2;
+    if(side==='restore'){
+      // An UPDATE's USING may remain restricted even if WITH CHECK widens.
+      const updateName='issue950_restore_session_objects_update';
+      const originalCheck=(await rows(db,
+        "select with_check from pg_policies where schemaname='storage' and tablename='objects' and policyname=$1",
+        [updateName]))[0].with_check;
+      await db.exec("alter policy "+updateName+" on storage.objects with check (true)");
+      await assert.rejects(db.exec(renderUndo(side)),/unexpected policy identity or shape/);
+      await db.exec('rollback');
+      assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),4);
+      await db.exec("alter policy "+updateName+" on storage.objects with check ("+originalCheck+")");
+      checks+=2;
+    }
+    await db.exec(renderUndo(side));
+    // A subsequent cleanup is idempotent on the same verified host.
+    await db.exec(renderUndo(side));
+    checks+=1;
     assert.equal((await as(db,'authenticated',subject,()=>rows(db,"select name from storage.objects"))).length,0);
     assert.equal(await count(db,"select count(*) as n from pg_policies where schemaname='storage'"),0);
     assert.equal(await count(db,"select count(*) as n from storage.objects where bucket_id in('library-pass-assets','library-pass-books')"),21);

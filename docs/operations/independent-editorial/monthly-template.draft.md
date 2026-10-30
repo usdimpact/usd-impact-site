@@ -1,4 +1,4 @@
-# Independent Macro Monthly Review — prospective editorial outline
+# USD Impact Four-Week Macro Review — prospective editorial outline
 
 **DRAFT ONLY / FUTURE FOUR-WEEK WINDOW / 0 OF 4 INDEPENDENT WEEKLIES PUBLISHED / RIGHTS REVIEW REQUIRED**
 

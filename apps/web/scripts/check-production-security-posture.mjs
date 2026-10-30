@@ -140,6 +140,59 @@ try {
     if (/<meta[^>]*name="robots"[^>]*content="[^"]*noindex/i.test(html)) {
       fail(`Approved public Spanish page ${spanish} unexpectedly contains noindex.`);
     }
+
+    // hreflang must be reciprocal, not just present on the Spanish page.
+    const counterpart = await fetchWithTimeout(english, { redirect: 'manual' });
+    if (counterpart.status !== 200) {
+      fail(`English counterpart ${english} returned ${counterpart.status}, expected 200.`);
+    }
+    verifySecurityHeaders(counterpart, `English counterpart ${english}`);
+    const englishHtml = await counterpart.text();
+    requireText(englishHtml, '<html lang="en">', `English HTML ${english}`);
+    requireText(englishHtml, `<link rel="canonical" href="${source}">`, `English canonical ${english}`);
+    requireText(englishHtml, `<link rel="alternate" hreflang="en" href="${source}">`, `English reciprocal ${english}`);
+    requireText(englishHtml, `<link rel="alternate" hreflang="es" href="${localized}">`, `Spanish reciprocal ${english}`);
+    requireText(englishHtml, `<link rel="alternate" hreflang="x-default" href="${source}">`, `Default reciprocal ${english}`);
+  }
+
+  // Site index may add extra sitemaps as English content grows, but only
+  // five explicitly approved educational pages + /es/privacy may be indexed
+  // in Spanish. Never promote a review-only Spanish draft via a sitemap.
+  const indexResponse = await fetchWithTimeout('/sitemap-index.xml');
+  if (indexResponse.status !== 200) fail(`Sitemap index returned ${indexResponse.status}, expected 200.`);
+  const indexXml = await indexResponse.text();
+  const sitemapUrls = [...indexXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+  if (!sitemapUrls.length || sitemapUrls.length > 20) fail('Sitemap index must list 1–20 bounded sitemap files.');
+  const indexedSpanish = new Set();
+  for (const sitemapUrl of sitemapUrls.slice(0, 20)) {
+    const url = new URL(sitemapUrl);
+    if (url.origin !== 'https://www.usd-impact.com' || !/^\/sitemap-\d+\.xml$/.test(url.pathname)) {
+      fail(`Sitemap index lists a noncanonical sitemap: ${url.pathname}`);
+      continue;
+    }
+    const sitemapResponse = await fetchWithTimeout(url.pathname);
+    if (sitemapResponse.status !== 200) {
+      fail(`Sitemap ${url.pathname} returned ${sitemapResponse.status}, expected 200.`);
+      continue;
+    }
+    const sitemapXml = await sitemapResponse.text();
+    for (const match of sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)) {
+      const entry = match[1];
+      if (entry.startsWith('https://www.usd-impact.com/es/') || entry === 'https://www.usd-impact.com/es') {
+        if (indexedSpanish.has(entry)) fail(`Spanish sitemap URL repeated: ${entry}`);
+        indexedSpanish.add(entry);
+      }
+    }
+  }
+  const expectedSpanish = new Set([
+    ...approvedSpanishPages.map(({ spanish }) => `https://www.usd-impact.com${spanish}`),
+    'https://www.usd-impact.com/es/privacy',
+  ]);
+  for (const expected of expectedSpanish) {
+    if (!indexedSpanish.has(expected)) fail(`Approved Spanish URL missing from sitemap: ${expected}`);
+  }
+  for (const actual of indexedSpanish) {
+    if (!expectedSpanish.has(actual)) fail(`Unapproved Spanish URL present in sitemap: ${actual}`);
   }
 
   const securityTxt = await fetchWithTimeout('/.well-known/security.txt');

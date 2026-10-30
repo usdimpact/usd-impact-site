@@ -10,7 +10,7 @@
 - Independently authorized presentation exists in the isolated Vercel-authenticated review page, using shared component blob `22b3a44a59560ebdcd2c17781108332789e6dac1`, reviewed commit `889c9da8a692e5c7f5a2935fc4096eced67f8204`. Owner appearance, desktop/mobile and consent UI checks have been recorded as PASS.
 - The owner's later reported Production Network/Cookies PASS is pinned in [an exact receipt](production-privacy-owner-devtools-pass-2026-10-31.draft.json). It is not a preserved independent request/cookie trace or a qualified GDPR/ePrivacy certification.
 - The [item-by-item rights review packet](first-weekly-scope-limited-legal-and-production-privacy-review.draft.md) and [source evidence](first-weekly-source-rights-and-privacy-evidence-2026-10-30.draft.json) cover facts-and-links-only publishing, not agency logos, copied whole works or paid market data.
-- Current proposed public route: `/macro-reviews/weekly/2026-10-30/ (NOT generated). The October 26–30 dates are **coverage**, not a claimed public publication date. Do not backdate its first publication.
+- Current proposed public route: `/macro-reviews/weekly/2026-10-30/` (**NOT generated**). The October 26–30 dates are **coverage**, not a claimed public publication date. Do not backdate its first publication.
 - Existing original Score, Score-derived /reports/weekly/ and /reports/monthly/, commerce, licensing and source-rights registers are out of scope. First actually published **independent** Weekly = 0, qualifying independent Monthly = **0/4**.
 
 ## 2. Two remaining independent decision gates BEFORE a release patch

@@ -103,6 +103,49 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
    m.existingSiteReuse.privacyAndCookieComplianceNotCertified,
     'future site-shell use requires review; legal certification not invented');
 
+// Read-only primary-source factual verification is neither rights nor publication authority.
+{
+  const src=from('../../../docs/operations/independent-macro-release/first-weekly-primary-claim-reconciliation-2026-10-31.draft.json');
+  const review=JSON.parse(src);
+  eq(gitBlob(src),m.sources.independentPrimaryClaimReviewGitBlobSha,
+    'pin independent claim audit exact Git object');
+  eq(m.sources.independentPrimaryClaimReviewPath,'docs/operations/independent-macro-release/first-weekly-primary-claim-reconciliation-2026-10-31.draft.json',
+    'pin claim evidence location');
+  eq(review.schemaVersion,'usd-impact-first-independent-macro-weekly-six-claim-official-source-review-v1-draft',
+    'claim audit schema');
+  eq(review.sourceArticleBlobSha,gitBlob(html),'claim audit pins immutable article');
+  eq(review.officialSourceCount,m.sources.officialSourceUrls.length,'five official sources');
+  eq(review.reviewedClaimCount,m.sources.claimCount,'six source/method claims');
+  eq(review.reviewedEvents.map((x)=>x.id),[
+    'fomc-preview-oct26','fomc-outcome-oct28','gdp-oct29','pce-oct29','eci-oct30'],
+    'all five dated factual events reviewed');
+  eq(review.reviewedEvents.map((x)=>x.sourceUrl),m.sources.officialSourceUrls,
+    'only five existing official source URLs used');
+  ok(review.reviewedEvents.every((x)=>
+     html.includes('data-claim="'+x.id+'"') &&
+     html.includes('href="'+x.sourceUrl+'"') &&
+     x.factualCrossCheck==='PASS' && x.observedFacts.length>=2 &&
+     x.externallyVerifiedMarketReaction===false),
+     'all dated facts match frozen article without fabricated market-price evidence');
+  const method=review.editorialMethodClaim;
+  ok(method.methodologicalNotASixthGovernmentRelease &&
+     !method.marketPriceSourceUsed && !method.originalEightDriverScoreUsed &&
+     !method.realizedAssetReturnAsserted && !method.investmentRecommendationAsserted,
+     'sixth claim is only the explicit educational / no-price-data boundary');
+  ok(review.verificationScope.governmentSourceFactsIndependentlyReviewed &&
+     !review.verificationScope.qualifiedRomaniaEuInternationalRightsClearance &&
+     !review.verificationScope.qualifiedPrivacyCertification &&
+     !review.verificationScope.mergeAuthorized &&
+     !review.verificationScope.publicRouteAuthorized &&
+     !review.verificationScope.productionDeployAuthorized &&
+     !review.verificationScope.indexingAuthorized &&
+     !m.sources.independentPrimaryClaimReviewIsLegalClearance &&
+     !m.holds.fullIndependentClaimLevelSourceReviewApproved &&
+     !review.verificationScope.independentPublishedWeeklyCount &&
+     !review.verificationScope.eligibleMonthlyWeeklies,
+     'research-grade claim validation cannot self-approve release/legal governance');
+}
+
 // Shared BaseLayout integration stays non-public. The approved standalone
 // article remains unchanged, but the new presentation needs its own owner PASS.
 {

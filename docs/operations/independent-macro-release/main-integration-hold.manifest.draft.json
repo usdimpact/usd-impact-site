@@ -79,6 +79,9 @@
     "validatedDailyCount": 5,
     "officialSourceCount": 5,
     "claimCount": 6,
+    "independentPrimaryClaimReviewPath": "docs/operations/independent-macro-release/first-weekly-primary-claim-reconciliation-2026-10-31.draft.json",
+    "independentPrimaryClaimReviewGitBlobSha": "9df3db1eae5a12fd3debf4760b44a8a763a8f7f6",
+    "independentPrimaryClaimReviewIsLegalClearance": false,
     "authorizingThirdPartyIssuerLicenseReceipts": 0,
     "sourceMediaOutsideExactEnglishPage": false,
     "noAutomatedExternalMarketDataFeeds": true

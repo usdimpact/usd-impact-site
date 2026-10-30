@@ -1,5 +1,8 @@
 # Independent Macro Weekly — minimal integration on protected-main baseline (DRAFT / HOLD)
 
+> **CURRENT CHECKPOINT — 2026-10-31 (supersedes older status sentences below).** PR #1025 is still **Draft, unmerged, and unrouted**; public Production is unchanged. However, the shared-layout appearance **has received a separate exact-version owner presentation PASS** on isolated SSO-protected Preview `dpl_7RvFRJFNXKCotxv7J7tv9tRP1Nfu`. The current DevTools functional check is owner-reported PASS, not a preserved independent GA4 HAR or qualified privacy certification. The approved article and component/source blobs remain unchanged. [Owner presentation receipt](shared-layout-owner-presentation-pass-2026-10-30.draft.json) · [Owner privacy receipt](production-privacy-owner-devtools-pass-2026-10-31.draft.json) · [Factual claim audit](first-weekly-primary-claim-reconciliation-2026-10-31.draft.json) · [Final activation/rollback procedure](first-weekly-release-activation-and-rollback-plan.draft.md). **International qualified legal/privacy decision and separately authorized release still HOLD.** Historical Draft-only statements further below describe the **initial preparation stage**, not today's signoff state.
+
+
 **Owner priority:** release the first **independent educational** Macro Weekly as soon as it is legitimately cleared, without touching the original Score, commerce or paid market-data licensing.  
 **Prepared:** 2026-10-30.  
 **Working repository:** `usdimpact/usd-impact-site`.  

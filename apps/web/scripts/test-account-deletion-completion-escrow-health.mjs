@@ -88,7 +88,7 @@ try{
   assert.equal(h.manual_review_required,false);
   assert.equal(h.oldest_pending_age_band,'under_two_hours');
   checks+=4;
-  const idA=await acknowledge(a,A);
+  await acknowledge(a,A);
   h=await health();
   assert.equal(h.pending_count,0);
   assert.equal(h.manual_review_required,false);

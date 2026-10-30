@@ -495,6 +495,18 @@ The frozen Candidate 2 Introduction still describes Part IV as examining the `hi
 
 > Part IV examines the framework through descriptive historical evidence. It uses recalculated USD Impact Score v2 history and selected market regimes to illustrate where the cross-asset pattern was coherent, mixed, or specific to an individual market. The recalculated history is a present-day reconstruction of past conditions, not a point-in-time predictive backtest; dated as-published evidence must be evaluated separately. These illustrations do not establish a future hit rate or trading performance.
 
+### Spanish Edition 1.3 successor parity — proposal only (not approved)
+
+A read-only comparison with the existing, private Spanish Edition 1.3 Candidate 1 source on 2026-10-30 found that the Introduction still describes Part IV as being contrasted with empirical evidence without expressly distinguishing recalculated historical information from time-stamped, as-published evidence. The current Spanish candidate is not a successor to a corrected English source; it remains frozen/private.
+
+**Proposed neutral LATAM Spanish translation of the English successor paragraph, for editorial and financial-language review only:**
+
+> La parte IV examina el marco mediante evidencia histórica descriptiva. Utiliza el historial recalculado de USD Impact Score v2 y determinados regímenes de mercado para ilustrar cuándo el patrón entre activos fue coherente, mixto o específico de un mercado. Ese historial recalculado es una reconstrucción realizada hoy de condiciones pasadas, no una prueba retrospectiva de capacidad predictiva basada en la información disponible en cada fecha. La evidencia publicada en su momento debe evaluarse por separado. Estos ejemplos no demuestran una tasa de acierto futura ni resultados de inversión.
+
+**Bilingual parity checklist:** Ensure `descriptive historical evidence` = `evidencia histórica descriptiva`; `recalculated history` = `historial recalculado`; `point-in-time predictive backtest` explicitly excludes both the predictive claim and retroactive knowledge of the future; `as-published evidence` = `evidencia publicada en su momento`; avoid `tasa de éxito` or backtest-performance headlines. Check score/methodology version and historical-date examples against the eventual **new** English artifact, not the still-frozen English Candidate 2.
+
+**Status: DRAFT / SOURCE-DEPENDENT / NOT ACCEPTED.** No content change to Spanish Candidate 1, no updated translation/source checksum, no Spanish PDF regeneration or member/public delivery until a new canonical English successor exists and a separate Spanish review/approval is completed.
+
 Editorial acceptance for the successor must ensure:
 
 - no new performance percentage, hit-rate promise, predictive accuracy, or investment recommendation;

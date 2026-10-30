@@ -328,7 +328,8 @@ function syntheticPriorMonthly(weekOffset = 0) {
   const evidence = JSON.parse(fs.readFileSync(path.join(DRAFT_DIR,
     'pilot-release-timing-evidence.draft.json'), 'utf8'));
   assert.equal(evidence.schemaVersion, 'independent-weekly-release-timing-evidence-v0-draft');
-  assert.equal(evidence.status, 'EVIDENCE_ONLY_EXACT_ISSUER_TIMES_PENDING');
+  assert.equal(evidence.status, 'EVIDENCE_ONLY_ISSUE_TIMES_AND_EDITORIAL_CHRONOLOGY_RECORDED_ACTUAL_ISSUER_POSTING_UNVERIFIED');
+  assert.match(evidence.evidenceSemantics.exactIssuerActualPublicationAtUtc, /Only populate with directly authenticated/);
   assert.equal(evidence.sourceRetrievalPerformed, false);
   assert.equal(evidence.rightsGranted, false);
   assert.equal(evidence.publicationAuthorized, false);
@@ -362,6 +363,10 @@ function syntheticPriorMonthly(weekOffset = 0) {
       assert.match(fed, /Statement release: 2:00 p\.m\. U\.S\. Eastern/);
       assert.ok(Date.parse(event.existingDailyGeneratedAtUtc) >
         Date.parse(event.scheduledReleaseAtUtc));
+      assert.equal(event.postReleaseEditorialCandidate.sourcePr, 'https://github.com/usdimpact/usd-impact-site/pull/926');
+      assert.equal(event.postReleaseEditorialCandidate.sourcePrExactHead, 'b0790a73324741bf3c1f1e5b9603670b68c2e48b');
+      assert.equal(event.postReleaseEditorialCandidate.claimSpecificOwnerPassForIndependentReport, false);
+      assert.equal(event.postReleaseEditorialCandidate.exactIssuerPostingTimeAuthenticated, false);
     }
     if (Object.hasOwn(beaIds, event.claimId)) {
       assert.equal(event.scheduledReleaseAtUtc,
@@ -374,6 +379,10 @@ function syntheticPriorMonthly(weekOffset = 0) {
       'human post-release editorial review must be later than scheduled release');
       assert.equal(event.postReleaseEditorialReference,
         'https://github.com/usdimpact/usd-impact-site/pull/938#issuecomment-6510694719');
+      assert.equal(event.postReleaseEditorialCandidate.sourcePrExactHead, '14bbc23422518eb8850e4591f0127ba50cf68d7d');
+      assert.equal(event.postReleaseEditorialCandidate.commentCreatedAtUtc, '2026-10-29T23:11:35Z');
+      assert.equal(event.postReleaseEditorialCandidate.independentWeeklyEditorialApproval, false);
+      assert.equal(event.postReleaseEditorialCandidate.exactItemSourceRightsApproval, false);
       if (event.claimId === 'gdp-oct29') {
         assert.notEqual(event.exactSourceUrl, event.calendarOutcomeUrl,
           'distinct BEA GDP official URL spellings require human reconciliation');
@@ -385,16 +394,20 @@ function syntheticPriorMonthly(weekOffset = 0) {
       assert.equal(event.verifiedPostReleaseClaimReceipt, null,
         'editing a receipt link must not bypass claim-level review');
     } else {
-      assert.equal(event.exactIssuerActualPublicationAtUtc, claim.sourceReleaseAt);
+      assert.equal(event.recordedEditorialSourceReleaseAtUtc, claim.sourceReleaseAt,
+        'BLS official issue time in existing approved Daily must remain pinned');
+      assert.equal(event.exactIssuerActualPublicationAtUtc, null,
+        'official issued time is not authenticated website posting timestamp');
+      assert.equal(event.releaseTimeType, 'OFFICIAL_ISSUE_TIME_ALREADY_PINNED_IN_DAILY_NOT_INDEPENDENT_HTTP_POST_RECEIPT');
       assert.equal(event.verifiedPostReleaseClaimReceipt, claim.postReleaseEditorialReceipt);
       assert.ok(Date.parse(event.firstGeneratedAtUtc) <
-        Date.parse(event.exactIssuerActualPublicationAtUtc));
+        Date.parse(event.recordedEditorialSourceReleaseAtUtc));
     }
   }
   assert.deepEqual(evidence.events.filter((event) =>
     event.exactIssuerActualPublicationAtUtc === null).map((event) => event.claimId),
-    ['fomc-outcome-oct28', 'gdp-oct29', 'pce-oct29']);
-  tests += 21;
+    ['fomc-outcome-oct28', 'gdp-oct29', 'pce-oct29', 'eci-oct30']);
+  tests += 34;
 }
 // Agency notices are public-domain policy *context* only. The exact-source
 // rights worksheet stays all-deny, and no publishing permission is inferred.

@@ -75,7 +75,12 @@
     "ownerReviewReceiptGitBlobSha": "0d3cdf3f5e1251c17dfa0fed1190aec86dbc5dee",
     "ownerReviewedExactContentGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
     "ownerReviewTargetPrHead": "d4d55c7ae721c21ab464f5429b679b9020ea9e16",
-    "candidateEditorialPassCoversWholeArticleNotIndividualPriorDailyReceipts": true
+    "candidateEditorialPassCoversWholeArticleNotIndividualPriorDailyReceipts": true,
+    "finalDailySourceReconciliationFile": "docs/operations/independent-editorial/release-candidate-2026-10-30.final-daily-revision-audit.draft.json",
+    "finalDailySourceReconciliationGitBlobSha": "c1fc62c970339b7fec5e89241640d7253f4c2644",
+    "allFiveFinalPublishedDailyBlobsVerified": true,
+    "fedPriorPr926IntermediateDailyWasSupersededByMergedPr928": true,
+    "allFourOfficialOutcomeCorrectionsDocumentedAfterIssuerIssueTime": true
   },
   "sourceUse": {
     "stageBNarrowScopeJson": "docs/operations/independent-editorial/stage-b-narrow-source-use-review.draft.json",

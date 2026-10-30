@@ -185,6 +185,40 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
     'desktop/tablet/mobile and reduced-motion Draft presentation rules exist');
 }
 
+// A browser session checked only the EXISTING public privacy page; it did
+// not prove network-level cookie behavior or render the not-yet-public Weekly.
+{
+  const qaText=from('../../../docs/operations/independent-macro-release/current-site-consent-browser-qa-2026-10-30.draft.json');
+  const qa=JSON.parse(qaText);
+  eq(qa.schemaVersion,'usd-impact-live-existing-consent-browser-qa-v1-draft','consent browser receipt version');
+  eq(gitBlob(qaText),m.existingSiteReuse.currentPublicPrivacyBrowserQaGitBlobSha,
+    'exact existing-site browser QA receipt');
+  eq(qa.url,'https://www.usd-impact.com/privacy/','privacy test did not access new route');
+  eq(qa.mode,'fresh_anonymous_disposable_browser','no account or user-level data access');
+  ok(qa.observations.privacyNoticeRenders && qa.observations.termsFooterLinkVisible &&
+    qa.observations.complianceFooterLinkVisible,'current public legal/footer controls observed');
+  ok(qa.observations.firstVisitConsentBannerVisible && qa.observations.rejectAnalyticsButtonVisible &&
+    qa.observations.reviewSettingsButtonVisible && qa.observations.acceptAnalyticsButtonVisible,
+    'fresh visitor offered both optional analytics consent choices');
+  ok(qa.observations.rejectAnalyticsClicked &&
+    qa.observations.optionalAnalyticsUncheckedAfterReject &&
+    qa.observations.optionalAnalyticsRemainedUncheckedAfterReopen &&
+    m.existingSiteReuse.currentPublicConsentRejectPersistenceObserved,
+    'observed reject state persisted across reopening Privacy settings');
+  ok(!qa.observations.acceptThenWithdrawExplicitlyTested &&
+    !qa.observations.googleAnalyticsScriptAbsenceDirectlyVerified &&
+    !qa.observations.rawCookieValuesInspected &&
+    !qa.observations.networkRequestLogCaptured,
+    'do not invent accept/withdraw, cookie or network verification');
+  ok(!m.existingSiteReuse.gaNetworkAndCookieInspectionCompleted &&
+    !m.existingSiteReuse.optionalAnalyticsAcceptanceAndWithdrawalBrowserTestCompleted &&
+    !m.existingSiteReuse.futureMacroSharedLayoutBrowserTestCompleted &&
+    m.existingSiteReuse.privacyAndCookieComplianceNotCertified,
+    'future Weekly runtime and legal QA remain pending');
+  ok(!qa.publicReleaseAuthorized && !qa.newPagePublished && !qa.productionMutationAuthorized,
+    'browser-only review cannot enable publication');
+}
+
 const builtOutput = process.argv.includes('--built-output');
 if (builtOutput) {
   const dist = new URL('../dist/', import.meta.url);

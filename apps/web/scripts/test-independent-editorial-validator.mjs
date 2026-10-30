@@ -38,13 +38,13 @@ function monthly(weeks){
 const weeks=dates.map(weekly);
 function changed(base,transform){const x=structuredClone(base);transform(x);return x}
 function failsWeekly(w,reason){const r=validateIndependentWeekly(w,{asOfUtc:AS_OF});assert.equal(r.structurallyValid,false);assert.equal(r.releaseAuthorized,false);if(reason)assert.ok(r.errors.some(e=>e.includes(reason)),JSON.stringify(r.errors))}
-function failsMonthly(m,source=weeks,reason){const r=validateIndependentMonthly(m,source,{asOfUtc:AS_OF});assert.equal(r.structurallyValid,false);assert.equal(r.releaseAuthorized,false);if(reason)assert.ok(r.errors.some(e=>e.includes(reason)),JSON.stringify(r.errors))}
+function failsMonthly(m,source=weeks,reason){const r=validateIndependentMonthly(m,source,{asOfUtc:AS_OF,publishedMonthlyHistory:[]});assert.equal(r.structurallyValid,false);assert.equal(r.releaseAuthorized,false);if(reason)assert.ok(r.errors.some(e=>e.includes(reason)),JSON.stringify(r.errors))}
 
 test("four invented Weeklies structurally validate but never authorize production",()=>{
  for(const w of weeks){const r=validateIndependentWeekly(w,{asOfUtc:AS_OF});assert.deepEqual(r.errors,[]);assert.equal(r.structurallyValid,true);assert.equal(r.releaseAuthorized,false)}
 });
 test("invented four-week Monthly validates but never authorizes production",()=>{
- const r=validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:AS_OF});assert.deepEqual(r.errors,[]);assert.equal(r.structurallyValid,true);assert.equal(r.releaseAuthorized,false);
+ const r=validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:AS_OF,publishedMonthlyHistory:[]});assert.deepEqual(r.errors,[]);assert.equal(r.structurallyValid,true);assert.equal(r.releaseAuthorized,false);
 });
 test("four consecutive independent Weeklies satisfy structural eligibility only",()=>{
  const r=independentMonthlyEligibility(weeks,[],{asOfUtc:AS_OF});assert.equal(r.progress,4);assert.equal(r.ready,true);assert.equal(r.releaseAuthorized,false);
@@ -97,7 +97,21 @@ test("reject invalid source Weekly within Monthly",()=>failsMonthly(monthly(week
 test("reject monthly report bounds inconsistent with sources",()=>failsMonthly(changed(monthly(weeks),m=>m.periodStart="2099-01-12"),weeks,"period_does_not_match_sources"));
 test("reject monthly theme referencing an unreviewed source period",()=>failsMonthly(changed(monthly(weeks),m=>m.themes[0].weeklyDates=["2099-02-06"]),weeks,"unresolved_weekly_reference"));
 test("reject missing standalone Monthly production receipt",()=>failsMonthly(changed(monthly(weeks),m=>m.approvals.productionApprovalReceipt=null),weeks,"missing_productionApprovalReceipt"));
-test("reject malformed as-of for Monthly",()=>assert.equal(validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:"2099-02-30T12:00:00Z"}).structurallyValid,false));
+test("reject malformed as-of for Monthly",()=>assert.equal(validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:"2099-02-30T12:00:00Z",publishedMonthlyHistory:[]}).structurallyValid,false));
+test("monthly refuses to validate without explicit previously published history",()=>{
+ const r=validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:AS_OF});
+ assert.equal(r.structurallyValid,false);assert.ok(r.errors.includes("monthly:missing_explicit_published_history"));
+});
+test("monthly rejects reuse of an already published period",()=>{
+ const prior=monthly(weeks),current=monthly(weeks);
+ const r=validateIndependentMonthly(current,weeks,{asOfUtc:AS_OF,publishedMonthlyHistory:[prior]});
+ assert.equal(r.structurallyValid,false);assert.ok(r.errors.includes("monthly:period_already_published"));
+});
+test("monthly rejects source weekly reuse even when prior monthly identifier differs",()=>{
+ const prior=monthly(weeks);prior.id="independent-monthly-2099-02-06";prior.periodEnd="2099-02-06";
+ const r=validateIndependentMonthly(monthly(weeks),weeks,{asOfUtc:AS_OF,publishedMonthlyHistory:[prior]});
+ assert.equal(r.structurallyValid,false);assert.ok(r.errors.includes("monthly:source_weekly_already_consumed"));
+});
 test("static exact-source rights ledger is entirely denied and release HOLD",()=>{
  const path=new URL("../../../governance/independent-editorial-source-rights-review-2026-10-30.json",import.meta.url);
  const ledger=JSON.parse(readFileSync(path,"utf8"));

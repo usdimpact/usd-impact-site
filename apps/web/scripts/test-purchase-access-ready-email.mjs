@@ -388,6 +388,7 @@ const scannerFixture = {
   observedAt: '2026-11-03T13:00:00.000Z',
   purchases: [nextPurchase], purchaseIntents: [nextIntent],
   entitlements: [nextEntitlement], profiles: [accessResult.profile], outboxRows: [],
+  snapshotCertified: true,
 };
 const noneApproved = previewPurchaseAccessReadyRecovery(scannerFixture);
 assert.deepEqual(noneApproved.candidates, []);
@@ -445,6 +446,39 @@ for (const edit of [
   });
   assert.deepEqual(invalid.candidates, []);
 }
+
+const incompleteSnapshot = previewPurchaseAccessReadyRecovery({
+  ...allowedFixture, snapshotCertified: false,
+});
+assert.equal(incompleteSnapshot.state, 'hold');
+assert.equal(incompleteSnapshot.reason, 'SNAPSHOT_NOT_CERTIFIED');
+assert.deepEqual(incompleteSnapshot.candidates, []);
+assert.throws(
+  () => previewPurchaseAccessReadyRecovery({
+    ...allowedFixture, outboxRows: undefined,
+  }),
+  /bounded array/,
+);
+for (const field of ['refunded_at', 'disputed_at']) {
+  const incomplete = { ...nextPurchase };
+  delete incomplete[field];
+  const unsafeSnapshot = previewPurchaseAccessReadyRecovery({
+    ...allowedFixture, purchases: [incomplete],
+  });
+  assert.equal(unsafeSnapshot.held, 1, field + ' missing must fail closed');
+  assert.deepEqual(unsafeSnapshot.candidates, []);
+}
+const mislabeledExistingOutbox = previewPurchaseAccessReadyRecovery({
+  ...allowedFixture, outboxRows: [{
+    message_id: 'purchase_access_ready',
+    business_object_type: 'unknown',
+    business_object_id: nextPurchase.id,
+    status: 'accepted',
+  }],
+});
+assert.equal(mislabeledExistingOutbox.existing, 1);
+assert.deepEqual(mislabeledExistingOutbox.candidates, []);
+
 assert.throws(() => previewPurchaseAccessReadyRecovery({
   ...scannerFixture, approvedCutoverAt: '2026-11-02',
 }), /canonical UTC/);

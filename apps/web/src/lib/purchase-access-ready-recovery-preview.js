@@ -36,8 +36,8 @@ function result(state, reason, n, before, existing, held, candidates, codes) {
 function bump(codes, key) { codes[key] = (codes[key] || 0) + 1; }
 
 export function previewPurchaseAccessReadyRecovery({
-  purchases = [], purchaseIntents = [], entitlements = [], profiles = [],
-  outboxRows = [], approvedCutoverAt = null, observedAt,
+  purchases = null, purchaseIntents = null, entitlements = null, profiles = null,
+  outboxRows = null, approvedCutoverAt = null, observedAt, snapshotCertified = false,
 } = {}) {
   if (approvedCutoverAt == null) return result('hold', 'CUTOVER_NOT_APPROVED', 0, 0, 0, 0, [], {});
   const cutover = utc(approvedCutoverAt, 'approvedCutoverAt');
@@ -47,6 +47,9 @@ export function previewPurchaseAccessReadyRecovery({
   const ents = bounded(entitlements, 'entitlements');
   const users = bounded(profiles, 'profiles');
   const outbox = bounded(outboxRows, 'outboxRows');
+  if (snapshotCertified !== true) {
+    return result('hold', 'SNAPSHOT_NOT_CERTIFIED', ps.length, 0, 0, 0, [], {});
+  }
   if (cutover > observed) return result('not_due', 'CUTOVER_IN_FUTURE', ps.length, 0, 0, 0, [], {});
 
   let before = 0, existing = 0, held = 0;
@@ -67,6 +70,8 @@ export function previewPurchaseAccessReadyRecovery({
       || purchase.provider !== LEMON_SQUEEZY_PROVIDER
       || typeof purchase.provider_event_id !== 'string'
       || !purchase.provider_event_id.trim()
+      || !Object.hasOwn(purchase, 'refunded_at')
+      || !Object.hasOwn(purchase, 'disputed_at')
       || purchase.refunded_at != null || purchase.disputed_at != null
       || ordered.filter(x => x.id === purchase.id).length !== 1) {
       held += 1; bump(codes, 'PURCHASE_AUTHORITY_NOT_VERIFIED'); continue;
@@ -74,7 +79,7 @@ export function previewPurchaseAccessReadyRecovery({
     // Any prior purchase_access_ready row, even a failed or accepted one,
     // MUST prevent automated re-creation, regardless of its recipient.
     const prior = outbox.filter(x => x.message_id === 'purchase_access_ready'
-      && x.business_object_type === 'purchase' && x.business_object_id === purchase.id);
+      && x.business_object_id === purchase.id);
     if (prior.length) {
       existing += 1;
       if (prior.length > 1) bump(codes, 'MULTIPLE_EXISTING_OUTBOX_ROWS');

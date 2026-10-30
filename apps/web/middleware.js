@@ -33,13 +33,30 @@ export const config = {
     '/reports/weekly/:path*',
     '/reports/monthly/:path*',
     '/score/:path*',
+    '/internal/independent-macro-context/:path*',
   ],
 };
 
 export default async function learningAccessMiddleware(request) {
+  const url = new URL(request.url);
+  const pathname = normalizePath(url.pathname);
+  // Independent Macro Context #313 remains an UNRELEASED concept. A static
+  // Astro page and robots headers are not access control; deny requests
+  // before reaching the static file or any quiz/research entitlement path.
+  // Keep this unconditional until separate source-rights, owner, and
+  // access-architecture approval. This is not a member/owner login system.
+  const privateConcept = '/internal/independent-macro-context';
+  if (pathname === privateConcept || pathname.startsWith(`${privateConcept}/`)) {
+    return new Response(null, {
+      status: 404,
+      headers: {
+        'Cache-Control': 'private, no-store',
+        'X-Robots-Tag': 'noindex, nofollow',
+      },
+    });
+  }
   if (request.method !== 'GET' && request.method !== 'HEAD') return next();
 
-  const url = new URL(request.url);
   if (normalizePath(url.pathname) === '/research-membership') {
     url.pathname = '/research/';
     return Response.redirect(url, 301);

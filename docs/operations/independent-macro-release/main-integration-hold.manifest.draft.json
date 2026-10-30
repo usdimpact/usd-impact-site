@@ -167,6 +167,23 @@
     "productionCookieAndNetworkTraceCompleted": false,
     "releaseAuthorized": false
   },
+  "futureReleaseStatusInventoryDraft": {
+    "path": "docs/operations/independent-macro-release/first-weekly-publication-status-inventory-2026-10-31.draft.json",
+    "gitBlobSha": "b5924168238e155bf0e70ed57146b589308e8150",
+    "markerCount": 14,
+    "releaseStatusCopyApproved": false,
+    "publicRouteApprovalGranted": false
+  },
+  "optionalOwnerOperatedGovernanceAmendmentProposal": {
+    "path": "docs/operations/independent-macro-release/owner-operated-review-exception-proposal-2026-10-31.draft.md",
+    "gitBlobSha": "5bf6270c79ec22db1d42121dcce6ddc13f549fcd",
+    "proposedOnly": true,
+    "separateExplicitOwnerPolicyDecisionReceived": false,
+    "policyAmendedOrEffective": false,
+    "externalLegalObligationsWaived": false,
+    "qualifiedLegalAndPrivacyClearanceObtained": false,
+    "releaseAuthorized": false
+  },
   "siteShellAdaptationDraft": {
     "componentPath": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
     "componentGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",

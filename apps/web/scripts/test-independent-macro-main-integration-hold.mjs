@@ -146,7 +146,69 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      'research-grade claim validation cannot self-approve release/legal governance');
 }
 
-// Shared BaseLayout integration stays non-public. The approved standalone
+
+ // Offline inventory and INACTIVE governance proposal may never authorize a route.
+ {
+   const invText=from('../../../docs/operations/independent-macro-release/first-weekly-publication-status-inventory-2026-10-31.draft.json');
+   const inv=JSON.parse(invText);
+   const governanceText=from('../../../docs/operations/independent-macro-release/owner-operated-review-exception-proposal-2026-10-31.draft.md');
+   const invManifest=m.futureReleaseStatusInventoryDraft;
+   const proposal=m.optionalOwnerOperatedGovernanceAmendmentProposal;
+   eq(gitBlob(invText),invManifest.gitBlobSha,
+      'pin exact future publication-status inventory');
+   eq(gitBlob(governanceText),proposal.gitBlobSha,
+      'pin the proposed-only governance amendment');
+   eq(inv.scannedCommit,'66feffa2edc01b1a505c7c081672257098050762',
+      'inventory refers to exact frozen reviewed Draft');
+   eq(inv.approvedArticleBlobSha,gitBlob(html),
+      'inventory preserves original article source');
+   eq(inv.ownerReviewedSharedLayoutComponentBlobSha,m.siteShellAdaptationDraft.componentGitBlobSha,
+      'inventory records immutable owner-reviewed layout');
+   eq(inv.adapterBlobSha,m.siteShellAdaptationDraft.adapterGitBlobSha,
+      'inventory records immutable adapter');
+   eq(inv.disabledRouteBlobSha,gitBlob(route),
+      'inventory preserves disabled route');
+   eq(inv.markerCount,invManifest.markerCount,
+      'inventory marker count pinned');
+   eq(inv.markers.length,14,
+      'all identified publication-status hot spots inventoried');
+   const inspected={
+    'apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html':html,
+    'apps/web/src/components/IndependentMacroWeeklyDraftShell.astro':from('../src/components/IndependentMacroWeeklyDraftShell.astro'),
+    'apps/web/src/lib/independent-macro-weekly-draft-shell.mjs':from('../src/lib/independent-macro-weekly-draft-shell.mjs'),
+    'apps/web/src/pages/macro-reviews/weekly/[date].astro':route,
+   };
+   for(const marker of inv.markers) {
+     const input=inspected[marker.path];
+     ok(typeof input==='string' && marker.id && marker.futureAction &&
+       input.indexOf(marker.needle)>=0 &&
+       input.indexOf(marker.needle,input.indexOf(marker.needle)+marker.needle.length)<0,
+       'exact Draft publication-status marker remains pinned: '+marker.id);
+   }
+   ok(inv.originalArticleMustStayUnmodified &&
+      inv.releaseAuthorized===false &&
+      inv.publicationStatusCopyApproved===false &&
+      inv.newPublicRouteActivationApproved===false &&
+      inv.indexingAuthorized===false && !inv.originalScoreRightsGranted &&
+      inv.firstActualPublicationTimeUtc===null,
+      'publication-status inventory is non-executable and fail-closed');
+   ok(proposal.proposedOnly &&
+      !proposal.policyAmendedOrEffective &&
+      !proposal.separateExplicitOwnerPolicyDecisionReceived &&
+      !proposal.externalLegalObligationsWaived &&
+      !proposal.qualifiedLegalAndPrivacyClearanceObtained &&
+      !proposal.releaseAuthorized &&
+      !m.holds.qualifiedRomaniaEuInternationalDistributionApproved &&
+      !m.holds.finalLegalAndCompliancePass,
+      'proposed owner-led internal alternative cannot bypass original approval gates');
+   ok(governanceText.includes('**NOT SELECTED**') &&
+      governanceText.includes('**No activation action now.**') &&
+      governanceText.includes('**FALSE**') &&
+      governanceText.includes('**DENIED**'),
+      'governance proposal is inert and requires a new explicit decision');
+ }
+ 
+ // Shared BaseLayout integration stays non-public. The approved standalone
 // article remains unchanged, but the new presentation needs its own owner PASS.
 {
   const a=m.siteShellAdaptationDraft;

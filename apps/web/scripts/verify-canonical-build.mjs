@@ -32,7 +32,10 @@ if (!fs.existsSync(sitemapPath)) {
   // A noindex tag is not sufficient when the sitemap still advertises a draft.
   const candidateRoute = '/internal/independent-macro-context';
   if (locations.some((loc) => {
-    try { return (new URL(loc).pathname.replace(/\\/+$/, '') || '/') === candidateRoute; }
+    try {
+      const pathname = new URL(loc).pathname;
+      return (pathname.endsWith('/') ? pathname.slice(0, -1) : pathname) === candidateRoute;
+    }
     catch { return false; }
   })) failures.push('Unreleased Macro Context concept appears in sitemap.');
   if (!locations.length || locations.length !== [...xml.matchAll(/<url>/g)].length) {

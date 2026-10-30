@@ -106,5 +106,25 @@ jobs:
           } finally {
             Remove-Item Env:SUPABASE_SERVICE_ROLE_KEY
           }
+          # Positive path in CI uses ONLY a dummy PDF. Replace size/hash in a
+          # TEMPORARY copy of the candidate script; never weaken the repo copy.
+          $fixtureLength = (Get-Item -LiteralPath $probe).Length
+          $fixtureHash = (Get-FileHash -LiteralPath $probe -Algorithm SHA256).Hash.ToLowerInvariant()
+          $originalLength = '$expectedLength = [long]2281645'
+          $originalHash = "$" + "expectedSha256 = 'b96bf8cdc90a69112f367ef66dafe30b1e0fc2402edc43f249d8525db9fe3666'"
+          if (-not $source.Contains($originalLength) -or -not $source.Contains($originalHash)) {
+            throw 'Source exact size/hash constants changed unexpectedly'
+          }
+          $synthetic = $source.Replace($originalLength,('$expectedLength = [long]' + $fixtureLength))
+          $synthetic = $synthetic.Replace($originalHash,('$expectedSha256 = ' + "'" + $fixtureHash + "'"))
+          $fixtureScript = Join-Path $env:RUNNER_TEMP 'issue950-rest-envelope-fixture-only.ps1'
+          Set-Content -LiteralPath $fixtureScript -Value $synthetic -Encoding utf8
+          $markers = @(& $fixtureScript -SourcePdf $probe -DestinationProjectRef 'movnekagnxgcyenczfoc')
+          foreach ($marker in @('ISSUE950_LOCAL_REST_REQUEST_ENVELOPE_PASS','ISSUE950_NO_BROAD_SECRET_VARIABLES_PRESENT','ISSUE950_REDIRECT_BLOCKING_AVAILABLE','ISSUE950_NO_NETWORK_JWT_OR_STORAGE_WRITE_PERFORMED','ISSUE950_LIVE_RESTORE_STILL_NO_GO')) {
+            if ($markers -cnotcontains $marker) {
+              throw 'Synthetic REST envelope positive fixture did not reach expected no-network guard'
+            }
+          }
+          Remove-Item -LiteralPath $fixtureScript
           Remove-Item -LiteralPath $probe
-          Write-Output 'Issue950 REST client envelope negative fixtures PASS; no network, JWT, PDF upload, or secrets.'
+          Write-Output 'Issue950 REST client envelope positive/negative dummy fixtures PASS; no network, JWT, PDF upload, or secrets.'

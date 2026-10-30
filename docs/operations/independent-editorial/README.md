@@ -41,6 +41,12 @@ The proposed *independent* Weekly is a non-Score explanation of official release
 
 A future independent Monthly would use exactly the first four **separately published and rights-cleared independent Weeklies** in a consecutive completed-Friday sequence, with an independent source manifest and validator. As of October 30, there are **zero** such publications, hence **0/4**, not the legacy Monthly's 1/4. There is no calendar-month shortcut and no backdating or historical-score carry-forward. No earliest publish date is asserted.
 
+## Latest offline readiness audit — still blocked
+
+The draft validator now returns a separate read-only `readiness` section alongside its existing Weekly and Monthly results. It is computed **only from the pinned local October 30 Weekly, empty Monthly, and owner Draft decision JSON**, without consulting a website, market-data service, or external provider. The expected audit identifies **four dated official-outcome claims**, **three missing exact `sourceReleaseAt` timestamps** (`fomc-outcome-oct28`, `gdp-oct29`, `pce-oct29`), **six of six claims with source rights still pending**, and **zero of four actually published independent Monthly source Weeklies**. The BLS ECI claim has a release timestamp and linked later editorial receipt, but remains **rights-pending**. The audit additionally rejects any attempt to turn owner approval of names/access into source, Preview, merge, or Production authority. It always reports `HOLD_DRAFT_ONLY` / `releaseAuthorized:false`.
+
+This dated snapshot is a **blocker inventory, not a real-time source or legal approval monitor**. The three missing release times must be verified from legitimate existing receipts and independently reviewed before any separately authorized future publishing contract; never fabricate or retrospectively backdate. Current source-rights permissions and public-production decisions remain disallowed. Green GitHub quality tests are evidence of an internally consistent draft, not an authorization to publish.
+
 ## Required decisions before a separate release-stage PR
 
 - Legal/provider/source reviewer: clarify reuse terms for each *exact* Federal Reserve, BEA, BLS or other official release, allowed fact quotation/derivatives, commercial display, attribution, machine-readable format, snapshots and archives. Official government hosting or a Daily citation does not automatically settle every series or downstream use; no unapproved source fetch.

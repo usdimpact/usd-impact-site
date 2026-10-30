@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "usd-impact-independent-first-weekly-rights-privacy-evidence-v1-draft",
+  "preparedDate": "2026-10-30",
+  "scope": {
+    "repository": "usdimpact/usd-impact-site",
+    "pr": 1025,
+    "sourceArticleBlob": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "ownerApprovedPresentationCommit": "889c9da8a692e5c7f5a2935fc4096eced67f8204",
+    "edition": "independent_macro_education",
+    "language": "en"
+  },
+  "sourceItems": [
+    {
+      "id": "fed-october-calendar",
+      "url": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+      "policy": "https://www.federalreserve.gov/disclaimer.htm",
+      "finding": "October 27-28 2026 FOMC meeting scheduled",
+      "directRetrieved": true,
+      "issuerPolicyEvidence": "documented",
+      "articleUsesOnlyOriginalProseFactsAndLinks": true,
+      "sourceExpressionRehosted": false,
+      "agencySealOrThirdPartyAssetUsed": false,
+      "qualifiedInternationalRightsClearance": false
+    },
+    {
+      "id": "fed-fomc-statement-20261028",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+      "policy": "https://www.federalreserve.gov/disclaimer.htm",
+      "finding": "October 28 2 PM EDT, hold 3.75-4%, 10-2 vote",
+      "directRetrieved": true,
+      "issuerPolicyEvidence": "documented",
+      "articleUsesOnlyOriginalProseFactsAndLinks": true,
+      "sourceExpressionRehosted": false,
+      "agencySealOrThirdPartyAssetUsed": false,
+      "qualifiedInternationalRightsClearance": false
+    },
+    {
+      "id": "bea-gdp-q3-20261029",
+      "url": "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+      "policy": "https://www.bea.gov/help/faq/147",
+      "finding": "Oct 29 GDP Q3 3.4% SAAR after Q2 2.2% SAAR",
+      "directRetrieved": true,
+      "issuerPolicyEvidence": "documented",
+      "articleUsesOnlyOriginalProseFactsAndLinks": true,
+      "sourceExpressionRehosted": false,
+      "agencySealOrThirdPartyAssetUsed": false,
+      "qualifiedInternationalRightsClearance": false
+    },
+    {
+      "id": "bea-pce-sep-20261029",
+      "url": "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026",
+      "policy": "https://www.bea.gov/help/faq/147",
+      "finding": "Sep headline PCE 3.6% and core PCE 3.1% year-on-year, released Oct 29",
+      "directRetrieved": true,
+      "issuerPolicyEvidence": "documented",
+      "articleUsesOnlyOriginalProseFactsAndLinks": true,
+      "sourceExpressionRehosted": false,
+      "agencySealOrThirdPartyAssetUsed": false,
+      "qualifiedInternationalRightsClearance": false
+    },
+    {
+      "id": "bls-eci-q3-20261030",
+      "url": "https://www.bls.gov/news.release/archives/eci_10302026.htm",
+      "policy": "https://www.bls.gov/opub/copyright-information.htm",
+      "finding": "Oct 30 ECI civilian compensation 0.8% SA quarterly, 3.4% NSA annually",
+      "directRetrieved": false,
+      "verificationNote": "BLS official indexed archive and current ECI summary corroborate values; direct archive fetch failed in one web reader",
+      "issuerPolicyEvidence": "documented",
+      "articleUsesOnlyOriginalProseFactsAndLinks": true,
+      "sourceExpressionRehosted": false,
+      "agencySealOrThirdPartyAssetUsed": false,
+      "qualifiedInternationalRightsClearance": false
+    }
+  ],
+  "linkedDailyDates": [
+    "2026-10-26",
+    "2026-10-27",
+    "2026-10-28",
+    "2026-10-29",
+    "2026-10-30"
+  ],
+  "internationalReferences": [
+    "https://legislatie.just.ro/Public/DetaliiDocument/252971",
+    "https://www.usa.gov/government-copyright"
+  ],
+  "privacyReferences": [
+    "https://ans-extmail.dataprotection.ro/index.jsp?lang=en&page=Comunicat_Presa_26.06.2026",
+    "https://europa.eu/youreurope/business/growing/digitalising/online-privacy/index_en.htm",
+    "https://www.edpb.europa.eu/sme/find-practical-info/faq_en"
+  ],
+  "privacy": {
+    "currentConsentAndGa4SourceReviewed": true,
+    "visibleConsentUiOwnerPass": true,
+    "firstPartyConsentCookieVersion": "v1",
+    "productionNetworkRequestsBeforeConsentCertified": false,
+    "productionGa4AfterWithdrawalCertified": false,
+    "productionGaCookiesRemovedAfterWithdrawalCertified": false,
+    "productionFullTrackingHarCaptured": false,
+    "productionConfigurationEquivalentToIsolatedPreview": false,
+    "qualifiedGdprEprivacySignoff": false
+  },
+  "deniedAssetClasses": [
+    "agency-seals-and-logos",
+    "third-party-photos",
+    "copied-government-tables-and-pdfs",
+    "paid-market-returns-and-feeds",
+    "original-Score-assets",
+    "translations",
+    "rss",
+    "newsletter",
+    "downloadable-pdf"
+  ],
+  "reviewStatus": {
+    "itemSpecificThirdPartyExceptions": "pending",
+    "qualifiedRomaniaEuInternationalRights": "pending",
+    "qualifiedProductionPrivacyAndCookies": "pending",
+    "finalOwnerProductionRelease": "not_granted"
+  },
+  "releaseAuthorized": false,
+  "publicRouteAuthorized": false,
+  "mergeAuthorized": false,
+  "indexAuthorized": false,
+  "firstIndependentWeekliesPublished": 0,
+  "monthlyEligibleWeeks": 0
+}

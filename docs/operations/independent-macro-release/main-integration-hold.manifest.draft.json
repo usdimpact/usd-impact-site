@@ -150,6 +150,16 @@
     "Verify quality/build/CodeQL and Vercel target protections before any authorized Preview or Production",
     "After a separately approved live release record actual first publication timestamp and verify original Score remains held"
   ],
+  "firstWeeklyRightsAndPrivacyEvidenceDraft": {
+    "evidencePath": "docs/operations/independent-macro-release/first-weekly-source-rights-and-privacy-evidence-2026-10-30.draft.json",
+    "evidenceGitBlobSha": "f306a014c7bd1342fbb780b016bc71de065220fa",
+    "memoPath": "docs/operations/independent-macro-release/first-weekly-scope-limited-legal-and-production-privacy-review.draft.md",
+    "memoGitBlobSha": "a22501565cd219be65f2febcc42e087f3a00ad4f",
+    "sourceCount": 5,
+    "independentQualifiedLegalReviewCompleted": false,
+    "productionCookieAndNetworkTraceCompleted": false,
+    "releaseAuthorized": false
+  },
   "siteShellAdaptationDraft": {
     "componentPath": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
     "componentGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",

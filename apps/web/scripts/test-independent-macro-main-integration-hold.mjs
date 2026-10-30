@@ -275,6 +275,56 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
     'UI-only consent observation does not confer full tracking, legal or publication PASS');
 }
 
+// Exact-source legal/privacy review packet is only evidence: it grants NO rights.
+{
+  const packet=m.firstWeeklyRightsAndPrivacyEvidenceDraft;
+  ok(packet && packet.sourceCount===5,'narrow legal/privacy review packet exists');
+  const evidenceText=from('../../../docs/operations/independent-macro-release/first-weekly-source-rights-and-privacy-evidence-2026-10-30.draft.json');
+  const evidence=JSON.parse(evidenceText);
+  const memo=from('../../../docs/operations/independent-macro-release/first-weekly-scope-limited-legal-and-production-privacy-review.draft.md');
+  eq(gitBlob(evidenceText),packet.evidenceGitBlobSha,'exact evidence JSON Git blob');
+  eq(gitBlob(memo),packet.memoGitBlobSha,'exact qualified review memo Git blob');
+  eq(evidence.schemaVersion,'usd-impact-independent-first-weekly-rights-privacy-evidence-v1-draft',
+    'narrow five-item evidence schema');
+  eq(evidence.scope.sourceArticleBlob,gitBlob(html),'article source unchanged');
+  eq(evidence.sourceItems.length,5,'five official sources, no extra imports');
+  eq(evidence.sourceItems.map(x=>x.url),m.sources.officialSourceUrls,'five exact official URLs');
+  eq(evidence.linkedDailyDates,m.sources.originalPublishedDailyFiles.map(x=>x.date),
+    'five original Dailies and no additional source URLs');
+  ok(evidence.sourceItems.every(x=>x.policy.startsWith('https://') &&
+     x.sourceExpressionRehosted===false && x.agencySealOrThirdPartyAssetUsed===false &&
+     x.qualifiedInternationalRightsClearance===false &&
+     html.includes('href="'+x.url+'"')),
+     'facts-and-links-only evidence without legal grant or copied media');
+  ok(evidence.sourceItems[4].directRetrieved===false &&
+     evidence.sourceItems[4].verificationNote.includes('direct archive fetch failed'),
+     'do not manufacture independent BLS archive browser success');
+  ok(evidence.internationalReferences.length===2 &&
+     evidence.privacyReferences.length===3 &&
+     evidence.runtimePrivacyEvidence===undefined,
+     'specific cross-border and privacy sources without unrelated rights');
+  ok(evidence.privacy.currentConsentAndGa4SourceReviewed &&
+     !evidence.privacy.productionNetworkRequestsBeforeConsentCertified &&
+     !evidence.privacy.productionGa4AfterWithdrawalCertified &&
+     !evidence.privacy.productionGaCookiesRemovedAfterWithdrawalCertified &&
+     !evidence.privacy.productionFullTrackingHarCaptured &&
+     !evidence.privacy.qualifiedGdprEprivacySignoff,
+     'production network, cookie and legal clearance remain unproven');
+  ok(Object.values(evidence.reviewStatus).every(v=>v==='pending'||v==='not_granted') &&
+     !evidence.releaseAuthorized && !evidence.publicRouteAuthorized &&
+     !evidence.mergeAuthorized && !evidence.indexAuthorized &&
+     !packet.independentQualifiedLegalReviewCompleted &&
+     !packet.productionCookieAndNetworkTraceCompleted &&
+     !packet.releaseAuthorized &&
+     evidence.firstIndependentWeekliesPublished===0 && evidence.monthlyEligibleWeeks===0,
+     'all source/legal/release gates still closed');
+  ok(memo.includes('DRAFT / HOLD') && memo.includes('**HOLD**') &&
+     memo.includes('first-weekly-source-rights-and-privacy-evidence-2026-10-30.draft.json')===false &&
+     memo.includes('BLS ECI') && memo.includes('Privacy settings') &&
+     memo.includes('Independent published Weeklies: 0'),
+     'scoped counsel memo explicitly holds publisher decision and production tests');
+}
+
 const builtOutput = process.argv.includes('--built-output');
 if (builtOutput) {
   const dist = new URL('../dist/', import.meta.url);

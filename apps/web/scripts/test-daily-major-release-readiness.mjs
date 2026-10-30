@@ -6,6 +6,25 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assessDailyMajorReleaseCoverage } from '../src/lib/daily-major-release-readiness.js';
 
+
+// Catch operational clock errors near the Europe/Tirane daylight-saving cutover.
+// This is test-only: publisher event instants remain the UTC strings from issuer calendars.
+function clockInTirane(utcInstant) {
+  const fields = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Tirane', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date(utcInstant));
+  const p = Object.fromEntries(fields.map(({ type, value }) => [type, value]));
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`;
+}
+assert.equal(clockInTirane('2026-10-23T09:17:00Z'), '2026-10-23 11:17');
+assert.equal(clockInTirane('2026-10-30T09:17:00Z'), '2026-10-30 10:17');
+assert.equal(clockInTirane('2026-10-30T12:17:00Z'), '2026-10-30 13:17');
+assert.equal(clockInTirane('2026-10-30T12:30:00Z'), '2026-10-30 13:30');
+assert.equal(clockInTirane('2026-10-30T13:00:00Z'), '2026-10-30 14:00');
+assert.equal(clockInTirane('2026-10-30T15:47:00Z'), '2026-10-30 16:47');
+assert.equal(clockInTirane('2026-10-30T18:45:00Z'), '2026-10-30 19:45');
+
 const GDP = 'https://www.bea.gov/index.php/news/2026/gdp-advance-estimate-3rd-quarter-2026';
 const PCE = 'https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026';
 const SCHEDULE = 'https://www.bea.gov/news/schedule/full';

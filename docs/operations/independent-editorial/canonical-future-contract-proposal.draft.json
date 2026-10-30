@@ -8,7 +8,7 @@
     "fourWeeklyTitle": "USD Impact Four-Week Macro Review",
     "language": "en",
     "intendedFutureAccess": "free_public_educational",
-    "editorialInputs": "existing_published_verified_usd_impact_dailies_only",
+    "editorialInputs": "existing_published_verified_usd_impact_daily_editions_only",
     "fourWeeklyRule": "first_four_genuinely_published_consecutive_friday_independent_weeklies"
   },
   "technicalPreference": {

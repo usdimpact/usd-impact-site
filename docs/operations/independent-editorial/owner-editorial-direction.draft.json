@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "independent-editorial-owner-direction-draft-v1",
+  "recordedDate": "2026-10-30",
+  "decisionContext": "Explicit owner direction in ChatGPT conversation; recorded in Draft PR #1019",
+  "scope": "DRAFT_EDITORIAL_DIRECTION_ONLY",
+  "ownerDraftDirectionApproved": true,
+  "editorial": {
+    "weeklyWorkingTitle": "USD Impact Macro Weekly Review",
+    "fourWeeklyWorkingTitle": "USD Impact Four-Week Macro Review",
+    "language": "en",
+    "intendedFutureAccess": "free_public_educational",
+    "inputPolicy": "existing_published_verified_usd_impact_daily_editions_only",
+    "primarySourceUse": "direct_links_and_editorial_paraphrase_subject_to_independent_exact_item_rights_review",
+    "noScoreRegimeOrProviderMarketValueUse": true,
+    "monthlyRule": "first_four_consecutive_genuinely_published_independent_friday_weeklies_after_latest_independent_monthly"
+  },
+  "reportingAsOf": {
+    "date": "2026-10-30",
+    "independentPublishedWeeklyCount": 0,
+    "independentMonthlyEligible": false,
+    "independentOctober30WeeklyStatus": "DRAFT_NOT_PUBLISHED"
+  },
+  "authorizations": {
+    "draftNaming": true,
+    "draftLanguage": true,
+    "draftFreePublicDirection": true,
+    "draftPublishedDailySourceDirection": true,
+    "draftFourWeeklyMonthlyRule": true,
+    "exactItemCommercialSourceRights": false,
+    "internationalReuseAndRetentionRights": false,
+    "finalPublicBrandAndReleaseContract": false,
+    "previewDeployment": false,
+    "mergeToProtectedMain": false,
+    "publicPublication": false,
+    "productionDeployment": false,
+    "scoreRightsGateModification": false,
+    "legacyScoreDerivedUse": false,
+    "newProviderDataFetch": false,
+    "paidMarketDataLicense": false
+  },
+  "unresolved": [
+    "Exact source-item third-party/commercial/international reuse, attribution, and retention approvals",
+    "Publication timestamps and later editorial receipts for each official outcome",
+    "Whether a permanent Weekly must always include five weekday Dailies and how to handle holidays or missing Dailies",
+    "Single final independent schema and independently authenticated publisher receipts; PR #1019 and #1020 are incompatible draft contracts",
+    "Final routes, audience implementation, indexing, preview QA and separate owner Production authorization"
+  ],
+  "existingHolds": {
+    "originalSiteAndPipelineScoreRights": "HOLD",
+    "independentEditorialRights": "HOLD",
+    "independentWeeklyAndMonthlyPublication": "HOLD",
+    "production": "HOLD"
+  },
+  "linkedDraftPrs": [
+    1019,
+    1020
+  ],
+  "executableActivation": false,
+  "productionRuntimeUsesThisFile": false
+}

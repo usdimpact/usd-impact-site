@@ -76,6 +76,39 @@ The working titles, English editorial language, intended free/public audience, p
 
 No mandatory hosting, DNS, account, paid-license or manual GitHub action is necessary to record the decisions in this packet. The remaining meaningful manual activity is the scoped rights review below. Keep both PRs **Draft/unmerged**.
 
+## Narrowest zero-new-market-data-license use case for qualified review
+
+**Recommendation, not permission:** for a future **single English-language, free educational webpage**, consider only (a) USD Impact's *independently written* explanations, (b) accurately characterized released public macro facts already included in a version-pinned published Daily, and (c) direct, source-specific hyperlinks with issuer attribution. Avoid copied release passages, tables, charts, figures, logos, government seals, licensed index/market observations, raw vendor numerical feeds, automated source downloads and historical Score inputs. Do not assume facts and full-source expressive presentations are licensed identically. **Do not publish this candidate until exact-item and relevant international/retention rights have been assessed.**
+
+The planned *first use* should be deliberately narrower than a multi-channel product:
+
+| Medium / practice | Draft recommendation | Separate later signoff |
+| --- | --- | --- |
+| One original English educational webpage | Proposed as lowest-rights-footprint *future* format; still HOLD | Exact-item authorship/exceptions, local/EU-facing publication and attributions |
+| Direct links to official issuer releases | Proposed; no implication of agency endorsement | Check each exact URL and the site's linking notice |
+| Screenshot, chart, table image, agency logo or copy of source HTML/PDF | **Exclude by default** | Require separately scoped source-content and mark permissions |
+| Market-price tables, licensed USD/DXY/WTI/SPX/VIX data or original Score | **Exclude entirely** from this alternate product | Not cleared by any U.S. government notice |
+| Newsletter, email, RSS, downloadable PDF, member bundle | **Hold pending separate distribution scope** | Rights/format, retention, subscriber delivery and post-publication amendments |
+| Translation (Spanish/Portuguese) and archive/backups of third-party material | **Hold pending separate scope** | Cross-border/translation and retention review |
+| Automation or provider endpoints (including new agency numerical series) | **No fetching in the current scope** | New explicit authority, permitted transport/data rights and controlled storage |
+
+A source reviewer should use the **five-item [exact-use worksheet](pilot-exact-source-rights-worksheet.draft.json)**, the corresponding [policy evidence](official-source-reuse-policy-evidence.draft.json), and the [two-PR crosswalk](cross-pr-exact-source-rights-map.draft.json). The general government-agency public-domain notices are favorable context but are **not an owner/legal receipt** for these specific releases, protected third-party elements, or Romanian/EU/LATAM distribution.
+
+### Exact release chronology — do not confuse four distinct timestamps
+
+1. **Scheduled announcement time** (the planned FOMC / BEA / BLS release time) is useful chronological context, but is not independently verified server publication.
+2. **Official issuer-issued time**, if the release itself explicitly identifies it, may be independently recorded with the **exact release URL and evidence**; this is not necessarily the first live HTTP posting time.
+3. **Original Daily `generatedAt`** is the initial automation timestamp and may precede the official release; never rewrite it to resemble a later editorial result.
+4. **Later editorial correction/review time** proves subsequent handling of the claim when tied to the exact Daily Git blob/PR review, **not** that the issuer published at that precise moment, nor that a source license was granted.
+
+The [timing worksheet](pilot-release-timing-evidence.draft.json) now keeps the FOMC, GDP and PCE *actual issuer website posting* fields null, and **also keeps the BLS actual website posting field null**. The BLS Daily/Weekly still records its separately approved **12:30 UTC official issue-time context and later editorial PASS**. Thus, the source-pinned Weekly's three missing `sourceReleaseAt` fields remain null; no existing approved Daily source is rewritten. Whether a future publication needs the **official issuer-issued time** rather than an exact website server log is a methodology/evidence-policy decision for the future approved release contract.
+
+### Evidence a reviewer should return (no credentials or proprietary data)
+
+For each of the five exact URLs: `sourceId`, actual reviewed URL, agency/third-party authorship finding, allowed use media (original English educational webpage versus additional formats), attribution text and no-endorsement wording, excluded graphics/marks/tables, geographic treatment, permitted link-out/archive/translation use, a dated human reviewer/decision authority, decision basis and a persistent evidence reference. **If uncertain, mark PENDING instead of interpreting silence as approval.** An approval of one media/jurisdiction does not approve every distribution channel.
+
+This packet is an **issue-spotting checklist**, not a legal opinion or a demand that a paid data subscription be bought. If a qualified local rights assessment is unavailable, preserve the release HOLD instead of promoting a draft into a live product.
+
 ## Manual rights check (owner or qualified reviewer)
 
 1. Open each of the **five distinct official primary items** listed above and the matched agency notice. Verify whether the exact issuer-authored textual material carries a third-party notice, embedded protected chart, photo, logo or redistribution condition; **do not copy raw economic series or imagery**. Record exact source URL, human reviewer, review date, permitted *type* of use, and relevant notice in a private decision log.

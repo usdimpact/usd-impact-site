@@ -1,0 +1,41 @@
+name: Account deletion request canonical Auth link - isolated
+
+on:
+  pull_request:
+    paths:
+      - 'docs/operations/candidates/account-deletion-atomic-claim.review.sql'
+      - 'apps/web/scripts/test-account-deletion-request-canonical-auth-link.mjs'
+      - '.github/workflows/account-deletion-request-auth-link-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  deny-stale-identity-request:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install locked development fixtures
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: No live secrets or Auth Admin actions
+        run: |
+          test -z "${SUPABASE_SECRET_KEY:-}"
+          test -z "${SUPABASE_SERVICE_ROLE_KEY:-}"
+          test -z "${RESEND_API_KEY:-}"
+          test -z "${CRON_SECRET:-}"
+          node --check scripts/test-account-deletion-request-canonical-auth-link.mjs
+          node scripts/test-account-deletion-request-canonical-auth-link.mjs

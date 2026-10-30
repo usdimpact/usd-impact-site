@@ -43,6 +43,18 @@ await handleAudiobookRequest(request('', { authenticated: true }), denied, { rea
 assert.equal(denied.statusCode, 302);
 assert.match(denied.getHeader('location'), /reason=refunded/);
 
+// Deletion must stop minting new private Storage capabilities while a
+// browser may still hold a stale auth cookie or previously issued signed URL.
+let afterDeleteAudioSigningCalls=0;
+const deletedTrack=response();
+await handleAudiobookRequest(request('track/read-the-dollar-first',{authenticated:true}),deletedTrack,{
+  readAccessState:async()=>({allowed:false,reason:'deleted'}),
+  createSignedUrl:async()=>{afterDeleteAudioSigningCalls++;throw new Error('signer forbidden');},
+});
+assert.equal(afterDeleteAudioSigningCalls,0);
+assert.equal(deletedTrack.statusCode,302);
+assert.match(deletedTrack.getHeader('cache-control'),/no-store/);
+
 const eligible = response();
 await handleAudiobookRequest(request('', { authenticated: true }), eligible, { readAccessState: async () => ({ allowed: true }) });
 assert.equal(eligible.statusCode, 200);

@@ -20,7 +20,7 @@ import {
   COMMERCE_READINESS_STATES,
   resolveCommerceReadiness,
 } from './commerce-provider.js';
-import { deliverPurchaseAccessReadyEmail } from './purchase-access-ready-email.js';
+import { attemptNonBlockingPurchaseAccessReadyEmail } from './purchase-access-ready-email.js';
 import { readSupabaseServerConfig } from './supabase-server.js';
 
 const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
@@ -1035,7 +1035,10 @@ export async function processLemonSqueezyWebhook({
         occurredAt: event.occurredAt || new Date(now).toISOString(),
         fetchImpl,
       });
-      await deliverPurchaseAccessReadyEmail({
+      // Paid entitlement and account identity were verified above. Email is
+      // secondary: a ledger/provider HOLD must not fail the commercial receipt
+      // or cause Lemon Squeezy to replay a successfully granted purchase.
+      await attemptNonBlockingPurchaseAccessReadyEmail({
         accessResult,
         ledgerFetchImpl: fetchImpl,
         providerFetchImpl: fetchImpl,

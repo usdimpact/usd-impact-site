@@ -1,5 +1,13 @@
 import assert from 'node:assert/strict';
 import {
+  attemptNonBlockingPurchaseAccessReadyEmail,
+} from '../src/lib/purchase-access-ready-email.js';
+import {
+  renderPurchaseAccessReadyLocalePreview,
+  resolveVerifiedAccessReadyLocale,
+} from '../src/lib/purchase-access-ready-locale-preview.js';
+import { readFile } from 'node:fs/promises';
+import {
   PURCHASE_ACCESS_READY_EMAIL_BUSINESS_OBJECT_TYPE,
   PURCHASE_ACCESS_READY_EMAIL_MESSAGE_ID,
   createPurchaseAccessReadyEmailIntent,
@@ -236,5 +244,121 @@ await assert.rejects(
 );
 assert.equal(unapprovedDispatchNetworkCalls, 0);
 assert.equal(providerCalls, 0);
+
+
+
+// Owner-approved contract: a secondary notification must not turn an already
+// verified and granted purchase into a failed webhook receipt. Synthetic only.
+const errorsLogged = [];
+const heldNotification = await attemptNonBlockingPurchaseAccessReadyEmail({
+  accessResult,
+  deliveryImpl: async () => {
+    const error = new Error('recipient and secret values must never enter the log');
+    error.code = 'PRODUCTION_LEDGER_NOT_APPROVED';
+    throw error;
+  },
+  reportImpl: (message, metadata) => errorsLogged.push({ message, metadata }),
+});
+assert.deepEqual(heldNotification, { status: 'hold', code: 'PRODUCTION_LEDGER_NOT_APPROVED' });
+assert.equal(errorsLogged.length, 1);
+assert.deepEqual(errorsLogged[0].metadata, { code: 'PRODUCTION_LEDGER_NOT_APPROVED' });
+assert.doesNotMatch(JSON.stringify(errorsLogged), /recipient and secret values/);
+
+const unreachableLogger = await attemptNonBlockingPurchaseAccessReadyEmail({
+  accessResult,
+  deliveryImpl: async () => {
+    throw new Error('unknown provider failure');
+  },
+  reportImpl: () => { throw new Error('logger unavailable'); },
+});
+assert.deepEqual(unreachableLogger, {
+  status: 'hold',
+  code: 'PURCHASE_ACCESS_READY_NOTIFICATION_UNAVAILABLE',
+});
+
+const nonBlockingDisabled = await attemptNonBlockingPurchaseAccessReadyEmail({
+  accessResult,
+  environment: {},
+  ledgerFetchImpl: async () => { throw new Error('disabled must not call a network'); },
+  providerFetchImpl: async () => { throw new Error('disabled must not call a network'); },
+  reportImpl: () => { throw new Error('disabled must not warn'); },
+});
+assert.deepEqual(nonBlockingDisabled, { status: 'dispatch_disabled' });
+
+const acceptedButNotDelivered = await attemptNonBlockingPurchaseAccessReadyEmail({
+  accessResult,
+  deliveryImpl: async () => ({ enabled: true, state: { enabled: true }, delivery: { action: 'accepted' } }),
+  reportImpl: () => { throw new Error('accepted result must not warn'); },
+});
+assert.deepEqual(acceptedButNotDelivered, { status: 'delivery_attempted' });
+
+// Read/identity verification remains OUTSIDE the secondary email failure
+// boundary: it is required before invoking the non-blocking notification.
+const commerceRuntimeSource = await readFile(
+  new URL('../src/lib/lemon-squeezy-commerce-runtime.js', import.meta.url),
+  'utf8',
+);
+assert.match(
+  commerceRuntimeSource,
+  /const accessResult = await readCommerceAccessReadyResult\([\s\S]*?await attemptNonBlockingPurchaseAccessReadyEmail\(/,
+);
+assert.doesNotMatch(commerceRuntimeSource, /await deliverPurchaseAccessReadyEmail\(/);
+
+// Localized copy is REVIEW ONLY; there is currently no verified customer
+// language column and no locale snapshot in the durable outbox.
+assert.deepEqual(resolveVerifiedAccessReadyLocale(), {
+  state: 'fallback', locale: 'en', reason: 'no_verified_preference',
+});
+assert.deepEqual(resolveVerifiedAccessReadyLocale({ locale: 'es-419', source: 'verified_account' }), {
+  state: 'ready', locale: 'es', reason: 'verified_account',
+});
+assert.deepEqual(resolveVerifiedAccessReadyLocale({ locale: 'en-US', source: 'verified_account' }), {
+  state: 'ready', locale: 'en', reason: 'verified_account',
+});
+assert.deepEqual(resolveVerifiedAccessReadyLocale({ locale: 'pt-BR', source: 'verified_account' }), {
+  state: 'hold', locale: null, reason: 'portuguese_publication_hold',
+});
+assert.throws(
+  () => resolveVerifiedAccessReadyLocale({ locale: 'es', source: 'resend_segment' }),
+  (error) => error.code === 'UNTRUSTED_PURCHASE_LOCALE_SOURCE',
+);
+assert.throws(
+  () => resolveVerifiedAccessReadyLocale({ locale: 'de-DE', source: 'verified_account' }),
+  (error) => error.code === 'UNSUPPORTED_PURCHASE_LOCALE',
+);
+const englishPreview = renderPurchaseAccessReadyLocalePreview({ reference: 'PURCHASE_01' });
+assert.equal(englishPreview.locale, 'en');
+assert.equal(englishPreview.previewOnly, true);
+assert.equal(englishPreview.canDispatch, false);
+assert.match(englishPreview.html, /<html lang="en">/);
+
+const spanishPreview = renderPurchaseAccessReadyLocalePreview({
+  reference: 'PURCHASE_02', locale: 'es-MX', source: 'verified_account',
+});
+assert.equal(spanishPreview.locale, 'es');
+assert.equal(spanishPreview.previewOnly, true);
+assert.equal(spanishPreview.canDispatch, false);
+assert.equal(spanishPreview.classification, 'transactional');
+assert.match(spanishPreview.html, /<html lang="es">/);
+assert.match(spanishPreview.text, /Tu acceso al Library Pass está listo/);
+assert.match(spanishPreview.html, /https:\/\/www\.usd-impact\.com\/account\//);
+assert.doesNotMatch(spanishPreview.html, /List-Unsubscribe|siguiendoeldollar\.com|seguindoodolar\.com/i);
+assert.doesNotMatch(spanishPreview.text, /suscríbete|promoción|oferta limitada/i);
+assert.equal('headers' in spanishPreview, false);
+assert.deepEqual(
+  renderPurchaseAccessReadyLocalePreview({
+    reference: 'PURCHASE_03', locale: 'pt', source: 'verified_account',
+  }),
+  {
+    previewOnly: true, canDispatch: false, state: 'hold',
+    locale: null, reason: 'portuguese_publication_hold',
+  },
+);
+assert.throws(
+  () => renderPurchaseAccessReadyLocalePreview({
+    reference: '<script>', locale: 'es', source: 'verified_account',
+  }),
+  (error) => error.code === 'INVALID_PURCHASE_REFERENCE',
+);
 
 console.log('Purchase access-ready email tests passed.');

@@ -26,6 +26,7 @@ Owner decision: [Issue #950, comment 6527985148](https://github.com/usdimpact/us
 * **Offline SQL scope tests:** PASS at [Draft #1011](https://github.com/usdimpact/usd-impact-site/pull/1011) once exact-head CI has completed; **rerun after any source change**
 * **Target project state:** READ-ONLY PASS at last check (21 Library rows; two private buckets; zero temporary Storage policies/users; no pending deletions), **RECHECK immediately before live execution**
 * **PDF actual bytes:** PASS in the current owner-provided private copy; **RECHECK on operator workstation immediately before any request**
+* **Read-only owner workstation file check:** Available as a new PowerShell 5.1+ script, **not yet executed on the owner's machine**. CI validates synthetic negative cases only; it cannot substitute for the owner checking real private bytes.
 * **DB host binding available:** READ-ONLY PASS that `inet_server_addr()` is non-null; matching private fingerprint not attested or installed; do not print host details or private substitute values in GitHub
 * **Protected local operator client:** **NOT READY / NOT VERIFIED**. Must prove a client that cannot target Production or a second object and securely handles JWT
 * **Synthetic Auth user:** **NOT CREATED**. Must be a noncustomer account in the isolated restore, with admin-only `app_metadata` marker, application profile suspended, and zero entitlements; never co-opt an existing customer/user. No credentials in chat/issues/CI
@@ -40,7 +41,15 @@ Owner decision: [Issue #950, comment 6527985148](https://github.com/usdimpact/us
 
 1. Use the [isolated restore Dashboard](https://supabase.com/dashboard/project/movnekagnxgcyenczfoc) to recheck the project identifier. Cross-check through a separately obtained authorized project reference. Never trust the dashboard's generic branch/status label alone.
 2. In [restore Storage](https://supabase.com/dashboard/project/movnekagnxgcyenczfoc/storage/buckets) and [restore Auth](https://supabase.com/dashboard/project/movnekagnxgcyenczfoc/auth/users), **inspect only** until the exact readiness gates are satisfied; no upload, object delete, user creation or policy installation now.
-3. On the owner's private Windows machine, verify the source file size and hash using built-in PowerShell. Example with the actual local path substituted privately (do not post the file or its path if it identifies personal directories):
+3. On the owner's private Windows machine, use the **read-only local source preflight** [`issue950-pdf-only-offline-source-preflight.review.ps1`](../candidates/issue950-pdf-only-offline-source-preflight.review.ps1) from this exact protected Draft head. This uses built-in Windows PowerShell 5.1+ and **does not create tokens or make network requests**. It rejects the wrong project ref, missing file, wrong extension, wrong byte length, or SHA-256 mismatch. Run it only with the PDF held privately on the protected machine; do not paste the full local path into issues or ChatGPT:
+
+   ```powershell
+   & '.\\issue950-pdf-only-offline-source-preflight.review.ps1' -SourcePdf 'C:\\Path\\To\\Authorized\\Book.pdf' -DestinationProjectRef 'movnekagnxgcyenczfoc'
+   ```
+
+   Expected successful output includes `ISSUE950_LOCAL_SOURCE_SHA256_PASS`, `ISSUE950_DESTINATION_PARAMETER_PIN_PASS`, `ISSUE950_NO_NETWORK_OR_WRITE_ACTION_PERFORMED` and `ISSUE950_LIVE_RESTORE_STILL_NO_GO`. The `DestinationProjectRef` flag checks only the **operator-supplied text parameter**, not the identity of any live network connection. The script is not an authenticated uploader, does not verify a JWT, and cannot convert the live-operation NO-GO into GO.
+
+   Alternative one-off built-in PowerShell commands (if you cannot acquire the script from the exact Draft head), with the actual local path substituted privately:
    ```powershell
    $f = 'C:\Path\To\Authorized\Book.pdf'
    $size = (Get-Item -LiteralPath $f).Length

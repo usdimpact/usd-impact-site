@@ -1,0 +1,44 @@
+name: Independent Macro Weekly candidate — Draft-only QA
+
+on:
+  pull_request:
+    branches:
+      - agent/independent-editorial-reports-2026-10-30
+    paths:
+      - "apps/web/src/data/independent-macro-review/**"
+      - "apps/web/src/pages/macro-reviews/weekly/**"
+      - "apps/web/scripts/test-independent-macro-release-candidate*.mjs"
+      - "apps/web/package.json"
+      - "docs/operations/independent-editorial/release-candidate*"
+      - ".github/workflows/independent-macro-release-candidate-draft-qa.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-not-published:
+    name: Draft candidate QA — route absent
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout exact PR merge for validation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Use Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install reviewed lockfile only
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Verify source, rights and candidate route remain withheld
+        run: npm run validate:reports
+      - name: Build without releasing a page
+        run: npm run build
+      - name: Verify emitted files are still private-by-absence
+        run: node scripts/test-independent-macro-release-candidate-build.mjs

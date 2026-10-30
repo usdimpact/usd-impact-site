@@ -396,4 +396,48 @@ function syntheticPriorMonthly(weekOffset = 0) {
     ['fomc-outcome-oct28', 'gdp-oct29', 'pce-oct29']);
   tests += 21;
 }
+// Agency notices are public-domain policy *context* only. The exact-source
+// rights worksheet stays all-deny, and no publishing permission is inferred.
+{
+  const policy = JSON.parse(fs.readFileSync(
+    path.join(DRAFT_DIR, 'official-source-reuse-policy-evidence.draft.json'), 'utf8'));
+  const rights = JSON.parse(fs.readFileSync(
+    path.join(DRAFT_DIR, 'pilot-exact-source-rights-worksheet.draft.json'), 'utf8'));
+  assert.equal(policy.schemaVersion, 'independent-weekly-policy-evidence-v0-draft');
+  assert.equal(policy.reviewedPoliciesOnly, true);
+  assert.equal(policy.marketDataObservationEndpointsQueried, false);
+  assert.equal(policy.exactItemRightsOrPermissionsReviewed, false);
+  assert.equal(policy.rightsAuthorized, false);
+  assert.equal(policy.publishingAuthorized, false);
+  assert.equal(policy.publicationStatus, 'HOLD_DRAFT_ONLY');
+  assert.equal(policy.internationalCaution.romanianEuLatamUseDecision, 'PENDING');
+  const claimed = new Map(weekly.claims.map((claim) => [claim.id, claim]));
+  const pinnedRights = new Map(rights.sourceItems.map((source) => [source.sourceId, source]));
+  assert.equal(policy.sourceItems.length, pinnedRights.size);
+  assert.equal(policy.sourceItems.length, 5);
+  assert.equal(new Set(policy.sourceItems.map((item) => item.sourceId)).size, 5);
+  for (const item of policy.sourceItems) {
+    const source = pinnedRights.get(item.sourceId);
+    assert.ok(source, 'policy source not found in rights worksheet');
+    assert.equal(item.exactPinnedItemUrl, source.exactSourceUrl);
+    assert.deepEqual([...item.claimIds].sort(), [...source.sourceClaims].sort());
+    assert.equal(item.policyIndicatesGeneralAgencyTextMayBeReusable, true);
+    assert.equal(item.exactItemCheckedForExceptions, false);
+    assert.equal(item.publicSiteCommercialContextReviewed, false);
+    assert.equal(item.crossBorderUseReviewed, false);
+    assert.equal(item.translationOrStorageReviewed, false);
+    assert.equal(item.scopeSpecificApproval, false);
+    assert.equal(item.permissionToPublish, false);
+    assert.equal(item.legalOrOwnerReceipt, null);
+    assert.ok(Object.values(source.rightsChecks).every((granted) => granted === false));
+    assert.match(item.policyEvidence.publicNoticeUrl, /^https:\/\//);
+    for (const claimId of item.claimIds) {
+      const claim = claimed.get(claimId);
+      assert.ok(claim && claim.sourceId === item.sourceId,
+        'policy may cite only claims in verified source-pinned Weekly');
+    }
+  }
+  tests += 20;
+}
+
 console.log('Independent editorial offline draft contract: ' + tests + ' assertions passed (never release-ready).');

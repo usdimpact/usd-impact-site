@@ -5,6 +5,7 @@ on:
     paths:
       - 'docs/operations/candidates/issue950-s3-jwt-session-*.review.sql'
       - 'docs/operations/candidates/issue950-pdf-only-*.review.sql'
+      - 'docs/operations/candidates/issue950-pdf-only-offline-source-preflight.review.ps1'
       - 'docs/operations/issue950-pdf-only-restore-upsert-pilot-review-2026-10-30.md'
       - 'docs/operations/issue950-owner-operated-single-pdf-go-no-go-2026-10-30.md'
       - 'apps/web/scripts/test-issue950-scoped-s3-jwt-rls-pglite.mjs'
@@ -49,3 +50,25 @@ jobs:
           node --check scripts/test-issue950-scoped-s3-jwt-rls-pglite.mjs
           node scripts/test-issue950-scoped-s3-jwt-rls-pglite.mjs
           node scripts/test-account-deletion-review-only-activation.mjs
+      - name: Offline owner PDF preflight must fail closed without original file
+        shell: pwsh
+        run: |
+          $probe = Join-Path $env:RUNNER_TEMP 'issue950-fixture-not-real.pdf'
+          $script = Join-Path $env:GITHUB_WORKSPACE 'docs/operations/candidates/issue950-pdf-only-offline-source-preflight.review.ps1'
+          Set-Content -LiteralPath $probe -Value '%PDF-1.4 disposable fake content' -Encoding ascii
+          function MustStop([string] $source, [string] $project, [string] $expect) {
+            $actual = $null
+            try {
+              & $script -SourcePdf $source -DestinationProjectRef $project | Out-Null
+            } catch {
+              $actual = $_.Exception.Message
+            }
+            if ($actual -cne $expect) {
+              throw 'Offline preflight did not stop at the expected validation gate'
+            }
+          }
+          MustStop $probe 'gjzetjugmnwanvjkchux' 'STOP: destination project ref is not the isolated restore'
+          MustStop ($probe + '.missing') 'movnekagnxgcyenczfoc' 'STOP: local PDF source file is missing'
+          MustStop $probe 'movnekagnxgcyenczfoc' 'STOP: PDF size mismatch'
+          Remove-Item -LiteralPath $probe
+          Write-Output 'Issue950 PowerShell wrong-project/missing-source/wrong-byte negative fixtures PASS; zero network calls.'

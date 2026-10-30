@@ -282,4 +282,44 @@ function syntheticPriorMonthly(weekOffset = 0) {
     /cannot count imaginary/);
 }
 
+// Five *exact* primary-source URLs used in six source-pinned Daily claims.
+// This worksheet is reviewer preparation and cannot authorize reuse.
+{
+  const worksheet = JSON.parse(fs.readFileSync(
+    path.join(DRAFT_DIR, 'pilot-exact-source-rights-worksheet.draft.json'), 'utf8'));
+  assert.equal(worksheet.schemaVersion, 'independent-weekly-exact-source-worksheet-draft-v1');
+  assert.equal(worksheet.status, 'HOLD_PENDING_QUALIFIED_EXACT_ITEM_REVIEW');
+  assert.equal(worksheet.sourceItemCount, 5);
+  assert.equal(worksheet.claimCount, 6);
+  assert.equal(worksheet.sourceRetrievalPerformed, false);
+  assert.equal(worksheet.permittedByThisRecord, false);
+  assert.equal(worksheet.releaseAuthorized, false);
+  const bySource = new Map(worksheet.sourceItems.map((source) => [source.sourceId, source]));
+  assert.equal(bySource.size, 5, 'source IDs must be unique');
+  const byDate = new Map(weekly.sourceEditions.map((daily) => [daily.date, daily.gitBlobSha]));
+  for (const claim of weekly.claims) {
+    const source = bySource.get(claim.sourceId);
+    assert.ok(source, 'exact source worksheet item required: ' + claim.sourceId);
+    assert.equal(source.exactSourceUrl, claim.sourceUrl, 'pinned URL must match original Daily claim');
+    assert.ok(source.sourceClaims.includes(claim.id), 'claim must be explicitly mapped');
+    assert.ok(source.sourceDailyEvidence.some(
+      (daily) => daily.date === claim.sourceEditionDate &&
+        daily.gitBlobSha === byDate.get(claim.sourceEditionDate)
+    ), 'source evidence must match already published pinned Daily blob');
+  }
+  for (const source of worksheet.sourceItems) {
+    assert.equal(source.currentDisposition, 'EXACT_ITEM_REUSE_REVIEW_PENDING');
+    assert.equal(source.reviewerName, null);
+    assert.equal(source.reviewedAtUtc, null);
+    assert.equal(source.decisionAuthority, null);
+    assert.equal(source.scopedReceiptUrl, null);
+    assert.equal(source.authorizationForPublication, false);
+    assert.equal(Object.keys(source.rightsChecks).length, 9);
+    assert.ok(Object.values(source.rightsChecks).every((value) => value === false));
+    assert.deepEqual(source.sourceClaims.slice().sort(),
+      weekly.claims.filter((claim) => claim.sourceId === source.sourceId)
+        .map((claim) => claim.id).sort(), 'worksheet claims must exactly match real pilot claims');
+  }
+  tests += 16;
+}
 console.log('Independent editorial offline draft contract: ' + tests + ' assertions passed (never release-ready).');

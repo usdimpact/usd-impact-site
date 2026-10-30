@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { SPANISH_PUBLIC_NAVIGATION } from '../src/lib/site-navigation.js';
 import {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,
@@ -86,6 +87,32 @@ const [
   readFile(new URL('../src/pages/[...slug].astro', import.meta.url), 'utf8'),
   readFile(new URL('../src/pages/index.astro', import.meta.url), 'utf8'),
 ]);
+
+// The Spanish web remains exactly five educational routes. The only
+// additional navigation item is a transparent shortcut to EN member content.
+const fiveApprovedSpanishNavPaths = [
+  '/es/',
+  '/es/start-here/',
+  '/es/dollar-framework/',
+  '/es/framework/dollar-transmission-chain/',
+  '/es/framework/three-dial-dashboard/',
+];
+assert.deepEqual(
+  SPANISH_PUBLIC_NAVIGATION.filter((link) => link.href.startsWith('/es/')).map((link) => link.href),
+  fiveApprovedSpanishNavPaths,
+);
+const englishBridges = SPANISH_PUBLIC_NAVIGATION.filter((link) => !link.href.startsWith('/es/'));
+assert.equal(englishBridges.length, 1);
+assert.equal(englishBridges[0].href, '/guided-edition/');
+assert.equal(englishBridges[0].label, 'Biblioteca (EN)');
+assert.equal(englishBridges[0].destinationLocale, 'en');
+assert.match(englishBridges[0].accessibilityLabel, /en inglés/);
+assert.equal(Object.isFrozen(englishBridges[0]), true);
+assert.match(baseLayout, /hreflang=\{link\.destinationLocale\}/);
+assert.match(baseLayout, /aria-label=\{link\.accessibilityLabel\}/);
+assert.match(spanishHome, /\[abrir la Biblioteca en inglés\]\(\/guided-edition\/\)/);
+assert.match(spanishHome, /Este enlace no habilita el libro/);
+assert.doesNotMatch(spanishHome, /\/es\/guided-edition\//);
 
 assert.match(baseLayout, /<html lang=\{locale\}>/);
 assert.match(baseLayout, /requestedLocale = 'en'/);

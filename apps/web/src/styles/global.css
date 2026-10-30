@@ -363,3 +363,13 @@ main { padding: 56px 0; }
   .audiobook-speed { margin-left: 0; }
   .audiobook-about { grid-template-columns: 1fr; }
 }
+
+/* Spanish header includes a link to the English Library. Collapse at
+   tablet widths to prevent overflow; leave English navigation unchanged. */
+@media (min-width: 761px) and (max-width: 1180px) {
+  html[lang="es"] .header-inner { flex-wrap: wrap; gap: 10px; }
+  html[lang="es"] .nav-toggle { display: inline-flex; margin-left: auto; }
+  html[lang="es"] .nav { display: none; width: 100%; flex-direction: column; align-items: stretch; gap: 4px; padding-top: 6px; }
+  html[lang="es"] .nav[data-open="true"] { display: flex; }
+  html[lang="es"] .nav-direct { width: 100%; justify-content: space-between; }
+}

@@ -1,0 +1,274 @@
+{
+  "schemaVersion": "independent-macro-weekly-narrow-first-use-review-v1-draft",
+  "preparedDate": "2026-10-30",
+  "documentStatus": "EVIDENCE_ASSESSED_APPROVAL_PENDING",
+  "reviewedStageAArticleGitBlobSha": "4fc7844ebb8701dd3682326dfe4e119c8783467f",
+  "reviewedStageAOwnerPassFile": "docs/operations/independent-editorial/stage-a-editorial-layout-owner-pass.draft.json",
+  "existingRightsWorksheetBlobSha": "615476aeca74e0e373b02d868c4c86575eb40bd6",
+  "sourceReviewCount": 5,
+  "claimCount": 6,
+  "sourceItems": [
+    {
+      "sourceId": "fed-october-calendar",
+      "exactOfficialSourceUrl": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+      "sourceAgency": "Board of Governors of the Federal Reserve System",
+      "generalReuseNoticeUrl": "https://www.federalreserve.gov/disclaimer.htm",
+      "claimIds": [
+        "fomc-preview-oct26",
+        "fomc-reminder-oct27"
+      ],
+      "factsCheckedAgainstIssuer": [
+        "Oct 27-28 FOMC meeting"
+      ],
+      "requestedActualUse": {
+        "originalUsdImpactEnglishProse": true,
+        "issuerCreditAndExactLink": true,
+        "factualReleasedObservations": true,
+        "verbatimIssuerParagraphs": false,
+        "reproducedIssuerTables": false,
+        "reproducedChartImageOrLogo": false,
+        "embeddedExternalFrames": false,
+        "sourceHtmlOrPdfRehosting": false,
+        "automatedNumericalFeeds": false,
+        "vendorMarketQuotes": false,
+        "legacyScoreHistory": false,
+        "emailRssPdfOrTranslations": false,
+        "thirdPartyPhotosOrGraphics": false
+      },
+      "firstUseMedium": "one_original_english_educational_webpage_only",
+      "publisher": "KELA LEADS S.R.L. (Romania) / USD Impact",
+      "readerGeography": "International including EU and LATAM",
+      "policySupportsGeneralAgencyContentAndLinkingWithExceptions": true,
+      "foreignPublicationRightsNotInferredFromUsPublicDomain": true,
+      "agencyMarksOrThirdPartyMediaCopied": false,
+      "localRightsAndAttributionReviewer": "PENDING",
+      "scopedRightsDecisionBasis": null,
+      "reviewerName": null,
+      "reviewAtUtc": null,
+      "rightsReceipt": null,
+      "sourceUseApprovedForPublicRelease": false
+    },
+    {
+      "sourceId": "fed-fomc-statement-20261028",
+      "exactOfficialSourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+      "sourceAgency": "Board of Governors of the Federal Reserve System",
+      "generalReuseNoticeUrl": "https://www.federalreserve.gov/disclaimer.htm",
+      "claimIds": [
+        "fomc-outcome-oct28"
+      ],
+      "factsCheckedAgainstIssuer": [
+        "Oct 28 2 p.m. EDT issuer-stated time",
+        "3.75%-4.00% unchanged range",
+        "10-2 vote, two favor 25bp rise"
+      ],
+      "requestedActualUse": {
+        "originalUsdImpactEnglishProse": true,
+        "issuerCreditAndExactLink": true,
+        "factualReleasedObservations": true,
+        "verbatimIssuerParagraphs": false,
+        "reproducedIssuerTables": false,
+        "reproducedChartImageOrLogo": false,
+        "embeddedExternalFrames": false,
+        "sourceHtmlOrPdfRehosting": false,
+        "automatedNumericalFeeds": false,
+        "vendorMarketQuotes": false,
+        "legacyScoreHistory": false,
+        "emailRssPdfOrTranslations": false,
+        "thirdPartyPhotosOrGraphics": false
+      },
+      "firstUseMedium": "one_original_english_educational_webpage_only",
+      "publisher": "KELA LEADS S.R.L. (Romania) / USD Impact",
+      "readerGeography": "International including EU and LATAM",
+      "policySupportsGeneralAgencyContentAndLinkingWithExceptions": true,
+      "foreignPublicationRightsNotInferredFromUsPublicDomain": true,
+      "agencyMarksOrThirdPartyMediaCopied": false,
+      "localRightsAndAttributionReviewer": "PENDING",
+      "scopedRightsDecisionBasis": null,
+      "reviewerName": null,
+      "reviewAtUtc": null,
+      "rightsReceipt": null,
+      "sourceUseApprovedForPublicRelease": false
+    },
+    {
+      "sourceId": "bea-gdp-q3-20261029",
+      "exactOfficialSourceUrl": "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+      "sourceAgency": "U.S. Bureau of Economic Analysis",
+      "generalReuseNoticeUrl": "https://www.bea.gov/help/faq/147",
+      "claimIds": [
+        "gdp-oct29"
+      ],
+      "factsCheckedAgainstIssuer": [
+        "Oct 29 8:30 a.m. EDT stated release",
+        "Q3 +3.4% real GDP SAAR",
+        "Q2 +2.2% real GDP SAAR"
+      ],
+      "requestedActualUse": {
+        "originalUsdImpactEnglishProse": true,
+        "issuerCreditAndExactLink": true,
+        "factualReleasedObservations": true,
+        "verbatimIssuerParagraphs": false,
+        "reproducedIssuerTables": false,
+        "reproducedChartImageOrLogo": false,
+        "embeddedExternalFrames": false,
+        "sourceHtmlOrPdfRehosting": false,
+        "automatedNumericalFeeds": false,
+        "vendorMarketQuotes": false,
+        "legacyScoreHistory": false,
+        "emailRssPdfOrTranslations": false,
+        "thirdPartyPhotosOrGraphics": false
+      },
+      "firstUseMedium": "one_original_english_educational_webpage_only",
+      "publisher": "KELA LEADS S.R.L. (Romania) / USD Impact",
+      "readerGeography": "International including EU and LATAM",
+      "policySupportsGeneralAgencyContentAndLinkingWithExceptions": true,
+      "foreignPublicationRightsNotInferredFromUsPublicDomain": true,
+      "agencyMarksOrThirdPartyMediaCopied": false,
+      "localRightsAndAttributionReviewer": "PENDING",
+      "scopedRightsDecisionBasis": null,
+      "reviewerName": null,
+      "reviewAtUtc": null,
+      "rightsReceipt": null,
+      "sourceUseApprovedForPublicRelease": false
+    },
+    {
+      "sourceId": "bea-pce-sep-20261029",
+      "exactOfficialSourceUrl": "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026",
+      "sourceAgency": "U.S. Bureau of Economic Analysis",
+      "generalReuseNoticeUrl": "https://www.bea.gov/help/faq/147",
+      "claimIds": [
+        "pce-oct29"
+      ],
+      "factsCheckedAgainstIssuer": [
+        "Oct 29 8:30 a.m. EDT stated release",
+        "Sep headline PCE +3.6% over 12 months",
+        "Sep core PCE +3.1% over 12 months"
+      ],
+      "requestedActualUse": {
+        "originalUsdImpactEnglishProse": true,
+        "issuerCreditAndExactLink": true,
+        "factualReleasedObservations": true,
+        "verbatimIssuerParagraphs": false,
+        "reproducedIssuerTables": false,
+        "reproducedChartImageOrLogo": false,
+        "embeddedExternalFrames": false,
+        "sourceHtmlOrPdfRehosting": false,
+        "automatedNumericalFeeds": false,
+        "vendorMarketQuotes": false,
+        "legacyScoreHistory": false,
+        "emailRssPdfOrTranslations": false,
+        "thirdPartyPhotosOrGraphics": false
+      },
+      "firstUseMedium": "one_original_english_educational_webpage_only",
+      "publisher": "KELA LEADS S.R.L. (Romania) / USD Impact",
+      "readerGeography": "International including EU and LATAM",
+      "policySupportsGeneralAgencyContentAndLinkingWithExceptions": true,
+      "foreignPublicationRightsNotInferredFromUsPublicDomain": true,
+      "agencyMarksOrThirdPartyMediaCopied": false,
+      "localRightsAndAttributionReviewer": "PENDING",
+      "scopedRightsDecisionBasis": null,
+      "reviewerName": null,
+      "reviewAtUtc": null,
+      "rightsReceipt": null,
+      "sourceUseApprovedForPublicRelease": false
+    },
+    {
+      "sourceId": "bls-eci-q3-20261030",
+      "exactOfficialSourceUrl": "https://www.bls.gov/news.release/archives/eci_10302026.htm",
+      "sourceAgency": "U.S. Bureau of Labor Statistics",
+      "generalReuseNoticeUrl": "https://www.bls.gov/bls/linksite.htm",
+      "claimIds": [
+        "eci-oct30"
+      ],
+      "factsCheckedAgainstIssuer": [
+        "Oct 30 8:30 a.m. Eastern stated release",
+        "Q3 civilian compensation +0.8% QoQ SA",
+        "12-month civilian compensation +3.4% NSA"
+      ],
+      "requestedActualUse": {
+        "originalUsdImpactEnglishProse": true,
+        "issuerCreditAndExactLink": true,
+        "factualReleasedObservations": true,
+        "verbatimIssuerParagraphs": false,
+        "reproducedIssuerTables": false,
+        "reproducedChartImageOrLogo": false,
+        "embeddedExternalFrames": false,
+        "sourceHtmlOrPdfRehosting": false,
+        "automatedNumericalFeeds": false,
+        "vendorMarketQuotes": false,
+        "legacyScoreHistory": false,
+        "emailRssPdfOrTranslations": false,
+        "thirdPartyPhotosOrGraphics": false
+      },
+      "firstUseMedium": "one_original_english_educational_webpage_only",
+      "publisher": "KELA LEADS S.R.L. (Romania) / USD Impact",
+      "readerGeography": "International including EU and LATAM",
+      "policySupportsGeneralAgencyContentAndLinkingWithExceptions": true,
+      "foreignPublicationRightsNotInferredFromUsPublicDomain": true,
+      "agencyMarksOrThirdPartyMediaCopied": false,
+      "localRightsAndAttributionReviewer": "PENDING",
+      "scopedRightsDecisionBasis": null,
+      "reviewerName": null,
+      "reviewAtUtc": null,
+      "rightsReceipt": null,
+      "sourceUseApprovedForPublicRelease": false
+    }
+  ],
+  "agencyNotices": {
+    "fed": "https://www.federalreserve.gov/disclaimer.htm",
+    "bea": "https://www.bea.gov/help/faq/147",
+    "bls": "https://www.bls.gov/bls/linksite.htm",
+    "foreignLaw": "https://www.usa.gov/government-copyright"
+  },
+  "useBoundaries": {
+    "onlyOriginalProseFactualObservationsAndExactOfficialLinks": true,
+    "agencyCreditWithoutEndorsement": true,
+    "noSourceExpressionOrThirdPartyImagesCopied": true,
+    "noIndexPricesVendorDataOrScoreValues": true,
+    "noAutomaticProviderDataRequests": true,
+    "USPublicDomainProtectionMayDifferOutsideUS": true,
+    "noNewMarketDataLicenseNeededForThisContent": true,
+    "notALegalOpinion": true,
+    "generalPoliciesCannotApproveSourceSpecificForeignUse": true
+  },
+  "outOfScopeReviewFlagsAtCurrentMediaScope": [
+    "emailAndRssDistribution",
+    "translationAndDerivativeText",
+    "sourceSnapshotAndHistoryRetention",
+    "automatedDownloadOrDataTransport",
+    "imageLogoChartReuse"
+  ],
+  "scopedQuestionsStillRequiringDecision": [
+    "agencyAuthorshipAndThirdPartyExceptions",
+    "commercialSiteEditorialUse",
+    "directAttributionAndCitation",
+    "internationalRomaniaEuLatamPublication"
+  ],
+  "methodologyProposal": {
+    "issuerDeclaredIssueTimePlusAuthenticatedLaterEditorialReview": true,
+    "exactFirstWebsitePostingRequired": false,
+    "methodologyOwnerApproved": false,
+    "noHistoricalTimestampFabrication": true
+  },
+  "approvals": {
+    "perItemRights": false,
+    "foreignPublisherScope": false,
+    "claimLevelEditorialProvenance": false,
+    "contractSelected": false,
+    "publicMerge": false,
+    "publicProduction": false,
+    "indexing": false,
+    "publication": false,
+    "originalScoreGateModification": false
+  },
+  "sourceReviewReceiptsPresent": 0,
+  "rightsWorksheetChanged": false,
+  "publishReady": false,
+  "releaseAuthorized": false,
+  "reviewPrompts": [
+    "Confirm only original English facts, paraphrase, issuer title/date credit and direct ordinary links; no text copying, third-party graphics or hosted agency documents.",
+    "Assess this exact use for a Romania-based publisher and readers internationally including EU and LATAM, without assuming US public-domain status resolves foreign jurisdictions.",
+    "Record a dated, scoped reviewer decision and evidence; unrelated email/RSS/PDF/translations/source-data retention remain outside the permission request.",
+    "Select official issuer issue time plus later exact-version editorial receipt as the proposed factual chronology method, not the unknown first web-server posting instant.",
+    "Keep publication, merge, indexing and Production denied until the owner authorizes those specific actions separately."
+  ]
+}

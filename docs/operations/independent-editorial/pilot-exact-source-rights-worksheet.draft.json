@@ -1,0 +1,189 @@
+{
+  "schemaVersion": "independent-weekly-exact-source-worksheet-draft-v1",
+  "createdOn": "2026-10-30",
+  "ownerDraftDirectionReceipt": "https://github.com/usdimpact/usd-impact-site/pull/1019#issuecomment-6529455131",
+  "purpose": "DRAFT reviewer worksheet and claim-to-official-item inventory, not legal clearance or an independent new publication rights gate",
+  "appliesTo": "USD Impact Macro Weekly Review — October 26-30, 2026 (unpublished)",
+  "referenceWeeklyJson": "docs/operations/independent-editorial/weekly-2026-10-30.draft.json",
+  "referenceRightsGate": "usdimpact/usd-impact-site PR #1020 governance/independent-editorial-source-rights-review-2026-10-30.json",
+  "status": "HOLD_PENDING_QUALIFIED_EXACT_ITEM_REVIEW",
+  "permittedByThisRecord": false,
+  "sourceRetrievalPerformed": false,
+  "releaseAuthorized": false,
+  "sourceItemCount": 5,
+  "claimCount": 6,
+  "sourceItems": [
+    {
+      "sourceId": "fed-october-calendar",
+      "exactSourceUrl": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+      "agencyPolicyContextUrl": "https://www.federalreserve.gov/disclaimer.htm",
+      "sourceClaims": [
+        "fomc-preview-oct26",
+        "fomc-reminder-oct27"
+      ],
+      "sourceDailyEvidence": [
+        {
+          "date": "2026-10-26",
+          "gitBlobSha": "a05089cbcb372862455157e0382a9a4e81cbd532"
+        },
+        {
+          "date": "2026-10-27",
+          "gitBlobSha": "29ee81eb8ac3e49ebf4676c34fb025a052daf398"
+        }
+      ],
+      "intendedUse": "independent original educational paraphrase and exact official hyperlink only, contingent on independent review",
+      "currentDisposition": "EXACT_ITEM_REUSE_REVIEW_PENDING",
+      "reviewerName": null,
+      "reviewedAtUtc": null,
+      "decisionAuthority": null,
+      "scopedReceiptUrl": null,
+      "rightsChecks": {
+        "agencyAuthorshipAndThirdPartyExceptions": false,
+        "commercialSiteEditorialUse": false,
+        "directAttributionAndCitation": false,
+        "internationalRomaniaEuLatamPublication": false,
+        "emailAndRssDistribution": false,
+        "translationAndDerivativeText": false,
+        "sourceSnapshotAndHistoryRetention": false,
+        "automatedDownloadOrDataTransport": false,
+        "imageLogoChartReuse": false
+      },
+      "authorizationForPublication": false
+    },
+    {
+      "sourceId": "fed-fomc-statement-20261028",
+      "exactSourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+      "agencyPolicyContextUrl": "https://www.federalreserve.gov/disclaimer.htm",
+      "sourceClaims": [
+        "fomc-outcome-oct28"
+      ],
+      "sourceDailyEvidence": [
+        {
+          "date": "2026-10-28",
+          "gitBlobSha": "c7e6ae165a445658aaefe5958f753c4474e89212"
+        }
+      ],
+      "intendedUse": "independent original educational paraphrase and exact official hyperlink only, contingent on independent review",
+      "currentDisposition": "EXACT_ITEM_REUSE_REVIEW_PENDING",
+      "reviewerName": null,
+      "reviewedAtUtc": null,
+      "decisionAuthority": null,
+      "scopedReceiptUrl": null,
+      "rightsChecks": {
+        "agencyAuthorshipAndThirdPartyExceptions": false,
+        "commercialSiteEditorialUse": false,
+        "directAttributionAndCitation": false,
+        "internationalRomaniaEuLatamPublication": false,
+        "emailAndRssDistribution": false,
+        "translationAndDerivativeText": false,
+        "sourceSnapshotAndHistoryRetention": false,
+        "automatedDownloadOrDataTransport": false,
+        "imageLogoChartReuse": false
+      },
+      "authorizationForPublication": false
+    },
+    {
+      "sourceId": "bea-gdp-q3-20261029",
+      "exactSourceUrl": "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+      "agencyPolicyContextUrl": "https://www.bea.gov/help/faq/147",
+      "sourceClaims": [
+        "gdp-oct29"
+      ],
+      "sourceDailyEvidence": [
+        {
+          "date": "2026-10-30",
+          "gitBlobSha": "f8881e383adba66eb801a3fbbcb4d1507de32917"
+        }
+      ],
+      "intendedUse": "independent original educational paraphrase and exact official hyperlink only, contingent on independent review",
+      "currentDisposition": "EXACT_ITEM_REUSE_REVIEW_PENDING",
+      "reviewerName": null,
+      "reviewedAtUtc": null,
+      "decisionAuthority": null,
+      "scopedReceiptUrl": null,
+      "rightsChecks": {
+        "agencyAuthorshipAndThirdPartyExceptions": false,
+        "commercialSiteEditorialUse": false,
+        "directAttributionAndCitation": false,
+        "internationalRomaniaEuLatamPublication": false,
+        "emailAndRssDistribution": false,
+        "translationAndDerivativeText": false,
+        "sourceSnapshotAndHistoryRetention": false,
+        "automatedDownloadOrDataTransport": false,
+        "imageLogoChartReuse": false
+      },
+      "authorizationForPublication": false
+    },
+    {
+      "sourceId": "bea-pce-sep-20261029",
+      "exactSourceUrl": "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026",
+      "agencyPolicyContextUrl": "https://www.bea.gov/help/faq/147",
+      "sourceClaims": [
+        "pce-oct29"
+      ],
+      "sourceDailyEvidence": [
+        {
+          "date": "2026-10-30",
+          "gitBlobSha": "f8881e383adba66eb801a3fbbcb4d1507de32917"
+        }
+      ],
+      "intendedUse": "independent original educational paraphrase and exact official hyperlink only, contingent on independent review",
+      "currentDisposition": "EXACT_ITEM_REUSE_REVIEW_PENDING",
+      "reviewerName": null,
+      "reviewedAtUtc": null,
+      "decisionAuthority": null,
+      "scopedReceiptUrl": null,
+      "rightsChecks": {
+        "agencyAuthorshipAndThirdPartyExceptions": false,
+        "commercialSiteEditorialUse": false,
+        "directAttributionAndCitation": false,
+        "internationalRomaniaEuLatamPublication": false,
+        "emailAndRssDistribution": false,
+        "translationAndDerivativeText": false,
+        "sourceSnapshotAndHistoryRetention": false,
+        "automatedDownloadOrDataTransport": false,
+        "imageLogoChartReuse": false
+      },
+      "authorizationForPublication": false
+    },
+    {
+      "sourceId": "bls-eci-q3-20261030",
+      "exactSourceUrl": "https://www.bls.gov/news.release/archives/eci_10302026.htm",
+      "agencyPolicyContextUrl": "https://www.bls.gov/bls/linksite.htm",
+      "sourceClaims": [
+        "eci-oct30"
+      ],
+      "sourceDailyEvidence": [
+        {
+          "date": "2026-10-30",
+          "gitBlobSha": "f8881e383adba66eb801a3fbbcb4d1507de32917"
+        }
+      ],
+      "intendedUse": "independent original educational paraphrase and exact official hyperlink only, contingent on independent review",
+      "currentDisposition": "EXACT_ITEM_REUSE_REVIEW_PENDING",
+      "reviewerName": null,
+      "reviewedAtUtc": null,
+      "decisionAuthority": null,
+      "scopedReceiptUrl": null,
+      "rightsChecks": {
+        "agencyAuthorshipAndThirdPartyExceptions": false,
+        "commercialSiteEditorialUse": false,
+        "directAttributionAndCitation": false,
+        "internationalRomaniaEuLatamPublication": false,
+        "emailAndRssDistribution": false,
+        "translationAndDerivativeText": false,
+        "sourceSnapshotAndHistoryRetention": false,
+        "automatedDownloadOrDataTransport": false,
+        "imageLogoChartReuse": false
+      },
+      "authorizationForPublication": false
+    }
+  ],
+  "unresolvedBeforeRelease": [
+    "Reviewer must confirm exact issuer-authored text and third-party exceptions for each source item",
+    "Reviewer must determine scope for original paraphrase, official hyperlink, commercial educational use and attribution",
+    "Reviewer must determine whether international Romania/EU and LATAM publication, translations, backup retention, RSS and email distribution are acceptable",
+    "Missing exact official release timestamps and later editorial evidence remain a separate editorial provenance gate",
+    "No numerical market observations or original Score inputs; no data provider requests, endpoint fetch, storage or publishing"
+  ]
+}

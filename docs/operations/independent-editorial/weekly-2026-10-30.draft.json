@@ -1,0 +1,147 @@
+{
+  "contractVersion": "independent-editorial-draft-v1",
+  "series": "independent_macro_education",
+  "kind": "independent_weekly",
+  "status": "draft",
+  "releaseAuthorized": false,
+  "rightsStatus": "pending_independent_source_review",
+  "marketDataLicenseBudgetUSD": 0,
+  "periodStart": "2026-10-26",
+  "periodEnd": "2026-10-30",
+  "sourceEditions": [
+    {
+      "date": "2026-10-26",
+      "gitBlobSha": "a05089cbcb372862455157e0382a9a4e81cbd532"
+    },
+    {
+      "date": "2026-10-27",
+      "gitBlobSha": "29ee81eb8ac3e49ebf4676c34fb025a052daf398"
+    },
+    {
+      "date": "2026-10-28",
+      "gitBlobSha": "c7e6ae165a445658aaefe5958f753c4474e89212"
+    },
+    {
+      "date": "2026-10-29",
+      "gitBlobSha": "068950a9aec9c4b5bee6ca8ce16ebdadd430451e"
+    },
+    {
+      "date": "2026-10-30",
+      "gitBlobSha": "f8881e383adba66eb801a3fbbcb4d1507de32917"
+    }
+  ],
+  "claims": [
+    {
+      "id": "fomc-preview-oct26",
+      "sourceEditionDate": "2026-10-26",
+      "sourceId": "fed-october-calendar",
+      "sourceUrl": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+      "claimCategory": "calendar_preview",
+      "eventDate": "2026-10-28",
+      "observationPeriod": "October 27-28 FOMC meeting schedule",
+      "assertion": "The October 26 edition identified an upcoming October 27-28 FOMC meeting, not the eventual policy outcome.",
+      "marketReactionAsserted": false,
+      "rightsStatus": "pending_independent_source_review",
+      "sourceReleaseAt": null,
+      "postReleaseEditorialReceipt": null
+    },
+    {
+      "id": "fomc-reminder-oct27",
+      "sourceEditionDate": "2026-10-27",
+      "sourceId": "fed-october-calendar",
+      "sourceUrl": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+      "claimCategory": "calendar_preview",
+      "eventDate": "2026-10-28",
+      "observationPeriod": "October 27-28 FOMC meeting schedule",
+      "assertion": "The October 27 Daily reiterated the scheduled decision date without anticipating the policy vote.",
+      "marketReactionAsserted": false,
+      "rightsStatus": "pending_independent_source_review",
+      "sourceReleaseAt": null,
+      "postReleaseEditorialReceipt": null
+    },
+    {
+      "id": "fomc-outcome-oct28",
+      "sourceEditionDate": "2026-10-28",
+      "sourceId": "fed-fomc-statement-20261028",
+      "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+      "claimCategory": "official_outcome",
+      "eventDate": "2026-10-28",
+      "observationPeriod": "October 28, 2026 FOMC decision",
+      "assertion": "The Federal Reserve maintained the 3.75%-4.00% target range by a 10-2 vote; two officials preferred a 25-basis-point increase.",
+      "marketReactionAsserted": false,
+      "rightsStatus": "pending_independent_source_review",
+      "sourceReleaseAt": null,
+      "postReleaseEditorialReceipt": null
+    },
+    {
+      "id": "gdp-oct29",
+      "sourceEditionDate": "2026-10-30",
+      "sourceId": "bea-gdp-q3-20261029",
+      "sourceUrl": "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+      "claimCategory": "official_outcome",
+      "eventDate": "2026-10-29",
+      "observationPeriod": "Q3 2026 real GDP, seasonally adjusted annual rate; Q2 comparison",
+      "assertion": "BEA's October 29 advance estimate recorded 3.4% annualized Q3 real GDP growth, compared with 2.2% in Q2; the reference period is a quarter, not October 30.",
+      "marketReactionAsserted": false,
+      "rightsStatus": "pending_independent_source_review",
+      "sourceReleaseAt": null,
+      "postReleaseEditorialReceipt": null
+    },
+    {
+      "id": "pce-oct29",
+      "sourceEditionDate": "2026-10-30",
+      "sourceId": "bea-pce-sep-20261029",
+      "sourceUrl": "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026",
+      "claimCategory": "official_outcome",
+      "eventDate": "2026-10-29",
+      "observationPeriod": "September 2026 monthly/year-over-year PCE inflation",
+      "assertion": "BEA's September PCE release, published October 29, reported headline inflation at 3.6% year over year and core inflation at 3.1% year over year.",
+      "marketReactionAsserted": false,
+      "rightsStatus": "pending_independent_source_review",
+      "sourceReleaseAt": null,
+      "postReleaseEditorialReceipt": null
+    },
+    {
+      "id": "eci-oct30",
+      "sourceEditionDate": "2026-10-30",
+      "sourceId": "bls-eci-q3-20261030",
+      "sourceUrl": "https://www.bls.gov/news.release/archives/eci_10302026.htm",
+      "claimCategory": "official_outcome",
+      "eventDate": "2026-10-30",
+      "observationPeriod": "Q3 2026 Employment Cost Index, q/q SA and 12-month NSA",
+      "assertion": "BLS reported Q3 civilian compensation growth of 0.8% quarter over quarter, seasonally adjusted, versus 0.9% in Q2, and 3.4% over 12 months, not seasonally adjusted.",
+      "marketReactionAsserted": false,
+      "rightsStatus": "pending_independent_source_review",
+      "sourceReleaseAt": "2026-10-30T12:30:00Z",
+      "postReleaseEditorialReceipt": "https://github.com/usdimpact/usd-impact-site/pull/1009#issuecomment-6525502611"
+    }
+  ],
+  "editorial": {
+    "title": "USD Impact Macro Weekly Review — October 26-30, 2026 (DRAFT ONLY)",
+    "summary": "Official policy, growth, inflation and labor-cost releases created an informative macro backdrop; the existing Dailies do not establish a contemporaneous dollar or asset-price reaction.",
+    "sections": [
+      {
+        "heading": "What happened and when",
+        "text": "Separate the October 26-27 calendar previews from the October 28 FOMC outcome and the October 29 GDP/PCE and October 30 ECI releases."
+      },
+      {
+        "heading": "Why it matters for dollar transmission",
+        "text": "Policy-rate expectations, real yields and risk appetite are conditional transmission channels, not evidence of an observed DXY or cross-asset move in this week's official releases."
+      },
+      {
+        "heading": "Data units and source integrity",
+        "text": "Keep GDP annualized quarterly growth separate from monthly PCE price changes, and quarterly seasonally adjusted ECI separate from 12-month unadjusted ECI."
+      },
+      {
+        "heading": "Risks and what remains unverified",
+        "text": "No real-time DXY, WTI, gas, Gold, BTC or index performance is measured here. All reused official-source facts require independent publication-rights review."
+      }
+    ],
+    "whatToWatch": [
+      "Confirm the next official release calendar before attributing outcomes.",
+      "Distinguish dated issuer facts from hypothetical dollar, yield or cross-asset transmission.",
+      "Require independent source-rights and editorial approval before creating any public report."
+    ],
+    "complianceNote": "Educational and informational only; not investment, financial, legal or trading advice, and not a recommendation to buy or sell any asset."
+  }
+}

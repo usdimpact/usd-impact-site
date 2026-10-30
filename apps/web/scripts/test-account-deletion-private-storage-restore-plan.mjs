@@ -51,7 +51,7 @@ for(const s of p.steps){
 }
 function denied(change,code){
   assert.throws(()=>buildIssue950PrivateStoragePlan({...allowed,...change}),
-    e=>e instanceof StorageRestoreHold&&e.code===code,code);
+    e=>e instanceof StorageRestoreHold && e.code === code,code);
   checks++;
 }
 for(const [change,code] of [

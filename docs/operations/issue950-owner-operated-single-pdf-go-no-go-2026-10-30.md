@@ -37,6 +37,16 @@ Owner decision: [Issue #950, comment 6527985148](https://github.com/usdimpact/us
 * **Actual restore download SHA-256:** **NOT EXECUTED** (0/21 verified restored bytes)
 * **Cleanup and no-access proof:** **NOT EXECUTED**
 
+## New owner-supplied Auth provider finding (NO-GO, 2026-10-30)
+
+Owner screenshots of the **isolated restore** `https://supabase.com/dashboard/project/movnekagnxgcyenczfoc/auth/providers` show **Allow new users to sign up: OFF**, **Email provider: DISABLED**, **Phone provider: DISABLED**, **all displayed third-party/social providers: DISABLED**, **Allow anonymous sign-ins: OFF**, and **Confirm email: ON**. Screenshots were read-only; no setting was changed. Exact RESTORE project ref was visible in the URL. The existing nine restored users and current Storage metadata were reverified via SELECT-only SQL.
+
+**Critical consequence:** The planned new synthetic user's email/password sign-in cannot be assumed functional while **Email provider is disabled**. The Dashboard's `Create new user` form by itself does not issue a tested Auth session/JWT. A protected Auth method must be demonstrated before creating a new user, enabling a Storage policy or attempting private file transfers.
+
+**Alternatives requiring separate risk analysis:** (A) Temporarily enable **Email authentication on the isolated restore only**, with **public signup kept OFF**, prove login with exactly one dedicated noncustomer synthetic identity, then restore the original Auth configuration after the controlled test; this provider switch is **project-wide**, could permit password logins by the nine existing restored accounts, and is NOT yet approved/executed. (B) Request a documented supported Supabase method for issuing a short-lived **authenticated user JWT** on the isolated restore while Email and all other sign-in providers remain disabled, without using broad `service_role`, JWT signing secrets or SQL edits to `auth.users`. Do not invent or silently substitute a custom-signed token.
+
+**Current GO verdict: NO-GO** on Auth/session readiness and upload. A new positive decision must identify the provider path, risks to the existing users, how to obtain the `app_metadata` marker and suspended profile through supported admin operations, authenticated session lifetime, rollback to initial provider state, and a protected local client. Any external security/privacy requirements remain in force. Until then **leave Email and every other provider disabled; do not click Save changes, Add/Create user, or upload an object.**
+
 ## Safe preparation (no live Storage write)
 
 1. Use the [isolated restore Dashboard](https://supabase.com/dashboard/project/movnekagnxgcyenczfoc) to recheck the project identifier. Cross-check through a separately obtained authorized project reference. Never trust the dashboard's generic branch/status label alone.

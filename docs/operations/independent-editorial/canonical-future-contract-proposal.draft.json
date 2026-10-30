@@ -79,11 +79,11 @@
       "vendor_market_data"
     ],
     "thirdPartyExceptionsReviewNeeded": true,
-    "romaEuLatamCommercialUseReviewNeeded": true,
     "historicalCopiesAndRetentionReviewNeeded": true,
     "proposedScopeApprovedByQualifiedReviewer": false,
     "perSourceReviewerEvidenceRequired": true,
-    "independentOriginalScoreRightsGateMustRemainHold": true
+    "independentOriginalScoreRightsGateMustRemainHold": true,
+    "romaniaEuLatamCommercialUseReviewNeeded": true
   },
   "weeklyPublicationPlan": {
     "requiredWeekEnd": "Friday",

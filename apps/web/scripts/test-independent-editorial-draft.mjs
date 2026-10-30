@@ -440,4 +440,43 @@ function syntheticPriorMonthly(weekOffset = 0) {
   tests += 20;
 }
 
+// Cross-PR reconciliation is a frozen exact-link snapshot, NOT a schema merge,
+// remote GitHub lookup, source licensing, nor a release pathway.
+{
+  const crosswalk = JSON.parse(fs.readFileSync(
+    path.join(DRAFT_DIR, 'cross-pr-exact-source-rights-map.draft.json'), 'utf8'));
+  const rights = JSON.parse(fs.readFileSync(
+    path.join(DRAFT_DIR, 'pilot-exact-source-rights-worksheet.draft.json'), 'utf8'));
+  assert.equal(crosswalk.schemaVersion, 'independent-editorial-cross-pr-rights-crosswalk-v0-draft');
+  assert.match(crosswalk.referencePr1020Head, /^[a-f0-9]{40}$/);
+  assert.match(crosswalk.referencePr1020LedgerBlobSha, /^[a-f0-9]{40}$/);
+  assert.equal(crosswalk.referencePr1019RightsBlobSha, '615476aeca74e0e373b02d868c4c86575eb40bd6');
+  assert.equal(crosswalk.finalContractSelected, false);
+  assert.equal(crosswalk.publicationRightsApproved, false);
+  assert.equal(crosswalk.codeOrSchemasMerged, false);
+  assert.equal(crosswalk.runtimeDependencyOnOtherPr, false);
+  assert.equal(crosswalk.publicationAuthorized, false);
+  assert.equal(crosswalk.extraMarketDataLicenseBudgetUsd, 0);
+  assert.equal(crosswalk.mappedItems.length, 5);
+  assert.deepEqual(crosswalk.unmappedPr1020InventorySources.map((source) => source.id).sort(),
+    ['bls_october_schedule', 'eia_optional_future']);
+  const sources = new Map(rights.sourceItems.map((source) => [source.sourceId, source]));
+  const seen = new Set();
+  for (const item of crosswalk.mappedItems) {
+    assert.ok(!seen.has(item.pilotSourceId), 'duplicate pilot source');
+    seen.add(item.pilotSourceId);
+    const source = sources.get(item.pilotSourceId);
+    assert.ok(source, 'cross-PR record must reference an exact pinned pilot item');
+    assert.equal(item.exactSourceUrl, source.exactSourceUrl);
+    assert.deepEqual([...item.pilotClaimIds].sort(), [...source.sourceClaims].sort());
+    assert.equal(item.sourceUrlExactMatch, true);
+    assert.equal(item.pr1019NineRightsChecksAllFalse, true);
+    assert.equal(item.pr1020SevenPermissionsAllFalse, true);
+    assert.equal(item.rightsReceipt, null);
+    assert.equal(item.canRelease, false);
+  }
+  assert.equal(seen.size, 5);
+  tests += 19;
+}
+
 console.log('Independent editorial offline draft contract: ' + tests + ' assertions passed (never release-ready).');

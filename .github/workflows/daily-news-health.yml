@@ -87,7 +87,7 @@ jobs:
               'Start background news generation') failure_stage='generation' ;;
               'Poll background news generation') failure_stage='generation-or-repair' ;;
               'Import as published content') failure_stage='import' ;;
-              'Validate and build') failure_stage='validation' ;;
+              'Validate publication content preflight') failure_stage='validation' ;;
               'Open and validate publication pull request') failure_stage='publication' ;;
               'Report Daily failure gate') failure_stage='failure-reporting' ;;
               *) failure_stage='workflow' ;;

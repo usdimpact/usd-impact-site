@@ -492,4 +492,75 @@ function syntheticPriorMonthly(weekOffset = 0) {
   tests += 19;
 }
 
+// Proposed future contract is documentation data, not an importable publisher.
+// The only owner-approved choices are Draft editorial choices; all external
+// source-rights/release gates and any candidate holiday exception stay FALSE.
+{
+  const proposal = JSON.parse(fs.readFileSync(
+    path.join(DRAFT_DIR, 'canonical-future-contract-proposal.draft.json'), 'utf8'));
+  const owner = JSON.parse(fs.readFileSync(
+    path.join(DRAFT_DIR, 'owner-editorial-direction.draft.json'), 'utf8'));
+  assert.equal(proposal.schemaVersion, 'independent-editorial-canonical-release-design-proposal-v0-draft');
+  assert.equal(proposal.status, 'PROPOSAL_DRAFT_HOLD_NOT_IMPLEMENTED');
+  assert.equal(proposal.scope, 'SINGLE_PREFERRED_CONTRACT_ARCHITECTURE_ONLY');
+  assert.equal(proposal.userApprovedDraftDirections.weeklyTitle, owner.editorial.weeklyWorkingTitle);
+  assert.equal(proposal.userApprovedDraftDirections.fourWeeklyTitle, owner.editorial.fourWeeklyWorkingTitle);
+  assert.equal(proposal.userApprovedDraftDirections.language, owner.editorial.language);
+  assert.equal(proposal.userApprovedDraftDirections.intendedFutureAccess, owner.editorial.intendedFutureAccess);
+  assert.equal(proposal.userApprovedDraftDirections.editorialInputs, owner.editorial.inputPolicy);
+  assert.equal(proposal.technicalPreference.draftFoundationPr, 1019);
+  assert.equal(proposal.technicalPreference.rightsReferencePr1020, 1020);
+  assert.equal(proposal.technicalPreference.pilotContractVersion, weekly.contractVersion);
+  assert.equal(proposal.technicalPreference.pilotSeries, weekly.series);
+  assert.equal(proposal.technicalPreference.singleFinalContractApproved, false);
+  assert.equal(proposal.technicalPreference.competingPr1020SchemaUsedAsRuntime, false);
+  assert.equal(proposal.technicalPreference.proposedPublicPaths, null);
+  assert.equal(proposal.technicalPreference.runtimeCodeImportCreated, false);
+  assert.equal(proposal.technicalPreference.siteCollectionOrRoutingCreated, false);
+  assert.equal(proposal.technicalPreference.schemaMigrationAuthorized, false);
+  assert.equal(proposal.sourceProvenance.dailyGeneratedAt.immutable, true);
+  assert.equal(proposal.sourceProvenance.firstLiveWebsitePosting.optionalNullable, true);
+  assert.equal(proposal.sourceProvenance.firstLiveWebsitePosting.cannotBeSynthesizedFromScheduledTimeOrGitCommit, true);
+  assert.equal(proposal.sourceProvenance.postReleaseEditorialReceipt.urlPatternOnlyNeverSufficient, true);
+  assert.equal(proposal.sourceProvenance.postReleaseEditorialReceipt.futureOnlineAuthenticityCheckRequired, true);
+  assert.equal(proposal.sourceProvenance.scoreInputsOrRegimesPermitted, false);
+  assert.equal(proposal.sourceProvenance.actualMarketPriceClaimsPermitted, false);
+  assert.equal(proposal.weeklyPublicationPlan.currentPilotRequiresExactlyFiveActualPublishedDailies, true);
+  assert.equal(proposal.weeklyPublicationPlan.permanentHolidayOrMissingDailyPolicy, 'UNDECIDED');
+  assert.equal(proposal.weeklyPublicationPlan.proposedPartialWeekRule.status, 'PROPOSAL_ONLY_NOT_APPROVED');
+  assert.equal(proposal.weeklyPublicationPlan.proposedPartialWeekRule.ownerApprovalBeforeUse, true);
+  assert.equal(proposal.weeklyPublicationPlan.noInventedOrBackfilledDailies, true);
+  assert.equal(proposal.weeklyPublicationPlan.independentWeeklyPublicationsAsOf20261030, 0);
+  assert.equal(proposal.fourWeeklyMonthlyPlan.firstFourPublishedIndependentWeekliesOnly, true);
+  assert.equal(proposal.fourWeeklyMonthlyPlan.fourConsecutiveFridaysRequired, true);
+  assert.equal(proposal.fourWeeklyMonthlyPlan.legacyScorePublishedWeeksAreNeverEligible, true);
+  assert.equal(proposal.fourWeeklyMonthlyPlan.urlShapedOrSelfAttestedReceiptsCannotProvePublication, true);
+  assert.equal(proposal.fourWeeklyMonthlyPlan.eligibleMonthlyAsOf20261030, false);
+  assert.equal(proposal.fourWeeklyMonthlyPlan.sourceIndependentlyPublishedWeekliesAsOf20261030, 0);
+  assert.equal(proposal.fourWeeklyMonthlyPlan.missingFridayResolution,
+    'HOLD_AND_SEPARATE_OWNER_EDITORIAL_EXCEPTION_DECISION');
+  const releaseGates = Object.entries(proposal.releaseEvidenceGates);
+  assert.equal(releaseGates.length, 13, 'all future authorization boundaries must be represented');
+  assert.ok(releaseGates.every((entry) => entry[1] === false),
+    'proposal must not clear a future rights/preview/release gate');
+  assert.equal(proposal.rightsReview.exactSourceItems, 5);
+  assert.equal(proposal.rightsReview.initialPublisherRightsChecksApproved, 0);
+  assert.equal(proposal.rightsReview.proposedScopeApprovedByQualifiedReviewer, false);
+  assert.equal(proposal.rightsReview.independentOriginalScoreRightsGateMustRemainHold, true);
+  assert.deepEqual(Object.entries(proposal.holdInvariants).sort(),
+    Object.entries({
+      noProviderDataRetrieval: true,
+      additionalPaidMarketDataLicenseBudgetUsd: 0,
+      noScoreOrExistingReportMutation: true,
+      noPreviewOrProductionDeployment: true,
+      noPublicRoutingOrIndexing: true,
+      noMerge: true,
+      noRelease: true,
+      gatesAboveAllFalse: true,
+      publishReady: false,
+      releaseAuthorized: false
+    }).sort());
+  tests += 44;
+}
+
 console.log('Independent editorial offline draft contract: ' + tests + ' assertions passed (never release-ready).');

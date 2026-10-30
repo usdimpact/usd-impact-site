@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   DEV_ORIGIN, DEV_PROJECT, FIXTURE_TYPE, makeFixture, assertSafeEnvironment,
-  assertRows, exerciseCas, makeRestHeaders,
+  assertRows, exerciseCas, makeRestHeaders, reserveFreshManifest,
 } from './webhook-postgrest-cas-qa.mjs';
 
 const id = '70707070-7070-4707-8707-707070707070';
@@ -43,6 +45,24 @@ test('fixtures are deterministic, non-deliverable and scoped to the QA object ty
   assert.match(fixture.idempotencyKey, /^notification:v1:[0-9a-f]{64}$/);
   assert.equal(makeFixture(id).providerRef, fixture.providerRef);
   assert.throws(() => makeFixture('production-customer-id'));
+});
+
+test('manifest reservation is exclusive, private, and refuses stale files without modification', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'usd-impact-cas-qa-test-'));
+  try {
+    const path = join(dir, 'manifest.json');
+    reserveFreshManifest(path, fixture);
+    const original = readFileSync(path, 'utf8');
+    assert.deepEqual(JSON.parse(original), {
+      id: fixture.id, providerRef: fixture.providerRef, email: fixture.email,
+    });
+    if (process.platform !== 'win32') assert.equal(statSync(path).mode & 0o777, 0o600);
+    const different = makeFixture('80808080-8080-4808-8808-808080808080');
+    assert.throws(() => reserveFreshManifest(path, different), /STALE_FIXTURE_REQUIRES_CLEANUP/);
+    assert.equal(readFileSync(path, 'utf8'), original, 'stale fixture must remain untouched');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('every run is manual, exact-head, Development-only and credential-gated', () => {

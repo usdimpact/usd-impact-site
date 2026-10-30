@@ -103,32 +103,48 @@ function checkDatabaseConfig(config) {
 async function requestPreference({ config, accessToken, accountId, locale, fetchImpl }) {
   const accountFilter = 'account_id=eq.' + encodeURIComponent(accountId);
   const base = config.url + '/rest/v1/' + LOCALE_TABLE;
+  // A generic PostgREST UPSERT can include account_id in its UPDATE
+  // columns, but authenticated roles intentionally have UPDATE privilege
+  // only for preferred_locale. Do not broaden those grants. Read the
+  // current row and then use INSERT or PATCH with the minimum required
+  // columns, both still checked by RLS on auth.uid().
+  const existing = locale === undefined ? null : await requestPreference({
+    config, accessToken, accountId, fetchImpl,
+  });
+  if (locale !== undefined && existing.source === 'verified_account' && existing.locale === locale) {
+    return existing;
+  }
+  const updating = locale !== undefined && existing.source === 'verified_account';
+  const method = locale === undefined ? 'GET' : updating ? 'PATCH' : 'POST';
   const query = locale === undefined
     ? '?' + accountFilter + '&select=' + SELECT_FIELDS + '&limit=2'
-    : '?on_conflict=account_id&select=' + SELECT_FIELDS;
+    : updating
+      ? '?' + accountFilter + '&select=' + SELECT_FIELDS
+      : '?select=' + SELECT_FIELDS;
+  const writeBody = updating
+    ? { preferred_locale: locale }
+    : { account_id: accountId, preferred_locale: locale };
   let response;
   try {
     response = await fetchImpl(base + query, {
-      method: locale === undefined ? 'GET' : 'POST',
+      method,
       headers: {
         Accept: 'application/json',
         apikey: config.publishableKey,
         Authorization: 'Bearer ' + accessToken,
         ...(locale === undefined ? {} : {
           'Content-Type': 'application/json',
-          Prefer: 'resolution=merge-duplicates,return=representation',
+          Prefer: 'return=representation',
         }),
       },
-      ...(locale === undefined ? {} : {
-        // Account identity is *not* accepted from the browser. PostgreSQL
-        // still independently enforces auth.uid() and ownership RLS.
-        body: JSON.stringify({ account_id: accountId, preferred_locale: locale }),
-      }),
+      ...(locale === undefined ? {} : { body: JSON.stringify(writeBody) }),
     });
   } catch {
     throw fail(503, 'TRANSACTIONAL_LOCALE_REST_UNAVAILABLE', 'Language preference is unavailable.');
   }
   if (!response?.ok) {
+    // A concurrent insert/update race may return a conflict. Do not attempt
+    // a privileged retry, user-selected account ID, or an outbox action.
     throw fail(503, 'TRANSACTIONAL_LOCALE_REST_DENIED', 'Language preference is unavailable.');
   }
   let payload;

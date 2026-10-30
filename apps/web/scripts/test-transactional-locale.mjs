@@ -161,20 +161,26 @@ const readForeign = await run(request(), fixture({
 assert.equal(readForeign.statusCode, 503);
 assert.equal(readForeign.body.code, 'TRANSACTIONAL_LOCALE_RECORD_UNVERIFIED');
 
+let reads = 0;
 let writes = 0;
 const approvedWriteMock = async (url, init) => {
-  writes++;
-  assert.match(url, /\/rest\/v1\/account_transactional_locale_preferences\?on_conflict=account_id/);
-  assert.equal(init.method, 'POST');
   assert.equal(init.headers.Authorization, 'Bearer ' + fakeAccessToken);
   assert.equal(init.headers.apikey, fakeConfig.publishableKey);
-  assert.equal(init.headers.Prefer, 'resolution=merge-duplicates,return=representation');
+  assert.equal(JSON.stringify(init).includes('sb_secret_'), false);
+  if (init.method === 'GET') {
+    reads++;
+    assert.match(url, new RegExp('account_id=eq\\.' + accountId));
+    return new Response('[]', { status: 200 });
+  }
+  writes++;
+  assert.match(url, /\/rest\/v1\/account_transactional_locale_preferences\?select=/);
+  assert.equal(init.method, 'POST');
+  assert.equal(init.headers.Prefer, 'return=representation');
   assert.equal(init.headers['Content-Type'], 'application/json');
   assert.deepEqual(JSON.parse(init.body), {
     account_id: accountId,
     preferred_locale: 'es',
   });
-  assert.equal(JSON.stringify(init).includes('sb_secret_'), false);
   return new Response(JSON.stringify([verifiedPreference()]), { status: 201 });
 };
 const saved = await run(request('POST', JSON.stringify({ locale: 'es' })), fixture({
@@ -184,7 +190,39 @@ assert.equal(saved.statusCode, 200);
 assert.equal(saved.body.locale, 'es');
 assert.equal(saved.body.marketingConsentChanged, false);
 assert.equal(saved.body.notificationsEnabled, false);
+assert.equal(reads, 1);
 assert.equal(writes, 1);
+
+// An existing row needs only UPDATE(preferred_locale); never update
+// the immutable authenticated account_id.
+let patches = 0;
+const changed = await run(request('POST', JSON.stringify({ locale: 'es' })), fixture({
+  fetchImpl: async (url, init) => {
+    if (init.method === 'GET') {
+      return new Response(JSON.stringify([verifiedPreference('en', 1)]), { status: 200 });
+    }
+    patches++;
+    assert.equal(init.method, 'PATCH');
+    assert.match(url, new RegExp('account_id=eq\\.' + accountId));
+    assert.equal(init.headers.Prefer, 'return=representation');
+    assert.deepEqual(JSON.parse(init.body), { preferred_locale: 'es' });
+    return new Response(JSON.stringify([verifiedPreference('es', 2)]), { status: 200 });
+  },
+}));
+assert.equal(changed.statusCode, 200);
+assert.equal(changed.body.revision, 2);
+assert.equal(changed.body.locale, 'es');
+assert.equal(patches, 1);
+
+// Saving an already selected locale is a no-op; revision does not change.
+const same = await run(request('POST', JSON.stringify({ locale: 'es' })), fixture({
+  fetchImpl: async (url, init) => {
+    assert.equal(init.method, 'GET');
+    return new Response(JSON.stringify([verifiedPreference('es', 2)]), { status: 200 });
+  },
+}));
+assert.equal(same.body.revision, 2);
+assert.equal(same.statusCode, 200);
 
 let invalidWrites = 0;
 for (const input of [
@@ -228,7 +266,11 @@ for (const badResult of [
   new Response(JSON.stringify([{ ...verifiedPreference(), preferred_locale: 'en' }]), { status: 200 }),
 ]) {
   const result = await run(request('POST', JSON.stringify({ locale: 'es' })),
-    fixture({ fetchImpl: async () => badResult }));
+    fixture({
+      fetchImpl: async (_url, init) => init.method === 'GET'
+        ? new Response('[]', { status: 200 })
+        : badResult,
+    }));
   assert.equal(result.statusCode, 503);
 }
 const failedNetwork = await run(request(), fixture({

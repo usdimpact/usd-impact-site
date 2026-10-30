@@ -221,4 +221,32 @@ function syntheticPriorMonthly(weekOffset = 0) {
   }), /fewer than four published independent Weeklies/);
 }
 
+// Owner-approved editorial direction is DRAFT ONLY. A naming/access choice does
+// not constitute permission to change rights gates, merge, publish or deploy.
+{
+  const decision = JSON.parse(fs.readFileSync(path.join(DRAFT_DIR, 'owner-editorial-direction.draft.json'), 'utf8'));
+  assert.equal(decision.scope, 'DRAFT_EDITORIAL_DIRECTION_ONLY');
+  assert.equal(decision.ownerDraftDirectionApproved, true);
+  assert.equal(decision.editorial.weeklyWorkingTitle, 'USD Impact Macro Weekly Review');
+  assert.equal(decision.editorial.fourWeeklyWorkingTitle, 'USD Impact Four-Week Macro Review');
+  assert.equal(decision.editorial.language, 'en');
+  assert.equal(decision.editorial.intendedFutureAccess, 'free_public_educational');
+  assert.equal(decision.reportingAsOf.independentPublishedWeeklyCount, 0);
+  assert.equal(decision.reportingAsOf.independentMonthlyEligible, false);
+  assert.equal(decision.executableActivation, false);
+  assert.equal(decision.productionRuntimeUsesThisFile, false);
+  assert.ok(weekly.editorial.title.startsWith(decision.editorial.weeklyWorkingTitle));
+  assert.ok(monthly.editorial.title.startsWith(decision.editorial.fourWeeklyWorkingTitle));
+  const approvedDraftKeys = new Set([
+    'draftNaming', 'draftLanguage', 'draftFreePublicDirection',
+    'draftPublishedDailySourceDirection', 'draftFourWeeklyMonthlyRule'
+  ]);
+  assert.equal(Object.keys(decision.authorizations).length, 16);
+  for (const [key, enabled] of Object.entries(decision.authorizations)) {
+    assert.equal(enabled, approvedDraftKeys.has(key), 'unexpected authorization: ' + key);
+  }
+  assert.ok(Object.values(decision.existingHolds).every((value) => value === 'HOLD'));
+  tests += 14 + Object.keys(decision.authorizations).length;
+}
+
 console.log('Independent editorial offline draft contract: ' + tests + ' assertions passed (never release-ready).');

@@ -7,6 +7,7 @@ import {
   resolveVerifiedAccessReadyLocale,
 } from '../src/lib/purchase-access-ready-locale-preview.js';
 import { readFile } from 'node:fs/promises';
+import { previewPurchaseAccessReadyRecovery } from '../src/lib/purchase-access-ready-recovery-preview.js';
 import {
   PURCHASE_ACCESS_READY_EMAIL_BUSINESS_OBJECT_TYPE,
   PURCHASE_ACCESS_READY_EMAIL_MESSAGE_ID,
@@ -360,5 +361,111 @@ assert.throws(
   }),
   (error) => error.code === 'INVALID_PURCHASE_REFERENCE',
 );
+
+
+// Read-only recovery cases: historical purchases, outbox suppression and
+// failed notification may NOT trigger a replay of a commercial webhook.
+const nextPurchase = {
+  id: '523e4567-e89b-42d3-a456-426614174000',
+  account_id: accountId,
+  purchase_intent_id: '623e4567-e89b-42d3-a456-426614174000',
+  product_id: 'read-the-dollar-first-guided-interactive-edition',
+  provider: 'lemon-squeezy',
+  provider_event_id: 'lemon-squeezy:fixture-event',
+  status: 'completed', completed_at: '2026-11-03T12:30:00.000Z',
+  refunded_at: null, disputed_at: null,
+};
+const nextEntitlement = {
+  ...accessResult.entitlement, id: '723e4567-e89b-42d3-a456-426614174000',
+  account_id: accountId, purchase_id: nextPurchase.id, state: 'active',
+  product_id: nextPurchase.product_id, version: 1,
+};
+const nextIntent = {
+  id: nextPurchase.purchase_intent_id, account_id: accountId,
+  status: 'completed', product_id: nextPurchase.product_id,
+};
+const scannerFixture = {
+  observedAt: '2026-11-03T13:00:00.000Z',
+  purchases: [nextPurchase], purchaseIntents: [nextIntent],
+  entitlements: [nextEntitlement], profiles: [accessResult.profile], outboxRows: [],
+};
+const noneApproved = previewPurchaseAccessReadyRecovery(scannerFixture);
+assert.deepEqual(noneApproved.candidates, []);
+assert.equal(noneApproved.reason, 'CUTOVER_NOT_APPROVED');
+assert.equal(noneApproved.canDispatch, false);
+const allowedFixture = { ...scannerFixture, approvedCutoverAt: '2026-11-02T00:00:00.000Z' };
+const oneMissing = previewPurchaseAccessReadyRecovery(allowedFixture);
+assert.equal(oneMissing.state, 'review_only');
+assert.deepEqual(oneMissing.candidates, [{
+  purchaseId: nextPurchase.id, verdict: 'REVIEW_ONLY', locale: 'en',
+  reason: 'MISSING_OUTBOX_AFTER_APPROVED_CUTOVER',
+}]);
+assert.equal(oneMissing.canDispatch, false);
+assert.equal(oneMissing.canWrite, false);
+assert.deepEqual(oneMissing, previewPurchaseAccessReadyRecovery(allowedFixture));
+assert.doesNotMatch(JSON.stringify(oneMissing), /buyer@example.com|lemon-squeezy:fixture-event/);
+const historicalOnly = previewPurchaseAccessReadyRecovery({
+  ...scannerFixture, approvedCutoverAt: '2026-11-04T00:00:00.000Z',
+  observedAt: '2026-11-05T00:00:00.000Z',
+});
+assert.equal(historicalOnly.beforeCutover, 1);
+assert.deepEqual(historicalOnly.candidates, []);
+const existingEmail = previewPurchaseAccessReadyRecovery({
+  ...allowedFixture, outboxRows: [{
+    message_id: 'purchase_access_ready', business_object_type: 'purchase',
+    business_object_id: nextPurchase.id, status: 'terminal_failed',
+    recipient_email_normalized: 'stale@example.com',
+  }],
+});
+assert.equal(existingEmail.existing, 1);
+assert.deepEqual(existingEmail.candidates, []);
+const invalidEntitlement = previewPurchaseAccessReadyRecovery({
+  ...allowedFixture, entitlements: [{
+    ...nextEntitlement, account_id: '823e4567-e89b-42d3-a456-426614174000',
+  }],
+});
+assert.equal(invalidEntitlement.held, 1);
+assert.deepEqual(invalidEntitlement.candidates, []);
+const duplicateEntitlement = previewPurchaseAccessReadyRecovery({
+  ...allowedFixture, entitlements: [nextEntitlement, { ...nextEntitlement }],
+});
+assert.equal(duplicateEntitlement.held, 1);
+const invalidRecipient = previewPurchaseAccessReadyRecovery({
+  ...allowedFixture, profiles: [{ ...accessResult.profile, email: 'not-an-email' }],
+});
+assert.equal(invalidRecipient.held, 1);
+for (const edit of [
+  { status: 'refunded' }, { provider: 'untrusted' },
+  { provider_event_id: null },
+  { refunded_at: '2026-11-03T12:40:00.000Z' },
+  { disputed_at: '2026-11-03T12:40:00.000Z' },
+]) {
+  const invalid = previewPurchaseAccessReadyRecovery({
+    ...allowedFixture, purchases: [{ ...nextPurchase, ...edit }],
+  });
+  assert.deepEqual(invalid.candidates, []);
+}
+assert.throws(() => previewPurchaseAccessReadyRecovery({
+  ...scannerFixture, approvedCutoverAt: '2026-11-02',
+}), /canonical UTC/);
+assert.throws(() => previewPurchaseAccessReadyRecovery({
+  ...allowedFixture, purchases: Array.from({ length: 501 }, () => nextPurchase),
+}), /bounded array/);
+const twentySix = Array.from({ length: 26 }, (_, i) => {
+  const suffix = i.toString(16).padStart(12, '0');
+  return {
+    ...nextPurchase,
+    id: '523e4567-e89b-42d3-a456-' + suffix,
+    purchase_intent_id: '623e4567-e89b-42d3-a456-' + suffix,
+  };
+});
+const overflow = previewPurchaseAccessReadyRecovery({
+  ...allowedFixture, purchases: twentySix,
+  purchaseIntents: twentySix.map(x => ({ ...nextIntent, id: x.purchase_intent_id })),
+  entitlements: twentySix.map(x => ({ ...nextEntitlement, purchase_id: x.id })),
+});
+assert.equal(overflow.state, 'hold');
+assert.equal(overflow.reason, 'CANDIDATE_LIMIT_EXCEEDED');
+assert.deepEqual(overflow.candidates, []);
 
 console.log('Purchase access-ready email tests passed.');

@@ -31,3 +31,17 @@ Owner direction: standard purchase-linked USD Impact access-ready notice, locali
 - Merchant receipt remains the canonical payment receipt. Account access must remain available even when USD Impact transactional email is delayed or never delivered.
 
 References: https://github.com/usdimpact/usd-impact-site/issues/1021 ; https://github.com/usdimpact/usd-impact-site/pull/1022 ; https://github.com/usdimpact/usd-impact-site/issues/54
+
+## Future-buyer notification reconciliation — review-only draft
+
+The immutable paid purchase, completed intent, purchase-linked entitlement and verified profile can be compared against the application notification outbox in a bounded read-only snapshot. The new pure preview module is apps/web/src/lib/purchase-access-ready-recovery-preview.js. It is NOT wired to a route, cron, webhook, provider or database operation.
+
+Only a separately authorized FUTURE activation cutover may make an item a review candidate. The currently accepted historical first buyer remains excluded and must never be backfilled. The current owner policy decision is not an activation timestamp. There is no approved activation cutover.
+
+The planner identifies completed, non-refunded, non-disputed Lemon Squeezy Library Pass purchases with verified, unique completed intents and active purchase-linked entitlements, matching active account identity, validated email, and no existing purchase_access_ready outbox row. Any prior row of any status is an existing notification and requires manual reconciliation, not automatic recreation.
+
+All output is review only (canWrite=false, canDispatch=false, requiresOperatorApproval=true). Only opaque purchase IDs and reason codes appear; no recipient address or provider data. Input is capped at 500 records per source and 25 proposed candidates; exceeding limits fails closed. Copy language defaults to EN because accounts have no verified locale column; Spanish remains render-only and Portuguese remains HOLD.
+
+Before an authorized future recovery action, the operator must revalidate live authoritative state, provider ownership, exact purchase and outbox identity, delivery/complaint suppression, immutable locale/template snapshot and idempotent conflict handling. A signed callback is needed to prove delivery. Any execution requires a separately approved read-only inspector then bounded Development proof and exact-head Production release gates. No payment webhook replay, historical buyer send, or Production mail activation is authorized by this draft.
+
+Remaining separate risk: transient failure while reading account/entitlement after a committed purchase may still fail the original commerce webhook receipt. Do not suppress an access-authority failure without an independent commercial reconciliation proof. Maintain HOLD until this is addressed and tested.

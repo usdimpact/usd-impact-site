@@ -6,6 +6,7 @@ on:
       - 'docs/operations/candidates/issue950-s3-jwt-session-*.review.sql'
       - 'docs/operations/candidates/issue950-pdf-only-*.review.sql'
       - 'docs/operations/candidates/issue950-pdf-only-offline-source-preflight.review.ps1'
+      - 'docs/operations/candidates/issue950-pdf-only-rest-envelope-preflight.review.ps1'
       - 'docs/operations/issue950-pdf-only-restore-upsert-pilot-review-2026-10-30.md'
       - 'docs/operations/issue950-owner-operated-single-pdf-go-no-go-2026-10-30.md'
       - 'apps/web/scripts/test-issue950-scoped-s3-jwt-rls-pglite.mjs'
@@ -72,3 +73,38 @@ jobs:
           MustStop $probe 'movnekagnxgcyenczfoc' 'STOP: PDF size mismatch'
           Remove-Item -LiteralPath $probe
           Write-Output 'Issue950 PowerShell wrong-project/missing-source/wrong-byte negative fixtures PASS; zero network calls.'
+      - name: REST client request-envelope cannot run on wrong target or broad credentials
+        shell: pwsh
+        run: |
+          $script = Join-Path $env:GITHUB_WORKSPACE 'docs/operations/candidates/issue950-pdf-only-rest-envelope-preflight.review.ps1'
+          $source = Get-Content -LiteralPath $script -Raw
+          if ($source -match 'Invoke-WebRequest|Invoke-RestMethod|SendAsync|GetAsync|PostAsync|Start-Process|WebClient|WebRequest.Create') {
+            throw 'Review-only REST envelope must contain no network transport execution'
+          }
+          if ($source -notmatch 'HttpClientHandler' -or $source -notmatch 'AllowAutoRedirect') {
+            throw 'REST envelope must explicitly require redirect refusal'
+          }
+          $probe = Join-Path $env:RUNNER_TEMP 'issue950-offline-envelope-not-real.pdf'
+          Set-Content -LiteralPath $probe -Value '%PDF-1.4 fake offline fixture' -Encoding ascii
+          function MustStop([string] $sourceFile, [string] $project, [string] $expected) {
+            $actual = $null
+            try {
+              & $script -SourcePdf $sourceFile -DestinationProjectRef $project | Out-Null
+            } catch {
+              $actual = $_.Exception.Message
+            }
+            if ($actual -cne $expected) {
+              throw 'REST envelope unexpectedly accepted a prohibited fixture'
+            }
+          }
+          MustStop $probe 'gjzetjugmnwanvjkchux' 'STOP: non-restore project'
+          MustStop ($probe + '.missing') 'movnekagnxgcyenczfoc' 'STOP: original PDF unavailable'
+          MustStop $probe 'movnekagnxgcyenczfoc' 'STOP: original PDF byte length mismatch'
+          $env:SUPABASE_SERVICE_ROLE_KEY = 'offline-fixture-placeholder-not-a-key'
+          try {
+            MustStop $probe 'movnekagnxgcyenczfoc' 'STOP: broad credential environment variable is present'
+          } finally {
+            Remove-Item Env:SUPABASE_SERVICE_ROLE_KEY
+          }
+          Remove-Item -LiteralPath $probe
+          Write-Output 'Issue950 REST client envelope negative fixtures PASS; no network, JWT, PDF upload, or secrets.'

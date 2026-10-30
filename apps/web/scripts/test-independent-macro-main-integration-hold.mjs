@@ -296,9 +296,10 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      x.qualifiedInternationalRightsClearance===false &&
      html.includes('href="'+x.url+'"')),
      'facts-and-links-only evidence without legal grant or copied media');
-  ok(evidence.sourceItems[4].directRetrieved===false &&
-     evidence.sourceItems[4].verificationNote.includes('direct archive fetch failed'),
-     'do not manufacture independent BLS archive browser success');
+  ok(evidence.sourceItems[4].directRetrieved===true &&
+     evidence.sourceItems[4].verificationNote.includes('direct browser-backed retrieval succeeded') &&
+     evidence.sourceItems[4].qualifiedInternationalRightsClearance===false,
+     'separate BLS direct source check is not international legal clearance');
   ok(evidence.internationalReferences.length===2 &&
      evidence.privacyReferences.length===3 &&
      evidence.runtimePrivacyEvidence===undefined,

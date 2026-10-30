@@ -152,9 +152,9 @@
   ],
   "firstWeeklyRightsAndPrivacyEvidenceDraft": {
     "evidencePath": "docs/operations/independent-macro-release/first-weekly-source-rights-and-privacy-evidence-2026-10-30.draft.json",
-    "evidenceGitBlobSha": "f306a014c7bd1342fbb780b016bc71de065220fa",
+    "evidenceGitBlobSha": "42d272bbb0f1c7dc523993fbd93ecc7acdb519d5",
     "memoPath": "docs/operations/independent-macro-release/first-weekly-scope-limited-legal-and-production-privacy-review.draft.md",
-    "memoGitBlobSha": "a22501565cd219be65f2febcc42e087f3a00ad4f",
+    "memoGitBlobSha": "1072f0953e92213bad4212ec8400a549d467c6e9",
     "sourceCount": 5,
     "independentQualifiedLegalReviewCompleted": false,
     "productionCookieAndNetworkTraceCompleted": false,

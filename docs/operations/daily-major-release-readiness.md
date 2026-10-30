@@ -19,6 +19,26 @@ As of October 30, pre-reviewed calendar examples exist for [October 29 BEA GDP/P
 
 The October 30 ECI record has a null `outcomeUrl` while outcome verification is outstanding. After its actual release, an editor must verify the issuer's dated outcome page and supply the exact primary URL in a reviewed manifest before any outcome can count. No future number, headline or source URL may be guessed.
 
+
+### October 30, 2026 — IANA timezone and source cutover
+
+**Use `Europe/Tirane` on the event date, not a fixed UTC+02:00 offset.** Albania returned to standard time (UTC+01:00) on October 25, 2026. U.S. Eastern Time is still daylight time (UTC−04:00) on October 30. The [official BLS Employment Cost Index schedule](https://www.bls.gov/schedule/news_release/eci.htm) says 08:30 Eastern on October 30 = **12:30 UTC = 13:30 Tirane**, so the existing 14:00 Tirane editorial assessment happens **30 minutes after** that release. Earlier operational notes that displayed 14:30 Tirane for ECI were incorrect and were superseded in [Issue #840](https://github.com/usdimpact/usd-impact-site/issues/840).
+
+| Checkpoint on Friday October 30 | UTC | Europe/Tirane (CET) | Verification boundary |
+| --- | --- | --- | --- |
+| Native weekday Daily generation | 09:17 | **10:17** | Original schedule, never trigger a duplicate paid run |
+| Independent wake | 09:32 | **10:32** | Observe existing ownership/lease, not new authority |
+| First existing backstop | 12:17 | **13:17** | Before BLS; pre-release candidate cannot claim ECI result |
+| BLS Q3 ECI official release | **12:30** | **13:30** | Independently verify actual official outcome page and release date |
+| Editorial assessment | 13:00 | **14:00** | Review actual post-release candidate and any still-active jobs |
+| Publication target | 15:00 | **16:00** | Human exact-copy PASS, protected checks, Preview READY and live proof |
+| Last existing backstop | 15:47 | **16:47** | Already 47 minutes after target; not evidence of on-time delivery |
+| Escalation | 17:00 | **18:00** | Record actual delivered/HOLD state, do not manufacture success |
+| Natural Daily Health schedule | 18:45 | **19:45** | Only a real scheduled run can prove unattended recovery |
+
+The pre-release generator may produce a valid *pre-ECI* article; it must not be marketed as containing a later official outcome. If updated after ECI, preserve `generatedAt`, verify a dated BLS outcome URL, document the new post-release editorial review, and cite the source in the final highlight. The local date/time table is an **operational aid**, not a scheduling change, automatic timer, verified release receipt or editorial approval. Recompute future dates using IANA rules; do not reuse these offsets after U.S. or Albanian daylight-saving transitions.
+
+
 ## Operator command
 
 From the `apps/web` directory, using the exact branch/candidate under review:

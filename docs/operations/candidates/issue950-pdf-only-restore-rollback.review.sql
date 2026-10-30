@@ -63,14 +63,14 @@ begin
         -- and the identical expiry used at installation. This is a
         -- conservative fail-closed structure check, not a live permission test.
         or (p.cmd in ('SELECT','UPDATE') and (
-          regexp_count(coalesce(p.qual,''), '\\mAND\\M', 1, 'i') <> 3
-          or regexp_count(coalesce(p.qual,''), '\\mOR\\M', 1, 'i') <> 0
+          regexp_count(coalesce(p.qual,''), '\mAND\M', 1, 'i') <> 3
+          or regexp_count(coalesce(p.qual,''), '\mOR\M', 1, 'i') <> 0
           or position(to_char(approved_expires_at,'YYYY-MM-DD HH24:MI:SS')
                       in coalesce(p.qual,''))=0
         ))
         or (p.cmd in ('INSERT','UPDATE') and (
-          regexp_count(coalesce(p.with_check,''), '\\mAND\\M', 1, 'i') <> 3
-          or regexp_count(coalesce(p.with_check,''), '\\mOR\\M', 1, 'i') <> 0
+          regexp_count(coalesce(p.with_check,''), '\mAND\M', 1, 'i') <> 3
+          or regexp_count(coalesce(p.with_check,''), '\mOR\M', 1, 'i') <> 0
           or position(to_char(approved_expires_at,'YYYY-MM-DD HH24:MI:SS')
                       in coalesce(p.with_check,''))=0
         ))

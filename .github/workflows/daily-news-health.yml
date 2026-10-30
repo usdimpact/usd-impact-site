@@ -30,6 +30,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_NAME: daily-news.yml
+          HEALTH_WORKFLOW_EVENT: ${{ github.event_name }}
           MAX_AGE_HOURS: '12'
           MAX_ACTIVE_MINUTES: '130'
         run: |
@@ -224,6 +225,16 @@ jobs:
             --base-url "https://www.usd-impact.com" \
             --report daily-health-report.md
 
+          # A manually dispatched Health check can inspect evidence, but only a
+          # naturally scheduled Health run can certify unattended recovery.
+          if [ "$HEALTH_WORKFLOW_EVENT" != "schedule" ]; then
+            echo "- Operational conclusion: health_workflow_not_scheduled" >> daily-health-report.md
+            echo "- Result: this Health run was manually triggered; it cannot certify or close the native scheduled-recovery incident." >> daily-health-report.md
+            echo "state=pending" >> "$GITHUB_OUTPUT"
+            cat daily-health-report.md
+            exit 0
+          fi
+
           echo "- Result: healthy." >> daily-health-report.md
           echo "state=healthy" >> "$GITHUB_OUTPUT"
           cat daily-health-report.md
@@ -273,7 +284,7 @@ jobs:
           fi
 
       - name: Close recovered daily health issue
-        if: steps.health.outcome == 'success' && steps.health.outputs.state == 'healthy'
+        if: steps.health.outcome == 'success' && steps.health.outputs.state == 'healthy' && github.event_name == 'schedule'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_TITLE: P1 — Daily USD Impact automation requires attention

@@ -136,7 +136,7 @@ assert.match(
 );
 assert.match(
   workflow,
-  /echo "state=healthy" >> "\$GITHUB_OUTPUT"[\s\S]*if: steps\.health\.outcome == 'success' && steps\.health\.outputs\.state == 'healthy'/,
+  /echo "state=healthy" >> "\$GITHUB_OUTPUT"[\s\S]*if: steps\.health\.outcome == 'success' && steps\.health\.outputs\.state == 'healthy' && github\.event_name == 'schedule'/,
   'only proven deployed health may close an existing Daily health issue',
 );
 assert.match(
@@ -176,6 +176,22 @@ assert.match(
   /for step_name in "\$\{required_steps\[@\]\}"; do[\s\S]*select\(\.name == \$name\)[\s\S]*if \[ "\$step_conclusion" != "success" \]; then[\s\S]*scheduled_generation_not_proven[\s\S]*state=pending/,
   'missing or skipped generator job steps must fail closed as PENDING, not healthy',
 );
+assert.match(
+  workflow,
+  /HEALTH_WORKFLOW_EVENT: \$\{\{ github\.event_name \}\}/,
+  'Health inspection must receive the actual event trigger, not infer it from Daily provenance',
+);
+assert.match(
+  workflow,
+  /check-daily-news-deployment-health\.mjs[\s\S]*if \[ "\$HEALTH_WORKFLOW_EVENT" != "schedule" \]; then[\s\S]*health_workflow_not_scheduled[\s\S]*state=pending[\s\S]*exit 0[\s\S]*echo "- Result: healthy\."/,
+  'a manually dispatched Health run must stay pending even if all Daily and deployment checks pass',
+);
+assert.match(
+  workflow,
+  /- name: Close recovered daily health issue\n\s*if: steps\.health\.outcome == 'success' && steps\.health\.outputs\.state == 'healthy' && github\.event_name == 'schedule'/,
+  'issue closure must independently require the natural Health schedule event',
+);
+
 assert.ok(
   (workflow.match(/echo "state=healthy" >> "\$GITHUB_OUTPUT"/g) || []).length === 1,
   'Health must have only one healthy emission downstream from provenance checks',

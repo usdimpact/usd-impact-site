@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { extractIndependentMacroWeeklyDraftFragment, DRAFT_ARTICLE_SECTION_IDS } from '../src/lib/independent-macro-weekly-draft-shell.mjs';
+import { buildIndependentMacroWeeklyAppearanceReview, PUBLICATION_APPEARANCE_EDITS, PUBLICATION_APPEARANCE_DISCLOSURE } from '../src/lib/independent-macro-weekly-publication-appearance-review.mjs';
 
 const from = (relative) => readFileSync(new URL(relative, import.meta.url), 'utf8');
 const gitBlob = (value) => {
@@ -459,11 +460,12 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
     ['R04','R05','R06','R07','X01'],
     'all separate unresolved human decisions present');
   ok(proposed.evidence.length===p.itemsNeedingActualOwnerReview &&
-     proposed.evidence.every(x=>x.ownerDecision==='PENDING' &&
-       !x.ownerAcknowledgedRisk && !x.hardStopConfirmed && x.sources.length>0),
+     proposed.evidence.every(x=>x.ownerDecision==='OWNER_APPROVED_SCOPED_RISK_REVIEW' &&
+       x.ownerAcknowledgedRisk && !x.hardStopConfirmed && x.sources.length>0 &&
+       x.finalRenderedReleasePermission===false && x.ownerScopeAccepted.length>30),
      'no item-specific owner approval invented');
   const ai=proposed.aiEditorialDetermination;
-  ok(ai.actualAIContributionToFinalText==='NOT_ATTESTED' &&
+  ok(ai.actualAIContributionToFinalText==='AI_ASSISTED_DRAFT_PREPARATION_DOCUMENTED_FOR_THIS_WORKFLOW' &&
      ai.priorOwnerEditorialContentPassRecorded &&
      ai.priorOwnerPresentationPassRecorded &&
      ai.primarySourceFactsCheckedAgainstFiveIssuerLinks &&
@@ -471,24 +473,124 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      !ai.legalEditorialResponsibilityForThisArticleAttested &&
      !ai.exceptionUnderEUArticle50_4Chosen && !ai.publicAITextDisclosureChosen &&
      ai.disclosureCandidateNotInsertedIntoArticle &&
-     ai.editorialDecision==='PENDING' &&
+     ai.editorialDecision==='CONSERVATIVE_DISCLOSURE_PREPARED_FOR_NONPUBLIC_FINAL_RENDER_REVIEW' &&
+     ai.conservativeVisibleDisclosureProofPrepared &&
      !ai.legalCertification,
      'source facts PASS does not become Article 50 human review certification');
-  ok(Object.values(proposed.signOff).every(x=>x===false) &&
+  ok(proposed.signOff.eachItemReviewedAndAccepted &&
+     Object.entries(proposed.signOff).every(([key,value])=>key==='eachItemReviewedAndAccepted' ? value===true : value===false) &&
      Object.values(proposed.releasePermissions).every(x=>x===false) &&
-     !p.itemSpecificRiskAcceptanceRecorded && !p.aiEditorialDeterminationRecorded &&
+     p.itemSpecificRiskAcceptanceRecorded && !p.aiEditorialDeterminationRecorded &&
      !p.finalStatusCopyPassed && !p.releaseAuthorized &&
      proposed.firstPublishedIndependentWeeklies===0 &&
      proposed.eligibleMonthlyCount===0,
      'owner-specific review may not waive release/indexing/Score or legal requirements');
   ok(worksheet.includes('AI Act Article 50(4)') &&
-     worksheet.includes('all five owner outcomes PENDING') &&
+     worksheet.includes('five scoped owner approvals recorded') &&
+     worksheet.includes('named editorial responsibility NOT ATTESTED') &&
      worksheet.includes('KELA LEADS S.R.L.') &&
      worksheet.includes('Privacy PR #1035 is now live in public Production') &&
      worksheet.includes('no privacy breach established') &&
      worksheet.includes('independent traffic/cookie-name') &&
      !m.releaseAuthorized && !m.publishReady,
      'worksheet explicitly holds legal/privacy and publication decision');
+}
+
+// Owner scoped approval receipt and strict private final-copy review.
+{
+  const root='../../../docs/operations/independent-macro-release/';
+  const p=m.ownerFiveScopeApprovalDraft;
+  const raw=from(root+'owner-five-item-risk-approval-receipt-2026-10-31.draft.json');
+  const receipt=JSON.parse(raw);
+  eq(gitBlob(raw),p.receiptGitBlobSha,'pin owner five-item approval receipt');
+  eq(receipt.ownerVerbatim,'all approved, please continue','exact owner reply');
+  eq(receipt.scope.reviewedDraftHead,'920630af13743b54de69cc99c402c0ce65b7003c',
+    'owner acceptance refers to previous frozen review source');
+  eq(receipt.ownerAcknowledgements.map(x=>x.id),['R04','R05','R06','R07','X01'],
+    'five scoped owner approvals and no extras');
+  ok(p.ownerReviewedItemCount===5 && !p.independentLegalReviewCertification &&
+     !p.namedEditorLegalCapacityVerified && !p.actualFinalRenderedCopyOwnerPass &&
+     !p.publicationRightsGranted && !receipt.limitations.ownerIdentityAndLegalCapacityIndependentlyVerified &&
+     !receipt.limitations.qualifiedForeignRightsOpinionObtained &&
+     !receipt.limitations.independentProductionConsentNetworkCookieTraceCaptured &&
+     !receipt.limitations.externalGdprEprivacyCertificationObtained &&
+     !receipt.limitations.statusCopyOrFinalRenderedPageOwnerPassObtained &&
+     !receipt.limitations.authorizesGitMerge && !receipt.limitations.authorizesPublicRoute &&
+     !receipt.limitations.authorizesProductionDeploy &&
+     !receipt.limitations.authorizesIndexingOrDistribution &&
+     !receipt.limitations.authorizesOriginalScorePublication &&
+     !receipt.limitations.authorizesSiteCommerceChanges &&
+     !m.releaseAuthorized && !m.publishReady,'all downstream release rights remain HOLD');
+  const a=m.nonRoutedPublicationAppearanceReviewDraft;
+  const helper=from('../src/lib/independent-macro-weekly-publication-appearance-review.mjs');
+  const component=from('../src/components/IndependentMacroWeeklyPublicationAppearanceReview.astro');
+  const css=from('../src/styles/independent-macro-weekly-publication-appearance-review.css');
+  const proof=from(root+'first-weekly-final-copy-ai-disclosure-offline-proof-2026-10-31.draft.html');
+  const priorProof=from(root+'first-weekly-status-copy-offline-proof-2026-10-31.draft.html');
+  const proposal=JSON.parse(from(root+'first-weekly-conditional-publication-copy-2026-10-31.draft.json'));
+  eq(gitBlob(helper),a.helperGitBlobSha,'pin only new final-review adapter');
+  eq(gitBlob(component),a.componentGitBlobSha,'pin only new not-routed component');
+  eq(gitBlob(css),a.stylesheetGitBlobSha,'pin only new review-only styles');
+  eq(gitBlob(proof),a.staticOfflineProofGitBlobSha,'pin offsite owner copy proof');
+  eq(gitBlob(html),a.originalArticleGitBlobSha,'original owner-frozen source kept intact');
+  eq(a.approvedHistoricSharedLayoutGitBlobSha,m.siteShellAdaptationDraft.componentGitBlobSha,
+    'historic reviewed shell unchanged');
+  eq(PUBLICATION_APPEARANCE_EDITS.map(x=>x.id),
+     ['hero-badge','hero-review-status','section-seven-status','section-seven-heading','adapter-stale-presentation-notice'],
+     'only four source copy changes and one release sidebar notice');
+  for(const edit of PUBLICATION_APPEARANCE_EDITS) {
+    const matching=proposal.proposedStatusOnlySubstitutions.find(x=>x.id===edit.id);
+    ok(!!matching,'each status edit drawn from owner review proposal');
+    eq([edit.old,edit.proposed],[matching.old,matching.proposed],
+      'exact unchanged source-to-status mapping '+edit.id);
+  }
+  const review=buildIndependentMacroWeeklyAppearanceReview(html);
+  ok(review.notRouted && !review.releaseAuthorized && !review.finalRenderedOwnerPass &&
+     review.sectionIds.length===7 && review.statusOnlyEdits===5 &&
+     review.aiDisclosureVisible,'appearance proof non-public with all seven original sections');
+  let expected=extractIndependentMacroWeeklyDraftFragment(html).fragment;
+  for(const edit of PUBLICATION_APPEARANCE_EDITS){
+    eq(expected.split(edit.old).length-1,1,'one intended source marker for '+edit.id);
+    expected=expected.replace(edit.old,edit.proposed);
+  }
+  const aiNotice='<div class="mw-ai-review-disclosure" role="note" data-ai-disclosure-proposed="true"><strong>AI-assisted preparation:</strong> '+
+    PUBLICATION_APPEARANCE_DISCLOSURE+'</div>';
+  expected=expected.replace('<main id="main-content" class="container layout">',
+    aiNotice+'\n  <main id="main-content" class="container layout">');
+  eq(review.fragment,expected,'review helper changes only approved status and proposed visible AI disclosure');
+  eq(PUBLICATION_APPEARANCE_DISCLOSURE,receipt.aiTransparency.candidateDisclosureText,
+    'review text corresponds to owner visibility packet');
+  for(const url of m.sources.officialSourceUrls)
+    ok(review.fragment.includes('href="'+url+'"'),'issuer hyperlink preserved '+url);
+  ok(component.includes('noindex={true}') &&
+     component.includes('data-release-authorized="false"') &&
+     component.includes('data-final-rendered-owner-pass="false"') &&
+     component.includes('data-indexing-authorized="false"') &&
+     component.includes('PRIVATE FINAL-COPY REVIEW') &&
+     !route.includes('IndependentMacroWeeklyPublicationAppearanceReview') &&
+     a.AstroComponentWrittenButNotRoutedOrCompiled &&
+     !a.ownerFinalExactRenderedArtifactPass && !a.finalReleaseCopyApproved &&
+     !a.publicRouteAuthorized && !a.publicProductionAuthorized &&
+     !a.indexingAuthorized && !a.originalScoreAuthorized && !a.releaseAuthorized,
+     'new private Astro component has no public route or approval');
+  const one=(str,a,b)=>{eq(str.split(a).length-1,1,'one offline proof marker');return str.replace(a,b);};
+  const note='  <div role="note" data-ai-disclosure-proposed="true" style="max-width:1160px;margin:24px auto 0;padding:17px 26px;background:#102538;border-left:4px solid #80dbcb;color:#e8f3f5"><strong>AI-assisted preparation:</strong> '+
+    PUBLICATION_APPEARANCE_DISCLOSURE+'</div>\n';
+  let expectedProof=one(priorProof,'  <main id="main" class="container layout">',
+    note+'  <main id="main" class="container layout">');
+  expectedProof=one(expectedProof,
+    '<title>USD Impact Macro Weekly Review | October 26–30, 2026 — Draft Release Candidate (Unpublished)</title>',
+    '<title>USD Impact Macro Weekly Review | October 26–30, 2026 — Private final-copy review</title>');
+  expectedProof=one(expectedProof,
+    'OFFLINE WORDING PROOF — NOT PUBLISHED. This file illustrates proposed status wording only.',
+    'PRIVATE FINAL-COPY REVIEW — NOT PUBLISHED. This file illustrates the approved-scope status edits and proposed AI disclosure only.');
+  eq(proof,expectedProof,'private final-copy static proof is reproducible from frozen prior HTML');
+  ok(proof.includes('data-release-authorized="false"') &&
+     proof.includes('noindex,nofollow,noarchive,nosnippet') &&
+     proof.includes('data-offline-review-only="true"') &&
+     proof.includes('Unpublished release candidate') &&
+     !/<script\b|<iframe\b/iu.test(proof) &&
+     !m.releaseAuthorized && !m.publishReady,'offline proof is not indexable or live');
 }
 
 // Non-routable owner wording proof: exactly four source-label changes and one adapted side notice.
@@ -864,7 +966,9 @@ if (builtOutput) {
     'Release Candidate • Draft only',
     'USD Impact Macro Weekly Review | October 26–30, 2026 — Draft Release Candidate (Unpublished)',
     'data-shared-layout-status="draft-not-published"',
-    'Shared-layout Draft — not published — presentation review'
+    'Shared-layout Draft — not published — presentation review',
+    'data-private-appearance-proof="true"',
+    'data-ai-disclosure-proposed="true"'
   ];
   let inspected=0;
   function walk(folder){

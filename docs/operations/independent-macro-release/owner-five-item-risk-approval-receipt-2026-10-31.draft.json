@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "usd-impact-owner-five-scope-approval-receipt-v1",
+  "calendarDate": "2026-10-31",
+  "source": "Owner's latest direct reply to all five pending owner-review gates in the Macro Weekly Draft PR #1025 conversation.",
+  "ownerVerbatim": "all approved, please continue",
+  "scope": {
+    "pullRequest": 1025,
+    "reviewedDraftHead": "920630af13743b54de69cc99c402c0ce65b7003c",
+    "approvedOriginalArticleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "approvedOriginalSharedLayoutGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
+    "reviewWorksheetGitBlobSha": "e8f782f3d5fe2202c8fb8feae7e951098305ef0f",
+    "fiveOwnerRiskCategories": [
+      "R04",
+      "R05",
+      "R06",
+      "R07",
+      "X01"
+    ],
+    "meaning": "Owner approves proceeding within the reviewed one-week English original-facts-and-links scope, with acknowledged outstanding verifiable legal and final-rendered requirements."
+  },
+  "ownerAcknowledgements": [
+    {
+      "id": "R04",
+      "scopedDecision": "APPROVED_TO_PROCEED_WITH_ORIGINAL_FACTS_AND_LINKS",
+      "globalAgencyReuseRightsGranted": false,
+      "unknownContractExceptionsWaived": false
+    },
+    {
+      "id": "R05",
+      "scopedDecision": "APPROVED_FROZEN_FACTUAL_EDUCATIONAL_ARTICLE_SCOPE",
+      "finalChangedStatusCopyPassGranted": false
+    },
+    {
+      "id": "R06",
+      "scopedDecision": "APPROVED_PREVIOUSLY_SHIPPED_PRIVACY_HARDENING_AND_DOCUMENTED_EVIDENCE_SCOPE",
+      "qualifiedPrivacyCertificationGranted": false
+    },
+    {
+      "id": "R07",
+      "scopedDecision": "APPROVED_EXISTING_KELA_LEADS_OPERATOR_IDENTIFICATION_SCOPE",
+      "editorIdentityAndFinalRenderedLegalNoticesReviewed": false
+    },
+    {
+      "id": "X01",
+      "scopedDecision": "APPROVED_TOPIC_WITH_CONSERVATIVE_AI_DISCLOSURE_PROOF_TO_REVIEW",
+      "humanEditorialExceptionClaimed": false,
+      "finalVisibleDisclosurePlacementPassed": false
+    }
+  ],
+  "aiTransparency": {
+    "knownWorkflowAIUsedToHelpDraft": true,
+    "conservativePublicationChoice": "PREPARE_VISIBLE_DISCLOSURE_FOR_FINAL_OWNER_REVIEW",
+    "candidateDisclosureText": "AI tools assisted with preparation of this educational review. USD Impact, operated by KELA LEADS S.R.L., is responsible for the published content. The linked Federal Reserve, BEA and BLS releases are the sources for reported official facts.",
+    "notClaimingSubstantiveHumanReviewException": true,
+    "legallyAccountablePublisherForFinalCopyNeedsExactRenderedOwnerAttestation": true
+  },
+  "limitations": {
+    "ownerIdentityAndLegalCapacityIndependentlyVerified": false,
+    "qualifiedForeignRightsOpinionObtained": false,
+    "independentProductionConsentNetworkCookieTraceCaptured": false,
+    "externalGdprEprivacyCertificationObtained": false,
+    "statusCopyOrFinalRenderedPageOwnerPassObtained": false,
+    "authorizesGitMerge": false,
+    "authorizesPublicRoute": false,
+    "authorizesProductionDeploy": false,
+    "authorizesIndexingOrDistribution": false,
+    "authorizesOriginalScorePublication": false,
+    "authorizesSiteCommerceChanges": false,
+    "actualIndependentWeekliesPublished": 0
+  },
+  "state": "OWNER_SCOPE_APPROVAL_RECORDED_DRAFT_FINAL_PAGE_REVIEW_PENDING"
+}

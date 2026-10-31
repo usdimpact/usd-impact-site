@@ -1,7 +1,7 @@
 {
   "schemaVersion": "usd-impact-first-weekly-owner-item-specific-release-input-v1",
   "createdLocalDate": "2026-10-31",
-  "state": "PREPARED_FOR_OWNER_SPECIFIC_REVIEW_NOT_SIGNED_OR_RELEASED",
+  "state": "FIVE_OWNER_SCOPE_APPROVALS_RECORDED_FINAL_RENDERED_RELEASE_PENDING",
   "authority": "Generic owner instruction 'please continue, approved' authorizes Draft preparation only; it is NOT an item-by-item legal/privacy acceptance, AI-Act exception declaration, or publication permission.",
   "repository": "usdimpact/usd-impact-site",
   "pullRequest": 1025,
@@ -26,9 +26,11 @@
       ],
       "requiredDecision": "I have reviewed the five exact official sources and source-only English scope; I identify no actual unfulfilled source/license restriction, or I specify the restriction and stop.",
       "recommendedDisposition": "REVIEW_AND_STOP_ON_ACTUAL_RESTRICTION",
-      "ownerDecision": "PENDING",
-      "ownerAcknowledgedRisk": false,
-      "hardStopConfirmed": false
+      "ownerDecision": "OWNER_APPROVED_SCOPED_RISK_REVIEW",
+      "ownerAcknowledgedRisk": true,
+      "hardStopConfirmed": false,
+      "ownerScopeAccepted": "Exact English educational issuer-facts-and-hyperlinks scope only; no special permission to copy protected third-party content.",
+      "finalRenderedReleasePermission": false
     },
     {
       "riskId": "R05",
@@ -40,9 +42,11 @@
       ],
       "requiredDecision": "I reviewed the exact seven-section factual article, conditional transmission language and proposed eight status-only edits; no trading advice or unsupported market return is introduced.",
       "recommendedDisposition": "FROZEN_FACTS_SUPPORTED_FINAL_STATUS_COPY_PENDING",
-      "ownerDecision": "PENDING",
-      "ownerAcknowledgedRisk": false,
-      "hardStopConfirmed": false
+      "ownerDecision": "OWNER_APPROVED_SCOPED_RISK_REVIEW",
+      "ownerAcknowledgedRisk": true,
+      "hardStopConfirmed": false,
+      "ownerScopeAccepted": "Original seven-section educational/factual manuscript approved; no approval of unrendered final status text.",
+      "finalRenderedReleasePermission": false
     },
     {
       "riskId": "R06",
@@ -55,9 +59,11 @@
       ],
       "requiredDecision": "Resolve any actual remaining provider/transfer/network and legal risks relevant to the final independent Macro Weekly public page. A proven unconsented beacon or legal restriction is a STOP; a missing independently captured trace alone is not proof of a breach. The completed privacy code rollout is not an external certification or general risk acceptance.",
       "recommendedDisposition": "PRODUCTION_GA4_HARDENING_SHIPPED_R06_RISK_DECISION_PENDING",
-      "ownerDecision": "PENDING",
-      "ownerAcknowledgedRisk": false,
-      "hardStopConfirmed": false
+      "ownerDecision": "OWNER_APPROVED_SCOPED_RISK_REVIEW",
+      "ownerAcknowledgedRisk": true,
+      "hardStopConfirmed": false,
+      "ownerScopeAccepted": "Production GA4 hardening and known privacy evidence acknowledged; no independent GDPR/ePrivacy certification.",
+      "finalRenderedReleasePermission": false
     },
     {
       "riskId": "R07",
@@ -69,9 +75,11 @@
       ],
       "requiredDecision": "Confirm operator legal person and editorial responsibility, and require actual final rendered non-endorsement/Terms/Privacy/legal-footer review before any public route.",
       "recommendedDisposition": "OPERATOR_SUPPORTED_FINAL_ARTIFACT_STILL_UNREVIEWED",
-      "ownerDecision": "PENDING",
-      "ownerAcknowledgedRisk": false,
-      "hardStopConfirmed": false
+      "ownerDecision": "OWNER_APPROVED_SCOPED_RISK_REVIEW",
+      "ownerAcknowledgedRisk": true,
+      "hardStopConfirmed": false,
+      "ownerScopeAccepted": "Existing operator name and site legal links accepted as source basis; final page rendered legal/accountable-editor review remains.",
+      "finalRenderedReleasePermission": false
     },
     {
       "riskId": "X01",
@@ -83,13 +91,15 @@
       ],
       "requiredDecision": "Confirm whether AI tools generated/manipulated this text. Either record the substantive human editorial review, authority over substantive changes, and responsible publisher if relying on exception, OR approve a clear and accurate AI-assistance disclosure for the final public article. Do not assume either path.",
       "recommendedDisposition": "HUMAN_REVIEW_EXCEPTION_OR_DISCLOSURE_UNDETERMINED",
-      "ownerDecision": "PENDING",
-      "ownerAcknowledgedRisk": false,
-      "hardStopConfirmed": false
+      "ownerDecision": "OWNER_APPROVED_SCOPED_RISK_REVIEW",
+      "ownerAcknowledgedRisk": true,
+      "hardStopConfirmed": false,
+      "ownerScopeAccepted": "Owner approves preparation of conservative visible AI-assistance disclosure for final review; neither the human-review exception nor an exact final disclosure has been attested.",
+      "finalRenderedReleasePermission": false
     }
   ],
   "aiEditorialDetermination": {
-    "actualAIContributionToFinalText": "NOT_ATTESTED",
+    "actualAIContributionToFinalText": "AI_ASSISTED_DRAFT_PREPARATION_DOCUMENTED_FOR_THIS_WORKFLOW",
     "priorOwnerEditorialContentPassRecorded": true,
     "priorOwnerPresentationPassRecorded": true,
     "primarySourceFactsCheckedAgainstFiveIssuerLinks": true,
@@ -102,8 +112,9 @@
     "publicDisclosureTextCandidate": "AI tools assisted with preparation of this educational review. USD Impact, operated by KELA LEADS S.R.L., is responsible for the published content. The linked Federal Reserve, BEA and BLS releases are the sources for reported official facts.",
     "disclosureCandidateAssumesAIToolsWereUsed": true,
     "disclosureCandidateNotInsertedIntoArticle": true,
-    "editorialDecision": "PENDING",
-    "legalCertification": false
+    "editorialDecision": "CONSERVATIVE_DISCLOSURE_PREPARED_FOR_NONPUBLIC_FINAL_RENDER_REVIEW",
+    "legalCertification": false,
+    "conservativeVisibleDisclosureProofPrepared": true
   },
   "nonWaivableStops": [
     "Actual third-party source/license restriction, mark use, or applicable law/contract not satisfied",
@@ -114,7 +125,7 @@
   ],
   "signOff": {
     "ownerNameAndCapacityConfirmedForThisSpecificRiskReview": false,
-    "eachItemReviewedAndAccepted": false,
+    "eachItemReviewedAndAccepted": true,
     "substantiveAIHumanEditorialControlOrDisclosureApproved": false,
     "remainingLegalAndPrivacyLimitationsAcknowledged": false,
     "finalEightStatusCopyEditorialPass": false,
@@ -133,7 +144,7 @@
   },
   "firstPublishedIndependentWeeklies": 0,
   "eligibleMonthlyCount": 0,
-  "note": "The first source article is immutable. This preparatory record exists to make a narrow owner decision possible; it does not resolve applicable legal questions or entitle any deployment.",
+  "note": "The first source article is immutable. This preparatory record exists to make a narrow owner decision possible; it does not resolve applicable legal questions or entitle any deployment.\n2026-10-31 owner wrote exactly: 'all approved, please continue' in response to five owner-review categories. This records five owner-scoped acknowledgements, not a qualified legal/privacy opinion, signed editorial responsibility, approval of the separately rendered status copy, a choice of the AI-law exception, or Git/route/Production/indexing/Score authorization.",
   "privacyProductionEvidence": {
     "mergedMainSha": "743872f3fdfd5fdddd242b64e7a42674a459a416",
     "productionDeploymentId": "dpl_7APZ2YJAZuyh1SrpPu3Rp9PVaxeB",
@@ -142,5 +153,7 @@
     "independentFullProductionTraceCaptured": false,
     "qualifiedGdprEprivacyOpinion": false,
     "macroPublicationAuthorized": false
-  }
+  },
+  "ownerApprovedScopeReceiptPath": "docs/operations/independent-macro-release/owner-five-item-risk-approval-receipt-2026-10-31.draft.json",
+  "ownerApprovedScopeReceiptGitBlobSha": "cddf62cc7466a4667c37740e1685c22374fd4262"
 }

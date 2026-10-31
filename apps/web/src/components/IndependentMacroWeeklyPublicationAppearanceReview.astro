@@ -1,0 +1,35 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import originalCandidate from '../data/independent-macro-review/weekly-2026-10-30.release-candidate.html?raw';
+import { buildIndependentMacroWeeklyAppearanceReview } from '../lib/independent-macro-weekly-publication-appearance-review.mjs';
+import '../styles/independent-macro-weekly-draft.css';
+import '../styles/independent-macro-weekly-publication-appearance-review.css';
+
+// Review component only: no Astro page imports it and public getStaticPaths stays [].
+// A separate exact-rendered owner PASS and exact-SHA release decision are required.
+const view = buildIndependentMacroWeeklyAppearanceReview(originalCandidate);
+if (!view.notRouted || view.releaseAuthorized || view.finalRenderedOwnerPass) {
+  throw new Error('Publication-appearance proof must be neither public nor approved');
+}
+---
+<BaseLayout
+  title="USD Impact Macro Weekly Review | October 26–30, 2026 — Private final-copy review"
+  description="Non-public final wording and visible AI-assistance disclosure review. Not published, not indexed or authorized."
+  locale="en"
+  currentPath="/macro-reviews/weekly/2026-10-30/"
+  noindex={true}
+>
+  <div
+    class="mw-root mw-publication-appearance-review"
+    data-article-series="independent_macro_education"
+    data-private-appearance-proof="true"
+    data-release-authorized="false"
+    data-final-rendered-owner-pass="false"
+    data-indexing-authorized="false"
+  >
+    <div class="mw-ribbon" role="status">
+      PRIVATE FINAL-COPY REVIEW — NOT PUBLISHED. Public routing, rights, indexing and original Score remain on HOLD.
+    </div>
+    <Fragment set:html={view.fragment} />
+  </div>
+</BaseLayout>

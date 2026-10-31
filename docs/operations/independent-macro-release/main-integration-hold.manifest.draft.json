@@ -232,11 +232,11 @@
   },
   "nextOwnerRiskAndAiEditorialDecisionInputDraft": {
     "inputPath": "docs/operations/independent-macro-release/first-weekly-owner-final-decision-input-2026-10-31.draft.json",
-    "inputGitBlobSha": "17251a7323640c539397a060d8b0bf0441ffd40a",
+    "inputGitBlobSha": "b46f5f2bece062f88c465d46b522e46612a27aaa",
     "worksheetPath": "docs/operations/independent-macro-release/first-weekly-final-risk-and-ai-editorial-review-2026-10-31.draft.md",
-    "worksheetGitBlobSha": "e8f782f3d5fe2202c8fb8feae7e951098305ef0f",
+    "worksheetGitBlobSha": "2368c188a1c1d9bde5629242b990500bd0cbc23f",
     "itemsNeedingActualOwnerReview": 5,
-    "itemSpecificRiskAcceptanceRecorded": false,
+    "itemSpecificRiskAcceptanceRecorded": true,
     "aiEditorialDeterminationRecorded": false,
     "finalStatusCopyPassed": false,
     "releaseAuthorized": false
@@ -299,6 +299,49 @@
     "ownerFinalRiskAcceptance": false,
     "macroRouteAuthorized": false,
     "mergeAuthorized": false,
+    "releaseAuthorized": false
+  },
+  "ownerFiveScopeApprovalDraft": {
+    "receiptPath": "docs/operations/independent-macro-release/owner-five-item-risk-approval-receipt-2026-10-31.draft.json",
+    "receiptGitBlobSha": "cddf62cc7466a4667c37740e1685c22374fd4262",
+    "ownerVerbatim": "all approved, please continue",
+    "ownerReviewedItemCount": 5,
+    "approvedRiskIds": [
+      "R04",
+      "R05",
+      "R06",
+      "R07",
+      "X01"
+    ],
+    "meaning": "Owner approvals of the reviewed original educational English facts-and-links scope only; no final rendered appearance/signature or qualified legal statement.",
+    "aiPath": "PREPARE_ACCURATE_AI_DISCLOSURE_AS_NONPUBLIC_FINAL_REVIEW_PROOF",
+    "independentLegalReviewCertification": false,
+    "namedEditorLegalCapacityVerified": false,
+    "actualFinalRenderedCopyOwnerPass": false,
+    "publicationRightsGranted": false
+  },
+  "nonRoutedPublicationAppearanceReviewDraft": {
+    "helperPath": "apps/web/src/lib/independent-macro-weekly-publication-appearance-review.mjs",
+    "helperGitBlobSha": "a11453cc211d0e42f2226d2f3e45dd77fb8fe7b4",
+    "componentPath": "apps/web/src/components/IndependentMacroWeeklyPublicationAppearanceReview.astro",
+    "componentGitBlobSha": "e6698700831852989cf2c851c57c0defda5747ed",
+    "stylesheetPath": "apps/web/src/styles/independent-macro-weekly-publication-appearance-review.css",
+    "stylesheetGitBlobSha": "6078ec1194619316d36a1c5f14cbde776c333798",
+    "staticOfflineProofPath": "docs/operations/independent-macro-release/first-weekly-final-copy-ai-disclosure-offline-proof-2026-10-31.draft.html",
+    "staticOfflineProofGitBlobSha": "0d5580377ba245dfadcd9d52a8eb1e8b2a03be95",
+    "originalArticleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "approvedHistoricSharedLayoutGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
+    "sourceOnlyCopyChangeCount": 4,
+    "adapterSideStatusChangeCount": 1,
+    "aiVisibleDisclosureProposed": true,
+    "staticOfflineProofGeneratedForReview": true,
+    "AstroComponentWrittenButNotRoutedOrCompiled": true,
+    "ownerFinalExactRenderedArtifactPass": false,
+    "finalReleaseCopyApproved": false,
+    "publicRouteAuthorized": false,
+    "publicProductionAuthorized": false,
+    "indexingAuthorized": false,
+    "originalScoreAuthorized": false,
     "releaseAuthorized": false
   }
 }

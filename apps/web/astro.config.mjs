@@ -1,13 +1,20 @@
 import { defineConfig } from 'astro/config';
 
-// QA-ONLY sandbox overlay: never ship with Production. Reject real GA4 IDs.
-// A Vercel build is allowed only in Preview with a synthetic ID. This is a
-// second fail-closed check if a caller incorrectly asks Vercel for Production.
+// QA-ONLY sandbox overlay: NEVER merge into main or the public Production project.
+// The initial Vercel deployment of a brand-new isolated project may be classified
+// as "production" by Vercel. Permit it ONLY when the isolated QA project supplies
+// two project-specific, Production-scoped, nonsecret markers explicitly for this
+// one approved QA bootstrap. Absence/mismatch of either marker fails closed.
+const qaMeasurementId = process.env.PUBLIC_GA4_MEASUREMENT_ID;
+const qaPreview = process.env.VERCEL_ENV === 'preview';
+const qaIsolatedBootstrap = process.env.VERCEL_ENV === 'production'
+  && process.env.GA4_QA_BOOTSTRAP_PROJECT_ID === 'prj_OhTpe4Alzv1HEaZfIlwlIXKtuaja'
+  && process.env.GA4_QA_BOOTSTRAP_APPROVED === 'isolated-ga4-qa-20261031';
 if (process.env.VERCEL === '1' && (
-  process.env.VERCEL_ENV !== 'preview' ||
-  process.env.PUBLIC_GA4_MEASUREMENT_ID !== 'G-TEST1234'
+  qaMeasurementId !== 'G-TEST1234' ||
+  (!qaPreview && !qaIsolatedBootstrap)
 )) {
-  throw new Error('GA4 QA-only build requires Vercel Preview and synthetic G-TEST1234.');
+  throw new Error('GA4 QA-only build requires synthetic ID and a scoped QA Preview or isolated bootstrap.');
 }
 if (process.env.PUBLIC_GA4_MEASUREMENT_ID && process.env.PUBLIC_GA4_MEASUREMENT_ID !== 'G-TEST1234') {
   throw new Error('GA4 QA-only sandbox refuses non-synthetic analytics measurement IDs.');

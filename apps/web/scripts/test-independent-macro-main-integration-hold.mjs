@@ -489,6 +489,54 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      'worksheet explicitly holds legal/privacy and publication decision');
 }
 
+// Non-routable owner wording proof: exactly four source-label changes and one adapted side notice.
+{
+  const original=html;
+  const status=JSON.parse(from('../../../docs/operations/independent-macro-release/first-weekly-conditional-publication-copy-2026-10-31.draft.json'));
+  const proof=from('../../../docs/operations/independent-macro-release/first-weekly-status-copy-offline-proof-2026-10-31.draft.html');
+  const p=m.offlineStatusCopyProofDraft;
+  eq(gitBlob(proof),p.gitBlobSha,'pin exact review-only HTML proof');
+  eq(gitBlob(original),p.sourceHtmlGitBlobSha,'pin original immutable article in proof');
+  eq(gitBlob(from('../../../docs/operations/independent-macro-release/first-weekly-conditional-publication-copy-2026-10-31.draft.json')),p.statusCopyGitBlobSha,
+    'pin eight-proposal editorial status copy');
+  const replaceOnlyOne=(str,oldText,newText,label)=>{
+    eq(str.split(oldText).length-1,1,'one source occurrence for '+label);
+    return str.replace(oldText,newText);
+  };
+  const banner="  <div role=\"note\" data-offline-review-only=\"true\" style=\"background:#fff0b6;color:#1c2626;padding:18px 28px;text-align:center;font:700 15px/1.5 system-ui\">\n    OFFLINE WORDING PROOF — NOT PUBLISHED. This file illustrates proposed status wording only. It is not the shared-site Astro layout or a public release. All legal, privacy, routing, deployment, indexing, and original Score permissions remain on HOLD.\n  </div>\n";
+  const open="<body data-candidate-period-end=\"2026-10-30\" data-release-candidate=\"draft\" data-series=\"independent_macro_education\" data-release-authorized=\"false\">";
+  let expected=replaceOnlyOne(original,open,open+'\n'+banner,'review-only banner');
+  const four=status.proposedStatusOnlySubstitutions.filter(x=>
+    x.path==='apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html');
+  eq(four.length,4,'four original-source visible copy edits');
+  for(const change of four) {
+    expected=replaceOnlyOne(expected,change.old,change.proposed,change.id);
+  }
+  const sidebar=status.proposedStatusOnlySubstitutions.find(x=>
+    x.id==='adapter-stale-presentation-notice');
+  expected=replaceOnlyOne(expected,
+    'This page is NOT routed or published. Rights clearance, exact article PASS, merge and public Production release are still denied.',
+    sidebar.proposed,'offline proof sidebar');
+  eq(proof,expected,
+    'wording proof must be identical to frozen source except five intentional text changes and warning banner');
+  eq([...proof.matchAll(/<section aria-labelledby="([^"]+)">/g)].map(x=>x[1]),
+    ['summary','timeline','transmission','mistakes','watch','sources','compliance'],
+    'seven unchanged factual editorial sections');
+  ok(m.sources.officialSourceUrls.every(x=>proof.includes('href="'+x+'"')),
+    'all five official sources preserved in proof');
+  ok(proof.includes('data-offline-review-only="true"') &&
+     proof.includes('data-release-authorized="false"') &&
+     proof.includes('<meta name="robots" content="noindex,nofollow,noarchive,nosnippet">') &&
+     proof.includes('Release Candidate • Draft only • Not published • All rights HOLD') &&
+     !/<script\\b/i.test(proof) && !/<iframe\\b/i.test(proof),
+    'only inert, noindex review proof with prominent nonpublication status');
+  ok(p.storedOutsideSiteSrcAndDist && p.noindexAndReleaseDenialRetained &&
+     !p.sharedLayoutCompiledOrRendered && !p.ownerProofApprovalReceived &&
+     !p.publicRouteAuthorized && !p.releaseAuthorized &&
+     !m.releaseAuthorized && !m.publishReady,
+     'offline proof never grants site deploy or indexing authority');
+}
+
 // Shared BaseLayout integration stays non-public. The approved standalone
 // article remains unchanged, but the new presentation needs its own owner PASS.
 {

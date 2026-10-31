@@ -1,16 +1,16 @@
-# First Macro Weekly — exact owner decision worksheet (DRAFT; not a decision)
+# First Macro Weekly — provisional Option B selected; final page-specific risk and release decisions remain HOLD
 
 **Recorded context:** October 31, 2026. PR [#1025](https://github.com/usdimpact/usd-impact-site/pull/1025), source text blob `4ce3ea62d8db328fa03739ae15e2571f5f6e99bd`, owner-reviewed shared-layout blob `22b3a44a59560ebdcd2c17781108332789e6dac1`, route `/macro-reviews/weekly/2026-10-30/` **currently disabled**.
 
-**Purpose:** Collect one documented, carefully limited decision rather than repeated visual QA. This file is intentionally **unsigned, unapproved, and non-executable**. "Ok, proceed" authorizes preparation only; it is **not** recorded as a selection of Option B, legal clearance, publication, merge, index or Production release.
+**Updated 2026-10-31:** The owner expressly selected **temporary Option B for the internal review process only** in [this decision](https://github.com/usdimpact/usd-impact-site/pull/1025#issuecomment-6536125797); [receipt](provisional-owner-led-review-approval-2026-10-31.draft.json) pins the original source and all-deny release scope. This is **not** final item-specific legal/privacy risk acceptance, a qualified external opinion, publication-status copy approval, merge, indexing, or Production release. The earlier "not selected" proposal is a historical preparation record.
 
-## I. Decision to be made (not selected)
+## I. Review-process decision: Option B selected provisionally
 
 - **A — Retain qualified outside review:** use the existing [scoped legal/privacy memo](first-weekly-scope-limited-legal-and-production-privacy-review.draft.md) for an item-specific reviewer determination.
 - **B — Request a scoped change to the project's internal review process:** owner-led self-review/risk acceptance for **this one original English facts-and-links Weekly only**, conditional on no independently mandatory external approval being bypassed. A self-review is **not** a legal opinion or GDPR/ePrivacy certificate, and it cannot authorize use of otherwise restricted content.
 - **C — Maintain HOLD:** no publication or final release patch.
 
-**Current decision = NOT SELECTED.** Neither a generic permission to continue nor prior presentation/browser PASS changes this choice.
+**Current internal-process selection = Option B (temporary, owner-approved on 2026-10-31).** Actual final item-specific review and risk acceptance are not yet completed; prior presentation/browser PASS does not clear external duties or authorize release.
 
 ## II. What existing evidence does and does not establish
 
@@ -32,15 +32,15 @@ Do not proceed to a public release if the review identifies any legal prohibitio
 
 | Field | Required recorded response |
 | --- | --- |
-| Selected A, B or C | **NOT SELECTED** |
+| Selected A, B or C | **B — PROVISIONAL INTERNAL PROCESS ONLY; explicit owner choice 2026-10-31** |
 | Named owner/capacity to accept internal business risk | **NOT RECORDED** |
 | Specific source and version accepted | **NOT YET ATTESTED FOR THIS DECISION** |
 | Understood independent legal/privacy opinion not obtained | **NOT ATTESTED FOR THIS DECISION** |
 | Applicable legal/contractual requirements independently satisfied | **NOT DETERMINED** |
 | External qualified review under current governance | **PENDING** |
-| Internal governance amendment approved/effective | **FALSE** |
+| Internal governance amendment approved/effective | **TRUE FOR THIS EXACT INTERNAL REVIEW PROCESS ONLY**; page-specific risk review and release still pending |
 | Exact future publication-status copy approved | **FALSE** |
 | Date of actual public publication | **NONE** |
 | Merge, Production, public route and indexing | **ALL DENIED** |
 
-**No executable action follows this worksheet.** If Option B is explicitly requested later, record the precise amendment and the owner's risk decision separately; evaluate and preserve all actual legal/third-party obligations. Final public activation still needs a new exact-commit owner instruction and successful release validation.
+**No executable release action follows this worksheet.** Option B is now provisionally selected for internal review only. A **separate item-specific owner assessment**, check of all applicable external obligations, fresh exact publication-copy PASS, and explicit exact-commit release authorization are still required. See [Issue #1030](https://github.com/usdimpact/usd-impact-site/issues/1030) for the planned upgrade to qualified external review.

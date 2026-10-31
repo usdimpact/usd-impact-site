@@ -147,7 +147,7 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
 }
 
 
- // Offline inventory and INACTIVE governance proposal may never authorize a route.
+ // Exact owner selection activates ONLY temporary internal review; public release still denied.
  {
    const invText=from('../../../docs/operations/independent-macro-release/first-weekly-publication-status-inventory-2026-10-31.draft.json');
    const inv=JSON.parse(invText);
@@ -192,20 +192,20 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
       inv.indexingAuthorized===false && !inv.originalScoreRightsGranted &&
       inv.firstActualPublicationTimeUtc===null,
       'publication-status inventory is non-executable and fail-closed');
-   ok(proposal.proposedOnly &&
-      !proposal.policyAmendedOrEffective &&
-      !proposal.separateExplicitOwnerPolicyDecisionReceived &&
+   ok(!proposal.proposedOnly &&
+      proposal.policyAmendedOrEffective &&
+      proposal.separateExplicitOwnerPolicyDecisionReceived &&
       !proposal.externalLegalObligationsWaived &&
       !proposal.qualifiedLegalAndPrivacyClearanceObtained &&
       !proposal.releaseAuthorized &&
       !m.holds.qualifiedRomaniaEuInternationalDistributionApproved &&
       !m.holds.finalLegalAndCompliancePass,
       'proposed owner-led internal alternative cannot bypass original approval gates');
-   ok(governanceText.includes('**NOT SELECTED**') &&
-      governanceText.includes('**No activation action now.**') &&
+   ok(governanceText.includes('historical optional review proposal') &&
+      governanceText.includes('original "not selected" status') &&
       governanceText.includes('**FALSE**') &&
       governanceText.includes('**DENIED**'),
-      'governance proposal is inert and requires a new explicit decision');
+      'original proposal preserved as historic evidence; owner selection is separate');
  }
  
  // The final-status copy is a proposed redline only; no executable release route.
@@ -254,14 +254,60 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      !statusCopy.noindexRemovalAuthorized && !statusCopy.legalRightsReviewPassed &&
      !statusCopy.privacyCertificationPassed,
      'future status-only copy does not authorize publishing or legal approval');
-  ok(decision.includes('**NOT SELECTED**') &&
+  ok(decision.includes('**B — PROVISIONAL INTERNAL PROCESS ONLY; explicit owner choice 2026-10-31**') &&
      decision.includes('**ALL DENIED**') &&
      decision.includes('**FALSE**') &&
-     decision.includes('**No executable action follows this worksheet.**') &&
-     !pinned.newStatusCopyEditorialPass && !pinned.ownerPathSelected &&
-     !pinned.internalGovernanceAmendmentActivated && !pinned.releaseAuthorized &&
-     !m.optionalOwnerOperatedGovernanceAmendmentProposal.policyAmendedOrEffective,
-     'owner decision worksheet remains unapproved and all-deny');
+     decision.includes('**No executable release action follows this worksheet.**') &&
+     !pinned.newStatusCopyEditorialPass && pinned.ownerPathSelected &&
+     pinned.internalGovernanceAmendmentActivated && !pinned.releaseAuthorized &&
+     m.optionalOwnerOperatedGovernanceAmendmentProposal.policyAmendedOrEffective,
+     'owner selected internal process only; final page review and public release still denied');
+}
+
+// Exact owner decision — provisional internal-process substitution, never a release gate.
+{
+  const recText=from('../../../docs/operations/independent-macro-release/provisional-owner-led-review-approval-2026-10-31.draft.json');
+  const rec=JSON.parse(recText);
+  const entry=m.provisionalOwnerLedReviewApproval;
+  eq(gitBlob(recText),entry.decisionReceiptGitBlobSha,
+    'provisional Option B receipt Git blob is immutable');
+  eq(entry.decisionReceiptPath,'docs/operations/independent-macro-release/provisional-owner-led-review-approval-2026-10-31.draft.json',
+    'provisional owner decision path pinned');
+  eq(rec.schemaVersion,'usd-impact-macro-weekly-provisional-option-b-owner-process-approval-v1',
+    'internal-only scope schema');
+  eq(rec.ownerResponseVerbatim,
+    'approved for now, until we get a better solution, remember to upgrade when ever possible',
+    'owner words recorded exactly without release inference');
+  eq(rec.selectedOption,'B','owner explicitly selected Option B');
+  eq(rec.exactPr.number,1025,'only existing independent Macro Weekly PR');
+  eq(rec.exactPr.originalArticleGitBlobSha,gitBlob(html),
+    'same exact owner-reviewed original source');
+  eq(rec.exactPr.ownerReviewedSharedLayoutComponentGitBlobSha,
+    m.siteShellAdaptationDraft.componentGitBlobSha,
+    'same exact shared-layout review blob');
+  ok(entry.internalOwnerReviewProcessActive && entry.scopeLimitedToOneEnglishWeekly &&
+     rec.internalGovernanceChange.scopedOwnerOperatedReviewSelected &&
+     rec.internalGovernanceChange.supersedesInternalQualifiedReviewerAsProcessOnly &&
+     rec.internalGovernanceChange.provisionalRatherThanPermanent &&
+     rec.internalGovernanceChange.requiresFinalItemSpecificOwnerRiskAssessment &&
+     !rec.internalGovernanceChange.finalItemSpecificOwnerRiskAssessmentCompleted &&
+     !rec.internalGovernanceChange.qualifiedInternationalLegalOpinionObtained &&
+     !rec.internalGovernanceChange.qualifiedProductionPrivacyAssessmentObtained &&
+     !rec.internalGovernanceChange.applicableStatutoryOrContractualRequirementsWaived,
+     'temporary internal review path is distinct from legal and publication acceptance');
+  ok(rec.upgradePolicy.openIssueUrl===entry.upgradeIssue &&
+     rec.upgradePolicy.doNotPurchaseOrEngageAutomatically &&
+     rec.upgradePolicy.ownerReapprovalNeededForUpgradeOrReplacement &&
+     rec.upgradePolicy.neverAutoExpandScope &&
+     rec.hardStops.length>=5,
+     'improvement plan is tracked without automatic external actions');
+  ok(Object.values(rec.uncompletedDecisions).every(x=>x===false) &&
+     !entry.finalSpecificRiskAssessmentSignedOff && !entry.externalLegalAndPrivacyCertified &&
+     !entry.releaseAuthorized && !rec.releaseAuthorized &&
+     rec.publishedIndependentWeeklyCount===0 && rec.eligibleMonthlyCount===0 &&
+     !m.releaseAuthorized && !m.publishReady &&
+     Object.values(m.holds).every(x=>x===false),
+     'owner process selection cannot self-clear any release or legal/privacy gate');
 }
 
 // Shared BaseLayout integration stays non-public. The approved standalone

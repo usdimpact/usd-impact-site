@@ -1,4 +1,6 @@
-# Macro Weekly — optional solo-owner governance amendment (PROPOSAL ONLY / HOLD)
+# Macro Weekly — historical optional review proposal (SUPERSEDED FOR INTERNAL PROCESS ONLY / PUBLIC RELEASE HOLD)
+
+> **Current 2026-10-31 decision:** The owner explicitly selected provisional **Option B**, an internal-process exception for the single exact English Macro Weekly only. [Decision receipt](provisional-owner-led-review-approval-2026-10-31.draft.json) and [owner comment](https://github.com/usdimpact/usd-impact-site/pull/1025#issuecomment-6536125797) supersede the **original "not selected" status below**, retained as historical proposal text. A [permanent upgrade issue](https://github.com/usdimpact/usd-impact-site/issues/1030) tracks replacing owner-led review with qualified outside assessment when possible. This does **not** waive actual law/contractual rights, complete the page-specific review, approve status-copy changes or authorize any public release.
 
 **Prepared 2026-10-31.** Exact source scope: one independent English educational Macro Weekly for October 26–30, 2026 in [Draft PR #1025](https://github.com/usdimpact/usd-impact-site/pull/1025). The approved article source Git blob is `4ce3ea62d8db328fa03739ae15e2571f5f6e99bd`; the protected-layout component Git blob is `22b3a44a59560ebdcd2c17781108332789e6dac1`. **This document does not change any live governance requirement or authorize any release.**
 

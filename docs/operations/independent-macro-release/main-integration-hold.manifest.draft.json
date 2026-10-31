@@ -176,10 +176,10 @@
   },
   "optionalOwnerOperatedGovernanceAmendmentProposal": {
     "path": "docs/operations/independent-macro-release/owner-operated-review-exception-proposal-2026-10-31.draft.md",
-    "gitBlobSha": "5bf6270c79ec22db1d42121dcce6ddc13f549fcd",
-    "proposedOnly": true,
-    "separateExplicitOwnerPolicyDecisionReceived": false,
-    "policyAmendedOrEffective": false,
+    "gitBlobSha": "8dbc1317011713229bb30ac3d4b5800a043085c9",
+    "proposedOnly": false,
+    "separateExplicitOwnerPolicyDecisionReceived": true,
+    "policyAmendedOrEffective": true,
     "externalLegalObligationsWaived": false,
     "qualifiedLegalAndPrivacyClearanceObtained": false,
     "releaseAuthorized": false
@@ -188,11 +188,23 @@
     "statusCopyPath": "docs/operations/independent-macro-release/first-weekly-conditional-publication-copy-2026-10-31.draft.json",
     "statusCopyGitBlobSha": "4d88076dedc4c038368c9324edc3374e036e702d",
     "ownerDecisionPath": "docs/operations/independent-macro-release/first-weekly-owner-review-decision-record-2026-10-31.draft.md",
-    "ownerDecisionGitBlobSha": "c9fb4dc9a1433c5b38286b54cc74457a6a64d9ae",
+    "ownerDecisionGitBlobSha": "3cced5b83698458a3883658459a1d1b9e53b22d4",
     "proposedSubstitutionCount": 8,
     "newStatusCopyEditorialPass": false,
-    "ownerPathSelected": false,
-    "internalGovernanceAmendmentActivated": false,
+    "ownerPathSelected": true,
+    "internalGovernanceAmendmentActivated": true,
+    "releaseAuthorized": false
+  },
+  "provisionalOwnerLedReviewApproval": {
+    "decision": "OPTION_B_PROVISIONAL_INTERNAL_PROCESS",
+    "decisionReceiptPath": "docs/operations/independent-macro-release/provisional-owner-led-review-approval-2026-10-31.draft.json",
+    "decisionReceiptGitBlobSha": "6ef581b1ca22d82136b566c726bbdb788b0e4d5e",
+    "ownerApprovalComment": "https://github.com/usdimpact/usd-impact-site/pull/1025#issuecomment-6536125797",
+    "upgradeIssue": "https://github.com/usdimpact/usd-impact-site/issues/1030",
+    "scopeLimitedToOneEnglishWeekly": true,
+    "internalOwnerReviewProcessActive": true,
+    "finalSpecificRiskAssessmentSignedOff": false,
+    "externalLegalAndPrivacyCertified": false,
     "releaseAuthorized": false
   },
   "siteShellAdaptationDraft": {

@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "usd-impact-macro-weekly-provisional-option-b-owner-process-approval-v1",
+  "recordedCalendarDate": "2026-10-31",
+  "decisionSource": "Owner approval in current ChatGPT conversation, immediately after the exact question asking to approve Option B for one English Macro Weekly",
+  "ownerResponseVerbatim": "approved for now, until we get a better solution, remember to upgrade when ever possible",
+  "selectedOption": "B",
+  "state": "PROVISIONAL_INTERNAL_REVIEW_PROCESS_ACTIVE_FINAL_ITEM_ASSESSMENT_PENDING",
+  "ownerApprovalCommentUrl": "https://github.com/usdimpact/usd-impact-site/pull/1025#issuecomment-6536125797",
+  "upgradeIssueUrl": "https://github.com/usdimpact/usd-impact-site/issues/1030",
+  "exactPr": {
+    "repository": "usdimpact/usd-impact-site",
+    "number": 1025,
+    "approvedProcessAtPriorHead": "6d775416f611f827f5a16a64c1b0cf12b8a4cd1a",
+    "draft": true,
+    "originalArticleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "ownerReviewedSharedLayoutComponentGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
+    "coverageStart": "2026-10-26",
+    "coverageEnd": "2026-10-30",
+    "language": "en",
+    "scope": "one original facts-and-links-only educational Macro Weekly"
+  },
+  "internalGovernanceChange": {
+    "scopedOwnerOperatedReviewSelected": true,
+    "supersedesInternalQualifiedReviewerAsProcessOnly": true,
+    "provisionalRatherThanPermanent": true,
+    "automaticExpirationOrScopeExpansion": false,
+    "reviewMustBeRepeatedForOtherPage": false,
+    "requiresFinalItemSpecificOwnerRiskAssessment": true,
+    "finalItemSpecificOwnerRiskAssessmentCompleted": false,
+    "qualifiedInternationalLegalOpinionObtained": false,
+    "qualifiedProductionPrivacyAssessmentObtained": false,
+    "applicableStatutoryOrContractualRequirementsWaived": false
+  },
+  "hardStops": [
+    "Actual source/license/right restriction, protected agency mark, third-party expression, copied asset or unauthorized data redistribution",
+    "Evidence of unconsented analytics or privacy noncompliance, or any applicable legal obligation not satisfied",
+    "Material wrong facts, invented market outcomes or misleading claims about independent certification",
+    "Unapproved translation, market vendor feeds, Score output, newsletter, RSS, PDF or paid-data use",
+    "Unapproved public route/merge/deployment/indexing or stale/failed exact-head release checks"
+  ],
+  "upgradePolicy": {
+    "preferredOutcome": "Replace temporary owner-led internal review with affordable qualified independent Romanian/EU international source-rights and actual-production privacy assessment when realistically available",
+    "openIssueUrl": "https://github.com/usdimpact/usd-impact-site/issues/1030",
+    "scopeReviewTriggers": [
+      "qualified fixed-scope reviewer becomes accessible",
+      "credible affordable independent privacy/rights review is available",
+      "material law or provider policy changes",
+      "new media or market-data provider use",
+      "expanding publication scope beyond exact English facts/links page"
+    ],
+    "doNotPurchaseOrEngageAutomatically": true,
+    "doNotAssumeProviderCredentialsOrReviewCompletion": true,
+    "ownerReapprovalNeededForUpgradeOrReplacement": true,
+    "neverAutoExpandScope": true
+  },
+  "uncompletedDecisions": {
+    "legalSourceItemDecision": false,
+    "productionPrivacyAndCookiesLegalDecision": false,
+    "specificOwnerPageRiskAcceptance": false,
+    "finalPublicationStatusCopyEditorialPass": false,
+    "reviewedFinalPublicArtifact": false,
+    "mergeAuthorized": false,
+    "publicRouteAuthorized": false,
+    "productionDeployAuthorized": false,
+    "searchIndexingAuthorized": false,
+    "originalScoreRightsGranted": false,
+    "syndicationAuthorized": false,
+    "recordedActualPublication": false
+  },
+  "releaseAuthorized": false,
+  "publishedIndependentWeeklyCount": 0,
+  "eligibleMonthlyCount": 0,
+  "note": "Temporary internal process only. Does not create independent legal or GDPR/ePrivacy clearance. All live publication gates remain fail-closed."
+}

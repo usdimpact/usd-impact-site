@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 import sourceHandler from './daily-news-source.js';
+import { emitGptUsageDiagnostic } from '../src/lib/gpt-usage-diagnostic.js';
 import { validateEditorialBundle } from '../src/lib/daily-news-editorial-validation.js';
 import { sourceDateAttributionIssue } from '../src/lib/source-date-basis.js';
 
@@ -603,12 +604,14 @@ function forwardRecordedResponse(response, recorder, extraHeaders = {}) {
 async function normalizeCompletedResponse(request, response, date, openAiResponse, apiKey) {
   const initial = await validateCompletedResponse(request, date, openAiResponse);
   if (initial.recorder.statusCode === 200) {
+    emitGptUsageDiagnostic({ response: openAiResponse, stage: 'research', outcome: 'validated' });
     return forwardRecordedResponse(response, initial.recorder, {
       'X-USD-Impact-Repaired': 'false',
       'X-USD-Impact-Repair-Count': '0',
     });
   }
 
+  emitGptUsageDiagnostic({ response: openAiResponse, stage: 'research', outcome: 'invalid', validationReason: initial.reason });
   console.error(`Daily news bundle requires bounded repair: ${initial.reason}`);
   const feasibility = assessBoundedRepairFeasibility(openAiResponse, date);
   if (!feasibility.canRepair) {
@@ -655,15 +658,18 @@ async function normalizeCompletedResponse(request, response, date, openAiRespons
       );
       const repaired = await validateCompletedResponse(request, date, candidate);
       if (repaired.recorder.statusCode === 200) {
+        emitGptUsageDiagnostic({ response: candidate, stage: 'repair', outcome: 'validated', repairAttempt: attempt });
         return forwardRecordedResponse(response, repaired.recorder, {
           'X-USD-Impact-Repaired': 'true',
           'X-USD-Impact-Repair-Count': String(attempt),
         });
       }
       currentReason = repaired.reason;
+      emitGptUsageDiagnostic({ response: candidate, stage: 'repair', outcome: 'invalid', validationReason: currentReason, repairAttempt: attempt });
       console.error(`Daily news bundle repair attempt ${attempt} still failed validation: ${currentReason}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'unknown error';
+      emitGptUsageDiagnostic({ response: candidate, stage: 'repair', outcome: 'provider_failed', validationReason: message, repairAttempt: attempt });
       console.error(`Daily news bundle repair attempt ${attempt} failed: ${message}`);
       return sendJson(response, {
         error: 'Daily news source generation failed validation and could not be repaired.',
@@ -731,6 +737,7 @@ export default async function handler(request, response) {
     }
     if (TERMINAL_FAILURE_STATUSES.has(openAiResponse.status)) {
       const details = terminalFailureDetails(openAiResponse);
+      emitGptUsageDiagnostic({ response: openAiResponse, stage: 'research', outcome: 'provider_failed', validationReason: details.reason });
       console.error(
         `Daily news background response ${responseId} ended with status ${openAiResponse.status}; reason ${details.reason}; usage ${JSON.stringify(details.usage)}.`,
       );

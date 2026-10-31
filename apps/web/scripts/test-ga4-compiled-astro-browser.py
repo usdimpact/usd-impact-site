@@ -28,7 +28,7 @@ bundles = [p.read_text(encoding="utf-8") for p in (DIST / "_astro").glob("*.js")
 assert any("usd-impact:consent-ready" in js and "ga-disable-" in js for js in bundles), (
     "Processed GA4 script missing from generated same-origin JS bundles"
 )
-assert "type=\"module\"" in home, "Processed Astro modules not present in rendered page", "Processed Astro module script not found"
+assert "type=\"module\"" in home, "Processed Astro modules not present in rendered page"
 
 class QuietStatic(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):

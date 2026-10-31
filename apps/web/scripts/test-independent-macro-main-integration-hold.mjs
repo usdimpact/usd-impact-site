@@ -460,9 +460,10 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
     ['R04','R05','R06','R07','X01'],
     'all separate unresolved human decisions present');
   ok(proposed.evidence.length===p.itemsNeedingActualOwnerReview &&
-     proposed.evidence.every(x=>x.ownerDecision==='OWNER_APPROVED_SCOPED_RISK_REVIEW' &&
-       x.ownerAcknowledgedRisk && !x.hardStopConfirmed && x.sources.length>0 &&
-       x.finalRenderedReleasePermission===false && x.ownerScopeAccepted.length>30),
+     proposed.evidence.every(x=>x.ownerDecision==='PENDING' &&
+       !x.ownerAcknowledgedRisk && !x.explicitItemAnswerProvided &&
+       x.ownerSpecificVerbatim===null && !x.hardStopConfirmed && x.sources.length>0 &&
+       x.finalRenderedReleasePermission===false && x.proposedScopeForOwnerReview.length>30),
      'no item-specific owner approval invented');
   const ai=proposed.aiEditorialDetermination;
   ok(ai.actualAIContributionToFinalText==='AI_ASSISTED_DRAFT_PREPARATION_DOCUMENTED_FOR_THIS_WORKFLOW' &&
@@ -477,16 +478,15 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      ai.conservativeVisibleDisclosureProofPrepared &&
      !ai.legalCertification,
      'source facts PASS does not become Article 50 human review certification');
-  ok(proposed.signOff.eachItemReviewedAndAccepted &&
-     Object.entries(proposed.signOff).every(([key,value])=>key==='eachItemReviewedAndAccepted' ? value===true : value===false) &&
+  ok(Object.values(proposed.signOff).every(value=>value===false) &&
      Object.values(proposed.releasePermissions).every(x=>x===false) &&
-     p.itemSpecificRiskAcceptanceRecorded && !p.aiEditorialDeterminationRecorded &&
+     !p.itemSpecificRiskAcceptanceRecorded && !p.aiEditorialDeterminationRecorded &&
      !p.finalStatusCopyPassed && !p.releaseAuthorized &&
      proposed.firstPublishedIndependentWeeklies===0 &&
      proposed.eligibleMonthlyCount===0,
      'owner-specific review may not waive release/indexing/Score or legal requirements');
   ok(worksheet.includes('AI Act Article 50(4)') &&
-     worksheet.includes('five scoped owner approvals recorded') &&
+     worksheet.includes('Five specific owner determinations pending') &&
      worksheet.includes('named editorial responsibility NOT ATTESTED') &&
      worksheet.includes('KELA LEADS S.R.L.') &&
      worksheet.includes('Privacy PR #1035 is now live in public Production') &&
@@ -496,7 +496,7 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      'worksheet explicitly holds legal/privacy and publication decision');
 }
 
-// Owner scoped approval receipt and strict private final-copy review.
+// Generic owner continuation receipt, per-item decisions remain unapproved; separate private review proof.
 {
   const root='../../../docs/operations/independent-macro-release/';
   const p=m.ownerFiveScopeApprovalDraft;
@@ -507,8 +507,20 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
   eq(receipt.scope.reviewedDraftHead,'920630af13743b54de69cc99c402c0ce65b7003c',
     'owner acceptance refers to previous frozen review source');
   eq(receipt.ownerAcknowledgements.map(x=>x.id),['R04','R05','R06','R07','X01'],
-    'five scoped owner approvals and no extras');
-  ok(p.ownerReviewedItemCount===5 && !p.independentLegalReviewCertification &&
+    'five risk categories awaiting explicit answers');
+  eq(receipt.state,'OWNER_GENERAL_CONTINUE_RECORDED_INDIVIDUAL_ITEM_DECISIONS_PENDING',
+     'generic owner message must not become item approval');
+  eq(receipt.previousMisclassification.priorReceiptBlobSha,'cddf62cc7466a4667c37740e1685c22374fd4262',
+     'prior overinterpreted receipt retained as Git history');
+  ok(receipt.actualConfirmedItemDecisions===0 &&
+     receipt.ownerAcknowledgements.every(x=>x.scopedDecision==='PENDING_EXPLICIT_ITEM_DETERMINATION' &&
+       !x.ownerItemDecisionEstablished && x.ownerSpecificVerbatim===null &&
+       typeof x.priorInferredDecision==='string' && x.priorInferredDecision.startsWith('APPROVED_')),
+     'original generic owner reply retained without inferred per-item acceptance');
+  ok(p.ownerReviewedItemCount===0 && p.approvedRiskIds.length===0 &&
+     p.riskIdsPendingExplicitOwnerDetermination.join(',')==='R04,R05,R06,R07,X01' &&
+     !p.explicitOwnerItemDecisionsRecorded &&
+     !p.independentLegalReviewCertification &&
      !p.namedEditorLegalCapacityVerified && !p.actualFinalRenderedCopyOwnerPass &&
      !p.publicationRightsGranted && !receipt.limitations.ownerIdentityAndLegalCapacityIndependentlyVerified &&
      !receipt.limitations.qualifiedForeignRightsOpinionObtained &&

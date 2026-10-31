@@ -232,11 +232,11 @@
   },
   "nextOwnerRiskAndAiEditorialDecisionInputDraft": {
     "inputPath": "docs/operations/independent-macro-release/first-weekly-owner-final-decision-input-2026-10-31.draft.json",
-    "inputGitBlobSha": "b46f5f2bece062f88c465d46b522e46612a27aaa",
+    "inputGitBlobSha": "57b726f2f3cd1344d634c5177dc8834c3c670c46",
     "worksheetPath": "docs/operations/independent-macro-release/first-weekly-final-risk-and-ai-editorial-review-2026-10-31.draft.md",
-    "worksheetGitBlobSha": "2368c188a1c1d9bde5629242b990500bd0cbc23f",
+    "worksheetGitBlobSha": "ba96571ebd806cab51365d6204a27364fcff62a0",
     "itemsNeedingActualOwnerReview": 5,
-    "itemSpecificRiskAcceptanceRecorded": true,
+    "itemSpecificRiskAcceptanceRecorded": false,
     "aiEditorialDeterminationRecorded": false,
     "finalStatusCopyPassed": false,
     "releaseAuthorized": false
@@ -303,22 +303,25 @@
   },
   "ownerFiveScopeApprovalDraft": {
     "receiptPath": "docs/operations/independent-macro-release/owner-five-item-risk-approval-receipt-2026-10-31.draft.json",
-    "receiptGitBlobSha": "cddf62cc7466a4667c37740e1685c22374fd4262",
+    "receiptGitBlobSha": "be5e1a03cde569aa59d54cf0f24c2d8e8ee2bc06",
     "ownerVerbatim": "all approved, please continue",
-    "ownerReviewedItemCount": 5,
-    "approvedRiskIds": [
+    "ownerReviewedItemCount": 0,
+    "approvedRiskIds": [],
+    "meaning": "General continuation only; no five distinct risk decisions were attested. The prior overinterpretation is corrected, with original owner words preserved in receipt.",
+    "aiPath": "PREPARE_ACCURATE_AI_DISCLOSURE_AS_NONPUBLIC_FINAL_REVIEW_PROOF",
+    "independentLegalReviewCertification": false,
+    "namedEditorLegalCapacityVerified": false,
+    "actualFinalRenderedCopyOwnerPass": false,
+    "publicationRightsGranted": false,
+    "riskIdsPendingExplicitOwnerDetermination": [
       "R04",
       "R05",
       "R06",
       "R07",
       "X01"
     ],
-    "meaning": "Owner approvals of the reviewed original educational English facts-and-links scope only; no final rendered appearance/signature or qualified legal statement.",
-    "aiPath": "PREPARE_ACCURATE_AI_DISCLOSURE_AS_NONPUBLIC_FINAL_REVIEW_PROOF",
-    "independentLegalReviewCertification": false,
-    "namedEditorLegalCapacityVerified": false,
-    "actualFinalRenderedCopyOwnerPass": false,
-    "publicationRightsGranted": false
+    "explicitOwnerItemDecisionsRecorded": false,
+    "previousOverstatedReceiptGitBlobSha": "cddf62cc7466a4667c37740e1685c22374fd4262"
   },
   "nonRoutedPublicationAppearanceReviewDraft": {
     "helperPath": "apps/web/src/lib/independent-macro-weekly-publication-appearance-review.mjs",

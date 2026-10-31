@@ -16,35 +16,50 @@
       "R07",
       "X01"
     ],
-    "meaning": "Owner approves proceeding within the reviewed one-week English original-facts-and-links scope, with acknowledged outstanding verifiable legal and final-rendered requirements."
+    "meaning": "The owner's broad response authorized additional Draft preparation. It does NOT contain five distinct owner answers and must not be treated as item-specific R04/R05/R06/R07/X01 acceptance."
   },
   "ownerAcknowledgements": [
     {
       "id": "R04",
-      "scopedDecision": "APPROVED_TO_PROCEED_WITH_ORIGINAL_FACTS_AND_LINKS",
+      "scopedDecision": "PENDING_EXPLICIT_ITEM_DETERMINATION",
       "globalAgencyReuseRightsGranted": false,
-      "unknownContractExceptionsWaived": false
+      "unknownContractExceptionsWaived": false,
+      "priorInferredDecision": "APPROVED_TO_PROCEED_WITH_ORIGINAL_FACTS_AND_LINKS",
+      "ownerSpecificVerbatim": null,
+      "ownerItemDecisionEstablished": false
     },
     {
       "id": "R05",
-      "scopedDecision": "APPROVED_FROZEN_FACTUAL_EDUCATIONAL_ARTICLE_SCOPE",
-      "finalChangedStatusCopyPassGranted": false
+      "scopedDecision": "PENDING_EXPLICIT_ITEM_DETERMINATION",
+      "finalChangedStatusCopyPassGranted": false,
+      "priorInferredDecision": "APPROVED_FROZEN_FACTUAL_EDUCATIONAL_ARTICLE_SCOPE",
+      "ownerSpecificVerbatim": null,
+      "ownerItemDecisionEstablished": false
     },
     {
       "id": "R06",
-      "scopedDecision": "APPROVED_PREVIOUSLY_SHIPPED_PRIVACY_HARDENING_AND_DOCUMENTED_EVIDENCE_SCOPE",
-      "qualifiedPrivacyCertificationGranted": false
+      "scopedDecision": "PENDING_EXPLICIT_ITEM_DETERMINATION",
+      "qualifiedPrivacyCertificationGranted": false,
+      "priorInferredDecision": "APPROVED_PREVIOUSLY_SHIPPED_PRIVACY_HARDENING_AND_DOCUMENTED_EVIDENCE_SCOPE",
+      "ownerSpecificVerbatim": null,
+      "ownerItemDecisionEstablished": false
     },
     {
       "id": "R07",
-      "scopedDecision": "APPROVED_EXISTING_KELA_LEADS_OPERATOR_IDENTIFICATION_SCOPE",
-      "editorIdentityAndFinalRenderedLegalNoticesReviewed": false
+      "scopedDecision": "PENDING_EXPLICIT_ITEM_DETERMINATION",
+      "editorIdentityAndFinalRenderedLegalNoticesReviewed": false,
+      "priorInferredDecision": "APPROVED_EXISTING_KELA_LEADS_OPERATOR_IDENTIFICATION_SCOPE",
+      "ownerSpecificVerbatim": null,
+      "ownerItemDecisionEstablished": false
     },
     {
       "id": "X01",
-      "scopedDecision": "APPROVED_TOPIC_WITH_CONSERVATIVE_AI_DISCLOSURE_PROOF_TO_REVIEW",
+      "scopedDecision": "PENDING_EXPLICIT_ITEM_DETERMINATION",
       "humanEditorialExceptionClaimed": false,
-      "finalVisibleDisclosurePlacementPassed": false
+      "finalVisibleDisclosurePlacementPassed": false,
+      "priorInferredDecision": "APPROVED_TOPIC_WITH_CONSERVATIVE_AI_DISCLOSURE_PROOF_TO_REVIEW",
+      "ownerSpecificVerbatim": null,
+      "ownerItemDecisionEstablished": false
     }
   ],
   "aiTransparency": {
@@ -68,5 +83,20 @@
     "authorizesSiteCommerceChanges": false,
     "actualIndependentWeekliesPublished": 0
   },
-  "state": "OWNER_SCOPE_APPROVAL_RECORDED_DRAFT_FINAL_PAGE_REVIEW_PENDING"
+  "state": "OWNER_GENERAL_CONTINUE_RECORDED_INDIVIDUAL_ITEM_DECISIONS_PENDING",
+  "ownerReplyCategory": "GENERAL_CONTINUATION_APPROVAL_NOT_ITEM_SPECIFIC_ATTESTATION",
+  "previousMisclassification": {
+    "priorReceiptBlobSha": "cddf62cc7466a4667c37740e1685c22374fd4262",
+    "previousStatus": "OWNER_SCOPE_APPROVAL_RECORDED_DRAFT_FINAL_PAGE_REVIEW_PENDING",
+    "correctionReason": "Independent read-only QA identified a broad phrase incorrectly promoted into five individual risk authorizations; original owner verbatim preserved.",
+    "actualOwnerWordsStillPreserved": true
+  },
+  "actualConfirmedItemDecisions": 0,
+  "requiredExplicitItemDecisions": [
+    "R04",
+    "R05",
+    "R06",
+    "R07",
+    "X01"
+  ]
 }

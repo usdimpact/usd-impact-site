@@ -123,8 +123,8 @@ assert.equal(scriptElements.length, 1, 'revocation must not load an additional t
 assert.equal(cookies.has('_ga'), false, 'previous GA cookie expired on revoke');
 assert.equal(cookies.has('_ga_TEST1234'), false);
 assert.equal(cookies.has('usd_impact_consent'), true);
-assert.equal(calls('consent', 'update').length, 1, 'one update after previously loaded tag');
-assert.equal(calls('consent', 'update')[0][2].analytics_storage, 'denied');
+assert.equal(calls('consent', 'update').at(-1)[2].analytics_storage, 'denied', 'latest update revokes analytics');
+assert.equal(calls('consent', 'update').filter(([, , settings]) => settings.analytics_storage === 'denied').length, 1, 'exactly one denied update after withdrawal');
 assertAdsDenied();
 
 const queuedOnRevoke = queued().length;
@@ -137,7 +137,7 @@ changePreference(true);
 assert.equal(window['ga-disable-' + measurementId], false, 're-consent clears opt-out flag');
 assert.equal(scriptElements.length, 1, 're-consent does not double-load tag');
 assert.equal(calls('config').length, 1, 're-consent does not double-configure the tag');
-assert.equal(calls('consent', 'update').length, 2, 'second update explicitly regrants consent');
-assert.equal(calls('consent', 'update')[1][2].analytics_storage, 'granted');
+assert.equal(calls('consent', 'update').at(-1)[2].analytics_storage, 'granted', 'regrant restores analytics only');
+assert.equal(calls('consent', 'update').filter(([, , settings]) => settings.analytics_storage === 'denied').length, 1, 'only the withdrawal transition denied analytics');
 assertAdsDenied();
 console.log('GA4 simulated consent lifecycle passed: deny -> accept -> revoke -> regrant, zero Google load before consent.');

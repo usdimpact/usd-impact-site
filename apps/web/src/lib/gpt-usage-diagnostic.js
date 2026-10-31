@@ -31,7 +31,7 @@ export function classifyGptValidationReason(reason) {
   if (/missing from catalysts|catalyst.*missing|statusLabel is invalid/i.test(value)) return 'catalyst_mismatch';
   if (/publishedAt|publication date|source date|dated document|date attribution/i.test(value)) return 'source_date';
   if (/primary source|reporting domain|independent reporting/i.test(value)) return 'insufficient_evidence';
-  if (/invalid JSON|unknown source|schema|invalid output/i.test(value)) return 'schema_invalid';
+  if (/invalid JSON|not valid JSON|malformed JSON|unknown source|schema|invalid output/i.test(value)) return 'schema_invalid';
   return 'other';
 }
 

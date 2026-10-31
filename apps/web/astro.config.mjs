@@ -1,4 +1,9 @@
 import { defineConfig } from 'astro/config';
+
+// QA-ONLY sandbox overlay: never ship with Production. Reject real GA4 IDs.
+if (process.env.PUBLIC_GA4_MEASUREMENT_ID && process.env.PUBLIC_GA4_MEASUREMENT_ID !== 'G-TEST1234') {
+  throw new Error('GA4 QA-only sandbox refuses non-synthetic analytics measurement IDs.');
+}
 import sitemap from '@astrojs/sitemap';
 import { SEARCH_UTILITY_PATHS } from './src/lib/search-utility-policy.js';
 import { canonicalUrlForRequest } from './src/lib/canonical-url.js';
@@ -47,11 +52,11 @@ export default defineConfig({
       algorithm: 'SHA-384',
       directives: [
         "default-src 'self'",
-        "img-src 'self' data: blob: https:",
+        "img-src 'self' data: blob:",
         "font-src 'self' data:",
-        "connect-src 'self' https://challenges.cloudflare.com https://www.google-analytics.com https://region1.google-analytics.com",
-        "frame-src 'self' https://challenges.cloudflare.com",
-        "media-src 'self' blob: https:",
+        "connect-src 'self'",
+        "frame-src 'self'",
+        "media-src 'self' blob:",
         "worker-src 'self' blob:",
         "manifest-src 'self'",
         "form-action 'self'",
@@ -60,8 +65,6 @@ export default defineConfig({
       scriptDirective: {
         resources: [
           { resource: "'self'", kind: 'element' },
-          { resource: 'https://challenges.cloudflare.com', kind: 'element' },
-          { resource: 'https://www.googletagmanager.com', kind: 'element' },
           { resource: "'none'", kind: 'attribute' },
         ],
       },

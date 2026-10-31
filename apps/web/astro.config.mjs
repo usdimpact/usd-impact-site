@@ -1,4 +1,24 @@
 import { defineConfig } from 'astro/config';
+
+// QA-ONLY sandbox overlay: NEVER merge into main or the public Production project.
+// The initial Vercel deployment of a brand-new isolated project may be classified
+// as "production" by Vercel. Permit it ONLY when the isolated QA project supplies
+// two project-specific, Production-scoped, nonsecret markers explicitly for this
+// one approved QA bootstrap. Absence/mismatch of either marker fails closed.
+const qaMeasurementId = process.env.PUBLIC_GA4_MEASUREMENT_ID;
+const qaPreview = process.env.VERCEL_ENV === 'preview';
+const qaIsolatedBootstrap = process.env.VERCEL_ENV === 'production'
+  && process.env.GA4_QA_BOOTSTRAP_PROJECT_ID === 'prj_OhTpe4Alzv1HEaZfIlwlIXKtuaja'
+  && process.env.GA4_QA_BOOTSTRAP_APPROVED === 'isolated-ga4-qa-20261031';
+if (process.env.VERCEL === '1' && (
+  qaMeasurementId !== 'G-TEST1234' ||
+  (!qaPreview && !qaIsolatedBootstrap)
+)) {
+  throw new Error('GA4 QA-only build requires synthetic ID and a scoped QA Preview or isolated bootstrap.');
+}
+if (process.env.PUBLIC_GA4_MEASUREMENT_ID && process.env.PUBLIC_GA4_MEASUREMENT_ID !== 'G-TEST1234') {
+  throw new Error('GA4 QA-only sandbox refuses non-synthetic analytics measurement IDs.');
+}
 import sitemap from '@astrojs/sitemap';
 import { SEARCH_UTILITY_PATHS } from './src/lib/search-utility-policy.js';
 import { canonicalUrlForRequest } from './src/lib/canonical-url.js';
@@ -47,11 +67,11 @@ export default defineConfig({
       algorithm: 'SHA-384',
       directives: [
         "default-src 'self'",
-        "img-src 'self' data: blob: https:",
+        "img-src 'self' data: blob:",
         "font-src 'self' data:",
-        "connect-src 'self' https://challenges.cloudflare.com https://www.google-analytics.com https://region1.google-analytics.com",
-        "frame-src 'self' https://challenges.cloudflare.com",
-        "media-src 'self' blob: https:",
+        "connect-src 'self'",
+        "frame-src 'self'",
+        "media-src 'self' blob:",
         "worker-src 'self' blob:",
         "manifest-src 'self'",
         "form-action 'self'",
@@ -60,8 +80,6 @@ export default defineConfig({
       scriptDirective: {
         resources: [
           { resource: "'self'", kind: 'element' },
-          { resource: 'https://challenges.cloudflare.com', kind: 'element' },
-          { resource: 'https://www.googletagmanager.com', kind: 'element' },
           { resource: "'none'", kind: 'attribute' },
         ],
       },

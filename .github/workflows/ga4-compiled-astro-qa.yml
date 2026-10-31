@@ -40,10 +40,43 @@ jobs:
       - name: Verify focused consent lifecycle regression before Astro build
         working-directory: apps/web
         run: node scripts/test-ga4-consent-revocation.mjs
-      - name: Build actual Astro output with synthetic GA4 ID, no deployment
+      - name: Verify strict QA bootstrap authorization matrix without deploying
+        working-directory: apps/web
+        env:
+          VERCEL: '1'
+          PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { spawnSync } from 'node:child_process';
+          const project = 'prj_OhTpe4Alzv1HEaZfIlwlIXKtuaja';
+          const marker = 'isolated-ga4-qa-20261031';
+          const tests = [
+            ['reject unmarked isolated Production', false, { VERCEL_ENV: 'production' }],
+            ['reject mismatched project', false, { VERCEL_ENV: 'production', GA4_QA_BOOTSTRAP_PROJECT_ID: 'prj_wrong', GA4_QA_BOOTSTRAP_APPROVED: marker }],
+            ['reject missing approval marker', false, { VERCEL_ENV: 'production', GA4_QA_BOOTSTRAP_PROJECT_ID: project }],
+            ['reject incorrect approval marker', false, { VERCEL_ENV: 'production', GA4_QA_BOOTSTRAP_PROJECT_ID: project, GA4_QA_BOOTSTRAP_APPROVED: 'not-authorized' }],
+            ['reject non-synthetic ID even with markers', false, { VERCEL_ENV: 'production', GA4_QA_BOOTSTRAP_PROJECT_ID: project, GA4_QA_BOOTSTRAP_APPROVED: marker, PUBLIC_GA4_MEASUREMENT_ID: 'G-REAL9999' }],
+            ['allow isolated Preview synthetic ID', true, { VERCEL_ENV: 'preview' }],
+            ['allow exact isolated Production bootstrap', true, { VERCEL_ENV: 'production', GA4_QA_BOOTSTRAP_PROJECT_ID: project, GA4_QA_BOOTSTRAP_APPROVED: marker }],
+          ];
+          for (const [label, expected, override] of tests) {
+            const env = { ...process.env, GA4_QA_BOOTSTRAP_PROJECT_ID: '', GA4_QA_BOOTSTRAP_APPROVED: '', ...override };
+            const result = spawnSync(process.execPath, ['--input-type=module', '-e', 'await import("./astro.config.mjs")'], { env, encoding: 'utf8', timeout: 30000 });
+            if ((result.status === 0) !== expected) {
+              throw new Error('QA bootstrap authorization matrix failed: ' + label);
+            }
+            console.log('PASS: ' + label);
+          }
+          NODE
+      - name: Build actual Astro output for authorized isolated QA bootstrap
         working-directory: apps/web
         env:
           PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+          VERCEL: '1'
+          VERCEL_ENV: production
+          GA4_QA_BOOTSTRAP_PROJECT_ID: prj_OhTpe4Alzv1HEaZfIlwlIXKtuaja
+          GA4_QA_BOOTSTRAP_APPROVED: isolated-ga4-qa-20261031
           CI: 'true'
         run: |
           set -euo pipefail

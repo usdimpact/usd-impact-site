@@ -141,3 +141,92 @@ assert.equal(calls('consent', 'update').at(-1)[2].analytics_storage, 'granted', 
 assert.equal(calls('consent', 'update').filter(([, , settings]) => settings.analytics_storage === 'denied').length, 1, 'only the withdrawal transition denied analytics');
 assertAdsDenied();
 console.log('GA4 simulated consent lifecycle passed: deny -> accept -> revoke -> regrant, zero Google load before consent.');
+
+
+// Regression: Astro's define:vars GA4 script can run before ConsentClient's
+// deferred module on EACH new document. A previously granted _ga identifier
+// must not be expired during that gap; explicit reject still expires it.
+const returningCookies = new Map([
+  ['usd_impact_consent', 'v1.analytics-granted'],
+  ['_ga', 'stable-client-id'],
+  ['_ga_TEST1234', 'stable-stream-cookie'],
+]);
+const delayedPage = (granted) => {
+  const writes = [];
+  const scripts = [];
+  const callbacks = new Map();
+  let allowed = granted;
+  const pageDoc = {
+    get cookie() {
+      return [...returningCookies.entries()].map(([key, value]) => key + '=' + value).join('; ');
+    },
+    set cookie(value) {
+      writes.push(value);
+      const name = value.split('=')[0];
+      if (/;\s*Max-Age=0(?:;|$)/.test(value)) returningCookies.delete(name);
+      else returningCookies.set(name, value.slice(name.length + 1).split(';')[0]);
+    },
+    getElementById(id) { return scripts.find((s) => s.id === id) ?? null; },
+    createElement(tag) { assert.equal(tag, 'script'); return { id: '', src: '', async: false }; },
+    head: { appendChild(script) { scripts.push(script); return script; } },
+  };
+  const pageWin = {
+    location: { hostname: 'www.usd-impact.com', protocol: 'https:' },
+    addEventListener(event, callback) {
+      const list = callbacks.get(event) ?? [];
+      list.push(callback);
+      callbacks.set(event, list);
+    },
+    dispatchEvent(event) {
+      for (const fn of callbacks.get(event.type) ?? []) fn(event);
+    },
+  };
+  runInNewContext(scriptMatch[1], {
+    measurementId, window: pageWin, document: pageDoc, CustomEvent: FakeCustomEvent,
+  }, { filename: 'GA4-delayed-consent.js', timeout: 1500 });
+  assert.equal(scripts.length, 0, 'deferred consent cannot load Google early');
+  assert.equal(pageWin.gtag, undefined, 'no Google shim before consent-ready');
+  assert.equal(pageWin.dataLayer, undefined, 'no Google queue before consent-ready');
+  assert.equal(pageWin['ga-disable-' + measurementId], true, 'analytics disabled while consent API is pending');
+  assert.deepEqual(writes, [], 'pending state must never touch existing cookies');
+  assert.equal(returningCookies.get('_ga'), 'stable-client-id', 'previously granted _ga survives initialization gap');
+  pageWin.USDImpactConsent = { analyticsAllowed: () => allowed };
+  pageWin.dispatchEvent(new FakeCustomEvent('usd-impact:consent-ready'));
+  if (allowed) {
+    assert.equal(scripts.length, 1, 'consent-ready grants one Google tag');
+    assert.equal(pageWin['ga-disable-' + measurementId], false);
+    assert.equal(returningCookies.get('_ga'), 'stable-client-id', 'valid opt-in must preserve client identity');
+    assert.equal(returningCookies.get('_ga_TEST1234'), 'stable-stream-cookie');
+    assert.equal(writes.filter((v) => /Max-Age=0/.test(v)).length, 0,
+      'no expired GA cookies on already-granted navigation');
+  } else {
+    assert.equal(scripts.length, 0, 'first-time reject cannot load Google');
+    assert.equal(returningCookies.has('_ga'), false, 'reject deletes an obsolete GA cookie');
+    assert.equal(returningCookies.has('_ga_TEST1234'), false);
+  }
+  return {
+    win: pageWin, scripts, writes,
+    withdraw() {
+      allowed = false;
+      pageWin.dispatchEvent(new FakeCustomEvent('usd-impact:consent-change'));
+    },
+  };
+};
+const homePage = delayedPage(true);
+const privacyPage = delayedPage(true);
+assert.equal(homePage.scripts.length, 1);
+assert.equal(privacyPage.scripts.length, 1);
+assert.equal(returningCookies.get('_ga'), 'stable-client-id',
+  'returning consent survives simulated home-to-privacy full-document navigation');
+privacyPage.withdraw();
+assert.equal(returningCookies.has('_ga'), false, 'withdrawal deletes previously granted _ga');
+assert.equal(returningCookies.has('_ga_TEST1234'), false);
+assert.equal(Array.from(privacyPage.win.dataLayer ?? []).map((args) => Array.from(args))
+  .filter(([a, b]) => a === 'consent' && b === 'update').at(-1)[2].analytics_storage, 'denied',
+  'withdrawal still queues the explicit Google denied update');
+assert.equal(returningCookies.has('usd_impact_consent'), true, 'privacy decision survives cleanup');
+returningCookies.set('_ga', 'obsolete-id');
+returningCookies.set('_ga_TEST1234', 'obsolete-stream-id');
+delayedPage(false);
+assert.equal(returningCookies.has('_ga'), false, 'denied consent-ready expires obsolete GA cookie');
+console.log('GA4 delayed consent initialization passed: stable returning client ID across documents, revoked on withdrawal.');

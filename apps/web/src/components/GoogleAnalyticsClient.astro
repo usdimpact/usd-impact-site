@@ -157,6 +157,14 @@ const measurementId = measurementIdPattern.test(rawMeasurementId) ? rawMeasureme
     window.addEventListener(CONSENT_READY_EVENT, applyConsent);
     window.addEventListener(CONSENT_CHANGE_EVENT, applyConsent);
     window.addEventListener(ANALYTICS_EVENT, sendAnalyticsEvent);
-    applyConsent();
+    // Astro processes ConsentClient's ordinary script as a deferred module.
+    // This define:vars script is inline and can run first. Do not expire a
+    // returning member's GA cookies before the consent API has initialized.
+    // Fail closed while waiting; ConsentClient emits consent-ready afterward.
+    if (typeof window.USDImpactConsent?.analyticsAllowed === 'function') {
+      applyConsent();
+    } else {
+      window[DISABLE_KEY] = true;
+    }
   </script>
 )}

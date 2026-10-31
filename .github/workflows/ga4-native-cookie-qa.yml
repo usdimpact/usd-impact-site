@@ -1,0 +1,42 @@
+name: GA4 native-cookie QA (Draft only, no deployment)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ga4-native-cookie-qa.yml'
+      - 'apps/web/scripts/test-ga4-native-cookie-browser.py'
+      - 'apps/web/src/components/GoogleAnalyticsClient.astro'
+      - 'apps/web/src/components/ConsentClient.astro'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ga4-native-cookie-isolated-draft
+  cancel-in-progress: false
+
+jobs:
+  isolated-chromium:
+    name: Native first-party cookie QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Check out exact PR source (no persisted credentials)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Install pinned Playwright Python driver (system Chrome, no browser download)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/ga4-native-venv"
+          "$RUNNER_TEMP/ga4-native-venv/bin/python" -m pip install --disable-pip-version-check --no-cache-dir playwright==1.57.0
+          command -v google-chrome || command -v chromium
+      - name: Execute exact-source browser QA on loopback only
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/ga4-native-venv/bin/python" apps/web/scripts/test-ga4-native-cookie-browser.py

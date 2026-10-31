@@ -528,7 +528,7 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      proof.includes('data-release-authorized="false"') &&
      proof.includes('<meta name="robots" content="noindex,nofollow,noarchive,nosnippet">') &&
      proof.includes('Release Candidate • Draft only • Not published • All rights HOLD') &&
-     !/<script\\b/i.test(proof) && !/<iframe\\b/i.test(proof),
+     !/<script\b/i.test(proof) && !/<iframe\b/i.test(proof) && !/<img\b/i.test(proof),
     'only inert, noindex review proof with prominent nonpublication status');
   ok(p.storedOutsideSiteSrcAndDist && p.noindexAndReleaseDenialRetained &&
      !p.sharedLayoutCompiledOrRendered && !p.ownerProofApprovalReceived &&

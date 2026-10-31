@@ -37,13 +37,13 @@
     {
       "riskId": "R05",
       "scope": "Financial-language perimeter and final editorial status copy",
-      "finding": "Five official event facts and seven sections are verified; no actual asset return, original Score, personalized trading recommendation or asset-price signal identified in frozen text. Future publication status text is separate and not approved.",
+      "finding": "Five official event facts and seven sections are verified; no actual asset return, original Score, personalized trading recommendation or asset-price signal identified in frozen text. Future publication status text is separate and not approved. Independent owner-supplied QA separately identified (a) `participants` imprecision in the 10-2 FOMC dissent, (b) an ambiguous compliance heading, and (c) an abbreviated advisory disclaimer. A non-routed review-only component now proposes three exact text corrections, while the original owner-reviewed source remains frozen.",
       "sources": [
         "https://www.esma.europa.eu/publications-data/questions-answers/1741",
         "https://github.com/usdimpact/usd-impact-site/pull/1025"
       ],
-      "requiredDecision": "I reviewed the exact seven-section factual article, conditional transmission language and proposed eight status-only edits; no trading advice or unsupported market return is introduced.",
-      "recommendedDisposition": "FROZEN_FACTS_SUPPORTED_FINAL_STATUS_COPY_PENDING",
+      "requiredDecision": "Individually review and affirm the R05 risk scope, then give a new exact-rendered editorial PASS to the new three corrected sentences/heading and final release-status substitutions. Verify no trading advice or unsupported returns. Do not treat earlier frozen-source PASS as a PASS for this new proof.",
+      "recommendedDisposition": "THREE_CORRECTIONS_PREPARED_PENDING_NEW_EXACT_RENDERED_EDITORIAL_PASS",
       "ownerDecision": "PENDING",
       "ownerAcknowledgedRisk": false,
       "hardStopConfirmed": false,
@@ -92,7 +92,7 @@
     {
       "riskId": "X01",
       "scope": "EU AI Act Article 50(4) and human editorial control or disclosure",
-      "finding": "Economic/financial public-interest AI-generated text can require disclosure; applicable exception depends on substantive human editorial review/control AND identifiable natural or legal person holding editorial responsibility. Existing owner content PASS and five-source fact QA exist; no signed full editorial-provenance and responsibility determination for final text.",
+      "finding": "Economic/financial public-interest AI-generated text can require disclosure; applicable exception depends on substantive human editorial review/control AND identifiable natural or legal person holding editorial responsibility. Existing owner content PASS and five-source fact QA exist; no signed full editorial-provenance and responsibility determination for final text. AI-assistance disclosure proposal was moved inside the main article in the non-routed proof. New location, exact text and responsible publisher remain pending separate owner PASS.",
       "sources": [
         "https://ai-act-service-desk.ec.europa.eu/en/ai-act/article-50",
         "https://digital-strategy.ec.europa.eu/en/faqs/transparency-obligations-under-article-50-ai-act"
@@ -165,5 +165,17 @@
     "macroPublicationAuthorized": false
   },
   "ownerGeneralContinueReceiptPath": "docs/operations/independent-macro-release/owner-five-item-risk-approval-receipt-2026-10-31.draft.json",
-  "ownerGeneralContinueReceiptGitBlobSha": "be5e1a03cde569aa59d54cf0f24c2d8e8ee2bc06"
+  "ownerGeneralContinueReceiptGitBlobSha": "be5e1a03cde569aa59d54cf0f24c2d8e8ee2bc06",
+  "independentReadOnlyQaFollowup": {
+    "source": "Owner-provided read-only QA report created 2026-10-31 reviewing earlier Draft 920630af",
+    "reportedOriginalHead": "920630af13743b54de69cc99c402c0ce65b7003c",
+    "currentCorrectionReviewHead": "34b88f6bfc8a39802d0e4213eec40af65a8cc89e",
+    "productionConsentOrderingFinding": "INFERRED_AND_SEPARATELY_TRACKED_IN_DRAFT_PRIVACY_PR_1037",
+    "ownerFiveExplicitRiskAnswersRecorded": false,
+    "fomcDissentPreciseCorrectionSupportedByOfficialFed": true,
+    "threeNonpublicEditorialCopyCorrectionsProposed": true,
+    "finalRenderedEditorialPass": false,
+    "publishedRouteAuthorized": false,
+    "supportingCorrectionPath": "docs/operations/independent-macro-release/first-weekly-independent-qa-editorial-corrections-2026-10-31.draft.json"
+  }
 }

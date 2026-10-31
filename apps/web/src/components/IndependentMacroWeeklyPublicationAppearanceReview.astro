@@ -6,6 +6,9 @@ import '../styles/independent-macro-weekly-draft.css';
 import '../styles/independent-macro-weekly-publication-appearance-review.css';
 
 // Review component only: no Astro page imports it and public getStaticPaths stays [].
+// Historical DraftShell contains a stale layout-PASS comment. Keep that reviewed
+// blob immutable; the separate owner visual PASS does not approve this new copy.
+// Three editorial corrections and the visible AI disclosure require new owner PASS.
 // A separate exact-rendered owner PASS and exact-SHA release decision are required.
 const view = buildIndependentMacroWeeklyAppearanceReview(originalCandidate);
 if (!view.notRouted || view.releaseAuthorized || view.finalRenderedOwnerPass) {

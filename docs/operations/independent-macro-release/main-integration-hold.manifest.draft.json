@@ -232,9 +232,9 @@
   },
   "nextOwnerRiskAndAiEditorialDecisionInputDraft": {
     "inputPath": "docs/operations/independent-macro-release/first-weekly-owner-final-decision-input-2026-10-31.draft.json",
-    "inputGitBlobSha": "57b726f2f3cd1344d634c5177dc8834c3c670c46",
+    "inputGitBlobSha": "2ea2698829e52e0a5d5a9841f613f162689c50ed",
     "worksheetPath": "docs/operations/independent-macro-release/first-weekly-final-risk-and-ai-editorial-review-2026-10-31.draft.md",
-    "worksheetGitBlobSha": "ba96571ebd806cab51365d6204a27364fcff62a0",
+    "worksheetGitBlobSha": "fac703eae9cc4cc78b4b94cdd338f2b1a3a6f548",
     "itemsNeedingActualOwnerReview": 5,
     "itemSpecificRiskAcceptanceRecorded": false,
     "aiEditorialDeterminationRecorded": false,
@@ -325,13 +325,13 @@
   },
   "nonRoutedPublicationAppearanceReviewDraft": {
     "helperPath": "apps/web/src/lib/independent-macro-weekly-publication-appearance-review.mjs",
-    "helperGitBlobSha": "a11453cc211d0e42f2226d2f3e45dd77fb8fe7b4",
+    "helperGitBlobSha": "46cb6f48e34675c966f080e85972a611734661c8",
     "componentPath": "apps/web/src/components/IndependentMacroWeeklyPublicationAppearanceReview.astro",
-    "componentGitBlobSha": "e6698700831852989cf2c851c57c0defda5747ed",
+    "componentGitBlobSha": "2bb1c81ce1473e33fe1f8f8a4e196b8fe1d8c825",
     "stylesheetPath": "apps/web/src/styles/independent-macro-weekly-publication-appearance-review.css",
     "stylesheetGitBlobSha": "6078ec1194619316d36a1c5f14cbde776c333798",
     "staticOfflineProofPath": "docs/operations/independent-macro-release/first-weekly-final-copy-ai-disclosure-offline-proof-2026-10-31.draft.html",
-    "staticOfflineProofGitBlobSha": "0d5580377ba245dfadcd9d52a8eb1e8b2a03be95",
+    "staticOfflineProofGitBlobSha": "61c35f8380c793c8330ca5b6402f483ec7e38710",
     "originalArticleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
     "approvedHistoricSharedLayoutGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
     "sourceOnlyCopyChangeCount": 4,
@@ -345,6 +345,25 @@
     "publicProductionAuthorized": false,
     "indexingAuthorized": false,
     "originalScoreAuthorized": false,
-    "releaseAuthorized": false
+    "releaseAuthorized": false,
+    "editorialCorrectionsPendingExactOwnerPass": 3,
+    "editorialCorrectionsEvidencePath": "docs/operations/independent-macro-release/first-weekly-independent-qa-editorial-corrections-2026-10-31.draft.json",
+    "editorialCorrectionsEvidenceGitBlobSha": "0a8b05fcc43ddddd2cd05d09d9f59fbb900bdb7a",
+    "aiDisclosureNowPlacedInsideMainArticleInProof": true
+  },
+  "independentReadOnlyQA": {
+    "source": "Owner supplied text report, older reviewed commit 920630af; newer code verified independently",
+    "originalReviewedHead": "920630af13743b54de69cc99c402c0ce65b7003c",
+    "originalReportReadOnlyCIUnverified": true,
+    "globalOwnerApprovalDowngradedToGeneralContinue": true,
+    "fiveItemSpecificSignoffsStillNeeded": true,
+    "FomcFactCorrectedInUnroutedProofOnly": true,
+    "standardEducationalDisclaimerPreparedUnroutedOnly": true,
+    "aiDisclosurePlacedWithinMainArticleProof": true,
+    "privacyCookieOrderingSeparateDraftPr": 1037,
+    "privacyCookieChurnOnRealProductionVerified": false,
+    "qualifiedExternalLegalApprovalObtained": false,
+    "protectedPreviewPermissionGranted": false,
+    "publicMergeOrProductionPermissionGranted": false
   }
 }

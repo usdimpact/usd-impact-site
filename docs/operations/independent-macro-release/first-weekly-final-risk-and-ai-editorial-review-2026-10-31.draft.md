@@ -27,6 +27,22 @@ The direct reply *“all approved, please continue”* is preserved as **general
 
 The owner responded **“all approved, please continue”** immediately following the five-item worksheet and its explicit statement that legal restrictions cannot be waived. The five categories R04, R05, R06, R07 and X01 were named in a preceding request, but the response gave no item-by-item determination or evidence. They remain PENDING and must be answered separately. This is not a personal identity/capacity verification, external legal clearance, verified editor responsibility or approval of an as-yet unrendered publication page. Eight historical remediation-matrix source/rights flags remain as their original point-in-time evidence; the corrected owner receipt retains the broad reply without inferring item approvals. Any proven rights restriction or privacy defect remains a STOP.
 
+## Independent read-only QA corrections for the future release proof (2026-10-31)
+
+An owner-supplied independent review of earlier Draft `920630af` identified three **P2 editorial clarifications**. They are prepared in the new **non-public** appearance proof only, not the frozen original seven-section owner-reviewed article.
+
+| Target | Corrected *proposed* wording or change | Evidence and approval |
+| --- | --- | --- |
+| FOMC Oct 28 vote | “two voting dissenters, Lisa D. Cook and Beth M. Hammack, preferring a 25-basis-point increase” instead of “two participants” | [Federal Reserve's 10–2 FOMC decision](https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm); newly changed final copy needs owner PASS |
+| Editorial heading | “Educational only — not investment or trading advice” | Removes a potentially ambiguous reading; new exact rendered owner PASS required |
+| Advisory paragraph | Explicitly excludes financial/investment/trading/legal/tax advice, explains regime dependence and points to appropriately qualified professionals | Extends educational notice without turning the page into a recommendation; exact new owner PASS required |
+
+The same non-public appearance proof now places the proposed AI-assisted-preparation disclosure **within the main article**. This is a disclosure proposal, not an external legal opinion or a claim of substantive human-review exemption. [Correction evidence](first-weekly-independent-qa-editorial-corrections-2026-10-31.draft.json).
+
+A separate privacy-only [Draft PR #1037](https://github.com/usdimpact/usd-impact-site/pull/1037) addresses a **hypothesized returning-user GA cookie reset** due to Astro script ordering. That hypothesis is not yet verified with real Production browser cookies and does not demonstrate a leak; it must not be merged or deployed without its own exact-SHA approval.
+
+The historical shared-layout component has a stale layout-PASS **comment**. It remains frozen to preserve the owner's original exact-component review; the new private component explicitly documents the historical correction, without falsely converting its new final-copy view into an owner-approved release.
+
 ## AI editorial record — conservative disclosure prepared; no exception claimed
 
 **Path 1: substantial human editorial control.** If true, record who substantively checked the factual sections, could approve/alter/reject the text, what changes were made or reviewed, the exact final content version, and which natural or legal person bears ultimate editorial responsibility. Superficial copyediting does not meet the Commission's description of substantive review. This does not itself claim a qualified external legal determination.

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { extractIndependentMacroWeeklyDraftFragment, DRAFT_ARTICLE_SECTION_IDS } from '../src/lib/independent-macro-weekly-draft-shell.mjs';
-import { buildIndependentMacroWeeklyAppearanceReview, PUBLICATION_APPEARANCE_EDITS, PUBLICATION_APPEARANCE_DISCLOSURE } from '../src/lib/independent-macro-weekly-publication-appearance-review.mjs';
+import { buildIndependentMacroWeeklyAppearanceReview, PUBLICATION_APPEARANCE_EDITS, PUBLICATION_APPEARANCE_EDITORIAL_CORRECTIONS, PUBLICATION_APPEARANCE_DISCLOSURE } from '../src/lib/independent-macro-weekly-publication-appearance-review.mjs';
 
 const from = (relative) => readFileSync(new URL(relative, import.meta.url), 'utf8');
 const gitBlob = (value) => {
@@ -559,16 +559,45 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
   const review=buildIndependentMacroWeeklyAppearanceReview(html);
   ok(review.notRouted && !review.releaseAuthorized && !review.finalRenderedOwnerPass &&
      review.sectionIds.length===7 && review.statusOnlyEdits===5 &&
+     review.editorialCorrectionsPendingOwnerPass===3 &&
      review.aiDisclosureVisible,'appearance proof non-public with all seven original sections');
   let expected=extractIndependentMacroWeeklyDraftFragment(html).fragment;
   for(const edit of PUBLICATION_APPEARANCE_EDITS){
     eq(expected.split(edit.old).length-1,1,'one intended source marker for '+edit.id);
     expected=expected.replace(edit.old,edit.proposed);
   }
+  const evidenceText=from('../../../docs/operations/independent-macro-release/first-weekly-independent-qa-editorial-corrections-2026-10-31.draft.json');
+  const qaEvidence=JSON.parse(evidenceText);
+  eq(gitBlob(evidenceText),a.editorialCorrectionsEvidenceGitBlobSha,
+    'pin external QA editorial source and exact proposed revisions');
+  eq(qaEvidence.originalArticleBlob,gitBlob(html),'independent QA preserves original source');
+  eq(qaEvidence.corrections.map(x=>x.id),
+    ['fomc-two-voting-dissenters','educational-advice-heading','standard-advice-notice'],
+    'exact three new human-review-only corrections');
+  eq(PUBLICATION_APPEARANCE_EDITORIAL_CORRECTIONS.map(x=>x.id),
+     qaEvidence.corrections.map(x=>x.id),'new helper matches QA proposal IDs');
+  for(const change of PUBLICATION_APPEARANCE_EDITORIAL_CORRECTIONS) {
+    const original=qaEvidence.corrections.find(x=>x.id===change.id);
+    eq([change.old,change.proposed],[original.old,original.proposed],
+      'new helper matches factual QA correction '+change.id);
+    eq(expected.split(change.old).length-1,1,'one old factual wording marker '+change.id);
+    expected=expected.replace(change.old,change.proposed);
+  }
+  ok(review.fragment.includes('two voting dissenters, Lisa D. Cook and Beth M. Hammack') &&
+     review.fragment.includes('Educational only — not investment or trading advice') &&
+     review.fragment.includes('not financial, investment, trading, legal or tax advice') &&
+     review.fragment.includes('Consult an appropriately qualified professional') &&
+     review.fragment.includes('No agency endorses this page') &&
+     html.includes('with two participants favoring a 25-basis-point increase') &&
+     !review.fragment.includes('with two participants favoring a 25-basis-point increase') &&
+     a.editorialCorrectionsPendingExactOwnerPass===3 &&
+     a.aiDisclosureNowPlacedInsideMainArticleInProof &&
+     !a.ownerFinalExactRenderedArtifactPass,
+     'exact R05 corrections exist only in new, unapproved final-copy review');
   const aiNotice='<div class="mw-ai-review-disclosure" role="note" data-ai-disclosure-proposed="true"><strong>AI-assisted preparation:</strong> '+
     PUBLICATION_APPEARANCE_DISCLOSURE+'</div>';
-  expected=expected.replace('<main id="main-content" class="container layout">',
-    aiNotice+'\n  <main id="main-content" class="container layout">');
+  expected=expected.replace('<article class="content">',
+    '<article class="content">\n      '+aiNotice);
   eq(review.fragment,expected,'review helper changes only approved status and proposed visible AI disclosure');
   eq(PUBLICATION_APPEARANCE_DISCLOSURE,receipt.aiTransparency.candidateDisclosureText,
     'review text corresponds to owner visibility packet');
@@ -579,6 +608,7 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      component.includes('data-final-rendered-owner-pass="false"') &&
      component.includes('data-indexing-authorized="false"') &&
      component.includes('PRIVATE FINAL-COPY REVIEW') &&
+     component.includes('Historical DraftShell contains a stale layout-PASS comment.') &&
      !route.includes('IndependentMacroWeeklyPublicationAppearanceReview') &&
      a.AstroComponentWrittenButNotRoutedOrCompiled &&
      !a.ownerFinalExactRenderedArtifactPass && !a.finalReleaseCopyApproved &&
@@ -586,18 +616,25 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      !a.indexingAuthorized && !a.originalScoreAuthorized && !a.releaseAuthorized,
      'new private Astro component has no public route or approval');
   const one=(str,a,b)=>{eq(str.split(a).length-1,1,'one offline proof marker');return str.replace(a,b);};
-  const note='  <div role="note" data-ai-disclosure-proposed="true" style="max-width:1160px;margin:24px auto 0;padding:17px 26px;background:#102538;border-left:4px solid #80dbcb;color:#e8f3f5"><strong>AI-assisted preparation:</strong> '+
-    PUBLICATION_APPEARANCE_DISCLOSURE+'</div>\n';
-  let expectedProof=one(priorProof,'  <main id="main" class="container layout">',
-    note+'  <main id="main" class="container layout">');
+  const note='\n      <div role="note" data-ai-disclosure-proposed="true" style="max-width:1160px;margin:24px auto 0;padding:17px 26px;background:#102538;border-left:4px solid #80dbcb;color:#e8f3f5"><strong>AI-assisted preparation:</strong> '+
+    PUBLICATION_APPEARANCE_DISCLOSURE+'</div>';
+  let expectedProof=one(priorProof,'<article class="content">',
+    '<article class="content">'+note);
   expectedProof=one(expectedProof,
     '<title>USD Impact Macro Weekly Review | October 26–30, 2026 — Draft Release Candidate (Unpublished)</title>',
     '<title>USD Impact Macro Weekly Review | October 26–30, 2026 — Private final-copy review</title>');
   expectedProof=one(expectedProof,
     'OFFLINE WORDING PROOF — NOT PUBLISHED. This file illustrates proposed status wording only.',
     'PRIVATE FINAL-COPY REVIEW — NOT PUBLISHED. This file illustrates the approved-scope status edits and proposed AI disclosure only.');
+  for(const edit of PUBLICATION_APPEARANCE_EDITORIAL_CORRECTIONS){
+    expectedProof=one(expectedProof,edit.old,edit.proposed);
+  }
   eq(proof,expectedProof,'private final-copy static proof is reproducible from frozen prior HTML');
-  ok(proof.includes('data-release-authorized="false"') &&
+  ok(proof.includes('two voting dissenters, Lisa D. Cook and Beth M. Hammack') &&
+     proof.includes('data-ai-disclosure-proposed="true"') &&
+     proof.indexOf('data-ai-disclosure-proposed="true"') > proof.indexOf('<main') &&
+     proof.indexOf('data-ai-disclosure-proposed="true"') > proof.indexOf('<article class="content">') &&
+     proof.includes('data-release-authorized="false"') &&
      proof.includes('noindex,nofollow,noarchive,nosnippet') &&
      proof.includes('data-offline-review-only="true"') &&
      proof.includes('Unpublished release candidate') &&

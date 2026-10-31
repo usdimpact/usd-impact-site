@@ -29,6 +29,27 @@ export const PUBLICATION_APPEARANCE_EDITS = Object.freeze([
     "proposed": "This independent educational Weekly summarizes cited official releases, without measured market-price returns or original USD Impact Score outputs."
   }
 ]);
+export const PUBLICATION_APPEARANCE_EDITORIAL_CORRECTIONS = Object.freeze([
+  {
+    "id": "fomc-two-voting-dissenters",
+    "old": "with two participants favoring a 25-basis-point increase.",
+    "proposed": "with two voting dissenters, Lisa D. Cook and Beth M. Hammack, preferring a 25-basis-point increase.",
+    "officialSource": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+    "finalEditorialPassRequired": true
+  },
+  {
+    "id": "educational-advice-heading",
+    "old": "Educational, not actionable trading advice",
+    "proposed": "Educational only — not investment or trading advice",
+    "finalEditorialPassRequired": true
+  },
+  {
+    "id": "standard-advice-notice",
+    "old": "This independent review is educational and informational only. It is not personalized investment advice, a recommendation to buy or sell any asset, a live price analysis, or an independently verified original USD Impact Score. Past relationships may change, and market responses cannot be determined from macroeconomic headlines alone.",
+    "proposed": "This independent review is educational and informational only. It is not financial, investment, trading, legal or tax advice, a recommendation to buy or sell any asset, a live price analysis, or an independently verified original USD Impact Score. Macro relationships are regime-dependent and may change; market responses cannot be determined from macroeconomic headlines alone. Consult an appropriately qualified professional regarding individual circumstances.",
+    "finalEditorialPassRequired": true
+  }
+]);
 export const PUBLICATION_APPEARANCE_DISCLOSURE = "AI tools assisted with preparation of this educational review. USD Impact, operated by KELA LEADS S.R.L., is responsible for the published content. The linked Federal Reserve, BEA and BLS releases are the sources for reported official facts.";
 export const PUBLICATION_APPEARANCE_SECTION_IDS = DRAFT_ARTICLE_SECTION_IDS;
 
@@ -49,12 +70,16 @@ export function buildIndependentMacroWeeklyAppearanceReview(originalCandidate) {
   for (const edit of PUBLICATION_APPEARANCE_EDITS) {
     fragment = replaceOnce(fragment, edit.old, edit.proposed, edit.id);
   }
+  // Corrections are for this new review proof only; the original frozen manuscript is untouched.
+  for (const correction of PUBLICATION_APPEARANCE_EDITORIAL_CORRECTIONS) {
+    fragment = replaceOnce(fragment, correction.old, correction.proposed, correction.id);
+  }
   const aiNotice = '<div class="mw-ai-review-disclosure" role="note" data-ai-disclosure-proposed="true"><strong>AI-assisted preparation:</strong> ' +
     PUBLICATION_APPEARANCE_DISCLOSURE + '</div>';
   fragment = replaceOnce(fragment,
-    '<main id="main-content" class="container layout">',
-    aiNotice + '\n  <main id="main-content" class="container layout">',
-    'visible AI disclosure near article beginning');
+    '<article class="content">',
+    '<article class="content">\n      ' + aiNotice,
+    'visible AI disclosure inside main article');
   if (fragment.includes('Draft candidate — HOLD') ||
       fragment.includes('Draft only, never published') ||
       fragment.includes('Shared-layout Draft — not published') ||
@@ -71,6 +96,7 @@ export function buildIndependentMacroWeeklyAppearanceReview(originalCandidate) {
     fragment,
     sectionIds: PUBLICATION_APPEARANCE_SECTION_IDS,
     statusOnlyEdits: PUBLICATION_APPEARANCE_EDITS.length,
+    editorialCorrectionsPendingOwnerPass: PUBLICATION_APPEARANCE_EDITORIAL_CORRECTIONS.length,
     aiDisclosureVisible: true,
     notRouted: true,
     releaseAuthorized: false,

@@ -484,7 +484,9 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
   ok(worksheet.includes('AI Act Article 50(4)') &&
      worksheet.includes('all five owner outcomes PENDING') &&
      worksheet.includes('KELA LEADS S.R.L.') &&
-     worksheet.includes('No proven breach.') &&
+     worksheet.includes('Privacy PR #1035 is now live in public Production') &&
+     worksheet.includes('no privacy breach established') &&
+     worksheet.includes('independent traffic/cookie-name') &&
      !m.releaseAuthorized && !m.publishReady,
      'worksheet explicitly holds legal/privacy and publication decision');
 }

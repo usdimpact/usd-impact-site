@@ -408,8 +408,8 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
   eq(matrix.sourceGitBlobs.article,gitBlob(html),'risk matrix original article SHA');
   eq(matrix.sourceGitBlobs.baseLayout,m.existingSiteReuse.baseLayoutGitBlobSha,
     'risk matrix references reviewed site layout');
-  eq(matrix.sourceGitBlobs.googleAnalyticsClient,gitBlob(from('../src/components/GoogleAnalyticsClient.astro')),
-    'risk matrix references GA consent code');
+  eq(matrix.sourceGitBlobs.googleAnalyticsClient,m.privacyProductionReconciliationDraft.currentGA4ClientGitBlobSha,
+    'historical R06 risk matrix is pinned to its reviewed #1035 GA4 source, not current #1040 Production');
   eq(matrix.sourceGitBlobs.consentClient,m.existingSiteReuse.consentComponentGitBlobSha,
     'risk matrix references consent client');
   eq(matrix.mainEight.map(x=>x.id),['R01','R02','R03','R04','R05','R06','R07','R08'],

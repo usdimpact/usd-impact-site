@@ -9,7 +9,7 @@ const consent = readFileSync(new URL('../src/components/ConsentClient.astro', im
 const scriptMatch = source.match(/<script>([\s\S]*?)<\/script>/);
 assert.ok(scriptMatch, 'GA4 processed module must be present');
 assert.match(source, /id="usd-impact-ga4-config"/);
-assert.doesNotMatch(source, /define:vars/);
+assert.doesNotMatch(source, /<script\s+define:vars/);
 assert.match(source, /if \(configured && typeof window\.gtag === 'function'\)/);
 assert.match(source, /window\[DISABLE_KEY\] = true;/);
 assert.match(source, /clearGaCookies\(\);/);

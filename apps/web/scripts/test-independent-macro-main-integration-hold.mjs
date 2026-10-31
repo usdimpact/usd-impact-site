@@ -491,7 +491,7 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      worksheet.includes('KELA LEADS S.R.L.') &&
      worksheet.includes('Privacy PR #1035 is now live in public Production') &&
      worksheet.includes('no privacy breach established') &&
-     worksheet.includes('independent traffic/cookie-name') &&
+     worksheet.includes('No independent GDPR/ePrivacy certification is claimed.') &&
      !m.releaseAuthorized && !m.publishReady,
      'worksheet explicitly holds legal/privacy and publication decision');
 }

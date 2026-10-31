@@ -75,6 +75,27 @@ assert.equal(sanitized.repairAttempt, 2);
 assert.equal(sanitized.validationCode, 'none');
 assert.equal(captured[1].includes(privateCanary), false);
 
+// Telemetry failures must never interrupt a successful publication or
+// convert a source-validation decision into an unrelated server error.
+const enabled = { USDIMPACT_GPT_METRICS_ENABLED: 'true' };
+const beforeFailureCount = captured.length;
+assert.equal(
+  emitGptUsageDiagnostic(args, { env: enabled, logger: () => { throw new Error(privateCanary); } }),
+  false,
+  'a failing logger must be non-blocking',
+);
+assert.equal(captured.length, beforeFailureCount, 'logging failure must not fall back to raw output');
+const providerWithBadUsage = {
+  ...provider,
+  get usage() { throw new Error(privateCanary); },
+};
+assert.equal(
+  emitGptUsageDiagnostic({ ...args, response: providerWithBadUsage }, { env: enabled, logger }),
+  false,
+  'a malformed provider usage accessor must be non-blocking',
+);
+assert.equal(captured.length, beforeFailureCount);
+
 const background = readFileSync(new URL('../api/daily-news-background.js', import.meta.url), 'utf8');
 assert.match(background, /emitGptUsageDiagnostic/);
 assert.match(background, /outcome: 'provider_failed'/);

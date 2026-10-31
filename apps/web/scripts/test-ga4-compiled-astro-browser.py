@@ -6,6 +6,7 @@ blocked Google requests, no user data, no Production and no deployment.
 """
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from html.parser import HTMLParser
 from urllib.parse import urlsplit
 import json
 import shutil
@@ -20,6 +21,27 @@ for relative in PAGES:
     assert (DIST / relative).is_file(), f"Expected compiled Astro route missing: {relative}"
 home = (DIST / "privacy/index.html").read_text(encoding="utf-8")
 assert "G-TEST1234" in home, "Synthetic QA measurement ID missing from compiled HTML"
+config = json.loads((WEB / "vercel.json").read_text(encoding="utf-8"))
+assert not config.get("crons"), "QA Preview must not schedule jobs"
+assert not config.get("rewrites"), "QA Preview must not expose default production API rewrites"
+assert any(header.get("key", "").lower() == "x-robots-tag" and "noindex" in header.get("value", "")
+  for rule in config.get("headers", []) if rule.get("source") == "/(.*)"
+  for header in rule.get("headers", [])), "Site-wide QA noindex header missing"
+class CspMeta(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.policies = []
+    def handle_starttag(self, tag, attrs):
+        if tag != "meta": return
+        a = dict(attrs)
+        if a.get("http-equiv", "").lower() == "content-security-policy":
+            self.policies.append(a.get("content", ""))
+csp = CspMeta()
+csp.feed(home)
+assert csp.policies, "Compiled Astro page has no browser CSP meta tag"
+assert all("googletagmanager.com" not in value and "google-analytics.com" not in value and "challenges.cloudflare.com" not in value for value in csp.policies), "QA CSP unexpectedly permits external scripts or analytics connections"
+assert any("connect-src 'self'" in value for value in csp.policies), "QA CSP must forbid external requests"
+print("QA_ISOLATION_CONFIG_OK: no schedules, no API rewrites, noindex, external browser hosts absent from CSP")
 assert "id=\"privacy-consent-banner\"" in home
 assert "id=\"privacy-settings-button\"" in home
 assert 'id="usd-impact-ga4-config"' in home, "Validated public measurement ID DOM bridge missing"
@@ -51,8 +73,14 @@ with sync_playwright() as playwright:
     def fixture():
         ctx = browser.new_context(service_workers="block")
         page = ctx.new_page()
-        observed = {"google_mocked": 0, "other_external": 0, "console_errors": [], "page_errors": []}
-        page.on("console", lambda m: observed["console_errors"].append(m.text[:260]) if m.type == "error" else None)
+        observed = {"google_mocked": 0, "other_external": 0, "console_errors": [], "page_errors": [], "csp_denied_google": 0}
+        def log_console(m):
+            if m.type != "error": return
+            message = m.text
+            observed["console_errors"].append(message[:260])
+            if "Content Security Policy" in message and "googletagmanager.com" in message:
+                observed["csp_denied_google"] += 1
+        page.on("console", log_console)
         page.on("pageerror", lambda exc: observed["page_errors"].append(str(exc)[:260]))
         def handle(route):
             url = route.request.url
@@ -61,8 +89,7 @@ with sync_playwright() as playwright:
                 route.continue_()
             elif host in {"www.googletagmanager.com", "www.google-analytics.com", "region1.google-analytics.com"}:
                 observed["google_mocked"] += 1
-                route.fulfill(status=200, content_type="application/javascript",
-                              body="/* synthetic QA: Google vendor code not loaded */")
+                route.abort()  # If CSP fails, block network here and fail the scenario.
             else:
                 observed["other_external"] += 1
                 route.abort()
@@ -97,6 +124,7 @@ with sync_playwright() as playwright:
         })""")
     def guard(obs):
         assert obs["other_external"] == 0, "Unexpected external request attempted"
+        assert obs["google_mocked"] == 0, "QA CSP failed to stop Google request before routing"
     def run(label, func):
         global passed, google_mocked_total
         n = func()
@@ -130,7 +158,8 @@ with sync_playwright() as playwright:
             page.click("#privacy-consent-accept")
             s = state(page)
             assert s["allowed"] and s["adsDenied"] and s["count"] == 1
-            assert obs["google_mocked"] >= 1
+            assert obs["google_mocked"] == 0, "Google request escaped CSP"
+            assert obs["csp_denied_google"] >= 1, "Expected browser CSP to reject Google script URL"
             seed(ctx, "_ga", "controlled-ga-id")
             seed(ctx, "_ga_TEST1234", "controlled-stream-id")
             navigate(page, "/terms/")
@@ -227,6 +256,7 @@ print("RESULT " + json.dumps({
   "cases": passed, "passed": passed, "compiled_astro": True,
   "browser_native_first_party_cookies": True,
   "synthetic_ga4_id": True, "google_vendor_code_executed": False,
-  "google_requests_forwarded": 0, "google_requests_locally_stubbed": google_mocked_total,
+  "google_requests_forwarded": 0, "google_requests_locally_stubbed": 0,
+  "google_script_blocked_by_csp": True, "vercel_noindex_and_no_cron_config_checked": True,
   "production_tested": False, "vercel_deployment": False
 }, sort_keys=True))

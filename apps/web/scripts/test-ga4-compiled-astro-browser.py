@@ -22,10 +22,13 @@ home = (DIST / "privacy/index.html").read_text(encoding="utf-8")
 assert "G-TEST1234" in home, "Synthetic QA measurement ID missing from compiled HTML"
 assert "id=\"privacy-consent-banner\"" in home
 assert "id=\"privacy-settings-button\"" in home
-assert "googletagmanager.com" in home
-assert "usd-impact:consent-ready" in home, "Consent listener not present in compiled GA4 code"
-assert "if (typeof window.USDImpactConsent?.analyticsAllowed === 'function')" in home, "Proposed initialization guard absent from compiled output"
-assert "type=\"module\"" in home, "Processed Astro module script not found"
+assert 'id="usd-impact-ga4-config"' in home, "Validated public measurement ID DOM bridge missing"
+assert 'data-ga4-measurement-id="G-TEST1234"' in home, "Synthetic ID not serialized as data"
+bundles = [p.read_text(encoding="utf-8") for p in (DIST / "_astro").glob("*.js")]
+assert any("usd-impact:consent-ready" in js and "ga-disable-" in js for js in bundles), (
+    "Processed GA4 script missing from generated same-origin JS bundles"
+)
+assert "type=\"module\"" in home, "Processed Astro modules not present in rendered page", "Processed Astro module script not found"
 
 class QuietStatic(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):

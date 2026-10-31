@@ -1,0 +1,66 @@
+name: GA4 compiled Astro consent QA (Draft, loopback only)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ga4-compiled-astro-qa.yml'
+      - 'apps/web/scripts/test-ga4-compiled-astro-browser.py'
+      - 'apps/web/src/components/GoogleAnalyticsClient.astro'
+      - 'apps/web/src/components/ConsentClient.astro'
+      - 'apps/web/src/layouts/BaseLayout.astro'
+      - 'apps/web/astro.config.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ga4-compiled-astro-isolated-draft
+  cancel-in-progress: false
+
+jobs:
+  compiled-page-browser:
+    name: Actual compiled Astro native-cookie QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Read-only checkout without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # repo-reviewed immutable SHA
+        with:
+          persist-credentials: false
+      - name: Use pinned project Node.js major version
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4.4.1
+        with:
+          node-version: '24.x'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install exact-lock dependencies
+        working-directory: apps/web
+        run: npm ci --strict-allow-scripts --no-audit --no-fund
+      - name: Verify focused consent lifecycle regression before Astro build
+        working-directory: apps/web
+        run: node scripts/test-ga4-consent-revocation.mjs
+      - name: Build actual Astro output with synthetic GA4 ID, no deployment
+        working-directory: apps/web
+        env:
+          PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          npm run prepare:fonts
+          npm run generate:quizzes
+          npx --no-install astro build
+      - name: Install isolated Playwright driver, no browser download
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/ga4-compiled-venv"
+          "$RUNNER_TEMP/ga4-compiled-venv/bin/python" -m pip install --disable-pip-version-check --no-cache-dir playwright==1.57.0
+          command -v google-chrome || command -v chromium
+      - name: Run native-cookie QA against exact compiled output on loopback
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/ga4-compiled-venv/bin/python" apps/web/scripts/test-ga4-compiled-astro-browser.py

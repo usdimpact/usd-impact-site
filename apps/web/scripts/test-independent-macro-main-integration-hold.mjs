@@ -331,10 +331,13 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
     if(edit.renderTarget==='layout')component=input.replace(edit.old,edit.proposed);
     else fragment=input.replace(edit.old,edit.proposed);
   }
-  const visibleFragment=fragment.replace(/<[^>]*>/g,' ').replace(/\\s+/g,' ');
+  const visibleFragment=fragment.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ');
   const layoutBody=component.slice(component.indexOf('<BaseLayout'));
-  const visibleLayout=layoutBody.replace(/<[^>]*>/g,' ').replace(/\\s+/g,' ');
-  ok(!/\\b(?:Draft|unpublished|never published|not published|release.candidate|on HOLD)\\b/i.test(visibleFragment+' '+visibleLayout),
+  const visibleLayout=layoutBody.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ');
+  const staleLabels=/\b(?:Draft|unpublished|never published|not published|release.candidate|on HOLD)\b/i;
+  ok(staleLabels.test('Shared-layout Draft - not published'),
+     'offline draft-language detector must detect a known obsolete sentence');
+  ok(!staleLabels.test(visibleFragment+' '+visibleLayout),
      'offline proposed visible text has no obsolete unpublished Draft language');
   eq([...fragment.matchAll(/<section aria-labelledby="([^"]+)">/g)].map(x=>x[1]),
     ['summary','timeline','transmission','mistakes','watch','sources','compliance'],

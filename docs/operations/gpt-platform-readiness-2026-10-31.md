@@ -12,6 +12,28 @@
 - The independent integrity watchdog reviewer is optional and requires a dedicated key plus explicit model; it does not override deterministic evidence.
 - The production API key's OpenAI project attribution, live model overrides, cost and API consumption are **not independently verified** from the available connector read surface. Do not assume this lab project pays for Production.
 
+## Owner-supplied dashboard checkpoint — 2026-10-31
+
+The owner provided five direct screenshots of the OpenAI Platform and Vercel dashboards. These are UI observations, not complete API billing/export evidence and not proof of credential-to-project identity.
+
+| Check | Observed value | Scope / qualification |
+| --- | --- | --- |
+| Selected API project | USD Impact H1 Lab | Usage dashboard filtered to this project, all API sources and API keys |
+| H1 Lab usage | 0 requests, 0 tokens, no usage data | Selected **Last 7 days**, not a full October activity export |
+| H1 Lab October spend | $0.00 | OpenAI Projects table |
+| H1 Lab limit | $1.00 | OpenAI Projects table; do not increase automatically |
+| Default project October spend | $2.15 | Project table; do not attribute to USD Impact until supported by project logs or usage breakdown |
+| Organization October spend indicator | $2.15 / $100.00 | Personal organization; this is not evidence of sufficient budget controls for every project |
+| Vercel `OPENAI_API_KEY` | present for Production and Preview | Secret remains masked; screenshot shows last update September 7 |
+| Vercel `OPENAI_NEWS_MODEL` | present for Production and Preview | Masked; exact deployed model value **not established** |
+| Vercel `OPENAI_NEWS_REPAIR_MODEL` | no match in Project environment variables search | Existing repair fallback in code is gpt-5-mini; absence alone is not a defect |
+
+The H1 Lab project was created September 25, after the Vercel OpenAI key was last updated on September 7 according to the screenshots. This chronology and the H1 Lab's zero observed usage **suggest** that the active production key is associated with the older Default project, but the dashboard evidence is insufficient to certify that identity. Do not rotate or reassign the working key based solely on inference.
+
+**Owner-only follow-up:** In https://platform.openai.com/usage, remove the project filter, select October 1–31 and compare project and model costs. In https://platform.openai.com/settings/organization/projects inspect project-level limits and key metadata without disclosing key material. In https://vercel.com/usd-impact/usd-impact-site/settings/environment-variables keep secrets masked, confirm the exact model name only if it can be shown without exposing the API key, and do not edit Production. Any key migration requires a separate documented rollback and smoke-test plan.
+
+**CI coverage:** `apps/web/package.json` now adds `node scripts/test-gpt-usage-diagnostic.mjs` to the existing `validate:automation-health` chain. Successful CI must be observed on the **latest** PR head before considering the branch reviewed.
+
 ## Proposed improvement — metrics only, OFF by default
 
 The branch introduces a pure helper and one offline test to support diagnostic logs when specifically enabled. It emits **only** a bounded JSON record containing:

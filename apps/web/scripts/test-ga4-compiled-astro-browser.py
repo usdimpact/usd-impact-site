@@ -193,7 +193,7 @@ with sync_playwright() as playwright:
             navigate(page, "/es/privacy/")
             s = state(page)
             assert s["enabled"] == "false" and not s["allowed"] and s["count"] == 0
-            assert "_ga" in names(ctx) or "_ga" not in names(ctx)  # GA4 is excluded on this locale
+            # This locale excludes GA4; absent GA4 does not promise stale-cookie cleanup.
             assert obs["google_mocked"] == 0
             guard(obs)
             return obs["google_mocked"]

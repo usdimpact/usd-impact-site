@@ -310,6 +310,84 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      'owner process selection cannot self-clear any release or legal/privacy gate');
 }
 
+// Offline final-text preflight: a content-only simulation must leave no visible Draft labels.
+{
+  const proposed=JSON.parse(from('../../../docs/operations/independent-macro-release/first-weekly-conditional-publication-copy-2026-10-31.draft.json'));
+  const srcAdapter=from('../src/lib/independent-macro-weekly-draft-shell.mjs');
+  const bodyStart=html.indexOf('<section class="hero" aria-labelledby="headline">');
+  const bodyEnd=html.indexOf('</main>',bodyStart);
+  const previous='This page is NOT routed or published. Rights clearance, exact article PASS, merge and public Production release are still denied.';
+  const historical='This shared-layout adaptation is not published. The standalone article has an editorial PASS; this new layout, qualified international rights review, merge and public Production release remain on HOLD.';
+  ok(srcAdapter.includes(previous) && srcAdapter.includes(historical) &&
+     bodyStart>=0 && bodyEnd>=0,'offline source selection mirrors original draft adapter');
+  let fragment=html.slice(bodyStart,bodyEnd+7)
+     .replace('<main id="main" class="container layout">',
+      '<main id="main-content" class="container layout">').replace(previous,historical);
+  let component=from('../src/components/IndependentMacroWeeklyDraftShell.astro');
+  eq(proposed.proposedStatusOnlySubstitutions.length,8,'exactly eight targeted visible replacements');
+  for(const edit of proposed.proposedStatusOnlySubstitutions) {
+    const input=edit.renderTarget==='layout'?component:fragment;
+    eq(input.split(edit.old).length-1,1,'each intended visible replacement matches once: '+edit.id);
+    if(edit.renderTarget==='layout')component=input.replace(edit.old,edit.proposed);
+    else fragment=input.replace(edit.old,edit.proposed);
+  }
+  const visibleFragment=fragment.replace(/<[^>]*>/g,' ').replace(/\\s+/g,' ');
+  const layoutBody=component.slice(component.indexOf('<BaseLayout'));
+  const visibleLayout=layoutBody.replace(/<[^>]*>/g,' ').replace(/\\s+/g,' ');
+  ok(!/\\b(?:Draft|unpublished|never published|not published|release.candidate|on HOLD)\\b/i.test(visibleFragment+' '+visibleLayout),
+     'offline proposed visible text has no obsolete unpublished Draft language');
+  eq([...fragment.matchAll(/<section aria-labelledby="([^"]+)">/g)].map(x=>x[1]),
+    ['summary','timeline','transmission','mistakes','watch','sources','compliance'],
+    'proposed visible status copy does not remove any of seven original sections');
+  ok(m.sources.officialSourceUrls.every(x=>fragment.includes('href="'+x+'"')),
+     'all five original issuer URLs retained in offline visible text');
+  ok(component.includes('noindex={true}') &&
+     component.includes('data-release-authorized="false"') &&
+     component.includes('data-shared-layout-editorial-pass="false"') &&
+     component.includes('data-shared-layout-status="draft-not-published"'),
+     'historical machine-authority controls remain disabled even in offline copy audit');
+  ok(proposed.machineReadablePublishStateChangesRequiringSeparateAuthorization.length===4 &&
+     proposed.machineReadablePublishStateChangesRequiringSeparateAuthorization.every(x=>
+       x.allowedOnlyAfterExactReleaseAuthorization||x.allowedOnlyAfterNewFinalRenderedEditorialPass||
+       x.allowedOnlyAfterRealVerifiedPublication||x.allowedOnlyAfterSeparateIndexingDecision),
+     'machine state, indexing and timestamp need distinct future release authority');
+  ok(proposed.offlineRenderedTextPreflight.visibleOldDraftLabelsRemaining===0 &&
+     !proposed.offlineRenderedTextPreflight.newRenderedAstroComponentCompiled &&
+     !proposed.offlineRenderedTextPreflight.newPreviewOrProductionCreated &&
+     !proposed.ownerStatusCopyEditorialPass && !proposed.releaseAuthorized,
+     'offline string simulation is never a new owner approval or deployment');
+}
+// Objective risk preflight: no owner legal/risk signoff may be self-issued.
+{
+  const txt=from('../../../docs/operations/independent-macro-release/first-weekly-owner-item-specific-risk-preflight-2026-10-31.draft.json');
+  const risk=JSON.parse(txt);
+  eq(gitBlob(txt),m.ownerItemSpecificRiskPreflightDraft.gitBlobSha,
+     'pin exact nonlegal owner risk preflight');
+  eq(risk.schemaVersion,'usd-impact-first-weekly-owner-scope-risk-preflight-v1',
+     'risk review scope version');
+  eq(risk.source.articleGitBlobSha,gitBlob(html),'risk review pins original approved source');
+  eq(risk.source.componentGitBlobSha,m.siteShellAdaptationDraft.componentGitBlobSha,
+     'risk review pins original approved layout');
+  eq(risk.riskItems.length,m.ownerItemSpecificRiskPreflightDraft.riskItemCount,
+     'all eight discrete risk areas must be individually reviewed');
+  ok(risk.riskItems.every(x=>x.ownerFinalAcceptance===false && x.evidenceUrls.length>0 && x.uncertainty),
+     'no risk assessment may be marked accepted without owner signoff');
+  ok(risk.internalReviewProcess.option==='B' && risk.internalReviewProcess.provisionallyApproved &&
+     !risk.internalReviewProcess.qualifiedLegalOpinionObtained &&
+     !risk.internalReviewProcess.independentQualifiedPrivacyReviewObtained &&
+     !risk.internalReviewProcess.externalLegalOrContractualObligationsWaived &&
+     !risk.acceptance.anyOwnerRiskItemAccepted && !risk.acceptance.ownerNameOrCapacityRecorded &&
+     !risk.acceptance.finalEditorialCopyPass && !risk.acceptance.actualReleaseAuthorization,
+     'internal process accepted but no item-level risk/rights/privacy certification');
+  ok(!risk.releaseAuthorized && !risk.mergeAuthorized && !risk.publicRouteAuthorized &&
+     !risk.productionDeployAuthorized && !risk.indexingAuthorized &&
+     !m.ownerItemSpecificRiskPreflightDraft.ownerFinalRiskAcceptance &&
+     !m.ownerItemSpecificRiskPreflightDraft.qualifiedExternalRightsOrPrivacyCertification &&
+     !m.ownerItemSpecificRiskPreflightDraft.publicationAuthorized &&
+     risk.firstPublishedIndependentWeeklies===0 && risk.monthlyEligibleCount===0,
+     'risk worksheet never authorizes any public page or original Score rights');
+}
+
 // Shared BaseLayout integration stays non-public. The approved standalone
 // article remains unchanged, but the new presentation needs its own owner PASS.
 {

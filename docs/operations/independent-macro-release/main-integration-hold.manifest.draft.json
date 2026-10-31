@@ -186,7 +186,7 @@
   },
   "futureReleaseCopyAndOwnerDecisionDraft": {
     "statusCopyPath": "docs/operations/independent-macro-release/first-weekly-conditional-publication-copy-2026-10-31.draft.json",
-    "statusCopyGitBlobSha": "4d88076dedc4c038368c9324edc3374e036e702d",
+    "statusCopyGitBlobSha": "de9d07cb78734729daa2858057955371ab953022",
     "ownerDecisionPath": "docs/operations/independent-macro-release/first-weekly-owner-review-decision-record-2026-10-31.draft.md",
     "ownerDecisionGitBlobSha": "3cced5b83698458a3883658459a1d1b9e53b22d4",
     "proposedSubstitutionCount": 8,
@@ -206,6 +206,14 @@
     "finalSpecificRiskAssessmentSignedOff": false,
     "externalLegalAndPrivacyCertified": false,
     "releaseAuthorized": false
+  },
+  "ownerItemSpecificRiskPreflightDraft": {
+    "path": "docs/operations/independent-macro-release/first-weekly-owner-item-specific-risk-preflight-2026-10-31.draft.json",
+    "gitBlobSha": "1c0ba33605805b4e847257ddb19b7f053855c0d1",
+    "riskItemCount": 8,
+    "ownerFinalRiskAcceptance": false,
+    "qualifiedExternalRightsOrPrivacyCertification": false,
+    "publicationAuthorized": false
   },
   "siteShellAdaptationDraft": {
     "componentPath": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",

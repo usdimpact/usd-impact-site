@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "usd-impact-first-weekly-owner-scope-risk-preflight-v1",
+  "preparedDate": "2026-10-31",
+  "state": "ENGINEERING_EVIDENCE_PACK_READY_NOT_OWNER_ACCEPTED",
+  "repository": "usdimpact/usd-impact-site",
+  "pr": 1025,
+  "source": {
+    "articleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "componentGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
+    "adapterGitBlobSha": "77cbc75bd1fe7e5a843592904442d74cf4e07ab0",
+    "gaClientGitBlobSha": "cb6d89da7a6cfa3dab0c51b9972527fc1581e860",
+    "consentClientGitBlobSha": "3d97c458e97e51860d9002346fcb030746151292",
+    "telemetryClientGitBlobSha": "fc19d517ea3e8ae8afe52065a60e9cba83ba614f"
+  },
+  "internalReviewProcess": {
+    "option": "B",
+    "provisionallyApproved": true,
+    "scope": "one original English independent Weekly 2026-10-26 through 2026-10-30",
+    "upgradeTrackingIssue": "https://github.com/usdimpact/usd-impact-site/issues/1030",
+    "qualifiedLegalOpinionObtained": false,
+    "independentQualifiedPrivacyReviewObtained": false,
+    "externalLegalOrContractualObligationsWaived": false
+  },
+  "checkedArticle": {
+    "sevenSectionsPresent": true,
+    "sourceOfficialLinks": 5,
+    "priorDailyLinks": 5,
+    "sourceHasImagesScriptsFormsOrIframes": false,
+    "sourceHasOriginalScoreDataOrActualMarketReturns": false,
+    "sourceProtectionHoldsMustNotBeRemoved": true
+  },
+  "riskItems": [
+    {
+      "key": "fed-source-2-items",
+      "observation": "Original educational summaries and hyperlinks to Board October calendar and FOMC statement; no Board photograph/seal/graphic reproduced.",
+      "evidenceUrls": [
+        "https://www.federalreserve.gov/disclaimer.htm",
+        "https://www.federalreserve.gov/newsevents/2026-october.htm",
+        "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm"
+      ],
+      "preflight": "NO COPIED THIRD-PARTY-ASSET IDENTIFIED",
+      "uncertainty": "Check that no future release layout inserts protected Board branding or copied third-party expression.",
+      "ownerFinalAcceptance": false
+    },
+    {
+      "key": "bea-source-2-items",
+      "observation": "Original factual summaries and hyperlinks to GDP and PCE original releases; no copied BEA chart or release table.",
+      "evidenceUrls": [
+        "https://www.bea.gov/help/faq/147",
+        "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+        "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026"
+      ],
+      "preflight": "NO COPIED THIRD-PARTY-ASSET IDENTIFIED",
+      "uncertainty": "Any later BEA image/table/license notice requires a new item review.",
+      "ownerFinalAcceptance": false
+    },
+    {
+      "key": "bls-source-1-item",
+      "observation": "Original summary of quarterly and annual ECI numbers with direct BLS archive hyperlink; no BLS emblem or copyrighted photography.",
+      "evidenceUrls": [
+        "https://www.bls.gov/opub/copyright-information.htm",
+        "https://www.bls.gov/news.release/archives/eci_10302026.htm"
+      ],
+      "preflight": "NO COPIED THIRD-PARTY-ASSET IDENTIFIED",
+      "uncertainty": "BLS emblem and previously copyrighted visual components remain excluded.",
+      "ownerFinalAcceptance": false
+    },
+    {
+      "key": "romania-crossborder-rights",
+      "observation": "Romanian Law 8/1996 Article 9 identifies simple facts/data as outside copyright; this page reports factual observations in independently authored text.",
+      "evidenceUrls": [
+        "https://legislatie.just.ro/Public/DetaliiDocument/252971",
+        "https://www.usa.gov/government-copyright"
+      ],
+      "preflight": "FACTS-LIMITED SCOPE EVIDENCED",
+      "uncertainty": "International distribution, cross-border protections, contract-specific terms and publisher obligations are not resolved by this observation.",
+      "ownerFinalAcceptance": false
+    },
+    {
+      "key": "editorial-financial-compliance",
+      "observation": "Seven sections; official source hyperlinks; conditional transmission framework; no documented actual asset returns, trading signal or original Score.",
+      "evidenceUrls": [
+        "https://www.federalreserve.gov/newsevents/2026-october.htm",
+        "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+        "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+        "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026",
+        "https://www.bls.gov/news.release/archives/eci_10302026.htm"
+      ],
+      "preflight": "FACTUAL AND CONTENT SCOPE CHECKED",
+      "uncertainty": "New words, public-status copy and actual first publication timing require their own editorial PASS.",
+      "ownerFinalAcceptance": false
+    },
+    {
+      "key": "production-eprivacy",
+      "observation": "Consent-client source exposes Reject/Accept/Withdraw; GA4 and first-party telemetry contain opt-in checks and cookie-deletion attempts. Owner reported DevTools PASS; browser UI retest separately passed.",
+      "evidenceUrls": [
+        "https://europa.eu/youreurope/business/growing/digitalising/online-privacy/index_en.htm",
+        "https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/legal-grounds-processing-data_en"
+      ],
+      "preflight": "SOURCE AND OWNER-REPORTED FUNCTIONAL QA",
+      "uncertainty": "No independently preserved complete preconsent/post-withdrawal GA4 traffic and cookie proof; no external GDPR/ePrivacy certification. New defect is a hard STOP.",
+      "ownerFinalAcceptance": false
+    },
+    {
+      "key": "operator-and-endorsement-disclosure",
+      "observation": "Approved educational source identifies USD Impact / KELA LEADS S.R.L.; issuer references are links with no endorsement claim.",
+      "evidenceUrls": [
+        "https://www.federalreserve.gov/disclaimer.htm",
+        "https://www.bea.gov/help/faq/147",
+        "https://www.bls.gov/opub/copyright-information.htm"
+      ],
+      "preflight": "TEXTUAL ATTRIBUTION/DISCLOSURE OBSERVED",
+      "uncertainty": "Suitability of final operator, cross-border and financial information notices requires owner/legal risk check on final rendered artifact.",
+      "ownerFinalAcceptance": false
+    },
+    {
+      "key": "public-route-and-reachability",
+      "observation": "Public Astro route getStaticPaths() returns []; no public draft-branch Production deployment; main remains stable.",
+      "evidenceUrls": [
+        "https://github.com/usdimpact/usd-impact-site/pull/1025"
+      ],
+      "preflight": "NO PUBLICATION",
+      "uncertainty": "Future release must have exact public project/SHA authorization and accurate post-publication date; noindex and syndication independent decisions.",
+      "ownerFinalAcceptance": false
+    }
+  ],
+  "acceptance": {
+    "riskItemCount": 8,
+    "anyOwnerRiskItemAccepted": false,
+    "ownerNameOrCapacityRecorded": false,
+    "independentCounselOpinionRecorded": false,
+    "finalEditorialCopyPass": false,
+    "actualReleaseAuthorization": false
+  },
+  "recommendedNextOwnerDecision": "Review each of eight risk items; either accept specific documented residual business risk for this exact one-page scope or hold any disputed item. Do not self-certify legal compliance. Final release and new status copy remain separate decisions.",
+  "hardStopIf": [
+    "Third-party licensing or protected material is identified",
+    "Any actually applicable legal/contractual requirement is unmet",
+    "Production analytics is detected before opt-in or after withdrawal",
+    "Wrong official source figures or unapproved financial recommendations",
+    "Unreviewed public content/indexing/Score exposure",
+    "Different artifact SHA or failed exact-head security/build CI"
+  ],
+  "releaseAuthorized": false,
+  "mergeAuthorized": false,
+  "publicRouteAuthorized": false,
+  "productionDeployAuthorized": false,
+  "indexingAuthorized": false,
+  "firstPublishedIndependentWeeklies": 0,
+  "monthlyEligibleCount": 0
+}

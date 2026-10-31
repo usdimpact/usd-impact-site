@@ -31,12 +31,12 @@ jobs:
       - name: Use pinned project Node.js major version
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4.4.1
         with:
-          node-version: '24'
+          node-version: '24.x'
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
       - name: Install exact-lock dependencies
         working-directory: apps/web
-        run: npm ci --no-audit --no-fund
+        run: npm ci --strict-allow-scripts --no-audit --no-fund
       - name: Verify focused consent lifecycle regression before Astro build
         working-directory: apps/web
         run: node scripts/test-ga4-consent-revocation.mjs

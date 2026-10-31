@@ -49,7 +49,9 @@ with sync_playwright() as playwright:
     def fixture():
         ctx = browser.new_context(service_workers="block")
         page = ctx.new_page()
-        observed = {"google_mocked": 0, "other_external": 0}
+        observed = {"google_mocked": 0, "other_external": 0, "console_errors": [], "page_errors": []}
+        page.on("console", lambda m: observed["console_errors"].append(m.text[:260]) if m.type == "error" else None)
+        page.on("pageerror", lambda exc: observed["page_errors"].append(str(exc)[:260]))
         def handle(route):
             url = route.request.url
             host = urlsplit(url).hostname
@@ -106,6 +108,7 @@ with sync_playwright() as playwright:
             navigate(page, "/privacy/")
             s = state(page)
             assert s["enabled"] == "true" and s["preference"] == "unset"
+            print("FIRST_VISIT_DIAGNOSTIC " + json.dumps({"state": s, "console_errors": obs["console_errors"][:6], "page_errors": obs["page_errors"][:6]}))
             assert s["disabled"] is True and not s["allowed"] and s["count"] == 0
             assert obs["google_mocked"] == 0
             page.click("#privacy-consent-reject")

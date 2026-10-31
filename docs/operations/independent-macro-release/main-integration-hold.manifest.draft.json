@@ -116,7 +116,10 @@
     "independentlyCapturedFullProductionNetworkCookieTraceAvailable": false,
     "gaNetworkAndCookieInspectionCompleted": false,
     "optionalAnalyticsAcceptanceAndWithdrawalBrowserTestCompleted": false,
-    "futureMacroSharedLayoutBrowserTestCompleted": false
+    "futureMacroSharedLayoutBrowserTestCompleted": false,
+    "currentProductionGa4ClientGitBlobSha": "2877b295ddc106c0e89b75eb55e71a0c92afc642",
+    "currentProductionMainCommitSha": "743872f3fdfd5fdddd242b64e7a42674a459a416",
+    "explicitGa4WithdrawalConsentDenialDeployed": true
   },
   "holds": {
     "sourceItemGlobalReuseRightsApproved": false,
@@ -209,7 +212,7 @@
   },
   "ownerItemSpecificRiskPreflightDraft": {
     "path": "docs/operations/independent-macro-release/first-weekly-owner-item-specific-risk-preflight-2026-10-31.draft.json",
-    "gitBlobSha": "1c0ba33605805b4e847257ddb19b7f053855c0d1",
+    "gitBlobSha": "7f88eb9c68bed49761875fba8f0e6308ae4128b4",
     "riskItemCount": 8,
     "ownerFinalRiskAcceptance": false,
     "qualifiedExternalRightsOrPrivacyCertification": false,
@@ -217,7 +220,7 @@
   },
   "independentRemediationAndStandingPublicationDecisionRule": {
     "matrixPath": "docs/operations/independent-macro-release/first-weekly-remediation-matrix-2026-10-31.draft.json",
-    "matrixGitBlobSha": "3319221ffd574300d2b13b7805568773af4d9c6a",
+    "matrixGitBlobSha": "91f8764519afdc23c41f7f69624fae0dc82a3326",
     "futurePolicyPath": "docs/operations/publication-risk-decision-standard.md",
     "futurePolicyGitBlobSha": "cda404b685c5f53e009dcf3119ea5d478a7389f1",
     "sourceReviewBaseline": "85b2b836838c689fc8fdd6ccbc681324dd05f183",
@@ -229,9 +232,9 @@
   },
   "nextOwnerRiskAndAiEditorialDecisionInputDraft": {
     "inputPath": "docs/operations/independent-macro-release/first-weekly-owner-final-decision-input-2026-10-31.draft.json",
-    "inputGitBlobSha": "bf37a211bf5e9787e10456e4c1a5744e7146fa1c",
+    "inputGitBlobSha": "17251a7323640c539397a060d8b0bf0441ffd40a",
     "worksheetPath": "docs/operations/independent-macro-release/first-weekly-final-risk-and-ai-editorial-review-2026-10-31.draft.md",
-    "worksheetGitBlobSha": "782f95d50dc476b2f4414aebbb5f0ce9a6a9dd05",
+    "worksheetGitBlobSha": "e8f782f3d5fe2202c8fb8feae7e951098305ef0f",
     "itemsNeedingActualOwnerReview": 5,
     "itemSpecificRiskAcceptanceRecorded": false,
     "aiEditorialDeterminationRecorded": false,
@@ -279,6 +282,23 @@
     "actualBrowserCookieControlsValidatedForFuturePage": false,
     "actualBrowserVisualQaCompleted": false,
     "qualifiedForeignLegalClearance": false,
+    "releaseAuthorized": false
+  },
+  "privacyProductionReconciliationDraft": {
+    "receiptPath": "docs/operations/independent-macro-release/privacy-production-merge-integration-receipt-2026-10-31.draft.json",
+    "receiptGitBlobSha": "1e3d8e72e4b7b2227b7cb9ea9a7ff03307653639",
+    "priorProtectedMain": "eb832fac7203a6a0f2ff29c0320616114e39224f",
+    "mergedPrivacyProtectedMainSha": "743872f3fdfd5fdddd242b64e7a42674a459a416",
+    "previousGA4ClientGitBlobSha": "cb6d89da7a6cfa3dab0c51b9972527fc1581e860",
+    "currentGA4ClientGitBlobSha": "2877b295ddc106c0e89b75eb55e71a0c92afc642",
+    "priorMacroDraftHead": "4c1ce56c9fa805171eede394c8c4254d0dbcd7b9",
+    "ownerPreviewUatReportedPass": true,
+    "liveProductionPrivacyPatchVerified": true,
+    "independentPrivacyComplianceCertified": false,
+    "macroIntegrationOnly": true,
+    "ownerFinalRiskAcceptance": false,
+    "macroRouteAuthorized": false,
+    "mergeAuthorized": false,
     "releaseAuthorized": false
   }
 }

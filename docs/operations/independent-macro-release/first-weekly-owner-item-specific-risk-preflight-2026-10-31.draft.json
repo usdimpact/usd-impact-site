@@ -8,7 +8,7 @@
     "articleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
     "componentGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
     "adapterGitBlobSha": "77cbc75bd1fe7e5a843592904442d74cf4e07ab0",
-    "gaClientGitBlobSha": "cb6d89da7a6cfa3dab0c51b9972527fc1581e860",
+    "gaClientGitBlobSha": "2877b295ddc106c0e89b75eb55e71a0c92afc642",
     "consentClientGitBlobSha": "3d97c458e97e51860d9002346fcb030746151292",
     "telemetryClientGitBlobSha": "fc19d517ea3e8ae8afe52065a60e9cba83ba614f"
   },
@@ -92,13 +92,13 @@
     },
     {
       "key": "production-eprivacy",
-      "observation": "Consent-client source exposes Reject/Accept/Withdraw; GA4 and first-party telemetry contain opt-in checks and cookie-deletion attempts. Owner reported DevTools PASS; browser UI retest separately passed.",
+      "observation": "Consent-client Reject/Accept/Withdraw remains gated; optional GA4 and first-party telemetry opt-in remain. Privacy PR #1035 was owner-authorized, merged and deployed to Production. GA4 now explicitly sends analytics_storage:denied on withdrawal after prior initialization, retains ga-disable and best-effort GA-cookie expiry. Owner-reported Preview functional PASS; live homepage/privacy smoke PASS; no runtime errors in sampled interval.",
       "evidenceUrls": [
         "https://europa.eu/youreurope/business/growing/digitalising/online-privacy/index_en.htm",
         "https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/legal-grounds-processing-data_en"
       ],
-      "preflight": "SOURCE AND OWNER-REPORTED FUNCTIONAL QA",
-      "uncertainty": "No independently preserved complete preconsent/post-withdrawal GA4 traffic and cookie proof; no external GDPR/ePrivacy certification. New defect is a hard STOP.",
+      "preflight": "CURRENT GA4 SOURCE/PRODUCTION IMPLEMENTATION VERIFIED; OWNER PREVIEW UAT REPORTED PASS; INDEPENDENT COMPLETE TRAFFIC AND COOKIE EVIDENCE PENDING",
+      "uncertainty": "No independently archived full Production GA4 consent network or before/after cookie-name trace and no external GDPR/ePrivacy certification. An actual consent breach is a STOP; a missing trace alone is not evidence of a breach.",
       "ownerFinalAcceptance": false
     },
     {
@@ -147,5 +147,20 @@
   "productionDeployAuthorized": false,
   "indexingAuthorized": false,
   "firstPublishedIndependentWeeklies": 0,
-  "monthlyEligibleCount": 0
+  "monthlyEligibleCount": 0,
+  "privacyProductionIntegration": {
+    "priorSourceBlobSha": "cb6d89da7a6cfa3dab0c51b9972527fc1581e860",
+    "currentSourceBlobSha": "2877b295ddc106c0e89b75eb55e71a0c92afc642",
+    "mainIntegrationCommit": "743872f3fdfd5fdddd242b64e7a42674a459a416",
+    "siteProductionDeploymentId": "dpl_7APZ2YJAZuyh1SrpPu3Rp9PVaxeB",
+    "productionReleaseEvidence": "https://github.com/usdimpact/usd-impact-site/issues/1036#issuecomment-6543527535",
+    "historicalRiskPreflightGitBlobSha": "1c0ba33605805b4e847257ddb19b7f053855c0d1",
+    "ownerPreviewFunctionalPassReported": true,
+    "siteProductionReadyObserved": true,
+    "independentCompleteProductionNetworkCookieTrace": false,
+    "qualifiedGdprEprivacyCertification": false,
+    "riskAcceptanceGranted": false,
+    "sitePublicationAuthorized": false,
+    "scope": "CURRENT SOURCE INTEGRATION ONLY; original reviewed source remains frozen"
+  }
 }

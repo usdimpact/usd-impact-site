@@ -10,7 +10,7 @@
   "sourceGitBlobs": {
     "article": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
     "baseLayout": "513d7e0472d7983c543af928bb54612b87bd786d",
-    "googleAnalyticsClient": "cb6d89da7a6cfa3dab0c51b9972527fc1581e860",
+    "googleAnalyticsClient": "2877b295ddc106c0e89b75eb55e71a0c92afc642",
     "consentClient": "3d97c458e97e51860d9002346fcb030746151292",
     "telemetryClient": "fc19d517ea3e8ae8afe52065a60e9cba83ba614f",
     "terms": "4253e97881bf09f1c553555684a577ec70291b97",
@@ -90,8 +90,8 @@
       "scope": "Production analytics, consent, withdrawal and third-party data processing",
       "priority": "P1",
       "status": "EVIDENCE_GAP_NOT_PROVEN_DEFECT",
-      "finding": "Real UI and owner Network/Cookies PASS reported; code conditionally loads GA4 and telemetry and uses ga-disable plus cookie deletion attempt on withdrawal. No independently archived before/after HAR/cookie-name proof or qualified EU privacy assessment; Google-specific consent-update-denied on withdrawal not explicitly present in this code.",
-      "remediation": "Do not request redundant UI QA without new issue; preserve owner PASS, review client behavior as a defense-in-depth task, independently validate pre-opt-in, reject, accept and withdraw network/cookie names (no secrets), check controller/provider terms/transfer mechanism as applicable; if actual defect, separate scoped privacy patch with tests and approval.",
+      "finding": "Merged privacy PR #1035 shipped explicit analytics_storage:denied updates for previously configured GA4 tags upon withdrawal, retaining ga-disable and best-effort GA cookie cleanup. First-party telemetry remains consent-gated. Owner Preview functional PASS, CI PASS, Vercel Production READY and public homepage/privacy smoke PASS. Complete independent consent Network/Cookie evidence and qualified supplier/privacy review remain unavailable; no breach demonstrated.",
+      "remediation": "Privacy client hardening is LIVE. Preserve owner Preview UAT, confirm applicable controller/provider DPA and transfer obligations and obtain sanitized before/reject/accept/withdraw network/cookie-name evidence if required. Do not repeat accepted owner UI checks. Escalate only an actual demonstrated defect or legal restriction; no general certification is inferred.",
       "trigger": "Any evidence of pre-consent beacon, withdrawal collection, failed preference, misleading notice, provider/config change or new data recipient.",
       "citation": "https://europa.eu/youreurope/business/growing/digitalising/online-privacy/index_en.htm",
       "ownerItemDecisionRecorded": false,
@@ -136,8 +136,8 @@
       "id": "X02",
       "priority": "P1",
       "scope": "Consent implementation and provider responsibility",
-      "finding": "Google ga-disable is documented; absence of explicit denied consent update is a possible hardening improvement not proven leak. The online privacy notice acknowledges Google and cookies but no independent DPA/transfers review is evidenced in this PR.",
-      "requiredEvidence": "Test after withdrawing consent, consider explicit consent denied update and cookie/telemetry invariants, verify versioned notice, provider processing agreement and transfer basis as applicable. Do not claim breach without direct observations.",
+      "finding": "Production GA4 now explicitly updates consent to denied on withdrawal after prior opt-in while retaining existing GA kill switch, optional telemetry consent gates and cookie expiration. Owner Preview UAT and sampled public smoke passed. Independent full traffic/cookie capture and applicable provider transfer review are still unproven.",
+      "requiredEvidence": "Determine whether applicable privacy/provider requirements call for additional external evidence; verify actual post-withdrawal collection/cookie state if required. Do not claim legal certification from functional owner PASS or infer breach solely from missing traces.",
       "source": "https://developers.google.com/tag-platform/security/guides/privacy",
       "complete": false
     },
@@ -180,5 +180,24 @@
     "Source reuse for ordinary facts/links is lower risk: do not manufacture unnecessary license requirements.",
     "A missing signed opinion or missing HAR is not proof of an unlawful practice; classify as evidence gap unless defect demonstrated.",
     "All future decisions should check the canonical policy, issue #1031, owner risk record and current exact commit. Never silently transfer article-specific Option B to another project."
-  ]
+  ],
+  "historicalSourceReview": {
+    "originalReviewedClientBlobSha": "cb6d89da7a6cfa3dab0c51b9972527fc1581e860",
+    "previousRemediationMatrixBlobSha": "3319221ffd574300d2b13b7805568773af4d9c6a",
+    "previousPreflightBlobSha": "1c0ba33605805b4e847257ddb19b7f053855c0d1",
+    "originalBaselineCommit": "85b2b836838c689fc8fdd6ccbc681324dd05f183",
+    "ownerAttestationHistoryNotChanged": true
+  },
+  "currentProductionPrivacyIntegration": {
+    "mainSha": "743872f3fdfd5fdddd242b64e7a42674a459a416",
+    "ga4ClientBlobSha": "2877b295ddc106c0e89b75eb55e71a0c92afc642",
+    "testGitBlobSha": "cd94df36571fd74e57cfb7b42a7ebdd41ed93d09",
+    "productionDeploymentId": "dpl_7APZ2YJAZuyh1SrpPu3Rp9PVaxeB",
+    "codeInProduction": true,
+    "ownerPreviewFunctionalPassReported": true,
+    "independentFullLiveTraceAvailable": false,
+    "professionalPrivacyCertification": false,
+    "sourceRightsAndMacroReviewStillOnHold": true,
+    "releaseEvidence": "https://github.com/usdimpact/usd-impact-site/issues/1036#issuecomment-6543527535"
+  }
 }

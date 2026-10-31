@@ -8,7 +8,7 @@
   "draftReviewBaseline": "3afc6ff3207e99e79a167b2fc2992a074857e2a8",
   "approvedArticleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
   "approvedPresentationComponentGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
-  "riskPreflightGitBlobSha": "1c0ba33605805b4e847257ddb19b7f053855c0d1",
+  "riskPreflightGitBlobSha": "7f88eb9c68bed49761875fba8f0e6308ae4128b4",
   "caseRemediationIssue": "https://github.com/usdimpact/usd-impact-site/issues/1031",
   "qualifiedReviewUpgradeIssue": "https://github.com/usdimpact/usd-impact-site/issues/1030",
   "internalProcess": "PROVISIONAL_OPTION_B_ONLY_ONE_ENGLISH_ARTICLE",
@@ -47,14 +47,14 @@
     {
       "riskId": "R06",
       "scope": "Production analytics and privacy",
-      "finding": "Consent UI and owner-reported DevTools PASS; code gates optional GA4/telemetry and sets ga-disable and clears accessible _ga cookies, but does not expressly send gtag consent update to denied on withdrawal. Independent full request/cookie record and qualified supplier-transfer assessment not preserved in PR. This is a hardening/evidence gap, not confirmed leak.",
+      "finding": "Owner-authorized privacy PR #1035 has merged into protected main, and GA4 consent withdrawal hardening is READY in public Production. Previously initialized GA4 now gets analytics_storage:denied on withdrawal, with ga-disable and cookie-expiry logic retained; first-party telemetry stays optional. Owner Preview functional QA was reported PASS, exact-head CI and public-site smoke passed. No independent complete Production network/cookie trace or qualified provider GDPR/transfer opinion is claimed.",
       "sources": [
         "https://developers.google.com/tag-platform/security/guides/consent",
         "https://europa.eu/youreurope/business/growing/digitalising/online-privacy/index_en.htm",
         "https://www.usd-impact.com/privacy/"
       ],
-      "requiredDecision": "Determine whether any real analytics consent defect exists. If so, STOP and fix separately; otherwise preserve owner functional PASS and arrange appropriate independent evidence/consent hardening and actual applicable provider obligations.",
-      "recommendedDisposition": "PRIVACY_HARDENING_REVIEW_AND_DOCUMENTED_ASSURANCE",
+      "requiredDecision": "Resolve any actual remaining provider/transfer/network and legal risks relevant to the final independent Macro Weekly public page. A proven unconsented beacon or legal restriction is a STOP; a missing independently captured trace alone is not proof of a breach. The completed privacy code rollout is not an external certification or general risk acceptance.",
+      "recommendedDisposition": "PRODUCTION_GA4_HARDENING_SHIPPED_R06_RISK_DECISION_PENDING",
       "ownerDecision": "PENDING",
       "ownerAcknowledgedRisk": false,
       "hardStopConfirmed": false
@@ -133,5 +133,14 @@
   },
   "firstPublishedIndependentWeeklies": 0,
   "eligibleMonthlyCount": 0,
-  "note": "The first source article is immutable. This preparatory record exists to make a narrow owner decision possible; it does not resolve applicable legal questions or entitle any deployment."
+  "note": "The first source article is immutable. This preparatory record exists to make a narrow owner decision possible; it does not resolve applicable legal questions or entitle any deployment.",
+  "privacyProductionEvidence": {
+    "mergedMainSha": "743872f3fdfd5fdddd242b64e7a42674a459a416",
+    "productionDeploymentId": "dpl_7APZ2YJAZuyh1SrpPu3Rp9PVaxeB",
+    "currentGa4ClientBlobSha": "2877b295ddc106c0e89b75eb55e71a0c92afc642",
+    "ownerPreviewUatReportedPass": true,
+    "independentFullProductionTraceCaptured": false,
+    "qualifiedGdprEprivacyOpinion": false,
+    "macroPublicationAuthorized": false
+  }
 }

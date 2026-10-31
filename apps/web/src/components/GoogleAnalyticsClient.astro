@@ -97,7 +97,17 @@ const measurementId = measurementIdPattern.test(rawMeasurementId) ? rawMeasureme
     };
 
     const disableGa4 = () => {
+      // First-time rejection must never initialize Google or load the tag.
+      // After a prior opt-in, explicitly revoke the Google consent state.
       window[DISABLE_KEY] = true;
+      if (configured && typeof window.gtag === 'function') {
+        window.gtag('consent', 'update', {
+          analytics_storage: 'denied',
+          ad_storage: 'denied',
+          ad_user_data: 'denied',
+          ad_personalization: 'denied',
+        });
+      }
       clearGaCookies();
     };
 

@@ -537,6 +537,63 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      'offline proof never grants site deploy or indexing authority');
 }
 
+// Merged privacy client provenance: historical point-in-time evidence remains distinct.
+{
+  const raw=from('../../../docs/operations/independent-macro-release/privacy-production-merge-integration-receipt-2026-10-31.draft.json');
+  const receipt=JSON.parse(raw);
+  const p=m.privacyProductionReconciliationDraft;
+  const risk=JSON.parse(from('../../../docs/operations/independent-macro-release/first-weekly-owner-item-specific-risk-preflight-2026-10-31.draft.json'));
+  const matrix=JSON.parse(from('../../../docs/operations/independent-macro-release/first-weekly-remediation-matrix-2026-10-31.draft.json'));
+  const decision=JSON.parse(from('../../../docs/operations/independent-macro-release/first-weekly-owner-final-decision-input-2026-10-31.draft.json'));
+  const ga=from('../src/components/GoogleAnalyticsClient.astro');
+  const gaTest=from('./test-ga4-consent-revocation.mjs');
+  const gaMemo=from('../../../docs/operations/privacy/ga4-revocation-hardening-2026-10-31.draft.md');
+  const pkg=JSON.parse(from('../package.json'));
+  eq(gitBlob(raw),p.receiptGitBlobSha,'GA4 merge receipt exactly pinned');
+  eq(p.receiptPath,'docs/operations/independent-macro-release/privacy-production-merge-integration-receipt-2026-10-31.draft.json','merge receipt path exact');
+  eq(receipt.schemaVersion,'usd-impact-macro-weekly-ga4-production-integration-v1',
+    'privacy integration receipt schema');
+  eq(receipt.previousDraftHead,'4c1ce56c9fa805171eede394c8c4254d0dbcd7b9','historic Draft head pinned');
+  eq(receipt.protectedMainSha,'743872f3fdfd5fdddd242b64e7a42674a459a416','merged Production main SHA');
+  eq(receipt.historicalGa4ClientGitBlobSha,'cb6d89da7a6cfa3dab0c51b9972527fc1581e860',
+    'historic prior-source GA4 blob preserved');
+  eq(receipt.currentGa4ClientGitBlobSha,'2877b295ddc106c0e89b75eb55e71a0c92afc642',
+    'current deployed-source GA4 blob preserved');
+  eq(gitBlob(ga),receipt.currentGa4ClientGitBlobSha,'current GA4 code matches Production source');
+  eq(gitBlob(gaTest),receipt.ga4RevocationTestGitBlobSha,'privacy regression test imported exactly');
+  eq(gitBlob(gaMemo),receipt.privacyPatchNotesGitBlobSha,'privacy engineering memo imported');
+  eq(risk.source.gaClientGitBlobSha,receipt.currentGa4ClientGitBlobSha,
+    'R06 owner preflight references new GA4 source');
+  eq(risk.privacyProductionIntegration.priorSourceBlobSha,receipt.historicalGa4ClientGitBlobSha,
+    'preflight explicitly retains prior GA4');
+  eq(risk.privacyProductionIntegration.historicalRiskPreflightGitBlobSha,
+    receipt.historicalOwnerPreflightGitBlobSha,'historical risk preflight retained as historical');
+  eq(matrix.sourceGitBlobs.googleAnalyticsClient,receipt.currentGa4ClientGitBlobSha,
+    'R06 matrix references new GA4 source');
+  eq(matrix.historicalSourceReview.previousRemediationMatrixBlobSha,
+    receipt.historicalCaseMatrixGitBlobSha,'historical matrix is immutable provenance');
+  eq(decision.riskPreflightGitBlobSha,gitBlob(from('../../../docs/operations/independent-macro-release/first-weekly-owner-item-specific-risk-preflight-2026-10-31.draft.json')),
+    'owner five-item review points to reconciled preflight');
+  eq(pkg.scripts['validate:functions'].split('test-ga4-consent-revocation.mjs').length-1,1,
+    'privacy lifecycle regression added exactly once');
+  ok(pkg.scripts.build.includes('test-independent-macro-main-integration-hold.mjs --built-output') &&
+    pkg.scripts['validate:reports'].includes('test-independent-macro-main-integration-hold.mjs'),
+    'independent Macro Weekly negative build/contract tests retained');
+  ok(ga.includes("analytics_storage: 'denied'") &&
+     ga.includes("if (configured && typeof window.gtag === 'function')") &&
+     ga.includes('window[DISABLE_KEY] = true'),
+    'actual merged GA4 has explicit denial and retains client kill switch');
+  ok(receipt.liveDeployment.state==='READY' && receipt.liveDeployment.macroWeeklyPublicRoute404 &&
+    receipt.qa.ownerPreviewUatReportedPass && !receipt.qa.independentFullProdNetworkCookieTrace &&
+    !receipt.qa.professionalGDPRReview &&
+    !receipt.rights.allEightItemsOwnerAccepted && !receipt.rights.fiveResidualOwnerDecisionsTaken &&
+    !receipt.rights.macroRouteAuthorized && !receipt.rights.macroMergeAuthorized &&
+    !receipt.rights.macroProductionAuthorized && !receipt.rights.indexingAuthorized &&
+    !receipt.rights.originalScorePublicationAuthorized &&
+    !p.ownerFinalRiskAcceptance && !p.macroRouteAuthorized && !p.mergeAuthorized &&
+    !p.releaseAuthorized && !m.releaseAuthorized && !m.publishReady,
+    'privacy Production hardening cannot grant Macro Weekly, original Score, or external rights');
+}
 // Shared BaseLayout integration stays non-public. The approved standalone
 // article remains unchanged, but the new presentation needs its own owner PASS.
 {

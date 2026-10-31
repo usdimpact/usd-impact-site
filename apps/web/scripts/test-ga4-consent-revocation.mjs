@@ -6,8 +6,10 @@ import { runInNewContext } from 'node:vm';
 const source = readFileSync(new URL('../src/components/GoogleAnalyticsClient.astro', import.meta.url), 'utf8');
 const telemetry = readFileSync(new URL('../src/components/TelemetryClient.astro', import.meta.url), 'utf8');
 const consent = readFileSync(new URL('../src/components/ConsentClient.astro', import.meta.url), 'utf8');
-const scriptMatch = source.match(/<script define:vars=\{\{ measurementId \}\}>([\s\S]*?)<\/script>/);
-assert.ok(scriptMatch, 'GA4 script must exist only in measurement-ID gated component');
+const scriptMatch = source.match(/<script>([\s\S]*?)<\/script>/);
+assert.ok(scriptMatch, 'GA4 processed module must be present');
+assert.match(source, /id="usd-impact-ga4-config"/);
+assert.doesNotMatch(source, /define:vars/);
 assert.match(source, /if \(configured && typeof window\.gtag === 'function'\)/);
 assert.match(source, /window\[DISABLE_KEY\] = true;/);
 assert.match(source, /clearGaCookies\(\);/);
@@ -36,7 +38,9 @@ const document = {
     assert.equal(tag, 'script', 'only a Google script element may be constructed');
     return { id: '', src: '', async: false };
   },
-  getElementById: (id) => scriptElements.find((script) => script.id === id) ?? null,
+  getElementById: (id) => id === 'usd-impact-ga4-config'
+    ? { getAttribute: (key) => key === 'data-ga4-measurement-id' ? measurementId : null }
+    : scriptElements.find((script) => script.id === id) ?? null,
   head: {
     appendChild: (script) => {
       scriptElements.push(script);
@@ -79,7 +83,7 @@ const changePreference = (value) => {
   window.dispatchEvent(new FakeCustomEvent('usd-impact:consent-change'));
 };
 
-runInNewContext(scriptMatch[1], { measurementId, window, document, CustomEvent: FakeCustomEvent }, {
+runInNewContext(scriptMatch[1], { window, document, CustomEvent: FakeCustomEvent }, {
   filename: 'GoogleAnalyticsClient-inline.js',
   timeout: 1500,
 });
@@ -166,7 +170,11 @@ const delayedPage = (granted) => {
       if (/;\s*Max-Age=0(?:;|$)/.test(value)) returningCookies.delete(name);
       else returningCookies.set(name, value.slice(name.length + 1).split(';')[0]);
     },
-    getElementById(id) { return scripts.find((s) => s.id === id) ?? null; },
+    getElementById(id) {
+      return id === 'usd-impact-ga4-config'
+        ? { getAttribute: (key) => key === 'data-ga4-measurement-id' ? measurementId : null }
+        : scripts.find((s) => s.id === id) ?? null;
+    },
     createElement(tag) { assert.equal(tag, 'script'); return { id: '', src: '', async: false }; },
     head: { appendChild(script) { scripts.push(script); return script; } },
   };
@@ -182,7 +190,7 @@ const delayedPage = (granted) => {
     },
   };
   runInNewContext(scriptMatch[1], {
-    measurementId, window: pageWin, document: pageDoc, CustomEvent: FakeCustomEvent,
+    window: pageWin, document: pageDoc, CustomEvent: FakeCustomEvent,
   }, { filename: 'GA4-delayed-consent.js', timeout: 1500 });
   assert.equal(scripts.length, 0, 'deferred consent cannot load Google early');
   assert.equal(pageWin.gtag, undefined, 'no Google shim before consent-ready');

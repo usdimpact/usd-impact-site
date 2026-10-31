@@ -437,6 +437,58 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      'future guardrail differentiates verified facts, gaps, defects, and approvals');
 }
 
+// The five owner risk and AI editorial choices are decision inputs, not inferred approvals.
+{
+  const inputText=from('../../../docs/operations/independent-macro-release/first-weekly-owner-final-decision-input-2026-10-31.draft.json');
+  const proposed=JSON.parse(inputText);
+  const worksheet=from('../../../docs/operations/independent-macro-release/first-weekly-final-risk-and-ai-editorial-review-2026-10-31.draft.md');
+  const p=m.nextOwnerRiskAndAiEditorialDecisionInputDraft;
+  eq(gitBlob(inputText),p.inputGitBlobSha,
+    'exact five-question owner-risk decision input pinned');
+  eq(gitBlob(worksheet),p.worksheetGitBlobSha,
+    'exact human-readable decision worksheet pinned');
+  eq(proposed.schemaVersion,'usd-impact-first-weekly-owner-item-specific-release-input-v1',
+    'specific owner decision schema');
+  eq(proposed.approvedArticleGitBlobSha,gitBlob(html),
+    'frozen article exact Git blob preserved');
+  eq(proposed.approvedPresentationComponentGitBlobSha,m.siteShellAdaptationDraft.componentGitBlobSha,
+    'owner-reviewed shared-layout exact Git blob preserved');
+  eq(proposed.riskPreflightGitBlobSha,m.ownerItemSpecificRiskPreflightDraft.gitBlobSha,
+    'same original owner-risk preflight');
+  eq(proposed.evidence.map(x=>x.riskId),
+    ['R04','R05','R06','R07','X01'],
+    'all separate unresolved human decisions present');
+  ok(proposed.evidence.length===p.itemsNeedingActualOwnerReview &&
+     proposed.evidence.every(x=>x.ownerDecision==='PENDING' &&
+       !x.ownerAcknowledgedRisk && !x.hardStopConfirmed && x.sources.length>0),
+     'no item-specific owner approval invented');
+  const ai=proposed.aiEditorialDetermination;
+  ok(ai.actualAIContributionToFinalText==='NOT_ATTESTED' &&
+     ai.priorOwnerEditorialContentPassRecorded &&
+     ai.priorOwnerPresentationPassRecorded &&
+     ai.primarySourceFactsCheckedAgainstFiveIssuerLinks &&
+     !ai.humanSubstantiveReviewBeyondGenericPassDocumented &&
+     !ai.legalEditorialResponsibilityForThisArticleAttested &&
+     !ai.exceptionUnderEUArticle50_4Chosen && !ai.publicAITextDisclosureChosen &&
+     ai.disclosureCandidateNotInsertedIntoArticle &&
+     ai.editorialDecision==='PENDING' &&
+     !ai.legalCertification,
+     'source facts PASS does not become Article 50 human review certification');
+  ok(Object.values(proposed.signOff).every(x=>x===false) &&
+     Object.values(proposed.releasePermissions).every(x=>x===false) &&
+     !p.itemSpecificRiskAcceptanceRecorded && !p.aiEditorialDeterminationRecorded &&
+     !p.finalStatusCopyPassed && !p.releaseAuthorized &&
+     proposed.firstPublishedIndependentWeeklies===0 &&
+     proposed.eligibleMonthlyCount===0,
+     'owner-specific review may not waive release/indexing/Score or legal requirements');
+  ok(worksheet.includes('AI Act Article 50(4)') &&
+     worksheet.includes('all five owner outcomes PENDING') &&
+     worksheet.includes('KELA LEADS S.R.L.') &&
+     worksheet.includes('No proven breach.') &&
+     !m.releaseAuthorized && !m.publishReady,
+     'worksheet explicitly holds legal/privacy and publication decision');
+}
+
 // Shared BaseLayout integration stays non-public. The approved standalone
 // article remains unchanged, but the new presentation needs its own owner PASS.
 {

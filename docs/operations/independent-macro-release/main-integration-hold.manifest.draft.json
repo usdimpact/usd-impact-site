@@ -227,6 +227,17 @@
     "newCrossCuttingRisksCount": 4,
     "releaseAuthorized": false
   },
+  "nextOwnerRiskAndAiEditorialDecisionInputDraft": {
+    "inputPath": "docs/operations/independent-macro-release/first-weekly-owner-final-decision-input-2026-10-31.draft.json",
+    "inputGitBlobSha": "bf37a211bf5e9787e10456e4c1a5744e7146fa1c",
+    "worksheetPath": "docs/operations/independent-macro-release/first-weekly-final-risk-and-ai-editorial-review-2026-10-31.draft.md",
+    "worksheetGitBlobSha": "782f95d50dc476b2f4414aebbb5f0ce9a6a9dd05",
+    "itemsNeedingActualOwnerReview": 5,
+    "itemSpecificRiskAcceptanceRecorded": false,
+    "aiEditorialDeterminationRecorded": false,
+    "finalStatusCopyPassed": false,
+    "releaseAuthorized": false
+  },
   "siteShellAdaptationDraft": {
     "componentPath": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
     "componentGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",

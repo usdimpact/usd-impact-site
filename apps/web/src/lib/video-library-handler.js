@@ -13,6 +13,7 @@ import {
   normalizePaidAccessReason,
 } from './paid-route.js';
 import { getVideo } from '../data/video-library.js';
+import { readMediaCaptionLocaleForPreview } from './media-locale-handler.js';
 import {
   createCloudflareStreamToken,
   safeCloudflareStreamError,
@@ -85,6 +86,7 @@ export async function handleVideoLibraryRequest(
     readAccessState = readAccountAccessState,
     resolveSession = resolveSessionWithRefresh,
     createToken = createCloudflareStreamToken,
+    readMediaCaptionLocale = readMediaCaptionLocaleForPreview,
     environment = process.env,
   } = {},
 ) {
@@ -153,11 +155,30 @@ export async function handleVideoLibraryRequest(
   }
 
   try {
+    // Only an eligible paid member can reach this point. A media preference
+    // influences display language, never entitlement or token creation.
+    let preferredCaptionLocale = 'en';
+    if (environment.VERCEL_ENV === 'preview'
+      && environment.VERCEL_GIT_COMMIT_REF === 'draft/media-language-es-captions-preview-20261031'
+      && environment.ACCOUNT_MEDIA_LOCALE_UI_ENABLED === 'true'
+      && state?.user?.id === state?.profile?.account_id) {
+      try {
+        preferredCaptionLocale = await readMediaCaptionLocale({
+          environment,
+          accessToken: resolved.accessToken,
+          accountId: state.user.id,
+        });
+      } catch {
+        // Never block legitimate paid playback because a preference is absent.
+        preferredCaptionLocale = 'en';
+      }
+    }
     const signedToken = await createToken({ videoUid, environment });
     return sendHtml(response, request, 200, renderProtectedVideoLesson({
       video,
       signedToken,
       customerCode,
+      preferredCaptionLocale,
     }));
   } catch (error) {
     safeCloudflareStreamError(error);

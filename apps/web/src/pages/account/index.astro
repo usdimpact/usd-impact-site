@@ -167,6 +167,29 @@ import Icon from '../../components/Icon.astro';
         <p id="transactional-language-status" class="account-status" role="status" aria-live="polite"></p>
       </section>
 
+      <section id="media-language-panel" class="card account-panel" aria-labelledby="media-language-heading" hidden>
+        <p class="eyebrow">Development preview only</p>
+        <h2 id="media-language-heading">Video and audio language</h2>
+        <p>Choose your preferred media language. All 51 films offer verified Spanish subtitles,
+          while the original video narration and released audiobook remain in English.
+          This choice does not change the language of purchase-access emails.</p>
+        <form id="media-language-form" class="account-form">
+          <label for="media-language-choice">Preferred media language</label>
+          <select id="media-language-choice" name="locale" disabled>
+            <option value="en">English — original captions and audio</option>
+            <option value="es">Español — Spanish subtitles when available</option>
+          </select>
+          <button id="media-language-save" type="submit" class="button account-secondary" disabled>Save media language</button>
+        </form>
+        <p class="account-help">
+          The selection applies next time you open a video. It does not download video,
+          provide a Spanish-dubbed track, activate the Spanish audiobook, or change
+          payments, membership, marketing consent or email notifications.
+        </p>
+        <p id="media-language-status" class="account-status" role="status" aria-live="polite"></p>
+        <a class="account-text-link" href="/guided-edition/video-library/">Open Video Library →</a>
+      </section>
+
       <section class="card account-panel" aria-labelledby="payment-records-heading">
         <h2 id="payment-records-heading">Payment receipt and invoice</h2>
         <p>
@@ -250,6 +273,11 @@ import Icon from '../../components/Icon.astro';
     const supportStatus = document.getElementById('support-status');
     const pushSettingsLink = document.getElementById('push-settings-link');
     const passkeySettingsLink = document.getElementById('passkey-settings-link');
+    const mediaLanguagePanel = document.getElementById('media-language-panel');
+    const mediaLanguageForm = document.getElementById('media-language-form');
+    const mediaLanguageChoice = document.getElementById('media-language-choice');
+    const mediaLanguageSave = document.getElementById('media-language-save');
+    const mediaLanguageStatus = document.getElementById('media-language-status');
     const transactionalLanguagePanel = document.getElementById('transactional-language-panel');
     const transactionalLanguageForm = document.getElementById('transactional-language-form');
     const transactionalLanguageChoice = document.getElementById('transactional-language-choice');
@@ -421,6 +449,64 @@ import Icon from '../../components/Icon.astro';
       }
     };
 
+    let canSaveMediaLocale = false;
+    const showMediaLocaleStatus = (messageText, state = '') => {
+      if (!mediaLanguageStatus) return;
+      mediaLanguageStatus.textContent = messageText;
+      mediaLanguageStatus.dataset.state = state;
+    };
+    const loadMediaLanguageSettings = async () => {
+      if (!mediaLanguagePanel || !mediaLanguageChoice || !mediaLanguageSave) return;
+      try {
+        const response = await fetch('/api/account?action=media-locale', { credentials: 'same-origin', cache: 'no-store' });
+        if (!response.ok) { mediaLanguagePanel.hidden = true; return; }
+        const data = await response.json();
+        if (data.enabled !== true || data.mediaPreferenceOnly !== true || !['en','es'].includes(data.locale)) {
+          mediaLanguagePanel.hidden = true; return;
+        }
+        mediaLanguagePanel.hidden = false;
+        mediaLanguageChoice.value = data.locale;
+        canSaveMediaLocale = data.writable === true;
+        mediaLanguageChoice.disabled = !canSaveMediaLocale;
+        mediaLanguageSave.disabled = !canSaveMediaLocale;
+        showMediaLocaleStatus(
+          canSaveMediaLocale ? 'Your media language is loaded.' : 'Media language changes are not enabled.',
+          canSaveMediaLocale ? 'success' : '',
+        );
+      } catch { mediaLanguagePanel.hidden = true; }
+    };
+    mediaLanguageForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!canSaveMediaLocale || !mediaLanguageChoice || !mediaLanguageSave || !['en','es'].includes(mediaLanguageChoice.value)) return;
+      mediaLanguageSave.disabled = true;
+      mediaLanguageChoice.disabled = true;
+      showMediaLocaleStatus('Saving media language…', 'pending');
+      try {
+        const requested = mediaLanguageChoice.value;
+        const response = await fetch('/api/account?action=media-locale', {
+          method: 'POST', credentials: 'same-origin', cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({locale: requested}),
+        });
+        if (response.status === 401) {
+          window.location.replace('/account/sign-in/?next=/account/'); return;
+        }
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.enabled !== true || data.mediaPreferenceOnly !== true || data.locale !== requested) {
+          throw Error('Media preference not confirmed');
+        }
+        showMediaLocaleStatus(
+          'Media language saved. Reopen a film for the chosen subtitles. Original narration stays English.',
+          'success',
+        );
+      } catch {
+        showMediaLocaleStatus('Media language could not be saved. Please try again.', 'error');
+      } finally {
+        mediaLanguageChoice.disabled = !canSaveMediaLocale;
+        mediaLanguageSave.disabled = !canSaveMediaLocale;
+      }
+    });
+
     let canSaveTransactionalLocale = false;
     const showTransactionalLocaleStatus = (text, state = '') => {
       if (!transactionalLanguageStatus) return;
@@ -516,6 +602,7 @@ import Icon from '../../components/Icon.astro';
         loadNotificationSettingsAvailability(),
         loadPasskeySettingsAvailability(),
         loadTransactionalLanguageSettings(),
+        loadMediaLanguageSettings(),
       ]);
       showMessage('Account loaded.', 'success');
     };

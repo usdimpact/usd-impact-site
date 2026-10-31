@@ -45,6 +45,7 @@ import { handleVideoProgressRequest } from '../src/lib/video-progress-handler.js
 import { handleScoreMembershipCheck } from '../src/lib/score-membership-handler.js';
 import { handleScoreMemberContent } from '../src/lib/score-member-handler.js';
 import { handleTransactionalLocaleRequest } from '../src/lib/transactional-locale-handler.js';
+import { handleMediaLocaleRequest } from '../src/lib/media-locale-handler.js';
 
 function header(request, name) {
   const value = request.headers?.[name] ?? request.headers?.[name.toLowerCase()];
@@ -455,6 +456,7 @@ const handlers = Object.freeze({
   'score-membership': handleScoreMembershipCheck,
   'score-member-content': handleScoreMemberContent,
   'transactional-locale': handleTransactionalLocaleRequest,
+  'media-locale': handleMediaLocaleRequest,
 });
 
 export default async function handler(request, response) {

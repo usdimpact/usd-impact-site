@@ -1,6 +1,6 @@
 # Separate media preference and Spanish media readiness — October 31, 2026
 
-**Status: Development preference installed; Preview runtime OFF; Spanish media release and regeneration HOLD.**
+**Status: Development-only preference installed and enabled on exact isolated Preview branch; owner-confirmed browser QA PASS; Production and Spanish media regeneration/release remain HOLD.**
 
 ## Feature separation
 The account transactional-language preference in Draft PR #1022 changes future eligible access-notice email rendering only. The new media-language preference in Draft PR #1028 is a separate RLS-protected account row, set only by the authenticated user. Changing one does not change the other. No marketing consent or entitlement is inferred.
@@ -23,6 +23,13 @@ Authoritative sources: docs/localization/SPANISH_VIDEO_FINAL_HOLD_QA.md; apps/we
 - Separate default-OFF flags ACCOUNT_MEDIA_LOCALE_UI_ENABLED and ACCOUNT_MEDIA_LOCALE_WRITE_ENABLED must be scoped to Vercel Preview AND exact Git branch draft/media-language-es-captions-preview-20261031, with matching runtime branch guard and Development Supabase hostname.
 - Protected Video Library checks paid entitlement BEFORE the preference lookup or signed media token. ES selection only when the localization manifest verifies a non-default es track for the selected film. On error/missing/unknown: EN. The global EN source default remains unchanged.
 - Player preload=metadata stays. Do not download full audio/video, auto-play, or make an EN video appear dubbed simply because ES subtitles are active.
+
+## Current QA checkpoint (2026-10-31)
+
+- The original UI-03 exact-head runtime commit `54b4b2faddc47fc347a25506a7c18e562ae76d0f` passed all eight GitHub Actions workflows and Vercel Preview READY; the user accepted EN/ES account preference and DXY initial subtitle behavior, then independently confirmed signed-out and mobile/tablet browser PASS. See [owner browser acceptance](https://github.com/usdimpact/usd-impact-site/pull/1028#issuecomment-6536242046). Acceptance is **owner-reported** for interactive browser checks, not an automated end-to-end proof of all 51 streams.
+- A read-only Development SQL check after sign-in confirmed one saved Spanish media-language preference and the separate transactional-language preference, with media RLS enabled and media preference included in the account export function. The Production media and transactional-language tables are still absent.
+- This checkpoint records **Preview functional acceptance only**, not merge, future-buyer email launch, Production SQL cutover, global Spanish caption defaults, or Spanish narration availability. Draft PR #1028 depends on still-Draft upstream PR #1022, and both remain unmerged.
+- Source-only [51-film inventory](https://github.com/usdimpact/usd-impact-site/issues/1029#issuecomment-6536259783) maps exact Stream UIDs and catalog runtimes to the verified Spanish subtitle manifest. A fresh read-only Cloudflare Stream metadata call was denied `403 / 10002`: Spanish alternate-audio presence and dubbing rights remain **UNKNOWN**, not absent. Do not infer media availability or spend from the account setting.
 
 ## Acceptance tests before further release
 1. In Production or feature-off Preview: media selector hidden and player caption default EN. No extra database/media lookup.

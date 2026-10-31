@@ -1,0 +1,45 @@
+name: Account deletion private completion escrow age monitor - offline
+
+on:
+  pull_request:
+    paths:
+      - 'docs/operations/candidates/account-deletion-completion-escrow-health.review.sql'
+      - 'docs/operations/candidates/account-deletion-atomic-claim.review.sql'
+      - 'docs/operations/candidates/account-deletion-transactional-completion-escrow.review.sql'
+      - 'apps/web/scripts/test-account-deletion-completion-escrow-health.mjs'
+      - 'apps/web/scripts/test-account-deletion-review-only-activation.mjs'
+      - '.github/workflows/account-deletion-completion-escrow-health-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  aggregate-health-and-private-access:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install exact locked dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Test SQL against disposable PGlite and enforce activation block
+        run: |
+          test -z "${SUPABASE_SECRET_KEY:-}"
+          test -z "${SUPABASE_SERVICE_ROLE_KEY:-}"
+          test -z "${RESEND_API_KEY:-}"
+          test -z "${CRON_SECRET:-}"
+          node --check scripts/test-account-deletion-completion-escrow-health.mjs
+          node scripts/test-account-deletion-completion-escrow-health.mjs
+          node scripts/test-account-deletion-review-only-activation.mjs

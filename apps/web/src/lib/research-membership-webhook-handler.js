@@ -161,7 +161,7 @@ function headers(secretKey) {
   return {
     Accept: 'application/json',
     apikey: secretKey,
-    Authorization: `Bearer ${secretKey}`,
+    // Outbox and subscription reads use the server-side opaque apikey only.
   };
 }
 

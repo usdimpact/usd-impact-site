@@ -1,0 +1,44 @@
+name: Research Membership privileged REST project and key contracts
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/lib/research-membership-persistence.js'
+      - 'apps/web/src/lib/research-membership-webhook-handler.js'
+      - 'apps/web/scripts/test-research-membership-persistence.mjs'
+      - 'apps/web/scripts/test-research-membership-webhook-execution.mjs'
+      - 'apps/web/scripts/test-research-membership-webhook-replay.mjs'
+      - '.github/workflows/research-membership-opaque-rest-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-research-privilege-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout without persistent Git credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Offline Research RPC authorization, replay and bounded project checks
+        run: |
+          test -z "${SUPABASE_SECRET_KEY:-}"
+          test -z "${LEMON_SQUEEZY_API_KEY:-}"
+          node --check src/lib/research-membership-persistence.js
+          node --check src/lib/research-membership-webhook-handler.js
+          node scripts/test-research-membership-persistence.mjs
+          node scripts/test-research-membership-webhook-execution.mjs
+          node scripts/test-research-membership-webhook-replay.mjs

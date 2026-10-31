@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "usd-impact-independent-macro-weekly-draft-publication-status-inventory-v1",
+  "preparedDate": "2026-10-31",
+  "status": "OFFLINE_INVENTORY_ONLY_RELEASE_DENIED",
+  "repository": "usdimpact/usd-impact-site",
+  "prNumber": 1025,
+  "scannedCommit": "66feffa2edc01b1a505c7c081672257098050762",
+  "approvedArticleBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+  "ownerReviewedSharedLayoutComponentBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
+  "adapterBlobSha": "77cbc75bd1fe7e5a843592904442d74cf4e07ab0",
+  "disabledRouteBlobSha": "526b6a00f307ebe3c861b85d8a1d5f1f49879e92",
+  "markers": [
+    {
+      "id": "source-robots",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "needle": "<meta name=\"robots\" content=\"noindex,nofollow,noarchive,nosnippet\">",
+      "scope": "standalone source",
+      "futureAction": "preserve archived Draft; decide robots only on new release component"
+    },
+    {
+      "id": "source-body-denial",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "needle": "<body data-candidate-period-end=\"2026-10-30\" data-release-candidate=\"draft\" data-series=\"independent_macro_education\" data-release-authorized=\"false\">",
+      "scope": "standalone source",
+      "futureAction": "preserve archived Draft; separately author valid release-status element"
+    },
+    {
+      "id": "source-ribbon",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "needle": "Release Candidate • Draft only • Not published • All rights HOLD",
+      "scope": "standalone source",
+      "futureAction": "do not rehost archival ribbon; use accurate publication-specific label"
+    },
+    {
+      "id": "source-badge",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "needle": "Draft candidate — HOLD",
+      "scope": "shared factual source hero",
+      "futureAction": "change publication-only badge on separate release artifact with fresh editor PASS"
+    },
+    {
+      "id": "source-review-status",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "needle": "Draft only, never published",
+      "scope": "shared factual source hero",
+      "futureAction": "use actual first publication date/status only after public URL verified"
+    },
+    {
+      "id": "source-compliance",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "needle": "This page is an unpublished Draft candidate. Exact-item rights, international distribution, and public release remain on HOLD",
+      "scope": "seventh factual/compliance section",
+      "futureAction": "requires targeted new editorial PASS when release-status language changes"
+    },
+    {
+      "id": "source-release-control",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "needle": "This page is NOT routed or published. Rights clearance, exact article PASS, merge and public Production release are still denied.",
+      "scope": "source status notice",
+      "futureAction": "leave original unchanged; replace stale notice in newly reviewed publisher adapter"
+    },
+    {
+      "id": "shared-noindex",
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "needle": "noindex={true}",
+      "scope": "reviewed layout component",
+      "futureAction": "separate indexing decision: default noindex on any future public preview"
+    },
+    {
+      "id": "shared-release-false",
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "needle": "data-release-authorized=\"false\"",
+      "scope": "reviewed layout component",
+      "futureAction": "use a separate release component after final explicit approval"
+    },
+    {
+      "id": "shared-historical-editorial",
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "needle": "data-shared-layout-editorial-pass=\"false\"",
+      "scope": "reviewed layout component",
+      "futureAction": "historical reviewed artifact stays immutable; new release component may reflect PASS"
+    },
+    {
+      "id": "shared-unpublished-ribbon",
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "needle": "Shared-layout Draft — not published — presentation review, international rights and Production HOLD",
+      "scope": "reviewed layout component",
+      "futureAction": "replace unpublished/pending language only in new final release artifact"
+    },
+    {
+      "id": "shared-unpublished-title",
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "needle": "Unpublished shared-layout Draft",
+      "scope": "reviewed layout component",
+      "futureAction": "replace unpublished page title in final reviewed release artifact"
+    },
+    {
+      "id": "adapter-stale-layout-review",
+      "path": "apps/web/src/lib/independent-macro-weekly-draft-shell.mjs",
+      "needle": "this new layout, qualified international rights review, merge and public Production release remain on HOLD.",
+      "scope": "reviewed Draft adapter",
+      "futureAction": "do not alter this historical Draft adapter; new adapter may reflect exact owner PASS"
+    },
+    {
+      "id": "route-zero-pages",
+      "path": "apps/web/src/pages/macro-reviews/weekly/[date].astro",
+      "needle": "return [];",
+      "scope": "public route hard-deny",
+      "futureAction": "replace only with one whitelisted date after separate named final SHA authorization"
+    }
+  ],
+  "markerCount": 14,
+  "notes": [
+    "These are exact Draft status sentinels, not authorization to remove or publish them.",
+    "Current seven editorial sections remain byte-for-byte unchanged.",
+    "A separate future release artifact needs fresh status/editorial PASS, not a silent mutation of this approved Draft.",
+    "One public date whitelist, noindex, merge, Production and syndication remain separate decisions."
+  ],
+  "originalArticleMustStayUnmodified": true,
+  "newPublicRouteActivationApproved": false,
+  "publicationStatusCopyApproved": false,
+  "firstActualPublicationTimeUtc": null,
+  "releaseAuthorized": false,
+  "indexingAuthorized": false,
+  "originalScoreRightsGranted": false
+}

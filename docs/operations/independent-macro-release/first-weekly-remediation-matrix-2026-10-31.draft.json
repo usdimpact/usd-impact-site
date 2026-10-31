@@ -1,0 +1,203 @@
+{
+  "schemaVersion": "usd-impact-independent-macro-risk-remediation-register-v1",
+  "reviewDate": "2026-10-31",
+  "scope": "ONE original English independent Macro Weekly covering 2026-10-26 through 2026-10-30 only",
+  "caseIssue": "https://github.com/usdimpact/usd-impact-site/issues/1031",
+  "upgradeIssue": "https://github.com/usdimpact/usd-impact-site/issues/1030",
+  "canonicalFuturePolicyPath": "docs/operations/publication-risk-decision-standard.md",
+  "sourcePr": 1025,
+  "reviewedBaselineCommit": "85b2b836838c689fc8fdd6ccbc681324dd05f183",
+  "sourceGitBlobs": {
+    "article": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "baseLayout": "513d7e0472d7983c543af928bb54612b87bd786d",
+    "googleAnalyticsClient": "2877b295ddc106c0e89b75eb55e71a0c92afc642",
+    "consentClient": "3d97c458e97e51860d9002346fcb030746151292",
+    "telemetryClient": "fc19d517ea3e8ae8afe52065a60e9cba83ba614f",
+    "terms": "4253e97881bf09f1c553555684a577ec70291b97",
+    "privacyNotice": "2c41e5a77b0df62802371468de43c0c964c00928"
+  },
+  "legend": {
+    "P0": "Before any public activation: exact artifact and explicit independent release authorization required",
+    "P1": "Before release: make item-specific review determination or obtain adequate evidence; some issues are review gaps not proven legal defects",
+    "P2": "Conditional exclusion for changes of scope; no present defect or extra licence requirement established",
+    "VERIFIED_NO_CURRENT_SOURCE_FIX": "Evidence presently supports limited original-facts-and-direct-links use; reopen for any scope change",
+    "EVIDENCE_GAP_NOT_PROVEN_DEFECT": "Missing independent evidence or formal decision, not proof of unlawful behavior",
+    "FUTURE_RELEASE_WORK": "Needed in a separately authorized release version; current Draft denial is correct"
+  },
+  "mainEight": [
+    {
+      "id": "R01",
+      "scope": "Federal Reserve calendar and FOMC statement",
+      "priority": "P2",
+      "status": "VERIFIED_NO_CURRENT_SOURCE_FIX",
+      "finding": "Official factual event calendar and 10–2 hold report cited by direct URLs; no Board logos, copied tables, graphics or agency endorsement evidenced in frozen article.",
+      "remediation": "Keep text-and-links only; preserve source credits and no endorsement; re-review any new Board content/marks/framing.",
+      "trigger": "Any quote beyond short attributed factual context, copied expression, Board mark, embed, syndication or new source.",
+      "citation": "https://www.federalreserve.gov/disclaimer.htm",
+      "ownerItemDecisionRecorded": false,
+      "sourceRightsGrantedGlobally": false
+    },
+    {
+      "id": "R02",
+      "scope": "BEA GDP and PCE releases",
+      "priority": "P2",
+      "status": "VERIFIED_NO_CURRENT_SOURCE_FIX",
+      "finding": "Original GDP/PCE fact summaries, release dates, annualized vs year-over-year units and issuer links; no copied third-party BEA media.",
+      "remediation": "Preserve credit and measurement units; check restrictions for any new BEA chart/table/image/asset.",
+      "trigger": "Copying/embedding agency or third-party material; any new vendor feed or republication.",
+      "citation": "https://www.bea.gov/help/faq/147",
+      "ownerItemDecisionRecorded": false,
+      "sourceRightsGrantedGlobally": false
+    },
+    {
+      "id": "R03",
+      "scope": "BLS archived Employment Cost Index",
+      "priority": "P2",
+      "status": "VERIFIED_NO_CURRENT_SOURCE_FIX",
+      "finding": "Original quarterly seasonally-adjusted 0.8% and annual not-seasonally-adjusted 3.4% summary; prior browser-backed BLS archive retrieval recorded; no BLS emblem/photography included.",
+      "remediation": "Retain citation, period/unit labels and original-only wording; recheck archived URL with real browser if link behavior changes.",
+      "trigger": "BLS emblem, photographs, copied release table, asset reuse or source revision.",
+      "citation": "https://www.bls.gov/opub/copyright-information.htm",
+      "ownerItemDecisionRecorded": false,
+      "sourceRightsGrantedGlobally": false
+    },
+    {
+      "id": "R04",
+      "scope": "Romania/EU/international copyright and third-party exceptions",
+      "priority": "P1",
+      "status": "EVIDENCE_GAP_NOT_PROVEN_DEFECT",
+      "finding": "Romanian Law 8/1996 Art.9(f) excludes simple facts/data; USAGov explicitly warns U.S.-government public-domain status may differ abroad. No exact copied third-party asset identified; no qualified international opinion recorded.",
+      "remediation": "Document page-specific owner decision against five links and any actual contract restrictions. Remain facts-and-links only. If substantive protected expression, marks, contractual limitation or mandatory external assessment exists, stop/escalate instead of treating internal risk acceptance as a waiver.",
+      "trigger": "New jurisdiction, media/mark, third-party chart, vendor licensing, translation, extraction or evidence of restriction.",
+      "citation": "https://legislatie.just.ro/Public/DetaliiDocument/252971",
+      "ownerItemDecisionRecorded": false,
+      "sourceRightsGrantedGlobally": false
+    },
+    {
+      "id": "R05",
+      "scope": "Educational macro content and financial recommendation perimeter",
+      "priority": "P1",
+      "status": "EVIDENCE_GAP_NOT_PROVEN_DEFECT",
+      "finding": "Five historic issuer facts and original conditional economic interpretation verified; no trading signal, realized market-price return, original Score or explicit/implicit strategy identified. ESMA distinguishes purely factual information from MAR investment recommendations if it does not propose a strategy.",
+      "remediation": "Maintain clear fact-vs-inference distinction; review final rewritten compliance wording and any surrounding call to action or affiliate disclosure. Obtain fresh exact-copy editorial PASS. Any new buy/sell/hold, asset target, implied strategy or market return requires a different compliance/market-rights review.",
+      "trigger": "Personalization, trade idea, price target, portfolio allocation, signals, marketing/affiliate calls or scope changes.",
+      "citation": "https://www.esma.europa.eu/publications-data/questions-answers/1741",
+      "ownerItemDecisionRecorded": false,
+      "sourceRightsGrantedGlobally": false
+    },
+    {
+      "id": "R06",
+      "scope": "Production analytics, consent, withdrawal and third-party data processing",
+      "priority": "P1",
+      "status": "EVIDENCE_GAP_NOT_PROVEN_DEFECT",
+      "finding": "Merged privacy PR #1035 shipped explicit analytics_storage:denied updates for previously configured GA4 tags upon withdrawal, retaining ga-disable and best-effort GA cookie cleanup. First-party telemetry remains consent-gated. Owner Preview functional PASS, CI PASS, Vercel Production READY and public homepage/privacy smoke PASS. Complete independent consent Network/Cookie evidence and qualified supplier/privacy review remain unavailable; no breach demonstrated.",
+      "remediation": "Privacy client hardening is LIVE. Preserve owner Preview UAT, confirm applicable controller/provider DPA and transfer obligations and obtain sanitized before/reject/accept/withdraw network/cookie-name evidence if required. Do not repeat accepted owner UI checks. Escalate only an actual demonstrated defect or legal restriction; no general certification is inferred.",
+      "trigger": "Any evidence of pre-consent beacon, withdrawal collection, failed preference, misleading notice, provider/config change or new data recipient.",
+      "citation": "https://europa.eu/youreurope/business/growing/digitalising/online-privacy/index_en.htm",
+      "ownerItemDecisionRecorded": false,
+      "sourceRightsGrantedGlobally": false
+    },
+    {
+      "id": "R07",
+      "scope": "Operator disclosure, government non-endorsement, editorial provenance",
+      "priority": "P1",
+      "status": "EVIDENCE_GAP_NOT_PROVEN_DEFECT",
+      "finding": "BaseLayout footer and Terms identify KELA LEADS S.R.L. and educational nature. Final public release artifact not built/reviewed. The actual owner reviewed content, but substantive human editorial-review evidence and explicit responsible publisher determination for EU AI Act Article 50 are not yet complete in this risk register.",
+      "remediation": "Review exact final rendered operator name/contact/Terms/Privacy, attribution and no endorsement. Record AI involvement and substantive human control + responsible publisher, or if necessary visible AI-generated-text disclosure. Check site navigation/footer/mobile and accessibility without modifying historic approved Draft.",
+      "trigger": "Public-interest AI-generated text, new editor, lack of substantive review, missing attribution, copied official seals or new legal page.",
+      "citation": "https://digital-strategy.ec.europa.eu/en/faqs/transparency-obligations-under-article-50-ai-act",
+      "ownerItemDecisionRecorded": false,
+      "sourceRightsGrantedGlobally": false
+    },
+    {
+      "id": "R08",
+      "scope": "Publication version, static routing, metadata, indexing, runtime parity and rollback",
+      "priority": "P0",
+      "status": "FUTURE_RELEASE_WORK",
+      "finding": "Draft route rightly emits zero pages and historical component still has explicit release-false/noindex/Draft labels. Source-only copy preflight is not a compiled or browser-reviewed final artifact. Private QA Node 26 vs public production Node 24 at historical review.",
+      "remediation": "After review decisions, create separate minimal release PR off current protected main; new exact date whitelist and accurate publication metadata/date; preserve original source; inspect 200/404, seven sections, official links and original Score HOLD; run exact CI and target runtime-parity authenticated QA; obtain new final rendered owner PASS; separately authorize route/merge/Production and indexing; verify public first timestamp and rollback.",
+      "trigger": "Any attempted merge, preview, live route, sitemap, navigation, search indexing, PDF/RSS/email or production promotion.",
+      "citation": "https://vercel.com/docs/deployments",
+      "ownerItemDecisionRecorded": false,
+      "sourceRightsGrantedGlobally": false
+    }
+  ],
+  "crossCutting": [
+    {
+      "id": "X01",
+      "priority": "P1",
+      "scope": "EU AI Act Article 50(4) on public-interest economic/financial AI-generated content",
+      "finding": "Applied from Aug 2 2026; an exception may apply when genuine substantive human editorial review/control and a legal/natural publisher responsible for text are demonstrable.",
+      "requiredEvidence": "Confirm whether AI materially generated/manipulated final article; record substantive corrections/source checks, accountable publisher and editor, and review exact final text. If legal exception not substantiated, assess clear Article 50 disclosure. Do not infer exception from a bare PASS.",
+      "source": "https://digital-strategy.ec.europa.eu/en/faqs/transparency-obligations-under-article-50-ai-act",
+      "complete": false
+    },
+    {
+      "id": "X02",
+      "priority": "P1",
+      "scope": "Consent implementation and provider responsibility",
+      "finding": "Production GA4 now explicitly updates consent to denied on withdrawal after prior opt-in while retaining existing GA kill switch, optional telemetry consent gates and cookie expiration. Owner Preview UAT and sampled public smoke passed. Independent full traffic/cookie capture and applicable provider transfer review are still unproven.",
+      "requiredEvidence": "Determine whether applicable privacy/provider requirements call for additional external evidence; verify actual post-withdrawal collection/cookie state if required. Do not claim legal certification from functional owner PASS or infer breach solely from missing traces.",
+      "source": "https://developers.google.com/tag-platform/security/guides/privacy",
+      "complete": false
+    },
+    {
+      "id": "X03",
+      "priority": "P1",
+      "scope": "Final document provenance and runtime parity",
+      "finding": "Fact/HTML editor PASS pertains to frozen Draft; publication copy and attributes require new review, and isolated preview had different Node major than public production.",
+      "requiredEvidence": "New exact-source reviewed release artifact, automated route/source/rights negative tests, public-project target/runtime parity and authorized rollback. Actual first publication UTC only after verified public response.",
+      "source": "https://vercel.com/docs/deployments",
+      "complete": false
+    },
+    {
+      "id": "X04",
+      "priority": "P1",
+      "scope": "Provisional owner review and future upgrade",
+      "finding": "Owner explicitly selected temporary internal Option B for one English article; it is not a legal waiver or independent lawyer approval. Weekly conditional upgrade watch is active.",
+      "requiredEvidence": "Complete eight item-specific owner outcomes with residual risks, stop if actual legal prohibition, record exact decision and use Issue #1030 for cost-effective outside reviewer upgrade. All release decisions remain separately explicit.",
+      "source": "https://github.com/usdimpact/usd-impact-site/issues/1030",
+      "complete": false
+    }
+  ],
+  "currentDecision": {
+    "provisionalOptionBActive": true,
+    "individualOwnerRiskItemsAccepted": 0,
+    "qualifiedLegalOpinionObtained": false,
+    "independentPrivacyCertified": false,
+    "finalReleaseCopyPassed": false,
+    "finalReleaseArtifactBuilt": false,
+    "publicReleaseAuthorized": false,
+    "mergeAuthorized": false,
+    "indexingAuthorized": false,
+    "sourceRightsExpanded": false,
+    "originalScoreRightsUnblocked": false,
+    "publishedIndependentWeeklies": 0,
+    "eligibleIndependentMonthlyWeeks": 0
+  },
+  "notes": [
+    "Prior owner visual and browser functional PASS are respected and not automatically repeated.",
+    "Source reuse for ordinary facts/links is lower risk: do not manufacture unnecessary license requirements.",
+    "A missing signed opinion or missing HAR is not proof of an unlawful practice; classify as evidence gap unless defect demonstrated.",
+    "All future decisions should check the canonical policy, issue #1031, owner risk record and current exact commit. Never silently transfer article-specific Option B to another project."
+  ],
+  "historicalSourceReview": {
+    "originalReviewedClientBlobSha": "cb6d89da7a6cfa3dab0c51b9972527fc1581e860",
+    "previousRemediationMatrixBlobSha": "3319221ffd574300d2b13b7805568773af4d9c6a",
+    "previousPreflightBlobSha": "1c0ba33605805b4e847257ddb19b7f053855c0d1",
+    "originalBaselineCommit": "85b2b836838c689fc8fdd6ccbc681324dd05f183",
+    "ownerAttestationHistoryNotChanged": true
+  },
+  "currentProductionPrivacyIntegration": {
+    "mainSha": "743872f3fdfd5fdddd242b64e7a42674a459a416",
+    "ga4ClientBlobSha": "2877b295ddc106c0e89b75eb55e71a0c92afc642",
+    "testGitBlobSha": "cd94df36571fd74e57cfb7b42a7ebdd41ed93d09",
+    "productionDeploymentId": "dpl_7APZ2YJAZuyh1SrpPu3Rp9PVaxeB",
+    "codeInProduction": true,
+    "ownerPreviewFunctionalPassReported": true,
+    "independentFullLiveTraceAvailable": false,
+    "professionalPrivacyCertification": false,
+    "sourceRightsAndMacroReviewStillOnHold": true,
+    "releaseEvidence": "https://github.com/usdimpact/usd-impact-site/issues/1036#issuecomment-6543527535"
+  }
+}

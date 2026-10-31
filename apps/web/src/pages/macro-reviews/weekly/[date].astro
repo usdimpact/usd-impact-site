@@ -1,0 +1,14 @@
+---
+import IndependentMacroWeeklyDraftShell from '../../../components/IndependentMacroWeeklyDraftShell.astro';
+
+// DRAFT-ONLY / UNROUTED. A source file is not a publication approval.
+// Shared-layout draft integrates the site's legal footer and consent, but has
+// no new presentation approval, source clearance or publication permission.
+// Until a separate exact-commit rights + editorial + Production release decision,
+// static generation MUST yield no paths, regardless of environment variables.
+export const prerender = true;
+export function getStaticPaths() {
+  return [];
+}
+---
+<IndependentMacroWeeklyDraftShell />

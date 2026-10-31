@@ -711,18 +711,70 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
   eq(receipt.historicalGa4ClientGitBlobSha,'cb6d89da7a6cfa3dab0c51b9972527fc1581e860',
     'historic prior-source GA4 blob preserved');
   eq(receipt.currentGa4ClientGitBlobSha,'2877b295ddc106c0e89b75eb55e71a0c92afc642',
-    'current deployed-source GA4 blob preserved');
-  eq(gitBlob(ga),receipt.currentGa4ClientGitBlobSha,'current GA4 code matches Production source');
-  eq(gitBlob(gaTest),receipt.ga4RevocationTestGitBlobSha,'privacy regression test imported exactly');
+    'historical #1035 Production GA4 blob preserved as point-in-time evidence');
+  eq(receipt.ga4RevocationTestGitBlobSha,'cd94df36571fd74e57cfb7b42a7ebdd41ed93d09',
+    'historical #1035 consent regression evidence preserved');
+  const liveRaw=from('../../../docs/operations/independent-macro-release/privacy-live-ga4-1040-draft-merge-reconciliation-2026-10-31.draft.json');
+  const liveReceipt=JSON.parse(liveRaw);
+  const live=m.privacyLatestProductionReconciliationDraft;
+  eq(live.receiptPath,'docs/operations/independent-macro-release/privacy-live-ga4-1040-draft-merge-reconciliation-2026-10-31.draft.json','latest GA4 provenance receipt path pinned');
+  eq(gitBlob(liveRaw),live.receiptGitBlobSha,'latest GA4 provenance receipt byte-exact');
+  eq(liveReceipt.schemaVersion,'usd-impact-independent-macro-ga4-current-production-reconciliation-v2',
+    'live GA4 release provenance schema');
+  eq(liveReceipt.historicalPrivacyReceipt.blobSha,p.receiptGitBlobSha,
+    'historic privacy receipt retained unchanged');
+  eq(liveReceipt.historicalPrivacyReceipt.priorProductionGa4ClientBlobSha,receipt.currentGa4ClientGitBlobSha,
+    'historic GA4 source explicitly distinguished from latest live source');
+  eq(liveReceipt.historicalPrivacyReceipt.priorConsentRegressionBlobSha,receipt.ga4RevocationTestGitBlobSha,
+    'historic consent regression retained');
+  eq(liveReceipt.liveGa4Release.protectedMainCommit,'4221668716c2214012e4dd26a1dae8ee050f728a',
+    'current protected main exact source commit');
+  eq(liveReceipt.liveGa4Release.pr,1040,'latest privacy release provenance');
+  eq(liveReceipt.liveGa4Release.ga4ClientBlobSha,'0667863de7759c6e32c6feb4f118deb37c5ebf05',
+    'latest GA4 client exact blob');
+  eq(liveReceipt.liveGa4Release.ga4ConsentRegressionBlobSha,'7a3289f61a9535c922d48b2cd1de4fc5d34ed844',
+    'latest GA4 regression exact blob');
+  eq(m.existingSiteReuse.currentProductionMainCommitSha,liveReceipt.liveGa4Release.protectedMainCommit,
+    'Macro manifest aligned to latest live Production main');
+  eq(m.existingSiteReuse.currentProductionGa4ClientGitBlobSha,liveReceipt.liveGa4Release.ga4ClientBlobSha,
+    'Macro manifest aligned to latest live GA4 source');
+  eq(live.currentGA4ClientGitBlobSha,liveReceipt.liveGa4Release.ga4ClientBlobSha,
+    'latest separate privacy source fingerprint pinned');
+  eq(live.currentGA4ConsentRegressionGitBlobSha,liveReceipt.liveGa4Release.ga4ConsentRegressionBlobSha,
+    'latest separate privacy regression fingerprint pinned');
+  eq(gitBlob(ga),live.currentGA4ClientGitBlobSha,
+    'actual Macro Draft GA4 code matches latest Production source');
+  eq(gitBlob(gaTest),live.currentGA4ConsentRegressionGitBlobSha,
+    'actual Macro Draft GA4 regression matches latest Production');
+  ok(ga.includes('usd-impact-ga4-config') && ga.includes('CONSENT_READY_EVENT') &&
+     ga.includes('<script>') && !ga.includes('<script define:vars>'),
+    'latest compiled-Astro GA4 is a CSP-safe processed module and defers startup');
+  ok(liveReceipt.liveGa4Release.ownerReportedProductionConsentPass &&
+     !liveReceipt.liveGa4Release.independentFullProductionNetworkCookieTrace &&
+     !liveReceipt.liveGa4Release.qualifiedEprivacyAssessment &&
+     liveReceipt.liveGa4Release.monitoring24HourPassNotYetEstablished &&
+     liveReceipt.integrationGuards.macroRouteGetStaticPathsReturnsEmpty &&
+     !liveReceipt.integrationGuards.macroPublicPagesAuthorized &&
+     !liveReceipt.integrationGuards.macroPRMergeAuthorized &&
+     !liveReceipt.integrationGuards.macroProductionDeploymentAuthorized &&
+     !liveReceipt.integrationGuards.macroSearchIndexingAuthorized &&
+     !liveReceipt.integrationGuards.originalScoreOrProviderDataRightsAuthorized &&
+     !liveReceipt.integrationGuards.qualifiedLegalAndPrivacyClearanceObtained &&
+     !liveReceipt.integrationGuards.ownerItemSpecificR04R05R06R07X01Accepted &&
+     !liveReceipt.integrationGuards.qaOnlyPr1041MayBeMerged &&
+     !live.macroRouteAuthorized && !live.macroMergeAuthorized &&
+     !live.macroProductionAuthorized && !live.releaseAuthorized &&
+     !m.releaseAuthorized && !m.publishReady,
+    'latest GA4 source parity confers no Macro public, legal, rights or QA-only permissions');
   eq(gitBlob(gaMemo),receipt.privacyPatchNotesGitBlobSha,'privacy engineering memo imported');
   eq(risk.source.gaClientGitBlobSha,receipt.currentGa4ClientGitBlobSha,
-    'R06 owner preflight references new GA4 source');
+    'R06 historical preflight references prior #1035 GA4 source; fresh review remains pending');
   eq(risk.privacyProductionIntegration.priorSourceBlobSha,receipt.historicalGa4ClientGitBlobSha,
     'preflight explicitly retains prior GA4');
   eq(risk.privacyProductionIntegration.historicalRiskPreflightGitBlobSha,
     receipt.historicalOwnerPreflightGitBlobSha,'historical risk preflight retained as historical');
   eq(matrix.sourceGitBlobs.googleAnalyticsClient,receipt.currentGa4ClientGitBlobSha,
-    'R06 matrix references new GA4 source');
+    'R06 historical matrix references prior #1035 GA4 source; no implicit reapproval');
   eq(matrix.historicalSourceReview.previousRemediationMatrixBlobSha,
     receipt.historicalCaseMatrixGitBlobSha,'historical matrix is immutable provenance');
   eq(decision.riskPreflightGitBlobSha,gitBlob(from('../../../docs/operations/independent-macro-release/first-weekly-owner-item-specific-risk-preflight-2026-10-31.draft.json')),

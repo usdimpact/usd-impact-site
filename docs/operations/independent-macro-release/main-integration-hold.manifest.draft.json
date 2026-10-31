@@ -117,8 +117,8 @@
     "gaNetworkAndCookieInspectionCompleted": false,
     "optionalAnalyticsAcceptanceAndWithdrawalBrowserTestCompleted": false,
     "futureMacroSharedLayoutBrowserTestCompleted": false,
-    "currentProductionGa4ClientGitBlobSha": "2877b295ddc106c0e89b75eb55e71a0c92afc642",
-    "currentProductionMainCommitSha": "743872f3fdfd5fdddd242b64e7a42674a459a416",
+    "currentProductionGa4ClientGitBlobSha": "0667863de7759c6e32c6feb4f118deb37c5ebf05",
+    "currentProductionMainCommitSha": "4221668716c2214012e4dd26a1dae8ee050f728a",
     "explicitGa4WithdrawalConsentDenialDeployed": true
   },
   "holds": {
@@ -365,5 +365,21 @@
     "qualifiedExternalLegalApprovalObtained": false,
     "protectedPreviewPermissionGranted": false,
     "publicMergeOrProductionPermissionGranted": false
+  },
+  "privacyLatestProductionReconciliationDraft": {
+    "receiptPath": "docs/operations/independent-macro-release/privacy-live-ga4-1040-draft-merge-reconciliation-2026-10-31.draft.json",
+    "receiptGitBlobSha": "82bfd50b76081c9838ed6b67d863d8f2cf94f062",
+    "protectedMainSha": "4221668716c2214012e4dd26a1dae8ee050f728a",
+    "currentGA4ClientGitBlobSha": "0667863de7759c6e32c6feb4f118deb37c5ebf05",
+    "currentGA4ConsentRegressionGitBlobSha": "7a3289f61a9535c922d48b2cd1de4fc5d34ed844",
+    "historicalPrivacyReceiptGitBlobSha": "1e3d8e72e4b7b2227b7cb9ea9a7ff03307653639",
+    "ownerReportedProductionConsentPass": true,
+    "independentlyCapturedFullProductionNetworkCookieTrace": false,
+    "qualifiedEprivacyAssessmentObtained": false,
+    "macroRouteAuthorized": false,
+    "macroMergeAuthorized": false,
+    "macroProductionAuthorized": false,
+    "ownerItemSpecificRiskAcceptanceObtained": false,
+    "releaseAuthorized": false
   }
 }

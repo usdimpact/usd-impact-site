@@ -37,6 +37,9 @@ jobs:
       - name: Install exact-lock dependencies
         working-directory: apps/web
         run: npm ci --no-audit --no-fund
+      - name: Verify focused consent lifecycle regression before Astro build
+        working-directory: apps/web
+        run: node scripts/test-ga4-consent-revocation.mjs
       - name: Build actual Astro output with synthetic GA4 ID, no deployment
         working-directory: apps/web
         env:

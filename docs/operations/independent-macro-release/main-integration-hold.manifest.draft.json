@@ -215,6 +215,18 @@
     "qualifiedExternalRightsOrPrivacyCertification": false,
     "publicationAuthorized": false
   },
+  "independentRemediationAndStandingPublicationDecisionRule": {
+    "matrixPath": "docs/operations/independent-macro-release/first-weekly-remediation-matrix-2026-10-31.draft.json",
+    "matrixGitBlobSha": "3319221ffd574300d2b13b7805568773af4d9c6a",
+    "futurePolicyPath": "docs/operations/publication-risk-decision-standard.md",
+    "futurePolicyGitBlobSha": "cda404b685c5f53e009dcf3119ea5d478a7389f1",
+    "sourceReviewBaseline": "85b2b836838c689fc8fdd6ccbc681324dd05f183",
+    "caseTrackingIssue": "https://github.com/usdimpact/usd-impact-site/issues/1031",
+    "allEightRiskAreasPresent": true,
+    "allIndividualOwnerAcceptancesDenied": true,
+    "newCrossCuttingRisksCount": 4,
+    "releaseAuthorized": false
+  },
   "siteShellAdaptationDraft": {
     "componentPath": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
     "componentGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",

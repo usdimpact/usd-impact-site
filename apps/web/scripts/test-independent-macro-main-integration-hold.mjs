@@ -391,6 +391,52 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      'risk worksheet never authorizes any public page or original Score rights');
 }
 
+// Standing release risk standard and case-specific remediation matrix are immutable evidence.
+{
+  const matrixText=from('../../../docs/operations/independent-macro-release/first-weekly-remediation-matrix-2026-10-31.draft.json');
+  const matrix=JSON.parse(matrixText);
+  const policyText=from('../../../docs/operations/publication-risk-decision-standard.md');
+  const ptr=m.independentRemediationAndStandingPublicationDecisionRule;
+  eq(gitBlob(matrixText),ptr.matrixGitBlobSha,'pin exact eight-area remediation matrix');
+  eq(gitBlob(policyText),ptr.futurePolicyGitBlobSha,'pin reusable future-publication rulebook');
+  eq(ptr.matrixPath,'docs/operations/independent-macro-release/first-weekly-remediation-matrix-2026-10-31.draft.json','pin case-specific path');
+  eq(ptr.futurePolicyPath,'docs/operations/publication-risk-decision-standard.md','pin reusable policy path');
+  eq(matrix.schemaVersion,'usd-impact-independent-macro-risk-remediation-register-v1',
+    'matrix schema');
+  eq(matrix.reviewedBaselineCommit,'85b2b836838c689fc8fdd6ccbc681324dd05f183','reviewed baseline SHA');
+  eq(matrix.sourceGitBlobs.article,gitBlob(html),'risk matrix original article SHA');
+  eq(matrix.sourceGitBlobs.baseLayout,m.existingSiteReuse.baseLayoutGitBlobSha,
+    'risk matrix references reviewed site layout');
+  eq(matrix.sourceGitBlobs.googleAnalyticsClient,gitBlob(from('../src/components/GoogleAnalyticsClient.astro')),
+    'risk matrix references GA consent code');
+  eq(matrix.sourceGitBlobs.consentClient,m.existingSiteReuse.consentComponentGitBlobSha,
+    'risk matrix references consent client');
+  eq(matrix.mainEight.map(x=>x.id),['R01','R02','R03','R04','R05','R06','R07','R08'],
+    'all eight original risk categories included');
+  eq(matrix.mainEight.map(x=>x.priority),['P2','P2','P2','P1','P1','P1','P1','P0'],
+    'risk priorities preserved and never silently demoted');
+  eq(matrix.crossCutting.map(x=>x.id),['X01','X02','X03','X04'],
+    'future AI, privacy, runtime and upgrade guards tracked');
+  ok(matrix.mainEight.every(x=>x.ownerItemDecisionRecorded===false && x.sourceRightsGrantedGlobally===false) &&
+     matrix.crossCutting.every(x=>x.complete===false) &&
+     ptr.allEightRiskAreasPresent && ptr.allIndividualOwnerAcceptancesDenied &&
+     ptr.newCrossCuttingRisksCount===4 &&
+     matrix.currentDecision.provisionalOptionBActive &&
+     !matrix.currentDecision.publicReleaseAuthorized &&
+     !matrix.currentDecision.sourceRightsExpanded &&
+     !matrix.currentDecision.originalScoreRightsUnblocked &&
+     !ptr.releaseAuthorized && !m.releaseAuthorized,
+     'standing policy evidence never certifies legal rights or public release');
+  ok(policyText.includes('AI Act Article 50(4)') &&
+     policyText.includes('every actual release') &&
+     policyText.includes('**a potential improvement**') &&
+     policyText.includes('**an evidence gap**') &&
+     policyText.includes('**a **')===false &&
+     policyText.includes('**a **')===false &&
+     policyText.includes('all future')===false,
+     'future guardrail differentiates verified facts, gaps, defects, and approvals');
+}
+
 // Shared BaseLayout integration stays non-public. The approved standalone
 // article remains unchanged, but the new presentation needs its own owner PASS.
 {

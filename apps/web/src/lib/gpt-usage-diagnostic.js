@@ -45,21 +45,27 @@ export function emitGptUsageDiagnostic({
   const env = options.env ?? process.env;
   if (env?.USDIMPACT_GPT_METRICS_ENABLED !== 'true') return false;
 
-  const model = typeof response?.model === 'string' && MODEL_ID.test(response.model)
-    ? response.model
-    : 'unknown';
-  const record = {
-    event: 'USDIMPACT_GPT_USAGE',
-    schemaVersion: 1,
-    component: 'daily-news',
-    stage: STAGES.has(stage) ? stage : 'unknown',
-    outcome: OUTCOMES.has(outcome) ? outcome : 'unknown',
-    model,
-    repairAttempt: Math.min(count(repairAttempt) ?? 0, 2),
-    validationCode: outcome === 'validated' ? 'none' : classifyGptValidationReason(validationReason),
-    usage: summarizeOpenAiUsage(response?.usage),
-  };
-  const logger = options.logger ?? console.info;
-  logger(JSON.stringify(record));
-  return true;
+  // Metrics are best-effort. A bad provider payload or logger must never
+  // turn an otherwise valid Daily into an HTTP 502 or trigger paid retries.
+  try {
+    const model = typeof response?.model === 'string' && MODEL_ID.test(response.model)
+      ? response.model
+      : 'unknown';
+    const record = {
+      event: 'USDIMPACT_GPT_USAGE',
+      schemaVersion: 1,
+      component: 'daily-news',
+      stage: STAGES.has(stage) ? stage : 'unknown',
+      outcome: OUTCOMES.has(outcome) ? outcome : 'unknown',
+      model,
+      repairAttempt: Math.min(count(repairAttempt) ?? 0, 2),
+      validationCode: outcome === 'validated' ? 'none' : classifyGptValidationReason(validationReason),
+      usage: summarizeOpenAiUsage(response?.usage),
+    };
+    const logger = options.logger ?? console.info;
+    logger(JSON.stringify(record));
+    return true;
+  } catch {
+    return false;
+  }
 }

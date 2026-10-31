@@ -34,6 +34,20 @@ The H1 Lab project was created September 25, after the Vercel OpenAI key was las
 
 **CI coverage:** `apps/web/package.json` now adds `node scripts/test-gpt-usage-diagnostic.mjs` to the existing `validate:automation-health` chain. Successful CI must be observed on the **latest** PR head before considering the branch reviewed.
 
+## Owner screenshot reconciliation — full October 2026
+
+Three further owner-supplied OpenAI dashboard screenshots (2026-10-31) resolve the **project-level spend and model inventory**, but not yet the mapping from the deployed Vercel key to the API project.
+
+- **Default project; October 1–31, 2026:** Total spent **$2.15**, **72 requests**, **1,024,045 input tokens** in the Responses and Chat Completions usage view.
+- **Model dimension:** The only model displayed for that input-token breakdown was `gpt-5-mini-2025-08-07` (1.024M input tokens). This is observed **Default-project API usage**, not a verified Production `OPENAI_NEWS_MODEL` environment value, and does not establish that every request belonged to USD Impact.
+- **USD Impact H1 Lab:** The prior project listing showed **$0.00 October spend**. Its API Keys page, with access set to all project keys, showed a single **expired** replacement key named `usd-impact-h1-lab-replacement`: created 2026-09-27, last used 2026-09-27, expired 2026-10-27, monthly spend **$0.00**. Do not copy key prefixes, tracking IDs or secret material into audit reports.
+- **Account chronology:** The H1 Lab was created 2026-09-25, after the currently shown Vercel Production/Preview API key entry was last updated 2026-09-07. Both timing and usage suggest the Vercel key is **not** the expired H1 Lab replacement key. This is a strong inference, **not a verified key/project identity**.
+- **Earlier last-seven-days screenshot:** Across all projects it showed **34 requests**, **570,781 tokens** and **$1.12** over the selected window. These totals are a **subset** of, not a replacement for, the full-October Default-project view.
+
+**Reconciliation status:** **PASS** for project-level October spending, request count and the displayed model-token breakdown. **HOLD** for attributing production traffic to a particular key, establishing the exact Vercel `OPENAI_NEWS_MODEL` value, migrating keys/projects or changing the Production model. The Daily source code defaults to `gpt-5`, and its smaller bounded repair model defaults to `gpt-5-mini`; the visible Default-project `gpt-5-mini-2025-08-07` usage may reflect the research override, repairs or unrelated workloads. Do not conflate these.
+
+**Remaining manual non-secret evidence:** In OpenAI Usage for the **Default project** and October 1–31, view the **API Keys**/Services breakdown and compare masked key labels (never share key values). In the Vercel Project environment settings, inspect **only** the non-secret model name for `OPENAI_NEWS_MODEL`; do not reveal or rotate `OPENAI_API_KEY`. Keep the H1 Lab $1.00 limit and all existing Production controls unchanged. No new key is required to complete this audit.
+
 ## Proposed improvement — metrics only, OFF by default
 
 The branch introduces a pure helper and one offline test to support diagnostic logs when specifically enabled. It emits **only** a bounded JSON record containing:

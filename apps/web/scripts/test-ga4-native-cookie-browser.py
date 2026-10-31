@@ -16,22 +16,19 @@ def source(file, pattern):
     assert match, "Astro source extraction failed"
     return match.group(1)
 
-ga = source("GoogleAnalyticsClient.astro", r'<script define:vars=\{\{ measurementId \}\}>(.*?)</script>')
+ga = source("GoogleAnalyticsClient.astro", r'<script>(.*?)</script>')
 consent = source("ConsentClient.astro", r"<script>(.*?)</script>")
-guard = """    // Astro processes ConsentClient's ordinary script as a deferred module.
-    // This define:vars script is inline and can run first. Do not expire a
-    // returning member's GA cookies before the consent API has initialized.
-    // Fail closed while waiting; ConsentClient emits consent-ready afterward.
-    if (typeof window.USDImpactConsent?.analyticsAllowed === 'function') {
-      applyConsent();
-    } else {
-      window[DISABLE_KEY] = true;
-    }"""
+guard = """      if (typeof window.USDImpactConsent?.analyticsAllowed === 'function') {
+        applyConsent();
+      } else {
+        window[DISABLE_KEY] = true;
+      }"""
 assert ga.count(guard) == 1, "Unexpected GA4 implementation; stop instead of guessing"
 old_ga = ga.replace(guard, "    applyConsent();")
 
-html = """<!doctype html><html><head><meta charset="utf-8">
-<script>const measurementId="G-TEST1234";
+html = """<!doctype html><html><head><meta charset="utf-8"></head><body>
+<span id="usd-impact-ga4-config" data-ga4-measurement-id="G-TEST1234" hidden></span>
+<script>
 __GA__
 window.__initial={
   noConsentApi:typeof window.USDImpactConsent==="undefined",
@@ -39,7 +36,7 @@ window.__initial={
   hasGa:document.cookie.split(";").some(s=>s.trim().startsWith("_ga=")),
   hasTag:!!document.getElementById("usd-impact-ga4-script")
 };
-</script></head><body>
+</script>
 <div id="privacy-consent-banner" data-analytics-enabled="__ENABLED__" hidden>
   <button id="privacy-consent-accept">Accept</button>
   <button id="privacy-consent-reject">Reject</button>

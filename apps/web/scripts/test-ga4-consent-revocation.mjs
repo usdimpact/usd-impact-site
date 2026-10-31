@@ -189,7 +189,8 @@ const delayedPage = (granted) => {
   assert.equal(pageWin.dataLayer, undefined, 'no Google queue before consent-ready');
   assert.equal(pageWin['ga-disable-' + measurementId], true, 'analytics disabled while consent API is pending');
   assert.deepEqual(writes, [], 'pending state must never touch existing cookies');
-  assert.equal(returningCookies.get('_ga'), 'stable-client-id', 'previously granted _ga survives initialization gap');
+  assert.equal(returningCookies.get('_ga'), granted ? 'stable-client-id' : 'obsolete-id',
+    'pending consent must not change the existing granted or obsolete client cookie');
   pageWin.USDImpactConsent = { analyticsAllowed: () => allowed };
   pageWin.dispatchEvent(new FakeCustomEvent('usd-impact:consent-ready'));
   if (allowed) {

@@ -40,10 +40,26 @@ jobs:
       - name: Verify focused consent lifecycle regression before Astro build
         working-directory: apps/web
         run: node scripts/test-ga4-consent-revocation.mjs
+      - name: Prove QA-only Vercel target fails closed on Production
+        working-directory: apps/web
+        env:
+          VERCEL: '1'
+          VERCEL_ENV: production
+          PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+        run: |
+          node --input-type=module -e '
+            let denied = false;
+            try { await import("./astro.config.mjs"); }
+            catch (error) { denied = String(error?.message ?? "").includes("GA4 QA-only build requires Vercel Preview"); }
+            if (!denied) throw new Error("QA-only build did not reject a Production target");
+            console.log("PASS: QA-only source refuses Production target");
+          '
       - name: Build actual Astro output with synthetic GA4 ID, no deployment
         working-directory: apps/web
         env:
           PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+          VERCEL: '1'
+          VERCEL_ENV: preview
           CI: 'true'
         run: |
           set -euo pipefail

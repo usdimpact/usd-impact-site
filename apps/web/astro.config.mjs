@@ -1,6 +1,14 @@
 import { defineConfig } from 'astro/config';
 
 // QA-ONLY sandbox overlay: never ship with Production. Reject real GA4 IDs.
+// A Vercel build is allowed only in Preview with a synthetic ID. This is a
+// second fail-closed check if a caller incorrectly asks Vercel for Production.
+if (process.env.VERCEL === '1' && (
+  process.env.VERCEL_ENV !== 'preview' ||
+  process.env.PUBLIC_GA4_MEASUREMENT_ID !== 'G-TEST1234'
+)) {
+  throw new Error('GA4 QA-only build requires Vercel Preview and synthetic G-TEST1234.');
+}
 if (process.env.PUBLIC_GA4_MEASUREMENT_ID && process.env.PUBLIC_GA4_MEASUREMENT_ID !== 'G-TEST1234') {
   throw new Error('GA4 QA-only sandbox refuses non-synthetic analytics measurement IDs.');
 }

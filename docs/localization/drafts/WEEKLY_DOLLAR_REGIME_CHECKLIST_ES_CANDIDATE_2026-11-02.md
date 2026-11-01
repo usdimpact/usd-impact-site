@@ -62,7 +62,7 @@ Solo para fines educativos. No constituye asesoramiento de inversión, jurídico
 
 - **Fuente exacta:** PDF inglés de 3 páginas, en la ruta original listada en el encabezado; copia de Drive de 67.780 bytes, coincidente en tamaño con el recurso del repositorio, y SHA-256 `ad840927a2c0c54b3511eb3833b0514698e5eda3215dd4652f9dc12718d1841d`.
 - **Salida revisada:** PDF español de 3 páginas, tamaño de carta estadounidense, con portada, tablas y lista semanal, recreado sin alterar el recurso inglés. SHA-256 `1f4f965c018ed56ac8bb3cf9d9930a0638eabea2e53ad30f56d98e09151d97ec`; entregado como archivo de revisión de esta conversación, **no subido al repositorio ni al sitio**.
-- **Revisión visual:** fuente inglesa y salida española renderizadas, las seis filas de activos, tres diales y siete puntos de control examinados en páginas 1–3. PDF de texto seleccionable, sin fuente tipográfica incrustada para distribución separada.
+- **Revisión visual:** fuente inglesa y salida española renderizadas, las seis filas de activos, tres diales y siete puntos de control examinados en páginas 1–3. PDF con texto seleccionable y fuentes incorporadas al propio archivo; no se entrega ningún archivo de fuentes por separado.
 - **Estado editorial:** traducción preparada para cotejo, **no revisión financiera/lingüística humana aprobada**. No se ha creado la URL /es/lead-magnets/weekly-dollar-regime-checklist ni una descarga pública española.
 - **Alcance:** documento educativo sin datos intradía, proyecciones, pautas de compra o venta. No cambia derechos comerciales, los accesos al libro/audiolibro, los recursos PDF ingleses ni la futura política del sitio Fundraising.
 

@@ -93,8 +93,23 @@ try:
                 print("COMPILED_QA_DIAGNOSTIC "+label+" "+json.dumps({"distinctIssuerLinks":found["issuerLinks"],"horizontalOverflowPixels":found["overflow"]}))
                 assert found["issuerLinks"]==5 and found["overflow"]==0, label+": distinct source count or horizontal overflow"
                 assert not blocked and not errors, label+": external request or page errors "+str((blocked,errors))
-                page.screenshot(path=str(OUT/("macro-compiled-"+label+".png")),full_page=True,animations="disabled")
-                results.append({"viewport":label,"width":width,"height":height,"assertions":found,"externalRequests":blocked,"pageErrors":errors})
+                # First-visit consent UI may cover the disclosure at small widths.
+                # Dismiss it in isolated synthetic browser context, never Production.
+                page.locator("#privacy-consent-reject").click(timeout=10000)
+                page.locator("#privacy-consent-banner").wait_for(state="hidden",timeout=10000)
+                disclosed=page.evaluate("""() => {
+                    const n=document.querySelector('article.content [data-ai-disclosure-proposed="true"]');
+                    if (!n) return false;
+                    const r=n.getBoundingClientRect();
+                    const hit=document.elementFromPoint(Math.max(0,r.left+Math.min(r.width/2,innerWidth/2)),
+                        Math.max(0,r.top+Math.min(r.height/2,innerHeight/2)));
+                    return r.height>0 && (hit===n || n.contains(hit));
+                }""")
+                assert disclosed, label+": AI notice remains visually occluded after rejecting optional analytics"
+                assert page.evaluate("() => window.USDImpactConsent?.analyticsAllowed?.() === false"), label+": analytics not rejected"
+                assert not blocked and not errors, label+": external request or page errors after Reject"
+                page.screenshot(path=str(OUT/("macro-compiled-"+label+"-after-reject.png")),full_page=True,animations="disabled")
+                results.append({"viewport":label,"width":width,"height":height,"assertions":found,"aiDisclosureUnobstructedAfterReject":disclosed,"syntheticConsentState":"denied","externalRequests":blocked,"pageErrors":errors})
                 print("PASS compiled Astro private "+label)
                 ctx.close()
         finally:

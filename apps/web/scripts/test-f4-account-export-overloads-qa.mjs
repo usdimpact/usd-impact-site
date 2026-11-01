@@ -202,6 +202,82 @@ try {
   checked('one-arg RPC remains unavailable to anon', () => {
     assert.equal(anonPermission.rows[0].allowed, false);
   });
+  // Mechanical candidate ONLY, assembled in this disposable PGlite database.
+  // It does not create a migration, grant real access or settle F3 policy.
+  // Its active-only behavior is a TEST OPTION and requires privacy approval.
+  await pg.exec(`
+    create table public.account_media_locale_preferences (
+      account_id uuid primary key, preferred_media_locale text not null
+    );
+    insert into public.account_media_locale_preferences values
+      ('123e4567-e89b-42d3-a456-426614174000', 'es');
+  `);
+  const oidBefore = (await pg.query(`
+    select oid::text as oid from pg_proc
+    where oid = 'public.account_export(uuid)'::regprocedure;
+  `)).rows[0].oid;
+  const marker = "    'profile', (select to_jsonb(p) - 'email'";
+  assert.equal(legacyFn.split(marker).length, 2, 'Pinned original JSON contract changed');
+  const localeFields = `    'transactionalLanguagePreference', (
+      select to_jsonb(pref) from public.account_transactional_locale_preferences pref
+      where pref.account_id = export_account_id
+        and exists (select 1 from public.profiles prof
+                    where prof.account_id = export_account_id and prof.status = 'active')
+    ),
+    'mediaLanguagePreference', (
+      select to_jsonb(pref) from public.account_media_locale_preferences pref
+      where pref.account_id = export_account_id
+        and exists (select 1 from public.profiles prof
+                    where prof.account_id = export_account_id and prof.status = 'active')
+    ),
+`;
+  const mechanicalCandidate = legacyFn.replace(marker, localeFields + marker)
+    .replace('set search_path = public', "set search_path = ''");
+  assert.notEqual(mechanicalCandidate, legacyFn);
+  assert.match(mechanicalCandidate, /where export_account_id = auth\.uid\(\)/i);
+  await pg.exec(mechanicalCandidate);
+  const oidAfter = (await pg.query(`
+    select oid::text as oid from pg_proc
+    where oid = 'public.account_export(uuid)'::regprocedure;
+  `)).rows[0].oid;
+  checked('one-arg CREATE OR REPLACE preserves function OID', () => {
+    assert.equal(oidAfter, oidBefore);
+  });
+  await pg.query('update public.profiles set status=$2 where account_id=$1::uuid',
+    [a, 'active']);
+  const patchedSelf = payload(await asRole('authenticated', a,
+    'select public.account_export($1::uuid) as payload', [a]));
+  checked('synthetic one-arg prototype preserves all legacy keys and adds both locales', () => {
+    assert.deepEqual(Object.keys(patchedSelf).sort(), [
+      ...Object.keys(selfBefore), 'transactionalLanguagePreference', 'mediaLanguagePreference',
+    ].sort());
+    assert.equal(patchedSelf.transactionalLanguagePreference.preferred_locale, 'es');
+    assert.equal(patchedSelf.mediaLanguagePreference.preferred_media_locale, 'es');
+    assert.equal(patchedSelf.profile.account_id, a);
+  });
+  const deniedAfter = payload(await asRole('authenticated', a,
+    'select public.account_export($1::uuid) as payload', [b]));
+  checked('synthetic one-arg prototype keeps self-account denial', () => {
+    assert.equal(deniedAfter, null);
+  });
+  const aclAfter = (await pg.query(`
+    select has_function_privilege('anon','public.account_export(uuid)','EXECUTE') as anon,
+           has_function_privilege('authenticated','public.account_export(uuid)','EXECUTE') as user;
+  `)).rows[0];
+  checked('synthetic one-arg prototype preserves existing grants', () => {
+    assert.equal(aclAfter.anon, false);
+    assert.equal(aclAfter.user, true);
+  });
+  await pg.query('update public.profiles set status=$2 where account_id=$1::uuid',
+    [a, 'deletion_pending']);
+  const pendingCandidate = payload(await asRole('authenticated', a,
+    'select public.account_export($1::uuid) as payload', [a]));
+  checked('synthetic active-only option withholds locale fields when pending', () => {
+    assert.equal(pendingCandidate.transactionalLanguagePreference, null);
+    assert.equal(pendingCandidate.mediaLanguagePreference, null);
+    assert.equal(pendingCandidate.profile.status, 'deletion_pending');
+  });
+
   console.log('RESULT F4: ' + passed + '/' + passed +
     ' isolated PostgreSQL source/contract checks passed; RELEASE DEFECT REMAINS.');
 } finally {

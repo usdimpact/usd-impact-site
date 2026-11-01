@@ -12,6 +12,13 @@ import {
 } from '../src/lib/localization-policy.js';
 
 import { SITE_NAVIGATION, SPANISH_GROUPED_NAVIGATION } from '../src/lib/site-navigation.js';
+import {
+  SPANISH_PUBLIC_REVIEW_SECTIONS,
+  SPANISH_PUBLIC_REVIEW_PATHS,
+  SPANISH_PUBLIC_REVIEW_PAIRS,
+  spanishPublicReviewEnabled,
+  isSpanishPublicReviewPath,
+} from '../src/lib/spanish-public-review-policy.js';
 
 assert.equal(SPANISH_GROUPED_NAVIGATION.length, SITE_NAVIGATION.length, 'Spanish uses the same three navigation groups');
 assert.deepEqual(SPANISH_GROUPED_NAVIGATION.map(({ label }) => label), ['Aprender', 'Actualizaciones', 'Biblioteca']);
@@ -48,6 +55,20 @@ assert.ok(SPANISH_GROUPED_NAVIGATION.flatMap(({ links }) => links)
 import { videos, collections } from '../src/data/video-library.js';
 import { spanishVideoMetadata, spanishVideoCollections } from '../src/data/es-video-catalog-draft.js';
 
+assert.deepEqual([...SPANISH_PUBLIC_REVIEW_SECTIONS], ['news','score','reports','video-library']);
+assert.deepEqual([...SPANISH_PUBLIC_REVIEW_PATHS], ['/es/news','/es/score','/es/reports','/es/video-library']);
+assert.deepEqual(
+  SPANISH_PUBLIC_REVIEW_PAIRS,
+  {'/news':'/es/news/','/score':'/es/score/','/reports':'/es/reports/','/video-library':'/es/video-library/'},
+);
+assert.equal(spanishPublicReviewEnabled('preview'), true);
+assert.equal(spanishPublicReviewEnabled('production'), false);
+assert.equal(spanishPublicReviewEnabled(undefined), false);
+assert.equal(isSpanishPublicReviewPath('/es/news/'), true);
+assert.equal(isSpanishPublicReviewPath('/es/score'), true);
+assert.equal(isSpanishPublicReviewPath('/es/invalid'), false);
+assert.equal(isSpanishPublicReviewPath('/es/start-here'), false, 'existing reviewed Spanish public pages are not UI-40 previews');
+
 assert.equal(videos.length, 51, 'source video catalogue should remain the same 51 approved entries');
 assert.equal(Object.keys(spanishVideoMetadata).length, 51, 'every source film requires Spanish metadata');
 assert.deepEqual(
@@ -65,9 +86,16 @@ for (const film of videos) {
   assert.ok(es.title && es.description, 'missing Spanish title/description for ' + film.slug);
 }
 const spanishPreview = await readFile(new URL('../src/pages/es/[section].astro', import.meta.url), 'utf8');
-assert.match(spanishPreview, /if \(process\.env\.VERCEL_ENV !== 'preview'\) return \[\]/);
-assert.match(spanishPreview, /return \['news','score','reports','video-library'\]/);
+assert.match(spanishPreview, /if \(!spanishPublicReviewEnabled\(process\.env\.VERCEL_ENV\)\) return \[\]/);
+assert.match(spanishPreview, /return SPANISH_PUBLIC_REVIEW_SECTIONS\.map/);
 assert.match(spanishPreview, /\bnoindex\b/);
+const astroSiteMapConfig = await readFile(new URL('../astro.config.mjs', import.meta.url), 'utf8');
+assert.match(astroSiteMapConfig, /!isSpanishPublicReviewPath\(pathname\)/);
+const canonicalVerifier = await readFile(new URL('./verify-canonical-build.mjs', import.meta.url), 'utf8');
+assert.match(canonicalVerifier, /Preview-only Spanish route generated outside Preview/);
+assert.match(canonicalVerifier, /Preview-only Spanish route is in sitemap/);
+assert.match(canonicalVerifier, /Spanish Preview-only route missing noindex/);
+assert.match(canonicalVerifier, /Spanish Preview-only route has canonical/);
 assert.match(spanishPreview, /status === 'published'/);
 assert.match(spanishPreview, /monthlyEligibility\(weekly, monthly\)/);
 assert.match(spanishPreview, /<span lang="en">\{r\.data\.title\}<\/span>/);
@@ -158,11 +186,8 @@ assert.match(baseLayout, /SPANISH_PUBLIC_NAVIGATION/);
 assert.match(baseLayout, /SPANISH_GROUPED_NAVIGATION\.map/);
 assert.match(baseLayout, /data-site-language-choice=\{languageSwitchTarget\}/);
 assert.match(baseLayout, /data-public-alternate-href=\{effectivePublicAlternate \|\| undefined\}/);
-assert.match(baseLayout, /process\.env\.VERCEL_ENV === 'preview'/);
-assert.match(baseLayout, /'\/news': '\/es\/news\/'/);
-assert.match(baseLayout, /'\/score': '\/es\/score\/'/);
-assert.match(baseLayout, /'\/reports': '\/es\/reports\/'/);
-assert.match(baseLayout, /'\/video-library': '\/es\/video-library\/'/);
+assert.match(baseLayout, /spanishPublicReviewEnabled\(process\.env\.VERCEL_ENV\)/);
+assert.match(baseLayout, /previewSpanishLandingByEnglish = SPANISH_PUBLIC_REVIEW_PAIRS/);
 assert.match(baseLayout, /spanishGroupedNavigation\.map/);
 assert.match(baseLayout, /localStorage\.setItem\(languagePreferenceKey, requested\)/);
 assert.match(baseLayout, /localStorage\.getItem\(languagePreferenceKey\)/);

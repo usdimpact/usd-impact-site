@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "independent-editorial-cross-pr-rights-crosswalk-v0-draft",
+  "preparedDate": "2026-10-30",
+  "intent": "Compare exact source identities between two noninteroperable Draft-only PRs without merging code, contracts, CI, or permissions",
+  "referencePr1019": "https://github.com/usdimpact/usd-impact-site/pull/1019",
+  "referencePr1020": "https://github.com/usdimpact/usd-impact-site/pull/1020",
+  "referencePr1020Head": "32fa70db623c583197a8a7297be070ff713e4dc4",
+  "referencePr1020LedgerBlobSha": "2b540070b022b57142aecc35ebc61eda6de8cb50",
+  "referencePr1019RightsBlobSha": "615476aeca74e0e373b02d868c4c86575eb40bd6",
+  "mappedItems": [
+    {
+      "pilotSourceId": "fed-october-calendar",
+      "governanceSourceId": "fed_fomc_calendar",
+      "exactSourceUrl": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+      "pilotClaimIds": [
+        "fomc-preview-oct26",
+        "fomc-reminder-oct27"
+      ],
+      "sourceUrlExactMatch": true,
+      "pr1019NineRightsChecksAllFalse": true,
+      "pr1020SevenPermissionsAllFalse": true,
+      "rightsReceipt": null,
+      "canRelease": false
+    },
+    {
+      "pilotSourceId": "fed-fomc-statement-20261028",
+      "governanceSourceId": "fed_fomc_statement",
+      "exactSourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+      "pilotClaimIds": [
+        "fomc-outcome-oct28"
+      ],
+      "sourceUrlExactMatch": true,
+      "pr1019NineRightsChecksAllFalse": true,
+      "pr1020SevenPermissionsAllFalse": true,
+      "rightsReceipt": null,
+      "canRelease": false
+    },
+    {
+      "pilotSourceId": "bea-gdp-q3-20261029",
+      "governanceSourceId": "bea_q3_advance_gdp",
+      "exactSourceUrl": "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+      "pilotClaimIds": [
+        "gdp-oct29"
+      ],
+      "sourceUrlExactMatch": true,
+      "pr1019NineRightsChecksAllFalse": true,
+      "pr1020SevenPermissionsAllFalse": true,
+      "rightsReceipt": null,
+      "canRelease": false
+    },
+    {
+      "pilotSourceId": "bea-pce-sep-20261029",
+      "governanceSourceId": "bea_september_pce",
+      "exactSourceUrl": "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026",
+      "pilotClaimIds": [
+        "pce-oct29"
+      ],
+      "sourceUrlExactMatch": true,
+      "pr1019NineRightsChecksAllFalse": true,
+      "pr1020SevenPermissionsAllFalse": true,
+      "rightsReceipt": null,
+      "canRelease": false
+    },
+    {
+      "pilotSourceId": "bls-eci-q3-20261030",
+      "governanceSourceId": "bls_q3_eci",
+      "exactSourceUrl": "https://www.bls.gov/news.release/archives/eci_10302026.htm",
+      "pilotClaimIds": [
+        "eci-oct30"
+      ],
+      "sourceUrlExactMatch": true,
+      "pr1019NineRightsChecksAllFalse": true,
+      "pr1020SevenPermissionsAllFalse": true,
+      "rightsReceipt": null,
+      "canRelease": false
+    }
+  ],
+  "unmappedPr1020InventorySources": [
+    {
+      "id": "bls_october_schedule",
+      "reason": "CONTEXT_CALENDAR_NOT_INCLUDED_AS_SEPARATE_CLAIM"
+    },
+    {
+      "id": "eia_optional_future",
+      "reason": "OUT_OF_SCOPE_OPTIONAL_FUTURE_EIA"
+    }
+  ],
+  "finalContractSelected": false,
+  "publicationRightsApproved": false,
+  "extraMarketDataLicenseBudgetUsd": 0,
+  "codeOrSchemasMerged": false,
+  "runtimeDependencyOnOtherPr": false,
+  "publicationAuthorized": false,
+  "reviewActionsStillRequired": [
+    "Select one final future versioned contract with immutable authenticated publication provenance; recommendation for the source-pinned PR #1019 remains draft only",
+    "Complete source-item rights and international/retention review for each exact pinned URL and owner release sign-off",
+    "Resolve the calendar outcome timestamp vs actual publication-time evidence gap without guessing",
+    "If later separately approved, reconcile package validate:reports changes from both PRs on then-current protected main, with exact-head CI and no Score gate bypass"
+  ]
+}

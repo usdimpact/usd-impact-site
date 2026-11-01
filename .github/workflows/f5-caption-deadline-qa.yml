@@ -26,12 +26,16 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # pinned v7
         with:
           node-version: 24.x
+      - name: Install pinned local PostgreSQL test dependency
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Syntax check patched handler and test source
         run: |
           node --check src/lib/media-locale-handler.js
           node --check scripts/test-media-locale.mjs
           node --check scripts/test-video-library-function.mjs
+          node --check scripts/test-f2-ui03-rls-pglite.mjs
       - name: Run actual code with fake identities and no provider secrets
         run: |
           node scripts/test-media-locale.mjs
           node scripts/test-video-library-function.mjs
+          node scripts/test-f2-ui03-rls-pglite.mjs

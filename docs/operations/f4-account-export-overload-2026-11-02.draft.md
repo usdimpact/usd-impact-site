@@ -34,6 +34,14 @@ PostgreSQL identifies functions by **name plus argument types**; `CREATE OR REPL
 
 The stacked UI-03 function is source-reviewed but **not executed** here because this isolated QA branch intentionally starts at #1022's upstream head rather than importing dependent PR files. The test is **not** a signed PostgREST/Auth test and has no connection to any Supabase project.
 
+## Mechanical one-argument replacement proof — synthetic only
+
+In a **second phase in the same disposable PGlite database**, the verifier constructs a **transient prototype** by inserting both locale JSON keys into the complete seven-key legacy function body, then re-running `CREATE OR REPLACE FUNCTION public.account_export(export_account_id uuid)`. No fixture SQL is installed in `supabase/migrations`, no remote SQL is executed, and the synthetic function disappears with PGlite cleanup.
+
+The test verifies that the one-argument function retains the **same PostgreSQL OID**, remains self-scoped to `auth.uid()`, keeps anon EXECUTE denied and authenticated EXECUTE allowed, and can preserve the seven legacy JSON fields while including both preferences. The mock prototype uses an explicit *active-only* preference selection as an **illustrative F3 option**, **not** an approved deletion-pending privacy decision. The real SQL must independently verify target object grants, RLS visibility, namespace/owner, search path, PostgREST schema-cache state, and true signed-user negative tests before promotion.
+
+This proof demonstrates a technically viable correction **mechanism** only. It does not certify the source-format migration strategy, production-grade security properties, or installation on canonical Development/Production.
+
 ## Required corrective sequence — separate authorization
 
 1. **F1 first:** preserve applied Development migration bytes and finish full Development-history compatibility. Do not edit the two already-applied Dev SQL files in place, re-timestamp them, or run `db push`, `migration repair`, or `apply_migration` as a shortcut.

@@ -19,6 +19,19 @@ This PR is deliberately separate from #1042. The two new scripts plus read-only 
 - Vercel's Ignored Build Step convention: **exit 0 means request to ignore the build; exit 1 means proceed with a normal build**. The proposed script deliberately returns 1 if anything is uncertain. This protects against suppressing unrelated application deployments, but it does **not** guarantee that a Production deployment cannot happen.
 - Current production project root is `apps/web`. The script searches for the Git root; fixture tests execute from `apps/web` too. This is not proof of Vercel's live checkout depth, shell, environment variables, ignoreCommand length limit, or custom project settings.
 
+### More direct *inline* candidate (not enabled)
+
+The Vercel project's \`commandForIgnoringBuildStep\` has a maximum accepted length of 256 characters. The following one-time shell expression is **252 characters**, so unlike the source-file helper it can be entered into the project setting without adding a script to PR #1042. It compares \`VERCEL_ENV\`, the branch, the full first-parent commit, and a Git blob hash over \`git diff --raw --no-abbrev\` including all four file paths, modes and source blobs:
+
+
+```sh
+[ "$VERCEL_ENV:$VERCEL_GIT_COMMIT_REF" = production:main ] && [ "$(git rev-parse HEAD^)" = 4221668716c2214012e4dd26a1dae8ee050f728a ] && [ "$(git diff --raw --no-abbrev HEAD^ HEAD | git hash-object --stdin)" = 8f2bdca5f1a38cb4fec5fd66ec09db431fee0286 ]
+```
+
+The expected raw-diff Git hash \`8f2bdca5f1a38cb4fec5fd66ec09db431fee0286\` was independently derived from the **four added files** and their exact reviewed Git blob IDs in PR #1042. A synthetic commit with those precise blob identities created using \`git update-index --cacheinfo\` and \`git write-tree --missing-ok\` gave the same raw-diff hash. The 7-case [\`test-f1-vercel-inline-ignore.sh\`](/usdimpact/usd-impact-site/blob/agent/f1-vercel-skip-qa-20261101/.github/scripts/test-f1-vercel-inline-ignore.sh) checks skip on exact change, no skip on Preview/wrong branch/missing environment/stale parent/extra app change, and execution from \`apps/web\`.
+
+**Boundary:** This is an **offline-tested candidate only**, not a live integration. There has been no Vercel checkout/environment test, no verification of the current project's Ignored Build Step setting, and no observation of an ignored *Production* deployment. A missing Git parent, unsupported shell, unexpected Git formatting, or missing system environment variable evaluates to **build normally**, which could violate the no-Production-deployment hold if used blindly. Do not install/merge without isolated validation and separate authorization. Because the expression is near 256 characters, do not add whitespace/comments when considering the project setting. Any \`main\` change invalidates the pinned parent and requires re-review.
+
 ## IMPORTANT: not deployable as-is
 
 The source-level candidate is **not installed in Vercel** and does not exist in PR #1042's four-file changed set. A project Ignored Build Step command cannot invoke a script that is absent from the merge's checkout. Adding this script to #1042 changes the reviewed file allowlist and requires retesting/review. Do not assume its successful synthetic tests give a safe shortcut to merging #1042.

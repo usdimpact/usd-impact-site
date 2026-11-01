@@ -34,8 +34,10 @@ jobs:
           node --check scripts/test-media-locale.mjs
           node --check scripts/test-video-library-function.mjs
           node --check scripts/test-f2-ui03-rls-pglite.mjs
+          node --check scripts/test-f4-current-rpc-chain-ui03.mjs
       - name: Run actual code with fake identities and no provider secrets
         run: |
           node scripts/test-media-locale.mjs
           node scripts/test-video-library-function.mjs
           node scripts/test-f2-ui03-rls-pglite.mjs
+          node scripts/test-f4-current-rpc-chain-ui03.mjs

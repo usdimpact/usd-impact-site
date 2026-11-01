@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,
@@ -102,6 +103,40 @@ assert.match(spanishPreview, /<span lang="en">\{r\.data\.title\}<\/span>/);
 assert.match(spanishPreview, /subtítulos en español/i);
 assert.match(spanishPreview, /no se ha publicado una pista de narración alternativa en español/);
 assert.doesNotMatch(spanishPreview, /<video|<audio|autoplay|publicBucket|setContentLanguagePreference/);
+
+// Historical source-paired Daily translation: editorial draft only, never
+// import this Markdown into Astro's published news collections.
+const dailyEnglishBytes = await readFile(new URL('../src/content/news/2026-10-30.md', import.meta.url));
+const dailyEnglish = dailyEnglishBytes.toString('utf8');
+const expectedDailySourceSha = 'f8881e383adba66eb801a3fbbcb4d1507de32917';
+const computedGitBlobSha = createHash('sha1')
+  .update('blob ' + String(dailyEnglishBytes.length) + '\0')
+  .update(dailyEnglishBytes)
+  .digest('hex');
+assert.equal(computedGitBlobSha, expectedDailySourceSha, 'source Daily updated: re-review Spanish candidate before release');
+const spanishDailyCandidate = await readFile(
+  new URL('../../../docs/localization/drafts/DAILY_2026-10-30_ES_CANDIDATE_2026-11-02.md', import.meta.url), 'utf8',
+);
+for (const required of [
+  'language: es', 'publicationAuthorized: false', 'releaseStatus: private_draft',
+  'sourcePublishedDate: 2026-10-30', 'originalPublicUrl: /news/2026-10-30',
+  'sourceBlobSha: ' + expectedDailySourceSha,
+  '## Resumen ejecutivo', '## Titulares verificados y sus implicaciones',
+  '## Qué cambió', '## Qué importa para la lista de seguimiento de USD Impact',
+  '## Qué vigilar después', '## Error habitual', '## Conclusión clave',
+  '## Fuentes verificadas y límites de la edición',
+  '30 de octubre', '0,8 %', '0,9 %', '3,4 %', '3,6 %',
+  '3,75 %', '4,00 %', '10 a 2', 'antes de la publicación del ECI',
+]) {
+  assert.ok(spanishDailyCandidate.includes(required), 'Spanish Daily editorial draft missing ' + required);
+}
+const dailySourceIds = [...dailyEnglish.matchAll(/^  - id: "([^"]+)"$/gm)].map(([, id]) => id);
+assert.equal(dailySourceIds.length, 7, 'expected seven original primary source IDs');
+assert.equal(new Set(dailySourceIds).size, 7);
+for (const sourceId of dailySourceIds) {
+  assert.ok(spanishDailyCandidate.includes(String.fromCharCode(96) + sourceId + String.fromCharCode(96)), 'Spanish Daily draft lost primary source ID ' + sourceId);
+}
+assert.ok(!spanishPreview.includes('/es/news/2026-10-30'), 'unreviewed translated dated Daily must have no Preview route');
 
 assert.equal(DEFAULT_LOCALE, 'en');
 assert.deepEqual([...SUPPORTED_LOCALES], ['en', 'es']);

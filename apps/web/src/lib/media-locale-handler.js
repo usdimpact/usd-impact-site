@@ -263,8 +263,27 @@ export async function readMediaCaptionLocaleForPreview({
     || accessToken.length < 20) return 'en';
   const resolvedConfig = config || readSupabaseServerConfig(environment);
   checkDatabaseConfig(resolvedConfig);
-  const record = await requestPreference({
-    config: resolvedConfig, accessToken, accountId, fetchImpl,
+  // Caption selection is optional: a stalled PostgREST response, including
+  // a fetch implementation that ignores AbortSignal, must not block an
+  // already-authorized member from receiving the original English video.
+  const controller = new AbortController();
+  let timer;
+  const deadline = new Promise(resolve => {
+    timer = setTimeout(() => {
+      controller.abort();
+      resolve(null);
+    }, 800);
   });
-  return record.source === 'verified_account' && record.locale === 'es' ? 'es' : 'en';
+  // Observe even late rejection after timeout; do not leak an unhandled
+  // promise or allow a late Spanish response to change the English fallback.
+  const lookup = requestPreference({
+    config: resolvedConfig, accessToken, accountId,
+    fetchImpl: (url, init) => fetchImpl(url, { ...init, signal: controller.signal }),
+  }).catch(() => null);
+  try {
+    const record = await Promise.race([lookup, deadline]);
+    return record?.source === 'verified_account' && record.locale === 'es' ? 'es' : 'en';
+  } finally {
+    clearTimeout(timer);
+  }
 }

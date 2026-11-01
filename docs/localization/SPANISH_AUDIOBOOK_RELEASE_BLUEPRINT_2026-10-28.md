@@ -2,6 +2,8 @@
 
 Status: **IMPLEMENTATION-READY PLAN / RELEASE HOLD**
 
+> **2026-11-01 correction:** The edited selected Track 00 v2 is 109.835306 s, not the original 113.345306 s WAV. Its exact final WAV/hash remains missing. Separately close MP-21 English/Spanish Introduction parity and explicitly review any Track 02 narration change before releasing the full audiobook.
+
 This document defines the smallest safe path from the verified private Spanish audiobook QA state to a future Library Pass release. It does not authorize storage upload, member delivery, public publication, entitlement changes or Production release.
 
 ## 1. Current verified state
@@ -18,7 +20,7 @@ Current QA facts:
 - 19 exact selected private Drive WAV exports passed decoder/duration/loudness/true-peak/silence/clipping QA.
 - Those 19 tracks are 44.1 kHz, mono, PCM16 with integrated loudness tightly clustered at approximately -24.0 to -23.8 LUFS.
 - The largest targeted signal outliers on Tracks 13 and 14 received owner **PASS BOTH**.
-- Track 00 selected v2 has bounded edit provenance and private human listening acceptance. Its authoritative Descript source identity is now pinned to project `2f542797-4a70-4d44-a164-76dee15859ca`, composition `91240c6b-78df-4910-a994-43c616f9b53f`, and matching WAV asset `12e94d44-66e7-4baf-9731-9a8470697b63` at 113.345306 s; exact binary materialization/hash remains pending.
+- Track 00 selected edited v2 has bounded EDL provenance and private human listening acceptance. The **selected composition** is `ebe7f026-e369-4dd4-a184-9476a6482f5b` at **109.835306 s**; exact rendered WAV bytes/hash remain **PENDING**. Original composition `91240c6b-78df-4910-a994-43c616f9b53f` and WAV media asset `12e94d44-66e7-4baf-9731-9a8470697b63` at **113.345306 s** were archived and independently recovered/hashed from private Google Drive on 2026-11-01; they are **not** the selected final edited master. See Issue #1044 and the corrected Track 00 provenance/checklist.
 - Current-main localization manifest now records the Spanish audiobook as `verified_current` / review PASS while preserving `releaseStatus=private_hold` and `audiobookMemberDelivery=false`.
 
 ## 2. Existing English member-delivery architecture
@@ -195,8 +197,8 @@ Until Gates A–E are cleared, do not:
 
 Engineering/audio:
 - **192 kbps MP3 encoding profile QA: PASS** — 20/20 technical candidate encodes validated; authoritative record: `SPANISH_AUDIOBOOK_PRIVATE_MP3_ENCODING_QA_2026-10-28.md`;
-- **Track 00 source identity: RESOLVED** — authoritative record: `SPANISH_AUDIOBOOK_TRACK00_SOURCE_PROVENANCE_2026-10-28.md`;
-- Track 00 exact binary materialization/hash: **PENDING** — retrieve/hash the pinned Descript asset before final MP3 materialization; if exact bytes cannot be obtained, explicit publisher/owner approval is still required before using any deterministic render-equivalent source.
+- **Track 00 original identity: VERIFIED; edited selected v2 final source: PENDING** — see updated `SPANISH_AUDIOBOOK_TRACK00_SOURCE_PROVENANCE_2026-10-28.md` and Issue #1044;
+- Edited selected v2 Track 00 exact WAV/hash: **PENDING** — retrieve/hash composition `ebe7f026-e369-4dd4-a184-9476a6482f5b` at 109.835306 s before final MP3 materialization; if exact bytes are unavailable, an explicit **source-substitution-specific** owner/publisher approval is required before any render-equivalent candidate becomes the final master.
 
 Publisher/legal:
 - rights wording;

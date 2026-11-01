@@ -1,0 +1,34 @@
+name: Supabase Production migration intake guard (no database access)
+
+# A required check must be emitted on *every* PR. GitHub leaves path-filtered
+# workflows Pending on unrelated PRs, which would block safe merges once required.
+on:
+  pull_request:
+  # If main uses a merge queue, the required check must also run on merge groups.
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fail-closed-migration-intake:
+    name: Reject Development-only Production migration files
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact proposed source without saved credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Select reviewed Node.js runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.x'
+      - name: Run negative fixtures (must reject all three Dev migrations)
+        run: node --test .github/scripts/test-supabase-production-intake.mjs
+      - name: Refuse Development-only versions in the deployable migration directory
+        run: node .github/scripts/check-supabase-production-intake.mjs

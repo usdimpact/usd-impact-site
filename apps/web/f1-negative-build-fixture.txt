@@ -1,0 +1,1 @@
+F1 negative fixture only: unapproved application tree change for isolated Vercel skip test. Never merge.

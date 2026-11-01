@@ -278,6 +278,72 @@ try {
     assert.equal(pendingCandidate.profile.status, 'deletion_pending');
   });
 
+  // Alternative F3 decision option: permit the *same authenticated account*
+  // to export retained locale metadata during deletion_pending, but never
+  // broaden table RLS or permit pending writes. NO PRIVACY DECISION IS MADE.
+  // The original self-only SECURITY DEFINER contract and all legacy keys stay.
+  const pendingReadableLocaleFields = localeFields.replaceAll(
+    "prof.status = 'active'",
+    "prof.status in ('active', 'deletion_pending')",
+  );
+  assert.notEqual(pendingReadableLocaleFields, localeFields);
+  assert.equal((pendingReadableLocaleFields.match(/deletion_pending/g) ?? []).length, 2);
+  const pendingReadablePrototype = legacyFn.replace(
+    marker, pendingReadableLocaleFields + marker,
+  ).replace('set search_path = public', "set search_path = ''");
+  await pg.exec(pendingReadablePrototype);
+  const pendingOwn = payload(await asRole('authenticated', a,
+    'select public.account_export($1::uuid) as payload', [a]));
+  checked('F3 option B: pending owner can self-export both retained locale fields', () => {
+    assert.equal(pendingOwn.profile.status, 'deletion_pending');
+    assert.deepEqual(Object.keys(pendingOwn).sort(), [
+      ...Object.keys(selfBefore), 'transactionalLanguagePreference', 'mediaLanguagePreference',
+    ].sort());
+    assert.equal(pendingOwn.transactionalLanguagePreference.preferred_locale, 'es');
+    assert.equal(pendingOwn.mediaLanguagePreference.preferred_media_locale, 'es');
+  });
+  const pendingDirect = await asRole('authenticated', a,
+    'select account_id from public.account_transactional_locale_preferences');
+  checked('F3 option B does not weaken direct table RLS for pending account', () => {
+    assert.deepEqual(pendingDirect.rows, []);
+  });
+  const crossPending = payload(await asRole('authenticated', a,
+    'select public.account_export($1::uuid) as payload', [b]));
+  const crossActive = payload(await asRole('authenticated', b,
+    'select public.account_export($1::uuid) as payload', [a]));
+  checked('F3 option B preserves both directions of cross-account isolation', () => {
+    assert.equal(crossPending, null);
+    assert.equal(crossActive, null);
+  });
+  const afterOptionsAcl = (await pg.query(`
+    select oid::text as oid, prosecdef as definer,
+      has_function_privilege('anon',oid,'EXECUTE') as anon,
+      has_function_privilege('authenticated',oid,'EXECUTE') as authenticated
+    from pg_proc where oid = 'public.account_export(uuid)'::regprocedure;
+  `)).rows[0];
+  checked('F3 option B keeps original function OID, definer and grants', () => {
+    assert.equal(afterOptionsAcl.oid, oidBefore);
+    assert.equal(afterOptionsAcl.definer, true);
+    assert.equal(afterOptionsAcl.anon, false);
+    assert.equal(afterOptionsAcl.authenticated, true);
+  });
+  await pg.query('update public.profiles set status=$2 where account_id=$1::uuid',
+    [a, 'deleted']);
+  const fullyDeleted = payload(await asRole('authenticated', a,
+    'select public.account_export($1::uuid) as payload', [a]));
+  checked('F3 option B hides locale fields for deleted status in fixture only', () => {
+    assert.equal(fullyDeleted.profile.status, 'deleted');
+    assert.equal(fullyDeleted.transactionalLanguagePreference, null);
+    assert.equal(fullyDeleted.mediaLanguagePreference, null);
+  });
+  // The original one-arg function may still return legacy keys for a
+  // synthetically retained deleted profile. Auth token revocation and actual
+  // deletion lifecycle must be verified separately; do not interpret this
+  // fixture as a real deleted account being able to call PostgREST.
+  checked('F3 deleted-state legacy export and token revocation remain unverified', () => {
+    assert.ok(fullyDeleted.profile && 'purchases' in fullyDeleted);
+  });
+
   console.log('RESULT F4: ' + passed + '/' + passed +
     ' isolated PostgreSQL source/contract checks passed; RELEASE DEFECT REMAINS.');
 } finally {

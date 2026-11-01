@@ -7,6 +7,7 @@ on:
     paths:
       - .github/scripts/f1-vercel-ignore-qa-candidate.sh
       - .github/scripts/test-f1-vercel-ignore-qa.sh
+      - .github/scripts/test-f1-vercel-inline-ignore.sh
       - .github/workflows/f1-vercel-ignore-qa.yml
   workflow_dispatch:
 
@@ -25,3 +26,5 @@ jobs:
           persist-credentials: false
       - name: Run deterministic no-network Git fixtures (12 cases)
         run: bash .github/scripts/test-f1-vercel-ignore-qa.sh
+      - name: Verify exact-blob inline ignored-build command (7 cases)
+        run: bash .github/scripts/test-f1-vercel-inline-ignore.sh

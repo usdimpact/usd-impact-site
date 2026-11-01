@@ -349,4 +349,64 @@ const wrongBranch = await readMediaCaptionLocaleForPreview({
 assert.equal(wrongBranch, 'en');
 assert.equal(disabledReaderNetwork, 0);
 
+// The optional lookup runs only after paid entitlement verification. A
+// non-cooperating fetch or stalled response body must fall back to English
+// within the server-side 800ms deadline, never leave video signing pending.
+async function mustFinishOptionalCaptionRead(promise) {
+  let watchdog;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        watchdog = setTimeout(() => reject(new Error('F5_CAPTION_LOOKUP_HUNG')), 4000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(watchdog);
+  }
+}
+let uncooperativeFetchAborted = false;
+const hungStarted = Date.now();
+const hungCaption = await mustFinishOptionalCaptionRead(readMediaCaptionLocaleForPreview({
+  environment: development, config: fakeConfig, accessToken: fakeAccessToken, accountId,
+  fetchImpl: async (_url, init) => {
+    assert.equal(init.method, 'GET');
+    assert.equal(typeof init.signal?.addEventListener, 'function');
+    init.signal.addEventListener('abort', () => { uncooperativeFetchAborted = true; }, { once: true });
+    return new Promise(() => {}); // Intentionally ignores abort and never settles.
+  },
+}));
+assert.equal(hungCaption, 'en');
+assert.equal(uncooperativeFetchAborted, true);
+assert.ok(Date.now() - hungStarted < 4000, 'Hung optional read must not delay member playback');
+
+let cooperativeFetchAborted = false;
+const cooperativeCaption = await mustFinishOptionalCaptionRead(readMediaCaptionLocaleForPreview({
+  environment: development, config: fakeConfig, accessToken: fakeAccessToken, accountId,
+  fetchImpl: (_url, init) => new Promise((_, reject) => {
+    init.signal.addEventListener('abort', () => {
+      cooperativeFetchAborted = true;
+      reject(new Error('Synthetic AbortError'));
+    }, { once: true });
+  }),
+}));
+assert.equal(cooperativeCaption, 'en');
+assert.equal(cooperativeFetchAborted, true);
+
+const stalledBodyCaption = await mustFinishOptionalCaptionRead(readMediaCaptionLocaleForPreview({
+  environment: development, config: fakeConfig, accessToken: fakeAccessToken, accountId,
+  fetchImpl: async () => ({ ok: true, json: async () => new Promise(() => {}) }),
+}));
+assert.equal(stalledBodyCaption, 'en', 'JSON response-body stall must also meet the deadline');
+
+const lateCaption = await mustFinishOptionalCaptionRead(readMediaCaptionLocaleForPreview({
+  environment: development, config: fakeConfig, accessToken: fakeAccessToken, accountId,
+  fetchImpl: async () => new Promise(resolve => {
+    setTimeout(() => resolve(new Response(JSON.stringify([verifiedPreference('es', 4)]), {
+      status: 200,
+    })), 1200);
+  }),
+}));
+assert.equal(lateCaption, 'en', 'Late Spanish reply must not override timely English fallback');
+
 console.log('Account media language isolated Preview/RLS contracts passed.');

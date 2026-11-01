@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import guidedEditionHandler from '../api/guided-edition.js';
 import { handleVideoLibraryRequest } from '../src/lib/video-library-handler.js';
+import { readMediaCaptionLocaleForPreview } from '../src/lib/media-locale-handler.js';
 import { getStreamUid } from '../src/lib/video-stream-map.js';
 import { SESSION_COOKIE_NAMES } from '../src/lib/supabase-auth.js';
 
@@ -143,6 +144,60 @@ await handleVideoLibraryRequest(
 );
 assert.equal(mediaReadErrorVideo.statusCode, 200);
 assert.match(mediaReadErrorVideo.body, /defaultTextTrack=en/);
+
+// Full protected-route regression: an entitled member with a permanently
+// hung optional caption preference still receives a signed English video.
+// All identities, tokens, network calls and cloud token generation are fake.
+let hungPreferenceFetches = 0;
+let signedAfterFallback = 0;
+const hungVideo = responseRecorder();
+let videoWatchdog;
+try {
+  await Promise.race([
+    handleVideoLibraryRequest(
+      request({ authenticated: true, url: '/api/video-library?__video_path=dollar-yields-liquidity' }),
+      hungVideo,
+      {
+        environment: qaMediaEnvironment,
+        readAccessState: async () => ({
+          allowed: true, reason: 'active',
+          user: { id: mediaActorId },
+          profile: { account_id: mediaActorId, status: 'active' },
+        }),
+        readMediaCaptionLocale: ({ environment, accountId, accessToken: token }) =>
+          readMediaCaptionLocaleForPreview({
+            environment, accountId, accessToken: token,
+            config: {
+              url: 'https://ycstrcvshdluovtuasjc.supabase.co',
+              publishableKey: 'sb_publishable_abcdefghijklmnopqrstuvwxyz',
+              secretKey: null,
+            },
+            fetchImpl: async () => {
+              hungPreferenceFetches += 1;
+              return new Promise(() => {}); // Never cooperates with AbortSignal.
+            },
+          }),
+        createToken: async () => {
+          signedAfterFallback += 1;
+          return signedToken;
+        },
+      },
+    ),
+    new Promise((_, reject) => {
+      videoWatchdog = setTimeout(() => reject(new Error('F5_PAID_VIDEO_HUNG')), 4000);
+    }),
+  ]);
+} finally {
+  clearTimeout(videoWatchdog);
+}
+assert.equal(hungVideo.statusCode, 200);
+assert.equal(hungPreferenceFetches, 1, 'Optional lookup attempted only for paid member');
+assert.equal(signedAfterFallback, 1, 'Paid video token must still be created after deadline');
+assert.match(hungVideo.body, /defaultTextTrack=en/);
+assert.match(hungVideo.body, /Verified English captions/);
+assert.doesNotMatch(hungVideo.body, /defaultTextTrack=es/);
+assert.match(hungVideo.body, new RegExp(signedToken.replaceAll('.', '\\.')));
+
 
 
 // The user's caption choice must never weaken entitlement or leak a

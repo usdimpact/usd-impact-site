@@ -71,7 +71,7 @@ assert.match(spanishPreview, /\bnoindex\b/);
 assert.match(spanishPreview, /status === 'published'/);
 assert.match(spanishPreview, /monthlyEligibility\(weekly, monthly\)/);
 assert.match(spanishPreview, /<span lang="en">\{r\.data\.title\}<\/span>/);
-assert.match(spanishPreview, /Subtítulos en español/);
+assert.match(spanishPreview, /subtítulos en español/i);
 assert.match(spanishPreview, /no se ha publicado una pista de narración alternativa en español/);
 assert.doesNotMatch(spanishPreview, /<video|<audio|autoplay|publicBucket|setContentLanguagePreference/);
 

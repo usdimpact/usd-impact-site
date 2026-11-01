@@ -188,6 +188,22 @@ try:
                 ensure(page.evaluate("() => window.USDImpactConsent?.analyticsAllowed?.() === false"),
                        label+": analytics consent not denied")
                 ensure(not blocked and not errors,label+": blocked external requests/errors after rejection")
+                # Full-page screenshots taken while the browser is scrolled can
+                # paint a fixed, off-viewport skip link at an interior document Y.
+                # Return to top after validating disclosure in-view. Do not alter
+                # the site's actual keyboard accessibility CSS.
+                page.evaluate("""() => {
+                  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+                  window.scrollTo({top:0,left:0,behavior:'instant'});
+                }""")
+                page.wait_for_timeout(100)
+                hidden_skip=page.evaluate("""() => {
+                  const s=document.querySelector('.skip-link');
+                  if (!s) return false;
+                  const r=s.getBoundingClientRect();
+                  return document.activeElement!==s && r.bottom <= 0;
+                }""")
+                ensure(hidden_skip,label+": accessibility skip link visible without focus")
                 page.screenshot(path=str(OUT/("release-shaped-"+label+"-after-reject.png")),
                                 full_page=True,animations="disabled")
                 results.append({"viewport":label,"width":width,"height":height,

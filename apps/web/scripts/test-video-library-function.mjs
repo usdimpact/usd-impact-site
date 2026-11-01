@@ -194,7 +194,8 @@ assert.equal(hungVideo.statusCode, 200);
 assert.equal(hungPreferenceFetches, 1, 'Optional lookup attempted only for paid member');
 assert.equal(signedAfterFallback, 1, 'Paid video token must still be created after deadline');
 assert.match(hungVideo.body, /defaultTextTrack=en/);
-assert.match(hungVideo.body, /Original spoken narration remains in English/);
+assert.match(hungVideo.body, /Verified English captions/);
+assert.doesNotMatch(hungVideo.body, /defaultTextTrack=es/);
 assert.match(hungVideo.body, new RegExp(signedToken.replaceAll('.', '\\.')));
 
 

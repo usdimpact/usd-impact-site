@@ -25,13 +25,14 @@
     "newTestScript": "apps/web/scripts/test-independent-macro-private-compiled-browser.py",
     "newTestScriptGitBlobSha": "209db254e2115c34f511c2b12e08811bd9dc5912",
     "newCiWorkflow": ".github/workflows/independent-macro-private-compiled-qa.yml",
-    "newCiWorkflowGitBlobSha": "3e7882f3700adc0884331f8f535d27aaeda7f894",
+    "newCiWorkflowGitBlobSha": "30a10e96eef8287bf08274fbe7df601b086c64ed",
     "temporaryRouteCreatedOnlyInDisposableRunner": true,
     "temporarySitemapExclusionCreatedOnlyInDisposableRunner": true,
     "externalNetworkRequestsBlockedInBrowser": true,
     "noProductionOrPreviewDeploy": true,
     "qaRunOutcomeNotYetEvaluated": true,
-    "browserQaTestRevision": "Distinct official URLs are counted once even when shown in timeline and source list; horizontal overflow remains a hard failure."
+    "browserQaTestRevision": "Distinct official URLs are counted once even when shown in timeline and source list; horizontal overflow remains a hard failure.",
+    "artifactUploadCorrection": "GitHub Actions artifact upload now includes the isolated hidden QA evidence directory; no site-build distribution uploaded."
   },
   "finalRenderedEditorialPass": false,
   "finalRenderedOwnerPass": false,

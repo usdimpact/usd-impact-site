@@ -94,6 +94,7 @@ jobs:
           name: macro-weekly-private-compiled-review
           path: apps/web/.private_macro_compiled_qa/
           retention-days: 7
+          include-hidden-files: true
           if-no-files-found: ignore
       - name: Remove runner-only QA route and restore local config
         if: always()

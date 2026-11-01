@@ -288,8 +288,19 @@ try {
   );
   assert.notEqual(pendingReadableLocaleFields, localeFields);
   assert.equal((pendingReadableLocaleFields.match(/deletion_pending/g) ?? []).length, 2);
+  const originalIdentityGuard = 'where export_account_id = auth.uid()';
+  assert.equal(legacyFn.split(originalIdentityGuard).length, 2,
+    'The pinned self-account identity predicate has changed');
   const pendingReadablePrototype = legacyFn.replace(
     marker, pendingReadableLocaleFields + marker,
+  ).replace(
+    originalIdentityGuard,
+    `where export_account_id = auth.uid()
+      and exists (
+        select 1 from public.profiles owner_profile
+        where owner_profile.account_id = export_account_id
+          and owner_profile.status in ('active', 'deletion_pending')
+      )`,
   ).replace('set search_path = public', "set search_path = ''");
   await pg.exec(pendingReadablePrototype);
   const pendingOwn = payload(await asRole('authenticated', a,
@@ -331,18 +342,18 @@ try {
     [a, 'deleted']);
   const fullyDeleted = payload(await asRole('authenticated', a,
     'select public.account_export($1::uuid) as payload', [a]));
-  checked('F3 option B hides locale fields for deleted status in fixture only', () => {
-    assert.equal(fullyDeleted.profile.status, 'deleted');
-    assert.equal(fullyDeleted.transactionalLanguagePreference, null);
-    assert.equal(fullyDeleted.mediaLanguagePreference, null);
+  checked('F3 option B denies the complete export for deleted accounts', () => {
+    assert.equal(fullyDeleted, null,
+      'A stale matching synthetic JWT must not get old profile or locale fields');
   });
-  // The original one-arg function may still return legacy keys for a
-  // synthetically retained deleted profile. Auth token revocation and actual
-  // deletion lifecycle must be verified separately; do not interpret this
-  // fixture as a real deleted account being able to call PostgREST.
-  checked('F3 deleted-state legacy export and token revocation remain unverified', () => {
-    assert.ok(fullyDeleted.profile && 'purchases' in fullyDeleted);
+  const unaffectedOwner = payload(await asRole('authenticated', b,
+    'select public.account_export($1::uuid) as payload', [b]));
+  checked('F3 option B keeps unaffected active owners eligible for own export', () => {
+    assert.equal(unaffectedOwner.profile.account_id, b);
+    assert.equal(unaffectedOwner.profile.status, 'active');
   });
+  // This synthetic guard is a defense-in-depth candidate, not a substitute
+  // for real Auth session revocation or final deletion verification.
 
   console.log('RESULT F4: ' + passed + '/' + passed +
     ' isolated PostgreSQL source/contract checks passed; RELEASE DEFECT REMAINS.');

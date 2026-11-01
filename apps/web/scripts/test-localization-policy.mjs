@@ -20,6 +20,21 @@ assert.deepEqual(
   SITE_NAVIGATION.map(({ links }) => links.length),
   'Spanish uses exactly the same navigation hierarchy',
 );
+assert.deepEqual(
+  SPANISH_GROUPED_NAVIGATION.flatMap(({ links }) => links.map(({ englishHref }) => englishHref)),
+  SITE_NAVIGATION.flatMap(({ links }) => links.map(({ href }) => href)),
+  'Spanish must map each menu position to its exact English destination, not an adjacent article',
+);
+assert.equal(
+  SPANISH_GROUPED_NAVIGATION[0].links[1].href,
+  '/es/framework/dollar-transmission-chain/',
+  'Framework must resolve to the translated version of the linked English Framework page',
+);
+assert.ok(SPANISH_GROUPED_NAVIGATION.flatMap(({ links }) => links)
+  .filter(({ contentLocale }) => contentLocale === 'en')
+  .every(({ href, englishHref }) => href === englishHref),
+  'English-only fallback destinations must not change paths when locale is Spanish',
+);
 const publicEsLinks = new Set(['/es/start-here/', '/es/dollar-framework/']);
 const englishFallbacks = SPANISH_GROUPED_NAVIGATION.flatMap(({ links }) => links)
   .filter(({ contentLocale }) => contentLocale === 'en');
@@ -118,7 +133,10 @@ assert.match(baseLayout, /approvedAlternate\?\.startsWith\('\/'\)/);
 assert.match(baseLayout, /!approvedAlternate\.startsWith\('\/\/'\)/);
 assert.match(baseLayout, /window\.location\.replace\(approvedAlternate\)/);
 assert.match(baseLayout, /Contenido disponible en inglés/);
-assert.match(baseLayout, /Cuenta · EN/);
+assert.match(baseLayout, /aria-label=\{link\.contentLocale === 'en'/);
+assert.match(baseLayout, /\{link\.label\}\{link\.contentLocale === 'en' && <span lang="en" aria-hidden="true">/);
+assert.match(baseLayout, /Cuenta \(disponible en inglés\)/);
+assert.doesNotMatch(baseLayout, /lang=\{link\.contentLocale === 'en' \? 'en'/);
 
 assert.match(baseLayout, /alternateLocaleHref/);
 assert.match(baseLayout, /englishLocaleUrl/);

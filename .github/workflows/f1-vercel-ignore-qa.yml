@@ -1,0 +1,27 @@
+name: F1 Vercel ignore candidate isolated QA (no deployment)
+
+# This is a Draft-only OFFLINE test. It deploys nothing and has no credentials.
+# The job is not a required mainline check and does not alter Production.
+on:
+  pull_request:
+    paths:
+      - .github/scripts/f1-vercel-ignore-qa-candidate.sh
+      - .github/scripts/test-f1-vercel-ignore-qa.sh
+      - .github/workflows/f1-vercel-ignore-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-synthetic:
+    name: F1 Vercel ignore decision (synthetic only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout proposed Draft source with no saved credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Run deterministic no-network Git fixtures (12 cases)
+        run: bash .github/scripts/test-f1-vercel-ignore-qa.sh

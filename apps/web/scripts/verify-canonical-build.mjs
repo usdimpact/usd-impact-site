@@ -93,7 +93,7 @@ for (const route of SPANISH_PUBLIC_REVIEW_PATHS) {
     continue;
   }
   const html = fs.readFileSync(file, 'utf8');
-  if (!/<meta\\s+name="robots"\\s+content="noindex, nofollow"\\s*\\/?\\s*>/i.test(html)) {
+  if (!/<meta\s+name="robots"\s+content="noindex, nofollow"\s*\/?\s*>/i.test(html)) {
     failures.push(`Canonical policy: Spanish Preview-only route missing noindex: ${route}.`);
   }
   if (canonicalHrefs(html).length !== 0) failures.push(`Canonical policy: Spanish Preview-only route has canonical: ${route}.`);

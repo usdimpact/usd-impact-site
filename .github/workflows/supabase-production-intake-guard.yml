@@ -1,19 +1,11 @@
 name: Supabase Production migration intake guard (no database access)
 
+# A required check must be emitted on *every* PR. GitHub leaves path-filtered
+# workflows Pending on unrelated PRs, which would block safe merges once required.
 on:
   pull_request:
-    paths:
-      - 'supabase/migrations/**'
-      - '.github/scripts/check-supabase-production-intake.mjs'
-      - '.github/scripts/test-supabase-production-intake.mjs'
-      - '.github/workflows/supabase-production-intake-guard.yml'
   push:
     branches: [main]
-    paths:
-      - 'supabase/migrations/**'
-      - '.github/scripts/check-supabase-production-intake.mjs'
-      - '.github/scripts/test-supabase-production-intake.mjs'
-      - '.github/workflows/supabase-production-intake-guard.yml'
   workflow_dispatch:
 
 permissions:

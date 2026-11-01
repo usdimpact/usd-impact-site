@@ -4,6 +4,9 @@ name: Supabase Production migration intake guard (no database access)
 # workflows Pending on unrelated PRs, which would block safe merges once required.
 on:
   pull_request:
+  # If main uses a merge queue, the required check must also run on merge groups.
+  merge_group:
+    types: [checks_requested]
   push:
     branches: [main]
   workflow_dispatch:

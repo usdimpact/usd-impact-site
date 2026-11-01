@@ -87,7 +87,7 @@ try {
     insert into public.profiles values
       ('123e4567-e89b-42d3-a456-426614174000','active'),
       ('223e4567-e89b-42d3-a456-426614174000','active'),
-      ('323e4567-e89b-42d3-a456-426614174000','deletion_pending');
+      ('323e4567-e89b-42d3-a456-426614174000','active');
     alter table public.profiles enable row level security;
     create policy f2_fake_profile_owner_read on public.profiles
       for select to authenticated using (account_id = auth.uid());
@@ -221,7 +221,7 @@ try {
       values ($1::uuid,'es');
     `,[C]),{isAnonymous:true}),
     /row.level security|violates/i,
-    'anonymous signed claim cannot insert while status pending',
+    'anonymous JWT on active C cannot insert own preference',
   );
 
   const noSubject = await selectAs(null);
@@ -230,6 +230,7 @@ try {
   });
 
   await database.query("update public.profiles set status='deletion_pending' where account_id=$1::uuid;",[A]);
+  await database.query("update public.profiles set status='deletion_pending' where account_id=$1::uuid;",[C]);
   const pendingRead = await selectAs(A);
   pass('deletion_pending A cannot SELECT even retained own preference',()=>{
     assert.equal(pendingRead.rows.length,0);

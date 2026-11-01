@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -72,4 +72,33 @@ test('missing migration directory fails closed', () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('renamed and retimestamped Development SQL objects cannot enter the Production intake', () => {
+  withSyntheticRepository(({ root, add }) => {
+    add('20300101120001_access_locale_rollout.sql',
+      'create table public.account_transactional_locale_preferences (account_id uuid);');
+    add('20300101120002_account_privacy_rollout.sql',
+      'create function public.ui02_purge_transactional_locale_on_deletion() returns trigger language sql as $$ select null $$;');
+    add('20300101120003_media_locale_rollout.sql',
+      'create table public.account_media_locale_preferences (account_id uuid);');
+    const violations = scanProductionMigrationIntake(root);
+    assert.equal(violations.length, 3);
+    assert.ok(violations.every(v => /object identifier/.test(v.reason)));
+  });
+});
+
+test('multiline SQL block header stating Development-only is refused', () => {
+  withSyntheticRepository(({ root, add }) => {
+    add('20300101120004_other.sql', '/*\n * Development-only for test environment\n */\nselect 1;');
+    assert.match(scanProductionMigrationIntake(root)[0].reason, /header/i);
+  });
+});
+
+test('SQL symlink is rejected rather than being followed', () => {
+  withSyntheticRepository(({ root, path, add }) => {
+    add('20300101120005_original.sql');
+    symlinkSync('20300101120005_original.sql', join(path, '20300101120006_alias.sql'));
+    assert.match(scanProductionMigrationIntake(root)[0].reason, /not a regular file/i);
+  });
 });

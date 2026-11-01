@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "usd-impact-independent-macro-release-shaped-private-qa-v1",
+  "preparedDate": "2026-11-01",
+  "state": "NONPUBLIC_RELEASE_SHAPED_QA_PLANNED_NO_RELEASE",
+  "repository": "usdimpact/usd-impact-site",
+  "pr": 1025,
+  "sourceDraftHead": "25d3c94283c3db31ecad3950e50c8ee665296c87",
+  "contentProvenance": {
+    "originalCandidatePath": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+    "originalCandidateGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "ownerReviewedOfflineHtmlProofGitBlobSha": "61c35f8380c793c8330ca5b6402f483ec7e38710",
+    "ownerPrivateRenderedPassAtCommit": "4cfa107f74bd62d221c5699f07e1d122750715aa",
+    "ownerPrivateReviewEvidence": "docs/operations/independent-macro-release/first-weekly-r05-x01-private-compiled-owner-visual-pass-2026-11-01.draft.json",
+    "privacyNoticeProductionBlobShaBeforeReview": "2c41e5a77b0df62802371468de43c0c964c00928"
+  },
+  "proposedPresentation": {
+    "headline": "USD Impact Macro Weekly Review | October 26–30, 2026",
+    "description": "Independent educational review of official FOMC, GDP, PCE and Employment Cost Index releases covering October 26–30, 2026. Not an investment recommendation or market-price signal.",
+    "coverageEnd": "2026-10-30",
+    "proposedFuturePath": "/macro-reviews/weekly/2026-10-30/",
+    "firstPublicationUtc": null,
+    "showFirstPublishedLabel": false,
+    "proposedPageRouteIsCommitted": false,
+    "generatedInsideDisposableGitHubRunnerOnly": true,
+    "noindex": true,
+    "canonicalAllowed": false,
+    "structuredArticleDatePublishedAllowed": false,
+    "expectedIssuerLinks": 5,
+    "expectedDailyLinks": 5,
+    "expectedSectionIds": [
+      "summary",
+      "timeline",
+      "transmission",
+      "mistakes",
+      "watch",
+      "sources",
+      "compliance"
+    ]
+  },
+  "ownerAndPrivacy": {
+    "ownerR04LimitedFactsLinksAccepted": true,
+    "ownerR05PrivateCompiledCandidatePass": true,
+    "ownerR06ImplementationAcknowledgedWithLegalLimitations": true,
+    "ownerR07PublisherCapacityAttestedNotIndependentlyVerified": true,
+    "ownerX01VisibleAiDisclosurePrivatePass": true,
+    "actualPublicReleaseRenderedEditorialPass": false,
+    "fullInternationalTransferMappingVerified": false,
+    "qualifiedPrivacyAndRightsReviewCompleted": false,
+    "ga4EventRetentionMonthsObserved": 2,
+    "ga4UserRetentionMonthsObserved": 14,
+    "ga4ResetOnNewActivityObserved": true,
+    "ga4DpaAcceptedObservedDate": "2026-09-17",
+    "liveConsentOneVantageNoUnconsentedRequestsObserved": true,
+    "ga4ConsentAuditReferenceRun": 41322389260
+  },
+  "permissions": {
+    "publicRoute": false,
+    "releaseMerge": false,
+    "productionDeploy": false,
+    "previewDeploy": false,
+    "indexing": false,
+    "navigation": false,
+    "distribution": false,
+    "originalScoreRights": false,
+    "paidSourceDataRights": false,
+    "paymentOrCommerce": false,
+    "credentialsOrProjectChanges": false,
+    "privacyNoticeProductionEdit": false,
+    "ga4AdminSettingsMutation": false
+  },
+  "nextGate": "Review exact release-shaped private browser screenshots and legal/privacy draft; keep public-release controls denied until separate exact-SHA authorization."
+}

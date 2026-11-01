@@ -426,5 +426,22 @@
     "originalArticleUnchanged": true,
     "releaseAuthorized": false,
     "allPublicDeployIndexRightsRemainDenied": true
+  },
+  "privateCompiledR05X01OwnerVisualReviewPass": {
+    "receiptPath": "docs/operations/independent-macro-release/first-weekly-r05-x01-private-compiled-owner-visual-pass-2026-11-01.draft.json",
+    "receiptGitBlobSha": "7df568fdbd2f7521adf66963e131b5306211aa03",
+    "exactReviewedCommit": "4cfa107f74bd62d221c5699f07e1d122750715aa",
+    "exactReviewedProofGitBlobSha": "61c35f8380c793c8330ca5b6402f483ec7e38710",
+    "originalArticleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "githubRunId": 41318078153,
+    "githubArtifactId": 13088480632,
+    "status": "OWNER_PASS_OF_NONPUBLIC_COMPILED_ASTRO_ONLY",
+    "r05PrivateRenderedCandidatePass": true,
+    "x01PrivateRenderedDisclosurePlacementPass": true,
+    "finalPublicPageEditorialPass": false,
+    "finalPublicPageAiDisclosurePass": false,
+    "finalLegalAndPrivacyRightsApproval": false,
+    "publicRouteMergeDeployIndexScoreRightsApproved": false,
+    "releaseAuthorized": false
   }
 }

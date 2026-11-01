@@ -808,6 +808,60 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
     'R05 preparatory wording approval never grants final editorial/legal rights or publication');
 }
 
+// Explicit R05/X01 owner PASS applies only to the exact compiled private QA screenshots.
+// It does NOT transfer to a release route or imply copyright, privacy or Production authority.
+{
+  const path='docs/operations/independent-macro-release/first-weekly-r05-x01-private-compiled-owner-visual-pass-2026-11-01.draft.json';
+  const raw=from('../../../'+path);
+  const review=JSON.parse(raw);
+  const pin=m.privateCompiledR05X01OwnerVisualReviewPass;
+  const prev=JSON.parse(from('../../../docs/operations/independent-macro-release/first-weekly-r05-compiled-qa-wording-decision-2026-11-01.draft.json'));
+  eq(pin.receiptPath,path,'R05/X01 exact private compiled review receipt path');
+  eq(gitBlob(raw),pin.receiptGitBlobSha,'R05/X01 owner private review receipt byte exact');
+  eq(review.schemaVersion,'usd-impact-macro-weekly-private-compiled-r05-x01-owner-pass-v1','R05/X01 review receipt schema');
+  eq(review.ownerMessageVerbatim,'PASS, please continue','owner PASS quote recorded verbatim');
+  eq(review.reviewIdentity.checkedOutDraftCommit,'4cfa107f74bd62d221c5699f07e1d122750715aa',
+    'review PASS tied to prior exact tested head, not future source changes');
+  eq(review.reviewIdentity.originalArticleGitBlobSha,gitBlob(html),
+    'frozen original candidate article never rewritten by R05 QA');
+  eq(review.reviewIdentity.reviewedOfflineHtmlProofGitBlobSha,
+     m.nonRoutedPublicationAppearanceReviewDraft.staticOfflineProofGitBlobSha,
+     'reviewed offline proof remains immutable');
+  eq(review.reviewIdentity.priorOwnerR05WordingForQaReceiptGitBlobSha,
+     m.r05PrivateCompiledQaWordingDecision.receiptGitBlobSha,
+     'prior source approval receipt remains immutable and distinct from new QA result');
+  eq(prev.decision,'ACCEPT_OFFLINE_WORDING_FOR_COMPILED_QA',
+     'earlier owner scope never silently expanded retroactively');
+  eq(review.reviewIdentity.githubActionsRunId,41318078153,'source of compiled exact-head QA run');
+  eq(review.reviewIdentity.githubActionsArtifactId,13088480632,'owner-visible exact screenshots artifact');
+  eq(review.verifiedQa.chromeViewportsPassed.map(x=>x.width),[1440,768,390],
+     'desktop tablet and mobile compiled QA viewports');
+  ok(review.ownerAttestedPrivateReview.r05CompiledCandidateWordingAndPresentationPass &&
+     review.ownerAttestedPrivateReview.x01VisibleAiAssistanceDisclosurePlacementPrivateReviewPass &&
+     !review.ownerAttestedPrivateReview.transfersToUnbuiltRealPublicRoute &&
+     !review.ownerAttestedPrivateReview.actualProductionRenderedPageReviewed &&
+     !review.ownerAttestedPrivateReview.legalOrPublisherCapacityIndependentlyVerified &&
+     !review.ownerAttestedPrivateReview.finalPublicArticleApprovalGranted,
+    'owner PASS limited to source-exact nonpublic compiled Astro render');
+  ok(review.verifiedQa.exactDraftHeadSevenOfSevenWorkflowsSuccess &&
+     review.verifiedQa.afterSyntheticRejectAnalyticsVisibleUnobstructedAiDisclosure &&
+     review.verifiedQa.zeroExternalNetworkRequests &&
+     review.verifiedQa.zeroHorizontalOverflow &&
+     review.verifiedQa.zeroBrowserScriptErrors &&
+     review.verifiedQa.noindexInCompiledPrivateReview &&
+     review.verifiedQa.noCanonicalInCompiledPrivateReview &&
+     review.verifiedQa.publicMacroPagesGenerated===0 &&
+     review.verifiedQa.sitemapOrAssetLeaks===0,
+    'nonpublic compiled QA evidence recorded without false site release');
+  ok(Object.values(review.releasePermissions).every(x=>x===false) &&
+     !pin.finalPublicPageEditorialPass && !pin.finalPublicPageAiDisclosurePass &&
+     !pin.finalLegalAndPrivacyRightsApproval &&
+     !pin.publicRouteMergeDeployIndexScoreRightsApproved &&
+     !pin.releaseAuthorized && !m.releaseAuthorized && !m.publishReady &&
+     Object.values(m.holds).every(x=>x===false),
+    'private owner visual PASS cannot enable any release/rights gate');
+}
+
 // Merged privacy client provenance: historical point-in-time evidence remains distinct.
 {
   const raw=from('../../../docs/operations/independent-macro-release/privacy-production-merge-integration-receipt-2026-10-31.draft.json');

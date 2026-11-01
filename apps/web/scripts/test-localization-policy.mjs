@@ -136,7 +136,7 @@ assert.match(baseLayout, /Contenido disponible en inglés/);
 assert.match(baseLayout, /aria-label=\{link\.contentLocale === 'en'/);
 assert.match(baseLayout, /\{link\.label\}\{link\.contentLocale === 'en' && <span lang="en" aria-hidden="true">/);
 assert.match(baseLayout, /Cuenta \(disponible en inglés\)/);
-assert.doesNotMatch(baseLayout, /lang=\{link\.contentLocale === 'en' \? 'en'/);
+assert.doesNotMatch(baseLayout, /^\s+lang=\{link\.contentLocale === 'en' \? 'en'/m);
 
 assert.match(baseLayout, /alternateLocaleHref/);
 assert.match(baseLayout, /englishLocaleUrl/);

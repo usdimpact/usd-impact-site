@@ -64,7 +64,7 @@ try:
                 response=page.goto(origin+"/internal/macro-weekly-private-qa/",wait_until="domcontentloaded",timeout=30000)
                 assert response and response.status==200, label+": compiled QA page not 200"
                 page.locator('[data-private-appearance-proof="true"]').wait_for(timeout=10000)
-                found=page.evaluate("""() => {
+                found=page.evaluate(r"""() => {
                   const r=document.querySelector('[data-private-appearance-proof="true"]');
                   const a=r?.querySelector('article.content');
                   const n=a?.querySelector('[data-ai-disclosure-proposed="true"]');
@@ -77,7 +77,7 @@ try:
                     noindex:[...document.querySelectorAll('meta[name="robots"]')].some(x=>x.content.includes('noindex')),
                     canonicalCount:document.querySelectorAll('link[rel="canonical"]').length,
                     release:r?.dataset.releaseAuthorized,renderedPass:r?.dataset.finalRenderedOwnerPass,
-                    indexing:r?.dataset.indexingAuthorized,issuerLinks:links.length,
+                    indexing:r?.dataset.indexingAuthorized,issuerLinks:new Set(links.map(x=>x.href)).size,
                     fomc:a?.innerText.includes('two voting dissenters, Lisa D. Cook and Beth M. Hammack'),
                     advice:a?.innerText.includes('not financial, investment, trading, legal or tax advice'),
                     operator:document.body.innerText.includes('KELA LEADS S.R.L.'),
@@ -90,7 +90,8 @@ try:
                 assert found["noindex"] and found["canonicalCount"]==0, label+": indexing metadata"
                 assert found["release"]=="false" and found["renderedPass"]=="false" and found["indexing"]=="false", label+": release authority leaked"
                 assert all(found[x] for x in ("fomc","advice","operator","terms","privacy")), label+": wording or legal links missing"
-                assert found["issuerLinks"]==5 and found["overflow"]==0, label+": source count or horizontal overflow"
+                print("COMPILED_QA_DIAGNOSTIC "+label+" "+json.dumps({"distinctIssuerLinks":found["issuerLinks"],"horizontalOverflowPixels":found["overflow"]}))
+                assert found["issuerLinks"]==5 and found["overflow"]==0, label+": distinct source count or horizontal overflow"
                 assert not blocked and not errors, label+": external request or page errors "+str((blocked,errors))
                 page.screenshot(path=str(OUT/("macro-compiled-"+label+".png")),full_page=True,animations="disabled")
                 results.append({"viewport":label,"width":width,"height":height,"assertions":found,"externalRequests":blocked,"pageErrors":errors})

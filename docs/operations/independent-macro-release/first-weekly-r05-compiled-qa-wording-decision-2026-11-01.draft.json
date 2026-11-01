@@ -23,7 +23,7 @@
   "qaImplementation": {
     "privateAstroSourceComponent": "apps/web/src/components/IndependentMacroWeeklyPublicationAppearanceReview.astro",
     "newTestScript": "apps/web/scripts/test-independent-macro-private-compiled-browser.py",
-    "newTestScriptGitBlobSha": "7ff35e28e6993f6dec67a5e9b374c014b7a8636f",
+    "newTestScriptGitBlobSha": "05c53ac15f30cf186ed52e79e6b7d03831a92e39",
     "newCiWorkflow": ".github/workflows/independent-macro-private-compiled-qa.yml",
     "newCiWorkflowGitBlobSha": "30a10e96eef8287bf08274fbe7df601b086c64ed",
     "temporaryRouteCreatedOnlyInDisposableRunner": true,
@@ -33,7 +33,8 @@
     "qaRunOutcomeNotYetEvaluated": true,
     "browserQaTestRevision": "Distinct official URLs are counted once even when shown in timeline and source list; horizontal overflow remains a hard failure.",
     "artifactUploadCorrection": "GitHub Actions artifact upload now includes the isolated hidden QA evidence directory; no site-build distribution uploaded.",
-    "visualReviewScreenshotMode": "Fresh-browser Reject analytics in loopback-only context; screenshot after banner dismisses; AI notice must be visually unobstructed."
+    "visualReviewScreenshotMode": "Fresh-browser Reject analytics in loopback-only context; screenshot after banner dismisses; AI notice must be visually unobstructed.",
+    "mobileDisclosureVisibilityReview": "Use Playwright scroll_into_view_if_needed before elementFromPoint to distinguish below-the-fold from true occlusion; obstruction still fails."
   },
   "finalRenderedEditorialPass": false,
   "finalRenderedOwnerPass": false,

@@ -97,6 +97,7 @@ try:
                 # Dismiss it in isolated synthetic browser context, never Production.
                 page.locator("#privacy-consent-reject").click(timeout=10000)
                 page.locator("#privacy-consent-banner").wait_for(state="hidden",timeout=10000)
+                page.locator('article.content [data-ai-disclosure-proposed="true"]').scroll_into_view_if_needed(timeout=10000)
                 disclosed=page.evaluate("""() => {
                     const n=document.querySelector('article.content [data-ai-disclosure-proposed="true"]');
                     if (!n) return false;

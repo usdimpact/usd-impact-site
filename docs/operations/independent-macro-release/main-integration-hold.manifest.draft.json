@@ -408,7 +408,7 @@
   },
   "r05PrivateCompiledQaWordingDecision": {
     "receiptPath": "docs/operations/independent-macro-release/first-weekly-r05-compiled-qa-wording-decision-2026-11-01.draft.json",
-    "receiptGitBlobSha": "5f907a8f96b409d570f12e92e427af8df270741b",
+    "receiptGitBlobSha": "794b6335e11bf80e4d9336c9850a186d57bb00bc",
     "decision": "ACCEPT_OFFLINE_WORDING_FOR_COMPILED_QA",
     "reviewedProofGitBlobSha": "61c35f8380c793c8330ca5b6402f483ec7e38710",
     "reviewedHeadBeforeQa": "12494bb4768f791d8703a77f1ce397155c8cdd5e",
@@ -417,7 +417,7 @@
     "newWorkflowPath": ".github/workflows/independent-macro-private-compiled-qa.yml",
     "newWorkflowGitBlobSha": "30a10e96eef8287bf08274fbe7df601b086c64ed",
     "newBrowserScriptPath": "apps/web/scripts/test-independent-macro-private-compiled-browser.py",
-    "newBrowserScriptGitBlobSha": "7ff35e28e6993f6dec67a5e9b374c014b7a8636f",
+    "newBrowserScriptGitBlobSha": "05c53ac15f30cf186ed52e79e6b7d03831a92e39",
     "r05CandidateWordingApprovedForQa": true,
     "r05FinalRenderedEditorialPass": false,
     "x01FinalRenderedDisclosurePass": false,

@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import originalCandidate from '../data/independent-macro-review/weekly-2026-10-30.release-candidate.html?raw';
+import { buildIndependentMacroWeeklyAppearanceReview } from '../lib/independent-macro-weekly-publication-appearance-review.mjs';
+import '../styles/independent-macro-weekly-draft.css';
+import '../styles/independent-macro-weekly-publication-appearance-review.css';
+
+// NOT A PUBLIC PAGE. A disposable GitHub Actions runner imports this
+// un-routed component to test the proposed release-shaped page only.
+// Original manuscript and the existing owner-approved private proof are immutable.
+const view = buildIndependentMacroWeeklyAppearanceReview(originalCandidate);
+if (!view.notRouted || view.releaseAuthorized || view.finalRenderedOwnerPass) {
+  throw new Error('Macro release-shaped candidate cannot become published or approved');
+}
+const coverageEnd = '2026-10-30';
+const proposedPath = '/macro-reviews/weekly/2026-10-30/';
+---
+<BaseLayout
+  title="USD Impact Macro Weekly Review | October 26–30, 2026"
+  description="Independent educational review of official FOMC, GDP, PCE and Employment Cost Index releases covering October 26–30, 2026. Not an investment recommendation or market-price signal."
+  currentPath={proposedPath}
+  locale="en"
+  noindex={true}
+>
+  <div
+    class="mw-root mw-publication-appearance-review mw-release-shaped-hold"
+    data-release-shaped-review="true"
+    data-review-only="true"
+    data-original-coverage-end={coverageEnd}
+    data-first-publication-recorded="false"
+    data-release-authorized="false"
+    data-indexing-authorized="false"
+    data-final-rendered-owner-pass="false"
+    data-original-score-rights-authorized="false"
+  >
+    <div class="mw-ribbon" role="status" data-hold-banner="true">
+      NONPUBLIC RELEASE-SHAPED REVIEW — NOT PUBLISHED. This is a temporary browser QA artifact.
+      Public routing, legal clearance, indexing, email distribution, deployment and original Score rights remain on HOLD.
+    </div>
+    <Fragment set:html={view.fragment} />
+  </div>
+</BaseLayout>

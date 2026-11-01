@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "usd-impact-macro-weekly-ga4-production-integration-v1",
+  "createdDate": "2026-10-31",
+  "status": "DRAFT_SOURCE_RECONCILIATION_ONLY_NOT_PUBLICATION",
+  "draftPr": 1025,
+  "previousDraftHead": "4c1ce56c9fa805171eede394c8c4254d0dbcd7b9",
+  "protectedMainSha": "743872f3fdfd5fdddd242b64e7a42674a459a416",
+  "mergedPrivacyPr": 1035,
+  "reviewedPrivacyPrHead": "412fde7102407139d18a779e90821690868a943f",
+  "historicalGa4ClientGitBlobSha": "cb6d89da7a6cfa3dab0c51b9972527fc1581e860",
+  "currentGa4ClientGitBlobSha": "2877b295ddc106c0e89b75eb55e71a0c92afc642",
+  "historicalOwnerPreflightGitBlobSha": "1c0ba33605805b4e847257ddb19b7f053855c0d1",
+  "historicalCaseMatrixGitBlobSha": "3319221ffd574300d2b13b7805568773af4d9c6a",
+  "ga4RevocationTestGitBlobSha": "cd94df36571fd74e57cfb7b42a7ebdd41ed93d09",
+  "privacyPatchNotesGitBlobSha": "6476031fb702ffb495b0e690963c74469de78ddd",
+  "approvedArticleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+  "approvedSharedLayoutGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
+  "liveDeployment": {
+    "id": "dpl_7APZ2YJAZuyh1SrpPu3Rp9PVaxeB",
+    "target": "production",
+    "state": "READY",
+    "releaseEvidence": "https://github.com/usdimpact/usd-impact-site/issues/1036#issuecomment-6543527535",
+    "homeAndPrivacySmokePass": true,
+    "macroWeeklyPublicRoute404": true,
+    "previousKnownGood": "dpl_8CfC6X2K2kM1P9H3dPPatJFKKffh"
+  },
+  "qa": {
+    "ownerPreviewUatReportedPass": true,
+    "privacyReviewedSourceCiSixOfSixPass": true,
+    "independentFullProdNetworkCookieTrace": false,
+    "professionalGDPRReview": false
+  },
+  "rights": {
+    "allEightItemsOwnerAccepted": false,
+    "fiveResidualOwnerDecisionsTaken": false,
+    "macroRouteAuthorized": false,
+    "macroMergeAuthorized": false,
+    "macroProductionAuthorized": false,
+    "indexingAuthorized": false,
+    "originalScorePublicationAuthorized": false,
+    "independentWeekliesPublished": 0,
+    "eligibleMonthlies": 0
+  },
+  "note": "Historical exact-blob evidence retained separately. Actual source integration into Draft PR #1025 does not approve independent Macro content or rights."
+}

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "usd-impact-first-weekly-independent-qa-proposed-editorial-corrections-v1",
+  "qaSource": "Owner-supplied read-only assessment dated 2026-10-31 of earlier Draft commit 920630af, independently rechecked against official FOMC statement",
+  "currentDraftAtReview": "34b88f6bfc8a39802d0e4213eec40af65a8cc89e",
+  "originalArticleBlob": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+  "originalArticleUnchanged": true,
+  "corrections": [
+    {
+      "id": "fomc-two-voting-dissenters",
+      "old": "with two participants favoring a 25-basis-point increase.",
+      "proposed": "with two voting dissenters, Lisa D. Cook and Beth M. Hammack, preferring a 25-basis-point increase.",
+      "officialSource": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+      "finalEditorialPassRequired": true
+    },
+    {
+      "id": "educational-advice-heading",
+      "old": "Educational, not actionable trading advice",
+      "proposed": "Educational only — not investment or trading advice",
+      "finalEditorialPassRequired": true
+    },
+    {
+      "id": "standard-advice-notice",
+      "old": "This independent review is educational and informational only. It is not personalized investment advice, a recommendation to buy or sell any asset, a live price analysis, or an independently verified original USD Impact Score. Past relationships may change, and market responses cannot be determined from macroeconomic headlines alone.",
+      "proposed": "This independent review is educational and informational only. It is not financial, investment, trading, legal or tax advice, a recommendation to buy or sell any asset, a live price analysis, or an independently verified original USD Impact Score. Macro relationships are regime-dependent and may change; market responses cannot be determined from macroeconomic headlines alone. Consult an appropriately qualified professional regarding individual circumstances.",
+      "finalEditorialPassRequired": true
+    }
+  ],
+  "proposedDisclosureLocation": "inside main > article.content, near top",
+  "expectedPublication": false,
+  "releaseAuthorized": false,
+  "renderedOwnerPass": false,
+  "sourceFactsUnchangedExceptSeparateProofCorrections": true,
+  "privacySeparateDraft": "https://github.com/usdimpact/usd-impact-site/pull/1037",
+  "historicalLayoutCommentLeftUnchangedToPreserveReviewedGitBlob": true
+}

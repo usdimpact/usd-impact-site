@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "usd-impact-first-independent-macro-weekly-six-claim-official-source-review-v1-draft",
+  "reviewRecordedDate": "2026-10-31",
+  "status": "INDEPENDENT_PRIMARY_FACT_RECONCILIATION_COMPLETE_NONLEGAL_DRAFT",
+  "repository": "usdimpact/usd-impact-site",
+  "prNumber": 1025,
+  "sourceArticleBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+  "ownerApprovedSharedLayoutReviewedCommit": "889c9da8a692e5c7f5a2935fc4096eced67f8204",
+  "coveragePeriod": [
+    "2026-10-26",
+    "2026-10-30"
+  ],
+  "officialSourceCount": 5,
+  "reviewedClaimCount": 6,
+  "reviewedEvents": [
+    {
+      "id": "fomc-preview-oct26",
+      "label": "FOMC event scheduling before the decision",
+      "sourceUrl": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+      "observedFacts": [
+        "FOMC meeting scheduled October 27–28, 2026",
+        "Premeeting calendar was not an outcome announcement"
+      ],
+      "sourceType": "official Federal Reserve calendar",
+      "factualCrossCheck": "PASS",
+      "releaseTimeBoundary": "No implied decision before October 28",
+      "externallyVerifiedMarketReaction": false
+    },
+    {
+      "id": "fomc-outcome-oct28",
+      "label": "FOMC target and vote",
+      "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+      "observedFacts": [
+        "October 28, 2026 at 2:00 p.m. EDT",
+        "Target range maintained at 3.75%–4.00%",
+        "Committee statement adopted by a 10–2 vote",
+        "Two dissenters wanted a 0.25 percentage-point increase"
+      ],
+      "sourceType": "official FOMC statement",
+      "factualCrossCheck": "PASS",
+      "releaseTimeBoundary": "Issuer release time, not verified website first-posting instant",
+      "externallyVerifiedMarketReaction": false
+    },
+    {
+      "id": "gdp-oct29",
+      "label": "Q3 real GDP advance",
+      "sourceUrl": "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+      "observedFacts": [
+        "October 29, 2026 at 8:30 a.m. EDT",
+        "Q3 2026 real GDP +3.4% seasonally adjusted annual rate",
+        "Q2 2026 real GDP +2.2% seasonally adjusted annual rate"
+      ],
+      "sourceType": "official BEA release",
+      "factualCrossCheck": "PASS",
+      "releaseTimeBoundary": "Quarterly annualized rate is not year-over-year growth",
+      "externallyVerifiedMarketReaction": false
+    },
+    {
+      "id": "pce-oct29",
+      "label": "September headline and core PCE",
+      "sourceUrl": "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026",
+      "observedFacts": [
+        "October 29, 2026 at 8:30 a.m. EDT",
+        "September PCE price index +3.6% from same month one year earlier",
+        "September PCE price index excluding food and energy +3.1% year over year"
+      ],
+      "sourceType": "official BEA release",
+      "factualCrossCheck": "PASS",
+      "releaseTimeBoundary": "Rates are year-over-year, not month-over-month",
+      "externallyVerifiedMarketReaction": false
+    },
+    {
+      "id": "eci-oct30",
+      "label": "Q3 Employment Cost Index",
+      "sourceUrl": "https://www.bls.gov/news.release/archives/eci_10302026.htm",
+      "observedFacts": [
+        "October 30, 2026 at 8:30 a.m. Eastern",
+        "Civilian compensation +0.8% for September-ending quarter, seasonally adjusted",
+        "Previous quarter civilian compensation +0.9% seasonally adjusted",
+        "Civilian compensation +3.4% twelve months to September 2026, not seasonally adjusted"
+      ],
+      "sourceType": "official indexed and browser-backed BLS archive release",
+      "factualCrossCheck": "PASS",
+      "releaseTimeBoundary": "Quarterly seasonally adjusted and annual not-seasonally-adjusted measures kept separate",
+      "externallyVerifiedMarketReaction": false
+    }
+  ],
+  "editorialMethodClaim": {
+    "id": "independent-facts-do-not-prove-asset-price-reaction",
+    "status": "PASS_BOUNDARY_REVIEW",
+    "statement": "Official event/quantity facts do not independently prove a contemporaneous DXY, USD, yield, oil, gas, gold, Bitcoin or equity-price direction.",
+    "marketPriceSourceUsed": false,
+    "originalEightDriverScoreUsed": false,
+    "realizedAssetReturnAsserted": false,
+    "investmentRecommendationAsserted": false,
+    "methodologicalNotASixthGovernmentRelease": true
+  },
+  "verificationScope": {
+    "governmentSourceFactsIndependentlyReviewed": true,
+    "fivePreviouslyPublishedDailyVersionPinsAlreadyInExistingManifest": true,
+    "officialIssuerReleaseTimeNotGuaranteedFirstPostingTime": true,
+    "officialIssuerFactualCorrectionsToFrozenArticleRequired": false,
+    "marketDataRightsGranted": false,
+    "thirdPartyImagesOrTablesCopied": false,
+    "qualifiedRomaniaEuInternationalRightsClearance": false,
+    "qualifiedPrivacyCertification": false,
+    "editorialApprovalTransferredToNewPublishedStatusCopy": false,
+    "mergeAuthorized": false,
+    "publicRouteAuthorized": false,
+    "productionDeployAuthorized": false,
+    "indexingAuthorized": false,
+    "independentPublishedWeeklyCount": 0,
+    "eligibleMonthlyWeeklies": 0
+  },
+  "note": "Research-backed factual QA evidence, not a source redistribution license, legal opinion, statement of live asset returns, or publication approval. Frozen approved article remains unchanged."
+}

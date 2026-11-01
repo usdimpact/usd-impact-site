@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "usd-impact-independent-macro-ga4-current-production-reconciliation-v2",
+  "preparedDate": "2026-10-31",
+  "status": "DRAFT_ONLY_MAIN_SOURCE_PARITY_NO_MACRO_RELEASE",
+  "repository": "usdimpact/usd-impact-site",
+  "draftPr": 1025,
+  "draftHeadBeforeReconciliation": "67e6d0c984c0f08ccabfad9248ece612e0bcf0f4",
+  "historicalPrivacyReceipt": {
+    "path": "docs/operations/independent-macro-release/privacy-production-merge-integration-receipt-2026-10-31.draft.json",
+    "blobSha": "1e3d8e72e4b7b2227b7cb9ea9a7ff03307653639",
+    "priorProductionMain": "743872f3fdfd5fdddd242b64e7a42674a459a416",
+    "priorProductionGa4ClientBlobSha": "2877b295ddc106c0e89b75eb55e71a0c92afc642",
+    "priorConsentRegressionBlobSha": "cd94df36571fd74e57cfb7b42a7ebdd41ed93d09",
+    "immutablePointInTimeEvidence": true
+  },
+  "liveGa4Release": {
+    "pr": 1040,
+    "reviewedHead": "992abc4050ae07f70e8a31dec725593891c7bcba",
+    "protectedMainCommit": "4221668716c2214012e4dd26a1dae8ee050f728a",
+    "vercelProductionDeployment": "dpl_EmRG6A6tKtXjWuzp3FDNKVfJGC9i",
+    "observedReady": true,
+    "ga4ClientBlobSha": "0667863de7759c6e32c6feb4f118deb37c5ebf05",
+    "ga4ConsentRegressionBlobSha": "7a3289f61a9535c922d48b2cd1de4fc5d34ed844",
+    "compiledAstroModuleRequired": true,
+    "ownerReportedProductionConsentPass": true,
+    "independentFullProductionNetworkCookieTrace": false,
+    "qualifiedEprivacyAssessment": false,
+    "monitoring24HourPassNotYetEstablished": true
+  },
+  "integrationGuards": {
+    "mainSourceIncludesTwoCompiledChromiumQAWorkflows": true,
+    "previousOwnerApprovedOriginalArticleBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "previousOwnerApprovedLayoutBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
+    "ownerRiskDocsRemainedHistoricalNoImplicitReapproval": true,
+    "macroRouteGetStaticPathsReturnsEmpty": true,
+    "macroPublicPagesAuthorized": false,
+    "macroPRMergeAuthorized": false,
+    "macroProductionDeploymentAuthorized": false,
+    "macroSearchIndexingAuthorized": false,
+    "originalScoreOrProviderDataRightsAuthorized": false,
+    "qualifiedLegalAndPrivacyClearanceObtained": false,
+    "ownerItemSpecificR04R05R06R07X01Accepted": false,
+    "qaOnlyPr1041MayBeMerged": false
+  },
+  "nextGate": "Review exact merged Draft SHA after CI. R04/R05/R06/R07/X01 and fresh release copy PASS still PENDING. Do not deploy or merge."
+}

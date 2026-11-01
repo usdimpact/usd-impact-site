@@ -1,0 +1,35 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import originalCandidate from '../data/independent-macro-review/weekly-2026-10-30.release-candidate.html?raw';
+import { extractIndependentMacroWeeklyDraftFragment } from '../lib/independent-macro-weekly-draft-shell.mjs';
+import '../styles/independent-macro-weekly-draft.css';
+
+// This component is intentionally used only by the disabled Draft route.
+// The previously approved standalone HTML stays unchanged. The shared-site
+// presentation is a different review artifact and has NO owner layout PASS.
+// No publication, sitemap, indexing, email, Preview or Production is authorized.
+const adapted = extractIndependentMacroWeeklyDraftFragment(originalCandidate);
+if (!adapted.presentationChanged || adapted.readyForPublicRelease) {
+  throw new Error('Independent Macro Weekly adaptation must remain Draft-only');
+}
+---
+<BaseLayout
+  title="USD Impact Macro Weekly Review | October 26–30, 2026 — Unpublished shared-layout Draft"
+  description="Private, unpublished integration Draft. Independent educational macro report; source use and public release still on HOLD."
+  locale="en"
+  currentPath="/macro-reviews/weekly/2026-10-30/"
+  noindex={true}
+>
+  <div
+    class="mw-root"
+    data-macro-series="independent_macro_education"
+    data-release-authorized="false"
+    data-shared-layout-editorial-pass="false"
+    data-shared-layout-status="draft-not-published"
+  >
+    <div class="mw-ribbon" role="status">
+      Shared-layout Draft — not published — presentation review, international rights and Production HOLD
+    </div>
+    <Fragment set:html={adapted.fragment} />
+  </div>
+</BaseLayout>

@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "usd-impact-first-weekly-proposed-status-copy-v1-draft",
+  "preparedDate": "2026-10-31",
+  "state": "TEXT_PROPOSAL_ONLY_NOT_RENDERED_NOT_APPROVED",
+  "repository": "usdimpact/usd-impact-site",
+  "pr": 1025,
+  "proposalBasedOnCommit": "138d250cab78560d10c2581a45288a1466f282f8",
+  "unchangedEvidence": {
+    "articleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "componentGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
+    "adapterGitBlobSha": "77cbc75bd1fe7e5a843592904442d74cf4e07ab0",
+    "sevenEditorialSectionsUnchanged": true,
+    "officialSourcesPreserved": 5,
+    "originalDailyLinksPreserved": 5
+  },
+  "proposedStatusOnlySubstitutions": [
+    {
+      "id": "hero-badge",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "old": "Draft candidate — HOLD",
+      "proposed": "Coverage: October 26–30, 2026",
+      "category": "source hero status",
+      "editorialApprovalNeeded": true,
+      "renderTarget": "fragment"
+    },
+    {
+      "id": "hero-review-status",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "old": "Draft only, never published",
+      "proposed": "Official release facts checked; education only",
+      "category": "source hero status",
+      "editorialApprovalNeeded": true,
+      "renderTarget": "fragment"
+    },
+    {
+      "id": "section-seven-status",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "old": "This page is an unpublished Draft candidate. Exact-item rights, international distribution, and public release remain on HOLD; no agency endorses the page.",
+      "proposed": "This page provides original educational commentary on cited official releases; it does not report independently observed asset-price reactions or the original Score. No agency endorses this page.",
+      "category": "editorial compliance section",
+      "editorialApprovalNeeded": true,
+      "renderTarget": "fragment"
+    },
+    {
+      "id": "section-seven-heading",
+      "path": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+      "old": "Release-candidate limitations:",
+      "proposed": "Scope and limitations:",
+      "category": "editorial compliance heading",
+      "editorialApprovalNeeded": true,
+      "renderTarget": "fragment"
+    },
+    {
+      "id": "layout-ribbon",
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "old": "Shared-layout Draft — not published — presentation review, international rights and Production HOLD",
+      "proposed": "Independent Macro Weekly — October 26–30, 2026",
+      "category": "shared layout",
+      "editorialApprovalNeeded": true,
+      "renderTarget": "layout"
+    },
+    {
+      "id": "layout-title",
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "old": "USD Impact Macro Weekly Review | October 26–30, 2026 — Unpublished shared-layout Draft",
+      "proposed": "USD Impact Macro Weekly Review | October 26–30, 2026",
+      "category": "page metadata",
+      "editorialApprovalNeeded": true,
+      "renderTarget": "layout"
+    },
+    {
+      "id": "layout-description",
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "old": "Private, unpublished integration Draft. Independent educational macro report; source use and public release still on HOLD.",
+      "proposed": "An educational review of official FOMC, GDP, PCE and Employment Cost Index releases for October 26–30, 2026. Not a market-price signal or investment recommendation.",
+      "category": "page metadata",
+      "editorialApprovalNeeded": true,
+      "renderTarget": "layout"
+    },
+    {
+      "id": "adapter-stale-presentation-notice",
+      "path": "apps/web/src/lib/independent-macro-weekly-draft-shell.mjs",
+      "old": "This shared-layout adaptation is not published. The standalone article has an editorial PASS; this new layout, qualified international rights review, merge and public Production release remain on HOLD.",
+      "proposed": "This independent educational Weekly summarizes cited official releases, without measured market-price returns or original USD Impact Score outputs.",
+      "category": "presentation notice",
+      "editorialApprovalNeeded": true,
+      "renderTarget": "fragment"
+    }
+  ],
+  "otherChangesThatMustBeDecidedSeparately": {
+    "standaloneOriginalSourceMustRemainImmutable": true,
+    "createSeparateReleaseComponentAndAdapterRatherThanOverwriteReviewArtifact": true,
+    "exactDateRouteWhitelistMustRemainDisabled": true,
+    "noindexFirstDefault": true,
+    "publicReleaseMetadataDateMustBeSetOnlyOnVerifiedActualPublication": true,
+    "productionDeployAndMergeRequireNewOwnerAuthorization": true,
+    "indexingRequiresSeparateAuthorization": true,
+    "extraWeekliesNeverAutoGenerated": true
+  },
+  "ownerStatusCopyEditorialPass": false,
+  "releaseCandidateCompiled": false,
+  "renderedReleaseCandidateReviewed": false,
+  "releaseAuthorized": false,
+  "routeActivated": false,
+  "noindexRemovalAuthorized": false,
+  "firstPublicPublicationUtc": null,
+  "legalRightsReviewPassed": false,
+  "privacyCertificationPassed": false,
+  "reviewRevision": "2026-10-31-source-rendered-fragment-audit",
+  "offlineRenderedTextPreflight": {
+    "mode": "source-string-simulation-only_no_site_build_no_deployment",
+    "allEightMappedTextEditsApplyToDisplayedFragmentOrLayout": true,
+    "unnecessaryHistoricalSideNoteReplacementRemoved": true,
+    "previouslyUnmappedSeventhSectionHeadingAddressed": true,
+    "visibleOldDraftLabelsRemaining": 0,
+    "factualSectionsPresentAndUnchangedExceptTargetedComplianceCopy": true,
+    "officialLinksUnaffected": true,
+    "baseLayoutReviewedComponentOriginalUnchanged": true,
+    "newRenderedAstroComponentCompiled": false,
+    "newPreviewOrProductionCreated": false
+  },
+  "machineReadablePublishStateChangesRequiringSeparateAuthorization": [
+    {
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "needle": "data-release-authorized=\"false\"",
+      "possibleFutureValue": "data-release-authorized=\"true\"",
+      "allowedOnlyAfterExactReleaseAuthorization": true
+    },
+    {
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "needle": "data-shared-layout-editorial-pass=\"false\"",
+      "possibleFutureValue": "data-shared-layout-editorial-pass=\"true\"",
+      "allowedOnlyAfterNewFinalRenderedEditorialPass": true
+    },
+    {
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "needle": "data-shared-layout-status=\"draft-not-published\"",
+      "possibleFutureValue": "data-shared-layout-status=\"published\"",
+      "allowedOnlyAfterRealVerifiedPublication": true
+    },
+    {
+      "path": "apps/web/src/components/IndependentMacroWeeklyDraftShell.astro",
+      "needle": "noindex={true}",
+      "possibleFutureValue": "indexing determined by independent owner decision; default noindex",
+      "allowedOnlyAfterSeparateIndexingDecision": true
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+name: Independent Macro release-shaped private review (HOLD)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/independent-macro-release-shaped-private-qa.yml'
+      - 'apps/web/scripts/test-independent-macro-release-shaped-browser.py'
+      - 'apps/web/src/components/IndependentMacroWeeklyReleaseShapeHold.astro'
+      - 'docs/operations/independent-macro-release/first-weekly-release-shaped-private-qa-2026-11-01.draft.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macro-release-shaped-private-qa-pr1025
+  cancel-in-progress: false
+
+jobs:
+  private-release-shaped-qa:
+    if: github.event.pull_request.number == 1025
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Exact Draft source, no credential persistence
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Use reviewed Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install locked dependencies without secrets
+        working-directory: apps/web
+        run: npm ci --strict-allow-scripts --no-audit --no-fund
+      - name: Fail closed on unchanged Macro Weekly route
+        working-directory: apps/web
+        run: node scripts/test-independent-macro-main-integration-hold.mjs
+      - name: Inject one temporary internal Astro page and local sitemap exclusion
+        working-directory: apps/web
+        shell: bash
+        run: |
+          set -euo pipefail
+          route="src/pages/internal/macro-weekly-release-shape-qa/index.astro"
+          test ! -e "$route"
+          mkdir -p "$(dirname "$route")"
+          cat > "$route" <<'ASTRO'
+          ---
+          import Shape from '../../../components/IndependentMacroWeeklyReleaseShapeHold.astro';
+          export const prerender = true;
+          ---
+          <Shape />
+          ASTRO
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('astro.config.mjs')
+          source=p.read_text()
+          anchor="  '/internal/localization/spanish-privacy-review',"
+          assert source.count(anchor)==1, "Cannot safely inject internal path exclusion"
+          p.write_text(source.replace(anchor,anchor+"\n  '/internal/macro-weekly-release-shape-qa',"))
+          PY
+          echo "Runner-only Astro path injected; original route remains getStaticPaths => []"
+      - name: Compile site with ephemeral noindex review, no deployment
+        working-directory: apps/web
+        shell: bash
+        env:
+          PUBLIC_GA4_MEASUREMENT_ID: ''
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          npm run prepare:fonts
+          npm run generate:quizzes
+          npx --no-install astro build
+          test -f dist/internal/macro-weekly-release-shape-qa/index.html
+      - name: Install pinned Playwright for system Chrome only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/release-shaped-qa-venv"
+          "$RUNNER_TEMP/release-shaped-qa-venv/bin/python" -m pip install --disable-pip-version-check --no-cache-dir playwright==1.57.0
+          command -v google-chrome || command -v chromium
+      - name: Verify exact release-shaped metadata, footer, source and noindex in Chrome
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/release-shaped-qa-venv/bin/python" apps/web/scripts/test-independent-macro-release-shaped-browser.py
+      - name: Preserve seven-day screenshots and redacted build report only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: macro-release-shaped-private-pr1025
+          path: apps/web/.private_macro_release_shape_evidence/
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Remove disposable internal page, restore runner Astro config
+        if: always()
+        working-directory: apps/web
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf src/pages/internal/macro-weekly-release-shape-qa
+          git restore -- astro.config.mjs
+          test ! -e src/pages/internal/macro-weekly-release-shape-qa/index.astro
+          echo "No site route or Production setting changed in repository"

@@ -1,0 +1,16 @@
+/* Styles exclusively for an un-routed, noindex, review-only component. */
+.mw-publication-appearance-review .mw-ai-review-disclosure {
+  max-width: 1160px;
+  margin: 26px auto 0;
+  padding: 15px 24px;
+  border-left: 4px solid #80dbcb;
+  border-radius: 7px;
+  background: #102538;
+  color: #e8f3f5;
+  font-size: .96rem;
+  line-height: 1.6;
+}
+.mw-publication-appearance-review .mw-ai-review-disclosure strong { color: #f1c990; }
+@media (max-width: 760px) {
+  .mw-publication-appearance-review .mw-ai-review-disclosure { margin: 18px 12px 0; padding: 14px 18px; }
+}

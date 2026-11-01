@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "usd-impact-macro-weekly-shared-layout-owner-presentation-pass-v1-draft",
+  "recordedCalendarDate": "2026-10-30",
+  "exactAttestedUtcTimestamp": null,
+  "decisionSource": "ChatGPT owner follow-up immediately after the requested protected review screenshots and 320px/Network/Privacy settings instructions",
+  "ownerResponseVerbatim": "all PASS, please continue",
+  "ownerDecision": "PASS_PRESENTATION_ONLY_FOR_EXACT_REVIEWED_ARTIFACT",
+  "sourceReceiptPrComment": "https://github.com/usdimpact/usd-impact-site/pull/1025#issuecomment-6534279543",
+  "reviewedArtifact": {
+    "repository": "usdimpact/usd-impact-site",
+    "prNumber": 1025,
+    "reviewedPrCommit": "889c9da8a692e5c7f5a2935fc4096eced67f8204",
+    "reviewedBranch": "agent/independent-macro-weekly-main-integration-hold-2026-10-30",
+    "originalArticleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "sharedLayoutComponentGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
+    "sharedLayoutAdapterGitBlobSha": "77cbc75bd1fe7e5a843592904442d74cf4e07ab0",
+    "sharedLayoutCssGitBlobSha": "6ba06b4ace2dca2db7dac7a1a7b376c83909f163",
+    "proposedPublicPath": "/macro-reviews/weekly/2026-10-30/",
+    "reviewedIsolatedDeploymentId": "dpl_7RvFRJFNXKCotxv7J7tv9tRP1Nfu",
+    "reviewedIsolatedVercelProjectId": "prj_rJ1pQKXoNAbrjMivScWeRYNfsAJa",
+    "reviewedAuthenticatedQaPage": "https://usd-impact-macro-weekly-stage-1s5k56isl-usd-impact.vercel.app/qa-weekly/"
+  },
+  "evidenceAndLimits": {
+    "ownerProvidedDesktopAnd400pxScreenshotsInConversation": true,
+    "ownerReportsAllFollowupManualChecksPass": true,
+    "ownerAttestsPresentationPass": true,
+    "directAttached320pxScreenshotInGithub": false,
+    "independentlyCapturedFullNetworkHar": false,
+    "independentlyCapturedConsoleErrorRootCause": false,
+    "failedHistoricalNavigationRootCauseVerified": false,
+    "rawProductionCookieJarAndGa4BeaconsAudited": false,
+    "isolatedQaWasProductionRuntimeParity": false,
+    "qualifiedScreenReaderAuditCompleted": false,
+    "sitePrivacyOrGdprComplianceCertified": false,
+    "reviewedComponentAtReviewTimeStillEmbedsEditorialPassFalseMarker": true,
+    "futureStatusMarkerUpdateRequiresSeparatelyControlledChange": true
+  },
+  "approvedOnly": {
+    "ownerPresentationAndResponsiveAppearance": true,
+    "ownerReportedManualFunctionalityAndPrivacyUi": true,
+    "originalReviewedArticleEditorialContentUnchanged": true
+  },
+  "notApproved": {
+    "merge": true,
+    "publicPreviewOrProductionDeploy": true,
+    "searchIndexing": true,
+    "siteNavigation": true,
+    "newsletterRssPdfTranslation": true,
+    "sourceRightsMatricesUnblocking": true,
+    "originalScorePublicationRights": true,
+    "qualifiedRomaniaEuInternationalLegalClearance": true,
+    "thirdPartyMediaOrMarketFeedReuse": true,
+    "productionAnalyticsCookieComplianceCertification": true
+  },
+  "releaseAuthorized": false,
+  "publishReady": false,
+  "publishedIndependentWeeklyCount": 0,
+  "eligibleMonthlyWeeklies": 0,
+  "note": "Owner PASS is a post-build decision for a frozen exact preview. Frozen component attributes continue to say not editorially approved until a future controlled change updates them; that historical marker is not current rights or publication authority."
+}

@@ -1,0 +1,107 @@
+name: Independent Macro Weekly private compiled QA (DRAFT HOLD)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/independent-macro-private-compiled-qa.yml'
+      - 'apps/web/scripts/test-independent-macro-private-compiled-browser.py'
+      - 'docs/operations/independent-macro-release/first-weekly-r05-compiled-qa-wording-decision-2026-11-01.draft.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macro-weekly-private-compiled-qa-pr1025
+  cancel-in-progress: false
+
+jobs:
+  private-compiled-review:
+    if: github.event.pull_request.number == 1025
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Read-only checkout without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Use pinned Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install exact dependencies, no secrets
+        working-directory: apps/web
+        run: npm ci --strict-allow-scripts --no-audit --no-fund
+      - name: Test unmerged Macro HOLD source
+        working-directory: apps/web
+        run: node scripts/test-independent-macro-main-integration-hold.mjs
+      - name: Inject runner-only private Astro review path and local sitemap exclusion
+        shell: bash
+        working-directory: apps/web
+        run: |
+          set -euo pipefail
+          path="src/pages/internal/macro-weekly-private-qa/index.astro"
+          test ! -e "$path"
+          mkdir -p "$(dirname "$path")"
+          cat > "$path" <<'ASTRO'
+          ---
+          import PrivateReview from '../../../components/IndependentMacroWeeklyPublicationAppearanceReview.astro';
+          export const prerender = true;
+          ---
+          <PrivateReview />
+          ASTRO
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('astro.config.mjs')
+          txt=p.read_text()
+          anchor="  '/internal/localization/spanish-privacy-review',"
+          assert txt.count(anchor)==1
+          p.write_text(txt.replace(anchor,anchor+"\n  '/internal/macro-weekly-private-qa',"))
+          PY
+          echo "Temporary QA route exists only in disposable runner"
+      - name: Compile actual Astro component to temporary route, no deployment
+        shell: bash
+        working-directory: apps/web
+        env:
+          PUBLIC_GA4_MEASUREMENT_ID: ''
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          npm run prepare:fonts
+          npm run generate:quizzes
+          npx --no-install astro build
+          test -f dist/internal/macro-weekly-private-qa/index.html
+      - name: Install pinned Playwright driver (system Chrome)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/macro-qa-venv"
+          "$RUNNER_TEMP/macro-qa-venv/bin/python" -m pip install --disable-pip-version-check --no-cache-dir playwright==1.57.0
+          command -v google-chrome || command -v chromium
+      - name: Verify compiled rendered review on loopback, save QA screenshots
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/macro-qa-venv/bin/python" apps/web/scripts/test-independent-macro-private-compiled-browser.py
+      - name: Upload review evidence only, not full site build
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: macro-weekly-private-compiled-review
+          path: apps/web/.private_macro_compiled_qa/
+          retention-days: 7
+          include-hidden-files: true
+          if-no-files-found: ignore
+      - name: Remove runner-only QA route and restore local config
+        if: always()
+        shell: bash
+        working-directory: apps/web
+        run: |
+          set -euo pipefail
+          rm -rf src/pages/internal/macro-weekly-private-qa
+          git restore -- astro.config.mjs
+          test ! -e src/pages/internal/macro-weekly-private-qa/index.astro

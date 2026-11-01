@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "usd-impact-macro-weekly-private-compiled-r05-x01-owner-pass-v1",
+  "recordedDate": "2026-11-01",
+  "recordScope": "APPROVAL_OF_PRIVATE_COMPILED_ASTRO_VISUAL_QA_ONLY",
+  "repository": "usdimpact/usd-impact-site",
+  "pullRequest": 1025,
+  "ownerMessageVerbatim": "PASS, please continue",
+  "ownerMessageContext": "The immediately preceding assistant requested review of compiled wording, visible AI-assisted disclosure placement, and final page appearance using desktop/mobile screenshots, while explicitly reserving R05 final public release page and legal gates.",
+  "reviewIdentity": {
+    "checkedOutDraftCommit": "4cfa107f74bd62d221c5699f07e1d122750715aa",
+    "originalArticleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "reviewedOfflineHtmlProofGitBlobSha": "61c35f8380c793c8330ca5b6402f483ec7e38710",
+    "priorOwnerR05WordingForQaReceiptGitBlobSha": "794b6335e11bf80e4d9336c9850a186d57bb00bc",
+    "actualCompiledFromComponent": "apps/web/src/components/IndependentMacroWeeklyPublicationAppearanceReview.astro",
+    "privatePagePath": "/internal/macro-weekly-private-qa/",
+    "privatePageExistsInCommittedSource": false,
+    "compiledPageBuiltOnlyInsideTemporaryGitHubActionsRunner": true,
+    "githubActionsRunId": 41318078153,
+    "githubActionsRunUrl": "https://github.com/usdimpact/usd-impact-site/actions/runs/41318078153",
+    "githubActionsArtifactId": 13088480632,
+    "githubActionsArtifactUrl": "https://github.com/usdimpact/usd-impact-site/actions/runs/41318078153/artifacts/13088480632",
+    "artifactName": "macro-weekly-private-compiled-review",
+    "artifactSizeBytes": 3224119,
+    "artifactRetentionDays": 7,
+    "artifactExpiresAndIsNotIndefiniteRightsClearance": true
+  },
+  "verifiedQa": {
+    "exactDraftHeadSevenOfSevenWorkflowsSuccess": true,
+    "localBuiltOnlyNoExternalDeployment": true,
+    "actualCompiledAstro": true,
+    "chromeViewportsPassed": [
+      {
+        "label": "desktop",
+        "width": 1440
+      },
+      {
+        "label": "tablet",
+        "width": 768
+      },
+      {
+        "label": "mobile",
+        "width": 390
+      }
+    ],
+    "afterSyntheticRejectAnalyticsVisibleUnobstructedAiDisclosure": true,
+    "verifiedFiveDistinctOfficialSources": true,
+    "verifiedSevenContentSections": true,
+    "verifiedFomcTwoVotingDissenters": true,
+    "verifiedEducationalHeadingAndDisclaimer": true,
+    "verifiedOperatorAndPrivacyTermsLinks": true,
+    "zeroBrowserScriptErrors": true,
+    "zeroExternalNetworkRequests": true,
+    "zeroHorizontalOverflow": true,
+    "noindexInCompiledPrivateReview": true,
+    "noCanonicalInCompiledPrivateReview": true,
+    "publicMacroPagesGenerated": 0,
+    "sitemapOrAssetLeaks": 0,
+    "gitHubWebQualitySourceAssertionsPassed": 468,
+    "gitHubWebQualityBuildAssertionsPassed": 3418
+  },
+  "ownerAttestedPrivateReview": {
+    "r05CompiledCandidateWordingAndPresentationPass": true,
+    "x01VisibleAiAssistanceDisclosurePlacementPrivateReviewPass": true,
+    "scopeOnly": "THE EXACT NONPUBLIC COMPILED QA SCREENSHOTS AND TESTED SOURCE",
+    "transfersToUnbuiltRealPublicRoute": false,
+    "actualProductionRenderedPageReviewed": false,
+    "legalOrPublisherCapacityIndependentlyVerified": false,
+    "finalPublicArticleApprovalGranted": false
+  },
+  "historicalRecordsPreserved": {
+    "originalOwnerFiveChoicesReceiptGitBlobSha": "9d8a023c53cebbb672a8897d721efff261b16e22",
+    "earlierR05WordingQaReceiptGitBlobSha": "794b6335e11bf80e4d9336c9850a186d57bb00bc",
+    "historicalR05OwnerValueAtTimeOfFirstReceipt": "PENDING",
+    "currentlyOwnerApprovedForDraftQa": true
+  },
+  "releasePermissions": {
+    "finalPublicRenderedEditorialPass": false,
+    "finalPublicRenderedAiDisclosurePass": false,
+    "sourceRightsGlobalReuse": false,
+    "foreignDistributionRights": false,
+    "qualifiedLegalAndPrivacyReview": false,
+    "productionConsentNetworkTraceCertified": false,
+    "originalScoreAndProviderRights": false,
+    "mergeToMain": false,
+    "deployToVercelProduction": false,
+    "deployToVercelPreview": false,
+    "publishMacroRoute": false,
+    "exposeInNavigation": false,
+    "indexInSearch": false,
+    "distributeInEmailRssPdf": false,
+    "paymentOrCommerce": false,
+    "credentialsOrProjectsChange": false
+  },
+  "requiredBeforeAnyPublication": [
+    "Review a separately approved exact public-release HTML/Astro artifact and ensure first-published-date, canonical, legal footer, AI disclosure, route and robots correctness.",
+    "Resolve actual source-use rights restrictions and qualified publisher GDPR/ePrivacy/cross-border obligations without assuming that a private visual PASS constitutes legal clearance.",
+    "Check any changed wording or source data against final primary evidence and record separate exact-version editorial/editor-of-record decisions.",
+    "Require explicit owner authorization to merge exact release commit, activate one Macro route and separately deploy/index/distribute.",
+    "Preserve existing public GA4 #1040, original Score rights HOLD, and QA-only PR #1041 DO NOT MERGE."
+  ],
+  "status": "PRIVATE_COMPILED_ASTRO_VISUAL_PASS_PUBLICATION_HOLD"
+}

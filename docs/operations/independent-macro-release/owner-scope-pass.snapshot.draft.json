@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "independent-macro-weekly-owner-editorial-and-narrow-use-pass-v1",
+  "recordedCalendarDate": "2026-10-30",
+  "exactReviewTimestampUtc": null,
+  "reviewTimestampRationale": "Owner's approval is recorded in this ChatGPT conversation; no independently attested exact UTC timestamp or signature is available.",
+  "decisionSource": "user_explicit_approval_following_specific_dual_review_question",
+  "askedQuestion": "Do you approve the candidate’s editorial content and, acting as publisher, accept the narrowly defined original-prose, official-facts and direct-links use after considering the documented international exceptions?",
+  "ownerResponse": "approved, please continue in high detail",
+  "ownerRole": "Publisher/operator decision-maker for KELA LEADS S.R.L. / USD Impact (role supplied in project context; identity and legal authority not independently verified by a signature)",
+  "reviewedArtifact": {
+    "repository": "usdimpact/usd-impact-site",
+    "draftPrNumber": 1024,
+    "branch": "agent/independent-macro-weekly-public-candidate-2026-10-30",
+    "reviewedPrHeadAtDecision": "d4d55c7ae721c21ab464f5429b679b9020ea9e16",
+    "htmlPath": "apps/web/src/data/independent-macro-review/weekly-2026-10-30.release-candidate.html",
+    "htmlGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+    "coverageStart": "2026-10-26",
+    "coverageEnd": "2026-10-30",
+    "title": "USD Impact Macro Weekly Review — October 26–30, 2026",
+    "exactClaimIds": [
+      "fomc-preview-oct26",
+      "fomc-reminder-oct27",
+      "fomc-outcome-oct28",
+      "gdp-oct29",
+      "pce-oct29",
+      "eci-oct30"
+    ],
+    "sourceItemIds": [
+      "fed-october-calendar",
+      "fed-fomc-statement-20261028",
+      "bea-gdp-q3-20261029",
+      "bea-pce-sep-20261029",
+      "bls-eci-q3-20261030"
+    ]
+  },
+  "approvals": {
+    "exactCandidateEditorialContentAndPresentationPass": true,
+    "publisherAcceptsNarrowOriginalProseOfficialFactsDirectLinksScope": true,
+    "publisherAcknowledgesDocumentedRomaniaEuInternationalRightsExceptions": true,
+    "issuerDeclaredIssueTimePlusAuthenticatedLaterReviewDraftMethodology": true,
+    "publisherPermissionForReproducingAgencyExpression": false,
+    "agencyApprovalOrThirdPartyLicenseGranted": false,
+    "qualifiedCrossBorderLegalOpinionCompleted": false,
+    "publicReleaseAuthorized": false,
+    "mergeAuthorized": false,
+    "publicProductionDeployAuthorized": false,
+    "indexingAuthorized": false,
+    "rssEmailPdfOrTranslationAuthorized": false,
+    "originalScoreLicenseOrRightsChanged": false
+  },
+  "actualUseScope": {
+    "language": "en",
+    "intendedFutureMedium": "one free/public educational webpage only, subject to later explicit release",
+    "sourcePolicy": "exact five official Fed/BEA/BLS source links, dates and reported factual observations only",
+    "originalWrittenExplanations": true,
+    "directLinksAndPlainTextIssuerCredit": true,
+    "noAgencyEndorsement": true,
+    "copiedAgencyParagraphsTablesChartsOrGraphics": false,
+    "governmentLogoSealOrTrademarkUse": false,
+    "commercialVendorMarketFeeds": false,
+    "originalEightDriverScoreOrScoreReportData": false,
+    "newsletterRssDownloadablePdf": false,
+    "translations": false,
+    "programmaticProviderDataExtraction": false,
+    "thirdPartySourceCopiesOrArchives": false
+  },
+  "unresolvedRightsRemainHold": {
+    "verifiedAgencyOrThirdPartyExceptionsForExactSourceItems": false,
+    "qualifiedRomaniaEuInternationalAssessmentComplete": false,
+    "finalCrossBorderLegalComplianceClearance": false,
+    "allOriginalProjectAllDenySourceMatricesRemainUnmodified": true,
+    "oneEnglishWebpageScopeDoesNotApproveOtherMedia": true,
+    "noClaimThatUSFederalPublicDomainAppliesGlobally": true
+  },
+  "independentClaimEvidence": {
+    "priorDailyPostReleaseCorrectionIsNotThisWeeklyReview": true,
+    "thisApprovalCoversReviewedCandidateEditorialTextAsAWhole": true,
+    "independentLaterClaimSourceAuthenticityAuditComplete": false,
+    "firstIssuerHttpPostingTimesKnown": false,
+    "dateOfUSDImpactActualFirstPublicationUtc": null,
+    "noRetroactiveDatePublished": true
+  },
+  "postReviewPolicy": {
+    "htmlGitBlobImmutableUntilNewEditorialPass": true,
+    "changesToExactCandidateHtmlRequireNewReview": true,
+    "reviewRecordMayBeIncludedInDraftCIOnly": true,
+    "reviewRecordIsNotQualifiedLegalSignoff": true,
+    "allOldAndNewReleaseGatesRemainedFalse": true,
+    "noEnablingOfAstroStaticPaths": true,
+    "publicSiteProductionStillHold": true,
+    "firstIndependentMonthlyEligiblePublishedWeeks": 0
+  },
+  "publishReady": false,
+  "releaseAuthorized": false
+}

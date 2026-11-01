@@ -1,0 +1,181 @@
+{
+  "schemaVersion": "usd-impact-first-weekly-owner-item-specific-release-input-v1",
+  "createdLocalDate": "2026-10-31",
+  "state": "GENERAL_CONTINUE_RECORDED_EXPLICIT_ITEM_RISK_DECISIONS_PENDING",
+  "authority": "Generic owner instruction 'please continue, approved' authorizes Draft preparation only; it is NOT an item-by-item legal/privacy acceptance, AI-Act exception declaration, or publication permission.",
+  "repository": "usdimpact/usd-impact-site",
+  "pullRequest": 1025,
+  "draftReviewBaseline": "3afc6ff3207e99e79a167b2fc2992a074857e2a8",
+  "approvedArticleGitBlobSha": "4ce3ea62d8db328fa03739ae15e2571f5f6e99bd",
+  "approvedPresentationComponentGitBlobSha": "22b3a44a59560ebdcd2c17781108332789e6dac1",
+  "riskPreflightGitBlobSha": "7f88eb9c68bed49761875fba8f0e6308ae4128b4",
+  "caseRemediationIssue": "https://github.com/usdimpact/usd-impact-site/issues/1031",
+  "qualifiedReviewUpgradeIssue": "https://github.com/usdimpact/usd-impact-site/issues/1030",
+  "internalProcess": "PROVISIONAL_OPTION_B_ONLY_ONE_ENGLISH_ARTICLE",
+  "evidence": [
+    {
+      "riskId": "R04",
+      "scope": "Romania/EU international source rights and five issuer links",
+      "finding": "Facts-and-links only and no copied protected agency asset detected; international third-party and contractual restrictions require narrow item-based determination.",
+      "sources": [
+        "https://legislatie.just.ro/Public/DetaliiDocument/252971",
+        "https://www.usa.gov/government-copyright",
+        "https://www.federalreserve.gov/disclaimer.htm",
+        "https://www.bea.gov/help/faq/147",
+        "https://www.bls.gov/opub/copyright-information.htm"
+      ],
+      "requiredDecision": "I have reviewed the five exact official sources and source-only English scope; I identify no actual unfulfilled source/license restriction, or I specify the restriction and stop.",
+      "recommendedDisposition": "REVIEW_AND_STOP_ON_ACTUAL_RESTRICTION",
+      "ownerDecision": "PENDING",
+      "ownerAcknowledgedRisk": false,
+      "hardStopConfirmed": false,
+      "finalRenderedReleasePermission": false,
+      "ownerSpecificVerbatim": null,
+      "explicitItemAnswerProvided": false,
+      "proposedScopeForOwnerReview": "Exact English educational issuer-facts-and-hyperlinks scope only; no special permission to copy protected third-party content."
+    },
+    {
+      "riskId": "R05",
+      "scope": "Financial-language perimeter and final editorial status copy",
+      "finding": "Five official event facts and seven sections are verified; no actual asset return, original Score, personalized trading recommendation or asset-price signal identified in frozen text. Future publication status text is separate and not approved. Independent owner-supplied QA separately identified (a) `participants` imprecision in the 10-2 FOMC dissent, (b) an ambiguous compliance heading, and (c) an abbreviated advisory disclaimer. A non-routed review-only component now proposes three exact text corrections, while the original owner-reviewed source remains frozen.",
+      "sources": [
+        "https://www.esma.europa.eu/publications-data/questions-answers/1741",
+        "https://github.com/usdimpact/usd-impact-site/pull/1025"
+      ],
+      "requiredDecision": "Individually review and affirm the R05 risk scope, then give a new exact-rendered editorial PASS to the new three corrected sentences/heading and final release-status substitutions. Verify no trading advice or unsupported returns. Do not treat earlier frozen-source PASS as a PASS for this new proof.",
+      "recommendedDisposition": "THREE_CORRECTIONS_PREPARED_PENDING_NEW_EXACT_RENDERED_EDITORIAL_PASS",
+      "ownerDecision": "PENDING",
+      "ownerAcknowledgedRisk": false,
+      "hardStopConfirmed": false,
+      "finalRenderedReleasePermission": false,
+      "ownerSpecificVerbatim": null,
+      "explicitItemAnswerProvided": false,
+      "proposedScopeForOwnerReview": "Original seven-section educational/factual manuscript approved; no approval of unrendered final status text."
+    },
+    {
+      "riskId": "R06",
+      "scope": "Production analytics and privacy",
+      "finding": "Owner-authorized privacy PR #1035 has merged into protected main, and GA4 consent withdrawal hardening is READY in public Production. Previously initialized GA4 now gets analytics_storage:denied on withdrawal, with ga-disable and cookie-expiry logic retained; first-party telemetry stays optional. Owner Preview functional QA was reported PASS, exact-head CI and public-site smoke passed. No independent complete Production network/cookie trace or qualified provider GDPR/transfer opinion is claimed.",
+      "sources": [
+        "https://developers.google.com/tag-platform/security/guides/consent",
+        "https://europa.eu/youreurope/business/growing/digitalising/online-privacy/index_en.htm",
+        "https://www.usd-impact.com/privacy/"
+      ],
+      "requiredDecision": "Resolve any actual remaining provider/transfer/network and legal risks relevant to the final independent Macro Weekly public page. A proven unconsented beacon or legal restriction is a STOP; a missing independently captured trace alone is not proof of a breach. The completed privacy code rollout is not an external certification or general risk acceptance.",
+      "recommendedDisposition": "PRODUCTION_GA4_HARDENING_SHIPPED_R06_RISK_DECISION_PENDING",
+      "ownerDecision": "PENDING",
+      "ownerAcknowledgedRisk": false,
+      "hardStopConfirmed": false,
+      "finalRenderedReleasePermission": false,
+      "ownerSpecificVerbatim": null,
+      "explicitItemAnswerProvided": false,
+      "proposedScopeForOwnerReview": "Production GA4 hardening and known privacy evidence acknowledged; no independent GDPR/ePrivacy certification."
+    },
+    {
+      "riskId": "R07",
+      "scope": "Publisher/operator, government non-endorsement and final public disclosures",
+      "finding": "The existing site footer and Terms identify KELA LEADS S.R.L.; educational-only disclaimer and privacy/contact links exist. The new public status version has not been built or tested on target runtime.",
+      "sources": [
+        "https://github.com/usdimpact/usd-impact-site/pull/1025",
+        "https://www.usd-impact.com/privacy/"
+      ],
+      "requiredDecision": "Confirm operator legal person and editorial responsibility, and require actual final rendered non-endorsement/Terms/Privacy/legal-footer review before any public route.",
+      "recommendedDisposition": "OPERATOR_SUPPORTED_FINAL_ARTIFACT_STILL_UNREVIEWED",
+      "ownerDecision": "PENDING",
+      "ownerAcknowledgedRisk": false,
+      "hardStopConfirmed": false,
+      "finalRenderedReleasePermission": false,
+      "ownerSpecificVerbatim": null,
+      "explicitItemAnswerProvided": false,
+      "proposedScopeForOwnerReview": "Existing operator name and site legal links accepted as source basis; final page rendered legal/accountable-editor review remains."
+    },
+    {
+      "riskId": "X01",
+      "scope": "EU AI Act Article 50(4) and human editorial control or disclosure",
+      "finding": "Economic/financial public-interest AI-generated text can require disclosure; applicable exception depends on substantive human editorial review/control AND identifiable natural or legal person holding editorial responsibility. Existing owner content PASS and five-source fact QA exist; no signed full editorial-provenance and responsibility determination for final text. AI-assistance disclosure proposal was moved inside the main article in the non-routed proof. New location, exact text and responsible publisher remain pending separate owner PASS.",
+      "sources": [
+        "https://ai-act-service-desk.ec.europa.eu/en/ai-act/article-50",
+        "https://digital-strategy.ec.europa.eu/en/faqs/transparency-obligations-under-article-50-ai-act"
+      ],
+      "requiredDecision": "Confirm whether AI tools generated/manipulated this text. Either record the substantive human editorial review, authority over substantive changes, and responsible publisher if relying on exception, OR approve a clear and accurate AI-assistance disclosure for the final public article. Do not assume either path.",
+      "recommendedDisposition": "HUMAN_REVIEW_EXCEPTION_OR_DISCLOSURE_UNDETERMINED",
+      "ownerDecision": "PENDING",
+      "ownerAcknowledgedRisk": false,
+      "hardStopConfirmed": false,
+      "finalRenderedReleasePermission": false,
+      "ownerSpecificVerbatim": null,
+      "explicitItemAnswerProvided": false,
+      "proposedScopeForOwnerReview": "Owner approves preparation of conservative visible AI-assistance disclosure for final review; neither the human-review exception nor an exact final disclosure has been attested."
+    }
+  ],
+  "aiEditorialDetermination": {
+    "actualAIContributionToFinalText": "AI_ASSISTED_DRAFT_PREPARATION_DOCUMENTED_FOR_THIS_WORKFLOW",
+    "priorOwnerEditorialContentPassRecorded": true,
+    "priorOwnerPresentationPassRecorded": true,
+    "primarySourceFactsCheckedAgainstFiveIssuerLinks": true,
+    "humanSubstantiveReviewBeyondGenericPassDocumented": false,
+    "humanEditorIdentityOrLegalResponsibilitySigned": false,
+    "legalEditorialEntityObservedInWebsiteTerms": "KELA LEADS S.R.L.",
+    "legalEditorialResponsibilityForThisArticleAttested": false,
+    "exceptionUnderEUArticle50_4Chosen": false,
+    "publicAITextDisclosureChosen": false,
+    "publicDisclosureTextCandidate": "AI tools assisted with preparation of this educational review. USD Impact, operated by KELA LEADS S.R.L., is responsible for the published content. The linked Federal Reserve, BEA and BLS releases are the sources for reported official facts.",
+    "disclosureCandidateAssumesAIToolsWereUsed": true,
+    "disclosureCandidateNotInsertedIntoArticle": true,
+    "editorialDecision": "CONSERVATIVE_DISCLOSURE_PREPARED_FOR_NONPUBLIC_FINAL_RENDER_REVIEW",
+    "legalCertification": false,
+    "conservativeVisibleDisclosureProofPrepared": true
+  },
+  "nonWaivableStops": [
+    "Actual third-party source/license restriction, mark use, or applicable law/contract not satisfied",
+    "Confirmed collection of optional analytics without consent, or withdrawal failure",
+    "Material economic-data error, implied financial advice, unverifiable market returns",
+    "Misleading publisher/AI/editorial disclosure or unapproved public status",
+    "Any source blob change or exact-head CI failure, public route leak or unapproved deploy"
+  ],
+  "signOff": {
+    "ownerNameAndCapacityConfirmedForThisSpecificRiskReview": false,
+    "eachItemReviewedAndAccepted": false,
+    "substantiveAIHumanEditorialControlOrDisclosureApproved": false,
+    "remainingLegalAndPrivacyLimitationsAcknowledged": false,
+    "finalEightStatusCopyEditorialPass": false,
+    "finalRenderedReleaseArtifactReviewed": false,
+    "finalExactCommitOwnerReleaseAuthorization": false
+  },
+  "releasePermissions": {
+    "sourceRightsExpanded": false,
+    "originalScoreUnblocked": false,
+    "publicRoute": false,
+    "gitMerge": false,
+    "productionDeploy": false,
+    "indexing": false,
+    "siteNav": false,
+    "newsletterRssPdfTranslation": false
+  },
+  "firstPublishedIndependentWeeklies": 0,
+  "eligibleMonthlyCount": 0,
+  "note": "The first source article is immutable. This preparatory record exists to make a narrow owner decision possible; it does not resolve applicable legal questions or entitle any deployment.\n2026-10-31 owner wrote exactly: 'all approved, please continue' in response to five owner-review categories. This records five owner-scoped acknowledgements, not a qualified legal/privacy opinion, signed editorial responsibility, approval of the separately rendered status copy, a choice of the AI-law exception, or Git/route/Production/indexing/Score authorization.\nCorrection to prior inference: the exact generic owner message remains captured; separate individual decisions R04/R05/R06/R07/X01 are required before marking each accepted. The previously created receipt was downgraded, not erased. Original editorial/presentation historical PASS unaffected.",
+  "privacyProductionEvidence": {
+    "mergedMainSha": "743872f3fdfd5fdddd242b64e7a42674a459a416",
+    "productionDeploymentId": "dpl_7APZ2YJAZuyh1SrpPu3Rp9PVaxeB",
+    "currentGa4ClientBlobSha": "2877b295ddc106c0e89b75eb55e71a0c92afc642",
+    "ownerPreviewUatReportedPass": true,
+    "independentFullProductionTraceCaptured": false,
+    "qualifiedGdprEprivacyOpinion": false,
+    "macroPublicationAuthorized": false
+  },
+  "ownerGeneralContinueReceiptPath": "docs/operations/independent-macro-release/owner-five-item-risk-approval-receipt-2026-10-31.draft.json",
+  "ownerGeneralContinueReceiptGitBlobSha": "be5e1a03cde569aa59d54cf0f24c2d8e8ee2bc06",
+  "independentReadOnlyQaFollowup": {
+    "source": "Owner-provided read-only QA report created 2026-10-31 reviewing earlier Draft 920630af",
+    "reportedOriginalHead": "920630af13743b54de69cc99c402c0ce65b7003c",
+    "currentCorrectionReviewHead": "34b88f6bfc8a39802d0e4213eec40af65a8cc89e",
+    "productionConsentOrderingFinding": "INFERRED_AND_SEPARATELY_TRACKED_IN_DRAFT_PRIVACY_PR_1037",
+    "ownerFiveExplicitRiskAnswersRecorded": false,
+    "fomcDissentPreciseCorrectionSupportedByOfficialFed": true,
+    "threeNonpublicEditorialCopyCorrectionsProposed": true,
+    "finalRenderedEditorialPass": false,
+    "publishedRouteAuthorized": false,
+    "supportingCorrectionPath": "docs/operations/independent-macro-release/first-weekly-independent-qa-editorial-corrections-2026-10-31.draft.json"
+  }
+}

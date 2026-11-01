@@ -172,16 +172,16 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
                         href={link.href}
                         aria-current={navigationLinkIsActive(currentPath, link.href) ? "page" : undefined}
                         hreflang={link.contentLocale === 'en' ? 'en' : undefined}
-                        lang={link.contentLocale === 'en' ? 'en' : undefined}
+                        aria-label={link.contentLocale === 'en' ? `${link.label} (disponible en inglés)` : undefined}
                         title={link.contentLocale === 'en' ? 'Contenido disponible en inglés' : undefined}
                       >
-                        {link.label}{link.contentLocale === 'en' ? ' · EN' : ''}
+                        {link.label}{link.contentLocale === 'en' && <span lang="en" aria-hidden="true"> · EN</span>}
                       </a>
                     ))}
                   </div>
                 </details>
               ))}
-              <a class="nav-direct" href="/account" hreflang="en" lang="en" title="Cuenta disponible en inglés" aria-current={pageIsActive("/account/") ? "page" : undefined}>Cuenta · EN</a>
+              <a class="nav-direct" href="/account" hreflang="en" aria-label="Cuenta (disponible en inglés)" title="Cuenta disponible en inglés" aria-current={pageIsActive("/account/") ? "page" : undefined}>Cuenta <span lang="en" aria-hidden="true">· EN</span></a>
             </>
           )}
           <a

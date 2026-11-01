@@ -16,6 +16,7 @@ import {
   siteShellCopyForLocale,
 } from '../lib/site-navigation.js';
 import { localizationManifest } from '../data/localization-manifest.js';
+import { SPANISH_PUBLIC_REVIEW_PAIRS, spanishPublicReviewEnabled } from '../lib/spanish-public-review-policy.js';
 import { serializeStructuredData, structuredDataGraph } from '../lib/structured-data.js';
 import { getChapterById, getSurfaceBridgeForPath } from '../data/book-site-bridge/index.mjs';
 const [learnNavigation, updatesNavigation, libraryNavigation] = SITE_NAVIGATION;
@@ -34,13 +35,8 @@ const locale = requestedLocale === 'es' ? 'es' : 'en';
 const shellCopy = siteShellCopyForLocale(locale);
 // UI-40: These translated landing pages exist ONLY in Vercel Preview and
 // are unindexed; this mapping never activates an unpublished Production URL.
-const previewSpanishLandingByEnglish = Object.freeze({
-  '/news': '/es/news/',
-  '/score': '/es/score/',
-  '/reports': '/es/reports/',
-  '/video-library': '/es/video-library/',
-});
-const spanishTranslationReviewEnabled = process.env.VERCEL_ENV === 'preview';
+const previewSpanishLandingByEnglish = SPANISH_PUBLIC_REVIEW_PAIRS;
+const spanishTranslationReviewEnabled = spanishPublicReviewEnabled(process.env.VERCEL_ENV);
 const normalizedDocumentPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
 const previewSpanishAlternate = spanishTranslationReviewEnabled && locale === 'en'
   ? previewSpanishLandingByEnglish[normalizedDocumentPath] ?? null

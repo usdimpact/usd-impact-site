@@ -1,0 +1,232 @@
+---
+/*
+ * UI-40 Spanish public destination previews only.
+ *
+ * NO production routes: this getStaticPaths allowlist emits nothing unless
+ * Vercel explicitly builds a Preview deployment. This does not translate any
+ * unpublished Daily/Weekly source article or authorize a paid member asset.
+ */
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { monthlyEligibility } from '../../lib/report-periods.js';
+import { SPANISH_PUBLIC_REVIEW_SECTIONS, spanishPublicReviewEnabled } from '../../lib/spanish-public-review-policy.js';
+import { collections, getCollectionVideos, getVideoNumber, videos, libraryMeta } from '../../data/video-library.js';
+import { spanishVideoMetadata, spanishVideoCollections } from '../../data/es-video-catalog-draft.js';
+
+export function getStaticPaths() {
+  if (!spanishPublicReviewEnabled(process.env.VERCEL_ENV)) return [];
+  return SPANISH_PUBLIC_REVIEW_SECTIONS.map((section) => ({params:{section}}));
+}
+
+const section = Astro.params.section;
+const routes = {
+  news: { title: 'Daily USD Impact en español | Noticias y fuentes', description: 'Índice en español de las noticias diarias publicadas por USD Impact. Los artículos fuente continúan en inglés hasta su revisión editorial.', english: '/news/' },
+  score: { title: 'Weekly USD Impact Score en español | Metodología y acceso', description: 'Introducción en español al USD Impact Score, sus límites y el acceso protegido de Research.', english: '/score/' },
+  reports: { title: 'Informes de USD Impact en español | Semanal y mensual', description: 'Navegación en español de los informes semanales y mensuales verificados. Las ediciones fuente conservan su idioma original.', english: '/reports/' },
+  'video-library': { title: 'Videoteca de USD Impact | Catálogo de 51 películas en español', description: 'Catálogo educativo traducido al español de las 51 películas, con cinco colecciones y disponibilidad de subtítulos en español.', english: '/video-library/' }
+};
+const meta = routes[section];
+
+const daily = section === 'news'
+  ? (await getCollection('news')).filter((r) => r.data.status === 'published').sort((a,b) => b.data.date.localeCompare(a.data.date))
+  : [];
+const weekly = section === 'reports'
+  ? (await getCollection('weeklyReports')).filter((r) => r.data.status === 'published').sort((a,b) => b.data.periodEnd.localeCompare(a.data.periodEnd))
+  : [];
+const monthlyFiles = section === 'reports' ? import.meta.glob('../../content/monthly-reports/*.md') : {};
+const monthly = section === 'reports' && Object.keys(monthlyFiles).length
+  ? (await getCollection('monthlyReports')).filter((r) => r.data.status === 'published').sort((a,b) => b.data.periodEnd.localeCompare(a.data.periodEnd))
+  : [];
+const monthlyWindow = section === 'reports' ? monthlyEligibility(weekly, monthly) : null;
+const formatDate = (value) => new Intl.DateTimeFormat('es', {day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(`${value}T12:00:00Z`));
+const compliance = 'Contenido educativo e informativo. No constituye asesoramiento de inversión personalizado, financiero, legal, fiscal ni de operativa; tampoco una señal de trading ni una recomendación para comprar o vender activos.';
+---
+<BaseLayout
+  title={meta.title}
+  description={meta.description}
+  locale="es"
+  currentPath={`/es/${section}/`}
+  alternateLocaleHref={meta.english}
+  noindex
+  responsiveTables
+  stylesheets={section === 'video-library' ? ['/assets/video-library.css'] : []}
+>
+  {section === 'news' && (
+    <>
+      <section class="hero news-hero">
+        <div class="container">
+          <p class="eyebrow">Daily USD Impact</p>
+          <h1>Entiende las noticias a través del dólar.</h1>
+          <p class="lead">Revisa las ediciones publicadas de USD Impact y sus fuentes para seguir los efectos del dólar, las tasas, la liquidez, la energía, el oro, Bitcoin y los mercados de acciones.</p>
+        </div>
+      </section>
+      <main id="main-content" class="container page-content">
+        <div class="card" role="note">
+          <strong>Idioma de las ediciones:</strong> esta página de navegación está traducida. Las noticias, resúmenes y análisis originales que se enlazan a continuación siguen en inglés hasta completar su revisión y traducción.
+        </div>
+        {daily.length ? (
+          <>
+            <section class="latest-edition">
+              <p class="eyebrow">Última edición verificada</p>
+              <h2 lang="en">{daily[0].data.title}</h2>
+              <p>{formatDate(daily[0].data.date)}</p>
+              <p lang="en">{daily[0].data.summary}</p>
+              <a class="button primary" href={daily[0].data.slug} hreflang="en">Leer la edición original (EN)</a>
+            </section>
+            <section class="edition-archive">
+              <h2>Archivo de ediciones</h2>
+              <ul>
+                {daily.slice(0, 20).map((edition) => (
+                  <li><a href={edition.data.slug} hreflang="en">{formatDate(edition.data.date)} · <span lang="en">{edition.data.title}</span> · EN</a></li>
+                ))}
+              </ul>
+              <p><a href="/news/feed.xml" hreflang="en">Suscripción RSS original</a></p>
+            </section>
+          </>
+        ) : (
+          <section class="card"><h2>Edición pendiente de verificación</h2><p>Las noticias solo aparecen después de superar la revisión de fuentes y publicación.</p></section>
+        )}
+        <section class="compliance"><strong>Nota educativa:</strong> {compliance}</section>
+      </main>
+    </>
+  )}
+
+  {section === 'score' && (
+    <>
+      <section class="hero score-hero">
+        <div class="container">
+          <p class="eyebrow">Weekly USD Impact Score</p>
+          <h1>El régimen del dólar, observado cada semana.</h1>
+          <p class="lead">Un marco de lectura de distintos mercados producido por el proceso de datos de USD Impact. Ayuda a describir el contexto, no a pronosticar ni generar señales de inversión.</p>
+        </div>
+      </section>
+      <main id="main-content" class="container page-content">
+        <section class="grid">
+          <article class="card"><h2>Qué mide</h2><p>Combina variables de mercado en una lectura semanal del régimen del dólar. El DXY, por sí solo, no representa todas las condiciones del sistema del dólar.</p></article>
+          <article class="card"><h2>Cómo interpretarlo</h2><p>Contrasta el resultado con rendimientos reales, liquidez, crédito, materias primas, divisas y apetito por el riesgo. Una relación histórica no garantiza un resultado futuro.</p></article>
+          <article class="card"><h2>Metodología pública</h2><p>La explicación original documenta variables, ponderaciones, normalización, datos faltantes, bandas de régimen y limitaciones de validación.</p></article>
+        </section>
+        <section class="card">
+          <h2>Las pruebas históricas tienen límites.</h2>
+          <p>USD Impact Score v2 utiliza ocho niveles de mercado semanales con ponderaciones fijas y normalización basada en una muestra creciente desde enero de 2015. El historial recalculado es una reconstrucción actual de períodos pasados: no equivale a un historial de predicciones publicado en tiempo real.</p>
+          <p>Consulta en inglés los detalles de recorte de ±3,5, reglas de datos ausentes, ausencia de un ajuste explícito por correlación y comparación entre versiones publicadas y recalculadas.</p>
+          <div class="button-row">
+            <a class="button" href="/score/methodology/" hreflang="en">Metodología completa (EN)</a>
+            <a class="button" href="/score/member/en/" hreflang="en">Panel protegido de Research (EN)</a>
+          </div>
+        </section>
+        <section class="card">
+          <h2>Acceso a Score</h2>
+          <p>Las lecturas y el archivo protegidos solo están disponibles tras verificar la sesión y los derechos de Research Membership. Elegir español no modifica el acceso ni publica datos restringidos.</p>
+          <a href="/account/sign-in/?next=%2Fscore%2F" hreflang="en">Iniciar sesión para consultar Score (EN)</a>
+        </section>
+        <section class="compliance"><strong>Nota educativa:</strong> {compliance}</section>
+      </main>
+    </>
+  )}
+
+  {section === 'reports' && (
+    <>
+      <section class="hero reports-hero">
+        <div class="container">
+          <p class="eyebrow">Informes de USD Impact</p>
+          <h1>Relaciona la evidencia semanal con el contexto del dólar.</h1>
+          <p class="lead">Consulta los informes semanales publicados y sigue la preparación del resumen mensual, que exige cuatro semanas consecutivas con fuentes verificadas.</p>
+        </div>
+      </section>
+      <main id="main-content" class="container page-content">
+        <div class="card" role="note"><strong>Idioma de los informes:</strong> este índice está traducido, pero los títulos y resúmenes de las ediciones originales se muestran en inglés hasta su revisión editorial.</div>
+        {weekly[0] ? (
+          <section class="latest-report">
+            <p class="eyebrow">Último informe semanal publicado</p>
+            <h2 lang="en">{weekly[0].data.title}</h2>
+            <p>Semana finalizada el {formatDate(weekly[0].data.periodEnd)}</p>
+            <p lang="en">{weekly[0].data.summary}</p>
+            <a class="button primary" href={weekly[0].data.slug} hreflang="en">Leer el informe semanal original (EN)</a>
+          </section>
+        ) : <section class="card"><h2>Primer informe en preparación</h2><p>El informe semanal requiere ediciones diarias y datos verificados de la semana concluida.</p></section>}
+        <section class="card">
+          <h2>Seguimiento del informe mensual</h2>
+          {monthly[0] && <p>Último informe mensual publicado: <a href={monthly[0].data.slug} hreflang="en">{formatDate(monthly[0].data.periodEnd)} · versión original (EN)</a>.</p>}
+          <p><strong>{monthlyWindow.progress} de 4</strong> informes semanales consecutivos válidos para el siguiente ciclo mensual.</p>
+          {monthlyWindow.blockedByGap ? (
+            <p>Falta un informe semanal necesario para mantener las cuatro semanas consecutivas. Una semana posterior no sustituye el período ausente.</p>
+          ) : monthlyWindow.ready ? (
+            <p>Se ha completado el requisito de cuatro informes para preparar la siguiente síntesis. Esto no significa que el informe mensual esté publicado.</p>
+          ) : (
+            <p>El siguiente informe mensual sigue pendiente de completar sus cuatro semanas de datos verificables.</p>
+          )}
+          <p>Una revisión mensual no debe añadir afirmaciones de mercado sin fuentes.</p>
+        </section>
+        {weekly.length > 0 && (
+          <section class="report-archive">
+            <h2>Archivo de informes semanales</h2>
+            <ul>{weekly.slice(0, 20).map((r) => (
+              <li><a href={r.data.slug} hreflang="en">{formatDate(r.data.periodEnd)} · <span lang="en">{r.data.title}</span> · EN</a></li>
+            ))}</ul>
+          </section>
+        )}
+        {monthly.length > 0 && (
+          <section class="monthly-archive">
+            <h2>Archivo de informes mensuales</h2>
+            <ul>{monthly.map((r) => <li><a href={r.data.slug} hreflang="en">{formatDate(r.data.periodEnd)} · <span lang="en">{r.data.title}</span> · EN</a></li>)}</ul>
+          </section>
+        )}
+        <section class="compliance"><strong>Nota educativa:</strong> {compliance}</section>
+      </main>
+    </>
+  )}
+
+  {section === 'video-library' && (
+    <main id="main-content" class="main-with-hero">
+      <section class="vl-hero">
+        <div class="vl-shell">
+          <p class="vl-eyebrow">Edición interactiva guiada</p>
+          <h1>Explora el sistema del dólar en 51 videos.</h1>
+          <p class="vl-lead">Una ruta de aprendizaje visual organizada en cinco colecciones. Los títulos y las descripciones del catálogo están traducidos al español; la narración de los videos originales continúa en inglés.</p>
+          <div class="vl-stat-row">
+            <span><strong>{videos.length}</strong> videos</span>
+            <span><strong>{collections.length}</strong> colecciones</span>
+            <span><strong>{libraryMeta.totalDurationLabel}</strong> de duración</span>
+            <span><strong>ES</strong> subtítulos disponibles</span>
+          </div>
+          <p><a class="vl-button" href="/guided-edition/video-library" hreflang="en">Abrir reproductor protegido (EN)</a></p>
+        </div>
+      </section>
+      <div class="vl-shell vl-main page-content">
+        <p class="vl-public-note">La reproducción completa sigue protegida por el acceso vigente de Library Pass. Elegir español no habilita acceso, reproducción automática ni doblaje. En la colección existente hay subtítulos en español, pero no se ha publicado una pista de narración alternativa en español.</p>
+        <nav class="vl-collection-filter" aria-label="Colecciones de videos">
+          {collections.map((c) => <a href={`#${c.id}`}><span>{c.order}. {spanishVideoCollections[c.id].title}</span><span aria-hidden="true">{getCollectionVideos(c.id).length}</span></a>)}
+        </nav>
+        {collections.map((c) => (
+          <section class="vl-collection" id={c.id} aria-labelledby={`es-${c.id}-title`}>
+            <div class="vl-section-heading">
+              <div><p class="vl-eyebrow">Ruta {c.order} de {collections.length} · {spanishVideoCollections[c.id].kicker}</p><h2 id={`es-${c.id}-title`}>{spanishVideoCollections[c.id].title}</h2></div>
+              <p>{spanishVideoCollections[c.id].description}</p>
+            </div>
+            <ol class="vl-grid">
+              {getCollectionVideos(c.id).map((v) => {
+                const index = getVideoNumber(v);
+                const es = spanishVideoMetadata[v.slug];
+                return (
+                  <li class="vl-card vl-public-card">
+                    <a href={`/guided-edition/video-library/${v.slug}`} hreflang="en">
+                      <div class={`vl-card-art vl-theme-${v.collectionId}`} aria-hidden="true"><span>{String(index).padStart(2,'0')}</span><i></i><i></i><i></i></div>
+                      <div class="vl-card-copy">
+                        <div class="vl-card-meta"><span>Video {String(index).padStart(2,'0')}</span><time>{v.durationLabel}</time></div>
+                        <h3>{es?.title ?? v.title}</h3>
+                        <p>{es?.description ?? v.description}</p>
+                        <small>Reproductor actual en inglés · subtítulos ES disponibles</small>
+                      </div>
+                    </a>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        ))}
+        <section class="compliance"><strong>Nota educativa:</strong> {compliance}</section>
+      </div>
+    </main>
+  )}
+</BaseLayout>

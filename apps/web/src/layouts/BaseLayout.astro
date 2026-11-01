@@ -16,6 +16,7 @@ import {
   siteShellCopyForLocale,
 } from '../lib/site-navigation.js';
 import { localizationManifest } from '../data/localization-manifest.js';
+import { SPANISH_PUBLIC_REVIEW_PAIRS, spanishPublicReviewEnabled } from '../lib/spanish-public-review-policy.js';
 import { serializeStructuredData, structuredDataGraph } from '../lib/structured-data.js';
 import { getChapterById, getSurfaceBridgeForPath } from '../data/book-site-bridge/index.mjs';
 const [learnNavigation, updatesNavigation, libraryNavigation] = SITE_NAVIGATION;
@@ -32,8 +33,28 @@ const {
 } = Astro.props;
 const locale = requestedLocale === 'es' ? 'es' : 'en';
 const shellCopy = siteShellCopyForLocale(locale);
-const languageSwitchHref = alternateLocaleHref || (locale === 'en' ? '/es/' : '/');
+// UI-40: These translated landing pages exist ONLY in Vercel Preview and
+// are unindexed; this mapping never activates an unpublished Production URL.
+const previewSpanishLandingByEnglish = SPANISH_PUBLIC_REVIEW_PAIRS;
+const spanishTranslationReviewEnabled = spanishPublicReviewEnabled(process.env.VERCEL_ENV);
+const normalizedDocumentPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const previewSpanishAlternate = spanishTranslationReviewEnabled && locale === 'en'
+  ? previewSpanishLandingByEnglish[normalizedDocumentPath] ?? null
+  : null;
+const effectivePublicAlternate = alternateLocaleHref || previewSpanishAlternate;
+const languageSwitchHref = effectivePublicAlternate || (locale === 'en' ? '/es/' : '/');
 const languageSwitchTarget = locale === 'en' ? 'es' : 'en';
+const spanishGroupedNavigation = SPANISH_GROUPED_NAVIGATION.map((group) => ({
+  ...group,
+  links: group.links.map((link) => {
+    const reviewHref = spanishTranslationReviewEnabled
+      ? previewSpanishLandingByEnglish[link.englishHref] ?? null
+      : null;
+    return reviewHref
+      ? { ...link, href: reviewHref, contentLocale: 'es' }
+      : link;
+  }),
+}));
 const analyticsEnabled = localizationManifest.locales[locale]?.analyticsEnabled === true;
 const noindex = pageNoindex || isSearchUtilityPath(Astro.url.pathname);
 const canonicalUrl = noindex ? null : canonicalUrlForRequest(Astro.url);
@@ -106,7 +127,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
     )}
     {locale === 'en' && <script is:inline src="/assets/session-entry.js" defer></script>}
   </head>
-  <body data-content-language={locale} data-public-alternate-href={alternateLocaleHref || undefined}>
+  <body data-content-language={locale} data-public-alternate-href={effectivePublicAlternate || undefined}>
     <a class="skip-link" href="#main-content">{shellCopy.skipLink}</a>
     <header class="site-header">
       <div class="container header-inner">
@@ -161,7 +182,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
             </>
           ) : (
             <>
-              {SPANISH_GROUPED_NAVIGATION.map((group) => (
+              {spanishGroupedNavigation.map((group) => (
                 <details class="nav-group" data-nav-group>
                   <summary class:list={["nav-summary", { "is-active": group.links.some((link) => navigationLinkIsActive(currentPath, link.href)) }]}>
                     {group.label}
@@ -287,6 +308,15 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
               <p class="footer-heading">Español</p>
               {SPANISH_PUBLIC_NAVIGATION.map((link) => <a href={link.href}>{link.label}</a>)}
             </div>
+            {spanishTranslationReviewEnabled && (
+              <div class="footer-group">
+                <p class="footer-heading">Contenido traducido (revisión privada)</p>
+                <a href="/es/news/">Noticias diarias</a>
+                <a href="/es/score/">Score semanal</a>
+                <a href="/es/reports/">Informes</a>
+                <a href="/es/video-library/">Videoteca · 51 videos</a>
+              </div>
+            )}
             <div class="footer-group">
               <p class="footer-heading">Legal y transparencia</p>
               <a href="/compliance">Cumplimiento (EN)</a>

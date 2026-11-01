@@ -138,6 +138,43 @@ for (const sourceId of dailySourceIds) {
 }
 assert.ok(!spanishPreview.includes('/es/news/2026-10-30'), 'unreviewed translated dated Daily must have no Preview route');
 
+// Historical Weekly source-paired translation: no new Score calculation,
+// date-of-report change or rights activation is permitted by the draft.
+const weeklyEnglishBytes = await readFile(new URL('../src/content/weekly-reports/2026-10-23.md', import.meta.url));
+const weeklyEnglish = weeklyEnglishBytes.toString('utf8');
+const expectedWeeklySourceSha = '9bd65af82fb98e71fafd6bd98870c72be1fe2390';
+const actualWeeklyGitBlobSha = createHash('sha1')
+  .update('blob ' + String(weeklyEnglishBytes.length) + '\0')
+  .update(weeklyEnglishBytes)
+  .digest('hex');
+assert.equal(actualWeeklyGitBlobSha, expectedWeeklySourceSha, 'source Weekly updated: re-review Spanish candidate before release');
+const spanishWeeklyCandidate = await readFile(
+  new URL('../../../docs/localization/drafts/WEEKLY_2026-10-23_ES_CANDIDATE_2026-11-02.md', import.meta.url), 'utf8',
+);
+for (const required of [
+  'language: es', 'publicationAuthorized: false', 'releaseStatus: private_draft',
+  'sourcePeriodStart: 2026-10-19', 'sourcePeriodEnd: 2026-10-23',
+  'originalPublicUrl: /reports/weekly/2026-10-23',
+  'sourceBlobSha: ' + expectedWeeklySourceSha,
+  '## Resumen ejecutivo de la semana', '## Temas de la semana',
+  '## Cómo encajan las noticias y el Score', '## Qué vigilar después',
+  '## Nota metodológica y procedencia',
+  '−0,5037263731481794', '−0,021022170432771492',
+  '+0,0548985187261295', 'SPX −0,296', 'WTI −0,273', 'GOLD −0,267',
+  'Soft dollar regime', '−0,30', '1.232', '4,2 %', '1,5 %',
+]) {
+  assert.ok(spanishWeeklyCandidate.includes(required), 'Spanish Weekly editorial draft missing ' + required);
+}
+const weeklySourceEditionPaths = [...weeklyEnglish.matchAll(/^    url: "(\/news\/2026-10-\d{2})"$/gm)].map(([, path]) => path);
+assert.equal(weeklySourceEditionPaths.length, 5, 'Weekly source must contain five Daily edition links');
+for (const url of weeklySourceEditionPaths) {
+  assert.ok(spanishWeeklyCandidate.includes('](' + url + ')'), 'Spanish Weekly draft lost original Daily link ' + url);
+}
+const weeklyOriginalCatalysts = [...weeklyEnglish.matchAll(/^  - date: "(2026-10-\d{2})"$/gm)].map(([, date]) => date);
+assert.deepEqual(weeklyOriginalCatalysts, ['2026-10-28', '2026-10-30']);
+assert.ok(spanishWeeklyCandidate.includes('https://score.usd-impact.com/archive/2026-10-23/weekly_input.json'));
+assert.ok(!spanishPreview.includes('/es/reports/weekly/2026-10-23'), 'unreviewed translated Weekly must have no Preview route');
+
 assert.equal(DEFAULT_LOCALE, 'en');
 assert.deepEqual([...SUPPORTED_LOCALES], ['en', 'es']);
 assert.equal(resolveSupportedLocale('en'), 'en');

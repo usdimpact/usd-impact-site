@@ -1,0 +1,49 @@
+name: GA4 Production anonymous consent network audit (Draft-only, read-only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/ga4-live-consent-network-qa.yml'
+      - 'apps/web/scripts/test-ga4-production-consent-anonymous.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ga4-live-consent-readonly-pr1025
+  cancel-in-progress: false
+
+jobs:
+  anonymous-public-site-qa:
+    if: github.event.pull_request.number == 1025
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Read-only checkout of exact PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Isolated Python Playwright driver (system Chrome, no login)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/ga4-anonymous-venv"
+          "$RUNNER_TEMP/ga4-anonymous-venv/bin/python" -m pip install --disable-pip-version-check --no-cache-dir playwright==1.57.0
+          command -v google-chrome || command -v chromium
+      - name: Test anonymous live public-site requests, cookies by NAME only
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/ga4-anonymous-venv/bin/python" apps/web/scripts/test-ga4-production-consent-anonymous.py
+      - name: Retain seven days of sanitized counts, no HAR or cookies
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ga4-live-consent-anonymous-redacted-report
+          path: apps/web/.ga4_live_network_qa/redacted-production-consent-report.json
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: ignore

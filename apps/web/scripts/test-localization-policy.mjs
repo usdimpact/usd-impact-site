@@ -44,6 +44,37 @@ assert.ok(SPANISH_GROUPED_NAVIGATION.flatMap(({ links }) => links)
   .filter(({ contentLocale }) => contentLocale === 'es')
   .every(({ href }) => publicEsLinks.has(href)), 'only reviewed ES destinations in the grouped nav');
 
+
+import { videos, collections } from '../src/data/video-library.js';
+import { spanishVideoMetadata, spanishVideoCollections } from '../src/data/es-video-catalog-draft.js';
+
+assert.equal(videos.length, 51, 'source video catalogue should remain the same 51 approved entries');
+assert.equal(Object.keys(spanishVideoMetadata).length, 51, 'every source film requires Spanish metadata');
+assert.deepEqual(
+  [...Object.keys(spanishVideoMetadata)].sort(),
+  videos.map(({ slug }) => slug).sort(),
+  'Spanish metadata must map exactly the 51 source slugs without omissions or additions',
+);
+assert.deepEqual(
+  Object.keys(spanishVideoCollections).sort(),
+  collections.map(({ id }) => id).sort(),
+  'all five source collections must have Spanish names and descriptions',
+);
+for (const film of videos) {
+  const es = spanishVideoMetadata[film.slug];
+  assert.ok(es.title && es.description, 'missing Spanish title/description for ' + film.slug);
+}
+const spanishPreview = await readFile(new URL('../src/pages/es/[section].astro', import.meta.url), 'utf8');
+assert.match(spanishPreview, /if \(process\.env\.VERCEL_ENV !== 'preview'\) return \[\]/);
+assert.match(spanishPreview, /return \['news','score','reports','video-library'\]/);
+assert.match(spanishPreview, /\bnoindex\b/);
+assert.match(spanishPreview, /status === 'published'/);
+assert.match(spanishPreview, /monthlyEligibility\(weekly, monthly\)/);
+assert.match(spanishPreview, /<span lang="en">\{r\.data\.title\}<\/span>/);
+assert.match(spanishPreview, /Subtítulos en español/);
+assert.match(spanishPreview, /no se ha publicado una pista de narración alternativa en español/);
+assert.doesNotMatch(spanishPreview, /<video|<audio|autoplay|publicBucket|setContentLanguagePreference/);
+
 assert.equal(DEFAULT_LOCALE, 'en');
 assert.deepEqual([...SUPPORTED_LOCALES], ['en', 'es']);
 assert.equal(resolveSupportedLocale('en'), 'en');
@@ -126,7 +157,13 @@ assert.match(baseLayout, /siteShellCopyForLocale\(locale\)/);
 assert.match(baseLayout, /SPANISH_PUBLIC_NAVIGATION/);
 assert.match(baseLayout, /SPANISH_GROUPED_NAVIGATION\.map/);
 assert.match(baseLayout, /data-site-language-choice=\{languageSwitchTarget\}/);
-assert.match(baseLayout, /data-public-alternate-href=\{alternateLocaleHref \|\| undefined\}/);
+assert.match(baseLayout, /data-public-alternate-href=\{effectivePublicAlternate \|\| undefined\}/);
+assert.match(baseLayout, /process\.env\.VERCEL_ENV === 'preview'/);
+assert.match(baseLayout, /'\/news': '\/es\/news\/'/);
+assert.match(baseLayout, /'\/score': '\/es\/score\/'/);
+assert.match(baseLayout, /'\/reports': '\/es\/reports\/'/);
+assert.match(baseLayout, /'\/video-library': '\/es\/video-library\/'/);
+assert.match(baseLayout, /spanishGroupedNavigation\.map/);
 assert.match(baseLayout, /localStorage\.setItem\(languagePreferenceKey, requested\)/);
 assert.match(baseLayout, /localStorage\.getItem\(languagePreferenceKey\)/);
 assert.match(baseLayout, /approvedAlternate\?\.startsWith\('\/'\)/);

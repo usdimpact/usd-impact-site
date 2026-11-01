@@ -31,6 +31,32 @@ export const SPANISH_PUBLIC_NAVIGATION = Object.freeze([
   Object.freeze({ label: 'Panel de tres diales', href: '/es/framework/three-dial-dashboard/' }),
 ]);
 
+// Share the English site's three-group IA with the public Spanish shell.
+// Non-published translations retain their real English destination, visibly
+// marked as English-only. This is presentation, not access authorization.
+export const SPANISH_GROUPED_NAVIGATION = Object.freeze([
+  { label: 'Aprender', links: [
+    { label: 'Empieza aquí', href: '/es/start-here/', contentLocale: 'es' },
+    { label: 'Marco del dólar', href: '/es/dollar-framework/', contentLocale: 'es' },
+    { label: 'Lista semanal', href: '/lead-magnets/weekly-dollar-regime-checklist', contentLocale: 'en' },
+  ] },
+  { label: 'Actualizaciones', links: [
+    { label: 'Daily USD Impact', href: '/news', contentLocale: 'en' },
+    { label: 'Weekly Score', href: '/score', contentLocale: 'en' },
+    { label: 'Informes', href: '/reports', contentLocale: 'en' },
+  ] },
+  { label: 'Biblioteca', links: [
+    { label: 'Edición guiada', href: '/guided-edition', contentLocale: 'en' },
+    { label: 'Libro', href: '/guided-edition/book', contentLocale: 'en' },
+    { label: 'Audiolibro', href: '/guided-edition/audiobook', contentLocale: 'en' },
+    { label: 'Videoteca', href: '/guided-edition/video-library', contentLocale: 'en' },
+    { label: 'Pase de Biblioteca', href: '/book/read-the-dollar-first', contentLocale: 'en' },
+  ] },
+].map((group) => Object.freeze({
+  label: group.label,
+  links: Object.freeze(group.links.map((link) => Object.freeze(link))),
+})));
+
 export const SITE_SHELL_COPY = Object.freeze({
   en: Object.freeze({
     skipLink: 'Skip to main content',

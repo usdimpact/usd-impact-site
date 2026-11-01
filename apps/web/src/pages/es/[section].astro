@@ -9,12 +9,13 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { monthlyEligibility } from '../../lib/report-periods.js';
+import { SPANISH_PUBLIC_REVIEW_SECTIONS, spanishPublicReviewEnabled } from '../../lib/spanish-public-review-policy.js';
 import { collections, getCollectionVideos, getVideoNumber, videos, libraryMeta } from '../../data/video-library.js';
 import { spanishVideoMetadata, spanishVideoCollections } from '../../data/es-video-catalog-draft.js';
 
 export function getStaticPaths() {
-  if (process.env.VERCEL_ENV !== 'preview') return [];
-  return ['news','score','reports','video-library'].map((section) => ({params:{section}}));
+  if (!spanishPublicReviewEnabled(process.env.VERCEL_ENV)) return [];
+  return SPANISH_PUBLIC_REVIEW_SECTIONS.map((section) => ({params:{section}}));
 }
 
 const section = Astro.params.section;

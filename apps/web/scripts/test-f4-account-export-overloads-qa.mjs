@@ -150,8 +150,9 @@ try {
     ].sort());
     assert.equal(augA.profile.account_id,A);
   });
+  const augZeroA=obj(await zero(A));
   check('August wrapper delegates exactly to canonical zero-arg RPC',()=>{
-    assert.deepEqual(augA,obj(await zero(A)));
+    assert.deepEqual(augA,augZeroA);
   });
   const beforeCross=obj(await one(A,B));
   check('August named-arg cross-owner call denied',()=>{
@@ -173,8 +174,9 @@ try {
       ...Object.keys(augA),'transactionalLanguagePreference',
     ].sort());
   });
+  const octZeroA=obj(await zero(A));
   check('Direct canonical zero-arg and one-arg wrapper agree after UI02',()=>{
-    assert.deepEqual(octA,obj(await zero(A)));
+    assert.deepEqual(octA,octZeroA);
   });
   const octB=obj(await one(B,B));
   check('Other owner B gets only their own locale',()=>{

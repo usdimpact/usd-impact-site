@@ -42,6 +42,25 @@ The test verifies that the one-argument function retains the **same PostgreSQL O
 
 This proof demonstrates a technically viable correction **mechanism** only. It does not certify the source-format migration strategy, production-grade security properties, or installation on canonical Development/Production.
 
+## F3 decision alternatives tested — 2026-11-02, NOT owner approval
+
+**Synthetic implementation proof:** [F4/F3 + F2 isolated CI run 41357640124](https://github.com/usdimpact/usd-impact-site/actions/runs/41357640124) at commit `c29cf9fdbe72417fdeac04e8f941dea357a62e41`: **22/22** function/RPC source-contract assertions and **18/18** independently executed UI-02 RLS assertions PASS. No live database, PostgREST, actual signed user or applied migration change.
+
+| Option | `deletion_pending` self-export | Direct RLS / writes | Tradeoff |
+| --- | --- | --- | --- |
+| **A — active-only preference reads** | Retained language preferences produce `null` in the self-export | Existing RLS remains status-active-only; pending writes denied | Self-service account export can be incomplete while personal data remains retained. Requires a separately verified data-subject access mechanism or an explicit privacy/legal basis for limiting self-service output. |
+| **B — read-only retained-data exception** | On the **existing one-arg `account_export(export_account_id uuid)` signature only**, explicitly include retained language preferences when the validated owner status is `active` **or** `deletion_pending` | Leave direct preference table RLS and all INSERT/UPDATE/DELETE policies unchanged; no pending writes | The SECURITY DEFINER export must keep the exact `export_account_id = auth.uid()` guard, authenticated-only EXECUTE grants and controlled search path; actual JWT session validity, ownership and deletion workflow require separate signed-user verification. |
+
+**Option B local tests PASS:** the pending owner sees both retained locale fields through the one-arg prototype; direct table SELECT still returns zero rows; authenticated A cannot export B and vice versa; the PostgreSQL function OID and effective anon/authenticated grants remain unchanged; locale fields are `null` once status becomes `deleted` in this limited fixture.
+
+**Unresolved critical nuance:** the legacy `account_export` SQL returns baseline profile/purchase keys for a synthetically retained `deleted` profile, because its identity check uses `auth.uid()` rather than profile status. In the real app, account deletion and revoked sessions may prevent this, but **that has not been established**. Do not claim deleted-account protection or change the deletion/storage workflow without a separately executed signed-session and revocation test. This check does **not** certify GDPR compliance, and UI export is not the only possible channel for responding to a verified data-subject access request.
+
+**Privacy reference materials:** European Commission, [handling personal-data access requests](https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/dealing-requests-individuals_en); European Data Protection Board, [Guidelines 01/2022 — Right of Access](https://www.edpb.europa.eu/documents/guideline/guidelines-012022-on-data-subject-rights-right-of-access_en). These describe the general obligation to provide access to personal data held about the requester, subject to lawful exceptions, identity safeguards and appropriate delivery channels.
+
+**Tentative engineering preference (not authorization):** Option B offers more complete *self-service* export while data remains retained, without relaxing direct-table RLS; it still requires a separate privacy/legal decision and a narrowly authorized live test. Option A can be acceptable as a product-level design only if the user's verified data-subject rights are met through another reliable process.
+
+**Required owner decision:** choose A or B and confirm the handling of `deletion_pending` versus permanently `deleted` accounts, including the identity-verification and retained-data schedule. Until approval, do not add a migration, update grants, change PostgREST, touch real user records or merge this QA branch. Both options are **prototype behavior only**.
+
 ## Required corrective sequence — separate authorization
 
 1. **F1 first:** preserve applied Development migration bytes and finish full Development-history compatibility. Do not edit the two already-applied Dev SQL files in place, re-timestamp them, or run `db push`, `migration repair`, or `apply_migration` as a shortcut.

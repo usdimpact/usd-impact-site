@@ -690,6 +690,71 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
      'offline proof never grants site deploy or indexing authority');
 }
 
+// New 2026-11-01 individual owner decisions (after earlier general reply):
+// retain historical all-PENDING snapshots as point-in-time evidence and keep release denied.
+{
+  const path='docs/operations/independent-macro-release/first-weekly-owner-item-specific-decisions-2026-11-01.draft.json';
+  const textValue=from('../../../'+path);
+  const decision=JSON.parse(textValue);
+  const pointer=m.currentOwnerItemSpecificDecisionsDraft;
+  const ids=['R04','R05','R06','R07','X01'];
+  const choices=[
+    'ACCEPT_LIMITED_FACTS_AND_LINKS_SCOPE',
+    'PENDING',
+    'ACKNOWLEDGE_IMPLEMENTATION_WITH_LEGAL_LIMITATIONS',
+    'CONFIRM_PUBLISHER_RESPONSIBILITY_AND_AUTHORITY',
+    'APPROVE_VISIBLE_AI_DISCLOSURE_PATH',
+  ];
+  eq(pointer.receiptPath,path,'new scoped owner decisions receipt path pinned');
+  eq(gitBlob(textValue),pointer.receiptGitBlobSha,'new scoped owner decisions receipt exact Git blob');
+  eq(decision.schemaVersion,'usd-impact-macro-weekly-owner-item-specific-draft-decision-v1',
+    'new owner decision receipt version pinned');
+  eq(decision.originalDraftHead,'cda215ef0945750846fa7148aea902fd02831205',
+    'source review was made against original tested Draft head, no retrospective proof');
+  eq(decision.reviewedProof.gitBlobSha,m.nonRoutedPublicationAppearanceReviewDraft.staticOfflineProofGitBlobSha,
+    'owner selected exact offline proof blob rather than an unreviewed rendered copy');
+  eq(decision.decisions.map(item=>item.id),ids,'five categories retained in original order');
+  eq(decision.decisions.map(item=>item.value),choices,'only four precise owner choices recorded; R05 remains pending');
+  eq(decision.decisions.filter(item=>item.ownerExplicit).map(item=>item.id),
+    ['R04','R06','R07','X01'],'owner confirmed four separate item choices');
+  eq(decision.recordedOwnerChoiceCount,4,'explicit owner item decision count');
+  eq(decision.pendingOwnerDecisionIds,['R05'],'R05 remains the only pending item-specific owner selection');
+  eq(pointer.ownerConfirmedDraftItemChoices,['R04','R06','R07','X01'],
+    'manifest accurately reflects exact owner-confirmed subset');
+  eq(pointer.remainingPendingOwnerDecisionIds,['R05'],
+    'manifest does not accidentally approve R05');
+  ok(decision.decisions.every(item=>item.finalRenderedReleaseApproval===false && item.legalComplianceCertified===false) &&
+     !decision.fullMacroPublicationRiskAccepted &&
+     !decision.finalRenderedCopyOwnerPass &&
+     !decision.finalR05EditorialApproval &&
+     !decision.finalX01RenderedDisclosureApproval &&
+     !decision.finalPublisherLegalFooterQaApproved &&
+     !decision.independentRightsAndPrivacyReviewCertified,
+    'none of four scoped choices grants legal clearance or final rendered copy approval');
+  ok(decision.decisions[3].ownerAttestedPublisherAndAuthority &&
+     !decision.decisions[3].independentlyVerifiedLegalCapacity &&
+     !decision.ownerMessages.personalIdentityOrLegalCapacityIndependentlyVerified &&
+     decision.decisions[4].visibleDisclosureForRenderedQaApproved &&
+     !decision.decisions[4].substantiveHumanEditorialExceptionClaimed &&
+     !pointer.independentLegalAndPrivacyCertification,
+    'R07 is owner statement, X01 visible draft path, no independent legal verification');
+  ok(decision.historicalSnapshotsPreserved.oldDecisionInputGitBlobSha===
+       m.nextOwnerRiskAndAiEditorialDecisionInputDraft.inputGitBlobSha &&
+     decision.historicalSnapshotsPreserved.generalContinueReceiptGitBlobSha===
+       m.ownerFiveScopeApprovalDraft.receiptGitBlobSha &&
+     pointer.historicalGeneralContinueReceiptsUnmodified,
+    'historical October 31 general-approval records are not rewritten');
+  ok(Object.values(decision.releasePermissions).every(x=>x===false) &&
+     Object.values(m.holds).every(x=>x===false) &&
+     !pointer.releaseAuthorized &&
+     !pointer.finalRenderedOwnerPass &&
+     !pointer.r05EditorialPass &&
+     !pointer.currentFiveItemDecisionReviewFullyComplete &&
+     pointer.routeMergeProductionIndexingAndOriginalScoreStillDenied &&
+     !m.releaseAuthorized && !m.publishReady,
+    'no Git merge, deployment, indexing, licensing, commerce, original Score or release flags activated');
+}
+
 // Merged privacy client provenance: historical point-in-time evidence remains distinct.
 {
   const raw=from('../../../docs/operations/independent-macro-release/privacy-production-merge-integration-receipt-2026-10-31.draft.json');

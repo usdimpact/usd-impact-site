@@ -381,5 +381,29 @@
     "macroProductionAuthorized": false,
     "ownerItemSpecificRiskAcceptanceObtained": false,
     "releaseAuthorized": false
+  },
+  "currentOwnerItemSpecificDecisionsDraft": {
+    "receiptPath": "docs/operations/independent-macro-release/first-weekly-owner-item-specific-decisions-2026-11-01.draft.json",
+    "receiptGitBlobSha": "9d8a023c53cebbb672a8897d721efff261b16e22",
+    "sourceDraftHeadBeforeRecording": "cda215ef0945750846fa7148aea902fd02831205",
+    "exactProofGitBlobSha": "61c35f8380c793c8330ca5b6402f483ec7e38710",
+    "ownerConfirmedDraftItemChoices": [
+      "R04",
+      "R06",
+      "R07",
+      "X01"
+    ],
+    "remainingPendingOwnerDecisionIds": [
+      "R05"
+    ],
+    "historicalGeneralContinueReceiptsUnmodified": true,
+    "currentFiveItemDecisionReviewFullyComplete": false,
+    "ownerR07CapacityAttestedNotIndependentlyVerified": true,
+    "x01VisibleDisclosureForNonpublicRenderedQaApproved": true,
+    "r05EditorialPass": false,
+    "finalRenderedOwnerPass": false,
+    "independentLegalAndPrivacyCertification": false,
+    "releaseAuthorized": false,
+    "routeMergeProductionIndexingAndOriginalScoreStillDenied": true
   }
 }

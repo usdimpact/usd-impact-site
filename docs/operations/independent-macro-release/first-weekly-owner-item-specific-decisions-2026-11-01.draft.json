@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "usd-impact-macro-weekly-owner-item-specific-draft-decision-v1",
+  "recordDate": "2026-11-01",
+  "status": "FOUR_SCOPED_DRAFT_ITEM_DECISIONS_RECORDED_R05_PENDING_NO_RELEASE_AUTHORIZATION",
+  "repository": "usdimpact/usd-impact-site",
+  "pullRequest": 1025,
+  "originalDraftHead": "cda215ef0945750846fa7148aea902fd02831205",
+  "reviewedProof": {
+    "path": "docs/operations/independent-macro-release/first-weekly-final-copy-ai-disclosure-offline-proof-2026-10-31.draft.html",
+    "gitBlobSha": "61c35f8380c793c8330ca5b6402f483ec7e38710",
+    "kind": "OFFLINE_NONPUBLIC_HTML_SOURCE_NOT_COMPILED_ASTRO_RENDER",
+    "coverageStart": "2026-10-26",
+    "coverageEnd": "2026-10-30"
+  },
+  "ownerMessages": {
+    "initialDecisionsVerbatim": "R04: ACCEPT_LIMITED_FACTS_AND_LINKS_SCOPE\nR05: PENDING\nR06: ACKNOWLEDGE_IMPLEMENTATION_WITH_LEGAL_LIMITATIONS\nR07: CONFIRM_PUBLISHER_RESPONSIBILITY_AND_AUTHORITY\nX01: PENDING",
+    "laterX01Verbatim": "X01 — AI transparencyApprove visible AI-assistance disclosure path for rendered QA\n\nas well",
+    "effectiveX01Override": "APPROVE_VISIBLE_AI_DISCLOSURE_PATH",
+    "permissionBoundaryVerbatim": "Record only these specific decisions. Preserve any pending legal or final-rendered gates. Do not merge, deploy, publish, index, change permissions, or enable Score rights.",
+    "ownerSelectionIsItemSpecific": true,
+    "personalIdentityOrLegalCapacityIndependentlyVerified": false
+  },
+  "decisions": [
+    {
+      "id": "R04",
+      "value": "ACCEPT_LIMITED_FACTS_AND_LINKS_SCOPE",
+      "ownerExplicit": true,
+      "kind": "LIMITED_DRAFT_FACTS_LINKS_SCOPE",
+      "notes": "Owner accepts the narrow original-facts-and-five-official-links scope only; no agency marks, licensed data, copied protected assets, global or cross-border reuse rights authorized.",
+      "broadCopyrightLicenseGranted": false,
+      "legalComplianceCertified": false,
+      "finalRenderedReleaseApproval": false
+    },
+    {
+      "id": "R05",
+      "value": "PENDING",
+      "ownerExplicit": false,
+      "kind": "EDITORIAL_PROOF_AND_FINAL_STATUS_REVIEW",
+      "notes": "Corrected editorial copy, eight status substitutions and final rendered review remain pending. No exact rendered PASS is inferred.",
+      "legalComplianceCertified": false,
+      "finalRenderedReleaseApproval": false
+    },
+    {
+      "id": "R06",
+      "value": "ACKNOWLEDGE_IMPLEMENTATION_WITH_LEGAL_LIMITATIONS",
+      "ownerExplicit": true,
+      "kind": "PRIVACY_IMPLEMENTATION_ACKNOWLEDGEMENT_ONLY",
+      "notes": "Acknowledges deployed consent implementation and its documented limitations; no independent full Production cookie trace, vendor-transfer assessment or qualified GDPR/ePrivacy legal certification.",
+      "privacyLegalDutyWaived": false,
+      "legalComplianceCertified": false,
+      "finalRenderedReleaseApproval": false
+    },
+    {
+      "id": "R07",
+      "value": "CONFIRM_PUBLISHER_RESPONSIBILITY_AND_AUTHORITY",
+      "ownerExplicit": true,
+      "kind": "OWNER_ATTESTATION_FOR_DRAFT_REVIEW",
+      "notes": "Owner specifically attests that KELA LEADS S.R.L. is the responsible publisher and that the owner is authorized to attest this scope; independent identity or legal-capacity verification and final rendered legal/footer/issuer nonendorsement review remain pending.",
+      "ownerAttestedPublisherAndAuthority": true,
+      "independentlyVerifiedLegalCapacity": false,
+      "legalComplianceCertified": false,
+      "finalRenderedReleaseApproval": false
+    },
+    {
+      "id": "X01",
+      "value": "APPROVE_VISIBLE_AI_DISCLOSURE_PATH",
+      "ownerExplicit": true,
+      "kind": "VISIBLE_AI_DISCLOSURE_APPROVED_FOR_RENDERED_QA_ONLY",
+      "notes": "Owner explicitly selected conservative visible in-article AI-assistance disclosure path for next non-public rendered QA, superseding earlier X01:PENDING; exact final rendered wording, legal responsibility and final publication approval are not yet granted. No Article 50 substantive-human-review exception claimed.",
+      "visibleDisclosureForRenderedQaApproved": true,
+      "substantiveHumanEditorialExceptionClaimed": false,
+      "legalComplianceCertified": false,
+      "finalRenderedReleaseApproval": false
+    }
+  ],
+  "recordedOwnerChoiceCount": 4,
+  "pendingOwnerDecisionIds": [
+    "R05"
+  ],
+  "finalRenderedCopyOwnerPass": false,
+  "finalR05EditorialApproval": false,
+  "finalX01RenderedDisclosureApproval": false,
+  "finalPublisherLegalFooterQaApproved": false,
+  "independentRightsAndPrivacyReviewCertified": false,
+  "fullMacroPublicationRiskAccepted": false,
+  "historicalSnapshotsPreserved": {
+    "generalContinueReceiptPath": "docs/operations/independent-macro-release/owner-five-item-risk-approval-receipt-2026-10-31.draft.json",
+    "generalContinueReceiptGitBlobSha": "be5e1a03cde569aa59d54cf0f24c2d8e8ee2bc06",
+    "oldDecisionInputPath": "docs/operations/independent-macro-release/first-weekly-owner-final-decision-input-2026-10-31.draft.json",
+    "oldDecisionInputGitBlobSha": "2ea2698829e52e0a5d5a9841f613f162689c50ed",
+    "historicalZeroChoicesAreAsOfOldRecord": true
+  },
+  "releasePermissions": {
+    "publicRoute": false,
+    "gitMerge": false,
+    "productionDeploy": false,
+    "indexing": false,
+    "siteNavigation": false,
+    "newsletterRssPdfTranslations": false,
+    "externalSourcesLicenses": false,
+    "originalScoreRights": false,
+    "paymentOrCommerce": false,
+    "credentialsOrProjectPermissions": false
+  },
+  "nextStep": "R05 remains owner-PENDING; prepare non-public exact rendered review when authorized, then require separate new owner PASS and exact-commit release decision. Stop on any actual unmet rights, legal, privacy, or editorial constraint."
+}

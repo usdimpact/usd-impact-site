@@ -1,0 +1,38 @@
+name: F4 account export overload isolated QA
+
+# Runs only on this isolated agent branch. No deploy or database secrets.
+on:
+  push:
+    branches:
+      - agent/f4-account-export-rpc-qa-20261102
+
+permissions:
+  contents: read
+
+jobs:
+  f4-synthetic-postgres:
+    name: F4 exact SQL overload and identity proof (local PGlite)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Node.js 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install pinned local dependencies without lifecycle hooks
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Run local PostgreSQL function-signature proof
+        run: |
+          node --check scripts/test-f4-account-export-overloads-qa.mjs
+          node scripts/test-f4-account-export-overloads-qa.mjs
+          node --check scripts/test-f2-ui02-rls-pglite.mjs
+          node scripts/test-f2-ui02-rls-pglite.mjs

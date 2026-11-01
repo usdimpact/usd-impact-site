@@ -755,6 +755,59 @@ ok(m.existingSiteReuse.futureLayoutSwitchRequiresFreshOwnerPresentationReview &&
     'no Git merge, deployment, indexing, licensing, commerce, original Score or release flags activated');
 }
 
+// R05 candidate wording is separately approved for private COMPILED QA, not final release.
+{
+  const path='docs/operations/independent-macro-release/first-weekly-r05-compiled-qa-wording-decision-2026-11-01.draft.json';
+  const raw=from('../../../'+path);
+  const item=JSON.parse(raw);
+  const pointer=m.r05PrivateCompiledQaWordingDecision;
+  const older=JSON.parse(from('../../../docs/operations/independent-macro-release/first-weekly-owner-item-specific-decisions-2026-11-01.draft.json'));
+  eq(pointer.receiptPath,path,'specific R05 wording decision receipt path');
+  eq(gitBlob(raw),pointer.receiptGitBlobSha,'R05 candidate approval exact source blob');
+  eq(item.schemaVersion,'usd-impact-macro-weekly-r05-compiled-qa-wording-approval-v1','R05 event schema');
+  eq(item.decision,'ACCEPT_OFFLINE_WORDING_FOR_COMPILED_QA','owner approved candidate only for private compiled QA');
+  eq(pointer.decision,item.decision,'current R05 scoped owner decision pinned');
+  eq(item.reviewedProofBlobSha,m.nonRoutedPublicationAppearanceReviewDraft.staticOfflineProofGitBlobSha,'R05 exact reviewed offline HTML');
+  eq(pointer.reviewedProofGitBlobSha,item.reviewedProofBlobSha,'manifest exact R05 reviewed proof');
+  eq(item.scope.priorOwnerFourItemReceiptGitBlobSha,m.currentOwnerItemSpecificDecisionsDraft.receiptGitBlobSha,'historic four-item source retained');
+  eq(item.scope.originalArticleGitBlobSha,gitBlob(html),'owner frozen article source not modified');
+  eq(older.decisions.find(x=>x.id==='R05').value,'PENDING','historical four-item receipt stays as originally recorded');
+  eq(older.recordedOwnerChoiceCount,4,'historic receipt not retrospectively promoted');
+  const workflow=from('../../../.github/workflows/independent-macro-private-compiled-qa.yml');
+  const browser=from('../scripts/test-independent-macro-private-compiled-browser.py');
+  eq(gitBlob(workflow),pointer.newWorkflowGitBlobSha,'private compiled QA workflow pinned');
+  eq(gitBlob(browser),pointer.newBrowserScriptGitBlobSha,'private compiled browser QA script pinned');
+  ok(workflow.includes('if: github.event.pull_request.number == 1025') &&
+     workflow.includes('persist-credentials: false') &&
+     workflow.includes("PUBLIC_GA4_MEASUREMENT_ID: ''") &&
+     workflow.includes('127.0.0.1')===false &&
+     workflow.includes('npx --no-install astro build') &&
+     !workflow.includes('vercel deploy') &&
+     !workflow.includes('workflow_dispatch'),
+     'private build cannot dispatch, deploy, access credentials or target other PRs');
+  ok(browser.includes('127.0.0.1') &&
+     browser.includes('service_workers="block"') &&
+     browser.includes('noindex') &&
+     browser.includes('PASS compiled Astro private'),
+    'compiled browser QA blocks external network and checks review mode');
+  ok(!existsSync(new URL('../src/pages/internal/macro-weekly-private-qa/index.astro',import.meta.url)) &&
+     route.includes('return [];') &&
+     item.qaImplementation.temporaryRouteCreatedOnlyInDisposableRunner &&
+     item.qaImplementation.temporarySitemapExclusionCreatedOnlyInDisposableRunner,
+    'private Astro page injection cannot exist in committed source');
+  ok(item.scope.candidateWordingForNonpublicCompiledAstro &&
+     pointer.r05CandidateWordingApprovedForQa &&
+     !item.finalRenderedEditorialPass && !item.finalRenderedOwnerPass &&
+     !item.r05FinalRenderAndStatusCopySignoff && !item.x01FinalRenderedDisclosureSignoff &&
+     !item.qualifiedCopyrightPrivacyLegalApproval && !item.releaseAuthorized &&
+     !pointer.r05FinalRenderedEditorialPass && !pointer.x01FinalRenderedDisclosurePass &&
+     !pointer.finalRenderedOwnerPass && !pointer.releaseAuthorized &&
+     !m.publishReady && !m.releaseAuthorized &&
+     Object.values(item.releasePermissions).every(x=>x===false) &&
+     Object.values(m.holds).every(x=>x===false),
+    'R05 preparatory wording approval never grants final editorial/legal rights or publication');
+}
+
 // Merged privacy client provenance: historical point-in-time evidence remains distinct.
 {
   const raw=from('../../../docs/operations/independent-macro-release/privacy-production-merge-integration-receipt-2026-10-31.draft.json');

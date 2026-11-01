@@ -5,7 +5,6 @@ publicationAuthorized: false
 releaseStatus: private_draft
 sourceLocale: en
 sourceFile: apps/web/public/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf
-sourceGoogleDriveId: 1gXNXmXcC2GFdRZSK1rx-8AUEMdOq49Jo
 sourceSizeBytes: 67780
 sourceSha256: ad840927a2c0c54b3511eb3833b0514698e5eda3215dd4652f9dc12718d1841d
 sourcePages: 3

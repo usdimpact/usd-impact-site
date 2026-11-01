@@ -170,7 +170,8 @@ assert.equal(weeklySourceEditionPaths.length, 5, 'Weekly source must contain fiv
 for (const url of weeklySourceEditionPaths) {
   assert.ok(spanishWeeklyCandidate.includes('](' + url + ')'), 'Spanish Weekly draft lost original Daily link ' + url);
 }
-const weeklyOriginalCatalysts = [...weeklyEnglish.matchAll(/^  - date: "(2026-10-\d{2})"$/gm)].map(([, date]) => date);
+const weeklyCatalystBlock = weeklyEnglish.split(/^catalysts:\s*$/m)[1]?.split(/^complianceNote:/m)[0] ?? '';
+const weeklyOriginalCatalysts = [...weeklyCatalystBlock.matchAll(/^  - date: "(2026-10-\d{2})"$/gm)].map(([, date]) => date);
 assert.deepEqual(weeklyOriginalCatalysts, ['2026-10-28', '2026-10-30']);
 assert.ok(spanishWeeklyCandidate.includes('https://score.usd-impact.com/archive/2026-10-23/weekly_input.json'));
 assert.ok(!spanishPreview.includes('/es/reports/weekly/2026-10-23'), 'unreviewed translated Weekly must have no Preview route');

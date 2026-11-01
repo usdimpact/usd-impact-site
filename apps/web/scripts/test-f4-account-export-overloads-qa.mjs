@@ -1,0 +1,209 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { PGlite } from '@electric-sql/pglite';
+
+// Local PGlite only. This does not connect to Supabase, invoke a Data API,
+// create customers, apply migrations or access any account record.
+const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
+const [legacy, ui02, app] = await Promise.all([
+  read('../../../supabase/migrations/20260729203000_paid_access_foundation.sql'),
+  read('../../../supabase/migrations/20261030221037_ui02_language_privacy_lifecycle_dev.sql'),
+  read('../src/lib/supabase-server.js'),
+]);
+
+function extracted(source, expression, description) {
+  const matches = [...source.matchAll(expression)];
+  assert.equal(matches.length, 1, 'Expected exactly one ' + description);
+  return matches[0][0];
+}
+const legacyFn = extracted(legacy,
+  /create or replace function public\.account_export\(export_account_id uuid\)[\s\S]*?\$\$;/gi,
+  'original one-parameter account export');
+const ui02Fn = extracted(ui02,
+  /create or replace function public\.account_export\(\)[\s\S]*?\$function\$;/gi,
+  'Development zero-parameter export');
+
+const ui02Sha = createHash('sha256').update(ui02).digest('hex');
+assert.equal(ui02Sha, 'b741bd787610b412cc2b1439e1f74dc0bfb5b64e35e071f9400177a451217eb3');
+assert.match(legacyFn, /security definer/i);
+assert.match(legacyFn, /where export_account_id = auth\.uid\(\)/i);
+assert.doesNotMatch(ui02Fn, /security definer/i);
+assert.match(app, /path:\s*'\/rest\/v1\/rpc\/account_export'/);
+assert.match(app, /body:\s*\{\s*export_account_id:\s*user\.id\s*\}/);
+
+const a = '123e4567-e89b-42d3-a456-426614174000';
+const b = '223e4567-e89b-42d3-a456-426614174000';
+const pg = new PGlite();
+let passed = 0;
+function checked(label, assertion) {
+  assertion();
+  passed += 1;
+  console.log('PASS F4 ' + label);
+}
+async function asRole(role, accountId, sql, params = []) {
+  await pg.query('select set_config($1, $2, false)', [
+    'request.jwt.claim.sub', accountId ?? '',
+  ]);
+  await pg.exec('set role ' + role + ';');
+  try {
+    return await pg.query(sql, params);
+  } finally {
+    await pg.exec('reset role;');
+  }
+}
+function payload(result) {
+  const value = result.rows[0]?.payload ?? null;
+  return typeof value === 'string' ? JSON.parse(value) : value;
+}
+
+try {
+  await pg.exec(`
+    create role anon;
+    create role authenticated;
+    create schema auth;
+    create function auth.uid() returns uuid language sql stable
+      as $$ select nullif(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
+    create table public.profiles (
+      account_id uuid primary key, email text, status text not null
+    );
+    create table public.purchases (
+      account_id uuid not null, completed_at timestamptz not null default now()
+    );
+    create table public.entitlements (
+      account_id uuid not null, created_at timestamptz not null default now()
+    );
+    create table public.learning_progress (
+      account_id uuid not null, content_id text not null
+    );
+    create table public.bookmarks (
+      account_id uuid not null, created_at timestamptz not null default now()
+    );
+    create table public.support_requests (
+      account_id uuid not null, created_at timestamptz not null default now()
+    );
+    create table public.privacy_requests (
+      account_id uuid not null, requested_at timestamptz not null default now()
+    );
+    create table public.account_transactional_locale_preferences (
+      account_id uuid primary key, preferred_locale text not null
+    );
+    insert into public.profiles values
+      ('123e4567-e89b-42d3-a456-426614174000', 'a@invalid.test', 'active'),
+      ('223e4567-e89b-42d3-a456-426614174000', 'b@invalid.test', 'active');
+    insert into public.purchases(account_id) values
+      ('123e4567-e89b-42d3-a456-426614174000'),
+      ('223e4567-e89b-42d3-a456-426614174000');
+    insert into public.account_transactional_locale_preferences values
+      ('123e4567-e89b-42d3-a456-426614174000', 'es'),
+      ('223e4567-e89b-42d3-a456-426614174000', 'en');
+    alter table public.account_transactional_locale_preferences enable row level security;
+    create policy f4_active_pref on public.account_transactional_locale_preferences
+      for select to authenticated
+      using (
+        account_id = auth.uid()
+        and exists(select 1 from public.profiles p
+                   where p.account_id=auth.uid() and p.status='active')
+      );
+    grant usage on schema public, auth to authenticated, anon;
+    grant select on all tables in schema public to authenticated;
+  `);
+  // Execute the ORIGINAL function body copied from repository source,
+  // not a synthetic approximation of its argument signature.
+  await pg.exec(legacyFn);
+  await pg.exec(`
+    revoke all on function public.account_export(uuid) from public, anon;
+    grant execute on function public.account_export(uuid) to authenticated;
+  `);
+  const selfBefore = payload(await asRole('authenticated', a,
+    'select public.account_export($1::uuid) as payload', [a]));
+  checked('legacy one-arg owner export returns all seven legacy fields', () => {
+    assert.ok(selfBefore);
+    assert.deepEqual(Object.keys(selfBefore).sort(), [
+      'bookmarks', 'entitlements', 'learningProgress', 'privacyRequests',
+      'profile', 'purchases', 'supportRequests',
+    ].sort());
+    assert.equal(selfBefore.profile.account_id, a);
+  });
+  checked('legacy function rejects cross-account export', () => {
+    // The actual cross-user SQL call is executed below.
+    assert.equal(legacyFn.includes('where export_account_id = auth.uid()'), true);
+  });
+  const forbidden = payload(await asRole('authenticated', a,
+    'select public.account_export($1::uuid) as payload', [b]));
+  checked('signed actor A cannot export actor B', () => assert.equal(forbidden, null));
+
+  // Execute the ACTUAL already-Development-applied UI-02 function
+  // definition. Different arguments create a second overload, not a fix.
+  await pg.exec(ui02Fn);
+  const catalog = await pg.query(`
+    select pronargs as count, prosecdef as is_definer,
+           pg_get_function_identity_arguments(oid) as args
+    from pg_proc
+    where pronamespace = 'public'::regnamespace and proname = 'account_export'
+    order by pronargs;
+  `);
+  checked('PostgreSQL reports two distinct account_export identities', () => {
+    assert.equal(catalog.rows.length, 2);
+    assert.deepEqual(catalog.rows.map(row => Number(row.count)), [0, 1]);
+    assert.deepEqual(catalog.rows.map(row => row.is_definer), [false, true]);
+    assert.match(catalog.rows[1].args, /export_account_id uuid/);
+  });
+  const privileged = await pg.query(`
+    select
+      has_function_privilege('anon', 'public.account_export(uuid)', 'EXECUTE') as anon_one_arg,
+      has_function_privilege('authenticated', 'public.account_export(uuid)', 'EXECUTE') as auth_one_arg,
+      has_function_privilege('anon', 'public.account_export()', 'EXECUTE') as anon_zero_arg;
+  `);
+  checked('original security grants and new PUBLIC default differ', () => {
+    assert.equal(privileged.rows[0].anon_one_arg, false);
+    assert.equal(privileged.rows[0].auth_one_arg, true);
+    assert.equal(privileged.rows[0].anon_zero_arg, true);
+  });
+  const oneAfter = payload(await asRole('authenticated', a,
+    'select public.account_export($1::uuid) as payload', [a]));
+  checked('named-argument client still selects old export (missing preference)', () => {
+    assert.deepEqual(oneAfter, selfBefore);
+    assert.equal(Object.hasOwn(oneAfter, 'transactionalLanguagePreference'), false);
+  });
+  const zeroAfter = payload(await asRole('authenticated', a,
+    'select public.account_export() as payload'));
+  checked('zero-arg invoker export contains the new preference instead', () => {
+    assert.equal(zeroAfter.profile.account_id, a);
+    assert.equal(zeroAfter.transactionalLanguagePreference.preferred_locale, 'es');
+    assert.equal(Object.hasOwn(zeroAfter, 'mediaLanguagePreference'), false);
+  });
+  const otherZero = payload(await asRole('authenticated', b,
+    'select public.account_export() as payload'));
+  checked('zero-arg invoker observes caller B own preference', () => {
+    assert.equal(otherZero.profile.account_id, b);
+    assert.equal(otherZero.transactionalLanguagePreference.preferred_locale, 'en');
+  });
+
+  // Read-only source-policy simulation. This DOES NOT prescribe which
+  // deletion_pending export policy the owner must approve.
+  await pg.query('update public.profiles set status=$2 where account_id=$1::uuid',
+    [a, 'deletion_pending']);
+  const pending = payload(await asRole('authenticated', a,
+    'select public.account_export() as payload'));
+  checked('active-only RLS hides preference during deletion_pending', () => {
+    assert.equal(pending.profile.status, 'deletion_pending');
+    assert.equal(pending.transactionalLanguagePreference, null);
+  });
+  const legacyPending = payload(await asRole('authenticated', a,
+    'select public.account_export($1::uuid) as payload', [a]));
+  checked('legacy one-arg export still exposes legacy keys for self', () => {
+    assert.equal(legacyPending.profile.status, 'deletion_pending');
+    assert.equal(Object.hasOwn(legacyPending, 'transactionalLanguagePreference'), false);
+  });
+  const anonPermission = await pg.query(`
+    select has_function_privilege('anon','public.account_export(uuid)','EXECUTE') as allowed;
+  `);
+  checked('one-arg RPC remains unavailable to anon', () => {
+    assert.equal(anonPermission.rows[0].allowed, false);
+  });
+  console.log('RESULT F4: ' + passed + '/' + passed +
+    ' isolated PostgreSQL source/contract checks passed; RELEASE DEFECT REMAINS.');
+} finally {
+  await pg.close();
+}

@@ -1,0 +1,215 @@
+{
+  "contractVersion": "independent-editorial-rights-review-v0-draft",
+  "preparedDate": "2026-10-30",
+  "authority": "owner-approved draft preparation only",
+  "state": "HOLD_PENDING_EXACT_SOURCE_EDITORIAL_REVIEW",
+  "authorizedAdditionalMarketDataLicenseBudgetUsd": 0,
+  "noLiveSourceDataFetch": true,
+  "noDirectMarketDataIngestion": true,
+  "noScoreInputReuse": true,
+  "noLegacyScoreHistoryReuse": true,
+  "originalScoreRightsGateMustRemainHold": true,
+  "externalUsePolicyContext": [
+    "https://www.federalreserve.gov/disclaimer.htm",
+    "https://www.bea.gov/help/faq/147",
+    "https://www.bls.gov/bls/linksite.htm",
+    "https://www.eia.gov/about/copyrights_reuse.php",
+    "https://www.usa.gov/government-copyright"
+  ],
+  "permissionDimensions": [
+    "exact_item_agency_authorship_reviewed",
+    "commercial_editorial_reuse_approved",
+    "third_party_exclusions_reviewed",
+    "attribution_and_trademark_reviewed",
+    "automated_retrieval_approved",
+    "retention_and_revision_vintages_approved",
+    "external_publication_approved"
+  ],
+  "sources": [
+    {
+      "id": "fed_fomc_calendar",
+      "issuer": "Federal Reserve Board",
+      "role": "Scheduled Oct 27–28 FOMC background in Oct 26–27 Daily",
+      "sourceUrl": "https://www.federalreserve.gov/newsevents/2026-october.htm",
+      "policyUrl": "https://www.federalreserve.gov/disclaimer.htm",
+      "context": "The exact published Daily pilot URL is the October 2026 Fed Board event calendar; separate FOMC meeting index also confirms dates. Both official public web pages were inspected; agency authorship, exact-item rights, translation, archive and use approvals still require independent scoped review.",
+      "dailyDates": [
+        "2026-10-26",
+        "2026-10-27"
+      ],
+      "requiredAttribution": "Source: Board of Governors of the Federal Reserve System (calendar date as accessed)",
+      "itemReviewStatus": "PENDING_EXACT_ITEM_AND_USE_REVIEW",
+      "privateLegalOrOwnerReceipt": null,
+      "permissions": {
+        "exact_item_agency_authorship_reviewed": false,
+        "commercial_editorial_reuse_approved": false,
+        "third_party_exclusions_reviewed": false,
+        "attribution_and_trademark_reviewed": false,
+        "automated_retrieval_approved": false,
+        "retention_and_revision_vintages_approved": false,
+        "external_publication_approved": false
+      },
+      "alternateOfficialCalendarUrl": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "sourceUrlAlignment": "PILOT_DAILY_CITATION_EXACT_MATCH_NOT_RIGHTS_APPROVAL"
+    },
+    {
+      "id": "fed_fomc_statement",
+      "issuer": "Federal Reserve Board",
+      "role": "October 28 FOMC decision, not a market reaction",
+      "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+      "policyUrl": "https://www.federalreserve.gov/disclaimer.htm",
+      "context": "Board material generally public domain with credit; exact item, graphics and third-party exceptions need review.",
+      "dailyDates": [
+        "2026-10-28",
+        "2026-10-29",
+        "2026-10-30"
+      ],
+      "requiredAttribution": "Source: Board of Governors of the Federal Reserve System (October 28, 2026)",
+      "itemReviewStatus": "PENDING_EXACT_ITEM_AND_USE_REVIEW",
+      "privateLegalOrOwnerReceipt": null,
+      "permissions": {
+        "exact_item_agency_authorship_reviewed": false,
+        "commercial_editorial_reuse_approved": false,
+        "third_party_exclusions_reviewed": false,
+        "attribution_and_trademark_reviewed": false,
+        "automated_retrieval_approved": false,
+        "retention_and_revision_vintages_approved": false,
+        "external_publication_approved": false
+      }
+    },
+    {
+      "id": "bea_q3_advance_gdp",
+      "issuer": "U.S. Bureau of Economic Analysis",
+      "role": "October 29 advance Q3 real GDP, SAAR; separate from monthly inflation",
+      "sourceUrl": "https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026",
+      "policyUrl": "https://www.bea.gov/help/faq/147",
+      "context": "BEA FAQ says information is public domain unless otherwise stated, with attribution appreciated; item-specific exceptions remain to be checked.",
+      "dailyDates": [
+        "2026-10-29",
+        "2026-10-30"
+      ],
+      "requiredAttribution": "Source: U.S. Bureau of Economic Analysis (GDP advance estimate, October 29, 2026)",
+      "itemReviewStatus": "PENDING_EXACT_ITEM_AND_USE_REVIEW",
+      "privateLegalOrOwnerReceipt": null,
+      "permissions": {
+        "exact_item_agency_authorship_reviewed": false,
+        "commercial_editorial_reuse_approved": false,
+        "third_party_exclusions_reviewed": false,
+        "attribution_and_trademark_reviewed": false,
+        "automated_retrieval_approved": false,
+        "retention_and_revision_vintages_approved": false,
+        "external_publication_approved": false
+      }
+    },
+    {
+      "id": "bea_september_pce",
+      "issuer": "U.S. Bureau of Economic Analysis",
+      "role": "October 29 Personal Income and Outlays: September headline/core PCE",
+      "sourceUrl": "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026",
+      "policyUrl": "https://www.bea.gov/help/faq/147",
+      "context": "BEA general public-domain FAQ does not establish every external attachment, third-party image or delivery-method right.",
+      "dailyDates": [
+        "2026-10-29",
+        "2026-10-30"
+      ],
+      "requiredAttribution": "Source: U.S. Bureau of Economic Analysis (September 2026 PCE, released October 29)",
+      "itemReviewStatus": "PENDING_EXACT_ITEM_AND_USE_REVIEW",
+      "privateLegalOrOwnerReceipt": null,
+      "permissions": {
+        "exact_item_agency_authorship_reviewed": false,
+        "commercial_editorial_reuse_approved": false,
+        "third_party_exclusions_reviewed": false,
+        "attribution_and_trademark_reviewed": false,
+        "automated_retrieval_approved": false,
+        "retention_and_revision_vintages_approved": false,
+        "external_publication_approved": false
+      }
+    },
+    {
+      "id": "bls_q3_eci",
+      "issuer": "U.S. Bureau of Labor Statistics",
+      "role": "October 30 Employment Cost Index, Q3 q/q SA and 12-month NSA",
+      "sourceUrl": "https://www.bls.gov/news.release/archives/eci_10302026.htm",
+      "policyUrl": "https://www.bls.gov/bls/linksite.htm",
+      "context": "BLS describes agency-published materials as public domain with citation requested, except previously copyrighted images/illustrations; BLS emblem restricted.",
+      "dailyDates": [
+        "2026-10-30"
+      ],
+      "requiredAttribution": "Source: U.S. Bureau of Labor Statistics (ECI, October 30, 2026)",
+      "itemReviewStatus": "PENDING_EXACT_ITEM_AND_USE_REVIEW",
+      "privateLegalOrOwnerReceipt": null,
+      "permissions": {
+        "exact_item_agency_authorship_reviewed": false,
+        "commercial_editorial_reuse_approved": false,
+        "third_party_exclusions_reviewed": false,
+        "attribution_and_trademark_reviewed": false,
+        "automated_retrieval_approved": false,
+        "retention_and_revision_vintages_approved": false,
+        "external_publication_approved": false
+      }
+    },
+    {
+      "id": "bls_october_schedule",
+      "issuer": "U.S. Bureau of Labor Statistics",
+      "role": "Official release calendar context, not outcome evidence",
+      "sourceUrl": "https://www.bls.gov/schedule/2026/10_sched_list.htm",
+      "policyUrl": "https://www.bls.gov/bls/linksite.htm",
+      "context": "BLS general reproduction and linking policy, not permission to assert a release outcome before the actual source publication.",
+      "dailyDates": [
+        "2026-10-26",
+        "2026-10-30"
+      ],
+      "requiredAttribution": "Source: U.S. Bureau of Labor Statistics (October 2026 schedule)",
+      "itemReviewStatus": "PENDING_EXACT_ITEM_AND_USE_REVIEW",
+      "privateLegalOrOwnerReceipt": null,
+      "permissions": {
+        "exact_item_agency_authorship_reviewed": false,
+        "commercial_editorial_reuse_approved": false,
+        "third_party_exclusions_reviewed": false,
+        "attribution_and_trademark_reviewed": false,
+        "automated_retrieval_approved": false,
+        "retention_and_revision_vintages_approved": false,
+        "external_publication_approved": false
+      }
+    },
+    {
+      "id": "eia_optional_future",
+      "issuer": "U.S. Energy Information Administration",
+      "role": "Out-of-scope future energy context only; NO current issuer data ingestion",
+      "sourceUrl": "https://www.eia.gov/about/copyrights_reuse.php",
+      "policyUrl": "https://www.eia.gov/about/copyrights_reuse.php",
+      "context": "EIA permits use of many government-authored products with credit and publication date, but explicitly excludes contributed/licensed private material and protected logos.",
+      "dailyDates": [],
+      "requiredAttribution": "Source: U.S. Energy Information Administration (specific product and publication date, if later approved)",
+      "itemReviewStatus": "OUT_OF_SCOPE_PENDING",
+      "privateLegalOrOwnerReceipt": null,
+      "permissions": {
+        "exact_item_agency_authorship_reviewed": false,
+        "commercial_editorial_reuse_approved": false,
+        "third_party_exclusions_reviewed": false,
+        "attribution_and_trademark_reviewed": false,
+        "automated_retrieval_approved": false,
+        "retention_and_revision_vintages_approved": false,
+        "external_publication_approved": false
+      }
+    }
+  ],
+  "publicationGates": {
+    "exactAgencyItemsCleared": false,
+    "commercialEditorialUsageCleared": false,
+    "thirdPartyAndImageAuditComplete": false,
+    "attributionAndTranslationsApproved": false,
+    "contentRetentionBoundaryApproved": false,
+    "methodologyAndIndependentProductApproved": false,
+    "editorialApprovalRecorded": false,
+    "validatedIndependentWeeklySourcesPublished": false,
+    "monthlyFourConsecutiveIndependentWeeklies": false,
+    "releaseAuthorization": false
+  },
+  "notes": [
+    "General public-domain policies are contextual evidence, not affirmative project-wide or exact-item authorization.",
+    "Separate editorial paraphrase and citation of already published Daily text from retrieving or storing new issuer numbers.",
+    "The original Score, Weekly and Monthly rights/retention issues remain separate and open.",
+    "A syntactically passing offline fixture must never be interpreted as a source grant or Production approval."
+  ]
+}

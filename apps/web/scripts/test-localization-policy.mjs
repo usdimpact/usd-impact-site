@@ -35,7 +35,7 @@ assert.ok(SPANISH_GROUPED_NAVIGATION.flatMap(({ links }) => links)
   .every(({ href, englishHref }) => href === englishHref),
   'English-only fallback destinations must not change paths when locale is Spanish',
 );
-const publicEsLinks = new Set(['/es/start-here/', '/es/dollar-framework/']);
+const publicEsLinks = new Set(['/es/start-here/', '/es/framework/dollar-transmission-chain/']);
 const englishFallbacks = SPANISH_GROUPED_NAVIGATION.flatMap(({ links }) => links)
   .filter(({ contentLocale }) => contentLocale === 'en');
 assert.ok(englishFallbacks.length > 0);

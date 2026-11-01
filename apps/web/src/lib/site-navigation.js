@@ -36,21 +36,21 @@ export const SPANISH_PUBLIC_NAVIGATION = Object.freeze([
 // marked as English-only. This is presentation, not access authorization.
 export const SPANISH_GROUPED_NAVIGATION = Object.freeze([
   { label: 'Aprender', links: [
-    { label: 'Empieza aquí', href: '/es/start-here/', contentLocale: 'es' },
-    { label: 'Marco del dólar', href: '/es/dollar-framework/', contentLocale: 'es' },
-    { label: 'Lista semanal', href: '/lead-magnets/weekly-dollar-regime-checklist', contentLocale: 'en' },
+    { label: 'Empieza aquí', href: '/es/start-here/', englishHref: '/start-here', contentLocale: 'es' },
+    { label: 'Cadena de transmisión', href: '/es/framework/dollar-transmission-chain/', englishHref: '/framework/dollar-transmission-chain', contentLocale: 'es' },
+    { label: 'Lista semanal', href: '/lead-magnets/weekly-dollar-regime-checklist', englishHref: '/lead-magnets/weekly-dollar-regime-checklist', contentLocale: 'en' },
   ] },
   { label: 'Actualizaciones', links: [
-    { label: 'Daily USD Impact', href: '/news', contentLocale: 'en' },
-    { label: 'Weekly Score', href: '/score', contentLocale: 'en' },
-    { label: 'Informes', href: '/reports', contentLocale: 'en' },
+    { label: 'Daily USD Impact', href: '/news', englishHref: '/news', contentLocale: 'en' },
+    { label: 'Weekly Score', href: '/score', englishHref: '/score', contentLocale: 'en' },
+    { label: 'Informes', href: '/reports', englishHref: '/reports', contentLocale: 'en' },
   ] },
   { label: 'Biblioteca', links: [
-    { label: 'Edición guiada', href: '/guided-edition', contentLocale: 'en' },
-    { label: 'Libro', href: '/guided-edition/book', contentLocale: 'en' },
-    { label: 'Audiolibro', href: '/guided-edition/audiobook', contentLocale: 'en' },
-    { label: 'Videoteca', href: '/guided-edition/video-library', contentLocale: 'en' },
-    { label: 'Pase de Biblioteca', href: '/book/read-the-dollar-first', contentLocale: 'en' },
+    { label: 'Edición guiada', href: '/guided-edition', englishHref: '/guided-edition', contentLocale: 'en' },
+    { label: 'Libro', href: '/guided-edition/book', englishHref: '/guided-edition/book', contentLocale: 'en' },
+    { label: 'Audiolibro', href: '/guided-edition/audiobook', englishHref: '/guided-edition/audiobook', contentLocale: 'en' },
+    { label: 'Videoteca', href: '/guided-edition/video-library', englishHref: '/guided-edition/video-library', contentLocale: 'en' },
+    { label: 'Pase de Biblioteca', href: '/book/read-the-dollar-first', englishHref: '/book/read-the-dollar-first', contentLocale: 'en' },
   ] },
 ].map((group) => Object.freeze({
   label: group.label,

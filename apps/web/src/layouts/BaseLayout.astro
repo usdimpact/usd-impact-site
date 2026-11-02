@@ -218,6 +218,11 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
         </nav>
       </div>
     </header>
+    <ConsentClient
+      locale={locale}
+      privacyHref={locale === 'es' ? '/es/privacy/' : '/privacy/'}
+      analyticsEnabled={analyticsEnabled}
+    />
     <slot />
     {surfaceBridge && surfaceChapter && (
       <aside
@@ -370,12 +375,17 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
 
       document.addEventListener("keydown", (event) => {
         if (event.key !== "Escape") return;
+        // Native modal dialogs own Escape and focus restoration while open.
+        if (document.querySelector("dialog[open]")) return;
         const openGroup = navigationGroups.find((group) => group.hasAttribute("open"));
         if (window.matchMedia("(max-width: 760px)").matches) {
+          // An already-closed mobile menu must never steal focus from page content.
+          if (!(navigation instanceof HTMLElement) || navigation.dataset.open !== "true") return;
           setNavigationOpen(false);
           if (navigationToggle instanceof HTMLButtonElement) navigationToggle.focus();
           return;
         }
+        if (!openGroup) return;
         closeNavigationGroups();
         const summary = openGroup?.querySelector("summary");
         if (summary instanceof HTMLElement) summary.focus();
@@ -413,11 +423,6 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
         if (firstMain.id === "main-content") firstMain.tabIndex = -1;
       }
     </script>
-    <ConsentClient
-      locale={locale}
-      privacyHref={locale === 'es' ? '/es/privacy/' : '/privacy/'}
-      analyticsEnabled={analyticsEnabled}
-    />
     {analyticsEnabled && <GoogleAnalyticsClient />}
     {analyticsEnabled && <TelemetryClient />}
     {locale === 'en' && <PwaClient />}

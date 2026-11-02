@@ -109,6 +109,24 @@ const ga4Position = layout.indexOf('<GoogleAnalyticsClient />');
 const telemetryPosition = layout.indexOf('<TelemetryClient />');
 assert.ok(consentPosition >= 0 && ga4Position > consentPosition && telemetryPosition > ga4Position);
 
+ 
+// Keep the first privacy notice in normal document order, not fixed over keyboard focus.
+assert.ok(consentPosition > layout.indexOf('</header>') && consentPosition < layout.indexOf('<slot />'),
+  'consent notice must follow the header and precede main content');
+assert.equal((layout.match(/<ConsentClient\b/g) || []).length, 1);
+const bannerStyle = consent.match(/\.privacy-consent-banner \{([^}]*)\}/)?.[1] || '';
+assert.match(bannerStyle, /position:\s*relative;/);
+assert.doesNotMatch(bannerStyle, /position:\s*(fixed|sticky|absolute)/);
+assert.match(bannerStyle, /width:\s*calc\(100% - 40px\)/);
+assert.match(consent, /\.privacy-consent-banner \{ width: calc\(100% - 20px\); margin: 10px auto;/);
+
+// Escape only affects open navigation, and never overrides a native consent dialog.
+const navigationEscape = layout.split('document.addEventListener("keydown", (event) => {')[1]
+  ?.split('navigation?.querySelectorAll("a")')[0] || '';
+assert.match(navigationEscape, /if \(document\.querySelector\("dialog\[open\]"\)\) return;/);
+assert.match(navigationEscape, /navigation\.dataset\.open !== "true"\) return;/);
+assert.match(navigationEscape, /if \(!openGroup\) return;/);
+
 const telemetryGuard = telemetry.indexOf('if (!analyticsAllowed()) return false;');
 const telemetryRequest = telemetry.indexOf('fetch(TELEMETRY_ENDPOINT');
 assert.ok(telemetryGuard >= 0 && telemetryRequest > telemetryGuard);

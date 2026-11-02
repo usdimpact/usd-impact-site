@@ -119,3 +119,18 @@ jobs:
         run: npm run validate:daily-cards
       - name: Build production site
         run: npm run build
+      - name: Exact Spanish Preview widths (isolated Draft only)
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/agent/monthly-es-preview-integration-20261102'
+        env:
+          VERCEL_ENV: preview
+        run: |
+          npm run build
+          node scripts/qa-spanish-preview-responsive.mjs
+      - name: Upload isolated Spanish viewport QA evidence
+        if: always() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/agent/monthly-es-preview-integration-20261102'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: spanish-preview-breakpoints
+          path: apps/web/spanish-preview-qa/
+          if-no-files-found: warn
+          retention-days: 2

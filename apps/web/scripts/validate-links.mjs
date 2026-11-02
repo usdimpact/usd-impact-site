@@ -23,4 +23,5 @@ for (const page of ['privacy.md', 'terms.md', 'refund-policy.md']) {
 }
 
 execFileSync(process.execPath, ['scripts/test-framework-evidence-chain.mjs'], { stdio: 'inherit' });
+execFileSync(process.execPath, ['scripts/test-independent-weekly-current-entry.mjs'], { stdio: 'inherit' });
 console.log('internal link slug check pass');

@@ -29,6 +29,8 @@ export const SPANISH_PUBLIC_NAVIGATION = Object.freeze([
   Object.freeze({ label: 'Marco del dólar', href: '/es/dollar-framework/' }),
   Object.freeze({ label: 'Cadena de transmisión', href: '/es/framework/dollar-transmission-chain/' }),
   Object.freeze({ label: 'Panel de tres diales', href: '/es/framework/three-dial-dashboard/' }),
+  // Cross-language shortcut ONLY. Spanish member delivery remains on HOLD.
+  Object.freeze({ label: 'Biblioteca (EN)', href: '/guided-edition/', destinationLocale: 'en', accessibilityLabel: 'Biblioteca (contenido disponible en inglés)' }),
 ]);
 
 export const SITE_SHELL_COPY = Object.freeze({

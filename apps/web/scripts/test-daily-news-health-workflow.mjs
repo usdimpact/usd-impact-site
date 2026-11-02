@@ -25,6 +25,32 @@ assert.match(
 );
 assert.match(
   workflow,
+  /latest_run_json="\$\(gh run list[\s\S]*?--branch main[\s\S]*?--limit 1[\s\S]*?--json databaseId,status,conclusion,createdAt,updatedAt,url,event\)"/,
+  'the latest any-event run must remain available to detect newer fallback failures',
+);
+assert.match(
+  workflow,
+  /run_json="\$\(gh run list[\s\S]*?--branch main[\s\S]*?--event schedule[\s\S]*?--limit 1[\s\S]*?--json databaseId,status,conclusion,createdAt,updatedAt,url,event\)"/,
+  'native recovery must select a schedule-event run even when an external wake came later',
+);
+assert.match(
+  workflow,
+  /No native scheduled Daily USD Impact workflow run was found\./,
+  'missing native schedule evidence must remain a failure rather than becoming healthy',
+);
+assert.match(
+  workflow,
+  /latest_created_epoch" -gt "\$created_epoch"[\s\S]*newer_fallback_pending[\s\S]*latest_conclusion" != "success"[\s\S]*exit 1/,
+  'a newer failed or pending fallback must never be ignored when certifying the native schedule',
+);
+assert.match(
+  workflow,
+  /Newer non-scheduled run succeeded; assessing the independently identified native schedule below\./,
+  'a successful newer fallback must not hide the earlier natural schedule',
+);
+
+assert.match(
+  workflow,
   /expected_date="\$\{created_at:0:10\}"/,
   'the scheduled run date must remain the expected edition date',
 );

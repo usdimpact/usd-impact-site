@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
 import {
   parseChromeDebugPort,
   chromeDebugHttpUrl,
+  fetchChromeDebugEndpoint,
   chromeDebugWebSocketUrl,
 } from './qa-chrome-debug-endpoint.mjs';
 
@@ -46,4 +48,54 @@ for (const kind of ['browser', 'page']) {
   assert.throws(() => chromeDebugWebSocketUrl(good, 9223, kind));
   assert.throws(() => chromeDebugWebSocketUrl(good, port, kind === 'page' ? 'browser' : 'page'));
 }
+// The default fetch API follows 301/302 redirects. Even a local 127.0.0.1
+// server must not redirect our request to another destination.
+const callLog = [];
+const simulated = await fetchChromeDebugEndpoint(9222, '/json/list', async (url, opts) => {
+  callLog.push({url, opts});
+  return {ok:true};
+});
+assert.equal(simulated.ok, true);
+assert.deepEqual(callLog, [{
+  url:'http://127.0.0.1:9222/json/list',
+  opts:{redirect:'error'},
+}]);
+assert.rejects(fetchChromeDebugEndpoint(9222, '/json/list?redirect=1',
+  async () => { throw Error('invalid path must never invoke fetch'); }), /Unexpected Chrome debugging endpoint/);
+
+async function startLoopback(server) {
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  return server.address().port;
+}
+async function closeLoopback(server) {
+  await new Promise((resolve, reject) => server.close(err => err ? reject(err) : resolve()));
+}
+let redirectHits = 0;
+const destination = createServer((_req, res) => {
+  redirectHits++;
+  res.writeHead(200, {'content-type':'application/json'});
+  res.end('{"unsafe":"redirect was followed"}');
+});
+const destinationPort = await startLoopback(destination);
+const redirector = createServer((_req, res) => {
+  res.writeHead(302, {'location':'http://127.0.0.1:' + destinationPort + '/destination'});
+  res.end();
+});
+try {
+  const redirectPort = await startLoopback(redirector);
+  await assert.rejects(
+    () => fetchChromeDebugEndpoint(redirectPort, '/json/version'),
+    /fetch failed|redirect/i,
+    'A 302 from the local debugging port must never be automatically followed',
+  );
+  assert.equal(redirectHits, 0, 'redirect target must not receive any request');
+} finally {
+  if (redirector.listening) await closeLoopback(redirector);
+  await closeLoopback(destination);
+}
+console.log('Chrome debugging loopback HTTP redirect rejection PASS');
+
 console.log('Chrome QA DevTools loopback endpoint validation PASS (positive + malicious-input negatives)');

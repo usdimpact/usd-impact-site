@@ -73,9 +73,15 @@ assert.throws(() => assessIndependentMonthlyCoverage({
   publishedIndependentFridayEnds: [],
 }), /valid ISO/);
 
-const sourcePath = fileURLToPath(new URL('../src/pages/macro-reviews/monthly/2026-10/index.astro', import.meta.url));
+const sourcePath = fileURLToPath(new URL('../src/pages/macro-reviews/monthly/[period]/index.astro', import.meta.url));
 const builtPath = fileURLToPath(new URL('../dist/macro-reviews/monthly/2026-10/index.html', import.meta.url));
 const source = readFileSync(sourcePath, 'utf8');
+const staticRoute = fileURLToPath(new URL('../src/pages/macro-reviews/monthly/2026-10/index.astro', import.meta.url));
+assert.ok(!existsSync(staticRoute), 'a static October route would bypass the Preview-only release guard');
+assert.match(source, /export function getStaticPaths\(\)/);
+assert.match(source, /process\.env\.VERCEL_ENV !== 'preview'/);
+assert.match(source, /params: \{ period: '2026-10' \}/);
+
 const originalSources = [
   'https://www.bls.gov/news.release/archives/empsit_10022026.htm',
   'https://www.bls.gov/news.release/archives/cpi_10142026.htm',
@@ -126,17 +132,27 @@ assert.doesNotMatch(source, /<link\b[^>]+rel="canonical"/);
 const allPublishedIndependent = [...source.matchAll(/href="(\/macro-reviews\/weekly\/[^"]+)"/g)].map(m => m[1]);
 assert.ok(allPublishedIndependent.every(x => x === '/macro-reviews/weekly/2026-10-30/'));
 if (process.argv.includes('--built')) {
-  assert.ok(existsSync(builtPath), 'Astro must build the isolated independent October preview route');
-  const built = readFileSync(builtPath, 'utf8');
-  assert.match(built, /http-equiv="content-security-policy"/i, 'Astro CSP remains enforced');
-  assert.match(built, /name="robots"[^>]+noindex/);
-  assert.match(built, /data-report="calendar_monthly_preview"/);
-  assert.match(built, /AI-assisted preparation/);
-  assert.doesNotMatch(built, /<script\b|<iframe\b|<form\b/i);
-  for (const url of originalSources) assert.ok(built.includes('href="' + url + '"'));
-  assert.ok(!existsSync(fileURLToPath(new URL('../dist/macro-reviews/monthly/2026-11/index.html', import.meta.url))), 'future November remains ungenerated');
+  const previewBuild = process.env.VERCEL_ENV === 'preview';
+  assert.equal(
+    existsSync(builtPath), previewBuild,
+    'October route exists ONLY for Vercel Preview; production/default builds must not publish it',
+  );
+  if (previewBuild) {
+    const built = readFileSync(builtPath, 'utf8');
+    assert.match(built, /http-equiv="content-security-policy"/i, 'Astro CSP remains enforced');
+    assert.match(built, /name="robots"[^>]+noindex/);
+    assert.match(built, /data-report="calendar_monthly_preview"/);
+    assert.match(built, /AI-assisted preparation/);
+    assert.doesNotMatch(built, /<script\b|<iframe\b|<form\b/i);
+    for (const url of originalSources) assert.ok(built.includes('href="' + url + '"'));
+  }
+  assert.ok(
+    !existsSync(fileURLToPath(new URL('../dist/macro-reviews/monthly/2026-11/index.html', import.meta.url))),
+    'future November Monthly must never be generated',
+  );
   const sitemap = readFileSync(fileURLToPath(new URL('../dist/sitemap-0.xml', import.meta.url)), 'utf8');
-  assert.ok(!sitemap.includes('/macro-reviews/monthly/2026-10'), 'preview remains noindex and out of sitemap');
+  assert.ok(!sitemap.includes('/macro-reviews/monthly/2026-10'), 'October Preview remains excluded from sitemap');
+  assert.ok(!sitemap.includes('/macro-reviews/monthly/2026-11'), 'future November is absent from sitemap');
 }
 console.log('Independent October calendar Monthly Preview coverage/source/privacy checks pass' +
-  (process.argv.includes('--built') ? ' (built route verified)' : ''));
+  (process.argv.includes('--built') ? ' (Preview-only build artifact verified; Production/default absent)' : ''));

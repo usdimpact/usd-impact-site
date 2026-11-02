@@ -1,3 +1,14 @@
+---
+/*
+ * Independent October 2026 educational Monthly: private Vercel Preview only.
+ * An unapproved merge must never generate a public route in Production.
+ * Only an explicit future release PR may change this gate after fresh QA.
+ */
+export function getStaticPaths() {
+  if (process.env.VERCEL_ENV !== 'preview') return [];
+  return [{ params: { period: '2026-10' } }];
+}
+---
 <!doctype html>
 <!-- Independent USD Impact calendar-month educational preview; not a Score-derived Monthly.
      October 1-31, 2026; six dated original-publisher releases; only one independent Weekly published.

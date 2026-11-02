@@ -143,7 +143,25 @@ assert.equal((source.match(/<article class="body">/g) || []).length, 1);
 // keyboard Tab stop; the focus ring stays visible following skip activation.
 assert.match(source, /<a class="skip" href="#main">Skip to October preview<\/a>/);
 assert.match(source, /<main id="main" tabindex="-1" class="container grid">/);
-assert.match(source, /main:focus\{outline:3px solid var\(--warm\);outline-offset:4px\}/);
+assert.match(source, /main:focus\{outline:3px solid var\(--gold-text\);outline-offset:4px\}/);
+
+ // Presentation-only brand parity with the already published, owner-approved Macro Weekly.
+ // Keep this as source-level verification; Astro emits global CSS to a hashed stylesheet.
+ assert.match(source, /<meta name="color-scheme" content="light">/);
+ assert.match(source, /<meta name="theme-color" content="#0b1f33">/);
+ for (const token of ['--bg: #f7f8fa;', '--surface: #fff;', '--navy: #071a33;', '--gold: #c9a35b;', '--gold-text: #8a6518;']) {
+   assert.ok(source.includes(token), 'approved Weekly branding token: ' + token);
+ }
+ assert.match(source, /font-family: "Inter Variable"/);
+ assert.match(source, /font-family: "Playfair Display Variable"/);
+ assert.match(source, /--font-sans: "Inter Variable"/);
+ assert.match(source, /--font-display: "Playfair Display Variable"/);
+ assert.match(source, /\.brand em \{ color: var\(--gold\);/);
+ assert.match(source, /\.hero \{[\s\S]*?border-bottom: 2px solid var\(--gold\);/);
+ assert.match(source, /\.event:before \{[^\n]*background: var\(--gold\);/);
+ assert.match(source, /\.card \{[^\n]*background: linear-gradient\(160deg, var\(--navy\), #0c223d\)/);
+ assert.match(source, /\.card strong \{ color: #fff; \}/);
+
 assert.match(source, /@media\(prefers-reduced-motion:reduce\)\{html\{scroll-behavior:auto\}\}/);
 assert.equal((source.match(/<h1\b/g) || []).length, 1, 'one English Monthly page heading');
 const monthlyIds = [...source.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
@@ -202,8 +220,8 @@ if (process.argv.includes('--built')) {
       const outline = declarations.match(/(?:^|;)\s*outline\s*:\s*([^;]+)/)?.[1] ?? '';
       const offset = declarations.match(/(?:^|;)\s*outline-offset\s*:\s*([^;]+)/)?.[1] ?? '';
       return /\b3px\b/i.test(outline) && /\bsolid\b/i.test(outline)
-        && /var\(--warm\)|#efd0a1/i.test(outline) && /^\s*4px\s*$/.test(offset);
-    }), 'emitted CSS must retain a warm three-pixel main focus ring');
+        && /var\(--gold-text\)|#8a6518/i.test(outline) && /^\s*4px\s*$/.test(offset);
+    }), 'emitted CSS must retain a contrast-aware gold three-pixel main focus ring');
     assert.match(built, /http-equiv="content-security-policy"/i, 'Astro CSP remains enforced');
     assert.match(built, /name="robots"[^>]+noindex/);
     assert.match(built, /data-report="calendar_monthly_preview"/);

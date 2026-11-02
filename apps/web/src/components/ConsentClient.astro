@@ -197,17 +197,16 @@ const copy = analyticsAvailable ? baseCopy : {
 
 <style>
   .privacy-consent-banner {
-    position: fixed;
-    z-index: 1000;
-    right: 20px;
-    bottom: 20px;
-    left: 20px;
+    /* A normal-flow notice cannot hide keyboard-focused content. */
+    position: relative;
+    z-index: 1;
+    width: calc(100% - 40px);
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 24px;
     align-items: center;
     max-width: 1120px;
-    margin: 0 auto;
+    margin: 16px auto;
     padding: 20px 22px;
     color: #f3f5f7;
     background: #071525;
@@ -278,7 +277,7 @@ const copy = analyticsAvailable ? baseCopy : {
   }
 
   @media (max-width: 520px) {
-    .privacy-consent-banner { right: 10px; bottom: 10px; left: 10px; padding: 18px; }
+    .privacy-consent-banner { width: calc(100% - 20px); margin: 10px auto; padding: 18px; }
     .privacy-consent-actions { display: grid; }
     .privacy-consent-button { width: 100%; }
     .privacy-consent-dialog-copy, .privacy-consent-category, .privacy-consent-dialog-actions { padding: 18px; }

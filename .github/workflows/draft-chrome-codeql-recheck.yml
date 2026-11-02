@@ -5,7 +5,7 @@ name: Draft Chrome QA CodeQL recheck
 on:
   pull_request:
     branches:
-      - agent/held-release-boundary-negative-tests-20261103
+      - agent/held-release-mandatory-check-design-20261103
 
 permissions:
   contents: read

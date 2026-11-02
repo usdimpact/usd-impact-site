@@ -2,9 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { PUBLIC_CANONICAL_ORIGIN, canonicalUrlForRequest } from '../src/lib/canonical-url.js';
 import { SEARCH_UTILITY_PATHS } from '../src/lib/search-utility-policy.js';
+import { SPANISH_PUBLIC_REVIEW_PATHS, spanishPublicReviewEnabled } from '../src/lib/spanish-public-review-policy.js';
+import { videos as canonicalVideoLibrary, collections as canonicalVideoCollections } from '../src/data/video-library.js';
 
 const distRoot = path.resolve('dist');
 const failures = [];
+const sitemapPathnames = new Set();
 
 function outputPath(pathname) {
   const route = pathname.replace(/^\/+|\/+$/g, '');
@@ -40,6 +43,7 @@ if (!fs.existsSync(sitemapPath)) {
         failures.push(`Canonical policy: unexpected sitemap URL: ${loc}.`);
         continue;
       }
+      sitemapPathnames.add(sourceUrl.pathname.replace(/\/+$/, '') || '/');
       const expected = canonicalUrlForRequest(sourceUrl);
       if (loc !== expected) {
         failures.push(`Canonical policy: sitemap URL must equal canonical URL ${expected}, found ${loc}.`);
@@ -73,6 +77,80 @@ for (const route of noindexControls) {
   }
   const hrefs = canonicalHrefs(fs.readFileSync(file, 'utf8'));
   if (hrefs.length !== 0) failures.push(`Canonical policy: noindex control must not emit canonical: ${route}.`);
+}
+
+// UI-40 negative gate: review pages must be private to Vercel Preview and must
+// NEVER acquire a production sitemap entry or public canonical metadata.
+const reviewMode = spanishPublicReviewEnabled(process.env.VERCEL_ENV);
+for (const route of SPANISH_PUBLIC_REVIEW_PATHS) {
+  if (sitemapPathnames.has(route)) failures.push(`Canonical policy: Preview-only Spanish route is in sitemap: ${route}.`);
+  const file = outputPath(route);
+  if (!reviewMode) {
+    if (fs.existsSync(file)) failures.push(`Canonical policy: Preview-only Spanish route generated outside Preview: ${route}.`);
+    continue;
+  }
+  if (!fs.existsSync(file)) {
+    failures.push(`Canonical policy: Preview-only Spanish page missing: ${route}.`);
+    continue;
+  }
+  const html = fs.readFileSync(file, 'utf8');
+  if (!/<meta\s+name="robots"\s+content="noindex, nofollow"\s*\/?\s*>/i.test(html)) {
+    failures.push(`Canonical policy: Spanish Preview-only route missing noindex: ${route}.`);
+  }
+  if (canonicalHrefs(html).length !== 0) failures.push(`Canonical policy: Spanish Preview-only route has canonical: ${route}.`);
+  if (!html.includes('Transparencia sobre IA:')) failures.push(`Canonical policy: Spanish Preview-only route missing AI drafting notice: ${route}.`);
+  if (route === '/es/reports' &&
+      (!html.includes('Seguimiento del informe mensual histórico (Score)')
+       || !html.includes('Macro Monthly independiente: mes natural')
+       || !html.includes('cinco viernes: 2, 9, 16, 23 y 30'))) {
+    failures.push('Canonical policy: Spanish Reports mixes historical Score-derived Monthly with independent calendar Monthly.');
+  }
+}
+
+// UI-40 Video Library release-integrity sentinel (only on protected Vercel
+// Preview builds). Public translated catalogue metadata must never include
+// streaming assets or silently drop/reorder any of the 51 gated film links.
+if (reviewMode) {
+  const spanishVideoFile = outputPath('/es/video-library');
+  if (!fs.existsSync(spanishVideoFile)) {
+    failures.push('Spanish video catalogue: missing Preview-only generated HTML.');
+  } else {
+    const videoHtml = fs.readFileSync(spanishVideoFile, 'utf8');
+    const lessonSlugs = [...videoHtml.matchAll(
+      /<a\b[^>]*href="\/guided-edition\/video-library\/([a-z0-9-]+)"[^>]*>/gi,
+    )].map(([, slug]) => slug);
+    const expectedSlugs = canonicalVideoLibrary.map(({ slug }) => slug);
+    if (lessonSlugs.length !== expectedSlugs.length
+        || new Set(lessonSlugs).size !== expectedSlugs.length
+        || lessonSlugs.some((slug, index) => slug !== expectedSlugs[index])) {
+      failures.push('Spanish video catalogue: expected exactly 51 distinct protected film links in original source order.');
+    }
+    if (canonicalVideoCollections.length !== 5
+        || canonicalVideoCollections.some(({ id }) => !videoHtml.includes('id="' + id + '"'))) {
+      failures.push('Spanish video catalogue: expected five source-matched collection sections.');
+    }
+    // Draft-only editorial candidates are visible in the actual generated page.
+    for (const phrase of [
+      'dólar amplio ponderado por el comercio',
+      'dato del IPC frente a compensación implícita en el mercado',
+      'disyuntiva entre estabilidad cambiaria, movilidad de capitales e independencia monetaria',
+    ]) {
+      if (!videoHtml.includes(phrase)) {
+        failures.push('Spanish video catalogue: refined source-paired editorial candidate not rendered: ' + phrase);
+      }
+    }
+    if ([...videoHtml.matchAll(/<h1\b/gi)].length !== 1) {
+      failures.push('Spanish video catalogue: expected one page-level H1.');
+    }
+    if (/<(?:video|audio|iframe)\b/i.test(videoHtml)
+        || /(?:videodelivery\.net|cloudflarestream\.com|\.m3u8\b|\.mp4\b|\.vtt\b)/i.test(videoHtml)) {
+      failures.push('Spanish video catalogue: public Preview metadata must not embed playable media or streaming asset links.');
+    }
+    if (!videoHtml.includes('Reproductor actual en inglés')
+        || !videoHtml.includes('no se ha publicado una pista de narración alternativa en español')) {
+      failures.push('Spanish video catalogue: English narration and absent Spanish dub must remain accurately disclosed.');
+    }
+  }
 }
 
 if (failures.length) {

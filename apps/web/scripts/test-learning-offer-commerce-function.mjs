@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import commerceHandler from '../api/commerce.js';
 import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-handler.js';
 import { LEARNING_OFFER_MODE_KEY } from '../src/lib/learning-offer-commerce-policy.js';
@@ -147,6 +148,36 @@ try {
   assert.equal((await invokeCommerce()).json.code, 'COMMERCE_DISABLED');
   assert.deepEqual((await invokeReadiness({})).json.commerce, originalReadiness.json.commerce);
 
+  // merchant-hosted-checkout-source-scan (offline). Site-owned Library Pass
+  // links must go through /checkout/ and server readiness, not through a
+  // hardcoded provider buy URL that would bypass the free-first API guard.
+  // Merchant-hosted links previously issued outside this repository remain
+  // an independent approval gate; this source check cannot disable them.
+  const publicEntrySurfaces = [
+    '../src/components/BookPurchaseCTA.astro',
+    '../src/components/HomeLibraryPassCTA.astro',
+    '../src/components/LibraryPassAvailabilityCTA.astro',
+    '../src/pages/checkout/index.astro',
+    '../src/pages/account/index.astro',
+    '../src/pages/research/index.astro',
+    '../src/lib/checkout-client.js',
+  ];
+  const directProviderCheckout = /https?:\\/\\/(?:[a-z0-9-]+\\.)*lemonsqueezy\\.com\\/checkout(?:\\/|[?#"'])/i;
+  const directHostedBuy = /https?:\\/\\/[^"'\\s<>]+\\/checkout\\/buy(?:\\/|[?#"'])/i;
+  for (const relativePath of publicEntrySurfaces) {
+    const source = await readFile(new URL(relativePath, import.meta.url), 'utf8');
+    assert.doesNotMatch(source, directProviderCheckout, `${relativePath}: provider checkout URL bypasses server offer guard`);
+    assert.doesNotMatch(source, directHostedBuy, `${relativePath}: hosted buy link bypasses server offer guard`);
+  }
+  for (const relativePath of [
+    '../src/components/BookPurchaseCTA.astro',
+    '../src/components/LibraryPassAvailabilityCTA.astro',
+  ]) {
+    const source = await readFile(new URL(relativePath, import.meta.url), 'utf8');
+    assert.match(source, /href="\\/checkout\\/"/, `${relativePath} must use internal checkout`);
+  }
+
+  console.log('Learning-offer public-entrypoint source guard passed (no hardcoded hosted buy links).');
   console.log('Learning-offer direct-request negative matrix passed (offline, no provider access).');
 } finally {
   for (const [key, value] of Object.entries(saved)) {

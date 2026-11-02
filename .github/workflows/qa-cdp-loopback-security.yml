@@ -1,0 +1,26 @@
+name: Chromium QA loopback security
+on:
+  pull_request:
+    paths:
+      - 'apps/web/scripts/qa-october-monthly-responsive.mjs'
+      - 'apps/web/scripts/qa-spanish-preview-responsive.mjs'
+      - 'apps/web/scripts/qa-chrome-debug-endpoint.mjs'
+      - 'apps/web/scripts/test-qa-chrome-debug-endpoint.mjs'
+      - '.github/workflows/qa-cdp-loopback-security.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-loopback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Validate Chrome QA sources and malicious endpoint fixtures
+        run: |
+          node --check apps/web/scripts/qa-october-monthly-responsive.mjs
+          node --check apps/web/scripts/qa-spanish-preview-responsive.mjs
+          node --check apps/web/scripts/qa-chrome-debug-endpoint.mjs
+          node apps/web/scripts/test-qa-chrome-debug-endpoint.mjs

@@ -4,6 +4,7 @@ import os from 'node:os';
 import http from 'node:http';
 import {spawn, execFileSync} from 'node:child_process';
 import {setTimeout as sleep} from 'node:timers/promises';
+import {parseChromeDebugPort, chromeDebugHttpUrl, chromeDebugWebSocketUrl} from './qa-chrome-debug-endpoint.mjs';
 
 const root = path.resolve('dist');
 const output = path.resolve('spanish-preview-qa');
@@ -23,11 +24,11 @@ async function main(){
  let browser,page;
  try{
   const active=await poll(()=>fs.existsSync(path.join(temp,'DevToolsActivePort'))&&fs.readFileSync(path.join(temp,'DevToolsActivePort'),'utf8'));
-  const debugPort=active.split('\n')[0];const ver=await poll(async()=>{let r=await fetch('http://127.0.0.1:'+debugPort+'/json/version');return r.ok?r.json():null;});
-  browser=await cdp(ver.webSocketDebuggerUrl);
+  const debugPort=parseChromeDebugPort(active);const ver=await poll(async()=>{let r=await fetch(chromeDebugHttpUrl(debugPort,'/json/version'));return r.ok?r.json():null;});
+  browser=await cdp(chromeDebugWebSocketUrl(ver.webSocketDebuggerUrl,debugPort,'browser'));
   const t=await browser.call('Target.createTarget',{url:'about:blank'});
-  const wsUrl=await poll(async()=>{let r=await fetch('http://127.0.0.1:'+debugPort+'/json/list');let a=await r.json();return a.find(x=>x.id===t.targetId)?.webSocketDebuggerUrl;});
-  page=await cdp(wsUrl);await page.call('Page.enable');await page.call('Runtime.enable');
+  const wsUrl=await poll(async()=>{let r=await fetch(chromeDebugHttpUrl(debugPort,'/json/list'));let a=await r.json();return a.find(x=>x.id===t.targetId)?.webSocketDebuggerUrl;});
+  page=await cdp(chromeDebugWebSocketUrl(wsUrl,debugPort,'page'));await page.call('Page.enable');await page.call('Runtime.enable');
   const results=[],failures=[];
   for(const route of routes)for(const width of widths){
    await page.call('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});

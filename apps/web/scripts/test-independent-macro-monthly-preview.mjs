@@ -185,7 +185,25 @@ if (process.argv.includes('--built')) {
     const built = readFileSync(builtPath, 'utf8');
     assert.match(built, /<a class="skip" href="#main">Skip to October preview<\/a>/, 'Preview skip link preserved');
     assert.match(built, /<main id="main" tabindex="-1" class="container grid">/, 'Preview main must support programmatic focus');
-    assert.match(built, /main:focus\{outline:3px solid var\(--warm\);outline-offset:4px\}/, 'visible focused main ring');
+    // Astro extracts the global <style> into a hashed /_astro/ CSS asset.
+    // Verify the emitted stylesheet, not an inlined CSS literal in HTML.
+    const cssHrefs = [...built.matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*>/g)]
+      .map(([link]) => link.match(/\bhref="(\/_astro\/[A-Za-z0-9._-]+\.css)"/)?.[1])
+      .filter(Boolean);
+    assert.ok(cssHrefs.length > 0, 'Preview HTML must link a local Astro stylesheet');
+    const compiledCss = cssHrefs.map((href) => readFileSync(
+      fileURLToPath(new URL('../dist' + href, import.meta.url)), 'utf8',
+    )).join('\n');
+    const mainFocusRules = [...compiledCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter(([, selectors]) => selectors.split(',').some((selector) => selector.trim() === 'main:focus'))
+      .map(([, , declarations]) => declarations);
+    assert.ok(mainFocusRules.length > 0, 'emitted CSS must contain the main:focus rule');
+    assert.ok(mainFocusRules.some((declarations) => {
+      const outline = declarations.match(/(?:^|;)\s*outline\s*:\s*([^;]+)/)?.[1] ?? '';
+      const offset = declarations.match(/(?:^|;)\s*outline-offset\s*:\s*([^;]+)/)?.[1] ?? '';
+      return /\b3px\b/i.test(outline) && /\bsolid\b/i.test(outline)
+        && /var\(--warm\)|#efd0a1/i.test(outline) && /^\s*4px\s*$/.test(offset);
+    }), 'emitted CSS must retain a warm three-pixel main focus ring');
     assert.match(built, /http-equiv="content-security-policy"/i, 'Astro CSP remains enforced');
     assert.match(built, /name="robots"[^>]+noindex/);
     assert.match(built, /data-report="calendar_monthly_preview"/);

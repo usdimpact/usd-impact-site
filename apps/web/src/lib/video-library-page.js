@@ -45,7 +45,7 @@ function renderFooter() {
   </div></footer>`;
 }
 
-function renderDocument({ title, description, body, scripts = '' }) {
+function renderDocument({ title, description, body, scripts = '', mediaOrigin = '' }) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -54,6 +54,7 @@ function renderDocument({ title, description, body, scripts = '' }) {
   <meta name="robots" content="noindex,nofollow">
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(description)}">
+  ${mediaOrigin ? `<link rel="preconnect" href="${escapeHtml(mediaOrigin)}">` : ''}
   <link rel="stylesheet" href="/assets/video-library.css">
 ${memberMainMenuAssets()}
 </head>
@@ -146,7 +147,8 @@ export function renderProtectedVideoLesson({ video, signedToken, customerCode })
     preload: 'metadata',
     defaultTextTrack: 'en',
   });
-  const playerUrl = `https://customer-${customerCode}.cloudflarestream.com/${encodeURIComponent(signedToken)}/iframe?${query}`;
+  const streamOrigin = `https://customer-${customerCode}.cloudflarestream.com`;
+  const playerUrl = `${streamOrigin}/${encodeURIComponent(signedToken)}/iframe?${query}`;
   const concepts = video.concepts.map((concept) => `<li>${escapeHtml(concept)}</li>`).join('');
   const sources = video.sources.map((source) => `<li>${escapeHtml(source)}</li>`).join('');
   const previous = adjacent.previous
@@ -159,6 +161,7 @@ export function renderProtectedVideoLesson({ video, signedToken, customerCode })
   return renderDocument({
     title: `${video.title} | USD Impact Video Library`,
     description: video.description,
+    mediaOrigin: streamOrigin,
     body: `<main class="vl-watch">
       <div class="vl-shell vl-main">
         <nav class="vl-breadcrumb" aria-label="Breadcrumb"><a href="/guided-edition/video-library/">Video Library</a><span>/</span><a href="/guided-edition/video-library/#${escapeHtml(collection.id)}">${escapeHtml(collection.title)}</a><span>/</span><span>Film ${String(number).padStart(2, '0')}</span></nav>

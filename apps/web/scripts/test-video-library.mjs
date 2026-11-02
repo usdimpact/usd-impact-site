@@ -8,7 +8,7 @@ import {
   videos,
 } from '../src/data/video-library.js';
 import { STREAM_CUSTOMER_CODE, VIDEO_STREAM_UIDS } from '../src/lib/video-stream-map.js';
-import { renderProtectedVideoCatalog } from '../src/lib/video-library-page.js';
+import { renderProtectedVideoCatalog, renderProtectedVideoLesson } from '../src/lib/video-library-page.js';
 
 assert.equal(videos.length, 51);
 assert.equal(collections.length, 5);
@@ -33,6 +33,18 @@ assert.match(publicSource, /data-video-collection=\{collection\.id\}/);
 assert.match(publicSource, /src="\/assets\/video-library-progress\.js"/);
 
 const protectedCatalog = renderProtectedVideoCatalog();
+const currentLesson = renderProtectedVideoLesson({
+  video: videos[0],
+  signedToken: 'synthetic-signed-video-token',
+  customerCode: 'syntheticcode',
+});
+assert.doesNotMatch(protectedCatalog, /rel="preconnect"/, 'Public and catalog views must not warm protected media origins.');
+assert.match(currentLesson, /<link rel="preconnect" href="https:\/\/customer-syntheticcode\.cloudflarestream\.com">/);
+assert.match(currentLesson, /preload=metadata&amp;defaultTextTrack=en/);
+assert.doesNotMatch(currentLesson, /<link rel="preload"/, 'Do not preload WebVTT or video files outside the signed provider player.');
+const preconnect = currentLesson.match(/<link rel="preconnect" href="([^"]+)">/);
+assert.equal(preconnect?.[1], 'https://customer-syntheticcode.cloudflarestream.com');
+assert.doesNotMatch(preconnect?.[1] || '', /synthetic-signed-video-token/);
 assert.equal((protectedCatalog.match(/data-video-filter="[^"]+"/g) || []).length, collections.length + 1);
 assert.equal((protectedCatalog.match(/data-video-collection="[^"]+"/g) || []).length, collections.length);
 assert.equal((protectedCatalog.match(/data-video-card/g) || []).length, videos.length);

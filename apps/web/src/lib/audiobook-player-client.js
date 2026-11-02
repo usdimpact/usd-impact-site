@@ -27,6 +27,16 @@ export function audiobookPlayerClient() {
   let pendingWrite = false;
   let message = 'Loading this chapter.';
   const validTime = (time) => typeof time === 'number' && Number.isFinite(time) && time >= 0 && time <= Number.MAX_SAFE_INTEGER;
+  // Only the active protected chapter may preload more than metadata. Never
+  // issue a second track fetch or cache expiring signed Storage URLs here.
+  function currentChapterPreload() {
+    const network = typeof navigator === 'undefined'
+      ? null
+      : (navigator.connection || navigator.mozConnection || navigator.webkitConnection);
+    if (!network || network.saveData !== false) return 'metadata';
+    return network.type === 'wifi' || network.type === 'ethernet' ? 'auto' : 'metadata';
+  }
+
   const record = () => JSON.stringify({ index, time: Math.floor(position) });
 
   function announce() {
@@ -136,6 +146,7 @@ export function audiobookPlayerClient() {
     update();
     announce();
     try {
+      audio.preload = currentChapterPreload();
       audio.src = tracks[index].dataset.url;
       audio.load();
     } catch {

@@ -6,6 +6,11 @@ on:
       - '.github/workflows/held-release-boundary-negative.yml'
       - 'apps/web/scripts/held-release-boundary.mjs'
       - 'apps/web/scripts/test-held-release-boundary.mjs'
+      - 'apps/web/scripts/score-held-report-source-baseline.json'
+      - 'apps/web/scripts/score-held-report-source-guard.mjs'
+      - 'apps/web/scripts/test-score-held-report-source-guard.mjs'
+      - 'apps/web/src/content/weekly-reports/**'
+      - 'apps/web/src/content/monthly-reports/**'
       - 'apps/web/src/lib/spanish-public-review-policy.js'
       - 'apps/web/src/pages/es/**'
       - 'apps/web/src/pages/macro-reviews/monthly/**'
@@ -37,6 +42,10 @@ jobs:
           node --check scripts/test-held-release-boundary.mjs
           node scripts/test-held-release-boundary.mjs
           node scripts/held-release-boundary.mjs
+          node --check scripts/score-held-report-source-guard.mjs
+          node --check scripts/test-score-held-report-source-guard.mjs
+          node scripts/test-score-held-report-source-guard.mjs
+          node scripts/score-held-report-source-guard.mjs
       - name: Install existing locked dependencies (ephemeral CI only)
         run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Build in Production classification (no remote deployment)

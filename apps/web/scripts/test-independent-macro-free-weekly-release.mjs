@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const articleFile = fileURLToPath(new URL('../public/macro-reviews/weekly/2026-10-30/index.html', import.meta.url));
+const articleFile = fileURLToPath(new URL('../src/pages/macro-reviews/weekly/2026-10-30/index.astro', import.meta.url));
 const buildFile = fileURLToPath(new URL('../dist/macro-reviews/weekly/2026-10-30/index.html', import.meta.url));
 const article = readFileSync(articleFile, 'utf8');
 const expectedSources = [
@@ -49,7 +49,18 @@ assert.doesNotMatch(article, /<link\b[^>]+rel="canonical"/);
 assert.equal((article.match(/<article class="content">/g) || []).length, 1);
 if (process.argv.includes('--built')) {
   assert.ok(existsSync(buildFile), 'Astro must copy the standalone free Weekly to the public route');
-  assert.equal(readFileSync(buildFile, 'utf8'), article, 'built public page must match reviewed source exactly');
+  const built = readFileSync(buildFile, 'utf8');
+  assert.match(built, /http-equiv="content-security-policy"/i, 'Astro must supply page CSP');
+  assert.match(built, /name="robots"[^>]+noindex/i, 'public page stays noindex');
+  assert.match(built, /AI-assisted preparation/, 'visible AI disclosure');
+  assert.match(built, /two voting dissenters, Lisa D\. Cook and Beth M\. Hammack/, 'verified FOMC wording');
+  assert.doesNotMatch(built, /<script\b|<iframe\b|<form\b/i, 'no page scripts, tracking or embeds');
+  const builtSources = [...built.matchAll(/href="(https:\/\/(?:www\.)?(?:federalreserve|bea|bls)\.gov[^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual([...new Set(builtSources)].sort(), expectedSources.slice().sort(), 'official-source parity in built page');
+  assert.ok(!existsSync(fileURLToPath(new URL('../dist/macro-reviews/weekly/2026-10-23/index.html', import.meta.url))));
+  assert.ok(!existsSync(fileURLToPath(new URL('../dist/macro-reviews/weekly/2026-11-06/index.html', import.meta.url))));
+  const sitemap = readFileSync(fileURLToPath(new URL('../dist/sitemap-0.xml', import.meta.url)), 'utf8');
+  assert.ok(!sitemap.includes('/macro-reviews/weekly/2026-10-30'), 'no indexing before separate authorization');
 }
 console.log('independent free Weekly factual/source/privacy/isolation checks pass' +
   (process.argv.includes('--built') ? ' (built route verified)' : ''));

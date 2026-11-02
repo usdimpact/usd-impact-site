@@ -82,6 +82,39 @@ assert.match(source, /export function getStaticPaths\(\)/);
 assert.match(source, /process\.env\.VERCEL_ENV !== 'preview'/);
 assert.match(source, /params: \{ period: '2026-10' \}/);
 
+// Reconciliation regression for *future* integration with UI-39/#1047 and UI-40/#1050.
+// This does not bring their Draft code onto this branch. If their Spanish
+// module arrives in a combined tree, the matching sitemap filter becomes mandatory.
+const sitemapConfigPath = fileURLToPath(new URL('../astro.config.mjs', import.meta.url));
+const sitemapConfig = readFileSync(sitemapConfigPath, 'utf8');
+assert.match(sitemapConfig, /['"]\/macro-reviews\/weekly\/2026-10-30['"]/, 'preserve the existing public independent Weekly sitemap HOLD');
+assert.match(sitemapConfig, /['"]\/macro-reviews\/monthly['"]/, 'preserve all independent Monthly Preview sitemap exclusions');
+assert.match(sitemapConfig, /!privatePaths\.has\(pathname\)/, 'private routes remain filtered');
+assert.match(sitemapConfig, /!isUnpublishedLocalePath\(pathname\)/, 'unpublished locale routes remain filtered');
+assert.match(sitemapConfig, /!previewOnlySitemapPrefixes\.some\(/, 'Preview-only route prefixes remain filtered');
+
+const spanishPolicyUrl = new URL('../src/lib/spanish-public-review-policy.js', import.meta.url);
+const spanishReviewPolicyPresent = existsSync(fileURLToPath(spanishPolicyUrl));
+const pendingSpanishSitemapPaths = ['/es/news', '/es/score', '/es/reports', '/es/video-library'];
+if (spanishReviewPolicyPresent) {
+  assert.match(
+    sitemapConfig,
+    /import\s+\{\s*isSpanishPublicReviewPath\s*\}\s+from\s+['"]\.\/src\/lib\/spanish-public-review-policy\.js['"]/,
+    'when the Spanish review policy lands, do not drop its sitemap import',
+  );
+  assert.match(
+    sitemapConfig,
+    /!isSpanishPublicReviewPath\(pathname\)/,
+    'when the Spanish review policy lands, do not drop its sitemap exclusion',
+  );
+  const policy = await import(spanishPolicyUrl.href);
+  for (const path of pendingSpanishSitemapPaths) {
+    assert.equal(policy.isSpanishPublicReviewPath(path), true, 'Spanish Preview-only sitemap path ' + path);
+    assert.equal(policy.isSpanishPublicReviewPath(path + '/'), true, 'trailing-slash Spanish Preview-only path ' + path);
+  }
+  assert.equal(policy.isSpanishPublicReviewPath('/es/not-allowed'), false, 'do not broaden Spanish review allowlist');
+}
+
 const originalSources = [
   'https://www.bls.gov/news.release/archives/empsit_10022026.htm',
   'https://www.bls.gov/news.release/archives/cpi_10142026.htm',
@@ -153,6 +186,12 @@ if (process.argv.includes('--built')) {
   const sitemap = readFileSync(fileURLToPath(new URL('../dist/sitemap-0.xml', import.meta.url)), 'utf8');
   assert.ok(!sitemap.includes('/macro-reviews/monthly/2026-10'), 'October Preview remains excluded from sitemap');
   assert.ok(!sitemap.includes('/macro-reviews/monthly/2026-11'), 'future November is absent from sitemap');
+  assert.ok(!sitemap.includes('/macro-reviews/weekly/2026-10-30'), 'published free Weekly remains noindex-first');
+  if (spanishReviewPolicyPresent) {
+    for (const path of pendingSpanishSitemapPaths) {
+      assert.ok(!sitemap.includes(path + '/'), 'unreleased Spanish surface is excluded from sitemap: ' + path);
+    }
+  }
 }
 console.log('Independent October calendar Monthly Preview coverage/source/privacy checks pass' +
   (process.argv.includes('--built') ? ' (Preview-only build artifact verified; Production/default absent)' : ''));

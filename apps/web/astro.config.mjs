@@ -23,6 +23,7 @@ const privatePaths = new Set([
   '/internal/checklist-analytics',
   '/internal/ask-usd-impact',
   '/internal/localization/spanish-privacy-review',
+  '/macro-reviews/weekly/2026-10-30', // first independent Weekly: public but noindex-first pending separate SEO authorization
 ]);
 
 const previewOnlySitemapPrefixes = [

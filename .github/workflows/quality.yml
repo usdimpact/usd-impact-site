@@ -128,7 +128,7 @@ jobs:
           node scripts/qa-spanish-preview-responsive.mjs
       - name: Upload isolated Spanish viewport QA evidence
         if: always() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/agent/monthly-es-preview-integration-20261102'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # reviewed repository-pinned SHA
         with:
           name: spanish-preview-breakpoints
           path: apps/web/spanish-preview-qa/

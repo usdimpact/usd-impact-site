@@ -47,6 +47,11 @@ export function assessIndependentMonthlyCoverage({
     if (typeof date !== 'string' || !eligibleFridays.has(date) || published.has(date)) {
       throw new Error('A published independent Weekly date is duplicated or outside this calendar month.');
     }
+    // Dates alone do not prove an issuer/publisher receipt, and future dates
+    // must never be represented as independently published at this checkpoint.
+    if (date > asOfDate) {
+      throw new Error('A published independent Weekly cannot be after asOfDate.');
+    }
     published.add(date);
   }
   return Object.freeze({

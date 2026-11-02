@@ -35,6 +35,20 @@ assert.equal(octoberPreview.observedWeeklyCount, 1);
 assert.deepEqual(octoberPreview.missingIndependentFridays, [
   '2026-10-02', '2026-10-09', '2026-10-16', '2026-10-23',
 ]);
+// A claimed publication later than the explicit evidence checkpoint is invalid,
+// even when the Friday belongs to the intended calendar month.
+assert.throws(() => assessIndependentMonthlyCoverage({
+  year: 2026, month: 11, asOfDate: '2026-11-02',
+  publishedIndependentFridayEnds: ['2026-11-27'],
+}), /cannot be after asOfDate/);
+assert.throws(() => assessIndependentMonthlyCoverage({
+  year: 2026, month: 10, asOfDate: '2026-10-20',
+  publishedIndependentFridayEnds: ['2026-10-30'],
+}), /cannot be after asOfDate/);
+assert.equal(assessIndependentMonthlyCoverage({
+  year: 2026, month: 10, asOfDate: '2026-10-31',
+  publishedIndependentFridayEnds: ['2026-10-30'],
+}).mayPrepareEditorialPreview, false, 'Month-end must elapse before the Monthly preview is prepared.');
 const novemberStillOpen = assessIndependentMonthlyCoverage({
   year: 2026, month: 11, asOfDate: '2026-11-02',
   publishedIndependentFridayEnds: [],

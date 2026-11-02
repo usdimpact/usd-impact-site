@@ -101,7 +101,7 @@ jobs:
                     issuerLinks:document.querySelectorAll('a[href*="federalreserve.gov"],a[href*="bea.gov"],a[href*="bls.gov"]').length,
                     dailies:document.querySelectorAll('.daily-list a').length,
                     embeds:document.querySelectorAll('script,iframe,form,img').length,
-          stylesheetHrefs:[...document.querySelectorAll('link[rel="stylesheet"]')].map(link=>link.href)
+                    stylesheetHrefs:[...document.querySelectorAll('link[rel="stylesheet"]')].map(link=>link.href)
                   }
                 }""")
                 problems=[]
@@ -110,8 +110,8 @@ jobs:
                 if check["issuerLinks"]!=10: problems.append("issuer-source link count")
                 if check["dailies"]!=5: problems.append("Daily link count")
                 if check["embeds"]!=0: problems.append("script/image/iframe/form present")
-      if any(not href.startswith(base+"/") for href in check["stylesheetHrefs"]): problems.append("External stylesheet")
-      if not check["stylesheetHrefs"]: problems.append("Expected compiled Astro stylesheet absent")
+                if any(not href.startswith(base+"/") for href in check["stylesheetHrefs"]): problems.append("External stylesheet")
+                if not check["stylesheetHrefs"]: problems.append("Expected compiled Astro stylesheet absent")
                 if check["robots"]!="noindex,nofollow,noarchive,nosnippet": problems.append("robots changed")
                 if not check["csp"]: problems.append("missing compiled CSP")
                 if "Inter Variable" not in check["bodyFont"]: problems.append("body not Inter")

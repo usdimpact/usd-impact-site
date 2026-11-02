@@ -25,10 +25,10 @@ async function main(){
  try{
   const active=await poll(()=>fs.existsSync(path.join(temp,'DevToolsActivePort'))&&fs.readFileSync(path.join(temp,'DevToolsActivePort'),'utf8'));
   const debugPort=parseChromeDebugPort(active);const ver=await poll(async()=>{let r=await fetch(chromeDebugHttpUrl(debugPort,'/json/version'));return r.ok?r.json():null;});
-  browser=await cdp(chromeDebugWebSocketUrl(ver.webSocketDebuggerUrl,debugPort,'browser'))
+  browser=await cdp(chromeDebugWebSocketUrl(ver.webSocketDebuggerUrl,debugPort,'browser'));
   const t=await browser.call('Target.createTarget',{url:'about:blank'});
   const wsUrl=await poll(async()=>{let r=await fetch(chromeDebugHttpUrl(debugPort,'/json/list'));let a=await r.json();return a.find(x=>x.id===t.targetId)?.webSocketDebuggerUrl;});
-  page=await cdp(chromeDebugWebSocketUrl(wsUrl,debugPort,'page'))await page.call('Page.enable');await page.call('Runtime.enable');
+  page=await cdp(chromeDebugWebSocketUrl(wsUrl,debugPort,'page'));await page.call('Page.enable');await page.call('Runtime.enable');
   const results=[],failures=[];
   for(const route of routes)for(const width of widths){
    await page.call('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});

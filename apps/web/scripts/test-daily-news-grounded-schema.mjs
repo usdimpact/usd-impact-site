@@ -281,6 +281,11 @@ try {
   assert.equal(recorded.statusCode, 502);
   const body = JSON.parse(recorded.body);
   assert.equal(body.repairAttempts, 1);
+  assert.equal(body.initialDraftSourceCount, 2, 'original model ledger count is reported without its URLs');
+  assert.equal(body.latestDraftSourceCount, 2, 'failed repair does not invent a different count');
+  assert.equal(body.groundedMetadataUrlCount, 3, 'search metadata count is distinguishable from the draft ledger');
+  assert.equal(body.originalRetainedLedgerUrlCount, 2, 'only exact ledger/matching grounded metadata count is reported');
+  assert.equal('groundedSourceUrls' in body, false, 'error responses cannot disclose URLs');
   assert.match(body.repairError, /synthetic repair stop/);
   assert.equal(providerCalls.length, 2, 'one retrieval plus one bounded context-linked repair');
   assert.equal(repairBodies.length, 1);
@@ -295,6 +300,34 @@ try {
   assert.match(repairBody.input, /PERMITTED GROUNDED CONTEXT URLS/);
   assert.match(repairBody.input, /Do not perform a fresh web search/);
   assert.doesNotMatch(repairBody.input, /example\.invalid/);
+  // Insufficient stored search context must remain fail-closed and request no
+  // repair model; errors may expose counts only, never source URLs.
+  const noRepairProvider = makeFakeProvider(testSourceUrls.slice(0, 2), testSourceUrls.slice(0, 2));
+  let noRepairProviderCalls = 0;
+  globalThis.fetch = async (url, options = {}) => {
+    noRepairProviderCalls += 1;
+    assert.equal(options.method, 'GET');
+    assert.match(String(url), /\/v1\/responses\/resp_test1234567$/);
+    return new Response(JSON.stringify(noRepairProvider), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    });
+  };
+  const noRepairRecord = {
+    statusCode: 200, headers: {}, body: '',
+    setHeader(key, value) { this.headers[String(key).toLowerCase()] = value; },
+    end(value) { this.body = value; },
+  };
+  await backgroundHandler(req, noRepairRecord);
+  const insufficient = JSON.parse(noRepairRecord.body);
+  assert.equal(noRepairRecord.statusCode, 502);
+  assert.equal(insufficient.code, 'insufficient-grounded-sources');
+  assert.equal(insufficient.repairAttempts, 0);
+  assert.equal(insufficient.initialDraftSourceCount, 2);
+  assert.equal(insufficient.latestDraftSourceCount, 2);
+  assert.equal(insufficient.groundedMetadataUrlCount, 2);
+  assert.equal(insufficient.originalRetainedLedgerUrlCount, 2);
+  assert.equal(noRepairProviderCalls, 1, 'no paid repair request from an insufficient context');
+
   // Test the real nested generation wrappers with one synthetic provider POST.
   // All calls are intercepted; this is not a live generator acceptance test.
   const generationBodies = [];

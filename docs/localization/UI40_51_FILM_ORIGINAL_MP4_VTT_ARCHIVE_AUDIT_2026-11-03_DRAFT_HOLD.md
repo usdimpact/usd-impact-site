@@ -13,9 +13,25 @@
 ## Exact archive source-selection exceptions
 
 1. **Short Film #2 — `dollar-yields-liquidity`:** parent `/upload/2` contains a `USD_Impact_Film_02_Cloudflare_Upload_Package` folder and ZIP. The nested folder holds `USD_Impact_Film_02_Dollar_Yields_Liquidity_FASTSTART.mp4` (3,656,930 bytes) and `USD_Impact_Film_02_Dollar_Yields_Liquidity.en.vtt` (1,887 bytes). **Present, nested**, not missing.
-2. **Funding Stack Part 6 — `part-6-global-dollar-funding-and-fx-swaps`:** `/upload/masterclass/6` includes a root MP4 named `USD_Impact_Dollar_Funding_Stack_Part_7_Dollar_Liquidity_Backstops_and_Policy_Facilities_Final.mp4` (30,704,822 bytes) alongside `part-6.en.vtt` (9,703 bytes), a ZIP and a clean folder. **Do not treat the root Part-7-named MP4 as an approved Part 6 source.** The nested `USD_Impact_Film_6_Clean_Upload_Package` has `USD_Impact_Dollar_Funding_Stack_Part_6_Global_Dollar_Funding_and_FX_Swaps_Final.mp4` (34,294,415 bytes) and `part-6.en.vtt` (9,703 bytes). This is the unambiguously *Part-6-named archival candidate*, not cryptographic proof of the current hosted asset.
-3. **Funding Stack Part 7 — `part-7-dollar-liquidity-backstops-and-policy-facilities`:** `/upload/masterclass/7` holds the proper `USD_Impact_Dollar_Funding_Stack_Part_7_Dollar_Liquidity_Backstops_and_Policy_Facilities_Final.mp4` (30,704,822 bytes) and `part-7.en.vtt` (9,818 bytes), plus `raw.txt`. A root MP4 with the same filename and length is also found in Part 6's parent; contents have **not** been compared byte for byte.
+2. **Funding Stack Part 6 — `part-6-global-dollar-funding-and-fx-swaps`:** `/upload/masterclass/6` includes a root MP4 named `USD_Impact_Dollar_Funding_Stack_Part_7_Dollar_Liquidity_Backstops_and_Policy_Facilities_Final.mp4` (30,704,822 bytes) alongside `part-6.en.vtt` (9,703 bytes), a ZIP and a clean folder. **Do not treat the root Part-7-named MP4 as an approved Part 6 source.** The nested `USD_Impact_Film_6_Clean_Upload_Package` has `USD_Impact_Dollar_Funding_Stack_Part_6_Global_Dollar_Funding_and_FX_Swaps_Final.mp4` (34,294,415 bytes) and `part-6.en.vtt` (9,703 bytes). The nested Part 6 candidate's locally measured 340.288-s duration **exactly matches** the current catalogue; its SHA-256 is recorded below. Current Stream byte identity remains unverified.
+3. **Funding Stack Part 7 — `part-7-dollar-liquidity-backstops-and-policy-facilities`:** `/upload/masterclass/7` holds the proper `USD_Impact_Dollar_Funding_Stack_Part_7_Dollar_Liquidity_Backstops_and_Policy_Facilities_Final.mp4` (30,704,822 bytes) and `part-7.en.vtt` (9,818 bytes), plus `raw.txt`. A duplicate older 337.045-s Part 7 MP4 is also present in the Part 6 root. Both files are now **proven byte-identical** by SHA-256 and direct binary comparison, but the currently hosted Part 7 RC2 is ~372 s. Do **not** treat either older copy as the current RC2.
 4. **Film #23 — `central-bank-swaps-vs-fima-repo`:** the two original archived Drive files were SHA-256 verified in separate read-only receipts (MP4 `88fb2f1c9c35ce3ad67ab947bf1a048e788a234754fc7ffbde4657b44f4f6d27`, EN VTT `2235895f4ab5aadddc859dd4f6525916e5682f36a7507fbcfa353f54f95377b2`). The owner's FULL LISTEN and LIVE FILM23 CONTENT PASS are **human meaning/content** attestations, not provider file hashes or legal rights.
+
+## Source integrity update: exact archived MP4 binary comparison (2026-11-03)
+
+The following private Drive files were read through authorized access, hashed locally with SHA-256 and decoded with FFprobe. They were not modified in Drive. These attest **archive copies only**, not Cloudflare source identity or any distribution licence.
+
+| Source (folder-relative) | Bytes | Runtime | SHA-256 |
+| --- | ---: | ---: | --- |
+| `masterclass/6/Clean Upload Package/Part_6_Global_Dollar_Funding_and_FX_Swaps_Final.mp4` | 34,294,415 | **340.288 s** | `c2f0c889c94ab2dbbe1c8cd40d5fc97cc7e5954606f5e6527d410a4612cd8010` |
+| `masterclass/6/Part_7_Dollar_Liquidity_Backstops_and_Policy_Facilities_Final.mp4` (misfiled) | 30,704,822 | 337.045 s | `70fb07e70085d84ce9311c2b80b86aa21503ef65baacf9e9e70f69ac146bb5a2` |
+| `masterclass/7/Part_7_Dollar_Liquidity_Backstops_and_Policy_Facilities_Final.mp4` (legacy) | 30,704,822 | 337.045 s | `70fb07e70085d84ce9311c2b80b86aa21503ef65baacf9e9e70f69ac146bb5a2` |
+
+**Binary result:** The Part-7-named MP4s in Parts 6 and 7 are **byte-for-byte identical** (`cmp` PASS), not merely equal-length candidates. The 11,422-character `raw.txt` files in those two roots are also textually identical Part 7 transcripts, opening `Welcome to Part 7 of the USD Impact` and ending at approximately 05:36. The separately archived Part 6 English VTT begins with `GLOBAL DOLLAR FUNDING AND FX SWAPS`; Part 7 VTT begins with the Part 7 introduction.
+
+**Current-release distinction:** Draft PR #1072's unchanged source catalogue pins Part 6 at **340.288 s** and Part 7 at **372.080 s**. The original-account [31 October signed Stream inventory](https://drive.google.com/drive/folders/1718-e_n6jdeM9_UfZe_xqqzZU6x5pfO1) identifies the active Part 7 release as a **372-s RC2 corrected asset**; therefore the 337.045-s archived copy cannot safely be used for a current Part 7 restore. The 340.288-s nested Part 6 clean MP4 matches the catalogue duration exactly, but actual current Stream upload hash remains unknown.
+
+**Fail-closed recovery:** Any future original-media restoration must explicitly select the nested Part 6 clean package for Part 6 and the separately reconciled RC2 corrected source for Part 7. Do not mix `part-6.en.vtt` with a Part-7-named MP4, or infer binary source parity from runtime alone. No live Stream, captions, payments, Production, repo source mapping, or archive originals were altered.
 
 ## 51-film private-source locator matrix
 
@@ -72,8 +88,8 @@
 | 47 | `part-3-repo-collateral-and-haircuts` | `masterclass/3` | MP4 + EN VTT | Direct pair |
 | 48 | `part-4-dealers-and-balance-sheet-intermediation` | `masterclass/4` | MP4 + EN VTT | Direct pair |
 | 49 | `part-5-funding-stress-and-market-transmission` | `masterclass/5` | MP4 + EN VTT | Direct pair |
-| 50 | `part-6-global-dollar-funding-and-fx-swaps` | `masterclass/6` | MP4 + EN VTT | Use nested Part 6 CLEAN package; root MP4 labelled Part 7 |
-| 51 | `part-7-dollar-liquidity-backstops-and-policy-facilities` | `masterclass/7` | MP4 + EN VTT | Direct pair; auxiliary raw.txt |
+| 50 | `part-6-global-dollar-funding-and-fx-swaps` | `masterclass/6` | MP4 + EN VTT | Use nested Part 6 CLEAN package; root MP4 is byte-identical older Part 7 |
+| 51 | `part-7-dollar-liquidity-backstops-and-policy-facilities` | `masterclass/7` | MP4 + EN VTT | Older 337-s archived Part 7 MP4/VTT pair; **not** the hosted 372-s RC2; auxiliary raw.txt |
 
 ## Remaining gates and remediation safety
 

@@ -27,6 +27,7 @@ const privatePaths = new Set([
 ]);
 
 const previewOnlySitemapPrefixes = [
+  '/macro-reviews/monthly', // independent calendar previews remain noindex until explicitly approved
   '/book/read-the-dollar-first/companion',
   '/practice/dxy-vs-broad-usd',
   '/practice/weekly-regime',

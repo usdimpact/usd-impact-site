@@ -42,10 +42,10 @@ jobs:
           node scripts/test-score-held-report-source-guard.mjs
           node scripts/score-held-report-source-guard.mjs
       - name: Install existing locked dependencies for source-impacting PR
-        if: steps.plan.outputs.build == 'true'
+        if: steps.plan.outputs.build != 'false'
         run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Build and inspect Production classification (no remote deployment)
-        if: steps.plan.outputs.build == 'true'
+        if: steps.plan.outputs.build != 'false'
         env:
           VERCEL_ENV: production
         run: |
@@ -53,7 +53,7 @@ jobs:
           npm run build
           node scripts/held-release-boundary.mjs --built production
       - name: Build and inspect Preview classification (no remote deployment)
-        if: steps.plan.outputs.build == 'true'
+        if: steps.plan.outputs.build != 'false'
         env:
           VERCEL_ENV: preview
         run: |

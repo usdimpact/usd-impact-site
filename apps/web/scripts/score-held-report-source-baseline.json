@@ -1,9 +1,9 @@
 {
-  "version": 1,
+  "version": 2,
   "disposition": "hold",
   "source_main_commit": "d1740214f5737996f321a037efe3f2f7d21ecd64",
   "score_rights_issue": "https://github.com/usdimpact/usd-impact-pipeline/issues/155",
-  "note": "Git blob SHA1 of pre-existing historical Score-derived report sources; inventory is NOT rights clearance. Only deletion is non-publishing; any new or changed report must remain HOLD pending separate authorization.",
+  "note": "Git blob SHA-1s for 16 existing Score-derived report files plus the known one-byte monthly .gitkeep at locked Production main. Any new or changed file at any depth or extension is on HOLD. This is NOT rights clearance; deletion of prior data is not republishing authority.",
   "existing_reports": {
     "monthly-reports/2026-08-21.md": "dca65e8b67f054a61e6aa50336fced5f9771a442",
     "monthly-reports/2026-09-18.md": "aa965257421244bc1e72cb89576615f365faa116",
@@ -21,5 +21,8 @@
     "weekly-reports/2026-10-09.md": "3633189c3ede9b2a2ef92006bcfda7127693f193",
     "weekly-reports/2026-10-16.md": "e0458f38d2b4394879acfcea731c20785256bfae",
     "weekly-reports/2026-10-23.md": "9bd65af82fb98e71fafd6bd98870c72be1fe2390"
+  },
+  "existing_other_files": {
+    "monthly-reports/.gitkeep": "8b137891791fe96927ad78e64b0aad7bded08bdc"
   }
 }

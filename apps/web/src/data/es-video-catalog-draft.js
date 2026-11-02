@@ -5,7 +5,7 @@ const sourcePairs = [
   [
     "dxy-the-signal-vs-the-system",
     "DXY: la señal frente al sistema",
-    "Utiliza el DXY como señal de una cesta de monedas definida, sin perder de vista las condiciones del dólar más amplio ponderadas por comercio."
+    "Utiliza el DXY como señal basada en una cesta definida de monedas, sin perder de vista las condiciones del dólar amplio ponderado por el comercio."
   ],
   [
     "dollar-yields-liquidity",
@@ -64,7 +64,7 @@ const sourcePairs = [
   ],
   [
     "inflation-expectations-cpi-vs-market-pricing",
-    "Expectativas de inflación: IPC frente a precios de mercado",
+    "Expectativas de inflación: dato del IPC frente a compensación implícita en el mercado",
     "Distingue un dato de inflación retrospectivo de las expectativas y la compensación por riesgo incorporadas en los mercados."
   ],
   [
@@ -75,7 +75,7 @@ const sourcePairs = [
   [
     "treasury-supply-issuance-vs-market-absorption",
     "Oferta de bonos del Tesoro: emisión frente a absorción del mercado",
-    "Relaciona el titular de oferta con la demanda en subastas, la intermediación y la capacidad del mercado para absorber emisiones."
+    "Relaciona los anuncios de emisión de bonos del Tesoro con la demanda en subastas, la intermediación y la capacidad del mercado para absorber nuevas emisiones."
   ],
   [
     "treasury-general-account-vs-bank-reserves",
@@ -89,7 +89,7 @@ const sourcePairs = [
   ],
   [
     "reserve-management-purchases-vs-qe",
-    "Compras para gestionar reservas frente a expansión cuantitativa",
+    "Compras para gestionar las reservas bancarias frente a expansión cuantitativa",
     "Compara el crecimiento del balance según propósito, vencimiento y transmisión prevista, no solo por su magnitud."
   ],
   [
@@ -100,7 +100,7 @@ const sourcePairs = [
   [
     "discount-window-vs-standing-repo-facility",
     "Ventanilla de descuento frente a facilidad permanente de repo",
-    "Compara contrapartes, estructuras de transacción y funciones de política de dos mecanismos internos de respaldo de liquidez."
+    "Compara las contrapartes, las estructuras de transacción y las funciones de política de dos mecanismos de respaldo de liquidez utilizados en Estados Unidos."
   ],
   [
     "bank-reserves-vs-bank-deposits",
@@ -115,7 +115,7 @@ const sourcePairs = [
   [
     "central-bank-swaps-vs-fima-repo",
     "Swaps de liquidez entre bancos centrales frente a repo FIMA",
-    "Compara el acceso a divisas mediante swaps con el acceso a dólares respaldado por bonos del Tesoro, distinguiendo las contrapartes."
+    "Compara las líneas swap por las que la Fed entrega dólares a bancos centrales extranjeros a cambio de divisas con el acceso temporal a dólares mediante repo FIMA respaldado por bonos del Tesoro de EE. UU.; distingue las contrapartes."
   ],
   [
     "correspondent-banking",
@@ -140,7 +140,7 @@ const sourcePairs = [
   [
     "currency-pegs-stability-vs-monetary-independence",
     "Tipos de cambio fijos: estabilidad frente a independencia monetaria",
-    "Expone el equilibrio de política entre estabilidad cambiaria, movilidad de capitales e independencia monetaria."
+    "Expone la disyuntiva entre estabilidad cambiaria, movilidad de capitales e independencia monetaria."
   ],
   [
     "dollar-debt-service-interest-vs-refinancing",
@@ -154,7 +154,7 @@ const sourcePairs = [
   ],
   [
     "dollar-funding-onshore-vs-offshore",
-    "Financiación en dólares: mercados dentro y fuera de EE. UU.",
+    "Financiación en dólares: mercados onshore y offshore",
     "Considera la actividad dentro y fuera de Estados Unidos como partes conectadas del sistema del dólar, respetando los límites institucionales."
   ],
   [
@@ -179,7 +179,7 @@ const sourcePairs = [
   ],
   [
     "fx-hedging-natural-vs-financial",
-    "Cobertura cambiaria: flujos naturales frente a contratos financieros",
+    "Cobertura cambiaria: compensación natural de flujos frente a contratos financieros",
     "Compara compensaciones operativas de flujos de caja con coberturas financieras contractuales y sus distintas limitaciones."
   ],
   [
@@ -239,8 +239,8 @@ const sourcePairs = [
   ],
   [
     "part-4-dealers-and-balance-sheet-intermediation",
-    "Intermediarios y balance: cómo se conectan los mercados",
-    "Explica cómo los balances de los intermediarios conectan mercados de financiación y cómo la capacidad de intermediación altera la transmisión."
+    "Intermediarios de mercado (dealers) y sus balances",
+    "Explica cómo los balances de los intermediarios de mercado (dealers) conectan los mercados de financiación y cómo su capacidad de intermediación puede alterar la transmisión."
   ],
   [
     "part-5-funding-stress-and-market-transmission",

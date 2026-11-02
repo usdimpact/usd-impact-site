@@ -2,9 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { PUBLIC_CANONICAL_ORIGIN, canonicalUrlForRequest } from '../src/lib/canonical-url.js';
 import { SEARCH_UTILITY_PATHS } from '../src/lib/search-utility-policy.js';
+import { SPANISH_PUBLIC_REVIEW_PATHS, spanishPublicReviewEnabled } from '../src/lib/spanish-public-review-policy.js';
 
 const distRoot = path.resolve('dist');
 const failures = [];
+const sitemapPathnames = new Set();
 
 function outputPath(pathname) {
   const route = pathname.replace(/^\/+|\/+$/g, '');
@@ -40,6 +42,7 @@ if (!fs.existsSync(sitemapPath)) {
         failures.push(`Canonical policy: unexpected sitemap URL: ${loc}.`);
         continue;
       }
+      sitemapPathnames.add(sourceUrl.pathname.replace(/\/+$/, '') || '/');
       const expected = canonicalUrlForRequest(sourceUrl);
       if (loc !== expected) {
         failures.push(`Canonical policy: sitemap URL must equal canonical URL ${expected}, found ${loc}.`);
@@ -73,6 +76,27 @@ for (const route of noindexControls) {
   }
   const hrefs = canonicalHrefs(fs.readFileSync(file, 'utf8'));
   if (hrefs.length !== 0) failures.push(`Canonical policy: noindex control must not emit canonical: ${route}.`);
+}
+
+// UI-40 negative gate: review pages must be private to Vercel Preview and must
+// NEVER acquire a production sitemap entry or public canonical metadata.
+const reviewMode = spanishPublicReviewEnabled(process.env.VERCEL_ENV);
+for (const route of SPANISH_PUBLIC_REVIEW_PATHS) {
+  if (sitemapPathnames.has(route)) failures.push(`Canonical policy: Preview-only Spanish route is in sitemap: ${route}.`);
+  const file = outputPath(route);
+  if (!reviewMode) {
+    if (fs.existsSync(file)) failures.push(`Canonical policy: Preview-only Spanish route generated outside Preview: ${route}.`);
+    continue;
+  }
+  if (!fs.existsSync(file)) {
+    failures.push(`Canonical policy: Preview-only Spanish page missing: ${route}.`);
+    continue;
+  }
+  const html = fs.readFileSync(file, 'utf8');
+  if (!/<meta\s+name="robots"\s+content="noindex, nofollow"\s*\/?\s*>/i.test(html)) {
+    failures.push(`Canonical policy: Spanish Preview-only route missing noindex: ${route}.`);
+  }
+  if (canonicalHrefs(html).length !== 0) failures.push(`Canonical policy: Spanish Preview-only route has canonical: ${route}.`);
 }
 
 if (failures.length) {

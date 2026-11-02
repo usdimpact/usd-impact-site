@@ -1,0 +1,37 @@
+# Isolated October Monthly and Spanish combined integration QA
+
+**Status: DRAFT-ONLY / REVIEW HOLD. Do not merge into original PRs or Production.**
+
+## Pinned exact source heads — 2026-11-02
+- Protected main: `37589725e5b09675040c74c329478f305f4bfb30`
+- Independent October Monthly PR #1060: `1605bbc5367a93f89869d4f39d180ecc7cbb23eb`; this candidate is based on its tree.
+- UI-39 Spanish shell Draft PR #1047: `6a7245c5c8611a53208e4fcfe13bc9317635e05e`.
+- UI-40 Spanish public destination Draft PR #1050: `48b4194bbc0120f2651e56973abb7b52edb0d6e9` (includes #1047 ancestor).
+
+## Construction and nonoverlap
+- Imported 13 unchanged, source-pinned Spanish JS/Astro/test/doc file blobs from #1050, including #1047's `site-navigation.js` and earlier owner contract, without modifying either original PR.
+- Shared `apps/web/astro.config.mjs` is **not** copied from the Spanish branch. Only the Spanish review-policy import and sitemap-filter check were inserted into #1060's newer version. Preserves current main's independent Oct 30 Weekly exclusion, October Monthly prefix exclusion, private paths, unpublished locale filter, CSP and canonical handling.
+- Main diverged from #1047's base in eight files, and the **only** intersecting imported source path is `astro.config.mjs`, reconciled as above. Existing Score reports, research/payments, access, Supabase, Cloudflare, consent and Production are untouched.
+- Test code from #1060 conditionally enforces Spanish review exclusion in combined builds; #1050 also asserts its own source and canonical contract.
+- No October editorial HTML changes, translations approved, media rights opened, or November Monthly generated.
+
+## QA to execute before completing review
+- Exact-head GitHub Web quality / localization / canonical / migration / GA4 / security checks. Both Preview and default/Production-shaped build restrictions must hold.
+- Protected Preview: October Monthly, `/es/news/`, `/es/score/`, `/es/reports/`, `/es/video-library/` produce noindex pages excluded from XML sitemap; already-published independent Weekly remains accessible and noindex; November Monthly is absent.
+- Production/default builds must not generate the Monthly or four Spanish Preview-only routes. No custom domain is assigned to the Preview. No index, RSS or public Reports navigation additions.
+- This branch is not the public release of Monthly or Spanish. Editorial signoff, legal/rights disposition, bilingual content checks, and separate exact-version deployment approval remain mandatory.
+
+## Imported exact blobs
+- `apps/web/scripts/test-localization-policy.mjs` — `562ebb0c78a9a685aaa05051f4cd9eca5b12eec0`
+- `apps/web/scripts/verify-canonical-build.mjs` — `019a0ea9cd96d43d47ef5f52ece54cb1270be44d`
+- `apps/web/src/data/es-video-catalog-draft.js` — `cf49633a94bff2ceaf333e9cc046fa4f78e3d0c5`
+- `apps/web/src/layouts/BaseLayout.astro` — `8ee30ea1e7d0718959d894b8d775f8b8513356d9`
+- `apps/web/src/lib/spanish-public-review-policy.js` — `02acddb9ddc35fbf6c68a90e46a6994820353c9e`
+- `apps/web/src/pages/es/[section].astro` — `c40ea1a18894296426301c31b39f31d222c4dad1`
+- `docs/localization/ES_PUBLIC_DESTINATIONS_DRAFT_REVIEW_2026-11-01.md` — `6f8ee7314aee5d6ef913f8b4d4885d1bdc0500d2`
+- `docs/localization/ES_VIDEO_51_SOURCE_PAIRED_EDITORIAL_REVIEW_2026-11-02.md` — `92762a04c6f5b3ce2cdd33bc6d7eaeccc951fd92`
+- `docs/localization/drafts/DAILY_2026-10-30_ES_CANDIDATE_2026-11-02.md` — `5c68925be45988289e3c21a4f3f6ff2226c58b83`
+- `docs/localization/drafts/WEEKLY_2026-10-23_ES_CANDIDATE_2026-11-02.md` — `1249a4f1f3538cfde52143a9510257f6bf04aa9d`
+- `docs/localization/drafts/WEEKLY_DOLLAR_REGIME_CHECKLIST_ES_CANDIDATE_2026-11-02.md` — `f19993953b9c2d89eeeb9643f83eff32b107c9b2`
+- `apps/web/src/lib/site-navigation.js` — `fc9b9fe088eca6e8c83869c7c9ccdd87815a1d6e`
+- `docs/localization/EN_ES_SHELL_AND_FUNDRAISING_MODE_CONTRACT_2026-11-01.md` — `28c764bd4acfffa0951f0d90745b7df4fb376e99`

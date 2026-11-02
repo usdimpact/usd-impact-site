@@ -100,7 +100,7 @@ assert.match(source, /November 1–30, 2026/);
 assert.match(source, /6, 13, 20 and 27/);
 assert.match(source, /AI-assisted preparation/);
 assert.match(source, /KELA LEADS S\.R\.L\./);
-assert.match(source, /not affiliated with nor endorsed by BLS/i);
+assert.match(source, /neither affiliated with nor endorsed by BLS/i);
 assert.match(source, /not the first-publication date/);
 for (const link of ['/', '/news', '/privacy/', '/terms/', '/compliance', '/contact']) {
   assert.ok(source.includes('href="' + link + '"'), 'safe website navigation ' + link);

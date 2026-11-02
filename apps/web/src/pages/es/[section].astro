@@ -68,10 +68,14 @@ const aiDisclosure = 'La redacción y traducción de esta página de revisión s
         {daily.length ? (
           <>
             <section class="latest-edition">
-              <p class="eyebrow">Última edición verificada</p>
-              <h2 lang="en">{daily[0].data.title}</h2>
-              <p>{formatDate(daily[0].data.date)}</p>
-              <p lang="en">{daily[0].data.summary}</p>
+              <p class="eyebrow">Última edición verificada · original en inglés</p>
+              <h2>Edición diaria del {formatDate(daily[0].data.date)}</h2>
+              <p>El título y el resumen originales están en inglés. Su traducción al español sigue pendiente de revisión editorial.</p>
+              <details class="card">
+                <summary>Ver título y resumen originales (EN)</summary>
+                <p lang="en"><strong>{daily[0].data.title}</strong></p>
+                <p lang="en">{daily[0].data.summary}</p>
+              </details>
               <a class="button primary" href={daily[0].data.slug} hreflang="en">Leer la edición original (EN)</a>
             </section>
             <section class="edition-archive">
@@ -139,10 +143,14 @@ const aiDisclosure = 'La redacción y traducción de esta página de revisión s
         <div class="card" role="note"><strong>Idioma de los informes:</strong> este índice está traducido, pero los títulos y resúmenes de las ediciones originales se muestran en inglés hasta su revisión editorial.</div>
         {weekly[0] ? (
           <section class="latest-report">
-            <p class="eyebrow">Último informe semanal publicado</p>
-            <h2 lang="en">{weekly[0].data.title}</h2>
-            <p>Semana finalizada el {formatDate(weekly[0].data.periodEnd)}</p>
-            <p lang="en">{weekly[0].data.summary}</p>
+            <p class="eyebrow">Último informe del archivo semanal vinculado a Score</p>
+            <h2>Informe semanal del {formatDate(weekly[0].data.periodEnd)}</h2>
+            <p>Este archivo es distinto de la serie semanal educativa independiente. El título y el resumen originales están en inglés, sin traducción editorial al español aprobada.</p>
+            <details class="card">
+              <summary>Ver título y resumen originales (EN)</summary>
+              <p lang="en"><strong>{weekly[0].data.title}</strong></p>
+              <p lang="en">{weekly[0].data.summary}</p>
+            </details>
             <a class="button primary" href={weekly[0].data.slug} hreflang="en">Leer el informe semanal original (EN)</a>
           </section>
         ) : <section class="card"><h2>Primer informe en preparación</h2><p>El informe semanal requiere ediciones diarias y datos verificados de la semana concluida.</p></section>}

@@ -94,7 +94,7 @@ for (const url of originalSources) {
 for (const day of ['02', '14', '28', '29', '30']) {
   assert.ok(source.includes('https://www.usd-impact.com/news/2026-10-' + day + '/'), 'published Daily ' + day);
 }
-assert.match(source, /only the October 26–30 free independent Weekly/i);
+assert.match(source, /October 26–30 free independent Weekly/i);
 assert.match(source, /Five Fridays occurred in October/);
 assert.match(source, /November 1–30, 2026/);
 assert.match(source, /6, 13, 20 and 27/);

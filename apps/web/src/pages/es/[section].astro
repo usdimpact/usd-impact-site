@@ -40,6 +40,7 @@ const monthly = section === 'reports' && Object.keys(monthlyFiles).length
 const monthlyWindow = section === 'reports' ? monthlyEligibility(weekly, monthly) : null;
 const formatDate = (value) => new Intl.DateTimeFormat('es', {day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(`${value}T12:00:00Z`));
 const compliance = 'Contenido educativo e informativo. No constituye asesoramiento de inversión personalizado, financiero, legal, fiscal ni de operativa; tampoco una señal de trading ni una recomendación para comprar o vender activos.';
+const aiDisclosure = 'La redacción y traducción de esta página de revisión se prepararon con asistencia de IA. El contenido sigue pendiente de validación editorial y de derechos antes de cualquier publicación.';
 ---
 <BaseLayout
   title={meta.title}
@@ -86,7 +87,7 @@ const compliance = 'Contenido educativo e informativo. No constituye asesoramien
         ) : (
           <section class="card"><h2>Edición pendiente de verificación</h2><p>Las noticias solo aparecen después de superar la revisión de fuentes y publicación.</p></section>
         )}
-        <section class="compliance"><strong>Nota educativa:</strong> {compliance}</section>
+        <section class="compliance"><p><strong>Nota educativa:</strong> {compliance}</p><p><strong>Transparencia sobre IA:</strong> {aiDisclosure}</p></section>
       </main>
     </>
   )}
@@ -120,7 +121,7 @@ const compliance = 'Contenido educativo e informativo. No constituye asesoramien
           <p>Las lecturas y el archivo protegidos solo están disponibles tras verificar la sesión y los derechos de Research Membership. Elegir español no modifica el acceso ni publica datos restringidos.</p>
           <a href="/account/sign-in/?next=%2Fscore%2F" hreflang="en">Iniciar sesión para consultar Score (EN)</a>
         </section>
-        <section class="compliance"><strong>Nota educativa:</strong> {compliance}</section>
+        <section class="compliance"><p><strong>Nota educativa:</strong> {compliance}</p><p><strong>Transparencia sobre IA:</strong> {aiDisclosure}</p></section>
       </main>
     </>
   )}
@@ -131,7 +132,7 @@ const compliance = 'Contenido educativo e informativo. No constituye asesoramien
         <div class="container">
           <p class="eyebrow">Informes de USD Impact</p>
           <h1>Relaciona la evidencia semanal con el contexto del dólar.</h1>
-          <p class="lead">Consulta los informes semanales publicados y sigue la preparación del resumen mensual, que exige cuatro semanas consecutivas con fuentes verificadas.</p>
+          <p class="lead">Consulta los informes publicados. El Monthly histórico vinculado a Score exige cuatro informes semanales consecutivos con fuentes verificadas; el Macro Monthly educativo independiente cubre un mes natural y no utiliza ese contador.</p>
         </div>
       </section>
       <main id="main-content" class="container page-content">
@@ -146,7 +147,8 @@ const compliance = 'Contenido educativo e informativo. No constituye asesoramien
           </section>
         ) : <section class="card"><h2>Primer informe en preparación</h2><p>El informe semanal requiere ediciones diarias y datos verificados de la semana concluida.</p></section>}
         <section class="card">
-          <h2>Seguimiento del informe mensual</h2>
+          <h2>Seguimiento del informe mensual histórico (Score)</h2>
+          <p>Este contador corresponde solo al archivo mensual histórico basado en Score. No determina si puede prepararse una revisión mensual independiente.</p>
           {monthly[0] && <p>Último informe mensual publicado: <a href={monthly[0].data.slug} hreflang="en">{formatDate(monthly[0].data.periodEnd)} · versión original (EN)</a>.</p>}
           <p><strong>{monthlyWindow.progress} de 4</strong> informes semanales consecutivos válidos para el siguiente ciclo mensual.</p>
           {monthlyWindow.blockedByGap ? (
@@ -157,6 +159,12 @@ const compliance = 'Contenido educativo e informativo. No constituye asesoramien
             <p>El siguiente informe mensual sigue pendiente de completar sus cuatro semanas de datos verificables.</p>
           )}
           <p>Una revisión mensual no debe añadir afirmaciones de mercado sin fuentes.</p>
+        </section>
+        <section class="card" aria-labelledby="calendario-mensual-independiente">
+          <h2 id="calendario-mensual-independiente">Macro Monthly independiente: mes natural</h2>
+          <p>Este formato educativo utiliza acontecimientos de un mes de calendario y fuentes originales verificadas. No exige cuatro informes semanales independientes ya publicados ni emplea el contador histórico de Score.</p>
+          <p>Octubre de 2026 tuvo cinco viernes: 2, 9, 16, 23 y 30. Al corte del 2 de noviembre, solo estaba publicada la edición semanal independiente del 26 al 30 de octubre; las otras cuatro no deben darse por publicadas.</p>
+          <p>El Macro Monthly independiente de octubre permanece como borrador privado y no está publicado. El de noviembre de 2026 solo podrá prepararse después del 30 de noviembre, tras verificar las fuentes disponibles.</p>
         </section>
         {weekly.length > 0 && (
           <section class="report-archive">
@@ -172,7 +180,7 @@ const compliance = 'Contenido educativo e informativo. No constituye asesoramien
             <ul>{monthly.map((r) => <li><a href={r.data.slug} hreflang="en">{formatDate(r.data.periodEnd)} · <span lang="en">{r.data.title}</span> · EN</a></li>)}</ul>
           </section>
         )}
-        <section class="compliance"><strong>Nota educativa:</strong> {compliance}</section>
+        <section class="compliance"><p><strong>Nota educativa:</strong> {compliance}</p><p><strong>Transparencia sobre IA:</strong> {aiDisclosure}</p></section>
       </main>
     </>
   )}
@@ -225,7 +233,7 @@ const compliance = 'Contenido educativo e informativo. No constituye asesoramien
             </ol>
           </section>
         ))}
-        <section class="compliance"><strong>Nota educativa:</strong> {compliance}</section>
+        <section class="compliance"><p><strong>Nota educativa:</strong> {compliance}</p><p><strong>Transparencia sobre IA:</strong> {aiDisclosure}</p></section>
       </div>
     </main>
   )}

@@ -90,6 +90,18 @@ const spanishPreview = await readFile(new URL('../src/pages/es/[section].astro',
 assert.match(spanishPreview, /if \(!spanishPublicReviewEnabled\(process\.env\.VERCEL_ENV\)\) return \[\]/);
 assert.match(spanishPreview, /return SPANISH_PUBLIC_REVIEW_SECTIONS\.map/);
 assert.match(spanishPreview, /\bnoindex\b/);
+assert.equal(
+  spanishPreview.split('<strong>Transparencia sobre IA:</strong>').length - 1,
+  4,
+  'all four unreleased Spanish review surfaces must include explicit AI-assisted drafting disclosure',
+);
+assert.match(spanishPreview, /El Monthly histórico vinculado a Score exige cuatro informes semanales consecutivos/);
+assert.match(spanishPreview, /Este contador corresponde solo al archivo mensual histórico basado en Score/);
+assert.match(spanishPreview, /Macro Monthly independiente: mes natural/);
+assert.match(spanishPreview, /Octubre de 2026 tuvo cinco viernes: 2, 9, 16, 23 y 30/);
+assert.match(spanishPreview, /Al corte del 2 de noviembre, solo estaba publicada la edición semanal independiente/);
+assert.match(spanishPreview, /permanece como borrador privado y no está publicado/);
+assert.doesNotMatch(spanishPreview, /resumen mensual, que exige cuatro semanas consecutivas/);
 const astroSiteMapConfig = await readFile(new URL('../astro.config.mjs', import.meta.url), 'utf8');
 assert.match(astroSiteMapConfig, /!isSpanishPublicReviewPath\(pathname\)/);
 const canonicalVerifier = await readFile(new URL('./verify-canonical-build.mjs', import.meta.url), 'utf8');

@@ -97,6 +97,13 @@ for (const route of SPANISH_PUBLIC_REVIEW_PATHS) {
     failures.push(`Canonical policy: Spanish Preview-only route missing noindex: ${route}.`);
   }
   if (canonicalHrefs(html).length !== 0) failures.push(`Canonical policy: Spanish Preview-only route has canonical: ${route}.`);
+  if (!html.includes('Transparencia sobre IA:')) failures.push(`Canonical policy: Spanish Preview-only route missing AI drafting notice: ${route}.`);
+  if (route === '/es/reports' &&
+      (!html.includes('Seguimiento del informe mensual histórico (Score)')
+       || !html.includes('Macro Monthly independiente: mes natural')
+       || !html.includes('cinco viernes: 2, 9, 16, 23 y 30'))) {
+    failures.push('Canonical policy: Spanish Reports mixes historical Score-derived Monthly with independent calendar Monthly.');
+  }
 }
 
 if (failures.length) {

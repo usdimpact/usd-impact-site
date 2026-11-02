@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import {
   LEARNING_OFFER_MODE_KEY,
   LEARNING_OFFER_MODES,
+  FREE_CORE_PUBLIC_RELEASE_COMMITTED,
+  resolveLearningOfferCommercePolicyForRelease,
   gateLearningOfferCommerceReadiness,
   resolveLearningOfferCommercePolicy,
 } from '../src/lib/learning-offer-commerce-policy.js';
@@ -48,5 +50,26 @@ for (const mode of ['free', 'paid', 'invalid']) {
 }
 assert.equal(approvedLegacyReadiness.checkoutEnabled, true); // No mutation.
 assert.throws(() => gateLearningOfferCommerceReadiness(null, {}), TypeError);
+
+
+assert.equal(FREE_CORE_PUBLIC_RELEASE_COMMITTED, false, 'This Draft must never commit the public free launch.');
+for (const rawMode of [undefined, null, '', 'free', ' FREE ']) {
+  const env = rawMode === undefined ? {} : { [LEARNING_OFFER_MODE_KEY]: rawMode };
+  const future = resolveLearningOfferCommercePolicyForRelease(env, true);
+  assert.equal(future.mode, LEARNING_OFFER_MODES.FREE);
+  assert.equal(future.allowNewLibraryCheckout, false);
+  assert.ok(Object.isFrozen(future));
+}
+for (const rawMode of ['legacy', ' LEGACY ', 'paid-pending', 'true', ' ', true, 42]) {
+  const future = resolveLearningOfferCommercePolicyForRelease({ [LEARNING_OFFER_MODE_KEY]: rawMode }, true);
+  assert.equal(future.mode, LEARNING_OFFER_MODES.INVALID);
+  assert.equal(future.allowNewLibraryCheckout, false);
+}
+const futurePaid = resolveLearningOfferCommercePolicyForRelease({ [LEARNING_OFFER_MODE_KEY]: 'paid' }, true);
+assert.equal(futurePaid.mode, LEARNING_OFFER_MODES.PAID);
+assert.equal(futurePaid.allowNewLibraryCheckout, false, 'A paid request is not a merchant authorization.');
+assert.equal(resolveLearningOfferCommercePolicyForRelease({}, false).allowNewLibraryCheckout, true);
+assert.equal(resolveLearningOfferCommercePolicyForRelease(null, true).allowNewLibraryCheckout, false);
+assert.equal(resolveLearningOfferCommercePolicyForRelease({}, 'true').allowNewLibraryCheckout, false);
 
 console.log('Free-first/new-paid Library checkout policy offline unit tests passed.');

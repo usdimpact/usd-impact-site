@@ -29,3 +29,14 @@ Reuse the existing quarantine design in #1013, public boundary monitor #1018, Mo
 ### Evidence standard
 
 Record the exact commit and GitHub run URL for this new branch. PASS is limited to source/static-artifact safety and does not clear H-15/H-16 or authorize a public-release PR.
+
+
+## N4 addendum — hand-committed Score-derived content (isolated Draft-only regression)
+
+The current monthly structural validator checks four consecutive Friday sources, matching dates, Score regime/value consistency, and publication frontmatter; it does not consult the Score rights HOLD before accepting an otherwise structurally valid hand-written Monthly report. That is a **different gate** from the scheduled Weekly generator, which already refuses publishing during HOLD.
+
+A new baseline inventory locks the **exact Git blob SHA-1** of 13 pre-existing historical Score-derived Weekly report sources and three Monthly report sources at Production main d1740214f5737996f321a037efe3f2f7d21ecd64. The new guard rejects **added or modified** Markdown in those Score-derived report namespaces while Issue #155 remains held; removed old files do not introduce publication. The inventory does not certify that the existing historical content is correctly licensed. It does not block independent calendar Monthly under the separate macro-reviews path.
+
+A synthetic four-consecutive-Friday Score-derived Monthly fixture is written only to the CI runner's temporary directory. The original structural validator is expected to ACCEPT this date/value-consistent candidate; the new rights/source-baseline guard must independently REJECT it as a new rights-sensitive publication. This closes the prior *fixture inconsistency* in Claude's N4 probe, not the need for legal rights clearance or live route authorization.
+
+**Limitations:** pinned blob inventory is a reviewable policy file, not an immutable signed manifest or externally enforced owner approval. A contributor with authority to change both CI policy and data could still try to bypass it unless GitHub branch protection requires independent checks and reviews. The guard does not semantically classify Score-derived prose copied into unrelated new source paths. Public historical Score pages retain their existing rights HOLD and no new exposure is authorized.

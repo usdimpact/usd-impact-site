@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/held-release-boundary-negative.yml'
       - 'apps/web/scripts/held-release-boundary.mjs'
+      - 'docs/operations/claude-security-release-boundary-hold-2026-11-03.md'
       - 'apps/web/scripts/test-held-release-boundary.mjs'
       - 'apps/web/scripts/score-held-report-source-baseline.json'
       - 'apps/web/scripts/score-held-report-source-guard.mjs'

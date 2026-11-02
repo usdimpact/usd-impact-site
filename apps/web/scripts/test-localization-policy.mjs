@@ -118,6 +118,22 @@ assert.match(spanishPreview, /Octubre de 2026 tuvo cinco viernes: 2, 9, 16, 23 y
 assert.match(spanishPreview, /Al corte del 2 de noviembre, solo estaba publicada la edición semanal independiente/);
 assert.match(spanishPreview, /permanece como borrador privado y no está publicado/);
 assert.doesNotMatch(spanishPreview, /resumen mensual, que exige cuatro semanas consecutivas/);
+
+const spanishReviewNewsBlock = spanishPreview.split("{section === 'news' && (")[1]?.split("{section === 'score' && (")[0];
+const spanishReviewReportsBlock = spanishPreview.split("{section === 'reports' && (")[1]?.split("{section === 'video-library' && (")[0];
+for (const [label, block, source] of [
+  ['News', spanishReviewNewsBlock, 'daily'],
+  ['Reports', spanishReviewReportsBlock, 'weekly'],
+]) {
+  assert.ok(block, `missing Spanish ${label} Preview section`);
+  assert.match(block, /<details class="card">\s*<summary>Ver título y resumen originales \(EN\)<\/summary>/,
+    `${label} must offer a labelled disclosure`);
+  assert.doesNotMatch(block, /<details\b[^>]*\bopen\b/, `${label} must initially be collapsed`);
+  assert.ok(block.includes(`<p lang="en"><strong>{${source}[0].data.title}</strong></p>`));
+  assert.ok(block.includes(`<p lang="en">{${source}[0].data.summary}</p>`));
+}
+assert.match(spanishReviewReportsBlock, /Último informe del archivo semanal vinculado a Score/);
+
 const astroSiteMapConfig = await readFile(new URL('../astro.config.mjs', import.meta.url), 'utf8');
 assert.match(astroSiteMapConfig, /!isSpanishPublicReviewPath\(pathname\)/);
 const canonicalVerifier = await readFile(new URL('./verify-canonical-build.mjs', import.meta.url), 'utf8');

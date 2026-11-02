@@ -134,3 +134,15 @@ jobs:
           path: apps/web/spanish-preview-qa/
           if-no-files-found: warn
           retention-days: 2
+
+      - name: Exact October Monthly Preview widths (isolated Draft only)
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/agent/monthly-es-preview-integration-20261102'
+        run: node scripts/qa-october-monthly-responsive.mjs
+      - name: Upload isolated October Monthly viewport evidence
+        if: always() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/agent/monthly-es-preview-integration-20261102'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # repository-reviewed SHA
+        with:
+          name: october-monthly-preview-breakpoints
+          path: apps/web/october-monthly-qa/
+          if-no-files-found: warn
+          retention-days: 2

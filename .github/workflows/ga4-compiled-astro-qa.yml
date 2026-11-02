@@ -65,7 +65,7 @@ jobs:
         run: |
           set -euo pipefail
           "$RUNNER_TEMP/ga4-compiled-venv/bin/python" apps/web/scripts/test-ga4-compiled-astro-browser.py
-- name: Build exact Spanish Preview routes for isolated keyboard QA
+      - name: Build exact Spanish Preview routes for isolated keyboard QA
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == true && github.head_ref == 'agent/es-compiled-a11y-qa-20261103' }}
         working-directory: apps/web
         env:

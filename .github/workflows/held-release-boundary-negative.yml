@@ -1,0 +1,65 @@
+name: Held release-boundary negative checks
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/held-release-boundary-negative.yml'
+      - 'apps/web/scripts/held-release-boundary.mjs'
+      - 'docs/operations/claude-security-release-boundary-hold-2026-11-03.md'
+      - 'apps/web/scripts/test-held-release-boundary.mjs'
+      - 'apps/web/scripts/score-held-report-source-baseline.json'
+      - 'apps/web/scripts/score-held-report-source-guard.mjs'
+      - 'apps/web/scripts/test-score-held-report-source-guard.mjs'
+      - 'apps/web/src/content/weekly-reports/**'
+      - 'apps/web/src/content/monthly-reports/**'
+      - 'apps/web/src/lib/spanish-public-review-policy.js'
+      - 'apps/web/src/pages/es/**'
+      - 'apps/web/src/pages/macro-reviews/monthly/**'
+      - 'apps/web/astro.config.mjs'
+      - 'apps/web/scripts/score-rights-consumer-manifest.json'
+      - 'apps/web/scripts/score-derived-publication-rights-gate.mjs'
+      - 'apps/web/vercel.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fail-closed-contract:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Run source and malicious route fixtures
+        run: |
+          node --check scripts/held-release-boundary.mjs
+          node --check scripts/test-held-release-boundary.mjs
+          node scripts/test-held-release-boundary.mjs
+          node scripts/held-release-boundary.mjs
+          node --check scripts/score-held-report-source-guard.mjs
+          node --check scripts/test-score-held-report-source-guard.mjs
+          node scripts/test-score-held-report-source-guard.mjs
+          node scripts/score-held-report-source-guard.mjs
+      - name: Install existing locked dependencies (ephemeral CI only)
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Build in Production classification (no remote deployment)
+        env:
+          VERCEL_ENV: production
+        run: |
+          rm -rf dist
+          npm run build
+          node scripts/held-release-boundary.mjs --built production
+      - name: Build in Preview classification (no remote deployment)
+        env:
+          VERCEL_ENV: preview
+        run: |
+          rm -rf dist
+          npm run build
+          node scripts/held-release-boundary.mjs --built preview

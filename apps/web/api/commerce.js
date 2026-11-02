@@ -15,6 +15,7 @@ import {
   readResearchMembershipCheckoutConfig,
 } from '../src/lib/research-membership-first-purchase.js';
 import { publicResearchMembershipWebhookError } from '../src/lib/research-membership-webhook-handler.js';
+import { resolveLearningOfferCommercePolicy } from '../src/lib/learning-offer-commerce-policy.js';
 
 export const config = {
   api: {
@@ -121,6 +122,12 @@ function researchCheckoutConfig(response) {
 
 async function handleCheckout(request, response) {
   if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
+  if (!resolveLearningOfferCommercePolicy(process.env).allowNewLibraryCheckout) {
+    return sendJson(response, 503, {
+      error: 'New Library Pass purchases are unavailable under the current learning offer policy.',
+      code: 'LEARNING_LIBRARY_CHECKOUT_DISABLED',
+    }, { 'X-Robots-Tag': 'noindex, nofollow' });
+  }
   if (rejectCrossSite(request, response)) return;
   if (!requestHeader(request, 'content-type').toLowerCase().includes('application/json')) {
     return sendJson(response, 415, {

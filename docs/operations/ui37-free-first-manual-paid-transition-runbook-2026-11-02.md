@@ -46,6 +46,18 @@ The Draft API checks POST method, cross-site request and JSON content type first
 
 **The free public launch is not performed by PR #1056**. This PR contains only the staged checkout boundary and tests.
 
+### Merchant-hosted legacy checkout containment — prepare now; do not execute on Live
+
+A website checkout denial alone cannot stop someone using a previously shared Lemon Squeezy `buy_now_url`, a provider storefront listing, or an open provider checkout. In the official [Lemon Squeezy variants documentation](https://docs.lemonsqueezy.com/help/products/variants), **disabling** a variant makes it unpurchasable while preserving access for its past purchasers; **deleting** a variant can remove their existing downloadable files. The [test-mode documentation](https://docs.lemonsqueezy.com/help/getting-started/test-mode) supports provider-side checkout, webhook and subscription testing without real cards. These are general provider behaviors; the exact current USD Impact store/variant/hosted URL statuses have **not** been independently verified by this Draft.
+
+1. **Inventory without changing**: privately identify the existing Library Pass product ID, active variants, merchant-hosted checkout/buy links, enabled store/marketplace listings, prior receipt links and live Research Membership variants. Store identifiers and receipts only in the existing restricted merchant evidence repository, not public PR content or tracker cells.
+2. **Isolated dry-run**: in Lemon Squeezy **Test Mode**, if the relevant test store/product/variant is available and authorized, confirm that an enabled variant can be purchased, then disabled, and that the same original hosted buy link cannot create a new checkout/order; verify test-mode past buyer access is retained. Record the provider UI / test order / link-denial evidence. Do **not** use real cards or alter Live variants.
+3. **Owner-approved Live cutover only**: at the independently approved free-public release, coordinate the source-committed checkout lock and a **variant-disable (not deletion)** procedure for the exact legacy new-sale item, subject to the provider's written confirmation of USD Impact's product configuration. Confirm that a previously shared hosted link can no longer create a new paid order, while signed order/refund webhooks and old buyers' account/download access remain intact.
+4. **Protect Research**: the existing Research Membership checkout variants and billing portal must not be disabled, altered or confused with Library Pass. Verify separately after the approved action.
+5. **Fail closed**: if the live merchant cannot prevent new legacy orders without affecting existing buyers, **do not publish a contradictory free-only Library promise**. Request a merchant-specific remediation first. Do not delete variants, uploads or external links to solve a buy-link issue: deletion can harm historic purchasers.
+
+Site source-code regression: `test-learning-offer-commerce-function.mjs` scans the known application Library CTA and checkout entrypoints for direct Lemon Squeezy hosted buy URLs. This is a **static source check**, not a merchant Dashboard scan and not proof that every historical external link is disabled.
+
 ## 4. Owner-triggered prospective paid release (no countdown, not yet an offer)
 
 1. Owner requests a pricing review whenever funding or operations require it. No threshold or elapsed day automatically changes the site.

@@ -138,6 +138,17 @@ assert.match(source, /<title>October 2026 Macro Monthly Preview \| USD Impact<\/
 assert.equal((source.match(/<section aria-labelledby="/g) || []).length, 7);
 assert.equal((source.match(/<main\b/g) || []).length, 1);
 assert.equal((source.match(/<article class="body">/g) || []).length, 1);
+// Exact standalone English Monthly keyboard/skip-link source guard.
+// tabindex=-1 allows the #main fragment to receive focus without adding a
+// keyboard Tab stop; the focus ring stays visible following skip activation.
+assert.match(source, /<a class="skip" href="#main">Skip to October preview<\/a>/);
+assert.match(source, /<main id="main" tabindex="-1" class="container grid">/);
+assert.match(source, /main:focus\{outline:3px solid var\(--warm\);outline-offset:4px\}/);
+assert.match(source, /@media\(prefers-reduced-motion:reduce\)\{html\{scroll-behavior:auto\}\}/);
+assert.equal((source.match(/<h1\b/g) || []).length, 1, 'one English Monthly page heading');
+const monthlyIds = [...source.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
+assert.equal(new Set(monthlyIds).size, monthlyIds.length, 'all monthly heading and landmark ids must be unique');
+assert.doesNotMatch(source, /<dialog\b|<button\b|<form\b|<script\b/i, 'standalone Monthly must not inherit interactive consent or navigation code');
 for (const section of sections) {
   assert.ok(source.includes('<section aria-labelledby="' + section + '">'), 'section ' + section);
 }
@@ -172,6 +183,9 @@ if (process.argv.includes('--built')) {
   );
   if (previewBuild) {
     const built = readFileSync(builtPath, 'utf8');
+    assert.match(built, /<a class="skip" href="#main">Skip to October preview<\/a>/, 'Preview skip link preserved');
+    assert.match(built, /<main id="main" tabindex="-1" class="container grid">/, 'Preview main must support programmatic focus');
+    assert.match(built, /main:focus\{outline:3px solid var\(--warm\);outline-offset:4px\}/, 'visible focused main ring');
     assert.match(built, /http-equiv="content-security-policy"/i, 'Astro CSP remains enforced');
     assert.match(built, /name="robots"[^>]+noindex/);
     assert.match(built, /data-report="calendar_monthly_preview"/);

@@ -36,15 +36,28 @@ jobs:
         run: |
           set -euo pipefail
 
-          run_json="$(gh run list \
+          # Evaluate both the latest fallback/manual run and the latest native
+          # scheduled run. A later successful workflow_dispatch (often a
+          # deliberate publication no-op) must not conceal a genuine schedule.
+          # Conversely, a newer failed or still-active fallback must never
+          # allow the scheduled generator to receive a false HEALTHY verdict.
+          latest_run_json="$(gh run list \
             --repo "$GITHUB_REPOSITORY" \
             --workflow "$WORKFLOW_NAME" \
             --branch main \
             --limit 1 \
             --json databaseId,status,conclusion,createdAt,updatedAt,url,event)"
 
+          run_json="$(gh run list \
+            --repo "$GITHUB_REPOSITORY" \
+            --workflow "$WORKFLOW_NAME" \
+            --branch main \
+            --event schedule \
+            --limit 1 \
+            --json databaseId,status,conclusion,createdAt,updatedAt,url,event)"
+
           if [ "$(jq length <<< "$run_json")" -ne 1 ]; then
-            echo "No recent Daily USD Impact workflow run was found." > daily-health-report.md
+            echo "No native scheduled Daily USD Impact workflow run was found." > daily-health-report.md
             exit 1
           fi
 
@@ -79,6 +92,52 @@ jobs:
             echo "- Last updated: \`$updated_at\`"
             echo "- Recovery age: $((age_seconds / 60)) minutes"
           } > daily-health-report.md
+
+          # Newer external wake/manual runs are separate operational evidence.
+          # Never ignore their failures or claim native HEALTHY while a newer
+          # fallback is still running. A completed SUCCESS/no-op fallback,
+          # however, must not replace the latest real scheduled run.
+          if [ "$(jq length <<< "$latest_run_json")" -ne 1 ]; then
+            echo "- Failure: latest Daily workflow run could not be identified." >> daily-health-report.md
+            exit 1
+          fi
+
+          latest_id="$(jq -r '.[0].databaseId' <<< "$latest_run_json")"
+          latest_event="$(jq -r '.[0].event' <<< "$latest_run_json")"
+          latest_status="$(jq -r '.[0].status' <<< "$latest_run_json")"
+          latest_conclusion="$(jq -r '.[0].conclusion // "unknown"' <<< "$latest_run_json")"
+          latest_created="$(jq -r '.[0].createdAt' <<< "$latest_run_json")"
+          latest_url="$(jq -r '.[0].url' <<< "$latest_run_json")"
+          latest_created_epoch="$(date -u -d "$latest_created" +%s)"
+
+          if [ "$latest_id" != "$run_id" ] \
+            && [ "$latest_event" != "schedule" ] \
+            && [ "$latest_created_epoch" -gt "$created_epoch" ]; then
+            {
+              echo "- Newer non-scheduled run: $latest_url"
+              echo "- Newer run event: \`$latest_event\`"
+              echo "- Newer run status: \`$latest_status\`"
+              echo "- Newer run conclusion: \`$latest_conclusion\`"
+            } >> daily-health-report.md
+
+            if [ "$latest_status" != "completed" ]; then
+              latest_active_seconds="$((now_epoch - latest_created_epoch))"
+              if [ "$latest_active_seconds" -ge 0 ] \
+                && [ "$latest_active_seconds" -le "$max_active_seconds" ]; then
+                echo "- Operational conclusion: newer_fallback_pending" >> daily-health-report.md
+                echo "state=pending" >> "$GITHUB_OUTPUT"
+                cat daily-health-report.md
+                exit 0
+              fi
+              echo "- Failure: newer non-scheduled run exceeded its active allowance." >> daily-health-report.md
+              exit 1
+            fi
+            if [ "$latest_conclusion" != "success" ]; then
+              echo "- Failure: a newer non-scheduled Daily run ended unsuccessfully; native recovery cannot be certified." >> daily-health-report.md
+              exit 1
+            fi
+            echo "- Newer non-scheduled run succeeded; assessing the independently identified native schedule below." >> daily-health-report.md
+          fi
 
           if [ "$status" = "completed" ] && [ "$conclusion" != "success" ]; then
             jobs_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs?per_page=100")"

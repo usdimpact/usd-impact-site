@@ -86,6 +86,19 @@ for (const film of videos) {
   const es = spanishVideoMetadata[film.slug];
   assert.ok(es.title && es.description, 'missing Spanish title/description for ' + film.slug);
 }
+// Owner-approved film metadata. This is a source-pair assertion, not a release or rights clearance.
+assert.equal(videos.find(({ slug }) => slug === 'central-bank-swaps-vs-fima-repo')?.description, "Compare Fed U.S.-dollar liquidity swap lines supplying dollars to foreign central banks in exchange for foreign currency with FIMA repo's temporary Treasury-backed dollar access, keeping counterparties distinct.");
+assert.equal(spanishVideoMetadata["dxy-the-signal-vs-the-system"]["description"], "Utiliza el DXY como señal basada en una cesta definida de monedas, sin perder de vista las condiciones del dólar amplio ponderado por el comercio.");
+assert.equal(spanishVideoMetadata["inflation-expectations-cpi-vs-market-pricing"]["title"], "Expectativas de inflación: dato del IPC frente a compensación implícita en el mercado");
+assert.equal(spanishVideoMetadata["currency-pegs-stability-vs-monetary-independence"]["description"], "Expone la disyuntiva entre estabilidad cambiaria, movilidad de capitales e independencia monetaria.");
+assert.equal(spanishVideoMetadata["treasury-supply-issuance-vs-market-absorption"]["description"], "Relaciona los anuncios de emisión de bonos del Tesoro con la demanda en subastas, la intermediación y la capacidad del mercado para absorber nuevas emisiones.");
+assert.equal(spanishVideoMetadata["reserve-management-purchases-vs-qe"]["title"], "Compras para gestionar las reservas bancarias frente a expansión cuantitativa");
+assert.equal(spanishVideoMetadata["discount-window-vs-standing-repo-facility"]["description"], "Compara las contrapartes, las estructuras de transacción y las funciones de política de dos mecanismos de respaldo de liquidez utilizados en Estados Unidos.");
+assert.equal(spanishVideoMetadata["dollar-funding-onshore-vs-offshore"]["title"], "Financiación en dólares: mercados onshore y offshore");
+assert.equal(spanishVideoMetadata["fx-hedging-natural-vs-financial"]["title"], "Cobertura cambiaria: compensación natural de flujos frente a contratos financieros");
+assert.equal(spanishVideoMetadata["part-4-dealers-and-balance-sheet-intermediation"]["title"], "Intermediarios de mercado (dealers) y sus balances");
+assert.equal(spanishVideoMetadata["part-4-dealers-and-balance-sheet-intermediation"]["description"], "Explica cómo los balances de los intermediarios de mercado (dealers) conectan los mercados de financiación y cómo su capacidad de intermediación puede alterar la transmisión.");
+assert.equal(spanishVideoMetadata["central-bank-swaps-vs-fima-repo"]["description"], "Compara las líneas swap por las que la Fed entrega dólares a bancos centrales extranjeros a cambio de divisas con el acceso temporal a dólares mediante repo FIMA respaldado por bonos del Tesoro de EE. UU.; distingue las contrapartes.");
 const spanishPreview = await readFile(new URL('../src/pages/es/[section].astro', import.meta.url), 'utf8');
 assert.match(spanishPreview, /if \(!spanishPublicReviewEnabled\(process\.env\.VERCEL_ENV\)\) return \[\]/);
 assert.match(spanishPreview, /return SPANISH_PUBLIC_REVIEW_SECTIONS\.map/);

@@ -214,7 +214,7 @@ export const videos = [
   {
     order: 1, slug: "central-bank-swaps-vs-fima-repo", title: "Central Bank Liquidity Swaps vs FIMA Repo", shortTitle: "Swap Lines vs FIMA Repo",
     collectionId: "global-dollar-fx", format: "brief", durationSeconds: 56.64, durationLabel: "00:57",
-    description: "Compare foreign-currency swap access with Treasury-collateralized dollar access while keeping counterparties distinct.",
+    description: "Compare Fed U.S.-dollar liquidity swap lines supplying dollars to foreign central banks in exchange for foreign currency with FIMA repo's temporary Treasury-backed dollar access, keeping counterparties distinct.",
     concepts: ["Swap lines", "FIMA Repo", "Counterparty boundary"], sources: ["Federal Reserve Board", "Federal Reserve Bank of New York"],
 
   },

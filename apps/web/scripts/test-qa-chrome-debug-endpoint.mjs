@@ -60,7 +60,7 @@ assert.deepEqual(callLog, [{
   url:'http://127.0.0.1:9222/json/list',
   opts:{redirect:'error'},
 }]);
-assert.rejects(fetchChromeDebugEndpoint(9222, '/json/list?redirect=1',
+await assert.rejects(fetchChromeDebugEndpoint(9222, '/json/list?redirect=1',
   async () => { throw Error('invalid path must never invoke fetch'); }), /Unexpected Chrome debugging endpoint/);
 
 async function startLoopback(server) {

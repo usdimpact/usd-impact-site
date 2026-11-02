@@ -86,6 +86,22 @@ for (const film of videos) {
   const es = spanishVideoMetadata[film.slug];
   assert.ok(es.title && es.description, 'missing Spanish title/description for ' + film.slug);
 }
+
+assert.equal(
+  spanishVideoMetadata['dxy-the-signal-vs-the-system'].description,
+  'Utiliza el DXY como señal basada en una cesta definida de monedas, sin perder de vista las condiciones del dólar amplio ponderado por el comercio.',
+  'DXY Spanish wording must keep the broad trade-weighted index distinct from DXY',
+);
+assert.equal(
+  spanishVideoMetadata['inflation-expectations-cpi-vs-market-pricing'].title,
+  'Expectativas de inflación: dato del IPC frente a compensación implícita en el mercado',
+  'inflation market pricing must not be mislabeled as consumer goods market prices',
+);
+assert.equal(
+  spanishVideoMetadata['currency-pegs-stability-vs-monetary-independence'].description,
+  'Expone la disyuntiva entre estabilidad cambiaria, movilidad de capitales e independencia monetaria.',
+  'fixed-peg policy trade-off must survive Spanish translation',
+);
 const spanishPreview = await readFile(new URL('../src/pages/es/[section].astro', import.meta.url), 'utf8');
 assert.match(spanishPreview, /if \(!spanishPublicReviewEnabled\(process\.env\.VERCEL_ENV\)\) return \[\]/);
 assert.match(spanishPreview, /return SPANISH_PUBLIC_REVIEW_SECTIONS\.map/);

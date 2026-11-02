@@ -5,7 +5,7 @@ const sourcePairs = [
   [
     "dxy-the-signal-vs-the-system",
     "DXY: la señal frente al sistema",
-    "Utiliza el DXY como señal de una cesta de monedas definida, sin perder de vista las condiciones del dólar más amplio ponderadas por comercio."
+    "Utiliza el DXY como señal basada en una cesta definida de monedas, sin perder de vista las condiciones del dólar amplio ponderado por el comercio."
   ],
   [
     "dollar-yields-liquidity",
@@ -64,7 +64,7 @@ const sourcePairs = [
   ],
   [
     "inflation-expectations-cpi-vs-market-pricing",
-    "Expectativas de inflación: IPC frente a precios de mercado",
+    "Expectativas de inflación: dato del IPC frente a compensación implícita en el mercado",
     "Distingue un dato de inflación retrospectivo de las expectativas y la compensación por riesgo incorporadas en los mercados."
   ],
   [
@@ -140,7 +140,7 @@ const sourcePairs = [
   [
     "currency-pegs-stability-vs-monetary-independence",
     "Tipos de cambio fijos: estabilidad frente a independencia monetaria",
-    "Expone el equilibrio de política entre estabilidad cambiaria, movilidad de capitales e independencia monetaria."
+    "Expone la disyuntiva entre estabilidad cambiaria, movilidad de capitales e independencia monetaria."
   ],
   [
     "dollar-debt-service-interest-vs-refinancing",

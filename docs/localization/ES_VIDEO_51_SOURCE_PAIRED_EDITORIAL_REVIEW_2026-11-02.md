@@ -2,7 +2,7 @@
 
 **Prepared 2026-11-02 · UI-40 Draft PR #1050 · PUBLIC RELEASE HOLD**
 
-These pairs were assembled directly from the current `apps/web/src/data/video-library.js` and `apps/web/src/data/es-video-catalog-draft.js` on the same Draft branch. This is a **frozen comparison for a human editor**, not approval of accuracy, video redistribution, newly dubbed audio, or Production deployment. Source English catalogue blob: `0f1cada2a7d663272002c40e64dba0adf2731c6a`. Spanish draft blob: `cf49633a94bff2ceaf333e9cc046fa4f78e3d0c5`.
+These pairs were assembled directly from the current `apps/web/src/data/video-library.js` and `apps/web/src/data/es-video-catalog-draft.js` on the same Draft branch. This is a **frozen comparison for a human editor**, not approval of accuracy, video redistribution, newly dubbed audio, or Production deployment. Source English catalogue blob: `0f1cada2a7d663272002c40e64dba0adf2731c6a`. Spanish draft blob (current isolated candidate): `8e20bf504d8564b646193161ffc3af06df3a6c54`. The initial frozen UI-40 snapshot was `cf49633a94bff2ceaf333e9cc046fa4f78e3d0c5`; original source PR #1050 remains unchanged.
 
 **Automated structural result:** 51/51 unique source slugs represented by exactly one Spanish title and description; 5/5 collections represented; English order and media references unchanged. Editorial meaning, financial terminology, pronunciation and rights **PENDING**.
 
@@ -23,7 +23,7 @@ These pairs were assembled directly from the current `apps/web/src/data/video-li
 - **EN title:** DXY: The Signal vs the System
 - **ES candidate:** DXY: la señal frente al sistema
 - **EN description:** Use DXY as a defined currency-basket signal while keeping broader trade-weighted dollar conditions in view.
-- **ES candidate:** Utiliza el DXY como señal de una cesta de monedas definida, sin perder de vista las condiciones del dólar más amplio ponderadas por comercio.
+- **ES candidate (isolated Draft refinement):** Utiliza el DXY como señal basada en una cesta definida de monedas, sin perder de vista las condiciones del dólar amplio ponderado por el comercio.
 - **Editor verdict:** ☐ PASS  ☐ EDIT  ☐ HOLD — *not yet reviewed*
 
 ### 2. `dollar-yields-liquidity`
@@ -121,7 +121,7 @@ These pairs were assembled directly from the current `apps/web/src/data/video-li
 ### 13. `inflation-expectations-cpi-vs-market-pricing`
 
 - **EN title:** Inflation Expectations: CPI Prints vs Market Pricing
-- **ES candidate:** Expectativas de inflación: IPC frente a precios de mercado
+- **ES candidate (isolated Draft refinement):** Expectativas de inflación: dato del IPC frente a compensación implícita en el mercado
 - **EN description:** Distinguish a backward-looking inflation release from the expectations and risk compensation embedded in markets.
 - **ES candidate:** Distingue un dato de inflación retrospectivo de las expectativas y la compensación por riesgo incorporadas en los mercados.
 - **Editor verdict:** ☐ PASS  ☐ EDIT  ☐ HOLD — *not yet reviewed*
@@ -245,7 +245,7 @@ These pairs were assembled directly from the current `apps/web/src/data/video-li
 - **EN title:** Currency Pegs: Exchange-Rate Stability vs Monetary Independence
 - **ES candidate:** Tipos de cambio fijos: estabilidad frente a independencia monetaria
 - **EN description:** Frame the policy trade-off between exchange-rate stability, capital mobility and monetary independence.
-- **ES candidate:** Expone el equilibrio de política entre estabilidad cambiaria, movilidad de capitales e independencia monetaria.
+- **ES candidate (isolated Draft refinement):** Expone la disyuntiva entre estabilidad cambiaria, movilidad de capitales e independencia monetaria.
 - **Editor verdict:** ☐ PASS  ☐ EDIT  ☐ HOLD — *not yet reviewed*
 
 ### 29. `dollar-debt-service-interest-vs-refinancing`
@@ -448,7 +448,7 @@ These pairs were assembled directly from the current `apps/web/src/data/video-li
 **Release status remains HOLD.** The owner’s previous UI-39 *navigation* PASS did not approve all 51 translated descriptions. The current DEC-016 free-learning direction is separately rights-, bandwidth- and consumer-gated; Research remains paid and existing Library Pass purchasers remain entitled.
 
 
-## Supplemental preliminary English/Spanish semantic pre-screen — 2026-11-02 (isolated integration #1061)
+## Historical preliminary English/Spanish semantic pre-screen — 2026-11-02 (before isolated wording refinements)
 
 **This is an AI-assisted editorial pre-screen, NOT an authorized bilingual editor's PASS.** Source snapshots unchanged: English `0f1cada2a7d663272002c40e64dba0adf2731c6a`, Spanish `cf49633a94bff2ceaf333e9cc046fa4f78e3d0c5`. All 51 title/description pairs were read against their exact English counterpart; automatic structural audit found **51 unique matches, zero missing and zero duplicated slugs, five collections**. No material meaning reversal was established in the pre-screen. **Four individual terms need deliberate editorial disposition** before the final owner PASS/EDIT/HOLD receipt:
 
@@ -460,3 +460,11 @@ These pairs were assembled directly from the current `apps/web/src/data/video-li
 **Rendered source-equivalent catalogue check on protected Vercel Preview, exact commit `49a5936d01586998f7d36994e505121b6ae9813e`:** 51 cards, 51 unique protected-film links matching canonical slugs, five labelled collection IDs, all 51 Spanish titles present, one `h1`, and **no** embedded `video`, `audio`, `iframe` or visible streaming asset URL. Three representative lesson URLs (first, middle and last) returned the application sign-in page without playable media. This is not proof of every membership/entitlement path, subtitle rights, original narration rights or screenshot-level mobile accessibility. New Draft-only `verify-canonical-build.mjs` regression asserts the essential rendered structure and absence of player/streaming assets in Preview mode. Any future changes require fresh exact-head CI and protected Preview verification.
 
 **Disposition:** all 51 original `Editor verdict` checkboxes remain **unmarked**; these four wording issues are proposed editorial review items, not automatic edits. Original English source, Spanish metadata, Stream UIDs, caption settings, subtitles, paid entitlements and Production are **unchanged**. Rights/legal, native-speaker copy, and actual mobile/screen-reader approvals remain HOLD.
+
+## Current isolated Draft wording refinements — 2026-11-02 (NOT final editorial signoff)
+
+**Current exact candidate source:** English `0f1cada2a7d663272002c40e64dba0adf2731c6a` unchanged; Spanish metadata `8e20bf504d8564b646193161ffc3af06df3a6c54` (isolated PR #1061 ONLY). The three source-paired entries above now reflect candidate copy updates: `dxy-the-signal-vs-the-system` (distinguish DXY basket from broader trade-weighted dollar), `inflation-expectations-cpi-vs-market-pricing` (market-implied inflation compensation, not retail consumer prices), and `currency-pegs-stability-vs-monetary-independence` (explicit policy trade-off). These are **editorial proposals, not approved translations**; the **51 Editor verdicts remain unmarked**. None of the other 48 translated titles or descriptions changed. No streaming sources, VTT, dubbing, film duration/order, existing customer access, or English master content changed.
+
+**Source-sensitive separate HOLD:** `central-bank-swaps-vs-fima-repo` is unchanged in both EN/ES. Original narration/caption context must be checked before deciding whether the intended comparison is the Fed's **U.S.-dollar liquidity swap lines** (Fed lends dollars to foreign central banks) or **foreign-currency liquidity swaps** (Fed capacity to obtain and potentially provide foreign currencies), versus Treasury-backed FIMA repo for eligible account holders. The Federal Reserve identifies these separately: https://www.federalreserve.gov/monetarypolicy/bst_swapfaqs.htm and https://www.federalreserve.gov/monetarypolicy/fima-repo-facility-faqs.htm. Do not claim legal, editorial or translation PASS before the original audio meaning is resolved.
+
+**A source-paired 51/51 structural count does not imply 51 editor verdicts.** All source-paired entry statuses above are still `☐ PASS ☐ EDIT ☐ HOLD`; exact original media narration, Spanish captions and distribution rights remain independent gates. Integration build/render evidence for this modified blob must be re-executed at a new commit.

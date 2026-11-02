@@ -129,6 +129,16 @@ if (reviewMode) {
         || canonicalVideoCollections.some(({ id }) => !videoHtml.includes('id="' + id + '"'))) {
       failures.push('Spanish video catalogue: expected five source-matched collection sections.');
     }
+    // Draft-only editorial candidates are visible in the actual generated page.
+    for (const phrase of [
+      'dólar amplio ponderado por el comercio',
+      'dato del IPC frente a compensación implícita en el mercado',
+      'disyuntiva entre estabilidad cambiaria, movilidad de capitales e independencia monetaria',
+    ]) {
+      if (!videoHtml.includes(phrase)) {
+        failures.push('Spanish video catalogue: refined source-paired editorial candidate not rendered: ' + phrase);
+      }
+    }
     if ([...videoHtml.matchAll(/<h1\b/gi)].length !== 1) {
       failures.push('Spanish video catalogue: expected one page-level H1.');
     }

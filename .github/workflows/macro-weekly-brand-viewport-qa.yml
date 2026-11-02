@@ -1,0 +1,147 @@
+name: Isolated Macro Weekly brand visual QA (no deployment)
+on:
+  push:
+    branches:
+      - qa/macro-weekly-brand-viewport-20261102
+permissions:
+  contents: read
+concurrency:
+  group: macro-weekly-brand-qa-20261102
+  cancel-in-progress: false
+jobs:
+  render-and-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout QA branch without stored credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Verify exact PR 1063 article blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object apps/web/src/pages/macro-reviews/weekly/2026-10-30/index.astro)" = "cdd2e4b5c893a1099087bcfb1b6740ffad981048"
+      - name: Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install from lockfile
+        working-directory: apps/web
+        run: npm ci --strict-allow-scripts --no-audit --no-fund
+      - name: Build exact Astro route without deployment
+        working-directory: apps/web
+        env:
+          PUBLIC_GA4_MEASUREMENT_ID: ''
+          CI: 'true'
+        run: npm run build
+      - name: Render at four sizes and inspect source and asset isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/brand-qa-env"
+          "$RUNNER_TEMP/brand-qa-env/bin/python" -m pip install --disable-pip-version-check --no-cache-dir playwright==1.57.0
+          cat > "$RUNNER_TEMP/brand-qa.py" <<'PY'
+          import http.server, threading, json, shutil
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          root=Path.cwd()
+          dist=root/"apps/web/dist"
+          out=root/"apps/web/.macro_weekly_brand_qa"
+          out.mkdir(parents=True, exist_ok=True)
+          assert (dist/"macro-reviews/weekly/2026-10-30/index.html").is_file()
+          assert (dist/"assets/fonts/inter-latin-wght-normal.woff2").is_file()
+          assert (dist/"assets/fonts/playfair-display-latin-wght-normal.woff2").is_file()
+          class Quiet(http.server.SimpleHTTPRequestHandler):
+              def __init__(self,*args,**kwargs):
+                  super().__init__(*args, directory=str(dist),**kwargs)
+              def log_message(self,*args): pass
+          server=http.server.ThreadingHTTPServer(("127.0.0.1",0),Quiet)
+          threading.Thread(target=server.serve_forever,daemon=True).start()
+          base=f"http://127.0.0.1:{server.server_port}"
+          report={"source_article_blob":"cdd2e4b5c893a1099087bcfb1b6740ffad981048","viewports":[]}
+          failed=[]
+          try:
+            with sync_playwright() as p:
+              binary=shutil.which("google-chrome") or shutil.which("chromium")
+              assert binary
+              browser=p.chromium.launch(headless=True,executable_path=binary,args=["--no-sandbox"])
+              for width in (1440,768,390,320):
+                ctx=browser.new_context(viewport={"width":width,"height":900},device_scale_factor=1)
+                page=ctx.new_page()
+                requests=[]; responses=[]; errors=[]
+                def handler(route):
+                  uri=route.request.url
+                  requests.append(uri)
+                  if not uri.startswith(base+"/"):
+                    errors.append("External request "+uri)
+                    route.abort()
+                  else: route.continue_()
+                page.route("**/*",handler)
+                page.on("response",lambda response: responses.append([response.url,response.status]))
+                page.on("pageerror",lambda error: errors.append("Page exception "+str(error)))
+                page.goto(base+"/macro-reviews/weekly/2026-10-30/",wait_until="networkidle",timeout=45000)
+                page.evaluate("document.fonts.ready")
+                check=page.evaluate("""() => {
+                  const css=(e)=>getComputedStyle(e);
+                  const root=css(document.documentElement);
+                  return {
+                    width:innerWidth, scrollWidth:document.documentElement.scrollWidth,
+                    h1Font:css(document.querySelector('.hero h1')).fontFamily,
+                    h2Font:css(document.querySelector('.content h2')).fontFamily,
+                    bodyFont:css(document.body).fontFamily,
+                    background:css(document.body).backgroundColor,
+                    gold:root.getPropertyValue('--gold').trim(),
+                    navy:root.getPropertyValue('--navy').trim(),
+                    robots:document.querySelector('meta[name="robots"]')?.content,
+                    csp:!!document.querySelector('meta[http-equiv="content-security-policy"]'),
+                    sections:document.querySelectorAll('article.content > section[aria-labelledby]').length,
+                    issuerLinks:document.querySelectorAll('a[href*="federalreserve.gov"],a[href*="bea.gov"],a[href*="bls.gov"]').length,
+                    dailies:document.querySelectorAll('.daily-list a').length,
+                    embeds:document.querySelectorAll('script,iframe,form,img,link[rel="stylesheet"]').length
+                  }
+                }""")
+                problems=[]
+                if check["scrollWidth"] > width+1:problems.append(f"horizontal overflow: {check['scrollWidth']} vs {width}")
+                if check["sections"]!=7: problems.append("seven-section contract failed")
+                if check["issuerLinks"]!=10: problems.append("issuer-source link count")
+                if check["dailies"]!=5: problems.append("Daily link count")
+                if check["embeds"]!=0: problems.append("script/image/third party embed present")
+                if check["robots"]!="noindex,nofollow,noarchive,nosnippet": problems.append("robots changed")
+                if not check["csp"]: problems.append("missing compiled CSP")
+                if "Inter Variable" not in check["bodyFont"]: problems.append("body not Inter")
+                if "Playfair Display Variable" not in check["h1Font"]:problems.append("hero not Playfair")
+                if check["gold"].lower()!="#c9a35b" or check["navy"].lower()!="#071a33":problems.append("brand token mismatch")
+                fonts=[[u,s] for u,s in responses if "/assets/fonts/" in u]
+                if not any("inter-latin" in u and s==200 for u,s in fonts): problems.append("Inter font resource not 200")
+                if not any("playfair-display-latin" in u and s==200 for u,s in fonts):problems.append("Playfair font resource not 200")
+                if any(s>=400 for _,s in responses): problems.append("page response not 2xx")
+                problems.extend(errors)
+                check["fontResponses"]=[[u.rsplit("/",1)[-1],s] for u,s in fonts]
+                check["problems"]=problems
+                check["screenshot"]=f"macro-brand-{width}px.png"
+                page.screenshot(path=str(out/check["screenshot"]),full_page=True,animations="disabled")
+                report["viewports"].append(check)
+                failed.extend([f"{width}: {s}" for s in problems])
+                print(f"WIDTH {width} scroll={check['scrollWidth']} fonts={check['fontResponses']} problems={problems}",flush=True)
+                ctx.close()
+              browser.close()
+          finally:
+            server.shutdown()
+          report["status"]="PASS" if not failed else "FAIL"
+          report["failures"]=failed
+          (out/"report.json").write_text(json.dumps(report,indent=2),encoding="utf8")
+          assert not failed, "Visual QA failed: "+"; ".join(failed)
+          PY
+          "$RUNNER_TEMP/brand-qa-env/bin/python" "$RUNNER_TEMP/brand-qa.py"
+      - name: Upload 7-day visual screenshots and QA metadata
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: macro-weekly-brand-review-4viewports
+          path: apps/web/.macro_weekly_brand_qa/
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: ignore

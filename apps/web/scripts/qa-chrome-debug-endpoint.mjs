@@ -28,6 +28,14 @@ export function chromeDebugHttpUrl(port, pathname) {
   return url.href;
 }
 
+// Chrome's debugging HTTP endpoint is on the verified loopback port only.
+// Reject every redirect: fetch() follows redirects by default, which could turn
+// an untrusted local response into a request to an arbitrary off-loopback host.
+export async function fetchChromeDebugEndpoint(port, pathname, fetchImpl = fetch) {
+  const url = chromeDebugHttpUrl(port, pathname);
+  return fetchImpl(url, { redirect: 'error' });
+}
+
 export function chromeDebugWebSocketUrl(candidate, port, targetKind) {
   requirePort(port);
   if (typeof candidate !== 'string' || (targetKind !== 'browser' && targetKind !== 'page')) {

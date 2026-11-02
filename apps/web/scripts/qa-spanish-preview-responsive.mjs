@@ -4,7 +4,7 @@ import os from 'node:os';
 import http from 'node:http';
 import {spawn, execFileSync} from 'node:child_process';
 import {setTimeout as sleep} from 'node:timers/promises';
-import {parseChromeDebugPort, chromeDebugHttpUrl, chromeDebugWebSocketUrl} from './qa-chrome-debug-endpoint.mjs';
+import {parseChromeDebugPort, fetchChromeDebugEndpoint, chromeDebugWebSocketUrl} from './qa-chrome-debug-endpoint.mjs';
 
 const root = path.resolve('dist');
 const output = path.resolve('spanish-preview-qa');
@@ -24,10 +24,10 @@ async function main(){
  let browser,page;
  try{
   const active=await poll(()=>fs.existsSync(path.join(temp,'DevToolsActivePort'))&&fs.readFileSync(path.join(temp,'DevToolsActivePort'),'utf8'));
-  const debugPort=parseChromeDebugPort(active);const ver=await poll(async()=>{let r=await fetch(chromeDebugHttpUrl(debugPort,'/json/version'));return r.ok?r.json():null;});
+  const debugPort=parseChromeDebugPort(active);const ver=await poll(async()=>{let r=await fetchChromeDebugEndpoint(debugPort,'/json/version');return r.ok?r.json():null;});
   browser=await cdp(chromeDebugWebSocketUrl(ver.webSocketDebuggerUrl,debugPort,'browser'));
   const t=await browser.call('Target.createTarget',{url:'about:blank'});
-  const wsUrl=await poll(async()=>{let r=await fetch(chromeDebugHttpUrl(debugPort,'/json/list'));let a=await r.json();return a.find(x=>x.id===t.targetId)?.webSocketDebuggerUrl;});
+  const wsUrl=await poll(async()=>{let r=await fetchChromeDebugEndpoint(debugPort,'/json/list');let a=await r.json();return a.find(x=>x.id===t.targetId)?.webSocketDebuggerUrl;});
   page=await cdp(chromeDebugWebSocketUrl(wsUrl,debugPort,'page'));await page.call('Page.enable');await page.call('Runtime.enable');
   const results=[],failures=[];
   for(const route of routes)for(const width of widths){

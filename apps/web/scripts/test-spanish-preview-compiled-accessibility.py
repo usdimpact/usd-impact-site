@@ -94,7 +94,20 @@ try:
                         assert "noindex" in (page.locator('meta[name="robots"]').get_attribute("content") or "")
                         assert page.locator("h1").count() == 1
                         assert page.locator("main#main-content").count() == 1
+                        # Include the visible page H1 and main-content descendants only:
+                        # the closed consent dialog contains headings not exposed to AT.
+                        heading_levels = page.locator(
+                            "h1, main h2, main h3, main h4, main h5, main h6"
+                        ).evaluate_all("(nodes) => nodes.map(node => Number(node.tagName[1]))")
+                        assert len(heading_levels) >= 2 and heading_levels[0] == 1
+                        assert all(
+                            later <= earlier + 1
+                            for earlier, later in zip(heading_levels, heading_levels[1:])
+                        ), "Visible page heading hierarchy skips levels"
                         assert page.locator(summary_selector).count() == 1
+                        assert "Ver título y resumen originales (EN)" in (
+                            page.locator(summary_selector).aria_snapshot()
+                        ), "Disclosure has no accessible name"
                         assert page.locator(original_link_selector).get_attribute("hreflang") == "en"
                         assert page.locator(details_selector + " p[lang='en']").count() == 2
                         contents = page.locator(details_selector + " p[lang='en']").all_text_contents()
@@ -123,6 +136,23 @@ try:
                         assert page.evaluate(
                             "() => document.activeElement?.classList.contains('skip-link')"
                         ), "First Tab must expose skip link"
+                        page.keyboard.press("Enter")
+                        assert page.evaluate("location.hash") == "#main-content", (
+                            "Skip-link Enter did not reach main fragment"
+                        )
+                        assert page.evaluate("document.activeElement?.id") == "main-content", (
+                            "Skip-link destination did not receive keyboard focus"
+                        )
+                        # Restart initial focus-order traversal without a saved choice.
+                        response = page.goto(origin + route, wait_until="load")
+                        assert response and response.status == 200
+                        page.wait_for_function(
+                            "typeof window.USDImpactConsent?.preference === 'function'"
+                        )
+                        page.keyboard.press("Tab")
+                        assert page.evaluate(
+                            "() => document.activeElement?.classList.contains('skip-link')"
+                        )
                         seen = []
                         reached = False
                         for _ in range(90):
@@ -188,6 +218,9 @@ try:
                         review.click()
                         dialog = page.locator("#privacy-consent-dialog")
                         assert dialog.evaluate("(el) => el.open")
+                        assert "Opciones de privacidad" in dialog.aria_snapshot(), (
+                            "Consent dialog is missing its accessible name"
+                        )
                         page.keyboard.press("Escape")
                         assert not dialog.evaluate("(el) => el.open"), "Escape did not close modal"
                         assert review.evaluate("(el) => document.activeElement === el"), (
@@ -224,6 +257,50 @@ try:
                             "Native browser did not persist privacy choice"
                         )
                         assert not page.evaluate("window.USDImpactConsent.analyticsAllowed()")
+                        mobile_full_page_keyboard = False
+                        if width <= 390:
+                            # After dismissing consent, use Tab to reach controls
+                            # throughout the body and footer (not just the hero).
+                            response = page.goto(origin + route, wait_until="load")
+                            assert response and response.status == 200
+                            page.wait_for_function(
+                                "typeof window.USDImpactConsent?.preference === 'function'"
+                            )
+                            assert not page.locator("#privacy-consent-banner").is_visible()
+                            page.keyboard.press("Tab")
+                            assert page.evaluate(
+                                "() => document.activeElement?.classList.contains('skip-link')"
+                            )
+                            main_controls = 0
+                            footer_reached = False
+                            for _ in range(160):
+                                focus_state = page.evaluate("""() => {
+                                  const node = document.activeElement;
+                                  const rect = node.getBoundingClientRect();
+                                  return {
+                                    id: node.id,
+                                    inMain: Boolean(node.closest('main')),
+                                    visible: rect.bottom >= -1 &&
+                                      rect.top <= innerHeight + 1
+                                  };
+                                }""")
+                                if focus_state["inMain"]:
+                                    main_controls += 1
+                                    assert focus_state["visible"], (
+                                        "Main content keyboard focus scrolled off-screen"
+                                    )
+                                if focus_state["id"] == "privacy-settings-button":
+                                    footer_reached = True
+                                    break
+                                page.keyboard.press("Tab")
+                            assert footer_reached and main_controls >= 5, (
+                                "Keyboard did not traverse multiple main controls through footer"
+                            )
+                            mobile_full_page_keyboard = True
+                            page.screenshot(
+                                path=str(OUT / (label + "-" + str(width) + "-fullpage.png")),
+                                full_page=True,
+                            )
                         other = "/es/reports/" if route == "/es/news/" else "/es/news/"
                         response = page.goto(origin + other, wait_until="load")
                         assert response and response.status == 200
@@ -250,6 +327,8 @@ try:
                             "result": "PASS", "source_language": "en",
                             "native_cookie": True, "visual_focus": True,
                             "escape_scoped": True, "modal_focus": True,
+                            "skip_target_focus": True, "semantic_headings": True,
+                            "full_page_mobile_keyboard": mobile_full_page_keyboard,
                             "external_requests": 0,
                         })
                         print("PASS " + label + " " + str(width) + "x" + str(height))

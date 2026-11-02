@@ -48,6 +48,22 @@ async function main(){
   fs.writeFileSync(path.join(output,'summary.json'),JSON.stringify(summary,null,2));
   console.log(JSON.stringify({testCount:results.length,pages:routes,widths,failures}));
   if(failures.length)process.exitCode=1;
- }finally{page?.close();browser?.close();chrome.kill('SIGTERM');await new Promise(ok=>server.close(ok));fs.rmSync(temp,{recursive:true,force:true});}
+ }finally{
+   page?.close();
+   browser?.close();
+   // Wait for Chromium to stop writing its temporary profile before removing it.
+   // This must not mask a failed viewport assertion or falsely mark it as PASS.
+   if (chrome.exitCode === null && chrome.signalCode === null) {
+     const exited = new Promise(resolve => chrome.once('exit', resolve));
+     chrome.kill('SIGTERM');
+     await Promise.race([exited, sleep(2000)]);
+     if (chrome.exitCode === null && chrome.signalCode === null) {
+       chrome.kill('SIGKILL');
+       await Promise.race([exited, sleep(1000)]);
+     }
+   }
+   await new Promise(resolve => server.close(resolve));
+   fs.rmSync(temp,{recursive:true,force:true,maxRetries:12,retryDelay:150});
+ }
 }
 await main();

@@ -162,8 +162,8 @@ try {
     '../src/pages/research/index.astro',
     '../src/lib/checkout-client.js',
   ];
-  const directProviderCheckout = /https?:\\/\\/(?:[a-z0-9-]+\\.)*lemonsqueezy\\.com\\/checkout(?:\\/|[?#"'])/i;
-  const directHostedBuy = /https?:\\/\\/[^"'\\s<>]+\\/checkout\\/buy(?:\\/|[?#"'])/i;
+  const directProviderCheckout = /https?:\/\/(?:[a-z0-9-]+\.)*lemonsqueezy\.com\/checkout(?:\/|[?#"'])/i;
+  const directHostedBuy = /https?:\/\/[^"'\s<>]+\/checkout\/buy(?:\/|[?#"'])/i;
   for (const relativePath of publicEntrySurfaces) {
     const source = await readFile(new URL(relativePath, import.meta.url), 'utf8');
     assert.doesNotMatch(source, directProviderCheckout, `${relativePath}: provider checkout URL bypasses server offer guard`);
@@ -174,7 +174,7 @@ try {
     '../src/components/LibraryPassAvailabilityCTA.astro',
   ]) {
     const source = await readFile(new URL(relativePath, import.meta.url), 'utf8');
-    assert.match(source, /href="\\/checkout\\/"/, `${relativePath} must use internal checkout`);
+    assert.match(source, /href="\/checkout\/"/, `${relativePath} must use internal checkout`);
   }
 
   console.log('Learning-offer public-entrypoint source guard passed (no hardcoded hosted buy links).');

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { publicCheckoutCanOpen, publicCheckoutPresentation, bookPurchasePresentation } from '../src/lib/checkout-client.js';
 import { readResearchMembershipCheckoutConfig, buildResearchMembershipCheckoutRequest } from '../src/lib/research-membership-first-purchase.js';
 import {
   LEARNING_OFFER_MODE_KEY,
@@ -50,6 +51,21 @@ for (const mode of ['free', 'paid', 'invalid']) {
   assert.ok(Object.isFrozen(gated));
 }
 assert.equal(approvedLegacyReadiness.checkoutEnabled, true); // No mutation.
+
+  // UI-37 checkout presentation isolation regression, all data synthetic.
+  // The existing Library price UI must only open with a genuinely active
+  // legacy readiness result. Pending free/paid are closed even if the
+  // underlying provider still reports its own Live checkout as active.
+  const liveReady = { ...approvedLegacyReadiness, provider: 'lemon-squeezy' };
+  assert.equal(publicCheckoutCanOpen(liveReady, true), true);
+  for (const value of ['free', 'paid', 'paid-pending', 'invalid']) {
+    const result = gateLearningOfferCommerceReadiness(liveReady, { [LEARNING_OFFER_MODE_KEY]: value });
+    assert.equal(publicCheckoutCanOpen(result, true), false);
+    assert.equal(publicCheckoutPresentation(result, true).available, false);
+    assert.equal(bookPurchasePresentation(result).available, false);
+    assert.notEqual(bookPurchasePresentation(result).primaryHref, '/checkout/');
+  }
+
 assert.throws(() => gateLearningOfferCommerceReadiness(null, {}), TypeError);
 
 

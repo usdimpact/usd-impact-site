@@ -34,8 +34,8 @@ const signed = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}`.replace(
   <section class="hero reports-hero">
     <div class="container">
       <div class="eyebrow">USD Impact Reports</div>
-      <h1>See how the week's verified evidence and score fit together.</h1>
-      <p class="lead">Start with the published Daily editions, compare the completed-Friday cross-asset Score, then read the weekly synthesis. Monthly reviews build only from validated weekly briefs.</p>
+      <h1>Read the latest Weekly, then explore the Score-based archive.</h1>
+      <p class="lead">The latest published Weekly is a free, independent macro review grounded in official sources. Earlier Score-based Weekly and Monthly reports remain available below; new Score-derived reports are on hold pending data-redistribution rights review.</p>
     </div>
   </section>
 
@@ -44,7 +44,7 @@ const signed = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}`.replace(
 
     <section class="independent-weekly-entry" aria-labelledby="independent-weekly-title">
       <article class="card">
-        <div class="eyebrow">Free independent Macro Weekly</div>
+        <div class="eyebrow">Latest published Weekly · Free independent Macro Weekly</div>
         <h2 id="independent-weekly-title">October 26–30, 2026: a source-linked macro review</h2>
         <p>Read original educational analysis based on cited Federal Reserve, BEA, and BLS releases. This independent review does not use the licensed USD Impact Score or live asset-price feeds, and is separate from the historical Score-based Weekly and Monthly reports below.</p>
         <div class="button-row">
@@ -58,11 +58,13 @@ const signed = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}`.replace(
       <section class="latest-report">
         <div class="section-heading">
           <div>
-            <div class="eyebrow">Latest weekly brief</div>
+            <div class="eyebrow">Historical Score-based Weekly · Publication on hold</div>
             <h2>{latest.data.title}</h2>
           </div>
           <p>Week ending {formatDate(latest.data.periodEnd)}</p>
         </div>
+
+        <p><strong>Publication status — on hold:</strong> This Score-derived Weekly series is paused while provider-data redistribution rights are reviewed. The newer October 26–30 independent Macro Weekly is available above without Score-derived inputs.</p>
 
         <div class="report-score-panel">
           <div>
@@ -192,7 +194,7 @@ const signed = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}`.replace(
         <div class="section-heading">
           <div>
             <div class="eyebrow">Archive</div>
-            <h2>Weekly briefs</h2>
+            <h2>Historical Score-based Weekly briefs</h2>
           </div>
         </div>
         <div class="archive-list">

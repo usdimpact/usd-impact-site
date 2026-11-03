@@ -49,6 +49,7 @@ function attributes(tag){
 function reportDigest(root,route){
   const html=regularFile(path.join(root,'dist',route,'index.html')).toString('utf8');
   const body=one([...html.matchAll(/<body\b[^>]*>[\s\S]*?<\/body\s*>/gi)],'body',route)[0];
+  const head=one([...html.matchAll(/<head\b[^>]*>[\s\S]*?<\/head\s*>/gi)],'head',route)[0];
   const hero=one([...html.matchAll(/<section\b[^>]*>[\s\S]*?<\/section\s*>/gi)]
     .map(m=>m[0]).filter(v=>/^<section\b[^>]*class\s*=\s*(?:"[^"]*reports-hero[^"]*"|'[^']*reports-hero[^']*')/i.test(v)),
     'historical report hero',route);
@@ -63,6 +64,7 @@ function reportDigest(root,route){
     }).map(v=>normalizeHtml(v));
   return {
     body:sha(normalizeHtml(body)),
+    head:sha(normalizeHtml(head)),
     hero:sha(normalizeHtml(hero)),
     title:sha(normalizeHtml(title)),
     meta_description:sha(normalizeHtml(desc)),
@@ -101,6 +103,8 @@ const output={
   original_sha256:original,
   candidate_body_sha256:Object.fromEntries(
     Object.entries(candidate.reports).map(([name,regions])=>[name,regions.body])),
+  candidate_head_sha256:Object.fromEntries(
+    Object.entries(candidate.reports).map(([name,regions])=>[name,regions.head])),
   classified_mode:process.env.VERCEL_ENV??'unspecified',
   original_whole_body_unapproved_deltas:differences.filter(d=>d.field==='body').length,
 };

@@ -5,7 +5,6 @@ name: N1b held Score News/Catalyst policy review (DRAFT ONLY)
 on:
   pull_request:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: read

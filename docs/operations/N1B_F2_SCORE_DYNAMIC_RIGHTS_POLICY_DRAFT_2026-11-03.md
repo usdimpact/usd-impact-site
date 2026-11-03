@@ -64,3 +64,11 @@ Relevant current platform security references: [GitHub secure use](https://docs.
 | Original Score Issue #155, H-15/H-16, media, commerce and indexing | HOLD | Separate documentary rights and release approvals |
 
 No public release, automatic publishing, Production deployment, migration, membership or payment activation is authorized by this document or any CI outcome.
+
+## 6. QA8 adversarial review clarifications (additional Draft-only scope)
+
+The first N1b QA-only version contained false-PASS risks unrelated to F1d: it scanned only the first 4,096 characters of a Markdown line; skipped an entire \`impactScore:\` line even if a separate held Score claim followed; ignored score values placed on an immediately following line; did not normalize Spanish original Score terminology; and reported ambiguous numeric claim or document removal for manual review while returning a boolean PASS. It also needed checks for intermediate source-folder symlinks and \`.gitkeep\` symlinks.
+
+The hardened Draft scanner examines bounded complete lines, preserves ordinary Catalyst \`impactScore\` by matching original Score labels rather than ignoring a line, recognizes selected Spanish claim labels, detects immediately adjacent Score values, and treats manual-review items and deletions as **review required** rather than PASS. It refuses source-parent symlinks. These are targeted syntactic tests, not a comprehensive semantic rights detector. Longer-distance paraphrases, externally sourced score-like numbers, model-translated text, markdown rendered from embedded scripts, and claims with omitted original labels still require a human rights reviewer.
+
+This still does **not** activate a publication gate or bind the classifier to protected-main checks. The F2 App-owned source/policy requirement, F3 anonymous-domain verification, original Score provider rights, all H-15/H-16 and media/commerce/indexing holds are unchanged.

@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 export const COLLECTIONS=Object.freeze(['news','catalyst-briefs']);
 const MAX_BYTES=1024*1024;
-const ORIGINAL_SCORE=/(?:\busd[\s-]*impact(?:['’]s)?\s+(?:weekly\s+)?score\b|\boriginal\s+(?:weekly\s+)?score\b|\bour\s+(?:weekly\s+)?score\b|\bproprietary\s+(?:weekly\s+)?score\b|\bweekly\s+score\b)/giu;
+const ORIGINAL_SCORE=/(?:\busd[\s-]*impact(?:['’]s)?\s+(?:weekly\s+)?score\b|\boriginal\s+(?:weekly\s+)?score\b|\bour\s+(?:weekly\s+)?score\b|\bproprietary\s+(?:weekly\s+)?score\b|\bweekly\s+score\b|\bpuntuaci[oó]n\s+(?:semanal\s+|original\s+)?(?:de\s+)?usd\s+impact\b|\bpuntaje\s+(?:semanal\s+)?(?:de\s+)?usd\s+impact\b)/giu;
 const THREE_DIALS=/\b(?:three\s+dials?|3\s+dials?|tres\s+diales)\b/giu;
 const NUMERIC_SIGNAL=String.raw`(?:[0-9]{1,3}(?:\.[0-9]{1,2})?(?:\s*\/\s*(?:5|10|100))?|bullish|bearish|neutral|risk[\s-]?on|risk[\s-]?off|alcista|bajista)`;
 const SCORE_VALUATION=new RegExp('^\\s*(?:(?::|=|→|—|–|->|\\bis\\b|\\bwas\\b|\\breads?\\b|\\breading\\b|\\bvalue\\b|\\blevel\\b|\\bstands?\\s+at\\b|\\breached\\b|\\bregistered\\b|\\bof\\b|\\bat\\b|\\bnow\\b|\\bto\\b|\\bturned\\b)\\s*){1,6}('+NUMERIC_SIGNAL+')(?![\\d])','iu');
@@ -24,17 +24,19 @@ export function reviewText(text){
     .replace(/[\u200b-\u200d\u2060\ufeff]/gu,'')
     .replace(/\u00a0/gu,' ')
     .replace(/\r\n?/gu,'\n');
-  for(const [index,original] of normalized.split('\n').entries()){
-    const line=original.slice(0,4096);
+  // Each individual file is bounded by MAX_BYTES; do not silently ignore
+  // content after the first 4,096 characters of a long Markdown/YAML line.
+  const lines=normalized.split('\n');
+  for(const [index,line] of lines.entries()){
     if(!line.trim())continue;
     if(DIRECT_DERIVATIVE.test(line)){
       holds.push({line:index+1,rule:'held_score_derived_file_link'});
       continue;
     }
-    if(/^\s*impactScore\s*:/iu.test(line))continue; // Catalyst impact importance 1..5, not original Score
     let blocked=false;
     for(const match of line.matchAll(ORIGINAL_SCORE)){
-      const after=line.slice(match.index+match[0].length,match.index+match[0].length+125);
+      // Also recognize a directly following Markdown/YAML value on the next line.
+      const after=(line.slice(match.index+match[0].length)+'\n'+(lines[index+1]||'')).slice(0,180);
       if(SCORE_VALUATION.test(after)){
         holds.push({line:index+1,rule:'original_weekly_score_value_or_regime'});
         blocked=true;
@@ -43,7 +45,8 @@ export function reviewText(text){
     }
     if(blocked)continue;
     for(const match of line.matchAll(THREE_DIALS)){
-      const after=line.slice(match.index+match[0].length,match.index+match[0].length+125);
+      // Also recognize a directly following Markdown/YAML value on the next line.
+      const after=(line.slice(match.index+match[0].length)+'\n'+(lines[index+1]||'')).slice(0,180);
       if(DIALS_VALUATION.test(after)){
         holds.push({line:index+1,rule:'unverified_three_dials_numeric_or_regime'});
         blocked=true;
@@ -51,8 +54,10 @@ export function reviewText(text){
       }
     }
     if(blocked)continue;
-    if(/\b(?:weekly\s+score|original\s+score|three\s+dials?|tres\s+diales)\b/iu.test(line)
-      && /\d(?:[\d.,/]*\d)?/u.test(line)){
+    // Known methodology versions (v2) are not computed score readings.
+    const withoutVersions=line.replace(/\bv(?:ersion)?\s*\d+(?:\.\d+)?\b/giu,'');
+    if(/(?:\bweekly\s+score\b|\boriginal\s+score\b|\bthree\s+dials?\b|\btres\s+diales\b|\bpuntuaci[oó]n\s+(?:semanal|original)\b)/iu.test(line)
+      && /\d/u.test(withoutVersions)){
       reviews.push({line:index+1,rule:'manual_score_context_review'});
     }
   }
@@ -77,11 +82,21 @@ function validRoot(root){
 }
 export function loadCorpus(webRoot){
   const root=validRoot(webRoot),files=new Map();
+  // A symlink in an intermediate source ancestor can escape the intended
+  // checkout while the final collection directory itself looks ordinary.
+  for(const ancestor of ['src','src/content']){
+    const info=fs.lstatSync(path.join(root,ancestor));
+    if(!info.isDirectory()||info.isSymbolicLink())
+      throw Error('Invalid dynamic content ancestor: '+ancestor);
+  }
   for(const folder of COLLECTIONS){
     const directory=path.join(root,'src/content',folder),stat=fs.lstatSync(directory);
     if(!stat.isDirectory()||stat.isSymbolicLink())throw Error('Invalid dynamic content directory: '+folder);
     for(const entry of fs.readdirSync(directory,{withFileTypes:true})){
-      if(entry.name==='.gitkeep')continue;
+      if(entry.name==='.gitkeep'){
+        if(!entry.isFile()||entry.isSymbolicLink())throw Error('Unsafe .gitkeep entry: '+folder);
+        continue;
+      }
       if(!entry.name.endsWith('.md')||!entry.isFile()||entry.isSymbolicLink()){
         throw Error('Unsupported dynamic content entry: '+folder+'/'+entry.name);
       }
@@ -101,11 +116,17 @@ export function compareCorpora(baseRoot,candidateRoot,options={}){
     for(const issue of findings.holds)holds.push({file:name,...issue});
     for(const issue of findings.reviews)reviews.push({file:name,...issue});
   }
-  for(const name of original.keys())if(!candidate.has(name))deleted.push(name);
+  for(const name of original.keys())if(!candidate.has(name)){
+    deleted.push(name);
+    reviews.push({file:name,line:0,rule:'deleted_dynamic_content_requires_editorial_review'});
+  }
   return {schema:1,mode:'DRAFT_ONLY_REVIEW_NOT_PUBLICATION_GATE',
     base_count:original.size,candidate_count:candidate.size,
     changed:changed.sort(),deleted:deleted.sort(),holds,reviews,
-    pass:holds.length===0&&(!options.expectChanges||changed.length>0)};
+    // Manual review items are not silent PASS, even though this entire
+    // classifier is still QA-only and must not be mistaken for rights approval.
+    pass:holds.length===0&&reviews.length===0&&deleted.length===0
+      &&(!options.expectChanges||changed.length>0)};
 }
 function args(argv){
   const indexed=new Map();

@@ -54,7 +54,7 @@ jobs:
           VERCEL_ENV: production
         run: |
           rm -rf dist
-          npm run build
+          npm run validate && npm run build
           node scripts/held-release-boundary.mjs --built production
           node scripts/score-held-report-source-guard.mjs --built
       - name: Build and inspect Preview classification (no remote deployment)
@@ -63,7 +63,7 @@ jobs:
           VERCEL_ENV: preview
         run: |
           rm -rf dist
-          npm run build
+          npm run validate && npm run build
           node scripts/held-release-boundary.mjs --built preview
           node scripts/score-held-report-source-guard.mjs --built
 

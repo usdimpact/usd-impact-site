@@ -146,3 +146,5 @@ jobs:
         run: npm run validate && npm run build
       - name: Compare 16 historical rendered main bodies to original Production
         run: node .github/scripts/score-held-production-body-receipt.mjs
+      - name: Compare full historical Score body, metadata and newsletter receipts
+        run: node .github/scripts/score-held-production-expanded-receipt.mjs

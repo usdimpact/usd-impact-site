@@ -177,6 +177,7 @@ export const F1D_RENDER_PINS=Object.freeze({
     'f6baaba42ab4d04e122f071f3d942e4890d36816', // #1088
   ]),
   vercelBuildCommand:'node scripts/score-held-report-source-guard.mjs && npm run validate && npm run build && node scripts/score-held-report-source-guard.mjs --built',
+  packageBuildCommand:"node scripts/score-held-report-source-guard.mjs && npm run prepare:fonts && npm run generate:quizzes && npm run validate:purchase-access-email && astro build && node scripts/test-rendered-structured-data-contract.mjs && npm run validate:a11y-build && npm run validate:checkout-presentation && npm run validate:csp-build && node scripts/verify-production-build.mjs && node scripts/test-independent-macro-free-weekly-release.mjs --built && node scripts/score-held-report-source-guard.mjs --built",
 });
 
 // Reconstruct the git tree object independently of .git availability, which
@@ -218,6 +219,13 @@ export function checkFrozenScoreRenderSurfaces(root=webRoot,pins=F1D_RENDER_PINS
       failures.push('F1d: unapproved page templates or alternate route tree');
   }catch{
     failures.push('F1d: missing, symlinked or unreadable protected route tree');
+  }
+  try{
+    const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
+    if(pkg.scripts?.build!==pins.packageBuildCommand)
+      failures.push('F1d/F3: npm build must execute source and built rights guards');
+  }catch{
+    failures.push('F1d/F3: missing or invalid npm build policy');
   }
   try{
     const vercel=JSON.parse(fs.readFileSync(path.join(root,'vercel.json'),'utf8'));

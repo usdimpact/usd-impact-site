@@ -294,6 +294,8 @@ export function checkFrozenScorePublishedEnvelope(inventory,distRoot) {
   const actualReports=Object.keys(frozen?.reports??{}).sort();
   const actualJson=Object.keys(frozen?.newsletter_json??{}).sort();
   const expectedBody=Object.keys(frozen?.original_whole_body_reference_sha256??{}).sort();
+  const draftWholeBody=frozen?.draft_containment_whole_body_sha256;
+  const draftBodyNames=Object.keys(draftWholeBody?.sha256??{}).sort();
   const shaOk=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
   if(!frozen||frozen.source_main_commit!=='d1740214f5737996f321a037efe3f2f7d21ecd64'
     ||frozen.normalization!=='HTML_ATTR_NONCE_INTEGRITY_VALUE_ONLY_V1'
@@ -304,6 +306,14 @@ export function checkFrozenScorePublishedEnvelope(inventory,distRoot) {
     ||actualReports.join('|')!==reportNames.join('|')
     ||actualJson.join('|')!==expectedJson.join('|')
     ||expectedBody.join('|')!==reportNames.join('|')
+    ||!draftWholeBody
+    ||draftWholeBody.evidence_commit!=='6af6c6ce62eb86bb3712a6b7f6d977777ff86761'
+    ||draftWholeBody.evidence_workflow_run!==41689499564
+    ||draftWholeBody.scope!=='DRAFT_ONLY_BYTE_INTEGRITY_NOT_ORIGINAL_MAIN_LICENSE'
+    ||draftWholeBody.classification_match!=='PRODUCTION_PREVIEW_16_OF_16'
+    ||draftBodyNames.join('|')!==reportNames.join('|')
+    ||!draftBodyNames.every(name=>shaOk(draftWholeBody.sha256[name])
+      &&draftWholeBody.sha256[name]!==frozen.original_whole_body_reference_sha256[name])
     ||!actualReports.every(name=>{
       const r=frozen.reports[name];
       return r&&['hero','title','meta_description','jsonld'].every(key=>shaOk(r[key]))
@@ -325,12 +335,17 @@ export function checkFrozenScorePublishedEnvelope(inventory,distRoot) {
     try {actual=digestFrozenScoreEnvelope(readRegular(path.join(distRoot,name,'index.html')).toString('utf8'));}
     catch(err){failures.push('Missing/malformed historical Score envelope on rights HOLD: '+name);continue;}
     const golden=frozen.reports[name];
+    // This Draft body snapshot is separate from original pinned Production.
+    // It detects changed output anywhere in the page body, without treating
+    // #1088's unapproved navigation differences as release permission.
+    if(actual.body!==draftWholeBody.sha256[name])
+      failures.push('Changed Draft-frozen historical Score whole body on rights HOLD: '+name);
     for(const field of ['hero','title','meta_description','jsonld','jsonld_count']) {
       if(actual[field]!==golden[field])
         failures.push('Changed original Production historical Score '+field+' on rights HOLD: '+name);
     }
-    // The broader <body> digest is evidence-only pending owner approval;
-    // do not infer that unchanged Score sections authorize altered navigation.
+    // Original-vs-Draft whole-body mismatch remains owner HOLD even when
+    // this within-Draft integrity comparison passes.
   }
   for(const family of ['weekly','progress']) {
     try {

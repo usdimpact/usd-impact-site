@@ -79,18 +79,18 @@ export function reviewText(text){
     if(ambiguous){
       const after=line.slice(ambiguous.index+ambiguous[0].length);
       const withoutVersions=after.replace(/\bv(?:ersion)?\s*\d+(?:\.\d+)?\b/giu,'');
-      if(/\\d/u.test(withoutVersions))
+      if(/\d/u.test(withoutVersions))
         reviews.push({line:index+1,rule:'manual_score_context_review'});
       // Markdown headings and table-like breaks can separate a Score label
       // from a number by blank lines; manual review only, never auto-licence.
       const nearby=lines.slice(index+1,index+4).join(' ');
-      if(!/\\d/u.test(withoutVersions)&&/\\d+(?:\\.\\d+)?\\s*\\/\\s*(?:5|10|100)/u.test(nearby))
+      if(!/\d/u.test(withoutVersions)&&/\d+(?:\.\d+)?\s*\/\s*(?:5|10|100)/u.test(nearby))
         reviews.push({line:index+1,rule:'manual_multiline_score_context_review'});
     }
     // Deliberately cautious English/Spanish semantic review; this is not
     // exhaustive natural-language inference and must stay QA-only.
     if(LIKELY_SCORE_CONTEXT.test(line)&&DERIVED_LANGUAGE.test(line)
-      &&!/(?:methodology|metodolog[ií]a|framework|marco\\s+educativo|not\\s+publish|no\\s+publica)/iu.test(line)
+      &&!/(?:methodology|metodolog[ií]a|framework|marco\s+educativo|not\s+publish|no\s+publica)/iu.test(line)
       &&!reviews.some(x=>x.line===index+1))
       reviews.push({line:index+1,rule:'manual_unlabeled_score_inference_review'});
   }

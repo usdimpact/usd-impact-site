@@ -132,6 +132,13 @@ test('unsafe XML constructions and non-feed HTML are rejected', () => {
     /unsupported active/);
 });
 
+test('entry appended outside the signed feed root is never interpreted as a valid row', () => {
+  const forged = xmlRows([{day:'2026-11-02',two:'3.8',ten:'4.1'}]) +
+    '<entry><d:NEW_DATE>2026-11-03T00:00:00</d:NEW_DATE>' +
+    '<d:BC_2YEAR>4.12</d:BC_2YEAR><d:BC_10YEAR>4.65</d:BC_10YEAR></entry>';
+  assert.throws(()=>readTreasuryObservation(forged,DAY),/complete Atom-style/);
+});
+
 test('odd cardinality, invalid date fields and huge responses fail closed', () => {
   const bad = xmlRows().replace('2026-11-03T00:00:00','2026-11-32T00:00:00');
   assert.throws(()=>readTreasuryObservation(bad,DAY),/bad or missing/);

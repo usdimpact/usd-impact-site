@@ -15,15 +15,16 @@ let checks = 0;
 function check(label, fn) { fn(); checks += 1; }
 const fedIndex = 'https://www.federalreserve.gov/newsevents.htm';
 const blsIndex = 'https://www.bls.gov/schedule/2026/home.htm';
+const blsCpsIndex = 'https://www.bls.gov/cps/publications/release-calendar.htm';
 const blocked = [
-  fedIndex, blsIndex,
+  fedIndex, blsIndex, blsCpsIndex,
   'https://www.federalreserve.gov/recentpostings.htm',
   'https://home.treasury.gov/policy-issues/financing-the-government/quarterly-refunding/most-recent-quarterly-refunding-documents',
   'https://home.treasury.gov/system/files/221/Tentative-Auction-Schedule.pdf',
   'https://www.eia.gov/petroleum/supply/weekly/pdf/wpsrall.pdf',
   'https://www.eia.gov/petroleum/supply/weekly/schedule.php',
 ];
-for (const base of [fedIndex, blsIndex]) {
+for (const base of [fedIndex, blsIndex, blsCpsIndex]) {
   for (const url of [
     base, `${base}/`, `${base}//`, `${base}?utm_source=fixture#section`,
     base.replace('www.', '').replace('.gov/', '.gov./'),
@@ -55,6 +56,12 @@ for (const url of blocked.slice(2)) check(`existing safeguard ${url}`, () => {
   assert.ok(sourceDateAttributionIssue(url));
   assert.equal(isLivingSourceUrl(url), false);
 });
+check('CPS July-modified calendar may not be rebadged with a November edition date', () => {
+  const issue = sourceDateAttributionIssue(blsCpsIndex);
+  assert.equal(sourceDateBasisForUrl(blsCpsIndex), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
+  assert.match(issue, /CPS release calendar.*Last Modified/i);
+  assert.equal(safeValidationDiagnostic(`${issue} synthetic-private-detail`).code, 'invalid-source-date');
+});
 check('supported living calendars unchanged', () => {
   assert.equal(sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/2026-october.htm'), SOURCE_DATE_BASIS.LAST_UPDATED);
   assert.equal(sourceDateBasisForUrl('https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm'), SOURCE_DATE_BASIS.LAST_UPDATED);
@@ -62,6 +69,7 @@ check('supported living calendars unchanged', () => {
 check('discovery instructions distinguish document dates', () => {
   assert.match(SOURCE_DATE_RULES, /News and Events page \(newsevents\.htm\)/);
   assert.match(SOURCE_DATE_RULES, /BLS annual release calendar/);
+  assert.match(SOURCE_DATE_RULES, /BLS CPS release calendar/);
   assert.match(SOURCE_DATE_RULES, /month-specific schedule URL/);
   assert.match(SOURCE_DATE_RULES, /Verify each economic event date separately/);
   assert.match(SOURCE_DATE_RULES, /EIA Weekly Petroleum Status Report schedule page/);

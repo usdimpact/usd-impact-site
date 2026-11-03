@@ -16,6 +16,9 @@ const FEDERAL_RESERVE_NEWS_INDEX_PATH = '/newsevents.htm';
 const FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH = /^\/newsevents\/pressreleases\/\d{4}-press-fomc\.htm$/;
 // The annual BLS page aggregates monthly sections with separate Last Modified dates.
 const BLS_ANNUAL_CALENDAR_PATH = /^\/schedule\/\d{4}\/home\.htm$/;
+// The CPS standing calendar lists future event dates but is not a dated news release.
+// Its page Last Modified date is distinct from the events it lists.
+const BLS_CPS_RELEASE_CALENDAR_PATH = '/cps/publications/release-calendar.htm';
 // Reused full-report pointer; new citations must identify a dated release.
 const EIA_WEEKLY_REPORT_POINTER_PATH = '/petroleum/supply/weekly/pdf/wpsrall.pdf';
 // Reusable WPSR schedule: event rows change over time, but the page exposes no
@@ -54,7 +57,7 @@ export function sourceDateBasisForUrl(value) {
     }
     if ((indexHostname === 'home.treasury.gov' && pathname === TREASURY_REFUNDING_INDEX_PATH)
       || (indexHostname === 'federalreserve.gov' && ([FEDERAL_RESERVE_POSTINGS_INDEX_PATH, FEDERAL_RESERVE_NEWS_INDEX_PATH].includes(pathname) || FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH.test(pathname)))
-      || (indexHostname === 'bls.gov' && BLS_ANNUAL_CALENDAR_PATH.test(pathname))
+      || (indexHostname === 'bls.gov' && (BLS_ANNUAL_CALENDAR_PATH.test(pathname) || pathname === BLS_CPS_RELEASE_CALENDAR_PATH))
       || (indexHostname === 'eia.gov' && pathname === EIA_WEEKLY_SCHEDULE_PATH)) {
       return SOURCE_DATE_BASIS.DOCUMENT_INDEX;
     }
@@ -106,6 +109,9 @@ export function sourceDateAttributionIssue(value) {
     return 'EIA Weekly Petroleum Status Report schedule is a reusable schedule page without a page-level publication or Last Updated date. Use the current WPSR landing page when it directly supports the next-release claim and its displayed current Release Date as publishedAt, or cite a dated release-specific EIA document. Never assign an event date from the schedule table, an access date, or a prior historical date to the reusable schedule page; if no dated source supports the claim, omit the unsupported source and claim.';
   }
   if (hostname === 'bls.gov') {
+    if (pathname === BLS_CPS_RELEASE_CALENDAR_PATH) {
+      return 'BLS CPS release calendar is a reusable schedule index, not a news release. Its Last Modified date is different from the dates of listed events. Use a verified dated BLS news release or the relevant month-specific schedule with its own displayed Last Modified date; never assign an event date, edition date or access date as the publication date of the CPS calendar. If no eligible dated source supports the claim, omit the source and unsupported claim. Do not modify archived citations.';
+    }
     return 'BLS annual release calendar aggregates separately updated monthly sections. Cite the relevant month-specific schedule with its own verified Last Modified date, or a directly linked dated release. Verify the event date separately; never use an access date, edition date, event date or another month section date as the annual page publication date. If no such source is verifiable, omit the unsupported source and claim.';
   }
   const label = hostname === 'federalreserve.gov'

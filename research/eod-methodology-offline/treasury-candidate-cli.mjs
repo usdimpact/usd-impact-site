@@ -26,7 +26,7 @@ if (args.length !== 1 || !['--demo', '--live-official'].includes(args[0])) {
 
 const result = args[0] === '--demo' ?
   buildTreasuryCandidate({
-    xml: fixtureXml, day: '2100-02-01', asOfUtc:'2100-02-01T23:05:00Z',
+    xml: fixtureXml, day: '2100-02-01', asOfUtc:'2100-02-01T23:45:00Z',
   }) :
   await (async () => {
     const start = new Date();

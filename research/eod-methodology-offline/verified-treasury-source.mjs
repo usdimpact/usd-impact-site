@@ -200,7 +200,7 @@ function buildCandidateInternal({ xml, day, asOfUtc, transport, httpChecks = nul
         'ASSERTED_EXACT_RESPONSE_URL_NOT_INDEPENDENTLY_ATTESTED' : 'UNVERIFIED_FIXTURE',
       issuer_payload_origin_independently_attested: false,
       source_sha256: rawSourceSha256 ?? createHash('sha256').update(xml, 'utf8').digest('hex'),
-      source_hash_basis: rawSourceSha256 ? 'RAW_HTTP_RESPONSE_BYTES' :
+      source_hash_basis: rawSourceSha256 ? 'FETCH_BODY_BYTES_POST_HTTP_DECODING' :
         (transport === 'EXACT_ISSUER_RESPONSE' ? 'REENCODED_TEXT_FALLBACK_NOT_RAW' : 'UTF8_FIXTURE_TEXT'),
       http_response_checks: transport === 'EXACT_ISSUER_RESPONSE' ? httpChecks : null,
       capture_context: context,
@@ -255,7 +255,7 @@ export function renderTreasuryCandidate(record, language) {
     ) &&
     (record.source.source_hash_basis === 'UTF8_FIXTURE_TEXT' &&
       record.source.transport === 'UNVERIFIED_FIXTURE' ||
-      ['RAW_HTTP_RESPONSE_BYTES', 'REENCODED_TEXT_FALLBACK_NOT_RAW'].includes(record.source.source_hash_basis) &&
+      ['FETCH_BODY_BYTES_POST_HTTP_DECODING', 'REENCODED_TEXT_FALLBACK_NOT_RAW'].includes(record.source.source_hash_basis) &&
       record.source.transport === 'EXACT_ISSUER_RESPONSE') &&
     /^[a-f0-9]{64}$/.test(record.source.source_sha256) &&
     record.source.source_rights_status === 'SEPARATE_LEGAL_EDITORIAL_REVIEW_REQUIRED' &&
@@ -435,6 +435,7 @@ export async function fetchTreasuryCandidate({day, fetchImpl, clock = () => new 
     while (true) {
       const {done, value} = await reader.read();
       if (done) break;
+      assert(value instanceof Uint8Array, 'issuer stream yielded a non-binary chunk');
       bytes += value.byteLength;
       assert(bytes <= MAX_XML_BYTES, 'issuer stream exceeds bounded XML size');
       rawHash.update(value);

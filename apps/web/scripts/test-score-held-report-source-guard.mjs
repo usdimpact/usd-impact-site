@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   gitBlobSha1, evaluateScoreContentFreeze, verifyCurrentScoreHold, collectScoreContents,
+  checkScoreLoaderContract, checkBuiltScoreArtifacts, PINNED_SCORE_LOADERS,
 } from './score-held-report-source-guard.mjs';
 
 assert.deepEqual(verifyCurrentScoreHold(), [], 'all existing historical Score sources must match the trusted main baseline');
@@ -170,4 +171,63 @@ try {
 }finally{
   fs.rmSync(work,{recursive:true,force:true});
 }
+// F1b: validate the actual config and inspect disposable built-output trees.
+{
+  const realConfig=fs.readFileSync(new URL('../src/content.config.ts',import.meta.url),'utf8');
+  assert.deepEqual(checkScoreLoaderContract(realConfig),[],'current loaders must match pinned declarations');
+  const redirected=realConfig.replace(PINNED_SCORE_LOADERS[0],
+    "loader: glob({ pattern: '{weekly-reports,score-archive}/**/*.md', base: './src/content' }),");
+  assert.ok(checkScoreLoaderContract(redirected).some(s=>s.includes('loader declaration changed')),
+    'redirecting Weekly loader outside inventoried folder must fail');
+  const extraLoader=realConfig+"\nconst extra = defineCollection({ loader: glob({ pattern: '**/*.md', base: './src/content/score-archive' }) });\n";
+  assert.ok(checkScoreLoaderContract(extraLoader).some(s=>s.includes('Unexpected report-like content loader')),
+    'a new report-like source loader must fail');
+  assert.ok(checkScoreLoaderContract(realConfig+'\n'+PINNED_SCORE_LOADERS[1]).length>0,
+    'duplicate loader declaration must fail');
+  assert.ok(checkScoreLoaderContract(undefined).length>0,'missing config must fail');
+
+  const inventory=JSON.parse(fs.readFileSync(new URL('./score-held-report-source-baseline.json',import.meta.url),'utf8'));
+  const distWork=fs.mkdtempSync(path.join(os.tmpdir(),'score-rights-built-'));
+  try{
+    const make=(name,files)=>{
+      const root=path.join(distWork,name);
+      for(const [rel,data] of Object.entries(files)){
+        const full=path.join(root,rel);
+        fs.mkdirSync(path.dirname(full),{recursive:true});
+        fs.writeFileSync(full,data);
+      }
+      return root;
+    };
+    const loc=(p)=>'<urlset><url><loc>https://www.usd-impact.com'+p+'</loc></url></urlset>';
+    const clean=make('clean',{
+      'reports/weekly/2026-10-23/index.html':'ok',
+      'reports/monthly/2026-10-16/index.html':'ok',
+      'newsletter/weekly/2026-10-23.json':'{}',
+      'newsletter/progress/2026-10-23.json':'{}',
+      'sitemap-0.xml':loc('/reports/weekly/2026-10-23')+loc('/reports/monthly/2026-10-16'),
+    });
+    assert.deepEqual(checkBuiltScoreArtifacts(inventory,clean),[],'historical built outputs must pass');
+    assert.deepEqual(checkBuiltScoreArtifacts(inventory,make('deleted',{'sitemap-0.xml':loc('/about')})),[],
+      'deleting old outputs is not new publication');
+    const cases={
+      'new weekly page':{'reports/weekly/2026-10-30/index.html':'x'},
+      'new monthly page':{'reports/monthly/2026-11-20/index.html':'x'},
+      'new newsletter json':{'newsletter/weekly/2026-10-30.json':'{}'},
+      'new progress json':{'newsletter/progress/2026-10-30.json':'{}'},
+      'flat html variant':{'reports/weekly/2026-10-30.html':'x'},
+      'sitemap-only leak':{'sitemap-0.xml':loc('/reports/weekly/2026-10-30')},
+      'sitemap trailing slash leak':{'sitemap-index-1.xml':loc('/reports/monthly/2026-11-20/')},
+    };
+    for(const [name,files] of Object.entries(cases)){
+      const root=make(name.replace(/\W+/g,'-'),{'sitemap-0.xml':loc('/about'),...files});
+      assert.ok(checkBuiltScoreArtifacts(inventory,root).length>0,'built artifact negative must fail: '+name);
+    }
+    assert.ok(checkBuiltScoreArtifacts(inventory,path.join(distWork,'missing')).length>0,
+      'missing build root must fail');
+  }finally{
+    fs.rmSync(distWork,{recursive:true,force:true});
+  }
+}
 console.log('Score rights N4 PASS: structurally valid manually prepared Score Monthly accepted by schema validator but REJECTED by new rights/source baseline; existing historical sources unchanged');
+
+console.log('Score rights F1b PASS: pinned loaders; redirected/extra loaders and new report/newsletter/sitemap dates rejected; removal-only allowed');

@@ -71,11 +71,12 @@ export function readTreasuryObservation(xml, day) {
     'Treasury XML exceeds bounded source size');
   assert(!/<!DOCTYPE|<!ENTITY|<!\[CDATA\[|<script\b/i.test(xml),
     'unsupported active or external XML construct');
-  assert(/<(?:[A-Za-z][\w.-]*:)?feed(?:\s|>)/.test(xml) &&
-    /<\/(?:[A-Za-z][\w.-]*:)?feed\s*>/.test(xml),
-    'not an Atom-style Treasury XML feed');
+  const feed = xml.trim().replace(/^\uFEFF/, '').match(
+    /^(?:<\?xml\b[^>]*\?>\s*)?<(?:[A-Za-z][\w.-]*:)?feed\b[^>]*>([\s\S]*?)<\/(?:[A-Za-z][\w.-]*:)?feed\s*>\s*$/,
+  );
+  assert(feed, 'not a complete Atom-style Treasury XML feed');
   const entryPattern = /<(?:[A-Za-z][\w.-]*:)?entry\b[^>]*>([\s\S]*?)<\/(?:[A-Za-z][\w.-]*:)?entry\s*>/g;
-  const entries = [...xml.matchAll(entryPattern)];
+  const entries = [...feed[1].matchAll(entryPattern)];
   assert(entries.length <= MAX_ENTRIES, 'unexpectedly large Treasury month feed');
   let found = null;
   const dates = new Set();

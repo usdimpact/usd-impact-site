@@ -49,8 +49,8 @@ function attributes(tag){
 function reportDigest(root,route){
   const html=regularFile(path.join(root,'dist',route,'index.html')).toString('utf8');
   const body=one([...html.matchAll(/<body\b[^>]*>[\s\S]*?<\/body\s*>/gi)],'body',route)[0];
-  const hero=one([...html.matchAll(/<section\\b[^>]*>[\\s\\S]*?<\\/section\\s*>/gi)]
-    .map(m=>m[0]).filter(v=>/^<section\\b[^>]*class\\s*=\\s*(?:"[^"]*reports-hero[^"]*"|'[^']*reports-hero[^']*')/i.test(v)),
+  const hero=one([...html.matchAll(/<section\b[^>]*>[\s\S]*?<\/section\s*>/gi)]
+    .map(m=>m[0]).filter(v=>/^<section\b[^>]*class\s*=\s*(?:"[^"]*reports-hero[^"]*"|'[^']*reports-hero[^']*')/i.test(v)),
     'historical report hero',route);
   const title=one([...html.matchAll(/<title\b[^>]*>[\s\S]*?<\/title\s*>/gi)],'title',route)[0];
   const metas=[...html.matchAll(/<meta\b[^>]*>/gi)]

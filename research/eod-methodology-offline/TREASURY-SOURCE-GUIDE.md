@@ -37,6 +37,15 @@ The source adapter has injected-response tests for endpoint enforcement, days an
 
 The current live public feed has been read through a browser-oriented extractor; that system converted the XML into flattened text. This confirms the endpoint and monthly observation shape but does NOT certify raw XML bytes, headers, original issuer publication instant or complete compatibility with the exact parser. Certify these separately before enabling any factual issuer-source generation.
 
+**Separate independent source QA (Nov 3, 2026):** The Treasury's dated public rate table and the month-filtered XML extractor expose matching October 30 2-year and 10-year values and the same 10Y–2Y arithmetic, without using third-party market feeds. This is a presentation-level comparison, NOT an execution of this exact JavaScript parser against raw issuer XML. The current parser is a bounded, research-only XML-subset matcher rather than a standards-compliant XML parser; require raw-body, namespace and HTTP-header tests before allowing any scheduled or published source-backed edition.
+
+**Historical method discontinuity:** Treasury's official par-yield table identifies a change on December 6, 2021 to a monotone-convex-spline curve methodology. Any before/after study, multi-year baseline or comparison to historical USD Impact Score inputs must explicitly document that break and use verified, rights-cleared exact series/vintages. Do not infer that the Treasury series automatically reproduce the original Score v2 inputs.
+
+Official verification links:
+- https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?field_tdr_date_value=2026&type=daily_treasury_yield_curve
+- https://home.treasury.gov/treasury-daily-interest-rate-xml-feed
+
+
 ## What remains before genuine unattended Method Daily production
 
 This first module **does not** produce a real published article. Before connecting to a workflow or adding market facts:

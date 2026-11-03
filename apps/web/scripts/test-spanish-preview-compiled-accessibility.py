@@ -18,7 +18,7 @@ WEB = Path(__file__).resolve().parents[1]
 DIST = WEB / "dist"
 OUT = WEB / "spanish-preview-accessibility-qa"
 ROUTES = ("/es/news/", "/es/reports/")
-VIEWPORTS = ((320, 568), (390, 844), (768, 900), (1440, 900))
+VIEWPORTS = ((320, 568), (390, 844), (768, 900), (960, 900), (961, 900), (1440, 900))
 
 for route in ROUTES:
     assert (DIST / route.strip("/") / "index.html").is_file(), (
@@ -339,7 +339,7 @@ try:
                                 "User spacing obscures focus: " + selector + " " +
                                 json.dumps(state)
                             )
-                        if width <= 390:
+                        if width in (320, 390, 768):
                             page.screenshot(
                                 path=str(OUT / (label + "-" + str(width) + "-textspacing-fullpage.png")),
                                 full_page=True,
@@ -470,4 +470,4 @@ print("RESULT " + json.dumps({
     "real_browser_cookie": True, "vercel_deployed": False,
 }, sort_keys=True))
 assert not failures, "Compiled Spanish Preview accessibility regression failed"
-assert len(results) == 8, "Expected eight exact compiled route/viewport cases"
+assert len(results) == 12, "Expected twelve compiled route/viewport cases, including the 960px breakpoint"

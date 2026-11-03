@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import {
   REPOSITORY, REQUIRED_GENERATOR_STEPS, REQUIRED_CHECKS,
   beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
-  selectExactDailyPr, validateDailyContent, requireExactChecks,
+  selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
 } from './daily-news-auto-publish-policy.mjs';
 
 const auto = readFileSync(new URL('../../../.github/workflows/daily-news-auto-publish.yml', import.meta.url), 'utf8');
@@ -60,6 +60,16 @@ assert.throws(() => selectExactDailyPr([{ ...pr, draft: true }], run, base), /no
 assert.throws(() => selectExactDailyPr([{ ...pr, base: { ref: 'main', sha } }], run, base), /not-unique/);
 assert.throws(() => selectExactDailyPr([pr, pr], run, base), /not-unique/);
 assert.throws(() => selectExactDailyPr(Array(100).fill(pr), run, base), /incomplete/);
+const comparison = {
+  status: 'ahead', ahead_by: 1, behind_by: 0,
+  files: [{ filename: 'apps/web/src/content/news/2026-11-04.md', status: 'added' }],
+};
+assert.equal(isSingleGeneratorCommit(comparison, day), true);
+assert.equal(isSingleGeneratorCommit({ ...comparison, ahead_by: 2 }, day), false);
+assert.equal(isSingleGeneratorCommit({ ...comparison, behind_by: 1 }, day), false);
+assert.equal(isSingleGeneratorCommit({ ...comparison, files: [
+  ...comparison.files, { filename: '.github/workflows/other.yml', status: 'modified' },
+] }, day), false);
 const candidate = [
   '---',
   'title: "Daily USD Impact — November 4, 2026"',
@@ -136,6 +146,7 @@ assert.match(dep, /base-ref: \$\{\{ github\.event_name == 'workflow_dispatch'/);
 assert.match(dep, /head-ref: \$\{\{ github\.event_name == 'workflow_dispatch'/);
 assert.match(mainDaily, /gh workflow run quality\.yml --ref "\$branch"/);
 assert.doesNotMatch(mainDaily, /gh pr merge/);
+assert.match(runtime, /isSingleGeneratorCommit\(/);
 assert.match(runtime, /requireExactChecks\(/);
 assert.match(runtime, /previewReady\(/);
 assert.match(runtime, /ensureMorning\(\)/);

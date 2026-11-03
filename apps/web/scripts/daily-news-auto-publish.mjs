@@ -123,8 +123,13 @@ async function run() {
   const compare = api('compare/' + mainSha + '...' + headSha);
   if (!isSingleGeneratorCommit(compare, editionDate)) hold('pr-head-is-not-the-original-one-commit-generator-output');
   const files = api('pulls/' + prNumber + '/files?per_page=100');
-  if (!Array.isArray(files) || files.length !== 1) hold('unexpected-publication-file-scope');
-  const contentResult = api('contents/' + files[0].filename + '?ref=' + headSha);
+  const expectedPath = 'apps/web/src/content/news/' + editionDate + '.md';
+  if (!Array.isArray(files) || files.length !== 1
+      || files[0].filename !== expectedPath || files[0].status !== 'added') {
+    hold('unexpected-publication-file-scope');
+  }
+  // Build the source URL only from the verified ISO date, never from PR data.
+  const contentResult = api('contents/' + expectedPath + '?ref=' + headSha);
   if (contentResult.encoding !== 'base64') hold('unreadable-publication-file');
   const content = Buffer.from(contentResult.content, 'base64').toString('utf8');
   const counts = validateDailyContent(content, editionDate, files[0]);

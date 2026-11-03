@@ -37,3 +37,20 @@ The last read-only QA5 recorded successful negative cases A–D, but demonstrate
 | F2 trusted status provenance | HOLD |
 | F3 custom Preview domain | HOLD |
 | Original Score source rights and public content release | HOLD |
+
+
+## Assignment 7 follow-up and guarded original-body receipt (2026-11-03; newer evidence)
+
+**Independent Claude QA7:** Existing main-compatible #1089 blocked E/E3/F/G/H, E4/E5/E6, G2b and G3 in local exact Vercel-command builds. This was a Draft-containment PASS with conditions, not release authorization. Attack N4 demonstrated self-repinning the PR-owned build manifest along with changed source; N1b demonstrated a newly inserted Score value in an excluded News source. Focused #1090 remains Draft, superseded and unmerged.
+
+**N3 generated runtime roots:** The scanner now rejects pre-existing .vercel, .astro, .cache and coverage directories at its initial invocation, including staged .vercel/output. node_modules, dist and .git are still ignored. A clean Astro build creates .astro, so CI deletes only generated .astro *between* successive isolated builds; the actual npm/Vercel production command does not remove untrusted output. A real Vercel Preview must verify the builder does not precreate an incompatible directory.
+
+**Historical main body integrity:** GitHub's read-only evidence job compiled pinned original Production main d1740214f5737996f321a037efe3f2f7d21ecd64 and #1089. Exactly 16/16 report main bodies matched at SHA-256. The existing Score source baseline now embeds 16 original Production hash digests; the post-build rights guard checks those exact 13 Weekly and 3 Monthly main-body hashes and blocks tampering, removal and malformed output. Only hash digests were recorded, not report text. This remains a PR-owned baseline until F2 is independently protected.
+
+**F2 staging, not activation:** The F1d build-input and Score source/output guards now offer an absolute --root candidate directory argument. A future protected-main checkout can therefore use its own trusted source and baseline to evaluate the PR's source files. The N4 fixture shows why the earlier trusted manifest rejects a concurrent candidate self-repin. No trusted-base required-check or ruleset has been activated. A one-maintainer policy-only bootstrap/re-pin, auditable owner bypass and strict avoidance of unrelated content within bypass PRs require an explicit owner decision. Never execute untrusted PR scripts in a privileged pull_request_target context.
+
+**F3 custom-domain Preview evidence:** Vercel lists verified passkeys-dev.usd-impact.com as a branch-assigned custom project domain; the current alias points to a READY Preview-classified deployment. Project authentication is all_except_custom_domains. This corrects the project-wide claim that no custom-domain Preview exists, but does not prove held Score content is exposed. Unauthenticated browser evidence and a separate owner access-control decision remain necessary; do not alter passkeys, DNS or SSO in this Draft.
+
+**Owner editorial decisions:** The News/Catalyst dynamic exclusions protect Daily publication workflows but allow new Score numeric or regime claims to be inserted into News (Claude N1b). Choose either a narrowly scoped fail-closed prohibition on actual Score values/regime calls during rights HOLD, allowing generic methodology references, or formally record acceptance of the residual risk. Separately decide whether #1088's site-wide Spanish navigation link is intended under the existing Spanish/editorial holds.
+
+**All releases remain HOLD:** original Score Issue #155, H-15/H-16, F2 trusted checks, F3 real Preview and custom domain protection, CodeQL review, English/Spanish and media rights, Production merge, indexing, member access, commerce and customer email. Engineering receipt and QA do not grant new source rights.

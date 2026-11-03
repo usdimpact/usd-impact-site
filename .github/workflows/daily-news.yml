@@ -313,7 +313,7 @@ jobs:
             printf '%s\n\n%s\n\n%s\n' \
               '## Automated Daily USD Impact publication' \
               "This pull request contains the source-backed **${edition_date}** edition with status \`published\`." \
-              'The workflow validates this exact commit with Web quality, then stops for protected human editorial review and merge. A failed validation or build leaves the pull request open and does not change production.' \
+              'The generator validates this exact commit with Web quality and submits its PR to a separately gated automatic publisher. Any failing source, calendar, security, Preview or timing gate leaves the PR open for protected owner review; a failed validation or build never changes Production.' \
               > "$RUNNER_TEMP/daily-news-pr.md"
 
             pr_url="$(gh pr create \
@@ -355,8 +355,8 @@ jobs:
             echo "Web quality run $run_id concluded '${run_conclusion:-unknown}'; expected success."
             exit 1
           fi
-          echo 'Required PR-event checks, editorial facts/calendar review, Preview and exact-version release approval remain separate gates.'
-          echo "Daily USD Impact ${edition_date} passed Web quality and is ready for protected editorial review and merge: $pr_url"
+          echo 'Required exact-head security checks, original-source validation and Preview remain separate from generator success; the bounded auto-publisher may merge eligible morning editions only after them.'
+          echo "Daily USD Impact ${edition_date} passed Web quality and is ready for bounded automatic publication or protected owner review: $pr_url"
 
       - name: Report Daily failure gate
         if: failure() && (steps.preflight.outcome == 'failure' || steps.config.outputs.configured == 'true')

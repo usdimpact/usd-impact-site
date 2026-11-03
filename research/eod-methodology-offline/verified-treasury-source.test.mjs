@@ -144,7 +144,7 @@ test('odd cardinality, invalid date fields and huge responses fail closed', () =
 
 test('injected issuer fetch verifies exact URL, status, content type and no redirect', async () => {
   const calls=[];
-  const x=await fetchTreasuryCandidate({day:DAY,asOfUtc:AS_OF,fetchImpl:async(url,options)=>{
+  const x=await fetchTreasuryCandidate({day:DAY,clock:()=>new Date(AS_OF),fetchImpl:async(url,options)=>{
     calls.push({url,options});return response();
   }});
   assert.equal(calls.length,1);
@@ -166,23 +166,59 @@ test('issuer fetch rejects wrong URL, redirect, HTTP status and HTML', async () 
   ];
   for(const changes of bad) {
     await assert.rejects(()=>fetchTreasuryCandidate({
-      day:DAY,asOfUtc:AS_OF,fetchImpl:async()=>response(xmlRows(),changes)
+      day:DAY,clock:()=>new Date(AS_OF),fetchImpl:async()=>response(xmlRows(),changes)
     }), /issuer|redirect|HTTP|content type|length/);
   }
 });
 
 test('issuer fetch refuses implicit network permissions', async () => {
-  await assert.rejects(()=>fetchTreasuryCandidate({day:DAY,asOfUtc:AS_OF}),/explicit issuer fetch/);
+  await assert.rejects(()=>fetchTreasuryCandidate({day:DAY,clock:()=>new Date(AS_OF)}),/explicit issuer fetch/);
 });
 
 test('parser does not bless real provider claims merely because request was mocked', async () => {
-  const x=await fetchTreasuryCandidate({day:DAY,asOfUtc:AS_OF,fetchImpl:async()=>response()});
+  const x=await fetchTreasuryCandidate({day:DAY,clock:()=>new Date(AS_OF),fetchImpl:async()=>response()});
   assert.equal(x.record.source.source_rights_status,'SEPARATE_LEGAL_EDITORIAL_REVIEW_REQUIRED');
   assert.equal(x.record.publisher_release_verification_pending,true);
   assert.equal(x.record.human_editorial_review_required,true);
   assert.equal(x.record.permitted_claim_class,'DATED_ISSUER_OBSERVATIONS_AND_ARITHMETIC_ONLY');
   assert.equal(x.record.interpretation_level,'NO_CAUSAL_INFERENCE');
   assert.equal(x.record.existing_news_workflow_untouched,true);
+});
+
+test('response capture time is stamped after the source bytes were read', async () => {
+  let calls = 0;
+  const clock = () => new Date(++calls === 1 ? AS_OF : '2026-11-03T22:43:00Z');
+  const x = await fetchTreasuryCandidate({day:DAY,clock,fetchImpl:async()=>response()});
+  assert.equal(calls, 2);
+  assert.equal(x.record.captured_as_of_utc, '2026-11-03T22:43:00.000Z');
+});
+
+test('source completed after New York midnight cannot be backdated', async () => {
+  let calls = 0;
+  const clock = () => new Date(++calls === 1 ? AS_OF : '2026-11-04T05:15:00Z');
+  await assert.rejects(()=>fetchTreasuryCandidate({
+    day:DAY,clock,fetchImpl:async()=>response()
+  }), /match New York/);
+});
+
+test('streaming source length is bounded before buffering any oversized response', async () => {
+  let sent = false;
+  const stream = {getReader:()=>({read:async()=> {
+    if(sent) return {done:true};
+    sent = true; return {done:false,value:new Uint8Array(500001)};
+  }})};
+  await assert.rejects(()=>fetchTreasuryCandidate({
+    day:DAY,clock:()=>new Date(AS_OF),
+    fetchImpl:async()=>response(xmlRows(),{body:stream})
+  }),/stream exceeds bounded/);
+});
+
+test('fixture inputs cannot forge exact official-issuer transport status', () => {
+  const x = buildTreasuryCandidate({
+    xml:xmlRows(),day:DAY,asOfUtc:AS_OF,transport:'EXACT_ISSUER_RESPONSE'
+  });
+  assert.equal(x.record.source.transport,'UNVERIFIED_FIXTURE');
+  assert.equal(x.record.source.public_redistribution_rights_granted,false);
 });
 
 test('cannot render as an approved public article or in an unapproved language', () => {

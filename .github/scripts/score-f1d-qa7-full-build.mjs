@@ -212,3 +212,53 @@ console.log('QA9_B8_B9_ACTUAL_HEAD_REPIN_JSON='+JSON.stringify({headPass,
   exactBuild:command,rights:'HOLD',f2:'UNTRUSTED_PR_OWNED',attacks:headAttacks}));
 if(!headPass)process.exitCode=1;
 
+// QA10 B10: genuine local Astro build with the candidate's BaseLayout source
+// hash deliberately self-repinned. An out-of-body visible Score paragraph
+// must reach isolated dist, and fail specifically at whole-document built
+// rights verification, not at an unrelated validator or source freeze.
+function attemptRePinnedDocumentTail(mode) {
+  const layoutFile=path.join(root,layoutRelative);
+  const manifestFile=path.join(root,closureRelative);
+  const originalLayout=fs.readFileSync(layoutFile,'utf8');
+  const originalManifest=fs.readFileSync(manifestFile,'utf8');
+  const anchor='  </body>\n</html>';
+  const marker='QA10-B10-OUTSIDE-BODY-SCORE-9.99';
+  let outcome;
+  try {
+    assert.ok(originalLayout.includes(anchor),'QA10 B10 expected Astro outer document tail');
+    const modified=originalLayout.replace(anchor,
+      '  </body>\n    {Astro.url.pathname.startsWith("/reports/") && <p>'+marker+'</p>}\n</html>');
+    fs.writeFileSync(layoutFile,modified,'utf8');
+    const manifest=JSON.parse(originalManifest);
+    assert.ok(manifest.pinned_files?.[layoutRelative],'QA10 layout must have an F1d source pin');
+    manifest.pinned_files[layoutRelative]=gitBlobSha1(Buffer.from(modified));
+    fs.writeFileSync(manifestFile,JSON.stringify(manifest,null,2)+'\n');
+    fs.rmSync(path.join(root,'dist'),{recursive:true,force:true});
+    const result=run(mode);
+    const generated=path.join(root,historic);
+    const html=fs.existsSync(generated)?fs.readFileSync(generated,'utf8'):'';
+    const logs=(result.stdout??'')+'\n'+(result.stderr??'');
+    const rightsDenied=logs.includes('Score-derived source rights HOLD check FAILED')
+      &&logs.includes('Changed Draft-frozen historical Score complete document on rights HOLD');
+    const inputRepinAccepted=!logs.includes('Score F1d build-input closure FAIL');
+    const locallyRendered=html.includes(marker);
+    outcome={case:'B10',mode,exit:result.status,signal:result.signal,
+      sourceRepinAccepted:inputRepinAccepted,scoreDocumentGuardDenied:rightsDenied,
+      alteredHtmlInLocalDist:locallyRendered,
+      accepted:result.status!==0&&!result.signal&&rightsDenied&&inputRepinAccepted&&locallyRendered,
+      logs:printFailure(logs)};
+    console.log('QA10_B10_ACTUAL_BUILD '+JSON.stringify(outcome));
+  }finally {
+    fs.writeFileSync(layoutFile,originalLayout,'utf8');
+    fs.writeFileSync(manifestFile,originalManifest,'utf8');
+    fs.rmSync(path.join(root,'dist'),{recursive:true,force:true});
+    fs.rmSync(path.join(root,'.astro'),{recursive:true,force:true});
+  }
+  return outcome;
+}
+const b10=attemptRePinnedDocumentTail('preview');
+console.log('QA10_B10_ACTUAL_DOCUMENT_REPIN_JSON='+JSON.stringify({accepted:b10.accepted,
+  exactBuild:command,rights:'HOLD',f2:'UNTRUSTED_PR_OWNED',case:b10}));
+if(!b10.accepted)process.exitCode=1;
+
+

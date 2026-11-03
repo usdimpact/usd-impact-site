@@ -185,6 +185,229 @@ export function checkBuiltScoreArtifacts(baseline, distRoot) {
   return failures;
 }
 
+// Rights-HOLD provenance: 16 historical report main-body hashes obtained by
+// compiling pinned Production main d1740214 and comparing the candidate under
+// the exact Vercel command. This protects outputs even when source pins are
+// changed, but trusted-base enforcement (F2) is a separate required gate.
+export function checkFrozenHistoricalMainBodies(inventory,distRoot) {
+  const failures=[];
+  const historical=inventory?.rendered_main_sha256;
+  const sourceNames=Object.keys(inventory?.existing_reports??{});
+  const names=sourceNames.map(name=>{
+    const match=/^(weekly|monthly)-reports\/(\d{4}-\d{2}-\d{2})\.md$/.exec(name);
+    return match?'reports/'+match[1]+'/'+match[2]:null;
+  });
+  const digests=historical?.sha256;
+  if(!historical||historical.source_main_commit!=='d1740214f5737996f321a037efe3f2f7d21ecd64'
+    ||historical.algorithm!=='sha256_of_html_main_inner_fragment_exact_utf8'
+    ||!digests||typeof digests!=='object'||Array.isArray(digests)
+    ||names.length!==16||names.some(name=>!name)
+    ||Object.keys(digests).length!==16
+    ||names.some(name=>!Object.hasOwn(digests,name)
+      ||!/^[a-f0-9]{64}$/.test(digests[name]))) {
+    return ['Missing or invalid original Production historical Score body hash inventory'];
+  }
+  if(!distRoot||!fs.existsSync(distRoot))return ['Missing compiled Score output tree for historical body integrity'];
+  for(const name of names) {
+    const target=path.join(distRoot,name,'index.html');
+    let html;
+    try {
+      if(!fs.lstatSync(target).isFile()||fs.lstatSync(target).isSymbolicLink())
+        throw Error('not a real HTML file');
+      html=fs.readFileSync(target,'utf8');
+    }catch {
+      failures.push('Missing historical Score report body on rights HOLD: '+name);
+      continue;
+    }
+    const matches=[...html.matchAll(/<main\b[^>]*>([\s\S]*?)<\/main\s*>/gi)];
+    if(matches.length!==1) {
+      failures.push('Unexpected historical Score report main-body structure: '+name);
+      continue;
+    }
+    const digest=createHash('sha256').update(Buffer.from(matches[0][1],'utf8')).digest('hex');
+    if(digest!==digests[name])
+      failures.push('Changed original Production historical Score report main-body on rights HOLD: '+name);
+  }
+  return failures;
+}
+
+// P1-A partial closure: the immutable original Score body ledger protects <main>,
+// but some original Score summary facts render in the report hero, outside main.
+// Pin those original-main hero and metadata regions plus 13 weekly + 13 progress
+// newsletter JSON artifacts. The COMPLETE body intentionally stays HOLD: all
+// 16 original-main vs current integration whole-body hashes differ, and owner
+// has not approved those global-shell differences. F2 policy is still PR-owned.
+const scoreRegionSha256=(value)=>createHash('sha256').update(value).digest('hex');
+function normalizeHeldScoreHtmlAttributes(value) {
+  return value.replace(/<[a-z][^>]*>/gi,tag=>tag
+    .replace(/(\snonce\s*=\s*)(?:"[^"]*"|'[^']*')/gi,'$1"__CSP_NONCE__"')
+    .replace(/(\sintegrity\s*=\s*)(?:"[^"]*"|'[^']*')/gi,'$1"__SRI_VALUE__"'));
+}
+function scoreHtmlAttributes(tag) {
+  const values=new Map();
+  for(const field of tag.matchAll(/([a-z][a-z0-9:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)){
+    const name=field[1].toLowerCase();
+    if(values.has(name))throw Error('Duplicate report HTML attribute: '+name);
+    values.set(name,field[2]??field[3]??'');
+  }
+  return values;
+}
+export function digestFrozenScoreEnvelope(html) {
+  if(typeof html!=='string')throw Error('Historical Score HTML required');
+  const one=(items,label)=>{
+    if(items.length!==1)throw Error('Historical Score requires one '+label);
+    return items[0];
+  };
+  const body=one([...html.matchAll(/<body\b[^>]*>[\s\S]*?<\/body\s*>/gi)].map(m=>m[0]),'body');
+  const head=one([...html.matchAll(/<head\b[^>]*>[\s\S]*?<\/head\s*>/gi)].map(m=>m[0]),'head');
+  const hero=one([...html.matchAll(/<section\b[^>]*>[\s\S]*?<\/section\s*>/gi)]
+    .map(m=>m[0])
+    .filter(section=>/^<section\b[^>]*class\s*=\s*(?:"[^"]*reports-hero[^"]*"|'[^']*reports-hero[^']*')/i.test(section)),
+    'report hero');
+  const title=one([...html.matchAll(/<title\b[^>]*>[\s\S]*?<\/title\s*>/gi)].map(m=>m[0]),'title');
+  const desc=one([...html.matchAll(/<meta\b[^>]*>/gi)]
+    .map(m=>m[0]).filter(meta=>scoreHtmlAttributes(meta).get('name')?.toLowerCase()==='description'),
+    'description meta tag');
+  const jsonld=[...html.matchAll(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi)]
+    .map(m=>m[0]).filter(script=>{
+      const opening=/^<script\b[^>]*>/i.exec(script);
+      return opening&&scoreHtmlAttributes(opening[0]).get('type')?.toLowerCase()==='application/ld+json';
+    }).map(normalizeHeldScoreHtmlAttributes);
+  return {
+    body:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(body)),
+    document:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(html)),
+    head:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(head)),
+    hero:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(hero)),
+    title:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(title)),
+    meta_description:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(desc)),
+    jsonld:scoreRegionSha256(JSON.stringify(jsonld)),
+    jsonld_count:jsonld.length,
+  };
+}
+export function checkFrozenScorePublishedEnvelope(inventory,distRoot) {
+  const failures=[];
+  const frozen=inventory?.rendered_score_envelope_sha256;
+  const sourceReports=Object.keys(inventory?.existing_reports??{});
+  const reportNames=sourceReports.map(x=>{
+    const m=/^(weekly|monthly)-reports\/(\d{4}-\d{2}-\d{2})\.md$/.exec(x);
+    return m?'reports/'+m[1]+'/'+m[2]:null;
+  }).sort();
+  const weeklyDates=sourceReports.map(x=>/^weekly-reports\/(\d{4}-\d{2}-\d{2})\.md$/.exec(x)?.[1]).filter(Boolean).sort();
+  const expectedJson=weeklyDates.flatMap(d=>['newsletter/weekly/'+d+'.json','newsletter/progress/'+d+'.json']).sort();
+  const actualReports=Object.keys(frozen?.reports??{}).sort();
+  const actualJson=Object.keys(frozen?.newsletter_json??{}).sort();
+  const expectedBody=Object.keys(frozen?.original_whole_body_reference_sha256??{}).sort();
+  const draftWholeBody=frozen?.draft_containment_whole_body_sha256;
+  const draftBodyNames=Object.keys(draftWholeBody?.sha256??{}).sort();
+  const draftWholeHead=frozen?.draft_containment_whole_head_sha256;
+  const draftHeadNames=Object.keys(draftWholeHead?.sha256??{}).sort();
+  const originalHeadNames=Object.keys(frozen?.original_whole_head_reference_sha256??{}).sort();
+  const draftWholeDocument=frozen?.draft_containment_whole_document_sha256;
+  const draftDocumentNames=Object.keys(draftWholeDocument?.sha256??{}).sort();
+  const originalDocumentNames=Object.keys(frozen?.original_whole_document_reference_sha256??{}).sort();
+  const shaOk=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
+  if(!frozen||frozen.source_main_commit!=='d1740214f5737996f321a037efe3f2f7d21ecd64'
+    ||frozen.normalization!=='HTML_ATTR_NONCE_INTEGRITY_VALUE_ONLY_V1'
+    ||frozen.region_algorithm!=='SHA256_HTML_REPORT_HERO_TITLE_META_JSONLD_AND_RAW_NEWSLETTER_JSON_V1'
+    ||frozen.whole_body_release_status!=='HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN'
+    ||reportNames.length!==16||reportNames.some(x=>!x)
+    ||weeklyDates.length!==13||expectedJson.length!==26
+    ||actualReports.join('|')!==reportNames.join('|')
+    ||actualJson.join('|')!==expectedJson.join('|')
+    ||expectedBody.join('|')!==reportNames.join('|')
+    ||!draftWholeBody
+    ||draftWholeBody.evidence_commit!=='6af6c6ce62eb86bb3712a6b7f6d977777ff86761'
+    ||draftWholeBody.evidence_workflow_run!==41689499564
+    ||draftWholeBody.scope!=='DRAFT_ONLY_BYTE_INTEGRITY_NOT_ORIGINAL_MAIN_LICENSE'
+    ||draftWholeBody.classification_match!=='PRODUCTION_PREVIEW_16_OF_16'
+    ||draftBodyNames.join('|')!==reportNames.join('|')
+    ||!draftBodyNames.every(name=>shaOk(draftWholeBody.sha256[name])
+      &&draftWholeBody.sha256[name]!==frozen.original_whole_body_reference_sha256[name])
+    ||!draftWholeHead
+    ||draftWholeHead.evidence_commit!=='3d7694260f29d16eb67bd83f65c12e8ca1cee7c3'
+    ||draftWholeHead.evidence_workflow_run!==41695519712
+    ||draftWholeHead.scope!=='DRAFT_ONLY_HEAD_INTEGRITY_NOT_ORIGINAL_MAIN_LICENSE'
+    ||draftWholeHead.classification_match!=='PRODUCTION_PREVIEW_16_OF_16'
+    ||frozen.whole_head_release_status!=='HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN'
+    ||originalHeadNames.join('|')!==reportNames.join('|')
+    ||draftHeadNames.join('|')!==reportNames.join('|')
+    ||!draftHeadNames.every(name=>shaOk(draftWholeHead.sha256[name])
+      &&shaOk(frozen.original_whole_head_reference_sha256[name])
+      &&draftWholeHead.sha256[name]!==frozen.original_whole_head_reference_sha256[name])
+    ||!draftWholeDocument
+    ||draftWholeDocument.evidence_commit!=='cdaa9a4de861f36088a9b1308f96afe7b8ac220e'
+    ||draftWholeDocument.evidence_workflow_run!==41701921845
+    ||draftWholeDocument.scope!=='DRAFT_ONLY_COMPLETE_DOCUMENT_NOT_ORIGINAL_MAIN_LICENSE'
+    ||draftWholeDocument.classification_match!=='PRODUCTION_PREVIEW_16_OF_16'
+    ||frozen.whole_document_release_status!=='HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN'
+    ||originalDocumentNames.join('|')!==reportNames.join('|')
+    ||draftDocumentNames.join('|')!==reportNames.join('|')
+    ||!draftDocumentNames.every(name=>shaOk(draftWholeDocument.sha256[name])
+      &&shaOk(frozen.original_whole_document_reference_sha256[name])
+      &&draftWholeDocument.sha256[name]!==frozen.original_whole_document_reference_sha256[name])
+    ||!actualReports.every(name=>{
+      const r=frozen.reports[name];
+      return r&&['hero','title','meta_description','jsonld'].every(key=>shaOk(r[key]))
+        &&Number.isInteger(r.jsonld_count)&&r.jsonld_count>=0
+        &&shaOk(frozen.original_whole_body_reference_sha256[name]);
+    })
+    ||!actualJson.every(name=>shaOk(frozen.newsletter_json[name]))) {
+    return ['Invalid original Production Score hero, metadata or newsletter digest ledger'];
+  }
+  if(!distRoot||!fs.existsSync(distRoot))return ['Missing output tree for original Score regions'];
+  const readRegular=filename=>{
+    const meta=fs.lstatSync(filename);
+    if(!meta.isFile()||meta.isSymbolicLink()||meta.size>16*1024*1024)
+      throw Error('not a regular bounded output');
+    return fs.readFileSync(filename);
+  };
+  for(const name of reportNames) {
+    let actual;
+    try {actual=digestFrozenScoreEnvelope(readRegular(path.join(distRoot,name,'index.html')).toString('utf8'));}
+    catch(err){failures.push('Missing/malformed historical Score envelope on rights HOLD: '+name);continue;}
+    const golden=frozen.reports[name];
+    // This Draft body snapshot is separate from original pinned Production.
+    // It detects changed output anywhere in the page body, without treating
+    // #1088's unapproved navigation differences as release permission.
+    if(actual.body!==draftWholeBody.sha256[name])
+      failures.push('Changed Draft-frozen historical Score whole body on rights HOLD: '+name);
+    // B8/B9: reject unapproved head additions (Open Graph, link titles, etc.)
+    // even when the Score source closure was legitimately re-pinned.
+    if(actual.head!==draftWholeHead.sha256[name])
+      failures.push('Changed Draft-frozen historical Score whole head on rights HOLD: '+name);
+    // B10: browsers can move text following </body> into rendered content.
+    // Hash the entire raw HTML document, including bytes outside <head>/<body>.
+    // This Draft-only check is not a trusted F2 release gate.
+    if(actual.document!==draftWholeDocument.sha256[name])
+      failures.push('Changed Draft-frozen historical Score complete document on rights HOLD: '+name);
+    for(const field of ['hero','title','meta_description','jsonld','jsonld_count']) {
+      if(actual[field]!==golden[field])
+        failures.push('Changed original Production historical Score '+field+' on rights HOLD: '+name);
+    }
+    // Original-vs-Draft whole-body mismatch remains owner HOLD even when
+    // this within-Draft integrity comparison passes.
+  }
+  for(const family of ['weekly','progress']) {
+    try {
+      const dirname=path.join(distRoot,'newsletter',family);
+      const st=fs.lstatSync(dirname);
+      if(!st.isDirectory()||st.isSymbolicLink())throw Error('invalid output family');
+      const current=fs.readdirSync(dirname).sort();
+      const allowed=weeklyDates.map(d=>d+'.json').sort();
+      if(current.join('|')!==allowed.join('|'))
+        failures.push('Unapproved original Score newsletter JSON artifact list: '+family);
+    } catch {failures.push('Missing original Score newsletter JSON family: '+family);}
+  }
+  for(const name of expectedJson) {
+    try{
+      const actual=scoreRegionSha256(readRegular(path.join(distRoot,name)));
+      if(actual!==frozen.newsletter_json[name])
+        failures.push('Changed original Production historical Score newsletter JSON on rights HOLD: '+name);
+    }catch {failures.push('Missing/unreadable original Score newsletter JSON: '+name);}
+  }
+  return failures;
+}
+
 export function verifyCurrentScoreHold(root=webRoot) {
   const inventory=JSON.parse(fs.readFileSync(baselineFile,'utf8'));
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'scripts/score-rights-consumer-manifest.json'),'utf8'));
@@ -199,11 +422,36 @@ export function verifyCurrentScoreHold(root=webRoot) {
   ];
 }
 
+// Staged F2 trusted checkout interface. When this module is invoked from a
+// separate protected-base checkout, --root points at candidate web files;
+// rights ledger, verifier and golden digests stay anchored to this module.
+// Current Draft workflows do NOT constitute independent trusted F2 enforcement.
+export function selectTrustedScoreSourceRoot(argv=process.argv,defaultRoot=webRoot) {
+  const indices=argv.flatMap((arg,i)=>arg==='--root'?[i]:[]);
+  if(indices.length>1)throw Error('Score --root may occur only once');
+  if(!indices.length)return defaultRoot;
+  const value=argv[indices[0]+1];
+  if(typeof value!=='string'||!path.isAbsolute(value)||value.startsWith('-'))
+    throw Error('Score --root requires a single absolute candidate web path');
+  const target=path.resolve(value);
+  if(!fs.lstatSync(target).isDirectory()||fs.lstatSync(target).isSymbolicLink())
+    throw Error('Score --root must name a real directory');
+  return target;
+}
+
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  const failures=verifyCurrentScoreHold();
-  if(process.argv.includes('--built')){
-    const inventory=JSON.parse(fs.readFileSync(baselineFile,'utf8'));
-    failures.push(...checkBuiltScoreArtifacts(inventory,path.join(webRoot,'dist')));
+  let failures=[];
+  try {
+    const sourceRoot=selectTrustedScoreSourceRoot();
+    failures=verifyCurrentScoreHold(sourceRoot);
+    if(process.argv.includes('--built')){
+      const inventory=JSON.parse(fs.readFileSync(baselineFile,'utf8'));
+      failures.push(...checkBuiltScoreArtifacts(inventory,path.join(sourceRoot,'dist')));
+      failures.push(...checkFrozenHistoricalMainBodies(inventory,path.join(sourceRoot,'dist')));
+      failures.push(...checkFrozenScorePublishedEnvelope(inventory,path.join(sourceRoot,'dist')));
+    }
+  }catch(err){
+    failures.push('Score trusted source/root evaluation failed: '+String(err?.message||err));
   }
   if(failures.length){
     console.error('Score-derived source rights HOLD check FAILED:\n- '+failures.join('\n- '));

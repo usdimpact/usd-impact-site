@@ -3,10 +3,13 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import {
   gitBlobSha1, evaluateScoreContentFreeze, verifyCurrentScoreHold, collectScoreContents,
-  checkScoreLoaderContract, checkBuiltScoreArtifacts, PINNED_SCORE_LOADERS,
+  checkScoreLoaderContract, checkBuiltScoreArtifacts, checkFrozenHistoricalMainBodies,
+  checkFrozenScorePublishedEnvelope, digestFrozenScoreEnvelope,
+  selectTrustedScoreSourceRoot, PINNED_SCORE_LOADERS,
   PINNED_SCORE_CONTENT_CONFIG_BLOB,
 } from './score-held-report-source-guard.mjs';
 
@@ -281,3 +284,226 @@ try {
 console.log('Score rights N4 PASS: structurally valid manually prepared Score Monthly accepted by schema validator but REJECTED by new rights/source baseline; existing historical sources unchanged');
 
 console.log('Score rights F1b PASS: pinned loaders; redirected/extra loaders and new report/newsletter/sitemap dates rejected; removal-only allowed');
+
+
+// P1-2: trusted Production main-body SHA256 comparison on all 16 report routes.
+// Disposable outputs ensure no third-party provider report is republished here.
+{
+  const original=JSON.parse(fs.readFileSync(new URL('./score-held-report-source-baseline.json',import.meta.url),'utf8'));
+  assert.equal(Object.keys(original.rendered_main_sha256?.sha256??{}).length,16,
+    'original pinned Production main-body ledger must contain 16 digests');
+  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'score-original-main-body-'));
+  const expected={};
+  const sourceNames=Object.keys(original.existing_reports);
+  try{
+    for(const source of sourceNames){
+      const match=/^(weekly|monthly)-reports\/(\d{4}-\d{2}-\d{2})\.md$/.exec(source);
+      assert.ok(match,'unknown original Score source path');
+      const route='reports/'+match[1]+'/'+match[2];
+      const inner='fixture historical immutable Score body '+route;
+      const filename=path.join(temp,route,'index.html');
+      fs.mkdirSync(path.dirname(filename),{recursive:true});
+      fs.writeFileSync(filename,'<!doctype html><html><main id="primary">'+inner+'</main></html>');
+      expected[route]=createHash('sha256').update(Buffer.from(inner,'utf8')).digest('hex');
+    }
+    const fixture={...original,rendered_main_sha256:{
+      ...original.rendered_main_sha256,
+      sha256:expected,
+    }};
+    const verify=()=>checkFrozenHistoricalMainBodies(fixture,temp);
+    assert.deepEqual(verify(),[],'16 original historical main-body fixture digests must pass');
+    const sample=Object.keys(expected).find(name=>name.includes('weekly/'));
+    const target=path.join(temp,sample,'index.html');
+    const clean=fs.readFileSync(target,'utf8');
+    fs.writeFileSync(target,clean.replace('immutable Score body','modified Score body'));
+    assert.ok(verify().some(x=>x.includes('Changed original Production historical Score report main-body')),
+      'N4 changed historical rendered content MUST fail even after input re-pin');
+    fs.writeFileSync(target,clean);
+    fs.writeFileSync(target,clean.replace('<main','<article').replace('</main>','</article>'));
+    assert.ok(verify().some(x=>x.includes('main-body structure')),
+      'malformed HTML main structure MUST fail');
+    fs.writeFileSync(target,clean);
+    fs.rmSync(target);
+    assert.ok(verify().some(x=>x.includes('Missing historical Score report body')),
+      'missing historical body MUST fail during rights HOLD');
+    fs.writeFileSync(target,clean);
+    const forged={...fixture,rendered_main_sha256:{...fixture.rendered_main_sha256,
+      source_main_commit:'a'.repeat(40)}};
+    assert.ok(checkFrozenHistoricalMainBodies(forged,temp).some(x=>x.includes('invalid original')),
+      'mismatched original Production anchor MUST fail');
+    assert.deepEqual(verify(),[],'recover clean historical body fixture after adversarial tests');
+  }finally{fs.rmSync(temp,{recursive:true,force:true});}
+}
+console.log('Score F1d historical body hashes PASS: 16 pinned original Production main digests and tampered/missing/malformed/forged negatives');
+
+
+// F2 staged trusted-source CLI validation (not an activated protected main check).
+{
+  const originalSite=fileURLToPath(new URL('../',import.meta.url));
+  assert.equal(selectTrustedScoreSourceRoot(['node','script'],originalSite),originalSite);
+  assert.equal(selectTrustedScoreSourceRoot(['node','script','--root',originalSite]),path.resolve(originalSite));
+  assert.throws(()=>selectTrustedScoreSourceRoot(['node','script','--root','relative'],originalSite),
+    /absolute candidate web path/);
+  assert.throws(()=>selectTrustedScoreSourceRoot(['node','script','--root',originalSite,'--root',originalSite]),
+    /only once/);
+}
+console.log('Score F2 staged trusted-source --root parser PASS (no GitHub ruleset or required check activated)');
+
+
+// P1-A B1/B6/B7 beyond-main rendered publication negatives.
+// All artifacts are synthetic, temporary, with no new source licence or release.
+// The input freeze is deliberately treated as self-repinned/green in this test:
+// the separate built rights ledger must independently reject altered output.
+{
+  const original=JSON.parse(fs.readFileSync(new URL('./score-held-report-source-baseline.json',import.meta.url),'utf8'));
+  const base=original.rendered_score_envelope_sha256;
+  assert.equal(Object.keys(base?.reports??{}).length,16,'pin 16 historical hero+metadata receipts');
+  assert.equal(Object.keys(base?.newsletter_json??{}).length,26,'pin 26 weekly/progress JSON receipts');
+  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'score-p1a-regions-'));
+  const routes=Object.keys(base.reports).sort();
+  const weeklyDates=Object.keys(original.existing_reports)
+    .map(n=>/^weekly-reports\/(\d{4}-\d{2}-\d{2})\.md$/.exec(n)?.[1]).filter(Boolean);
+  const sha256=b=>createHash('sha256').update(b).digest('hex');
+  const files={};
+  const goldenReports={},goldenBody={},goldenHead={},goldenDocument={},originalMainBodies={},originalMainHeads={},originalMainDocuments={},goldenJson={};
+  const template=(name)=>'<!doctype html><html><head><title>Original '+name+
+    '</title><meta name="description" content="Original report description">'+
+    '<script type="application/ld+json">{"source":"pinned fixture"}</script></head>'+
+    '<body><nav>Provisional shell</nav><section class="hero reports-hero">'+
+    '<p>USD Impact Score was −0.53</p></section>'+
+    '<main><h1>Original report body</h1></main></body></html>';
+  const write=(rel,text)=>{
+    const target=path.join(tmp,rel);
+    fs.mkdirSync(path.dirname(target),{recursive:true});
+    fs.writeFileSync(target,text,'utf8');files[rel]=text;return target;
+  };
+  try {
+    for(const route of routes) {
+      const html=template(route);
+      write(route+'/index.html',html);
+      const dig=digestFrozenScoreEnvelope(html);
+      const {body,head,document,...regions}=dig;
+      goldenReports[route]=regions;goldenBody[route]=body;goldenHead[route]=head;goldenDocument[route]=document;
+      originalMainBodies[route]=sha256(Buffer.from('distinct original Production whole body '+route));
+      originalMainHeads[route]=sha256(Buffer.from('distinct original Production whole head '+route));
+      originalMainDocuments[route]=sha256(Buffer.from('distinct original Production complete document '+route));
+    }
+    for(const family of ['weekly','progress'])for(const date of weeklyDates){
+      const rel='newsletter/'+family+'/'+date+'.json';
+      const json=JSON.stringify({date,family,value:'original synthetic snapshot'})+'\n';
+      write(rel,json);goldenJson[rel]=sha256(Buffer.from(json));
+    }
+    const safe={...original,rendered_score_envelope_sha256:{
+      ...base,reports:goldenReports,newsletter_json:goldenJson,
+      original_whole_body_reference_sha256:originalMainBodies,
+      original_whole_head_reference_sha256:originalMainHeads,
+      original_whole_document_reference_sha256:originalMainDocuments,
+      draft_containment_whole_document_sha256:{
+        ...base.draft_containment_whole_document_sha256,
+        sha256:goldenDocument,
+      },
+      draft_containment_whole_head_sha256:{
+        ...base.draft_containment_whole_head_sha256,
+        sha256:goldenHead,
+      },
+      draft_containment_whole_body_sha256:{
+        ...base.draft_containment_whole_body_sha256,
+        sha256:goldenBody,
+      },
+    }};
+    const verify=()=>checkFrozenScorePublishedEnvelope(safe,tmp);
+    assert.deepEqual(verify(),[],'clean 16+26 generated artifacts must pass');
+
+    const weekly=routes.find(name=>name.startsWith('reports/weekly/'));
+    const htmlRel=weekly+'/index.html';
+    write(htmlRel,files[htmlRel].replace('Score was −0.53','Score was −0.35'));
+    assert.ok(verify().some(x=>x.includes('historical Score hero')),
+      'B1 Score value outside main MUST fail despite candidate source re-pin');
+    write(htmlRel,template(weekly));
+
+    write(htmlRel,files[htmlRel].replace('<title>Original','<title>Changed'));
+    assert.ok(verify().some(x=>x.includes('historical Score title')),
+      'B6 changed title MUST fail even when historical main content is unchanged');
+    write(htmlRel,template(weekly));
+
+    write(htmlRel,files[htmlRel].replace('Original report description','Changed report description'));
+    assert.ok(verify().some(x=>x.includes('meta_description')),
+      'changed description MUST fail');
+    write(htmlRel,template(weekly));
+
+    write(htmlRel,files[htmlRel].replace('pinned fixture','malicious Score rewrite'));
+    assert.ok(verify().some(x=>x.includes('historical Score jsonld')),
+      'changed JSON-LD MUST fail');
+    write(htmlRel,template(weekly));
+
+    const jsonRel='newsletter/weekly/'+weeklyDates[0]+'.json';
+    write(jsonRel,files[jsonRel].replace('original synthetic snapshot','modified Score 9.99'));
+    assert.ok(verify().some(x=>x.includes('historical Score newsletter JSON')),
+      'B7 changed historical newsletter JSON MUST fail');
+    write(jsonRel,JSON.stringify({date:weeklyDates[0],family:'weekly',value:'original synthetic snapshot'})+'\n');
+
+    // A changed navigation shell remains outside the currently accepted
+    // original-main regions. Record the limitation, do not claim FULL BODY pass.
+    // B8/B9 head-only bypass negatives. Previously these passed the
+    // candidate-owned built check after re-pinning the source closure.
+    const baselineHeadAndBody=digestFrozenScoreEnvelope(template(weekly));
+    for(const [label,insertion] of [
+      ['B8', '<meta property="og:description" content="USD Impact Score was −0.35">'],
+      ['B9', '<link rel="alternate" href="/independent-source" title="Weekly Score: 9.99/10">'],
+    ]) {
+      const changed=template(weekly).replace('</head>',insertion+'</head>');
+      const digest=digestFrozenScoreEnvelope(changed);
+      for(const field of ['body','hero','title','meta_description','jsonld','jsonld_count'])
+        assert.equal(digest[field],baselineHeadAndBody[field],
+          label+' changes only previously unguarded head content');
+      assert.notEqual(digest.head,baselineHeadAndBody.head,
+        label+' MUST change the complete head digest');
+      write(htmlRel,changed);
+      assert.ok(verify().some(x=>x.includes('Changed Draft-frozen historical Score whole head')),
+        label+' MUST fail specifically at the new built whole-head guard');
+      write(htmlRel,template(weekly));
+    }
+    assert.deepEqual(verify(),[],'B8/B9 temporary head injection restored');
+
+    write(htmlRel,files[htmlRel].replace('Provisional shell','Changed global shell'));
+    assert.ok(verify().some(x=>x.includes('Changed Draft-frozen historical Score whole body')),
+      'new Draft-frozen whole-body digest MUST block changed navigation shell');
+    write(htmlRel,template(weekly));
+    // B10 complete document bypass: old head/body hashers missed Score text
+    // following the closing body tag. HTML parsers may relocate the text into
+    // their rendered body; its raw document bytes must still be rejected.
+    for(const [attack,edited] of [
+      ['B10','</body><p>QA10-B10 USD Impact Score +9.99</p>'],
+      ['B10-text','</body>QA10-B10-plain-Score-9.99'],
+    ]) {
+      const modified=template(weekly).replace('</body>',edited);
+      const before=digestFrozenScoreEnvelope(template(weekly));
+      const after=digestFrozenScoreEnvelope(modified);
+      for(const field of ['head','body','hero','title','meta_description','jsonld','jsonld_count'])
+        assert.equal(after[field],before[field],attack+' must keep previously pinned regions intact');
+      assert.notEqual(after.document,before.document,attack+' complete HTML SHA MUST change');
+      write(htmlRel,modified);
+      assert.ok(verify().some(x=>x.includes('Changed Draft-frozen historical Score complete document')),
+        attack+' must fail specifically in the Score complete-document built rights check');
+      write(htmlRel,template(weekly));
+    }
+    for(const [attack,modified] of [
+      ['B11',template(weekly).replace('<html>','<html data-score="9.99">')],
+      ['B12',template(weekly).replace('</head>','</head><p>QA10 Score 9.99 between head and body</p>')],
+    ]) {
+      const before=digestFrozenScoreEnvelope(template(weekly));
+      const after=digestFrozenScoreEnvelope(modified);
+      assert.equal(after.head,before.head,attack+' should leave existing whole-head hash intact');
+      assert.equal(after.body,before.body,attack+' should leave existing whole-body hash intact');
+      assert.notEqual(after.document,before.document,attack+' must alter complete document SHA');
+      write(htmlRel,modified);
+      assert.ok(verify().some(x=>x.includes('Changed Draft-frozen historical Score complete document')),
+        attack+' must fail at the new complete-document rights guard');
+      write(htmlRel,template(weekly));
+    }
+    assert.deepEqual(verify(),[],'complete-document negatives restore clean synthetic artifacts');
+
+    assert.deepEqual(verify(),[],'all synthetic Score regions restored');
+  }finally{fs.rmSync(tmp,{recursive:true,force:true});}
+}
+console.log('Score P1-A B1/B6/B7/B8/B9/B10/B11/B12 PASS: 16 original Score regions + 26 newsletters; Draft head/body pinned; original head/body owner HOLD');

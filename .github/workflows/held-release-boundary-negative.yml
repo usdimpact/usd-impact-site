@@ -41,6 +41,10 @@ jobs:
           node --check scripts/test-score-held-report-source-guard.mjs
           node scripts/test-score-held-report-source-guard.mjs
           node scripts/score-held-report-source-guard.mjs
+          node --check scripts/score-held-build-closure.mjs
+          node --check scripts/test-score-held-build-closure.mjs
+          node scripts/test-score-held-build-closure.mjs
+          node scripts/score-held-build-closure.mjs
       - name: Install existing locked dependencies for source-impacting PR
         if: steps.plan.outputs.build != 'false'
         run: npm ci --no-audit --no-fund --strict-allow-scripts
@@ -49,8 +53,8 @@ jobs:
         env:
           VERCEL_ENV: production
         run: |
-          rm -rf dist
-          npm run build
+          rm -rf dist .astro
+          npm run validate && npm run build
           node scripts/held-release-boundary.mjs --built production
           node scripts/score-held-report-source-guard.mjs --built
       - name: Build and inspect Preview classification (no remote deployment)
@@ -58,7 +62,103 @@ jobs:
         env:
           VERCEL_ENV: preview
         run: |
-          rm -rf dist
-          npm run build
+          rm -rf dist .astro
+          npm run validate && npm run build
           node scripts/held-release-boundary.mjs --built preview
           node scripts/score-held-report-source-guard.mjs --built
+
+  qa6-exact-head-full-build-differential:
+    # Isolated read-only testing of two immutable Draft source heads.
+    # Not a trusted F2 check; never runs on Production, main or arbitrary PRs.
+    if: github.event_name == 'pull_request' && github.head_ref == 'agent/score-f1d-build-input-closure-20261103'
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact candidate head (QA6 harness)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Checkout exact focused F1d comparison source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: 3ec1d533b4893ed35503e4a53757370055115cd3
+          path: qa1090
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install locked dependencies for broad candidate
+        working-directory: apps/web
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Install locked dependencies for focused comparison
+        working-directory: qa1090/apps/web
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Run E/E3/F/G/H full npm builds, plus actual historical layout-digest mutation
+        run: node .github/scripts/score-f1d-qa6-full-build.mjs
+      - name: Run E4/E5/E6/G2b/G3 true full builds with configured Vercel command (both classifications)
+        run: node .github/scripts/score-f1d-qa7-full-build.mjs
+
+  historical-score-production-body-receipt:
+    # Engineering evidence only. Compare compiled immutable Production original
+    # with the candidate in isolated checkouts; never deploy or change rights.
+    if: github.event_name == 'pull_request' && github.head_ref == 'agent/score-f1d-build-input-closure-20261103'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact PR candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Checkout pinned original Production main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: d1740214f5737996f321a037efe3f2f7d21ecd64
+          path: qa-pinned-main
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install candidate locked dependencies
+        working-directory: apps/web
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Install pinned original locked dependencies
+        working-directory: qa-pinned-main/apps/web
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Build pinned original Production classification locally
+        working-directory: qa-pinned-main/apps/web
+        env:
+          VERCEL_ENV: production
+        run: npm run build
+      - name: Build candidate Production classification with exact Vercel command
+        working-directory: apps/web
+        env:
+          VERCEL_ENV: production
+        run: npm run validate && npm run build
+      - name: Compare 16 historical rendered main bodies to original Production
+        run: node .github/scripts/score-held-production-body-receipt.mjs
+      - name: Compare original Score regions and record Production body HOLD
+        env:
+          VERCEL_ENV: production
+        run: node .github/scripts/score-held-production-expanded-receipt.mjs
+      - name: Isolate the candidate Preview generated output tree
+        working-directory: apps/web
+        run: rm -rf dist .astro
+      - name: Build candidate Preview with exact Vercel command
+        working-directory: apps/web
+        env:
+          VERCEL_ENV: preview
+        run: npm run validate && npm run build
+      - name: Compare original Score regions in Preview classification
+        env:
+          VERCEL_ENV: preview
+        run: node .github/scripts/score-held-production-expanded-receipt.mjs

@@ -24,5 +24,303 @@
   },
   "existing_other_files": {
     "monthly-reports/.gitkeep": "8b137891791fe96927ad78e64b0aad7bded08bdc"
+  },
+  "rendered_main_sha256": {
+    "source_main_commit": "d1740214f5737996f321a037efe3f2f7d21ecd64",
+    "algorithm": "sha256_of_html_main_inner_fragment_exact_utf8",
+    "sha256": {
+      "reports/monthly/2026-08-21": "02b548903decd1476a779253566b08a041747eb13ecdca72bbc954bd2b156cb9",
+      "reports/monthly/2026-09-18": "77cdbc788b56b1bbd27c23eafbfcc93f408e00c3862b7e487bdf166d1ee3383f",
+      "reports/monthly/2026-10-16": "107a37faf559a1d22bf58f7a0e711c792bf3f6fba6626f3d1bec5d922de71281",
+      "reports/weekly/2026-07-31": "8f0bfbcfac5e095f106d32c9c0edf330edc878638669b73636ba8c31b79ae4bb",
+      "reports/weekly/2026-08-07": "8106ea2399c5fad2831b7248d060322f5ba0cd320d55d0231501519de9df5062",
+      "reports/weekly/2026-08-14": "ccd78d20b5a2d0f5c9dab1c144dc69912705ad6c711082e45a34b2bee1e90df5",
+      "reports/weekly/2026-08-21": "6890e21b0c567aa5c8598f3a13032ef64bbc7561dd5ab6b02a254f786edd4959",
+      "reports/weekly/2026-08-28": "c7282ddbc8753e479477530ae7322f4ca0d23b559607e40a5e4d08d8f33e4832",
+      "reports/weekly/2026-09-04": "f258563d5b32aba05dd3271f7571351bda1563d2983e243317ed0226902e0f36",
+      "reports/weekly/2026-09-11": "a9586db1dd519287b6c2f0458d10180733f1645e46aefcb0552ab109c776b138",
+      "reports/weekly/2026-09-18": "f8ec02f4349bc58ff6721509e9df00a83023e800d23777a096ae8fe44f990096",
+      "reports/weekly/2026-09-25": "be240765d029200c46b602d73143fa5efce35ab19109a659f34b32a9bfd2fbae",
+      "reports/weekly/2026-10-02": "30e3ff046089199f650948ab2662255f3e13bc7dbc26cf9294eb1a8c04745f0d",
+      "reports/weekly/2026-10-09": "1fe8a96c9927447e8a77e8d072260cef60443b19c08c3aa2f2c2dd501512a760",
+      "reports/weekly/2026-10-16": "b59ec137411ecabd30b25cc5ef214403a02718f983354059b03da7a0a6c895bb",
+      "reports/weekly/2026-10-23": "f389e7ff201c0a22b9c9b71d2299114e8da845e30e4297dcef214f4fc30d142a"
+    }
+  },
+  "rendered_score_envelope_sha256": {
+    "source_main_commit": "d1740214f5737996f321a037efe3f2f7d21ecd64",
+    "normalization": "HTML_ATTR_NONCE_INTEGRITY_VALUE_ONLY_V1",
+    "region_algorithm": "SHA256_HTML_REPORT_HERO_TITLE_META_JSONLD_AND_RAW_NEWSLETTER_JSON_V1",
+    "reports": {
+      "reports/monthly/2026-08-21": {
+        "hero": "c309e16dffe6919c5ca7f67b88d726bfef29a4f739fd5b34fe5a236652cdbf25",
+        "title": "4911c58efd9726af431dd188940941630aa8db563b7babcfef5c71997006f2f3",
+        "meta_description": "0fc9d01c25e9a590eec70ad6d260253547b6d722fcda4b5fc31e13fdf31174f5",
+        "jsonld": "de269c1ecc135f9596a038ca6bc3b83843067b500d997d3ae00f188890d01e48",
+        "jsonld_count": 1
+      },
+      "reports/monthly/2026-09-18": {
+        "hero": "6825f8be9e88fe1a3fd5332417f8456989140ffdd3e030ae1f3b6bedd26582e4",
+        "title": "a950672a97707f4fb5a604bf50494d24d3fe252af9a12bde129e24e6775448da",
+        "meta_description": "2d04cc04e925b458c03bad0a91c0bc76d0bc4a5a7352790ecae06193c015538f",
+        "jsonld": "e2e007adefa364cff98a7fddf868a0c83d4cb679b825721d94b620f755d8a080",
+        "jsonld_count": 1
+      },
+      "reports/monthly/2026-10-16": {
+        "hero": "01bcb73dac0ab9b89314165e1532f87778503e3b658a6635f52ba658ed8ca5ba",
+        "title": "18a3948ba45c719421e0036a35a26e3ea8b951838e426f7adfa10a0ddfccadae",
+        "meta_description": "0e46cb5505bb0b2f40a06b4b4dd5ee145f44dfc960afac58c87a59a6d6258958",
+        "jsonld": "093ab2cceb6778400cbd7fa2a8e3e8435661960eb5f1f31f40d6a38979317d93",
+        "jsonld_count": 1
+      },
+      "reports/weekly/2026-07-31": {
+        "hero": "33427e54b123250ea5151cfbf1de2dd30042b9ca26f00c06e8ca90a84c6fe991",
+        "title": "da7675ae29a4350cd124c8418b104969565701dad2e21af30701bf4c3f051c60",
+        "meta_description": "ea41d064e702f8024016817437e0ffa4b5f44d781f55a8d9daf08f5d9e2e5fee",
+        "jsonld": "a60f180180c1d034c7afc87f4e2bbc6bbb512ba5f3f03c5415714910ef982346",
+        "jsonld_count": 1
+      },
+      "reports/weekly/2026-08-07": {
+        "hero": "e8128fa06368541cac3e7ad7c7f3f58a745fc8164cdad3af6730cc08a021befa",
+        "title": "d5526947cf09ca6673142dfe5eba1b5a0ee9bbe93f9970b046e3506bd45b5278",
+        "meta_description": "fdb366d705aacfc7dfe3ec9f7e1e1264c5513f0e5b5c03f0e72e1dece3690b8f",
+        "jsonld": "3ac97f9beb16ea3ada15230e83072b0ae17539712e6af123868e1e68c8dbfd52",
+        "jsonld_count": 1
+      },
+      "reports/weekly/2026-08-14": {
+        "hero": "c714cd2bac211599d90bcdba60ddd2097e2c1fe9277a3b405b2749fa7da6c7e0",
+        "title": "d07a86c3333cb21d1379b2e1132b825bcbfd5923229480fb0dd1e4dc8d98f9db",
+        "meta_description": "bc91e9c50f3eeae93b13c738679bdf0c04359c4219ac36e9349ad1758b18e8ea",
+        "jsonld": "d164e39dea5341a908057452c52c5b327024d57683bbb7cd997b879f210cb363",
+        "jsonld_count": 1
+      },
+      "reports/weekly/2026-08-21": {
+        "hero": "e6862d3e7553ff5c8ca9b978f0e2bb87c46ba6085edbb9edbcc1cebc19d660d5",
+        "title": "b34323e365ab43c20f66d36f70e1f0940c90ac2d20ccc26bea65cbe972c81dbf",
+        "meta_description": "aa22d0a907e22ad98c8614931acb11f115bda9bd5124176bb409ec7edd7a58e6",
+        "jsonld": "ca9d26c8eecc72ef09022e950d2b743b10e872d4f59290d033bc7b9ebde36d5c",
+        "jsonld_count": 1
+      },
+      "reports/weekly/2026-08-28": {
+        "hero": "43afa1d6c62cd08f637ed12eb953b006bf7fcf1f791916ff133ef0d69dcd7a4b",
+        "title": "984937781db231947de4b905ff35dab97367512dbea1ae17a37ae3edea12eaa1",
+        "meta_description": "b85f7c223efc1a863ab27af55dda7774d644229400a395d095f2f4a34be68c63",
+        "jsonld": "2fc5a92c061c661c22927314153685a627359a7ede3ff56bcb99be36249ee0ca",
+        "jsonld_count": 1
+      },
+      "reports/weekly/2026-09-04": {
+        "hero": "220e19c1b78276fd187ab57f33aea3aee189709aee78e333afef3fe5e9bc0546",
+        "title": "2c7d60b95d97c27b58f0bdabeec6f11684cdf055caf7969bb3e882c7b5fe0f70",
+        "meta_description": "e8d5d208419becd69c3e19d8f9c632259c051cda5effc1de04eb4ebcf03aca34",
+        "jsonld": "bd8e396476bb0f1e511368577ff40ed0bd30fa661b5c737907d502d836b0cf5b",
+        "jsonld_count": 1
+      },
+      "reports/weekly/2026-09-11": {
+        "hero": "6ba859246ef4d4bb75bd6f011d56990e8d57117f91f05129242c686fa37ce103",
+        "title": "b8cc5405195959de1b2b85d4dcd91888aaff9062e8645d2941540eff45bf3312",
+        "meta_description": "44a8598c421bfe9a7e9744bd73ae345ea15cf803682e5d025808d7dd9d33580d",
+        "jsonld": "3cefbb5e18edb3afc9ca36d06e79f7153f98f833f07fa7a45562aec8567b1f4e",
+        "jsonld_count": 1
+      },
+      "reports/weekly/2026-09-18": {
+        "hero": "e4b33ea72821238eecda3ee3c2b16f0ff1976f740f77e218ff968e72e0299ad3",
+        "title": "eb01403c81916c0b868f51a9e61483b68071df197531354367cf4d9e43ea8de4",
+        "meta_description": "acf4b825d094fe0c728720e91e97cc1d756787e9e775f704ef0bb94a726e0151",
+        "jsonld": "0e45854241913afae7d29846f3e1aac97b438f953a1eec5468fbc1c0d83b03f3",
+        "jsonld_count": 1
+      },
+      "reports/weekly/2026-09-25": {
+        "hero": "30967ef390cab430c821aec082bb826255064f8f60504cc19e096a57e3b05968",
+        "title": "368309d5905f6292d6d3168a0901dd745dffe53815b8a6f86c425fafb105bcfd",
+        "meta_description": "984923eae3329b9aab0083a51fbc2bb7f545d8d434a9d917f1c69ee9d9ec4196",
+        "jsonld": "0438ec4c89215d5c87ba43562aa56ca3c5b322f52f1b72be0dfeac69a78c7d22",
+        "jsonld_count": 1
+      },
+      "reports/weekly/2026-10-02": {
+        "hero": "05f5284c891b705c7393870748e1a80befe9109b434531d501b1133299aa2a5f",
+        "title": "8b34ccdc23869dc09da00d1fb4f3198c66631ae3625bdf3210b1fa7b138fab50",
+        "meta_description": "5cc20b1a0417042127079bac86f2fc48623d4e371bc274c00b3a6f783e8096fb",
+        "jsonld": "86dd135ae341b435115ba1fca1be53df691b49a1f422e04b6abc9f5f6ce04b93",
+        "jsonld_count": 1
+      },
+      "reports/weekly/2026-10-09": {
+        "hero": "3fe96b1719bf9b945438532e169fd635069f3a884ee1d1276a6b85238495f484",
+        "title": "76ba92aeb45105f7edd89aa403d652ffec28bab35a685af9a05afafcd1482b38",
+        "meta_description": "6ec58553367cb2b8d1b0cda26ce054cb2878085725cc43ba2f31dbd065894f90",
+        "jsonld": "0ec02dd966fcc74e91fc9e03d1c38b13402d63936006d71a2fbdf104a9a5dba7",
+        "jsonld_count": 1
+      },
+      "reports/weekly/2026-10-16": {
+        "hero": "d360300c2551bb3548b66ef3fc7801352c6d18c19d9a04572b8eb1c707e99c0d",
+        "title": "d53f6848824c01bfac6b2d5e57692ab10c21648abc6724149a56143a3a5a066c",
+        "meta_description": "e601fe187511d0160c4b58136c42449bcc5b58b69bb9fa2e2a20d66663127def",
+        "jsonld": "19708ed816af68d9720423f1f11ca08a06ca9d7e0c866224feb35320bbae7e8e",
+        "jsonld_count": 1
+      },
+      "reports/weekly/2026-10-23": {
+        "hero": "6a00dd17cc5e80751fa9b4011a32b79b96c4ba630ddd62d62b12027640ab38d6",
+        "title": "de8d55e281e5e29fb5344e2bf26984f8c41bffa2a6b589c7e29d5cc9d2314c27",
+        "meta_description": "8a2116a351d66b15c68356b4b400cad73edf5f53e78679dca6b246c6516c3201",
+        "jsonld": "958c8d4ef256b3da35db371ac1a59cd196a0b88228ad8dfb55c6415f48920cf1",
+        "jsonld_count": 1
+      }
+    },
+    "newsletter_json": {
+      "newsletter/progress/2026-07-31.json": "ff1bed9866a44899e8f15870eee5ed0d8770090ae6ce136bcbf92e55b869b8b4",
+      "newsletter/progress/2026-08-07.json": "7ae893358ede39bf3934c56abe539c08d3466212178b4aa60636474d6b86a623",
+      "newsletter/progress/2026-08-14.json": "de01621bac5fb53aa2b13c5f4c896104c239439b5411df9649db2efc594fe9ad",
+      "newsletter/progress/2026-08-21.json": "0f4a8b4eac1849c1509b25e3fbe368fd6c9bc35e79842b38d5a2b6c9a9900b22",
+      "newsletter/progress/2026-08-28.json": "50116ac8062fb668a660bf2276c1f8ae1de3bd2d69b4d9f2108cc5c2c77cbf4c",
+      "newsletter/progress/2026-09-04.json": "e6210865ef1c0bd5fb6c4437ac1ba4e76d56600063a38910490315bd5cf73304",
+      "newsletter/progress/2026-09-11.json": "45026f7612f43b37e7fe8d2701cd83d3ea5dd6c472ff583da5e8926a891c701a",
+      "newsletter/progress/2026-09-18.json": "1c44916a88df27767031121f1463321a4da10934c11b55860c2d489a3eb833c8",
+      "newsletter/progress/2026-09-25.json": "52e4fc1b2cad8d45a4dae38fe3d92156acf348840793e5a475770267c13e7e9c",
+      "newsletter/progress/2026-10-02.json": "b5c21d32a09f93312f6694343aa7f92df8dff92a69b6e3f134902643f97db53e",
+      "newsletter/progress/2026-10-09.json": "a0118c09be8fa2f51b3fd4f0ce0946f93b49e0c88ad3178d0543182f4b6c37b0",
+      "newsletter/progress/2026-10-16.json": "8d61c158be161da2bad9478b1a11e221a7397f3bc684f1c58f61a5d427b2c831",
+      "newsletter/progress/2026-10-23.json": "9a95b084f64f98bb2b73a1b63d3cbda86b3d06f4e8d69a1f1ed4d996911b213c",
+      "newsletter/weekly/2026-07-31.json": "21e67659f08f5562a4d0fbe19ea5a9d2870b6d9c5c8f7eea1f58eb413aa15b71",
+      "newsletter/weekly/2026-08-07.json": "b7a3cd81bf4ffb45bf20f84629df93e764cdc481edf84fe689b84ebd946fd97c",
+      "newsletter/weekly/2026-08-14.json": "f5f5663d17aab7c36648ce004827e2d574f3c2240fa0c27a738163f9cc835540",
+      "newsletter/weekly/2026-08-21.json": "73fed7d434bcb937165fdfa3215f8718d40226d5503bb5974dfcffb37a7eb707",
+      "newsletter/weekly/2026-08-28.json": "0c3b196e3c31756ec6d6255ea2b14dbd3139e7a784ab9da5e7a8ebc38ecccfe1",
+      "newsletter/weekly/2026-09-04.json": "edc1edab1e955c8dc65984ad476dac0193ae2ee1147ea3f2592fe53acb9d8b43",
+      "newsletter/weekly/2026-09-11.json": "231ea639fb32c6df33b01ebb46900e797f73f6d792b3ebddd941602b962afc45",
+      "newsletter/weekly/2026-09-18.json": "24d35891fb7da8b8d1477b03a5c3cf4adc1c2313cb33cbb0c4bed9bfb033bafc",
+      "newsletter/weekly/2026-09-25.json": "67467ad488a70fbb519a2dcda9b5b355901b417408d38ea42325eb57724558ab",
+      "newsletter/weekly/2026-10-02.json": "829ce40f89a1f3792a0062378f223efa91ab8d9764133b145e7490cfa8d723e2",
+      "newsletter/weekly/2026-10-09.json": "aa08d35de0c04700ee567b4a7f01245c32bb6e5de96d63a2cdf8b10d5efb0e44",
+      "newsletter/weekly/2026-10-16.json": "a07e05ae8e6b1789ec5479a5efa75c4922dcab45e9658a77c885fe9a224b3b7e",
+      "newsletter/weekly/2026-10-23.json": "11f178237f94c601a225e368ad2a179a766a173abb1c2e21a5ec6840e408fcbb"
+    },
+    "original_whole_body_reference_sha256": {
+      "reports/monthly/2026-08-21": "8dd3bffc213f5c855155fb785085f3a1cce3cc4222e7dce641b08accc028bdef",
+      "reports/monthly/2026-09-18": "fa787ac4f6fd4bc274dd45ffec1610fb49c3e660ea175cc7e31fbcc688fe2921",
+      "reports/monthly/2026-10-16": "d8bef4db1c199a3974b8d9d97e6bea1e29122cf1ee6f7dd817c2b62a7d1df675",
+      "reports/weekly/2026-07-31": "0596780edf0eaa6ea0a8c6cfc88b3c27843d130037cc36ed637d051d5d42d169",
+      "reports/weekly/2026-08-07": "2cb035131f790d3dca438f1a04d33b43cb217aec78fe9473fb0d5a3cdd3a9145",
+      "reports/weekly/2026-08-14": "071b0571c926fe8d1a51ac567284f349e18e91d85d79902f7ee361e7a1f40efc",
+      "reports/weekly/2026-08-21": "d6e8572d75d8b542793a994295a65b702158997598962ebd60dd0724af5c55e5",
+      "reports/weekly/2026-08-28": "f1d84c92f5f70b33d56e15b93131ab011438dd92df4c1b2b6b4f2d19987338d1",
+      "reports/weekly/2026-09-04": "690e1c5a258003fe5c0af907d6d8bc05f06bb39284e9998ccceeef4393833817",
+      "reports/weekly/2026-09-11": "3fce207af410dd58603f31523943bb61c1bce9432903a3b238f3646bbfd8f4bb",
+      "reports/weekly/2026-09-18": "07c32d19bcfed831c9b0b9edf2bef4f99dc6d1ca47be71f68c05d8a52f6cfcf5",
+      "reports/weekly/2026-09-25": "5720c914ed89c96bd85204c49f7582524a5e8d8b5fa302f8718a398db8ee2548",
+      "reports/weekly/2026-10-02": "c0179bdcf3f614b71242a4094b970e0685114a246a0ece4b26c08da921286161",
+      "reports/weekly/2026-10-09": "4ec5ed80bc0bcb41091d4c0171657eb79b9035d25a28c323fc0fefadaa326959",
+      "reports/weekly/2026-10-16": "c10a8b186ca3a2c0f8a6ff18a878749171ffcc1274cf6c8754ed78b78d68df34",
+      "reports/weekly/2026-10-23": "9f502696e47a08f149cd64cc29ae8a01c6a893a4ba49f135c52a3bb30e73f8f9"
+    },
+    "whole_body_release_status": "HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN",
+    "draft_containment_whole_body_sha256": {
+      "evidence_commit": "6af6c6ce62eb86bb3712a6b7f6d977777ff86761",
+      "evidence_workflow_run": 41689499564,
+      "scope": "DRAFT_ONLY_BYTE_INTEGRITY_NOT_ORIGINAL_MAIN_LICENSE",
+      "classification_match": "PRODUCTION_PREVIEW_16_OF_16",
+      "sha256": {
+        "reports/monthly/2026-08-21": "b02bd1f7db311050312902a58c69d753a30b2a146c0c4262544d6f9979fb5ffc",
+        "reports/monthly/2026-09-18": "fbc9e214e99f8da4dc008b83a155d7ac31d1225f663e3c503d850765fcc77731",
+        "reports/monthly/2026-10-16": "167b2ea2cb19d2ce11ad15e15ed788fcb4e623c3fbea77abb719ce8e858a38c9",
+        "reports/weekly/2026-07-31": "4e1a44bd71d88ebac7c6dce766f54359e4780b8124fa5f294733ac7a4f0dc109",
+        "reports/weekly/2026-08-07": "a3764fd159602c53acaf2b655e57a7ab144111ceedc1b82f4c29f2a76b73c3f7",
+        "reports/weekly/2026-08-14": "74aba52eefce073c3516d0deac661ddfe335b7892b6cebd21a8080950737a3a1",
+        "reports/weekly/2026-08-21": "9d711da8a7f435a6258f8f21b87b63214ab5e978004efc2671f45dabf25d61a6",
+        "reports/weekly/2026-08-28": "376603b254e06adeece00cb5dd39a936caedf2a98790d0489b13edabd3a09f37",
+        "reports/weekly/2026-09-04": "412baeeb401750e7a88d943efe826815020d2629743175680d1281df886a9465",
+        "reports/weekly/2026-09-11": "81d65fa39a2cb58b991f244f00482436afceef43eadb340cd7b66faa51787085",
+        "reports/weekly/2026-09-18": "bdd70924976c5dd6164d46cd54ab79605db67b9d7044e31bf64e41d888c2b8c7",
+        "reports/weekly/2026-09-25": "6a4fdb685e82652d1f796b0834440fb2da7acd88ed72c79002c591ec7fcc287f",
+        "reports/weekly/2026-10-02": "74b981f9d9450e976f391e8561fa7a433218bd9a798727f3b2393b4b1dfdd1ba",
+        "reports/weekly/2026-10-09": "40880305586e447c2d061e4b10d2962e4b5d21728e1cc048edc11d643d9151f9",
+        "reports/weekly/2026-10-16": "94b517034bf0dc387d8d50d9a7edfee2c9fd592ad80a96de1cdf3fa3fc6bc049",
+        "reports/weekly/2026-10-23": "5f359916b8e30f004b2de42ba5654bfbbfae6d897f53307b71f628dbe7fb26f8"
+      }
+    },
+    "original_whole_head_reference_sha256": {
+      "reports/monthly/2026-08-21": "2de4a56c523447be6a4f37193722160d98fd4eb3870c20bc758483b8a938042c",
+      "reports/monthly/2026-09-18": "ce6158eb2bdc21acef823023ef0e7121947a5551a0513393b8324bfc4af51d87",
+      "reports/monthly/2026-10-16": "8d5314fdfb56c8a3dc5edf659015e00505f8babf8bb204472136f28e6066fc0d",
+      "reports/weekly/2026-07-31": "d078d75d10dcb1441ac2d6f0b91e4f7541018c39a33b8d6c074c6b969a4787fe",
+      "reports/weekly/2026-08-07": "ff4f495abedb87792be4efc00350ced397894de997355142f28ad3d33a3cfd89",
+      "reports/weekly/2026-08-14": "a1fa9bf2825243b2f26bf9932fe0074928a99843a2858933b55632a8714de55b",
+      "reports/weekly/2026-08-21": "d654e7d63843e73c357d312d684f4043f3a50c6c004b8e63ef49babd1da0abcf",
+      "reports/weekly/2026-08-28": "717186121f0d7e0f3a7c737bffbd5d42f73339afa25dbd7245c8de6d88bebcb6",
+      "reports/weekly/2026-09-04": "94b9a4fd47c82aeea20f49647fe5e6e7b35281d8fc33cccaed7958bf87084fcd",
+      "reports/weekly/2026-09-11": "ef49537e99edea532063dd62dee811029ee46da2adb3182559ec8f4bc9580cdb",
+      "reports/weekly/2026-09-18": "69bc3f5028af0b4c29a8bf157a010657d08432ba984a7a65cc6777865c070c61",
+      "reports/weekly/2026-09-25": "e08aa35591d91a028f411210b08ca369a6c1a1b8b5e2b7fe4e0ec31f31ef2950",
+      "reports/weekly/2026-10-02": "e25aa0f6e4ec54365db22d6721c0d4ca9372e6ecbb30b657657a8f3f0823a2b0",
+      "reports/weekly/2026-10-09": "ced84cc907e48e5d36a9dc17af02fa2bbe3b2615056d52be8af22f36c0229cbd",
+      "reports/weekly/2026-10-16": "eed57d13c5a5bc784e9772ff4b96e08ff43363134aeb15e5d81f438076316448",
+      "reports/weekly/2026-10-23": "6e79544d0a2115bb79a9aae5da67c2d45ddad878d619d005589456496e32b437"
+    },
+    "draft_containment_whole_head_sha256": {
+      "evidence_commit": "3d7694260f29d16eb67bd83f65c12e8ca1cee7c3",
+      "evidence_workflow_run": 41695519712,
+      "scope": "DRAFT_ONLY_HEAD_INTEGRITY_NOT_ORIGINAL_MAIN_LICENSE",
+      "classification_match": "PRODUCTION_PREVIEW_16_OF_16",
+      "sha256": {
+        "reports/monthly/2026-08-21": "1413990e9f08edde22de7f1e5e5cf7baa8fe28540910f18bdb4789c172112a3d",
+        "reports/monthly/2026-09-18": "8c04e2985acdfeb043604e6425e560bf1ccfc84fa136e09ca1a03a23fc6b422b",
+        "reports/monthly/2026-10-16": "56bda9a6d7ead0c5f8b1dbcedc2142b0da616f346209adfe38e5db737905d0d3",
+        "reports/weekly/2026-07-31": "dd1d2ae0e0b763fd06ddd278ad91762be7bf1b6d1cddeaa4c864d7255f8d0355",
+        "reports/weekly/2026-08-07": "6db55699ef01c94e658dac246ba500ffd921533d4a12ff01094865ed117c4994",
+        "reports/weekly/2026-08-14": "adaab2262db1cf8809c6204066caf8dd441faaa6d76b6c207a7149f42be4fb32",
+        "reports/weekly/2026-08-21": "f823cf87d5deb5019f0652af526d390adc0e813da5d6f0c32b699e584ebb72e0",
+        "reports/weekly/2026-08-28": "a35096f1eae04784a9198a291f78f3ece60784cdba81440a0514ff264935c7db",
+        "reports/weekly/2026-09-04": "940248487221c89b075081f88b4dde6d65d2fabf6ea8fdd4e7d48855cd1a67af",
+        "reports/weekly/2026-09-11": "c899c2df3d6de14d2693250d802c9860f3b5449e14aa15195e360ff6ee5b37e7",
+        "reports/weekly/2026-09-18": "9e5a69370890c7d4fd405e22b6b47415b6f9bc739458aaa43637eb4b522487e1",
+        "reports/weekly/2026-09-25": "23510babcac124d826cedb10c58bb5d9b1c36692184bec832b3e40d8084e8d53",
+        "reports/weekly/2026-10-02": "514390e7e8a63352e9a2add5912000991b6d14bbafd215d724be592b5f341c30",
+        "reports/weekly/2026-10-09": "5549a3682cbd11d5a988c2a355efc01459bdbb9b0661ed1a505db032f402a910",
+        "reports/weekly/2026-10-16": "37cec4f24e7c5a61b569f1669e70392a94946bb6f3cd2190659b5b893224e8ad",
+        "reports/weekly/2026-10-23": "1784a17a406127089f797b132d8b810e33686041574067de084719e3983ba7cb"
+      }
+    },
+    "whole_head_release_status": "HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN",
+    "original_whole_document_reference_sha256": {
+      "reports/monthly/2026-08-21": "684c1eeff51a3b0b451b6d65551557f1c15545e3f3201f4ad77c513a4ced5dd1",
+      "reports/monthly/2026-09-18": "d48b0c8d9908e1648546f5cfbed8f3459ea0d484d40176647cca505bdad4f66c",
+      "reports/monthly/2026-10-16": "fb6fbabf57a560caf9dc21ae65929ea2061778f267aef7da46532fe9ea5e6236",
+      "reports/weekly/2026-07-31": "13dd70c56170066e68139f7cec06612f095af48f316a69de7baad0f0943faa4e",
+      "reports/weekly/2026-08-07": "f4312804b977192212fca71b8059a15d319b36b8a95895c37442aa7d5cdcfe61",
+      "reports/weekly/2026-08-14": "3ae56a8036bef281367c59a50f9eca442a1f18862818710fcbee828ebb4d18dc",
+      "reports/weekly/2026-08-21": "9cc1f7ce9d902c06e3c1cc07cd25725c1a0af7d593fdc633440162c441aaab53",
+      "reports/weekly/2026-08-28": "6b32c4af1d181dacc490eca5eb02a2c0b0ad6b7d696c37901197dc4d1a32f707",
+      "reports/weekly/2026-09-04": "f5b83a03cfb0ce32dc0aadc7cf028fdac8236edbf761704c60c5f3edc921b92c",
+      "reports/weekly/2026-09-11": "5c1ace9a9d53334a92c2b0fbc96e826a105cfceb9220b17c53ec59beb2ef7bf4",
+      "reports/weekly/2026-09-18": "25861c296d36adeb7fd26d56c451e53fa5d4635e8bd4a0fc2296d77c811c7948",
+      "reports/weekly/2026-09-25": "c74b769ba3a26c1eedfb64bd1006748028f4823808398f697fbb244aaa97a742",
+      "reports/weekly/2026-10-02": "8e747c98e8c91eae1a3b754384403dfb2962cbb47e0e93d175ee5363bf97ff3e",
+      "reports/weekly/2026-10-09": "9cae4a428c7597d8b0c11269ad16c887c05d154e86d32c438fb60518ba91f5af",
+      "reports/weekly/2026-10-16": "753553bacd1bdc48d1298973a0202204b0ed5b8f84ea42eb8ce20c4854ca80b7",
+      "reports/weekly/2026-10-23": "e429d210e3359313efce90e58967025de4352cbe9ddd554e1ccb56008450c1fa"
+    },
+    "draft_containment_whole_document_sha256": {
+      "evidence_commit": "cdaa9a4de861f36088a9b1308f96afe7b8ac220e",
+      "evidence_workflow_run": 41701921845,
+      "scope": "DRAFT_ONLY_COMPLETE_DOCUMENT_NOT_ORIGINAL_MAIN_LICENSE",
+      "classification_match": "PRODUCTION_PREVIEW_16_OF_16",
+      "sha256": {
+        "reports/monthly/2026-08-21": "a844c31f7dce8f8de3ecaf635024dd492f5d517161736eeffa9070d68bbffa8e",
+        "reports/monthly/2026-09-18": "53520db49b51a59604ccb688b5c315a58a6e5e23f1abb4d0535f95f50dcd218d",
+        "reports/monthly/2026-10-16": "cfbbe15c5711806ad96eb0008d76a8f7fb360bb6744f9cd3bb86e23c9e9cce41",
+        "reports/weekly/2026-07-31": "80bc2e754c932921b49870e353d5f6e3c5c69351515f0ebed58f1521d61097ec",
+        "reports/weekly/2026-08-07": "fd0de0f1c685a6388952e3351f62ef8709d50257c4f28f27514a219c57493eb1",
+        "reports/weekly/2026-08-14": "c7356cad69b7aeb2e8ae8f6977bb29d237c528f14d87f3f805b346179a0387e2",
+        "reports/weekly/2026-08-21": "43149f9815d0c8878e8b51855c2a4b4e3fdf6e993a420ce68343649c61b4bc03",
+        "reports/weekly/2026-08-28": "9c8bcaf39d712217b6699ace649ce5e64097aaa110f0e885fc2f28afe58dbce7",
+        "reports/weekly/2026-09-04": "69a3e14c2e5edcbf9ee599f268e1966f572d998d8fae2736d936a62fe47d4785",
+        "reports/weekly/2026-09-11": "29bb556658228ef61d194e7583964354a0915136620e4a523bcd498328ecb97b",
+        "reports/weekly/2026-09-18": "e8bd1a543671a9d0170f24a5b93e51aa9a89f62d5d76ab0db4e5f21bdac3e919",
+        "reports/weekly/2026-09-25": "a954bba4689bbf42a6d37aa1feae07e37bfc006f3d18bc67eab32eb14cf1914f",
+        "reports/weekly/2026-10-02": "89f5e8cffff576702846fb45c23a8231814bb02dea8a613758c752bf46f5bf5b",
+        "reports/weekly/2026-10-09": "480f9026ffecbd6b2d0b9a70e2bc5e3d51c9c333562b6bef31b1396388e4dc44",
+        "reports/weekly/2026-10-16": "fde3274f06359c039f495b3dcd3d0b498aa12ff4f57d35ea0194bae4e6825bcb",
+        "reports/weekly/2026-10-23": "45298bfe70ca7224d3183a07cfa80e41df484a722b660f90b692ee46354054ee"
+      }
+    },
+    "whole_document_release_status": "HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN"
   }
 }

@@ -278,6 +278,49 @@
         "reports/weekly/2026-10-23": "1784a17a406127089f797b132d8b810e33686041574067de084719e3983ba7cb"
       }
     },
-    "whole_head_release_status": "HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN"
+    "whole_head_release_status": "HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN",
+    "original_whole_document_reference_sha256": {
+      "reports/monthly/2026-08-21": "684c1eeff51a3b0b451b6d65551557f1c15545e3f3201f4ad77c513a4ced5dd1",
+      "reports/monthly/2026-09-18": "d48b0c8d9908e1648546f5cfbed8f3459ea0d484d40176647cca505bdad4f66c",
+      "reports/monthly/2026-10-16": "fb6fbabf57a560caf9dc21ae65929ea2061778f267aef7da46532fe9ea5e6236",
+      "reports/weekly/2026-07-31": "13dd70c56170066e68139f7cec06612f095af48f316a69de7baad0f0943faa4e",
+      "reports/weekly/2026-08-07": "f4312804b977192212fca71b8059a15d319b36b8a95895c37442aa7d5cdcfe61",
+      "reports/weekly/2026-08-14": "3ae56a8036bef281367c59a50f9eca442a1f18862818710fcbee828ebb4d18dc",
+      "reports/weekly/2026-08-21": "9cc1f7ce9d902c06e3c1cc07cd25725c1a0af7d593fdc633440162c441aaab53",
+      "reports/weekly/2026-08-28": "6b32c4af1d181dacc490eca5eb02a2c0b0ad6b7d696c37901197dc4d1a32f707",
+      "reports/weekly/2026-09-04": "f5b83a03cfb0ce32dc0aadc7cf028fdac8236edbf761704c60c5f3edc921b92c",
+      "reports/weekly/2026-09-11": "5c1ace9a9d53334a92c2b0fbc96e826a105cfceb9220b17c53ec59beb2ef7bf4",
+      "reports/weekly/2026-09-18": "25861c296d36adeb7fd26d56c451e53fa5d4635e8bd4a0fc2296d77c811c7948",
+      "reports/weekly/2026-09-25": "c74b769ba3a26c1eedfb64bd1006748028f4823808398f697fbb244aaa97a742",
+      "reports/weekly/2026-10-02": "8e747c98e8c91eae1a3b754384403dfb2962cbb47e0e93d175ee5363bf97ff3e",
+      "reports/weekly/2026-10-09": "9cae4a428c7597d8b0c11269ad16c887c05d154e86d32c438fb60518ba91f5af",
+      "reports/weekly/2026-10-16": "753553bacd1bdc48d1298973a0202204b0ed5b8f84ea42eb8ce20c4854ca80b7",
+      "reports/weekly/2026-10-23": "e429d210e3359313efce90e58967025de4352cbe9ddd554e1ccb56008450c1fa"
+    },
+    "draft_containment_whole_document_sha256": {
+      "evidence_commit": "cdaa9a4de861f36088a9b1308f96afe7b8ac220e",
+      "evidence_workflow_run": 41701921845,
+      "scope": "DRAFT_ONLY_COMPLETE_DOCUMENT_NOT_ORIGINAL_MAIN_LICENSE",
+      "classification_match": "PRODUCTION_PREVIEW_16_OF_16",
+      "sha256": {
+        "reports/monthly/2026-08-21": "a844c31f7dce8f8de3ecaf635024dd492f5d517161736eeffa9070d68bbffa8e",
+        "reports/monthly/2026-09-18": "53520db49b51a59604ccb688b5c315a58a6e5e23f1abb4d0535f95f50dcd218d",
+        "reports/monthly/2026-10-16": "cfbbe15c5711806ad96eb0008d76a8f7fb360bb6744f9cd3bb86e23c9e9cce41",
+        "reports/weekly/2026-07-31": "80bc2e754c932921b49870e353d5f6e3c5c69351515f0ebed58f1521d61097ec",
+        "reports/weekly/2026-08-07": "fd0de0f1c685a6388952e3351f62ef8709d50257c4f28f27514a219c57493eb1",
+        "reports/weekly/2026-08-14": "c7356cad69b7aeb2e8ae8f6977bb29d237c528f14d87f3f805b346179a0387e2",
+        "reports/weekly/2026-08-21": "43149f9815d0c8878e8b51855c2a4b4e3fdf6e993a420ce68343649c61b4bc03",
+        "reports/weekly/2026-08-28": "9c8bcaf39d712217b6699ace649ce5e64097aaa110f0e885fc2f28afe58dbce7",
+        "reports/weekly/2026-09-04": "69a3e14c2e5edcbf9ee599f268e1966f572d998d8fae2736d936a62fe47d4785",
+        "reports/weekly/2026-09-11": "29bb556658228ef61d194e7583964354a0915136620e4a523bcd498328ecb97b",
+        "reports/weekly/2026-09-18": "e8bd1a543671a9d0170f24a5b93e51aa9a89f62d5d76ab0db4e5f21bdac3e919",
+        "reports/weekly/2026-09-25": "a954bba4689bbf42a6d37aa1feae07e37bfc006f3d18bc67eab32eb14cf1914f",
+        "reports/weekly/2026-10-02": "89f5e8cffff576702846fb45c23a8231814bb02dea8a613758c752bf46f5bf5b",
+        "reports/weekly/2026-10-09": "480f9026ffecbd6b2d0b9a70e2bc5e3d51c9c333562b6bef31b1396388e4dc44",
+        "reports/weekly/2026-10-16": "fde3274f06359c039f495b3dcd3d0b498aa12ff4f57d35ea0194bae4e6825bcb",
+        "reports/weekly/2026-10-23": "45298bfe70ca7224d3183a07cfa80e41df484a722b660f90b692ee46354054ee"
+      }
+    },
+    "whole_document_release_status": "HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN"
   }
 }

@@ -7,7 +7,8 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import {
   gitBlobSha1, evaluateScoreContentFreeze, verifyCurrentScoreHold, collectScoreContents,
-  checkScoreLoaderContract, checkBuiltScoreArtifacts, checkFrozenHistoricalMainBodies, PINNED_SCORE_LOADERS,
+  checkScoreLoaderContract, checkBuiltScoreArtifacts, checkFrozenHistoricalMainBodies,
+  selectTrustedScoreSourceRoot, PINNED_SCORE_LOADERS,
   PINNED_SCORE_CONTENT_CONFIG_BLOB,
 } from './score-held-report-source-guard.mjs';
 
@@ -333,3 +334,16 @@ console.log('Score rights F1b PASS: pinned loaders; redirected/extra loaders and
   }finally{fs.rmSync(temp,{recursive:true,force:true});}
 }
 console.log('Score F1d historical body hashes PASS: 16 pinned original Production main digests and tampered/missing/malformed/forged negatives');
+
+
+// F2 staged trusted-source CLI validation (not an activated protected main check).
+{
+  const originalSite=fileURLToPath(new URL('../',import.meta.url));
+  assert.equal(selectTrustedScoreSourceRoot(['node','script'],originalSite),originalSite);
+  assert.equal(selectTrustedScoreSourceRoot(['node','script','--root',originalSite]),originalSite);
+  assert.throws(()=>selectTrustedScoreSourceRoot(['node','script','--root','relative'],originalSite),
+    /absolute candidate web path/);
+  assert.throws(()=>selectTrustedScoreSourceRoot(['node','script','--root',originalSite,'--root',originalSite]),
+    /only once/);
+}
+console.log('Score F2 staged trusted-source --root parser PASS (no GitHub ruleset or required check activated)');

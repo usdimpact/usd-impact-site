@@ -1,0 +1,42 @@
+name: EOD methodology - synthetic read-only dry run (HOLD)
+
+# This workflow does not install or authorize a new public publishing service.
+# The schedule only executes from the default branch, and the owner gate defaults OFF.
+# Date/time eligibility is evidence planning; it is not a market-close claim.
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/eod-methodology-dry-run.yml'
+      - 'research/eod-methodology-offline/**'
+  schedule:
+    - cron: '37 17 * * 1-5'
+      timezone: 'America/New_York'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eod-methodology-research-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  synthetic-review:
+    # PR validation can execute immediately; schedule/dispatch stays off until
+    # the owner separately creates a true repo variable (not a secret).
+    if: ${{ github.event_name == 'pull_request' || vars.USD_IMPACT_EOD_RESEARCH_ENABLE == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout source (read-only)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Prepare Node.js (no installs)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '24.x'
+      - name: Verify existing and new fictional evidence contracts
+        run: node --test research/eod-methodology-offline/test.mjs research/eod-methodology-offline/methodology-schedule.test.mjs
+      - name: Produce synthetic run summary (no market sources, no site edits)
+        run: node research/eod-methodology-offline/automation-dry-run.mjs --evidence=quiet

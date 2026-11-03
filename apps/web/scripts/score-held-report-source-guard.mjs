@@ -245,12 +245,35 @@ export function verifyCurrentScoreHold(root=webRoot) {
   ];
 }
 
+// Staged F2 trusted checkout interface. When this module is invoked from a
+// separate protected-base checkout, --root points at candidate web files;
+// rights ledger, verifier and golden digests stay anchored to this module.
+// Current Draft workflows do NOT constitute independent trusted F2 enforcement.
+export function selectTrustedScoreSourceRoot(argv=process.argv,defaultRoot=webRoot) {
+  const indices=argv.flatMap((arg,i)=>arg==='--root'?[i]:[]);
+  if(indices.length>1)throw Error('Score --root may occur only once');
+  if(!indices.length)return defaultRoot;
+  const value=argv[indices[0]+1];
+  if(typeof value!=='string'||!path.isAbsolute(value)||value.startsWith('-'))
+    throw Error('Score --root requires a single absolute candidate web path');
+  const target=path.resolve(value);
+  if(!fs.lstatSync(target).isDirectory()||fs.lstatSync(target).isSymbolicLink())
+    throw Error('Score --root must name a real directory');
+  return target;
+}
+
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  const failures=verifyCurrentScoreHold();
-  if(process.argv.includes('--built')){
-    const inventory=JSON.parse(fs.readFileSync(baselineFile,'utf8'));
-    failures.push(...checkBuiltScoreArtifacts(inventory,path.join(webRoot,'dist')));
-    failures.push(...checkFrozenHistoricalMainBodies(inventory,path.join(webRoot,'dist')));
+  let failures=[];
+  try {
+    const sourceRoot=selectTrustedScoreSourceRoot();
+    failures=verifyCurrentScoreHold(sourceRoot);
+    if(process.argv.includes('--built')){
+      const inventory=JSON.parse(fs.readFileSync(baselineFile,'utf8'));
+      failures.push(...checkBuiltScoreArtifacts(inventory,path.join(sourceRoot,'dist')));
+      failures.push(...checkFrozenHistoricalMainBodies(inventory,path.join(sourceRoot,'dist')));
+    }
+  }catch(err){
+    failures.push('Score trusted source/root evaluation failed: '+String(err?.message||err));
   }
   if(failures.length){
     console.error('Score-derived source rights HOLD check FAILED:\n- '+failures.join('\n- '));

@@ -157,5 +157,8 @@ assert.match(runtime, /ensureMorning\(\)/);
 assert.match(runtime, /verifyDailyNewsDeployment\(/);
 assert.match(runtime, /'merge_method=squash'/);
 assert.doesNotMatch(runtime, /--admin|--force|--bypass|gh pr merge/);
+assert.match(runtime, /files\[0\]\.filename !== expectedPath/);
+assert.match(runtime, /'contents\/' \+ expectedPath/);
+assert.doesNotMatch(runtime, /'contents\/' \+ files\[0\]\.filename/);
 
 console.log('Daily bounded auto-publication policy PASS: fake dates, backstop, exact PR, strict source, check provenance and workflow limits; no network or merge.');

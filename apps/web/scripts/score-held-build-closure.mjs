@@ -20,6 +20,16 @@ export const AUDIT_ONLY_EXCLUSIONS=Object.freeze([
   'scripts/test-score-held-build-closure.mjs',
   'scripts/score-held-build-closure-baseline.json',
 ]);
+export const GENERATED_FONT_SHA256=Object.freeze({
+  'public/assets/fonts/inter-latin-wght-normal.woff2':'3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62',
+  'public/assets/fonts/inter-latin-ext-wght-normal.woff2':'34b9c504cab7a73e37b746343a449132e56cf7b5481af2cb81dc74dcff25c956',
+  'public/assets/fonts/playfair-display-latin-wght-normal.woff2':'e0c764a8e9e1cce92163c55bac4b2ad6cd4cf8c696ce2289ab5c41565e65b7e2',
+  'public/assets/fonts/playfair-display-latin-ext-wght-normal.woff2':'42898ad49a6b23f32b109243e1df596edf831015ed685f429e4dafbb181d599d',
+  'public/assets/fonts/inter-OFL-1.1.txt':'3b0a5fca3d17942cde889069889dedbbbd075e9b599968c82a95f4d944e9b345',
+  'public/assets/fonts/playfair-display-OFL-1.1.txt':'c052aafd2a71e90bcee6e69f475029d430a10d548c08ffcae350171f0e9668b1',
+});
+// These six post-install artifacts are copied by the pinned prepare-font-assets.mjs.
+// Accept them only at exactly these paths AND exactly these upstream SHA-256 digests.
 const GENERATED_ROOT_DIRS=new Set(['node_modules','dist','.astro','.vercel','.git','coverage','.cache']);
 const MAX_FILE_BYTES=64*1024*1024;
 const SHA1=/^[a-f0-9]{40}$/;
@@ -69,7 +79,15 @@ export function collectWebBuildInputs(root, options={}) {
           if(!opened.isFile() || opened.size>MAX_FILE_BYTES || (opened.mode & 0o111)!==0) {
             failures.push('Unsupported file mode/size in held build input: '+rel);
           } else {
-            found[rel]=gitBlobSha(fs.readFileSync(descriptor));
+            const bytes=fs.readFileSync(descriptor);
+            const expectedFontSha=Object.hasOwn(GENERATED_FONT_SHA256,rel)?GENERATED_FONT_SHA256[rel]:null;
+            if(expectedFontSha){
+              if(createHash('sha256').update(bytes).digest('hex')!==expectedFontSha) {
+                failures.push('Generated font digest mismatch: '+rel);
+              }
+            }else{
+              found[rel]=gitBlobSha(bytes);
+            }
           }
         } catch(err) {
           failures.push('Cannot securely read held build input: '+rel+' ('+String(err?.code||'error')+')');

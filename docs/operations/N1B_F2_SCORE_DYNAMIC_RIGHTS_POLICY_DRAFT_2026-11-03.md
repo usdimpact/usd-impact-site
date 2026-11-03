@@ -59,7 +59,7 @@ Relevant current platform security references: [GitHub secure use](https://docs.
 | N1b lexical claims in excluded News/Catalyst | Draft review only | Owner approves narrowly scoped option A, revises it, or formally accepts risk B |
 | N1b semantic paraphrases/source rights | HOLD | Editorial+licensing clearance; no automatic classifier is comprehensive |
 | F2 exact head and App-owned required check | HOLD | Owner selects protected policy/App, safe bootstrap and trusted job |
-| F3 Preview custom domain `passkeys-dev.usd-impact.com` | HOLD | Read-only anonymous browser/protection evidence, no global auth toggles |
+| F3 Preview custom domain `passkeys-dev.usd-impact.com` | Alias-intent mismatch **resolved** in [PR #930 evidence](https://github.com/usdimpact/usd-impact-site/pull/930#issuecomment-6611472140); real-device WebAuthn remains deferred | Preserve approved alias, no DNS/auth toggles; only separately approved device acceptance |
 | F1d main integration | HOLD | Preserve #1088/#1089, #1078 Monthly and independent Spanish accessibility PRs; independent CodeQL and required checks after separate approval |
 | Original Score Issue #155, H-15/H-16, media, commerce and indexing | HOLD | Separate documentary rights and release approvals |
 
@@ -71,7 +71,7 @@ The first N1b QA-only version contained false-PASS risks unrelated to F1d: it sc
 
 The hardened Draft scanner examines bounded complete lines, preserves ordinary Catalyst \`impactScore\` by matching original Score labels rather than ignoring a line, recognizes selected Spanish claim labels, detects immediately adjacent Score values, and treats manual-review items and deletions as **review required** rather than PASS. It refuses source-parent symlinks. These are targeted syntactic tests, not a comprehensive semantic rights detector. Longer-distance paraphrases, externally sourced score-like numbers, model-translated text, markdown rendered from embedded scripts, and claims with omitted original labels still require a human rights reviewer.
 
-This still does **not** activate a publication gate or bind the classifier to protected-main checks. The F2 App-owned source/policy requirement, F3 anonymous-domain verification, original Score provider rights, all H-15/H-16 and media/commerce/indexing holds are unchanged.
+This still does **not** activate a publication gate or bind the classifier to protected-main checks. The F2 App-owned source/policy requirement, F3 remaining real-device WebAuthn acceptance, original Score provider rights, all H-15/H-16 and media/commerce/indexing holds are unchanged.
 
 
 ## 7. F2 implementation-ready trust bootstrap — independently held policy, not activated

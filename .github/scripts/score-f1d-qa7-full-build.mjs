@@ -27,6 +27,9 @@ const fixture={
 const outcomes=[],hashes={};
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 function run(mode){
+  // Reproduce a clean checkout for each case; a prior Astro build populates
+  // .astro and must not mask the specific malicious input being tested.
+  fs.rmSync(path.join(root,'.astro'),{recursive:true,force:true});
   return spawnSync('/bin/bash',['-lc',command],{
     cwd:root,env:{...process.env,VERCEL_ENV:mode,CI:'true'},
     encoding:'utf8',maxBuffer:16*1024*1024,timeout:240000,

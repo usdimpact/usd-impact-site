@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/ga4-compiled-astro-qa.yml'
       - 'apps/web/scripts/test-ga4-compiled-astro-browser.py'
+      - 'apps/web/scripts/test-spanish-preview-compiled-accessibility.py'
       - 'apps/web/src/components/GoogleAnalyticsClient.astro'
       - 'apps/web/src/components/ConsentClient.astro'
       - 'apps/web/src/layouts/BaseLayout.astro'
@@ -64,3 +65,31 @@ jobs:
         run: |
           set -euo pipefail
           "$RUNNER_TEMP/ga4-compiled-venv/bin/python" apps/web/scripts/test-ga4-compiled-astro-browser.py
+      - name: Build exact Spanish Preview routes for isolated keyboard QA
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == true && github.head_ref == 'agent/es-compiled-a11y-qa-20261103' }}
+        working-directory: apps/web
+        env:
+          VERCEL_ENV: preview
+          PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          npm run prepare:fonts
+          npm run generate:quizzes
+          npx --no-install astro build
+      - name: Test compiled Spanish accessibility, focus, and real browser cookie on loopback
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == true && github.head_ref == 'agent/es-compiled-a11y-qa-20261103' }}
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/ga4-compiled-venv/bin/python" apps/web/scripts/test-spanish-preview-compiled-accessibility.py
+      - name: Upload isolated Spanish accessibility QA screenshots and summary
+        if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.draft == true && github.head_ref == 'agent/es-compiled-a11y-qa-20261103' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # repo-reviewed SHA
+        with:
+          name: spanish-compiled-accessibility-draft
+          path: apps/web/spanish-preview-accessibility-qa/
+          if-no-files-found: warn
+          retention-days: 2

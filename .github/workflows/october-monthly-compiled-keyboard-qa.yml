@@ -1,0 +1,69 @@
+name: October Monthly compiled keyboard focus QA (Draft, loopback only)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/october-monthly-compiled-keyboard-qa.yml'
+      - 'apps/web/scripts/test-october-monthly-compiled-keyboard-focus.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: october-monthly-compiled-focus-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  monthly-focus:
+    if: ${{ github.event.pull_request.draft == true && github.head_ref == 'agent/october-monthly-native-focus-qa-20261103' }}
+    name: Actual compiled October Monthly skip/main/footer focus in Chromium
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Read-only source checkout, no persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Use pinned project Node.js major version
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.x'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install exact-lock dependencies
+        working-directory: apps/web
+        run: npm ci --strict-allow-scripts --no-audit --no-fund
+      - name: Build generated Preview-only October Monthly HTML and CSS
+        working-directory: apps/web
+        env:
+          VERCEL_ENV: preview
+          PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          npm run prepare:fonts
+          npm run generate:quizzes
+          npx --no-install astro build
+          node scripts/test-independent-macro-monthly-preview.mjs --built
+      - name: Install isolated Playwright driver, no browser download
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/october-monthly-focus-venv"
+          "$RUNNER_TEMP/october-monthly-focus-venv/bin/python" -m pip install --disable-pip-version-check --no-cache-dir playwright==1.57.0
+          command -v google-chrome || command -v chromium
+      - name: Verify native keyboard main and footer focus at 320, 390, 768, 1440
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/october-monthly-focus-venv/bin/python" apps/web/scripts/test-october-monthly-compiled-keyboard-focus.py
+      - name: Upload short-lived sanitized keyboard screenshots and JSON
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: october-monthly-focus-compiled-draft
+          path: apps/web/october-monthly-focus-evidence/
+          if-no-files-found: warn
+          retention-days: 2

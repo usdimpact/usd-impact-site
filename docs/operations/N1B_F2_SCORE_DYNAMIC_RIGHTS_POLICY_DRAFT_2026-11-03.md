@@ -72,3 +72,74 @@ The first N1b QA-only version contained false-PASS risks unrelated to F1d: it sc
 The hardened Draft scanner examines bounded complete lines, preserves ordinary Catalyst \`impactScore\` by matching original Score labels rather than ignoring a line, recognizes selected Spanish claim labels, detects immediately adjacent Score values, and treats manual-review items and deletions as **review required** rather than PASS. It refuses source-parent symlinks. These are targeted syntactic tests, not a comprehensive semantic rights detector. Longer-distance paraphrases, externally sourced score-like numbers, model-translated text, markdown rendered from embedded scripts, and claims with omitted original labels still require a human rights reviewer.
 
 This still does **not** activate a publication gate or bind the classifier to protected-main checks. The F2 App-owned source/policy requirement, F3 anonymous-domain verification, original Score provider rights, all H-15/H-16 and media/commerce/indexing holds are unchanged.
+
+
+## 7. F2 implementation-ready trust bootstrap — independently held policy, not activated
+
+**Last read-only ruleset receipt (2026-11-03):** [Protect main #19557112](https://github.com/usdimpact/usd-impact-site/rules/19557112) is active with strict status checks. It requires \`validate-and-build\`, \`Dependency review\`, and \`Reject Development-only Production migration files\` from integration \`15368\`. The ruleset has no independently App-owned Score-rights check. Branch-protection REST is separately integration-restricted (403), so use the ruleset receipt rather than claiming branch-protection API access.
+
+**Security boundary to establish:** candidate repository content is untrusted, including candidate versions of this policy, workflow YAML, tests, SHA baseline and release manifest. The check-publishing identity and the policy that determines its verdict must be loaded from a separately authorized control plane. A different GitHub Actions context from the same candidate repository does not establish F2 independence.
+
+### 7.1 Minimum viable, low-cost architecture for a solo owner
+
+1. **Protected policy home:** standalone private policy repository (or independently deployed immutable package) dedicated to Score rights, administered separately from candidate PR review. Maintain a tagged, byte-pinned policy version, exact source tree and 16 historical full-body reference receipts. Require explicit recorded owner approval for each policy version or allow-list change; never derive the baseline from the candidate PR. Establish controls so writing to the site PR cannot edit the trusted policy release or runner configuration.
+2. **GitHub App identity:** create a dedicated \`USD Impact Score Rights\` App with only the minimum installation permissions for repository metadata/content read, pull requests read and checks write, limited to the target repository. Record installation identity and numeric app integration ID from GitHub, not a guessed value. Keep the App private key in the external evaluator's secret store, not site repository secrets or workflow environment. App ownership/administrator access must not be granted to PR automation.
+3. **Event source and validation:** externally receive signed GitHub \`pull_request\` webhook events (opened, synchronize, reopened, edited as appropriate). Validate HMAC with constant-time comparison, repository ID/owner/name, event type and exact PR head/target. Fetch the current head through the GitHub API after receiving the event to avoid trusting stale or caller-supplied branch names. Protect against replay and processing duplicates.
+4. **Candidate acquisition:** fetch Git trees/blob bytes from GitHub at **exact head SHA** via read-only API or pinned archive. Never checkout and then run site-defined npm/Node/Astro scripts; do not execute hooks, submodules or external URLs embedded in content. Reject symlinks, oversized files, unexpected modes, path escapes, malformed UTF-8 and incomplete fetch/coverage.
+5. **Evaluation:** execute the trusted pinned evaluator with the approved policy hash, frozen historical-file digest list, closed set of Score sources/aliases, and N1b review rules against candidate bytes. Always distinguish \`DENY\`, \`MANUAL_REVIEW\` and \`ALLOW\`; a machine score of \`ALLOW\` cannot assert provider licence. Source-rights receipt must include provider and licensed use, redistribution/derivatives restrictions, observation vintage and document approver when necessary.
+6. **Check publication:** publish \`USD Impact / Score Rights Trusted Policy\` from the **App** to the **exact candidate SHA** using Checks API. Output a concise audit record: repository/PR IDs, head SHA, protected target SHA, policy release hash, evaluator version, evaluated paths and counts, verdict, evidence reference and timestamp. Use \`neutral\` or \`action_required\` for unresolved editorial review and \`failure\` for hard violations, never \`success\` on ambiguous cases. Refuse missing evidence, network error and policy mismatch.
+7. **Race closure:** before posting success, re-fetch PR head and protected target; if either changed, mark result stale and reschedule current-head evaluation. Ensure that a later status from an old head cannot satisfy a strict required check for a new head. Re-evaluate any PR after a trusted policy update that invalidates earlier decisions.
+
+### 7.2 Mandatory independent negative tests before enabling any required check
+
+| Attack or scenario | Expected trusted result |
+|---|---|
+| N4: candidate changes both source and own evaluator/test/baseline to say PASS | **DENY** using independently pinned evaluator, even if PR-owned Actions is green |
+| Edit one of 16 held historical report body outputs through template or source | **DENY** from trusted original baseline / rendered-output or immutable snapshot receipt |
+| Create new disguised Score route or derived JSON/HTML | **DENY** or documented manual review based on trusted route/file coverage |
+| News/Catalyst has affirmative original Score value or held component link | **DENY** irrespective of local \`impactScore\` / \`marketRegime\` |
+| News/Catalyst paraphrases alleged original regime with no label | **MANUAL_REVIEW**, not automatic green |
+| BLS / Treasury sourced numeric data and pure methodology language | **ALLOW** only as review-logic outcome, not independent licensing certificate |
+| Candidate force-pushes after external evaluation starts | **STALE** old run and re-evaluate new exact head |
+| Policy SHA changes, App permission revoked, webhook missing or evaluation times out | **NO SUCCESS**; monitoring and manual response required |
+| Spoofed same-name check from ordinary Actions integration \`15368\` | **NOT ACCEPTED** as App-owned required context |
+| Benign Nov 3 Daily / ordinary Catalyst importance fields | **ALLOW** after independent fixture and genuine-content comparison |
+
+### 7.3 Activation sequence — separate explicit change control
+
+**Stage S0 — current:** N1b/QA9 remains review-only Draft, F1d independent comparison pending; existing ruleset unchanged.
+
+**Stage S1 — external shadow:** owner creates and secures the standalone policy source and dedicated GitHub App; evaluator runs privately without writing checks. Verify HMAC, event identity, exact-SHA evaluation, policy-hash and N4 self-repin negatives, plus source-rights ledger handling. This stage requires external setup and independently maintained secrets; cannot be completed by modifying the site repository alone.
+
+**Stage S2 — App check in shadow:** publish a non-required App-owned check on actual PR heads, confirm identity (numeric integration ID), consistent delivery on all active PR types and valid failure/timeout outcomes. Do not use privileged \`pull_request_target\` on untrusted code.
+
+**Stage S3 — independent acceptance:** record two separate negative-test executions and a legitimate Daily/Catalyst acceptance receipt. Ensure the 16 held historical bodies and all build outputs are covered by a genuinely trusted evaluator. Verify provenance, source terms and documented manual exceptions. Recheck F1d latest main-compatible candidate independently, without merging overlapping branches.
+
+**Stage S4 — protected ruleset change:** only after an explicit follow-up owner authorization for the exact App integration ID and check name, add the new App-owned context to [ruleset #19557112](https://github.com/usdimpact/usd-impact-site/rules/19557112) while preserving all three existing contexts and strict matching. Record before/after JSON, exercise a malicious and benign PR, prove no freeze/deadlock and prepare reversible rollback. Owner-approved rollback must remove only the newly added App check.
+
+**Stage S5 — independent release:** rights Issue #155, original Score, publishing routes, media, indexing, Source licences, F1d and commerce are separate gates; a green F2 check grants **none** of these rights.
+
+**Hard stop:** do not deploy an App, touch secrets, change branch rules, grant provider rights, merge or activate publication based solely on this design. Approval to continue Draft engineering is not permission to change Production or enforcement.
+
+### 7.4 Minimum attributable evidence record
+
+\`\`\`json
+{
+  "schema": 1,
+  "repo_id": "verified GitHub repository ID",
+  "pr": "verified PR number",
+  "head_sha": "40-hex Git commit",
+  "target_base_sha": "40-hex protected target commit",
+  "policy_release_sha256": "64-hex immutable policy checksum",
+  "evaluator_version": "trusted release ID",
+  "app_integration_id": "verified GitHub App numeric ID",
+  "checked_paths": "bounded manifest digest + count",
+  "historical_body_receipt": "external immutable baseline receipt ID",
+  "verdict": "ALLOW | DENY | MANUAL_REVIEW | ERROR",
+  "rights_receipts": "approved source references or unresolved",
+  "event_id": "GitHub delivery ID",
+  "created_at": "UTC time"
+}
+\`\`\`
+
+Evidence without a verified external policy hash and App identity must be labeled **PR-owned review only** rather than F2.

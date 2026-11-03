@@ -215,6 +215,16 @@ export function renderTreasuryCandidate(record, language) {
     record.source.exact_original_score_input === false &&
     record.source.canonical_url === treasuryMonthlyUrl(record.observation_date),
     'candidate status, rights or issuer provenance is inconsistent');
+  const ctx = record.source?.capture_context;
+  assert(ctx && ['SAME_DAY_AFTER_1830_ET','EXPLICIT_RETROSPECTIVE'].includes(ctx.capture_mode),
+    'missing or unauthorized source capture context');
+  const expectedCtx = treasuryReviewContext(record.observation_date, record.captured_as_of_utc,
+    {allowRetrospective: ctx.capture_mode === 'EXPLICIT_RETROSPECTIVE'});
+  assert(ctx.capture_lag_calendar_days === expectedCtx.capture_lag_calendar_days &&
+    ctx.capture_mode === expectedCtx.capture_mode &&
+    ctx.as_of_utc === expectedCtx.as_of_utc &&
+    ctx.first_issuer_publication_time_verified === false,
+    'candidate capture date relation or issuer vintage was modified');
   const facts = record.facts;
   assert(Array.isArray(facts) && (facts.length === 0 || facts.length === 3),
     'candidate fact shape is inconsistent');
@@ -247,6 +257,11 @@ export function renderTreasuryCandidate(record, language) {
   const lines = ['# ' + name + ' — ' + record.observation_date, '', '**' + caution + '**',
     '', guidance, '', (es ? 'Fuente primaria: ' : 'Primary source: ') + record.source.canonical_url,
     (es ? 'Consultado a las ' : 'Captured as of ') + record.captured_as_of_utc, ''];
+  if (ctx.capture_mode === 'EXPLICIT_RETROSPECTIVE') {
+    lines.push(es ?
+      'Revisión retrospectiva: la fecha de consulta es posterior a la observación. No se conoce la hora de primera publicación.' :
+      'Retrospective review: captured after the observation date. First publication time remains unknown.');
+  }
   if (record.facts.length === 0) {
     lines.push(es ?
       'El feed mensual consultado no contenía una observación para esa fecha en el momento de la consulta. Esto no demuestra que no hubiera actividad en los mercados.' :

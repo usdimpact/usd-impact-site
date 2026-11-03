@@ -106,12 +106,19 @@ export function validateDailyContent(content, editionDate, file) {
       || !simplePublicationMarkdown(Buffer.from(screen, 'utf8'))) {
     throw new Error('not-a-single-safe-new-daily');
   }
-  const esc = editionDate.replace(/-/g, '\\-');
-  if (!(new RegExp('^date: "' + esc + '"$', 'm')).test(content)
-      || !(new RegExp('^slug: "/news/' + esc + '"$', 'm')).test(content)
-      || !(new RegExp('^lastReviewed: "' + esc + '"$', 'm')).test(content)
-      || !(new RegExp('^generatedAt: "' + esc + 'T', 'm')).test(content)
-      || !/^status: "published"$/m.test(content)
+  // Never construct a regular expression from source/event input.
+  // The fixed ISO date format and literal complete lines avoid escaping bugs.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(editionDate)) {
+    throw new Error('invalid-edition-date');
+  }
+  const lines = new Set(String(content).split(/\r?\n/));
+  const generatedAtLines = [...lines].filter((line) =>
+    line.startsWith('generatedAt: "' + editionDate + 'T'));
+  if (!lines.has('date: "' + editionDate + '"')
+      || !lines.has('slug: "/news/' + editionDate + '"')
+      || !lines.has('lastReviewed: "' + editionDate + '"')
+      || generatedAtLines.length !== 1
+      || !lines.has('status: "published"')
       || !/^complianceNote: "Educational and informational only\./m.test(content)) {
     throw new Error('daily-date-or-compliance-drift');
   }

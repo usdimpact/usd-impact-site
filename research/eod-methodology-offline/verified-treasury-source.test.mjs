@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import {
   buildTreasuryCandidate, fetchTreasuryCandidate, readTreasuryObservation,
   renderTreasuryCandidate, treasuryMonthlyUrl, validateTreasuryClock, redactedIssuerProbeReceipt, planTreasuryProbeArgs,
@@ -302,6 +303,72 @@ test('response capture time is stamped after the source bytes were read', async 
   const x = await fetchTreasuryCandidate({day:DAY,clock,fetchImpl:async()=>response()});
   assert.equal(calls, 2);
   assert.equal(x.record.captured_as_of_utc, '2026-11-03T23:43:00.000Z');
+});
+
+test('stream hash is over exact fetched body bytes, including a removed UTF-8 BOM', async () => {
+  const xml = xmlRows();
+  const payload = Buffer.concat([Buffer.from([0xef,0xbb,0xbf]), Buffer.from(xml)]);
+  let n=0;
+  const stream={getReader:()=>({read:async()=>{
+    if(n===0){n++;return {done:false,value:payload.subarray(0,2)};}
+    if(n===1){n++;return {done:false,value:payload.subarray(2,10)};}
+    if(n===2){n++;return {done:false,value:payload.subarray(10)};}
+    return {done:true};
+  }})};
+  const x=await fetchTreasuryCandidate({
+    day:DAY,clock:()=>new Date(AS_OF),
+    fetchImpl:async()=>response(xml,{body:stream,
+      headers:{'content-length':String(payload.length)}}),
+  });
+  const rawSha=createHash('sha256').update(payload).digest('hex');
+  const textSha=createHash('sha256').update(xml,'utf8').digest('hex');
+  assert.notEqual(rawSha,textSha);
+  assert.equal(x.record.source.source_sha256,rawSha);
+  assert.equal(x.record.source.source_hash_basis,'FETCH_BODY_BYTES_POST_HTTP_DECODING');
+  const receipt=redactedIssuerProbeReceipt(x);
+  assert.equal(receipt.source_sha256,rawSha);
+  assert.equal(receipt.source_hash_basis,'FETCH_BODY_BYTES_POST_HTTP_DECODING');
+  assert.doesNotMatch(JSON.stringify(receipt), /4\.12|4\.65|0\.53|markdown/);
+});
+
+test('text-only mocked response cannot claim a hashed source body', async () => {
+  const xml=xmlRows();
+  const x=await fetchTreasuryCandidate({
+    day:DAY,clock:()=>new Date(AS_OF),fetchImpl:async()=>response(xml)
+  });
+  assert.equal(x.record.source.source_sha256,
+    createHash('sha256').update(xml,'utf8').digest('hex'));
+  assert.equal(x.record.source.source_hash_basis,'REENCODED_TEXT_FALLBACK_NOT_RAW');
+  assert.equal(redactedIssuerProbeReceipt(x).source_hash_basis,
+    'REENCODED_TEXT_FALLBACK_NOT_RAW');
+  const fixture=buildTreasuryCandidate({xml,day:DAY,asOfUtc:AS_OF});
+  assert.equal(fixture.record.source.source_hash_basis,'UTF8_FIXTURE_TEXT');
+});
+
+test('invalid UTF-8 source bytes are rejected rather than silently replaced', async () => {
+  const xml=xmlRows();
+  const bytes=Buffer.concat([Buffer.from([0xc3,0x28]),Buffer.from(xml)]);
+  let n=0;
+  const stream={getReader:()=>({read:async()=>n++===0?
+    {done:false,value:bytes}:{done:true}})};
+  await assert.rejects(()=>fetchTreasuryCandidate({
+    day:DAY,clock:()=>new Date(AS_OF),
+    fetchImpl:async()=>response(xml,{body:stream,
+      headers:{'content-length':String(bytes.length)}})
+  }),/encoded data|utf-8/i);
+});
+
+test('non-binary stream chunks and forged hash-basis claims fail closed', async () => {
+  const stream={getReader:()=>({read:async()=>({done:false,value:'malformed'})})};
+  await assert.rejects(()=>fetchTreasuryCandidate({
+    day:DAY,clock:()=>new Date(AS_OF),
+    fetchImpl:async()=>response(xmlRows(),{body:stream})
+  }),/non-binary chunk/);
+  const fixture=buildTreasuryCandidate({xml:xmlRows(),day:DAY,asOfUtc:AS_OF});
+  assert.throws(()=>renderTreasuryCandidate({
+    ...fixture.record,source:{...fixture.record.source,
+      source_hash_basis:'FETCH_BODY_BYTES_POST_HTTP_DECODING'}
+  },'en'),/candidate status, rights or issuer provenance/);
 });
 
 test('source completed after New York midnight cannot be backdated', async () => {

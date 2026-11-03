@@ -41,6 +41,10 @@ jobs:
           node --check scripts/test-score-held-report-source-guard.mjs
           node scripts/test-score-held-report-source-guard.mjs
           node scripts/score-held-report-source-guard.mjs
+          node --check scripts/score-held-build-closure.mjs
+          node --check scripts/test-score-held-build-closure.mjs
+          node scripts/test-score-held-build-closure.mjs
+          node scripts/score-held-build-closure.mjs
       - name: Install existing locked dependencies for source-impacting PR
         if: steps.plan.outputs.build != 'false'
         run: npm ci --no-audit --no-fund --strict-allow-scripts

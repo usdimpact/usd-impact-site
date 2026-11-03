@@ -35,7 +35,7 @@ const pkg=JSON.parse(fs.readFileSync(path.join(site,'package.json'),'utf8'));
 const vercel=JSON.parse(fs.readFileSync(path.join(site,'vercel.json'),'utf8'));
 assert.equal(vercel.buildCommand,'npm run validate && npm run build');
 assert.match(pkg.scripts.validate,/^node scripts\/score-held-build-closure\.mjs && node scripts\/score-held-report-source-guard\.mjs && /);
-assert.match(pkg.scripts.build,/^node scripts\/score-held-build-closure\.mjs && /);
+assert.match(pkg.scripts.build,/^npm run prepare:fonts && node scripts\/score-held-build-closure\.mjs && /);
 assert.match(pkg.scripts.build,/&& node scripts\/score-held-report-source-guard\.mjs --built$/);
 
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'f1d-build-closure-negative-'));

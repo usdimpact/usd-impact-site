@@ -259,6 +259,7 @@ export function digestFrozenScoreEnvelope(html) {
     return items[0];
   };
   const body=one([...html.matchAll(/<body\b[^>]*>[\s\S]*?<\/body\s*>/gi)].map(m=>m[0]),'body');
+  const head=one([...html.matchAll(/<head\b[^>]*>[\s\S]*?<\/head\s*>/gi)].map(m=>m[0]),'head');
   const hero=one([...html.matchAll(/<section\b[^>]*>[\s\S]*?<\/section\s*>/gi)]
     .map(m=>m[0])
     .filter(section=>/^<section\b[^>]*class\s*=\s*(?:"[^"]*reports-hero[^"]*"|'[^']*reports-hero[^']*')/i.test(section)),
@@ -274,6 +275,7 @@ export function digestFrozenScoreEnvelope(html) {
     }).map(normalizeHeldScoreHtmlAttributes);
   return {
     body:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(body)),
+    head:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(head)),
     hero:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(hero)),
     title:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(title)),
     meta_description:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(desc)),
@@ -296,6 +298,9 @@ export function checkFrozenScorePublishedEnvelope(inventory,distRoot) {
   const expectedBody=Object.keys(frozen?.original_whole_body_reference_sha256??{}).sort();
   const draftWholeBody=frozen?.draft_containment_whole_body_sha256;
   const draftBodyNames=Object.keys(draftWholeBody?.sha256??{}).sort();
+  const draftWholeHead=frozen?.draft_containment_whole_head_sha256;
+  const draftHeadNames=Object.keys(draftWholeHead?.sha256??{}).sort();
+  const originalHeadNames=Object.keys(frozen?.original_whole_head_reference_sha256??{}).sort();
   const shaOk=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
   if(!frozen||frozen.source_main_commit!=='d1740214f5737996f321a037efe3f2f7d21ecd64'
     ||frozen.normalization!=='HTML_ATTR_NONCE_INTEGRITY_VALUE_ONLY_V1'
@@ -314,6 +319,17 @@ export function checkFrozenScorePublishedEnvelope(inventory,distRoot) {
     ||draftBodyNames.join('|')!==reportNames.join('|')
     ||!draftBodyNames.every(name=>shaOk(draftWholeBody.sha256[name])
       &&draftWholeBody.sha256[name]!==frozen.original_whole_body_reference_sha256[name])
+    ||!draftWholeHead
+    ||draftWholeHead.evidence_commit!=='3d7694260f29d16eb67bd83f65c12e8ca1cee7c3'
+    ||draftWholeHead.evidence_workflow_run!==41695519712
+    ||draftWholeHead.scope!=='DRAFT_ONLY_HEAD_INTEGRITY_NOT_ORIGINAL_MAIN_LICENSE'
+    ||draftWholeHead.classification_match!=='PRODUCTION_PREVIEW_16_OF_16'
+    ||frozen.whole_head_release_status!=='HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN'
+    ||originalHeadNames.join('|')!==reportNames.join('|')
+    ||draftHeadNames.join('|')!==reportNames.join('|')
+    ||!draftHeadNames.every(name=>shaOk(draftWholeHead.sha256[name])
+      &&shaOk(frozen.original_whole_head_reference_sha256[name])
+      &&draftWholeHead.sha256[name]!==frozen.original_whole_head_reference_sha256[name])
     ||!actualReports.every(name=>{
       const r=frozen.reports[name];
       return r&&['hero','title','meta_description','jsonld'].every(key=>shaOk(r[key]))
@@ -340,6 +356,10 @@ export function checkFrozenScorePublishedEnvelope(inventory,distRoot) {
     // #1088's unapproved navigation differences as release permission.
     if(actual.body!==draftWholeBody.sha256[name])
       failures.push('Changed Draft-frozen historical Score whole body on rights HOLD: '+name);
+    // B8/B9: reject unapproved head additions (Open Graph, link titles, etc.)
+    // even when the Score source closure was legitimately re-pinned.
+    if(actual.head!==draftWholeHead.sha256[name])
+      failures.push('Changed Draft-frozen historical Score whole head on rights HOLD: '+name);
     for(const field of ['hero','title','meta_description','jsonld','jsonld_count']) {
       if(actual[field]!==golden[field])
         failures.push('Changed original Production historical Score '+field+' on rights HOLD: '+name);

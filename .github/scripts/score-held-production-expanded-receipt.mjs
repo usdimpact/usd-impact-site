@@ -99,6 +99,8 @@ const output={
   newsletter_json:newsletterNames.length,
   differences,
   original_sha256:original,
+  candidate_body_sha256:Object.fromEntries(
+    Object.entries(candidate.reports).map(([name,regions])=>[name,regions.body])),
 };
 console.log('SCORE_EXPANDED_RENDER_RECEIPT_JSON='+JSON.stringify(output));
 if(process.env.GITHUB_STEP_SUMMARY){

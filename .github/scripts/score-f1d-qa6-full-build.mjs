@@ -75,8 +75,14 @@ function mutate(root,which){
       break;
     }
     case 'X':
-      if(!old.includes('<title>{title}</title>'))throw Error('X layout title anchor missing');
-      next=old.replace('<title>{title}</title>','<title>{title} '+MARKER+'</title>');
+      // Report-only HTML metadata in the shared BaseLayout does not change
+      // the exact SEO page title inspected by unrelated learn-card validators.
+      // It still modifies the rendered historical Weekly HTML digest.
+      if(!old.includes('<meta name="theme-color" content="#0b1f33" />'))
+        throw Error('X layout theme metadata anchor missing');
+      next=old.replace('<meta name="theme-color" content="#0b1f33" />',
+        '<meta name="theme-color" content="#0b1f33" />' +
+        '\n    {Astro.url.pathname.startsWith("/reports/weekly/") && <meta name="qa6-score-report" content="'+MARKER+'" />}');
       break;
     default:throw Error('Unknown fixture');
   }

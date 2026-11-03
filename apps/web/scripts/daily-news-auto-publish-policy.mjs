@@ -88,8 +88,16 @@ export function selectExactDailyPr(pulls, run, mainSha) {
 export function validateDailyContent(content, editionDate, file) {
   const bytes = Buffer.from(String(content), 'utf8');
   const expectedFile = 'apps/web/src/content/news/' + editionDate + '.md';
+  // The importer legitimately emits catalysts: [] on days without a verified
+  // high-impact forward event. The shared CI's conservative generic publication
+  // parser does not recognize that one empty-array scalar. Normalize only this
+  // exact syntax for shape screening; the original bytes remain authoritative.
+  const screen = String(content).replace(/^catalysts: \[\]$/m, 'catalysts:');
   if (!file || file.filename !== expectedFile || file.status !== 'added'
-      || !simplePublicationMarkdown(bytes)) throw new Error('not-a-single-safe-new-daily');
+      || bytes.length > 262144
+      || !simplePublicationMarkdown(Buffer.from(screen, 'utf8'))) {
+    throw new Error('not-a-single-safe-new-daily');
+  }
   const esc = editionDate.replace(/-/g, '\\-');
   if (!(new RegExp('^date: "' + esc + '"$', 'm')).test(content)
       || !(new RegExp('^slug: "/news/' + esc + '"$', 'm')).test(content)

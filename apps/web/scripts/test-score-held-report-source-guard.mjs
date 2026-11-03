@@ -278,6 +278,7 @@ console.log('Score rights F1b PASS: pinned loaders; redirected/extra loaders and
     const historical=path.join(fixture,'src','pages','reports','weekly','[date].astro');
     const astroConfig=path.join(fixture,'astro.config.mjs');
     const vercelFile=path.join(fixture,'vercel.json');
+    const packageFile=path.join(fixture,'package.json');
     const cleanConfig='export default { site: "https://www.usd-impact.com" };\n';
     fs.writeFileSync(astroConfig,cleanConfig);
     fs.writeFileSync(historical,'<div>Historical Score</div>\n');
@@ -286,6 +287,8 @@ console.log('Score rights F1b PASS: pinned loaders; redirected/extra loaders and
       git:{deploymentEnabled:{'agent/*':false}},
     });
     fs.writeFileSync(vercelFile,JSON.stringify(vercel()));
+    const pkg=()=>({scripts:{build:F1D_RENDER_PINS.packageBuildCommand}});
+    fs.writeFileSync(packageFile,JSON.stringify(pkg()));
     const fixturePins={
       astroConfig:gitBlobSha1(cleanConfig),
       pageTrees:[gitTreeSha1(path.join(fixture,'src','pages'))],
@@ -325,6 +328,10 @@ console.log('Score rights F1b PASS: pinned loaders; redirected/extra loaders and
     assert.ok(verify().some(x=>x.includes('Vercel build')),
       'F3 Vercel build guard omission MUST fail');
     fs.writeFileSync(vercelFile,JSON.stringify(vercel()));
+    fs.writeFileSync(packageFile,JSON.stringify({scripts:{build:'astro build'}}));
+    assert.ok(verify().some(x=>x.includes('npm build')),
+      'F3 npm build guard omission MUST fail');
+    fs.writeFileSync(packageFile,JSON.stringify(pkg()));
 
     assert.deepEqual(verify(),[],'all F1d fixtures restored to clean');
   }finally{

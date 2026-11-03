@@ -85,6 +85,8 @@ export function readTreasuryObservation(xml, day) {
     assert(dateValue && /^[0-9]{4}-[0-9]{2}-[0-9]{2}T/.test(dateValue) &&
       dayIsValid(dateValue.slice(0, 10)), 'bad or missing Treasury observation date');
     const observationDay = dateValue.slice(0, 10);
+    assert(observationDay.slice(0, 7) === day.slice(0, 7),
+      'Treasury monthly feed includes an observation from a different month');
     assert(!dates.has(observationDay), 'duplicate Treasury observation date in feed');
     dates.add(observationDay);
     if (observationDay !== day) continue;
@@ -134,9 +136,9 @@ function buildCandidateInternal({ xml, day, asOfUtc, transport }) {
     },
     facts: observation === null ? [] : [
       {id: 'TREASURY:PAR:' + day + ':2Y', name: 'US Treasury 2Y par yield',
-        value: observation.bc_2year_percent, unit: 'percentage_point'},
+        value: observation.bc_2year_percent, unit: 'percent'},
       {id: 'TREASURY:PAR:' + day + ':10Y', name: 'US Treasury 10Y par yield',
-        value: observation.bc_10year_percent, unit: 'percentage_point'},
+        value: observation.bc_10year_percent, unit: 'percent'},
       {id: 'TREASURY:PAR:' + day + ':10Y_MINUS_2Y', name: '10Y minus 2Y par yield',
         value: spread, unit: 'percentage_point', method: '10Y par yield minus 2Y par yield'},
     ],
@@ -161,6 +163,33 @@ export function renderTreasuryCandidate(record, language) {
   assert(['en', 'es'].includes(language), 'unapproved candidate locale');
   assert(record?.schema === TREASURY_METHOD_VERSION && record.public_release_authorized === false,
     'only non-public Treasury research candidates may render');
+  assert(record.kind === 'DAILY_METHOD_CANDIDATE' &&
+    record.original_score_reconstruction_authorized === false &&
+    record.human_editorial_review_required === true &&
+    record.source?.public_redistribution_rights_granted === false &&
+    record.source.exact_original_score_input === false &&
+    record.source.canonical_url === treasuryMonthlyUrl(record.observation_date),
+    'candidate status, rights or issuer provenance is inconsistent');
+  const facts = record.facts;
+  assert(Array.isArray(facts) && (facts.length === 0 || facts.length === 3),
+    'candidate fact shape is inconsistent');
+  if (facts.length === 3) {
+    const prefix = 'TREASURY:PAR:' + record.observation_date;
+    assert(record.source.source_observation_date === record.observation_date &&
+      facts[0].id === prefix + ':2Y' && facts[1].id === prefix + ':10Y' &&
+      facts[2].id === prefix + ':10Y_MINUS_2Y' &&
+      facts[0].unit === 'percent' && facts[1].unit === 'percent' &&
+      facts[2].unit === 'percentage_point' &&
+      facts.every(f => typeof f.value === 'number' && Number.isFinite(f.value)),
+      'candidate source facts, date or units are inconsistent');
+    const expectedSpread = Math.round((facts[1].value - facts[0].value) * 10000) / 10000;
+    assert(facts[2].value === expectedSpread,
+      'candidate derived 10Y-minus-2Y value is inconsistent');
+  } else {
+    assert(record.source.source_observation_date === null &&
+      record.status === 'NO_MATCHING_OBSERVATION_DRAFT',
+      'candidate no-observation status is inconsistent');
+  }
   const es = language === 'es';
   const name = es ? 'Nota diaria del método: curva del Tesoro' :
     'Daily Method Note: U.S. Treasury yield curve';

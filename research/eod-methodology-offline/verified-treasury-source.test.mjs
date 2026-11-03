@@ -228,6 +228,48 @@ test('fixture inputs cannot forge exact official-issuer transport status', () =>
   assert.equal(x.record.source.public_redistribution_rights_granted,false);
 });
 
+test('month-filtered issuer feed rejects wrong-month rows even with a matching target day', () => {
+  assert.throws(() => readTreasuryObservation(xmlRows([
+    {day:'2026-10-30',two:'3.90',ten:'4.20'},
+    {day:DAY,two:'4.12',ten:'4.65'}
+  ]), DAY), /different month/);
+});
+
+test('yield values use percent while a rate difference uses percentage points', () => {
+  const x = buildTreasuryCandidate({xml:xmlRows(),day:DAY,asOfUtc:AS_OF});
+  assert.deepEqual(x.record.facts.map(f=>f.unit), ['percent','percent','percentage_point']);
+  assert.deepEqual(x.en.canonical_values,x.es.canonical_values);
+});
+
+test('renderer fails closed when source IDs, calculated spread or rights are tampered', () => {
+  const record = buildTreasuryCandidate({xml:xmlRows(),day:DAY,asOfUtc:AS_OF}).record;
+  assert.throws(()=>renderTreasuryCandidate({
+    ...record, facts:record.facts.map((f,i)=>i===2?{...f,value:9.99}:f)
+  },'en'),/derived 10Y-minus-2Y/);
+  assert.throws(()=>renderTreasuryCandidate({
+    ...record, facts:record.facts.map((f,i)=>i===0?{...f,unit:'percentage_point'}:f)
+  },'es'),/source facts, date or units/);
+  assert.throws(()=>renderTreasuryCandidate({
+    ...record, source:{...record.source,public_redistribution_rights_granted:true}
+  },'en'),/candidate status, rights/);
+  assert.throws(()=>renderTreasuryCandidate({
+    ...record, source:{...record.source,source_observation_date:'2026-11-02'}
+  },'en'),/source facts, date or units/);
+  assert.throws(()=>renderTreasuryCandidate({
+    ...record,source:{...record.source,canonical_url:'https://other.example/test'}
+  },'en'),/candidate status, rights/);
+});
+
+test('no-observation note cannot be relabeled as an approved observation', () => {
+  const record = buildTreasuryCandidate({
+    xml:xmlRows([{day:'2026-11-02',two:'4.00',ten:'4.20'}]),day:DAY,asOfUtc:AS_OF
+  }).record;
+  assert.equal(record.facts.length,0);
+  assert.throws(()=>renderTreasuryCandidate({
+    ...record,status:'AWAITING_EDITORIAL_REVIEW'
+  },'en'),/no-observation status/);
+});
+
 test('cannot render as an approved public article or in an unapproved language', () => {
   const x=buildTreasuryCandidate({xml:xmlRows(),day:DAY,asOfUtc:AS_OF});
   assert.throws(()=>renderTreasuryCandidate({...x.record,public_release_authorized:true},'en'),

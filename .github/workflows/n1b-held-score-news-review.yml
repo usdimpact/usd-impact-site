@@ -37,6 +37,11 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.x
+      - name: Verify draft F2 Git tree self-repin contract (not a required check)
+        run: |
+          node --check .github/scripts/f2-trusted-git-tree-review.mjs
+          node --check .github/scripts/test-f2-trusted-git-tree-review.mjs
+          node .github/scripts/test-f2-trusted-git-tree-review.mjs
       - name: Validate standalone classifier and source-free negative fixtures
         run: |
           node --check .github/scripts/n1b-held-score-dynamic-review.mjs

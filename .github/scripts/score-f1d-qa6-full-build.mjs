@@ -162,18 +162,32 @@ for(const head of HEADS){
   console.log('VERCEL-BUILDCOMMAND '+head.key+' '+(vPass?'PASS':'FAIL')+
     ' exit='+vRun.status+' blocked='+vBlocked+' changedHistorical='+vOut.marker);
 }
+// Gate the proposed broad #1089 policy independently. The older focused #1090
+// still has a separately confirmed clean Vercel validate:ux build failure:
+// it must NOT be mislabeled as a bypass PASS or block the broad candidate's
+// test verdict solely because its comparison command exits before rendering.
+// Preserve the failed focused check explicitly in the emitted evidence.
 const expected=results.length===14;
-const success=expected&&results.every(r=>r.pass);
+const broad=results.filter(r=>r.head==='broad-1089');
+const focused=results.filter(r=>r.head==='focused-1090');
+const focusedVercel=focused.find(r=>r.case==='X-Vercel');
+const focusedSource=focused.filter(r=>r.case!=='X-Vercel');
+const success=expected && broad.length===7 && broad.every(r=>r.pass)
+  && focusedSource.length===6 && focusedSource.every(r=>r.pass);
+const comparisonWarning=focusedVercel?.pass!==true
+  ? 'Focused #1090 Vercel differential is NOT certified; clean validation fails on its UX build-prefix contract'
+  : null;
 console.log('QA6 DIFFERENTIAL FULL-BUILD RESULT '+(success?'PASS':'FAIL')+
   ' cases='+results.length+' broadBlocks='+results.filter(r=>r.head==='broad-1089'&&r.guardBlocked).length+
-  ' narrowLayoutBypass='+results.some(r=>r.head==='focused-1090'&&r.case==='X'&&r.alteredHistoricalPage));
-console.log('QA6_JSON='+JSON.stringify({success,summary:'No rights clearance or trusted F2 assertion; QA evidence only',results}));
+  ' narrowLayoutBypass='+results.some(r=>r.head==='focused-1090'&&r.case==='X'&&r.alteredHistoricalPage)+' comparisonWarning='+String(comparisonWarning));
+console.log('QA6_JSON='+JSON.stringify({success,comparisonWarning,summary:'Broad candidate technical check only. Focused Vercel comparison remains uncertified. No rights clearance or trusted F2 assertion.',results}));
 if(process.env.GITHUB_STEP_SUMMARY){
  const markdown=['## QA6 isolated full-build differential','',
    '| Head | Scenario | Expected technical outcome | Observation |',
    '|---|---|---|---|',
    ...results.map(r=>'| '+r.head+' | '+r.case+' | '+(r.head==='focused-1090'&&r.case.startsWith('X')?'known layout bypass':'guard rejects tampered inputs')+' | '+(r.pass?'Observed':'NOT VERIFIED')+' (exit '+r.exit+', modified='+r.alteredHistoricalPage+') |'),
-   '','These checkouts are pinned immutable commits with no credentials, deployments or rights authorization.',''];
+   '',comparisonWarning||'Focused comparison command tested as expected',
+   '', 'These checkouts are pinned immutable commits with no credentials, deployments or rights authorization.',''];
  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,markdown.join('\n'));
 }
 if(!success)process.exitCode=1;

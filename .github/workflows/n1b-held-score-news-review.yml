@@ -1,0 +1,51 @@
+name: N1b held Score News/Catalyst policy review (DRAFT ONLY)
+
+# Experimental lexical review aid, not a release or independently trusted F2 check.
+# New workflow is Draft/unmerged. It does not touch published validators.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  n1b-editorial-policy-dry-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout proposed Draft exact SHA without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Checkout immutable protected Production baseline as read-only content
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: d1740214f5737996f321a037efe3f2f7d21ecd64
+          path: qa-pinned-main
+          persist-credentials: false
+      - name: Checkout existing Nov 3 Daily candidate (not modified here)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: 39bea3a909e531ea54a7f76f1ae705ec7903efa1
+          path: qa-daily
+          persist-credentials: false
+      - name: Use pinned Node runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Validate standalone classifier and source-free negative fixtures
+        run: |
+          node --check .github/scripts/n1b-held-score-dynamic-review.mjs
+          node --check .github/scripts/test-n1b-held-score-dynamic-review.mjs
+          node .github/scripts/test-n1b-held-score-dynamic-review.mjs
+      - name: Compare current Draft to pinned main without evaluating untrusted scripts
+        run: |
+          node .github/scripts/n1b-held-score-dynamic-review.mjs --base "$GITHUB_WORKSPACE/qa-pinned-main/apps/web" --candidate "$GITHUB_WORKSPACE/apps/web"
+      - name: Check November 3 Daily against the pinned base; must not block legitimate source-backed publishing
+        run: |
+          node .github/scripts/n1b-held-score-dynamic-review.mjs --base "$GITHUB_WORKSPACE/qa-pinned-main/apps/web" --candidate "$GITHUB_WORKSPACE/qa-daily/apps/web" --expect-changes

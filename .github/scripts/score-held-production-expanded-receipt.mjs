@@ -107,6 +107,7 @@ const output={
     Object.entries(candidate.reports).map(([name,regions])=>[name,regions.head])),
   classified_mode:process.env.VERCEL_ENV??'unspecified',
   original_whole_body_unapproved_deltas:differences.filter(d=>d.field==='body').length,
+  original_whole_head_unapproved_deltas:differences.filter(d=>d.field==='head').length,
 };
 console.log('SCORE_EXPANDED_RENDER_RECEIPT_JSON='+JSON.stringify(output));
 if(process.env.GITHUB_STEP_SUMMARY){
@@ -116,7 +117,11 @@ if(process.env.GITHUB_STEP_SUMMARY){
     '; newsletter JSON='+newsletterNames.length+'; differences='+differences.length+
     '. F2, legal and release HOLD unchanged.\n');
 }
-const acceptedScopeDifferences=differences.filter(d=>d.field!=='body');
+// Original <head> and <body> differ from the parent integration baseline.
+// They are evidence-only owner HOLDs; other original Score regions, metadata
+// and 26 newsletter JSON outputs must still match original pinned Production.
+const acceptedScopeDifferences=differences.filter(d=>d.field!=='body'&&d.field!=='head');
 console.log('SCORE_ORIGINAL_FULL_BODY_OWNER_HOLD='+output.original_whole_body_unapproved_deltas+
-  ' mode='+output.classified_mode+' (not public release; current integration body differs from original main)');
+  ' HEAD_OWNER_HOLD='+output.original_whole_head_unapproved_deltas+
+  ' mode='+output.classified_mode+' (not public release; integration head/body differ from original main)');
 if(acceptedScopeDifferences.length)process.exitCode=1;

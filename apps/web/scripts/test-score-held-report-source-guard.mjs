@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import {
   gitBlobSha1, evaluateScoreContentFreeze, verifyCurrentScoreHold, collectScoreContents,
   checkScoreLoaderContract, checkBuiltScoreArtifacts, PINNED_SCORE_LOADERS,
+  PINNED_SCORE_CONTENT_CONFIG_BLOB,
 } from './score-held-report-source-guard.mjs';
 
 assert.deepEqual(verifyCurrentScoreHold(), [], 'all existing historical Score sources must match the trusted main baseline');
@@ -175,6 +176,28 @@ try {
 {
   const realConfig=fs.readFileSync(new URL('../src/content.config.ts',import.meta.url),'utf8');
   assert.deepEqual(checkScoreLoaderContract(realConfig),[],'current loaders must match pinned declarations');
+  assert.equal(PINNED_SCORE_CONTENT_CONFIG_BLOB, gitBlobSha1(realConfig),
+    'pinned whole-config blob must match original main');
+  // A text-only policy misses the following adversarial pattern: keep the
+  // old literal in a comment and point the live loader at an indirect
+  // alias with a benign-looking path name.
+  const commentedAlias=realConfig
+    .replace(PINNED_SCORE_LOADERS[0],
+      "// "+PINNED_SCORE_LOADERS[0]+"\n  loader: archiveLoader,")
+    .replace("const weeklyReports = defineCollection(",
+      "const archiveLoader = glob({ pattern: '**/*.md', base: './src/content/auxiliary' });\n"+
+      "const weeklyReports = defineCollection(");
+  assert.ok(checkScoreLoaderContract(commentedAlias)
+    .some(s=>s.includes('Unapproved Astro content collection configuration')),
+    'indirect loader alias and commented original text MUST fail');
+  const commentedDirect=realConfig.replace(PINNED_SCORE_LOADERS[0],
+    "// "+PINNED_SCORE_LOADERS[0]+"\n  loader: glob({ pattern: '**/*.md', base: './src/content/auxiliary' }),");
+  assert.ok(checkScoreLoaderContract(commentedDirect)
+    .some(s=>s.includes('Unapproved Astro content collection configuration')),
+    'comments preserving the pinned string MUST NOT defeat config freeze');
+  assert.ok(checkScoreLoaderContract(realConfig+'\n// unrelated unreviewed edit')
+    .some(s=>s.includes('Unapproved Astro content collection configuration')),
+    'any schema edit must receive separate rights-gate review while HOLD');
   const redirected=realConfig.replace(PINNED_SCORE_LOADERS[0],
     "loader: glob({ pattern: '{weekly-reports,score-archive}/**/*.md', base: './src/content' }),");
   assert.ok(checkScoreLoaderContract(redirected).some(s=>s.includes('loader declaration changed')),

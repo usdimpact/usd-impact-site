@@ -16,6 +16,19 @@ const SCORE_VALUATION=new RegExp('^\\s*(?:(?::|=|→|—|–|->|\\bis\\b|\\bwas\
 const DIALS_VALUATION=new RegExp('^\\s*(?:(?::|=|→|—|–|->|\\breading\\b|\\breads?\\b|\\bregime\\b|\\bscore\\b|\\bsignal\\b|\\bnow\\b|\\bis\\b|\\bwas\\b|\\bshows?\\b)\\s*){1,6}('+NUMERIC_SIGNAL+')(?![\\d])','iu');
 const DIRECT_DERIVATIVE=/(?:\/|^)(?:data\/(?:usd_impact_score_v2|weekly_input_latest)(?:\.(?:json|csv))?|data\/research\/score_v2_(?:point_in_time_latest|robustness_latest|vintage_comparison_latest)(?:\.(?:json|csv|html))?)(?=$|[\s)"'\]}?#])/iu;
 const SHA256=bytes=>createHash('sha256').update(bytes).digest('hex');
+// QA9: decode bounded URL percent octets for review, not for executing links.
+// Malformed encodings or layered escapes around protected paths get manual review.
+const PERCENT_OCTETS=/(?:%[0-9a-f]{2})+/giu;
+const LIKELY_SCORE_CONTEXT=/(?:\b(?:our|the|this\s+week(?:'s)?)\s+(?:(?:dollar|weekly)\s+)?(?:reading|dashboard|indicator|score)\b|\bindicador\s+de\s+tres\s+señales\b|\b(?:three\s+dials?|tres\s+diales|weekly\s+score)\b)/iu;
+const DERIVED_LANGUAGE=/(?:\b(?:reading|score|regime|dashboard|shifted|turned|point\s+to|points\s+to|defensive|risk[\s-]?off|risk[\s-]?on|bullish|bearish)\b|\b(?:indicador|pas[oó]\s+a|apuntan\s+a|escenario\s+defensivo|bajista|alcista)\b|\b\d+(?:\.\d+)?\s*\/\s*(?:5|10|100)\b)/iu;
+function decodedArtifactLine(line){
+  let malformed=false;
+  const decoded=line.replace(PERCENT_OCTETS,segment=>{
+    try{return decodeURIComponent(segment);}catch{malformed=true;return segment;}
+  });
+  return {decoded,malformed};
+}
+
 
 export function reviewText(text){
   if(typeof text!=='string')throw Error('N1b review expects decoded UTF-8 text');
@@ -29,8 +42,13 @@ export function reviewText(text){
   const lines=normalized.split('\n');
   for(const [index,line] of lines.entries()){
     if(!line.trim())continue;
-    if(DIRECT_DERIVATIVE.test(line)){
+    const link=decodedArtifactLine(line);
+    if(DIRECT_DERIVATIVE.test(link.decoded)){
       holds.push({line:index+1,rule:'held_score_derived_file_link'});
+      continue;
+    }
+    if((link.malformed||/%25[0-9a-f]{2}/iu.test(line))&&/data(?:\\/|%2f|%25)/iu.test(line)){
+      reviews.push({line:index+1,rule:'manual_encoded_artifact_review'});
       continue;
     }
     let blocked=false;
@@ -61,9 +79,20 @@ export function reviewText(text){
     if(ambiguous){
       const after=line.slice(ambiguous.index+ambiguous[0].length);
       const withoutVersions=after.replace(/\bv(?:ersion)?\s*\d+(?:\.\d+)?\b/giu,'');
-      if(/\d/u.test(withoutVersions))
+      if(/\\d/u.test(withoutVersions))
         reviews.push({line:index+1,rule:'manual_score_context_review'});
+      // Markdown headings and table-like breaks can separate a Score label
+      // from a number by blank lines; manual review only, never auto-licence.
+      const nearby=lines.slice(index+1,index+4).join(' ');
+      if(!/\\d/u.test(withoutVersions)&&/\\d+(?:\\.\\d+)?\\s*\\/\\s*(?:5|10|100)/u.test(nearby))
+        reviews.push({line:index+1,rule:'manual_multiline_score_context_review'});
     }
+    // Deliberately cautious English/Spanish semantic review; this is not
+    // exhaustive natural-language inference and must stay QA-only.
+    if(LIKELY_SCORE_CONTEXT.test(line)&&DERIVED_LANGUAGE.test(line)
+      &&!/(?:methodology|metodolog[ií]a|framework|marco\\s+educativo|not\\s+publish|no\\s+publica)/iu.test(line)
+      &&!reviews.some(x=>x.line===index+1))
+      reviews.push({line:index+1,rule:'manual_unlabeled_score_inference_review'});
   }
   return {holds,reviews};
 }

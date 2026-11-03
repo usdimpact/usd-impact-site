@@ -125,7 +125,7 @@ test('missing, blank, null, nonnumeric and outlier tenors never become zeros', (
 });
 
 test('unsafe XML constructions and non-feed HTML are rejected', () => {
-  assert.throws(()=>readTreasuryObservation('<html>Not an issuer feed</html>',DAY),/not an Atom/);
+  assert.throws(()=>readTreasuryObservation('<html>Not an issuer feed</html>',DAY),/not a complete Atom/);
   assert.throws(()=>readTreasuryObservation('<!DOCTYPE feed [<!ENTITY x SYSTEM "file:///etc/passwd">]>' +
     xmlRows(),DAY),/unsupported active/);
   assert.throws(()=>readTreasuryObservation(xmlRows().replace('<feed ', '<feed><script>alert(1)</script> '),DAY),

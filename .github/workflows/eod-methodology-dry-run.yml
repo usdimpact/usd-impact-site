@@ -37,6 +37,8 @@ jobs:
         with:
           node-version: '24.x'
       - name: Verify existing and new fictional evidence contracts
-        run: node --test research/eod-methodology-offline/test.mjs research/eod-methodology-offline/methodology-schedule.test.mjs
+        run: node --test research/eod-methodology-offline/test.mjs research/eod-methodology-offline/methodology-schedule.test.mjs research/eod-methodology-offline/verified-treasury-source.test.mjs
+      - name: Prove issuer-shaped candidate generation using fictional 2100 XML only
+        run: node research/eod-methodology-offline/treasury-candidate-cli.mjs --demo > /dev/null
       - name: Produce synthetic run summary (no market sources, no site edits)
         run: node research/eod-methodology-offline/automation-dry-run.mjs --evidence=quiet

@@ -73,14 +73,37 @@ export function collectScoreContents(root=webRoot) {
       throw Error('Score report collection directory is not a real directory: '+dir);
     }
     function visit(absolute, relative='') {
+      // Dirent classification avoids a separate path-based stat/read sequence.
+      // Always open files by descriptor with O_NOFOLLOW, then verify the opened
+      // object. A path replaced by a symlink between enumeration and open
+      // cannot redirect this rights audit to an unexpected file.
+      const {O_RDONLY,O_NOFOLLOW,O_NONBLOCK,O_DIRECTORY}=fs.constants;
+      if(!Number.isInteger(O_NOFOLLOW) || !Number.isInteger(O_DIRECTORY)) {
+        throw Error('Filesystem cannot enforce no-follow Score audit');
+      }
       for(const entry of fs.readdirSync(absolute,{withFileTypes:true})){
         const full=path.join(absolute,entry.name);
         const child=relative?relative+'/'+entry.name:entry.name;
-        const info=fs.lstatSync(full);
-        if(info.isSymbolicLink())throw Error('Symlink forbidden under Score report source: '+dir+'/'+child);
-        if(info.isDirectory())visit(full,child);
-        else if(info.isFile())contents[dir+'/'+child]=fs.readFileSync(full);
-        else throw Error('Unsupported Score report filesystem entry: '+dir+'/'+child);
+        if(entry.isSymbolicLink())throw Error('Symlink forbidden under Score report source: '+dir+'/'+child);
+        if(entry.isDirectory()){
+          const descriptor=fs.openSync(full,O_RDONLY|O_NOFOLLOW|O_DIRECTORY);
+          try {
+            if(!fs.fstatSync(descriptor).isDirectory()){
+              throw Error('Unsupported Score report filesystem entry: '+dir+'/'+child);
+            }
+          }finally{fs.closeSync(descriptor);}
+          visit(full,child);
+        }else if(entry.isFile()){
+          const descriptor=fs.openSync(full,O_RDONLY|O_NOFOLLOW|O_NONBLOCK);
+          try {
+            if(!fs.fstatSync(descriptor).isFile()){
+              throw Error('Unsupported Score report filesystem entry: '+dir+'/'+child);
+            }
+            contents[dir+'/'+child]=fs.readFileSync(descriptor);
+          }finally{fs.closeSync(descriptor);}
+        }else{
+          throw Error('Unsupported Score report filesystem entry: '+dir+'/'+child);
+        }
       }
     }
     visit(location);

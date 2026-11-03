@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   buildTreasuryCandidate, fetchTreasuryCandidate, readTreasuryObservation,
-  renderTreasuryCandidate, treasuryMonthlyUrl, validateTreasuryClock,
+  renderTreasuryCandidate, treasuryMonthlyUrl, validateTreasuryClock, redactedIssuerProbeReceipt,
 } from './verified-treasury-source.mjs';
 
 const DAY = '2026-11-03';
@@ -268,6 +269,43 @@ test('no-observation note cannot be relabeled as an approved observation', () =>
   assert.throws(()=>renderTreasuryCandidate({
     ...record,status:'AWAITING_EDITORIAL_REVIEW'
   },'en'),/no-observation status/);
+});
+
+test('optional real-issuer probe receipt never includes rates, translations or Score output', async () => {
+  const result = await fetchTreasuryCandidate({
+    day:DAY,clock:()=>new Date(AS_OF),fetchImpl:async()=>response()
+  });
+  const receipt = redactedIssuerProbeReceipt(result);
+  assert.equal(receipt.scenario, 'PRIVATE_ISSUER_SCHEMA_RECEIPT_ONLY');
+  assert.equal(receipt.issuer_raw_values_redacted, true);
+  assert.equal(receipt.issuer_numerical_data_not_logged, true);
+  assert.equal(receipt.public_release_authorized, false);
+  assert.equal(receipt.rights_and_editorial_hold, true);
+  assert.equal(receipt.parsed_field_count, 3);
+  assert.deepEqual(receipt.parsed_field_ids, result.record.facts.map(f=>f.id));
+  const rendered = JSON.stringify(receipt);
+  assert.doesNotMatch(rendered, /4\.12|4\.65|0\.53|canonical_values|markdown|english|spanish|"value":/);
+  assert.ok(!Object.hasOwn(receipt, 'record'));
+  assert.ok(!Object.hasOwn(receipt, 'facts'));
+});
+
+test('redacted receipt refuses fake transport and any claimed public rights', async () => {
+  const invented = buildTreasuryCandidate({xml:xmlRows(),day:DAY,asOfUtc:AS_OF});
+  assert.throws(()=>redactedIssuerProbeReceipt(invented), /rights-held exact-issuer/);
+  const received = await fetchTreasuryCandidate({
+    day:DAY,clock:()=>new Date(AS_OF),fetchImpl:async()=>response()
+  });
+  assert.throws(()=>redactedIssuerProbeReceipt({
+    ...received,record:{...received.record,source:{
+      ...received.record.source,public_redistribution_rights_granted:true
+    }}
+  }),/rights-held exact-issuer/);
+});
+
+test('CLI must route live output through nonnumeric redaction', () => {
+  const source = readFileSync(new URL('./treasury-candidate-cli.mjs', import.meta.url), 'utf8');
+  assert.match(source, /:\s*redactedIssuerProbeReceipt\(result\)/);
+  assert.match(source, /const report = args\[0\] === '--demo'/);
 });
 
 test('cannot render as an approved public article or in an unapproved language', () => {

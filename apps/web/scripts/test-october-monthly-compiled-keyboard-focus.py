@@ -74,6 +74,21 @@ try:
                         route.abort_()
 
                 context.route("**/*", isolate)
+                # A self-origin, memory-only CSS response models a user stylesheet
+                # without disabling the application's genuine style-src CSP.
+                css_path = origin + "/__qa_user_text_spacing.css"
+                spacing_css = (
+                    "* { line-height: 1.5 !important;"
+                    " letter-spacing: .12em !important;"
+                    " word-spacing: .16em !important; }"
+                    " p { margin-bottom: 2em !important; }"
+                )
+                context.route(
+                    css_path,
+                    lambda request: request.fulfill(
+                        status=200, content_type="text/css", body=spacing_css,
+                    ),
+                )
                 result = {"route": ROUTE, "width": width, "height": height}
                 stage = "load"
                 try:
@@ -253,14 +268,7 @@ try:
                     # overrides without changing any other authored CSS property.
                     # This is an extra regression beyond default-width reflow.
                     stage = "WCAG 1.4.12 user text spacing"
-                    page.add_style_tag(content="""
-                      * {
-                        line-height: 1.5 !important;
-                        letter-spacing: .12em !important;
-                        word-spacing: .16em !important;
-                      }
-                      p { margin-bottom: 2em !important; }
-                    """)
+                    page.add_style_tag(url=css_path)
                     page.locator("main h1").scroll_into_view_if_needed()
                     spacing = page.evaluate("""() => {
                       const p = document.querySelector('main p');

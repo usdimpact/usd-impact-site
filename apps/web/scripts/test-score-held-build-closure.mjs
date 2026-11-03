@@ -10,7 +10,7 @@ import {
   AUDIT_ONLY_EXCLUSIONS,
   collectWebBuildInputs,
   evaluatePinnedBuildInputs,
-  verifyHeldBuildInputs,
+  verifyHeldBuildInputs, selectF2TrustedCandidateRoot,
 } from './score-held-build-closure.mjs';
 
 const site=fileURLToPath(new URL('../',import.meta.url));
@@ -178,6 +178,33 @@ try {
   assert.ok(inspect().some(s=>s.includes('Symlink in held build input:')),
     'symlinked route must fail');
   fs.unlinkSync(path.join(root,'src/pages/reports/weekly/alias.astro'));
+
+  // F2 N4 adversarial self-repin: PR-owned source and baseline can collude,
+  // while a separately held base-branch evaluator + baseline rejects the edit.
+  // This is a design fixture; no trusted GitHub required check was installed.
+  const modifiedLayout='src/layouts/BaseLayout.astro';
+  put(modifiedLayout,'<slot />\n<em>F2 N4 altered historical body</em>\n');
+  const observedRepin=collectWebBuildInputs(root).files;
+  const attackerRepin={...fixture,pinned_files:{
+    ...fixture.pinned_files,
+    [modifiedLayout]:observedRepin[modifiedLayout],
+  }};
+  assert.deepEqual(evaluatePinnedBuildInputs(attackerRepin,observedRepin,{minimum:0}),[],
+    'a PR that edits its own pin is self-certifying without a trusted base');
+  assert.ok(evaluatePinnedBuildInputs(fixture,observedRepin,{minimum:0})
+      .some(x=>x.includes('Changed frozen build input: '+modifiedLayout)),
+    'F2 trusted-base prior manifest MUST reject self-repinned historical layout');
+  put(modifiedLayout,'<slot />\n');
+  assert.deepEqual(inspect(),[],'F2 N4 fixture returns to original frozen source');
+
+  assert.equal(selectF2TrustedCandidateRoot(['node','guard','--root',root],site),root,
+    'trusted evaluator --root must select explicit untrusted candidate');
+  assert.equal(selectF2TrustedCandidateRoot(['node','guard'],site),site,
+    'unprivileged normal evaluation preserves its original working root');
+  assert.throws(()=>selectF2TrustedCandidateRoot(['node','guard','--root','./relative'],site),
+    /absolute candidate web path/,'trusted evaluator must reject relative --root');
+  assert.throws(()=>selectF2TrustedCandidateRoot(['node','guard','--root',root,'--root',root],site),
+    /only once/,'duplicate --root must fail closed');
 
   // A missing manifest item and an altered manifest SHA must fail.
   fs.unlinkSync(path.join(root,monthly));

@@ -340,7 +340,7 @@ console.log('Score F1d historical body hashes PASS: 16 pinned original Productio
 {
   const originalSite=fileURLToPath(new URL('../',import.meta.url));
   assert.equal(selectTrustedScoreSourceRoot(['node','script'],originalSite),originalSite);
-  assert.equal(selectTrustedScoreSourceRoot(['node','script','--root',originalSite]),originalSite);
+  assert.equal(selectTrustedScoreSourceRoot(['node','script','--root',originalSite]),path.resolve(originalSite));
   assert.throws(()=>selectTrustedScoreSourceRoot(['node','script','--root','relative'],originalSite),
     /absolute candidate web path/);
   assert.throws(()=>selectTrustedScoreSourceRoot(['node','script','--root',originalSite,'--root',originalSite]),

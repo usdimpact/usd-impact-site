@@ -61,13 +61,13 @@ assert.doesNotMatch(
 );
 assert.match(
   workflow,
-  /passed Web quality and is ready for protected editorial review and merge/,
-  'publication must clearly report the protected editorial review handoff',
+  /passed Web quality and is ready for bounded automatic publication or protected owner review/,
+  'generator must accurately report automated-or-owner review handoff',
 );
 assert.match(
   workflow,
-  /stops for protected human editorial review and merge/,
-  'publication PR copy must not imply that Web quality alone causes a merge',
+  /submits its PR to a separately gated automatic publisher/,
+  'publication PR copy must describe separate guarded auto-publisher, not a direct quality merge',
 );
 assert.match(
   workflow,
@@ -365,3 +365,6 @@ for (const [label, block] of [
 }
 
 console.log('daily news publication workflow tests pass');
+
+// Safe, offline test of the separate guarded auto-publication controller.
+await import('./test-daily-news-auto-publish-workflow.mjs');

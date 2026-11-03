@@ -365,7 +365,7 @@ console.log('Score F2 staged trusted-source --root parser PASS (no GitHub rulese
     .map(n=>/^weekly-reports\/(\d{4}-\d{2}-\d{2})\.md$/.exec(n)?.[1]).filter(Boolean);
   const sha256=b=>createHash('sha256').update(b).digest('hex');
   const files={};
-  const goldenReports={},goldenBody={},originalMainBodies={},goldenJson={};
+  const goldenReports={},goldenBody={},goldenHead={},originalMainBodies={},originalMainHeads={},goldenJson={};
   const template=(name)=>'<!doctype html><html><head><title>Original '+name+
     '</title><meta name="description" content="Original report description">'+
     '<script type="application/ld+json">{"source":"pinned fixture"}</script></head>'+
@@ -382,9 +382,10 @@ console.log('Score F2 staged trusted-source --root parser PASS (no GitHub rulese
       const html=template(route);
       write(route+'/index.html',html);
       const dig=digestFrozenScoreEnvelope(html);
-      const {body,...regions}=dig;
-      goldenReports[route]=regions;goldenBody[route]=body;
+      const {body,head,...regions}=dig;
+      goldenReports[route]=regions;goldenBody[route]=body;goldenHead[route]=head;
       originalMainBodies[route]=sha256(Buffer.from('distinct original Production whole body '+route));
+      originalMainHeads[route]=sha256(Buffer.from('distinct original Production whole head '+route));
     }
     for(const family of ['weekly','progress'])for(const date of weeklyDates){
       const rel='newsletter/'+family+'/'+date+'.json';
@@ -394,6 +395,11 @@ console.log('Score F2 staged trusted-source --root parser PASS (no GitHub rulese
     const safe={...original,rendered_score_envelope_sha256:{
       ...base,reports:goldenReports,newsletter_json:goldenJson,
       original_whole_body_reference_sha256:originalMainBodies,
+      original_whole_head_reference_sha256:originalMainHeads,
+      draft_containment_whole_head_sha256:{
+        ...base.draft_containment_whole_head_sha256,
+        sha256:goldenHead,
+      },
       draft_containment_whole_body_sha256:{
         ...base.draft_containment_whole_body_sha256,
         sha256:goldenBody,
@@ -432,6 +438,27 @@ console.log('Score F2 staged trusted-source --root parser PASS (no GitHub rulese
 
     // A changed navigation shell remains outside the currently accepted
     // original-main regions. Record the limitation, do not claim FULL BODY pass.
+    // B8/B9 head-only bypass negatives. Previously these passed the
+    // candidate-owned built check after re-pinning the source closure.
+    const baselineHeadAndBody=digestFrozenScoreEnvelope(template(weekly));
+    for(const [label,insertion] of [
+      ['B8', '<meta property="og:description" content="USD Impact Score was −0.35">'],
+      ['B9', '<link rel="alternate" href="/independent-source" title="Weekly Score: 9.99/10">'],
+    ]) {
+      const changed=template(weekly).replace('</head>',insertion+'</head>');
+      const digest=digestFrozenScoreEnvelope(changed);
+      for(const field of ['body','hero','title','meta_description','jsonld','jsonld_count'])
+        assert.equal(digest[field],baselineHeadAndBody[field],
+          label+' changes only previously unguarded head content');
+      assert.notEqual(digest.head,baselineHeadAndBody.head,
+        label+' MUST change the complete head digest');
+      write(htmlRel,changed);
+      assert.ok(verify().some(x=>x.includes('Changed Draft-frozen historical Score whole head')),
+        label+' MUST fail specifically at the new built whole-head guard');
+      write(htmlRel,template(weekly));
+    }
+    assert.deepEqual(verify(),[],'B8/B9 temporary head injection restored');
+
     write(htmlRel,files[htmlRel].replace('Provisional shell','Changed global shell'));
     assert.ok(verify().some(x=>x.includes('Changed Draft-frozen historical Score whole body')),
       'new Draft-frozen whole-body digest MUST block changed navigation shell');
@@ -439,4 +466,4 @@ console.log('Score F2 staged trusted-source --root parser PASS (no GitHub rulese
     assert.deepEqual(verify(),[],'all synthetic Score regions restored');
   }finally{fs.rmSync(tmp,{recursive:true,force:true});}
 }
-console.log('Score P1-A B1/B6/B7 PASS: 16 hero/meta/JSON-LD plus 26 newsletter JSON hashes; whole body remains owner HOLD');
+console.log('Score P1-A B1/B6/B7/B8/B9 PASS: 16 original Score regions + 26 newsletters; Draft head/body pinned; original head/body owner HOLD');

@@ -293,6 +293,7 @@ console.log('Score rights F1b PASS: pinned loaders; redirected/extra loaders and
       astroConfig:gitBlobSha1(cleanConfig),
       pageTrees:[gitTreeSha1(path.join(fixture,'src','pages'))],
       vercelBuildCommand:F1D_RENDER_PINS.vercelBuildCommand,
+      packageBuildCommand:F1D_RENDER_PINS.packageBuildCommand,
     };
     const verify=()=>checkFrozenScoreRenderSurfaces(fixture,fixturePins);
     assert.deepEqual(verify(),[],'clean F1d disposable fixture must pass');

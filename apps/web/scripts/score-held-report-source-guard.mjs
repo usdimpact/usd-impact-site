@@ -88,6 +88,72 @@ export function collectScoreContents(root=webRoot) {
   return contents;
 }
 
+// F1b: source directory scanning alone cannot protect content if the Astro
+// Score report loader is repointed to a different, un-inventoried directory.
+export const PINNED_SCORE_LOADERS=Object.freeze([
+  "loader: glob({ pattern: '**/*.md', base: './src/content/weekly-reports' }),",
+  "loader: glob({ pattern: '**/*.md', base: './src/content/monthly-reports' }),",
+]);
+export function checkScoreLoaderContract(configSource) {
+  const failures=[];
+  if(typeof configSource!=='string') return ['Missing content collection config'];
+  for(const line of PINNED_SCORE_LOADERS){
+    if(configSource.split(line).length!==2) failures.push('Score report loader declaration changed or duplicated: '+line);
+  }
+  for(const m of configSource.matchAll(/glob\(\{[^}]*\}\)/g)){
+    if(/reports|score/i.test(m[0]) && !PINNED_SCORE_LOADERS.some(l=>l.includes(m[0]))){
+      failures.push('Unexpected report-like content loader: '+m[0]);
+    }
+  }
+  return failures;
+}
+
+// Independent inspection of actual generated report pages, newsletters and
+// sitemaps: a new publication date cannot be introduced while rights HOLD.
+const SCORE_ARTIFACT_FAMILIES=Object.freeze([
+  {dir:'reports/weekly',source:'weekly-reports',entry:/^(\d{4}-\d{2}-\d{2})$/,kind:'dir'},
+  {dir:'reports/monthly',source:'monthly-reports',entry:/^(\d{4}-\d{2}-\d{2})$/,kind:'dir'},
+  {dir:'newsletter/weekly',source:'weekly-reports',entry:/^(\d{4}-\d{2}-\d{2})\.json$/,kind:'file'},
+  {dir:'newsletter/progress',source:'weekly-reports',entry:/^(\d{4}-\d{2}-\d{2})\.json$/,kind:'file'},
+]);
+export function checkBuiltScoreArtifacts(baseline, distRoot) {
+  const failures=[];
+  const reports=baseline?.existing_reports;
+  if(!reports || typeof reports!=='object') return ['Unrecognized Score-derived HOLD inventory'];
+  if(!distRoot || !fs.existsSync(distRoot)) return ['Missing built output directory'];
+  const allowed=(source)=>new Set(Object.keys(reports)
+    .filter(name=>name.startsWith(source+'/'))
+    .map(name=>name.slice(source.length+1,-3)));
+  for(const family of SCORE_ARTIFACT_FAMILIES){
+    const location=path.join(distRoot,family.dir);
+    if(!fs.existsSync(location)) continue;
+    const dates=allowed(family.source);
+    for(const entry of fs.readdirSync(location,{withFileTypes:true})){
+      const match=entry.name.match(family.entry);
+      const kindOk=family.kind==='dir'?entry.isDirectory():entry.isFile();
+      if(!match || !kindOk){
+        failures.push('Unexpected built Score-derived artifact: '+family.dir+'/'+entry.name);
+      } else if(!dates.has(match[1])){
+        failures.push('New built Score-derived publication on rights HOLD: '+family.dir+'/'+entry.name);
+      }
+    }
+  }
+  const weekly=allowed('weekly-reports'),monthly=allowed('monthly-reports');
+  for(const name of fs.readdirSync(distRoot).filter(n=>/^sitemap(?:-[\w-]+)?\.xml$/.test(n))){
+    const xml=fs.readFileSync(path.join(distRoot,name),'utf8');
+    for(const found of xml.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)){
+      let pathname;
+      try{pathname=new URL(found[1].replaceAll('&amp;','&')).pathname.replace(/\/+$/,'');}
+      catch{failures.push('Invalid sitemap location');continue;}
+      const m=pathname.match(/^\/reports\/(weekly|monthly)\/([^/]+)$/);
+      if(m && !(m[1]==='weekly'?weekly:monthly).has(m[2])){
+        failures.push('New Score-derived report in sitemap on rights HOLD: '+pathname);
+      }
+    }
+  }
+  return failures;
+}
+
 export function verifyCurrentScoreHold(root=webRoot) {
   const inventory=JSON.parse(fs.readFileSync(baselineFile,'utf8'));
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'scripts/score-rights-consumer-manifest.json'),'utf8'));
@@ -96,11 +162,18 @@ export function verifyCurrentScoreHold(root=webRoot) {
     && manifest.weekly_report_publication_hold_required===true
     && manifest.manual_monthly_publication_requires_rights_review===true
     && manifest.historical_content_treatment_unresolved===true;
-  return evaluateScoreContentFreeze(inventory,collectScoreContents(root),rightsHold);
+  return [
+    ...evaluateScoreContentFreeze(inventory,collectScoreContents(root),rightsHold),
+    ...checkScoreLoaderContract(fs.readFileSync(path.join(root,'src','content.config.ts'),'utf8')),
+  ];
 }
 
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const failures=verifyCurrentScoreHold();
+  if(process.argv.includes('--built')){
+    const inventory=JSON.parse(fs.readFileSync(baselineFile,'utf8'));
+    failures.push(...checkBuiltScoreArtifacts(inventory,path.join(webRoot,'dist')));
+  }
   if(failures.length){
     console.error('Score-derived source rights HOLD check FAILED:\n- '+failures.join('\n- '));
     process.exitCode=1;

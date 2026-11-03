@@ -66,3 +66,37 @@ jobs:
           npm run build
           node scripts/held-release-boundary.mjs --built preview
           node scripts/score-held-report-source-guard.mjs --built
+
+  qa6-exact-head-full-build-differential:
+    # Isolated read-only testing of two immutable Draft source heads.
+    # Not a trusted F2 check; never runs on Production, main or arbitrary PRs.
+    if: github.event_name == 'pull_request' && github.head_ref == 'agent/score-f1d-build-input-closure-20261103'
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact candidate head (QA6 harness)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Checkout exact focused F1d comparison source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: 3ec1d533b4893ed35503e4a53757370055115cd3
+          path: qa1090
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install locked dependencies for broad candidate
+        working-directory: apps/web
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Install locked dependencies for focused comparison
+        working-directory: qa1090/apps/web
+        run: npm ci --no-audit --no-fund --strict-allow-scripts
+      - name: Run E/E3/F/G/H full npm builds, plus actual historical layout-digest mutation
+        run: node .github/scripts/score-f1d-qa6-full-build.mjs

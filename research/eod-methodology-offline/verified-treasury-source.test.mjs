@@ -138,6 +138,39 @@ test('the parser extracts dated issuer-shaped 2Y/10Y observations, not unrequest
   assert.deepEqual(y,x);
 });
 
+test('OData observation date rejects corrupted timestamp suffixes and times', () => {
+  for (const malformed of [
+    '2026-11-03Tgarbage',
+    '2026-11-03T25:00:00',
+    '2026-11-03T00:79:00',
+    '2026-11-03T00:00:61',
+    '2026-11-03T00:00:00EVIL',
+  ]) {
+    const xml = xmlRows().replace('2026-11-03T00:00:00', malformed);
+    assert.throws(()=>readTreasuryObservation(xml,DAY),/bad or missing Treasury observation date/);
+  }
+  assert.equal(readTreasuryObservation(xmlRows().replace('2026-11-03T00:00:00',
+    '2026-11-03T00:00:00.000'),DAY).observation_date,DAY);
+});
+
+test('Treasury 2022 omitted-null-field convention never creates a zero rate', () => {
+  const base=xmlRows();
+  const missingTwo=base.replace(/<d:BC_2YEAR[^>]*>[^<]*<\/d:BC_2YEAR>/, '');
+  const missingTen=base.replace(/<d:BC_10YEAR[^>]*>[^<]*<\/d:BC_10YEAR>/, '');
+  assert.notEqual(missingTwo,base);
+  assert.notEqual(missingTen,base);
+  assert.throws(()=>readTreasuryObservation(missingTwo,DAY),/BC_2YEAR missing/);
+  assert.throws(()=>readTreasuryObservation(missingTen,DAY),/BC_10YEAR missing/);
+});
+
+test('Treasury added optional curve tenor fields do not change the two-factor source note', () => {
+  const expanded=xmlRows().replace('</m:properties>',
+    '<d:BC_1_5MONTH m:type="Edm.Double">3.22</d:BC_1_5MONTH></m:properties>');
+  const a=readTreasuryObservation(xmlRows(),DAY);
+  const b=readTreasuryObservation(expanded,DAY);
+  assert.deepEqual(b,a);
+});
+
 test('private candidate contains only source values and exact 10Y−2Y arithmetic', () => {
   const x = buildTreasuryCandidate({xml:xmlRows(),day:DAY,asOfUtc:AS_OF});
   assert.equal(x.record.status, 'AWAITING_EDITORIAL_REVIEW');

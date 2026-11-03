@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   buildTreasuryCandidate, fetchTreasuryCandidate, readTreasuryObservation,
-  renderTreasuryCandidate, treasuryMonthlyUrl, validateTreasuryClock, redactedIssuerProbeReceipt,
+  renderTreasuryCandidate, treasuryMonthlyUrl, validateTreasuryClock, redactedIssuerProbeReceipt, planTreasuryProbeArgs,
 } from './verified-treasury-source.mjs';
 
 const DAY = '2026-11-03';
@@ -435,10 +435,44 @@ test('redacted receipt refuses fake transport and any claimed public rights', as
   }),/rights-held exact-issuer/);
 });
 
+test('pure Treasury CLI flag plan keeps demo and same-day live modes distinct', () => {
+  assert.deepEqual(planTreasuryProbeArgs(['--demo']),
+    {mode:'demo',day:null,allowRetrospective:false});
+  assert.deepEqual(planTreasuryProbeArgs(['--live-official']),
+    {mode:'live',day:null,allowRetrospective:false});
+});
+
+test('manual delayed-source probe is explicit, exactly one date and one request mode', () => {
+  assert.deepEqual(planTreasuryProbeArgs([
+    '--live-official','--probe-date=2026-10-30','--allow-retrospective'
+  ]),{mode:'live',day:'2026-10-30',allowRetrospective:true});
+  assert.throws(()=>validateTreasuryClock('2026-10-30','2026-11-14T15:00:00Z',
+    {allowRetrospective:true}), /within 14/);
+  assert.equal(validateTreasuryClock('2026-10-30','2026-11-07T15:00:00Z',
+    {allowRetrospective:true}), '2026-11-07T15:00:00.000Z');
+});
+
+test('CLI plan rejects implicit network, bad arguments, duplicated flags, and date injection', () => {
+  for (const args of [
+    [], ['--allow-retrospective'],['--probe-date=2026-10-30'],
+    ['--live-official','--probe-date=2026-10-30'],
+    ['--live-official','--allow-retrospective'],
+    ['--live-official','--probe-date=2026-10-30','--demo'],
+    ['--demo','--probe-date=2026-10-30','--allow-retrospective'],
+    ['--live-official','--probe-date=2026-10-30','--allow-retrospective','--demo'],
+    ['--live-official','--live-official'],
+    ['--live-official','--probe-date=2026-10-30?redirect=evil','--allow-retrospective'],
+    ['--live-official','--probe-date=2026-02-30','--allow-retrospective'],
+    ['--live-official','--probe-date=2026-10-30','--allow-retrospective','--allow-retrospective'],
+  ]) assert.throws(()=>planTreasuryProbeArgs(args), /Use --demo|invalid explicit retrospective/);
+});
+
 test('CLI must route live output through nonnumeric redaction', () => {
   const source = readFileSync(new globalThis.URL('./treasury-candidate-cli.mjs', import.meta.url), 'utf8');
   assert.match(source, /:\s*redactedIssuerProbeReceipt\(result\)/);
-  assert.match(source, /const report = args\[0\] === '--demo'/);
+  assert.match(source, /const plan = planTreasuryProbeArgs\(process\.argv\.slice\(2\)\)/);
+  assert.match(source, /const report = plan\.mode === 'demo'/);
+  assert.match(source, /allowRetrospective: plan\.allowRetrospective/);
 });
 
 test('real issuer Atom namespaces are required; similarly named foreign data fail closed', () => {

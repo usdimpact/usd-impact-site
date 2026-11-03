@@ -192,6 +192,11 @@ function buildCandidateInternal({ xml, day, asOfUtc, transport, httpChecks = nul
       canonical_url: sourceUrl,
       documentation_url: TREASURY_SOURCE_DOCUMENT,
       transport,
+      // An injected fetch capability and an asserted URL do not independently
+      // authenticate the publisher; the raw-header/origin gate remains held.
+      origin_provenance_level: transport === 'EXACT_ISSUER_RESPONSE' ?
+        'ASSERTED_EXACT_RESPONSE_URL_NOT_INDEPENDENTLY_ATTESTED' : 'UNVERIFIED_FIXTURE',
+      issuer_payload_origin_independently_attested: false,
       source_sha256: createHash('sha256').update(xml, 'utf8').digest('hex'),
       http_response_checks: transport === 'EXACT_ISSUER_RESPONSE' ? httpChecks : null,
       capture_context: context,
@@ -236,7 +241,23 @@ export function renderTreasuryCandidate(record, language) {
     record.human_editorial_review_required === true &&
     record.source?.public_redistribution_rights_granted === false &&
     record.source.exact_original_score_input === false &&
-    record.source.canonical_url === treasuryMonthlyUrl(record.observation_date),
+    record.source.publisher_release_instant === null &&
+    record.source.publisher_release_instant_verified === false &&
+    record.source.issuer_payload_origin_independently_attested === false &&
+    ['UNVERIFIED_FIXTURE', 'EXACT_ISSUER_RESPONSE'].includes(record.source.transport) &&
+    record.source.origin_provenance_level === (
+      record.source.transport === 'EXACT_ISSUER_RESPONSE' ?
+        'ASSERTED_EXACT_RESPONSE_URL_NOT_INDEPENDENTLY_ATTESTED' : 'UNVERIFIED_FIXTURE'
+    ) &&
+    record.source.source_rights_status === 'SEPARATE_LEGAL_EDITORIAL_REVIEW_REQUIRED' &&
+    record.source.documentation_url === TREASURY_SOURCE_DOCUMENT &&
+    record.source.canonical_url === treasuryMonthlyUrl(record.observation_date) &&
+    record.edition_key === 'METHOD-TREASURY:' + record.observation_date &&
+    record.permitted_claim_class === 'DATED_ISSUER_OBSERVATIONS_AND_ARITHMETIC_ONLY' &&
+    record.interpretation_level === 'NO_CAUSAL_INFERENCE' &&
+    record.publisher_release_verification_pending === true &&
+    record.live_issuer_fetch_does_not_grant_licence === true &&
+    record.existing_news_workflow_untouched === true,
     'candidate status, rights or issuer provenance is inconsistent');
   const ctx = record.source?.capture_context;
   assert(ctx && ['SAME_DAY_AFTER_1830_ET','EXPLICIT_RETROSPECTIVE'].includes(ctx.capture_mode),
@@ -252,6 +273,8 @@ export function renderTreasuryCandidate(record, language) {
   assert(Array.isArray(facts) && (facts.length === 0 || facts.length === 3),
     'candidate fact shape is inconsistent');
   if (facts.length === 3) {
+    assert(record.status === 'AWAITING_EDITORIAL_REVIEW',
+      'fact-bearing Treasury candidate is not pending editorial review');
     const prefix = 'TREASURY:PAR:' + record.observation_date;
     assert(record.source.source_observation_date === record.observation_date &&
       facts[0].id === prefix + ':2Y' && facts[1].id === prefix + ':10Y' &&
@@ -338,6 +361,8 @@ export function redactedIssuerProbeReceipt(candidate) {
     observation_date: candidate.record.observation_date,
     captured_as_of_utc: candidate.record.captured_as_of_utc,
     issuer_url: candidate.record.source.canonical_url,
+    origin_provenance_level: candidate.record.source.origin_provenance_level,
+    issuer_payload_origin_independently_attested: false,
     source_sha256: candidate.record.source.source_sha256,
     // Presence/type checks only. Header validators are not first publication times.
     http_response_checks: candidate.record.source.http_response_checks,

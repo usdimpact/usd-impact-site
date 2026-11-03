@@ -43,6 +43,40 @@ for(const [example,rule] of blocked){
   const got=reviewText(example);
   assert.ok(got.holds.some(x=>x.rule===rule),'N1b failed to flag high-confidence risk: '+example);
 }
+// QA9 regression cases: ambiguous source-provenance claims require reviewer,
+// while literal protected links remain HOLD and ordinary macro facts pass.
+const qa9Manual=[
+ 'The reading this week is 8.3/10; the regime is risk-off',
+ 'Our dollar dashboard shifted to a defensive regime.',
+ 'El indicador de tres señales pasó a bajista.',
+ '### Weekly Score\n\n**8.3/10**',
+ 'Three Dials point to a defensive dollar backdrop.',
+ 'Tres Diales apuntan a un escenario defensivo.',
+];
+for(const sample of qa9Manual){
+ const result=reviewText(sample);
+ assert.equal(result.holds.length,0,'QA9 ambiguity is not a definitive rights violation: '+sample);
+ assert.ok(result.reviews.length>0,'QA9 semantic ambiguity must not silently pass: '+sample);
+}
+const qa9Encoded=reviewText('Follow /data/%75sd_impact_score_v2.json');
+assert.ok(qa9Encoded.holds.some(x=>x.rule==='held_score_derived_file_link'));
+const qa9LinkControls=[
+ '[held]: /data/weekly_input_latest.json',
+ '/data/usd_impact_score_v2.json?source=news',
+];
+for(const sample of qa9LinkControls)
+ assert.ok(reviewText(sample).holds.length>0,'QA9 literal held artifact URL missed: '+sample);
+const qa9Benign=[
+ 'The BLS reported a 0.8% increase. Three Dials are a methodology framework.',
+ 'impactScore: 4\nmarketRegime: high-volatility',
+ 'Tres Diales es una metodología educativa que utiliza datos debidamente licenciados.',
+];
+for(const sample of qa9Benign){
+ const result=reviewText(sample);
+ assert.deepEqual(result.holds,[],'QA9 legitimate facts blocked: '+sample);
+ assert.deepEqual(result.reviews,[],'QA9 legitimate facts needlessly reviewed: '+sample);
+}
+
 const note=reviewText('Weekly Score was described as a method during 2026, but no live reading was claimed.');
 assert.deepEqual(note.holds,[]);
 assert.ok(note.reviews.length>0,'Ambiguous historical mention should prompt an editorial review, not publication clearance');
@@ -124,7 +158,7 @@ try{
 }finally{
   fs.rmSync(tmp,{recursive:true,force:true});
 }
-console.log('N1B_TEST_PASS safe='+safe.length+' blocked='+blocked.length+
+console.log('N1B_TEST_PASS qa9_manual='+qa9Manual.length+' qa9_encoded=1 qa9_benign='+qa9Benign.length+' safe='+safe.length+' blocked='+blocked.length+
   ' changed_content=2 long_line=blocked mixed_importance=blocked' +
   ' adjacent_line=blocked ambiguous=manual_review deletion=review_required' +
   ' source_ancestor_symlink=blocked malformed_utf8=blocked license_granted=false');

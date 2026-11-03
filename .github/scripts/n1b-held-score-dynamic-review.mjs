@@ -47,7 +47,7 @@ export function reviewText(text){
       holds.push({line:index+1,rule:'held_score_derived_file_link'});
       continue;
     }
-    if((link.malformed||/%25[0-9a-f]{2}/iu.test(line))&&/data(?:\\/|%2f|%25)/iu.test(line)){
+    if((link.malformed||/%25[0-9a-f]{2}/iu.test(line))&&/data(?:\/|%2f|%25)/iu.test(line)){
       reviews.push({line:index+1,rule:'manual_encoded_artifact_review'});
       continue;
     }

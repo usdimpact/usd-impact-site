@@ -71,6 +71,17 @@ const cases = [
   ['GitHub API malformed response leaves issue open',
     { ...good, prs: null }, false],
 ];
+const jqProbe = spawnSync('jq', ['--version'], { encoding: 'utf8', timeout: 2000 });
+// The Health workflow itself executes on Ubuntu GitHub Actions (which supplies
+// jq); Vercel's separate site-build image does not have to include jq.
+// Keep structural assertions in every environment and require all 10 executable
+// tests on the real GitHub Actions validation runner.
+if (jqProbe.status !== 0 && process.env.GITHUB_ACTIONS === 'true') {
+  throw new Error('jq is required to execute auto-closure evidence tests on GitHub Actions');
+}
+if (jqProbe.status !== 0) {
+  console.log('Daily auto-closure: static guard assertions pass; jq-dependent offline fixtures run in GitHub Actions, not this site builder.');
+} else {
 for (const [name, fixture, shouldClose] of cases) {
   const script = 'set -euo pipefail\n' + mockGh + '\n' + body + '\necho CLOSE_ELIGIBLE\n';
   const run = spawnSync('bash', ['-c', script], {
@@ -88,3 +99,4 @@ for (const [name, fixture, shouldClose] of cases) {
   assert.equal(run.stdout.includes('CLOSE_ELIGIBLE'), shouldClose, name + ': ' + run.stdout);
 }
 console.log('Daily auto-closure evidence: 10 offline positive/negative cases passed');
+}

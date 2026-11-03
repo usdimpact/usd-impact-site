@@ -32,7 +32,7 @@ const result = args[0] === '--demo' ?
     const start = new Date();
     const day = newYorkDay(start);
     return fetchTreasuryCandidate({
-      day, asOfUtc: start.toISOString(), fetchImpl: globalThis.fetch,
+      day, fetchImpl: globalThis.fetch,
     });
   })();
 if (result.record.public_release_authorized !== false ||

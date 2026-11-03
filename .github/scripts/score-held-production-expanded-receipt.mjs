@@ -63,6 +63,7 @@ function reportDigest(root,route){
       return m&&attributes(m[0]).get('type')?.toLowerCase()==='application/ld+json';
     }).map(v=>normalizeHtml(v));
   return {
+    document:sha(normalizeHtml(html)),
     body:sha(normalizeHtml(body)),
     head:sha(normalizeHtml(head)),
     hero:sha(normalizeHtml(hero)),
@@ -105,9 +106,12 @@ const output={
     Object.entries(candidate.reports).map(([name,regions])=>[name,regions.body])),
   candidate_head_sha256:Object.fromEntries(
     Object.entries(candidate.reports).map(([name,regions])=>[name,regions.head])),
+  candidate_document_sha256:Object.fromEntries(
+    Object.entries(candidate.reports).map(([name,regions])=>[name,regions.document])),
   classified_mode:process.env.VERCEL_ENV??'unspecified',
   original_whole_body_unapproved_deltas:differences.filter(d=>d.field==='body').length,
   original_whole_head_unapproved_deltas:differences.filter(d=>d.field==='head').length,
+  original_whole_document_unapproved_deltas:differences.filter(d=>d.field==='document').length,
 };
 console.log('SCORE_EXPANDED_RENDER_RECEIPT_JSON='+JSON.stringify(output));
 if(process.env.GITHUB_STEP_SUMMARY){
@@ -120,8 +124,12 @@ if(process.env.GITHUB_STEP_SUMMARY){
 // Original <head> and <body> differ from the parent integration baseline.
 // They are evidence-only owner HOLDs; other original Score regions, metadata
 // and 26 newsletter JSON outputs must still match original pinned Production.
-const acceptedScopeDifferences=differences.filter(d=>d.field!=='body'&&d.field!=='head');
+// Whole-document SHA-256 covers the bytes before <head>, between head and
+// body, and after </body>. Original-to-Draft differences remain explicitly
+// unapproved. This job only proves the 16 classified Draft hashes are stable.
+const acceptedScopeDifferences=differences.filter(d=>!['head','body','document'].includes(d.field));
 console.log('SCORE_ORIGINAL_FULL_BODY_OWNER_HOLD='+output.original_whole_body_unapproved_deltas+
   ' HEAD_OWNER_HOLD='+output.original_whole_head_unapproved_deltas+
+  ' DOCUMENT_OWNER_HOLD='+output.original_whole_document_unapproved_deltas+
   ' mode='+output.classified_mode+' (not public release; integration head/body differ from original main)');
 if(acceptedScopeDifferences.length)process.exitCode=1;

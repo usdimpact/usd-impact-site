@@ -57,7 +57,9 @@ try:
                 page = context.new_page()
                 external = []
                 errors = []
+                browser_console = []
                 page.on("pageerror", lambda e: errors.append(str(e)[:500]))
+                page.on("console", lambda m: browser_console.append(m.text[:400]) if m.type == "error" else None)
 
                 def isolate(route):
                     if route.request.url.startswith(origin + "/"):
@@ -168,6 +170,16 @@ try:
 
                     stage = "text-spacing user override under real CSP"
                     page.add_style_tag(url=css_url)
+                    page.wait_for_timeout(300)
+                    item["stylesheetDiagnostics"] = page.evaluate("""() => ({
+                      qaStylePresent: !!document.querySelector('link[href*="__qa_english_user_text_spacing.css"]'),
+                      qaStyleLoaded: [...document.styleSheets].some(
+                        s => s.href && s.href.includes('__qa_english_user_text_spacing.css')
+                      ),
+                      qaStyleLink: document.querySelector('link[href*="__qa_english_user_text_spacing.css"]')?.outerHTML.slice(0, 280) || null,
+                      sheetCount: document.styleSheets.length
+                    })""")
+                    item["browserConsoleErrors"] = browser_console[-8:]
                     spacing = page.evaluate("""() => {
                       const p = document.querySelector('main p');
                       const s = p && getComputedStyle(p);
@@ -208,6 +220,7 @@ try:
                     item["status"] = "FAIL"
                     item["stage"] = stage
                     item["error"] = str(exc)[:1200]
+                    item["browserConsoleErrors"] = browser_console[-8:]
                     failures.append(item)
                     print("FAIL English " + str(width) + " stage=" + stage + " " + str(exc)[:700])
                     try:

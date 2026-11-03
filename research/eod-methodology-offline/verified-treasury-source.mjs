@@ -102,7 +102,7 @@ function conciseNumber(n, locale) {
   return new Intl.NumberFormat(locale, {minimumFractionDigits: 2, maximumFractionDigits: 4}).format(n);
 }
 
-export function buildTreasuryCandidate({ xml, day, asOfUtc, transport = 'UNVERIFIED_FIXTURE' }) {
+function buildCandidateInternal({ xml, day, asOfUtc, transport }) {
   const clock = validateTreasuryClock(day, asOfUtc);
   assert(['UNVERIFIED_FIXTURE', 'EXACT_ISSUER_RESPONSE'].includes(transport),
     'unrecognized source transport');
@@ -149,6 +149,11 @@ export function buildTreasuryCandidate({ xml, day, asOfUtc, transport = 'UNVERIF
     existing_news_workflow_untouched: true,
   };
   return { record, en: renderTreasuryCandidate(record, 'en'), es: renderTreasuryCandidate(record, 'es') };
+}
+
+// Public test/fixture API always treats local XML as UNVERIFIED, regardless of extra props.
+export function buildTreasuryCandidate({xml, day, asOfUtc}) {
+  return buildCandidateInternal({xml, day, asOfUtc, transport: 'UNVERIFIED_FIXTURE'});
 }
 
 export function renderTreasuryCandidate(record, language) {
@@ -220,7 +225,7 @@ export async function fetchTreasuryCandidate({day, asOfUtc, fetchImpl}) {
     'issuer response length outside bound');
   const text = await response.text();
   assert(Buffer.byteLength(text, 'utf8') <= MAX_XML_BYTES, 'issuer body exceeds bound');
-  return buildTreasuryCandidate({
+  return buildCandidateInternal({
     xml: text, day, asOfUtc, transport: 'EXACT_ISSUER_RESPONSE',
   });
 }

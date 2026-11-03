@@ -9,6 +9,8 @@ Treasury publishes a government-originated daily par yield-curve XML feed. Its o
 - Guide: https://home.treasury.gov/treasury-daily-interest-rate-xml-feed
 - Canonical endpoint: https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value_month=YYYYMM
 - Fields: `NEW_DATE`, `BC_2YEAR`, `BC_10YEAR`.
+- Source units: two-year and ten-year **yields are percentages**; their arithmetic difference is in **percentage points**. The validated record and EN/ES renderers preserve that distinction.
+- Month binding: a monthly response with any out-of-month observation is rejected rather than treated as a quiet-day or valid publisher update.
 - Calculation: the directly reproducible **Treasury 10-year minus 2-year par-yield spread**, in percentage points. This is **not** the original Score v2 Treasury DGS2/DGS10 vendor transport, nor the eight-factor Score, nor a trading instruction.
 
 Treasury's government publisher status reduces source ambiguity. It **does not automatically certify** the contractual and legal public use of every input quotation, downstream derived display, or the original USD Impact Score. Original third-party licensing remains on HOLD. Any future published numeric series requires its own source-rights and editorial approval.
@@ -31,7 +33,9 @@ The `verified-treasury-source.mjs` adapter:
 - `node research/eod-methodology-offline/treasury-candidate-cli.mjs --demo` prints a **fictional February 2100 source-shaped example** to stdout. No files are written and no network requests occur.
 - Only when explicitly authorized for a read-only source probe, `node research/eod-methodology-offline/treasury-candidate-cli.mjs --live-official` makes one bounded GET to Treasury from the operator's runtime, only after the defined New York cutoff; stdout remains a **private draft**, not a release. Do not schedule this option or copy the JSON into public assets or GitHub logs without rights/privacy QA.
 
-The source adapter has injected-response tests for endpoint enforcement, days and DST, release-time limitations, XML parsing, duplicate dates, missing maturities, size limits, language parity, arithmetic, no-new-observation distinction, and read-only behavior.
+The source adapter has injected-response tests for endpoint enforcement, days and DST, release-time limitations, XML parsing, duplicate dates, wrong-month observations, missing maturities, source-value units, tampered derived arithmetic, changed issuer URLs/rights flags, size limits, language parity, no-new-observation distinction, and read-only behavior.
+
+The current live public feed has been read through a browser-oriented extractor; that system converted the XML into flattened text. This confirms the endpoint and monthly observation shape but does NOT certify raw XML bytes, headers, original issuer publication instant or complete compatibility with the exact parser. Certify these separately before enabling any factual issuer-source generation.
 
 ## What remains before genuine unattended Method Daily production
 

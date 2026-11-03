@@ -38,7 +38,10 @@ export function validateTreasuryClock(day, asOfUtc) {
   const localDay = local.year + '-' + local.month + '-' + local.day;
   assert(localDay === day, 'the requested observation day must match New York as-of day');
   assert(!['Sat', 'Sun'].includes(local.weekday), 'weekend observation requires separate policy');
-  assert(Number(local.hour) >= 17, 'methodology source check is before 17:00 New York cutoff');
+  // Treasury says par yields are usually available by 18:00 ET but can be delayed.
+  // Add a 30-minute buffer; actual record presence remains mandatory.
+  assert(Number(local.hour) * 60 + Number(local.minute) >= 18 * 60 + 30,
+    'Treasury source check is before 18:30 New York availability buffer');
   return instant.toISOString();
 }
 

@@ -147,7 +147,9 @@ export function readTreasuryObservation(xml, day) {
     const dateValue = uniqueDataTagValue(properties, 'NEW_DATE');
     // Treasury OData NEW_DATE is a date-time lexical value; a valid YYYY-MM-DD
     // prefix alone does not authorize arbitrary trailing content as a real date.
-    assert(dateValue && /^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\.[0-9]{1,7})?Z?$/.test(dateValue) &&
+    // Treasury's documented Edm.DateTime allows yyyy-mm-ddThh:mm with optional
+    // seconds and fractional seconds; reject broken suffixes, not valid minute-only input.
+    assert(dateValue && /^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9](?::[0-5][0-9](?:\.[0-9]{1,7})?)?Z?$/.test(dateValue) &&
       dayIsValid(dateValue.slice(0, 10)), 'bad or missing Treasury observation date');
     const observationDay = dateValue.slice(0, 10);
     assert(observationDay.slice(0, 7) === day.slice(0, 7),

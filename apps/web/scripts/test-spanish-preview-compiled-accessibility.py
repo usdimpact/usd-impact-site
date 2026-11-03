@@ -82,6 +82,21 @@ try:
                             interception.abort_()
 
                     context.route("**/*", route_request)
+                    # Same-origin, memory-only CSS response. Keep the application's
+                    # real CSP intact; no inline-style bypass and no file write.
+                    spacing_url = origin + "/__qa_spanish_user_text_spacing.css"
+                    spacing_css = (
+                        "* { line-height: 1.5 !important;"
+                        " letter-spacing: .12em !important;"
+                        " word-spacing: .16em !important; }"
+                        " p { margin-bottom: 2em !important; }"
+                    )
+                    context.route(
+                        spacing_url,
+                        lambda request: request.fulfill(
+                            status=200, content_type="text/css", body=spacing_css,
+                        ),
+                    )
                     entry = {"route": route, "width": width, "height": height}
                     try:
                         response = page.goto(origin + route, wait_until="load", timeout=30000)
@@ -271,6 +286,68 @@ try:
                             page.keyboard.press("Escape")
                             assert not first_group.evaluate("(el) => el.open")
                             assert first_summary.evaluate("(el) => document.activeElement === el")
+
+                        # WCAG 2.2 SC 1.4.12, four independent user overrides.
+                        # Validate the genuine first-visit banner and disclosure
+                        # remain usable at requested viewport widths, with CSP on.
+                        page.add_style_tag(url=spacing_url)
+                        spacing = page.evaluate("""() => {
+                          const p = document.querySelector('main p');
+                          const s = p && getComputedStyle(p);
+                          const font = s ? parseFloat(s.fontSize) : 0;
+                          return {
+                            width: innerWidth,
+                            scrollWidth: document.documentElement.scrollWidth,
+                            line: font ? parseFloat(s.lineHeight) / font : 0,
+                            paragraph: font ? parseFloat(s.marginBottom) / font : 0,
+                            letter: font ? parseFloat(s.letterSpacing) / font : 0,
+                            word: font ? parseFloat(s.wordSpacing) / font : 0,
+                            bannerPresent: !!document.querySelector('#privacy-consent-banner'),
+                            language: document.documentElement.lang
+                          };
+                        }""")
+                        assert spacing["width"] == width
+                        assert spacing["line"] >= 1.49 and spacing["paragraph"] >= 1.99
+                        assert spacing["letter"] >= .119 and spacing["word"] >= .159
+                        assert spacing["scrollWidth"] <= width + 1, (
+                            "User text spacing causes horizontal overflow: " +
+                            json.dumps(spacing)
+                        )
+                        assert spacing["bannerPresent"] and spacing["language"] == "es"
+                        assert page.evaluate("window.USDImpactConsent.preference()") == "unset"
+                        assert page.locator(summary_selector).count() == 1
+                        # Disclosure and privacy choices must remain focusable,
+                        # in viewport and uncovered under custom text spacing.
+                        for selector in (summary_selector, "#privacy-consent-reject"):
+                            el = page.locator(selector)
+                            el.scroll_into_view_if_needed()
+                            el.focus()
+                            state = el.evaluate("""(node) => {
+                              const rect = node.getBoundingClientRect();
+                              const hit = document.elementFromPoint(
+                                (rect.left + rect.right) / 2,
+                                (rect.top + rect.bottom) / 2
+                              );
+                              return {
+                                focused: document.activeElement === node,
+                                visible: rect.top >= -1 && rect.bottom <= innerHeight + 1,
+                                onTop: hit === node || node.contains(hit),
+                                outline: parseFloat(getComputedStyle(node).outlineWidth) || 0
+                              };
+                            }""")
+                            assert state["focused"] and state["visible"] and state["onTop"], (
+                                "User spacing obscures focus: " + selector + " " +
+                                json.dumps(state)
+                            )
+                        if width <= 390:
+                            page.screenshot(
+                                path=str(OUT / (label + "-" + str(width) + "-textspacing-fullpage.png")),
+                                full_page=True,
+                            )
+                        page.locator(
+                            'link[href="' + spacing_url + '"]'
+                        ).evaluate("(link) => link.remove()")
+                        entry["text_spacing"] = spacing
 
                         # Real first-party browser cookie and cross-page persistence.
                         page.locator("#privacy-consent-reject").click()

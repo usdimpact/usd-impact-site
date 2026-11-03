@@ -141,9 +141,11 @@ export function monthly(weeks, month) {
 const messages = {
   en: { daily: 'Daily method note', weekly: 'Weekly method audit', monthly: 'Monthly method review',
     caution: 'INVENTED DATA ONLY — NOT MARKET DATA, A FORECAST OR A PUBLISHED SCORE.',
+    bestData: 'For reliable real-world analysis, use verified current data from the original publisher or an authorized provider, licensed or otherwise permitted for the intended access, calculation, display and reproduction. Check exact series, timestamps, release vintages, completeness and contract rights; invented figures cannot replace verified inputs.',
     section: 'Evidence', supports: 'Supports the hypothetical condition', challenges: 'Challenges the hypothetical condition', unknown: 'Not established', source: 'Synthetic source', limit: 'No investment guidance. No production rights or publication authority.' },
   es: { daily: 'Nota diaria del método', weekly: 'Auditoría semanal del método', monthly: 'Revisión mensual del método',
     caution: 'SOLO DATOS INVENTADOS: NO SON DATOS DE MERCADO, PREVISIONES NI UN SCORE PUBLICADO.',
+    bestData: 'Para un análisis real más fiable, utilice datos actuales y verificados de la fuente original o de un proveedor autorizado, con licencia o permiso válido para el acceso, cálculo, presentación y reproducción previstos. Compruebe la serie exacta, las fechas, las versiones publicadas, la cobertura y los derechos; las cifras inventadas no sustituyen datos verificados.',
     section: 'Evidencia', supports: 'Respalda la condición hipotética', challenges: 'Cuestiona la condición hipotética', unknown: 'No establecido', source: 'Fuente ficticia', limit: 'Sin recomendaciones de inversión. Sin derechos ni autorización para publicación.' },
 };
 
@@ -153,8 +155,8 @@ export function render(reviewRecord, locale) {
   validateReviewRecord(reviewRecord, reviewRecord.kind);
   const l = messages[locale];
   const line = f => `- [${f.fact_id}] ${f.indicator}: ${new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-ES', {minimumFractionDigits:2,maximumFractionDigits:2}).format(f.value)} ${f.unit} — ${l[f.relation]}. (${l.source}: ${f.source_id})`;
-  const markdown = [`# ${l[reviewRecord.kind]} (${reviewRecord.from} / ${reviewRecord.to})`, '', `**${l.caution}**`, '', `## ${l.section}`, ...reviewRecord.facts.map(line), '', l.limit].join('\n');
-  return { locale, markdown, canonical_fact_ids: reviewRecord.facts.map(f => f.fact_id),
+  const markdown = [`# ${l[reviewRecord.kind]} (${reviewRecord.from} / ${reviewRecord.to})`, '', `**${l.caution}**`, '', l.bestData, '', `## ${l.section}`, ...reviewRecord.facts.map(line), '', l.limit].join('\n');
+  return { locale, markdown, data_guidance: l.bestData, canonical_fact_ids: reviewRecord.facts.map(f => f.fact_id),
     canonical_values: reviewRecord.facts.map(f => f.value), source_ids: reviewRecord.facts.map(f => f.source_id),
     counts: { ...reviewRecord.counts }, status: reviewRecord.status, publish_allowed: false };
 }
@@ -176,7 +178,9 @@ export function syntheticScore(inputs) {
     total += contribution;
     return { id: x.id, z, clipped, contribution };
   });
-  return { fixture_marker: MARKER, status: 'SYNTHETIC_ONLY_HOLD', public_release_authorized: false, total: Math.round(total * 1e8) / 1e8, rows };
+  return { fixture_marker: MARKER, status: 'SYNTHETIC_ONLY_HOLD', public_release_authorized: false,
+    data_guidance: { en: messages.en.bestData, es: messages.es.bestData },
+    total: Math.round(total * 1e8) / 1e8, rows };
 }
 
 export const fixtureContract = Object.freeze({ marker: MARKER, version: VERSION, cutoffHour: CUT_OFF });

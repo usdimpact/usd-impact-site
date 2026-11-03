@@ -291,6 +291,36 @@ test('optional real-issuer probe receipt never includes rates, translations or S
   assert.ok(!Object.hasOwn(receipt, 'facts'));
 });
 
+test('private issuer receipt proves transport header types and presence, not first publication', async () => {
+  const result = await fetchTreasuryCandidate({
+    day:DAY, clock:()=>new Date(AS_OF), fetchImpl:async()=>response(xmlRows(),{
+      headers:{
+        'content-type':'application/atom+xml; charset=utf-8',
+        'date':'Tue, 03 Nov 2026 23:37:00 GMT',
+        'last-modified':'Tue, 03 Nov 2026 23:20:00 GMT',
+        'etag':'"fictional-validator"',
+      }
+    })
+  });
+  const receipt = redactedIssuerProbeReceipt(result);
+  assert.deepEqual(receipt.http_response_checks, {
+    http_status:200,content_type:'application/atom+xml',
+    http_date_header_present:true,last_modified_header_present:true,
+    etag_header_present:true,original_first_publication_instant_verified:false
+  });
+  assert.doesNotMatch(JSON.stringify(receipt), /fictional-validator|Tue, 03 Nov|4\.12|4\.65|0\.53/);
+  assert.equal(receipt.original_publisher_release_time_verified,false);
+});
+
+test('fixtures cannot forge a verified issuer HTTP header receipt', () => {
+  const fixture = buildTreasuryCandidate({
+    xml:xmlRows(),day:DAY,asOfUtc:AS_OF,
+    httpChecks:{http_status:200,content_type:'application/xml'}
+  });
+  assert.equal(fixture.record.source.transport,'UNVERIFIED_FIXTURE');
+  assert.equal(fixture.record.source.http_response_checks,null);
+});
+
 test('redacted receipt refuses fake transport and any claimed public rights', async () => {
   const invented = buildTreasuryCandidate({xml:xmlRows(),day:DAY,asOfUtc:AS_OF});
   assert.throws(()=>redactedIssuerProbeReceipt(invented), /rights-held exact-issuer/);

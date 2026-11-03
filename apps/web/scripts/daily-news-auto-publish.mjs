@@ -5,7 +5,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { verifyDailyNewsDeployment } from './check-daily-news-deployment-health.mjs';
 import {
   REPOSITORY, beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
-  selectExactDailyPr, validateDailyContent, requireExactChecks,
+  selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
 } from './daily-news-auto-publish-policy.mjs';
 
 const SHA = /^[a-f0-9]{40}$/;
@@ -120,6 +120,8 @@ async function run() {
   const pr = api('pulls/' + prNumber);
   if (pr.head.sha !== headSha || pr.base.sha !== mainSha || pr.draft || pr.state !== 'open'
       || pr.head.repo?.full_name !== REPOSITORY) hold('pull-request-head-or-base-drift');
+  const compare = api('compare/' + mainSha + '...' + headSha);
+  if (!isSingleGeneratorCommit(compare, editionDate)) hold('pr-head-is-not-the-original-one-commit-generator-output');
   const files = api('pulls/' + prNumber + '/files?per_page=100');
   if (!Array.isArray(files) || files.length !== 1) hold('unexpected-publication-file-scope');
   const contentResult = api('contents/' + files[0].filename + '?ref=' + headSha);

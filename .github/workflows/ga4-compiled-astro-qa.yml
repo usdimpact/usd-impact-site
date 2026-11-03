@@ -66,7 +66,7 @@ jobs:
           set -euo pipefail
           "$RUNNER_TEMP/ga4-compiled-venv/bin/python" apps/web/scripts/test-ga4-compiled-astro-browser.py
       - name: Build exact Spanish Preview routes for isolated keyboard QA
-        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == true && github.head_ref == 'agent/es-compiled-a11y-qa-20261103' }}
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == true && (github.head_ref == 'agent/es-compiled-a11y-qa-20261103' || github.head_ref == 'agent/es-tablet-textspacing-nav-fix-20261103') }}
         working-directory: apps/web
         env:
           VERCEL_ENV: preview
@@ -78,7 +78,7 @@ jobs:
           npm run generate:quizzes
           npx --no-install astro build
       - name: Test compiled Spanish accessibility, focus, and real browser cookie on loopback
-        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == true && github.head_ref == 'agent/es-compiled-a11y-qa-20261103' }}
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == true && (github.head_ref == 'agent/es-compiled-a11y-qa-20261103' || github.head_ref == 'agent/es-tablet-textspacing-nav-fix-20261103') }}
         shell: bash
         env:
           PYTHONDONTWRITEBYTECODE: '1'
@@ -86,7 +86,7 @@ jobs:
           set -euo pipefail
           "$RUNNER_TEMP/ga4-compiled-venv/bin/python" apps/web/scripts/test-spanish-preview-compiled-accessibility.py
       - name: Upload isolated Spanish accessibility QA screenshots and summary
-        if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.draft == true && github.head_ref == 'agent/es-compiled-a11y-qa-20261103' }}
+        if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.draft == true && (github.head_ref == 'agent/es-compiled-a11y-qa-20261103' || github.head_ref == 'agent/es-tablet-textspacing-nav-fix-20261103') }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # repo-reviewed SHA
         with:
           name: spanish-compiled-accessibility-draft

@@ -1,7 +1,7 @@
-import { safeSupabaseError, sendJson } from './supabase-server.js';
+import { getVerifiedSupabaseUser, safeSupabaseError, sendJson } from './supabase-server.js';
 import {
   clearPkceCookie,
-  readSessionAccessToken,
+  resolveSessionWithRefresh,
   sessionReadyLocation,
   setSessionCookies,
 } from './supabase-auth.js';
@@ -56,13 +56,35 @@ function requireSameSiteJson(request, response) {
   return true;
 }
 
-function requireAccessToken(request, response) {
-  const accessToken = readSessionAccessToken(request);
-  if (!accessToken) {
+// Passkey settings share the same refresh-cookie continuity as protected
+// Library pages. Verify the authenticated user, not any paid entitlement:
+// customers retain account-security access independently of their purchases.
+export async function requirePasskeyManagementAccessToken(request, response, {
+  resolveSession = resolveSessionWithRefresh,
+  verifyAccessToken = getVerifiedSupabaseUser,
+  environment,
+  config,
+  fetchImpl,
+} = {}) {
+  let resolved;
+  try {
+    resolved = await resolveSession({
+      request,
+      response,
+      verifyAccessToken,
+      environment,
+      config,
+      fetchImpl,
+    });
+  } catch (error) {
+    safeError(response, error);
+    return null;
+  }
+  if (!resolved?.accessToken) {
     sendJson(response, 401, { error: 'Authentication is required.', code: 'AUTHENTICATION_REQUIRED' });
     return null;
   }
-  return accessToken;
+  return resolved.accessToken;
 }
 
 function safeError(response, error) {
@@ -155,9 +177,9 @@ async function authenticationVerify(request, response) {
   }
 }
 
-async function list(request, response) {
+async function list(request, response, dependencies) {
   if (request.method !== 'GET') return methodNotAllowed(response, 'GET');
-  const accessToken = requireAccessToken(request, response);
+  const accessToken = await requirePasskeyManagementAccessToken(request, response, dependencies);
   if (!accessToken) return;
   try {
     const passkeys = await listPasskeys({ accessToken });
@@ -167,10 +189,10 @@ async function list(request, response) {
   }
 }
 
-async function registrationOptions(request, response) {
+async function registrationOptions(request, response, dependencies) {
   if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
   if (!requireSameSiteJson(request, response)) return;
-  const accessToken = requireAccessToken(request, response);
+  const accessToken = await requirePasskeyManagementAccessToken(request, response, dependencies);
   if (!accessToken) return;
   try {
     const result = await startPasskeyRegistration({ accessToken });
@@ -180,10 +202,10 @@ async function registrationOptions(request, response) {
   }
 }
 
-async function registrationVerify(request, response) {
+async function registrationVerify(request, response, dependencies) {
   if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
   if (!requireSameSiteJson(request, response)) return;
-  const accessToken = requireAccessToken(request, response);
+  const accessToken = await requirePasskeyManagementAccessToken(request, response, dependencies);
   if (!accessToken) return;
   let payload;
   try {
@@ -203,10 +225,10 @@ async function registrationVerify(request, response) {
   }
 }
 
-async function rename(request, response) {
+async function rename(request, response, dependencies) {
   if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
   if (!requireSameSiteJson(request, response)) return;
-  const accessToken = requireAccessToken(request, response);
+  const accessToken = await requirePasskeyManagementAccessToken(request, response, dependencies);
   if (!accessToken) return;
   let payload;
   try {
@@ -226,10 +248,10 @@ async function rename(request, response) {
   }
 }
 
-async function remove(request, response) {
+async function remove(request, response, dependencies) {
   if (request.method !== 'POST') return methodNotAllowed(response, 'POST');
   if (!requireSameSiteJson(request, response)) return;
-  const accessToken = requireAccessToken(request, response);
+  const accessToken = await requirePasskeyManagementAccessToken(request, response, dependencies);
   if (!accessToken) return;
   let payload;
   try {
@@ -261,11 +283,12 @@ const operations = Object.freeze({
   delete: remove,
 });
 
-export async function handlePasskeyRequest(request, response) {
+export async function handlePasskeyRequest(request, response, dependencies = {}) {
   response.setHeader('Cache-Control', 'no-store');
+  response.setHeader('Vary', 'Cookie, Authorization');
   const selected = operations[operation(request)];
   if (!selected) {
     return sendJson(response, 404, { error: 'Passkey action not found.', code: 'PASSKEY_ACTION_NOT_FOUND' });
   }
-  return selected(request, response);
+  return selected(request, response, dependencies);
 }

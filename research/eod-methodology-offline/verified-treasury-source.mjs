@@ -204,8 +204,13 @@ export function renderTreasuryCandidate(record, language) {
   };
 }
 
-export async function fetchTreasuryCandidate({day, asOfUtc, fetchImpl}) {
-  validateTreasuryClock(day, asOfUtc);
+// Exact-origin fetch remains opt-in and never authorizes a public output.
+// The capture timestamp is recorded AFTER the response was actually received.
+export async function fetchTreasuryCandidate({day, fetchImpl, clock = () => new Date()}) {
+  assert(typeof clock === 'function', 'explicit clock provider required');
+  const started = clock();
+  assert(started instanceof Date && Number.isFinite(started.valueOf()), 'invalid request clock');
+  validateTreasuryClock(day, started.toISOString());
   assert(typeof fetchImpl === 'function', 'explicit issuer fetch capability required');
   const url = treasuryMonthlyUrl(day);
   const response = await fetchImpl(url, {
@@ -223,9 +228,32 @@ export async function fetchTreasuryCandidate({day, asOfUtc, fetchImpl}) {
   const length = Number(response.headers?.get('content-length') ?? 0);
   assert(Number.isFinite(length) && length >= 0 && length <= MAX_XML_BYTES,
     'issuer response length outside bound');
-  const text = await response.text();
-  assert(Buffer.byteLength(text, 'utf8') <= MAX_XML_BYTES, 'issuer body exceeds bound');
+  let text;
+  if (response.body && typeof response.body.getReader === 'function') {
+    // Actual HTTP streams are limited before full buffering. Fixture responses
+    // without streams may use the text() fallback for injected tests only.
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    const parts = [];
+    let bytes = 0;
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      assert(bytes <= MAX_XML_BYTES, 'issuer stream exceeds bounded XML size');
+      parts.push(decoder.decode(value, {stream:true}));
+    }
+    parts.push(decoder.decode());
+    text = parts.join('');
+  } else {
+    text = await response.text();
+    assert(Buffer.byteLength(text, 'utf8') <= MAX_XML_BYTES, 'issuer body exceeds bound');
+  }
+  const captured = clock();
+  assert(captured instanceof Date && Number.isFinite(captured.valueOf()), 'invalid capture clock');
+  assert(captured.getTime() >= started.getTime(), 'capture clock moved backwards');
+  const capturedAsOfUtc = validateTreasuryClock(day, captured.toISOString());
   return buildCandidateInternal({
-    xml: text, day, asOfUtc, transport: 'EXACT_ISSUER_RESPONSE',
+    xml: text, day, asOfUtc: capturedAsOfUtc, transport: 'EXACT_ISSUER_RESPONSE',
   });
 }

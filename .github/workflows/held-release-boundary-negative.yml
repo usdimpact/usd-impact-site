@@ -146,5 +146,19 @@ jobs:
         run: npm run validate && npm run build
       - name: Compare 16 historical rendered main bodies to original Production
         run: node .github/scripts/score-held-production-body-receipt.mjs
-      - name: Compare full historical Score body, metadata and newsletter receipts
+      - name: Compare original Score regions and record Production body HOLD
+        env:
+          VERCEL_ENV: production
+        run: node .github/scripts/score-held-production-expanded-receipt.mjs
+      - name: Isolate the candidate Preview generated output tree
+        working-directory: apps/web
+        run: rm -rf dist .astro
+      - name: Build candidate Preview with exact Vercel command
+        working-directory: apps/web
+        env:
+          VERCEL_ENV: preview
+        run: npm run validate && npm run build
+      - name: Compare original Score regions in Preview classification
+        env:
+          VERCEL_ENV: preview
         run: node .github/scripts/score-held-production-expanded-receipt.mjs

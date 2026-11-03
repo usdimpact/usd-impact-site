@@ -364,6 +364,59 @@ test('renderer fails closed when source IDs, calculated spread or rights are tam
   },'en'),/candidate status, rights/);
 });
 
+test('a fact-bearing candidate cannot silently become approved, released or source-verified', () => {
+  const record=buildTreasuryCandidate({xml:xmlRows(),day:DAY,asOfUtc:AS_OF}).record;
+  for(const status of ['APPROVED','PUBLISHED','NO_MATCHING_OBSERVATION_DRAFT']) {
+    assert.throws(()=>renderTreasuryCandidate({...record,status},'en'),
+      /not pending editorial review/);
+  }
+  for(const change of [
+    {source:{...record.source,publisher_release_instant:'2026-11-03T21:00:00Z'}},
+    {source:{...record.source,publisher_release_instant_verified:true}},
+    {source:{...record.source,issuer_payload_origin_independently_attested:true}},
+    {source:{...record.source,source_rights_status:'APPROVED'}},
+    {source:{...record.source,origin_provenance_level:'ISSUER_VERIFIED'}},
+    {source:{...record.source,documentation_url:'https://example.invalid'}},
+    {publisher_release_verification_pending:false},
+    {permitted_claim_class:'TRADE_RECOMMENDATION'},
+    {interpretation_level:'PRICE_CAUSATION_PROVEN'},
+    {live_issuer_fetch_does_not_grant_licence:false},
+    {existing_news_workflow_untouched:false},
+    {edition_key:'METHOD-TREASURY:2026-11-02'},
+  ]) assert.throws(()=>renderTreasuryCandidate({...record,...change},'es'),
+    /candidate status, rights or issuer provenance/);
+});
+
+test('a fetched response cannot be mistaken for independent publisher authentication', async () => {
+  // In-process fetch mocks are permitted for tests, so response.url alone
+  // must never be treated as a cryptographically attested publisher.
+  const x=await fetchTreasuryCandidate({
+    day:DAY,clock:()=>new Date(AS_OF),fetchImpl:async()=>response()
+  });
+  assert.equal(x.record.source.transport,'EXACT_ISSUER_RESPONSE');
+  assert.equal(x.record.source.origin_provenance_level,
+    'ASSERTED_EXACT_RESPONSE_URL_NOT_INDEPENDENTLY_ATTESTED');
+  assert.equal(x.record.source.issuer_payload_origin_independently_attested,false);
+  const receipt=redactedIssuerProbeReceipt(x);
+  assert.equal(receipt.origin_provenance_level,x.record.source.origin_provenance_level);
+  assert.equal(receipt.issuer_payload_origin_independently_attested,false);
+  assert.equal(receipt.public_release_authorized,false);
+  assert.doesNotMatch(JSON.stringify(receipt),/4\.12|4\.65|0\.53|markdown/);
+});
+
+test('a hand-supplied XML fixture is not promoted by caller-supplied transport metadata', () => {
+  const fixture=buildTreasuryCandidate({
+    xml:xmlRows(),day:DAY,asOfUtc:AS_OF,
+    transport:'EXACT_ISSUER_RESPONSE',
+    origin_provenance_level:'ISSUER_VERIFIED',
+    public_release_authorized:true,
+  });
+  assert.equal(fixture.record.source.transport,'UNVERIFIED_FIXTURE');
+  assert.equal(fixture.record.source.origin_provenance_level,'UNVERIFIED_FIXTURE');
+  assert.equal(fixture.record.source.issuer_payload_origin_independently_attested,false);
+  assert.throws(()=>redactedIssuerProbeReceipt(fixture),/rights-held exact-issuer/);
+});
+
 test('no-observation note cannot be relabeled as an approved observation', () => {
   const record = buildTreasuryCandidate({
     xml:xmlRows([{day:'2026-11-02',two:'4.00',ten:'4.20'}]),day:DAY,asOfUtc:AS_OF

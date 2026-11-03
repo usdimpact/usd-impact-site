@@ -43,6 +43,7 @@ function put(filename,contents){
   fs.mkdirSync(path.dirname(absolute),{recursive:true});
   fs.writeFileSync(absolute,contents);
 }
+let fixture;
 function inspect(){
   const scan=collectWebBuildInputs(root);
   return [...scan.failures,...evaluatePinnedBuildInputs(fixture,scan.files,{minimum:0})];
@@ -61,7 +62,7 @@ try {
   put('vercel.json','{"buildCommand":"npm run validate && npm run build"}\n');
   const clean=collectWebBuildInputs(root);
   assert.deepEqual(clean.failures,[]);
-  const fixture={
+  fixture={
     schema_version:1,
     disposition:'hold',
     source_commit:FROZEN_SOURCE_COMMIT,

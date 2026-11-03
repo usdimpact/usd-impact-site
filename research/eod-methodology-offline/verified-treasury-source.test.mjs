@@ -154,6 +154,18 @@ test('OData observation date rejects corrupted timestamp suffixes and times', ()
     '2026-11-03T00:00:00.000'),DAY).observation_date,DAY);
 });
 
+test('Treasury published Edm.DateTime lexical form accepts minute-only observation dates', () => {
+  const original=readTreasuryObservation(xmlRows(),DAY);
+  for(const suffix of ['T00:00','T00:00Z','T00:00:00.1234567']) {
+    const xml=xmlRows().replace('2026-11-03T00:00:00','2026-11-03'+suffix);
+    assert.deepEqual(readTreasuryObservation(xml,DAY),original);
+  }
+  for(const bad of ['T00:00.1','T00:00:00.12345678','T00:60','T24:00']) {
+    const xml=xmlRows().replace('2026-11-03T00:00:00','2026-11-03'+bad);
+    assert.throws(()=>readTreasuryObservation(xml,DAY),/bad or missing Treasury observation date/);
+  }
+});
+
 test('Treasury 2022 omitted-null-field convention never creates a zero rate', () => {
   const base=xmlRows();
   const missingTwo=base.replace(/<d:BC_2YEAR[^>]*>[^<]*<\/d:BC_2YEAR>/, '');

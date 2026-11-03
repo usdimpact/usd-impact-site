@@ -55,7 +55,7 @@ test('same New York day and 17:00 Eastern cutoff are mandatory, including DST', 
   assert.throws(() => validateTreasuryClock('2026-07-02', '2026-07-02T20:59:00Z'), /before 17/);
   assert.equal(validateTreasuryClock('2026-07-02', '2026-07-02T21:05:00Z'),
     '2026-07-02T21:05:00.000Z');
-  assert.throws(() => validateTreasuryClock(DAY, '2026-11-04T00:15:00Z'), /match New York/);
+  assert.throws(() => validateTreasuryClock(DAY, '2026-11-04T05:15:00Z'), /match New York/);
   assert.throws(() => validateTreasuryClock('2026-11-07', '2026-11-07T22:37:00Z'), /weekend/);
 });
 

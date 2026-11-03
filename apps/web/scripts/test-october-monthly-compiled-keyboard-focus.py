@@ -149,9 +149,65 @@ try:
                         "() => Boolean(document.activeElement?.closest('main#main'))"
                     ), "Next Tab after skip did not enter main content"
 
+                    stage = "natural keyboard-only traversal from main to Privacy footer"
+                    # Starting after the real skip-link Enter and first Tab, follow
+                    # every successive browser Tab without manually calling .focus().
+                    # A hidden or unreachable footer control must fail the test.
+                    tab_order = []
+                    for _ in range(90):
+                        active = page.evaluate("""() => {
+                          const el = document.activeElement;
+                          const css = getComputedStyle(el);
+                          const r = el.getBoundingClientRect();
+                          return {
+                            tag: el.tagName,
+                            name: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 120),
+                            inMain: Boolean(el.closest('main#main')),
+                            inFooter: Boolean(el.closest('footer')),
+                            isPrivacy: el.matches('footer a[href="/privacy/"]'),
+                            visible: r.top >= -1 && r.bottom <= innerHeight + 1,
+                            outlineStyle: css.outlineStyle,
+                            outlineWidth: parseFloat(css.outlineWidth) || 0,
+                            overflow: document.documentElement.scrollWidth > innerWidth + 1,
+                          };
+                        }""")
+                        assert active["tag"] == "A", (
+                            "Tab left keyboard-accessible links at " + active["tag"]
+                        )
+                        assert active["name"], "Focused link has no accessible name"
+                        assert active["visible"], (
+                            "Focused link outside viewport: " + active["name"]
+                        )
+                        assert active["outlineStyle"] != "none" and active["outlineWidth"] >= 3, (
+                            "Missing visible keyboard outline: " + active["name"]
+                        )
+                        assert not active["overflow"], "Horizontal overflow during Tab traversal"
+                        tab_order.append({
+                            "name": active["name"],
+                            "inMain": active["inMain"],
+                            "inFooter": active["inFooter"],
+                        })
+                        if active["isPrivacy"]:
+                            break
+                        page.keyboard.press("Tab")
+                    assert active["isPrivacy"], (
+                        "Natural Tab traversal never reached the footer Privacy link"
+                    )
+                    assert sum(1 for link in tab_order if link["inMain"]) >= 5, (
+                        "Fewer than five main-content links were reachable by Tab"
+                    )
+                    assert sum(1 for link in tab_order if link["inFooter"]) >= 3, (
+                        "Fewer than three footer links were reachable by Tab"
+                    )
+                    result["natural_tab"] = {
+                        "links": len(tab_order),
+                        "main": sum(1 for link in tab_order if link["inMain"]),
+                        "footer": sum(1 for link in tab_order if link["inFooter"]),
+                        "privacyReached": True,
+                    }
+
                     stage = "footer keyboard focus"
                     privacy = page.locator("footer a[href='/privacy/']")
-                    privacy.focus()
                     assert privacy.evaluate("(el) => document.activeElement === el")
                     page.keyboard.press("Shift+Tab")
                     assert page.evaluate(

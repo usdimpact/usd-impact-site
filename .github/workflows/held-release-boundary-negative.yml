@@ -53,7 +53,7 @@ jobs:
         env:
           VERCEL_ENV: production
         run: |
-          rm -rf dist
+          rm -rf dist .astro
           npm run validate && npm run build
           node scripts/held-release-boundary.mjs --built production
           node scripts/score-held-report-source-guard.mjs --built
@@ -62,7 +62,7 @@ jobs:
         env:
           VERCEL_ENV: preview
         run: |
-          rm -rf dist
+          rm -rf dist .astro
           npm run validate && npm run build
           node scripts/held-release-boundary.mjs --built preview
           node scripts/score-held-report-source-guard.mjs --built

@@ -1,7 +1,7 @@
 // Explicitly invoked CLI: DEMO uses invented XML and never downloads market data.
 // --live-official makes one bounded GET to the fixed Treasury government endpoint;
 // it never creates files, opens PRs, publishes, or asserts licence rights.
-import { buildTreasuryCandidate, fetchTreasuryCandidate } from './verified-treasury-source.mjs';
+import { buildTreasuryCandidate, fetchTreasuryCandidate, redactedIssuerProbeReceipt } from './verified-treasury-source.mjs';
 
 const args = process.argv.slice(2);
 const fixtureXml = '<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom" ' +
@@ -41,8 +41,10 @@ if (result.record.public_release_authorized !== false ||
   throw new Error('candidate violated publication prohibition');
 }
 
-const report = {
-  scenario: args[0] === '--demo' ? 'INVENTED_FIXTURE_ONLY' : 'ISSUER_GET_PRIVATE_RESEARCH',
+// The invented demo may show invented rates; an actual issuer probe NEVER
+// prints real numeric observations or translated rate-bearing Markdown.
+const report = args[0] === '--demo' ? {
+  scenario: 'INVENTED_FIXTURE_ONLY',
   source_transport: result.record.source.transport,
   status: result.record.status,
   record: result.record,
@@ -50,5 +52,5 @@ const report = {
   spanish: result.es,
   publication_enabled: false,
   writes_repository_or_customer_data: false,
-};
+} : redactedIssuerProbeReceipt(result);
 process.stdout.write(JSON.stringify(report, null, 2) + '\n');

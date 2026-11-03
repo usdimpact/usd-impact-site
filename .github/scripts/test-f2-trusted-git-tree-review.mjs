@@ -1,6 +1,6 @@
 // F2 dry-run: synthetic and unprivileged. Do not publish a GitHub check from this test.
 import assert from 'node:assert/strict';
-import {policySha256,reviewFrozenScoreTrees} from './f2-trusted-git-tree-review.mjs';
+import {policySha256,gitBlobSha1,auditBlobsSha256,reviewFrozenScoreTrees} from './f2-trusted-git-tree-review.mjs';
 
 const A='a'.repeat(40),B='b'.repeat(40),C='c'.repeat(40),D='d'.repeat(40),E='e'.repeat(40);
 const pinned=Object.fromEntries(Array.from({length:775},(_,i)=>['src/frozen/input-'+i+'.astro',A]));
@@ -31,8 +31,9 @@ const payload={
   repository:'usdimpact/usd-impact-site',baseBranch:'main',
   expectedHeadSha:C,observedHeadSha:C,
   expectedBaseTreeSha:D,expectedCandidateTreeSha:E,
-  trustedPolicyJson:raw,expectedPolicyGitBlobSha:A,observedPolicyGitBlobSha:A,
+  trustedPolicyJson:raw,expectedPolicyGitBlobSha:gitBlobSha1(raw),observedPolicyGitBlobSha:gitBlobSha1(raw),
   expectedPolicySha256:policySha256(raw),trustedAuditBlobs,
+  expectedAuditBlobsSha256:auditBlobsSha256(trustedAuditBlobs),
   baseTree:{sha:D,truncated:false,tree:base},
   candidateTree:{sha:E,truncated:false,tree:structuredClone(base)}
 };
@@ -94,6 +95,22 @@ expectHold(run({candidateTree:duplicate}),'duplicate');
 const deleted=structuredClone(payload.candidateTree);
 deleted.tree=deleted.tree.filter(e=>!e.path.endsWith('news/2026-11-02.md'));
 expectHold(run({candidateTree:deleted}),'editorial/source-rights review');
+// F2_TRUST_POLICY_AUDIT_CANONICAL_TESTS: independently bound inputs.
+assert.equal(run({trustedPolicyBytes:Buffer.from(raw),trustedPolicyJson:undefined}).disposition,
+  'DRAFT_SOURCE_ONLY_PASS','buffer policy bytes validated without normalization drift');
+const alteredPolicyRaw=JSON.stringify(repinned);
+expectHold(run({trustedPolicyJson:alteredPolicyRaw,
+  expectedPolicySha256:policySha256(alteredPolicyRaw)}),'Protected policy content');
+const forgedAudit={...trustedAuditBlobs,[audit[0]]:C};
+expectHold(run({trustedAuditBlobs:forgedAudit}),'Protected audit blobs');
+expectHold(run({trustedPolicyBytes:Buffer.alloc(0),trustedPolicyJson:undefined}),'Protected policy content');
+const forgedAuditAndCandidate=run({
+  trustedAuditBlobs:forgedAudit,
+  expectedAuditBlobsSha256:auditBlobsSha256(forgedAudit),
+  candidateTree:changed(audit[0],C)
+});
+assert.equal(forgedAuditAndCandidate.disposition,'DRAFT_SOURCE_ONLY_PASS',
+  'a fully attacker-supplied audit trust root can still self-certify; protected owner digest is mandatory');
 console.log('F2_DRAFT_TREE_CONTRACT_PASS clean=1 fail_closed='+cases+
   ' self_repin_denied=true audit_guard_denied=true editorial_review_required=true'+
   ' sha_bound=true app_published=false rights_granted=false');

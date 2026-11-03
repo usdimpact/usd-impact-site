@@ -2,17 +2,17 @@
   "version": 2,
   "methodology": {
     "id": "three-dials-rights-safe-v2",
-    "effective_from": "2026-10-23",
+    "effective_from": "2026-10-30",
     "break_from_v1": true,
     "history_policy": "Do not splice v1 and v2 observations into one continuous series. Version 2 uses different public measures."
   },
   "status": "published",
-  "week_ending": "2026-10-23",
-  "retrieved_at": "2026-10-27T01:43:00.000Z",
+  "week_ending": "2026-10-30",
+  "retrieved_at": "2026-11-03T03:41:50.021Z",
   "observation_policy": {
     "description": "Compare the latest usable observation on or before the completed Friday with the latest usable observation on or before the prior Friday. Every fact retains its actual observation date.",
-    "current_cutoff": "2026-10-23",
-    "previous_cutoff": "2026-10-16",
+    "current_cutoff": "2026-10-30",
+    "previous_cutoff": "2026-10-23",
     "thresholds": {
       "dollarFlatPct": 0.1,
       "yieldFlatBps": 5,
@@ -26,7 +26,7 @@
   },
   "dials": {
     "dollar": {
-      "direction": "rangebound",
+      "direction": "firmer",
       "confirmation": "single-primary-measure",
       "confidence": "medium",
       "title": "Dial 1 — Broad USD direction",
@@ -42,29 +42,32 @@
           ],
           "source_series_id": "H10/H10/JRXWTFB_N.B",
           "transport": {
-            "provider": "Federal Reserve Bank of St. Louis FRED",
-            "series_id": "DTWEXBGS",
-            "url": "https://fred.stlouisfed.org/series/DTWEXBGS",
-            "role": "Transport only. Source identity and reuse basis remain the Federal Reserve Board series above."
+            "provider": "Board of Governors of the Federal Reserve System",
+            "method": "full_release_xml_zip",
+            "release_id": "H10",
+            "url": "https://www.federalreserve.gov/releases/h10/data/FRB_h10_xml.zip",
+            "data_file": "H10_data.xml",
+            "series_name": "JRXWTFB_N.B",
+            "role": "First-party full-release XML linked from the Federal Reserve release page."
           },
-          "source_note": "Federal Reserve Board H.10 nominal broad dollar index. FRED is used only as the transport selected by the Board as a DDP successor path.",
+          "source_note": "Federal Reserve Board H.10 nominal broad dollar index fetched directly from the Board full-release XML linked on the H.10 release page.",
           "units": "Index",
           "latest": {
+            "date": "2026-10-30",
+            "value": 121.6656,
+            "display": "121.6656",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
             "date": "2026-10-23",
             "value": 121.3202,
             "display": "121.3202",
             "age_days_from_cutoff": 0
           },
-          "previous": {
-            "date": "2026-10-16",
-            "value": 121.4048,
-            "display": "121.4048",
-            "age_days_from_cutoff": 0
-          },
           "change": {
-            "value": -0.06968422994807488,
+            "value": 0.2847011462229654,
             "unit": "percent",
-            "display": "-0.07%"
+            "display": "+0.28%"
           }
         }
       ]
@@ -86,35 +89,38 @@
           ],
           "source_series_id": "H15/H15/RIFLGFCY10_XII_N.B",
           "transport": {
-            "provider": "Federal Reserve Bank of St. Louis FRED",
-            "series_id": "DFII10",
-            "url": "https://fred.stlouisfed.org/series/DFII10",
-            "role": "Transport only. Source identity and reuse basis remain the Federal Reserve Board series above."
+            "provider": "Board of Governors of the Federal Reserve System",
+            "method": "full_release_xml_zip",
+            "release_id": "H15",
+            "url": "https://www.federalreserve.gov/releases/h15/data/FRB_h15_xml.zip",
+            "data_file": "H15_data.xml",
+            "series_name": "RIFLGFCY10_XII_N.B",
+            "role": "First-party full-release XML linked from the Federal Reserve release page."
           },
-          "source_note": "Federal Reserve Board H.15 10-year inflation-indexed Treasury constant-maturity yield.",
+          "source_note": "Federal Reserve Board H.15 10-year inflation-indexed Treasury constant-maturity yield fetched directly from the Board full-release XML linked on the H.15 release page.",
           "units": "Percent",
           "latest": {
+            "date": "2026-10-30",
+            "value": 2.6,
+            "display": "2.60%",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
             "date": "2026-10-23",
             "value": 2.66,
             "display": "2.66%",
             "age_days_from_cutoff": 0
           },
-          "previous": {
-            "date": "2026-10-16",
-            "value": 2.74,
-            "display": "2.74%",
-            "age_days_from_cutoff": 0
-          },
           "change": {
-            "value": -8.000000000000007,
+            "value": -6.000000000000005,
             "unit": "basis_points",
-            "display": "-8 bp"
+            "display": "-6 bp"
           }
         }
       ]
     },
     "funding_pressure": {
-      "direction": "tightening",
+      "direction": "contained",
       "confirmation": "single-derived-measure",
       "confidence": "medium",
       "title": "Dial 3 — Funding pressure",
@@ -127,32 +133,34 @@
           "source_url": "https://www.newyorkfed.org/markets/reference-rates/sofr",
           "source_urls": [
             "https://www.newyorkfed.org/markets/reference-rates/sofr",
-            "https://www.federalreserve.gov/datadownload/Choose.aspx?rel=PRATES"
+            "https://www.federalreserve.gov/releases/prates/"
           ],
           "source_series_id": "NYFED_SOFR minus PRATES/PRATES_POLICY_RATES/RESBM_N.D",
           "transport": {
             "sofr": "https://markets.newyorkfed.org/api/rates/secured/sofr/search.json",
-            "iorb": "https://fred.stlouisfed.org/series/IORB",
-            "role": "SOFR fetched directly from the New York Fed API; IORB transported through FRED from the Federal Reserve Board source series."
+            "iorb": "https://www.federalreserve.gov/releases/prates/data/FRB_PRATES_xml.zip",
+            "iorb_data_file": "PRATES_data.xml",
+            "iorb_series_name": "RESBM_N.D",
+            "role": "SOFR fetched directly from the New York Fed API; IORB fetched directly from the Federal Reserve Board release-page XML."
           },
           "source_note": "USD Impact derived calculation: SOFR minus IORB in basis points. It is a funding-pressure indicator, not a credit spread or a complete liquidity/stress measure.",
           "units": "Basis points",
           "latest": {
+            "date": "2026-10-30",
+            "value": 5.000000000000027,
+            "display": "5 bp",
+            "age_days_from_cutoff": 0
+          },
+          "previous": {
             "date": "2026-10-23",
             "value": 2.0000000000000018,
             "display": "2 bp",
             "age_days_from_cutoff": 0
           },
-          "previous": {
-            "date": "2026-10-16",
-            "value": -2.0000000000000018,
-            "display": "-2 bp",
-            "age_days_from_cutoff": 0
-          },
           "change": {
-            "value": 4.0000000000000036,
+            "value": 3.000000000000025,
             "unit": "basis_points",
-            "display": "+4 bp"
+            "display": "+3 bp"
           }
         }
       ]
@@ -160,7 +168,7 @@
   },
   "interpretation": {
     "label": "Mixed / transitional environment",
-    "sentence": "The completed week showed a rangebound broad-dollar reading, 10-year real yields falling, and funding pressure increased.",
+    "sentence": "The completed week showed a firmer broad-dollar reading, 10-year real yields falling, and funding pressure stayed contained.",
     "scope": "Descriptive interpretation of completed observations; not a forecast or trading signal."
   },
   "source_rights": {
@@ -183,7 +191,7 @@
     "Dial 3 uses the USD Impact-derived SOFR-minus-IORB spread as a funding-pressure indicator. It is not a credit spread or a complete measure of market liquidity/stress.",
     "The SOFR reference rate data is subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the SOFR data by USD Impact, does not sanction or endorse any particular republication, and has no liability for your use.",
     "USD Impact is not affiliated with the New York Fed. The New York Fed does not sanction, endorse, or recommend any products or services offered by USD Impact.",
-    "Federal Reserve Board information is attributed to the Board; FRED is used only as transport for Board-origin series in this implementation.",
+    "Federal Reserve Board information is attributed to the Board; Board-origin inputs are fetched directly from the full-release XML linked on the Board release pages.",
     "The USD Impact Score remains a separate product with separate source governance and is intentionally not embedded in the Three Dials v2 snapshot.",
     "The Three-Dial interpretation is descriptive and deterministic. It is not investment advice, a trading signal, a probability, or a return forecast."
   ]

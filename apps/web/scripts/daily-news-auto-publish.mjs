@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, appendFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { verifyDailyNewsDeployment } from './check-daily-news-deployment-health.mjs';
@@ -23,13 +23,10 @@ function gh(args, timeout = 30000) {
 function api(route) { return JSON.parse(gh(['api', 'repos/' + REPOSITORY + '/' + route])); }
 function notice(message) { console.log('Daily auto-publication: ' + message); }
 function summary(message) {
-  if (!process.env.GITHUB_STEP_SUMMARY) return;
-  const fs = requireFs();
-  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, '- ' + message + '\n', 'utf8');
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    appendFileSync(process.env.GITHUB_STEP_SUMMARY, '- ' + message + '\n', 'utf8');
+  }
 }
-function requireFs() { return { appendFileSync: (path, text, encoding) => {
-  execFileSync(process.execPath, ['-e', "require('fs').appendFileSync(process.argv[1],process.argv[2])", path, text], { encoding, timeout: 10000 });
-} }; }
 function hold(reason) { throw new Error(reason); }
 function noOp(reason) { notice('NOOP: ' + reason); summary('NOOP: ' + reason); }
 function ensureMorning() { if (!beforeUsFirstRelease(NOW())) hold('after-first-us-release-cutoff'); }

@@ -83,7 +83,14 @@ function mutate(root,which){
   fs.writeFileSync(absolute,next);
   return ()=>{
     if(existing)fs.writeFileSync(absolute,old);
-    else fs.rmSync(absolute,{force:true});
+    else {
+      fs.rmSync(absolute,{force:true});
+      if(which==='G'){
+        // Git tree SHA includes empty directories under src/pages.
+        // Remove disposable parent directories before the next attack.
+        fs.rmSync(path.join(root,'src/pages/archivo'),{recursive:true,force:true});
+      }
+    }
   };
 }
 function checkBuild(head,which,baseline){

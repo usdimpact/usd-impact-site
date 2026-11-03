@@ -156,3 +156,59 @@ if(process.env.GITHUB_STEP_SUMMARY){
   fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,lines.join('\n'));
 }
 if(!complete)process.exitCode=1;
+
+// QA9 B8/B9: actual Astro full-build negatives even if the candidate
+// re-pins its own F1d source manifest. This is not trusted F2 enforcement.
+// Changed report heads reach local dist; the --built rights guard must fail.
+const layoutRelative='src/layouts/BaseLayout.astro';
+const closureRelative='scripts/score-held-build-closure-baseline.json';
+function gitBlobSha1(contents) {
+  return createHash('sha1').update(Buffer.from('blob '+contents.length+'\0')).update(contents).digest('hex');
+}
+function attemptRePinnedHead(mode,name,newTag) {
+  const layoutFile=path.join(root,layoutRelative);
+  const manifestFile=path.join(root,closureRelative);
+  const layoutOriginal=fs.readFileSync(layoutFile,'utf8');
+  const manifestOriginal=fs.readFileSync(manifestFile,'utf8');
+  const anchor='<meta name="theme-color" content="#0b1f33" />';
+  let result,html='',testPassed=false;
+  try {
+    assert.ok(layoutOriginal.includes(anchor),name+' expected layout source anchor');
+    const insertion='\n    {Astro.url.pathname.startsWith("/reports/") && '+newTag+'}';
+    const modified=layoutOriginal.replace(anchor,anchor+insertion);
+    fs.writeFileSync(layoutFile,modified,'utf8');
+    const manifest=JSON.parse(manifestOriginal);
+    assert.ok(manifest.pinned_files?.[layoutRelative],name+' layout pin missing');
+    manifest.pinned_files[layoutRelative]=gitBlobSha1(Buffer.from(modified));
+    fs.writeFileSync(manifestFile,JSON.stringify(manifest,null,2)+'\n');
+    fs.rmSync(path.join(root,'dist'),{recursive:true,force:true});
+    result=run(mode);
+    const resultPath=path.join(root,historic);
+    html=fs.existsSync(resultPath)?fs.readFileSync(resultPath,'utf8'):'';
+    const logs=(result.stdout??'')+'\n'+(result.stderr??'');
+    const denied=logs.includes('Score-derived source rights HOLD check FAILED')
+      &&logs.includes('Changed Draft-frozen historical Score whole head on rights HOLD');
+    const sourceDidNotBlock=!logs.includes('Score F1d build-input closure FAIL');
+    const renderReachedDist=html.includes('QA9-HEAD-ONLY-'+name);
+    testPassed=result.status!==0&&!result.signal&&denied&&sourceDidNotBlock&&renderReachedDist;
+    const evidence={mode,case:name,exit:result.status,headGuardDenied:denied,
+      sourceClosureRePinned:sourceDidNotBlock,alteredHeadReachedLocalDist:renderReachedDist,
+      accepted:testPassed,logs:printFailure(logs)};
+    console.log('QA9_HEAD_ACTUAL_BUILD '+JSON.stringify(evidence));
+    return evidence;
+  }finally{
+    fs.writeFileSync(layoutFile,layoutOriginal,'utf8');
+    fs.writeFileSync(manifestFile,manifestOriginal,'utf8');
+    fs.rmSync(path.join(root,'dist'),{recursive:true,force:true});
+    fs.rmSync(path.join(root,'.astro'),{recursive:true,force:true});
+  }
+}
+const headAttacks=[
+  attemptRePinnedHead('preview','B8','<meta property="og:description" content="QA9-HEAD-ONLY-B8 USD Impact Weekly Score is 9.99" />'),
+  attemptRePinnedHead('preview','B9','<link rel="alternate" href="/qa9-held-score" title="QA9-HEAD-ONLY-B9 Weekly Score: 9.99/10" />'),
+];
+const headPass=headAttacks.length===2&&headAttacks.every(x=>x.accepted);
+console.log('QA9_B8_B9_ACTUAL_HEAD_REPIN_JSON='+JSON.stringify({headPass,
+  exactBuild:command,rights:'HOLD',f2:'UNTRUSTED_PR_OWNED',attacks:headAttacks}));
+if(!headPass)process.exitCode=1;
+

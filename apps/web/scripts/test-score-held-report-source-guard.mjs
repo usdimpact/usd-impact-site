@@ -3,10 +3,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import {
   gitBlobSha1, evaluateScoreContentFreeze, verifyCurrentScoreHold, collectScoreContents,
-  checkScoreLoaderContract, checkBuiltScoreArtifacts, PINNED_SCORE_LOADERS,
+  checkScoreLoaderContract, checkBuiltScoreArtifacts, checkFrozenHistoricalMainBodies, PINNED_SCORE_LOADERS,
   PINNED_SCORE_CONTENT_CONFIG_BLOB,
 } from './score-held-report-source-guard.mjs';
 
@@ -281,3 +282,54 @@ try {
 console.log('Score rights N4 PASS: structurally valid manually prepared Score Monthly accepted by schema validator but REJECTED by new rights/source baseline; existing historical sources unchanged');
 
 console.log('Score rights F1b PASS: pinned loaders; redirected/extra loaders and new report/newsletter/sitemap dates rejected; removal-only allowed');
+
+
+// P1-2: trusted Production main-body SHA256 comparison on all 16 report routes.
+// Disposable outputs ensure no third-party provider report is republished here.
+{
+  const original=JSON.parse(fs.readFileSync(new URL('./score-held-report-source-baseline.json',import.meta.url),'utf8'));
+  assert.equal(Object.keys(original.rendered_main_sha256?.sha256??{}).length,16,
+    'original pinned Production main-body ledger must contain 16 digests');
+  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'score-original-main-body-'));
+  const expected={};
+  const sourceNames=Object.keys(original.existing_reports);
+  try{
+    for(const source of sourceNames){
+      const match=/^(weekly|monthly)-reports\/(\d{4}-\d{2}-\d{2})\.md$/.exec(source);
+      assert.ok(match,'unknown original Score source path');
+      const route='reports/'+match[1]+'/'+match[2];
+      const inner='fixture historical immutable Score body '+route;
+      const filename=path.join(temp,route,'index.html');
+      fs.mkdirSync(path.dirname(filename),{recursive:true});
+      fs.writeFileSync(filename,'<!doctype html><html><main id="primary">'+inner+'</main></html>');
+      expected[route]=createHash('sha256').update(Buffer.from(inner,'utf8')).digest('hex');
+    }
+    const fixture={...original,rendered_main_sha256:{
+      ...original.rendered_main_sha256,
+      sha256:expected,
+    }};
+    const verify=()=>checkFrozenHistoricalMainBodies(fixture,temp);
+    assert.deepEqual(verify(),[],'16 original historical main-body fixture digests must pass');
+    const sample=Object.keys(expected).find(name=>name.includes('weekly/'));
+    const target=path.join(temp,sample,'index.html');
+    const clean=fs.readFileSync(target,'utf8');
+    fs.writeFileSync(target,clean.replace('immutable Score body','modified Score body'));
+    assert.ok(verify().some(x=>x.includes('Changed original Production historical Score report main-body')),
+      'N4 changed historical rendered content MUST fail even after input re-pin');
+    fs.writeFileSync(target,clean);
+    fs.writeFileSync(target,clean.replace('<main','<article').replace('</main>','</article>'));
+    assert.ok(verify().some(x=>x.includes('main-body structure')),
+      'malformed HTML main structure MUST fail');
+    fs.writeFileSync(target,clean);
+    fs.rmSync(target);
+    assert.ok(verify().some(x=>x.includes('Missing historical Score report body')),
+      'missing historical body MUST fail during rights HOLD');
+    fs.writeFileSync(target,clean);
+    const forged={...fixture,rendered_main_sha256:{...fixture.rendered_main_sha256,
+      source_main_commit:'a'.repeat(40)}};
+    assert.ok(checkFrozenHistoricalMainBodies(forged,temp).some(x=>x.includes('invalid original')),
+      'mismatched original Production anchor MUST fail');
+    assert.deepEqual(verify(),[],'recover clean historical body fixture after adversarial tests');
+  }finally{fs.rmSync(temp,{recursive:true,force:true});}
+}
+console.log('Score F1d historical body hashes PASS: 16 pinned original Production main digests and tampered/missing/malformed/forged negatives');

@@ -48,12 +48,23 @@ export function treasuryMonthlyUrl(day) {
     day.slice(0, 7).replace('-', '');
 }
 
-function uniqueTagValue(content, name) {
-  const match = new RegExp('<(?:[A-Za-z][\\w.-]*:)?' + name +
-    '\\b[^>]*>\\s*([^<>]*?)\\s*<\\/(?:[A-Za-z][\\w.-]*:)?' + name + '\\s*>', 'g');
-  const found = [...content.matchAll(match)];
+function uniqueDataTagValue(properties, name) {
+  // Only the issuer-declared OData 'd:' namespace is valid for yield fields.
+  // A matching-looking value outside m:properties is not a source observation.
+  const match = new RegExp('<d:' + name +
+    '\\b[^>]*>\\s*([^<>]*?)\\s*<\\/d:' + name + '\\s*>', 'g');
+  const found = [...properties.matchAll(match)];
   assert(found.length <= 1, 'duplicate ' + name + ' XML field');
   return found.length === 0 ? null : found[0][1].trim();
+}
+
+function entryProperties(entryXml) {
+  const content = [...entryXml.matchAll(/<content\b([^>]*)>([\s\S]*?)<\/content\s*>/g)];
+  assert(content.length === 1 && /(?:^|\s)type\s*=\s*["']application\/xml["'](?:\s|$)/.test(content[0][1]),
+    'unexpected Treasury Atom entry content type or count');
+  const blocks = [...content[0][2].matchAll(/<m:properties(?:\s[^>]*)?>([\s\S]*?)<\/m:properties\s*>/g)];
+  assert(blocks.length === 1, 'missing or duplicate Treasury OData properties');
+  return blocks[0][1];
 }
 
 function parseRate(s, label) {
@@ -72,16 +83,25 @@ export function readTreasuryObservation(xml, day) {
   assert(!/<!DOCTYPE|<!ENTITY|<!\[CDATA\[|<script\b/i.test(xml),
     'unsupported active or external XML construct');
   const feed = xml.trim().replace(/^\uFEFF/, '').match(
-    /^(?:<\?xml\b[^>]*\?>\s*)?<(?:[A-Za-z][\w.-]*:)?feed\b[^>]*>([\s\S]*?)<\/(?:[A-Za-z][\w.-]*:)?feed\s*>\s*$/,
+    /^(?:<\?xml\b[^>]*\?>\s*)?<feed\b([^>]*)>([\s\S]*?)<\/feed\s*>\s*$/,
   );
   assert(feed, 'not a complete Atom-style Treasury XML feed');
-  const entryPattern = /<(?:[A-Za-z][\w.-]*:)?entry\b[^>]*>([\s\S]*?)<\/(?:[A-Za-z][\w.-]*:)?entry\s*>/g;
-  const entries = [...feed[1].matchAll(entryPattern)];
+  const attrs = feed[1];
+  assert(/\bxmlns\s*=\s*["']http:\/\/www\.w3\.org\/2005\/Atom["']/.test(attrs) &&
+    /\bxmlns:d\s*=\s*["']http:\/\/schemas\.microsoft\.com\/ado\/2007\/08\/dataservices["']/.test(attrs) &&
+    /\bxmlns:m\s*=\s*["']http:\/\/schemas\.microsoft\.com\/ado\/2007\/08\/dataservices\/metadata["']/.test(attrs),
+    'unexpected Treasury Atom or OData namespaces');
+  const entryPattern = /<entry\b[^>]*>([\s\S]*?)<\/entry\s*>/g;
+  const entries = [...feed[2].matchAll(entryPattern)];
   assert(entries.length <= MAX_ENTRIES, 'unexpectedly large Treasury month feed');
+  assert((feed[2].match(/<entry\b/g) ?? []).length === entries.length &&
+    (feed[2].match(/<\/entry\s*>/g) ?? []).length === entries.length,
+    'malformed or incomplete Treasury Atom entry');
   let found = null;
   const dates = new Set();
   for (const match of entries) {
-    const dateValue = uniqueTagValue(match[1], 'NEW_DATE');
+    const properties = entryProperties(match[1]);
+    const dateValue = uniqueDataTagValue(properties, 'NEW_DATE');
     assert(dateValue && /^[0-9]{4}-[0-9]{2}-[0-9]{2}T/.test(dateValue) &&
       dayIsValid(dateValue.slice(0, 10)), 'bad or missing Treasury observation date');
     const observationDay = dateValue.slice(0, 10);
@@ -92,8 +112,8 @@ export function readTreasuryObservation(xml, day) {
     if (observationDay !== day) continue;
     found = {
       observation_date: day,
-      bc_2year_percent: parseRate(uniqueTagValue(match[1], 'BC_2YEAR'), 'BC_2YEAR'),
-      bc_10year_percent: parseRate(uniqueTagValue(match[1], 'BC_10YEAR'), 'BC_10YEAR'),
+      bc_2year_percent: parseRate(uniqueDataTagValue(properties, 'BC_2YEAR'), 'BC_2YEAR'),
+      bc_10year_percent: parseRate(uniqueDataTagValue(properties, 'BC_10YEAR'), 'BC_10YEAR'),
     };
   }
   // The feed may be refreshed after a day is originally published. We therefore

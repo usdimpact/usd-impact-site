@@ -365,7 +365,7 @@ console.log('Score F2 staged trusted-source --root parser PASS (no GitHub rulese
     .map(n=>/^weekly-reports\/(\d{4}-\d{2}-\d{2})\.md$/.exec(n)?.[1]).filter(Boolean);
   const sha256=b=>createHash('sha256').update(b).digest('hex');
   const files={};
-  const goldenReports={},goldenBody={},goldenHead={},originalMainBodies={},originalMainHeads={},goldenJson={};
+  const goldenReports={},goldenBody={},goldenHead={},goldenDocument={},originalMainBodies={},originalMainHeads={},originalMainDocuments={},goldenJson={};
   const template=(name)=>'<!doctype html><html><head><title>Original '+name+
     '</title><meta name="description" content="Original report description">'+
     '<script type="application/ld+json">{"source":"pinned fixture"}</script></head>'+
@@ -382,10 +382,11 @@ console.log('Score F2 staged trusted-source --root parser PASS (no GitHub rulese
       const html=template(route);
       write(route+'/index.html',html);
       const dig=digestFrozenScoreEnvelope(html);
-      const {body,head,...regions}=dig;
-      goldenReports[route]=regions;goldenBody[route]=body;goldenHead[route]=head;
+      const {body,head,document,...regions}=dig;
+      goldenReports[route]=regions;goldenBody[route]=body;goldenHead[route]=head;goldenDocument[route]=document;
       originalMainBodies[route]=sha256(Buffer.from('distinct original Production whole body '+route));
       originalMainHeads[route]=sha256(Buffer.from('distinct original Production whole head '+route));
+      originalMainDocuments[route]=sha256(Buffer.from('distinct original Production complete document '+route));
     }
     for(const family of ['weekly','progress'])for(const date of weeklyDates){
       const rel='newsletter/'+family+'/'+date+'.json';
@@ -396,6 +397,11 @@ console.log('Score F2 staged trusted-source --root parser PASS (no GitHub rulese
       ...base,reports:goldenReports,newsletter_json:goldenJson,
       original_whole_body_reference_sha256:originalMainBodies,
       original_whole_head_reference_sha256:originalMainHeads,
+      original_whole_document_reference_sha256:originalMainDocuments,
+      draft_containment_whole_document_sha256:{
+        ...base.draft_containment_whole_document_sha256,
+        sha256:goldenDocument,
+      },
       draft_containment_whole_head_sha256:{
         ...base.draft_containment_whole_head_sha256,
         sha256:goldenHead,
@@ -463,7 +469,41 @@ console.log('Score F2 staged trusted-source --root parser PASS (no GitHub rulese
     assert.ok(verify().some(x=>x.includes('Changed Draft-frozen historical Score whole body')),
       'new Draft-frozen whole-body digest MUST block changed navigation shell');
     write(htmlRel,template(weekly));
+    // B10 complete document bypass: old head/body hashers missed Score text
+    // following the closing body tag. HTML parsers may relocate the text into
+    // their rendered body; its raw document bytes must still be rejected.
+    for(const [attack,edited] of [
+      ['B10','</body><p>QA10-B10 USD Impact Score +9.99</p>'],
+      ['B10-text','</body>QA10-B10-plain-Score-9.99'],
+    ]) {
+      const modified=template(weekly).replace('</body>',edited);
+      const before=digestFrozenScoreEnvelope(template(weekly));
+      const after=digestFrozenScoreEnvelope(modified);
+      for(const field of ['head','body','hero','title','meta_description','jsonld','jsonld_count'])
+        assert.equal(after[field],before[field],attack+' must keep previously pinned regions intact');
+      assert.notEqual(after.document,before.document,attack+' complete HTML SHA MUST change');
+      write(htmlRel,modified);
+      assert.ok(verify().some(x=>x.includes('Changed Draft-frozen historical Score complete document')),
+        attack+' must fail specifically in the Score complete-document built rights check');
+      write(htmlRel,template(weekly));
+    }
+    for(const [attack,modified] of [
+      ['B11',template(weekly).replace('<html>','<html data-score="9.99">')],
+      ['B12',template(weekly).replace('</head>','</head><p>QA10 Score 9.99 between head and body</p>')],
+    ]) {
+      const before=digestFrozenScoreEnvelope(template(weekly));
+      const after=digestFrozenScoreEnvelope(modified);
+      assert.equal(after.head,before.head,attack+' should leave existing whole-head hash intact');
+      assert.equal(after.body,before.body,attack+' should leave existing whole-body hash intact');
+      assert.notEqual(after.document,before.document,attack+' must alter complete document SHA');
+      write(htmlRel,modified);
+      assert.ok(verify().some(x=>x.includes('Changed Draft-frozen historical Score complete document')),
+        attack+' must fail at the new complete-document rights guard');
+      write(htmlRel,template(weekly));
+    }
+    assert.deepEqual(verify(),[],'complete-document negatives restore clean synthetic artifacts');
+
     assert.deepEqual(verify(),[],'all synthetic Score regions restored');
   }finally{fs.rmSync(tmp,{recursive:true,force:true});}
 }
-console.log('Score P1-A B1/B6/B7/B8/B9 PASS: 16 original Score regions + 26 newsletters; Draft head/body pinned; original head/body owner HOLD');
+console.log('Score P1-A B1/B6/B7/B8/B9/B10/B11/B12 PASS: 16 original Score regions + 26 newsletters; Draft head/body pinned; original head/body owner HOLD');

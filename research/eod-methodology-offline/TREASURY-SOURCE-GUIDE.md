@@ -35,7 +35,9 @@ The `verified-treasury-source.mjs` adapter:
 
 The source adapter has injected-response tests for endpoint enforcement, days and DST, release-time limitations, XML parsing, duplicate dates, wrong-month observations, missing maturities, source-value units, tampered derived arithmetic, changed issuer URLs/rights flags, size limits, language parity, no-new-observation distinction, and read-only behavior.
 
-The current live public feed has been read through a browser-oriented extractor; that system converted the XML into flattened text. This confirms the endpoint and monthly observation shape but does NOT certify raw XML bytes, headers, original issuer publication instant or complete compatibility with the exact parser. Certify these separately before enabling any factual issuer-source generation.
+**Independent read-only issuer inspection (2026-11-03):** A browser inspected the *October 2026 Treasury month-filtered feed's XML markup*, not only flattened extracted text. It confirmed the Atom `<feed>` root, `<entry>` records, `<content type="application/xml">` → `<m:properties>` containment, the three required `<d:...>` fields and the exact Atom/OData namespace URI families. This is a source-structure inspection, **not** proof that the current JavaScript function has parsed the full raw issuer response. The browser did NOT expose origin `Content-Type` or `Last-Modified` response headers, and no raw bytes were saved to the repository or published.
+
+**Code hardening based on that inspection:** The research parser now requires the Atom namespace, the expected `d` and `m` OData namespaces, a single XML content/properties block per complete entry, and source data fields inside `m:properties`; forged lookalike tags outside that location, incomplete entries and foreign namespaces are rejected. Exact-head offline workflow passed **58/58 tests** at commit `c6ae01adff84de7bbd5968e52524bf8178536585`. **This is not certification of complete raw XML compatibility**; run the controlled, nonnumeric `--live-official` probe under approved private conditions and separately capture the HTTP headers before claiming the gate is closed.
 
 **Separate independent source QA (Nov 3, 2026):** The Treasury's dated public rate table and the month-filtered XML extractor expose matching October 30 2-year and 10-year values and the same 10Y–2Y arithmetic, without using third-party market feeds. This is a presentation-level comparison, NOT an execution of this exact JavaScript parser against raw issuer XML. The current parser is a bounded, research-only XML-subset matcher rather than a standards-compliant XML parser; require raw-body, namespace and HTTP-header tests before allowing any scheduled or published source-backed edition.
 
@@ -45,6 +47,24 @@ Official verification links:
 - https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?field_tdr_date_value=2026&type=daily_treasury_yield_curve
 - https://home.treasury.gov/treasury-daily-interest-rate-xml-feed
 
+
+### Source/rights acceptance checklist (current gates)
+
+| Gate | Current evidence | Status |
+| --- | --- | --- |
+| Direct issuer URL and fixed `YYYYMM` query | Treasury's own XML-feed documentation | PASS — research endpoint only |
+| Actual Atom and OData hierarchy | Independent browser markup inspection: feed/entry/content/m:properties and required namespaced fields | PASS — structural observation |
+| XML parser against *raw returned bytes* and HTTP `Content-Type` | Browser cannot show headers; no same-run direct Node parser receipt | **HOLD** |
+| Historical example and 10Y−2Y math | Official Treasury dated table agrees with monthly XML's extracted values for Oct 30 | PASS — reference arithmetic only |
+| Observation, issue-time and revision chain | Date exists; feed/entry `updated` is not a certified first-publication timestamp | **HOLD** |
+| Permission for website numerical display, model-derived quotes, downstream archives and AI processing | USAgov guidance cautions federal pages can include third-party works; agency-specific commercial assessment needed | **HOLD** |
+| Exact original USD Impact Score v2 reproducibility | Treasury direct par curve is a teaching example, not proven DGS2/DGS10 source/vintage parity or the eight-factor Score | **HOLD** |
+| EN/ES invented-source parity and redacted source probe | 58/58 tests at the exact Draft head; no actual market data in GitHub CI | PASS — research only |
+| Public content, indexing, scheduled live pull and membership access | No approvals and no public release flow implemented | **HOLD** |
+
+**Economic interpretation:** Treasury's par curve uses indicative closing bid quotes from about 3:30 p.m. Eastern and reports *model-derived constant-maturity par yields*. They are not last-traded prices or yields on one actual security, nor are they a standalone predictive signal. Link the official Treasury source and state the observation date separately from the first-release/capture time. Its [interest-rate FAQ](https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics/interest-rates-frequently-asked-questions) explains these boundaries.
+
+**Rights distinction:** U.S. federal government works may be public domain, but [USAGov's federal-materials guidance](https://www.usa.gov/government-copyright) warns that agency webpages can include third-party works, logos/trademarks and use limitations. Do not mark the Treasury-derived number/AI workflow as fully authorized for USD Impact website, archives or customer redistribution without a recorded use-specific decision; paid data-provider licensing is separate.
 
 ## What remains before genuine unattended Method Daily production
 

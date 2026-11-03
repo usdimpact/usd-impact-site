@@ -56,8 +56,8 @@ function expectHold(result,needle){
   cases++;
 }
 expectHold(run({candidateTree:changed('src/frozen/input-9.astro')}),'modified frozen build input');
-expectHold(run({candidateTree:changed(audit[2])}),'Changed self-auditing');
-expectHold(run({candidateTree:changed(audit[0])}),'Changed self-auditing');
+expectHold(run({candidateTree:changed(audit[2],A)}),'Changed self-auditing');
+expectHold(run({candidateTree:changed(audit[0],A)}),'Changed self-auditing');
 // Simulate simultaneous malicious file modification and locally regenerated baseline:
 // independently pinned policy bytes and guard SHA are never inherited from candidate.
 const repinned={...policy,pinned_files:{...pinned,['src/frozen/input-9.astro']:B}};

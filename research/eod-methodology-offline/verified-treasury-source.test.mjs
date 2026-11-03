@@ -7,7 +7,7 @@ import {
 } from './verified-treasury-source.mjs';
 
 const DAY = '2026-11-03';
-const AS_OF = '2026-11-03T22:37:00Z';
+const AS_OF = '2026-11-03T23:37:00Z';
 const URL = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml' +
   '?data=daily_treasury_yield_curve&field_tdr_date_value_month=202611';
 
@@ -50,12 +50,14 @@ test('official Treasury URL is derived from fixed issuer and requested month onl
   assert.throws(() => treasuryMonthlyUrl('2026-11-31'), /invalid/);
 });
 
-test('same New York day and 17:00 Eastern cutoff are mandatory, including DST', () => {
+test('Treasury-specific 18:30 New York availability buffer is mandatory, including DST', () => {
   assert.equal(validateTreasuryClock(DAY, AS_OF), new Date(AS_OF).toISOString());
-  assert.throws(() => validateTreasuryClock(DAY, '2026-11-03T21:59:00Z'), /before 17/);
-  assert.throws(() => validateTreasuryClock('2026-07-02', '2026-07-02T20:59:00Z'), /before 17/);
-  assert.equal(validateTreasuryClock('2026-07-02', '2026-07-02T21:05:00Z'),
-    '2026-07-02T21:05:00.000Z');
+  assert.throws(() => validateTreasuryClock(DAY, '2026-11-03T23:29:00Z'), /before 18:30/);
+  assert.throws(() => validateTreasuryClock('2026-07-02', '2026-07-02T22:29:00Z'), /before 18:30/);
+  assert.equal(validateTreasuryClock('2026-07-02', '2026-07-02T22:30:00Z'),
+    '2026-07-02T22:30:00.000Z');
+  assert.throws(() => validateTreasuryClock(DAY, '2026-11-03T22:37:00Z'), /before 18:30/);
+  assert.equal(validateTreasuryClock(DAY, '2026-11-03T23:30:00Z'), '2026-11-03T23:30:00.000Z');
   assert.throws(() => validateTreasuryClock(DAY, '2026-11-04T05:15:00Z'), /match New York/);
   assert.throws(() => validateTreasuryClock('2026-11-07', '2026-11-07T22:37:00Z'), /weekend/);
 });
@@ -195,10 +197,10 @@ test('parser does not bless real provider claims merely because request was mock
 
 test('response capture time is stamped after the source bytes were read', async () => {
   let calls = 0;
-  const clock = () => new Date(++calls === 1 ? AS_OF : '2026-11-03T22:43:00Z');
+  const clock = () => new Date(++calls === 1 ? AS_OF : '2026-11-03T23:43:00Z');
   const x = await fetchTreasuryCandidate({day:DAY,clock,fetchImpl:async()=>response()});
   assert.equal(calls, 2);
-  assert.equal(x.record.captured_as_of_utc, '2026-11-03T22:43:00.000Z');
+  assert.equal(x.record.captured_as_of_utc, '2026-11-03T23:43:00.000Z');
 });
 
 test('source completed after New York midnight cannot be backdated', async () => {

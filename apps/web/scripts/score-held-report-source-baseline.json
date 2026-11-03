@@ -211,6 +211,30 @@
       "reports/weekly/2026-10-16": "c10a8b186ca3a2c0f8a6ff18a878749171ffcc1274cf6c8754ed78b78d68df34",
       "reports/weekly/2026-10-23": "9f502696e47a08f149cd64cc29ae8a01c6a893a4ba49f135c52a3bb30e73f8f9"
     },
-    "whole_body_release_status": "HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN"
+    "whole_body_release_status": "HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN",
+    "draft_containment_whole_body_sha256": {
+      "evidence_commit": "6af6c6ce62eb86bb3712a6b7f6d977777ff86761",
+      "evidence_workflow_run": 41689499564,
+      "scope": "DRAFT_ONLY_BYTE_INTEGRITY_NOT_ORIGINAL_MAIN_LICENSE",
+      "classification_match": "PRODUCTION_PREVIEW_16_OF_16",
+      "sha256": {
+        "reports/monthly/2026-08-21": "b02bd1f7db311050312902a58c69d753a30b2a146c0c4262544d6f9979fb5ffc",
+        "reports/monthly/2026-09-18": "fbc9e214e99f8da4dc008b83a155d7ac31d1225f663e3c503d850765fcc77731",
+        "reports/monthly/2026-10-16": "167b2ea2cb19d2ce11ad15e15ed788fcb4e623c3fbea77abb719ce8e858a38c9",
+        "reports/weekly/2026-07-31": "4e1a44bd71d88ebac7c6dce766f54359e4780b8124fa5f294733ac7a4f0dc109",
+        "reports/weekly/2026-08-07": "a3764fd159602c53acaf2b655e57a7ab144111ceedc1b82f4c29f2a76b73c3f7",
+        "reports/weekly/2026-08-14": "74aba52eefce073c3516d0deac661ddfe335b7892b6cebd21a8080950737a3a1",
+        "reports/weekly/2026-08-21": "9d711da8a7f435a6258f8f21b87b63214ab5e978004efc2671f45dabf25d61a6",
+        "reports/weekly/2026-08-28": "376603b254e06adeece00cb5dd39a936caedf2a98790d0489b13edabd3a09f37",
+        "reports/weekly/2026-09-04": "412baeeb401750e7a88d943efe826815020d2629743175680d1281df886a9465",
+        "reports/weekly/2026-09-11": "81d65fa39a2cb58b991f244f00482436afceef43eadb340cd7b66faa51787085",
+        "reports/weekly/2026-09-18": "bdd70924976c5dd6164d46cd54ab79605db67b9d7044e31bf64e41d888c2b8c7",
+        "reports/weekly/2026-09-25": "6a4fdb685e82652d1f796b0834440fb2da7acd88ed72c79002c591ec7fcc287f",
+        "reports/weekly/2026-10-02": "74b981f9d9450e976f391e8561fa7a433218bd9a798727f3b2393b4b1dfdd1ba",
+        "reports/weekly/2026-10-09": "40880305586e447c2d061e4b10d2962e4b5d21728e1cc048edc11d643d9151f9",
+        "reports/weekly/2026-10-16": "94b517034bf0dc387d8d50d9a7edfee2c9fd592ad80a96de1cdf3fa3fc6bc049",
+        "reports/weekly/2026-10-23": "5f359916b8e30f004b2de42ba5654bfbbfae6d897f53307b71f628dbe7fb26f8"
+      }
+    }
   }
 }

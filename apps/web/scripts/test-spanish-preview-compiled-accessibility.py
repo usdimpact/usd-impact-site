@@ -267,7 +267,7 @@ try:
                             "Consent modal did not restore opener focus"
                         )
 
-                        if width <= 760:
+                        if width <= 960:
                             menu = page.locator(".nav-toggle")
                             assert menu.is_visible()
                             menu.click()

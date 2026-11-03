@@ -303,7 +303,7 @@ test('redacted receipt refuses fake transport and any claimed public rights', as
 });
 
 test('CLI must route live output through nonnumeric redaction', () => {
-  const source = readFileSync(new URL('./treasury-candidate-cli.mjs', import.meta.url), 'utf8');
+  const source = readFileSync(new globalThis.URL('./treasury-candidate-cli.mjs', import.meta.url), 'utf8');
   assert.match(source, /:\s*redactedIssuerProbeReceipt\(result\)/);
   assert.match(source, /const report = args\[0\] === '--demo'/);
 });

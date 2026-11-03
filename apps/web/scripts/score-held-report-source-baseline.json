@@ -235,6 +235,49 @@
         "reports/weekly/2026-10-16": "94b517034bf0dc387d8d50d9a7edfee2c9fd592ad80a96de1cdf3fa3fc6bc049",
         "reports/weekly/2026-10-23": "5f359916b8e30f004b2de42ba5654bfbbfae6d897f53307b71f628dbe7fb26f8"
       }
-    }
+    },
+    "original_whole_head_reference_sha256": {
+      "reports/monthly/2026-08-21": "2de4a56c523447be6a4f37193722160d98fd4eb3870c20bc758483b8a938042c",
+      "reports/monthly/2026-09-18": "ce6158eb2bdc21acef823023ef0e7121947a5551a0513393b8324bfc4af51d87",
+      "reports/monthly/2026-10-16": "8d5314fdfb56c8a3dc5edf659015e00505f8babf8bb204472136f28e6066fc0d",
+      "reports/weekly/2026-07-31": "d078d75d10dcb1441ac2d6f0b91e4f7541018c39a33b8d6c074c6b969a4787fe",
+      "reports/weekly/2026-08-07": "ff4f495abedb87792be4efc00350ced397894de997355142f28ad3d33a3cfd89",
+      "reports/weekly/2026-08-14": "a1fa9bf2825243b2f26bf9932fe0074928a99843a2858933b55632a8714de55b",
+      "reports/weekly/2026-08-21": "d654e7d63843e73c357d312d684f4043f3a50c6c004b8e63ef49babd1da0abcf",
+      "reports/weekly/2026-08-28": "717186121f0d7e0f3a7c737bffbd5d42f73339afa25dbd7245c8de6d88bebcb6",
+      "reports/weekly/2026-09-04": "94b9a4fd47c82aeea20f49647fe5e6e7b35281d8fc33cccaed7958bf87084fcd",
+      "reports/weekly/2026-09-11": "ef49537e99edea532063dd62dee811029ee46da2adb3182559ec8f4bc9580cdb",
+      "reports/weekly/2026-09-18": "69bc3f5028af0b4c29a8bf157a010657d08432ba984a7a65cc6777865c070c61",
+      "reports/weekly/2026-09-25": "e08aa35591d91a028f411210b08ca369a6c1a1b8b5e2b7fe4e0ec31f31ef2950",
+      "reports/weekly/2026-10-02": "e25aa0f6e4ec54365db22d6721c0d4ca9372e6ecbb30b657657a8f3f0823a2b0",
+      "reports/weekly/2026-10-09": "ced84cc907e48e5d36a9dc17af02fa2bbe3b2615056d52be8af22f36c0229cbd",
+      "reports/weekly/2026-10-16": "eed57d13c5a5bc784e9772ff4b96e08ff43363134aeb15e5d81f438076316448",
+      "reports/weekly/2026-10-23": "6e79544d0a2115bb79a9aae5da67c2d45ddad878d619d005589456496e32b437"
+    },
+    "draft_containment_whole_head_sha256": {
+      "evidence_commit": "3d7694260f29d16eb67bd83f65c12e8ca1cee7c3",
+      "evidence_workflow_run": 41695519712,
+      "scope": "DRAFT_ONLY_HEAD_INTEGRITY_NOT_ORIGINAL_MAIN_LICENSE",
+      "classification_match": "PRODUCTION_PREVIEW_16_OF_16",
+      "sha256": {
+        "reports/monthly/2026-08-21": "1413990e9f08edde22de7f1e5e5cf7baa8fe28540910f18bdb4789c172112a3d",
+        "reports/monthly/2026-09-18": "8c04e2985acdfeb043604e6425e560bf1ccfc84fa136e09ca1a03a23fc6b422b",
+        "reports/monthly/2026-10-16": "56bda9a6d7ead0c5f8b1dbcedc2142b0da616f346209adfe38e5db737905d0d3",
+        "reports/weekly/2026-07-31": "dd1d2ae0e0b763fd06ddd278ad91762be7bf1b6d1cddeaa4c864d7255f8d0355",
+        "reports/weekly/2026-08-07": "6db55699ef01c94e658dac246ba500ffd921533d4a12ff01094865ed117c4994",
+        "reports/weekly/2026-08-14": "adaab2262db1cf8809c6204066caf8dd441faaa6d76b6c207a7149f42be4fb32",
+        "reports/weekly/2026-08-21": "f823cf87d5deb5019f0652af526d390adc0e813da5d6f0c32b699e584ebb72e0",
+        "reports/weekly/2026-08-28": "a35096f1eae04784a9198a291f78f3ece60784cdba81440a0514ff264935c7db",
+        "reports/weekly/2026-09-04": "940248487221c89b075081f88b4dde6d65d2fabf6ea8fdd4e7d48855cd1a67af",
+        "reports/weekly/2026-09-11": "c899c2df3d6de14d2693250d802c9860f3b5449e14aa15195e360ff6ee5b37e7",
+        "reports/weekly/2026-09-18": "9e5a69370890c7d4fd405e22b6b47415b6f9bc739458aaa43637eb4b522487e1",
+        "reports/weekly/2026-09-25": "23510babcac124d826cedb10c58bb5d9b1c36692184bec832b3e40d8084e8d53",
+        "reports/weekly/2026-10-02": "514390e7e8a63352e9a2add5912000991b6d14bbafd215d724be592b5f341c30",
+        "reports/weekly/2026-10-09": "5549a3682cbd11d5a988c2a355efc01459bdbb9b0661ed1a505db032f402a910",
+        "reports/weekly/2026-10-16": "37cec4f24e7c5a61b569f1669e70392a94946bb6f3cd2190659b5b893224e8ad",
+        "reports/weekly/2026-10-23": "1784a17a406127089f797b132d8b810e33686041574067de084719e3983ba7cb"
+      }
+    },
+    "whole_head_release_status": "HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN"
   }
 }

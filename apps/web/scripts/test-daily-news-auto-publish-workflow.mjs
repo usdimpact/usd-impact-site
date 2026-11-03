@@ -119,6 +119,10 @@ assert.throws(() => validateDailyContent(candidate.replace('status: "published"'
 assert.throws(() => validateDailyContent(candidate.replace('sourceType: "primary"', 'sourceType: "reporting"'), day, file), /primary/);
 assert.throws(() => validateDailyContent(candidate.replace('2026-11-04T09:41', '2026-11-03T09:41'), day, file), /drift/);
 assert.throws(() => validateDailyContent(candidate, day, { filename: file.filename, status: 'modified' }), /single/);
+assert.throws(() => validateDailyContent(candidate, day + '\\hostile', {
+  filename: 'apps/web/src/content/news/' + day + '\\hostile.md', status: 'added',
+}), /invalid-edition-date/);
+
 
 const checks = REQUIRED_CHECKS.map((name, i) => ({
   name, head_sha: sha, status: 'completed', conclusion: 'success',

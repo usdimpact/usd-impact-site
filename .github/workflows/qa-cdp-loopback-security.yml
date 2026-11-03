@@ -26,9 +26,12 @@ jobs:
           node apps/web/scripts/test-qa-chrome-debug-endpoint.mjs
 
   browser-regression:
-    # One-time exact-head validation for the redirect-hardening stacked Draft.
-    # Never add ongoing full Chromium work to unrelated PRs through this job.
-    if: github.base_ref == 'agent/held-release-mandatory-check-design-20261103'
+    # Exact-head Chromium validation for the original redirect-hardening Draft
+    # and ONE isolated main-target security compatibility Draft. Never run
+    # the expensive browser grid on unrelated pull requests.
+    if: >-
+      github.base_ref == 'agent/held-release-mandatory-check-design-20261103' ||
+      (github.base_ref == 'main' && github.head_ref == 'agent/held-security-main-integration-20261103')
     needs: validate-loopback
     runs-on: ubuntu-latest
     timeout-minutes: 20

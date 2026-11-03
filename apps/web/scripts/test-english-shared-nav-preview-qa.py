@@ -170,7 +170,18 @@ try:
 
                     stage = "text-spacing user override under real CSP"
                     page.add_style_tag(url=css_url)
-                    page.wait_for_timeout(300)
+                    # Wait for the user stylesheet to affect computed text.
+                    # A fixed delay can falsely fail despite a successful load.
+                    page.wait_for_function("""() => {
+                      const p = document.querySelector('main p');
+                      if (!p) return false;
+                      const s = getComputedStyle(p);
+                      const size = parseFloat(s.fontSize);
+                      return size > 0 &&
+                        parseFloat(s.letterSpacing) / size >= .119 &&
+                        parseFloat(s.wordSpacing) / size >= .159 &&
+                        parseFloat(s.marginBottom) / size >= 1.99;
+                    }""", timeout=10000)
                     item["stylesheetDiagnostics"] = page.evaluate("""() => ({
                       qaStylePresent: !!document.querySelector('link[href*="__qa_english_user_text_spacing.css"]'),
                       qaStyleLoaded: [...document.styleSheets].some(

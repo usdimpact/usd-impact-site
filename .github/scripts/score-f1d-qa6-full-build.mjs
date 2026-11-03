@@ -24,6 +24,9 @@ const results=[];
 function checksum(text){return createHash('sha256').update(text).digest('hex');}
 function excerpt(output){return String(output||'').split('\n').filter(x=>/F1d|Score-derived|rights HOLD|source freeze|unreviewed|Unapproved|unapproved|frozen|Invalid|Error|error/i.test(x)).slice(-5).map(x=>x.slice(0,260));}
 function invoke(root,command,timeout=160000){
+  // Each adversarial reproduction starts from a clean generated Astro cache.
+  // Never delete the cache as part of the real application build command.
+  fs.rmSync(path.join(root,'.astro'),{recursive:true,force:true});
   return spawnSync('/bin/bash',['-lc',command],{
     cwd:root,
     env:{...process.env,VERCEL_ENV:'preview',CI:'true'},

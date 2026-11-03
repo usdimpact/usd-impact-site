@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import {
   gitBlobSha1, evaluateScoreContentFreeze, verifyCurrentScoreHold, collectScoreContents,
   checkScoreLoaderContract, checkBuiltScoreArtifacts, checkFrozenHistoricalMainBodies,
+  checkFrozenScorePublishedEnvelope, digestFrozenScoreEnvelope,
   selectTrustedScoreSourceRoot, PINNED_SCORE_LOADERS,
   PINNED_SCORE_CONTENT_CONFIG_BLOB,
 } from './score-held-report-source-guard.mjs';
@@ -347,3 +348,90 @@ console.log('Score F1d historical body hashes PASS: 16 pinned original Productio
     /only once/);
 }
 console.log('Score F2 staged trusted-source --root parser PASS (no GitHub ruleset or required check activated)');
+
+
+// P1-A B1/B6/B7 beyond-main rendered publication negatives.
+// All artifacts are synthetic, temporary, with no new source licence or release.
+// The input freeze is deliberately treated as self-repinned/green in this test:
+// the separate built rights ledger must independently reject altered output.
+{
+  const original=JSON.parse(fs.readFileSync(new URL('./score-held-report-source-baseline.json',import.meta.url),'utf8'));
+  const base=original.rendered_score_envelope_sha256;
+  assert.equal(Object.keys(base?.reports??{}).length,16,'pin 16 historical hero+metadata receipts');
+  assert.equal(Object.keys(base?.newsletter_json??{}).length,26,'pin 26 weekly/progress JSON receipts');
+  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'score-p1a-regions-'));
+  const routes=Object.keys(base.reports).sort();
+  const weeklyDates=Object.keys(original.existing_reports)
+    .map(n=>/^weekly-reports\/(\d{4}-\d{2}-\d{2})\.md$/.exec(n)?.[1]).filter(Boolean);
+  const sha256=b=>createHash('sha256').update(b).digest('hex');
+  const files={};
+  const goldenReports={},goldenBody={},goldenJson={};
+  const template=(name)=>'<!doctype html><html><head><title>Original '+name+
+    '</title><meta name="description" content="Original report description">'+
+    '<script type="application/ld+json">{"source":"pinned fixture"}</script></head>'+
+    '<body><nav>Provisional shell</nav><section class="hero reports-hero">'+
+    '<p>USD Impact Score was −0.53</p></section>'+
+    '<main><h1>Original report body</h1></main></body></html>';
+  const write=(rel,text)=>{
+    const target=path.join(tmp,rel);
+    fs.mkdirSync(path.dirname(target),{recursive:true});
+    fs.writeFileSync(target,text,'utf8');files[rel]=text;return target;
+  };
+  try {
+    for(const route of routes) {
+      const html=template(route);
+      write(route+'/index.html',html);
+      const dig=digestFrozenScoreEnvelope(html);
+      const {body,...regions}=dig;
+      goldenReports[route]=regions;goldenBody[route]=body;
+    }
+    for(const family of ['weekly','progress'])for(const date of weeklyDates){
+      const rel='newsletter/'+family+'/'+date+'.json';
+      const json=JSON.stringify({date,family,value:'original synthetic snapshot'})+'\n';
+      write(rel,json);goldenJson[rel]=sha256(Buffer.from(json));
+    }
+    const safe={...original,rendered_score_envelope_sha256:{
+      ...base,reports:goldenReports,newsletter_json:goldenJson,
+      original_whole_body_reference_sha256:goldenBody,
+    }};
+    const verify=()=>checkFrozenScorePublishedEnvelope(safe,tmp);
+    assert.deepEqual(verify(),[],'clean 16+26 generated artifacts must pass');
+
+    const weekly=routes.find(name=>name.startsWith('reports/weekly/'));
+    const htmlRel=weekly+'/index.html';
+    write(htmlRel,files[htmlRel].replace('Score was −0.53','Score was −0.35'));
+    assert.ok(verify().some(x=>x.includes('historical Score hero')),
+      'B1 Score value outside main MUST fail despite candidate source re-pin');
+    write(htmlRel,template(weekly));
+
+    write(htmlRel,files[htmlRel].replace('<title>Original','<title>Changed'));
+    assert.ok(verify().some(x=>x.includes('historical Score title')),
+      'B6 changed title MUST fail even when historical main content is unchanged');
+    write(htmlRel,template(weekly));
+
+    write(htmlRel,files[htmlRel].replace('Original report description','Changed report description'));
+    assert.ok(verify().some(x=>x.includes('meta_description')),
+      'changed description MUST fail');
+    write(htmlRel,template(weekly));
+
+    write(htmlRel,files[htmlRel].replace('pinned fixture','malicious Score rewrite'));
+    assert.ok(verify().some(x=>x.includes('historical Score jsonld')),
+      'changed JSON-LD MUST fail');
+    write(htmlRel,template(weekly));
+
+    const jsonRel='newsletter/weekly/'+weeklyDates[0]+'.json';
+    write(jsonRel,files[jsonRel].replace('original synthetic snapshot','modified Score 9.99'));
+    assert.ok(verify().some(x=>x.includes('historical Score newsletter JSON')),
+      'B7 changed historical newsletter JSON MUST fail');
+    write(jsonRel,JSON.stringify({date:weeklyDates[0],family:'weekly',value:'original synthetic snapshot'})+'\n');
+
+    // A changed navigation shell remains outside the currently accepted
+    // original-main regions. Record the limitation, do not claim FULL BODY pass.
+    write(htmlRel,files[htmlRel].replace('Provisional shell','Changed global shell'));
+    assert.deepEqual(verify(),[],
+      'Unapproved whole-body shell changes are separately release-blocked, not validated by region guard');
+    write(htmlRel,template(weekly));
+    assert.deepEqual(verify(),[],'all synthetic Score regions restored');
+  }finally{fs.rmSync(tmp,{recursive:true,force:true});}
+}
+console.log('Score P1-A B1/B6/B7 PASS: 16 hero/meta/JSON-LD plus 26 newsletter JSON hashes; whole body remains owner HOLD');

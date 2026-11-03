@@ -185,6 +185,52 @@ export function checkBuiltScoreArtifacts(baseline, distRoot) {
   return failures;
 }
 
+// Rights-HOLD provenance: 16 historical report main-body hashes obtained by
+// compiling pinned Production main d1740214 and comparing the candidate under
+// the exact Vercel command. This protects outputs even when source pins are
+// changed, but trusted-base enforcement (F2) is a separate required gate.
+export function checkFrozenHistoricalMainBodies(inventory,distRoot) {
+  const failures=[];
+  const historical=inventory?.rendered_main_sha256;
+  const sourceNames=Object.keys(inventory?.existing_reports??{});
+  const names=sourceNames.map(name=>{
+    const match=/^(weekly|monthly)-reports\/(\d{4}-\d{2}-\d{2})\.md$/.exec(name);
+    return match?'reports/'+match[1]+'/'+match[2]:null;
+  });
+  const digests=historical?.sha256;
+  if(!historical||historical.source_main_commit!=='d1740214f5737996f321a037efe3f2f7d21ecd64'
+    ||historical.algorithm!=='sha256_of_html_main_inner_fragment_exact_utf8'
+    ||!digests||typeof digests!=='object'||Array.isArray(digests)
+    ||names.length!==16||names.some(name=>!name)
+    ||Object.keys(digests).length!==16
+    ||names.some(name=>!Object.hasOwn(digests,name)
+      ||!/^[a-f0-9]{64}$/.test(digests[name]))) {
+    return ['Missing or invalid original Production historical Score body hash inventory'];
+  }
+  if(!distRoot||!fs.existsSync(distRoot))return ['Missing compiled Score output tree for historical body integrity'];
+  for(const name of names) {
+    const target=path.join(distRoot,name,'index.html');
+    let html;
+    try {
+      if(!fs.lstatSync(target).isFile()||fs.lstatSync(target).isSymbolicLink())
+        throw Error('not a real HTML file');
+      html=fs.readFileSync(target,'utf8');
+    }catch {
+      failures.push('Missing historical Score report body on rights HOLD: '+name);
+      continue;
+    }
+    const matches=[...html.matchAll(/<main\b[^>]*>([\s\S]*?)<\/main\s*>/gi)];
+    if(matches.length!==1) {
+      failures.push('Unexpected historical Score report main-body structure: '+name);
+      continue;
+    }
+    const digest=createHash('sha256').update(Buffer.from(matches[0][1],'utf8')).digest('hex');
+    if(digest!==digests[name])
+      failures.push('Changed original Production historical Score report main-body on rights HOLD: '+name);
+  }
+  return failures;
+}
+
 export function verifyCurrentScoreHold(root=webRoot) {
   const inventory=JSON.parse(fs.readFileSync(baselineFile,'utf8'));
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'scripts/score-rights-consumer-manifest.json'),'utf8'));
@@ -204,6 +250,7 @@ if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.
   if(process.argv.includes('--built')){
     const inventory=JSON.parse(fs.readFileSync(baselineFile,'utf8'));
     failures.push(...checkBuiltScoreArtifacts(inventory,path.join(webRoot,'dist')));
+    failures.push(...checkFrozenHistoricalMainBodies(inventory,path.join(webRoot,'dist')));
   }
   if(failures.length){
     console.error('Score-derived source rights HOLD check FAILED:\n- '+failures.join('\n- '));

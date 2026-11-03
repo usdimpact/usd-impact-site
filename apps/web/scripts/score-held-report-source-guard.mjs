@@ -94,9 +94,17 @@ export const PINNED_SCORE_LOADERS=Object.freeze([
   "loader: glob({ pattern: '**/*.md', base: './src/content/weekly-reports' }),",
   "loader: glob({ pattern: '**/*.md', base: './src/content/monthly-reports' }),",
 ]);
+export const PINNED_SCORE_CONTENT_CONFIG_BLOB='dc34afdf430a074d4118d55a4f7001564d7bcc2c';
 export function checkScoreLoaderContract(configSource) {
   const failures=[];
   if(typeof configSource!=='string') return ['Missing content collection config'];
+  // Exact Git-blob identity blocks commented-out original loaders, indirect
+  // aliases and other untracked sources that string matching cannot detect.
+  // This freezes the WHOLE collection configuration while Score rights HOLD.
+  // A future legitimate schema edit needs explicit policy review and rebase.
+  if(gitBlobSha1(configSource)!==PINNED_SCORE_CONTENT_CONFIG_BLOB) {
+    failures.push('Unapproved Astro content collection configuration changed from locked Production main');
+  }
   for(const line of PINNED_SCORE_LOADERS){
     if(configSource.split(line).length!==2) failures.push('Score report loader declaration changed or duplicated: '+line);
   }

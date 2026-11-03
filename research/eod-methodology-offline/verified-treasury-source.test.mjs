@@ -33,11 +33,12 @@ function response(xml = xmlRows(), changes = {}) {
     'content-length': String(Buffer.byteLength(xml)),
     ...changes.headers,
   };
+  const {headers: _overrides, ...otherChanges} = changes;
   return {
     ok: true, status: 200, url: URL, redirected: false,
-    headers: {get: name => h[name.toLowerCase()] ?? null},
     text: async () => xml,
-    ...changes,
+    ...otherChanges,
+    headers: {get: name => h[name.toLowerCase()] ?? null},
   };
 }
 
@@ -49,7 +50,7 @@ test('official Treasury URL is derived from fixed issuer and requested month onl
 });
 
 test('same New York day and 17:00 Eastern cutoff are mandatory, including DST', () => {
-  assert.equal(validateTreasuryClock(DAY, AS_OF), AS_OF);
+  assert.equal(validateTreasuryClock(DAY, AS_OF), new Date(AS_OF).toISOString());
   assert.throws(() => validateTreasuryClock(DAY, '2026-11-03T21:59:00Z'), /before 17/);
   assert.throws(() => validateTreasuryClock('2026-07-02', '2026-07-02T20:59:00Z'), /before 17/);
   assert.equal(validateTreasuryClock('2026-07-02', '2026-07-02T21:05:00Z'),

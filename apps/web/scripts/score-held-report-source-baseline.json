@@ -24,5 +24,27 @@
   },
   "existing_other_files": {
     "monthly-reports/.gitkeep": "8b137891791fe96927ad78e64b0aad7bded08bdc"
+  },
+  "rendered_main_sha256": {
+    "source_main_commit": "d1740214f5737996f321a037efe3f2f7d21ecd64",
+    "algorithm": "sha256_of_html_main_inner_fragment_exact_utf8",
+    "sha256": {
+      "reports/monthly/2026-08-21": "02b548903decd1476a779253566b08a041747eb13ecdca72bbc954bd2b156cb9",
+      "reports/monthly/2026-09-18": "77cdbc788b56b1bbd27c23eafbfcc93f408e00c3862b7e487bdf166d1ee3383f",
+      "reports/monthly/2026-10-16": "107a37faf559a1d22bf58f7a0e711c792bf3f6fba6626f3d1bec5d922de71281",
+      "reports/weekly/2026-07-31": "8f0bfbcfac5e095f106d32c9c0edf330edc878638669b73636ba8c31b79ae4bb",
+      "reports/weekly/2026-08-07": "8106ea2399c5fad2831b7248d060322f5ba0cd320d55d0231501519de9df5062",
+      "reports/weekly/2026-08-14": "ccd78d20b5a2d0f5c9dab1c144dc69912705ad6c711082e45a34b2bee1e90df5",
+      "reports/weekly/2026-08-21": "6890e21b0c567aa5c8598f3a13032ef64bbc7561dd5ab6b02a254f786edd4959",
+      "reports/weekly/2026-08-28": "c7282ddbc8753e479477530ae7322f4ca0d23b559607e40a5e4d08d8f33e4832",
+      "reports/weekly/2026-09-04": "f258563d5b32aba05dd3271f7571351bda1563d2983e243317ed0226902e0f36",
+      "reports/weekly/2026-09-11": "a9586db1dd519287b6c2f0458d10180733f1645e46aefcb0552ab109c776b138",
+      "reports/weekly/2026-09-18": "f8ec02f4349bc58ff6721509e9df00a83023e800d23777a096ae8fe44f990096",
+      "reports/weekly/2026-09-25": "be240765d029200c46b602d73143fa5efce35ab19109a659f34b32a9bfd2fbae",
+      "reports/weekly/2026-10-02": "30e3ff046089199f650948ab2662255f3e13bc7dbc26cf9294eb1a8c04745f0d",
+      "reports/weekly/2026-10-09": "1fe8a96c9927447e8a77e8d072260cef60443b19c08c3aa2f2c2dd501512a760",
+      "reports/weekly/2026-10-16": "b59ec137411ecabd30b25cc5ef214403a02718f983354059b03da7a0a6c895bb",
+      "reports/weekly/2026-10-23": "f389e7ff201c0a22b9c9b71d2299114e8da845e30e4297dcef214f4fc30d142a"
+    }
   }
 }

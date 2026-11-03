@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 import {
   gitBlobSha1, evaluateScoreContentFreeze, verifyCurrentScoreHold, collectScoreContents,
   checkScoreLoaderContract, checkBuiltScoreArtifacts, PINNED_SCORE_LOADERS,
-  PINNED_SCORE_CONTENT_CONFIG_BLOB,
+  PINNED_SCORE_CONTENT_CONFIG_BLOB, F1D_RENDER_PINS,
+  gitTreeSha1, checkFrozenScoreRenderSurfaces,
 } from './score-held-report-source-guard.mjs';
 
 assert.deepEqual(verifyCurrentScoreHold(), [], 'all existing historical Score sources must match the trusted main baseline');
@@ -254,3 +255,80 @@ try {
 console.log('Score rights N4 PASS: structurally valid manually prepared Score Monthly accepted by schema validator but REJECTED by new rights/source baseline; existing historical sources unchanged');
 
 console.log('Score rights F1b PASS: pinned loaders; redirected/extra loaders and new report/newsletter/sitemap dates rejected; removal-only allowed');
+
+
+// F1d: independent source fixtures catch Claude QA5 E/E3/F/G before build.
+// The whole route-tree identity rejects both edits to existing Score templates
+// and extra alternate report routes, even if the route slug/date is allowed.
+// The Astro-config identity rejects build hooks and source-dir redirection.
+// These are source-level unit tests, NOT a replacement for Claude's full builds.
+{
+  const root=new URL('../',import.meta.url);
+  const realRoot=fileURLToPath(root);
+  assert.equal(gitBlobSha1(fs.readFileSync(path.join(realRoot,'astro.config.mjs'))),
+    F1D_RENDER_PINS.astroConfig,'real Astro config must match reviewed pin');
+  assert.ok(F1D_RENDER_PINS.pageTrees.includes(gitTreeSha1(path.join(realRoot,'src','pages'))),
+    'reviewed page tree must match one pinned source snapshot');
+  assert.deepEqual(checkFrozenScoreRenderSurfaces(realRoot),[],
+    'clean #1087/#1088 route and deployment source contract must pass');
+
+  const fixture=fs.mkdtempSync(path.join(os.tmpdir(),'score-f1d-routes-'));
+  try {
+    fs.mkdirSync(path.join(fixture,'src','pages','reports','weekly'),{recursive:true});
+    const historical=path.join(fixture,'src','pages','reports','weekly','[date].astro');
+    const astroConfig=path.join(fixture,'astro.config.mjs');
+    const vercelFile=path.join(fixture,'vercel.json');
+    const cleanConfig='export default { site: "https://www.usd-impact.com" };\n';
+    fs.writeFileSync(astroConfig,cleanConfig);
+    fs.writeFileSync(historical,'<div>Historical Score</div>\n');
+    const vercel=()=>({
+      buildCommand:F1D_RENDER_PINS.vercelBuildCommand,
+      git:{deploymentEnabled:{'agent/*':false}},
+    });
+    fs.writeFileSync(vercelFile,JSON.stringify(vercel()));
+    const fixturePins={
+      astroConfig:gitBlobSha1(cleanConfig),
+      pageTrees:[gitTreeSha1(path.join(fixture,'src','pages'))],
+      vercelBuildCommand:F1D_RENDER_PINS.vercelBuildCommand,
+    };
+    const verify=()=>checkFrozenScoreRenderSurfaces(fixture,fixturePins);
+    assert.deepEqual(verify(),[],'clean F1d disposable fixture must pass');
+
+    // E: config-level Astro post-build hook changing existing HTML.
+    fs.writeFileSync(astroConfig,cleanConfig+'// astro:build:done rewrite\n');
+    assert.ok(verify().some(x=>x.includes('Astro config')),
+      'E astro:build:done hook MUST fail the source guard');
+    fs.writeFileSync(astroConfig,cleanConfig);
+
+    // F: alternative srcDir can load unreviewed historical/new Score data.
+    fs.writeFileSync(astroConfig,cleanConfig+"// srcDir: './src-alt'\n");
+    assert.ok(verify().some(x=>x.includes('Astro config')),
+      'F alternate Astro srcDir MUST fail the source guard');
+    fs.writeFileSync(astroConfig,cleanConfig);
+
+    // E3: same-date historical Score injected through page source.
+    fs.writeFileSync(historical,'<div>Score: +9.99</div>\n');
+    assert.ok(verify().some(x=>x.includes('page templates')),
+      'E3 historical Score route modification MUST fail');
+    fs.writeFileSync(historical,'<div>Historical Score</div>\n');
+
+    // G: non-inventoried alternate route emits new Score body/date.
+    const alternate=path.join(fixture,'src','pages','archivo','semanal');
+    fs.mkdirSync(alternate,{recursive:true});
+    fs.writeFileSync(path.join(alternate,'[date].astro'),'<main>New Score body</main>\n');
+    assert.ok(verify().some(x=>x.includes('page templates')),
+      'G alternate publication route MUST fail');
+    fs.rmSync(path.join(fixture,'src','pages','archivo'),{recursive:true,force:true});
+
+    // F3: deployment command skips held source / built checks.
+    fs.writeFileSync(vercelFile,JSON.stringify({...vercel(),buildCommand:'npm run build'}));
+    assert.ok(verify().some(x=>x.includes('Vercel build')),
+      'F3 Vercel build guard omission MUST fail');
+    fs.writeFileSync(vercelFile,JSON.stringify(vercel()));
+
+    assert.deepEqual(verify(),[],'all F1d fixtures restored to clean');
+  }finally{
+    fs.rmSync(fixture,{recursive:true,force:true});
+  }
+}
+console.log('Score F1d source policy PASS: Astro build hook/srcDir, modified Score template, alternate route and disabled Vercel guard rejected');

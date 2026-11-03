@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run validate && npm run build",
+  "buildCommand": "node scripts/score-held-report-source-guard.mjs && npm run validate && npm run build && node scripts/score-held-report-source-guard.mjs --built",
   "installCommand": "npm ci --no-audit --no-fund --strict-allow-scripts",
   "outputDirectory": "dist",
   "framework": "astro",

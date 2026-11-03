@@ -1,9 +1,9 @@
 // Explicitly invoked CLI: DEMO uses invented XML and never downloads market data.
 // --live-official makes one bounded GET to the fixed Treasury government endpoint;
 // it never creates files, opens PRs, publishes, or asserts licence rights.
-import { buildTreasuryCandidate, fetchTreasuryCandidate, redactedIssuerProbeReceipt } from './verified-treasury-source.mjs';
+import { buildTreasuryCandidate, fetchTreasuryCandidate, redactedIssuerProbeReceipt, planTreasuryProbeArgs } from './verified-treasury-source.mjs';
 
-const args = process.argv.slice(2);
+const plan = planTreasuryProbeArgs(process.argv.slice(2));
 const fixtureXml = '<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom" ' +
   'xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" ' +
   'xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices">' +
@@ -20,19 +20,15 @@ function newYorkDay(instant) {
   return parts.year + '-' + parts.month + '-' + parts.day;
 }
 
-if (args.length !== 1 || !['--demo', '--live-official'].includes(args[0])) {
-  throw new Error('Specify exactly --demo OR --live-official. No implicit network requests.');
-}
-
-const result = args[0] === '--demo' ?
+const result = plan.mode === 'demo' ?
   buildTreasuryCandidate({
     xml: fixtureXml, day: '2100-02-01', asOfUtc:'2100-02-01T23:45:00Z',
   }) :
   await (async () => {
     const start = new Date();
-    const day = newYorkDay(start);
+    const day = plan.day ?? newYorkDay(start);
     return fetchTreasuryCandidate({
-      day, fetchImpl: globalThis.fetch,
+      day, fetchImpl: globalThis.fetch, allowRetrospective: plan.allowRetrospective,
     });
   })();
 if (result.record.public_release_authorized !== false ||
@@ -43,7 +39,7 @@ if (result.record.public_release_authorized !== false ||
 
 // The invented demo may show invented rates; an actual issuer probe NEVER
 // prints real numeric observations or translated rate-bearing Markdown.
-const report = args[0] === '--demo' ? {
+const report = plan.mode === 'demo' ? {
   scenario: 'INVENTED_FIXTURE_ONLY',
   source_transport: result.record.source.transport,
   status: result.record.status,

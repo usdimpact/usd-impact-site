@@ -85,6 +85,14 @@ export function selectExactDailyPr(pulls, run, mainSha) {
   return { prNumber: pr.number, branch: expectedBranch, headSha: pr.head.sha, editionDate: day };
 }
 
+export function isSingleGeneratorCommit(compare, editionDate) {
+  const file = 'apps/web/src/content/news/' + editionDate + '.md';
+  return Boolean(compare && compare.status === 'ahead'
+    && compare.ahead_by === 1 && compare.behind_by === 0
+    && Array.isArray(compare.files) && compare.files.length === 1
+    && compare.files[0].filename === file && compare.files[0].status === 'added');
+}
+
 export function validateDailyContent(content, editionDate, file) {
   const bytes = Buffer.from(String(content), 'utf8');
   const expectedFile = 'apps/web/src/content/news/' + editionDate + '.md';

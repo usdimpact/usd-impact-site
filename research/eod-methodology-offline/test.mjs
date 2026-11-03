@@ -83,6 +83,28 @@ test('language outputs share IDs, values, source provenance, counts and review s
   }
 });
 
+test('EN/ES Daily, Weekly, Monthly and example Score direct readers to licensed, verified real data', () => {
+  const { dailies, weeks, month } = buildFourWeeks();
+  for (const record of [dailies[0], weeks[0], month]) {
+    const en = render(record, 'en'), es = render(record, 'es');
+    assert.match(en.markdown, /verified current data/);
+    assert.match(en.markdown, /licensed or otherwise permitted/);
+    assert.match(en.markdown, /release vintages/);
+    assert.match(es.markdown, /datos actuales y verificados/);
+    assert.match(es.markdown, /licencia o permiso válido/);
+    assert.match(es.markdown, /versiones publicadas/);
+    assert.ok(en.markdown.includes(en.data_guidance));
+    assert.ok(es.markdown.includes(es.data_guidance));
+    assert.equal(en.publish_allowed, false);
+    assert.equal(es.publish_allowed, false);
+  }
+  const example = syntheticScore(inventedScoreInputs);
+  assert.match(example.data_guidance.en, /licensed or otherwise permitted/);
+  assert.match(example.data_guidance.es, /licencia o permiso válido/);
+  assert.equal(example.status, 'SYNTHETIC_ONLY_HOLD');
+  assert.equal(example.public_release_authorized, false);
+});
+
 test('translated rendering uses locale-safe precision, not translated source data', () => {
   const report = daily(fixtureDay('2100-02-02', 1));
   assert.match(render(report, 'en').markdown, /100\.25/);

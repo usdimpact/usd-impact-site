@@ -102,6 +102,33 @@ try {
   }finally{
     fs.rmSync(symbolicRoot,{recursive:true,force:true});
   }
+  // The enumerated file can be replaced after readdir returns a regular
+  // Dirent. O_NOFOLLOW must prevent the subsequent read from following it.
+  const raceFile=path.join(fixtureWeekly,'archive','race.md');
+  const raceTarget=path.join(fixtureRoot,'outside-source.md');
+  fs.writeFileSync(raceFile,'expected regular source');
+  fs.writeFileSync(raceTarget,'MALICIOUS REDIRECTED SOURCE');
+  const normalReaddir=fs.readdirSync;
+  let swapped=false;
+  try {
+    fs.readdirSync=function(dir,...rest) {
+      const entries=normalReaddir.call(fs,dir,...rest);
+      if(!swapped && dir===path.join(fixtureWeekly,'archive')){
+        fs.unlinkSync(raceFile);
+        fs.symlinkSync(raceTarget,raceFile);
+        swapped=true;
+      }
+      return entries;
+    };
+    assert.throws(()=>collectScoreContents(fixtureRoot),
+      err=>/ELOOP|symbolic link|Symlink forbidden/i.test(String(err)),
+      'race-swapped regular file must not be read through a symlink');
+    assert.equal(swapped,true,'race scenario must have occurred');
+  }finally{
+    fs.readdirSync=normalReaddir;
+    fs.rmSync(raceFile,{force:true});
+    fs.rmSync(raceTarget,{force:true});
+  }
   assert.deepEqual(evaluateScoreContentFreeze(fixtureBaseline,collectScoreContents(fixtureRoot)),[],
     'recovery to original-only source tree must pass');
 }finally{

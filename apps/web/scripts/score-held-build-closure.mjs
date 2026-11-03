@@ -30,7 +30,10 @@ export const GENERATED_FONT_SHA256=Object.freeze({
 });
 // These six post-install artifacts are copied by the pinned prepare-font-assets.mjs.
 // Accept them only at exactly these paths AND exactly these upstream SHA-256 digests.
-const GENERATED_ROOT_DIRS=new Set(['node_modules','dist','.astro','.vercel','.git','coverage','.cache']);
+const GENERATED_ROOT_DIRS=new Set(['node_modules','dist','.git']);
+// A checked-in or stale build-output directory must never be silently ignored.
+// In particular .vercel/output can bypass normal Astro dist/ rights checks.
+const FORBIDDEN_RUNTIME_ROOT_DIRS=new Set(['.vercel','.astro','.cache','coverage']);
 const MAX_FILE_BYTES=64*1024*1024;
 const SHA1=/^[a-f0-9]{40}$/;
 
@@ -67,6 +70,10 @@ export function collectWebBuildInputs(root, options={}) {
         continue;
       }
       if(entry.isDirectory()) {
+        if(!relative && FORBIDDEN_RUNTIME_ROOT_DIRS.has(rel)) {
+          failures.push('Forbidden pre-build runtime directory: '+rel);
+          continue;
+        }
         if(!relative && GENERATED_ROOT_DIRS.has(rel)) continue;
         if(isDynamic) continue; // normal News/Catalyst publication uses separate validators
         walk(full,rel);

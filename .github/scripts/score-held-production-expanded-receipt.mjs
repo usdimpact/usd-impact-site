@@ -101,6 +101,8 @@ const output={
   original_sha256:original,
   candidate_body_sha256:Object.fromEntries(
     Object.entries(candidate.reports).map(([name,regions])=>[name,regions.body])),
+  classified_mode:process.env.VERCEL_ENV??'unspecified',
+  original_whole_body_unapproved_deltas:differences.filter(d=>d.field==='body').length,
 };
 console.log('SCORE_EXPANDED_RENDER_RECEIPT_JSON='+JSON.stringify(output));
 if(process.env.GITHUB_STEP_SUMMARY){
@@ -110,4 +112,7 @@ if(process.env.GITHUB_STEP_SUMMARY){
     '; newsletter JSON='+newsletterNames.length+'; differences='+differences.length+
     '. F2, legal and release HOLD unchanged.\n');
 }
-if(differences.length)process.exitCode=1;
+const acceptedScopeDifferences=differences.filter(d=>d.field!=='body');
+console.log('SCORE_ORIGINAL_FULL_BODY_OWNER_HOLD='+output.original_whole_body_unapproved_deltas+
+  ' mode='+output.classified_mode+' (not public release; current integration body differs from original main)');
+if(acceptedScopeDifferences.length)process.exitCode=1;

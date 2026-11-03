@@ -1,6 +1,6 @@
 // F2 dry-run: synthetic and unprivileged. Do not publish a GitHub check from this test.
 import assert from 'node:assert/strict';
-import {gitBlobSha,policySha256,reviewFrozenScoreTrees} from './f2-trusted-git-tree-review.mjs';
+import {policySha256,reviewFrozenScoreTrees} from './f2-trusted-git-tree-review.mjs';
 
 const A='a'.repeat(40),B='b'.repeat(40),C='c'.repeat(40),D='d'.repeat(40),E='e'.repeat(40);
 const pinned=Object.fromEntries(Array.from({length:775},(_,i)=>['src/frozen/input-'+i+'.astro',A]));
@@ -31,7 +31,7 @@ const payload={
   repository:'usdimpact/usd-impact-site',baseBranch:'main',
   expectedHeadSha:C,observedHeadSha:C,
   expectedBaseTreeSha:D,expectedCandidateTreeSha:E,
-  trustedPolicyJson:raw,expectedPolicyGitBlobSha:gitBlobSha(raw),
+  trustedPolicyJson:raw,expectedPolicyGitBlobSha:A,observedPolicyGitBlobSha:A,
   expectedPolicySha256:policySha256(raw),trustedAuditBlobs,
   baseTree:{sha:D,truncated:false,tree:base},
   candidateTree:{sha:E,truncated:false,tree:structuredClone(base)}
@@ -63,6 +63,7 @@ expectHold(run({candidateTree:changed(audit[0],A)}),'Changed self-auditing');
 const repinned={...policy,pinned_files:{...pinned,['src/frozen/input-9.astro']:B}};
 const attack=run({trustedPolicyJson:JSON.stringify(repinned),candidateTree:changed('src/frozen/input-9.astro')});
 expectHold(attack,'Protected policy content');
+expectHold(run({observedPolicyGitBlobSha:B}),'Protected policy content');
 const extra=structuredClone(payload.candidateTree);
 extra.tree.push(entry('src/pages/unapproved-score.astro',A));
 expectHold(run({candidateTree:extra}),'New unreviewed');

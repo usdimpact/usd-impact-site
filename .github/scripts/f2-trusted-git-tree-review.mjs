@@ -20,10 +20,6 @@ const MAX_TREE_ITEMS=20000;
 const MAX_POLICY_BYTES=1048576;
 const BLOCKED_RUNTIME=/^(?:\.vercel|\.astro|\.cache|coverage|dist|node_modules)(?:\/|$)/u;
 
-export function gitBlobSha(text){
-  const data=Buffer.from(text,'utf8');
-  return createHash('sha1').update('blob '+data.length+'\0').update(data).digest('hex');
-}
 export function policySha256(text){
   return createHash('sha256').update(Buffer.from(text,'utf8')).digest('hex');
 }
@@ -81,7 +77,7 @@ export function reviewFrozenScoreTrees(input){
   if(typeof raw!=='string'||Buffer.byteLength(raw,'utf8')>MAX_POLICY_BYTES
      ||!SHA40.test(input.expectedPolicyGitBlobSha??'')
      ||!SHA64.test(input.expectedPolicySha256??'')
-     ||gitBlobSha(raw)!==input.expectedPolicyGitBlobSha
+     ||input.observedPolicyGitBlobSha!==input.expectedPolicyGitBlobSha
      ||policySha256(raw)!==input.expectedPolicySha256){
     errors.push('Protected policy content does not match externally pinned SHA1 and SHA256');
     return hold();

@@ -1,0 +1,248 @@
+#!/usr/bin/env python3
+"""Read-only keyboard and focus QA on exact compiled October Monthly Preview.
+
+Runs only against locally built Astro dist served over 127.0.0.1. Blocks all
+external browser requests; no Vercel access tokens, live data or Production
+changes. Does not constitute signed-in Preview or assistive-technology QA.
+"""
+import json
+import shutil
+import threading
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+from playwright.sync_api import sync_playwright
+
+WEB = Path(__file__).resolve().parents[1]
+DIST = WEB / "dist"
+REPORT = DIST / "macro-reviews/monthly/2026-10/index.html"
+OUT = WEB / "october-monthly-focus-evidence"
+ROUTE = "/macro-reviews/monthly/2026-10/"
+VIEWPORTS = ((320, 568), (390, 844), (768, 900), (1440, 900))
+
+assert REPORT.is_file(), "Preview-only compiled October route missing: no test may be skipped"
+assert not (DIST / "macro-reviews/monthly/2026-11/index.html").exists(), (
+    "Unreleased future Monthly must remain absent"
+)
+OUT.mkdir(parents=True, exist_ok=True)
+
+
+class LocalHandler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(DIST), **kwargs)
+
+    def log_message(self, *args):
+        pass
+
+
+server = ThreadingHTTPServer(("127.0.0.1", 0), LocalHandler)
+threading.Thread(target=server.serve_forever, daemon=True).start()
+origin = "http://127.0.0.1:" + str(server.server_port)
+chrome = next(
+    (shutil.which(name) for name in
+     ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser")
+     if shutil.which(name)), None,
+)
+assert chrome, "System Chromium missing: do not silently skip focus assertions"
+
+results = []
+failures = []
+try:
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(
+            executable_path=chrome, headless=True,
+            args=["--no-sandbox", "--disable-dev-shm-usage"],
+        )
+        try:
+            for width, height in VIEWPORTS:
+                context = browser.new_context(
+                    viewport={"width": width, "height": height},
+                    device_scale_factor=1,
+                    service_workers="block",
+                    reduced_motion="reduce",
+                )
+                page = context.new_page()
+                errors = []
+                external_requests = []
+                page.on("pageerror", lambda err: errors.append(str(err)[:400]))
+
+                def isolate(route):
+                    if route.request.url.startswith(origin + "/"):
+                        route.continue_()
+                    else:
+                        external_requests.append(route.request.url.split("/")[2])
+                        route.abort_()
+
+                context.route("**/*", isolate)
+                result = {"route": ROUTE, "width": width, "height": height}
+                stage = "load"
+                try:
+                    response = page.goto(origin + ROUTE, wait_until="load", timeout=40000)
+                    assert response and response.status == 200, "Compiled page did not load"
+                    page.evaluate("() => document.fonts.ready")
+                    assert page.locator("html").get_attribute("lang") == "en"
+                    assert "noindex" in (
+                        page.locator('meta[name="robots"]').get_attribute("content") or ""
+                    )
+                    assert page.locator("h1").count() == 1
+                    assert page.locator("main#main[tabindex='-1']").count() == 1
+                    assert page.locator("footer a[href='/privacy/']").count() == 1
+                    assert page.locator("main section[aria-labelledby]").count() == 7
+
+                    stage = "skip-link keyboard focus"
+                    page.keyboard.press("Tab")
+                    assert page.evaluate(
+                        "() => document.activeElement?.matches('a.skip[href=\"#main\"]')"
+                    ), "First Tab must focus the Skip to October preview link"
+                    skip = page.evaluate("""() => {
+                      const a = document.activeElement;
+                      const css = getComputedStyle(a);
+                      const r = a.getBoundingClientRect();
+                      return {
+                        width: innerWidth,
+                        outlineStyle: css.outlineStyle,
+                        outlineWidth: parseFloat(css.outlineWidth) || 0,
+                        fullyVisible: r.top >= -1 && r.bottom <= innerHeight + 1
+                      };
+                    }""")
+                    assert skip["width"] == width, "Unexpected browser viewport width"
+                    assert skip["outlineStyle"] != "none" and skip["outlineWidth"] >= 3
+                    assert skip["fullyVisible"], "Skip link focus outline not in viewport"
+                    if width <= 390:
+                        page.screenshot(path=str(OUT / ("october-" + str(width) + "-skip.png")))
+
+                    stage = "main target DOM focus"
+                    page.keyboard.press("Enter")
+                    focus = page.evaluate("""() => {
+                      const main = document.querySelector('main#main');
+                      const css = getComputedStyle(main);
+                      const r = main.getBoundingClientRect();
+                      return {
+                        hash: location.hash,
+                        activeTag: document.activeElement?.tagName,
+                        activeId: document.activeElement?.id,
+                        mainIsActive: document.activeElement === main,
+                        outlineStyle: css.outlineStyle,
+                        outlineWidth: parseFloat(css.outlineWidth) || 0,
+                        mainTop: r.top, viewportHeight: innerHeight,
+                        horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+                      };
+                    }""")
+                    assert focus["hash"] == "#main", "Skip link failed to navigate to #main"
+                    assert focus["mainIsActive"], (
+                        "Skip link reached #main but DOM focus stayed on " +
+                        str(focus["activeTag"]) + "#" + str(focus["activeId"])
+                    )
+                    assert focus["outlineStyle"] != "none" and focus["outlineWidth"] >= 3, (
+                        "Compiled main focus ring was not visible"
+                    )
+                    assert not focus["horizontalOverflow"], "Horizontal overflow at requested width"
+                    if width <= 390:
+                        page.screenshot(
+                            path=str(OUT / ("october-" + str(width) + "-main-focused.png"))
+                        )
+                    result["skip_to_main"] = focus
+
+                    stage = "keyboard movement into main content"
+                    page.keyboard.press("Tab")
+                    assert page.evaluate(
+                        "() => Boolean(document.activeElement?.closest('main#main'))"
+                    ), "Next Tab after skip did not enter main content"
+
+                    stage = "footer keyboard focus"
+                    privacy = page.locator("footer a[href='/privacy/']")
+                    privacy.focus()
+                    assert privacy.evaluate("(el) => document.activeElement === el")
+                    page.keyboard.press("Shift+Tab")
+                    assert page.evaluate(
+                        "() => document.activeElement?.matches('footer a[href=\"/news\"]')"
+                    ), "Shift+Tab from Privacy did not reach preceding footer Dailies link"
+                    page.keyboard.press("Tab")
+                    assert privacy.evaluate("(el) => document.activeElement === el"), (
+                        "Tab did not move focus back to the Privacy footer link"
+                    )
+                    footer = privacy.evaluate("""(el) => {
+                      const css = getComputedStyle(el);
+                      const r = el.getBoundingClientRect();
+                      const hit = document.elementFromPoint(
+                        (r.left + r.right) / 2, (r.top + r.bottom) / 2
+                      );
+                      return {
+                        accessibleName: el.textContent.trim(),
+                        outlineStyle: css.outlineStyle,
+                        outlineWidth: parseFloat(css.outlineWidth) || 0,
+                        fullyVisible: r.top >= -1 && r.bottom <= innerHeight + 1,
+                        hitOnLink: hit === el || el.contains(hit),
+                        viewportWidth: innerWidth,
+                        horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+                      };
+                    }""")
+                    assert footer["accessibleName"] == "Privacy"
+                    assert footer["outlineStyle"] != "none" and footer["outlineWidth"] >= 3, (
+                        "Privacy footer link keyboard focus outline not visible"
+                    )
+                    assert footer["fullyVisible"] and footer["hitOnLink"], (
+                        "Privacy link focus obscured or outside viewport"
+                    )
+                    assert not footer["horizontalOverflow"] and footer["viewportWidth"] == width
+                    if width <= 390:
+                        page.screenshot(
+                            path=str(OUT / ("october-" + str(width) + "-footer-focused.png"))
+                        )
+                        page.screenshot(
+                            path=str(OUT / ("october-" + str(width) + "-fullpage.png")),
+                            full_page=True,
+                        )
+                    assert not errors, "Browser page exceptions: " + repr(errors)
+                    assert not external_requests, (
+                        "External request attempted: " + repr(external_requests)
+                    )
+                    result["footer_focus"] = footer
+                    result["status"] = "PASS"
+                    print("PASS October Monthly " + str(width) + "x" + str(height)
+                          + " skip-main focus + Privacy footer focus")
+                except Exception as exc:
+                    result["status"] = "FAIL"
+                    result["stage"] = stage
+                    result["error"] = str(exc)[:900]
+                    failures.append(result)
+                    print("FAIL October Monthly " + str(width) + " " + stage + ": "
+                          + str(exc)[:700])
+                    try:
+                        page.screenshot(
+                            path=str(OUT / ("october-" + str(width) + "-failure.png")),
+                            full_page=True,
+                        )
+                    except Exception:
+                        pass
+                finally:
+                    results.append(result)
+                    context.close()
+        finally:
+            browser.close()
+finally:
+    server.shutdown()
+    server.server_close()
+
+summary = {
+    "cases": len(results) * 2,
+    "passed": 2 * (len(results) - len(failures)),
+    "failed": 2 * len(failures),
+    "results": results,
+    "scope": "Actual compiled Preview HTML/CSS, native Chromium keyboard, 127.0.0.1 only.",
+    "limitations": (
+        "NOT a live authenticated Vercel Preview or genuine NVDA, VoiceOver or "
+        "physical-device certification. No customer, consent or Production access."
+    ),
+}
+(OUT / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+print("RESULT " + json.dumps({
+    "viewports": len(results),
+    "passed_viewports": len(results) - len(failures),
+    "failed_viewports": len(failures),
+    "keyboard_cases": len(results) * 2,
+    "compiled_preview": True,
+    "deployed_preview": False,
+}, sort_keys=True))
+assert len(results) == 4, "Expected four exact viewport cases"
+assert not failures, "October Monthly compiled keyboard focus QA failed"

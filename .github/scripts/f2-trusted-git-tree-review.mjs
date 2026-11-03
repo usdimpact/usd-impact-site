@@ -23,6 +23,17 @@ const BLOCKED_RUNTIME=/^(?:\.vercel|\.astro|\.cache|coverage|dist|node_modules)(
 export function policySha256(text){
   return createHash('sha256').update(Buffer.from(text,'utf8')).digest('hex');
 }
+// Canonical Git blob SHA: never trust caller-supplied observed blob IDs.
+export function gitBlobSha1(value){
+  const bytes=Buffer.isBuffer(value)?value:Buffer.from(value,'utf8');
+  return createHash('sha1').update('blob '+bytes.length+String.fromCharCode(0)).update(bytes).digest('hex');
+}
+// Canonical sorted audit-map digest; expected digest MUST be owner-controlled.
+export function auditBlobsSha256(value){
+  if(!value||typeof value!=='object'||Array.isArray(value))return null;
+  const pairs=Object.entries(value).sort(([a],[b])=>a<b?-1:a>b?1:0);
+  return createHash('sha256').update(JSON.stringify(pairs),'utf8').digest('hex');
+}
 function validRel(path){
   return typeof path==='string'&&path.length>0&&path.length<900
     &&REL.test(path)&&!path.startsWith('/')
@@ -73,12 +84,17 @@ export function reviewFrozenScoreTrees(input){
     errors.push('GitHub repository, exact PR HEAD or Git tree provenance mismatch');
     return hold();
   }
-  const raw=input.trustedPolicyJson;
-  if(typeof raw!=='string'||Buffer.byteLength(raw,'utf8')>MAX_POLICY_BYTES
+  // Buffer allows canonical raw-byte hashing; trustedPolicyJson is kept as
+  // a deprecated UTF-8 alias for older read-only fixtures/callers.
+  const value=input.trustedPolicyBytes??input.trustedPolicyJson;
+  const bytes=Buffer.isBuffer(value)?value:typeof value==='string'?Buffer.from(value,'utf8'):null;
+  const raw=bytes?.toString('utf8')??'';
+  if(!bytes||bytes.length===0||bytes.length>MAX_POLICY_BYTES
      ||!SHA40.test(input.expectedPolicyGitBlobSha??'')
      ||!SHA64.test(input.expectedPolicySha256??'')
      ||input.observedPolicyGitBlobSha!==input.expectedPolicyGitBlobSha
-     ||policySha256(raw)!==input.expectedPolicySha256){
+     ||gitBlobSha1(bytes)!==input.expectedPolicyGitBlobSha
+     ||policySha256(bytes)!==input.expectedPolicySha256){
     errors.push('Protected policy content does not match externally pinned SHA1 and SHA256');
     return hold();
   }
@@ -109,6 +125,11 @@ export function reviewFrozenScoreTrees(input){
      ||Object.keys(expectedAudit).sort().join('|')!==[...AUDIT].sort().join('|')
      ||!AUDIT.every(rel=>SHA40.test(expectedAudit[rel]))){
     errors.push('Three externally pinned guard/auditor file blobs required');
+    return hold();
+  }
+  if(!SHA64.test(input.expectedAuditBlobsSha256??'')
+     ||auditBlobsSha256(expectedAudit)!==input.expectedAuditBlobsSha256){
+    errors.push('Protected audit blobs do not match externally pinned SHA256');
     return hold();
   }
   const base=readWebTree(input.baseTree,'trusted-base',errors);

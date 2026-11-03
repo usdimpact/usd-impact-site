@@ -275,6 +275,7 @@ export function digestFrozenScoreEnvelope(html) {
     }).map(normalizeHeldScoreHtmlAttributes);
   return {
     body:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(body)),
+    document:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(html)),
     head:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(head)),
     hero:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(hero)),
     title:scoreRegionSha256(normalizeHeldScoreHtmlAttributes(title)),
@@ -301,6 +302,9 @@ export function checkFrozenScorePublishedEnvelope(inventory,distRoot) {
   const draftWholeHead=frozen?.draft_containment_whole_head_sha256;
   const draftHeadNames=Object.keys(draftWholeHead?.sha256??{}).sort();
   const originalHeadNames=Object.keys(frozen?.original_whole_head_reference_sha256??{}).sort();
+  const draftWholeDocument=frozen?.draft_containment_whole_document_sha256;
+  const draftDocumentNames=Object.keys(draftWholeDocument?.sha256??{}).sort();
+  const originalDocumentNames=Object.keys(frozen?.original_whole_document_reference_sha256??{}).sort();
   const shaOk=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
   if(!frozen||frozen.source_main_commit!=='d1740214f5737996f321a037efe3f2f7d21ecd64'
     ||frozen.normalization!=='HTML_ATTR_NONCE_INTEGRITY_VALUE_ONLY_V1'
@@ -330,6 +334,17 @@ export function checkFrozenScorePublishedEnvelope(inventory,distRoot) {
     ||!draftHeadNames.every(name=>shaOk(draftWholeHead.sha256[name])
       &&shaOk(frozen.original_whole_head_reference_sha256[name])
       &&draftWholeHead.sha256[name]!==frozen.original_whole_head_reference_sha256[name])
+    ||!draftWholeDocument
+    ||draftWholeDocument.evidence_commit!=='cdaa9a4de861f36088a9b1308f96afe7b8ac220e'
+    ||draftWholeDocument.evidence_workflow_run!==41701921845
+    ||draftWholeDocument.scope!=='DRAFT_ONLY_COMPLETE_DOCUMENT_NOT_ORIGINAL_MAIN_LICENSE'
+    ||draftWholeDocument.classification_match!=='PRODUCTION_PREVIEW_16_OF_16'
+    ||frozen.whole_document_release_status!=='HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN'
+    ||originalDocumentNames.join('|')!==reportNames.join('|')
+    ||draftDocumentNames.join('|')!==reportNames.join('|')
+    ||!draftDocumentNames.every(name=>shaOk(draftWholeDocument.sha256[name])
+      &&shaOk(frozen.original_whole_document_reference_sha256[name])
+      &&draftWholeDocument.sha256[name]!==frozen.original_whole_document_reference_sha256[name])
     ||!actualReports.every(name=>{
       const r=frozen.reports[name];
       return r&&['hero','title','meta_description','jsonld'].every(key=>shaOk(r[key]))
@@ -360,6 +375,11 @@ export function checkFrozenScorePublishedEnvelope(inventory,distRoot) {
     // even when the Score source closure was legitimately re-pinned.
     if(actual.head!==draftWholeHead.sha256[name])
       failures.push('Changed Draft-frozen historical Score whole head on rights HOLD: '+name);
+    // B10: browsers can move text following </body> into rendered content.
+    // Hash the entire raw HTML document, including bytes outside <head>/<body>.
+    // This Draft-only check is not a trusted F2 release gate.
+    if(actual.document!==draftWholeDocument.sha256[name])
+      failures.push('Changed Draft-frozen historical Score complete document on rights HOLD: '+name);
     for(const field of ['hero','title','meta_description','jsonld','jsonld_count']) {
       if(actual[field]!==golden[field])
         failures.push('Changed original Production historical Score '+field+' on rights HOLD: '+name);

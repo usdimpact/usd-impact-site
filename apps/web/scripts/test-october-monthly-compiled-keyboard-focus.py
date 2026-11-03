@@ -249,6 +249,88 @@ try:
                             path=str(OUT / ("october-" + str(width) + "-fullpage.png")),
                             full_page=True,
                         )
+                    # W3C WCAG 2.2 SC 1.4.12: test the four user text-spacing
+                    # overrides without changing any other authored CSS property.
+                    # This is an extra regression beyond default-width reflow.
+                    stage = "WCAG 1.4.12 user text spacing"
+                    page.add_style_tag(content="""
+                      * {
+                        line-height: 1.5 !important;
+                        letter-spacing: .12em !important;
+                        word-spacing: .16em !important;
+                      }
+                      p { margin-bottom: 2em !important; }
+                    """)
+                    page.locator("main h1").scroll_into_view_if_needed()
+                    spacing = page.evaluate("""() => {
+                      const p = document.querySelector('main p');
+                      const ps = p ? getComputedStyle(p) : null;
+                      const font = ps ? parseFloat(ps.fontSize) : 0;
+                      const root = document.documentElement;
+                      const elements = Array.from(document.querySelectorAll('body *'));
+                      const overflowNodes = elements.filter(el => {
+                        if (getComputedStyle(el).display === 'none') return false;
+                        const r = el.getBoundingClientRect();
+                        return r.right > innerWidth + 1 || r.left < -1;
+                      }).slice(0, 5).map(el => ({
+                        tag: el.tagName,
+                        cls: String(el.className).slice(0, 90),
+                        text: (el.textContent || '').trim().slice(0, 60)
+                      }));
+                      return {
+                        viewport: innerWidth,
+                        scrollWidth: root.scrollWidth,
+                        lineHeightRatio: font ? parseFloat(ps.lineHeight) / font : 0,
+                        paragraphSpacingRatio: font ? parseFloat(ps.marginBottom) / font : 0,
+                        letterSpacingRatio: font ? parseFloat(ps.letterSpacing) / font : 0,
+                        wordSpacingRatio: font ? parseFloat(ps.wordSpacing) / font : 0,
+                        sections: document.querySelectorAll('main section[aria-labelledby]').length,
+                        footerPrivacyVisible: Boolean(document.querySelector('footer a[href="/privacy/"]')),
+                        overflowingElements: overflowNodes
+                      };
+                    }""")
+                    assert spacing["lineHeightRatio"] >= 1.49
+                    assert spacing["paragraphSpacingRatio"] >= 1.99
+                    assert spacing["letterSpacingRatio"] >= .119
+                    assert spacing["wordSpacingRatio"] >= .159
+                    assert spacing["viewport"] == width
+                    assert spacing["scrollWidth"] <= width + 1, (
+                        "User text spacing introduces horizontal scrolling: " +
+                        json.dumps(spacing)
+                    )
+                    assert spacing["sections"] == 7 and spacing["footerPrivacyVisible"], (
+                        "User text spacing removed Monthly content or footer"
+                    )
+                    # The already keyboard-tested footer must remain unobscured
+                    # after the user-defined text spacing changes reflow.
+                    privacy.scroll_into_view_if_needed()
+                    privacy.focus()
+                    footer_after_spacing = privacy.evaluate("""(el) => {
+                      const css = getComputedStyle(el);
+                      const rect = el.getBoundingClientRect();
+                      const hit = document.elementFromPoint(
+                        (rect.left + rect.right) / 2,
+                        (rect.top + rect.bottom) / 2
+                      );
+                      return {
+                        focused: document.activeElement === el,
+                        visible: rect.top >= -1 && rect.bottom <= innerHeight + 1,
+                        onTop: hit === el || el.contains(hit),
+                        outline: parseFloat(css.outlineWidth) || 0
+                      };
+                    }""")
+                    assert all([
+                        footer_after_spacing["focused"],
+                        footer_after_spacing["visible"],
+                        footer_after_spacing["onTop"],
+                        footer_after_spacing["outline"] >= 3,
+                    ]), "Text spacing obstructed footer keyboard focus"
+                    result["text_spacing"] = spacing
+                    if width <= 390:
+                        page.screenshot(
+                            path=str(OUT / ("october-" + str(width) + "-textspacing-fullpage.png")),
+                            full_page=True,
+                        )
                     assert not errors, "Browser page exceptions: " + repr(errors)
                     assert not external_requests, (
                         "External request attempted: " + repr(external_requests)

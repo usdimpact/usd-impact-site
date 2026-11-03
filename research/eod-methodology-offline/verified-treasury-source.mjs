@@ -28,21 +28,40 @@ function utcInstant(instant) {
   return d;
 }
 
-export function validateTreasuryClock(day, asOfUtc) {
+function treasuryReviewContext(day, asOfUtc, {allowRetrospective = false} = {}) {
   assert(dayIsValid(day), 'invalid requested observation day');
+  assert(typeof allowRetrospective === 'boolean', 'retrospective flag must be boolean');
+  const targetDow = new Date(day + 'T00:00:00Z').getUTCDay();
+  assert(targetDow !== 0 && targetDow !== 6, 'weekend observation requires separate policy');
   const instant = utcInstant(asOfUtc);
   const local = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
     timeZone: NEW_YORK, year: 'numeric', month: '2-digit', day: '2-digit',
     weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
   }).formatToParts(instant).map(p => [p.type, p.value]));
   const localDay = local.year + '-' + local.month + '-' + local.day;
-  assert(localDay === day, 'the requested observation day must match New York as-of day');
-  assert(!['Sat', 'Sun'].includes(local.weekday), 'weekend observation requires separate policy');
-  // Treasury says par yields are usually available by 18:00 ET but can be delayed.
-  // Add a 30-minute buffer; actual record presence remains mandatory.
-  assert(Number(local.hour) * 60 + Number(local.minute) >= 18 * 60 + 30,
-    'Treasury source check is before 18:30 New York availability buffer');
-  return instant.toISOString();
+  const calendarLag = (Date.parse(localDay + 'T00:00:00Z') -
+    Date.parse(day + 'T00:00:00Z')) / 86400000;
+  if (calendarLag === 0) {
+    // Treasury usually publishes by 18:00 ET, but delayed releases occur.
+    // This is an eligibility buffer, not evidence of first publication.
+    assert(Number(local.hour) * 60 + Number(local.minute) >= 1110,
+      'Treasury source check is before 18:30 New York availability buffer');
+  } else {
+    // Retrospective only by explicit opt-in; allow weekend capture of a
+    // WEEKDAY observation. Do not silently treat old data as today's data.
+    assert(allowRetrospective && calendarLag >= 1 && calendarLag <= 14,
+      'retrospective review requires explicit opt-in within 14 calendar days');
+  }
+  return {
+    as_of_utc: instant.toISOString(),
+    capture_mode: calendarLag === 0 ? 'SAME_DAY_AFTER_1830_ET' : 'EXPLICIT_RETROSPECTIVE',
+    capture_lag_calendar_days: calendarLag,
+    first_issuer_publication_time_verified: false,
+  };
+}
+
+export function validateTreasuryClock(day, asOfUtc, options = {}) {
+  return treasuryReviewContext(day, asOfUtc, options).as_of_utc;
 }
 
 export function treasuryMonthlyUrl(day) {
@@ -128,8 +147,9 @@ function conciseNumber(n, locale) {
   return new Intl.NumberFormat(locale, {minimumFractionDigits: 2, maximumFractionDigits: 4}).format(n);
 }
 
-function buildCandidateInternal({ xml, day, asOfUtc, transport, httpChecks = null }) {
-  const clock = validateTreasuryClock(day, asOfUtc);
+function buildCandidateInternal({ xml, day, asOfUtc, transport, httpChecks = null, allowRetrospective = false }) {
+  const context = treasuryReviewContext(day, asOfUtc, {allowRetrospective});
+  const clock = context.as_of_utc;
   assert(['UNVERIFIED_FIXTURE', 'EXACT_ISSUER_RESPONSE'].includes(transport),
     'unrecognized source transport');
   const sourceUrl = treasuryMonthlyUrl(day);
@@ -151,6 +171,7 @@ function buildCandidateInternal({ xml, day, asOfUtc, transport, httpChecks = nul
       transport,
       source_sha256: createHash('sha256').update(xml, 'utf8').digest('hex'),
       http_response_checks: transport === 'EXACT_ISSUER_RESPONSE' ? httpChecks : null,
+      capture_context: context,
       source_observation_date: observation?.observation_date ?? null,
       publisher_release_instant: null,
       publisher_release_instant_verified: false,
@@ -179,8 +200,8 @@ function buildCandidateInternal({ xml, day, asOfUtc, transport, httpChecks = nul
 }
 
 // Public test/fixture API always treats local XML as UNVERIFIED, regardless of extra props.
-export function buildTreasuryCandidate({xml, day, asOfUtc}) {
-  return buildCandidateInternal({xml, day, asOfUtc, transport: 'UNVERIFIED_FIXTURE'});
+export function buildTreasuryCandidate({xml, day, asOfUtc, allowRetrospective = false}) {
+  return buildCandidateInternal({xml, day, asOfUtc, transport: 'UNVERIFIED_FIXTURE', allowRetrospective});
 }
 
 export function renderTreasuryCandidate(record, language) {
@@ -282,6 +303,7 @@ export function redactedIssuerProbeReceipt(candidate) {
     source_sha256: candidate.record.source.source_sha256,
     // Presence/type checks only. Header validators are not first publication times.
     http_response_checks: candidate.record.source.http_response_checks,
+    capture_context: candidate.record.source.capture_context,
     parsed_field_ids: candidate.record.facts.map(f => f.id),
     parsed_field_count: candidate.record.facts.length,
     original_publisher_release_time_verified: false,
@@ -295,11 +317,11 @@ export function redactedIssuerProbeReceipt(candidate) {
 
 // Exact-origin fetch remains opt-in and never authorizes a public output.
 // The capture timestamp is recorded AFTER the response was actually received.
-export async function fetchTreasuryCandidate({day, fetchImpl, clock = () => new Date()}) {
+export async function fetchTreasuryCandidate({day, fetchImpl, clock = () => new Date(), allowRetrospective = false}) {
   assert(typeof clock === 'function', 'explicit clock provider required');
   const started = clock();
   assert(started instanceof Date && Number.isFinite(started.valueOf()), 'invalid request clock');
-  validateTreasuryClock(day, started.toISOString());
+  validateTreasuryClock(day, started.toISOString(), {allowRetrospective});
   assert(typeof fetchImpl === 'function', 'explicit issuer fetch capability required');
   const url = treasuryMonthlyUrl(day);
   const response = await fetchImpl(url, {
@@ -351,9 +373,9 @@ export async function fetchTreasuryCandidate({day, fetchImpl, clock = () => new 
   const captured = clock();
   assert(captured instanceof Date && Number.isFinite(captured.valueOf()), 'invalid capture clock');
   assert(captured.getTime() >= started.getTime(), 'capture clock moved backwards');
-  const capturedAsOfUtc = validateTreasuryClock(day, captured.toISOString());
+  const capturedAsOfUtc = validateTreasuryClock(day, captured.toISOString(), {allowRetrospective});
   return buildCandidateInternal({
     xml: text, day, asOfUtc: capturedAsOfUtc, transport: 'EXACT_ISSUER_RESPONSE',
-    httpChecks,
+    httpChecks, allowRetrospective,
   });
 }

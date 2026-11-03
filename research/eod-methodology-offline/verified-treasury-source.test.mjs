@@ -58,8 +58,76 @@ test('Treasury-specific 18:30 New York availability buffer is mandatory, includi
     '2026-07-02T22:30:00.000Z');
   assert.throws(() => validateTreasuryClock(DAY, '2026-11-03T22:37:00Z'), /before 18:30/);
   assert.equal(validateTreasuryClock(DAY, '2026-11-03T23:30:00Z'), '2026-11-03T23:30:00.000Z');
-  assert.throws(() => validateTreasuryClock(DAY, '2026-11-04T05:15:00Z'), /match New York/);
+  assert.throws(() => validateTreasuryClock(DAY, '2026-11-04T05:15:00Z'), /retrospective review/);
   assert.throws(() => validateTreasuryClock('2026-11-07', '2026-11-07T22:37:00Z'), /weekend/);
+});
+
+test('delayed-source review must be explicitly requested; same-day buffer cannot be bypassed', () => {
+  const later='2026-11-04T12:00:00Z';
+  assert.throws(()=>validateTreasuryClock(DAY,later),/retrospective review/);
+  assert.equal(validateTreasuryClock(DAY,later,{allowRetrospective:true}),
+    '2026-11-04T12:00:00.000Z');
+  assert.throws(()=>validateTreasuryClock(DAY,'2026-11-03T23:29:00Z',
+    {allowRetrospective:true}),/before 18:30/);
+  assert.throws(()=>validateTreasuryClock(DAY,later,
+    {allowRetrospective:'true'}),/boolean/);
+});
+
+test('retrospective source review is bounded by 14 days and never pre-dated', () => {
+  assert.equal(validateTreasuryClock(DAY,'2026-11-17T12:00:00Z',
+    {allowRetrospective:true}),'2026-11-17T12:00:00.000Z');
+  assert.throws(()=>validateTreasuryClock(DAY,'2026-11-18T12:00:00Z',
+    {allowRetrospective:true}),/within 14/);
+  assert.throws(()=>validateTreasuryClock(DAY,'2026-11-02T23:59:00Z',
+    {allowRetrospective:true}),/within 14/);
+});
+
+test('post-trading-day weekend inspection is allowed only for a weekday observation', () => {
+  const capture='2026-11-07T15:00:00Z'; // Saturday in New York
+  assert.equal(validateTreasuryClock('2026-11-06',capture,
+    {allowRetrospective:true}),'2026-11-07T15:00:00.000Z');
+  assert.throws(()=>validateTreasuryClock('2026-11-07',capture,
+    {allowRetrospective:true}),/weekend observation/);
+});
+
+test('English and Spanish late review drafts explicitly separate observation and later capture', () => {
+  const x=buildTreasuryCandidate({
+    xml:xmlRows(),day:DAY,asOfUtc:'2026-11-04T12:00:00Z',allowRetrospective:true
+  });
+  assert.equal(x.record.source.capture_context.capture_mode,'EXPLICIT_RETROSPECTIVE');
+  assert.equal(x.record.source.capture_context.capture_lag_calendar_days,1);
+  assert.equal(x.record.source.capture_context.first_issuer_publication_time_verified,false);
+  assert.match(x.en.markdown,/Retrospective review: captured after/);
+  assert.match(x.es.markdown,/Revisión retrospectiva/);
+  assert.deepEqual(x.en.canonical_values,x.es.canonical_values);
+  assert.equal(x.record.public_release_authorized,false);
+});
+
+test('one explicitly late issuer fetch keeps private metadata and original dated observation', async () => {
+  const x=await fetchTreasuryCandidate({day:DAY,allowRetrospective:true,
+    clock:()=>new Date('2026-11-04T12:00:00Z'),fetchImpl:async()=>response()});
+  const receipt=redactedIssuerProbeReceipt(x);
+  assert.equal(receipt.capture_context.capture_mode,'EXPLICIT_RETROSPECTIVE');
+  assert.equal(receipt.capture_context.capture_lag_calendar_days,1);
+  assert.equal(receipt.observation_date,DAY);
+  assert.equal(receipt.original_publisher_release_time_verified,false);
+  assert.doesNotMatch(JSON.stringify(receipt),/4\.12|4\.65|0\.53|markdown/);
+});
+
+test('forged dates or retrospective privilege cannot be rendered as valid source facts', () => {
+  const x=buildTreasuryCandidate({
+    xml:xmlRows(),day:DAY,asOfUtc:'2026-11-04T12:00:00Z',allowRetrospective:true
+  });
+  assert.throws(()=>renderTreasuryCandidate({
+    ...x.record,source:{...x.record.source,capture_context:{
+      ...x.record.source.capture_context,capture_lag_calendar_days:0
+    }}
+  },'en'),/capture date relation/);
+  assert.throws(()=>renderTreasuryCandidate({
+    ...x.record,source:{...x.record.source,capture_context:{
+      ...x.record.source.capture_context,capture_mode:'SAME_DAY_AFTER_1830_ET'
+    }}
+  },'es'),/retrospective review/);
 });
 
 test('the parser extracts dated issuer-shaped 2Y/10Y observations, not unrequested series', () => {
@@ -208,7 +276,7 @@ test('source completed after New York midnight cannot be backdated', async () =>
   const clock = () => new Date(++calls === 1 ? AS_OF : '2026-11-04T05:15:00Z');
   await assert.rejects(()=>fetchTreasuryCandidate({
     day:DAY,clock,fetchImpl:async()=>response()
-  }), /match New York/);
+  }), /retrospective review/);
 });
 
 test('streaming source length is bounded before buffering any oversized response', async () => {

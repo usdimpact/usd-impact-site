@@ -162,6 +162,17 @@ try {
   put('src/content/catalyst-briefs/2026-11-03-example-preview.md','---\ntitle: Event\n---\n');
   assert.deepEqual(inspect(),[],'ordinary content directories must remain outside this extra closure');
 
+  // N3: reject committed or stale runtime build outputs before deployment.
+  // These roots must not be skipped wholesale just because they look generated.
+  for (const dir of ['.vercel','.astro','.cache','coverage']) {
+    const file=dir==='.vercel'?'.vercel/output/functions/score.func/index.js':dir+'/qa7-injected.json';
+    put(file,'{\"source\":\"untrusted Score payload\"}\\n');
+    assert.ok(inspect().some(s=>s.includes('Forbidden pre-build runtime directory: '+dir)),
+      'N3: staged '+dir+' tree MUST block before Astro build');
+    fs.rmSync(path.join(root,dir),{recursive:true,force:true});
+    assert.deepEqual(inspect(),[],'N3 '+dir+' removal must restore clean source');
+  }
+
   // A symlink is never an allowed new build input.
   fs.symlinkSync(path.join(root,weekly),path.join(root,'src/pages/reports/weekly/alias.astro'));
   assert.ok(inspect().some(s=>s.includes('Symlink in held build input:')),

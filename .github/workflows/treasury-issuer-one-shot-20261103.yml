@@ -1,0 +1,89 @@
+name: Treasury issuer one-time private schema receipt (no publication)
+
+# One-time pull-request-opened check only. No schedule, dispatch, keys, artifacts or production.
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: treasury-issuer-once-20261103
+  cancel-in-progress: false
+
+jobs:
+  issuer-schema-once:
+    if: >-
+      github.event.pull_request.base.ref == 'research/method-daily-direct-treasury-draft-20261103' &&
+      github.event.pull_request.head.ref == 'research/treasury-xml-one-shot-20261103'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout pinned Draft source without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: 36b1f20264cad96dff6fd749640b21ca51812bc5
+          persist-credentials: false
+      - name: Node 24 without package installation
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '24.x'
+      - name: Run one bounded exact-Node Treasury issuer check (nonnumeric receipt)
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import {fetchTreasuryCandidate, redactedIssuerProbeReceipt} from './research/eod-methodology-offline/verified-treasury-source.mjs';
+          let requestCount = 0;
+          const oneFetch = async (url, opts) => {
+            if (++requestCount !== 1) throw new Error('ONE_FETCH_LIMIT');
+            return fetch(url, opts);
+          };
+          try {
+            const candidate = await fetchTreasuryCandidate({
+              day: '2026-10-30', allowRetrospective: true,
+              clock: () => new Date(), fetchImpl: oneFetch,
+            });
+            const receipt = redactedIssuerProbeReceipt(candidate);
+            if (requestCount !== 1 ||
+                receipt.source_hash_basis !== 'FETCH_BODY_BYTES_POST_HTTP_DECODING' ||
+                receipt.http_response_checks?.http_status !== 200 ||
+                receipt.parsed_field_count !== 3 ||
+                receipt.capture_context?.capture_mode !== 'EXPLICIT_RETROSPECTIVE' ||
+                receipt.public_release_authorized !== false ||
+                receipt.original_score_reconstruction_authorized !== false ||
+                receipt.issuer_raw_values_redacted !== true) {
+              throw new Error('INCOMPLETE_NONNUMERIC_RECEIPT');
+            }
+            console.log('TREASURY_ONE_SHOT_RECEIPT ' + JSON.stringify({
+              scenario: receipt.scenario,
+              observation_date: receipt.observation_date,
+              captured_as_of_utc: receipt.captured_as_of_utc,
+              source_sha256: receipt.source_sha256,
+              source_hash_basis: receipt.source_hash_basis,
+              http_response_checks: receipt.http_response_checks,
+              capture_mode: receipt.capture_context?.capture_mode,
+              parsed_field_ids: receipt.parsed_field_ids,
+              parsed_field_count: receipt.parsed_field_count,
+              origin_provenance_level: receipt.origin_provenance_level,
+              original_publisher_release_time_verified: false,
+              issuer_numerical_data_not_logged: true,
+              public_release_authorized: false,
+              original_score_reconstruction_authorized: false,
+              rights_and_editorial_hold: true,
+              requests_made: requestCount,
+            }));
+          } catch (error) {
+            // Do not log fetched body, values, raw headers, URL query, or exception stack.
+            const code = error?.message === 'ONE_FETCH_LIMIT' ? 'ONE_FETCH_LIMIT' :
+              error?.message === 'INCOMPLETE_NONNUMERIC_RECEIPT' ? 'INCOMPLETE_RECEIPT' :
+              'SOURCE_OR_PARSER_NOT_VERIFIED';
+            console.error('TREASURY_ONE_SHOT_BLOCKED ' + JSON.stringify({
+              code, error_type: String(error?.name ?? 'Error').slice(0,32),
+              requests_made: requestCount, public_release_authorized: false,
+            }));
+            process.exitCode = 1;
+          }
+          NODE
+
+# No other jobs, no retry workflow, no scheduled fetches, no artifacts.

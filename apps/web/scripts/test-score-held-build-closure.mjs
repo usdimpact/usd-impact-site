@@ -57,6 +57,10 @@ try {
   put(weekly,'<main>original historical Score report</main>\n');
   put(monthly,'<main>original historical Monthly report</main>\n');
   put('src/layouts/BaseLayout.astro','<slot />\n');
+  const evidenceComponent='src/components/FrameworkEvidenceChain.astro';
+  const configImportedLib='src/lib/localization-policy.js';
+  put(evidenceComponent,'<aside>Original verified evidence chain</aside>\n');
+  put(configImportedLib,'export const heldPolicy = true;\n');
   put(hook,'export const render = () => "unchanged";\n');
   put(astro,"export default { output: 'static' };\n");
   put('package.json','{"scripts":{"build":"astro build"}}\n');
@@ -100,6 +104,38 @@ try {
   assert.ok(inspect().some(s=>s.includes('Changed frozen build input: '+hook)),
     'E3: changed approved build script must fail');
   put(hook,'export const render = () => "unchanged";\n');
+
+  // Claude QA6 E4/E5/E6/G2b/G3: guard build influencers beyond src/pages.
+  // E5: imported component can alter all historical Weekly figures.
+  put(evidenceComponent,'<aside>Changed Score figure +9.99</aside>\n');
+  assert.ok(inspect().some(s=>s.includes('Changed frozen build input: '+evidenceComponent)),
+    'E5: edited imported report component MUST fail');
+  put(evidenceComponent,'<aside>Original verified evidence chain</aside>\n');
+
+  // E6: report layout can alter history without touching the route itself.
+  put('src/layouts/BaseLayout.astro','<slot />\n<!-- tampered historical Score -->\n');
+  assert.ok(inspect().some(s=>s.includes('Changed frozen build input: src/layouts/BaseLayout.astro')),
+    'E6: edited shared layout MUST fail');
+  put('src/layouts/BaseLayout.astro','<slot />\n');
+
+  // E4: an Astro-config imported helper can modify dist on process exit.
+  put(configImportedLib,'export const heldPolicy = false; // exit hook hijack\n');
+  assert.ok(inspect().some(s=>s.includes('Changed frozen build input: '+configImportedLib)),
+    'E4: changed build-imported src/lib helper MUST fail');
+  put(configImportedLib,'export const heldPolicy = true;\n');
+
+  // G2b: public/ file is copied straight to dist, bypassing route inventories.
+  const publicScore='public/data/score-archive/2026-11-06.json';
+  put(publicScore,'{"date":"2026-11-06","score":9.99}\n');
+  assert.ok(inspect().some(s=>s.includes('New unreviewed build input: '+publicScore)),
+    'G2b: extra public Score JSON MUST fail');
+  fs.rmSync(path.join(root,'public/data/score-archive'),{recursive:true,force:true});
+
+  // G3: Vercel runtime rewrites could redirect reviewed report routes.
+  put('vercel.json','{"buildCommand":"npm run validate && npm run build","rewrites":[{"source":"/reports/weekly/:d","destination":"/api/report/:d"}]}\n');
+  assert.ok(inspect().some(s=>s.includes('Changed frozen build input: vercel.json')),
+    'G3: Vercel rewrite targeting Score route MUST fail');
+  put('vercel.json','{"buildCommand":"npm run validate && npm run build"}\n');
 
   // F: an alternate Astro srcDir makes the old collection guard scan the wrong tree.
   put(astro,"export default { srcDir: './alternate-src', output: 'static' };\n");

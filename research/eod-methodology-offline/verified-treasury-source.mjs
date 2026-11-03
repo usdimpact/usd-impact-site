@@ -128,7 +128,7 @@ function conciseNumber(n, locale) {
   return new Intl.NumberFormat(locale, {minimumFractionDigits: 2, maximumFractionDigits: 4}).format(n);
 }
 
-function buildCandidateInternal({ xml, day, asOfUtc, transport }) {
+function buildCandidateInternal({ xml, day, asOfUtc, transport, httpChecks = null }) {
   const clock = validateTreasuryClock(day, asOfUtc);
   assert(['UNVERIFIED_FIXTURE', 'EXACT_ISSUER_RESPONSE'].includes(transport),
     'unrecognized source transport');
@@ -150,6 +150,7 @@ function buildCandidateInternal({ xml, day, asOfUtc, transport }) {
       documentation_url: TREASURY_SOURCE_DOCUMENT,
       transport,
       source_sha256: createHash('sha256').update(xml, 'utf8').digest('hex'),
+      http_response_checks: transport === 'EXACT_ISSUER_RESPONSE' ? httpChecks : null,
       source_observation_date: observation?.observation_date ?? null,
       publisher_release_instant: null,
       publisher_release_instant_verified: false,
@@ -279,6 +280,8 @@ export function redactedIssuerProbeReceipt(candidate) {
     captured_as_of_utc: candidate.record.captured_as_of_utc,
     issuer_url: candidate.record.source.canonical_url,
     source_sha256: candidate.record.source.source_sha256,
+    // Presence/type checks only. Header validators are not first publication times.
+    http_response_checks: candidate.record.source.http_response_checks,
     parsed_field_ids: candidate.record.facts.map(f => f.id),
     parsed_field_count: candidate.record.facts.length,
     original_publisher_release_time_verified: false,
@@ -311,6 +314,16 @@ export async function fetchTreasuryCandidate({day, fetchImpl, clock = () => new 
   const mime = response.headers?.get('content-type') ?? '';
   assert(/^(?:application\/(?:xml|atom\+xml)|text\/xml)(?:;|$)/i.test(mime),
     'unexpected Treasury content type');
+  // Record bounded header presence/type metadata, never header payloads, rates,
+  // or assumptions about the original first-publication time.
+  const httpChecks = {
+    http_status: response.status,
+    content_type: mime.split(';')[0].trim().toLowerCase(),
+    http_date_header_present: Boolean(response.headers?.get('date')),
+    last_modified_header_present: Boolean(response.headers?.get('last-modified')),
+    etag_header_present: Boolean(response.headers?.get('etag')),
+    original_first_publication_instant_verified: false,
+  };
   const length = Number(response.headers?.get('content-length') ?? 0);
   assert(Number.isFinite(length) && length >= 0 && length <= MAX_XML_BYTES,
     'issuer response length outside bound');
@@ -341,5 +354,6 @@ export async function fetchTreasuryCandidate({day, fetchImpl, clock = () => new 
   const capturedAsOfUtc = validateTreasuryClock(day, captured.toISOString());
   return buildCandidateInternal({
     xml: text, day, asOfUtc: capturedAsOfUtc, transport: 'EXACT_ISSUER_RESPONSE',
+    httpChecks,
   });
 }

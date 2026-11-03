@@ -54,11 +54,15 @@ export function reviewText(text){
       }
     }
     if(blocked)continue;
-    // Known methodology versions (v2) are not computed score readings.
-    const withoutVersions=line.replace(/\bv(?:ersion)?\s*\d+(?:\.\d+)?\b/giu,'');
-    if(/(?:\bweekly\s+score\b|\boriginal\s+score\b|\bthree\s+dials?\b|\btres\s+diales\b|\bpuntuaci[oó]n\s+(?:semanal|original)\b)/iu.test(line)
-      && /\d/u.test(withoutVersions)){
-      reviews.push({line:index+1,rule:'manual_score_context_review'});
+    // Unrelated issuer numbers before a methodology mention must not be
+    // misclassified as numeric Score claims. Examine only the text after
+    // the Score/Dials reference; "Three Dials v2" is a version, not a value.
+    const ambiguous=/(?:\bweekly\s+score\b|\boriginal\s+score\b|\bthree\s+dials?\b|\btres\s+diales\b|\bpuntuaci[oó]n\s+(?:semanal|original)\b)/iu.exec(line);
+    if(ambiguous){
+      const after=line.slice(ambiguous.index+ambiguous[0].length);
+      const withoutVersions=after.replace(/\bv(?:ersion)?\s*\d+(?:\.\d+)?\b/giu,'');
+      if(/\d/u.test(withoutVersions))
+        reviews.push({line:index+1,rule:'manual_score_context_review'});
     }
   }
   return {holds,reviews};

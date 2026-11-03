@@ -162,6 +162,75 @@ export function checkBuiltScoreArtifacts(baseline, distRoot) {
   return failures;
 }
 
+
+// F1d: freeze the Astro renderer and route surface as Git-identity snapshots.
+// Includes ALL src/pages files: a new alternate Score route, an edited report
+// template, or an Astro build hook must fail even if it reuses a held date.
+// Two explicitly reviewed snapshots are allowed: #1087's security stack and
+// #1088's main-compatible branded Monthly integration. Neither is a license.
+// This is strict during rights HOLD: new/changed legitimate routes require a
+// separately reviewed policy update before their build may pass.
+export const F1D_RENDER_PINS=Object.freeze({
+  astroConfig:'4c0313a910f85402af9e0421048cac1d0e328b4e',
+  pageTrees:Object.freeze([
+    '8cf3d1fd29a3d4b7fc4f1aacfbd52ac828064c25', // #1087
+    'f6baaba42ab4d04e122f071f3d942e4890d36816', // #1088
+  ]),
+  vercelBuildCommand:'node scripts/score-held-report-source-guard.mjs && npm run validate && npm run build && node scripts/score-held-report-source-guard.mjs --built',
+});
+
+// Reconstruct the git tree object independently of .git availability, which
+// is not guaranteed inside Vercel's source checkout.
+export function gitTreeSha1(directory) {
+  const items=fs.readdirSync(directory,{withFileTypes:true}).map(entry=>{
+    const full=path.join(directory,entry.name);
+    const stat=fs.lstatSync(full);
+    if(stat.isSymbolicLink()) throw Error('Symlink forbidden in protected route tree: '+entry.name);
+    if(stat.isDirectory()) return {name:entry.name,sort:entry.name+'/',mode:'40000',sha:gitTreeSha1(full)};
+    if(stat.isFile()) return {
+      name:entry.name,sort:entry.name,
+      mode:(stat.mode&0o111)?'100755':'100644',
+      sha:gitBlobSha1(fs.readFileSync(full)),
+    };
+    throw Error('Unsupported protected route entry: '+entry.name);
+  }).sort((a,b)=>Buffer.compare(Buffer.from(a.sort),Buffer.from(b.sort)));
+  const bytes=Buffer.concat(items.map(item=>Buffer.concat([
+    Buffer.from(item.mode+' '+item.name+'\0'),
+    Buffer.from(item.sha,'hex'),
+  ])));
+  return createHash('sha1').update('tree '+bytes.length+'\0').update(bytes).digest('hex');
+}
+
+export function checkFrozenScoreRenderSurfaces(root=webRoot,pins=F1D_RENDER_PINS) {
+  const failures=[];
+  try{
+    const astro=fs.readFileSync(path.join(root,'astro.config.mjs'));
+    if(gitBlobSha1(astro)!==pins.astroConfig)
+      failures.push('F1d: unapproved Astro config / srcDir / build hook modification');
+  }catch{
+    failures.push('F1d: missing or unreadable Astro config');
+  }
+  try{
+    const pages=path.join(root,'src','pages');
+    if(!fs.lstatSync(pages).isDirectory() || fs.lstatSync(pages).isSymbolicLink())
+      throw Error('Invalid protected route directory');
+    if(!pins.pageTrees.includes(gitTreeSha1(pages)))
+      failures.push('F1d: unapproved page templates or alternate route tree');
+  }catch{
+    failures.push('F1d: missing, symlinked or unreadable protected route tree');
+  }
+  try{
+    const vercel=JSON.parse(fs.readFileSync(path.join(root,'vercel.json'),'utf8'));
+    if(vercel.buildCommand!==pins.vercelBuildCommand)
+      failures.push('F1d/F3: Vercel build must run source and built rights guards');
+    if(vercel.git?.deploymentEnabled?.['agent/*']!==false)
+      failures.push('F1d/F3: held agent branches must not deploy automatically');
+  }catch{
+    failures.push('F1d/F3: missing or invalid Vercel deployment policy');
+  }
+  return failures;
+}
+
 export function verifyCurrentScoreHold(root=webRoot) {
   const inventory=JSON.parse(fs.readFileSync(baselineFile,'utf8'));
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'scripts/score-rights-consumer-manifest.json'),'utf8'));
@@ -173,6 +242,7 @@ export function verifyCurrentScoreHold(root=webRoot) {
   return [
     ...evaluateScoreContentFreeze(inventory,collectScoreContents(root),rightsHold),
     ...checkScoreLoaderContract(fs.readFileSync(path.join(root,'src','content.config.ts'),'utf8')),
+    ...checkFrozenScoreRenderSurfaces(root),
   ];
 }
 

@@ -170,12 +170,14 @@ function conciseNumber(n, locale) {
   return new Intl.NumberFormat(locale, {minimumFractionDigits: 2, maximumFractionDigits: 4}).format(n);
 }
 
-function buildCandidateInternal({ xml, day, asOfUtc, transport, httpChecks = null, allowRetrospective = false }) {
+function buildCandidateInternal({ xml, day, asOfUtc, transport, httpChecks = null, allowRetrospective = false, rawSourceSha256 = null }) {
   const context = treasuryReviewContext(day, asOfUtc, {allowRetrospective});
   const clock = context.as_of_utc;
   assert(['UNVERIFIED_FIXTURE', 'EXACT_ISSUER_RESPONSE'].includes(transport),
     'unrecognized source transport');
   const sourceUrl = treasuryMonthlyUrl(day);
+  assert(rawSourceSha256 === null || (/^[0-9a-f]{64}$/.test(rawSourceSha256) &&
+    transport === 'EXACT_ISSUER_RESPONSE'), 'raw response digest is not valid for this transport');
   const observation = readTreasuryObservation(xml, day);
   const spread = observation === null ? null :
     Math.round((observation.bc_10year_percent - observation.bc_2year_percent) * 10000) / 10000;
@@ -197,7 +199,9 @@ function buildCandidateInternal({ xml, day, asOfUtc, transport, httpChecks = nul
       origin_provenance_level: transport === 'EXACT_ISSUER_RESPONSE' ?
         'ASSERTED_EXACT_RESPONSE_URL_NOT_INDEPENDENTLY_ATTESTED' : 'UNVERIFIED_FIXTURE',
       issuer_payload_origin_independently_attested: false,
-      source_sha256: createHash('sha256').update(xml, 'utf8').digest('hex'),
+      source_sha256: rawSourceSha256 ?? createHash('sha256').update(xml, 'utf8').digest('hex'),
+      source_hash_basis: rawSourceSha256 ? 'RAW_HTTP_RESPONSE_BYTES' :
+        (transport === 'EXACT_ISSUER_RESPONSE' ? 'REENCODED_TEXT_FALLBACK_NOT_RAW' : 'UTF8_FIXTURE_TEXT'),
       http_response_checks: transport === 'EXACT_ISSUER_RESPONSE' ? httpChecks : null,
       capture_context: context,
       source_observation_date: observation?.observation_date ?? null,
@@ -249,6 +253,11 @@ export function renderTreasuryCandidate(record, language) {
       record.source.transport === 'EXACT_ISSUER_RESPONSE' ?
         'ASSERTED_EXACT_RESPONSE_URL_NOT_INDEPENDENTLY_ATTESTED' : 'UNVERIFIED_FIXTURE'
     ) &&
+    (record.source.source_hash_basis === 'UTF8_FIXTURE_TEXT' &&
+      record.source.transport === 'UNVERIFIED_FIXTURE' ||
+      ['RAW_HTTP_RESPONSE_BYTES', 'REENCODED_TEXT_FALLBACK_NOT_RAW'].includes(record.source.source_hash_basis) &&
+      record.source.transport === 'EXACT_ISSUER_RESPONSE') &&
+    /^[a-f0-9]{64}$/.test(record.source.source_sha256) &&
     record.source.source_rights_status === 'SEPARATE_LEGAL_EDITORIAL_REVIEW_REQUIRED' &&
     record.source.documentation_url === TREASURY_SOURCE_DOCUMENT &&
     record.source.canonical_url === treasuryMonthlyUrl(record.observation_date) &&
@@ -364,6 +373,7 @@ export function redactedIssuerProbeReceipt(candidate) {
     origin_provenance_level: candidate.record.source.origin_provenance_level,
     issuer_payload_origin_independently_attested: false,
     source_sha256: candidate.record.source.source_sha256,
+    source_hash_basis: candidate.record.source.source_hash_basis,
     // Presence/type checks only. Header validators are not first publication times.
     http_response_checks: candidate.record.source.http_response_checks,
     capture_context: candidate.record.source.capture_context,
@@ -413,11 +423,13 @@ export async function fetchTreasuryCandidate({day, fetchImpl, clock = () => new 
   assert(Number.isFinite(length) && length >= 0 && length <= MAX_XML_BYTES,
     'issuer response length outside bound');
   let text;
+  let rawSourceSha256 = null;
   if (response.body && typeof response.body.getReader === 'function') {
     // Actual HTTP streams are limited before full buffering. Fixture responses
     // without streams may use the text() fallback for injected tests only.
     const reader = response.body.getReader();
-    const decoder = new TextDecoder();
+    const decoder = new TextDecoder('utf-8', {fatal:true});
+    const rawHash = createHash('sha256');
     const parts = [];
     let bytes = 0;
     while (true) {
@@ -425,10 +437,12 @@ export async function fetchTreasuryCandidate({day, fetchImpl, clock = () => new 
       if (done) break;
       bytes += value.byteLength;
       assert(bytes <= MAX_XML_BYTES, 'issuer stream exceeds bounded XML size');
+      rawHash.update(value);
       parts.push(decoder.decode(value, {stream:true}));
     }
     parts.push(decoder.decode());
     text = parts.join('');
+    rawSourceSha256 = rawHash.digest('hex');
   } else {
     text = await response.text();
     assert(Buffer.byteLength(text, 'utf8') <= MAX_XML_BYTES, 'issuer body exceeds bound');
@@ -439,6 +453,6 @@ export async function fetchTreasuryCandidate({day, fetchImpl, clock = () => new 
   const capturedAsOfUtc = validateTreasuryClock(day, captured.toISOString(), {allowRetrospective});
   return buildCandidateInternal({
     xml: text, day, asOfUtc: capturedAsOfUtc, transport: 'EXACT_ISSUER_RESPONSE',
-    httpChecks, allowRetrospective,
+    httpChecks, allowRetrospective, rawSourceSha256,
   });
 }

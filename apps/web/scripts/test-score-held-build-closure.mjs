@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
   FROZEN_SOURCE_COMMIT,
   DYNAMIC_CONTENT_PREFIXES,
+  GENERATED_FONT_SHA256,
   AUDIT_ONLY_EXCLUSIONS,
   collectWebBuildInputs,
   evaluatePinnedBuildInputs,
@@ -72,6 +73,14 @@ try {
     pinned_files:{...clean.files},
   };
   assert.deepEqual(inspect(),[],'small clean fixture must pass');
+  assert.equal(Object.keys(GENERATED_FONT_SHA256).length,6);
+  const counterfeitFont='public/assets/fonts/inter-OFL-1.1.txt';
+  put(counterfeitFont,'unapproved font license contents');
+  assert.ok(inspect().some(s=>s.includes('Generated font digest mismatch: '+counterfeitFont)),
+    'unknown generated font bytes must never be accepted');
+  fs.unlinkSync(path.join(root,counterfeitFont));
+  assert.deepEqual(inspect(),[],'generated font negative must recover');
+
 
   // E: same-date historical HTML changes via the existing page template.
   put(weekly,'<main>altered historical Score body on the same date</main>\n');

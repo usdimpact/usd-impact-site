@@ -161,8 +161,30 @@ export function verifyHeldBuildInputs(root=webRoot, baselinePath=manifestPath) {
   return [...scan.failures,...evaluatePinnedBuildInputs(baseline,scan.files)];
 }
 
+// Future F2 trusted-base evaluator: run this already-trusted copy of the guard
+// and its baseline against an untrusted PR's web root. --root never loads a
+// manifest or evaluator from the candidate directory. Required main ruleset
+// and independent workflow execution remain separate owner-controlled gates.
+export function selectF2TrustedCandidateRoot(argv=process.argv,defaultRoot=webRoot) {
+  const positions=argv.flatMap((a,i)=>a==='--root'?[i]:[]);
+  if(positions.length>1)throw Error('F2 --root may be supplied only once');
+  if(!positions.length)return defaultRoot;
+  const raw=argv[positions[0]+1];
+  if(typeof raw!=='string'||!path.isAbsolute(raw)||raw.startsWith('-'))
+    throw Error('F2 --root requires one absolute candidate web path');
+  const candidate=path.resolve(raw);
+  if(!fs.lstatSync(candidate).isDirectory()||fs.lstatSync(candidate).isSymbolicLink())
+    throw Error('F2 candidate --root must be a real directory');
+  return candidate;
+}
+
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
-  const failures=verifyHeldBuildInputs();
+  let failures;
+  try {
+    failures=verifyHeldBuildInputs(selectF2TrustedCandidateRoot());
+  }catch(err){
+    failures=['F2 invalid trusted evaluator candidate root: '+String(err?.message||err)];
+  }
   if(failures.length) {
     console.error('Score F1d build-input closure FAIL ('+failures.length+' issues):\n- '+failures.slice(0,30).join('\n- '));
     process.exitCode=1;

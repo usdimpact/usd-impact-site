@@ -213,6 +213,31 @@ try:
                         if width <= 390:
                             page.screenshot(path=str(OUT / (label + "-" + str(width) + "-focused.png")))
 
+                        # First-visit footer privacy dialog: while the initial banner
+                        # is still visible, Escape must return focus to the footer
+                        # opener without recording any consent preference.
+                        first_visit_footer = page.locator("#privacy-settings-button")
+                        assert banner.is_visible()
+                        assert page.evaluate("window.USDImpactConsent.preference()") == "unset"
+                        first_visit_footer.click()
+                        pristine_dialog = page.locator("#privacy-consent-dialog")
+                        assert pristine_dialog.evaluate("(el) => el.open"), (
+                            "First-visit footer privacy dialog did not open"
+                        )
+                        page.keyboard.press("Escape")
+                        assert not pristine_dialog.evaluate("(el) => el.open"), (
+                            "First-visit footer privacy dialog did not close on Escape"
+                        )
+                        assert first_visit_footer.evaluate(
+                            "(el) => document.activeElement === el"
+                        ), "First-visit footer privacy dialog did not restore opener focus"
+                        assert page.evaluate("window.USDImpactConsent.preference()") == "unset", (
+                            "Opening or closing privacy options changed consent"
+                        )
+                        assert banner.is_visible(), (
+                            "Initial banner disappeared without an explicit choice"
+                        )
+
                         # Native consent modal must own Escape and restore focus to its opener.
                         review = page.locator("#privacy-consent-review")
                         review.click()
@@ -328,6 +353,7 @@ try:
                             "native_cookie": True, "visual_focus": True,
                             "escape_scoped": True, "modal_focus": True,
                             "skip_target_focus": True, "semantic_headings": True,
+                            "first_visit_footer_modal_focus": True,
                             "full_page_mobile_keyboard": mobile_full_page_keyboard,
                             "external_requests": 0,
                         })

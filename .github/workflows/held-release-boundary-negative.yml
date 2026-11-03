@@ -100,3 +100,5 @@ jobs:
         run: npm ci --no-audit --no-fund --strict-allow-scripts
       - name: Run E/E3/F/G/H full npm builds, plus actual historical layout-digest mutation
         run: node .github/scripts/score-f1d-qa6-full-build.mjs
+      - name: Run E4/E5/E6/G2b/G3 true full builds with configured Vercel command (both classifications)
+        run: node .github/scripts/score-f1d-qa7-full-build.mjs

@@ -64,6 +64,27 @@ export function validateTreasuryClock(day, asOfUtc, options = {}) {
   return treasuryReviewContext(day, asOfUtc, options).as_of_utc;
 }
 
+// Pure CLI plan. The network-facing option requires an exact combination of
+// flags and one fixed Treasury URL; it cannot silently choose a historical day.
+export function planTreasuryProbeArgs(args) {
+  assert(Array.isArray(args) && args.every(a => typeof a === 'string'),
+    'CLI flags must be a string list');
+  if (args.length === 1 && args[0] === '--demo') {
+    return {mode:'demo', day:null, allowRetrospective:false};
+  }
+  if (args.length === 1 && args[0] === '--live-official') {
+    return {mode:'live', day:null, allowRetrospective:false};
+  }
+  const prefix = '--probe-date=';
+  if (args.length === 3 && args[0] === '--live-official' &&
+      args[1].startsWith(prefix) && args[2] === '--allow-retrospective') {
+    const day = args[1].slice(prefix.length);
+    assert(dayIsValid(day), 'invalid explicit retrospective observation date');
+    return {mode:'live', day, allowRetrospective:true};
+  }
+  throw new Error('Use --demo; --live-official; or --live-official --probe-date=YYYY-MM-DD --allow-retrospective. No implicit network requests.');
+}
+
 export function treasuryMonthlyUrl(day) {
   assert(dayIsValid(day), 'invalid requested observation day');
   return TREASURY_ENDPOINT + '?data=daily_treasury_yield_curve&field_tdr_date_value_month=' +

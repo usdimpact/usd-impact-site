@@ -234,6 +234,39 @@ export function renderTreasuryCandidate(record, language) {
   };
 }
 
+// Deliberately redacted receipt for source-schema QA. A real-data CLI must not
+// accidentally publish rates or translated fact narratives in CI or terminal logs.
+export function redactedIssuerProbeReceipt(candidate) {
+  assert(candidate?.record?.schema === TREASURY_METHOD_VERSION &&
+    candidate.record.source?.transport === 'EXACT_ISSUER_RESPONSE' &&
+    candidate.record.public_release_authorized === false &&
+    candidate.record.source.public_redistribution_rights_granted === false &&
+    candidate.record.original_score_reconstruction_authorized === false,
+    'not a rights-held exact-issuer private candidate');
+  // Revalidate fact and bilingual integrity before acknowledging the response.
+  const en = renderTreasuryCandidate(candidate.record, 'en');
+  const es = renderTreasuryCandidate(candidate.record, 'es');
+  assert(JSON.stringify(en.fact_ids) === JSON.stringify(es.fact_ids) &&
+    JSON.stringify(en.canonical_values) === JSON.stringify(es.canonical_values),
+    'inconsistent bilingual candidate');
+  return {
+    schema: candidate.record.schema,
+    scenario: 'PRIVATE_ISSUER_SCHEMA_RECEIPT_ONLY',
+    observation_date: candidate.record.observation_date,
+    captured_as_of_utc: candidate.record.captured_as_of_utc,
+    issuer_url: candidate.record.source.canonical_url,
+    source_sha256: candidate.record.source.source_sha256,
+    parsed_field_ids: candidate.record.facts.map(f => f.id),
+    parsed_field_count: candidate.record.facts.length,
+    original_publisher_release_time_verified: false,
+    issuer_raw_values_redacted: true,
+    issuer_numerical_data_not_logged: true,
+    public_release_authorized: false,
+    original_score_reconstruction_authorized: false,
+    rights_and_editorial_hold: true,
+  };
+}
+
 // Exact-origin fetch remains opt-in and never authorizes a public output.
 // The capture timestamp is recorded AFTER the response was actually received.
 export async function fetchTreasuryCandidate({day, fetchImpl, clock = () => new Date()}) {

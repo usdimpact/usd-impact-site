@@ -269,7 +269,7 @@ try:
                     # This is an extra regression beyond default-width reflow.
                     stage = "WCAG 1.4.12 user text spacing"
                     page.add_style_tag(url=css_path)
-                    page.locator("main h1").scroll_into_view_if_needed()
+                    page.locator("h1#page-title").scroll_into_view_if_needed()
                     spacing = page.evaluate("""() => {
                       const p = document.querySelector('main p');
                       const ps = p ? getComputedStyle(p) : null;

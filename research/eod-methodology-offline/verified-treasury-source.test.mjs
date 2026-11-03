@@ -308,6 +308,46 @@ test('CLI must route live output through nonnumeric redaction', () => {
   assert.match(source, /const report = args\[0\] === '--demo'/);
 });
 
+test('real issuer Atom namespaces are required; similarly named foreign data fail closed', () => {
+  const clean = xmlRows();
+  assert.throws(()=>readTreasuryObservation(
+    clean.replace('xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices"',
+      'xmlns:d="https://untrusted.example/odata"'), DAY),
+  /unexpected Treasury Atom or OData namespaces/);
+  assert.throws(()=>readTreasuryObservation(
+    clean.replace('xmlns="http://www.w3.org/2005/Atom"',
+      'xmlns="https://untrusted.example/atom"'), DAY),
+  /unexpected Treasury Atom or OData namespaces/);
+  assert.throws(()=>readTreasuryObservation(
+    clean.replace('<d:NEW_DATE ', '<x:NEW_DATE ').replace('</d:NEW_DATE>', '</x:NEW_DATE>'),
+    DAY), /bad or missing Treasury observation date/);
+});
+
+test('Treasury source values must be inside one m:properties within application/xml content', () => {
+  const clean = xmlRows();
+  assert.throws(()=>readTreasuryObservation(
+    clean.replace('<content type="application/xml">', '<content type="text/plain">'),
+    DAY), /unexpected Treasury Atom entry content/);
+  assert.throws(()=>readTreasuryObservation(
+    clean.replace('</m:properties>', '</m:properties><m:properties><d:BC_2YEAR>9</d:BC_2YEAR></m:properties>'),
+    DAY), /missing or duplicate Treasury OData properties/);
+  assert.throws(()=>readTreasuryObservation(
+    clean.replace('<d:BC_2YEAR', '</m:properties><d:BC_2YEAR'),
+    DAY), /BC_2YEAR missing/);
+});
+
+test('a matching observation date outside issuer properties cannot fabricate a dated record', () => {
+  const clean=xmlRows([{day:'2026-11-02',two:'4.01',ten:'4.21'}]);
+  const changed=clean.replace('</content>', '</content><d:NEW_DATE>2026-11-03T00:00:00</d:NEW_DATE>');
+  assert.equal(readTreasuryObservation(changed,DAY),null);
+});
+
+test('a truncated Atom entry cannot silently become a no-observation day', () => {
+  const clean=xmlRows([{day:'2026-11-02',two:'4.01',ten:'4.21'}]);
+  assert.throws(()=>readTreasuryObservation(clean.replace('</entry>', ''),
+    DAY), /malformed or incomplete Treasury Atom entry/);
+});
+
 test('cannot render as an approved public article or in an unapproved language', () => {
   const x=buildTreasuryCandidate({xml:xmlRows(),day:DAY,asOfUtc:AS_OF});
   assert.throws(()=>renderTreasuryCandidate({...x.record,public_release_authorized:true},'en'),

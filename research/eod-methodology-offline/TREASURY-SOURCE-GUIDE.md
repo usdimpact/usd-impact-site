@@ -20,12 +20,15 @@ Treasury's government publisher status reduces source ambiguity. It **does not a
 The `verified-treasury-source.mjs` adapter:
 
 1. Builds a fixed HTTPS Treasury monthly feed URL from a validated `YYYY-MM-DD` date. Rejects redirects, wrong issuer URLs, non-XML responses, HTTP failures and oversized bodies.
-2. Requires **17:00 or later in America/New_York** on the matching business-day. This is a proposed observation checkpoint, not a guaranteed publisher release time or global market close.
+2. Requires **18:30 or later in America/New_York** on the matching business-day for any real Treasury-source candidate. Treasury's official methodology states the day's par yields are *usually available by 18:00 Eastern, but may be delayed*; 18:30 is only a conservative research buffer, **not a guarantee**. Missing current-day observations stay held or become an explicitly dated no-observation educational note, never invented market facts. This source-specific cutoff is deliberately different from the unrelated **17:37 synthetic research dry run** in parent #1082, which remains OFF by default and must never be wired to this real-source adapter without separate schedule authorization.
 3. Parses a tightly scoped, size-bounded XML subset from the official feed: unique observation dates; exact two- and ten-year par yields; no `DOCTYPE`, dynamic XML entities or unknown numeric fields. Missing rates and duplicates FAIL; a valid feed without the target date yields a labeled `NO_MATCHING_OBSERVATION_DRAFT`.
 4. Stores an integrity hash and limited source metadata in the transient candidate object, **not raw vendor data archives**. `feed/updated` is **not** a certified publication time: original issuer release instant is explicitly `null`.
 5. Produces one canonical fact list and deterministic EN/ES Markdown drafts with identical IDs, values and source URLs; no text suggests Treasury curves prove a dollar/gold/oil/BTC/equity price move.
 6. Returns `public_release_authorized:false`, `human_editorial_review_required:true`, `source_rights_status:SEPARATE_LEGAL_EDITORIAL_REVIEW_REQUIRED` and `original_score_reconstruction_authorized:false` in all cases.
 7. Local hand-supplied XML always receives `UNVERIFIED_FIXTURE` provenance, even if a caller tries to pass a stronger transport flag. Only the explicit exact-origin fetch function can label a response `EXACT_ISSUER_RESPONSE`; that label **does not establish rights or original issuer release time**.
+
+
+**Primary publication-timing source:** [Treasury Yield Curve Methodology](https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics/treasury-yield-curve-methodology) explicitly states rates are typically available by **6:00 p.m. ET** and can be delayed. Separately, 3:30 p.m. ET is approximately when indicative *inputs* are collected, not when the resulting public XML has necessarily been published. Never equate those two times or use source `feed/updated` as a verified initial availability timestamp.
 
 ## Running the safe example
 

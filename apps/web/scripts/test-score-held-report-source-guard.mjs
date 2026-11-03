@@ -365,7 +365,7 @@ console.log('Score F2 staged trusted-source --root parser PASS (no GitHub rulese
     .map(n=>/^weekly-reports\/(\d{4}-\d{2}-\d{2})\.md$/.exec(n)?.[1]).filter(Boolean);
   const sha256=b=>createHash('sha256').update(b).digest('hex');
   const files={};
-  const goldenReports={},goldenBody={},goldenJson={};
+  const goldenReports={},goldenBody={},originalMainBodies={},goldenJson={};
   const template=(name)=>'<!doctype html><html><head><title>Original '+name+
     '</title><meta name="description" content="Original report description">'+
     '<script type="application/ld+json">{"source":"pinned fixture"}</script></head>'+
@@ -384,6 +384,7 @@ console.log('Score F2 staged trusted-source --root parser PASS (no GitHub rulese
       const dig=digestFrozenScoreEnvelope(html);
       const {body,...regions}=dig;
       goldenReports[route]=regions;goldenBody[route]=body;
+      originalMainBodies[route]=sha256(Buffer.from('distinct original Production whole body '+route));
     }
     for(const family of ['weekly','progress'])for(const date of weeklyDates){
       const rel='newsletter/'+family+'/'+date+'.json';
@@ -392,7 +393,11 @@ console.log('Score F2 staged trusted-source --root parser PASS (no GitHub rulese
     }
     const safe={...original,rendered_score_envelope_sha256:{
       ...base,reports:goldenReports,newsletter_json:goldenJson,
-      original_whole_body_reference_sha256:goldenBody,
+      original_whole_body_reference_sha256:originalMainBodies,
+      draft_containment_whole_body_sha256:{
+        ...base.draft_containment_whole_body_sha256,
+        sha256:goldenBody,
+      },
     }};
     const verify=()=>checkFrozenScorePublishedEnvelope(safe,tmp);
     assert.deepEqual(verify(),[],'clean 16+26 generated artifacts must pass');
@@ -428,8 +433,8 @@ console.log('Score F2 staged trusted-source --root parser PASS (no GitHub rulese
     // A changed navigation shell remains outside the currently accepted
     // original-main regions. Record the limitation, do not claim FULL BODY pass.
     write(htmlRel,files[htmlRel].replace('Provisional shell','Changed global shell'));
-    assert.deepEqual(verify(),[],
-      'Unapproved whole-body shell changes are separately release-blocked, not validated by region guard');
+    assert.ok(verify().some(x=>x.includes('Changed Draft-frozen historical Score whole body')),
+      'new Draft-frozen whole-body digest MUST block changed navigation shell');
     write(htmlRel,template(weekly));
     assert.deepEqual(verify(),[],'all synthetic Score regions restored');
   }finally{fs.rmSync(tmp,{recursive:true,force:true});}

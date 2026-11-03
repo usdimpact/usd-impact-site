@@ -365,3 +365,6 @@ for (const [label, block] of [
 }
 
 console.log('daily news publication workflow tests pass');
+
+// Safe, offline test of the separate guarded auto-publication controller.
+await import('./test-daily-news-auto-publish-workflow.mjs');

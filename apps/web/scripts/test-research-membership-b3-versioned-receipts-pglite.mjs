@@ -21,10 +21,10 @@ const begin = (id,version='research-receipt-business-v3',hash='a'.repeat(64)) =>
 const finish = (r,status,code=null) =>
   rpc('finish_review_receipt',[r.receipt_id,r.attempt_count,r.lease_token,status,code]);
 const journal = async () => query('select conflict_code,provider_event_id,attempt_count from research_receipt_review.conflict_observations order by observed_at,id');
-async function rejected(fn) {
+async function rejected(fn, expected = /append-only/) {
   let error; try {await fn();} catch(e){error=e;}
   assert.ok(error,'append-only evidence must reject mutations');
-  assert.match(String(error?.message??error), /append-only/);
+  assert.match(String(error?.message??error), expected);
 }
 try {
   await db.exec(sql);
@@ -83,7 +83,10 @@ try {
   assert.ok(count>=4);
   await rejected(()=>query("update research_receipt_review.conflict_observations set conflict_code='foreign_invoice'"));
   await rejected(()=>query('delete from research_receipt_review.conflict_observations'));
-  await rejected(()=>query('truncate research_receipt_review.conflict_observations'));
+  // PostgreSQL may reject this TRUNCATE through a referring FK BEFORE reaching our trigger.
+  // Both protections are valid rejections; the resolution table below verifies the trigger.
+  await rejected(()=>query('truncate research_receipt_review.conflict_observations'),
+    /append-only|cannot truncate a table referenced in a foreign key constraint/);
   assert.equal((await query('select count(*)::integer as c from research_receipt_review.conflict_observations'))[0].c,count);
 
   const resolution=await query("insert into research_receipt_review.resolution_observations(conflict_id,resolution_code) select id,'owner_reviewed' from research_receipt_review.conflict_observations where provider_event_id='review:event-b' limit 1 returning id");

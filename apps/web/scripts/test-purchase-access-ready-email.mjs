@@ -57,6 +57,24 @@ const disabled = await deliverPurchaseAccessReadyEmail({
 assert.equal(disabled.enabled, false);
 assert.equal(fetchCalled, false);
 
+// When app-owned email is HOLD, malformed notification-only data must be inert.
+const heldInvalidRecipient = await deliverPurchaseAccessReadyEmail({
+  accessResult: {
+    ...accessResult,
+    profile: { ...accessResult.profile, email: 'not-an-email' },
+  },
+  environment: {},
+  ledgerFetchImpl: async () => {
+    throw new Error('held email must not call the ledger');
+  },
+  providerFetchImpl: async () => {
+    throw new Error('held email must not call Resend');
+  },
+});
+assert.equal(heldInvalidRecipient.enabled, false);
+assert.equal(heldInvalidRecipient.state.enabled, false);
+
+
 assert.throws(
   () => createPurchaseAccessReadyEmailIntent({
     accessResult: {

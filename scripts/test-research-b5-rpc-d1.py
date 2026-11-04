@@ -406,6 +406,37 @@ def real_app_js_postgres_bridge():
            0,"numeric provider product creates no paid observation")
     print("PASS B5 REAL APP JS->PG: exact issuer/attach/observe/bind bodies, internal product ID, SHA, pending/no grant, negative numeric product and retry",flush=True)
 
+
+def narrow_owner_rls_negatives():
+    """D2 candidate policy regression: privileged helper cannot abuse owner role."""
+    with db() as root:
+        root.execute("set role review_checkout_owner")
+        try:
+            eq(one(root,"select count(*) from public.entitlements where product_id <> 'research-membership'"),
+               0,"C11 owner cannot see Library Pass or unrelated entitlements")
+            eq(one(root,"select count(*) from public.entitlements where product_id='research-membership'"),
+               1,"C11 owner can still detect complimentary Research")
+            refused(root,
+              """insert into public.subscriptions
+                 (account_id,product_id,provider,provider_subscription_id,billing_interval,state)
+                 values (%s::uuid,'research-membership','lemon-squeezy',
+                   'forbidden-active-from-owner','monthly','active')""",
+              (A[4],))
+            refused(root,
+              """insert into public.subscriptions
+                 (account_id,product_id,provider,provider_subscription_id,billing_interval,state)
+                 values (%s::uuid,'research-membership','foreign-provider',
+                   'forbidden-foreign-provider','monthly','pending')""",
+              (A[4],))
+            refused(root,"update public.profiles set status='suspended' where account_id=%s::uuid",(A[0],))
+        finally:
+            root.execute("reset role")
+        eq(one(root,"select status::text from public.profiles where account_id=%s::uuid",(A[0],)),
+           "active","C11 profile status remains active")
+        eq(one(root,"select count(*) from public.subscriptions where provider_subscription_id like %s",
+               ("forbidden-%",)),0,"C11 no unauthorized subscription persisted")
+    print("PASS B5 C11 narrowed owner RLS: deny nonpending/foreign-provider writes, profile UPDATE, and non-Research entitlement reads",flush=True)
+
 def main():
     assert os.environ.get("GITHUB_ACTIONS")=="true"
     assert os.environ.get("GITHUB_HEAD_REF")=="agent/1103-b5-rpc-sql-isolated-d1-20261104"
@@ -415,6 +446,7 @@ def main():
     unbound(); concurrent_paid(); complimentary_and_library(); expiry_and_immutable(); test_c4_payment_before_expiry_with_late_webhook()
     catalog_quarantine()
     real_app_js_postgres_bridge()
+    narrow_owner_rls_negatives()
     with db() as root:
         version=one(root,"show server_version")
     print("B5_D1_POSTGRES_PROPOSAL_PASS "+json.dumps({"version":version,

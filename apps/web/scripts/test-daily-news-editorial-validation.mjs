@@ -496,6 +496,25 @@ function eiaWpsrCalendarFixture(date, editionDate = '2026-11-04', event = 'EIA W
   };
 }
 assert.doesNotThrow(() => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-04')));
+assert.doesNotThrow(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-04', '2026-11-04', 'EIA weekly inventories')),
+  'EIA alternative WPSR event wording must retain the same official calendar gate',
+);
+assert.throws(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-06', '2026-11-04', 'EIA weekly inventory report')),
+  /EIA WPSR date 2026-11-06 conflicts/,
+  'alternate EIA weekly inventory wording must not bypass the release-date check',
+);
+for (const landing of [
+  'https://www.eia.gov/petroleum/supply/weekly/',
+  'https://www.eia.gov/petroleum/supply/weekly/index.php',
+]) {
+  assert.doesNotThrow(() => validateEditorialBundle({
+    ...eiaWpsrCalendarFixture('2026-11-04'),
+    sources: [source('eia-dated', '2026-10-28', landing)],
+  }), 'EIA current-release landing pages with a directly verified displayed Release Date remain eligible');
+}
+
 assert.throws(
   () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-06')),
   /EIA WPSR date 2026-11-06 conflicts with the verified official 2026 release calendar/,

@@ -174,7 +174,7 @@ async function serviceRequest({ config, path, method = 'GET', body, prefer, fetc
       Accept: 'application/json',
       'Content-Type': 'application/json',
       apikey: config.secretKey,
-      Authorization: `Bearer ${config.secretKey}`,
+      // Opaque sb_secret_ keys authenticate through apikey, never Bearer.
       ...(prefer ? { Prefer: prefer } : {}),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),

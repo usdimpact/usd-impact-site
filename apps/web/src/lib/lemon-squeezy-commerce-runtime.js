@@ -21,6 +21,7 @@ import {
   resolveCommerceReadiness,
 } from './commerce-provider.js';
 import { deliverPurchaseAccessReadyEmail } from './purchase-access-ready-email.js';
+import { lifecycleEmailLedgerEnabled } from './launch-email-dispatch.js';
 import { readSupabaseServerConfig } from './supabase-server.js';
 
 const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
@@ -949,6 +950,35 @@ function webhookIdentity(payload) {
   });
 }
 
+async function attemptNonBlockingPurchaseAccessReadyEmail({
+  config, purchaseIntent, completionResult, occurredAt, fetchImpl, now,
+}) {
+  // Email readiness is not a condition for recording a successfully paid order.
+  // With email held, skip all notification-only reads and address validation.
+  if (!lifecycleEmailLedgerEnabled()) return;
+  let stage = 'lookup';
+  try {
+    const accessResult = await readCommerceAccessReadyResult({
+      config, purchaseIntent, completionResult, occurredAt, fetchImpl,
+    });
+    stage = 'delivery';
+    await deliverPurchaseAccessReadyEmail({
+      accessResult,
+      ledgerFetchImpl: fetchImpl,
+      providerFetchImpl: fetchImpl,
+      nowMs: new Date(now).getTime(),
+    });
+  } catch {
+    // No buyer identity, address, payload or credential enters these logs.
+    // The paid purchase and its webhook receipt remain independent of email.
+    console.error('Purchase access-ready notification unavailable.', {
+      code: stage === 'lookup'
+        ? 'PURCHASE_ACCESS_READY_LOOKUP_FAILED'
+        : 'PURCHASE_ACCESS_READY_DELIVERY_FAILED',
+    });
+  }
+}
+
 export async function processLemonSqueezyWebhook({
   config,
   rawBody,
@@ -1028,18 +1058,13 @@ export async function processLemonSqueezyWebhook({
         fetchImpl,
         now,
       });
-      const accessResult = await readCommerceAccessReadyResult({
+      await attemptNonBlockingPurchaseAccessReadyEmail({
         config,
         purchaseIntent,
         completionResult: result,
         occurredAt: event.occurredAt || new Date(now).toISOString(),
         fetchImpl,
-      });
-      await deliverPurchaseAccessReadyEmail({
-        accessResult,
-        ledgerFetchImpl: fetchImpl,
-        providerFetchImpl: fetchImpl,
-        nowMs: new Date(now).getTime(),
+        now,
       });
     } else if (identity.eventName === 'order_refunded') {
       if (commercial.status === 'paid') {

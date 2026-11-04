@@ -232,7 +232,7 @@ async function readJson(response) {
 
 async function loadExistingSubscription({ config, providerSubscriptionId, fetchImpl }) {
   const query = new URLSearchParams({
-    select: 'id,account_id,product_id,provider,provider_subscription_id,state,current_period_start,current_period_end,cancel_at_period_end',
+    select: 'id,account_id,product_id,provider,provider_subscription_id,provider_customer_id,state,current_period_start,current_period_end,cancel_at_period_end',
     provider: `eq.${PROVIDER}`,
     provider_subscription_id: `eq.${providerSubscriptionId}`,
     product_id: `eq.${RESEARCH_MEMBERSHIP_PRODUCT_ID}`,
@@ -264,6 +264,7 @@ async function loadExistingSubscription({ config, providerSubscriptionId, fetchI
     productId: row.product_id,
     provider: row.provider,
     providerSubscriptionId: row.provider_subscription_id,
+    providerCustomerId: row.provider_customer_id,
     state: row.state,
     currentPeriodStart: row.current_period_start,
     currentPeriodEnd: row.current_period_end,

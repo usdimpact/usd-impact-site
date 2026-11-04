@@ -117,3 +117,11 @@ A32 provider-schema review identified omitted **signed business fields**, confir
 Reference: https://docs.lemonsqueezy.com/api/subscription-invoices/the-subscription-invoice-object
 Reference: https://docs.lemonsqueezy.com/api/subscriptions/the-subscription-object
 Reference: https://docs.lemonsqueezy.com/api/subscription-items/the-subscription-item-object
+
+## A33 bound invoice customer gate — Draft-only (2026-11-04)
+
+Independently reviewed v3 fingerprint is a digest, NOT a customer binding check. The existing subscriptions foundation stores `public.subscriptions.provider_customer_id` (20260905201000 foundation), but `loadExistingSubscription` omitted that column. This Draft now selects that trusted column and carries `providerCustomerId` into recurring event validation. For any invoice object, unknown/blank trusted customer refuses processing (`RESEARCH_WEBHOOK_CUSTOMER_BINDING_UNAVAILABLE`); known customer mismatch refuses (`RESEARCH_WEBHOOK_CUSTOMER_BINDING_MISMATCH`). For subscription objects, an existing trusted customer must match the signed object. HMAC, store/product/variant/test-mode and provider_subscription_id checks still precede lifecycle planning/ledger reads. Signed `meta.custom_data` or email are never accepted as substitutes for the persisted customer ID.
+
+Offline synthetic adapter tests reject wrong invoice customer on success/failure/recovery/refund, missing trusted customer, and changed subscription-object customer. Webhook execution/replay mocks assert provider_customer_id is fetched from database, reject invoice mismatch **before subscription_events lookup or RPC**, and preserve the original positive/duplicate cases. No real signed provider deliveries, PostgreSQL rows, transactions, or customer accounts were used. Historical rows with NULL provider_customer_id will cause invoices to fail closed until a separately authorized verified reconciliation; never silently backfill from a webhook. No payment retry/recovery authority is implied.
+
+**STILL BLOCKED:** feature receipt flag remains default-OFF; no new SQL, schema, role, migration or Production write. Stale lifecycle ordering, concurrent paid subscription binding and receipt lease/CAS/journal remain P1 #1103 pending D1-D7, isolated real PostgreSQL acceptance and independent review. The entire PR remains Draft and unmerged.

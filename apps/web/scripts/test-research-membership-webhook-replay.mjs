@@ -24,14 +24,14 @@ const environment = {
 };
 const base = {
   id: subscriptionId, accountId, productId: 'research-membership',
-  provider: 'lemon-squeezy', providerSubscriptionId: 'sub_fixture', state: 'active',
+  provider: 'lemon-squeezy', providerSubscriptionId: 'sub_fixture', providerCustomerId: '456', state: 'active',
   currentPeriodStart: '2026-09-01T00:00:00.000Z',
   currentPeriodEnd: '2026-10-01T00:00:00.000Z', cancelAtPeriodEnd: false,
 };
 const payload = () => ({
   meta: { event_name: 'subscription_updated', custom_data: { usd_impact_account_id: accountId } },
   data: { type: 'subscriptions', id: 'sub_fixture', attributes: {
-    store_id: 42, product_id: 99, variant_id: 314, test_mode: true,
+    store_id: 42, product_id: 99, variant_id: 314, customer_id: 456, test_mode: true,
     status: 'active', cancelled: false, ends_at: null,
     created_at: '2026-09-01T00:00:00.000Z', updated_at: '2026-10-01T00:00:01.000Z',
     renews_at: '2026-11-01T00:00:00.000Z',
@@ -68,10 +68,12 @@ function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscri
       assert.equal(u.searchParams.get('provider'), 'eq.lemon-squeezy');
       assert.equal(u.searchParams.get('product_id'), 'eq.research-membership');
       assert.equal(u.searchParams.get('provider_subscription_id'), 'eq.sub_fixture');
+      assert.match(u.searchParams.get('select') || '', /provider_customer_id/);
       if (subscriptionReply) return subscriptionReply(ctx, json);
       const s = ctx.current;
       return json([{ id: s.id, account_id: s.accountId, product_id: s.productId,
-        provider: s.provider, provider_subscription_id: s.providerSubscriptionId, state: s.state,
+        provider: s.provider, provider_subscription_id: s.providerSubscriptionId,
+        provider_customer_id: s.providerCustomerId, state: s.state,
         current_period_start: s.currentPeriodStart, current_period_end: s.currentPeriodEnd,
         cancel_at_period_end: s.cancelAtPeriodEnd }]);
     }
@@ -358,6 +360,37 @@ for (const [eventName, fromState, attributes] of [
     });
   }
 }
+await test('signed invoice mismatched customer rejects before reading event history or writing', async () => {
+  const value = payload();
+  value.meta.event_name = 'subscription_payment_success';
+  value.data.type = 'subscription-invoices';
+  value.data.id = 'invoice_foreign';
+  value.data.attributes.subscription_id = 'sub_fixture';
+  value.data.attributes.customer_id = 999;
+  const ctx = fixture();
+  await assert.rejects(() => ctx.run(value),
+    (error) => error.code === 'RESEARCH_WEBHOOK_CUSTOMER_BINDING_MISMATCH');
+  ctx.assertReadOnly();
+  assert.equal(ctx.ledgerReads, 0);
+});
+await test('invoice with unknown trusted customer binding fails closed before event lookup', async () => {
+  const value = payload();
+  value.meta.event_name = 'subscription_payment_success';
+  value.data.type = 'subscription-invoices';
+  value.data.id = 'invoice_unbound';
+  value.data.attributes.subscription_id = 'sub_fixture';
+  const ctx = fixture({
+    subscriptionReply: (_ctx, json) => json([{
+      id: subscriptionId, account_id: accountId, product_id: 'research-membership',
+      provider: 'lemon-squeezy', provider_subscription_id: 'sub_fixture',
+      provider_customer_id: null, state: 'active',
+    }]),
+  });
+  await assert.rejects(() => ctx.run(value),
+    (error) => error.code === 'RESEARCH_WEBHOOK_CUSTOMER_BINDING_UNAVAILABLE');
+  ctx.assertReadOnly();
+  assert.equal(ctx.ledgerReads, 0);
+});
 await test('ordinary payment success remains ignored, without persisting a fake renewal', async () => {
   const value = payload(); value.meta.event_name = 'subscription_payment_success';
   value.data.type = 'subscription-invoices'; value.data.id = 'invoice_fixture';

@@ -28,6 +28,7 @@ const payload = {
       store_id: 42,
       product_id: 99,
       variant_id: 314,
+      customer_id: 456,
       status: 'active',
       cancelled: false,
       test_mode: true,
@@ -58,6 +59,7 @@ const result = await processResearchMembershipWebhook({
         product_id: 'research-membership',
         provider: 'lemon-squeezy',
         provider_subscription_id: 'sub_7001',
+        provider_customer_id: '456',
         state: 'active',
         current_period_start: '2026-09-05T20:00:00.000Z',
         current_period_end: '2026-09-30T20:00:00.000Z',
@@ -87,6 +89,7 @@ assert.equal(result.action, 'applied');
 assert.equal(result.providerSubscriptionId, 'sub_7001');
 assert.equal(requests.length, 3);
 assert.match(requests[0].url, /provider_subscription_id=eq\.sub_7001/);
+assert.match(requests[0].url, /provider_customer_id/, 'trusted DB customer binding must be selected');
 
 let fetchCalled = false;
 await assert.rejects(

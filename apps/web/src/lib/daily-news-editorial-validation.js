@@ -26,7 +26,7 @@ const MONTH_NUMBER = new Map([
 // an alternative release. This is only a date plausibility gate; it does not
 // establish that the report was released or verify source publishedAt metadata.
 // https://www.eia.gov/petroleum/supply/weekly/schedule.php
-const EIA_WPSR_CATALYST_PATTERN = /\b(?:weekly petroleum status report|wpsr)\b/i;
+const EIA_WPSR_CATALYST_PATTERN = /\b(?:weekly petroleum status report|wpsr|eia weekly (?:petroleum|oil|inventory|inventories|stocks?))\b/i;
 const EIA_WPSR_2026_POSTPONED_WEDNESDAYS = new Map([
   ['2026-01-21', '2026-01-22'],
   ['2026-02-18', '2026-02-19'],

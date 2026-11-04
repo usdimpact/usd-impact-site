@@ -1,4 +1,8 @@
 import { createHash } from 'node:crypto';
+import {
+  fingerprintResearchReceiptBusinessEvent,
+  RESEARCH_RECEIPT_FINGERPRINT_VERSION,
+} from './research-membership-receipt-business-fingerprint.js';
 import { verifyLemonSqueezyWebhookSignature } from './lemon-squeezy-adapter-scaffold.js';
 import { processResearchMembershipWebhook } from './research-membership-webhook-handler.js';
 import { readSupabaseServerConfig } from './supabase-server.js';
@@ -540,6 +544,8 @@ export function inspectResearchMembershipFirstPurchase({
       bindingSource: boundAccountId ? 'signed-subscription-created-unverified-claim' : 'signed-provider-unbound-pending-recovery',
       checkoutKey: signedCheckoutKey,
       rawBodySha256: createHash('sha256').update(body).digest('hex'),
+      businessFingerprintSha256: fingerprintResearchReceiptBusinessEvent(payload),
+      businessFingerprintVersion: RESEARCH_RECEIPT_FINGERPRINT_VERSION,
       storeId: String(config.storeId),
       productId: String(config.productId),
       variantId: String(variantId),
@@ -581,6 +587,8 @@ async function observeSignedResearchMembershipFirstPurchase({
         p_raw_body_sha256: rawDigest,
         p_claimed_account_id: binding?.accountId || null,
         p_claimed_checkout_proof_sha256: proofDigest,
+        p_business_fingerprint_version: binding.metadata.businessFingerprintVersion,
+        p_business_fingerprint_sha256: binding.metadata.businessFingerprintSha256,
       }),
     });
   } catch (error) {
@@ -638,6 +646,8 @@ export async function bindResearchMembershipFirstPurchase({
       p_store_id: String(config.storeId),
       p_product_id: String(config.productId),
       p_test_mode: config.testMode,
+      p_business_fingerprint_version: binding.metadata.businessFingerprintVersion,
+      p_business_fingerprint_sha256: binding.metadata.businessFingerprintSha256,
     }),
     });
   } catch (error) {

@@ -25,6 +25,16 @@ export function dispatchSourceRunId(envelope) {
   return id;
 }
 
+export function isAuthenticatedBotDispatch(source, publisherActor) {
+  // A manually submitted workflow_dispatch input may identify an authentic run.
+  // It must not allow that human-originated event to publish automatically.
+  return publisherActor === 'github-actions[bot]'
+    && source?.actor?.login === 'github-actions[bot]'
+    && source?.event === 'workflow_dispatch'
+    && source?.path === '.github/workflows/daily-news.yml'
+    && source?.repository?.full_name === REPOSITORY;
+}
+
 export function beforeUsFirstRelease(now = new Date()) {
   if (!(now instanceof Date) || Number.isNaN(now.getTime())) return false;
   const parts = new Intl.DateTimeFormat('en-US', {

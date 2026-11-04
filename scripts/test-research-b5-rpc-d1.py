@@ -103,6 +103,17 @@ def roles():
       "observe_signed_research_subscription_created(text,text,text,text,text,text,boolean,timestamptz,text,uuid,text,text,text)",
       "bind_research_membership_with_checkout_intent(uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean,text,text)"]
     with db() as root,db("issuer") as i,db("verifier") as v,db("binder") as b:
+        # C11 test-only non-escalatable SECURITY DEFINER ownership.
+        eq(one(root,"select rolcanlogin from pg_roles where rolname='review_checkout_owner'"),False,"C11 owner NOLOGIN")
+        eq(one(root,"select rolbypassrls from pg_roles where rolname='review_checkout_owner'"),False,"C11 owner cannot BYPASSRLS")
+        eq(one(root,"select rolsuper from pg_roles where rolname='review_checkout_owner'"),False,"C11 owner not superuser")
+        eq(one(root,"select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace join pg_roles r on r.oid=p.proowner where n.nspname='public' and p.proname in ('issue_research_membership_checkout_intent','attach_research_membership_checkout_intent','observe_signed_research_subscription_created','bind_research_membership_with_checkout_intent') and r.rolname='review_checkout_owner'"),4,"C11 all four definer owners")
+        for role in ("review_checkout_issuer","review_checkout_verifier","review_checkout_binder","anon","authenticated"):
+            eq(one(root,"select pg_has_role(%s,'review_checkout_owner','MEMBER')",(role,)),False,"C11 caller cannot assume owner "+role)
+        eq(one(root,"select has_schema_privilege('review_checkout_owner','research_checkout_guard','CREATE')"),False,"C11 no post-install private CREATE")
+        eq(one(root,"select has_schema_privilege('review_checkout_owner','public','CREATE')"),False,"C11 no post-install public CREATE")
+        eq(one(root,"select has_table_privilege('review_checkout_owner','public.subscriptions','DELETE')"),False,"C11 no subscription DELETE")
+        eq(one(root,"select has_table_privilege('review_checkout_owner','research_checkout_guard.signed_paid_observations','DELETE')"),False,"C11 no journal DELETE")
         for role in ("anon","authenticated","public"):
             for f in funcs:
                 eq(one(root,"select has_function_privilege(%s,%s,'EXECUTE')",(role,"public."+f)),False,"public denied "+f)

@@ -113,7 +113,7 @@ create function research_receipt_review.begin_review_receipt(
 declare
   v_row research_receipt_review.receipts%rowtype;
   v_token uuid;
-  v_now timestamptz := transaction_timestamp();
+  v_now timestamptz := clock_timestamp();
 begin
   if p_event_id is null or char_length(p_event_id) not between 1 and 255
     or p_event_type is null or char_length(p_event_type) not between 1 and 100

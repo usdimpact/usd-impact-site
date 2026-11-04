@@ -9,8 +9,15 @@ import {
 } from '../src/lib/research-membership-first-purchase.js';
 
 const account = '88888888-8888-4888-8888-888888888888';
-const intent = '77777777-7777-4777-8777-777777777777';
-const proof = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+if (process.env.GITHUB_ACTIONS !== 'true'
+    || process.env.GITHUB_HEAD_REF !== 'agent/1103-b5-rpc-sql-isolated-d1-20261104') {
+  throw new Error('Real JS-to-Postgres bridge runs only in isolated B5 Draft CI');
+}
+const issued = JSON.parse(process.env.RESEARCH_B5_ISSUED_INTENT_JSON || '{}');
+const intent = issued.intent_id;
+const proof = issued.checkout_key;
+assert.match(intent || '', /^[a-f0-9-]{36}$/i);
+assert.match(proof || '', /^[A-Za-z0-9_-]{43}$/);
 const subscription = 'sub_b5_real_js_bridge';
 const checkoutId = 'checkout_b5_js_bridge';
 const now = new Date();
@@ -47,7 +54,7 @@ const checkout = await createResearchMembershipCheckout({
         action: 'reserved', intent_id: intent, checkout_key: proof,
         account_id: account, store_id: '42', variant_id: '314',
         billing_interval: 'monthly', test_mode: true,
-        expires_at: new Date(now.getTime() + 25 * 60000).toISOString(),
+        expires_at: issued.expires_at,
       }), { status: 200 });
     }
     if (url.endsWith('/rpc/attach_research_membership_checkout_intent')) {

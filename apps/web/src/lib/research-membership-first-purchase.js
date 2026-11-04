@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { verifyLemonSqueezyWebhookSignature } from './lemon-squeezy-adapter-scaffold.js';
 import { processResearchMembershipWebhook } from './research-membership-webhook-handler.js';
 import { readSupabaseServerConfig } from './supabase-server.js';
@@ -460,6 +461,7 @@ export function inspectResearchMembershipFirstPurchase({
   rawBody,
   signature,
   environment = process.env,
+  allowUnbound = false,
 }) {
   const config = readBootstrapConfig(environment);
   const body = rawBuffer(rawBody);
@@ -495,15 +497,31 @@ export function inspectResearchMembershipFirstPurchase({
     fail('Research Membership first-purchase subscription state is inconsistent with the no-trial contract.', 'RESEARCH_FIRST_PURCHASE_STATE_INVALID', 409);
   }
 
-  const custom = object(meta.custom_data, 'payload.meta.custom_data');
-  const boundAccountId = accountId(custom.usd_impact_account_id);
-  if (text(custom.usd_impact_research_product_id) !== PRODUCT_ID
-      || text(custom.usd_impact_research_billing_interval).toLowerCase() !== expectedInterval) {
-    fail('Research Membership checkout custom binding evidence does not match.', 'RESEARCH_FIRST_PURCHASE_CUSTOM_DATA_MISMATCH', 409);
+  // A signed active provider subscription can have missing, malformed or
+  // purchaser-supplied custom_data (direct Share checkout). On the custody
+  // path it must remain observable but NEVER become an account binding.
+  const custom = meta.custom_data && typeof meta.custom_data === 'object'
+      && !Array.isArray(meta.custom_data)
+    ? meta.custom_data : {};
+  const metadataMatches = text(custom.usd_impact_research_product_id) === PRODUCT_ID
+    && text(custom.usd_impact_research_billing_interval).toLowerCase() === expectedInterval;
+  const accountLooksValid = UUID_PATTERN.test(text(custom.usd_impact_account_id));
+  const proofLooksValid = ISSUED_CHECKOUT_PROOF_PATTERN.test(text(custom.usd_impact_research_checkout_key));
+  let boundAccountId = null;
+  let signedCheckoutKey = null;
+  if (allowUnbound) {
+    if (metadataMatches && accountLooksValid && proofLooksValid) {
+      boundAccountId = accountId(custom.usd_impact_account_id);
+      signedCheckoutKey = issuedCheckoutProof(custom.usd_impact_research_checkout_key);
+    }
+  } else {
+    boundAccountId = accountId(custom.usd_impact_account_id);
+    if (!metadataMatches) {
+      fail('Research Membership checkout custom binding evidence does not match.',
+        'RESEARCH_FIRST_PURCHASE_CUSTOM_DATA_MISMATCH', 409);
+    }
+    signedCheckoutKey = issuedCheckoutProof(custom.usd_impact_research_checkout_key);
   }
-  // This is an UNTRUSTED assertion copied by the provider into a signed
-  // webhook. The private atomic binding RPC below must prove server issuance.
-  const signedCheckoutKey = issuedCheckoutProof(custom.usd_impact_research_checkout_key);
   const createdAt = isoTimestamp(attributes.created_at, 'subscription created_at');
   const renewsAt = isoTimestamp(attributes.renews_at, 'subscription renews_at');
   if (Date.parse(renewsAt) <= Date.parse(createdAt)) {
@@ -519,7 +537,7 @@ export function inspectResearchMembershipFirstPurchase({
     billingInterval: expectedInterval,
     occurredAt: createdAt,
     metadata: Object.freeze({
-      bindingSource: 'signed-subscription-created',
+      bindingSource: boundAccountId ? 'signed-subscription-created-unverified-claim' : 'signed-provider-unbound-pending-recovery',
       checkoutKey: signedCheckoutKey,
       storeId: String(config.storeId),
       productId: String(config.productId),
@@ -527,6 +545,63 @@ export function inspectResearchMembershipFirstPurchase({
       testMode: config.testMode,
     }),
   });
+}
+
+export async function observeSignedResearchMembershipFirstPurchase({
+  binding,
+  rawBody,
+  environment = process.env,
+  fetchImpl = fetch,
+}) {
+  // The caller must have already verified the raw provider signature and exact
+  // Live/Test catalog in inspectResearchMembershipFirstPurchase(allowUnbound).
+  // The SQL writer independently commits this paid-event evidence BEFORE
+  // attempting the separate, potentially failing binding transaction.
+  const config = readBootstrapConfig(environment);
+  const rawDigest = createHash('sha256').update(rawBuffer(rawBody)).digest('hex');
+  const proofDigest = binding?.metadata?.checkoutKey
+    ? createHash('sha256').update(issuedCheckoutProof(binding.metadata.checkoutKey)).digest('hex')
+    : null;
+  const url = `${config.supabaseUrl}/rest/v1/rpc/observe_signed_research_subscription_created`;
+  let response;
+  try {
+    response = await fetchImpl(url, {
+      method: 'POST',
+      headers: serviceHeaders(config.supabaseSecret),
+      body: JSON.stringify({
+        p_provider: PROVIDER,
+        p_provider_subscription_id: stableIdentifier(binding?.providerSubscriptionId, 'provider subscription id'),
+        p_provider_customer_id: stableIdentifier(binding?.providerCustomerId, 'provider customer id'),
+        p_store_id: String(config.storeId),
+        p_product_id: String(config.productId),
+        p_provider_price_id: stableIdentifier(binding?.providerPriceId, 'provider price id'),
+        p_test_mode: config.testMode,
+        p_occurred_at: isoTimestamp(binding?.occurredAt, 'occurred_at'),
+        p_raw_body_sha256: rawDigest,
+        p_claimed_account_id: binding?.accountId || null,
+        p_claimed_checkout_proof_sha256: proofDigest,
+      }),
+    });
+  } catch (error) {
+    if (error instanceof ResearchMembershipFirstPurchaseError) throw error;
+    fail('Research Membership signed-paid evidence is unavailable.',
+      'RESEARCH_PAID_EVIDENCE_UNAVAILABLE', 503);
+  }
+  let data;
+  try {
+    data = await readJson(response);
+  } catch {
+    fail('Research Membership signed-paid evidence is unavailable.',
+      'RESEARCH_PAID_EVIDENCE_UNAVAILABLE', 503);
+  }
+  if (!response.ok
+      || !['recorded', 'already_recorded', 'conflict_recorded'].includes(data?.action)
+      || text(data.provider_subscription_id) !== binding?.providerSubscriptionId
+      || text(data.raw_body_sha256) !== rawDigest) {
+    fail('Research Membership signed-paid evidence is unavailable.',
+      'RESEARCH_PAID_EVIDENCE_UNAVAILABLE', 503);
+  }
+  return Object.freeze({ action: data.action });
 }
 
 export async function bindResearchMembershipFirstPurchase({
@@ -593,7 +668,21 @@ export async function processResearchMembershipWebhookWithFirstPurchase({
     if (error?.code !== 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND') throw error;
   }
 
-  const binding = inspectResearchMembershipFirstPurchase({ rawBody, signature, environment });
+  // Record *every* signed active subscription_created paid fact separately,
+  // even for a direct provider Share link with no account metadata. The
+  // durable observation must commit before any conditional account binding.
+  const binding = inspectResearchMembershipFirstPurchase({
+    rawBody, signature, environment, allowUnbound: true,
+  });
+  const observation = await observeSignedResearchMembershipFirstPurchase({
+    binding, rawBody, environment, fetchImpl,
+  });
+  if (observation.action === 'conflict_recorded') {
+    return Object.freeze({ action: 'held_paid_evidence_conflict' });
+  }
+  if (!binding.accountId || !binding.metadata.checkoutKey) {
+    return Object.freeze({ action: 'held_unbound' });
+  }
   await bindResearchMembershipFirstPurchase({ binding, environment, fetchImpl });
   return processImpl({ rawBody, signature, environment, fetchImpl });
 }

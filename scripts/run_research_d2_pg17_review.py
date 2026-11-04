@@ -103,6 +103,20 @@ def strict_mutation(label, name):
     elif name == 's4c_no_service_revoke':
         pat = re.compile(r'(revoke all on function public\.bind_research_membership_with_checkout_intent\(\s*uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean,text,text\)\s*from public,anon,authenticated),service_role;', re.I)
         content, changed = pat.subn(lambda m: m.group(1)+';', content)
+    elif name in ('issuer_bind_overgrant', 'binder_observe_overgrant', 'verifier_bind_overgrant'):
+        authority, function = {
+            'issuer_bind_overgrant': ('review_checkout_issuer',
+                'public.bind_research_membership_with_checkout_intent(uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean,text,text)'),
+            'binder_observe_overgrant': ('review_checkout_binder',
+                'public.observe_signed_research_subscription_created(text,text,text,text,text,text,boolean,timestamptz,text,uuid,text,text,text)'),
+            'verifier_bind_overgrant': ('review_checkout_verifier',
+                'public.bind_research_membership_with_checkout_intent(uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean,text,text)'),
+        }[name]
+        pat = re.compile(r'grant review_checkout_owner to postgres with inherit false, set true;', re.I)
+        content, changed = pat.subn(
+            lambda m: f'grant execute on function {function} to {authority};\n' + m.group(0),
+            content
+        )
     elif name == 'cross_overgrant':
         match = re.compile(r'grant review_checkout_owner to postgres with inherit false, set true;', re.I)
         injection = '''grant execute on function public.issue_research_membership_checkout_intent(uuid,text,text,text,text,boolean,text) to review_checkout_verifier;
@@ -137,6 +151,137 @@ def acl_matrix():
                   WHERE p.oid = %s::regprocedure AND a.grantee=0 AND a.privilege_type='EXECUTE')''', (function,)).fetchone()[0]
             assert public_grant is False, f'PUBLIC EXECUTE granted on {function}'
     print('PASS 42-role/function outcomes + 6 PUBLIC denies', flush=True)
+
+
+def seed_library_pass():
+    """One synthetic independent Library Pass entitlement before M1 dark install."""
+    user_id = str(uuid.uuid4())
+    with conn() as c:
+        c.execute('INSERT INTO auth.users(id,email) VALUES (%s::uuid,%s)',
+                  (user_id, 'd2-library-pass@example.invalid'))
+        c.execute('''INSERT INTO public.entitlements(account_id,product_id,state,starts_at,ends_at)
+                  VALUES (%s::uuid,'library-pass','active',clock_timestamp(),NULL)''', (user_id,))
+        original = c.execute('''SELECT md5(e::text) FROM public.entitlements e
+                WHERE account_id=%s::uuid AND product_id='library-pass' ''',(user_id,)).fetchone()[0]
+    assert original
+    print('PASS pre-M1 independent synthetic Library Pass entitlement seeded',flush=True)
+    return (user_id, original)
+
+
+def assert_library_pass_untouched(snapshot_value):
+    user_id, original = snapshot_value
+    with conn() as c:
+        rows = c.execute('''SELECT md5(e::text) FROM public.entitlements e
+            WHERE account_id=%s::uuid AND product_id='library-pass' ''',(user_id,)).fetchall()
+        research = c.execute('''SELECT count(*) FROM public.entitlements
+            WHERE product_id='research-membership' ''').fetchone()[0]
+    assert rows == [(original,)], f'Library Pass entitlement changed: {rows}'
+    assert research == 0, f'Research entitlements unexpectedly granted: {research}'
+    print('PASS Library Pass byte-identical, zero Research entitlements',flush=True)
+
+
+def evidence_structure_fingerprint():
+    """Stable independent columns, constraints, triggers and ACL readback."""
+    result = []
+    with conn() as c:
+        for name in ('signed_paid_observations','signed_paid_deliveries'):
+            row = c.execute('''SELECT c.relname, c.relacl::text, c.relrowsecurity,
+                c.relforcerowsecurity, pg_get_userbyid(c.relowner)
+              FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n
+              ON n.oid=c.relnamespace WHERE n.nspname='research_checkout_guard'
+              AND c.relname=%s''',(name,)).fetchone()
+            assert row
+            col = c.execute('''SELECT a.attname,format_type(a.atttypid,a.atttypmod),a.attnotnull
+                FROM pg_catalog.pg_attribute a WHERE a.attrelid=%s::regclass
+                AND a.attnum>0 AND NOT a.attisdropped ORDER BY a.attnum''',
+                ('research_checkout_guard.'+name,)).fetchall()
+            cons = c.execute('''SELECT conname,pg_get_constraintdef(oid) FROM pg_catalog.pg_constraint
+                WHERE conrelid=%s::regclass ORDER BY conname''',
+                ('research_checkout_guard.'+name,)).fetchall()
+            triggers = c.execute('''SELECT tgname,pg_get_triggerdef(oid) FROM pg_catalog.pg_trigger
+                WHERE tgrelid=%s::regclass AND NOT tgisinternal ORDER BY tgname''',
+                ('research_checkout_guard.'+name,)).fetchall()
+            result.append((row,col,cons,triggers))
+    return hashlib.sha256(repr(result).encode()).hexdigest()
+
+
+def evidence_snapshot():
+    with conn() as c:
+        result={}
+        for table in ('signed_paid_observations','signed_paid_deliveries'):
+            result[table]=dict(c.execute(
+                f'SELECT id::text, md5(t::text) FROM research_checkout_guard.{table} t ORDER BY id'
+            ).fetchall())
+    result['structure']=evidence_structure_fingerprint()
+    return result
+
+
+def assert_evidence_immutable(before,after,minimum_added=0):
+    assert before['structure']==after['structure'], 'Evidence structure/ACL changed during R1'
+    for table in ('signed_paid_observations','signed_paid_deliveries'):
+        previous=before[table]
+        current=after[table]
+        assert all(current.get(k)==v for k,v in previous.items()), f'Changed/missing evidence in {table}'
+        assert len(current)>=len(previous)+minimum_added, f'Lost custody in {table}'
+    print('PASS immutable evidence rows and catalogue structure across R1',flush=True)
+
+
+def expect_42501(label,callback):
+    try:
+        callback()
+    except psycopg.Error as err:
+        assert err.sqlstate=='42501', f'{label}: SQLSTATE {err.sqlstate}, expected 42501'
+        print('PASS 42501 denied:',label,flush=True)
+    else:
+        raise AssertionError(f'{label}: unauthorized operation succeeded')
+
+
+def verify_r1_stop_and_paid_custody(user_id,before):
+    """Real restricted LOGIN calls, not only catalogue permission assertions."""
+    def issued():
+        with conn(user='review_checkout_issuer',password='only_synthetic_issuer') as c:
+            c.execute('''SELECT public.issue_research_membership_checkout_intent(
+              %s::uuid,'research-membership','42','314','monthly',true,'blocked-r1')''',(user_id,))
+    def bound():
+        with conn(user='review_checkout_binder',password='only_synthetic_binder') as c:
+            c.execute('''SELECT public.bind_research_membership_with_checkout_intent(
+                %s::uuid,'lemon-squeezy','d2-r1-block','d2-r1-block-customer','314','monthly',
+                clock_timestamp(),'blocked-proof',%s,'42','research-membership',true,
+                'research-receipt-business-v3',%s)''',
+                (user_id,hashlib.sha256(b'blocked raw').hexdigest(),hashlib.sha256(b'blocked fp').hexdigest()))
+    expect_42501('issuer.issue during R1',issued)
+    expect_42501('binder.bind during R1',bound)
+    raw=hashlib.sha256(b'r1-synthetic-paid-delivery').hexdigest()
+    fp=hashlib.sha256(b'r1-synthetic-business-v3').hexdigest()
+    with conn(user='review_checkout_verifier',password='only_synthetic_verifier') as c:
+        value=c.execute('''SELECT public.observe_signed_research_subscription_created(
+            'lemon-squeezy','d2-r1-custody','d2-r1-customer','42','research-membership','314',true,
+            clock_timestamp(),%s,%s::uuid,NULL,'research-receipt-business-v3',%s)''',
+            (raw,user_id,fp)).fetchone()[0]
+    assert value['action']=='recorded',value
+    after=evidence_snapshot()
+    assert_evidence_immutable(before,after,minimum_added=1)
+    print('PASS verifier recorded new signed paid evidence DURING R1 with issuer and binder disabled',flush=True)
+    return after
+
+
+def verify_tamper_controls():
+    with conn() as c:
+        observation=c.execute('''SELECT id FROM research_checkout_guard.signed_paid_observations
+              ORDER BY recorded_at LIMIT 1''').fetchone()[0]
+    for authority in ('service_role','authenticated'):
+        def try_tamper():
+            with conn(user='postgres',password='synthetic_pg') as c:
+                c.execute('SET ROLE '+authority)
+                c.execute('''UPDATE research_checkout_guard.signed_paid_observations
+                    SET provider_customer_id='tampered' WHERE id=%s::uuid''',(observation,))
+        expect_42501(authority+' evidence UPDATE',try_tamper)
+    for table in ('signed_paid_observations','signed_paid_deliveries'):
+        def try_delete():
+            with conn(user='postgres',password='synthetic_pg') as c:
+                c.execute('DELETE FROM research_checkout_guard.'+table)
+        expect_42501('owner DELETE immutable '+table,try_delete)
+    print('PASS evidence tamper negatives for service_role, authenticated and table owner',flush=True)
 
 
 def synthetic_pending_flow():
@@ -309,6 +454,7 @@ def run():
         path = ROOT/'supabase'/'migrations'/migration
         assert path.is_file(), f'Missing expected main migration {path}'
         psql(path.read_text(encoding='utf-8'), label=f'original migration: {migration}')
+    library_fixture = seed_library_pass()
     base = snapshot()
     assert base.startswith('0|0|0|0|0|'), 'Dirty fixture at start: '+base
 
@@ -321,6 +467,8 @@ def run():
         assert_rolls_back('S4b binder grant missing', strict_mutation('S4b','s4b_missing_binder'))
         assert_rolls_back('D2-04 missing issuer.attach', strict_mutation('D2-04 attach','missing_attach'))
         assert_rolls_back('D2-04 cross-role overgrant', strict_mutation('D2-04 overgrant','cross_overgrant'))
+        for case in ('issuer_bind_overgrant','binder_observe_overgrant','verifier_bind_overgrant'):
+            assert_rolls_back('D2-11 '+case, strict_mutation('D2-11 '+case,case))
     if MODE == 'S2':
         assert_rolls_back('S4c service_role revoke missing', strict_mutation('S4c','s4c_no_service_revoke'))
 
@@ -337,17 +485,22 @@ def run():
     psql(fixture('M2_A46.sql'), label='M2 guarded legacy binder cutover')
     assert first("SELECT has_function_privilege('service_role','public.bind_research_membership_subscription(uuid,text,text,text,text,public.subscription_billing_interval,timestamptz,jsonb)','EXECUTE')") is False
     print('PASS M2 retired only synthetic legacy binder',flush=True)
+    before_r1 = evidence_snapshot()
     psql(fixture('R1_A46.sql'),label='R1 isolated kill switch')
     assert first("SELECT has_function_privilege('review_checkout_issuer','public.issue_research_membership_checkout_intent(uuid,text,text,text,text,boolean,text)','EXECUTE')") is False
     assert first("SELECT has_function_privilege('review_checkout_verifier','public.observe_signed_research_subscription_created(text,text,text,text,text,text,boolean,timestamptz,text,uuid,text,text,text)','EXECUTE')") is True
     print('PASS R1 issue disabled, paid-observer custody preserved',flush=True)
+    after_r1 = verify_r1_stop_and_paid_custody(flow_snapshot[0],before_r1)
+    verify_tamper_controls()
     psql(fixture('R1_restore_A46.sql'),label='R1 owner-authorized restore')
+    assert_evidence_immutable(after_r1,evidence_snapshot())
     acl_matrix()
     verify_custody_unchanged(flow_snapshot)
     with conn() as admin:
         result=admin.execute('SELECT state::text FROM public.subscriptions WHERE account_id=%s::uuid',(app_bridge_account,)).fetchall()
         assert result==[('pending',)]
         assert admin.execute('SELECT count(*) FROM public.entitlements WHERE account_id=%s::uuid',(app_bridge_account,)).fetchone()[0]==0
+    assert_library_pass_untouched(library_fixture)
     print('PASS real-JS-driven pending row preserved across M2/R1 stop/restore',flush=True)
     print(f'PASS {MODE} complete isolated D2-A security rehearsal (not a release approval)', flush=True)
 

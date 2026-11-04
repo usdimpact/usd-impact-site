@@ -4,7 +4,7 @@ import {
   REPOSITORY, REQUIRED_GENERATOR_STEPS, REQUIRED_CHECKS,
   beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
   selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
-  dispatchSourceRunId,
+  dispatchSourceRunId, isAuthenticatedBotDispatch,
 } from './daily-news-auto-publish-policy.mjs';
 
 const auto = readFileSync(new URL('../../../.github/workflows/daily-news-auto-publish.yml', import.meta.url), 'utf8');
@@ -183,5 +183,25 @@ assert.match(runtime, /process\.env\.GITHUB_REF !== 'refs\/heads\/main'/);
 assert.match(runtime, /validateSourceRun\(source, jobsPayload.jobs, mainSha, NOW\(\)\)/);
 assert.match(runtime, /isTrustedBackstop\(backstop\.workflow_runs, source\)/);
 assert.doesNotMatch(runtime, /GH_TOKEN[^\n]*secrets\./);
+
+const acceptedBotSource = {
+  ...run, actor: { login: 'github-actions[bot]' },
+};
+assert.equal(isAuthenticatedBotDispatch(acceptedBotSource, 'github-actions[bot]'), true);
+assert.equal(isAuthenticatedBotDispatch(acceptedBotSource, 'usdimpact'), false,
+  'a manually dispatched publisher must not accept a copied source run ID');
+assert.equal(isAuthenticatedBotDispatch({ ...acceptedBotSource, actor: { login: 'usdimpact' } }, 'github-actions[bot]'), false,
+  'a human-started generator cannot masquerade as the automatic backstop');
+assert.equal(isAuthenticatedBotDispatch({ ...acceptedBotSource, event: 'schedule' }, 'github-actions[bot]'), false,
+  'native schedule runs must use their separate workflow_run verification path');
+assert.equal(isAuthenticatedBotDispatch({ ...acceptedBotSource, path: 'other.yml' }, 'github-actions[bot]'), false);
+assert.equal(isAuthenticatedBotDispatch({ ...acceptedBotSource, repository: { full_name: 'someone/else' } }, 'github-actions[bot]'), false);
+assert.match(runtime, /isAuthenticatedBotDispatch\(source, process\.env\.GITHUB_ACTOR\)/);
+assert.match(runtime, /explicit-publisher-not-dispatched-by-github-bot/);
+assert.match(mainDaily, /Publisher run receipt not observed; no retry authorized/);
+assert.match(mainDaily, /Multiple new publisher runs; hold for provenance review/);
+assert.match(mainDaily, /\.actor\.login == "github-actions\[bot\]"/);
+assert.match(mainDaily, /\(\.created_at \| fromdateiso8601\)/);
+assert.match(mainDaily, /if \[ "\$GITHUB_ACTOR" != "github-actions\[bot\]" \]/);
 
 console.log('Daily bounded auto-publication policy PASS: fake dates, backstop, exact PR, strict source, check provenance and workflow limits; no network or merge.');

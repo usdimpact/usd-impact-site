@@ -84,7 +84,7 @@ create table research_binding_review.signed_paid_observations (
     check (provider = 'lemon-squeezy-research'),
   provider_event_id text not null unique,
   provider_subscription_id text not null,
-  bound_account_id uuid not null,
+  bound_account_id uuid,
   observed_at timestamptz not null default clock_timestamp(),
   check (char_length(provider_event_id) between 1 and 255),
   check (char_length(provider_subscription_id) between 1 and 255)
@@ -95,11 +95,11 @@ create table research_binding_review.conflict_observations (
   paid_observation_id uuid references research_binding_review.signed_paid_observations(id) on delete restrict,
   provider_event_id text not null,
   provider_subscription_id text not null,
-  bound_account_id uuid not null,
+  bound_account_id uuid,
   conflict_code text not null check (conflict_code in (
     'duplicate_paid_subscription','entitlement_conflict',
     'provider_subscription_in_use','account_unavailable','unbound_subscription',
-    'paid_evidence_identity_mismatch'
+    'paid_evidence_identity_mismatch','missing_custom_binding'
   )),
   observed_at timestamptz not null default clock_timestamp()
 );
@@ -149,7 +149,7 @@ set search_path = pg_catalog, research_binding_review, pg_temp as $$
 declare
   v_obs research_binding_review.signed_paid_observations%rowtype;
 begin
-  if p_account_id is null or p_subscription_id is null
+  if p_subscription_id is null
      or char_length(p_subscription_id) not between 1 and 255
      or p_event_id is null or char_length(p_event_id) not between 1 and 255
   then
@@ -162,12 +162,19 @@ begin
   on conflict(provider_event_id) do nothing returning * into v_obs;
 
   if found then
+    if p_account_id is null then
+      insert into research_binding_review.conflict_observations(
+        paid_observation_id,provider_event_id,provider_subscription_id,
+        bound_account_id,conflict_code
+      ) values (v_obs.id,p_event_id,p_subscription_id,null,'missing_custom_binding');
+      return jsonb_build_object('disposition','unbound_paid_observed');
+    end if;
     return jsonb_build_object('disposition','recorded');
   end if;
 
   select * into v_obs from research_binding_review.signed_paid_observations
     where provider_event_id=p_event_id;
-  if v_obs.bound_account_id=p_account_id
+  if v_obs.bound_account_id is not distinct from p_account_id
     and v_obs.provider_subscription_id=p_subscription_id then
     return jsonb_build_object('disposition','already_recorded');
   end if;

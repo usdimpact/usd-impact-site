@@ -13,12 +13,12 @@ const RESEARCH_CUSTOM_KEYS = Object.freeze([
 const SUBSCRIPTION_FIELDS = Object.freeze([
   'store_id', 'product_id', 'variant_id', 'customer_id',
   'status', 'cancelled', 'trial_ends_at', 'renews_at',
-  'ends_at', 'created_at', 'updated_at', 'test_mode', 'billing_reason',
+  'ends_at', 'created_at', 'updated_at', 'test_mode',
 ]);
 const INVOICE_FIELDS = Object.freeze([
   'subscription_id', 'store_id', 'test_mode', 'status', 'refunded',
   'total', 'refunded_amount', 'refunded_at', 'created_at', 'updated_at',
-  'currency', 'subtotal', 'tax', 'billing_reason',
+  'currency', 'subtotal', 'tax',
 ]);
 
 function isObject(value) {

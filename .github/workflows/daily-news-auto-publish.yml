@@ -44,4 +44,6 @@ jobs:
       - name: Check exact source workflow, PR, source and required checks; publish only before US data cutover
         env:
           GH_TOKEN: ${{ github.token }}
+          PUBLISH_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          PUBLISH_RUN_ATTEMPT: ${{ github.run_attempt }}
         run: node apps/web/scripts/daily-news-auto-publish.mjs

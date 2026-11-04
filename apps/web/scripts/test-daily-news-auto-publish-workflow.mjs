@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import {
   REPOSITORY, REQUIRED_GENERATOR_STEPS, REQUIRED_CHECKS,
   beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
@@ -204,5 +205,65 @@ assert.match(mainDaily, /Multiple new publisher runs; hold for provenance review
 assert.match(mainDaily, /\.actor\.login == "github-actions\[bot\]"/);
 assert.match(mainDaily, /\(\.created_at \| fromdateiso8601\)/);
 assert.match(mainDaily, /if \[ "\$GITHUB_ACTOR" != "github-actions\[bot\]" \]/);
+
+
+// Execute the source workflow's actual publisher-dispatch shell in an offline
+// stubbed GitHub environment. No repository write, workflow dispatch or network.
+const dispatchStepMatch = mainDaily.match(
+  /      - name: Explicitly dispatch trusted bounded publisher after source verification\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Report Daily failure gate)/,
+);
+assert.ok(dispatchStepMatch, 'publisher handoff shell must exist');
+const dispatchShell = dispatchStepMatch[1].split('\n')
+  .map((line) => line.startsWith('          ') ? line.slice(10) : line).join('\n');
+const parsedDispatch = spawnSync('bash', ['-n'], { input: dispatchShell, encoding: 'utf8' });
+assert.equal(parsedDispatch.status, 0, 'publisher dispatch shell syntax must pass bash -n');
+const jqAvailable = spawnSync('jq', ['--version'], { encoding: 'utf8' }).status === 0;
+if (!jqAvailable && process.env.GITHUB_ACTIONS === 'true') {
+  throw new Error('jq required for publisher dispatch mock evidence in GitHub Actions');
+}
+if (jqAvailable) {
+  const createdAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const goodReceipt = {
+    event: 'workflow_dispatch', head_branch: 'main',
+    actor: { login: 'github-actions[bot]' }, created_at: createdAt,
+    html_url: 'https://github.com/usdimpact/usd-impact-site/actions/runs/700001',
+  };
+  const mockGh = [
+    'gh() {',
+    '  case "$1" in',
+    '    pr) printf "%s\\n" "$MOCK_PR_COUNT" ;;',
+    '    workflow) echo "MOCK_DISPATCH" >&2; [ "$MOCK_DISPATCH_FAIL" != "true" ] ;;',
+    '    api) printf "%s\\n" "$MOCK_PAYLOAD" ;;',
+    '    *) return 59 ;;',
+    '  esac',
+    '}',
+    'sleep() { :; }',
+  ].join('\n');
+  const fixtures = [
+    ['valid single bot receiver', 'github-actions[bot]', '1', false, [goodReceipt], 0, true],
+    ['missing original PR', 'github-actions[bot]', '0', false, [goodReceipt], 1, false],
+    ['manual source actor', 'usdimpact', '1', false, [goodReceipt], 1, false],
+    ['publisher dispatch refused', 'github-actions[bot]', '1', true, [goodReceipt], 1, true],
+    ['receiver not created', 'github-actions[bot]', '1', false, [], 1, true],
+    ['ambiguous bot receivers', 'github-actions[bot]', '1', false, [goodReceipt, { ...goodReceipt, html_url: 'https://github.com/usdimpact/usd-impact-site/actions/runs/700002' }], 1, true],
+    ['human receiver not accepted', 'github-actions[bot]', '1', false, [{ ...goodReceipt, actor: { login: 'usdimpact' } }], 1, true],
+    ['old run cannot be mistaken for this request', 'github-actions[bot]', '1', false, [{ ...goodReceipt, created_at: '2026-01-02T09:00:00Z' }], 1, true],
+  ];
+  for (const [name, actor, count, dispatchFail, runs, expectedExit, wasDispatched] of fixtures) {
+    const payload = JSON.stringify({ total_count: runs.length, workflow_runs: runs });
+    const test = spawnSync('bash', ['-c', 'set -euo pipefail\n' + mockGh + '\n' + dispatchShell], {
+      encoding: 'utf8', timeout: 10000,
+      env: {
+        ...process.env, GITHUB_REPOSITORY: REPOSITORY, GITHUB_RUN_ID: '770001',
+        GITHUB_ACTOR: actor, MOCK_PR_COUNT: count,
+        MOCK_DISPATCH_FAIL: dispatchFail ? 'true' : 'false', MOCK_PAYLOAD: payload,
+      },
+    });
+    assert.equal(test.status, expectedExit, name + ': ' + test.stderr);
+    assert.equal(test.stderr.includes('MOCK_DISPATCH'), wasDispatched, name + ' actual dispatch receipt');
+    if (expectedExit === 0) assert.match(test.stdout, /Publisher workflow_dispatch observed/);
+  }
+  console.log('Daily publisher dispatch shell: eight mocked positive and negative scenarios passed');
+}
 
 console.log('Daily bounded auto-publication policy PASS: fake dates, backstop, exact PR, strict source, check provenance and workflow limits; no network or merge.');

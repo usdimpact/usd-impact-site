@@ -165,23 +165,23 @@ assert.doesNotMatch(runtime, /'contents\/' \+ files\[0\]\.filename/);
 
 assert.equal(dispatchSourceRunId({ inputs: { source_run_id: '41808333994' } }), 41808333994);
 for (const invalid of ['', '0', '-1', '1.2', '999999999999999999999',
-  '41808333994\\n--ref untrusted', ' 41808333994', 'not-a-run']) {
+  '41808333994\n--ref untrusted', ' 41808333994', 'not-a-run']) {
   assert.throws(() => dispatchSourceRunId({ inputs: { source_run_id: invalid } }),
     /invalid-explicit-source-run-id/, 'dispatch source ID must be non-authoritative and strictly numeric');
 }
 assert.throws(() => dispatchSourceRunId({ inputs: {} }), /invalid-explicit-source-run-id/);
-assert.match(auto, /workflow_dispatch:[\\s\\S]*source_run_id:[\\s\\S]*required: true/);
+assert.match(auto, /workflow_dispatch:[\s\S]*source_run_id:[\s\S]*required: true/);
 assert.match(auto, /github.event_name == 'workflow_dispatch'/);
 assert.match(mainDaily, /Explicitly dispatch trusted bounded publisher after source verification/);
-assert.match(mainDaily, /gh workflow run daily-news-auto-publish\\.yml[\\s\\S]*source_run_id=\\$GITHUB_RUN_ID/);
-assert.match(mainDaily, /if ! gh workflow run daily-news-auto-publish\\.yml[\\s\\S]*never retry automatically/);
-assert.match(runtime, /source = api\\('actions\\/runs\\/' \\+ id\\)/);
-assert.match(runtime, /source\\.repository\\?\\.full_name !== REPOSITORY[\\s\\S]*source\\.event !== 'workflow_dispatch'/);
-assert.match(runtime, /source\\.status === 'completed'[\\s\\S]*source\\.conclusion !== 'success'/);
+assert.match(mainDaily, /gh workflow run daily-news-auto-publish\.yml[\s\S]*source_run_id=\$GITHUB_RUN_ID/);
+assert.match(mainDaily, /if ! gh workflow run daily-news-auto-publish\.yml[\s\S]*never retry automatically/);
+assert.match(runtime, /source = api\('actions\/runs\/' \+ id\)/);
+assert.match(runtime, /source\.repository\?\.full_name !== REPOSITORY[\s\S]*source\.event !== 'workflow_dispatch'/);
+assert.match(runtime, /source\.status === 'completed'[\s\S]*source\.conclusion !== 'success'/);
 assert.match(runtime, /explicit-source-uses-trusted-dispatch-controller/);
-assert.match(runtime, /process\\.env\\.GITHUB_REF !== 'refs\\/heads\\/main'/);
-assert.match(runtime, /validateSourceRun\\(source, jobsPayload.jobs, mainSha, NOW\\(\\)\\)/);
-assert.match(runtime, /isTrustedBackstop\\(backstop\\.workflow_runs, source\\)/);
-assert.doesNotMatch(runtime, /GH_TOKEN[^\\n]*secrets\\./);
+assert.match(runtime, /process\.env\.GITHUB_REF !== 'refs\/heads\/main'/);
+assert.match(runtime, /validateSourceRun\(source, jobsPayload.jobs, mainSha, NOW\(\)\)/);
+assert.match(runtime, /isTrustedBackstop\(backstop\.workflow_runs, source\)/);
+assert.doesNotMatch(runtime, /GH_TOKEN[^\n]*secrets\./);
 
 console.log('Daily bounded auto-publication policy PASS: fake dates, backstop, exact PR, strict source, check provenance and workflow limits; no network or merge.');

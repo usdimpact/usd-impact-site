@@ -7,8 +7,10 @@ on:
     branches: [agent/1103-b5-rpc-sql-isolated-d1-20261104]
     paths:
       - '.github/workflows/research-d2-pg17-isolated-review.yml'
-      - 'docs/operations/research-d2-pg17-review-fixtures.tar.xz.b64'
+      - 'docs/operations/research-d2-pg17/**'
       - 'docs/operations/research-d2-pg17-fixture-sha256.txt'
+      - 'scripts/run_research_d2_pg17_review.py'
+      - 'scripts/test_research_d2_fixture_integrity.py'
 permissions:
   contents: read
 concurrency:
@@ -63,12 +65,10 @@ jobs:
           test -z "${SUPABASE_URL:-}"
           test -z "${DATABASE_URL:-}"
           test -z "${VERCEL_ENV:-}"
-          mkdir -p "$RUNNER_TEMP/d2-fixture"
-          base64 --decode docs/operations/research-d2-pg17-review-fixtures.tar.xz.b64 > "$RUNNER_TEMP/research-d2-fixture.tar.xz"
-          printf '%s  %s\n' '0027705cfe30f09b2be3e0d034a09eefeb33cfcdf3c1e930201e58fdcae97a47' "$RUNNER_TEMP/research-d2-fixture.tar.xz" | sha256sum --check
-          tar -xJf "$RUNNER_TEMP/research-d2-fixture.tar.xz" -C "$RUNNER_TEMP/d2-fixture"
-          (cd "$RUNNER_TEMP/d2-fixture" && sha256sum --check "$GITHUB_WORKSPACE/docs/operations/research-d2-pg17-fixture-sha256.txt")
-          python3 -m py_compile "$RUNNER_TEMP/d2-fixture/run_pg17_review.py"
+          # Explicit, diffable SQL/Python fixtures: reject opaque archives.
+          test ! -f docs/operations/research-d2-pg17-review-fixtures.tar.xz.b64
+          python3 scripts/test_research_d2_fixture_integrity.py
+          python3 -m py_compile scripts/run_research_d2_pg17_review.py
           echo 'D2 no Supabase project, no provider webhook, no paid customer data'
       - name: Install pinned isolated PostgreSQL client in ephemeral venv
         shell: bash
@@ -99,7 +99,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          "$RUNNER_TEMP/d2-venv/bin/python" "$RUNNER_TEMP/d2-fixture/run_pg17_review.py"
+          "$RUNNER_TEMP/d2-venv/bin/python" "$GITHUB_WORKSPACE/scripts/run_research_d2_pg17_review.py"
       - name: Record strict no-release scope
         if: always()
         shell: bash

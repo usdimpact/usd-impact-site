@@ -6,6 +6,7 @@ import {
   dispatchEnqueuedLaunchEmail,
   enqueueLaunchEmailIntent,
   lifecycleEmailDispatchEnabled,
+  lifecycleEmailLedgerEnabled,
 } from './launch-email-dispatch.js';
 
 export const PURCHASE_ACCESS_READY_EMAIL_MESSAGE_ID = 'purchase_access_ready';
@@ -116,6 +117,10 @@ export async function deliverPurchaseAccessReadyEmail({
   providerFetchImpl = fetch,
   nowMs = Date.now(),
 }) {
+  // Disabled transactional email must be inert even if buyer email is malformed.
+  if (!lifecycleEmailLedgerEnabled(environment)) {
+    return Object.freeze({ enabled: false, state: Object.freeze({ enabled: false }), delivery: null });
+  }
   const prepared = createPurchaseAccessReadyEmailIntent({ accessResult });
   const state = await enqueueLaunchEmailIntent({
     intent: prepared.intent,

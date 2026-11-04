@@ -54,7 +54,7 @@ const checkout = await createResearchMembershipCheckout({
         action: 'reserved', intent_id: intent, checkout_key: proof,
         account_id: account, store_id: '42', variant_id: '314',
         billing_interval: 'monthly', test_mode: true,
-        expires_at: issued.expires_at,
+        created_at: issued.created_at, expires_at: issued.expires_at,
       }), { status: 200 });
     }
     if (url.endsWith('/rpc/attach_research_membership_checkout_intent')) {

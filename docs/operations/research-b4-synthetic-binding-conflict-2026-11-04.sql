@@ -149,7 +149,7 @@ for each statement execute function research_binding_review.reject_evidence_muta
 -- mutate historical Library Pass rows through this review fixture.
 create function research_binding_review.guard_library_pass_mutation()
 returns trigger language plpgsql
-set search_path = pg_catalog, research_binding_review, pg_temp as $
+set search_path = pg_catalog, research_binding_review, pg_temp as $$
 begin
   if tg_op = 'TRUNCATE' then
     raise exception 'B-4 Library Pass rows are immutable'
@@ -165,7 +165,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 create trigger guard_library_pass_update_delete
 before update or delete on research_binding_review.entitlements
 for each row execute function research_binding_review.guard_library_pass_mutation();

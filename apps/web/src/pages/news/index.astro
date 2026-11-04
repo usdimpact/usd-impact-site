@@ -14,9 +14,11 @@ const catalystBriefs = hasCatalystBriefFiles
       .filter((entry) => entry.data.status === 'published')
       .sort((a, b) => b.data.generatedAt.localeCompare(a.data.generatedAt))
   : [];
-const latestWeeklyReport = (await getCollection('weeklyReports'))
-  .filter((entry) => entry.data.status === 'published')
-  .sort((a, b) => b.data.periodEnd.localeCompare(a.data.periodEnd))[0];
+// Only independently verified, published static Friday Weeklies can be promoted.
+// The dedicated freshness contract rejects a stale date whenever a new Friday
+// route is published. Do not resolve source filesystem paths from prerendered
+// Astro chunks: import.meta.url points at dist/.prerender during the build.
+const latestIndependentWeek = '2026-10-30';
 const formatDate = (value) => new Intl.DateTimeFormat('en', {
   day: 'numeric',
   month: 'long',
@@ -63,14 +65,14 @@ const formatDate = (value) => new Intl.DateTimeFormat('en', {
           </div>
         </section>
 
-        {latestWeeklyReport && (
+        {latestIndependentWeek && (
           <section class="reports-promo card">
             <div>
-              <div class="eyebrow">Weekly synthesis</div>
-              <h2>Connect the news to the score</h2>
-              <p>{latestWeeklyReport.data.summary}</p>
+              <div class="eyebrow">Latest independent Macro Weekly · {formatDate(latestIndependentWeek)}</div>
+              <h2>Review the completed week through official sources</h2>
+              <p>The latest published, independent educational Weekly uses original analysis and cited primary sources without licensed Score-derived values or live market-price feeds. The historical Score-based Weekly series remains on rights hold.</p>
             </div>
-            <a class="button report-link" href={latestWeeklyReport.data.slug}>Read the Weekly Brief</a>
+            <a class="button report-link" href={`/macro-reviews/weekly/${latestIndependentWeek}/`}>Read the independent Weekly</a>
           </section>
         )}
 

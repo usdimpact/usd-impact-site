@@ -11,6 +11,8 @@ revoke all on schema research_checkout_guard from public;
 create role review_checkout_issuer login noinherit password 'only_synthetic_issuer';
 create role review_checkout_verifier login noinherit password 'only_synthetic_verifier';
 create role review_checkout_binder login noinherit password 'only_synthetic_binder';
+-- D1 C11: isolated NOLOGIN function owner, never a Supabase role install.
+create role review_checkout_owner nologin noinherit nosuperuser nocreatedb nocreaterole nobypassrls;
 create role anon nologin;
 create role authenticated nologin;
 
@@ -441,6 +443,35 @@ begin
    'subscription_state','pending','raw_body_sha256',p_raw_body_sha256);
 end;
 $fn$;
+
+-- D1 C11: the four exposed SECURITY DEFINER RPCs and their private
+-- helper must never remain owned by a PostgreSQL superuser. Grant only
+-- the exact fixture data operations needed by their existing SQL.
+grant usage on schema research_checkout_guard, extensions, public to review_checkout_owner;
+grant select on research_checkout_guard.allowed_variants to review_checkout_owner;
+grant select, insert, update on research_checkout_guard.checkout_intents to review_checkout_owner;
+grant select, insert, update on research_checkout_guard.signed_paid_observations to review_checkout_owner;
+grant select, insert on research_checkout_guard.signed_paid_deliveries to review_checkout_owner;
+grant select, insert on research_checkout_guard.conflict_evidence to review_checkout_owner;
+grant select, update on public.profiles to review_checkout_owner;
+grant select, insert on public.subscriptions to review_checkout_owner;
+grant select on public.entitlements, public.subscription_offers to review_checkout_owner;
+-- CREATE is temporarily needed to transfer function ownership and is
+-- revoked immediately. No login caller gets membership in this owner.
+grant create on schema public, research_checkout_guard to review_checkout_owner;
+alter function research_checkout_guard.hold_binding_conflict(uuid,text,text)
+  owner to review_checkout_owner;
+alter function public.issue_research_membership_checkout_intent(
+ uuid,text,text,text,text,boolean,text) owner to review_checkout_owner;
+alter function public.attach_research_membership_checkout_intent(
+ uuid,text,text) owner to review_checkout_owner;
+alter function public.observe_signed_research_subscription_created(
+ text,text,text,text,text,text,boolean,timestamptz,text,uuid,text,text,text)
+ owner to review_checkout_owner;
+alter function public.bind_research_membership_with_checkout_intent(
+ uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean,text,text)
+ owner to review_checkout_owner;
+revoke create on schema public, research_checkout_guard from review_checkout_owner;
 
 -- D1 FAKE ROLE GRANTS ONLY, not production service-role permission.
 revoke all on function public.issue_research_membership_checkout_intent(

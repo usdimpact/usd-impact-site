@@ -45,6 +45,16 @@ def api():
         connect_timeout=5,autocommit=True,
     )
 
+def verifier():
+    # Synthetic, separate login for a simulated previously-verified provider
+    # event. This connection DOES NOT itself establish a real HMAC.
+    return psycopg.connect(
+        host="127.0.0.1",port=5432,dbname="ci_review",
+        user="review_binding_verifier",
+        password="ci_review_verifier_only_password",
+        connect_timeout=5,autocommit=True,
+    )
+
 def query(connection, text, params=()):
     with connection.cursor() as cursor:
         cursor.execute(text,params)
@@ -114,10 +124,10 @@ def setup_fixture(root):
               values (%s::uuid,'lemon-squeezy',%s,'processed')""",
             (p,"library-event-"+p[:8]))
 
-def test_t13_two_distinct_paid_bindings(a,b,watch):
+def test_t13_two_distinct_paid_bindings(a,b,watch,v):
     # Independent precommitted evidence for BOTH signed/paid provider objects.
-    assert invoke(a,"observe_signed_paid",P1,"synthetic-provider-sub-1","evt-b4-1")["disposition"]=="recorded"
-    assert invoke(b,"observe_signed_paid",P1,"synthetic-provider-sub-2","evt-b4-2")["disposition"]=="recorded"
+    assert invoke(v,"observe_signed_paid",P1,"synthetic-provider-sub-1","evt-b4-1")["disposition"]=="recorded"
+    assert invoke(v,"observe_signed_paid",P1,"synthetic-provider-sub-2","evt-b4-2")["disposition"]=="recorded"
     assert len(paid(watch,"evt-b4-1"))==len(paid(watch,"evt-b4-2"))==1
 
     before_library_ent=snapshot(watch,"entitlements","product_id='library-pass'")
@@ -160,8 +170,8 @@ def test_t13_two_distinct_paid_bindings(a,b,watch):
     assert snapshot(watch,"library_pass_receipts")==before_library_receipts
     print("PASS B4 T13: real profile row lock; second paid subscription returned conflict; committed journal; first pending")
 
-def test_t21_complimentary_preservation(a,b,watch):
-    assert invoke(a,"observe_signed_paid",P2,"synthetic-provider-sub-3","evt-b4-3")["disposition"]=="recorded"
+def test_t21_complimentary_preservation(a,b,watch,v):
+    assert invoke(v,"observe_signed_paid",P2,"synthetic-provider-sub-3","evt-b4-3")["disposition"]=="recorded"
     before=snapshot(watch,"entitlements",
        f"account_id='{P2}'::uuid and product_id='research-membership'")
     assert len(before)==1
@@ -226,11 +236,11 @@ def test_x2_lease_uses_wall_clock(admin_a,watch):
     assert diff>=88.9, f"X2 expected wall-clock-based 90s lease, got {diff:.3f}s"
     print("PASS B4 X2: delayed transaction still receives 90s clock_timestamp lease")
 
-def test_x3_rollback_journal_limitation(a,watch):
+def test_x3_rollback_journal_limitation(a,watch,v):
     # A signed/paid observation commits BEFORE a rollbackable binding attempt.
     # This cannot make the later conflict journal autonomous.
     event="evt-b4-rollback"
-    assert invoke(a,"observe_signed_paid",P1,"synthetic-provider-sub-rollback",event)["disposition"]=="recorded"
+    assert invoke(v,"observe_signed_paid",P1,"synthetic-provider-sub-rollback",event)["disposition"]=="recorded"
     assert len(paid(watch,event))==1
     a.execute("BEGIN")
     result=invoke(a,"try_bind_paid",P1,"synthetic-provider-sub-rollback",event)
@@ -280,8 +290,31 @@ def test_x8_version_mismatch_remains_non_applied(watch):
     assert original["disposition"]=="acquired","Frozen v1 hash is required for an authorized retry"
     print("EXPECTED B4 X8 BLOCKER: v3 cannot replay a stored v1 failure; frozen v1 hash required (not wired into app)")
 
-def test_d2_isolated_non_superuser_privileges(a,watch):
+def test_d2_isolated_non_superuser_privileges(a,watch,v):
     assert one(a,"select current_user")=="review_binding_api"
+    assert one(v,"select current_user")=="review_binding_verifier"
+    assert not one(watch,"select has_function_privilege('review_binding_api','research_binding_review.observe_signed_paid(uuid,text,text)','EXECUTE')")
+    assert one(watch,"select has_function_privilege('review_binding_verifier','research_binding_review.observe_signed_paid(uuid,text,text)','EXECUTE')")
+    assert not one(watch,"select has_function_privilege('review_binding_verifier','research_binding_review.try_bind_paid(uuid,text,text)','EXECUTE')")
+    # Y1: an unverified API caller cannot insert fake paid evidence or bind it.
+    forged="evt-b41-unverified"
+    expect_error(lambda: invoke(a,"observe_signed_paid",P3,"fake-paid-event",forged),sqlstate="42501")
+    assert paid(watch,forged)==[]
+    assert invoke(a,"try_bind_paid",P3,"fake-paid-event",forged)["disposition"]=="unverified_paid_evidence"
+    assert one(watch,"select count(*) from research_binding_review.subscriptions where provider_subscription_id='fake-paid-event'")==0
+    # Y5: prove a function created AFTER the fixture transaction lacks the
+    # PostgreSQL global PUBLIC EXECUTE default. Not merely per-schema REVOKE.
+    watch.execute("create function research_binding_review.b41_future_canary() returns integer language sql as $ select 1 $")
+    assert not one(watch,"select has_function_privilege('review_binding_api','research_binding_review.b41_future_canary()','EXECUTE')")
+    assert not one(watch,"select has_function_privilege('review_binding_verifier','research_binding_review.b41_future_canary()','EXECUTE')")
+    assert not one(watch,"select has_table_privilege('review_binding_writer','research_binding_review.entitlements','UPDATE')")
+    # Y6: direct updates remain impossible even if a superuser temporarily
+    # assumes the nonlogin writer role (only in this disposable CI database).
+    watch.execute("set role review_binding_writer")
+    try:
+        expect_error(lambda: watch.execute("update research_binding_review.entitlements set version=version+1"),sqlstate="42501")
+    finally:
+        watch.execute("reset role")
     assert not one(a,"select rolbypassrls from pg_roles where rolname=current_user")
     assert not one(a,"select pg_has_role(current_user,'review_binding_writer','MEMBER')")
     assert one(watch,"select has_function_privilege('review_binding_api','research_binding_review.try_bind_paid(uuid,text,text)','EXECUTE')")
@@ -301,36 +334,87 @@ def test_d2_isolated_non_superuser_privileges(a,watch):
     assert one(watch,
         """select pg_get_userbyid(proowner) from pg_proc
            where oid='research_binding_review.try_bind_paid(uuid,text,text)'::regprocedure""")=="review_binding_writer"
-    print("PASS B4 synthetic D2: non-superuser API, no direct table writes, no SET ROLE, restricted execute; NOT actual Supabase RLS")
+    print("PASS B4.1 Y1/Y5/Y6: API paid-event forgery rejected; verifier isolated; global future EXECUTE default revoked; no writer UPDATE on entitlements")
 
-def test_paid_event_identity_conflict(a,watch):
+def test_paid_event_identity_conflict(a,watch,v):
     eid="evt-b4-identity"
-    assert invoke(a,"observe_signed_paid",P1,"synthetic-sub-identity-a",eid)["disposition"]=="recorded"
-    x=invoke(a,"observe_signed_paid",P1,"synthetic-sub-identity-b",eid)
+    assert invoke(v,"observe_signed_paid",P1,"synthetic-sub-identity-a",eid)["disposition"]=="recorded"
+    x=invoke(v,"observe_signed_paid",P1,"synthetic-sub-identity-b",eid)
     assert x["disposition"]=="event_identity_conflict"
     j=conflicts(watch,eid)
     assert any(z[0]=="paid_evidence_identity_mismatch" for z in j)
     assert paid(watch,eid)[0][1]=="synthetic-sub-identity-a"
     print("PASS B4 provider event identity collision is journalled, not silently reused")
 
-def test_d5_unbound_public_checkout(a,watch):
+def test_d5_unbound_public_checkout(a,watch,v):
     # Lemon Squeezy Share product URL can omit checkout custom account ID.
     # A synthetic signed paid event must remain discoverable with NULL account.
     # This does NOT execute a real checkout or verify provider HMAC.
     evt="evt-b4-public-unbound"
     sub="synthetic-public-no-custom-binding"
-    recorded=invoke(a,"observe_signed_paid",None,sub,evt)
+    recorded=invoke(v,"observe_signed_paid",None,sub,evt)
     assert recorded["disposition"]=="unbound_paid_observed",recorded
     assert len(paid(watch,evt))==1 and paid(watch,evt)[0][2] is None
     observed=conflicts(watch,evt)
     assert len(observed)==1 and observed[0][0]=="missing_custom_binding"
     assert observed[0][3] is None
-    assert invoke(a,"observe_signed_paid",None,sub,evt)["disposition"]=="already_recorded"
+    assert invoke(v,"observe_signed_paid",None,sub,evt)["disposition"]=="already_recorded"
     assert invoke(a,"try_bind_paid",None,sub,evt)["disposition"]=="invalid_input"
     assert one(watch,
         "select count(*) from research_binding_review.subscriptions where provider_subscription_id=%s",
         (sub,))==0
     print("PASS B4 D5 synthetic: signed unbound provider purchase observed and journalled without granting access")
+
+
+def test_y2_terminal_subscription_no_reactivation(a,watch,v):
+    # Rejected terminal states must not be resurrected by a paid observation.
+    for state in ("refunded","cancelled","past_due","cancel_scheduled"):
+        event="evt-b41-terminal-"+state
+        sub="synthetic-terminal-"+state
+        assert invoke(v,"observe_signed_paid",P3,sub,event)["disposition"]=="recorded"
+        assert invoke(a,"try_bind_paid",P3,sub,event)["disposition"]=="created"
+        watch.execute(
+            "update research_binding_review.subscriptions set status=%s where provider_subscription_id=%s",
+            (state,sub))
+        outcome=invoke(a,"try_activate_paid",P3,sub,event)
+        assert outcome=={"disposition":"conflict","code":"subscription_not_activatable"},outcome
+        assert one(watch,
+            "select status from research_binding_review.subscriptions where provider_subscription_id=%s",
+            (sub,))==state
+        assert one(watch,
+            "select count(*) from research_binding_review.entitlements where account_id=%s::uuid and product_id='research-membership' and state='active'",
+            (P3,))==0
+        assert any(x[0]=="subscription_not_activatable" for x in conflicts(watch,event))
+    print("PASS B4.1 Y2: refunded/cancelled/past_due/cancel_scheduled never activated")
+
+def test_y3_provider_subscription_account_conflict(a,watch,v):
+    # Preserve both independently asserted paid events, but trust neither
+    # account assignment until owner/provider reconciliation.
+    sub="synthetic-provider-account-collision"
+    one_event="evt-b41-sub-account-one"
+    two_event="evt-b41-sub-account-two"
+    assert invoke(v,"observe_signed_paid",P1,sub,one_event)["disposition"]=="recorded"
+    outcome=invoke(v,"observe_signed_paid",P3,sub,two_event)
+    assert outcome["disposition"]=="subscription_account_conflict",outcome
+    assert len(paid(watch,one_event))==len(paid(watch,two_event))==1
+    assert any(c[0]=="provider_subscription_account_mismatch" for c in conflicts(watch,two_event))
+    for account,event in ((P1,one_event),(P3,two_event)):
+        outcome=invoke(a,"try_bind_paid",account,sub,event)
+        assert outcome=={"disposition":"conflict","code":"provider_subscription_account_mismatch"},outcome
+    assert one(watch,
+        "select count(*) from research_binding_review.subscriptions where provider_subscription_id=%s",(sub,))==0
+    print("PASS B4.1 Y3: same provider subscription / distinct accounts preserved and fail-closed")
+
+def test_y6_library_pass_invariance_guard(watch,before_ent,before_receipts):
+    for stmt in (
+        "update research_binding_review.entitlements set version=version+1 where product_id='library-pass'",
+        "delete from research_binding_review.entitlements where product_id='library-pass'",
+        "truncate research_binding_review.entitlements cascade",
+    ):
+        expect_error(lambda s=stmt: watch.execute(s),sqlstate="42501",contains="Library Pass")
+    assert snapshot(watch,"entitlements","product_id='library-pass'")==before_ent
+    assert snapshot(watch,"library_pass_receipts")==before_receipts
+    print("PASS B4.1 Y6: Library Pass UPDATE/DELETE/TRUNCATE rejected by trigger (synthetic)")
 
 def main():
     assert guard()
@@ -338,20 +422,23 @@ def main():
         setup_fixture(root)
         library_ent=snapshot(root,"entitlements","product_id='library-pass'")
         library_receipts=snapshot(root,"library_pass_receipts")
-        with api() as a, api() as b:
-            test_d2_isolated_non_superuser_privileges(a,root)
-            test_t13_two_distinct_paid_bindings(a,b,root)
-            test_t21_complimentary_preservation(a,b,root)
-            test_paid_event_identity_conflict(a,root)
-            test_d5_unbound_public_checkout(a,root)
-            test_x3_rollback_journal_limitation(a,root)
+        with api() as a, api() as b, verifier() as v:
+            test_d2_isolated_non_superuser_privileges(a,root,v)
+            test_t13_two_distinct_paid_bindings(a,b,root,v)
+            test_t21_complimentary_preservation(a,b,root,v)
+            test_paid_event_identity_conflict(a,root,v)
+            test_d5_unbound_public_checkout(a,root,v)
+            test_x3_rollback_journal_limitation(a,root,v)
+            test_y2_terminal_subscription_no_reactivation(a,root,v)
+            test_y3_provider_subscription_account_conflict(a,root,v)
+            test_y6_library_pass_invariance_guard(root,library_ent,library_receipts)
             test_t22_library_untouched(root,library_ent,library_receipts)
         with admin() as a, admin() as b:
             test_x1_expired_lease_reacquisition(a,b,root)
             test_x2_lease_uses_wall_clock(a,root)
         test_x4_force_truncate_review_journal(root)
         test_x8_version_mismatch_remains_non_applied(root)
-    print("B4 REAL PostgreSQL synthetic T13/T21/T22/X1/X2/X4/D2/D5-unbound PASS; X3/X8 LIMITATIONS DOCUMENTED.")
+    print("B4.1 REAL PostgreSQL synthetic T13/T21/T22/X1/X2/X4/D2/D5 + Y1/Y2/Y3/Y5/Y6 assertions PASS; X3/X8 remain design BLOCKERS.")
     print("NOT TESTED: actual USD Impact paid binding/Library Pass SQL migration, HMAC/merchant, Supabase roles, Production.")
 
 if __name__=="__main__":

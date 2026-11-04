@@ -13,15 +13,24 @@
 
 begin;
 
+-- Scope of this global default-EXECUTE change is the disposable CI database
+-- ONLY; ci_research is the isolated PostgreSQL fixture owner, not Supabase.
+-- Schema-only default REVOKE cannot remove Postgres's global PUBLIC default.
+alter default privileges for role ci_research
+  revoke execute on functions from public;
+
 create role review_binding_writer nologin;
 create role review_binding_evidence_owner nologin;
 create role review_binding_api login password 'ci_review_api_only_password';
+-- Distinct simulated trusted server-side verifier. Its CI-only credential
+-- does NOT prove Lemon Squeezy HMAC in SQL or authorize a live provider role.
+create role review_binding_verifier login password 'ci_review_verifier_only_password';
 create role review_binding_anon nologin;
 create role review_binding_authenticated nologin;
 
 create schema research_binding_review;
 revoke all on schema research_binding_review from public;
-grant usage on schema research_binding_review to review_binding_writer, review_binding_api;
+grant usage on schema research_binding_review to review_binding_writer, review_binding_api, review_binding_verifier;
 -- CREATE granted only temporarily to transfer SECURITY DEFINER ownership.
 grant create on schema research_binding_review to review_binding_writer;
 -- Temporary CREATE is required for the distinct evidence-owner transfer.
@@ -101,7 +110,8 @@ create table research_binding_review.conflict_observations (
   conflict_code text not null check (conflict_code in (
     'duplicate_paid_subscription','entitlement_conflict',
     'provider_subscription_in_use','account_unavailable','unbound_subscription',
-    'paid_evidence_identity_mismatch','missing_custom_binding'
+    'paid_evidence_identity_mismatch','missing_custom_binding',
+    'provider_subscription_account_mismatch','subscription_not_activatable'
   )),
   observed_at timestamptz not null default clock_timestamp()
 );
@@ -135,16 +145,45 @@ create trigger no_conflict_truncate
 before truncate on research_binding_review.conflict_observations
 for each statement execute function research_binding_review.reject_evidence_mutation();
 
+-- Defense in depth: a privileged or accidentally broadened writer may NEVER
+-- mutate historical Library Pass rows through this review fixture.
+create function research_binding_review.guard_library_pass_mutation()
+returns trigger language plpgsql
+set search_path = pg_catalog, research_binding_review, pg_temp as $
+begin
+  if tg_op = 'TRUNCATE' then
+    raise exception 'B-4 Library Pass rows are immutable'
+      using errcode = '42501';
+  end if;
+  if old.product_id = 'library-pass'
+     or (tg_op = 'UPDATE' and new.product_id = 'library-pass') then
+    raise exception 'B-4 Library Pass rows are immutable'
+      using errcode = '42501';
+  end if;
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+  return new;
+end;
+$;
+create trigger guard_library_pass_update_delete
+before update or delete on research_binding_review.entitlements
+for each row execute function research_binding_review.guard_library_pass_mutation();
+create trigger guard_entitlement_truncate
+before truncate on research_binding_review.entitlements
+for each statement execute function research_binding_review.guard_library_pass_mutation();
+
 grant select, update on research_binding_review.profiles to review_binding_writer;
 grant select, insert, update on research_binding_review.subscriptions to review_binding_writer;
-grant select, insert, update on research_binding_review.entitlements to review_binding_writer;
+grant select, insert on research_binding_review.entitlements to review_binding_writer;
 grant select, insert on research_binding_review.signed_paid_observations to review_binding_writer;
 grant select, insert on research_binding_review.conflict_observations to review_binding_writer;
 -- Explicitly NO table privileges whatsoever for review_binding_api.
 
--- This is a simulated authenticated-paid observation function. Only the
--- application caller can verify the Lemon Squeezy signature before calling:
--- the DB function itself cannot verify the real provider signature here.
+-- The only caller is the separate simulated verifier login, NOT the API
+-- caller that requests binding/activation. SQL itself cannot verify HMAC,
+-- catalog, a checkout-intent reservation, or a real customer charge.
+-- Therefore this is ONLY the D1 trust-boundary simulation, not a live fix.
 create function research_binding_review.observe_signed_paid(
   p_account_id uuid, p_subscription_id text, p_event_id text
 ) returns jsonb language plpgsql security definer
@@ -159,12 +198,29 @@ begin
     return jsonb_build_object('disposition','invalid_input');
   end if;
 
+  -- Serialize distinct paid-event identities for the same provider sub, so
+  -- two verifier sessions cannot each pass a first-seen identity check.
+  perform pg_advisory_xact_lock(hashtextextended(p_subscription_id, 0));
+
   insert into research_binding_review.signed_paid_observations(
     bound_account_id,provider_subscription_id,provider_event_id
   ) values (p_account_id,p_subscription_id,p_event_id)
   on conflict(provider_event_id) do nothing returning * into v_obs;
 
   if found then
+    if exists (
+      select 1 from research_binding_review.signed_paid_observations p
+       where p.provider_subscription_id = p_subscription_id
+         and p.id <> v_obs.id
+         and p.bound_account_id is distinct from p_account_id
+    ) then
+      insert into research_binding_review.conflict_observations(
+        paid_observation_id,provider_event_id,provider_subscription_id,
+        bound_account_id,conflict_code
+      ) values (v_obs.id,p_event_id,p_subscription_id,p_account_id,
+        'provider_subscription_account_mismatch');
+      return jsonb_build_object('disposition','subscription_account_conflict');
+    end if;
     if p_account_id is null then
       insert into research_binding_review.conflict_observations(
         paid_observation_id,provider_event_id,provider_subscription_id,
@@ -214,6 +270,22 @@ begin
 
   if not found then
     return jsonb_build_object('disposition','unverified_paid_evidence');
+  end if;
+
+  -- Even a precommitted verifier observation cannot bind one provider
+  -- subscription to contradictory account identities. Human D6 review only.
+  if exists (
+    select 1 from research_binding_review.signed_paid_observations p
+     where p.provider_subscription_id = p_subscription_id
+       and p.bound_account_id is distinct from p_account_id
+  ) then
+    insert into research_binding_review.conflict_observations(
+      paid_observation_id,provider_event_id,provider_subscription_id,
+      bound_account_id,conflict_code
+    ) values (v_paid_id,p_event_id,p_subscription_id,p_account_id,
+      'provider_subscription_account_mismatch');
+    return jsonb_build_object('disposition','conflict',
+      'code','provider_subscription_account_mismatch');
   end if;
 
   -- Lock profile BEFORE subscription and entitlement to serialize bindings.
@@ -281,6 +353,20 @@ begin
     return jsonb_build_object('disposition','unverified_paid_evidence');
   end if;
 
+  if exists (
+    select 1 from research_binding_review.signed_paid_observations p
+     where p.provider_subscription_id = p_subscription_id
+       and p.bound_account_id is distinct from p_account_id
+  ) then
+    insert into research_binding_review.conflict_observations(
+      paid_observation_id,provider_event_id,provider_subscription_id,
+      bound_account_id,conflict_code
+    ) values (v_paid_id,p_event_id,p_subscription_id,p_account_id,
+      'provider_subscription_account_mismatch');
+    return jsonb_build_object('disposition','conflict',
+      'code','provider_subscription_account_mismatch');
+  end if;
+
   select status into v_profile_status from research_binding_review.profiles
     where account_id=p_account_id for update;
   if not found or v_profile_status <> 'active' then
@@ -302,11 +388,22 @@ begin
     return jsonb_build_object('disposition','conflict','code','unbound_subscription');
   end if;
 
+  if v_sub.status not in ('pending','active') then
+    insert into research_binding_review.conflict_observations(
+      paid_observation_id,provider_event_id,provider_subscription_id,
+      bound_account_id,conflict_code
+    ) values (v_paid_id,p_event_id,p_subscription_id,p_account_id,
+      'subscription_not_activatable');
+    return jsonb_build_object('disposition','conflict',
+      'code','subscription_not_activatable');
+  end if;
+
   select * into v_ent from research_binding_review.entitlements
     where account_id=p_account_id and product_id='research-membership'
       and state='active' for update;
   if found then
-    if v_ent.source='paid' and v_ent.provider_subscription_id=p_subscription_id then
+    if v_sub.status='active' and v_ent.source='paid'
+       and v_ent.provider_subscription_id=p_subscription_id then
       return jsonb_build_object('disposition','already_active');
     end if;
     insert into research_binding_review.conflict_observations(
@@ -314,6 +411,18 @@ begin
       bound_account_id,conflict_code
     ) values (v_paid_id,p_event_id,p_subscription_id,p_account_id,'entitlement_conflict');
     return jsonb_build_object('disposition','conflict','code','entitlement_conflict');
+  end if;
+
+  -- A terminal/refunded/cancelled or pre-existing active subscription must
+  -- never be reactivated or granted a fresh entitlement by this function.
+  if v_sub.status <> 'pending' then
+    insert into research_binding_review.conflict_observations(
+      paid_observation_id,provider_event_id,provider_subscription_id,
+      bound_account_id,conflict_code
+    ) values (v_paid_id,p_event_id,p_subscription_id,p_account_id,
+      'subscription_not_activatable');
+    return jsonb_build_object('disposition','conflict',
+      'code','subscription_not_activatable');
   end if;
 
   update research_binding_review.subscriptions
@@ -337,8 +446,10 @@ revoke create on schema research_binding_review from review_binding_writer;
 -- no intermediate public EXECUTE window. This models D2 review constraints
 -- but is NOT a connected Supabase role/grant approval.
 revoke all on all functions in schema research_binding_review from public;
+-- The API cannot create its own paid proof. The simulated verifier alone may
+-- assert a precommitted event. The verifier must be external, not an API alias.
 grant execute on function research_binding_review.observe_signed_paid(uuid,text,text)
-  to review_binding_api;
+  to review_binding_verifier;
 grant execute on function research_binding_review.try_bind_paid(uuid,text,text)
   to review_binding_api;
 grant execute on function research_binding_review.try_activate_paid(uuid,text,text)

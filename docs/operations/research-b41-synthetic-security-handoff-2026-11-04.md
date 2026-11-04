@@ -1,0 +1,18 @@
+# B-4.1 independent Draft — simulated paid-event trust and terminal-state fixes
+Date: 2026-11-04. Owner D1 synthetic-only test approval. Source B-4 Draft #1117 pinned at 9e3dc4dc56c283e329f82339d206c3a6eca340e3; protected main unchanged.
+
+## Scope / non-claims
+This child changes ONLY the isolated `research_binding_review` SQL fixture, its disposable two-session PostgreSQL script, and this document. It is NOT a Supabase migration, Production role/grant, checkout-intent system, HMAC implementation, provider API call, billing reconciliation or live Research fix. Real D2/D3/D4/D6/D7/merge/deployment approvals are withheld. The existing pinned D1 workflow runs this child because the changed synthetic SQL/script paths are already allowlisted. No workflow YAML or runtime file changed.
+
+## Security hardening under test
+- Y1: Separate CI-only `review_binding_verifier` role alone may invoke `observe_signed_paid`. Untrusted `review_binding_api` loses paid-evidence creation permission but retains guarded bind/activate. A denied spoof attempt and absence of any subsequent subscription/entitlement is asserted. **This does NOT cryptographically authenticate a provider payment:** the simulated verifier must stand for a separately approved, real HMAC/catalog/checkout-intent implementation, which is still missing. Never deploy this role scheme as a complete provider proof.
+- Y2: Activation requires `pending`; a preexisting `active` sub is only idempotently acknowledged when its matching paid entitlement is already active. `refunded`, `cancelled`, `past_due`, `cancel_scheduled`, or active-without-entitlement states are non-applied, journalled `subscription_not_activatable` conflicts.
+- Y3: Distinct paid event identities for one provider subscription and two different claimed accounts retain both paid observations but create an identity conflict and block binding. The isolated receipt-observation path serializes provider subscription checks with a transaction advisory lock. It does not resolve which account is authorized.
+- Y5: PostgreSQL's **global** default PUBLIC EXECUTE is revoked for the synthetic fixture creator `ci_research`, before creating functions. A later newly created function is tested for denied API/verifier EXECUTE. Existing individual grants are explicitly restricted. Never execute this default-privilege statement in any persistent database as part of this Draft.
+- Y6: The synthetic writer no longer has UPDATE on entitlements; a defense-in-depth Library Pass trigger rejects UPDATE/DELETE/TRUNCATE even for the fixture admin role. No tests touch actual Library Pass rows.
+
+## Acceptance / blocked items
+Require exact-head 5/5 hosted checks, especially two-session real PostgreSQL logs with existing T13/T21/T22/X1/X2/X3/X4/X8 plus new Y1/Y2/Y3/Y5/Y6 negatives. A PASS demonstrates only isolated fake roles and SQL fixture. X3 same-transaction rollback still erases uncommitted conflict observations (precommitted paid evidence survives); X8 v1/v3 receipt reconciliation still requires frozen v1. Real caller-authenticated paid evidence, persisted checkout reservation, provider-led refund/relink, actual main SQL T13/T21 and Supabase non-escalatable writer controls are STILL activation BLOCKERS. Source Daily #840 and storage Issue #950 remain unrelated HOLD.
+
+## Independent QA
+Review precisely the child file changes, verify the synthetic verifier cannot be impersonated by API or assumed via SET ROLE, challenge the advisory-lock hash collision/identity contract, terminal idempotency, and default role privileges. No Production mutation or merge allowed.

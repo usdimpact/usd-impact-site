@@ -261,6 +261,28 @@ await test('ledger read error is not treated as event absence', async () => {
     return true;
   }); ctx.assertReadOnly();
 });
+for (const [caseName, responder] of [
+  ['network transport exception', () => { throw new Error('internal network details must not escape'); }],
+  ['HTTP 503', (_ctx, json) => json({ error: 'internal database details' }, 503)],
+  ['malformed JSON with HTTP 200', () => new Response('{invalid', { status: 200 })],
+  ['non-array JSON with HTTP 200', (_ctx, json) => json({ message: 'invalid shape' })],
+  ['empty HTTP 200 body', () => new Response('', { status: 200 })],
+]) {
+  await test('subscription lookup ' + caseName + ' returns retryable 502 without a write', async () => {
+    const ctx = fixture({ subscriptionReply: responder });
+    await assert.rejects(() => ctx.run(), (error) => {
+      assert.equal(error.code, 'RESEARCH_WEBHOOK_SUBSCRIPTION_LOOKUP_FAILED');
+      const publicError = publicResearchMembershipWebhookError(error);
+      assert.equal(publicError.status, 502);
+      assert.equal(publicError.payload.code, 'RESEARCH_WEBHOOK_SUBSCRIPTION_LOOKUP_FAILED');
+      assert.doesNotMatch(JSON.stringify(publicError), /internal network details|internal database details|invalid shape/);
+      return true;
+    });
+    assert.equal(ctx.calls.length, 1, 'do not try a second lookup or write');
+    assert.equal(ctx.ledgerReads, 0);
+    ctx.assertReadOnly();
+  });
+}
 await test('ambiguous subscription and Library Pass bindings reject before ledger lookup', async () => {
   for (const body of [[], [{}, {}], [{ id: subscriptionId, account_id: accountId, product_id: 'library-pass', provider: 'lemon-squeezy', provider_subscription_id: 'sub_fixture' }]]) {
     const ctx = fixture({ subscriptionReply: (_c, json) => json(body) });

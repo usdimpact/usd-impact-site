@@ -238,17 +238,23 @@ async function loadExistingSubscription({ config, providerSubscriptionId, fetchI
     product_id: `eq.${RESEARCH_MEMBERSHIP_PRODUCT_ID}`,
     limit: '2',
   });
-  const response = await fetchImpl(`${config.supabaseUrl}/rest/v1/subscriptions?${query}`, {
-    headers: headers(config.supabaseSecret),
-  });
-  const payload = await readJson(response);
-  if (!response.ok) {
-    const error = new Error('Research Membership subscription lookup failed.');
-    error.code = 'RESEARCH_WEBHOOK_SUBSCRIPTION_LOOKUP_FAILED';
-    error.status = 502;
-    throw error;
+  let response;
+  let payload;
+  try {
+    response = await fetchImpl(`${config.supabaseUrl}/rest/v1/subscriptions?${query}`, {
+      headers: headers(config.supabaseSecret),
+    });
+    payload = await readJson(response);
+  } catch {
+    // A transient transport failure is not proof that a paid binding is absent.
+    throw replayError('RESEARCH_WEBHOOK_SUBSCRIPTION_LOOKUP_FAILED', 502);
   }
-  if (!Array.isArray(payload) || payload.length !== 1) {
+  if (!response?.ok || !Array.isArray(payload)) {
+    // A successful but malformed response is also an untrusted lookup failure,
+    // never a business-level missing/ambiguous subscription (409).
+    throw replayError('RESEARCH_WEBHOOK_SUBSCRIPTION_LOOKUP_FAILED', 502);
+  }
+  if (payload.length !== 1) {
     const error = new Error('Research Membership subscription binding was not uniquely resolved.');
     error.code = 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND';
     error.status = 409;

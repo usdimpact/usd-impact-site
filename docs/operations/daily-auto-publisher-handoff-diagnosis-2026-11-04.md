@@ -1,7 +1,7 @@
 # Daily #840 — November 4 unattended publication handoff / release gate design
 
 **Created:** 2026-11-04. **Scope:** documentation-only, standalone Draft from protected main
-\`bb6fb9b5cd6212c6a4bbed3069c2cba6a5b17eea\`.
+`bb6fb9b5cd6212c6a4bbed3069c2cba6a5b17eea`.
 
 **NO release/activation:** This file changes no workflow, controller, rights gate, token, GitHub App,
 configuration, Production page, SQL, news article, checkout or paid generator. It is a review artifact,
@@ -11,26 +11,26 @@ not a fix. Do not merge or deploy on the strength of these observations.
 
 - Independent [schedule backstop #41808313000](https://github.com/usdimpact/usd-impact-site/actions/runs/41808313000)
   began 09:32:11 UTC and finished SUCCESS. The trusted backstop workflow uses the repository's
-  \`GITHUB_TOKEN\` to dispatch \`daily-news.yml\` as a \`workflow_dispatch\`.
+  `GITHUB_TOKEN` to dispatch `daily-news.yml` as a `workflow_dispatch`.
 - [Daily generator #41808333994](https://github.com/usdimpact/usd-impact-site/actions/runs/41808333994)
   began 09:32:20 UTC and completed SUCCESS by 09:34:51 UTC. Source start/poll/import,
   content preflight, one-file PR and Web quality dispatch succeeded.
 - [PR #1110](https://github.com/usdimpact/usd-impact-site/pull/1110) is still OPEN, non-Draft,
-  unmerged, source HEAD \`c011ddd1a3060e0b324a38f9b3474320880241fe\`,
-  base main \`bb6fb9b5cd6212c6a4bbed3069c2cba6a5b17eea\`.
-  The sole content is \`apps/web/src/content/news/2026-11-04.md\`.
+  unmerged, source HEAD `c011ddd1a3060e0b324a38f9b3474320880241fe`,
+  base main `bb6fb9b5cd6212c6a4bbed3069c2cba6a5b17eea`.
+  The sole content is `apps/web/src/content/news/2026-11-04.md`.
 - [Web quality #41808591121](https://github.com/usdimpact/usd-impact-site/actions/runs/41808591121)
-  exact-head \`validate-and-build\` SUCCESS; Vercel Preview SUCCESS.
+  exact-head `validate-and-build` SUCCESS; Vercel Preview SUCCESS.
 - Separate PR-triggered Web quality/Dependency/Supabase intake runs have
-  \`action_required\` and zero jobs due to GitHub token-created PR policy;
+  `action_required` and zero jobs due to GitHub token-created PR policy;
   there is NO verified exact-head required Dependency/migration PASS for #1110.
 - The separate trusted-main [bounded auto-publication controller](https://github.com/usdimpact/usd-impact-site/blob/bb6fb9b5cd6212c6a4bbed3069c2cba6a5b17eea/.github/workflows/daily-news-auto-publish.yml)
-  subscribes to \`workflow_run\` completion of \`Daily USD Impact publication\`. No
+  subscribes to `workflow_run` completion of `Daily USD Impact publication`. No
   controller run appeared in the 100 recent repository runs, and an API query
-  with \`event=workflow_run\` returned \`total_count=0\`.
+  with `event=workflow_run` returned `total_count=0`.
 - Therefore zero-touch publication DID NOT complete. No protected-main merge,
   matching Production deploy, dated article, News index, latest JSON and RSS
-  parity has been proven. The front-matter \`status: "published"\` in a PR is
+  parity has been proven. The front-matter `status: "published"` in a PR is
   not evidence of public publication.
 
 ## 2. Root cause — strongest hypothesis, NOT proved
@@ -38,12 +38,12 @@ not a fix. Do not merge or deploy on the strength of these observations.
 Official GitHub documentation:
 https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow
 
-- Events triggered by a workflow's \`GITHUB_TOKEN\` generally do not start
-  another workflow. Exceptions include explicit \`workflow_dispatch\` and
-  \`repository_dispatch\`, plus approval-required PR workflows.
+- Events triggered by a workflow's `GITHUB_TOKEN` generally do not start
+  another workflow. Exceptions include explicit `workflow_dispatch` and
+  `repository_dispatch`, plus approval-required PR workflows.
 - A similar public GitHub community reproduction exists for a
-  \`GITHUB_TOKEN\`-dispatched child workflow whose own completion does NOT
-  generate the expected \`workflow_run\` controller:
+  `GITHUB_TOKEN`-dispatched child workflow whose own completion does NOT
+  generate the expected `workflow_run` controller:
   https://github.com/orgs/community/discussions/48748
 - This mechanism closely matches the Nov 4 chain, BUT the exact server-side
   suppression/registration status is not visible through the connector and
@@ -88,15 +88,15 @@ re-verifies the exact source run, immutable bot PR, source at original SHA,
 required exact-head checks, Vercel Preview and morning cutoff without ever
 checking out PR HEAD code to run scripts. The job's permissions and trust
 model must be reviewed independently. Current auto-publisher expects a
-\`workflow_run\` event payload; it cannot be blindly reused from a
-\`workflow_dispatch\` job. Failure must result in HOLD, not a best-effort
+`workflow_run` event payload; it cannot be blindly reused from a
+`workflow_dispatch` job. Failure must result in HOLD, not a best-effort
 merge. Do not reuse a privileged generator token without explicit review.
 
 ### Option B — independent explicit dispatch with narrowly scoped identity
 
 Use a dedicated authenticated, narrowly authorized and short-lived GitHub
-App token to explicitly \`workflow_dispatch\` a trusted controller (rather than
-trusting implicit \`workflow_run\`). The controller must bind immutable source
+App token to explicitly `workflow_dispatch` a trusted controller (rather than
+trusting implicit `workflow_run`). The controller must bind immutable source
 run ID/sha, PR HEAD/base, date, and no-duplicate guard, validate all of them
 from API instead of accepting inputs as authority. This requires new owner
 approval for app permissions/credentials, privilege boundaries and release
@@ -118,8 +118,8 @@ do not weaken provenance, scope or post-cutoff protections to fit it.
 
 All requirements below are FUTURE tests; no active controller changed.
 
-- Source is a trusted native \`schedule\` or one proven, same-day independent
-  backstop \`workflow_dispatch\`; otherwise fail closed.
+- Source is a trusted native `schedule` or one proven, same-day independent
+  backstop `workflow_dispatch`; otherwise fail closed.
 - The source run and its required generator steps all succeeded at one
   immutable protected-main SHA; source-run ID is not caller-chosen authority.
 - Exactly one open non-Draft original Daily PR matching source-run ID, correct
@@ -127,7 +127,7 @@ All requirements below are FUTURE tests; no active controller changed.
 - Head equals original generator output, base equals verified main, zero
   extra commits, no PR-head code executed by privileged job.
 - Exact HEAD: Web Quality, Dependency, Supabase migration guard all completed
-  SUCCESS from trusted GitHub Actions, not \`action_required\` or skipped;
+  SUCCESS from trusted GitHub Actions, not `action_required` or skipped;
   Vercel Preview at exact HEAD is independently READY.
 - Editorial primary sources, release dates, asset impact and compliance pass;
   the Nov 4 EIA misdate fails its agency release-calendar check.

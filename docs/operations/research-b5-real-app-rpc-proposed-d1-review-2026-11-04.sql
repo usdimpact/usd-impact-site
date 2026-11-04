@@ -196,7 +196,7 @@ begin
    'action','reserved','intent_id',v_id,'checkout_key',v_proof,
    'account_id',p_account_id,'store_id',p_store_id,'variant_id',p_variant_id,
    'billing_interval',p_billing_interval,'test_mode',p_test_mode,
-   'expires_at',v_now+interval '30 minutes');
+   'created_at',v_now,'expires_at',v_now+interval '30 minutes');
 end;
 $fn$;
 

@@ -111,6 +111,26 @@ jobs:
           test "$(git -C integration/main rev-parse --verify MERGE_HEAD)" = "$held"
           test "$(git -C integration/main hash-object "$article")" = '35afff7c29034678b0040259639930aa7a4136be'
           echo 'EPHEMERAL_MERGE_PASS base=91ebcb7e f1d=454bcdee article=35afff7c no_push=true'
+      - name: Guard unchanged existing Daily and free Weekly source across simulated merge
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in \
+            'apps/web/src/pages/news/index.astro' \
+            'apps/web/src/pages/news/[date].astro' \
+            'apps/web/src/content/news/2026-11-03.md' \
+            'apps/web/src/content/news/2026-11-04.md' \
+            'apps/web/src/pages/macro-reviews/weekly/2026-10-30/index.astro' \
+            'apps/web/src/pages/news/feed.xml.js' \
+            'apps/web/src/pages/news/latest.json.js'; do
+            expected_blob="$(git -C integration/main rev-parse "HEAD:$path")"
+            merged_blob="$(git -C integration/main hash-object "$path")"
+            test "$expected_blob" = "$merged_blob" || {
+              echo "ERROR: existing published source changed during held merge: $path" >&2
+              exit 1
+            }
+          done
+          echo 'EPHEMERAL_DAILY_WEEKLY_SOURCE_PARITY_PASS paths=7'
       - name: Use pinned project Node.js major version
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
@@ -135,6 +155,26 @@ jobs:
           npm run generate:quizzes
           npx --no-install astro build
           node scripts/test-independent-macro-monthly-preview.mjs --built
+      - name: Confirm existing public Daily and Weekly pages render in combined Preview
+        working-directory: integration/main/apps/web
+        shell: bash
+        run: |
+          set -euo pipefail
+          for page in \
+            news/index.html \
+            news/2026-11-03/index.html \
+            news/2026-11-04/index.html \
+            macro-reviews/weekly/2026-10-30/index.html; do
+            test -f "dist/$page" || {
+              echo "ERROR: expected existing public page missing in Preview: $page" >&2
+              exit 1
+            }
+          done
+          grep -Fq 'Read the market through the dollar.' dist/news/index.html
+          grep -Fq 'Daily USD Impact' dist/news/2026-11-03/index.html
+          grep -Fq 'Daily USD Impact' dist/news/2026-11-04/index.html
+          grep -Fq 'USD Impact Macro Weekly Review' dist/macro-reviews/weekly/2026-10-30/index.html
+          echo 'EPHEMERAL_PREVIEW_DAILY_WEEKLY_RENDER_PASS pages=4'
       - name: Install isolated Chromium driver
         shell: bash
         run: |
@@ -164,6 +204,27 @@ jobs:
           test ! -e dist/macro-reviews/monthly/2026-10/index.html
           test ! -e dist/macro-reviews/monthly/2026-11/index.html
           echo 'EPHEMERAL_PRODUCTION_EXCLUSION_PASS'
+      - name: Confirm existing public Daily and Weekly pages render in combined Production
+        working-directory: integration/main/apps/web
+        shell: bash
+        run: |
+          set -euo pipefail
+          for page in \
+            news/index.html \
+            news/2026-11-03/index.html \
+            news/2026-11-04/index.html \
+            macro-reviews/weekly/2026-10-30/index.html; do
+            test -f "dist/$page" || {
+              echo "ERROR: expected existing public page missing in Production: $page" >&2
+              exit 1
+            }
+          done
+          grep -Fq 'Read the market through the dollar.' dist/news/index.html
+          grep -Fq 'Daily USD Impact' dist/news/2026-11-03/index.html
+          grep -Fq 'Daily USD Impact' dist/news/2026-11-04/index.html
+          grep -Fq 'USD Impact Macro Weekly Review' dist/macro-reviews/weekly/2026-10-30/index.html
+          test ! -e dist/macro-reviews/monthly/2026-10/index.html
+          echo 'EPHEMERAL_PRODUCTION_DAILY_WEEKLY_RENDER_PASS pages=4 monthly_absent=true'
       - name: Preserve sanitized compiled merged-view screenshots
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

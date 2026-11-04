@@ -400,6 +400,8 @@ const bound = await bindResearchMembershipFirstPurchase({
     const body = JSON.parse(init.body);
     assert.equal(body.p_checkout_proof, issuedProof);
     assert.equal(body.p_store_id, '42');
+    assert.equal(body.p_product_id, 'research-membership');
+    assert.notEqual(body.p_product_id, String(config.productId));
     assert.equal(body.p_test_mode, true);
     assert.equal(body.p_raw_body_sha256, inspected.metadata.rawBodySha256);
     assert.equal(body.p_account_id, accountId);
@@ -437,6 +439,8 @@ const wrapperResult = await processResearchMembershipWebhookWithFirstPurchase({
       const body = JSON.parse(init.body);
       const sha = crypto.createHash('sha256').update(event.rawBody).digest('hex');
       assert.equal(body.p_raw_body_sha256, sha);
+      assert.equal(body.p_product_id, 'research-membership');
+      assert.notEqual(body.p_product_id, String(config.productId));
       assert.equal(body.p_provider_subscription_id, 'sub_first_1');
       assert.equal(body.p_claimed_account_id, accountId);
       assert.equal(body.p_claimed_checkout_proof_sha256,
@@ -647,6 +651,7 @@ const unboundResult = await processResearchMembershipWebhookWithFirstPurchase({
     assert.equal(url, `${environment.SUPABASE_URL}/rest/v1/rpc/observe_signed_research_subscription_created`);
     const body = JSON.parse(init.body);
     assert.equal(body.p_claimed_account_id, null);
+    assert.equal(body.p_product_id, 'research-membership');
     assert.equal(body.p_claimed_checkout_proof_sha256, null);
     assert.equal(body.p_raw_body_sha256,
       crypto.createHash('sha256').update(unboundSignedEvent.rawBody).digest('hex'));

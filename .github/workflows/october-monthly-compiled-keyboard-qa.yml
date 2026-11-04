@@ -67,3 +67,108 @@ jobs:
           path: apps/web/october-monthly-focus-evidence/
           if-no-files-found: warn
           retention-days: 14
+
+  current-main-integration-smoke:
+    if: ${{ github.event.pull_request.draft == true && github.head_ref == 'agent/october-monthly-natural-textspacing-qa-20261105' }}
+    name: Ephemeral current-main + F1d Monthly build, 4 widths, Production absent
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - name: Read-only checkout of QA script at this exact PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Read-only checkout of protected main snapshot
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 91ebcb7e8fce2bc52514a3df3132f7ff805f7a6f
+          path: integration/main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Read-only checkout of held F1d child of Monthly #1088
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 454bcdee6bc61aa9749f1efb879f2b58c6f22513
+          path: integration/f1d
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Simulate merge only inside ephemeral runner, verify exact approved article
+        shell: bash
+        run: |
+          set -euo pipefail
+          main='91ebcb7e8fce2bc52514a3df3132f7ff805f7a6f'
+          held='454bcdee6bc61aa9749f1efb879f2b58c6f22513'
+          article='apps/web/src/pages/macro-reviews/monthly/[period]/index.astro'
+          test "$(git -C integration/main rev-parse HEAD)" = "$main"
+          test "$(git -C integration/f1d rev-parse HEAD)" = "$held"
+          test "$(git -C integration/f1d rev-parse "HEAD:$article")" = '35afff7c29034678b0040259639930aa7a4136be'
+          git -C integration/main -c protocol.file.allow=always fetch --no-tags "$GITHUB_WORKSPACE/integration/f1d" HEAD
+          git -C integration/main -c user.name='Ephemeral CI' -c user.email='ci@example.invalid' merge --no-commit --no-ff FETCH_HEAD
+          test "$(git -C integration/main rev-parse HEAD)" = "$main"
+          test "$(git -C integration/main rev-parse --verify MERGE_HEAD)" = "$held"
+          test "$(git -C integration/main hash-object "$article")" = '35afff7c29034678b0040259639930aa7a4136be'
+          echo 'EPHEMERAL_MERGE_PASS base=91ebcb7e f1d=454bcdee article=35afff7c no_push=true'
+      - name: Use pinned project Node.js major version
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.x'
+          cache: npm
+          cache-dependency-path: integration/main/apps/web/package-lock.json
+      - name: Install exact-lock dependencies on ephemeral combined tree
+        working-directory: integration/main/apps/web
+        run: npm ci --strict-allow-scripts --no-audit --no-fund
+      - name: Verify combined source guard and Preview-only compiled Monthly
+        working-directory: integration/main/apps/web
+        env:
+          VERCEL_ENV: preview
+          PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+          CI: 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-independent-macro-monthly-preview.mjs
+          node scripts/test-held-release-boundary.mjs
+          npm run prepare:fonts
+          npm run generate:quizzes
+          npx --no-install astro build
+          node scripts/test-independent-macro-monthly-preview.mjs --built
+      - name: Install isolated Chromium driver
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/monthly-merge-focus-venv"
+          "$RUNNER_TEMP/monthly-merge-focus-venv/bin/python" -m pip install --disable-pip-version-check --no-cache-dir playwright==1.57.0
+          command -v google-chrome || command -v chromium
+      - name: Run actual keyboard and focus in combined compiled page at four widths
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          cp apps/web/scripts/test-october-monthly-compiled-keyboard-focus.py integration/main/apps/web/scripts/test-october-monthly-compiled-keyboard-focus.py
+          "$RUNNER_TEMP/monthly-merge-focus-venv/bin/python" integration/main/apps/web/scripts/test-october-monthly-compiled-keyboard-focus.py
+      - name: Verify combined Production build omits October Monthly
+        working-directory: integration/main/apps/web
+        env:
+          VERCEL_ENV: production
+          PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+          CI: 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --no-install astro build
+          node scripts/test-independent-macro-monthly-preview.mjs --built
+          test ! -e dist/macro-reviews/monthly/2026-10/index.html
+          test ! -e dist/macro-reviews/monthly/2026-11/index.html
+          echo 'EPHEMERAL_PRODUCTION_EXCLUSION_PASS'
+      - name: Preserve sanitized compiled merged-view screenshots
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: october-monthly-current-main-merge-qa-only
+          path: integration/main/apps/web/october-monthly-focus-evidence/
+          if-no-files-found: warn
+          retention-days: 14

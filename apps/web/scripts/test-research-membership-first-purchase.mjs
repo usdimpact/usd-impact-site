@@ -12,6 +12,10 @@ import {
 
 const accountId = '11111111-1111-4111-8111-111111111111';
 const subscriptionId = '22222222-2222-4222-8222-222222222222';
+const issuedProof = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+const productionIssuedProof = 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
+const intentId = '44444444-4444-4444-8444-444444444444';
+const productionIntentId = '55555555-5555-4555-8555-555555555555';
 const environment = {
   VERCEL_ENV: 'preview',
   RESEARCH_MEMBERSHIP_WEBHOOK_ENABLED: 'true',
@@ -54,7 +58,7 @@ function payload(overrides = {}) {
         usd_impact_account_id: accountId,
         usd_impact_research_product_id: 'research-membership',
         usd_impact_research_billing_interval: 'monthly',
-        usd_impact_research_checkout_key: 'research-checkout-001',
+        usd_impact_research_checkout_key: issuedProof,
       },
     },
     data: {
@@ -214,12 +218,34 @@ const checkout = await createResearchMembershipCheckout({
       assert.equal(parsed.searchParams.get('state'), 'in.(pending,active,past_due,cancel_scheduled)');
       return new Response('[]', { status: 200 });
     }
+    if (url === `${config.supabase.url}/rest/v1/rpc/issue_research_membership_checkout_intent`) {
+      const body = JSON.parse(init.body);
+      assert.equal(body.p_account_id, accountId);
+      assert.equal(body.p_variant_id, '314');
+      assert.equal(body.p_client_request_id, 'research-checkout-001');
+      return new Response(JSON.stringify({
+        action: 'reserved', intent_id: intentId, checkout_key: issuedProof,
+        account_id: accountId, store_id: '42', variant_id: '314',
+        billing_interval: 'monthly', test_mode: true,
+        expires_at: '2026-09-07T15:30:00.000Z',
+      }), { status: 200 });
+    }
+    if (url === `${config.supabase.url}/rest/v1/rpc/attach_research_membership_checkout_intent`) {
+      const body = JSON.parse(init.body);
+      assert.equal(body.p_intent_id, intentId);
+      assert.equal(body.p_checkout_proof, issuedProof);
+      assert.equal(body.p_provider_checkout_id, 'checkout_1');
+      return new Response(JSON.stringify({
+        action: 'attached', intent_id: intentId, provider_checkout_id: 'checkout_1',
+      }), { status: 200 });
+    }
     assert.equal(url, 'https://api.lemonsqueezy.com/v1/checkouts');
     assert.equal(init.method, 'POST');
     assert.match(init.headers.Authorization, /^Bearer test_api_key_/);
     const body = JSON.parse(init.body);
     assert.equal(body.data.attributes.checkout_data.custom.usd_impact_account_id, accountId);
-    assert.equal(body.data.attributes.checkout_data.custom.usd_impact_research_checkout_key, 'research-checkout-001');
+    assert.equal(body.data.attributes.checkout_data.custom.usd_impact_research_checkout_key, issuedProof);
+    assert.notEqual(body.data.attributes.checkout_data.custom.usd_impact_research_checkout_key, 'research-checkout-001');
     providerCalls += 1;
     return new Response(JSON.stringify({
       data: {
@@ -246,9 +272,30 @@ const productionCheckout = await createResearchMembershipCheckout({
   user: productionUser,
   billingInterval: 'monthly',
   idempotencyKey: 'research-live-checkout-002',
+  now: new Date('2026-09-07T15:00:00.000Z'),
   fetchImpl: async (url, init = {}) => {
     if (String(url).startsWith(`${productionConfig.supabase.url}/rest/v1/subscriptions?`)) {
       return new Response('[]', { status: 200 });
+    }
+    if (url === `${productionConfig.supabase.url}/rest/v1/rpc/issue_research_membership_checkout_intent`) {
+      const body = JSON.parse(init.body);
+      assert.equal(body.p_client_request_id, 'research-live-checkout-002');
+      return new Response(JSON.stringify({
+        action: 'reserved', intent_id: productionIntentId,
+        checkout_key: productionIssuedProof,
+        account_id: accountId, store_id: '142', variant_id: '414',
+        billing_interval: 'monthly', test_mode: false,
+        expires_at: '2026-09-07T15:30:00.000Z',
+      }), { status: 200 });
+    }
+    if (url === `${productionConfig.supabase.url}/rest/v1/rpc/attach_research_membership_checkout_intent`) {
+      const body = JSON.parse(init.body);
+      assert.equal(body.p_intent_id, productionIntentId);
+      assert.equal(body.p_checkout_proof, productionIssuedProof);
+      return new Response(JSON.stringify({
+        action: 'attached', intent_id: productionIntentId,
+        provider_checkout_id: 'checkout_live_1',
+      }), { status: 200 });
     }
     assert.equal(url, 'https://api.lemonsqueezy.com/v1/checkouts');
     assert.equal(init.method, 'POST');
@@ -256,6 +303,7 @@ const productionCheckout = await createResearchMembershipCheckout({
     const body = JSON.parse(init.body);
     assert.equal(body.data.attributes.test_mode, false);
     assert.equal(body.data.attributes.checkout_data.email, 'member@example.com');
+    assert.equal(body.data.attributes.checkout_data.custom.usd_impact_research_checkout_key, productionIssuedProof);
     productionProviderCalls += 1;
     return new Response(JSON.stringify({
       data: {
@@ -301,7 +349,7 @@ assert.equal(inspected.providerSubscriptionId, 'sub_first_1');
 assert.equal(inspected.providerCustomerId, '456');
 assert.equal(inspected.providerPriceId, '314');
 assert.equal(inspected.billingInterval, 'monthly');
-assert.equal(inspected.metadata.checkoutKey, 'research-checkout-001');
+assert.equal(inspected.metadata.checkoutKey, issuedProof);
 assert.equal(inspected.metadata.testMode, true);
 
 const productionEvent = signed(productionPayload(), productionEnvironment);
@@ -346,9 +394,12 @@ const bound = await bindResearchMembershipFirstPurchase({
   binding: inspected,
   environment,
   fetchImpl: async (url, init) => {
-    assert.equal(url, `${environment.SUPABASE_URL}/rest/v1/rpc/bind_research_membership_subscription`);
+    assert.equal(url, `${environment.SUPABASE_URL}/rest/v1/rpc/bind_research_membership_with_checkout_intent`);
     assert.equal(init.method, 'POST');
     const body = JSON.parse(init.body);
+    assert.equal(body.p_checkout_proof, issuedProof);
+    assert.equal(body.p_store_id, '42');
+    assert.equal(body.p_test_mode, true);
     assert.equal(body.p_account_id, accountId);
     assert.equal(body.p_provider, 'lemon-squeezy');
     assert.equal(body.p_provider_subscription_id, 'sub_first_1');
@@ -378,7 +429,7 @@ const wrapperResult = await processResearchMembershipWebhookWithFirstPurchase({
     return { action: 'applied', eventKey: 'lemon-squeezy:event' };
   },
   fetchImpl: async (url) => {
-    assert.equal(url, `${environment.SUPABASE_URL}/rest/v1/rpc/bind_research_membership_subscription`);
+    assert.equal(url, `${environment.SUPABASE_URL}/rest/v1/rpc/bind_research_membership_with_checkout_intent`);
     wrapperBindCalls += 1;
     return new Response(JSON.stringify({ action: 'existing', subscription_id: subscriptionId, subscription_state: 'pending' }), { status: 200 });
   },
@@ -406,6 +457,90 @@ await assert.rejects(
   { code: 'RESEARCH_WEBHOOK_SIGNATURE_INVALID' },
 );
 assert.equal(unexpectedFetches, 0);
+
+
+let unknownIntentProviderCalls = 0;
+await assert.rejects(
+  () => createResearchMembershipCheckout({
+    config, user, billingInterval: 'monthly', idempotencyKey: 'client-supplied-key-001',
+    now: new Date('2026-09-07T15:00:00.000Z'),
+    fetchImpl: async (url) => {
+      if (String(url).includes('/rest/v1/subscriptions?')) return new Response('[]', { status: 200 });
+      if (String(url).includes('/rpc/issue_research_membership_checkout_intent')) {
+        return new Response(JSON.stringify({ error: 'not_installed' }), { status: 404 });
+      }
+      unknownIntentProviderCalls += 1;
+      return new Response('{}', { status: 201 });
+    },
+  }),
+  { code: 'RESEARCH_CHECKOUT_INTENT_UNAVAILABLE', status: 503 },
+);
+assert.equal(unknownIntentProviderCalls, 0, 'No provider checkout without a committed private issuer');
+
+for (const mismatch of [
+  { account_id: '99999999-9999-4999-8999-999999999999' },
+  { checkout_key: 'client-supplied-key-001' },
+  { variant_id: '315' },
+  { expires_at: '2026-09-07T16:00:00.000Z' },
+]) {
+  let unexpectedProviderWrites = 0;
+  await assert.rejects(
+    () => createResearchMembershipCheckout({
+      config, user, billingInterval: 'monthly', idempotencyKey: 'request-uid-12345',
+      now: new Date('2026-09-07T15:00:00.000Z'),
+      fetchImpl: async (url) => {
+        if (String(url).includes('/rest/v1/subscriptions?')) return new Response('[]', { status: 200 });
+        if (String(url).includes('/rpc/issue_research_membership_checkout_intent')) {
+          return new Response(JSON.stringify({
+            action: 'reserved', intent_id: intentId, checkout_key: issuedProof,
+            account_id: accountId, store_id: '42', variant_id: '314',
+            billing_interval: 'monthly', test_mode: true,
+            expires_at: '2026-09-07T15:30:00.000Z',
+            ...mismatch,
+          }), { status: 200 });
+        }
+        unexpectedProviderWrites += 1;
+        return new Response('{}', { status: 201 });
+      },
+    }),
+    { status: 503 },
+  );
+  assert.equal(unexpectedProviderWrites, 0, 'Inconsistent issuer output must never reach Lemon Squeezy');
+}
+
+const forgedSignedPayload = payload();
+forgedSignedPayload.meta.custom_data.usd_impact_research_checkout_key = 'F'.repeat(43);
+const forgedEvent = signed(forgedSignedPayload);
+let forgedProcessCalls = 0;
+let forgedBindAttempts = 0;
+await assert.rejects(
+  () => processResearchMembershipWebhookWithFirstPurchase({
+    ...forgedEvent, environment,
+    processImpl: async () => {
+      forgedProcessCalls += 1;
+      const error = new Error('No matching subscription');
+      error.code = 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND';
+      error.status = 409;
+      throw error;
+    },
+    fetchImpl: async (url) => {
+      assert.equal(url, `${environment.SUPABASE_URL}/rest/v1/rpc/bind_research_membership_with_checkout_intent`);
+      forgedBindAttempts += 1;
+      return new Response(JSON.stringify({ error: 'reservation_missing' }), { status: 409 });
+    },
+  }),
+  { code: 'RESEARCH_FIRST_PURCHASE_TRUSTED_BINDING_UNAVAILABLE', status: 503 },
+);
+assert.equal(forgedProcessCalls, 1, 'Untrusted checkout metadata must never re-enter entitlement processing');
+assert.equal(forgedBindAttempts, 1);
+assert.throws(
+  () => inspectResearchMembershipFirstPurchase({
+    ...signed({ ...payload(), meta: { ...payload().meta, custom_data: {
+      ...payload().meta.custom_data, usd_impact_research_checkout_key: 'guessed-short-key',
+    } } }), environment,
+  }),
+  { code: 'RESEARCH_CHECKOUT_INTENT_PROOF_INVALID' },
+);
 
 const migration = await readFile(
   new URL('../../../supabase/migrations/20260907154500_research_membership_first_purchase_binding.sql', import.meta.url),

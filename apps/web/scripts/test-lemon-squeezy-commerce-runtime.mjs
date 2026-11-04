@@ -341,3 +341,5 @@ await assert.rejects(
 assert.equal(providerCheckoutCalled, false);
 
 console.log('Lemon Squeezy sandbox commerce runtime tests passed.');
+
+await import('./test-commerce-access-ready-nonblocking.mjs');

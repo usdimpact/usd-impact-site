@@ -1,5 +1,8 @@
 ---
 import { getCollection } from 'astro:content';
+import { readdirSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import NewsHighlightCard from '../../components/NewsHighlightCard.astro';
 import { hasCatalystBriefFiles } from '../../lib/catalyst-brief-content.js';
@@ -14,9 +17,17 @@ const catalystBriefs = hasCatalystBriefFiles
       .filter((entry) => entry.data.status === 'published')
       .sort((a, b) => b.data.generatedAt.localeCompare(a.data.generatedAt))
   : [];
-const latestWeeklyReport = (await getCollection('weeklyReports'))
-  .filter((entry) => entry.data.status === 'published')
-  .sort((a, b) => b.data.periodEnd.localeCompare(a.data.periodEnd))[0];
+// Only the source-reviewed static independent Weekly routes are current.
+ // The older Score-derived weeklyReports archive remains rights-held and must
+ // not be promoted as the newest weekly on the Daily landing page.
+const independentWeeklyRoot = fileURLToPath(new URL('../macro-reviews/weekly/', import.meta.url));
+const latestIndependentWeek = readdirSync(independentWeeklyRoot, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(entry.name))
+  .map((entry) => entry.name)
+  .filter((date) => new Date(`${date}T00:00:00Z`).getUTCDay() === 5
+    && existsSync(join(independentWeeklyRoot, date, 'index.astro')))
+  .sort()
+  .at(-1);
 const formatDate = (value) => new Intl.DateTimeFormat('en', {
   day: 'numeric',
   month: 'long',
@@ -63,14 +74,14 @@ const formatDate = (value) => new Intl.DateTimeFormat('en', {
           </div>
         </section>
 
-        {latestWeeklyReport && (
+        {latestIndependentWeek && (
           <section class="reports-promo card">
             <div>
-              <div class="eyebrow">Weekly synthesis</div>
-              <h2>Connect the news to the score</h2>
-              <p>{latestWeeklyReport.data.summary}</p>
+              <div class="eyebrow">Latest independent Macro Weekly · {formatDate(latestIndependentWeek)}</div>
+              <h2>Review the completed week through official sources</h2>
+              <p>The latest published, independent educational Weekly uses original analysis and cited primary sources without licensed Score-derived values or live market-price feeds. The historical Score-based Weekly series remains on rights hold.</p>
             </div>
-            <a class="button report-link" href={latestWeeklyReport.data.slug}>Read the Weekly Brief</a>
+            <a class="button report-link" href={`/macro-reviews/weekly/${latestIndependentWeek}/`}>Read the independent Weekly</a>
           </section>
         )}
 

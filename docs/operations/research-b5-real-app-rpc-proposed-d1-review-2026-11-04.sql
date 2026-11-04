@@ -191,9 +191,20 @@ begin
  end if;
  select * into v_intent from research_checkout_guard.checkout_intents
   where id=p_intent_id for update;
- if not found or v_intent.state<>'reserved'
-    or v_intent.expires_at <= clock_timestamp()
+ if not found or v_intent.expires_at <= clock_timestamp()
     or v_intent.checkout_proof_sha256 <> encode(sha256(convert_to(p_checkout_proof,'UTF8')),'hex') then
+   return jsonb_build_object('action','rejected');
+ end if;
+ if v_intent.state='attached' and v_intent.provider_checkout_id=p_provider_checkout_id then
+   return jsonb_build_object('action','attached','intent_id',p_intent_id,'provider_checkout_id',p_provider_checkout_id);
+ end if;
+ if v_intent.state<>'reserved' then
+   return jsonb_build_object('action','rejected');
+ end if;
+ perform pg_advisory_xact_lock(hashtextextended(p_provider_checkout_id,873));
+ if exists(select 1 from research_checkout_guard.checkout_intents
+     where test_mode=v_intent.test_mode and provider_checkout_id=p_provider_checkout_id
+       and id<>p_intent_id) then
    return jsonb_build_object('action','rejected');
  end if;
  update research_checkout_guard.checkout_intents set state='attached',
@@ -345,7 +356,9 @@ begin
    return research_checkout_guard.hold_binding_conflict(
      v_obs.id,'checkout_consumed_by_other',v_obs.raw_body_sha256);
  end if;
- if v_intent.state<>'attached' or v_intent.expires_at<=clock_timestamp() then
+ -- C4: compare signed provider payment time, not the delayed webhook arrival.
+ if v_intent.state<>'attached'
+    or p_occurred_at>v_intent.expires_at+interval '2 minutes' then
    return research_checkout_guard.hold_binding_conflict(
      v_obs.id,'expired_checkout_key',v_obs.raw_body_sha256);
  end if;
@@ -414,6 +427,16 @@ grant execute on function public.observe_signed_research_subscription_created(
 grant execute on function public.bind_research_membership_with_checkout_intent(
  uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean)
  to review_checkout_binder;
+-- C12 D1-only proposed atomic cutover: deny the unverified old binder.
+do $cutover$
+begin
+ if to_regprocedure('public.bind_research_membership_subscription(uuid,text,text,text,text,public.subscription_billing_interval,timestamptz,jsonb)') is not null then
+   revoke execute on function public.bind_research_membership_subscription(
+    uuid,text,text,text,text,public.subscription_billing_interval,timestamptz,jsonb)
+    from service_role,public,anon,authenticated;
+ end if;
+end;
+$cutover$;
 -- Public schema is exposed in Supabase by default; role-specific EXECUTE,
 -- issuer session validation, private writer custody and D2 actual grants
 -- all require owner approval before a real migration can be authored.

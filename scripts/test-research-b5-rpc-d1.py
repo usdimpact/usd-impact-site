@@ -76,6 +76,13 @@ def setup():
         """)
         for a in A:
             c.execute("insert into public.profiles values (%s::uuid,'active')",(a,))
+        c.execute("create role service_role nologin")
+        c.execute("""create function public.bind_research_membership_subscription(
+          uuid,text,text,text,text,public.subscription_billing_interval,timestamptz,jsonb)
+          returns jsonb language sql as $$ select '{}'::jsonb $$""")
+        c.execute("""grant execute on function public.bind_research_membership_subscription(
+          uuid,text,text,text,text,public.subscription_billing_interval,timestamptz,jsonb)
+          to service_role""")
         content=SQL.read_text()
         assert content.startswith("-- D1 ISOLATED REVIEW ONLY.")
         assert content.count("create function public.")==4
@@ -97,6 +104,8 @@ def roles():
                 eq(one(root,"select has_function_privilege(%s,%s,'EXECUTE')",(role,"public."+f)),False,"public denied "+f)
         for role in ("review_checkout_issuer","review_checkout_verifier","review_checkout_binder"):
             eq(one(root,"select has_schema_privilege(%s,'research_checkout_guard','USAGE')",(role,)),False,"private schema")
+        eq(one(root,"select has_function_privilege('service_role',%s,'EXECUTE')",
+           ("public.bind_research_membership_subscription(uuid,text,text,text,text,public.subscription_billing_interval,timestamptz,jsonb)",)),False,"C12 old binder revoked")
         refused(i,"select public.observe_signed_research_subscription_created('lemon-squeezy','forged','cust','42','research-membership','314',true,now(),%s,null,null)",("a"*64,))
         refused(v,"select public.issue_research_membership_checkout_intent(%s::uuid,'research-membership','42','314','monthly',true,'request123456')",(A[0],))
         refused(b,"select public.observe_signed_research_subscription_created('lemon-squeezy','forged','cust','42','research-membership','314',true,now(),%s,null,null)",("b"*64,))
@@ -118,7 +127,11 @@ def issue_attach():
         eq(issuer(i,A[0],request="request-next111")["action"],"rejected","no parallel checkouts")
         eq(attach(i,k,proof="A"*43)["action"],"rejected","forged attachment proof")
         eq(attach(i,k,provider="checkout-a1")["action"],"attached","attached before URL")
+        eq(attach(i,k,provider="checkout-a1")["action"],"attached","C6 idempotent exact retry")
         eq(attach(i,k,provider="checkout-b1")["action"],"rejected","no second checkout ID")
+        other=issuer(i,A[1],request="other-request-001")
+        eq(other["action"],"reserved","second valid account intent")
+        eq(attach(i,other,provider="checkout-a1")["action"],"rejected","C6 duplicate checkout safe rejection")
         eq(one(root,"select checkout_proof_sha256 from research_checkout_guard.checkout_intents where id=%s::uuid",(k["intent_id"],)),hash256(k["checkout_key"]),"only hash stored")
     print("PASS B5 G1: account+catalog+mode+30m issuance, proof digest, one attached checkout",flush=True)
     return k
@@ -227,13 +240,31 @@ def expiry_and_immutable():
         refused(b,"update research_checkout_guard.checkout_intents set state='consumed'")
         eq(one(root,"select count(*) from public.entitlements where subscription_id is not null"),0,"never granted")
     print("PASS B5 X3 partial: journal immutability and expired paid-event custody; no entitlement",flush=True)
+def test_c4_payment_before_expiry_with_late_webhook():
+    account="77777777-7777-4777-8777-777777777777"
+    with db() as root:
+        root.execute("insert into public.profiles(account_id,status) values(%s::uuid,'active')",(account,))
+    with db("issuer") as i,db("verifier") as v,db("binder") as b,db() as root:
+        issued=issuer(i,account)
+        eq(issued["action"],"reserved","C4 issued")
+        eq(attach(i,issued,provider="late-checkout")["action"],"attached","C4 attached")
+        now=one(root,"select clock_timestamp()")
+        sent=now-datetime.timedelta(minutes=31)
+        paid=sent+datetime.timedelta(minutes=29)
+        root.execute("update research_checkout_guard.checkout_intents set created_at=%s::timestamptz,expires_at=%s::timestamptz where id=%s::uuid",
+          (sent,sent+datetime.timedelta(minutes=30),issued["intent_id"]))
+        EVENT_OCCURRED_AT["late-subscription"]=paid
+        sha=hash256("signed-before-expiry-paid")
+        eq(observe(v,"late-subscription",sha,account,issued["checkout_key"])["action"],"recorded","C4 observed")
+        eq(bind(b,account,"late-subscription",sha,issued["checkout_key"])["action"],"created","C4 late webhook binds")
+    print("PASS B5 C4: signed payment in window accepted after webhook delay",flush=True)
 def main():
     assert os.environ.get("GITHUB_ACTIONS")=="true"
     assert os.environ.get("GITHUB_HEAD_REF")=="agent/1103-b5-rpc-sql-isolated-d1-20261104"
     for key in ("SUPABASE_URL","SUPABASE_DB_URL","DATABASE_URL","LEMON_SQUEEZY_API_KEY"):
         assert not os.environ.get(key),f"Remote environment prohibited: {key}"
     setup(); roles(); k=issue_attach(); custody_and_bind(k)
-    unbound(); concurrent_paid(); complimentary_and_library(); expiry_and_immutable()
+    unbound(); concurrent_paid(); complimentary_and_library(); expiry_and_immutable(); test_c4_payment_before_expiry_with_late_webhook()
     with db() as root:
         version=one(root,"show server_version")
     print("B5_D1_POSTGRES_PROPOSAL_PASS "+json.dumps({"version":version,

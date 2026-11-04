@@ -247,3 +247,5 @@ await assert.rejects(
 );
 
 console.log('Research receipt B-1 opt-in signed evidence, conflict and fail-closed synthetic tests passed.');
+
+await import('./test-research-membership-b2-review.mjs');

@@ -177,12 +177,18 @@ begin
       where account_id=p_account_id and product_id=p_product_id and state='active') then
    return jsonb_build_object('action','rejected','code','already_subscribed_or_entitled');
  end if;
- -- No redisclosure of one-time proofs on client-request retries: safe
- -- 409/503 at app boundary rather than multiple potentially paid checkouts.
+ -- A consumed client request ID is never reusable. The original proof
+ -- is stored only as a digest and must never be redisclosed.
  if exists(select 1 from research_checkout_guard.checkout_intents
-     where account_id=p_account_id and
-       (client_request_id=p_client_request_id or
-        (state in ('reserved','attached') and expires_at>v_now))) then
+     where account_id=p_account_id and client_request_id=p_client_request_id) then
+   return jsonb_build_object('action','rejected','code','checkout_request_replayed');
+ end if;
+ -- A new request ID cannot create a second overlapping payable checkout.
+ -- Once the previous issued intent expires, a fresh ID can proceed after
+ -- independently checking subscription/entitlement eligibility again.
+ if exists(select 1 from research_checkout_guard.checkout_intents
+     where account_id=p_account_id and state in ('reserved','attached')
+       and expires_at>v_now) then
    return jsonb_build_object('action','rejected','code','existing_checkout_intent');
  end if;
  v_proof:=translate(rtrim(encode(extensions.gen_random_bytes(32),'base64'),'='),'+/','-_');

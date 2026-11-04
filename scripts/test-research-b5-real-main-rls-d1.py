@@ -46,9 +46,8 @@ def bootstrap():
     with local_connection() as c:
         c.execute("""create schema auth;
           create schema extensions;
-          create role anon nologin;
-          create role authenticated nologin;
-          create role service_role nologin;
+          -- PostgreSQL roles are cluster-wide; earlier isolated D1 test
+          -- created these synthetic role stubs in this same ephemeral server.
           create table auth.users(id uuid primary key, email text);
           create function auth.uid() returns uuid language sql stable as $fn$
              select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid
@@ -60,9 +59,20 @@ def bootstrap():
             c.execute(data)
         proposed = base.SQL.read_text()
         assert proposed.startswith("-- D1 ISOLATED REVIEW ONLY.")
-        for line in ("create role anon nologin;", "create role authenticated nologin;"):
-            assert proposed.count(line) == 1
-            proposed = proposed.replace(line, "-- existing actual-main D1 role stub")
+        # REVIEW roles belong to the disposable PostgreSQL cluster, not a
+        # particular DB. The prior D1 job creates/validates them. Omit only
+        # their synthetic CREATE statements; functions/policies are unchanged.
+        role_lines = (
+          "create role anon nologin;",
+          "create role authenticated nologin;",
+          "create role review_checkout_issuer login noinherit password 'only_synthetic_issuer';",
+          "create role review_checkout_verifier login noinherit password 'only_synthetic_verifier';",
+          "create role review_checkout_binder login noinherit password 'only_synthetic_binder';",
+          "create role review_checkout_owner nologin noinherit nosuperuser nocreatedb nocreaterole nobypassrls;",
+        )
+        for line in role_lines:
+            assert proposed.count(line) == 1, "Proposed SQL review-role declaration changed: " + line
+            proposed = proposed.replace(line, "-- existing isolated D1 cluster role")
         # All four *unchanged* function bodies and owner/RLS policies run
         # on actual historical table types, CHECKs, FKs, triggers, RLS.
         c.execute(proposed)

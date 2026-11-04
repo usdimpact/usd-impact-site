@@ -527,4 +527,19 @@ assert.throws(
   'do not weaken the existing source-date fail-closed rule for a reusable agency schedule',
 );
 
+for (const rollingTableUrl of [
+  'https://www.eia.gov/petroleum/supply/weekly/pdf/table14.pdf',
+  'https://www.eia.gov/petroleum/supply/weekly/pdf/table1.pdf',
+]) {
+  assert.throws(
+    () => validateEditorialBundle({
+      ...eiaWpsrCalendarFixture('2026-11-04'),
+      sources: [source('eia-dated', '2026-10-29', rollingTableUrl)],
+    }),
+    /EIA weekly petroleum rolling report requires a verified dated archive document/,
+    'rolling EIA WPSR tables cannot be assigned an unsupported historical publishedAt',
+  );
+}
+
+
 console.log('daily news editorial validation tests pass');

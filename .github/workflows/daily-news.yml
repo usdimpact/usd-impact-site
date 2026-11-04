@@ -381,6 +381,9 @@ jobs:
             echo "::error::Generator actor is not the GitHub bot; no automatic handoff."
             exit 1
           fi
+          # GitHub's run-name is derived from the requested source_run_id, so an
+          # unrelated bot dispatch within the same minute cannot count as ours.
+          expected_title="Daily USD Impact bounded auto-publication source $GITHUB_RUN_ID"
           requested_at="$(date -u +%s)"
           if ! gh workflow run daily-news-auto-publish.yml --repo "$GITHUB_REPOSITORY" \
             --ref main -f "source_run_id=$GITHUB_RUN_ID"; then
@@ -396,10 +399,11 @@ jobs:
               echo "::error::Ambiguous or truncated publisher run evidence; hold."
               exit 1
             fi
-            matches="$(jq -c --argjson timestamp "$requested_at" \
+            matches="$(jq -c --arg expected_title "$expected_title" --argjson timestamp "$requested_at" \
               '[.workflow_runs[] | select(
                 .event == "workflow_dispatch" and .head_branch == "main"
                 and .actor.login == "github-actions[bot]"
+                and .display_title == $expected_title
                 and ((.created_at | fromdateiso8601) >= ($timestamp - 15))
               )]' <<< "$payload")"
             count="$(jq 'length' <<< "$matches")"

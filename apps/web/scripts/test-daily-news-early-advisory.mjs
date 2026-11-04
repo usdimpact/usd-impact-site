@@ -10,7 +10,6 @@ const sourceId = 41888880001;
 const pubId = 41888880002;
 const prNumber = 987;
 const title = 'Daily USD Impact — November 5, 2026: Mock issuer evidence';
-const sourceBranch = 'automation/daily-usd-impact-' + day + '-' + sourceId;
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {

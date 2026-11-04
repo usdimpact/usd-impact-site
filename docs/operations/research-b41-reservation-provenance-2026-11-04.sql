@@ -66,9 +66,11 @@ CREATE TABLE research_binding_review.conflicts_v41(
 
 -- An evidence-owner has no writer membership and cannot directly write
 -- existing subscriptions or entitlements. No direct table access to API users.
+GRANT CREATE ON SCHEMA research_binding_review TO review_binding_evidence_owner;
 ALTER TABLE research_binding_review.verified_paid_events_v41 OWNER TO review_binding_evidence_owner;
 ALTER TABLE research_binding_review.provider_claims_v41 OWNER TO review_binding_evidence_owner;
 ALTER TABLE research_binding_review.conflicts_v41 OWNER TO review_binding_evidence_owner;
+REVOKE CREATE ON SCHEMA research_binding_review FROM review_binding_evidence_owner;
 CREATE TRIGGER b41_events_no_update_delete
 BEFORE UPDATE OR DELETE ON research_binding_review.verified_paid_events_v41
 FOR EACH ROW EXECUTE FUNCTION research_binding_review.reject_evidence_mutation();
@@ -110,7 +112,7 @@ CREATE FUNCTION research_binding_review.issue_reserved_checkout_v41(
 SET search_path=pg_catalog,research_binding_review,pg_temp AS $$
 DECLARE v_key text; v_status text;
 BEGIN
-  IF p_account IS NULL OR p_price NOT IN ('review-monthly','review-annual') THEN
+  IF p_account IS NULL OR p_price IS NULL OR p_price NOT IN ('review-monthly','review-annual') THEN
     RETURN jsonb_build_object('disposition','invalid_request');
   END IF;
   SELECT status INTO v_status FROM research_binding_review.profiles
@@ -142,7 +144,7 @@ BEGIN
      p_price IS NULL OR char_length(p_price) NOT BETWEEN 1 AND 128 OR
      p_raw_sha IS NULL OR p_raw_sha !~ '^[a-f0-9]{64}$' OR
      p_verifier IS DISTINCT FROM 'research-hmac-review-v1' OR
-     p_provider_state NOT IN ('paid','refunded','cancelled') THEN
+     (p_provider_state IS NULL OR p_provider_state NOT IN ('paid','refunded','cancelled')) THEN
     RETURN jsonb_build_object('disposition','invalid_verification');
   END IF;
   v_digest:=CASE WHEN p_key IS NULL THEN NULL

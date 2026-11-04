@@ -494,7 +494,7 @@ export function inspectResearchMembershipFirstPurchase({
     : variantId === config.annualVariantId
       ? 'annual'
       : null;
-  if (!expectedInterval) fail('Research Membership first-purchase variant is not trusted.', 'RESEARCH_FIRST_PURCHASE_VARIANT_MISMATCH', 409);
+  if (!expectedInterval && !allowUnbound) fail('Research Membership first-purchase variant is not trusted.', 'RESEARCH_FIRST_PURCHASE_VARIANT_MISMATCH', 409);
   if (text(attributes.status).toLowerCase() !== 'active'
       || attributes.cancelled !== false
       || attributes.trial_ends_at != null) {
@@ -543,6 +543,7 @@ export function inspectResearchMembershipFirstPurchase({
     metadata: Object.freeze({
       bindingSource: boundAccountId ? 'signed-subscription-created-unverified-claim' : 'signed-provider-unbound-pending-recovery',
       checkoutKey: signedCheckoutKey,
+      catalogQuarantined: !expectedInterval,
       rawBodySha256: createHash('sha256').update(body).digest('hex'),
       businessFingerprintSha256: fingerprintResearchReceiptBusinessEvent(payload),
       businessFingerprintVersion: RESEARCH_RECEIPT_FINGERPRINT_VERSION,
@@ -610,7 +611,13 @@ async function observeSignedResearchMembershipFirstPurchase({
     fail('Research Membership signed-paid evidence is unavailable.',
       'RESEARCH_PAID_EVIDENCE_UNAVAILABLE', 503);
   }
-  return Object.freeze({ action: data.action });
+  // An unknown signed variant may be ACKed only after the committed SQL
+  // explicitly confirms evidence-only quarantine; it cannot bind/grant.
+  if (binding?.metadata?.catalogQuarantined && data.catalog_quarantined !== true) {
+    fail('Research Membership catalog quarantine custody is unavailable.',
+      'RESEARCH_PAID_EVIDENCE_UNAVAILABLE', 503);
+  }
+  return Object.freeze({ action: data.action, catalogQuarantined: data.catalog_quarantined === true });
 }
 
 export async function bindResearchMembershipFirstPurchase({
@@ -717,6 +724,9 @@ export async function processResearchMembershipWebhookWithFirstPurchase({
   });
   if (observation.action === 'conflict_recorded') {
     return Object.freeze({ action: 'held_paid_evidence_conflict' });
+  }
+  if (binding.metadata.catalogQuarantined) {
+    return Object.freeze({ action: 'held_catalog_quarantine' });
   }
   if (!binding.accountId || !binding.metadata.checkoutKey) {
     return Object.freeze({ action: 'held_unbound' });

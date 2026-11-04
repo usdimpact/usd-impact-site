@@ -32,13 +32,13 @@ def issuer(c,account,request=None,variant="314",mode=True):
 def attach(c,intent,provider="checkout_1",proof=None):
     return one(c,"select public.attach_research_membership_checkout_intent(%s::uuid,%s,%s)",
       (intent["intent_id"],proof or intent["checkout_key"],provider))
-def observe(c,sub,sha,account=None,proof=None,customer="cust_1",business=None):
+def observe(c,sub,sha,account=None,proof=None,customer="cust_1",business=None,variant="314"): 
     occurred=EVENT_OCCURRED_AT.setdefault(sub,datetime.datetime.now(datetime.timezone.utc))
     fingerprint=BUSINESS_FINGERPRINT.setdefault(sub,hash256("v3-business:"+sub)) if business is None else business
     return one(c,"select public.observe_signed_research_subscription_created("
-       "'lemon-squeezy',%s,%s,'42','research-membership','314',true,"
+       "'lemon-squeezy',%s,%s,'42','research-membership',%s,true,"
        "%s::timestamptz,%s,%s::uuid,%s,%s,%s)",
-       (sub,customer,occurred,sha,account,hash256(proof) if proof else None,
+       (sub,customer,variant,occurred,sha,account,hash256(proof) if proof else None,
         "research-receipt-business-v3",fingerprint))
 def bind(c,account,sub,sha,proof,customer="cust_1",business=None):
     occurred=EVENT_OCCURRED_AT.get(sub,datetime.datetime.now(datetime.timezone.utc))
@@ -277,6 +277,26 @@ def test_c4_payment_before_expiry_with_late_webhook():
         eq(observe(v,"late-subscription",sha,account,issued["checkout_key"])["action"],"recorded","C4 observed")
         eq(bind(b,account,"late-subscription",sha,issued["checkout_key"])["action"],"created","C4 late webhook binds")
     print("PASS B5 C4: signed payment in window accepted after webhook delay",flush=True)
+
+def catalog_quarantine():
+    with db("verifier") as v, db("binder") as b, db() as root:
+        sha=hash256("signed unknown-variant first purchase")
+        recorded=observe(v,"sub-stale-catalog",sha,variant="999")
+        eq(recorded["action"],"recorded","CAT first signed stale catalog")
+        eq(recorded["catalog_quarantined"],True,"CAT custody-only response")
+        eq(observe(v,"sub-stale-catalog",sha,variant="999")["action"],
+           "already_recorded","CAT idempotent retry")
+        eq(one(root,"select catalog_quarantined from research_checkout_guard.signed_paid_observations where provider_subscription_id='sub-stale-catalog'"),True,"CAT private quarantine row")
+        held=bind(b,A[4],"sub-stale-catalog",sha,"A"*43)
+        eq(held["action"],"conflict","CAT never create a subscription")
+        eq(held["code"],"catalog_pending_reconciliation","CAT signed quarantine reason")
+        eq(one(root,"select count(*) from public.subscriptions where provider_subscription_id='sub-stale-catalog'"),0,"CAT no subscription created")
+        eq(one(root,"select count(*) from public.entitlements where account_id=%s::uuid and product_id='research-membership'",(A[4],)),0,"CAT no entitlements")
+        bad=one(v,"select public.observe_signed_research_subscription_created('lemon-squeezy','foreign-catalog','cust_1','999','research-membership','999',true,now(),%s,null,null,'research-receipt-business-v3',%s)",(hash256("foreign"),hash256("foreign-business")))
+        eq(bad["action"],"rejected","CAT foreign store not in known catalog")
+        eq(one(root,"select count(*) from research_checkout_guard.signed_paid_observations where provider_subscription_id='foreign-catalog'"),0,"CAT foreign store cannot claim paid custody")
+    print("PASS B5 CAT: known-store signed stale variant journalled, no binding; foreign store rejected",flush=True)
+
 def main():
     assert os.environ.get("GITHUB_ACTIONS")=="true"
     assert os.environ.get("GITHUB_HEAD_REF")=="agent/1103-b5-rpc-sql-isolated-d1-20261104"
@@ -284,6 +304,7 @@ def main():
         assert not os.environ.get(key),f"Remote environment prohibited: {key}"
     setup(); roles(); k=issue_attach(); custody_and_bind(k)
     unbound(); concurrent_paid(); complimentary_and_library(); expiry_and_immutable(); test_c4_payment_before_expiry_with_late_webhook()
+    catalog_quarantine()
     with db() as root:
         version=one(root,"show server_version")
     print("B5_D1_POSTGRES_PROPOSAL_PASS "+json.dumps({"version":version,

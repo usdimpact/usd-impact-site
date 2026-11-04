@@ -149,8 +149,12 @@ def issue_attach():
         eq(k["test_mode"],True,"test mode")
         expires=datetime.datetime.fromisoformat(str(k["expires_at"]).replace("Z","+00:00"))
         assert 0 < expires.timestamp()-time.time() <=1805
-        eq(issuer(i,A[0],request="request-fixed-111")["action"],"rejected","cannot reissue same proof")
-        eq(issuer(i,A[0],request="request-next111")["action"],"rejected","no parallel checkouts")
+        same=issuer(i,A[0],request="request-fixed-111")
+        eq(same["action"],"rejected","cannot reissue same proof")
+        eq(same["code"],"checkout_request_replayed","same request ID never rediscloses proof")
+        concurrent=issuer(i,A[0],request="request-next111")
+        eq(concurrent["action"],"rejected","no parallel checkouts")
+        eq(concurrent["code"],"existing_checkout_intent","new key held during reservation")
         eq(attach(i,k,proof="A"*43)["action"],"rejected","forged attachment proof")
         eq(attach(i,k,provider="checkout-a1")["action"],"attached","attached before URL")
         eq(attach(i,k,provider="checkout-a1")["action"],"attached","C6 idempotent exact retry")
@@ -160,6 +164,16 @@ def issue_attach():
         collision=attach(i,other,provider="checkout-a1")
         eq(collision["action"],"rejected","C6 duplicate checkout safe rejection")
         eq(collision["code"],"checkout_reference_in_use","C6 safe typed collision")
+        # After an expired UNATTACHED intent, another client ID may create a
+        # new reservation, but replaying the old ID must never redisclose proof.
+        root.execute("""update research_checkout_guard.checkout_intents
+          set created_at=clock_timestamp()-interval '35 minutes',
+              expires_at=clock_timestamp()-interval '5 minutes'
+          where id=%s::uuid""",(other["intent_id"],))
+        eq(issuer(i,A[1],request="other-request-001")["code"],
+           "checkout_request_replayed","expired same ID remains burned")
+        recovered=issuer(i,A[1],request="different-request-002")
+        eq(recovered["action"],"reserved","expired unattached permits fresh ID")
         eq(one(root,"select checkout_proof_sha256 from research_checkout_guard.checkout_intents where id=%s::uuid",(k["intent_id"],)),hash256(k["checkout_key"]),"only hash stored")
     print("PASS B5 G1: account+catalog+mode+30m issuance, proof digest, one attached checkout",flush=True)
     return k

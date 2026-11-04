@@ -283,15 +283,18 @@ assert.match(failureStep[1], /Failing gate:/);
 assert.match(failureStep[1], /gh issue comment 184/);
 assert.match(failureStep[1], /gh issue create/);
 
-assert.match(
-  backstop,
-  /cron: '17 12 \* \* 1-5'/,
-  'the backstop must run after the primary 09:17 UTC Daily schedule',
+assert.ok(
+  backstop.includes("cron: '47 10 * * 1-5'"),
+  'the first backstop must run after the primary 09:17 UTC Daily but leave enough time for publication',
 );
-assert.match(
-  backstop,
-  /cron: '47 15 \* \* 1-5'/,
-  'the backstop must have a second delayed-schedule observation without expanding the recovery budget',
+assert.ok(
+  backstop.includes("cron: '7 11 * * 1-5'"),
+  'the second backstop must retain single recovery while observing before US 07:10 cutoff',
+);
+assert.ok(
+  backstop.includes('TZ=America/New_York date +%H:%M')
+    && backstop.includes('past safe 07:10 ET recovery start'),
+  'late or DST-shifted starts must never trigger paid generation',
 );
 assert.match(backstop, /actions: write/, 'the backstop needs only Actions write permission to dispatch recovery');
 assert.match(backstop, /contents: read/, 'the backstop must keep repository contents read-only');

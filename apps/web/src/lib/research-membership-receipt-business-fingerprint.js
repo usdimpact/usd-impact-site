@@ -3,7 +3,7 @@
 // Its sole current caller is the default-OFF Research receipt evidence path.
 import { createHash } from 'node:crypto';
 
-const VERSION = 'research-receipt-business-v2';
+const VERSION = 'research-receipt-business-v3';
 const RESEARCH_CUSTOM_KEYS = Object.freeze([
   'usd_impact_account_id',
   'usd_impact_research_product_id',
@@ -12,13 +12,14 @@ const RESEARCH_CUSTOM_KEYS = Object.freeze([
 ]);
 const SUBSCRIPTION_FIELDS = Object.freeze([
   'store_id', 'product_id', 'variant_id', 'customer_id',
+  'order_id', 'order_item_id', 'billing_anchor',
   'status', 'cancelled', 'trial_ends_at', 'renews_at',
   'ends_at', 'created_at', 'updated_at', 'test_mode',
 ]);
 const INVOICE_FIELDS = Object.freeze([
-  'subscription_id', 'store_id', 'test_mode', 'status', 'refunded',
+  'subscription_id', 'store_id', 'customer_id', 'test_mode', 'status', 'refunded',
   'total', 'refunded_amount', 'refunded_at', 'created_at', 'updated_at',
-  'currency', 'subtotal', 'tax', 'billing_reason',
+  'currency', 'subtotal', 'discount_total', 'tax', 'tax_inclusive', 'billing_reason',
 ]);
 
 function isObject(value) {
@@ -34,7 +35,7 @@ function project(source, keys) {
     // Missing and explicit null remain distinct. This avoids silently treating
     // a malformed signed object as equivalent to a complete one.
     result[key] = Object.prototype.hasOwnProperty.call(source, key)
-      ? source[key] : { __research_receipt_missing_v2: true };
+      ? source[key] : { __research_receipt_missing_v3: true };
   }
   return result;
 }
@@ -44,7 +45,7 @@ function project(source, keys) {
 // to the fields used for the invoice/access contract, excluding display URLs.
 function projectOptionalNested(source, key, allowedKeys = null) {
   if (!Object.prototype.hasOwnProperty.call(source, key)) {
-    return { __research_receipt_missing_v2: true };
+    return { __research_receipt_missing_v3: true };
   }
   const value = source[key];
   if (value === null) return null;
@@ -118,7 +119,7 @@ export function fingerprintResearchReceiptBusinessEvent(payload) {
         ...(isSubscription ? {
           pause: projectOptionalNested(attrs, 'pause'),
           first_subscription_item: projectOptionalNested(
-            attrs, 'first_subscription_item', ['price_id', 'quantity'],
+            attrs, 'first_subscription_item', ['id', 'subscription_id', 'price_id', 'quantity', 'is_usage_based'],
           ),
         } : {}),
       },

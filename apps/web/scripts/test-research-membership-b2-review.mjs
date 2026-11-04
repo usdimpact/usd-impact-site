@@ -21,9 +21,10 @@ const sub = {
     type: 'subscriptions', id: 'sub_123',
     attributes: {
       store_id: 42, product_id: 99, variant_id: 314, customer_id: 456,
+      order_id: 701, order_item_id: 702, billing_anchor: 12,
       status: 'active', cancelled: false, trial_ends_at: null,
       pause: null,
-      first_subscription_item: { price_id: 501, quantity: 1, subscription_id: 'sub_123' },
+      first_subscription_item: { id: 703, subscription_id: 'sub_123', price_id: 501, quantity: 1, is_usage_based: false },
       renews_at: '2026-12-01T00:00:00Z', ends_at: null,
       created_at: '2026-11-01T00:00:00Z',
       updated_at: '2026-11-04T00:00:00Z', test_mode: true,
@@ -36,7 +37,7 @@ const sub = {
     },
   },
 };
-assert.equal(RESEARCH_RECEIPT_FINGERPRINT_VERSION, 'research-receipt-business-v2');
+assert.equal(RESEARCH_RECEIPT_FINGERPRINT_VERSION, 'research-receipt-business-v3');
 const original = fingerprintResearchReceiptBusinessEvent(sub);
 assert.match(original, /^[a-f0-9]{64}$/);
 
@@ -77,11 +78,17 @@ for (const [name, mutator] of [
   ['product', x => { x.data.attributes.product_id = 98; }],
   ['variant', x => { x.data.attributes.variant_id = 315; }],
   ['customer', x => { x.data.attributes.customer_id = 4567; }],
+  ['original order id', x => { x.data.attributes.order_id = 999; }],
+  ['original order item id', x => { x.data.attributes.order_item_id = 999; }],
+  ['billing anchor', x => { x.data.attributes.billing_anchor = 18; }],
   ['status', x => { x.data.attributes.status = 'past_due'; }],
   ['cancelled', x => { x.data.attributes.cancelled = true; }],
   ['scheduled pause', x => { x.data.attributes.pause = { mode: 'void', resumes_at: '2026-11-06T00:00:00Z' }; }],
+  ['first item id', x => { x.data.attributes.first_subscription_item.id = 999; }],
+  ['first item subscription id', x => { x.data.attributes.first_subscription_item.subscription_id = 'sub_999'; }],
   ['first item price', x => { x.data.attributes.first_subscription_item.price_id = 502; }],
   ['first item quantity', x => { x.data.attributes.first_subscription_item.quantity = 2; }],
+  ['first item usage-based flag', x => { x.data.attributes.first_subscription_item.is_usage_based = true; }],
   ['trial end', x => { x.data.attributes.trial_ends_at = '2026-11-02T00:00:00Z'; }],
   ['renewal date', x => { x.data.attributes.renews_at = '2027-01-01T00:00:00Z'; }],
   ['access end date', x => { x.data.attributes.ends_at = '2026-11-20T00:00:00Z'; }],
@@ -94,6 +101,12 @@ for (const [name, mutator] of [
   assert.notEqual(changes(mutator), original, name + ' is protected business evidence');
 }
 assert.notEqual(changes(x => { delete x.data.attributes.ends_at; }), original, 'missing versus explicit null');
+assert.notEqual(changes(x => { delete x.data.attributes.billing_anchor; }), original, 'missing billing anchor versus present');
+assert.notEqual(changes(x => { x.data.attributes.billing_anchor = null; }), original, 'null billing anchor versus present');
+assert.notEqual(changes(x => { delete x.data.attributes.first_subscription_item.id; }), original,
+  'missing nested item ID versus present');
+assert.notEqual(changes(x => { x.data.attributes.first_subscription_item.subscription_id = null; }), original,
+  'null nested subscription binding versus present');
 assert.notEqual(changes(x => { delete x.data.attributes.pause; }), original, 'missing pause versus null');
 assert.notEqual(changes(x => { delete x.data.attributes.first_subscription_item; }), original, 'missing first item versus present');
 assert.notEqual(changes(x => { x.data.attributes.first_subscription_item = null; }), original, 'null first item versus object');
@@ -120,8 +133,9 @@ const invoice = {
   data: {
     type: 'subscription-invoices', id: 'inv_1',
     attributes: {
-      store_id: 42, test_mode: true, subscription_id: 'sub_123',
+      store_id: 42, test_mode: true, subscription_id: 'sub_123', customer_id: 456,
       status: 'refunded', billing_reason: 'renewal', refunded: true, total: 3900, refunded_amount: 3900,
+      subtotal: 3900, discount_total: 0, tax: 0, tax_inclusive: false,
       refunded_at: '2026-11-04T12:00:00Z', created_at: '2026-11-04T11:00:00Z',
       updated_at: '2026-11-04T12:00:00Z', currency: 'USD',
       urls: { invoice: 'https://example.invalid/signed?key=1' },
@@ -131,7 +145,16 @@ const invoice = {
 const invoiceHash = fingerprintResearchReceiptBusinessEvent(invoice);
 const altUrl = clone(invoice); altUrl.data.attributes.urls.invoice = 'https://example.invalid/signed?key=2';
 assert.equal(fingerprintResearchReceiptBusinessEvent(altUrl), invoiceHash);
-for (const key of ['subscription_id','status','billing_reason','refunded','total','refunded_amount','refunded_at','created_at','updated_at','currency','store_id','test_mode']) {
+const invoiceWithoutCustomer = clone(invoice);
+delete invoiceWithoutCustomer.data.attributes.customer_id;
+assert.notEqual(fingerprintResearchReceiptBusinessEvent(invoiceWithoutCustomer), invoiceHash,
+  'missing invoice customer identity must not equal signed customer identity');
+const invoiceNullCustomer = clone(invoice);
+invoiceNullCustomer.data.attributes.customer_id = null;
+assert.notEqual(fingerprintResearchReceiptBusinessEvent(invoiceNullCustomer), invoiceHash,
+  'null invoice customer identity must differ from a verified customer ID');
+for (const key of ['subscription_id','customer_id','status','billing_reason','refunded','total','refunded_amount',
+  'subtotal','discount_total','tax','tax_inclusive','refunded_at','created_at','updated_at','currency','store_id','test_mode']) {
   const altered = clone(invoice);
   const prior = altered.data.attributes[key];
   altered.data.attributes[key] = typeof prior === 'number' ? prior + 1 : typeof prior === 'boolean' ? !prior : String(prior) + '2';
@@ -188,4 +211,4 @@ function simulatedFailureAndRetry() {
 }
 simulatedFailureAndRetry();
 assert.equal(second.status,'received');
-console.log('Research B-2 v2 fingerprint (G1/G2/G3) and CAS/journal DESIGN MODEL passed (NOT SQL or PostgreSQL concurrency evidence).');
+console.log('Research B-2 v3 fingerprint (A32 identity/anchor/item fields) and CAS/journal DESIGN MODEL passed (NOT SQL or PostgreSQL concurrency evidence).');

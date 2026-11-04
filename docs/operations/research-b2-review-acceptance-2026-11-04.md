@@ -102,3 +102,18 @@ any merge. Evidence: https://github.com/usdimpact/usd-impact-site/issues/840#iss
 **No release:** no SQL, roles/grants, workflows, cron, real Postgres,
 provider request, payment/refund, customer entitlement, email, Production
 settings, deployment or merge. Independent final-SHA review required.
+
+## A32 targeted provider-field completion — v3 Draft-only (2026-11-04)
+
+A32 provider-schema review identified omitted **signed business fields**, confirmed in published Lemon Squeezy API attribute definitions (not observed in a real customer webhook). The existing stacked Draft #1111 now proposes `research-receipt-business-v3` in the default-OFF pure fingerprint helper; no provider API access, merchant event, SQL or Production change.
+
+- Subscription signed identity: `order_id`, `order_item_id`, and `billing_anchor` are now projected, in addition to the existing store/product/variant/customer fields. The billing anchor is the collection day, but this hash does **not** validate the authenticity of a later provider subscription snapshot.
+- The nested first subscription item projects `id`, `subscription_id`, `price_id`, `quantity`, and optional `is_usage_based`. Missing versus null versus changed item identity are synthetic negative cases. Current Research products are not hereby authorized for usage-based billing.
+- Invoice signed identity and money fields: `customer_id`, `discount_total`, and `tax_inclusive` are projected alongside subscription, store, currency, amounts, status and billing reason. Rotating invoice download URLs and buyer names/emails remain deliberately excluded.
+- Synthetic tests cover altered order/item, collection day, customer, discount/tax, price/quantity/usage flags, key reorder, absent/null fields and URL/presentation stability. These are **hash distinctions**, not provider/customer binding checks, real signed webhook replay or durable storage assertions.
+- Version changed from v2 to v3 because the protected field set and presence sentinel changed. **Never compare a persisted v1/v2 receipt against v3 as equivalent without an approved version migration and signed-event reconciliation.** Flag default-OFF and no v3 receipts installed or written by this Draft.
+- Invoice customer-to-bound-subscription matching, unknown future financial provider fields, authorized database CAS/journal, role grants, trusted event ordering, two-session real PostgreSQL, and D1–D7 owner policy/release approval remain separate **ACTIVATION BLOCK** items.
+
+Reference: https://docs.lemonsqueezy.com/api/subscription-invoices/the-subscription-invoice-object
+Reference: https://docs.lemonsqueezy.com/api/subscriptions/the-subscription-object
+Reference: https://docs.lemonsqueezy.com/api/subscription-items/the-subscription-item-object

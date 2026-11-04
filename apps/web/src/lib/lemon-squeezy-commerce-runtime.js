@@ -1001,7 +1001,8 @@ async function boundedPurchaseEmailStage(operation, fetchImpl) {
       ));
     }, PURCHASE_EMAIL_STAGE_BUDGET_MS);
   });
-  const scopedFetch = (url, options = {}) => fetchImpl(url, {
+  const transport = typeof fetchImpl === 'function' ? fetchImpl : fetch;
+  const scopedFetch = (url, options = {}) => transport(url, {
     ...options,
     signal: controller.signal,
   });

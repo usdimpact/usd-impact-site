@@ -87,6 +87,9 @@ def setup():
         c.execute("""grant execute on function public.bind_research_membership_subscription(
           uuid,text,text,text,text,public.subscription_billing_interval,timestamptz,jsonb)
           to service_role""")
+        # Exercise the proposed owner policies with real RLS enforcement.
+        for table in ("profiles","subscriptions","entitlements","subscription_offers"):
+            c.execute("alter table public."+table+" enable row level security")
         content=SQL.read_text()
         assert content.startswith("-- D1 ISOLATED REVIEW ONLY.")
         assert content.count("create function public.")==4
@@ -104,6 +107,14 @@ def roles():
       "bind_research_membership_with_checkout_intent(uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean,text,text)"]
     with db() as root,db("issuer") as i,db("verifier") as v,db("binder") as b:
         # C11 test-only non-escalatable SECURITY DEFINER ownership.
+        eq(one(root,"select count(*) from pg_policies where schemaname='public' and policyname like 'research_b5_owner_%'"),6,"C11 owner RLS policies installed")
+        eq(one(root,"select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname in ('profiles','subscriptions','entitlements','subscription_offers') and c.relrowsecurity"),4,"C11 RLS enabled")
+        root.execute("set role review_checkout_owner")
+        try:
+            eq(one(root,"select count(*) from public.profiles"),5,"C11 owner sees protected profiles")
+            eq(one(root,"select count(*) from public.subscription_offers"),1,"C11 owner sees protected offers")
+        finally:
+            root.execute("reset role")
         eq(one(root,"select rolcanlogin from pg_roles where rolname='review_checkout_owner'"),False,"C11 owner NOLOGIN")
         eq(one(root,"select rolbypassrls from pg_roles where rolname='review_checkout_owner'"),False,"C11 owner cannot BYPASSRLS")
         eq(one(root,"select rolsuper from pg_roles where rolname='review_checkout_owner'"),False,"C11 owner not superuser")

@@ -8,6 +8,7 @@ on:
     paths:
       - '.github/workflows/research-d2-pg17-isolated-review.yml'
       - 'docs/operations/research-d2-pg17-review-fixtures.tar.xz.b64'
+      - 'docs/operations/research-d2-pg17-fixture-sha256.txt'
 permissions:
   contents: read
 concurrency:
@@ -63,7 +64,10 @@ jobs:
           test -z "${DATABASE_URL:-}"
           test -z "${VERCEL_ENV:-}"
           mkdir -p "$RUNNER_TEMP/d2-fixture"
-          base64 --decode docs/operations/research-d2-pg17-review-fixtures.tar.xz.b64 | tar -xJ -C "$RUNNER_TEMP/d2-fixture"
+          base64 --decode docs/operations/research-d2-pg17-review-fixtures.tar.xz.b64 > "$RUNNER_TEMP/research-d2-fixture.tar.xz"
+          printf '%s  %s\n' '0027705cfe30f09b2be3e0d034a09eefeb33cfcdf3c1e930201e58fdcae97a47' "$RUNNER_TEMP/research-d2-fixture.tar.xz" | sha256sum --check
+          tar -xJf "$RUNNER_TEMP/research-d2-fixture.tar.xz" -C "$RUNNER_TEMP/d2-fixture"
+          (cd "$RUNNER_TEMP/d2-fixture" && sha256sum --check "$GITHUB_WORKSPACE/docs/operations/research-d2-pg17-fixture-sha256.txt")
           python3 -m py_compile "$RUNNER_TEMP/d2-fixture/run_pg17_review.py"
           echo 'D2 no Supabase project, no provider webhook, no paid customer data'
       - name: Install pinned isolated PostgreSQL client in ephemeral venv
@@ -72,6 +76,25 @@ jobs:
           set -euo pipefail
           python3 -m venv "$RUNNER_TEMP/d2-venv"
           "$RUNNER_TEMP/d2-venv/bin/python" -m pip install --disable-pip-version-check --no-input 'psycopg[binary]==3.2.10'
+          "$RUNNER_TEMP/d2-venv/bin/python" - <<'PYPgExact'
+          import os
+          import psycopg
+          assert os.environ["PGHOST"] == "127.0.0.1"
+          with psycopg.connect(
+              host=os.environ["PGHOST"], port=int(os.environ["PGPORT"]),
+              dbname=os.environ["PGDATABASE"], user=os.environ["PGUSER"],
+              password=os.environ["PGPASSWORD"], connect_timeout=5
+          ) as conn:
+              with conn.cursor() as cur:
+                  cur.execute("show server_version_num")
+                  version_num=int(cur.fetchone()[0])
+                  cur.execute("show server_version")
+                  version_text=str(cur.fetchone()[0])
+          assert version_num == 170006 and version_text.startswith("17.6 "), (
+              f"Required exact PostgreSQL 17.6; got {version_text} ({version_num})"
+          )
+          print("PASS exact PostgreSQL 17.6: " + version_text)
+          PYPgExact
       - name: Exercise non-superuser installer, controlled ACL faults, M2 and R1
         shell: bash
         run: |
@@ -164,6 +187,25 @@ jobs:
           set -euo pipefail
           python3 -m venv "$RUNNER_TEMP/d2-original-app-venv"
           "$RUNNER_TEMP/d2-original-app-venv/bin/python" -m pip install --disable-pip-version-check --no-input 'psycopg[binary]==3.2.10'
+          "$RUNNER_TEMP/d2-original-app-venv/bin/python" - <<'PYPgExact'
+          import os
+          import psycopg
+          assert os.environ["PGHOST"] == "127.0.0.1"
+          with psycopg.connect(
+              host=os.environ["PGHOST"], port=int(os.environ["PGPORT"]),
+              dbname=os.environ["PGDATABASE"], user=os.environ["PGUSER"],
+              password=os.environ["PGPASSWORD"], connect_timeout=5
+          ) as conn:
+              with conn.cursor() as cur:
+                  cur.execute("show server_version_num")
+                  version_num=int(cur.fetchone()[0])
+                  cur.execute("show server_version")
+                  version_text=str(cur.fetchone()[0])
+          assert version_num == 170006 and version_text.startswith("17.6 "), (
+              f"Required exact PostgreSQL 17.6; got {version_text} ({version_num})"
+          )
+          print("PASS exact PostgreSQL 17.6: " + version_text)
+          PYPgExact
       - name: Verify standalone real app JavaScript regressions
         shell: bash
         run: |

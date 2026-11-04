@@ -325,7 +325,8 @@ else process.exit(2);
           GITHUB_REPOSITORY: 'usdimpact/usd-impact-site', GITHUB_RUN_ID: '99',
           GITHUB_STEP_SUMMARY: summary, GH_TOKEN: 'fixture-not-real' } });
       assert.equal(child.status, exit, `${scenario}: ${child.stderr}`);
-      assert.ok((await readFile(summary, 'utf8')).includes(message));
+      const summaryText = await readFile(summary, 'utf8');
+      assert.ok(summaryText.includes(message), `${scenario}: expected '${message}' in ${JSON.stringify(summaryText)}`);
       assert.equal((await readFile(calls, 'utf8')).split('\n').filter((x) => x.startsWith('workflow run')).length, dispatches);
     });
   }

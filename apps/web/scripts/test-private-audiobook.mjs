@@ -65,12 +65,36 @@ assert.equal(
 assert.equal(signingRequest.options.method, 'POST');
 assert.equal(signingRequest.options.cache, 'no-store');
 assert.equal(signingRequest.options.headers.apikey, config.secretKey);
-assert.equal(signingRequest.options.headers.Authorization, `Bearer ${config.secretKey}`);
+assert.equal(
+  Object.keys(signingRequest.options.headers).some(name=>name.toLowerCase()==='authorization'),
+  false, 'opaque sb_secret_ must never be used as a bearer token',
+);
+assert.equal(signingRequest.options.headers['Content-Type'],'application/json');
+assert.equal(AUDIOBOOK_SIGNED_URL_TTL_SECONDS,3600,'audio signed-link lifetime must not silently grow');
 assert.deepEqual(JSON.parse(signingRequest.options.body), { expiresIn: AUDIOBOOK_SIGNED_URL_TTL_SECONDS });
 assert.equal(
   signedUrl,
   `${config.url}/storage/v1/object/sign/${PRIVATE_AUDIOBOOK_BUCKET}/${firstTrack.objectPath}?token=temporary-token`,
 );
+
+// The same safe header helper preserves existing JWT-form service_role keys.
+{
+  const legacyKey='eyJsynthetic.legacy.jwt-only-for-a-test';
+  let seen;
+  await createSignedAudiobookTrackUrl({
+    slug:firstTrack.slug,config:{...config,secretKey:legacyKey},
+    fetchImpl:async(url,options)=>{
+      seen={url,options};
+      return {ok:true,status:200,
+        async json(){return {signedURL:
+          `/object/sign/${PRIVATE_AUDIOBOOK_BUCKET}/${firstTrack.objectPath}?token=synthetic`};},
+      };
+    },
+  });
+  assert.equal(seen.options.headers.apikey,legacyKey);
+  assert.equal(seen.options.headers.Authorization,`Bearer ${legacyKey}`);
+  assert.equal(seen.url.includes(legacyKey),false);
+}
 
 for (const payload of [
   {},

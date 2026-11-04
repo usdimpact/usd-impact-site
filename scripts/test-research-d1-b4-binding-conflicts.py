@@ -313,6 +313,25 @@ def test_paid_event_identity_conflict(a,watch):
     assert paid(watch,eid)[0][1]=="synthetic-sub-identity-a"
     print("PASS B4 provider event identity collision is journalled, not silently reused")
 
+def test_d5_unbound_public_checkout(a,watch):
+    # Lemon Squeezy Share product URL can omit checkout custom account ID.
+    # A synthetic signed paid event must remain discoverable with NULL account.
+    # This does NOT execute a real checkout or verify provider HMAC.
+    evt="evt-b4-public-unbound"
+    sub="synthetic-public-no-custom-binding"
+    recorded=invoke(a,"observe_signed_paid",None,sub,evt)
+    assert recorded["disposition"]=="unbound_paid_observed",recorded
+    assert len(paid(watch,evt))==1 and paid(watch,evt)[0][2] is None
+    observed=conflicts(watch,evt)
+    assert len(observed)==1 and observed[0][0]=="missing_custom_binding"
+    assert observed[0][3] is None
+    assert invoke(a,"observe_signed_paid",None,sub,evt)["disposition"]=="already_recorded"
+    assert invoke(a,"try_bind_paid",None,sub,evt)["disposition"]=="invalid_input"
+    assert one(watch,
+        "select count(*) from research_binding_review.subscriptions where provider_subscription_id=%s",
+        (sub,))==0
+    print("PASS B4 D5 synthetic: signed unbound provider purchase observed and journalled without granting access")
+
 def main():
     assert guard()
     with admin() as root:
@@ -324,6 +343,7 @@ def main():
             test_t13_two_distinct_paid_bindings(a,b,root)
             test_t21_complimentary_preservation(a,b,root)
             test_paid_event_identity_conflict(a,root)
+            test_d5_unbound_public_checkout(a,root)
             test_x3_rollback_journal_limitation(a,root)
             test_t22_library_untouched(root,library_ent,library_receipts)
         with admin() as a, admin() as b:
@@ -331,7 +351,7 @@ def main():
             test_x2_lease_uses_wall_clock(a,root)
         test_x4_force_truncate_review_journal(root)
         test_x8_version_mismatch_remains_non_applied(root)
-    print("B4 REAL PostgreSQL synthetic T13/T21/T22/X1/X2/X4/D2 PASS; X3/X8 LIMITATIONS DOCUMENTED.")
+    print("B4 REAL PostgreSQL synthetic T13/T21/T22/X1/X2/X4/D2/D5-unbound PASS; X3/X8 LIMITATIONS DOCUMENTED.")
     print("NOT TESTED: actual USD Impact paid binding/Library Pass SQL migration, HMAC/merchant, Supabase roles, Production.")
 
 if __name__=="__main__":

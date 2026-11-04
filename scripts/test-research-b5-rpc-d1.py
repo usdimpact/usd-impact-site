@@ -190,7 +190,7 @@ def concurrent_paid():
         a.rollback(); b.rollback(); a.close(); b.close()
     with db() as root:
         eq(one(root,"select count(*) from public.subscriptions where account_id=%s::uuid",(A[3],)),1,"one subscription")
-        eq(one(root,"select count(*) from research_checkout_guard.signed_paid_observations where provider_subscription_id like 'sub-dupe-%'"),2,"both paid events retained")
+        eq(one(root,"select count(*) from research_checkout_guard.signed_paid_observations where provider_subscription_id like %s",("sub-dupe-%",)),2,"both paid events retained")
         assert one(root,"select count(*) from research_checkout_guard.conflict_evidence where conflict_code='duplicate_paid_subscription'")>=1
     print("PASS B5 T13: two distinct PostgreSQL sessions blocked; second paid preserved without second grant",flush=True)
 def complimentary_and_library():

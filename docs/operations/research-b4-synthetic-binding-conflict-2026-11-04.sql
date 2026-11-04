@@ -24,6 +24,8 @@ revoke all on schema research_binding_review from public;
 grant usage on schema research_binding_review to review_binding_writer, review_binding_api;
 -- CREATE granted only temporarily to transfer SECURITY DEFINER ownership.
 grant create on schema research_binding_review to review_binding_writer;
+-- Temporary CREATE is required for the distinct evidence-owner transfer.
+grant usage, create on schema research_binding_review to review_binding_evidence_owner;
 
 create table research_binding_review.profiles (
   account_id uuid primary key,
@@ -118,6 +120,7 @@ begin
 end;
 $$;
 alter function research_binding_review.reject_evidence_mutation() owner to review_binding_evidence_owner;
+revoke create on schema research_binding_review from review_binding_evidence_owner;
 
 create trigger no_signed_paid_update_delete
 before update or delete on research_binding_review.signed_paid_observations

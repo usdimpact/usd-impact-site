@@ -759,6 +759,63 @@ await assert.rejects(
   { code: 'RESEARCH_FIRST_PURCHASE_OBSERVATION_INVALID', status: 503 },
 );
 
+
+const staleCatalogPayload = payload();
+staleCatalogPayload.data.attributes.variant_id = 999;
+const staleSigned = signed(staleCatalogPayload);
+const catalogResult = await processResearchMembershipWebhookWithFirstPurchase({
+  ...staleSigned, environment,
+  processImpl: async () => {
+    const e = new Error('unknown subscription');
+    e.code = 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND';
+    throw e;
+  },
+  fetchImpl: async (url, init) => {
+    assert.equal(url, `${environment.SUPABASE_URL}/rest/v1/rpc/observe_signed_research_subscription_created`);
+    const body = JSON.parse(init.body);
+    assert.equal(body.p_product_id, 'research-membership');
+    assert.equal(body.p_provider_price_id, '999');
+    assert.equal(body.p_claimed_account_id, null, 'stale catalog cannot bind a claimed account');
+    return new Response(JSON.stringify({
+      action: 'recorded', provider_subscription_id: 'sub_first_1',
+      raw_body_sha256: crypto.createHash('sha256').update(staleSigned.rawBody).digest('hex'),
+      catalog_quarantined: true,
+    }), { status: 200 });
+  },
+});
+assert.equal(catalogResult.action, 'held_catalog_quarantine');
+await assert.rejects(
+  () => processResearchMembershipWebhookWithFirstPurchase({
+    ...staleSigned, environment,
+    processImpl: async () => {
+      const e = new Error('unknown subscription');
+      e.code = 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND';
+      throw e;
+    },
+    fetchImpl: async () => new Response(JSON.stringify({
+      action: 'recorded', provider_subscription_id: 'sub_first_1',
+      raw_body_sha256: crypto.createHash('sha256').update(staleSigned.rawBody).digest('hex'),
+    }), { status: 200 }),
+  }),
+  { code: 'RESEARCH_PAID_EVIDENCE_UNAVAILABLE', status: 503 },
+);
+const foreignCatalogPayload = payload();
+foreignCatalogPayload.data.attributes.store_id = 999;
+let foreignCustodyRequests = 0;
+await assert.rejects(
+  () => processResearchMembershipWebhookWithFirstPurchase({
+    ...signed(foreignCatalogPayload), environment,
+    processImpl: async () => {
+      const e = new Error('unknown subscription');
+      e.code = 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND';
+      throw e;
+    },
+    fetchImpl: async () => { foreignCustodyRequests += 1; throw new Error('No custody allowed'); },
+  }),
+  { code: 'RESEARCH_FIRST_PURCHASE_CATALOG_MISMATCH', status: 409 },
+);
+assert.equal(foreignCustodyRequests, 0, 'foreign store must not enter Research paid evidence');
+
 const migration = await readFile(
   new URL('../../../supabase/migrations/20260907154500_research_membership_first_purchase_binding.sql', import.meta.url),
   'utf8',

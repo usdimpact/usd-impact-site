@@ -297,7 +297,8 @@ begin
  select * into v_obs from research_checkout_guard.signed_paid_observations
   where provider=p_provider and provider_subscription_id=p_provider_subscription_id
   for update;
- if not found or v_obs.raw_body_sha256<>p_raw_body_sha256 then
+ if not found or v_obs.raw_body_sha256<>p_raw_body_sha256
+    or v_obs.occurred_at is distinct from p_occurred_at then
    return jsonb_build_object('action','unverified_paid_evidence');
  end if;
  -- A signed/committed provider fact cannot authenticate an account by itself.

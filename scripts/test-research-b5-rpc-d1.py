@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """B5 exact-app-RPC SQL test using a disposable real PostgreSQL 16 server only."""
 import os, json, time, uuid, hashlib, concurrent.futures, datetime
+EVENT_OCCURRED_AT={}
 from pathlib import Path
 import psycopg
 ROOT=Path(__file__).resolve().parents[1]
@@ -31,15 +32,17 @@ def attach(c,intent,provider="checkout_1",proof=None):
     return one(c,"select public.attach_research_membership_checkout_intent(%s::uuid,%s,%s)",
       (intent["intent_id"],proof or intent["checkout_key"],provider))
 def observe(c,sub,sha,account=None,proof=None,customer="cust_1"):
+    occurred=EVENT_OCCURRED_AT.setdefault(sub,datetime.datetime.now(datetime.timezone.utc))
     return one(c,"select public.observe_signed_research_subscription_created("
        "'lemon-squeezy',%s,%s,'42','research-membership','314',true,"
-       "clock_timestamp(),%s,%s::uuid,%s)",
-       (sub,customer,sha,account,hash256(proof) if proof else None))
+       "%s::timestamptz,%s,%s::uuid,%s)",
+       (sub,customer,occurred,sha,account,hash256(proof) if proof else None))
 def bind(c,account,sub,sha,proof,customer="cust_1"):
+    occurred=EVENT_OCCURRED_AT.get(sub,datetime.datetime.now(datetime.timezone.utc))
     return one(c,"select public.bind_research_membership_with_checkout_intent("
        "%s::uuid,'lemon-squeezy',%s,%s,'314','monthly',"
-       "clock_timestamp(),%s,%s,'42','research-membership',true)",
-       (account,sub,customer,proof,sha))
+       "%s::timestamptz,%s,%s,'42','research-membership',true)",
+       (account,sub,customer,occurred,proof,sha))
 def refused(c,sql,args=()):
     try: c.execute(sql,args)
     except psycopg.Error as e: eq(e.sqlstate,"42501","must deny mutation")
@@ -109,7 +112,8 @@ def issue_attach():
         eq(k["account_id"],A[0],"server account")
         eq(k["store_id"],"42","store")
         eq(k["test_mode"],True,"test mode")
-        assert 0 < k["expires_at"].timestamp()-time.time() <=1805
+        expires=datetime.datetime.fromisoformat(str(k["expires_at"]).replace("Z","+00:00"))
+        assert 0 < expires.timestamp()-time.time() <=1805
         eq(issuer(i,A[0],request="request-fixed-111")["action"],"rejected","cannot reissue same proof")
         eq(issuer(i,A[0],request="request-next111")["action"],"rejected","no parallel checkouts")
         eq(attach(i,k,proof="A"*43)["action"],"rejected","forged attachment proof")
@@ -125,6 +129,10 @@ def custody_and_bind(k):
         eq(observe(v,"sub-alice",sha,A[0],k["checkout_key"])["action"],"already_recorded","signed retry")
         eq(observe(v,"sub-alice",hash256("changed bytes"),A[0],k["checkout_key"])["action"],"conflict_recorded","immutable signed identity")
         eq(bind(b,A[0],"sub-alice",hash256("unknown"),k["checkout_key"])["action"],"unverified_paid_evidence","exact SHA")
+        original=EVENT_OCCURRED_AT["sub-alice"]
+        EVENT_OCCURRED_AT["sub-alice"]=original-datetime.timedelta(days=1)
+        eq(bind(b,A[0],"sub-alice",sha,k["checkout_key"])["action"],"unverified_paid_evidence","signed event time")
+        EVENT_OCCURRED_AT["sub-alice"]=original
         first=bind(b,A[0],"sub-alice",sha,k["checkout_key"])
         eq(first["action"],"created","safe pending binding")
         eq(first["raw_body_sha256"],sha,"same signed event")

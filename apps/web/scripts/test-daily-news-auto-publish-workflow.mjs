@@ -172,6 +172,8 @@ for (const invalid of ['', '0', '-1', '1.2', '999999999999999999999',
 }
 assert.throws(() => dispatchSourceRunId({ inputs: {} }), /invalid-explicit-source-run-id/);
 assert.match(auto, /workflow_dispatch:[\s\S]*source_run_id:[\s\S]*required: true/);
+assert.match(auto, /run-name:.*inputs\.source_run_id/);
+assert.match(mainDaily, /\.display_title == \$expected_title/);
 assert.match(auto, /github.event_name == 'workflow_dispatch'/);
 assert.match(mainDaily, /Explicitly dispatch trusted bounded publisher after source verification/);
 assert.match(mainDaily, /gh workflow run daily-news-auto-publish\.yml[\s\S]*source_run_id=\$GITHUB_RUN_ID/);
@@ -223,9 +225,11 @@ if (!jqAvailable && process.env.GITHUB_ACTIONS === 'true') {
 }
 if (jqAvailable) {
   const createdAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const expectedTitle = 'Daily USD Impact bounded auto-publication source 770001';
   const goodReceipt = {
     event: 'workflow_dispatch', head_branch: 'main',
     actor: { login: 'github-actions[bot]' }, created_at: createdAt,
+    display_title: expectedTitle,
     html_url: 'https://github.com/usdimpact/usd-impact-site/actions/runs/700001',
   };
   const mockGh = [
@@ -245,7 +249,10 @@ if (jqAvailable) {
     ['manual source actor', 'usdimpact', '1', false, [goodReceipt], 1, false],
     ['publisher dispatch refused', 'github-actions[bot]', '1', true, [goodReceipt], 1, true],
     ['receiver not created', 'github-actions[bot]', '1', false, [], 1, true],
-    ['ambiguous bot receivers', 'github-actions[bot]', '1', false, [goodReceipt, { ...goodReceipt, html_url: 'https://github.com/usdimpact/usd-impact-site/actions/runs/700002' }], 1, true],
+    ['ambiguous bot receivers same source ID', 'github-actions[bot]', '1', false, [goodReceipt, { ...goodReceipt, html_url: 'https://github.com/usdimpact/usd-impact-site/actions/runs/700002' }], 1, true],
+    ['other bot source ID ignored', 'github-actions[bot]', '1', false, [goodReceipt, { ...goodReceipt, display_title: 'Daily USD Impact bounded auto-publication source 880002', html_url: 'https://github.com/usdimpact/usd-impact-site/actions/runs/700003' }], 0, true],
+    ['only wrong source ID does not authorize', 'github-actions[bot]', '1', false, [{ ...goodReceipt, display_title: 'Daily USD Impact bounded auto-publication source 880002' }], 1, true],
+    ['missing display title does not authorize', 'github-actions[bot]', '1', false, [{ ...goodReceipt, display_title: undefined }], 1, true],
     ['human receiver not accepted', 'github-actions[bot]', '1', false, [{ ...goodReceipt, actor: { login: 'usdimpact' } }], 1, true],
     ['old run cannot be mistaken for this request', 'github-actions[bot]', '1', false, [{ ...goodReceipt, created_at: '2026-01-02T09:00:00Z' }], 1, true],
   ];
@@ -263,7 +270,7 @@ if (jqAvailable) {
     assert.equal(test.stderr.includes('MOCK_DISPATCH'), wasDispatched, name + ' actual dispatch receipt');
     if (expectedExit === 0) assert.match(test.stdout, /Publisher workflow_dispatch observed/);
   }
-  console.log('Daily publisher dispatch shell: eight mocked positive and negative scenarios passed');
+  console.log('Daily publisher dispatch shell: eleven mocked positive and negative scenarios passed');
 }
 
 console.log('Daily bounded auto-publication policy PASS: fake dates, backstop, exact PR, strict source, check provenance and workflow limits; no network or merge.');

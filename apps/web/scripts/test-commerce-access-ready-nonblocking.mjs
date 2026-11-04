@@ -132,6 +132,18 @@ async function scenario({ name, ledger, email, mismatch = false, profileFailure 
       }), /Variant mismatch|Variant/i, name);
       assert.deepEqual(calls.receipt, ['failed'], name + ': real commerce failure must remain visible');
       assert.equal(calls.complete, 0);
+    } else if (profileFailure || ledgerFailure) {
+      // Before durable outbox creation, a transient outage MUST return a
+      // retryable 503 even though the paid purchase RPC already succeeded.
+      await assert.rejects(() => processLemonSqueezyWebhook({
+        config, rawBody, signature, fetchImpl, now: new Date('2026-08-26T12:00:05Z'),
+      }), (error) => error?.code === 'PURCHASE_ACCESS_READY_INTENT_RETRY_REQUIRED'
+        && error.status === 503, name);
+      assert.deepEqual(calls.receipt, ['failed'], name + ': signed-provider retry stays possible');
+      assert.equal(calls.complete, 1, name + ': trusted purchase completes first');
+      assert.equal(processed, false, name + ': no false processed receipt');
+      assert.equal(errorCodes.length, 1, name + ': one sanitized retry log');
+      assert.doesNotMatch(errorCodes[0], /qa@example\\.com|buyer7001|sb_secret_/);
     } else {
       const first = await processLemonSqueezyWebhook({
         config, rawBody, signature, fetchImpl, now: new Date('2026-08-26T12:00:00Z'),
@@ -182,7 +194,7 @@ try {
     console.log(row.name + ': receipt=' + row.receipt.join(',') +
       ' completed=' + row.complete + ' outbox=' + row.outbox);
   }
-  console.log('Non-blocking purchase access-ready webhook synthetic tests PASS (7 scenarios).');
+  console.log('Purchase access-ready webhook synthetic acknowledgement and retry tests PASS (7 scenarios).');
 } finally {
   console.error = originalLog;
   for (const [name, value] of Object.entries(original)) {

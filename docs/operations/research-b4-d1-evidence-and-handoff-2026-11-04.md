@@ -29,6 +29,25 @@ The flow models:
 
 **Known limitation:** The raw `observe_signed_paid` fixture is callable by a synthetic server role and does not check a real provider signature. Production would require trusted server-side provider verification, proper source, catalog and user-account authorization, monitoring and narrow RPC grants. The proposed model does **not** solve customer-facing duplicate checkout generation, recurring billing, refund/cancel, purchase confirmation or D6 case resolution.
 
+## Direct merchant Share checkout — synthetic unbound evidence (D5)
+
+Owner-supplied Lemon Squeezy Share-panel screenshots confirm a Live, published
+Research Membership product with a shareable `/checkout/buy/` URL and both
+Monthly $29 / Annual $290 variants. Its displayed link has no visible USD Impact
+`checkout[custom][...]` account-binding parameters. Public signed-out purchase
+success is not established; no checkout or payment has been performed.
+
+The B-4 fixture therefore allows a signed paid observation with
+`bound_account_id = NULL`, records an append-only
+`missing_custom_binding` conflict, and **refuses to bind or activate** it.
+This is a synthetic detection contract only: provider HMAC/catalog verification,
+signed subscription-object authenticity and reliable payment confirmation must
+occur BEFORE any equivalent future Production ledger entry. Do not infer a
+customer account by email or silently grant paid Research access.
+
+Lemon Squeezy documents custom checkout data and webhook metadata:
+https://docs.lemonsqueezy.com/help/checkout/passing-custom-data
+
 ## Required hosted test evidence
 
 The child PR's D1 workflow runs **both** the original isolated receipt tests and the new B-4 Python suite on one ephemeral PostgreSQL 16.15 service container:

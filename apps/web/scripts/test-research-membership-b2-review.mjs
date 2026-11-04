@@ -212,3 +212,7 @@ function simulatedFailureAndRetry() {
 simulatedFailureAndRetry();
 assert.equal(second.status,'received');
 console.log('Research B-2 v3 fingerprint (A32 identity/anchor/item fields) and CAS/journal DESIGN MODEL passed (NOT SQL or PostgreSQL concurrency evidence).');
+
+// Stage B-3 is an isolated single-session PGlite prototype from docs/operations.
+// Its PASS is never a real PostgreSQL two-session / Production approval.
+await import('./test-research-membership-b3-versioned-receipts-pglite.mjs');

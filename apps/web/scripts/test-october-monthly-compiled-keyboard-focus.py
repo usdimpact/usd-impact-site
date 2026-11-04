@@ -309,10 +309,22 @@ try:
                     assert spacing["sections"] == 7 and spacing["footerPrivacyVisible"], (
                         "User text spacing removed Monthly content or footer"
                     )
-                    # The already keyboard-tested footer must remain unobscured
-                    # after the user-defined text spacing changes reflow.
-                    privacy.scroll_into_view_if_needed()
-                    privacy.focus()
+                    # Reflow must preserve the real keyboard path, not merely
+                    # the ability to programmatically focus a footer link.
+                    # Starting at Privacy (naturally reached above), use only
+                    # Shift+Tab and Tab after the user spacing override.
+                    stage = "natural footer keyboard after text spacing"
+                    assert privacy.evaluate(
+                        "(el) => document.activeElement === el"
+                    ), "Text-spacing override unexpectedly displaced keyboard focus"
+                    page.keyboard.press("Shift+Tab")
+                    assert page.evaluate(
+                        "() => document.activeElement?.matches('footer a[href=\\\"/news\\\"]')"
+                    ), "Shift+Tab after text spacing did not reach Dailies"
+                    page.keyboard.press("Tab")
+                    assert privacy.evaluate(
+                        "(el) => document.activeElement === el"
+                    ), "Natural Tab after text spacing did not return to Privacy"
                     footer_after_spacing = privacy.evaluate("""(el) => {
                       const css = getComputedStyle(el);
                       const rect = el.getBoundingClientRect();

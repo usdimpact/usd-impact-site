@@ -29,3 +29,7 @@ This review requires future trusted runtime custody of provider API credentials 
 ## Fail-closed boundaries
 
 No files are placed under `supabase/migrations`. No live code imports the proposed provider validator. The PostgreSQL runner rejects remote database/provider environment variables, binds `PGHOST=127.0.0.1` and uses exact PostgreSQL 17.6. Only synthetic accounts and one-time purchase records are generated. The historical `service_role` direct-write grant is **asserted as an unresolved defect**, not silently described as fixed. Nothing in this Draft permits a merchant action, checkout pause, deployed change or customer entitlement mutation.
+
+## Exact-head security negative added after initial acceptance
+
+At the later Stage C review head, the fixture models the historical Supabase `service_role` with `BYPASSRLS`. It demonstrates that the legacy 16-parameter RPC **can** apply an older payment failure after a newer renewal, shortening a synthetic paid period and suspending a synthetic entitlement; a direct entitlement UPDATE also succeeds. All such writes are performed in a disposable transaction that is explicitly **rolled back**, and the original synthetic rows are compared afterward. This documents a **still-open P1 bypass**, not a remediation. See `STAGE_D_RELEASE_DESIGN.md` for the required coordinated old-RPC/direct-write cutover, authenticated provider evidence and rollback plan.

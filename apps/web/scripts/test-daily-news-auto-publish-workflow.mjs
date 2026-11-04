@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import {
   REPOSITORY, REQUIRED_GENERATOR_STEPS, REQUIRED_CHECKS,
   beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
   selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
+  dispatchSourceRunId, isAuthenticatedBotDispatch,
 } from './daily-news-auto-publish-policy.mjs';
 
 const auto = readFileSync(new URL('../../../.github/workflows/daily-news-auto-publish.yml', import.meta.url), 'utf8');
@@ -160,5 +162,108 @@ assert.doesNotMatch(runtime, /--admin|--force|--bypass|gh pr merge/);
 assert.match(runtime, /files\[0\]\.filename !== expectedPath/);
 assert.match(runtime, /'contents\/' \+ expectedPath/);
 assert.doesNotMatch(runtime, /'contents\/' \+ files\[0\]\.filename/);
+
+
+assert.equal(dispatchSourceRunId({ inputs: { source_run_id: '41808333994' } }), 41808333994);
+for (const invalid of ['', '0', '-1', '1.2', '999999999999999999999',
+  '41808333994\n--ref untrusted', ' 41808333994', 'not-a-run']) {
+  assert.throws(() => dispatchSourceRunId({ inputs: { source_run_id: invalid } }),
+    /invalid-explicit-source-run-id/, 'dispatch source ID must be non-authoritative and strictly numeric');
+}
+assert.throws(() => dispatchSourceRunId({ inputs: {} }), /invalid-explicit-source-run-id/);
+assert.match(auto, /workflow_dispatch:[\s\S]*source_run_id:[\s\S]*required: true/);
+assert.match(auto, /github.event_name == 'workflow_dispatch'/);
+assert.match(mainDaily, /Explicitly dispatch trusted bounded publisher after source verification/);
+assert.match(mainDaily, /gh workflow run daily-news-auto-publish\.yml[\s\S]*source_run_id=\$GITHUB_RUN_ID/);
+assert.match(mainDaily, /if ! gh workflow run daily-news-auto-publish\.yml[\s\S]*never retry automatically/);
+assert.match(runtime, /source = api\('actions\/runs\/' \+ id\)/);
+assert.match(runtime, /source\.id !== id \|\| source\.head_branch !== 'main'/);
+assert.match(runtime, /!isAuthenticatedBotDispatch\(source, process\.env\.GITHUB_ACTOR\)/);
+assert.match(runtime, /source\.status === 'completed'[\s\S]*source\.conclusion !== 'success'/);
+assert.match(runtime, /explicit-source-uses-trusted-dispatch-controller/);
+assert.match(runtime, /process\.env\.GITHUB_REF !== 'refs\/heads\/main'/);
+assert.match(runtime, /validateSourceRun\(source, jobsPayload.jobs, mainSha, NOW\(\)\)/);
+assert.match(runtime, /isTrustedBackstop\(backstop\.workflow_runs, source\)/);
+assert.doesNotMatch(runtime, /GH_TOKEN[^\n]*secrets\./);
+
+const acceptedBotSource = {
+  ...run, actor: { login: 'github-actions[bot]' },
+};
+assert.equal(isAuthenticatedBotDispatch(acceptedBotSource, 'github-actions[bot]'), true);
+assert.equal(isAuthenticatedBotDispatch(acceptedBotSource, 'usdimpact'), false,
+  'a manually dispatched publisher must not accept a copied source run ID');
+assert.equal(isAuthenticatedBotDispatch({ ...acceptedBotSource, actor: { login: 'usdimpact' } }, 'github-actions[bot]'), false,
+  'a human-started generator cannot masquerade as the automatic backstop');
+assert.equal(isAuthenticatedBotDispatch({ ...acceptedBotSource, event: 'schedule' }, 'github-actions[bot]'), false,
+  'native schedule runs must use their separate workflow_run verification path');
+assert.equal(isAuthenticatedBotDispatch({ ...acceptedBotSource, path: 'other.yml' }, 'github-actions[bot]'), false);
+assert.equal(isAuthenticatedBotDispatch({ ...acceptedBotSource, repository: { full_name: 'someone/else' } }, 'github-actions[bot]'), false);
+assert.match(runtime, /isAuthenticatedBotDispatch\(source, process\.env\.GITHUB_ACTOR\)/);
+assert.match(runtime, /explicit-publisher-not-dispatched-by-github-bot/);
+assert.match(mainDaily, /Publisher run receipt not observed; no retry authorized/);
+assert.match(mainDaily, /Multiple new publisher runs; hold for provenance review/);
+assert.match(mainDaily, /\.actor\.login == "github-actions\[bot\]"/);
+assert.match(mainDaily, /\(\.created_at \| fromdateiso8601\)/);
+assert.match(mainDaily, /if \[ "\$GITHUB_ACTOR" != "github-actions\[bot\]" \]/);
+
+
+// Execute the source workflow's actual publisher-dispatch shell in an offline
+// stubbed GitHub environment. No repository write, workflow dispatch or network.
+const dispatchStepMatch = mainDaily.match(
+  /      - name: Explicitly dispatch trusted bounded publisher after source verification\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Report Daily failure gate)/,
+);
+assert.ok(dispatchStepMatch, 'publisher handoff shell must exist');
+const dispatchShell = dispatchStepMatch[1].split('\n')
+  .map((line) => line.startsWith('          ') ? line.slice(10) : line).join('\n');
+const parsedDispatch = spawnSync('bash', ['-n'], { input: dispatchShell, encoding: 'utf8' });
+assert.equal(parsedDispatch.status, 0, 'publisher dispatch shell syntax must pass bash -n');
+const jqAvailable = spawnSync('jq', ['--version'], { encoding: 'utf8' }).status === 0;
+if (!jqAvailable && process.env.GITHUB_ACTIONS === 'true') {
+  throw new Error('jq required for publisher dispatch mock evidence in GitHub Actions');
+}
+if (jqAvailable) {
+  const createdAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const goodReceipt = {
+    event: 'workflow_dispatch', head_branch: 'main',
+    actor: { login: 'github-actions[bot]' }, created_at: createdAt,
+    html_url: 'https://github.com/usdimpact/usd-impact-site/actions/runs/700001',
+  };
+  const mockGh = [
+    'gh() {',
+    '  case "$1" in',
+    '    pr) printf "%s\\n" "$MOCK_PR_COUNT" ;;',
+    '    workflow) echo "MOCK_DISPATCH" >&2; [ "$MOCK_DISPATCH_FAIL" != "true" ] ;;',
+    '    api) printf "%s\\n" "$MOCK_PAYLOAD" ;;',
+    '    *) return 59 ;;',
+    '  esac',
+    '}',
+    'sleep() { :; }',
+  ].join('\n');
+  const fixtures = [
+    ['valid single bot receiver', 'github-actions[bot]', '1', false, [goodReceipt], 0, true],
+    ['missing original PR', 'github-actions[bot]', '0', false, [goodReceipt], 1, false],
+    ['manual source actor', 'usdimpact', '1', false, [goodReceipt], 1, false],
+    ['publisher dispatch refused', 'github-actions[bot]', '1', true, [goodReceipt], 1, true],
+    ['receiver not created', 'github-actions[bot]', '1', false, [], 1, true],
+    ['ambiguous bot receivers', 'github-actions[bot]', '1', false, [goodReceipt, { ...goodReceipt, html_url: 'https://github.com/usdimpact/usd-impact-site/actions/runs/700002' }], 1, true],
+    ['human receiver not accepted', 'github-actions[bot]', '1', false, [{ ...goodReceipt, actor: { login: 'usdimpact' } }], 1, true],
+    ['old run cannot be mistaken for this request', 'github-actions[bot]', '1', false, [{ ...goodReceipt, created_at: '2026-01-02T09:00:00Z' }], 1, true],
+  ];
+  for (const [name, actor, count, dispatchFail, runs, expectedExit, wasDispatched] of fixtures) {
+    const payload = JSON.stringify({ total_count: runs.length, workflow_runs: runs });
+    const test = spawnSync('bash', ['-c', 'set -euo pipefail\n' + mockGh + '\n' + dispatchShell], {
+      encoding: 'utf8', timeout: 10000,
+      env: {
+        ...process.env, GITHUB_REPOSITORY: REPOSITORY, GITHUB_RUN_ID: '770001',
+        GITHUB_ACTOR: actor, MOCK_PR_COUNT: count,
+        MOCK_DISPATCH_FAIL: dispatchFail ? 'true' : 'false', MOCK_PAYLOAD: payload,
+      },
+    });
+    assert.equal(test.status, expectedExit, name + ': ' + test.stderr);
+    assert.equal(test.stderr.includes('MOCK_DISPATCH'), wasDispatched, name + ' actual dispatch receipt');
+    if (expectedExit === 0) assert.match(test.stdout, /Publisher workflow_dispatch observed/);
+  }
+  console.log('Daily publisher dispatch shell: eight mocked positive and negative scenarios passed');
+}
 
 console.log('Daily bounded auto-publication policy PASS: fake dates, backstop, exact PR, strict source, check provenance and workflow limits; no network or merge.');

@@ -319,7 +319,7 @@ try:
                     ), "Text-spacing override unexpectedly displaced keyboard focus"
                     page.keyboard.press("Shift+Tab")
                     assert page.evaluate(
-                        "() => document.activeElement?.matches('footer a[href=\\\"/news\\\"]')"
+                        "() => Boolean(document.activeElement?.closest('footer')) && document.activeElement?.getAttribute('href') === '/news'"
                     ), "Shift+Tab after text spacing did not reach Dailies"
                     page.keyboard.press("Tab")
                     assert privacy.evaluate(

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """B5 exact-app-RPC SQL test using a disposable real PostgreSQL 16 server only."""
-import os, json, time, uuid, hashlib, concurrent.futures, datetime
+import os, json, time, uuid, hashlib, concurrent.futures, datetime, subprocess
 EVENT_OCCURRED_AT={}
 BUSINESS_FINGERPRINT={}
 from pathlib import Path
@@ -299,6 +299,85 @@ def catalog_quarantine():
         eq(one(root,"select count(*) from research_checkout_guard.signed_paid_observations where provider_subscription_id='foreign-catalog'"),0,"CAT foreign store cannot claim paid custody")
     print("PASS B5 CAT: known-store signed stale variant journalled, no binding; foreign store rejected",flush=True)
 
+
+def real_app_js_postgres_bridge():
+    """Use the exact request dictionaries emitted by the actual JS application."""
+    account="88888888-8888-4888-8888-888888888888"
+    with db() as root:
+        root.execute("insert into public.profiles(account_id,status) values(%s::uuid,'active')",(account,))
+    with db("issuer") as issuer_conn:
+        issued=issuer(issuer_conn,account,request="b5-real-js-bridge-request-001")
+        eq(issued["action"],"reserved","real JS bridge issuer precommitted")
+    env=os.environ.copy()
+    env["RESEARCH_B5_ISSUED_INTENT_JSON"]=json.dumps(issued,default=str)
+    app=ROOT/"apps/web"
+    script=app/"scripts/export-research-b5-real-rpc-vectors.mjs"
+    output=subprocess.run(["node",str(script)],cwd=app,env=env,
+        text=True,capture_output=True,timeout=45)
+    if output.returncode:
+        raise AssertionError("Real JS RPC capture failed: "+output.stderr[-1200:])
+    vector=json.loads(output.stdout.strip().splitlines()[-1])
+    eq(vector["source"],"actual-app-JS","actual application capture source")
+    req=vector["requests"]
+    eq(set(req),{"issue","attach","observe","bind"},"four actual RPC requests")
+    i=req["issue"]; a=req["attach"]; o=req["observe"]; b=req["bind"]
+    eq(i["p_account_id"],account,"JS issuer account")
+    eq(i["p_product_id"],"research-membership","JS issuer product")
+    eq(i["p_client_request_id"],"b5-real-js-bridge-request-001","JS issued request key")
+    eq(a["p_intent_id"],str(issued["intent_id"]),"JS attachment intent")
+    eq(a["p_checkout_proof"],issued["checkout_key"],"JS attachment proof")
+    eq(o["p_product_id"],"research-membership","JS observation internal product key")
+    eq(b["p_product_id"],"research-membership","JS bind internal product key")
+    eq(o["p_provider_price_id"],"314","numeric provider variant still independently checked")
+    eq(o["p_raw_body_sha256"],b["p_raw_body_sha256"],"same exact signed raw body SHA")
+    # The approved isolated issuer returned the real 256-bit proof above.
+    # Pass the *unmodified* attached/observed/bound RPC dictionaries to PG.
+    with db("issuer") as issuer_conn:
+        attached=one(issuer_conn,
+            "select public.attach_research_membership_checkout_intent(%s::uuid,%s,%s)",
+            (a["p_intent_id"],a["p_checkout_proof"],a["p_provider_checkout_id"]))
+        eq(attached["action"],"attached","real JS checkout reference attached")
+    with db("verifier") as verifier_conn:
+        params=("p_provider","p_provider_subscription_id","p_provider_customer_id",
+          "p_store_id","p_product_id","p_provider_price_id","p_test_mode",
+          "p_occurred_at","p_raw_body_sha256","p_claimed_account_id",
+          "p_claimed_checkout_proof_sha256","p_business_fingerprint_version",
+          "p_business_fingerprint_sha256")
+        observed=one(verifier_conn,
+          "select public.observe_signed_research_subscription_created("
+          "%s,%s,%s,%s,%s,%s,%s,%s::timestamptz,%s,%s::uuid,%s,%s,%s)",
+          tuple(o[k] for k in params))
+        eq(observed["action"],"recorded","real JS valid paid observation committed")
+        forged=dict(o,p_product_id="99",p_provider_subscription_id="sub_numeric_product_rejected")
+        rejected=one(verifier_conn,
+          "select public.observe_signed_research_subscription_created("
+          "%s,%s,%s,%s,%s,%s,%s,%s::timestamptz,%s,%s::uuid,%s,%s,%s)",
+          tuple(forged[k] for k in params))
+        eq(rejected["action"],"rejected","real JS numeric provider product not internal authorization")
+    with db("binder") as binder_conn:
+        fields=("p_account_id","p_provider","p_provider_subscription_id",
+          "p_provider_customer_id","p_provider_price_id","p_billing_interval",
+          "p_occurred_at","p_checkout_proof","p_raw_body_sha256","p_store_id",
+          "p_product_id","p_test_mode","p_business_fingerprint_version",
+          "p_business_fingerprint_sha256")
+        sql="select public.bind_research_membership_with_checkout_intent(" \
+            "%s::uuid,%s,%s,%s,%s,%s,%s::timestamptz,%s,%s,%s,%s,%s,%s,%s)"
+        forged=dict(b,p_product_id="99")
+        eq(one(binder_conn,sql,tuple(forged[k] for k in fields))["action"],
+           "rejected","numeric product binder fail-closed")
+        bound=one(binder_conn,sql,tuple(b[k] for k in fields))
+        eq(bound["action"],"created","actual JS captured bind creates pending row")
+        eq(bound["subscription_state"],"pending","actual JS no premature entitlement")
+        eq(bound["raw_body_sha256"],o["p_raw_body_sha256"],"exact signed SHA bridge")
+        eq(one(binder_conn,sql,tuple(b[k] for k in fields))["action"],
+           "existing","actual JS exact retry idempotent")
+    with db() as root:
+        eq(one(root,"select count(*) from public.entitlements where account_id=%s::uuid",(account,)),
+           0,"actual JS-to-PG creates no immediate entitlement")
+        eq(one(root,"select count(*) from research_checkout_guard.signed_paid_observations where provider_subscription_id='sub_numeric_product_rejected'"),
+           0,"numeric provider product creates no paid observation")
+    print("PASS B5 REAL APP JS->PG: exact issuer/attach/observe/bind bodies, internal product ID, SHA, pending/no grant, negative numeric product and retry",flush=True)
+
 def main():
     assert os.environ.get("GITHUB_ACTIONS")=="true"
     assert os.environ.get("GITHUB_HEAD_REF")=="agent/1103-b5-rpc-sql-isolated-d1-20261104"
@@ -307,6 +386,7 @@ def main():
     setup(); roles(); k=issue_attach(); custody_and_bind(k)
     unbound(); concurrent_paid(); complimentary_and_library(); expiry_and_immutable(); test_c4_payment_before_expiry_with_late_webhook()
     catalog_quarantine()
+    real_app_js_postgres_bridge()
     with db() as root:
         version=one(root,"show server_version")
     print("B5_D1_POSTGRES_PROPOSAL_PASS "+json.dumps({"version":version,

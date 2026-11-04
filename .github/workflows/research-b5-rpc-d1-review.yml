@@ -7,6 +7,8 @@ on:
     paths:
       - '.github/workflows/research-b5-rpc-d1-review.yml'
       - 'scripts/test-research-b5-rpc-d1.py'
+      - 'scripts/test-research-b5-real-main-rls-d1.py'
+      - 'apps/web/scripts/export-research-b5-real-rpc-vectors.mjs'
       - 'docs/operations/research-b5-real-app-rpc-proposed-d1-review-2026-11-04.sql'
 permissions:
   contents: read
@@ -66,6 +68,11 @@ jobs:
         run: |
           set -euo pipefail
           "$RUNNER_TEMP/research-b5-venv/bin/python" scripts/test-research-b5-rpc-d1.py
+      - name: Review actual protected-main Research migrations with RLS ON
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/research-b5-venv/bin/python" scripts/test-research-b5-real-main-rls-d1.py
       - name: Record scope and untouched release gates
         if: always()
         shell: bash

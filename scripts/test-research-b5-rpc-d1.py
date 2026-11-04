@@ -168,7 +168,7 @@ def issue_attach():
         # new reservation, but replaying the old ID must never redisclose proof.
         root.execute("""update research_checkout_guard.checkout_intents
           set created_at=clock_timestamp()-interval '35 minutes',
-              expires_at=clock_timestamp()-interval '5 minutes'
+              expires_at=clock_timestamp()-interval '6 minutes'
           where id=%s::uuid""",(other["intent_id"],))
         eq(issuer(i,A[1],request="other-request-001")["code"],
            "checkout_request_replayed","expired same ID remains burned")

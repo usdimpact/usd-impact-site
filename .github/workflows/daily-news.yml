@@ -375,12 +375,50 @@ jobs:
             echo "::error::No unique original Daily publication PR; not dispatching publisher."
             exit 1
           fi
+          # Only the GitHub token-owned backstop generator can request a
+          # privileged publisher. Do not extend this path to manual generators.
+          if [ "$GITHUB_ACTOR" != "github-actions[bot]" ]; then
+            echo "::error::Generator actor is not the GitHub bot; no automatic handoff."
+            exit 1
+          fi
+          requested_at="$(date -u +%s)"
           if ! gh workflow run daily-news-auto-publish.yml --repo "$GITHUB_REPOSITORY" \
             --ref main -f "source_run_id=$GITHUB_RUN_ID"; then
             echo "::error::Publisher dispatch acknowledgement not verified; never retry automatically."
             exit 1
           fi
-          echo "Dispatched independent bounded publisher with immutable source run $GITHUB_RUN_ID; not a publication success receipt."
+          # An accepted dispatch command is not proof that the receiver exists.
+          # Poll only for a fresh bot-originated run, without dispatch retry.
+          receipt=""
+          for poll in $(seq 1 12); do
+            payload="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/daily-news-auto-publish.yml/runs?event=workflow_dispatch&created=$(date -u +%F)&per_page=100")"
+            if ! jq -e '.total_count <= 100 and .total_count == (.workflow_runs | length)' <<< "$payload" >/dev/null; then
+              echo "::error::Ambiguous or truncated publisher run evidence; hold."
+              exit 1
+            fi
+            matches="$(jq -c --argjson timestamp "$requested_at" \
+              '[.workflow_runs[] | select(
+                .event == "workflow_dispatch" and .head_branch == "main"
+                and .actor.login == "github-actions[bot]"
+                and ((.created_at | fromdateiso8601) >= ($timestamp - 15))
+              )]' <<< "$payload")"
+            count="$(jq 'length' <<< "$matches")"
+            if [ "$count" -gt 1 ]; then
+              echo "::error::Multiple new publisher runs; hold for provenance review."
+              exit 1
+            fi
+            if [ "$count" -eq 1 ]; then
+              receipt="$(jq -r '.[0].html_url' <<< "$matches")"
+              break
+            fi
+            sleep 5
+          done
+          if [ -z "$receipt" ]; then
+            echo "::error::Publisher run receipt not observed; no retry authorized."
+            exit 1
+          fi
+          echo "Publisher workflow_dispatch observed: $receipt"
+          echo "Source run $GITHUB_RUN_ID remains subject to exact success, cutoff, CI and editorial gates."
 
       - name: Report Daily failure gate
         if: failure() && (steps.preflight.outcome == 'failure' || steps.config.outputs.configured == 'true')

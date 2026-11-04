@@ -5,6 +5,12 @@ on:
     workflows: ["Daily USD Impact publication"]
     branches: [main]
     types: [completed]
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: 'Original completed Daily generator run ID (hint only; independently verified)'
+        required: true
+        type: string
 
 permissions:
   actions: write
@@ -18,7 +24,7 @@ concurrency:
 
 jobs:
   publish-verified-daily:
-    if: ${{ github.event.workflow_run.conclusion == 'success' && vars.DAILY_NEWS_AUTO_PUBLISH_DISABLED != 'true' }}
+    if: ${{ vars.DAILY_NEWS_AUTO_PUBLISH_DISABLED != 'true' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:

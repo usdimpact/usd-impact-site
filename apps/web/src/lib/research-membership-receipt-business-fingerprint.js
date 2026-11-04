@@ -3,7 +3,7 @@
 // Its sole current caller is the default-OFF Research receipt evidence path.
 import { createHash } from 'node:crypto';
 
-const VERSION = 'research-receipt-business-v1';
+const VERSION = 'research-receipt-business-v2';
 const RESEARCH_CUSTOM_KEYS = Object.freeze([
   'usd_impact_account_id',
   'usd_impact_research_product_id',
@@ -18,7 +18,7 @@ const SUBSCRIPTION_FIELDS = Object.freeze([
 const INVOICE_FIELDS = Object.freeze([
   'subscription_id', 'store_id', 'test_mode', 'status', 'refunded',
   'total', 'refunded_amount', 'refunded_at', 'created_at', 'updated_at',
-  'currency', 'subtotal', 'tax',
+  'currency', 'subtotal', 'tax', 'billing_reason',
 ]);
 
 function isObject(value) {
@@ -34,10 +34,24 @@ function project(source, keys) {
     // Missing and explicit null remain distinct. This avoids silently treating
     // a malformed signed object as equivalent to a complete one.
     result[key] = Object.prototype.hasOwnProperty.call(source, key)
-      ? source[key] : { __research_receipt_missing_v1: true };
+      ? source[key] : { __research_receipt_missing_v2: true };
   }
   return result;
 }
+// Nested subscription attributes have their own presence and type contract.
+// Pause carries lifecycle-relevant fields; keep its complete signed object so
+// future pause changes cannot silently bypass review. Item pricing is projected
+// to the fields used for the invoice/access contract, excluding display URLs.
+function projectOptionalNested(source, key, allowedKeys = null) {
+  if (!Object.prototype.hasOwnProperty.call(source, key)) {
+    return { __research_receipt_missing_v2: true };
+  }
+  const value = source[key];
+  if (value === null) return null;
+  const object = requireObject(value, 'data.attributes.' + key);
+  return allowedKeys === null ? object : project(object, allowedKeys);
+}
+
 function canonicalize(value) {
   if (Array.isArray(value)) return value.map(canonicalize);
   if (isObject(value)) {
@@ -75,7 +89,12 @@ export function fingerprintResearchReceiptBusinessEvent(payload) {
   if (!isSubscription && !isInvoice) {
     throw new TypeError('Research receipt object type is unsupported.');
   }
-  const custom = meta.custom_data == null ? {} : requireObject(meta.custom_data, 'meta.custom_data');
+  // Missing, explicit null and empty custom_data carry different binding
+  // evidence; a future webhook reconciliation must not collapse them.
+  const customState = !Object.prototype.hasOwnProperty.call(meta, 'custom_data')
+    ? 'missing' : meta.custom_data === null ? 'null' : 'object';
+  const custom = customState === 'object'
+    ? requireObject(meta.custom_data, 'meta.custom_data') : {};
   const unknownBindingKeys = Object.keys(custom).filter(
     (k) => k.startsWith('usd_impact_') && !RESEARCH_CUSTOM_KEYS.includes(k),
   );
@@ -88,12 +107,21 @@ export function fingerprintResearchReceiptBusinessEvent(payload) {
     version: VERSION,
     meta: {
       event_name: meta.event_name,
+      custom_data_state: customState,
       custom_data: project(custom, RESEARCH_CUSTOM_KEYS),
     },
     data: {
       type: data.type,
       id: data.id,
-      attributes: project(attrs, isSubscription ? SUBSCRIPTION_FIELDS : INVOICE_FIELDS),
+      attributes: {
+        ...project(attrs, isSubscription ? SUBSCRIPTION_FIELDS : INVOICE_FIELDS),
+        ...(isSubscription ? {
+          pause: projectOptionalNested(attrs, 'pause'),
+          first_subscription_item: projectOptionalNested(
+            attrs, 'first_subscription_item', ['price_id', 'quantity'],
+          ),
+        } : {}),
+      },
     },
   };
   return createHash('sha256').update(JSON.stringify(canonicalize(projected))).digest('hex');

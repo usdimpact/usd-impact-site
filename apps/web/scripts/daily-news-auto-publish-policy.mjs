@@ -29,6 +29,8 @@ export function isAuthenticatedBotDispatch(source, publisherActor) {
   // A manually submitted workflow_dispatch input may identify an authentic run.
   // It must not allow that human-originated event to publish automatically.
   return publisherActor === 'github-actions[bot]'
+    && source?.run_attempt === 1
+    && source?.triggering_actor?.login === 'github-actions[bot]'
     && source?.actor?.login === 'github-actions[bot]'
     && source?.event === 'workflow_dispatch'
     && source?.path === '.github/workflows/daily-news.yml'
@@ -55,6 +57,9 @@ export function validateSourceRun(run, jobs, mainSha, now = new Date()) {
       || run.head_branch !== 'main' || run.repository?.full_name !== REPOSITORY) {
     return 'not-a-successful-trusted-daily-run';
   }
+  // GitHub reruns retain the original actor's permissions. They must not
+  // inherit the original run's unattended-publication authority.
+  if (run.run_attempt !== 1) return 'source-run-was-replayed';
   if (!/^[a-f0-9]{40}$/.test(mainSha || '') || run.head_sha !== mainSha) return 'main-has-moved';
   if (!Number.isSafeInteger(run.id) || run.id < 1) return 'invalid-source-run-id';
   const day = String(run.created_at || '').slice(0, 10);
@@ -81,6 +86,7 @@ export function isTrustedBackstop(backstops, run) {
     && ['schedule', 'workflow_dispatch'].includes(entry.event)
     && entry.head_branch === 'main'
     && entry.head_sha === run.head_sha
+    && entry.run_attempt === 1
     && entry.conclusion === 'success'
     && entry.status === 'completed'
     && created - Date.parse(entry.created_at) >= 0

@@ -923,6 +923,79 @@ await assert.rejects(
 );
 assert.equal(staleIssuerProviderCalls, 0);
 
+
+// A44: base64url-encoded 32-byte DB proofs may begin with '-' or '_'.
+// Client idempotency hints remain stricter. Only a DB-issued, attached
+// one-time proof may reach provider metadata.
+for (const prefix of ['-', '_']) {
+  const databaseProof = prefix + 'A'.repeat(42);
+  assert.equal(databaseProof.length, 43);
+  assert.throws(
+    () => buildResearchMembershipCheckoutRequest({
+      config, user, billingInterval: 'monthly', idempotencyKey: databaseProof,
+      now: new Date('2026-09-07T15:00:00.000Z'),
+    }),
+    { code: 'RESEARCH_CHECKOUT_IDEMPOTENCY_KEY_INVALID' },
+    'Untrusted client key must not bypass the original first-character restriction',
+  );
+  let providerWrites = 0;
+  let attachments = 0;
+  const result = await createResearchMembershipCheckout({
+    config, user, billingInterval: 'monthly',
+    idempotencyKey: prefix === '-' ? 'client-prefix-dash-001' : 'client-prefix-underscore-001',
+    now: new Date('2026-09-07T15:00:00.000Z'),
+    clock: () => Date.parse('2026-09-07T15:00:01.000Z'),
+    fetchImpl: async (url, init = {}) => {
+      if (String(url).includes('/rest/v1/subscriptions?')) {
+        return new Response('[]', { status: 200 });
+      }
+      if (String(url).endsWith('/rpc/issue_research_membership_checkout_intent')) {
+        const body = JSON.parse(init.body);
+        assert.equal(body.p_product_id, 'research-membership');
+        assert.notEqual(body.p_client_request_id, databaseProof);
+        return new Response(JSON.stringify({
+          action: 'reserved', intent_id: intentId, checkout_key: databaseProof,
+          account_id: accountId, store_id: '42', variant_id: '314',
+          billing_interval: 'monthly', test_mode: true,
+          created_at: '2026-09-07T15:00:00.300Z',
+          expires_at: '2026-09-07T15:30:00.300Z',
+        }), { status: 200 });
+      }
+      if (String(url) === 'https://api.lemonsqueezy.com/v1/checkouts') {
+        const body = JSON.parse(init.body);
+        assert.equal(
+          body.data.attributes.checkout_data.custom.usd_impact_research_checkout_key,
+          databaseProof,
+          'Exactly the verified database-issued proof must reach provider metadata',
+        );
+        providerWrites += 1;
+        return new Response(JSON.stringify({
+          data: {
+            type: 'checkouts',
+            id: 'prefix_checkout',
+            attributes: {
+              store_id: 42, variant_id: 314, test_mode: true,
+              url: 'https://example.lemonsqueezy.com/checkout/prefix_checkout',
+            },
+          },
+        }), { status: 201 });
+      }
+      assert.ok(String(url).endsWith('/rpc/attach_research_membership_checkout_intent'));
+      const body = JSON.parse(init.body);
+      assert.equal(body.p_checkout_proof, databaseProof);
+      assert.equal(body.p_intent_id, intentId);
+      assert.equal(body.p_provider_checkout_id, 'prefix_checkout');
+      attachments += 1;
+      return new Response(JSON.stringify({
+        action: 'attached', intent_id: intentId, provider_checkout_id: 'prefix_checkout',
+      }), { status: 200 });
+    },
+  });
+  assert.equal(result.checkoutId, 'prefix_checkout');
+  assert.equal(providerWrites, 1, 'One valid DB proof creates exactly one provider checkout');
+  assert.equal(attachments, 1, 'One valid provider checkout is durably attached');
+}
+
 const migration = await readFile(
   new URL('../../../supabase/migrations/20260907154500_research_membership_first_purchase_binding.sql', import.meta.url),
   'utf8',

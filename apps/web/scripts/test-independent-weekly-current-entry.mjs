@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const reportsFile = fileURLToPath(new URL('../src/pages/reports/index.astro', import.meta.url));
+const newsIndexFile = fileURLToPath(new URL('../src/pages/news/index.astro', import.meta.url));
 const independentRoot = fileURLToPath(new URL('../src/pages/macro-reviews/weekly/', import.meta.url));
 const rightsGateFile = fileURLToPath(new URL('../../../governance/score-derived-publication-rights-gate.json', import.meta.url));
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -79,4 +80,12 @@ if (rights.state === 'hold') {
     'rights-HOLD history label cannot silently disappear',
   );
 }
-console.log('independent Weekly Reports current-entry contract PASS: ' + latest + ' (' + dates.length + ' published static route(s)); stale-link negatives PASS');
+const newsSource = readFileSync(newsIndexFile, 'utf8');
+assert.match(newsSource, /Latest independent Macro Weekly/, 'Daily news index must promote the current independent Weekly');
+assert.match(newsSource, /const latestIndependentWeek = readdirSync\(independentWeeklyRoot/, 'derive the latest independent Friday from actually published route files');
+assert.match(newsSource, /href=\{`\/macro-reviews\/weekly\/\$\{latestIndependentWeek\}\/`\}/, 'Daily news promo must link to the latest independent static page');
+assert.match(newsSource, /historical Score-based Weekly series remains on rights hold/, 'Daily news must preserve the legacy Score rights warning');
+assert.doesNotMatch(newsSource, /getCollection\('weeklyReports'\)|Connect the news to the score|latestWeeklyReport\.data/, 'Daily news must not display a stale Score-linked Weekly as the current one');
+assert.ok(existsSync(join(independentRoot, latest, 'index.astro')), 'independent Weekly linked by Daily must exist');
+
+console.log('independent Weekly Reports/News current-entry contract PASS: ' + latest + ' (' + dates.length + ' published static route(s)); stale-link negatives PASS');

@@ -1,4 +1,3 @@
-import { writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { verifyDailyNewsDeployment } from './check-daily-news-deployment-health.mjs';
 
@@ -216,10 +215,9 @@ function parseCli(args) {
   const opts = {};
   for (let index = 0; index < args.length; index += 1) {
     if (args[index] === '--date') opts.date = args[++index];
-    else if (args[index] === '--report') opts.report = args[++index];
     else throw new Error('Unsupported early advisory argument.');
   }
-  if (!opts.date || !opts.report) throw new Error('--date and --report are required.');
+  if (!opts.date) throw new Error('--date is required.');
   return opts;
 }
 
@@ -238,7 +236,7 @@ async function main() {
     process.exitCode = 1;
   }
   const report = formatEarlyReport({ date: opts.date, result, failure });
-  await writeFile(opts.report, report, 'utf8');
+  // Emit only to stdout; the trusted workflow owns its fixed report path.
   console.log(report);
 }
 

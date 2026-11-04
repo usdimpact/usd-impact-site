@@ -43,7 +43,7 @@ def db(autocommit=True):
 def bootstrap(c):
     c.execute("""create role anon nologin;
       create role authenticated nologin;
-      create role service_role nologin nobypassrls;
+      create role service_role nologin bypassrls;
       create schema auth;
       create table auth.users(id uuid primary key,email text);
       create function auth.uid() returns uuid language sql stable set search_path='' as $$
@@ -212,7 +212,37 @@ def main():
         state=evidence(c,sid)
         assert state['events']==1 and state['audit']==1 and state['subscription'][3]==2
     print('PASS concurrent same-key real-schema idempotence: one applied, one duplicate, one audit row',flush=True)
-    print('RESEARCH_STAGE_C_ACTUAL_SCHEMA_REVIEW_PASS (no provider auth, no live install)',flush=True)
+
+    # SECURITY NEGATIVE: mimic real Supabase service_role BYPASSRLS on this
+    # disposable DB, prove the existing 16-parameter RPC can still overwrite
+    # newer Research access. Always ROLLBACK; never use a connected project.
+    with db() as prep:
+        acc,sid,_=seed(prep,7)
+        assert apply(prep,sid,acc,'safe-applied-renewal')['action']=='applied'
+        good=evidence(prep,sid)
+    with db(autocommit=False) as unsafe:
+        unsafe.execute('set local role service_role')
+        old_result=unsafe.execute('''select public.apply_research_membership_transition(
+            %s::uuid,%s,%s,%s,%s,%s::public.subscription_state,
+            %s::public.subscription_state,%s::timestamptz,%s::timestamptz,%s,
+            %s::public.entitlement_state,%s::timestamptz,%s::timestamptz,
+            %s,%s::timestamptz,%s::jsonb)''',(
+            sid,'review-legacy-out-of-order','review-old-payment-failed','lemon-squeezy','1007',
+            'active','past_due',START,'2026-11-15T00:00:00+00:00',False,
+            'suspended',START,'2026-11-03T00:00:00+00:00',
+            'subscription.payment_failed','2026-10-30T00:00:00+00:00','{}'
+        )).fetchone()[0]
+        assert old_result['action']=='applied',old_result
+        sub=unsafe.execute('select state::text,current_period_end from public.subscriptions where id=%s',(sid,)).fetchone()
+        ent=unsafe.execute('select state::text from public.entitlements where subscription_id=%s',(sid,)).fetchone()
+        assert sub[0]=='past_due' and ent[0]=='suspended' and sub[1] < good['subscription'][2]
+        unsafe.execute("update public.entitlements set state='revoked' where subscription_id=%s",(sid,))
+        assert unsafe.execute('select state::text from public.entitlements where subscription_id=%s',(sid,)).fetchone()[0]=='revoked'
+        unsafe.rollback()  # Must restore all synthetic rows; this negative never commits.
+    with db() as verify:
+        assert evidence(verify,sid)==good,'review legacy bypass negative did not roll back'
+    print('CONFIRMED P1 BLOCKER: historical service_role and old 16-arg RPC bypass ordering in disposable PG; all writes rolled back',flush=True)
+    print('RESEARCH_STAGE_C_ACTUAL_SCHEMA_REVIEW_PASS (security blocker remains, no live install)',flush=True)
 
 
 if __name__=='__main__':main()

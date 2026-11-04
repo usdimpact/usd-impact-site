@@ -398,9 +398,13 @@ begin
       'code','subscription_not_activatable');
   end if;
 
+  -- A profile FOR UPDATE lock was already taken above. All synthetic
+  -- bind/activate writers serialize on that account row, so no entitlement
+  -- UPDATE privilege or second FOR UPDATE lock is needed by this test role.
+  -- The real application must independently prove the same lock discipline.
   select * into v_ent from research_binding_review.entitlements
     where account_id=p_account_id and product_id='research-membership'
-      and state='active' for update;
+      and state='active';
   if found then
     if v_sub.status='active' and v_ent.source='paid'
        and v_ent.provider_subscription_id=p_subscription_id then

@@ -58,12 +58,25 @@ create table research_checkout_guard.signed_paid_observations(
  provider_price_id text not null, test_mode boolean not null,
  occurred_at timestamptz not null,
  raw_body_sha256 text not null check(raw_body_sha256 ~ '^[a-f0-9]{64}$'),
+ business_fingerprint_version text not null
+  check(business_fingerprint_version='research-receipt-business-v3'),
+ business_fingerprint_sha256 text not null
+  check(business_fingerprint_sha256 ~ '^[a-f0-9]{64}$'),
  claimed_account_id uuid,
  claimed_checkout_proof_sha256 text
    check(claimed_checkout_proof_sha256 is null or
          claimed_checkout_proof_sha256 ~ '^[a-f0-9]{64}$'),
  recorded_at timestamptz not null default clock_timestamp(),
  unique (provider,provider_subscription_id)
+);
+-- Every newly HMAC-verified delivery has its own immutable raw-body SHA,
+-- while canonical v3 signed BUSINESS evidence is shared for true retries.
+create table research_checkout_guard.signed_paid_deliveries(
+ id uuid primary key default gen_random_uuid(),
+ paid_observation_id uuid not null references research_checkout_guard.signed_paid_observations(id),
+ raw_body_sha256 text not null check(raw_body_sha256 ~ '^[a-f0-9]{64}$'),
+ recorded_at timestamptz not null default clock_timestamp(),
+ unique(paid_observation_id,raw_body_sha256)
 );
 create table research_checkout_guard.conflict_evidence(
  id uuid primary key default gen_random_uuid(),
@@ -88,6 +101,12 @@ create trigger reject_paid_update_delete
  for each row execute function research_checkout_guard.reject_evidence_mutation();
 create trigger reject_paid_truncate
  before truncate on research_checkout_guard.signed_paid_observations
+ for each statement execute function research_checkout_guard.reject_evidence_mutation();
+create trigger reject_delivery_update_delete
+ before update or delete on research_checkout_guard.signed_paid_deliveries
+ for each row execute function research_checkout_guard.reject_evidence_mutation();
+create trigger reject_delivery_truncate
+ before truncate on research_checkout_guard.signed_paid_deliveries
  for each statement execute function research_checkout_guard.reject_evidence_mutation();
 create trigger reject_conflict_update_delete
  before update or delete on research_checkout_guard.conflict_evidence
@@ -218,7 +237,8 @@ create function public.observe_signed_research_subscription_created(
  p_provider text,p_provider_subscription_id text,p_provider_customer_id text,
  p_store_id text,p_product_id text,p_provider_price_id text,
  p_test_mode boolean,p_occurred_at timestamptz,p_raw_body_sha256 text,
- p_claimed_account_id uuid,p_claimed_checkout_proof_sha256 text
+ p_claimed_account_id uuid,p_claimed_checkout_proof_sha256 text,
+ p_business_fingerprint_version text,p_business_fingerprint_sha256 text
 ) returns jsonb language plpgsql security definer set search_path = ''
 as $fn$
 declare v_obs research_checkout_guard.signed_paid_observations%rowtype;
@@ -232,6 +252,8 @@ begin
     or p_store_id is null or p_product_id<>'research-membership'
     or p_provider_price_id is null or p_occurred_at is null or p_test_mode is null
     or p_raw_body_sha256 !~ '^[a-f0-9]{64}$'
+    or p_business_fingerprint_version is distinct from 'research-receipt-business-v3'
+    or p_business_fingerprint_sha256 !~ '^[a-f0-9]{64}$'
     or (p_claimed_checkout_proof_sha256 is not null and
         p_claimed_checkout_proof_sha256 !~ '^[a-f0-9]{64}$') then
    return jsonb_build_object('action','rejected');
@@ -246,13 +268,17 @@ begin
  insert into research_checkout_guard.signed_paid_observations(
   provider,provider_subscription_id,provider_customer_id,store_id,
   product_id,provider_price_id,test_mode,occurred_at,raw_body_sha256,
-  claimed_account_id,claimed_checkout_proof_sha256)
+  claimed_account_id,claimed_checkout_proof_sha256,
+  business_fingerprint_version,business_fingerprint_sha256)
  values(p_provider,p_provider_subscription_id,p_provider_customer_id,
   p_store_id,p_product_id,p_provider_price_id,p_test_mode,p_occurred_at,
-  p_raw_body_sha256,p_claimed_account_id,p_claimed_checkout_proof_sha256)
+  p_raw_body_sha256,p_claimed_account_id,p_claimed_checkout_proof_sha256,
+  p_business_fingerprint_version,p_business_fingerprint_sha256)
  on conflict(provider,provider_subscription_id) do nothing
  returning * into v_obs;
  if found then
+   insert into research_checkout_guard.signed_paid_deliveries(
+     paid_observation_id,raw_body_sha256) values(v_obs.id,p_raw_body_sha256);
    return jsonb_build_object('action','recorded',
       'provider_subscription_id',p_provider_subscription_id,
       'raw_body_sha256',p_raw_body_sha256);
@@ -260,7 +286,9 @@ begin
  select * into v_obs from research_checkout_guard.signed_paid_observations
   where provider=p_provider and provider_subscription_id=p_provider_subscription_id
   for update;
- v_changed := v_obs.raw_body_sha256<>p_raw_body_sha256
+ v_changed := v_obs.business_fingerprint_version is distinct from p_business_fingerprint_version
+   or v_obs.business_fingerprint_sha256 is distinct from p_business_fingerprint_sha256
+   or v_obs.occurred_at is distinct from p_occurred_at
    or v_obs.provider_customer_id is distinct from p_provider_customer_id
    or v_obs.store_id is distinct from p_store_id
    or v_obs.product_id is distinct from p_product_id
@@ -269,6 +297,11 @@ begin
    or v_obs.claimed_account_id is distinct from p_claimed_account_id
    or v_obs.claimed_checkout_proof_sha256 is distinct from p_claimed_checkout_proof_sha256;
  if not v_changed then
+   -- A changed presentation URL or provider webhook delivery ID is still
+   -- an independent signed raw-body observation of the same paid fact.
+   insert into research_checkout_guard.signed_paid_deliveries(
+     paid_observation_id,raw_body_sha256) values(v_obs.id,p_raw_body_sha256)
+     on conflict(paid_observation_id,raw_body_sha256) do nothing;
    return jsonb_build_object('action','already_recorded',
       'provider_subscription_id',p_provider_subscription_id,
       'raw_body_sha256',p_raw_body_sha256);
@@ -289,7 +322,8 @@ create function public.bind_research_membership_with_checkout_intent(
  p_provider_customer_id text,p_provider_price_id text,
  p_billing_interval text,p_occurred_at timestamptz,
  p_checkout_proof text,p_raw_body_sha256 text,p_store_id text,
- p_product_id text,p_test_mode boolean
+ p_product_id text,p_test_mode boolean,
+ p_business_fingerprint_version text,p_business_fingerprint_sha256 text
 ) returns jsonb language plpgsql security definer set search_path = ''
 as $fn$
 declare v_obs research_checkout_guard.signed_paid_observations%rowtype;
@@ -301,15 +335,21 @@ begin
     p_provider_subscription_id is null or p_provider_customer_id is null or
     p_provider_price_id is null or p_billing_interval not in ('monthly','annual')
     or p_occurred_at is null or p_checkout_proof !~ '^[A-Za-z0-9_-]{43}$'
-    or p_raw_body_sha256 !~ '^[a-f0-9]{64}$' or p_store_id is null
+    or p_raw_body_sha256 !~ '^[a-f0-9]{64}$'
+    or p_business_fingerprint_version is distinct from 'research-receipt-business-v3'
+    or p_business_fingerprint_sha256 !~ '^[a-f0-9]{64}$'
+    or p_store_id is null
     or p_product_id<>'research-membership' or p_test_mode is null then
     return jsonb_build_object('action','rejected');
  end if;
  select * into v_obs from research_checkout_guard.signed_paid_observations
   where provider=p_provider and provider_subscription_id=p_provider_subscription_id
   for update;
- if not found or v_obs.raw_body_sha256<>p_raw_body_sha256
-    or v_obs.occurred_at is distinct from p_occurred_at then
+ if not found or v_obs.business_fingerprint_version is distinct from p_business_fingerprint_version
+    or v_obs.business_fingerprint_sha256 is distinct from p_business_fingerprint_sha256
+    or v_obs.occurred_at is distinct from p_occurred_at
+    or not exists (select 1 from research_checkout_guard.signed_paid_deliveries d
+       where d.paid_observation_id=v_obs.id and d.raw_body_sha256=p_raw_body_sha256) then
    return jsonb_build_object('action','unverified_paid_evidence');
  end if;
  -- A signed/committed provider fact cannot authenticate an account by itself.
@@ -318,20 +358,20 @@ begin
     or v_obs.claimed_checkout_proof_sha256 is distinct from
          encode(sha256(convert_to(p_checkout_proof,'UTF8')),'hex') then
    return research_checkout_guard.hold_binding_conflict(
-       v_obs.id,'unissued_checkout_key',v_obs.raw_body_sha256);
+       v_obs.id,'unissued_checkout_key',p_raw_body_sha256);
  end if;
  if v_obs.provider_customer_id<>p_provider_customer_id or
     v_obs.provider_price_id<>p_provider_price_id or
     v_obs.store_id<>p_store_id or v_obs.product_id<>p_product_id or
     v_obs.test_mode<>p_test_mode then
    return research_checkout_guard.hold_binding_conflict(
-       v_obs.id,'provider_subscription_account_mismatch',v_obs.raw_body_sha256);
+       v_obs.id,'provider_subscription_account_mismatch',p_raw_body_sha256);
  end if;
  -- Account serialization prevents two distinct paid subscriptions binding.
  perform 1 from public.profiles where account_id=p_account_id
    and status='active' for update;
  if not found then return research_checkout_guard.hold_binding_conflict(
-    v_obs.id,'account_unavailable',v_obs.raw_body_sha256); end if;
+    v_obs.id,'account_unavailable',p_raw_body_sha256); end if;
  v_hash:=encode(sha256(convert_to(p_checkout_proof,'UTF8')),'hex');
  select * into v_intent from research_checkout_guard.checkout_intents
   where account_id=p_account_id and checkout_proof_sha256=v_hash for update;
@@ -340,7 +380,7 @@ begin
     v_intent.billing_interval<>p_billing_interval or
     v_intent.test_mode<>p_test_mode or v_intent.provider_checkout_id is null then
    return research_checkout_guard.hold_binding_conflict(
-      v_obs.id,'unissued_checkout_key',v_obs.raw_body_sha256);
+      v_obs.id,'unissued_checkout_key',p_raw_body_sha256);
  end if;
  if v_intent.state='consumed' then
    select * into v_existing from public.subscriptions
@@ -354,34 +394,34 @@ begin
        'subscription_state',v_existing.state,'raw_body_sha256',p_raw_body_sha256);
    end if;
    return research_checkout_guard.hold_binding_conflict(
-     v_obs.id,'checkout_consumed_by_other',v_obs.raw_body_sha256);
+     v_obs.id,'checkout_consumed_by_other',p_raw_body_sha256);
  end if;
  -- C4: compare signed provider payment time, not the delayed webhook arrival.
  if v_intent.state<>'attached'
     or p_occurred_at>v_intent.expires_at+interval '2 minutes' then
    return research_checkout_guard.hold_binding_conflict(
-     v_obs.id,'expired_checkout_key',v_obs.raw_body_sha256);
+     v_obs.id,'expired_checkout_key',p_raw_body_sha256);
  end if;
  if p_occurred_at < v_intent.created_at-interval '5 minutes' or
     p_occurred_at>clock_timestamp()+interval '5 minutes' then
    return research_checkout_guard.hold_binding_conflict(
-      v_obs.id,'expired_checkout_key',v_obs.raw_body_sha256);
+      v_obs.id,'expired_checkout_key',p_raw_body_sha256);
  end if;
  select * into v_existing from public.subscriptions
    where provider=p_provider and provider_subscription_id=p_provider_subscription_id;
  if found then
    return research_checkout_guard.hold_binding_conflict(
-      v_obs.id,'provider_subscription_in_use',v_obs.raw_body_sha256);
+      v_obs.id,'provider_subscription_in_use',p_raw_body_sha256);
  end if;
  if exists(select 1 from public.subscriptions
      where account_id=p_account_id and product_id=p_product_id) then
    return research_checkout_guard.hold_binding_conflict(
-      v_obs.id,'duplicate_paid_subscription',v_obs.raw_body_sha256);
+      v_obs.id,'duplicate_paid_subscription',p_raw_body_sha256);
  end if;
  if exists(select 1 from public.entitlements
       where account_id=p_account_id and product_id=p_product_id) then
    return research_checkout_guard.hold_binding_conflict(
-      v_obs.id,'entitlement_conflict',v_obs.raw_body_sha256);
+      v_obs.id,'entitlement_conflict',p_raw_body_sha256);
  end if;
  -- Pending row only; NO entitlement writes. Signed lifecycle processing
  -- remains a separate, independently reviewed state transition operation.
@@ -408,10 +448,10 @@ revoke all on function public.issue_research_membership_checkout_intent(
 revoke all on function public.attach_research_membership_checkout_intent(
  uuid,text,text) from public,anon,authenticated;
 revoke all on function public.observe_signed_research_subscription_created(
- text,text,text,text,text,text,boolean,timestamptz,text,uuid,text)
+ text,text,text,text,text,text,boolean,timestamptz,text,uuid,text,text,text)
  from public,anon,authenticated;
 revoke all on function public.bind_research_membership_with_checkout_intent(
- uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean)
+ uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean,text,text)
  from public,anon,authenticated;
 revoke all on function research_checkout_guard.hold_binding_conflict(uuid,text,text)
  from public,anon,authenticated;
@@ -422,10 +462,10 @@ grant execute on function public.issue_research_membership_checkout_intent(
 grant execute on function public.attach_research_membership_checkout_intent(
  uuid,text,text) to review_checkout_issuer;
 grant execute on function public.observe_signed_research_subscription_created(
- text,text,text,text,text,text,boolean,timestamptz,text,uuid,text)
+ text,text,text,text,text,text,boolean,timestamptz,text,uuid,text,text,text)
  to review_checkout_verifier;
 grant execute on function public.bind_research_membership_with_checkout_intent(
- uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean)
+ uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean,text,text)
  to review_checkout_binder;
 -- C12 D1-only proposed atomic cutover: deny the unverified old binder.
 do $cutover$

@@ -64,6 +64,18 @@ function requireEntitlementVersion(value) {
   return version;
 }
 
+function validatedPurchaseRecipient(email) {
+  try {
+    return normalizeEmail(email);
+  } catch {
+    // Normalize recipient failures into a stable, non-PII deterministic code.
+    throw new LaunchEmailDispatchError(
+      'Purchase access-ready email recipient is invalid.',
+      'PURCHASE_ACCESS_READY_INVALID_RECIPIENT',
+    );
+  }
+}
+
 export function createPurchaseAccessReadyEmailIntent({ accessResult }) {
   const result = requirePlainObject(accessResult, 'accessResult');
   const profile = requirePlainObject(result.profile, 'accessResult.profile');
@@ -96,7 +108,7 @@ export function createPurchaseAccessReadyEmailIntent({ accessResult }) {
     businessObjectType: PURCHASE_ACCESS_READY_EMAIL_BUSINESS_OBJECT_TYPE,
     businessObjectId: purchaseId,
     stateVersion: requireEntitlementVersion(entitlement.version),
-    recipientEmail: normalizeEmail(profile.email),
+    recipientEmail: validatedPurchaseRecipient(profile.email),
     occurredAt,
   });
 
@@ -110,14 +122,13 @@ export function createPurchaseAccessReadyEmailIntent({ accessResult }) {
   return Object.freeze({ intent, entitlementId });
 }
 
-export async function deliverPurchaseAccessReadyEmail({
+// Enqueue is a separate, durable boundary. A failed/ambiguous enqueue must
+// never be disguised as successful delivery or an acknowledged future buyer.
+export async function enqueuePurchaseAccessReadyEmail({
   accessResult,
   environment = process.env,
   ledgerFetchImpl = fetch,
-  providerFetchImpl = fetch,
-  nowMs = Date.now(),
 }) {
-  // Disabled transactional email must be inert even if buyer email is malformed.
   if (!lifecycleEmailLedgerEnabled(environment)) {
     return Object.freeze({ enabled: false, state: Object.freeze({ enabled: false }), delivery: null });
   }
@@ -127,10 +138,28 @@ export async function deliverPurchaseAccessReadyEmail({
     environment,
     fetchImpl: ledgerFetchImpl,
   });
+  return Object.freeze({ enabled: state.enabled === true, state, delivery: null });
+}
+
+// Dispatch is allowed only after a verified, persisted intent exists. Its
+// failure cannot invalidate the already-completed financial transaction.
+export async function dispatchPurchaseAccessReadyEmail({
+  enqueueResult,
+  environment = process.env,
+  ledgerFetchImpl = fetch,
+  providerFetchImpl = fetch,
+  nowMs = Date.now(),
+}) {
+  if (!enqueueResult || typeof enqueueResult !== 'object' || !enqueueResult.state) {
+    throw new LaunchEmailDispatchError(
+      'A verified purchase access-ready enqueue result is required.',
+      'INVALID_PURCHASE_ACCESS_READY_ENQUEUE_STATE',
+    );
+  }
+  const state = enqueueResult.state;
   if (!state.enabled || !lifecycleEmailDispatchEnabled(environment)) {
     return Object.freeze({ enabled: false, state, delivery: null });
   }
-
   const providerAdapter = createResendLaunchEmailAdapter({
     environment,
     fetchImpl: providerFetchImpl,
@@ -145,4 +174,26 @@ export async function deliverPurchaseAccessReadyEmail({
     nowMs,
   });
   return Object.freeze({ enabled: true, state, delivery });
+}
+
+// Preserve the original module-level API for existing isolated tests/callers.
+export async function deliverPurchaseAccessReadyEmail({
+  accessResult,
+  environment = process.env,
+  ledgerFetchImpl = fetch,
+  providerFetchImpl = fetch,
+  nowMs = Date.now(),
+}) {
+  const enqueueResult = await enqueuePurchaseAccessReadyEmail({
+    accessResult,
+    environment,
+    ledgerFetchImpl,
+  });
+  return dispatchPurchaseAccessReadyEmail({
+    enqueueResult,
+    environment,
+    ledgerFetchImpl,
+    providerFetchImpl,
+    nowMs,
+  });
 }

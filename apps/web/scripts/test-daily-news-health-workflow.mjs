@@ -222,3 +222,4 @@ await import('./test-daily-news-schedule-wake.mjs');
 // Always execute the real auto-closure shell against fake manual, missing,
 // bot, edited-file, workflow-failure and duplicate-PR receipts. No network.
 await import('./test-daily-health-auto-close-evidence.mjs');
+await import('./test-daily-news-early-advisory.mjs');

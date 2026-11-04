@@ -436,6 +436,6 @@ try {
   await import('./test-research-membership-receipt-evidence.mjs');
 } catch (error) {
   // Explicitly surface failures nested in the existing node:test runner.
-  console.error('Research receipt B-1 synthetic failure:', error?.stack || error?.message || String(error));
+  console.error('Research receipt B-1 synthetic failure:', error?.code, error?.validation || null, error?.stack || error?.message || String(error));
   throw error;
 }

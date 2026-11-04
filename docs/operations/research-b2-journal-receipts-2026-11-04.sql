@@ -123,3 +123,69 @@
 -- D7 receipt flag approval ONLY after independent QA & real SQL tests.
 --
 -- NO SQL OR SCHEMA IN THIS FILE IS EXECUTED AUTOMATICALLY.
+
+--
+-- A31 ADDENDUM, 2026-11-04 (G5): DOCUMENTATION ONLY, NOT EXECUTABLE
+-- Journal owner, retention and receipt lease closure. All details below
+-- require independent PostgreSQL testing and owner approval (D1/D2/D6/D7).
+--
+-- LEASE STATE INVARIANTS:
+-- * Server-side lease_expires_at = transaction_timestamp() + interval
+--   '90 seconds' is PROPOSED, not approved. Bounded worker I/O must be
+--   strictly shorter than the lease; network timeout has to be enforced.
+-- * A second begin returns in_progress while lease_expires_at > now().
+-- * A failed or expired lease can be reclaimed only by an atomic
+--   increment of attempt_count under row lock, issuing a NEW database
+--   generated UUID token. A stale token can never finalize.
+-- * Use a unique provider,event_id index and explicit SHA+VERSION
+--   comparison BEFORE checking even terminal processed/ignored status.
+-- * Do not use a caller-supplied lease token in privilege escalation,
+--   do not grant direct receipt UPDATE/DELETE to service_role.
+--
+-- IDEMPOTENT FINISH AFTER UNCERTAIN NETWORK OUTCOME:
+-- * A successful CAS finalization stores last_finished_attempt,
+--   last_finished_token_digest and last_finished_status atomically.
+--   If a retry of the SAME finish call receives zero affected rows,
+--   a SELECT ... FOR UPDATE must compare those three fields AND exact
+--   receipt identity before returning already_applied.
+-- * A repeat with a different target status or token is stale_attempt
+--   or conflict; NEVER report a blind success.
+-- * Validate failed->retry->processed transitions without losing prior
+--   failure observations; a lease refresh is not permission to erase
+--   customer evidence or skip provider replay checks.
+-- * A worker crash after business commit and before receipt finish is
+--   NOT made globally atomic by CAS. Persist a separate idempotent
+--   event_key audit and reconcile the later receipt outcome.
+--
+-- APPEND-ONLY OWNER CONTROLS (REVIEW ONLY):
+-- * Create journal in an unexposed private schema owned by an approved
+--   migration/evidence owner separate from the NOLOGIN writer role.
+-- * Writer receives only a narrowly owned INSERT entrypoint; PUBLIC,
+--   anon, authenticated and service_role have no direct UPDATE,
+--   DELETE or TRUNCATE privilege. Assert grants and inherited roles.
+-- * Proposed BEFORE UPDATE OR DELETE ROW trigger refuses mutation.
+--   Proposed BEFORE TRUNCATE STATEMENT trigger refuses truncation.
+--   Owner/superuser can disable triggers; this is accident protection,
+--   NOT cryptographic immutability or protection against superuser.
+-- * Keep separate append-only RESOLUTION observations; no journal
+--   mutation when resolving a duplicate, refund or cancellation case.
+-- * Do not add ON DELETE CASCADE to profiles; a missing link must not
+--   cause journal data loss. bound_account_id is pseudonymous data.
+-- * D6 requires written legal/privacy retention and audited redaction
+--   path. A redaction exception must itself be immutable and must not
+--   destroy financial audit obligations without explicit authorization.
+-- * Reconcile Supabase BYPASSRLS roles via exact grants and search_path:
+--   RLS alone does not constrain service_role. SECURITY DEFINER
+--   owner must not be obtainable via SET ROLE; restrict EXECUTE and
+--   pg_proc overloads and assert no old bypass signatures remain.
+--
+-- PGLITE versus REAL POSTGRES:
+-- * PGlite single-session tests can check a schema's shape, trigger
+--   rejection, and CAS predicate within one transaction.
+-- * RC1 / T17 and RC2 / T18 need two independent isolated PostgreSQL
+--   connections; in-memory mocks are NOT concurrency acceptance.
+-- * T19 requires a killed worker/crash and evidence-survival readback.
+-- * T20 needs controlled semantic changed URL fixture, not a claim
+--   that Lemon Squeezy actually regenerates webhook URLs.
+-- * T21/T22 must assert complimentary and Library rows byte-identical.
+-- * No test, role, migration or workflow is created by this document.

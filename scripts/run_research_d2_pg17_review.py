@@ -491,6 +491,8 @@ def run():
     assert first("SELECT has_function_privilege('review_checkout_verifier','public.observe_signed_research_subscription_created(text,text,text,text,text,text,boolean,timestamptz,text,uuid,text,text,text)','EXECUTE')") is True
     print('PASS R1 issue disabled, paid-observer custody preserved',flush=True)
     after_r1 = verify_r1_stop_and_paid_custody(flow_snapshot[0],before_r1)
+    # A valid verifier observation during R1 adds one immutable paid row.
+    flow_snapshot = (flow_snapshot[0], flow_snapshot[1], flow_snapshot[2]+1)
     verify_tamper_controls()
     psql(fixture('R1_restore_A46.sql'),label='R1 owner-authorized restore')
     assert_evidence_immutable(after_r1,evidence_snapshot())

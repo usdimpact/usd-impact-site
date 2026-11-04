@@ -1,0 +1,73 @@
+name: Daily USD Impact early advisory
+
+# An independent, no-generator observer after the fixed 08:30 America/New_York
+# publishing cutoff. 14:00 UTC = 09:00 EST / 10:00 EDT and
+# 16:00 winter / 17:00 summer in Athens. The existing 18:45 UTC
+# Health workflow retains exclusive incident-closing authority.
+on:
+  schedule:
+    - cron: '0 14 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+  issues: write
+
+concurrency:
+  group: daily-news-early-advisory
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Check bot source, original PR, bounded publisher and public parity
+        id: check
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node apps/web/scripts/check-daily-news-early-advisory.mjs \
+            --date "$(date -u +%F)" \
+            --report "$RUNNER_TEMP/daily-early-advisory.md"
+
+      - name: Summarize the read-only observation
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f "$RUNNER_TEMP/daily-early-advisory.md" ]; then
+            cat "$RUNNER_TEMP/daily-early-advisory.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Early Daily advisory report unavailable; inspection failed before the summary." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # A failed scheduled observation may COMMENT on the one existing incident.
+      # Never open/close incidents, regenerate, retry, merge, promote or deploy.
+      # Manual workflow_dispatch and reruns never comment, preventing duplicates.
+      - name: Add one diagnostic comment to existing Daily incident
+        if: ${{ steps.check.outcome == 'failure' && github.event_name == 'schedule' && github.run_attempt == 1 }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          state="$(gh issue view 840 --repo "$GITHUB_REPOSITORY" --json state --jq '.state' || true)"
+          if [ "$state" = "OPEN" ]; then
+            gh issue comment 840 --repo "$GITHUB_REPOSITORY" \
+              --body-file "$RUNNER_TEMP/daily-early-advisory.md"
+          else
+            echo "The Daily incident is not open; no issue mutation performed." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Fail when the early advisory cannot prove publication
+        if: steps.check.outcome == 'failure'
+        run: |
+          echo "Early Daily advisory is HOLD; see the report and existing issue #840."
+          exit 1

@@ -102,8 +102,15 @@ def main():
         assert expect_no_change(db,sid2,'first-unverified',verified=True)=='pending_reconciliation'
         sid3=seed(db,3,watermark=AT,state='refunded')
         assert expect_no_change(db,sid3,'terminal-reopen',state='active')=='pending_reconciliation'
-        acl=db.execute("select proacl is not null from pg_proc where proname='apply_synthetic_delivery' and pronamespace='research_ordering_review'::regnamespace").fetchone()
-        assert acl == (True,), 'review-only function must have explicit revoked ACL'
+        acl=db.execute("""select p.proacl is not null,
+          coalesce((select bool_or(grantee=0) from aclexplode(p.proacl)),false)
+          from pg_proc p where proname='apply_synthetic_delivery'
+            and pronamespace='research_ordering_review'::regnamespace""").fetchone()
+        assert acl == (True,False), 'review-only function must explicitly deny PUBLIC'
+        schema_acl=db.execute("""select coalesce((select bool_or(grantee=0)
+          from aclexplode(n.nspacl)),false) from pg_namespace n
+          where nspname='research_ordering_review'""").fetchone()
+        assert schema_acl == (False,), 'private schema must deny PUBLIC USAGE'
         # Even owner may not rewrite audit evidence through normal SQL.
         try: db.execute("update research_ordering_review.delivery_audit set disposition='applied' where event_key='O1-old-failed'")
         except psycopg.Error as e: assert 'append-only' in str(e)
@@ -134,6 +141,62 @@ def main():
         assert count(check,sid)==2
         assert check.execute("select disposition from research_ordering_review.delivery_audit where event_key='race-old-failure'").fetchone()[0]=='stale_ignored'
     print('PASS real 2-connection PostgreSQL 17 FOR UPDATE serialization; paid period intact; 2 audit rows')
+
+    # Two more genuinely concurrent deliveries: O4 stale cancellation and equal-time conflict.
+    for i, label, clock, state, period, disposition in (
+        (5, 'O4', '2026-10-30T00:00:00+00:00', 'cancel_scheduled', '2026-11-15T00:00:00+00:00', 'stale_ignored'),
+        (6, 'equal', '2026-11-02T00:00:00+00:00', 'past_due', END, 'ordering_conflict'),
+    ):
+        with psycopg.connect(**PARAMS, autocommit=True) as seed_db:
+            race_id=seed(seed_db,i)
+        with psycopg.connect(**PARAMS) as first:
+            first.execute('select id from research_ordering_review.subscriptions where id=%s for update',(race_id,))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                def waiting():
+                    with psycopg.connect(**PARAMS,autocommit=True) as c:
+                        return run(c,'race-'+label+'-held',sid=race_id,clock=clock,state=state,period=period)
+                future=pool.submit(waiting)
+                time.sleep(.2)
+                assert not future.done(), label+' delivery did not wait for subscription lock'
+                assert run(first,'race-'+label+'-renewal',sid=race_id,clock='2026-11-02T00:00:00+00:00')['action']=='applied'
+                first.commit()
+                assert future.result(timeout=10)['action']==disposition
+        with psycopg.connect(**PARAMS,autocommit=True) as verify:
+            assert snapshot(verify,race_id)[0][0]=='active'
+            assert snapshot(verify,race_id)[1][0]=='active'
+            assert count(verify,race_id)==2
+    print('PASS real 2-connection O4 delayed cancellation and equal-clock race, no paid-access regression')
+
+    # Reverse arrival ordering: an older but unverified object must be quarantined,
+    # then a verified newer renewal may apply in the same synthetic connection.
+    with psycopg.connect(**PARAMS,autocommit=True) as verify:
+        sid8=seed(verify,8)
+        before=snapshot(verify,sid8)
+        old=run(verify,'reverse-old-unverified',sid=sid8,clock='2026-11-01T13:00:00+00:00',state='past_due',period=END,verified=False)
+        assert old['action']=='pending_reconciliation'
+        assert snapshot(verify,sid8)==before
+        newer=run(verify,'reverse-new-verified',sid=sid8,clock='2026-11-02T00:00:00+00:00')
+        assert newer['action']=='applied' and snapshot(verify,sid8)[0][0]=='active'
+        assert count(verify,sid8)==2
+    print('PASS reverse arrival ordering with unverified earlier delivery quarantined')
+
+    # Same-key concurrent arrivals must not both apply or increment version twice.
+    with psycopg.connect(**PARAMS,autocommit=True) as init:
+        sid9=seed(init,9)
+    import threading
+    barrier=threading.Barrier(2)
+    def same_key_call():
+        with psycopg.connect(**PARAMS,autocommit=True) as c:
+            barrier.wait(timeout=5)
+            return run(c,'same-key-two-workers',sid=sid9)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        f1=pool.submit(same_key_call)
+        f2=pool.submit(same_key_call)
+        assert sorted([f1.result(timeout=10)['action'],f2.result(timeout=10)['action']])==['applied','duplicate']
+    with psycopg.connect(**PARAMS,autocommit=True) as verify:
+        assert count(verify,sid9)==1
+        assert snapshot(verify,sid9)[0][3]==2
+    print('PASS two-connection same-key idempotence; one applied transition and one audit row')
     print('RESEARCH_STAGE_B_ISOLATED_ORDERING_ORACLE_PASS')
 
 

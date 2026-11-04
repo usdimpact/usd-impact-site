@@ -1,7 +1,7 @@
 // Draft B-1: optional Research webhook receipt evidence, default OFF.
 // This is NOT an atomic payment/subscription reconciliation guarantee.
 // Do not enable in Production until independent QA and receipt SQL/CAS approval.
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PROVIDER = 'lemon-squeezy-research';
 
 function evidenceError(code) {

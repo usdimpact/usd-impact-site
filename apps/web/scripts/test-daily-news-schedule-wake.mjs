@@ -260,7 +260,7 @@ elif [[ "$*" == *'+%H:%M'* ]]; then
     *) echo '06:50' ;;
   esac
 elif [[ "$*" == *'+%F'* ]]; then
-  if [ "$SCENARIO" = wrong-us-date ]; then echo 2026-10-18; else echo 2026-10-19; fi
+  if [ "$SCENARIO" = wrong-us-date ] && [[ "$*" != *"-u"* ]]; then echo 2026-10-18; else echo 2026-10-19; fi
 else echo 2026-10-19; fi
 `;
   for (const [name, content] of [['gh', gh], ['date', date], ['sleep', '#!/bin/bash\nexit 0\n']]) {

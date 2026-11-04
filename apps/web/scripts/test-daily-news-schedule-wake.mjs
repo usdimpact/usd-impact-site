@@ -328,7 +328,7 @@ await check('grounded generation retains reviewed prompt with isolated cron rout
   // The EIA rolling-table and 2026 holiday release guidance intentionally
   // changes the grounded model prompt only. Exact cron route/guard remain
   // independently asserted above; the rest of this implementation is frozen.
-  assert.equal(blob, 'e794bb55e6f0da062538cd5e9e2e06f30995f0ff');
+  assert.equal(blob, '009f802ea85ee33ebc72562d425afb5b34c95350');
 });
 const routedBody = routedSource.match(/export default async function handler\(request, response\) \{([\s\S]*)\}\s*$/)?.[1];
 assert.ok(routedBody);

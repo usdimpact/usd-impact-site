@@ -22,6 +22,8 @@ const sub = {
     attributes: {
       store_id: 42, product_id: 99, variant_id: 314, customer_id: 456,
       status: 'active', cancelled: false, trial_ends_at: null,
+      pause: null,
+      first_subscription_item: { price_id: 501, quantity: 1, subscription_id: 'sub_123' },
       renews_at: '2026-12-01T00:00:00Z', ends_at: null,
       created_at: '2026-11-01T00:00:00Z',
       updated_at: '2026-11-04T00:00:00Z', test_mode: true,
@@ -34,7 +36,7 @@ const sub = {
     },
   },
 };
-assert.equal(RESEARCH_RECEIPT_FINGERPRINT_VERSION, 'research-receipt-business-v1');
+assert.equal(RESEARCH_RECEIPT_FINGERPRINT_VERSION, 'research-receipt-business-v2');
 const original = fingerprintResearchReceiptBusinessEvent(sub);
 assert.match(original, /^[a-f0-9]{64}$/);
 
@@ -77,6 +79,9 @@ for (const [name, mutator] of [
   ['customer', x => { x.data.attributes.customer_id = 4567; }],
   ['status', x => { x.data.attributes.status = 'past_due'; }],
   ['cancelled', x => { x.data.attributes.cancelled = true; }],
+  ['scheduled pause', x => { x.data.attributes.pause = { mode: 'void', resumes_at: '2026-11-06T00:00:00Z' }; }],
+  ['first item price', x => { x.data.attributes.first_subscription_item.price_id = 502; }],
+  ['first item quantity', x => { x.data.attributes.first_subscription_item.quantity = 2; }],
   ['trial end', x => { x.data.attributes.trial_ends_at = '2026-11-02T00:00:00Z'; }],
   ['renewal date', x => { x.data.attributes.renews_at = '2027-01-01T00:00:00Z'; }],
   ['access end date', x => { x.data.attributes.ends_at = '2026-11-20T00:00:00Z'; }],
@@ -89,6 +94,24 @@ for (const [name, mutator] of [
   assert.notEqual(changes(mutator), original, name + ' is protected business evidence');
 }
 assert.notEqual(changes(x => { delete x.data.attributes.ends_at; }), original, 'missing versus explicit null');
+assert.notEqual(changes(x => { delete x.data.attributes.pause; }), original, 'missing pause versus null');
+assert.notEqual(changes(x => { delete x.data.attributes.first_subscription_item; }), original, 'missing first item versus present');
+assert.notEqual(changes(x => { x.data.attributes.first_subscription_item = null; }), original, 'null first item versus object');
+
+const noCustom = clone(sub);
+delete noCustom.meta.custom_data;
+const nullCustom = clone(sub);
+nullCustom.meta.custom_data = null;
+const emptyCustom = clone(sub);
+emptyCustom.meta.custom_data = {};
+const missingCustomHash = fingerprintResearchReceiptBusinessEvent(noCustom);
+const nullCustomHash = fingerprintResearchReceiptBusinessEvent(nullCustom);
+const emptyCustomHash = fingerprintResearchReceiptBusinessEvent(emptyCustom);
+assert.notEqual(missingCustomHash, nullCustomHash, 'G2: missing and explicit null binding metadata differ');
+assert.notEqual(missingCustomHash, emptyCustomHash, 'G2: missing and empty binding metadata differ');
+assert.notEqual(nullCustomHash, emptyCustomHash, 'G2: null and empty binding metadata differ');
+assert.notEqual(missingCustomHash, original, 'G2: missing and actual binding evidence differ');
+
 assert.throws(() => changes(x => { x.meta.custom_data.usd_impact_future_account_binding = 'secret'; }), TypeError);
 assert.throws(() => fingerprintResearchReceiptBusinessEvent({ data: sub.data }), TypeError);
 
@@ -98,7 +121,7 @@ const invoice = {
     type: 'subscription-invoices', id: 'inv_1',
     attributes: {
       store_id: 42, test_mode: true, subscription_id: 'sub_123',
-      status: 'refunded', refunded: true, total: 3900, refunded_amount: 3900,
+      status: 'refunded', billing_reason: 'renewal', refunded: true, total: 3900, refunded_amount: 3900,
       refunded_at: '2026-11-04T12:00:00Z', created_at: '2026-11-04T11:00:00Z',
       updated_at: '2026-11-04T12:00:00Z', currency: 'USD',
       urls: { invoice: 'https://example.invalid/signed?key=1' },
@@ -108,7 +131,7 @@ const invoice = {
 const invoiceHash = fingerprintResearchReceiptBusinessEvent(invoice);
 const altUrl = clone(invoice); altUrl.data.attributes.urls.invoice = 'https://example.invalid/signed?key=2';
 assert.equal(fingerprintResearchReceiptBusinessEvent(altUrl), invoiceHash);
-for (const key of ['subscription_id','status','refunded','total','refunded_amount','refunded_at','created_at','updated_at','currency','store_id','test_mode']) {
+for (const key of ['subscription_id','status','billing_reason','refunded','total','refunded_amount','refunded_at','created_at','updated_at','currency','store_id','test_mode']) {
   const altered = clone(invoice);
   const prior = altered.data.attributes[key];
   altered.data.attributes[key] = typeof prior === 'number' ? prior + 1 : typeof prior === 'boolean' ? !prior : String(prior) + '2';
@@ -165,4 +188,4 @@ function simulatedFailureAndRetry() {
 }
 simulatedFailureAndRetry();
 assert.equal(second.status,'received');
-console.log('Research B-2 offline fingerprint and CAS/journal DESIGN MODEL passed (NOT SQL or PostgreSQL concurrency evidence).');
+console.log('Research B-2 v2 fingerprint (G1/G2/G3) and CAS/journal DESIGN MODEL passed (NOT SQL or PostgreSQL concurrency evidence).');

@@ -107,8 +107,10 @@ async function lookupAuthenticSourceRun() {
     hold('not-a-trusted-publisher-event');
   }
   const envelope = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
-  if (process.env.GITHUB_ACTOR !== 'github-actions[bot]') {
-    hold('explicit-publisher-not-dispatched-by-github-bot');
+  if (process.env.GITHUB_ACTOR !== 'github-actions[bot]'
+      || process.env.PUBLISH_TRIGGERING_ACTOR !== 'github-actions[bot]'
+      || process.env.PUBLISH_RUN_ATTEMPT !== '1') {
+    hold('explicit-publisher-not-first-attempt-bot-trigger');
   }
   const id = dispatchSourceRunId(envelope);
   for (let attempt = 0; attempt < 24; attempt++) {

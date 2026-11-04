@@ -432,4 +432,10 @@ assert.match(commerceRoute, /testMode:\s*result\.testMode/);
 console.log('Research Membership first-purchase checkout and binding regressions passed.');
 
 // Draft B-1: execute only synthetic opt-in receipt tests. No live I/O.
-await import('./test-research-membership-receipt-evidence.mjs');
+try {
+  await import('./test-research-membership-receipt-evidence.mjs');
+} catch (error) {
+  // Explicitly surface failures nested in the existing node:test runner.
+  console.error('Research receipt B-1 synthetic failure:', error?.stack || error?.message || String(error));
+  throw error;
+}

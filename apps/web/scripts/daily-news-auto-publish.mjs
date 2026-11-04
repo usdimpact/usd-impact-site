@@ -6,7 +6,7 @@ import { verifyDailyNewsDeployment } from './check-daily-news-deployment-health.
 import {
   REPOSITORY, beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
   selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
-  dispatchSourceRunId,
+  dispatchSourceRunId, isAuthenticatedBotDispatch,
 } from './daily-news-auto-publish-policy.mjs';
 
 const SHA = /^[a-f0-9]{40}$/;
@@ -107,14 +107,16 @@ async function lookupAuthenticSourceRun() {
     hold('not-a-trusted-publisher-event');
   }
   const envelope = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+  if (process.env.GITHUB_ACTOR !== 'github-actions[bot]') {
+    hold('explicit-publisher-not-dispatched-by-github-bot');
+  }
   const id = dispatchSourceRunId(envelope);
   for (let attempt = 0; attempt < 24; attempt++) {
     // Never trust the supplied run ID until its GitHub REST receipt, immutable
     // source workflow identity, and actual successful completion are verified.
     const source = api('actions/runs/' + id);
-    if (source.id !== id || source.repository?.full_name !== REPOSITORY
-        || source.path !== '.github/workflows/daily-news.yml'
-        || source.head_branch !== 'main' || source.event !== 'workflow_dispatch') {
+    if (source.id !== id || source.head_branch !== 'main'
+        || !isAuthenticatedBotDispatch(source, process.env.GITHUB_ACTOR)) {
       hold('explicit-source-run-not-authenticated-backstop-candidate');
     }
     if (source.status === 'completed') {

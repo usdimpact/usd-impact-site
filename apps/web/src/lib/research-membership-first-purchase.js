@@ -19,6 +19,11 @@ const CHECKOUT_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{7,254}$/;
 // Only the separately committed private database issuer may generate an intent
 // proof. A correctly formatted client key is NEVER sufficient for binding.
 const ISSUED_CHECKOUT_PROOF_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+// Compare database-issued timestamps to one another, not to a pre-RPC JS
+// request timestamp. These bounds reject stale/implausibly skewed replies.
+const MAX_CHECKOUT_INTENT_TTL_MS = 30 * 60 * 1000;
+const MAX_ISSUER_CLOCK_SKEW_MS = 2 * 60 * 1000;
+const MAX_ISSUER_RESPONSE_AGE_MS = 5 * 60 * 1000;
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export class ResearchMembershipFirstPurchaseError extends Error {
@@ -300,7 +305,7 @@ async function assertNoCurrentResearchSubscription({ config, userId, fetchImpl }
 }
 
 async function issueResearchMembershipCheckoutIntent({
-  config, userId, variantId, billingInterval, clientRequestKey, fetchImpl, now,
+  config, userId, variantId, billingInterval, clientRequestKey, fetchImpl, clock,
 }) {
   // This RPC is intentionally NOT present in the current database. Until the
   // D2-reviewed issuer is installed, no provider checkout may be created.
@@ -343,15 +348,30 @@ async function issueResearchMembershipCheckoutIntent({
     fail('Research Membership trusted checkout intent did not match the account and catalog.',
       'RESEARCH_CHECKOUT_INTENT_MISMATCH', 503);
   }
+  let createdAt;
   let expiresAt;
+  let observedAtMs;
   try {
+    createdAt = isoTimestamp(data.created_at, 'checkout intent created_at');
     expiresAt = isoTimestamp(data.expires_at, 'checkout intent expires_at');
+    observedAtMs = Number(clock());
   } catch {
     fail('Research Membership checkout reservation expiry is invalid.',
       'RESEARCH_CHECKOUT_INTENT_EXPIRY_INVALID', 503);
   }
-  const lifetime = Date.parse(expiresAt) - new Date(now).getTime();
-  if (!Number.isFinite(lifetime) || lifetime <= 0 || lifetime > 30 * 60 * 1000) {
+  const createdAtMs = Date.parse(createdAt);
+  const expiresAtMs = Date.parse(expiresAt);
+  const ttlMs = expiresAtMs - createdAtMs;
+  // The one-time database reservation uses its own clock as the TTL source.
+  // A modest cross-system skew is tolerated, but stale or future-dated
+  // issuer receipts must not reach provider checkout creation.
+  if (!Number.isFinite(observedAtMs)
+      || !Number.isFinite(ttlMs)
+      || ttlMs <= 0 || ttlMs > MAX_CHECKOUT_INTENT_TTL_MS
+      || createdAtMs > observedAtMs + MAX_ISSUER_CLOCK_SKEW_MS
+      || observedAtMs - createdAtMs
+        > MAX_ISSUER_RESPONSE_AGE_MS + MAX_ISSUER_CLOCK_SKEW_MS
+      || expiresAtMs <= observedAtMs + MAX_ISSUER_CLOCK_SKEW_MS) {
     fail('Research Membership checkout reservation expiry is invalid.',
       'RESEARCH_CHECKOUT_INTENT_EXPIRY_INVALID', 503);
   }
@@ -401,6 +421,7 @@ export async function createResearchMembershipCheckout({
   idempotencyKey,
   fetchImpl = fetch,
   now = new Date(),
+  clock = () => Date.now(),
 }) {
   const userId = accountId(user?.id);
   const selected = variantForInterval(config, billingInterval);
@@ -409,7 +430,7 @@ export async function createResearchMembershipCheckout({
   await assertNoCurrentResearchSubscription({ config, userId, fetchImpl });
   const intent = await issueResearchMembershipCheckoutIntent({
     config, userId, variantId: selected.variantId, billingInterval: selected.interval,
-    clientRequestKey: idempotencyKey, fetchImpl, now,
+    clientRequestKey: idempotencyKey, fetchImpl, clock,
   });
   const requestBody = buildResearchMembershipCheckoutRequest({
     config, user, billingInterval, idempotencyKey: intent.checkoutKey, now,

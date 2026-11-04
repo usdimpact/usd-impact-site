@@ -21,6 +21,37 @@ const MONTH_NUMBER = new Map([
   ['september', 9], ['october', 10], ['november', 11], ['december', 12],
 ]);
 
+// EIA WPSR official 2026 release schedule (reviewed 2026-11-04): standard Wednesday
+// at 10:30 ET, except agency-listed holiday dates. An affected Wednesday is NOT
+// an alternative release. This is only a date plausibility gate; it does not
+// establish that the report was released or verify source publishedAt metadata.
+// https://www.eia.gov/petroleum/supply/weekly/schedule.php
+const EIA_WPSR_CATALYST_PATTERN = /\b(?:weekly petroleum status report|wpsr)\b/i;
+const EIA_WPSR_2026_POSTPONED_WEDNESDAYS = new Map([
+  ['2026-01-21', '2026-01-22'],
+  ['2026-02-18', '2026-02-19'],
+  ['2026-05-27', '2026-05-28'],
+  ['2026-09-09', '2026-09-10'],
+  ['2026-10-14', '2026-10-15'],
+  ['2026-11-11', '2026-11-12'],
+]);
+const EIA_WPSR_2026_ALTERNATE_RELEASES = new Set(EIA_WPSR_2026_POSTPONED_WEDNESDAYS.values());
+
+function eiaWpsrReleaseDateIssue(catalyst, context) {
+  if (!EIA_WPSR_CATALYST_PATTERN.test(String(catalyst?.event ?? ''))) return null;
+  const scheduled = dateOnly(catalyst.date, context);
+  // Do not extrapolate the 2026 holiday calendar into a later year.
+  if (!scheduled.text.startsWith('2026-')) {
+    return `${context} EIA WPSR calendar for ${scheduled.text.slice(0, 4)} requires a new official-year review`;
+  }
+  if (EIA_WPSR_2026_ALTERNATE_RELEASES.has(scheduled.text)) return null;
+  if (new Date(scheduled.time).getUTCDay() !== 3
+      || EIA_WPSR_2026_POSTPONED_WEDNESDAYS.has(scheduled.text)) {
+    return `${context} EIA WPSR date ${scheduled.text} conflicts with the verified official 2026 release calendar`;
+  }
+  return null;
+}
+
 const SYSTEMIC_CATALYST_RULES = [
   {
     eventType: 'central-bank',
@@ -207,6 +238,8 @@ export function validateEditorialBundle({ editionDate, sources, highlights, cata
     if (referenced.some(isTreasuryBuybackSource) && hasUnsupportedBuybackSupplyClaim(text)) {
       issues.push(`${context} incorrectly characterizes Treasury buybacks as mechanically reducing or offsetting Treasury supply`);
     }
+    const eiaCalendarIssue = eiaWpsrReleaseDateIssue(catalyst, context);
+    if (eiaCalendarIssue) issues.push(eiaCalendarIssue);
     if (!hasTreasuryRefundingLanguage(text)) return;
     if (!hasRecentSource(referenced, edition, isTreasurySource)) {
       issues.push(`${context} requires a current Treasury refunding or auction source`);

@@ -67,7 +67,14 @@ export async function beginResearchWebhookReceipt({
       || !['received', 'processed', 'ignored'].includes(result.status)
       || (result.should_process && result.status !== 'received')
       || (!result.should_process && !['processed', 'ignored'].includes(result.status))) {
-    throw evidenceError('RESEARCH_WEBHOOK_RECEIPT_RESPONSE_INVALID');
+    const error = evidenceError('RESEARCH_WEBHOOK_RECEIPT_RESPONSE_INVALID');
+    // Server-only structural diagnostics: booleans and status, never identities.
+    error.validation = {
+      receiptUuid: UUID_PATTERN.test(result.receipt_id || ''),
+      processFlagType: typeof result.should_process,
+      receiptStatus: result.status,
+    };
+    throw error;
   }
   return Object.freeze({
     id: result.receipt_id,

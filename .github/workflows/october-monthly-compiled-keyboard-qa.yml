@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   monthly-focus:
-    if: ${{ github.event.pull_request.draft == true && github.head_ref == 'agent/october-monthly-native-focus-qa-20261103' }}
+    if: ${{ github.event.pull_request.draft == true && github.head_ref == 'agent/october-monthly-natural-textspacing-qa-20261105' }}
     name: Actual compiled October Monthly skip/main/footer focus in Chromium
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -66,4 +66,4 @@ jobs:
           name: october-monthly-focus-compiled-draft
           path: apps/web/october-monthly-focus-evidence/
           if-no-files-found: warn
-          retention-days: 2
+          retention-days: 14

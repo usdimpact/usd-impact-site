@@ -107,7 +107,7 @@ def roles():
       "bind_research_membership_with_checkout_intent(uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean,text,text)"]
     with db() as root,db("issuer") as i,db("verifier") as v,db("binder") as b:
         # C11 test-only non-escalatable SECURITY DEFINER ownership.
-        eq(one(root,"select count(*) from pg_policies where schemaname='public' and policyname like 'research_b5_owner_%'"),6,"C11 owner RLS policies installed")
+        eq(one(root,"select count(*) from pg_policies where schemaname='public' and policyname like 'research_b5_owner_%%'"),6,"C11 owner RLS policies installed")
         eq(one(root,"select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname in ('profiles','subscriptions','entitlements','subscription_offers') and c.relrowsecurity"),4,"C11 RLS enabled")
         root.execute("set role review_checkout_owner")
         try:

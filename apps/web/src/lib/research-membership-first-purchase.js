@@ -547,7 +547,7 @@ export function inspectResearchMembershipFirstPurchase({
   });
 }
 
-export async function observeSignedResearchMembershipFirstPurchase({
+async function observeSignedResearchMembershipFirstPurchase({
   binding,
   rawBody,
   environment = process.env,

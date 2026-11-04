@@ -415,6 +415,7 @@ assert.equal(bound.action, 'created');
 
 let processCalls = 0;
 let wrapperBindCalls = 0;
+let observedSignedPaidCalls = 0;
 const wrapperResult = await processResearchMembershipWebhookWithFirstPurchase({
   ...event,
   environment,
@@ -428,7 +429,21 @@ const wrapperResult = await processResearchMembershipWebhookWithFirstPurchase({
     }
     return { action: 'applied', eventKey: 'lemon-squeezy:event' };
   },
-  fetchImpl: async (url) => {
+  fetchImpl: async (url, init) => {
+    if (url === `${environment.SUPABASE_URL}/rest/v1/rpc/observe_signed_research_subscription_created`) {
+      const body = JSON.parse(init.body);
+      const sha = crypto.createHash('sha256').update(event.rawBody).digest('hex');
+      assert.equal(body.p_raw_body_sha256, sha);
+      assert.equal(body.p_provider_subscription_id, 'sub_first_1');
+      assert.equal(body.p_claimed_account_id, accountId);
+      assert.equal(body.p_claimed_checkout_proof_sha256,
+        crypto.createHash('sha256').update(issuedProof).digest('hex'));
+      observedSignedPaidCalls += 1;
+      return new Response(JSON.stringify({
+        action: 'recorded', provider_subscription_id: 'sub_first_1',
+        raw_body_sha256: sha,
+      }), { status: 200 });
+    }
     assert.equal(url, `${environment.SUPABASE_URL}/rest/v1/rpc/bind_research_membership_with_checkout_intent`);
     wrapperBindCalls += 1;
     return new Response(JSON.stringify({ action: 'existing', subscription_id: subscriptionId, subscription_state: 'pending' }), { status: 200 });
@@ -436,6 +451,7 @@ const wrapperResult = await processResearchMembershipWebhookWithFirstPurchase({
 });
 assert.equal(processCalls, 2);
 assert.equal(wrapperBindCalls, 1);
+assert.equal(observedSignedPaidCalls, 1);
 assert.equal(wrapperResult.action, 'applied');
 
 let unexpectedFetches = 0;
@@ -524,6 +540,12 @@ await assert.rejects(
       throw error;
     },
     fetchImpl: async (url) => {
+      if (url === `${environment.SUPABASE_URL}/rest/v1/rpc/observe_signed_research_subscription_created`) {
+        return new Response(JSON.stringify({
+          action: 'recorded', provider_subscription_id: 'sub_first_1',
+          raw_body_sha256: crypto.createHash('sha256').update(forgedEvent.rawBody).digest('hex'),
+        }), { status: 200 });
+      }
       assert.equal(url, `${environment.SUPABASE_URL}/rest/v1/rpc/bind_research_membership_with_checkout_intent`);
       forgedBindAttempts += 1;
       return new Response(JSON.stringify({ error: 'reservation_missing' }), { status: 409 });
@@ -602,6 +624,77 @@ await assert.rejects(
   }),
   { code: 'RESEARCH_FIRST_PURCHASE_TRUSTED_BINDING_UNAVAILABLE', status: 503 },
 );
+
+
+const directShareWithoutBinding = payload();
+delete directShareWithoutBinding.meta.custom_data;
+const unboundSignedEvent = signed(directShareWithoutBinding);
+let unboundProcessingAttempts = 0;
+let unboundEvidenceCommits = 0;
+const unboundResult = await processResearchMembershipWebhookWithFirstPurchase({
+  ...unboundSignedEvent, environment,
+  processImpl: async () => {
+    unboundProcessingAttempts += 1;
+    const error = new Error('no signed local binding');
+    error.code = 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND';
+    throw error;
+  },
+  fetchImpl: async (url, init) => {
+    assert.equal(url, `${environment.SUPABASE_URL}/rest/v1/rpc/observe_signed_research_subscription_created`);
+    const body = JSON.parse(init.body);
+    assert.equal(body.p_claimed_account_id, null);
+    assert.equal(body.p_claimed_checkout_proof_sha256, null);
+    assert.equal(body.p_raw_body_sha256,
+      crypto.createHash('sha256').update(unboundSignedEvent.rawBody).digest('hex'));
+    unboundEvidenceCommits += 1;
+    return new Response(JSON.stringify({
+      action: 'recorded', provider_subscription_id: 'sub_first_1',
+      raw_body_sha256: body.p_raw_body_sha256,
+    }), { status: 200 });
+  },
+});
+assert.equal(unboundResult.action, 'held_unbound');
+assert.equal(unboundProcessingAttempts, 1, 'Signed but unbound event cannot retry entitlement processing');
+assert.equal(unboundEvidenceCommits, 1, 'Signed unbound event must be durably observed before provider ACK');
+
+let noCustodyBindCalls = 0;
+await assert.rejects(
+  () => processResearchMembershipWebhookWithFirstPurchase({
+    ...unboundSignedEvent, environment,
+    processImpl: async () => {
+      const error = new Error('no local binding');
+      error.code = 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND';
+      throw error;
+    },
+    fetchImpl: async (url) => {
+      assert.equal(url, `${environment.SUPABASE_URL}/rest/v1/rpc/observe_signed_research_subscription_created`);
+      noCustodyBindCalls += 1;
+      return new Response('{}', { status: 404 });
+    },
+  }),
+  { code: 'RESEARCH_PAID_EVIDENCE_UNAVAILABLE', status: 503 },
+);
+assert.equal(noCustodyBindCalls, 1, 'No binding may follow failed paid evidence custody');
+
+let conflictBindCalls = 0;
+const conflictHeld = await processResearchMembershipWebhookWithFirstPurchase({
+  ...event, environment,
+  processImpl: async () => {
+    const error = new Error('no local binding');
+    error.code = 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND';
+    throw error;
+  },
+  fetchImpl: async (url) => {
+    assert.equal(url, `${environment.SUPABASE_URL}/rest/v1/rpc/observe_signed_research_subscription_created`);
+    conflictBindCalls += 1;
+    return new Response(JSON.stringify({
+      action: 'conflict_recorded', provider_subscription_id: 'sub_first_1',
+      raw_body_sha256: crypto.createHash('sha256').update(event.rawBody).digest('hex'),
+    }), { status: 200 });
+  },
+});
+assert.equal(conflictHeld.action, 'held_paid_evidence_conflict');
+assert.equal(conflictBindCalls, 1, 'Immutable conflicting event evidence never authorizes an account bind');
 
 const migration = await readFile(
   new URL('../../../supabase/migrations/20260907154500_research_membership_first_purchase_binding.sql', import.meta.url),

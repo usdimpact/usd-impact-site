@@ -1,0 +1,63 @@
+name: Research O1 O4 Stage C real-schema disposable review (HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/research-ordering-stage-c-review.yml'
+      - 'docs/operations/research-ordering-stage-c/**'
+      - 'supabase/migrations/20260729203000_paid_access_foundation.sql'
+      - 'supabase/migrations/20260905201000_research_membership_recurring_foundation.sql'
+      - 'supabase/migrations/20260906004500_research_membership_transition_persistence.sql'
+      - 'supabase/migrations/20260906104500_research_membership_performance_hardening.sql'
+      - 'supabase/migrations/20260906180500_research_membership_service_role_grants.sql'
+      - 'supabase/migrations/20260907154500_research_membership_first_purchase_binding.sql'
+permissions:
+  contents: read
+concurrency:
+  group: research-stage-c-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  review-snapshot-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify offline Lemon Squeezy snapshot review with zero network
+        run: |
+          set -euo pipefail
+          node --check docs/operations/research-ordering-stage-c/provider_snapshot_review.mjs
+          node docs/operations/research-ordering-stage-c/test_provider_snapshot_review.mjs
+  actual-six-migrations-disposable-pg17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+        env:
+          POSTGRES_USER: ci_research
+          POSTGRES_PASSWORD: synthetic-stage-c-review-only
+          POSTGRES_DB: ci_review
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_research -d ci_review"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Replay exact six historical Research migrations and run two-session ordering oracle
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGDATABASE: ci_review
+          PGUSER: ci_research
+          PGPASSWORD: synthetic-stage-c-review-only
+        run: |
+          set -euo pipefail
+          test -z "${DATABASE_URL:-}" && test -z "${SUPABASE_URL:-}" && test -z "${LEMON_SQUEEZY_API_KEY:-}"
+          python3 -m venv "$RUNNER_TEMP/stage-c-review-venv"
+          "$RUNNER_TEMP/stage-c-review-venv/bin/python" -m pip install --disable-pip-version-check --no-input 'psycopg[binary]==3.2.10'
+          "$RUNNER_TEMP/stage-c-review-venv/bin/python" -m py_compile docs/operations/research-ordering-stage-c/test_real_schema_ordering.py
+          "$RUNNER_TEMP/stage-c-review-venv/bin/python" docs/operations/research-ordering-stage-c/test_real_schema_ordering.py

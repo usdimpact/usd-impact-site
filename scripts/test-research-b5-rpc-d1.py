@@ -146,7 +146,9 @@ def issue_attach():
         eq(attach(i,k,provider="checkout-b1")["action"],"rejected","no second checkout ID")
         other=issuer(i,A[1],request="other-request-001")
         eq(other["action"],"reserved","second valid account intent")
-        eq(attach(i,other,provider="checkout-a1")["action"],"rejected","C6 duplicate checkout safe rejection")
+        collision=attach(i,other,provider="checkout-a1")
+        eq(collision["action"],"rejected","C6 duplicate checkout safe rejection")
+        eq(collision["code"],"checkout_reference_in_use","C6 safe typed collision")
         eq(one(root,"select checkout_proof_sha256 from research_checkout_guard.checkout_intents where id=%s::uuid",(k["intent_id"],)),hash256(k["checkout_key"]),"only hash stored")
     print("PASS B5 G1: account+catalog+mode+30m issuance, proof digest, one attached checkout",flush=True)
     return k

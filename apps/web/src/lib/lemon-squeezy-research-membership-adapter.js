@@ -118,6 +118,29 @@ function validateEnvironment(attributes, {
   }
 }
 
+function validateProviderCustomerBinding({ attributes, isInvoiceObject, subscription }) {
+  const trustedCustomerId = subscription.providerCustomerId;
+  // An invoice must be bound to an independently stored provider customer.
+  // A signed invoice customer_id or custom_data is never a substitute.
+  if (isInvoiceObject && (trustedCustomerId == null || !String(trustedCustomerId).trim())) {
+    const error = new Error('Lemon Squeezy invoice provider customer binding is unavailable.');
+    error.code = 'RESEARCH_WEBHOOK_CUSTOMER_BINDING_UNAVAILABLE';
+    error.status = 409;
+    throw error;
+  }
+  // Existing historical subscription-object events without a stored customer
+  // remain separate from invoices; Stage B must reconcile the missing binding.
+  if (trustedCustomerId == null || !String(trustedCustomerId).trim()) return;
+  const expected = stableIdentifier(trustedCustomerId, 'bound provider customer id');
+  const incoming = stableIdentifier(attributes.customer_id, 'signed provider customer id');
+  if (incoming !== expected) {
+    const error = new Error('Lemon Squeezy provider customer binding mismatch.');
+    error.code = 'RESEARCH_WEBHOOK_CUSTOMER_BINDING_MISMATCH';
+    error.status = 409;
+    throw error;
+  }
+}
+
 function providerEventId(eventName, data, attributes) {
   const timestamp = isoTimestamp(attributes.updated_at || attributes.created_at, 'provider event timestamp');
   return stableIdentifier(
@@ -347,6 +370,7 @@ export function inspectLemonSqueezyResearchMembershipWebhook({
   if (providerSubscriptionId !== subscription.providerSubscriptionId) {
     throw new Error('Lemon Squeezy subscription binding mismatch.');
   }
+  validateProviderCustomerBinding({ attributes, isInvoiceObject, subscription });
 
   const customData = meta.custom_data == null ? null : object(meta.custom_data, 'payload.meta.custom_data');
   if (customData?.usd_impact_account_id != null

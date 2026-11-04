@@ -1,5 +1,7 @@
+import { fingerprintResearchReceiptBusinessEvent } from './research-membership-receipt-business-fingerprint.js';
 import { verifyLemonSqueezyWebhookSignature } from './lemon-squeezy-adapter-scaffold.js';
 import {
+  LEMON_SQUEEZY_RESEARCH_EVENTS,
   inspectLemonSqueezyResearchMembershipWebhook,
   normalizeLemonSqueezyResearchMembershipWebhook,
   prepareLemonSqueezyResearchMembershipTransition,
@@ -157,6 +159,63 @@ function signedEnvelope(rawBody, signature, secret) {
   return { body, providerSubscriptionId };
 }
 
+// Signed, catalog-scoped evidence for opt-in Research receipt auditing.
+// This does not determine entitlement state or authorize a transaction.
+// The receipt ID must be stable across delivery-only meta.webhook_id changes.
+export function inspectSignedResearchWebhookReceiptEnvelope({
+  rawBody,
+  signature,
+  environment = process.env,
+}) {
+  const config = readConfig(environment);
+  const envelope = signedEnvelope(rawBody, signature, config.secret);
+  const payload = JSON.parse(envelope.body.toString('utf8'));
+  const meta = payload.meta;
+  const data = payload.data;
+  const attributes = data.attributes;
+  const eventType = text(meta?.event_name);
+  if (!LEMON_SQUEEZY_RESEARCH_EVENTS.includes(eventType)) {
+    throw replayError('RESEARCH_WEBHOOK_RECEIPT_EVENT_INVALID', 400);
+  }
+  const isInvoice = eventType.startsWith('subscription_payment_');
+  if (isInvoice !== (data.type === 'subscription-invoices')
+      || !['subscriptions', 'subscription-invoices'].includes(data.type)
+      || typeof data.id !== 'string' && typeof data.id !== 'number') {
+    throw replayError('RESEARCH_WEBHOOK_RECEIPT_OBJECT_INVALID', 400);
+  }
+  if (attributes.test_mode !== config.expectedTestMode
+      || String(attributes.store_id) !== String(config.storeId)
+      || (data.type === 'subscriptions'
+        && (String(attributes.product_id) !== String(config.productId)
+          || !config.variantIds.some((id) => String(id) === String(attributes.variant_id))))) {
+    throw replayError('RESEARCH_WEBHOOK_RECEIPT_CATALOG_INVALID', 409);
+  }
+  const dataId = String(data.id).trim();
+  if (!/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,254}$/.test(dataId)) {
+    throw replayError('RESEARCH_WEBHOOK_RECEIPT_OBJECT_INVALID', 400);
+  }
+  const eventDate = new Date(attributes.updated_at || attributes.created_at);
+  if (!Number.isFinite(eventDate.getTime())) {
+    throw replayError('RESEARCH_WEBHOOK_RECEIPT_CLOCK_INVALID', 400);
+  }
+  const providerEventId = `${PROVIDER}:${eventType}:${data.type}:${dataId}:${eventDate.toISOString()}`;
+  if (providerEventId.length > 255) {
+    throw replayError('RESEARCH_WEBHOOK_RECEIPT_EVENT_INVALID', 400);
+  }
+
+  // Stage B review-only: signed-provider business fields, not rotating portal
+  // URLs or delivery metadata. Flag-off execution never enters this function.
+  const semanticSha256 = fingerprintResearchReceiptBusinessEvent(payload);
+  return Object.freeze({
+    providerEventId,
+    providerSubscriptionId: envelope.providerSubscriptionId,
+    eventType,
+    semanticSha256,
+    supabaseUrl: config.supabaseUrl,
+    supabaseSecret: config.supabaseSecret,
+  });
+}
+
 function headers(secretKey) {
   return {
     Accept: 'application/json',
@@ -173,23 +232,29 @@ async function readJson(response) {
 
 async function loadExistingSubscription({ config, providerSubscriptionId, fetchImpl }) {
   const query = new URLSearchParams({
-    select: 'id,account_id,product_id,provider,provider_subscription_id,state,current_period_start,current_period_end,cancel_at_period_end',
+    select: 'id,account_id,product_id,provider,provider_subscription_id,provider_customer_id,state,current_period_start,current_period_end,cancel_at_period_end',
     provider: `eq.${PROVIDER}`,
     provider_subscription_id: `eq.${providerSubscriptionId}`,
     product_id: `eq.${RESEARCH_MEMBERSHIP_PRODUCT_ID}`,
     limit: '2',
   });
-  const response = await fetchImpl(`${config.supabaseUrl}/rest/v1/subscriptions?${query}`, {
-    headers: headers(config.supabaseSecret),
-  });
-  const payload = await readJson(response);
-  if (!response.ok) {
-    const error = new Error('Research Membership subscription lookup failed.');
-    error.code = 'RESEARCH_WEBHOOK_SUBSCRIPTION_LOOKUP_FAILED';
-    error.status = 502;
-    throw error;
+  let response;
+  let payload;
+  try {
+    response = await fetchImpl(`${config.supabaseUrl}/rest/v1/subscriptions?${query}`, {
+      headers: headers(config.supabaseSecret),
+    });
+    payload = await readJson(response);
+  } catch {
+    // A transient transport failure is not proof that a paid binding is absent.
+    throw replayError('RESEARCH_WEBHOOK_SUBSCRIPTION_LOOKUP_FAILED', 502);
   }
-  if (!Array.isArray(payload) || payload.length !== 1) {
+  if (!response?.ok || !Array.isArray(payload)) {
+    // A successful but malformed response is also an untrusted lookup failure,
+    // never a business-level missing/ambiguous subscription (409).
+    throw replayError('RESEARCH_WEBHOOK_SUBSCRIPTION_LOOKUP_FAILED', 502);
+  }
+  if (payload.length !== 1) {
     const error = new Error('Research Membership subscription binding was not uniquely resolved.');
     error.code = 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND';
     error.status = 409;
@@ -205,6 +270,7 @@ async function loadExistingSubscription({ config, providerSubscriptionId, fetchI
     productId: row.product_id,
     provider: row.provider,
     providerSubscriptionId: row.provider_subscription_id,
+    providerCustomerId: row.provider_customer_id,
     state: row.state,
     currentPeriodStart: row.current_period_start,
     currentPeriodEnd: row.current_period_end,

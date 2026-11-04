@@ -470,4 +470,61 @@ const insufficientEvidence = collectRepairEvidence({
 assert.equal(insufficientEvidence.permittedSourceUrls.length, 2, 'fail-closed source minimum is enforced before repair model calls');
 assert.match(sourceHandler, /audit every non-schedule highlight/i);
 
+
+// #840 regression: the Nov 4 generated article incorrectly described Nov 6 as
+// the EIA WPSR release date (the Nov 6 date is the next data-week ending date).
+// The agency schedules Nov 4 at 10:30 ET, then Nov 12 at noon ET.
+// Keep the reusable schedule INDEX ineligible as a publishedAt ledger source.
+function eiaWpsrCalendarFixture(date, editionDate = '2026-11-04', event = 'EIA Weekly Petroleum Status Report') {
+  return {
+    editionDate,
+    sources: [source('eia-dated', '2026-10-28', 'https://www.eia.gov/petroleum/supply/weekly/')],
+    highlights: [{
+      headline: 'EIA data from the previous dated weekly report',
+      development: 'A previously released weekly report gives historical energy context.',
+      whyItMatters: 'Oil inventories may affect WTI volatility.',
+      sourceIds: ['eia-dated'],
+    }],
+    catalysts: [{ event, date, sourceIds: ['eia-dated'] }],
+    summary: 'Historical weekly energy context, no same-day market reaction inferred.',
+    body: 'Educational only.',
+  };
+}
+assert.doesNotThrow(() => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-04')));
+assert.throws(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-06')),
+  /EIA WPSR date 2026-11-06 conflicts with the verified official 2026 release calendar/,
+  'the exact original Nov 4 generator error must be rejected',
+);
+assert.throws(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-11', '2026-11-09')),
+  /EIA WPSR date 2026-11-11 conflicts/,
+  'the Veterans Day holiday exception must displace the preceding Wednesday',
+);
+assert.doesNotThrow(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-12', '2026-11-09')),
+  'the EIA-authorized holiday-adjusted Thursday must remain eligible for separate source review',
+);
+assert.throws(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-05')),
+  /EIA WPSR date 2026-11-05 conflicts/,
+);
+assert.throws(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2027-01-06', '2026-12-31')),
+  /requires a new official-year review/,
+  'unreviewed next-year holiday schedules must not silently use a Wednesday heuristic',
+);
+assert.doesNotThrow(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-06', '2026-11-04', 'BLS Employment Situation')),
+  'unrelated official Friday catalysts must not be blocked by the EIA-only guard',
+);
+assert.throws(
+  () => validateEditorialBundle({
+    ...eiaWpsrCalendarFixture('2026-11-04'),
+    sources: [source('eia-dated', '2026-10-28', 'https://www.eia.gov/petroleum/supply/weekly/schedule.php')],
+  }),
+  /reusable schedule page without a page-level publication/,
+  'do not weaken the existing source-date fail-closed rule for a reusable agency schedule',
+);
+
 console.log('daily news editorial validation tests pass');

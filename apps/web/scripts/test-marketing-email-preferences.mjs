@@ -55,6 +55,15 @@ const progressWithdrawal = Object.freeze({
   withdrawn_at: '2026-09-11T21:00:00.000Z',
 });
 
+function assertOpaqueDatabaseRequest(url, options = {}) {
+  const parsed = new URL(url);
+  assert.equal(parsed.origin, environment.SUPABASE_URL);
+  assert.ok(parsed.pathname.startsWith('/rest/v1/'));
+  assert.equal(options.headers?.apikey, environment.SUPABASE_SECRET_KEY);
+  assert.equal(Object.hasOwn(options.headers || {}, 'Authorization'), false,
+    'Opaque sb_secret_ must never be sent as Bearer on consent PostgREST calls');
+}
+
 function response(payload, status = 200) {
   return {
     ok: status >= 200 && status < 300,
@@ -70,7 +79,8 @@ function response(payload, status = 200) {
   const result = await readMarketingEmailPreferences({
     email,
     environment,
-    fetchImpl: async (url) => {
+    fetchImpl: async (url, options = {}) => {
+      assertOpaqueDatabaseRequest(url, options);
       calls.push(url);
       if (url.includes('purpose=eq.weekly_newsletter')) return response([weeklyGrant]);
       if (url.includes('purpose=eq.learning_progress_updates')) {
@@ -99,6 +109,7 @@ const unsubscribeToken = createMarketingEmailUnsubscribeToken({
     withdrawnAt: '2026-09-12T08:00:00.000Z',
     environment,
     fetchImpl: async (url, options = {}) => {
+      assertOpaqueDatabaseRequest(url, options);
       call += 1;
       if (call === 1) {
         assert.match(url, /idempotency_key=eq\.consent%3Av1%3A/);
@@ -141,7 +152,8 @@ const unsubscribeToken = createMarketingEmailUnsubscribeToken({
   const result = await withdrawMarketingEmailPurpose({
     token: unsubscribeToken,
     environment,
-    fetchImpl: async () => {
+    fetchImpl: async (url, options = {}) => {
+      assertOpaqueDatabaseRequest(url, options);
       call += 1;
       if (call === 1) return response([weeklyGrant]);
       if (call === 2) return response([existingWithdrawal]);

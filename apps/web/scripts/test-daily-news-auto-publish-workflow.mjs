@@ -176,7 +176,8 @@ assert.match(mainDaily, /Explicitly dispatch trusted bounded publisher after sou
 assert.match(mainDaily, /gh workflow run daily-news-auto-publish\.yml[\s\S]*source_run_id=\$GITHUB_RUN_ID/);
 assert.match(mainDaily, /if ! gh workflow run daily-news-auto-publish\.yml[\s\S]*never retry automatically/);
 assert.match(runtime, /source = api\('actions\/runs\/' \+ id\)/);
-assert.match(runtime, /source\.repository\?\.full_name !== REPOSITORY[\s\S]*source\.event !== 'workflow_dispatch'/);
+assert.match(runtime, /source\.id !== id \|\| source\.head_branch !== 'main'/);
+assert.match(runtime, /!isAuthenticatedBotDispatch\(source, process\.env\.GITHUB_ACTOR\)/);
 assert.match(runtime, /source\.status === 'completed'[\s\S]*source\.conclusion !== 'success'/);
 assert.match(runtime, /explicit-source-uses-trusted-dispatch-controller/);
 assert.match(runtime, /process\.env\.GITHUB_REF !== 'refs\/heads\/main'/);

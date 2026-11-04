@@ -236,7 +236,7 @@ def expiry_and_immutable():
         intent=issuer(i,A[4])
         eq(intent["action"],"reserved","expiry setup")
         eq(attach(i,intent,provider="checkout-expire")["action"],"attached","expiry attached")
-        root.execute("update research_checkout_guard.checkout_intents set expires_at=created_at+interval '1 second' where id=%s::uuid",(intent["intent_id"],))
+        root.execute("update research_checkout_guard.checkout_intents set created_at=created_at-interval '4 minutes',expires_at=created_at-interval '4 minutes'+interval '1 second' where id=%s::uuid",(intent["intent_id"],))
         time.sleep(1.5)
         sha=hash256("signed after expiry")
         eq(observe(v,"sub-expiry",sha,A[4],intent["checkout_key"])["action"],"recorded","paid survives expiry")

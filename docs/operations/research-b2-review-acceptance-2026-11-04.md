@@ -55,3 +55,50 @@ The existing Library Pass shared receipt SQL remains untouched. An app-level rec
 **Proposed next order:** owner D1 secrets-free two-session PostgreSQL target; D2 safe writer-role model; review B-2 append-only journal and CAS; choose D3 interim #1107 checkout rule; defer D4 read credential; owner D5 merchant public buy-link inspection; D6 customer refund/relink protocol; D7 flag release only after independent QA and real DB receipts.
 
 **Status: Draft-only, test model only, all Production/Research P1/rights/F2/Score/email/publication/migration HOLDs preserved.** No real customer charge or Production incidence has been demonstrated by these offline tests.
+
+## A31 independent review follow-up (2026-11-04; new stacked Draft, no release)
+
+Claude independently reviewed exact parent Draft #1109 HEAD ae8df0bf81cb8341adf538c8f1d5fd0bc33184d0.
+Verdict: CODE-LEVEL PASS with receipt feature OFF; ACTIVATION BLOCK.
+RC2/RC3 stale finish, RC8 erased conflict, concurrent begin, terminal hash mismatch,
+unrelated invoice and missing real PostgreSQL proof are NOT fixed by v2.
+
+**G1 invoice billing reason:** Invoice billing_reason is read by the Research
+Lemon Squeezy adapter but omitted from v1. v2 includes it, with offline
+renewal-versus-initial negative tests.
+
+**G2 binding metadata:** Missing, explicit-null and empty meta.custom_data now
+produce distinct v2 fingerprints via a custom_data_state discriminator.
+All four known USD Impact binding fields remain protected; unknown
+usd_impact_* keys fail closed pending fingerprint review.
+
+**G3 pause and subscription price:** v2 hashes the full signed subscription
+pause object (or exact missing/null state) and first_subscription_item.price_id
+and quantity, with offline negative tests. The actual adapter STILL ignores
+pause as an entitlement transition. Separate signed-provider state mapping
+and owner policy are required; this is not live pause support.
+
+**Version upgrade:** v1 and v2 have different hashes. Flag remains OFF and
+no receipt was rewritten. Before any future activation, independently verify
+current environment settings and any historical v1 receipt rows; define
+a versioned migration/reconciliation protocol rather than silently accepting
+changed semantics as duplicates.
+
+**G5:** Companion comment-only .sql specifies proposed 90-second lease
+(unapproved), idempotent finish with completed-token digest, separate
+journal ownership, UPDATE/DELETE/TRUNCATE refusal triggers, privilege and
+RLS assertions, and approved retention/redaction requirements.
+No migration or real PostgreSQL execution occurred, and F2/F3 remain
+unimplemented. Owner D1-D7 HOLDs remain.
+
+**Daily #840 P0:** Read-only evidence finds Nov 4 generator #41808333994
+SUCCESS and one-file PR #1110 exact HEAD c011ddd1a3060e0b324a38f9b3474320880241fe
+open/unmerged. No auto-publisher run was visible in recent Actions runs.
+The candidate incorrectly dates next EIA petroleum report November 6,
+conflicting with EIA's standard Wednesday Nov 4 release and Nov 12
+holiday exception. Source and release gate approval required before
+any merge. Evidence: https://github.com/usdimpact/usd-impact-site/issues/840#issuecomment-6633022086
+
+**No release:** no SQL, roles/grants, workflows, cron, real Postgres,
+provider request, payment/refund, customer entitlement, email, Production
+settings, deployment or merge. Independent final-SHA review required.

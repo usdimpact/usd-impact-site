@@ -7,6 +7,7 @@ import BookPurchaseCTA from '../components/BookPurchaseCTA.astro';
 import FrameworkVisual from '../components/FrameworkVisual.astro';
 import ThreeDialsSnapshot from '../components/ThreeDialsSnapshot.astro';
 import WaitlistForm from '../components/WaitlistForm.astro';
+import StartHereFiveMinuteGuide from '../components/StartHereFiveMinuteGuide.astro';
 
 const checklistDownload = '/downloads/USD_Impact_Weekly_Dollar_Regime_Checklist_Lead_Magnet.pdf';
 const bookSlug = '/book/read-the-dollar-first';
@@ -38,6 +39,8 @@ const downloadPath = 'downloadPath' in entry.data && typeof entry.data.downloadP
   : checklistDownload;
 const isBookPage = normalizedSlug === bookSlug;
 const isThreeDialsPage = normalizedSlug === threeDialsSlug;
+// Explicit fail-closed gate: this module cannot render in Production.
+const isFiveMinuteGuidePreview = normalizedSlug === '/start-here' && process.env.VERCEL_ENV === 'preview';
 const spanishAlternateHref = SPANISH_ALTERNATE_BY_ENGLISH_SLUG[normalizedSlug] ?? null;
 const requestedPrimary = entry.data.ctaPrimary;
 const requestedPrimaryHref = entry.data.ctaPrimaryHref;
@@ -83,6 +86,7 @@ const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref =
     {entry.data.visual && <FrameworkVisual src={entry.data.visual} alt={entry.data.title} />}
     {isThreeDialsPage && <ThreeDialsSnapshot />}
     <Content />
+    {isFiveMinuteGuidePreview && <StartHereFiveMinuteGuide />}
     {isBookPage && <WaitlistForm initiallyHidden />}
     <ComplianceNote text={entry.data.complianceNote} />
     </div>

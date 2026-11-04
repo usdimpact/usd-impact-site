@@ -1,0 +1,187 @@
+---
+/** Isolated Preview-only lesson; importing this does not change the public site shell. */
+---
+<section id="five-minute-guide" class="five-minute-guide" data-five-minute-guide lang="en" aria-labelledby="five-minute-guide-title" hidden>
+  <div class="five-minute-guide__heading">
+    <div>
+      <p class="five-minute-guide__eyebrow">USD Impact · Learning Preview</p>
+      <h2 id="five-minute-guide-title" data-guide-title>Your first five minutes with the dollar</h2>
+      <p data-guide-intro>Five short steps. Hypothetical examples, not current quotes.</p>
+    </div>
+    <div class="five-minute-guide__language" role="group" aria-label="Language" data-language-group>
+      <button type="button" data-guide-locale="en" aria-pressed="true">English</button>
+      <button type="button" data-guide-locale="es-419" aria-pressed="false">Español</button>
+    </div>
+  </div>
+
+  <p class="five-minute-guide__notice" data-guide-notice>HYPOTHETICAL EXAMPLE — NOT CURRENT MARKET QUOTES</p>
+  <div class="five-minute-guide__progress">
+    <p data-guide-progress aria-live="polite">Step 1 of 5</p>
+    <progress value="1" max="5" data-guide-meter aria-label="Learning progress"></progress>
+  </div>
+
+  <div class="five-minute-guide__step" aria-labelledby="five-minute-guide-step-heading">
+    <h3 id="five-minute-guide-step-heading" data-guide-heading tabindex="-1">The dollar is more than DXY</h3>
+    <div data-guide-paragraphs></div>
+    <p class="five-minute-guide__example" data-guide-example></p>
+    <div data-guide-quiz hidden>
+      <fieldset class="five-minute-guide__question" data-guide-question="0">
+        <legend data-guide-question-label="0"></legend>
+        <div class="five-minute-guide__choices">
+          <label><input type="radio" name="five-guide-q0" value="yes" data-guide-answer="0" /><span data-guide-yes>Yes</span></label>
+          <label><input type="radio" name="five-guide-q0" value="no" data-guide-answer="0" /><span data-guide-no>No</span></label>
+        </div>
+        <p class="five-minute-guide__feedback" data-guide-feedback="0" aria-live="polite"></p>
+      </fieldset>
+      <fieldset class="five-minute-guide__question" data-guide-question="1">
+        <legend data-guide-question-label="1"></legend>
+        <div class="five-minute-guide__choices">
+          <label><input type="radio" name="five-guide-q1" value="yes" data-guide-answer="1" /><span data-guide-yes>Yes</span></label>
+          <label><input type="radio" name="five-guide-q1" value="no" data-guide-answer="1" /><span data-guide-no>No</span></label>
+        </div>
+        <p class="five-minute-guide__feedback" data-guide-feedback="1" aria-live="polite"></p>
+      </fieldset>
+      <p class="five-minute-guide__complete" data-guide-completion role="status" aria-live="polite" aria-atomic="true"></p>
+    </div>
+  </div>
+
+  <nav class="five-minute-guide__actions" aria-label="Learning guide navigation" data-guide-navigation>
+    <button type="button" data-guide-action="back" hidden>Previous</button>
+    <button type="button" data-guide-action="next">Next</button>
+    <button type="button" data-guide-action="restart" hidden>Restart</button>
+    <a href="#main-content" data-guide-return>Return to the Start Here article</a>
+  </nav>
+  <p class="five-minute-guide__disclaimer" data-guide-disclaimer>Educational content only. This is not investment advice or a recommendation to buy or sell.</p>
+</section>
+
+<script>
+  import { COPY, TOTAL_STEPS, initialState, isComplete, questionFeedback, updateState } from '../lib/five-minute-guide-model';
+
+  const root = document.querySelector('[data-five-minute-guide]');
+  if (root instanceof HTMLElement) {
+    const container = root;
+    let state = initialState();
+    const get = (selector: string): Element | null => container.querySelector(selector);
+    const write = (selector: string, value: string): void => {
+      const el = get(selector);
+      if (el) el.textContent = value;
+    };
+
+    function render({ focusHeading = false, rerenderStep = true }: { focusHeading?: boolean; rerenderStep?: boolean } = {}): void {
+      const copy = COPY[state.locale];
+      const step = copy.steps[state.step];
+      container.lang = state.locale;
+      write('[data-guide-title]', copy.title);
+      write('[data-guide-intro]', copy.intro);
+      write('[data-guide-notice]', copy.hypothetical);
+      write('[data-guide-progress]', `${copy.stepLabel} ${state.step + 1} ${copy.ofLabel} ${TOTAL_STEPS}`);
+      write('[data-guide-heading]', step.heading);
+      write('[data-guide-disclaimer]', copy.disclaimer);
+      write('[data-guide-return]', copy.backToArticle);
+      const group = get('[data-language-group]');
+      if (group) group.setAttribute('aria-label', copy.languageLabel);
+      container.querySelectorAll('[data-guide-locale]').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.getAttribute('data-guide-locale') === state.locale));
+      });
+      const meter = get('[data-guide-meter]');
+      if (meter instanceof HTMLProgressElement) {
+        meter.value = state.step + 1;
+        meter.setAttribute('aria-label', `${copy.stepLabel} ${state.step + 1} ${copy.ofLabel} ${TOTAL_STEPS}`);
+      }
+      const paragraphs = get('[data-guide-paragraphs]');
+      if (rerenderStep && paragraphs) {
+        paragraphs.replaceChildren(...step.paragraphs.map((value) => {
+          const node = document.createElement('p');
+          node.textContent = value;
+          return node;
+        }));
+      }
+      write('[data-guide-example]', step.evidence);
+      const example = get('[data-guide-example]');
+      if (example instanceof HTMLElement) example.hidden = !step.evidence;
+      const showQuiz = state.step === TOTAL_STEPS - 1;
+      const quiz = get('[data-guide-quiz]');
+      if (quiz instanceof HTMLElement) quiz.hidden = !showQuiz;
+      copy.questions.forEach((q, index) => {
+        write(`[data-guide-question-label="${index}"]`, q.question);
+        write(`[data-guide-feedback="${index}"]`, questionFeedback(state, index));
+      });
+      container.querySelectorAll('[data-guide-yes]').forEach((el) => { el.textContent = copy.yes; });
+      container.querySelectorAll('[data-guide-no]').forEach((el) => { el.textContent = copy.no; });
+      container.querySelectorAll('[data-guide-answer]').forEach((input) => {
+        if (!(input instanceof HTMLInputElement)) return;
+        const i = Number(input.getAttribute('data-guide-answer'));
+        input.checked = state.answers[i] === input.value;
+      });
+      write('[data-guide-completion]', isComplete(state) ? copy.done : '');
+      const previous = get('[data-guide-action="back"]');
+      const next = get('[data-guide-action="next"]');
+      const restart = get('[data-guide-action="restart"]');
+      if (previous instanceof HTMLElement) { previous.hidden = state.step === 0; previous.textContent = copy.previous; }
+      if (next instanceof HTMLElement) { next.hidden = showQuiz; next.textContent = copy.next; }
+      if (restart instanceof HTMLElement) { restart.hidden = !showQuiz; restart.textContent = copy.restart; }
+      if (focusHeading) (get('[data-guide-heading]') as HTMLElement | null)?.focus();
+    }
+
+    container.querySelectorAll('[data-guide-locale]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const value = button.getAttribute('data-guide-locale');
+        state = updateState(state, { type: 'LOCALE', value });
+        render();
+      });
+    });
+    container.querySelectorAll('[data-guide-action]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const action = button.getAttribute('data-guide-action');
+        if (action !== 'back' && action !== 'next' && action !== 'restart') return;
+        const type = action === 'back' ? 'BACK' : action === 'next' ? 'NEXT' : 'RESTART';
+        state = updateState(state, { type });
+        render({ focusHeading: true });
+      });
+    });
+    container.querySelectorAll('[data-guide-answer]').forEach((input) => {
+      input.addEventListener('change', () => {
+        if (!(input instanceof HTMLInputElement)) return;
+        state = updateState(state, {
+          type: 'ANSWER',
+          index: Number(input.getAttribute('data-guide-answer')),
+          value: input.value,
+        });
+        render({ rerenderStep: false });
+      });
+    });
+    container.hidden = false; // No-JS fallback: the original Start Here article remains fully readable.
+    render();
+  }
+</script>
+
+<style>
+  .five-minute-guide { margin-block: 3rem; padding: clamp(1.25rem, 3vw, 2.5rem); border: 1px solid #d8dee6; border-radius: 18px; background: #fff; box-shadow: 0 10px 28px rgba(2,10,20,.07); }
+  .five-minute-guide[hidden], .five-minute-guide [hidden] { display: none !important; }
+  .five-minute-guide__heading { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+  .five-minute-guide__heading h2 { margin: .15rem 0 1rem; }
+  .five-minute-guide__heading p { max-width: 70ch; }
+  .five-minute-guide__eyebrow { color: var(--gold-text); font-weight: 800; font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; }
+  .five-minute-guide__language { display: inline-flex; flex-wrap: wrap; gap: .4rem; }
+  .five-minute-guide button { font: inherit; min-height: 44px; cursor: pointer; padding: .55rem .85rem; border: 1px solid var(--slate); border-radius: 10px; background: var(--white); color: var(--navy); }
+  .five-minute-guide button[aria-pressed="true"], .five-minute-guide button[data-guide-action="next"], .five-minute-guide button[data-guide-action="restart"] { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
+  .five-minute-guide :is(a,button,input):focus-visible { outline: 3px solid var(--gold-text); outline-offset: 3px; }
+  .five-minute-guide__notice { display: inline-block; padding: .35rem .5rem; border-radius: 8px; background: #fff5db; color: #79540b; font-size: .83rem; font-weight: 800; }
+  .five-minute-guide__progress { margin: 1.25rem 0; }
+  .five-minute-guide__progress p { margin: 0 0 .4rem; font-weight: 750; }
+  .five-minute-guide__progress progress { width: 100%; height: .65rem; accent-color: var(--navy); }
+  .five-minute-guide__step h3 { margin: 1.25rem 0 .85rem; }
+  .five-minute-guide__step > div > p { max-width: 75ch; }
+  .five-minute-guide__example { padding: 1rem; border-left: 4px solid var(--gold); background: #f5f7fa; color: var(--graphite); }
+  .five-minute-guide__question { margin: 1rem 0; padding: 1rem; border: 1px solid #d8dee6; border-radius: 14px; min-width: 0; }
+  .five-minute-guide__question legend { font-weight: 800; color: var(--navy); padding: 0 .4rem; }
+  .five-minute-guide__choices { display: flex; gap: .65rem; flex-wrap: wrap; }
+  .five-minute-guide__choices label { display: inline-flex; min-height: 44px; min-width: 72px; align-items: center; gap: .5rem; padding: .45rem .7rem; border-radius: 8px; cursor: pointer; }
+  .five-minute-guide__choices input { width: 20px; height: 20px; accent-color: var(--navy); }
+  .five-minute-guide__feedback { margin: .5rem 0 0; color: var(--navy); }
+  .five-minute-guide__complete:not(:empty) { font-weight: 750; color: var(--navy); }
+  .five-minute-guide__actions { display: flex; gap: .65rem; flex-wrap: wrap; align-items: center; margin-top: 1.25rem; }
+  .five-minute-guide__actions a { margin-left: auto; font-size: .9rem; }
+  .five-minute-guide__disclaimer { font-size: .88rem; color: var(--slate); margin-top: 1.25rem; }
+  @media (max-width: 600px) { .five-minute-guide__actions a { width: 100%; margin: .25rem 0 0; } .five-minute-guide__language { width: 100%; } }
+</style>

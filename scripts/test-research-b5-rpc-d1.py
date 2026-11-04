@@ -316,11 +316,14 @@ def real_app_js_postgres_bridge():
     account="88888888-8888-4888-8888-888888888888"
     with db() as root:
         root.execute("insert into public.profiles(account_id,status) values(%s::uuid,'active')",(account,))
+    preissue_time=(datetime.datetime.now(datetime.timezone.utc)
+                  -datetime.timedelta(seconds=2)).isoformat()
     with db("issuer") as issuer_conn:
         issued=issuer(issuer_conn,account,request="b5-real-js-bridge-request-001")
         eq(issued["action"],"reserved","real JS bridge issuer precommitted")
     env=os.environ.copy()
     env["RESEARCH_B5_ISSUED_INTENT_JSON"]=json.dumps(issued,default=str)
+    env["RESEARCH_B5_PREISSUE_CLIENT_TIME"]=preissue_time
     app=ROOT/"apps/web"
     script=app/"scripts/export-research-b5-real-rpc-vectors.mjs"
     output=subprocess.run(["node",str(script)],cwd=app,env=env,

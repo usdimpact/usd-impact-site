@@ -76,7 +76,7 @@ def seed(c,i, *, state='active',watermark=A,period_end=END, library=False):
       (id,account_id,product_id,provider,provider_subscription_id,provider_customer_id,
        provider_price_id,billing_interval,state,current_period_start,current_period_end,metadata)
        values (%s,%s,'research-membership','lemon-squeezy',%s,%s,%s,'monthly',%s,%s,%s,
-       jsonb_build_object('review_store_id',%s,'review_variant_id',%s,'review_binding_fingerprint',%s))""",
+       jsonb_build_object('review_store_id',%s::text,'review_variant_id',%s::text,'review_binding_fingerprint',%s::text))""",
       (sid,acc,str(1000+i),CUSTOMER,VARIANT,state,START,period_end,STORE,VARIANT,BINDING))
     c.execute("""insert into public.entitlements
       (id,account_id,subscription_id,product_id,state,starts_at,ends_at)

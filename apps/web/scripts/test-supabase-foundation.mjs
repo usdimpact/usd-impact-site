@@ -3,6 +3,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import {
   SupabaseConfigurationError,
   SupabaseRequestError,
+  buildSupabaseRestHeaders,
   exportOwnAccount,
   getVerifiedSupabaseUser,
   readAccountAccessState,
@@ -23,6 +24,41 @@ const privilegedConfig = Object.freeze({
   ...publicConfig,
   secretKey: 'sb_secret_abcdefghijklmnopqrstuvwxyz',
 });
+
+// Opaque keys authorize at the Supabase API gateway through apikey only.
+// For authenticated/RLS requests the explicit session JWT remains Bearer.
+// These are offline header contracts, not authorization to read anonymous rows.
+for (const key of [publicConfig.publishableKey, privilegedConfig.secretKey]) {
+  const headers = buildSupabaseRestHeaders({ apiKey: key });
+  assert.equal(headers.apikey, key);
+  assert.equal(Object.hasOwn(headers, 'Authorization'), false,
+    'opaque API keys must never be sent as Bearer JWTs');
+  assert.equal(headers.Accept, 'application/json');
+  assert.equal(headers['Content-Type'], 'application/json');
+}
+const userHeaders = buildSupabaseRestHeaders({
+  apiKey: publicConfig.publishableKey,
+  accessToken,
+  headers: { Prefer: 'return=representation' },
+});
+assert.equal(userHeaders.apikey, publicConfig.publishableKey);
+assert.equal(userHeaders.Authorization, `Bearer ${accessToken}`);
+assert.equal(userHeaders.Prefer, 'return=representation');
+const legacyJwt = 'eyJ' + 'b'.repeat(45);
+const legacyHeaders = buildSupabaseRestHeaders({ apiKey: legacyJwt });
+assert.equal(legacyHeaders.Authorization, `Bearer ${legacyJwt}`);
+for (const invalid of [null, undefined, 0, {}, '']) {
+  assert.throws(
+    () => buildSupabaseRestHeaders({ apiKey: invalid }),
+    (error) => error instanceof SupabaseConfigurationError,
+  );
+}
+for (const badToken of [false, [], {}, '']) {
+  assert.throws(
+    () => buildSupabaseRestHeaders({ apiKey: publicConfig.publishableKey, accessToken: badToken }),
+    (error) => error instanceof SupabaseConfigurationError,
+  );
+}
 
 const response = (status, body) => new Response(body == null ? '' : JSON.stringify(body), {
   status,

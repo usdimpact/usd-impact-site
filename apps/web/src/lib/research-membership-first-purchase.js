@@ -337,6 +337,27 @@ async function issueResearchMembershipCheckoutIntent({
   if (!response.ok) {
     fail('Research Membership trusted checkout issuer is unavailable.', 'RESEARCH_CHECKOUT_INTENT_UNAVAILABLE', 503);
   }
+  // Expected customer/checkout state is a 409, not a false infrastructure 503.
+  // No existing one-time proof is returned and no provider call follows.
+  if (data?.action === 'rejected') {
+    switch (text(data.code)) {
+      case 'checkout_request_replayed':
+        fail('This Research Membership request key was already used.',
+          'RESEARCH_CHECKOUT_REQUEST_REPLAYED', 409);
+      case 'existing_checkout_intent':
+        fail('A Research Membership checkout reservation is still active.',
+          'RESEARCH_CHECKOUT_RESERVATION_ACTIVE', 409);
+      case 'already_subscribed_or_entitled':
+        fail('This account already has a Research Membership record or entitlement.',
+          'RESEARCH_CHECKOUT_ALREADY_ENTITLED', 409);
+      case 'account_unavailable':
+        fail('This account is not currently eligible for Research Membership checkout.',
+          'RESEARCH_CHECKOUT_ACCOUNT_INELIGIBLE', 409);
+      default:
+        fail('Research Membership checkout issuer rejected its request.',
+          'RESEARCH_CHECKOUT_INTENT_MISMATCH', 503);
+    }
+  }
   if (!data || data.action !== 'reserved'
       || !UUID_PATTERN.test(text(data.intent_id))
       || !ISSUED_CHECKOUT_PROOF_PATTERN.test(text(data.checkout_key))

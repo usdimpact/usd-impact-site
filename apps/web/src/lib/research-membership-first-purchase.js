@@ -210,11 +210,11 @@ function variantForInterval(config, billingInterval) {
   fail('Research Membership billing interval must be monthly or annual.', 'RESEARCH_CHECKOUT_INTERVAL_INVALID');
 }
 
-export function buildResearchMembershipCheckoutRequest({
+function buildResearchMembershipCheckoutRequestFromValidatedKey({
   config,
   user,
   billingInterval,
-  idempotencyKey,
+  validatedCheckoutKey,
   now = new Date(),
   expiresAt = null,
 }) {
@@ -227,7 +227,9 @@ export function buildResearchMembershipCheckoutRequest({
     fail('Research Membership Test checkout is restricted to the configured QA account.', 'RESEARCH_CHECKOUT_QA_ACCOUNT_REQUIRED', 403);
   }
   const selected = variantForInterval(config, billingInterval);
-  const key = checkoutKey(idempotencyKey);
+  // Already validated by one of two disjoint callers: ordinary client-key
+  // helper or the authenticated DB-issued base64url proof path.
+  const key = validatedCheckoutKey;
   const checkoutExpiresAt = expiresAt == null
     ? new Date(new Date(now).getTime() + 30 * 60 * 1000).toISOString()
     : isoTimestamp(expiresAt, 'checkout expires_at');
@@ -266,6 +268,20 @@ export function buildResearchMembershipCheckoutRequest({
         variant: { data: { type: 'variants', id: String(selected.variantId) } },
       },
     },
+  });
+}
+
+// The exported helper accepts client-generated idempotency hints, not an
+// authoritative account-binding proof. Preserve its stricter first-character
+// policy. The live checkout path uses the private helper after DB issuance.
+export function buildResearchMembershipCheckoutRequest({
+  config, user, billingInterval, idempotencyKey,
+  now = new Date(), expiresAt = null,
+}) {
+  return buildResearchMembershipCheckoutRequestFromValidatedKey({
+    config, user, billingInterval,
+    validatedCheckoutKey: checkoutKey(idempotencyKey),
+    now, expiresAt,
   });
 }
 
@@ -453,8 +469,9 @@ export async function createResearchMembershipCheckout({
     config, userId, variantId: selected.variantId, billingInterval: selected.interval,
     clientRequestKey: idempotencyKey, fetchImpl, clock,
   });
-  const requestBody = buildResearchMembershipCheckoutRequest({
-    config, user, billingInterval, idempotencyKey: intent.checkoutKey, now,
+  const requestBody = buildResearchMembershipCheckoutRequestFromValidatedKey({
+    config, user, billingInterval,
+    validatedCheckoutKey: issuedCheckoutProof(intent.checkoutKey), now,
     expiresAt: intent.expiresAt,
   });
 

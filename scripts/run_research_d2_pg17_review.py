@@ -158,11 +158,11 @@ def seed_library_pass():
     user_id = str(uuid.uuid4())
     with conn() as c:
         c.execute('INSERT INTO auth.users(id,email) VALUES (%s::uuid,%s)',
-                  (user_id, 'd2-library-pass@example.invalid'))
+                  (user_id, 'd2-guided-pass@example.invalid'))
         c.execute('''INSERT INTO public.entitlements(account_id,product_id,state,starts_at,ends_at)
-                  VALUES (%s::uuid,'library-pass','active',clock_timestamp(),NULL)''', (user_id,))
+                  VALUES (%s::uuid,'read-the-dollar-first-guided-interactive-edition','active',clock_timestamp(),NULL)''', (user_id,))
         original = c.execute('''SELECT md5(e::text) FROM public.entitlements e
-                WHERE account_id=%s::uuid AND product_id='library-pass' ''',(user_id,)).fetchone()[0]
+                WHERE account_id=%s::uuid AND product_id='read-the-dollar-first-guided-interactive-edition' ''',(user_id,)).fetchone()[0]
     assert original
     print('PASS pre-M1 independent synthetic Library Pass entitlement seeded',flush=True)
     return (user_id, original)
@@ -172,7 +172,7 @@ def assert_library_pass_untouched(snapshot_value):
     user_id, original = snapshot_value
     with conn() as c:
         rows = c.execute('''SELECT md5(e::text) FROM public.entitlements e
-            WHERE account_id=%s::uuid AND product_id='library-pass' ''',(user_id,)).fetchall()
+            WHERE account_id=%s::uuid AND product_id='read-the-dollar-first-guided-interactive-edition' ''',(user_id,)).fetchall()
         research = c.execute('''SELECT count(*) FROM public.entitlements
             WHERE product_id='research-membership' ''').fetchone()[0]
     assert rows == [(original,)], f'Library Pass entitlement changed: {rows}'
@@ -184,7 +184,7 @@ def evidence_structure_fingerprint():
     """Stable independent columns, constraints, triggers and ACL readback."""
     result = []
     with conn() as c:
-        for name in ('signed_paid_observations','signed_paid_deliveries'):
+        for name in ('signed_paid_observations','signed_paid_deliveries','conflict_evidence','checkout_intents'):
             row = c.execute('''SELECT c.relname, c.relacl::text, c.relrowsecurity,
                 c.relforcerowsecurity, pg_get_userbyid(c.relowner)
               FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n
@@ -208,7 +208,7 @@ def evidence_structure_fingerprint():
 def evidence_snapshot():
     with conn() as c:
         result={}
-        for table in ('signed_paid_observations','signed_paid_deliveries'):
+        for table in ('signed_paid_observations','signed_paid_deliveries','conflict_evidence','checkout_intents'):
             result[table]=dict(c.execute(
                 f'SELECT id::text, md5(t::text) FROM research_checkout_guard.{table} t ORDER BY id'
             ).fetchall())
@@ -218,12 +218,37 @@ def evidence_snapshot():
 
 def assert_evidence_immutable(before,after,minimum_added=0):
     assert before['structure']==after['structure'], 'Evidence structure/ACL changed during R1'
-    for table in ('signed_paid_observations','signed_paid_deliveries'):
+    for table in ('signed_paid_observations','signed_paid_deliveries','conflict_evidence','checkout_intents'):
         previous=before[table]
         current=after[table]
-        assert all(current.get(k)==v for k,v in previous.items()), f'Changed/missing evidence in {table}'
-        assert len(current)>=len(previous)+minimum_added, f'Lost custody in {table}'
-    print('PASS immutable evidence rows and catalogue structure across R1',flush=True)
+        assert all(current.get(k)==v for k,v in previous.items()), f'Changed/missing evidence or used intent in {table}'
+        if table in ('signed_paid_observations','signed_paid_deliveries'):
+            assert len(current)>=len(previous)+minimum_added, f'Lost signed-paid custody in {table}'
+        else:
+            # R1 must neither change old conflict records nor consume/create checkout reservations.
+            assert current==previous, f'Conflict evidence or checkout reservations changed in {table}'
+    print('PASS immutable paid, conflict, consumed-intent rows and catalogue across R1',flush=True)
+
+
+def seed_r1_nonvacuous_invariants():
+    """Commit one synthetic conflict and require consumed checkout reservations before stop."""
+    with conn() as c:
+        observation = c.execute(
+            'SELECT id FROM research_checkout_guard.signed_paid_observations ORDER BY recorded_at LIMIT 1'
+        ).fetchone()
+        assert observation, 'Missing signed observation to seed synthetic conflict'
+        conflict_hash = hashlib.sha256(b'd2-synthetic-pre-r1-conflict').hexdigest()
+        result = c.execute(
+            "SELECT research_checkout_guard.hold_binding_conflict(%s::uuid,'d2-review-conflict-snapshot',%s)",
+            (observation[0],conflict_hash)
+        ).fetchone()[0]
+        assert result.get('action')=='conflict' and result.get('conflict_evidence_id'), result
+        conflict_count = c.execute('SELECT count(*) FROM research_checkout_guard.conflict_evidence').fetchone()[0]
+        consumed_count = c.execute(
+            "SELECT count(*) FROM research_checkout_guard.checkout_intents WHERE state='consumed' AND consumed_at IS NOT NULL"
+        ).fetchone()[0]
+        assert conflict_count>=1 and consumed_count>=2, (conflict_count,consumed_count)
+    print('PASS non-vacuous conflict evidence and consumed checkout reservations seeded before R1',flush=True)
 
 
 def expect_42501(label,callback):
@@ -485,7 +510,10 @@ def run():
     psql(fixture('M2_A46.sql'), label='M2 guarded legacy binder cutover')
     assert first("SELECT has_function_privilege('service_role','public.bind_research_membership_subscription(uuid,text,text,text,text,public.subscription_billing_interval,timestamptz,jsonb)','EXECUTE')") is False
     print('PASS M2 retired only synthetic legacy binder',flush=True)
+    seed_r1_nonvacuous_invariants()
     before_r1 = evidence_snapshot()
+    assert len(before_r1['conflict_evidence'])>=1, 'Empty conflict evidence before R1'
+    assert len(before_r1['checkout_intents'])>=2, 'Missing used checkout reservations before R1'
     psql(fixture('R1_A46.sql'),label='R1 isolated kill switch')
     assert first("SELECT has_function_privilege('review_checkout_issuer','public.issue_research_membership_checkout_intent(uuid,text,text,text,text,boolean,text)','EXECUTE')") is False
     assert first("SELECT has_function_privilege('review_checkout_verifier','public.observe_signed_research_subscription_created(text,text,text,text,text,text,boolean,timestamptz,text,uuid,text,text,text)','EXECUTE')") is True

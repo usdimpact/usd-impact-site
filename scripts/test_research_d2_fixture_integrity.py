@@ -19,9 +19,9 @@ RUNNER = 'scripts/run_research_d2_pg17_review.py'
 ARCHIVE = ROOT / 'docs/operations/research-d2-pg17-review-fixtures.tar.xz.b64'
 
 
-def parse_manifest():
+def parse_manifest(path=MANIFEST):
     rows = []
-    for line in MANIFEST.read_text(encoding='utf-8').splitlines():
+    for line in path.read_text(encoding='utf-8').splitlines():
         match = re.fullmatch(r'([0-9a-f]{64})  ([A-Za-z0-9_./-]+)', line)
         assert match, 'Invalid checksum record'
         digest, path = match.groups()
@@ -90,7 +90,24 @@ def main():
             raise AssertionError('Unexpected fixture went undetected')
         unexpected.unlink()
         verify(isolated, rows)
-    print('PASS 12 plain source SHA256 checks, 12/12 corruption negatives, missing/extra member negatives', flush=True)
+
+        # A syntactically valid changed manifest hash must fail, not merely changed source bytes.
+        first_digest = rows[0][0]
+        mutated_digest = ('0' if first_digest[0] != '0' else '1') + first_digest[1:]
+        tampered_manifest = isolated / 'manifest-line-tampered.txt'
+        tampered_manifest.write_text(
+            MANIFEST.read_text(encoding='utf-8').replace(first_digest, mutated_digest, 1),
+            encoding='utf-8'
+        )
+        try:
+            verify(isolated, parse_manifest(tampered_manifest))
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError('Modified manifest hash line went undetected')
+        tampered_manifest.unlink()
+        verify(isolated, rows)
+    print('PASS 12 plain source SHA256 checks, 12/12 corruption negatives, missing/extra member and manifest-line tamper negatives', flush=True)
 
 
 if __name__ == '__main__':

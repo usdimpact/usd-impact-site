@@ -154,11 +154,14 @@ def late_webhook_real_main():
 def js_bridge_real_main():
     identity="88888888-8888-4888-8888-888888888888"
     account(identity)
+    preissue_time=(datetime.datetime.now(datetime.timezone.utc)
+                  -datetime.timedelta(seconds=2)).isoformat()
     with local_connection("issuer") as i:
         issued=base.issuer(i,identity,request="b5-real-js-bridge-request-001")
         check(issued["action"],"reserved","bridge real-main issuer")
     env=os.environ.copy()
     env["RESEARCH_B5_ISSUED_INTENT_JSON"]=json.dumps(issued,default=str)
+    env["RESEARCH_B5_PREISSUE_CLIENT_TIME"]=preissue_time
     runner=subprocess.run(["node","scripts/export-research-b5-real-rpc-vectors.mjs"],
         cwd=ROOT/"apps/web",env=env,capture_output=True,text=True,timeout=45)
     if runner.returncode:

@@ -2,6 +2,7 @@
 """B5 exact-app-RPC SQL test using a disposable real PostgreSQL 16 server only."""
 import os, json, time, uuid, hashlib, concurrent.futures, datetime
 EVENT_OCCURRED_AT={}
+BUSINESS_FINGERPRINT={}
 from pathlib import Path
 import psycopg
 ROOT=Path(__file__).resolve().parents[1]
@@ -31,18 +32,21 @@ def issuer(c,account,request=None,variant="314",mode=True):
 def attach(c,intent,provider="checkout_1",proof=None):
     return one(c,"select public.attach_research_membership_checkout_intent(%s::uuid,%s,%s)",
       (intent["intent_id"],proof or intent["checkout_key"],provider))
-def observe(c,sub,sha,account=None,proof=None,customer="cust_1"):
+def observe(c,sub,sha,account=None,proof=None,customer="cust_1",business=None):
     occurred=EVENT_OCCURRED_AT.setdefault(sub,datetime.datetime.now(datetime.timezone.utc))
+    fingerprint=BUSINESS_FINGERPRINT.setdefault(sub,hash256("v3-business:"+sub)) if business is None else business
     return one(c,"select public.observe_signed_research_subscription_created("
        "'lemon-squeezy',%s,%s,'42','research-membership','314',true,"
-       "%s::timestamptz,%s,%s::uuid,%s)",
-       (sub,customer,occurred,sha,account,hash256(proof) if proof else None))
-def bind(c,account,sub,sha,proof,customer="cust_1"):
+       "%s::timestamptz,%s,%s::uuid,%s,%s,%s)",
+       (sub,customer,occurred,sha,account,hash256(proof) if proof else None,
+        "research-receipt-business-v3",fingerprint))
+def bind(c,account,sub,sha,proof,customer="cust_1",business=None):
     occurred=EVENT_OCCURRED_AT.get(sub,datetime.datetime.now(datetime.timezone.utc))
+    fingerprint=BUSINESS_FINGERPRINT.get(sub,hash256("v3-business:"+sub)) if business is None else business
     return one(c,"select public.bind_research_membership_with_checkout_intent("
        "%s::uuid,'lemon-squeezy',%s,%s,'314','monthly',"
-       "%s::timestamptz,%s,%s,'42','research-membership',true)",
-       (account,sub,customer,occurred,proof,sha))
+       "%s::timestamptz,%s,%s,'42','research-membership',true,%s,%s)",
+       (account,sub,customer,occurred,proof,sha,"research-receipt-business-v3",fingerprint))
 def refused(c,sql,args=()):
     try: c.execute(sql,args)
     except psycopg.Error as e: eq(e.sqlstate,"42501","must deny mutation")
@@ -96,8 +100,8 @@ def setup():
 def roles():
     funcs=["issue_research_membership_checkout_intent(uuid,text,text,text,text,boolean,text)",
       "attach_research_membership_checkout_intent(uuid,text,text)",
-      "observe_signed_research_subscription_created(text,text,text,text,text,text,boolean,timestamptz,text,uuid,text)",
-      "bind_research_membership_with_checkout_intent(uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean)"]
+      "observe_signed_research_subscription_created(text,text,text,text,text,text,boolean,timestamptz,text,uuid,text,text,text)",
+      "bind_research_membership_with_checkout_intent(uuid,text,text,text,text,text,timestamptz,text,text,text,text,boolean,text,text)"]
     with db() as root,db("issuer") as i,db("verifier") as v,db("binder") as b:
         for role in ("anon","authenticated","public"):
             for f in funcs:
@@ -106,9 +110,9 @@ def roles():
             eq(one(root,"select has_schema_privilege(%s,'research_checkout_guard','USAGE')",(role,)),False,"private schema")
         eq(one(root,"select has_function_privilege('service_role',%s,'EXECUTE')",
            ("public.bind_research_membership_subscription(uuid,text,text,text,text,public.subscription_billing_interval,timestamptz,jsonb)",)),False,"C12 old binder revoked")
-        refused(i,"select public.observe_signed_research_subscription_created('lemon-squeezy','forged','cust','42','research-membership','314',true,now(),%s,null,null)",("a"*64,))
+        refused(i,"select public.observe_signed_research_subscription_created('lemon-squeezy','forged','cust','42','research-membership','314',true,now(),%s,null,null,'research-receipt-business-v3',%s)",("a"*64,"c"*64))
         refused(v,"select public.issue_research_membership_checkout_intent(%s::uuid,'research-membership','42','314','monthly',true,'request123456')",(A[0],))
-        refused(b,"select public.observe_signed_research_subscription_created('lemon-squeezy','forged','cust','42','research-membership','314',true,now(),%s,null,null)",("b"*64,))
+        refused(b,"select public.observe_signed_research_subscription_created('lemon-squeezy','forged','cust','42','research-membership','314',true,now(),%s,null,null,'research-receipt-business-v3',%s)",("b"*64,"c"*64))
         eq(one(root,"select count(*) from research_checkout_guard.signed_paid_observations"),0,"no forged observation")
     print("PASS B5 role isolation: public/anon/authenticated and cross-role EXECUTE denied",flush=True)
 def issue_attach():
@@ -140,21 +144,25 @@ def custody_and_bind(k):
         sha=hash256("signed provider subscription_created alice")
         eq(observe(v,"sub-alice",sha,A[0],k["checkout_key"])["action"],"recorded","committed signed observation")
         eq(observe(v,"sub-alice",sha,A[0],k["checkout_key"])["action"],"already_recorded","signed retry")
-        eq(observe(v,"sub-alice",hash256("changed bytes"),A[0],k["checkout_key"])["action"],"conflict_recorded","immutable signed identity")
+        rotated=hash256("signed retry with changed presentation URL")
+        eq(observe(v,"sub-alice",rotated,A[0],k["checkout_key"])["action"],"already_recorded","C5 signed business retry")
+        eq(one(root,"select count(*) from research_checkout_guard.signed_paid_deliveries d join research_checkout_guard.signed_paid_observations o on o.id=d.paid_observation_id where o.provider_subscription_id='sub-alice'"),2,"C5 both signed raw deliveries journalled")
+        eq(observe(v,"sub-alice",hash256("altered business raw"),A[0],k["checkout_key"],
+           business=hash256("changed business v3"))["action"],"conflict_recorded","C5 changed billing identity denied")
         eq(bind(b,A[0],"sub-alice",hash256("unknown"),k["checkout_key"])["action"],"unverified_paid_evidence","exact SHA")
         original=EVENT_OCCURRED_AT["sub-alice"]
         EVENT_OCCURRED_AT["sub-alice"]=original-datetime.timedelta(days=1)
         eq(bind(b,A[0],"sub-alice",sha,k["checkout_key"])["action"],"unverified_paid_evidence","signed event time")
         EVENT_OCCURRED_AT["sub-alice"]=original
-        first=bind(b,A[0],"sub-alice",sha,k["checkout_key"])
+        first=bind(b,A[0],"sub-alice",rotated,k["checkout_key"])
         eq(first["action"],"created","safe pending binding")
-        eq(first["raw_body_sha256"],sha,"same signed event")
+        eq(first["raw_body_sha256"],rotated,"exact accepted signed retry delivery")
         eq(bind(b,A[0],"sub-alice",sha,k["checkout_key"])["action"],"existing","same paid event idempotent")
         eq(one(root,"select count(*) from public.entitlements where account_id=%s::uuid",(A[0],)),0,"no entitlement grant")
         root.execute("update public.subscriptions set state='refunded' where provider_subscription_id='sub-alice'")
         eq(bind(b,A[0],"sub-alice",sha,k["checkout_key"])["action"],"conflict","refund cannot reactivate")
         eq(one(root,"select state from public.subscriptions where provider_subscription_id='sub-alice'"),"refunded","terminal remains")
-    print("PASS B5 G2/G4: paid before bind, exact SHA, conflicting replay journalled, no grant, refunded deny",flush=True)
+    print("PASS B5 G2/G4/C5: paid before binding, versioned replay and raw custody, refunded deny",flush=True)
 def unbound():
     with db("verifier") as v,db("binder") as b,db() as root:
         sha=hash256("signed direct Share unbound")

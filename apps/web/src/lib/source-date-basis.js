@@ -21,6 +21,10 @@ const BLS_ANNUAL_CALENDAR_PATH = /^\/schedule\/\d{4}\/home\.htm$/;
 const BLS_CPS_RELEASE_CALENDAR_PATH = '/cps/publications/release-calendar.htm';
 // Reused full-report pointer; new citations must identify a dated release.
 const EIA_WEEKLY_REPORT_POINTER_PATH = '/petroleum/supply/weekly/pdf/wpsrall.pdf';
+// Individual WPSR tableNN.pdf URLs are also mutable weekly pointers, not
+// dated snapshots. An arbitrary publishedAt must not turn a rolling PDF into
+// a release-specific citation (Nov 4 generated Daily #1110 cited table14.pdf).
+const EIA_WEEKLY_TABLE_POINTER_PATTERN = /^\/petroleum\/supply\/weekly\/pdf\/table[0-9]+\.pdf$/;
 // Reusable WPSR schedule: event rows change over time, but the page exposes no
 // page-level publication or Last Updated date suitable for publishedAt.
 const EIA_WEEKLY_SCHEDULE_PATH = '/petroleum/supply/weekly/schedule.php';
@@ -52,7 +56,8 @@ export function sourceDateBasisForUrl(value) {
     if (indexHostname === 'home.treasury.gov' && pathname === TREASURY_TENTATIVE_AUCTION_SCHEDULE_PATH) {
       return SOURCE_DATE_BASIS.ROLLING_REPORT;
     }
-    if (indexHostname === 'eia.gov' && pathname === EIA_WEEKLY_REPORT_POINTER_PATH) {
+    if (indexHostname === 'eia.gov'
+      && (pathname === EIA_WEEKLY_REPORT_POINTER_PATH || EIA_WEEKLY_TABLE_POINTER_PATTERN.test(pathname))) {
       return SOURCE_DATE_BASIS.ROLLING_REPORT;
     }
     if ((indexHostname === 'home.treasury.gov' && pathname === TREASURY_REFUNDING_INDEX_PATH)

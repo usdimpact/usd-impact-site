@@ -542,6 +542,67 @@ assert.throws(
   { code: 'RESEARCH_CHECKOUT_INTENT_PROOF_INVALID' },
 );
 
+
+let attachProviderCalls = 0;
+await assert.rejects(
+  () => createResearchMembershipCheckout({
+    config, user, billingInterval: 'monthly', idempotencyKey: 'attach-test-001',
+    now: new Date('2026-09-07T15:00:00.000Z'),
+    fetchImpl: async (url) => {
+      if (String(url).includes('/rest/v1/subscriptions?')) return new Response('[]', { status: 200 });
+      if (String(url).includes('/rpc/issue_research_membership_checkout_intent')) {
+        return new Response(JSON.stringify({
+          action: 'reserved', intent_id: intentId, checkout_key: issuedProof,
+          account_id: accountId, store_id: '42', variant_id: '314',
+          billing_interval: 'monthly', test_mode: true,
+          expires_at: '2026-09-07T15:30:00.000Z',
+        }), { status: 200 });
+      }
+      if (String(url).includes('/rpc/attach_research_membership_checkout_intent')) {
+        return new Response(JSON.stringify({ error: 'durable_attach_failed' }), { status: 503 });
+      }
+      assert.equal(url, 'https://api.lemonsqueezy.com/v1/checkouts');
+      attachProviderCalls += 1;
+      return new Response(JSON.stringify({
+        data: {
+          type: 'checkouts', id: 'orphan_checkout',
+          attributes: {
+            store_id: 42, variant_id: 314, test_mode: true,
+            url: 'https://example.lemonsqueezy.com/checkout/orphan_checkout',
+          },
+        },
+      }), { status: 201 });
+    },
+  }),
+  { code: 'RESEARCH_CHECKOUT_INTENT_ATTACH_FAILED', status: 503 },
+);
+assert.equal(attachProviderCalls, 1, 'Failed durable attach must withhold the provider URL');
+
+let unreadableIssuerProviderCalls = 0;
+await assert.rejects(
+  () => createResearchMembershipCheckout({
+    config, user, billingInterval: 'monthly', idempotencyKey: 'unreadable-issuer-001',
+    fetchImpl: async (url) => {
+      if (String(url).includes('/rest/v1/subscriptions?')) return new Response('[]', { status: 200 });
+      if (String(url).includes('/rpc/issue_research_membership_checkout_intent')) {
+        return { ok: true, async text() { throw new Error('private read failure'); } };
+      }
+      unreadableIssuerProviderCalls += 1;
+      throw new Error('No merchant request may be made');
+    },
+  }),
+  { code: 'RESEARCH_CHECKOUT_INTENT_UNAVAILABLE', status: 503 },
+);
+assert.equal(unreadableIssuerProviderCalls, 0, 'Unreadable issuer response cannot start a purchase');
+
+await assert.rejects(
+  () => bindResearchMembershipFirstPurchase({
+    binding: inspected, environment,
+    fetchImpl: async () => { throw new Error('internal database network failure'); },
+  }),
+  { code: 'RESEARCH_FIRST_PURCHASE_TRUSTED_BINDING_UNAVAILABLE', status: 503 },
+);
+
 const migration = await readFile(
   new URL('../../../supabase/migrations/20260907154500_research_membership_first_purchase_binding.sql', import.meta.url),
   'utf8',

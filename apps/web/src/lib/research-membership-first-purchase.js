@@ -318,7 +318,12 @@ async function issueResearchMembershipCheckoutIntent({
   } catch {
     fail('Research Membership trusted checkout issuer is unavailable.', 'RESEARCH_CHECKOUT_INTENT_UNAVAILABLE', 503);
   }
-  const data = await readJson(response);
+  let data;
+  try {
+    data = await readJson(response);
+  } catch {
+    fail('Research Membership trusted checkout issuer is unavailable.', 'RESEARCH_CHECKOUT_INTENT_UNAVAILABLE', 503);
+  }
   if (!response.ok) {
     fail('Research Membership trusted checkout issuer is unavailable.', 'RESEARCH_CHECKOUT_INTENT_UNAVAILABLE', 503);
   }
@@ -333,7 +338,13 @@ async function issueResearchMembershipCheckoutIntent({
     fail('Research Membership trusted checkout intent did not match the account and catalog.',
       'RESEARCH_CHECKOUT_INTENT_MISMATCH', 503);
   }
-  const expiresAt = isoTimestamp(data.expires_at, 'checkout intent expires_at');
+  let expiresAt;
+  try {
+    expiresAt = isoTimestamp(data.expires_at, 'checkout intent expires_at');
+  } catch {
+    fail('Research Membership checkout reservation expiry is invalid.',
+      'RESEARCH_CHECKOUT_INTENT_EXPIRY_INVALID', 503);
+  }
   const lifetime = Date.parse(expiresAt) - new Date(now).getTime();
   if (!Number.isFinite(lifetime) || lifetime <= 0 || lifetime > 30 * 60 * 1000) {
     fail('Research Membership checkout reservation expiry is invalid.',
@@ -364,7 +375,13 @@ async function attachResearchMembershipCheckoutReference({ config, intent, check
   } catch {
     fail('Research Membership checkout reference could not be stored.', 'RESEARCH_CHECKOUT_INTENT_ATTACH_FAILED', 503);
   }
-  const data = await readJson(response);
+  let data;
+  try {
+    data = await readJson(response);
+  } catch {
+    fail('Research Membership checkout reference could not be stored.',
+      'RESEARCH_CHECKOUT_INTENT_ATTACH_FAILED', 503);
+  }
   if (!response.ok || data?.action !== 'attached'
       || text(data.intent_id) !== intent.id
       || text(data.provider_checkout_id) !== checkoutId) {
@@ -546,7 +563,13 @@ export async function bindResearchMembershipFirstPurchase({
     fail('Research Membership trusted checkout binding is unavailable.',
       'RESEARCH_FIRST_PURCHASE_TRUSTED_BINDING_UNAVAILABLE', 503);
   }
-  const payload = await readJson(response);
+  let payload;
+  try {
+    payload = await readJson(response);
+  } catch {
+    fail('Research Membership trusted checkout binding is unavailable.',
+      'RESEARCH_FIRST_PURCHASE_TRUSTED_BINDING_UNAVAILABLE', 503);
+  }
   if (!response.ok) {
     fail('Research Membership trusted checkout binding is unavailable.',
       'RESEARCH_FIRST_PURCHASE_TRUSTED_BINDING_UNAVAILABLE', 503);

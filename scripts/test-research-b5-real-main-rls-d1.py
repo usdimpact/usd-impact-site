@@ -214,6 +214,7 @@ def main():
     base.catalog_quarantine()
     late_webhook_real_main()
     js_bridge_real_main()
+    base.narrow_owner_rls_negatives()
     with local_connection() as c:
         check(one(c,"select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname in ('profiles','subscriptions','entitlements','subscription_offers') and c.relrowsecurity"),4,"actual-main four protected RLS tables")
         check(one(c,"select count(*) from pg_policies where policyname like %s",("research_b5_owner_%",)),6,"actual-main owner policy count")

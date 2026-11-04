@@ -167,6 +167,7 @@ const checkoutRequest = buildResearchMembershipCheckoutRequest({
   billingInterval: 'monthly',
   idempotencyKey: 'research-checkout-001',
   now: new Date('2026-09-07T15:00:00.000Z'),
+    clock: () => Date.parse('2026-09-07T15:00:01.000Z'),
 });
 assert.equal(checkoutRequest.data.attributes.test_mode, true);
 assert.equal(checkoutRequest.data.attributes.checkout_options.discount, false);
@@ -195,6 +196,7 @@ const productionCheckoutRequest = buildResearchMembershipCheckoutRequest({
   billingInterval: 'annual',
   idempotencyKey: 'research-live-checkout-001',
   now: new Date('2026-09-07T15:00:00.000Z'),
+    clock: () => Date.parse('2026-09-07T15:00:01.000Z'),
 });
 assert.equal(productionCheckoutRequest.data.attributes.test_mode, false);
 assert.equal(productionCheckoutRequest.data.attributes.checkout_options.discount, false);
@@ -210,6 +212,7 @@ const checkout = await createResearchMembershipCheckout({
   billingInterval: 'monthly',
   idempotencyKey: 'research-checkout-001',
   now: new Date('2026-09-07T15:00:00.000Z'),
+    clock: () => Date.parse('2026-09-07T15:00:01.000Z'),
   fetchImpl: async (url, init = {}) => {
     if (String(url).startsWith(`${config.supabase.url}/rest/v1/subscriptions?`)) {
       assert.equal(init.method, undefined);
@@ -227,7 +230,8 @@ const checkout = await createResearchMembershipCheckout({
         action: 'reserved', intent_id: intentId, checkout_key: issuedProof,
         account_id: accountId, store_id: '42', variant_id: '314',
         billing_interval: 'monthly', test_mode: true,
-        expires_at: '2026-09-07T15:30:00.000Z',
+        created_at: '2026-09-07T15:00:00.300Z',
+        expires_at: '2026-09-07T15:30:00.300Z',
       }), { status: 200 });
     }
     if (url === `${config.supabase.url}/rest/v1/rpc/attach_research_membership_checkout_intent`) {
@@ -273,6 +277,7 @@ const productionCheckout = await createResearchMembershipCheckout({
   billingInterval: 'monthly',
   idempotencyKey: 'research-live-checkout-002',
   now: new Date('2026-09-07T15:00:00.000Z'),
+    clock: () => Date.parse('2026-09-07T15:00:01.000Z'),
   fetchImpl: async (url, init = {}) => {
     if (String(url).startsWith(`${productionConfig.supabase.url}/rest/v1/subscriptions?`)) {
       return new Response('[]', { status: 200 });
@@ -285,7 +290,8 @@ const productionCheckout = await createResearchMembershipCheckout({
         checkout_key: productionIssuedProof,
         account_id: accountId, store_id: '142', variant_id: '414',
         billing_interval: 'monthly', test_mode: false,
-        expires_at: '2026-09-07T15:30:00.000Z',
+        created_at: '2026-09-07T15:00:00.300Z',
+        expires_at: '2026-09-07T15:30:00.300Z',
       }), { status: 200 });
     }
     if (url === `${productionConfig.supabase.url}/rest/v1/rpc/attach_research_membership_checkout_intent`) {
@@ -488,6 +494,7 @@ await assert.rejects(
   () => createResearchMembershipCheckout({
     config, user, billingInterval: 'monthly', idempotencyKey: 'client-supplied-key-001',
     now: new Date('2026-09-07T15:00:00.000Z'),
+    clock: () => Date.parse('2026-09-07T15:00:01.000Z'),
     fetchImpl: async (url) => {
       if (String(url).includes('/rest/v1/subscriptions?')) return new Response('[]', { status: 200 });
       if (String(url).includes('/rpc/issue_research_membership_checkout_intent')) {
@@ -506,12 +513,15 @@ for (const mismatch of [
   { checkout_key: 'client-supplied-key-001' },
   { variant_id: '315' },
   { expires_at: '2026-09-07T16:00:00.000Z' },
+  { created_at: '2026-09-07T15:05:00.000Z' },
+  { created_at: '2026-09-07T14:40:00.000Z' },
 ]) {
   let unexpectedProviderWrites = 0;
   await assert.rejects(
     () => createResearchMembershipCheckout({
       config, user, billingInterval: 'monthly', idempotencyKey: 'request-uid-12345',
       now: new Date('2026-09-07T15:00:00.000Z'),
+    clock: () => Date.parse('2026-09-07T15:00:01.000Z'),
       fetchImpl: async (url) => {
         if (String(url).includes('/rest/v1/subscriptions?')) return new Response('[]', { status: 200 });
         if (String(url).includes('/rpc/issue_research_membership_checkout_intent')) {
@@ -519,7 +529,8 @@ for (const mismatch of [
             action: 'reserved', intent_id: intentId, checkout_key: issuedProof,
             account_id: accountId, store_id: '42', variant_id: '314',
             billing_interval: 'monthly', test_mode: true,
-            expires_at: '2026-09-07T15:30:00.000Z',
+            created_at: '2026-09-07T15:00:00.300Z',
+        expires_at: '2026-09-07T15:30:00.300Z',
             ...mismatch,
           }), { status: 200 });
         }
@@ -578,6 +589,7 @@ await assert.rejects(
   () => createResearchMembershipCheckout({
     config, user, billingInterval: 'monthly', idempotencyKey: 'attach-test-001',
     now: new Date('2026-09-07T15:00:00.000Z'),
+    clock: () => Date.parse('2026-09-07T15:00:01.000Z'),
     fetchImpl: async (url) => {
       if (String(url).includes('/rest/v1/subscriptions?')) return new Response('[]', { status: 200 });
       if (String(url).includes('/rpc/issue_research_membership_checkout_intent')) {
@@ -585,7 +597,8 @@ await assert.rejects(
           action: 'reserved', intent_id: intentId, checkout_key: issuedProof,
           account_id: accountId, store_id: '42', variant_id: '314',
           billing_interval: 'monthly', test_mode: true,
-          expires_at: '2026-09-07T15:30:00.000Z',
+          created_at: '2026-09-07T15:00:00.300Z',
+        expires_at: '2026-09-07T15:30:00.300Z',
         }), { status: 200 });
       }
       if (String(url).includes('/rpc/attach_research_membership_checkout_intent')) {

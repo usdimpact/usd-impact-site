@@ -1,0 +1,78 @@
+# Owner D1 isolated synthetic testing only. Never reuse customer DBs or secrets.
+name: Research B5 four-RPC isolated PostgreSQL contract
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - '.github/workflows/research-b5-rpc-d1-review.yml'
+      - 'scripts/test-research-b5-rpc-d1.py'
+      - 'docs/operations/research-b5-real-app-rpc-proposed-d1-review-2026-11-04.sql'
+permissions:
+  contents: read
+concurrency:
+  group: research-b5-rpc-d1-contract
+  cancel-in-progress: true
+jobs:
+  isolated-postgres-contract:
+    if: github.head_ref == 'agent/1103-b5-rpc-sql-isolated-d1-20261104' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      PGHOST: '127.0.0.1'
+      PGPORT: '5432'
+      PGDATABASE: 'ci_review'
+      PGUSER: 'ci_research'
+      PGPASSWORD: 'ci_fixture_only_password'
+    services:
+      postgres:
+        image: postgres:16.15-bookworm@sha256:e8a07d2c7579b038938cdba6c539e580e5001caf9ea203d397b5cc83e76bd938
+        env:
+          POSTGRES_DB: ci_review
+          POSTGRES_USER: ci_research
+          POSTGRES_PASSWORD: ci_fixture_only_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_research -d ci_review"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - name: Checkout read-only PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Enforce isolated fixture paths and no remote DB
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "ci_review"
+          test -f scripts/test-research-b5-rpc-d1.py
+          grep -q 'D1 ISOLATED REVIEW ONLY' docs/operations/research-b5-real-app-rpc-proposed-d1-review-2026-11-04.sql
+          python3 -m py_compile scripts/test-research-b5-rpc-d1.py
+          echo "B5 D1 no real Supabase DB, keys, provider checkout or customer data"
+      - name: Install pinned isolated psycopg test client
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/research-b5-venv"
+          "$RUNNER_TEMP/research-b5-venv/bin/python" -m pip install --disable-pip-version-check --no-input "psycopg[binary]==3.2.10"
+      - name: Run exact app RPC signatures with two real PostgreSQL backends
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/research-b5-venv/bin/python" scripts/test-research-b5-rpc-d1.py
+      - name: Record scope and untouched release gates
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '### B5 real PostgreSQL D1 review-only'
+            echo 'Disposable synthetic PostgreSQL 16.15; no connected Supabase or merchant.'
+            echo 'Docs SQL is NOT a migration; no Production, Development, secrets or paid customers.'
+            echo 'D2 role/grants, D3 checkout, D4 provider, D6 recovery, D7 activation HOLD.'
+          } >> "$GITHUB_STEP_SUMMARY"

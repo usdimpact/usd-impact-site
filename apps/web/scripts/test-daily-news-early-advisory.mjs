@@ -156,4 +156,12 @@ assert.match(workflow, /github\.event_name == 'schedule' && github\.run_attempt 
 assert.match(workflow, /gh issue comment 840/, 'only add incident evidence on an eligible failed scheduled check');
 assert.doesNotMatch(workflow,/gh workflow run|gh issue close|vercel deploy|force-push|gh pr merge/i);
 assert.match(workflow,/if: steps\.check\.outcome == 'failure'/, 'fail checkout on missing Daily');
+const checkerSource = readFileSync(new URL('./check-daily-news-early-advisory.mjs', import.meta.url), 'utf8');
+assert.doesNotMatch(checkerSource, /writeFile|appendFile|--report/,
+  'external observations must not flow to a CLI-selected file path');
+assert.ok(workflow.includes('tee "$RUNNER_TEMP/daily-early-advisory.md"'),
+  'trusted CI, not the checker, must own the fixed report path');
+assert.ok(workflow.includes('set -euo pipefail'),
+  'tee must preserve the nonzero status of the checker');
+
 console.log('early Daily advisory and DST / provenance / public parity negatives PASS');

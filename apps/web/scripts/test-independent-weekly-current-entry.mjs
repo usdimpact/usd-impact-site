@@ -82,14 +82,15 @@ if (rights.state === 'hold') {
 }
 const newsSource = readFileSync(newsIndexFile, 'utf8');
 assert.match(newsSource, /Latest independent Macro Weekly/, 'Daily news index must promote the current independent Weekly');
-const newsDate = newsSource.match(/const latestIndependentWeek = '(\\d{4}-\\d{2}-\\d{2})';/);
+const newsDate = newsSource.match(/const latestIndependentWeek = '([0-9]{4}-[0-9]{2}-[0-9]{2})';/);
 assert.equal(newsDate?.[1], latest, 'Daily news must point to the same latest static independent Weekly as Reports');
 assert.notEqual('2026-10-23', latest, 'historical Score Friday cannot stand in for the current independent Weekly');
 const staleNewsSource = newsSource.replace(
   `const latestIndependentWeek = '${latest}';`,
   "const latestIndependentWeek = '2026-10-23';",
 );
-assert.notEqual(staleNewsSource.match(/const latestIndependentWeek = '(\\d{4}-\\d{2}-\\d{2})';/)?.[1], latest,
+assert.equal(staleNewsSource.match(/const latestIndependentWeek = '([0-9]{4}-[0-9]{2}-[0-9]{2})';/)?.[1], '2026-10-23', 'negative fixture must target historical Score date');
+assert.notEqual(staleNewsSource.match(/const latestIndependentWeek = '([0-9]{4}-[0-9]{2}-[0-9]{2})';/)?.[1], latest,
   'the freshness contract must detect and reject a stale Daily Weekly link');
 assert.match(newsSource, /href=\{`\/macro-reviews\/weekly\/\$\{latestIndependentWeek\}\/`\}/, 'Daily news promo must link to the latest independent static page');
 assert.match(newsSource, /historical Score-based Weekly series remains on rights hold/, 'Daily news must preserve the legacy Score rights warning');

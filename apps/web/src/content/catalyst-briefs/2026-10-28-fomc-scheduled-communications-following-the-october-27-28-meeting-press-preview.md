@@ -13,6 +13,14 @@ lastReviewed: "2026-10-26"
 status: "published"
 category: "USD Impact Catalyst Brief"
 statusLabel: "scheduled-confirmed"
+archiveNote:
+  addedAt: "2026-11-04"
+  introduction: "This briefing was prepared before the October 28, 2026 FOMC decision and press conference."
+  links:
+    - context: "For the verified October 28 decision and official release evidence, read our"
+      label: "published outcome brief"
+      href: "/news/catalysts/2026-10-28-fomc-scheduled-communications-following-the-october-27-28-meeting-press-outcome"
+  closing: "The preview below preserves the information available before the meeting; it does not retroactively incorporate the decision."
 summary: "The Federal Reserve is scheduled to hold a two-day FOMC meeting on October 27–28, 2026. Its October calendar lists the meeting communication for 2:00 p.m. ET on October 28 and the press conference for 2:30 p.m. ET. The October meeting is not marked as a Summary of Economic Projections meeting. This preview uses Federal Reserve primary sources only and does not predict the decision or market reaction."
 assets:
   - "Fed"

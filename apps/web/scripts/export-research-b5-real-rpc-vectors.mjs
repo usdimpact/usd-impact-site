@@ -32,8 +32,8 @@ const env = {
   LEMON_SQUEEZY_TEST_API_KEY: 'test_only_synthetic_b5_api_key_abcdefghijklmnopqrstuvwxyz',
   COMMERCE_SANDBOX_QA_EMAIL: 'synthetic@example.com',
   SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.supabase.co',
-  SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_synthetic_b5',
-  SUPABASE_SECRET_KEY: 'sb_secret_synthetic_b5',
+  SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_abcdefghijklmnopqrstuvwxyz',
+  SUPABASE_SECRET_KEY: 'sb_secret_abcdefghijklmnopqrstuvwxyz',
 };
 const config = readResearchMembershipCheckoutConfig(env);
 const requests = {};

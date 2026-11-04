@@ -14,6 +14,27 @@ export const REQUIRED_CHECKS = Object.freeze([
   'Reject Development-only Production migration files',
 ]);
 
+// Dispatch inputs are untrusted hints, never proof of a successful source run.
+export function dispatchSourceRunId(envelope) {
+  const raw = envelope?.inputs?.source_run_id;
+  if (typeof raw !== 'string' || !/^[1-9][0-9]{0,15}$/.test(raw)) {
+    throw new Error('invalid-explicit-source-run-id');
+  }
+  const id = Number(raw);
+  if (!Number.isSafeInteger(id)) throw new Error('invalid-explicit-source-run-id');
+  return id;
+}
+
+export function isAuthenticatedBotDispatch(source, publisherActor) {
+  // A manually submitted workflow_dispatch input may identify an authentic run.
+  // It must not allow that human-originated event to publish automatically.
+  return publisherActor === 'github-actions[bot]'
+    && source?.actor?.login === 'github-actions[bot]'
+    && source?.event === 'workflow_dispatch'
+    && source?.path === '.github/workflows/daily-news.yml'
+    && source?.repository?.full_name === REPOSITORY;
+}
+
 export function beforeUsFirstRelease(now = new Date()) {
   if (!(now instanceof Date) || Number.isNaN(now.getTime())) return false;
   const parts = new Intl.DateTimeFormat('en-US', {

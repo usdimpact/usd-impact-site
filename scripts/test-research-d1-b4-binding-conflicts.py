@@ -304,7 +304,7 @@ def test_d2_isolated_non_superuser_privileges(a,watch,v):
     assert one(watch,"select count(*) from research_binding_review.subscriptions where provider_subscription_id='fake-paid-event'")==0
     # Y5: prove a function created AFTER the fixture transaction lacks the
     # PostgreSQL global PUBLIC EXECUTE default. Not merely per-schema REVOKE.
-    watch.execute("create function research_binding_review.b41_future_canary() returns integer language sql as $ select 1 $")
+    watch.execute("create function research_binding_review.b41_future_canary() returns integer language sql as $$ select 1 $$")
     assert not one(watch,"select has_function_privilege('review_binding_api','research_binding_review.b41_future_canary()','EXECUTE')")
     assert not one(watch,"select has_function_privilege('review_binding_verifier','research_binding_review.b41_future_canary()','EXECUTE')")
     assert not one(watch,"select has_table_privilege('review_binding_writer','research_binding_review.entitlements','UPDATE')")

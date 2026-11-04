@@ -1,8 +1,5 @@
 ---
 import { getCollection } from 'astro:content';
-import { readdirSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import NewsHighlightCard from '../../components/NewsHighlightCard.astro';
 import { hasCatalystBriefFiles } from '../../lib/catalyst-brief-content.js';
@@ -17,17 +14,11 @@ const catalystBriefs = hasCatalystBriefFiles
       .filter((entry) => entry.data.status === 'published')
       .sort((a, b) => b.data.generatedAt.localeCompare(a.data.generatedAt))
   : [];
-// Only the source-reviewed static independent Weekly routes are current.
- // The older Score-derived weeklyReports archive remains rights-held and must
- // not be promoted as the newest weekly on the Daily landing page.
-const independentWeeklyRoot = fileURLToPath(new URL('../macro-reviews/weekly/', import.meta.url));
-const latestIndependentWeek = readdirSync(independentWeeklyRoot, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(entry.name))
-  .map((entry) => entry.name)
-  .filter((date) => new Date(`${date}T00:00:00Z`).getUTCDay() === 5
-    && existsSync(join(independentWeeklyRoot, date, 'index.astro')))
-  .sort()
-  .at(-1);
+// Only independently verified, published static Friday Weeklies can be promoted.
+// The dedicated freshness contract rejects a stale date whenever a new Friday
+// route is published. Do not resolve source filesystem paths from prerendered
+// Astro chunks: import.meta.url points at dist/.prerender during the build.
+const latestIndependentWeek = '2026-10-30';
 const formatDate = (value) => new Intl.DateTimeFormat('en', {
   day: 'numeric',
   month: 'long',

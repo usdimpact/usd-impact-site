@@ -351,6 +351,7 @@ assert.equal(inspected.providerPriceId, '314');
 assert.equal(inspected.billingInterval, 'monthly');
 assert.equal(inspected.metadata.checkoutKey, issuedProof);
 assert.equal(inspected.metadata.testMode, true);
+assert.equal(inspected.metadata.rawBodySha256, crypto.createHash('sha256').update(event.rawBody).digest('hex'));
 
 const productionEvent = signed(productionPayload(), productionEnvironment);
 const productionInspected = inspectResearchMembershipFirstPurchase({
@@ -400,6 +401,7 @@ const bound = await bindResearchMembershipFirstPurchase({
     assert.equal(body.p_checkout_proof, issuedProof);
     assert.equal(body.p_store_id, '42');
     assert.equal(body.p_test_mode, true);
+    assert.equal(body.p_raw_body_sha256, inspected.metadata.rawBodySha256);
     assert.equal(body.p_account_id, accountId);
     assert.equal(body.p_provider, 'lemon-squeezy');
     assert.equal(body.p_provider_subscription_id, 'sub_first_1');
@@ -407,7 +409,8 @@ const bound = await bindResearchMembershipFirstPurchase({
     assert.equal(body.p_provider_price_id, '314');
     assert.equal(body.p_billing_interval, 'monthly');
     bindCalls += 1;
-    return new Response(JSON.stringify({ action: 'created', subscription_id: subscriptionId, subscription_state: 'pending' }), { status: 200 });
+    return new Response(JSON.stringify({ action: 'created', subscription_id: subscriptionId,
+      subscription_state: 'pending', raw_body_sha256: inspected.metadata.rawBodySha256 }), { status: 200 });
   },
 });
 assert.equal(bindCalls, 1);
@@ -446,7 +449,8 @@ const wrapperResult = await processResearchMembershipWebhookWithFirstPurchase({
     }
     assert.equal(url, `${environment.SUPABASE_URL}/rest/v1/rpc/bind_research_membership_with_checkout_intent`);
     wrapperBindCalls += 1;
-    return new Response(JSON.stringify({ action: 'existing', subscription_id: subscriptionId, subscription_state: 'pending' }), { status: 200 });
+    return new Response(JSON.stringify({ action: 'existing', subscription_id: subscriptionId,
+      subscription_state: 'pending', raw_body_sha256: inspected.metadata.rawBodySha256 }), { status: 200 });
   },
 });
 assert.equal(processCalls, 2);
@@ -695,6 +699,60 @@ const conflictHeld = await processResearchMembershipWebhookWithFirstPurchase({
 });
 assert.equal(conflictHeld.action, 'held_paid_evidence_conflict');
 assert.equal(conflictBindCalls, 1, 'Immutable conflicting event evidence never authorizes an account bind');
+
+
+let paidConflictProcessing = 0;
+let committedPaidConflict = 0;
+const duplicatePaidResult = await processResearchMembershipWebhookWithFirstPurchase({
+  ...event, environment,
+  processImpl: async () => {
+    paidConflictProcessing += 1;
+    const error = new Error('not yet linked');
+    error.code = 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND';
+    throw error;
+  },
+  fetchImpl: async (url) => {
+    if (url.endsWith('/rpc/observe_signed_research_subscription_created')) {
+      committedPaidConflict += 1;
+      return new Response(JSON.stringify({
+        action: 'recorded', provider_subscription_id: 'sub_first_1',
+        raw_body_sha256: inspected.metadata.rawBodySha256,
+      }), { status: 200 });
+    }
+    assert.ok(url.endsWith('/rpc/bind_research_membership_with_checkout_intent'));
+    return new Response(JSON.stringify({
+      action: 'conflict', code: 'duplicate_paid_subscription',
+      conflict_evidence_id: '66666666-6666-4666-8666-666666666666',
+      raw_body_sha256: inspected.metadata.rawBodySha256,
+    }), { status: 200 });
+  },
+});
+assert.equal(duplicatePaidResult.action, 'held_paid_binding_conflict');
+assert.equal(duplicatePaidResult.reason, 'duplicate_paid_subscription');
+assert.equal(paidConflictProcessing, 1, 'Duplicate paid never activates a second subscription');
+assert.equal(committedPaidConflict, 1, 'Duplicate paid evidence must be pre-committed before conflict');
+
+await assert.rejects(
+  () => bindResearchMembershipFirstPurchase({
+    binding: inspected, environment,
+    fetchImpl: async () => new Response(JSON.stringify({
+      action: 'conflict', code: 'duplicate_paid_subscription',
+      conflict_evidence_id: '66666666-6666-4666-8666-666666666666',
+      raw_body_sha256: 'f'.repeat(64),
+    }), { status: 200 }),
+  }),
+  { code: 'RESEARCH_FIRST_PURCHASE_BINDING_INVALID', status: 502 },
+);
+await assert.rejects(
+  () => bindResearchMembershipFirstPurchase({
+    binding: { ...inspected, metadata: { ...inspected.metadata, rawBodySha256: 'bad' } },
+    environment,
+    fetchImpl: async () => {
+      throw new Error('Invalid signed observation identity must stop before DB call');
+    },
+  }),
+  { code: 'RESEARCH_FIRST_PURCHASE_OBSERVATION_INVALID', status: 503 },
+);
 
 const migration = await readFile(
   new URL('../../../supabase/migrations/20260907154500_research_membership_first_purchase_binding.sql', import.meta.url),

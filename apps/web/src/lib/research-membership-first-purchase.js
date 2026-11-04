@@ -539,6 +539,7 @@ export function inspectResearchMembershipFirstPurchase({
     metadata: Object.freeze({
       bindingSource: boundAccountId ? 'signed-subscription-created-unverified-claim' : 'signed-provider-unbound-pending-recovery',
       checkoutKey: signedCheckoutKey,
+      rawBodySha256: createHash('sha256').update(body).digest('hex'),
       storeId: String(config.storeId),
       productId: String(config.productId),
       variantId: String(variantId),
@@ -628,6 +629,12 @@ export async function bindResearchMembershipFirstPurchase({
       p_billing_interval: variantForInterval(config, binding?.billingInterval).interval,
       p_occurred_at: isoTimestamp(binding?.occurredAt, 'binding occurred_at'),
       p_checkout_proof: issuedCheckoutProof(binding?.metadata?.checkoutKey),
+      // Join the exact separately committed provider-signed observation,
+      // not merely an account/variant or provider subscription identifier.
+      p_raw_body_sha256: /^[a-f0-9]{64}$/.test(text(binding?.metadata?.rawBodySha256))
+        ? text(binding.metadata.rawBodySha256)
+        : fail('Research Membership signed observation identity is invalid.',
+          'RESEARCH_FIRST_PURCHASE_OBSERVATION_INVALID', 503),
       p_store_id: String(config.storeId),
       p_product_id: String(config.productId),
       p_test_mode: config.testMode,
@@ -649,8 +656,29 @@ export async function bindResearchMembershipFirstPurchase({
     fail('Research Membership trusted checkout binding is unavailable.',
       'RESEARCH_FIRST_PURCHASE_TRUSTED_BINDING_UNAVAILABLE', 503);
   }
-  if (!payload || !['created', 'existing'].includes(payload.action) || !UUID_PATTERN.test(text(payload.subscription_id))) {
-    fail('Research Membership first-purchase binding returned an invalid result.', 'RESEARCH_FIRST_PURCHASE_BINDING_INVALID', 502);
+  // Only a *committed* and exact-observation-matched conflict may end the
+  // webhook with a held outcome. This prevents repeated attempts from
+  // masking a second paid subscription that could not be bound.
+  if (payload?.action === 'conflict') {
+    const safeCodes = new Set([
+      'duplicate_paid_subscription', 'entitlement_conflict',
+      'provider_subscription_in_use', 'account_unavailable',
+      'unissued_checkout_key', 'expired_checkout_key',
+      'checkout_consumed_by_other', 'provider_subscription_account_mismatch',
+    ]);
+    if (!safeCodes.has(text(payload.code))
+        || !UUID_PATTERN.test(text(payload.conflict_evidence_id))
+        || text(payload.raw_body_sha256) !== text(binding?.metadata?.rawBodySha256)) {
+      fail('Research Membership first-purchase conflict evidence is invalid.',
+        'RESEARCH_FIRST_PURCHASE_BINDING_INVALID', 502);
+    }
+    return Object.freeze({ action: 'conflict', code: text(payload.code) });
+  }
+  if (!payload || !['created', 'existing'].includes(payload.action)
+      || !UUID_PATTERN.test(text(payload.subscription_id))
+      || text(payload.raw_body_sha256) !== text(binding?.metadata?.rawBodySha256)) {
+    fail('Research Membership first-purchase binding returned an invalid result.',
+      'RESEARCH_FIRST_PURCHASE_BINDING_INVALID', 502);
   }
   return Object.freeze({ ...payload });
 }
@@ -683,7 +711,10 @@ export async function processResearchMembershipWebhookWithFirstPurchase({
   if (!binding.accountId || !binding.metadata.checkoutKey) {
     return Object.freeze({ action: 'held_unbound' });
   }
-  await bindResearchMembershipFirstPurchase({ binding, environment, fetchImpl });
+  const bound = await bindResearchMembershipFirstPurchase({ binding, environment, fetchImpl });
+  if (bound.action === 'conflict') {
+    return Object.freeze({ action: 'held_paid_binding_conflict', reason: bound.code });
+  }
   return processImpl({ rawBody, signature, environment, fetchImpl });
 }
 

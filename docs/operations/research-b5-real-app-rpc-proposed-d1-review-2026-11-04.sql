@@ -468,9 +468,33 @@ grant select, insert, update on research_checkout_guard.checkout_intents to revi
 grant select, insert, update on research_checkout_guard.signed_paid_observations to review_checkout_owner;
 grant select, insert on research_checkout_guard.signed_paid_deliveries to review_checkout_owner;
 grant select, insert on research_checkout_guard.conflict_evidence to review_checkout_owner;
-grant select, update on public.profiles to review_checkout_owner;
+grant select on public.profiles to review_checkout_owner;
+-- PostgreSQL requires an UPDATE privilege for SELECT ... FOR UPDATE.
+-- Limit it to the status column; no function modifies a profile field.
+grant update(status) on public.profiles to review_checkout_owner;
 grant select, insert on public.subscriptions to review_checkout_owner;
 grant select on public.entitlements, public.subscription_offers to review_checkout_owner;
+-- C11 actual-main RLS repair. With NOBYPASSRLS the owner is blind
+-- to protected Research rows unless policies explicitly name this NOLOGIN
+-- role. Do NOT install on a connected Supabase project under D1 authority.
+-- These are restricted to the non-inheritable function owner. The owner
+-- has no login and is NOT granted to any API, anon, authenticated or
+-- service-role principal.
+create policy research_b5_owner_profiles_select
+ on public.profiles for select to review_checkout_owner using (true);
+create policy research_b5_owner_profiles_row_lock
+ on public.profiles for update to review_checkout_owner
+ using (true) with check (true);
+create policy research_b5_owner_subscriptions_select
+ on public.subscriptions for select to review_checkout_owner using (true);
+create policy research_b5_owner_subscriptions_insert
+ on public.subscriptions for insert to review_checkout_owner
+ with check (true);
+create policy research_b5_owner_entitlements_select
+ on public.entitlements for select to review_checkout_owner using (true);
+create policy research_b5_owner_offers_select
+ on public.subscription_offers for select to review_checkout_owner using (true);
+
 -- CREATE is temporarily needed to transfer function ownership and is
 -- revoked immediately. No login caller gets membership in this owner.
 grant create on schema public, research_checkout_guard to review_checkout_owner;

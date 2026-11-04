@@ -366,6 +366,8 @@ jobs:
         if: ${{ success() && github.event_name == 'workflow_dispatch' && steps.config.outputs.configured == 'true' && steps.publish_pr.outcome == 'success' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          SOURCE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          SOURCE_RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
           set -euo pipefail
           expected_branch="automation/daily-usd-impact-$(date -u +%F)-$GITHUB_RUN_ID"
@@ -377,8 +379,10 @@ jobs:
           fi
           # Only the GitHub token-owned backstop generator can request a
           # privileged publisher. Do not extend this path to manual generators.
-          if [ "$GITHUB_ACTOR" != "github-actions[bot]" ]; then
-            echo "::error::Generator actor is not the GitHub bot; no automatic handoff."
+          if [ "$GITHUB_ACTOR" != "github-actions[bot]" ] \
+            || [ "$SOURCE_TRIGGERING_ACTOR" != "github-actions[bot]" ] \
+            || [ "$SOURCE_RUN_ATTEMPT" != "1" ]; then
+            echo "::error::Generator must be a first-attempt bot-triggered source; no rerun handoff."
             exit 1
           fi
           # GitHub's run-name is derived from the requested source_run_id, so an

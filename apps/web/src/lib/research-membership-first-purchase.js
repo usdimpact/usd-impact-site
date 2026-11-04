@@ -11,6 +11,9 @@ const MAX_BODY_BYTES = 1024 * 1024;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const STABLE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,254}$/;
 const CHECKOUT_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{7,254}$/;
+// Only the separately committed private database issuer may generate an intent
+// proof. A correctly formatted client key is NEVER sufficient for binding.
+const ISSUED_CHECKOUT_PROOF_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export class ResearchMembershipFirstPurchaseError extends Error {
@@ -52,6 +55,14 @@ function checkoutKey(value) {
   const normalized = text(String(value ?? ''));
   if (!CHECKOUT_KEY_PATTERN.test(normalized)) {
     fail('A valid Research Membership checkout idempotency key is required.', 'RESEARCH_CHECKOUT_IDEMPOTENCY_KEY_INVALID');
+  }
+  return normalized;
+}
+
+function issuedCheckoutProof(value) {
+  const normalized = text(value);
+  if (!ISSUED_CHECKOUT_PROOF_PATTERN.test(normalized)) {
+    fail('Research Membership checkout intent proof is invalid.', 'RESEARCH_CHECKOUT_INTENT_PROOF_INVALID', 409);
   }
   return normalized;
 }
@@ -195,6 +206,7 @@ export function buildResearchMembershipCheckoutRequest({
   billingInterval,
   idempotencyKey,
   now = new Date(),
+  expiresAt = null,
 }) {
   if (!config || typeof config.testMode !== 'boolean') {
     fail('Research Membership checkout requires an explicit environment configuration.', 'RESEARCH_CHECKOUT_CONFIGURATION_INVALID', 503);
@@ -206,7 +218,9 @@ export function buildResearchMembershipCheckoutRequest({
   }
   const selected = variantForInterval(config, billingInterval);
   const key = checkoutKey(idempotencyKey);
-  const expiresAt = new Date(new Date(now).getTime() + 30 * 60 * 1000).toISOString();
+  const checkoutExpiresAt = expiresAt == null
+    ? new Date(new Date(now).getTime() + 30 * 60 * 1000).toISOString()
+    : isoTimestamp(expiresAt, 'checkout expires_at');
 
   return Object.freeze({
     data: {
@@ -234,7 +248,7 @@ export function buildResearchMembershipCheckoutRequest({
           },
           variant_quantities: [{ variant_id: selected.variantId, quantity: 1 }],
         },
-        expires_at: expiresAt,
+        expires_at: checkoutExpiresAt,
         test_mode: config.testMode,
       },
       relationships: {
@@ -280,6 +294,84 @@ async function assertNoCurrentResearchSubscription({ config, userId, fetchImpl }
   }
 }
 
+async function issueResearchMembershipCheckoutIntent({
+  config, userId, variantId, billingInterval, clientRequestKey, fetchImpl, now,
+}) {
+  // This RPC is intentionally NOT present in the current database. Until the
+  // D2-reviewed issuer is installed, no provider checkout may be created.
+  const url = `${config.supabase.url}/rest/v1/rpc/issue_research_membership_checkout_intent`;
+  let response;
+  try {
+    response = await fetchImpl(url, {
+      method: 'POST',
+      headers: serviceHeaders(config.supabase.secretKey),
+      body: JSON.stringify({
+        p_account_id: userId,
+        p_product_id: PRODUCT_ID,
+        p_store_id: String(config.storeId),
+        p_variant_id: String(variantId),
+        p_billing_interval: billingInterval,
+        p_test_mode: config.testMode,
+        p_client_request_id: checkoutKey(clientRequestKey),
+      }),
+    });
+  } catch {
+    fail('Research Membership trusted checkout issuer is unavailable.', 'RESEARCH_CHECKOUT_INTENT_UNAVAILABLE', 503);
+  }
+  const data = await readJson(response);
+  if (!response.ok) {
+    fail('Research Membership trusted checkout issuer is unavailable.', 'RESEARCH_CHECKOUT_INTENT_UNAVAILABLE', 503);
+  }
+  if (!data || data.action !== 'reserved'
+      || !UUID_PATTERN.test(text(data.intent_id))
+      || !ISSUED_CHECKOUT_PROOF_PATTERN.test(text(data.checkout_key))
+      || text(data.account_id).toLowerCase() !== userId.toLowerCase()
+      || String(data.store_id) !== String(config.storeId)
+      || String(data.variant_id) !== String(variantId)
+      || data.test_mode !== config.testMode
+      || text(data.billing_interval) !== billingInterval) {
+    fail('Research Membership trusted checkout intent did not match the account and catalog.',
+      'RESEARCH_CHECKOUT_INTENT_MISMATCH', 503);
+  }
+  const expiresAt = isoTimestamp(data.expires_at, 'checkout intent expires_at');
+  const lifetime = Date.parse(expiresAt) - new Date(now).getTime();
+  if (!Number.isFinite(lifetime) || lifetime <= 0 || lifetime > 30 * 60 * 1000) {
+    fail('Research Membership checkout reservation expiry is invalid.',
+      'RESEARCH_CHECKOUT_INTENT_EXPIRY_INVALID', 503);
+  }
+  return Object.freeze({
+    id: text(data.intent_id),
+    checkoutKey: issuedCheckoutProof(data.checkout_key),
+    expiresAt,
+  });
+}
+
+async function attachResearchMembershipCheckoutReference({ config, intent, checkoutId, fetchImpl }) {
+  // Do not disclose a provider checkout URL until the reference is durably
+  // attached to the previously committed account-bound checkout intent.
+  const url = `${config.supabase.url}/rest/v1/rpc/attach_research_membership_checkout_intent`;
+  let response;
+  try {
+    response = await fetchImpl(url, {
+      method: 'POST',
+      headers: serviceHeaders(config.supabase.secretKey),
+      body: JSON.stringify({
+        p_intent_id: intent.id,
+        p_checkout_proof: intent.checkoutKey,
+        p_provider_checkout_id: checkoutId,
+      }),
+    });
+  } catch {
+    fail('Research Membership checkout reference could not be stored.', 'RESEARCH_CHECKOUT_INTENT_ATTACH_FAILED', 503);
+  }
+  const data = await readJson(response);
+  if (!response.ok || data?.action !== 'attached'
+      || text(data.intent_id) !== intent.id
+      || text(data.provider_checkout_id) !== checkoutId) {
+    fail('Research Membership checkout reference could not be stored.', 'RESEARCH_CHECKOUT_INTENT_ATTACH_FAILED', 503);
+  }
+}
+
 export async function createResearchMembershipCheckout({
   config,
   user,
@@ -288,9 +380,19 @@ export async function createResearchMembershipCheckout({
   fetchImpl = fetch,
   now = new Date(),
 }) {
-  const requestBody = buildResearchMembershipCheckoutRequest({ config, user, billingInterval, idempotencyKey, now });
   const userId = accountId(user?.id);
+  const selected = variantForInterval(config, billingInterval);
+  // The public request key is only a replay hint; never send it to the provider
+  // as the authoritative account-binding proof.
   await assertNoCurrentResearchSubscription({ config, userId, fetchImpl });
+  const intent = await issueResearchMembershipCheckoutIntent({
+    config, userId, variantId: selected.variantId, billingInterval: selected.interval,
+    clientRequestKey: idempotencyKey, fetchImpl, now,
+  });
+  const requestBody = buildResearchMembershipCheckoutRequest({
+    config, user, billingInterval, idempotencyKey: intent.checkoutKey, now,
+    expiresAt: intent.expiresAt,
+  });
 
   const response = await fetchImpl(`${PROVIDER_API_ROOT}/checkouts`, {
     method: 'POST',
@@ -307,7 +409,6 @@ export async function createResearchMembershipCheckout({
   }
   const data = object(payload?.data, 'checkout response data');
   const attributes = object(data.attributes, 'checkout response attributes');
-  const selected = variantForInterval(config, billingInterval);
   if (data.type !== 'checkouts'
       || attributes.test_mode !== config.testMode
       || String(attributes.store_id) !== String(config.storeId)
@@ -315,8 +416,12 @@ export async function createResearchMembershipCheckout({
       || !text(attributes.url).startsWith('https://')) {
     fail('Research Membership checkout response did not match the trusted catalog.', 'RESEARCH_CHECKOUT_PROVIDER_RESPONSE_INVALID', 502);
   }
+  const checkoutId = stableIdentifier(data.id, 'checkout id');
+  await attachResearchMembershipCheckoutReference({
+    config, intent, checkoutId, fetchImpl,
+  });
   return Object.freeze({
-    checkoutId: stableIdentifier(data.id, 'checkout id'),
+    checkoutId,
     url: text(attributes.url),
     testMode: config.testMode,
     billingInterval: selected.interval,
@@ -379,7 +484,9 @@ export function inspectResearchMembershipFirstPurchase({
       || text(custom.usd_impact_research_billing_interval).toLowerCase() !== expectedInterval) {
     fail('Research Membership checkout custom binding evidence does not match.', 'RESEARCH_FIRST_PURCHASE_CUSTOM_DATA_MISMATCH', 409);
   }
-  const signedCheckoutKey = checkoutKey(custom.usd_impact_research_checkout_key);
+  // This is an UNTRUSTED assertion copied by the provider into a signed
+  // webhook. The private atomic binding RPC below must prove server issuance.
+  const signedCheckoutKey = issuedCheckoutProof(custom.usd_impact_research_checkout_key);
   const createdAt = isoTimestamp(attributes.created_at, 'subscription created_at');
   const renewsAt = isoTimestamp(attributes.renews_at, 'subscription renews_at');
   if (Date.parse(renewsAt) <= Date.parse(createdAt)) {
@@ -411,7 +518,13 @@ export async function bindResearchMembershipFirstPurchase({
   fetchImpl = fetch,
 }) {
   const config = readBootstrapConfig(environment);
-  const response = await fetchImpl(`${config.supabaseUrl}/rest/v1/rpc/bind_research_membership_subscription`, {
+  // Do not call the old bind_research_membership_subscription RPC: it checks
+  // profile/subscription constraints but does not prove checkout issuance.
+  // The replacement must consume a trusted intent AND bind atomically under
+  // the DB writer's D2-approved privileges; until deployed, fail closed.
+  let response;
+  try {
+    response = await fetchImpl(`${config.supabaseUrl}/rest/v1/rpc/bind_research_membership_with_checkout_intent`, {
     method: 'POST',
     headers: serviceHeaders(config.supabaseSecret),
     body: JSON.stringify({
@@ -422,12 +535,21 @@ export async function bindResearchMembershipFirstPurchase({
       p_provider_price_id: stableIdentifier(binding?.providerPriceId, 'provider price id'),
       p_billing_interval: variantForInterval(config, binding?.billingInterval).interval,
       p_occurred_at: isoTimestamp(binding?.occurredAt, 'binding occurred_at'),
-      p_metadata: binding?.metadata || {},
+      p_checkout_proof: issuedCheckoutProof(binding?.metadata?.checkoutKey),
+      p_store_id: String(config.storeId),
+      p_product_id: String(config.productId),
+      p_test_mode: config.testMode,
     }),
-  });
+    });
+  } catch (error) {
+    if (error instanceof ResearchMembershipFirstPurchaseError) throw error;
+    fail('Research Membership trusted checkout binding is unavailable.',
+      'RESEARCH_FIRST_PURCHASE_TRUSTED_BINDING_UNAVAILABLE', 503);
+  }
   const payload = await readJson(response);
   if (!response.ok) {
-    fail('Research Membership first-purchase binding failed.', 'RESEARCH_FIRST_PURCHASE_BINDING_FAILED', response.status >= 400 && response.status <= 599 ? response.status : 502);
+    fail('Research Membership trusted checkout binding is unavailable.',
+      'RESEARCH_FIRST_PURCHASE_TRUSTED_BINDING_UNAVAILABLE', 503);
   }
   if (!payload || !['created', 'existing'].includes(payload.action) || !UUID_PATTERN.test(text(payload.subscription_id))) {
     fail('Research Membership first-purchase binding returned an invalid result.', 'RESEARCH_FIRST_PURCHASE_BINDING_INVALID', 502);

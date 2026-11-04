@@ -155,8 +155,10 @@ BEGIN
     provider_subscription_id,claimed_account_id,first_event_id
   ) VALUES (p_sub,p_account,p_event)
   ON CONFLICT(provider_subscription_id) DO NOTHING;
+  -- Unique-index ON CONFLICT already serializes competing claims. A plain
+  -- SELECT avoids granting UPDATE on the append-only evidence-owner table.
   SELECT * INTO v_claim FROM research_binding_review.provider_claims_v41
-   WHERE provider_subscription_id=p_sub FOR UPDATE;
+   WHERE provider_subscription_id=p_sub;
   IF v_claim.claimed_account_id IS DISTINCT FROM p_account THEN
     v_disposition:='identity_conflict';
   END IF;

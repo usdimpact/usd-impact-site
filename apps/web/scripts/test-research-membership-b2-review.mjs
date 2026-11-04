@@ -216,3 +216,16 @@ console.log('Research B-2 v3 fingerprint (A32 identity/anchor/item fields) and C
 // Stage B-3 is an isolated single-session PGlite prototype from docs/operations.
 // Its PASS is never a real PostgreSQL two-session / Production approval.
 await import('./test-research-membership-b3-versioned-receipts-pglite.mjs');
+
+// D1 is scoped to exactly this unmerged test-only Draft branch.
+if (process.env.GITHUB_ACTIONS === 'true' &&
+    process.env.GITHUB_HEAD_REF === 'agent/1103-d1-two-session-postgres-20261104') {
+  const { spawnSync } = await import('node:child_process');
+  const pg = spawnSync('python3', ['scripts/test-research-membership-d1-two-session.py'], {
+    stdio: 'inherit', env: process.env, timeout: 240000,
+  });
+  if (pg.error || pg.status !== 0) {
+    throw new Error('D1 disposable two-session PostgreSQL test did not pass.');
+  }
+}
+

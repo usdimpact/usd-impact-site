@@ -227,7 +227,7 @@ begin
  if exists(select 1 from research_checkout_guard.checkout_intents
      where test_mode=v_intent.test_mode and provider_checkout_id=p_provider_checkout_id
        and id<>p_intent_id) then
-   return jsonb_build_object('action','rejected');
+   return jsonb_build_object('action','rejected','code','checkout_reference_in_use');
  end if;
  update research_checkout_guard.checkout_intents set state='attached',
    provider_checkout_id=p_provider_checkout_id where id=p_intent_id;

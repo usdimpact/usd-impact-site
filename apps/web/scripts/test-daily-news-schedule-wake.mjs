@@ -198,11 +198,11 @@ await check('shared mutex and unchanged least-privilege permissions', () => {
   assert.match(backstop, /accepted dispatch has no visible run receipt/);
   assert.match(backstop, /for receipt_check in \$\(seq 1 12\)/);
   assert.match(backstop, /file_status.*!=.*404/s);
-  assert.match(backstop, /cron: '47 10 \\* \\* 1-5'/);
-  assert.match(backstop, /cron: '7 11 \\* \\* 1-5'/);
-  assert.doesNotMatch(backstop, /cron: '47 15 \\* \\* 1-5'/);
-  assert.match(backstop, /TZ=America\\/New_York date \\+%H:%M/);
-  assert.match(backstop, /past safe 07:10 ET recovery start/);
+  assert.ok(backstop.includes("cron: '47 10 * * 1-5'"));
+  assert.ok(backstop.includes("cron: '7 11 * * 1-5'"));
+  assert.ok(!backstop.includes("cron: '47 15 * * 1-5'"));
+  assert.ok(backstop.includes('TZ=America/New_York date +%H:%M'));
+  assert.ok(backstop.includes('past safe 07:10 ET recovery start'));
 });
 
 

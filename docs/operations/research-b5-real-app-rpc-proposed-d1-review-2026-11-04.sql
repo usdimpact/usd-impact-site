@@ -58,6 +58,7 @@ create table research_checkout_guard.signed_paid_observations(
  provider_customer_id text not null,
  store_id text not null, product_id text not null,
  provider_price_id text not null, test_mode boolean not null,
+ catalog_quarantined boolean not null default false,
  occurred_at timestamptz not null,
  raw_body_sha256 text not null check(raw_body_sha256 ~ '^[a-f0-9]{64}$'),
  business_fingerprint_version text not null
@@ -244,7 +245,7 @@ create function public.observe_signed_research_subscription_created(
 ) returns jsonb language plpgsql security definer set search_path = ''
 as $fn$
 declare v_obs research_checkout_guard.signed_paid_observations%rowtype;
- v_changed boolean; v_disposition text;
+ v_changed boolean; v_catalog_quarantined boolean;
 begin
  -- Only a separate D2-approved trusted verifier may call this after
  -- raw-body HMAC + status/no-trial + catalog checks. SQL cannot verify HMAC.
@@ -261,19 +262,25 @@ begin
    return jsonb_build_object('action','rejected');
  end if;
  if not exists(select 1 from research_checkout_guard.allowed_variants
-  where store_id=p_store_id and product_id=p_product_id
-   and variant_id=p_provider_price_id and test_mode=p_test_mode) then
-   return jsonb_build_object('action','rejected');
+  where store_id=p_store_id and product_id=p_product_id and test_mode=p_test_mode) then
+   return jsonb_build_object('action','rejected','code','foreign_store_or_mode');
  end if;
+ -- CAT evidence-only: known store/product/mode with stale variant;
+ -- never infer an account or grant from an unrecognized provider variant.
+ v_catalog_quarantined := not exists(select 1
+  from research_checkout_guard.allowed_variants
+  where store_id=p_store_id and product_id=p_product_id
+    and variant_id=p_provider_price_id and test_mode=p_test_mode);
+
  -- Unique provider subscription ID is a logical event key for this one
  -- subscription_created flow; serialization is by DB unique index.
  insert into research_checkout_guard.signed_paid_observations(
   provider,provider_subscription_id,provider_customer_id,store_id,
-  product_id,provider_price_id,test_mode,occurred_at,raw_body_sha256,
+  product_id,provider_price_id,test_mode,catalog_quarantined,occurred_at,raw_body_sha256,
   claimed_account_id,claimed_checkout_proof_sha256,
   business_fingerprint_version,business_fingerprint_sha256)
  values(p_provider,p_provider_subscription_id,p_provider_customer_id,
-  p_store_id,p_product_id,p_provider_price_id,p_test_mode,p_occurred_at,
+  p_store_id,p_product_id,p_provider_price_id,p_test_mode,v_catalog_quarantined,p_occurred_at,
   p_raw_body_sha256,p_claimed_account_id,p_claimed_checkout_proof_sha256,
   p_business_fingerprint_version,p_business_fingerprint_sha256)
  on conflict(provider,provider_subscription_id) do nothing
@@ -283,12 +290,14 @@ begin
      paid_observation_id,raw_body_sha256) values(v_obs.id,p_raw_body_sha256);
    return jsonb_build_object('action','recorded',
       'provider_subscription_id',p_provider_subscription_id,
-      'raw_body_sha256',p_raw_body_sha256);
+      'raw_body_sha256',p_raw_body_sha256,
+      'catalog_quarantined',v_catalog_quarantined);
  end if;
  select * into v_obs from research_checkout_guard.signed_paid_observations
   where provider=p_provider and provider_subscription_id=p_provider_subscription_id
   for update;
- v_changed := v_obs.business_fingerprint_version is distinct from p_business_fingerprint_version
+ v_changed := v_obs.catalog_quarantined is distinct from v_catalog_quarantined
+    or v_obs.business_fingerprint_version is distinct from p_business_fingerprint_version
    or v_obs.business_fingerprint_sha256 is distinct from p_business_fingerprint_sha256
    or v_obs.occurred_at is distinct from p_occurred_at
    or v_obs.provider_customer_id is distinct from p_provider_customer_id
@@ -306,7 +315,8 @@ begin
      on conflict(paid_observation_id,raw_body_sha256) do nothing;
    return jsonb_build_object('action','already_recorded',
       'provider_subscription_id',p_provider_subscription_id,
-      'raw_body_sha256',p_raw_body_sha256);
+      'raw_body_sha256',p_raw_body_sha256,
+      'catalog_quarantined',v_obs.catalog_quarantined);
  end if;
  -- Separate append-only conflicting evidence; no update to first signed fact.
  insert into research_checkout_guard.conflict_evidence(
@@ -353,6 +363,11 @@ begin
     or not exists (select 1 from research_checkout_guard.signed_paid_deliveries d
        where d.paid_observation_id=v_obs.id and d.raw_body_sha256=p_raw_body_sha256) then
    return jsonb_build_object('action','unverified_paid_evidence');
+ end if;
+ -- Quarantined paid evidence cannot bind even after allowlist changes.
+ if v_obs.catalog_quarantined then
+   return research_checkout_guard.hold_binding_conflict(
+     v_obs.id,'catalog_pending_reconciliation',p_raw_body_sha256);
  end if;
  -- A signed/committed provider fact cannot authenticate an account by itself.
  -- These claims must all match a separately issued private intent.

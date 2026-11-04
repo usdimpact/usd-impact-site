@@ -75,7 +75,7 @@ export function sourceDateBasisForUrl(value) {
   if (hostname === 'bls.gov' && /^\/cpi\/?$/i.test(url.pathname)) {
     return SOURCE_DATE_BASIS.CURRENT_RELEASE;
   }
-  if (hostname === 'eia.gov' && /^\/petroleum\/supply\/weekly\/index\.php$/i.test(url.pathname)) {
+  if (hostname === 'eia.gov' && /^\/petroleum\/supply\/weekly(?:\/(?:index\.php)?)?$/i.test(url.pathname)) {
     return SOURCE_DATE_BASIS.CURRENT_RELEASE;
   }
   if (hostname === 'bea.gov' && /^\/data\/personal-consumption-expenditures-price-index\/?$/i.test(url.pathname)) {

@@ -320,14 +320,15 @@ const routeGuard = "  // User-agent selects the route only; CRON_SECRET still au
   "  // Return before the provider wrapper. No thirteenth Vercel function is added.\n" +
   "  if (request.headers?.['user-agent'] === 'vercel-cron/1.0') {\n" +
   "    return scheduleWakeHandler(request, response);\n  }\n";
-await check('normal grounded generation implementation is byte-for-byte preserved', () => {
+await check('grounded generation retains reviewed prompt with isolated cron routing', () => {
   assert.ok(routedSource.startsWith(routeImport));
   assert.ok(routedSource.includes(routeGuard));
   const original = Buffer.from(routedSource.replace(routeImport, '').replace(routeSetup, '').replace(routeGuard, ''));
   const blob = createHash('sha1').update(`blob ${original.length}\0`).update(original).digest('hex');
-  // Reviewed Daily source-date update: FOMC annual-index rejection/guidance changed,
-  // while the exact cron route and all wake behavior remain unchanged.
-  assert.equal(blob, 'ea45105e53a3bd34ff013b8dac6ded6e3ad9dc3a');
+  // The EIA rolling-table and 2026 holiday release guidance intentionally
+  // changes the grounded model prompt only. Exact cron route/guard remain
+  // independently asserted above; the rest of this implementation is frozen.
+  assert.equal(blob, '009f802ea85ee33ebc72562d425afb5b34c95350');
 });
 const routedBody = routedSource.match(/export default async function handler\(request, response\) \{([\s\S]*)\}\s*$/)?.[1];
 assert.ok(routedBody);

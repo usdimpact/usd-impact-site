@@ -6,6 +6,7 @@ import { verifyDailyNewsDeployment } from './check-daily-news-deployment-health.
 import {
   REPOSITORY, beforeUsFirstRelease, validateSourceRun, isTrustedBackstop,
   selectExactDailyPr, validateDailyContent, requireExactChecks, isSingleGeneratorCommit,
+  dispatchSourceRunId, isAuthenticatedBotDispatch,
 } from './daily-news-auto-publish-policy.mjs';
 
 const SHA = /^[a-f0-9]{40}$/;
@@ -88,13 +89,51 @@ async function verifyLive(editionDate) {
   hold('production-live-edition-not-verified');
 }
 
-async function run() {
-  if (process.env.GITHUB_REPOSITORY !== REPOSITORY || process.env.GITHUB_EVENT_NAME !== 'workflow_run') {
-    hold('not-trusted-workflow-run');
+
+async function lookupAuthenticSourceRun() {
+  if (process.env.GITHUB_REPOSITORY !== REPOSITORY) hold('unexpected-repository');
+  if (process.env.GITHUB_EVENT_NAME === 'workflow_run') {
+    const envelope = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+    const source = envelope.workflow_run;
+    if (!source) hold('missing-workflow-run-receipt');
+    // An explicitly-dispatched Daily has its own independently verified
+    // workflow_dispatch path. Suppress the fallback workflow_run to avoid
+    // two controllers racing to merge the same article.
+    if (source.event === 'workflow_dispatch') return null;
+    return source;
+  }
+  if (process.env.GITHUB_EVENT_NAME !== 'workflow_dispatch'
+      || process.env.GITHUB_REF !== 'refs/heads/main') {
+    hold('not-a-trusted-publisher-event');
   }
   const envelope = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
-  const source = envelope.workflow_run;
-  if (!source || source.conclusion !== 'success') return noOp('source-workflow-not-successful');
+  if (process.env.GITHUB_ACTOR !== 'github-actions[bot]'
+      || process.env.PUBLISH_TRIGGERING_ACTOR !== 'github-actions[bot]'
+      || process.env.PUBLISH_RUN_ATTEMPT !== '1') {
+    hold('explicit-publisher-not-first-attempt-bot-trigger');
+  }
+  const id = dispatchSourceRunId(envelope);
+  for (let attempt = 0; attempt < 24; attempt++) {
+    // Never trust the supplied run ID until its GitHub REST receipt, immutable
+    // source workflow identity, and actual successful completion are verified.
+    const source = api('actions/runs/' + id);
+    if (source.id !== id || source.head_branch !== 'main'
+        || !isAuthenticatedBotDispatch(source, process.env.GITHUB_ACTOR)) {
+      hold('explicit-source-run-not-authenticated-backstop-candidate');
+    }
+    if (source.status === 'completed') {
+      if (source.conclusion !== 'success') hold('explicit-source-run-not-successful');
+      return source;
+    }
+    await sleep(5000);
+  }
+  hold('source-run-completion-not-confirmed-within-bounded-lease');
+}
+
+async function run() {
+  const source = await lookupAuthenticSourceRun();
+  if (source === null) return noOp('explicit-source-uses-trusted-dispatch-controller');
+  if (source.conclusion !== 'success') return noOp('source-workflow-not-successful');
   const mainSha = currentMain();
   const jobsPayload = api('actions/runs/' + source.id + '/jobs?per_page=100');
   if (jobsPayload.total_count !== jobsPayload.jobs?.length || jobsPayload.total_count > 100) {
@@ -191,10 +230,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       .replace(/[^a-z0-9-]/gi, '-').slice(0, 100);
     console.error('Daily guarded auto-publication HOLD: ' + reason);
     try {
+      const evidence = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+      const sourceId = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch'
+        ? (typeof evidence.inputs?.source_run_id === 'string' ? evidence.inputs.source_run_id : '')
+        : String(evidence.workflow_run?.id || '');
+      const safeSourceId = /^[1-9][0-9]{0,15}$/.test(sourceId) ? sourceId : 'unknown';
       gh(['api', '-X', 'POST', 'repos/' + REPOSITORY + '/issues/840/comments',
         '-f', 'body=Daily guarded auto-publication HOLD: ' + reason
-        + '. Source run: https://github.com/' + REPOSITORY + '/actions/runs/'
-        + String(JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')).workflow_run?.id || '')
+        + '. Source run ID: ' + safeSourceId
         + '. No content validation bypass or new generation was authorized.']);
     } catch { /* Never obscure original hold. */ }
     process.exitCode = 1;

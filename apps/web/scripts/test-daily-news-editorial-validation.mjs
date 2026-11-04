@@ -378,6 +378,9 @@ assert.match(sourceHandler, /include every Employment Situation, CPI, PCE, and F
 assert.match(sourceHandler, /central-bank decision language as central-bank catalyst mentions/i);
 assert.match(sourceHandler, /Otherwise remove the forward-looking mention/i);
 assert.match(sourceHandler, /Never pad the ledger with an unused source/i);
+assert.match(sourceHandler, /table14\.pdf, table1\.pdf and other tableN\.pdf paths are mutable weekly pointers/i);
+assert.match(sourceHandler, /NEVER label Nov 6 the report.s release date/i);
+assert.match(sourceHandler, /Check the official EIA schedule for the edition year/i);
 assert.match(sourceHandler, /Do not claim that a release, decision, or source was not found/i);
 assert.match(sourceHandler, /Do not include assistant conversation/i);
 
@@ -413,6 +416,8 @@ assert.match(repairHandler, /X-USD-Impact-Repair-Count/);
 
 const groundedHandler = await readFile(new URL('../api/daily-news-grounded-background.js', import.meta.url), 'utf8');
 assert.match(groundedHandler, /at least three distinct source URLs/i);
+assert.match(groundedHandler, /reject rolling wpsrall\.pdf and tableN\.pdf/i);
+assert.match(groundedHandler, /Nov 12 Thursday noon ET for the week ending Nov 6/i);
 assert.match(groundedHandler, /fewer than three grounded URLs/i);
 assert.doesNotMatch(groundedHandler, /at least two distinct source URLs/i);
 
@@ -469,5 +474,96 @@ const insufficientEvidence = collectRepairEvidence({
 }, '2026-10-12');
 assert.equal(insufficientEvidence.permittedSourceUrls.length, 2, 'fail-closed source minimum is enforced before repair model calls');
 assert.match(sourceHandler, /audit every non-schedule highlight/i);
+
+
+// #840 regression: the Nov 4 generated article incorrectly described Nov 6 as
+// the EIA WPSR release date (the Nov 6 date is the next data-week ending date).
+// The agency schedules Nov 4 at 10:30 ET, then Nov 12 at noon ET.
+// Keep the reusable schedule INDEX ineligible as a publishedAt ledger source.
+function eiaWpsrCalendarFixture(date, editionDate = '2026-11-04', event = 'EIA Weekly Petroleum Status Report') {
+  return {
+    editionDate,
+    sources: [source('eia-dated', '2026-10-28', 'https://www.eia.gov/petroleum/supply/weekly/')],
+    highlights: [{
+      headline: 'EIA data from the previous dated weekly report',
+      development: 'A previously released weekly report gives historical energy context.',
+      whyItMatters: 'Oil inventories may affect WTI volatility.',
+      sourceIds: ['eia-dated'],
+    }],
+    catalysts: [{ event, date, sourceIds: ['eia-dated'] }],
+    summary: 'Historical weekly energy context, no same-day market reaction inferred.',
+    body: 'Educational only.',
+  };
+}
+assert.doesNotThrow(() => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-04')));
+assert.doesNotThrow(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-04', '2026-11-04', 'EIA weekly inventories')),
+  'EIA alternative WPSR event wording must retain the same official calendar gate',
+);
+assert.throws(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-06', '2026-11-04', 'EIA weekly inventory report')),
+  /EIA WPSR date 2026-11-06 conflicts/,
+  'alternate EIA weekly inventory wording must not bypass the release-date check',
+);
+for (const landing of [
+  'https://www.eia.gov/petroleum/supply/weekly/',
+  'https://www.eia.gov/petroleum/supply/weekly/index.php',
+]) {
+  assert.doesNotThrow(() => validateEditorialBundle({
+    ...eiaWpsrCalendarFixture('2026-11-04'),
+    sources: [source('eia-dated', '2026-10-28', landing)],
+  }), 'EIA current-release landing pages with a directly verified displayed Release Date remain eligible');
+}
+
+assert.throws(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-06')),
+  /EIA WPSR date 2026-11-06 conflicts with the verified official 2026 release calendar/,
+  'the exact original Nov 4 generator error must be rejected',
+);
+assert.throws(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-11', '2026-11-09')),
+  /EIA WPSR date 2026-11-11 conflicts/,
+  'the Veterans Day holiday exception must displace the preceding Wednesday',
+);
+assert.doesNotThrow(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-12', '2026-11-09')),
+  'the EIA-authorized holiday-adjusted Thursday must remain eligible for separate source review',
+);
+assert.throws(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-05')),
+  /EIA WPSR date 2026-11-05 conflicts/,
+);
+assert.throws(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2027-01-06', '2026-12-31')),
+  /requires a new official-year review/,
+  'unreviewed next-year holiday schedules must not silently use a Wednesday heuristic',
+);
+assert.doesNotThrow(
+  () => validateEditorialBundle(eiaWpsrCalendarFixture('2026-11-06', '2026-11-04', 'BLS Employment Situation')),
+  'unrelated official Friday catalysts must not be blocked by the EIA-only guard',
+);
+assert.throws(
+  () => validateEditorialBundle({
+    ...eiaWpsrCalendarFixture('2026-11-04'),
+    sources: [source('eia-dated', '2026-10-28', 'https://www.eia.gov/petroleum/supply/weekly/schedule.php')],
+  }),
+  /reusable schedule page without a page-level publication/,
+  'do not weaken the existing source-date fail-closed rule for a reusable agency schedule',
+);
+
+for (const rollingTableUrl of [
+  'https://www.eia.gov/petroleum/supply/weekly/pdf/table14.pdf',
+  'https://www.eia.gov/petroleum/supply/weekly/pdf/table1.pdf',
+]) {
+  assert.throws(
+    () => validateEditorialBundle({
+      ...eiaWpsrCalendarFixture('2026-11-04'),
+      sources: [source('eia-dated', '2026-10-29', rollingTableUrl)],
+    }),
+    /EIA weekly petroleum rolling report requires a verified dated archive document/,
+    'rolling EIA WPSR tables cannot be assigned an unsupported historical publishedAt',
+  );
+}
+
 
 console.log('daily news editorial validation tests pass');

@@ -87,3 +87,105 @@ jobs:
             echo 'No Supabase connection, no Production/Development DDL, no Lemon Squeezy or paid entitlements.'
             echo 'A46 corrected installer and D2-04 supplement remain review-only; D2-B/C and D4/D6/D7 NO-GO.'
           } >> "$GITHUB_STEP_SUMMARY"
+  original-app-pg17-regression:
+    # Run the existing real-main D1 and actual-app JS suites in a separate PG17
+    # fixture, to avoid cross-database role collisions with the corrected M1 job.
+    if: github.head_ref == 'agent/1103-d2-a-pg17-disposable-review-20261104' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      CI: 'true'
+      PGHOST: '127.0.0.1'
+      PGPORT: '5432'
+      PGDATABASE: ci_review
+      PGUSER: ci_research
+      PGPASSWORD: ci_fixture_only_password
+    services:
+      postgres:
+        image: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+        env:
+          POSTGRES_DB: ci_review
+          POSTGRES_USER: ci_research
+          POSTGRES_PASSWORD: ci_fixture_only_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_research -d ci_review"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - name: Checkout existing D1 app and real-main test source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Enforce local-only runner and rebind D1 branch guards in temp checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = 127.0.0.1
+          test "$PGDATABASE" = ci_review
+          test "$PGUSER" = ci_research
+          test -z "${SUPABASE_URL:-}"
+          test -z "${SUPABASE_DB_URL:-}"
+          test -z "${DATABASE_URL:-}"
+          test -z "${LEMON_SQUEEZY_API_KEY:-}"
+          test -z "${VERCEL_ENV:-}"
+          grep -q 'D1 ISOLATED REVIEW ONLY' docs/operations/research-b5-real-app-rpc-proposed-d1-review-2026-11-04.sql
+          python3 - <<'PYBRANCH'
+          import os
+          from pathlib import Path
+          parent='agent/1103-b5-rpc-sql-isolated-d1-20261104'
+          child='agent/1103-d2-a-pg17-disposable-review-20261104'
+          assert os.environ['GITHUB_HEAD_REF']==child
+          files=[
+            Path('scripts/test-research-b5-rpc-d1.py'),
+            Path('scripts/test-research-b5-real-main-rls-d1.py'),
+            Path('apps/web/scripts/export-research-b5-real-rpc-vectors.mjs'),
+          ]
+          for src in files:
+            text=src.read_text(encoding='utf-8')
+            assert text.count(parent)==1, f'Guard changed upstream: {src}'
+            assert 'GITHUB_HEAD_REF' in text
+            # The mutation is ephemeral in this checkout only, never committed.
+            src.write_text(text.replace(parent,child),encoding='utf-8')
+          print('PASS ephemeral branch guard rebinding; no application logic changed')
+          PYBRANCH
+          python3 -m py_compile scripts/test-research-b5-rpc-d1.py scripts/test-research-b5-real-main-rls-d1.py
+          python3 - <<'PYVERSION'
+          import os
+          assert os.environ['GITHUB_HEAD_REF']=='agent/1103-d2-a-pg17-disposable-review-20261104'
+          assert os.environ.get('CI')=='true'
+          PYVERSION
+      - name: Install pinned ephemeral test client
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/d2-original-app-venv"
+          "$RUNNER_TEMP/d2-original-app-venv/bin/python" -m pip install --disable-pip-version-check --no-input 'psycopg[binary]==3.2.10'
+      - name: Verify standalone real app JavaScript regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node apps/web/scripts/test-research-membership-first-purchase.mjs
+      - name: Replay original D1 real PostgreSQL 17 tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/d2-original-app-venv/bin/python" scripts/test-research-b5-rpc-d1.py
+      - name: Replay real Research migrations and JS RPC bridge on PostgreSQL 17
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/d2-original-app-venv/bin/python" scripts/test-research-b5-real-main-rls-d1.py
+      - name: Record original D1 regression scope and release hold
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '### D2-09 exact-source original D1 regression, standalone PG17'
+            echo 'No connected Supabase, real provider, customer, or merchant access.'
+            echo 'This validates D1 app and RLS at PG17; corrected D2 M1 is separately covered by the four matrix jobs.'
+            echo 'D2-B/C, D4 settlement, D6 recovery and D7 activation remain HOLD.'
+          } >> "$GITHUB_STEP_SUMMARY"

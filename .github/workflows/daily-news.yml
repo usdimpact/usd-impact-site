@@ -358,6 +358,30 @@ jobs:
           echo 'Required exact-head security checks, original-source validation and Preview remain separate from generator success; the bounded auto-publisher may merge eligible morning editions only after them.'
           echo "Daily USD Impact ${edition_date} passed Web quality and is ready for bounded automatic publication or protected owner review: $pr_url"
 
+
+      # GITHUB_TOKEN-dispatched upstream runs can suppress a downstream workflow_run
+      # event. Explicit workflow_dispatch is GitHub's supported exception; the
+      # receiver must re-fetch and validate this immutable source run itself.
+      - name: Explicitly dispatch trusted bounded publisher after source verification
+        if: ${{ success() && github.event_name == 'workflow_dispatch' && steps.config.outputs.configured == 'true' && steps.publish_pr.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          expected_branch="automation/daily-usd-impact-$(date -u +%F)-$GITHUB_RUN_ID"
+          pr_count="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base main \
+            --head "$expected_branch" --json number --jq 'length')"
+          if [ "$pr_count" != "1" ]; then
+            echo "::error::No unique original Daily publication PR; not dispatching publisher."
+            exit 1
+          fi
+          if ! gh workflow run daily-news-auto-publish.yml --repo "$GITHUB_REPOSITORY" \
+            --ref main -f "source_run_id=$GITHUB_RUN_ID"; then
+            echo "::error::Publisher dispatch acknowledgement not verified; never retry automatically."
+            exit 1
+          fi
+          echo "Dispatched independent bounded publisher with immutable source run $GITHUB_RUN_ID; not a publication success receipt."
+
       - name: Report Daily failure gate
         if: failure() && (steps.preflight.outcome == 'failure' || steps.config.outputs.configured == 'true')
         env:

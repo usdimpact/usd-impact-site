@@ -829,6 +829,100 @@ await assert.rejects(
 );
 assert.equal(foreignCustodyRequests, 0, 'foreign store must not enter Research paid evidence');
 
+
+for (const [rejection, expected] of [
+  ['checkout_request_replayed', 'RESEARCH_CHECKOUT_REQUEST_REPLAYED'],
+  ['existing_checkout_intent', 'RESEARCH_CHECKOUT_RESERVATION_ACTIVE'],
+  ['already_subscribed_or_entitled', 'RESEARCH_CHECKOUT_ALREADY_ENTITLED'],
+  ['account_unavailable', 'RESEARCH_CHECKOUT_ACCOUNT_INELIGIBLE'],
+]) {
+  let unexpectedProviderCalls = 0;
+  await assert.rejects(
+    () => createResearchMembershipCheckout({
+      config, user, billingInterval: 'monthly',
+      idempotencyKey: 'review-' + rejection + '-001',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/rest/v1/subscriptions?')) {
+          return new Response('[]', { status: 200 });
+        }
+        if (String(url).includes('/rpc/issue_research_membership_checkout_intent')) {
+          return new Response(JSON.stringify({ action: 'rejected', code: rejection }), { status: 200 });
+        }
+        unexpectedProviderCalls += 1;
+        throw new Error('No provider or attachment may follow an expected issuer 409');
+      },
+    }),
+    { code: expected, status: 409 },
+    rejection,
+  );
+  assert.equal(unexpectedProviderCalls, 0, 'Issuer 409 never creates a payable checkout');
+}
+
+for (const skewMs of [-60_000, 60_000]) {
+  let providerCallsUnderSkew = 0;
+  const checkoutUnderSkew = await createResearchMembershipCheckout({
+    config, user, billingInterval: 'monthly',
+    idempotencyKey: 'skew-review-' + Math.abs(skewMs) + (skewMs < 0 ? 'minus' : 'plus'),
+    now: new Date('2026-09-07T15:00:00.000Z'),
+    clock: () => Date.parse('2026-09-07T15:00:01.000Z') + skewMs,
+    fetchImpl: async (url, init = {}) => {
+      if (String(url).includes('/rest/v1/subscriptions?')) {
+        return new Response('[]', { status: 200 });
+      }
+      if (String(url).includes('/rpc/issue_research_membership_checkout_intent')) {
+        return new Response(JSON.stringify({
+          action: 'reserved', intent_id: intentId, checkout_key: issuedProof,
+          account_id: accountId, store_id: '42', variant_id: '314',
+          billing_interval: 'monthly', test_mode: true,
+          created_at: '2026-09-07T15:00:00.300Z',
+          expires_at: '2026-09-07T15:30:00.300Z',
+        }), { status: 200 });
+      }
+      if (String(url).includes('/rpc/attach_research_membership_checkout_intent')) {
+        return new Response(JSON.stringify({
+          action: 'attached', intent_id: intentId, provider_checkout_id: 'skew_checkout',
+        }), { status: 200 });
+      }
+      assert.equal(url, 'https://api.lemonsqueezy.com/v1/checkouts');
+      providerCallsUnderSkew += 1;
+      return new Response(JSON.stringify({
+        data: { type: 'checkouts', id: 'skew_checkout',
+          attributes: { store_id: 42, variant_id: 314, test_mode: true,
+            url: 'https://example.lemonsqueezy.com/checkout/skew_checkout' } },
+      }), { status: 201 });
+    },
+  });
+  assert.equal(checkoutUnderSkew.checkoutId, 'skew_checkout');
+  assert.equal(providerCallsUnderSkew, 1, 'Allowed clock skew creates exactly one checkout');
+}
+
+let staleIssuerProviderCalls = 0;
+await assert.rejects(
+  () => createResearchMembershipCheckout({
+    config, user, billingInterval: 'monthly', idempotencyKey: 'far-skew-001',
+    now: new Date('2026-09-07T15:00:00.000Z'),
+    clock: () => Date.parse('2026-09-07T15:15:00.000Z'),
+    fetchImpl: async (url) => {
+      if (String(url).includes('/rest/v1/subscriptions?')) {
+        return new Response('[]', { status: 200 });
+      }
+      if (String(url).includes('/rpc/issue_research_membership_checkout_intent')) {
+        return new Response(JSON.stringify({
+          action: 'reserved', intent_id: intentId, checkout_key: issuedProof,
+          account_id: accountId, store_id: '42', variant_id: '314',
+          billing_interval: 'monthly', test_mode: true,
+          created_at: '2026-09-07T15:00:00.300Z',
+          expires_at: '2026-09-07T15:30:00.300Z',
+        }), { status: 200 });
+      }
+      staleIssuerProviderCalls += 1;
+      throw new Error('Stale issuer must not reach provider');
+    },
+  }),
+  { code: 'RESEARCH_CHECKOUT_INTENT_EXPIRY_INVALID', status: 503 },
+);
+assert.equal(staleIssuerProviderCalls, 0);
+
 const migration = await readFile(
   new URL('../../../supabase/migrations/20260907154500_research_membership_first_purchase_binding.sql', import.meta.url),
   'utf8',

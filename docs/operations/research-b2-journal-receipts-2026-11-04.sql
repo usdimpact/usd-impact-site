@@ -1,0 +1,125 @@
+-- USD Impact #1103 / Claude A30 / 2026-11-04
+-- DESIGN REVIEW ONLY. NOT A MIGRATION. DO NOT EXECUTE.
+-- This file intentionally contains NO executable DDL or DML.
+-- NOT in supabase/migrations. No database or privilege change approved.
+--
+-- Scope: B-1 Research-specific receipt CAS + B-2 append-only conflict journal.
+-- Existing Library Pass commerce receipt functions MUST remain untouched.
+--
+-- EXISTING VERIFIED SOURCE:
+-- public.webhook_receipts in 20260729203000_paid_access_foundation.sql:
+--   provider, provider_event_id unique; payload_sha256; status;
+--   attempt_count; last_error.
+-- public.begin_commerce_webhook_receipt in
+--   20260826230126_allow_terminal_commerce_webhook_replay_delivery_variance.sql:
+--   terminal duplicate bypasses hash comparison;
+--   nonterminal retry SET last_error = null.
+-- public.finish_commerce_webhook_receipt in
+--   20260826170000_commerce_reconciliation_runtime.sql:
+--   UPDATE WHERE id only (no attempt CAS), overwrites state.
+--
+-- PROPOSED INTERFACES (SIGNATURES, NOT IMPLEMENTED):
+--
+-- begin_research_webhook_receipt(
+--   p_event_id text, p_event_type text, p_semantic_sha256 text,
+--   p_fingerprint_version text
+-- ) => {receipt_id, attempt_count, lease_token, disposition}
+-- disposition in {acquired, in_progress, terminal_duplicate,
+--                 semantic_conflict, pending_reconciliation}
+--
+-- finish_research_webhook_receipt(
+--   p_receipt_id uuid, p_attempt_count bigint, p_lease_token uuid,
+--   p_status text, p_failure_code text default null
+-- ) => {status, attempt_count, disposition}
+-- disposition in {applied, stale_attempt, already_terminal}
+--
+-- REQUIRED SQL TRANSACTION CONTRACT:
+-- (1) Use a Research-only, disjoint provider namespace.
+-- (2) Fetch receipt under SELECT ... FOR UPDATE or an equivalent
+--     transaction-scoped lock. Compare VERSION and SEMANTIC HASH for
+--     EVERY existing event, including processed/ignored terminal receipts.
+-- (3) The first begin creates a durable receipt with an exclusive lease,
+--     generated server-side in the database. Return only a server-generated
+--     attempt_count/lease_token, never a caller-chosen one.
+-- (4) Concurrent begin while a valid lease is active returns in_progress
+--     and MUST NOT invoke subscription transition or binding.
+-- (5) A recovered or expired lease may be acquired only after a verified
+--     policy-controlled timeout, preserving the original conflict history.
+-- (6) Finish must implement compare-and-swap semantics:
+--       UPDATE research_private.research_receipts
+--       SET status = p_status, lease_token = NULL, processed_at = now()
+--       WHERE id = p_receipt_id
+--         AND attempt_count = p_attempt_count
+--         AND lease_token = p_lease_token
+--         AND status = 'received'
+--       RETURNING id, status, attempt_count;
+--     An UPDATE affecting zero rows is a documented stale_attempt,
+--     NEVER an unconditional success.
+-- (7) The receipt begin/finish commits do NOT share a transaction with
+--     provider/webhook application code; a business transition can succeed
+--     before receipt finish times out. Durable event_key idempotency and
+--     reconciliation must cover this crash window.
+-- (8) No raw provider payload, buyer email, buyer name, URLs or secrets
+--     are stored in receipt or journal.
+--
+-- REVIEW-ONLY JOURNAL TABLE SHAPE (private, not exposed to PostgREST):
+--
+-- CREATE SCHEMA research_private; -- pending owner D2 / migration approval
+--
+-- CREATE TABLE research_private.research_payment_reconciliation_journal (
+--   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+--   provider text NOT NULL CHECK (provider = 'lemon-squeezy'),
+--   provider_subscription_id text, -- may be unknown on bad custom_data
+--   provider_event_id text,        -- signed provider event ID
+--   bound_account_id uuid,         -- nullable; do NOT guess from email
+--   business_fingerprint_version text NOT NULL,
+--   business_fingerprint_sha256 text NOT NULL
+--     CHECK (business_fingerprint_sha256 ~ '^[a-f0-9]{64}$'),
+--   conflict_code text NOT NULL CHECK (conflict_code IN (
+--     'duplicate_paid_subscription','entitlement_conflict',
+--     'unbound_subscription','missing_custom_binding',
+--     'semantic_payload_conflict','foreign_invoice',
+--     'receipt_completion_conflict','provider_reconciliation_needed'
+--   )),
+--   observed_at timestamptz NOT NULL DEFAULT now(),
+--   observer_attempt bigint,
+--   source_class text NOT NULL CHECK (source_class IN (
+--     'signed_subscription','signed_invoice','internal_reconciliation'
+--   )),
+--   CHECK (char_length(coalesce(provider_event_id,'')) <= 255)
+-- );
+--
+-- Unlike an UPSERT of last_error or last_seen, each observation above is
+-- immutable and append-only. A separate append-only resolution-events
+-- table (or scoped case-management system) records owner-authorized
+-- resolutions. A derived view can COUNT observations and calculate
+-- first_seen/last_seen; never mutate the evidence row on retry.
+--
+-- MANDATORY PRIVILEGE AND RLS DESIGN (NOT APPROVED):
+-- * REVOKE ALL ON SCHEMA research_private FROM PUBLIC,anon,authenticated;
+-- * REVOKE ALL ON JOURNAL FROM PUBLIC,anon,authenticated,service_role;
+-- * ENABLE ROW LEVEL SECURITY on every exposed and private table.
+-- * Only an independently approved, narrowly owned entrypoint may INSERT.
+-- * No UPDATE/DELETE on journal to service_role.
+-- * A SECURITY DEFINER writer must be NOLOGIN; audit every role's
+--   pg_has_role, ownership, search_path, EXECUTE and SET ROLE behaviour.
+-- * Explicitly REVOKE function EXECUTE FROM PUBLIC/anon/authenticated
+--   in the same migration transaction; verify pg_proc overload count.
+-- * Preserve secure account deletion/privacy retention and DSAR gates.
+--
+-- SECURITY AND OPERATIONS ACCEPTANCE (ALL UNEXECUTED ON REAL POSTGRES):
+-- T7/T8: same key exact/revised fingerprint; terminal mismatch rejected.
+-- T13: two paid bindings; unbound second provider sub journalled.
+-- T17: two begins inside one lease -> one acquired, one in_progress.
+-- T18: finish token N+1 then stale N must never overwrite terminal.
+-- T19: failed conflict => retry => crash, journal remains append-only.
+-- T20: rotated signed URLs => same versioned semantic hash, no 42501.
+-- T21: complimentary entitlement remains byte-identical after paid conflict.
+-- T22: Library Pass entitlements byte-identical for entire suite.
+--
+-- REQUIRED OWNER ACTIONS: D1 isolated two-session PostgreSQL, D2 safe writer
+-- security model, D3 interim checkout policy, D4 provider read custody,
+-- D5 read-only public merchant buy-link inspection, D6 refund/cancel policy,
+-- D7 receipt flag approval ONLY after independent QA & real SQL tests.
+--
+-- NO SQL OR SCHEMA IN THIS FILE IS EXECUTED AUTOMATICALLY.

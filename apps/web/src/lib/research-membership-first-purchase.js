@@ -280,6 +280,34 @@ async function assertNoCurrentResearchSubscription({ config, userId, fetchImpl }
   }
 }
 
+// A previous paid or complimentary Research entitlement occupies the unique
+// (account_id, product_id) row. Until the separately reviewed DB relink path
+// exists, offering another paid checkout could charge without activating access.
+async function assertNoExistingResearchEntitlement({ config, userId, fetchImpl }) {
+  const query = new URLSearchParams({
+    select: 'id',
+    account_id: `eq.${userId}`,
+    product_id: `eq.${PRODUCT_ID}`,
+    limit: '1',
+  });
+  const response = await fetchImpl(`${config.supabase.url}/rest/v1/entitlements?${query}`, {
+    headers: serviceHeaders(config.supabase.secretKey),
+  });
+  const rows = await readJson(response);
+  if (
+    !response.ok || !Array.isArray(rows)
+    || rows.length > 1
+    || rows.some((row) => !row || !UUID_PATTERN.test(String(row.id || '')))
+  ) {
+    fail('Research Membership checkout entitlement eligibility lookup failed.',
+      'RESEARCH_CHECKOUT_ENTITLEMENT_LOOKUP_FAILED', 502);
+  }
+  if (rows.length > 0) {
+    fail('Existing Research Membership access requires support before purchasing again.',
+      'RESEARCH_CHECKOUT_ENTITLEMENT_CONFLICT', 409);
+  }
+}
+
 export async function createResearchMembershipCheckout({
   config,
   user,
@@ -291,6 +319,7 @@ export async function createResearchMembershipCheckout({
   const requestBody = buildResearchMembershipCheckoutRequest({ config, user, billingInterval, idempotencyKey, now });
   const userId = accountId(user?.id);
   await assertNoCurrentResearchSubscription({ config, userId, fetchImpl });
+  await assertNoExistingResearchEntitlement({ config, userId, fetchImpl });
 
   const response = await fetchImpl(`${PROVIDER_API_ROOT}/checkouts`, {
     method: 'POST',

@@ -20,7 +20,12 @@ assert.match(intent || '', /^[a-f0-9-]{36}$/i);
 assert.match(proof || '', /^[A-Za-z0-9_-]{43}$/);
 const subscription = 'sub_b5_real_js_bridge';
 const checkoutId = 'checkout_b5_js_bridge';
-const now = new Date();
+// D1 injects a pre-RPC app timestamp earlier than the genuine SQL issuer
+// timestamp; this catches the old 30-minute false-overrun failure.
+const now = process.env.RESEARCH_B5_PREISSUE_CLIENT_TIME
+  ? new Date(process.env.RESEARCH_B5_PREISSUE_CLIENT_TIME)
+  : new Date();
+assert.ok(Number.isFinite(now.getTime()), 'Synthetic pre-issue clock is valid');
 const env = {
   VERCEL_ENV: 'preview', RESEARCH_MEMBERSHIP_WEBHOOK_ENABLED: 'true',
   LEMON_SQUEEZY_RESEARCH_TEST_MODE: 'true',
@@ -132,5 +137,6 @@ assert.equal(String(config.productId), '99');
 assert.equal(requests.observe.p_raw_body_sha256, requests.bind.p_raw_body_sha256);
 assert.equal(requests.observe.p_provider_price_id, '314');
 assert.equal(requests.issue.p_account_id, account);
-console.log(JSON.stringify({ source: 'actual-app-JS', capturedAt: now.toISOString(),
+console.log(JSON.stringify({ source: 'actual-app-JS',
+  capturedAt: now.toISOString(), issuerCreatedAt: issued.created_at,
   requests }));

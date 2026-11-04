@@ -198,6 +198,11 @@ await check('shared mutex and unchanged least-privilege permissions', () => {
   assert.match(backstop, /accepted dispatch has no visible run receipt/);
   assert.match(backstop, /for receipt_check in \$\(seq 1 12\)/);
   assert.match(backstop, /file_status.*!=.*404/s);
+  assert.ok(backstop.includes("cron: '47 10 * * 1-5'"));
+  assert.ok(backstop.includes("cron: '7 11 * * 1-5'"));
+  assert.ok(!backstop.includes("cron: '47 15 * * 1-5'"));
+  assert.ok(backstop.includes('TZ=America/New_York date +%H:%M'));
+  assert.ok(backstop.includes('past safe 07:10 ET recovery start'));
 });
 
 
@@ -247,6 +252,15 @@ else echo 'Unexpected mock invocation' >&2; exit 99; fi
   const date = `#!/bin/bash
 if [[ "$*" == *'+%u'* ]]; then
   if [ "$SCENARIO" = weekend ]; then echo 6; else echo 1; fi
+elif [[ "$*" == *'+%H:%M'* ]]; then
+  case "$SCENARIO" in
+    at-safe-cutoff) echo '07:10' ;;
+    after-safe-cutoff) echo '08:20' ;;
+    bad-us-clock) echo 'bad-clock' ;;
+    *) echo '06:50' ;;
+  esac
+elif [[ "$*" == *'+%F'* ]]; then
+  if [ "$SCENARIO" = wrong-us-date ] && [[ "$*" != *"-u"* ]]; then echo 2026-10-18; else echo 2026-10-19; fi
 else echo 2026-10-19; fi
 `;
   for (const [name, content] of [['gh', gh], ['date', date], ['sleep', '#!/bin/bash\nexit 0\n']]) {
@@ -294,6 +308,10 @@ else process.exit(2);
     ['missing-crlf', 0, 1, 'Recovery run receipt'],
     ['forbidden', 1, 0, 'lookup did not return'],
     ['transport', 1, 0, 'lookup did not return'], ['weekend', 0, 0, 'outside UTC weekdays'],
+    ['at-safe-cutoff', 0, 0, 'past safe 07:10 ET recovery start'],
+    ['after-safe-cutoff', 0, 0, 'past safe 07:10 ET recovery start'],
+    ['wrong-us-date', 0, 0, 'UTC and US edition dates differ'],
+    ['bad-us-clock', 1, 0, 'invalid US local time'],
     ['closed-pr', 0, 0, 'publication PR already exists'], ['active', 0, 0, 'already active'],
     ['used', 0, 0, 'one-recovery budget is exhausted'], ['prior-failed', 1, 0, 'earlier backstop did not succeed'],
     ['ack-lost', 1, 1, 'acknowledgement is unknown'], ['no-receipt', 1, 1, 'no visible run receipt'],
@@ -307,11 +325,22 @@ else process.exit(2);
           GITHUB_REPOSITORY: 'usdimpact/usd-impact-site', GITHUB_RUN_ID: '99',
           GITHUB_STEP_SUMMARY: summary, GH_TOKEN: 'fixture-not-real' } });
       assert.equal(child.status, exit, `${scenario}: ${child.stderr}`);
-      assert.ok((await readFile(summary, 'utf8')).includes(message));
+      const summaryText = await readFile(summary, 'utf8');
+      assert.ok(summaryText.includes(message), `${scenario}: expected '${message}' in ${JSON.stringify(summaryText)}`);
       assert.equal((await readFile(calls, 'utf8')).split('\n').filter((x) => x.startsWith('workflow run')).length, dispatches);
     });
   }
-} finally { await rm(temp, { recursive: true, force: true }); }
+ } finally { await rm(temp, { recursive: true, force: true }); }
+
+await check('early UTC fallbacks remain before 07:10 ET across DST', () => {
+  const timeInNewYork = (value) => new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).format(new Date(value));
+  assert.equal(timeInNewYork('2026-07-15T10:47:00Z'), '06:47');
+  assert.equal(timeInNewYork('2026-07-15T11:07:00Z'), '07:07');
+  assert.equal(timeInNewYork('2026-11-05T10:47:00Z'), '05:47');
+  assert.equal(timeInNewYork('2026-11-05T11:07:00Z'), '06:07');
+});
 // Verify the existing function routes cron requests before the generator wrapper.
 const routedSource = await readFile(new URL('../api/daily-news-grounded-background.js', import.meta.url), 'utf8');
 const routeImport = "import { createScheduleWakeHandler } from '../src/lib/daily-news-schedule-wake.js';\n";

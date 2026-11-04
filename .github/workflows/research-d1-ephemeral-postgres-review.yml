@@ -12,6 +12,8 @@ on:
       - 'docs/operations/research-b3-versioned-receipts-pglite-review-2026-11-04.sql'
       - 'docs/operations/research-b4-synthetic-binding-conflict-2026-11-04.sql'
       - 'scripts/test-research-d1-b4-binding-conflicts.py'
+      - 'docs/operations/research-b41-reservation-provenance-2026-11-04.sql'
+      - 'scripts/test-research-d1-b41-reservation-hardening.py'
 
 permissions:
   contents: read
@@ -68,6 +70,8 @@ jobs:
           test -f docs/operations/research-b3-versioned-receipts-pglite-review-2026-11-04.sql
           test -f docs/operations/research-b4-synthetic-binding-conflict-2026-11-04.sql
           test -f scripts/test-research-d1-b4-binding-conflicts.py
+          test -f docs/operations/research-b41-reservation-provenance-2026-11-04.sql
+          test -f scripts/test-research-d1-b41-reservation-hardening.py
           echo "D1 isolated review: no Supabase keys, production URLs or real merchant API calls."
 
       - name: Install pinned test-only Python PostgreSQL client in runner venv
@@ -89,6 +93,12 @@ jobs:
           set -euo pipefail
           "$RUNNER_TEMP/research-d1-venv/bin/python" scripts/test-research-d1-b4-binding-conflicts.py
 
+      - name: B-4.1 synthetic checkout reservation and provenance adversarial tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/research-d1-venv/bin/python" scripts/test-research-d1-b41-reservation-hardening.py
+
       - name: Append scope of evidence to workflow summary
         if: always()
         shell: bash
@@ -99,5 +109,6 @@ jobs:
             echo "Real two-session tests apply to the B-3 *prototype*, not deployed subscription/entitlement code."
             echo "No Supabase Production/Development DB, customer identity, merchant key, migrations or credentials."
             echo "B-4 uses synthetic bindings, signed-paid observations, and non-superuser fake roles only."
+            echo "B-4.1 rejects forged checkout keys and refunded reactivation in TEST fixtures only."
             echo "Actual USD Impact T13/T21/T22, real Supabase D2 roles, provider HMAC, refunds and D7 activation remain HOLD."
           } >> "$GITHUB_STEP_SUMMARY"

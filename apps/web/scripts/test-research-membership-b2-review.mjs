@@ -22,7 +22,6 @@ const sub = {
     attributes: {
       store_id: 42, product_id: 99, variant_id: 314, customer_id: 456,
       status: 'active', cancelled: false, trial_ends_at: null,
-      billing_reason: 'subscription_created',
       renews_at: '2026-12-01T00:00:00Z', ends_at: null,
       created_at: '2026-11-01T00:00:00Z',
       updated_at: '2026-11-04T00:00:00Z', test_mode: true,
@@ -77,7 +76,6 @@ for (const [name, mutator] of [
   ['variant', x => { x.data.attributes.variant_id = 315; }],
   ['customer', x => { x.data.attributes.customer_id = 4567; }],
   ['status', x => { x.data.attributes.status = 'past_due'; }],
-  ['billing reason', x => { x.data.attributes.billing_reason = 'subscription_updated'; }],
   ['cancelled', x => { x.data.attributes.cancelled = true; }],
   ['trial end', x => { x.data.attributes.trial_ends_at = '2026-11-02T00:00:00Z'; }],
   ['renewal date', x => { x.data.attributes.renews_at = '2027-01-01T00:00:00Z'; }],
@@ -91,7 +89,6 @@ for (const [name, mutator] of [
   assert.notEqual(changes(mutator), original, name + ' is protected business evidence');
 }
 assert.notEqual(changes(x => { delete x.data.attributes.ends_at; }), original, 'missing versus explicit null');
-assert.notEqual(changes(x => { delete x.data.attributes.billing_reason; }), original, 'missing billing reason must differ from signed billing reason');
 assert.throws(() => changes(x => { x.meta.custom_data.usd_impact_future_account_binding = 'secret'; }), TypeError);
 assert.throws(() => fingerprintResearchReceiptBusinessEvent({ data: sub.data }), TypeError);
 
@@ -102,7 +99,6 @@ const invoice = {
     attributes: {
       store_id: 42, test_mode: true, subscription_id: 'sub_123',
       status: 'refunded', refunded: true, total: 3900, refunded_amount: 3900,
-      billing_reason: 'renewal',
       refunded_at: '2026-11-04T12:00:00Z', created_at: '2026-11-04T11:00:00Z',
       updated_at: '2026-11-04T12:00:00Z', currency: 'USD',
       urls: { invoice: 'https://example.invalid/signed?key=1' },
@@ -112,17 +108,12 @@ const invoice = {
 const invoiceHash = fingerprintResearchReceiptBusinessEvent(invoice);
 const altUrl = clone(invoice); altUrl.data.attributes.urls.invoice = 'https://example.invalid/signed?key=2';
 assert.equal(fingerprintResearchReceiptBusinessEvent(altUrl), invoiceHash);
-for (const key of ['subscription_id','status','refunded','total','refunded_amount','refunded_at','created_at','updated_at','currency','store_id','test_mode','billing_reason']) {
+for (const key of ['subscription_id','status','refunded','total','refunded_amount','refunded_at','created_at','updated_at','currency','store_id','test_mode']) {
   const altered = clone(invoice);
   const prior = altered.data.attributes[key];
   altered.data.attributes[key] = typeof prior === 'number' ? prior + 1 : typeof prior === 'boolean' ? !prior : String(prior) + '2';
   assert.notEqual(fingerprintResearchReceiptBusinessEvent(altered), invoiceHash, 'invoice ' + key + ' must be fingerprinted');
 }
-
-const missingInvoiceBillingReason = clone(invoice);
-delete missingInvoiceBillingReason.data.attributes.billing_reason;
-assert.notEqual(fingerprintResearchReceiptBusinessEvent(missingInvoiceBillingReason), invoiceHash,
-  'invoice missing billing reason must be distinct from signed billing reason');
 
 // Prospective B-2 DESIGN MODEL ONLY; this does not execute the real DB.
 // The current shared SQL is known to violate these properties.

@@ -378,6 +378,9 @@ assert.match(sourceHandler, /include every Employment Situation, CPI, PCE, and F
 assert.match(sourceHandler, /central-bank decision language as central-bank catalyst mentions/i);
 assert.match(sourceHandler, /Otherwise remove the forward-looking mention/i);
 assert.match(sourceHandler, /Never pad the ledger with an unused source/i);
+assert.match(sourceHandler, /table14\.pdf, table1\.pdf and other tableN\.pdf paths are mutable weekly pointers/i);
+assert.match(sourceHandler, /NEVER label Nov 6 the report.s release date/i);
+assert.match(sourceHandler, /Check the official EIA schedule for the edition year/i);
 assert.match(sourceHandler, /Do not claim that a release, decision, or source was not found/i);
 assert.match(sourceHandler, /Do not include assistant conversation/i);
 
@@ -413,6 +416,8 @@ assert.match(repairHandler, /X-USD-Impact-Repair-Count/);
 
 const groundedHandler = await readFile(new URL('../api/daily-news-grounded-background.js', import.meta.url), 'utf8');
 assert.match(groundedHandler, /at least three distinct source URLs/i);
+assert.match(groundedHandler, /reject rolling wpsrall\.pdf and tableN\.pdf/i);
+assert.match(groundedHandler, /Nov 12 Thursday noon ET for the week ending Nov 6/i);
 assert.match(groundedHandler, /fewer than three grounded URLs/i);
 assert.doesNotMatch(groundedHandler, /at least two distinct source URLs/i);
 

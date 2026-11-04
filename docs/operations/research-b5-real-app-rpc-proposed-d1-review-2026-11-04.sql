@@ -480,6 +480,12 @@ grant select on public.profiles to review_checkout_owner;
 grant update(status) on public.profiles to review_checkout_owner;
 grant select, insert on public.subscriptions to review_checkout_owner;
 grant select on public.entitlements, public.subscription_offers to review_checkout_owner;
+-- C11 restricted D1 review: profiles lock/read only active; profile status
+-- updates prohibited by WITH CHECK(false), but FOR UPDATE remains eligible;
+-- Research entitlement and offer reads only; inserts only pending Lemon
+-- Squeezy Research subscriptions. The subscription SELECT policy remains
+-- broader under the isolated NOLOGIN owner to detect external provider-ID
+-- collisions instead of hiding an existing conflicting provider subscription.
 -- C11 actual-main RLS repair. With NOBYPASSRLS the owner is blind
 -- to protected Research rows unless policies explicitly name this NOLOGIN
 -- role. Do NOT install on a connected Supabase project under D1 authority.
@@ -487,19 +493,22 @@ grant select on public.entitlements, public.subscription_offers to review_checko
 -- has no login and is NOT granted to any API, anon, authenticated or
 -- service-role principal.
 create policy research_b5_owner_profiles_select
- on public.profiles for select to review_checkout_owner using (true);
+ on public.profiles for select to review_checkout_owner using (status = 'active');
 create policy research_b5_owner_profiles_row_lock
  on public.profiles for update to review_checkout_owner
- using (true) with check (true);
+ using (status = 'active') with check (false);
 create policy research_b5_owner_subscriptions_select
  on public.subscriptions for select to review_checkout_owner using (true);
 create policy research_b5_owner_subscriptions_insert
  on public.subscriptions for insert to review_checkout_owner
- with check (true);
+ with check (product_id = 'research-membership'
+   and provider = 'lemon-squeezy' and state = 'pending');
 create policy research_b5_owner_entitlements_select
- on public.entitlements for select to review_checkout_owner using (true);
+ on public.entitlements for select to review_checkout_owner
+ using (product_id = 'research-membership');
 create policy research_b5_owner_offers_select
- on public.subscription_offers for select to review_checkout_owner using (true);
+ on public.subscription_offers for select to review_checkout_owner
+ using (product_id = 'research-membership');
 
 -- CREATE is temporarily needed to transfer function ownership and is
 -- revoked immediately. No login caller gets membership in this owner.

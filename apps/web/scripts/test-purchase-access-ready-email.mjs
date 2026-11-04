@@ -103,4 +103,83 @@ assert.throws(
   /email/i,
 );
 
+// Synthetic Production-approval negatives. These mock both database and provider;
+// neither Production SQL nor Resend is contacted.
+const syntheticProduction = {
+  VERCEL_ENV: 'production',
+  SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_abcdefghijklmnopqrstuvwxyz',
+  SUPABASE_SECRET_KEY: 'sb_secret_abcdefghijklmnopqrstuvwxyz',
+  EMAIL_READINESS_LEDGER_ENABLED: 'true',
+  EMAIL_READINESS_PRODUCTION_APPROVED: 'true',
+  LAUNCH_EMAIL_DISPATCH_ENABLED: 'true',
+  LAUNCH_EMAIL_PRODUCTION_APPROVED: 'false',
+  RESEND_API_KEY: 're_fake_readonly_123456789012345',
+  LAUNCH_EMAIL_FROM_EMAIL: 'USD Impact <support@usd-impact.com>',
+};
+const persistedOutbox = {
+  ...prepared.intent.outboxRecord,
+  id: '623e4567-e89b-42d3-a456-426614174000',
+  status: 'queued',
+  attempt_count: 0,
+  created_at: '2026-09-02T14:41:47.000Z',
+};
+async function syntheticLedgerFetch(url, options = {}) {
+  assert.match(url, /\/rest\/v1\/notification_outbox\?on_conflict=idempotency_key$/);
+  assert.equal(options.method, 'POST');
+  return new Response(JSON.stringify([persistedOutbox]), {
+    status: 201, headers: { 'Content-Type': 'application/json' },
+  });
+}
+let attemptedResend = 0;
+const blockResend = async () => {
+  attemptedResend += 1;
+  throw new Error('Synthetic safety failure: no real Resend request allowed.');
+};
+let syntheticOutboxWrites = 0;
+const recordSyntheticWrite = async (...args) => {
+  syntheticOutboxWrites += 1;
+  return syntheticLedgerFetch(...args);
+};
+await assert.rejects(
+  () => deliverPurchaseAccessReadyEmail({
+    accessResult,
+    environment: syntheticProduction,
+    ledgerFetchImpl: recordSyntheticWrite,
+    providerFetchImpl: blockResend,
+  }),
+  (error) => error?.code === 'PRODUCTION_DISPATCH_NOT_APPROVED',
+  'E9c: disabled Production approval must reject provider dispatch after at most one outbox write',
+);
+assert.equal(syntheticOutboxWrites, 1);
+assert.equal(attemptedResend, 0);
+
+await assert.rejects(
+  () => deliverPurchaseAccessReadyEmail({
+    accessResult,
+    environment: { ...syntheticProduction, RESEND_API_KEY: '', LAUNCH_EMAIL_PRODUCTION_APPROVED: 'true' },
+    ledgerFetchImpl: recordSyntheticWrite,
+    providerFetchImpl: blockResend,
+  }),
+  (error) => error?.code === 'RESEND_API_KEY_INVALID',
+  'E13: missing Resend credential must not send a provider request',
+);
+assert.equal(syntheticOutboxWrites, 2);
+assert.equal(attemptedResend, 0);
+
+await assert.rejects(
+  () => deliverPurchaseAccessReadyEmail({
+    accessResult,
+    environment: { ...syntheticProduction, EMAIL_READINESS_PRODUCTION_APPROVED: 'false' },
+    ledgerFetchImpl: recordSyntheticWrite,
+    providerFetchImpl: blockResend,
+  }),
+  (error) => error?.code === 'PRODUCTION_LEDGER_NOT_APPROVED',
+  'E9: missing Production ledger authorization must reject before the outbox write',
+);
+assert.equal(syntheticOutboxWrites, 2);
+assert.equal(attemptedResend, 0);
+
+console.log('Purchase access-ready E9/E9c/E13 Production approval and missing-key negatives passed.');
+
 console.log('Purchase access-ready email tests passed.');

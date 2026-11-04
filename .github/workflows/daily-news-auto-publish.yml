@@ -1,4 +1,7 @@
 name: Daily USD Impact bounded auto-publication
+# Source-specific display titles make receiver receipts unambiguous. The title
+# is only an observable hint; the receiver still validates the GitHub source run.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Daily USD Impact bounded auto-publication source {0}', inputs.source_run_id) || 'Daily USD Impact bounded auto-publication' }}
 
 on:
   workflow_run:

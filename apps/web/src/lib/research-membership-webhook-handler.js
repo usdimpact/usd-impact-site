@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { fingerprintResearchReceiptBusinessEvent } from './research-membership-receipt-business-fingerprint.js';
 import { verifyLemonSqueezyWebhookSignature } from './lemon-squeezy-adapter-scaffold.js';
 import {
   LEMON_SQUEEZY_RESEARCH_EVENTS,
@@ -162,17 +162,6 @@ function signedEnvelope(rawBody, signature, secret) {
 // Signed, catalog-scoped evidence for opt-in Research receipt auditing.
 // This does not determine entitlement state or authorize a transaction.
 // The receipt ID must be stable across delivery-only meta.webhook_id changes.
-function canonicalReceiptObject(value) {
-  if (Array.isArray(value)) return value.map(canonicalReceiptObject);
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value).sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, v]) => [k, canonicalReceiptObject(v)]),
-    );
-  }
-  return value;
-}
-
 export function inspectSignedResearchWebhookReceiptEnvelope({
   rawBody,
   signature,
@@ -214,16 +203,9 @@ export function inspectSignedResearchWebhookReceiptEnvelope({
     throw replayError('RESEARCH_WEBHOOK_RECEIPT_EVENT_INVALID', 400);
   }
 
-  // Only a known delivery-only field is omitted. Other changed, signed
-  // provider evidence produces a different fingerprint and fails closed.
-  const canonicalPayload = {
-    ...payload,
-    meta: { ...meta },
-  };
-  delete canonicalPayload.meta.webhook_id;
-  const semanticSha256 = createHash('sha256')
-    .update(JSON.stringify(canonicalReceiptObject(canonicalPayload)))
-    .digest('hex');
+  // Stage B review-only: signed-provider business fields, not rotating portal
+  // URLs or delivery metadata. Flag-off execution never enters this function.
+  const semanticSha256 = fingerprintResearchReceiptBusinessEvent(payload);
   return Object.freeze({
     providerEventId,
     providerSubscriptionId: envelope.providerSubscriptionId,

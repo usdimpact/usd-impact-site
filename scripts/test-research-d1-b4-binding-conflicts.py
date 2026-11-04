@@ -368,22 +368,26 @@ def test_d5_unbound_public_checkout(a,watch,v):
 
 def test_y2_terminal_subscription_no_reactivation(a,watch,v):
     # Rejected terminal states must not be resurrected by a paid observation.
-    for state in ("refunded","cancelled","past_due","cancel_scheduled"):
+    for index,state in enumerate(("refunded","cancelled","past_due","cancel_scheduled")):
+        # Use independent synthetic accounts so existing pending/active unique
+        # constraints do not contaminate the next terminal-state negative case.
+        account="44444444-4444-4444-8444-"+str(index+1).zfill(12)
+        watch.execute("insert into research_binding_review.profiles(account_id,status) values (%s::uuid,'active')",(account,))
         event="evt-b41-terminal-"+state
         sub="synthetic-terminal-"+state
-        assert invoke(v,"observe_signed_paid",P3,sub,event)["disposition"]=="recorded"
-        assert invoke(a,"try_bind_paid",P3,sub,event)["disposition"]=="created"
+        assert invoke(v,"observe_signed_paid",account,sub,event)["disposition"]=="recorded"
+        assert invoke(a,"try_bind_paid",account,sub,event)["disposition"]=="created"
         watch.execute(
             "update research_binding_review.subscriptions set status=%s where provider_subscription_id=%s",
             (state,sub))
-        outcome=invoke(a,"try_activate_paid",P3,sub,event)
+        outcome=invoke(a,"try_activate_paid",account,sub,event)
         assert outcome=={"disposition":"conflict","code":"subscription_not_activatable"},outcome
         assert one(watch,
             "select status from research_binding_review.subscriptions where provider_subscription_id=%s",
             (sub,))==state
         assert one(watch,
             "select count(*) from research_binding_review.entitlements where account_id=%s::uuid and product_id='research-membership' and state='active'",
-            (P3,))==0
+            (account,))==0
         assert any(x[0]=="subscription_not_activatable" for x in conflicts(watch,event))
     print("PASS B4.1 Y2: refunded/cancelled/past_due/cancel_scheduled never activated")
 

@@ -5,6 +5,7 @@ import {
   LEARNING_OFFER_MODE_KEY,
   LEARNING_OFFER_MODES,
   FREE_CORE_PUBLIC_RELEASE_COMMITTED,
+  NEW_LIBRARY_PASS_SALES_PAUSED,
   resolveLearningOfferCommercePolicyForRelease,
   gateLearningOfferCommerceReadiness,
   resolveLearningOfferCommercePolicy,
@@ -14,7 +15,8 @@ for (const value of [undefined, null, '', 'legacy', ' LEGACY ']) {
   const env = value === undefined ? {} : { [LEARNING_OFFER_MODE_KEY]: value };
   const policy = resolveLearningOfferCommercePolicy(env);
   assert.equal(policy.mode, LEARNING_OFFER_MODES.LEGACY);
-  assert.equal(policy.allowNewLibraryCheckout, true);
+  assert.equal(policy.allowNewLibraryCheckout, false, 'Source-pinned sale pause wins over missing/stale legacy env.');
+  assert.equal(resolveLearningOfferCommercePolicyForRelease(env, false).allowNewLibraryCheckout, true, 'Historical simulation only, never runtime.');
   assert.ok(Object.isFrozen(policy));
 }
 
@@ -41,7 +43,14 @@ const approvedLegacyReadiness = Object.freeze({
   checkoutEnabled: true,
   disclosuresComplete: true,
 });
-assert.equal(gateLearningOfferCommerceReadiness(approvedLegacyReadiness, {}), approvedLegacyReadiness);
+assert.equal(NEW_LIBRARY_PASS_SALES_PAUSED, true, 'This Draft stops sales but does not release protected media.');
+const pausedLegacyReadiness = gateLearningOfferCommerceReadiness(approvedLegacyReadiness, {});
+assert.notEqual(pausedLegacyReadiness, approvedLegacyReadiness);
+assert.equal(pausedLegacyReadiness.state, 'blocked');
+assert.equal(pausedLegacyReadiness.checkoutEnabled, false);
+assert.equal(pausedLegacyReadiness.mode, 'live');
+assert.ok(Object.isFrozen(pausedLegacyReadiness));
+assert.equal(resolveLearningOfferCommercePolicy({}).allowNewLibraryCheckout, false);
 for (const mode of ['free', 'paid', 'invalid']) {
   const gated = gateLearningOfferCommerceReadiness(approvedLegacyReadiness, { [LEARNING_OFFER_MODE_KEY]: mode });
   assert.equal(gated.state, 'blocked');
@@ -85,7 +94,9 @@ for (const rawMode of ['legacy', ' LEGACY ', 'paid-pending', 'true', ' ', true, 
 const futurePaid = resolveLearningOfferCommercePolicyForRelease({ [LEARNING_OFFER_MODE_KEY]: 'paid' }, true);
 assert.equal(futurePaid.mode, LEARNING_OFFER_MODES.PAID);
 assert.equal(futurePaid.allowNewLibraryCheckout, false, 'A paid request is not a merchant authorization.');
-assert.equal(resolveLearningOfferCommercePolicyForRelease({}, false).allowNewLibraryCheckout, true);
+assert.equal(resolveLearningOfferCommercePolicyForRelease({}, false).allowNewLibraryCheckout, true, 'Historical simulation only.');
+assert.equal(resolveLearningOfferCommercePolicy({}).allowNewLibraryCheckout, false, 'Unconfigured runtime must remain blocked.');
+assert.equal(resolveLearningOfferCommercePolicy({ [LEARNING_OFFER_MODE_KEY]: 'legacy' }).allowNewLibraryCheckout, false, 'Explicit legacy cannot restore sales.');
 assert.equal(resolveLearningOfferCommercePolicyForRelease(null, true).allowNewLibraryCheckout, false);
 assert.equal(resolveLearningOfferCommercePolicyForRelease({}, 'true').allowNewLibraryCheckout, false);
 

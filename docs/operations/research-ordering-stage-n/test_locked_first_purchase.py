@@ -170,6 +170,10 @@ with db() as verifier:
     verifier.execute(W_INSERT,wargs(a,intent_id))
     verifier.execute(W_INSERT,wargs(args(ACC,SID,key="fake-stage-n-intent"),uuid.UUID(
         "99999999-9999-4999-8999-000000000099")))
+    verifier.execute(W_INSERT,wargs(args(ACC,SID,key="wrong-stage-n-quote"),
+                                    intent_id,quote="3"*64))
+    verifier.execute(W_INSERT,wargs(args(ACC,SID,key="wrong-stage-n-invoice"),
+                                    intent_id,invoice="999"))
     verifier.execute("RESET ROLE")
 with db() as g:
     role_denied(g,"research_e_gateway",CALL_L,a)
@@ -189,6 +193,60 @@ with db() as g:
     role_denied(g,"research_e_gateway",CALL_N,args(ACC,SID,state="past_due"))
     assert count(g,"public.entitlements","account_id=%s AND product_id='research-membership'",(ACC,))==0
 
+# L-1 adversarial persisted evidence probes: all changes occur in isolated
+# transactions which are ROLLED BACK before the next case. No new access.
+def deny_changed_evidence(update_sql,params):
+    with db(autocommit=False) as changed:
+        changed.execute(update_sql,params)
+        changed.execute("SET LOCAL ROLE research_e_gateway")
+        denied(changed,CALL_N,a)
+        changed.rollback()
+    with db() as verify:
+        assert count(verify,"public.entitlements",
+            "account_id=%s AND product_id='research-membership'",(ACC,))==0
+        assert (verify.execute("SELECT state FROM research_checkout_guard.checkout_intents WHERE id=%s",
+            (intent_id,)).fetchone()[0])=="consumed"
+        assert verify.execute("SELECT disposition FROM research_ordering_stage_j.invoice_receipts "
+           "WHERE invoice_id='118'").fetchone()[0]=="pending_reconciliation"
+
+FOREIGN=uuid.UUID("88888888-8888-4888-8888-000000000042")
+with db() as root:
+    root.execute("INSERT INTO auth.users(id,email) VALUES(%s,%s)",
+      (FOREIGN,"stage-n-foreign@invalid.example"))
+deny_changed_evidence(
+ "UPDATE research_checkout_guard.checkout_intents SET state='attached',consumed_at=NULL WHERE id=%s",
+ (intent_id,))
+deny_changed_evidence(
+ "UPDATE research_checkout_guard.checkout_intents SET account_id=%s WHERE id=%s",
+ (FOREIGN,intent_id))
+deny_changed_evidence(
+ "UPDATE research_checkout_guard.checkout_intents SET variant_id='314' WHERE id=%s",
+ (intent_id,))
+deny_changed_evidence(
+ "UPDATE research_checkout_guard.checkout_intents SET created_at=clock_timestamp()-interval '35 days', "
+ "expires_at=clock_timestamp()-interval '35 days'+interval '30 minutes' WHERE id=%s",
+ (intent_id,))
+deny_changed_evidence(
+ "UPDATE research_ordering_stage_j.invoice_receipts SET disposition='quarantined_conflict' "
+ "WHERE provider='lemon-squeezy' AND store_id='41' AND test_mode=true AND invoice_id='118'",
+ ())
+with db() as root:
+    obsid=root.execute("SELECT id FROM research_checkout_guard.signed_paid_observations "
+      "WHERE provider_subscription_id='217'").fetchone()[0]
+deny_changed_evidence(
+ "INSERT INTO research_checkout_guard.conflict_evidence("
+ "paid_observation_id,provider_subscription_id,conflict_code,raw_body_sha256) "
+ "VALUES(%s,'217','stage-n-injected-evidence-conflict',%s)",
+ (obsid,"9"*64))
+with db() as g:
+    role_denied(g,"research_e_gateway",CALL_N,args(ACC,SID,key="wrong-stage-n-quote"))
+    role_denied(g,"research_e_gateway",CALL_N,args(ACC,SID,key="wrong-stage-n-invoice"))
+    role_denied(g,"research_e_gateway",CALL_N,args(ACC,SID,variant="314"))
+    assert count(g,"public.entitlements",
+      "account_id=%s AND product_id='research-membership'",(ACC,))==0
+print("STAGE_N_NEGATIVES_PASS actual B5 foreign/unconsumed/expired/variant/conflict and "
+      "J quarantine/missing/quote mismatch deny without Research or Library Pass writes",flush=True)
+
 # P2 L-2 direct privileged but NOLOGIN owner cannot write Library Pass.
 with db() as r:
     r.execute("SET ROLE research_e_owner")
@@ -202,6 +260,11 @@ with db() as r:
     denied(r,"INSERT INTO public.entitlements(account_id,product_id,state,starts_at) "
       "VALUES(%s,'read-the-dollar-first-guided-interactive-edition','active',%s)",
       (ACC,START),states=("42501",))
+    denied(r,"UPDATE research_checkout_guard.checkout_intents SET state='reserved' WHERE id=%s",
+      (intent_id,),states=("42501",))
+    denied(r,"UPDATE research_ordering_stage_j.invoice_receipts SET disposition='quarantined_conflict' "
+      "WHERE provider='lemon-squeezy' AND store_id='41' AND invoice_id='118'",
+      (),states=("42501",))
     r.execute("RESET ROLE")
     print("STAGE_N_L2_PASS Research NOLOGIN owner denied Library Pass SELECT/UPDATE/INSERT by OLD+NEW product RLS",flush=True)
 

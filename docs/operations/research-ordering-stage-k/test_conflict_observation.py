@@ -79,7 +79,7 @@ with db() as c:
     ):
         cfg=c.execute("SELECT proconfig FROM pg_proc WHERE oid=%s::regprocedure",
                       (signature,)).fetchone()[0]
-        assert cfg and "search_path=" in cfg,(signature,cfg)
+        assert cfg and any(v in ("search_path=","search_path=\"\"") for v in cfg),(signature,cfg)
     for role in ("anon","authenticated","service_role","research_stage_j_writer"):
         assert c.execute("SELECT has_function_privilege(%s,%s,'EXECUTE')",
             (role,"research_ordering_stage_k.hold_observation(text,text,boolean,text,text,text,text,text,text,text,text)")

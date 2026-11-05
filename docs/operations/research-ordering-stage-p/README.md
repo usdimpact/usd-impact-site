@@ -2,7 +2,7 @@
 
 **DRAFT / DISPOSABLE POSTGRESQL 17.6 ONLY / RESEARCH LIVE P1 AND B-5 NO-GO.** This is not a deployable SQL migration, webhook handler, issuer signing proof, or merchant settlement authority.
 
-Parent: [Stage O Draft #1151](https://github.com/usdimpact/usd-impact-site/pull/1151) at exact `8200cef8308edff563158e766bfdedce5e4dc179`, unchanged. Stage O's guards-first B-5 binder N-X0 test and Stage N's original pinned B-5 M1 SQL remain untouched.
+Parent: [Stage O Draft #1151](https://github.com/usdimpact/usd-impact-site/pull/1151) originally at exact `8200cef8308edff563158e766bfdedce5e4dc179`; the Stage O parent received only the independently requested O-T1 exact-empty-search-path assertion correction at `f5d53e0af767f6caa0fee2f0cc4c40566b2da951`. Its security behavior remains unchanged; final parent tests must be exact-head green. Stage O's guards-first B-5 binder N-X0 test and Stage N's original pinned B-5 M1 SQL remain untouched.
 
 This child adds a test-only SQL overlay, a fresh PG17 test and a scoped 10-job review workflow. No app imports, credentials, live Supabase SQL, checkout/merchant/payments/refunds, Library Pass, customer subscription/entitlement, merge or deployment.
 

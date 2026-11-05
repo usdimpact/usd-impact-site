@@ -82,6 +82,21 @@ def confirm(a,lease):
 def finish(a,lease):
     return svc("SELECT public.finish_deletion_auth_cleanup(%s,%s)",(a,lease))
 
+# The old service_role REST RPCs must be unavailable after the migration;
+# both helpers remain owner-internal to the SECURITY DEFINER Phase A transaction.
+for legacy_name in ("prepare_account_deletion_auth_removal", "finalize_account_deletion"):
+    for api_role in ("service_role", "anon", "authenticated"):
+        old_result=exec_role(api_role,
+           f"SELECT public.{legacy_name}(%s)", (uuid.uuid4(),))
+        rec(f"G {api_role} denied legacy {legacy_name} direct call",
+            old_result[0]=="ERR" and old_result[1].startswith("42501"),
+            old_result)
+    rec(f"G service_role lacks explicit legacy {legacy_name} EXECUTE grant",
+        su("SELECT NOT has_function_privilege('service_role', %s::regprocedure, 'EXECUTE')",
+           (f"public.{legacy_name}(uuid)",)))
+# Independent synthetic integration below proves Phase A's owner calls still
+# work despite this outer service_role revocation.
+
 # G - grants/shape checks. No API role can read the private PII cleanup queue.
 new_functions = [
     ("finalize_deletion_and_queue_auth_cleanup", "SELECT public.finalize_deletion_and_queue_auth_cleanup(%s)", (uuid.uuid4(),)),

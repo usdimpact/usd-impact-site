@@ -4,6 +4,11 @@ begin;
 create schema research_ordering_d33;
 revoke all on schema research_ordering_d33 from public,anon,authenticated,service_role;
 grant usage on schema research_ordering_d33 to research_e_owner;
+-- NOLOGIN lifecycle helper needs read-only profile eligibility facts.
+grant select on public.profiles to research_e_owner;
+drop policy if exists d33_research_owner_profile_select on public.profiles;
+create policy d33_research_owner_profile_select on public.profiles
+for select to research_e_owner using(true);
 grant select on public.subscription_events to research_e_owner;
 drop policy if exists d33_research_owner_subscription_event_read on public.subscription_events;
 create policy d33_research_owner_subscription_event_read on public.subscription_events

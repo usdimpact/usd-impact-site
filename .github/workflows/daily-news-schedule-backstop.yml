@@ -2,8 +2,10 @@ name: Daily USD Impact schedule backstop
 
 on:
   schedule:
-    - cron: '17 12 * * 1-5'
-    - cron: '47 15 * * 1-5'
+    # Early UTC backstops permit source/CI/publisher/deploy before 08:30 ET.
+    # 10:47/11:07 UTC = 06:47/07:07 EDT; 05:47/06:07 EST.
+    - cron: '47 10 * * 1-5'
+    - cron: '7 11 * * 1-5'
   workflow_dispatch:
 
 permissions:
@@ -40,6 +42,27 @@ jobs:
           # A delayed Friday event must not generate a Saturday edition.
           if [ "$(date -u +%u)" -gt 5 ]; then
             echo "- Result: outside UTC weekdays; no recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # A late GitHub runner or manual dispatch must never start another
+          # paid Daily after the safe 07:10 ET launch window. Leave 80 minutes
+          # before the 08:30 ET publication cutoff for generation, validation,
+          # protected merge and deployment. Evaluate the actual US timezone so
+          # DST transitions do not silently move the cutoff.
+          us_day="$(TZ=America/New_York date +%F)"
+          us_time="$(TZ=America/New_York date +%H:%M)"
+          if [[ ! "$us_day" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] \
+             || [[ ! "$us_time" =~ ^[0-2][0-9]:[0-5][0-9]$ ]]; then
+            echo "- HOLD: invalid US local time; no recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          if [ "$us_day" != "$today" ]; then
+            echo "- HOLD: UTC and US edition dates differ; no recovery dispatch." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [[ "$us_time" > "07:10" ]] || [ "$us_time" = "07:10" ]; then
+            echo "- HOLD: past safe 07:10 ET recovery start; no paid generation." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 

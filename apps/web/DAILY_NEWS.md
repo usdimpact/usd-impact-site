@@ -67,7 +67,7 @@ The bundle contains:
 - a deterministic `extraBrief` eligibility flag for the small subset of high-impact catalysts
 - optional long-form body
 
-The importer always writes `status: review`. It cannot publish.
+The importer defaults to `status: review`; the existing scheduled Daily workflow explicitly invokes `--publish` to write `status: published` **inside an unmerged PR only**. This does not publish to Production. The separate guarded auto-publisher may merge one original morning Daily PR only after source/date/content, exact-head CI, Preview and pre-08:30 ET cutoff checks succeed; other cases retain owner review.
 
 ## Required repository configuration
 
@@ -120,7 +120,7 @@ A published highlight must be either:
 - `verified-primary`: directly supported by an authoritative first-party source
 - `verified-multiple`: supported by at least two independent reliable reporting domains
 
-Developing or single-source claims remain outside the published edition until verified. Every generated draft still requires human editorial review before its status is changed to `published`. Corrections must update `lastReviewed` and preserve the original source ledger.
+Developing or single-source claims remain outside the published edition until verified. Under the November 4, 2026 owner's **narrow Daily-only unattended delivery authorization**, an original, unchanged one-file weekday Daily PR may be protected-merged by the separate automatic publisher before 08:30 America/New_York if the strict primary-source, run lineage, original-copy, check, Preview and current-main gates all pass. This is a narrowly bounded release decision, **not an approval of other drafts, changed stories, post-release articles, Score, Catalyst Briefs, Weekly, Monthly, commerce or rights**. Any failed, ambiguous, late or changed candidate stays open for human editorial review. Corrections must update `lastReviewed` and preserve the original source ledger.
 
 ## Important Catalyst Briefs
 

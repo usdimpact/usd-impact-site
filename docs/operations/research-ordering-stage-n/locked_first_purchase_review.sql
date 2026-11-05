@@ -38,6 +38,29 @@ CREATE POLICY stage_n_j_invoice_reader ON research_ordering_stage_j.invoice_rece
  FOR SELECT TO research_e_owner USING(true);
 CREATE POLICY stage_n_k_observation_reader ON research_ordering_stage_k.provider_observations
  FOR SELECT TO research_e_owner USING(true);
+-- Row-level locks require UPDATE privilege even for FOR SHARE. The owner
+-- receives only narrow column grants with fail-closed SQL UPDATE guards;
+-- it MUST NOT be able to edit custody or checkout state directly.
+GRANT UPDATE(state) ON research_checkout_guard.checkout_intents TO research_e_owner;
+GRANT UPDATE(id) ON research_checkout_guard.signed_paid_observations TO research_e_owner;
+GRANT UPDATE(disposition) ON research_ordering_stage_j.invoice_receipts TO research_e_owner;
+CREATE POLICY stage_n_j_owner_lock_only ON research_ordering_stage_j.invoice_receipts
+ FOR UPDATE TO research_e_owner USING(true) WITH CHECK(false);
+
+CREATE FUNCTION research_ordering_stage_n.reject_research_owner_checkout_edit()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $
+BEGIN
+ IF current_user='research_e_owner' THEN
+  RAISE EXCEPTION 'stage n: lifecycle owner cannot modify checkout custody'
+   USING ERRCODE='42501';
+ END IF;
+ RETURN NEW;
+END;
+$;
+CREATE TRIGGER stage_n_checkout_owner_read_lock_only
+ BEFORE UPDATE ON research_checkout_guard.checkout_intents
+ FOR EACH ROW EXECUTE FUNCTION research_ordering_stage_n.reject_research_owner_checkout_edit();
+
 
 CREATE FUNCTION research_ordering_stage_n.apply_b5_bound_lifecycle_review(
  p_subscription_id uuid,p_account_id uuid,p_provider text,
@@ -74,8 +97,7 @@ BEGIN
     WHERE event_key=p_event_key AND subscription_id=p_subscription_id
       AND account_id=p_account_id AND provider_subscription_id=p_provider_subscription_id
       AND event_fingerprint=p_fingerprint AND expected_entitlement_absent
-      AND billing_reason='initial'
-    FOR SHARE;
+      AND billing_reason='initial'; -- immutable witness; no row lock needed
    IF NOT FOUND OR v_first.checkout_intent_id IS NULL OR
       v_first.checkout_intent_id !~
       '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
@@ -103,7 +125,7 @@ BEGIN
 
    SELECT * INTO v_paid FROM research_checkout_guard.signed_paid_observations
     WHERE provider=p_provider AND provider_subscription_id=p_provider_subscription_id
-    FOR SHARE;
+    FOR UPDATE; -- FK conflict inserts require key-share; block until commit
    IF NOT FOUND OR v_paid.catalog_quarantined
       OR v_paid.provider_customer_id IS DISTINCT FROM p_provider_customer_id
       OR v_paid.store_id IS DISTINCT FROM p_store_id
@@ -145,7 +167,7 @@ BEGIN
       AND event_name='subscription_payment_success'
       AND action='first_invoice_held'
       AND disposition='pending_reconciliation'
-    ORDER BY id LIMIT 1 FOR SHARE;
+    ORDER BY id LIMIT 1; -- append-only audit; J parent receipt remains locked
    IF NOT FOUND OR EXISTS(
      SELECT 1 FROM research_ordering_stage_k.provider_observations k
      WHERE k.provider='lemon-squeezy' AND k.store_id=p_store_id

@@ -7,6 +7,7 @@ import {
 import { decidePaidRouteAccess } from '../src/lib/paid-route.js';
 import {
   FREE_CORE_PUBLIC_RELEASE_COMMITTED,
+  NEW_LIBRARY_PASS_SALES_PAUSED,
   LEARNING_OFFER_MODE_KEY,
   resolveLearningOfferCommercePolicyForRelease,
 } from '../src/lib/learning-offer-commerce-policy.js';
@@ -26,7 +27,8 @@ const original = Object.freeze({
 const baseline = JSON.stringify(original);
 const url = 'https://preview.example/guided-edition/chapter-1/';
 
-assert.equal(FREE_CORE_PUBLIC_RELEASE_COMMITTED, false, 'Release remains uncommitted in this Draft.');
+assert.equal(FREE_CORE_PUBLIC_RELEASE_COMMITTED, false, 'Free protected media release remains uncommitted.');
+assert.equal(NEW_LIBRARY_PASS_SALES_PAUSED, true, 'New sales pause must preserve historic access.');
 const cases = [
   [{}, false],
   [{ [LEARNING_OFFER_MODE_KEY]: 'legacy' }, false],

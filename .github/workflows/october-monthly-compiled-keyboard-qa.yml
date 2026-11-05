@@ -192,9 +192,14 @@ jobs:
           "$RUNNER_TEMP/monthly-merge-focus-venv/bin/python" integration/main/apps/web/scripts/test-october-monthly-compiled-keyboard-focus.py
       - name: Verify combined Production build omits October Monthly
         working-directory: integration/main/apps/web
+        # Reproduce the frozen historical Score receipt build environment:
+        # baseline #41701921845 ran without PUBLIC_GA4_MEASUREMENT_ID.
+        # A synthetic G-TEST1234 ID inserts a hidden GA4 span in <body>
+        # across all 16 reports and invalidates the raw body/document hashes.
+        # Do NOT modify the historical Score baseline to mask this difference.
         env:
           VERCEL_ENV: production
-          PUBLIC_GA4_MEASUREMENT_ID: G-TEST1234
+          PUBLIC_GA4_MEASUREMENT_ID: ''
           CI: 'true'
         shell: bash
         run: |

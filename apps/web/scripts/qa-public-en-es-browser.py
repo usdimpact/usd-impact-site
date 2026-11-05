@@ -69,13 +69,13 @@ def skips(browser, js):
     finally:
         ctx.close()
 
-def mobile_menu(browser, language):
-    ctx, page = setup(browser)
+def mobile_menu(browser, language, width):
+    ctx, page = setup(browser, width=width)
     try:
         route = "/es/" if language == "es" else "/"
         visit(page, route)
         toggle = page.locator("button.nav-toggle")
-        assert toggle.is_visible(), "Toggle not visible at 390px"
+        assert toggle.is_visible(), f"Toggle not visible at {width}px"
         toggle.focus()
         page.keyboard.press("Enter")
         assert toggle.get_attribute("aria-expanded") == "true", "Enter did not open menu"
@@ -85,12 +85,12 @@ def mobile_menu(browser, language):
         page.keyboard.press("Escape")
         assert toggle.get_attribute("aria-expanded") == "false", "Escape did not close menu"
         assert page.evaluate("document.activeElement?.classList?.contains('nav-toggle') === true"), "Escape did not restore toggle focus"
-        return {"language":language, "width":390}
+        return {"language":language, "width":width}
     finally:
         ctx.close()
 
-def desktop_menu(browser):
-    ctx, page = setup(browser, width=1280)
+def desktop_menu(browser, width):
+    ctx, page = setup(browser, width=width)
     try:
         visit(page, "/")
         item = page.locator(".nav-group summary").first
@@ -99,7 +99,7 @@ def desktop_menu(browser):
         assert item.evaluate("(el) => el.parentElement.hasAttribute('open')"), "Enter did not open group"
         page.keyboard.press("Escape")
         assert not item.evaluate("(el) => el.parentElement.hasAttribute('open')"), "Escape did not close group"
-        return {"width":1280}
+        return {"width":width}
     finally:
         ctx.close()
 
@@ -123,9 +123,11 @@ try:
         browser = p.chromium.launch(executable_path=chrome, headless=True, args=["--no-sandbox","--disable-dev-shm-usage"])
         check("no-JS skip Tab-Enter across public pages", lambda: skips(browser, False))
         check("JS-on skip Tab-Enter across public pages", lambda: skips(browser, True))
-        check("ES mobile menu Enter-Tab-Escape", lambda: mobile_menu(browser, "es"))
-        check("EN mobile menu Enter-Tab-Escape", lambda: mobile_menu(browser, "en"))
-        check("EN desktop menu Enter-Escape", lambda: desktop_menu(browser))
+        for width in (390, 768, 960):
+            check(f"ES tablet/mobile {width}px Enter-Tab-Escape", lambda width=width: mobile_menu(browser, "es", width))
+            check(f"EN tablet/mobile {width}px Enter-Tab-Escape", lambda width=width: mobile_menu(browser, "en", width))
+        for width in (961, 1280):
+            check(f"EN desktop {width}px Enter-Escape", lambda width=width: desktop_menu(browser, width))
         for route in ("/", "/es/", "/news/", "/reports/", "/learn/", "/quiz/"):
             check("reflow " + route, lambda route=route: reflow(browser, route))
         browser.close()

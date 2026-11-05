@@ -353,6 +353,58 @@ async function assertNoExistingResearchEntitlement({ config, userId, fetchImpl }
   }
 }
 
+// Research P1 checkout custody: a DB-issued attempt is recorded under a
+// profile lock BEFORE the merchant call, and the merchant checkout id must be
+// attached (profile still active) BEFORE any checkout URL leaves the server.
+async function postServiceRpc({ config, name, body, fetchImpl }) {
+  let response;
+  try {
+    response = await fetchImpl(`${config.supabase.url}/rest/v1/rpc/${name}`, {
+      method: 'POST',
+      headers: serviceHeaders(config.supabase.secretKey),
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return { ok: false, status: 0, payload: null };
+  }
+  let payload = null;
+  try { payload = await readJson(response); } catch { payload = null; }
+  return { ok: response.ok, status: response.status, payload };
+}
+
+async function createResearchCheckoutAttempt({ config, userId, checkoutKeyValue, interval, fetchImpl }) {
+  const result = await postServiceRpc({
+    config,
+    name: 'create_research_checkout_attempt',
+    body: { p_account_id: userId, p_checkout_key: checkoutKeyValue, p_billing_interval: interval },
+    fetchImpl,
+  });
+  if (result.ok && typeof result.payload === 'string' && UUID_PATTERN.test(result.payload)) return result.payload;
+  if (result.status >= 400 && result.status < 500) {
+    fail('Account is not eligible for Research Membership checkout.', 'RESEARCH_CHECKOUT_ATTEMPT_REFUSED', 409);
+  }
+  fail('Research Membership checkout custody could not be recorded.', 'RESEARCH_CHECKOUT_ATTEMPT_FAILED', 502);
+}
+
+async function attachResearchCheckoutAttempt({ config, userId, attemptId, checkoutId, expiresAt, fetchImpl }) {
+  const result = await postServiceRpc({
+    config,
+    name: 'attach_research_checkout_attempt',
+    body: {
+      p_attempt_id: attemptId,
+      p_account_id: userId,
+      p_provider_checkout_id: checkoutId,
+      p_provider_expires_at: expiresAt,
+    },
+    fetchImpl,
+  });
+  if (result.ok && result.payload === true) return;
+  if (result.ok && result.payload === false) {
+    fail('Account is not eligible for Research Membership checkout.', 'RESEARCH_CHECKOUT_ATTACH_REFUSED', 409);
+  }
+  fail('Research Membership checkout custody could not be confirmed.', 'RESEARCH_CHECKOUT_ATTACH_FAILED', 502);
+}
+
 export async function createResearchMembershipCheckout({
   config,
   user,
@@ -366,6 +418,14 @@ export async function createResearchMembershipCheckout({
   await assertActiveResearchProfile({ config, userId, fetchImpl });
   await assertNoCurrentResearchSubscription({ config, userId, fetchImpl });
   await assertNoExistingResearchEntitlement({ config, userId, fetchImpl });
+  const checkoutAttributes = requestBody.data.attributes;
+  const attemptId = await createResearchCheckoutAttempt({
+    config,
+    userId,
+    checkoutKeyValue: checkoutAttributes.checkout_data.custom.usd_impact_research_checkout_key,
+    interval: checkoutAttributes.checkout_data.custom.usd_impact_research_billing_interval,
+    fetchImpl,
+  });
 
   const response = await fetchImpl(`${PROVIDER_API_ROOT}/checkouts`, {
     method: 'POST',
@@ -390,8 +450,17 @@ export async function createResearchMembershipCheckout({
       || !text(attributes.url).startsWith('https://')) {
     fail('Research Membership checkout response did not match the trusted catalog.', 'RESEARCH_CHECKOUT_PROVIDER_RESPONSE_INVALID', 502);
   }
+  const checkoutId = stableIdentifier(data.id, 'checkout id');
+  await attachResearchCheckoutAttempt({
+    config,
+    userId,
+    attemptId,
+    checkoutId,
+    expiresAt: checkoutAttributes.expires_at,
+    fetchImpl,
+  });
   return Object.freeze({
-    checkoutId: stableIdentifier(data.id, 'checkout id'),
+    checkoutId,
     url: text(attributes.url),
     testMode: config.testMode,
     billingInterval: selected.interval,
@@ -524,8 +593,43 @@ export async function processResearchMembershipWebhookWithFirstPurchase({
   }
 
   const binding = inspectResearchMembershipFirstPurchase({ rawBody, signature, environment });
-  await bindResearchMembershipFirstPurchase({ binding, environment, fetchImpl });
+  try {
+    await bindResearchMembershipFirstPurchase({ binding, environment, fetchImpl });
+  } catch (error) {
+    // Research P1 paid-but-unbound quarantine: the delivery is signed and
+    // catalog-verified, so a refused binding means a merchant subscription may
+    // be billing with no local subscription row. Record it durably (keeps the
+    // claimed account's deletion on hold) before surfacing the refusal.
+    await recordResearchPaidBindingRefusal({ binding, error, environment, fetchImpl });
+    throw error;
+  }
   return processImpl({ rawBody, signature, environment, fetchImpl });
+}
+
+export async function recordResearchPaidBindingRefusal({ binding, error, environment = process.env, fetchImpl = fetch }) {
+  const config = readBootstrapConfig(environment);
+  const reason = /^[A-Z0-9_]{1,80}$/.test(text(error?.code)) ? text(error.code) : 'RESEARCH_FIRST_PURCHASE_BINDING_FAILED';
+  let response;
+  try {
+    response = await fetchImpl(`${config.supabaseUrl}/rest/v1/rpc/record_research_paid_binding_refusal`, {
+      method: 'POST',
+      headers: serviceHeaders(config.supabaseSecret),
+      body: JSON.stringify({
+        p_provider: PROVIDER,
+        p_provider_subscription_id: stableIdentifier(binding?.providerSubscriptionId, 'provider subscription id'),
+        p_claimed_account_id: accountId(binding?.accountId),
+        p_checkout_key: text(binding?.metadata?.checkoutKey) || null,
+        p_reason_code: reason,
+      }),
+    });
+  } catch {
+    response = null;
+  }
+  const payload = response ? await readJson(response).catch(() => null) : null;
+  if (!response?.ok || !UUID_PATTERN.test(text(payload))) {
+    fail('Research Membership refused binding could not be quarantined.', 'RESEARCH_FIRST_PURCHASE_QUARANTINE_FAILED', 503);
+  }
+  return payload;
 }
 
 export function publicResearchMembershipFirstPurchaseError(error) {

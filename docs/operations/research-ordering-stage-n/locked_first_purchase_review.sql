@@ -210,4 +210,43 @@ REVOKE EXECUTE ON FUNCTION research_ordering_stage_l.apply_lifecycle_review(
  uuid,uuid,text,text,text,text,text,text,text,text,text,text,
  timestamptz,public.subscription_state,timestamptz,timestamptz
 ) FROM research_e_gateway;
+
+-- D2-23 J1i: exact one-time legacy archive INSERT was not sufficient.
+-- Owner-issued subsequent INSERT must also prove the existing signed H event
+-- and K canonical observation are bitwise/identity consistent.
+GRANT USAGE ON SCHEMA research_ordering_stage_h,research_ordering_stage_k
+ TO research_stage_m_owner;
+GRANT SELECT ON research_ordering_stage_h.pending_receipts,
+ research_ordering_stage_k.provider_observations TO research_stage_m_owner;
+CREATE POLICY stage_n_h_archive_reader ON research_ordering_stage_h.pending_receipts
+ FOR SELECT TO research_stage_m_owner USING(true);
+CREATE POLICY stage_n_k_archive_reader ON research_ordering_stage_k.provider_observations
+ FOR SELECT TO research_stage_m_owner USING(true);
+
+CREATE FUNCTION research_ordering_stage_n.reject_legacy_archive_mismatch()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $D2J1I$
+BEGIN
+ IF NOT EXISTS(
+  SELECT 1 FROM research_ordering_stage_h.pending_receipts h
+  JOIN research_ordering_stage_k.provider_observations k
+    ON h.event_key=k.event_name||':'||k.invoice_id
+    AND h.signed_delivery_hash=k.signed_delivery_hash
+    AND h.invoice_version=k.provider_invoice_version
+    AND h.subscription_version=k.provider_subscription_version
+    AND h.candidate_digest=k.invoice_snapshot_digest
+  WHERE h.event_key=NEW.event_key AND k.id=NEW.observation_id
+    AND k.provider=NEW.provider AND k.store_id=NEW.store_id
+    AND k.test_mode=NEW.test_mode AND k.invoice_id=NEW.invoice_id
+    AND k.signed_delivery_hash=NEW.signed_delivery_hash
+ ) THEN
+   RAISE EXCEPTION 'stage n: archive link cannot misrepresent original signed evidence'
+    USING ERRCODE='42501';
+ END IF;
+ RETURN NEW;
+END;
+$D2J1I$;
+CREATE TRIGGER stage_n_archive_insert_integrity
+ BEFORE INSERT ON research_ordering_stage_m.legacy_receipt_links
+ FOR EACH ROW EXECUTE FUNCTION research_ordering_stage_n.reject_legacy_archive_mismatch();
+
 COMMIT;

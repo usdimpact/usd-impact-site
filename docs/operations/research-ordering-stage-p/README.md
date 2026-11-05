@@ -8,7 +8,7 @@ This child adds a test-only SQL overlay, a fresh PG17 test and a scoped 10-job r
 
 ## Review contracts
 
-**N-5 / N-6 consumed checkout ordering.** Require `created_at <= consumed_at <= expires_at` for the persisted B-5 checkout. The pinned M1 strict table permits malformed `consumed_at` independent of its other CHECK constraints. Two corruption-injection tests deliberately set the consumed timestamp before creation and after expiry, verify gateway rejects `42501` and roll back. Neither attempt may create a Research entitlement or change the pending subscription.
+**N-5 / N-6 consumed checkout ordering.** Require `created_at <= consumed_at <= expires_at` **and** signed `paid.occurred_at <= consumed_at` for the persisted B-5 checkout. The pinned M1 strict table permits malformed `consumed_at` independent of its other CHECK constraints. Two corruption-injection tests deliberately set the consumed timestamp before creation and after expiry; a third temporarily disables the *disposable fixture's* signed-observation immutability trigger to inject a payment timestamp after consumption, verifies rejection, and rolls back the DDL and data edits. All tests require gateway denial and zero Research entitlement effects. Neither attempt may create a Research entitlement or change the pending subscription.
 
 **N-P exact paid fact.** The B-5 fixture already has `UNIQUE(provider,provider_subscription_id)`; Stage P uses `SELECT ... INTO STRICT ... FOR UPDATE` and maps missing/ambiguous cardinality to a fail-closed permission error. This protects against future schema drift and avoids nondeterministic row selection. It does not turn a B-5 signed observation into a settled paid invoice.
 

@@ -373,6 +373,65 @@ rec("R10", "unclaimed paid event serializes with Phase A and blocks irreversible
     and su("SELECT count(*) FROM auth.users WHERE id=%s",(race_owner,))==1,
     f"waiting={was_blocked} result={race_result} state={race_state}")
 
+# ---------------- R11: conflicting signed replay never loses either owner ----------------
+# One provider subscription ID can be reported with different claimed accounts
+# and checkout keys. The first claimant is not an authority over later evidence.
+claimed_a,claimed_b=user(),user()
+key_a,key_b='p1-conflict-evidence-owner-A001','p1-conflict-evidence-owner-B001'
+issued_a=svc("SELECT public.create_research_checkout_attempt(%s,%s,'monthly')",(claimed_a,key_a))
+issued_b=svc("SELECT public.create_research_checkout_attempt(%s,%s,'monthly')",(claimed_b,key_b))
+for who in (claimed_a,claimed_b):
+    request_del(who)
+    make_due(who)
+    su("UPDATE public.research_checkout_attempts SET hold_until=now()-interval '2 hours' WHERE account_id=%s",(who,))
+    own("SELECT public.record_research_billing_clearance(%s,'provider_api','synthetic-conflicting-proof-001',now(),'owner-synthetic')",(who,))
+before_a,before_b=ready(claimed_a),ready(claimed_b)
+first=svc("""SELECT public.record_research_paid_binding_refusal(
+    'lemon-squeezy','synthetic-conflict-paid-sub-01',%s,%s,'SIGNED_PAID_BINDING_REFUSED')""",(claimed_a,key_a))
+second=svc("""SELECT public.record_research_paid_binding_refusal(
+    'lemon-squeezy','synthetic-conflict-paid-sub-01',%s,%s,'SIGNED_PAID_BINDING_REFUSED')""",(claimed_b,key_b))
+all_claims=su("""SELECT seen_claimed_account_ids @> ARRAY[%s,%s]::uuid[]
+                AND seen_checkout_keys @> ARRAY[%s,%s]::text[]
+                AND cardinality(seen_claimed_account_ids)=2
+                AND cardinality(seen_checkout_keys)=2
+                AND delivery_count=2
+              FROM public.research_paid_binding_quarantine
+              WHERE provider='lemon-squeezy' AND provider_subscription_id='synthetic-conflict-paid-sub-01'""",
+              (claimed_a,claimed_b,key_a,key_b))
+after_a,after_b=ready(claimed_a),ready(claimed_b)
+rec("R11", "conflicting signed claim retains BOTH account and checkout associations",
+    issued_a[0]=="OK" and issued_b[0]=="OK"
+    and before_a[1]["clear"] is True and before_b[1]["clear"] is True
+    and first[0]=="OK" and second[0]=="OK" and first[1]==second[1]
+    and all_claims,
+    f"first={first} second={second} associations={all_claims}")
+rec("R11", "both owners remain billing-held despite the earlier merchant proof",
+    "research_paid_binding_quarantined" in after_a[1]["reasons"]
+    and "research_paid_binding_quarantined" in after_b[1]["reasons"],
+    f"first={after_a} second={after_b}")
+# An account-level reconciliation may set resolved_at only through accountable
+# owner review, but ANY new signed provider delivery re-opens it.
+su("""UPDATE public.research_paid_binding_quarantine
+      SET resolved_at=now(),resolution_reference='synthetic-review'
+      WHERE provider='lemon-squeezy' AND provider_subscription_id='synthetic-conflict-paid-sub-01'""")
+after_resolve_a,after_resolve_b=ready(claimed_a),ready(claimed_b)
+redelivery=svc("""SELECT public.record_research_paid_binding_refusal(
+    'lemon-squeezy','synthetic-conflict-paid-sub-01',%s,%s,'SIGNED_PAID_BINDING_REFUSED')""",(claimed_b,key_b))
+again_a,again_b=ready(claimed_a),ready(claimed_b)
+state11=su("""SELECT resolved_at IS NULL
+                 AND resolution_reference IS NULL
+                 AND delivery_count=3
+                 AND cardinality(seen_claimed_account_ids)=2
+                 AND cardinality(seen_checkout_keys)=2
+             FROM public.research_paid_binding_quarantine
+             WHERE provider='lemon-squeezy' AND provider_subscription_id='synthetic-conflict-paid-sub-01'""")
+rec("R11", "signed redelivery after resolution reopens all linked billing holds",
+    after_resolve_a[1]["clear"] is True and after_resolve_b[1]["clear"] is True
+    and redelivery[0]=="OK" and state11
+    and "research_paid_binding_quarantined" in again_a[1]["reasons"]
+    and "research_paid_binding_quarantined" in again_b[1]["reasons"],
+    f"resolved={after_resolve_a[1]['clear']}/{after_resolve_b[1]['clear']} reopen={again_a[1]['clear']}/{again_b[1]['clear']} state={state11}")
+
 # ---------------- D33 / D2-C live paths ----------------
 p, psid, ppsub = research_member(); request_del(p)
 g = svc(TR, (psid, f"p1-renew-{ppsub}", f"evt-renew-{ppsub}", ppsub, "active", "active", "active", "2026-11-01T00:00:00Z"))

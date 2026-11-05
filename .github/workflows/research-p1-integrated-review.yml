@@ -8,6 +8,8 @@ on:
       - 'apps/web/src/lib/research-membership-first-purchase.js'
       - 'apps/web/src/lib/account-deletion-finalizer.js'
       - 'apps/web/src/lib/account-deletion-two-phase-review.js'
+      - 'apps/web/api/account-deletion-two-phase-preflight.js'
+      - 'apps/web/scripts/test-account-deletion-two-phase-preflight.mjs'
       - 'apps/web/scripts/test-account-deletion-two-phase-review.mjs'
       - 'apps/web/scripts/test-research-p1-billing-safe-deletion.mjs'
       - '.github/workflows/research-p1-integrated-review.yml'
@@ -56,6 +58,8 @@ jobs:
           node scripts/test-account-deletion-finalizer.mjs
           node --check src/lib/account-deletion-two-phase-review.js
           node scripts/test-account-deletion-two-phase-review.mjs
+          node --check api/account-deletion-two-phase-preflight.js
+          node scripts/test-account-deletion-two-phase-preflight.mjs
           node scripts/test-research-p1-billing-safe-deletion.mjs
       - name: Replay every migration as non-superuser owner, then run the PG17 lifecycle matrix
         run: |

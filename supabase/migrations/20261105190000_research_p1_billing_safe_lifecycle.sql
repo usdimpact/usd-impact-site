@@ -2067,6 +2067,7 @@ returns boolean language plpgsql security definer set search_path='' as $finish$
 declare
   v_row research_lifecycle_private.deletion_auth_cleanup;
   v_profile public.profiles;
+  v_outbox_id uuid;
 begin
   -- DB-first reconciliation and the paid-event writer use profile locks.
   -- A late signed payment must prevent privacy/completion acknowledgement.
@@ -2094,17 +2095,35 @@ begin
     raise exception using errcode='55000',
       message='Research payment evidence arrived before deletion acknowledgement';
   end if;
-  if not exists (
-    select 1 from public.notification_outbox o
-    where o.message_id='account_deletion_completed'
-      and o.business_object_type='account_deletion_request'
-      and o.business_object_id=p_account_id::text
-      and o.recipient_email_normalized=pg_catalog.lower(pg_catalog.btrim(v_row.recipient_email))
-      and o.state_version=pg_catalog.floor(
-        extract(epoch from v_row.deleted_at)/60
-      )::integer
-  ) then
-    raise exception using errcode='55000', message='durable completion email outbox not found';
+  -- The email is inserted by the ordinary ledger helper, but the trigger
+  -- stages it as NON-DISPATCHABLE until this transaction acknowledges it.
+  select o.id into v_outbox_id from public.notification_outbox o
+   where o.message_id='account_deletion_completed'
+     and o.business_object_type='account_deletion_request'
+     and o.business_object_id=p_account_id::text
+     and o.recipient_email_normalized=pg_catalog.lower(pg_catalog.btrim(v_row.recipient_email))
+     and o.state_version=pg_catalog.floor(
+       extract(epoch from v_row.deleted_at)/60
+     )::integer
+     and o.status='deletion_staged'
+   for update;
+  if not found then
+    raise exception using errcode='55000', message='staged completion email outbox not found';
+  end if;
+
+  update research_lifecycle_private.deletion_auth_cleanup q
+     set phase='email_enqueued',recipient_email=null,
+         privacy_request_ids='{}'::uuid[],lease_id=null,
+         email_enqueued_at=pg_catalog.clock_timestamp(),last_error_code=null
+   where q.account_id=p_account_id;
+
+  -- The update trigger refuses queued delivery unless the private phase
+  -- already says email_enqueued. Both changes roll back together on failure.
+  update public.notification_outbox o
+     set status='queued',updated_at=pg_catalog.clock_timestamp()
+   where o.id=v_outbox_id and o.status='deletion_staged';
+  if not found then
+    raise exception using errcode='55000', message='completion email release lost';
   end if;
 
   update public.privacy_requests pr
@@ -2112,12 +2131,6 @@ begin
          decision_reason='Auth cleanup confirmed; account deletion completed',
          updated_at=pg_catalog.clock_timestamp()
    where pr.id=any(v_row.privacy_request_ids) and pr.request_type='deletion';
-
-  update research_lifecycle_private.deletion_auth_cleanup q
-     set phase='email_enqueued',recipient_email=null,
-         privacy_request_ids='{}'::uuid[],lease_id=null,
-         email_enqueued_at=pg_catalog.clock_timestamp(),last_error_code=null
-   where q.account_id=p_account_id;
   return true;
 end;
 $finish$;
@@ -2125,4 +2138,94 @@ revoke all on function public.finish_deletion_auth_cleanup(uuid,uuid)
   from public,anon,authenticated,service_role;
 grant execute on function public.finish_deletion_auth_cleanup(uuid,uuid)
   to service_role;
+
+-- ---------------------------------------------------------------------------
+-- Part 10. HOLD-BY-DEFAULT completion email outbox. This is a DRAFT-only
+-- proposed release barrier; it changes a shared table, so owner approval and
+-- independent compatibility review are mandatory before any migration.
+--
+-- The ordinary service_role email helper inserts without a status value.
+-- A privileged BEFORE INSERT trigger forces account_deletion_completed rows
+-- to deletion_staged (never dispatchable) only after the Auth lease has been
+-- confirmed and the same profile-based billing lock is clear.
+--
+-- finish_deletion_auth_cleanup above flips the private phase and releases the
+-- staged outbox to queued IN ONE SQL TRANSACTION, after a fresh billing check.
+-- A direct service_role UPDATE cannot release a staged outbox prematurely.
+-- ---------------------------------------------------------------------------
+alter table public.notification_outbox drop constraint notification_outbox_status_allowed;
+alter table public.notification_outbox add constraint notification_outbox_status_allowed
+  check (status in (
+    'queued','sending','accepted','delivered','soft_bounced','hard_bounced',
+    'complained','suppressed','retry_scheduled','terminal_failed','cancelled',
+    'deletion_staged'
+  ));
+
+create or replace function research_lifecycle_private.stage_deletion_completion_email()
+returns trigger language plpgsql security definer set search_path='' as $stage$
+declare
+  v_account_id uuid;
+  v_profile public.profiles;
+  v_queue research_lifecycle_private.deletion_auth_cleanup;
+begin
+  if new.message_id<>'account_deletion_completed' then
+    return new;
+  end if;
+  if new.business_object_type<>'account_deletion_request'
+     or new.business_object_id is null
+     or new.business_object_id !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
+
+ then
+    raise exception using errcode='42501', message='completion email has invalid account identity';
+  end if;
+  v_account_id:=new.business_object_id::uuid;
+
+  if tg_op='INSERT' then
+    select p.* into v_profile from public.profiles p
+     where p.account_id=v_account_id for update;
+    if not found or v_profile.status<>'deleted' or v_profile.auth_user_id is not null
+       or v_profile.deleted_at is null then
+      raise exception using errcode='55000', message='completion email account is not finalized';
+    end if;
+    select q.* into v_queue from research_lifecycle_private.deletion_auth_cleanup q
+     where q.account_id=v_account_id for update;
+    if not found or v_queue.phase<>'auth_confirmed'
+       or v_queue.lease_id is null
+       or v_queue.next_attempt_at<=pg_catalog.clock_timestamp()
+       or v_queue.deleted_at is distinct from v_profile.deleted_at
+       or new.recipient_email_normalized is distinct from
+          pg_catalog.lower(pg_catalog.btrim(v_queue.recipient_email))
+       or new.state_version is distinct from pg_catalog.floor(
+          extract(epoch from v_queue.deleted_at)/60
+       )::integer then
+      raise exception using errcode='42501', message='completion email lacks Auth-confirmed custody';
+    end if;
+    if pg_catalog.cardinality(
+         research_lifecycle_private.billing_hold_reasons(v_account_id)
+       )>0 then
+      raise exception using errcode='55000',
+        message='completion email blocked by late Research billing observation';
+    end if;
+    new.status:='deletion_staged';
+  elsif tg_op='UPDATE' and old.status='deletion_staged'
+        and new.status is distinct from old.status then
+    -- Only the SQL finisher can first move private custody to email_enqueued.
+    -- Do not permit a direct privileged PATCH to bypass that transaction.
+    if new.status<>'queued' or not exists (
+      select 1 from research_lifecycle_private.deletion_auth_cleanup q
+       where q.account_id=v_account_id and q.phase='email_enqueued'
+    ) then
+      raise exception using errcode='42501', message='staged deletion email cannot be dispatched';
+    end if;
+  end if;
+  return new;
+end;
+$stage$;
+revoke all on function research_lifecycle_private.stage_deletion_completion_email()
+ from public,anon,authenticated,service_role;
+drop trigger if exists research_p1_stage_deletion_completion_email on public.notification_outbox;
+create trigger research_p1_stage_deletion_completion_email
+ before insert or update on public.notification_outbox
+ for each row execute function research_lifecycle_private.stage_deletion_completion_email();
+
 

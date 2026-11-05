@@ -13,12 +13,15 @@ const [landing, sample, account, accessRequired, previewGate, tradingViewRunbook
 ]);
 
 assert.match(landing, /USD 290\/year/);
-assert.match(landing, /Best Value — save USD 58/);
+assert.match(landing, /Annual reference price/);
 assert.match(landing, /USD 29\/month/);
 assert.match(landing, /No free trial and no introductory discount/);
 assert.match(landing, /href="\/research\/sample\/"/);
 assert.match(landing, /href="\/research\/account\/"/);
-assert.match(landing, /Research Membership is now available on monthly or annual billing/i);
+assert.match(landing, /New Research Membership subscriptions are temporarily paused/);
+assert.doesNotMatch(landing, /<button[^>]*research-checkout-button/);
+assert.doesNotMatch(landing, /Best Value — save USD 58/);
+assert.equal((landing.match(/Planned — not yet confirmed as available or included/g) || []).length, 5);
 assert.match(landing, /Library Pass resources remain a separate permanent product/);
 assert.match(landing, /On the roadmap:/);
 assert.match(landing, /Private TradingView indicator access is planned as a future Research Membership\s+enhancement/i);
@@ -37,8 +40,8 @@ assert.doesNotMatch(sample, /href="\/score\//);
 assert.doesNotMatch(sample, /research-membership-checkout/);
 assert.doesNotMatch(sample, /\/api\/commerce/);
 
-assert.match(account, /Research Membership checkout is open/);
-assert.match(account, /choose monthly or annual billing/i);
+assert.match(account, /New Research subscriptions are temporarily paused/);
+assert.doesNotMatch(account, /Checkout is created only after authenticated account verification/i);
 assert.ok(account.includes('href="https://app.lemonsqueezy.com/my-orders"'));
 assert.match(account, /Research Membership billing is independent from Library Pass/);
 assert.match(account, /Canceling prevents the next renewal/);
@@ -51,6 +54,8 @@ assert.match(accessRequired, /href="\/research\/sample\/"/);
 assert.match(accessRequired, /href="\/research\/account\/"/);
 assert.match(accessRequired, /Library Pass remains separate and permanent/);
 
+assert.match(sample, /Other complete historical reports are also public/);
+assert.doesNotMatch(sample, /behind current member research/);
 assert.match(previewGate, /\/research\/access-required\//);
 assert.doesNotMatch(previewGate, /\/account\/access-required\//);
 assert.match(previewGate, /RESEARCH_MEMBERSHIP_PRODUCT_ID/);

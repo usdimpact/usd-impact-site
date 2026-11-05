@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import {
   REPOSITORY, REQUIRED_GENERATOR_STEPS, REQUIRED_CHECKS,
@@ -202,27 +204,36 @@ const configShell = appConfigStep[1].split('\n')
 assert.equal(spawnSync('bash', ['-n'], { input: configShell, encoding: 'utf8' }).status, 0);
 const fakeEnv = {
   ...process.env,
-  GITHUB_OUTPUT: '/dev/stdout',
+  // Assigned per synthetic scenario to a temporary regular file below.
   PUBLICATION_NEEDED: 'true',
   NEWSFEED_ENDPOINT: 'https://invalid.example/daily-news-source',
   NEWSFEED_BEARER_TOKEN: 'synthetic-newsfeed-only',
   DAILY_PR_APP_CLIENT_ID: 'synthetic-app-id',
   DAILY_PR_APP_PRIVATE_KEY: 'SYNTHETIC-PRIVATE-KEY-DO-NOT-USE',
 };
-for (const [label, changes, accepted] of [
-  ['complete fictional configuration', {}, true],
-  ['missing App ID', { DAILY_PR_APP_CLIENT_ID: '' }, false],
-  ['missing App private key', { DAILY_PR_APP_PRIVATE_KEY: '' }, false],
-  ['missing newsfeed token', { NEWSFEED_BEARER_TOKEN: '' }, false],
-  ['existing Daily article', { PUBLICATION_NEEDED: 'false' }, false],
-]) {
-  const test = spawnSync('bash', ['-c', 'set -euo pipefail\n' + configShell], {
-    encoding: 'utf8', env: { ...fakeEnv, ...changes }, timeout: 10000,
-  });
-  assert.equal(test.status, 0, label + ': ' + test.stderr);
-  assert.match(test.stdout, new RegExp('configured=' + String(accepted)), label);
-  assert.doesNotMatch(test.stdout + test.stderr, /SYNTHETIC-PRIVATE-KEY-DO-NOT-USE/,
-    'never print a private key');
+// GITHUB_OUTPUT is a writable regular file in GitHub Actions; /dev/stdout
+// under node child-process pipes is not always reopenable on Linux.
+const appPreflightDir = mkdtempSync(join(tmpdir(), 'usdimpact-daily-app-preflight-'));
+try {
+  let scenario = 0;
+  for (const [label, changes, accepted] of [
+    ['complete fictional configuration', {}, true],
+    ['missing App ID', { DAILY_PR_APP_CLIENT_ID: '' }, false],
+    ['missing App private key', { DAILY_PR_APP_PRIVATE_KEY: '' }, false],
+    ['missing newsfeed token', { NEWSFEED_BEARER_TOKEN: '' }, false],
+    ['existing Daily article', { PUBLICATION_NEEDED: 'false' }, false],
+  ]) {
+    const outputFile = join(appPreflightDir, 'output-' + String(++scenario));
+    const test = spawnSync('bash', ['-c', 'set -euo pipefail\n' + configShell], {
+      encoding: 'utf8', env: { ...fakeEnv, ...changes, GITHUB_OUTPUT: outputFile }, timeout: 10000,
+    });
+    assert.equal(test.status, 0, label + ': ' + test.stderr);
+    assert.match(readFileSync(outputFile, 'utf8'), new RegExp('configured=' + String(accepted)), label);
+    assert.doesNotMatch(test.stdout + test.stderr, /SYNTHETIC-PRIVATE-KEY-DO-NOT-USE/,
+      'never print a private key');
+  }
+} finally {
+  rmSync(appPreflightDir, { recursive: true, force: true });
 }
 console.log('Daily PR GitHub App authorship: fixed SHA, scoped token, no-spend and 5 negative/positive configuration fixtures PASS');
 

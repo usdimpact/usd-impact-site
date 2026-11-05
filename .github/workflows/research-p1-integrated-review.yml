@@ -58,3 +58,4 @@ jobs:
           python3 -m pip install --break-system-packages "psycopg[binary]==3.2.10"
           python3 supabase/tests/research-p1/owner_model_replay.py "$GITHUB_WORKSPACE"
           python3 supabase/tests/research-p1/test_research_p1_lifecycle.py CI
+          python3 supabase/tests/research-p1/test_research_p1_two_phase.py

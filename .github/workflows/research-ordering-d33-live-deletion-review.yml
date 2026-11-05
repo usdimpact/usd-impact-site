@@ -16,10 +16,11 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
-      max-parallel: 3
+      max-parallel: 4
       matrix:
         script:
           - docs/operations/research-ordering-d33/test_live_rpc_profile_fence_pg17.py
+          - docs/operations/research-ordering-d33/test_finalizer_billing_hold_pg17.py
           - docs/operations/research-ordering-d2c-author/test_full52_lp_parity_pg17.py
           - docs/operations/research-ordering-d2c-author/test_profile_fence_stage_q_pg17.py
     services:

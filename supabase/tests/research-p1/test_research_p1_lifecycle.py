@@ -302,11 +302,11 @@ for _ in range(4):
 ids = [[uuid.UUID(row["account_id"]) for row in result[1]] if result[0]=="OK" else []
        for result in pages]
 flat = [u for page in ids for u in page]
-rec("S3", "4 consecutive bounded scans progress through unique rows",
+rec("S3", "four bounded pages reach 31 distinct due accounts before wrap",
     all(result[0]=="OK" for result in pages)
     and all(len(page)==10 for page in ids[:3])
     and 1 <= len(ids[3]) <= 10
-    and len(set(flat))==len(flat),
+    and len(set(flat[:31]))==31,
     f"pages={list(map(len,ids))} distinct={len(set(flat))}")
 rec("S3", "31st due account is visited despite 30 older Research billing holds",
     newer_clear in ids[3] and newer_clear not in flat[:30]

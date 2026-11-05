@@ -1150,13 +1150,27 @@ begin
     v_reasons := pg_catalog.array_append(v_reasons, 'research_checkout_window_open');
   end if;
 
+  -- A signed paid refusal may claim the WRONG or NO account but carry the
+  -- canonical DB-issued checkout key. Billing must hold the checkout owner
+  -- as well as the claimed account until the conflict is reconciled.
   if exists (
     select 1 from public.research_paid_binding_quarantine q
-    where q.claimed_account_id = p_account_id and q.resolved_at is null
+    where q.resolved_at is null and (
+      q.claimed_account_id = p_account_id
+      or exists (
+        select 1 from public.research_checkout_attempts a
+        where a.account_id = p_account_id and a.checkout_key = q.checkout_key
+      )
+    )
   ) then
     v_reasons := pg_catalog.array_append(v_reasons, 'research_paid_binding_quarantined');
     select greatest(v_latest, max(q.updated_at)) into v_latest
-    from public.research_paid_binding_quarantine q where q.claimed_account_id = p_account_id;
+    from public.research_paid_binding_quarantine q
+    where q.claimed_account_id = p_account_id
+      or exists (
+        select 1 from public.research_checkout_attempts a
+        where a.account_id = p_account_id and a.checkout_key = q.checkout_key
+      );
   end if;
 
   if cardinality(v_reasons) = 0 then
@@ -1822,11 +1836,18 @@ begin
   if p_provider is null or p_provider_subscription_id is null or p_reason_code is null then
     raise exception using errcode='22023', message='research paid binding refusal input is incomplete';
   end if;
-  if p_claimed_account_id is not null then
-    perform 1 from public.profiles p
-      where p.account_id=p_claimed_account_id for share;
-    -- Never discard signed evidence merely because the profile is missing.
-  end if;
+  -- Lock BOTH identities (claimed account and checkout owner) in account
+  -- order before writing signed evidence. This synchronizes with Phase A's
+  -- profile lock even when custom claimed_account_id was misbound.
+  perform 1 from public.profiles p
+    where p.account_id = p_claimed_account_id
+       or p.account_id in (
+         select a.account_id from public.research_checkout_attempts a
+         where a.checkout_key = p_checkout_key
+       )
+    order by p.account_id
+    for share;
+  -- Never discard signed evidence merely because either profile is absent.
   insert into public.research_paid_binding_quarantine as q
     (provider,provider_subscription_id,claimed_account_id,checkout_key,reason_code)
   values (p_provider,p_provider_subscription_id,p_claimed_account_id,p_checkout_key,p_reason_code)

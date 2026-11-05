@@ -9,7 +9,7 @@ create table public.research_deletion_billing_holds (
   hold_state text not null default 'open'
     check (hold_state in ('open', 'manual_review')),
   reason_code text not null
-    check (reason_code in ('subscription_present','lookup_unavailable','lookup_malformed')),
+    check (reason_code in ('subscription_present','lookup_unavailable','lookup_malformed','existing_hold')),
   attempt_count integer not null default 1
     check (attempt_count between 1 and 2147483647),
   first_seen_at timestamptz not null default clock_timestamp(),
@@ -48,7 +48,7 @@ declare
 begin
   if p_account_id is null
      or p_reason_code not in
-      ('subscription_present','lookup_unavailable','lookup_malformed')
+      ('subscription_present','lookup_unavailable','lookup_malformed','existing_hold')
      or p_reason_code is null then
     raise exception 'invalid research deletion billing hold input'
       using errcode='22023';

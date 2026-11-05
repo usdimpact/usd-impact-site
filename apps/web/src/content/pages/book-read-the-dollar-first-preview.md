@@ -22,12 +22,12 @@ ctaPrimary: "Read the sample lesson"
 ctaPrimaryHref: "/start-here/"
 ctaSecondary: "Take the sample quiz"
 ctaSecondaryHref: "/start-here/quiz/"
-hero: "Test the actual USD Impact teaching method before purchase: read a real lesson, complete a real book checkpoint, and inspect the full video syllabus without opening protected member content."
+hero: "Test the actual USD Impact teaching method for free: read a real lesson, complete a real book checkpoint, and inspect the full video syllabus without opening protected member content."
 ---
 
 ## What this free sample includes
 
-The purpose of this page is simple: give you enough real material to judge the teaching method before deciding whether to purchase the Guided Interactive Edition.
+The purpose of this page is simple: make the teaching method available to inspect without an account or purchase.
 
 This is not a mock demo and it is not a shortened sales page. The lesson and quiz below are live parts of the USD Impact educational system.
 
@@ -37,7 +37,7 @@ You can:
 2. take the real **Start Here** book checkpoint — Quiz 1 of 12, with ten questions, explanations and retry support; and
 3. browse the complete public syllabus for the 51-film Video Library, including film titles, descriptions, collections and durations.
 
-The sample does **not** unlock paid chapters, audiobook playback, protected video playback, saved member progress or protected reference resources.
+The sample does **not** unlock protected chapters, audiobook playback, protected video playback, saved member progress or protected reference resources.
 
 ---
 
@@ -88,7 +88,7 @@ You can also **[browse the USD Impact Video Library catalog](/video-library/)**.
 
 The public catalog shows the structure of the full 51-film library across five collections, with film titles, descriptions and durations. It is useful for checking whether the subject coverage matches what you want to learn.
 
-**Video playback remains protected.** The public catalog does not expose Cloudflare Stream playback tokens or provide an alternate route around Guided Interactive Edition access. A paid film is not being republished as a free excerpt on this page.
+**Video playback remains protected.** The public catalog does not expose Cloudflare Stream playback tokens or provide an alternate route around Guided Interactive Edition access. Protected film playback is not being republished as a free excerpt on this page.
 
 A dedicated public video teaser may be added separately if it can be produced as a purpose-built public asset. Until then, the catalog is the truthful preview of the video syllabus and protected playback remains unchanged.
 
@@ -108,19 +108,15 @@ The free sample is intentionally bounded. It does not provide access to:
 - protected reference resources; or
 - any future entitlement-only feature.
 
-Those boundaries are part of the product design. Public sample content is deliberately public; purchased content remains behind the verified account and entitlement system.
+Those boundaries are part of the product design. Public sample content is deliberately public; content previously purchased under a Library Pass remains governed by the verified account and entitlement system.
 
 ---
 
-## What the full edition adds
+## Access for previous purchasers
 
-The full Guided Interactive Edition is designed to connect the same method across a longer learning sequence rather than stopping at one lesson.
+The protected complete Guided Interactive Edition, English audiobook and 51-film Video Library are separate from this public sample. Existing Library Pass purchasers can sign in using their original verified account to access the materials included in their purchase, subject to the applicable order terms. This page does not offer a new Library Pass or change any past purchase.
 
-It includes the complete chapter-by-chapter learning path, the English audiobook, the protected 51-film Video Library, interactive knowledge checks, saved progress and protected reference resources under the verified USD Impact account used for the purchase.
-
-The launch price is **USD 39.00**, followed by a standard price of **USD 49.00** after the approved launch offer ends. Lemon Squeezy is the selected Merchant of Record. Current checkout availability is verified live on the product page before a purchase link is shown.
-
-See **[product details, pricing and current availability](/book/read-the-dollar-first/)**.
+See **[the public book overview](/book/read-the-dollar-first/)** or **[sign in for a previous Library Pass purchase](/account/sign-in/?next=/account/)**.
 
 ---
 
@@ -136,10 +132,10 @@ Instead, ask:
 - Could you repeat the framework without relying on a prediction?
 - Does the film syllabus cover the areas you want to understand in more depth?
 
-If the answer is yes, the full edition extends that learning process. If not, the public lesson, quiz and catalog remain available without purchase.
+Whether or not you go deeper, the public lesson, quiz and film syllabus remain available without purchase. Existing protected Library Pass content remains available only to the eligible account.
 
 ## Key takeaway
 
-You should be able to inspect the teaching method before paying for it.
+You should be able to inspect the teaching method for free, without signing in or paying.
 
-The public sample therefore gives you a **real lesson**, a **real book checkpoint**, and a **transparent view of the video syllabus**, while keeping paid chapters, audiobook access, video playback and saved progress protected.
+The public sample therefore gives you a **real lesson**, a **real book checkpoint**, and a **transparent view of the video syllabus**, while keeping protected chapters, audiobook access, video playback and saved progress protected.

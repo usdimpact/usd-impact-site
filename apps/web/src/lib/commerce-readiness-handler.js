@@ -1,4 +1,5 @@
 import { REGISTERED_COMMERCE_ADAPTERS } from './commerce-adapters.js';
+import { gateLearningOfferCommerceReadiness } from './learning-offer-commerce-policy.js';
 import {
   publicCommerceReadiness,
   resolveCommerceReadiness,
@@ -33,7 +34,7 @@ export async function handleCommerceReadinessRequest(
     const readiness = resolveCommerceReadiness(environment, adapters);
     return sendJson(response, {
       ok: true,
-      commerce: publicCommerceReadiness(readiness),
+      commerce: gateLearningOfferCommerceReadiness(publicCommerceReadiness(readiness), environment),
     });
   } catch (error) {
     console.error('Commerce readiness configuration failed.', {

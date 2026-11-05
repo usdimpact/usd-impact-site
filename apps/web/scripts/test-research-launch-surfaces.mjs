@@ -122,7 +122,14 @@ assert.doesNotMatch(landing, /USD (?!29\b|290\b)\d+/, 'no other price figures');
 // Pinned on whitespace-normalized tokens: tolerant of reindentation/reformatting, strict on any code change.
 // (Byte-exact SHA256 of the original block at bf16f25 was 4267271f0b88ddd5096417a7c14aff8bab9f6c584c346e524e1be1ce33833e35.)
 const CHECKOUT_SCRIPT_NORMALIZED_SHA256 = 'b2cec3becd0ba1bcadb36caba74adabf61b63824bf568c467c59079b8e151843';
-const checkoutScriptBody = landing.match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? '';
+// Extract the single inline script by index, not by an HTML regex (CodeQL js/bad-tag-filter). This test only reads
+// repository source; it does not sanitize HTML. Case-insensitive so an upper-case <SCRIPT> cannot slip past.
+const landingLower = landing.toLowerCase();
+const scriptOpen = landingLower.indexOf('<script');
+const scriptOpenEnd = scriptOpen === -1 ? -1 : landingLower.indexOf('>', scriptOpen);
+const scriptClose = scriptOpenEnd === -1 ? -1 : landingLower.indexOf('</script', scriptOpenEnd);
+assert.ok(scriptOpen !== -1 && scriptOpenEnd !== -1 && scriptClose !== -1, 'checkout script block not found');
+const checkoutScriptBody = landing.slice(scriptOpenEnd + 1, scriptClose);
 assert.equal(
   createHash('sha256').update(checkoutScriptBody.replace(/\s+/g, ' ').trim()).digest('hex'),
   CHECKOUT_SCRIPT_NORMALIZED_SHA256,
@@ -132,7 +139,7 @@ assert.equal(
 assert.match(checkoutScriptBody, /document\.querySelectorAll\('\.research-checkout-button'\)/);
 assert.match(checkoutScriptBody, /hostname !== 'lemonsqueezy\.com' && !hostname\.endsWith\('\.lemonsqueezy\.com'\)/);
 assert.match(checkoutScriptBody, /url\.protocol !== 'https:'/);
-assert.equal((landing.match(/<script\b/g) ?? []).length, 1);
+assert.equal(landingLower.split('<script').length - 1, 1, 'exactly one script block (any case)');
 assert.ok(landing.indexOf('/api/commerce') > landing.indexOf("button.addEventListener('click'"), 'commerce call only inside click handler');
 assert.doesNotMatch(landing, /DOMContentLoaded|window\.onload|setTimeout\(/);
 for (const [name, page] of [['landing', landing], ['account', account], ['sample', sample]]) {
@@ -143,7 +150,7 @@ for (const [name, page] of [['landing', landing], ['account', account], ['sample
 // Existing subscribers keep account management, cancellation and Library Pass independence.
 assert.match(account, /Lemon Squeezy My Orders/);
 assert.match(account, /never removes permanent Library Pass access/);
-assert.doesNotMatch(account, /\/api\/commerce|<script|research-checkout-button|data-billing-interval/);
+assert.doesNotMatch(account, /\/api\/commerce|<script|research-checkout-button|data-billing-interval/i);
 assert.doesNotMatch(account, purchaseButton, 'account page must not render any purchase-labelled button');
 assert.match(landing, /never removes permanent access obtained\s+through a separate Library Pass purchase/);
 

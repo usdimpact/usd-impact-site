@@ -238,8 +238,13 @@ with db() as c:
       (104,pending,pending_intent,"deletion_pending"),
       (105,deleted,deleted_intent,"deleted"),
     ):
-        c.execute("update public.profiles set status=%s::public.account_status "
-                  "where account_id=%s",(state,aid))
+        if state=="deleted":
+            # Actual full migration enforces auth_user_id IS NULL for deleted.
+            c.execute("update public.profiles set status='deleted', auth_user_id=null, "
+                      "deleted_at=clock_timestamp() where account_id=%s",(aid,))
+        else:
+            c.execute("update public.profiles set status='deletion_pending' "
+                      "where account_id=%s",(aid,))
         try:
             run_service(c,COMPLETE,complete_args(aid,iid,n))
             raise AssertionError("late paid event was granted to "+state)

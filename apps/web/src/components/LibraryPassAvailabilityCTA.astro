@@ -5,66 +5,9 @@ interface Props {
 
 const { className = 'button primary' } = Astro.props;
 ---
+// Legacy component name retained for existing quiz/learning imports; its public action is now free.
 <a
   class={className}
-  href="/checkout/"
-  data-library-pass-availability-cta
-  data-library-pass-checkout-readiness="checking"
->Check Library Pass availability</a>
-
-<script>
-  import {
-    bookPurchasePresentation,
-    checkoutHrefWithCampaign,
-  } from '../lib/checkout-client.js';
-
-  const candidates = Array.from(
-    document.querySelectorAll('a[data-library-pass-availability-cta]'),
-  );
-  const campaignCheckoutUrl = () => checkoutHrefWithCampaign('/checkout/', window.location.search);
-
-  for (const candidate of candidates) {
-    if (candidate instanceof HTMLAnchorElement) {
-      candidate.href = campaignCheckoutUrl();
-    }
-  }
-
-  if (
-    candidates.length > 0
-    && document.documentElement.dataset.libraryPassAvailabilityRequested !== 'true'
-  ) {
-    document.documentElement.dataset.libraryPassAvailabilityRequested = 'true';
-
-    fetch('/api/commerce-readiness', {
-      method: 'GET',
-      credentials: 'same-origin',
-      cache: 'no-store',
-      headers: { Accept: 'application/json' },
-    })
-      .then(async (response) => {
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok || !body.commerce) {
-          throw new Error('Commerce readiness could not be verified.');
-        }
-        return bookPurchasePresentation(body.commerce);
-      })
-      .then((presentation) => {
-        for (const candidate of candidates) {
-          if (!(candidate instanceof HTMLAnchorElement)) continue;
-          candidate.dataset.libraryPassCheckoutReadiness = presentation.verificationState;
-          if (!presentation.available) continue;
-          candidate.textContent = presentation.primaryLabel;
-          candidate.href = checkoutHrefWithCampaign(
-            presentation.primaryHref,
-            window.location.search,
-          );
-        }
-      })
-      .catch(() => {
-        for (const candidate of candidates) {
-          if (!(candidate instanceof HTMLAnchorElement)) continue;
-          candidate.dataset.libraryPassCheckoutReadiness = 'error';
-        }
-      });
-  }
-</script>
+  href="/book/read-the-dollar-first/preview/"
+  data-public-book-sample-cta
+>Read the public book sample</a>

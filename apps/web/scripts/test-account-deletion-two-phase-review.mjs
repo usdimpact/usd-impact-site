@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { SENDABLE_STATUSES } from '../src/lib/launch-email-dispatch-common.js';
 import {
   prepareDraftDatabaseFinalization, claimDraftAuthCleanup,
   resumeDraftAuthCleanup, runDraftAuthCleanupBatch,
@@ -288,4 +289,6 @@ const baseWorld = (overrides = {}) => {
   check(world.calls.join(',') === 'DUE' && world.emails.length === 0,
     'duplicated due identities fail closed before Phase A and Auth calls');
 }
+check(!SENDABLE_STATUSES.has('deletion_staged'),
+  'shared email dispatcher cannot send staged deletion completion before SQL release');
 console.log('Research P1 two-phase offline review passed (' + passed + ' assertions).');

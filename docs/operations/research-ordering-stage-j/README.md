@@ -12,7 +12,7 @@ there are no application imports or deployable `supabase/migrations`.
 
 | Independent D2-18 finding | Stage J offline review behavior |
 | --- | --- |
-| NG1: signed success and recovered webhook names for one invoice create distinct event keys | Canonical receipt identity is `(store_id, subscription_id, invoice_id)`. Companion events have separately retained signed-delivery hashes but are one pending invoice; two PostgreSQL backends race to one original. No second entitlement effect. |
+| NG1: signed success and recovered webhook names for one invoice create distinct event keys | Canonical receipt identity is `(provider, store_id, test_mode, invoice_id)`; a different subscription claim for the same invoice is a conflict, not a second first receipt. Companion events have separately retained signed-delivery hashes but are one pending invoice; two PostgreSQL backends race to one original. No second entitlement effect. |
 | NG2: older paid invoice can appear consistent with current subscription `renews_at` | Require an explicitly synthetic, invoice-specific cycle-link witness; mismatches hold. A synthetic match is **not provider-authoritative** and never permits access. |
 | NG3: Stage G accepts a paid 1-cent invoice regardless of issued offer | Compare exact invoice total/currency to a synthetic locally issued quote/approved adjustment; mismatch holds. No arbitrary price floor, since legitimate discounts/tax can change totals. |
 | NG4: `initial` vs `renewal` `billing_reason` not bound to membership transition | Require synthetic transition kind, local subscription version, pending initial checkout intent or existing renewal terms; mismatches hold. `updated` remains non-granting. |
@@ -27,7 +27,7 @@ network access or credentials; `globalThis.fetch` is forbidden in tests.
 
 `invoice_journal_review.sql` is loaded **only into a disposable PG17.6
 database** after the six real historical Research migrations and purchase-backed
-Library Pass fixtures. The private schema has a NOLOGIN/NOBYPASSRLS owner,
+Library Pass fixtures. The receipt's provider/store/environment/invoice key is unique independently of subscription ID, while the original subscription ID stays immutable; a cross-subscription reuse must quarantine. The private schema has a NOLOGIN/NOBYPASSRLS owner,
 EXECUTE-only simulated holder, append-only audit with FK, statement-level
 DELETE/TRUNCATE denial, immutable original evidence and monotonic quarantine.
 The snapshot digest and quote are still synthetic caller-supplied evidence.

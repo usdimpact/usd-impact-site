@@ -1,6 +1,12 @@
 name: Research P1 integrated security candidate (disposable PG17, synthetic data)
 
 on:
+  # PR merge refs may not exist while the Draft conflicts with main. Run this
+  # disposable, secret-free test workflow on ONLY this exact Draft branch.
+  # Do not broaden this to main/Production or add connected Supabase credentials.
+  push:
+    branches:
+      - 'agent/research-live-p1-integrated-rc-20261105'
   pull_request:
     paths:
       - 'supabase/migrations/**'

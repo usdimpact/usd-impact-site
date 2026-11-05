@@ -167,10 +167,25 @@ if receipt:
              )""",(key,"synthetic-two-phase-"+a.hex,str(a),state_version,q["recipient_email"].lower()))
     except psycopg.Error as e:
         print("synthetic outbox insert failed:",e.sqlstate,str(e).splitlines()[0])
+# The outbox must remain NON-DISPATCHABLE until SQL finisher updates the
+# queue and notification row atomically. Direct service-role PATCH must fail.
+staged=su("""SELECT status FROM public.notification_outbox
+  WHERE business_object_id=%s AND message_id='account_deletion_completed'""",(str(a),))
+rec("B completion email is staged and cannot dispatch before SQL acknowledgement",
+    staged=="deletion_staged",staged)
+premature=svc("""UPDATE public.notification_outbox
+    SET status='queued' WHERE business_object_id=%s
+      AND message_id='account_deletion_completed'""",(str(a),))
+rec("B service_role cannot release staged completion email without private phase",
+    premature[0]=="ERR" and premature[1].startswith("42501"),premature)
 yes=finish(a,lease)
 rec("B outbox acknowledgement completes private ledger and scrubs duplicate recipient PII",
     yes==("OK",True) and ledger(a)["phase"]=="email_enqueued"
     and ledger(a)["recipient_email"] is None,yes)
+released=su("""SELECT status FROM public.notification_outbox
+  WHERE business_object_id=%s AND message_id='account_deletion_completed'""",(str(a),))
+rec("B one SQL transaction releases staged email to queued after final ack",
+    released=="queued",released)
 rec("B privacy request is marked completed only after Auth+durable email",
     su("SELECT status::text FROM public.privacy_requests WHERE id=%s",(uuid.UUID(q["privacy_request_ids"][0]),))=="completed",q["privacy_request_ids"])
 rec("B duplicate finish is idempotent and retains no email",
@@ -230,6 +245,24 @@ assert last_selected is not None, last_rows
 assert svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",(last,last_lease))==("OK",True)
 su("DELETE FROM auth.users WHERE id=%s",(last,))
 assert confirm(last,last_lease)[0]=="OK"
+# Stage an actual durable completion outbox first; a subsequent late signed
+# payment must still block release, leaving the staged row unsendable.
+last_key="notification:v1:"+hashlib.sha256(("post-stage:"+str(last)).encode()).hexdigest()
+staged_last=su("""INSERT INTO public.notification_outbox(
+   idempotency_key,event_id,message_id,classification,business_object_type,
+   business_object_id,state_version,recipient_email_normalized,
+   template_id,template_version,provider,payload,status
+ ) SELECT
+   %s,%s,'account_deletion_completed','transactional_operational',
+   'account_deletion_request',q.account_id::text,
+   pg_catalog.floor(extract(epoch from q.deleted_at)/60)::integer,
+   pg_catalog.lower(q.recipient_email),
+   'account_deletion_completed','v1','resend','{}'::jsonb,'queued'
+ FROM research_lifecycle_private.deletion_auth_cleanup q
+ WHERE q.account_id=%s
+ RETURNING status""",(last_key,"synthetic-post-stage-"+last.hex,last))
+rec("C an Auth-confirmed email insert is force-staged by SQL trigger",
+    staged_last=="deletion_staged",staged_last)
 late2=svc("""SELECT public.record_research_paid_binding_refusal(
     'lemon-squeezy',%s,%s,%s,'SIGNED_PAID_BINDING_REFUSED')""",
     ("syn-post-auth-"+last.hex[:10],last,"syn-checkout-"+last.hex[:14]))
@@ -240,7 +273,10 @@ rec("C late signed payment after Auth confirmation blocks privacy/email completi
     and held_finish[1].startswith("55000")
     and "Research payment evidence" in held_finish[1]
     and ledger(last)["phase"]=="auth_confirmed"
-    and ledger(last)["recipient_email"] is not None,
+    and ledger(last)["recipient_email"] is not None
+    and su("""SELECT status FROM public.notification_outbox
+      WHERE business_object_id=%s AND message_id='account_deletion_completed'""",
+      (str(last),))=="deletion_staged",
     f"late={late2} finish={held_finish}")
 
 rec("C late paid event after DB phase is durably quarantined, without reopening deleted profile",

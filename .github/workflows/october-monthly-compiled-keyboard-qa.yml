@@ -204,6 +204,30 @@ jobs:
           test ! -e dist/macro-reviews/monthly/2026-10/index.html
           test ! -e dist/macro-reviews/monthly/2026-11/index.html
           echo 'EPHEMERAL_PRODUCTION_EXCLUSION_PASS'
+      - name: Check original Score freeze and Draft envelope after integrated Production build
+        working-directory: integration/main/apps/web
+        shell: bash
+        run: |
+          set -euo pipefail
+          # PR-owned diagnostic on pinned ephemeral merge, NOT independent F2.
+          # Existing guard protects 16 historical report main bodies, original
+          # hero/title/meta/JSON-LD, draft-frozen full body/head/document,
+          # and 26 original newsletter JSON artifacts.
+          node scripts/test-score-held-report-source-guard.mjs
+          node scripts/score-held-report-source-guard.mjs --built
+          node --input-type=module -e '
+            import fs from "node:fs";
+            import assert from "node:assert/strict";
+            const ledger=JSON.parse(fs.readFileSync("scripts/score-held-report-source-baseline.json","utf8"));
+            const frozen=ledger.rendered_score_envelope_sha256;
+            assert.equal(ledger.disposition,"hold");
+            assert.equal(Object.keys(ledger.existing_reports).length,16);
+            assert.equal(Object.keys(frozen.original_whole_body_reference_sha256).length,16);
+            assert.equal(Object.keys(frozen.newsletter_json).length,26);
+            assert.equal(frozen.whole_body_release_status,"HOLD_16_UNAPPROVED_DIFFERENCES_FROM_PINNED_MAIN");
+            console.log("EPHEMERAL_SCORE_SOURCE_AND_DRAFT_CONTAINMENT_PASS reports=16 newsletters=26 original_whole_body=HOLD_16_NOT_AUTHORIZED");
+          '
+          echo 'EPHEMERAL_SCORE_SECURITY_HOLD_RETAINED'
       - name: Confirm existing public Daily and Weekly pages render in combined Production
         working-directory: integration/main/apps/web
         shell: bash

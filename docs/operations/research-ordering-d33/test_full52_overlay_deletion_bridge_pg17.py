@@ -129,6 +129,7 @@ def cancellation(c,a,sid,n):
 with db() as root:
     assert root.execute("show server_version_num").fetchone()[0]=="170006"
     bootstrap(root)
+    root.execute('create role authenticator nologin noinherit')
     b5=ROOT/"docs/operations/research-ordering-stage-n/b5_m1_strict_pinned_review_only.sql"
     root.execute(b5.read_text("utf-8"))
     root.execute((ROOT/"docs/operations/research-ordering-stage-e/segmented_caller_review.sql").read_text("utf-8"))

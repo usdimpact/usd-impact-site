@@ -88,6 +88,14 @@ def check_hold(c,a):
 with db() as c:
     assert c.execute("show server_version_num").fetchone()[0]=="170006"
     bootstrap(c)
+    # Supabase's managed installation locates pgcrypto in extensions;
+    # the synthetic 52-migration harness installed pgcrypto in public.
+    # Test-only compatibility alias: NO connected platform schema change.
+    c.execute("""create schema extensions;
+      create function extensions.digest(payload text, algo text)
+      returns bytea language sql stable set search_path='' as $alias$
+        select public.digest(payload,algo)
+      $alias$;""")
     c.execute((ROOT/"docs/operations/research-ordering-d33/live_transition_profile_lock_review.sql").read_text("utf-8"))
     c.execute((ROOT/"docs/operations/research-ordering-d33/finalizer_subscription_billing_hold_review.sql").read_text("utf-8"))
     print("D33_BILLING_FINALIZER_REVIEW_APPLIED_52_MIGRATIONS",flush=True)

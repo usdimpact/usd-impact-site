@@ -81,7 +81,10 @@ try {
     body: JSON.stringify({ idempotencyKey: 'qa-request-12345678' }),
   }));
   assert.equal(disabledCheckout.status, 503);
-  assert.equal(disabledCheckout.json.code, 'COMMERCE_DISABLED');
+  // The source-committed Library sales stop must deny before even resolving
+  // a disabled provider runtime; old webhook/reconciliation tests below keep
+  // their separate existing failure behavior.
+  assert.equal(disabledCheckout.json.code, 'LEARNING_LIBRARY_CHECKOUT_DISABLED');
 
   const crossSite = await invoke(request({
     method: 'POST',

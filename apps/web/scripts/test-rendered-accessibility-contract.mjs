@@ -3,9 +3,15 @@ import { readFile } from 'node:fs/promises';
 const routes = [
   '/',
   '/news/',
+  '/news/2026-07-22/',
   '/reports/',
+  '/reports/weekly/2026-07-31/',
   '/score/',
+  '/score/methodology/',
   '/learn/',
+  '/learn/dxy-signal-vs-dollar-system/',
+  '/quiz/',
+  '/start-here/quiz/',
   '/start-here/',
   '/book/read-the-dollar-first/',
   '/audiobook/read-the-dollar-first/',
@@ -21,6 +27,24 @@ const routes = [
   '/contact/',
   '/accessibility/',
 ];
+
+const sourceTemplates = [
+  'news/[date].astro',
+  'news/catalysts/[slug].astro',
+  'reports/weekly/[date].astro',
+  'reports/monthly/[date].astro',
+  'learn/[slug].astro',
+  'score/methodology.astro',
+  'quiz/index.astro',
+  '[...lesson]/quiz.astro',
+];
+
+for (const relativePath of sourceTemplates) {
+  const template = await readFile(new URL(`../src/pages/${relativePath}`, import.meta.url), 'utf8');
+  if (!/<main\s+id=["']main-content["']/.test(template)) {
+    throw new Error(`Missing SSR skip-link target in public Astro template: ${relativePath}`);
+  }
+}
 
 const failures = [];
 const fail = (route, message) => failures.push(`${route}: ${message}`);

@@ -1,0 +1,42 @@
+name: D34 Research Preview authorization P1 (DRAFT HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/d34-research-preview-access-review.yml'
+      - 'apps/web/src/lib/research-preview-route.js'
+      - 'apps/web/scripts/test-research-preview-route.mjs'
+permissions:
+  contents: read
+concurrency:
+  group: d34-research-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  review-only:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.x
+      - name: Offline authorization matrix
+        run: |
+          set -euo pipefail
+          node --check apps/web/src/lib/research-preview-route.js
+          node --check apps/web/scripts/test-research-preview-route.mjs
+          node apps/web/scripts/test-research-preview-route.mjs
+          node apps/web/scripts/test-research-access-gate.mjs
+          node apps/web/scripts/test-paid-access.mjs
+          node apps/web/scripts/test-research-membership-runtime.mjs
+      - name: Preserve held release boundary
+        if: always()
+        run: |
+          {
+            echo '### D34 Research Preview P1 author-side security tests'
+            echo 'No merchant, Supabase project, Production, Development, customer data, deployment or credentials accessed.'
+            echo 'This is a Draft-only candidate; tests do not establish actual Preview datasource isolation.'
+            echo 'Independent exact-head QA and owner deployment GO still required. #1103 remains HOLD.'
+          } >> "$GITHUB_STEP_SUMMARY"

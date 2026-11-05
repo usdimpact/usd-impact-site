@@ -78,7 +78,7 @@ async function run(label,reason,{eventName='subscription_payment_success',
     secondReadAt:'2026-11-05T01:05:01.000000Z',
     beforeLocalVersion:localBefore,afterLocalVersion:localAfter,
     cycleEvidence,
-    afterFirstRead:afterFirstRead||async()=>{},
+    afterFirstRead:async()=>{if(afterFirstRead)await afterFirstRead({invoice,sub});},
   },trustedQuote,expectedTransition,syntheticCycleLink,priorInvoiceReceipt});
   assert.equal(result.canMutate,false,label);
   assert.equal(result.providerSettlementProven,false,label);
@@ -155,7 +155,7 @@ await run('NG2 subscription paid horizon mismatch is rejected upstream',
  {cycleEvidence:{...cycle,periodEnd:'2027-01-05T00:00:00.000000Z'}});
 await run('NG2 remote refund observed mid-window is held upstream',
  'stage_h_not_reconciled_second_snapshot_invoice_not_fully_paid_or_has_refund',
- {afterFirstRead:async()=>{invoiceBase.__unused=1;}}).catch(e=>{throw e;});
+ {afterFirstRead:async({invoice})=>{invoice.status='refunded';invoice.refunded=true;invoice.refunded_amount=1299;}});
 // NG3: a 1 cent invoice must not match a 1299 cent issued quote, but do not
 // impose a magic hard minimum (legit discounts require authoritative quote).
 await run('NG3 one-cent invoice versus issued 1299 quote',

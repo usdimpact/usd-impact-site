@@ -214,7 +214,13 @@ const deletionEnvironment = Object.freeze({
   CRON_SECRET: 'abcdefghijklmnopqrstuvwxyz0123456789',
 });
 const deletionConfig = readAccountDeletionFinalizerConfig(deletionEnvironment);
-const profile = { account_id: accountId, email: 'member@invalid.example', status: 'deletion_pending' };
+const profile = {
+  account_id: accountId,
+  email: 'member@invalid.example',
+  status: 'deletion_pending',
+  deletion_requested_at: '2026-08-20T18:00:00.000Z',
+  deletion_due_at: '2026-08-27T18:00:00.000Z',
+};
 
 function deletionWorld(readiness, { support = () => json(201), mark = () => json(200, true) } = {}) {
   const log = [];

@@ -93,7 +93,7 @@ BEGIN
  IF p_store IS NULL OR p_store !~ '^[1-9][0-9]{0,17}$' OR
     p_subscription IS NULL OR p_subscription !~ '^[1-9][0-9]{0,17}$' OR
     p_invoice IS NULL OR p_invoice !~ '^[1-9][0-9]{0,17}$' OR
-    p_event_name NOT IN ('subscription_payment_success','subscription_payment_recovered') OR
+    p_event_name IS NULL OR p_event_name NOT IN ('subscription_payment_success','subscription_payment_recovered') OR
     p_signed_delivery_digest IS NULL OR p_signed_delivery_digest !~ '^[a-f0-9]{64}$' OR
     p_invoice_snapshot_digest IS NULL OR p_invoice_snapshot_digest !~ '^[a-f0-9]{64}$'
  THEN RAISE EXCEPTION 'invalid synthetic invoice custody input' USING ERRCODE='22023';

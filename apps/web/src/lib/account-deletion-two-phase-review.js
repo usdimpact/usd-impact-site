@@ -207,3 +207,62 @@ export async function runDraftAuthCleanupBatch({
   }
   return Object.freeze({ scanned: rows.length, completed, held, errors });
 }
+
+
+// Full DRAFT-only orchestration review: fair due scan -> atomic database Phase A
+// -> leased Auth cleanup. This is deliberately NOT imported by any route or
+// cron, and the Development-only config guard executes before all network IO.
+// A Phase A failure never triggers an Auth operation for the failed account.
+// The merchant-stop and privileged-runtime cutover approvals remain HOLD.
+export async function runDraftTwoPhaseReviewCycle({
+  config, batchSize = 1, now = new Date(), environment = process.env,
+  fetchImpl = fetch, enqueueImpl = enqueueAccountDeletionCompletedEmail,
+}) {
+  const cfg = requireReviewConfig(config);
+  if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 25) {
+    throw new TwoPhaseReviewError('TWO_PHASE_BATCH_INVALID');
+  }
+  const parsedNow = new Date(now);
+  if (!Number.isFinite(parsedNow.getTime())) {
+    throw new TwoPhaseReviewError('TWO_PHASE_NOW_INVALID');
+  }
+  const due = await rpc({
+    config: cfg, name: 'list_due_account_deletions_fair',
+    input: { p_limit: batchSize, p_due_at: parsedNow.toISOString() },
+    fetchImpl,
+  });
+  const ids = new Set();
+  if (!Array.isArray(due) || due.length > batchSize || due.some((row) => {
+    const id = row?.account_id;
+    if (!validId(id) || ids.has(id) || row?.status !== 'deletion_pending'
+        || !Number.isFinite(Date.parse(String(row?.deletion_due_at || '')))
+        || Date.parse(row.deletion_due_at) > parsedNow.getTime()) return true;
+    ids.add(id);
+    return false;
+  })) {
+    throw new TwoPhaseReviewError('TWO_PHASE_DUE_SCAN_INVALID');
+  }
+  let prepared = 0;
+  let held = 0;
+  const errors = [];
+  for (const row of due) {
+    try {
+      await prepareDraftDatabaseFinalization({
+        config: cfg, accountId: row.account_id, fetchImpl,
+      });
+      prepared += 1;
+    } catch (error) {
+      held += 1;
+      errors.push(typeof error?.code === 'string'
+        ? error.code : 'TWO_PHASE_PREPARE_FAILED');
+    }
+  }
+  const cleanup = await runDraftAuthCleanupBatch({
+    config: cfg, batchSize, environment, fetchImpl, enqueueImpl,
+  });
+  return Object.freeze({
+    dueScanned: due.length, prepared, held,
+    cleanupScanned: cleanup.scanned, cleanupCompleted: cleanup.completed,
+    cleanupHeld: cleanup.held, errors: Object.freeze([...errors, ...cleanup.errors]),
+  });
+}

@@ -105,6 +105,20 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # Validate App installation and scoped token permissions before any paid
+      # source generation. A present but invalid/misinstalled private key must
+      # never permit spending merely to fail on PR creation after generation.
+      # This token is not passed to source generation or Git commands.
+      - name: Verify PR-author App installation before paid news generation
+        id: daily_pr_author_preflight
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.DAILY_NEWS_PR_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DAILY_NEWS_PR_APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
+
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         if: steps.config.outputs.configured == 'true'
         with:

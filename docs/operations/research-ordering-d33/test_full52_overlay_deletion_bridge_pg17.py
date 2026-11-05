@@ -129,6 +129,13 @@ def cancellation(c,a,sid,n):
 with db() as root:
     assert root.execute("show server_version_num").fetchone()[0]=="170006"
     bootstrap(root)
+    # Synthetic migration harness installs pgcrypto in public; the managed
+    # runtime uses extensions.digest. Provide only a disposable compatibility alias.
+    root.execute("""create schema extensions;
+      create function extensions.digest(payload text,algo text) returns bytea
+      language sql stable set search_path='' as $d33$
+        select public.digest(payload,algo)
+      $d33$;""")
     root.execute('create role authenticator nologin noinherit')
     b5=ROOT/"docs/operations/research-ordering-stage-n/b5_m1_strict_pinned_review_only.sql"
     root.execute(b5.read_text("utf-8"))

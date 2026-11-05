@@ -277,6 +277,102 @@ future_small = own("""SELECT public.record_research_billing_clearance(
 rec("R9", "even one minute of future-dated merchant observation is rejected",
     future_small[0] == "ERR" and future_small[1].startswith("22023"), str(future_small))
 
+# ---------------- R10: signed paid binding with absent/wrong claimed account ----------------
+# Checkout owner must be held even when the signed webhook's custom claimed
+# account is unavailable or inconsistent with the DB-issued checkout key.
+unclaimed_owner = user()
+unclaimed_key = 'p1-unclaimed-checkout-key-000001'
+issued = svc("SELECT public.create_research_checkout_attempt(%s,%s,'monthly')",
+             (unclaimed_owner, unclaimed_key))
+request_del(unclaimed_owner)
+make_due(unclaimed_owner)
+su("UPDATE public.research_checkout_attempts SET hold_until=now()-interval '2 hours' WHERE account_id=%s",
+   (unclaimed_owner,))
+owner_proof = own("""SELECT public.record_research_billing_clearance(
+  %s,'provider_api','synthetic-owner-before-late-payment-01',now(),'owner-synthetic')""",
+  (unclaimed_owner,))
+cleared_before = ready(unclaimed_owner)
+late = svc("""SELECT public.record_research_paid_binding_refusal(
+  'lemon-squeezy','synthetic-unclaimed-paid-sub-01',NULL,%s,'SIGNED_PAID_BINDING_REFUSED')""",
+  (unclaimed_key,))
+blocked_after = ready(unclaimed_owner)
+rec("R10", "unclaimed signed payment still holds canonical checkout owner",
+    issued[0]=="OK" and owner_proof[0]=="OK"
+    and cleared_before[1]["clear"] is True and late[0]=="OK"
+    and blocked_after[1]["clear"] is False
+    and "research_paid_binding_quarantined" in blocked_after[1]["reasons"],
+    f"late={late} before={cleared_before} after={blocked_after}")
+refused = finalize(unclaimed_owner)
+rec("R10", "unclaimed signed paid event blocks SQL finalization after owner proof",
+    refused[0]=="ERR" and refused[1].startswith("55000"),str(refused))
+
+wrong_owner = user()
+claimed_other = user()
+wrong_key = 'p1-wrong-claim-checkout-key-001'
+issued2 = svc("SELECT public.create_research_checkout_attempt(%s,%s,'monthly')",
+              (wrong_owner,wrong_key))
+request_del(wrong_owner)
+make_due(wrong_owner)
+su("UPDATE public.research_checkout_attempts SET hold_until=now()-interval '2 hours' WHERE account_id=%s",
+   (wrong_owner,))
+own("SELECT public.record_research_billing_clearance(%s,'provider_api','synthetic-other-proof-001',now(),'owner-synthetic')",
+    (wrong_owner,))
+clear2 = ready(wrong_owner)
+wrong = svc("""SELECT public.record_research_paid_binding_refusal(
+  'lemon-squeezy','synthetic-wrong-account-paid-sub-01',%s,%s,'SIGNED_PAID_BINDING_REFUSED')""",
+  (claimed_other,wrong_key))
+actual_hold = ready(wrong_owner)
+claimed_hold = ready(claimed_other)
+rec("R10", "wrong-account signed event holds both claimed identity and checkout owner",
+    issued2[0]=="OK" and clear2[1]["clear"] is True and wrong[0]=="OK"
+    and "research_paid_binding_quarantined" in actual_hold[1]["reasons"]
+    and "research_paid_binding_quarantined" in claimed_hold[1]["reasons"],
+    f"actual={actual_hold} claimed={claimed_hold}")
+# Independent transaction: an in-flight paid event for a checkout key, with
+# no claimed ID, must lock the checkout OWNER before DB Phase A can commit.
+race_owner = user()
+race_key='p1-race-unclaimed-checkout-00001'
+race_attempt=svc("SELECT public.create_research_checkout_attempt(%s,%s,'monthly')",
+                 (race_owner,race_key))
+request_del(race_owner)
+su("""UPDATE public.profiles SET deletion_due_at=now()-interval '1 minute',
+    deletion_requested_at=now()-interval '31 days' WHERE account_id=%s""",(race_owner,))
+su("UPDATE public.research_checkout_attempts SET hold_until=now()-interval '2 hours' WHERE account_id=%s",
+   (race_owner,))
+race_proof=own("SELECT public.record_research_billing_clearance(%s,'provider_api','synthetic-race-proof-001',now(),'owner-synthetic')",(race_owner,))
+race_conn=conn(False)
+race_conn.execute("SET ROLE service_role")
+race_pending=race_conn.execute("""SELECT public.record_research_paid_binding_refusal(
+  'lemon-squeezy','synthetic-race-sub-01',NULL,%s,'SIGNED_PAID_BINDING_REFUSED')""",(race_key,)).fetchone()[0]
+race_result={}
+def finalize_during_unclaimed_payment():
+    with conn(False) as cc:
+        cc.execute("SET ROLE service_role")
+        cc.execute("SET lock_timeout='5s'")
+        started=time.time()
+        try:
+            cc.execute("SELECT public.finalize_deletion_and_queue_auth_cleanup(%s)",(race_owner,))
+            race_result["outcome"]="unexpected-success"
+        except psycopg.Error as e:
+            race_result["outcome"]=err(e)
+            cc.rollback()
+        race_result["wait"]=time.time()-started
+race_thread=threading.Thread(target=finalize_during_unclaimed_payment)
+race_thread.start()
+time.sleep(0.4)
+was_blocked=race_thread.is_alive()
+race_conn.commit()
+race_conn.close()
+race_thread.join(timeout=6)
+race_state=su("SELECT status::text FROM public.profiles WHERE account_id=%s",(race_owner,))
+rec("R10", "unclaimed paid event serializes with Phase A and blocks irreversible deletion",
+    race_attempt[0]=="OK" and race_proof[0]=="OK" and race_pending is not None
+    and was_blocked and not race_thread.is_alive()
+    and race_result.get("outcome","").startswith("55000")
+    and race_state=="deletion_pending"
+    and su("SELECT count(*) FROM auth.users WHERE id=%s",(race_owner,))==1,
+    f"waiting={was_blocked} result={race_result} state={race_state}")
+
 # ---------------- D33 / D2-C live paths ----------------
 p, psid, ppsub = research_member(); request_del(p)
 g = svc(TR, (psid, f"p1-renew-{ppsub}", f"evt-renew-{ppsub}", ppsub, "active", "active", "active", "2026-11-01T00:00:00Z"))

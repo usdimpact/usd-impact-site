@@ -20,6 +20,7 @@ def bootstrap(c):
     c.execute("""create role anon nologin;
       create role authenticated nologin;
       create role service_role nologin bypassrls;
+      create role postgres nologin noinherit nobypassrls;
       create schema auth;
       create table auth.users(id uuid primary key,email text);
       create function auth.uid() returns uuid language sql stable set search_path='' as $d2cu$

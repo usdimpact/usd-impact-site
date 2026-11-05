@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import preflight from '../api/account-deletion-two-phase-preflight.js';
+import preflight from '../src/lib/account-deletion-two-phase-preflight.js';
+import accountHandler from '../api/account.js';
 
 const environment = Object.freeze({
   VERCEL_ENV: 'preview',
@@ -111,4 +112,42 @@ try {
 } finally {
   globalThis.fetch = priorFetch;
 }
+
+// Integration contract: the separate account action must remain disabled by
+// default and must not alter the original scheduled finalizer route.
+const keys = Object.keys(environment);
+const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+const oldFetch = globalThis.fetch;
+try {
+  for (const key of keys) delete process.env[key];
+  globalThis.fetch = async () => { throw Error('account API preflight may not make external calls'); };
+  const reply = () => ({
+    statusCode: null, headers: {}, body: null,
+    setHeader(key, val) { this.headers[String(key).toLowerCase()] = val; },
+    end(payload) { this.body = JSON.parse(payload); },
+  });
+  let result = reply();
+  await accountHandler({
+    url: '/api/account?action=deletion-two-phase-preflight',
+    method: 'GET', headers: {},
+  }, result);
+  assert.equal(result.statusCode, 404, 'new action must be off by default');
+  Object.assign(process.env, environment);
+  result = reply();
+  await accountHandler({
+    url: '/api/account?action=deletion-two-phase-preflight',
+    method: 'GET', headers: { authorization: 'Bearer ' + environment.CRON_SECRET },
+  }, result);
+  assert.equal(result.statusCode, 200, 'preflight only under explicit isolated Development config');
+  assert.equal(result.body.deletionExecuted, false);
+  assert.equal(result.body.releaseApproved, false);
+  passed += 2;
+} finally {
+  globalThis.fetch = oldFetch;
+  for (const key of keys) {
+    if (previous[key] === undefined) delete process.env[key];
+    else process.env[key] = previous[key];
+  }
+}
+
 console.log('Research P1 isolated two-phase cutover preflight passed (' + passed + ' cases).');

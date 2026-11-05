@@ -57,7 +57,7 @@ const primaryHref = isLibraryPassAcquisition
 const secondaryHref = requestedSecondaryHref ?? downloadPath;
 const secondaryDownload = requestedSecondaryDownload ?? requestedSecondaryHref === undefined;
 ---
-<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription} alternateLocaleHref={spanishAlternateHref}>
+<BaseLayout title={entry.data.metaTitle} description={entry.data.metaDescription} alternateLocaleHref={spanishAlternateHref} noindex={isFiveMinuteGuidePreview}>
   <main id="main-content" class="main-with-hero">
     <section class:list={["hero", { "book-hero": isBookPage }]}>
       <div class="container">

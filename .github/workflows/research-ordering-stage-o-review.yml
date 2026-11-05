@@ -60,6 +60,7 @@ jobs:
           - docs/operations/research-ordering-stage-m/test_canonical_bridge.py
           - docs/operations/research-ordering-stage-n/test_locked_first_purchase.py
           - docs/operations/research-ordering-stage-o/test_driver_deadline.py
+          - docs/operations/research-ordering-stage-o/test_guard_first_b5_bind.py
     services:
       postgres:
         image: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3

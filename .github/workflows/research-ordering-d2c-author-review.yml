@@ -1,0 +1,72 @@
+name: B5 D2-C LP and Research profile fixes PG17 (DRAFT HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/research-ordering-d2c-author-review.yml'
+      - 'docs/operations/research-ordering-d2c-author/**'
+permissions:
+  contents: read
+concurrency:
+  group: d2c-author-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  disposable-actual-sql:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        test_script:
+          - docs/operations/research-ordering-d2c-author/test_lp_guard_corrected_pg17.py
+          - docs/operations/research-ordering-d2c-author/test_profile_fence_stage_q_pg17.py
+    services:
+      postgres:
+        image: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+        env:
+          POSTGRES_DB: ci_review
+          POSTGRES_USER: ci_research
+          POSTGRES_PASSWORD: synthetic-stage-c-review-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_research -d ci_review"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: '127.0.0.1'
+      PGPORT: '5432'
+      PGDATABASE: ci_review
+      PGUSER: ci_research
+      PGPASSWORD: synthetic-stage-c-review-only
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Enforce strict ephemeral local-only target
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = 127.0.0.1 && test "$PGPORT" = 5432
+          test "$PGDATABASE" = ci_review && test "$PGUSER" = ci_research
+          for key in DATABASE_URL SUPABASE_URL SUPABASE_DB_URL SUPABASE_SERVICE_ROLE_KEY LEMON_SQUEEZY_API_KEY LEMON_SQUEEZY_WEBHOOK_SECRET LEMON_SQUEEZY_STORE_ID VERCEL_ENV; do
+            test -z "${!key:-}" || { echo "::error::Forbidden connected key $key"; exit 1; }
+          done
+      - name: Install isolated PostgreSQL driver
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/d2c-author-venv"
+          "$RUNNER_TEMP/d2c-author-venv/bin/python" -m pip install --disable-pip-version-check --no-input 'psycopg[binary]==3.2.10'
+          "$RUNNER_TEMP/d2c-author-venv/bin/python" -m py_compile "${{ matrix.test_script }}"
+      - name: Replay genuine historical SQL with review-only correction
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/d2c-author-venv/bin/python" "${{ matrix.test_script }}"
+      - name: Preserve NO-GO evidence boundary
+        if: always()
+        run: |
+          {
+            echo '### B5 D2-C Draft-only correction proposal'
+            echo 'Source-author-only CI, NOT independent acceptance or cutover readiness.'
+            echo 'Synthetic PostgreSQL 17.6, only review docs SQL installed in disposable service.'
+            echo 'No connected Supabase, merchant, customer/payment/refund, migration or deployment changes.'
+            echo '52-migration parity, Development, deletion/provider policy, privilege custody, R1/R2 remain HOLD.'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -41,7 +41,7 @@ Do not copy API tokens, provider-signed customer portal links, personal addresse
 
 ## 5. Open release gates
 
-1. **No authenticated USD Impact Lemon Squeezy merchant readback exists in this packet.** The currently available browser context named `lemon-squeezy-usd-impact` has no confirmed signed-in site recorded. Do not use it to claim merchant state.
+1. **No authenticated USD Impact Lemon Squeezy merchant readback exists in this packet.** No confirmed provider session or scoped API response supports account-specific financial cessation claims. Do not substitute browser-profile names, checkout expiry or local subscription rows for merchant evidence.
 2. Owner must approve the **maximum privacy hold/deadline**, permitted merchant cessation evidence, customer notice, refund/chargeback handling, and post-deletion payment incident procedure.
 3. Independent reviewer must reproduce cross-service, legacy RPC and shared email outbox tests at the final PR SHA. Site runtime cutover, Development/Production migration compatibility and owner-specific deployment/rollback GO remain separate.
 

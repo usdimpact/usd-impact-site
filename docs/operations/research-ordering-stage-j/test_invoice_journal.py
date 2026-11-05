@@ -147,9 +147,9 @@ with db() as owner:
       "TRUNCATE research_ordering_stage_j.invoice_receipts,research_ordering_stage_j.invoice_delivery_audit",
     ):denied(owner,statement)
     denied(owner,"INSERT INTO research_ordering_stage_j.invoice_delivery_audit("
-       "store_id,subscription_id,invoice_id,event_name,signed_delivery_hash,"
-       "observed_invoice_digest,action) VALUES(%s,%s,%s,%s,%s,%s,%s)",
-       ("41","217","999",SUCCESS,"a"*64,"1"*64,"first_invoice_held"),("23503",))
+       "provider,store_id,test_mode,subscription_id,invoice_id,event_name,signed_delivery_hash,"
+       "observed_invoice_digest,action) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+       ("lemon-squeezy","41",True,"217","999",SUCCESS,"a"*64,"1"*64,"first_invoice_held"),("23503",))
     print("STAGE_J_OWNER_GUARDS_PASS immutable original/append-only audit/TRUNCATE/FK negative tests",flush=True)
 
 with db() as c:

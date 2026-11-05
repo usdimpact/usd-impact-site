@@ -257,7 +257,7 @@ for (const [kind, changes, status] of [
 ]) {
   const test = spawnSync('bash', ['-c', smokeGuardShell], {
     encoding: 'utf8', timeout: 5000, env: { ...process.env,
-      GITHUB_REF: appSmokeRef, GITHUB_RUN_ATTEMPT: '1',
+      GITHUB_REF: appSmokeRef, EXPECTED_REF: appSmokeRef, GITHUB_RUN_ATTEMPT: '1',
       GITHUB_EVENT_NAME: 'workflow_dispatch',
       GITHUB_REPOSITORY: 'usdimpact/usd-impact-site', ...changes,
     },

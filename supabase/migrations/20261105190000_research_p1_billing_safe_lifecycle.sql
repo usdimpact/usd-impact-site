@@ -1965,6 +1965,49 @@ revoke all on function public.claim_deletion_auth_cleanup_batch(integer)
 grant execute on function public.claim_deletion_auth_cleanup_batch(integer)
   to service_role;
 
+-- Pre-Auth / pre-email financial fence. The caller must present the active
+-- lease. The same profile row lock serializes this check against in-flight
+-- signed paid-binding quarantine and Research lifecycle writers. This RPC is
+-- a point-in-time check, NOT a lock across subsequent Auth/HTTP requests and
+-- NOT standalone provider cancellation evidence.
+create or replace function public.check_deletion_auth_cleanup_billing_fence(
+  p_account_id uuid, p_lease_id uuid
+)
+returns boolean language plpgsql security definer set search_path='' as $fence$
+declare
+  v_profile public.profiles;
+  v_row research_lifecycle_private.deletion_auth_cleanup;
+begin
+  select p.* into v_profile from public.profiles p
+   where p.account_id=p_account_id for update;
+  if not found or v_profile.status<>'deleted'
+     or v_profile.auth_user_id is not null or v_profile.deleted_at is null then
+    raise exception using errcode='55000', message='deletion identity is not finalized';
+  end if;
+  select q.* into v_row from research_lifecycle_private.deletion_auth_cleanup q
+   where q.account_id=p_account_id for update;
+  if not found or p_lease_id is null
+     or v_row.lease_id is distinct from p_lease_id
+     or v_row.next_attempt_at <= pg_catalog.clock_timestamp()
+     or v_row.phase not in ('auth_pending','auth_confirmed')
+     or v_row.original_auth_user_id is distinct from p_account_id
+     or v_row.deleted_at is distinct from v_profile.deleted_at then
+    raise exception using errcode='42501', message='Auth cleanup financial fence lease invalid';
+  end if;
+  if pg_catalog.cardinality(
+      research_lifecycle_private.billing_hold_reasons(p_account_id)
+    ) > 0 then
+    raise exception using errcode='55000',
+      message='post-finalization Research financial evidence requires reconciliation';
+  end if;
+  return true;
+end;
+$fence$;
+revoke all on function public.check_deletion_auth_cleanup_billing_fence(uuid,uuid)
+  from public,anon,authenticated,service_role;
+grant execute on function public.check_deletion_auth_cleanup_billing_fence(uuid,uuid)
+  to service_role;
+
 -- The caller attests Auth Admin DELETE success (or verified absence). Only
 -- service_role may attest, and it must present the current lease. Database
 -- finalization is already done; no billing hold may be silently erased here.
@@ -1972,20 +2015,31 @@ create or replace function public.confirm_deletion_auth_cleanup(
   p_account_id uuid,p_lease_id uuid
 )
 returns jsonb language plpgsql security definer set search_path='' as $confirm$
-declare v_row research_lifecycle_private.deletion_auth_cleanup;
+declare
+  v_row research_lifecycle_private.deletion_auth_cleanup;
+  v_profile public.profiles;
 begin
+  -- Match Phase A lock order (profile first) and serialize against new
+  -- signed payment observations before acknowledging Auth retirement.
+  select p.* into v_profile from public.profiles p
+   where p.account_id=p_account_id for update;
+  if not found or v_profile.status<>'deleted' or v_profile.auth_user_id is not null
+     or v_profile.deleted_at is null then
+    raise exception using errcode='55000', message='database identity not finalized';
+  end if;
   select q.* into v_row from research_lifecycle_private.deletion_auth_cleanup q
    where q.account_id=p_account_id for update;
   if not found or p_lease_id is null or v_row.lease_id is distinct from p_lease_id
     or v_row.next_attempt_at <= pg_catalog.clock_timestamp()
-    or v_row.phase not in ('auth_pending','auth_confirmed') then
+    or v_row.phase not in ('auth_pending','auth_confirmed')
+    or v_row.deleted_at is distinct from v_profile.deleted_at then
     raise exception using errcode='42501', message='Auth cleanup lease invalid';
   end if;
-  if not exists (
-    select 1 from public.profiles p
-     where p.account_id=p_account_id and p.status='deleted' and p.auth_user_id is null
-  ) then
-    raise exception using errcode='55000', message='database identity not finalized';
+  if pg_catalog.cardinality(
+       research_lifecycle_private.billing_hold_reasons(p_account_id)
+     ) > 0 then
+    raise exception using errcode='55000',
+      message='Research payment evidence arrived after database deletion';
   end if;
   update research_lifecycle_private.deletion_auth_cleanup q
     set phase='auth_confirmed',
@@ -2010,8 +2064,18 @@ create or replace function public.finish_deletion_auth_cleanup(
   p_account_id uuid,p_lease_id uuid
 )
 returns boolean language plpgsql security definer set search_path='' as $finish$
-declare v_row research_lifecycle_private.deletion_auth_cleanup;
+declare
+  v_row research_lifecycle_private.deletion_auth_cleanup;
+  v_profile public.profiles;
 begin
+  -- DB-first reconciliation and the paid-event writer use profile locks.
+  -- A late signed payment must prevent privacy/completion acknowledgement.
+  select p.* into v_profile from public.profiles p
+   where p.account_id=p_account_id for update;
+  if not found or v_profile.status<>'deleted' or v_profile.auth_user_id is not null
+     or v_profile.deleted_at is null then
+    raise exception using errcode='55000', message='database identity not finalized';
+  end if;
   select q.* into v_row from research_lifecycle_private.deletion_auth_cleanup q
    where q.account_id=p_account_id for update;
   if not found then
@@ -2020,8 +2084,15 @@ begin
   if v_row.phase='email_enqueued' then return true; end if;
   if p_lease_id is null or v_row.lease_id is distinct from p_lease_id
      or v_row.next_attempt_at <= pg_catalog.clock_timestamp()
-     or v_row.phase<>'auth_confirmed' then
+     or v_row.phase<>'auth_confirmed'
+     or v_row.deleted_at is distinct from v_profile.deleted_at then
     raise exception using errcode='42501', message='Auth email cleanup lease invalid';
+  end if;
+  if pg_catalog.cardinality(
+       research_lifecycle_private.billing_hold_reasons(p_account_id)
+     ) > 0 then
+    raise exception using errcode='55000',
+      message='Research payment evidence arrived before deletion acknowledgement';
   end if;
   if not exists (
     select 1 from public.notification_outbox o

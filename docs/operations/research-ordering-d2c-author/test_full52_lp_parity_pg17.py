@@ -22,15 +22,15 @@ def bootstrap(c):
       create role service_role nologin bypassrls;
       create schema auth;
       create table auth.users(id uuid primary key,email text);
-      create function auth.uid() returns uuid language sql stable set search_path='' as $
+      create function auth.uid() returns uuid language sql stable set search_path='' as $d2cu$
         select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid
-      $;
-      create function auth.jwt() returns jsonb language sql stable set search_path='' as $
+      $d2cu$;
+      create function auth.jwt() returns jsonb language sql stable set search_path='' as $d2cu$
         select '{}'::jsonb
-      $;
-      create function auth.role() returns text language sql stable set search_path='' as $
+      $d2cu$;
+      create function auth.role() returns text language sql stable set search_path='' as $d2cu$
         select 'authenticated'::text
-      $;
+      $d2cu$;
       create schema storage;
       create table storage.buckets(
         id text primary key,name text not null unique,public boolean default false,

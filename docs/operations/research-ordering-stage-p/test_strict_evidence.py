@@ -147,7 +147,7 @@ with db() as root:
     # Preserve trigger security invoker semantics and strict search path.
     props=root.execute("SELECT p.prosecdef,coalesce(p.proconfig,ARRAY[]::text[]) FROM pg_proc p "
       "WHERE p.oid='research_ordering_stage_e.reject_unauthorized_research_write()'::regprocedure").fetchone()
-    assert props[0] is False and any(v.startswith("search_path=") for v in props[1]),props
+    assert props == (False, ['search_path=""']),props
     assert count(root,"pg_trigger","tgname='research_e_guard_subscriptions' AND NOT tgisinternal")==1
     bound=as_role(root,"review_checkout_binder",BIND,args)
     assert bound["action"]=="created" and bound["subscription_state"]=="pending",bound

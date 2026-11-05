@@ -89,7 +89,21 @@ export async function decideResearchPreviewRequest({
     return redirect(url, '/research/access-required/', 'denied');
   }
 
-  const subscriptionState = state?.entitlement?.state;
+  // Never authorize Preview access from an entitlement state alone.
+  // readAccountAccessState verifies the bearer user, active profile and
+  // entitlement dates, returning allowed=false on deletion or expiration.
+  // Keep explicit profile/product checks as defense against inconsistent
+  // account reads and accidental future changes to the state provider.
+  const entitlement = state?.entitlement;
+  if (
+    state?.allowed !== true
+    || state?.profile?.status !== 'active'
+    || entitlement?.productId !== RESEARCH_MEMBERSHIP_PRODUCT_ID
+  ) {
+    return redirect(url, '/research/access-required/', 'denied');
+  }
+
+  const subscriptionState = entitlement.state;
   if (!KNOWN_RESEARCH_STATES.has(subscriptionState)) {
     return redirect(url, '/research/access-required/', 'denied');
   }

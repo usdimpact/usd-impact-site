@@ -301,5 +301,38 @@ still_held=phase_a(lock_account)
 rec("E a forged local event cannot clear signed quarantine",
     still_held[0]=="ERR" and still_held[1].startswith("55000"),still_held)
 
+
+# F - lease expiry after a worker crash must permit a fresh worker and make
+# the old worker's token permanently invalid. This is a DB-level synthetic
+# timeout exercise, not a clock-based wait or a real Auth administration call.
+lease_account=synthetic_user()
+request(lease_account)
+make_due_keep_auth(lease_account)
+assert phase_a(lease_account)[0]=="OK"
+su("""UPDATE research_lifecycle_private.deletion_auth_cleanup
+       SET next_attempt_at=now()+interval '1 hour'
+       WHERE account_id<>%s""",(lease_account,))
+first_claim=claim(1)
+first_rows=first_claim[1] if first_claim[0]=="OK" else []
+old_lease=uuid.UUID(first_rows[0]["lease_id"]) if first_rows else uuid.uuid4()
+rec("F first worker leases the selected identity",
+    len(first_rows)==1 and first_rows[0]["account_id"]==str(lease_account))
+su("""UPDATE research_lifecycle_private.deletion_auth_cleanup
+       SET next_attempt_at=now()-interval '1 minute'
+       WHERE account_id=%s""",(lease_account,))
+next_claim=claim(1)
+next_rows=next_claim[1] if next_claim[0]=="OK" else []
+new_lease=uuid.UUID(next_rows[0]["lease_id"]) if next_rows else uuid.uuid4()
+rec("F expired worker lease is replaced by a different idempotent retry lease",
+    len(next_rows)==1 and next_rows[0]["account_id"]==str(lease_account)
+    and new_lease!=old_lease)
+old_ack=confirm(lease_account,old_lease)
+rec("F stale worker cannot acknowledge after a competing recovery lease",
+    old_ack[0]=="ERR" and old_ack[1].startswith("42501"),old_ack)
+su("DELETE FROM auth.users WHERE id=%s",(lease_account,))
+latest_ack=confirm(lease_account,new_lease)
+rec("F fresh worker can finish the Auth-confirmed step",
+    latest_ack[0]=="OK" and latest_ack[1]["phase"]=="auth_confirmed")
+
 print(f"P1_TWO_PHASE_DONE total={len(R)} pass={sum(R)} fail={len(R)-sum(R)}",flush=True)
 raise SystemExit(0 if all(R) else 1)

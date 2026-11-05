@@ -101,7 +101,7 @@ for (const required of [
 ]) {
   assert.ok(homeCta.includes(required), `Homepage free-learning CTA is missing: ${required}`);
 }
-assert.doesNotMatch(homeCta, /\\/checkout\\/|\\/api\\/commerce-readiness|checkoutHrefWithCampaign|Check Library Pass availability/);
+assert.doesNotMatch(homeCta, /\/checkout\/|\/api\/commerce-readiness|checkoutHrefWithCampaign|Check Library Pass availability/);
 
 for (const required of [
   'data-public-book-sample-cta',
@@ -110,23 +110,23 @@ for (const required of [
 ]) {
   assert.ok(availabilityCta.includes(required), `Public book sample CTA is missing: ${required}`);
 }
-assert.doesNotMatch(availabilityCta, /\\/checkout\\/|\\/api\\/commerce-readiness|bookPurchasePresentation|Check Library Pass availability/);
+assert.doesNotMatch(availabilityCta, /\/checkout\/|\/api\/commerce-readiness|bookPurchasePresentation|Check Library Pass availability/);
 
-assert.match(productCta, /import LibraryPassAvailabilityCTA from '.\\/LibraryPassAvailabilityCTA\\.astro';/);
+assert.match(productCta, /import LibraryPassAvailabilityCTA from '\.\/LibraryPassAvailabilityCTA\.astro';/);
 assert.match(productCta, /libraryPassAvailability = false/);
-assert.match(productCta, /libraryPassAvailability \\? \\(\\s*<LibraryPassAvailabilityCTA className="button primary" \\/>/);
+assert.match(productCta, /libraryPassAvailability \? \(\s*<LibraryPassAvailabilityCTA className="button primary" \/>/);
 assert.ok(contentRoute.includes("const isLegacyBookAcquisition = requestedPrimary === 'Get the book'"));
 assert.ok(contentRoute.includes("? 'Read the public book sample'"));
 assert.ok(contentRoute.includes("? '/book/read-the-dollar-first/preview/'"));
 assert.ok(contentRoute.includes('libraryPassAvailability={isLegacyBookAcquisition}'));
-assert.match(acquisitionContent[0], /ctaPrimary:\\s*"Explore the free dollar framework"/);
-assert.match(acquisitionContent[0], /ctaPrimaryHref:\\s*"\\/dollar-framework\\/"/);
+assert.match(acquisitionContent[0], /ctaPrimary:\s*"Explore the free dollar framework"/);
+assert.match(acquisitionContent[0], /ctaPrimaryHref:\s*"\/dollar-framework\/"/);
 for (const source of acquisitionContent.slice(1)) {
-  assert.match(source, /ctaPrimary:\\s*"(?:Get the book|Explore the book)"/);
+  assert.match(source, /ctaPrimary:\s*"(?:Get the book|Explore the book)"/);
 }
-assert.match(homepage, /import HomeLibraryPassCTA from '..\\/components\\/HomeLibraryPassCTA\\.astro';/);
-assert.match(homepage, /<HomeLibraryPassCTA \\/>/);
-assert.doesNotMatch(homepage, /<ProductCTA \\/>/);
+assert.match(homepage, /import HomeLibraryPassCTA from '\.\.\/components\/HomeLibraryPassCTA\.astro';/);
+assert.match(homepage, /<HomeLibraryPassCTA \/>/);
+assert.doesNotMatch(homepage, /<ProductCTA \/>/);
 
 console.log('Global Library Pass announcement disabled; public CTAs lead only to approved free learning.');
 

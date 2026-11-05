@@ -53,6 +53,7 @@ CREATE POLICY stage_l_witness_insert ON research_ordering_stage_l.verified_first
 -- No second broad gateway: retire Stage F's caller permission in this SAME
 -- disposable SQL transaction.
 GRANT INSERT ON public.entitlements TO research_e_owner;
+GRANT INSERT ON research_ordering_stage_c.applied_watermarks TO research_e_owner;
 
 CREATE FUNCTION research_ordering_stage_l.apply_lifecycle_review(
  p_subscription_id uuid, p_account_id uuid, p_provider text,

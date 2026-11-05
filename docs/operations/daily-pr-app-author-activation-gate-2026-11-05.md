@@ -49,6 +49,29 @@ Official references: [register an App](https://docs.github.com/en/apps/creating-
 
 The current live `main` still uses the old bot-token generator. If the Draft is not reviewed and merged before the next native Daily, do **not** claim automation is fixed. A real App test must never dispatch the paid generator manually or use the published November 5 content as a fresh source; use a separately authorized nonpublisher proof of legitimate `pull_request` events. The final rollout must remain a new exact-head protected-merge decision.
 
+## Temporary nonpublishing App-token / PR-event acceptance proof — Draft only
+
+**Status:** Owner authorized an isolated test after confirming the repository App variable and encrypted secret are configured. **No smoke run has been dispatched at this point.** The new App action will prove actual access or fail before any PR is created. The smoke job is **temporary** and must be removed from Draft #1163 before any Production merge.
+
+The existing workflow `.github/workflows/daily-news.yml` is already registered on default `main` with `workflow_dispatch`, and GitHub supports choosing another branch in **Run workflow**. The Draft adds a **branch-specific** `app-pr-event-smoke` job with the following hard checks:
+
+- It runs only on an original, first-attempt **manual `workflow_dispatch`** from exact ref `refs/heads/fix/daily-pr-app-author-draft-20261105`; any other ref/replay/schedule fails the job condition. The existing `build-and-publish` generator job is explicitly **skipped** on this Draft ref. Therefore no source endpoint, paid request, import, public Daily, trusted publisher or production merge can run from the test branch.
+- The smoke first verifies event/ref/repository/attempt, then uses the pinned App-token action with **Contents read** and **Pull requests write**, scoped to `usdimpact/usd-impact-site`, with automatic token revocation. The private key never goes to the shell or job output.
+- Using the ordinary default `GITHUB_TOKEN` **only for contents writes**, it creates a unique branch from current protected main with exactly **one inert Markdown documentation fixture**. It verifies the compare is exactly one added file and no other changes.
+- It uses the short-lived **App token only for `gh pr create --draft`**, creating one explicitly named `TEST ONLY` Draft PR. It reads back PR identity and fails if the author is not `usd-impact-daily-pr-author[bot]`, if the base is not main, or if the file branch differs. It **does not merge, close, auto-approve, publish or enable auto-merge**. An external reviewer must inspect the native `pull_request` run event for the three required checks.
+
+### Mandatory beginner action — no credentials and no local installs
+
+1. Confirm [Draft PR #1163](https://github.com/usdimpact/usd-impact-site/pull/1163) still shows **Draft / unmerged**, with current technical CI green. Do not press Merge.
+2. Open [Actions → Daily USD Impact publication](https://github.com/usdimpact/usd-impact-site/actions/workflows/daily-news.yml).
+3. Click **Run workflow** and choose **`fix/daily-pr-app-author-draft-20261105`** in the **Use workflow from / Branch** dropdown. **Do not leave the selection on `main`**. This distinction is mandatory: manually dispatching `main` is a *different*, potentially paid workflow.
+4. Click **Run workflow** once. Do not rerun failed jobs or manually dispatch a second copy; keep the one-test budget.
+5. Open the new run. It must show **`build-and-publish` SKIPPED** and **`app-pr-event-smoke` SUCCESS**. If either differs, stop and report the run URL; do not retry.
+6. The successful log summary gives the newly created **TEST ONLY** Draft PR URL. Send only that PR link and the Actions run URL (no credentials, screenshots of key values or private contents). The reviewer will inspect author attribution and eligible native `pull_request` checks.
+7. The evidence PR must **never be merged**. After independent acceptance it will be closed, then the temporary smoke job and generator-branch guard will be **removed from #1163**, with exact-head CI repeated. Only the separately owner-approved production PR-author change can later be merged.
+
+GitHub official guidance: [Manually run workflow, selecting a branch](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow); [GitHub App tokens enable eligible workflow triggers](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
+
 ## Owner-only provisioning (NOT performed by this Draft)
 
 - Review the App's name, owner, installation/repository allowlist, consent and rights. The App must be installed only on `usdimpact/usd-impact-site`, with repository **Contents read** and **Pull requests write** and no administrative or Actions write/other privileges. GitHub App has required metadata read implicitly.

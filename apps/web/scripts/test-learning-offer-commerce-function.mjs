@@ -66,13 +66,13 @@ try {
 
   const legacyDefault = await invokeCommerce();
   assert.equal(legacyDefault.status, 503);
-  assert.equal(legacyDefault.json.code, 'COMMERCE_DISABLED');
+  assert.equal(legacyDefault.json.code, 'LEARNING_LIBRARY_CHECKOUT_DISABLED', 'Missing server mode fails closed.');
   assert.match(legacyDefault.headers['cache-control'], /no-store/);
 
   process.env[LEARNING_OFFER_MODE_KEY] = 'legacy';
   const explicitLegacy = await invokeCommerce();
   assert.equal(explicitLegacy.status, legacyDefault.status);
-  assert.equal(explicitLegacy.json.code, legacyDefault.json.code);
+  assert.equal(explicitLegacy.json.code, legacyDefault.json.code, 'Explicit legacy cannot bypass source-committed pause.');
 
   // A response from the normal Research route must be identical across offer
   // modes. It is intentionally disabled in this fixture, so no provider is
@@ -89,8 +89,13 @@ try {
   assert.equal(originalReadiness.status, 200);
   assert.equal(originalReadiness.json.ok, true);
   assert.equal(originalReadiness.json.commerce.checkoutEnabled, false);
+  assert.equal(originalReadiness.json.commerce.state, 'blocked');
+  // Production-shaped live mode must still deny before provider config/body.
+  process.env.COMMERCE_MODE = 'live';
+  assert.equal((await invokeCommerce()).json.code, 'LEARNING_LIBRARY_CHECKOUT_DISABLED');
+  process.env.COMMERCE_MODE = 'disabled';
 
-  for (const mode of ['free', ' FREE ', 'paid', 'paid-pending', 'invalid', ' ', 'true']) {
+  for (const mode of ['legacy', ' LEGACY ', 'free', ' FREE ', 'paid', 'paid-pending', 'invalid', ' ', 'true']) {
     process.env[LEARNING_OFFER_MODE_KEY] = mode;
 
     const blocked = await invokeCommerce();
@@ -143,9 +148,9 @@ try {
   // Reversible in-process state regression. This tests no Production setting:
   // changing or removing the env value in a deployment requires its own audit.
   process.env[LEARNING_OFFER_MODE_KEY] = 'legacy';
-  assert.equal((await invokeCommerce()).json.code, 'COMMERCE_DISABLED');
+  assert.equal((await invokeCommerce()).json.code, 'LEARNING_LIBRARY_CHECKOUT_DISABLED');
   delete process.env[LEARNING_OFFER_MODE_KEY];
-  assert.equal((await invokeCommerce()).json.code, 'COMMERCE_DISABLED');
+  assert.equal((await invokeCommerce()).json.code, 'LEARNING_LIBRARY_CHECKOUT_DISABLED');
   assert.deepEqual((await invokeReadiness({})).json.commerce, originalReadiness.json.commerce);
 
   // merchant-hosted-checkout-source-scan (offline). Site-owned Library Pass
@@ -174,7 +179,7 @@ try {
     '../src/components/LibraryPassAvailabilityCTA.astro',
   ]) {
     const source = await readFile(new URL(relativePath, import.meta.url), 'utf8');
-    assert.match(source, /href="\/checkout\/"/, `${relativePath} must use internal checkout`);
+    assert.match(source, /href="\/(?:checkout|book\/read-the-dollar-first\/preview)\/"/, `${relativePath} must link only to internal guarded checkout or free public sample`);
   }
 
   console.log('Learning-offer public-entrypoint source guard passed (no hardcoded hosted buy links).');

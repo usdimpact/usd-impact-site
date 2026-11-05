@@ -251,5 +251,55 @@ rec("D two concurrent workers claim disjoint Auth identities",
 rec("D after claim, durable queue contains both identities for crash recovery",
     all(ledger(z)["phase"]=="auth_pending" and ledger(z)["attempt_count"]>=1 for z in ready))
 
+
+# E - payment evidence that holds a profile lock must commit before DB phase A,
+# or its state must be reconciled AFTER phase A. No signed receipt is discarded.
+lock_account=synthetic_user()
+request(lock_account)
+make_due_keep_auth(lock_account)
+writer=conn(False)
+writer.execute("SET ROLE service_role")
+writer.execute("""SELECT public.record_research_paid_binding_refusal(
+  'lemon-squeezy',%s,%s,%s,'SIGNED_PAYMENT_UNBOUND')""",
+  ("syn-race-"+lock_account.hex[:12],lock_account,"checkout-"+lock_account.hex[:12]))
+outcome={}
+def competing_phase_a():
+    with conn(False) as db:
+        db.execute("SET ROLE service_role")
+        db.execute("SET lock_timeout='5s'")
+        try:
+            outcome["value"]=db.execute(
+                "SELECT public.finalize_deletion_and_queue_auth_cleanup(%s)",
+                (lock_account,)).fetchone()[0]
+            db.commit()
+        except psycopg.Error as e:
+            outcome["error"]=e.sqlstate
+            db.rollback()
+phase_worker=threading.Thread(target=competing_phase_a)
+phase_worker.start()
+time.sleep(0.3)
+was_waiting=phase_worker.is_alive()
+writer.commit()
+writer.close()
+phase_worker.join(timeout=6)
+rec("E two-connection signed payment lock makes Phase A wait and then HOLD",
+    was_waiting and not phase_worker.is_alive() and outcome.get("error")=="55000"
+    and row(lock_account)["status"]=="deletion_pending"
+    and row(lock_account)["auth_user_id"]==str(lock_account)
+    and ledger(lock_account) is None,outcome)
+rec("E signed payment evidence is retained after the refused Phase A",
+    su("SELECT count(*) FROM public.research_paid_binding_quarantine WHERE claimed_account_id=%s",
+       (lock_account,))==1)
+
+# E2 - service_role cannot fabricate owner clearance, even after having
+# quarantined a real paid event. Known Research billing remains on hold.
+forged=svc("""SELECT public.record_research_billing_clearance(
+    %s,'provider_api','fake-provider-cancellation-001',now(),'web')""",(lock_account,))
+rec("E service_role cannot manufacture merchant cessation proof",
+    forged[0]=="ERR" and forged[1].startswith("42501"),forged)
+still_held=phase_a(lock_account)
+rec("E a forged local event cannot clear signed quarantine",
+    still_held[0]=="ERR" and still_held[1].startswith("55000"),still_held)
+
 print(f"P1_TWO_PHASE_DONE total={len(R)} pass={sum(R)} fail={len(R)-sum(R)}",flush=True)
 raise SystemExit(0 if all(R) else 1)

@@ -106,6 +106,7 @@ for (const route of publicLearningRoutes) {
 }
 
 
+const videoLibraryPage = pagePath('/video-library');
 if (fs.existsSync(videoLibraryPage)) {
   const html = fs.readFileSync(videoLibraryPage, 'utf8');
   const filmLinks = html.match(/href="\/guided-edition\/video-library\/[a-z0-9-]+\/?"/g) || [];

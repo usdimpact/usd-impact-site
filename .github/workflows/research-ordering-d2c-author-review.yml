@@ -19,6 +19,7 @@ jobs:
       matrix:
         test_script:
           - docs/operations/research-ordering-d2c-author/test_lp_guard_corrected_pg17.py
+          - docs/operations/research-ordering-d2c-author/test_full52_lp_parity_pg17.py
           - docs/operations/research-ordering-d2c-author/test_profile_fence_stage_q_pg17.py
     services:
       postgres:

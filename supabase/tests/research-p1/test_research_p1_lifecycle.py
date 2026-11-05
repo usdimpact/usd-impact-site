@@ -240,6 +240,43 @@ rec("R7", "late positive event cannot reopen a deleted account (D33-1)", re_[0] 
 cf = own("SELECT public.record_research_billing_clearance(%s,'provider_api','ref-future-01',now()+interval '1 day','owner')", (n,))
 rec("R8", "clearance cannot be future-dated", cf[0] == "ERR" and cf[1].startswith("22023"), str(cf))
 
+# ---------------- R9: proof time versus entry time / checkout expiry ----------------
+# Expiration only ends the automatic checkout-window hold. It must NOT turn
+# an issued provider checkout into evidence that no payment ever occurred.
+expiry = user()
+attempt = svc("SELECT public.create_research_checkout_attempt(%s,%s,'monthly')",
+              (expiry, 'p1-proof-expired-checkout-001'))
+rec("R9", "issued synthetic checkout was recorded", attempt[0] == "OK", str(attempt))
+request_del(expiry)
+make_due(expiry)
+# Move only the synthetic timer; preserve the immutable issued checkout row.
+su("UPDATE public.research_checkout_attempts SET hold_until=now()-interval '2 hours' WHERE account_id=%s", (expiry,))
+preclear = ready(expiry)
+rec("R9", "expired checkout remains billing evidence pending external clearance",
+    preclear[0] == "OK" and preclear[1]["clear"] is False
+    and "research_checkout_issued" in preclear[1]["reasons"]
+    and "research_checkout_window_open" not in preclear[1]["reasons"],
+    str(preclear))
+oldproof = own("""SELECT public.record_research_billing_clearance(
+    %s,'provider_api','synthetic-stale-checkout-proof-001',
+    now()-interval '1 day','synthetic-owner')""",(expiry,))
+still = ready(expiry)
+rec("R9", "stale provider observation entered after checkout cannot clear it",
+    oldproof[0] == "OK" and still[0] == "OK" and still[1]["clear"] is False,
+    f"proof={oldproof[0]} ready={still}")
+fresh = own("""SELECT public.record_research_billing_clearance(
+    %s,'provider_api','synthetic-fresh-checkout-proof-001',
+    now(),'synthetic-owner')""",(expiry,))
+cleared = ready(expiry)
+rec("R9", "owner-proven provider observation after expired checkout may clear it",
+    fresh[0] == "OK" and cleared[0] == "OK" and cleared[1]["clear"] is True,
+    f"proof={fresh[0]} ready={cleared}")
+future_small = own("""SELECT public.record_research_billing_clearance(
+    %s,'provider_api','synthetic-early-clock-proof-001',
+    now()+interval '1 minute','synthetic-owner')""",(expiry,))
+rec("R9", "even one minute of future-dated merchant observation is rejected",
+    future_small[0] == "ERR" and future_small[1].startswith("22023"), str(future_small))
+
 # ---------------- D33 / D2-C live paths ----------------
 p, psid, ppsub = research_member(); request_del(p)
 g = svc(TR, (psid, f"p1-renew-{ppsub}", f"evt-renew-{ppsub}", ppsub, "active", "active", "active", "2026-11-01T00:00:00Z"))

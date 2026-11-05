@@ -37,7 +37,10 @@ def exec_role(role, sql, args=(), connection=None):
 def su(sql, args=()):
     with conn() as c:
         cur = c.execute(sql,args)
-        return cur.fetchone()[0] if cur.description else None
+        if not cur.description:
+            return None
+        found = cur.fetchone()
+        return found[0] if found is not None else None
 
 svc = lambda sql, args=(), connection=None: exec_role("service_role",sql,args,connection)
 own = lambda sql, args=(): exec_role("postgres",sql,args)

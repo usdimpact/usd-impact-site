@@ -56,9 +56,9 @@ for (const [label, source] of [
 assert.match(routeSource, /const purchaseUrl = accessMap\.purchaseFallbackUrl;/);
 assert.doesNotMatch(routeSource, /PUBLIC_BOOK_PURCHASE_URL/);
 assert.match(engineSource, /data-purchase-url=\{purchaseUrl\}/);
-assert.match(availabilityCtaSource, /href="\\/book\\/read-the-dollar-first\\/preview\\/"/);
+assert.match(availabilityCtaSource, /href="\/book\/read-the-dollar-first\/preview\/"/);
 assert.match(availabilityCtaSource, /data-public-book-sample-cta/);
-assert.match(availabilityCtaSource, />Read the public book sample<\\/a>/);
-assert.doesNotMatch(availabilityCtaSource, /href="\\/checkout\\/"|bookPurchasePresentation|\\/api\\/commerce-readiness/);
+assert.match(availabilityCtaSource, />Read the public book sample<\/a>/);
+assert.doesNotMatch(availabilityCtaSource, /href="\/checkout\/"|bookPurchasePresentation|\/api\/commerce-readiness/);
 
 console.log('Quiz UI and Library Pass CTA regression contract passed.');

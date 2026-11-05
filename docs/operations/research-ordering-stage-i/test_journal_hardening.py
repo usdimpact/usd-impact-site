@@ -171,11 +171,14 @@ with db() as owner:
         "SET disposition='pending_reconciliation' "
         "WHERE event_key='payment_success:stage-i-writer'",
         "DELETE FROM research_ordering_stage_h.pending_receipts",
-        "TRUNCATE research_ordering_stage_h.pending_receipts",
         "DELETE FROM research_ordering_stage_h.receipt_audit",
         "TRUNCATE research_ordering_stage_h.receipt_audit",
     ):
         denied(owner, sql)
+    # A single-table TRUNCATE can fail first on FK 0A000; prove the trigger
+    # independently by naming both related tables in the same TRUNCATE.
+    denied(owner, "TRUNCATE research_ordering_stage_h.pending_receipts", expected=("0A000", "42501"))
+    denied(owner, "TRUNCATE research_ordering_stage_h.pending_receipts, research_ordering_stage_h.receipt_audit")
     denied(owner,
            "INSERT INTO research_ordering_stage_h.receipt_audit"
            "(event_key,action,observed_digest) VALUES(%s,%s,%s)",

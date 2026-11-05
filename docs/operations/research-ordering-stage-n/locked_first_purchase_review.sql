@@ -48,7 +48,7 @@ CREATE POLICY stage_n_j_owner_lock_only ON research_ordering_stage_j.invoice_rec
  FOR UPDATE TO research_e_owner USING(true) WITH CHECK(false);
 
 CREATE FUNCTION research_ordering_stage_n.reject_research_owner_checkout_edit()
-RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $$
 BEGIN
  IF current_user='research_e_owner' THEN
   RAISE EXCEPTION 'stage n: lifecycle owner cannot modify checkout custody'
@@ -56,7 +56,7 @@ BEGIN
  END IF;
  RETURN NEW;
 END;
-$;
+$$;
 CREATE TRIGGER stage_n_checkout_owner_read_lock_only
  BEFORE UPDATE ON research_checkout_guard.checkout_intents
  FOR EACH ROW EXECUTE FUNCTION research_ordering_stage_n.reject_research_owner_checkout_edit();

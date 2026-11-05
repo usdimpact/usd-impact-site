@@ -1,0 +1,73 @@
+name: Research O1 O4 Stage J invoice identity and policy (DRAFT HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/research-ordering-stage-j-review.yml'
+      - 'docs/operations/research-ordering-stage-j/**'
+      - 'docs/operations/research-ordering-stage-i/**'
+      - 'docs/operations/research-ordering-stage-h/**'
+      - 'docs/operations/research-ordering-stage-g/**'
+      - 'docs/operations/research-ordering-stage-c/**'
+      - 'supabase/migrations/20260729203000_paid_access_foundation.sql'
+      - 'supabase/migrations/20260905201000_research_membership_recurring_foundation.sql'
+      - 'supabase/migrations/20260906004500_research_membership_transition_persistence.sql'
+      - 'supabase/migrations/20260906104500_research_membership_performance_hardening.sql'
+      - 'supabase/migrations/20260906180500_research_membership_service_role_grants.sql'
+      - 'supabase/migrations/20260907154500_research_membership_first_purchase_binding.sql'
+permissions:
+  contents: read
+concurrency:
+  group: research-stage-j-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  offline-invoice-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run NG1 NG2 NG3 NG4 synthetic policy and Stage G H regressions
+        run: |
+          set -euo pipefail
+          test -z "${DATABASE_URL:-}" && test -z "${SUPABASE_URL:-}" && test -z "${SUPABASE_DB_URL:-}"
+          test -z "${LEMON_SQUEEZY_API_KEY:-}" && test -z "${LEMON_SQUEEZY_WEBHOOK_SECRET:-}"
+          node --check docs/operations/research-ordering-stage-j/invoice_custody_review.mjs
+          node --check docs/operations/research-ordering-stage-j/test_invoice_custody_review.mjs
+          node docs/operations/research-ordering-stage-g/test_provider_paid_evidence.mjs
+          node docs/operations/research-ordering-stage-h/test_provider_window_review.mjs
+          node docs/operations/research-ordering-stage-j/test_invoice_custody_review.mjs
+  disposable-pg17-invoice-custody:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+        env:
+          POSTGRES_USER: ci_research
+          POSTGRES_PASSWORD: synthetic-stage-c-review-only
+          POSTGRES_DB: ci_review
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_research -d ci_review"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test six historical migrations and pending-only canonical invoice journal
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGDATABASE: ci_review
+          PGUSER: ci_research
+          PGPASSWORD: synthetic-stage-c-review-only
+        run: |
+          set -euo pipefail
+          test -z "${DATABASE_URL:-}" && test -z "${SUPABASE_URL:-}" && test -z "${SUPABASE_DB_URL:-}"
+          test -z "${LEMON_SQUEEZY_API_KEY:-}" && test -z "${LEMON_SQUEEZY_WEBHOOK_SECRET:-}"
+          python3 -m venv "$RUNNER_TEMP/research-stage-j-venv"
+          "$RUNNER_TEMP/research-stage-j-venv/bin/python" -m pip install --disable-pip-version-check --no-input 'psycopg[binary]==3.2.10'
+          "$RUNNER_TEMP/research-stage-j-venv/bin/python" -m py_compile docs/operations/research-ordering-stage-j/test_invoice_journal.py
+          "$RUNNER_TEMP/research-stage-j-venv/bin/python" docs/operations/research-ordering-stage-j/test_invoice_journal.py

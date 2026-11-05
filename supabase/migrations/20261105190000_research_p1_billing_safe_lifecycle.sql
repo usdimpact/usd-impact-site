@@ -2016,7 +2016,7 @@ begin
       and o.business_object_id=p_account_id::text
       and o.recipient_email_normalized=pg_catalog.lower(pg_catalog.btrim(v_row.recipient_email))
       and o.state_version=pg_catalog.floor(
-        pg_catalog.extract(epoch from v_row.deleted_at)/60
+        extract(epoch from v_row.deleted_at)/60
       )::integer
   ) then
     raise exception using errcode='55000', message='durable completion email outbox not found';

@@ -10,6 +10,12 @@ drop policy if exists d33_research_owner_profile_select on public.profiles;
 create policy d33_research_owner_profile_select on public.profiles
 for select to research_e_owner using(true);
 grant select on public.subscription_events to research_e_owner;
+-- INSERT ... ON CONFLICT + collision inspection also needs tightly scoped
+-- SELECT on the Research-only event ledger for this NOLOGIN owner.
+grant select on public.entitlement_events to research_e_owner;
+drop policy if exists d33_research_owner_entitlement_event_read on public.entitlement_events;
+create policy d33_research_owner_entitlement_event_read on public.entitlement_events
+for select to research_e_owner using(product_id='research-membership');
 drop policy if exists d33_research_owner_subscription_event_read on public.subscription_events;
 create policy d33_research_owner_subscription_event_read on public.subscription_events
 for select to research_e_owner using(product_id='research-membership');

@@ -199,6 +199,26 @@ assert.deepEqual(productionCheckoutRequest.data.attributes.product_options.enabl
 assert.equal(productionCheckoutRequest.data.attributes.checkout_data.email, 'member@example.com');
 assert.equal(productionCheckoutRequest.data.attributes.checkout_data.custom.usd_impact_research_billing_interval, 'annual');
 
+// Research P1: the success paths must record and attach a DB-issued checkout
+// attempt around the single merchant call.
+function custody(inner, log = []) {
+  return async (url, init = {}) => {
+    const href = String(url);
+    if (href.endsWith('/rest/v1/rpc/create_research_checkout_attempt')) {
+      log.push('attempt');
+      return new Response(JSON.stringify('11111111-1111-4111-8111-111111111111'), { status: 200 });
+    }
+    if (href.endsWith('/rest/v1/rpc/attach_research_checkout_attempt')) {
+      log.push('attach');
+      return new Response('true', { status: 200 });
+    }
+    if (href.startsWith('https://api.lemonsqueezy.com/')) log.push('provider');
+    return inner(url, init);
+  };
+}
+const custodyLog = [];
+const productionCustodyLog = [];
+
 let providerCalls = 0;
 const checkout = await createResearchMembershipCheckout({
   config,
@@ -206,7 +226,7 @@ const checkout = await createResearchMembershipCheckout({
   billingInterval: 'monthly',
   idempotencyKey: 'research-checkout-001',
   now: new Date('2026-09-07T15:00:00.000Z'),
-  fetchImpl: async (url, init = {}) => {
+  fetchImpl: custody(async (url, init = {}) => {
     if (String(url).startsWith(`${config.supabase.url}/rest/v1/profiles?`)) {
       const parsed = new URL(url);
       assert.equal(parsed.searchParams.get('account_id'), `eq.${accountId}`);
@@ -246,9 +266,10 @@ const checkout = await createResearchMembershipCheckout({
         },
       },
     }), { status: 201 });
-  },
+  }, custodyLog),
 });
 assert.equal(providerCalls, 1);
+assert.deepEqual(custodyLog, ['attempt', 'provider', 'attach']);
 assert.equal(checkout.checkoutId, 'checkout_1');
 assert.equal(checkout.billingInterval, 'monthly');
 assert.equal(checkout.testMode, true);
@@ -259,7 +280,7 @@ const productionCheckout = await createResearchMembershipCheckout({
   user: productionUser,
   billingInterval: 'monthly',
   idempotencyKey: 'research-live-checkout-002',
-  fetchImpl: async (url, init = {}) => {
+  fetchImpl: custody(async (url, init = {}) => {
     if (String(url).startsWith(`${productionConfig.supabase.url}/rest/v1/profiles?`)) {
       return new Response(JSON.stringify([{ account_id: accountId, status: 'active', deletion_requested_at: null, deleted_at: null }]), { status: 200 });
     }
@@ -288,9 +309,10 @@ const productionCheckout = await createResearchMembershipCheckout({
         },
       },
     }), { status: 201 });
-  },
+  }, productionCustodyLog),
 });
 assert.equal(productionProviderCalls, 1);
+assert.deepEqual(productionCustodyLog, ['attempt', 'provider', 'attach']);
 assert.equal(productionCheckout.checkoutId, 'checkout_live_1');
 assert.equal(productionCheckout.testMode, false);
 

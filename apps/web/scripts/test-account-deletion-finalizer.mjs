@@ -44,6 +44,18 @@ function response(status, body) {
   });
 }
 
+// Research P1: legacy scenarios model accounts with no Research footprint, so
+// the pre-Auth billing readiness RPC answers clear. Hold paths are covered in
+// scripts/test-research-p1-billing-safe-deletion.mjs.
+function clearReadiness(inner) {
+  return async (url, options = {}) => {
+    if (String(url).endsWith('/rest/v1/rpc/check_research_deletion_billing_readiness')) {
+      return response(200, { clear: true, reasons: [], escalate: false });
+    }
+    return inner(url, options);
+  };
+}
+
 function emptyRunResult(overrides = {}) {
   return {
     enabled: true,
@@ -54,6 +66,7 @@ function emptyRunResult(overrides = {}) {
     finalized: 0,
     alreadyFinalized: 0,
     failed: 0,
+    billingHeld: 0,
     ...overrides,
   };
 }
@@ -180,7 +193,7 @@ const fetchImpl = async (url, options = {}) => {
 
 const result = await runDueAccountDeletionFinalizer({
   environment,
-  fetchImpl,
+  fetchImpl: clearReadiness(fetchImpl),
   now: new Date('2026-08-27T18:10:00.000Z'),
 });
 assert.deepEqual(result, emptyRunResult({ scanned: 1, finalized: 1 }));
@@ -225,7 +238,7 @@ const concurrentFetch = async (url, options = {}) => {
 };
 const concurrent = await runDueAccountDeletionFinalizer({
   environment,
-  fetchImpl: concurrentFetch,
+  fetchImpl: clearReadiness(concurrentFetch),
   now: new Date('2026-08-27T18:10:00.000Z'),
 });
 assert.deepEqual(concurrent, emptyRunResult({ scanned: 1, alreadyFinalized: 1 }));
@@ -256,7 +269,7 @@ const authFailureFetch = async (url, options = {}) => {
 };
 const authFailure = await runDueAccountDeletionFinalizer({
   environment,
-  fetchImpl: authFailureFetch,
+  fetchImpl: clearReadiness(authFailureFetch),
   now: new Date('2026-08-27T18:10:00.000Z'),
 });
 assert.deepEqual(authFailure, emptyRunResult({ scanned: 1, failed: 1 }));
@@ -285,7 +298,7 @@ const ambiguousFinalizeFetch = async (url, options = {}) => {
 };
 const ambiguousFinalize = await runDueAccountDeletionFinalizer({
   environment,
-  fetchImpl: ambiguousFinalizeFetch,
+  fetchImpl: clearReadiness(ambiguousFinalizeFetch),
   now: new Date('2026-08-27T18:10:00.000Z'),
 });
 assert.deepEqual(ambiguousFinalize, emptyRunResult({ scanned: 1, failed: 1 }));
@@ -323,7 +336,7 @@ const completionFailureFetch = async (url, options = {}) => {
 };
 const completionFailure = await runDueAccountDeletionFinalizer({
   environment,
-  fetchImpl: completionFailureFetch,
+  fetchImpl: clearReadiness(completionFailureFetch),
   now: new Date('2026-08-27T18:10:00.000Z'),
 });
 assert.deepEqual(completionFailure, emptyRunResult({ scanned: 1, failed: 1 }));
@@ -355,7 +368,7 @@ const recoveryFetch = async (url, options = {}) => {
 };
 const recoveryRun = await runDueAccountDeletionFinalizer({
   environment,
-  fetchImpl: recoveryFetch,
+  fetchImpl: clearReadiness(recoveryFetch),
   now: new Date('2026-08-27T18:10:00.000Z'),
   batchSize: 3,
 });
@@ -392,14 +405,14 @@ const recoveredOnce = await recoverOneDeletionCompletionAcknowledgement({
   recovery: duplicateRecovery,
   config: readAccountDeletionFinalizerConfig(environment),
   environment,
-  fetchImpl: duplicateRecoveryFetch,
+  fetchImpl: clearReadiness(duplicateRecoveryFetch),
   now: new Date(deletedAt),
 });
 const recoveredTwice = await recoverOneDeletionCompletionAcknowledgement({
   recovery: duplicateRecovery,
   config: readAccountDeletionFinalizerConfig(environment),
   environment,
-  fetchImpl: duplicateRecoveryFetch,
+  fetchImpl: clearReadiness(duplicateRecoveryFetch),
   now: new Date(deletedAt),
 });
 assert.equal(recoveredOnce.outboxId, recoveredTwice.outboxId);
@@ -433,7 +446,7 @@ const escalationFailureFetch = async (url, options = {}) => {
 };
 const escalationFailure = await runDueAccountDeletionFinalizer({
   environment,
-  fetchImpl: escalationFailureFetch,
+  fetchImpl: clearReadiness(escalationFailureFetch),
   now: new Date('2026-08-27T18:10:00.000Z'),
 });
 assert.deepEqual(escalationFailure, emptyRunResult({ scanned: 1, failed: 1 }));
@@ -449,7 +462,7 @@ const forgedScanFetch = async (url, options = {}) => {
   throw new Error(`Unexpected forged-scan request: ${options.method || 'GET'} ${href}`);
 };
 assert.deepEqual(
-  await runDueAccountDeletionFinalizer({ environment, fetchImpl: forgedScanFetch, batchSize: 5 }),
+  await runDueAccountDeletionFinalizer({ environment, fetchImpl: clearReadiness(forgedScanFetch), batchSize: 5 }),
   emptyRunResult(),
 );
 assert.equal(forgedScanUrls.some((href) => href.includes('/profiles?')), true);
@@ -462,7 +475,7 @@ const limitFetch = async (url, options = {}) => {
   throw new Error(`Unexpected limit request: ${options.method || 'GET'} ${href}`);
 };
 assert.deepEqual(
-  await runDueAccountDeletionFinalizer({ environment, fetchImpl: limitFetch, batchSize: 999 }),
+  await runDueAccountDeletionFinalizer({ environment, fetchImpl: clearReadiness(limitFetch), batchSize: 999 }),
   emptyRunResult(),
 );
 assert.equal(limitUrls.some((href) => href.includes('/support_requests?') && href.includes('limit=100')), true);
@@ -485,6 +498,7 @@ assert.deepEqual(disabled, {
   finalized: 0,
   alreadyFinalized: 0,
   failed: 0,
+  billingHeld: 0,
 });
 assert.equal(disabledFetchCalled, false);
 

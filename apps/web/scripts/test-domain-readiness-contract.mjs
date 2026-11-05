@@ -54,9 +54,14 @@ if (productDisclosureCount !== 4) {
   failures.push(`Product page must expose exactly four concise disclosures; found ${productDisclosureCount}.`);
 }
 requireText(files.preview, 'Free sample page', [
-  'Lemon Squeezy is the selected Merchant of Record',
-  'Current checkout availability is verified live',
+  'The sample does **not** unlock protected chapters',
+  'Video playback remains protected.',
+  'Access for previous purchasers',
+  '/account/sign-in/?next=/account/',
 ]);
+if (files.preview.includes('USD 39.00') || files.preview.includes('USD 49.00')) {
+  failures.push('Free sample page must not advertise a retired Library Pass price.');
+}
 requireText(files.terms, 'Terms', [
   'KELA LEADS S.R.L.',
   '40790448',

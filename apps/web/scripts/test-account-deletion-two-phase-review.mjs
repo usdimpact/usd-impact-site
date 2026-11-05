@@ -93,12 +93,14 @@ const baseWorld = (overrides = {}) => {
     let kind;
     if (href.endsWith('should_soft_delete=true')) kind = 'AUTH_DELETE';
     else if (href.includes('/auth/v1/admin/users/')) kind = 'AUTH_GET';
+    else if (href.endsWith('/rpc/check_deletion_auth_cleanup_billing_fence')) kind = 'FENCE';
     else if (href.endsWith('/rpc/confirm_deletion_auth_cleanup')) kind = 'CONFIRM';
     else if (href.endsWith('/rpc/finish_deletion_auth_cleanup')) kind = 'FINISH';
     else if (href.endsWith('/rpc/claim_deletion_auth_cleanup_batch')) kind = 'CLAIM';
     else throw Error('Unexpected network call: ' + href);
     calls.push(kind);
     if (overrides[kind]) return overrides[kind](url, init);
+    if (kind === 'FENCE') return json(200, true);
     if (kind === 'AUTH_DELETE') return json(200, { id: account });
     if (kind === 'AUTH_GET') return empty(404);
     if (kind === 'CONFIRM') return json(200, receipt);
@@ -118,7 +120,7 @@ const baseWorld = (overrides = {}) => {
     () => resumeDraftAuthCleanup({ config, row, ...world }),
     (error) => error.code === 'TWO_PHASE_AUTH_DELETE_UNAVAILABLE',
   );
-  check(world.calls.join(',') === 'AUTH_DELETE' && world.emails.length === 0,
+  check(world.calls.join(',') === 'FENCE,AUTH_DELETE' && world.emails.length === 0,
     'Auth DELETE failure retains DB queue and cannot acknowledge completion');
 }
 {
@@ -127,14 +129,14 @@ const baseWorld = (overrides = {}) => {
     () => resumeDraftAuthCleanup({ config, row, ...world }),
     (error) => error.code === 'TWO_PHASE_AUTH_NOT_RETIRED',
   );
-  check(world.calls.join(',') === 'AUTH_DELETE,AUTH_GET' && world.emails.length === 0,
+  check(world.calls.join(',') === 'FENCE,AUTH_DELETE,AUTH_GET' && world.emails.length === 0,
     'Auth Admin still-active response blocks confirmation and completion email');
 }
 {
   const world = baseWorld();
   const done = await resumeDraftAuthCleanup({ config, row, ...world });
   check(done.status === 'auth_and_email_confirmed'
-    && world.calls.join(',') === 'AUTH_DELETE,AUTH_GET,CONFIRM,FINISH'
+    && world.calls.join(',') === 'FENCE,AUTH_DELETE,AUTH_GET,CONFIRM,FINISH'
     && world.emails.length === 1 && world.emails[0].account_id === account,
     '200 DELETE and 404 Auth verification permit confirm, durable email, then scrub');
 }
@@ -142,7 +144,7 @@ const baseWorld = (overrides = {}) => {
   const world = baseWorld({ AUTH_DELETE: () => empty(404) });
   const done = await resumeDraftAuthCleanup({ config, row, ...world });
   check(done.status === 'auth_and_email_confirmed'
-    && world.calls[1] === 'AUTH_GET',
+    && world.calls[2] === 'AUTH_GET',
     'retry after already absent Auth identity is idempotent');
 }
 {
@@ -156,7 +158,7 @@ const baseWorld = (overrides = {}) => {
   const retry = { ...row, phase: 'auth_confirmed', attempt_count: 2 };
   const done = await resumeDraftAuthCleanup({ config, row: retry, ...world });
   check(done.status === 'auth_and_email_confirmed'
-    && world.calls.join(',') === 'CONFIRM,FINISH',
+    && world.calls.join(',') === 'FENCE,CONFIRM,FINISH',
     'crash after Auth confirmation resumes email without another Auth DELETE');
 }
 {
@@ -193,5 +195,26 @@ const baseWorld = (overrides = {}) => {
     && result.errors[0] === 'TWO_PHASE_AUTH_DELETE_UNAVAILABLE'
     && world.emails.length === 0,
     'batch runner holds failed Auth and emits only non-PII structured errors');
+}
+// Late signed paid evidence or unverifiable merchant state must stop before
+// Auth Admin DELETE. Mocked fence outcomes never count as provider proof.
+{
+  const world = baseWorld({ FENCE: () => json(503, { code: 'BILLING_UNVERIFIED' }) });
+  await assert.rejects(
+    () => resumeDraftAuthCleanup({ config, row, ...world }),
+    (error) => error.code === 'TWO_PHASE_DATABASE_UNAVAILABLE',
+  );
+  check(world.calls.join(',') === 'FENCE' && world.emails.length === 0,
+    'late paid/unverified billing fence blocks Auth API and completion before calls');
+}
+{
+  const world = baseWorld({ FENCE: () => json(200, false) });
+  const retry = { ...row, phase: 'auth_confirmed', attempt_count: 2 };
+  await assert.rejects(
+    () => resumeDraftAuthCleanup({ config, row: retry, ...world }),
+    (error) => error.code === 'TWO_PHASE_BILLING_FENCE_REFUSED',
+  );
+  check(world.calls.join(',') === 'FENCE' && world.emails.length === 0,
+    'payment arriving after Auth confirmation still holds email and privacy completion');
 }
 console.log('Research P1 two-phase offline review passed (' + passed + ' assertions).');

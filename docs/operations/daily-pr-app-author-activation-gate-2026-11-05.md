@@ -1,6 +1,6 @@
 # Daily PR-author GitHub App — approval and acceptance gate (November 5, 2026)
 
-**Status:** DRAFT ONLY / NO MERGE / NO CREDENTIAL / NO PRODUCTION ACTIVATION.
+**Status:** DRAFT ONLY / NO MERGE / NO PRODUCTION ACTIVATION. GitHub App credentials were configured by the owner outside this Draft and successfully validated in an isolated nonpublishing run; no secret value was exposed.
 
 **Incident:** [#840](https://github.com/usdimpact/usd-impact-site/issues/840). **Publication tracker:** [#1129](https://github.com/usdimpact/usd-impact-site/issues/1129). Separate closed manual-late [PR #1160](https://github.com/usdimpact/usd-impact-site/pull/1160) delivered the November 5 edition; it is **not** proof of unattended publication.
 

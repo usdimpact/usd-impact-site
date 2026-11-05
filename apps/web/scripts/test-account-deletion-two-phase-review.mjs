@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   prepareDraftDatabaseFinalization, claimDraftAuthCleanup,
   resumeDraftAuthCleanup, runDraftAuthCleanupBatch,
+  runDraftTwoPhaseReviewCycle,
 } from '../src/lib/account-deletion-two-phase-review.js';
 
 const account = '46d8a4a1-e616-4d9d-8faf-d877a42af310';
@@ -94,12 +95,19 @@ const baseWorld = (overrides = {}) => {
     if (href.endsWith('should_soft_delete=true')) kind = 'AUTH_DELETE';
     else if (href.includes('/auth/v1/admin/users/')) kind = 'AUTH_GET';
     else if (href.endsWith('/rpc/check_deletion_auth_cleanup_billing_fence')) kind = 'FENCE';
+    else if (href.endsWith('/rpc/list_due_account_deletions_fair')) kind = 'DUE';
+    else if (href.endsWith('/rpc/finalize_deletion_and_queue_auth_cleanup')) kind = 'PREPARE';
     else if (href.endsWith('/rpc/confirm_deletion_auth_cleanup')) kind = 'CONFIRM';
     else if (href.endsWith('/rpc/finish_deletion_auth_cleanup')) kind = 'FINISH';
     else if (href.endsWith('/rpc/claim_deletion_auth_cleanup_batch')) kind = 'CLAIM';
     else throw Error('Unexpected network call: ' + href);
     calls.push(kind);
     if (overrides[kind]) return overrides[kind](url, init);
+    if (kind === 'DUE') return json(200, [{
+      account_id: account, status: 'deletion_pending',
+      deletion_due_at: '2026-11-01T00:00:00.000Z',
+    }]);
+    if (kind === 'PREPARE') return json(200, { phase: 'auth_pending', account_id: account });
     if (kind === 'FENCE') return json(200, true);
     if (kind === 'AUTH_DELETE') return json(200, { id: account });
     if (kind === 'AUTH_GET') return empty(404);
@@ -216,5 +224,57 @@ const baseWorld = (overrides = {}) => {
   );
   check(world.calls.join(',') === 'FENCE' && world.emails.length === 0,
     'payment arriving after Auth confirmation still holds email and privacy completion');
+}
+// Entire Draft-only deletion cycle exercises ordering without registering a
+// web route or touching a connected database, merchant, or Auth identity.
+{
+  let calls = 0;
+  await assert.rejects(
+    () => runDraftTwoPhaseReviewCycle({
+      config: { ...config, production: true },
+      fetchImpl: () => { calls += 1; throw Error('unexpected'); },
+    }),
+    (error) => error.code === 'TWO_PHASE_DRAFT_DEVELOPMENT_ONLY',
+  );
+  check(calls === 0, 'Draft review cycle refuses Production before network IO');
+}
+{
+  const world = baseWorld();
+  const result = await runDraftTwoPhaseReviewCycle({
+    config, now: '2026-11-05T21:00:00Z', ...world,
+  });
+  check(result.prepared === 1 && result.cleanupCompleted === 1
+    && result.held === 0 && result.cleanupHeld === 0
+    && world.calls.join(',') === 'DUE,PREPARE,CLAIM,FENCE,AUTH_DELETE,AUTH_GET,CONFIRM,FINISH',
+  'Draft cycle always commits DB Phase A before Auth, confirmation and email');
+}
+{
+  const world = baseWorld({
+    PREPARE: () => json(550, { code: '55000', message: 'billing hold' }),
+    CLAIM: () => json(200, []),
+  });
+  const result = await runDraftTwoPhaseReviewCycle({
+    config, now: '2026-11-05T21:00:00Z', ...world,
+  });
+  check(result.prepared === 0 && result.held === 1
+    && result.cleanupCompleted === 0
+    && world.calls.join(',') === 'DUE,PREPARE,CLAIM',
+  'failed Phase A never calls Auth or queues a deletion-completed email');
+}
+{
+  const world = baseWorld({
+    DUE: () => json(200, [
+      { account_id: account, status: 'deletion_pending', deletion_due_at: '2026-11-01T00:00:00Z' },
+      { account_id: account, status: 'deletion_pending', deletion_due_at: '2026-11-01T00:00:00Z' },
+    ]),
+  });
+  await assert.rejects(
+    () => runDraftTwoPhaseReviewCycle({
+      config, now: '2026-11-05T21:00:00Z', batchSize: 2, ...world,
+    }),
+    (error) => error.code === 'TWO_PHASE_DUE_SCAN_INVALID',
+  );
+  check(world.calls.join(',') === 'DUE' && world.emails.length === 0,
+    'duplicated due identities fail closed before Phase A and Auth calls');
 }
 console.log('Research P1 two-phase offline review passed (' + passed + ' assertions).');

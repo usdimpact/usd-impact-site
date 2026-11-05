@@ -24,6 +24,7 @@ assert tuple(os.getenv(k) for k in
     "synthetic-stage-c-review-only")
 
 LP="read-the-dollar-first-guided-interactive-edition"
+PADDLE=ROOT/"supabase/migrations/20260731160000_paddle_checkout_completed.sql"
 COMMERCE=ROOT/"supabase/migrations/20260826170000_commerce_reconciliation_runtime.sql"
 STAGE_E=ROOT/"docs/operations/research-ordering-stage-e/segmented_caller_review.sql"
 COMPLETE="select public.complete_commerce_purchase("+",".join(["%s"]*15)+")"
@@ -86,6 +87,11 @@ def entitlement_state(c,aid):
 with db() as c:
     assert c.execute("show server_version_num").fetchone()[0]=="170006"
     bootstrap(c)
+    # Foundation + Research alone is insufficient for the later LP commerce RPC:
+    # real 20260731 Paddle migration adds purchases provider_price_id and related
+    # columns. Replay this historical dependency unchanged before commerce.
+    assert PADDLE.read_text().startswith("begin;")
+    c.execute(PADDLE.read_text())
     assert COMMERCE.read_text().startswith("begin;")
     c.execute(COMMERCE.read_text())
     research,sid,_=seed(c,9001,library=True)

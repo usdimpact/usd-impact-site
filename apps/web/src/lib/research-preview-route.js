@@ -9,17 +9,6 @@ import { RESEARCH_MEMBERSHIP_PRODUCT_ID } from './research-membership-runtime.js
 const WEEKLY_REPORT_PREFIX = '/reports/weekly';
 const MONTHLY_REPORT_PREFIX = '/reports/monthly';
 const WEEKLY_SCORE_PATH = '/score';
-const KNOWN_RESEARCH_STATES = new Set([
-  'pending',
-  'active',
-  'past_due',
-  'cancel_scheduled',
-  'cancelled',
-  'refunded',
-  'disputed',
-  'charged_back',
-]);
-
 function normalizePathname(value) {
   const normalized = String(value || '/').replace(/\/{2,}/g, '/').replace(/\/+$/, '');
   return normalized || '/';
@@ -89,10 +78,24 @@ export async function decideResearchPreviewRequest({
     return redirect(url, '/research/access-required/', 'denied');
   }
 
-  const subscriptionState = state?.entitlement?.state;
-  if (!KNOWN_RESEARCH_STATES.has(subscriptionState)) {
+  // Never authorize Preview access from an entitlement state alone.
+  // readAccountAccessState verifies the bearer user, active profile and
+  // entitlement dates, returning allowed=false on deletion or expiration.
+  // Keep explicit profile/product checks as defense against inconsistent
+  // account reads and accidental future changes to the state provider.
+  const entitlement = state?.entitlement;
+  if (
+    state?.allowed !== true
+    || state?.profile?.status !== 'active'
+    || entitlement?.productId !== RESEARCH_MEMBERSHIP_PRODUCT_ID
+    || entitlement?.state !== 'active'
+  ) {
     return redirect(url, '/research/access-required/', 'denied');
   }
+
+  // The subscription may be scheduled to cancel, but the entitlement remains
+  // 'active' through its paid window; readAccountAccessState validated dates.
+  const subscriptionState = entitlement.state;
 
   const decision = resolveResearchAccess({
     surface,

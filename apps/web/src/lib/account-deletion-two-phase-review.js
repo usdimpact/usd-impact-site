@@ -141,6 +141,17 @@ export async function resumeDraftAuthCleanup({
       || !['auth_pending', 'auth_confirmed'].includes(row.phase)) {
     throw new TwoPhaseReviewError('TWO_PHASE_CLAIM_RECEIPT_INVALID');
   }
+  // Fence before irreversible Auth and before email: pending signed payment
+  // observations must fail closed. A database lock cannot span the subsequent
+  // Auth HTTP call, so externally verified cessation remains a release gate.
+  const fenced = await rpc({
+    config: cfg, name: 'check_deletion_auth_cleanup_billing_fence',
+    input: { p_account_id: row.account_id, p_lease_id: row.lease_id },
+    fetchImpl,
+  });
+  if (fenced !== true) {
+    throw new TwoPhaseReviewError('TWO_PHASE_BILLING_FENCE_REFUSED');
+  }
   if (row.phase === 'auth_pending') {
     await confirmedAuthRetirement({ config: cfg, accountId: row.account_id, fetchImpl });
   }

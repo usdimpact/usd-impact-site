@@ -10,6 +10,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 import psycopg
+from psycopg.types.json import Jsonb
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(ROOT/"docs/operations/research-ordering-stage-c"))
@@ -69,7 +70,7 @@ NEXT="2027-01-01T00:00:00+00:00"
 def args(sid,key,old="active",new="active",ent="active",end=NEXT):
     return (sid,key,key+"-provider-event","lemon-squeezy",
             str(1000+int(str(sid)[-12:])),old,new,START,end,False,
-            ent,START,end,"synthetic D33 review", "2026-11-05T14:00:00+00:00",{})
+            ent,START,end,"synthetic D33 review", "2026-11-05T14:00:00+00:00",Jsonb({}))
 
 def call(c,params):
     c.execute("set role service_role")

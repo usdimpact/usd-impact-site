@@ -172,6 +172,26 @@ const appAction = mainDaily.match(
 );
 assert.ok(appAction, 'App token must be minted immediately before the PR author step');
 assert.match(appAction[0], /actions\/create-github-app-token@[a-f0-9]{40}/);
+// Validate the actual App installation/permissions before any paid request.
+// Mint a second fresh PR token only after bounded background generation.
+const appPreflight = mainDaily.match(
+  /      - name: Verify PR-author App installation before paid news generation\n([\s\S]*?)(?=\n      - uses: actions\/setup-node@)/,
+);
+assert.ok(appPreflight, 'pre-paid installation-token probe must exist');
+assert.match(appPreflight[0], /if: steps\.config\.outputs\.configured == 'true'/);
+assert.match(appPreflight[0], /actions\/create-github-app-token@[a-f0-9]{40}/);
+assert.match(appPreflight[0], /permission-contents: read/);
+assert.match(appPreflight[0], /permission-pull-requests: write/);
+assert.doesNotMatch(appPreflight[0], /permission-actions: write|permission-administration: write|skip-token-revoke: true/);
+assert.doesNotMatch(appPreflight[0], /^\s+(?:owner|repositories):/m);
+assert.equal((mainDaily.match(/actions\/create-github-app-token@[a-f0-9]{40}/g) || []).length, 2);
+assert.ok(mainDaily.indexOf('Verify PR-author App installation before paid news generation')
+  < mainDaily.indexOf('Start background news generation'),
+  'actual installation check must complete before paid source requests');
+assert.ok(mainDaily.indexOf('Start background news generation')
+  < mainDaily.indexOf('Mint short-lived Daily PR-author GitHub App token'),
+  'fresh PR token must be minted after lengthy generation');
+
 assert.match(appAction[0], /permission-contents: read/);
 assert.match(appAction[0], /permission-pull-requests: write/);
 assert.doesNotMatch(appAction[0], /permission-actions: write|permission-administration: write|skip-token-revoke: true/);
@@ -196,7 +216,7 @@ assert.doesNotMatch(mainDaily, /GH_TOKEN: \$\{\{ steps\.daily_pr_author_token\.o
 // No network or paid source generation. Verify missing App identity holds and
 // that its private key never appears in logs.
 const appConfigStep = mainDaily.match(
-  /      - name: Check newsfeed configuration\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - uses: actions\/setup-node@)/,
+  /      - name: Check newsfeed configuration\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      # Validate App installation and scoped token permissions)/,
 );
 assert.ok(appConfigStep, 'pre-spend configuration must be present');
 const configShell = appConfigStep[1].split('\n')

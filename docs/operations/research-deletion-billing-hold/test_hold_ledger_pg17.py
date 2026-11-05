@@ -99,7 +99,7 @@ with db() as c:
     print("D33_LEDGER_ACCOUNT_KEY_DEDUP_AND_SCHEDULE_THROTTLE_PASS",flush=True)
 
     for expected in (2,3,4):
-        c.execute("update public.research_deletion_billing_holds set next_check_at=clock_timestamp()-interval '1 second' where account_id=%s",(aid,))
+        c.execute("update public.research_deletion_billing_holds set first_seen_at=least(first_seen_at,clock_timestamp()-interval '26 hours'), next_check_at=clock_timestamp()-interval '1 second' where account_id=%s",(aid,))
         again=invoke(c,aid,"lookup_unavailable")
         assert again["attempt_count"]==expected,again
         assert again["hold_state"]=="open" or expected>=4

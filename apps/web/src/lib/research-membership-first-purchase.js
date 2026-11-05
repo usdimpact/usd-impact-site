@@ -260,6 +260,43 @@ function serviceHeaders(secretKey) {
   };
 }
 
+// Checkout eligibility is separate from authentication: a valid session can remain
+// usable after an account has requested deletion. This read-only guard blocks the
+// ordinary non-active path before we ask the merchant to issue a payment URL.
+// It is NOT a transaction/lock against a deletion requested after this lookup;
+// the final secure design must pair an issued checkout intent with lifecycle locks.
+async function assertActiveResearchProfile({ config, userId, fetchImpl }) {
+  const query = new URLSearchParams({
+    select: 'account_id,status,deletion_requested_at,deleted_at',
+    account_id: `eq.${userId}`,
+    limit: '2',
+  });
+  let response;
+  try {
+    response = await fetchImpl(`${config.supabase.url}/rest/v1/profiles?${query}`, {
+      headers: serviceHeaders(config.supabase.secretKey),
+    });
+  } catch {
+    fail('Research Membership account eligibility lookup failed.', 'RESEARCH_CHECKOUT_PROFILE_LOOKUP_FAILED', 502);
+  }
+  let rows;
+  try {
+    rows = await readJson(response);
+  } catch {
+    fail('Research Membership account eligibility lookup failed.', 'RESEARCH_CHECKOUT_PROFILE_LOOKUP_FAILED', 502);
+  }
+  if (!response.ok || !Array.isArray(rows) || rows.length !== 1
+    || text(rows[0]?.account_id).toLowerCase() !== userId.toLowerCase()
+    || typeof rows[0]?.status !== 'string') {
+    fail('Research Membership account eligibility lookup failed.', 'RESEARCH_CHECKOUT_PROFILE_LOOKUP_FAILED', 502);
+  }
+  if (rows[0].status !== 'active'
+    || rows[0].deletion_requested_at != null
+    || rows[0].deleted_at != null) {
+    fail('Account is not eligible for Research Membership checkout.', 'RESEARCH_CHECKOUT_PROFILE_NOT_ACTIVE', 409);
+  }
+}
+
 async function assertNoCurrentResearchSubscription({ config, userId, fetchImpl }) {
   const query = new URLSearchParams({
     select: 'id,state',
@@ -290,6 +327,7 @@ export async function createResearchMembershipCheckout({
 }) {
   const requestBody = buildResearchMembershipCheckoutRequest({ config, user, billingInterval, idempotencyKey, now });
   const userId = accountId(user?.id);
+  await assertActiveResearchProfile({ config, userId, fetchImpl });
   await assertNoCurrentResearchSubscription({ config, userId, fetchImpl });
 
   const response = await fetchImpl(`${PROVIDER_API_ROOT}/checkouts`, {

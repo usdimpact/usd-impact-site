@@ -325,12 +325,17 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
 
       document.addEventListener("keydown", (event) => {
         if (event.key !== "Escape") return;
+        // Keep native modal-dialog Escape and focus restoration intact.
+        if (document.querySelector("dialog[open]")) return;
         const openGroup = navigationGroups.find((group) => group.hasAttribute("open"));
-        if (window.matchMedia("(max-width: 760px)").matches) {
+        if (window.matchMedia("(max-width: 960px)").matches) {
+          // Escape outside an open menu must not steal focus.
+          if (!(navigation instanceof HTMLElement) || navigation.dataset.open !== "true") return;
           setNavigationOpen(false);
           if (navigationToggle instanceof HTMLButtonElement) navigationToggle.focus();
           return;
         }
+        if (!openGroup) return;
         closeNavigationGroups();
         const summary = openGroup?.querySelector("summary");
         if (summary instanceof HTMLElement) summary.focus();

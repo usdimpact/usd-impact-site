@@ -133,7 +133,10 @@ export async function inspectResearchInvoiceCustodyReview({
   }
   // This only ties together synthetic inputs; provider still does not attest
   // to paid-cycle start, snapshot conditional version or GET-to-COMMIT atomicity.
-  // Invoice identity is provider/store/environment/invoice, NOT event name or\n  // subscription. A replay against another subscription must be a conflict.\n  const canonicalInvoiceKey=['lemon-squeezy',id(binding.storeId),\n    binding.testMode?'test':'live',invoiceId].join(':');
+  // Invoice identity is provider/store/environment/invoice, NOT event name or
+  // subscription. A replay against another subscription must be a conflict.
+  const canonicalInvoiceKey=['lemon-squeezy',id(binding.storeId),
+    binding.testMode?'test':'live',invoiceId].join(':');
   const invoiceSnapshotDigest=hash({key:canonicalInvoiceKey,invoice:inv,
     periodStart:syntheticCycleLink.periodStart,periodEnd:syntheticCycleLink.periodEnd});
   const receipt=priorInvoiceReceipt;
@@ -141,7 +144,11 @@ export async function inspectResearchInvoiceCustodyReview({
     if(receipt?.canonicalInvoiceKey!==canonicalInvoiceKey ||
        typeof receipt?.invoiceSnapshotDigest!=='string' ||
        !SHA.test(receipt.invoiceSnapshotDigest))return held('prior_invoice_custody_unverifiable');
-    if(receipt.subscriptionId!==id(binding.subscriptionId)) {\n      return Object.freeze({...held('same_invoice_key_subscription_scope_conflict','quarantined_conflict'),\n        canonicalInvoiceKey,invoiceSnapshotDigest,subscriptionId:id(binding.subscriptionId)});\n    }\n    if(receipt.invoiceSnapshotDigest!==invoiceSnapshotDigest) {
+    if(receipt.subscriptionId!==id(binding.subscriptionId)) {
+      return Object.freeze({...held('same_invoice_key_subscription_scope_conflict','quarantined_conflict'),
+        canonicalInvoiceKey,invoiceSnapshotDigest,subscriptionId:id(binding.subscriptionId)});
+    }
+    if(receipt.invoiceSnapshotDigest!==invoiceSnapshotDigest) {
       return Object.freeze({...held('same_invoice_key_conflicting_provider_evidence','quarantined_conflict'),
         canonicalInvoiceKey,invoiceSnapshotDigest,subscriptionId:id(binding.subscriptionId)});
     }

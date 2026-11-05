@@ -1016,7 +1016,7 @@ create table if not exists public.research_billing_clearances (
   constraint research_billing_clearances_recorded_by check (char_length(recorded_by) between 2 and 100)
 );
 create index if not exists research_billing_clearances_account_idx
-  on public.research_billing_clearances(account_id, recorded_at desc);
+  on public.research_billing_clearances(account_id, verified_at desc);
 
 create table if not exists public.research_deletion_billing_holds (
   account_id uuid primary key references public.profiles(account_id) on delete restrict,
@@ -1131,13 +1131,23 @@ begin
     where e.account_id = p_account_id and e.product_id = 'research-membership' and e.state <> 'account_deleted'
   ) then v_reasons := pg_catalog.array_append(v_reasons, 'research_entitlement_present'); end if;
 
+  -- Checkout issuance is a durable financial footprint even AFTER its
+  -- exposure window expires. A timeout does not prove that the provider
+  -- declined a purchase, stopped retrying, or never created a charge.
+  -- Require owner-verified provider clearance observed after the attempt.
+  if exists (
+    select 1 from public.research_checkout_attempts a
+    where a.account_id = p_account_id
+  ) then
+    v_reasons := pg_catalog.array_append(v_reasons, 'research_checkout_issued');
+    select greatest(v_latest, max(a.updated_at), max(a.created_at)) into v_latest
+    from public.research_checkout_attempts a where a.account_id = p_account_id;
+  end if;
   if exists (
     select 1 from public.research_checkout_attempts a
     where a.account_id = p_account_id and a.hold_until > pg_catalog.clock_timestamp()
   ) then
     v_reasons := pg_catalog.array_append(v_reasons, 'research_checkout_window_open');
-    select greatest(v_latest, max(a.updated_at)) into v_latest
-    from public.research_checkout_attempts a where a.account_id = p_account_id;
   end if;
 
   if exists (
@@ -1160,7 +1170,9 @@ begin
     return v_reasons;
   end if;
 
-  select max(c.recorded_at) into v_cleared
+  -- An operator entering old proof today must not turn its recorded_at into
+  -- a fictitious fresh provider observation. Only verified_at is evidence.
+  select max(c.verified_at) into v_cleared
   from public.research_billing_clearances c
   where c.account_id = p_account_id;
   if v_cleared is not null and v_cleared > v_latest then
@@ -1292,7 +1304,7 @@ set search_path = ''
 as $$
 declare v_id uuid;
 begin
-  if p_verified_at is null or p_verified_at > pg_catalog.clock_timestamp() + interval '5 minutes' then
+  if p_verified_at is null or p_verified_at > pg_catalog.clock_timestamp() then
     raise exception using errcode = '22023', message = 'verification time is required and cannot be in the future';
   end if;
   if not exists (select 1 from public.profiles p where p.account_id = p_account_id) then

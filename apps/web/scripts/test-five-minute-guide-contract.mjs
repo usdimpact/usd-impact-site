@@ -57,6 +57,7 @@ for (const locale of LANGUAGES) {
 test('fail-closed Preview-only integration; no public QA routes', () => {
   assert.match(route, /normalizedSlug === '\/start-here' && process\.env\.VERCEL_ENV === 'preview'/);
   assert.match(route, /\{isFiveMinuteGuidePreview && <StartHereFiveMinuteGuide \/>\}/);
+  assert.match(route, /<BaseLayout[^>]*noindex=\{isFiveMinuteGuidePreview\}/);
   assert.equal((route.match(/<StartHereFiveMinuteGuide \/>/g) || []).length, 1);
   assert.doesNotMatch(route, /<StartHereFiveMinuteGuide\s*\/>\s*<ComplianceNote/);
   assert.doesNotMatch(view, /\bfetch\s*\(|\blocalStorage\b|\bsessionStorage\b|\bXMLHttpRequest\b|\bWebSocket\b|<form\b/i);

@@ -1,0 +1,76 @@
+name: D33 legacy Research deletion/renewal PG17 guard (DRAFT HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/research-ordering-d33-live-deletion-review.yml'
+      - 'docs/operations/research-ordering-d33/**'
+permissions:
+  contents: read
+concurrency:
+  group: d33-deletion-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  disposable-pg17:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        script:
+          - docs/operations/research-ordering-d33/test_live_rpc_profile_fence_pg17.py
+          - docs/operations/research-ordering-d2c-author/test_full52_lp_parity_pg17.py
+          - docs/operations/research-ordering-d2c-author/test_profile_fence_stage_q_pg17.py
+    services:
+      postgres:
+        image: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+        env:
+          POSTGRES_USER: ci_research
+          POSTGRES_PASSWORD: synthetic-stage-c-review-only
+          POSTGRES_DB: ci_review
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_research -d ci_review"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: '127.0.0.1'
+      PGPORT: '5432'
+      PGDATABASE: ci_review
+      PGUSER: ci_research
+      PGPASSWORD: synthetic-stage-c-review-only
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Explicitly forbid connected project and merchant credentials
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = 127.0.0.1
+          test "$PGPORT" = 5432
+          test "$PGDATABASE" = ci_review
+          test "$PGUSER" = ci_research
+          for key in DATABASE_URL SUPABASE_URL SUPABASE_DB_URL SUPABASE_SERVICE_ROLE_KEY LEMON_SQUEEZY_API_KEY LEMON_SQUEEZY_WEBHOOK_SECRET LEMON_SQUEEZY_STORE_ID VERCEL_ENV; do
+            test -z "${!key:-}" || { echo "::error::connected credential $key not permitted"; exit 1; }
+          done
+      - name: Pinned ephemeral PostgreSQL client
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/d33-venv"
+          "$RUNNER_TEMP/d33-venv/bin/python" -m pip install --disable-pip-version-check --no-input 'psycopg[binary]==3.2.10'
+          "$RUNNER_TEMP/d33-venv/bin/python" -m py_compile "${{ matrix.script }}"
+      - name: Run actual local-only historical PostgreSQL 17.6 SQL
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/d33-venv/bin/python" "${{ matrix.script }}"
+      - name: Preserve author-only nonrelease scope
+        if: always()
+        run: |
+          {
+            echo '### D33 author-only legacy Research RPC review'
+            echo 'No connected database or provider, no customer data, no Production deployment.'
+            echo 'Actual historical SQL and pending Draft correction only, pinned PostgreSQL 17.6.'
+            echo 'NOT independent acceptance, NOT real cancellation evidence, NOT a release approval.'
+            echo 'D33 deletion/cancellation and stage P clock/R1-R2/privilege-owner holds remain.'
+          } >> "$GITHUB_STEP_SUMMARY"

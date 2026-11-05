@@ -1760,3 +1760,284 @@ revoke all on function public.list_due_account_deletions_fair(integer,timestampt
 grant execute on function public.list_due_account_deletions_fair(integer,timestamptz)
   to service_role;
 
+-- ---------------------------------------------------------------------------
+-- Part 9. DRAFT two-phase deletion candidate: ONE atomic database finalization,
+-- followed by durable, idempotent Auth identity cleanup and only then the email.
+--
+-- This intentionally DOES NOT change or activate the existing Vercel runtime.
+-- External provider cancellation evidence and live role parity remain HOLD.
+-- ---------------------------------------------------------------------------
+create table if not exists research_lifecycle_private.deletion_auth_cleanup (
+  account_id uuid primary key references public.profiles(account_id) on delete restrict,
+  phase text not null default 'auth_pending'
+    check (phase in ('auth_pending','auth_confirmed','email_enqueued')),
+  original_auth_user_id uuid not null,
+  recipient_email text,
+  deletion_requested_at timestamptz not null,
+  deleted_at timestamptz not null,
+  privacy_request_ids uuid[] not null default '{}',
+  started_at timestamptz not null default pg_catalog.clock_timestamp(),
+  auth_confirmed_at timestamptz,
+  email_enqueued_at timestamptz,
+  next_attempt_at timestamptz not null default pg_catalog.clock_timestamp(),
+  lease_id uuid,
+  attempt_count integer not null default 0 check (attempt_count >= 0),
+  last_error_code text,
+  constraint deletion_auth_cleanup_email_state check (
+    (phase='email_enqueued' and recipient_email is null)
+    or (phase<>'email_enqueued' and recipient_email is not null)
+  )
+);
+alter table research_lifecycle_private.deletion_auth_cleanup enable row level security;
+alter table research_lifecycle_private.deletion_auth_cleanup force row level security;
+revoke all on table research_lifecycle_private.deletion_auth_cleanup
+  from public, anon, authenticated, service_role;
+create index if not exists deletion_auth_cleanup_due_idx
+  on research_lifecycle_private.deletion_auth_cleanup(next_attempt_at,started_at)
+  where phase in ('auth_pending','auth_confirmed');
+
+-- Protect the post-Auth race: the SQL finalizer and verified paid-event
+-- quarantine now acquire the same account profile lock. The signed merchant
+-- event is still recorded if it arrives AFTER DB finalization; this never
+-- reactivates the deleted account and must be independently reconciled.
+create or replace function public.record_research_paid_binding_refusal(
+  p_provider text, p_provider_subscription_id text,
+  p_claimed_account_id uuid, p_checkout_key text, p_reason_code text
+)
+returns uuid language plpgsql security definer set search_path='' as $quarantine$
+declare v_id uuid;
+begin
+  if p_provider is null or p_provider_subscription_id is null or p_reason_code is null then
+    raise exception using errcode='22023', message='research paid binding refusal input is incomplete';
+  end if;
+  if p_claimed_account_id is not null then
+    perform 1 from public.profiles p
+      where p.account_id=p_claimed_account_id for share;
+    -- Never discard signed evidence merely because the profile is missing.
+  end if;
+  insert into public.research_paid_binding_quarantine as q
+    (provider,provider_subscription_id,claimed_account_id,checkout_key,reason_code)
+  values (p_provider,p_provider_subscription_id,p_claimed_account_id,p_checkout_key,p_reason_code)
+  on conflict (provider,provider_subscription_id) do update
+    set last_seen_at=pg_catalog.clock_timestamp(),
+        updated_at=pg_catalog.clock_timestamp(),
+        delivery_count=q.delivery_count+1,
+        claimed_account_id=coalesce(q.claimed_account_id,excluded.claimed_account_id),
+        checkout_key=coalesce(q.checkout_key,excluded.checkout_key)
+  returning q.id into v_id;
+  return v_id;
+end;
+$quarantine$;
+revoke all on function public.record_research_paid_binding_refusal(text,text,uuid,text,text)
+ from public,anon,authenticated,service_role;
+grant execute on function public.record_research_paid_binding_refusal(text,text,uuid,text,text)
+ to service_role;
+
+-- Phase A: Acquire the profile row lock once, inspect billing evidence, detach
+-- the FK only *inside this transaction*, finalize database state, and commit a
+-- recoverable Auth cleanup record together. Any error rolls the WHOLE phase A
+-- back, including the auth_user_id change. No Auth Admin request occurs yet.
+create or replace function public.finalize_deletion_and_queue_auth_cleanup(p_account_id uuid)
+returns jsonb language plpgsql security definer set search_path='' as $phase_a$
+declare
+  v_profile public.profiles;
+  v_existing research_lifecycle_private.deletion_auth_cleanup;
+  v_done record;
+  v_privacy uuid[];
+  v_now timestamptz := pg_catalog.clock_timestamp();
+begin
+  if p_account_id is null then
+    raise exception using errcode='22023', message='account id is required';
+  end if;
+  select p.* into v_profile from public.profiles p
+    where p.account_id=p_account_id for update;
+  if not found then
+    raise exception using errcode='P0002', message='account profile not found';
+  end if;
+
+  select q.* into v_existing from research_lifecycle_private.deletion_auth_cleanup q
+    where q.account_id=p_account_id for update;
+  if found then
+    if v_profile.status<>'deleted' then
+      raise exception using errcode='55000', message='auth cleanup exists for non-finalized profile';
+    end if;
+    return pg_catalog.jsonb_build_object('phase',v_existing.phase,'account_id',p_account_id);
+  end if;
+  if v_profile.status<>'deletion_pending'
+     or v_profile.deletion_requested_at is null
+     or v_profile.deletion_due_at is null
+     or v_profile.deletion_due_at>v_now then
+    raise exception using errcode='22023', message='account is not due for deletion';
+  end if;
+  if v_profile.auth_user_id is not null and v_profile.auth_user_id<>p_account_id then
+    raise exception using errcode='23514', message='noncanonical Auth identity link';
+  end if;
+  if pg_catalog.cardinality(
+       research_lifecycle_private.billing_hold_reasons(p_account_id)
+     )>0 then
+    raise exception using errcode='55000',
+      message='Research billing has not been externally verified as stopped';
+  end if;
+
+  select coalesce(pg_catalog.array_agg(pr.id),'{}'::uuid[]) into v_privacy
+    from public.privacy_requests pr
+    where pr.account_id=p_account_id and pr.request_type='deletion'
+      and pr.status in ('open','in_progress');
+
+  insert into research_lifecycle_private.deletion_auth_cleanup
+    (account_id,phase,original_auth_user_id,recipient_email,
+     deletion_requested_at,deleted_at,privacy_request_ids,started_at,next_attempt_at)
+  values (p_account_id,'auth_pending',p_account_id,v_profile.email,
+          v_profile.deletion_requested_at,v_now,v_privacy,v_now,v_now);
+
+  -- Existing migration helper detaches the FK but does not delete Auth.
+  -- Both it and the finalizer run in this same SQL transaction.
+  perform public.prepare_account_deletion_auth_removal(p_account_id);
+  select f.* into v_done from public.finalize_account_deletion(p_account_id) f;
+  if not found or v_done.account_id is null or v_done.deleted_at is null then
+    raise exception using errcode='55000', message='database finalization receipt missing';
+  end if;
+
+  update research_lifecycle_private.deletion_auth_cleanup q
+    set deleted_at=v_done.deleted_at
+    where q.account_id=p_account_id;
+
+  -- The legacy finalizer marks privacy requests completed too early. Defer
+  -- that status until durable Auth cleanup and email-enqueue acknowledgement.
+  update public.privacy_requests pr
+    set status='in_progress', completed_at=null,
+        decision_reason='Auth cleanup pending verification',
+        updated_at=pg_catalog.clock_timestamp()
+    where pr.id=any(v_privacy) and pr.request_type='deletion';
+
+  return pg_catalog.jsonb_build_object('phase','auth_pending','account_id',p_account_id);
+end;
+$phase_a$;
+revoke all on function public.finalize_deletion_and_queue_auth_cleanup(uuid)
+  from public,anon,authenticated,service_role;
+grant execute on function public.finalize_deletion_and_queue_auth_cleanup(uuid)
+  to service_role;
+
+-- Phase B lease: SKIP LOCKED prevents two workers from deleting the same Auth
+-- identity concurrently; expiry permits recovery when a worker crashes after
+-- DB commit or midway through the Auth HTTP operation.
+create or replace function public.claim_deletion_auth_cleanup_batch(p_limit integer)
+returns table (account_id uuid, phase text, lease_id uuid, attempt_count integer)
+language plpgsql security definer set search_path='' as $claim$
+declare v_item record; v_now timestamptz:=pg_catalog.clock_timestamp();
+begin
+  if p_limit is null or p_limit<1 or p_limit>25 then
+    raise exception using errcode='22023', message='Auth cleanup batch must be between 1 and 25';
+  end if;
+  for v_item in
+    select q.account_id from research_lifecycle_private.deletion_auth_cleanup q
+    where q.phase in ('auth_pending','auth_confirmed')
+      and q.next_attempt_at <= v_now
+    order by q.next_attempt_at,q.started_at,q.account_id
+    for update skip locked
+    limit p_limit
+  loop
+    update research_lifecycle_private.deletion_auth_cleanup q
+      set lease_id=pg_catalog.gen_random_uuid(),
+          next_attempt_at=v_now+interval '15 minutes',
+          attempt_count=q.attempt_count+1
+      where q.account_id=v_item.account_id
+      returning q.account_id,q.phase,q.lease_id,q.attempt_count
+        into account_id,phase,lease_id,attempt_count;
+    return next;
+  end loop;
+end;
+$claim$;
+revoke all on function public.claim_deletion_auth_cleanup_batch(integer)
+  from public,anon,authenticated,service_role;
+grant execute on function public.claim_deletion_auth_cleanup_batch(integer)
+  to service_role;
+
+-- The caller attests Auth Admin DELETE success (or verified absence). Only
+-- service_role may attest, and it must present the current lease. Database
+-- finalization is already done; no billing hold may be silently erased here.
+create or replace function public.confirm_deletion_auth_cleanup(
+  p_account_id uuid,p_lease_id uuid
+)
+returns jsonb language plpgsql security definer set search_path='' as $confirm$
+declare v_row research_lifecycle_private.deletion_auth_cleanup;
+begin
+  select q.* into v_row from research_lifecycle_private.deletion_auth_cleanup q
+   where q.account_id=p_account_id for update;
+  if not found or p_lease_id is null or v_row.lease_id is distinct from p_lease_id
+    or v_row.phase not in ('auth_pending','auth_confirmed') then
+    raise exception using errcode='42501', message='Auth cleanup lease invalid';
+  end if;
+  if not exists (
+    select 1 from public.profiles p
+     where p.account_id=p_account_id and p.status='deleted' and p.auth_user_id is null
+  ) then
+    raise exception using errcode='55000', message='database identity not finalized';
+  end if;
+  update research_lifecycle_private.deletion_auth_cleanup q
+    set phase='auth_confirmed',
+        auth_confirmed_at=coalesce(q.auth_confirmed_at,pg_catalog.clock_timestamp())
+    where q.account_id=p_account_id;
+  return pg_catalog.jsonb_build_object(
+    'phase','auth_confirmed','account_id',v_row.account_id,
+    'recipient_email',v_row.recipient_email,
+    'deletion_requested_at',v_row.deletion_requested_at,
+    'deleted_at',v_row.deleted_at
+  );
+end;
+$confirm$;
+revoke all on function public.confirm_deletion_auth_cleanup(uuid,uuid)
+  from public,anon,authenticated,service_role;
+grant execute on function public.confirm_deletion_auth_cleanup(uuid,uuid)
+  to service_role;
+
+-- Phase C acknowledgement. An actual durable notification_outbox entry must
+-- exist BEFORE the recovery ledger can discard the original recipient email.
+create or replace function public.finish_deletion_auth_cleanup(
+  p_account_id uuid,p_lease_id uuid
+)
+returns boolean language plpgsql security definer set search_path='' as $finish$
+declare v_row research_lifecycle_private.deletion_auth_cleanup;
+begin
+  select q.* into v_row from research_lifecycle_private.deletion_auth_cleanup q
+   where q.account_id=p_account_id for update;
+  if not found then
+    raise exception using errcode='P0002', message='Auth cleanup record missing';
+  end if;
+  if v_row.phase='email_enqueued' then return true; end if;
+  if p_lease_id is null or v_row.lease_id is distinct from p_lease_id
+     or v_row.phase<>'auth_confirmed' then
+    raise exception using errcode='42501', message='Auth email cleanup lease invalid';
+  end if;
+  if not exists (
+    select 1 from public.notification_outbox o
+    where o.message_id='account_deletion_completed'
+      and o.business_object_type='account_deletion_request'
+      and o.business_object_id=p_account_id::text
+      and o.recipient_email_normalized=pg_catalog.lower(pg_catalog.btrim(v_row.recipient_email))
+      and o.state_version=pg_catalog.floor(
+        pg_catalog.extract(epoch from v_row.deleted_at)/60
+      )::integer
+  ) then
+    raise exception using errcode='55000', message='durable completion email outbox not found';
+  end if;
+
+  update public.privacy_requests pr
+     set status='completed', completed_at=pg_catalog.clock_timestamp(),
+         decision_reason='Auth cleanup confirmed; account deletion completed',
+         updated_at=pg_catalog.clock_timestamp()
+   where pr.id=any(v_row.privacy_request_ids) and pr.request_type='deletion';
+
+  update research_lifecycle_private.deletion_auth_cleanup q
+     set phase='email_enqueued',recipient_email=null,
+         privacy_request_ids='{}'::uuid[],lease_id=null,
+         email_enqueued_at=pg_catalog.clock_timestamp(),last_error_code=null
+   where q.account_id=p_account_id;
+  return true;
+end;
+$finish$;
+revoke all on function public.finish_deletion_auth_cleanup(uuid,uuid)
+  from public,anon,authenticated,service_role;
+grant execute on function public.finish_deletion_auth_cleanup(uuid,uuid)
+  to service_role;
+

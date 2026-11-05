@@ -101,8 +101,9 @@ with db() as root:
                  " VALUES ('41','research-membership','313','monthly',true)")
     root.execute("INSERT INTO auth.users(id,email) VALUES(%s,%s)",
                  (ACC,"stage-n-test@invalid.example"))
-    root.execute("INSERT INTO public.profiles(account_id,email) VALUES(%s,%s)",
-                 (ACC,"stage-n-test@invalid.example"))
+    # Historical auth.users trigger creates the profile; never insert twice.
+    assert root.execute("SELECT status::text FROM public.profiles WHERE account_id=%s",
+                        (ACC,)).fetchone()[0]=="active"
     issuer=as_role(root,"review_checkout_issuer",ISSUE,
       (ACC,"research-membership",STORE,VARIANT,"monthly",True,"synthetic-stage-n-request"))
     assert issuer["action"]=="reserved",issuer

@@ -317,6 +317,42 @@ async function assertNoCurrentResearchSubscription({ config, userId, fetchImpl }
   }
 }
 
+// An existing Research entitlement occupies the unique account/product row,
+// even when revoked. Until a separately reviewed relink procedure exists,
+// another paid checkout could charge the buyer but fail to activate Research.
+// This is a precautionary non-atomic read, not a replacement for paid-intent
+// custody and an account-first lifecycle lock.
+async function assertNoExistingResearchEntitlement({ config, userId, fetchImpl }) {
+  const query = new URLSearchParams({
+    select: 'id',
+    account_id: `eq.${userId}`,
+    product_id: `eq.${PRODUCT_ID}`,
+    limit: '2',
+  });
+  let response;
+  try {
+    response = await fetchImpl(`${config.supabase.url}/rest/v1/entitlements?${query}`, {
+      headers: serviceHeaders(config.supabase.secretKey),
+    });
+  } catch {
+    fail('Research Membership entitlement eligibility lookup failed.', 'RESEARCH_CHECKOUT_ENTITLEMENT_LOOKUP_FAILED', 502);
+  }
+  let rows;
+  try {
+    rows = await readJson(response);
+  } catch {
+    fail('Research Membership entitlement eligibility lookup failed.', 'RESEARCH_CHECKOUT_ENTITLEMENT_LOOKUP_FAILED', 502);
+  }
+  if (!response.ok || !Array.isArray(rows) || rows.length > 1
+    || rows.some((row) => !row || !UUID_PATTERN.test(String(row.id ?? '')))) {
+    fail('Research Membership entitlement eligibility lookup failed.', 'RESEARCH_CHECKOUT_ENTITLEMENT_LOOKUP_FAILED', 502);
+  }
+  if (rows.length !== 0) {
+    fail('Existing Research Membership entitlement requires account support before another checkout.',
+      'RESEARCH_CHECKOUT_ENTITLEMENT_CONFLICT', 409);
+  }
+}
+
 export async function createResearchMembershipCheckout({
   config,
   user,
@@ -329,6 +365,7 @@ export async function createResearchMembershipCheckout({
   const userId = accountId(user?.id);
   await assertActiveResearchProfile({ config, userId, fetchImpl });
   await assertNoCurrentResearchSubscription({ config, userId, fetchImpl });
+  await assertNoExistingResearchEntitlement({ config, userId, fetchImpl });
 
   const response = await fetchImpl(`${PROVIDER_API_ROOT}/checkouts`, {
     method: 'POST',

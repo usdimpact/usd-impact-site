@@ -320,6 +320,14 @@ rec("F first worker leases the selected identity",
 su("""UPDATE research_lifecycle_private.deletion_auth_cleanup
        SET next_attempt_at=now()-interval '1 minute'
        WHERE account_id=%s""",(lease_account,))
+# A lease must expire by time, not merely when another worker replaces it.
+# Before any reclaim, the stale worker is already barred from acknowledgement.
+expired_confirm=confirm(lease_account,old_lease)
+rec("F expired lease cannot confirm Auth even without a replacement worker",
+    expired_confirm[0]=="ERR" and expired_confirm[1].startswith("42501"),expired_confirm)
+expired_finish=finish(lease_account,old_lease)
+rec("F expired lease cannot finish email even without a replacement worker",
+    expired_finish[0]=="ERR" and expired_finish[1].startswith("42501"),expired_finish)
 next_claim=claim(1)
 next_rows=next_claim[1] if next_claim[0]=="OK" else []
 new_lease=uuid.UUID(next_rows[0]["lease_id"]) if next_rows else uuid.uuid4()

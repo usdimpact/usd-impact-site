@@ -1977,6 +1977,7 @@ begin
   select q.* into v_row from research_lifecycle_private.deletion_auth_cleanup q
    where q.account_id=p_account_id for update;
   if not found or p_lease_id is null or v_row.lease_id is distinct from p_lease_id
+    or v_row.next_attempt_at <= pg_catalog.clock_timestamp()
     or v_row.phase not in ('auth_pending','auth_confirmed') then
     raise exception using errcode='42501', message='Auth cleanup lease invalid';
   end if;
@@ -2018,6 +2019,7 @@ begin
   end if;
   if v_row.phase='email_enqueued' then return true; end if;
   if p_lease_id is null or v_row.lease_id is distinct from p_lease_id
+     or v_row.next_attempt_at <= pg_catalog.clock_timestamp()
      or v_row.phase<>'auth_confirmed' then
     raise exception using errcode='42501', message='Auth email cleanup lease invalid';
   end if;

@@ -7,6 +7,8 @@ on:
       - 'supabase/tests/research-p1/**'
       - 'apps/web/src/lib/research-membership-first-purchase.js'
       - 'apps/web/src/lib/account-deletion-finalizer.js'
+      - 'apps/web/src/lib/account-deletion-two-phase-review.js'
+      - 'apps/web/scripts/test-account-deletion-two-phase-review.mjs'
       - 'apps/web/scripts/test-research-p1-billing-safe-deletion.mjs'
       - '.github/workflows/research-p1-integrated-review.yml'
   workflow_dispatch:
@@ -52,6 +54,8 @@ jobs:
           node --check src/lib/account-deletion-finalizer.js
           node scripts/test-research-membership-first-purchase.mjs
           node scripts/test-account-deletion-finalizer.mjs
+          node --check src/lib/account-deletion-two-phase-review.js
+          node scripts/test-account-deletion-two-phase-review.mjs
           node scripts/test-research-p1-billing-safe-deletion.mjs
       - name: Replay every migration as non-superuser owner, then run the PG17 lifecycle matrix
         run: |

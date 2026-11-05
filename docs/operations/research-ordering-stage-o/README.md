@@ -7,6 +7,44 @@ exact head `a57e78c94eb522e709939941e2ea757451e97626`.
 This branch changes only this Stage O directory and its isolated read-only
 GitHub Actions workflow. It adds no runtime imports, secrets or migrations.
 
+## O-0: D2-24 N-X0 P1 — B5 binder blocked by Stage E guard
+
+The independent D2-24 reviewer found a P1 design conflict:
+Stage N's positive test ran the B5 binder **before** the Stage E→N
+protection overlays. Installing the actual overlays first causes Stage E's
+\`reject_unauthorized_research_write\` trigger to reject B5's legitimate
+\`review_checkout_owner\` INSERT of a **pending** Research subscription.
+The original checkout intent remains attached rather than consumed. This
+is an integration defect in the disposable design; no live customer was
+affected.
+
+This Stage O-only SQL overlay overrides the isolated Stage E trigger
+function with an allow-list for **exactly one action**: a
+\`review_checkout_owner\` INSERT into \`public.subscriptions\` with
+Research product + Lemon Squeezy provider + state \`pending\` + no paid
+period or lifecycle event. It requires a separately recorded signed B5
+observation and an attached, issued intent matching account, variant,
+store, environment, checkout proof, paid timestamp and conflict
+quarantine. Only verified identity material from those B5 tables
+generates the *test-only* Stage L binding metadata. No caller can supply
+arbitrary metadata or turn this into an \`active\` subscription.
+
+The new \`test_guard_first_b5_bind.py\` reproduces **RED** after
+E..N installation; confirms the original signed event survives and
+intent stays attached; installs the narrow overlay and then exercises
+**GREEN**: B5 binder creates a pending subscription with zero Research
+entitlements, J/K invoice is held, Stage N synthetic lifecycle creates
+one Research entitlement and one each subscription and entitlement
+event. Additional negatives require direct owner INSERT active/forged
+pending, UPDATE, Library Pass insertion, \`service_role\` direct UPDATE
+and \`postgres\` direct UPDATE to fail. Purchase-backed Library Pass
+remains byte-identical.
+
+This does **not** resolve live L1 role/legacy RPC containment and does
+not authorize real payment or access. The original Stage N and B5
+branches are deliberately unchanged. The reviewer must independently
+confirm the new exact head and all privilege/signed-evidence invariants.
+
 ## O-1: close the Stage N hosted regression coverage gap
 
 Hosted CI re-runs **all six** historical Research migrations against a
@@ -16,7 +54,7 @@ independent D2-24 handoff explicitly requested I/J/K regression.
 G72, H31, J30 and M36 JS synthetic provider/quote tests run alongside the
 Stage O R1/R2 non-authorizing screen. No deployed SQL or provider reads.
 
-Each suite owns its own isolated cluster, so no helper role, temporary
+Each suite and the separate N-X0 guards-first test own an isolated cluster, so no helper role, temporary
 schema or fixture row from another suite can make a failing test pass.
 
 ## O-2: P2-K1 driver cancellation is independently needed

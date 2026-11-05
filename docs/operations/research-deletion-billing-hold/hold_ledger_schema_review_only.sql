@@ -53,10 +53,11 @@ begin
     raise exception 'invalid research deletion billing hold input'
       using errcode='22023';
   end if;
-  -- Do not create ledger cases against unrelated/active profiles. SHARE locks
-  -- the profile until commit, preventing concurrent status-write drift.
+  -- Do not create ledger cases against unrelated/active profiles. This
+  -- service-role invoker performs a read-only status check, NOT a lifecycle
+  -- lock; the separate D33 migration must enforce atomic deletion/activation.
   select * into v_profile from public.profiles
-    where account_id=p_account_id for share;
+    where account_id=p_account_id;
   if not found or v_profile.status <> 'deletion_pending' then
     raise exception 'account is not awaiting deletion'
       using errcode='42501';

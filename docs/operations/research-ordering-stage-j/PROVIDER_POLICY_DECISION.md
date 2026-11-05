@@ -6,8 +6,8 @@ customer-entitlement, infrastructure or release action is permitted.
 
 ## What the offline review now demonstrates
 
-1. Canonical paid-invoice identity must be based on store/subscription/invoice;
-   delivery/event names remain distinct audit evidence. Lemon Squeezy states
+1. Canonical paid-invoice identity must be based on provider/store/environment/invoice;
+   subscription ID is a required immutable binding (mismatch quarantines), and delivery/event names remain distinct audit evidence. Lemon Squeezy states
    `subscription_payment_recovered` accompanies `subscription_payment_success`;
    two event names alone cannot create two paid cycles.
 2. Amount and currency need the *actually issued* local quote or an approved

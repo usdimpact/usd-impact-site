@@ -134,6 +134,7 @@ BEGIN
         IS DISTINCT FROM v_intent.checkout_proof_sha256
       OR v_paid.business_fingerprint_sha256 IS DISTINCT FROM p_binding_fingerprint
       OR v_paid.occurred_at > v_intent.expires_at + interval '2 minutes'
+      OR v_paid.occurred_at > v_intent.consumed_at
       OR v_paid.occurred_at < v_intent.created_at - interval '5 minutes'
    THEN RAISE EXCEPTION 'stage n: B5 signed paid observation mismatch'
       USING ERRCODE='42501'; END IF;

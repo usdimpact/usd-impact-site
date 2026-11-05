@@ -30,6 +30,13 @@ The new SQL is in `supabase/migrations/20261105190000_research_p1_billing_safe_l
 * Require verification **after** the last known subscription, entitlement, checkout or signed event mutation, with no still-open checkout window and no unresolved quarantine. Re-verify when any new signed payment/renewal/refund/chargeback observation occurs. Never invent a provider cancellation event to clear a hold.
 * **Proposed internal escalation only (not a legal finding):** alert a privacy/support owner when a due deletion first holds or Auth cleanup fails, review within one business day, recheck every business day, and escalate before the earliest applicable privacy-policy or statutory deadline. The system's current 7-day deletion due date and one-month privacy-request due date are *data-model defaults*, not a verified legal SLA. The owner must approve a maximum hold and escalation owner. No default timed auto-clearance.
 
+## Additional Draft billing and worker lease hardening (2026-11-05)
+
+* **Expired checkout != no charge.** All issued checkout attempts remain durable billing footprints even after their `hold_until` window has passed. A still-open window is an absolute hold; after expiry, the attempt still requires owner-verified external merchant reconciliation observed **after** its latest mutation. A failed attachment remains observable.
+* **Evidence time != entry time.** Only `research_billing_clearances.verified_at` can be used to establish that external merchant verification followed the latest local financial footprint. `recorded_at` is audit metadata, not a substitute for checking the provider. Future-dated verification, including a one-minute offset, is rejected. Neither SQL time check proves an external observation actually occurred: owner evidence custody remains mandatory.
+* **Lease expiry is authoritative.** `confirm_deletion_auth_cleanup` and `finish_deletion_auth_cleanup` reject a worker when `next_attempt_at` has expired, even before a second worker reclaims that row. Claim tokens never authorize acknowledgements indefinitely.
+* **Safety caveat:** The currently deployed finalizer still invokes the old Auth-first chain, and older privileged RPCs have not been cut over or contained. These modifications are Draft migration/test changes only; no real merchant cancellation/expiry semantics, hosted Auth behavior, or Production compatibility has been validated.
+
 ## Acceptance and release requirements
 
 | Gate | Evidence required | Current posture |

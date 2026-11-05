@@ -154,11 +154,12 @@ with db() as c:
     # First paid activation must not create a Research entitlement once requested.
     new_acc=uuid.UUID("aaaaaaaa-aaaa-4aaa-8aaa-000000006103")
     c.execute("insert into auth.users(id,email) values (%s,'d33-new@invalid.example')",(new_acc,))
-    new_sid=c.execute("""insert into public.subscriptions(
-      account_id,product_id,provider,provider_subscription_id,provider_customer_id,
+    new_sid=uuid.UUID("22222222-2222-4222-8222-000000006103")
+    c.execute("""insert into public.subscriptions(
+      id,account_id,product_id,provider,provider_subscription_id,provider_customer_id,
       provider_price_id,billing_interval,state,metadata)
-      values(%s,'research-membership','lemon-squeezy','7103','customer-33',
-       '313','monthly','pending','{}') returning id""",(new_acc,)).fetchone()[0]
+      values(%s,%s,'research-membership','lemon-squeezy','7103','customer-33',
+       '313','monthly','pending','{}')""",(new_sid,new_acc))
     delete_profile(c,new_acc,deleted=False)
     denied(c,args(new_sid,"d33-after-request-initial","pending","active","active"))
     assert snapshot(c,new_sid,new_acc)==(("pending",1),None,0,0)

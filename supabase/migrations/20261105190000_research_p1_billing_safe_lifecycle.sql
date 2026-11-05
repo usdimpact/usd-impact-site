@@ -984,6 +984,10 @@ create table if not exists public.research_paid_binding_quarantine (
   provider_subscription_id text not null,
   claimed_account_id uuid,
   checkout_key text,
+  -- Preserve ALL distinct signed claims for a provider subscription. The
+  -- first claimed ID/key alone is not authoritative for later replays.
+  seen_claimed_account_ids uuid[] not null default '{}'::uuid[],
+  seen_checkout_keys text[] not null default '{}'::text[],
   reason_code text not null,
   first_seen_at timestamptz not null default now(),
   last_seen_at timestamptz not null default now(),
@@ -1157,9 +1161,12 @@ begin
     select 1 from public.research_paid_binding_quarantine q
     where q.resolved_at is null and (
       q.claimed_account_id = p_account_id
+      or p_account_id = any(q.seen_claimed_account_ids)
       or exists (
         select 1 from public.research_checkout_attempts a
-        where a.account_id = p_account_id and a.checkout_key = q.checkout_key
+        where a.account_id = p_account_id
+          and (a.checkout_key = q.checkout_key
+               or a.checkout_key = any(q.seen_checkout_keys))
       )
     )
   ) then
@@ -1167,9 +1174,12 @@ begin
     select greatest(v_latest, max(q.updated_at)) into v_latest
     from public.research_paid_binding_quarantine q
     where q.claimed_account_id = p_account_id
+      or p_account_id = any(q.seen_claimed_account_ids)
       or exists (
         select 1 from public.research_checkout_attempts a
-        where a.account_id = p_account_id and a.checkout_key = q.checkout_key
+        where a.account_id = p_account_id
+          and (a.checkout_key = q.checkout_key
+               or a.checkout_key = any(q.seen_checkout_keys))
       );
   end if;
 
@@ -1849,14 +1859,34 @@ begin
     for share;
   -- Never discard signed evidence merely because either profile is absent.
   insert into public.research_paid_binding_quarantine as q
-    (provider,provider_subscription_id,claimed_account_id,checkout_key,reason_code)
-  values (p_provider,p_provider_subscription_id,p_claimed_account_id,p_checkout_key,p_reason_code)
+    (provider,provider_subscription_id,claimed_account_id,checkout_key,
+     seen_claimed_account_ids,seen_checkout_keys,reason_code)
+  values (
+    p_provider,p_provider_subscription_id,p_claimed_account_id,p_checkout_key,
+    case when p_claimed_account_id is null then '{}'::uuid[] else array[p_claimed_account_id] end,
+    case when p_checkout_key is null then '{}'::text[] else array[p_checkout_key] end,
+    p_reason_code
+  )
   on conflict (provider,provider_subscription_id) do update
     set last_seen_at=pg_catalog.clock_timestamp(),
         updated_at=pg_catalog.clock_timestamp(),
         delivery_count=q.delivery_count+1,
         claimed_account_id=coalesce(q.claimed_account_id,excluded.claimed_account_id),
-        checkout_key=coalesce(q.checkout_key,excluded.checkout_key)
+        checkout_key=coalesce(q.checkout_key,excluded.checkout_key),
+        seen_claimed_account_ids=array(
+          select distinct t.id from pg_catalog.unnest(
+            q.seen_claimed_account_ids || excluded.seen_claimed_account_ids
+          ) as t(id) order by t.id
+        ),
+        seen_checkout_keys=array(
+          select distinct t.key from pg_catalog.unnest(
+            q.seen_checkout_keys || excluded.seen_checkout_keys
+          ) as t(key) order by t.key
+        ),
+        -- A newly observed signed delivery is never silently treated as
+        -- resolved based on an earlier owner's review.
+        resolved_at=null,
+        resolution_reference=null
   returning q.id into v_id;
   return v_id;
 end;

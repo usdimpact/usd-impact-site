@@ -306,5 +306,79 @@ with db() as root:
     assert (root.execute("SELECT row_to_json(e)::text FROM public.entitlements e WHERE account_id=%s AND purchase_id IS NOT NULL",(ACC,)).fetchall(),
             root.execute("SELECT row_to_json(p)::text FROM public.purchases p WHERE account_id=%s",(ACC,)).fetchall())==original_lp
     print("STAGE_O_NX0_END_TO_END_PASS GUARDS FIRST -> REAL B5 BIND -> J/K INVOICE -> ONE N SYNTHETIC ACTIVATION; LP byte-identical",flush=True)
+# N-T: a *consistent* hypothetical live-mode provider/store/invoice/quote
+# namespace is STILL held. This is an entirely synthetic fixture and makes
+# no live merchant request. Unlike an inconsistent test/live field flip,
+# every namespace and digest below matches; the policy itself must deny.
+LIVE_ACC=uuid.UUID("88888888-8888-4888-8888-000000000052")
+LIVE_SUB="219"; LIVE_CUSTOMER="81"; LIVE_INVOICE="120"
+LIVE_KEY="stage-p-synthetic-live-hold-52"
+with db() as live:
+    live.execute("INSERT INTO auth.users(id,email) VALUES(%s,%s)",(
+      LIVE_ACC,"stage-p-live-test@invalid.example"))
+    live.execute("INSERT INTO research_checkout_guard.allowed_variants"
+      "(store_id,product_id,variant_id,billing_interval,test_mode) "
+      "VALUES(%s,'research-membership',%s,'monthly',false)",(STORE,VARIANT))
+    issued=as_role(live,"review_checkout_issuer",ISSUE,(
+      LIVE_ACC,"research-membership",STORE,VARIANT,"monthly",False,
+      "stage-p-live-request-52"))
+    assert issued["action"]=="reserved",issued
+    live_intent=issued["intent_id"]; live_proof=issued["checkout_key"]
+    attached=as_role(live,"review_checkout_issuer",ATTACH,(
+      live_intent,live_proof,"stage-p-live-checkout"))
+    assert attached["action"]=="attached",attached
+    live_paid=live.execute("SELECT created_at FROM research_checkout_guard.checkout_intents "
+      "WHERE id=%s",(live_intent,)).fetchone()[0]
+    observed=as_role(live,"review_checkout_verifier",OBSERVE,(
+      "lemon-squeezy",LIVE_SUB,LIVE_CUSTOMER,STORE,"research-membership",
+      VARIANT,False,live_paid,"e"*64,LIVE_ACC,signed(live_proof),
+      "research-receipt-business-v3",FP))
+    assert observed["action"]=="recorded",observed
+    live_bound=as_role(live,"review_checkout_binder",BIND,(
+      LIVE_ACC,"lemon-squeezy",LIVE_SUB,LIVE_CUSTOMER,VARIANT,"monthly",
+      live_paid,live_proof,"e"*64,STORE,"research-membership",False,
+      "research-receipt-business-v3",FP))
+    assert live_bound["action"]=="created" and live_bound["subscription_state"]=="pending"
+    LIVE_SID=live_bound["subscription_id"]
+    assert live.execute("SELECT state,test_mode FROM research_checkout_guard.checkout_intents "
+       "WHERE id=%s",(live_intent,)).fetchone()==("consumed",False)
+    assert count(live,"public.entitlements","account_id=%s AND product_id='research-membership'",
+       (LIVE_ACC,))==0
+with db() as k:
+    got=as_role(k,"research_stage_k_gateway",K_CALL,(
+      "lemon-squeezy",STORE,False,LIVE_SUB,LIVE_INVOICE,
+      "subscription_payment_success","d"*64,"1"*64,
+      "invoice-v1","subscription-v1","2"*64))
+    assert got["action"]=="first_invoice_held" and got["can_mutate"] is False
+with db() as verifier:
+    verifier.execute("SET ROLE research_e_verifier")
+    verifier.execute(W_INSERT,(
+      LIVE_KEY,LIVE_SID,LIVE_ACC,"lemon-squeezy",LIVE_SUB,LIVE_CUSTOMER,
+      STORE,VARIANT,FP,LIVE_KEY,signed(LIVE_KEY),"subscriptions",
+      CLOCK,"active",START,END,1,True,str(live_intent),
+      LIVE_INVOICE,"1"*64,"2"*64,"initial",
+      "synthetic-live-hold-v1","synthetic_not_provider_authoritative"))
+    live_canon=("m1|lemon-squeezy|41|live|"+LIVE_INVOICE+"|"+LIVE_SUB+
+      "|"+"1"*64+"|"+"2"*64)
+    verifier.execute(HANDOFF,(
+      LIVE_KEY,LIVE_ACC,LIVE_SUB,LIVE_INVOICE,False,
+      "1"*64,"2"*64,hashlib.sha256(live_canon.encode("utf8")).hexdigest()))
+    verifier.execute("RESET ROLE")
+live_call=(
+    LIVE_SID,LIVE_ACC,"lemon-squeezy",LIVE_SUB,LIVE_CUSTOMER,
+    STORE,VARIANT,FP,LIVE_KEY,LIVE_KEY,signed(LIVE_KEY),
+    "subscriptions",CLOCK,"active",START,END
+)
+with db() as gateway:
+    denied_role(gateway,"research_e_gateway",N_CALL,live_call)
+with db() as check:
+    assert check.execute("SELECT state::text,version FROM public.subscriptions "
+      "WHERE id=%s",(LIVE_SID,)).fetchone()==("pending",1)
+    assert count(check,"public.entitlements",
+      "account_id=%s AND product_id='research-membership'",(LIVE_ACC,))==0
+    assert count(check,"public.subscription_events","subscription_id=%s",(LIVE_SID,))==0
+    assert count(check,"public.entitlement_events","account_id=%s",(LIVE_ACC,))==0
+print("STAGE_P_NT_CONSISTENT_LIVE_HOLD_PASS all synthetic LIVE B5/J/K/transport identities match, no Research entitlement authorized",flush=True)
+
 print("STAGE_P_CANONICAL_HANDOFF_PASS JS UTF8 SHA256 equals locked PG17 digest, wrong/missing handoff denies without entitlement",flush=True)
 print("RESEARCH_STAGE_P_PG17_STRICT_EVIDENCE_PASS; synthetic only, no merchant-paid cycle or remote atomicity",flush=True)

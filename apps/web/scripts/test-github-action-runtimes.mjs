@@ -24,6 +24,8 @@ const expectedActionRefs = new Map([
   ['actions/upload-artifact', '043fb46d1a93c77aae656e7c1c64a875d1fc6a0a'],
   ['github/codeql-action', '2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2'],
   ['actions/dependency-review-action', 'a1d282b36b6f3519aa1f3fc636f609c47dddb294'],
+  // Reviewed node24 App-token action, restricted below to Daily PR authorship.
+  ['actions/create-github-app-token', '64ab729a6294000f5aa4a4bc0b73d1f32bc45510'],
 ]);
 
 // PR #561: one reviewed reusable workflow, not an owner/repository-wide exception.
@@ -51,6 +53,10 @@ function validateReference(workflowFile, resource, ref) {
   assert.ok(expectedActionRefs.has(action), `${workflowFile} uses unapproved action ${action}`);
   assert.match(ref, /^[0-9a-f]{40}$/, `${workflowFile} must pin ${action} to an immutable 40-char SHA`);
   assert.equal(ref, expectedActionRefs.get(action), `${workflowFile} must use the reviewed ${action} SHA`);
+  if (action === 'actions/create-github-app-token') {
+    assert.equal(workflowFile, 'daily-news.yml',
+      'App token action is restricted to the original Daily PR generator workflow');
+  }
   return action;
 }
 
@@ -379,6 +385,17 @@ for (const [name, source, pattern] of [
   ['mapping run', 'jobs: {extra: {steps: [{run: {uses: anything}}]}}', /run must be a string/],
   ['structure limit', `jobs: {extra: {steps: [${'{run: echo},'.repeat(6000)}]}}`, /structure limit/],
 ]) rejectParsed(`reject ${name}`, source, pattern);
+const appTokenAction = `actions/create-github-app-token@${expectedActionRefs.get('actions/create-github-app-token')}`;
+parsedRegression('Daily-only App token pinned action accepted', () => {
+  const fixture = `jobs: {daily: {steps: [{uses: '${appTokenAction}'}]}}`;
+  assert.equal(validateParsedReferences(fixture, 'daily-news.yml')
+    .counts.get('actions/create-github-app-token'), 1);
+  assert.throws(() => validateParsedReferences(fixture, 'unrelated-workflow.yml'),
+    /App token action is restricted/);
+  assert.throws(() => validateParsedReferences(fixture.replace(
+    appTokenAction, 'actions/create-github-app-token@' + 'a'.repeat(40)), 'daily-news.yml'),
+    /must use the reviewed/);
+});
 const checkout = `actions/checkout@${expectedActionRefs.get('actions/checkout')}`;
 for (const [name, entry] of [
   ['quoted action', `uses: '${checkout}'`],

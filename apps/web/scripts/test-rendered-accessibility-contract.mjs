@@ -2,6 +2,10 @@ import { readFile } from 'node:fs/promises';
 
 const routes = [
   '/',
+  '/news/',
+  '/reports/',
+  '/score/',
+  '/learn/',
   '/start-here/',
   '/book/read-the-dollar-first/',
   '/audiobook/read-the-dollar-first/',

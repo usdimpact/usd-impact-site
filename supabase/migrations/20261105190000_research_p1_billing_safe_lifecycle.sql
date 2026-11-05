@@ -2279,4 +2279,19 @@ create trigger research_p1_stage_deletion_completion_email
  before insert or update on public.notification_outbox
  for each row execute function research_lifecycle_private.stage_deletion_completion_email();
 
-
+-- ---------------------------------------------------------------------------
+-- Part 11. Draft cutover: revoke direct legacy deletion entrypoints.
+--
+-- ONLY apply this reviewed candidate after explicitly disabling and draining
+-- every Auth-first finalizer worker. This is deliberately not a separately
+-- live migration, and it is NOT deployed by this Draft PR.
+--
+-- Phase A remains able to invoke both helpers under its SECURITY DEFINER
+-- owner; direct service_role REST calls to the old two-step helpers may not
+-- detach or finish an account outside the new atomic and leased protocol.
+-- A stopped legacy cron may NOT be re-enabled as a rollback after Part 11.
+-- ---------------------------------------------------------------------------
+revoke all on function public.prepare_account_deletion_auth_removal(uuid)
+  from public, anon, authenticated, service_role;
+revoke all on function public.finalize_account_deletion(uuid)
+  from public, anon, authenticated, service_role;

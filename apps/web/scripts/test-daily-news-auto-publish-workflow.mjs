@@ -184,7 +184,9 @@ assert.match(appPreflight[0], /permission-contents: read/);
 assert.match(appPreflight[0], /permission-pull-requests: write/);
 assert.doesNotMatch(appPreflight[0], /permission-actions: write|permission-administration: write|skip-token-revoke: true/);
 assert.doesNotMatch(appPreflight[0], /^\s+(?:owner|repositories):/m);
-assert.equal((mainDaily.match(/actions\/create-github-app-token@[a-f0-9]{40}/g) || []).length, 2);
+// Temporary Draft smoke adds a third independently scoped pinned token action.
+// Restore this to 2 after the one-time proof job is removed before final merge.
+assert.equal((mainDaily.match(/actions\/create-github-app-token@[a-f0-9]{40}/g) || []).length, 3);
 assert.ok(mainDaily.indexOf('Verify PR-author App installation before paid news generation')
   < mainDaily.indexOf('Start background news generation'),
   'actual installation check must complete before paid source requests');
@@ -212,6 +214,57 @@ assert.ok(!prAuthor[0].includes('gh pr create --admin'));
 assert.doesNotMatch(mainDaily, /GH_TOKEN: \$\{\{ steps\.daily_pr_author_token\.outputs\.token \}\}/,
   'subsequent CI dispatch and GitHub calls retain the ordinary Actions token');
 
+// TEMPORARY NONPUBLISHING APP SMOKE CONTRACT: the generator is categorically
+// disabled on the proof Draft branch. The only valid run is a manual dispatch
+// on that exact ref; no source, production or privileged publisher access.
+const appSmokeRef = 'refs/heads/fix/daily-pr-app-author-draft-20261105';
+assert.ok(mainDaily.includes(`if: \${{ github.ref != '${appSmokeRef}' }}`),
+  'Draft proof branch must explicitly skip the paid build-and-publish job');
+const appSmoke = mainDaily.match(
+  /  # TEMPORARY DRAFT-ONLY PROOF\.[\s\S]*?(?=\n?$)/,
+);
+assert.ok(appSmoke, 'temporary app-smoke job must be present');
+assert.match(appSmoke[0], /app-pr-event-smoke:\n    if: >-/);
+assert.match(appSmoke[0], /github\.event_name == 'workflow_dispatch'/);
+assert.ok(appSmoke[0].includes(`github.ref == '${appSmokeRef}'`));
+assert.match(appSmoke[0], /github\.run_attempt == 1/);
+assert.match(appSmoke[0], /permissions:\n      contents: write\n      pull-requests: read/);
+assert.match(appSmoke[0], /test "\$GITHUB_REF" != refs\/heads\/main/);
+assert.match(appSmoke[0], /uses: actions\/create-github-app-token@[a-f0-9]{40}/);
+assert.match(appSmoke[0], /permission-contents: read\n          permission-pull-requests: write/);
+assert.doesNotMatch(appSmoke[0], /permission-actions: write|permission-administration: write|skip-token-revoke: true/);
+assert.match(appSmoke[0], /gh api -X POST .*git\/refs/);
+assert.match(appSmoke[0], /gh api -X PUT .*contents\/\$smoke_file/);
+assert.match(appSmoke[0], /gh pr create [\\\s\S]*--draft/);
+assert.match(appSmoke[0], /GH_TOKEN="\$DAILY_PR_APP_TOKEN" gh pr create/);
+assert.match(appSmoke[0], /\.user\.login == "usd-impact-daily-pr-author\[bot\]"/);
+assert.doesNotMatch(appSmoke[0], /gh pr merge|\/daily-news-source|NEWSFEED_BEARER_TOKEN|curl --request POST|gh workflow run/);
+assert.match(appSmoke[0], /No paid generation, publication, merge or change to protected main/);
+const smokeGuard = appSmoke[0].match(
+  /      - name: Verify isolated nonpublishing identity before reading the App key\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - name: Mint GitHub App token for isolated PR-event proof)/,
+);
+assert.ok(smokeGuard, 'repo/ref/attempt validation must run before private-key access');
+const smokeGuardShell = smokeGuard[1].split('\n')
+  .map((line) => line.startsWith('          ') ? line.slice(10) : line).join('\n');
+assert.equal(spawnSync('bash', ['-n'], { input: smokeGuardShell, encoding: 'utf8' }).status, 0);
+for (const [kind, changes, status] of [
+  ['correct manual Draft ref', {}, 0],
+  ['main ref', { GITHUB_REF: 'refs/heads/main' }, 1],
+  ['wrong branch', { GITHUB_REF: 'refs/heads/other' }, 1],
+  ['automatic schedule', { GITHUB_EVENT_NAME: 'schedule' }, 1],
+  ['replayed run', { GITHUB_RUN_ATTEMPT: '2' }, 1],
+  ['wrong repository', { GITHUB_REPOSITORY: 'other/repo' }, 1],
+]) {
+  const test = spawnSync('bash', ['-c', smokeGuardShell], {
+    encoding: 'utf8', timeout: 5000, env: { ...process.env,
+      GITHUB_REF: appSmokeRef, GITHUB_RUN_ATTEMPT: '1',
+      GITHUB_EVENT_NAME: 'workflow_dispatch',
+      GITHUB_REPOSITORY: 'usdimpact/usd-impact-site', ...changes,
+    },
+  });
+  assert.equal(test.status, status, kind + ': ' + test.stderr);
+}
+console.log('Draft-only App PR-event smoke: 6 offline identity fixtures PASS; no paid source or production path');
 // Execute the actual pre-spend configuration shell using synthetic credentials.
 // No network or paid source generation. Verify missing App identity holds and
 // that its private key never appears in logs.

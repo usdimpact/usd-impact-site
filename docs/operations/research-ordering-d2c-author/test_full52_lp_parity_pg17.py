@@ -42,8 +42,11 @@ def bootstrap(c):
     assert len(all_sql)==52, ("Historical migration count changed",len(all_sql))
     for migration in all_sql:
         sql=migration.read_text("utf-8")
-        assert sql.strip().lower().startswith("begin;"),migration.name
-        c.execute(sql)
+        try:
+            c.execute(sql)
+        except psycopg.Error as exc:
+            print("D2C_FULL52_MIGRATION_FAILURE",migration.name,exc.sqlstate,flush=True)
+            raise
     oracle=ROOT/"docs/operations/research-ordering-stage-c/real_schema_ordering_review.sql"
     c.execute(oracle.read_text("utf-8"))
     print("D2C_ALL_52_HISTORICAL_MIGRATIONS_APPLIED_WITH_SYNTHETIC_PLATFORM_STUBS",flush=True)

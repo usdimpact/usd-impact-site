@@ -86,6 +86,7 @@ def finish(a,lease):
 new_functions = [
     ("finalize_deletion_and_queue_auth_cleanup", "SELECT public.finalize_deletion_and_queue_auth_cleanup(%s)", (uuid.uuid4(),)),
     ("claim_deletion_auth_cleanup_batch", "SELECT count(*) FROM public.claim_deletion_auth_cleanup_batch(1)", ()),
+    ("check_deletion_auth_cleanup_billing_fence", "SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)", (uuid.uuid4(), uuid.uuid4())),
     ("confirm_deletion_auth_cleanup", "SELECT public.confirm_deletion_auth_cleanup(%s,%s)", (uuid.uuid4(), uuid.uuid4())),
     ("finish_deletion_auth_cleanup", "SELECT public.finish_deletion_auth_cleanup(%s,%s)", (uuid.uuid4(), uuid.uuid4()))
 ]
@@ -194,9 +195,54 @@ owner=own("""SELECT public.record_research_billing_clearance(
 success=phase_a(hold)
 rec("C owner external-clearance model permits atomic DB finalization",
     owner[0]=="OK" and success[0]=="OK" and success[1]["phase"]=="auth_pending",success)
+# New two-phase billing fence must allow the already cleared database
+# deletion queue only before a later signed merchant conflict is recorded.
+hold_claim=claim(25)
+hold_claim_rows=hold_claim[1] if hold_claim[0]=="OK" else []
+hold_selected=next((z for z in hold_claim_rows if z["account_id"]==str(hold)),None)
+hold_lease=uuid.UUID(hold_selected["lease_id"]) if hold_selected else uuid.uuid4()
+before_late=svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",(hold,hold_lease))
+rec("C billing fence permits owner-cleared Phase A before late merchant evidence",
+    hold_selected is not None and before_late==("OK",True),before_late)
 after=svc("""SELECT public.record_research_paid_binding_refusal(
     'lemon-squeezy',%s,%s,%s,'SIGNED_PAID_BINDING_REFUSED')""",
     ("syn-late-"+hold.hex[:12],hold,"syn-checkout-"+hold.hex[:14]))
+after_fence=svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",(hold,hold_lease))
+after_ack=confirm(hold,hold_lease)
+rec("C post-Phase-A signed payment refuses pre-Auth fence and leaves Auth intact",
+    after_fence[0]=="ERR" and after_fence[1].startswith("55000")
+    and after_ack[0]=="ERR" and after_ack[1].startswith("55000")
+    and su("SELECT count(*) FROM auth.users WHERE id=%s",(hold,))==1
+    and ledger(hold)["phase"]=="auth_pending",
+    f"fence={after_fence} confirm={after_ack}")
+
+# A signed charge can arrive after Auth is already retired and confirmed.
+# Final completion must still fail and leave the private recovery state open.
+last=synthetic_user()
+request(last)
+make_due_keep_auth(last)
+assert phase_a(last)[0]=="OK"
+last_claim=claim(25)
+last_rows=last_claim[1] if last_claim[0]=="OK" else []
+last_selected=next((z for z in last_rows if z["account_id"]==str(last)),None)
+last_lease=uuid.UUID(last_selected["lease_id"]) if last_selected else uuid.uuid4()
+assert last_selected is not None, last_rows
+assert svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",(last,last_lease))==("OK",True)
+su("DELETE FROM auth.users WHERE id=%s",(last,))
+assert confirm(last,last_lease)[0]=="OK"
+late2=svc("""SELECT public.record_research_paid_binding_refusal(
+    'lemon-squeezy',%s,%s,%s,'SIGNED_PAID_BINDING_REFUSED')""",
+    ("syn-post-auth-"+last.hex[:10],last,"syn-checkout-"+last.hex[:14]))
+held_finish=finish(last,last_lease)
+rec("C late signed payment after Auth confirmation blocks privacy/email completion",
+    late2[0]=="OK"
+    and held_finish[0]=="ERR"
+    and held_finish[1].startswith("55000")
+    and "Research payment evidence" in held_finish[1]
+    and ledger(last)["phase"]=="auth_confirmed"
+    and ledger(last)["recipient_email"] is not None,
+    f"late={late2} finish={held_finish}")
+
 rec("C late paid event after DB phase is durably quarantined, without reopening deleted profile",
     after[0]=="OK"
     and row(hold)["status"]=="deleted"

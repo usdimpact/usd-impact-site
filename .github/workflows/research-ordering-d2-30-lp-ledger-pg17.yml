@@ -1,0 +1,67 @@
+name: D2-30 independent LP ledger PG17 acceptance (DRAFT HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/research-ordering-d2-30-lp-ledger-pg17.yml'
+      - 'docs/operations/research-ordering-d2-30/**'
+permissions:
+  contents: read
+concurrency:
+  group: d2-30-independent-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  d2-30-lp-ledger:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    services:
+      postgres:
+        image: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+        env:
+          POSTGRES_USER: ci_research
+          POSTGRES_PASSWORD: synthetic-stage-c-review-only
+          POSTGRES_DB: ci_review
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_research -d ci_review"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: '127.0.0.1'
+      PGPORT: '5432'
+      PGDATABASE: ci_review
+      PGUSER: ci_research
+      PGPASSWORD: synthetic-stage-c-review-only
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Refuse connected Supabase/merchant configuration
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'ci_review'
+          test "$PGUSER" = 'ci_research'
+          for key in DATABASE_URL SUPABASE_URL SUPABASE_DB_URL SUPABASE_SERVICE_ROLE_KEY LEMON_SQUEEZY_API_KEY LEMON_SQUEEZY_WEBHOOK_SECRET LEMON_SQUEEZY_STORE_ID; do
+            test -z "${!key:-}" || { echo "::error::$key must not be configured"; exit 1; }
+          done
+      - name: Install isolated pinned test client
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/d2-30-venv"
+          "$RUNNER_TEMP/d2-30-venv/bin/python" -m pip install --disable-pip-version-check --no-input 'psycopg[binary]==3.2.10'
+          "$RUNNER_TEMP/d2-30-venv/bin/python" -m py_compile docs/operations/research-ordering-d2-30/test_lp_ledger_actual_pg17.py
+      - name: Exercise actual PostgreSQL 17.6 purchase/refund/guard SQL
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/d2-30-venv/bin/python" docs/operations/research-ordering-d2-30/test_lp_ledger_actual_pg17.py
+      - name: Retain review scope
+        if: always()
+        run: |
+          {
+            echo '### D2-30 independent PG17 historical RPC compatibility'
+            echo 'Review-only test, no deployable migrations or source fixes.'
+            echo 'Synthetic localhost-only PostgreSQL 17.6, no connected Supabase, merchant, customer records, payment or release.'
+            echo 'Observed negative reproduction is not a Production exploit and does not provide cutover authority.'
+            echo 'B5/D2-C, external R1/R2 settlement, privacy and deletion gates remain HOLD/NO-GO.'
+          } >> "$GITHUB_STEP_SUMMARY"

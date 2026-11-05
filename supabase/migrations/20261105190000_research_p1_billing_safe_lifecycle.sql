@@ -1649,3 +1649,114 @@ $$;
 
 revoke all on function public.finalize_account_deletion(uuid) from public, anon, authenticated;
 grant execute on function public.finalize_account_deletion(uuid) to service_role;
+-- ---------------------------------------------------------------------------
+-- Part 8. Bounded and starvation-resistant account-deletion scan.
+--
+-- The old REST query always selected the earliest 25 due profiles. Twenty-five
+-- older Research billing holds could therefore prevent any later account's
+-- deletion request from being visited. Persist one stable (due_at, account_id)
+-- round-robin cursor so each invocation advances beyond held profiles even
+-- if provider reconciliation remains unresolved. Cursor advances when IDs
+-- are handed out; a failed web attempt is retried on a future full rotation.
+--
+-- This is only fair scheduling: it DOES NOT change readiness, owner-only
+-- merchant evidence, Auth deletion, or the SQL finalization restrictions.
+-- A daily job with a large backlog still needs monitored privacy deadlines.
+-- ---------------------------------------------------------------------------
+create table if not exists research_lifecycle_private.deletion_scan_cursor (
+  singleton_id integer primary key check (singleton_id = 1),
+  last_due_at timestamptz,
+  last_account_id uuid,
+  updated_at timestamptz not null default pg_catalog.clock_timestamp(),
+  constraint deletion_scan_cursor_pair check (
+    (last_due_at is null) = (last_account_id is null)
+  )
+);
+alter table research_lifecycle_private.deletion_scan_cursor enable row level security;
+revoke all on table research_lifecycle_private.deletion_scan_cursor
+  from public, anon, authenticated, service_role;
+insert into research_lifecycle_private.deletion_scan_cursor(singleton_id)
+values (1) on conflict (singleton_id) do nothing;
+
+create or replace function public.list_due_account_deletions_fair(
+  p_limit integer,
+  p_due_at timestamptz
+)
+returns table (
+  account_id uuid,
+  email text,
+  status public.account_status,
+  deletion_requested_at timestamptz,
+  deletion_due_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = ''
+as $scan$
+declare
+  v_due_at timestamptz;
+  v_last_due_at timestamptz;
+  v_last_account_id uuid;
+  v_row record;
+  v_count integer := 0;
+begin
+  if p_limit is null or p_limit < 1 or p_limit > 25 then
+    raise exception using errcode='22023', message='account deletion scan batch must be between 1 and 25';
+  end if;
+  if p_due_at is null or not pg_catalog.isfinite(p_due_at) then
+    raise exception using errcode='22023', message='account deletion scan due time is required';
+  end if;
+  v_due_at := p_due_at;
+
+  -- The singleton row lock serializes cursor advancement across cron workers.
+  -- The query never locks profiles or bypasses eligibility/readiness checks.
+  select c.last_due_at, c.last_account_id
+    into v_last_due_at, v_last_account_id
+    from research_lifecycle_private.deletion_scan_cursor c
+    where c.singleton_id=1
+    for update;
+  if not found then
+    raise exception using errcode='55000', message='account deletion scan cursor unavailable';
+  end if;
+
+  for v_row in
+    select p.account_id, p.email, p.status,
+           p.deletion_requested_at, p.deletion_due_at
+      from public.profiles p
+      where p.status='deletion_pending'::public.account_status
+        and p.deletion_due_at is not null
+        and p.deletion_due_at <= v_due_at
+      order by case
+        when v_last_due_at is null then 0
+        when (p.deletion_due_at, p.account_id) > (v_last_due_at, v_last_account_id) then 0
+        else 1
+      end,
+      p.deletion_due_at asc,
+      p.account_id asc
+      limit p_limit
+  loop
+    account_id := v_row.account_id;
+    email := v_row.email;
+    status := v_row.status;
+    deletion_requested_at := v_row.deletion_requested_at;
+    deletion_due_at := v_row.deletion_due_at;
+    v_count := v_count + 1;
+    return next;
+    v_last_due_at := v_row.deletion_due_at;
+    v_last_account_id := v_row.account_id;
+  end loop;
+
+  if v_count > 0 then
+    update research_lifecycle_private.deletion_scan_cursor c
+       set last_due_at = v_last_due_at,
+           last_account_id = v_last_account_id,
+           updated_at = pg_catalog.clock_timestamp()
+     where c.singleton_id = 1;
+  end if;
+end;
+$scan$;
+revoke all on function public.list_due_account_deletions_fair(integer,timestamptz)
+  from public, anon, authenticated, service_role;
+grant execute on function public.list_due_account_deletions_fair(integer,timestamptz)
+  to service_role;
+

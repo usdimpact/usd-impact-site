@@ -50,51 +50,62 @@ const homepage = path.join(distRoot, 'index.html');
 if (!fs.existsSync(homepage)) failures.push('Homepage was not generated.');
 else {
   const html = fs.readFileSync(homepage, 'utf8');
-  if (!html.includes('Check Library Pass availability')) failures.push('Homepage neutral Library Pass CTA label is missing.');
-  if (!html.includes('href="/checkout/"')) failures.push('Homepage neutral Library Pass CTA destination is missing.');
-  if (html.includes('>Join the book waitlist</a>')) failures.push('Homepage renders a stale waitlist CTA before readiness settles.');
-  if (!html.includes('data-home-library-pass-cta')) failures.push('Homepage fail-closed Library Pass CTA is missing.');
-  if (!html.includes('data-home-checkout-readiness="checking"')) failures.push('Homepage Library Pass CTA is missing its initial checking state.');
+  if (!html.includes('data-home-free-learning-cta')) failures.push('Homepage free-learning CTA is missing.');
+  if (!html.includes('Start learning for free')) failures.push('Homepage free-learning label is missing.');
+  if (!html.includes('href="/start-here/"')) failures.push('Homepage free-learning destination is missing.');
+  if (html.includes('Check Library Pass availability')) failures.push('Homepage still promotes the legacy Library Pass offer.');
   if (html.includes('data-library-pass-launch-announcement')) failures.push('Global Library Pass launch announcement must remain disabled.');
-  if (html.includes('Open secure checkout / Abrir checkout seguro')) failures.push('Global Library Pass launch announcement CTA must remain disabled.');
+  if (html.includes('Open secure checkout / Abrir checkout seguro')) failures.push('Global Library Pass launch CTA must remain disabled.');
   if (!html.includes('href="/news/"')) failures.push('Homepage Daily USD Impact link is missing.');
-  if (!html.includes('href="/terms/"')) failures.push('Homepage footer Terms link is missing.');
-  if (!html.includes('href="/refund-policy/"')) failures.push('Homepage footer Refund Policy link is missing.');
+  if (!html.includes('href="/terms/"')) failures.push('Homepage Terms link is missing.');
+  if (!html.includes('href="/refund-policy/"')) failures.push('Homepage Refund Policy link is missing.');
 }
 
 const productPage = pagePath('/book/read-the-dollar-first');
 if (fs.existsSync(productPage)) {
   const html = fs.readFileSync(productPage, 'utf8');
-  for (const requiredText of ['Guided Interactive Edition', '51-film USD Impact Video Library', 'USD 39.00', 'USD 49.00', 'one-time', '14-day Refund Policy', 'ongoing access']) {
-    if (!html.includes(requiredText)) failures.push(`Product page is missing domain-review text: ${requiredText}.`);
+  for (const requiredText of [
+    'Read the public book sample', 'Guided Interactive Edition', '51-film USD Impact Video Library',
+    '14-day Refund Policy', 'Library Pass', 'Sign in with the account used for your purchase',
+    '/book/read-the-dollar-first/preview/', '/account/sign-in/?next=/account/',
+  ]) {
+    if (!html.includes(requiredText)) failures.push(`Product page is missing free-first or historical-buyer text: ${requiredText}.`);
   }
-  if (!html.includes('Check Library Pass availability')) failures.push('Product page neutral Library Pass CTA label is missing.');
-  if (!html.includes('id="book-primary-cta"') || !html.includes('href="/checkout/"')) failures.push('Product page neutral Library Pass CTA destination is missing.');
-  if (!html.includes('id="book-waitlist"')) failures.push('Product page actual waitlist form is missing.');
+  for (const obsolete of ['Check Library Pass availability', 'USD 39.00', 'USD 49.00']) {
+    if (html.includes(obsolete)) failures.push(`Product page still promotes the legacy new-sale offer: ${obsolete}.`);
+  }
+  if (!html.includes('id="book-primary-cta"')) failures.push('Product page public-sample CTA is missing.');
+  if (!html.includes('id="book-waitlist"')) failures.push('Product page preserved hidden waitlist markup is missing.');
 }
 
-const acquisitionRoutes = [
+const publicLearningRoutes = [
   '/start-here',
   '/framework/three-dial-dashboard',
   '/framework/dollar-transmission-chain',
   '/lead-magnets/weekly-dollar-regime-checklist',
   '/quiz',
 ];
-for (const route of acquisitionRoutes) {
+for (const route of publicLearningRoutes) {
   const file = pagePath(route);
   if (!fs.existsSync(file)) {
-    failures.push(`Library Pass acquisition route was not generated: ${route}.`);
+    failures.push(`Public learning route was not generated: ${route}.`);
     continue;
   }
   const html = fs.readFileSync(file, 'utf8');
-  if (!html.includes('data-library-pass-availability-cta')) failures.push(`${route} is missing the readiness-aware Library Pass CTA.`);
-  if (!html.includes('data-library-pass-checkout-readiness="checking"')) failures.push(`${route} is missing the initial Library Pass checking state.`);
-  if (!html.includes('Check Library Pass availability')) failures.push(`${route} is missing the neutral Library Pass CTA label.`);
-  if (!html.includes('href="/checkout/"')) failures.push(`${route} is missing the neutral Library Pass checkout destination.`);
-  if (html.includes('>Join the book waitlist</a>')) failures.push(`${route} renders a stale waitlist CTA.`);
+  if (route === '/start-here') {
+    if (!html.includes('Explore the free dollar framework') || !html.includes('href="/dollar-framework/"')) {
+      failures.push('/start-here is missing its free framework CTA.');
+    }
+  } else {
+    if (!html.includes('data-public-book-sample-cta')) failures.push(`${route} is missing its public book sample CTA.`);
+    if (!html.includes('Read the public book sample') || !html.includes('href="/book/read-the-dollar-first/preview/"')) {
+      failures.push(`${route} is missing its free public book sample link.`);
+    }
+  }
+  if (html.includes('Check Library Pass availability')) failures.push(`${route} retains the retired acquisition CTA.`);
 }
 
-const videoLibraryPage = pagePath('/video-library');
+
 if (fs.existsSync(videoLibraryPage)) {
   const html = fs.readFileSync(videoLibraryPage, 'utf8');
   const filmLinks = html.match(/href="\/guided-edition\/video-library\/[a-z0-9-]+\/?"/g) || [];
@@ -150,16 +161,16 @@ for (const [route, label, lesson] of releasedQuizzes) {
   const html = fs.readFileSync(file, 'utf8');
   if (!html.includes(label)) failures.push(`${route} is missing ${label}.`);
   if (!html.includes(`href="${lesson}"`)) failures.push(`${route} does not link to ${lesson}.`);
-  if (!html.includes('data-library-pass-availability-cta')) failures.push(`${route} is missing the readiness-aware Library Pass CTA.`);
-  if (!html.includes('Check Library Pass availability')) failures.push(`${route} is missing the neutral Library Pass CTA label.`);
-  if (!html.includes('href="/checkout/"')) failures.push(`${route} is missing the neutral Library Pass checkout destination.`);
-  if (html.includes('>Join the book waitlist</a>')) failures.push(`${route} renders a stale waitlist CTA.`);
+  if (!html.includes('data-public-book-sample-cta')) failures.push(`${route} is missing the free public book sample CTA.`);
+  if (!html.includes('Read the public book sample')) failures.push(`${route} is missing the free public sample label.`);
+  if (!html.includes('href="/book/read-the-dollar-first/preview/"')) failures.push(`${route} is missing the free public sample destination.`);
+  if (html.includes('Check Library Pass availability')) failures.push(`${route} retains the retired acquisition CTA.`);
 }
 const startQuizHtml = fs.existsSync(pagePath('/start-here/quiz')) ? fs.readFileSync(pagePath('/start-here/quiz'), 'utf8') : '';
 if (startQuizHtml) {
-  if (!startQuizHtml.includes('data-library-pass-availability-cta')) failures.push('/start-here/quiz is missing the readiness-aware Library Pass CTA.');
-  if (!startQuizHtml.includes('Check Library Pass availability')) failures.push('/start-here/quiz is missing the neutral Library Pass CTA label.');
-  if (startQuizHtml.includes('>Join the book waitlist</a>')) failures.push('/start-here/quiz renders a stale waitlist CTA.');
+  if (!startQuizHtml.includes('data-public-book-sample-cta')) failures.push('/start-here/quiz is missing the public book sample CTA.');
+  if (!startQuizHtml.includes('Read the public book sample')) failures.push('/start-here/quiz is missing the public sample label.');
+  if (startQuizHtml.includes('Check Library Pass availability')) failures.push('/start-here/quiz retains the retired acquisition CTA.');
 }
 const finalQuizHtml = fs.existsSync(pagePath(routes.currencyRiskQuiz)) ? fs.readFileSync(pagePath(routes.currencyRiskQuiz), 'utf8') : '';
 if (finalQuizHtml && !finalQuizHtml.includes('data-quiz-completion-link')) failures.push('Quiz 12 is missing the completion link contract.');

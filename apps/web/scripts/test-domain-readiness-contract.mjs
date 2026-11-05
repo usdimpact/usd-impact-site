@@ -25,13 +25,10 @@ const requireText = (file, label, values) => {
 requireText(files.layout, 'Footer', ['/terms/', '/refund-policy/', '/privacy/', '/book/read-the-dollar-first/']);
 requireText(files.product, 'Product page', [
   'Guided Interactive Edition',
-  'approved launch offer has no quantity cutoff',
-  'one-time',
-  'ongoing access',
-  'Lemon Squeezy is the selected Merchant of Record',
-  'verifies the current Live release state',
-  'fails closed to the waitlist',
-  'verified commercial event',
+  'Read the public book sample',
+  'public lesson',
+  'previous Library Pass purchase',
+  'historical Library Pass transactions',
   'KELA LEADS S.R.L.',
   '40790448',
   'J38/820/2020',
@@ -41,21 +38,16 @@ requireText(files.product, 'Product page', [
   '/privacy/',
   'https://www.lemonsqueezy.com/buyer-terms',
 ]);
-requireText(files.bookPurchaseCta, 'Book purchase CTA', [
-  'Guided Interactive Edition',
-  'Complete English audiobook',
-  '51-film Video Library',
-  'USD 39',
-  'USD 49',
-  'one time',
-  'data-book-checkout-readiness="checking"',
-  'Check Library Pass availability',
-  'href="/checkout/"',
+requireText(files.bookPurchaseCta, 'Public book sample CTA and historical buyer access', [
+  'Read the public book sample',
+  '/book/read-the-dollar-first/preview/',
+  'Already purchased a Library Pass?',
   'href="/account/sign-in/?next=/account/"',
-  '/api/commerce-readiness',
-  'bookPurchasePresentation',
-  'The book waitlist remains available.',
+  'protected full-book chapters, audiobook playback or member-only film playback',
 ]);
+for (const obsolete of ['USD 39.00', 'USD 49.00', 'Check Library Pass availability', 'href="/checkout/"']) {
+  if (files.bookPurchaseCta.includes(obsolete)) failures.push(`Public book sample CTA still advertises legacy acquisition: ${obsolete}`);
+}
 
 const productDisclosureCount = files.product.match(/<details class="book-disclosure">/g)?.length ?? 0;
 if (productDisclosureCount !== 4) {

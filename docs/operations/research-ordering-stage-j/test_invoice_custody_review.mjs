@@ -27,7 +27,7 @@ const link={authority:'synthetic_invoice_cycle_link_only',providerAuthenticated:
   periodStart:cycle.periodStart,periodEnd:cycle.periodEnd,billingReason:'renewal'};
 const quote={source:'synthetic_durable_quote_review_only',accountId:b.accountId,
   storeId:'41',customerId:'78',subscriptionId:'217',invoiceId:'118',
-  productId:'99',variantId:'313',currency:'USD',
+  productId:'99',variantId:'313',currency:'USD',testMode:true,
   expectedTotalCents:1299,quoteId:'synthetic-quote-118',
   quoteKind:'issued_renewal_terms',priorEntitlementVersion:5,subscriptionVersion:3};
 const transition={kind:'renewal',fromState:'active',toState:'active',subscriptionVersion:3};
@@ -93,7 +93,7 @@ async function run(label,reason,{eventName='subscription_payment_success',
 const ok='synthetic_quote_transition_and_invoice_cycle_shapes_match';
 const first=await run('matching synthetic quote+renewal+two GETs',ok);
 assert.equal(first.disposition,'candidate_for_human_review_only');
-assert.equal(first.canonicalInvoiceKey,'41:217:118');
+assert.equal(first.canonicalInvoiceKey,'lemon-squeezy:41:test:118');
 assert.equal(first.invoiceTotalCents,1299);
 assert.equal(first.invoiceBillingReason,'renewal');
 assert.match(first.invoiceSnapshotDigest,/^[0-9a-f]{64}$/);
@@ -131,9 +131,18 @@ const conflicting=await run('NG1 conflicting same invoice version quarantined',
   {priorInvoiceReceipt:first,invoiceChange:i=>{i.updated_at='2026-11-05T01:02:03.123457Z';}});
 assert.equal(conflicting.disposition,'quarantined_conflict');
 await run('NG1 prior receipt with missing digest held','prior_invoice_custody_unverifiable',
-  {priorInvoiceReceipt:{canonicalInvoiceKey:'41:217:118'}});
+  {priorInvoiceReceipt:{canonicalInvoiceKey:'lemon-squeezy:41:test:118'}});
 await run('NG1 prior receipt belongs to different invoice held','prior_invoice_custody_unverifiable',
-  {priorInvoiceReceipt:{...first,canonicalInvoiceKey:'41:217:119'}});
+  {priorInvoiceReceipt:{...first,canonicalInvoiceKey:'lemon-squeezy:41:test:119'}});
+
+// Same provider/store/environment/invoice across subscriptions is a conflict,
+ // never a new first receipt. The subscription is a BINDING, not the key.
+await run('NG1 same invoice against alternate subscription is quarantined',
+ 'same_invoice_key_subscription_scope_conflict',
+ {priorInvoiceReceipt:{...first,subscriptionId:'218'}});
+await run('NG1 provider environment quote must match trusted checkout',
+ 'durable_invoice_quote_or_scope_missing',
+ {trustedQuote:{...quote,testMode:false}});
 
 // NG2: current subscription next-renewal date is NOT a certificate that an
 // old invoice pays this current cycle. Synthetic link mismatch must hold.

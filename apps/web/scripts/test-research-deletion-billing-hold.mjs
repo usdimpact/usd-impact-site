@@ -162,7 +162,7 @@ for (const rpcCode of ['unavailable', 'invalid_ack']) {
         'RESEARCH_DELETION_HOLD_ACK_INVALID'].includes(err.code),
   );
   assert.equal(m.calls.some((v) => v.url.includes('/auth/v1/admin/')), false);
-  assert.equal(m.calls.some((v) => v.includes?.('/support_requests')), false);
+  assert.equal(m.calls.some((v) => v.url.includes('/support_requests')), false);
 }
 console.log('D33_APP_MISSING_LEDGER_WRITES_FAIL_CLOSED_WITHOUT_AUTH_PASS');
 

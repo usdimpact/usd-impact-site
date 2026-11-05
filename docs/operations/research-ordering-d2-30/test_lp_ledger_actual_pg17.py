@@ -155,7 +155,7 @@ with db() as c:
     assert clean["duplicate_transaction"] is False
     record=c.execute("select account_id,entitlement_id from public.entitlement_events "
       "where event_key='commerce:lemon-squeezy:d2-30-new-order-103:payment.completed'").fetchone()
-    assert record==(good,clean["entitlement_id"]),record
+    assert record==(good,uuid.UUID(clean["entitlement_id"])),record
     assert run_service(c,COMPLETE,complete_args(good,good_intent,103))[
       "duplicate_transaction"] is True
     print("A34_PG17_CLEAN_PURCHASE_AND_DUPLICATE_PASS",flush=True)

@@ -17,9 +17,6 @@ concurrency:
 
 jobs:
   build-and-publish:
-    # Temporary isolated PR-author smoke on this Draft ref must NEVER run the
-    # news source generator or spend credits. Remove this guard after proof.
-    if: ${{ github.ref != 'refs/heads/fix/daily-pr-app-author-draft-20261105' }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     defaults:
@@ -544,83 +541,3 @@ jobs:
                 --body-file "$RUNNER_TEMP/daily-failure-report.md"
             fi
           fi
-
-  # TEMPORARY DRAFT-ONLY PROOF. Remove this entire job and the above
-  # build-and-publish branch guard before the owner approves the production
-  # Daily App PR author change. It creates only one inert docs-only Draft PR.
-  app-pr-event-smoke:
-    if: >-
-      github.event_name == 'workflow_dispatch' &&
-      github.ref == 'refs/heads/fix/daily-pr-app-author-draft-20261105' &&
-      github.run_attempt == 1
-    runs-on: ubuntu-24.04
-    timeout-minutes: 8
-    permissions:
-      contents: write
-      pull-requests: read
-    steps:
-      - name: Verify isolated nonpublishing identity before reading the App key
-        env:
-          EXPECTED_REF: refs/heads/fix/daily-pr-app-author-draft-20261105
-        run: |
-          set -euo pipefail
-          test "$GITHUB_EVENT_NAME" = workflow_dispatch
-          test "$GITHUB_REF" = "$EXPECTED_REF"
-          test "$GITHUB_REPOSITORY" = usdimpact/usd-impact-site
-          test "$GITHUB_RUN_ATTEMPT" = 1
-          test "$GITHUB_REF" != refs/heads/main
-          echo 'Daily App PR-event smoke: approved Draft ref verified; no news generation or production publication.'
-
-      - name: Mint GitHub App token for isolated PR-event proof
-        id: smoke_app_token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ vars.DAILY_NEWS_PR_APP_CLIENT_ID }}
-          private-key: ${{ secrets.DAILY_NEWS_PR_APP_PRIVATE_KEY }}
-          permission-contents: read
-          permission-pull-requests: write
-
-      - name: Create one inert Draft PR with GitHub App authorship
-        env:
-          GH_TOKEN: ${{ github.token }}
-          DAILY_PR_APP_TOKEN: ${{ steps.smoke_app_token.outputs.token }}
-        run: |
-          set -euo pipefail
-          test -n "$DAILY_PR_APP_TOKEN"
-          main_sha="$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.commit.sha')"
-          [[ "$main_sha" =~ ^[a-f0-9]{40}$ ]]
-          test "$GITHUB_REF" = refs/heads/fix/daily-pr-app-author-draft-20261105
-          test "$GITHUB_RUN_ATTEMPT" = 1
-          smoke_branch="verification/daily-pr-app-event-$GITHUB_RUN_ID"
-          smoke_file="docs/operations/daily-pr-app-event-smoke-$GITHUB_RUN_ID.md"
-          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
-            -f "ref=refs/heads/$smoke_branch" -f "sha=$main_sha" > /dev/null
-          fixture="$(printf '# Temporary GitHub App event proof\n\nInert one-file fixture for source run %s. No news generated. Never merge this PR.\n' "$GITHUB_RUN_ID" | base64 -w0)"
-          gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/$smoke_file" \
-            -f "message=test(daily): nonpublishing GitHub App PR-event proof $GITHUB_RUN_ID" \
-            -f "branch=$smoke_branch" -f "content=$fixture" > /dev/null
-          head_sha="$(gh api "repos/$GITHUB_REPOSITORY/branches/$smoke_branch" --jq '.commit.sha')"
-          [[ "$head_sha" =~ ^[a-f0-9]{40}$ ]]
-          comparison="$(gh api "repos/$GITHUB_REPOSITORY/compare/$main_sha...$head_sha")"
-          jq -e --arg expected "$smoke_file" \
-            '.status == "ahead" and .ahead_by == 1 and .behind_by == 0 and (.files | length) == 1 and .files[0].filename == $expected and .files[0].status == "added"' \
-            <<< "$comparison" > /dev/null
-          printf '%s\n' 'Nonpublishing GitHub App pull-request event smoke.' \
-            'This Draft adds only one inert docs fixture, no executable changes.' \
-            'It exists solely to test whether native pull_request required checks start without action_required.' \
-            'Do NOT merge or convert to ready. Close after collecting exact-head check evidence.' \
-            > "$RUNNER_TEMP/daily-app-smoke-pr-body.md"
-          pr_url="$(GH_TOKEN="$DAILY_PR_APP_TOKEN" gh pr create \
-            --repo "$GITHUB_REPOSITORY" --base main --head "$smoke_branch" --draft \
-            --title "TEST ONLY: Daily GitHub App required-check event $GITHUB_RUN_ID" \
-            --body-file "$RUNNER_TEMP/daily-app-smoke-pr-body.md")"
-          pr_number="${pr_url##*/}"
-          [[ "$pr_number" =~ ^[1-9][0-9]{0,9}$ ]]
-          pr_data="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr_number")"
-          jq -e --arg source "$smoke_branch" --arg base "$main_sha" \
-            '.state == "open" and .draft == true and .base.ref == "main" and .base.sha == $base and .head.ref == $source and .user.login == "usd-impact-daily-pr-author[bot]"' \
-            <<< "$pr_data" > /dev/null
-          echo "App-authored nonpublishing Draft PR: $pr_url"
-          echo "Verified App author: usd-impact-daily-pr-author[bot]; exact original main: $main_sha"
-          echo "## App-author event proof: $pr_url" >> "$GITHUB_STEP_SUMMARY"
-          echo 'No paid generation, publication, merge or change to protected main was requested.' >> "$GITHUB_STEP_SUMMARY"

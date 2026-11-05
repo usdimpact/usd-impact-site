@@ -285,7 +285,7 @@ for (const [label, readiness, expectedLog, durable] of holdCases) {
   const fetchImpl = async (url, init = {}) => {
     const href = String(url);
     if (href.includes('/rest/v1/support_requests?category=eq.privacy')) return json(200, []);
-    if (href.includes('/rest/v1/profiles?status=eq.deletion_pending')) return json(200, [profile, { ...profile, account_id: '55555555-5555-4555-8555-555555555555' }]);
+    if (href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair') && init.method === 'POST') return json(200, [profile, { ...profile, account_id: '55555555-5555-4555-8555-555555555555' }]);
     if (href.endsWith('/rpc/check_research_deletion_billing_readiness')) {
       log.push('readiness');
       return json(200, { clear: false, reasons: ['research_entitlement_present'], escalate: false });

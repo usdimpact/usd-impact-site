@@ -255,5 +255,94 @@ rec("D2C", "Library Pass payment for an active account still completes", lp3[0] 
 done_ = user(); lp_purchase(done_, 4); request_del(done_); make_due(done_); f = finalize(done_)
 rec("F1", "LP-only account still finalizes (no Research footprint)", f == ("OK", 1), str(f))
 
+# ---------------- S: fair deletion scan (oldest-held starvation regression) ----------------
+scan_fn = "SELECT coalesce(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.list_due_account_deletions_fair(%s,now()) t"
+for role in ("anon", "authenticated"):
+    denied = as_role(role, scan_fn, (10,))
+    rec("S1", f"{role} cannot read privacy scan through RPC",
+        denied[0] == "ERR" and denied[1].startswith("42501"), str(denied))
+direct = svc("SELECT count(*) FROM research_lifecycle_private.deletion_scan_cursor")
+rec("S1", "service_role cannot read the private scan cursor", direct[0] == "ERR" and direct[1].startswith("42501"), str(direct))
+for bad_size in (0, 26, 1000):
+    bad = svc(scan_fn, (bad_size,))
+    rec("S1", f"scan size {bad_size} rejected", bad[0] == "ERR" and bad[1].startswith("22023"), str(bad))
+
+# Create a cohort whose oldest 30 requests remain held by Research billing.
+# The newer LP-free account must still be reached by later bounded 10-row
+# scans, without a migration of any real database or bypass of billing checks.
+held_accounts = []
+for idx in range(30):
+    held_account, _, _ = research_member()
+    request_del(held_account)
+    make_due(held_account)
+    su("""UPDATE public.profiles
+           SET deletion_requested_at=now()-interval '60 days',
+               deletion_due_at=now()-interval '50 days'+(%s * interval '1 second')
+           WHERE account_id=%s""", (idx, held_account))
+    held_accounts.append(held_account)
+newer_clear = user()
+request_del(newer_clear)
+make_due(newer_clear)
+su("""UPDATE public.profiles
+       SET deletion_requested_at=now()-interval '60 days',
+           deletion_due_at=now()-interval '40 days'
+       WHERE account_id=%s""", (newer_clear,))
+proof_hold = ready(held_accounts[0])
+proof_clear = ready(newer_clear)
+rec("S2", "old cohort has real Research holds; later account remains clear",
+    proof_hold[0] == "OK" and proof_hold[1]["clear"] is False
+    and proof_clear[0] == "OK" and proof_clear[1]["clear"] is True,
+    f"held={proof_hold[1]} clear={proof_clear[1]}")
+
+su("""UPDATE research_lifecycle_private.deletion_scan_cursor
+       SET last_due_at=NULL,last_account_id=NULL WHERE singleton_id=1""")
+pages = []
+for _ in range(4):
+    pages.append(svc(scan_fn, (10,)))
+ids = [[uuid.UUID(row["account_id"]) for row in result[1]] if result[0]=="OK" else []
+       for result in pages]
+flat = [u for page in ids for u in page]
+rec("S3", "4 consecutive bounded scans progress through unique rows",
+    all(result[0]=="OK" for result in pages)
+    and all(len(page)==10 for page in ids)
+    and len(set(flat))==40,
+    f"pages={list(map(len,ids))} distinct={len(set(flat))}")
+rec("S3", "31st due account is visited despite 30 older Research billing holds",
+    newer_clear in ids[3] and newer_clear not in flat[:30]
+    and set(held_accounts).issubset(set(flat)),
+    f"clear_page={next((i+1 for i,page in enumerate(ids) if newer_clear in page),None)}")
+cursor = su("""SELECT last_account_id FROM research_lifecycle_private.deletion_scan_cursor
+               WHERE singleton_id=1""")
+rec("S3", "cursor durable at last emitted due profile", cursor==flat[-1], str(cursor))
+
+# Two concurrent workers must acquire the cursor row lock, not both claim
+# the same first page. Newer profiles can appear while one worker waits.
+su("""UPDATE research_lifecycle_private.deletion_scan_cursor
+       SET last_due_at=NULL,last_account_id=NULL WHERE singleton_id=1""")
+scan_a=conn(False)
+scan_a.execute("SET ROLE service_role")
+first=scan_a.execute(scan_fn, (10,)).fetchone()[0]
+out={}
+def competing_scanner():
+    with conn(False) as db:
+        db.execute("SET ROLE service_role")
+        db.execute("SET lock_timeout='5s'")
+        started=time.time()
+        out["rows"]=db.execute(scan_fn, (10,)).fetchone()[0]
+        out["wait"]=time.time()-started
+        db.commit()
+worker=threading.Thread(target=competing_scanner)
+worker.start()
+time.sleep(0.4)
+waiting=worker.is_alive()
+scan_a.commit()
+scan_a.close()
+worker.join(timeout=6)
+r1={uuid.UUID(row["account_id"]) for row in first}
+r2={uuid.UUID(row["account_id"]) for row in out.get("rows",[])}
+rec("S4", "concurrent cursor scans serialize and hand out disjoint pages",
+    waiting and not worker.is_alive() and len(r1)==10 and len(r2)==10
+    and not (r1 & r2), f"waited={out.get('wait')} overlap={len(r1 & r2)}")
+
 print(f"P1_PG_DONE label={LABEL} total={len(R)} pass={sum(R)} fail={len(R)-sum(R)}")
 sys.exit(0 if all(R) else 1)

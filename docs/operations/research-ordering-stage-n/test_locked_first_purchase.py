@@ -224,7 +224,7 @@ deny_changed_evidence(
  (intent_id,))
 deny_changed_evidence(
  "UPDATE research_checkout_guard.checkout_intents SET created_at=clock_timestamp()-interval '35 days', "
- "expires_at=clock_timestamp()-interval '35 days'+interval '30 minutes' WHERE id=%s",
+ "expires_at=clock_timestamp()-interval '35 days'+interval '29 minutes' WHERE id=%s",
  (intent_id,))
 deny_changed_evidence(
  "UPDATE research_ordering_stage_j.invoice_receipts SET disposition='quarantined_conflict' "

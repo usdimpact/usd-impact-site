@@ -78,6 +78,17 @@ if (fs.existsSync(productPage)) {
   if (!html.includes('id="book-waitlist"')) failures.push('Product page preserved hidden waitlist markup is missing.');
 }
 
+const bookPreviewPage = pagePath('/book/read-the-dollar-first/preview');
+if (fs.existsSync(bookPreviewPage)) {
+  const html = fs.readFileSync(bookPreviewPage, 'utf8');
+  if (!html.includes('Access for previous purchasers') || !html.includes('/account/sign-in/?next=/account/')) {
+    failures.push('Public book preview is missing historical purchaser account access.');
+  }
+  if (html.includes('USD 39.00') || html.includes('USD 49.00') || html.includes('pricing and current availability')) {
+    failures.push('Public book preview advertises obsolete new-sale pricing.');
+  }
+}
+
 const publicLearningRoutes = [
   '/start-here',
   '/framework/three-dial-dashboard',

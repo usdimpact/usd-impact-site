@@ -463,14 +463,13 @@ export async function finalizeOneDueAccount({
     });
   } catch (error) {
     const code = typeof error?.code === 'string' ? error.code : 'ACCOUNT_DELETION_FINALIZER_FAILED';
-    const finalizedProfile = completion?.recipient_email
+    const preAuthBillingError = error instanceof ResearchDeletionBillingHoldError;
+    // No Auth mutation occurred on a preflight failure; do not perform
+    // post-finalization recovery reads or create duplicate support records.
+    const finalizedProfile = preAuthBillingError || completion?.recipient_email
       ? null
       : await finalizedProfileAfterFailure({ config, accountId, fetchImpl });
     const recoverable = Boolean(completion?.recipient_email || finalizedProfile);
-    // Pre-Auth errors are fail-closed. Their durable hold RPC was either
-    // acknowledged or failed; legacy escalation INSERT can create duplicate
-    // privacy requests, so this path stays on the bounded cron error report.
-    const preAuthBillingError = error instanceof ResearchDeletionBillingHoldError;
     if (!preAuthBillingError && (completion?.recipient_email || originalEmail)) {
       try {
         await recordDeletionFinalizationEscalation({

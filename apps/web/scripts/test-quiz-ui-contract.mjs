@@ -17,7 +17,7 @@ const availabilityCtaSource = await fs.readFile(
 assert.deepEqual(accessMap.quizzes.filter((item) => item.released).map((item) => item.canonicalId), [
   'quiz-start-here','quiz-what-is-us-dollar','quiz-fx-depreciation-vs-inflation','quiz-dxy-explained','quiz-dxy-vs-broad-usd','quiz-dollar-regime-framework','quiz-usd-and-gold','quiz-usd-and-wti','quiz-usd-and-lng-natural-gas','quiz-usd-and-equities','quiz-usd-and-bitcoin','quiz-usd-and-fx-currency-risk',
 ]);
-assert.equal(accessMap.purchaseFallbackUrl, '/checkout/');
+assert.equal(accessMap.purchaseFallbackUrl, '/book/read-the-dollar-first/preview/');
 const quiz12 = accessMap.quizzes[11];
 assert.equal(quiz12.released, true);
 assert.equal(quiz12.lessonReleased, true);
@@ -56,9 +56,9 @@ for (const [label, source] of [
 assert.match(routeSource, /const purchaseUrl = accessMap\.purchaseFallbackUrl;/);
 assert.doesNotMatch(routeSource, /PUBLIC_BOOK_PURCHASE_URL/);
 assert.match(engineSource, /data-purchase-url=\{purchaseUrl\}/);
-assert.match(availabilityCtaSource, /href="\/checkout\/"/);
-assert.match(availabilityCtaSource, />Check Library Pass availability<\/a>/);
-assert.match(availabilityCtaSource, /bookPurchasePresentation\(body\.commerce\)/);
-assert.match(availabilityCtaSource, /if \(!presentation\.available\) continue;/);
+assert.match(availabilityCtaSource, /href="\\/book\\/read-the-dollar-first\\/preview\\/"/);
+assert.match(availabilityCtaSource, /data-public-book-sample-cta/);
+assert.match(availabilityCtaSource, />Read the public book sample<\\/a>/);
+assert.doesNotMatch(availabilityCtaSource, /href="\\/checkout\\/"|bookPurchasePresentation|\\/api\\/commerce-readiness/);
 
 console.log('Quiz UI and Library Pass CTA regression contract passed.');

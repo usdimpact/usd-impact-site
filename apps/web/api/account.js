@@ -30,6 +30,7 @@ import {
   validCronAuthorization,
 } from '../src/lib/account-deletion-finalizer.js';
 import { handleTwoPhasePreflight } from '../src/lib/account-deletion-two-phase-preflight.js';
+import { handleDraftTwoPhaseWorker } from '../src/lib/account-deletion-two-phase-worker-review.js';
 import { handleCommerceReadinessRequest } from '../src/lib/commerce-readiness-handler.js';
 import { handleDailyCardReviewRequest } from '../src/lib/daily-card-progress-handler.js';
 import { handleKnowledgeSearchRequest } from '../src/lib/knowledge-search-handler.js';
@@ -447,6 +448,7 @@ const handlers = Object.freeze({
   passkey: handlePasskeyRequest,
   'deletion-finalizer': handleAccountDeletionFinalizer,
   'deletion-two-phase-preflight': handleTwoPhasePreflight,
+  'deletion-two-phase-review': handleDraftTwoPhaseWorker,
   'commerce-readiness': handleCommerceReadinessRequest,
   'video-progress': handleVideoProgressRequest,
   'push-subscription': handlePushSubscriptionRequest,

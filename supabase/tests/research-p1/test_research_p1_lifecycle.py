@@ -49,7 +49,10 @@ def research_member():
     assert t[0] == "OK", t
     return a, sid, psub
 def ready(a): return svc("SELECT public.check_research_deletion_billing_readiness(%s)", (a,))
-def finalize(a): return svc("SELECT count(*) FROM public.finalize_account_deletion(%s)", (a,))
+# SQL owner harness exercises the legacy inner function's billing invariants,
+# while the live service_role must NEVER call that RPC directly after cutover.
+# Real callers use only the atomic finalize_deletion_and_queue_auth_cleanup RPC.
+def finalize(a): return own("SELECT count(*) FROM public.finalize_account_deletion(%s)", (a,))
 def lp_purchase(a, n):
     r = svc("SELECT public.reserve_commerce_purchase_intent(%s,%s)", (a, f"p1-idem-{n:04d}-000000"))
     if r[0] != "OK": return r

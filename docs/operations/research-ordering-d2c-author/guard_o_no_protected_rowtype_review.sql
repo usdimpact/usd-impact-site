@@ -37,7 +37,7 @@ BEGIN
        AND (to_jsonb(NEW)->>'current_period_start') IS NULL
        AND (to_jsonb(NEW)->>'current_period_end') IS NULL
        AND (to_jsonb(NEW)->>'last_provider_event_id') IS NULL
-       AND COALESCE(NEW.metadata,'{}'::jsonb)='{}'::jsonb
+       AND COALESCE(to_jsonb(NEW)->'metadata','{}'::jsonb)='{}'::jsonb
     THEN
       -- The observed signed-fact/source identity MUST be recorded by the
       -- separately scoped B5 verifier. Same parent subscription, account,

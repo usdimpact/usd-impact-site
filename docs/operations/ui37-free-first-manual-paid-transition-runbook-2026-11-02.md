@@ -14,17 +14,18 @@
 
 Existing `Mode Switch` in the Fundraising tracker concerns an **alternate frontend routing decision**, not a payment switch. Do not move DNS or create a second store/site.
 
-## 2. Current Draft code, explicitly not activated
+## 2. Current Draft code — independent new-sale stop, NOT free media release
 
-`apps/web/src/lib/learning-offer-commerce-policy.js` defines server-controlled `USD_IMPACT_LEARNING_OFFER_MODE`.
+`apps/web/src/lib/learning-offer-commerce-policy.js` defines the server-controlled `USD_IMPACT_LEARNING_OFFER_MODE` and two **distinct** source constants. `NEW_LIBRARY_PASS_SALES_PAUSED = true` blocks **NEW legacy Library Pass sales** even if the environment variable is lost or says `legacy`; it does not publicize or unlock any protected education. `FREE_CORE_PUBLIC_RELEASE_COMMITTED = false` remains on hold pending per-item rights, access and consumer approvals.
 
-| Committed free-launch barrier | Runtime mode | New legacy Library checkout | Notes |
+| Source new-sales pause | Free-media-release flag | Runtime mode | New legacy Library checkout |
 | --- | --- | --- | --- |
-| `false` (this Draft) | unset or `legacy` | Existing behavior | Zero-change baseline for current Production |
-| `false` | `free`, `paid`, invalid | BLOCK | Testing guard, not a public free launch |
-| `true` (future separately approved source edit) | unset or `free` | BLOCK | Safe after free launch even if the env key is lost |
-| `true` | stale `legacy`, malformed | BLOCK | Reject a rollback to the old customer-facing checkout |
-| `true` | `paid` | BLOCK | A paid request does **not** authorize any SKU; new billing design remains missing |
+| `true` (current Draft) | `false` | unset, blank, `legacy` | **BLOCK** |
+| `true` | `false` | `free`, `paid`, invalid | **BLOCK** |
+| `true` | `true` (future separate release) | any | **BLOCK** |
+| `false` (historic simulation only; NOT current runtime) | `false` | unset or `legacy` | Prior behavior in isolated test only |
+
+The independent source pause, not an environment-only toggle, is the proposed enforcement for the current no-new-Library-sale policy. Existing entitlement access, webhook/refund reconciliation and Research checkout are out of its scope.
 
 **Future free-public release requires an exact, reviewed source edit setting `FREE_CORE_PUBLIC_RELEASE_COMMITTED = true` in the *same* approved release that exposes the cleared free content.** Never use env-only `free` as the final launch mechanism or assume removing a flag is a safe rollback.
 
@@ -52,7 +53,7 @@ A website checkout denial alone cannot stop someone using a previously shared Le
 
 1. **Inventory without changing**: privately identify the existing Library Pass product ID, active variants, merchant-hosted checkout/buy links, enabled store/marketplace listings, prior receipt links and live Research Membership variants. Store identifiers and receipts only in the existing restricted merchant evidence repository, not public PR content or tracker cells.
 2. **Isolated dry-run**: in Lemon Squeezy **Test Mode**, if the relevant test store/product/variant is available and authorized, confirm that an enabled variant can be purchased, then disabled, and that the same original hosted buy link cannot create a new checkout/order; verify test-mode past buyer access is retained. Record the provider UI / test order / link-denial evidence. Do **not** use real cards or alter Live variants.
-3. **Owner-approved Live cutover only**: at the independently approved free-public release, coordinate the source-committed checkout lock and a **variant-disable (not deletion)** procedure for the exact legacy new-sale item, subject to the provider's written confirmation of USD Impact's product configuration. Confirm that a previously shared hosted link can no longer create a new paid order, while signed order/refund webhooks and old buyers' account/download access remain intact.
+3. **Owner-approved Live cutover only**: at the independently approved **no-new-Library-sales cutover** (which may precede any public free media release), coordinate the source-committed checkout lock and a **variant-disable (not deletion)** procedure for the exact legacy new-sale item, subject to the provider's written confirmation of USD Impact's product configuration. Confirm that a previously shared hosted link can no longer create a new paid order, while signed order/refund webhooks and old buyers' account/download access remain intact.
 4. **Protect Research**: the existing Research Membership checkout variants and billing portal must not be disabled, altered or confused with Library Pass. Verify separately after the approved action.
 5. **Fail closed**: if the live merchant cannot prevent new legacy orders without affecting existing buyers, **do not publish a contradictory free-only Library promise**. Request a merchant-specific remediation first. Do not delete variants, uploads or external links to solve a buy-link issue: deletion can harm historic purchasers.
 
@@ -75,7 +76,7 @@ Site source-code regression: `test-learning-offer-commerce-function.mjs` scans t
 
 | Test | Evidence and boundary |
 | --- | --- |
-| Existing + explicit legacy checkout path unchanged in current pre-free Draft | `test-learning-offer-commerce-policy.mjs` and `test-learning-offer-commerce-function.mjs` |
+| Unset/blank and explicit legacy settings cannot restore NEW Library sales under the independently source-committed pause | `test-learning-offer-commerce-policy.mjs` and `test-learning-offer-commerce-function.mjs` |
 | Future free-committed missing env, stale `legacy`, invalid values and premature `paid` all block old checkout | `test-learning-offer-commerce-policy.mjs` (synthetic committed-state simulation) |
 | Direct POST denied before body, session, Supabase and Lemon Squeezy | `test-learning-offer-commerce-function.mjs` (offline disabled provider) |
 | Method 405, cross-site 403 and content-type 415 remain enforced | Same direct-request matrix |
@@ -100,7 +101,7 @@ Current Development/Production `entitlements`, `purchases` and `purchase_intents
 
 | Gate | Current state |
 | --- | --- |
-| UI-37 source-committed free-lock and offline checkout tests | Draft, under review |
+| UI-37 independent NEW Library Pass sales pause and offline checkout tests | Draft, under review; live merchant link containment not approved |
 | UI-02 historical buyer rights / EN-ES consumer notices | HOLD |
 | UI-29 existing Research checkout and real subscriber separation | HOLD for real-account tests |
 | UI-39/40 new EN-ES free public routes | Separate Drafts; not part of PR #1056 |

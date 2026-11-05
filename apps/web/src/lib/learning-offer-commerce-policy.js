@@ -10,6 +10,13 @@ export const LEARNING_OFFER_MODE_KEY = 'USD_IMPACT_LEARNING_OFFER_MODE';
 // Never roll back a publicly free release to an earlier pre-free commit.
 export const FREE_CORE_PUBLIC_RELEASE_COMMITTED = false;
 
+// Independent source-committed sales stop, without declaring free books/media
+// released. Deciding to stop NEW Library Pass sales cannot change historical
+// buyer entitlements, paid webhooks, refunds or Research billing. No runtime
+// env var (including stale/unset/legacy) may bypass this stop. Reopening sales
+// requires a new, independently approved release with consumer terms/rights.
+export const NEW_LIBRARY_PASS_SALES_PAUSED = true;
+
 export const LEARNING_OFFER_MODES = Object.freeze({
   LEGACY: 'legacy',
   FREE: 'free',
@@ -74,7 +81,12 @@ export function resolveLearningOfferCommercePolicyForRelease(environment, freeRe
 // free-launch barrier. New entitlements and Research subscriptions do not
 // depend on the learning offer checkout policy.
 export function resolveLearningOfferCommercePolicy(environment = process.env) {
-  return resolveLearningOfferCommercePolicyForRelease(environment, FREE_CORE_PUBLIC_RELEASE_COMMITTED);
+  const policy = resolveLearningOfferCommercePolicyForRelease(environment, FREE_CORE_PUBLIC_RELEASE_COMMITTED);
+  if (!NEW_LIBRARY_PASS_SALES_PAUSED) return policy;
+  // This is deliberately independent of FREE_CORE_PUBLIC_RELEASE_COMMITTED:
+  // new sales may be paused before anyone is promised free protected media.
+  // Keep the original diagnostic mode but never allow a new Library checkout.
+  return Object.freeze({ ...policy, allowNewLibraryCheckout: false });
 }
 
 export function gateLearningOfferCommerceReadiness(commerce, environment = process.env) {

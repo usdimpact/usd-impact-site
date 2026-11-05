@@ -158,6 +158,74 @@ assert.match(dep, /length == 1 and \.\[0\]\.filename == \$expected/);
 assert.match(dep, /base-ref: \$\{\{ github\.event_name == 'workflow_dispatch'/);
 assert.match(dep, /head-ref: \$\{\{ github\.event_name == 'workflow_dispatch'/);
 assert.match(mainDaily, /gh workflow run quality\.yml --ref "\$branch"/);
+
+// The generator must not spend on the next eligible Daily without a scoped,
+// independently owned GitHub App PR-author identity. The default GITHUB_TOKEN
+// can push the one-file branch, but cannot author an eligible PR event.
+assert.match(mainDaily, /DAILY_PR_APP_CLIENT_ID: \$\{\{ vars\.DAILY_NEWS_PR_APP_CLIENT_ID \}\}/);
+assert.match(mainDaily, /DAILY_PR_APP_PRIVATE_KEY: \$\{\{ secrets\.DAILY_NEWS_PR_APP_PRIVATE_KEY \}\}/);
+assert.match(mainDaily, /\[ -z "\$DAILY_PR_APP_CLIENT_ID" \] \|\| \[ -z "\$DAILY_PR_APP_PRIVATE_KEY" \]/);
+const appAction = mainDaily.match(
+  /      - name: Mint short-lived Daily PR-author GitHub App token\n([\s\S]*?)(?=\n      - name: Open and validate publication pull request)/,
+);
+assert.ok(appAction, 'App token must be minted immediately before the PR author step');
+assert.match(appAction[0], /actions\/create-github-app-token@[a-f0-9]{40}/);
+assert.match(appAction[0], /permission-contents: read/);
+assert.match(appAction[0], /permission-pull-requests: write/);
+assert.doesNotMatch(appAction[0], /permission-actions: write|permission-administration: write|skip-token-revoke: true/);
+assert.doesNotMatch(appAction[0], /^\s+(?:owner|repositories):/m,
+  'omitting owner and repositories scopes token to this repository');
+assert.ok(mainDaily.indexOf('      - name: Validate publication content preflight')
+  < mainDaily.indexOf('      - name: Mint short-lived Daily PR-author GitHub App token'));
+const prAuthor = mainDaily.match(
+  /      - name: Open and validate publication pull request\n([\s\S]*?)(?=\n      # GITHUB_TOKEN-dispatched upstream runs)/,
+);
+assert.ok(prAuthor);
+assert.match(prAuthor[0], /DAILY_PR_APP_TOKEN: \$\{\{ steps\.daily_pr_author_token\.outputs\.token \}\}/);
+assert.ok(prAuthor[0].includes('if [ -z "$DAILY_PR_APP_TOKEN" ]; then'));
+assert.ok(prAuthor[0].includes('GH_TOKEN="$DAILY_PR_APP_TOKEN" gh pr create'),
+  'only the App token can create the PR event');
+assert.equal((prAuthor[0].match(/gh pr create/g) || []).length, 1);
+assert.ok(!prAuthor[0].includes('gh pr create --admin'));
+assert.doesNotMatch(mainDaily, /GH_TOKEN: \$\{\{ steps\.daily_pr_author_token\.outputs\.token \}\}/,
+  'subsequent CI dispatch and GitHub calls retain the ordinary Actions token');
+
+// Execute the actual pre-spend configuration shell using synthetic credentials.
+// No network or paid source generation. Verify missing App identity holds and
+// that its private key never appears in logs.
+const appConfigStep = mainDaily.match(
+  /      - name: Check newsfeed configuration\n[\s\S]*?        run: \|\n([\s\S]*?)(?=\n      - uses: actions\/setup-node@)/,
+);
+assert.ok(appConfigStep, 'pre-spend configuration must be present');
+const configShell = appConfigStep[1].split('\n')
+  .map((line) => line.startsWith('          ') ? line.slice(10) : line).join('\n');
+assert.equal(spawnSync('bash', ['-n'], { input: configShell, encoding: 'utf8' }).status, 0);
+const fakeEnv = {
+  ...process.env,
+  GITHUB_OUTPUT: '/dev/stdout',
+  PUBLICATION_NEEDED: 'true',
+  NEWSFEED_ENDPOINT: 'https://invalid.example/daily-news-source',
+  NEWSFEED_BEARER_TOKEN: 'synthetic-newsfeed-only',
+  DAILY_PR_APP_CLIENT_ID: 'synthetic-app-id',
+  DAILY_PR_APP_PRIVATE_KEY: 'SYNTHETIC-PRIVATE-KEY-DO-NOT-USE',
+};
+for (const [label, changes, accepted] of [
+  ['complete fictional configuration', {}, true],
+  ['missing App ID', { DAILY_PR_APP_CLIENT_ID: '' }, false],
+  ['missing App private key', { DAILY_PR_APP_PRIVATE_KEY: '' }, false],
+  ['missing newsfeed token', { NEWSFEED_BEARER_TOKEN: '' }, false],
+  ['existing Daily article', { PUBLICATION_NEEDED: 'false' }, false],
+]) {
+  const test = spawnSync('bash', ['-c', 'set -euo pipefail\n' + configShell], {
+    encoding: 'utf8', env: { ...fakeEnv, ...changes }, timeout: 10000,
+  });
+  assert.equal(test.status, 0, label + ': ' + test.stderr);
+  assert.match(test.stdout, new RegExp('configured=' + String(accepted)), label);
+  assert.doesNotMatch(test.stdout + test.stderr, /SYNTHETIC-PRIVATE-KEY-DO-NOT-USE/,
+    'never print a private key');
+}
+console.log('Daily PR GitHub App authorship: fixed SHA, scoped token, no-spend and 5 negative/positive configuration fixtures PASS');
+
 assert.doesNotMatch(mainDaily, /gh pr merge/);
 assert.match(runtime, /isSingleGeneratorCommit\(/);
 assert.match(runtime, /requireExactChecks\(/);

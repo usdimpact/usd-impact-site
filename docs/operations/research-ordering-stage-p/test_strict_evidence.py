@@ -112,7 +112,7 @@ with db() as root:
     attach=as_role(root,"review_checkout_issuer",ATTACH,
       (intent_id,proof,"synthetic-stage-o-checkout"))
     assert attach["action"]=="attached"
-    occured=root.execute("SELECT created_at+interval '5 seconds' FROM "
+    occured=root.execute("SELECT created_at FROM "
       "research_checkout_guard.checkout_intents WHERE id=%s",(intent_id,)).fetchone()[0]
     obs=as_role(root,"review_checkout_verifier",OBSERVE,
       ("lemon-squeezy",PSUB,CUSTOMER,STORE,"research-membership",VARIANT,
@@ -236,6 +236,27 @@ fail_rolled_back("UPDATE research_checkout_guard.checkout_intents "
 # Simulated LIVE namespace never enables authorization in this review.
 fail_rolled_back("UPDATE research_checkout_guard.checkout_intents "
    "SET test_mode=false WHERE id=%s",(intent_id,))
+# Adversarial privileged fixture-only corruption: the signed fact is
+# append-only under ordinary DML. Roll back the temporarily disabled
+# mutation trigger so this negative cannot change test history.
+with db(autocommit=False) as changed:
+    changed.execute("ALTER TABLE research_checkout_guard.signed_paid_observations "
+      "DISABLE TRIGGER reject_paid_update_delete")
+    changed.execute("UPDATE research_checkout_guard.signed_paid_observations "
+      "SET occurred_at=(SELECT consumed_at+interval '1 second' "
+      "FROM research_checkout_guard.checkout_intents WHERE id=%s) "
+      "WHERE provider='lemon-squeezy' AND provider_subscription_id=%s",
+      (intent_id,PSUB))
+    changed.execute("SET LOCAL ROLE research_e_gateway")
+    denied(changed,N_CALL,INV)
+    changed.rollback()
+with db() as check:
+    assert check.execute("SELECT occurred_at<=("
+       "SELECT consumed_at FROM research_checkout_guard.checkout_intents WHERE id=%s) "
+       "FROM research_checkout_guard.signed_paid_observations WHERE "
+       "provider_subscription_id=%s",(intent_id,PSUB)).fetchone()[0] is True
+    assert count(check,"public.entitlements",
+       "account_id=%s AND product_id='research-membership'",(ACC,))==0
 # The verifying role may not inject a different digest silently.
 fail_rolled_back(None,digest="f"*64)
 with db() as root:
@@ -254,7 +275,7 @@ with db() as root:
        "%s,%s,%s,%s,%s,%s,%s)",(
        "lemon-squeezy",STORE,True,"118",PSUB,"1"*64,"2"*64
        )).fetchone()[0]==expected_digest
-print("STAGE_P_N5_N6_NT_ND_NEGATIVE_PASS impossible consumed_at before creation/after expiry, live namespace and mismatched transport digest DENY",flush=True)
+print("STAGE_P_N5_N6_NT_ND_NEGATIVE_PASS impossible consumed_at before creation/after expiry, signed paid event after consumption, live namespace and mismatched transport digest DENY",flush=True)
 
 with db() as verifier:
     verifier.execute("SET ROLE research_e_verifier")

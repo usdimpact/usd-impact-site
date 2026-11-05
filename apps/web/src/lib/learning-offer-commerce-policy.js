@@ -100,6 +100,10 @@ export function gateLearningOfferCommerceReadiness(commerce, environment = proce
     ...commerce,
     state: 'blocked',
     checkoutEnabled: false,
-    message: 'Library Pass checkout is not offered under the current learning access policy.',
+    // Preserve an already-blocked provider diagnostic instead of masking it;
+    // active provider readiness must clearly say the offer itself is paused.
+    message: commerce.checkoutEnabled
+      ? 'Library Pass checkout is not offered under the current learning access policy.'
+      : commerce.message,
   });
 }

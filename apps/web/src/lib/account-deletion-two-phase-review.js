@@ -175,6 +175,9 @@ export async function resumeDraftAuthCleanup({
   if (!queued?.enabled || !validId(queued?.outbox?.id)) {
     throw new TwoPhaseReviewError('TWO_PHASE_EMAIL_NOT_DURABLE');
   }
+  if (queued.outbox.status !== 'deletion_staged') {
+    throw new TwoPhaseReviewError('TWO_PHASE_EMAIL_NOT_STAGED');
+  }
   const completed = await rpc({
     config: cfg, name: 'finish_deletion_auth_cleanup',
     input: { p_account_id: row.account_id, p_lease_id: row.lease_id },

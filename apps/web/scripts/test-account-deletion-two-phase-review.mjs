@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { SENDABLE_STATUSES } from '../src/lib/launch-email-dispatch-common.js';
+import { readAccountAccessState } from '../src/lib/supabase-server.js';
 import {
   prepareDraftDatabaseFinalization, claimDraftAuthCleanup,
   resumeDraftAuthCleanup, runDraftAuthCleanupBatch,
@@ -289,6 +290,57 @@ const baseWorld = (overrides = {}) => {
   check(world.calls.join(',') === 'DUE' && world.emails.length === 0,
     'duplicated due identities fail closed before Phase A and Auth calls');
 }
+// Access-token revocation is not guaranteed by an Auth soft-delete call.
+// A valid-looking, previously issued JWT with a still-active entitlement must
+// NOT unlock paid materials once the profile enters the deletion workflow.
+// This checks the existing server-side access gate, not hosted Auth semantics.
+{
+  const token = 'eyJhbGciOiJIUzI1NiJ9.valid-synthetic-jwt-token.signature';
+  const accessConfig = Object.freeze({
+    url: origin,
+    publishableKey: 'sb_publishable_abcdefghijklmnopqrstuvwxyz',
+    secretKey: null,
+  });
+  for (const status of ['deletion_pending', 'deleted']) {
+    const calls = [];
+    const state = await readAccountAccessState({
+      accessToken: token,
+      config: accessConfig,
+      fetchImpl: async (url) => {
+        calls.push(url);
+        if (url.endsWith('/auth/v1/user')) {
+          return json(200, {
+            id: account,
+            email: 'synthetic@example.invalid',
+            email_confirmed_at: '2026-10-01T10:00:00Z',
+          });
+        }
+        if (url.includes('/rest/v1/profiles?')) {
+          return json(200, [{ account_id: account, status }]);
+        }
+        if (url.includes('/rest/v1/entitlements?')) {
+          return json(200, [{
+            id: 'aa921ce7-11ce-41d0-92e1-57960d91e20d',
+            account_id: account,
+            product_id: 'read-the-dollar-first-guided-interactive-edition',
+            state: 'active',
+            starts_at: '2026-10-01T10:00:00Z',
+            ends_at: null,
+            version: 1,
+            updated_at: '2026-10-01T10:00:00Z',
+          }]);
+        }
+        throw Error('No network request expected outside mocked Auth/profile/entitlement');
+      },
+    });
+    check(state.allowed === false && state.reason === status
+      && calls.some(url => url.endsWith('/auth/v1/user'))
+      && calls.some(url => url.includes('/rest/v1/profiles?'))
+      && calls.some(url => url.includes('/rest/v1/entitlements?')),
+    'previous JWT and active entitlement cannot unlock paid content for ' + status);
+  }
+}
+
 check(!SENDABLE_STATUSES.has('deletion_staged'),
   'shared email dispatcher cannot send staged deletion completion before SQL release');
 console.log('Research P1 two-phase offline review passed (' + passed + ' assertions).');

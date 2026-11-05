@@ -337,7 +337,7 @@ const libraryIsActive = ["/book/", "/audiobook/", "/video-library/", "/guided-ed
         }
         if (!openGroup) return;
         closeNavigationGroups();
-        const summary = openGroup.querySelector("summary");
+        const summary = openGroup?.querySelector("summary");
         if (summary instanceof HTMLElement) summary.focus();
       });
 

@@ -138,6 +138,9 @@ with db() as writer:
     ], (a, b, d, repeat)
     assert all(x["can_mutate"] is False for x in (a, b, d, repeat))
     assert d["disposition"] == repeat["disposition"] == "quarantined_conflict"
+    # Seed exact D2-18 J4/J5 regressions before a simulated owner erasure.
+    assert writer.execute(CALL, args("payment_success:stage-i-launder")).fetchone()[0]["action"] == "candidate_held"
+    assert writer.execute(CALL, args("payment_success:stage-i-audit-reset")).fetchone()[0]["action"] == "candidate_held"
     for sql in (
         "UPDATE research_ordering_stage_h.pending_receipts "
         "SET disposition='pending_reconciliation' WHERE event_key='payment_success:stage-i-writer'",
@@ -186,6 +189,18 @@ with db() as owner:
            expected=("23503",))
     print("STAGE_I_OWNER_TRIGGERS_PASS DELETE/TRUNCATE/downgrade/orphan rejected", flush=True)
 
+# J4: after the owner is denied receipt DELETE, changed evidence for the
+# same key must be a conflict, never a fresh original or harmless duplicate.
+# J5: after audit TRUNCATE is denied, the known event stays a duplicate.
+with db() as replay:
+    replay.execute("SET ROLE research_stage_i_writer")
+    launder = replay.execute(CALL, args("payment_success:stage-i-launder", "5"*64)).fetchone()[0]
+    kept = replay.execute(CALL, args("payment_success:stage-i-audit-reset")).fetchone()[0]
+    assert launder["action"] == "conflict_quarantined" and launder["disposition"] == "quarantined_conflict", launder
+    assert kept["action"] == "duplicate_held" and kept["disposition"] == "pending_reconciliation", kept
+    assert launder["can_mutate"] is False and kept["can_mutate"] is False
+print("STAGE_I_J4_J5_PASS conflict laundering and audit-reset relabel blocked", flush=True)
+
 barrier = threading.Barrier(2)
 def worker(_):
     with db() as c:
@@ -203,6 +218,10 @@ with db() as c:
     assert receipt(c, "payment_success:stage-i-two-backends")[2] == "pending_reconciliation"
     assert audit_count(c, "payment_success:stage-i-writer") == 4
     assert receipt(c, "payment_success:stage-i-writer")[2] == "quarantined_conflict"
+    assert receipt(c, "payment_success:stage-i-launder") == ("a"*64, "1"*64, "quarantined_conflict")
+    assert audit_count(c, "payment_success:stage-i-launder") == 2
+    assert receipt(c, "payment_success:stage-i-audit-reset")[2] == "pending_reconciliation"
+    assert audit_count(c, "payment_success:stage-i-audit-reset") == 2
     assert snapshot(c, account) == original_public, "Research or purchase-backed Library Pass changed"
     assert c.execute("SELECT has_table_privilege('service_role','public.entitlements','UPDATE')").fetchone()[0]
     assert c.execute("SELECT count(*) FROM public.entitlements WHERE account_id=%s",

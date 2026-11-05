@@ -118,7 +118,7 @@ const baseWorld = (overrides = {}) => {
   const emails = [];
   const enqueueImpl = async (args) => {
     emails.push(args.finalizationResult);
-    return overrides.EMAIL ? overrides.EMAIL() : { enabled: true, outbox: { id: outbox } };
+    return overrides.EMAIL ? overrides.EMAIL() : { enabled: true, outbox: { id: outbox, status: 'deletion_staged' } };
   };
   return { calls, emails, fetchImpl, enqueueImpl };
 };
@@ -177,6 +177,17 @@ const baseWorld = (overrides = {}) => {
   );
   check(!world.calls.includes('FINISH'),
     'failed email enqueue preserves email/DB recovery state for later retry');
+}
+{
+  const world = baseWorld({ EMAIL: () => ({
+    enabled: true, outbox: { id: outbox, status: 'queued' },
+  }) });
+  await assert.rejects(
+    () => resumeDraftAuthCleanup({ config, row, ...world }),
+    (error) => error.code === 'TWO_PHASE_EMAIL_NOT_STAGED',
+  );
+  check(!world.calls.includes('FINISH'),
+    'prematurely dispatchable outbox is rejected before SQL completion');
 }
 {
   const world = baseWorld({ CONFIRM: () => json(200, { ...receipt, account_id: lease }) });

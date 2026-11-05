@@ -21,7 +21,7 @@ const related = (card.relatedCardIds || [])
   .filter((item) => item && item.access === 'open' && item.status === 'ready-for-build');
 ---
 <BaseLayout title={pageTitle} description={pageDescription} stylesheets={['/assets/daily-cards.css']}>
-  <main id="main-content" class="dc-detail">
+  <main class="dc-detail">
     <p class="dc-kicker">USD Impact Learn · {card.format}</p>
     <h1>{card.title}</h1>
     <p class="dc-lead">{card.hook}</p>

@@ -94,83 +94,39 @@ assert.doesNotMatch(
 );
 
 for (const required of [
-  'data-home-library-pass-cta',
-  'data-home-checkout-readiness="checking"',
-  'aria-busy="true"',
-  'data-home-library-pass-primary',
-  'Check Library Pass availability',
-  "const neutralCheckoutUrl = '/checkout/'",
-  'href={neutralCheckoutUrl}',
-  '/api/commerce-readiness',
-  "credentials: 'same-origin'",
-  "cache: 'no-store'",
-  'bookPurchasePresentation(body.commerce)',
-  'checkoutHrefWithCampaign',
-  'window.location.search',
-  'primary.href = presentation.available',
-  ': waitlistUrl',
-  "container.dataset.homeCheckoutReadiness = 'error'",
-  'Checkout availability could not be verified. The book waitlist remains available.',
+  'data-home-free-learning-cta',
+  'href="/start-here/"',
+  'Start learning for free',
+  'Download the weekly checklist',
 ]) {
-  assert.ok(homeCta.includes(required), `Homepage Library Pass CTA is missing: ${required}`);
+  assert.ok(homeCta.includes(required), `Homepage free-learning CTA is missing: ${required}`);
 }
-assert.match(
-  homeCta,
-  /data-home-library-pass-primary[\s\S]*href=\{neutralCheckoutUrl\}[\s\S]*>Check Library Pass availability<\/a>/,
-  'Homepage CTA must render a neutral checkout destination before readiness settles.',
-);
+assert.doesNotMatch(homeCta, /\\/checkout\\/|\\/api\\/commerce-readiness|checkoutHrefWithCampaign|Check Library Pass availability/);
 
 for (const required of [
-  'data-library-pass-availability-cta',
-  'data-library-pass-checkout-readiness="checking"',
-  'href="/checkout/"',
-  'Check Library Pass availability',
-  '/api/commerce-readiness',
-  "credentials: 'same-origin'",
-  "cache: 'no-store'",
-  'return bookPurchasePresentation(body.commerce)',
-  'checkoutHrefWithCampaign',
-  'candidate.href = campaignCheckoutUrl()',
-  'if (!presentation.available) continue',
-  'candidate.textContent = presentation.primaryLabel',
-  'candidate.href = checkoutHrefWithCampaign(',
-  "candidate.dataset.libraryPassCheckoutReadiness = 'error'",
+  'data-public-book-sample-cta',
+  'href="/book/read-the-dollar-first/preview/"',
+  'Read the public book sample',
 ]) {
-  assert.ok(availabilityCta.includes(required), `Neutral Library Pass CTA is missing: ${required}`);
+  assert.ok(availabilityCta.includes(required), `Public book sample CTA is missing: ${required}`);
 }
-for (const forbidden of [
-  '/api/commerce?action=checkout',
-  "method: 'POST'",
-  'window.location.assign',
-  'lemonsqueezy.com',
-  'localStorage',
-  'sessionStorage',
-  'document.cookie',
-]) {
-  assert.ok(!availabilityCta.includes(forbidden), `Neutral Library Pass CTA crosses its boundary: ${forbidden}`);
-}
+assert.doesNotMatch(availabilityCta, /\\/checkout\\/|\\/api\\/commerce-readiness|bookPurchasePresentation|Check Library Pass availability/);
 
-assert.match(productCta, /import LibraryPassAvailabilityCTA from '.\/LibraryPassAvailabilityCTA\.astro';/);
+assert.match(productCta, /import LibraryPassAvailabilityCTA from '.\\/LibraryPassAvailabilityCTA\\.astro';/);
 assert.match(productCta, /libraryPassAvailability = false/);
-assert.match(productCta, /libraryPassAvailability \? \(\s*<LibraryPassAvailabilityCTA className="button primary" \/>/);
-assert.match(contentRoute, /const isLibraryPassAcquisition = requestedPrimary === 'Get the book'[\s\S]*requestedPrimary === 'Explore the book';/);
-assert.match(contentRoute, /const primaryLabel = isLibraryPassAcquisition[\s\S]*'Check Library Pass availability'/);
-assert.match(contentRoute, /const primaryHref = isLibraryPassAcquisition[\s\S]*'\/checkout\/'/);
-assert.match(contentRoute, /libraryPassAvailability=\{isLibraryPassAcquisition\}/);
-for (const source of acquisitionContent) {
-  assert.match(source, /ctaPrimary:\s*"(?:Get the book|Explore the book)"/);
+assert.match(productCta, /libraryPassAvailability \\? \\(\\s*<LibraryPassAvailabilityCTA className="button primary" \\/>/);
+assert.ok(contentRoute.includes("const isLegacyBookAcquisition = requestedPrimary === 'Get the book'"));
+assert.ok(contentRoute.includes("? 'Read the public book sample'"));
+assert.ok(contentRoute.includes("? '/book/read-the-dollar-first/preview/'"));
+assert.ok(contentRoute.includes('libraryPassAvailability={isLegacyBookAcquisition}'));
+assert.match(acquisitionContent[0], /ctaPrimary:\\s*"Explore the free dollar framework"/);
+assert.match(acquisitionContent[0], /ctaPrimaryHref:\\s*"\\/dollar-framework\\/"/);
+for (const source of acquisitionContent.slice(1)) {
+  assert.match(source, /ctaPrimary:\\s*"(?:Get the book|Explore the book)"/);
 }
+assert.match(homepage, /import HomeLibraryPassCTA from '..\\/components\\/HomeLibraryPassCTA\\.astro';/);
+assert.match(homepage, /<HomeLibraryPassCTA \\/>/);
+assert.doesNotMatch(homepage, /<ProductCTA \\/>/);
 
-for (const forbidden of [
-  '/api/commerce?action=checkout',
-  'window.location.assign',
-  'lemonsqueezy.com',
-]) {
-  assert.ok(!homeCta.includes(forbidden), `Homepage CTA must not initiate checkout: ${forbidden}`);
-}
+console.log('Global Library Pass announcement disabled; public CTAs lead only to approved free learning.');
 
-assert.match(homepage, /import HomeLibraryPassCTA from '..\/components\/HomeLibraryPassCTA\.astro';/);
-assert.match(homepage, /<HomeLibraryPassCTA \/>/);
-assert.doesNotMatch(homepage, /<ProductCTA \/>/);
-
-console.log('Library Pass global announcement disablement and acquisition CTA contract passed.');

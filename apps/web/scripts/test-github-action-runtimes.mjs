@@ -213,11 +213,14 @@ for (const resource of [
     () => validateReference(rehearsalCaller, resource, rehearsalRef), /uses unapproved action/)]);
 }
 for (const [action, ref] of expectedActionRefs) {
-  referenceRegressions.push([`retain reviewed ${action}`, () => assert.equal(validateReference('quality.yml', action, ref), action)]);
+  // The new App-token action has a stricter filename scope than other
+  // reviewed actions; exercise its valid location in generic pin tests.
+  const reviewWorkflow = action === 'actions/create-github-app-token' ? 'daily-news.yml' : 'quality.yml';
+  referenceRegressions.push([`retain reviewed ${action}`, () => assert.equal(validateReference(reviewWorkflow, action, ref), action)]);
   referenceRegressions.push([`reject changed ${action}`, () => assert.throws(
-    () => validateReference('quality.yml', action, 'a'.repeat(40)), /must use the reviewed/)]);
+    () => validateReference(reviewWorkflow, action, 'a'.repeat(40)), /must use the reviewed/)]);
   referenceRegressions.push([`reject mutable ${action}`, () => assert.throws(
-    () => validateReference('quality.yml', action, 'main'), /immutable 40-char SHA/)]);
+    () => validateReference(reviewWorkflow, action, 'main'), /immutable 40-char SHA/)]);
 }
 if (hasRehearsal) {
   referenceRegressions.push(['exact bound source set', () => validateRehearsalSources(checkedRehearsalSources)]);

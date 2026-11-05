@@ -58,7 +58,7 @@ try {
     assert.equal(result.headers['cache-control'], 'no-store');
     assert.equal(result.headers['x-robots-tag'], 'noindex, nofollow');
     assert.equal(result.json.ok, true);
-    assert.equal(result.json.commerce.state, 'ready_for_provider_configuration');
+    assert.equal(result.json.commerce.state, 'blocked', 'Missing sales-pause override must never reopen checkout.');
     assert.equal(result.json.commerce.checkoutEnabled, false);
     assert.equal(result.json.commerce.provider, null);
     assert.equal(result.json.commerce.disclosuresComplete, false);
@@ -71,7 +71,7 @@ try {
     process.env.PADDLE_WEBHOOK_SECRET = 'legacy-secret-that-must-not-leak';
     const result = await invoke(request());
     assert.equal(result.status, 200);
-    assert.equal(result.json.commerce.state, 'ready_for_provider_configuration');
+    assert.equal(result.json.commerce.state, 'blocked', 'Missing sales-pause override must never reopen checkout.');
     assert.equal('legacyProviderConfigurationIgnored' in result.json.commerce, false);
     assert.equal('liveApproved' in result.json.commerce, false);
     assert.doesNotMatch(JSON.stringify(result.json), /legacy-key|legacy-secret|paddle/i);

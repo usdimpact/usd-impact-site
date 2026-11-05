@@ -207,6 +207,12 @@ const checkout = await createResearchMembershipCheckout({
   idempotencyKey: 'research-checkout-001',
   now: new Date('2026-09-07T15:00:00.000Z'),
   fetchImpl: async (url, init = {}) => {
+    if (String(url).startsWith(`${config.supabase.url}/rest/v1/profiles?`)) {
+      const parsed = new URL(url);
+      assert.equal(parsed.searchParams.get('account_id'), `eq.${accountId}`);
+      assert.equal(parsed.searchParams.get('select'), 'account_id,status,deletion_requested_at,deleted_at');
+      return new Response(JSON.stringify([{ account_id: accountId, status: 'active', deletion_requested_at: null, deleted_at: null }]), { status: 200 });
+    }
     if (String(url).startsWith(`${config.supabase.url}/rest/v1/subscriptions?`)) {
       assert.equal(init.method, undefined);
       const parsed = new URL(url);
@@ -247,6 +253,9 @@ const productionCheckout = await createResearchMembershipCheckout({
   billingInterval: 'monthly',
   idempotencyKey: 'research-live-checkout-002',
   fetchImpl: async (url, init = {}) => {
+    if (String(url).startsWith(`${productionConfig.supabase.url}/rest/v1/profiles?`)) {
+      return new Response(JSON.stringify([{ account_id: accountId, status: 'active', deletion_requested_at: null, deleted_at: null }]), { status: 200 });
+    }
     if (String(url).startsWith(`${productionConfig.supabase.url}/rest/v1/subscriptions?`)) {
       return new Response('[]', { status: 200 });
     }
@@ -283,6 +292,9 @@ await assert.rejects(
     billingInterval: 'monthly',
     idempotencyKey: 'research-checkout-002',
     fetchImpl: async (url) => {
+      if (String(url).startsWith(`${config.supabase.url}/rest/v1/profiles?`)) {
+        return new Response(JSON.stringify([{ account_id: accountId, status: 'active', deletion_requested_at: null, deleted_at: null }]), { status: 200 });
+      }
       if (String(url).startsWith(`${config.supabase.url}/rest/v1/subscriptions?`)) {
         return new Response(JSON.stringify([{ id: subscriptionId, state: 'active' }]), { status: 200 });
       }
@@ -293,6 +305,88 @@ await assert.rejects(
   { code: 'RESEARCH_CHECKOUT_CURRENT_SUBSCRIPTION_EXISTS', status: 409 },
 );
 assert.equal(blockedProviderCalls, 0);
+
+// A valid Supabase session is not an active account. Fail before *any*
+// subscription lookup or Lemon Squeezy POST for deleted/deletion-pending profiles.
+const activeProfile = {
+  account_id: accountId,
+  status: 'active',
+  deletion_requested_at: null,
+  deleted_at: null,
+};
+for (const [label, profile] of [
+  ['deletion pending', { ...activeProfile, status: 'deletion_pending' }],
+  ['deleted', { ...activeProfile, status: 'deleted' }],
+  ['suspended', { ...activeProfile, status: 'suspended' }],
+  ['request timestamp still present', { ...activeProfile, deletion_requested_at: '2026-11-05T00:00:00.000Z' }],
+  ['deleted timestamp still present', { ...activeProfile, deleted_at: '2026-11-05T00:00:00.000Z' }],
+]) {
+  let subscriptionReads = 0;
+  let merchantPosts = 0;
+  await assert.rejects(
+    () => createResearchMembershipCheckout({
+      config: productionConfig,
+      user: productionUser,
+      billingInterval: 'monthly',
+      idempotencyKey: 'research-profile-blocked-001',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/rest/v1/profiles?')) {
+          return new Response(JSON.stringify([profile]), { status: 200 });
+        }
+        if (String(url).includes('/rest/v1/subscriptions?')) subscriptionReads += 1;
+        else merchantPosts += 1;
+        return new Response('[]', { status: 200 });
+      },
+    }),
+    { code: 'RESEARCH_CHECKOUT_PROFILE_NOT_ACTIVE', status: 409 },
+    label,
+  );
+  assert.equal(subscriptionReads, 0, label);
+  assert.equal(merchantPosts, 0, label);
+}
+for (const [label, payload, status] of [
+  ['missing row', [], 200],
+  ['wrong owner', [{ ...activeProfile, account_id: '33333333-3333-4333-8333-333333333333' }], 200],
+  ['ambiguous duplicate', [activeProfile, activeProfile], 200],
+  ['invalid state shape', [{ ...activeProfile, status: null }], 200],
+  ['malformed response', { bad: true }, 200],
+  ['upstream 503', { message: 'unavailable' }, 503],
+]) {
+  let subsequentCalls = 0;
+  await assert.rejects(
+    () => createResearchMembershipCheckout({
+      config: productionConfig,
+      user: productionUser,
+      billingInterval: 'annual',
+      idempotencyKey: 'research-profile-error-001',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/rest/v1/profiles?')) {
+          return new Response(JSON.stringify(payload), { status });
+        }
+        subsequentCalls += 1;
+        return new Response('[]', { status: 200 });
+      },
+    }),
+    { code: 'RESEARCH_CHECKOUT_PROFILE_LOOKUP_FAILED', status: 502 },
+    label,
+  );
+  assert.equal(subsequentCalls, 0, label);
+}
+let failedLookupOtherCalls = 0;
+await assert.rejects(
+  () => createResearchMembershipCheckout({
+    config,
+    user,
+    billingInterval: 'monthly',
+    idempotencyKey: 'research-profile-network-fail-001',
+    fetchImpl: async () => {
+      failedLookupOtherCalls += 1;
+      throw new Error('synthetic network timeout');
+    },
+  }),
+  { code: 'RESEARCH_CHECKOUT_PROFILE_LOOKUP_FAILED', status: 502 },
+);
+assert.equal(failedLookupOtherCalls, 1); // profile lookup only, never the merchant
 
 const event = signed();
 const inspected = inspectResearchMembershipFirstPurchase({ ...event, environment });

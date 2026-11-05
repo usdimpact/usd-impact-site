@@ -220,6 +220,13 @@ const checkout = await createResearchMembershipCheckout({
       assert.equal(parsed.searchParams.get('state'), 'in.(pending,active,past_due,cancel_scheduled)');
       return new Response('[]', { status: 200 });
     }
+    if (String(url).startsWith(`${config.supabase.url}/rest/v1/entitlements?`)) {
+      const parsed = new URL(url);
+      assert.equal(parsed.searchParams.get('account_id'), `eq.${accountId}`);
+      assert.equal(parsed.searchParams.get('product_id'), 'eq.research-membership');
+      assert.equal(parsed.searchParams.get('select'), 'id');
+      return new Response('[]', { status: 200 });
+    }
     assert.equal(url, 'https://api.lemonsqueezy.com/v1/checkouts');
     assert.equal(init.method, 'POST');
     assert.match(init.headers.Authorization, /^Bearer test_api_key_/);
@@ -257,6 +264,9 @@ const productionCheckout = await createResearchMembershipCheckout({
       return new Response(JSON.stringify([{ account_id: accountId, status: 'active', deletion_requested_at: null, deleted_at: null }]), { status: 200 });
     }
     if (String(url).startsWith(`${productionConfig.supabase.url}/rest/v1/subscriptions?`)) {
+      return new Response('[]', { status: 200 });
+    }
+    if (String(url).startsWith(`${productionConfig.supabase.url}/rest/v1/entitlements?`)) {
       return new Response('[]', { status: 200 });
     }
     assert.equal(url, 'https://api.lemonsqueezy.com/v1/checkouts');
@@ -387,6 +397,75 @@ await assert.rejects(
   { code: 'RESEARCH_CHECKOUT_PROFILE_LOOKUP_FAILED', status: 502 },
 );
 assert.equal(failedLookupOtherCalls, 1); // profile lookup only, never the merchant
+
+// A previous paid/revoked or complimentary Research entitlement occupies the
+// unique account/product row, so no further paid checkout may be offered until
+// a separate relink/recovery lifecycle is accepted.
+for (const [name, checkoutConfig, checkoutUser, entitlementState] of [
+  ['old revoked Research entitlement', config, user, 'revoked'],
+  ['complimentary active Research entitlement', config, user, 'active'],
+  ['previous Production entitlement', productionConfig, productionUser, 'revoked'],
+]) {
+  let lookups = 0;
+  let providerCalls = 0;
+  await assert.rejects(
+    () => createResearchMembershipCheckout({
+      config: checkoutConfig,
+      user: checkoutUser,
+      billingInterval: 'monthly',
+      idempotencyKey: 'research-existing-entitlement-001',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/rest/v1/profiles?')) {
+          return new Response(JSON.stringify(activeProfile ? [activeProfile] : []), { status: 200 });
+        }
+        if (String(url).includes('/rest/v1/subscriptions?')) return new Response('[]', { status: 200 });
+        if (String(url).includes('/rest/v1/entitlements?')) {
+          lookups += 1;
+          return new Response(JSON.stringify([{ id: '33333333-3333-4333-8333-333333333333', state: entitlementState }]), { status: 200 });
+        }
+        providerCalls += 1;
+        throw new Error('Never create paid checkout for ' + name);
+      },
+    }),
+    { code: 'RESEARCH_CHECKOUT_ENTITLEMENT_CONFLICT', status: 409 },
+    name,
+  );
+  assert.equal(lookups, 1, name);
+  assert.equal(providerCalls, 0, name);
+}
+for (const [name, payload, status] of [
+  ['entitlement lookup outage', { error: 'unavailable' }, 503],
+  ['entitlement malformed response', { data: [] }, 200],
+  ['entitlement invalid row', [{ id: 'invalid' }], 200],
+  ['entitlement duplicate rows', [
+    { id: '33333333-3333-4333-8333-333333333333' },
+    { id: '44444444-4444-4444-8444-444444444444' },
+  ], 200],
+]) {
+  let providerCalls = 0;
+  await assert.rejects(
+    () => createResearchMembershipCheckout({
+      config,
+      user,
+      billingInterval: 'annual',
+      idempotencyKey: 'research-entitlement-error-001',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/rest/v1/profiles?')) {
+          return new Response(JSON.stringify([activeProfile]), { status: 200 });
+        }
+        if (String(url).includes('/rest/v1/subscriptions?')) return new Response('[]', { status: 200 });
+        if (String(url).includes('/rest/v1/entitlements?')) {
+          return new Response(JSON.stringify(payload), { status });
+        }
+        providerCalls += 1;
+        throw new Error('Never create paid checkout on malformed entitlement evidence');
+      },
+    }),
+    { code: 'RESEARCH_CHECKOUT_ENTITLEMENT_LOOKUP_FAILED', status: 502 },
+    name,
+  );
+  assert.equal(providerCalls, 0, name);
+}
 
 const event = signed();
 const inspected = inspectResearchMembershipFirstPurchase({ ...event, environment });

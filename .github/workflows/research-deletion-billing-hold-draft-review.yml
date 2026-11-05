@@ -1,0 +1,88 @@
+name: Research deletion billing pre-Auth ledger (DRAFT HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/research-deletion-billing-hold-draft-review.yml'
+      - 'apps/web/src/lib/research-deletion-billing-hold.js'
+      - 'apps/web/src/lib/account-deletion-finalizer.js'
+      - 'apps/web/scripts/test-research-deletion-billing-hold.mjs'
+      - 'docs/operations/research-deletion-billing-hold/**'
+permissions:
+  contents: read
+concurrency:
+  group: research-deletion-hold-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  offline-app:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.x
+      - name: Validate review-gated application and existing deletion regressions
+        run: |
+          set -euo pipefail
+          node --check apps/web/src/lib/research-deletion-billing-hold.js
+          node --check apps/web/src/lib/account-deletion-finalizer.js
+          node apps/web/scripts/test-research-deletion-billing-hold.mjs
+          node apps/web/scripts/test-account-deletion-finalizer.mjs
+          node apps/web/scripts/test-account-deletion-finalizer-batch-bound.mjs
+  disposable-ledger:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    services:
+      postgres:
+        image: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+        env:
+          POSTGRES_USER: ci_research
+          POSTGRES_PASSWORD: synthetic-stage-c-review-only
+          POSTGRES_DB: ci_review
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_research -d ci_review"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: '127.0.0.1'
+      PGPORT: '5432'
+      PGDATABASE: ci_review
+      PGUSER: ci_research
+      PGPASSWORD: synthetic-stage-c-review-only
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Require localhost-only synthetic test environment
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = 127.0.0.1
+          test "$PGDATABASE" = ci_review
+          test "$PGUSER" = ci_research
+          for key in DATABASE_URL SUPABASE_URL SUPABASE_DB_URL SUPABASE_SERVICE_ROLE_KEY LEMON_SQUEEZY_API_KEY LEMON_SQUEEZY_WEBHOOK_SECRET LEMON_SQUEEZY_STORE_ID VERCEL_ENV; do
+            test -z "${!key:-}" || { echo "::error::Connected $key forbidden"; exit 1; }
+          done
+      - name: Install isolated pinned PostgreSQL test driver
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/d33-ledger-venv"
+          "$RUNNER_TEMP/d33-ledger-venv/bin/python" -m pip install --disable-pip-version-check --no-input 'psycopg[binary]==3.2.10'
+          "$RUNNER_TEMP/d33-ledger-venv/bin/python" -m py_compile docs/operations/research-deletion-billing-hold/test_hold_ledger_pg17.py
+      - name: Verify actual full historical SQL and ledger concurrency
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/d33-ledger-venv/bin/python" docs/operations/research-deletion-billing-hold/test_hold_ledger_pg17.py
+      - name: Preserve review-only release status
+        if: always()
+        run: |
+          {
+            echo '### Research billing hold — AUTHOR candidate, not cutover acceptance'
+            echo 'Review gate defaults OFF, Production gate refuses activation, SQL stored in docs only.'
+            echo 'No deployment, merge, migration, customer/provider action, external cancellation or refunds.'
+            echo 'Connected Development, independent exact-head QA, provider proof and legal/SLA decisions HOLD.'
+          } >> "$GITHUB_STEP_SUMMARY"

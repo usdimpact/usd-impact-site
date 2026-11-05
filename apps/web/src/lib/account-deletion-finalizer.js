@@ -2,6 +2,11 @@ import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto
 import { enqueueAccountDeletionCompletedEmail } from './account-deletion-completed-email.js';
 import { readSupabaseServerConfig } from './supabase-server.js';
 import { recordCronAuthorizationDiagnostic } from './cron-authorization-diagnostics.js';
+import {
+  ResearchDeletionBillingHoldError,
+  researchDeletionHoldReviewGate,
+  reviewResearchBillingBeforeAuthDeletion,
+} from './research-deletion-billing-hold.js';
 
 const DEVELOPMENT_PROJECT_REF = 'ycstrcvshdluovtuasjc';
 const PRODUCTION_PROJECT_REF = 'gjzetjugmnwanvjkchux';
@@ -412,6 +417,23 @@ export async function finalizeOneDueAccount({
   const originalEmail = String(profile?.email || '');
   let completion = null;
   try {
+    // Owner-approved D33 REVIEW candidate. Both flags are required and this
+    // path is blocked in Production. Feature OFF preserves existing behavior.
+    if (researchDeletionHoldReviewGate(environment, config)) {
+      const billing = await reviewResearchBillingBeforeAuthDeletion({
+        config, accountId, fetchImpl,
+      });
+      if (billing.decision === 'hold') {
+        // Durable support/reconciliation ledger acknowledged BEFORE returning.
+        // Never call Auth deletion, database finalization or completion email.
+        return Object.freeze({
+          status: 'billing_hold',
+          accountReference: opaqueReference(accountId),
+          nextCheckAt: billing.nextCheckAt,
+          outboxId: null,
+        });
+      }
+    }
     await softDeleteAuthUser({ config, accountId, fetchImpl });
     completion = await finalizeAccountDeletionRecord({ config, accountId, fetchImpl });
 
@@ -441,11 +463,14 @@ export async function finalizeOneDueAccount({
     });
   } catch (error) {
     const code = typeof error?.code === 'string' ? error.code : 'ACCOUNT_DELETION_FINALIZER_FAILED';
-    const finalizedProfile = completion?.recipient_email
+    const preAuthBillingError = error instanceof ResearchDeletionBillingHoldError;
+    // No Auth mutation occurred on a preflight failure; do not perform
+    // post-finalization recovery reads or create duplicate support records.
+    const finalizedProfile = preAuthBillingError || completion?.recipient_email
       ? null
       : await finalizedProfileAfterFailure({ config, accountId, fetchImpl });
     const recoverable = Boolean(completion?.recipient_email || finalizedProfile);
-    if (completion?.recipient_email || originalEmail) {
+    if (!preAuthBillingError && (completion?.recipient_email || originalEmail)) {
       try {
         await recordDeletionFinalizationEscalation({
           config,
@@ -501,11 +526,13 @@ export async function runDueAccountDeletionFinalizer({
     : [];
   let finalized = 0;
   let alreadyFinalized = 0;
+  let billingHeld = 0;
   let failed = 0;
   for (const profile of profiles) {
     try {
       const result = await finalizeOneDueAccount({ profile, config, environment, fetchImpl });
       if (result.status === 'already_finalized') alreadyFinalized += 1;
+      else if (result.status === 'billing_hold') billingHeld += 1;
       else finalized += 1;
     } catch (error) {
       failed += 1;
@@ -523,6 +550,8 @@ export async function runDueAccountDeletionFinalizer({
     finalized,
     alreadyFinalized,
     failed,
+    ...(String(environment.RESEARCH_DELETION_HOLD_V1_ENABLED || '').trim().toLowerCase()
+      === 'true' ? { billingHeld } : {}),
   });
 }
 

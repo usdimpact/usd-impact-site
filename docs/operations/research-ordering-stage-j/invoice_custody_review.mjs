@@ -37,7 +37,7 @@ function validateQuote(quote, b, invoiceId, obs) {
      id(quote.subscriptionId)!==id(b.subscriptionId) ||
      id(quote.invoiceId)!==invoiceId ||
      id(quote.productId)!==id(b.productId) || id(quote.variantId)!==id(b.variantId) ||
-     quote.currency!==b.currency ||
+     quote.currency!==b.currency || quote.testMode!==b.testMode ||
      !Number.isSafeInteger(quote.expectedTotalCents) || quote.expectedTotalCents<0 ||
      typeof quote.quoteId!=='string'||quote.quoteId.length<6 || quote.quoteId.length>120
   ) return 'durable_invoice_quote_or_scope_missing';
@@ -133,7 +133,7 @@ export async function inspectResearchInvoiceCustodyReview({
   }
   // This only ties together synthetic inputs; provider still does not attest
   // to paid-cycle start, snapshot conditional version or GET-to-COMMIT atomicity.
-  const canonicalInvoiceKey=[id(binding.storeId),id(binding.subscriptionId),invoiceId].join(':');
+  // Invoice identity is provider/store/environment/invoice, NOT event name or\n  // subscription. A replay against another subscription must be a conflict.\n  const canonicalInvoiceKey=['lemon-squeezy',id(binding.storeId),\n    binding.testMode?'test':'live',invoiceId].join(':');
   const invoiceSnapshotDigest=hash({key:canonicalInvoiceKey,invoice:inv,
     periodStart:syntheticCycleLink.periodStart,periodEnd:syntheticCycleLink.periodEnd});
   const receipt=priorInvoiceReceipt;
@@ -141,9 +141,9 @@ export async function inspectResearchInvoiceCustodyReview({
     if(receipt?.canonicalInvoiceKey!==canonicalInvoiceKey ||
        typeof receipt?.invoiceSnapshotDigest!=='string' ||
        !SHA.test(receipt.invoiceSnapshotDigest))return held('prior_invoice_custody_unverifiable');
-    if(receipt.invoiceSnapshotDigest!==invoiceSnapshotDigest) {
+    if(receipt.subscriptionId!==id(binding.subscriptionId)) {\n      return Object.freeze({...held('same_invoice_key_subscription_scope_conflict','quarantined_conflict'),\n        canonicalInvoiceKey,invoiceSnapshotDigest,subscriptionId:id(binding.subscriptionId)});\n    }\n    if(receipt.invoiceSnapshotDigest!==invoiceSnapshotDigest) {
       return Object.freeze({...held('same_invoice_key_conflicting_provider_evidence','quarantined_conflict'),
-        canonicalInvoiceKey,invoiceSnapshotDigest});
+        canonicalInvoiceKey,invoiceSnapshotDigest,subscriptionId:id(binding.subscriptionId)});
     }
     return Object.freeze({...held('same_invoice_already_seen_no_second_effect','duplicate_invoice_held'),
       canonicalInvoiceKey,invoiceSnapshotDigest});

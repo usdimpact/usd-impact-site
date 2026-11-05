@@ -187,6 +187,25 @@ with db() as k:
         "b"*64,SNAP,"invoice-v1","subscription-v1",QUOTE))
     assert held["action"]=="first_invoice_held" and held["can_mutate"] is False
 
+# D2-23 J1i: later archive INSERT cannot bypass the one-time M import's
+# matching predicate; both FK targets exist, but the raw signed hash differs.
+with db() as original:
+    h=original.execute("SELECT research_ordering_stage_h.hold_evidence(%s,%s,%s,%s,%s)",
+       ("subscription_payment_success:118","a"*64,"invoice-v1","subscription-v1",SNAP)
+       ).fetchone()[0]
+    assert h["can_mutate"] is False
+    obsid_k=original.execute("SELECT id FROM research_ordering_stage_k.provider_observations "
+      "WHERE invoice_id='118' AND action='first_invoice_held'").fetchone()[0]
+    original.execute("SET ROLE research_stage_m_owner")
+    denied(original,
+      "INSERT INTO research_ordering_stage_m.legacy_receipt_links("
+      "event_key,observation_id,provider,store_id,test_mode,invoice_id,signed_delivery_hash)"
+      " VALUES(%s,%s,'lemon-squeezy','41',true,'118',%s)",
+      ("subscription_payment_success:118",obsid_k,"a"*64))
+    original.execute("RESET ROLE")
+    assert count(original,"research_ordering_stage_m.legacy_receipt_links")==0
+print("STAGE_N_J1I_PASS post-import mismatched signed H/K archive INSERT rejected while both FK targets exist",flush=True)
+
 with db() as g:
     role_denied(g,"research_e_gateway",CALL_N,args(ACC,SID,variant="314"))
     role_denied(g,"research_e_gateway",CALL_N,args(ACC,SID,key="fake-stage-n-intent"))

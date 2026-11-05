@@ -146,7 +146,7 @@ const fetchImpl = async (url, options = {}) => {
     return response(200, []);
   }
 
-  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
+  if (href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair') && options.method === 'POST') {
     return response(200, [{
       account_id: accountId,
       email: recipientEmail,
@@ -208,7 +208,7 @@ const concurrentFetch = async (url, options = {}) => {
   if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') {
     return response(200, []);
   }
-  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
+  if (href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair') && options.method === 'POST') {
     return response(200, [{
       account_id: accountId,
       email: recipientEmail,
@@ -247,7 +247,7 @@ const manualEscalations = [];
 const authFailureFetch = async (url, options = {}) => {
   const href = String(url);
   if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') return response(200, []);
-  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
+  if (href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair') && options.method === 'POST') {
     return response(200, [{
       account_id: accountId,
       email: recipientEmail,
@@ -281,7 +281,7 @@ const recoverableEscalations = [];
 const ambiguousFinalizeFetch = async (url, options = {}) => {
   const href = String(url);
   if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') return response(200, []);
-  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
+  if (href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair') && options.method === 'POST') {
     return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt }]);
   }
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(200, { id: accountId });
@@ -319,7 +319,7 @@ const completionFailureEscalations = [];
 const completionFailureFetch = async (url, options = {}) => {
   const href = String(url);
   if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') return response(200, []);
-  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
+  if (href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair') && options.method === 'POST') {
     return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt }]);
   }
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(200, { id: accountId });
@@ -363,7 +363,7 @@ const recoveryFetch = async (url, options = {}) => {
     recoveryPatches.push(body);
     return response(200, [{ id: recoveryId, ...body }]);
   }
-  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') return response(200, []);
+  if (href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair') && options.method === 'POST') return response(200, []);
   throw new Error(`Unexpected recovery request: ${options.method || 'GET'} ${href}`);
 };
 const recoveryRun = await runDueAccountDeletionFinalizer({
@@ -436,7 +436,7 @@ assert.equal(forgedFetchCalled, false);
 const escalationFailureFetch = async (url, options = {}) => {
   const href = String(url);
   if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') return response(200, []);
-  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') {
+  if (href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair') && options.method === 'POST') {
     return response(200, [{ account_id: accountId, email: recipientEmail, status: 'deletion_pending', deletion_requested_at: deletionRequestedAt, deletion_due_at: deletionDueAt }]);
   }
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') return response(500, { error: 'auth down' });
@@ -458,20 +458,20 @@ const forgedScanFetch = async (url, options = {}) => {
   if (href.includes('/rest/v1/support_requests?category=eq.privacy') && options.method === 'GET') {
     return response(200, [{ ...signedRecovery, message: signedRecovery.message.replace(/[0-9a-f]{64}/i, 'f'.repeat(64)) }]);
   }
-  if (href.includes('/rest/v1/profiles?status=eq.deletion_pending') && options.method === 'GET') return response(200, []);
+  if (href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair') && options.method === 'POST') return response(200, []);
   throw new Error(`Unexpected forged-scan request: ${options.method || 'GET'} ${href}`);
 };
 assert.deepEqual(
   await runDueAccountDeletionFinalizer({ environment, fetchImpl: clearReadiness(forgedScanFetch), batchSize: 5 }),
   emptyRunResult(),
 );
-assert.equal(forgedScanUrls.some((href) => href.includes('/profiles?')), true);
+assert.equal(forgedScanUrls.some((href) => href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair')), true);
 
 const limitUrls = [];
 const limitFetch = async (url, options = {}) => {
   const href = String(url);
   limitUrls.push(href);
-  if (options.method === 'GET') return response(200, []);
+  if (options.method === 'GET' || (options.method === 'POST' && href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair'))) return response(200, []);
   throw new Error(`Unexpected limit request: ${options.method || 'GET'} ${href}`);
 };
 assert.deepEqual(
@@ -479,7 +479,7 @@ assert.deepEqual(
   emptyRunResult(),
 );
 assert.equal(limitUrls.some((href) => href.includes('/support_requests?') && href.includes('limit=100')), true);
-assert.equal(limitUrls.some((href) => href.includes('/profiles?') && href.includes('limit=25')), true);
+assert.equal(limitUrls.some((href) => href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair')), true);
 
 let disabledFetchCalled = false;
 const disabled = await runDueAccountDeletionFinalizer({
@@ -564,7 +564,8 @@ try {
   globalThis.fetch = async (url, options = {}) => {
     routeFetchCalled = true;
     const href = String(url);
-    if (options.method === 'GET' && (href.includes('/support_requests?') || href.includes('/profiles?'))) {
+    if ((options.method === 'GET' && href.includes('/support_requests?'))
+      || (options.method === 'POST' && href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair'))) {
       return response(200, []);
     }
     throw new Error(`Unexpected route request: ${options.method || 'GET'} ${href}`);

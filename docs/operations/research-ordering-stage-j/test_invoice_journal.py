@@ -20,12 +20,12 @@ assert os.getenv("PGDATABASE")=="ci_review"
 assert os.getenv("PGUSER")=="ci_research"
 assert os.getenv("PGPASSWORD")=="synthetic-stage-c-review-only"
 
-CALL="SELECT research_ordering_stage_j.hold_paid_invoice(%s,%s,%s,%s,%s,%s)"
+CALL="SELECT research_ordering_stage_j.hold_paid_invoice(%s,%s,%s,%s,%s,%s,%s,%s)"
 SUCCESS="subscription_payment_success"
 RECOVERED="subscription_payment_recovered"
 
-def params(event=SUCCESS,digest="1"*64,delivery="a"*64,store="41",sub="217",inv="118"):
-    return (store,sub,inv,event,delivery,digest)
+def params(event=SUCCESS,digest="1"*64,delivery="a"*64,store="41",sub="217",inv="118",provider="lemon-squeezy",test_mode=True):
+    return (provider,store,test_mode,sub,inv,event,delivery,digest)
 def one(c,*args):
     return c.execute(CALL,args).fetchone()[0]
 def snap(c,account):
@@ -39,17 +39,17 @@ def snap(c,account):
       c.execute("SELECT count(*) FROM public.subscription_events").fetchone()[0],
       c.execute("SELECT count(*) FROM public.entitlement_events").fetchone()[0],
     )
-def seen(c,store="41",sub="217",inv="118"):
+def seen(c,store="41",inv="118",provider="lemon-squeezy",test_mode=True):
     return c.execute(
        "SELECT invoice_snapshot_digest,disposition FROM "
        "research_ordering_stage_j.invoice_receipts WHERE "
-       "store_id=%s AND subscription_id=%s AND invoice_id=%s",
-       (store,sub,inv)).fetchone()
-def audit(c,store="41",sub="217",inv="118"):
-    return c.execute("SELECT event_name,action,signed_delivery_hash,observed_invoice_digest "
+       "provider=%s AND store_id=%s AND test_mode=%s AND invoice_id=%s",
+       (provider,store,test_mode,inv)).fetchone()
+def audit(c,store="41",inv="118",provider="lemon-squeezy",test_mode=True):
+    return c.execute("SELECT event_name,action,signed_delivery_hash,observed_invoice_digest,subscription_id "
        "FROM research_ordering_stage_j.invoice_delivery_audit "
-       "WHERE store_id=%s AND subscription_id=%s AND invoice_id=%s ORDER BY id",
-       (store,sub,inv)).fetchall()
+       "WHERE provider=%s AND store_id=%s AND test_mode=%s AND invoice_id=%s ORDER BY id",
+       (provider,store,test_mode,inv)).fetchall()
 def denied(c,sql,parameters=None,expected=("42501",)):
     try:c.execute(sql,parameters)
     except psycopg.Error as ex:
@@ -76,7 +76,7 @@ with db() as conn:
            (role,)).fetchone()[0] is False
         assert conn.execute(
            "SELECT has_function_privilege(%s,"
-           "'research_ordering_stage_j.hold_paid_invoice(text,text,text,text,text,text)',"
+           "'research_ordering_stage_j.hold_paid_invoice(text,text,boolean,text,text,text,text,text)',"
            "'EXECUTE')",(role,)).fetchone()[0] is False
     for table in ("invoice_receipts","invoice_delivery_audit"):
         for operation in ("SELECT","INSERT","UPDATE","DELETE","TRUNCATE","TRIGGER"):
@@ -84,7 +84,7 @@ with db() as conn:
              "SELECT has_table_privilege('research_stage_j_writer',%s,%s)",
              ("research_ordering_stage_j."+table,operation)).fetchone()[0] is False
     assert conn.execute("SELECT has_function_privilege('research_stage_j_writer',"
-         "'research_ordering_stage_j.hold_paid_invoice(text,text,text,text,text,text)',"
+         "'research_ordering_stage_j.hold_paid_invoice(text,text,boolean,text,text,text,text,text)',"
          "'EXECUTE')").fetchone()[0] is True
 
 with db() as writer:
@@ -101,8 +101,18 @@ with db() as writer:
     assert first["disposition"]=="pending_reconciliation"
     assert conflict["disposition"]==old["disposition"]=="quarantined_conflict"
     assert all(x["can_mutate"] is False for x in (first,recovered,replay,conflict,old))
-    assert all(x["invoice_identity"]=="41:217:118" for x in
+    assert all(x["invoice_identity"]=="lemon-squeezy:41:test:118" for x in
                (first,recovered,replay,conflict,old))
+    # Same provider/store/environment/invoice reused with another subscription
+    # is ONE invoice identity in quarantine, never a second fresh receipt.
+    first_cross=writer.execute(CALL,params(inv="121")).fetchone()[0]
+    cross=writer.execute(CALL,params(inv="121",sub="218",delivery="f"*64)).fetchone()[0]
+    assert first_cross["action"]=="first_invoice_held"
+    assert cross["action"]=="invoice_conflict_quarantined"
+    assert cross["disposition"]=="quarantined_conflict"
+    assert first_cross["invoice_identity"]==cross["invoice_identity"]=="lemon-squeezy:41:test:121"
+    separate_env=writer.execute(CALL,params(inv="121",test_mode=False,delivery="e"*64)).fetchone()[0]
+    assert separate_env["action"]=="first_invoice_held" and separate_env["can_mutate"] is False
     # A separate invoice ID may produce an independent pending receipt,
     # but does not mean a paid cycle or entitlement has been authorized.
     new=writer.execute(CALL,params(inv="119",digest="9"*64)).fetchone()[0]
@@ -112,7 +122,7 @@ with db() as writer:
        params(event="subscription_payment_refunded"),
        params(store="0"),params(sub="../217"),params(inv="bad"),
        params(digest="xyz"),params(delivery="not-sha256"),
-       params(event=None),
+       params(event=None),params(provider="other"),params(test_mode=None),
     ]: deny_holder(writer,malformed)
     for statement in (
       "UPDATE research_ordering_stage_j.invoice_receipts SET disposition='pending_reconciliation'",
@@ -150,6 +160,9 @@ with db() as c:
     ]
     assert rows[0][2]=="a"*64 and rows[1][2]=="b"*64
     assert seen(c)==("1"*64,"quarantined_conflict")
+    assert seen(c,inv="121")==("1"*64,"quarantined_conflict")
+    assert seen(c,inv="121",test_mode=False)==("1"*64,"pending_reconciliation")
+    assert [x[4] for x in audit(c,inv="121")]==["217","218"]
     assert snap(c,account)==original,"synthetic Research or Library Pass changed"
 
 barrier=threading.Barrier(2)
@@ -169,7 +182,7 @@ with db() as c:
     assert seen(c,inv="120")==("1"*64,"pending_reconciliation")
     assert len(audit(c,inv="120"))==2
     assert c.execute("SELECT count(*) FROM research_ordering_stage_j.invoice_receipts "
-                     "WHERE store_id='41' AND subscription_id='217' AND invoice_id='120'"
+                     "WHERE provider='lemon-squeezy' AND store_id='41' AND test_mode=true AND invoice_id='120'"
                      ).fetchone()[0]==1
     assert snap(c,account)==original
     # The old production-style service_role bypass remains a separate P1 blocker.

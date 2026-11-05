@@ -2173,9 +2173,9 @@ begin
   end if;
   if new.business_object_type<>'account_deletion_request'
      or new.business_object_id is null
-     or new.business_object_id !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
-
- then
+     or pg_catalog.char_length(new.business_object_id) <> 36
+     or new.business_object_id !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
+  then
     raise exception using errcode='42501', message='completion email has invalid account identity';
   end if;
   v_account_id:=new.business_object_id::uuid;

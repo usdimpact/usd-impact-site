@@ -142,7 +142,9 @@ try {
     assert.equal(readiness.json.ok, true, mode);
     assert.equal(readiness.json.commerce.state, 'blocked', mode);
     assert.equal(readiness.json.commerce.checkoutEnabled, false, mode);
-    assert.match(readiness.json.commerce.message, /Library Pass checkout is not offered/, mode);
+    // Preserve a provider's already-disabled diagnostic; the separate active
+    // provider fixture asserts the explicit Library Pass sales-pause message.
+    assert.match(readiness.json.commerce.message, /Public checkout remains disabled|Library Pass checkout is not offered/, mode);
   }
 
   // Reversible in-process state regression. This tests no Production setting:

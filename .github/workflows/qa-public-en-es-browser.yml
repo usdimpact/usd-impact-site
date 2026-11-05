@@ -1,0 +1,56 @@
+name: Public EN/ES Chrome a11y and reflow QA (Draft loopback only)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/qa-public-en-es-browser.yml'
+      - 'apps/web/scripts/qa-public-en-es-browser.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-en-es-browser-qa
+  cancel-in-progress: false
+
+jobs:
+  compiled-public-browser:
+    name: Compiled EN/ES keyboard and viewport QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out source, no persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Pinned Node.js major
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.x'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install exact-lock dependencies
+        working-directory: apps/web
+        run: npm ci --strict-allow-scripts --no-audit --no-fund
+      - name: Build actual Astro output (no deployment)
+        working-directory: apps/web
+        env:
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          npm run prepare:fonts
+          npm run generate:quizzes
+          npx --no-install astro build
+      - name: Temporary Playwright on runner Chrome, no browser download
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/qa-en-es-venv"
+          "$RUNNER_TEMP/qa-en-es-venv/bin/python" -m pip install --disable-pip-version-check --no-cache-dir playwright==1.57.0
+          command -v google-chrome || command -v chromium
+      - name: Native browser QA on loopback only
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/qa-en-es-venv/bin/python" apps/web/scripts/qa-public-en-es-browser.py

@@ -104,7 +104,7 @@ with db() as c:
         assert again["attempt_count"]==expected,again
         assert again["hold_state"]=="open" or expected>=4
     assert again["hold_state"]=="open","review escalation is time-driven, not auto at 4 attempts"
-    c.execute("update public.research_deletion_billing_holds set escalate_at=clock_timestamp()-interval '1 minute' where account_id=%s",(aid,))
+    c.execute("update public.research_deletion_billing_holds set first_seen_at=clock_timestamp()-interval '26 hours', escalate_at=clock_timestamp()-interval '1 minute' where account_id=%s",(aid,))
     escalation=invoke(c,aid,"lookup_malformed")
     assert escalation["hold_state"]=="manual_review" and escalation["attempt_count"]==4
     assert c.execute("select escalated_at from public.research_deletion_billing_holds where account_id=%s",(aid,)).fetchone()[0] is not None

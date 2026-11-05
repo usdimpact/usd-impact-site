@@ -126,13 +126,27 @@ export async function listDueAccountDeletions({
   if (!config?.enabled) return [];
   const limit = normalizeBatchSize(batchSize);
   const dueAt = new Date(now).toISOString();
-  const path = `/rest/v1/profiles?status=eq.deletion_pending&deletion_due_at=lte.${encodeURIComponent(dueAt)}&select=account_id,email,status,deletion_requested_at,deletion_due_at&order=deletion_due_at.asc&limit=${limit}`;
-  const response = await fetchImpl(`${config.supabase.url}${path}`, {
-    method: 'GET',
-    headers: jsonHeaders(config.supabase.secretKey),
-  });
+  // The server-owned cursor advances past previously examined billing holds
+  // across daily invocations. Missing the RPC is an error, never a fallback to
+  // the oldest-N REST scan (which can starve all newer deletion requests).
+  const response = await fetchImpl(
+    `${config.supabase.url}/rest/v1/rpc/list_due_account_deletions_fair`,
+    {
+      method: 'POST',
+      headers: jsonHeaders(config.supabase.secretKey),
+      body: JSON.stringify({ p_limit: limit, p_due_at: dueAt }),
+    },
+  );
   const rows = await requireOk(response, 'ACCOUNT_DELETION_DUE_SCAN_FAILED');
-  return Array.isArray(rows) ? rows : [];
+  if (!Array.isArray(rows) || rows.length > limit || rows.some((row) =>
+    !row || typeof row.account_id !== 'string'
+    || row.status !== 'deletion_pending' || !row.deletion_due_at)) {
+    throw new AccountDeletionFinalizerError(
+      'Account deletion due scan returned an invalid response.',
+      'ACCOUNT_DELETION_DUE_SCAN_FAILED',
+    );
+  }
+  return rows;
 }
 
 export async function readDeletionProfile({ config, accountId, fetchImpl = fetch }) {

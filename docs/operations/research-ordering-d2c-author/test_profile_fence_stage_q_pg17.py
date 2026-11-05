@@ -175,6 +175,24 @@ with db() as check:
       INVOICE_SHA,QUOTE_SHA)).fetchone()[0]==canonical_digest
 
 
+# Even though profile FOR SHARE requires an UPDATE(column) grant, the
+# NOLOGIN restricted definer must never gain a usable profile UPDATE path.
+with db() as owner_negative:
+    assert owner_negative.execute(
+      "select has_table_privilege('service_role','public.profiles','UPDATE')"
+    ).fetchone()[0] is False
+    owner_negative.execute("SET ROLE research_e_owner")
+    try:
+        affected=owner_negative.execute(
+          "UPDATE public.profiles SET account_id=account_id "
+          "WHERE account_id=%s RETURNING account_id",(ACC,)).fetchone()
+        assert affected is None,"restricted research owner mutated profile"
+    except psycopg.Error as exc:
+        assert exc.sqlstate=="42501",exc.sqlstate
+    finally:
+        owner_negative.execute("RESET ROLE")
+print("D2C_RESEARCH_NLOGIN_PROFILE_UPDATE_DENIED_PASS",flush=True)
+
 # Deny activation on a legitimately B5-bound pending subscription if the
 # account has since requested deletion; no entitlement, events or audit.
 with db() as pdel:

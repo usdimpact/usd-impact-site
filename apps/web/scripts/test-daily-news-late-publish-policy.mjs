@@ -47,6 +47,16 @@ const source = {
   created_at: date + 'T15:47:03Z',
   repository: { full_name: 'usdimpact/usd-impact-site' },
 };
+const sourceJobs = [{
+  name: 'prepare-one-late-candidate', status: 'completed', conclusion: 'success',
+  steps: [
+    'Check edition, original generator, and publication PRs',
+    'Build a dated source-verified candidate',
+    'Verify no protected main change',
+    'Mint PR author GitHub App token',
+    'Open one protected editorial PR; no auto-merge',
+  ].map((name) => ({ name, conclusion: 'success' })),
+}];
 const branch = 'automation/daily-carryforward-' + date + '-' + sourceId;
 const pr = {
   state: 'open', draft: false, merged: false, mergeable: true, mergeable_state: 'clean',
@@ -59,7 +69,7 @@ const compare = { status: 'ahead', ahead_by: 1, behind_by: 0, files: [file] };
 const reviews = [{ state: 'APPROVED', commit_id: head,
   user: { login: 'usdimpact' }, submitted_at: date + 'T16:31:00Z' }];
 const now = new Date(date + 'T17:05:00.000Z');
-const input = { enabled: true, now, currentMain: main, source, pr,
+const input = { enabled: true, now, currentMain: main, source, sourceJobs, pr,
   compare, files: [file], content, archiveSources: sources, checks,
   checkWorkflowRuns: runs, preview: { state: 'READY', target: 'preview', commitSha: head },
   reviews };
@@ -79,6 +89,16 @@ outcome('failed source workflow', { source: { ...source, conclusion: 'failure' }
   'not-original-successful-late-workflow');
 outcome('rerun', { source: { ...source, run_attempt: 2 } },
   'not-original-successful-late-workflow');
+outcome('successful run but skipped job', { sourceJobs: [{ ...sourceJobs[0],
+  conclusion: 'skipped' }] }, 'source-job-completion-not-proven');
+outcome('successful run but no PR opened', { sourceJobs: [{
+  ...sourceJobs[0], steps: sourceJobs[0].steps.map((step) =>
+    step.name.startsWith('Open one protected editorial PR')
+      ? { ...step, conclusion: 'skipped' } : step),
+}] }, 'source-publishing-steps-not-proven');
+outcome('ambiguous duplicate step', { sourceJobs: [{
+  ...sourceJobs[0], steps: [...sourceJobs[0].steps, sourceJobs[0].steps.at(-1)],
+}] }, 'source-publishing-steps-not-proven');
 outcome('next UTC day', { now: new Date('2026-11-10T00:05:00Z') },
   'not-same-day-late-weekday-window');
 outcome('before US release window', { now: new Date(date + 'T12:45:00Z') },
@@ -107,4 +127,4 @@ outcome('approval for old head', { reviews: [{ ...reviews[0], commit_id: main }]
 outcome('latest changes requested', { reviews: [...reviews,
   { ...reviews[0], state: 'CHANGES_REQUESTED', submitted_at: date + 'T16:40:00Z' }] },
   'owner-exact-head-approval-missing');
-console.log('Late Daily publication eligibility: 1 positive, 18 fail-closed offline cases PASS.');
+console.log('Late Daily publication eligibility: 1 positive, 21 fail-closed offline cases PASS.');

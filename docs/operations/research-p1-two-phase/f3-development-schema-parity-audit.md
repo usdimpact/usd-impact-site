@@ -1,171 +1,119 @@
-# F3 — Development UI02/UI03 and notification-outbox schema parity audit
+# F3 — Development UI02/UI03 and shared-outbox schema parity audit (revised after Claude P1)
 
-**Status: PREPARED ONLY — NO CONNECTED SQL EXECUTED; NOT HOSTED-VERIFIED; HOLD/NO-GO.**  
-**Scope:** USD Impact Research P1 account-deletion Draft PRs #1164 and stacked #1173. A separate Draft follow-up may tighten the SQL Auth-cleanup claim limit, but neither Draft is authorized to merge, migrate, deploy or delete a hosted identity.  
-**Environment:** canonical Development project `ycstrcvshdluovtuasjc` only; **never Production** `gjzetjugmnwanvjkchux`.  
-**Reviewer:** solo owner with an AI adversarial second opinion; do not describe an AI review as an external human audit.
+**Status: PREPARED FOR REVIEW ONLY — NOT AUTHORIZED TO RUN AGAINST HOSTED DEVELOPMENT; F3 NOT VERIFIED; PRODUCTION NO-GO.**  
+**Repository:** `usdimpact/usd-impact-site`. Stacked Draft #1178 on #1173 on #1164; all remain unmerged.  
+**Canonical Development:** `ycstrcvshdluovtuasjc`. **Production project is excluded.**  
+**Query pack:** [f3-development-catalog-readonly.sql](./f3-development-catalog-readonly.sql), revision-controlled as the **single executable source** for 15 system-catalog SELECTs. A separate CI contract runs this pack against disposable synthetic PostgreSQL 17, *not* hosted Development.  
+**Independence:** Claude's adversarial AI review is a second model review, not an independent human audit or owner acceptance.
 
-## What is known without connected SQL
+## 1. Grounded scope and hard limits
 
-Read-only Supabase management migration metadata on 2026-11-06 shows 58 Development migrations and 57 Production migrations. Development alone lists:
+Read-only Supabase **management metadata**, checked November 6, 2026, showed 58 Development migrations including these three Development-only UI02/UI03 migrations:
 
 - `20261030214706 ui02_atomic_purchase_access_locale_dev`
 - `20261030221037 ui02_language_privacy_lifecycle_dev`
 - `20261030234009 ui03_account_media_locale_preview_dev`
 
-The candidate `20261105190000_research_p1_billing_safe_lifecycle.sql` is in neither migration history. **Migration names are not definitions or proof of actual triggers, grants or RLS.** The UI02/UI03 migration source has not been reconciled in the repository's disposable PG replay.
+It showed 57 Production migrations, without these three. The proposed Research P1 migration `20261105190000_research_p1_billing_safe_lifecycle.sql` was not installed in either environment. Those numbers are **owner/author-observed management metadata, not verified by Claude**, and do **not** prove live function definitions, grants, trigger state or schema compatibility. Revalidate metadata at the exact time of an authorized catalog audit.
 
-## Authorization boundary
+**No connected SQL, table-row read, hosted Auth, merchant, cleanup operation or migration is authorized by this packet.** A generic approval to continue Draft work cannot authorize hosted access.
 
-**Do not execute the following queries automatically.** Before a separately approved catalog export, obtain owner approval naming the canonical Development project, exact query pack, read-only scope, retention destination and reviewer. Use a read-only database role when possible. No account UUID/email, payment row, merchant data, user table SELECT, secret, or live Auth/Admin call is required.
+## 2. Separate, tightly bounded owner permission required
 
-The queries below read PostgreSQL **system catalogs only**, returning object definitions and permission metadata. They do not modify tables or migration history. After owner approval, execute with a short `statement_timeout` and a transaction set to READ ONLY. When extracting functions for later isolated replay, keep *complete* function bodies in a restricted review location after checking for hard-coded secrets. Put **only redacted object names, hashes, classifications and test verdicts in GitHub**. Hash matches alone do not demonstrate semantic compatibility.
+Before any Development catalog read, the owner must approve all of: the exact **canonical Development** project; the pinned commit and 15-query SQL pack; a specified already-available **least-privileged, SELECT-only audit role** (mandatory, *not* the SQL Editor's default owner/superuser); a `READ ONLY` transaction and short query timeout; the named reviewer; and where/how long restricted catalog evidence is retained. If that role cannot access needed catalog metadata, **HOLD** and seek a separate access decision; do not change hosted grants/roles to make the audit work.
 
-### A. Trigger order, attached table and function custody
+Execute only after authorization, inside a single bounded consistent snapshot (and check every query result for truncation, missing schema, and permission errors):
 
-```sql
--- SYSTEM CATALOG ONLY. DEVELOPMENT, SEPARATE OWNER APPROVAL REQUIRED.
-select
-  ns.nspname as table_schema,
-  cl.relname as table_name,
-  tg.tgname as trigger_name,
-  tg.tgenabled as enabled_mode,
-  pg_catalog.pg_get_triggerdef(tg.oid, true) as trigger_definition,
-  pns.nspname || '.' || pr.proname as function_name,
-  pg_catalog.pg_get_userbyid(pr.proowner) as function_owner,
-  pr.prosecdef as security_definer,
-  coalesce(
-    (select string_agg(cfg, ', ' order by cfg) from unnest(pr.proconfig) as cfg
-     where cfg like 'search_path=%'),
-    '(no explicit search_path)'
-  ) as function_search_path,
-  pg_catalog.md5(pg_catalog.pg_get_functiondef(pr.oid)) as function_definition_md5
-from pg_catalog.pg_trigger as tg
-join pg_catalog.pg_class as cl on cl.oid=tg.tgrelid
-join pg_catalog.pg_namespace as ns on ns.oid=cl.relnamespace
-join pg_catalog.pg_proc as pr on pr.oid=tg.tgfoid
-join pg_catalog.pg_namespace as pns on pns.oid=pr.pronamespace
-where not tg.tgisinternal
-  and (
-    ns.nspname='public'
-    or (ns.nspname='auth' and cl.relname='users')
-  )
-order by table_schema, table_name, trigger_name;
+```text
+BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY;
+SET LOCAL statement_timeout = '5000ms';
+-- Run the 15 approved SELECT statements from f3-development-catalog-readonly.sql,
+-- under the authenticated, least-privileged audit connection.
+ROLLBACK;
 ```
 
-Do not assume trigger alphabetical order equals firing order when timing/event types differ. Inspect enabled/disabled status, `BEFORE` versus `AFTER`, event operations, and whether a failing UI02/UI03 trigger can roll back Phase A, cleanup-outbox staging or non-Research Library Pass behavior.
+The transaction wrapper is an *example*, not an authorization or a connected command to execute now. Never query `auth.users`, `storage.objects`, `cron.job`, `supabase_migrations.schema_migrations` or customer/payment/email rows. Catalog metadata about these tables is in scope; their **records are not**. Do not use Supabase SQL Editor/REST service-role privileges merely because they are convenient.
 
-### B. Relevant table shape and constraints
+Raw `pg_get_triggerdef`, view definitions, `pg_get_expr`, ACL and routine configuration may still contain sensitive literals; restrict and inspect them before sharing. GitHub/PR/CI receive only sanitized object identifiers, counts, nonsecret checksums, findings and verdicts. A successful hash match alone is not evidence of semantic or permission compatibility.
 
-```sql
-select
-  ns.nspname as table_schema,
-  cl.relname as table_name,
-  a.attname as column_name,
-  pg_catalog.format_type(a.atttypid,a.atttypmod) as data_type,
-  a.attnotnull as not_null,
-  coalesce(pg_catalog.pg_get_expr(ad.adbin,ad.adrelid),'') as default_expression
-from pg_catalog.pg_class cl
-join pg_catalog.pg_namespace ns on ns.oid=cl.relnamespace
-join pg_catalog.pg_attribute a on a.attrelid=cl.oid
-left join pg_catalog.pg_attrdef ad on ad.adrelid=cl.oid and ad.adnum=a.attnum
-where cl.relkind in ('r','p')
-  and a.attnum>0 and not a.attisdropped
-  and ns.nspname='public'
-  and (
-    cl.relname in ('profiles','privacy_requests','notification_outbox',
-                   'subscriptions','subscription_events','entitlements')
-    or cl.relname ~* '(language|locale|media)'
-  )
-order by table_schema,table_name,a.attnum;
-```
+## 3. Complete inventory — 15 catalog-only queries
 
-```sql
-select
-  ns.nspname as table_schema, cl.relname as table_name,
-  con.conname as constraint_name,
-  con.contype as constraint_type,
-  pg_catalog.pg_get_constraintdef(con.oid,true) as definition
-from pg_catalog.pg_constraint con
-join pg_catalog.pg_class cl on cl.oid=con.conrelid
-join pg_catalog.pg_namespace ns on ns.oid=cl.relnamespace
-where ns.nspname='public'
-  and (
-    cl.relname in ('profiles','privacy_requests','notification_outbox',
-                   'subscriptions','subscription_events','entitlements')
-    or cl.relname ~* '(language|locale|media)'
-  )
-order by table_name,constraint_name;
-```
+The previous five queries omitted checkout and Library Pass functions, enum labels, standalone unique indexes, policy roles, default grants and storage/event-trigger coverage. The revision inventories **all non-system schemas**, including `auth`, `storage`, `public` and extension namespaces, instead of filtering functions by a list of keywords.
 
-### C. RLS and privilege boundaries
+| Query | Evidence collected |
+|---|---|
+| Q01_TRIGGERS | All noninternal table triggers, including `storage.objects`, *all* `auth` tables, attachment, function identity and owner |
+| Q02_EVENT_TRIGGERS | Database event triggers and their owning functions |
+| Q03_COLUMNS_AND_DEFAULTS | Non-system table/view column types, nullability, identity, generated/default expressions |
+| Q04_ALL_ROUTINES | **Every** non-system routine including `complete_paddle_purchase`, `reserve_paddle_purchase_intent`, Research checkout/binding and email handlers; signatures, owners, security-definer, volatility, effective EXECUTE, definition hashes for functions/procedures |
+| Q05_CONSTRAINTS | Constraints, validity and deferrability |
+| Q06_ALL_INDEXES | All indexes, including unique/partial/expression indexes with no backing `pg_constraint` |
+| Q07_ENUM_LABELS | Complete ordered labels of enum types (not merely column type names), including privacy request/status where present |
+| Q08_RLS_POLICIES_AND_ROLES | Enabled/forced RLS, permissive/restrictive policies, `polroles`, actions, USING and WITH CHECK |
+| Q09_TABLE_DML_ACL | Table-level effective SELECT/INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER for `anon`, `authenticated`, `service_role` |
+| Q10_COLUMN_ACL | Explicit column grants, including grantor/grantee and grant option; inspect inherited table-level rights via Q09 |
+| Q11_DEFAULT_ACL | `pg_default_acl` at global and schema scope, critical for future `SECURITY DEFINER` function grants |
+| Q12_PUBLICATION_MEMBERSHIP | Explicit table, all-schema and all-tables publication membership (including Realtime scope) |
+| Q13_SCHEMA_PRIVILEGES | Schema owner and effective USAGE/CREATE for application roles |
+| Q14_VIEWS_AND_SECURITY_BARRIER | View definitions and `security_invoker`/`security_barrier` options, including materialized views |
+| Q15_EXTENSIONS | Extension names, installed versions, owners and schemas |
 
-```sql
-select
-  ns.nspname as table_schema, cl.relname as table_name,
-  cl.relrowsecurity as rls_enabled,
-  cl.relforcerowsecurity as rls_forced,
-  pg_catalog.has_table_privilege('anon',cl.oid,'SELECT') as anon_select,
-  pg_catalog.has_table_privilege('authenticated',cl.oid,'SELECT') as authenticated_select,
-  pg_catalog.has_table_privilege('service_role',cl.oid,'SELECT') as service_role_select,
-  pol.polname as policy_name,
-  pol.polcmd as command,
-  coalesce(pg_catalog.pg_get_expr(pol.polqual,pol.polrelid),'') as using_clause,
-  coalesce(pg_catalog.pg_get_expr(pol.polwithcheck,pol.polrelid),'') as check_clause
-from pg_catalog.pg_class cl
-join pg_catalog.pg_namespace ns on ns.oid=cl.relnamespace
-left join pg_catalog.pg_policy pol on pol.polrelid=cl.oid
-where ns.nspname='public'
-  and (
-    cl.relname in ('profiles','privacy_requests','notification_outbox',
-                   'subscriptions','subscription_events','entitlements')
-    or cl.relname ~* '(language|locale|media)'
-  )
-order by table_name,policy_name;
-```
+**Aggregate safety:** `pg_proc.prokind='a'` (aggregate) and `'w'` (window) rows are inventoried by Q04, but only `'f'` (function) and `'p'` (procedure) are passed to `pg_get_functiondef`. Do **not** call `pg_get_functiondef` on aggregates; the former query fails in that case. Include aggregates in the inventory, not in the body-export set.
 
-```sql
-select
-  ns.nspname as function_schema,
-  p.proname as function_name,
-  p.oid::regprocedure::text as signature,
-  pg_catalog.pg_get_userbyid(p.proowner) as owner_name,
-  p.prosecdef as security_definer,
-  pg_catalog.has_function_privilege('anon',p.oid,'EXECUTE') as anon_execute,
-  pg_catalog.has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute,
-  pg_catalog.has_function_privilege('service_role',p.oid,'EXECUTE') as service_execute,
-  pg_catalog.md5(pg_catalog.pg_get_functiondef(p.oid)) as function_definition_md5
-from pg_catalog.pg_proc p
-join pg_catalog.pg_namespace ns on ns.oid=p.pronamespace
-where ns.nspname in ('public','research_lifecycle_private')
-  and p.proname ~* '(language|locale|media|privacy|deletion|account|outbox|notification)'
-order by function_schema,function_name,signature;
-```
+**Coverage review:** Verify Q04 includes all purchase/checkout/binding routines regardless of name, and Q06 includes `profiles_auth_user_id_uidx` and `subscriptions_one_current_product_idx` if those indexes are present. Investigate missing expected objects rather than filling from guesses. Inspect cross-schema trigger dependencies and ensure default grants do not reopen restricted RPCs.
 
-Do not silently assume `SECURITY DEFINER` bypasses are restricted: check every `anon`/`authenticated` EXECUTE and the actual owner. On a candidate clone, test two distinct synthetic users to prove a caller cannot access the other's locale, media or payment records.
+## 4. Getting the **exact** UI02/UI03 DDL — separate source decision
 
-## Required follow-up in a disposable database
+Catalog inventories, function hashes and definitions of constraints do **not** reconstruct the complete original migration program or deployment order. Do not claim that this packet alone supplies the code needed to replay UI02/UI03.
 
-**Only after the approved, sanitized, complete Development DDL is obtained:**
+**Preferred option A (source provenance):** the owner retrieves and commits the *three exact Development migration SQL files* through the appropriate controlled development-source workflow, after secret/PII inspection. Pin each original version, hash, dependency list, owner, target environment and source provenance. This is preferable to reverse-engineering current state, and can be reviewed without reading connected rows.
 
-1. Install the **exact** UI02/UI03 definitions and their dependencies in disposable PostgreSQL 17, then the pinned Research P1 candidate, with the actual owner/grant/RLS ordering. Record hashes and differences before tests.
-2. Run an account with language and media-locale preferences and a pending deletion request through synthetic Phase A. Ensure no UI02/UI03 trigger tries to access a removed Auth FK or prematurely releases account-deletion email.
-3. Test a separate outstanding `access` or `export` privacy request: Phase A must fail closed, preserving the request/account link; a completed request can follow the controlled deletion path.
-4. Stage the shared `account_deletion_completed` outbox row and verify it remains **non-sendable** until confirmed Auth retirement, no new signed paid evidence, durable finish, and dispatcher permission. Inject a payment immediately after the fence; no email must send and the financial incident stays open.
-5. Verify the owner-only financial clearances and incident-recovery functions are inaccessible to `anon`, `authenticated` and `service_role`; verify stale-JWT direct PostgREST access cannot read retained subscription/payment metadata.
-6. Verify Library Pass purchase and entitlement rows remain isolated from Research billing holds for **other** accounts. Deletion of the owner account follows existing privacy/Library Pass retention policy; do not apply an unrelated Research hold.
-7. Stop and report **FAIL/HOLD** for missing function DDL, incompatible trigger/RLS grants, untrusted owner or library policy ambiguity. Do not patch hosted schema as a debugging step.
+**Fallback option B (new approval, not included in 15-query pack):** owner authorizes a **separate**, narrowly scoped SELECT of exactly those three versions' `supabase_migrations.schema_migrations.statements` (and version/name metadata) as a **migration-table row read**, under restricted custody. It is *not* a system-catalog read, and it must never be executed under this packet's present authorization. Missing or truncated statements remain HOLD.
 
-## Acceptance record
+**Fallback option C (different authorization):** selectively export full current routine definitions via `pg_get_functiondef` for owner-reviewed, allowlisted function OIDs from Q04, and associated triggers/views/constraints/indexes/policies/enum data. This is a **separate sensitive source extraction**; a routine definition may embed credentials. Store raw SQL only in the restricted review workspace, not a public issue or CI. A current-state reconstruction is not the same as the original migration sequence; document losses and prohibit speculative replay.
 
-| Gate | Evidence required | Current verdict |
+Until A, B or appropriately complete C is obtained, mark **exact DDL / combined replay NOT VERIFIED**. Never issue a broad live `SELECT *` against migration history, user tables, payments, sessions or task queues.
+
+## 5. Scheduler/outbox scope needs a second approval
+
+Q01 finds attached triggers, Q12 finds logical publication membership and Q04 identifies callable dispatcher functions. **They do not discover or prove the runtime scheduler.** A complete outbox verdict separately needs read-only evidence of the *actual* Vercel cron/environment routing and any `pg_cron` or `pg_net` integration, Resend dispatch policy, webhook event hooks, trigger order and protected completion-email state. `cron.job` and `net.*` are application/system **table row reads**, not system-catalog SELECTs: separately authorize minimized metadata queries and redact command arguments, URLs, credentials and bodies. If authorization is absent, scheduler/dispatcher parity remains **NOT VERIFIED**, even if Q01–Q15 all pass.
+
+Do not infer `notification_outbox` is unpublished or unobservable solely from an empty explicit `pg_publication_rel`: Q12 also includes entire-schema and all-table publications. Inspect `pg_event_trigger` for DDL-time side effects and `storage.objects` triggers for UI03 media-locale compatibility.
+
+## 6. Disposable replay / negative-test acceptance
+
+**Only after complete, sanitized, authorized Development DDL is available:** build a new disposable PostgreSQL 17 environment matching the actual extension versions, object owners, explicit/default ACLs, enum types, RLS, unique indexes and trigger attachments. Apply the exact UI02/UI03 definitions in migration order, then the **pinned** Research P1 candidate. Use synthetic accounts and two distinct role-bearing clients. Stop if any dependency or object owner is unknown.
+
+1. Test purchase/checkout and Library Pass flows alongside Research billing, with explicit negative tests for cross-account grants, direct stale-JWT reads and two-user RLS isolation.
+2. Exercise Phase A for an account with UI02/UI03 account-language/media-locale records; assert FK and trigger order compatibility and that no incomplete privacy request is orphaned. A pending unrelated access/export request must hold Phase A.
+3. Exercise the real *shared* `notification_outbox` schema, constraints, staging triggers and dispatcher policy. Simulate late payment immediately after a passed SQL fence: **no completion email may send**, financial custody must hold. **This test can still PASS while Auth was already irreversibly deleted; it NEVER closes P0.**
+4. Verify owner-only financial clearances and incident recovery deny `anon`, `authenticated`, `service_role`, and that an unexpired deleted-account JWT cannot read retained financial metadata directly.
+5. Confirm lease expiry and concurrent one-account claims with distinct synthetic identities, along with the legacy Auth-first RPC cutoff and idle/failed-worker recovery.
+6. Verify Library Pass purchasers in **other accounts** are not affected by a Research deletion hold. For deletion of a Library Pass owner's *own* account, preservation, deletion and refund/notice obligations require a cited, owner-approved privacy/commercial policy **not supplied by F3**; mark HOLD rather than invent a rule.
+7. Record full source provenance, reference hashes, trigger/constraint/role deltas, test failures and missing evidence. Never patch connected Development while diagnosing a replay failure.
+
+## 7. Separate owner operating decisions (still OPEN)
+
+| Decision | Requirement | Current disposition |
 |---|---|---|
-| Canonical Development scope | Owner-signed read-only catalog authorization | **NOT AUTHORIZED HERE** |
-| UI02/UI03 table / trigger / function DDL | Sanitized exact catalog export and owners | **NOT VERIFIED** |
-| Shared notification-outbox trigger / dispatcher parity | Catalog + replay on disposable database | **NOT VERIFIED** |
-| Research P1 candidate / UI02/UI03 combined replay | Deterministic two-user / stale-JWT negative tests | **NOT RUN** |
-| Hosted Auth DELETE/GET/refresh semantics | Separately approved synthetic Dev Auth fixture | **NOT AUTHORIZED HERE** |
-| Merchant cessation and late-charge boundary | Per-target authenticated proof + owner remediation | **HOLD** |
-| Production migration, merge, worker, real customer | Separate item-specific release authorization | **HOLD / NO-GO** |
+| Development scope/role | Approve a named least-privileged catalog-only role and exact query pack | **NOT AUTHORIZED** |
+| Source option A/B/C | Commit exact UI02/UI03 SQL, or independently approve migration-row / complete DDL extraction | **UNDECIDED** |
+| Scheduler evidence | Approve minimized, restricted `cron.job`/`pg_net` metadata only if needed | **NOT AUTHORIZED** |
+| Auth retirement clearance | Parent requires fresh owner merchant verification *after* Phase A and within 24 hours for **every account**, even those with no Research purchase. Decide operating workload, monitor privacy deadlines and escalation | **OWNER DECISION OPEN** |
+| Library Pass self-deletion | Cite approved retention/refund/support and privacy policy before applying it to owner's own account | **POLICY EVIDENCE MISSING** |
+| Post-fence payment race | Remove external charge path or explicitly decide on residual and incident/restoration policy; owner acknowledgement cannot itself make the HTTP race atomic | **P0 UNRESOLVED** |
 
-**Owner decision needed before any catalog request:** approve *only* system-catalog SELECTs on canonical Development, restricted export handling, no row/PII or Auth Admin reads, and no Production activity. A generic "continue" request is not a substitute for this separate approval.
+## 8. Evidence and go/no-go ledger
+
+| Gate | Current |
+|---|---|
+| Catalog query pack Q01–Q15 syntax on disposable database | **Run local synthetic contract; see exact-head CI** |
+| Catalog-only scope and least-privilege owner-approved Development access | **PREPARED, NOT EXECUTED/APPROVED** |
+| Hosted Development function/trigger/RLS/enum/index and outbox parity | **NOT VERIFIED** |
+| Complete UI02/UI03 SQL and combined disposable replay | **NOT VERIFIED** |
+| Auth Admin DELETE/GET, stale JWT/refresh and direct PostgREST behavior on hosted synthetic fixture | **NOT VERIFIED** |
+| Lemon Squeezy per-target payment cessation and owner privacy/refund/remediation | **HOLD** |
+| Unresolved signed payment between SQL fence and Auth DELETE | **P0 / NO-GO** |
+| Merge, deployment, hosted migration or live account action | **HOLD / NO-GO** |
+
+**No completed catalog inspection or hosted release authorization is implied by a green synthetic test or this revised packet.**

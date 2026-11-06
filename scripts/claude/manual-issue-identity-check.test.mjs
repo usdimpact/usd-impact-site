@@ -154,7 +154,7 @@ test('verified GitHub -> Anthropic token exchange makes exactly two requests, no
     assert.deepEqual(result, { result: 'IDENTITY_EXCHANGE_PASS', model_requests: 0,
       token_discarded: true, request_count: 2, side_effects: 'NONE' });
     assert.equal(requests.length, 2);
-    assert.match(requests[0].url, /\.actions\.githubusercontent\.com/);
+    assert.equal(new URL(requests[0].url).hostname, 'pipelines.actions.githubusercontent.com');
     assert.equal(requests[1].url, 'https://api.anthropic.com/v1/oauth/token');
     assert.equal(requests[1].init.method, 'POST');
     const body = JSON.parse(requests[1].init.body);

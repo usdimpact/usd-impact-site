@@ -73,7 +73,7 @@ assert.equal(
 );
 assert.equal(
   sourceDateBasisForUrl('https://www.bls.gov/schedule/2026/09_sched_list.htm'),
-  SOURCE_DATE_BASIS.PUBLISHED,
+  SOURCE_DATE_BASIS.DOCUMENT_INDEX,
 );
 assert.equal(
   sourceDateBasisForUrl('https://www.eia.gov/petroleum/supply/weekly/index.php'),

@@ -16,6 +16,10 @@ const FEDERAL_RESERVE_NEWS_INDEX_PATH = '/newsevents.htm';
 const FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH = /^\/newsevents\/pressreleases\/\d{4}-press-fomc\.htm$/;
 // The annual BLS page aggregates monthly sections with separate Last Modified dates.
 const BLS_ANNUAL_CALENDAR_PATH = /^\/schedule\/\d{4}\/home\.htm$/;
+// Month-specific BLS calendar URLs are mutable and historical editions disagree
+// about their Last Modified date. Block as discovery-only until independently
+// verified source-specific date evidence can be bound to the edition.
+const BLS_MONTHLY_CALENDAR_PATH = /^\/schedule\/\d{4}\/(?:0?[1-9]|1[0-2])_sched(?:_list)?\.htm$/;
 // The CPS standing calendar lists future event dates but is not a dated news release.
 // Its page Last Modified date is distinct from the events it lists.
 const BLS_CPS_RELEASE_CALENDAR_PATH = '/cps/publications/release-calendar.htm';
@@ -62,7 +66,7 @@ export function sourceDateBasisForUrl(value) {
     }
     if ((indexHostname === 'home.treasury.gov' && pathname === TREASURY_REFUNDING_INDEX_PATH)
       || (indexHostname === 'federalreserve.gov' && ([FEDERAL_RESERVE_POSTINGS_INDEX_PATH, FEDERAL_RESERVE_NEWS_INDEX_PATH].includes(pathname) || FEDERAL_RESERVE_FOMC_PRESS_INDEX_PATH.test(pathname)))
-      || (indexHostname === 'bls.gov' && (BLS_ANNUAL_CALENDAR_PATH.test(pathname) || pathname === BLS_CPS_RELEASE_CALENDAR_PATH))
+      || (indexHostname === 'bls.gov' && (BLS_ANNUAL_CALENDAR_PATH.test(pathname) || BLS_MONTHLY_CALENDAR_PATH.test(pathname) || pathname === BLS_CPS_RELEASE_CALENDAR_PATH))
       || (indexHostname === 'eia.gov' && pathname === EIA_WEEKLY_SCHEDULE_PATH)) {
       return SOURCE_DATE_BASIS.DOCUMENT_INDEX;
     }
@@ -115,9 +119,12 @@ export function sourceDateAttributionIssue(value) {
   }
   if (hostname === 'bls.gov') {
     if (pathname === BLS_CPS_RELEASE_CALENDAR_PATH) {
-      return 'BLS CPS release calendar is a reusable schedule index, not a news release. Its Last Modified date is different from the dates of listed events. Use a verified dated BLS news release or the relevant month-specific schedule with its own displayed Last Modified date; never assign an event date, edition date or access date as the publication date of the CPS calendar. If no eligible dated source supports the claim, omit the source and unsupported claim. Do not modify archived citations.';
+      return 'BLS CPS release calendar is a reusable schedule index, not a news release. Its Last Modified date is different from the dates of listed events. Use a directly linked, independently verified dated BLS release or official document; month-specific calendars are discovery-only and must not be cited as dated publication sources; never assign an event date, edition date or access date as the publication date of the CPS calendar. If no eligible dated source supports the claim, omit the source and unsupported claim. Do not modify archived citations.';
     }
-    return 'BLS annual release calendar aggregates separately updated monthly sections. Cite the relevant month-specific schedule with its own verified Last Modified date, or a directly linked dated release. Verify the event date separately; never use an access date, edition date, event date or another month section date as the annual page publication date. If no such source is verifiable, omit the unsupported source and claim.';
+    if (BLS_MONTHLY_CALENDAR_PATH.test(pathname)) {
+      return 'BLS month-specific release schedule index is a mutable calendar with conflicting historical Last Modified dates. Use for event discovery only; cite a verified dated BLS release or official document supporting the claim. Never borrow a historical citation date, event date, edition date, or access date to satisfy source validation; omit the unsupported source and claim.';
+    }
+    return 'BLS annual release calendar aggregates separately updated monthly sections. Cite a directly linked, independently verified dated BLS release or official document, never another mutable month-specific calendar. Verify the event date separately; never use an access date, edition date, event date or another month section date as the annual page publication date. If no such source is verifiable, omit the unsupported source and claim.';
   }
   const label = hostname === 'federalreserve.gov'
     ? (pathname === FEDERAL_RESERVE_NEWS_INDEX_PATH

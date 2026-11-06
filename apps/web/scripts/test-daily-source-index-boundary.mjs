@@ -40,8 +40,6 @@ for (const base of [fedIndex, blsIndex, blsCpsIndex]) {
 for (const url of [
   'https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm',
   'https://www.bls.gov/news.release/archives/cpi_09112026.htm',
-  'https://www.bls.gov/schedule/2026/10_sched.htm',
-  'https://www.bls.gov/schedule/2026/10_sched_list.htm',
   'https://www.eia.gov/petroleum/supply/weekly/archive/2026/2026_09_10/',
   'https://home.treasury.gov/news/press-releases/sb0607',
   'https://www.federalreserve.gov.example.org/newsevents.htm',
@@ -62,16 +60,47 @@ check('CPS July-modified calendar may not be rebadged with a November edition da
   assert.match(issue, /CPS release calendar.*Last Modified/i);
   assert.equal(safeValidationDiagnostic(`${issue} synthetic-private-detail`).code, 'invalid-source-date');
 });
+check('BLS index diagnostics never recommend citing a mutable month calendar', () => {
+  for (const url of [blsIndex, blsCpsIndex]) {
+    const issue = sourceDateAttributionIssue(url);
+    assert.match(issue, /independently verified dated BLS release/i);
+    assert.doesNotMatch(issue, /(?:Use|Cite) (?:a |the relevant )?month-specific schedule/i);
+    assert.match(issue, /month-specific calendar|month-specific sections/i);
+  }
+});
+check('BLS monthly calendar pointers fail closed across URL variants', () => {
+  for (const url of [
+    'https://www.bls.gov/schedule/2026/11_sched_list.htm',
+    'https://www.bls.gov/schedule/2026/10_sched.htm',
+    'https://bls.gov/schedule/2026/11_sched_list.htm?utm_source=fixture#section',
+    'https://www.BLS.GOV/schedule/2026/11_sched_list.htm/',
+    'https://www.bls.gov/schedule/2026/%31%31_sched_list.htm',
+  ]) {
+    assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
+    assert.match(sourceDateAttributionIssue(url), /BLS month-specific release schedule.*conflicting historical/i);
+    assert.equal(isLivingSourceUrl(url), false, 'Never exempt calendar dates from independent verification');
+    assert.equal(safeValidationDiagnostic(sourceDateAttributionIssue(url)).code, 'invalid-source-date');
+  }
+  for (const url of [
+    'https://www.bls.gov/schedule/2026/00_sched_list.htm',
+    'https://www.bls.gov/schedule/2026/13_sched_list.htm',
+    'https://www.bls.gov.example.org/schedule/2026/11_sched_list.htm',
+    'https://www.bls.gov/news.release/archives/cpi_09112026.htm',
+  ]) {
+    assert.notEqual(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
+  }
+  assert.match(SOURCE_DATE_RULES, /month-specific release calendars/);
+});
 check('supported living calendars unchanged', () => {
   assert.equal(sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/2026-october.htm'), SOURCE_DATE_BASIS.LAST_UPDATED);
   assert.equal(sourceDateBasisForUrl('https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm'), SOURCE_DATE_BASIS.LAST_UPDATED);
 });
 check('discovery instructions distinguish document dates', () => {
   assert.match(SOURCE_DATE_RULES, /News and Events page \(newsevents\.htm\)/);
-  assert.match(SOURCE_DATE_RULES, /BLS annual release calendar/);
+  assert.match(SOURCE_DATE_RULES, /BLS annual and month-specific release calendars/);
   assert.match(SOURCE_DATE_RULES, /BLS CPS release calendar/);
-  assert.match(SOURCE_DATE_RULES, /month-specific schedule URL/);
-  assert.match(SOURCE_DATE_RULES, /Verify each economic event date separately/);
+  assert.match(SOURCE_DATE_RULES, /month-specific release calendars/);
+  assert.match(SOURCE_DATE_RULES, /check future event dates separately/);
   assert.match(SOURCE_DATE_RULES, /EIA Weekly Petroleum Status Report schedule page/);
   assert.match(SOURCE_DATE_RULES, /no page-level publication or Last Updated date/i);
 });

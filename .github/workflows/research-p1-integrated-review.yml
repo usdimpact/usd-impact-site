@@ -17,6 +17,9 @@ on:
       # Direct modules and tests invoked by this security workflow must
       # themselves trigger the workflow; no deployment or main trigger.
       - 'apps/web/package.json'
+      # Transitive imports for every Node security regression are included,
+      # not only modules imported directly from the test entrypoints.
+      - 'apps/web/src/lib/**'
       - 'apps/web/api/guided-edition.js'
       - 'apps/web/src/lib/research-membership-persistence.js'
       - 'apps/web/src/lib/research-membership-event-adapter.js'

@@ -69,8 +69,10 @@ def setup(account,tag):
 
 
 def main():
-    a,b=uuid.uuid4(),uuid.uuid4()
-    setup(a,"A");setup(b,"B")
+    a,b,c=uuid.uuid4(),uuid.uuid4(),uuid.uuid4()
+    setup(a,"A");setup(b,"B");setup(c,"ANON")
+    # C has a valid active profile but no preference row, so an anonymous
+    # insert test cannot accidentally fail from a duplicate-key constraint.
     check("UI02 and UI03 tables installed",
           all(admin("SELECT to_regclass(%s) IS NOT NULL",(f"public.{table}",))[0][0]
               for table in ("account_transactional_locale_preferences",
@@ -119,6 +121,14 @@ def main():
             (a,),anonymous=True)
         check(f"{table} anonymous JWT cannot read own preference",
               anonymous==("OK",[]))
+        # RLS must reject INSERT for an anonymous authenticated-role session
+        # even when the subject owns an active profile and the row is new.
+        assert count(table,c)==0, "anonymous insert fixture must start empty"
+        anonymous_insert=user(c,
+            f"INSERT INTO public.{table}(account_id,{column}) VALUES(%s,'es') RETURNING revision",
+            (c,),anonymous=True)
+        check(f"{table} anonymous JWT cannot INSERT own preference",
+              anonymous_insert==("ERR","42501") and count(table,c)==0)
     export=user(a,"SELECT public.account_export()")
     check("account_export includes both independent UI preferences",
           export[0]=="OK" and isinstance(export[1][0][0],dict)
@@ -128,13 +138,15 @@ def main():
         result=user(a,f"SELECT count(*) FROM public.{relation}")
         check(f"authenticated cannot read shared {relation}",result[0]=="ERR")
     for signature in ("public.ui02_enqueue_access_ready_atomic(uuid)",
-                      "public.ui02_check_access_ready_dispatch(uuid,uuid)"):
-        matches=admin("SELECT oid::regprocedure::text FROM pg_proc WHERE proname=%s",
-                      (signature.split(".")[1].split("(")[0],))
-        if matches:
-            check(f"authenticated has no EXECUTE for {signature.split('(')[0]}",
-                  all(not admin("SELECT has_function_privilege('authenticated',%s::regprocedure,'EXECUTE')",
-                                (m[0],))[0][0] for m in matches))
+                      "public.ui02_check_access_ready_dispatch(uuid,text)"):
+        # Missing/renamed RPCs must fail, not silently reduce the assertion
+        # count. Match the exact function signature, not just proname.
+        matches=admin("SELECT oid::regprocedure::text FROM pg_proc WHERE oid=to_regprocedure(%s)",
+                      (signature,))
+        check(f"required UI02 RPC exists: {signature}",len(matches)==1)
+        check(f"authenticated cannot EXECUTE {signature}",
+              not admin("SELECT has_function_privilege('authenticated',%s::regprocedure,'EXECUTE')",
+                        (signature,))[0][0])
     request=user(a,"SELECT public.request_account_deletion()")
     check("A deletion request accepted",request[0]=="OK")
     check("A preference retained during deletion_pending",
@@ -166,6 +178,11 @@ def main():
         retry=user(a,
             f"INSERT INTO public.{relation}(account_id,{column}) VALUES(%s,'es')",(a,))
         check(f"deleted A stale JWT cannot recreate {relation}",retry[0]=="ERR")
+    # Intentional count assertion catches removal of any control or a
+    # future conditional branch that silently skips a security assertion.
+    expected_assertions=38
+    if PASSED!=expected_assertions:
+        raise AssertionError(f"UI assertions unexpectedly skipped: {PASSED}/{expected_assertions}")
     print(f"F3_UI_SEMANTICS_DONE total={PASSED} pass={PASSED} fail=0",flush=True)
 
 

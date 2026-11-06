@@ -109,6 +109,20 @@ const ga4Position = layout.indexOf('<GoogleAnalyticsClient />');
 const telemetryPosition = layout.indexOf('<TelemetryClient />');
 assert.ok(consentPosition >= 0 && ga4Position > consentPosition && telemetryPosition > ga4Position);
 
+// The first-visit notice stays a fixed overlay (no layout shift), but while it is shown the page reserves
+// the space it covers so keyboard focus and the end of the page scroll clear of it.
+const bannerRule = consent.match(/\.privacy-consent-banner \{([^}]*)\}/)?.[1] || '';
+assert.match(bannerRule, /position:\s*fixed;/, 'consent notice must remain a fixed overlay');
+assert.match(consent, /:global\(html\.privacy-consent-open\) \{ scroll-padding-bottom: var\(--privacy-consent-space, 0px\); \}/);
+assert.match(consent, /:global\(html\.privacy-consent-open body\) \{ padding-bottom: var\(--privacy-consent-space, 0px\); \}/);
+const sync = consent.slice(consent.indexOf('const syncBannerSpace = () => {'), consent.indexOf('const render = () => {'));
+assert.match(sync, /if \(!banner \|\| banner\.hidden\) \{\s*root\.classList\.remove\('privacy-consent-open'\);\s*root\.style\.removeProperty\('--privacy-consent-space'\);/);
+assert.match(sync, /root\.style\.setProperty\('--privacy-consent-space', `\$\{space\}px`\);/);
+assert.match(sync, /new ResizeObserver\(syncBannerSpace\)\.observe\(banner\)/);
+assert.match(sync, /window\.addEventListener\('resize', syncBannerSpace\);/);
+assert.match(consent, /analyticsToggle\.checked = analyticsAllowed\(\);\n    syncBannerSpace\(\);\n  \};/, 'render must resync the reserved space');
+assert.doesNotMatch(consent, /focusin|scrollIntoView|scrollBy\(|scrollTo\(|preventDefault\(\)/, 'no focus or scroll hijacking');
+
 const telemetryGuard = telemetry.indexOf('if (!analyticsAllowed()) return false;');
 const telemetryRequest = telemetry.indexOf('fetch(TELEMETRY_ENDPOINT');
 assert.ok(telemetryGuard >= 0 && telemetryRequest > telemetryGuard);

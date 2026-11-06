@@ -3,7 +3,7 @@
 **Status: PREPARED FOR REVIEW ONLY — NOT AUTHORIZED TO RUN AGAINST HOSTED DEVELOPMENT; F3 NOT VERIFIED; PRODUCTION NO-GO.**  
 **Repository:** `usdimpact/usd-impact-site`. Stacked Draft #1178 on #1173 on #1164; all remain unmerged.  
 **Canonical Development:** `ycstrcvshdluovtuasjc`. **Production project is excluded.**  
-**Query pack:** [f3-development-catalog-readonly.sql](./f3-development-catalog-readonly.sql), revision-controlled as the **single executable source** for 19 system-catalog SELECTs. A separate CI contract runs this pack against disposable synthetic PostgreSQL 17, *not* hosted Development.  
+**Query pack:** [f3-development-catalog-readonly.sql](./f3-development-catalog-readonly.sql), revision-controlled as the **single executable source** for 20 system-catalog SELECTs. A separate CI contract runs this pack against disposable synthetic PostgreSQL 17, *not* hosted Development.  
 **Independence:** Claude's adversarial AI review is a second model review, not an independent human audit or owner acceptance.
 
 ## 1. Grounded scope and hard limits
@@ -20,51 +20,53 @@ It showed 57 Production migrations, without these three. The proposed Research P
 
 ## 2. Separate, tightly bounded owner permission required
 
-Before any Development catalog read, the owner must approve all of: the exact **canonical Development** project; the pinned commit and 19-query SQL pack; a specified already-available **least-privileged, SELECT-only audit role** (mandatory, *not* the SQL Editor's default owner/superuser); a `READ ONLY` transaction and short query timeout; the named reviewer; and where/how long restricted catalog evidence is retained. If that role cannot access needed catalog metadata, **HOLD** and seek a separate access decision; do not change hosted grants/roles to make the audit work.
+Before any Development catalog read, the owner must approve all of: the exact **canonical Development** project; the pinned commit and 20-query SQL pack; a specified already-available **least-privileged, SELECT-only audit role** (mandatory, *not* the SQL Editor's default owner/superuser); a `READ ONLY` transaction and short query timeout; the named reviewer; and where/how long restricted catalog evidence is retained. If that role cannot access needed catalog metadata, **HOLD** and seek a separate access decision; do not change hosted grants/roles to make the audit work.
 
 Execute only after authorization, inside a single bounded consistent snapshot (and check every query result for truncation, missing schema, and permission errors):
 
 ```text
 BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY;
 SET LOCAL statement_timeout = '5000ms';
--- Run the 19 approved SELECT statements from f3-development-catalog-readonly.sql,
+SET LOCAL search_path = pg_catalog;
+-- Run the 20 approved SELECT statements from f3-development-catalog-readonly.sql,
 -- under the authenticated, least-privileged audit connection.
 ROLLBACK;
 ```
 
 The transaction wrapper is an *example*, not an authorization or a connected command to execute now. Never query `auth.users`, `storage.objects`, `cron.job`, `supabase_migrations.schema_migrations` or customer/payment/email rows. Catalog metadata about these tables is in scope; their **records are not**. Do not use Supabase SQL Editor/REST service-role privileges merely because they are convenient.
 
-Raw `pg_get_triggerdef`, view definitions, `pg_get_expr`, ACL and routine configuration may still contain sensitive literals; restrict and inspect them before sharing. GitHub/PR/CI receive only sanitized object identifiers, counts, nonsecret checksums, findings and verdicts. A successful hash match alone is not evidence of semantic or permission compatibility.
+Raw `pg_get_triggerdef`, view definitions, `pg_get_expr`, ACL and routine configuration may still contain sensitive literals; restrict and inspect them before sharing. GitHub/PR/CI receive only sanitized object identifiers, counts, nonsecret checksums, findings and verdicts. A successful hash match alone is not evidence of semantic or permission compatibility. Always set **`search_path = pg_catalog`** on both replay and approved Development audit before comparing definition hashes, record Q00 `server_version_num`, and avoid claims of byte-equivalence across PostgreSQL versions. Use only the Q17 variant compatible with Q00 (PG15 or PG16+).
 
-## 3. Complete inventory — 19 catalog-only queries
+## 3. Complete inventory — 20 catalog-only queries
 
 The previous five queries omitted checkout and Library Pass functions, enum labels, standalone unique indexes, policy roles, default grants and storage/event-trigger coverage. The revision inventories **all non-system schemas**, including `auth`, `storage`, `public` and extension namespaces, instead of filtering functions by a list of keywords.
 
 | Query | Evidence collected |
 |---|---|
+| Q00_SERVER_VERSION | Records `server_version_num`, selecting PG16+ Q17 or a separately marked PG15-compatible Q17 variant. The hosted Development version is unknown. |
 | Q01_TRIGGERS | All noninternal triggers and attached functions, including storage/auth; trigger type, argument **count** and a definition **hash only** — no raw trigger arguments or headers |
 | Q02_EVENT_TRIGGERS | Database event triggers and their owning functions |
-| Q03_COLUMNS_AND_DEFAULTS | Non-system table/view column types, nullability, identity, generated/default expressions |
-| Q04_ALL_ROUTINES | **Every** non-system routine including `complete_paddle_purchase`, `reserve_paddle_purchase_intent`, Research checkout/binding and email handlers; signatures, owners, security-definer, volatility, effective EXECUTE, definition hashes for functions/procedures |
-| Q05_CONSTRAINTS | Constraints, validity and deferrability |
-| Q06_ALL_INDEXES | All indexes, including unique/partial/expression indexes with no backing `pg_constraint` |
+| Q03_COLUMNS_AND_DEFAULTS | Non-system table/view column types, nullability, identity, default presence and **hashed** default expressions only |
+| Q04_ALL_ROUTINES | Every non-system routine including Library Pass/Research checkout and binding, owners, security-definer and effective EXECUTE; routine-body and configured search-path **hashes only** |
+| Q05_CONSTRAINTS | Constraints, validity, deferrability and **definition hashes only** |
+| Q06_ALL_INDEXES | All indexes including unique/partial/expression indexes without backing constraints; **definition hashes only** |
 | Q07_ENUM_LABELS | Complete ordered labels of enum types (not merely column type names), including privacy request/status where present |
-| Q08_RLS_POLICIES_AND_ROLES | Enabled/forced RLS, permissive/restrictive policies, `polroles`, actions, USING and WITH CHECK |
+| Q08_RLS_POLICIES_AND_ROLES | Enabled/forced RLS, policy roles and modes, USING/WITH CHECK **presence and hashes only** |
 | Q09_TABLE_DML_ACL | Table-level effective SELECT/INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER for `anon`, `authenticated`, `service_role` |
 | Q10_COLUMN_ACL | Explicit column grants with **resolved grantor/grantee role names**, privilege and grant option; inspect inherited table rights via Q09 |
 | Q11_DEFAULT_ACL | `pg_default_acl` at global and schema scope, critical for future `SECURITY DEFINER` function grants |
 | Q12_PUBLICATION_MEMBERSHIP | Explicit table, all-schema and all-tables publications; INSERT/UPDATE/DELETE/TRUNCATE flags, column-list attnums and **row-filter hash only** (not raw predicate) |
 | Q13_SCHEMA_PRIVILEGES | Schema owner and effective USAGE/CREATE for application roles |
-| Q14_VIEWS_AND_SECURITY_BARRIER | View definitions and `security_invoker`/`security_barrier` options, including materialized views |
+| Q14_VIEWS_AND_SECURITY_BARRIER | View-definition **hash only**, ownership, `security_invoker`/`security_barrier` options and materialized-view inventory |
 | Q15_EXTENSIONS | Extension names, installed versions, owners and schemas |
 | Q16_ROLE_ATTRIBUTES | `pg_roles` authorization flags, including `BYPASSRLS`, LOGIN, SUPERUSER and role-creation capabilities; **never** `pg_authid` password material |
-| Q17_ROLE_MEMBERSHIPS | `pg_auth_members` role-to-member inheritance, SET and admin options with grantor names |
+| Q17_ROLE_MEMBERSHIPS | `pg_auth_members` grantor/role membership options; use PG16+ definition with inherit/SET options, or **Q17 PG15 variant** (NULL for unsupported columns) |
 | Q18_SEQUENCES_AND_ACL | `pg_sequence` metadata and effective USAGE/SELECT/UPDATE privileges; **never** `pg_sequences.last_value` runtime data |
 | Q19_DOMAIN_CONSTRAINTS | Non-system domain checks with type, validity and a **constraint-definition hash**, including `conrelid=0` objects |
 
-**Default credential protection:** Database-webhook trigger arguments can contain bearer tokens, API keys or signed URLs. Q01 MUST NEVER emit `pg_get_triggerdef` as plaintext. Its output contains only argument count, trigger type bits and `md5(pg_get_triggerdef)` alongside object identity; full arguments/definitions require a **separate, item-specific sensitive-source approval**, not this pack. The disposable contract deliberately creates a synthetic trigger with `Authorization: Bearer sb_secret_...` and asserts that Q01 does not return the secret. Other catalog expression/view-definition fields may also contain sensitive literals and must remain inside the restricted local evidence channel; do not store raw results in GitHub or workflow logs.
+**Default credential protection:** Database-webhook trigger arguments can contain bearer tokens, API keys or signed URLs. Q01 MUST NEVER emit `pg_get_triggerdef` as plaintext. Its output contains only argument count, trigger type bits and `md5(pg_get_triggerdef)` alongside object identity; full arguments/definitions require a **separate, item-specific sensitive-source approval**, not this pack. The disposable contract deliberately creates a synthetic trigger with `Authorization: Bearer sb_secret_...` and asserts that Q01 does not return the secret. Q03/Q05/Q06/Q08/Q14 now emit **hashes instead of raw SQL expressions**; Q04 routine configuration is hashed. Object and role names remain sensitive metadata and must stay inside restricted custody. The disposable harness plants synthetic credentials in trigger arguments, defaults, policy and view SQL and scans **all query result sets** for recognizable secrets. Never store raw results in GitHub or workflow logs.
 
-**Query execution and fixtures:** Q02, Q12 and Q14 have **nonempty** CI fixtures for an event trigger, all three publication kinds and a `security_invoker` view. Q18 and Q19 have synthetic sequence/domain fixtures. A restricted test checks that only allowlisted harmless catalog function calls occur. Green CI is neither proof of live Dev permissions nor authorization to export.
+**Query execution and fixtures:** Q02, Q12 and Q14 have nonempty event-trigger, three-publication-mode and `security_invoker` view fixtures; Q18/Q19 have sequence/domain fixtures. The parser rejects quoted identifiers, inline block comments and unapproved function calls, including the two previously observed `pg_terminate_backend` bypasses; raw `pg_get_triggerdef` is never allowed. Both Q17 variants are syntactically tested on disposable PG17, although **hosted PG15 semantics remain NOT VERIFIED**. Green CI is neither proof of live Dev permissions nor authorization to export.
 
 **Aggregate safety:** `pg_proc.prokind='a'` (aggregate) and `'w'` (window) rows are inventoried by Q04, but only `'f'` (function) and `'p'` (procedure) are passed to `pg_get_functiondef`. Do **not** call `pg_get_functiondef` on aggregates; the former query fails in that case. Include aggregates in the inventory, not in the body-export set.
 
@@ -84,7 +86,7 @@ Catalog inventories, function hashes and definitions of constraints do **not** r
 
 This removes the need to read `schema_migrations.statements` merely to **locate** the source. It does **not** establish that the live Development database executed exactly those file bytes; version-name equality is insufficient. Independently check original file SHA-256 attestations/recorded apply receipts and all dependencies, then pin a sanitized **offline-only reference copy or source commit** before combined disposable replay. Keep the source branch Draft and do not cherry-pick these migration files into `main`, `supabase/migrations` on a release branch, or hosted Dev/Production under this authority. No connected SQL was used in locating the sources.
 
-**Fallback option B (new approval, not included in 15-query pack):** owner authorizes a **separate**, narrowly scoped SELECT of exactly those three versions' `supabase_migrations.schema_migrations.statements` (and version/name metadata) as a **migration-table row read**, under restricted custody. It is *not* a system-catalog read, and it must never be executed under this packet's present authorization. Missing or truncated statements remain HOLD.
+**Fallback option B (new approval, not included in the 20-query pack):** owner authorizes a **separate**, narrowly scoped SELECT of exactly those three versions' `supabase_migrations.schema_migrations.statements` (and version/name metadata) as a **migration-table row read**, under restricted custody. It is *not* a system-catalog read, and it must never be executed under this packet's present authorization. Missing or truncated statements remain HOLD.
 
 **Fallback option C (different authorization):** selectively export full current routine definitions via `pg_get_functiondef` for owner-reviewed, allowlisted function OIDs from Q04, and associated triggers/views/constraints/indexes/policies/enum data. This is a **separate sensitive source extraction**; a routine definition may embed credentials. Store raw SQL only in the restricted review workspace, not a public issue or CI. A current-state reconstruction is not the same as the original migration sequence; document losses and prohibit speculative replay.
 
@@ -92,7 +94,7 @@ Until A, B or appropriately complete C is obtained, mark **exact DDL / combined 
 
 ## 5. Scheduler/outbox scope needs a second approval
 
-Q01 finds attached triggers, Q12 finds logical publication membership and Q04 identifies callable dispatcher functions. **They do not discover or prove the runtime scheduler.** A complete outbox verdict separately needs read-only evidence of the *actual* Vercel cron/environment routing and any `pg_cron` or `pg_net` integration, Resend dispatch policy, webhook event hooks, trigger order and protected completion-email state. `cron.job` and `net.*` are application/system **table row reads**, not system-catalog SELECTs: separately authorize minimized metadata queries and redact command arguments, URLs, credentials and bodies. If authorization is absent, scheduler/dispatcher parity remains **NOT VERIFIED**, even if Q01–Q19 all pass.
+Q01 finds attached triggers, Q12 finds logical publication membership and Q04 identifies callable dispatcher functions. **They do not discover or prove the runtime scheduler.** A complete outbox verdict separately needs read-only evidence of the *actual* Vercel cron/environment routing and any `pg_cron` or `pg_net` integration, Resend dispatch policy, webhook event hooks, trigger order and protected completion-email state. `cron.job` and `net.*` are application/system **table row reads**, not system-catalog SELECTs: separately authorize minimized metadata queries and redact command arguments, URLs, credentials and bodies. If authorization is absent, scheduler/dispatcher parity remains **NOT VERIFIED**, even if Q00–Q19 all pass.
 
 Do not infer `notification_outbox` is unpublished or unobservable solely from an empty explicit `pg_publication_rel`: Q12 also includes entire-schema and all-table publications. Inspect `pg_event_trigger` for DDL-time side effects and `storage.objects` triggers for UI03 media-locale compatibility.
 
@@ -123,7 +125,7 @@ Do not infer `notification_outbox` is unpublished or unobservable solely from an
 
 | Gate | Current |
 |---|---|
-| Catalog query pack Q01–Q19 syntax, credential-leak fixture and nonempty coverage on disposable database | **Run revised synthetic contract; see new exact-head CI** |
+| Catalog query pack Q00–Q19 with alternate PG15 Q17, full result-set credential scan and nonempty fixtures | **Run revised synthetic contract on disposable PG17; hosted role/version still NOT VERIFIED** |
 | Catalog-only scope and least-privilege owner-approved Development access | **PREPARED, NOT EXECUTED/APPROVED** |
 | Hosted Development function/trigger/RLS/enum/index and outbox parity | **NOT VERIFIED** |
 | Complete UI02/UI03 SQL and combined disposable replay | **NOT VERIFIED** |

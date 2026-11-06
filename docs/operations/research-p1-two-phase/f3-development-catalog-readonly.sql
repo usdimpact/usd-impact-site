@@ -5,6 +5,13 @@
 -- No SELECTs from customer, Auth, merchant, storage objects or cron.job rows.
 -- Each F3_QUERY block is one SELECT, tested against disposable PG17.
 
+-- F3_QUERY: Q00_SERVER_VERSION
+-- Record PostgreSQL server major version BEFORE choosing Q17's compatible
+-- role-membership query. This selects one safe value from pg_catalog only.
+select pg_catalog.current_setting('server_version_num')::integer as server_version_num
+from pg_catalog.pg_settings
+where name='server_version_num';
+
 -- F3_QUERY: Q01_TRIGGERS
 select ns.nspname as table_schema, cl.relname as table_name,
        tg.tgname as trigger_name, tg.tgenabled as enabled_mode,
@@ -43,7 +50,8 @@ select ns.nspname as table_schema, cl.relname as relation_name, cl.relkind,
        pg_catalog.format_type(a.atttypid,a.atttypmod) as column_type,
        a.attnotnull as not_null, a.attidentity as identity_kind,
        a.attgenerated as generated_kind,
-       pg_catalog.pg_get_expr(def.adbin,def.adrelid) as default_expression
+       def.oid is not null as has_default,
+       pg_catalog.md5(pg_catalog.pg_get_expr(def.adbin,def.adrelid)) as default_expression_md5
 from pg_catalog.pg_class cl
 join pg_catalog.pg_namespace ns on ns.oid=cl.relnamespace
 join pg_catalog.pg_attribute a on a.attrelid=cl.oid
@@ -63,9 +71,10 @@ select ns.nspname as routine_schema, p.proname as routine_name,
        p.provolatile as volatility,
        pg_catalog.pg_get_userbyid(p.proowner) as owner_name,
        p.proacl::text as explicit_acl,
-       (select pg_catalog.string_agg(v, ', ' order by v)
+       p.proconfig is not null as has_routine_config,
+       (select pg_catalog.md5(pg_catalog.string_agg(v, ', ' order by v))
           from pg_catalog.unnest(p.proconfig) as v
-          where v like 'search_path=%') as search_path_setting,
+          where v like 'search_path=%') as search_path_config_md5,
        case when p.prokind in ('f','p')
             then pg_catalog.md5(pg_catalog.pg_get_functiondef(p.oid))
             else null end as definition_md5,
@@ -83,7 +92,7 @@ select ns.nspname as table_schema, cl.relname as relation_name,
        con.conname as constraint_name, con.contype as constraint_type,
        con.convalidated as validated, con.condeferrable as deferrable,
        con.condeferred as initially_deferred,
-       pg_catalog.pg_get_constraintdef(con.oid,true) as definition
+       pg_catalog.md5(pg_catalog.pg_get_constraintdef(con.oid,true)) as definition_md5
 from pg_catalog.pg_constraint con
 join pg_catalog.pg_class cl on cl.oid=con.conrelid
 join pg_catalog.pg_namespace ns on ns.oid=cl.relnamespace
@@ -97,7 +106,7 @@ select ns.nspname as table_schema, cl.relname as relation_name,
        idx.relname as index_name, i.indisunique as unique_index,
        i.indisprimary as primary_index, i.indisvalid as valid,
        i.indisready as ready, con.conname as backing_constraint,
-       pg_catalog.pg_get_indexdef(idx.oid) as definition
+       pg_catalog.md5(pg_catalog.pg_get_indexdef(idx.oid)) as definition_md5
 from pg_catalog.pg_index i
 join pg_catalog.pg_class cl on cl.oid=i.indrelid
 join pg_catalog.pg_namespace ns on ns.oid=cl.relnamespace
@@ -127,8 +136,10 @@ select ns.nspname as table_schema, cl.relname as relation_name,
                 else pg_catalog.pg_get_userbyid(role_oid)::text end
            order by role_oid),array[]::text[])
           from pg_catalog.unnest(pol.polroles) as role_oid) as policy_roles,
-       pg_catalog.pg_get_expr(pol.polqual,pol.polrelid) as using_clause,
-       pg_catalog.pg_get_expr(pol.polwithcheck,pol.polrelid) as check_clause
+       pol.polqual is not null as has_using_clause,
+       pol.polwithcheck is not null as has_check_clause,
+       pg_catalog.md5(pg_catalog.pg_get_expr(pol.polqual,pol.polrelid)) as using_clause_md5,
+       pg_catalog.md5(pg_catalog.pg_get_expr(pol.polwithcheck,pol.polrelid)) as check_clause_md5
 from pg_catalog.pg_class cl
 join pg_catalog.pg_namespace ns on ns.oid=cl.relnamespace
 left join pg_catalog.pg_policy pol on pol.polrelid=cl.oid
@@ -231,7 +242,7 @@ order by schema_name,role_name;
 select ns.nspname as view_schema, cl.relname as view_name,
        cl.relkind as kind, cl.reloptions::text as view_options,
        pg_catalog.pg_get_userbyid(cl.relowner) as owner_name,
-       pg_catalog.pg_get_viewdef(cl.oid,true) as definition
+       pg_catalog.md5(pg_catalog.pg_get_viewdef(cl.oid,true)) as definition_md5
 from pg_catalog.pg_class cl
 join pg_catalog.pg_namespace ns on ns.oid=cl.relnamespace
 where cl.relkind in ('v','m')
@@ -299,3 +310,15 @@ where typ.typtype='d'
   and ns.nspname not in ('pg_catalog','information_schema')
   and ns.nspname not like 'pg_toast%' and ns.nspname not like 'pg_temp%'
 order by domain_schema,domain_name,constraint_name;
+
+-- F3_QUERY_PG15: Q17_ROLE_MEMBERSHIPS
+-- PostgreSQL 15 pg_auth_members lacks inherit_option / set_option.
+-- Execute this alternative INSTEAD of the PG16+ Q17; never run both in hosted.
+select pg_catalog.pg_get_userbyid(m.roleid)::text as granted_role,
+       pg_catalog.pg_get_userbyid(m.member)::text as member_role,
+       pg_catalog.pg_get_userbyid(m.grantor)::text as grantor_role,
+       m.admin_option as admin_option,
+       null::boolean as inherit_option,
+       null::boolean as set_option
+from pg_catalog.pg_auth_members m
+order by granted_role,member_role;

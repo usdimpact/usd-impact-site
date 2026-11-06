@@ -18,6 +18,13 @@ create schema auth;
 create table auth.users(id uuid primary key,email text);
 create function auth.uid() returns uuid language sql stable set search_path='' as $$
   select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+-- Disposable synthetic Supabase Auth helper required by UI02 locale policies.
+-- No service key, session or real hosted Auth data is accessed by this stub.
+create function auth.jwt() returns jsonb language sql stable set search_path='' as $$
+  select coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb,
+    case when nullif(current_setting('request.jwt.claim.sub',true),'') is not null
+      then jsonb_build_object('sub',current_setting('request.jwt.claim.sub',true))
+      else '{}'::jsonb end) $$;
 create schema storage;
 create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,
   allowed_mime_types text[],owner uuid,created_at timestamptz default now(),updated_at timestamptz default now());
@@ -35,6 +42,10 @@ grant all on schema public to postgres; grant create on database ci_review to po
             print("FAIL",f.name,e.sqlstate,str(e).splitlines()[0]); break
     c.execute("RESET ROLE"); c.execute("reset lock_timeout; reset statement_timeout")
     print(f"OWNER-MODEL REPLAY {ok}/{len(MIG)} as postgres", flush=True)
+    # Never report success from a partial schema: CI/standalone replay must
+    # exit nonzero immediately, before any F3 catalog or lifecycle checks.
+    if ok != len(MIG):
+        raise SystemExit(1)
     print("owners:", c.execute("select string_agg(distinct pg_get_userbyid(relowner),',') from pg_class where relnamespace='public'::regnamespace and relkind='r'").fetchone()[0])
     if overlays:
         C=repo/"docs/operations"

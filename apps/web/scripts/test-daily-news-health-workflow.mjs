@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const workflow = await readFile(
   new URL('../../../.github/workflows/daily-news-health.yml', import.meta.url),
@@ -23,6 +25,32 @@ assert.match(
   /--json databaseId,status,conclusion,createdAt,updatedAt,url,event/,
   'health checks must request the workflow update timestamp',
 );
+assert.match(
+  workflow,
+  /latest_run_json="\$\(gh run list[\s\S]*?--branch main[\s\S]*?--limit 1[\s\S]*?--json databaseId,status,conclusion,createdAt,updatedAt,url,event\)"/,
+  'the latest any-event run must remain available to detect newer fallback failures',
+);
+assert.match(
+  workflow,
+  /run_json="\$\(gh run list[\s\S]*?--branch main[\s\S]*?--event schedule[\s\S]*?--limit 1[\s\S]*?--json databaseId,status,conclusion,createdAt,updatedAt,url,event\)"/,
+  'native recovery must select a schedule-event run even when an external wake came later',
+);
+assert.match(
+  workflow,
+  /No native scheduled Daily USD Impact workflow run was found\./,
+  'missing native schedule evidence must remain a failure rather than becoming healthy',
+);
+assert.match(
+  workflow,
+  /latest_created_epoch" -gt "\$created_epoch"[\s\S]*newer_fallback_pending[\s\S]*latest_conclusion" != "success"[\s\S]*exit 1/,
+  'a newer failed or pending fallback must never be ignored when certifying the native schedule',
+);
+assert.match(
+  workflow,
+  /Newer non-scheduled run succeeded; assessing the independently identified native schedule below\./,
+  'a successful newer fallback must not hide the earlier natural schedule',
+);
+
 assert.match(
   workflow,
   /expected_date="\$\{created_at:0:10\}"/,
@@ -214,6 +242,120 @@ assert.equal(
   0,
   `Daily Health shell must parse with bash -n:\n${syntaxCheck.stderr}`,
 );
+
+// Execute the real Health shell's selection and fallback-safety preamble in
+// isolation with synthetic GitHub run JSON. This complements pattern checks:
+// no GitHub API, model call, schedule dispatch or Production request is made.
+const earlyExitMarker = 'if [ "$status" = "completed" ] && [ "$conclusion" != "success" ]; then';
+const boundary = healthShell.indexOf(earlyExitMarker);
+assert.ok(boundary > 0, 'the native/fallback guard preamble must be extractable');
+const selectionOnlyShell = [
+  healthShell.slice(0, boundary),
+  'printf "SELECTED_RUN_ID=%s\\n" "$run_id"',
+].join('\n');
+
+const mockDir = await mkdtemp(join(tmpdir(), 'usd-daily-health-events-'));
+try {
+  const mockGhPath = join(mockDir, 'gh');
+  await writeFile(mockGhPath, [
+    '#!/usr/bin/env bash',
+    'case " $* " in',
+    '  *" --event schedule "*) printf "%s\\n" "$MOCK_SCHEDULE_JSON" ;;',
+    '  *) printf "%s\\n" "$MOCK_LATEST_JSON" ;;',
+    'esac',
+    '',
+  ].join('\n'), { mode: 0o755 });
+
+  const utcMinutesAgo = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString();
+  const fakeRun = (id, event, status, conclusion, minutesAgo) => ({
+    databaseId: id,
+    event,
+    status,
+    conclusion,
+    createdAt: utcMinutesAgo(minutesAgo),
+    updatedAt: utcMinutesAgo(Math.max(1, minutesAgo - 2)),
+    url: 'https://github.com/example/repo/actions/runs/' + id,
+  });
+  const scheduled = fakeRun(1001, 'schedule', 'completed', 'success', 65);
+  const latestFailed = fakeRun(1002, 'workflow_dispatch', 'completed', 'failure', 20);
+  const latestActive = fakeRun(1003, 'workflow_dispatch', 'in_progress', null, 20);
+  const latestSuccess = fakeRun(1004, 'workflow_dispatch', 'completed', 'success', 20);
+
+  const cases = [
+    {
+      name: 'missing-native-schedule-is-failure',
+      native: [],
+      latest: [latestSuccess],
+      exitCode: 1,
+      report: /No native scheduled Daily USD Impact workflow run was found/,
+    },
+    {
+      name: 'newer-failed-fallback-is-failure',
+      native: [scheduled],
+      latest: [latestFailed],
+      exitCode: 1,
+      report: /newer non-scheduled Daily run ended unsuccessfully/,
+    },
+    {
+      name: 'newer-active-fallback-is-pending',
+      native: [scheduled],
+      latest: [latestActive],
+      exitCode: 0,
+      report: /newer_fallback_pending/,
+      output: /state=pending/,
+    },
+    {
+      name: 'newer-successful-fallback-does-not-hide-native',
+      native: [scheduled],
+      latest: [latestSuccess],
+      exitCode: 0,
+      report: /assessing the independently identified native schedule/,
+      stdout: /SELECTED_RUN_ID=1001/,
+    },
+    {
+      name: 'latest-run-is-the-native-schedule',
+      native: [scheduled],
+      latest: [scheduled],
+      exitCode: 0,
+      stdout: /SELECTED_RUN_ID=1001/,
+    },
+  ];
+
+  for (const scenario of cases) {
+    const outputFile = join(mockDir, scenario.name + '.output');
+    const result = spawnSync('bash', ['-c', selectionOnlyShell], {
+      cwd: mockDir,
+      encoding: 'utf8',
+      timeout: 5_000,
+      env: {
+        ...process.env,
+        PATH: mockDir + ':' + process.env.PATH,
+        GITHUB_REPOSITORY: 'example/repo',
+        WORKFLOW_NAME: 'daily-news.yml',
+        GITHUB_OUTPUT: outputFile,
+        MAX_AGE_HOURS: '12',
+        MAX_ACTIVE_MINUTES: '130',
+        HEALTH_WORKFLOW_EVENT: 'schedule',
+        MOCK_SCHEDULE_JSON: JSON.stringify(scenario.native),
+        MOCK_LATEST_JSON: JSON.stringify(scenario.latest),
+      },
+    });
+    assert.equal(result.error, undefined, scenario.name + ' should run without subprocess failure');
+    assert.equal(
+      result.status, scenario.exitCode,
+      scenario.name + ': ' + result.stdout + '\n' + result.stderr,
+    );
+    const report = await readFile(join(mockDir, 'daily-health-report.md'), 'utf8');
+    if (scenario.report) assert.match(report, scenario.report, scenario.name);
+    if (scenario.stdout) assert.match(result.stdout, scenario.stdout, scenario.name);
+    if (scenario.output) {
+      const output = await readFile(outputFile, 'utf8');
+      assert.match(output, scenario.output, scenario.name);
+    }
+  }
+} finally {
+  await rm(mockDir, { recursive: true, force: true });
+}
 
 console.log('daily news health workflow tests pass');
 

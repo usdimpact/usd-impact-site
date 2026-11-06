@@ -273,6 +273,34 @@ hold_lease=uuid.UUID(hold_selected["lease_id"]) if hold_selected else uuid.uuid4
 before_late=svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",(hold,hold_lease))
 rec("C billing fence permits owner-cleared Phase A before late merchant evidence",
     hold_selected is not None and before_late==("OK",True),before_late)
+# F1: a signed renewal on an already-bound Research subscription arrives
+# after DB Phase A. It must be durably held, not silently rolled back.
+late_bound=svc("""SELECT public.apply_research_membership_transition(
+    %s,%s,%s,'lemon-squeezy',%s,'pending'::public.subscription_state,
+    'active'::public.subscription_state,
+    now(),now()+interval '30 days',false,'active'::public.entitlement_state,
+    now(),null,'subscription.renewed',now(),
+    '{"lemonEventName":"subscription_updated"}'::jsonb)""",
+    (binding[1]["subscription_id"],"syn-bound-late-"+hold.hex,
+     "evt-bound-late-"+hold.hex,"p1two-sub-"+hold.hex[:14]))
+late_bound_replay=svc("""SELECT public.apply_research_membership_transition(
+    %s,%s,%s,'lemon-squeezy',%s,'pending'::public.subscription_state,
+    'active'::public.subscription_state,
+    now(),now()+interval '30 days',false,'active'::public.entitlement_state,
+    now(),null,'subscription.renewed',now(),
+    '{"lemonEventName":"subscription_updated"}'::jsonb)""",
+    (binding[1]["subscription_id"],"syn-bound-late-"+hold.hex,
+     "evt-bound-late-"+hold.hex,"p1two-sub-"+hold.hex[:14]))
+bound_fence=svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",(hold,hold_lease))
+rec("C F1 late bound signed Research renewal invalidates preexisting owner clearance",
+    late_bound[0]=="OK" and late_bound[1]["action"]=="held_nonactive"
+    and late_bound_replay[0]=="OK" and late_bound_replay[1]["action"]=="duplicate"
+    and bound_fence[0]=="ERR" and bound_fence[1].startswith("55000")
+    and row(hold)["status"]=="deleted"
+    and su("SELECT count(*) FROM public.subscription_events WHERE event_key=%s",
+           ("syn-bound-late-"+hold.hex,))==1
+    and su("SELECT state::text FROM public.entitlements WHERE account_id=%s AND product_id='research-membership'",(hold,))=="account_deleted",
+    f"event={late_bound} replay={late_bound_replay} fence={bound_fence}")
 after=svc("""SELECT public.record_research_paid_binding_refusal(
     'lemon-squeezy',%s,%s,%s,'SIGNED_PAID_BINDING_REFUSED')""",
     ("syn-late-"+hold.hex[:12],hold,"syn-checkout-"+hold.hex[:14]))

@@ -69,6 +69,17 @@ const held = await persistResearchMembershipTransition({
   }), { status: 200 }),
 });
 assert.equal(held.action, 'held_stale');
+const nonactive = await persistResearchMembershipTransition({
+  plan, subscriptionId,
+  environment: {
+    SUPABASE_URL: 'https://example.supabase.co',
+    SUPABASE_SECRET_KEY: `sb_secret_${'x'.repeat(32)}`,
+  },
+  fetchImpl: async () => new Response(JSON.stringify({
+    action: 'held_nonactive', subscription_id: subscriptionId, event_key: body.p_event_key,
+  }), { status: 200 }),
+});
+assert.equal(nonactive.action, 'held_nonactive');
 assert.equal(request.url, 'https://example.supabase.co/rest/v1/rpc/apply_research_membership_transition');
 assert.equal(request.init.method, 'POST');
 assert.equal(JSON.parse(request.init.body).p_entitlement_state, 'suspended');

@@ -319,7 +319,11 @@ ent = su("SELECT string_agg(state::text, ',') FROM public.entitlements WHERE acc
 rec("R7", "cleared Research member finalizes; entitlement becomes account_deleted", f == ("OK", 1) and ent == "account_deleted", f"{f} {ent}")
 re_ = svc(TR, (msid, f"p1-reopen-{mpsub}", f"evt-reopen-{mpsub}", mpsub, "cancelled", "active", "active", "2026-11-01T00:00:00Z"))
 ent = su("SELECT string_agg(state::text, ',') FROM public.entitlements WHERE account_id=%s", (m,))
-rec("R7", "late positive event cannot reopen a deleted account (D33-1)", re_[0] == "ERR" and ent == "account_deleted", f"{re_} {ent}")
+rec("R7", "late positive event held durably without reopening deleted account (D33-1)",
+    re_[0]=="OK" and re_[1]["action"]=="held_nonactive" and ent=="account_deleted"
+    and su("SELECT count(*) FROM public.subscription_events WHERE event_key=%s",
+           (f"p1-reopen-{mpsub}",))==1,
+    f"{re_} {ent}")
 cf = own("SELECT public.record_research_billing_clearance(%s,'provider_api','ref-future-01',now()+interval '1 day','owner')", (n,))
 rec("R8", "clearance cannot be future-dated", cf[0] == "ERR" and cf[1].startswith("22023"), str(cf))
 
@@ -518,7 +522,12 @@ rec("R11", "signed redelivery after resolution reopens all linked billing holds"
 # ---------------- D33 / D2-C live paths ----------------
 p, psid, ppsub = research_member(); request_del(p)
 g = svc(TR, (psid, f"p1-renew-{ppsub}", f"evt-renew-{ppsub}", ppsub, "active", "active", "active", "2026-11-01T00:00:00Z"))
-rec("D33", "positive renewal refused for deletion_pending profile", g[0] == "ERR" and "nonactive" in g[1], str(g))
+rec("D33", "positive renewal on deletion_pending is non-applied, held financial evidence",
+    g[0]=="OK" and g[1]["action"]=="held_nonactive"
+    and su("SELECT metadata ->> 'researchP1NonactiveHeld' FROM public.subscription_events WHERE event_key=%s",
+           (f"p1-renew-{ppsub}",))=="true"
+    and su("SELECT state::text FROM public.entitlements WHERE account_id=%s AND product_id='research-membership'",(p,))=="active",
+    str(g))
 ng = svc(TR, (psid, f"p1-cxl-{ppsub}", f"evt-cxl-{ppsub}", ppsub, "active", "cancelled", "revoked", None))
 rec("D33", "negative cancellation still recorded for deletion_pending profile", ng[0] == "OK", str(ng)[:120])
 ok_a, _, _ = research_member()

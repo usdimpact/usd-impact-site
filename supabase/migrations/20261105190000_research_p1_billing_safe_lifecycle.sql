@@ -99,6 +99,7 @@ begin
     raise exception 'transition metadata must be a JSON object';
   end if;
   if p_metadata ? 'researchP1StaleHeld'
+     or p_metadata ? 'researchP1NonactiveHeld'
      or p_metadata ? 'researchP1OriginalToState'
      or p_metadata ? 'researchP1LatestAt' then
     raise exception using errcode='42501',
@@ -192,13 +193,28 @@ begin
     );
   end if;
 
-  -- Positive/benefit-bearing lifecycle events must not grant anything once
-  -- an account is suspended, deletion_pending or already deleted.
+  -- Valid signed positive events remain financial evidence after the account
+  -- is no longer active. Never restore benefits; retain a non-applied event.
+  -- Its INSERT created_at invalidates any older owner billing clearance.
   if v_profile_status <> 'active'
      and (p_to_state in ('pending','active','past_due','cancel_scheduled')
           or p_entitlement_state in ('active','suspended')) then
-    raise exception 'd33: Research paid grant refused for nonactive profile'
-      using errcode='42501';
+    insert into public.subscription_events
+      (event_key,subscription_id,account_id,product_id,from_state,to_state,
+       reason,actor_type,provider_event_id,metadata,occurred_at)
+    values (
+      p_event_key,p_subscription_id,v_subscription.account_id,'research-membership',
+      p_expected_from_state,p_expected_from_state,p_reason,'provider_webhook',
+      p_provider_event_id,
+      p_metadata || pg_catalog.jsonb_build_object(
+        'researchP1NonactiveHeld',true,
+        'researchP1OriginalToState',p_to_state::text
+      ),p_occurred_at
+    );
+    return pg_catalog.jsonb_build_object(
+      'action','held_nonactive','subscription_id',p_subscription_id,
+      'event_key',p_event_key
+    );
   end if;
   v_effective_entitlement_state := p_entitlement_state;
   v_terminal := p_to_state in ('cancelled', 'refunded', 'charged_back');

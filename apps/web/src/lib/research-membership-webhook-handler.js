@@ -260,13 +260,17 @@ function verifiedDuplicate(row, { inspected, options, eventKey }) {
     if (metadata[field] !== inspected.metadata[field]) throw replayError();
   }
   const staleHeld = metadata.researchP1StaleHeld === true;
-  if (Object.hasOwn(metadata, 'researchP1StaleHeld')
-      && !staleHeld) throw replayError();
-  if (staleHeld && (
+  const nonactiveHeld = metadata.researchP1NonactiveHeld === true;
+  if ((Object.hasOwn(metadata, 'researchP1StaleHeld') && !staleHeld)
+      || (Object.hasOwn(metadata, 'researchP1NonactiveHeld') && !nonactiveHeld)
+      || (staleHeld && nonactiveHeld)) throw replayError();
+  if ((staleHeld || nonactiveHeld) && (
     row.to_state !== row.from_state
     || typeof metadata.researchP1OriginalToState !== 'string'
-    || !Number.isFinite(Date.parse(metadata.researchP1LatestAt))
-    || Date.parse(metadata.researchP1LatestAt) < Date.parse(row.occurred_at)
+    || (staleHeld && (
+      !Number.isFinite(Date.parse(metadata.researchP1LatestAt))
+      || Date.parse(metadata.researchP1LatestAt) < Date.parse(row.occurred_at)
+    ))
   )) throw replayError();
   // Legacy rows have only the six provider fields above. Compare every field
   // they retained, without inventing a historical full-payload fingerprint.
@@ -286,12 +290,14 @@ function verifiedDuplicate(row, { inspected, options, eventKey }) {
     const event = normalizeResearchMembershipLifecycleEvent({
       ...normalized.providerEvent, accountId: subscription.accountId, currentState: row.from_state,
     });
-    if (event.toState !== (staleHeld ? metadata.researchP1OriginalToState : row.to_state)
+    if (event.toState !== ((staleHeld || nonactiveHeld)
+      ? metadata.researchP1OriginalToState : row.to_state)
         || event.eventType !== row.reason) throw replayError();
   } catch {
     throw replayError();
   }
-  return Object.freeze({ action: staleHeld ? 'held_stale' : 'duplicate', eventKey,
+  return Object.freeze({ action: staleHeld ? 'held_stale'
+    : nonactiveHeld ? 'held_nonactive' : 'duplicate', eventKey,
     providerSubscriptionId: subscription.providerSubscriptionId });
 }
 
@@ -356,11 +362,11 @@ export async function processResearchMembershipWebhook({
     if (concurrent) return verifiedDuplicate(concurrent, replayContext);
     throw error;
   }
-  if (persisted.action === 'duplicate' || persisted.action === 'held_stale') {
+  if (['duplicate', 'held_stale', 'held_nonactive'].includes(persisted.action)) {
     const concurrent = await readEvent();
     if (!concurrent) throw replayError();
     const verified = verifiedDuplicate(concurrent, replayContext);
-    if (persisted.action === 'held_stale' && verified.action !== 'held_stale') throw replayError();
+    if (persisted.action !== 'duplicate' && verified.action !== persisted.action) throw replayError();
     return verified;
   }
   return Object.freeze({

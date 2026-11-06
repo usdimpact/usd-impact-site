@@ -180,6 +180,36 @@ await test('forged chronology marker cannot bypass signed replay verification', 
   await assert.rejects(() => ctx.run(), { code: 'RESEARCH_WEBHOOK_REPLAY_CONFLICT' });
   ctx.assertReadOnly();
 });
+function nonactiveLedgerRecord() {
+  const record = archived();
+  record.to_state = record.from_state;
+  record.metadata.researchP1NonactiveHeld = true;
+  record.metadata.researchP1OriginalToState = archived().to_state;
+  return record;
+}
+await test('signed renewal for a nonactive profile is retained, not applied', async () => {
+  const ctx = fixture({ rows: [nonactiveLedgerRecord()] });
+  const before = structuredClone(ctx.current);
+  assert.equal((await ctx.run()).action, 'held_nonactive');
+  ctx.assertReadOnly();
+  assert.deepEqual(ctx.current, before);
+});
+await test('held-nonactive acknowledgement requires matching committed evidence', async () => {
+  const ctx = fixture({ rpcReply: (c, json) => {
+    c.rows.push(nonactiveLedgerRecord());
+    return json({ action: 'held_nonactive' });
+  } });
+  assert.equal((await ctx.run()).action, 'held_nonactive');
+  assert.equal(ctx.calls.filter(c => c.method === 'POST').length, 1);
+  assert.equal(ctx.writes.length, 0);
+});
+await test('forged nonactive event marker cannot bypass signed verification', async () => {
+  const row = nonactiveLedgerRecord();
+  row.metadata.researchP1OriginalToState = 'charged_back';
+  const ctx = fixture({ rows: [row] });
+  await assert.rejects(() => ctx.run(), { code: 'RESEARCH_WEBHOOK_REPLAY_CONFLICT' });
+  ctx.assertReadOnly();
+});
 await test('initial event is persisted once; replay after terminal transition never calls RPC', async () => {
   const ctx = fixture();
   assert.equal((await ctx.run()).action, 'applied');

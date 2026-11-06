@@ -266,6 +266,32 @@ try {
     '',
   ].join('\n'), { mode: 0o755 });
 
+  // GitHub's Ubuntu runner supplies jq; Vercel's build image may not. The
+  // production Health workflow still uses real jq. Only this offline synthetic
+  // shell harness installs a strictly whitelisted temporary compatibility
+  // reader when the executable is absent. No network or package install.
+  const jqProbe = spawnSync('jq', ['--version'], { encoding: 'utf8' });
+  if (jqProbe.error?.code === 'ENOENT') {
+    await writeFile(join(mockDir, 'jq'), [
+      '#!/usr/bin/env node',
+      "const { readFileSync } = require('node:fs');",
+      "const args = process.argv.slice(2);",
+      "const selector = args.length === 1 ? args[0] : (args.length === 2 && args[0] === '-r' ? args[1] : null);",
+      "const allowed = new Set(['length', '.[0].databaseId', '.[0].status', '.[0].conclusion // \"unknown\"', '.[0].createdAt', '.[0].updatedAt // .[0].createdAt', '.[0].url', '.[0].event']);",
+      "if (!allowed.has(selector)) { console.error('Unsupported synthetic jq selector'); process.exit(2); }",
+      "const input = JSON.parse(readFileSync(0, 'utf8'));",
+      "if (!Array.isArray(input)) process.exit(3);",
+      "const run = input[0] || {};",
+      "const key = selector.match(/^\\.\\[0\\]\\.([A-Za-z]+)(?: \\/\\/ .*)?$/)?.[1];",
+      "const value = selector === 'length' ? input.length : (selector === '.[0].conclusion // \"unknown\"' ? (run.conclusion ?? 'unknown') : (selector === '.[0].updatedAt // .[0].createdAt' ? (run.updatedAt ?? run.createdAt) : run[key]));",
+      "if (value === undefined) process.exit(4);",
+      "process.stdout.write(String(value) + '\\n');",
+    ].join(String.fromCharCode(10)), { mode: 0o755 });
+  } else {
+    assert.equal(jqProbe.error, undefined, 'system jq should execute when installed');
+    assert.equal(jqProbe.status, 0, 'system jq should be usable when installed');
+  }
+
   const utcMinutesAgo = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString();
   const fakeRun = (id, event, status, conclusion, minutesAgo) => ({
     databaseId: id,

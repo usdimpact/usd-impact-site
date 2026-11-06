@@ -46,7 +46,7 @@ for (const protectedPath of ['/reports/weekly/2026-08-28', '/reports/monthly/202
       readAccessToken: () => 'token',
       readAccessState: async ({ productId }) => {
         assert.equal(productId, 'research-membership');
-        return { entitlement: { state } };
+        return { profile: { status: 'active' }, entitlement: { state } };
       },
     });
     assert.equal(decision.action, 'allow', `${protectedPath}/${state}`);
@@ -57,7 +57,7 @@ for (const protectedPath of ['/reports/weekly/2026-08-28', '/reports/monthly/202
       request: request(protectedPath),
       environment: preview,
       readAccessToken: () => 'token',
-      readAccessState: async () => ({ entitlement: { state } }),
+      readAccessState: async () => ({ profile: { status: 'active' }, entitlement: { state } }),
     });
     assert.equal(decision.action, 'redirect', `${protectedPath}/${state}`);
     assert.match(decision.location, /\/research\/access-required\//);

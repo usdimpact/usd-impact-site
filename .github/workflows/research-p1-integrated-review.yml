@@ -70,6 +70,8 @@ jobs:
           node --check src/lib/account-deletion-two-phase-review.js
           node scripts/test-account-deletion-two-phase-review.mjs
           node scripts/test-account-deletion-two-phase-financial-hold.mjs
+          node scripts/test-research-preview-route.mjs
+          node scripts/test-account-deletion-interim-mode.mjs
           node --check src/lib/account-deletion-two-phase-preflight.js
           node --check api/account.js
           node scripts/test-account-deletion-two-phase-preflight.mjs
@@ -83,3 +85,4 @@ jobs:
           python3 supabase/tests/research-p1/test_research_p1_lifecycle.py CI
           python3 supabase/tests/research-p1/test_research_p1_two_phase.py
           python3 supabase/tests/research-p1/test_research_p1_auth_split_fence.py
+          python3 supabase/tests/research-p1/test_research_p1_interim_deletion.py "$GITHUB_WORKSPACE"

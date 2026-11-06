@@ -131,6 +131,19 @@ assert.match(shortRule, /\.privacy-consent-actions \{ flex: none; display: flex;
 assert.doesNotMatch(shortRule, /position:\s*sticky/, 'actions must not overlay the notice text');
 assert.ok(consent.lastIndexOf('@media (max-height: 560px)') > consent.lastIndexOf('@media (max-width: 520px)'), 'short-viewport rule must follow the narrow-width rule');
 
+// About 400% zoom on laptop screens: heading plus at least one complete line stays readable, the privacy link
+// stays on one line, choices stay in one row, and the notice leaves room above it for tall focused page elements.
+const tinyRule = consent.match(/@media \(max-height: 300px\) \{([\s\S]*?)\n  \}/)?.[1] || '';
+assert.match(tinyRule, /\.privacy-consent-banner \{ max-height: none; bottom: 4px;/);
+assert.match(tinyRule, /\.privacy-consent-banner > div:first-child \{ max-height: max\(33px, calc\(100vh - 142px\)\); scroll-padding-top: 16px; \}/);
+assert.match(tinyRule, /\.privacy-consent-banner > div:first-child strong \{ position: sticky; top: 0;/);
+assert.match(tinyRule, /\.privacy-consent-banner p a \{ white-space: nowrap; \}/);
+assert.match(tinyRule, /\.privacy-consent-actions \{ flex-wrap: nowrap;/);
+assert.match(tinyRule, /\.privacy-consent-button \{ flex: 1 1 0; width: auto; min-height: 24px;/);
+assert.doesNotMatch(tinyRule, /display:\s*none|visibility:\s*hidden/, 'notice text and choices must never be hidden');
+assert.match(consent, /@media \(max-height: 560px\) \{\s*\.privacy-consent-banner > div:first-child a:focus-visible \{ outline: 2px solid #f3cc68; outline-offset: -2px; \}/, 'link focus indicator must stay inside the scrolling notice');
+assert.ok(consent.lastIndexOf('@media (max-height: 300px)') > consent.lastIndexOf('@media (max-height: 560px)'), 'tiny-viewport rule must follow the short-viewport rule');
+
 const telemetryGuard = telemetry.indexOf('if (!analyticsAllowed()) return false;');
 const telemetryRequest = telemetry.indexOf('fetch(TELEMETRY_ENDPOINT');
 assert.ok(telemetryGuard >= 0 && telemetryRequest > telemetryGuard);

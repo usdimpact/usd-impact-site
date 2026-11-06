@@ -128,6 +128,7 @@ function verifyFiles(commits, history, intent, daily, approval, reasons) {
 export function evaluate(snapshot, now = Date.now()) {
   const r = [];
   if (!isObj(snapshot)) return result('HOLD', ['INVALID_SNAPSHOT']);
+  if (!Number.isFinite(now) || Math.abs(now) > 8.64e15) return result('HOLD', ['INVALID_CLOCK']);
   const { mode, provenance, intent, evidence, repository: repo,
     vercel, history, checks, dispatch, daily, approval, lock, dedupe, isolation } = snapshot;
   if (mode !== 'dry_run' || provenance !== 'synthetic_fixture') r.push('NOT_DRY_RUN');

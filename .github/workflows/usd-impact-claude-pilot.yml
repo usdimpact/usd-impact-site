@@ -1,0 +1,126 @@
+name: USD Impact Claude WIF pilot (manual authentication only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Validate GitHub OIDC claims; optionally exchange with Anthropic (no model requests)'
+        required: true
+        default: claims_only
+        type: choice
+        options:
+          - claims_only
+          - exchange_only
+
+# This workflow is intentionally not a Claude task dispatcher.
+# No push/PR/schedule trigger, checkout, model call, customer data, or repo write access.
+permissions: {}
+
+concurrency:
+  group: usd-impact-claude-wif-pilot
+  cancel-in-progress: false
+
+jobs:
+  verify-identity:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'usdimpact/usd-impact-site'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      WIF_MODE: ${{ inputs.mode }}
+      WIF_RULE_ID: ${{ vars.USD_IMPACT_ANTHROPIC_RULE_ID }}
+      WIF_ORGANIZATION_ID: ${{ vars.USD_IMPACT_ANTHROPIC_ORGANIZATION_ID }}
+      WIF_SERVICE_ACCOUNT_ID: ${{ vars.USD_IMPACT_ANTHROPIC_SERVICE_ACCOUNT_ID }}
+      WIF_WORKSPACE_ID: ${{ vars.USD_IMPACT_ANTHROPIC_WORKSPACE_ID }}
+    steps:
+      - name: Verify exact GitHub OIDC claims; optionally exchange token without inference
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const audience = 'https://api.anthropic.com';
+          const expected = {
+            iss: 'https://token.actions.githubusercontent.com',
+            sub: 'repo:usdimpact/usd-impact-site:ref:refs/heads/main',
+            aud: audience,
+            repository_owner: 'usdimpact',
+            repository_owner_id: '275107298',
+            repository: 'usdimpact/usd-impact-site',
+            repository_id: '1265351071',
+            ref: 'refs/heads/main',
+            event_name: 'workflow_dispatch',
+            workflow_ref: 'usdimpact/usd-impact-site/.github/workflows/usd-impact-claude-pilot.yml@refs/heads/main',
+          };
+          async function main() {
+            const mode = process.env.WIF_MODE;
+            if (mode !== 'claims_only' && mode !== 'exchange_only') throw Error('Unsupported pilot mode');
+            const requestUrl = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
+            const requestToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
+            if (!requestUrl || !requestToken) throw Error('GitHub OIDC permission is unavailable');
+            const url = new URL(requestUrl);
+            if (url.protocol !== 'https:' || !url.hostname.endsWith('.actions.githubusercontent.com')) {
+              throw Error('Unexpected GitHub OIDC request endpoint');
+            }
+            url.searchParams.set('audience', audience);
+            const oidcResponse = await fetch(url.toString(), {
+              headers: { Authorization: 'Bearer ' + requestToken },
+              signal: AbortSignal.timeout(10000),
+            });
+            if (!oidcResponse.ok) throw Error('OIDC issuance failed with HTTP ' + oidcResponse.status);
+            const issued = await oidcResponse.json();
+            const jwt = issued.value;
+            if (typeof jwt !== 'string' || jwt.split('.').length !== 3) throw Error('Invalid OIDC token format');
+            // Decoding checks the claims locally; Anthropic verifies the actual JWT signature on exchange.
+            const claims = JSON.parse(Buffer.from(jwt.split('.')[1], 'base64url').toString('utf8'));
+            for (const [key, value] of Object.entries(expected)) {
+              if (String(claims[key] ?? '') !== value) throw Error('OIDC claim mismatch: ' + key);
+            }
+            const now = Math.floor(Date.now() / 1000);
+            if (!Number.isSafeInteger(claims.iat) || !Number.isSafeInteger(claims.exp) ||
+                claims.iat > now + 30 || claims.exp <= now) throw Error('OIDC token time window invalid');
+            console.log('PASS: exact GitHub OIDC claims match the single permitted main-branch workflow.');
+            if (mode === 'claims_only') {
+              console.log('No Anthropic request, no model call, and no repository modification.');
+              return;
+            }
+            const rule = process.env.WIF_RULE_ID || '';
+            const organization = process.env.WIF_ORGANIZATION_ID || '';
+            const serviceAccount = process.env.WIF_SERVICE_ACCOUNT_ID || '';
+            const workspace = process.env.WIF_WORKSPACE_ID || '';
+            if (!/^fdrl_[a-zA-Z0-9]+$/.test(rule) ||
+                !/^[0-9a-fA-F-]{36}$/.test(organization) ||
+                !/^svac_[a-zA-Z0-9]+$/.test(serviceAccount)) {
+              throw Error('Exchange disabled: repository WIF ID variables are missing or invalid');
+            }
+            if (workspace && !/^wrkspc_[a-zA-Z0-9]+$/.test(workspace)) {
+              throw Error('Invalid workspace ID');
+            }
+            const body = {
+              grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+              assertion: jwt,
+              federation_rule_id: rule,
+              organization_id: organization,
+              service_account_id: serviceAccount,
+              ...(workspace ? { workspace_id: workspace } : {}),
+            };
+            const exchange = await fetch('https://api.anthropic.com/v1/oauth/token', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify(body),
+              signal: AbortSignal.timeout(15000),
+            });
+            // Never print tokens, JWT assertions, request bodies, or response bodies to CI logs.
+            if (!exchange.ok) throw Error('Anthropic identity exchange failed with HTTP ' + exchange.status);
+            const result = await exchange.json();
+            if (typeof result.access_token !== 'string' || !result.access_token.startsWith('sk-ant-oat01-') ||
+                result.token_type !== 'Bearer' ||
+                !Number.isInteger(result.expires_in) || result.expires_in < 60) {
+              throw Error('Unexpected Anthropic token-exchange response');
+            }
+            console.log('PASS: Anthropic federated identity exchange succeeded; access token discarded in memory.');
+            console.log('No Messages API/model request, repository change, or deployment was made.');
+          }
+          main().catch(e => { console.error(String(e.message || 'Authentication preflight failed')); process.exitCode = 1; });
+          NODE

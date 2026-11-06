@@ -284,9 +284,9 @@ try {
     '  if (!match || !Array.isArray(json)) process.exit(2);',
     '  value = json[0]?.[match[1]] ?? (match[2] || "null");',
     '}',
-    'process.stdout.write(String(value) + "\\n");',
+    'process.stdout.write(String(value) + "\n");',
     '',
-  ].join('\\n'), { mode: 0o755 });
+  ].join('\n'), { mode: 0o755 });
 
   const utcMinutesAgo = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString();
   const fakeRun = (id, event, status, conclusion, minutesAgo) => ({

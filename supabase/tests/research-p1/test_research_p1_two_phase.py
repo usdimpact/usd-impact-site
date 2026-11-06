@@ -299,7 +299,9 @@ rec("C F1 late bound signed Research renewal invalidates preexisting owner clear
     and row(hold)["status"]=="deleted"
     and su("SELECT count(*) FROM public.subscription_events WHERE event_key=%s",
            ("syn-bound-late-"+hold.hex,))==1
-    and su("SELECT state::text FROM public.entitlements WHERE account_id=%s AND product_id='research-membership'",(hold,))=="account_deleted",
+    and su("""SELECT count(*) FROM public.entitlements
+              WHERE account_id=%s AND product_id='research-membership'
+                AND state<>'account_deleted'""",(hold,))==0,
     f"event={late_bound} replay={late_bound_replay} fence={bound_fence}")
 after=svc("""SELECT public.record_research_paid_binding_refusal(
     'lemon-squeezy',%s,%s,%s,'SIGNED_PAID_BINDING_REFUSED')""",

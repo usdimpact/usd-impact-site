@@ -157,7 +157,15 @@ const notFound = async () => {
   error.status = 409;
   throw error;
 };
-async function webhook({ bind, quarantine }) {
+function modifiedSignedCreated(edit) {
+  const payload = JSON.parse(signedCreated().rawBody.toString('utf8'));
+  edit(payload);
+  const rawBody = Buffer.from(JSON.stringify(payload));
+  const signature = crypto.createHmac('sha256', checkoutEnvironment.LEMON_SQUEEZY_RESEARCH_TEST_WEBHOOK_SECRET)
+    .update(rawBody).digest('hex');
+  return { rawBody, signature };
+}
+async function webhook({ bind, quarantine, event = signedCreated() }) {
   const log = [];
   let quarantineBody = null;
   const fetchImpl = async (url, init = {}) => {
@@ -171,7 +179,7 @@ async function webhook({ bind, quarantine }) {
   let outcome;
   try {
     outcome = { result: await processResearchMembershipWebhookWithFirstPurchase({
-      ...signedCreated(), environment: checkoutEnvironment, fetchImpl, processImpl: notFound,
+      ...event, environment: checkoutEnvironment, fetchImpl, processImpl: notFound,
     }) };
   } catch (error) {
     outcome = { error };
@@ -201,6 +209,60 @@ async function webhook({ bind, quarantine }) {
 {
   const w = await webhook({ bind: () => json(400, {}), quarantine: () => json(200, 'garbage') });
   eq(w.error?.code, 'RESEARCH_FIRST_PURCHASE_QUARANTINE_FAILED', 'W4 malformed quarantine result fails closed');
+}
+
+
+// An authentic Research subscription can fail inspection before the normal
+// binder; its signed financial footprint must still be durably quarantined.
+{
+  const w = await webhook({
+    bind: () => { throw Error('invalid signed event must never bind'); },
+    quarantine: () => json(200, quarantineId),
+    event: modifiedSignedCreated(v => { v.data.attributes.variant_id = 999; }),
+  });
+  eq(w.log, ['quarantine'], 'W5 malformed signed Research variant quarantined before binding');
+  eq(w.quarantineBody.p_claimed_account_id, accountId, 'W5 claimed account retained');
+  eq(w.quarantineBody.p_checkout_key, 'research-checkout-p1-0001', 'W5 canonical checkout key retained');
+  eq(w.quarantineBody.p_reason_code, 'RESEARCH_FIRST_PURCHASE_VARIANT_MISMATCH', 'W5 exact rejection reason recorded');
+  eq(w.error?.code, 'RESEARCH_FIRST_PURCHASE_VARIANT_MISMATCH', 'W5 original error preserved');
+}
+{
+  const w = await webhook({
+    bind: () => { throw Error('no binding'); },
+    quarantine: () => json(200, quarantineId),
+    event: modifiedSignedCreated(v => { v.meta.custom_data.usd_impact_account_id = 'not-a-uuid'; }),
+  });
+  eq(w.log, ['quarantine'], 'W6 malformed claimed account does not discard signed checkout key');
+  eq(w.quarantineBody.p_claimed_account_id, null, 'W6 account claim withheld');
+  eq(w.quarantineBody.p_checkout_key, 'research-checkout-p1-0001', 'W6 checkout owner can still be held by SQL');
+}
+{
+  const original = signedCreated();
+  const w = await webhook({
+    bind: () => { throw Error('invalid signature'); },
+    quarantine: () => { throw Error('unsigned data must not be persisted'); },
+    event: { ...original, signature: '0'.repeat(64) },
+  });
+  eq(w.log, [], 'W7 invalid signature never writes merchant custody');
+  eq(w.error?.code, 'RESEARCH_WEBHOOK_SIGNATURE_INVALID', 'W7 signature refusal preserved');
+}
+{
+  const w = await webhook({
+    bind: () => { throw Error('foreign merchant product must not bind'); },
+    quarantine: () => { throw Error('foreign product cannot create Research billing hold'); },
+    event: modifiedSignedCreated(v => { v.data.attributes.product_id = 123456; }),
+  });
+  eq(w.log, [], 'W8 foreign signed product is not attributed to Research');
+  eq(w.error?.code, 'RESEARCH_FIRST_PURCHASE_CATALOG_MISMATCH', 'W8 foreign product rejection preserved');
+}
+{
+  const w = await webhook({
+    bind: () => { throw Error('bad Research event must not bind'); },
+    quarantine: () => json(500, {}),
+    event: modifiedSignedCreated(v => { v.data.attributes.variant_id = 999; }),
+  });
+  eq(w.error?.code, 'RESEARCH_FIRST_PURCHASE_QUARANTINE_FAILED',
+    'W9 failed signed-exception custody is retryable 503, never silent success');
 }
 
 // ---------------------------------------------------------------- pre-Auth billing hold

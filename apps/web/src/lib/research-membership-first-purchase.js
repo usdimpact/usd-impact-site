@@ -579,6 +579,43 @@ export async function bindResearchMembershipFirstPurchase({
   return Object.freeze({ ...payload });
 }
 
+
+// Scope an exceptional signed first-purchase delivery to this exact merchant
+// store, product, mode and event type BEFORE writing billing custody. This is
+// intentionally narrower than a general parser: failed signatures or foreign
+// catalog events must never hold an unrelated USD Impact account.
+function signedResearchFirstPurchaseExceptionBinding({ rawBody, signature, environment }) {
+  const config = readBootstrapConfig(environment);
+  let body;
+  try { body = rawBuffer(rawBody); } catch { return null; }
+  if (!verifyLemonSqueezyWebhookSignature({ rawBody: body, signature, secret: config.secret })) return null;
+  let parsed;
+  try { parsed = JSON.parse(body.toString('utf8')); } catch { return null; }
+  const meta = parsed?.meta;
+  const data = parsed?.data;
+  const attrs = data?.attributes;
+  if (meta?.event_name !== 'subscription_created' || data?.type !== 'subscriptions'
+      || !attrs || typeof attrs !== 'object' || Array.isArray(attrs)
+      || attrs.test_mode !== config.testMode
+      || String(attrs.store_id) !== String(config.storeId)
+      || String(attrs.product_id) !== String(config.productId)) return null;
+  let providerSubscriptionId;
+  try { providerSubscriptionId = stableIdentifier(data.id, 'provider subscription id'); }
+  catch { return null; }
+
+  const custom = meta.custom_data && typeof meta.custom_data === 'object'
+    && !Array.isArray(meta.custom_data) ? meta.custom_data : {};
+  const claimed = text(custom.usd_impact_account_id);
+  const rawKey = text(custom.usd_impact_research_checkout_key);
+  return Object.freeze({
+    accountId: UUID_PATTERN.test(claimed) ? claimed : null,
+    providerSubscriptionId,
+    metadata: Object.freeze({
+      checkoutKey: CHECKOUT_KEY_PATTERN.test(rawKey) ? rawKey : null,
+    }),
+  });
+}
+
 export async function processResearchMembershipWebhookWithFirstPurchase({
   rawBody,
   signature,
@@ -592,7 +629,23 @@ export async function processResearchMembershipWebhookWithFirstPurchase({
     if (error?.code !== 'RESEARCH_WEBHOOK_SUBSCRIPTION_NOT_FOUND') throw error;
   }
 
-  const binding = inspectResearchMembershipFirstPurchase({ rawBody, signature, environment });
+  let binding;
+  try {
+    binding = inspectResearchMembershipFirstPurchase({ rawBody, signature, environment });
+  } catch (error) {
+    const exceptionBinding = signedResearchFirstPurchaseExceptionBinding({
+      rawBody, signature, environment,
+    });
+    if (exceptionBinding) {
+      // A genuine subscription in the trusted Research catalog can still be
+      // financially live when account/custom data or first-purchase state is
+      // invalid. Persist minimal custody even if the account claim is absent.
+      await recordResearchPaidBindingRefusal({
+        binding: exceptionBinding, error, environment, fetchImpl,
+      });
+    }
+    throw error;
+  }
   try {
     await bindResearchMembershipFirstPurchase({ binding, environment, fetchImpl });
   } catch (error) {
@@ -617,7 +670,7 @@ export async function recordResearchPaidBindingRefusal({ binding, error, environ
       body: JSON.stringify({
         p_provider: PROVIDER,
         p_provider_subscription_id: stableIdentifier(binding?.providerSubscriptionId, 'provider subscription id'),
-        p_claimed_account_id: accountId(binding?.accountId),
+        p_claimed_account_id: binding?.accountId == null ? null : accountId(binding.accountId),
         p_checkout_key: text(binding?.metadata?.checkoutKey) || null,
         p_reason_code: reason,
       }),

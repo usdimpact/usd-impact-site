@@ -31,14 +31,6 @@ function positiveInteger(value, name) {
   return parsed;
 }
 
-function projectRef(value) {
-  try {
-    return new URL(value).hostname.split('.')[0] || '';
-  } catch {
-    return '';
-  }
-}
-
 function configurationError(message, code = 'RESEARCH_WEBHOOK_CONFIGURATION_INVALID') {
   const error = new Error(message);
   error.code = code;
@@ -77,7 +69,7 @@ function readConfig(environment = process.env) {
   }
 
   if (vercelEnvironment === 'preview') {
-    if (projectRef(environment.SUPABASE_URL) !== DEVELOPMENT_PROJECT_REF) {
+    if (environment.SUPABASE_URL !== `https://${DEVELOPMENT_PROJECT_REF}.supabase.co`) {
       throw configurationError('Research Membership Preview webhook must target canonical Development Supabase.', 'RESEARCH_WEBHOOK_DATABASE_MISMATCH');
     }
     if (!enabled(environment.LEMON_SQUEEZY_RESEARCH_TEST_MODE)) {
@@ -90,7 +82,7 @@ function readConfig(environment = process.env) {
     if (!enabled(environment.RESEARCH_MEMBERSHIP_PRODUCTION_ACTIVATION_APPROVED)) {
       throw configurationError('Research Membership Production webhook activation is not approved.', 'RESEARCH_WEBHOOK_PRODUCTION_NOT_APPROVED');
     }
-    if (projectRef(environment.SUPABASE_URL) !== PRODUCTION_PROJECT_REF) {
+    if (environment.SUPABASE_URL !== `https://${PRODUCTION_PROJECT_REF}.supabase.co`) {
       throw configurationError('Research Membership Production webhook must target canonical Production Supabase.', 'RESEARCH_WEBHOOK_DATABASE_MISMATCH');
     }
     if (enabled(environment.LEMON_SQUEEZY_RESEARCH_PRODUCTION_TEST_MODE)) {
@@ -301,6 +293,42 @@ function verifiedDuplicate(row, { inspected, options, eventKey }) {
     providerSubscriptionId: subscription.providerSubscriptionId });
 }
 
+// A fully authenticated, catalog-bound Research event can still be rejected
+// by the state planner (e.g., a paid renewal after the account was deleted).
+// Never discard this financial evidence merely because the mutation is unsafe.
+// This fallback only runs after signature, catalog, subscription and account
+// inspection succeeded; it records custody, never grants an entitlement.
+async function quarantineRejectedSignedBoundEvent({
+  config, existingSubscription, fetchImpl,
+}) {
+  let response;
+  try {
+    response = await fetchImpl(`${config.supabaseUrl}/rest/v1/rpc/record_research_paid_binding_refusal`, {
+      method: 'POST',
+      headers: {
+        ...headers(config.supabaseSecret),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        p_provider: PROVIDER,
+        p_provider_subscription_id: existingSubscription.providerSubscriptionId,
+        p_claimed_account_id: existingSubscription.accountId,
+        p_checkout_key: null,
+        p_reason_code: 'SIGNED_BOUND_LIFECYCLE_REJECTED',
+      }),
+    });
+  } catch {
+    throw replayError('RESEARCH_WEBHOOK_QUARANTINE_FAILED', 503);
+  }
+  let saved;
+  try { saved = await readJson(response); } catch {
+    throw replayError('RESEARCH_WEBHOOK_QUARANTINE_FAILED', 503);
+  }
+  if (!response?.ok || !UUID_PATTERN.test(String(saved ?? ''))) {
+    throw replayError('RESEARCH_WEBHOOK_QUARANTINE_FAILED', 503);
+  }
+}
+
 export async function processResearchMembershipWebhook({
   rawBody,
   signature,
@@ -340,6 +368,9 @@ export async function processResearchMembershipWebhook({
     if (error?.code === 'RESEARCH_MEMBERSHIP_INVALID_TRANSITION') {
       const concurrent = await readEvent();
       if (concurrent) return verifiedDuplicate(concurrent, replayContext);
+      await quarantineRejectedSignedBoundEvent({
+        config, existingSubscription, fetchImpl,
+      });
     }
     throw error;
   }

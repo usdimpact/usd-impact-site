@@ -54,9 +54,9 @@ function archived(value = payload(), subscription = base) {
     actor_type: 'provider_webhook', occurred_at: e.occurredAt, metadata: { ...e.metadata },
   };
 }
-function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscriptionReply } = {}) {
+function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscriptionReply, quarantineReply } = {}) {
   const originalLibrary = Object.freeze({ product_id: 'read-the-dollar-first-guided-interactive-edition', state: 'active' });
-  const ctx = { current: { ...base, state }, rows: structuredClone(rows), calls: [], writes: [], ledgerReads: 0, library: originalLibrary };
+  const ctx = { current: { ...base, state }, rows: structuredClone(rows), calls: [], writes: [], quarantines: [], ledgerReads: 0, library: originalLibrary };
   const json = (body, status = 200) => new Response(JSON.stringify(body), { status });
   ctx.fetchImpl = async (url, init = {}) => {
     const u = new URL(url);
@@ -85,6 +85,19 @@ function fixture({ state = 'active', rows = [], ledgerReplies, rpcReply, subscri
       ctx.ledgerReads += 1;
       if (ledgerReplies) return ledgerReplies(ctx, json, key.slice(3));
       return json(ctx.rows.filter((r) => r.event_key === key.slice(3)));
+    }
+    if (u.pathname === '/rest/v1/rpc/record_research_paid_binding_refusal') {
+      assert.equal(init.method, 'POST');
+      const evidence = JSON.parse(init.body);
+      assert.deepEqual(evidence, {
+        p_provider: 'lemon-squeezy',
+        p_provider_subscription_id: 'sub_fixture',
+        p_claimed_account_id: accountId,
+        p_checkout_key: null,
+        p_reason_code: 'SIGNED_BOUND_LIFECYCLE_REJECTED',
+      });
+      ctx.quarantines.push(evidence);
+      return quarantineReply ? quarantineReply(ctx, json) : json('99999999-9999-4999-8999-999999999999');
     }
     assert.equal(u.pathname, '/rest/v1/rpc/apply_research_membership_transition', 'no other surface may be accessed');
     assert.equal(init.method, 'POST');
@@ -234,10 +247,34 @@ await test('existing pre-fingerprint ledger row matches only its stored evidence
 for (const state of ['cancelled', 'refunded', 'charged_back']) {
   await test(`genuinely new webhook after ${state} stays rejected`, async () => {
     const ctx = fixture({ state });
+    const prior = structuredClone(ctx.current);
     await assert.rejects(() => ctx.run(), { code: 'RESEARCH_MEMBERSHIP_INVALID_TRANSITION' });
-    ctx.assertReadOnly();
+    assert.equal(ctx.quarantines.length, 1,
+      'signed event rejected by planner must create durable financial custody');
+    assert.equal(ctx.writes.length, 0, 'no entitlement or subscription mutation');
+    assert.deepEqual(ctx.current, prior);
+    assert.equal(ctx.library.product_id, 'read-the-dollar-first-guided-interactive-edition');
   });
 }
+await test('failed signed-bound quarantine is retryable and cannot be acknowledged', async () => {
+  const ctx = fixture({
+    state: 'cancelled',
+    quarantineReply: (_ctx, json) => json({ code: '55000' }, 503),
+  });
+  await assert.rejects(() => ctx.run(), { code: 'RESEARCH_WEBHOOK_QUARANTINE_FAILED', status: 503 });
+  assert.equal(ctx.quarantines.length, 1);
+  assert.equal(ctx.writes.length, 0);
+});
+await test('lookalike Development Supabase hostname is denied before any request', async () => {
+  const ctx = fixture();
+  await assert.rejects(
+    () => ctx.run(payload(), { environment: {
+      ...environment, SUPABASE_URL: 'https://ycstrcvshdluovtuasjc.attacker.invalid',
+    } }),
+    { code: 'RESEARCH_WEBHOOK_DATABASE_MISMATCH' },
+  );
+  assert.equal(ctx.calls.length, 0);
+});
 for (const [field, bad] of [
   ['subscription_id', '33333333-3333-4333-8333-333333333333'],
   ['account_id', '33333333-3333-4333-8333-333333333333'], ['product_id', 'library-pass'],

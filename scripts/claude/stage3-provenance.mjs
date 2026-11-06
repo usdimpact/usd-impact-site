@@ -1,6 +1,7 @@
 // OFFLINE PROTOTYPE ONLY. A signed metadata receipt is not a task authorization.
 // No GitHub API access, issue body/title, persistent state, or privileged operations.
 import { createHash, verify, KeyObject } from 'node:crypto';
+import { types as nodeTypes } from 'node:util';
 
 export const VERSION = 1;
 export const AUDIENCE = 'usdimpact-claude-stage3-metadata-review-v1';
@@ -22,17 +23,22 @@ const SHA_PATTERN = /^[0-9a-f]{40}$/;
 const NONCE_PATTERN = /^[0-9a-f]{32}$/;
 const TIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
-function exactRecord(value, keys) {
+// Verify exact own data descriptors once; use only this immutable snapshot below.
+// Reject Proxy wrappers so their property access cannot change between a
+// signature check and the returned identity. All inputs stay untrusted.
+function snapshotRecord(value, keys) {
   if (value === null || typeof value !== 'object' || Array.isArray(value) ||
-      Object.getPrototypeOf(value) !== Object.prototype) return false;
+      nodeTypes.isProxy(value) || Object.getPrototypeOf(value) !== Object.prototype) return null;
   const present = Reflect.ownKeys(value);
-  if (present.length !== keys.length) return false;
-  for (const key of present) {
-    if (typeof key !== 'string' || !keys.includes(key)) return false;
+  if (present.length !== keys.length ||
+      !present.every(key => typeof key === 'string' && keys.includes(key))) return null;
+  const entries = [];
+  for (const key of keys) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
-    if (!descriptor || !descriptor.enumerable || !Object.hasOwn(descriptor, 'value')) return false;
+    if (!descriptor || !descriptor.enumerable || !Object.hasOwn(descriptor, 'value')) return null;
+    entries.push([key, descriptor.value]);
   }
-  return true;
+  return Object.freeze(Object.fromEntries(entries));
 }
 
 function isoMillis(value) {
@@ -68,38 +74,40 @@ function outcome(allowed, issueNumber = null) {
 // authenticate a live GitHub fetch or the identity of the adapter by itself.
 export function reviewOfflineProvenance(receipt, trustedContext) {
   try {
-    if (!exactRecord(trustedContext, ['public_key', 'now_ms', 'workflow_sha', 'run_id', 'nonce'])) return outcome(false);
-    if (!(trustedContext.public_key instanceof KeyObject) ||
-        trustedContext.public_key.type !== 'public' ||
-        trustedContext.public_key.asymmetricKeyType !== 'ed25519' ||
-        !Number.isSafeInteger(trustedContext.now_ms) || trustedContext.now_ms < 0 ||
-        typeof trustedContext.workflow_sha !== 'string' || !SHA_PATTERN.test(trustedContext.workflow_sha) ||
-        !Number.isSafeInteger(trustedContext.run_id) || trustedContext.run_id < 1 ||
-        typeof trustedContext.nonce !== 'string' || !NONCE_PATTERN.test(trustedContext.nonce)) return outcome(false);
-    if (!exactRecord(receipt, RECEIPT_KEYS) || !exactRecord(receipt.payload, PAYLOAD_KEYS)) return outcome(false);
-    const p = receipt.payload;
+    const ctx = snapshotRecord(trustedContext, ['public_key', 'now_ms', 'workflow_sha', 'run_id', 'nonce']);
+    if (!ctx || nodeTypes.isProxy(ctx.public_key) ||
+        !(ctx.public_key instanceof KeyObject) ||
+        ctx.public_key.type !== 'public' ||
+        ctx.public_key.asymmetricKeyType !== 'ed25519' ||
+        !Number.isSafeInteger(ctx.now_ms) || ctx.now_ms < 0 ||
+        typeof ctx.workflow_sha !== 'string' || !SHA_PATTERN.test(ctx.workflow_sha) ||
+        !Number.isSafeInteger(ctx.run_id) || ctx.run_id < 1 ||
+        typeof ctx.nonce !== 'string' || !NONCE_PATTERN.test(ctx.nonce)) return outcome(false);
+    const outer = snapshotRecord(receipt, RECEIPT_KEYS);
+    const p = outer && snapshotRecord(outer.payload, PAYLOAD_KEYS);
+    if (!p) return outcome(false);
     if (p.schema_version !== VERSION || p.audience !== AUDIENCE || p.issuer !== ISSUER ||
         p.source_type !== 'github_issue_metadata' || p.repository_id !== REPOSITORY_ID ||
         p.repository !== REPOSITORY ||
         !Number.isSafeInteger(p.issue_number) || p.issue_number < 1 || p.issue_number > 2147483647 ||
         !Number.isSafeInteger(p.issue_id) || p.issue_id < 1 ||
         typeof p.source_digest !== 'string' || !SHA256_PATTERN.test(p.source_digest) ||
-        typeof p.workflow_sha !== 'string' || p.workflow_sha !== trustedContext.workflow_sha ||
-        p.workflow_ref !== EXPECTED_WORKFLOW_REF || p.run_id !== trustedContext.run_id ||
-        p.nonce !== trustedContext.nonce) return outcome(false);
+        typeof p.workflow_sha !== 'string' || p.workflow_sha !== ctx.workflow_sha ||
+        p.workflow_ref !== EXPECTED_WORKFLOW_REF || p.run_id !== ctx.run_id ||
+        p.nonce !== ctx.nonce) return outcome(false);
     const updated = isoMillis(p.source_updated_at);
     const observed = isoMillis(p.observed_at);
     const expires = isoMillis(p.expires_at);
     if (updated === null || observed === null || expires === null ||
-        updated > observed || observed > trustedContext.now_ms + MAX_CLOCK_SKEW_MS ||
-        observed < trustedContext.now_ms - MAX_RECEIPT_AGE_MS ||
-        expires <= trustedContext.now_ms || expires <= observed ||
+        updated > observed || observed > ctx.now_ms + MAX_CLOCK_SKEW_MS ||
+        observed < ctx.now_ms - MAX_RECEIPT_AGE_MS ||
+        expires <= ctx.now_ms || expires <= observed ||
         expires > observed + MAX_RECEIPT_AGE_MS ||
         p.source_digest !== digestMinimalSource(p)) return outcome(false);
-    if (typeof receipt.signature !== 'string' || !/^[A-Za-z0-9_-]{86}$/.test(receipt.signature)) return outcome(false);
-    const sig = Buffer.from(receipt.signature, 'base64url');
-    if (sig.length !== 64 || sig.toString('base64url') !== receipt.signature ||
-        !verify(null, canonicalReceiptBytes(p), trustedContext.public_key, sig)) return outcome(false);
+    if (typeof outer.signature !== 'string' || !/^[A-Za-z0-9_-]{86}$/.test(outer.signature)) return outcome(false);
+    const sig = Buffer.from(outer.signature, 'base64url');
+    if (sig.length !== 64 || sig.toString('base64url') !== outer.signature ||
+        !verify(null, canonicalReceiptBytes(p), ctx.public_key, sig)) return outcome(false);
     return outcome(true, p.issue_number);
   } catch {
     // Includes adversarial Proxies and getters; never throw into a scheduler.

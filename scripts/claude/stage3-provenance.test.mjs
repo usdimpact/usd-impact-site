@@ -152,3 +152,41 @@ test('decision evaluation has no network or external state', () => {
   try { assert.equal(reviewOfflineProvenance(signed(), context).recommendation, 'REVIEW_ONLY'); }
   finally { globalThis.fetch = originalFetch; }
 });
+
+
+test('security regression: signed issue identity cannot change between verification and outcome', () => {
+  const stable = signed({ ...original });
+  let reads = 0;
+  const mutableProxy = new Proxy(stable.payload, {
+    get(target, key, receiver) {
+      if (key === 'issue_number') { reads += 1; return reads > 5 ? 9999 : 1234; }
+      return Reflect.get(target, key, receiver);
+    },
+  });
+  // At original Draft HEAD 6819c880 this returned REVIEW_ONLY for issue 9999
+  // while Ed25519 signed issue 1234. Snapshot or Proxy rejection must HOLD.
+  checkHold({ payload: mutableProxy, signature: stable.signature });
+});
+
+test('adversarial top-level receipt cannot swap a signed identity after initial validation', () => {
+  const stable = signed({ ...original });
+  const swapped = new Proxy(stable, {
+    get(target, key, receiver) {
+      if (key === 'payload') return { ...original, issue_number: 9999 };
+      return Reflect.get(target, key, receiver);
+    },
+  });
+  checkHold(swapped);
+});
+
+test('adversarial trusted context and signing key wrappers fail closed', () => {
+  const evilContext = new Proxy({ ...context }, {
+    get(target, key, receiver) {
+      if (key === 'run_id') return 42;
+      return Reflect.get(target, key, receiver);
+    },
+  });
+  checkHold(signed(), evilContext);
+  const proxyPublicKey = new Proxy(publicKey, {});
+  checkHold(signed(), { ...context, public_key: proxyPublicKey });
+});

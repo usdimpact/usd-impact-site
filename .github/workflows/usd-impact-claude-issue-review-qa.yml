@@ -6,6 +6,9 @@ on:
       - '.github/workflows/usd-impact-claude-issue-review-qa.yml'
       - 'scripts/claude/manual-issue-review.mjs'
       - 'scripts/claude/manual-issue-review.test.mjs'
+      - 'scripts/claude/manual-issue-identity-check.mjs'
+      - 'scripts/claude/manual-issue-identity-check.test.mjs'
+      - 'docs/operations/claude-wif-identity-check-beginner.md'
       - 'docs/operations/claude-manual-issue-review-beginner.md'
 
 permissions:
@@ -26,3 +29,5 @@ jobs:
           set -euo pipefail
           node --check scripts/claude/manual-issue-review.mjs
           node --test scripts/claude/manual-issue-review.test.mjs
+          node --check scripts/claude/manual-issue-identity-check.mjs
+          node --test scripts/claude/manual-issue-identity-check.test.mjs

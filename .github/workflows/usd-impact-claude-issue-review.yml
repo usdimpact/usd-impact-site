@@ -16,6 +16,7 @@ on:
         options:
           - preflight
           - model_review
+          - identity_check
       expected_issue_id:
         description: 'For model_review only: paste Issue database ID from earlier preflight.'
         required: false
@@ -28,6 +29,10 @@ on:
         type: string
       model_approval_confirmation:
         description: 'For model_review only: explicit approved confirmation text (see guide).'
+        required: false
+        default: ''
+      identity_check_confirmation:
+        description: 'For identity_check only: separate owner approval; no Messages API call.'
         required: false
         default: ''
         type: string
@@ -95,3 +100,36 @@ jobs:
           node-version: 24.x
       - name: Fresh issue read, strict owner/run gates, OIDC, ONE bounded Claude call
         run: node scripts/claude/manual-issue-review.mjs
+
+  one-shot-identity-check:
+    needs: preflight
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'usdimpact/usd-impact-site' && inputs.mode == 'identity_check' && inputs.issue_number == '1193'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ISSUE_NUMBER: ${{ inputs.issue_number }}
+      MODE: identity_check
+      IDENTITY_CHECK_CONFIRMATION: ${{ inputs.identity_check_confirmation }}
+      BILLING_READY: ${{ vars.USD_IMPACT_CLAUDE_ISSUE_REVIEW_BILLING_READY }}
+      APPROVED_IDENTITY_RUN_NUMBER: ${{ vars.USD_IMPACT_CLAUDE_ISSUE_REVIEW_IDENTITY_CHECK_RUN_NUMBER }}
+      FEDERATION_RULE_ID: ${{ vars.USD_IMPACT_CLAUDE_ISSUE_REVIEW_RULE_ID }}
+      ANTHROPIC_ORGANIZATION_ID: ${{ vars.USD_IMPACT_CLAUDE_ISSUE_REVIEW_ORGANIZATION_ID }}
+      ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.USD_IMPACT_CLAUDE_ISSUE_REVIEW_SERVICE_ACCOUNT_ID }}
+      ANTHROPIC_WORKSPACE_ID: ${{ vars.USD_IMPACT_CLAUDE_ISSUE_REVIEW_WORKSPACE_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.x
+      - name: Run 18 identity-check negative tests offline
+        run: |
+          set -euo pipefail
+          node --check scripts/claude/manual-issue-identity-check.mjs
+          node --test scripts/claude/manual-issue-identity-check.test.mjs
+      - name: Exchange GitHub identity for a disposable Anthropic token (NO Messages API)
+        run: node scripts/claude/manual-issue-identity-check.mjs

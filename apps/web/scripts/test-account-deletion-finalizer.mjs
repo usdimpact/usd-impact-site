@@ -5,6 +5,7 @@ import {
   readAccountDeletionFinalizerConfig,
   recoverOneDeletionCompletionAcknowledgement,
   runDueAccountDeletionFinalizer,
+  finalizeOneDueAccount,
   validCronAuthorization,
 } from '../src/lib/account-deletion-finalizer.js';
 
@@ -54,6 +55,29 @@ function clearReadiness(inner) {
     }
     return inner(url, options);
   };
+}
+
+// Part 11 revokes the legacy readiness RPC before revoking the finalizer.
+// If an undrained Auth-first worker still runs, a 42501 must fail closed
+// BEFORE its irreversible Auth Admin DELETE request.
+{
+  const config = readAccountDeletionFinalizerConfig(environment);
+  const requests = [];
+  const result = await finalizeOneDueAccount({
+    profile: { account_id: accountId, email: recipientEmail },
+    config, environment,
+    fetchImpl: async (url) => {
+      requests.push(String(url));
+      if (String(url).endsWith('/rpc/check_research_deletion_billing_readiness')) {
+        return response(403, { code: '42501', message: 'permission denied' });
+      }
+      throw Error('legacy Auth/Admin or finalize RPC must not be called after Part 11');
+    },
+  });
+  assert.equal(result.status, 'billing_hold');
+  assert.equal(result.durable, false);
+  assert.equal(requests.length, 1);
+  assert.match(requests[0], /check_research_deletion_billing_readiness$/);
 }
 
 function emptyRunResult(overrides = {}) {

@@ -77,6 +77,18 @@ def claim(size=1,connection=None):
     return svc("""SELECT coalesce(jsonb_agg(to_jsonb(q)), '[]'::jsonb)
       FROM public.claim_deletion_auth_cleanup_batch(%s) q""",(size,),connection)
 
+# Disposable-only helper: exercise the old 25-row queue fixture via 25
+# independent one-row SQL claims. Production worker remains strictly 1/cycle.
+def claim_up_to(n):
+    items=[]
+    for _ in range(n):
+        result=claim(1)
+        if result[0]!="OK": return result
+        if not result[1]: break
+        assert len(result[1])==1, result
+        items.extend(result[1])
+    return ("OK",items)
+
 def confirm(a,lease):
     return svc("SELECT public.confirm_deletion_auth_cleanup(%s,%s)",(a,lease))
 
@@ -91,16 +103,26 @@ def fresh_clearance(a, ref):
 
 # The old service_role REST RPCs must be unavailable after the migration;
 # both helpers remain owner-internal to the SECURITY DEFINER Phase A transaction.
-for legacy_name in ("prepare_account_deletion_auth_removal", "finalize_account_deletion"):
+for legacy_name in (
+    "prepare_account_deletion_auth_removal", "finalize_account_deletion",
+    "check_research_deletion_billing_readiness", "mark_research_deletion_hold_escalated",
+):
     for api_role in ("service_role", "anon", "authenticated"):
         old_result=exec_role(api_role,
-           f"SELECT public.{legacy_name}(%s)", (uuid.uuid4(),))
+           (f"SELECT public.{legacy_name}(%s,%s)"
+             if legacy_name=="mark_research_deletion_hold_escalated"
+             else f"SELECT public.{legacy_name}(%s)"),
+           ((uuid.uuid4(),"ui-0000000000000000")
+             if legacy_name=="mark_research_deletion_hold_escalated"
+             else (uuid.uuid4(),)))
         rec(f"G {api_role} denied legacy {legacy_name} direct call",
             old_result[0]=="ERR" and old_result[1].startswith("42501"),
             old_result)
-    rec(f"G service_role lacks explicit legacy {legacy_name} EXECUTE grant",
+    signature = ("public.mark_research_deletion_hold_escalated(uuid,text)"
+      if legacy_name=="mark_research_deletion_hold_escalated" else f"public.{legacy_name}(uuid)")
+    rec(f"G service_role lacks legacy {legacy_name} EXECUTE",
         su("SELECT NOT has_function_privilege('service_role', %s::regprocedure, 'EXECUTE')",
-           (f"public.{legacy_name}(uuid)",)))
+           (signature,)))
 # Independent synthetic integration below proves Phase A's owner calls still
 # work despite this outer service_role revocation.
 
@@ -128,7 +150,7 @@ for role in ("service_role","anon","authenticated"):
     hidden=exec_role(role,"SELECT count(*) FROM research_lifecycle_private.deletion_billing_incidents")
     rec(f"G {role} cannot read private financial incident ledger",
         hidden[0]=="ERR" and hidden[1].startswith("42501"),hidden)
-for n in (0,26):
+for n in (0,2,25,26):
     r=claim(n)
     rec(f"G invalid batch size {n} denied",r[0]=="ERR" and r[1].startswith("22023"),r)
     r=svc("SELECT public.finalize_deletion_and_queue_auth_cleanup(NULL)")
@@ -281,7 +303,7 @@ rec("C owner external-clearance model permits atomic DB finalization",
     owner[0]=="OK" and success[0]=="OK" and success[1]["phase"]=="auth_pending",success)
 # New two-phase billing fence must allow the already cleared database
 # deletion queue only before a later signed merchant conflict is recorded.
-hold_claim=claim(25)
+hold_claim=claim_up_to(25)
 hold_claim_rows=hold_claim[1] if hold_claim[0]=="OK" else []
 hold_selected=next((z for z in hold_claim_rows if z["account_id"]==str(hold)),None)
 hold_lease=uuid.UUID(hold_selected["lease_id"]) if hold_selected else uuid.uuid4()
@@ -319,6 +341,33 @@ rec("C F1 late bound signed Research renewal invalidates preexisting owner clear
               WHERE account_id=%s AND product_id='research-membership'
                 AND state<>'account_deleted'""",(hold,))==0,
     f"event={late_bound} replay={late_bound_replay} fence={bound_fence}")
+# A paid invoice ignored for entitlement purposes is nonetheless an
+# authenticated financial event: it must reopen private incident custody
+# and invalidate the last clearance after database Phase A.
+invoice_key="lemon-squeezy:signed-invoice-"+hold.hex
+invoice_meta=json.dumps({
+    "lemonEventName":"subscription_payment_success",
+    "lemonDataType":"subscription-invoices",
+    "replayFingerprintVersion":1,
+    "replayFingerprint":"c"*64,
+})
+invoice_sql="""SELECT public.record_research_signed_invoice_receipt(
+    %s,%s,%s,'subscription_payment_success',now(),%s::jsonb)"""
+invoice_result=svc(invoice_sql,(binding[1]["subscription_id"],invoice_key,
+    "evt-signed-invoice-"+hold.hex,invoice_meta))
+invoice_incident=su("""SELECT to_jsonb(i)
+  FROM research_lifecycle_private.deletion_billing_incidents i
+  WHERE i.account_id=%s""",(hold,))
+invoice_fence=svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",(hold,hold_lease))
+rec("C signed invoice after Phase A creates financial incident without restoring Research access",
+    invoice_result[0]=="OK" and invoice_result[1]["action"]=="invoice_recorded"
+    and invoice_incident is not None and invoice_incident["status"]=="open"
+    and invoice_incident["observation_count"]>=2
+    and invoice_fence[0]=="ERR" and invoice_fence[1].startswith("55000")
+    and row(hold)["status"]=="deleted"
+    and su("""SELECT count(*) FROM public.entitlements WHERE account_id=%s
+             AND product_id='research-membership' AND state<>'account_deleted'""",(hold,))==0,
+    f"receipt={invoice_result} incident={invoice_incident}")
 after=svc("""SELECT public.record_research_paid_binding_refusal(
     'lemon-squeezy',%s,%s,%s,'SIGNED_PAID_BINDING_REFUSED')""",
     ("syn-late-"+hold.hex[:12],hold,"syn-checkout-"+hold.hex[:14]))
@@ -379,7 +428,7 @@ last=synthetic_user()
 request(last)
 make_due_keep_auth(last)
 assert phase_a(last)[0]=="OK"
-last_claim=claim(25)
+last_claim=claim_up_to(25)
 last_rows=last_claim[1] if last_claim[0]=="OK" else []
 last_selected=next((z for z in last_rows if z["account_id"]==str(last)),None)
 last_lease=uuid.UUID(last_selected["lease_id"]) if last_selected else uuid.uuid4()

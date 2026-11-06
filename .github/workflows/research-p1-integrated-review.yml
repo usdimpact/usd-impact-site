@@ -11,7 +11,17 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/research-p1/**'
+      - 'docs/operations/research-p1-two-phase/f3-development-schema-parity-audit.md'
+      - 'docs/operations/research-p1-two-phase/f3-development-catalog-readonly.sql'
+      - 'docs/operations/research-p1-two-phase/interim-deletion-review-queue.sql'
       - 'apps/web/src/lib/research-membership-first-purchase.js'
+      - 'apps/web/src/lib/lemon-squeezy-research-membership-adapter.js'
+      - 'apps/web/src/lib/research-membership-webhook-handler.js'
+      - 'apps/web/src/lib/research-preview-route.js'
+      - 'apps/web/scripts/test-lemon-squeezy-research-membership-adapter.mjs'
+      - 'apps/web/scripts/test-research-membership-webhook-replay.mjs'
+      - 'apps/web/scripts/test-research-preview-route.mjs'
+      - 'apps/web/scripts/test-account-deletion-interim-mode.mjs'
       - 'apps/web/src/lib/account-deletion-finalizer.js'
       - 'apps/web/src/lib/account-deletion-two-phase-review.js'
       - 'apps/web/src/lib/account-deletion-two-phase-preflight.js'
@@ -64,6 +74,7 @@ jobs:
           node --check src/lib/research-membership-first-purchase.js
           node --check src/lib/account-deletion-finalizer.js
           node scripts/test-research-membership-first-purchase.mjs
+          node scripts/test-lemon-squeezy-research-membership-adapter.mjs
           node scripts/test-research-membership-persistence.mjs
           node scripts/test-research-membership-webhook-replay.mjs
           node scripts/test-account-deletion-finalizer.mjs
@@ -82,7 +93,63 @@ jobs:
         run: |
           python3 -m pip install --break-system-packages "psycopg[binary]==3.2.10"
           python3 supabase/tests/research-p1/owner_model_replay.py "$GITHUB_WORKSPACE"
+          python3 supabase/tests/research-p1/test_f3_catalog_query_pack.py
           python3 supabase/tests/research-p1/test_research_p1_lifecycle.py CI
           python3 supabase/tests/research-p1/test_research_p1_two_phase.py
           python3 supabase/tests/research-p1/test_research_p1_auth_split_fence.py
           python3 supabase/tests/research-p1/test_research_p1_interim_deletion.py "$GITHUB_WORKSPACE"
+
+
+  # This is an additional, isolated, synthetic-only job. It does NOT add the
+  # Development-only UI02/UI03 files to supabase/migrations on any branch.
+  # The second checkout is pinned to an immutable source commit, then all
+  # three files are verified by exact Git blob SHA before replay.
+  ui02-ui03-f3-combined:
+    name: UI02/UI03 plus Research P1 disposable source replay (no hosted SQL)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    services:
+      pg:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: ci_research
+          POSTGRES_PASSWORD: synthetic-stage-c-review-only
+          POSTGRES_DB: ci_review
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ci_research -d ci_review"
+          --health-interval 2s --health-timeout 5s --health-retries 30
+    env:
+      PGHOST: 127.0.0.1
+      PGUSER: ci_research
+      PGPASSWORD: synthetic-stage-c-review-only
+      PGDATABASE: ci_review
+    steps:
+      - name: Checkout exact stacked Draft source without saved credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Checkout immutable UI02/UI03 reference sources (never deploy)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: usdimpact/usd-impact-site
+          ref: '7005aa0585301892c96490d341c3c5645a616890'
+          path: ui02_ui03_original_source
+          sparse-checkout: |
+            supabase/migrations
+          persist-credentials: false
+      - name: Select reviewed Node runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.x'
+      - name: Replay pinned UI source plus Research P1 against separate synthetic PG17
+        run: |
+          python3 -m pip install --break-system-packages "psycopg[binary]==3.2.10"
+          python3 supabase/tests/research-p1/owner_model_replay.py "$GITHUB_WORKSPACE" "--ui-source=$GITHUB_WORKSPACE/ui02_ui03_original_source"
+          python3 supabase/tests/research-p1/test_f3_catalog_query_pack.py
+          python3 supabase/tests/research-p1/test_research_p1_lifecycle.py CI
+          python3 supabase/tests/research-p1/test_research_p1_two_phase.py
+          python3 supabase/tests/research-p1/test_research_p1_auth_split_fence.py
+          python3 supabase/tests/research-p1/test_research_p1_interim_deletion.py "$GITHUB_WORKSPACE" "--ui-source=$GITHUB_WORKSPACE/ui02_ui03_original_source"

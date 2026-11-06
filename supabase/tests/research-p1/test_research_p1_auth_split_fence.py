@@ -73,11 +73,19 @@ def phase_a(a):
     return svc("SELECT public.finalize_deletion_and_queue_auth_cleanup(%s)", (a,))
 
 def lease_for(a):
-    result = svc("""SELECT coalesce(jsonb_agg(to_jsonb(q)),'[]'::jsonb)
-                    FROM public.claim_deletion_auth_cleanup_batch(25) q""")
-    rows = result[1] if result[0] == "OK" else []
-    chosen = next((r for r in rows if r["account_id"] == str(a)), None)
-    return uuid.UUID(chosen["lease_id"]) if chosen else None
+    # Match the SQL's one-account lease invariant. The disposable suite
+    # sometimes has earlier due synthetic accounts: iterate one-row claims
+    # up to the old 25-row fixture bound, without ever bulk-leasing.
+    for _ in range(25):
+        result = svc("""SELECT coalesce(jsonb_agg(to_jsonb(q)),'[]'::jsonb)
+                        FROM public.claim_deletion_auth_cleanup_batch(1) q""")
+        assert result[0] == "OK", result
+        rows = result[1]
+        if not rows: return None
+        assert len(rows) == 1, rows
+        if rows[0]["account_id"] == str(a):
+            return uuid.UUID(rows[0]["lease_id"])
+    return None
 
 def fence(a, lease):
     return svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)", (a, lease))

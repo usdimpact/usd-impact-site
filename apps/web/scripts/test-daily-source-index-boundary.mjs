@@ -40,8 +40,6 @@ for (const base of [fedIndex, blsIndex, blsCpsIndex]) {
 for (const url of [
   'https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm',
   'https://www.bls.gov/news.release/archives/cpi_09112026.htm',
-  'https://www.bls.gov/schedule/2026/10_sched.htm',
-  'https://www.bls.gov/schedule/2026/10_sched_list.htm',
   'https://www.eia.gov/petroleum/supply/weekly/archive/2026/2026_09_10/',
   'https://home.treasury.gov/news/press-releases/sb0607',
   'https://www.federalreserve.gov.example.org/newsevents.htm',
@@ -61,6 +59,29 @@ check('CPS July-modified calendar may not be rebadged with a November edition da
   assert.equal(sourceDateBasisForUrl(blsCpsIndex), SOURCE_DATE_BASIS.DOCUMENT_INDEX);
   assert.match(issue, /CPS release calendar.*Last Modified/i);
   assert.equal(safeValidationDiagnostic(`${issue} synthetic-private-detail`).code, 'invalid-source-date');
+});
+check('BLS month schedules use verified mutable Last Modified basis, not historical date identity', () => {
+  for (const url of [
+    'https://www.bls.gov/schedule/2026/11_sched_list.htm',
+    'https://www.bls.gov/schedule/2026/10_sched.htm',
+    'https://bls.gov/schedule/2026/11_sched_list.htm?utm_source=fixture#section',
+    'https://www.BLS.GOV/schedule/2026/11_sched_list.htm/',
+    'https://www.bls.gov/schedule/2026/%31%31_sched_list.htm',
+  ]) {
+    assert.equal(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.LAST_UPDATED);
+    assert.equal(sourceDateAttributionIssue(url), null);
+    assert.equal(isLivingSourceUrl(url), true, 'Historical citations to earlier verified revisions are not immutable-date evidence');
+  }
+  for (const url of [
+    'https://www.bls.gov/schedule/2026/00_sched_list.htm',
+    'https://www.bls.gov/schedule/2026/13_sched_list.htm',
+    'https://www.bls.gov.example.org/schedule/2026/11_sched_list.htm',
+    'https://www.bls.gov/schedule/2026/home.htm',
+    'https://www.bls.gov/news.release/archives/cpi_09112026.htm',
+  ]) {
+    assert.notEqual(sourceDateBasisForUrl(url), SOURCE_DATE_BASIS.LAST_UPDATED);
+  }
+  assert.match(SOURCE_DATE_RULES, /month-specific schedule URL and its own verified displayed Last Modified date/);
 });
 check('supported living calendars unchanged', () => {
   assert.equal(sourceDateBasisForUrl('https://www.federalreserve.gov/newsevents/2026-october.htm'), SOURCE_DATE_BASIS.LAST_UPDATED);

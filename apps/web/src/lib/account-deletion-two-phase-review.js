@@ -1,9 +1,14 @@
-// DRAFT REVIEW PROTOTYPE ONLY. No route imports this module. No Production,
-// merchant, or customer work is permitted. The database-first SQL must be
-// independently accepted before a separately approved runtime integration.
+// DRAFT REVIEW PROTOTYPE ONLY. The owner-gated Preview-only review worker
+// can import this module, but is disabled by default. No Production, merchant,
+// or real customer work is authorized. Independent database-first acceptance
+// and release approval are required before any hosted execution.
 import { enqueueAccountDeletionCompletedEmail } from './account-deletion-completed-email.js';
 
 const DEVELOPMENT_REF = 'ycstrcvshdluovtuasjc';
+// Keep every privileged HTTP step bounded well below the 15-minute SQL lease.
+// Timeout cannot prove whether the server committed: recovery still relies on
+// the private phase/lease ledger and independent Auth GET verification.
+const PRIVILEGED_REQUEST_TIMEOUT_MS = 25_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export class TwoPhaseReviewError extends Error {
@@ -42,9 +47,25 @@ function validId(value) {
   return typeof value === 'string' && UUID.test(value);
 }
 
+async function boundedRequest({ url, options, fetchImpl, failureCode }) {
+  try {
+    return await fetchImpl(url, {
+      ...options,
+      signal: AbortSignal.timeout(PRIVILEGED_REQUEST_TIMEOUT_MS),
+    });
+  } catch {
+    // Raw network/timeout messages may embed internal URLs or account data.
+    throw new TwoPhaseReviewError(failureCode);
+  }
+}
+
 async function rpc({ config, name, input, fetchImpl }) {
-  const res = await fetchImpl(config.supabase.url + '/rest/v1/rpc/' + name, {
-    method: 'POST', headers: headers(config), body: JSON.stringify(input),
+  const res = await boundedRequest({
+    url: config.supabase.url + '/rest/v1/rpc/' + name, fetchImpl,
+    options: {
+      method: 'POST', headers: headers(config), body: JSON.stringify(input),
+    },
+    failureCode: 'TWO_PHASE_DATABASE_UNAVAILABLE',
   });
   if (!res?.ok) {
     throw new TwoPhaseReviewError('TWO_PHASE_DATABASE_UNAVAILABLE');
@@ -98,10 +119,13 @@ export async function claimDraftAuthCleanup({
 
 async function confirmedAuthRetirement({ config, accountId, fetchImpl }) {
   const url = config.supabase.url + '/auth/v1/admin/users/' + encodeURIComponent(accountId);
-  const removed = await fetchImpl(url, {
-    method: 'DELETE', headers: headers(config),
-    // GoTrue Admin reads this option from JSON body, not the URL query.
-    body: JSON.stringify({ should_soft_delete: true }),
+  const removed = await boundedRequest({
+    url, fetchImpl, failureCode: 'TWO_PHASE_AUTH_DELETE_UNAVAILABLE',
+    options: {
+      method: 'DELETE', headers: headers(config),
+      // GoTrue Admin reads this option from JSON body, not the URL query.
+      body: JSON.stringify({ should_soft_delete: true }),
+    },
   });
   if (!removed?.ok && removed?.status !== 404) {
     throw new TwoPhaseReviewError('TWO_PHASE_AUTH_DELETE_UNAVAILABLE');
@@ -109,7 +133,10 @@ async function confirmedAuthRetirement({ config, accountId, fetchImpl }) {
   // A successful DELETE alone does not certify that the identity is retired.
   // A GET must report 404 or an explicitly deleted matching user. Actual
   // hosted soft-delete response semantics remain a release-time HOLD.
-  const observed = await fetchImpl(url, { method: 'GET', headers: headers(config) });
+  const observed = await boundedRequest({
+    url, fetchImpl, failureCode: 'TWO_PHASE_AUTH_STATUS_UNKNOWN',
+    options: { method: 'GET', headers: headers(config) },
+  });
   if (observed?.status === 404) return;
   if (!observed?.ok) throw new TwoPhaseReviewError('TWO_PHASE_AUTH_STATUS_UNKNOWN');
   let doc;
@@ -216,8 +243,9 @@ export async function runDraftAuthCleanupBatch({
 
 
 // Full DRAFT-only orchestration review: fair due scan -> atomic database Phase A
-// -> leased Auth cleanup. This is deliberately NOT imported by any route or
-// cron, and the Development-only config guard executes before all network IO.
+// -> leased Auth cleanup. Only an explicitly owner-gated Preview review route
+// can call this; no production or deployed cron is authorized.
+// The canonical Development config guard executes before all network IO.
 // A Phase A failure never triggers an Auth operation for the failed account.
 // The merchant-stop and privileged-runtime cutover approvals remain HOLD.
 export async function runDraftTwoPhaseReviewCycle({

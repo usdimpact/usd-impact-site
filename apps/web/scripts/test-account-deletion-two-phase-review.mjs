@@ -121,6 +121,10 @@ const baseWorld = (overrides = {}) => {
     else if (href.endsWith('/rpc/finish_deletion_auth_cleanup')) kind = 'FINISH';
     else if (href.endsWith('/rpc/claim_deletion_auth_cleanup_batch')) kind = 'CLAIM';
     else throw Error('Unexpected network call: ' + href);
+    // Auth/Admin and SQL operations must all time out well before the SQL
+    // 15-minute lease, so a hung HTTP request does not run indefinitely.
+    assert.ok(init.signal instanceof AbortSignal, kind + ' must have AbortSignal');
+    assert.equal(typeof init.signal.aborted, 'boolean');
     calls.push(kind);
     if (overrides[kind]) return overrides[kind](url, init);
     if (kind === 'DUE') return json(200, [{
@@ -256,6 +260,74 @@ const baseWorld = (overrides = {}) => {
   check(world.calls.join(',') === 'FENCE' && world.emails.length === 0,
     'payment arriving after Auth confirmation still holds email and privacy completion');
 }
+
+{
+  const world = baseWorld({ AUTH_DELETE: () => { throw Error('synthetic network timeout with PII'); } });
+  await assert.rejects(
+    () => resumeDraftAuthCleanup({ config, row, ...world }),
+    (error) => error.code === 'TWO_PHASE_AUTH_DELETE_UNAVAILABLE'
+      && !String(error.message).includes('PII'),
+  );
+  check(world.calls.join(',') === 'FENCE,AUTH_DELETE' && world.emails.length === 0,
+    'Auth transport timeout fails closed, masks raw details and retains recoverable queue');
+}
+{
+  const world = baseWorld({ AUTH_GET: () => { throw Error('synthetic timeout'); } });
+  await assert.rejects(
+    () => resumeDraftAuthCleanup({ config, row, ...world }),
+    (error) => error.code === 'TWO_PHASE_AUTH_STATUS_UNKNOWN',
+  );
+  check(world.calls.join(',') === 'FENCE,AUTH_DELETE,AUTH_GET' && world.emails.length === 0,
+    'ambiguous Auth GET timeout is not counted as verified retirement');
+}
+{
+  const world = baseWorld({ FENCE: () => { throw Error('synthetic PostgreSQL timeout'); } });
+  await assert.rejects(
+    () => resumeDraftAuthCleanup({ config, row, ...world }),
+    (error) => error.code === 'TWO_PHASE_DATABASE_UNAVAILABLE',
+  );
+  check(world.calls.join(',') === 'FENCE' && world.emails.length === 0,
+    'database transport timeout cannot reach irreversible Auth or email');
+}
+{
+  const world = baseWorld({ CONFIRM: () => json(403, { code: '42501', message: 'stale lease' }) });
+  await assert.rejects(
+    () => resumeDraftAuthCleanup({ config, row, ...world }),
+    (error) => error.code === 'TWO_PHASE_DATABASE_UNAVAILABLE',
+  );
+  check(world.calls.join(',') === 'FENCE,AUTH_DELETE,AUTH_GET,CONFIRM'
+      && world.emails.length === 0,
+    'expired/replaced lease cannot acknowledge Auth or release completion email');
+}
+// CRITICAL NEGATIVE WITNESS, NOT A PASS OF CROSS-SERVICE BILLING SAFETY.
+// A signed paid event can commit immediately AFTER a successful SQL fence
+// releases its profile lock and BEFORE the distinct Auth API call. The later
+// SQL confirmation correctly HOLDs completion, but cannot undo Auth DELETE.
+// A green test of this observation must NEVER be treated as release approval.
+{
+  let signedPaidCommitted = false;
+  let authRetiredAfterPaid = false;
+  const world = baseWorld({
+    FENCE: () => {
+      signedPaidCommitted = true; // synthetic webhook commits after fence response
+      return json(200, true);
+    },
+    AUTH_DELETE: () => {
+      authRetiredAfterPaid = signedPaidCommitted;
+      return json(200, { id: account });
+    },
+    CONFIRM: () => json(409, { code: '55000', message: 'late signed payment now holds' }),
+  });
+  await assert.rejects(
+    () => resumeDraftAuthCleanup({ config, row, ...world }),
+    (error) => error.code === 'TWO_PHASE_DATABASE_UNAVAILABLE',
+  );
+  check(authRetiredAfterPaid
+      && world.calls.join(',') === 'FENCE,AUTH_DELETE,AUTH_GET,CONFIRM'
+      && world.emails.length === 0 && !world.calls.includes('FINISH'),
+    'KNOWN RELEASE BLOCKER: paid event after fence permits Auth DELETE before SQL HOLD; no email or false completion');
+}
+
 // Entire Draft-only deletion cycle exercises ordering without registering a
 // web route or touching a connected database, merchant, or Auth identity.
 {

@@ -134,6 +134,49 @@ rec("I4", "hold-ledger row cannot be re-keyed even by owner (D37-6/D38-4)", r[0]
 r = own("UPDATE public.research_deletion_billing_hold_events SET reason_codes='{}' WHERE account_id=%s", (a1,))
 rec("I4", "hold history is append-only", r[0] == "ERR" and "append-only" in r[1], str(r))
 
+# ---------------- O1: signed provider event ordering under row lock ----------------
+oa,osid,ops=research_member()
+before_older=su("""SELECT s.state::text||':'||s.version||':'||e.state::text||':'||e.version
+  FROM public.subscriptions s JOIN public.entitlements e ON e.subscription_id=s.id
+  WHERE s.id=%s""",(osid,))
+tr_old=TR.replace("'p1 synthetic',now(),'{}'::jsonb)",
+                  "'p1 synthetic',now()-interval '7 days','{}'::jsonb)")
+old_key="p1-older-"+ops
+stale=svc(tr_old,(osid,old_key,"evt-older-"+ops,ops,"active","past_due","suspended",None))
+after_older=su("""SELECT s.state::text||':'||s.version||':'||e.state::text||':'||e.version
+  FROM public.subscriptions s JOIN public.entitlements e ON e.subscription_id=s.id
+  WHERE s.id=%s""",(osid,))
+stale_row=su("SELECT to_jsonb(e) FROM public.subscription_events e WHERE event_key=%s",(old_key,))
+rec("O1","distinct older signed event is durably held, never changes paid state",
+    stale[0]=="OK" and stale[1]["action"]=="held_stale"
+    and before_older==after_older and stale_row is not None
+    and stale_row["to_state"]==stale_row["from_state"]=="active"
+    and stale_row["metadata"]["researchP1StaleHeld"] is True
+    and stale_row["metadata"]["researchP1OriginalToState"]=="past_due",
+    f"sql={stale}, state={before_older}->{after_older}")
+same_stale=svc(tr_old,(osid,old_key,"evt-older-"+ops,ops,"active","past_due","suspended",None))
+rec("O1","same signed stale event idempotently replays without another mutation",
+    same_stale[0]=="OK" and same_stale[1]["action"]=="duplicate"
+    and su("SELECT count(*) FROM public.subscription_events WHERE event_key=%s",(old_key,))==1,
+    str(same_stale))
+last_ts=su("""SELECT max(occurred_at) FROM public.subscription_events
+    WHERE subscription_id=%s AND metadata ->> 'researchP1StaleHeld' IS DISTINCT FROM 'true'""",(osid,))
+tr_equal=TR.replace("'p1 synthetic',now(),'{}'::jsonb)",
+                    "'p1 synthetic',%s::timestamptz,'{}'::jsonb)")
+equal=svc(tr_equal,(osid,"p1-equal-"+ops,"evt-equal-"+ops,ops,"active",
+                    "past_due","suspended",None,last_ts))
+rec("O1","distinct equal-timestamp signed event is held against ambiguous order",
+    equal[0]=="OK" and equal[1]["action"]=="held_stale"
+    and su("""SELECT state::text FROM public.subscriptions WHERE id=%s""",(osid,))=="active",
+    str(equal))
+fresh=svc(TR,(osid,"p1-fresh-"+ops,"evt-fresh-"+ops,ops,"active","past_due","suspended",None))
+rec("O1","later genuine provider event still applies and suspends entitlement",
+    fresh[0]=="OK" and fresh[1]["action"]=="applied"
+    and su("SELECT state::text FROM public.subscriptions WHERE id=%s",(osid,))=="past_due"
+    and su("""SELECT state::text FROM public.entitlements
+              WHERE account_id=%s AND product_id='research-membership'""",(oa,))=="suspended",
+    str(fresh))
+
 # ---------------- C: checkout custody ----------------
 a = user()
 r1 = svc("SELECT public.create_research_checkout_attempt(%s,'p1-checkout-key-00000001','monthly')", (a,))

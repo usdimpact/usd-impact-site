@@ -259,6 +259,15 @@ function verifiedDuplicate(row, { inspected, options, eventKey }) {
   for (const field of ['lemonEventName', 'lemonDataType', 'lemonDataId', 'lemonStatus', 'lemonBillingReason', 'testMode']) {
     if (metadata[field] !== inspected.metadata[field]) throw replayError();
   }
+  const staleHeld = metadata.researchP1StaleHeld === true;
+  if (Object.hasOwn(metadata, 'researchP1StaleHeld')
+      && !staleHeld) throw replayError();
+  if (staleHeld && (
+    row.to_state !== row.from_state
+    || typeof metadata.researchP1OriginalToState !== 'string'
+    || !Number.isFinite(Date.parse(metadata.researchP1LatestAt))
+    || Date.parse(metadata.researchP1LatestAt) < Date.parse(row.occurred_at)
+  )) throw replayError();
   // Legacy rows have only the six provider fields above. Compare every field
   // they retained, without inventing a historical full-payload fingerprint.
   // A present but invalid/version-mismatched fingerprint never falls back.
@@ -277,11 +286,13 @@ function verifiedDuplicate(row, { inspected, options, eventKey }) {
     const event = normalizeResearchMembershipLifecycleEvent({
       ...normalized.providerEvent, accountId: subscription.accountId, currentState: row.from_state,
     });
-    if (event.toState !== row.to_state || event.eventType !== row.reason) throw replayError();
+    if (event.toState !== (staleHeld ? metadata.researchP1OriginalToState : row.to_state)
+        || event.eventType !== row.reason) throw replayError();
   } catch {
     throw replayError();
   }
-  return Object.freeze({ action: 'duplicate', eventKey, providerSubscriptionId: subscription.providerSubscriptionId });
+  return Object.freeze({ action: staleHeld ? 'held_stale' : 'duplicate', eventKey,
+    providerSubscriptionId: subscription.providerSubscriptionId });
 }
 
 export async function processResearchMembershipWebhook({
@@ -345,10 +356,12 @@ export async function processResearchMembershipWebhook({
     if (concurrent) return verifiedDuplicate(concurrent, replayContext);
     throw error;
   }
-  if (persisted.action === 'duplicate') {
+  if (persisted.action === 'duplicate' || persisted.action === 'held_stale') {
     const concurrent = await readEvent();
     if (!concurrent) throw replayError();
-    return verifiedDuplicate(concurrent, replayContext);
+    const verified = verifiedDuplicate(concurrent, replayContext);
+    if (persisted.action === 'held_stale' && verified.action !== 'held_stale') throw replayError();
+    return verified;
   }
   return Object.freeze({
     action: persisted.action,

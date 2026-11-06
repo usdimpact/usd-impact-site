@@ -84,6 +84,7 @@ declare
   v_terminal boolean;
   v_effective_entitlement_state public.entitlement_state;
   v_kept_deleted boolean := false;
+  v_last_provider_at timestamptz;
 begin
   if p_event_key is null or btrim(p_event_key) = '' then
     raise exception 'event key is required';
@@ -96,6 +97,12 @@ begin
   end if;
   if p_metadata is null or jsonb_typeof(p_metadata) <> 'object' then
     raise exception 'transition metadata must be a JSON object';
+  end if;
+  if p_metadata ? 'researchP1StaleHeld'
+     or p_metadata ? 'researchP1OriginalToState'
+     or p_metadata ? 'researchP1LatestAt' then
+    raise exception using errcode='42501',
+      message='Research event metadata cannot set internal custody markers';
   end if;
   if p_occurred_at is null then
     raise exception 'occurred_at is required';
@@ -152,6 +159,37 @@ begin
   end if;
   if v_subscription.state <> p_expected_from_state then
     raise exception 'subscription state drift: expected %, found %', p_expected_from_state, v_subscription.state;
+  end if;
+
+  -- Under the subscription row lock, never let an older or same-timestamp
+  -- distinct signed event overwrite a newer provider state. Retain the signed
+  -- fact as a non-applied event; webhook replay verifies its original request.
+  -- The database event's created_at (not backdated occurred_at) invalidates
+  -- earlier merchant clearances until manual reconciliation.
+  select max(ev.occurred_at) into v_last_provider_at
+  from public.subscription_events ev
+  where ev.subscription_id=p_subscription_id
+    and ev.actor_type='provider_webhook'
+    and ev.metadata ->> 'researchP1StaleHeld' is distinct from 'true';
+  if v_profile_status<>'deleted' and v_last_provider_at is not null
+     and p_occurred_at<=v_last_provider_at then
+    insert into public.subscription_events
+      (event_key,subscription_id,account_id,product_id,from_state,to_state,
+       reason,actor_type,provider_event_id,metadata,occurred_at)
+    values (
+      p_event_key,p_subscription_id,v_subscription.account_id,'research-membership',
+      p_expected_from_state,p_expected_from_state,p_reason,'provider_webhook',
+      p_provider_event_id,
+      p_metadata || pg_catalog.jsonb_build_object(
+        'researchP1StaleHeld',true,
+        'researchP1OriginalToState',p_to_state::text,
+        'researchP1LatestAt',v_last_provider_at
+      ),p_occurred_at
+    );
+    return pg_catalog.jsonb_build_object(
+      'action','held_stale','subscription_id',p_subscription_id,
+      'event_key',p_event_key
+    );
   end if;
 
   -- Positive/benefit-bearing lifecycle events must not grant anything once
@@ -1134,6 +1172,13 @@ begin
     select 1 from public.entitlements e
     where e.account_id = p_account_id and e.product_id = 'research-membership' and e.state <> 'account_deleted'
   ) then v_reasons := pg_catalog.array_append(v_reasons, 'research_entitlement_present'); end if;
+
+  -- A late signed provider fact is financial evidence on ARRIVAL, not its
+  -- historical provider timestamp. Invalidate any older owner attestation
+  -- even when the signed event was deliberately held as out of order.
+  select greatest(v_latest,max(ev.created_at)) into v_latest
+  from public.subscription_events ev
+  where ev.account_id=p_account_id and ev.product_id='research-membership';
 
   -- Checkout issuance is a durable financial footprint even AFTER its
   -- exposure window expires. A timeout does not prove that the provider

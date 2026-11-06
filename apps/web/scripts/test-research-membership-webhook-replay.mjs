@@ -149,6 +149,37 @@ for (const state of ['active', 'past_due', 'cancel_scheduled', 'disputed', 'canc
     assert.deepEqual(ctx.current, before);
   });
 }
+function staleLedgerRecord() {
+  const record = archived();
+  record.to_state = record.from_state;
+  record.metadata.researchP1StaleHeld = true;
+  record.metadata.researchP1OriginalToState = archived().to_state;
+  record.metadata.researchP1LatestAt = '2026-10-02T00:00:00.000Z';
+  return record;
+}
+await test('signed provider event held for chronology replays without a grant', async () => {
+  const ctx = fixture({ rows: [staleLedgerRecord()] });
+  const original = structuredClone(ctx.current);
+  assert.equal((await ctx.run()).action, 'held_stale');
+  ctx.assertReadOnly();
+  assert.deepEqual(ctx.current, original);
+});
+await test('held-stale RPC acknowledgement requires a matching committed event', async () => {
+  const ctx = fixture({ rpcReply: (c, json) => {
+    c.rows.push(staleLedgerRecord());
+    return json({ action: 'held_stale' });
+  } });
+  assert.equal((await ctx.run()).action, 'held_stale');
+  assert.equal(ctx.calls.filter(c => c.method === 'POST').length, 1);
+  assert.equal(ctx.writes.length, 0);
+});
+await test('forged chronology marker cannot bypass signed replay verification', async () => {
+  const row = staleLedgerRecord();
+  row.metadata.researchP1OriginalToState = 'cancelled';
+  const ctx = fixture({ rows: [row] });
+  await assert.rejects(() => ctx.run(), { code: 'RESEARCH_WEBHOOK_REPLAY_CONFLICT' });
+  ctx.assertReadOnly();
+});
 await test('initial event is persisted once; replay after terminal transition never calls RPC', async () => {
   const ctx = fixture();
   assert.equal((await ctx.run()).action, 'applied');

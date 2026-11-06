@@ -46,13 +46,18 @@ const defaultUrls = [];
 await runDueAccountDeletionFinalizer({
   environment: baseEnvironment,
   fetchImpl: async (url, options = {}) => {
-    assert.equal(options.method, 'GET');
-    defaultUrls.push(String(url));
+    const href = String(url);
+    assert.equal(options.method, href.includes('/support_requests?') ? 'GET' : 'POST');
+    if (options.method === 'POST') {
+      assert.equal(href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair'), true);
+      assert.equal(JSON.parse(options.body).p_limit, 1);
+    }
+    defaultUrls.push(href);
     return response([]);
   },
 });
 assert.equal(defaultUrls.some((url) => url.includes('/support_requests?') && url.includes('limit=4')), true);
-assert.equal(defaultUrls.some((url) => url.includes('/profiles?') && url.includes('limit=1')), true);
+assert.equal(defaultUrls.some((url) => url.endsWith('/rest/v1/rpc/list_due_account_deletions_fair')), true);
 
 const configuredUrls = [];
 await runDueAccountDeletionFinalizer({
@@ -61,13 +66,18 @@ await runDueAccountDeletionFinalizer({
     ACCOUNT_DELETION_FINALIZER_BATCH_SIZE: '5',
   },
   fetchImpl: async (url, options = {}) => {
-    assert.equal(options.method, 'GET');
-    configuredUrls.push(String(url));
+    const href = String(url);
+    assert.equal(options.method, href.includes('/support_requests?') ? 'GET' : 'POST');
+    if (options.method === 'POST') {
+      assert.equal(href.endsWith('/rest/v1/rpc/list_due_account_deletions_fair'), true);
+      assert.equal(JSON.parse(options.body).p_limit, 5);
+    }
+    configuredUrls.push(href);
     return response([]);
   },
 });
 assert.equal(configuredUrls.some((url) => url.includes('/support_requests?') && url.includes('limit=20')), true);
-assert.equal(configuredUrls.some((url) => url.includes('/profiles?') && url.includes('limit=5')), true);
+assert.equal(configuredUrls.some((url) => url.endsWith('/rest/v1/rpc/list_due_account_deletions_fair')), true);
 
 const previewConfig = readAccountDeletionFinalizerConfig({
   ...baseEnvironment,

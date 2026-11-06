@@ -1,0 +1,88 @@
+name: Research P1 integrated security candidate (disposable PG17, synthetic data)
+
+on:
+  # PR merge refs may not exist while the Draft conflicts with main. Run this
+  # disposable, secret-free test workflow on ONLY this exact Draft branch.
+  # Do not broaden this to main/Production or add connected Supabase credentials.
+  push:
+    branches:
+      - 'agent/research-live-p1-integrated-rc-20261105'
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/research-p1/**'
+      - 'apps/web/src/lib/research-membership-first-purchase.js'
+      - 'apps/web/src/lib/account-deletion-finalizer.js'
+      - 'apps/web/src/lib/account-deletion-two-phase-review.js'
+      - 'apps/web/src/lib/account-deletion-two-phase-preflight.js'
+      - 'apps/web/src/lib/account-deletion-two-phase-worker-review.js'
+      - 'apps/web/api/account.js'
+      - 'apps/web/scripts/test-account-deletion-two-phase-preflight.mjs'
+      - 'apps/web/scripts/test-account-deletion-two-phase-worker-review.mjs'
+      - 'apps/web/scripts/test-account-deletion-two-phase-review.mjs'
+      - 'apps/web/scripts/test-research-p1-billing-safe-deletion.mjs'
+      - '.github/workflows/research-p1-integrated-review.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  research-p1:
+    name: Research P1 lifecycle regressions (no connected database)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      pg:
+        # Disposable job-local database only. No secrets, no connected project.
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: ci_research
+          POSTGRES_PASSWORD: synthetic-stage-c-review-only
+          POSTGRES_DB: ci_review
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ci_research -d ci_review"
+          --health-interval 2s --health-timeout 5s --health-retries 30
+    env:
+      PGHOST: 127.0.0.1
+      PGUSER: ci_research
+      PGPASSWORD: synthetic-stage-c-review-only
+      PGDATABASE: ci_review
+    steps:
+      - name: Checkout exact proposed source without saved credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Select reviewed Node.js runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.x'
+      - name: Offline web regressions (checkout custody, quarantine, pre-Auth hold)
+        working-directory: apps/web
+        run: |
+          node --check src/lib/research-membership-first-purchase.js
+          node --check src/lib/account-deletion-finalizer.js
+          node scripts/test-research-membership-first-purchase.mjs
+          node scripts/test-research-membership-persistence.mjs
+          node scripts/test-research-membership-webhook-replay.mjs
+          node scripts/test-account-deletion-finalizer.mjs
+          node --check src/lib/account-deletion-two-phase-review.js
+          node scripts/test-account-deletion-two-phase-review.mjs
+          node scripts/test-account-deletion-two-phase-financial-hold.mjs
+          node scripts/test-research-preview-route.mjs
+          node scripts/test-account-deletion-interim-mode.mjs
+          node --check src/lib/account-deletion-two-phase-preflight.js
+          node --check api/account.js
+          node scripts/test-account-deletion-two-phase-preflight.mjs
+          node --check src/lib/account-deletion-two-phase-worker-review.js
+          node scripts/test-account-deletion-two-phase-worker-review.mjs
+          node scripts/test-research-p1-billing-safe-deletion.mjs
+      - name: Replay every migration as non-superuser owner, then run the PG17 lifecycle matrix
+        run: |
+          python3 -m pip install --break-system-packages "psycopg[binary]==3.2.10"
+          python3 supabase/tests/research-p1/owner_model_replay.py "$GITHUB_WORKSPACE"
+          python3 supabase/tests/research-p1/test_research_p1_lifecycle.py CI
+          python3 supabase/tests/research-p1/test_research_p1_two_phase.py
+          python3 supabase/tests/research-p1/test_research_p1_auth_split_fence.py
+          python3 supabase/tests/research-p1/test_research_p1_interim_deletion.py "$GITHUB_WORKSPACE"

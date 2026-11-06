@@ -45,3 +45,15 @@ Codespaces is only for independent **offline** tests. Do **not** call the model 
 - **The Stage 3 Ed25519 metadata-receipt verifier is not integrated here.** This first functional prototype relies on verified GitHub REST source identity, exact digest and two-phase human review. A cryptographic signed-receipt adapter with separate key custody, durable anti-replay, and source revalidation remains a future approval gate.
 - The `claude-review-safe` label and simple blocklist are defense in depth, not a substitute for owner review. Only choose deliberately public, non-sensitive issues for the paid model test.
 - If any validation fails, stop. Never bypass a HOLD status, repeat a paid call, or make an unauthorized merge.
+
+## November 6, 2026: run #3 failure — Draft-only correction
+
+The owner-approved paid review [run #3](https://github.com/usdimpact/usd-impact-site/actions/runs/42275865424) passed the pinned synthetic-issue preflight and made exactly one Messages API request, but exited with `CLAUDE_MODEL_RESPONSE_HOLD`. The old validator used that same code both for unexpected text-block cardinality and for invalid JSON. No raw response body was logged, so the precise cause is unproven. The request may have incurred a small charge; no automatic or manual retry is permitted.
+
+This Draft change proposes the supported Anthropic `output_config.format` JSON schema for `claude-haiku-5-5` and asks for a shorter advisory. The output cap remains **256 tokens**, thinking remains disabled, effort remains low, and the request is still **exactly one Messages API call with no tools**. Local schema/length limits and the existing source, owner, OIDC, billing and exact-run safeguards remain enforced. The API schema uses only supported fields: `type`, `properties`, `enum`, `items`, `required`, `additionalProperties:false` and `description`; length/array limits remain enforced in local validation.
+
+Safe diagnostics now emit only an allowlisted stop reason, counts of content/text blocks, and bounded numeric token usage. They never log response text, GitHub issue content, JWTs or tokens. Distinct fail-closed reasons cover `max_tokens` truncation, refusals, abnormal stops, content-block anomalies, invalid JSON, invalid schema and invalid usage. No retry, fallback model or output repair is added.
+
+References: [Anthropic structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs); [stop reasons](https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons); [Haiku 5.5 migration](https://platform.claude.com/docs/en/models/haiku-5-5/migration-guide).
+
+**Current owner-gate status:** `USD_IMPACT_CLAUDE_ISSUE_REVIEW_BILLING_READY=no`, original pilot billing `no`, previous paid run #3 consumed. This correction is strictly Draft/unmerged. No further model calls, GitHub workflow dispatch, merge, Production deployment or autonomous issue handling without separate exact-head approval. Preserve Research P1, F2 Stage B, Score rights, Issue #950 NO-GO, Daily, Library Pass/commerce and media/IP holds.

@@ -63,7 +63,9 @@ def research_member():
     t = svc(TR, (sid, f"p1-first-{psub}", f"evt-first-{psub}", psub, "pending", "active", "active", "2026-11-01T00:00:00Z"))
     assert t[0] == "OK", t
     return a, sid, psub
-def ready(a): return svc("SELECT public.check_research_deletion_billing_readiness(%s)", (a,))
+# The old Auth-first service_role API loses EXECUTE at Part 11. This
+# disposable test uses the owner to assert the internal readiness invariants.
+def ready(a): return own("SELECT public.check_research_deletion_billing_readiness(%s)", (a,))
 # SQL owner harness exercises the legacy inner function's billing invariants,
 # while the live service_role must NEVER call that RPC directly after cutover.
 # Real callers use only the atomic finalize_deletion_and_queue_auth_cleanup RPC.
@@ -136,6 +138,48 @@ rec("I4", "hold history is append-only", r[0] == "ERR" and "append-only" in r[1]
 
 # ---------------- O1: signed provider event ordering under row lock ----------------
 oa,osid,ops=research_member()
+# Research invoice notifications are durable billing facts, NOT permission
+# to change the subscription state or grant entitlements.
+invoice_key="lemon-squeezy:invoice-synthetic-"+ops
+invoice_event="lemon-squeezy:subscription_payment_success:subscription-invoices:invoice-"+ops
+invoice_at="2026-11-06T01:00:00Z"
+invoice_meta=json.dumps({
+    "lemonEventName":"subscription_payment_success",
+    "lemonDataType":"subscription-invoices",
+    "replayFingerprintVersion":1,
+    "replayFingerprint":"a"*64,
+})
+invoice_rpc="""SELECT public.record_research_signed_invoice_receipt(
+  %s,%s,%s,'subscription_payment_success',%s::timestamptz,%s::jsonb)"""
+prior_state=su("""SELECT s.state::text||':'||s.version||':'||e.state::text||':'||e.version
+  FROM public.subscriptions s JOIN public.entitlements e ON e.subscription_id=s.id
+  WHERE s.id=%s""",(osid,))
+invoice=svc(invoice_rpc,(osid,invoice_key,invoice_event,invoice_at,invoice_meta))
+repeat_invoice=svc(invoice_rpc,(osid,invoice_key,invoice_event,invoice_at,invoice_meta))
+after_invoice=su("""SELECT s.state::text||':'||s.version||':'||e.state::text||':'||e.version
+  FROM public.subscriptions s JOIN public.entitlements e ON e.subscription_id=s.id
+  WHERE s.id=%s""",(osid,))
+rec("I4", "signed Research invoice success is retained with no paid-state change",
+    invoice[0]=="OK" and invoice[1]["action"]=="invoice_recorded"
+    and repeat_invoice[0]=="OK" and repeat_invoice[1]["action"]=="duplicate"
+    and prior_state==after_invoice
+    and su("""SELECT count(*) FROM public.subscription_events
+      WHERE event_key=%s AND reason='subscription_payment_success'
+        AND metadata->>'researchP1InvoiceReceipt'='true'
+        AND from_state=to_state""",(invoice_key,))==1,
+    f"invoice={invoice} replay={repeat_invoice}")
+bad_meta=json.dumps({
+    "lemonEventName":"subscription_payment_success",
+    "lemonDataType":"subscription-invoices",
+    "replayFingerprintVersion":1,
+    "replayFingerprint":"b"*64,
+})
+collision=svc(invoice_rpc,(osid,invoice_key,invoice_event,invoice_at,bad_meta))
+rec("I4", "conflicting invoice replay cannot overwrite signed billing fingerprint",
+    collision[0]=="ERR" and collision[1].startswith("23505"),str(collision))
+no_public=as_role("authenticated",invoice_rpc,(osid,invoice_key,invoice_event,invoice_at,invoice_meta))
+rec("I4", "authenticated app client cannot directly forge invoice receipts",
+    no_public[0]=="ERR" and no_public[1].startswith("42501"),str(no_public))
 before_older=su("""SELECT s.state::text||':'||s.version||':'||e.state::text||':'||e.version
   FROM public.subscriptions s JOIN public.entitlements e ON e.subscription_id=s.id
   WHERE s.id=%s""",(osid,))
@@ -293,12 +337,12 @@ rec("R3", "escalation claimed once; immediate re-check does not re-escalate (D36
 su("UPDATE public.research_deletion_billing_holds SET escalation_claimed_at=now()-interval '2 hours' WHERE account_id=%s", (m,))
 e3 = ready(m)
 rec("R3", "unconfirmed claim expires after 1h and is re-claimed (lost escalation recovers)", e3[1]["escalate"] is True, str(e3[1]))
-mk = svc("SELECT public.mark_research_deletion_hold_escalated(%s,'ui-0123456789abcdef')", (m,))
-mk2 = svc("SELECT public.mark_research_deletion_hold_escalated(%s,'ui-0123456789abcdef')", (m,))
+mk = own("SELECT public.mark_research_deletion_hold_escalated(%s,'ui-0123456789abcdef')", (m,))
+mk2 = own("SELECT public.mark_research_deletion_hold_escalated(%s,'ui-0123456789abcdef')", (m,))
 su("UPDATE public.research_deletion_billing_holds SET escalation_claimed_at=now()-interval '2 hours' WHERE account_id=%s", (m,))
 e4 = ready(m)
 rec("R3", "after escalation is confirmed, no further escalations", mk == ("OK", True) and mk2 == ("OK", False) and e4[1]["escalate"] is False, f"{mk} {mk2} {e4[1]['escalate']}")
-bad = svc("SELECT public.mark_research_deletion_hold_escalated(%s,'alice@example.com')", (m,))
+bad = own("SELECT public.mark_research_deletion_hold_escalated(%s,'alice@example.com')", (m,))
 rec("R3", "escalation reference must be opaque (no PII)", bad[0] == "ERR" and bad[1].startswith("22023"), str(bad))
 hist = su("SELECT string_agg(event_type, ',' ORDER BY id) FROM public.research_deletion_billing_hold_events WHERE account_id=%s", (m,))
 rec("R4", "reason history preserved per check (D37-5)", hist.startswith("held,escalation_claimed,rechecked"), hist)

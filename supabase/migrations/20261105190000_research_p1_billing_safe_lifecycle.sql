@@ -2605,6 +2605,13 @@ revoke all on function public.prepare_account_deletion_auth_removal(uuid)
   from public, anon, authenticated, service_role;
 revoke all on function public.finalize_account_deletion(uuid)
   from public, anon, authenticated, service_role;
+-- Fail the legacy Auth-first finalizer BEFORE its irreversible Auth DELETE.
+-- A revoked finalization RPC alone is too late: legacy readiness could still
+-- return clear=true and allow Auth deletion before returning a 42501 error.
+revoke all on function public.check_research_deletion_billing_readiness(uuid)
+  from public, anon, authenticated, service_role;
+revoke all on function public.mark_research_deletion_hold_escalated(uuid,text)
+  from public, anon, authenticated, service_role;
 
 
 -- ---------------------------------------------------------------------------
@@ -3009,3 +3016,88 @@ end;
 $resolve_incident$;
 revoke all on function public.resolve_research_deletion_billing_incident(uuid,uuid,text)
   from public,anon,authenticated,service_role;
+
+
+-- ---------------------------------------------------------------------------
+-- Part 15. A signed subscription invoice may be non-transition-driving but is
+-- NEVER financial non-evidence. Record payment_success and ignored refund
+-- variants without changing subscription or entitlement state. The existing
+-- subscription_events insert trigger holds post-Phase-A billing incidents.
+-- Called only by the signed/catalog/binding-verified Research webhook adapter.
+-- ---------------------------------------------------------------------------
+create or replace function public.record_research_signed_invoice_receipt(
+  p_subscription_id uuid,
+  p_event_key text,
+  p_provider_event_id text,
+  p_event_name text,
+  p_occurred_at timestamptz,
+  p_metadata jsonb
+)
+returns jsonb language plpgsql security definer set search_path='' as $invoice$
+declare
+  v_account_id uuid;
+  v_provider text;
+  v_subscription public.subscriptions;
+  v_existing public.subscription_events;
+begin
+  if p_subscription_id is null or p_occurred_at is null
+     or p_event_name not in ('subscription_payment_success','subscription_payment_refunded')
+     or p_event_key is null or char_length(p_event_key) not between 6 and 255
+     or p_provider_event_id is null or char_length(p_provider_event_id) not between 6 and 255
+     or p_metadata is null or pg_catalog.jsonb_typeof(p_metadata)<>'object'
+     or p_metadata ->> 'lemonEventName' is distinct from p_event_name
+     or p_metadata ->> 'lemonDataType' is distinct from 'subscription-invoices'
+     or p_metadata ->> 'replayFingerprintVersion' is distinct from '1'
+     or coalesce(p_metadata ->> 'replayFingerprint','') !~ '^[0-9a-f]{64}$'
+     or p_metadata ? 'researchP1InvoiceReceipt'
+     or p_metadata ? 'researchP1NonactiveHeld'
+     or p_metadata ? 'researchP1StaleHeld' then
+    raise exception using errcode='22023',message='signed Research invoice receipt is invalid';
+  end if;
+  select s.account_id into v_account_id
+    from public.subscriptions s where s.id=p_subscription_id;
+  if not found then
+    raise exception using errcode='P0002',message='Research invoice subscription is missing';
+  end if;
+  perform research_lifecycle_private.lock_account_profile(v_account_id);
+  select s.* into v_subscription from public.subscriptions s
+    where s.id=p_subscription_id for update;
+  if not found or v_subscription.account_id is distinct from v_account_id
+     or v_subscription.product_id<>'research-membership'
+     or v_subscription.provider<>'lemon-squeezy' then
+    raise exception using errcode='42501',message='signed Research invoice binding mismatch';
+  end if;
+
+  select e.* into v_existing
+    from public.subscription_events e where e.event_key=p_event_key;
+  if found then
+    if v_existing.subscription_id<>p_subscription_id
+       or v_existing.account_id<>v_account_id
+       or v_existing.provider_event_id is distinct from p_provider_event_id
+       or v_existing.reason is distinct from p_event_name
+       or v_existing.metadata ->> 'researchP1InvoiceReceipt' is distinct from 'true'
+       or v_existing.metadata ->> 'replayFingerprint' is distinct from p_metadata ->> 'replayFingerprint'
+       or v_existing.occurred_at is distinct from p_occurred_at then
+      raise exception using errcode='23505',message='Research invoice event key conflicts with stored evidence';
+    end if;
+    return pg_catalog.jsonb_build_object('action','duplicate','event_key',p_event_key);
+  end if;
+
+  insert into public.subscription_events(
+    event_key,subscription_id,account_id,product_id,from_state,to_state,
+    reason,actor_type,provider_event_id,metadata,occurred_at
+  ) values (
+    p_event_key,p_subscription_id,v_account_id,'research-membership',
+    v_subscription.state,v_subscription.state,p_event_name,'provider_webhook',
+    p_provider_event_id,
+    p_metadata || pg_catalog.jsonb_build_object('researchP1InvoiceReceipt',true),
+    p_occurred_at
+  );
+  return pg_catalog.jsonb_build_object('action','invoice_recorded','event_key',p_event_key);
+end;
+$invoice$;
+revoke all on function public.record_research_signed_invoice_receipt(
+  uuid,text,text,text,timestamptz,jsonb)
+  from public,anon,authenticated,service_role;
+grant execute on function public.record_research_signed_invoice_receipt(
+  uuid,text,text,text,timestamptz,jsonb) to service_role;

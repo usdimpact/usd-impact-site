@@ -91,16 +91,26 @@ def fresh_clearance(a, ref):
 
 # The old service_role REST RPCs must be unavailable after the migration;
 # both helpers remain owner-internal to the SECURITY DEFINER Phase A transaction.
-for legacy_name in ("prepare_account_deletion_auth_removal", "finalize_account_deletion"):
+for legacy_name in (
+    "prepare_account_deletion_auth_removal", "finalize_account_deletion",
+    "check_research_deletion_billing_readiness", "mark_research_deletion_hold_escalated",
+):
     for api_role in ("service_role", "anon", "authenticated"):
         old_result=exec_role(api_role,
-           f"SELECT public.{legacy_name}(%s)", (uuid.uuid4(),))
+           (f"SELECT public.{legacy_name}(%s,%s)"
+             if legacy_name=="mark_research_deletion_hold_escalated"
+             else f"SELECT public.{legacy_name}(%s)"),
+           ((uuid.uuid4(),"ui-0000000000000000")
+             if legacy_name=="mark_research_deletion_hold_escalated"
+             else (uuid.uuid4(),)))
         rec(f"G {api_role} denied legacy {legacy_name} direct call",
             old_result[0]=="ERR" and old_result[1].startswith("42501"),
             old_result)
-    rec(f"G service_role lacks explicit legacy {legacy_name} EXECUTE grant",
+    signature = ("public.mark_research_deletion_hold_escalated(uuid,text)"
+      if legacy_name=="mark_research_deletion_hold_escalated" else f"public.{legacy_name}(uuid)")
+    rec(f"G service_role lacks legacy {legacy_name} EXECUTE",
         su("SELECT NOT has_function_privilege('service_role', %s::regprocedure, 'EXECUTE')",
-           (f"public.{legacy_name}(uuid)",)))
+           (signature,)))
 # Independent synthetic integration below proves Phase A's owner calls still
 # work despite this outer service_role revocation.
 
@@ -319,6 +329,33 @@ rec("C F1 late bound signed Research renewal invalidates preexisting owner clear
               WHERE account_id=%s AND product_id='research-membership'
                 AND state<>'account_deleted'""",(hold,))==0,
     f"event={late_bound} replay={late_bound_replay} fence={bound_fence}")
+# A paid invoice ignored for entitlement purposes is nonetheless an
+# authenticated financial event: it must reopen private incident custody
+# and invalidate the last clearance after database Phase A.
+invoice_key="lemon-squeezy:signed-invoice-"+hold.hex
+invoice_meta=json.dumps({
+    "lemonEventName":"subscription_payment_success",
+    "lemonDataType":"subscription-invoices",
+    "replayFingerprintVersion":1,
+    "replayFingerprint":"c"*64,
+})
+invoice_sql="""SELECT public.record_research_signed_invoice_receipt(
+    %s,%s,%s,'subscription_payment_success',now(),%s::jsonb)"""
+invoice_result=svc(invoice_sql,(binding[1]["subscription_id"],invoice_key,
+    "evt-signed-invoice-"+hold.hex,invoice_meta))
+invoice_incident=su("""SELECT to_jsonb(i)
+  FROM research_lifecycle_private.deletion_billing_incidents i
+  WHERE i.account_id=%s""",(hold,))
+invoice_fence=svc("SELECT public.check_deletion_auth_cleanup_billing_fence(%s,%s)",(hold,hold_lease))
+rec("C signed invoice after Phase A creates financial incident without restoring Research access",
+    invoice_result[0]=="OK" and invoice_result[1]["action"]=="invoice_recorded"
+    and invoice_incident is not None and invoice_incident["status"]=="open"
+    and invoice_incident["observation_count"]>=2
+    and invoice_fence[0]=="ERR" and invoice_fence[1].startswith("55000")
+    and row(hold)["status"]=="deleted"
+    and su("""SELECT count(*) FROM public.entitlements WHERE account_id=%s
+             AND product_id='research-membership' AND state<>'account_deleted'""",(hold,))==0,
+    f"receipt={invoice_result} incident={invoice_incident}")
 after=svc("""SELECT public.record_research_paid_binding_refusal(
     'lemon-squeezy',%s,%s,%s,'SIGNED_PAID_BINDING_REFUSED')""",
     ("syn-late-"+hold.hex[:12],hold,"syn-checkout-"+hold.hex[:14]))

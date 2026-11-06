@@ -60,6 +60,14 @@ check('CPS July-modified calendar may not be rebadged with a November edition da
   assert.match(issue, /CPS release calendar.*Last Modified/i);
   assert.equal(safeValidationDiagnostic(`${issue} synthetic-private-detail`).code, 'invalid-source-date');
 });
+check('BLS index diagnostics never recommend citing a mutable month calendar', () => {
+  for (const url of [blsIndex, blsCpsIndex]) {
+    const issue = sourceDateAttributionIssue(url);
+    assert.match(issue, /independently verified dated BLS release/i);
+    assert.doesNotMatch(issue, /(?:Use|Cite) (?:a |the relevant )?month-specific schedule/i);
+    assert.match(issue, /month-specific calendar|month-specific sections/i);
+  }
+});
 check('BLS monthly calendar pointers fail closed across URL variants', () => {
   for (const url of [
     'https://www.bls.gov/schedule/2026/11_sched_list.htm',

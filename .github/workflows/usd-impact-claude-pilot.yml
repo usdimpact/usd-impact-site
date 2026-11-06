@@ -11,9 +11,16 @@ on:
         options:
           - claims_only
           - exchange_only
+          - queue_fixture
+      model_call_confirmation:
+        description: 'For queue_fixture only: type I_APPROVE_ONE_HAIKU_CALL. Requires billing and a separate owner GO.'
+        required: false
+        default: ''
+        type: string
 
-# This workflow is intentionally not a Claude task dispatcher.
-# No push/PR/schedule trigger, checkout, model call, customer data, or repo write access.
+# This workflow is intentionally not an autonomous Claude task dispatcher.
+# The optional queue_fixture makes exactly one bounded Haiku call under strict manual, one-run gates.
+# No push/PR/schedule trigger, checkout, customer data, repo writes, or deployment.
 permissions: {}
 
 concurrency:
@@ -30,6 +37,7 @@ jobs:
       id-token: write
     env:
       WIF_MODE: ${{ inputs.mode }}
+      WIF_MODEL_CONFIRMATION: ${{ inputs.model_call_confirmation }}
       WIF_RULE_ID: ${{ vars.USD_IMPACT_ANTHROPIC_RULE_ID }}
       WIF_ORGANIZATION_ID: ${{ vars.USD_IMPACT_ANTHROPIC_ORGANIZATION_ID }}
       WIF_SERVICE_ACCOUNT_ID: ${{ vars.USD_IMPACT_ANTHROPIC_SERVICE_ACCOUNT_ID }}
@@ -55,7 +63,15 @@ jobs:
           };
           async function main() {
             const mode = process.env.WIF_MODE;
-            if (mode !== 'claims_only' && mode !== 'exchange_only') throw Error('Unsupported pilot mode');
+            if (mode !== 'claims_only' && mode !== 'exchange_only' && mode !== 'queue_fixture') {
+              throw Error('Unsupported pilot mode');
+            }
+            // This is a deliberately one-shot model gate. A rerun or any later run must fail closed.
+            if (mode === 'queue_fixture' &&
+                (process.env.GITHUB_RUN_NUMBER !== '3' || process.env.GITHUB_RUN_ATTEMPT !== '1' ||
+                 process.env.WIF_MODEL_CONFIRMATION !== 'I_APPROVE_ONE_HAIKU_CALL')) {
+              throw Error('Paid model fixture is not approved for this exact first attempt');
+            }
             const requestUrl = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
             const requestToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
             if (!requestUrl || !requestToken) throw Error('GitHub OIDC permission is unavailable');
@@ -119,8 +135,63 @@ jobs:
                 !Number.isInteger(result.expires_in) || result.expires_in < 60) {
               throw Error('Unexpected Anthropic token-exchange response');
             }
-            console.log('PASS: Anthropic federated identity exchange succeeded; access token discarded in memory.');
-            console.log('No Messages API/model request, repository change, or deployment was made.');
+            if (mode === 'exchange_only') {
+              console.log('PASS: Anthropic federated identity exchange succeeded; access token discarded in memory.');
+              console.log('No Messages API/model request, repository change, or deployment was made.');
+              return;
+            }
+            // No repository checkout, user-controlled prompt, private data, tools, or task execution.
+            // All content below is a hard-coded synthetic fixture; at most one Messages API call.
+            const fixture = [
+              'Classify these purely synthetic USD Impact workflow cases.',
+              'A: Draft-only QA with no customer access, approved for isolated testing.',
+              'B: Merge Research deletion logic into Production while P1 race remains open.',
+              'C: Publish Score data without approved source rights.',
+              'Respond with only compact JSON of form',
+              '{"ready":"A","hold":["B","C"]}. No Markdown, explanation, or other keys.',
+            ].join(' ');
+            if (fixture.length > 480) throw Error('Fixture input size exceeded');
+            const payload = {
+              model: 'claude-haiku-5-5',
+              max_tokens: 96,
+              output_config: { effort: 'low' },
+              thinking: { type: 'disabled' },
+              messages: [{ role: 'user', content: fixture }],
+            };
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+              method: 'POST',
+              headers: {
+                Authorization: 'Bearer ' + result.access_token,
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json',
+              },
+              body: JSON.stringify(payload),
+              signal: AbortSignal.timeout(20000),
+            });
+            // Never print request headers, OAuth/JWT tokens, or error response bodies.
+            if (!response.ok) throw Error('Single Claude API call failed with HTTP ' + response.status);
+            const generated = await response.json();
+            const blocks = Array.isArray(generated.content) ? generated.content : [];
+            const texts = blocks.filter(x => x.type === 'text' && typeof x.text === 'string');
+            if (texts.length !== 1) throw Error('Unexpected Claude response shape');
+            let decision;
+            try { decision = JSON.parse(texts[0].text.trim()); }
+            catch { throw Error('Claude did not return compact JSON'); }
+            if (decision.ready !== 'A' || !Array.isArray(decision.hold) ||
+                decision.hold.length !== 2 || decision.hold[0] !== 'B' || decision.hold[1] !== 'C' ||
+                Object.keys(decision).sort().join(',') !== 'hold,ready') {
+              throw Error('Claude synthetic classification did not match protected fixture');
+            }
+            const usage = generated.usage || {};
+            if (!Number.isInteger(usage.input_tokens) || !Number.isInteger(usage.output_tokens) ||
+                usage.input_tokens < 0 || usage.input_tokens > 400 ||
+                usage.output_tokens < 1 || usage.output_tokens > 96) {
+              throw Error('Claude token usage exceeded the bounded pilot fixture');
+            }
+            console.log('PASS: Real Claude Haiku 5.5 classified the synthetic fixture correctly.');
+            console.log('SYNTHETIC_RESULT: A=READY; B=HOLD; C=HOLD.');
+            console.log('USAGE: input=' + usage.input_tokens + '; output=' + usage.output_tokens + ' tokens.');
+            console.log('One paid Messages API call; access token discarded; no repository writes or deployments.');
           }
           main().catch(e => { console.error(String(e.message || 'Authentication preflight failed')); process.exitCode = 1; });
           NODE

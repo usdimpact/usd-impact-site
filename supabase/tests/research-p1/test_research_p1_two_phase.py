@@ -211,8 +211,30 @@ hold=synthetic_user()
 binding=svc("""SELECT public.bind_research_membership_subscription(
     %s,'lemon-squeezy',%s,%s,'313','monthly',now(),'{}'::jsonb)""",
     (hold,"p1two-sub-"+hold.hex[:14],"p1two-cust-"+hold.hex[:14]))
+# A genuine retained Research event makes the stale-JWT RLS proof non-vacuous.
+su("""INSERT INTO public.subscription_events
+      (event_key,subscription_id,account_id,product_id,from_state,to_state,
+       reason,actor_type,provider_event_id,occurred_at)
+      SELECT %s,s.id,s.account_id,s.product_id,'pending','pending',
+             'synthetic retention proof','provider_webhook',%s,now()
+      FROM public.subscriptions s
+      WHERE s.account_id=%s AND s.product_id='research-membership'""",
+   ("syn-retained-"+hold.hex, "syn-event-"+hold.hex, hold))
 request(hold)
 make_due_keep_auth(hold)
+# The preexisting JWT may still be accepted by PostgREST; use that *same*
+# synthetic JWT claim before and after database Phase A.
+def browser_billing_counts(account):
+    with conn() as c:
+        c.execute("SET ROLE authenticated")
+        c.execute("SELECT set_config('request.jwt.claim.sub',%s,false)",(str(account),))
+        a=c.execute("SELECT count(*) FROM public.subscriptions WHERE account_id=%s",(account,)).fetchone()[0]
+        b=c.execute("SELECT count(*) FROM public.subscription_events WHERE account_id=%s",(account,)).fetchone()[0]
+        c.execute("RESET ROLE")
+        return a,b
+before_stale_jwt=browser_billing_counts(hold)
+rec("C stale JWT can read own retained Research billing while deletion is pending",
+    before_stale_jwt==(1,1),before_stale_jwt)
 refusal=phase_a(hold)
 rec("C Research footprint blocks Phase A and preserves Auth identity",
     binding[0]=="OK" and refusal[0]=="ERR" and refusal[1].startswith("55000")
@@ -223,6 +245,13 @@ rec("C Research footprint blocks Phase A and preserves Auth identity",
 owner=own("""SELECT public.record_research_billing_clearance(
     %s,'provider_api','syn-external-verified-0001',now(),'synthetic-owner')""",(hold,))
 success=phase_a(hold)
+retained=su("""SELECT count(*) FROM public.subscriptions s WHERE s.account_id=%s""",(hold,))
+retained_events=su("""SELECT count(*) FROM public.subscription_events e WHERE e.account_id=%s""",(hold,))
+after_stale_jwt=browser_billing_counts(hold)
+rec("C retired profile denies direct Research billing reads to unexpired JWT",
+    retained==1 and retained_events==1 and after_stale_jwt==(0,0)
+    and su("SELECT count(*) FROM auth.users WHERE id=%s",(hold,))==1,
+    f"owner rows {retained},{retained_events} browser rows {after_stale_jwt}")
 rec("C owner external-clearance model permits atomic DB finalization",
     owner[0]=="OK" and success[0]=="OK" and success[1]["phase"]=="auth_pending",success)
 # New two-phase billing fence must allow the already cleared database

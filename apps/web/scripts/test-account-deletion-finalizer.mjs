@@ -88,6 +88,26 @@ function queuedOutbox(inserted, createdAt = deletedAt) {
 }
 
 assert.deepEqual(readAccountDeletionFinalizerConfig({}), { enabled: false });
+// A hostname beginning with the expected project-ref must never receive a secret.
+for (const fake of [
+  'https://ycstrcvshdluovtuasjc.attacker.invalid',
+  'https://ycstrcvshdluovtuasjc.supabase.co.attacker.invalid',
+]) {
+  assert.throws(
+    () => readAccountDeletionFinalizerConfig({ ...environment, SUPABASE_URL: fake }),
+    /canonical Development/,
+  );
+}
+assert.throws(
+  () => readAccountDeletionFinalizerConfig({
+    ...environment,
+    VERCEL_ENV: 'production',
+    SUPABASE_URL: 'https://gjzetjugmnwanvjkchux.attacker.invalid',
+    ACCOUNT_DELETION_FINALIZER_PRODUCTION_APPROVED: 'true',
+    EMAIL_READINESS_PRODUCTION_APPROVED: 'true',
+  }),
+  /not approved/,
+);
 assert.throws(
   () => readAccountDeletionFinalizerConfig({
     ...environment,
@@ -157,7 +177,8 @@ const fetchImpl = async (url, options = {}) => {
   }
 
   if (href.includes(`/auth/v1/admin/users/${accountId}`) && options.method === 'DELETE') {
-    assert.match(href, /should_soft_delete=true/);
+    assert.equal(href, `${environment.SUPABASE_URL}/auth/v1/admin/users/${accountId}`);
+    assert.deepEqual(JSON.parse(options.body), { should_soft_delete: true });
     return response(200, { id: accountId });
   }
 

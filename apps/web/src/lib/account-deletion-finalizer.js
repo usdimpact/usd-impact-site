@@ -18,11 +18,10 @@ export class AccountDeletionFinalizerError extends Error {
 }
 
 function projectRefFromUrl(url) {
-  try {
-    return new URL(url).hostname.split('.')[0] || '';
-  } catch {
-    return '';
-  }
+  // Exact origin only: a lookalike project-ref prefix is not an API boundary.
+  if (url === `https://${DEVELOPMENT_PROJECT_REF}.supabase.co`) return DEVELOPMENT_PROJECT_REF;
+  if (url === `https://${PRODUCTION_PROJECT_REF}.supabase.co`) return PRODUCTION_PROJECT_REF;
+  return '';
 }
 
 function enabled(value) {
@@ -161,10 +160,11 @@ export async function readDeletionProfile({ config, accountId, fetchImpl = fetch
 
 export async function softDeleteAuthUser({ config, accountId, fetchImpl = fetch }) {
   const response = await fetchImpl(
-    `${config.supabase.url}/auth/v1/admin/users/${encodeURIComponent(accountId)}?should_soft_delete=true`,
+    `${config.supabase.url}/auth/v1/admin/users/${encodeURIComponent(accountId)}`,
     {
       method: 'DELETE',
       headers: jsonHeaders(config.supabase.secretKey),
+      body: JSON.stringify({ should_soft_delete: true }),
     },
   );
   if (response.status === 404) return Object.freeze({ alreadyAbsent: true });

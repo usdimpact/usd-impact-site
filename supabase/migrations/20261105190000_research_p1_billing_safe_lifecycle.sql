@@ -2295,3 +2295,25 @@ revoke all on function public.prepare_account_deletion_auth_removal(uuid)
   from public, anon, authenticated, service_role;
 revoke all on function public.finalize_account_deletion(uuid)
   from public, anon, authenticated, service_role;
+
+
+-- ---------------------------------------------------------------------------
+-- Part 12. A retired account can retain a still-valid pre-deletion JWT.
+-- Customer SELECT on retained Research subscriptions and event history must
+-- therefore stop at the database RLS boundary, not only at the web gate.
+-- Preserve deletion_pending self-service visibility; refuse only deleted.
+-- ---------------------------------------------------------------------------
+drop policy if exists subscriptions_select_own on public.subscriptions;
+create policy subscriptions_select_own on public.subscriptions
+  for select to authenticated
+  using (account_id=(select auth.uid()) and exists (
+    select 1 from public.profiles p
+    where p.account_id=(select auth.uid()) and p.status<>'deleted'
+  ));
+drop policy if exists subscription_events_select_own on public.subscription_events;
+create policy subscription_events_select_own on public.subscription_events
+  for select to authenticated
+  using (account_id=(select auth.uid()) and exists (
+    select 1 from public.profiles p
+    where p.account_id=(select auth.uid()) and p.status<>'deleted'
+  ));

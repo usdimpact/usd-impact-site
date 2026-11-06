@@ -216,7 +216,7 @@ assert.match(
 );
 assert.match(
   workflow,
-  /- name: Close recovered daily health issue\n\s*if: steps\.health\.outcome == 'success' && steps\.health\.outputs\.state == 'healthy' && github\.event_name == 'schedule' && vars\.DAILY_NEWS_INCIDENT_AUTOCLOSE_APPROVED == 'true'/,
+  /- name: Close recovered daily health issue\n(?:\s*#.*\n)*\s*if: steps\.health\.outcome == 'success' && steps\.health\.outputs\.state == 'healthy' && github\.event_name == 'schedule' && vars\.DAILY_NEWS_INCIDENT_AUTOCLOSE_APPROVED == 'true'/,
   'issue closure must independently require the natural Health schedule event',
 );
 

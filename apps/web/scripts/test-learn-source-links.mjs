@@ -111,7 +111,13 @@ test('markup, controls and missing descriptions rejected', () => {
 });
 test('renderer patch leaves the original template reversible byte-for-byte', () => {
   const candidate = fs.readFileSync(new URL('../src/pages/learn/[slug].astro', import.meta.url), 'utf8');
-  let restored = candidate.replace("import { getLearnSourceLinks } from '../../lib/learn-source-links.mjs';\n", '');
+  // QA-23: explicitly undo the single SSR skip-anchor attribute before the unchanged original-template hash check.
+  // No other renderer edits are exempted: this check is purposefully exact and fail-closed.
+  const skipMain = '<main id="main-content" class="dc-detail">';
+  assert.equal(candidate.split(skipMain).length - 1, 1, 'Learn renderer must have exactly one server-rendered skip target');
+  assert.equal(candidate.split('id="main-content"').length - 1, 1, 'Learn renderer must not duplicate the skip target');
+  let restored = candidate.replace(skipMain, '<main class="dc-detail">');
+  restored = restored.replace("import { getLearnSourceLinks } from '../../lib/learn-source-links.mjs';\n", '');
   restored = restored.replace("import { getLearnSeoDescription, getLearnSeoTitle } from '../../lib/learn-seo-metadata.mjs';\n", '');
   restored = restored.replace('const sourceLinks = getLearnSourceLinks(card);\n', '');
   restored = restored.replace('const pageTitle = getLearnSeoTitle(card);\n', '');

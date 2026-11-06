@@ -164,7 +164,7 @@ assert.match(
 );
 assert.match(
   workflow,
-  /echo "state=healthy" >> "\$GITHUB_OUTPUT"[\s\S]*if: steps\.health\.outcome == 'success' && steps\.health\.outputs\.state == 'healthy' && github\.event_name == 'schedule'/,
+  /echo "state=healthy" >> "\$GITHUB_OUTPUT"[\s\S]*if: steps\.health\.outcome == 'success' && steps\.health\.outputs\.state == 'healthy' && github\.event_name == 'schedule' && vars\.DAILY_NEWS_INCIDENT_AUTOCLOSE_APPROVED == 'true'/,
   'only proven deployed health may close an existing Daily health issue',
 );
 assert.match(
@@ -216,10 +216,19 @@ assert.match(
 );
 assert.match(
   workflow,
-  /- name: Close recovered daily health issue\n\s*if: steps\.health\.outcome == 'success' && steps\.health\.outputs\.state == 'healthy' && github\.event_name == 'schedule'/,
+  /- name: Close recovered daily health issue\n(?:\s*#.*\n)*\s*if: steps\.health\.outcome == 'success' && steps\.health\.outputs\.state == 'healthy' && github\.event_name == 'schedule' && vars\.DAILY_NEWS_INCIDENT_AUTOCLOSE_APPROVED == 'true'/,
   'issue closure must independently require the natural Health schedule event',
 );
 
+assert.ok(
+  !workflow.includes('DAILY_NEWS_INCIDENT_AUTOCLOSE_APPROVED: true'),
+  'incident closure approval must not be hardcoded inside the workflow',
+);
+assert.match(
+  workflow,
+  /vars\.DAILY_NEWS_INCIDENT_AUTOCLOSE_APPROVED == 'true'/,
+  'incident auto-closure must remain disabled without a separate owner activation',
+);
 assert.ok(
   (workflow.match(/echo "state=healthy" >> "\$GITHUB_OUTPUT"/g) || []).length === 1,
   'Health must have only one healthy emission downstream from provenance checks',

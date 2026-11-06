@@ -92,13 +92,13 @@ outcome('extra file', { files: [file, { filename: '.github/workflows/evil.yml', 
 outcome('altered archived source', { archiveSources: sources.slice(0, 3) },
   'source-not-identical-to-reviewed-original');
 outcome('false manual check', { checkWorkflowRuns: runs.map((x) => ({ ...x, event: 'workflow_dispatch' })) },
-  'genuine-exact-head-pull_request-checks-not-proven');
+  'genuine-exact-head-pull-request-checks-not-proven');
 outcome('one failed actual PR check', { checks: checks.map((x, i) =>
   i === 1 ? { ...x, conclusion: 'failure' } : x) },
-  'genuine-exact-head-pull_request-checks-not-proven');
+  'genuine-exact-head-pull-request-checks-not-proven');
 outcome('ineligible SHA', { checkWorkflowRuns: runs.map((x, i) =>
   i === 2 ? { ...x, head_sha: main } : x) },
-  'genuine-exact-head-pull_request-checks-not-proven');
+  'genuine-exact-head-pull-request-checks-not-proven');
 outcome('stale preview', { preview: { state: 'READY', target: 'preview', commitSha: main } },
   'exact-head-preview-not-ready');
 outcome('human has not reviewed', { reviews: [] }, 'owner-exact-head-approval-missing');

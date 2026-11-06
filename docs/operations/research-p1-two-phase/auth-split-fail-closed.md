@@ -9,7 +9,7 @@ The pre-Auth billing fence is a separate SQL transaction. A signed Research paym
 
 ## 2. What cannot be fixed in code
 
-- **No cross-service atomicity.** No PostgreSQL lock, transaction or lease can span an HTTP call to Supabase Auth Admin. Whatever the order, a window remains between the last SQL check and the external `DELETE`.
+- **No cross-service atomicity.** A database transaction can keep locks open while an HTTP call to Supabase Auth Admin is in flight, but that cannot make the PostgreSQL commit, the Auth soft delete and any Lemon Squeezy charge one atomic operation: each system commits independently and a provider payment does not wait on our locks. Whatever the order, a window remains between the last SQL check and the external `DELETE`.
 - **Absence of local evidence is not cessation.** Webhooks can be delayed, retried or lost; Lemon Squeezy can retry `past_due` charges for about two weeks; a cancelled subscription can stay in a paid grace period and be resumed; a checkout created before local custody, or with `expires_at=null`, has no local row. A database with no Research footprint cannot prove the provider will not charge.
 - **Auth retirement cannot be undone here.** A soft-deleted GoTrue user is not restored by this code, and nothing here re-grants paid access.
 
@@ -37,7 +37,7 @@ Hold classes, from least to most severe:
 
 Unchanged and preserved: checkout custody, paid-binding quarantine (including all seen claimed accounts and checkout keys), bounded privileged HTTP, stale-JWT RLS denial, staged non-dispatchable completion email, legacy direct-RPC revocation, Library Pass entitlements (the hold reasons only ever consider `research-membership`).
 
-**Consequence (owner decision D1):** Auth retirement becomes owner-gated for every account. Database Phase A still runs automatically; it already makes the profile deleted and denies stale JWTs, and the retained Auth identity is the recoverable side.
+**Consequence (owner decision D1):** in this Draft, Auth retirement requires an owner-recorded clearance for every account, but once one exists the worker retires Auth automatically. Database Phase A still runs automatically; it already makes the profile deleted and denies stale JWTs, and the retained Auth identity is the recoverable side. The stricter proposals (owner-run Auth retirement, optionally also owner-run Phase A) are **not implemented**; see `post-fence-race-options.md` §2 Option A.
 
 ## 4. Per-account Lemon Squeezy evidence for an Auth-retirement clearance
 
@@ -76,9 +76,11 @@ A held deletion is still an open data-subject request. The worker reports only c
 
 ## 7. Owner decisions
 
+Strict defaults, alternatives, consequences and required approvals for each item are in `post-fence-race-options.md` §5. Nothing there is approved.
+
 | ID | Decision |
 |---|---|
-| D1 | Accept owner-gated Auth retirement for **all** accounts, or approve a narrower rule (for example a store-level attestation that Live Research was never purchasable for a cohort). The default is the strict rule. |
+| D1 | Choose between the strict proposal (owner-run Phase A and Auth retirement for **all** accounts), the alternative (automatic Phase A, owner-run Auth retirement), or a narrower rule (for example a store-level attestation that Live Research was never purchasable for a cohort). Neither proposal is implemented; the Draft retires Auth automatically once a clearance exists. |
 | D2 | Maximum privacy hold, escalation owner and customer-communication procedure for each hold class. |
 | D3 | Freshness window for an Auth-retirement clearance (24 hours in this Draft). |
 | D4 | Refund and remediation policy for a charge observed after Auth retirement. |

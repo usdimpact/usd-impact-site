@@ -101,7 +101,7 @@ export async function claimDraftAuthCleanup({
   config, batchSize = 1, fetchImpl = fetch,
 }) {
   const cfg = requireReviewConfig(config);
-  if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 25) {
+  if (!Number.isInteger(batchSize) || batchSize !== 1) {
     throw new TwoPhaseReviewError('TWO_PHASE_BATCH_INVALID');
   }
   const rows = await rpc({
@@ -193,15 +193,25 @@ export async function resumeDraftAuthCleanup({
   if (!validCompletion(receipt, row.account_id)) {
     throw new TwoPhaseReviewError('TWO_PHASE_AUTH_CONFIRM_RECEIPT_INVALID');
   }
-  const queued = await enqueueImpl({
-    finalizationResult: {
-      account_id: receipt.account_id,
-      recipient_email: receipt.recipient_email,
-      deletion_requested_at: receipt.deletion_requested_at,
-      deleted_at: receipt.deleted_at,
-    },
-    environment, fetchImpl,
+  // The shared email helper performs both POST and GET. Bound each operation
+  // before invoking the shared helper; unknown outcomes remain retryable.
+  const boundedEmailFetch = (url, options = {}) => boundedRequest({
+    url, options, fetchImpl, failureCode: 'TWO_PHASE_EMAIL_NOT_DURABLE',
   });
+  let queued;
+  try {
+    queued = await enqueueImpl({
+      finalizationResult: {
+        account_id: receipt.account_id,
+        recipient_email: receipt.recipient_email,
+        deletion_requested_at: receipt.deletion_requested_at,
+        deleted_at: receipt.deleted_at,
+      },
+      environment, fetchImpl: boundedEmailFetch,
+    });
+  } catch {
+    throw new TwoPhaseReviewError('TWO_PHASE_EMAIL_NOT_DURABLE');
+  }
   if (!queued?.enabled || !validId(queued?.outbox?.id)) {
     throw new TwoPhaseReviewError('TWO_PHASE_EMAIL_NOT_DURABLE');
   }
@@ -225,6 +235,8 @@ export async function runDraftAuthCleanupBatch({
   config, batchSize = 1, environment = process.env, fetchImpl = fetch,
   enqueueImpl = enqueueAccountDeletionCompletedEmail,
 }) {
+  // Never claim many leased Auth tasks and process them sequentially.
+  if (batchSize !== 1) throw new TwoPhaseReviewError('TWO_PHASE_BATCH_INVALID');
   const rows = await claimDraftAuthCleanup({ config, batchSize, fetchImpl });
   let completed = 0;
   let held = 0;
@@ -253,7 +265,7 @@ export async function runDraftTwoPhaseReviewCycle({
   fetchImpl = fetch, enqueueImpl = enqueueAccountDeletionCompletedEmail,
 }) {
   const cfg = requireReviewConfig(config);
-  if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 25) {
+  if (!Number.isInteger(batchSize) || batchSize !== 1) {
     throw new TwoPhaseReviewError('TWO_PHASE_BATCH_INVALID');
   }
   const parsedNow = new Date(now);

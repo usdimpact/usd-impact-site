@@ -2022,6 +2022,18 @@ begin
       message='Research billing has not been externally verified as stopped';
   end if;
 
+  -- The legacy SQL helper detaches every privacy_request.account_id, even
+  -- for outstanding access/export/correction requests. Do not orphan an
+  -- unresolved non-deletion request by executing Phase A prematurely.
+  if exists (
+    select 1 from public.privacy_requests pr
+    where pr.account_id=p_account_id
+      and pr.request_type<>'deletion'
+      and pr.status in ('open','in_progress')
+  ) then
+    raise exception using errcode='55000',
+      message='other active privacy requests require owner handling before account deletion';
+  end if;
   select coalesce(pg_catalog.array_agg(pr.id),'{}'::uuid[]) into v_privacy
     from public.privacy_requests pr
     where pr.account_id=p_account_id and pr.request_type='deletion'

@@ -214,6 +214,47 @@ const baseWorld = (overrides = {}) => {
     'prematurely dispatchable outbox is rejected before SQL completion');
 }
 {
+  const world = baseWorld();
+  let outboxNetworkCalls = 0;
+  const fetchImpl = async (url, options = {}) => {
+    if (String(url).includes('/rest/v1/notification_outbox')) {
+      assert.ok(options.signal instanceof AbortSignal,
+        'the shared outbox POST/GET must each carry a deadline');
+      outboxNetworkCalls += 1;
+      return json(200, {});
+    }
+    return world.fetchImpl(url, options);
+  };
+  const enqueueImpl = async ({ fetchImpl: emailFetch }) => {
+    await emailFetch(origin + '/rest/v1/notification_outbox', { method: 'POST' });
+    await emailFetch(origin + '/rest/v1/notification_outbox?limit=1', { method: 'GET' });
+    return { enabled: true, outbox: { id: outbox, status: 'deletion_staged' } };
+  };
+  const done = await resumeDraftAuthCleanup({ config, row, fetchImpl, enqueueImpl });
+  check(done.status === 'auth_and_email_confirmed' && outboxNetworkCalls === 2
+    && world.calls.includes('FINISH'),
+    'both shared outbox requests inherit bounded transport deadline');
+}
+{
+  const world = baseWorld();
+  const fetchImpl = async (url, options) => {
+    if (String(url).includes('/rest/v1/notification_outbox')) {
+      assert.ok(options.signal instanceof AbortSignal);
+      throw Error('sensitive email transport failure with PII');
+    }
+    return world.fetchImpl(url, options);
+  };
+  const enqueueImpl = ({ fetchImpl: emailFetch }) =>
+    emailFetch(origin + '/rest/v1/notification_outbox', { method: 'POST' });
+  await assert.rejects(
+    () => resumeDraftAuthCleanup({ config, row, fetchImpl, enqueueImpl }),
+    (error) => error.code === 'TWO_PHASE_EMAIL_NOT_DURABLE'
+      && !String(error.message).includes('PII'),
+  );
+  check(!world.calls.includes('FINISH'),
+    'outbox network failure is sanitized and leaves recovery stage intact');
+}
+{
   const world = baseWorld({ CONFIRM: () => json(200, { ...receipt, account_id: lease }) });
   await assert.rejects(
     () => resumeDraftAuthCleanup({ config, row, ...world }),
@@ -238,6 +279,22 @@ const baseWorld = (overrides = {}) => {
     && result.errors[0] === 'TWO_PHASE_AUTH_DELETE_UNAVAILABLE'
     && world.emails.length === 0,
     'batch runner holds failed Auth and emits only non-PII structured errors');
+}
+{
+  let calls = 0;
+  await assert.rejects(
+    () => runDraftAuthCleanupBatch({
+      config, batchSize: 2, fetchImpl: () => { calls += 1; throw Error('forbidden'); },
+    }),
+    (error) => error.code === 'TWO_PHASE_BATCH_INVALID',
+  );
+  await assert.rejects(
+    () => runDraftTwoPhaseReviewCycle({
+      config, batchSize: 2, fetchImpl: () => { calls += 1; throw Error('forbidden'); },
+    }),
+    (error) => error.code === 'TWO_PHASE_BATCH_INVALID',
+  );
+  check(calls === 0, 'bulk leased cleanup and due-cycle rejected before IO');
 }
 // Late signed paid evidence or unverifiable merchant state must stop before
 // Auth Admin DELETE. Mocked fence outcomes never count as provider proof.
@@ -373,7 +430,7 @@ const baseWorld = (overrides = {}) => {
   });
   await assert.rejects(
     () => runDraftTwoPhaseReviewCycle({
-      config, now: '2026-11-05T21:00:00Z', batchSize: 2, ...world,
+      config, now: '2026-11-05T21:00:00Z', batchSize: 1, ...world,
     }),
     (error) => error.code === 'TWO_PHASE_DUE_SCAN_INVALID',
   );

@@ -597,5 +597,34 @@ latest_ack=confirm(lease_account,new_lease)
 rec("F fresh worker can finish the Auth-confirmed step",
     latest_ack[0]=="OK" and latest_ack[1]["phase"]=="auth_confirmed")
 
+# F5: the legacy finalizer detaches all privacy request account IDs. A
+# pending non-deletion request must be resolved before Phase A, so the
+# applicant's pending export/access rights cannot be orphaned.
+privacy_account=synthetic_user()
+request(privacy_account)
+make_due_keep_auth(privacy_account)
+privacy_id=su("""INSERT INTO public.privacy_requests
+  (account_id,email,request_type,status)
+  SELECT p.account_id,p.email,'access','open' FROM public.profiles p
+  WHERE p.account_id=%s RETURNING id""",(privacy_account,))
+privacy_blocked=phase_a(privacy_account)
+privacy_unlinked=su("""SELECT account_id IS NULL FROM public.privacy_requests
+  WHERE id=%s""",(privacy_id,))
+rec("F5 open access request holds Phase A and preserves the original account link",
+    privacy_blocked[0]=="ERR" and privacy_blocked[1].startswith("55000")
+    and not privacy_unlinked and row(privacy_account)["status"]=="deletion_pending"
+    and ledger(privacy_account) is None
+    and su("SELECT count(*) FROM auth.users WHERE id=%s",(privacy_account,))==1,
+    str(privacy_blocked))
+su("""UPDATE public.privacy_requests SET status='completed',completed_at=now()
+  WHERE id=%s""",(privacy_id,))
+privacy_after=phase_a(privacy_account)
+rec("F5 completed non-deletion request permits normal atomic Phase A",
+    privacy_after[0]=="OK" and privacy_after[1]["phase"]=="auth_pending"
+    and row(privacy_account)["status"]=="deleted"
+    and su("""SELECT status::text FROM public.privacy_requests WHERE id=%s""",
+           (privacy_id,))=="completed",
+    str(privacy_after))
+
 print(f"P1_TWO_PHASE_DONE total={len(R)} pass={sum(R)} fail={len(R)-sum(R)}",flush=True)
 raise SystemExit(0 if all(R) else 1)
